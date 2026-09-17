@@ -1,0 +1,36 @@
+{
+  "schema": "saoc.nos-content-baseline/v1",
+  "feature": "F24",
+  "mission": "national-show-ia-alignment",
+  "milestone": "M4",
+  "checkId": "NF17",
+
+  "purpose": "Regression tripwire for the blocker fixed in db6cd81d. Every route listed here rendered real published content on 2026-09-10 and is expected to keep doing so. NF17 compares the live census against this file. It is NOT F24's gate — A19 (disclosure) is. It exists because every other assertion in contract-f24.yaml stays GREEN if all six silently revert to disclosed shells: the fallback machinery would be verified working while the thing it substitutes for had vanished.",
+
+  "establishedAt": "2026-09-10",
+  "establishedBy": "db6cd81d — fix(nos): hyphenate seed document ids — unblocks the six 404ing show routes",
+  "verifiedAnonymously": true,
+
+  "expectedPublished": [
+    { "slug": "/national-show/programme", "pageKey": "11-programme", "seed": "content/show-pages/11-programme.json" },
+    { "slug": "/national-show/symposium", "pageKey": "06-saoc-symposium", "seed": "content/show-pages/06-saoc-symposium.json" },
+    { "slug": "/national-show/wosa-conference", "pageKey": "07-wosa-conference", "seed": "content/show-pages/07-wosa-conference.json" },
+    { "slug": "/national-show/sa-exhibitors", "pageKey": "04-south-african-exhibitors", "seed": "content/show-pages/04-south-african-exhibitors.json" },
+    { "slug": "/national-show/international-guests", "pageKey": "05-international-guests-and-exhibitors", "seed": "content/show-pages/05-international-guests-and-exhibitors.json" },
+    { "slug": "/national-show/sponsors", "pageKey": "15-sponsors", "seed": "content/show-pages/15-sponsors.json" }
+  ],
+
+  "verdicts": {
+    "PASS": "Every route in expectedPublished renders `published`, and the set of published routes matches this file exactly.",
+    "FAIL": "THE TRIPWIRE FIRED. A route in expectedPublished rendered `fallback-unpublished`. Its content regressed — check the named seed and the seeding run before anything else. This is the db6cd81d blocker returning.",
+    "DRIFT": "The live set and this file disagree in a way that is not a regression: a route renders `published` that is not listed here, or a route listed here is no longer a listed:true row in the manifest. Someone added or retired a page without recording it. THE FIX IS TO EDIT THIS FILE in the same commit that made the change — not to loosen the check."
+  },
+
+  "howToRetireAPage": "Remove its entry here, in the same commit that retires the route. The edit is the record: it has an author, a diff and a commit message, which a gate colour does not. Never widen the check to make a retirement pass silently.",
+
+  "notes": [
+    "DRIFT is deliberately a distinct verdict token, not folded into FAIL, so a legitimate retirement is legible at a glance instead of arriving as a mysterious red.",
+    "This file is a baseline, never a count. An assertion written as `published == 6` cannot tell a broken seed from a deliberately retired page; both look like the same red.",
+    "13-booking-tickets.json is seeded but backs no listed:true route, so it is deliberately absent from expectedPublished."
+  ]
+}

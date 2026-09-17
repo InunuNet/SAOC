@@ -1,0 +1,630 @@
+schema: athanor.contract/v1
+slug: nos-design-system
+goal: >-
+  Give the NOS layer a semantic status colour system it does not have (six paired
+  tokens, three ground-resolved aliases, four in-scope sites converted off brand ink
+  and raw Tailwind red), and replace the 40%-alpha box-shadow focus ring with one
+  scoped unlayered outline reset reading a ground-paired --ring-focus — both proved
+  by rendered pixels, never by reading the stylesheet.
+created_at: '2026-09-08'
+autonomy: high
+
+features:
+  - id: F23
+    name: >-
+      Semantic status colour in the NOS layer — six --status-{error,warning,success}-on-{light,dark}
+      literals plus three ground-resolved aliases declared in nos-theme.css, the two public
+      vendor banners moved off brand primary-800 and the two gated sites off raw text-red-700,
+      every rendered status element measured ≥4.5:1 at the composited pixel and carrying a
+      word or icon as well as a hue (R8)
+    status: pending
+  - id: F24
+    name: >-
+      Focus affordance in the NOS layer — --ring-focus-on-light/--ring-focus-on-dark pair with
+      --ring-focus as the retained consumed alias, one scoped unlayered
+      ".nos-theme :focus-visible" outline reset that fixes the nine ring-ink/40 sites without
+      editing one of them, exactly one visible indicator per focused element, every ring
+      opaque and ≥3:1 against its own adjacent ground at 390 and 1280 (R9)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/nos-design-system/goldens/m8/status-tokens.golden.md
+  - .agent/memory/project/specs/nos-design-system/goldens/m8/focus-affordance.golden.md
+  - .agent/memory/project/specs/nos-design-system/goldens/m8/evidence-artefacts.golden.md
+  - .agent/memory/project/specs/nos-design-system/goldens/m8/verifier-contract.golden.md
+
+assertions:
+  phase: 4
+  checks:
+
+    # ---------------------------------------------------------------------
+    # A0 — harness integrity. One Playwright driver takes every rendered
+    # measurement in one run from one build and writes a flat id -> PASS/FAIL
+    # map; every browser assertion below greps that map, so a failure names
+    # itself instead of collapsing into one red driver. This block is what
+    # catches the shared-fate risk that design creates.
+    # ---------------------------------------------------------------------
+    - id: A0_DRIVER
+      description: >-
+        Run the M8 verifier — spawns its own dev server on 3413, drives 390/1280 across
+        /national-show/vendors/apply, /national-show/vendors/register, /national-show and
+        /contact, writes .tmp/sandbox/nos-m8/results.json. Exit 0 all pass, 1 a check
+        failed, 2 the harness itself broke (never collapsed into 1).
+      type: shell
+      timeout_seconds: 900
+      command: node_modules/.bin/tsx execution/checks/verify_nos_m8_status_and_focus.ts
+
+    - id: A0_SCRIPT_EXISTS
+      description: The commissioned verifier script exists at its contracted path.
+      type: shell
+      command: test -f execution/checks/verify_nos_m8_status_and_focus.ts
+
+    - id: A0_RESULTS_FRESH
+      description: >-
+        results.json records the HEAD commit it was measured at — no check in this repo
+        runs automatically, so a results file from three commits ago greps identically to
+        a fresh one and is exactly how a "still passing" claim survives a regression.
+      type: shell
+      command: 'grep -q "$(git rev-parse HEAD)" .tmp/sandbox/nos-m8/results.json'
+
+    - id: A0_DETAIL_SEPARATE
+      description: >-
+        Measured values live in detail.json, not results.json — a detail blob on a results
+        line would let the PASS greps below match a substring of a diagnostic message
+        instead of a verdict.
+      type: shell
+      command: 'test -f .tmp/sandbox/nos-m8/detail.json && ! grep -q "_detail" .tmp/sandbox/nos-m8/results.json'
+
+    - id: A0_NEGCTL_GREP_DISCRIMINATES
+      description: >-
+        A never-emitted id does not match the PASS grep. Every browser assertion in this
+        contract is the same shape; if that shape matched anything, all 29 would be theatre.
+      type: shell
+      command: 'test -f .tmp/sandbox/nos-m8/results.json && ! grep -q ''"__ID_NEVER_EMITTED__":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    # ---------------------------------------------------------------------
+    # F23 — semantic status colour, measured (R8)
+    # Token values are NOT asserted as literals anywhere in this contract:
+    # every check below tests measured ratio, hue pairing, saturation and
+    # lightness, so Codi may substitute values on review of the swatch sheet
+    # and a substituted value meeting the constraints passes unchanged.
+    # ---------------------------------------------------------------------
+    - id: A1
+      description: >-
+        All six status literals and all three aliases resolve to non-empty values under
+        .nos-theme, read back from an injected probe's raster — never from a colour string.
+      type: shell
+      command: 'grep -q ''"STATUS_TOKENS_RESOLVE_LIGHT":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A2
+      description: >-
+        Each alias resolves to a different value inside .nos-on-dark, and to the declared
+        on-dark literal. Mechanism proof, not deployment proof — no in-scope status element
+        sits on a dark ground today, so this is measured on an injected probe.
+      type: shell
+      command: 'grep -q ''"STATUS_TOKENS_FLIP_ON_DARK":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A3
+      description: >-
+        The aliases resolve empty on a non-NOS route — the tokens stay in the NOS layer and
+        do not leak into the SAOC base.
+      type: shell
+      command: 'grep -q ''"STATUS_NO_THEME_LEAK":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A4
+      description: >-
+        Zero status-painted elements at rest at 390. This is the assertion that makes the
+        rest mean anything — without it the contrast checks pass vacuously on a page where
+        the trigger silently failed and there was nothing to measure.
+      type: shell
+      command: 'grep -q ''"STATUS_NONE_AT_REST_390":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A5
+      description: Zero status-painted elements at rest at 1280.
+      type: shell
+      command: 'grep -q ''"STATUS_NONE_AT_REST_1280":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A6
+      description: >-
+        At least one status-painted element after the trigger at 390 — empty submit on
+        /national-show/vendors/apply, the ordinary validation path, never the honeypot branch.
+      type: shell
+      command: 'grep -q ''"STATUS_RENDERED_390":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A7
+      description: At least one status-painted element after the trigger at 1280.
+      type: shell
+      command: 'grep -q ''"STATUS_RENDERED_1280":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A8
+      description: >-
+        Every rendered status element measures ≥4.5:1 at the composited pixel at 390,
+        computed from the raster — never by regex-parsing getComputedStyle, which Tailwind v4
+        serialises as oklab()/color() and which returns plausible, wrong numbers
+        (InunuNet/SAOC#3).
+      type: shell
+      command: 'grep -q ''"STATUS_CONTRAST_390":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A9
+      description: Every rendered status element measures ≥4.5:1 at the composited pixel at 1280.
+      type: shell
+      command: 'grep -q ''"STATUS_CONTRAST_1280":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A10
+      description: >-
+        Each rendered status element mixFits to a declared status token at α ≥ 0.98 — proving
+        which token painted it, and that it was not painted through an alpha modifier.
+      type: shell
+      command: 'grep -q ''"STATUS_TOKEN_IDENTIFIED":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A11
+      description: >-
+        No element bearing role="alert" under .nos-theme mixFits to --primary-800 or any
+        brand token. This is R8/1's actual content: contrast alone does not catch it, since
+        today's defective banner measures well over 4.5:1 while still recolouring itself out
+        of existence on the next palette change.
+      type: shell
+      command: 'grep -q ''"STATUS_NO_BRAND_AS_STATUS":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A12
+      description: >-
+        Each pair's two members measure within ±15° of each other, register taking
+        precedence within that tolerance (golden §4). Loosened from ±4° after Codi approved
+        success-on-dark #8fb89c at 139° against its partner's 150.5°: the tight bound
+        rejected a correctly-chosen value on a quantity nobody perceives. The verifier owns
+        the threshold; ±15° is a ceiling, not a target — error and warning sit at 0.5°.
+        Nothing here asserts equal saturation across a pair (success measures 0.22/0.50);
+        A13's ≤0.70 ceiling is the binding saturation constraint.
+      type: shell
+      command: 'grep -q ''"STATUS_HUE_PAIRED":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A13
+      description: >-
+        Every member's measured HSL saturation ≤ 0.70 — the mechanical half of R8/4's ink,
+        not signal. Tailwind red-500 is ~0.84 and is the register the ruling rejects.
+      type: shell
+      command: 'grep -q ''"STATUS_SAT_BOUND":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A14
+      description: >-
+        Every on-light member's measured HSL lightness ≤ 0.40 — "deep oxblood rather than
+        fluorescent red" is a lightness claim as much as a hue one.
+      type: shell
+      command: 'grep -q ''"STATUS_LIGHTNESS_ON_LIGHT":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A15
+      description: >-
+        Every status-painted element has non-empty visible text or an svg / [data-status-icon]
+        descendant (R8/5). An element whose only difference from its neighbours is its colour
+        is a defect however good its ratio.
+      type: shell
+      command: 'grep -q ''"STATUS_NEVER_COLOUR_ALONE":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A16
+      description: >-
+        The rendered error banner carries role="alert", so the state reaches a screen reader
+        without depending on visual salience at all.
+      type: shell
+      command: 'grep -q ''"STATUS_ERROR_ROLE_ALERT":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    # ---------------------------------------------------------------------
+    # F23 — static. Declaration shape and the two gated sites a headless gate
+    # cannot render (they live behind the vendor registration token, so they
+    # are fixed by source edit and covered here only — no browser assertion in
+    # this contract claims to have measured them).
+    # ---------------------------------------------------------------------
+    - id: A17
+      description: >-
+        app/globals.css contains no --status- and no --ring-focus. R8/2 — the SAOC base is
+        not this mission's to open, and its blast radius is every SAOC route. REFUSING.
+      type: shell
+      command: '! grep -Eq "\-\-status-|\-\-ring-focus" app/globals.css'
+
+    - id: A18
+      description: >-
+        Exactly six --status-{error,warning,success}-on-{light,dark} literals are declared in
+        nos-theme.css — three states × two grounds, because no single value clears 4.5:1 on
+        both #fbfaf0 and #1a1445 (R8/3).
+      type: shell
+      command: 'test "$(grep -o -- "--status-\(error\|warning\|success\)-on-\(light\|dark\):" "app/(marketing)/national-show/nos-theme.css" | wc -l | tr -d " ")" -eq 6'
+
+    - id: A19
+      description: >-
+        The three on-light aliases are declared — --status-<state>: var(--status-<state>-on-light).
+        A custom-property declaration resolves at the element that declares it, so this
+        resolves at .nos-theme against literals on that same element.
+      type: shell
+      command: 'test "$(grep -o -- "--status-\(error\|warning\|success\): *var(--status-\(error\|warning\|success\)-on-light)" "app/(marketing)/national-show/nos-theme.css" | wc -l | tr -d " ")" -eq 3'
+
+    - id: A20
+      description: >-
+        The three on-dark aliases are declared, redeclaring the same names inside the
+        dark-ground scope.
+      type: shell
+      command: 'test "$(grep -o -- "--status-\(error\|warning\|success\): *var(--status-\(error\|warning\|success\)-on-dark)" "app/(marketing)/national-show/nos-theme.css" | wc -l | tr -d " ")" -eq 3'
+
+    - id: A21
+      description: >-
+        A .nos-theme .nos-on-dark scope exists — one class carrying both token families'
+        ground flip, applied once per dark section rather than once per token.
+      type: shell
+      command: 'grep -q "\.nos-theme \.nos-on-dark" "app/(marketing)/national-show/nos-theme.css"'
+
+    - id: A22
+      description: >-
+        No --color-status-* names anywhere under app/ or components/. Tailwind v4 generates
+        named utilities from the global @theme at-rule only, and that at-rule is global —
+        using it here is precisely the leak nos-theme.css warns against. REFUSING.
+      type: shell
+      command: '! grep -rq -- "--color-status-" app/ components/'
+
+    - id: A23
+      description: >-
+        The two public banner sites no longer paint status with brand ink and now consume
+        var(--status-error) — VendorApplyForm.tsx and VendorRegistrationCodeEntryForm.tsx.
+      type: shell
+      command: '! grep -Eq "(text|border)-primary-800" components/vendors/VendorApplyForm.tsx components/vendors/VendorRegistrationCodeEntryForm.tsx && grep -q "var(--status-error)" components/vendors/VendorApplyForm.tsx && grep -q "var(--status-error)" components/vendors/VendorRegistrationCodeEntryForm.tsx'
+
+    - id: A24
+      description: >-
+        The two token-gated sites no longer carry raw Tailwind text-red-700 and now consume
+        var(--status-error) — VendorMarketingFieldset.tsx and VendorMarketingUploadField.tsx.
+        These render only behind a vendor registration session token a headless gate cannot
+        mint, so this static check is the whole of their coverage and is honest about it.
+      type: shell
+      command: '! grep -q "text-red-700" components/vendors/VendorMarketingFieldset.tsx components/vendors/VendorMarketingUploadField.tsx && grep -q "var(--status-error)" components/vendors/VendorMarketingFieldset.tsx && grep -q "var(--status-error)" components/vendors/VendorMarketingUploadField.tsx'
+
+    # ---------------------------------------------------------------------
+    # F24 — focus affordance, measured (R9). Focus is never inspected by
+    # reading the stylesheet: a correct rule proves nothing about an
+    # overflow:hidden ancestor clipping the result, a ring-* shadow still
+    # painting underneath, or the ground under a control being the one @dev
+    # assumed when applying .nos-on-dark.
+    # ---------------------------------------------------------------------
+    - id: A25
+      description: >-
+        --ring-focus-on-light, --ring-focus-on-dark and --ring-focus all resolve under
+        .nos-theme, read back from the probe's raster.
+      type: shell
+      command: 'grep -q ''"FOCUS_RING_TOKENS_DECLARED":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A26
+      description: >-
+        --ring-focus resolves to the on-dark literal inside .nos-on-dark — the flip reaches
+        the five already-correct NOS outline sites with no call-site edit.
+      type: shell
+      command: 'grep -q ''"FOCUS_RING_FLIPS_ON_DARK":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A27
+      description: >-
+        Every focusable control under .nos-theme shows a ring in the focused-vs-unfocused
+        raster diff at 390. The diff is the only technique that proves an indicator is
+        visible as opposed to declared.
+      type: shell
+      command: 'grep -q ''"FOCUS_RING_VISIBLE_390":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A28
+      description: Every focusable control under .nos-theme shows a ring in the raster diff at 1280.
+      type: shell
+      command: 'grep -q ''"FOCUS_RING_VISIBLE_1280":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A29
+      description: >-
+        Every ring measures ≥3:1 against its own adjacent ground at 390, per control — not
+        against an assumed page background.
+      type: shell
+      command: 'grep -q ''"FOCUS_RING_CONTRAST_390":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A30
+      description: Every ring measures ≥3:1 against its own adjacent ground at 1280, per control.
+      type: shell
+      command: 'grep -q ''"FOCUS_RING_CONTRAST_1280":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A31
+      description: >-
+        Every ring mixFits at α ≥ 0.98. This is the /40 defect caught without parsing a
+        colour string: ring-ink/40 measures 2.43:1 where the same ink at full alpha measures
+        14.84:1 — the colour was never the problem.
+      type: shell
+      command: 'grep -q ''"FOCUS_RING_OPAQUE":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A32
+      description: >-
+        Corroborating only: focused elements resolve outline-width > 0. Kept because it
+        localises a failure fast; explicitly not the contrast measurement — a run where this
+        passes and A29/A30 fail is a real failure.
+      type: shell
+      command: 'grep -q ''"FOCUS_IS_OUTLINE":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A33
+      description: >-
+        Corroborating only: focused elements resolve box-shadow none, so no ring-* shadow
+        paints underneath the outline.
+      type: shell
+      command: 'grep -q ''"FOCUS_NO_BOX_SHADOW":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A34
+      description: >-
+        The card/group sites show exactly one changed band in the diff, not two. NosEventCard
+        and VisitorLinkCard deliberately delegate the ring to an inner Card via
+        group-focus-visible; a blanket reset restores an outline on the Link as well. The
+        invariant is asserted, not the mechanism — @dev may hold it any way it likes.
+      type: shell
+      command: 'grep -q ''"FOCUS_ONE_INDICATOR_CARDS":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A35
+      description: >-
+        The ring band is present on all four edges of each control — a box-shadow ring is
+        clipped by an overflow:hidden ancestor and an outline is not, and this is where that
+        difference becomes visible.
+      type: shell
+      command: 'grep -q ''"FOCUS_NOT_CLIPPED":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A36
+      description: >-
+        The /national-show hero CTA's ring clears 3:1 — the R9/3 defect (violet on #1a1445 at
+        2.48:1) measured where it actually ships, on the real photographic ground, not simulated.
+      type: shell
+      command: 'grep -q ''"FOCUS_DARK_GROUND_RING":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A37
+      description: >-
+        A control on a non-NOS route still shows its original ring — the scoped reset did not
+        leak out of .nos-theme into the SAOC surfaces this mission has no mandate over.
+      type: shell
+      command: 'grep -q ''"FOCUS_NON_NOS_UNAFFECTED":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    # ---------------------------------------------------------------------
+    # F24 — static. Declaration shape, plus two REFUSING checks that fail if
+    # @dev "fixed" R9 by editing call sites instead of writing one scoped rule.
+    # ---------------------------------------------------------------------
+    - id: A38
+      description: >-
+        Both ring tokens are declared in nos-theme.css — one value cannot serve both a pale
+        ground and #1a1445, and the single-ring instinct is what produced the defect (R9/3).
+      type: shell
+      command: 'test "$(grep -o -- "--ring-focus-on-\(light\|dark\):" "app/(marketing)/national-show/nos-theme.css" | wc -l | tr -d " ")" -eq 2'
+
+    - id: A39
+      description: >-
+        --ring-focus is retained as an alias of the on-light token, and redeclared as the
+        on-dark token in the dark scope. The consumed name is deliberately unchanged: it is
+        what the five correct call sites already read.
+      type: shell
+      command: 'grep -q -- "--ring-focus: *var(--ring-focus-on-light)" "app/(marketing)/national-show/nos-theme.css" && grep -q -- "--ring-focus: *var(--ring-focus-on-dark)" "app/(marketing)/national-show/nos-theme.css"'
+
+    - id: A40
+      description: >-
+        The scoped reset exists and carries all three properties — outline 2px solid
+        var(--ring-focus), outline-offset 2px, box-shadow none.
+      type: shell
+      command: 'grep -q "\.nos-theme :focus-visible" "app/(marketing)/national-show/nos-theme.css" && grep -q -- "outline: *2px solid var(--ring-focus)" "app/(marketing)/national-show/nos-theme.css" && grep -q -- "outline-offset: *2px" "app/(marketing)/national-show/nos-theme.css" && grep -q -- "box-shadow: *none" "app/(marketing)/national-show/nos-theme.css"'
+
+    - id: A41
+      description: >-
+        nos-theme.css declares no @layer. Tailwind v4 emits utilities inside @layer utilities,
+        and unlayered declarations beat layered ones regardless of specificity — that is what
+        overrides focus-visible:outline-none and focus-visible:ring-2 with no !important.
+        REFUSING.
+      type: shell
+      command: '! grep -q "@layer" "app/(marketing)/national-show/nos-theme.css"'
+
+    - id: A42
+      description: >-
+        The nine focus-visible:ring-ink/40 strings still exist unchanged in components/vendors/.
+        REFUSING, deliberately: those class strings are shared with SAOC routes this mission
+        has no mandate over, and the whole design of the fix is one scoped reset rather than
+        nine edits. A check that only verified the ring renders could not tell a scoped reset
+        from a rewrite that also changed /tickets.
+      type: shell
+      command: 'test "$(grep -ro "focus-visible:ring-ink/40" components/vendors/ | wc -l | tr -d " ")" -eq 9'
+
+    - id: A43
+      description: >-
+        The five already-correct NOS outline sites still read var(--ring-focus) and were not
+        rewritten — four under components/nos/ plus archive/page.tsx. The token fix reaches
+        them; editing them is unrequested work. REFUSING.
+      type: shell
+      command: 'test "$(grep -rl "var(--ring-focus)" components/nos/ "app/(marketing)/national-show/archive/page.tsx" | wc -l | tr -d " ")" -eq 5'
+
+    # ---------------------------------------------------------------------
+    # Non-goals. Every one of these is a real defect of the same class,
+    # recorded so the audit sent to the SAOC session is complete — and asserted
+    # UNCHANGED so a @dev that "helpfully" fixes them fails the gate for
+    # widening a mandate rather than honouring one.
+    # ---------------------------------------------------------------------
+    - id: A44
+      description: >-
+        components/nos/ still contains zero focus-visible:ring-* utilities — the NOS layer
+        stays on outline, and the reset did not tempt anyone into adding ring utilities.
+      type: shell
+      command: '! grep -rq "focus-visible:ring-" components/nos/'
+
+    - id: A45
+      description: >-
+        components/events/SubmitEventForm.tsx keeps its nine raw-palette status matches. Not a
+        NOS route, out of scope. REFUSING.
+      type: shell
+      command: 'test "$(grep -Eo "text-red-[0-9]{3}|border-red-[0-9]{3}|bg-red-[0-9]{2,3}|text-green-[0-9]{3}|bg-green-[0-9]{2,3}" components/events/SubmitEventForm.tsx | wc -l | tr -d " ")" -eq 9'
+
+    - id: A46
+      description: >-
+        app/admin/settings/page.tsx keeps its three raw-palette status matches. Not under
+        .nos-theme, out of scope. REFUSING.
+      type: shell
+      command: 'test "$(grep -Eo "text-red-[0-9]{3}|border-red-[0-9]{3}|bg-red-[0-9]{2,3}|text-green-[0-9]{3}|bg-green-[0-9]{2,3}" app/admin/settings/page.tsx | wc -l | tr -d " ")" -eq 3'
+
+    - id: A47
+      description: >-
+        components/tickets/CategoryTicketsPage.tsx carries no var(--status-*). Explicitly
+        excluded by the dispatch brief. REFUSING.
+      type: shell
+      command: '! grep -q "var(--status-" components/tickets/CategoryTicketsPage.tsx'
+
+    - id: A48
+      description: >-
+        components/tickets/ and components/admin/ still carry their focus-visible:ring-*
+        strings. They have the identical defect and are not fixed here; the reset is scoped to
+        .nos-theme and must not have been widened. REFUSING.
+      type: shell
+      command: 'grep -rq "focus-visible:ring-" components/tickets/ components/admin/'
+
+    # ---------------------------------------------------------------------
+    # Evidence for Codi. Asserted present and fresh, never correct — the
+    # correctness judgment is Codi's, and a gate claiming to have made it would
+    # be lying about what it measured.
+    # ---------------------------------------------------------------------
+    - id: A49
+      description: >-
+        The status swatch sheet and its machine-readable measurements exist — two ground
+        columns × three state rows, each cell carrying block, body text, 1px border, word and
+        icon, with the ratio printed from the raster of the cell above it.
+      type: shell
+      command: 'test -f .tmp/sandbox/nos-m8/evidence/status-swatches.png && test -f .tmp/sandbox/nos-m8/evidence/status-swatches.json'
+
+    - id: A50
+      description: >-
+        status-swatches.json records the HEAD commit it was rendered at — same mechanism and
+        same reason as A0_RESULTS_FRESH.
+      type: shell
+      command: 'grep -q "$(git rev-parse HEAD)" .tmp/sandbox/nos-m8/evidence/status-swatches.json'
+
+    - id: A51
+      description: >-
+        All four before/after focus frames exist, at both viewports. 390 and 1280 are not two
+        sizes of the same picture: at 390 the controls are full-width and adjacent, so a 2px
+        outline at 2px offset can collide with its neighbour.
+      type: shell
+      command: 'test -f .tmp/sandbox/nos-m8/evidence/focus-390-before.png && test -f .tmp/sandbox/nos-m8/evidence/focus-390-after.png && test -f .tmp/sandbox/nos-m8/evidence/focus-1280-before.png && test -f .tmp/sandbox/nos-m8/evidence/focus-1280-after.png'
+
+    - id: A52
+      description: >-
+        focus-measurements.json exists and records the HEAD commit the after-frames were
+        rendered at, carrying the composited ratio and mixFit α behind the visual claim.
+      type: shell
+      command: 'test -f .tmp/sandbox/nos-m8/evidence/focus-measurements.json && grep -q "$(git rev-parse HEAD)" .tmp/sandbox/nos-m8/evidence/focus-measurements.json'
+
+    - id: A53
+      description: >-
+        The before-frames record a _head_before that is not HEAD — they were captured from the
+        pre-fix tree, not re-rendered from the fixed one. A "before" capture bearing the
+        post-fix hash is the one way this artefact quietly becomes worthless.
+      type: shell
+      command: 'grep -q "_head_before" .tmp/sandbox/nos-m8/evidence/focus-measurements.json && ! grep -q "\"_head_before\": *\"$(git rev-parse HEAD)\"" .tmp/sandbox/nos-m8/evidence/focus-measurements.json'
+
+    # ---------------------------------------------------------------------
+    # Negative controls. Three metrics, three proofs that each can return the
+    # failing answer. This project has already paid for this lesson once: a
+    # passing a11y harness that could not have failed.
+    # ---------------------------------------------------------------------
+    - id: A54
+      description: >-
+        The contrast metric reports below 3:1 for #7e3f97 on #1a1445 — a contrast function
+        that always returns a passing number passes every real check too.
+      type: shell
+      command: 'grep -q ''"NEGCTL_CONTRAST_DETECTS_FAILURE":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A55
+      description: >-
+        mixFit reports α ≈ 0.4, not 1.0, for a synthesised 40% composite of --ink over --ivory.
+      type: shell
+      command: 'grep -q ''"NEGCTL_MIXFIT_DETECTS_ALPHA":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    - id: A56
+      description: >-
+        The ring diff reports no ring for an element with outline none !important applied inline.
+      type: shell
+      command: 'grep -q ''"NEGCTL_RING_DIFF_DETECTS_ABSENCE":.*"PASS"'' .tmp/sandbox/nos-m8/results.json'
+
+    # ---------------------------------------------------------------------
+    # F24 call-site consequence. The reset supplies outline, width, offset and
+    # colour, so the masthead lockup link's four focus-visible:outline-* classes
+    # are now dead — including the outline-offset-4 that the reset takes to 2px.
+    # Ruled 2026-09-08: 2px is the system value, deliberately, and the classes go
+    # rather than stay as intent that produces nothing. Rationale and evidence in
+    # goldens/m8/focus-affordance.golden.md §0.
+    # ---------------------------------------------------------------------
+    - id: A57
+      description: >-
+        The masthead lockup link declares no focus-visible outline utilities; it takes its ring
+        from the theme like the other five sites. This is the whole file, not just line 64 —
+        that link is currently its only focus-visible declaration, so a reintroduction anywhere
+        in the layout trips this.
+      type: shell
+      command: '! grep -q "focus-visible:outline" "app/(marketing)/national-show/layout.tsx"'
+
+    # ---------------------------------------------------------------------
+    # Triad (CTO ruling, PR #1) — mirrors contract.yaml TRIAD-01/TRIAD-02.
+    # This contract references app/ paths (A17-A22, A38-A41, A43, A46, A57) so
+    # verify_triad_coverage.py classes it UI/workflow and requires codex_qa +
+    # browser_deployed_check + gws_inbox_check. codex_qa and
+    # browser_deployed_check are declared for real below; gws_inbox_check is
+    # NOT declared — M8 has no email surface (the vendor forms' validation
+    # states are rendered in-page; no email is sent by anything this milestone
+    # changed) — and is grandfathered instead via
+    # execution/triad-baseline-exempt.{txt,sha256}, per the ruling. This
+    # contract must never gain a gws_inbox_check assertion claiming an inbox
+    # check ran. Both checks carry `phase: 5` so phase 4 (every measured
+    # assertion above) can be gated and read independently of the pending
+    # deploy: contract.py's per-check phase routing (GH #1317 / F6) leaves
+    # every check without a phase field on the block-level phase 4. Editing
+    # this file forfeits the grandfather — re-pin the sha256 after any change.
+    # Observed 2026-09-08 while adding this block: the verifier A0_DRIVER names,
+    # execution/checks/verify_nos_m8_status_and_focus.ts, is not in the tree,
+    # and .tmp/sandbox/nos-m8/ holds no results.json or detail.json. Recorded
+    # here as an observation only — this block changes no assertion above.
+    # ---------------------------------------------------------------------
+    - id: TRIAD-01
+      description: >-
+        Codex GPT-5.5 adversarial review of the M8 diff — CTO-ruling triad
+        requirement. Already run for this branch on 2026-09-08 via
+        execution/codex_qa.sh over the combined M7+M8 tracked-file diff (65,022
+        tokens, exit 0, PASS, zero findings); evidence at
+        .agent/evidence/nos-design/codex/codex-qa-m7m8-2026-09-08.log. The prompt
+        below scopes the review to this milestone's files. Real, not decorative:
+        the gate invokes codex live on every --run-checks run. timeout_seconds
+        matches codex_qa.sh's own 600s default so contract.py's 200s supervisory
+        default cannot kill a legitimate open-ended review.
+      type: codex_qa
+      phase: 5
+      timeout_seconds: 600
+      target: >-
+        Adversarially review the working tree against origin/main (git diff
+        origin/main), scoped to the M8 status-colour and focus-affordance change
+        set: app/(marketing)/national-show/nos-theme.css (the six
+        --status-*-on-{light,dark} literals and their aliases, the .nos-on-dark
+        scope, the --ring-focus token pair, and the unlayered
+        ".nos-theme :focus-visible" outline reset), the four vendor call sites
+        components/vendors/VendorApplyForm.tsx,
+        components/vendors/VendorRegistrationCodeEntryForm.tsx,
+        components/vendors/VendorMarketingFieldset.tsx,
+        components/vendors/VendorMarketingUploadField.tsx, and
+        app/(marketing)/national-show/layout.tsx (masthead lockup link focus
+        classes). Also review execution/checks/verify_nos_m8_status_and_focus.ts if
+        it exists on disk; if it does not, state that plainly. Look for real bugs,
+        regressions, security issues and correctness risks, not style — in
+        particular any way the scoped reset or the status tokens could leak outside
+        .nos-theme into SAOC routes. For each finding cite exact file:line, state
+        the concrete failure scenario, and rate confidence. If nothing real is
+        wrong, say so plainly instead of inventing findings.
+
+    - id: TRIAD-02
+      description: >-
+        Deployed browser-run manifest for the M8 status-colour and focus changes on
+        /national-show/vendors/apply, /national-show/vendors/register and
+        /national-show — CTO-ruling triad requirement, earned against a deployed
+        origin, never the localhost:3002 dev server nor the verifier's own port-3413
+        server. target is a manifest JSON path per
+        execution/browser_deployed_check.sh's usage contract (argv[1]), not a URL.
+        PENDING: the manifest at this path does not exist and cannot yet — the
+        nos-design branch is not deployed at an allowlisted origin
+        (BROWSER_CHECK_DEPLOYED_ORIGIN, default https://beta.saoc.co.za; *.hosted.app
+        and *.run.app are denylisted). The deploying dev produces it after driving a
+        real browser run against that deployment. Until then this assertion
+        honestly errors (exit 2, wrapper usage error, verdict ERROR) — correct
+        behaviour, not something to paper over, and never a fabricated manifest.
+        Same allowlist caveat as contract.yaml TRIAD-02: the origin match is exact
+        against an env var the gate's shell must export; no contract field sets it.
+      type: browser_deployed_check
+      phase: 5
+      target: .agent/memory/project/specs/nos-design-system/browser-deployed-manifest-m8.json

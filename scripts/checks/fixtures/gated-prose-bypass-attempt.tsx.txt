@@ -1,0 +1,20 @@
+// QA exploit probe — attempts to render section prose WITHOUT the notice,
+// entirely without touching components/nos/ShowPageProse.tsx, and without
+// calling loadShowPage (avoids unrelated sanityFetch overload noise).
+import { PortableText } from '@portabletext/react';
+import { __unsafeUnwrapGatedProse, type ShowPageSection } from '@/lib/data/show-pages';
+
+declare const section: ShowPageSection;
+
+export function SilentRenderer() {
+  // Deliberately discard `notice` — nothing stops this import or this call.
+  const { blocks } = __unsafeUnwrapGatedProse(section.body);
+  return <PortableText value={blocks} />;
+}
+
+// Attempt #2: pass GatedProse directly to PortableText with NO unwrap and NO cast.
+// This line is expected to be a genuine compile error (structural mismatch).
+export function DirectPass() {
+  // @ts-expect-error -- GatedProse is not PortableTextBlock[]
+  return <PortableText value={section.body} />;
+}

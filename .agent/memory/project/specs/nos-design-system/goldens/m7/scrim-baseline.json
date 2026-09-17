@@ -1,0 +1,12 @@
+{
+  "_what": "Computed background-image of NosHero's three scrim layers on /national-show at 1280x900 (DPR 2), DOM order, read via the hero img.object-cover parent's :scope > div[aria-hidden=\"true\"] children. Consumed by execution/checks/verify_nos_m7_hero_and_grammar.ts SCRIM_UNCHANGED (verifier-contract.golden.md section 6).",
+  "_captured_at": "2026-09-08",
+  "_commit": "24f87e05",
+  "_source_tree": "detached git worktree .tmp/sandbox/m7-baseline-tree at 24f87e05 (the M6 build; M7 was uncommitted at capture time), served with next dev --webpack on port 3921 (Turbopack refuses a symlinked node_modules)",
+  "_pre_m7_evidence": "In the same capture the M6 server's hero <h1> was the Logo lockup (class starts 'flex flex-col items-start gap-3 text-left xl:flex-row', contains an <img>) — the titleIsElement path M7 removed — while the current tree's <h1> is the typographic headline with no <img>. Two demonstrably different trees rendered byte-identical gradients, which is the R4/D2 property (scrims keep their current stops and opacities), not a copy of the tree under test.",
+  "layers": [
+    "linear-gradient(to top, rgba(14, 11, 36, 0.95) 0%, rgba(14, 11, 36, 0.82) 30%, rgba(14, 11, 36, 0.45) 58%, rgba(14, 11, 36, 0) 88%)",
+    "linear-gradient(to right, rgba(14, 11, 36, 0.85) 0%, rgba(14, 11, 36, 0.55) 42%, rgba(14, 11, 36, 0.12) 72%, rgba(14, 11, 36, 0) 100%)",
+    "linear-gradient(rgba(14, 11, 36, 0.85) 0%, rgba(14, 11, 36, 0.64) 55%, rgba(14, 11, 36, 0) 100%)"
+  ]
+}

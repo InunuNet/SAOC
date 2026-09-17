@@ -1,0 +1,116 @@
+{
+  "pageKey": "07-wosa-conference",
+  "specNumber": 7,
+  "title": "WOSA Conference",
+  "summary": "The Wild Orchids of Southern Africa Conference, held alongside the National Show.",
+  "sections": [
+    {
+      "sectionKey": "about-the-conference",
+      "heading": "About the Conference",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "about-the-conference-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "about-the-conference-b1-s1",
+              "text": "This page covers the WOSA Conference held alongside the 2027 National Show, what the conference is, who it is for, and how it fits into the wider programme.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "about-the-conference-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "about-the-conference-b2-s1",
+              "text": "The WOSA Conference is organised in partnership with Wild Orchids of Southern Africa and runs as its own dedicated strand of the Show, distinct from the SAOC Symposium.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "attending",
+      "heading": "Attending",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "attending-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "attending-b1-s1",
+              "text": "Registration details for the WOSA Conference will be published here once they are finalised, alongside how it links to the main National Show booking.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "attending-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "attending-b2-s1",
+              "text": "Session details, speakers and any conference fees are not yet confirmed.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionKey": "about-wosa",
+      "heading": "About WOSA",
+      "kind": "prose",
+      "provenance": "placeholder-ai",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "about-wosa-b1",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "about-wosa-b1-s1",
+              "text": "Wild Orchids of Southern Africa (WOSA) is the Council's partner organisation for matters relating to orchids growing outside cultivation.",
+              "marks": []
+            }
+          ]
+        },
+        {
+          "_type": "block",
+          "_key": "about-wosa-b2",
+          "style": "normal",
+          "markDefs": [],
+          "children": [
+            {
+              "_type": "span",
+              "_key": "about-wosa-b2-s1",
+              "text": "WOSA's own website carries their identification, ecological and conservation content directly, which sits outside what this site covers.",
+              "marks": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -94,7 +94,7 @@ export function VendorMarketingUploadField({
       {status === 'uploading' ? <p className="font-sans text-[13px] text-muted">Uploading…</p> : null}
       {status === 'success' ? <p className="font-sans text-[13px] text-ink">Uploaded.</p> : null}
       {status === 'error' && errorMessage ? (
-        <p role="alert" className="font-sans text-[13px] text-red-700">
+        <p role="alert" className="font-sans text-[13px] text-[var(--status-error)]">
           {errorMessage}
         </p>
       ) : null}

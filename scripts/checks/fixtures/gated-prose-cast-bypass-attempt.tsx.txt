@@ -1,0 +1,28 @@
+// gated-prose-cast-bypass-attempt.tsx.txt — COMMITTED regression fixture (G12).
+//
+// This reproduces the SECOND bypass shape Codex's cross-model review found: a raw
+// double-cast that reaches into GatedProse's opaque internal shape directly, without
+// importing anything from components/nos/gated-prose-internal.ts at all. The import
+// boundary (eslint's no-restricted-imports, the grep guard, and G12's import scan)
+// stops the first bypass shape (import the unwrap function from an arbitrary file) but
+// has nothing to say about a file that never imports the internal module and instead
+// asserts its own type through the opaque brand — `as unknown` defeats any type
+// system's opacity by construction, that is what it is for.
+//
+// Never compiled as project source (see the .tsx.txt extension, matching
+// gated-prose-bypass-attempt.tsx.txt's convention). G12's cast-detection sub-check
+// scans real project files for this pattern by regex and asserts THIS fixture, scanned
+// by the identical regex, IS flagged — the same "the self-test must be able to fail"
+// discipline as the import-based probe.
+import { PortableText } from '@portabletext/react';
+import type { ShowPageSection } from '@/lib/data/show-pages';
+
+declare const section: ShowPageSection;
+
+export function CastBypassRenderer() {
+  // Deliberately discards the notice, exactly like the import-based bypass — the
+  // difference is HOW it reaches `blocks`: a raw double-cast, not an imported unwrap
+  // function.
+  const { blocks } = section.body as unknown as { blocks: unknown[] };
+  return <PortableText value={blocks as never} />;
+}

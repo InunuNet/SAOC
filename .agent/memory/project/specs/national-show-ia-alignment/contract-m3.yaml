@@ -1,0 +1,239 @@
+schema: athanor.contract/v1
+slug: national-show-ia-alignment
+goal: >-
+  Write the placeholder copy for the fifteen National Show pages the council has not supplied,
+  so every page carries either their real words or invented words that are unmistakably marked
+  as invented - and so that nothing invented is a fact a visitor could act on and be wrong.
+  Fifteen of the seventeen documents carry the disclosure; entries 2 and 13 hold real council
+  copy and are not touched.
+created_at: '2026-09-10'
+autonomy: high
+
+features:
+  - id: F9
+    name: >-
+      Researched placeholder copy for the ten spec entries with no council copy at all
+      (1, 5, 7, 8, 9, 10, 11, 12, 15, 16), written from each entry's own spec Section 4
+      Purpose and Key-content lines, every section placeholder-ai
+    status: pending
+  - id: F10
+    name: >-
+      Gap-fill for the five thin entries (3, 4, 6, 17, 18) as SEPARATE sections, so the
+      council's existing words keep council-supplied provenance and ours never inherit it
+    status: pending
+  - id: F11
+    name: >-
+      Content review - the WOSA subject-matter boundary, POPIA, no facts of record, and a
+      credential scan on everything lifted from client source documents into tracked files
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m3/copy-authoring.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m3/per-page-copy.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m3/wosa-content-boundary.golden.md
+  - .agent/memory/project/specs/national-show-ia-alignment/goldens/m3/verifier-contract.golden.md
+
+assertions:
+  phase: 4
+  checks:
+
+    # -----------------------------------------------------------------------
+    # A0 — the commissioned verifier. Reads the committed corpus with no Sanity
+    # token and no network, which is what makes M3 gate-runnable. Every semantic
+    # assertion greps its manifest so a failure names itself.
+    # scripts/checks/, never execution/ — that tree is HARNESS-owned and is
+    # deleted by the next `make update-template`.
+    # -----------------------------------------------------------------------
+
+    - id: B0_DRIVER
+      description: >-
+        Run the M3 verifier. Exit 0 all passed, 1 a check failed, 2 the harness itself broke
+        (never collapsed into 1). Writes .tmp/sandbox/nos-ia/m3-results.txt.
+      type: shell
+      timeout_seconds: 600
+      command: node_modules/.bin/tsx scripts/checks/verify-show-page-m3.ts
+
+    - id: B0_SCRIPT_EXISTS
+      description: The commissioned verifier exists at its contracted project-owned path.
+      type: shell
+      command: test -f scripts/checks/verify-show-page-m3.ts
+
+    - id: B0_NOT_IN_HARNESS
+      description: >-
+        The verifier was NOT written into execution/checks/, which the next template update
+        deletes, silently removing this gate.
+      type: shell
+      command: test ! -e execution/checks/verify-show-page-m3.ts
+
+    # -----------------------------------------------------------------------
+    # Provenance discipline — if we wrote it, the council did not.
+    # -----------------------------------------------------------------------
+
+    - id: B1
+      description: >-
+        No section M3 authors carries council-supplied. That value means the council wrote
+        these words; M3 writes them, so it never applies. Every page M3 touches therefore
+        renders the placeholder notice - the intended outcome, not a side effect.
+      type: shell
+      command: grep -q '^C1 PASS$' .tmp/sandbox/nos-ia/m3-results.txt
+
+    - id: B2
+      description: >-
+        All fifteen pages have at least one generated section with a non-empty body. No page
+        ships blank - an empty page reads as a finished page with nothing to say.
+      type: shell
+      command: grep -q '^C5 PASS$' .tmp/sandbox/nos-ia/m3-results.txt
+
+    - id: B3
+      description: >-
+        Per-page sectionKey sets match per-page-copy.golden.md exactly - no missing sections
+        and no extra ones. This is what stops a prose sponsor listing appearing on entry 15 or
+        a prose results table on entry 8, where the honest shape is a real listing rendered
+        from the sponsor / award / judge types that already exist.
+      type: shell
+      command: grep -q '^C9 PASS$' .tmp/sandbox/nos-ia/m3-results.txt
+
+    - id: B4
+      description: >-
+        Spec entry 14 still has no seed source and no 14- pageKey. Regression guard on M1's
+        decision that Lee-Ann asked for a link, not a page.
+      type: shell
+      command: grep -q '^C6 PASS$' .tmp/sandbox/nos-ia/m3-results.txt
+
+    # -----------------------------------------------------------------------
+    # The rule that matters most: nothing invented that a visitor could act on.
+    # -----------------------------------------------------------------------
+
+    - id: B5
+      description: >-
+        NO FACTS OF RECORD in generated copy - no time of day, calendar date, email address,
+        phone number, or "over/about/nearly N" count. An invented opening time sends someone
+        to a locked gate; an obviously-unwritten page costs a little credibility. Placeholder
+        copy is allowed to be thin, never wrong. Dry-run 17/17 both directions.
+      type: shell
+      command: grep -q '^C2 PASS$' .tmp/sandbox/nos-ia/m3-results.txt
+
+    - id: B6
+      description: >-
+        No proper noun in generated copy outside content/show-pages/_name-allowlist.json - no
+        invented nursery, sponsor, speaker or place. Naming an exhibitor who is not confirmed
+        invents a relationship with a real business. When it fires on a legitimate name the fix
+        is to add the name to the allowlist, NEVER to reword the sentence.
+      type: shell
+      command: grep -q '^C3 PASS$' .tmp/sandbox/nos-ia/m3-results.txt
+
+    - id: B7
+      description: >-
+        No prices in generated copy. Lee-Ann's own reply on spec 2.7 is that ticket and
+        cocktail options still need to be fully developed, and the ticketing document
+        contradicts itself on the Early Bird Weekend Pass. Reuses M1's P6 discriminator, which
+        distinguishes a price from a road designation.
+      type: shell
+      command: grep -q '^P6 PASS$' .tmp/sandbox/nos-ia/m3-results.txt
+
+    - id: B8
+      description: >-
+        The venue and theme sentences appear verbatim wherever reused. They are the only two
+        facts M3 may state, they exist nowhere else, and the venue line has already been
+        paraphrased once to satisfy a broken check.
+      type: shell
+      command: grep -q '^C8 PASS$' .tmp/sandbox/nos-ia/m3-results.txt
+
+    # -----------------------------------------------------------------------
+    # The WOSA boundary — the one place the spec asks for something we decline.
+    # -----------------------------------------------------------------------
+
+    - id: B9
+      description: >-
+        No habitat, distribution or conservation-status vocabulary in generated copy. Inventing
+        conservation claims about real South African wild orchids, published under a real
+        council's name, is a correctness and reputational harm no placeholder label covers.
+      type: shell
+      command: grep -q '^W1 PASS$' .tmp/sandbox/nos-ia/m3-results.txt
+
+    - id: B10
+      description: >-
+        No South African orchid genus named in generated copy. A generated sentence naming a
+        genus is a fabricated plant claim.
+      type: shell
+      command: grep -q '^W2 PASS$' .tmp/sandbox/nos-ia/m3-results.txt
+
+    - id: B11
+      description: >-
+        Spec entry 7 carries no honorific followed by a name and no quoted attributed speech.
+        An abstract we write because none was supplied is a fabricated scientific claim under a
+        named researcher - worse than an empty section, and spec 4.7 asks for exactly that.
+      type: shell
+      command: grep -q '^C7 PASS$' .tmp/sandbox/nos-ia/m3-results.txt
+
+    # -----------------------------------------------------------------------
+    # Client source documents can contain secrets.
+    # -----------------------------------------------------------------------
+
+    - id: B12
+      description: >-
+        Credential scan over content/show-pages/ and content/drive-recovered/ - everything M3
+        adds or lifts from a client source document. Codex found live email passwords in
+        Lee-Ann's spec document, committed and pushed to a public repo. Anything copied from a
+        client document into a tracked file is scanned BEFORE it lands. Deliberately excludes
+        content/drive-source/, which holds the known exposure someone else is remediating;
+        extending it there is the follow-up once that lands. Dry-run 12/12 both directions.
+      type: shell
+      command: grep -q '^C4 PASS$' .tmp/sandbox/nos-ia/m3-results.txt
+
+    # -----------------------------------------------------------------------
+    # Preservation and integrity.
+    # -----------------------------------------------------------------------
+
+    - id: B13
+      description: >-
+        M1's contract is byte-identical to the frozen version 237ae697. Pinned by content hash,
+        NOT by `git diff HEAD` - M1's contract is legitimately uncommitted while @dev is
+        mid-gate, so a diff check would fail for a reason unrelated to M3 and teach whoever hit
+        it to ignore the assertion. M1's triad baseline is pinned to these exact bytes, so an
+        edit from M3 would silently re-arm triad enforcement on a contract mid-gate. If M1's
+        contract legitimately changes after its gate is green, update this digest deliberately.
+      type: shell
+      command: shasum -a 256 .agent/memory/project/specs/national-show-ia-alignment/contract-m1.yaml | grep -q '^237ae69730be39d855cbbe7f5a840b9ea461376f25d570fa1a2a9ec3b2352ef8'
+
+    - id: B14
+      description: >-
+        ticketType is untouched. M3 writes content/ JSON only, but ticketType is Sanity-adjacent
+        and is the one schema a copy milestone could plausibly reach for when it wants a price.
+        The vendor-subsystem half of this guard was deliberately REMOVED rather than kept: it
+        was the contract's only app/ path, which made the triad linter classify a copy-only
+        milestone as UI/workflow and demand a browser check of pages that do not exist yet. The
+        choice was a redundant guard or a suppressed safety mechanism, and a near-zero-value
+        check is not worth an exemption. The vendor subsystem is covered by M1's A37 and will be
+        covered by M4's, which renders real pages and carries the full triad.
+      type: shell
+      command: test -z "$(git diff --name-only HEAD -- sanity/schemas/documents/ticketType.ts)"
+
+    - id: B15
+      description: The project still typechecks.
+      type: shell
+      timeout_seconds: 900
+      command: node_modules/.bin/tsc --noEmit -p tsconfig.json
+
+    - id: B16
+      description: >-
+        Codex cross-model adversarial review of the M3 diff. NOTE contract.py reads `target:`
+        for this kind and ignores `command:` - an assertion carrying only `command:` passes an
+        empty prompt and reviews nothing. Guarded by B17.
+      type: codex_qa
+      timeout_seconds: 600
+      target: >-
+        Review the current git diff, which adds placeholder marketing copy for a real
+        non-profit's public website. Look specifically for invented facts a visitor could act
+        on and be wrong - dates, times, prices, opening hours, named people, named businesses,
+        contact details, capacities - and for any claim about wild orchid habitat, distribution
+        or conservation status, which is out of scope for this organisation. Also flag any
+        credential-shaped string. Cite exact file:line for each finding and rate confidence. If
+        nothing real is wrong, say so plainly instead of inventing findings.
+
+    - id: B17
+      description: >-
+        Every codex_qa assertion in this contract carries a non-empty target - the regression
+        that made M1's A39 review nothing while reading as fully populated.
+      type: shell
+      command: python3 scripts/checks/verify-codex-target-present.py .agent/memory/project/specs/national-show-ia-alignment/contract-m3.yaml

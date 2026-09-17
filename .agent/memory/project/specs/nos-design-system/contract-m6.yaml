@@ -1,0 +1,278 @@
+schema: athanor.contract/v1
+slug: nos-design-system
+goal: Turn the show's public commerce and discovery surfaces into conversion surfaces -- a
+  ticket front door that shows real prices and a primary path instead of five identical
+  cards, a confirmation that reads as a ticket rather than a receipt, a real per-route
+  metadata and schema.org Event layer that resolves the current-edition vs archive
+  cannibalisation honestly, and an export-ready social artboard kit driven by the NOS tokens
+  -- with every string sourced from data and nothing invented.
+created_at: '2026-09-07'
+autonomy: high
+features:
+  - id: F17
+    name: Ticket purchase as a conversion surface. F17a (this session's tree) --
+      /national-show/tickets reframed from a five-card router into a front door with a
+      dominant admission block showing real prices and a four-item secondary grid. F17b
+      (sibling session's tree, GATED) -- buy-screen presentation and the confirmation ticket
+      stub.
+    status: pending
+  - id: F18
+    name: SEO and discoverability -- lib/seo.ts metadata helper applied across
+      /national-show/**, exactly ONE schema.org Event on the site (the current edition) with
+      one Offer per ticketType pointing at the existing per-product /tickets/<slug> pages, no
+      Event markup on archives / workshops / conferences / the gated vendor flow, corrected
+      sitemap. Built against research H2 (Google Search Central), not H.
+    status: pending
+  - id: F19
+    name: Social and advertising kit -- four fixed-ratio NOS artboards on a noindex route,
+      exported at 2x by a Playwright script, every string sourced from Sanity.
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-design-system/goldens/m6-conversion-seo-social.golden.md
+assertions:
+  phase: 4
+  checks:
+
+    # ---------------------------------------------------------------------------
+    # F17a -- the ticket front door. Structural guards first.
+    # ---------------------------------------------------------------------------
+
+    - id: B1
+      description: The orphan grid cell is gone. The five-item `grid gap-6 sm:grid-cols-3` in
+        app/(marketing)/national-show/tickets/page.tsx left the fifth card alone in a
+        three-wide row at >=640px. The secondary group is four items in two columns; a
+        three-column grid with a non-multiple-of-three item count must not reappear. False
+        state -- the class string changed but the rendered layout still orphans; B10 measures
+        real bounding boxes at real viewports.
+      command: '! grep -q "sm:grid-cols-3" "app/(marketing)/national-show/tickets/page.tsx"'
+
+    - id: B2
+      description: NO HARDCODED PRICES. The front door's price line is sourced from Sanity
+        ticketType, never typed into the page. A price literal in JSX goes stale silently and
+        misprices a real transaction. This greps for a rand-amount literal in the page source.
+      command: '! grep -qE "R[0-9]{2,4}" "app/(marketing)/national-show/tickets/page.tsx"'
+
+    - id: B3
+      description: The five existing OPTIONS headings survive verbatim -- this feature restyles
+        and re-ranks, it does not rewrite real copy. Sampling two of the five distinctive
+        strings; B10 checks all five in SERVED HTML, which is the real proof given this repo's
+        invisible JSX whitespace bug class.
+      command: grep -q "I'm a nursery or trader" "app/(marketing)/national-show/tickets/page.tsx" && grep -q "I'm exhibiting orchids" "app/(marketing)/national-show/tickets/page.tsx"
+
+    - id: B4
+      description: F17b's gated tree is untouched unless the sibling SAOC session confirmed in
+        writing. app/(marketing)/tickets/** and components/tickets/** are owned by the sibling
+        session (mission constraint 3, stated for CategoryTicketsPage and applying to the whole
+        tree). A silent edit here is a merge conflict discovered at integration time. If
+        confirmation HAS arrived, the orchestrator removes this assertion deliberately and
+        records who confirmed -- it is not quietly deleted by the dev.
+      command: test -z "$(git diff --name-only main -- 'app/(marketing)/tickets' 'components/tickets')"
+
+    # ---------------------------------------------------------------------------
+    # F18 -- SEO. Note: rendered-output assertions read SERVED HTML, never source.
+    # ---------------------------------------------------------------------------
+
+    - id: B5
+      description: One shared metadata helper exists and is actually used across the show
+        routes, rather than each route hand-rolling its own openGraph block. Today only four
+        files in the whole repo touch openGraph and every /national-show/* route ships a bare
+        `metadata = { title }`.
+      command: test -f "lib/seo.ts" && grep -q "buildPageMetadata" lib/seo.ts
+
+    - id: B6
+      description: At least six /national-show routes import the shared helper -- proving it
+        was applied, not merely written. A helper nobody calls is dead code.
+      command: test "$(grep -rl 'buildPageMetadata' 'app/(marketing)/national-show' | wc -l)" -ge 6
+
+    - id: B7
+      description: The sitemap no longer advertises /national-show/upcoming, which is an
+        intentional 308 permanent redirect (mission constraint 4). A sitemap listing a
+        permanent redirect is a real crawl-budget defect and it is live today at
+        app/sitemap.ts.
+      command: '! grep -q "national-show/upcoming" app/sitemap.ts'
+
+    - id: B8
+      description: The current-edition Event builder exists alongside the existing
+        organizationJsonLd/breadcrumbJsonLd in components/seo/JsonLd.tsx and uses only
+        EventScheduled -- one of the four values Google actually documents. B11 proves the
+        emitted JSON-LD parses and carries the right fields.
+      command: grep -q "EventScheduled" components/seo/JsonLd.tsx
+
+    - id: B8a
+      description: >-
+        NO UNDOCUMENTED SCHEMA VOCABULARY. Google's Event documentation never mentions
+        subEvent, superEvent or eventAttendanceMode, and does not list EventCompleted among its
+        four eventStatus values (research H2, fetched from Google Search Central; section H's
+        contrary claims are confirmed wrong and must not be built). previousStartDate is ruled
+        out -- it is strictly for a rescheduled instance and requires EventRescheduled
+        alongside it, so it cannot link prior years. None of these five identifiers may appear
+        anywhere in the SEO layer.
+      command: '! grep -rqE "subEvent|superEvent|eventAttendanceMode|EventCompleted|previousStartDate" components/seo lib/seo.ts'
+
+    - id: B8b
+      description: >-
+        offers.url points at the per-product purchase pages, never at an index. Google requires
+        each offer URL to be a crawlable page whose PREDOMINANT PURPOSE is selling that
+        specific ticket to the general public; /national-show/tickets is a five-product router
+        and does not qualify. The per-product pages already exist
+        (app/(marketing)/tickets/[slug]/page.tsx, linked from
+        components/tickets/TicketTypeCard.tsx:121), so this needs no new routes. Asserts the
+        builder never emits the index path as an offer URL; B11 case 3 checks the real emitted
+        JSON.
+      command: '! grep -qE "offers.*national-show/tickets|national-show/tickets.*offers" components/seo/JsonLd.tsx'
+
+    - id: B8c
+      description: >-
+        NO EVENT MARKUP ON THE GATED VENDOR FLOW. Google's content guidelines make events
+        requiring a membership or invitation prior to purchasing ineligible for the event
+        experience; the vendor flow is single-use-HMAC-token gated, which is exactly that.
+        Emitting Event/Offer markup there is inert at best and a guidelines problem at worst.
+        The token-gated register and payment routes additionally carry noindex -- they are not
+        public content.
+      command: '! grep -rqE "eventJsonLd|\"@type\": ?\"(Event|Offer)\"" "app/(marketing)/national-show/vendors"'
+
+    - id: B8d
+      description: >-
+        NO EVENT MARKUP ON WORKSHOPS OR CONFERENCES in this milestone, and no fabricated
+        session date to unlock one. Google's pattern would be one Event per separately-ticketed
+        session on its own leaf page, and those leaf pages already exist -- but Sanity's
+        ticketType schema carries NO session date field (verified 2026-09-07: name, slug,
+        price, description, capacity, active, order, show, demo, provisional, earlyBirdCutoff,
+        regularPrice, releasedQuantity, requiresDaySelection, requiresAttendeeNames, category,
+        capacityPool, headcountPerUnit). startDate is a hard Google requirement and cannot be
+        supplied. Adding sessionStart/sessionEnd to ticketType is the recommended follow-up,
+        out of scope here.
+      command: '! grep -rqE "eventJsonLd|\"@type\": ?\"Event\"" "app/(marketing)/national-show/workshops" "app/(marketing)/national-show/conferences"'
+
+    - id: B8e
+      description: >-
+        NO EVENT MARKUP ON ARCHIVE PAGES -- the architect's explicit judgement call, labelled
+        as such because no source resolves it. Google's event feature is framed entirely around
+        upcoming bookable events and its documentation does not address past editions; a past
+        edition is not bookable, so Event markup buys nothing documented while creating a
+        second Event entity competing under the same series name as the live show. Archive
+        pages are regular content with descriptive metadata plus the existing BreadcrumbList.
+        The anti-cannibalisation mechanism does not depend on the dropped vocabulary -- it is
+        self-canonical URLs plus year-leading titles, asserted behaviourally by B11.
+      command: '! grep -rqE "eventJsonLd|\"@type\": ?\"Event\"" "app/(marketing)/national-show/archive"'
+
+    - id: B9
+      description: NO FABRICATED EVENT DATA. The Event builder must refuse to emit a node when
+        a schema-required field (name, startDate, location) is absent, rather than substituting
+        a placeholder date or venue. A fabricated Event is both an SEO defect and a breach of
+        this mission's hardest rule. Asserts the guard exists as a real early return; B11
+        proves it behaviourally by driving the builder with a null-field input.
+      command: python3 execution/checks/verify_event_jsonld_guard.py components/seo/JsonLd.tsx
+
+    # ---------------------------------------------------------------------------
+    # Load-bearing behavioural proofs -- real production build, real server,
+    # SERVED HTML, real bounding boxes. B1-B9 only prove code shape.
+    # ---------------------------------------------------------------------------
+
+    - id: B10
+      description: >-
+        Playwright against a real built-and-served instance proves, on
+        /national-show/tickets: (1) at 390, 768, 1024 and 1280 viewports, no card in the
+        secondary group is left alone in a partially-filled row -- computed from real bounding
+        boxes, not from class names; (2) a real rand-denominated price string is present in
+        SERVED HTML above the fold, sourced from Sanity, and matches the value the Sanity
+        ticketType query actually returns rather than any literal in the page; (3) exactly one
+        element is styled as the primary CTA and it targets the admission path -- the visitor
+        journey is visibly dominant, not one of five equals; (4) all five original OPTIONS
+        headings and bodies appear in SERVED HTML character-for-character, catching the
+        invisible JSX-whitespace-collapse bug class that source greps cannot see; (5) the hero
+        headline measures at least 4.5:1 against the actual rendered pixels behind it, sampled
+        from the real image crop and not an average -- the current white-on-orchid-yellow
+        treatment must fail this, proving the assertion rejects the pre-fix state; (6) no
+        horizontal page scroll at 320px; (7) every interactive element has an accessible name
+        and a visible focus ring; (8) zero browser console errors.
+      command: node_modules/.bin/tsx execution/checks/verify_tickets_front_door.ts
+      timeout_seconds: 900
+
+    - id: B11
+      description: >-
+        Playwright + JSON-LD parsing against the real server proves: (1) every
+        /national-show/** route returns 200 and carries a non-empty title, description,
+        canonical, og:title, og:type, og:image, og:url and twitter:card in SERVED HTML -- the
+        four Open Graph properties the protocol actually requires are og:title, og:type,
+        og:image and og:url, and ogp.me defines no event type, so og:type is a base value and
+        not an invented event extension; (2) every canonical is absolute, self-referential, and
+        points at the route actually fetched; (3) /national-show emits EXACTLY ONE Event node
+        in the whole crawl: it JSON-parses, carries name + startDate + location.name +
+        location.address, uses eventStatus EventScheduled, gives startDate/endDate as bare
+        YYYY-MM-DD spanning the show rather than a midnight timestamp, and carries one Offer
+        per Sanity ticketType with price, priceCurrency ZAR, an availability drawn only from
+        InStock/SoldOut/PreOrder, validFrom on any early-bird-restricted offer, and a url that
+        resolves 200 and is a per-product /tickets/<slug> page -- never /national-show/tickets;
+        (4) NO Event node appears on any archive, workshop, conference or vendor route, and the
+        strings subEvent, superEvent, eventAttendanceMode, EventCompleted and previousStartDate
+        appear nowhere in any served HTML; (5) each /national-show/archive/[year] is
+        self-canonical and does NOT canonicalise to /national-show -- cross-canonicalising
+        would deindex genuinely unique historical content -- and its rendered title and h1 both
+        lead with the year, which is the actual anti-cannibalisation mechanism now that the
+        schema linkage is dropped; (6) when the Sanity fixture omits startDate or location, NO
+        Event node is emitted at all and no placeholder date or venue appears anywhere in the
+        served HTML; (7) the token-gated /national-show/vendors/register and
+        /national-show/vendors/payment serve noindex; (8) sitemap.xml parses, contains every
+        /national-show child route and every archive year, contains no /admin, /studio,
+        /tickets/confirmation, vendor-gated or social-kit URL, and contains no URL that returns
+        a 3xx when fetched -- which is what catches the /national-show/upcoming defect
+        behaviourally rather than by grep.
+      command: node_modules/.bin/tsx execution/checks/verify_show_seo.ts
+      timeout_seconds: 900
+
+    # ---------------------------------------------------------------------------
+    # F19 -- social artboards
+    # ---------------------------------------------------------------------------
+
+    - id: B12
+      description: The four artboards exist at their exact declared pixel sizes and are
+        addressable by data attribute rather than DOM position, so the exporter cannot silently
+        grab the wrong element after a reorder.
+      command: grep -q "1080" "app/(marketing)/national-show/social-kit/page.tsx" && grep -q "1920" "app/(marketing)/national-show/social-kit/page.tsx" && grep -q "data-artboard" "app/(marketing)/national-show/social-kit/page.tsx"
+
+    - id: B13
+      description: The social-kit route is noindex and excluded from the sitemap -- it is a
+        production tool, not a public page.
+      command: grep -qE "noindex|robots" "app/(marketing)/national-show/social-kit/page.tsx" && ! grep -q "social-kit" app/sitemap.ts
+
+    - id: B14
+      description: NO UNCLEARED PHOTOGRAPHY. Only the five cleared images in public/images may
+        appear on the artboards. Scott Ormerod's 13 studio photographs are watermarked, not
+        licensed, and flagged reference-only by the design system -- shipping one is a rights
+        breach, not a style error.
+      command: python3 execution/checks/verify_cleared_images_only.py "app/(marketing)/national-show/social-kit/page.tsx"
+
+    - id: B15
+      description: >-
+        Playwright proves the artboards are real and export-ready: (1) each of the four
+        data-artboard elements measures exactly its declared pixel size (1080x1080, 1080x1350,
+        1080x1920, 1200x628) in layout pixels, independent of any CSS preview scaling; (2) all
+        four export to PNG at deviceScaleFactor 2 into .agent/evidence/nos-design/social/ and
+        each output file's pixel dimensions are exactly double the artboard; (3) every text
+        string rendered on every artboard either matches a value the Sanity nationalShow query
+        actually returned or sits inside an element carrying data-placeholder -- proving no
+        date, venue, price, person name, phone or email was invented; (4) all story-artboard
+        text sits inside the 250px top / 250px bottom safe area; (5) no CSS gradient and no
+        duotone/filter is applied to any photograph, per the design system's brand-photography
+        rule; (6) the route returns noindex in a real response header or meta tag. Each
+        sub-case reported independently.
+      command: node_modules/.bin/tsx execution/checks/verify_social_artboards.ts
+      timeout_seconds: 900
+
+    # ---------------------------------------------------------------------------
+    # Build and type gates
+    # ---------------------------------------------------------------------------
+
+    - id: B16
+      description: The real Next.js production build succeeds with every M6 change in the tree.
+        B1-B14 all stay green under a build-breaking mistake only a real build catches.
+      command: node_modules/.bin/next build
+      timeout_seconds: 900
+
+    - id: B17
+      description: TypeScript strict mode is clean -- no `any`, no unchecked Sanity response
+        shapes. The build can pass with type errors suppressed by config; this runs the
+        compiler directly.
+      command: node_modules/.bin/tsc --noEmit
+      timeout_seconds: 600

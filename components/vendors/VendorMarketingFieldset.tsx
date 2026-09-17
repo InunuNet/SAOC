@@ -59,7 +59,7 @@ export function VendorMarketingFieldset({ state, onFieldChange, disabled }: Vend
       />
       <p
         aria-live="polite"
-        className={`font-sans text-[13px] ${bioWordCount === 0 || bioInBounds ? 'text-muted' : 'text-red-700'}`}
+        className={`font-sans text-[13px] ${bioWordCount === 0 || bioInBounds ? 'text-muted' : 'text-[var(--status-error)]'}`}
       >
         {bioWordCount} word{bioWordCount === 1 ? '' : 's'} (needs {BIO_MIN_WORDS}–{BIO_MAX_WORDS})
       </p>

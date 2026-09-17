@@ -48,6 +48,18 @@ Do not scope work from an entry that contradicts it.
 
 ## Next up (queued, not yet a mission — dispatch as soon as current mission closes)
 
+- [ ] **[P3] Brad wants a training session covering the harness's available hooks and skills**,
+  so every session/agent knows how to leverage them well — his framing, 2026-09-14/15 (verbal,
+  relayed via `Dev_Son5_M4-F24_NationalShowIaAlignment`): *"every harness needs to know how to
+  leverage them."* Explicit instruction: **do not frame it in terms of MCP.** No further scope
+  or timing given — surfaced as an aside, not urgent. Needs Brad to clarify audience (agents via
+  a rules/memory doc? Brad himself as a walkthrough?) and format before dispatch.
+  **Follow-up detail, same relay, same day:** scope is not just a walkthrough of what exists —
+  he wants coverage of building actual *workflows* on top of the existing hooks/skills. Named
+  research-type capabilities he feels are underused as examples: summarizing/transcribing a
+  podcast, scraping/pulling from YouTube. His framing: *"there's no reason why we can't be
+  getting that"* out of the harness already. Still a scoping/roadmap call, not started.
+
 - [x] **[P1 — RESOLVED 2026-09-10] "Live menu renders the pre-Layout-4 panel" was deploy lag on the wrong origin.**
   Cause (a) of the two candidates, confirmed by Brad's screenshots of `beta.saoc.co.za`: the
   Layout 4 render IS live and correct — five tracks, lead block, per-leaf descriptors, feature
@@ -856,6 +868,34 @@ flat-over-nested-submenu pattern.
 - **Athanor#1399** (filed 2026-09-06, verification-triad-gate M2/F2) — the protected-path deny
   on `CLAUDE.md` leaves factual documentation inside the agent instruction file permanently
   uncorrectable by any agent once it goes stale; see the `CLAUDE.md` staleness item above.
+- [ ] **[P1] Upstream dependency: carve `execution/checks/` (or an equivalent project-owned check
+  directory) out of HARNESS ownership in `update-manifest.yaml`.** Surfaced 2026-09-08 by
+  nos-design-system M7, whose contract commissions a project-specific verifier at
+  `execution/checks/verify_nos_m7_hero_and_grammar.ts`. `execution/` is marked `HARNESS`, so the
+  next `make update-template` replaces the tree wholesale, silently, with no merge and no conflict
+  marker — taking any project-authored check with it and leaving the contract's assertions
+  greenless with no trace of why. This is **not** specific to M7: ~20 existing siblings already
+  live in `execution/checks/` under the same exposure, so it is a pre-existing project-wide gap
+  this feature merely surfaced. Per `.claude/rules/athanor.md` a harness defect is filed, never
+  patched or worked around — M7 therefore keeps its verifier at the conventional path rather than
+  inventing a private one. Ask: a `PROJECT`-marked (or manifest-excluded) subdirectory for
+  project-authored contract checks, so the harness can still ship its own scripts alongside.
+
+- [ ] **[P1] Upstream dependency: `execution/codex_qa.sh` reports transport failures as `FAIL`.**
+  Filed 2026-09-08 as [InunuNet/Athanor#1419](https://github.com/InunuNet/Athanor/issues/1419).
+  Running the mandatory Codex pass on the M7 diff hit an OpenAI usage limit; the wrapper's
+  `fail_safe()` (`codex_qa.sh:26-29`, called at `:88` for any non-zero `codex` exit) emitted
+  `FAIL` + exit 1 — the identical signal to a genuine defect verdict — with zero findings and
+  zero `file:line` citations, because no review ever ran. The documented contract
+  (`codex_qa.sh:9-10`) merges these on purpose: `1=FAIL (verdict or fail-safe)`.
+  Why it matters here: `.claude/rules/workflow.md` makes the Codex pass a blocking gate before
+  any feature is DONE, so an ambiguous failure either blocks a clean diff indefinitely or teaches
+  the operator to wave `FAIL` through as "probably quota" — which is how a real finding ships.
+  Asked for: a distinct exit code meaning *review did not execute*, with quota/auth/network/timeout
+  classified as transport failures before `fail_safe`, so a `type: codex_qa` assertion can record
+  BLOCKED instead of a verdict no model produced.
+  **Blocks:** M7 cannot be marked DONE until the Codex pass actually runs (quota resets 17:01
+  local, 2026-09-08). Do not route around it — re-run, don't waive.
 
 ---
 
@@ -1057,6 +1097,169 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 > Truncated 104 items at trim time (2026-09-04). Restore from git history if needed.
 > Truncated 3 items at trim time (2026-09-06). Restore from git history if needed.
 
+- [ ] **P2 — upstream (Athanor): `drive_docx_sync.py` silently loses a whole content folder to an
+  unsafe Drive name.** On 2026-09-09 the sync skipped `13. Registration/Booking/Tickets` — the `/`
+  in Lee-Ann's folder name is (correctly) rejected as a path component, so the folder *and both
+  documents under it* were skipped: `13.1 Ticketing system details.docx` (the full booking model,
+  ticket categories and prices) and `13.2 Vendor Form`. It also skipped `Symposium Theme`, a real
+  `.docx` whose *name* simply lacks the extension, because the scope filter tests the name rather
+  than the mimeType (`application/vnd.openxmlformats-officedocument.wordprocessingml.document`).
+  The containment check is right; losing the content is not. Proposed fix upstream: sanitise the
+  folder name into a safe component (retaining the original in `manifest.json`) rather than
+  skipping the subtree, and select `.docx` by mimeType with the name as fallback. We cannot rename
+  the Drive folder — it is the client's. Recovered manually into `.tmp/sandbox/nos-ia/` for mission
+  `national-show-ia-alignment`; that sandbox copy is **not** a durable source of truth.
+  File against `InunuNet/Athanor`. Do NOT patch `execution/drive_docx_sync.py` in place (harness).
+
+- [ ] **P1 — contract verifiers in `execution/checks/` will be deleted by the next
+  `make update-template`, taking their gates with them.** `.agent/update-manifest.yaml:12`
+  classifies `execution/` as HARNESS *wholesale*, so every file under it is replaced on update.
+  `nos-design-system`'s M8 contract commissions `execution/checks/verify_nos_m8_status_and_focus.ts`,
+  and three untracked `execution/checks/*` files sit in the working tree now
+  (`json_field.py`, `json_in_window.py`, `nos_scrim_probe.mjs`). When they vanish, the assertions
+  that call them fail with "script not found" and the gates read as broken rather than as
+  regressed — the same symptom already recorded against M8. Fix: move commissioned verifiers to
+  `scripts/checks/` (project-owned) and repoint the contracts. `national-show-ia-alignment` M1
+  already does this and pins it with assertion A0_NOT_IN_HARNESS. Found by @architect, 2026-09-09.
+
+- [x] **WITHDRAWN — `execution/codex_qa.sh` does NOT exit 0 on a FAIL verdict. The original
+  report was a pipeline artefact, and the entry is corrected here rather than deleted so the
+  same conclusion is not re-derived.** Tested on 2026-09-09 against the real script with a
+  stubbed `codex` that always exits 0, so the wrapper could only get its status from the
+  verdict token:
+
+  | case | exit |
+  |---|---|
+  | `FAIL` verdict | **1** |
+  | `PASS` verdict | **0** |
+  | unparseable transcript | 1 (fails closed) |
+  | empty codex output | 1 (fails closed) |
+  | **`codex_qa.sh ... \| head`** | **0 — the pipe's status, not the wrapper's** |
+
+  The last row is what was observed. `$?` after a pipeline is the *last* command's status, so
+  reading the wrapper through `head`, `tee` or any pipe discards its exit code. The wrapper is
+  correct: `execution/codex_qa.sh:100-115` derives the code from line 1 of the transcript, and
+  `execution/contract.py:392-415` invokes it via `subprocess.run` with no shell and no pipe,
+  reading the real status and distinguishing rc 2 (wrapper error) and unexpected rc as
+  *inconclusive* rather than as a pass or a fail. **Nothing to file upstream.**
+
+  Pinned so the belief is tested rather than remembered:
+  `scripts/checks/verify-codex-qa-exit-contract.sh` (assertion A48) drives all five cases,
+  including the pipeline case as a known fact.
+
+  **The real lesson, which is worth more than the reported bug:** never read a verdict wrapper's
+  status through a pipe. And a defect report against harness code deserves the same
+  two-directional test as an assertion — filing this upstream would have wasted a maintainer's
+  time and risked a "fix" to a script that was already right.
+
+- [ ] **P2 — `execution/verify_triad_coverage.py` classifies a contract as UI/workflow when
+  `app/` paths appear only inside *prohibition* greps, with no route or component under test.**
+  On 2026-09-09 this blocked `mission.py gate --milestone M1` at exit 6 for
+  `national-show-ia-alignment`. The two assertions that tripped it are both negative:
+  A16 — *"No file under app/ contains the GROQ type literal for showPage"* — and
+  A37 — *"the gated vendor subsystem is untouched"* (`git diff --name-only HEAD -- app/api/vendors`).
+  Neither renders anything. M1 ships `components/nos/ShowPageProse.tsx` and
+  `lib/data/show-pages.ts`, but **no route renders either until M4**, so there is no deployed
+  surface for a `browser_deployed_check` to point at — the same reason the route checks R1/R3/R4
+  correctly report SKIP.
+  Proposed fix: classify on *positive* evidence — an assertion that exercises a route or renders a
+  component — rather than on any occurrence of an `app/` path; at minimum, exclude assertions whose
+  command is a negative grep or a `git diff --name-only` emptiness check.
+  Worked around locally, correctly and narrowly: `TRIAD_BASELINE_FILE` /
+  `TRIAD_BASELINE_HASH_FILE` point at **project-owned** `scripts/checks/triad-baseline-exempt.txt`
+  and `.sha256` (never `execution/`, which the next `make update-template` deletes), scoped to M1's
+  contract alone and content-pinned by sha256 so any edit re-arms enforcement. **M4 must carry the
+  full triad and must never be added to that baseline** — it builds sixteen real pages on a
+  deployed origin, which is exactly what the triad exists for.
+  Filed upstream: **InunuNet/Athanor#1432**. Do NOT weaken the linter and do NOT fabricate triad assertions.
+
+- [ ] **P2 — an assertion that can only be satisfied by altering the client's factual content is
+  a defect class, not a one-off.** On 2026-09-09 assertion P6 (`national-show-ia-alignment` M1)
+  matched `/\bR\s?\d{2,4}\b/` to catch unconfirmed ticket prices. It also matches **`R44`** — the
+  national road the venue sits on. The council's only written statement of the venue is
+  *"Stellenbosch Flying Club, R44 northbound to Stellenbosch"*, so the check made a confirmed fact
+  a visitor needs unpublishable, and @dev paraphrased around the road number to get the gate green.
+  Fixed by scoping P6 to sections whose provenance is `placeholder-ai` or `research` — **we police
+  our own words, not the client's** — plus a price-vs-route discriminator, dry-run 19/19 in both
+  directions. The same scoping now governs the WOSA vocabulary checks (W1/W2).
+  Two more of the class were found in the same audit and fixed: P7 matched `home` as a substring
+  (a title like "Homegrown Orchids" would have been forced to change) — now word-bounded; and no
+  assertion protected the venue sentence itself — added as D6/A44, which asserts it verbatim.
+  **Standing rule for contract authors:** before shipping a content-matching assertion, ask what a
+  correct-but-unusual client fact would do to it, and scope it to generated copy wherever the
+  client's own words could be caught. Found by @architect and the team lead, 2026-09-09.
+
+- [x] **Standing rule, added 2026-09-09 — an overstated guarantee is a defect, and on this
+  mission it was the commonest one.** Of the three critical findings against
+  `national-show-ia-alignment` M1, **two were overstated guarantees rather than missing code**:
+  - `provenance-gate.golden.md` claimed *"the copy never crosses a module boundary as plain data,
+    so there is no un-noticed form of it to render by mistake."* `lib/data/show-pages.ts` exported
+    `__unsafeUnwrapGatedProse` publicly, guarded only by a doc-comment. @qa's probe imported it
+    from an arbitrary component, discarded the notice, rendered the blocks, and typechecked clean.
+  - the same golden's limitation (a) said `sourcePath` *"raises the cost"* of mislabelling. The
+    implementation resolved against cwd and called `existsSync`, so any existing path on the
+    machine satisfied it — `/etc/hosts` included. The cost was zero.
+
+  Both had working-looking implementations. Both had golden text describing a stronger property
+  than the code delivered. **A limitation that reads as stronger than it is does more damage than
+  no limitation at all, because it stops the next person looking** — which is precisely why
+  neither was found by review and both needed an adversarial probe.
+
+  **For contract and golden authors, in addition to the content-assertion rule above:**
+  1. State the guarantee at the strength the *weakest enforcing layer* provides, never the
+     strongest. "Accidental misuse does not compile; deliberate misuse fails CI" is honest;
+     "structurally impossible" was not.
+  2. A CI grep or lint rule is materially weaker than a type error. Say which one is holding the
+     line, per claim.
+  3. Every escape hatch belongs in the limitations list the day it is written, not the day
+     somebody exploits it. The `__unsafeUnwrapGatedProse` export was absent from a limitations
+     list that enumerated five other weaknesses.
+  4. A boundary check nobody has watched fail is not a boundary check. Commit the probe that
+     proves it fires — and commit it somewhere tracked: `.tmp/` is gitignored, so a self-test
+     reading a sandbox fixture passes vacuously on a fresh checkout, which is exactly where it
+     matters.
+
+- [ ] **P0 — Drive-sourced client documents can carry live secrets into a tracked, PUBLIC repo.**
+  On 2026-09-09 Codex found plaintext email passwords in
+  `docs/leeann-source/website-development-specification-v3_2026-09-06.md`, committed `1d6512cb`
+  and pushed to public `InunuNet/SAOC`. See `needs-human.md` for the rotation actions.
+  The design gap: `execution/drive_docx_sync.py` converts the client's Drive documents into
+  `content/drive-source/`, and per `docs/drive-docx-version-export.md` the derived `content.md`
+  is **tracked by design**. Nobody anticipated a client planning document containing credentials
+  — which is exactly what a volunteer-run organisation's working document does contain.
+  Fix: a secret scan gating anything Drive-sourced before it can be staged or committed
+  (credential-shaped table rows, `password`-adjacent columns, high-entropy tokens), failing
+  closed. Consider whether derived `content.md` should be tracked at all for client-supplied
+  source, or kept local with only checksums and structure committed.
+  `execution/` is HARNESS-owned — file upstream against `InunuNet/Athanor`, do not patch.
+
+- [ ] **P2 — `mission.py validate` accepts a milestone referencing a nonexistent feature.**
+  On 2026-09-10 @architect accidentally deleted feature F15 while revising an adjacent brief.
+  `mission.py validate` reported "Valid, 18 features" — it verifies every feature belongs to a
+  milestone, but not the converse: that every milestone's feature reference resolves. The mission
+  would have carried a dangling `F15` under M4 and silently lost its deployed-verification
+  feature. Caught only because the author cross-checked both directions by hand.
+  Fix: validate milestone→feature references resolve, and fail on a dangling ref. Cheap check,
+  and the failure it prevents is silent feature loss.
+  **Not yet filed upstream** — read `execution/mission.py`'s validator first and reproduce it in
+  both directions before filing. One untested upstream claim today was enough (see the withdrawn
+  `codex_qa.sh` entry). `execution/` is HARNESS-owned; file against `InunuNet/Athanor`, no patch.
+
+## NOS M1 — open on resume (paused 2026-09-10 by operator)
+- A39 source-verification fix is COMPLETE (content-linkage check in `lib/data/show-pages.ts`); gate not re-run.
+- Linkage check correctly FAILS two seed sections whose body is @dev's prose but labelled `council-supplied`:
+  - `content/show-pages/13-booking-tickets.json` § `categories`
+  - `content/show-pages/18-contact-us.json` § `overview`
+  Fix on resume: replace with a real excerpt from the source, else reclassify to `placeholder-ai`. Never loosen the 25-char/sentence threshold.
+- Structure itself is frozen pending three-session sign-off (SAOC lead / NOS Site / NOS Design) + operator approval.
+- [ ] **[P1] Duplicate `Event` structured-data node for the 2027 National Show.**
+  `/events/19th-south-african-national-orchid-show` emits a second schema.org `Event` for the
+  SAME real-world show as `/national-show` — identical name, dates and venue, different URL.
+  Duplicate-entity cannibalisation in search. Origin is the generic society-event route driven
+  by a Sanity `societyEvent` document. Found 2026-09-08 by the NOS design session during its SEO
+  work and filed as InunuNet/SAOC#2 with three candidate directions. **Do NOT delete the Sanity
+  document without first checking what else reads it** — the events calendar and .ics feeds may
+  depend on it. Our tree (`app/(marketing)/events/**`), not the NOS session's.
 
 
 
@@ -1500,6 +1703,139 @@ Related: the same session has adopted running the scanner at BOTH ENDS of a meas
 treating its own geometry numbers as suspect if the dataset moved underneath it. Worth making
 standing practice for any agent taking visual measurements against live content.
 
+## Upstream: Athanor #1435 — hardcoded dev-server port in verification guidance
+Filed 2026-09-10: https://github.com/InunuNet/Athanor/issues/1435
+`.claude/rules/shell-paths.md` (HARNESS-owned) hardcodes localhost:3002 in its Playwright example;
+this project's CLAUDE.md says 3000; `pnpm dev` actually runs 3002. The dangerous half is the
+"reuse whatever answers on 3000" pattern — on a multi-session machine that can verify a different
+project's app and report green. Local fix until upstream lands: verifiers probe, prove server
+identity before reuse, and record verified-vs-started in the evidence line.
+
+## NOS M4 — state at 2026-09-10 wrap-up (commit c27b41cb, branch nos-site)
+
+NOT DONE. The six new routes exist and typecheck but return 404 on localhost:3002.
+
+RESUME HERE, in order:
+1. Run `scripts/seed-show-pages.ts` — AUTHORISED by Brad. Target is the PRODUCTION dataset
+   (26yfbug4). Creates and field-scoped patches only; report output verbatim; stop on anything
+   that reads as an overwrite of council content. Without this the six routes stay 404 because
+   loadShowPage returns null and R6's notFound() fires as designed.
+2. HTTP-check all 18 NOS routes on port 3002 (NOT 3000 — pnpm dev is `next dev --port 3002`;
+   CLAUDE.md's "localhost:3000" is NOT wrong — 3000 is what Next binds when free, 3002 is the
+   fallback when it isn't. The doc is silent about the fallback; the fix belongs in the checker
+   pinning its own port, not in the doc. Do not "correct" CLAUDE.md.
+3. Only then tell saoc-eb the routes are ready, so they can build the menu against them.
+
+Deferred to a separate slice (Brad's call): `scripts/checks/verify-nos-m4-notice.ts` (pixel
+measurement, N1-N15/G3b), F16 visitor-info/showFaq provenance unification (V1-V5 correctly FAIL),
+`ExhibitorSteps`/`ExhibitorQuestions` grid migration (D92 — escalate, never act unilaterally),
+and the hub's pre-existing fixed-count grids (deferred WITH REASONS in the golden, not skipped).
+
+Open, needs a decision:
+- S1-S4 rendered-output snapshots have NO pre-M4 baseline. Resolution given but not executed:
+  capture from a clean worktree at 3fe9c6e1, never from the current tree (that is the self-
+  comparison trap S3 exists to catch). Check first whether any untouchable route reads showPage —
+  if so the baseline must be captured BEFORE the seed.
+- Gate checks need `M4_BASE_REF=3fe9c6e1`; `origin/main` predates this work and over-reports.
+
+- `nos-site` is PUSHED (origin/nos-site, head 9f467869). saoc-eb reads the route manifest from
+  `git show origin/nos-site:content/national-show-routes.json` (21 routes, 17 listed) to build the
+  header. No PR opened yet.
+
+## RESUME POINT 2026-09-10 → next session
+Full plan on disk: `.agent/memory/project/plans/2026-09-11-m4-closeout.md`
+Blocker: six routes 404 because `showPage` is invisible to ANONYMOUS Sanity reads (13 docs exist and
+are published; dataset is public; `showPage` is the only type missing from an anonymous type list).
+NOT CDN lag — that was disproved. Prime suspect is our own read path (`sanity/lib/fetch.ts`).
+
+
+---
+
+## UPSTREAM DEPENDENCY — InunuNet/Athanor#1436 (filed 2026-09-10)
+
+`contract.py gate --phase max` hard-blocks with **exit 6** on a triad-coverage preflight before
+running any assertion: *"contract-m4.yaml is a UI/workflow contract missing triad kind(s):
+gws_inbox_check"*. This contradicts `CLAUDE.md`, which documents `verify_triad_coverage.py` as
+**not wired into any gate path**. Either the behaviour or the documentation is wrong.
+
+**Consequence for M4:** the 92-assertion contract could not be gated. Measurement was obtained by
+invoking `contract.py check` per assertion instead — **61 PASS / 30 FAIL / 1 ERROR**, raw log at
+`.tmp/sandbox/m4-seed/gate-m4-checks-raw.log`. The gate path and the measurement path can therefore
+disagree silently, and only the per-assertion path was actually run. **State this in the PR.**
+
+**Three escapes deliberately NOT taken, and why:**
+1. Adding a `gws_inbox_check` assertion — this mission has no inbox surface, so the assertion would
+   be vacuous. That is the exact defect class the triad exists to prevent.
+2. Adding the contract to `scripts/checks/triad-baseline-exempt.txt` — exempting a contract to turn
+   a gate green is indistinguishable from the outside from gaming the gate, and the list carries no
+   reason next to the entry.
+3. Patching `execution/contract.py` — harness-owned, reverted by the next `make update-template`.
+
+**Preferred upstream fix:** a first-class way to declare a triad kind *not applicable* with a written
+justification recorded next to the contract, distinct from a global exemption list. "Not applicable,
+because there is no inbox surface in this mission" is an honest, reviewable claim; an exempt-list
+entry is not.
+
+**Until it lands:** measure with per-assertion `contract.py check`. Do not add to the exempt list and
+do not patch the harness.
+
+
+---
+
+## BUG — `brain.py wrap-up` cannot run (2026-09-10)
+
+`python3 execution/brain.py wrap-up` dies at `execution/brain.py:452`:
+`TypeError: unsupported operand type(s) for |: 'type' and 'NoneType'` on
+`def latest_wrapup_timestamp() -> str | None:`.
+
+That syntax is valid from Python 3.10, and **it fails identically under
+`/tmp/athanor-py311-venv/bin/python3` (3.11.15)** — so the script is evidently re-executing itself
+under an older interpreter rather than honouring the one that invoked it. Not investigated further;
+found at a quota ceiling.
+
+**Consequence:** the 2026-09-10 session close has NO brain wrap-up entry. The session summary lives
+in `.agent/memory/project/plans/2026-09-11-m4-closeout.md` under "SESSION END 2026-09-10" instead.
+Anyone reconstructing that day from brain alone will find a hole and should read the plan file.
+
+### ROOT CAUSE FOUND — a stale venv, not a code bug
+
+`brain.py:41-64` (`_ensure_chromadb`) re-execs the whole script into `~/.athanor-env` via `os.execv`
+**whenever `import chromadb` fails in the calling interpreter** — regardless of which interpreter was
+invoked. `~/.athanor-env/bin/python3` is a symlink created **21 Apr** pointing at
+`/Applications/Xcode.app/Contents/Developer/usr/bin/python3` = **Python 3.9.6**.
+
+`str | None` (PEP 604) needs **3.10+**. It entered at `brain.py:452` with harness template update
+**3.7.107 -> 3.7.109** (commit `8995bde0`) — upstream's code, not ours.
+
+**Why it looks intermittent:** brain works when invoked by a 3.10+ interpreter that ALREADY has
+chromadb, because no re-exec happens. That is why the PreCompact hook stored
+`mem_20260910_195151_d35fcd21` successfully at 19:51. It fails whenever the caller lacks chromadb,
+because the rescue path lands on the 3.9.6 venv. Explicitly invoking a 3.11 interpreter does NOT
+help — the re-exec overrides it.
+
+**Confirmed scope: ALL subcommands**, read and write — `recall`, `last-session`, `wrap-up`,
+`remember`. The failure is at module import, so nothing runs.
+
+### THE FIX — needs Brad, because it is outside the project folder
+
+`~/.athanor-env` lives in the operator's home directory, not this project, so per
+`.claude/rules/scope.md` an agent must not rebuild it without permission asked and granted first.
+
+Steps for the operator: delete the `~/.athanor-env` directory, recreate it with a 3.10+ interpreter
+(`/opt/homebrew/bin/python3 -m venv ~/.athanor-env`), then `~/.athanor-env/bin/pip install chromadb`.
+
+Note brain.py recreates the venv itself when absent, but builds it from whatever `sys.executable`
+happens to be at that moment — which is how a 3.9 venv got created in the first place. Deleting it
+alone is not sufficient; it must be recreated deliberately from a 3.10+ python.
+
+### FILED UPSTREAM: InunuNet/Athanor#1437 (P0)
+`execution/` is marked HARNESS in `.agent/update-manifest.yaml`, so do not patch `brain.py` in place.
+The upstream defect: `_ensure_chromadb()` re-execs into a venv **without checking its Python
+version**, turning a stale-environment problem into an unreadable `TypeError` at import. It should
+assert the venv satisfies the minimum version and rebuild, or fail with a message naming the cause.
+Same shape as the audited defect class — the rescue path is trusted without verifying the property
+it depends on.
+
 ## Focus states suppressed site-wide — live a11y defect (logged 2026-09-10)
 
 `design/design_handoff_saoc/src/styles.css` sets `outline: none` at lines 450, 1134,
@@ -1630,11 +1966,15 @@ Athanor#1438 — `execution/codex_qa.sh:77` hardcodes reasoning effort `medium` 
 documented `high`; medium returned a false PASS on this repo. Until it lands upstream, run
 Codex via the documented fallback with `-c model_reasoning_effort=high` explicitly.
 
-## `sanity/lib/fetch.ts` swallows errors to null (P1, still open)
+## `sanity/lib/fetch.ts` swallows errors to null (P1) — FIXED on `nos-site`, 2026-09-15
 
-Renders a false "SAOC has not supplied content" claim instead of surfacing a real fetch
-failure. 12+ callers on `main`. Predates both the menu-system-layout4 and
-site-content-alignment lanes.
+Fixed on the `nos-site` branch, commit `d15715fe`: added an opt-in `propagateErrors` flag
+to `sanityFetch()`, default off (byte-identical for the other ~29 callers repo-wide). Only
+`lib/data/show-pages.ts`'s `loadShowPageOrFallback` path sets it true, so a real outage now
+throws to Next's error boundary instead of rendering "not yet published." Reviewed by Codex
+GPT-5.5 at both medium and manual high effort, no findings. **Not yet on `main`** — lands
+when PR #4 merges. If this file still shows the swallow on `main` after that, the fix did
+not make it across; check `sanity/lib/fetch.ts` for `propagateErrors` to confirm.
 
 ## Rule needed: no `pkill`/`kill` by pattern (2026-09-11)
 

@@ -1,0 +1,213 @@
+schema: athanor.contract/v1
+slug: nos-design-system
+goal: Rebuild the /admin information architecture so a volunteer committee member lands and
+  immediately knows what needs them -- audience-first route tree (visitor / vendor / exhibitor),
+  a queue-rack overview replacing the flat ticket table, a fixed four-state status vocabulary
+  and a shared party badge -- without changing any authorization logic, without inventing an
+  exhibitor pipeline that has no data model, and without NOS-branding a year-round tool.
+created_at: '2026-09-07'
+autonomy: high
+features:
+  - id: F14
+    name: Admin information architecture -- audience-first route tree, extended AdminNav,
+      queue-rack overview at /admin, four-state StatusPill vocabulary, shared PartyBadge,
+      declared-empty /admin/exhibitors
+    status: pending
+  - id: F15
+    name: Vendor and exhibitor review surfaces made legible at a glance -- application and
+      submission queues, status transitions, payment and booth allocation, all rendering
+      through the F14 status and party vocabularies
+    status: pending
+  - id: F16
+    name: Visitor and door surfaces -- ticket table moved to /admin/visitors/tickets, ticket
+      lookup by booking ref / name / email, door scanner behaviour and one-handed layout
+      preserved unchanged
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-design-system/goldens/m5-admin-ia.golden.md
+assertions:
+  phase: 4
+  checks:
+
+    # ---------------------------------------------------------------------------
+    # F14 -- structural guards. Cheap to grep, cheap to regress. NECESSARY, never
+    # SUFFICIENT: a class name or a file existing is not proof of a rendered result.
+    # A14 and A15 are the load-bearing behavioural proofs.
+    # ---------------------------------------------------------------------------
+
+    - id: A1
+      description: The audience-first route tree exists on disk -- /admin/visitors,
+        /admin/visitors/tickets and /admin/exhibitors are real routes, not nav links pointing
+        at 404s. False state that still passes -- the files exist but render nothing useful;
+        A14 navigates to each and asserts a 200 with the expected heading in SERVED HTML.
+      command: test -f "app/admin/visitors/page.tsx" -a -f "app/admin/visitors/tickets/page.tsx" -a -f "app/admin/exhibitors/page.tsx"
+
+    - id: A2
+      description: AdminNav carries the six audience-first destinations. False state -- the
+        strings are present in a comment or an unreachable branch; A14 reads the rendered nav
+        list from a real browser at three viewports.
+      command: grep -q "'/admin/visitors'" components/admin/AdminNav.tsx && grep -q "'/admin/exhibitors'" components/admin/AdminNav.tsx
+
+    - id: A3
+      description: AdminNav is STILL presentation-only after being extended -- no import of
+        getAdminSession or hasCapability was introduced. Regression guard on admin-nav-menu's
+        "the nav is not the access boundary" guarantee, which F14 edits the same file as.
+      command: '! grep -qE "getAdminSession|hasCapability" components/admin/AdminNav.tsx'
+
+    - id: A4
+      description: The active-link indicator survives the nav extension -- aria-current,
+        bg-primary-100 and font-semibold are all three still present. admin-nav-active-state
+        shipped colour-plus-weight-plus-chip deliberately; losing any one silently regresses
+        WCAG 1.4.1 (colour is not the only channel).
+      command: grep -q "aria-current" components/admin/AdminNav.tsx && grep -q "bg-primary-100" components/admin/AdminNav.tsx && grep -q "font-semibold" components/admin/AdminNav.tsx
+
+    - id: A5
+      description: A single shared PartyBadge component exists -- the one implementation of
+        the vendor/exhibitor/visitor/committee vocabulary. Per-surface ad-hoc badges are the
+        defect this prevents.
+      command: test -f "components/admin/PartyBadge.tsx"
+
+    - id: A6
+      description: StatusPill exposes a pure, exported mapping from domain status strings onto
+        exactly the four defined states (pending/active/done/blocked), so the vocabulary is
+        greppable and testable rather than scattered through JSX ternaries.
+      command: grep -qE "pending" components/admin/StatusPill.tsx && grep -qE "blocked" components/admin/StatusPill.tsx && grep -qE "export (function|const)" components/admin/StatusPill.tsx
+
+    - id: A7
+      description: NO FABRICATED EXHIBITOR PIPELINE. /admin/exhibitors must not read from, or
+        name, an exhibitor Firestore collection -- none exists (verified 2026-09-07; the
+        collections are adminSettings, buyers, checkinAttempts, contactSubmissions, orders,
+        supporterRegistrations, tickets, vendorApplications, vendorStandOrders,
+        vendorSubmissions). The page states honestly that entries are not accepted online.
+      command: '! grep -qE "collection\(.(exhibitors|exhibitorEntries|exhibitorSubmissions)" app/admin/exhibitors/page.tsx'
+
+    - id: A8
+      description: /admin/exhibitors marks its empty region with data-placeholder -- the
+        load-bearing integrity marker this project asserts on. It must never be stripped while
+        restyling.
+      command: grep -q "data-placeholder" app/admin/exhibitors/page.tsx
+
+    - id: A9
+      description: ADMIN IS NOT NOS-BRANDED. No file under app/admin or components/admin
+        imports the NOS token layer, the NOS fonts, or an NOS component. Admin is a
+        year-round, cross-edition tool; branding it to one 2027 edition dates it and its pale
+        gold ground fails WCAG AA for dense operational text (mission contrast note).
+      command: '! grep -rqE "nos-theme|components/nos|Cormorant|Jost" app/admin components/admin'
+
+    - id: A10
+      description: Every new admin Server Component that reads Firestore declares
+        force-dynamic. Without it Next prerenders at build time, initAdmin() throws "Missing
+        Firebase Admin credentials" in the cloud build, and the deploy fails -- the exact trap
+        documented at app/admin/vendors/page.tsx:32.
+      command: grep -q "force-dynamic" app/admin/visitors/tickets/page.tsx && grep -q "force-dynamic" app/admin/page.tsx
+
+    # ---------------------------------------------------------------------------
+    # F15 / F16 -- structural guards
+    # ---------------------------------------------------------------------------
+
+    - id: A11
+      description: The vendor review surfaces render status through the shared StatusPill and
+        the shared PartyBadge rather than bespoke inline pills -- the single-vocabulary
+        requirement. False state -- imported but not rendered; A15 reads the rendered pill
+        text and computed colours from a real browser.
+      command: grep -q "StatusPill" components/admin/VendorReviewTable.tsx && grep -q "StatusPill" components/admin/VendorApplicationReviewTable.tsx
+
+    - id: A12
+      description: The ticket table moved to /admin/visitors/tickets and /admin no longer
+        renders it -- /admin is now an overview, not a data table. False state -- the import
+        removed but the table left behind under another name; A14 asserts /admin renders the
+        queue rack and no tickets table in served HTML.
+      command: grep -q "TicketsTable" app/admin/visitors/tickets/page.tsx && ! grep -q "TicketsTable" app/admin/page.tsx
+
+    - id: A13
+      description: /admin/door is untouched by F16's restyling -- no persistent AdminNav bar
+        was introduced. The door layout was deliberately tuned for one-handed camera scanning
+        (app/admin/door/page.tsx's own comment; mission door-checkin-one-handed). A16 proves
+        the pixel budget behaviourally.
+      command: grep -q "minimal" app/admin/door/layout.tsx
+
+    # ---------------------------------------------------------------------------
+    # Load-bearing behavioural proofs -- real production build, real server, real
+    # session cookies, real computed style. These are what actually prove the
+    # feature; A1-A13 only prove the code shape.
+    #
+    # Reuse the existing harness: contracts/checks/admin-auth-hardening/_shared.mjs
+    # (createAllowlistedFixtureUser, mintIdTokenForUid, setCustomClaims, postSession)
+    # for real session cookies -- never fake ones -- and follow
+    # execution/checks/verify_admin_nav.ts's conventions: every sub-case checked and
+    # reported independently, a failure in one never suppressing others.
+    # ---------------------------------------------------------------------------
+
+    - id: A14
+      description: >-
+        Playwright against a real built-and-served instance with a real minted admin session
+        proves, by reading SERVED HTML and COMPUTED STYLE (never by grepping source): (1)
+        /admin, /admin/visitors, /admin/visitors/tickets, /admin/vendors,
+        /admin/vendors/applications, /admin/exhibitors and /admin/settings all return 200 for a
+        capability-holding admin; (2) /admin renders a queue rack of rows, each row carrying a
+        queue name, a numeric pending count, an oldest-pending age string and exactly one
+        primary action link, and renders NO tickets table; (3) a queue with zero pending still
+        renders its row (a disappearing row destroys the scan pattern) with a count of 0; (4)
+        /admin/exhibitors renders zero data rows, contains a data-placeholder element, and its
+        served HTML contains no fabricated count, date, venue, person name, phone or email;
+        (5) the rendered nav list at 1440/375/320 contains the six destinations in the golden's
+        order, exactly one carries aria-current="page" and it is the correct link for the
+        route; (6) capability gating is unchanged -- an admin WITHOUT
+        review-vendor-applications never sees the Vendors link, and their direct navigation to
+        /admin/vendors is handled by the ROUTE's own gate (a defined redirect, not a 500);
+        (7) zero browser console errors on every route at every viewport; (8) no horizontal
+        page scroll at 320px on any route (document.scrollWidth <= clientWidth), wide tables
+        scrolling inside their own container instead. Assertions about rendered copy read
+        served HTML, because this repo has a live JSX whitespace bug class that is invisible in
+        source.
+      command: node_modules/.bin/tsx execution/checks/verify_admin_ia.ts
+      timeout_seconds: 900
+
+    - id: A15
+      description: >-
+        Playwright proves the two vocabularies are real and consistent, not merely imported:
+        (1) every status pill rendered anywhere across /admin, /admin/visitors/tickets,
+        /admin/vendors and /admin/vendors/applications resolves to exactly one of the four
+        defined states, and a pill resolving to a fifth state fails the check; (2) every pill
+        renders a non-empty visible text label -- a pill communicating by colour or icon alone
+        fails (WCAG 1.4.1); (3) pills sharing a state share a computed background colour across
+        different pages, and pills of different states differ -- proving one vocabulary, not
+        per-page improvisation; (4) error/failure statuses do NOT resolve to a brand hue,
+        enforcing the mission's guardrail 1 that semantic status colours stay semantic; (5)
+        every party badge rendered resolves to one of vendor/exhibitor/visitor/committee and
+        renders visible text. Each sub-case reported independently.
+      command: node_modules/.bin/tsx execution/checks/verify_admin_status_vocabulary.ts
+      timeout_seconds: 900
+
+    - id: A16
+      description: admin-nav-menu's own behavioural suite still passes unmodified -- link
+        visibility per capability, direct-URL reachability, /admin/door's no-persistent-bar
+        guarantee with the minimal trigger under 56px and an uncovered video container, tab
+        focus rings, zero console errors, and sign-out actually clearing the session
+        server-side. F14 edits the same component; this is the regression gate.
+      command: node_modules/.bin/tsx execution/checks/verify_admin_nav.ts
+      timeout_seconds: 600
+
+    - id: A17
+      description: admin-nav-active-state's behavioural suite still passes -- the active link's
+        computed font-weight is at least 200 heavier than every inactive sibling's AND its
+        computed background is visibly painted and different, both together. Extending the nav
+        with three new destinations must not regress the indicator.
+      command: node_modules/.bin/tsx execution/checks/verify_admin_nav_active_state.ts
+      timeout_seconds: 600
+
+    - id: A18
+      description: The real Next.js production build succeeds with every M5 change in the tree.
+        A1-A13 all stay green under a build-breaking mistake that only a real build catches --
+        a bad Server/Client boundary, an unserialisable Firestore Timestamp crossing into a
+        'use client' component (see lib/firestore-serialization.ts and
+        docs/admin-vendor-listing-serialization.md), or a type error under strict mode.
+      command: node_modules/.bin/next build
+      timeout_seconds: 900
+
+    - id: A19
+      description: TypeScript strict mode is clean across the changed tree -- no `any`, no
+        untyped Firestore reads leaking through. The build alone can pass with type errors
+        suppressed by config; this runs the compiler directly.
+      command: node_modules/.bin/tsc --noEmit
+      timeout_seconds: 600

@@ -721,6 +721,315 @@ CLAUDE.md entry only needs the summary above plus its existing pointer to that d
 **Upstream:** filed against the harness as the protected-path design having no route for
 correcting factual staleness in an agent-maintained instruction file.
 
+---
+
+## 2026-09-08 — canonical SAOC enquiry address: `council@` or `info@`?
+
+**Action needed:** Brad picks one of `council@saoc.co.za` / `info@saoc.co.za` as canonical.
+
+**Why it matters:** both appear across the public site, so a visitor sees two "official"
+addresses and the JSON-LD `Organization` block can only carry one. Whichever loses should be
+kept as a working alias, not deleted — printed material and the old Joomla site still point
+at it.
+
+**Blocked on:** a fact only SAOC holds (which mailbox is actually monitored). No agent can
+determine this; guessing would ship a wrong contact address to production.
+
+## 🚨 2026-09-10 — Live credentials exposed in the PUBLIC repo (human action required)
+
+**Found by:** Codex GPT-5.5 cross-model review of the M1 diff, 2026-09-09 (incidental — it was
+reviewing something else).
+
+`docs/leeann-source/website-development-specification-v3_2026-09-06.md` contains a table of SAOC
+email accounts with **plaintext passwords**. Committed in `1d6512cb` on 2026-09-06, present in
+HEAD, and pushed to `origin/main`, `origin/nos-design` and `origin/HEAD`.
+**`InunuNet/SAOC` is PUBLIC** (`gh repo view`: `"isPrivate": false`).
+
+Two accounts, both owned by Lee-Ann McCleland per the document:
+- `info@saoc.co.za`
+- `treasurer-secretary@saoc.co.za`
+
+Recovery contact for both is `saoctreasurer@gmail.com`, so the exposure plausibly pivots to the
+treasurer's mailbox — a payment-fraud target.
+
+**Required (human, cannot be automated):**
+1. **Rotate both passwords.** Assume compromised: public-GitHub credential scanners are
+   continuous, and this sat for four days. Rotation is the only real remediation.
+2. Audit both accounts — sent items, forwarding rules, recovery-address changes.
+3. Notify Lee-Ann. Writing credentials into a working document is an ordinary thing for a
+   volunteer to do; committing it to a public repo was our failure, not hers.
+4. Decide on history rewrite. NOT done by any agent: it needs a force-push to a shared public
+   repo and is the operator's call. It also does not undo exposure (forks, clones, caches).
+   Rotate first; scrub second.
+
+**Agent action taken:** the freshly-synced copy under `content/drive-source/` was unstaged so it
+could not be committed again. Git history untouched.
+
+## For Lee-Ann — questions and corrections in her source documents (not urgent)
+
+Raised 2026-09-10 during `national-show-ia-alignment` M3. None of these are blocking; all need
+her, not us, because they are her documents and her facts.
+
+1. **The FAQ `.docx` in Drive is corrupt.** `17.1 Frequently asked questions.docx` is truncated —
+   its zip central directory is missing, so it will not open. Our download is byte-perfect against
+   Drive's own checksum, so the damage is in the stored file, not in transit. We salvaged the text
+   by hand; she should re-save and re-upload it. Until then the sync tool re-derives an error
+   string for that document on every run.
+2. **A typo in her FAQ: "September 22027"** should presumably be 2027. **We have not corrected
+   it** — we do not edit the client's prose, including typos. She should fix it at source.
+3. **Her FAQ Q1 answer is an unfilled template** — "on xx, xx September 22027 at the xx". We have
+   stopped publishing that fragment rather than showing placeholders as finished copy; the site
+   now says the symposium date is not yet confirmed. It publishes properly once she fills it in.
+4. **Folder `13. Registration/Booking/Tickets` cannot be synced** — the `/` in the name is not a
+   legal filename component, so the sync skips the folder and both documents inside it, including
+   the ticketing model. We fetched them by hand. Renaming the folder (e.g. "13. Registration,
+   Booking, Tickets") makes it sync normally. It is her folder; we have not renamed it.
+5. **`Symposium Theme` has no `.docx` extension**, so the sync skips it although it is a valid
+   Word file. Adding the extension makes it sync.
+6. **Spec §4.7 asks the WOSA Conference page to carry galleries of indigenous orchids, habitats
+   and fieldwork.** We have declined to write that: wild orchid conservation is WOSA's subject,
+   not SAOC's, and inventing conservation claims about real South African orchids under the
+   Council's name is not something we will generate. The page carries conference logistics and
+   links to WOSA. If she wants that content, it should come from WOSA with attribution.
+7. **Ticket prices are not final** — her own §2.7 reply says the ticket and cocktail options
+   "still need to be fully developed", and her ticketing document contradicts itself on the
+   weekend pass. No price appears anywhere in the seeded content.
+
+---
+
+## M4 gws_inbox_check has no subject under the approved 17-page tree (2026-09-10)
+
+**Decision needed from the lead orchestrator. Raised by @architect while revising
+`contract-m4.yaml`; not an architect's call to make.**
+
+The mandatory verification triad (`.claude/rules/workflow.md`) has three kinds, one of which is
+`gws_inbox_check` — a real test submission whose arrival in a real inbox `gws mail read`
+verifies. M4's revision 1 satisfied it through spec entry 18's contact page: a POPIA-consented
+form on `/national-show/contact` reusing the existing `/api/contact` → Resend flow.
+
+**Brad's approved tree deletes that page** (no NOS-level contact page; a second inbox is an
+unwatched inbox, and site-level `/contact` is the `saoc-eb` lane's). After that deletion, **no
+route M4 owns wires a form that sends mail.** `/national-show/vendors/apply` does, and it is
+the `saoc-eb` lane's, untouchable, and not in this diff.
+
+Pointing the manifest at the site-level `/contact` form would verify **the other lane's code**
+and prove nothing about M4. M4's own revision-1 golden already ruled that out in its own words:
+*"the right response then is to say so and ask, never to point the manifest at an unrelated
+email."*
+
+Two ways out, both structural:
+
+1. **Exempt M4 from `gws_inbox_check`** on the recorded ground that it wires no mail path — and
+   record it as an exemption with a reason, not by quietly omitting the kind. Note
+   `scripts/checks/triad-baseline-exempt.txt` says in its own text that M4 must never be added
+   to an exemption baseline, so this needs an explicit ruling rather than an edit.
+2. **Put a mail path back in scope**, which means adding a page or a form to the approved tree
+   — a change to Brad's approved structure, and his to make.
+
+Until it is ruled, `contract-m4.yaml`'s `D32` asserts only that this escalation exists. The
+other two triad kinds (`codex_qa` `D30`, `browser_deployed_check` `D31`) are unaffected and
+both run.
+
+
+---
+
+## NEEDS BRAD — the Tickets nav path lands on a chooser, not a checkout (2026-09-10)
+
+**Two call sites, one decision. Neither lane is changing anything until Brad rules.**
+
+- Lead's lane: the nav's Tickets entry was repointed from `/tickets` to `/national-show/tickets`.
+- Our lane: `components/show/ShowSectionNav.tsx:53` carries `/national-show/tickets` with the hint
+  **"Buy admission tickets"** — a hint that promises checkout.
+
+`/national-show/tickets` is a chooser: it asks whether you are a visitor, an exhibitor or a vendor and
+forwards on. Both routes exist, so nothing is dead and **no href-level assertion fires** — this is the
+lead's "reachability is not arrival" case, and we have no assertion that distinguishes them.
+
+**Read the page before deciding — it is not a flat three-way question.**
+`app/(marketing)/national-show/tickets/page.tsx:130` puts a primary-variant `Get visitor tickets`
+button straight to `/tickets`; comments at lines 28 and 95 record this as a deliberate **F8 decision
+from M3 of nos-design-system** — visitor admission was demoted from one of five equal cards and
+re-anchored as the dominant journey, exhibitor and vendor left as ghost-variant secondaries. So a
+visitor sees their button first. The cost is one extra click, not a dead end.
+
+**The question for Brad, framed honestly:** should the nav skip a chooser that was deliberately built
+to route three audiences, at the price of the exhibitor and vendor paths losing their entry point?
+Do NOT frame it as "the buy button lands on a question" — that invites undoing F8 without saying it
+was a decision.
+
+Whatever he rules applies to BOTH call sites at once. Two lanes independently adjusting ticket-path
+wording while the underlying question is open is how we ship a decision nobody made.
+
+### CORRECTION 2026-09-10 — the two lanes described two different files, and both were right
+
+The F8 reading above is **branch-qualified and was not marked as such.** Verified across refs:
+
+| ref | lines | shape |
+|---|---|---|
+| `origin/main` | 77 | flat `.map` over OPTIONS, three identical cards, every one `bg-primary`, heading "What are you here for?". No F8 comment, no variants, no demotion. |
+| `origin/nos-site` (= our HEAD) | 191 | F8 comment at line 28, primary `Get visitor tickets` button to `/tickets` at line 130, ghost-variant secondaries at line 182. |
+
+The lead described main; we described our branch. Both cited real files and real line numbers and
+reached incompatible conclusions, because **neither said which tree.** A file path is not an
+identifier — a file path plus a ref is. This is the input-layer collapse one step further out than the
+`nav-links-200` case: not the wrong artefact, but the right artefact in the wrong tree.
+
+**Which framing Brad should get depends on merge order, and that is now a real dependency:**
+
+- **If `nos-site` merges before the menu ships** (expected, and it is what the plan requires — their
+  flyout cannot gate green until our six routes return 200): the F8 chooser is the destination that
+  will actually exist, so the question is whether the nav should skip a chooser deliberately built to
+  route three audiences, at the cost of the exhibitor and vendor entry points.
+- **If the menu shipped first**, the nav would point at main's flat three-card chooser and the
+  lead's original framing — a buy button landing on an undifferentiated question — would be live and
+  correct.
+
+The lead has corrected what they sent Brad to the first framing, and will verify the destination
+against merged `main` before signing off their own gate rather than assuming it. **If our timebox
+escape hatch is ever taken, re-check this entry before it goes to Brad** — the escape hatch changes
+what lands and could revive the second framing.
+
+#### RESOLVED 2026-09-10 — the merge-order condition is NOT load-bearing. Do not re-litigate.
+
+Verified: `app/(marketing)/national-show/tickets/page.tsx` is touched by `b3adca7d` and `a34e68e5`,
+both inside `origin/main..origin/nos-site` (range is **52 commits**, not the 41 quoted earlier — size
+the review against the range at PR time, not against any number in these notes). The page differs
+main-to-branch by +143/-29.
+
+**The escape hatch flips six manifest rows to `listed: false` and merges the same commits. It drops
+nav entries, not commits — nothing in it reverts a file edit.** So the 191-line F8 page lands in the
+reduced-PR scenario exactly as in the full one, and the first framing above is the correct one
+unconditionally.
+
+**Keep the condition recorded, but treat it as answered.** A decision memo that shows why a condition
+was checked is worth more than one that silently omits it.
+
+**The reasoning is the reusable part:** this hatch is safe *specifically because it operates on
+manifest data rather than on history*. That distinction is not visible in the phrase "escape hatch".
+Any future hatch that drops, reverts or reorders commits brings the whole concern straight back and
+must be re-checked against this entry.
+
+
+---
+
+## NEEDS BRAD / CODI — the manifest `purpose` has no provenance slot (2026-09-10, from M4/F24)
+
+F24 (never-404 fallback) renders each absent page's **manifest `purpose` string, byte-identical**,
+underneath a `placeholder-ai` disclosure reading "AI-generated placeholder… may be inaccurate".
+
+**The mismatch:** `purpose` is team-authored, already-published content — the lead's flyout renders it
+trimmed. Describing it as AI-generated slightly *mis*states what it is. The architect chose
+over-disclosure deliberately, because under-disclosure is this repo's audited defect class, and I have
+upheld that for M4. **It ships this way unless Codi rules otherwise.**
+
+**The real finding underneath it:** `purpose` occupies a *fifth* provenance state that
+`docs/rules/no-invention.md`'s four values have no slot for — team-authored routing metadata that has
+become published content. Not `council-supplied` (not the council's words), not `council-draft` (not
+Lee-Ann's), not `research`, not `placeholder-ai`. **This is a gap in the provenance vocabulary, not a
+bug in F24.** Codi's call.
+
+### Second, separate: some `purpose` strings make factual claims about the show
+
+`11-programme`'s purpose is "The overall schedule of sessions across the four show days." **"Four show
+days" is a factual claim about an unconfirmed event.** It is already published, so F24 treats it as an
+existing decision rather than a new invention — but F24 propagates it onto a page whose entire premise
+is that nothing on it is confirmed yet.
+
+**Someone should confirm the show is four days** before this reaches more surfaces. If it is not, the
+error is already live in the flyout and is not F24's to fix. Sweep every `purpose` string for similar
+claims while ruling.
+
+### Accepted without escalation (recorded so the reasoning is not re-litigated)
+- **No breadcrumb.** My brief named one; this repo has no breadcrumb component and building one is
+  design work Brad's instruction explicitly forbids taking on here. `ShowSectionNav` substitutes — it
+  exists, is already on all six routes, and is required there by L7/N15. Correct refusal.
+- **The fixed sentence** ("The South African Orchid Council has not yet supplied the content for this
+  page.") is authored prose no source document contains, but it makes no claim about the show, and
+  NF13's text census pins the marked subtree to exactly four permitted strings so it cannot grow.
+
+
+---
+
+## NEEDS BRAD — SECURITY: `.env.local` was briefly copied to `/tmp` (2026-09-10)
+
+**What happened.** While preparing the LIVE1 discrimination demo, `Dev_Son5_M4-F13` ran a `cp` of
+`.env.local` to `/tmp/env-local-backup-verify-only.txt`. That file holds `SANITY_API_TOKEN` — a
+**write-capable** token for the production dataset. The agent noticed immediately, deleted it, and
+**disclosed it unprompted in its report.**
+
+**Verified by the orchestrator, not taken on trust:**
+- `/tmp/env-local-backup-verify-only.txt` — confirmed absent.
+- No other `*env*` copies in `/tmp` or `/private/tmp` (the `athanor-py311-venv` hits are a glob
+  false positive on "venv").
+- Inside the project, only `.env.local` and `.env.local.example` exist. No stray copy.
+
+**Exposure assessment.** Brief, local-only, single-user machine, file removed. `/tmp` on macOS is
+world-readable as a directory and files there typically land mode 644, so any other local account
+could have read it during the window. No evidence of access; no way to prove absence of access.
+
+### THE DECISION FOR BRAD: rotate the Sanity token, or accept the risk?
+
+**Recommendation: rotate.** The token is write-capable against the production dataset, rotation is
+cheap, and "briefly world-readable on disk" is the standard trigger for it. Accepting the risk is
+defensible on a single-user machine — but that is a judgement about the machine, which is Brad's to
+make, not the agents'.
+
+Nothing is blocked on this. The mission continues either way.
+
+### Why the disclosure matters more than the incident
+The agent caught its own mistake, cleaned it up, and reported it without being asked, in a report it
+knew would be read by the person who could criticise it. **That behaviour must not be discouraged.**
+An agent that hides a stray `cp` is far more dangerous than one that makes it. The rule to reinforce
+is the existing one — secrets never leave the project folder, and scratch belongs in
+`.tmp/sandbox/<purpose>/` — not "don't admit it".
+
+**Process note:** `.claude/rules/sandbox.md` already forbids `/tmp` for scratch. This is not a missing
+rule; it is a rule that was not applied under time pressure to a file nobody thought of as scratch.
+Worth restating in dev briefs that the sandbox rule covers *copies of project files*, not just
+temporary working files.
+
+
+---
+
+## NEEDS BRAD — URGENT: `InunuNet/SAOC` IS PUBLIC AND HAS SECRETS IN ITS HISTORY (2026-09-10)
+
+**Verified directly, not relayed:** `gh repo view InunuNet/SAOC` returns `"isPrivate": false,
+"visibility": "PUBLIC"`. Brad believed this repo was private. It is not, and it has been pushed to
+as recently as today.
+
+**What is exposed** (found by the `saoc-eb` lane, not this one): two plaintext mailbox passwords in
+a committed copy of Lee-Ann's spec document. **Redacted from HEAD today — but git history still
+carries them, and the repo is public.**
+
+### Redaction is not remediation
+
+Removing a secret from HEAD does nothing about history. On a public repository assume every commit
+has been cloned, forked, mirrored and indexed. Even a full history rewrite (`filter-repo`/BFG) does
+not reach existing forks, GitHub's cached object views, or anything already scraped. **The only
+remedy that actually works is rotating the credential.** Everything else is tidying.
+
+### Recommended, in this order
+1. **Change both mailbox passwords now.** Treat them as compromised, because on a public repo they
+   are — not "possibly", by default.
+2. **Decide the repo's visibility deliberately.** If it was never meant to be public, make it
+   private — but do that knowing it does not un-publish anything already fetched.
+3. **Rotate the Sanity write token** (the separate `/tmp` incident logged above). Two credential
+   events in one day is a pattern, and this one raises the stakes of the other.
+4. **Sweep history for anything else Drive-sourced.** `content/drive-source/` holds Lee-Ann's
+   documents converted to markdown, and `content.md` + `manifest.json` are TRACKED by design per
+   `CLAUDE.md`. If any of her documents contain credentials, they are in git by policy, not accident.
+
+### This lane's exposure: NONE FOUND — checked, not assumed
+- `.env.local` has **never** been tracked in any ref.
+- This lane tracks **zero** files under `content/drive-source/`.
+- The 58-commit diff `origin/main..origin/nos-site` introduces **no** credential-shaped content
+  (matches were telemetry session ids, a settings flag, and a function name).
+- The `/tmp` copy of `.env.local` never entered git.
+
+**Nothing in the NOS site lane needs to change.** This is recorded here because it is far more
+serious than the mission it interrupted, and because the sweep of item 4 is a decision for Brad —
+tracked Drive content is a documented policy, and changing it is his call, not an agent's.
+
 ## 2026-09-10 — CRITICAL: live SAOC mailbox passwords in a PUBLIC repo
 
 **Verified independently by the lead session (not taken on a peer's word):**

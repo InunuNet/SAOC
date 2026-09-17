@@ -21,6 +21,72 @@ const config = [
     files: ['**/*.{js,mjs,cjs,jsx,ts,tsx}'],
     rules: {},
   },
+  // F3 (national-show-ia-alignment, M1) — enforces the showPage provenance gate's
+  // unwrap boundary. QA's cross-model review found that the previous unwrap function,
+  // exported plainly from lib/data/show-pages.ts, could be imported and called from any
+  // new file with no error of any kind — the TypeScript brand on GatedProse does not by
+  // itself stop that, since nothing about importing a function is a type violation.
+  // components/nos/gated-prose-internal.ts is the wrap/unwrap boundary now; only
+  // components/nos/ShowPageProse.tsx (the render side) and lib/data/show-pages.ts (the
+  // wrap side, used internally, never re-exported) may import it. Every other file gets
+  // a real lint error. Verified against a probe file that imports it from a third
+  // location — see .agent/memory/scratch/dev-result-national-show-ia-alignment.md.
+  //
+  // `files` covers .js/.jsx too, not just .ts/.tsx — this project has none today, but
+  // Next.js accepts either, and a restriction that only fires on one file-extension
+  // family is not a restriction (Codex's cross-model review, second pass).
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    ignores: ['components/nos/ShowPageProse.tsx', 'lib/data/show-pages.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/gated-prose-internal', '**/gated-prose-internal.ts', '@/components/nos/gated-prose-internal'],
+              message:
+                'gated-prose-internal.ts is the showPage provenance gate\'s wrap/unwrap boundary. ' +
+                'Only components/nos/ShowPageProse.tsx renders a GatedProse value; only ' +
+                'lib/data/show-pages.ts constructs one. Import loadShowPage/loadAllShowPages and ' +
+                'render sections through <ShowPageProse> instead — see page-contract.golden.md.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // F24 (national-show-ia-alignment, M4) — sibling restriction for the ShowPageResult
+  // boundary. Only components/show/nos/ShowContentState.tsx (opens it, to render) and
+  // lib/data/show-pages.ts (wraps it, in loadShowPageOrFallback, never re-exported) may
+  // import show-content-state-internal.ts. Same opaque-brand + lint + grep-guard idiom
+  // as the GatedProse rule above — see never-404-fallback.golden.md.
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    ignores: ['components/show/nos/ShowContentState.tsx', 'lib/data/show-pages.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '**/show-content-state-internal',
+                '**/show-content-state-internal.ts',
+                '@/components/show/nos/show-content-state-internal',
+              ],
+              message:
+                'show-content-state-internal.ts is the never-404 fallback\'s ShowPageResult ' +
+                'wrap/unwrap boundary. Only components/show/nos/ShowContentState.tsx renders a ' +
+                'ShowPageResult; only lib/data/show-pages.ts constructs one. Call ' +
+                'loadShowPageOrFallback and render through <ShowContentState> instead — see ' +
+                'never-404-fallback.golden.md.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];
 
 export default config;

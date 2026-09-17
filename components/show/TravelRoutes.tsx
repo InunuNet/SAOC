@@ -6,6 +6,7 @@
 // =============================================================
 
 import type { TravelRoute } from '@/types';
+import { COLUMN_CLASS, SPAN_CLASS, resolveGridLayout } from '@/lib/grid-columns';
 
 export interface TravelRoutesProps {
   routes?: TravelRoute[] | null;
@@ -15,10 +16,22 @@ export function TravelRoutes({ routes }: TravelRoutesProps) {
   const entries = (routes ?? []).filter((route) => route?.origin);
   if (entries.length === 0) return null;
 
+  // R13 — column count DERIVED from the rendered count, never a hardcoded class. See
+  // .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/grid-orphan-rule.golden.md.
+  const { columns, finalCardSpans } = resolveGridLayout(entries.length);
+  const lastIndex = entries.length - 1;
+
   return (
-    <ul className="mt-6 grid grid-cols-1 gap-px bg-rule md:grid-cols-3">
+    // No hardcoded column-count utility below lg: mobile/tablet stack via flex-col — the only
+    // column-count class comes from lib/grid-columns.ts (D68).
+    <ul className={`mt-6 flex flex-col gap-px bg-rule lg:grid ${COLUMN_CLASS[columns]}`}>
       {entries.map((route, index) => (
-        <li key={route._key ?? `${route.origin}-${index}`} className="bg-parchment p-6">
+        <li
+          key={route._key ?? `${route.origin}-${index}`}
+          className={`bg-parchment p-6 ${
+            index === lastIndex && finalCardSpans > 1 ? SPAN_CLASS[finalCardSpans] : ''
+          }`}
+        >
           <h4 className="font-serif text-[19px] font-medium leading-snug text-ink">
             {route.origin}
           </h4>

@@ -1,0 +1,41 @@
+{
+  "schema": "saoc.retired-seeds/v1",
+  "retired": [
+    {
+      "pageKey": "08-judging-and-awards",
+      "specNumber": 8,
+      "file": "content/show-pages/retired/08-judging-and-awards.json",
+      "retiredOn": "2026-09-10",
+      "ruling": "Brad, 2026-09-10 — no NOS-level judging page; site-level /judging exists and a duplicate splits the record.",
+      "sourceProvenance": "none — every section in this file is placeholder-ai, verified by reading it before retirement.",
+      "contentDisposition": "Nothing of the council's was in this file. All three sections (intro, how-judging-works, results) were AI-generated placeholder text; retiring the page loses none of her words."
+    },
+    {
+      "pageKey": "09-plant-exhibition-and-sales",
+      "specNumber": 9,
+      "file": "content/show-pages/retired/09-plant-exhibition-and-sales.json",
+      "retiredOn": "2026-09-10",
+      "ruling": "Brad, 2026-09-10 — no plant-exhibition page; the competitive display is covered by What to Expect plus /judging.",
+      "sourceProvenance": "none — every section in this file is placeholder-ai, verified by reading it before retirement.",
+      "contentDisposition": "Nothing of the council's was in this file. All three sections (intro, visiting, accessibility) were AI-generated placeholder text; retiring the page loses none of her words."
+    },
+    {
+      "pageKey": "10-plant-sales",
+      "specNumber": 10,
+      "file": "content/show-pages/retired/10-plant-sales.json",
+      "retiredOn": "2026-09-10",
+      "ruling": "Brad, 2026-09-10 — no plant-sales page; the sales area is described inside the SA Exhibitors document.",
+      "sourceProvenance": "none — every section in this file is placeholder-ai, verified by reading it before retirement.",
+      "contentDisposition": "Nothing of the council's was in this file. All three sections (intro, buying-and-taking-plants-home, payment) were AI-generated placeholder text; retiring the page loses none of her words."
+    },
+    {
+      "pageKey": "18-contact-us",
+      "specNumber": 18,
+      "file": "content/show-pages/retired/18-contact-us.json",
+      "retiredOn": "2026-09-10",
+      "ruling": "Brad, 2026-09-10 — no NOS-level contact page. A second inbox is an unwatched inbox; site-level /contact is owned by the saoc-eb lane.",
+      "sourceProvenance": "council-supplied — content/drive-source/National Show/18. Contact/2027 Show Contact information/v1.0/content.md",
+      "contentDisposition": "The Drive source document is retained unmodified at that path and is the canonical record. This lane publishes none of it. Routing enquiries to the site-level /contact page belongs to the saoc-eb lane; no NOS page consumes this seed. The 'overview' section's provenance was corrected to placeholder-ai before this file moved here — the body is our own paraphrase of the council's still-undecided routing plan, not a verbatim quotation of her words, and was mislabelled council-supplied."
+    }
+  ]
+}
