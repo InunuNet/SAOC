@@ -34,6 +34,22 @@ SPECS_ROOT = Path(os.environ.get(
 ))
 
 
+def _is_fixture(path: Path) -> bool:
+    """True iff path has a "goldens" segment followed by a later segment
+    whose name contains the substring "fixture" (case-insensitive) --
+    catches both "fixture_specs/" and "fixtures/" without hard-coding
+    either literal. Scoped to goldens/ subtrees only: a real
+    contract-fN.yaml directly under a mission's specs dir never has a
+    "goldens" segment, so it is never exempt regardless of its filename.
+    F6 (delivery-and-truth) -- see spec-f6.md "Design" for the full rule.
+    """
+    parts = [p.lower() for p in path.parts]
+    if "goldens" not in parts:
+        return False
+    idx = parts.index("goldens")
+    return any("fixture" in part for part in parts[idx + 1:])
+
+
 failures = []
 checked = 0
 
@@ -48,6 +64,16 @@ checked = 0
 # Each failure is still reported per-file, naming the exact offending path,
 # not just the scan root.
 for path in sorted(SPECS_ROOT.glob("**/contract*.yaml")):
+    if _is_fixture(path):
+        try:
+            rel = path.relative_to(REPO_ROOT)
+        except ValueError:
+            rel = path
+        print(
+            f"INFO: {rel} is a negative-test fixture under goldens/ "
+            "(excluded from PASS/FAIL sweep)"
+        )
+        continue
     checked += 1
     try:
         yaml.safe_load(path.read_text())

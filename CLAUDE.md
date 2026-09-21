@@ -1,230 +1,76 @@
-# SAOC Website — Developer Guide
-
-## Client Context
-
-The **South African Orchid Council (SAOC)** is a non-profit national body coordinating orchid societies across South Africa since 1968. This site replaces their existing broken Joomla site at saoc.co.za.
-
-### Critical scope boundary
-
-**SAOC is not wild orchid conservation.** SAOC focuses on orchids *in cultivation*: growing, showing, hybridising, judging, and community. Wild orchid identification, habitat protection, and conservation belong to **WOSA (Wild Orchids of Southern Africa)** — a separate partner organisation with its own site. Never produce content about wild orchid conservation — link to WOSA for those topics.
-
+---
+name: architect
+model: opus
+description: System design and structural decisions
+allowedTools: ["Read", "Bash", "Grep"]
+disallowedTools: ["Write", "Edit"]
 ---
 
-## Tech Stack
+# Architect Agent
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| Framework | Next.js 16 (App Router, TypeScript), Node 22 runtime | RSC-first, Firebase App Hosting native SSR support |
-| Styling | Tailwind CSS v4 | CSS-first config, no tailwind.config.ts needed |
-| Hosting | Firebase App Hosting | Native Next.js SSR, same ecosystem as Firestore |
-| CMS | Sanity (Studio at `/studio`) | Structured content editing (events, national show, media kit, etc.) via `next-sanity` |
-| Database | Firestore | Contact submissions, ticket sales/check-in, event submissions |
-| Auth | Firebase Auth | Email/password, Google, Microsoft, and Apple sign-in for `/admin`; session cookies via `firebase-admin/auth` |
-| Forms | API route → Firestore + Resend | Contact and event submissions written to Firestore; confirmation email sent via Resend |
-| Payments | PayFast (sandbox) | Ticket checkout + ITN webhook verification (`lib/payfast.ts`) |
-| Package manager | pnpm | Faster, stricter hoisting |
+You are the system architect. You make structural decisions and define technical approaches. You return decisions and rationale, never code.
 
----
+## Rules
+## Alembic Mandaten- Use Alembic (URL distilling service) for all external URL retrieval and research. See `.agent/skills/alembic.md`.
+- **Framework Awareness**: You are operating within the Athanor Agentic Workspace. Follow the mandates in AGENTS.md and rules.md strictly.
+- Evaluate tradeoffs explicitly (pros/cons/risks)
+- Consider all three platforms (Claude Code, Gemini CLI, OpenCode) in decisions
+- Check learned.md for prior decisions — don't contradict without justification
+- Document decisions in a format that dev can implement directly
+- Keep it simple — prefer convention over configuration
 
-## Project Structure
+## Contract Output (mandatory for every task)
 
-```
-app/
-├── (marketing)/          # Public-facing pages (route group — no URL segment)
-│   ├── page.tsx          # Home
-│   ├── about/             # About SAOC
-│   ├── societies/         # 21 affiliated societies + [slug] individual pages
-│   ├── judging/           # Judging system overview
-│   ├── events/            # Events calendar + [slug] detail
-│   ├── national-show/     # Show overview + upcoming + archive/[year] + vendors showcase + gated registration flow
-│   │   ├── vendors/       # Vendor showcase (public) + application form (public) + registration form (gated by token, M1)
-│   ├── media-kit/         # Media kit
-│   ├── sponsors/          # Sponsors
-│   ├── constitution/      # Constitution
-│   ├── privacy/           # Privacy policy
-│   ├── terms/             # Terms
-│   └── contact/           # Contact form
-├── admin/                # Firebase Auth-gated admin (login, door check-in scanner, vendor review)
-│   └── vendors/           # Vendor management (application review + full submission review; gated: review-vendor-applications)
-│       └── applications/  # Vendor applications (short form, M1)
-├── studio/               # Sanity Studio, mounted at /studio (see sanity.config.ts)
-├── api/
-│   ├── contact/           # Contact form POST handler → Firestore + Resend
-│   ├── events/             # Event submission + per-event .ics export
-│   ├── events.ics/         # Combined events feed
-│   ├── tickets/            # PayFast checkout + ITN webhook → Firestore `tickets`
-│   ├── vendors/            # Vendor application (short form, M1) → `vendorApplications`; full registration (gated by token, M1) → `vendorSubmissions`; proof-of-payment upload
-│   ├── admin/               # Session (Firebase Auth), check-in, CSV export; vendor review and payment routes
-│   │   ├── vendors/        # Vendor review workflow (F6) and payment/booth allocation (F7)
-│   │   └── reconcile-orders/ # Cloud Scheduler-triggered: alerts on orders stranded `reserved` past expiry (docs/order-reconciliation.md)
-│   ├── draft/ + disable-draft/  # Sanity draft-mode preview toggles
-│   └── revalidate/          # Sanity webhook → on-demand ISR revalidation
-├── layout.tsx             # Root layout (html/body/fonts/globals)
-└── globals.css            # Tailwind v4 import only
+Write `contract-f1.yaml` at `.agent/memory/project/specs/<slug>/contract-f1.yaml`.
+MUST use `slug:` field (NOT `spec:`). Assertions use `command:` (NOT `verify.cmd`).
 
-sanity/
-├── schemas/                # Document + object schema types
-└── lib/                    # Sanity client helpers
+**ASSERTION COMMAND RULES — non-negotiable:**
+- NEVER emit multiline python3 -c commands — they FAIL at contract.py gate execution time even when the implementation is correct (subprocess shell parsing breaks on embedded newlines).
+- Use single-line grep/test commands. For complex Python logic, write a helper script and call it.
 
-lib/
-├── firebase.ts             # Client Firebase initialisation (singleton)
-├── firebase-admin.ts       # Server Firebase Admin initialisation (singleton)
-├── payfast.ts               # PayFast signature + sandbox constants
-├── email.ts                 # Resend email sending
-└── data/                    # Server-side data-fetch helpers
+```yaml
+# PROHIBITED — multiline python3 -c breaks gate execution:
+command: "python3 -c '
+import sys
+raise ValueError()'"
+command: |
+  python3 -c '
+    import sys
+    sys.exit(1)
+  '
 
-types/
-└── index.ts                # Shared TypeScript types (Society, SocietyEvent, NationalShow, etc.)
+# ALLOWED — single-line and helper-script forms:
+command: grep -q "pattern" path/to/file
+command: test -f path/to/file
+command: python3 -c "import mod; mod.fn()"
+command: python3 execution/checks/verify_raises.py path/to/file ValueError
 ```
 
----
-
-## Firebase Setup
-
-### First-time setup
-
-1. Create a Firebase project at console.firebase.google.com
-2. Enable Firestore (production mode)
-3. Enable Firebase Auth (email/password sign-in is enabled by default; Google, Microsoft, and Apple sign-in require additional provider configuration in the Firebase Console — see `docs/admin-access.md`)
-4. Enable Firebase App Hosting
-
-### Environment variables
-
-Copy `.env.local.example` → `.env.local` and fill in your values.
-
-**Client vars** (`NEXT_PUBLIC_*`): from Firebase console → Project Settings → Your apps → Web app config.
-
-**Admin vars** (`FIREBASE_*`): from Firebase console → Project Settings → Service Accounts → Generate new private key. Download the JSON and copy the three fields.
-
-The `FIREBASE_PRIVATE_KEY` contains literal `\n` characters in the JSON — paste the whole quoted string including the quotes. The `initAdmin()` function handles the `.replace(/\\n/g, '\n')`.
-
-### Collections
-
-| Collection | Purpose |
-|-----------|---------|
-| `societies` | 21 affiliated societies — add as Firestore docs, no code change needed |
-| `events` | Society events and shows — add as Firestore docs |
-| `nationalShows` | Past and upcoming national shows — add as Firestore docs |
-| `contactSubmissions` | Written by the `/api/contact` route — do not edit manually |
-| `adminSettings` | Operational settings written and read by admin-only API routes. Contains one doc per named setting (e.g. `activePaymentGateway`, `ozowSandboxTestMode`). See [docs/payment-gateway-selection.md](docs/payment-gateway-selection.md) and the `ozow-sandbox-toggle` contract for the stored shapes and access patterns. |
-| `vendorApplications` | Short vendor application form submissions (M1, mission vendor-gated-registration-flow). Status: `pending` / `approved` / `declined`. Single-use registration tokens are issued on approval and claimed on full-registration submission. See [docs/vendor-gated-registration-flow.md](docs/vendor-gated-registration-flow.md) |
-| `vendorSubmissions` | Full vendor registration form submissions (gated by token, M1; field set corrected M2). Token-gated via M1's single-use HMAC workflow (see [docs/vendor-gated-registration-flow.md § M1](docs/vendor-gated-registration-flow.md#m1-checkpoint)). M2 (F13-F21, gated) added ~60 new fields (online presence, booth sizing, repeating equipment tables, vehicle registrations, insurance policy numbers, food certifications, marketing uploads, signature block) and deprecated-in-place the old field shapes (see [docs/vendor-gated-registration-flow.md § M2](docs/vendor-gated-registration-flow.md#m2-full-registration-form-corrections)); pre-M2 documents remain queryable and backward-compatible. |
-| `vendorStandOrders` | One doc per vendor stand-booking payment attempt (id = `vendorSubmissionId`), written by `POST /api/vendors/stand-payment/initiate` and settled by the PayFast/Ozow ITN handler (`lib/vendor-stand-payment-notification.ts`). Carries an `attemptId` field (mission `vendor-stand-payment-confirm-gate`, F3) — a fresh id minted per payment attempt and threaded through the gateway reference (`VSO-{vendorSubmissionId}::{attemptId}`) so a stale notification from an abandoned attempt can't poison a fresh one; pre-mission documents have no `attemptId` and are handled by an explicit migration-window carve-out. See [docs/vendor-stand-payment-settlement.md](docs/vendor-stand-payment-settlement.md). |
-| `orders` / `tickets` | Ticket orders and their positions. Requires a deployed Firestore composite index on `orders(status, expiresAt)` (`firestore.indexes.json`) for `POST /api/admin/reconcile-orders` to query stranded orders — see [docs/order-reconciliation.md](docs/order-reconciliation.md). Positions carry `chosenDay: string \| null` (F5) validated server-side against the active show's window — see [docs/f5-day-selection-attendees.md](docs/f5-day-selection-attendees.md) |
-| `ticketType` (Sanity) | The five admission products (Early-Bird Exhibition, Day Visitor, Early-Bird Weekend Pass, Weekend Pass, VIP). F4 adds five schema fields: `provisional`, `earlyBirdCutoff`, `releasedQuantity`, `requiresDaySelection`, `requiresAttendeeNames` — see [docs/f4-admission-products.md](docs/f4-admission-products.md) |
-
-### Admin authorisation
-
-All `/admin` surfaces are gated through one shared helper, `lib/admin-auth.ts` —
-`admin === true` custom claim, `email_verified === true`, and live membership of
-`ADMIN_EMAIL_ALLOWLIST`, all re-checked per request; fails closed on every unenumerated
-state. See [`docs/admin-access.md`](docs/admin-access.md) for the policy, the debugging
-`reason` values, and known traps (unverified-email lockouts, an empty allowlist that
-fails closed silently).
-
-### Admin vendor notifications — vendor confirmation and admin notices
-
-Vendor flow G1 (mission vendor-flow-notifications M1/F1) wires four new notification emails: vendor-facing "we received your application" acknowledgement on application submission, and three admin notices on application submitted, full registration submitted, and stand payment received. All sends are independently wrapped in `deliverConfirmationEmailAfterCommit()` so no notification failure blocks the vendor's action. Admin recipients are resolved once per email send via `lib/vendor-admin-notify-recipients.ts:getVendorAdminNotifyRecipients()`, reading `ADMIN_EMAIL_ALLOWLIST`. See [`docs/vendor-flow-notifications.md`](docs/vendor-flow-notifications.md) for the architecture, the Firestore transaction-retry bug fix in payment notification, why early assertions were insufficient (A10 closure testing), and two accepted limitations on static-analysis boundaries.
-
-### Admin vendor listing — Firestore Timestamp serialisation
-
-Admin pages that read Firestore collections with timestamp-shaped fields (`submittedAt`, `reviewedAt`, etc.) must convert `Timestamp` class instances to native `Date` objects before passing them to `'use client'` components. The conversion module `lib/firestore-serialization.ts` provides `serializeVendorApplication()` and `serializeVendorSubmission()` for this — both convert by structure (duck-typed `.toDate()` method), not by a hardcoded field-name allowlist, ensuring new fields are handled correctly. See [`docs/admin-vendor-listing-serialization.md`](docs/admin-vendor-listing-serialization.md) for the defect analysis, the fix rationale, and why field allowlists fail.
-
-### Site content alignment — Lee-Ann's Drive as coverage contract, not a URL map
-
-Mission `site-content-alignment` (M1/F1 audit + M2/F2 build) treats Lee-Ann's
-Drive tree as the **content inventory and coverage contract** — which of her 20
-SAOC + National Show sections exist and have official committee copy — never a
-literal folder-to-URL map; nav and IA stay engineering decisions against the
-approved design handoff. The 20-section coverage map
-(`.agent/memory/project/specs/site-content-alignment/goldens/fixtures/f1-coverage-map.json`)
-tracks `routeStatus` and `contentStatus` as independent fields so build progress
-is never conflated with copy provenance. `components/show/_shared/StatusMarker.tsx`
-unifies the previously-duplicated `ExhibitorStatusBadge`/`ConfirmationBadge`
-render path (byte-identical refactor, `question`-vocabulary preserved on the
-exhibitor-only branch). See [`docs/site-content-alignment.md`](docs/site-content-alignment.md)
-and [`docs/rules/no-invention.md`](docs/rules/no-invention.md) for the governing
-rule, the open Brad-only design question (badge vs. literal bracket placeholder),
-and known gaps (5 pre-existing dead nav links, `/national-show`'s zero-marker
-render still untraced).
-
-### Drive .docx version export — Lee-Ann's source content
-
-`execution/drive_docx_sync.py` (mission drive-docx-version-export, M1/F1) is a read-only,
-on-demand sync tool that mirrors Lee-Ann's Drive folder of `.docx` source content ("Docs for
-Brad", id `1rZJVrYwrWM92vqmPw2c9E_HABQKEQoGa` — her folder structure is the shape the site's
-content follows) into a local versioned store, `content/drive-source/`. Version bumps are keyed
-to Drive's `md5Checksum` (real content change) — never `modifiedTime`, which advances on renames,
-comments, and permission touches with no content change at all. Minor bumps (`v1.0 → v1.1 → ...`)
-are automatic; major bumps (`vX.0 → v(X+1).0`) are manual-only via `--major <fileId>`, never
-inferred. Duplicate filenames in one Drive folder are disambiguated (both files keep independent
-histories), not skipped. Untrusted Drive names (`..`, empty, containing a path separator or NUL)
-are rejected at the boundary with a resolved-path containment check as defence in depth, while
-unusual-but-legitimate names (including the real `SAOC ` folder's trailing space) keep working.
-Deletions from Drive never delete local history — they flip the index entry to `status: missing`.
-Raw `source.docx` bytes are gitignored; `content.md`, `manifest.json`, and `index.json` are
-tracked. See [`docs/drive-docx-version-export.md`](docs/drive-docx-version-export.md).
-
-### Verification triad gate — `browser_deployed_check` / `gws_inbox_check` contract kinds
-
-`execution/contract.py` supports `browser_deployed_check` and `gws_inbox_check` as first-class contract assertion kinds, sibling to the pre-existing `codex_qa` kind, so a mission contract can declare that the mandatory three-layer verification triad (Codex adversarial review, BrowserAgent against the deployed site, `gws` read-only inbox check — see `.claude/rules/workflow.md`) actually ran, not merely that it was supposed to. `execution/verify_triad_coverage.py` is a coverage linter that flags a UI/workflow contract missing any triad kind — **it is not yet wired into any gate path** (`quick_gate.sh`, `contract.py`'s `gate_cmd`), so declaring the triad on a contract is still voluntary, not enforced. See [`docs/verification-triad-gate.md`](docs/verification-triad-gate.md) for the manifest shapes, the exit-code contract, the environment-override defaults, and what these checks cannot prove.
-
----
-
-## Adding Data (No Code Changes Needed)
-
-### Add a society
-Add a document to the `societies` Firestore collection. Required fields: `name`, `slug`, `province`, `city`, `venue`, `meetingDay`, `meetingTime`, `email`. See `types/index.ts` for the full `Society` type.
-
-The `slug` must be URL-safe (e.g. `orchid-society-of-pretoria`). It's used for `/societies/[slug]` routes.
-
-### Add an event
-Add a document to the `events` collection. `societyId` references the society document ID. `startDate` and `endDate` are Firestore Timestamps.
-
-### Add a past national show
-Add a document to the `nationalShows` collection. `edition` is the show number (e.g. 18), `year` is the calendar year. `startDate` and `endDate` are Timestamps. Optional: `grandChampion`, `reserveChampion`, `categoryWinners`, `galleryImages`.
-
----
-
-## Coding Conventions
-
-- **TypeScript strict mode** — no `any`, no type assertions without a comment explaining why
-- **Server Components by default** — only add `'use client'` when you need browser APIs, event handlers, or useState/useEffect
-- **No client-side data fetching for static/Firestore content** — fetch server-side in Server Components or API routes using the Admin SDK
-- **Admin SDK in API routes** — never import `firebase-admin` in client components or pages that ship to the browser
-- **Conventional commits** — `feat:`, `fix:`, `chore:`, `docs:`, `style:`, `refactor:`, `test:`
-- **No invented brand assets** — do not add colours, logos, fonts, or visual design decisions. Wait for Claude Design handoffs.
-- **Firestore builders: coalesce optionals or strip undefined** — builders that construct Firestore documents from optional-field drafts must never leave `undefined` own-properties on the output. Either coalesce to `null` (`field: input.field ?? null`) or strip undefined keys before writing. See `docs/firestore-undefined-write-safety.md` and the safe reference pattern in `buildMultiReservationDocs()` and M3 stand-payment write.
-
----
-
-## Design Handoff Workflow
-
-Visual design is produced in **Claude Design** (claude.ai/design) as a separate workstream. Design approval happens there, not in this repo.
-
-When a design handoff arrives, it will be delivered as a bundle containing:
-- Design spec (colours, typography, spacing tokens)
-- Component structure (which components to create, their props)
-- Implementation notes
-
-Implement handoffs faithfully against the existing page structure. Do not restructure routes or rename pages to fit the design — adapt the design to the structure.
-
-Tailwind v4 uses CSS custom properties for theming. When the brand tokens arrive, add them to `app/globals.css` as `@theme` variables.
-
----
-
-## Running Locally
-
-```bash
-pnpm install
-cp .env.local.example .env.local   # fill in Firebase credentials
-pnpm dev
+```yaml
+schema: athanor.contract/v1
+slug: <mission-slug>
+goal: <one sentence>
+created_at: '<YYYY-MM-DD>'
+autonomy: high
+features:
+  - id: F1
+    name: <description>
+    status: pending
+goldens:
+  - .agent/memory/project/specs/<slug>/goldens/<file>
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: <verify what>
+      command: grep -q "pattern" path/to/file
 ```
 
-App runs at http://localhost:3000.
+Also write golden files at `.agent/memory/project/specs/<slug>/goldens/`.
 
----
-
-## Deployment
-
-Firebase App Hosting handles deployment. See `apphosting.yaml` (to be created at deploy time). The hosting backend reads `FIREBASE_*` secrets from Secret Manager — do not commit `.env.local`.
+## Output Format
+📋 DECISION: [what was decided]
+🔍 ANALYSIS: [tradeoffs evaluated]
+⚡ SPECIFICATION: [what dev should implement]
+✅ RATIONALE: [why this approach]
+➡️ RISKS: [what could go wrong]

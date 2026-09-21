@@ -10,39 +10,107 @@ Usage:
 
 Exit-code contract for `gate` on a specific phase number (not "all"/"max"):
   0 = every phase-N assertion passed (allowing skips only via --allow-skips).
-  1 = reserved specifically for "a real adversarial finding from a
-      verification-triad kind (codex_qa, browser_deployed_check, or
-      gws_inbox_check) is among the failing assertions for this phase" — a
-      genuine cross-model/cross-layer QA BLOCKED verdict, never anything else.
+  1 = reserved specifically for "a real codex_qa adversarial finding is among
+      the failing assertions for this phase" — a genuine cross-model QA
+      BLOCKED verdict, never anything else.
   2 = every other failure shape: plain shell/file_exists/etc assertion
-      failures with no triad-kind assertion involved at all (the pre-existing
-      contract every non-triad mission relies on), a pure triad-kind
+      failures with no codex_qa assertion involved at all (the pre-existing
+      contract every non-codex_qa mission relies on), a pure codex_qa
       wrapper/usage error with zero real fail verdicts (auth/network/usage
       failure, not a finding), or unresolved skips.
   ("all"/"max" phase gating always exits 2 on any failure and 0 on full
-  success — the 1-vs-2 triad-kind distinction only applies to the specific-
+  success — the 1-vs-2 codex_qa distinction only applies to the specific-
   phase path above.)
 """
 import argparse
-import hashlib
+import difflib
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).parent / "checks"))
+
 RESULTS_DIR = Path(".agent/memory/scratch/contract-results")
 MAX_TIMEOUT_SECONDS = 86400  # 24h ceiling -- generous for CI, still finite
+EVIDENCE_DISPLAY_MAX = 2000  # console print cap; storage caps match, so print is a no-op
 
-# Assertion kinds whose FAIL verdict is a genuine cross-model/cross-layer
-# adversarial finding -- not an ordinary shell/file_exists assertion failure --
-# and so must route to the BLOCKED gate verdict rather than a plain FAIL. See
-# mission verification-triad-gate (F1): codex_qa was the original member; F1
-# added the two sibling verification-triad kinds alongside it.
-TRIAD_ASSERTION_KINDS = ("codex_qa", "browser_deployed_check", "gws_inbox_check")
+# Top-level keys seen across the live 331-contract corpus (schema, goal-style
+# prose fields, retirement metadata, etc). An unrecognized top-level key is
+# very often an agent guessing a plausible-but-wrong field name (Omarchy
+# failure 1) rather than a deliberate new field -- validate_cmd flags it and
+# suggests the closest known key instead of silently ignoring it.
+KNOWN_TOP_LEVEL_KEYS = {
+    "acceptance", "amendment_2026_08_16", "amendment_2026_08_16b", "anti_patterns",
+    "architect", "assertions", "autonomy", "classifications", "cleanup", "constraints",
+    # enforcement_edits is READ BY check_autonomy.sh's route1_permit() as the
+    # sanctioned, audited way to declare a floor-protected edit (F7/D26). It was
+    # absent from this set, so any contract that used it failed validation --
+    # and an invalid contract makes resolve_feature_contract.py return
+    # "noncontract", which blocks EVERY write, including the one that would fix
+    # the contract. The hatch was unusable and the deadlock was silent.
+    "contract_ref", "coverage", "created_at", "description", "enforcement_edits",
+    "exclusions", "exit_codes",
+    "expected_failures", "feature", "features", "files", "files_changed", "gate_command",
+    "gate_policy", "goal", "goldens", "id", "implementation_notes", "issue", "layer",
+    "mechanism", "mission", "mission_id", "notes", "pass_criteria", "phase1_scope",
+    "phase3_traps", "phase4_gate", "phase_count", "phases", "preconditions",
+    "premise_correction", "risks", "retired_reason", "schema", "scope", "side_effects",
+    "slug", "spec", "status", "success_criteria", "summary", "title", "traps", "updated_at",
+}
+
+
+def _line_tracking_load(text):
+    """Parse YAML with every mapping carrying its own source line number, so
+    validation errors can say WHERE the problem is instead of leaving a
+    60-assertion contract to be searched by hand.
+
+    Each dict gains two synthetic keys: '__line__' (1-based line of the
+    mapping's first key) and '__keylines__' (dict of key -> 1-based line for
+    that mapping's own direct keys, not recursive). Both are stripped by
+    callers that don't want them; normalize_contract's dict.get() calls
+    simply ignore them.
+    """
+    import yaml
+
+    class _LineLoader(yaml.SafeLoader):
+        pass
+
+    def _construct(loader, node, deep=False):
+        mapping = {}
+        keylines = {}
+        for key_node, value_node in node.value:
+            key = loader.construct_object(key_node, deep=deep)
+            value = loader.construct_object(value_node, deep=deep)
+            mapping[key] = value
+            try:
+                keylines[key] = key_node.start_mark.line + 1
+            except Exception:
+                pass
+        mapping["__line__"] = node.start_mark.line + 1
+        mapping["__keylines__"] = keylines
+        return mapping
+
+    _LineLoader.add_constructor(
+        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct
+    )
+    return yaml.load(text, Loader=_LineLoader)
+
+
+def _raw_checks(raw):
+    """Return the raw (pre-normalize) list of check dicts from either the
+    @architect `assertions: {phase, checks: [...]}` shape or a plain
+    `assertions: [...]` list, whichever the file actually uses."""
+    assertions_raw = (raw or {}).get("assertions")
+    if isinstance(assertions_raw, dict):
+        return assertions_raw.get("checks", []) or []
+    if isinstance(assertions_raw, list):
+        return assertions_raw
+    return []
 
 
 def load_contract(path: str) -> dict:
@@ -54,11 +122,24 @@ def load_contract(path: str) -> dict:
         # Try YAML first, fall back to JSON
         try:
             import yaml
-            with open(p) as f:
-                contract = yaml.safe_load(f)
+            try:
+                with open(p) as f:
+                    contract = yaml.safe_load(f)
+            except yaml.YAMLError as e:
+                from yaml_safe import diagnose_scalar_break
+                msg = f"ERROR: failed to parse {path}: {e}"
+                hint = diagnose_scalar_break(p.read_text(), e)
+                if hint:
+                    msg += f"\n  hint: {hint}"
+                print(msg, file=sys.stderr)
+                sys.exit(1)
         except ImportError:
             with open(p) as f:
                 contract = json.load(f)
+    except Exception as e:
+        print(f"ERROR: failed to parse {path}: {e}", file=sys.stderr)
+        sys.exit(1)
+    try:
         return normalize_contract(contract)
     except Exception as e:
         print(f"ERROR: failed to parse {path}: {e}", file=sys.stderr)
@@ -166,20 +247,6 @@ def normalize_contract(contract: dict) -> dict:
                     "script": check.get("script", "execution/codex_qa.sh"),
                     "timeout_seconds": check.get("timeout_seconds", 200),
                 }
-            elif check_type == "browser_deployed_check":
-                verify = {
-                    "kind": "browser_deployed_check",
-                    "target": check.get("target", ""),
-                    "script": check.get("script", "execution/browser_deployed_check.sh"),
-                    "timeout_seconds": check.get("timeout_seconds", 200),
-                }
-            elif check_type == "gws_inbox_check":
-                verify = {
-                    "kind": "gws_inbox_check",
-                    "target": check.get("target", ""),
-                    "script": check.get("script", "execution/gws_inbox_check.sh"),
-                    "timeout_seconds": check.get("timeout_seconds", 200),
-                }
             else:
                 verify = {"kind": "shell", "cmd": cmd}
                 if "timeout_seconds" in check:
@@ -246,6 +313,149 @@ def write_result(contract: dict, assertion_id: str, verdict: str, evidence: str)
     }, indent=2))
 
 
+def _clamped_mtime(path: str) -> float | None:
+    """Return path's mtime clamped to now() (guards against a future-dated
+    file from clock skew, a bad `touch`, or a restored artifact that kept a
+    future mtime), or None if the file can't be stat'd."""
+    try:
+        m = os.stat(path).st_mtime
+    except OSError:
+        return None
+    now = datetime.now(timezone.utc).timestamp()
+    return min(m, now)
+
+
+def _candidate_paths_from_shell_cmd(cmd: str) -> list[str]:
+    """Extract plausible file-path tokens from a shell command string: tokens
+    containing '/' or ending in a file extension, excluding flag-like tokens
+    (leading '-'). Only tokens that resolve to an existing file are kept by
+    the caller."""
+    try:
+        tokens = shlex.split(cmd)
+    except ValueError:
+        return []
+    candidates = []
+    for tok in tokens:
+        if tok.startswith("-"):
+            continue
+        has_slash = "/" in tok
+        has_ext = bool(re.search(r"\.[A-Za-z0-9]{1,8}$", tok))
+        if has_slash or has_ext:
+            candidates.append(tok)
+    return candidates
+
+
+def _assertion_dependency_mtime(assertion: dict, handoff: str | None = None) -> tuple[float | None, str | None]:
+    """Return (mtime, path) of the newest file referenced by this
+    assertion's verify block, scoped to only what the assertion actually
+    depends on -- never a repo-wide scan (GH #1327 QA round-1 false-positive
+    finding: this harness has 80+ concurrent agents writing to
+    .agent/memory/scratch/, backlog.md, active.json, etc., none of which a
+    given assertion's command references).
+
+    Returns (None, None) when no candidate dependency path can be
+    identified, in which case the caller trusts the cache exactly as before
+    -- no regression for that assertion.
+    """
+    verify = assertion.get("verify", {})
+    kind = verify.get("kind", "")
+
+    candidates: list[str] = []
+    dir_candidates: list[str] = []
+    if kind == "shell":
+        for p in _candidate_paths_from_shell_cmd(verify.get("cmd", "")):
+            if os.path.isfile(p):
+                candidates.append(p)
+            elif os.path.isdir(p):
+                dir_candidates.append(p)
+    elif kind in ("file_exists", "file_contains", "json_path"):
+        path = verify.get("path", "")
+        if path and os.path.isfile(path):
+            candidates = [path]
+    elif kind == "codex_qa":
+        target = verify.get("target", "")
+        if target and "://" not in target and os.path.isfile(target):
+            candidates = [target]
+    elif kind == "handoff_field":
+        if handoff and os.path.isfile(handoff):
+            candidates = [handoff]
+
+    best_mtime = None
+    best_path = None
+    for p in candidates:
+        m = _clamped_mtime(p)
+        if m is None:
+            continue
+        if best_mtime is None or m > best_mtime:
+            best_mtime = m
+            best_path = p
+
+    # Directory-only path tokens (e.g. `pytest tests/ -q`, `grep -rlq ... dir/`)
+    # are not dropped: walk the single referenced directory (scoped to that
+    # one candidate, never a repo-wide scan) and fold its newest file's
+    # clamped mtime into the comparison.
+    for d in dir_candidates:
+        for root, _dirs, files in os.walk(d):
+            for fname in files:
+                fpath = os.path.join(root, fname)
+                m = _clamped_mtime(fpath)
+                if m is None:
+                    continue
+                if best_mtime is None or m > best_mtime:
+                    best_mtime = m
+                    best_path = fpath
+    return best_mtime, best_path
+
+
+def _multiline_python3_c_violation(cmd: str) -> bool:
+    """True iff cmd invokes python3/python with -c and the -c argument's own
+    value contains an actual raw newline (chr(10)). Only the -c argument
+    itself is checked -- not the whole command string -- so a literal
+    backslash-n substring (e.g. inside a regex r'\\n' or string 'a\\nb') does
+    not false-positive; that is normal single-line python source, not
+    evidence of a multiline script."""
+    if "python3" not in cmd and "python" not in cmd:
+        return False
+    try:
+        tokens = shlex.split(cmd)
+    except ValueError:
+        return False
+    for i, tok in enumerate(tokens):
+        if tok == "-c" and i > 0 and i + 1 < len(tokens) and tokens[i - 1].split("/")[-1] in ("python3", "python"):
+            return "\n" in tokens[i + 1]
+    return False
+
+
+def _attributed_and_chain_script(cmd: str) -> str:
+    """Rewrite a top-level `A && B && C` command so that on failure, the
+    captured evidence names exactly which conjunct failed (Omarchy failure
+    6) -- without changing behaviour for a chain that fully succeeds, and
+    without touching a command that has no top-level `&&` at all.
+
+    Behaviourally equivalent to running `cmd` verbatim: the rewritten script
+    still stops at the first conjunct whose exit code is non-zero and exits
+    with that same code; if every conjunct succeeds it exits 0, exactly what
+    a real `&&` chain that reaches its end does.
+    """
+    try:
+        import assertion_lint
+        parts = [t for t, _ in assertion_lint._split_top_level(cmd, {"&&"})]
+    except Exception:
+        return cmd
+    if len(parts) <= 1:
+        return cmd
+    lines = []
+    for part in parts:
+        lines.append(part)
+        lines.append("_ARLINT_RC=$?")
+        lines.append(
+            f'if [ "$_ARLINT_RC" -ne 0 ]; then printf "FAILED CONJUNCT: %s\\n" '
+            f"{shlex.quote(part)} >&2; exit $_ARLINT_RC; fi"
+        )
+    lines.append("exit 0")
+    return "\n".join(lines) + "\n"
+
+
 def _timeout_seconds_error(ts) -> str | None:
     """Same rule validate_cmd already enforces at file-scan time; now also
     callable at the point check_cmd is about to consume the value."""
@@ -262,55 +472,169 @@ def validate_cmd(args):
     contract = load_contract(args.contract)
     errors = []
 
+    # Second, line-tracking parse of the same file purely for diagnostics --
+    # never used for the actual schema decisions above, only to attach a
+    # line number and to inspect fields normalize_contract already discarded
+    # or coerced (e.g. a non-numeric phase, a `verify: {cmd: ...}` typo).
+    raw_text = Path(args.contract).read_text()
+    try:
+        raw = _line_tracking_load(raw_text)
+    except Exception:
+        raw = {}
+    if not isinstance(raw, dict):
+        raw = {}
+    root_line = raw.get("__line__", 1)
+    root_keylines = raw.get("__keylines__", {})
+
+    def err(msg, line=None):
+        errors.append(f"{msg} (line {line if line is not None else root_line})")
+
+    # Unknown top-level keys -- Omarchy failure 1. An agent guessing a
+    # plausible-but-wrong field name (`contract_slug` for `slug`) previously
+    # got only "Missing required field", never told what it actually wrote.
+    for key in raw:
+        if key in ("__line__", "__keylines__") or key in KNOWN_TOP_LEVEL_KEYS:
+            continue
+        suggestion = difflib.get_close_matches(key, KNOWN_TOP_LEVEL_KEYS, n=1, cutoff=0.4)
+        line = root_keylines.get(key, root_line)
+        if suggestion:
+            err(f"Unknown top-level key {key!r} -- did you mean {suggestion[0]!r}?", line)
+        else:
+            err(f"Unknown top-level key {key!r}", line)
+
     # Required fields
     for field in ["schema", "created_at", "assertions"]:
         if field not in contract:
-            errors.append(f"Missing required field: {field}")
+            err(f"Missing required field: {field}")
     if "spec" not in contract and "slug" not in contract:
-        errors.append("Missing required field: spec or slug")
+        err("Missing required field: spec or slug")
 
     if contract.get("schema") != "athanor.contract/v1":
-        errors.append(f"Unknown schema: {contract.get('schema')}")
+        err(f"Unknown schema: {contract.get('schema')}")
 
     assertions = contract.get("assertions", [])
     if len(assertions) == 0:
-        errors.append("assertions list is empty -- a contract must declare at least one assertion")
+        err("assertions list is empty -- a contract must declare at least one assertion")
+
+    # Raw (pre-normalize) checks, for line numbers, duplicate-id locations
+    # and the un-coerced `phase:`/`verify:` field values normalize_contract
+    # already massaged away.
+    raw_checks = _raw_checks(raw)
+    lines_by_id = {}       # id -> list of every line it was declared on
+    raw_check_by_line = {}  # line -> raw check dict, for phase/verify lookups
+    for rc in raw_checks:
+        if not isinstance(rc, dict):
+            continue
+        rc_id = rc.get("id", "")
+        rc_line = rc.get("__line__", root_line)
+        lines_by_id.setdefault(rc_id, []).append(rc_line)
+        raw_check_by_line[rc_line] = rc
+
+    for rc_id, locs in lines_by_id.items():
+        if len(locs) > 1:
+            where = ", ".join(f"line {ln}" for ln in locs)
+            err(f"Duplicate assertion ID: {rc_id} ({where})", locs[0])
+
     ids = set()
-    binary_kinds = {"shell", "file_exists", "file_contains", "json_path", "handoff_field"}
+    binary_kinds = {"shell", "file_exists", "file_contains", "json_path", "handoff_field", "codex_qa"}
     binary_count = 0
-    for a in assertions:
+    assertion_lint = None
+    try:
+        import assertion_lint as _al
+        assertion_lint = _al
+    except Exception:
+        pass
+
+    for i, a in enumerate(assertions):
         aid = a.get("id", "")
+        # Best-effort: match this normalized assertion back to its raw check
+        # by id (falls back to positional index when ids repeat/are absent).
+        occ = lines_by_id.get(aid, [])
+        ln = occ[0] if occ else root_line
+        raw_check = raw_check_by_line.get(ln, {})
+
         if not re.match(r"^[A-Za-z0-9][A-Za-z0-9_-]*$", aid):
-            errors.append(f"Invalid assertion ID: {aid}")
-        if aid in ids:
-            errors.append(f"Duplicate assertion ID: {aid}")
+            err(f"Invalid assertion ID: {aid}", ln)
         ids.add(aid)
         if not a.get("description", ""):
-            errors.append(f"Assertion {aid} missing description")
+            err(f"Assertion {aid} missing description", ln)
         if "verify" not in a:
-            errors.append(f"Assertion {aid} missing verify block")
+            err(f"Assertion {aid} missing verify block", ln)
         elif a["verify"].get("kind") in binary_kinds:
             binary_count += 1
 
-        ts = a.get("verify", {}).get("timeout_seconds")
+        verify = a.get("verify", {})
+        ts = verify.get("timeout_seconds")
         if ts is not None:
             ts_error = _timeout_seconds_error(ts)
             if ts_error:
-                errors.append(f"Assertion {aid}: timeout_seconds {ts_error}")
+                err(f"Assertion {aid}: timeout_seconds {ts_error}", ln)
 
-        # Detect prohibited multiline python3 -c pattern
-        verify = a.get("verify", {})
+        # Omarchy failure 2, and the sharpest of the six: `verify: {cmd: ...}`
+        # under `checks:` normalizes to an EMPTY command. An empty command is
+        # a bash script that exits 0 -- the gate would record a pass for an
+        # assertion that runs nothing. F19 (notes-f19.md §5) widens this: a
+        # check with NO `command:` key at all normalizes the exact same way
+        # and was NOT caught here, so it was silently counted toward
+        # "machine-verifiable" under --strict -- a check that runs nothing
+        # certifying itself as verified is the presence-not-function disease
+        # one layer up from boot_panel's. And a non-string `command:` (a YAML
+        # list, say) crashed this function outright on cmd.strip() -- a
+        # malformed contract deserves a diagnostic naming the assertion, never
+        # an uncaught traceback that reads as a harness crash.
         cmd = verify.get("cmd", "")
-        if "python3" in cmd and "-c" in cmd and ("\n" in cmd or "\\n" in cmd):
-            errors.append(
-                f"Assertion {aid}: multiline python3 -c is prohibited — "
-                "use single-line grep/test instead"
+        if verify.get("kind") == "shell" and not isinstance(cmd, str):
+            err(f"Assertion {aid}: command must be a string, got "
+                f"{type(cmd).__name__} ({cmd!r}) -- a non-string command "
+                f"cannot be executed", ln)
+            cmd = ""
+        elif verify.get("kind") == "shell" and not cmd.strip():
+            if isinstance(raw_check.get("verify"), dict):
+                err(f"Assertion {aid}: resolved command is empty -- this check used "
+                    f"`verify:` (with a nested `cmd:`) instead of the top-level "
+                    f"`command:` key checks: expects; an empty command always exits 0 "
+                    f"and would always record a pass", ln)
+            else:
+                err(f"Assertion {aid}: no command -- this check has no `command:` "
+                    f"key at all and would run nothing; an empty command always "
+                    f"exits 0 and must not be counted as machine-verifiable", ln)
+
+        # Omarchy failure 3. `phase: "4"` on an individual check survives
+        # today only because normalize_contract happens to int() it; a
+        # non-numeric value like `phase: four` silently produces a phase no
+        # `--phase N` can ever select.
+        if "phase" in raw_check:
+            raw_phase = raw_check.get("phase")
+            try:
+                int(raw_phase)
+            except (TypeError, ValueError):
+                err(f"Assertion {aid}: phase must be an int, got "
+                    f"{type(raw_phase).__name__} {raw_phase!r}", ln)
+
+        # Detect prohibited multiline python3 -c pattern. This prohibition is
+        # correct -- nesting python source inside a YAML scalar inside a
+        # shell -c string is where quoting breaks -- but must name the
+        # SUPPORTED alternative (a heredoc), not advise a single-line
+        # grep/test the affected contracts cannot use.
+        if _multiline_python3_c_violation(cmd):
+            err(
+                f"Assertion {aid}: multiline 'python3 -c' is prohibited -- "
+                "use a heredoc instead, which validates and executes correctly: "
+                "command: |\\n  python3 - <<'PY'\\n  ...python source...\\n  PY "
+                "(see docs/harness/assertion-shape.md)",
+                ln,
             )
+
+        # Two lint rules, both about a verdict that does not actually depend
+        # on what the assertion claims to test (delivery-integrity M2).
+        if assertion_lint is not None and verify.get("kind") == "shell" and cmd.strip():
+            for finding in assertion_lint.lint_command(cmd):
+                err(f"Assertion {aid}: {finding['rule']} -- {finding['message']}", ln)
 
     strict = getattr(args, "strict", False)
     if strict and binary_count == 0 and len(assertions) > 0:
-        errors.append("No binary assertions (shell/file_exists/file_contains/json_path/handoff_field). "
-                      "Contracts must have at least one machine-verifiable assertion.")
+        err("No binary assertions (shell/file_exists/file_contains/json_path/handoff_field). "
+            "Contracts must have at least one machine-verifiable assertion.")
 
     if errors:
         for e in errors:
@@ -347,18 +671,53 @@ def check_cmd(args):
                 evidence = f"Invalid timeout_seconds: {ts_error}"
                 write_result(contract, assertion_id, "fail", evidence)
                 print(f"FAIL {assertion_id} ({kind}): FAIL")
-                print(f"   {evidence[:200]}")
+                print(f"   {evidence[:EVIDENCE_DISPLAY_MAX]}")
                 sys.exit(1)
         if timeout is None:
-            timeout = getattr(args, "timeout_seconds", 60)
+            timeout = getattr(args, "timeout_seconds", DEFAULT_TIMEOUT_SECONDS)
+
+        # Defence in depth on the F8 "empty command" defect: `verify:
+        # {cmd: ...}` under `checks:` normalizes to an empty command, and an
+        # empty bash script always exits 0. validate_cmd rejects this at
+        # authoring time, but check_cmd must never record a pass for it
+        # either, in case a contract reaches `check` without having been
+        # validated first.
+        if not cmd.strip():
+            evidence = ("empty command -- this assertion runs nothing; an empty "
+                        "bash script always exits 0, refusing to record a pass")
+            write_result(contract, assertion_id, "fail", evidence)
+            print(f"FAIL {assertion_id} ({kind}): FAIL")
+            print(f"   {evidence[:EVIDENCE_DISPLAY_MAX]}")
+            sys.exit(1)
+
+        # F5/F6: refuse to run (and never record a verdict for) an assertion
+        # whose command shape cannot report a real failure -- validate alone
+        # is not enough, because check/gate --run-checks never calls it.
+        try:
+            import assertion_lint
+            lint_findings = assertion_lint.lint_command(cmd)
+        except Exception:
+            lint_findings = []
+        if lint_findings:
+            evidence = ("assertion_lint rejected this command: " + "; ".join(
+                f"{f['rule']}: {f['message']}" for f in lint_findings))[:EVIDENCE_DISPLAY_MAX]
+            write_result(contract, assertion_id, "fail", evidence)
+            print(f"FAIL {assertion_id} ({kind}): FAIL")
+            print(f"   {evidence[:EVIDENCE_DISPLAY_MAX]}")
+            sys.exit(1)
+
         tf_name = None
         try:
             import tempfile
             # Always execute via a temp bash script (no shell=True, no branching on
             # command content). Writes cmd verbatim -- no mutation of any kind --
             # so literal "\n" sequences inside quoted arguments are never rewritten.
+            # The one exception is a top-level `&&` chain, which is rewritten to
+            # attribute a failure to its specific conjunct (see
+            # _attributed_and_chain_script) while remaining behaviourally
+            # identical to running cmd verbatim.
             with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as tf:
-                tf.write("#!/usr/bin/env bash\n" + cmd)
+                tf.write("#!/usr/bin/env bash\n" + _attributed_and_chain_script(cmd))
                 tf_name = tf.name
             os.chmod(tf_name, 0o755)
             # Prefer the project's own .venv for bare python3/pip PATH resolution, so
@@ -373,7 +732,7 @@ def check_cmd(args):
                 run_env["PATH"] = str(venv_python.parent) + os.pathsep + run_env.get("PATH", "")
             result = subprocess.run(tf_name, shell=False, env=run_env,
                                     capture_output=True, text=True, timeout=timeout)
-            evidence = (result.stdout + result.stderr).strip()[:500]
+            evidence = (result.stdout + result.stderr).strip()[:EVIDENCE_DISPLAY_MAX]
             # Reserved skip exit code (autotools convention): checked BEFORE
             # comparison against expect_exit -- exit 77 always means skip,
             # regardless of what expect_exit was configured to.
@@ -382,8 +741,14 @@ def check_cmd(args):
             else:
                 verdict = "pass" if result.returncode == expected_exit else "fail"
         except subprocess.TimeoutExpired:
-            evidence = f"Command timed out after {timeout}s"
-            verdict = "fail"
+            # Distinct RED, not FAIL (platform-scoped-delivery D8): a check
+            # that never finished proved nothing about the code under test --
+            # conflating it with FAIL taught the false-RED-under-load pattern
+            # measured 2026-09-01. TIMEOUT is never convertible to SKIP (the
+            # exit-77 branch above is untouched) and never suppressible by
+            # --allow-skips (gate_cmd counts it in `failing`, same as fail).
+            evidence = f"did not finish within {timeout}s (Command timed out after {timeout}s)"
+            verdict = "timeout"
         finally:
             if tf_name:
                 try: os.unlink(tf_name)
@@ -402,70 +767,16 @@ def check_cmd(args):
                 evidence = "codex_qa PASS"
             elif rc == 1:
                 verdict = "fail"
-                evidence = "CODEX_QA_FAIL: " + result.stdout.strip()[:2000]
+                evidence = "CODEX_QA_FAIL: " + result.stdout.strip()[:EVIDENCE_DISPLAY_MAX]
             elif rc == 2:
                 verdict = "error"
-                evidence = "CODEX_QA_WRAPPER_ERROR: " + (result.stdout + result.stderr).strip()[:500]
+                evidence = "CODEX_QA_WRAPPER_ERROR: " + (result.stdout + result.stderr).strip()[:EVIDENCE_DISPLAY_MAX]
             else:
                 verdict = "error"
                 evidence = f"codex_qa wrapper exited {rc} (neither 0, 1, nor 2) -- treated as inconclusive, not a QA fail"
         except subprocess.TimeoutExpired:
             verdict = "error"
             evidence = (f"codex_qa wrapper exceeded {timeout}s supervisory timeout "
-                        "(check_cmd level, independent of the wrapper's own internal timeout)")
-
-    elif kind == "browser_deployed_check":
-        target = verify.get("target", "")
-        script = verify.get("script", "execution/browser_deployed_check.sh")
-        timeout = verify.get("timeout_seconds", 200)
-        try:
-            result = subprocess.run([script, target], capture_output=True,
-                                     text=True, timeout=timeout)
-            rc = result.returncode
-            if rc == 0:
-                verdict = "pass"
-                evidence = "browser_deployed_check PASS"
-            elif rc == 1:
-                verdict = "fail"
-                evidence = "BROWSER_DEPLOYED_CHECK_FAIL: " + result.stdout.strip()[:2000]
-            elif rc == 2:
-                verdict = "error"
-                evidence = ("BROWSER_DEPLOYED_CHECK_WRAPPER_ERROR: "
-                             + (result.stdout + result.stderr).strip()[:500])
-            else:
-                verdict = "error"
-                evidence = (f"browser_deployed_check wrapper exited {rc} (neither 0, 1, nor 2) "
-                            "-- treated as inconclusive, not a QA fail")
-        except subprocess.TimeoutExpired:
-            verdict = "error"
-            evidence = (f"browser_deployed_check wrapper exceeded {timeout}s supervisory timeout "
-                        "(check_cmd level, independent of the wrapper's own internal timeout)")
-
-    elif kind == "gws_inbox_check":
-        target = verify.get("target", "")
-        script = verify.get("script", "execution/gws_inbox_check.sh")
-        timeout = verify.get("timeout_seconds", 200)
-        try:
-            result = subprocess.run([script, target], capture_output=True,
-                                     text=True, timeout=timeout)
-            rc = result.returncode
-            if rc == 0:
-                verdict = "pass"
-                evidence = "gws_inbox_check PASS"
-            elif rc == 1:
-                verdict = "fail"
-                evidence = "GWS_INBOX_CHECK_FAIL: " + result.stdout.strip()[:2000]
-            elif rc == 2:
-                verdict = "error"
-                evidence = ("GWS_INBOX_CHECK_WRAPPER_ERROR: "
-                             + (result.stdout + result.stderr).strip()[:500])
-            else:
-                verdict = "error"
-                evidence = (f"gws_inbox_check wrapper exited {rc} (neither 0, 1, nor 2) "
-                            "-- treated as inconclusive, not a QA fail")
-        except subprocess.TimeoutExpired:
-            verdict = "error"
-            evidence = (f"gws_inbox_check wrapper exceeded {timeout}s supervisory timeout "
                         "(check_cmd level, independent of the wrapper's own internal timeout)")
 
     elif kind == "file_exists":
@@ -558,11 +869,14 @@ def check_cmd(args):
         evidence = f"Unknown verify kind: {kind}"
 
     write_result(contract, assertion_id, verdict, evidence)
-    icon = "PASS" if verdict == "pass" else ("SKIP" if verdict == "skip" else
-           ("ERROR" if verdict == "error" else "FAIL"))
+    icon = ("PASS" if verdict == "pass" else
+            "SKIP" if verdict == "skip" else
+            "ERROR" if verdict == "error" else
+            "TIMEOUT" if verdict == "timeout" else
+            "FAIL")
     print(f"{icon} {assertion_id} ({kind}): {verdict.upper()}")
     if evidence:
-        print(f"   {evidence[:200]}")
+        print(f"   {evidence[:EVIDENCE_DISPLAY_MAX]}")
     sys.exit(0 if verdict in ("pass", "skip") else 1)
 
 
@@ -589,23 +903,131 @@ def _phase_matches(phase_id, target_str: str) -> bool:
         return False
 
 
+# --- structured gate report (athanor.gate-report/v1) -------------------------
+# Opt-in via `gate --report-json PATH`. Nothing on stdout/stderr changes; when
+# the flag is absent nothing here is written and every existing caller behaves
+# byte-for-byte identically.
+#
+# Why this channel exists: `check_cmd` echoes up to 200 chars of every
+# assertion's OWN stdout back as "evidence", both before the authoritative
+# "Phase N summary:" line and (via _print_gate_errors) after it. Any tool that
+# classifies a gate by searching that text is reading arbitrary, user-authored
+# check output. This report is written by contract.py alone -- no check output
+# can reach it -- which makes it collision-proof rather than merely harder to
+# collide with. See the repo-wide-gate-sweep spec's goldens/DECISIONS.md.
+GATE_REPORT_SCHEMA = "athanor.gate-report/v1"
+
+# Worst-first, so a multi-phase run's `overall` is the most severe phase status.
+_GATE_STATUS_SEVERITY = ("INVALID", "ERROR", "BLOCKED", "FAIL",
+                         "INCONCLUSIVE", "PASS")
+
+# Populated by _record_phase_result(); drained by gate_cmd's report write.
+_GATE_PHASE_RECORDS = []
+
+
+def _record_phase_result(phase_n, *, status=None, reason=None, pass_count=0,
+                         skip_count=0, fail_count=0, error_count=0,
+                         failing=(), skipped=(), errors=(), allow_skips=False,
+                         assertions_by_id=None):
+    """Record one phase's verdict for the optional --report-json output.
+
+    `status`, when not given explicitly, is derived from exactly the same
+    locals _gate_single_phase's own print/return branches use, in the same
+    order -- never re-derived from anything printed.
+    """
+    if status is None:
+        if failing:
+            codex_qa_failing = [
+                aid for aid in failing
+                if (assertions_by_id or {}).get(aid, {}).get("verify", {}).get("kind") == "codex_qa"
+            ]
+            status = "BLOCKED" if codex_qa_failing else "FAIL"
+        elif errors:
+            status = "ERROR"
+        elif skipped and not allow_skips:
+            status = "FAIL"
+            reason = reason or "unresolved_skips"
+        elif skipped and pass_count == 0:
+            status = "INCONCLUSIVE"
+            reason = reason or "nothing_verified"
+        else:
+            status = "PASS"
+    _GATE_PHASE_RECORDS.append({
+        "phase": str(phase_n),
+        "status": status,
+        "pass": pass_count,
+        "skip": skip_count,
+        "fail": fail_count,
+        "error": error_count,
+        "failing": list(failing),
+        "errors": list(errors),
+        "skipped": list(skipped),
+        "allow_skips": bool(allow_skips),
+        "reason": reason,
+    })
+
+
+def _write_gate_report(args):
+    """Write the structured verdict when --report-json or --report-fd was given.
+
+    Written with os.replace so a concurrent reader (e.g. gate_sweep.py under
+    --jobs N) never observes a partial file. If no phase was ever recorded --
+    the contract did not parse, `validate` refused it, or a check crashed the
+    gate process outright -- NOTHING is written at all, so a consumer's
+    fail-closed rule ("no report means the gate never ran") holds.
+
+    `--report-fd N` (F5 round 5, additive) writes the same bytes to an already
+    open descriptor the caller owns instead of to a path. A path is a name in a
+    namespace, and when the caller confines this process together with the
+    checks it runs, every grant that lets this function write the report also
+    lets a check overwrite it -- so a caller that must not be lied to hands over
+    a DESCRIPTOR, which the checks can neither name nor inherit. No tmp+replace
+    on that branch: nothing else holds the descriptor, and the caller reads it
+    only after this process has exited. `--report-json` is untouched.
+    """
+    fd = getattr(args, "report_fd", None)
+    dest = getattr(args, "report_json", None)
+    if not _GATE_PHASE_RECORDS or (fd is None and not dest):
+        return
+    overall = "PASS"
+    for status in _GATE_STATUS_SEVERITY:
+        if any(rec["status"] == status for rec in _GATE_PHASE_RECORDS):
+            overall = status
+            break
+    payload = {
+        "schema": GATE_REPORT_SCHEMA,
+        "contract": str(args.contract),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "phases": list(_GATE_PHASE_RECORDS),
+        "overall": overall,
+    }
+    blob = json.dumps(payload, indent=2) + "\n"
+    if fd is not None:
+        data = blob.encode("utf-8")
+        while data:
+            data = data[os.write(fd, data):]
+        return
+    dest = Path(dest)
+    if dest.parent and str(dest.parent):
+        dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_name(dest.name + f".tmp.{os.getpid()}")
+    tmp.write_text(blob)
+    os.replace(tmp, dest)
+
+
 def _gate_single_phase(contract: dict, args) -> bool:
     """Helper function to gate a single phase.
 
     On failure, also sets args.gate_codex_qa_failure (bool): True iff at
-    least one assertion of a TRIAD_ASSERTION_KINDS kind (codex_qa,
-    browser_deployed_check, gws_inbox_check) is among the failing assertions
-    for this phase (a real cross-model/cross-layer adversarial finding).
-    False for every other failure shape, including plain shell/file_exists/
-    etc assertion failures (no triad kind involved at all) and pure
-    triad-kind wrapper/usage errors with zero real fail verdicts. The
-    attribute name predates the two sibling kinds (it covered codex_qa
-    alone) and was kept as-is when its meaning was generalised, rather than
-    renamed, to avoid touching every existing reader of this attribute.
-    Callers that care about distinguishing a genuine triad BLOCKED from
-    every other kind of gate failure (contract.py gate's specific-phase exit
-    code, currently 1 vs 2) read this attribute after the call; callers that
-    don't care simply ignore it.
+    least one codex_qa-kind assertion is among the failing assertions for
+    this phase (a real cross-model adversarial finding). False for every
+    other failure shape, including plain shell/file_exists/etc assertion
+    failures (no codex_qa involved at all) and pure codex_qa wrapper/usage
+    errors with zero real fail verdicts. Callers that care about
+    distinguishing a genuine codex_qa BLOCKED from every other kind of gate
+    failure (contract.py gate's specific-phase exit code, currently 1 vs 2)
+    read this attribute after the call; callers that don't care simply
+    ignore it.
     """
     args.gate_codex_qa_failure = False
     phase_n = args.phase
@@ -616,11 +1038,13 @@ def _gate_single_phase(contract: dict, args) -> bool:
     phase = next((p for p in phases if _phase_matches(p["id"], phase_n)), None)
     if not phase:
         print(f"ERROR: phase {phase_n} not found in contract", file=sys.stderr)
+        _record_phase_result(phase_n, status="INVALID", reason="phase_not_found")
         return False
 
     phase_assertions = phase.get("assertions", [])
     if not phase_assertions:
         print(f"ERROR: phase {phase_n} has zero assertions -- nothing to gate", file=sys.stderr)
+        _record_phase_result(phase_n, status="INVALID", reason="zero_assertions")
         return False
     allow_skips = getattr(args, "allow_skips", False)
     assertions_by_id = {a["id"]: a for a in contract.get("assertions", [])}
@@ -632,7 +1056,7 @@ def _gate_single_phase(contract: dict, args) -> bool:
                 contract=args.contract,
                 assertion=aid,
                 handoff=getattr(args, "handoff", None),
-                timeout_seconds=getattr(args, "timeout_seconds", 60),
+                timeout_seconds=getattr(args, "timeout_seconds", DEFAULT_TIMEOUT_SECONDS),
             )
             try:
                 check_cmd(check_args)
@@ -648,6 +1072,12 @@ def _gate_single_phase(contract: dict, args) -> bool:
     error_count = 0
     evidence_by_id = {}
 
+    # Cache-staleness check (GH #1327): --run-checks already re-runs every
+    # assertion live above, so this only applies to the default cache-read
+    # path. Scoped per-assertion to the files that assertion's own verify
+    # block actually references -- never a repo-wide scan, which false-
+    # positived on unrelated concurrent harness activity (QA round-1
+    # finding: backlog.md, active.json, scratch notes from other agents).
     for aid in phase_assertions:
         rf = result_file(contract, aid)
         if not rf.exists():
@@ -656,12 +1086,42 @@ def _gate_single_phase(contract: dict, args) -> bool:
             fail_count += 1
             continue
         result = json.loads(rf.read_text())
+
+        if not run_checks:
+            dep_mtime, dep_path = _assertion_dependency_mtime(
+                assertions_by_id.get(aid, {}), handoff=getattr(args, "handoff", None)
+            )
+            try:
+                cached_ts = datetime.fromisoformat(result.get("ts", "")).timestamp()
+            except (ValueError, TypeError):
+                cached_ts = None
+            if dep_mtime is not None and cached_ts is not None and dep_mtime > cached_ts:
+                print(f"\n!!! STALE CACHE -- repo changed since {aid} was last verified "
+                      f"({dep_path} modified after the cached result) -- "
+                      f"re-verifying live now (re-running check, not trusting the stale result) !!!")
+                check_args = argparse.Namespace(
+                    contract=args.contract,
+                    assertion=aid,
+                    handoff=getattr(args, "handoff", None),
+                    timeout_seconds=getattr(args, "timeout_seconds", DEFAULT_TIMEOUT_SECONDS),
+                )
+                try:
+                    check_cmd(check_args)
+                except SystemExit:
+                    pass
+                result = json.loads(rf.read_text())
+
         verdict = result.get("verdict", "fail")
         evidence_by_id[aid] = result.get("evidence", "")
-        icon = "PASS" if verdict == "pass" else ("SKIP" if verdict == "skip" else
-               ("ERROR" if verdict == "error" else "FAIL"))
+        icon = ("PASS" if verdict == "pass" else
+                "SKIP" if verdict == "skip" else
+                "ERROR" if verdict == "error" else
+                "TIMEOUT" if verdict == "timeout" else
+                "FAIL")
         print(f"  {icon} {aid}: {verdict}")
-        if verdict == "fail":
+        if verdict in ("fail", "timeout"):
+            # TIMEOUT is a distinct red, never SKIP and never --allow-skips-
+            # suppressible -- it counts as a fail here on purpose.
             failing.append(aid)
             fail_count += 1
         elif verdict == "skip":
@@ -683,49 +1143,52 @@ def _gate_single_phase(contract: dict, args) -> bool:
     print(f"\nPhase {phase_n} summary: {pass_count} pass, {skip_count} skip, "
           f"{fail_count} fail, {error_count} error")
 
+    _record_phase_result(
+        phase_n, pass_count=pass_count, skip_count=skip_count,
+        fail_count=fail_count, error_count=error_count,
+        failing=failing, skipped=skipped, errors=errors,
+        allow_skips=allow_skips, assertions_by_id=assertions_by_id,
+    )
+
+    def _print_gate_errors():
+        for aid in errors:
+            print(f"\nGATE ERROR Phase {phase_n}: codex_qa wrapper did not produce a verdict for {aid}")
+            print(f"   (QA inconclusive -- not a QA failure). {evidence_by_id.get(aid, '')}")
+            print("   Fix: ensure the `codex` binary is on PATH and target/prompt is valid.")
+            print("   See docs/codex_qa.md.")
+
     if failing:
-        # Triad-kind assertions (codex_qa, browser_deployed_check, gws_inbox_check) all
-        # route a real fail verdict to the same BLOCKED treatment -- a genuine adversarial
-        # finding from any verification-triad layer must never be confused with an ordinary
-        # shell/file_exists assertion failure. The attribute name is unchanged from when it
-        # covered codex_qa alone (mission verification-triad-gate F1 generalised its meaning
-        # rather than its name, to avoid touching every existing reader of this attribute).
         codex_qa_failing = [
             aid for aid in failing
-            if assertions_by_id.get(aid, {}).get("verify", {}).get("kind") in TRIAD_ASSERTION_KINDS
+            if assertions_by_id.get(aid, {}).get("verify", {}).get("kind") == "codex_qa"
         ]
         other_failing = [aid for aid in failing if aid not in codex_qa_failing]
         if codex_qa_failing:
             args.gate_codex_qa_failure = True
-            print(f"\nBLOCKED Phase {phase_n} gate BLOCKED -- verification-triad layer reported findings.")
+            print(f"\nBLOCKED Phase {phase_n} gate BLOCKED -- cross-model QA (GPT-5.5) reported findings.")
             for aid in codex_qa_failing:
-                kind = assertions_by_id.get(aid, {}).get("verify", {}).get("kind", "")
-                print(f"Triad findings ({aid}, kind={kind}):")
+                print(f"GPT-5.5 findings ({aid}):")
                 print(f"   {evidence_by_id.get(aid, '')}")
         if other_failing:
             print(f"\nFAIL Phase {phase_n} gate FAILED. Failing: {', '.join(other_failing)}")
             print("   Resolve before proceeding to the next phase.")
         if errors:
-            for aid in errors:
-                kind = assertions_by_id.get(aid, {}).get("verify", {}).get("kind", "unknown")
-                print(f"\nGATE ERROR Phase {phase_n}: {kind} wrapper did not produce a verdict for {aid}")
-                print(f"   (QA inconclusive -- not a QA failure). {evidence_by_id.get(aid, '')}")
-                print("   Fix: ensure the underlying tool (codex/browser tooling/gws) is on "
-                      "PATH and the target/manifest is valid.")
-                print("   See docs/codex_qa.md and goldens/README.md for the sibling kinds.")
+            _print_gate_errors()
         return False
     elif errors:
-        for aid in errors:
-            kind = assertions_by_id.get(aid, {}).get("verify", {}).get("kind", "unknown")
-            print(f"\nGATE ERROR Phase {phase_n}: {kind} wrapper did not produce a verdict for {aid}")
-            print(f"   (QA inconclusive -- not a QA failure). {evidence_by_id.get(aid, '')}")
-            print("   Fix: ensure the underlying tool (codex/browser tooling/gws) is on "
-                  "PATH and the target/manifest is valid.")
-            print("   See docs/codex_qa.md and goldens/README.md for the sibling kinds.")
+        _print_gate_errors()
         return False
     elif skipped and not allow_skips:
         print(f"\nFAIL Phase {phase_n} gate FAILED. Skipped (use --allow-skips to permit): {', '.join(skipped)}")
         print("   Resolve before proceeding to the next phase.")
+        return False
+    elif skipped and pass_count == 0:
+        # --allow-skips means "tolerate some skips alongside real passes", never
+        # "tolerate a phase where nothing was verified at all". Zero passes plus
+        # skips is INCONCLUSIVE -- a distinct non-zero verdict, never PASS.
+        print(f"\nINCONCLUSIVE Phase {phase_n} gate INCONCLUSIVE -- every assertion skipped "
+              f"({skip_count} skip, 0 pass); nothing was verified. Skipped: {', '.join(skipped)}")
+        print("   --allow-skips does not permit a phase in which nothing passed.")
         return False
     elif skipped:
         print(f"\nPASS Phase {phase_n} gate PASSED (skips allowed). Proceed to next phase.")
@@ -735,412 +1198,116 @@ def _gate_single_phase(contract: dict, args) -> bool:
         return True
 
 
-# Dataset-residue-guard wiring (mission fix-live-sentinel-residue-cms-loop-f3, 2026-08-22).
-#
-# scripts/scan-dataset-residue.ts already existed and already caught two live incidents of
-# contract checks leaving sentinel/test residue in the live Sanity dataset — but only as a
-# nightly GitHub Actions cron nobody was watching, the same "log nobody reads" gap project
-# memory project_contract_checks_mutate_live_content already warned about, just one layer
-# down. Wiring the scanner directly into `gate` puts the finding in the one place every
-# mission's dev/QA/architect already looks: the gate command's own output.
-#
-# RESIDUE_EXIT_CODE is deliberately distinct from every other gate exit code (0/1/2) so a
-# caller can never mistake a poisoned dataset for an ordinary assertion failure or a codex_qa
-# finding. It is reserved EXCLUSIVELY for "the scanner ran successfully and found real
-# residue" — never for "the scanner itself could not run" (see RESIDUE_SCAN_ERROR_EXIT_CODE).
-RESIDUE_EXIT_CODE = 4
-
-# RESIDUE_SCAN_ERROR_EXIT_CODE identifies the scanner-infrastructure-failure case (subprocess
-# crash, timeout, tsx/esm import failure, transient Sanity network blip) — distinct from
-# RESIDUE_EXIT_CODE so a caller branching on exit code can never conflate "confirmed live
-# residue, stop everything" with "the residue-check tooling itself had a hiccup". By design
-# this code is NOT what the gate exits with today: a scanner-infrastructure failure fails
-# OPEN (loud warning, gate proceeds on its normal exit code) rather than fail-closed, because
-# blocking every concurrent agent's unrelated gate run on a transient tooling error is itself
-# a real availability cost, whereas a confirmed real residue finding must still hard-block
-# unconditionally. The constant exists so the failure mode has a stable, greppable identity
-# in logs/output even though it is not currently used as a process exit code.
-RESIDUE_SCAN_ERROR_EXIT_CODE = 5
-
-# scan-dataset-residue.ts exits nonzero for both a confirmed residue finding AND an uncaught
-# script-level crash (see scripts/scan-dataset-residue.ts's report() vs its top-level
-# main().catch()) — the exit code alone cannot distinguish them. This marker string only
-# appears on stdout when report() actually found and printed real hits, so its presence is
-# the ground truth for "dirty" vs "error".
-RESIDUE_CONFIRMED_MARKER = "FAIL: found"
-
-# CONTRACT_GATE_RESIDUE_FIXTURE is a TEST-ONLY override: when set, both the pre-flight and
-# post-flight scans run scan-dataset-residue.ts's --fixture mode against that local JSON file
-# instead of fetching the live Sanity dataset. Real gate runs never set this. It exists so
-# this behaviour can be proven (execution/checks/verify_gate_residue_preflight.py) against the
-# existing contracts/golden/dataset-residue-guard/ fixtures without touching live credentials.
-RESIDUE_FIXTURE_ENV_VAR = "CONTRACT_GATE_RESIDUE_FIXTURE"
-
-
-def _preflight_residue_guard() -> str:
-    """Runs scan-dataset-residue.ts BEFORE any assertion phase executes.
-
-    A poisoned dataset makes every mutating check's captured baseline untrustworthy — a check
-    that captures a leftover sentinel as its "baseline" will faithfully restore that garbage and
-    report a clean cleanup. Returns "clean", "dirty", or "error" (scanner itself could not run —
-    see RESIDUE_SCAN_ERROR_EXIT_CODE).
-    """
-    return _run_dataset_residue_scan("pre-flight")
-
-
-def _postflight_residue_guard() -> str:
-    """Runs scan-dataset-residue.ts AFTER the gate's own assertion phase(s) finish.
-
-    Catches residue this gate run itself just introduced (e.g. a mutating check whose cleanup
-    silently failed), not only residue that pre-existed the run. Returns "clean", "dirty", or
-    "error" (scanner itself could not run — see RESIDUE_SCAN_ERROR_EXIT_CODE).
-    """
-    return _run_dataset_residue_scan("post-flight")
-
-
-def _run_dataset_residue_scan(stage: str) -> str:
-    """Returns "clean" (scanner ran, found nothing), "dirty" (scanner ran, found real
-    residue — must hard-block), or "error" (the scanner itself could not run — subprocess
-    crash, timeout, tsx/esm import failure, transient network blip). "error" is deliberately
-    NOT treated as "dirty" by callers: conflating the two would mean a transient tooling
-    hiccup hard-blocks the gate with the same signal as confirmed live production corruption.
-    """
-    fixture = os.environ.get(RESIDUE_FIXTURE_ENV_VAR)
-    cmd = ["node", "--import", "tsx/esm", "scripts/scan-dataset-residue.ts"]
-    if fixture:
-        cmd += ["--fixture", fixture]
-    print(f"\n--- Dataset residue guard ({stage}): scan-dataset-residue.ts ---")
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-    except Exception as e:
-        print("=" * 78, file=sys.stderr)
-        print(f"RESIDUE GUARD ERROR ({stage}) [code {RESIDUE_SCAN_ERROR_EXIT_CODE}]: "
-              f"scan-dataset-residue.ts could not run — {e}", file=sys.stderr)
-        print("This is a scanner-infrastructure failure, NOT a confirmed residue finding — "
-              "the gate proceeds (fail-open) rather than blocking unrelated work on a "
-              "transient tooling error. If this persists, investigate the scanner directly.",
-              file=sys.stderr)
-        print("=" * 78, file=sys.stderr)
-        return "error"
-    if result.stdout:
-        print(result.stdout.rstrip())
-    if result.stderr:
-        print(result.stderr.rstrip(), file=sys.stderr)
-    if result.returncode != 0:
-        # scan-dataset-residue.ts exits 1 for BOTH a confirmed residue finding (report()
-        # returning 1 after printing "FAIL: found N residue hit(s)...") AND an uncaught
-        # script-level crash (its top-level main().catch() printing "Residue scan failed:"
-        # and exiting 1 too) — same exit code, two entirely different situations. Only the
-        # former is a real "dirty" result; anything else is a scanner-infrastructure failure.
-        if RESIDUE_CONFIRMED_MARKER in result.stdout:
-            print("=" * 78)
-            print(f"RESIDUE ALERT ({stage}) — the live dataset holds sentinel/test residue. "
-                  "The gate refuses to proceed against a poisoned dataset.")
-            print("Restore by hand from scripts/seed-page-singletons.ts (or the relevant seed "
-                  "script), re-run scan-dataset-residue.ts to confirm clean, then re-run the "
-                  "gate.")
-            print("=" * 78)
-            return "dirty"
-        print("=" * 78, file=sys.stderr)
-        print(f"RESIDUE GUARD ERROR ({stage}) [code {RESIDUE_SCAN_ERROR_EXIT_CODE}]: "
-              f"scan-dataset-residue.ts exited {result.returncode} without confirming a real "
-              "residue finding — treating as a scanner-infrastructure failure, not confirmed "
-              "residue.", file=sys.stderr)
-        print("This is a scanner-infrastructure failure, NOT a confirmed residue finding — "
-              "the gate proceeds (fail-open) rather than blocking unrelated work on a "
-              "transient tooling error. If this persists, investigate the scanner directly.",
-              file=sys.stderr)
-        print("=" * 78, file=sys.stderr)
-        return "error"
-    return "clean"
-
-
-# --- Verification-triad coverage preflight (mission verification-triad-gate, M2/F2) ---
-#
-# Wires execution/verify_triad_coverage.py into the real gate path so no UI/workflow contract
-# can reach a green gate without declaring all three verification-triad kinds (codex_qa,
-# browser_deployed_check, gws_inbox_check). See
-# .agent/memory/project/specs/verification-triad-gate/contract-f2.yaml for the five binding
-# architect decisions this implements.
-#
-# Deliberately the OPPOSITE fail posture of the dataset-residue guard above:
-# verify_triad_coverage.py is pure local file read + regex, no subprocess of its own, no
-# network -- a broken/missing linter is a real code regression, not transient noise, so this
-# preflight FAILS CLOSED on any linter-infrastructure error instead of the residue guard's
-# fail-open. TRIAD_ENFORCEMENT_EXIT_CODE (a confirmed, non-grandfathered triad-coverage FAIL)
-# and TRIAD_PREFLIGHT_ERROR_EXIT_CODE (the linter itself could not produce a real
-# classification) are deliberately distinct from each other and from RESIDUE_EXIT_CODE (4) /
-# RESIDUE_SCAN_ERROR_EXIT_CODE (5) so no caller can ever conflate the three.
-TRIAD_ENFORCEMENT_EXIT_CODE = 6
-TRIAD_PREFLIGHT_ERROR_EXIT_CODE = 7
-
-# The only classification exit codes verify_triad_coverage.py documents (see its own
-# docstring): 0 = PASS or EXEMPT, 1 = FAIL (confirmed UI/workflow contract missing triad
-# kinds). Anything else -- a usage/parse error (2), a crash, a missing script -- is not a real
-# classification result and must fail closed, never be treated as either compliant or
-# noncompliant.
-TRIAD_LINTER_VALID_EXIT_CODES = (0, 1)
-
-# Test-only override letting a check point the preflight at a stub linter (e.g.
-# goldens/fixtures/f2_broken_linter_stub.sh) instead of the real script, mirroring
-# RESIDUE_FIXTURE_ENV_VAR's existing pattern. Never set in real runs.
-TRIAD_LINTER_SCRIPT_ENV_VAR = "TRIAD_LINTER_SCRIPT_OVERRIDE"
-DEFAULT_TRIAD_LINTER = REPO_ROOT / "execution" / "verify_triad_coverage.py"
-
-# TRIAD_BASELINE_FILE is the same env var name already read by
-# execution/checks/verify_f2_baseline_completeness.py -- reused here, not reinvented, so a
-# check script and a real gate run agree on which baseline file is authoritative.
-TRIAD_BASELINE_FILE_ENV_VAR = "TRIAD_BASELINE_FILE"
-DEFAULT_TRIAD_BASELINE = REPO_ROOT / "execution" / "triad-baseline-exempt.txt"
-
-# TRIAD_BASELINE_HASH_FILE is new for F2: the companion content-hash pin that makes the
-# baseline re-arm on edit (decision 3) rather than grandfathering a path forever.
-TRIAD_BASELINE_HASH_FILE_ENV_VAR = "TRIAD_BASELINE_HASH_FILE"
-DEFAULT_TRIAD_BASELINE_HASH = REPO_ROOT / "execution" / "triad-baseline-exempt.sha256"
-
-# Scope note (decision 5): template/execution/contract.py is this project's seed copy of the
-# upstream Athanor harness, not a second production gate path for SAOC's own contracts -- this
-# fix intentionally does NOT propagate there as part of F2. It is logged as an upstream-PR
-# follow-up in .agent/memory/project/backlog.md (per project convention
-# feedback_harness_issues_pr_upstream), not silently dropped.
-
-
-def _load_triad_baseline_paths(baseline_path: Path) -> set:
-    """Repo-relative contract paths grandfathered against triad enforcement -- plain path per
-    line, `#`-comments and blank lines ignored. Missing file means an empty (no) baseline, not
-    an error: a fresh checkout with no baseline yet simply enforces everything."""
-    if not baseline_path.exists():
-        return set()
-    return {
-        line.strip()
-        for line in baseline_path.read_text().splitlines()
-        if line.strip() and not line.strip().startswith("#")
-    }
-
-
-def _load_triad_baseline_hashes(hash_path: Path) -> dict:
-    """`<sha256>  <repo-relative-path>` per line -> {path: hash}. Missing file means no pins,
-    so no baselined path can be honoured (a baseline entry with no matching pin can never be
-    treated as grandfathered)."""
-    entries: dict = {}
-    if not hash_path.exists():
-        return entries
-    for line in hash_path.read_text().splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        parts = line.split(None, 1)
-        if len(parts) != 2:
-            continue
-        digest, rel_path = parts
-        entries[rel_path.strip()] = digest.strip()
-    return entries
-
-
-def _exit_on_triad_baseline_error(failing_path: Path, exc: Exception) -> None:
-    """Prints a TRIAD PREFLIGHT ERROR block matching the linter-subprocess error format
-    (see _run_triad_coverage_preflight) and exits fail-closed. Called when a baseline or
-    hash-pin file can't be read as a plain UTF-8 text file (e.g. it's a directory, or its
-    bytes aren't valid UTF-8) -- an infrastructure error, never a silent pass and never
-    conflated with a real triad-noncompliance or dataset-residue exit code."""
-    print("=" * 78, file=sys.stderr)
-    print(f"TRIAD PREFLIGHT ERROR [code {TRIAD_PREFLIGHT_ERROR_EXIT_CODE}]: could not read "
-          f"{failing_path} -- {exc}", file=sys.stderr)
-    print("This is a baseline-infrastructure failure -- unlike the dataset-residue guard, "
-          "the triad preflight fails CLOSED here: it has no external dependency, so an "
-          "unreadable/malformed baseline file is a real regression, not transient noise.",
-          file=sys.stderr)
-    print("=" * 78, file=sys.stderr)
-    sys.exit(TRIAD_PREFLIGHT_ERROR_EXIT_CODE)
-
-
-def _triad_contract_is_grandfathered(contract_rel_path: str) -> bool:
-    """True only if contract_rel_path is listed in the baseline AND its live sha256 still
-    matches the pinned hash. An edit since baselining forfeits the grandfather -- enforcement
-    re-arms for that path (decision 3), it is not carried forward automatically."""
-    baseline_path = Path(os.environ.get(TRIAD_BASELINE_FILE_ENV_VAR, str(DEFAULT_TRIAD_BASELINE)))
-    hash_path = Path(os.environ.get(TRIAD_BASELINE_HASH_FILE_ENV_VAR, str(DEFAULT_TRIAD_BASELINE_HASH)))
-
-    try:
-        baseline_paths = _load_triad_baseline_paths(baseline_path)
-    except (OSError, UnicodeDecodeError) as e:
-        _exit_on_triad_baseline_error(baseline_path, e)
-    if contract_rel_path not in baseline_paths:
-        return False
-
-    try:
-        pinned_hashes = _load_triad_baseline_hashes(hash_path)
-    except (OSError, UnicodeDecodeError) as e:
-        _exit_on_triad_baseline_error(hash_path, e)
-    pinned = pinned_hashes.get(contract_rel_path)
-    if not pinned:
-        return False  # listed but unpinned -- cannot be honoured as grandfathered
-
-    full_path = REPO_ROOT / contract_rel_path
-    if not full_path.exists():
-        return False
-    live_hash = hashlib.sha256(full_path.read_bytes()).hexdigest()
-    return live_hash == pinned
-
-
-def _run_triad_coverage_preflight(contract_path: str) -> None:
-    """Runs execution/verify_triad_coverage.py (or its test override) against the contract
-    file being gated, before any assertion phase executes -- see gate_cmd() for the ordering
-    rationale. Exits the process directly; returns only when the gate may proceed.
-    """
-    linter = Path(os.environ.get(TRIAD_LINTER_SCRIPT_ENV_VAR, str(DEFAULT_TRIAD_LINTER)))
-    print(f"\n--- Verification-triad coverage preflight: {linter} ---")
-
-    try:
-        # Invoke the linter by its own path (not forced through sys.executable) so a test
-        # override pointing at a non-Python stub (e.g. a bash script) runs under its own
-        # shebang instead of being fed to the Python interpreter as source.
-        result = subprocess.run(
-            [str(linter), contract_path],
-            capture_output=True, text=True, timeout=30,
-        )
-    except Exception as e:
-        print("=" * 78, file=sys.stderr)
-        print(f"TRIAD PREFLIGHT ERROR [code {TRIAD_PREFLIGHT_ERROR_EXIT_CODE}]: could not run "
-              f"{linter} against {contract_path} -- {e}", file=sys.stderr)
-        print("This is a linter-infrastructure failure -- unlike the dataset-residue guard, "
-              "the triad preflight fails CLOSED here: it has no external dependency, so a "
-              "missing/crashing linter is a real regression, not transient noise.",
-              file=sys.stderr)
-        print("=" * 78, file=sys.stderr)
-        sys.exit(TRIAD_PREFLIGHT_ERROR_EXIT_CODE)
-
-    if result.stdout:
-        print(result.stdout.rstrip())
-    if result.stderr:
-        print(result.stderr.rstrip(), file=sys.stderr)
-
-    if result.returncode not in TRIAD_LINTER_VALID_EXIT_CODES:
-        print("=" * 78, file=sys.stderr)
-        print(f"TRIAD PREFLIGHT ERROR [code {TRIAD_PREFLIGHT_ERROR_EXIT_CODE}]: {linter} "
-              f"exited {result.returncode}, outside its documented classification contract "
-              f"({TRIAD_LINTER_VALID_EXIT_CODES}) -- treating as a linter-infrastructure "
-              "failure, never a silent pass.", file=sys.stderr)
-        print("=" * 78, file=sys.stderr)
-        sys.exit(TRIAD_PREFLIGHT_ERROR_EXIT_CODE)
-
-    if result.returncode == 0:
-        # PASS or EXEMPT -- decision 4: the linter's own exit-0 path never touches the
-        # baseline mechanism at all, zero added noise for contracts that already comply or
-        # don't need to.
-        return
-
-    # result.returncode == 1: confirmed UI/workflow contract missing one or more triad kinds.
-    contract_rel_path = os.path.relpath(os.path.abspath(contract_path), str(REPO_ROOT))
-    if _triad_contract_is_grandfathered(contract_rel_path):
-        print(f"TRIAD PREFLIGHT: {contract_rel_path} is missing triad kind(s) but is "
-              "grandfathered in the rollout baseline (unedited since baselining) -- warning, "
-              "not blocking.")
-        return
-
-    print("=" * 78, file=sys.stderr)
-    print(f"TRIAD PREFLIGHT BLOCKED [code {TRIAD_ENFORCEMENT_EXIT_CODE}]: {contract_rel_path} "
-          "is a UI/workflow contract missing verification-triad kind(s) and is not "
-          "grandfathered (either never baselined, or edited since baselining -- an edit "
-          "forfeits the grandfather). Add the missing triad assertions, or -- only with real "
-          "justification -- add it to execution/triad-baseline-exempt.txt with a matching "
-          "pin in execution/triad-baseline-exempt.sha256.", file=sys.stderr)
-    print("=" * 78, file=sys.stderr)
-    sys.exit(TRIAD_ENFORCEMENT_EXIT_CODE)
-
-
-def _gate_dispatch(contract: dict, args) -> int:
-    """Runs the phase-gating logic for `gate` and returns the exit code it would use, without
-    calling sys.exit() itself — split out of gate_cmd so the post-flight residue guard can run
-    exactly once, after this completes, regardless of which phase path was taken."""
-    if args.phase == "all":
-        phases_data = sorted(contract.get("phases", []), key=lambda p: _phase_sort_key(p.get("id", 0)))
-        if not phases_data:
-            print("No phases found in contract to gate.")
-            return 0
-
-        for phase_def in phases_data:
-            phase_id = phase_def['id']
-            print(f"\n--- Gating Phase {phase_id} ---")
-            # Create a temporary args object for _gate_single_phase
-            single_phase_args = argparse.Namespace(
-                contract=args.contract,
-                phase=str(phase_id),
-                run_checks=getattr(args, "run_checks", False),
-                handoff=getattr(args, "handoff", None),
-                allow_skips=getattr(args, "allow_skips", False),
-                timeout_seconds=getattr(args, "timeout_seconds", 60),
-            )
-            if not _gate_single_phase(contract, single_phase_args):
-                print(f"\nFAIL: Phase {phase_id} failed. Stopping all-phase gate.")
-                return 2  # Exit on first failure
-        print("\nPASS All phases gated successfully.")
-        return 0
-    elif args.phase == "max":
-        phases = contract.get("phases", [])
-        phase_n = sorted(phases, key=lambda p: _phase_sort_key(p["id"]))[-1]["id"] if phases else 1
-        args.phase = str(phase_n)  # Update args for _gate_single_phase
-        if not _gate_single_phase(contract, args):
-            return 2
-        return 0
-    else:  # Specific phase number
-        if not _gate_single_phase(contract, args):
-            # Exit code contract for the specific-phase gate path:
-            #   1 = reserved specifically for "a real adversarial finding from
-            #       a TRIAD_ASSERTION_KINDS kind (codex_qa, browser_deployed_
-            #       check, gws_inbox_check) is among the failing assertions
-            #       for this phase" (args.gate_codex_qa_failure is True --
-            #       name predates the two sibling kinds, meaning generalised
-            #       rather than renamed). This is the ONLY case that exits 1.
-            #   2 = every other failure shape: plain shell/file_exists/etc
-            #       assertion failures with no triad kind involved at all (the
-            #       pre-existing, widely-relied-on contract for every
-            #       non-triad mission), a pure triad-kind wrapper/usage
-            #       error with zero real fail verdicts, or unresolved skips.
-            # A caller checking the exit code must never mistake a wrapper
-            # crash or a plain assertion failure for an adversarial finding,
-            # or vice versa (see F2's BLOCKED-vs-GATE-ERROR verdict split).
-            return 1 if getattr(args, "gate_codex_qa_failure", False) else 2
-        return 0
-
-
 def gate_cmd(args):
+    # One report channel or the other, never both: a caller that asked for the
+    # unforgeable descriptor channel must not silently also get the path one.
+    if getattr(args, "report_fd", None) is not None and getattr(args, "report_json", None):
+        print("ERROR: --report-fd and --report-json are mutually exclusive.",
+              file=sys.stderr)
+        sys.exit(2)
+
     contract = load_contract(args.contract)
+
+    # Gate runs live by default; --cached opts into trusting prior results
+    # (GH #1404: a bare gate must not print a stale cached verdict without
+    # executing). --cached wins if given; otherwise every assertion re-runs.
+    args.run_checks = not getattr(args, "cached", False)
+
+    # F7: gate eligibility. A contract that fails `contract.py validate`
+    # must never be able to gate green -- today neither `gate` nor `check`
+    # calls validate at all, so an invalid contract (missing schema, a check
+    # with no verify block, ...) can still produce a green gate.
+    _validate_proc = subprocess.run(
+        [sys.executable, str(Path(__file__).resolve()), "validate", args.contract],
+        capture_output=True, text=True, timeout=120,
+    )
+    if _validate_proc.returncode != 0:
+        print("ERROR: gate refuses to run -- this contract is not valid "
+              "(contract.py validate failed):", file=sys.stderr)
+        print((_validate_proc.stdout + _validate_proc.stderr).strip(), file=sys.stderr)
+        sys.exit(1)
 
     # Pre-flight: reject prohibited multiline python3 -c assertions before running
     for _a in contract.get("assertions", []):
         _cmd = _a.get("verify", {}).get("cmd", "")
-        if "python3" in _cmd and "-c" in _cmd and ("\n" in _cmd or "\\n" in _cmd):
-            print(f"ERROR: Assertion {_a['id']}: multiline python3 -c is prohibited — "
-                  f"rewrite as a single-line command or a script file.", file=sys.stderr)
+        if _multiline_python3_c_violation(_cmd):
+            print(f"ERROR: Assertion {_a['id']}: multiline 'python3 -c' is prohibited -- "
+                  f"use a heredoc instead: command: |\\n  python3 - <<'PY'\\n  ...\\n  PY "
+                  f"(see docs/harness/assertion-shape.md)", file=sys.stderr)
             sys.exit(1)
 
-    # Dataset-residue pre-flight: a poisoned dataset makes every mutating check's captured
-    # baseline untrustworthy, so no assertion should run against one. This runs before any
-    # phase, regardless of --phase all/max/N. Only a confirmed "dirty" result blocks; an
-    # "error" result (scanner infrastructure failure) fails open — see RESIDUE_SCAN_ERROR_EXIT_CODE.
-    if _preflight_residue_guard() == "dirty":
-        sys.exit(RESIDUE_EXIT_CODE)
+    # --report-json (opt-in) is written here so it is produced on every exit
+    # path below -- sys.exit raises SystemExit, which `finally` still runs.
+    try:
+        if args.phase == "all":
+            phases_data = sorted(contract.get("phases", []), key=lambda p: _phase_sort_key(p.get("id", 0)))
+            if not phases_data:
+                print("No phases found in contract to gate.")
+                sys.exit(0)
 
-    # Verification-triad coverage pre-flight (mission verification-triad-gate, M2/F2): fires
-    # unconditionally, independent of --phase or --run-checks, because it only inspects the
-    # contract's declared shape via verify_triad_coverage.py, not any assertion result. This is
-    # the one placement common to all four real gate entry points (quick_gate.sh,
-    # gate_sweep.py, improvement_loop.sh, mission.py cmd_gate) -- see
-    # .agent/memory/scratch/research-f2-triad-gate-wiring.md section 3. Exits directly (never
-    # returns) on a confirmed noncompliant, non-grandfathered contract or a linter-
-    # infrastructure error; only returns when the gate may proceed.
-    _run_triad_coverage_preflight(args.contract)
-
-    exit_code = _gate_dispatch(contract, args)
-
-    # Dataset-residue post-flight: catches residue THIS gate run itself introduced. Runs even
-    # when the gate otherwise passed — a mutating check can pass its own assertion while still
-    # leaving residue behind if its cleanup silently failed. Same fail-open handling as above.
-    if _postflight_residue_guard() == "dirty":
-        sys.exit(RESIDUE_EXIT_CODE)
-
-    sys.exit(exit_code)
+            for phase_def in phases_data:
+                phase_id = phase_def['id']
+                print(f"\n--- Gating Phase {phase_id} ---")
+                # Create a temporary args object for _gate_single_phase
+                single_phase_args = argparse.Namespace(
+                    contract=args.contract,
+                    phase=str(phase_id),
+                    run_checks=getattr(args, "run_checks", False),
+                    handoff=getattr(args, "handoff", None),
+                    allow_skips=getattr(args, "allow_skips", False),
+                    timeout_seconds=getattr(args, "timeout_seconds", DEFAULT_TIMEOUT_SECONDS),
+                )
+                if not _gate_single_phase(contract, single_phase_args):
+                    print(f"\nFAIL: Phase {phase_id} failed. Stopping all-phase gate.")
+                    sys.exit(2) # Exit on first failure
+            print("\nPASS All phases gated successfully.")
+            sys.exit(0)
+        elif args.phase == "max":
+            phases = contract.get("phases", [])
+            phase_n = sorted(phases, key=lambda p: _phase_sort_key(p["id"]))[-1]["id"] if phases else 1
+            args.phase = str(phase_n) # Update args for _gate_single_phase
+            if not _gate_single_phase(contract, args):
+                sys.exit(2)
+            sys.exit(0)
+        else: # Specific phase number
+            if not _gate_single_phase(contract, args):
+                # Exit code contract for the specific-phase gate path:
+                #   1 = reserved specifically for "a real codex_qa adversarial
+                #       finding is among the failing assertions for this phase"
+                #       (args.gate_codex_qa_failure is True). This is the ONLY
+                #       case that exits 1.
+                #   2 = every other failure shape: plain shell/file_exists/etc
+                #       assertion failures with no codex_qa involved at all (the
+                #       pre-existing, widely-relied-on contract for every
+                #       non-codex_qa mission), a pure codex_qa wrapper/usage
+                #       error with zero real fail verdicts, or unresolved skips.
+                # A caller checking the exit code must never mistake a wrapper
+                # crash or a plain assertion failure for an adversarial finding,
+                # or vice versa (see F2's BLOCKED-vs-GATE-ERROR verdict split).
+                sys.exit(1 if getattr(args, "gate_codex_qa_failure", False) else 2)
+            sys.exit(0)
+    finally:
+        # The --report-json write is OPTIONAL and must never be able to change
+        # the gate's own verdict. Unguarded, any exception raised here (an
+        # unwritable destination, a read-only or full TMPDIR, ENOSPC, a
+        # serialisation error) propagates out of this `finally` and REPLACES the
+        # in-flight SystemExit -- rewriting e.g. a real FAIL's exit 2 into exit
+        # 1, which :1186-1198 reserves exclusively for a codex_qa adversarial
+        # finding. A report that cannot be written degrades to the consumer's
+        # fail-closed no-file case (see _write_gate_report's docstring); it does
+        # not mutate the verdict. Exception, not BaseException: a genuine
+        # KeyboardInterrupt/SystemExit here is the operator's, and must still
+        # propagate. The inner guard covers a closed stderr (`2>&-`), where the
+        # warning itself would otherwise raise and re-corrupt the exit path.
+        try:
+            _write_gate_report(args)
+        except Exception as exc:
+            try:
+                print(f"WARNING: could not write --report-json to "
+                      f"{getattr(args, 'report_json', None)!r}: "
+                      f"{type(exc).__name__}: {exc}", file=sys.stderr)
+            except Exception:
+                pass
 
 
 
@@ -1184,7 +1351,20 @@ def clear_cmd(args):
         print("Nothing to clear.")
 
 
-def main():
+# Default shell-assertion budget. Raised 60->180 2026-09-01 (platform-scoped-
+# delivery D8): 60s produced four false REDs under load on 2026-09-01
+# (contract-f5 34/34 standalone but 19/15 and 24/10 alongside anything;
+# mission.py gate 29/5, every failure `Command timed out after 60s`) and
+# contract-f1 itself needs 90-156s for 4 assertions on a warm box. 180 clears
+# the measured worst case (156s) with headroom; slow checks keep declaring a
+# larger per-check timeout_seconds (already supported, max 86400).
+DEFAULT_TIMEOUT_SECONDS = 180
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Extracted from main() so the shipped --timeout-seconds default is
+    assertable in-process (same observability move repo-wide-gate-sweep A1
+    made on gate_sweep.py)."""
     parser = argparse.ArgumentParser(description="Athanor Validation Contract CLI")
     sub = parser.add_subparsers(dest="cmd")
 
@@ -1197,26 +1377,49 @@ def main():
     c.add_argument("contract")
     c.add_argument("--assertion", required=True)
     c.add_argument("--handoff")
-    c.add_argument("--timeout-seconds", type=int, default=60,
-                   help="Shell assertion timeout in seconds (default: 60)")
+    c.add_argument("--timeout-seconds", type=int, default=DEFAULT_TIMEOUT_SECONDS,
+                   help=f"Shell assertion timeout in seconds (default: {DEFAULT_TIMEOUT_SECONDS})")
 
-    g = sub.add_parser("gate", help="Exit 0 iff all phase-N assertions pass. Use --run-checks to auto-run any missing checks before evaluating.")
+    g = sub.add_parser("gate", help="Exit 0 iff all phase-N assertions pass. Runs every assertion live by default; --cached trusts prior results.")
     g.add_argument("contract")
     g.add_argument("--phase", type=str, required=True, choices=['all', 'max'] + [str(i) for i in range(1, 10)],
                    help="Phase id (integer), 'max' for highest phase, or 'all' for all phases in contract")
-    g.add_argument("--run-checks", action="store_true", default=False,
-                   help="Auto-run check for each assertion that lacks a result file before evaluating the gate")
+    g.add_argument("--run-checks", action="store_true", default=True,
+                   help="(default, kept for back-compat) re-run every assertion live before evaluating the gate")
+    g.add_argument("--cached", action="store_true", default=False,
+                   help="Trust cached results in .agent/memory/scratch/contract-results/ instead of "
+                        "re-running each assertion. Faster, but the verdict then reflects the last run, "
+                        "not the current tree, so a bare gate could report a stale green (GH #1404).")
     g.add_argument("--allow-skips", action="store_true", default=False,
                    help="Do not fail the gate when a non-required assertion is verdict=skip (default: off)")
-    g.add_argument("--timeout-seconds", type=int, default=60,
-                   help="Shell assertion timeout in seconds (default: 60)")
+    g.add_argument("--timeout-seconds", type=int, default=DEFAULT_TIMEOUT_SECONDS,
+                   help=f"Shell assertion timeout in seconds (default: {DEFAULT_TIMEOUT_SECONDS})")
+    g.add_argument("--report-json", default=None, metavar="PATH",
+                   help="Also write the structured athanor.gate-report/v1 verdict to PATH "
+                        "(opt-in; stdout/stderr are unchanged). No file is written if the "
+                        "gate never ran, so consumers can fail closed on its absence.")
+    g.add_argument("--report-fd", type=int, default=None, metavar="N",
+                   help="Write the structured athanor.gate-report/v1 verdict to already "
+                        "open descriptor N instead of to a path (mutually exclusive with "
+                        "--report-json). For a caller that confines this process alongside "
+                        "the checks it runs: a descriptor is authority the checks can "
+                        "neither name nor inherit, whereas any path this process may write "
+                        "a check's descendant may overwrite. Nothing is written if the "
+                        "gate never ran, so consumers can fail closed on an empty channel.")
 
     r = sub.add_parser("report")
     r.add_argument("contract")
 
     cl = sub.add_parser("clear")
     cl.add_argument("contract")
+    return parser
 
+
+def main():
+    _boot_check = Path(__file__).parent / "checks" / "verify_boot_ran.py"
+    subprocess.run([sys.executable, str(_boot_check)], check=False)
+
+    parser = build_parser()
     args = parser.parse_args()
     if not args.cmd:
         parser.print_help()

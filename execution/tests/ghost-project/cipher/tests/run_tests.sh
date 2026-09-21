@@ -84,7 +84,8 @@ run_test "non_monotonic_timestamps_exit2" 2 \
 rm -f "$MONO_FILE"
 
 # ── Test 4: negative capacity → exit 2 ───────────────────────────────────────
-VALID_FILE="$(mktemp /tmp/cipher_test_XXXXXX.txt)"
+mkdir -p "$CIPHER_DIR/../../../../.tmp/sandbox/cipher-tests"
+VALID_FILE="$(mktemp "$CIPHER_DIR/../../../../.tmp/sandbox/cipher-tests/cipher_test_XXXXXX.txt")"
 printf '0\t1\n' > "$VALID_FILE"
 run_test "negative_capacity_exit2" 2 \
     --capacity -1 --rate 5 --events "$VALID_FILE"
@@ -93,7 +94,7 @@ rm -f "$VALID_FILE"
 # ── Test 5: req > capacity always DENY even with full bucket ─────────────────
 # capacity=3, rate=0 → bucket starts at 3, never refills
 # event: t=0, req=5 → 3 < 5, DENY
-OVER_FILE="$(mktemp /tmp/cipher_test_XXXXXX.txt)"
+OVER_FILE="$(mktemp "$CIPHER_DIR/../../../../.tmp/sandbox/cipher-tests/cipher_test_XXXXXX.txt")"
 printf '0\t5\n' > "$OVER_FILE"
 OVER_OUT=$(python3 "$CIPHER" --capacity 3 --rate 0 --events "$OVER_FILE" 2>/dev/null)
 OVER_EXIT=$?

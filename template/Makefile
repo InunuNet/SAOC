@@ -5,8 +5,13 @@ VERSION := $(shell cat .agent/version 2>/dev/null || echo "UNKNOWN")
 # CEO Directive v2 (2026-09-06), section L1: 67 targets reduced to 12.
 # The full pre-lobotomy target set is preserved in Makefile.archive and can be
 # restored one target at a time, with a reason, under L2. Nothing was deleted.
+#
+# L2 restore (2026-09-11): `directives` — fleet directive
+# ATH-20260831-directive-channel-adopt still tells every downstream to run
+# `make directives`. Without this target the published channel cannot be
+# confirmed as specified.
 
-.PHONY: help check test commit mission-new mission-status update-template sync bump-version pulse-status backlog-trim onboard
+.PHONY: help check test commit mission-new mission-status update-template sync bump-version pulse-status backlog-trim onboard directives
 
 help:
 	@echo "🏭 Athanor v$(VERSION)"
@@ -23,6 +28,7 @@ help:
 	@echo "  make pulse-status    Check Athanor Pulse service status."
 	@echo "  make backlog-trim    Trim/archive completed backlog items."
 	@echo "  make onboard         Start AI-guided project onboarding."
+	@echo "  make directives      List harness directives addressed to this project."
 	@echo ""
 	@echo "  Archived targets live in Makefile.archive (L2 restores them one at a time)."
 
@@ -121,3 +127,7 @@ onboard:
 	@echo "Open your AI agent and run: /onboard"
 	@echo "Skill: .agent/skills/onboard.md"
 	@echo "Headless: python3 execution/onboard_headless.py --project-name ... --role ... --mission ..."
+
+# L2: fleet directive ATH-20260831-directive-channel-adopt names this target.
+directives:
+	@python3 execution/directives.py list

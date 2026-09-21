@@ -8,7 +8,7 @@ echo "=== test_pulse_mission_loop_codex_queue.sh ==="
 
 ACTIVE_JSON=".agent/memory/project/missions/active.json"
 QUEUE_FILE=".agent/mission_queue.txt"
-MISSION_FILE=".agent/memory/project/missions/$(date +%Y-%m-%d)-test-loop-queue.md"
+MISSION_FILE=".agent/memory/project/missions/$(date -u +%Y-%m-%d)-test-loop-queue.md"
 
 ACTIVE_BACKUP="$(mktemp)"
 QUEUE_BACKUP="$(mktemp)"

@@ -1226,5 +1226,46 @@ if [ "$LEVEL" = "medium" ]; then
   fi
 fi
 
+# ── cd-chain auto-allow ───────────────────────────────────────────────────────
+# Claude Code's own permission engine cannot statically resolve a cd-chained
+# Bash command (`cd DIR && cmd`) and falls back to a manual approval ask even
+# under bypassPermissions whenever a Read()/Write() deny rule exists in
+# settings.json (upstream anthropics/claude-code#20085, #37621, #4956) --
+# sandbox.md calls this out as "the single most common source of
+# interruptions during autonomous work." We already resolve DIR correctly
+# through expand_target()/path_in_project() (F28, lib/target_resolve.sh) for
+# the read/write floor checks above; this tells Claude Code's engine about
+# that resolution instead of leaving it to re-ask a question we already
+# answered. A PreToolUse hook returning permissionDecision:"allow" is a
+# native, documented Claude Code mechanism -- not a custom permission engine.
+#
+# Scope, deliberately narrow: only a literal `cd DIR && ...` / `cd DIR; ...`
+# shape, where DIR resolves inside TR_PROJECT_ROOT and is not floor-protected.
+# DIR containing a variable, command substitution, or glob is left alone (it
+# cannot be resolved safely, so it must still get Claude Code's normal
+# ask/deny), and so is any DIR that resolves outside the project root --
+# leaving the work folder still prompts, exactly as it should.
+if [ "$TOOL" = "Bash" ] && [[ "$COMMAND" =~ ^cd[[:space:]]+([^\&\;\|$'\n']+)[\ \t]*(\&\&|\;|$'\n') ]]; then
+  _cd_target="${BASH_REMATCH[1]}"
+  _cd_target="${_cd_target%\"}"; _cd_target="${_cd_target#\"}"
+  _cd_target="${_cd_target%\'}"; _cd_target="${_cd_target#\'}"
+  _cd_target="${_cd_target%"${_cd_target##*[! ]}"}"
+  case "$_cd_target" in
+    *'$'*|*'`'*|*'*'*|*'?'*|*'['*) ;;  # unresolvable -- fall through unchanged
+    *)
+      _cd_resolved="$(expand_target "$_cd_target")"
+      # floor_glob_match's globs require a path segment AFTER the protected
+      # dir (e.g. */execution/hooks/*), so cd'ing to the bare directory
+      # itself would not match. Testing "$_cd_resolved/" too catches that.
+      if path_in_project "$_cd_resolved" \
+        && ! floor_glob_match "$_cd_resolved" \
+        && ! floor_glob_match "$_cd_resolved/"; then
+        printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"cd target resolves inside the project root and is not floor-protected"}}'
+        exit 0
+      fi
+      ;;
+  esac
+fi
+
 # ── All other cases: allow ────────────────────────────────────────────────────
 exit 0

@@ -37,6 +37,7 @@ sys.path.insert(0, str(Path(__file__).parent / "checks"))
 
 RESULTS_DIR = Path(".agent/memory/scratch/contract-results")
 MAX_TIMEOUT_SECONDS = 86400  # 24h ceiling -- generous for CI, still finite
+EVIDENCE_DISPLAY_MAX = 2000  # console print cap; storage caps match, so print is a no-op
 
 # Top-level keys seen across the live 331-contract corpus (schema, goal-style
 # prose fields, retirement metadata, etc). An unrecognized top-level key is
@@ -670,7 +671,7 @@ def check_cmd(args):
                 evidence = f"Invalid timeout_seconds: {ts_error}"
                 write_result(contract, assertion_id, "fail", evidence)
                 print(f"FAIL {assertion_id} ({kind}): FAIL")
-                print(f"   {evidence[:200]}")
+                print(f"   {evidence[:EVIDENCE_DISPLAY_MAX]}")
                 sys.exit(1)
         if timeout is None:
             timeout = getattr(args, "timeout_seconds", DEFAULT_TIMEOUT_SECONDS)
@@ -686,7 +687,7 @@ def check_cmd(args):
                         "bash script always exits 0, refusing to record a pass")
             write_result(contract, assertion_id, "fail", evidence)
             print(f"FAIL {assertion_id} ({kind}): FAIL")
-            print(f"   {evidence[:200]}")
+            print(f"   {evidence[:EVIDENCE_DISPLAY_MAX]}")
             sys.exit(1)
 
         # F5/F6: refuse to run (and never record a verdict for) an assertion
@@ -699,10 +700,10 @@ def check_cmd(args):
             lint_findings = []
         if lint_findings:
             evidence = ("assertion_lint rejected this command: " + "; ".join(
-                f"{f['rule']}: {f['message']}" for f in lint_findings))[:500]
+                f"{f['rule']}: {f['message']}" for f in lint_findings))[:EVIDENCE_DISPLAY_MAX]
             write_result(contract, assertion_id, "fail", evidence)
             print(f"FAIL {assertion_id} ({kind}): FAIL")
-            print(f"   {evidence[:200]}")
+            print(f"   {evidence[:EVIDENCE_DISPLAY_MAX]}")
             sys.exit(1)
 
         tf_name = None
@@ -731,7 +732,7 @@ def check_cmd(args):
                 run_env["PATH"] = str(venv_python.parent) + os.pathsep + run_env.get("PATH", "")
             result = subprocess.run(tf_name, shell=False, env=run_env,
                                     capture_output=True, text=True, timeout=timeout)
-            evidence = (result.stdout + result.stderr).strip()[:500]
+            evidence = (result.stdout + result.stderr).strip()[:EVIDENCE_DISPLAY_MAX]
             # Reserved skip exit code (autotools convention): checked BEFORE
             # comparison against expect_exit -- exit 77 always means skip,
             # regardless of what expect_exit was configured to.
@@ -766,10 +767,10 @@ def check_cmd(args):
                 evidence = "codex_qa PASS"
             elif rc == 1:
                 verdict = "fail"
-                evidence = "CODEX_QA_FAIL: " + result.stdout.strip()[:2000]
+                evidence = "CODEX_QA_FAIL: " + result.stdout.strip()[:EVIDENCE_DISPLAY_MAX]
             elif rc == 2:
                 verdict = "error"
-                evidence = "CODEX_QA_WRAPPER_ERROR: " + (result.stdout + result.stderr).strip()[:500]
+                evidence = "CODEX_QA_WRAPPER_ERROR: " + (result.stdout + result.stderr).strip()[:EVIDENCE_DISPLAY_MAX]
             else:
                 verdict = "error"
                 evidence = f"codex_qa wrapper exited {rc} (neither 0, 1, nor 2) -- treated as inconclusive, not a QA fail"
@@ -875,7 +876,7 @@ def check_cmd(args):
             "FAIL")
     print(f"{icon} {assertion_id} ({kind}): {verdict.upper()}")
     if evidence:
-        print(f"   {evidence[:200]}")
+        print(f"   {evidence[:EVIDENCE_DISPLAY_MAX]}")
     sys.exit(0 if verdict in ("pass", "skip") else 1)
 
 

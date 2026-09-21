@@ -1364,6 +1364,27 @@ def deep_merge(base: dict, override: dict) -> dict:
     return result
 
 
+def _count_hook_registrations(hooks_value) -> int:
+    """Count hook command entries across every event -> matcher -> hooks list.
+
+    Mirrors the counting rule in replace_hook_config()'s docstring: a
+    "registration" is one object in a matcher group's "hooks" list, summed
+    across every matcher group in every event array.
+    """
+    if not isinstance(hooks_value, dict):
+        return 0
+    total = 0
+    for groups in hooks_value.values():
+        if not isinstance(groups, list):
+            continue
+        for group in groups:
+            if isinstance(group, dict):
+                hooks_list = group.get("hooks")
+                if isinstance(hooks_list, list):
+                    total += len(hooks_list)
+    return total
+
+
 def merge_json_deep(src: Path, dst: Path, backup_dir: Path) -> str:
     """Merge strategy: deep merge JSON objects (src values win on conflict)."""
     if not src.exists():
@@ -1389,6 +1410,18 @@ def merge_json_deep(src: Path, dst: Path, backup_dir: Path) -> str:
         dst_data = {}
 
     merged = deep_merge(dst_data, src_data)
+
+    # Hook-reconciliation telemetry (delivery-and-truth F1, #1410). Only
+    # emitted for a file that actually carries a `hooks` key on either side
+    # of the merge -- most json_deep_merge targets (e.g. statusline.json)
+    # never do. This callsite runs only on the --apply path: the MERGE
+    # branch in main()'s manifest loop prints "would merge (...)" and skips
+    # straight past this function under --dry-run, so no separate gating is
+    # needed here to keep the line off a dry-run preview.
+    if "hooks" in dst_data or "hooks" in merged:
+        n = _count_hook_registrations(dst_data.get("hooks"))
+        m = _count_hook_registrations(merged.get("hooks"))
+        print(f"hooks: {n} -> {m}")
 
     if merged == dst_data:
         return f"  unchanged (json_deep_merge): {dst}"
@@ -1446,11 +1479,15 @@ def apply_retractions(
 
     Runs as its own pass, AFTER the normal manifest loop (same shape as
     apply_missing_file_backstop). Reads manifest["retractions"] -- an
-    optional list of {path, key_path, bad_value, action, replacement,
-    reason, issue} entries (see .agent/update-manifest.yaml). For each
-    entry: load `path` (workspace-relative) as JSON, resolve the dotted
-    `key_path`, and act ONLY if the CURRENT value there is JSON-equal to
-    `bad_value` -- never on "key absent" (that would clobber a legitimate
+    optional list of {path, key_path, bad_value (optional), action,
+    replacement, reason, issue} entries (see .agent/update-manifest.yaml).
+    For each entry: load `path` (workspace-relative) as JSON, resolve the
+    dotted `key_path`, and act on the CURRENT value there. `bad_value` is
+    OPTIONAL: when present, act ONLY if the current value is JSON-equal to
+    it (exact-match mode -- e.g. the haiku-model entry); when omitted, act
+    on ANY present value at `key_path` (any-value mode -- e.g. retiring
+    CLAUDE_AUTOCOMPACT_PCT_OVERRIDE, fleet-observed at both 30 and 35). In
+    BOTH modes, never act on "key absent" (that would clobber a legitimate
     local customization upstream never shipped) and never dependent on any
     prior delivery record, so this fires correctly on a workspace that has
     never seen this mechanism before (every real affected workspace today).
@@ -1494,7 +1531,8 @@ def apply_retractions(
         try:
             rel_path = entry["path"]
             key_path = entry["key_path"]
-            bad_value = entry["bad_value"]
+            has_bad_value = "bad_value" in entry
+            bad_value = entry.get("bad_value")
         except (KeyError, TypeError) as e:
             print(
                 f"  WARN  retraction entry {entry!r} missing required field(s) "
@@ -1528,7 +1566,7 @@ def apply_retractions(
             continue
 
         current_value = parent[leaf]
-        if current_value != bad_value:
+        if has_bad_value and current_value != bad_value:
             print(
                 f"  retraction SKIP   {rel_path}::{key_path} (current value "
                 "differs from known-bad signature -- left untouched)"
@@ -4088,10 +4126,26 @@ def main():
             print(f"ERROR: source directory not found: {source}", file=sys.stderr)
             sys.exit(1)
 
+        # updater-self-staleness F1: does the RUNNING update_template.py
+        # (this process, already loaded into memory) differ from the
+        # payload's own copy? Captured HERE, before the manifest loop below
+        # can overwrite Path(__file__) on disk -- a comparison performed
+        # after delivery would always read "matches" and guard nothing. A
+        # payload tree missing execution/update_template.py is treated as
+        # NOT stale (guard skipped) so an incomplete source doesn't brick
+        # the run. Never set on --dry-run: nothing is delivered or stamped,
+        # so there is nothing to guard.
+        updater_self_stale = False
         if dry_run:
             print("[dry-run] No changes will be written. Pass --apply to apply changes.")
         else:
             print(f"[apply] Source: {source}. Backups created before overwriting.")
+
+            payload_updater = source / "execution" / "update_template.py"
+            if payload_updater.exists():
+                updater_self_stale = not _paths_have_identical_content(
+                    payload_updater, Path(__file__).resolve()
+                )
 
             # Pre-apply version-regression guard: refuse to install a payload
             # whose declared template version is older than what's already
@@ -4549,17 +4603,89 @@ def main():
                 if key != ".agent/version"
                 and not _paths_have_identical_content(source / key, Path(key))
             ]
-            if stale_withheld:
-                version_msg = (
-                    "  HELD  template_version NOT bumped -- "
-                    f"{len(stale_withheld)} HARNESS file(s) withheld and "
-                    "stale this run: "
-                    + ", ".join(sorted(stale_withheld))
-                    + ". Stamping the new version now would claim this "
-                    "workspace is current while the file(s) above are still "
-                    "the old content. Resolve the withholding (see the "
-                    "WITHHELD block below) and re-run to advance the stamp."
-                )
+            if stale_withheld or updater_self_stale:
+                if updater_self_stale:
+                    # .agent/version is an ordinary HARNESS manifest entry --
+                    # the loop above already delivered it (it isn't
+                    # baseline-withheld in the common case), so skipping
+                    # update_profile_version() alone is not enough to hold
+                    # the stamp at its pre-run value. Restore it to its
+                    # PRE-LOOP state, captured before the manifest loop ran:
+                    # rewrite the old value if one existed, or -- when
+                    # prior_local_version is None because the file was
+                    # absent before this run -- delete the manifest-
+                    # delivered file so the workspace ends with no
+                    # .agent/version, matching pre-run state exactly (Codex
+                    # finding: the None case was previously left untouched,
+                    # so a stale run with no PRIOR .agent/version still
+                    # advanced the stamp from absent to the payload
+                    # version). Strict here (unlike the ordinary write
+                    # sites): never follow a symlink for this restore, not
+                    # even one the operator has allow-listed via
+                    # .agent/allowed-symlinks -- a restore must never write
+                    # or delete through a symlinked destination, so the
+                    # ancestor-walk check is used directly instead of
+                    # _refuse_symlinked_write()'s allow-list-consulting
+                    # wrapper.
+                    # The whole restore is wrapped: an exotic filesystem
+                    # edge (a symlink-loop RuntimeError out of
+                    # _contains_symlink_component(), a TOCTOU/permission
+                    # race on unlink(), ...) must fail LOUD, not crash
+                    # --apply with a bare traceback. The existing
+                    # `if updater_self_stale: sys.exit(1)` below already
+                    # guarantees a non-zero exit either way, so a failed
+                    # restore still ends as a loud, operator-visible,
+                    # non-zero failure -- never a silent stamp advance --
+                    # which is the acceptable degraded mode here.
+                    try:
+                        local_version_path = profile_file.parent / "version"
+                        symlinked, offending = _contains_symlink_component(
+                            local_version_path, stop_at=Path.cwd()
+                        )
+                        if symlinked:
+                            print(
+                                "  WARN  local .agent/version is reached through a "
+                                f"symlink at {offending} -- REFUSING to restore "
+                                "its pre-run state through a symlinked destination."
+                            )
+                        elif prior_local_version is not None:
+                            _write_text_nofollow(
+                                local_version_path, prior_local_version + "\n",
+                                "local .agent/version",
+                            )
+                        elif local_version_path.exists() and not local_version_path.is_symlink() \
+                                and local_version_path.is_file():
+                            local_version_path.unlink()
+                    except Exception as e:
+                        print(
+                            "  WARN  could not restore .agent/version to its "
+                            f"pre-run state ({e.__class__.__name__}): {e} -- the "
+                            "version stamp may be left at the payload value; "
+                            "re-run `make update-template` under the refreshed "
+                            "updater."
+                        )
+                    version_msg = (
+                        "  HELD  template_version NOT bumped -- "
+                        "UPDATER-SELF-STALE: the updater that ran this pass "
+                        "differs from the payload's execution/update_template.py. "
+                        "The refreshed updater has been delivered to disk, but "
+                        "its new logic did NOT execute this pass (this process "
+                        "already loaded the old code) -- template_version was "
+                        "NOT advanced. Re-run `make update-template` (or "
+                        "update_template.py --apply) now that the current "
+                        "updater is in place."
+                    )
+                else:
+                    version_msg = (
+                        "  HELD  template_version NOT bumped -- "
+                        f"{len(stale_withheld)} HARNESS file(s) withheld and "
+                        "stale this run: "
+                        + ", ".join(sorted(stale_withheld))
+                        + ". Stamping the new version now would claim this "
+                        "workspace is current while the file(s) above are still "
+                        "the old content. Resolve the withholding (see the "
+                        "WITHHELD block below) and re-run to advance the stamp."
+                    )
             else:
                 # prior_local_version was captured above, BEFORE the
                 # manifest loop -- .agent/version is a HARNESS path the loop
@@ -4588,7 +4714,8 @@ def main():
             paths_untracked = [key for key in paths_untracked if key in paths_withheld]
 
             delivery_status = (
-                DELIVERY_PARTIAL if (paths_withheld or paths_refused or paths_failed)
+                DELIVERY_PARTIAL
+                if (paths_withheld or paths_refused or paths_failed or updater_self_stale)
                 else DELIVERY_COMPLETE
             )
             try:
@@ -4739,6 +4866,8 @@ def main():
         # withheld local delivery.
         if not dry_run:
             if stamp_divergent:
+                sys.exit(1)
+            if updater_self_stale:
                 sys.exit(1)
             # --allow-skips acknowledges CONTENT the operator knowingly keeps;
             # it may not mute a compromised write path (F4c-2 C12).

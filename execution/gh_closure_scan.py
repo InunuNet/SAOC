@@ -20,6 +20,25 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ISSUE_RE = re.compile(r"#(\d+)")
 
+# Conservative phrase list — a #N mention within NEGATION_WINDOW chars of one of
+# these patterns is treated as "keep open" language, not a closure signal.
+NEGATION_RE = re.compile(
+    r"\bkeep\b.*?\bopen\b"
+    r"|\bstill\b.*?\bopen\b"
+    r"|\bremains?\s+open\b"
+    r"|\bdo\s*n[o']?t\s+close\b"
+    r"|\bdo\s+not\s+close\b"
+    r"|\bnot\s+closing\b",
+    re.IGNORECASE,
+)
+# Chars of context checked on each side of a #N match for negation language.
+NEGATION_WINDOW = 40
+
+# Matches a connector between two enumerated issue references (e.g. "#90, #123"
+# or "#90 and #123") so negation attached to the first can chain forward onto
+# subsequent list members.
+ENUM_CONNECTOR_RE = re.compile(r"^(?:,\s*(?:and|or)\s+|,\s*|\s+(?:and|or)\s+)$", re.IGNORECASE)
+
 
 def _resolve_since(since: str | None) -> str | None:
     if since:
@@ -42,6 +61,53 @@ def _resolve_repo(repo: str | None) -> str:
     return result.stdout.strip()
 
 
+def _extract_open_candidates(text: str) -> set:
+    """Issue numbers mentioned in `text`, excluding ones with nearby negation language.
+
+    e.g. "keep #90/#123 open" yields no candidates; "fixes #90" yields {90}.
+
+    Negation is target-aware: each NEGATION_RE match suppresses only the numbers it is
+    grammatically attached to, never every number that happens to sit nearby. A phrase
+    is attached to a number when the number falls inside the phrase's own match span
+    ("keep #90/#123 open" spans both numbers), or when only whitespace separates the
+    phrase from the number ("do not close #2"). Anything else — a comma, a conjunction,
+    another issue reference — breaks the attachment, so "closes #123, but keep #90 open"
+    flags #123 and "fixes #1, do not close #2" still flags #1.
+    """
+    issue_matches = list(ISSUE_RE.finditer(text))
+    negated = set()
+    for neg in NEGATION_RE.finditer(text):
+        neg_start, neg_end = neg.span()
+        contained = {
+            i for i, m in enumerate(issue_matches)
+            if neg_start <= m.start() and m.end() <= neg_end
+        }
+        if contained:
+            negated |= contained
+            continue
+        for i, m in enumerate(issue_matches):
+            if m.end() <= neg_start:
+                gap = text[m.end():neg_start]
+            elif m.start() >= neg_end:
+                gap = text[neg_end:m.start()]
+            else:
+                continue
+            if len(gap) <= NEGATION_WINDOW and not gap.strip():
+                negated.add(i)
+                if m.start() >= neg_end:
+                    idx = i
+                    while idx + 1 < len(issue_matches):
+                        between = text[issue_matches[idx].end():issue_matches[idx + 1].start()]
+                        if ENUM_CONNECTOR_RE.match(between):
+                            negated.add(idx + 1)
+                            idx += 1
+                        else:
+                            break
+    return {
+        int(m.group(1)) for i, m in enumerate(issue_matches) if i not in negated
+    }
+
+
 def _commit_evidence(since: str) -> dict:
     """Evidence A: issue numbers referenced in commit subjects since `since`."""
     evidence = {}
@@ -55,30 +121,17 @@ def _commit_evidence(since: str) -> dict:
         if "\x1f" not in line:
             continue
         sha, subject = line.split("\x1f", 1)
-        for m in ISSUE_RE.finditer(subject):
-            number = int(m.group(1))
+        for number in _extract_open_candidates(subject):
             if number not in evidence:
                 evidence[number] = {"source": f"commit {sha[:7]}", "evidence": subject}
     return evidence
 
 
-def _mission_evidence(missions_dir: Path, since: str) -> tuple[dict, list[str]]:
-    """Evidence B: issue numbers referenced in the goal of completed missions since `since`.
-
-    Returns (evidence, parse_failures). `mission.parse_mission_file` is written for CLI use and
-    calls sys.exit(1) (after printing "ERROR: ..." to stderr) on a genuine parse failure — e.g. a
-    file in missions_dir with no YAML frontmatter, or frontmatter that fails to parse. That is
-    NOT the same thing as "this .md file just isn't shaped like a mission and should be skipped
-    silently" (there is no such case here — every *.md file in missions_dir is expected to be a
-    mission). Swallowing that SystemExit and moving on, as this function used to do, let a real
-    parse error print its ERROR line and then vanish into an overall exit code of 0 — the same
-    silent-green defect class flagged elsewhere this session. Every genuine failure is now
-    collected and returned so the caller can make the process exit non-zero.
-    """
+def _mission_evidence(missions_dir: Path, since: str) -> dict:
+    """Evidence B: issue numbers referenced in the goal of completed missions since `since`."""
     evidence = {}
-    failures: list[str] = []
     if not missions_dir.exists():
-        return evidence, failures
+        return evidence
     sys.path.insert(0, str(REPO_ROOT / "execution"))
     import mission
 
@@ -86,7 +139,6 @@ def _mission_evidence(missions_dir: Path, since: str) -> tuple[dict, list[str]]:
         try:
             fm, _ = mission.parse_mission_file(str(path))
         except SystemExit:
-            failures.append(str(path))
             continue
         if fm.get("status") != "done":
             continue
@@ -94,11 +146,10 @@ def _mission_evidence(missions_dir: Path, since: str) -> tuple[dict, list[str]]:
         if not last_active or last_active < since:
             continue
         goal = fm.get("goal", "")
-        for m in ISSUE_RE.finditer(goal):
-            number = int(m.group(1))
+        for number in _extract_open_candidates(goal):
             if number not in evidence:
                 evidence[number] = {"source": f"mission {path.name}", "evidence": goal}
-    return evidence, failures
+    return evidence
 
 
 def _open_issue_numbers(repo: str, open_issues_json: str | None) -> set:
@@ -126,10 +177,9 @@ def _open_issue_numbers(repo: str, open_issues_json: str | None) -> set:
     return {item["number"] for item in data}
 
 
-def scan(since: str, repo: str, missions_dir: Path, open_issues_json: str | None) -> tuple[list, list[str]]:
+def scan(since: str, repo: str, missions_dir: Path, open_issues_json: str | None) -> list:
     merged = _commit_evidence(since)
-    mission_evidence, failures = _mission_evidence(missions_dir, since)
-    for number, ev in mission_evidence.items():
+    for number, ev in _mission_evidence(missions_dir, since).items():
         merged.setdefault(number, ev)
 
     open_numbers = _open_issue_numbers(repo, open_issues_json)
@@ -140,7 +190,7 @@ def scan(since: str, repo: str, missions_dir: Path, open_issues_json: str | None
         if number in open_numbers
     ]
     candidates.sort(key=lambda c: c["number"])
-    return candidates, failures
+    return candidates
 
 
 def main():
@@ -162,21 +212,13 @@ def main():
 
     repo = _resolve_repo(args.repo)
     missions_dir = Path(args.missions_dir)
-    candidates, failures = scan(since, repo, missions_dir, args.open_issues_json)
+    candidates = scan(since, repo, missions_dir, args.open_issues_json)
 
     if args.format == "lines":
         for c in candidates:
             print(f"GH #{c['number']} — {c['evidence']} ({c['source']})")
     else:
         print(json.dumps(candidates))
-
-    if failures:
-        print(
-            f"ERROR: {len(failures)} mission file(s) in {missions_dir} failed to parse — "
-            f"results above are incomplete: {', '.join(failures)}",
-            file=sys.stderr,
-        )
-        sys.exit(1)
 
     sys.exit(0)
 

@@ -24,6 +24,15 @@ if os.environ.get("BACKLOG_TRIM_DATA_DIR"):
     DATA_DIR = Path(os.environ["BACKLOG_TRIM_DATA_DIR"])
 BRAIN_PY = SCRIPT_DIR / "brain.py"
 
+
+def _brain_py_path() -> Path:
+    """Path to brain.py, overridable for tests -- same pattern as
+    mission.py's ATHANOR_BRAIN_PY_PATH override. Lets a golden point archival
+    at a stand-in script (capturing or failing) instead of the real
+    chromadb-backed brain."""
+    override = os.environ.get("ATHANOR_BRAIN_PY_PATH")
+    return Path(override) if override else BRAIN_PY
+
 CLOSED_PATTERN = re.compile(r"^- \[x\]")
 OPEN_PATTERN = re.compile(r"^- \[ \]")
 BULLET_PATTERN = re.compile(r"^- \[[ x]\]")
@@ -76,7 +85,7 @@ def archive_to_brain(text: str) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(BRAIN_PY),
+            str(_brain_py_path()),
             "remember",
             "--summary", f"BACKLOG ARCHIVE: {summary}",
             "--tags", "backlog,archive",
@@ -196,6 +205,21 @@ def main() -> None:
         else:
             truncated_count = len(open_positions) - MAX_OPEN
             remove_positions = set(open_positions[MAX_OPEN:])
+            # Archive every about-to-be-dropped OPEN item to brain BEFORE
+            # removing it (GH #1413) -- same primitive and fail-closed
+            # semantics as the closed-item loop above. If any archival call
+            # fails, abort before the atomic write at the end of main(): the
+            # original file is never touched, so no undo logic is needed.
+            for i in remove_positions:
+                _, block = capped_blocks[i]
+                try:
+                    archive_to_brain(block_text(block))
+                except subprocess.CalledProcessError as exc:
+                    print(
+                        f"ERROR: brain.py remember failed for item: {block_text(block)[:120]}\n{exc}",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
             capped_blocks = [b for i, b in enumerate(capped_blocks) if i not in remove_positions]
             today_str = date.today().isoformat()
             truncation_marker = f"> Truncated {truncated_count} items at trim time ({today_str}). Restore from git history if needed.\n"

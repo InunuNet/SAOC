@@ -176,11 +176,39 @@ def read_active() -> dict | None:
 
 
 def write_active(mission_path: str, checkpoint: dict | None = None):
+    """Write active.json, preserving state this function does not author.
+
+    This used to rebuild the dict from scratch, so every key written by
+    someone else was silently dropped on each call. The one that mattered was
+    `autonomy`: set_autonomy.py wrote a verified decision, the very next
+    `mission.py checkpoint` erased it, and boot_panel then halted on
+    autonomy.undecided. The chain could not advance a feature without an
+    operator re-arming autonomy by hand afterwards -- the exact opposite of
+    the "chain continuous" rule.
+
+    Carry-forward is deliberately scoped to the SAME mission. A decision made
+    for mission A must never leak onto mission B: switching missions starts
+    clean, which is what REQUIREMENTS 6 ("a mission is never silently
+    resumed") depends on. `activated_at` is likewise preserved across a
+    same-mission update, so it keeps meaning "when this mission was
+    activated" rather than "when it was last checkpointed".
+    """
     MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
+    authored = {"mission", "checkpoint", "activated_at"}
+    carried: dict = {}
+    activated_at = now_iso()
+
+    prior = read_active()
+    if isinstance(prior, dict) and prior.get("mission") == str(mission_path):
+        carried = {k: v for k, v in prior.items() if k not in authored}
+        if isinstance(prior.get("activated_at"), str) and prior["activated_at"]:
+            activated_at = prior["activated_at"]
+
     data = {
         "mission": str(mission_path),
         "checkpoint": checkpoint or {"milestone": None, "feature": None},
-        "activated_at": now_iso(),
+        "activated_at": activated_at,
+        **carried,
     }
     tmp = str(ACTIVE_JSON) + ".tmp"
     Path(tmp).write_text(json.dumps(data, indent=2))
