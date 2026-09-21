@@ -1,3 +1,50 @@
+## Sanity schema registration does not guarantee Studio nav reachability (2026-09-18)
+
+Feature `studio-nav-missing-types` F1 (found by a read-only site-wide maintenance audit pass,
+fixed same session, no mission file — small/direct scope like `admin-vendor-listing-serialization`).
+Three document types (`showSponsor`, `vendorNursery`, `province`) were registered in
+`sanity/schemas/index.ts` and actively consumed by live pages (`/national-show/sponsors`,
+`/national-show/vendors` + `/sa-exhibitors` + `/international-guests`, `/societies` +
+`/about` + `/national-show`), but editors could not browse to them in Studio — `+ Create`
+worked, but there was no nav entry to find or edit an *existing* doc without knowing the
+Studio URL or writing a GROQ query by hand.
+
+Root cause: this project's `sanity/structure.ts` uses a custom desk-structure nav (not
+Sanity's default "list every schema type" structure), built from two explicit arrays —
+`PINNED_SINGLETON_TYPES` and `COLLECTION_TYPES`. Schema registration and nav registration
+are two separate steps here; the three types were only ever added to the first. **Whenever
+this project uses a custom `structure.ts`, registering a schema type is necessary but not
+sufficient — it also needs an entry in `COLLECTION_TYPES` or `PINNED_SINGLETON_TYPES`, or it
+is schema-valid but editorially invisible.** Fix: `sanity/structure.ts`'s `COLLECTION_TYPES`
+array now includes all three. Contract gate 9/9, QA PASS, Codex GPT-5.5 PASS. Docs:
+`docs/studio-nav-missing-types.md` (also documents the reusable checklist step for future
+schema additions, and two previously-undocumented optional env vars found along the way:
+`NEXT_PUBLIC_SANITY_API_VERSION`, `RESEND_REPLY_TO`).
+
+## Workspace identity corrected to "SAOC NOS Site" (2026-09-17)
+
+Folder/profile name mismatch was real (folder renamed to "SAOC NOS Site", `profile.json`
+still said "SAOC") — this project is a child/sub-project of the main SAOC project, not an
+unrelated copy. `execution/identity_ambiguity.py --affirm copy` is the wrong tool for a
+parent/child relationship: it triggers a full re-scaffold/template-fill pass that disowns
+memory (quarantines it) and, in this run, **failed mid-way (exit 3)** choking on stale
+`{{AGENT_NAME}}`/`{{PROJECT_ROLE}}` placeholder text sitting in an old mission scratch
+fixture at `.tmp/sandbox/m7-baseline-tree/` — leaving 44 files touched, including a deleted
+`.claude/rules/shell-paths.md` and several modified `.agent/pulse/registry/*.sh` hooks.
+Reverted via `git checkout` on tracked files + manual removal of the stray untracked hook
+files it dropped at project root, then fixed identity directly with a plain edit: set
+`project_name` in `.agent/profile.json` **and** the `WORKSPACE` file (both must agree —
+`execution/hooks/verify_workspace.sh` checks this on every Bash call) to "SAOC NOS Site".
+No memory quarantine needed for a same-lineage rename/child-naming case — quarantine
+(`--affirm copy`) is for genuinely unrelated new projects only. The quarantine dir from the
+aborted run (`.agent/memory-quarantine-20260917T150439Z/`) was left in place, untouched,
+in case anything in it is worth reviewing later.
+
+**Filed as harness defect candidate:** `identity_ambiguity.py --affirm copy` has no
+"related child project" mode distinct from "disown everything," and its re-scaffold pass
+isn't resilient to stale placeholder text in old `.tmp/sandbox/` fixture trees (should skip
+`.tmp/` entirely when scanning for unfilled template tokens).
+
 Standing rule now enforced by per-turn injection: `docs/rules/no-invention.md` +
 `docs/rules/inject_no_invention.sh`, registered in `.claude/settings.json` on both
 `UserPromptSubmit` and `SubagentStart`. Lives under `docs/` (not `.claude/rules/` or

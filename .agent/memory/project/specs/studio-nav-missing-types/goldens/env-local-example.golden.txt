@@ -1,0 +1,11 @@
+# Golden reference: two new documented, optional entries to add to
+# .env.local.example. Both already have safe inline fallbacks in code — this is
+# documentation only, not a new runtime requirement.
+
+# Sanity API version pin (optional — client falls back to '2024-10-01' if unset;
+# see lib/sanity client config).
+NEXT_PUBLIC_SANITY_API_VERSION=
+
+# Optional Reply-To address for outbound Resend emails (optional — see
+# lib/email.ts; omitted entirely if unset, no fallback address is sent).
+RESEND_REPLY_TO=

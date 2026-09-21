@@ -551,6 +551,15 @@ shipped as real (not test-only) production behaviour on the first pass. **Missio
 `contract.py`'s `gate_cmd`, so a real UI/workflow contract cannot skip declaring triad coverage),
 has not started. See `backlog.md`'s P0 entry and the mission file's "M2 — DEFERRED" section.
 
+### 2026-09-18 — `studio-nav-missing-types` F1 DONE — read-only audit finding, fixed same session
+
+Site-wide maintenance audit (read-only analyst pass) found three Sanity document types
+(`showSponsor`, `vendorNursery`, `province`) schema-registered and live on real pages but
+unreachable in Studio's nav because `sanity/structure.ts` uses a custom nav list, not
+Sanity's default. Fixed same session, no mission file (small/direct scope): all three added
+to `structure.ts`'s `COLLECTION_TYPES`. Gate 9/9, QA PASS, Codex GPT-5.5 PASS. See
+`learned.md` for the reusable defect pattern and `docs/studio-nav-missing-types.md`.
+
 ### 2026-09-02 — `vendor-flow-notifications` M1 (F1) DONE — mission complete
 
 ~~`vendor-flow-notifications` (F1: fills G1 from the `vendor-flow-gaps` spec — admin notices at

@@ -1,0 +1,46 @@
+schema: athanor.contract/v1
+slug: studio-nav-missing-types
+goal: >-
+  Add the three schema-registered, live-page-used document types (showSponsor,
+  vendorNursery, province) to sanity/structure.ts's COLLECTION_TYPES nav list
+  so editors can browse to them in Studio's left-hand navigation; document two
+  already-code-supported optional env vars in .env.local.example.
+created_at: '2026-09-18'
+autonomy: high
+features:
+  - id: F1
+    name: Restore missing document types to Studio nav + document two optional env vars
+    status: pending
+goldens:
+  - .agent/memory/project/specs/studio-nav-missing-types/goldens/structure-collection-types.golden.ts
+  - .agent/memory/project/specs/studio-nav-missing-types/goldens/env-local-example.golden.txt
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: showSponsor is present in sanity/structure.ts's COLLECTION_TYPES list
+      command: grep -q "'showSponsor'" "sanity/structure.ts"
+    - id: A2
+      description: vendorNursery is present in sanity/structure.ts's COLLECTION_TYPES list
+      command: grep -q "'vendorNursery'" "sanity/structure.ts"
+    - id: A3
+      description: province is present in sanity/structure.ts's COLLECTION_TYPES list
+      command: grep -q "'province'" "sanity/structure.ts"
+    - id: A4
+      description: All three new types still fall before the closing bracket of COLLECTION_TYPES (not accidentally added to PINNED_SINGLETON_TYPES or elsewhere)
+      command: awk "/const COLLECTION_TYPES = \[/,/\];/" "sanity/structure.ts" | grep -q "showSponsor" && awk "/const COLLECTION_TYPES = \[/,/\];/" "sanity/structure.ts" | grep -q "vendorNursery" && awk "/const COLLECTION_TYPES = \[/,/\];/" "sanity/structure.ts" | grep -q "province"
+    - id: A5
+      description: No pre-existing COLLECTION_TYPES entry was removed (showPage still present as the prior last entry)
+      command: grep -q "'showPage'" "sanity/structure.ts"
+    - id: A6
+      description: filterNewDocumentOptions still only filters PINNED_SINGLETON_TYPES (unchanged) — the three added types remain ordinary collection types, not accidentally pinned
+      command: grep -q "PINNED_SINGLETON_TYPES as readonly string\[\]" "sanity/structure.ts"
+    - id: A7
+      description: NEXT_PUBLIC_SANITY_API_VERSION documented in .env.local.example
+      command: grep -q "^NEXT_PUBLIC_SANITY_API_VERSION=" ".env.local.example"
+    - id: A8
+      description: RESEND_REPLY_TO documented in .env.local.example
+      command: grep -q "^RESEND_REPLY_TO=" ".env.local.example"
+    - id: A9
+      description: TypeScript compiles cleanly after the structure.ts edit
+      command: npx tsc --noEmit -p tsconfig.json
