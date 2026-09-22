@@ -39,7 +39,7 @@
   "created_at": "2026-04-21T12:12:52Z",
   "template_version": "3.8.2",
   "identity": {
-    "agent_name": "Athanor",
+    "agent_name": "SAOC NOS Site Agent",
     "project_role": "primary maintainer"
   },
   "autonomy": {
