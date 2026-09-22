@@ -250,13 +250,16 @@ test.describe('mega menu — Layout 4 visual fidelity (mission menu-system-layou
     await expect(featureRail).toHaveCSS('border-left-width', '1px');
     await expect(featureRail).toHaveCSS('border-left-color', GOLD_RULE_SOFT);
 
-    // The lead block's "The Show" group heading is also a real <h3> now, but
-    // the lead block CONTAINER is still located via its non-heading eyebrow
-    // ("The National Show"), which is unique in the panel and precedes the
-    // heading — see goldens/f7-layout4-visual-fidelity.json's leadEyebrow
-    // section for why the eyebrow itself does not become a heading.
-    const leadEyebrow = panel.getByText('The National Show', { exact: true });
-    const leadBlock = leadEyebrow.locator('xpath=..');
+    // REPOINTED (mission menu-system-layout4 M2/F8, A13/A14): F8a replaced the
+    // lead block's eyebrow + serif heading pair with a logo image, so the
+    // eyebrow text this used to locate the lead block CONTAINER through no
+    // longer exists. The lead block container now carries its own stable,
+    // content-independent anchor — data-testid="mega-menu-lead"
+    // (MegaMenu.tsx, the flex flex-col pr-6 div) — added specifically so this
+    // class of breakage (a locator riding on copy that later changes) closes
+    // for good. The property measured (no left rule on the lead block, unlike
+    // the group columns and feature rail above) is unchanged.
+    const leadBlock = panel.getByTestId('mega-menu-lead');
     await expect(leadBlock).toHaveCSS('border-left-width', '0px');
     await expect(leadBlock).toHaveCSS('padding-right', '24px');
   });
@@ -279,7 +282,7 @@ test.describe('mega menu — Layout 4 visual fidelity (mission menu-system-layou
     }
   });
 
-  test('the lead block eyebrow ("The National Show") is styled to the artifact\'s .dd-head treatment, not a pill badge', async ({
+  test.skip('the lead block eyebrow ("The National Show") is styled to the artifact\'s .dd-head treatment, not a pill badge — RETIRED (mission menu-system-layout4 M2/F8, A17): the eyebrow <p> this test targeted no longer exists, replaced by F8a\'s NOS logo image — see A1 above, which already proves the eyebrow text is gone. Nothing left for this test to assert.', async ({
     page,
   }) => {
     const panel = await openNationalShowMenu(page);
@@ -297,7 +300,17 @@ test.describe('mega menu — Layout 4 visual fidelity (mission menu-system-layou
     expect(bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent').toBe(true);
   });
 
-  test('lead link and lead meta line match the artifact\'s .dd-lead / .dd-lead-sub typography', async ({
+  // SPLIT (mission menu-system-layout4 M2/F8, A18): this test originally
+  // covered both the lead link (.dd-lead) and the lead meta line (.dd-lead-sub)
+  // in one body. F8a removed the serif <Link> the leadLink half targeted,
+  // replacing it with the NOS logo image (see A1/A17) — nothing left for that
+  // half to assert, so it retires here alongside A17's eyebrow retirement,
+  // same reasoning. The leadMeta half is untouched by F8a (the venue/date span
+  // still renders exactly as before, per f8-lead-logo.json's metaLineRuling)
+  // and survives below as its own standalone, still-live test rather than
+  // being skipped alongside the dead leadLink assertions it used to share a
+  // body with.
+  test.skip('lead link matches the artifact\'s .dd-lead typography — RETIRED (mission menu-system-layout4 M2/F8, A17/A18): the serif <Link> this half targeted no longer exists, replaced by F8a\'s NOS logo image — see A1 above, which already proves the lead link text is gone. Nothing left for this half to assert.', async ({
     page,
   }) => {
     const panel = await openNationalShowMenu(page);
@@ -312,6 +325,10 @@ test.describe('mega menu — Layout 4 visual fidelity (mission menu-system-layou
     // .dd-lead has no margin-top of its own — the gap above it comes from the
     // eyebrow's own margin-bottom, not an explicit top margin on this element.
     await expect(leadLink).toHaveCSS('margin-top', '0px');
+  });
+
+  test('lead meta line matches the artifact\'s .dd-lead-sub typography', async ({ page }) => {
+    const panel = await openNationalShowMenu(page);
 
     const leadMeta = panel.getByText(/Hangar|Stellenbosch/); // venue name, sourced from the nationalShow singleton — see leadMetaLine note
     const metaFontFamily = await leadMeta.first().evaluate((el) => getComputedStyle(el).fontFamily);
@@ -380,7 +397,13 @@ test.describe('mega menu — Layout 4 visual fidelity (mission menu-system-layou
   }) => {
     const panel = await openNationalShowMenu(page);
 
-    const leadBox = await panel.getByText('The National Show', { exact: true }).locator('xpath=..').boundingBox();
+    // REPOINTED (mission menu-system-layout4 M2/F8, A13/A15): measures the
+    // lead track via data-testid="mega-menu-lead" (A13) instead of the
+    // removed eyebrow text — same element, same bounding box, F8a only
+    // changed what renders inside it. The ratio math below (colUnit,
+    // tolerance 0.06, all five comparisons, the edge-to-edge gap checks) is
+    // unchanged.
+    const leadBox = await panel.getByTestId('mega-menu-lead').boundingBox();
     const visitBox = await panel
       .getByRole('heading', { level: 3, name: 'Visit', exact: true })
       .locator('xpath=..')
@@ -483,10 +506,14 @@ test.describe('mega menu — Layout 4 visual fidelity (mission menu-system-layou
       return parts[parts.length - 1];
     };
 
-    // serif: the lead link (.dd-lead), same element the existing serif
-    // .toContain check above already targets.
-    const leadLink = panel.getByRole('link', { name: '19th SAOC National Orchid Show', exact: true });
-    const serifFamily = await leadLink.evaluate((el) => getComputedStyle(el).fontFamily);
+    // serif: REPOINTED (mission menu-system-layout4 M2/F8, A16) from the lead
+    // link (.dd-lead, removed by F8a — see A17/A18) to the feature rail's
+    // <h4>Tickets</h4> heading (MegaMenu.tsx:249, font-serif) — the only
+    // font-serif text element remaining in the panel after F8a. Same property:
+    // the resolved font-family's LAST comma-separated entry must be exactly
+    // "serif", not merely a substring match.
+    const serifHeading = panel.getByRole('heading', { level: 4, name: 'Tickets', exact: true });
+    const serifFamily = await serifHeading.evaluate((el) => getComputedStyle(el).fontFamily);
     expect(lastFamily(serifFamily)).toBe('serif');
 
     // mono: a group heading (.dd-head), same element the existing mono

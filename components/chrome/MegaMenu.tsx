@@ -26,6 +26,7 @@
 // =============================================================
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 import type { NavItem } from './nav-config';
@@ -80,11 +81,18 @@ export function MegaMenu({ item, show }: MegaMenuProps) {
 
   // Meta lines: computed at render time from the nationalShow singleton, never
   // authored as literal copy in nav-config.ts (see its own NavMegaLead.meta /
-  // NavMegaFeatureRail.meta comments). As of 2026-09-10 the singleton's
-  // showDate/showEndDate are both null, so formatShowDateRange returns null —
-  // the lead line renders venue-only with no dangling separator, and the
-  // feature rail's date-only meta renders nothing (cleanly omitted). Both pick
-  // up real values with no code change once Studio has real dates.
+  // NavMegaFeatureRail.meta comments) — that contract is load-bearing and
+  // must not change. Whether showDate/showEndDate are set is live Sanity
+  // content this file does not control and must not assume a fixed state
+  // for: when both are null, formatShowDateRange returns null, the lead line
+  // renders venue-only with no dangling separator, and the feature rail's
+  // date-only meta renders nothing (cleanly omitted); when set, both pick up
+  // the real values with no code change. Do not re-snapshot "as of <date>,
+  // the dates are/aren't null" here — a dataset fact frozen into a code
+  // comment goes stale silently the next time Studio content changes, with
+  // nothing to catch it (see e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts's
+  // A21, which checks the live DOM at test time instead of trusting a
+  // snapshot for exactly this reason).
   const venueName = show?.venue?.name ?? null;
   const dateRange = formatShowDateRange(show?.showDate, show?.showEndDate);
   const leadMeta =
@@ -109,7 +117,7 @@ export function MegaMenu({ item, show }: MegaMenuProps) {
     'rounded-sm font-mono text-[10px] uppercase tracking-[0.18em] text-accent transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment';
 
   return (
-    <div ref={containerRef} onBlur={onBlur}>
+    <div ref={containerRef} onBlur={onBlur} className="text-[14px]">
       <button
         ref={triggerRef}
         type="button"
@@ -132,17 +140,30 @@ export function MegaMenu({ item, show }: MegaMenuProps) {
               {/* Track 1 — lead block: eyebrow, serif lead linking the hub, meta
                 line, "The Show" group folded in underneath. */}
               {item.lead && (
-                <div className="flex flex-col pr-6">
-                  <p className={groupHeadingClassName}>{item.lead.eyebrow}</p>
+                <div data-testid="mega-menu-lead" className="flex flex-col pr-6">
+                  {/* F8a: the NOS lockup replaces the eyebrow + serif heading
+                    pair entirely — the artwork already carries the identity
+                    text ("National Orchid Show", "Western Cape · 2027"), and
+                    the image is the clickable lead link, not a second anchor.
+                    See .agent/memory/project/specs/menu-system-layout4/
+                    goldens/f8-lead-logo.json `render`/`reading.ruling`. */}
                   <Link
                     href={item.lead.leadHref}
                     onClick={close}
-                    className="mb-[6px] block w-fit rounded-sm font-serif text-[23px] font-semibold leading-[1.12] text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                    className="mb-[6px] block w-fit rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
                   >
-                    {item.lead.leadLabel}
+                    <Image
+                      src="/images/nos-2027-logo-full-colour-vertical.png"
+                      alt="National Orchid Show — Western Cape · 2027"
+                      width={200}
+                      height={176}
+                    />
                   </Link>
                   {leadMeta && (
-                    <span className="mb-4 block max-w-[32ch] text-[12.5px] text-muted">
+                    <span
+                      data-testid="mega-menu-lead-meta"
+                      className="mb-4 block max-w-[32ch] text-[12.5px] text-muted"
+                    >
                       {leadMeta}
                     </span>
                   )}
@@ -231,7 +252,10 @@ export function MegaMenu({ item, show }: MegaMenuProps) {
               {item.featureRail && (
                 <div className="border-l border-rule-soft bg-nos-pale-gold p-6">
                   {featureRailMeta && (
-                    <span className="mb-3 block font-mono text-[10px] uppercase tracking-[0.14em] text-nos-olive-700">
+                    <span
+                      data-testid="feature-rail-meta"
+                      className="mb-3 block font-mono text-[10px] uppercase tracking-[0.14em] text-nos-olive-700"
+                    >
                       {featureRailMeta}
                     </span>
                   )}
