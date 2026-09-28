@@ -1,11 +1,18 @@
 {
   "provider": "grok-cli",
   "display_name": "Grok CLI",
-  "headless_command": ["grok", "-p", "{prompt}"],
-  "continue_command": ["grok", "-c"],
+  "headless_command": [
+    "grok",
+    "-p",
+    "{prompt}"
+  ],
+  "continue_command": [
+    "grok",
+    "-c"
+  ],
   "supports_headless": true,
   "supports_continue": true,
-  "supports_hooks": true,
+  "supports_hooks": false,
   "supports_subagents": true,
   "supports_max_turns": true,
   "supports_max_tokens": false,
@@ -13,23 +20,65 @@
   "routing_policy": {
     "auto_route": true,
     "cost_tier": "standard",
-    "complexity": ["trivial", "standard"],
-    "domains": ["analysis", "docs", "research"],
+    "complexity": [
+      "trivial",
+      "standard"
+    ],
+    "domains": [
+      "analysis",
+      "docs",
+      "research"
+    ],
     "priority": 30,
-    "escalation_order": ["opencode", "claude-code"]
+    "escalation_order": [
+      "opencode",
+      "claude-code"
+    ]
   },
   "role_capabilities": {
     "schema": "athanor.role-capabilities/v1",
     "mode": "mixed",
     "roles": {
-      "lead": {"supported": false, "dispatch": "unsupported", "reason": "Grok CLI has no verified lead subagent dispatch path in this harness."},
-      "analyst": {"supported": true, "dispatch": "primary-only", "reason": "Grok CLI can run analyst/research prompts in the primary session using synced instructions."},
-      "architect": {"supported": false, "dispatch": "unsupported", "reason": "Grok CLI has no verified architect subagent dispatch path for chain-critical spec gates."},
-      "dev": {"supported": false, "dispatch": "unsupported", "reason": "Grok CLI has no verified dev subagent dispatch path in this harness yet."},
-      "qa": {"supported": true, "dispatch": "primary-only", "reason": "Grok CLI can run bounded QA review prompts in the primary session."},
-      "docs": {"supported": true, "dispatch": "primary-only", "reason": "Grok CLI can perform documentation updates when tools are available in the primary session."},
-      "maintainer": {"supported": false, "dispatch": "unsupported", "reason": "Grok CLI has no verified maintainer closeout dispatch path with reliable artifact writes."},
-      "designer": {"supported": false, "dispatch": "unsupported", "reason": "Grok CLI has no verified designer role dispatch path in this harness."}
+      "lead": {
+        "supported": false,
+        "dispatch": "unsupported",
+        "reason": "Grok CLI has no verified lead subagent dispatch path in this harness."
+      },
+      "analyst": {
+        "supported": true,
+        "dispatch": "primary-only",
+        "reason": "Grok CLI can run analyst/research prompts in the primary session using synced instructions."
+      },
+      "architect": {
+        "supported": false,
+        "dispatch": "unsupported",
+        "reason": "Grok CLI has no verified architect subagent dispatch path for chain-critical spec gates."
+      },
+      "dev": {
+        "supported": false,
+        "dispatch": "unsupported",
+        "reason": "Grok CLI has no verified dev subagent dispatch path in this harness yet."
+      },
+      "qa": {
+        "supported": true,
+        "dispatch": "primary-only",
+        "reason": "Grok CLI can run bounded QA review prompts in the primary session."
+      },
+      "docs": {
+        "supported": true,
+        "dispatch": "primary-only",
+        "reason": "Grok CLI can perform documentation updates when tools are available in the primary session."
+      },
+      "maintainer": {
+        "supported": false,
+        "dispatch": "unsupported",
+        "reason": "Grok CLI has no verified maintainer closeout dispatch path with reliable artifact writes."
+      },
+      "designer": {
+        "supported": false,
+        "dispatch": "unsupported",
+        "reason": "Grok CLI has no verified designer role dispatch path in this harness."
+      }
     }
   },
   "hooks_dir": ".grok/hooks",
@@ -37,7 +86,7 @@
   "skills_dir": ".grok/skills",
   "rules_dir": ".grok/rules",
   "native_instruction_file": "AGENTS.md",
-  "notes": "Provider adapter only; scheduled/background work must enqueue tickets instead of launching this command directly. Grok natively reads .claude/rules/*.md when its Claude-compat mode is on, independent of this harness's own .grok/rules sync.",
+  "notes": "Provider adapter only; scheduled/background work must enqueue tickets instead of launching this command directly. Grok natively reads .claude/rules/*.md when its Claude-compat mode is on, independent of this harness's own .grok/rules sync. HOOKS: none, by decision. grok 1.0.40 reported total_hooks=0 with --trust in both the real repo and a clean sandbox -- it discovered neither .grok/hooks/*.json nor the .claude/settings.json compat path -- and chasing it is not worth it: a hook that hangs the agent costs more than the floor it enforces. Grok is covered the same way Codex and OpenCode are: the mandatory first-turn full_boot.sh instruction in AGENTS.md. Do not set supports_hooks true again without a run that shows a pre_tool hook actually firing.",
   "autonomy": {
     "supports_policy_sync": true,
     "max_honorable_level": "high",

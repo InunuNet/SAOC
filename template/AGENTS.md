@@ -163,6 +163,8 @@ even if the Makefile is replaced by a project-specific one.
 | Sync agents/skills/rules to provider configs | `make sync` | `bash execution/sync_agents.sh`, `bash execution/sync_skills.sh`, `bash execution/sync_rules.sh` |
 | Regenerate CLAUDE.md / GEMINI.md from AGENTS.md | `make sync-clones` | `python3 execution/paired_copies.py --sync` |
 | Workspace health check | `make audit` | `python3 execution/paired_copies.py --check` |
+| List harness directives addressed to this project | `make directives` | `python3 execution/directives.py list` |
+| Print the compact boot panel | `make boot-report` | `python3 execution/boot_panel.py --format report` |
 | Run the validation suite | `make test` | — |
 | Onboard this project | `make onboard` | see `.agent/skills/onboard.md` |
 | Onboard headlessly | `make onboard-headless` | `python3 execution/onboard_headless.py …` |

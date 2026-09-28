@@ -450,6 +450,43 @@ path_in_project() {
   return 1
 }
 
+# project_own_dotenv <resolved-path> -- is this THIS project's own dotenv,
+# sitting directly at the project root?
+#
+# Operator ruling, 2026-09-22 (Brad, verbatim): "what's the point if you can't
+# manage your own project files." The write-only half-measure shipped earlier
+# the same day let an agent append to `.env` but not read it back, so every
+# rotation, every "is the key actually set", every malformed-line repair still
+# became homework handed to the operator. Read and write are now both allowed
+# for this one file in this one tree.
+#
+# The depth restriction is the security boundary and is deliberate: only a
+# dotenv sitting DIRECTLY at the project root qualifies, so
+# `<project>/secrets/.env` stays denied on the strength of `secrets/` and no
+# nested credential directory can be reached by naming a file `.env` inside it.
+# Another project's dotenv, the home directory's, ~/.ssh, ~/.aws, ~/.gnupg,
+# */secrets/*, *.pem and *.key are all unchanged, denied in both directions.
+#
+# CONSEQUENCE, stated once because it is now the operator's accepted risk:
+# reading a dotenv pulls live secret VALUES into the agent's context, and from
+# there into transcripts, logs and compaction summaries. The floor no longer
+# prevents that mechanically. `.agent/rules/_core/security.md` still forbids
+# logging a key, and `execution/env_keys.py` exists so the common case -- "is
+# KEY set?" -- can be answered without the value ever being printed. Prefer it.
+project_own_dotenv() {
+  local p="$1"
+  [ -z "$TR_PROJECT_ROOT" ] && return 1
+  case "$p" in
+    /*) ;;
+    *) [ -z "$TR_CWD" ] && return 1
+       p=$(expand_target "${TR_CWD}/${p}") ;;
+  esac
+  case "$p" in
+    "$TR_PROJECT_ROOT"/.env|"$TR_PROJECT_ROOT"/.env.*) return 0 ;;
+  esac
+  return 1
+}
+
 # read_protected <resolved-path> — the READ-direction verdict. 0 = protected.
 #
 # The core credential set is tested FIRST and unconditionally, so a settings
@@ -458,6 +495,9 @@ path_in_project() {
 # the workspace-scoped exemption.
 read_protected() {
   local p="$1"
+  # Tested before the core set, because `.env` IS in the core set. The depth
+  # restriction inside project_own_dotenv() is what keeps that safe.
+  project_own_dotenv "$p" && return 1
   ci_match "$re_read_protpath_core" "$p" && return 0
   component_glob_hit "$p" && return 0
   if ci_match "$re_read_protpath_settings" "$p"; then

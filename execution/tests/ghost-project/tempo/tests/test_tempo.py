@@ -70,12 +70,21 @@ with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tf:
     with open(fixture_path("in_c.json")) as f:
         tf.write(f.read())
 
-proc = subprocess.run(
-    f"{sys.executable} {TEMPO} < {tf_path}",
-    shell=True,
-    capture_output=True,
-    text=True,
-)
+# argv list, not a shell string. The `<` here is only stdin redirection, which
+# subprocess does natively — so routing it through a shell bought nothing and
+# cost correctness: the path was interpolated unquoted, and `__file__` resolves
+# to an ABSOLUTE path on Python 3.9+, so any project whose directory contains a
+# space had the command split mid-path. Reported by mlilo-savant-0e 2026-09-21
+# from `/Users/vetus/ai/Mlilo Savant`, where this failed with
+# "can't open file '/Users/vetus/ai/Mlilo'". shlex.quote() would also have
+# worked; not invoking a shell at all is the fix that cannot regress.
+with open(tf_path) as stdin_f:
+    proc = subprocess.run(
+        [sys.executable, TEMPO],
+        stdin=stdin_f,
+        capture_output=True,
+        text=True,
+    )
 os.unlink(tf_path)
 expected = read_fixture("expected_c.json")
 assert_test(

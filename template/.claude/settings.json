@@ -76,6 +76,11 @@
             "type": "command",
             "command": "[ -f execution/hooks/post_compact_inject.sh ] || exit 0; bash execution/hooks/post_compact_inject.sh",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/compaction_backstop.sh ] && bash execution/hooks/compaction_backstop.sh || exit 0",
+            "timeout": 10
           }
         ]
       }
@@ -117,6 +122,7 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "BASH_DEFAULT_TIMEOUT_MS": "300000"
   },
+  "autoCompactWindow": 400000,
   "sandbox": {
     "enabled": false,
     "credentials": {

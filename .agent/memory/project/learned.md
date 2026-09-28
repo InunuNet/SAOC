@@ -4239,3 +4239,44 @@ Two items verified and relayed this session:
    this very entry — had to reword around it). Same defect class as this repo's pre-existing
    `expand_target()` / `*/secrets/*` false-positive bug: a check triggerable without the
    property it's actually testing for.
+
+## Session 2026-09-28: harness update 3.8.2 -> 3.8.5 silently dropped 23 hook registrations
+
+- **`json_deep_merge` during `make update-template` is not additive for hook arrays** — the
+  3.8.2 -> 3.8.5 update collapsed `.claude/settings.json` from 32 hook registrations to 9,
+  losing `docs/rules/inject_no_invention.sh` (UserPromptSubmit + SubagentStart), all three
+  `SessionEnd` hooks, and every chain guard (`require_contract*`, `require_docs`,
+  `require_research`, `require_dev_result`, `require_qa_report`, `require_maintainer`).
+  First `make update-template` run exited 1 (cause not captured); a second
+  `python3 execution/update_template.py --apply` completed rc=0 and stamped 3.8.5 in
+  `.agent/profile.json` and `.agent/version` — the hook loss happened silently on that clean
+  run, not the failed one.
+- **`execution/integrity_check.py` cannot see this class of loss** — it only compares
+  `.claude/settings.json` against the *template's* 8 expected hooks, so a project that had
+  32 registrations (23 of them project-specific, added post-template) reads as "ok" even
+  after losing all 23. **Rule: diff `.claude/settings.json` against `HEAD` after every
+  `update-template`, before committing — integrity_check passing is not sufficient.**
+- **Fix used: `python3 execution/repair_hooks.py --root "<abs project path>" --apply`**,
+  which restored all 23 registrations additively from this project's git history (backup at
+  `.claude/settings.json.pre-repair-20260928T140535`). Operator (Brad) explicitly rejected
+  `git checkout -- .claude/settings.json` as the fix — checkout would also discard the
+  update's intentional changes, not just the regression.
+- **Pitfall: `repair_hooks.py` without `--root` scans (and with `--apply`, modifies) every
+  sibling project workspace** — hit this: without `--root` it targeted MacOS Tweaks, Paradox,
+  SAOC, SAOC NOS Design, and SAOC NOS Site all at once, which is a scope violation per
+  `.claude/rules/scope.md`. Always pass `--root "<this project's absolute path>"`.
+- Likely upstream cause: Athanor issue #1453 — `update_template.py` (~line 1266) only
+  recognises hook scripts living under `execution/hooks`, `.claude/hooks`, `.gemini/hooks`,
+  `.grok/hooks`. Does not fully explain this loss: 21 of the 23 dropped hooks in this project
+  *do* live under `execution/hooks`, only 2 (`docs/rules/inject_no_invention.sh`) live
+  outside it. Filed as pending upstream, not yet confirmed as the root cause — see
+  `[[athanor-harness-notes]]` / backlog for follow-up.
+
+### NOS routes check for menu-system-layout4 M3 (verified via Alembic, no_cache)
+
+All six NOS-lane routes are live on `origin/main` (736db97d) and returned 200 on
+`beta.saoc.co.za`: `/national-show/programme`, `/symposium`, `/wosa-conference`,
+`/sa-exhibitors`, `/international-guests`, `/sponsors`. All six carry the R11
+placeholder-copy disclosure by design (not a defect). Note: `/national-show/wosa` was
+renamed to `/national-show/wosa-conference` in `db6cd81d` (2026-09-10) — any reference to the
+old path is stale. Confirmed to the menu-lane session (`saoc-85`), which acknowledged.

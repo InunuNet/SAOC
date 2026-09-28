@@ -12,7 +12,9 @@ Usage:
 """
 
 import json
+import hashlib
 import os
+from pathlib import Path
 import sys
 
 
@@ -88,7 +90,7 @@ def wire_autonomy_hook(target_dir: str) -> None:
         print("  ok check_autonomy.sh already wired")
 
 
-AUTOCOMPACT_WINDOW_DEFAULT = 300000
+AUTOCOMPACT_WINDOW_DEFAULT = 400000
 
 
 def seed_autocompact_window(target_dir: str, settings_path: str | None = None) -> None:
@@ -129,9 +131,24 @@ def seed_autocompact_window(target_dir: str, settings_path: str | None = None) -
         print(f"  warn settings.json parse error, autoCompactWindow seed skipped: {e}")
         return
 
-    if "autoCompactWindow" in settings:
-        print(f"  ok autoCompactWindow already set ({settings['autoCompactWindow']!r}) — left alone")
-        return
+    current = settings.get("autoCompactWindow")
+    # The default is a FLOOR, not just a seed. A project that already carried a
+    # lower value kept compacting early forever, because this only ever wrote
+    # the key when it was absent: mumbl-ai-f0 was observed compacting at 27%
+    # context on 2026-09-21 with the key already present at the old value.
+    # Raising the floor has to reach existing projects or it reaches nobody.
+    # A HIGHER value is the operator's own deliberate choice (/autocompact)
+    # and is never lowered.
+    if isinstance(current, (int, float)) and not isinstance(current, bool):
+        if current >= AUTOCOMPACT_WINDOW_DEFAULT:
+            print(f"  ok autoCompactWindow already {current!r} "
+                  f"(>= floor {AUTOCOMPACT_WINDOW_DEFAULT}) — left alone")
+            return
+        print(f"  raising autoCompactWindow {current!r} -> "
+              f"{AUTOCOMPACT_WINDOW_DEFAULT} (floor)")
+    elif current is not None:
+        print(f"  replacing non-numeric autoCompactWindow ({current!r}) -> "
+              f"{AUTOCOMPACT_WINDOW_DEFAULT}")
 
     settings["autoCompactWindow"] = AUTOCOMPACT_WINDOW_DEFAULT
     try:
@@ -227,6 +244,164 @@ def remove_pulse_scripts(target_dir: str) -> None:
             print(f"  Removed obsolete Pulse script: {fname}")
 
 
+# The L1 hook cut (2026-09-06) retired these 20 scripts from execution/hooks/,
+# but `--apply` only copies and updates -- it never deletes a file upstream
+# removed, so a workspace that had one on disk keeps it forever. Reported live
+# (SAOC, 2026-09-17): require_maintainer.sh, still present downstream, blocked
+# a real `git commit` behind a maintainer-handoff check upstream had already
+# abolished. boot_panel.py's own delivery.hooks_retired check names this same
+# set dynamically (expected-but-not-registered-and-not-on-disk); this list is
+# the inverse direction -- what to physically remove if still on disk.
+RETIRED_HOOK_SCRIPTS = [
+    "block_asq_in_loop.sh", "blocker_scan.sh", "compaction_backstop.sh",
+    "compaction_nudge.sh", "harness_heartbeat.sh", "inject_pressure.sh",
+    "post_agent_loop_continue.sh", "quota_death_checkpoint.sh",
+    "require_contract.sh", "require_contract_for_write.sh",
+    "require_dev_result.sh", "require_docs.sh", "require_maintainer.sh",
+    "require_qa_report.sh", "require_research.sh",
+    "session_clean_exit_marker.sh", "session_start_away_report.sh",
+    "session_token_log.sh", "subagent_start.sh", "turn_end_stamp.sh",
+]
+
+
+HOOK_BASELINES_PATH = os.path.join(
+    ".agent", "memory", "scratch", "template_baselines.json")
+
+
+def _load_hook_baselines(target_dir: str) -> dict:
+    """Recorded harness hashes, keyed by path. Missing store -> no claims."""
+    try:
+        with open(os.path.join(target_dir, HOOK_BASELINES_PATH)) as f:
+            data = json.load(f)
+    except Exception:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _is_harness_authored(fpath: str, fname: str, baselines: dict) -> bool:
+    """Can this harness PROVE it wrote the file now sitting at fpath?
+
+    THE NAME IS NOT THE PROOF. RETIRED_HOOK_SCRIPTS is an inventory of names,
+    and a name in the harness hooks directory was taken as evidence of harness
+    ownership. It is not: mumbl-ai-f0 keeps eight of their own live hooks
+    there, under eight of these exact names, including their session-end
+    wrap-up. Deleting on the strength of the name alone destroys the scripts
+    outright -- worse than the registration loss fixed in 099ac075, and
+    unrecoverable without git.
+
+    That is the same error as that bug, one layer down: there it was applied to
+    registrations, here to files. The rule is the same one _drop_existing_
+    registration() settled on -- act only on what the harness can prove it
+    owns, and PRESERVE under ambiguity. The failure modes are not symmetric: a
+    retired script left on disk is inert once its registration is pruned, while
+    a deleted project script is gone.
+
+    Proof is a content hash this harness recorded for that path. No recorded
+    hash, or a hash that does not match, means the bytes are not ours.
+    """
+    try:
+        digest = hashlib.sha256(Path(fpath).read_bytes()).hexdigest()
+    except Exception:
+        return False
+    suffix = os.path.join("execution", "hooks", fname)
+    for key, recorded in baselines.items():
+        if not str(key).endswith(suffix):
+            continue
+        if isinstance(recorded, dict):
+            recorded = recorded.get("sha256") or recorded.get("hash")
+        if isinstance(recorded, str) and recorded == digest:
+            return True
+    return False
+
+
+def remove_retired_hooks(target_dir: str) -> None:
+    """Delete retired hook scripts and prune their dead registrations.
+
+    Two halves, because either one alone leaves a hazard: deleting only the
+    file turns a guarded registration (`[ -f ... ] || exit 0`) harmless but
+    leaves an UNguarded one erroring on every tool call; pruning only the
+    registration leaves the retired script runnable by hand or by a stale
+    reference elsewhere. Both together match what boot_panel.py's
+    delivery.hooks_retired check expects to find: gone, not merely disarmed.
+    """
+    hooks_dir = os.path.join(target_dir, "execution", "hooks")
+    baselines = _load_hook_baselines(target_dir)
+    removed, kept = [], []
+    for fname in RETIRED_HOOK_SCRIPTS:
+        fpath = os.path.join(hooks_dir, fname)
+        if not os.path.exists(fpath):
+            continue
+        if _is_harness_authored(fpath, fname, baselines):
+            os.remove(fpath)
+            removed.append(fname)
+        else:
+            kept.append(fname)
+    for fname in removed:
+        print(f"  Removed retired hook script: {fname}")
+    for fname in kept:
+        print(f"  KEPT {fname}: content does not match any hash this harness "
+              f"recorded for it — treating it as the project's own script, "
+              f"not a retired harness one")
+
+    # Every provider that can register a hook, not just Claude Code -- a
+    # workspace whose .gemini/settings.json still names a deleted script
+    # fails on its next Gemini session (reported live tonight, SAOC:
+    # `.gemini/settings.json` kept 6 registrations for hooks `ls` already
+    # showed gone; `.claude/settings.json` happened to be clean by luck of
+    # timing, not by any reconciliation actually running).
+    for provider_dir in (".claude", ".gemini", ".grok"):
+        _prune_retired_hook_registrations(
+            os.path.join(target_dir, provider_dir, "settings.json"))
+
+
+def _prune_retired_hook_registrations(settings_path: str) -> None:
+    if not os.path.exists(settings_path):
+        return
+    try:
+        with open(settings_path) as f:
+            settings = json.load(f)
+    except Exception as e:
+        print(f"  warn {settings_path} parse error, retired-hook pruning skipped: {e}")
+        return
+
+    hooks = settings.get("hooks")
+    if not isinstance(hooks, dict):
+        return
+
+    pruned_count = 0
+    for event, matchers in list(hooks.items()):
+        if not isinstance(matchers, list):
+            continue
+        new_matchers = []
+        for matcher in matchers:
+            entries = matcher.get("hooks") if isinstance(matcher, dict) else None
+            if not isinstance(entries, list):
+                new_matchers.append(matcher)
+                continue
+            kept_entries = [
+                h for h in entries
+                if not (isinstance(h, dict)
+                        and any(name in str(h.get("command", ""))
+                                for name in RETIRED_HOOK_SCRIPTS))
+            ]
+            pruned_count += len(entries) - len(kept_entries)
+            if kept_entries:
+                matcher["hooks"] = kept_entries
+                new_matchers.append(matcher)
+            # A matcher whose only entries were all retired is dropped
+            # entirely, not left registered with an empty hooks list.
+        hooks[event] = new_matchers
+
+    if pruned_count:
+        try:
+            with open(settings_path, "w") as f:
+                json.dump(settings, f, indent=2)
+        except Exception as e:
+            print(f"  warn {settings_path} retired-hook pruning write failed: {e}")
+            return
+        print(f"  Pruned {pruned_count} dead registration(s) in {settings_path}")
+
+
 def check_agents_md_placeholders(target_dir: str) -> None:
     """Warn if AGENTS.md still contains unfilled {{PLACEHOLDER}} tokens."""
     agents_md = os.path.join(target_dir, "AGENTS.md")
@@ -264,6 +439,9 @@ def main(target_dir: str, version: str) -> None:
 
     print("[Gap 6] Removing obsolete Pulse scripts...")
     remove_pulse_scripts(target_dir)
+
+    print("[Gap 9] Removing retired hook scripts and dead registrations...")
+    remove_retired_hooks(target_dir)
 
     print("[Gap 5] Checking AGENTS.md for unfilled placeholders...")
     check_agents_md_placeholders(target_dir)

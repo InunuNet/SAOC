@@ -11,7 +11,7 @@
 # turn a session sits above threshold, for the agent to run /compact itself.
 # Wired alongside (not replacing) inject_pressure.sh and compaction_nudge.sh.
 #
-# Design (see DECISIONS.md + goldens/compaction_backstop_spec.md):
+# Design (see DECISIONS.md + docs/harness/compaction-backstop.md):
 #   - Two tiers, purely by PERCENTAGE of the resolved window (never a raw
 #     token count — that was inject_pressure.sh's HIGH_FIRES alarm-fatigue
 #     bug; this hook must not repeat it).
@@ -39,6 +39,16 @@
 #   - ALWAYS exit 0 (never block a user turn)
 #   - Read-only: no writes to the transcript, no persisted state of any kind
 #   - All stderr suppressed; timeout python work at <= 4s
+#
+# Known limitation (accepted, not fixed here): invoking this hook with file
+# descriptor 0 closed hangs indefinitely on `INPUT=$(cat)` below. This is the
+# classic bash command-substitution hazard (with fd 0 closed, the shell
+# reassigns the substitution's own pipe to the lowest free descriptor and
+# `cat` deadlocks reading it) — it reproduces identically in inject_pressure.sh
+# and in a bare `bash -c 'X=$(cat)' <&-`, and no cheap fix exists that doesn't
+# risk swallowing legitimate stdin content. Claude Code always supplies stdin
+# in production, and the outer hook timeout in .claude/settings.json bounds
+# it regardless. See docs/harness/compaction-backstop.md "Known limitations".
 set +e
 exec 2>/dev/null
 
@@ -60,8 +70,33 @@ emit_silent() {
 }
 
 emit_message() {
-  jq -nc --arg msg "$1" '{hookSpecificOutput:{hookEventName:"UserPromptSubmit",additionalContext:$msg}}' \
-    || printf '%s' '{}'
+  local msg="$1"
+  local json
+  json=$(jq -nc --arg msg "$msg" '{hookSpecificOutput:{hookEventName:"UserPromptSubmit",additionalContext:$msg}}' 2>/dev/null)
+  if [ -n "$json" ]; then
+    printf '%s' "$json"
+  else
+    # jq itself failed -- never fall back to {} here, that would silently
+    # suppress a real warning at exactly the moment it matters most, and
+    # never fall back to plain text either: Claude Code only injects
+    # hookSpecificOutput.additionalContext from a valid JSON envelope, so
+    # plain text is exactly as silent to the agent as {}. This script
+    # already hard-depends on python3 (it pipes to lib/context_window.py),
+    # so use json.dumps for correct escaping instead of a hand-rolled
+    # splice -- $msg embeds ${MODEL}, which is transcript-derived and can
+    # contain control characters (newline/tab) or a mix of quote and
+    # backslash, none of which a two-substitution hand escape covers.
+    local escaped_json
+    escaped_json=$(timeout 4 python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$msg" 2>/dev/null)
+    if [ -n "$escaped_json" ]; then
+      printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$escaped_json"
+    else
+      # python3 itself failed -- unreachable in practice (see above), but
+      # never emit invalid JSON: fall back to a fixed, non-interpolated
+      # literal that cannot be broken by any input.
+      printf '%s' '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"compaction_backstop: warning could not be formatted"}}'
+    fi
+  fi
   exit 0
 }
 
@@ -71,6 +106,35 @@ emit_message() {
 # reserved for decision 4's genuinely-healthy silence.
 fail_fallback() {
   emit_message "compaction_backstop: context pressure could not be computed this turn (internal error) — if the session feels heavy, consider running /compact manually."
+}
+
+# num_ge: $1 >= $2, both already validated by the caller as ^[0-9]+$.
+# Uses python3 (already a hard dependency below) instead of bash's native
+# `-ge` arithmetic comparison, which throws "integer expected" and falls
+# through toward silence on a number too large for it to hold (e.g. a
+# 68-digit numeric string in a corrupted or adversarial transcript) — the
+# same silent-on-failure bug this whole hook exists to prevent, via a
+# different trigger. python's int() has no size limit, so this cannot
+# overflow. On the (should-be-unreachable) chance this call itself errors
+# or times out, return failure so the caller routes to fail_fallback —
+# fail-safe-toward-warning, never fail-safe-toward-silent.
+num_ge() {
+  timeout 1 python3 -c '
+import sys
+try:
+    a = int(sys.argv[1])
+    b = int(sys.argv[2])
+except Exception:
+    sys.exit(2)
+sys.exit(0 if a >= b else 1)
+' "$1" "$2" 2>/dev/null
+  local rc=$?
+  # timeout(1) reports its own 124 on expiry; normalise every non-0/1
+  # outcome (124 included) to 2 so callers can tell "false" from "error".
+  if [ "$rc" != 0 ] && [ "$rc" != 1 ]; then
+    return 2
+  fi
+  return "$rc"
 }
 
 # -r as well as -f: an existing regular file we cannot READ is a failure, not
@@ -112,20 +176,35 @@ MODEL="${_REST#*|}"
 case "$STATE" in
   resolved|exceeded)
     if [[ "$PCT" =~ ^[0-9]+$ ]]; then
-      if [ "$PCT" -ge "$ESCALATE_THRESHOLD" ]; then
+      num_ge "$PCT" "$ESCALATE_THRESHOLD"; _RC_ESCALATE=$?
+      if [ "$_RC_ESCALATE" -eq 0 ]; then
         emit_message "⚡ CONTEXT PRESSURE ${PCT}% of ${WINDOW} — WRAP UP: this is past the worst native auto-compact miss ever observed in this harness; run /compact now."
-      elif [ "$PCT" -ge "$BACKSTOP_THRESHOLD" ]; then
-        emit_message "context pressure is ${PCT}% of ${WINDOW}, above the native auto-compact's observed operating range — if this session hasn't compacted yet, run /compact now."
+      elif [ "$_RC_ESCALATE" -eq 2 ]; then
+        fail_fallback
       else
-        emit_silent
+        num_ge "$PCT" "$BACKSTOP_THRESHOLD"; _RC_BACKSTOP=$?
+        if [ "$_RC_BACKSTOP" -eq 0 ]; then
+          emit_message "context pressure is ${PCT}% of ${WINDOW}, above the native auto-compact's observed operating range — if this session hasn't compacted yet, run /compact now."
+        elif [ "$_RC_BACKSTOP" -eq 2 ]; then
+          fail_fallback
+        else
+          emit_silent
+        fi
       fi
     else
       fail_fallback
     fi
     ;;
   unresolved|nodata)
-    if [[ "$TOKENS" =~ ^[0-9]+$ ]] && [ "$TOKENS" -ge "$UNRESOLVED_TOKEN_FLOOR" ]; then
-      emit_message "context pressure cannot be verified — the context window could not be resolved for model '${MODEL}', but raw usage is already ${TOKENS} tokens. Check manually / consider /compact."
+    if [[ "$TOKENS" =~ ^[0-9]+$ ]]; then
+      num_ge "$TOKENS" "$UNRESOLVED_TOKEN_FLOOR"; _RC_FLOOR=$?
+      if [ "$_RC_FLOOR" -eq 0 ]; then
+        emit_message "context pressure cannot be verified — the context window could not be resolved for model '${MODEL}', but raw usage is already ${TOKENS} tokens. Check manually / consider /compact."
+      elif [ "$_RC_FLOOR" -eq 2 ]; then
+        fail_fallback
+      else
+        emit_silent
+      fi
     else
       emit_silent
     fi

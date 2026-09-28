@@ -1003,8 +1003,22 @@ def _refresh_paid_probe(name, probe, root, cache):
 def _probe_entry(name, probe, root, cache, refresh=False):
     """Resolve one tech-stack entry to (status, detail, blocking, fix, note).
 
-    Unverifiable is indistinguishable from missing, so an entry with no probe
-    HALTS; `verify: manual` is the committed, reviewable escape hatch. A
+    An entry with no probe WARNS. It used to halt, on the reasoning that
+    unverifiable is indistinguishable from missing — true, but the price was a
+    workspace that cannot boot the moment onboarding asks the operator to name
+    their stack, because `stack_probes.json` ships probes for a handful of keys
+    and the operator names whatever they actually use. Antigravity's Agy Test
+    entered Python, bash and two CLI names on 2026-09-21 and drew 13 blocking
+    checks on a fresh scaffold; the only way forward was hand-editing a config
+    file the operator had never been told about. A harness that must be
+    repaired by hand before it will start is worse than one that says plainly
+    which entries it could not check.
+
+    So: no probe renders `warn` with the note "unprobed", which is exactly what
+    it is — declared by the operator, not verified by anything. Nothing claims
+    verification it does not have, and the fix line still names the registry.
+    `verify: manual` remains the committed, reviewable declaration for an entry
+    someone has actually looked at. A
     cost:network-paid probe is NEVER executed here — boot must not spend money,
     and a cached reading is never presented as a live one.
 
@@ -1015,8 +1029,8 @@ def _probe_entry(name, probe, root, cache, refresh=False):
     does not decide what the note says.
     """
     if probe is None:
-        return ("fail", f"{name}: no probe defined — unverifiable is not verified", True,
-                f"add a probe to {STACK_REGISTRY_REL} or declare verify: manual", None)
+        return ("warn", f"{name}: declared by the operator, no probe defined — unverified", False,
+                f"add a probe to {STACK_REGISTRY_REL} or declare verify: manual", "unprobed")
     if probe.get("verify") == "manual":
         return ("warn", f"{name}: operator-declared manual verification", False, None,
                 "manual")

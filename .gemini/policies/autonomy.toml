@@ -51,7 +51,7 @@
 
 [[rule]]
   toolName = ["write_file", "replace"]
-  argsPattern = "(\.git/|\.env|\.sops\.yaml|\.pem$|\.key$|/secrets/|init\.sh|full_boot\.sh|\.ssh/|\.aws/|\.gnupg/)"
+  argsPattern = '(\.git/|\.env|\.sops\.yaml|\.pem$|\.key$|/secrets/|init\.sh|full_boot\.sh|\.ssh/|\.aws/|\.gnupg/)'
   decision = "deny"
   priority = 999
   description = "Floor: never write sensitive files."
@@ -65,14 +65,14 @@
 
 [[rule]]
   toolName = "run_shell_command"
-  commandRegex = "(\.gemini/policies/|gemini config)"
+  commandRegex = '(\.gemini/policies/|gemini config)'
   decision = "deny"
   priority = 999
   description = "Never touch autonomy policy from within a session."
 
 [[rule]]
   toolName = ["write_file", "replace"]
-  argsPattern = "(\.gemini/policies/)"
+  argsPattern = '(\.gemini/policies/)'
   decision = "deny"
   priority = 999
   description = "Never write autonomy policy from within a session."

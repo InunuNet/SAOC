@@ -166,7 +166,7 @@ QUARANTINE_BASENAME=""
 # INSTALL-time templates whose {{PROJECT_ROOT}} is filled by `make
 # install-pulse`, not by init.sh. Kept as data, in one place, so the next
 # exemption is a reviewed diff rather than a shrug.
-PLACEHOLDER_RESIDUE_ALLOWLIST=( '*.plist' )
+PLACEHOLDER_RESIDUE_ALLOWLIST=( '*.plist' 'Makefile.archive' )
 
 # HARNESS SOURCE IS NOT A DELIVERED INSTRUCTION (first-boot-e2e A1, defect D2).
 # The operator's scaffold path leaves the WHOLE harness checkout standing in the

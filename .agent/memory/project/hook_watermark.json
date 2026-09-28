@@ -1,0 +1,23 @@
+{
+  "PostCompact": [
+    "post_compact_restore.sh"
+  ],
+  "PreCompact": [
+    "brain.py",
+    "pre_compact_snapshot.sh"
+  ],
+  "PreToolUse": [
+    "check_autonomy.sh",
+    "verify_workspace.sh"
+  ],
+  "SessionStart": [
+    "full_boot.sh"
+  ],
+  "SubagentStop": [
+    "subagent_stop.sh"
+  ],
+  "UserPromptSubmit": [
+    "compaction_backstop.sh",
+    "post_compact_inject.sh"
+  ]
+}

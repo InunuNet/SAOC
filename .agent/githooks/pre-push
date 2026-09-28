@@ -1,0 +1,3 @@
+#!/bin/sh
+# Exec-shim (no-new-bash exception, platform-scoped-delivery D6): git requires an executable hook entry point; all logic lives in execution/git_guard.py.
+exec python3 "$(git rev-parse --show-toplevel)/execution/git_guard.py" pre-push "$@"

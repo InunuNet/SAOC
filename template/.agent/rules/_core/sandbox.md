@@ -17,83 +17,75 @@ when done; leave `.tmp/sandbox/` in place.
 This binds shipped `contract.yaml` assertion commands too. **An assertion that prompts
 cannot run in a gate.**
 
-## Guard every variable delete path
+## Never put a variable in an `rm` argument
 
-A bare `rm "$A/$B/$C"` prompts even inside the project — an empty variable makes it a
-dangerous-path delete.
+The shell guard does not help. Claude Code scans the *command text* for a
+delete whose path comes from a variable and raises "Dangerous rm operation on
+possibly-empty variable path". That scan runs ahead of the permission system,
+so neither `defaultMode: bypassPermissions` nor a blanket `Bash` allow rule
+suppresses it, and `[ -n "$f" ] && [ -e "$f" ] && rm -f -- "$f"` prompts
+exactly like the bare form -- the scanner sees `rm` and `$f`, not the test in
+front of it. This rule used to prescribe that guard and was wrong: it cost the
+operator a hand-approval on every sandbox cleanup an agent performed.
 
-```sh
-del(){ [ -n "$1" ] && [ -e "$1" ] && rm -f -- "$1"; }
-del "$W/$prov/$cls/$victim"
-```
+The autonomy floor separately denies `rm -rf` and `find ... -delete`
+unconditionally, with no exception.
 
-Same for `rm -r` on a sandbox dir: guard the variable, always `--`, never let an unset
-variable expand into a delete path.
-
-## Tearing down a whole sandbox directory
-
-Never `rm -rf` a sandbox directory, and never fall back to `find … -delete` —
-the autonomy floor denies both unconditionally, with no exception. An agent
-that reaches for either is stopped every time.
-
-Use a resolved-path containment guard in Python instead: it deletes only what
-is strictly inside the sandbox, and refuses everything else, including the
-sandbox root itself.
-
-```python
-import shutil
-import sys
-from pathlib import Path
-
-def safe_rmtree(target: Path) -> None:
-    target = target.resolve()
-    root = (Path.cwd() / ".tmp" / "sandbox").resolve()
-    if target == root or root not in target.parents:
-        print(f"refusing to delete outside the sandbox: {target}", file=sys.stderr)
-        return
-    if target.is_dir():
-        shutil.rmtree(target, ignore_errors=True)
-
-if __name__ == "__main__":
-    safe_rmtree(Path(sys.argv[1]))
-```
-
-Save it as a local script and run it from the project root, naming the case
-directory to remove:
+So once a path is computed, there is no prompt-free shell delete. Use the
+shipped helper, which checks containment against *resolved* paths -- a real
+check rather than a textual one:
 
 ```sh
-python3 .tmp/sandbox/safe_rmtree.py .tmp/sandbox/<purpose>/<case>
+python3 execution/safe_delete.py .tmp/sandbox/a12/{real,c1,c2}.toml
+python3 execution/safe_delete.py .tmp/sandbox/a12
 ```
 
-## Never `cd`, and always use absolute paths
+It takes files and directories, treats a missing path as already done, and
+refuses anything that is not strictly inside `<project>/.tmp/sandbox` --
+including the sandbox root itself. Exit 0 when everything was removed, 1 if
+any target was refused.
 
-Two rules, two different reasons — don't collapse them into one.
+A literal path with no variable in it is still fine and needs no helper:
+
+```sh
+rm -f .tmp/sandbox/a12/probe.toml
+```
+
+## Never `cd`. Inside the project, use relative paths
 
 **Never `cd`** — because it makes the *following* command's target statically
 unresolvable. `grep`/`cat`/`head`/`sed`/`find` prompt the operator whenever the
 harness cannot determine what will be read; the scaffold ships `Read(~/.ssh/*)`
 and its siblings as deny rules, and once any `Read()` deny exists, an
 unresolvable target must be approved by hand — no matter that `Bash`/`Grep` are
-allowed and the command is read-only. You are already in the project root, so a
-`cd` to it is redundant churn that only costs a prompt, and a bare `.` search
-root is exactly as unresolvable as a relative file — name the directory.
+allowed and the command is read-only. A bare `.` search root is exactly as
+unresolvable as a `cd`; name the directory.
+
+**Your cwd is already the project root.** So write paths relative to it. A
+`cd` to the root is redundant churn that costs a prompt, and absolute paths
+inside the project are noise that make every command longer to read without
+making it safer.
 
 | don't | do |
 |---|---|
-| `cd "$dir" && grep -n foo file.py` | `grep -n foo /abs/path/file.py` |
-| `grep -rl foo .` | `grep -rl foo /abs/path/` |
+| `cd "$dir" && grep -n foo file.py` | `grep -n foo execution/file.py` |
+| `grep -rl foo .` | `grep -rl foo execution/` |
+| `grep -rn x /Users/you/ai/Proj/execution/` | `grep -rn x execution/` |
 
-**Always use absolute paths** — because a prompt that does still fire has to be
-*approvable*. `~/.claude/settings.json` (the machine-global file, shared by
-every project) and `<project>/.claude/settings.json` (this project's own file)
-both render to the operator as `.claude/settings.json` once the path is
-relative — they cannot tell which tree is about to be touched, and can only
-refuse. `scope.md` states the same requirement for permission requests ("names
-the full path and says which tree it is in"); this is that principle applied
-to tool calls, not just requests.
+**Absolute paths are for outside the project only** — because a prompt that
+does fire out there has to be *approvable*. `~/.claude/settings.json` (the
+machine-global file, shared by every project) and `<project>/.claude/settings.json`
+(this project's own file) both render to the operator as `.claude/settings.json`
+once the path is relative — they cannot tell which tree is about to be touched,
+and can only refuse. `scope.md` states the same requirement for permission
+requests ("names the full path and says which tree it is in"); that applies to
+any tool call reaching beyond the project boundary.
 
-Together, these are the single most common source of interruptions during
-autonomous work.
+Quote every glob-bearing argument (`--include='*.sh'`). This is zsh: an
+unquoted glob is expanded by the shell before the command sees it, and a
+no-match aborts the whole command.
+
+`cd` is the single most common source of interruptions during autonomous work.
 
 ## Escalate, don't route around
 

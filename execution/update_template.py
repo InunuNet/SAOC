@@ -1163,6 +1163,7 @@ def merge_line_union(src: Path, dst: Path, backup_dir: Path) -> str:
     return f"  merge  (line_union, +{len(new_lines)} lines): {dst}"
 
 
+HARNESS_HOOK_DIR = "execution/" + "hooks/"
 HOOK_SCRIPT_RE = re.compile(r"execution/hooks/([A-Za-z0-9_.-]+\.sh)")
 
 
@@ -1239,7 +1240,79 @@ def _is_hook_config(value) -> bool:
     return True
 
 
-def replace_hook_config(override_hooks: dict) -> dict:
+HOOK_SCRIPT_RE = re.compile(r"[\w./-]*hooks/([\w.-]+\.(?:sh|py))")
+
+
+def _hook_scripts_in(entry) -> set:
+    """Basenames of hook scripts a registration's command references."""
+    if not isinstance(entry, dict):
+        return set()
+    return set(HOOK_SCRIPT_RE.findall(str(entry.get("command", ""))))
+
+
+def _harness_hook_scripts(override_hooks: dict) -> set:
+    """Every hook script the template itself registers."""
+    scripts = set()
+    for groups in (override_hooks or {}).values():
+        if not isinstance(groups, list):
+            continue
+        for group in groups:
+            if isinstance(group, dict):
+                for entry in group.get("hooks", []):
+                    scripts |= _hook_scripts_in(entry)
+    return scripts
+
+
+def _hook_scripts_exist(entry, target_root) -> bool:
+    """True when at least one script this registration names is on disk."""
+    if target_root is None:
+        return True
+    for name in _hook_scripts_in(entry):
+        for base in ("execution/" + "hooks", ".claude/" + "hooks",
+                     ".gemini/" + "hooks", ".grok/" + "hooks"):
+            if (Path(target_root) / base / name).exists():
+                return True
+    return False
+
+
+def _drop_existing_registration(entry, harness_scripts: set, target_root) -> bool:
+    """Should this pre-existing registration be dropped during an update?
+
+    DIRECTORY IS NOT OWNERSHIP. The previous attempt keyed on the script living
+    in the harness hooks directory, and mumbl-ai-f0 measured the result on a
+    live update: every one of that project's own hooks lives there, so all
+    eight were classified harness-owned, then classified retired because the
+    current template does not ship them, then deregistered. Eleven hook events
+    went to six. The scripts stayed on disk, so an existence check reported a
+    false all-clear while nothing ran them -- the worst end state available,
+    because a session simply stops wrapping up and nothing says why.
+
+    Two narrow reasons to drop, and PRESERVE for everything else:
+
+    1. The current template ships this script. The template's own groups
+       supply it, so keeping the old registration duplicates it -- and this is
+       what collapses three old check_autonomy registrations (Bash, Write,
+       Edit) into the one `Bash|Edit|Write` group (#1394).
+
+    2. The script is gone from disk. That is a real retirement: the overlay
+       deleted the file, so the registration can only be a dead reference.
+
+    A registration naming no script at all is the project's and is preserved.
+    Ambiguity resolves to PRESERVE in every case, because the failure modes are
+    not symmetric: a stale registration is a no-op behind its own `[ -f X ]`
+    guard, while a deleted one goes unnoticed until a session ends without a
+    wrap-up.
+    """
+    referenced = _hook_scripts_in(entry)
+    if not referenced:
+        return False
+    if referenced & harness_scripts:
+        return True
+    return not _hook_scripts_exist(entry, target_root)
+
+
+def replace_hook_config(override_hooks: dict, existing_hooks=None,
+                        target_root=None) -> dict:
     """The `hooks` key of a settings file is REPLACED wholesale, never unioned.
 
     THE DEFECT (#1394). Unioning hook registrations by (event, matcher) let
@@ -1267,16 +1340,35 @@ def replace_hook_config(override_hooks: dict) -> dict:
     `[ -f X ] || exit 0` guard, but 22 of them, in a file the directive is
     cutting to six.
 
-    WHAT REPLACEMENT COSTS, AND WHY IT COSTS NOTHING. A downstream's own hooks
-    inside a template-declared matcher group do not survive this. They are not
-    meant to live here: `.claude/settings.json` is a MERGE path the harness
-    delivers, while `.claude/settings.local.json` is WORKSPACE in
-    .agent/update-manifest.yaml -- personal overrides, gitignored, and never
-    read or written by this module. Local hooks belong there, where no update
-    can reach them.
+    WHAT REPLACEMENT USED TO COST, AND WHY THAT WAS NOT ACCEPTABLE. This
+    function used to return a result that was a function of the template
+    ALONE, on the reasoning that a project's own hooks "are not meant to live
+    here" and belong in the WORKSPACE-category settings.local.json. The
+    reasoning was fine and the behaviour was not: nothing ever migrated an
+    existing project's hooks there, nothing warned that they were about to go,
+    and the strategy doing it is declared `json_deep_merge` on a MERGE-category
+    file. A merge that deletes keys is mislabelled.
 
-    Idempotent by definition: the result is a function of the template alone.
+    Measured by mumbl-ai-f0 2026-09-21, updating to 3.8.3: 77 deletions
+    against 5 insertions on .claude/settings.json. Nine project hooks were
+    destroyed, including the ENTIRE SessionEnd block -- that project's
+    session-end wrap-up and memory persistence, documented in its own memory.md
+    as the mechanism that runs automatically. Two of the five insertions were
+    genuine. Everything else was destruction, and fleet_acceptance passed 6/6
+    while it happened.
+
+    SO: HARNESS-OWNED REGISTRATIONS ARE STILL REPLACED -- that is what retires
+    a hook and what reconciles a changed matcher set, and both are still
+    required. Registrations the template does not own are CARRIED OVER. A
+    registration is harness-owned if its command names a script the template
+    ships under execution/hooks or .claude/hooks; anything else is the
+    project's and is none of the updater's business.
+
+    Still idempotent: replacing harness registrations and preserving the same
+    local ones twice gives the same file.
     """
+    harness_scripts = _harness_hook_scripts(override_hooks)
+
     out = {}
     for event, groups in override_hooks.items():
         rebuilt = []
@@ -1287,6 +1379,32 @@ def replace_hook_config(override_hooks: dict) -> dict:
             new_group["hooks"] = merge_hook_entries([], group.get("hooks", []))
             rebuilt.append(new_group)
         out[event] = rebuilt
+
+    # Carry over every registration the template does not own, in its original
+    # event and matcher group. A project-local hook sharing a matcher with a
+    # template group is appended to that group rather than dropped.
+    for event, groups in (existing_hooks or {}).items():
+        if not isinstance(groups, list):
+            continue
+        for group in groups:
+            if not isinstance(group, dict):
+                continue
+            local = [h for h in group.get("hooks", [])
+                     if not _drop_existing_registration(
+                         h, harness_scripts, target_root)]
+            if not local:
+                continue
+            matcher = group.get("matcher")
+            target = None
+            for candidate in out.setdefault(event, []):
+                if candidate.get("matcher") == matcher:
+                    target = candidate
+                    break
+            if target is None:
+                target = dict(group)
+                target["hooks"] = []
+                out[event].append(target)
+            target["hooks"] = merge_hook_entries(target.get("hooks", []), local)
     return out
 
 
@@ -1345,18 +1463,20 @@ def merge_list_union(base_list: list, override_list: list) -> list:
     return result
 
 
-def deep_merge(base: dict, override: dict) -> dict:
+def deep_merge(base: dict, override: dict, target_root=None) -> dict:
     """Deep merge: override values take priority; nested dicts are merged
     recursively; lists present on both sides are unioned (see
     merge_list_union) instead of replaced."""
     result = dict(base)
     for key, val in override.items():
         if key == "hooks" and _is_hook_config(val):
-            # Hook registrations are harness-owned and REPLACED, not unioned.
-            # See replace_hook_config() for why a union cannot work here.
-            result[key] = replace_hook_config(val)
+            # Harness registrations are REPLACED (only replacement retires a
+            # hook or reconciles a changed matcher set); project-local ones are
+            # preserved. See replace_hook_config().
+            result[key] = replace_hook_config(val, result.get(key),
+                                              target_root)
         elif key in result and isinstance(result[key], dict) and isinstance(val, dict):
-            result[key] = deep_merge(result[key], val)
+            result[key] = deep_merge(result[key], val, target_root)
         elif key in result and isinstance(result[key], list) and isinstance(val, list):
             result[key] = merge_list_union(result[key], val)
         else:
@@ -1409,7 +1529,11 @@ def merge_json_deep(src: Path, dst: Path, backup_dir: Path) -> str:
     else:
         dst_data = {}
 
-    merged = deep_merge(dst_data, src_data)
+    # The settings file sits one level inside the project root
+    # (.claude/settings.json), so its grandparent is that root --
+    # needed to tell a retired hook from a project hook by asking
+    # whether the script is still on disk.
+    merged = deep_merge(dst_data, src_data, dst.parent.parent)
 
     # Hook-reconciliation telemetry (delivery-and-truth F1, #1410). Only
     # emitted for a file that actually carries a `hooks` key on either side
@@ -2429,6 +2553,13 @@ def _walk_harness_manifest_files(manifest: dict, root: Path = Path(".")) -> list
                 if "__pycache__" in f.relative_to(dst_dir).parts:
                     continue
                 if f.suffix in (".pyc", ".pyo"):
+                    continue
+                if f.name == ".DS_Store":
+                    # macOS Finder junk, not harness content -- no exclusion
+                    # existed for it (found live 2026-09-17, jordanpumps-2e):
+                    # execution/.DS_Store and template/.DS_Store were adopted
+                    # as HARNESS baselines even though upstream ships neither,
+                    # dead bookkeeping that can never gate a real delivery.
                     continue
                 key = f"{path.rstrip('/')}/{f.relative_to(dst_dir).as_posix()}"
                 results.append((key, f))
@@ -3846,6 +3977,104 @@ def cmd_reconcile_from_history(targets: list[str]) -> int:
     return _reconcile_targets(targets, new_tree=None)
 
 
+# Ship-time content hash of THIS file, written by execution/bump_version.sh
+# at every version bump (updater-self-check F1). Independent of the
+# 587b1896 self-heal below (updater_self_stale / updater_disk_hash_before /
+# updater_had_baseline), which only detects drift during a real --apply
+# fetch -- this answers "does the code I am running match what my own
+# version number claims" on ANY invocation, no fetch or prior run required.
+UPDATER_HASH_PATH = Path("execution/update_template.sha256.json")
+
+
+def _self_check_updater_staleness() -> str | None:
+    """Compare the RUNNING execution/update_template.py's content hash
+    against the one recorded for the version .agent/version claims.
+
+    Returns the warning string if the recorded hash exists for the current
+    version and does not match -- the updater on disk is hand-patched,
+    truncated, or corrupted relative to what that version shipped. Returns
+    None when there is nothing to report: UPDATER_HASH_PATH is missing,
+    unreadable, not valid JSON, or its recorded version does not match
+    .agent/version (an ordinary behind-upstream workspace, already
+    surfaced by full_boot.sh's update banner and the version-regression
+    guard -- not the corruption case this check exists for), or the hashes
+    match.
+
+    Never raises: every failure mode collapses to "nothing to report".
+    Callers should still wrap the call in try/except (fail-open, mirroring
+    full_boot.sh/boot_panel.py's "steps never fatal" doctrine) since this is
+    pure diagnostic output that must never affect a normal run's exit code.
+    """
+    try:
+        version = Path(".agent/version").read_text().strip()
+        record = json.loads(UPDATER_HASH_PATH.read_text())
+    except (OSError, ValueError):
+        return None
+    if not isinstance(record, dict) or record.get("version") != version:
+        return None
+    try:
+        actual_hash = _sha256_of_file(Path(__file__).resolve())
+    except OSError:
+        return None
+    if record.get("sha256") == actual_hash:
+        return None
+    return (
+        f"⚠️  STALE UPDATER: execution/update_template.py claims version "
+        f"{version} but its content does not match what {version} shipped "
+        "(recorded hash mismatch). This updater may be hand-patched, "
+        "truncated, or corrupted. Run `python3 execution/update_template.py "
+        "--apply` to fetch a clean copy, or re-run `make update-template`."
+    )
+
+
+def _self_source_digest() -> str:
+    """SHA-256 of this module's own file, or "" if it cannot be read."""
+    try:
+        return hashlib.sha256(Path(__file__).resolve().read_bytes()).hexdigest()
+    except Exception:
+        return ""
+
+
+def _warn_if_self_replaced(before: str) -> bool:
+    """Say so, loudly, when the overlay replaced this module mid-run.
+
+    AN UPDATER FIX CANNOT PROTECT THE RUN THAT DELIVERS IT. Python loads this
+    module at process start; the overlay then rewrites the file on disk
+    partway through; every step after that still executes the OLD code. So the
+    run that installs a fix to the merge path is the one run guaranteed to
+    behave as though the fix does not exist -- silently, at exactly the moment
+    the operator is told it has landed.
+
+    Diagnosed by mumbl-ai-f0 2026-09-21 after three destructive settings
+    merges. The third was this: 099ac075 was on disk and irrelevant, because
+    the process had 6afb6870 in memory. They proved it by calling
+    replace_hook_config() directly on the same inputs and watching it behave
+    correctly while the live run did not. That investigation cost an evening
+    and produced a report that said a fix had failed when it had not.
+
+    Detection is cheap and re-exec is not, so this warns rather than restarts:
+    a re-run under the new code is always correct and always available.
+    """
+    after = _self_source_digest()
+    if not before or not after or before == after:
+        return False
+    print("")
+    print("  " + "!" * 68)
+    print("  !! update_template.py WAS REPLACED DURING THIS RUN.")
+    print("  !! Everything after the overlay ran under the PREVIOUS version,")
+    print("  !! including every MERGE-strategy file (.claude/settings.json).")
+    print("  !! Those results do NOT reflect the logic you just installed.")
+    print("  !!")
+    print("  !! Re-run `make update-template` to apply the new logic, then")
+    print("  !! check your hook registrations:")
+    print("  !!   python3 -c \"import json;d=json.load("
+          "open('.claude/settings.json'));print({k:sum(len(g.get('hooks',[])) "
+          "for g in v) for k,v in d.get('hooks',{}).items()})\"")
+    print("  " + "!" * 68)
+    print("")
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Athanor harness update driver — reads update-manifest.yaml, applies changes safely."
@@ -4012,6 +4241,20 @@ def main():
         ),
     )
     parser.add_argument(
+        "--self-check",
+        action="store_true",
+        default=False,
+        help=(
+            "Run ONLY the content-hash staleness check (updater-self-check "
+            "F1) against execution/update_template.sha256.json and exit -- "
+            "no fetch, manifest load, or writes. Prints OK and exits 0 if "
+            "the hash matches the recorded version (or the recorded/local "
+            "version don't line up -- not this check's problem); prints "
+            "the stale warning and exits 1 on a genuine hash mismatch for "
+            "a matching version."
+        ),
+    )
+    parser.add_argument(
         "--record-scaffold-baselines",
         default=None,
         metavar="PATH",
@@ -4026,6 +4269,41 @@ def main():
         ),
     )
     args = parser.parse_args()
+
+    # updater-self-check F1: standalone answer to "does the updater I am
+    # running match what my own version number claims" -- checked, and
+    # exited on, before any other main() logic (no fetch, no manifest load,
+    # no writes). Deliberately ahead of every other short-circuit below so
+    # --self-check never triggers any of their side effects either.
+    if args.self_check:
+        try:
+            _self_check_warning = _self_check_updater_staleness()
+        except Exception:
+            _self_check_warning = None
+        if _self_check_warning:
+            print(_self_check_warning, file=sys.stderr)
+            sys.exit(1)
+        try:
+            _self_check_version = Path(".agent/version").read_text().strip()
+        except OSError:
+            _self_check_version = "unknown"
+        print(
+            "OK — execution/update_template.py matches the hash recorded "
+            f"for version {_self_check_version}"
+        )
+        sys.exit(0)
+
+    # updater-self-check F1: passive top-of-main() pass, runs on EVERY
+    # invocation (--dry-run, --apply, or bare) -- warn-only, fail-open, and
+    # must never change a normal run's exit code. Covers the "no --apply has
+    # ever run against this hash file" case the 587b1896 self-heal below
+    # cannot see, since that heal only fires during a real fetch.
+    try:
+        _passive_staleness_warning = _self_check_updater_staleness()
+        if _passive_staleness_warning:
+            print(_passive_staleness_warning, file=sys.stderr)
+    except Exception:
+        pass
 
     # F6's two recovery affordances are standalone commands, not modifiers of
     # a normal --apply/--dry-run run: neither reads/writes HARNESS content,
@@ -5002,4 +5280,13 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Digest taken BEFORE main() so the comparison spans the whole run,
+    # including the overlay that may rewrite this very file partway through.
+    # main() exits via sys.exit on most paths, so the check lives in `finally`
+    # -- a warning that only printed on the fall-through path would miss every
+    # run that matters.
+    _source_before = _self_source_digest()
+    try:
+        main()
+    finally:
+        _warn_if_self_replaced(_source_before)

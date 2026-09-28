@@ -11,7 +11,7 @@ VERSION := $(shell cat .agent/version 2>/dev/null || echo "UNKNOWN")
 # `make directives`. Without this target the published channel cannot be
 # confirmed as specified.
 
-.PHONY: help check test commit mission-new mission-status update-template sync bump-version pulse-status backlog-trim onboard directives
+.PHONY: help sync-clones check test commit mission-new mission-status update-template sync bump-version pulse-status backlog-trim onboard directives audit boot-report
 
 help:
 	@echo "🏭 Athanor v$(VERSION)"
@@ -20,6 +20,7 @@ help:
 	@echo "                       unit tests, and the touched spec's contract gate."
 	@echo "  make test            Full validation suite (stress + 3-layer factory)."
 	@echo "  make sync            Sync agents, skills, rules, and clones → providers."
+	@echo "  make sync-clones     Regenerate the generated clone files only (FORCE=1 to overwrite)."
 	@echo "  make commit          Semantic commit (TYPE=feat MSG='...')."
 	@echo "  make mission-new     Create a mission (GOAL='your goal')."
 	@echo "  make mission-status  Show active mission status."
@@ -29,6 +30,8 @@ help:
 	@echo "  make backlog-trim    Trim/archive completed backlog items."
 	@echo "  make onboard         Start AI-guided project onboarding."
 	@echo "  make directives      List harness directives addressed to this project."
+	@echo "  make audit           Validate provider settings JSON + agent/skill sync."
+	@echo "  make boot-report     Print the compact boot panel (REQUIREMENTS.md 5.4)."
 	@echo ""
 	@echo "  Archived targets live in Makefile.archive (L2 restores them one at a time)."
 
@@ -88,6 +91,16 @@ test:
 
 # ── Provider sync (agents + skills + rules + clones + autonomy) ───────────────
 # Sub-target recipes inlined so the Makefile stays at 12 targets (L1).
+# Four call sites print "run make sync-clones" as the remedy for clone drift
+# (execution/boot_integrity.py, execution/paired_copies.py,
+# execution/onboard_fill.py). The target never existed, so every one of those
+# banners sent the operator to a "No rule to make target" error -- advice that
+# errors is worse than none, because it costs a call and then discredits the
+# next thing the banner says. Reported by alembic-39 2026-09-21, whose boot
+# banner had been printing it every session.
+sync-clones:
+	@python3 execution/paired_copies.py --sync $(if $(FORCE),--force,)
+
 sync:
 	@python3 execution/sync_autonomy.py
 	@bash execution/sync_agents.sh
@@ -142,3 +155,22 @@ onboard:
 # L2: fleet directive ATH-20260831-directive-channel-adopt names this target.
 directives:
 	@python3 execution/directives.py list
+
+# L2 restore (2026-09-18): scoped down from the archived 10-check recipe
+# (Makefile.archive) to the 6 confirmed-live checks. 5 in-scope checks were
+# retired as non-trivial to reconstruct with no surviving golden spec, plus
+# one out-of-scope check per standing operator instruction. See
+# .agent/memory/project/data/p0-make-audit-archived-with-rotted-depend.md for
+# the full history.
+audit:
+	@echo "Running audit..."
+	@python3 -c "import json; json.load(open('.claude/settings.json')); print('✅ .claude/settings.json')"
+	@python3 -c "import json; json.load(open('.gemini/settings.json')); print('✅ .gemini/settings.json')"
+	@python3 execution/paired_copies.py --check
+	@python3 execution/integrity_check.py || true
+	@python3 execution/brain.py stats
+	@bash execution/verify_agents.sh
+	@echo "  [manifest] checking path coverage..."
+	@bash execution/validate_manifest.sh || (echo "  FAIL: manifest coverage gaps found" && exit 1)
+	@echo "  OK: manifest coverage complete"
+	@python3 execution/audit_gates.py

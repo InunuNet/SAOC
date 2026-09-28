@@ -1,6 +1,12 @@
 {
-  "template_version": "3.8.2",
-  "applied_at": "2026-09-17T20:49:09Z",
+  "template_version": "3.8.5",
+  "applied_at": "2026-09-28T10:44:01Z",
   "delivery": "complete",
-  "workspace_id": "44a2b8bc49dd98e3"
+  "workspace_id": "44a2b8bc49dd98e3",
+  "bootstrap_unresolved": {
+    "anchor": "3.8.2",
+    "paths": {
+      "execution/repair_hooks.py": "dd25a0dddfb0a5a63a4df1e0a1d5d9de6995558b54ee1e6631f8637c8f84c20d"
+    }
+  }
 }
