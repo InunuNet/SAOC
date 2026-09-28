@@ -105,8 +105,17 @@ const HERO_LOCKUP_VERTICAL_SRC = '/images/nos/lockup/NOS-2027-logo-full-colour-r
  * box is `min(365px, 104%)` of the column, centred with
  * `margin-left: calc(50% - width/2)` — `margin-inline: auto` was tried and
  * rejected: the box is 15px wider than the visible ink, which reads
- * off-centre. `mb-[58px]`/`mb-2` are the starting values from Brad's ink
- * measurement, tuned against the rendered 1280/390 screenshots — see this
+ * off-centre. `max-w-none` overrides Preflight's `img{max-width:100%}` —
+ * both boxes are deliberately sized past their column at these percentages
+ * (mobile 104%, desktop's negative margin), and without it the browser
+ * silently clips the box back to 100% of the column. `mb-[95px]`/
+ * `mb-[48px]` are NOT Brad's raw 58px/8px figures: the PNGs carry built-in
+ * transparent clearspace below the visible ink (measured from each file's
+ * alpha channel — 19.0% of the horizontal file's height, 8.9% of the
+ * vertical's), so these margins are the raw figure plus that clearspace,
+ * minus the 16px `gap-4` the flex column already applies between children —
+ * tuned against the rendered 1714/390 `getBoundingClientRect` measurements
+ * to land the actual ink-to-next-text gap at Brad's ~58px / ~37px. See this
  * feature's dev report for the measured result.
  */
 function HeroLockup() {
@@ -136,7 +145,14 @@ function HeroLockup() {
       <img
         {...desktopImgProps}
         alt={HERO_LOCKUP_ALT}
-        className="-ml-8 mb-[58px] block h-auto w-[min(1140px,93.75%)] max-[620px]:mb-2 max-[620px]:ml-[calc(50%-min(365px,104%)/2)] max-[620px]:w-[min(365px,104%)]"
+        // `max-w-none` overrides Preflight's `img { max-width: 100% }` — the
+        // reference artifact's own `.hero-wordmark img` rule does the same
+        // (`max-width:none`), because both boxes are deliberately wider than
+        // their column at these percentages (mobile is 104%, desktop's
+        // negative margin also pushes past the column edge). Without it the
+        // browser silently clips both formulas back down to 100% of the
+        // column, which is exactly what happened before this override.
+        className="-ml-8 mb-[95px] block h-auto w-[min(1140px,93.75%)] max-w-none max-[620px]:mb-[48px] max-[620px]:ml-[calc(50%-min(365px,104%)/2)] max-[620px]:w-[min(365px,104%)]"
       />
     </picture>
   );
