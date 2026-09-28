@@ -37,7 +37,7 @@ assertions:
       command: grep -q "National Orchid Show, Western Cape 2027" "app/(marketing)/national-show/page.tsx"
     - id: A5
       description: NosHero call site no longer passes EmblemBadge as brandMark
-      command: grep -L "brandMark={<EmblemBadge" "app/(marketing)/national-show/page.tsx"
+      command: '! grep -q "brandMark={<EmblemBadge" "app/(marketing)/national-show/page.tsx"'
     - id: A6
       description: EmblemBadge.tsx itself is untouched (still used by Logo.tsx on the other 18 routes)
       command: test -f "components/nos/EmblemBadge.tsx"
@@ -79,7 +79,7 @@ assertions:
       command: grep -rq "font-nos-karla" "components/nos/NosHero.tsx" "app/(marketing)/national-show/page.tsx"
     - id: A17
       description: no font-serif (Cormorant) utility remains in NosHero.tsx now the h1 is an image
-      command: grep -L "font-serif" "components/nos/NosHero.tsx"
+      command: '! grep -q "font-serif" "components/nos/NosHero.tsx"'
 
     # ---- New Edition XIX eyebrow-2 slot exists and doesn't touch the other 11 heroes ----
     - id: A18
