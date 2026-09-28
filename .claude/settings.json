@@ -97,49 +97,15 @@
         ]
       }
     ],
-    "SessionEnd": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "CHANGED=$(git diff --stat HEAD 2>/dev/null | wc -l | tr -d ' '); if [ \"$CHANGED\" -gt 0 ]; then echo 'Session had uncommitted changes \u2014 run /wrap-up at start of next session.'; fi"
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/require_maintainer.sh ] && bash execution/hooks/require_maintainer.sh || exit 0"
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/session_token_log.sh ] && bash execution/hooks/session_token_log.sh || exit 0",
-            "timeout": 20
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/session_clean_exit_marker.sh ] && bash execution/hooks/session_clean_exit_marker.sh || exit 0",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/require_maintainer.sh ] || exit 0; bash execution/hooks/require_maintainer.sh"
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/session_token_log.sh ] || exit 0; bash execution/hooks/session_token_log.sh",
-            "timeout": 20
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/session_clean_exit_marker.sh ] || exit 0; bash execution/hooks/session_clean_exit_marker.sh",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
     "PreCompact": [
       {
         "matcher": "*",
         "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/pre_compact_snapshot.sh ] && bash execution/hooks/pre_compact_snapshot.sh || true",
+            "timeout": 30
+          },
           {
             "type": "command",
             "command": "input=$(cat); trigger=$(printf '%s' \"$input\" | python3 -c \"import sys,json; print(json.load(sys.stdin).get('compaction_trigger','unknown'))\" 2>/dev/null || echo 'unknown'); recent=$(git log --oneline -5 2>/dev/null | tr '\\n' '; ' || echo 'no git'); python3 execution/brain.py remember --summary \"Pre-compaction checkpoint ($trigger). Recent commits: $recent\" --tags \"compaction,checkpoint\" 2>/dev/null || true",
@@ -171,13 +137,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f docs/rules/inject_no_invention.sh ] || exit 0; bash docs/rules/inject_no_invention.sh",
-            "timeout": 5
+            "command": "[ -f execution/hooks/post_compact_inject.sh ] || exit 0; bash execution/hooks/post_compact_inject.sh",
+            "timeout": 10
           },
           {
             "type": "command",
-            "command": "[ -f execution/hooks/post_compact_inject.sh ] || exit 0; bash execution/hooks/post_compact_inject.sh",
+            "command": "[ -f execution/hooks/compaction_backstop.sh ] && bash execution/hooks/compaction_backstop.sh || exit 0",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "[ -f docs/rules/inject_no_invention.sh ] || exit 0; bash docs/rules/inject_no_invention.sh",
+            "timeout": 5
           },
           {
             "type": "command",
@@ -193,33 +164,6 @@
             "type": "command",
             "command": "[ -f execution/hooks/compaction_nudge.sh ] || exit 0; bash execution/hooks/compaction_nudge.sh",
             "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/compaction_backstop.sh ] || exit 0; bash execution/hooks/compaction_backstop.sh",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "matcher": "analyst|architect|designer|dev|docs|lead|maintainer|qa",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[ -f docs/rules/inject_no_invention.sh ] || exit 0; bash docs/rules/inject_no_invention.sh",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/subagent_start.sh ] && bash execution/hooks/subagent_start.sh || exit 0",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/subagent_start.sh ] || exit 0; bash execution/hooks/subagent_start.sh",
-            "timeout": 10
           }
         ]
       }
@@ -238,65 +182,11 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "AskUserQuestion",
+        "matcher": "Bash|Edit|Write",
         "hooks": [
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/block_asq_in_loop.sh ] && bash execution/hooks/block_asq_in_loop.sh || exit 0"
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/block_asq_in_loop.sh ] || exit 0; bash execution/hooks/block_asq_in_loop.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/check_autonomy.sh ] && bash execution/hooks/check_autonomy.sh || exit 0"
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/require_contract_for_write.sh ] && bash execution/hooks/require_contract_for_write.sh || exit 0"
-          },
-          {
-            "type": "command",
-            "command": "fp=$(cat | python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.claude/MEMORY/*|*/MEMORY/LEARNING/*|*/.claude/PAI/*) exit 2 ;; esac"
-          },
           {
             "type": "command",
             "command": "[ -f execution/hooks/check_autonomy.sh ] || exit 0; bash execution/hooks/check_autonomy.sh"
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/require_contract_for_write.sh ] || exit 0; bash execution/hooks/require_contract_for_write.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/check_autonomy.sh ] && bash execution/hooks/check_autonomy.sh || exit 0"
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/require_contract_for_write.sh ] && bash execution/hooks/require_contract_for_write.sh || exit 0"
-          },
-          {
-            "type": "command",
-            "command": "fp=$(cat | python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.claude/MEMORY/*|*/MEMORY/LEARNING/*|*/.claude/PAI/*) exit 2 ;; esac"
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/check_autonomy.sh ] || exit 0; bash execution/hooks/check_autonomy.sh"
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/require_contract_for_write.sh ] || exit 0; bash execution/hooks/require_contract_for_write.sh"
           }
         ]
       },
@@ -305,15 +195,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f execution/hooks/check_autonomy.sh ] || exit 0; bash execution/hooks/check_autonomy.sh"
+            "command": "[ -f execution/hooks/verify_workspace.sh ] || exit 0; bash execution/hooks/verify_workspace.sh"
           },
           {
             "type": "command",
             "command": "[ -f execution/hooks/require_contract_for_write.sh ] || exit 0; bash execution/hooks/require_contract_for_write.sh"
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/verify_workspace.sh ] || exit 0; bash execution/hooks/verify_workspace.sh"
           },
           {
             "type": "command",
@@ -330,24 +216,43 @@
         ]
       },
       {
-        "matcher": "Agent",
+        "matcher": "AskUserQuestion",
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f execution/hooks/require_research.sh ] && bash execution/hooks/require_research.sh || exit 0"
+            "command": "[ -f execution/hooks/block_asq_in_loop.sh ] || exit 0; bash execution/hooks/block_asq_in_loop.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/require_contract_for_write.sh ] || exit 0; bash execution/hooks/require_contract_for_write.sh"
           },
           {
             "type": "command",
-            "command": "[ -f execution/hooks/require_contract.sh ] && bash execution/hooks/require_contract.sh || exit 0"
+            "command": "fp=$(cat | python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.claude/MEMORY/*|*/MEMORY/LEARNING/*|*/.claude/PAI/*) exit 2 ;; esac"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/require_contract_for_write.sh ] || exit 0; bash execution/hooks/require_contract_for_write.sh"
           },
           {
             "type": "command",
-            "command": "[ -f execution/hooks/require_dev_result.sh ] && bash execution/hooks/require_dev_result.sh || exit 0"
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/require_qa_report.sh ] && bash execution/hooks/require_qa_report.sh || exit 0"
-          },
+            "command": "fp=$(cat | python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))\" 2>/dev/null); case \"$fp\" in */.claude/MEMORY/*|*/MEMORY/LEARNING/*|*/.claude/PAI/*) exit 2 ;; esac"
+          }
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
           {
             "type": "command",
             "command": "[ -f execution/hooks/require_research.sh ] || exit 0; bash execution/hooks/require_research.sh"
@@ -365,13 +270,46 @@
             "command": "[ -f execution/hooks/require_qa_report.sh ] || exit 0; bash execution/hooks/require_qa_report.sh"
           }
         ]
-      },
+      }
+    ],
+    "SessionEnd": [
       {
-        "matcher": "Bash|Edit|Write",
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f execution/hooks/check_autonomy.sh ] || exit 0; bash execution/hooks/check_autonomy.sh"
+            "command": "CHANGED=$(git diff --stat HEAD 2>/dev/null | wc -l | tr -d ' '); if [ \"$CHANGED\" -gt 0 ]; then echo 'Session had uncommitted changes \u2014 run /wrap-up at start of next session.'; fi"
+          },
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/require_maintainer.sh ] || exit 0; bash execution/hooks/require_maintainer.sh"
+          },
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/session_token_log.sh ] || exit 0; bash execution/hooks/session_token_log.sh",
+            "timeout": 20
+          },
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/session_clean_exit_marker.sh ] || exit 0; bash execution/hooks/session_clean_exit_marker.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "analyst|architect|designer|dev|docs|lead|maintainer|qa",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f docs/rules/inject_no_invention.sh ] || exit 0; bash docs/rules/inject_no_invention.sh",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/subagent_start.sh ] || exit 0; bash execution/hooks/subagent_start.sh",
+            "timeout": 10
           }
         ]
       }
@@ -380,10 +318,6 @@
       {
         "matcher": "Agent",
         "hooks": [
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/post_agent_loop_continue.sh ] && bash execution/hooks/post_agent_loop_continue.sh || exit 0"
-          },
           {
             "type": "command",
             "command": "[ -f execution/hooks/post_agent_loop_continue.sh ] || exit 0; bash execution/hooks/post_agent_loop_continue.sh"
@@ -397,11 +331,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f execution/hooks/quota_death_checkpoint.sh ] && bash execution/hooks/quota_death_checkpoint.sh || exit 0",
-            "timeout": 5
-          },
-          {
-            "type": "command",
             "command": "[ -f execution/hooks/quota_death_checkpoint.sh ] || exit 0; bash execution/hooks/quota_death_checkpoint.sh",
             "timeout": 5
           }
@@ -412,16 +341,6 @@
       {
         "matcher": "*",
         "hooks": [
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/turn_end_stamp.sh ] && bash execution/hooks/turn_end_stamp.sh || exit 0",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "[ -f execution/hooks/blocker_scan.sh ] && bash execution/hooks/blocker_scan.sh || exit 0",
-            "timeout": 5
-          },
           {
             "type": "command",
             "command": "[ -f execution/hooks/turn_end_stamp.sh ] || exit 0; bash execution/hooks/turn_end_stamp.sh",
@@ -439,8 +358,7 @@
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "BASH_DEFAULT_TIMEOUT_MS": "300000",
-    "PAI_CONTEXT_MODE": "coding",
-    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "300000"
+    "PAI_CONTEXT_MODE": "coding"
   },
   "cleanupPeriodDays": 30,
   "skipDangerousModePermissionPrompt": true,
@@ -472,6 +390,12 @@
           "mode": "deny"
         }
       ]
-    }
+    },
+    "enabled": false
+  },
+  "autoCompactWindow": 400000,
+  "statusLine": {
+    "type": "command",
+    "command": "python3 execution/statusline.py"
   }
 }

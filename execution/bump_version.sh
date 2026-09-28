@@ -113,6 +113,41 @@ printf '%s\n' "$NEW" > "$TPL"
 
 echo "${OLD} -> ${NEW}"
 
+# --- updater content-hash (updater-self-check F1) ---
+# execution/update_template.py's own _self_check_updater_staleness() reads
+# this file to answer "does the updater I am running match what my own
+# version number claims" on ANY invocation, no fetch or prior run required.
+# Regenerated here so every bump keeps it current with zero extra operator
+# discipline. Same degrade-on-failure posture as the reconciliation block
+# below: never fail the bump over this bookkeeping.
+python3 - "$NEW" <<'PYEOF' || true
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+new_version = sys.argv[1]
+updater_path = Path("execution/update_template.py")
+hash_paths = [
+    Path("execution/update_template.sha256.json"),
+    Path("template/execution/update_template.sha256.json"),
+]
+
+
+def warn(msg):
+    print("WARN: %s" % msg, file=sys.stderr)
+
+
+try:
+    digest = hashlib.sha256(updater_path.read_bytes()).hexdigest()
+    record = {"version": new_version, "sha256": digest}
+    for hash_path in hash_paths:
+        hash_path.parent.mkdir(parents=True, exist_ok=True)
+        hash_path.write_text(json.dumps(record, indent=2) + "\n")
+except Exception as exc:
+    warn("updater content-hash regeneration failed unexpectedly: %s" % exc)
+PYEOF
+
 # --- reconcile bookkeeping (.agent/.template_state, .agent/profile.json) ---
 # Mirrors write_template_state()/update_profile_version() in update_template.py:
 # same applied_at format, same symlink refusal, same key-preserving profile.json

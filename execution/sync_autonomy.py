@@ -63,7 +63,7 @@ _GEMINI_COMMON_HEADER = """\
 _GEMINI_FLOOR_DENIALS = """\
 [[rule]]
   toolName = ["write_file", "replace"]
-  argsPattern = "(\\.git/|\\.env|\\.sops\\.yaml|\\.pem$|\\.key$|/secrets/|init\\.sh|full_boot\\.sh|\\.ssh/|\\.aws/|\\.gnupg/)"
+  argsPattern = '(\\.git/|\\.env|\\.sops\\.yaml|\\.pem$|\\.key$|/secrets/|init\\.sh|full_boot\\.sh|\\.ssh/|\\.aws/|\\.gnupg/)'
   decision = "deny"
   priority = 999
   description = "Floor: never write sensitive files."
@@ -77,14 +77,14 @@ _GEMINI_FLOOR_DENIALS = """\
 
 [[rule]]
   toolName = "run_shell_command"
-  commandRegex = "(\\.gemini/policies/|gemini config)"
+  commandRegex = '(\\.gemini/policies/|gemini config)'
   decision = "deny"
   priority = 999
   description = "Never touch autonomy policy from within a session."
 
 [[rule]]
   toolName = ["write_file", "replace"]
-  argsPattern = "(\\.gemini/policies/)"
+  argsPattern = '(\\.gemini/policies/)'
   decision = "deny"
   priority = 999
   description = "Never write autonomy policy from within a session."
@@ -266,6 +266,34 @@ def main(argv=None) -> int:
 
     profile = json.loads(profile_path.read_text())
     stored_level = (profile.get("autonomy") or {}).get("level")
+
+    # UNSET is not an error — it is the state init.sh deliberately creates.
+    #
+    # "AUTONOMY IS DECIDED, NEVER DEFAULTED" (REQUIREMENTS section 6): init.sh
+    # pops the autonomy block at scaffold time rather than re-seeding the
+    # template's `medium`, because a level nobody chose is worse than no level
+    # at all. boot_panel._collect_autonomy already honours that by reading
+    # `(profile.get("autonomy") or {})` and emitting no failing check.
+    #
+    # This function read it the same defensive way but then treated "undecided"
+    # identically to "garbage value" and exited 1, so `make sync` — a documented
+    # core target — failed rc=2 on EVERY freshly scaffolded workspace. It failed
+    # closed, too: `make sync` leaves the caller's cwd in the scaffold, the
+    # autonomy hook then reads that profile, and an agent that had cd'd in could
+    # not cd back out. Found 2026-09-21 by scaffolding a probe and running the
+    # goal directly.
+    #
+    # Skipping is the honest response. Writing a default here would put back
+    # exactly the level init.sh removed, three stages later in the same run.
+    if stored_level is None:
+        print("sync-autonomy: no autonomy level decided yet — skipping provider "
+              "policy generation.")
+        print("   This is the expected state for a fresh workspace: the level is "
+              "chosen, never defaulted.")
+        print("   Decide it with: python3 execution/set_autonomy.py --level "
+              "<level>, then re-run `make sync`.")
+        return 0
+
     level = autonomy_dialect.normalize(stored_level)
     if level is None:
         print(f"ERROR: autonomy.level={stored_level!r} in {profile_path} is not "

@@ -135,7 +135,16 @@ QUOTA_INHERENT_REASONS = ("non_claude_code_session", "missing_mirror")
 # autonomy decision. Halting them would leave a blocked mission unclearable.
 DECISION_EXEMPT_STATUSES = ("close_out", "blocked", "done", "complete")
 
-BACKLOG_ITEM_RE = re.compile(r"^\s*-\s*\[[ xX]\]\s*(P[01])\b\s*(.*)$")
+# The priority token may be wrapped in markdown emphasis and followed by a
+# colon -- `- [ ] **P0: the thing**` is the shape every real entry uses, and
+# the intake rule in backlog.md itself writes them that way. The original
+# pattern demanded the token immediately after the checkbox, so `**` blocked
+# every match and the panel reported "backlog: (empty)" with three P0s sitting
+# in the file: the harness lying about its own state, which is exactly what
+# that file exists to catch.
+BACKLOG_ITEM_RE = re.compile(
+    r"^\s*-\s*\[[ xX]\]\s*(?:\*\*|__|\*|_)?\s*(P[01])\b:?\s*(.*)$"
+)
 HOOK_SCRIPT_RE = re.compile(r"execution/hooks/([\w.-]+\.sh)")
 
 
@@ -502,7 +511,7 @@ def _collect_quota(root, checks):
         "band": status.get("band", UNKNOWN),
         "reason": status.get("reason"),
     })
-    _check_quota_reading(checks, quota)
+    _check_quota_reading(checks, quota, root)
     return quota
 
 
@@ -515,7 +524,7 @@ def _check_quota_oracle(checks, detail):
         basis="parsed"))
 
 
-def _check_quota_reading(checks, quota):
+def _check_quota_reading(checks, quota, root):
     """The oracle answered. Grade the ANSWER, not the fact that it replied."""
     state, reason = quota.get("state"), quota.get("reason")
     if state == "ok" and quota.get("band") != UNKNOWN:
@@ -533,6 +542,25 @@ def _check_quota_reading(checks, quota):
             "but the reset time and band are not", False,
             "the mirror is rewritten in full on the next statusline refresh",
             basis="parsed"))
+        return
+    # The mirror's only writer was inject_pressure.sh. When that script is not
+    # on disk -- retired upstream in the L1 hook cut -- nothing in the
+    # workspace can refresh the mirror, so halting on it produces an
+    # unbootable workspace with a remedy naming a file that does not exist.
+    # Same rule as delivery.hooks_retired: halt only on what the operator can
+    # actually clear. The finding still surfaces, loudly, because a quota
+    # reading nobody refreshes is exactly the stale number operators steer by.
+    writer = root / HOOKS_DIR_REL / "inject_pressure.sh"
+    if not writer.is_file():
+        checks.append(_check(
+            "quota.state", "quota", "warn",
+            f"quota state is '{_s(state)}' (reason {_s(reason)}) and cannot be "
+            "determined here: the mirror's only writer, "
+            "execution/hooks/inject_pressure.sh, is not on disk (retired "
+            "upstream), so the reading never refreshes and must not be trusted",
+            False,
+            "treat the quota figure as absent, not current — restoring a writer "
+            "is upstream work, not a workspace fix", basis="parsed"))
         return
     checks.append(_check(
         "quota.state", "quota", "fail",
@@ -752,19 +780,38 @@ def _collect_hooks(root, manifest, checks):
     declared = manifest.get("hooks") if manifest else None
     source = "manifest" if declared is not None else "canonical"
     expected = declared if declared is not None else sorted(registered)
-    missing = [n for n in expected if n not in registered]
+    # A hook whose script is not on disk CANNOT be registered, so demanding it
+    # is an unsatisfiable halt: the printed remedy ("register the hook") would
+    # have the operator wire a command that does not exist, and following it
+    # re-registers scripts the L1 hook cut deliberately removed. Measured
+    # 2026-09-09: the panel demanded 26 and named 20 absent ones while only 7
+    # ship. Split the two populations -- an absent script is manifest
+    # staleness, which the operator cannot clear and which therefore must not
+    # halt boot; only a present-but-unregistered script is a real, clearable
+    # finding.
+    missing = [n for n in expected if n not in registered and n in on_disk]
+    retired = [n for n in expected if n not in registered and n not in on_disk]
     hooks = {
         "registered": len(registered), "expected": len(expected), "on_disk": len(on_disk),
         "source": source, "registered_names": sorted(registered), "on_disk_names": on_disk,
         "missing": missing,
+        "retired": retired,
         "unregistered": [n for n in on_disk if n not in registered],
     }
     if missing:
         checks.append(_check(
             "delivery.hooks", "delivery", "fail",
-            f"registered hooks {len(registered)}/{len(expected)} — not registered: "
-            + ", ".join(missing),
+            f"registered hooks {len(registered)}/{len(expected)} — on disk but "
+            "not registered: " + ", ".join(missing),
             True, f"register the hook in {CLAUDE_SETTINGS_REL}", basis="present"))
+    if retired:
+        checks.append(_check(
+            "delivery.hooks_retired", "delivery", "warn",
+            f"{len(retired)} hook(s) named by the manifest have no script on "
+            "disk — they were retired upstream and cannot be registered: "
+            + ", ".join(retired),
+            False, "drop them from the manifest's hooks list (they are stale, "
+                   "not missing) — do NOT re-register them", basis="parsed"))
     hooks.update(_probe_hooks_function(root, checks))
     return hooks
 
@@ -956,8 +1003,22 @@ def _refresh_paid_probe(name, probe, root, cache):
 def _probe_entry(name, probe, root, cache, refresh=False):
     """Resolve one tech-stack entry to (status, detail, blocking, fix, note).
 
-    Unverifiable is indistinguishable from missing, so an entry with no probe
-    HALTS; `verify: manual` is the committed, reviewable escape hatch. A
+    An entry with no probe WARNS. It used to halt, on the reasoning that
+    unverifiable is indistinguishable from missing — true, but the price was a
+    workspace that cannot boot the moment onboarding asks the operator to name
+    their stack, because `stack_probes.json` ships probes for a handful of keys
+    and the operator names whatever they actually use. Antigravity's Agy Test
+    entered Python, bash and two CLI names on 2026-09-21 and drew 13 blocking
+    checks on a fresh scaffold; the only way forward was hand-editing a config
+    file the operator had never been told about. A harness that must be
+    repaired by hand before it will start is worse than one that says plainly
+    which entries it could not check.
+
+    So: no probe renders `warn` with the note "unprobed", which is exactly what
+    it is — declared by the operator, not verified by anything. Nothing claims
+    verification it does not have, and the fix line still names the registry.
+    `verify: manual` remains the committed, reviewable declaration for an entry
+    someone has actually looked at. A
     cost:network-paid probe is NEVER executed here — boot must not spend money,
     and a cached reading is never presented as a live one.
 
@@ -968,8 +1029,8 @@ def _probe_entry(name, probe, root, cache, refresh=False):
     does not decide what the note says.
     """
     if probe is None:
-        return ("fail", f"{name}: no probe defined — unverifiable is not verified", True,
-                f"add a probe to {STACK_REGISTRY_REL} or declare verify: manual", None)
+        return ("warn", f"{name}: declared by the operator, no probe defined — unverified", False,
+                f"add a probe to {STACK_REGISTRY_REL} or declare verify: manual", "unprobed")
     if probe.get("verify") == "manual":
         return ("warn", f"{name}: operator-declared manual verification", False, None,
                 "manual")
@@ -1059,7 +1120,16 @@ def _collect_backlog(root):
     for line in text.splitlines():
         match = BACKLOG_ITEM_RE.match(line)
         if match and len(top) < BACKLOG_TOP_N:
-            top.append(f"{match.group(1)} {match.group(2)}".strip())
+            # A bolded title may close mid-line and continue into prose
+            # ("**P0: the thing.** Then detail..."), so cut at the CLOSING
+            # emphasis run rather than only stripping a trailing one -- the
+            # panel shows one scannable title per item, never a paragraph.
+            desc = match.group(2)
+            cut = re.search(r"(?:\*\*|__)", desc)
+            if cut:
+                desc = desc[: cut.start()]
+            desc = re.sub(r"(?:\*\*|__|\*|_)+\s*$", "", desc).strip()
+            top.append(f"{match.group(1)} {desc}".strip())
     return {"top": top}
 
 

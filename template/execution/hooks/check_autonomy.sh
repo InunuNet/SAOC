@@ -258,6 +258,124 @@ with open(logfile, "a") as fh:
   return 0
 }
 
+ROUTE3_TTL_SECONDS=1800
+
+# route3_hard_denied <target_canon> -- the subset NO permit of any route can
+# reach. Route 3 is agent-authored, so it needs a floor of its own or it is
+# not a route, it is a removal of the floor. Two families are permanently out:
+#
+#   credentials  -- an agent that can mint a permit for ~/.ssh or a .env has
+#                   exfiltration, not an emergency edit. Nothing about a
+#                   stuck session justifies reaching these, so no emergency
+#                   argument can be constructed that reaches them either.
+#   the machinery -- autonomy_matrix.json, the breakglass file, the emergency
+#                   permit file, and this hook. A permit that can rewrite the
+#                   thing that evaluates permits is a one-time grant that
+#                   makes itself permanent. Route 1 still reaches this hook
+#                   (a contract, a mission, and a reviewable diff), which is
+#                   how the file you are reading was changed; Route 3, which
+#                   has none of that, must not.
+route3_hard_denied() {
+  case "$1" in
+    */.env|*/.sops.yaml|*.pem|*.key|*/secrets/*|\
+    */.ssh/*|*/.aws/*|*/.gnupg/*|*/.git/*|\
+    */.agent/autonomy_matrix.json|\
+    */.agent/enforcement_breakglass.json|\
+    */.agent/enforcement_emergency.json|\
+    */execution/hooks/check_autonomy.sh)
+      return 0 ;;
+  esac
+  return 1
+}
+
+# route3_permit <target_canon> -- Route 3 (emergency). Checked only after
+# Route 1 and Route 2 have both denied.
+#
+# WHY THIS EXISTS. Route 1 needs an active mission and Route 2 needs the
+# operator. A project that hits a floor-protected file with no mission open
+# therefore had exactly one option -- stop and wait for a human -- and that
+# is the state the operator described as the harness consuming his time
+# instead of returning it (2026-09-21, granting this route to every project
+# in the fleet). The ceremony Route 1 requires is not what protects anything:
+# the contract carrying an enforcement_edits permit is written by the same
+# agent that wants the edit. What protects is the shape of the record --
+# one exact path, a stated reason, an audit line -- and that shape does not
+# need a mission around it.
+#
+# So this is Route 1's evidence without Route 1's prerequisites, plus a TTL
+# and a hard-deny list, and it is deliberately unpleasant to use at scale:
+# one path per permit, consumed on use, 30 minutes, and every grant lands in
+# the audit log under method "emergency" where a sweep can find it. An agent
+# reaching for it repeatedly is a signal, and it is a legible one.
+#
+# BE HONEST ABOUT WHAT THIS COSTS. For every path outside route3_hard_denied
+# the floor is now a speed bump with a receipt rather than a wall. That is a
+# real reduction and it was the operator's call, made twice and explicitly.
+route3_permit() {
+  local target_canon="$1" pfile p_path p_reason p_created now_epoch created_epoch age
+  local p_abs p_canon
+  pfile="$(pwd)/.agent/enforcement_emergency.json"
+  [ -f "$pfile" ] || return 1
+
+  route3_hard_denied "$target_canon" && return 1
+
+  p_path=$(jq -r '.path // empty' "$pfile" 2>/dev/null)
+  p_reason=$(jq -r '.reason // empty' "$pfile" 2>/dev/null)
+  p_created=$(jq -r '.created_at // empty' "$pfile" 2>/dev/null)
+  [ -z "$p_path" ] && return 1
+  [ -z "$p_created" ] && return 1
+  # A reason short enough to be a shrug is not a reason. This is the only
+  # part of the record a later reader has to reconstruct intent from.
+  [ "${#p_reason}" -lt 20 ] && return 1
+
+  # Same single-clean-line rule Routes 1 and 2 apply (D35 finding 4): an
+  # embedded newline or surrounding whitespace makes the grant ambiguous,
+  # and ambiguity is DENY.
+  case "$p_path" in
+    *[$'\n\r']*|" "*|*" "|$'\t'*|*$'\t') return 1 ;;
+  esac
+
+  if [[ "$p_path" = /* ]]; then p_abs="$p_path"; else p_abs="$(pwd)/${p_path}"; fi
+  p_canon=$(canon_path "$p_abs")
+  [ -z "$p_canon" ] && return 1
+  [ "$p_canon" = "$target_canon" ] || return 1
+
+  # Re-check the RESOLVED permit path, not just the target. A permit naming
+  # `.agent/../.agent/autonomy_matrix.json` resolves to a hard-denied file,
+  # and the check above ran before resolution.
+  route3_hard_denied "$p_canon" && return 1
+
+  now_epoch=$(date -u +%s 2>/dev/null) || return 1
+  created_epoch=$(python3 -c '
+import sys
+from datetime import datetime, timezone
+raw = sys.argv[1].strip().replace("Z", "+00:00")
+try:
+    dt = datetime.fromisoformat(raw)
+except Exception:
+    sys.exit(1)
+if dt.tzinfo is None:
+    dt = dt.replace(tzinfo=timezone.utc)
+print(int(dt.timestamp()))
+' "$p_created" 2>/dev/null) || return 1
+  [ -z "$created_epoch" ] && return 1
+  age=$(( now_epoch - created_epoch ))
+  # A clock-skewed future timestamp is not a fresh permit, it is an unreadable
+  # one, and unreadable is DENY.
+  [ "$age" -lt 0 ] && return 1
+  [ "$age" -gt "$ROUTE3_TTL_SECONDS" ] && return 1
+
+  # Consumed before the grant returns, exactly as Route 2 does: a permit that
+  # survives its own use is a standing grant wearing an emergency's clothes.
+  rm -f -- "$pfile" 2>/dev/null || return 1
+
+  HATCH_METHOD="emergency"
+  HATCH_MISSION=""
+  HATCH_FEATURE=""
+  HATCH_CONTRACT="$p_reason"
+  return 0
+}
+
 # check_enforcement_hatch <raw_target> -- the single entry point both floor
 # surfaces (direct Write/Edit FILE_PATH, and the Bash-write resolved
 # target) call before denying. Returns 0 (and has already audited the
@@ -272,7 +390,8 @@ check_enforcement_hatch() {
   [ -z "$target_canon" ] && return 1
 
   HATCH_METHOD=""; HATCH_MISSION=""; HATCH_FEATURE=""; HATCH_CONTRACT=""
-  if route1_permit "$target_canon" || route2_permit "$target_canon"; then
+  if route1_permit "$target_canon" || route2_permit "$target_canon" \
+     || route3_permit "$target_canon"; then
     if ! audit_permit "$HATCH_METHOD" "$target_canon" "$HATCH_MISSION" "$HATCH_FEATURE" "$HATCH_CONTRACT"; then
       echo "⛔ AUTONOMY FLOOR: enforcement-edit permit revoked — audit-log append failed" >&2
       return 1
@@ -286,6 +405,42 @@ check_enforcement_hatch() {
 # .gemini/policies/* is medium-protected (below), not floor-protected,
 # so level=high agents can update the policy file when explicitly authorized.
 # SEC-P0: floor-protect enforcement machinery (settings / hooks / instructions / matrix)
+
+# project_owned_secret <resolved-path> -- is this THIS project's own dotenv
+# file, as opposed to someone else's?
+#
+# Operator decision, 2026-09-22: a project's credential file belongs to the
+# project, not to Athanor. Forbidding the agent to write it did not protect
+# anything -- every add, rotation, removal and malformed-line repair became a
+# command handed to the operator to paste by hand, which is the harness
+# generating homework instead of doing maintenance.
+#
+# WRITE only. Reading is still denied, and that half is load-bearing: a `cat`
+# puts a live key into a transcript that syncs to claude.ai and sits in
+# scrollback, where nobody controls it afterwards. It caught alembic-39 twice
+# on 2026-09-22 -- once on a `sed` masking values, which looks safe and is not,
+# because the masking is the agent's intent and not something this hook can
+# verify. Writing a secret is maintenance; printing one is exfiltration.
+#
+# Scoped to $PWD, which for a hook invocation is the project root. Another
+# project's dotenv, the home directory's, and every */secrets/*, .ssh, .aws,
+# .gnupg, *.pem and *.key stay denied in both directions -- this names one
+# filename shape in one tree and nothing else.
+project_owned_secret() {
+  local resolved="$1" root
+  root=$(pwd -P 2>/dev/null) || return 1
+  # Both spellings: expand_target() leaves an already-relative token alone, so
+  # `printf ... >> .env` arrives here as `.env`, not as an absolute path. A
+  # relative token is by definition resolved against $PWD -- the project root
+  # -- so it names this project's file and nothing else. Testing only the
+  # absolute form silently kept every ordinary command denied while the Write
+  # tool worked, which is the worst of both.
+  case "$resolved" in
+    "$root"/.env|"$root"/.env.*) return 0 ;;
+    .env|.env.*|./.env|./.env.*) return 0 ;;
+  esac
+  return 1
+}
 
 # floor_glob_match <path> -- the SEC-P0 protected-path glob set, factored into
 # a function so the SAME list can be applied to more than one spelling of the
@@ -322,6 +477,9 @@ if [ -n "$FILE_PATH" ]; then
      || floor_glob_match "$FLOOR_RESOLVED" \
      || [[ "$FLOOR_RESOLVED" =~ $re_write_protpath ]] \
      || [[ "$FLOOR_RESOLVED" =~ $re_read_protpath ]]; then
+    if project_owned_secret "$FLOOR_RESOLVED"; then
+      exit 0
+    fi
     if check_enforcement_hatch "$FLOOR_RESOLVED"; then
       exit 0
     fi
@@ -488,6 +646,9 @@ check_target() {
     # .sops.yaml) keep their "write to" message. component_glob_hit() closes
     # the same glob-spelling gap (R7) on the write side too.
     if [ "$kind" = "write" ] && { ci_match "$re_write_protpath" "$resolved" || ci_match "$re_read_protpath" "$resolved" || component_glob_hit "$resolved"; }; then
+      if project_owned_secret "$resolved"; then
+        return
+      fi
       if ! check_enforcement_hatch "$resolved"; then
         _target_blk=1; _target_why="write to protected path '$resolved'"
       fi
@@ -1224,6 +1385,47 @@ if [ "$LEVEL" = "medium" ]; then
         exit 2 ;;
     esac
   fi
+fi
+
+# ── cd-chain auto-allow ───────────────────────────────────────────────────────
+# Claude Code's own permission engine cannot statically resolve a cd-chained
+# Bash command (`cd DIR && cmd`) and falls back to a manual approval ask even
+# under bypassPermissions whenever a Read()/Write() deny rule exists in
+# settings.json (upstream anthropics/claude-code#20085, #37621, #4956) --
+# sandbox.md calls this out as "the single most common source of
+# interruptions during autonomous work." We already resolve DIR correctly
+# through expand_target()/path_in_project() (F28, lib/target_resolve.sh) for
+# the read/write floor checks above; this tells Claude Code's engine about
+# that resolution instead of leaving it to re-ask a question we already
+# answered. A PreToolUse hook returning permissionDecision:"allow" is a
+# native, documented Claude Code mechanism -- not a custom permission engine.
+#
+# Scope, deliberately narrow: only a literal `cd DIR && ...` / `cd DIR; ...`
+# shape, where DIR resolves inside TR_PROJECT_ROOT and is not floor-protected.
+# DIR containing a variable, command substitution, or glob is left alone (it
+# cannot be resolved safely, so it must still get Claude Code's normal
+# ask/deny), and so is any DIR that resolves outside the project root --
+# leaving the work folder still prompts, exactly as it should.
+if [ "$TOOL" = "Bash" ] && [[ "$COMMAND" =~ ^cd[[:space:]]+([^\&\;\|$'\n']+)[\ \t]*(\&\&|\;|$'\n') ]]; then
+  _cd_target="${BASH_REMATCH[1]}"
+  _cd_target="${_cd_target%\"}"; _cd_target="${_cd_target#\"}"
+  _cd_target="${_cd_target%\'}"; _cd_target="${_cd_target#\'}"
+  _cd_target="${_cd_target%"${_cd_target##*[! ]}"}"
+  case "$_cd_target" in
+    *'$'*|*'`'*|*'*'*|*'?'*|*'['*) ;;  # unresolvable -- fall through unchanged
+    *)
+      _cd_resolved="$(expand_target "$_cd_target")"
+      # floor_glob_match's globs require a path segment AFTER the protected
+      # dir (e.g. */execution/hooks/*), so cd'ing to the bare directory
+      # itself would not match. Testing "$_cd_resolved/" too catches that.
+      if path_in_project "$_cd_resolved" \
+        && ! floor_glob_match "$_cd_resolved" \
+        && ! floor_glob_match "$_cd_resolved/"; then
+        printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"cd target resolves inside the project root and is not floor-protected"}}'
+        exit 0
+      fi
+      ;;
+  esac
 fi
 
 # ── All other cases: allow ────────────────────────────────────────────────────
