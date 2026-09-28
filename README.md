@@ -116,6 +116,7 @@ types/            — TypeScript interfaces
 | Drive .docx Version Export M1-F1 | Done | Read-only sync tool (`execution/drive_docx_sync.py`) mirrors Lee-Ann's "Docs for Brad" Drive folder into a local versioned store (`content/drive-source/`), keyed to real content changes (`md5Checksum`, never `modifiedTime`) so metadata-only touches never mint spurious versions. Automatic minor bumps, manual-only `--major` bumps, duplicate-name disambiguation, rename/move audit trail, and deletion-preserves-history. See [docs/drive-docx-version-export.md](docs/drive-docx-version-export.md). |
 
 | National Orchid Show design system | In progress | `/national-show/**` gets its own visual identity — Cormorant Garamond/Jost, royal purple/olive/pale-gold palette — scoped entirely to a `.nos-theme` wrapper in `app/(marketing)/national-show/layout.tsx`. `app/globals.css` and `components/chrome/*` are untouched. See [docs/nos-design-system.md](docs/nos-design-system.md) for the scoping mechanism, the CSS-inheritance trap it works around, and known gaps. |
+| NOS Hero Lockup M1-F1 | Done — pending QA/sign-off | `/national-show`'s hero `<h1>` is now the supplied NOS-2027 lockup artwork (byte-identical to the branding masters, R22) instead of the hand-composed `EmblemBadge` + typeset headline (R23), per Brad's 2026-09-28 R12 decision. Masthead band route-scoped off `/national-show` only; footer colophon, button order and sections below the hero are unchanged. See [docs/nos-hero-lockup.md](docs/nos-hero-lockup.md). |
 
 Full milestone docs are in [`docs/`](docs/).
 
