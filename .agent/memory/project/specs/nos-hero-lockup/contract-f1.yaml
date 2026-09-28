@@ -1,0 +1,101 @@
+schema: athanor.contract/v1
+slug: nos-hero-lockup
+goal: >-
+  Replace the /national-show hero's hand-typeset headline and EmblemBadge
+  brandMark with the supplied NOS lockup artwork as the <h1>, matching the
+  approved artifact's hero (order, R10/R15 scrim, R14 hero typography),
+  without rolling any change onto the other 18 NOS routes ahead of Brad's
+  approval of this hero as the template.
+created_at: '2026-09-28'
+autonomy: high
+features:
+  - id: F1
+    name: NOS hero lockup — replace EmblemBadge + typeset h1 with supplied artwork
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-hero-lockup/goldens/hero-structure.md
+  - .agent/memory/project/specs/nos-hero-lockup/goldens/visual-checklist.md
+  - .agent/memory/project/specs/nos-hero-lockup/goldens/placement-spec.md
+  - .agent/memory/project/specs/nos-hero-lockup/goldens/reference-artifact-SjeY6NP8-v4.html
+assertions:
+  phase: 4
+  checks:
+    # ---- R22 byte-identity: served copies vs branding masters ----
+    - id: A1
+      description: served desktop lockup PNG is byte-identical to the branding master
+      command: cmp -s "branding/National Show 2027/Logo/NOS-2027-logo-full-colour-reversed-horizontal.png" "public/images/nos/lockup/NOS-2027-logo-full-colour-reversed-horizontal.png"
+    - id: A2
+      description: served mobile lockup PNG is byte-identical to the branding master
+      command: cmp -s "branding/National Show 2027/Logo/NOS-2027-logo-full-colour-reversed-vertical.png" "public/images/nos/lockup/NOS-2027-logo-full-colour-reversed-vertical.png"
+
+    # ---- h1 = lockup image, alt text, EmblemBadge gone from the hero ----
+    - id: A3
+      description: hero lockup wrapper hook present in page.tsx
+      command: grep -q "data-nos-hero-lockup" "app/(marketing)/national-show/page.tsx"
+    - id: A4
+      description: lockup carries the exact required accessible name
+      command: grep -q "National Orchid Show, Western Cape 2027" "app/(marketing)/national-show/page.tsx"
+    - id: A5
+      description: NosHero call site no longer passes EmblemBadge as brandMark
+      command: grep -L "brandMark={<EmblemBadge" "app/(marketing)/national-show/page.tsx"
+    - id: A6
+      description: EmblemBadge.tsx itself is untouched (still used by Logo.tsx on the other 18 routes)
+      command: test -f "components/nos/EmblemBadge.tsx"
+
+    # ---- R12/R23: masthead band retired on /national-show only, not sitewide ----
+    - id: A7
+      description: NosMasthead is a client component reading the current pathname
+      command: grep -q "usePathname" "components/nos/NosMasthead.tsx"
+    - id: A8
+      description: NosMasthead excludes the exact /national-show route (not a prefix match)
+      command: grep -q "'/national-show'" "components/nos/NosMasthead.tsx"
+    - id: A9
+      description: layout.tsx renders the masthead through the route-scoped component
+      command: grep -q "<NosMasthead" "app/(marketing)/national-show/layout.tsx"
+    - id: A10
+      description: colophon (footer) is untouched and still renders on every route
+      command: grep -q "data-nos-colophon" "app/(marketing)/national-show/layout.tsx"
+    - id: A11
+      description: Cormorant Garamond load is untouched (still needed by Logo.tsx on the other 18 routes)
+      command: grep -q "Cormorant_Garamond" "app/(marketing)/national-show/layout.tsx"
+    - id: A12
+      description: Jost load is untouched (still needed by Logo.tsx on the other 18 routes)
+      command: grep -q "Jost" "app/(marketing)/national-show/layout.tsx"
+
+    # ---- R10/R15 scrim, gated to this hero only ----
+    - id: A13
+      description: the required 90deg R10/R15 gradient direction and all five alpha stops are present in NosHero.tsx (checked independently so exact string wrapping doesn't matter)
+      command: grep -q "linear-gradient(90deg" "components/nos/NosHero.tsx" && grep -q "rgba(11,10,20,0.94)" "components/nos/NosHero.tsx" && grep -q "rgba(11,10,20,0.80)" "components/nos/NosHero.tsx" && grep -q "rgba(11,10,20,0.44)" "components/nos/NosHero.tsx" && grep -q "rgba(11,10,20,0.18)" "components/nos/NosHero.tsx" && grep -q "rgba(11,10,20,0.04)" "components/nos/NosHero.tsx"
+
+    # ---- R14: Fraunces/Karla added, Cormorant absent from the hero's own markup ----
+    - id: A14
+      description: Fraunces is loaded (net-new font, additive to the existing Cormorant/Jost)
+      command: grep -q "Fraunces" "app/(marketing)/national-show/layout.tsx"
+    - id: A15
+      description: Karla is loaded (net-new font, additive to the existing Cormorant/Jost)
+      command: grep -q "Karla" "app/(marketing)/national-show/layout.tsx"
+    - id: A16
+      description: hero text uses the new Karla variable in place of the shared Jost one
+      command: grep -rq "font-nos-karla" "components/nos/NosHero.tsx" "app/(marketing)/national-show/page.tsx"
+    - id: A17
+      description: no font-serif (Cormorant) utility remains in NosHero.tsx now the h1 is an image
+      command: grep -L "font-serif" "components/nos/NosHero.tsx"
+
+    # ---- New Edition XIX eyebrow-2 slot exists and doesn't touch the other 11 heroes ----
+    - id: A18
+      description: eyebrow2 render hook exists on NosHero (net-new, optional prop)
+      command: grep -q "data-nos-hero-eyebrow2" "components/nos/NosHero.tsx"
+    - id: A19
+      description: eyebrow2 prop is optional so the other 11 NosHero call sites are unaffected
+      command: grep -q "eyebrow2?:" "components/nos/NosHero.tsx"
+
+    # ---- repo-wide gates ----
+    - id: A20
+      description: TypeScript compiles clean
+      command: pnpm run type-check
+    - id: A21
+      description: ESLint passes
+      command: pnpm run lint
+    - id: A22
+      description: production build succeeds
+      command: pnpm run build
