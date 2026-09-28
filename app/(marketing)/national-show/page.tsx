@@ -1,12 +1,12 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
+import { getImageProps } from 'next/image';
 import Link from 'next/link';
 
 import { ConfirmationBadge, ShowCountdown, ShowSectionNav } from '@/components/show';
 import { Button } from '@/components/nos/Button';
 import { CtaBand } from '@/components/nos/CtaBand';
 import { CycleStep } from '@/components/nos/CycleStep';
-import { EmblemBadge } from '@/components/nos/EmblemBadge';
 import { ExhibitorStageCard } from '@/components/nos/ExhibitorStageCard';
 import { JudgingGroupCard } from '@/components/nos/JudgingGroupCard';
 import { COLUMN_CLASS, SPAN_CLASS, resolveGridLayout } from '@/lib/grid-columns';
@@ -72,6 +72,75 @@ export const metadata: Metadata = buildPageMetadata({
  * term is inert — the Y term is what lifts the bloom out from behind the type.
  */
 const HERO_FOCAL_POINT = '51% 37%';
+
+/**
+ * nos-hero-lockup (F1): the hero `<h1>` is the supplied NOS lockup artwork,
+ * not typeset text — R22 ("place the supplied file, nothing else happens to
+ * it") and R23 (stop hand-composing a lockup out of the emblem and type).
+ * Served copies are byte-identical, uncropped, unresized copies of
+ * `branding/National Show 2027/Logo/NOS-2027-logo-full-colour-reversed-*.png`
+ * (see the repo root README/CI gate that diffs them against the masters).
+ * Native dimensions below are the masters' own — passed as the `<img>`'s
+ * `width`/`height` so there is no layout shift and `next/image` computes the
+ * correct `sizes`-driven candidate (R22/8), never a resize of the file
+ * itself. See hero-structure.md §4.
+ */
+const HERO_LOCKUP_ALT = 'National Orchid Show, Western Cape 2027';
+const HERO_LOCKUP_HORIZONTAL_SRC =
+  '/images/nos/lockup/NOS-2027-logo-full-colour-reversed-horizontal.png';
+const HERO_LOCKUP_VERTICAL_SRC = '/images/nos/lockup/NOS-2027-logo-full-colour-reversed-vertical.png';
+
+/**
+ * Art-directed `<picture>`: a vertical file below 620px, a horizontal file
+ * above it — native `<picture>` source-matching swaps the resource, so
+ * exactly one `<img>` ever exists in the rendered DOM (one accessible name,
+ * no screen-reader duplication). `getImageProps` gives each candidate its
+ * automatic 2x `srcSet` entry.
+ *
+ * Placement (Brad, 2026-09-28 — see placement-spec.md / hero-structure.md
+ * §5): desktop box `min(1140px, 93.75%)` of the hero's content column,
+ * `-32px` margin-left (cancels the column's own left padding so the box's
+ * left edge lands flush with the section's outer edge), `46px` from the
+ * column's top (set on the column itself, see NosHero.tsx). Below 620px the
+ * box is `min(365px, 104%)` of the column, centred with
+ * `margin-left: calc(50% - width/2)` — `margin-inline: auto` was tried and
+ * rejected: the box is 15px wider than the visible ink, which reads
+ * off-centre. `mb-[58px]`/`mb-2` are the starting values from Brad's ink
+ * measurement, tuned against the rendered 1280/390 screenshots — see this
+ * feature's dev report for the measured result.
+ */
+function HeroLockup() {
+  const common = { alt: HERO_LOCKUP_ALT, priority: true } as const;
+
+  const {
+    props: { srcSet: mobileSrcSet },
+  } = getImageProps({
+    ...common,
+    src: HERO_LOCKUP_VERTICAL_SRC,
+    width: 3272,
+    height: 2876,
+    sizes: '365px',
+  });
+
+  const { props: desktopImgProps } = getImageProps({
+    ...common,
+    src: HERO_LOCKUP_HORIZONTAL_SRC,
+    width: 4108,
+    height: 1008,
+    sizes: '(min-width: 1280px) 1140px, 93.75vw',
+  });
+
+  return (
+    <picture data-nos-hero-lockup="" className="block">
+      <source media="(max-width: 620px)" srcSet={mobileSrcSet} />
+      <img
+        {...desktopImgProps}
+        alt={HERO_LOCKUP_ALT}
+        className="-ml-8 mb-[58px] block h-auto w-[min(1140px,93.75%)] max-[620px]:mb-2 max-[620px]:ml-[calc(50%-min(365px,104%)/2)] max-[620px]:w-[min(365px,104%)]"
+      />
+    </picture>
+  );
+}
 
 // ---------------------------------------------------------------------------------------
 // F18 wiring (nos-design-system, M6) — the site's ONE schema.org Event node lives on this
@@ -431,36 +500,24 @@ export default async function NationalShowPage() {
         priority
         focalPoint={HERO_FOCAL_POINT}
         eyebrow="The Flagship"
-        // The headline is the show's own name, set as plain text in Cormorant at
-        // the scoped `--display-xl` step — NOT the Logo lockup. A lockup nested
-        // inside an <h1> made the heading a composite of a decorative emblem and
-        // two wordmark spans: the accessible name survived, but the type scale,
-        // the measure and the line-breaking were the lockup's, not the page's,
-        // and the emblem was doing masthead duty inside a heading. The mark now
-        // rides above the eyebrow as `brandMark`, where it is decoration, and the
-        // full lockup belongs to the masthead/colophon instead (F21).
-        brandMark={<EmblemBadge />}
-        title="The South African National Orchid Show"
+        // The `<h1>` is the supplied NOS lockup artwork (nos-hero-lockup F1) —
+        // not typeset text, not the old EmblemBadge + text composite. R22/R23:
+        // place the supplied file, don't build a lockup out of parts. See
+        // hero-structure.md §3/§4. `brandMark` is no longer passed: the mark
+        // is already in the artwork.
+        title={<HeroLockup />}
         titleSize="display"
+        eyebrow2={edition ? `Edition ${toRomanOrdinal(edition)}` : undefined}
         lede={PAGE_DESCRIPTION}
         actions={
           <div className="flex w-full flex-col gap-8">
-            {edition ? (
-              // Over the photograph, pale gold holds regardless of the image
-              // underneath — lilac measured 199,184,222 (weak) on the
-              // bright-petal region of orchid-yellow.jpg/orchid-pink.jpg.
-              <p className="font-sans text-[13px] font-medium uppercase tracking-[0.18em] text-ivory/90">
-                Edition {toRomanOrdinal(edition)}
-              </p>
-            ) : null}
-
             <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
               {heroMeta.map(({ label, value }) => (
                 <div key={label} className="border-l-[length:var(--border-primary)] border-[var(--olive)]/50 pl-4">
-                  <dt className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-ivory/55">
+                  <dt className="font-[family-name:var(--font-nos-karla)] text-[10px] font-medium uppercase tracking-[0.2em] text-ivory/55">
                     {label}
                   </dt>
-                  <dd className="mt-0.5 font-sans text-[15px] text-ivory">{value}</dd>
+                  <dd className="mt-0.5 font-[family-name:var(--font-nos-karla)] text-[15px] text-ivory">{value}</dd>
                 </div>
               ))}
             </dl>
