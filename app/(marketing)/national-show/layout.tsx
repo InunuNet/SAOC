@@ -1,6 +1,6 @@
-import { Cormorant_Garamond, Jost } from 'next/font/google';
-import Link from 'next/link';
+import { Cormorant_Garamond, Fraunces, Jost, Karla } from 'next/font/google';
 
+import { NosMasthead } from '@/components/nos/NosMasthead';
 import { Logo } from '@/components/nos/Logo';
 
 import './nos-theme.css';
@@ -20,6 +20,28 @@ const jost = Jost({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
   variable: '--font-nos-jost',
+  display: 'swap',
+});
+
+// nos-hero-lockup (F1): additive to Cormorant/Jost above, not a replacement —
+// Cormorant/Jost stay reserved to Logo.tsx's wordmark artwork (R14/1) and to
+// the other eighteen routes' existing type, per this feature's scope boundary
+// (hero-structure.md §1/§7). Fraunces is R14's display face; no Fraunces text
+// ships in this feature (the one display headline this hero carried is now
+// the lockup image), but it loads here because `layout.tsx` is where R14's
+// eventual sitewide font decision lands. Karla is R14's body face and is
+// applied inside the flagship hero only (NosHero.tsx's `display` branch).
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-nos-fraunces',
+  display: 'swap',
+});
+
+const karla = Karla({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-nos-karla',
   display: 'swap',
 });
 
@@ -48,25 +70,13 @@ const jost = Jost({
 // and cannot do that from class names alone.
 export default function NationalShowLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`nos-theme ${cormorantGaramond.variable} ${jost.variable}`}>
-      <header
-        data-nos-masthead=""
-        className="border-b-[length:var(--border-hairline)] border-[var(--rule)] bg-parchment"
-      >
-        <div className="mx-auto max-w-[1280px] px-8 py-6">
-          {/* Links to the show's own landing page. The lockup's wordmark text is
-              the link's accessible name, so it needs no extra label. The
-              colophon's copy of the lockup is deliberately NOT a link: a second
-              self-referential link with the identical name is noise for a screen
-              reader, and a colophon signature is not a navigation control. */}
-          <Link
-            href="/national-show"
-            className="inline-block"
-          >
-            <Logo orientation="responsive" tone="light" />
-          </Link>
-        </div>
-      </header>
+    <div
+      className={`nos-theme ${cormorantGaramond.variable} ${jost.variable} ${fraunces.variable} ${karla.variable}`}
+    >
+      {/* Route-scoped: renders on every route under this layout EXCEPT
+          `/national-show` itself, whose hero now carries the lockup artwork
+          directly — see NosMasthead.tsx and hero-structure.md §2. */}
+      <NosMasthead />
       {children}
       {/* Colophon on the flat night ground — the one ground `Logo`'s on-dark
           subtitle tint is cleared for (10.4:1); it is not cleared over
