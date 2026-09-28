@@ -1800,3 +1800,5 @@ server belonging to `/Users/vetus/ai/SaocNosDesign` — a different project, out
 repo. This is a scope-boundary violation, not just a note: add a rule that agents never use
 `pkill`/`kill` with a pattern; let Playwright's config manage its own servers.
 > Truncated 10 items at trim time (2026-09-18). Restore from git history if needed.
+
+- [ ] **Upstream (Athanor): update-template deregisters project hooks** — 2026-09-28, 3.8.5 update dropped 23 hook registrations (repaired, a85bc5f2). 2 are #1453 (commented: https://github.com/InunuNet/Athanor/issues/1453#issuecomment-5869510295); 21 under execution/hooks/ are a separate finding posted to Athanor's comms.md (queued, awaiting reply). After every `make update-template`, diff .claude/settings.json against HEAD and run `repair_hooks.py --root <project>` if registrations dropped.
