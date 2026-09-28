@@ -236,6 +236,14 @@ heading real, indexable text rather than a picture standing in for one. **Verifi
 2026-09-08** against real DOM at both 390 and 1280px, including that only one emblem is
 visible per breakpoint by computed size, not by class name alone. Not re-checked since.
 
+**Superseded 2026-09-28 (nos-hero-lockup F1) — flagship hero only.** Per R22/R23, the
+`/national-show` hero's `<h1>` is now the supplied NOS-2027 lockup *artwork* (an `<img>`,
+accessible name `"National Orchid Show, Western Cape 2027"`), not typeset text — the
+hand-composed emblem-plus-wordmark described above is retired from that hero and from the
+masthead band above it. The other eighteen NOS routes still use the masthead's
+Layout B lockup exactly as described in this section. See
+[docs/nos-hero-lockup.md](nos-hero-lockup.md).
+
 The wordmark measures 15.55em wide, so it cannot sit beside the emblem below roughly
 1263px of viewport width — the inline-to-stacked layout switch happens at Tailwind's
 `xl` breakpoint for exactly that reason. The emblem's width is derived from the type
