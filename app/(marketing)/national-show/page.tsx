@@ -527,7 +527,7 @@ export default async function NationalShowPage() {
                 <div key={label} className="border-l-[length:var(--border-primary)] border-[var(--olive)]/50 pl-4">
                   <dt
                     data-nos-hero-text={`meta-dt-${index}`}
-                    className="font-[family-name:var(--font-nos-karla)] text-[10px] font-medium uppercase tracking-[0.2em] text-ivory/55"
+                    className="font-[family-name:var(--font-nos-karla)] text-[10px] font-medium uppercase tracking-[0.2em] text-ivory/90"
                   >
                     {label}
                   </dt>
