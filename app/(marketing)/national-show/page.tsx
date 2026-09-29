@@ -55,23 +55,15 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 /**
- * `object-position` for the hero photograph — the measured bloom centre of
- * `/images/orchid-violet.jpg`, not a hand-picked crop (M7 golden D2, req 2).
- *
- * How it was measured (`.tmp/sandbox/m7-dev/measure-bloom-centre.mjs`): the jpg
- * is decoded in a headless browser, drawn to a canvas at its natural 7327×4885,
- * and sampled on a 240×240 grid. A pixel counts as bloom-like under D2.1's own
- * metric — HSL saturation ≥ 0.35 and lightness ≥ 0.35 — and the constant is the
- * centroid of every bloom-like sample, expressed image-relative: 50.7% / 36.5%,
- * rounded to whole percent. 21.2% of the frame is bloom-like.
- *
- * A single declared point, not a per-breakpoint crop, so the composition holds
- * across viewport aspects. Note what it can and cannot do: `object-cover` scales
- * this 3:2 image by whichever axis is short, and at every width the hero is
- * wider than 3:2, so the horizontal axis is the one that fits exactly and the X
- * term is inert — the Y term is what lifts the bloom out from behind the type.
+ * `object-position` for the hero photograph, `/images/orchid-dark.jpg` — Codi's
+ * value, verbatim, from the nos-hero-lockup amendment of 2026-09-29
+ * (placement-spec.md "Amendment 2026-09-29"; source:
+ * `.agent/memory/scratch/rulings-inbox/codi-hero-deltas-2026-09-29.md`). The
+ * approved artifact's hero JPEG is orchid-dark.jpg downscaled (pixel diff 0), so
+ * this is its crop, not a new measurement. One value at every width: the photo
+ * is a full-bleed layer behind all the hero content at every breakpoint.
  */
-const HERO_FOCAL_POINT = '51% 37%';
+const HERO_FOCAL_POINT = '68% 50%';
 
 /**
  * nos-hero-lockup (F1): the hero `<h1>` is the supplied NOS lockup artwork,
@@ -97,26 +89,29 @@ const HERO_LOCKUP_VERTICAL_SRC = '/images/nos/lockup/NOS-2027-logo-full-colour-r
  * no screen-reader duplication). `getImageProps` gives each candidate its
  * automatic 2x `srcSet` entry.
  *
- * Placement (Brad, 2026-09-28 — see placement-spec.md / hero-structure.md
- * §5): desktop box `min(1140px, 93.75%)` of the hero's content column,
- * `-32px` margin-left (cancels the column's own left padding so the box's
- * left edge lands flush with the section's outer edge), `46px` from the
- * column's top (set on the column itself, see NosHero.tsx). Below 620px the
- * box is `min(365px, 104%)` of the column, centred with
- * `margin-left: calc(50% - width/2)` — `margin-inline: auto` was tried and
- * rejected: the box is 15px wider than the visible ink, which reads
- * off-centre. `max-w-none` overrides Preflight's `img{max-width:100%}` —
- * both boxes are deliberately sized past their column at these percentages
- * (mobile 104%, desktop's negative margin), and without it the browser
- * silently clips the box back to 100% of the column. `mb-[95px]`/
- * `mb-[48px]` are NOT Brad's raw 58px/8px figures: the PNGs carry built-in
- * transparent clearspace below the visible ink (measured from each file's
- * alpha channel — 19.0% of the horizontal file's height, 8.9% of the
- * vertical's), so these margins are the raw figure plus that clearspace,
- * minus the 16px `gap-4` the flex column already applies between children —
- * tuned against the rendered 1714/390 `getBoundingClientRect` measurements
- * to land the actual ink-to-next-text gap at Brad's ~58px / ~37px. See this
- * feature's dev report for the measured result.
+ * Placement (Brad, 2026-09-28, amended by Codi 2026-09-29 — see
+ * placement-spec.md / hero-structure.md §5): desktop box `min(1140px, 93.75%)`
+ * of the hero's content column, `-32px` margin-left (cancels the column's own
+ * left padding so the box's left edge lands flush with the section's outer
+ * edge), `46px` from the column's top (set on the column itself, see
+ * NosHero.tsx). Box bottom sits `5px` above "The Flagship": NosHero keeps the
+ * display `<h1>` outside its flex gap, so this margin is the whole gap, and the
+ * file's own transparent clearspace below the ink (192/1008 of the box, 53.3px
+ * at 1140) makes up the rest of Brad's ~58px visible clear.
+ *
+ * Below 620px the box is `min(365px, 100vw - 25px)` wide and centred on the
+ * VIEWPORT, not the padded column: the column's padding is symmetric, so
+ * `calc(50% - width/2)` of its content box lands on the viewport's centre. The
+ * hero text stays left-aligned on the gutter. `margin-bottom: 8px` is the whole
+ * box-to-eyebrow gap (256/2876 of the box, 28.6px at 365, is clearspace under
+ * the ink, for ~37px visible). `max-w-none` overrides Preflight's
+ * `img{max-width:100%}`: both boxes are deliberately wider than the column
+ * (desktop's negative margin, mobile's viewport width), and without it the
+ * browser clips the box back to 100% of the column.
+ *
+ * CLS: each `<source>` carries its own file's intrinsic `width`/`height`, so
+ * below 620px the browser reserves the vertical file's aspect instead of the
+ * fallback `<img>`'s horizontal 4108×1008 one.
  */
 function HeroLockup() {
   const common = { alt: HERO_LOCKUP_ALT, priority: true } as const;
@@ -141,18 +136,13 @@ function HeroLockup() {
 
   return (
     <picture data-nos-hero-lockup="" className="block">
-      <source media="(max-width: 620px)" srcSet={mobileSrcSet} />
+      <source media="(max-width: 620px)" srcSet={mobileSrcSet} width={3272} height={2876} />
       <img
         {...desktopImgProps}
         alt={HERO_LOCKUP_ALT}
-        // `max-w-none` overrides Preflight's `img { max-width: 100% }` — the
-        // reference artifact's own `.hero-wordmark img` rule does the same
-        // (`max-width:none`), because both boxes are deliberately wider than
-        // their column at these percentages (mobile is 104%, desktop's
-        // negative margin also pushes past the column edge). Without it the
-        // browser silently clips both formulas back down to 100% of the
-        // column, which is exactly what happened before this override.
-        className="-ml-8 mb-[95px] block h-auto w-[min(1140px,93.75%)] max-w-none max-[620px]:mb-[48px] max-[620px]:ml-[calc(50%-min(365px,104%)/2)] max-[620px]:w-[min(365px,104%)]"
+        // `max-w-none` mirrors the reference artifact's own `.hero-wordmark img`
+        // rule (`max-width:none`) — see the placement note above.
+        className="-ml-8 mb-[5px] block h-auto w-[min(1140px,93.75%)] max-w-none max-[620px]:mb-[8px] max-[620px]:ml-[calc(50%_-_min(365px,100vw_-_25px)/2)] max-[620px]:w-[min(365px,100vw_-_25px)]"
       />
     </picture>
   );
@@ -512,7 +502,7 @@ export default async function NationalShowPage() {
           narrative (Kew pattern from research item 3: a visitor's first
           question is "can I come and what does it cost"). ── */}
       <NosHero
-        image="/images/orchid-violet.jpg"
+        image="/images/orchid-dark.jpg"
         priority
         focalPoint={HERO_FOCAL_POINT}
         eyebrow="The Flagship"
