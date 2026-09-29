@@ -148,7 +148,7 @@ export default async function PlanYourVisitPage() {
             <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {emergencyContacts.map((contact, index) => (
                 <Card key={contact._key ?? `${contact.label}-${index}`}>
-                  <dt className="font-sans text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
+                  <dt className="font-sans text-[12px] font-medium uppercase tracking-[0.16em] text-muted">
                     {contact.label}
                   </dt>
                   <dd className="mt-1 font-serif text-[26px] font-medium text-primary">

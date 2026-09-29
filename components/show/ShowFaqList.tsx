@@ -57,7 +57,7 @@ export function ShowFaqList({ faqs, pendingLabel, researchLabel }: ShowFaqListPr
           <section key={category} aria-labelledby={`faq-${category}`}>
             <h2
               id={`faq-${category}`}
-              className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent"
+              className="font-mono text-[12px] uppercase tracking-[0.2em] text-accent"
             >
               {CATEGORY_LABELS[category]}
             </h2>

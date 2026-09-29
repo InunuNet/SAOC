@@ -57,7 +57,7 @@ export function PastEditionCard({
             background: 'linear-gradient(to top, rgba(14,11,36,0.75) 0%, rgba(14,11,36,0) 45%)',
           }}
         />
-        <span className="absolute left-3 top-3 rounded-[length:var(--radius-pill)] bg-primary px-3 py-1 font-sans text-[10px] font-medium uppercase tracking-[0.18em] text-ivory">
+        <span className="absolute left-3 top-3 rounded-[length:var(--radius-pill)] bg-primary px-3 py-1 font-sans text-[12px] font-medium uppercase tracking-[0.18em] text-ivory">
           {editionLabel}
         </span>
       </div>
@@ -73,7 +73,7 @@ export function PastEditionCard({
             {stats.map((stat) => (
               <span
                 key={stat}
-                className="rounded-[length:var(--radius-pill)] bg-bone px-2.5 py-1 font-sans text-[10px] font-medium uppercase tracking-[0.14em] text-muted"
+                className="rounded-[length:var(--radius-pill)] bg-bone px-2.5 py-1 font-sans text-[12px] font-medium uppercase tracking-[0.14em] text-muted"
               >
                 {stat}
               </span>

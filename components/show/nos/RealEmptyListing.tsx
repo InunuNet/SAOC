@@ -25,7 +25,7 @@ export function RealEmptyListing({ fieldLabels, absenceStatement }: RealEmptyLis
       <p className="font-sans text-[15px] leading-relaxed text-ink/80">{absenceStatement}</p>
 
       <div className="mt-6 border-[length:var(--border-primary)] border-rule bg-white p-6">
-        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+        <p className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted">
           Each entry will show
         </p>
         <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2">

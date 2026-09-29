@@ -170,7 +170,7 @@ export default async function WhatToExpectPage() {
             <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {openingHours.map((entry, index) => (
                 <Card key={entry._key ?? `${entry.label}-${index}`}>
-                  <dt className="font-sans text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
+                  <dt className="font-sans text-[12px] font-medium uppercase tracking-[0.16em] text-muted">
                     {entry.label}
                   </dt>
                   <dd className="mt-1 font-serif text-[22px] font-medium text-ink">{entry.hours}</dd>

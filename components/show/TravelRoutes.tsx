@@ -37,7 +37,7 @@ export function TravelRoutes({ routes }: TravelRoutesProps) {
           </h4>
 
           {route.distance || route.duration ? (
-            <dl className="mt-3 space-y-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+            <dl className="mt-3 space-y-1 font-mono text-[12px] uppercase tracking-[0.14em] text-muted">
               {route.distance ? (
                 <div className="flex gap-2">
                   <dt>Distance</dt>

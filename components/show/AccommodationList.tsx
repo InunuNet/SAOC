@@ -49,7 +49,7 @@ export function AccommodationList({ options }: AccommodationListProps) {
 
         return (
           <section key={band}>
-            <h4 className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+            <h4 className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted">
               {BAND_LABELS[band]}
             </h4>
             {/* No hardcoded column-count utility below lg: mobile/tablet stack via flex-col — the
@@ -64,7 +64,7 @@ export function AccommodationList({ options }: AccommodationListProps) {
                 >
                   <p className="font-serif text-[18px] font-medium text-ink">{option.name}</p>
                   {option.area ? (
-                    <p className="mt-1 font-mono text-[10.5px] uppercase tracking-[0.16em] text-muted">
+                    <p className="mt-1 font-mono text-[12px] uppercase tracking-[0.16em] text-muted">
                       {option.area}
                     </p>
                   ) : null}

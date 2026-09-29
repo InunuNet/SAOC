@@ -56,7 +56,7 @@ export function ShowPageProse({ section }: ShowPageProseProps) {
       {notice ? (
         <p className="nos-show-page-notice mb-4 flex flex-wrap items-baseline gap-2" role="note">
           <span
-            className={`inline-block rounded-[length:var(--radius-1)] border px-2 py-0.5 font-sans text-[11px] font-medium uppercase tracking-[0.14em] ${
+            className={`inline-block rounded-[length:var(--radius-1)] border px-2 py-0.5 font-sans text-[12px] font-medium uppercase tracking-[0.14em] ${
               notice.tone === 'warning' ? 'text-[var(--status-warning)]' : 'text-[var(--status-muted)]'
             }`}
             style={{ borderColor: 'currentColor' }}

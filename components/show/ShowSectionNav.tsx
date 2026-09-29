@@ -69,7 +69,7 @@ export function ShowSectionNav({ current }: ShowSectionNavProps) {
   return (
     <nav aria-label="National Show section" className="bg-bone py-12">
       <div className="mx-auto max-w-[1280px] px-8">
-        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
+        <p className="font-mono text-[12px] uppercase tracking-[0.2em] text-accent">
           More on the National Show
         </p>
         {/* No hardcoded column-count utility below lg: mobile and tablet stack via flex-col, so the

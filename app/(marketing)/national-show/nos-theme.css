@@ -279,4 +279,13 @@
   --dur-fast: 120ms;
   --dur-med: 220ms;
   --dur-slow: 360ms;
+
+  /* ---- F2 type floor (Codi, 2026-09-29): no NOS text below 12px. The hero
+     meta `dt` alone gets this exception — 12.8px, not flat 12px like every
+     other raised label — because Codi named it "primary hero content"
+     specifically. 0.8rem = 12.8px at the default 16px root (no root
+     font-size override exists in app/globals.css). Every other sub-floor
+     label in the NOS/show scope is a flat `text-[12px]` literal instead;
+     this token is not a general small-text scale. ---- */
+  --fs-xs: 0.8rem;
 }
