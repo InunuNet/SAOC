@@ -73,7 +73,90 @@ public/images/nos/lockup/NOS-2027-logo-full-colour-horizontal.png
 `public/images/nos/lockup/` then holds exactly 4 files (2 from F1's hero + these
 2 new ones) — no other derivative should appear there.
 
-## Sizing (R22/5: "keep the CSS sizing minimal" — engineering's call, bounded by R21/8)
+## Sizing — SUPERSEDED 2026-09-29 (Codi F2 review)
+
+**The R21/8-derived 96px/120px sizing below this note is dead.** Codi
+reviewed the built masthead and colophon and found both illegible: "At 1280
+'WESTERN CAPE · 2027' is ~3px tall (illegible); masthead ~180px wide. Files
+correct; size wrong." The files and colourway selection above are unaffected
+— only the rendered dimensions change. The original 96px/120px section is
+kept immediately below, struck by this note, for the audit trail of what
+shipped first and why it was wrong (R21/8's table was legibility data for
+the artwork *in general*; it was never a substitute for measuring the
+lockup's own smallest legible sub-element, the location line, which is what
+actually failed).
+
+## Sizing (current, Codi F2 review, 2026-09-29)
+
+**New rule, replacing R21/8's table for this placement specifically:**
+Codi measured the location line ("WESTERN CAPE · 2027") directly against
+the supplied files — not the whole lockup's legibility, the smallest text
+element inside it, which is the part that was failing:
+- horizontal file: location band is 67 of 4108px of the file's width →
+  needs **≥440px rendered width** for a ≥7px cap height.
+- vertical file: location band is 67 of 2876px of the file's height →
+  needs **≥300px rendered height** (≈340px rendered width at the file's
+  native ratio) for the same ≥7px floor.
+
+**Both placements now take the same sizing rule** (masthead and colophon
+differ only by colourway via the existing `tone` prop, which already
+resolves correctly — see "File + colourway selection" above; nothing in
+that table changes):
+
+- **≥620px viewport: horizontal file at 440px wide** (`height: auto`,
+  native ratio 4108:1008 ⇒ ≈108px tall).
+- **<620px viewport: vertical file at `min(340px, 100vw - 2×gutter)`**
+  (`height: auto`). 620px is not a new breakpoint invented for this — it is
+  the same mobile threshold F1's hero lockup already switches on
+  (`page.tsx`'s `<source media="(max-width: 620px)">`, `NosHero.tsx`'s
+  `max-[620px]:` classes); reusing it keeps one mobile boundary for the
+  whole route instead of a second, unexplained one.
+
+**Gutter has no CSS variable to reference** (confirmed: no `--gutter` custom
+property exists anywhere in this repo). Both containers this lockup renders
+inside use the identical literal instead — `NosMasthead.tsx`'s `<div
+className="mx-auto max-w-[1280px] px-8 py-6">` and `layout.tsx`'s colophon
+`<div className="mx-auto max-w-[1280px] px-8 py-12">` both pad `px-8` (32px)
+each side. 2×gutter is therefore the literal **64px**, taken from the two
+actual containers the mark sits inside, not invented independently of them.
+If a future change ever gives either container its own distinct padding,
+this 64px stops being derived and must be revisited — it is not meant to
+outlive the assumption that both containers match.
+
+**Clear space (Codi F2 review: "≥ 1/4 emblem width... left-aligned as
+now").** Left alignment is unchanged, needs no code change, and no
+assertion. Clear-space width is **not independently gated in this
+contract** — R21/8's own method note applies here too ("measured directly...
+not read off catalogued values"), and no ruling records the emblem's own
+width as a fraction of either supplied file's total width (the 67/4108 and
+67/2876 figures above are the *location line*, a different sub-element).
+Verifying "1/4 emblem width" precisely would require measuring that
+sub-region directly, which no existing evidence plate does. Per no-invention,
+this is flagged rather than guessed at: dev implements the two rendered
+sizes above (which are exact and sourced), and Codi's own closing
+instruction — "Resend colophon + masthead screenshots at 1280 and 390
+after" — is the verification step for clear space, the same way it already
+is for legibility. If the screenshot shows either mark crowded against the
+container edge or an adjacent element, that is a follow-up ruling, not a
+silent judgment call made here.
+
+**File coverage — checked, nothing new to copy.** All four files this
+sizing rule needs already exist byte-identical in
+`public/images/nos/lockup/` — two from this feature's own masthead work
+(`NOS-2027-logo-full-colour-vertical.png`,
+`NOS-2027-logo-full-colour-horizontal.png`) and two reused from F1's hero
+(`NOS-2027-logo-full-colour-reversed-vertical.png`,
+`NOS-2027-logo-full-colour-reversed-horizontal.png` — F1's hero already
+uses the reversed-horizontal file as its own desktop lockup, contract-f1.yaml
+A1). The directory still holds exactly these 4 files; A9 is unchanged.
+
+Set width/height via CSS/className only, per R22/5 — no `sizes`/`quality`
+prop changes beyond what makes `next/image` pick a correctly-dense candidate
+for the *actual* rendered box (R22/8: "the 2x candidate must be the one a 2x
+display receives" — pass an explicit `sizes` matching each fixed CSS width
+so Next's device-size selection isn't guessing from the viewport).
+
+## Sizing (SUPERSEDED — 96px/120px, R21/8 legibility table; kept for the record)
 
 **Checked against the committee PDF's clear-space rule — not applied.** The
 committee-approved `branding/National Show 2027/National Orchid Show 2027
@@ -106,23 +189,14 @@ than inventing a number:
   masthead, so it gets the more generous end of the same table rather than the
   compact-context minimum.
 
-**Confirmed against the PDF's other size rule, and it holds.** Codi's answer
-(rulings-inbox, "Codi answers") accepts both figures explicitly: "The R23
-masthead and colophon use the supplied transparent PNGs, 96px on the
-masthead and 120px on the colophon. Accepted, because both clear the
-committee's 24px minimum emblem height." The PDF (p.8, "Clear space and
-minimum size") sets a 24px on-screen floor for emblem height; 96px and
-120px both clear it by a wide margin regardless of which dimension of the
-vertical lockup is read as "emblem height." This is a confirmation of the
-R21/8-derived numbers above, not a new source — the sizing rationale stays
-R21/8 as written; the PDF is cited here only because Codi's answer checked
-it and it does not conflict.
-
-Set width/height via CSS/className only, per R22/5 — no `sizes`/`quality`
-prop changes beyond what makes `next/image` pick a correctly-dense candidate
-for the *actual* rendered box (R22/8: "the 2x candidate must be the one a 2x
-display receives" — pass an explicit `sizes` matching the fixed CSS width so
-Next's device-size selection isn't guessing from the viewport).
+**Confirmed against the PDF's other size rule, and it holds — still true, just
+moot now that these numbers are superseded.** Codi's answer (rulings-inbox,
+"Codi answers") accepted both figures: "The R23 masthead and colophon use the
+supplied transparent PNGs, 96px on the masthead and 120px on the colophon.
+Accepted, because both clear the committee's 24px minimum emblem height."
+That PDF clearance check has no bearing on the new 440px/min(340px…) numbers
+above — they clear a 24px floor even more comfortably — so nothing here
+needed re-checking against the PDF when the sizing changed.
 
 ## Accessible name
 
@@ -143,11 +217,42 @@ this delta batch and adding one is inventing a feature, not placing an asset.
 ## What must NOT change
 
 - `EmblemBadge.tsx` — untouched, kept for its own legitimate future use (R23).
-- `NosMasthead.tsx` and `layout.tsx`'s two `<Logo .../>` call sites — same
-  props, same JSX, same position in the tree.
-- The `xl` breakpoint the masthead's `responsive` orientation already switches
-  on — this feature changes *what* renders at each side of it, not *when* it
-  switches.
+- `NosMasthead.tsx`'s call site — same props, same JSX, same position in the
+  tree (`<Logo orientation="responsive" tone="light" />`, unchanged).
 - Any font token (see `f2-page-deltas.md` §0) — the old Logo's `font-serif`/
   `font-sans` spans simply disappear along with the composed text; that is a
   side effect of R23, not a font-remap decision.
+
+## Correction, 2026-09-29 (Codi F2 review) — the colophon call site DOES change
+
+Everything above this note assumed a fixed `orientation="vertical"` colophon
+that never switched size or orientation. That assumption is gone: Codi's F2
+review puts the colophon under the **same** 620px-breakpoint responsive rule
+as the masthead (horizontal at ≥620px, vertical below it — see "Sizing"
+above), and `Logo.tsx`'s `verticalSrc(tone)`/`horizontalSrc(tone)` helpers
+are already tone-aware (they resolve to the `-reversed-` files for
+`on-dark` with no extra logic), so the cleanest implementation is for the
+colophon to use the **same** `responsive` orientation the masthead already
+uses, not a second bespoke mode.
+
+`layout.tsx`'s colophon call site therefore changes from:
+```
+<Logo orientation="vertical" tone="on-dark" />
+```
+to:
+```
+<Logo orientation="responsive" tone="on-dark" />
+```
+Same position in the tree, same wrapping `<div className="mx-auto
+max-w-[1280px] px-8 py-12">` — only the `orientation` prop value changes.
+This supersedes this file's earlier "both call sites stay exactly as they
+are" instruction for the colophon specifically; the masthead call site is
+still unchanged.
+
+The fixed `orientation="vertical"`/`orientation="horizontal"` branches in
+`Logo.tsx` keep no call site after this change. **Do not delete them** —
+same reasoning as `EmblemBadge.tsx`: they are part of the component's public
+API (`NosLogoProps`), a future placement may need a non-responsive fixed
+size, and removing a branch nobody currently calls is exactly the kind of
+"tidying" that turns into a second, undocumented API change nobody asked
+for.

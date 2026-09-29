@@ -286,14 +286,38 @@ Codi's delta names only "Coming to the show," and sweeping every grid in the
 file is a separate, unscoped R13 audit — not this feature. Flagged for a
 future pass, not fixed here.
 
-## 7. P0 paint check — escalated to LIKELY REAL, now gating (Codi item 9)
+## 7. P0 paint check — CLOSED 2026-09-29 (Codi F2 review)
+
+**Superseded.** Everything below the "Update — CLOSED" note is the diagnosis
+procedure as it stood before Codi's F2 review closed the item; kept for the
+audit trail (the diagnosis procedure and the gating script it specified were
+both legitimate work — the finding was that the *cause* was environmental,
+not that the investigation was wrong to run).
+
+**Update — CLOSED, per Codi's F2 review:** the source of the 6/7 and 7/8
+misses was Codi's own review agents loading the page through
+claude-in-chrome extension tabs, which were likely unfocused — Chrome skips
+paint work in background tabs, which is exactly the "background-tab paint
+artefact" theory the original audit raised and Codi's own second report had
+provisionally set aside. Foreground evidence is now 16/16 (Codi's own
+re-check) plus this feature's own paint-probe script (below), which is
+stronger evidence than the extension-tab reproductions were. **Do NOT add a
+`sizes` attribute to the mobile `<source>`** on the strength of candidate
+cause 2 below — Codi's review states plainly that it "defaults to 100vw;
+adding changes nothing" for this element, closing that lead as a red
+herring, not a fix. No production code changes ship for item 9.
+
+**The gating paint-probe script stays** (`scripts/checks/nos-hero-paint-probe.mjs`,
+spec below) — the escalation to a real gate was correct regardless of root
+cause, and a script that would have caught the artefact either way is worth
+keeping. It is a regression guard now, not a diagnostic pending a fix.
 
 Original audit: "h1 lockup failed to paint in 6/7 automated loads... likely
-background-tab paint artefact." **Update from Codi:** it reproduced again — a
-cold, foreground load at 1280 on `localhost:3002/national-show`, 7 of 8
-automated loads now. **Treat as LIKELY REAL, not an artefact.** This is no
-longer a one-off diagnostic with a no-op gate; it gets a real diagnosis
-procedure, a fix conditional on reproduction, and a gating assertion.
+background-tab paint artefact." **Update from Codi (superseded, see above):**
+it reproduced again — a cold, foreground load at 1280 on
+`localhost:3002/national-show`, 7 of 8 automated loads at the time. That
+report is what escalated this to a gating assertion; the escalation stands
+even though the root cause turned out to be the reviewing tool, not the page.
 
 ### Diagnosis procedure (dev)
 
@@ -318,8 +342,11 @@ profile), at **1280×900 and 390×844**. Per load, capture and log:
    `getImageProps` calls, which should set `loading="eager"` +
    `fetchPriority="high"` — check the *rendered* `<img>` attributes match what
    the code implies; don't assume the prop reached the DOM correctly.
-2. **A `<source>`/`sizes` mismatch — a concrete lead already visible in the
-   source, check this one first.** The mobile `<source>` element
+2. **A `<source>`/`sizes` mismatch — CLOSED, do not fix.** Codi's F2 review
+   checked this exact lead directly and ruled it out: a `<source>` with no
+   `sizes` "defaults to 100vw; adding changes nothing" for this element. Left
+   below for the record of what was checked; **do not add `sizes` to the
+   mobile `<source>`.** The mobile `<source>` element
    (`page.tsx` ~line 145: `<source media="(max-width: 620px)" srcSet={mobileSrcSet}
    width={3272} height={2876} />`) carries **no `sizes` attribute at all** —
    `getImageProps`'s vertical call (~line 127-133) was given `sizes: '365px'`,
