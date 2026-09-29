@@ -99,3 +99,40 @@ assertions:
     - id: A22
       description: production build succeeds
       command: pnpm run build
+
+    # ---- Amendment 2026-09-29 (Codi deltas, after QA FAIL + Brad's desktop
+    # feedback) — see goldens/placement-spec.md "Amendment 2026-09-29" for the
+    # verbatim source. Photo swap, focal point, and the new CLS fix on the
+    # mobile <source>. No prior assertion above hardcoded the superseded
+    # orchid-violet/margin values, so none of A1-A22 needed changing. ----
+    - id: A23
+      description: hero background is orchid-dark.jpg, not orchid-violet.jpg
+      command: grep -q 'image="/images/orchid-dark.jpg"' "app/(marketing)/national-show/page.tsx"
+    - id: A24
+      description: orchid-violet.jpg is no longer referenced as the hero image
+      command: '! grep -q "image=\"/images/orchid-violet.jpg\"" "app/(marketing)/national-show/page.tsx"'
+    - id: A25
+      description: hero photograph uses the Codi-specified 68% 50% object-position
+      command: grep -q "68% 50%" "app/(marketing)/national-show/page.tsx"
+    - id: A26
+      description: the mobile <source> (vertical lockup) carries its own width=3272 (CLS fix)
+      command: grep -A1 "<source" "app/(marketing)/national-show/page.tsx" | grep -q "3272"
+    - id: A27
+      description: the mobile <source> (vertical lockup) carries its own height=2876 (CLS fix)
+      command: grep -A1 "<source" "app/(marketing)/national-show/page.tsx" | grep -q "2876"
+
+    # ---- Amendment 2026-09-29b (legibility, Codi ruling on bce627a2) — see
+    # goldens/placement-spec.md "Amendment 2026-09-29b (legibility)" for the
+    # verbatim source. Desktop copy column narrows to 720px; mobile swaps the
+    # gradient scrim for a flat layer; gated contrast check via a new
+    # project-owned helper script. A13 (desktop scrim) is untouched: the
+    # ruling explicitly freezes it. ----
+    - id: A28
+      description: desktop hero copy block (eyebrow/eyebrow2/lede/dl/buttons/count) is capped at 720px per the mock's .hero-copy value
+      command: grep -q "max-w-\[720px\]" "components/nos/NosHero.tsx"
+    - id: A29
+      description: mobile scrim is a flat rgba(11,10,20,0.82) layer (not part of the gradient string) replacing the horizontal ramp at <=620px
+      command: 'grep "rgba(11,10,20,0.82)" "components/nos/NosHero.tsx" | grep -qv "linear-gradient"'
+    - id: A30
+      description: gated legibility acceptance — every hero text element and button border clears its contrast floor at 1280/1714/390 against a live server (SKIP-as-fail if unreachable; see hero-structure.md §10 for the script's spec)
+      command: node scripts/checks/nos-hero-contrast.mjs
