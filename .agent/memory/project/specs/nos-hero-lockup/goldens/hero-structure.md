@@ -101,6 +101,20 @@ viewport ≥1280.
   the 1280 screenshot in `visual-checklist.md`, record the value used and how it
   was checked.
 
+> **Superseded 2026-09-29 (Codi deltas, after QA FAIL) — see
+> `placement-spec.md`'s "Amendment 2026-09-29" section for the current
+> numbers.** The photo is `orchid-dark.jpg` at `object-position: 68% 50%`
+> (not `orchid-violet.jpg`/the computed 51%/37% bloom-centroid below); at
+> ≤620px the photo is full-bleed/absolute behind the whole hero column (the
+> in-flow stacked photo band described below this note is retired); and the
+> mobile lockup centres on the **viewport**, not "the column" as written
+> just below — `width: min(365px, 100vw - 25px)`,
+> `margin-left: calc(50% - <rendered-width>/2)` relative to a full-width
+> parent. Desktop placement numbers (1140/-32px/46px, ~58px ink gap) and the
+> mobile ~37px ink gap are unchanged; only the CSS mechanism and the
+> viewport-vs-column basis changed. Treat `placement-spec.md`'s amendment as
+> authoritative over the prose below wherever the two disagree.
+
 **Mobile (≤620px, centred variant — supersedes the earlier horizontal-inset
 version in `placement-spec.md`):**
 - Vertical file, box width `min(365px, ~104%)` of the column (scales up slightly
@@ -243,13 +257,105 @@ One `div`, `inset-0`, `aria-hidden`. No vertical/top-down layer, no photo
 filter/duotone (already true — do not regress it). The other 11 heroes' scrim
 markup is untouched — do not refactor it "while you're in there."
 
+> **Amended 2026-09-29b (legibility, Codi) — see `placement-spec.md`'s
+> "Amendment 2026-09-29b (legibility)" for the verbatim source.** The single
+> gradient above is DESKTOP-ONLY as of this amendment (frozen, unchanged) —
+> at `≤620px` render a second, mutually-exclusive scrim div instead: a flat
+> `background: rgba(11,10,20,0.82)` layer (no gradient), same `inset-0
+> aria-hidden`. Implement as two divs each shown via a breakpoint utility
+> (e.g. one hidden `max-[620px]:` and the other only present at that
+> breakpoint), not a single element whose background swaps via a media query
+> string, so the existing A13 grep assertion (which greps for the gradient's
+> literal stops anywhere in the file) keeps matching the desktop element
+> unchanged. Also see §5/§6 below: the hero copy column (eyebrow through
+> countdown) gets a new `max-w-[720px]` cap at desktop under this same
+> amendment — independent of the scrim change, but both come from the same
+> Codi ruling and ship together.
+
 ## 9. What ships vs. what's flagged for Brad/Codi
 
 Ships in F1: masthead retired on `/national-show` only (§2), EmblemBadge out of
 the hero (§3), lockup `<h1>` with byte-identical served masters (§4), placement
 (§5), element order incl. new Edition XIX eyebrow-2 (§6), Karla in the hero only
-(§7), single R10/R15 scrim gated to this hero (§8).
+(§7), single R10/R15 scrim gated to this hero (§8), the desktop 720px copy cap
+and mobile flat-scrim legibility fix with its gated contrast check (§10).
 
 Flagged, not applied — needs Brad/Codi sign-off before a follow-up feature:
 masthead retirement on the other 18 routes, footer/colophon R23 fix, sitewide
 Fraunces/Karla token swap, button reordering to match the artifact.
+
+## 10. Legibility fix + gated contrast check (Amendment 2026-09-29b)
+
+Per `placement-spec.md`'s "Amendment 2026-09-29b (legibility)": add
+`max-w-[720px]` to the `isDisplayTitle` branch's copy wrapper — the
+`<div className="flex flex-col gap-4">` at §6 that already holds
+eyebrow/eyebrow2/lede/actions — and add the `dl` (currently rendered in
+`page.tsx`, `grid-cols-2 sm:grid-cols-4`) inside that same capped column so it
+narrows with it. Mobile scrim swap is specified above (§8 amendment note).
+
+**New hooks, additive inside the `isDisplayTitle` branch only, no effect on
+the other 11 heroes:**
+- `data-nos-hero-text="<label>"` on every leaf text node the contrast script
+  must sample individually: eyebrow, eyebrow2, lede, each meta `dt`, each meta
+  `dd`, the confirmation badge's text (if rendered), the "Opens in" label, each
+  countdown unit's digits and its unit label, and each button's visible label
+  text. `<label>` is a short kebab identifier (`eyebrow`, `eyebrow2`, `lede`,
+  `meta-dt-0`, `meta-dd-0`, `countdown-days-value`, `btn-primary-label`, etc.)
+  — used only for the script's own report table, not asserted on by name.
+- `data-nos-hero-button` on each button's own root element, for border-colour
+  sampling (distinct from `data-nos-hero-buttons`, §6's existing wrapper
+  around the whole row — that one stays as the row-order hook; this new one
+  is per-button).
+
+**Helper script — `scripts/checks/nos-hero-contrast.mjs`** (project-owned;
+`execution/checks/` is HARNESS and is not where new project tooling goes).
+Dev implements it; this is the spec, not code:
+
+- Mirrors `execution/checks/nos_scrim_probe.mjs`'s established measurement
+  method for this codebase — Playwright (`chromium`) + `pngjs` for reading
+  actual composited pixels, DPR 2 — but does NOT copy its
+  spawn-a-server-if-absent behaviour: this script assumes a server is already
+  running and treats an absent one as a hard failure (see below), because a
+  contract-gate assertion should not itself spawn and tear down `next dev`.
+- Resolve target: `process.env.NOS_HERO_CONTRAST_URL`, default
+  `http://localhost:3002/national-show` (the full URL including the route,
+  not just the origin — this check is specific to this one hero).
+- Reachability probe first, short timeout (~3s), single attempt, no retry
+  loop and no server spawn. On failure: print to stderr exactly
+  `SKIP-AS-FAIL: no server reachable at <url> — hero contrast not verified`
+  and exit `1`. An unreachable server is a gate failure, never a silent pass
+  and never exit `0`.
+- Viewports: `1280x900`, `1714x1000`, `390x844`, `deviceScaleFactor: 2` at
+  each (matching `nos_scrim_probe.mjs`'s viewport-object convention; 1714's
+  1000px height and 390's 844px height are this script's own values, chosen
+  the same way the existing probe chose 900 for 1280 — no reference source
+  specifies a height for either, so these are the architect's fill-in).
+- Per viewport: navigate, wait for `document.fonts.ready` and for the hero
+  lockup `<img>` to report `naturalWidth > 0`, then for each
+  `[data-nos-hero-text]` element resolve its CSS `color` via a temporary
+  canvas fill (`ctx.fillStyle = <computed color>; getImageData` on a 1×1 fill)
+  rather than regex-parsing `getComputedStyle()` — the documented pitfall is
+  that Tailwind v4 serialises opacity-modified colours as `oklab()`, which a
+  regex parse gets plausibly wrong; a canvas fill asks the browser to resolve
+  it, sidestepping that. Sample the actual composited background pixel behind
+  the element from a real screenshot (`locator.screenshot()` on the element,
+  `pngjs` read, mode/most-common pixel in the box) — the background is photo
+  + scrim stacked and cannot be resolved from CSS alone. For each
+  `[data-nos-hero-button]`, resolve its computed `border-color` the same
+  canvas-fill way and sample the composited pixel just outside the border
+  edge.
+- Contrast ratio: standard WCAG relative-luminance formula,
+  `(L1 + 0.05) / (L2 + 0.05)` with `L1` the lighter of the two sRGB colours.
+- Floors: text `>= 4.5:1` (every `[data-nos-hero-text]` element; `dt` small
+  caps are not exempt). Button border `>= 3:1` (architect fill-in, WCAG
+  1.4.11, same floor already used for focus rings under R9 — Codi's ruling
+  only restates the text floor explicitly).
+- Per element, take the worst (minimum) ratio across the three viewports and
+  compare it to that element's floor; print a table
+  (`element | worst-case ratio | floor | PASS/FAIL`) to stdout.
+- Exit `0` only if every element and every button clear their floor at every
+  viewport; otherwise exit `1` and list which elements/viewports failed.
+- The `dl`'s 2×2 fallback (§ amendment) is a markup change dev makes and
+  re-runs the script against — the script itself does not special-case the
+  `dl`'s column count; it only ever walks whatever `[data-nos-hero-text]`
+  elements are present.
