@@ -568,15 +568,18 @@ export default async function NationalShowPage() {
                 now — `ghost-on-dark` shares every metric with `on-dark` (same
                 padding, same 15px label, same 2px radius), so the row reads as
                 one control group and each target clears the same touch area. */}
+            {/* Order + emphasis per Codi's mock (2026-09-29, F2 item 7): Register
+                interest is now primary (filled). Brad may reverse this order —
+                if he does, it's a one-line JSX reorder, no variant changes. */}
             <div className="flex flex-wrap items-center gap-3">
-              <Button<typeof Link> as={Link} href="/tickets" variant="on-dark" data-nos-hero-button="">
-                <span data-nos-hero-text="btn-primary-label">Book tickets →</span>
-              </Button>
-              <Button<typeof Link> as={Link} href="/contact" variant="ghost-on-dark" data-nos-hero-button="">
+              <Button<typeof Link> as={Link} href="/contact" variant="on-dark" data-nos-hero-button="">
                 <span data-nos-hero-text="btn-register-label">Register interest</span>
               </Button>
               <Button<typeof Link> as={Link} href="/societies" variant="ghost-on-dark" data-nos-hero-button="">
                 <span data-nos-hero-text="btn-societies-label">Find your society</span>
+              </Button>
+              <Button<typeof Link> as={Link} href="/tickets" variant="ghost-on-dark" data-nos-hero-button="">
+                <span data-nos-hero-text="btn-primary-label">Book tickets →</span>
               </Button>
             </div>
 
