@@ -533,7 +533,7 @@ export default async function NationalShowPage() {
                 <div key={label} className="border-l-[length:var(--border-primary)] border-[var(--olive)]/50 pl-4">
                   <dt
                     data-nos-hero-text={`meta-dt-${index}`}
-                    className="font-[family-name:var(--font-nos-karla)] text-[10px] font-medium uppercase tracking-[0.2em] text-ivory/90"
+                    className="font-[family-name:var(--font-nos-karla)] text-[length:var(--fs-xs)] font-medium uppercase tracking-[0.2em] text-ivory/90"
                   >
                     {label}
                   </dt>
@@ -594,7 +594,7 @@ export default async function NationalShowPage() {
                   whole hero and would regress what already passes. */}
               <p
                 data-nos-hero-text="countdown-opens-in"
-                className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/90"
+                className="mb-3 font-mono text-[12px] uppercase tracking-[0.18em] text-ivory/90"
               >
                 Opens in
               </p>
@@ -647,7 +647,7 @@ export default async function NationalShowPage() {
               <div className="font-serif text-[46px] font-medium leading-none text-primary">
                 {value}
               </div>
-              <div className="mt-2 font-sans text-[11px] font-medium tracking-[0.16em] text-muted">
+              <div className="mt-2 font-sans text-[12px] font-medium tracking-[0.16em] text-muted">
                 {label}
               </div>
             </div>

@@ -136,7 +136,7 @@ export function ShowCountdown({ countdownDate, edition, pendingLabel }: ShowCoun
           </div>
           <div
             data-nos-hero-text={`countdown-${label.toLowerCase()}-unit`}
-            className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/90"
+            className="mt-1 font-mono text-[12px] uppercase tracking-[0.18em] text-ivory/90"
           >
             {label}
           </div>

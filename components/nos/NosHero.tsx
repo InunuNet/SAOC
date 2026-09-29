@@ -257,7 +257,7 @@ export function NosHero({
                 <span
                   data-nos-hero-eyebrow2=""
                   data-nos-hero-text="eyebrow2"
-                  className="font-mono text-[11px] uppercase tracking-[0.22em] text-ivory/90"
+                  className="font-mono text-[12px] uppercase tracking-[0.22em] text-ivory/90"
                 >
                   {eyebrow2}
                 </span>

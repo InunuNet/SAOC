@@ -188,7 +188,7 @@ export default async function ShowYearPage({
                 <div className="font-serif text-[38px] font-medium leading-none text-primary">
                   {value}
                 </div>
-                <div className="mt-2 font-sans text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
+                <div className="mt-2 font-sans text-[12px] font-medium uppercase tracking-[0.16em] text-muted">
                   {label}
                 </div>
               </Card>
@@ -239,7 +239,7 @@ export default async function ShowYearPage({
               href={`/national-show/archive/${prevShow.year}`}
               className="group flex flex-col gap-1"
             >
-              <span className="font-sans text-[11px] font-medium uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
+              <span className="font-sans text-[12px] font-medium uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
                 ← Earlier
               </span>
               <span className="font-serif text-[20px] font-medium text-ink transition-colors duration-150 group-hover:text-primary">
@@ -254,7 +254,7 @@ export default async function ShowYearPage({
               href={`/national-show/archive/${nextShow.year}`}
               className="group flex flex-col gap-1 text-right"
             >
-              <span className="font-sans text-[11px] font-medium uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
+              <span className="font-sans text-[12px] font-medium uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
                 Later →
               </span>
               <span className="font-serif text-[20px] font-medium text-ink transition-colors duration-150 group-hover:text-primary">

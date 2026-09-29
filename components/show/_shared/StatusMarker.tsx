@@ -115,7 +115,7 @@ export function StatusMarker({
       {...dataProps}
       className={[
         'mt-2 inline-flex items-start gap-2 border px-2.5 py-1',
-        'font-mono text-[10.5px] uppercase leading-relaxed tracking-[0.14em]',
+        'font-mono text-[12px] uppercase leading-relaxed tracking-[0.14em]',
         TONE_CLASSES[tone],
       ].join(' ')}
     >

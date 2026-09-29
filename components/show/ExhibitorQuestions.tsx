@@ -38,7 +38,7 @@ export function ExhibitorQuestions({ heading, intro, questions, id }: ExhibitorQ
             className="border border-rule bg-parchment p-5"
           >
             {item.topic ? (
-              <p className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-muted">
+              <p className="font-mono text-[12px] uppercase tracking-[0.16em] text-muted">
                 {item.topic.replace(/-/g, ' ')}
               </p>
             ) : null}

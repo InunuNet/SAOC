@@ -31,7 +31,7 @@ export function CycleStep({ year, editionLabel, host, status }: NosCycleStepProp
       ].join(' ')}
     >
       {isCurrent && (
-        <span className="mb-1 inline-flex w-fit items-center rounded-[length:var(--radius-pill)] bg-bone px-2.5 py-0.5 font-sans text-[10px] font-medium uppercase tracking-[0.18em] text-primary">
+        <span className="mb-1 inline-flex w-fit items-center rounded-[length:var(--radius-pill)] bg-bone px-2.5 py-0.5 font-sans text-[12px] font-medium uppercase tracking-[0.18em] text-primary">
           Next
         </span>
       )}
@@ -54,7 +54,7 @@ export function CycleStep({ year, editionLabel, host, status }: NosCycleStepProp
       </div>
       <div
         className={[
-          'font-sans text-[11px] font-medium uppercase tracking-[0.14em]',
+          'font-sans text-[12px] font-medium uppercase tracking-[0.14em]',
           isCurrent ? 'text-[var(--lilac-muted)]' : 'text-muted',
         ].join(' ')}
       >
