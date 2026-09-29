@@ -658,7 +658,14 @@ export default async function NationalShowPage() {
       {/* ── Planning a visit — the section's front door (F5 reachability) ── */}
       <section className="mx-auto max-w-[1280px] px-8 pb-8">
         <SectionHeading eyebrow="Coming to the show" title="Planning a visit" />
-        <ul className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {/* R13 (Codi item 6, F2): 5 cards in a hardcoded 4-col grid orphaned the
+            last row (5 mod 4 = 1). Derived via the same resolveGridLayout helper
+            every other card grid in this file already uses, rather than a new
+            hardcoded literal — resolveGridLayout(5).columns === 3 (5 mod 3 = 2
+            holds), so this becomes a 3-column grid at lg. */}
+        <ul
+          className={`mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 ${COLUMN_CLASS[resolveGridLayout(VISITOR_CARDS.length).columns]}`}
+        >
           {VISITOR_CARDS.map(({ href, title: cardTitle, description }) => (
             <li key={href}>
               <VisitorLinkCard href={href} title={cardTitle} description={description} />
