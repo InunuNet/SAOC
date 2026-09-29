@@ -80,10 +80,14 @@ export default function NationalShowLayout({ children }: { children: React.React
       {children}
       {/* Colophon on the flat night ground — the one ground `Logo`'s on-dark
           subtitle tint is cleared for (10.4:1); it is not cleared over
-          photography, which is why this band is a flat fill and not an image. */}
+          photography, which is why this band is a flat fill and not an image.
+          `orientation="responsive"` (Codi's F2 review, 2026-09-29): the
+          colophon now takes the same 620px-breakpoint sizing rule the
+          masthead already uses, superseding the earlier fixed
+          `orientation="vertical"` — see f2-logo-lockup.md's "correction" note. */}
       <footer data-nos-colophon="" className="bg-[var(--night)]">
         <div className="mx-auto max-w-[1280px] px-8 py-12">
-          <Logo orientation="vertical" tone="on-dark" />
+          <Logo orientation="responsive" tone="on-dark" />
         </div>
       </footer>
     </div>

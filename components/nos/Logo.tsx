@@ -27,12 +27,17 @@ export interface NosLogoProps {
   /** `on-dark` for use over the royal-purple/night ground. */
   tone?: 'light' | 'on-dark';
   /**
-   * `vertical` (default) is the compact mark — the footer colophon's size.
-   * `horizontal` is the wide format for a masthead band at its widest.
-   * `responsive` (the masthead's own orientation) renders `vertical` below
-   * `xl` and swaps to `horizontal` from `xl` up, as a single logical mark —
-   * two `<Image>`s CSS-toggled by breakpoint, never two live instances at
-   * once, so a screen reader only ever meets one accessible name.
+   * `vertical` (default) is the compact mark, sized as a fixed 120px wide
+   * standalone placement. `horizontal` is the wide format, sized as a fixed
+   * 48px-tall standalone placement. Neither has a call site today — both are
+   * kept for the component's public API (a future placement may need a
+   * fixed, non-responsive size) — see f2-logo-lockup.md's "correction" note.
+   * `responsive` is what the masthead and colophon both use: renders
+   * `vertical` below 620px and swaps to `horizontal` at 620px and up, as a
+   * single logical mark — two `<Image>`s CSS-toggled by breakpoint, never
+   * two live instances at once, so a screen reader only ever meets one
+   * accessible name. 620px is the same mobile threshold F1's hero lockup and
+   * NosHero.tsx already switch on, not a second breakpoint invented for this.
    */
   orientation?: 'vertical' | 'horizontal' | 'responsive';
   className?: string;
@@ -69,27 +74,37 @@ function horizontalSrc(tone: 'light' | 'on-dark'): string {
 
 export function Logo({ tone = 'light', orientation = 'vertical', className = '' }: NosLogoProps) {
   if (orientation === 'responsive') {
-    // R21/8: 96px wide below `xl` ("sound minimum for a real placement"),
-    // 48px tall (width auto) from `xl` up — chosen so the masthead band's
-    // footprint stays close to its previous visual height rather than
-    // growing the header. `sizes` matches each rendered box exactly, so
-    // next/image's device-size selection isn't guessing from the viewport
-    // (R22/8).
+    // Codi's F2 review (2026-09-29) superseded the original R21/8 sizing
+    // (96px/120px) after finding both masthead and colophon illegible at
+    // 1280 — "WESTERN CAPE · 2027" rendered ~3px tall. Replaced with a
+    // measurement of the location line itself, the smallest text element in
+    // the artwork and the part that was actually failing: the horizontal
+    // file's location band is 67 of 4108px of its width, so it needs
+    // >=440px rendered width for a >=7px cap height; the vertical file's
+    // location band is 67 of 2876px of its height, needing >=300px rendered
+    // height (~340px width at the file's native ratio) for the same floor.
+    //
+    // <620px: vertical file at min(340px, 100vw - 64px) — 64px is 2x the
+    // 32px `px-8` gutter both the masthead's and the colophon's containers
+    // actually use (no `--gutter` CSS var exists in this repo to reference
+    // instead). >=620px: horizontal file at a flat 440px, `height: auto`.
+    // `sizes` matches each rendered box exactly, so next/image's device-size
+    // selection isn't guessing from the viewport (R22/8).
     return (
       <span className={['inline-block', className].filter(Boolean).join(' ')}>
         <Image
           src={verticalSrc(tone)}
           alt={NOS_LOCKUP_ALT}
           {...VERTICAL_NATIVE}
-          sizes="96px"
-          className="h-auto w-[96px] xl:hidden"
+          sizes="min(340px, 100vw - 64px)"
+          className="hidden h-auto w-[min(340px,100vw_-_64px)] max-[620px]:block"
         />
         <Image
           src={horizontalSrc(tone)}
           alt={NOS_LOCKUP_ALT}
           {...HORIZONTAL_NATIVE}
-          sizes="196px"
-          className="hidden h-[48px] w-auto xl:block"
+          sizes="440px"
+          className="block h-auto w-[440px] max-[620px]:hidden"
         />
       </span>
     );
