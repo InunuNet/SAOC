@@ -255,10 +255,21 @@ This feature is hero-only, by Brad's explicit instruction. Not touched:
 - `EmblemBadge.tsx` itself is untouched — it still renders on the other eighteen NOS routes
   via `Logo.tsx`, and remains legitimate for that (avatar/favicon-scale) use per R23.
 
-**Open, awaiting Brad:** the lede copy (`PAGE_DESCRIPTION`) repeats the show's name, which
-Codi flagged but explicitly left alone — *"not ours to decide: the lede stays verbatim
-until Brad rules on the copy"* — a separate open item from this feature's layout/legibility
-work, tracked for follow-up rather than resolved here.
+**Resolved (`c27c351e`): the hero lede has its own copy, separate from the meta
+description.** Brad's instruction, verbatim: *"update the intro text so it makes sense and
+doesn't repeat the owrding."* The display hero's `lede` prop now reads a dedicated
+`HERO_LEDE` constant —
+
+> "South Africa's triennial orchid competition, bringing together growers, judges and
+> enthusiasts from all nine provinces."
+
+— reusing only facts already on the page (triennial, growers/judges/enthusiasts, nine
+provinces) and dropping the repeats of "National Orchid Show" (already in the lockup
+artwork above it) and "flagship" (already in the eyebrow). `PAGE_DESCRIPTION` — the
+`<meta name="description">` and JSON-LD value — is **unchanged**, and deliberately keeps
+the full show name for SEO; only the on-page hero lede changed. Layout is unaffected: the
+`34ch` cap from the legibility pass above still applies, and the new copy's worst-case
+measured contrast is `7.77:1`, well clear of the `4.5:1` floor. Gate 30/30.
 
 ## Verification
 
