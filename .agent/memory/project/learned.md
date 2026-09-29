@@ -4280,3 +4280,39 @@ All six NOS-lane routes are live on `origin/main` (736db97d) and returned 200 on
 placeholder-copy disclosure by design (not a defect). Note: `/national-show/wosa` was
 renamed to `/national-show/wosa-conference` in `db6cd81d` (2026-09-10) — any reference to the
 old path is stale. Confirmed to the menu-lane session (`saoc-85`), which acknowledged.
+
+## Session 2026-09-29: nos-hero-lockup F1 — three durable lessons (merged 91c81873, gate 30/30)
+
+- **A PNG lockup carries its own transparent clearspace baked into the file.** A spacing
+  spec must state the *ink* gap (the visible margin around the rendered mark), not the box
+  margin — the box margin equals the ink gap minus the PNG's built-in transparent border. Our
+  first pass on this feature specified the box margin directly and got it backwards, since the
+  asset's clearspace ate into the intended gap. **Rule: when spacing a PNG/SVG lockup with
+  built-in padding, spec the ink gap and derive the box margin, never the reverse.**
+- **A Playwright element screenshot of a tall element under a sticky header clips at the
+  viewport top, not at the element's true top.** `page.locator(...).screenshot()` on a hero
+  taller than the viewport, with a sticky header overlapping it, produced what looked like a
+  genuine "header clips the hero" bug — it wasn't. Capture `page.screenshot({ fullPage: true })`
+  from `y: 0` instead when verifying a tall element's top edge; an element-scoped screenshot
+  is the wrong tool for that specific check and will manufacture a false defect report.
+- **Composited-pixel contrast gating must sample the text's line boxes, not the element's
+  bounding box**, and needs three additional guards to be trustworthy: (1) require an explicit
+  label/selector set for what counts as "the text" — without it, missing hooks silently
+  false-pass rather than failing loud; (2) wait for React Suspense content actually to resolve
+  inside the target before sampling, because a document-wide `querySelector` can match a
+  hidden/streamed Suspense segment that never paints, sampling pixels that were never visible to
+  a user; (3) the contrast gate's own false-pass (sampling the wrong box) was root-caused and
+  fixed in commit 91c81873 — confirmed via a negative control that now correctly goes red.
+
+Chain for this feature: 424d7ce7 -> Codi deltas -> architect amendment A23-27 -> @dev retry
+(opus5, bce627a2) -> Codi legibility ruling -> architect amendment A28-30 (contrast script) ->
+1846ecfd -> Codi ruling (a)+(b) -> be1bb68d -> docs 4c2d0889 -> Codex QA FAIL (1 High real, 2
+rejected: pre-existing `mt-2` spacing, a class-order no-op) -> 91c81873 (contrast gate
+false-pass fix, negative control goes red) -> gate 30/30 -> Codi design review PASS. Merge held
+on Brad's screenshot sign-off, not a gate or review gap.
+
+Correction check: an earlier session is reported to have diagnosed a BSD `grep -L` exit-code
+defect on this machine. Searched `learned.md` and the rest of `.agent/memory/project/` for that
+diagnosis to correct it per instruction — **no such entry exists here to correct.** If it was
+recorded, it lives somewhere this search didn't cover (a different project, a scratch file
+already trimmed, or verbally only); nothing was changed under this heading.

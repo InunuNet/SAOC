@@ -826,6 +826,19 @@ flat-over-nested-submenu pattern.
   on `CLAUDE.md` leaves factual documentation inside the agent instruction file permanently
   uncorrectable by any agent once it goes stale; see the `CLAUDE.md` staleness item above.
 
+- [ ] **Upstream (Athanor): `execution/codex_qa.sh` leaves stdin open on a file-argument run** —
+  2026-09-29, nos-hero-lockup F1. `codex exec` prints "Reading additional input from stdin..."
+  and hangs indefinitely when the wrapper is run in the background with a file argument for the
+  diff/prompt. Workaround used: redirect `< /dev/null` on the invocation. Not patched locally
+  per `athanor.md` — file upstream and keep the `< /dev/null` workaround until it lands.
+- [ ] **Upstream (Athanor): Codex read-only sandbox breaks `git` via `xcrun` shim on macOS** —
+  2026-09-29, nos-hero-lockup F1. Inside Codex's read-only sandbox, `git` (routed through the
+  `xcrun` shim) fails because `DARWIN_USER_TEMP_DIR` is unwritable there, so
+  `execution/codex_qa.sh`'s review dies with no verdict and the wrapper's fail-safe reports FAIL
+  regardless of the actual diff. Workaround used: pre-generate the diff to a file before invoking
+  Codex, rather than letting the wrapper shell out to `git` inside the sandbox. Not patched
+  locally — file upstream.
+
 
 ---
 
