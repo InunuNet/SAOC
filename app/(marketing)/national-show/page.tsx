@@ -48,6 +48,12 @@ export const revalidate = 60;
 const PAGE_DESCRIPTION =
   'The South African National Orchid Show — the flagship triennial competition bringing together growers, judges and enthusiasts from all nine provinces.';
 
+// Display-hero lede only (Brad, 2026-09-29): PAGE_DESCRIPTION repeats the
+// lockup's "National Orchid Show" and the eyebrow's "flagship", so the hero
+// carries this instead. Metadata and JSON-LD keep PAGE_DESCRIPTION.
+const HERO_LEDE =
+  'South Africa’s triennial orchid competition, bringing together growers, judges and enthusiasts from all nine provinces.';
+
 export const metadata: Metadata = buildPageMetadata({
   title: 'National Orchid Show',
   description: PAGE_DESCRIPTION,
@@ -514,7 +520,7 @@ export default async function NationalShowPage() {
         title={<HeroLockup />}
         titleSize="display"
         eyebrow2={edition ? `Edition ${toRomanOrdinal(edition)}` : undefined}
-        lede={PAGE_DESCRIPTION}
+        lede={HERO_LEDE}
         actions={
           <div className="flex w-full flex-col gap-8">
             {/* 2×2 at every width: Codi's legibility ruling (2026-09-29) keeps
