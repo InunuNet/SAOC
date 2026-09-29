@@ -95,34 +95,17 @@ export function NosHero({
         // see the file header — so any focus ring or status colour inside
         // it must read the on-dark alias, not the on-light default. See
         // nos-theme.css's `.nos-theme .nos-on-dark` block.
-        'nos-on-dark relative flex min-h-[520px] overflow-hidden bg-[var(--night)]',
-        // Below `sm` a display hero stacks: type block first, photograph under
-        // it. A display headline plus its lede and actions is tall enough that
-        // at 390 the overlay layout leaves the photograph as a few visible
-        // pixels of scrimmed texture behind a full-height text column — the
-        // flower, which is the brand's signature device, is effectively gone.
-        // Stacking gives the bloom its own 3:2 box (the image's own aspect, so
-        // `object-cover` crops nothing there) beneath type that now sits on the
-        // flat night ground. From `sm` up it is the overlay layout, unchanged.
-        isDisplayTitle ? 'flex-col items-stretch sm:flex-row sm:items-end' : 'items-end',
+        'nos-on-dark relative flex min-h-[520px] items-end overflow-hidden bg-[var(--night)]',
         className,
       ]
         .filter(Boolean)
         .join(' ')}
     >
-      {/* Photograph and its scrims share one box so the two layouts differ by
-          this element alone: absolutely filling the section (every hero, and
-          the display hero from `sm` up), or an in-flow band below the type
-          (display only, below `sm`). The scrims are `inset-0` on THIS box, so
-          they travel with the photograph instead of washing over stacked type
-          that no longer sits on it. */}
-      <div
-        className={
-          isDisplayTitle
-            ? 'relative order-2 aspect-[3/2] w-full sm:absolute sm:inset-0 sm:aspect-auto sm:w-auto'
-            : 'absolute inset-0'
-        }
-      >
+      {/* Photograph and its scrims share one box, absolutely filling the
+          section behind all the hero content at every width — the display
+          hero included (Codi, nos-hero-lockup amendment 2026-09-29, retired
+          its in-flow 3:2 band below the type at ≤620px). */}
+      <div className="absolute inset-0">
         <Image
           src={image}
           alt=""
@@ -219,11 +202,14 @@ export function NosHero({
       </div>
       <div
         className={[
-          'relative z-10 mx-auto flex w-full max-w-[1280px] flex-col gap-4 px-8',
+          'relative z-10 mx-auto flex w-full max-w-[1280px] flex-col px-8',
           // Display hero: 46px from the column's own top to the lockup image
           // (Brad's placement, 2026-09-28), 3px at ≤620px — not the shared
           // py-14 rhythm the eleven text heroes use. See hero-structure.md §5.
-          isDisplayTitle ? 'pt-[46px] pb-14 max-[620px]:pt-[3px]' : 'py-14',
+          // No column gap: the lockup's own margin-bottom is the whole
+          // box-to-eyebrow gap (Codi, 2026-09-29), so the rest of the content
+          // carries the gap-4 rhythm in its own wrapper below.
+          isDisplayTitle ? 'pt-[46px] pb-14 max-[620px]:pt-[3px]' : 'gap-4 py-14',
         ].join(' ')}
       >
         {isDisplayTitle ? (
@@ -235,31 +221,33 @@ export function NosHero({
                 the call site's own CSS on that element controls its box.
                 hero-structure.md §4/§6. */}
             <h1>{title}</h1>
-            {/* `eyebrow`'s wrapper carries `data-nos-hero-eyebrow` in both
-                branches so a gate check can find it regardless of which one
-                rendered — see the `else` branch below. */}
-            {eyebrow ? (
-              <span
-                data-nos-hero-eyebrow=""
-                className="font-[family-name:var(--font-nos-karla)] text-[12px] font-medium uppercase tracking-[0.3em] text-ivory"
-              >
-                {eyebrow}
-              </span>
-            ) : null}
-            {eyebrow2 ? (
-              <span
-                data-nos-hero-eyebrow2=""
-                className="font-mono text-[11px] uppercase tracking-[0.22em] text-ivory/90"
-              >
-                {eyebrow2}
-              </span>
-            ) : null}
-            {lede ? (
-              <p className="max-w-[58ch] font-[family-name:var(--font-nos-karla)] text-[19px] leading-[1.55] text-[var(--lilac-pale)]">
-                {lede}
-              </p>
-            ) : null}
-            {actions ? <div className="mt-2 flex flex-wrap items-center gap-3">{actions}</div> : null}
+            <div className="flex flex-col gap-4">
+              {/* `eyebrow`'s wrapper carries `data-nos-hero-eyebrow` in both
+                  branches so a gate check can find it regardless of which one
+                  rendered — see the `else` branch below. */}
+              {eyebrow ? (
+                <span
+                  data-nos-hero-eyebrow=""
+                  className="font-[family-name:var(--font-nos-karla)] text-[12px] font-medium uppercase tracking-[0.3em] text-ivory"
+                >
+                  {eyebrow}
+                </span>
+              ) : null}
+              {eyebrow2 ? (
+                <span
+                  data-nos-hero-eyebrow2=""
+                  className="font-mono text-[11px] uppercase tracking-[0.22em] text-ivory/90"
+                >
+                  {eyebrow2}
+                </span>
+              ) : null}
+              {lede ? (
+                <p className="max-w-[58ch] font-[family-name:var(--font-nos-karla)] text-[19px] leading-[1.55] text-[var(--lilac-pale)]">
+                  {lede}
+                </p>
+              ) : null}
+              {actions ? <div className="mt-2 flex flex-wrap items-center gap-3">{actions}</div> : null}
+            </div>
           </>
         ) : (
           <>
