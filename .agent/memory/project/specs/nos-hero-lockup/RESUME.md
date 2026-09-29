@@ -1,20 +1,21 @@
-# RESUME — nos-hero-lockup (paused 2026-09-28, Brad moving locations)
+# nos-hero-lockup — RESUME (paused 2026-09-29 by Brad: moving locations)
 
-Brad approved in-session: R12 hero lockup on /national-show, "it should look like their artifact". Scope = HERO ONLY (Brad, explicit). Mobile placement = centred (design commit beeea00).
+Branch: feat/nos-hero-lockup. Nothing merged, nothing deployed to beta. Merge waits on Brad's screenshot sign-off.
 
-Chain state: @architect DONE (contract-f1.yaml, 22 assertions; goldens hero-structure.md, placement-spec.md,
-visual-checklist.md, reference-artifact-SjeY6NP8-v4.html under .agent/memory/project/specs/nos-hero-lockup/).
-@dev DONE: feat/nos-hero-lockup commits 08d8c162 + c75b51ca, 22/22 assertions, build clean. Screenshots .tmp/sandbox/nos-hero-lockup/national-show-{1280,1714,390}.png
-Next: @qa (1 dispatch) → gate → @docs → screenshots 1280+390 to Codi (saoc-nos-design-f1) → Brad sign-off → merge.
-Nothing pushed/merged/deployed.
+## Done
+- F1 hero: complete. Gate 30/30. Codi PASS. Docs 9219d10f. Lede rewritten per Brad (c27c351e).
+- F2 page deltas (contract-f2.yaml, 34 assertions, committed 5ad0e059): items 3,4,5,6,7,9 shipped & accepted by Codi
+  (commits 638a6520 f3017139 3ad38ef6 d6253166 349cb86a 80ef95c3 06568d5d). Item 9 CLOSED (Codi's unfocused extension tabs); paint probe fixed for QA false-pass (06568d5d).
 
-Open for Brad: lede repeats the name (via Codi, don't rewrite); footer colophon still R23 composed lockup (next pass);
-button order differs from artifact; sections below hero out of scope.
-Also open: menu-system-layout4 autonomy unset (recommend autonomous); two unparseable old specs
-(gate-timeout-fix, mission-slug-collision-fix); Athanor comms.md hook-loss post awaiting reply.
+## In flight at pause
+- F2 item 2 resize (Codi review): masthead + colophon lockups 440px wide >=620px (horizontal), vertical at min(340px, 100vw - 64px) below 620. Dispatched to Dev_Son5_M1-F2_NosHeroLockup; check git log / git status for a `wip(nos)` commit or uncommitted edits.
+- After resize: both gates (f1 30/30, f2 34/34), measure location-line cap height >=7px, screenshots masthead/colophon at 1280+390 -> Codi; re-create hero-{1280,390,1714}.png (sandbox was partly wiped, capture.mjs gone).
+- Then: Codex QA of 40077970..HEAD (use saved diff + `< /dev/null`), @docs for F2, @maintainer, Brad sign-off, merge, beta rollout + verify.
 
-Done this session: harness 3.8.5 + hook repair (a85bc5f2), backlog (2dcc4b58), #1453 comment,
-NOS routes confirmed to menu lane, rulings R11–R23 mirrored into .agent/memory/project/design/nos-design-rulings.md (uncommitted).
-Check at resume: at 390 the lockup rendered 339px wide, not Brad's 365px — the site column uses a 32px gutter, whereas
-Brad's adjuster assumed 20px. It's still centred. Ask Codi/Brad whether 339 at a 32px gutter is acceptable.
-@dev also moved margin-bottom (desktop 95px, mobile 48px) away from the spec's 58/8, to hit the ink-gap targets once the PNG clearspace is accounted for.
+## Held / open
+- Item 1 fonts: HOLD for Brad (committee PDF says Cormorant+Jost vs R14 Fraunces+Karla).
+- Item 8 dl hairline: DROPPED (olive rules stay; A19 guards).
+- Header icon buttons 44px: menu lane (saoc-85) logged it.
+- Below-hero restructure: proposal awaiting Brad.
+- Dev server: something else holds :3002 (node pid 50082 at pause); sandbox .tmp/sandbox/nos-hero-lockup partly deleted — cause unconfirmed.
+Sources: .agent/memory/scratch/rulings-inbox/codi-*.md, brad-hero-lede-2026-09-29.md.
