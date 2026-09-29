@@ -517,13 +517,26 @@ export default async function NationalShowPage() {
         lede={PAGE_DESCRIPTION}
         actions={
           <div className="flex w-full flex-col gap-8">
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
-              {heroMeta.map(({ label, value }) => (
+            {/* 2×2 at every width: Codi's legibility ruling (2026-09-29) keeps
+                4 columns inside the 720px cap unless a desktop cell fails, in
+                which case 2×2 — venue and cycle measured 2.0–4.1:1 over the
+                ramp's lighter end at 1280/1714 as 4 columns
+                (scripts/checks/nos-hero-contrast.mjs). */}
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-5">
+              {heroMeta.map(({ label, value }, index) => (
                 <div key={label} className="border-l-[length:var(--border-primary)] border-[var(--olive)]/50 pl-4">
-                  <dt className="font-[family-name:var(--font-nos-karla)] text-[10px] font-medium uppercase tracking-[0.2em] text-ivory/55">
+                  <dt
+                    data-nos-hero-text={`meta-dt-${index}`}
+                    className="font-[family-name:var(--font-nos-karla)] text-[10px] font-medium uppercase tracking-[0.2em] text-ivory/55"
+                  >
                     {label}
                   </dt>
-                  <dd className="mt-0.5 font-[family-name:var(--font-nos-karla)] text-[15px] text-ivory">{value}</dd>
+                  <dd
+                    data-nos-hero-text={`meta-dd-${index}`}
+                    className="mt-0.5 font-[family-name:var(--font-nos-karla)] text-[15px] text-ivory"
+                  >
+                    {value}
+                  </dd>
                 </div>
               ))}
             </dl>
@@ -531,12 +544,16 @@ export default async function NationalShowPage() {
             {/* The dates above are our working assumption, not a committee decision.
                 An unmarked plausible date range is exactly the invention this section
                 must not ship — the marker is driven by showVisitorInfo.confirmations. */}
-            <ConfirmationBadge
-              status={datesStatus}
-              pendingLabel={visitorInfo?.pendingLabel}
-              researchLabel={visitorInfo?.researchLabel}
-              tone="dark"
-            />
+            {/* `contents`: no box of its own, so a confirmed status (badge
+                renders nothing) adds no empty flex item to the gap-8 column. */}
+            <div data-nos-hero-text="confirmation-badge" className="contents">
+              <ConfirmationBadge
+                status={datesStatus}
+                pendingLabel={visitorInfo?.pendingLabel}
+                researchLabel={visitorInfo?.researchLabel}
+                tone="dark"
+              />
+            </div>
 
             {/* Three actions, one grammar (F22). These were a filled Button plus
                 two underlined inline links: three different heights, three
@@ -546,14 +563,14 @@ export default async function NationalShowPage() {
                 padding, same 15px label, same 2px radius), so the row reads as
                 one control group and each target clears the same touch area. */}
             <div className="flex flex-wrap items-center gap-3">
-              <Button<typeof Link> as={Link} href="/tickets" variant="on-dark">
-                Book tickets →
+              <Button<typeof Link> as={Link} href="/tickets" variant="on-dark" data-nos-hero-button="">
+                <span data-nos-hero-text="btn-primary-label">Book tickets →</span>
               </Button>
-              <Button<typeof Link> as={Link} href="/contact" variant="ghost-on-dark">
-                Register interest
+              <Button<typeof Link> as={Link} href="/contact" variant="ghost-on-dark" data-nos-hero-button="">
+                <span data-nos-hero-text="btn-register-label">Register interest</span>
               </Button>
-              <Button<typeof Link> as={Link} href="/societies" variant="ghost-on-dark">
-                Find your society
+              <Button<typeof Link> as={Link} href="/societies" variant="ghost-on-dark" data-nos-hero-button="">
+                <span data-nos-hero-text="btn-societies-label">Find your society</span>
               </Button>
             </div>
 
@@ -569,7 +586,10 @@ export default async function NationalShowPage() {
                   photograph, and ivory/90 clears the 4.5:1 body bar with room
                   — without darkening NosHero's scrim, which is tuned across the
                   whole hero and would regress what already passes. */}
-              <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/90">
+              <p
+                data-nos-hero-text="countdown-opens-in"
+                className="mb-3 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/90"
+              >
                 Opens in
               </p>
               <Suspense fallback={null}>

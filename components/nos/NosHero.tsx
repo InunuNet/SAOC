@@ -116,19 +116,33 @@ export function NosHero({
           style={{ objectPosition: focalPoint }}
         />
         {isDisplayTitle ? (
-          // R10/R15: one horizontal near-black-to-transparent scrim, replacing
-          // the three-layer stack below for this one call site only. Dense
-          // over the text column at the left, transparent by the bloom at the
-          // right — see hero-structure.md §8. The other eleven heroes' scrim
-          // markup (the `else` branch) is untouched.
-          <div
-            aria-hidden="true"
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(90deg, rgba(11,10,20,0.94) 0%, rgba(11,10,20,0.80) 30%, rgba(11,10,20,0.44) 52%, rgba(11,10,20,0.18) 75%, rgba(11,10,20,0.04) 100%)',
-            }}
-          />
+          <>
+            {/* R10/R15: one horizontal near-black-to-transparent scrim,
+                replacing the three-layer stack below for this one call site
+                only. Dense over the text column at the left, transparent by
+                the bloom at the right — see hero-structure.md §8. Desktop
+                only (stops frozen); the other eleven heroes' scrim markup
+                (the `else` branch) is untouched. */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 max-[620px]:hidden"
+              style={{
+                background:
+                  'linear-gradient(90deg, rgba(11,10,20,0.94) 0%, rgba(11,10,20,0.80) 30%, rgba(11,10,20,0.44) 52%, rgba(11,10,20,0.18) 75%, rgba(11,10,20,0.04) 100%)',
+              }}
+            />
+            {/* ≤620px: the copy spans the full width over the photo, so the
+                ramp's light end sat under text. One flat near-black layer
+                over the whole hero instead (Codi, legibility ruling
+                2026-09-29, R15 mobile clause) — hero-structure.md §8. */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 hidden max-[620px]:block"
+              style={{
+                background: 'rgba(11,10,20,0.82)',
+              }}
+            />
+          </>
         ) : (
           <>
             {/* Scrim: dark-to-transparent, bottom to top, purple-tinted near-black.
@@ -221,13 +235,19 @@ export function NosHero({
                 the call site's own CSS on that element controls its box.
                 hero-structure.md §4/§6. */}
             <h1>{title}</h1>
-            <div className="flex flex-col gap-4">
+            {/* Copy block capped at 720px — the mock's `.hero-copy` value — so
+                every line sits over the dark end of the R10 ramp (Codi,
+                legibility ruling 2026-09-29; hero-structure.md §10).
+                `data-nos-hero-text` marks each element
+                scripts/checks/nos-hero-contrast.mjs samples. */}
+            <div className="flex max-w-[720px] flex-col gap-4">
               {/* `eyebrow`'s wrapper carries `data-nos-hero-eyebrow` in both
                   branches so a gate check can find it regardless of which one
                   rendered — see the `else` branch below. */}
               {eyebrow ? (
                 <span
                   data-nos-hero-eyebrow=""
+                  data-nos-hero-text="eyebrow"
                   className="font-[family-name:var(--font-nos-karla)] text-[12px] font-medium uppercase tracking-[0.3em] text-ivory"
                 >
                   {eyebrow}
@@ -236,13 +256,17 @@ export function NosHero({
               {eyebrow2 ? (
                 <span
                   data-nos-hero-eyebrow2=""
+                  data-nos-hero-text="eyebrow2"
                   className="font-mono text-[11px] uppercase tracking-[0.22em] text-ivory/90"
                 >
                   {eyebrow2}
                 </span>
               ) : null}
               {lede ? (
-                <p className="max-w-[58ch] font-[family-name:var(--font-nos-karla)] text-[19px] leading-[1.55] text-[var(--lilac-pale)]">
+                <p
+                  data-nos-hero-text="lede"
+                  className="max-w-[58ch] font-[family-name:var(--font-nos-karla)] text-[19px] leading-[1.55] text-[var(--lilac-pale)]"
+                >
                   {lede}
                 </p>
               ) : null}

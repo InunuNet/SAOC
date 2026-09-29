@@ -100,7 +100,7 @@ export function ShowCountdown({ countdownDate, edition, pendingLabel }: ShowCoun
     return (
       <div>
         {/* Same photography-legibility reasoning as the ticking state below. */}
-        <p className="font-serif text-[24px] leading-none text-ivory">
+        <p data-nos-hero-text="countdown-tbc" className="font-serif text-[24px] leading-none text-ivory">
           Show dates to be confirmed
         </p>
         <ConfirmationBadge status="pending" pendingLabel={pendingLabel} tone="dark" />
@@ -126,10 +126,18 @@ export function ShowCountdown({ countdownDate, edition, pendingLabel }: ShowCoun
               4.5:1 against orchid-yellow.jpg/orchid-pink.jpg's bright petals
               — over a photograph, legibility wins over brand tint (guardrail
               6), so both use solid pale gold instead. */}
-          <div className="font-serif text-[42px] leading-none text-ivory">
+          {/* `data-nos-hero-text`: sampled by scripts/checks/nos-hero-contrast.mjs
+              at that same one call site. */}
+          <div
+            data-nos-hero-text={`countdown-${label.toLowerCase()}-value`}
+            className="font-serif text-[42px] leading-none text-ivory"
+          >
             {String(value).padStart(2, '0')}
           </div>
-          <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/90">
+          <div
+            data-nos-hero-text={`countdown-${label.toLowerCase()}-unit`}
+            className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/90"
+          >
             {label}
           </div>
         </div>
