@@ -1,0 +1,184 @@
+schema: athanor.contract/v1
+slug: nos-hero-lockup
+goal: >-
+  Apply Codi's 2026-09-29 page-wide design deltas across the ~26 non-menu
+  /national-show routes. FINAL SCOPE after three live correction rounds to
+  the rulings-inbox file (see f2-page-deltas.md §0): items 2, 3, 4, 5, 6, 7
+  and 9 ship. Items 1 (font remap) and 8 (dl hairline) do not — see
+  `exclusions` below, which also now covers the two SAOC-chrome icon buttons
+  Codi's answer identified as out of scope. Item 9 (the h1 lockup paint
+  check) was escalated mid-pass from a one-time diagnostic to a real, gating
+  regression: Codi reproduced the failed paint a second time (7 of 8 cold
+  foreground loads at 1280), so this contract specifies a diagnosis
+  procedure and a gating paint-probe script rather than a report-only one.
+  Item 3 (type floor) now carries an explicit exception: the hero dt goes to
+  12.8px via a new --fs-xs token, not flat 12px like every other sub-floor
+  label. NOTE FOR THE GATE RUNNER: this contract's assertions cover ONLY
+  F2's own changes; F1's regression coverage (A1-A30) lives in
+  contract-f1.yaml and is not duplicated here — run BOTH contracts through
+  `python3 execution/contract.py gate` for full coverage, since `gate` takes
+  one contract path at a time.
+created_at: '2026-09-29'
+autonomy: high
+exclusions:
+  - item: 'Codi delta item 1 — Fraunces/Karla font remap (nos-theme.css, layout.tsx)'
+    reason: >-
+      HOLD, per Codi 2026-09-29: the committee-approved
+      "branding/National Show 2027/National Orchid Show 2027 Logo.pdf"
+      (p.6, "Typography") specifies Cormorant Garamond (display/wordmark) +
+      Jost (UI/labels/body) and says Montserrat "is no longer part of the
+      system" — no Fraunces, no Karla. This conflicts with R14
+      (nos-design-rulings.md), and Brad has to rule on it. No font-token
+      assertion is written; f2-page-deltas.md §0 has the full analysis.
+  - item: 'Codi delta item 8 — hero dl hairline (olive left-border -> neutral ivory hairline)'
+    reason: >-
+      DROPPED, per Codi's "Corrections from Codi" 2026-09-29: "the olive dl
+      rules stay; the committee identity names olives as 'accents for
+      rules'." Confirmed against the PDF, p.5 "Palette": "the two olives are
+      accents for rules, location lines and small marks." The current
+      `border-[var(--olive)]/50` on the hero meta dl is compliant as written.
+      No change-assertion is written, but A19 below is a new positive
+      regression guard confirming the olive rule stays present, per the team
+      lead's explicit instruction ("add an assertion that the olive rule is
+      still present, so nobody removes it"). f2-page-deltas.md §5 has the
+      full analysis.
+  - item: 'Mobile lockup geometry (F1 hero placement, any width)'
+    reason: >-
+      FINAL as built, per Codi: "the 10 Sep Logo folder files supersede the
+      PDF's lockup geometry [p.8's 1/4-emblem-width clear-space rule]. The F1
+      geometry assertions stay as they are." Not a hold — a closed decision.
+      This contract adds no assertion touching F1's hero geometry
+      (contract-f1.yaml A23-A29), and f2-logo-lockup.md's new masthead/
+      colophon sizing is grounded in R21/8's legibility table, not in the
+      PDF's clear-space formula, for the same reason.
+  - item: 'Codi delta item 5, second half — two icon buttons (SAOC header search + hamburger)'
+    reason: >-
+      Identified, not fixed here. Codi's answer (rulings-inbox, "Codi
+      answers") resolves the open question my own repo-wide search raised:
+      the two elements the touch-target audit means are the SAOC header's
+      search and hamburger controls in `components/chrome/**`. That surface
+      is off-limits to this mission (menu lane's territory, per the F2
+      dispatch) and Codi is flagging them to that lane directly. No F2
+      assertion covers them. The three hero CTAs remain in scope (A21 below)
+      and are unaffected. f2-page-deltas.md §3 has the full analysis.
+features:
+  - id: F2
+    name: NOS page-wide design deltas — R23 lockup placement, type floor (+ --fs-xs hero exception), touch targets, hero reorder, R13 grid, olive-rule regression guard, gated paint probe
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-hero-lockup/goldens/f2-page-deltas.md
+  - .agent/memory/project/specs/nos-hero-lockup/goldens/f2-logo-lockup.md
+  - .agent/memory/project/specs/nos-hero-lockup/goldens/hero-structure.md
+  - .agent/memory/project/specs/nos-hero-lockup/goldens/placement-spec.md
+  - .agent/memory/project/design/nos-design-rulings.md
+assertions:
+  phase: 4
+  checks:
+    # ---- R23 (f2-logo-lockup.md): Logo.tsx stops composing, starts placing ----
+    - id: A1
+      description: Logo.tsx no longer imports/composes EmblemBadge
+      command: '! grep -q "EmblemBadge" "components/nos/Logo.tsx"'
+    - id: A2
+      description: EmblemBadge.tsx itself is untouched (kept for its own legitimate future use, R23)
+      command: test -f "components/nos/EmblemBadge.tsx"
+    - id: A3
+      description: Logo.tsx now renders the supplied artwork via next/image (optimiser handles delivery per R22/7-8)
+      command: grep -q "from 'next/image'" "components/nos/Logo.tsx"
+    - id: A4
+      description: masthead (light/parchment ground) references the full-colour vertical master
+      command: grep -q "NOS-2027-logo-full-colour-vertical.png" "components/nos/Logo.tsx"
+    - id: A5
+      description: masthead (light/parchment ground) references the full-colour horizontal master, for the existing xl breakpoint
+      command: grep -q "NOS-2027-logo-full-colour-horizontal.png" "components/nos/Logo.tsx"
+    - id: A6
+      description: colophon (dark/night ground) reuses F1's full-colour-reversed vertical master
+      command: grep -q "NOS-2027-logo-full-colour-reversed-vertical.png" "components/nos/Logo.tsx"
+    - id: A7
+      description: served masthead vertical PNG is byte-identical to the branding master (R22 - place the file, don't touch it)
+      command: cmp -s "branding/National Show 2027/Logo/NOS-2027-logo-full-colour-vertical.png" "public/images/nos/lockup/NOS-2027-logo-full-colour-vertical.png"
+    - id: A8
+      description: served masthead horizontal PNG is byte-identical to the branding master
+      command: cmp -s "branding/National Show 2027/Logo/NOS-2027-logo-full-colour-horizontal.png" "public/images/nos/lockup/NOS-2027-logo-full-colour-horizontal.png"
+    - id: A9
+      description: lockup directory holds exactly the 4 expected files (F1's 2 + F2's 2 new ones) - no stray derivative
+      command: 'test "$(ls "public/images/nos/lockup" | wc -l)" -eq 4'
+    - id: A10
+      description: the placed lockup carries the same accessible name F1 established for the hero lockup
+      command: grep -q "National Orchid Show, Western Cape 2027" "components/nos/Logo.tsx"
+    - id: A11
+      description: NosMasthead's call site is unchanged (same props, same position - Logo's public API didn't move)
+      command: grep -q '<Logo orientation="responsive" tone="light" />' "components/nos/NosMasthead.tsx"
+    - id: A12
+      description: layout.tsx colophon call site is unchanged (same props, same position)
+      command: grep -q '<Logo orientation="vertical" tone="on-dark" />' "app/(marketing)/national-show/layout.tsx"
+
+    # ---- LCP (already shipped in F1) — regression only ----
+    - id: A13
+      description: hero photo still carries `priority` (next/image sets fetchpriority=high + disables lazy on its own; no fix needed, just don't let a future edit drop it)
+      command: grep -A3 "<NosHero$" "app/(marketing)/national-show/page.tsx" | grep -q "priority"
+
+    # ---- Type floor: no NOS text below 12px, except the hero dt at 12.8px (f2-page-deltas.md §2) — independent of the item 1 font HOLD, a size floor not a face change ----
+    - id: A14
+      description: no text-[10px] literal remains anywhere in the NOS/show scope (this was the hero dt's old literal; it now uses the --fs-xs token, see A17/A18)
+      command: '! grep -rq "text-\[10px\]" "components/nos" "components/show" "app/(marketing)/national-show"'
+    - id: A15
+      description: no text-[10.5px] literal remains anywhere in the NOS/show scope
+      command: '! grep -rq "text-\[10\.5px\]" "components/nos" "components/show" "app/(marketing)/national-show"'
+    - id: A16
+      description: no text-[11px] literal remains anywhere in the NOS/show scope (catches the countdown units and every other sub-12px label the rule's own wording covers)
+      command: '! grep -rq "text-\[11px\]" "components/nos" "components/show" "app/(marketing)/national-show"'
+    - id: A17
+      description: the new --fs-xs token (0.8rem = 12.8px) is declared in the .nos-theme scope, per Codi's exception for the hero dt specifically
+      command: grep -q -- "--fs-xs:" "app/(marketing)/national-show/nos-theme.css"
+    - id: A18
+      description: the hero dt (data-nos-hero-text="meta-dt-*") uses the --fs-xs token, not a flat 12px literal like every other raised label
+      command: grep -q "text-\[length:var(--fs-xs)\]" "app/(marketing)/national-show/page.tsx"
+    - id: A19
+      description: 'REGRESSION GUARD (item 8, DROPPED): the olive left-rule on the hero meta dl is still present — a positive assertion so a future, unrelated edit to this file cannot delete it silently'
+      command: grep -q "border-\[var(--olive)\]/50" "app/(marketing)/national-show/page.tsx"
+    - id: A20
+      description: gated legibility acceptance re-run after the size floor change, per Codi's own "re-run the contrast gate after" instruction (SKIP-as-fail if unreachable, same script as F1's A30)
+      command: node scripts/checks/nos-hero-contrast.mjs
+
+    # ---- Touch targets: 44px floor on the shared Button component (the two SAOC-chrome icon buttons are excluded above, not in scope here) ----
+    - id: A21
+      description: Button.tsx's shared base class list now guarantees a 44px minimum height on every variant (covers the three hero CTAs and every other Button call site)
+      command: grep -q "min-h-\[44px\]" "components/nos/Button.tsx"
+
+    # ---- R13: "Coming to the show" / VISITOR_CARDS grid no longer hardcodes 4 columns at 5 items ----
+    - id: A22
+      description: the old hardcoded 4-column literal for the 5-item VISITOR_CARDS grid is gone
+      command: '! grep -q "mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4" "app/(marketing)/national-show/page.tsx"'
+    - id: A23
+      description: the VISITOR_CARDS grid now derives its column count via the existing resolveGridLayout helper (already imported in this file for the judging grid), matching every other card grid in the codebase
+      command: grep -q "resolveGridLayout(VISITOR_CARDS.length)" "app/(marketing)/national-show/page.tsx"
+
+    # ---- Hero button reorder + re-emphasis (mock order; Brad may reverse later) ----
+    - id: A24
+      description: hero buttons render in the mock's order - Register interest, then Find your society, then Book tickets
+      command: 'grep -o "btn-register-label\|btn-societies-label\|btn-primary-label" "app/(marketing)/national-show/page.tsx" | head -3 | tr "\n" "," | grep -q "btn-register-label,btn-societies-label,btn-primary-label,"'
+    - id: A25
+      description: Register interest is now the primary (on-dark, filled) action
+      command: 'grep -A1 "variant=\"on-dark\"" "app/(marketing)/national-show/page.tsx" | grep -q "btn-register-label"'
+    - id: A26
+      description: Book tickets is now a secondary (ghost-on-dark) action
+      command: 'grep -A1 "variant=\"ghost-on-dark\"" "app/(marketing)/national-show/page.tsx" | grep -q "btn-primary-label"'
+    - id: A27
+      description: Find your society is a secondary (ghost-on-dark) action
+      command: 'grep -A1 "variant=\"ghost-on-dark\"" "app/(marketing)/national-show/page.tsx" | grep -q "btn-societies-label"'
+
+    # ---- P0 paint check: escalated to LIKELY REAL (Codi reproduced 7/8), now a real gate (f2-page-deltas.md §7) ----
+    - id: A28
+      description: gated cold-foreground-load paint check — the hero h1 lockup must actually paint at 1280 and 390 across every one of N=8 fresh, cache-disabled loads (SKIP-as-fail if unreachable, same reachability convention as the contrast script; exits 1 with a table on any miss)
+      command: node scripts/checks/nos-hero-paint-probe.mjs
+
+    # ---- repo-wide gates (same floor as F1) ----
+    - id: A29
+      description: TypeScript compiles clean
+      command: pnpm run type-check
+    - id: A30
+      description: ESLint passes
+      command: pnpm run lint
+    - id: A31
+      description: production build succeeds
+      command: pnpm run build
