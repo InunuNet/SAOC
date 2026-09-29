@@ -25,6 +25,12 @@
 // Focus ring colour follows the *ground the ring sits on*, not the control's
 // own fill (R9/3): outline-offset places the ring outside the button, so an
 // on-dark variant's ring lands on the dark ground and must be pale gold.
+//
+// F2 (Codi, 2026-09-29): `min-h-[44px]` is the WCAG touch-target floor,
+// fixed once here rather than per call site — this is the one shared
+// component behind every button on every NOS/show page. The three hero
+// CTAs used to be 39px tall (py-3 + a 15px line box); every other Button
+// call site was under the floor too, not just those three.
 // =============================================================
 
 import type { ComponentPropsWithoutRef, ElementType } from 'react';
@@ -78,7 +84,7 @@ export function Button<E extends ElementType = 'button'>(props: NosButtonProps<E
   return (
     <Root
       className={[
-        'inline-flex items-center justify-center gap-2 rounded-[length:var(--radius-button)] px-6 py-3',
+        'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[length:var(--radius-button)] px-6 py-3',
         'font-sans text-[15px] font-medium leading-none transition-colors',
         'duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
