@@ -265,7 +265,7 @@ export function NosHero({
               {lede ? (
                 <p
                   data-nos-hero-text="lede"
-                  className="max-w-[58ch] font-[family-name:var(--font-nos-karla)] text-[19px] leading-[1.55] text-[var(--lilac-pale)]"
+                  className="max-w-[34ch] font-[family-name:var(--font-nos-karla)] text-[19px] leading-[1.55] text-[var(--lilac-pale)]"
                 >
                   {lede}
                 </p>
