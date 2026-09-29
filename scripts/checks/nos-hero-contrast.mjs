@@ -25,8 +25,10 @@
 // server is a failure (exit 1), never a pass.
 //
 // Usage: node scripts/checks/nos-hero-contrast.mjs
-//   env NOS_HERO_CONTRAST_URL   default http://localhost:3002/national-show
-// Exit: 0 every element clears its floor at every viewport · 1 otherwise.
+//   env NOS_HERO_CONTRAST_URL          default http://localhost:3002/national-show
+//   env NOS_HERO_CONTRAST_NEGCTL_DROP  negative control only: strip that hook first
+// Exit: 0 every required hook was found and measured and every element clears
+// its floor at every viewport · 1 otherwise.
 // =============================================================================
 
 import { PNG } from 'pngjs';
@@ -56,6 +58,34 @@ const HIDE_TEXT_CSS = [
 ].join('\n');
 // The Next.js dev-tools badge floats over the hero's bottom-left corner in dev.
 const HIDE_DEV_OVERLAY_CSS = 'nextjs-portal { display: none !important; }';
+
+// Coverage: every hook the hero must carry, checked at every viewport. A hook
+// that is missing or renders no text fails the run — an unmeasured element is
+// never a pass.
+const REQUIRED_TEXT_LABELS = [
+  'eyebrow',
+  'eyebrow2',
+  'lede',
+  ...[0, 1, 2, 3].flatMap((i) => [`meta-dt-${i}`, `meta-dd-${i}`]),
+  'btn-primary-label',
+  'btn-register-label',
+  'btn-societies-label',
+  'countdown-opens-in',
+];
+// ShowCountdown renders either the ticking units or, with no countdown date,
+// the single "Show dates to be confirmed" line — exactly one of the two sets.
+const COUNTDOWN_TICKING_LABELS = ['days', 'hours', 'min', 'sec'].flatMap((unit) => [
+  `countdown-${unit}-value`,
+  `countdown-${unit}-unit`,
+]);
+const COUNTDOWN_TBC_LABEL = 'countdown-tbc';
+// The badge renders nothing when the dates are confirmed; the only optional hook.
+const OPTIONAL_TEXT_LABELS = new Set(['confirmation-badge']);
+const REQUIRED_BUTTON_COUNT = 3;
+const COUNTDOWN_WAIT_MS = 15_000;
+// Negative control: removes the named data-nos-hero-text hook from the page
+// before measuring, to prove the coverage check fails. Never set in the gate.
+const NEGCTL_DROP_ENV = 'NOS_HERO_CONTRAST_NEGCTL_DROP';
 
 // -----------------------------------------------------------------------------
 // Colour maths — WCAG 2.x relative luminance and contrast ratio.
@@ -178,10 +208,11 @@ function collectTargets() {
   const buttons = [...hero.querySelectorAll('[data-nos-hero-button]')].map((el, index) => {
     const style = getComputedStyle(el);
     const hasBorder = parseFloat(style.borderTopWidth) > 0;
+    const rect = pageRect(el);
     return {
       label: `button-${index}-${hasBorder ? 'border' : 'fill'}`,
-      rendered: true,
-      rect: pageRect(el),
+      rendered: rect.right - rect.left > 0 && rect.bottom - rect.top > 0,
+      rect,
       color: resolveColor(hasBorder ? style.borderTopColor : style.backgroundColor),
     };
   });
@@ -202,27 +233,92 @@ async function assertReachable(url) {
   }
 }
 
+/** Coverage failures for one viewport: every required hook found and rendered. */
+function coverageFailures(text, buttons) {
+  const found = new Set(text.map((t) => t.label));
+  const rendered = new Set(text.filter((t) => t.rendered).map((t) => t.label));
+  const problems = [];
+  if (text.length === 0) problems.push('no [data-nos-hero-text] elements found in the hero');
+  const describe = (label) =>
+    found.has(label) ? `${label}: hook present but renders no text` : `${label}: hook not found`;
+  for (const label of REQUIRED_TEXT_LABELS) {
+    if (!rendered.has(label)) problems.push(describe(label));
+  }
+  const tickingRendered = COUNTDOWN_TICKING_LABELS.filter((label) => rendered.has(label));
+  const tbcOnly = tickingRendered.length === 0 && rendered.has(COUNTDOWN_TBC_LABEL);
+  if (!tbcOnly) {
+    for (const label of COUNTDOWN_TICKING_LABELS) {
+      if (!rendered.has(label)) problems.push(describe(label));
+    }
+  }
+  for (const element of text) {
+    const known =
+      REQUIRED_TEXT_LABELS.includes(element.label) ||
+      COUNTDOWN_TICKING_LABELS.includes(element.label) ||
+      element.label === COUNTDOWN_TBC_LABEL ||
+      OPTIONAL_TEXT_LABELS.has(element.label);
+    if (!known && !element.rendered) problems.push(describe(element.label));
+  }
+  const renderedButtons = buttons.filter((b) => b.rendered).length;
+  if (renderedButtons !== REQUIRED_BUTTON_COUNT) {
+    problems.push(`data-nos-hero-button: ${renderedButtons} rendered, expected ${REQUIRED_BUTTON_COUNT}`);
+  }
+  return problems;
+}
+
+async function waitForHero(page) {
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForFunction(
+    () => {
+      const hero = document.querySelector('h1')?.closest('section');
+      const imgs = hero ? [...hero.querySelectorAll('img')] : [];
+      return imgs.length > 0 && imgs.every((img) => img.complete && img.naturalWidth > 0);
+    },
+    null,
+    { timeout: NAV_TIMEOUT_MS },
+  );
+  // The countdown sits behind Suspense and streams: its resolved markup first
+  // lands in a hidden segment elsewhere in the document, and only later is
+  // revealed in place of the boundary's placeholder. So wait for it INSIDE the
+  // hero and laid out, not merely present in the document. Bounded: if it never
+  // appears, the coverage check reports its hooks as missing.
+  await page
+    .waitForFunction(
+      (labels) => {
+        const hero = document.querySelector('h1')?.closest('section');
+        return labels.some((label) => {
+          const el = hero?.querySelector(`[data-nos-hero-text="${label}"]`);
+          return el !== null && el !== undefined && el.getClientRects().length > 0;
+        });
+      },
+      [...COUNTDOWN_TICKING_LABELS, COUNTDOWN_TBC_LABEL],
+      { timeout: COUNTDOWN_WAIT_MS },
+    )
+    .catch(() => {});
+}
+
+async function dropHookForNegativeControl(page, label) {
+  const dropped = await page.evaluate((target) => {
+    const els = [...document.querySelectorAll('[data-nos-hero-text]')].filter(
+      (el) => el.getAttribute('data-nos-hero-text') === target,
+    );
+    els.forEach((el) => el.removeAttribute('data-nos-hero-text'));
+    return els.length;
+  }, label);
+  if (dropped === 0) throw new Error(`${NEGCTL_DROP_ENV}=${label} matched no hook — control would be vacuous`);
+  process.stderr.write(`NEGCTL: dropped data-nos-hero-text="${label}" (${dropped} element)\n`);
+}
+
 async function measureViewport(browser, url, viewport) {
   const page = await browser.newPage({ viewport, deviceScaleFactor: DPR });
   try {
     await page.goto(url, { waitUntil: 'load', timeout: NAV_TIMEOUT_MS });
     await page.addStyleTag({ content: HIDE_DEV_OVERLAY_CSS });
-    await page.evaluate(() => document.fonts.ready);
-    await page.waitForFunction(
-      () => {
-        const hero = document.querySelector('h1')?.closest('section');
-        const imgs = hero ? [...hero.querySelectorAll('img')] : [];
-        // The countdown is a client component behind Suspense — wait for its
-        // digits too, or a cold first load measures a hero without them.
-        const countdownReady =
-          hero?.querySelector('[data-nos-hero-text^="countdown-"]:not([data-nos-hero-text="countdown-opens-in"])') !==
-          null;
-        return countdownReady && imgs.length > 0 && imgs.every((img) => img.complete && img.naturalWidth > 0);
-      },
-      null,
-      { timeout: NAV_TIMEOUT_MS },
-    );
+    await waitForHero(page);
+    const dropLabel = process.env[NEGCTL_DROP_ENV];
+    if (dropLabel) await dropHookForNegativeControl(page, dropLabel);
     const { heroRect, text, buttons } = await page.evaluate(collectTargets);
+    const coverage = coverageFailures(text, buttons);
     await page.addStyleTag({ content: HIDE_TEXT_CSS });
     const clip = {
       x: heroRect.left,
@@ -232,14 +328,15 @@ async function measureViewport(browser, url, viewport) {
     };
     const png = PNG.sync.read(await page.screenshot({ fullPage: true, clip }));
     const results = new Map();
-    for (const element of text) {
-      if (!element.rendered) continue;
+    // Unrendered hooks have no pixels to sample; coverageFailures has already
+    // failed any that are not the one named optional hook.
+    for (const element of text.filter((t) => t.rendered)) {
       results.set(element.label, { ratio: worstTextRatio(png, heroRect, element), floor: TEXT_FLOOR });
     }
-    for (const button of buttons) {
+    for (const button of buttons.filter((b) => b.rendered)) {
       results.set(button.label, { ratio: worstEdgeRatio(png, heroRect, button), floor: BUTTON_EDGE_FLOOR });
     }
-    return results;
+    return { results, coverage };
   } finally {
     await page.close();
   }
@@ -272,18 +369,24 @@ async function main() {
   await assertReachable(url);
   const browser = await chromium.launch();
   const byViewport = new Map();
+  const coverage = [];
   try {
     for (const viewport of VIEWPORTS) {
-      byViewport.set(`${viewport.width}`, await measureViewport(browser, url, viewport));
+      const { results, coverage: missing } = await measureViewport(browser, url, viewport);
+      byViewport.set(`${viewport.width}`, results);
+      coverage.push(...missing.map((problem) => `${problem} @ ${viewport.width}`));
     }
   } finally {
     await browser.close();
   }
   const failures = report(byViewport);
+  if (coverage.length > 0) {
+    process.stderr.write(`FAIL: ${coverage.length} required hook(s) not measured\n${coverage.join('\n')}\n`);
+  }
   if (failures.length > 0) {
     process.stderr.write(`FAIL: ${failures.length} below floor\n${failures.join('\n')}\n`);
-    process.exit(1);
   }
+  if (coverage.length > 0 || failures.length > 0) process.exit(1);
   process.stdout.write('PASS: every hero text element and button edge clears its floor at every viewport\n');
 }
 
