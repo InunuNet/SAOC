@@ -107,7 +107,10 @@ function deriveGroups(item: Extract<NavItem, { type: 'mega' }>): Group[] {
   if (item.featureRail) {
     groups.push({
       heading: 'Feature rail',
-      destinations: [{ label: item.featureRail.ctaLabel, href: item.featureRail.ctaHref }],
+      destinations: item.featureRail.destinations.map((destination) => ({
+        label: destination.label,
+        href: destination.href,
+      })),
     });
   }
   if (item.lead) {
@@ -208,7 +211,13 @@ for (const width of [390, 320] as const) {
             await page.setViewportSize({ width, height: VIEWPORT_HEIGHT });
             await page.goto('/');
             const dialog = await openNationalShow(page);
-            const destination = dialog.getByRole('link', { name: dest.label, exact: true });
+            // .first(): mission menu-system-layout4 M2/F8 intentionally
+            // duplicates the "Tickets" destination (theShow's own leaf +
+            // the feature rail's primary row) — same label, same href, two
+            // affordances in two regions (architect ruling, see
+            // f8-tickets-rail.json's rail.destinations.duplicateLinkRuling).
+            // Either match proves this destination is reachable.
+            const destination = dialog.getByRole('link', { name: dest.label, exact: true }).first();
             await expect(destination).toBeVisible();
             await destination.click();
             const hrefPattern = new RegExp(`${dest.href.replace(/\//g, '\\/')}$`);
@@ -229,7 +238,13 @@ for (const width of [390, 320] as const) {
         // auto-scrolls the drawer to bring the target into view and fails
         // outright if it's actually clipped, so this proves the destination is
         // genuinely reachable inside the drawer at this viewport.
-        const destination = dialog.getByRole('link', { name: dest.label, exact: true });
+        // .first(): mission menu-system-layout4 M2/F8 intentionally
+        // duplicates the "Tickets" destination (theShow's own leaf +
+        // the feature rail's primary row) — same label, same href, two
+        // affordances in two regions (architect ruling, see
+        // f8-tickets-rail.json's rail.destinations.duplicateLinkRuling).
+        // Either match proves this destination is reachable.
+        const destination = dialog.getByRole('link', { name: dest.label, exact: true }).first();
         await expect(destination).toBeVisible();
         await destination.click();
 

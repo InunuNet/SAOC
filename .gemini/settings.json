@@ -119,10 +119,6 @@
           {
             "type": "command",
             "command": "bash execution/hooks/verify_workspace.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash execution/hooks/require_maintainer.sh"
           }
         ]
       }

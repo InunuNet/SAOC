@@ -1,5 +1,14 @@
 // menu-system-layout4 -- shared guard used by F1/F2/F3/F4's contracts: SAOC and NOS
-// palettes never mix. NOS redeclares the same CSS custom-property NAMES to different
+// palettes never mix WITHIN THE FILES THIS SCRIPT IS ACTUALLY POINTED AT (the four
+// chrome component files: MegaMenu.tsx, MobileMenu.tsx, Header.tsx, nav-config.ts, in
+// every real invocation -- see contract-f2/f4/f7/f8.yaml). This script does not scan app/globals.css,
+// which legitimately carries NOS's --nos-* custom properties as F8's
+// ruled, provenanced exception (see goldens/f8-tickets-rail.json's `scopeBoundary`
+// field and nav-config.ts's own header comment) -- that is a deliberate scope
+// boundary, not an oversight, and this comment previously overstated what the script
+// proves.
+//
+// NOS redeclares the same CSS custom-property NAMES to different
 // values -- confirmed distinct on origin/nos-site's app/(marketing)/national-show/
 // nos-theme.css: --primary is #211a57 there vs SAOC's #384138 in
 // design/design_handoff_saoc/colors_and_type.css. A token-name match proves nothing; only

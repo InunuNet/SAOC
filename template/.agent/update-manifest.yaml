@@ -173,4 +173,51 @@ retractions:
     literal became the haiku-tier model id and broke Agent-tool dispatch
     for model:haiku agents
   issue: "InunuNet/Athanor#delivered-value-retraction-F1"
+- path: .claude/settings.json
+  key_path: env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE
+  action: remove
+  replacement: null
+  reason: >
+    makes Claude Code 2.1.x auto-compaction thrash at ~8-13% context
+    (observed fleet-wide at both 30 and 35); operator directive
+    2026-09-08 retires the override fleet-wide in favor of
+    CLAUDE_CODE_AUTO_COMPACT_WINDOW=300000
+  issue: "compaction-env-retire-F1"
+- path: .claude/settings.local.json
+  key_path: env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE
+  action: remove
+  replacement: null
+  reason: >
+    same override, second file. Claude Code merges .claude/settings.local.json
+    over .claude/settings.json and the local copy WINS; that file is
+    WORKSPACE/gitignored, so no sync channel touches it and the settings.json
+    retraction above never looked at it. A downstream kept thrashing across
+    full restarts while its settings.json read clean (observed 2026-09-08)
+  issue: "compaction-env-retire-F1"
+- path: .claude/settings.json
+  key_path: env.CLAUDE_CODE_AUTO_COMPACT_WINDOW
+  action: remove
+  replacement: null
+  reason: >
+    the env var sits at the TOP of the auto-compact precedence chain (env var
+    -> --autocompact flag -> autoCompactWindow settings key -> model default),
+    so shipping it in the template env block makes the /autocompact command
+    inert in every downstream: the CLI answers "CLAUDE_CODE_AUTO_COMPACT_WINDOW
+    is set and takes precedence. Unset it to change this setting here." On a 1M
+    model the threshold is min(300000, 1M) = 300000, discarding ~700k of usable
+    context with no operator recourse. The default belongs in the
+    autoCompactWindow settings key, which leaves /autocompact free to override.
+    Reported by GJ Dauth Estate 2026-09-09 (InunuNet/Athanor#1430)
+  issue: "1430"
+- path: .claude/settings.json
+  key_path: env.CLAUDE_AUTOCOMPACT_WINDOW
+  action: remove
+  replacement: null
+  reason: >
+    not a recognised Claude Code variable -- no CLAUDE_CODE_ prefix, absent
+    from the env-var reference. Added 2026-09-08 (c3b1c7d7) alongside the real
+    one as belt-and-braces; it reads as authoritative when auditing a settings
+    file while doing nothing at all. Dead weight, retracted.
+    Reported by GJ Dauth Estate 2026-09-09 (InunuNet/Athanor#1430)
+  issue: "1430"
 schema: athanor.manifest/v1

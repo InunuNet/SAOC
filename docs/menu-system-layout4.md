@@ -490,3 +490,538 @@ anything yet.
   today's two known instances (Programme, Tickets) by construction, but a
   third could still coincide in a way that only breaks a future
   text-based (not role-based) query.
+
+## F9 — the M1 gate's own checker was reading a retired F8 field (2026-09-14)
+
+F8 (M2, earlier in this mission) replaced `featureRail`'s shape from the F7-era
+`{blurb, ctaLabel, ctaHref}` to `{heading, destinations: [{id, label, href,
+variant}]}` (`components/chrome/nav-config.ts:266-283`). Nothing downstream of
+that rename was touched at the time, and one gate consumer was left reading
+the retired field: `contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs`'s
+`flattenNavHrefs()` still read `item.featureRail.ctaHref` — a property that no
+longer exists on the F8 shape. `hrefs.add(undefined)` inserted the literal
+value `undefined` into the live href set on every run, which the golden diff
+reported as `+ undefined` against `goldens/f1-nav-hrefs.json`, failing the
+M1 gate's assertion A2 on a nav tree that was otherwise correct.
+
+The fix touched test infrastructure only. `flattenNavHrefs()` now loops over
+`featureRail.destinations[]` and collects each entry's `.href`:
+
+```js
+if (item.featureRail) {
+  for (const dest of item.featureRail.destinations) hrefs.add(dest.href);
+}
+```
+
+`components/chrome/nav-config.ts` needed zero changes — contract-f9.yaml's A5
+enforces this directly (`git diff --quiet HEAD -- components/chrome/nav-config.ts`),
+confirming the live NAV tree was never the bug.
+
+Fixing the read exposed a second, independent gap: because the old checker
+never walked `destinations[]` at all, it had never validated the feature
+rail's two secondary destinations — `/tickets/day-visitor` and
+`/tickets/weekend-pass` — against anything, even though both are real,
+header-reachable routes (`app/(marketing)/tickets/[slug]/page.tsx`). Both
+hrefs were added to `goldens/f1-nav-hrefs.json`'s `expectedHrefs`, and
+`expectedHrefCount` moved from 23 to 25. The golden's `countNote` field spells
+out the new total's composition, including the dedupe rule inherited from the
+F7-era golden (the feature rail's primary destination shares an href with its
+`theShow.links` entry and is counted once).
+
+Full detail and every assertion: `.agent/memory/project/specs/menu-system-layout4/contract-f9.yaml`.
+
+## F10 — Codex's cross-model review of F9 caught a fixture regression F9 didn't scope (2026-09-14)
+
+The mandatory Codex GPT-5.5 pass against F9's diff (see `.claude/rules/workflow.md`)
+found a real regression outside F9's own contract: the F1 negative-fixture
+suite's positive control,
+`.agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-good-control.mjs`,
+still carried the retired F7 `featureRail` shape. Once F9 changed the checker
+to loop over `.destinations`, running it against this fixture threw
+`TypeError: item.featureRail.destinations is not iterable`.
+
+That crash didn't stay contained to the one fixture. The four real negative
+fixtures in the same directory (`nav-config-dead-link-not-fixed.mjs`,
+`nav-config-invented-descriptor.mjs`, `nav-config-missing-sponsors-href.mjs`,
+`nav-config-tickets-back-in-top-row.mjs`) each `structuredClone()` the
+good-control fixture and inject exactly one targeted defect of their own —
+none of the four touches `featureRail`. All four would have inherited the
+stale shape and hit the identical `TypeError`, masking the one real defect
+each fixture exists to prove, rather than failing for the reason its name
+claims.
+
+The fix (contract-f10.yaml) replaced good-control.mjs's `featureRail` block
+with the real F8 shape, transcribed directly from
+`components/chrome/nav-config.ts:266-281` — `{heading, destinations: [...]}`
+with all three real hrefs (`/national-show/tickets`, `/tickets/day-visitor`,
+`/tickets/weekend-pass`), dropping the retired `meta`, `blurb`, `ctaLabel`,
+and `ctaHref` fields entirely. Nothing else changed: the checker itself, the
+real nav config, and both golden files were left untouched (contract-f10.yaml
+A6), and all four negative fixtures were re-run to confirm each still fails
+for its own single injected defect, not the shape mismatch (A5).
+
+**Deliberate non-fix, recorded as a decision, not an oversight:** the Codex
+review also asked whether `flattenNavHrefs()` should defensively guard against
+a missing or non-iterable `destinations`. The architect's answer is no.
+`NavMegaFeatureRail.destinations` (`components/chrome/nav-config.ts:102-108`)
+is a required TypeScript field — production `nav-config.ts` cannot compile
+with a `featureRail` missing it. The only place this shape can go stale is a
+hand-authored `.mjs` fixture that bypasses the type checker by construction,
+which is exactly what happened here. A defensive guard would silently absorb
+that same drift into a quiet false pass instead of the loud, immediate crash
+that surfaced this regression before it reached the gate. Per this project's
+"fail fast" standard, fixture data consumed by the same suite that authors it
+is not a system boundary — it's trusted internal data that must be kept in
+sync, which is what F10 did.
+
+**Standing implication for future `featureRail` changes:** any future change
+to `featureRail`'s shape must update the checker's flattening logic
+(`check-nav-hrefs-golden.mjs`) *and* `nav-config-good-control.mjs` in the same
+change, or the negative-fixture suite silently stops testing anything real.
+
+**Known, related, not-yet-fixed:** a sibling checker,
+`contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs:147`,
+has the identical stale `item.featureRail.ctaHref` read F9 fixed in the F1
+checker. It is currently dormant — masked because the routes it would check
+are among the ones skipped while National Show routes are pending exemption
+— not exercised, not fixed. Tracked as an open P1 backlog item, not addressed
+by F9 or F10.
+
+Full detail and every assertion: `.agent/memory/project/specs/menu-system-layout4/contract-f10.yaml`.
+
+## F8 — NOS logo lead block and NOS-coloured tickets rail (2026-09-11/21)
+
+Two Brad-approved, screenshot-backed asks against the desktop mega menu,
+dispatched 2026-09-11 (`.agent/memory/project/specs/menu-system-layout4/contract-f8.yaml`):
+
+- **F8a** — the lead track's mono eyebrow ("The National Show") and serif
+  heading ("19th SAOC National Orchid Show") are replaced by the NOS 2027
+  vertical lockup image, rendered inside the existing lead link. The
+  venue/date meta line keeps rendering below it, unchanged.
+- **F8b** — the feature rail (Track 5, previously a single "Buy tickets" CTA
+  in a mostly-empty grey box) becomes three real destinations — Tickets, Day
+  Visitor, Weekend Pass — recoloured with the NOS brand palette, a deliberate,
+  narrowly scoped exception to this project's standing "SAOC chrome
+  site-wide" rule (`project_national_show_brand_architecture`). Every other
+  part of the header/menu, including the rail's own structural border-left,
+  stays SAOC.
+
+Full detail — every measured value, every ruling's verbatim source, and the
+complete assertion-authorship writeup summarised below — lives in
+`.agent/memory/project/specs/menu-system-layout4/goldens/f8-lead-logo.json`
+and `f8-tickets-rail.json`; this section is the summary for a reader who
+doesn't want to open JSON.
+
+### F8a — the lockup replaces the eyebrow and heading, not just the heading
+
+Brad's instruction named only "the heading," but the eyebrow and heading are
+one visual unit (a small mono caption directly above a serif link), and the
+lockup artwork itself already carries the equivalent identity content
+("NATIONAL ORCHID SHOW" / "WESTERN CAPE · 2027") — keeping the eyebrow as a
+separate sibling above the image would duplicate what the artwork already
+says. Both are replaced by a single `next/image`, rendered at 200×176 CSS px
+inside the existing `<Link href="/national-show">` — the image is the lead
+link's own clickable content, not a second anchor beside it.
+
+The venue/date meta line (`leadMeta`) is unchanged: the lockup carries only
+province and year, not the specific venue name or exact dates, so dropping it
+would be a real information regression on the one thing a menu visitor is
+most likely to want ("where and when"). It renders below the image via its
+own `<span data-testid="mega-menu-lead-meta">` (`MegaMenu.tsx:162-168`),
+completely independent of the image's own load/render path.
+
+No background plate sits behind the artwork (NOS Design ruling R21: the
+supplied files ship transparent, the production sheet's tinted preview panel
+is preview-only, and re-tinting or adding a plate is forbidden regardless of
+colourway). A11 walks `getComputedStyle` from the `<img>` up to the panel
+(`role="menu"`, `bg-parchment`) confirming no ancestor carries an added
+background-color. The full-colour vertical colourway itself is confirmed
+approved on the `#f4f3ec` parchment ground directly by NOS Design (they
+composited the real PNG, illustration included, against the ground colour),
+not inferred from ink-hex contrast alone.
+
+### A12 — file-integrity checks, re-grounded after the width floor was withdrawn
+
+A12 (`contracts/checks/menu-system-layout4-f8/check-logo-source-resolution.mjs`)
+originally enforced NOS Design ruling R22 — a raster lockup rendered at
+200 CSS px needs a source ≥400px wide (Retina 2x density), derived from the
+3272×2876px master, never from another derivative. **That width floor is now
+fully removed**, not merely relaxed. NOS Design withdrew R22 in full
+(commit `0a79280`, 2026-09-21): the vertical master is ~16x oversampled
+against a 200px render even before any Retina multiplier, so the
+serving-resolution problem the floor policed never arises when the file is
+used as supplied, un-cut. Brad's own asset-handling instruction settles the
+same question independently — the runtime asset is placed unmodified, with
+no derivative-generation step for a density floor to police:
+
+> "Keep the fucking branding assets as I supplied them. Don't convert edit or
+> change anything. You place it on the page and that's it."
+
+Do not re-add a width check on the strength of this history — if a
+width-related concern resurfaces, it needs its own new ruling, not a revival
+of R22.
+
+**What survives, re-grounded on its own merits, never on R22:**
+
+1. 8-byte PNG signature — wrong file type, or a non-PNG carrying the ASCII
+   bytes `IHDR` at offset 12 by coincidence (arbitrary bytes would otherwise
+   be read as width/height).
+2. IHDR tag at offset 12 — malformed header.
+3. IHDR chunk length (bytes 8–11, must equal 13) — malformed header.
+4. IEND terminator (final 12 bytes) — a partially-copied or interrupted file
+   transfer; everything checks 1–3 inspect lives inside the first 24 bytes,
+   so a truncated copy with a well-formed header alone would otherwise pass.
+5. IDAT presence — a syntactically well-formed header followed directly by
+   IEND with no pixel data at all.
+6. Exact-basename check (`caseSensitivityRuling`, added 2026-09-19,
+   unaffected by the R22 withdrawal) — see below.
+
+None of these police export width; they catch a bad **hand-copy** of the
+master, which is exactly the operation Brad's "place it, don't process it"
+policy still requires a human to perform correctly — there is no build step
+downstream that would ever notice a partial or mis-cased copy either.
+
+**Exact-basename check — why path resolution isn't evidence.** macOS/APFS is
+case-insensitive but case-preserving: both shell `test -f` and Node's
+`existsSync` resolve a lowercase path query against a title-cased on-disk
+file and report success, while Firebase App Hosting's case-sensitive Linux
+404s the same file. This is *active false confidence*, not a vacuous pass —
+A10 (`test -f`, case-blind by construction) and a naive `existsSync` read
+both say "present" on a mis-cased hand-copy. Only a real directory listing
+(`readdirSync(dir).includes(exactBasename)`) exposes the true on-disk name.
+The checker's fix has three states: no case-variant present → vacuous PASS
+unchanged; a case-variant present without an exact match → FAIL, naming both
+names and the rename needed; exact match → all structural checks proceed.
+
+**A10/A12 division of labour, unchanged by the re-grounding.** A10 (`test
+-f`, `required: false`) owns asset *presence* informationally — expected to
+fail until Brad places the file, not meant to red the gate. A12 (`required:
+true`) is deliberately vacuous-pass (exit 0) on true absence, so it can be
+`required: true` from the start without red-gating ahead of the asset
+landing, and fails only on a *present-but-wrong* file. A check that passed on
+both absence and a bad file would prove nothing — A12's whole value is that
+it distinguishes those two states, never collapsing them into the same PASS.
+
+**Why A12 stays a gate-time file check rather than folding into A20.** A12 is
+a cheap, dependency-free, direct file read that runs without booting a dev
+server or a browser, and when it fails it names the *specific* defect (not a
+PNG / truncated / mis-cased) rather than the single undifferentiated symptom
+A20 gets (`naturalWidth` stayed at or near 0), which could mean a corrupt
+file, a 404 from a wrong `src`, an optimizer failure, or a slow/flaky load —
+A20 cannot distinguish these from each other, A12 can. The two stay
+complementary, not redundant: A12 diagnoses the file at rest, A20 proves the
+fully-wired page actually serves and decodes it.
+
+**Accepted limitations — an honest-hand-copy threat model, no adversary.**
+Deliberate scope decisions, recorded so they aren't rediscovered as
+oversights. Threat model throughout: Brad honestly hand-copying a real design
+export — no adversary constructing a hostile PNG.
+
+- **Per-chunk CRCs unvalidated, image not decoded.** Pixel-data *presence* is
+  checked (IDAT existing); pixel-data *validity* is not. Full validation
+  needs a real PNG decoder, out of proportion for a fast, dependency-free
+  gate check.
+- **Declared-width forgery — closed by removal, not merely accepted.** @qa
+  built genuinely zlib-deflated, structurally valid PNGs with a hand-patched
+  IHDR width field disagreeing with the real (smaller) decoded image — the
+  checker's raw IHDR-width read couldn't see the disagreement. Once the width
+  floor is removed entirely, A12 makes no width claim at all, so there is
+  nothing left for a forged width to deceive — this finding is genuinely
+  closed, not re-accepted under a new name.
+- **Codex's IDAT-substring finding — declined, twice, independently.**
+  `buf.indexOf('IDAT')` matches that literal byte sequence anywhere in the
+  file, including inside an unrelated metadata chunk. A proper chunk-table
+  walker would close that specific case but not the declared-width-forgery
+  gap above (now moot), which needed real zlib inflation and a
+  decoded-vs-declared dimension cross-check — a materially bigger lift.
+  Declined by both the team lead and @qa independently on that cost/benefit
+  reasoning.
+
+The ~120px minimum-rendered-width figure and R22's original "this explains
+the NOS Site's own pixelation" premise were both retracted by NOS Design as
+measurement artifacts from an upscaled evidence plate before R22 was
+withdrawn in full — the NOS Site's pixelation turns out to have a different
+cause (no raster logo exists there at all; see R23). The golden's
+`backgroundRuling.servingResolutionRuling` carries the complete retraction-
+then-withdrawal history and every verbatim ruling; this section doesn't
+re-derive it.
+
+### A20 — proving the image actually decoded, not just that markup exists
+
+A 404'd or corrupt image still renders a syntactically correct `<img>`
+element with the right `src` and the right layout box — `next/image`
+reserves layout space from its `width`/`height` props regardless of whether
+the bytes ever arrived or decoded. A1–A3 (element presence, `src`, alt text)
+all pass on a broken image exactly as readily as on a working one — this
+project's own audited "assertion satisfiable without the property it claims
+to prove" defect class. A20 closes the gap the golden's
+`domLoadVerificationRequirement` had bound A1–A3 to since 2026-09-19 — a
+binding that was, in fact, nearly lost: F8a landed with A1–A3 shipped as
+element-presence-plus-`src`-attribute only, and the gap was caught by team
+lead re-inspection after the fact, not by any gate.
+
+A20 asserts, on the live element after load, both `complete === true` **and**
+`naturalWidth > 0` — `complete` alone can read true on a failed load in some
+browsers, and `naturalWidth` alone can transiently read 0 while a real image
+is still in flight, so neither is sufficient alone. It also asserts a floor
+of `naturalWidth >= 200` — the render spec's own requested CSS width, not the
+source master's 3272px and not any specific `next/image` srcset-derivative
+width (which breakpoint the optimizer snaps to was never independently
+confirmed, so it isn't asserted as fact).
+
+**The `>= 200` floor is load-bearing, not redundant with `naturalWidth > 0`.**
+@qa's adversarial pass proved this directly: a genuinely valid, fully
+decodable 10×10 PNG swapped in at the expected `src` measures `complete:
+true, naturalWidth: 10` — it clears `naturalWidth > 0` cleanly and is caught
+*only* by the floor. A placeholder/favicon-swap defect (small, valid,
+correctly-decoding image at the right path) would pass every other assertion
+in the file and this test's own `complete && naturalWidth > 0` check; only
+the floor catches it.
+
+A Codex finding calling the floor redundant with the preceding check was
+**declined on the record** — do not delete the floor as dead weight:
+(1) Codex's framing refuted a stronger claim than A20 makes — A20 never
+claims to prove a "correctly rendered 200px source," only that a real image
+decoded above a floor; (2) the redundancy claim is empirically false per
+@qa's 10×10 PNG measurement; (3) Codex's own justification ("CSS can upscale
+a smaller legitimate source") describes exactly the visibly-degraded-source
+defect the floor exists to catch, not a reason to remove it. Across three
+Codex passes on this spec file the findings went 3 real → 1 real → 1
+declined — read as convergence, not as license to keep re-running passes
+until one comes back clean; no fourth pass was run chasing an unqualified
+PASS. **This file's Codex verdict stands at FAIL with this one finding
+declined on record** — the same honest, not-laundered-into-clean treatment
+given to A12's declined findings above.
+
+A20 closes what A12 structurally cannot: (1) wrong-directory placement — a
+file at any path other than the expected one 404s and `naturalWidth` stays 0;
+(2) a mis-cased filename that somehow slipped past the local case check —
+belt-and-suspenders in production; (3) a truncated/corrupt file that happens
+to pass A12's structural read; (4) the declared-width-forgery class — a
+forged IHDR width still decodes to its real, different dimensions in a real
+browser, so `naturalWidth` disagrees with any declared width even though
+A12's raw header read never saw the disagreement.
+
+### F8b — the tickets rail, NOS palette as a scoped exception
+
+The rail's data shape changed from a single `{blurb, ctaLabel, ctaHref}` CTA
+to `{heading, destinations: NavMegaFeatureRailDestination[]}`
+(`components/chrome/nav-config.ts`), with exactly three entries: Tickets
+(primary), Day Visitor (secondary), Weekend Pass (secondary) — all three
+hrefs verified live (HTTP 200) at contract-authoring time. The old blurb
+copy is removed; the three rows occupy the space it left, closing Brad's
+"large amount of unused vertical space" complaint directly.
+
+Four new `--color-nos-*` tokens are registered in `app/globals.css`'s
+existing `@theme` block (not a new block — F7's own A7 already found a token
+declared outside `@theme` resolves to nothing usable as a Tailwind class):
+`--color-nos-royal-purple` (#211A57), `--color-nos-purple-700` (#33296F,
+primary-row hover), `--color-nos-pale-gold` (#F3F2D6), and
+`--color-nos-olive-700` (#6A6829, rail meta line). A5/A6 read real
+`getComputedStyle`, not a source grep — the primary row resolves to
+royal-purple fill / pale-gold text (hover: purple-700), the two secondary
+rows are ghost-styled (transparent fill, 1.5px royal-purple border,
+royal-purple text), colour-for-colour against the approved artifact's own
+`.btn-primary`/`.btn-ghost` rules.
+
+**Scope boundary — this is the one exception, and it's fenced.** A7 confirms
+the rail's own background resolves to NOS pale-gold while its structural
+border-left — the same divider every non-lead track carries — stays
+`--rule-soft` (SAOC), unchanged: a border that's part of the shared
+five-track grid system is left alone, only the rail's own content colours
+move. A8 walks every element in the open panel that is *not* a rail
+descendant, plus the trigger button, and asserts none of the four registered
+NOS hex values appear on any of their background/text/border-color
+properties — a genuine exhaustive negative, not a hand-picked subset. A9
+confirms `MegaMenu.tsx` and `nav-config.ts` carry zero NOS hex literals after
+F8 — the four values live only in `app/globals.css`'s `@theme` block, never
+inline or as arbitrary Tailwind syntax in the chrome components themselves.
+
+**The duplicate "Tickets" link is intentional, not a defect.** The rail's new
+primary row (label "Tickets", href `/national-show/tickets`) is
+byte-identical in label and href to the pre-existing "The Show" group's own
+Tickets leaf in the lead block. Ruled intentional: a quick-nav leaf and a
+prominent rail CTA are two different affordances in two different visual
+regions serving the same destination — the same pattern as a "Home" link
+appearing in both a header and a footer, not a WCAG 2.4.4 violation (which
+concerns a link's own context failing to disambiguate *its own* destination,
+not two distinct links intentionally sharing one). Every rail-scoped link
+lookup in the e2e spec is scoped through a `getRail(panel)` helper rather
+than an unscoped `getByRole('link', {name: 'Tickets'})`, which would
+otherwise hit a Playwright strict-mode violation (2 matches).
+
+### The assertion-authorship finding — six instances, one feature, one QA pass
+
+Six separate instances of this project's audited "assertion satisfiable
+without the property it claims to prove" defect class surfaced within this
+single feature's own QA pass — recorded once, properly, in
+`f8-tickets-rail.json`'s `specFileAssertionAuthorshipFinding`, rather than as
+six separate incident notes:
+
+- **A12** — the 400px/200px source-resolution floor (now removed) was two
+  independent literal arguments with no code-level expression tying one to
+  the other.
+- **A1–A3 / A20** — `domLoadVerificationRequirement` was written as a binding
+  requirement on A1–A3 before F8a existed; F8a landed and A1–A3 shipped
+  without it, caught by re-inspection, not a gate.
+- **A3** — "venue/date meta line still renders below the logo" built a
+  `leadTrack` locator, never used it (a bare `void leadTrack;` to silence the
+  lint), and asserted an unrelated element's position instead.
+- **A7** — "meta line is NOS olive-700" used an unscoped `rail.locator('span')`
+  selector broad enough to miss its own target and narrow enough that its
+  `if (count > 0)` guard silently never ran.
+- **A8** — "no NOS colour appears anywhere outside the tickets rail" checked
+  three hand-picked elements against one of four registered NOS colours.
+- **A4** — "renders exactly three destination links" asserted three named
+  links' hrefs and never measured the rail's total link count, so a fourth
+  link would have passed.
+
+Each of the six had a test *title* stating a specific, checkable property,
+and a test *body* written to make Playwright report green without anyone
+checking that the body's assertions actually entailed the title's claim. The
+finding's own conclusion, stated plainly rather than softened: the only thing
+that caught any of these six, across every mechanism, was a reader — human
+or model — asking whether the body proves the title. Three were found by
+Codex's cross-model pass (A7, A8, A4), three by direct human re-inspection
+(A12, A1–A3/A20, A3). Zero were caught by any contract gate, lint, or
+automatic check. This is the direct, concrete argument recorded for why the
+mandatory Codex GPT-5.5 pass (`.claude/rules/workflow.md`) is load-bearing
+infrastructure for this defect class, not a ceremonial second opinion — on
+this file's own evidence, skipping that pass would have let three of six
+real, title-contradicting defects ship.
+
+All six fixes were verified adversarially, not just re-read: @qa's round-2
+pass (`.agent/memory/scratch/qa-report-menu-system-layout4-f8.md`) injected a
+real breakage for each rewritten assertion against the live running app (an
+emptied meta span, a planted NOS colour on an out-of-rail heading, a genuine
+fourth rail link, five hand-built PNG fixtures for A12) and confirmed every
+rewrite fails under its own claimed regression, not merely that it reads
+correctly.
+
+### Verification state — accurate, not laundered into a clean story
+
+11 e2e tests in `e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts` pass. @qa's
+round-2 verdict is **PASS**, with every rewrite proven to fail under real,
+injected breakage. Codex's verdict on this spec file stands at **FAIL, with
+one finding (the A20 floor) declined on record** — not a clean pass being
+reported as one; a future reader re-running Codex and seeing FAIL should find
+that result already documented above, not a discrepancy to chase down.
+
+## F11 — M3 gate hardening: closing the seven-property audit gaps (2026-09-28)
+
+@analyst audited the mission's own seven gate properties (section 6 above)
+against what the test suite actually measured, now that all six NOS routes
+had landed on `main` (`736db97d`). Five of the seven had a real, named gap;
+two already passed for real. F11 closes the five, re-confirms the two live,
+corrects the mission-frontmatter bookkeeping (F6–F10 had landed as real,
+committed contracts but the mission file never advanced past M2/F4), and
+declares the verification triad. It touches zero production chrome code —
+`components/chrome/MegaMenu.tsx`, `MobileMenu.tsx`, `Header.tsx`, and
+`nav-config.ts` are unchanged (contract-f11.yaml's A16 enforces this with
+`git diff --quiet` on those four paths). Every fix here is test
+infrastructure, gate bookkeeping, or documentation accuracy.
+
+| Property | What the gate proves now | Checker / spec |
+| --- | --- | --- |
+| 1. No 404 reachable from the header | `f1-pending-nos-routes.json` is empty, so the property is measured for real rather than reporting UNMEASURED; the checker's stale F7 field read is fixed and it now catches the tickets-rail soft-404 case too (see below) | `check-nav-links-200-gated-by-exemptions.mjs`, `check-manifest-routes-have-pages.mjs`, `check-pending-routes-still-pending.mjs` |
+| 2. `/national-show` reachable from the header | Already passed; re-confirmed live rather than silently dropped from this contract's coverage | `check-nav-hrefs-golden.mjs`, A7 |
+| 3. No unsourced visual value | Docstring narrowed to state the checker's real scan scope (the four chrome component files only) and cites the ruled F8 exception for `app/globals.css`'s `--nos-*` custom properties, rather than implying it scans everything | `check-no-nos-palette-mixing.mjs`, A8/A8b (no scan-scope or behaviour change) |
+| 4. Keyboard | Extended to check a visible focus ring on every focusable leaf in DOM order (not just the first), and to assert the panel is not a focus trap | `e2e/nav-keyboard-operable.spec.ts`, A9/A9b/A10 |
+| 5. 390px drawer, no horizontal scroll | New measurement taken with the mobile drawer actually open (and National Show expanded), not just on the collapsed homepage | `e2e/no-horizontal-overflow-drawer-open.spec.ts`, A11/A12 |
+| 6. Descriptors are sourced | Already passed 16/16; re-confirmed live | `check-descriptor-provenance.mjs`, A13 |
+| 7. Nothing unmeasured reports as passing | Two sub-fixes: the skip-exit-code mismatch between this mission's checkers (exit 3) and `execution/contract.py`'s `kind: shell` convention (exit 77) is worked around per-assertion, not patched in the harness; the mission frontmatter now records F6–F10 as landed | A14 (remap), A15 (frontmatter), `.agent/memory/project/missions/2026-09-10-menu-system-layout4.md` |
+
+### The property-1 checker was blind to a real soft-404
+
+`app/(marketing)/tickets/[slug]/page.tsx` calls `notFound()` (line 91) for an
+unknown slug, but by then Next 16's streaming SSR has already committed
+HTTP 200 to the wire — `loading.tsx` streams before `notFound()` resolves
+deep in the tree, so the status code can never retroactively become 404.
+Confirmed live, both locally and on `https://beta.saoc.co.za`, against an
+unknown `/tickets/` slug: HTTP 200, no `<h1>`, and the response body carries
+`<meta name="robots" content="noindex"/>`. That meta tag is a
+Next-16-guaranteed signal, not an SAOC convention — `notFound()`'s own doc
+comment states it inserts exactly this tag, and
+`HTTPAccessFallbackErrorBoundary.render()` wraps the not-found render in it
+unconditionally, regardless of what status code already shipped. A grep of
+`app/`, `lib/`, and `components/` for `noindex` returns zero matches, so its
+presence is a reliable framework-level signal, never an SAOC-authored false
+positive; a sweep of all 25 real NAV hrefs (both localhost and
+beta.saoc.co.za) found it on none of them.
+
+The not-found page's own copy ("This orchid has left the bench") was ruled
+out as the signal instead — it's embedded in every page's RSC flight
+payload, not only actual 404s, confirmed by grepping real, non-404 page
+responses for it.
+
+`check-nav-links-200-gated-by-exemptions.mjs`'s HTTP loop now checks
+`status === 200 && !softNotFound`, where `softNotFound` is only ever
+evaluated when the status genuinely is 200 (so a real hard 404's own
+`noindex` tag, if it happens to carry one, never gets mislabelled
+`soft-404`). Two negative fixtures exercise the two branches independently:
+`goldens/fixtures/f1-negative-fixtures/nav-config-ticket-rail-404.mjs`
+points at `/national-show/does-not-exist-fixture-only-404` (a genuine
+router-level 404 — `/national-show` has no dynamic segment under it) to
+prove the plain status-code branch, and
+`nav-config-tickets-soft-404.mjs` points at an unknown `/tickets/` slug to
+prove the soft-404 branch. @qa mutation-tested the status branch: a
+sandboxed copy of the checker with the status term dropped from `ok`
+(`ok = !softNotFound` instead of `ok = status === 200 && !softNotFound`)
+wrongly passes the hard-404 fixture, while the real checker correctly fails
+it — confirming the fixture and assertion genuinely depend on the status
+check, not merely coincide with it.
+
+This is a gate-detection fix only. The app-side soft-404 itself (`loading.tsx`
+streaming ahead of `notFound()` resolving) is a separate, already-tracked P2
+backlog item in a route this mission does not own, and is not fixed here.
+
+### Every-leaf focus test now iterates DOM position, not href string
+
+`e2e/nav-keyboard-operable.spec.ts` previously resolved each expected href
+via `panel.locator('a[href="${href}"]').first()`. `/national-show/tickets`
+appears twice in the rendered panel — once as the "The Show" group's own
+Tickets leaf, once as the F8 feature rail's primary CTA (the ruled
+duplication documented in the F8 section above) — so the href-keyed lookup
+resolved both loop iterations to the same DOM node, and the feature rail's
+own CTA anchor was never independently focus-tested. The test now locates
+every `a[href]` inside the panel, asserts the count matches the expected
+href list (duplicates included), and walks the panel's links by DOM
+position instead, so both occurrences of the duplicated href get their own
+`.focus()` + `getComputedStyle` check.
+
+### The `--nav-file` flag is test-only
+
+`check-nav-links-200-gated-by-exemptions.mjs` takes an optional `--nav-file
+<path>` argument, mirroring `check-manifest-routes-have-pages.mjs`'s own
+`--manifest-file` escape hatch. It exists so a negative fixture can swap in
+a broken nav tree and prove the checker's HTTP branch actually fails on it —
+never for a real gate run.
+
+### Two open items, neither resolved by this feature
+
+- **Skip-exit-code mismatch.** This mission's shared checkers (built against
+  `contracts/checks/_shared/run_contract_suite.mjs`'s convention) exit 3 to
+  signal skip; `execution/contract.py`'s `kind: shell` assertions treat exit
+  77 as the reserved skip code. `execution/` is harness-owned
+  (`.agent/update-manifest.yaml`), so F11 does not patch it — instead, every
+  new assertion that can hit the 3-exit-code skip path remaps it to 77 in
+  the assertion's own shell command. The systemic fix (standardising the
+  exit code, or teaching `contract.py` to recognise 3 as well) is recorded
+  in `.agent/memory/project/backlog.md` as an Athanor upstream item.
+- **Verification-triad preflight.** `execution/contract.py`'s
+  `_run_triad_coverage_preflight()` runs unconditionally before any
+  assertion phase and hard-blocks a contract missing a declared triad kind
+  unless it's grandfathered in `execution/triad-baseline-exempt.txt`.
+  `contract-f11.yaml` is not in that file. It declares `codex_qa` (A17,
+  passed on the final diff) and `browser_deployed_check` (A18, against
+  `https://beta.saoc.co.za`, pending until deploy), but deliberately does
+  not declare `gws_inbox_check` — this feature sends no email and touches
+  no email-adjacent code, the same precedent already on record for the
+  `nos-design-system` mission's M7/M8 contracts. Until a baseline entry is
+  added (harness-owned, out of this feature's scope) or Brad rules on the
+  exemption, an actual `execution/mission.py gate --milestone M3` run would
+  hard-block on this contract before evaluating any of its assertions. This
+  is recorded as an open, currently-live gate blocker, not resolved here.
+
+Full detail and every assertion:
+`.agent/memory/project/specs/menu-system-layout4/contract-f11.yaml`.

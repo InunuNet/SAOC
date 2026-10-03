@@ -1,0 +1,3 @@
+# p2-tickets-slug-unknown-slug-is-a-soft-4
+
+**[P2] `/tickets/[slug]` unknown slug is a soft 404: HTTP 200 plus the not-found UI** (found 2026-09-28 by menu M3 F11 @dev; verified on beta). `https://beta.saoc.co.za/tickets/does-not-exist-xyz` returns 200 with `noindex` and no h1, whereas `/national-show/<missing>` returns a real 404. Likely cause: `app/(marketing)/tickets/loading.tsx` streams before `notFound()` runs. Effect: crawlers and status-only link checkers treat broken ticket links as live. Fix options: drop or relocate `loading.tsx`, or `dynamicParams=false` plus `generateStaticParams`. Note that the parked `national-show-ticket-router` stash moves this route, so decide that first. The menu M3 checker is being hardened to detect soft 404s regardless.

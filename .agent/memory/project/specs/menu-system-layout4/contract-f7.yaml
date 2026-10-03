@@ -144,6 +144,15 @@ assertions:
         by editing nav-config.ts) to match a correctly-fixed value.
       command: "node contracts/checks/menu-system-layout4-f7/check-featurerail-blurb-provenance.mjs"
       required: true
+      supersededByF8: >-
+        2026-09-11: mission menu-system-layout4 M2/F8 removed
+        featureRail.blurb entirely (replaced by three destination rows --
+        see goldens/f8-tickets-rail.json's `blurbRemoved`). This assertion
+        now correctly fails if re-run against the current tree -- that is
+        expected, not a regression. contract-f7.yaml is left unedited below
+        as the historical record of what F7 itself verified at close;
+        contract-f8.yaml is the current contract for the feature rail's
+        content and provenance.
 
     - id: A7
       description: >

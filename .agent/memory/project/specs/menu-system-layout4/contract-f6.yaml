@@ -147,6 +147,22 @@ assertions:
         webServer-managed dev server (playwright.config.ts) rather than an ambient port --
         left for whoever next runs this gate for real, once f1-pending-nos-routes.json is
         actually empty.
+
+        NOTE (2026-10-03, M3 gate maintenance): f1-pending-nos-routes.json is now
+        genuinely empty (all six NOS routes landed and return 200 on beta.saoc.co.za).
+        This assertion's own bare command therefore hits its designed USAGE ERROR branch
+        (exit 2, no --base-url supplied) -- the correctly-triggered transition anticipated
+        above ("left for whoever next runs this gate for real"), not a regression. Per
+        that handoff, contract-f11.yaml's A6 (e2e/nav-property1-http-gate.spec.ts, "real
+        NAV: all hrefs return 200") is the correctly-built successor: it runs this SAME
+        checker against a Playwright webServer-managed dev server (a NAMED tree, not an
+        ambient port) with an explicit --base-url, and additionally detects the soft-404
+        case (A2b/A2c in contract-f11.yaml) that this assertion's own status===200-only
+        check never could -- strictly wider coverage of the same property. A4 is
+        SUPERSEDED BY F11's A6, not retired: this assertion's command now re-runs that
+        exact Playwright test directly, so F6's own gate re-proves the property fires for
+        real rather than merely trusting that F11 ran it elsewhere. If F11's spec file is
+        ever removed or renamed, this command fails loudly rather than silently passing.
       command: >-
-        node contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs
+        npx playwright test e2e/nav-property1-http-gate.spec.ts -g "all hrefs return 200"
       required: true

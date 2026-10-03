@@ -176,11 +176,39 @@ def read_active() -> dict | None:
 
 
 def write_active(mission_path: str, checkpoint: dict | None = None):
+    """Write active.json, preserving state this function does not author.
+
+    This used to rebuild the dict from scratch, so every key written by
+    someone else was silently dropped on each call. The one that mattered was
+    `autonomy`: set_autonomy.py wrote a verified decision, the very next
+    `mission.py checkpoint` erased it, and boot_panel then halted on
+    autonomy.undecided. The chain could not advance a feature without an
+    operator re-arming autonomy by hand afterwards -- the exact opposite of
+    the "chain continuous" rule.
+
+    Carry-forward is deliberately scoped to the SAME mission. A decision made
+    for mission A must never leak onto mission B: switching missions starts
+    clean, which is what REQUIREMENTS 6 ("a mission is never silently
+    resumed") depends on. `activated_at` is likewise preserved across a
+    same-mission update, so it keeps meaning "when this mission was
+    activated" rather than "when it was last checkpointed".
+    """
     MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
+    authored = {"mission", "checkpoint", "activated_at"}
+    carried: dict = {}
+    activated_at = now_iso()
+
+    prior = read_active()
+    if isinstance(prior, dict) and prior.get("mission") == str(mission_path):
+        carried = {k: v for k, v in prior.items() if k not in authored}
+        if isinstance(prior.get("activated_at"), str) and prior["activated_at"]:
+            activated_at = prior["activated_at"]
+
     data = {
         "mission": str(mission_path),
         "checkpoint": checkpoint or {"milestone": None, "feature": None},
-        "activated_at": now_iso(),
+        "activated_at": activated_at,
+        **carried,
     }
     tmp = str(ACTIVE_JSON) + ".tmp"
     Path(tmp).write_text(json.dumps(data, indent=2))
@@ -1280,6 +1308,40 @@ def _existing_contract_for_feature(fm: dict, fid: str) -> ContractLookup:
 BOOT_HALT_EXIT_CODE = 4
 
 
+def _marker_is_stale(boot_panel, marker: dict, root: Path) -> bool:
+    """Staleness read the IDENTICAL way boot_panel.render_stamp computes it
+    for its own "STALE marker" warning — reused directly rather than
+    re-derived a third time (Codex QA round-2 finding, GH stale-boot-marker):
+    the threshold is boot_panel._stamp_stale_threshold(root), which is "how
+    long ago full_boot.sh last ran" (falling back to the bounded
+    MARKER_FRESH_FALLBACK_SECONDS, not "always stale", when
+    .last_full_boot_ts is missing/unparseable); staleness is the marker's own
+    age (from its collected_at field) exceeding that threshold.
+
+    The previous version compared verify_boot_ran's timestamp file directly
+    against MAX_AGE_SECONDS, which has the causality backwards: full_boot.sh
+    refreshes that timestamp file but never touches the boot-panel marker, so
+    an OLD halting marker followed by a fresh full_boot.sh run read as "not
+    stale" and would still incorrectly halt `resume` — reproducing the
+    original bug in reverse. Comparing the marker's own collected_at against
+    the marker's own stale threshold fixes that: a marker is only "not stale"
+    when IT is recent enough, regardless of what else ran since.
+
+    A marker with no parseable collected_at is treated as stale — there is
+    nothing to compare against, and the conservative direction is safe here:
+    the only effect of "stale" is an extra in-memory collect() (cheap,
+    side-effect-free — nothing is persisted back to disk), and it can never
+    manufacture a halt that the recomputed live state doesn't independently
+    produce, since a failed heal still falls through to the caller's
+    (None, []) no-halt default.
+    """
+    collected = boot_panel._parse_iso(marker.get("collected_at"))
+    if collected is None:
+        return True
+    age = (boot_panel._now() - collected).total_seconds()
+    return age > boot_panel._stamp_stale_threshold(root)
+
+
 def _boot_panel_verdict() -> tuple[str | None, list[str]]:
     """(verdict, halt_reasons) from THIS workspace's boot-panel marker.
 
@@ -1289,6 +1351,20 @@ def _boot_panel_verdict() -> tuple[str | None, list[str]]:
     A workspace with no panel, no marker, or an unusable marker yields
     (None, []): there is no halt to enforce, and inventing one would lock an
     operator out of a workspace they cannot clear.
+
+    A marker old enough to be untrustworthy is old enough that the mission
+    state it describes may no longer exist (GH stale-boot-marker P0) — so a
+    stale marker is re-collected in-process (collect() only) and the FRESH
+    verdict is used for THIS invocation's decision only. The on-disk marker
+    is deliberately left untouched here: persisting it would mean two
+    processes racing this self-heal could write conflicting fresh-vs-stale
+    copies with no lock between them (Codex QA finding). The disk copy still
+    gets refreshed the normal way — an operator running
+    `python3 execution/boot_panel.py` per the halt message, or the next
+    SessionStart — this function just stops trusting a STALE disk copy for
+    its own verdict. A collect() failure falls through to the same
+    (None, []) no-halt default as every other unusable-marker case here — a
+    failed heal must not become a new way to halt.
     """
     try:
         sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -1296,9 +1372,13 @@ def _boot_panel_verdict() -> tuple[str | None, list[str]]:
     except Exception:
         return None, []
     try:
-        marker = boot_panel.read_marker(Path.cwd())
+        root = Path.cwd()
+        marker = boot_panel.read_marker(root)
         if not isinstance(marker, dict) or boot_panel.marker_problems(marker):
             return None, []
+        if _marker_is_stale(boot_panel, marker, root):
+            doc = boot_panel.collect(root)
+            return doc.get("verdict"), [str(r) for r in doc.get("halt_reasons") or []]
         return marker.get("verdict"), [str(r) for r in marker.get("halt_reasons") or []]
     except Exception:
         return None, []

@@ -1,0 +1,983 @@
+schema: athanor.contract/v1
+slug: menu-system-layout4
+goal: >
+  M3/F11 — close every real gap @analyst's property-by-property audit
+  (.agent/memory/project/scratch/research-menu-m3-gate.md) found against the
+  mission's own seven gate properties (mission section 6), now that all six NOS
+  routes have landed on this branch (rebased onto origin/main 736db97d;
+  check-manifest-routes-have-pages.mjs --ref HEAD confirms 17/17 PASS, and the
+  NOS lane confirmed all six return 200 on beta.saoc.co.za). This is the LAST
+  feature before the M3 gate runs and the branch goes to PR — it does not touch
+  components/chrome/MegaMenu.tsx, MobileMenu.tsx, Header.tsx, or nav-config.ts
+  at all (A16 enforces this); every fix here is test-infrastructure, gate
+  bookkeeping, or documentation-accuracy.
+
+  SEVEN GAPS CLOSED, ONE PER PROPERTY:
+
+  1. f1-pending-nos-routes.json was stale (listed all six landed routes as
+     still pending), so property 1's dedicated gate checker
+     (check-nav-links-200-gated-by-exemptions.mjs) exited 3 (SKIP), correctly
+     UNMEASURED rather than falsely green, but blocking real measurement. This
+     feature empties the fixture (already done directly by @architect as a
+     golden — see goldens list) and fixes a LATENT bug the emptying exposes:
+     check-nav-links-200-gated-by-exemptions.mjs:147 still reads the retired F7
+     shape `item.featureRail.ctaHref` (contract-f9.yaml fixed the identical bug
+     in the sibling checker check-nav-hrefs-golden.mjs, but this "shared"
+     checker was never touched). Net effect before the fix: `undefined` is
+     pushed into the href list and the two ticket-rail secondary destinations
+     are never HTTP-checked. NOTE, confirmed live during contract authoring:
+     e2e/nav-links-200.spec.ts and e2e/mobile-nav-reaches-every-section.spec.ts
+     do NOT share this bug — both read the already-correct, F9-fixed
+     e2e/utils/collect-nav-hrefs.ts, which already walks `destinations[]`
+     (collect-nav-hrefs.ts:45-49). Only the standalone
+     check-nav-links-200-gated-by-exemptions.mjs (a third, independent href
+     collector) has the stale read. Fixing it, plus adding a `--nav-file`
+     TEST-ONLY escape hatch (mirroring check-manifest-routes-have-pages.mjs's
+     own `--manifest-file` pattern) so a negative fixture can prove the HTTP
+     branch actually fails a broken href, closes this gap for real.
+
+  1b. AMENDMENT (post-authoring, same feature): the checker's HTTP branch as
+     originally specified above (`status === 200`) is BLIND to a real,
+     already-present soft-404: app/(marketing)/tickets/[slug]/page.tsx calls
+     notFound() (line 91) after Next 16's streaming SSR has already committed
+     HTTP 200 to the wire (loading.tsx streams before notFound() resolves
+     deep in the tree, so the status code can never retroactively become
+     404). Verified LIVE, both locally (localhost:3002) and on
+     https://beta.saoc.co.za, against /tickets/does-not-exist-xyz and the new
+     fixture-only path used below: HTTP 200, no <h1>, and the response body
+     DOES contain `<meta name="robots" content="noindex"/>` -- confirmed as a
+     Next-16-guaranteed, framework-level behaviour, not an SAOC convention:
+     the doc comment on notFound() in
+     node_modules/next/dist/client/components/not-found.js states it inserts
+     exactly this meta tag, and
+     node_modules/next/dist/client/components/http-access-fallback/error-boundary.js's
+     HTTPAccessFallbackErrorBoundary.render() unconditionally wraps the
+     not-found render in it regardless of what status code already shipped.
+     Grepping the SAOC codebase itself (app/, lib/, components/) for
+     "noindex" returns zero matches -- nothing here sets this tag by hand, so
+     its presence is a reliable, framework-guaranteed signal for "the
+     not-found boundary rendered," never an SAOC-authored false positive.
+     NOTE the discriminator this rules out: the not-found page's own copy
+     ("This orchid has left the bench") is NOT usable as a signal -- it
+     appears in the RSC flight payload of every page on the site (confirmed
+     by grep against real, non-404 page responses), not only actual 404s.
+     `<meta name="robots" content="noindex"` does not share that false-
+     positive risk: empirically swept against all 25 real NAV hrefs (the
+     full golden list in goldens/f1-nav-hrefs.json), on BOTH localhost:3002
+     and https://beta.saoc.co.za, zero of the 25 carry it -- see A6's amended
+     description for the exact sweep. A2b below is the exact fix spec; the
+     new negative fixture
+     goldens/fixtures/f1-negative-fixtures/nav-config-tickets-soft-404.mjs
+     and A6's extended spec plus A6d prove the checker's soft-404 branch
+     actually fires, without touching nav-config-ticket-rail-404.mjs (the
+     existing hard-404 negative fixture, unchanged, still proving the
+     original status-code branch). Fixing the underlying soft-404 rendering
+     bug itself (e.g. app/(marketing)/tickets/[slug]/loading.tsx or a
+     dynamicParams change) is explicitly OUT OF SCOPE for this feature -- A16
+     still enforces zero production chrome-code changes, and this soft-404
+     is in a route this mission does not own; it is recorded separately by
+     the orchestrator, not fixed here. This contract only makes the gate
+     capable of detecting it.
+
+  2. Property 2 (`/national-show` reachable) already passes for real — no
+     action needed; A7 below re-confirms it live rather than silently dropping
+     it from this contract's coverage.
+
+  3. check-no-nos-palette-mixing.mjs's header comment overstates its own scope
+     — it reads as if it guards against any NOS token entering SAOC chrome, but
+     it only ever scans the four component files passed on argv, never
+     app/globals.css, which now legitimately carries `--nos-*` custom
+     properties as F8's ruled, provenanced exception
+     (goldens/f8-tickets-rail.json's `scopeBoundary` field). A8 narrows the
+     docstring to name exactly what it scans and cites the ruled exception —
+     no scan-scope change, no behaviour change.
+
+  4. e2e/nav-keyboard-operable.spec.ts proves Enter/Space/Escape/focus-restore/
+     tab-order-into-panel/one real focus-ring, but only checks the FIRST
+     focusable leaf for a visible focus ring, and never asserts the panel isn't
+     a focus trap. A9/A10 close both.
+
+  5. e2e/no-horizontal-overflow.spec.ts never opens the mobile drawer before
+     measuring — it only ever loads `/` collapsed. Mission section 6 property 5
+     explicitly asks for "390px drawer... no horizontal scroll," which this
+     spec has never actually measured. A11/A12 add a dedicated drawer-open
+     measurement.
+
+  6. Property 6 (descriptors sourced) already passes 16/16 for real — no action
+     needed; A13 re-confirms it live.
+
+  7. Two sub-gaps: (a) execution/contract.py's `kind: shell` treats exit 77 as
+     skip, while every shared checker in this mission (built against
+     contracts/checks/_shared/run_contract_suite.mjs's convention) exits 3 for
+     skip — a genuinely-skipping checker run through
+     `python3 execution/mission.py gate --milestone M3` (which subprocesses
+     `execution/contract.py gate <contract> --phase all --run-checks` per
+     feature — confirmed by reading execution/mission.py:1206-1210, the
+     authoritative runner for this mission) would read as a plain FAIL, not
+     SKIP. execution/ is HARNESS-owned per .agent/update-manifest.yaml (the
+     whole `execution/` path is marked HARNESS) — this feature does NOT edit
+     it. Instead every new assertion below that can hit the 3-exit-code SKIP
+     path wraps the invocation so exit 3 is explicitly remapped to exit 77 in
+     the assertion's own shell command (A14 proves the remap itself works).
+     The systemic fix — either standardising the exit code across
+     run_contract_suite.mjs and every existing checker, or teaching
+     contract.py to recognise 3 as well as 77 — is out of this feature's scope
+     (it would touch checkers this contract doesn't own, plus the
+     HARNESS-owned contract.py) and is recorded in
+     .agent/memory/project/backlog.md as an Athanor upstream item, not patched
+     here. (b) the mission frontmatter never advanced past M2/F4 even though
+     F6-F10 are real, committed, landed contracts. A15 corrects the
+     bookkeeping and re-validates the mission file.
+
+  TRIAD (.claude/rules/workflow.md, docs/verification-triad-gate.md): A17
+  declares codex_qa, A18 declares browser_deployed_check against
+  https://beta.saoc.co.za covering the header flyout and the 390px drawer.
+  gws_inbox_check is deliberately NOT declared — this feature sends no email
+  and touches no email-adjacent code, exactly the precedent already on record
+  in execution/triad-baseline-exempt.txt for
+  .agent/memory/project/specs/nos-design-system/contract.yaml and its
+  contract-m7.yaml/contract-m8.yaml siblings ("no email surface in this
+  mission" — codex_qa and browser_deployed_check declared for real,
+  gws_inbox_check grandfathered). This feature does NOT itself add an entry to
+  execution/triad-baseline-exempt.{txt,sha256} (execution/ is HARNESS-owned,
+  out of scope per this brief) — if verify_triad_coverage.py's `app/`-substring
+  classifier ever flags this specific contract file as UI/workflow (today it
+  will not: no assertion command/cmd/target string below contains the literal
+  substring `app/` — confirmed by grep against this file before authoring
+  finished), the automatic gate preflight would hard-block on the missing
+  gws_inbox_check kind until either a baseline entry is added by whoever owns
+  that harness-owned file, or a real gws_inbox_check assertion is declared.
+  Flagged here as a known constraint, not resolved, consistent with this
+  feature's rule against editing execution/.
+created_at: '2026-09-28'
+autonomy: high
+features:
+  - id: F11
+    name: >-
+      Close the M3 gate-audit gaps for properties 1, 3, 4, 5 and 7; re-confirm
+      properties 2 and 6 live; fix the mission frontmatter bookkeeping for
+      F6-F10; declare the verification triad. Zero production chrome code
+      touched.
+    status: pending
+goldens:
+  - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-pending-nos-routes.json
+  - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/one-pending-route-fixture.json
+  - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-ticket-rail-404.mjs
+  - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-tickets-soft-404.mjs
+  - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/pending-routes-empty-fixture.json
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        PROPERTY 1a: f1-pending-nos-routes.json is now empty (written directly
+        by @architect as a golden — see the goldens list; not left to @dev).
+        Both the filesystem-signal checker and the manifest-has-pages checker
+        must pass cleanly against the now-empty list at HEAD. CONFIRMED LIVE
+        during contract authoring: `node .../check-pending-routes-still-pending.mjs`
+        -> "CURRENTLY EXEMPT: 0 route(s) (0 stale)" / "PASS: all 0 exempt
+        route(s) are still genuinely pending" / exit 0; `node
+        .../check-manifest-routes-have-pages.mjs --ref HEAD` -> 17/17 PASS,
+        exit 0. Nothing left for @dev to do for this half of property 1 — this
+        assertion re-proves it stays true.
+      command: >-
+        node contracts/checks/menu-system-layout4-shared/check-pending-routes-still-pending.mjs
+        | grep -qE "CURRENTLY EXEMPT: 0 route"
+        && node contracts/checks/menu-system-layout4-shared/check-manifest-routes-have-pages.mjs --ref HEAD
+      required: true
+
+    - id: A2
+      description: >
+        FIX SPEC (exact, no judgment call left to @dev), PROPERTY 1b: in
+        contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs,
+        replace line 147
+        (`if (item.featureRail) hrefs.push(item.featureRail.ctaHref);`) with:
+          if (item.featureRail) {
+            for (const dest of item.featureRail.destinations) hrefs.push(dest.href);
+          }
+        Also fix the two comments that describe the stale shape: line 39
+        ("including lead.leadHref, lead.theShow's links, and
+        featureRail.ctaHref, not") -> replace "featureRail.ctaHref" with
+        "each of featureRail.destinations[].href"; line 129 ("featureRail.ctaHref.
+        Property 1 covers all 17 manifest routes, not just the") -> same
+        replacement. Also fix the hardcoded "17" in the SKIP-path log message
+        (lines 161-169, specifically "${17 - pendingRoutes.length} of 17
+        hrefs, not all 17.") -- this number was already wrong before this fix
+        (the real NAV href count is 25 per contract-f9.yaml's re-baselined
+        golden, not 17: the manifest's 17 listed routes plus 8 more site-wide
+        top-level links/lead/rail hrefs), and hardcoding a wrong number here is
+        the identical "docstring overstates what the code actually proves"
+        defect class flagged in A8 below for a different checker. Replace with
+        wording that does not hardcode a total, e.g. "it has measured only the
+        non-exempt subset of NAV hrefs, not all of them." Do not change
+        anything else in this file -- A16 checks the diff stays scoped.
+      command: >-
+        test -f contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs
+      required: true
+
+    - id: A3
+      description: >
+        REGRESSION GUARD (mirrors contract-f9.yaml's A3 for the sibling
+        checker): the stale F7 field read is fully gone.
+      command: >-
+        ! grep -q "ctaHref" contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs
+      required: true
+
+    - id: A4
+      description: >
+        PROPERTY (mirrors contract-f9.yaml's A4): the checker now actually
+        walks the F8 destinations array.
+      command: >-
+        grep -q "featureRail.destinations" contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs
+      required: true
+
+    - id: A5
+      description: >
+        FIX SPEC, PROPERTY 1c: add a `--nav-file <path>` TEST-ONLY escape
+        hatch to check-nav-links-200-gated-by-exemptions.mjs's parseArgs()
+        (lines 77-93), mirroring check-manifest-routes-have-pages.mjs's own
+        `--manifest-file` pattern (same file family, same documented
+        TEST-ONLY convention -- see that file's own usage comment,
+        lines 48-56). Exact shape:
+          let navFile = null;
+          ...
+          } else if (arg === '--nav-file') {
+            navFile = argv[++i];
+            if (!navFile) usageError('--nav-file requires a value');
+          } else {
+        ...and return `{ baseUrl, pendingRoutesPath, navFile }`. In main()
+        (currently line 183), replace:
+          const { NAV } = await import(path.join(REPO_ROOT, 'components/chrome/nav-config.ts'));
+        with:
+          const navModulePath = navFile
+            ? path.resolve(process.cwd(), navFile)
+            : path.join(REPO_ROOT, 'components/chrome/nav-config.ts');
+          const { NAV } = await import(navModulePath);
+        Add a header-comment usage line documenting `--nav-file` as TEST-ONLY,
+        never for a real gate run, exactly matching
+        check-manifest-routes-have-pages.mjs's own disclaimer wording ("Never
+        use ... for a real gate run -- it exists for
+        goldens/fixtures/f1-negative-fixtures/ only").
+      command: >-
+        grep -q -- "--nav-file" contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs
+      required: true
+
+    - id: A2b
+      description: >
+        FIX SPEC (exact, no judgment call left to @dev), PROPERTY 1
+        AMENDMENT: check-nav-links-200-gated-by-exemptions.mjs's real-HTTP
+        loop (confirmed at lines 204-216 of the pre-fix file) only ever
+        checks `status === 200` -- blind to the soft-404 documented in the
+        goal section's "1b. AMENDMENT" note above. Replace the loop body:
+
+          const failures = [];
+          for (const href of hrefs) {
+            let status;
+            try {
+              const res = await fetch(`${baseUrl}${href}`, { redirect: 'manual' });
+              status = res.status;
+            } catch (err) {
+              status = `unreachable (${err.message})`;
+            }
+            const ok = status === 200;
+            console.log(`${ok ? 'PASS' : 'FAIL'} ${href}: ${status}`);
+            if (!ok) failures.push(`${href} (${status})`);
+          }
+
+        with:
+
+          const SOFT_404_SIGNAL = '<meta name="robots" content="noindex"';
+          const failures = [];
+          for (const href of hrefs) {
+            let status;
+            let softNotFound = false;
+            try {
+              const res = await fetch(`${baseUrl}${href}`, { redirect: 'manual' });
+              status = res.status;
+              const body = await res.text();
+              softNotFound = body.includes(SOFT_404_SIGNAL);
+            } catch (err) {
+              status = `unreachable (${err.message})`;
+            }
+            const ok = status === 200 && !softNotFound;
+            const reason = softNotFound ? `${status} but soft-404 (noindex)` : status;
+            console.log(`${ok ? 'PASS' : 'FAIL'} ${href}: ${reason}`);
+            if (!ok) failures.push(`${href} (${reason})`);
+          }
+
+        Do NOT check for the not-found page's copy ("This orchid has left
+        the bench" or any substring of it) -- the goal section's "1b.
+        AMENDMENT" note documents why that string is unusable (present in
+        the RSC flight payload of every page, not only 404s). The signal is
+        the exact literal `<meta name="robots" content="noindex"` substring
+        only. Also update the file's own header usage comment (currently
+        lines 64-67, "Exit 1 = list empty but at least one href did not
+        return 200 (named)") to read "Exit 1 = list empty but at least one
+        href did not return 200, OR returned 200 with a soft-404 signal
+        (noindex meta tag) -- both named." Do not change anything else in
+        this file -- A16 still checks this feature's overall diff stays
+        scoped to test-infrastructure/gate files, and A3/A4 continue to
+        guard the destinations-loop fix from A2/A5 unrelated to this change.
+      command: >-
+        grep -q "SOFT_404_SIGNAL" contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs
+        && grep -q "noindex" contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs
+        && ! grep -qi "left the bench" contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs
+      required: true
+
+    - id: A2c
+      description: >
+        FIX SPEC (exact, no judgment call left to @dev), CORRECTING A2B'S OWN
+        BUG: @dev already applied A2b verbatim (confirmed live at
+        check-nav-links-200-gated-by-exemptions.mjs:205-222 today), and A2b's
+        own spec has a real defect this amendment closes. Empirically
+        confirmed live on https://beta.saoc.co.za, discovered while building
+        A6e/A9b below: `/national-show/does-not-exist-fixture-only-404` (a
+        GENUINE hard 404 -- no dynamic segment in that route, real 404
+        status) ALSO returns a body containing
+        `<meta name="robots" content="noindex"/>` -- Next 16 emits this meta
+        tag on EVERY not-found-boundary render, real 404 or soft-404 alike
+        (same source citation as the goal section's "1b. AMENDMENT" note).
+        A2b's `softNotFound = body.includes(SOFT_404_SIGNAL)` is computed
+        unconditionally, so on a genuine 404 it evaluates true, and
+        `reason = softNotFound ? ... 'soft-404' ... : status` then mislabels
+        a real hard 404 as `"404 but soft-404 (noindex)"` -- wrong, and it
+        would make A6e's proof-of-status-branch assertion (below) either
+        fail correctly-for-the-wrong-reason or require weakening, neither
+        acceptable. Fix: gate softNotFound on status === 200 so the
+        "soft-404" label is reserved for the one case it actually means --
+        200 with the not-found boundary's signal -- never applied to any
+        other status. Replace line 214 exactly:
+          softNotFound = body.includes(SOFT_404_SIGNAL);
+        with:
+          softNotFound = status === 200 && body.includes(SOFT_404_SIGNAL);
+        No other line in the loop changes -- `ok`'s formula (line 218) is
+        already correct as-is (`status === 200 && !softNotFound`) and does
+        not need to change, since softNotFound can now only be true when
+        status is already 200.
+      command: >-
+        grep -q "softNotFound = status === 200 && body.includes(SOFT_404_SIGNAL)" contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs
+      required: true
+
+    - id: A6
+      description: >
+        NEW GOLDEN (written directly by @architect, not left to @dev):
+        e2e/nav-property1-http-gate.spec.ts -- a Playwright wrapper that
+        subprocess-invokes the fixed checker against a REAL, Playwright
+        webServer-managed dev server (playwright.config.ts's own dynamic-port
+        BASE_URL), never an ambient port -- this is exactly the gap
+        contract-f6.yaml's A4 left open ("Re-proving the empty-list branch's
+        numbers properly requires a server whose tree is named -- e.g.
+        Playwright's own webServer-managed dev server ... rather than an
+        ambient port -- left for whoever next runs this gate for real"). Exact
+        file content @dev must create verbatim:
+
+          // e2e/nav-property1-http-gate.spec.ts
+          // Mission menu-system-layout4 M3/F11 -- wraps
+          // check-nav-links-200-gated-by-exemptions.mjs as a subprocess so its
+          // real-HTTP-check branch runs against a NAMED server
+          // (playwright.config.ts's own webServer-managed dynamic-port dev
+          // server, injected via Playwright's `baseURL` fixture) rather than an
+          // ambient port -- closing the gap contract-f6.yaml's A4 left open.
+          import { execFileSync } from 'node:child_process';
+          import path from 'node:path';
+
+          import { expect, test } from '@playwright/test';
+
+          const CHECKER = path.resolve(
+            __dirname,
+            '../contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs',
+          );
+          const EMPTY_PENDING = path.resolve(
+            __dirname,
+            '../.agent/memory/project/specs/menu-system-layout4/goldens/fixtures/pending-routes-empty-fixture.json',
+          );
+          const TICKET_RAIL_404_FIXTURE = path.resolve(
+            __dirname,
+            '../.agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-ticket-rail-404.mjs',
+          );
+          const TICKETS_SOFT_404_FIXTURE = path.resolve(
+            __dirname,
+            '../.agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-tickets-soft-404.mjs',
+          );
+
+          function runChecker(baseUrl: string, extraArgs: string[]) {
+            try {
+              const stdout = execFileSync(
+                'node',
+                [CHECKER, '--base-url', baseUrl, '--pending-routes', EMPTY_PENDING, ...extraArgs],
+                { encoding: 'utf8' },
+              );
+              return { code: 0, output: stdout };
+            } catch (err) {
+              const e = err as { status?: number; stdout?: string; stderr?: string };
+              return { code: e.status ?? 1, output: `${e.stdout ?? ''}${e.stderr ?? ''}` };
+            }
+          }
+
+          test.describe('property 1 HTTP gate (real webServer-managed dev server)', () => {
+            test('real NAV: all hrefs return 200', async ({ baseURL }) => {
+              expect(baseURL, 'playwright.config.ts must provide baseURL').toBeTruthy();
+              const { code, output } = runChecker(baseURL!, []);
+              expect(code, output).toBe(0);
+            });
+
+            test('negative fixture: a broken ticket-rail href fails the gate', async ({ baseURL }) => {
+              expect(baseURL, 'playwright.config.ts must provide baseURL').toBeTruthy();
+              const { code, output } = runChecker(baseURL!, ['--nav-file', TICKET_RAIL_404_FIXTURE]);
+              expect(code).toBe(1);
+              expect(output).toContain('/national-show/does-not-exist-fixture-only-404');
+              expect(output.toLowerCase()).not.toContain('soft-404');
+            });
+
+            test('negative fixture: a soft-404 (200 + noindex) ticket-rail href fails the gate', async ({
+              baseURL,
+            }) => {
+              expect(baseURL, 'playwright.config.ts must provide baseURL').toBeTruthy();
+              const { code, output } = runChecker(baseURL!, ['--nav-file', TICKETS_SOFT_404_FIXTURE]);
+              expect(code).toBe(1);
+              expect(output).toContain('/tickets/does-not-exist-fixture-only-soft404');
+              expect(output.toLowerCase()).toContain('soft-404');
+            });
+          });
+
+        PROPERTY closed by the first test: property 1 (all real NAV hrefs
+        return 200, and none of them soft-404 once A2b lands) is measured for
+        real, against a named server, with zero skips. Because this test runs
+        the FIXED checker (post-A2b) against the REAL NAV export, it is also
+        the POSITIVE CONTROL the goal section's "1b. AMENDMENT" note promises:
+        every one of the 25 real hrefs in goldens/f1-nav-hrefs.json is walked
+        through the same noindex check on every green run of this test, not
+        merely asserted clean once at contract-authoring time. That one-time
+        authoring-time sweep already ran live, for the record: all 25 real
+        hrefs, on BOTH localhost:3002 and https://beta.saoc.co.za, returned
+        200 with no noindex meta tag present (raw curl evidence, not
+        re-derived here). PROPERTY closed by the second test: the checker's
+        HTTP branch is not passable-by-construction for a HARD 404 -- a
+        genuinely broken href in the exact shape @dev's A2/A5 fix reads
+        (featureRail.destinations[].href) makes it fail and name the href,
+        proving A2's fix actually wires the destinations loop into a real
+        fetch(), not just into a comment. CORRECTED per A6e/nav-config-
+        ticket-rail-404.mjs's own corrected header comment: this fixture's
+        injected href is now /national-show/does-not-exist-fixture-only-404
+        (a genuine, router-level 404 with no dynamic segment), not the
+        original /tickets/... path, which Codex GPT-5.5 and @qa both
+        independently found actually soft-404s like every other
+        app/(marketing)/tickets/[slug] path -- so it never exercised the
+        `status !== 200` branch at all pre-fix. The added
+        `.not.toContain('soft-404')` assertion is the proof this test can
+        only pass via the status branch, per A2c's fix to the checker's own
+        reason-string labelling. PROPERTY closed by the third test
+        (A2b's amendment): the checker's HTTP branch is ALSO not
+        passable-by-construction for a SOFT 404 -- a destination href that
+        returns transport-level 200 but renders Next's not-found boundary
+        (confirmed live against this exact fixture path before it was
+        written) still makes the checker fail and name the href, with the
+        failure reason explicitly saying "soft-404" so it is never
+        indistinguishable in the log from a genuine hard-404 or an
+        unreachable server.
+      command: "npx playwright test e2e/nav-property1-http-gate.spec.ts -g \"all hrefs return 200\""
+      required: true
+
+    - id: A6b
+      description: >
+        Same spec, the negative branch (A6's second test) -- split into its
+        own assertion id so a failure here is unambiguous about which half
+        broke. CORRECTED (post-authoring, Codex GPT-5.5 + @qa both flagged
+        this independently): this test's underlying fixture and expected
+        string were wrong until A6e's fix lands -- see A6's amended
+        description and nav-config-ticket-rail-404.mjs's own corrected
+        header comment for the full defect analysis. Once A6e is applied,
+        this assertion proves the checker's genuine `status !== 200` branch,
+        provably distinct from the soft-404 branch A6d proves (the
+        `.not.toContain('soft-404')` check is what makes that distinction
+        provable rather than assumed).
+      command: "npx playwright test e2e/nav-property1-http-gate.spec.ts -g \"broken ticket-rail href fails the gate\""
+      required: true
+
+    - id: A6e
+      description: >
+        FIX SPEC (exact, no judgment call left to @dev), CORRECTING A6'S OWN
+        BUG: @dev already created e2e/nav-property1-http-gate.spec.ts per
+        A6's original spec (confirmed live today at lines 54-55). Codex
+        GPT-5.5 and @qa both independently found the fixture this test reads
+        (nav-config-ticket-rail-404.mjs) never actually 404s -- it soft-404s
+        (200 + noindex) exactly like every other path under
+        app/(marketing)/tickets/[slug]/page.tsx, so this test never actually
+        exercised the checker's `status !== 200` branch; it silently
+        exercised the same noindex branch A6d/nav-config-tickets-soft-404.mjs
+        already covers. The fixture itself is fixed directly (a golden,
+        written by @architect -- see nav-config-ticket-rail-404.mjs's own
+        corrected header comment and its href, now
+        /national-show/does-not-exist-fixture-only-404, a genuine
+        router-level 404 verified live on https://beta.saoc.co.za: HTTP 404).
+        This assertion is the matching fix to the TEST file that reads it.
+        Replace line 55 exactly:
+          expect(output).toContain('/tickets/does-not-exist-fixture-only-404');
+        with:
+          expect(output).toContain('/national-show/does-not-exist-fixture-only-404');
+          expect(output.toLowerCase()).not.toContain('soft-404');
+        The second line is the proof requested: it fails this test if the
+        checker's failure reason ever mislabels this genuine 404 as
+        "soft-404" (the exact bug A2c fixes on the checker side) -- so this
+        test can only pass by going through the checker's status branch,
+        never its noindex branch. Do not change anything else in this file --
+        A6/A6b/A6d's other two tests are unaffected.
+      command: >-
+        grep -q "not.toContain('soft-404')" e2e/nav-property1-http-gate.spec.ts
+        && grep -q "/national-show/does-not-exist-fixture-only-404" e2e/nav-property1-http-gate.spec.ts
+      required: true
+
+    - id: A6c
+      description: >
+        BONUS PROPERTY 1 PROOF, zero new code required: e2e/nav-links-200.spec.ts
+        already reads the CORRECT, F9-fixed e2e/utils/collect-nav-hrefs.ts (it
+        never had the ctaHref bug -- confirmed by direct read,
+        collect-nav-hrefs.ts:45-49 already walks destinations[]). Its ONLY
+        blocker was the stale pending-routes fixture (A1). With that fixture
+        now empty, this spec should run zero skips and all real hrefs green --
+        an independent, pre-existing, real HTTP check of property 1 that
+        required no checker fix at all.
+      command: "npx playwright test e2e/nav-links-200.spec.ts"
+      required: true
+
+    - id: A6d
+      description: >
+        Same spec, the soft-404 negative branch added by A2b's amendment
+        (A6's third test) -- split into its own assertion id, same
+        convention as A6b, so a failure here is unambiguous about which
+        failure mode broke: a regression in the noindex-detection code A2b
+        specifies, as distinct from A6b's hard-404 status-code branch.
+      command: "npx playwright test e2e/nav-property1-http-gate.spec.ts -g \"soft-404 .* ticket-rail href fails the gate\""
+      required: true
+
+    - id: A7
+      description: >
+        PROPERTY 2 re-confirmation (no fix needed): `/national-show` is
+        reachable from the header. check-nav-hrefs-golden.mjs's 25-href golden
+        already includes it and check-nav-hrefs-golden.mjs already passes
+        against the real NAV export (confirmed live during contract
+        authoring). Kept in this contract so property 2 is not silently
+        dropped from M3's own coverage.
+      command: >-
+        node contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs
+        && grep -q '"/national-show"' .agent/memory/project/specs/menu-system-layout4/goldens/f1-nav-hrefs.json
+      required: true
+
+    - id: A8
+      description: >
+        FIX SPEC, PROPERTY 3: contracts/checks/menu-system-layout4-shared/check-no-nos-palette-mixing.mjs's
+        header comment (lines 1-17) currently reads as if it guards SAOC chrome
+        globally; it only ever scans the files passed on argv (four component
+        files, in every real invocation). Replace the header comment's opening
+        paragraph with wording that states the true scan scope and cites the
+        ruled exception, e.g.:
+          // menu-system-layout4 -- shared guard used by F1/F2/F3/F4's contracts: SAOC and NOS
+          // palettes never mix WITHIN THE FILES THIS SCRIPT IS ACTUALLY POINTED AT (the four
+          // chrome component files: MegaMenu.tsx, MobileMenu.tsx, Header.tsx, nav-config.ts, in
+          // every real invocation -- see contract-f2/f4/f7/f8.yaml). This script does NOT scan
+          // app/globals.css, which legitimately carries NOS's --nos-* custom properties as F8's
+          // ruled, provenanced exception (see goldens/f8-tickets-rail.json's `scopeBoundary`
+          // field and nav-config.ts's own header comment) -- that is a deliberate scope
+          // boundary, not an oversight, and this comment previously overstated what the script
+          // proves.
+        SCOPE: comment-only change. The scan logic, KNOWN_NOS_HEX set, and
+        loadSaocPalette() must be byte-identical before and after -- A8b
+        proves this.
+      command: >-
+        grep -q "does not scan app/globals.css" contracts/checks/menu-system-layout4-shared/check-no-nos-palette-mixing.mjs
+        && grep -q "scopeBoundary" contracts/checks/menu-system-layout4-shared/check-no-nos-palette-mixing.mjs
+      required: true
+
+    - id: A8b
+      description: >
+        REGRESSION GUARD: the checker still passes against the real four
+        component files after the comment-only edit, proving the scan logic
+        itself was untouched.
+      command: >-
+        node contracts/checks/menu-system-layout4-shared/check-no-nos-palette-mixing.mjs components/chrome/MegaMenu.tsx components/chrome/MobileMenu.tsx components/chrome/Header.tsx components/chrome/nav-config.ts
+      required: true
+
+    - id: A9
+      description: >
+        NEW GOLDEN TEST, PROPERTY 4a (extends e2e/nav-keyboard-operable.spec.ts
+        -- exact test to add, inside the existing `test.describe('nav keyboard
+        operability', ...)` block, after the last existing test): every
+        focusable leaf in the open National Show panel shows a real focus
+        ring, not just the first. Reuses the file's own existing
+        `focusableHrefsInPanelOrder(NATIONAL_SHOW_ITEM)` helper (already
+        derives the full ordered list, not just [0]) and
+        `tabToAccessibleName` helper already in scope:
+
+          test('every focusable leaf in the open panel shows a visible focus indicator, not just the first', async ({
+            page,
+          }) => {
+            await page.setViewportSize({ width: 1280, height: 900 });
+            await page.goto('/');
+
+            const trigger = await tabToAccessibleName(page, TRIGGER_NAME);
+            await page.keyboard.press('Enter');
+            await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+            const panel = page.getByRole('menu', { name: TRIGGER_NAME });
+            const expectedHrefs = focusableHrefsInPanelOrder(NATIONAL_SHOW_ITEM);
+            expect(expectedHrefs.length).toBeGreaterThan(1);
+
+            // Iterate the DOM anchors themselves, by position, not by href
+            // lookup -- focusableHrefsInPanelOrder does not dedupe, and
+            // /national-show/tickets legitimately appears twice (theShow.links
+            // AND the featureRail primary CTA, the ruled F8 duplication). A
+            // href-keyed `.first()` lookup silently collapses the second
+            // occurrence onto the same DOM node as the first, so it is never
+            // independently focus-tested. Asserting the DOM anchor count
+            // equals expectedHrefs.length (duplicates included) means this
+            // test cannot pass by rendering fewer anchors than the config
+            // declares, either.
+            const panelLinks = panel.locator('a[href]');
+            await expect(
+              panelLinks,
+              `panel DOM anchor count must equal the NAV-derived expected count ` +
+                `(${expectedHrefs.length}, duplicates included) -- a mismatch means this test is not ` +
+                `walking every rendered anchor.`,
+            ).toHaveCount(expectedHrefs.length);
+
+            const linkCount = await panelLinks.count();
+            for (let i = 0; i < linkCount; i++) {
+              const link = panelLinks.nth(i);
+              const href = await link.getAttribute('href');
+              await link.evaluate((el) => (el as HTMLElement).focus());
+              await expect(link).toBeFocused();
+
+              const style = await link.evaluate((el) => {
+                const s = getComputedStyle(el);
+                return { outlineStyle: s.outlineStyle, outlineWidth: s.outlineWidth, boxShadow: s.boxShadow };
+              });
+              const hasVisibleFocusRing =
+                (style.outlineStyle !== 'none' && style.outlineWidth !== '0px') || style.boxShadow !== 'none';
+
+              expect(
+                hasVisibleFocusRing,
+                `panel anchor #${i} (href=${href}) has no real focus indicator via getComputedStyle: ${JSON.stringify(style)}`,
+              ).toBe(true);
+            }
+          });
+
+        This directly closes the audit's named gap: "nothing in this spec
+        proves [every leaf has a focus ring] -- a leaf-specific style override
+        elsewhere would go undetected." CORRECTED (post-authoring, Codex
+        GPT-5.5 + @qa both flagged this independently, citing the
+        already-implemented file at nav-keyboard-operable.spec.ts:219): the
+        original href-keyed `panel.locator(`a[href="${href}"]`).first()` loop
+        has a blind spot -- /national-show/tickets appears twice in NAV
+        (theShow.links's "Tickets" link and the featureRail primary CTA),
+        `focusableHrefsInPanelOrder` does not dedupe so the loop runs twice
+        for that href value, but `.first()` resolves to the SAME DOM anchor
+        both times, so the featureRail CTA anchor's own focus ring is never
+        independently tested. See A9b for the exact fix to the file @dev
+        already created.
+      command: "npx playwright test e2e/nav-keyboard-operable.spec.ts -g \"every focusable leaf in the open panel\""
+      required: true
+
+    - id: A9b
+      description: >
+        FIX SPEC (exact, no judgment call left to @dev), CORRECTING A9'S OWN
+        BUG: @dev already created this test per A9's original spec
+        (confirmed live today at nav-keyboard-operable.spec.ts:204-235, the
+        blind spot at line 219). Replace lines 214-234 exactly:
+          const panel = page.getByRole('menu', { name: TRIGGER_NAME });
+          const allHrefs = focusableHrefsInPanelOrder(NATIONAL_SHOW_ITEM);
+          expect(allHrefs.length).toBeGreaterThan(1);
+
+          for (const href of allHrefs) {
+            const link = panel.locator(`a[href="${href}"]`).first();
+            await link.evaluate((el) => (el as HTMLElement).focus());
+            await expect(link).toBeFocused();
+
+            const style = await link.evaluate((el) => {
+              const s = getComputedStyle(el);
+              return { outlineStyle: s.outlineStyle, outlineWidth: s.outlineWidth, boxShadow: s.boxShadow };
+            });
+            const hasVisibleFocusRing =
+              (style.outlineStyle !== 'none' && style.outlineWidth !== '0px') || style.boxShadow !== 'none';
+
+            expect(
+              hasVisibleFocusRing,
+              `leaf ${href} has no real focus indicator via getComputedStyle: ${JSON.stringify(style)}`,
+            ).toBe(true);
+          }
+        with the DOM-position-based loop shown in A9's amended description
+        above (the `expectedHrefs`/`panelLinks`/`toHaveCount`/`panelLinks.nth(i)`
+        block). The count assertion is the proof requested: it fails this
+        test if the panel ever renders fewer (or more) anchors than NAV
+        declares, including the /national-show/tickets duplicate, so the
+        test cannot pass vacuously or by collapsing duplicates. Do not change
+        the 'Tab past the last focusable leaf' test below it (a separate,
+        already-passing test the audit and this amendment did not flag) --
+        scope is this one test only.
+      command: >-
+        grep -q "toHaveCount(expectedHrefs.length)" e2e/nav-keyboard-operable.spec.ts
+        && grep -q "panelLinks.nth(i)" e2e/nav-keyboard-operable.spec.ts
+      required: true
+
+    - id: A10
+      description: >
+        NEW GOLDEN TEST, PROPERTY 4b (same file, same describe block): no
+        focus trap -- tabbing forward from the panel's LAST focusable leaf
+        must move focus OUTSIDE the panel, not wrap back inside it. Exact test
+        to add:
+
+          test('Tab past the last focusable leaf leaves the panel (no focus trap)', async ({ page }) => {
+            await page.setViewportSize({ width: 1280, height: 900 });
+            await page.goto('/');
+
+            const trigger = await tabToAccessibleName(page, TRIGGER_NAME);
+            await page.keyboard.press('Enter');
+            await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+            const panel = page.getByRole('menu', { name: TRIGGER_NAME });
+            const allHrefs = focusableHrefsInPanelOrder(NATIONAL_SHOW_ITEM);
+            const lastHref = allHrefs[allHrefs.length - 1];
+
+            const lastLink = panel.locator(`a[href="${lastHref}"]`).first();
+            await lastLink.evaluate((el) => (el as HTMLElement).focus());
+            await expect(lastLink).toBeFocused();
+
+            await page.keyboard.press('Tab');
+
+            const stillInPanel = panel.locator(':focus');
+            await expect(
+              stillInPanel,
+              'focus is still inside the open panel after tabbing past its last leaf -- this is a focus trap',
+            ).toHaveCount(0);
+          });
+
+        This directly closes the audit's named gap: "the spec never Tabs
+        forward from inside the open panel past its last item to confirm
+        focus is allowed to leave."
+      command: "npx playwright test e2e/nav-keyboard-operable.spec.ts -g \"no focus trap\""
+      required: true
+
+    - id: A11
+      description: >
+        NEW GOLDEN (written directly by @architect, not left to @dev):
+        e2e/no-horizontal-overflow-drawer-open.spec.ts -- PROPERTY 5, the gap
+        the audit named ("no-horizontal-overflow.spec.ts never opens the
+        mobile drawer before measuring ... a drawer-open-state overflow check
+        does not exist anywhere in this mission's test suite today"). Exact
+        file content @dev must create verbatim:
+
+          // e2e/no-horizontal-overflow-drawer-open.spec.ts
+          // Mission menu-system-layout4 M3/F11 -- extends
+          // no-horizontal-overflow.spec.ts's coverage to the state mission
+          // section 6 property 5 actually names: "390px drawer... no
+          // horizontal scroll" means no overflow WHILE THE DRAWER IS OPEN, not
+          // merely on the collapsed homepage. no-horizontal-overflow.spec.ts
+          // never opens the drawer before measuring (confirmed by reading its
+          // source) -- this file closes that gap.
+          import { expect, test } from '@playwright/test';
+
+          const VIEWPORT_HEIGHT = 900;
+
+          async function measureOverflow(page: import('@playwright/test').Page) {
+            return page.evaluate(() => ({
+              scrollWidth: document.documentElement.scrollWidth,
+              clientWidth: document.documentElement.clientWidth,
+            }));
+          }
+
+          test.describe('no horizontal overflow -- drawer open', () => {
+            test('no horizontal overflow at 390px with the mobile drawer open', async ({ page }) => {
+              await page.setViewportSize({ width: 390, height: VIEWPORT_HEIGHT });
+              await page.goto('/');
+              await page.getByRole('button', { name: 'Open menu' }).click();
+              await expect(page.getByRole('dialog')).toBeVisible();
+
+              const { scrollWidth, clientWidth } = await measureOverflow(page);
+              expect(
+                scrollWidth,
+                `drawer open at 390px: scrollWidth (${scrollWidth}) exceeds clientWidth (${clientWidth})`,
+              ).toBeLessThanOrEqual(clientWidth);
+            });
+
+            test('no horizontal overflow at 390px with the drawer open and National Show expanded', async ({
+              page,
+            }) => {
+              await page.setViewportSize({ width: 390, height: VIEWPORT_HEIGHT });
+              await page.goto('/');
+              await page.getByRole('button', { name: 'Open menu' }).click();
+              const dialog = page.getByRole('dialog');
+              await expect(dialog).toBeVisible();
+
+              const trigger = dialog.getByRole('button', { name: 'National Show', exact: true });
+              await expect(trigger).toBeVisible();
+              await trigger.click();
+              await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+              const { scrollWidth, clientWidth } = await measureOverflow(page);
+              expect(
+                scrollWidth,
+                `drawer + National Show expanded at 390px: scrollWidth (${scrollWidth}) exceeds clientWidth (${clientWidth})`,
+              ).toBeLessThanOrEqual(clientWidth);
+            });
+          });
+
+        Button/role names (`'Open menu'`, `role="dialog"`, `'National Show'`
+        trigger button) are taken directly from
+        e2e/mobile-nav-reaches-every-section.spec.ts's own
+        `openMobileMenuAndClick`/`openNationalShow` helpers (lines 171-188 of
+        that file) -- not invented, reused verbatim from the real, already-
+        passing spec.
+      command: "npx playwright test e2e/no-horizontal-overflow-drawer-open.spec.ts -g \"drawer open$\""
+      required: true
+
+    - id: A12
+      description: >
+        Same new spec, the drawer + National Show expanded case (A11's second
+        test) -- split into its own assertion id.
+      command: "npx playwright test e2e/no-horizontal-overflow-drawer-open.spec.ts -g \"National Show expanded\""
+      required: true
+
+    - id: A13
+      description: >
+        PROPERTY 6 re-confirmation (no fix needed), WRAPPED per the goal's
+        section 7a: every descriptor in nav-config.ts is a trimmed prefix of
+        its manifest row's `purpose` field. check-descriptor-provenance.mjs
+        already passes 16/16 against the real tree (confirmed live during
+        contract authoring), exiting 0 -- but this checker DOES have a real
+        SKIP branch (its own header comment: "exits 3 ... if neither [working
+        tree nor origin/nos-site] resolves"), unlike check-pending-routes-
+        still-pending.mjs (A1), which never skips by design. IMPORTANT NUANCE
+        (do not oversell this wrapper): execution/contract.py's own gate
+        logic treats a `skip` verdict on a `required: true` assertion as a
+        hard-override FAILURE regardless of the exit code that produced it
+        (contract.py:667-673, read directly before writing this assertion) --
+        so remapping 3 to 77 here does NOT change whether a genuine
+        manifest-resolution failure blocks this gate; it only changes HOW
+        that block is reported (SKIP, an honest "unmeasured" signal, instead
+        of a generic FAIL that looks identical to a real descriptor
+        mismatch). That reporting honesty is what property 7 actually asks
+        for ("nothing unmeasured reports as passing... never silently absent
+        from the count") -- it is a diagnostic-legibility fix, not a
+        gate-outcome fix, and this description says so rather than
+        overclaiming the latter.
+      command: >-
+        node contracts/checks/menu-system-layout4-f1/check-descriptor-provenance.mjs
+        ; rc=$?
+        ; if [ $rc -eq 3 ]; then echo "REMAPPED SKIP (exit 3 -> 77 for execution/contract.py's kind: shell convention)"; exit 77; else exit $rc; fi
+      required: true
+
+    - id: A14
+      description: >
+        PROPERTY 7a, THE SKIP-CODE REMAP ITSELF PROVEN: independent of A13's
+        live behaviour (which exits 0 today), this proves
+        check-nav-links-200-gated-by-exemptions.mjs's own SKIP branch (exit 3)
+        still fires correctly for a genuinely, deterministically pending
+        route -- using goldens/fixtures/one-pending-route-fixture.json, a
+        fictional route that can never resolve by accident (unlike the real
+        f1-pending-nos-routes.json, which THIS FEATURE just emptied). This
+        assertion's own command does NOT itself exit 77 -- doing so on a
+        `required: true` check would register as contract.py's hard-override
+        skip=fail path (contract.py:667-673) for the wrong reason (masking a
+        genuine PASS of "the SKIP branch works" as a gate FAILURE). Instead it
+        translates "the checker correctly reported SKIP" into a real exit 0,
+        and any other outcome (wrongly passing, wrongly hard-failing, or
+        erroring) into exit 1 -- a normal PASS/FAIL assertion of the
+        checker's own behaviour, not a demonstration that leaves this
+        contract's own gate outcome hostage to a SKIP verdict. THE REUSABLE
+        PATTERN for a checker invocation where a SKIP IS a legitimate,
+        non-blocking outcome (this contract has none such -- see A13's note)
+        would instead be marked `required: false` with the exit-3-to-77 remap
+        applied directly, so contract.py's skip-is-non-blocking path
+        (contract.py:674-676) actually engages.
+      command: >-
+        node contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs
+        --pending-routes .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/one-pending-route-fixture.json
+        ; rc=$?
+        ; if [ $rc -eq 3 ]; then exit 0; else echo "expected exit 3 (SKIP) for a genuinely pending route, got $rc"; exit 1; fi
+      required: true
+
+    - id: A15
+      description: >
+        PROPERTY 7b, BOOKKEEPING: the mission frontmatter
+        (.agent/memory/project/missions/2026-09-10-menu-system-layout4.md)
+        registers F6, F7, F8, F9, F10 as real features with status=done and
+        their real spec/contract paths (matching how F1-F5 are recorded),
+        placed under the milestone that actually covers their work -- F7 and
+        F8 (chrome-rendering fixes to MegaMenu.tsx/nav-config.ts) under M2
+        alongside F2/F3/F4; F6, F9, F10 (the property-1 gate-exemption
+        machinery and its own checker/fixture bugfixes) under M3 alongside the
+        new F11, since that is exactly M3's own stated remit ("Gate and PR").
+        M3's `features:` list becomes [F6, F9, F10, F11], with F6/F9/F10
+        status=done and F11 status=pending. `python3 execution/mission.py
+        validate .agent/memory/project/missions/2026-09-10-menu-system-layout4.md`
+        must exit 0 after the edit -- every feature id unique and
+        `^F[0-9]+$`-shaped, every feature referenced in exactly one milestone,
+        every feature carrying a `spec`/`contract` pair, matching
+        execution/mission.py's cmd_validate schema (read directly,
+        execution/mission.py:428-499, before writing this assertion).
+      command: >-
+        python3 execution/mission.py validate .agent/memory/project/missions/2026-09-10-menu-system-layout4.md
+      required: true
+
+    - id: A16
+      description: >
+        SCOPE GUARD: this feature touches zero production chrome code. No
+        change to nav-config.ts, MegaMenu.tsx, MobileMenu.tsx, or Header.tsx --
+        confirms every fix in this contract really is test-infrastructure, gate
+        bookkeeping, or documentation-accuracy, never a rendering change.
+      command: >-
+        git diff --quiet HEAD -- components/chrome/nav-config.ts components/chrome/MegaMenu.tsx components/chrome/MobileMenu.tsx components/chrome/Header.tsx
+      required: true
+
+    - id: A17
+      description: >
+        TRIAD -- Codex GPT-5.5 adversarial review of this feature's full diff
+        (the checker fix, the two new e2e specs, the keyboard-spec extension,
+        the docstring correction, and the mission-file bookkeeping edit),
+        scoped exactly as workflow.md's chain requires, run via
+        execution/codex_qa.sh (or the documented `codex exec` fallback) by the
+        orchestrator directly, per workflow.md's own note that this step "is
+        not a chain-dispatched subagent." Target is a prompt string, matching
+        the shape of nos-design-system/contract.yaml's TRIAD-01.
+      verify:
+        kind: codex_qa
+        target: >-
+          Review the git diff for mission menu-system-layout4 M3/F11, scoped to
+          contracts/checks/menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs,
+          contracts/checks/menu-system-layout4-shared/check-no-nos-palette-mixing.mjs,
+          e2e/nav-property1-http-gate.spec.ts, e2e/no-horizontal-overflow-drawer-open.spec.ts,
+          e2e/nav-keyboard-operable.spec.ts, and
+          .agent/memory/project/missions/2026-09-10-menu-system-layout4.md, for real bugs,
+          regressions, and correctness risks -- especially whether the new --nav-file escape
+          hatch could ever be reachable from a real (non-test) gate invocation, whether the
+          exit-3-to-77 remap wrapper could ever mask a real non-skip failure as a skip, and
+          whether the new soft-404 detection (matching the literal substring
+          `<meta name="robots" content="noindex"` in each fetched href's response body) could
+          ever false-positive against a real, legitimate SAOC page, or could be defeated by a
+          response body that never fully resolves (e.g. an infinite-streaming or truncated
+          response never containing the closing tag). Also specifically re-verify A2c's fix
+          (softNotFound gated on status === 200, so a genuine 404 that also happens to carry a
+          noindex meta tag is never mislabelled "soft-404" in the failure reason), A6e's fix
+          (nav-config-ticket-rail-404.mjs's injected href now under /national-show/, a route
+          with no dynamic segment, instead of the /tickets/[slug] path it originally used,
+          which soft-404s rather than hard-404s), and A9b's fix (DOM-position-based iteration
+          over every focusable panel anchor plus a toHaveCount assertion, replacing an
+          href-keyed `.first()` lookup that collapsed the /national-show/tickets duplicate
+          between theShow.links and the featureRail primary CTA onto one DOM node). Cite
+          file:line for every finding.
+      required: true
+
+    - id: A18
+      description: >
+        TRIAD -- deployed browser-run manifest covering the header flyout
+        (desktop, National Show mega open) and the 390px mobile drawer,
+        against https://beta.saoc.co.za (never a `*.hosted.app`/`*.run.app`
+        origin, per docs/verification-triad-gate.md's allowlist). PENDING: the
+        manifest at this path does not exist yet -- the deploying session
+        produces it after driving a real browser run against the deployed
+        origin. Until it exists this assertion honestly errors (exit 2,
+        wrapper usage error per execution/browser_deployed_check.sh's own
+        contract), which is correct, not something to paper over.
+      verify:
+        kind: browser_deployed_check
+        target: ".agent/memory/project/specs/menu-system-layout4/browser-deployed-manifest.json"
+      required: true
