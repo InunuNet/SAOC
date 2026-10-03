@@ -1,0 +1,7 @@
+{
+  "_comment": "Mission menu-system-layout4 M3/F11 -- deterministic single-entry pendingRoutes fixture, independent of the real f1-pending-nos-routes.json's live state (which F11 emptied). Exists solely to prove check-nav-links-200-gated-by-exemptions.mjs's SKIP branch (exit 3) still fires correctly, and that F11's contract-level exit-3-to-77 remap wrapper (see contract-f11.yaml A9) correctly turns that 3 into 77 for execution/contract.py's kind: shell skip convention. The route named here is intentionally fictional -- it must never resolve to a real page, so this fixture's SKIP trigger can never accidentally go stale the way f1-pending-nos-routes.json did.",
+  "capturedAt": "2026-09-28",
+  "pendingRoutes": [
+    "/national-show/this-route-does-not-exist-fixture-only"
+  ]
+}

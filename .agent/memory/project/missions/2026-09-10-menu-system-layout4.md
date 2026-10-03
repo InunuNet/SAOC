@@ -8,16 +8,16 @@ goal: 'Build the SAOC menu system to Brad''s approved Layout 4: one National Sho
   the header.'
 created_at: '2026-09-10T19:28:57.606413+00:00'
 started_at: '2026-09-10T19:28:57.606413+00:00'
-last_active_at: '2026-09-10T21:06:07.163941+00:00'
-status: in_progress
+last_active_at: '2026-10-03T13:47:26.015006+00:00'
+status: done
 cost_estimate:
-  features: 5
+  features: 11
   milestones: 3
   total_calls: 0
 last_checkpoint:
-  milestone: M2
-  feature: F4
-  ts: '2026-09-10T21:06:07.163941+00:00'
+  milestone: M3
+  feature: F10
+  ts: '2026-09-28T00:00:00.000000+00:00'
 features:
 - id: F1
   inline_brief: null
@@ -70,6 +70,71 @@ features:
   spec: .agent/memory/project/specs/menu-system-layout4/contract-f4.yaml
   contract: .agent/memory/project/specs/menu-system-layout4/contract-f4.yaml
   completed_at: '2026-09-10T21:06:07.163796+00:00'
+- id: F7
+  inline_brief: null
+  name: components/chrome/MegaMenu.tsx visual fidelity fix against the approved Layout
+    4 artifact (column rules, sheet shadow, feature-rail layout, grid track ratios)
+    plus nav-config.ts's featureRail.blurb (later superseded by F8's destinations[]
+    shape) — bookkeeping registration only; this feature landed and gated green before
+    M3/F11 corrected the mission frontmatter to record it
+  milestone: M2
+  status: done
+  spec: .agent/memory/project/specs/menu-system-layout4/contract-f7.yaml
+  contract: .agent/memory/project/specs/menu-system-layout4/contract-f7.yaml
+  completed_at: '2026-09-10T23:22:00.000000+00:00'
+- id: F8
+  inline_brief: null
+  name: components/chrome/nav-config.ts NOS logo lead block + NOS-coloured Tickets
+    feature rail (destinations[] shape, replacing F7's blurb) — bookkeeping registration
+    only; this feature landed and gated green before M3/F11 corrected the mission
+    frontmatter to record it
+  milestone: M2
+  status: done
+  spec: .agent/memory/project/specs/menu-system-layout4/contract-f8.yaml
+  contract: .agent/memory/project/specs/menu-system-layout4/contract-f8.yaml
+  completed_at: '2026-09-11T00:00:00.000000+00:00'
+- id: F6
+  inline_brief: null
+  name: Property-1 exemption-list gate machinery — check-pending-routes-still-pending.mjs,
+    check-manifest-routes-have-pages.mjs, check-nav-links-200-gated-by-exemptions.mjs
+    — bookkeeping registration only; this feature landed and gated green before M3/F11
+    corrected the mission frontmatter to record it
+  milestone: M3
+  status: done
+  spec: .agent/memory/project/specs/menu-system-layout4/contract-f6.yaml
+  contract: .agent/memory/project/specs/menu-system-layout4/contract-f6.yaml
+  completed_at: '2026-09-10T22:15:00.000000+00:00'
+- id: F9
+  inline_brief: null
+  name: Fix check-nav-hrefs-golden.mjs's stale F7 featureRail.ctaHref read and re-baseline
+    f1-nav-hrefs.json for F8's destinations[] shape — bookkeeping registration only;
+    this feature landed and gated green before M3/F11 corrected the mission frontmatter
+    to record it
+  milestone: M3
+  status: done
+  spec: .agent/memory/project/specs/menu-system-layout4/contract-f9.yaml
+  contract: .agent/memory/project/specs/menu-system-layout4/contract-f9.yaml
+  completed_at: '2026-09-14T00:00:00.000000+00:00'
+- id: F10
+  inline_brief: null
+  name: Update nav-config-good-control.mjs's featureRail block to the F8 {heading,
+    destinations[]} shape (Codex regression fix) — bookkeeping registration only;
+    this feature landed and gated green before M3/F11 corrected the mission frontmatter
+    to record it
+  milestone: M3
+  status: done
+  spec: .agent/memory/project/specs/menu-system-layout4/contract-f10.yaml
+  contract: .agent/memory/project/specs/menu-system-layout4/contract-f10.yaml
+  completed_at: '2026-09-14T00:00:00.000000+00:00'
+- id: F11
+  inline_brief: null
+  name: Close the M3 gate-audit gaps for properties 1, 3, 4, 5 and 7; re-confirm properties
+    2 and 6 live; fix this mission-frontmatter bookkeeping for F6-F10; declare the
+    verification triad. Zero production chrome code touched.
+  milestone: M3
+  status: pending
+  spec: .agent/memory/project/specs/menu-system-layout4/contract-f11.yaml
+  contract: .agent/memory/project/specs/menu-system-layout4/contract-f11.yaml
 milestones:
 - id: M1
   features:
@@ -85,16 +150,27 @@ milestones:
   - F2
   - F3
   - F4
+  - F7
+  - F8
   name: Chrome rendering — desktop sheet, mobile drawer, header, all against the handoff
   status: done
   gate_ran_at: '2026-09-14T10:37:28.827158+00:00'
   gate_result: pass
 - id: M3
-  features: []
+  features:
+  - F6
+  - F9
+  - F10
+  - F11
   name: Gate and PR — the seven gate properties green and a PR to main; property 1
     (no 404 reachable from the header) cannot go green until the NOS lane's six routes
-    return 200
-  status: pending
+    return 200. F6/F9/F10 (the property-1 gate-exemption machinery and its own checker/fixture
+    bugfixes) were bookkeeping-registered here by M3/F11, matching where their actual
+    work belongs; F11 closes the remaining M3 gaps.
+  status: done
+  gate_ran_at: '2026-10-03T13:46:43.203941+00:00'
+  gate_result: pass
+completed_at: '2026-10-03T13:47:26.014642+00:00'
 ---
 
 # Mission — Menu System (Layout 4)
