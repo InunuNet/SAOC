@@ -77,6 +77,15 @@ Do not scope work from an entry that contradicts it.
 - [ ] **[P3] Pre-existing `next/image` warning on `components/chrome/Header.tsx`**
   (… → [details](data/p3-pre-existing-next-image-warning-on-co.md)
 
+- [ ] **[P2] Pre-existing triad baseline hash drift**: `verify_f2_baseline_hash_consistency.py`
+  exits 1 on `contracts/contract-policy-pages.yaml` → [details](data/p2-triad-baseline-hash-drift-contract-po.md)
+
+- [ ] **[P3, design question for Brad] Mobile drawer Tickets rail is SAOC dark green, not
+  NOS royal-purple like desktop** → [details](data/p3-mobile-drawer-tickets-rail-colour-que.md)
+
+- [ ] **[P3] A18 mobile check ran at 606px (Chrome floor), not real 390px**
+  → [details](data/p3-a18-mobile-check-ran-at-606px-not-390.md)
+
 - [ ] **[P1] Harness friction: `execution/gate_sweep.py --sandbox-dir` is jointly unsa… → [details](data/p1-harness-friction-execution-gate-sweep.md)
 
 - [ ] **[P2, needs Brad] Auto-memory entry `project_show_dates_placeholder` may be par… → [details](data/p2-needs-brad-auto-memory-entry-project.md)
@@ -186,9 +195,6 @@ Do not scope work from an entry that contradicts it.
 
 ## Blocked on Brad (human action, not dispatchable)
 
-- [ ] **[P1] Ozow — mission `ozow-payment-provider` DONE (F1-F4, all gated, M4 gate pa… → [details](data/p1-ozow-mission-ozow-payment-provider-do.md)
-- [ ] **[P1] Go-live: live payment credentials.** In order: obtain live Merchant ID/Ke… → [details](data/p1-go-live-live-payment-credentials-in-o.md)
-- [ ] **[P1] DNS cutover.** Nameservers still point at the old cPanel host → [details](data/p1-dns-cutover-nameservers-still-point-a.md)
 
 ---
 
@@ -839,7 +845,6 @@ flat-over-nested-submenu pattern.
   or pinning in `.agent/no-update`; `.agent/version` stays at 3.8.1 until one happens. See
   `learned.md` 2026-09-28 entry for full detail.
 
-
 ---
 
 ## Hosting — decision pending Brad
@@ -1040,8 +1045,6 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
 > Truncated 104 items at trim time (2026-09-04). Restore from git history if needed.
 > Truncated 3 items at trim time (2026-09-06). Restore from git history if needed.
 
-
-
   | case | exit |
   |---|---|
   | `FAIL` verdict | **1** |
@@ -1066,8 +1069,6 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
   two-directional test as an assertion — filing this upstream would have wasted a maintainer's
   time and risked a "fix" to a script that was already right.
 
-
-
   Both had working-looking implementations. Both had golden text describing a stronger property
   than the code delivered. **A limitation that reads as stronger than it is does more damage than
   no limitation at all, because it stops the next person looking** — which is precisely why
@@ -1086,8 +1087,6 @@ _None currently. `execution/gh_closure_scan.py` does not run to completion (see 
      proves it fires — and commit it somewhere tracked: `.tmp/` is gitignored, so a self-test
      reading a sandbox fixture passes vacuously on a fresh checkout, which is exactly where it
      matters.
-
-
 
 ## NOS M1 — open on resume (paused 2026-09-10 by operator)
 - A39 source-verification fix is COMPLETE (content-linkage check in `lib/data/show-pages.ts`); gate not re-run.
@@ -1849,17 +1848,11 @@ until #1441 lands.
    reference, unrelated to F1's route relocation (the recovery flow was never implemented).
 > Truncated 2 items at trim time (2026-09-14). Restore from git history if needed.
 
-## Menu System Layout 4 — F8 session wrap-up (2026-09-19)
+## Menu System Layout 4 — minor residue after mission close (2026-10-03)
 
-F8 is NOT done. F8b (NOS-coloured tickets rail) is complete — assertions A4-A9 pass. F8a
-(NOS logo lead block) is blocked: A1, A2, A3, A11 fail because there is no logo to assert
-against, and A10 (informational asset precondition) fails because the file is absent. All
-five trace to one cause: `public/images/nos-2027-logo-full-colour-vertical.png` does not
-exist. A12 (built this session) passes vacuously by design. Phase 4 gate: 7 pass, 5 fail —
-do not record this feature as done or green. Blocked purely on the missing asset; see the
-`needs-human.md` entry for the exact file Brad needs to supply. Full detail:
-`docs/menu-system-layout4.md`, `.agent/memory/scratch/dev-result-menu-system-layout4-f8-a12.md`,
-`.agent/memory/scratch/qa-report-menu-system-layout4-f8-a12.md`.
+Mission `menu-system-layout4` is DONE (M3 gate passed 2026-10-03, all milestones/features
+F1-F11 complete, including F8's NOS logo lead block — the asset blocking it was supplied and
+the feature shipped in `db2d268f`). Two small items from the build survive it:
 
 1. **A12 literal-coupling follow-up.** A12's command line passes `400` and `200` as
    independent literals with no code-level tie to the golden's `render.widthPx`. Change the
@@ -1883,15 +1876,12 @@ do not record this feature as done or green. Blocked purely on the missing asset
    was not missing or wrong, only a few hours past the 24h window; the commit-blocking hook
    gave no stderr indicating this, costing a diagnostic round to distinguish "stale" from
    "missing" before the fix (write fresh content, re-run wrap-up) was obvious.
-3. **CLAUDE.md entry could not be added.** @docs was denied by the autonomy floor (CLAUDE.md
-   is a protected path) and correctly did not route around it. It drafted a one-paragraph
-   entry for insertion after the "Verification triad gate" section (CLAUDE.md:170-172), sized
-   to match its neighbours. Needs someone with the privilege to add it, or a decision that
-   `docs/menu-system-layout4.md` is sufficient on its own.
-4. **Two contracts fail to parse** (pre-existing, flagged at boot, unrelated to this mission):
-   `.agent/memory/project/specs/gate-timeout-fix/contract-f1.yaml` ("mapping values are not
-   allowed here") and `.agent/memory/project/specs/mission-slug-collision-fix/contract-f1.yaml`
-   ("expected a single document in the stream"). Verified directly this session.
+
+(The CLAUDE.md-entry and two-unparseable-contracts items formerly listed here were resolved
+or are tracked elsewhere: `docs/menu-system-layout4.md` stands as the feature's documentation,
+and the two unparseable contracts are the same pair already tracked under "[P1] TWO
+unparseable contracts" above.)
 > Truncated 1 items at trim time (2026-09-19). Restore from git history if needed.
 > Truncated 5 items at trim time (2026-09-21). Restore from git history if needed.
 > Truncated 12 items at trim time (2026-10-03). Restore from git history if needed.
+> Truncated 3 items at trim time (2026-10-03). Restore from git history if needed.

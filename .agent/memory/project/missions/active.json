@@ -1,17 +1,5 @@
 {
-  "mission": ".agent/memory/project/missions/2026-09-10-menu-system-layout4.md",
-  "checkpoint": {
-    "milestone": "M2",
-    "feature": "F4",
-    "ts": "2026-09-10T21:06:07.163941+00:00"
-  },
-  "activated_at": "2026-09-10T21:06:07.164002+00:00",
-  "autonomy": {
-    "level": "autonomous",
-    "normalized": "autonomous",
-    "permission_tier": "high",
-    "updated_at": "2026-09-14T10:14:57.874230+00:00",
-    "decided_at": "2026-09-14T10:14:57.874230+00:00",
-    "decided_by": "operator"
-  }
+  "mission": null,
+  "checkpoint": null,
+  "note": "mission complete"
 }

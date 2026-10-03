@@ -906,3 +906,122 @@ injected breakage. Codex's verdict on this spec file stands at **FAIL, with
 one finding (the A20 floor) declined on record** — not a clean pass being
 reported as one; a future reader re-running Codex and seeing FAIL should find
 that result already documented above, not a discrepancy to chase down.
+
+## F11 — M3 gate hardening: closing the seven-property audit gaps (2026-09-28)
+
+@analyst audited the mission's own seven gate properties (section 6 above)
+against what the test suite actually measured, now that all six NOS routes
+had landed on `main` (`736db97d`). Five of the seven had a real, named gap;
+two already passed for real. F11 closes the five, re-confirms the two live,
+corrects the mission-frontmatter bookkeeping (F6–F10 had landed as real,
+committed contracts but the mission file never advanced past M2/F4), and
+declares the verification triad. It touches zero production chrome code —
+`components/chrome/MegaMenu.tsx`, `MobileMenu.tsx`, `Header.tsx`, and
+`nav-config.ts` are unchanged (contract-f11.yaml's A16 enforces this with
+`git diff --quiet` on those four paths). Every fix here is test
+infrastructure, gate bookkeeping, or documentation accuracy.
+
+| Property | What the gate proves now | Checker / spec |
+| --- | --- | --- |
+| 1. No 404 reachable from the header | `f1-pending-nos-routes.json` is empty, so the property is measured for real rather than reporting UNMEASURED; the checker's stale F7 field read is fixed and it now catches the tickets-rail soft-404 case too (see below) | `check-nav-links-200-gated-by-exemptions.mjs`, `check-manifest-routes-have-pages.mjs`, `check-pending-routes-still-pending.mjs` |
+| 2. `/national-show` reachable from the header | Already passed; re-confirmed live rather than silently dropped from this contract's coverage | `check-nav-hrefs-golden.mjs`, A7 |
+| 3. No unsourced visual value | Docstring narrowed to state the checker's real scan scope (the four chrome component files only) and cites the ruled F8 exception for `app/globals.css`'s `--nos-*` custom properties, rather than implying it scans everything | `check-no-nos-palette-mixing.mjs`, A8/A8b (no scan-scope or behaviour change) |
+| 4. Keyboard | Extended to check a visible focus ring on every focusable leaf in DOM order (not just the first), and to assert the panel is not a focus trap | `e2e/nav-keyboard-operable.spec.ts`, A9/A9b/A10 |
+| 5. 390px drawer, no horizontal scroll | New measurement taken with the mobile drawer actually open (and National Show expanded), not just on the collapsed homepage | `e2e/no-horizontal-overflow-drawer-open.spec.ts`, A11/A12 |
+| 6. Descriptors are sourced | Already passed 16/16; re-confirmed live | `check-descriptor-provenance.mjs`, A13 |
+| 7. Nothing unmeasured reports as passing | Two sub-fixes: the skip-exit-code mismatch between this mission's checkers (exit 3) and `execution/contract.py`'s `kind: shell` convention (exit 77) is worked around per-assertion, not patched in the harness; the mission frontmatter now records F6–F10 as landed | A14 (remap), A15 (frontmatter), `.agent/memory/project/missions/2026-09-10-menu-system-layout4.md` |
+
+### The property-1 checker was blind to a real soft-404
+
+`app/(marketing)/tickets/[slug]/page.tsx` calls `notFound()` (line 91) for an
+unknown slug, but by then Next 16's streaming SSR has already committed
+HTTP 200 to the wire — `loading.tsx` streams before `notFound()` resolves
+deep in the tree, so the status code can never retroactively become 404.
+Confirmed live, both locally and on `https://beta.saoc.co.za`, against an
+unknown `/tickets/` slug: HTTP 200, no `<h1>`, and the response body carries
+`<meta name="robots" content="noindex"/>`. That meta tag is a
+Next-16-guaranteed signal, not an SAOC convention — `notFound()`'s own doc
+comment states it inserts exactly this tag, and
+`HTTPAccessFallbackErrorBoundary.render()` wraps the not-found render in it
+unconditionally, regardless of what status code already shipped. A grep of
+`app/`, `lib/`, and `components/` for `noindex` returns zero matches, so its
+presence is a reliable framework-level signal, never an SAOC-authored false
+positive; a sweep of all 25 real NAV hrefs (both localhost and
+beta.saoc.co.za) found it on none of them.
+
+The not-found page's own copy ("This orchid has left the bench") was ruled
+out as the signal instead — it's embedded in every page's RSC flight
+payload, not only actual 404s, confirmed by grepping real, non-404 page
+responses for it.
+
+`check-nav-links-200-gated-by-exemptions.mjs`'s HTTP loop now checks
+`status === 200 && !softNotFound`, where `softNotFound` is only ever
+evaluated when the status genuinely is 200 (so a real hard 404's own
+`noindex` tag, if it happens to carry one, never gets mislabelled
+`soft-404`). Two negative fixtures exercise the two branches independently:
+`goldens/fixtures/f1-negative-fixtures/nav-config-ticket-rail-404.mjs`
+points at `/national-show/does-not-exist-fixture-only-404` (a genuine
+router-level 404 — `/national-show` has no dynamic segment under it) to
+prove the plain status-code branch, and
+`nav-config-tickets-soft-404.mjs` points at an unknown `/tickets/` slug to
+prove the soft-404 branch. @qa mutation-tested the status branch: a
+sandboxed copy of the checker with the status term dropped from `ok`
+(`ok = !softNotFound` instead of `ok = status === 200 && !softNotFound`)
+wrongly passes the hard-404 fixture, while the real checker correctly fails
+it — confirming the fixture and assertion genuinely depend on the status
+check, not merely coincide with it.
+
+This is a gate-detection fix only. The app-side soft-404 itself (`loading.tsx`
+streaming ahead of `notFound()` resolving) is a separate, already-tracked P2
+backlog item in a route this mission does not own, and is not fixed here.
+
+### Every-leaf focus test now iterates DOM position, not href string
+
+`e2e/nav-keyboard-operable.spec.ts` previously resolved each expected href
+via `panel.locator('a[href="${href}"]').first()`. `/national-show/tickets`
+appears twice in the rendered panel — once as the "The Show" group's own
+Tickets leaf, once as the F8 feature rail's primary CTA (the ruled
+duplication documented in the F8 section above) — so the href-keyed lookup
+resolved both loop iterations to the same DOM node, and the feature rail's
+own CTA anchor was never independently focus-tested. The test now locates
+every `a[href]` inside the panel, asserts the count matches the expected
+href list (duplicates included), and walks the panel's links by DOM
+position instead, so both occurrences of the duplicated href get their own
+`.focus()` + `getComputedStyle` check.
+
+### The `--nav-file` flag is test-only
+
+`check-nav-links-200-gated-by-exemptions.mjs` takes an optional `--nav-file
+<path>` argument, mirroring `check-manifest-routes-have-pages.mjs`'s own
+`--manifest-file` escape hatch. It exists so a negative fixture can swap in
+a broken nav tree and prove the checker's HTTP branch actually fails on it —
+never for a real gate run.
+
+### Two open items, neither resolved by this feature
+
+- **Skip-exit-code mismatch.** This mission's shared checkers (built against
+  `contracts/checks/_shared/run_contract_suite.mjs`'s convention) exit 3 to
+  signal skip; `execution/contract.py`'s `kind: shell` assertions treat exit
+  77 as the reserved skip code. `execution/` is harness-owned
+  (`.agent/update-manifest.yaml`), so F11 does not patch it — instead, every
+  new assertion that can hit the 3-exit-code skip path remaps it to 77 in
+  the assertion's own shell command. The systemic fix (standardising the
+  exit code, or teaching `contract.py` to recognise 3 as well) is recorded
+  in `.agent/memory/project/backlog.md` as an Athanor upstream item.
+- **Verification-triad preflight.** `execution/contract.py`'s
+  `_run_triad_coverage_preflight()` runs unconditionally before any
+  assertion phase and hard-blocks a contract missing a declared triad kind
+  unless it's grandfathered in `execution/triad-baseline-exempt.txt`.
+  `contract-f11.yaml` is not in that file. It declares `codex_qa` (A17,
+  passed on the final diff) and `browser_deployed_check` (A18, against
+  `https://beta.saoc.co.za`, pending until deploy), but deliberately does
+  not declare `gws_inbox_check` — this feature sends no email and touches
+  no email-adjacent code, the same precedent already on record for the
+  `nos-design-system` mission's M7/M8 contracts. Until a baseline entry is
+  added (harness-owned, out of this feature's scope) or Brad rules on the
+  exemption, an actual `execution/mission.py gate --milestone M3` run would
+  hard-block on this contract before evaluating any of its assertions. This
+  is recorded as an open, currently-live gate blocker, not resolved here.
+
+Full detail and every assertion:
+`.agent/memory/project/specs/menu-system-layout4/contract-f11.yaml`.

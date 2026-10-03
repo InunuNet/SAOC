@@ -59,3 +59,15 @@ contracts/m2-next16-upgrade.yaml
 # re-arms enforcement until its sha256 pin is refreshed.
 .agent/memory/project/specs/nos-design-system/contract-m7.yaml
 .agent/memory/project/specs/nos-design-system/contract-m8.yaml
+# menu-system-layout4 contract-f11.yaml: ruling = Brad (operator), 2026-10-03,
+# "continue without me" accepting the orchestrator's recommendation ("exempt
+# gws_inbox_check alone for F11, same ruling as nos-design-system; codex_qa and
+# browser_deployed_check remain mandatory"). codex_qa and browser_deployed_check
+# are declared for real in the contract (A17/A18); only gws_inbox_check is
+# grandfathered here. Reason: no email surface -- this feature is navigation
+# menu test-infrastructure and gate bookkeeping only, it sends no email.
+# Baselined 2026-10-03, so the linter's missing-set at pin time was
+# {gws_inbox_check} alone (confirmed live via execution/verify_triad_coverage.py
+# against this file). Any further edit to the contract re-arms enforcement
+# until its sha256 pin is refreshed.
+.agent/memory/project/specs/menu-system-layout4/contract-f11.yaml
