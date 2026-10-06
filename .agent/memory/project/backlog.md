@@ -159,6 +159,24 @@ Do not scope work from an entry that contradicts it.
 
 - [ ] **[P2] Register Society — society profile intake + registration flow** (added 20… → [details](data/p2-register-society-society-profile-inta.md)
 
+- [ ] **[P3] `docs/f5-day-selection-attendees.md:29`'s UTC+2 explanation is factually wrong**
+  (pre-existing; found by Codex GPT-5.5 during `show-dates-23-26-sept-2027`, 2026-10-06).
+
+- [ ] **[P3] `docs/b4-national-show.md:57` describes a removed `TARGET_MS` literal**
+  (pre-existing; found during `show-dates-23-26-sept-2027`, 2026-10-06).
+
+- [ ] **[P2, needs Brad] `design/design_handoff_saoc/README.md:141,200` still say the show
+  countdown target is `2027-09-16T09:00+02:00`** — his active design-prototype lane (same
+  standing exception as the `data.js`/`pages-show-events-contact.jsx` entries under Standing
+  rules above); he updates it or authorises the edit. Found during `show-dates-23-26-sept-2027`,
+  2026-10-06.
+
+- [ ] **[P3] A26-style single-fetch `browser_deployed_check` assertions can flake** — add a
+  retry or multi-sample. During `show-dates-23-26-sept-2027` M1/F2 (2026-10-06), A26 failed once
+  then passed on an immediate re-run with no code change in between; likely a stale ISR render
+  from App Hosting's per-instance cache rather than a real defect, but a single fetch can't tell
+  the difference.
+
 ---
 
 - [ ] **[P3] Leftover "previous venue's values" comment at `scripts/seed-show-visitor-… → [details](data/p3-leftover-previous-venue-s-values-comm.md)

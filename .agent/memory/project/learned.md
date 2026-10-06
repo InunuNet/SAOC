@@ -4585,3 +4585,24 @@ deployed-site viewport check instead.
   redact the multi-line `FIREBASE_ADMIN_PRIVATE_KEY`. Most of the PEM was printed into the agent
   transcript. Never `sed`/`grep`/`cat` `.env.local` except for `grep -E '^EXACT_KEY='`-style
   single-line extraction. The key is pending rotation; it needs Brad to run `gcloud auth login`.
+
+## show-dates-23-26-sept-2027 M1 — four lessons (2026-10-06)
+
+- A uniform date shift (+7 days, Thu 16–Sun 19 → Thu 23–Sun 26 Sept 2027) turns a 163-hit
+  inventory into one auditable rule instead of 163 ad-hoc edits. Derived values (the 90-day
+  early-bird cutoff, countdown targets) must be proven by running the derive function against
+  the new date, never by hand arithmetic — hand math is exactly the kind of silent drift this
+  mission existed to fix.
+- A blanket whole-file residue grep for the old date collides with historical records that are
+  correctly allowed to still say "16–19 Sept" (past-tense narrative, changelog entries). The dev
+  rewrote a historical `_comment` clause just to satisfy one such grep. Scope residue checks to
+  structural/current-fact fields, and use narrow content-matched excludes for historical
+  sentences rather than widening the grep's blast radius.
+- A31's `--include=*.ts` was unquoted and passed vacuously under zsh (glob-expanded by the shell
+  before `grep` saw it, so no match ever executed and the assertion was unfalsifiable). The gate
+  runs bash, not zsh, but author it quoted regardless — `--include='*.ts'` — so it behaves the
+  same under either.
+- A26 (`browser_deployed_check`) failed once then passed on an immediate re-run with no code
+  change in between — likely a stale ISR render from App Hosting's per-instance cache, not a
+  real defect. A single-fetch deployed check can flake for this reason; see backlog for the
+  retry/multi-sample follow-up.
