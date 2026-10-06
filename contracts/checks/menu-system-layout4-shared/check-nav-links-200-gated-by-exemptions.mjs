@@ -36,8 +36,9 @@
 // never 0, no matter how many of the non-exempt hrefs return 200. It can only
 // exit 0 once the list is EMPTY and a real HTTP check of all 17 NAV hrefs
 // (collected the same way e2e/nav-rendered-reachability.spec.ts does --
-// including lead.leadHref, lead.theShow's links, and featureRail.ctaHref, not
-// just the narrower set e2e/nav-links-200.spec.ts's own collectHrefs reads)
+// including lead.leadHref, lead.theShow's links, and each of
+// featureRail.destinations[].href, not just the narrower set
+// e2e/nav-links-200.spec.ts's own collectHrefs reads)
 // confirms every one is 200.
 //
 // This is a STANDALONE script, not an edit to e2e/nav-links-200.spec.ts or
@@ -53,10 +54,18 @@
 //   check-pending-routes-still-pending.mjs). Never required while the list is
 //   non-empty, since the checker skips before it would ever be used.
 //
+//   node check-nav-links-200-gated-by-exemptions.mjs --nav-file <path> ...
+//   TEST-ONLY escape hatch: imports NAV from a local module on disk instead of
+//   components/chrome/nav-config.ts -- same documented TEST-ONLY convention as
+//   check-manifest-routes-have-pages.mjs's own --manifest-file. Never use
+//   --nav-file for a real gate run -- it exists for
+//   goldens/fixtures/f1-negative-fixtures/ only.
+//
 // Exit 0 = list empty AND all 17 hrefs return 200 (property 1 genuinely
-// satisfied). Exit 1 = list empty but at least one href did not return 200
-// (named). Exit 3 = list non-empty -- property 1 UNMEASURED, not evaluated,
-// never a pass. Exit 2 = usage/input error.
+// satisfied). Exit 1 = list empty but at least one href did not return 200, OR
+// returned 200 with a soft-404 signal (noindex meta tag) -- both named. Exit 3
+// = list non-empty -- property 1 UNMEASURED, not evaluated, never a pass.
+// Exit 2 = usage/input error.
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -77,6 +86,7 @@ function usageError(message) {
 function parseArgs(argv) {
   let baseUrl = null;
   let pendingRoutesPath = DEFAULT_PENDING_ROUTES;
+  let navFile = null;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--base-url') {
@@ -85,11 +95,14 @@ function parseArgs(argv) {
     } else if (arg === '--pending-routes') {
       pendingRoutesPath = path.resolve(process.cwd(), argv[++i] ?? '');
       if (!pendingRoutesPath) usageError('--pending-routes requires a value');
+    } else if (arg === '--nav-file') {
+      navFile = argv[++i];
+      if (!navFile) usageError('--nav-file requires a value');
     } else {
       usageError(`unrecognised argument: ${arg}`);
     }
   }
-  return { baseUrl, pendingRoutesPath };
+  return { baseUrl, pendingRoutesPath, navFile };
 }
 
 function assertLocalOrigin(url) {
@@ -126,8 +139,8 @@ function loadPendingRoutes(pendingRoutesPath) {
 // Same full-collection logic as e2e/nav-rendered-reachability.spec.ts's
 // collectAllNavHrefs -- deliberately wider than nav-links-200.spec.ts's own
 // collectHrefs, which misses lead.leadHref, lead.theShow's links, and
-// featureRail.ctaHref. Property 1 covers all 17 manifest routes, not just the
-// subset one existing spec happens to enumerate.
+// each of featureRail.destinations[].href. Property 1 covers all 17 manifest
+// routes, not just the subset one existing spec happens to enumerate.
 function collectAllNavHrefs(items) {
   const hrefs = [];
   for (const item of items) {
@@ -144,13 +157,15 @@ function collectAllNavHrefs(items) {
       if (column.headingHref) hrefs.push(column.headingHref);
       for (const link of column.links) hrefs.push(link.href);
     }
-    if (item.featureRail) hrefs.push(item.featureRail.ctaHref);
+    if (item.featureRail) {
+      for (const dest of item.featureRail.destinations) hrefs.push(dest.href);
+    }
   }
   return [...new Set(hrefs)];
 }
 
 async function main() {
-  const { baseUrl, pendingRoutesPath } = parseArgs(process.argv.slice(2));
+  const { baseUrl, pendingRoutesPath, navFile } = parseArgs(process.argv.slice(2));
   const pendingRoutes = loadPendingRoutes(pendingRoutesPath);
 
   console.log(
@@ -165,8 +180,8 @@ async function main() {
         `${pendingRoutes.join(', ')}. This must render SKIP, never PASS -- exiting ` +
         `${SHELL_SKIP_EXIT_CODE} (run_contract_suite.mjs's SHELL_SKIP_EXIT_CODE), not 0. A ` +
         `Playwright run of e2e/nav-links-200.spec.ts that skips these same routes and passes ` +
-        'the rest is NOT sufficient evidence property 1 holds -- it has measured ' +
-        `${17 - pendingRoutes.length} of 17 hrefs, not all 17.`,
+        'the rest is NOT sufficient evidence property 1 holds -- it has measured only the ' +
+        'non-exempt subset of NAV hrefs, not all of them.',
     );
     process.exit(SHELL_SKIP_EXIT_CODE);
   }
@@ -180,22 +195,30 @@ async function main() {
   }
   assertLocalOrigin(baseUrl);
 
-  const { NAV } = await import(path.join(REPO_ROOT, 'components/chrome/nav-config.ts'));
+  const navModulePath = navFile
+    ? path.resolve(process.cwd(), navFile)
+    : path.join(REPO_ROOT, 'components/chrome/nav-config.ts');
+  const { NAV } = await import(navModulePath);
   const hrefs = collectAllNavHrefs(NAV);
   console.log(`pendingRoutes is empty -- running the real HTTP check against all ${hrefs.length} NAV hrefs.`);
 
+  const SOFT_404_SIGNAL = '<meta name="robots" content="noindex"';
   const failures = [];
   for (const href of hrefs) {
     let status;
+    let softNotFound = false;
     try {
       const res = await fetch(`${baseUrl}${href}`, { redirect: 'manual' });
       status = res.status;
+      const body = await res.text();
+      softNotFound = status === 200 && body.includes(SOFT_404_SIGNAL);
     } catch (err) {
       status = `unreachable (${err.message})`;
     }
-    const ok = status === 200;
-    console.log(`${ok ? 'PASS' : 'FAIL'} ${href}: ${status}`);
-    if (!ok) failures.push(`${href} (${status})`);
+    const ok = status === 200 && !softNotFound;
+    const reason = softNotFound ? `${status} but soft-404 (noindex)` : status;
+    console.log(`${ok ? 'PASS' : 'FAIL'} ${href}: ${reason}`);
+    if (!ok) failures.push(`${href} (${reason})`);
   }
 
   if (failures.length > 0) {

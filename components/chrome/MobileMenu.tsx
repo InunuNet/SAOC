@@ -75,11 +75,15 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
   };
 
   // Meta lines: computed at render time from the nationalShow singleton, never
-  // authored as literal copy in nav-config.ts. As of 2026-09-10 the singleton's
-  // showDate/showEndDate are both null, so formatShowDateRange returns null —
-  // the lead line renders venue-only with no dangling separator, and the
-  // feature rail's date-only meta renders nothing (cleanly omitted). Both pick
-  // up real values with no code change once Studio has real dates.
+  // authored as literal copy in nav-config.ts. Whether showDate/showEndDate
+  // are set is live Sanity content this file does not control and must not
+  // assume a fixed state for: when both are null, formatShowDateRange
+  // returns null, the lead line renders venue-only with no dangling
+  // separator, and the feature rail's date-only meta renders nothing
+  // (cleanly omitted); when set, both pick up the real values with no code
+  // change. Do not re-snapshot "as of <date>, the dates are/aren't null"
+  // here — a dataset fact frozen into a code comment goes stale silently the
+  // next time Studio content changes, with nothing to catch it.
   const venueName = show?.venue?.name ?? null;
   const dateRange = formatShowDateRange(show?.showDate, show?.showEndDate);
   const leadMeta =
@@ -151,18 +155,26 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
                             <p className="mt-1 font-serif text-[16px] font-medium text-ink">
                               {n.featureRail.heading}
                             </p>
-                            {n.featureRail.blurb && (
-                              <p className="mt-1 font-sans text-[14px] text-ink/80">
-                                {n.featureRail.blurb}
-                              </p>
-                            )}
-                            <Link
-                              href={n.featureRail.ctaHref}
-                              onClick={onClose}
-                              className="mt-3 inline-flex w-fit items-center justify-center rounded-sm bg-primary px-4 py-2 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-                            >
-                              {n.featureRail.ctaLabel}
-                            </Link>
+                            {/* NOS brand colours (mission menu-system-layout4
+                                M2/F8) are scoped to the desktop rail only —
+                                see goldens/f8-tickets-rail.json's
+                                scopeBoundary. The mobile drawer stays SAOC. */}
+                            <div className="mt-3 flex flex-col space-y-2">
+                              {n.featureRail.destinations.map((destination) => (
+                                <Link
+                                  key={destination.id}
+                                  href={destination.href}
+                                  onClick={onClose}
+                                  className={
+                                    destination.variant === 'primary'
+                                      ? 'inline-flex w-fit items-center justify-center rounded-sm bg-primary px-4 py-2 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment'
+                                      : 'inline-flex w-fit items-center justify-center rounded-sm border border-primary px-4 py-2 font-sans text-[14px] font-medium text-primary transition-colors duration-150 hover:bg-primary hover:text-ivory focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment'
+                                  }
+                                >
+                                  {destination.label}
+                                </Link>
+                              ))}
+                            </div>
                           </div>
                         )}
 

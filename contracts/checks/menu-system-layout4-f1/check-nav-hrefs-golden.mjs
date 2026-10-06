@@ -7,7 +7,8 @@
 // the golden in both directions -- never a hand-typed list that could silently drift) but
 // extends flattenNavHrefs for the Layout 4 mega shape: a `lead` block (its own leadHref, plus
 // lead.theShow's headingHref/links), `columns` (headingHref/links per column, no longer a
-// single flat `columns` array meaning "the whole mega"), and a `featureRail` (ctaHref).
+// single flat `columns` array meaning "the whole mega"), and a `featureRail`
+// (heading + destinations[], each with its own href).
 //
 // Accepts an optional CLI argument pointing at an alternate module exporting `NAV`, purely so
 // this same script can be pointed at a negative fixture to prove it actually fails -- see
@@ -35,7 +36,9 @@ function flattenNavHrefs(nav) {
         if (column.headingHref) hrefs.add(column.headingHref);
         for (const link of column.links) hrefs.add(link.href);
       }
-      if (item.featureRail) hrefs.add(item.featureRail.ctaHref);
+      if (item.featureRail) {
+        for (const dest of item.featureRail.destinations) hrefs.add(dest.href);
+      }
     }
   }
   return hrefs;

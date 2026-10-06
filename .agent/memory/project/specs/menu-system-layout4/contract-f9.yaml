@@ -1,0 +1,111 @@
+schema: athanor.contract/v1
+slug: menu-system-layout4
+goal: >
+  Fix M1/F1's own A2 gate, which is failing not because of a nav regression but
+  because its checker, contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs,
+  was written against F7's featureRail shape ({blurb, ctaLabel, ctaHref}) and was never
+  updated when F8 (this mission, M2) replaced featureRail with {heading, destinations:
+  [{id,label,href,variant} x3]} (components/chrome/nav-config.ts:266-283). Line 38 of the
+  checker still reads the now-nonexistent `item.featureRail.ctaHref`, which evaluates to
+  `undefined`; `hrefs.add(undefined)` inserts the literal value `undefined` into the live
+  set, which the golden diff reports as "IN NAV BUT NOT IN THE GOLDEN: + undefined". This
+  is confirmed against the current file contents (not taken on the research agent's word):
+  nav-config.ts:266-283, check-nav-hrefs-golden.mjs:22-42, and
+  goldens/f1-nav-hrefs.json's current 23-entry expectedHrefs were all read directly.
+
+  Independently, because the checker's flattener never walks `featureRail.destinations[]`
+  at all, it has never validated the two secondary rail destinations --
+  /tickets/day-visitor and /tickets/weekend-pass (nav-config.ts:271-280) -- against
+  anything. Both are real, live routes: app/(marketing)/tickets/[slug]/page.tsx serves
+  them, and both slugs are established product identifiers already used elsewhere in the
+  codebase (lib/provisional-figures.ts:104,117; lib/tickets-orchid-image.ts:8-9). Adding
+  them to the golden does not paper over a 404 -- verified directly, not assumed.
+
+  This is a test-infrastructure-only fix. components/chrome/nav-config.ts is not at
+  fault and MUST NOT be touched by this feature -- every leaf in the live NAV tree
+  already carries a real href; the drift is entirely in the checker's stale field read
+  and the golden's incompleteness.
+created_at: '2026-09-14'
+autonomy: high
+features:
+  - id: F9
+    name: >-
+      Fix check-nav-hrefs-golden.mjs's stale F7 featureRail.ctaHref read and
+      re-baseline f1-nav-hrefs.json for F8's destinations[] shape, with zero
+      nav-config.ts change
+    status: pending
+goldens:
+  - .agent/memory/project/specs/menu-system-layout4/goldens/f1-nav-hrefs.json
+  - contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        FIX SPEC (exact, no judgment call left to @dev): in
+        contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs's
+        flattenNavHrefs(), replace line 38
+        (`if (item.featureRail) hrefs.add(item.featureRail.ctaHref);`) with a loop over
+        the F8 shape:
+          if (item.featureRail) {
+            for (const dest of item.featureRail.destinations) hrefs.add(dest.href);
+          }
+        This must NOT reference `.ctaHref` anywhere afterward (assertion A3 checks this
+        directly) and MUST read `.destinations[].href` (assertion A4 checks this). Also
+        update the file's header comment (lines 9-10, "a `featureRail` (ctaHref)") to
+        describe the destinations[] shape instead, since it documents the F7 shape the
+        code no longer implements.
+      command: >-
+        test -f contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs
+      required: true
+
+    - id: A2
+      description: >
+        FIX SPEC for the golden: in goldens/f1-nav-hrefs.json, add
+        "/tickets/day-visitor" and "/tickets/weekend-pass" to expectedHrefs (both are
+        real routes -- see goal), bump expectedHrefCount from 23 to 25, and update
+        countNote to explain the two additions (the feature rail's two secondary
+        destinations, previously never checked because the checker didn't walk
+        destinations[]). PROPERTY: after the fix, running the checker against the real
+        NAV export exits 0 with exactly 25 matched hrefs -- this is the actual gate this
+        feature closes.
+      command: >-
+        node contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs
+      required: true
+
+    - id: A3
+      description: >
+        REGRESSION GUARD: the stale F7 field read is fully gone from the checker, not
+        just dead-code-adjacent to a working new path.
+      command: >-
+        ! grep -q "ctaHref" contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs
+      required: true
+
+    - id: A4
+      description: >
+        PROPERTY: the checker now actually walks the F8 destinations array (closes the
+        latent coverage gap identified in the goal -- both /tickets/day-visitor and
+        /tickets/weekend-pass are genuinely exercised by the gate, not silently
+        unchecked).
+      command: >-
+        grep -q "destinations" contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs
+      required: true
+
+    - id: A5
+      description: >
+        SCOPE GUARD: this is a test-infrastructure-only fix. nav-config.ts itself must
+        be untouched by this feature -- confirms the diagnosis that the live NAV tree
+        was never the bug.
+      command: >-
+        git diff --quiet HEAD -- components/chrome/nav-config.ts
+      required: true
+
+    - id: A6
+      description: >
+        Full F1 gate re-run stays green end to end after this fix, not just A2 in
+        isolation (A1/A3/A4 from contract-f1.yaml must still pass unaffected).
+      command: >-
+        node contracts/checks/menu-system-layout4-f1/check-nav-top-level-golden.mjs &&
+        node contracts/checks/menu-system-layout4-f1/check-descriptor-provenance.mjs &&
+        node contracts/checks/menu-system-layout4-f1/check-dead-link-fixed.mjs
+      required: true

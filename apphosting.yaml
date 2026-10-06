@@ -169,3 +169,22 @@ env:
     secret: VENDOR_STAND_PAYMENT_TOKEN_SECRET
     availability:
       - RUNTIME
+
+  # Beta password wall (mission beta-password-wall F1/F2) -- Basic Auth
+  # credentials read per-request by proxy.ts's decideBasicAuth(). RUNTIME
+  # only: the comparison happens per request, and a BUILD entry would bake
+  # the value into the bundle. If EITHER is unset, proxy.ts fails closed in
+  # production -- every request on every host (including the real
+  # saoc.co.za apex) is denied until SITE_PUBLIC_LAUNCH is explicitly set to
+  # 'true' (see lib/beta-public-launch.ts; that flag is NOT added here --
+  # it stays absent from this file until the council actually decides to
+  # launch publicly) -- never "no auth required". See
+  # docs/beta-password-wall.md.
+  - variable: BETA_BASIC_AUTH_USER
+    secret: BETA_BASIC_AUTH_USER
+    availability:
+      - RUNTIME
+  - variable: BETA_BASIC_AUTH_PASSWORD
+    secret: BETA_BASIC_AUTH_PASSWORD
+    availability:
+      - RUNTIME

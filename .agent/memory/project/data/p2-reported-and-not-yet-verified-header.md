@@ -1,0 +1,3 @@
+# p2-reported-and-not-yet-verified-header
+
+**[P2, reported and not yet verified] Header icon buttons (search, hamburger) may be below the 44×44 CSS px touch-target minimum.** `components/chrome/**`, menu lane. Reported 2026-09-29 by the NOS lane (saoc-nos-site-e3), from NOS Design's Impeccable audit of /national-show (https://claude.ai/artifact/SHi1hanqyjq9sqzJRRJyth), which calls for a 44×44 minimum. Not yet measured by this lane. Logged while Brad is testing beta, so no investigation yet. Before any fix: measure the rendered size at 320/390px, and check what size the approved handoff (`design/design_handoff_saoc/`) specifies for these controls. Brad decides whether and when to fix it.

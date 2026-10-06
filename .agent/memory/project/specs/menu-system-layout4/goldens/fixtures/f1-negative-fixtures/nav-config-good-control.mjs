@@ -171,11 +171,27 @@ export const NAV = [
       }
     ],
     "featureRail": {
-      "meta": "(placeholder pending Brad/Lee-Ann copy)",
       "heading": "Tickets",
-      "blurb": "(placeholder pending Brad/Lee-Ann copy)",
-      "ctaLabel": "Buy tickets",
-      "ctaHref": "/national-show/tickets"
+      "destinations": [
+        {
+          "id": "tickets",
+          "label": "Tickets",
+          "href": "/national-show/tickets",
+          "variant": "primary"
+        },
+        {
+          "id": "day-visitor",
+          "label": "Day Visitor",
+          "href": "/tickets/day-visitor",
+          "variant": "secondary"
+        },
+        {
+          "id": "weekend-pass",
+          "label": "Weekend Pass",
+          "href": "/tickets/weekend-pass",
+          "variant": "secondary"
+        }
+      ]
     }
   },
   {

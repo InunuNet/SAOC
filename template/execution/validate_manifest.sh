@@ -61,11 +61,11 @@ VALID_CATEGORIES=(HARNESS WORKSPACE DERIVED MERGE)
 VALID_STRATEGIES=(line_union json_deep_merge)
 
 # Paths that should NEVER appear in the manifest (gitignored or VCS noise).
-EXCLUSIONS=(.git .DS_Store .tmp .env .env.enc pulse.log)
+EXCLUSIONS=(.git .DS_Store .tmp .env .env.enc pulse.log .cc-writes .pytest_cache)
 
 # Container directories — themselves not classified; instead, every direct
 # child is walked and checked individually.
-CONTAINERS=(.agent .claude .gemini)
+CONTAINERS=(.agent .claude .gemini .grok)
 
 if [ ! -f "$MANIFEST" ]; then
   echo "ERROR: $MANIFEST not found" >&2

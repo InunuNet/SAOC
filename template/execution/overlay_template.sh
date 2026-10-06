@@ -62,6 +62,34 @@ rm -rf "$TARGET/.agent.bak"
 cp -r "$TARGET/.agent" "$TARGET/.agent.bak"
 echo "  ✅ Backup: .agent.bak"
 
+# Step 1b: Backup the --delete targets that live OUTSIDE .agent.
+#
+# Step 1 covers .agent/{workflows,agents,rules,skills,reference}, so a
+# project-local file deleted from those is recoverable from .agent.bak.
+# Step 2 also runs `rsync --delete` over execution/hooks/, .claude/skills/
+# and .gemini/skills/, which that snapshot does NOT reach — so until this
+# step existed, a project-authored file in any of them was destroyed with no
+# backup, no prompt and no warning. mlilo-savant-0e lost 14 project-local
+# files under execution/hooks/ to exactly this (2026-09-21); they were only
+# recoverable because they happened to be git-tracked.
+#
+# .agent/no-update remains the way to keep a file out of the overlay's path
+# entirely. This is the safety net for everyone who did not know to use it.
+DELETE_TARGETS_OUTSIDE_AGENT=(
+  "execution/hooks"
+  ".claude/skills"
+  ".gemini/skills"
+  ".gemini/policies"
+)
+EXTERNAL_BAK="$TARGET/.agent.bak/_overlay_external"
+mkdir -p "$EXTERNAL_BAK"
+for rel in "${DELETE_TARGETS_OUTSIDE_AGENT[@]}"; do
+  [ -d "$TARGET/$rel" ] || continue
+  mkdir -p "$EXTERNAL_BAK/$(dirname "$rel")"
+  cp -R "$TARGET/$rel" "$EXTERNAL_BAK/$rel"
+done
+echo "  ✅ Backup: .agent.bak/_overlay_external (execution/hooks, provider skills)"
+
 # Step 2: Overlay infrastructure dirs — rsync --delete mirrors source exactly,
 #          removing any orphan files from previous template versions.
 #          Guarded by -d to avoid failure if template dirs are missing (Issue #50).
@@ -97,6 +125,34 @@ fi
 if [ -d "$TEMPLATE/execution/hooks/" ]; then
   build_excludes "execution/hooks/"
   rsync -a --delete "${EXC[@]}" "$TEMPLATE/execution/hooks/" "$TARGET/execution/hooks/" 2>/dev/null || true
+fi
+
+# Step 2b: Report what --delete removed from the trees outside .agent.
+#
+# A destructive action the operator only discovers afterwards, in a log they
+# did not read, is not something they consented to. Naming each removed file
+# and where its copy is turns a silent loss into a recoverable one the
+# operator actually knows about. Not fatal: the backup already makes it safe,
+# and aborting a half-applied overlay would be worse than completing it.
+removed_any=0
+for rel in "${DELETE_TARGETS_OUTSIDE_AGENT[@]}"; do
+  [ -d "$EXTERNAL_BAK/$rel" ] || continue
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    if [ ! -e "$TARGET/$rel/$f" ]; then
+      if [ "$removed_any" -eq 0 ]; then
+        echo ""
+        echo "  ⚠️  The overlay removed project-local files not present upstream:"
+        removed_any=1
+      fi
+      echo "     - $rel/$f"
+    fi
+  done < <(cd "$EXTERNAL_BAK/$rel" && find . -type f | sed 's|^\./||')
+done
+if [ "$removed_any" -eq 1 ]; then
+  echo "     Copies are in .agent.bak/_overlay_external/ — restore what you need."
+  echo "     To keep a file out of the overlay's path permanently, list it in .agent/no-update."
+  echo ""
 fi
 
 # Single files

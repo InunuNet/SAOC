@@ -58,6 +58,13 @@ const ARTIFACT_DIR = path.join(REPO_ROOT, '.agent/memory/scratch/door-checkin-on
 
 const BASE_URL = process.env.DOOR_VIEWPORT_BASE_URL ?? 'https://beta.saoc.co.za';
 
+const BETA_WALL_USER = process.env.BETA_BASIC_AUTH_USER;
+const BETA_WALL_PASSWORD = process.env.BETA_BASIC_AUTH_PASSWORD;
+const betaWallCredentialsConfigured = Boolean(BETA_WALL_USER) && Boolean(BETA_WALL_PASSWORD);
+const betaWallAuthorizationHeader = betaWallCredentialsConfigured
+  ? { Authorization: `Basic ${Buffer.from(`${BETA_WALL_USER}:${BETA_WALL_PASSWORD}`).toString('base64')}` }
+  : {};
+
 function fail(msg) {
   console.error(`FAIL: ${msg}`);
   process.exit(1);
@@ -117,7 +124,7 @@ async function mintSessionCookie(adminEmail) {
 
   const sessionRes = await fetch(`${BASE_URL}/api/admin/session`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...betaWallAuthorizationHeader },
     body: JSON.stringify({ idToken }),
   });
   if (!sessionRes.ok) {
@@ -143,6 +150,9 @@ async function runViewportCheck(viewport, sessionCookieValue) {
   try {
     const context = await browser.newContext({
       viewport: { width: viewport.width, height: viewport.height },
+      ...(betaWallCredentialsConfigured
+        ? { httpCredentials: { username: BETA_WALL_USER, password: BETA_WALL_PASSWORD } }
+        : {}),
     });
     await context.addCookies([
       {

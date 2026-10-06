@@ -59,7 +59,8 @@
     "backgroundColorToken": "--bone (#e8e6dc)",
     "layout": "natural document flow: meta -> h4 -> blurb <p> -> CTA <a>, top to bottom, NOT flex+justify-between",
     "note": "Current code is `flex flex-col justify-between rounded-sm bg-bone p-6` with content split into two flex children (a meta/h4/blurb wrapper div, then the CTA link) so justify-between stretches empty space between them. The artifact's .dd4__feature has NO border-radius property and NO flex/justify-between at all — .dd4__feature p{margin:0 0 var(--s4)} (16px bottom margin) is what creates the gap before the CTA, in normal flow. The large empty grey box in Brad's screenshot is `justify-between` stretching around a MISSING blurb paragraph (see f7-featurerail-blurb.json) — once the blurb renders, remove rounded-sm and justify-between and let the box collapse to content height.",
-    "blurbGoldenFile": ".agent/memory/project/specs/menu-system-layout4/goldens/f7-featurerail-blurb.json"
+    "blurbGoldenFile": ".agent/memory/project/specs/menu-system-layout4/goldens/f7-featurerail-blurb.json",
+    "supersededByF8": "2026-09-11: backgroundColor, layout content (blurb <p> and single CTA <a>), and blurbGoldenFile are all SUPERSEDED by mission menu-system-layout4 M2/F8 — the feature rail's single CTA was replaced by three destination rows (Tickets / Day Visitor / Weekend Pass) with NOS brand colours (background is now --color-nos-pale-gold, not --bone). See goldens/f8-tickets-rail.json for the current source of truth. borderRadius and padding above are UNCHANGED by F8 and still accurate. This field is left in place, not rewritten in place, so this golden stays a legible historical record of what F7 itself verified at the time — do not treat backgroundColor/layout/blurbGoldenFile above as current."
   },
   "typeTokensVerifiedReachable": {
     "border-rule-soft": "resolves to --color-rule-soft, app/globals.css:105 — present in @theme",

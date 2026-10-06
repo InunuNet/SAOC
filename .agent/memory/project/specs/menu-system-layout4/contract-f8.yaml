@@ -1,0 +1,750 @@
+schema: athanor.contract/v1
+slug: menu-system-layout4
+goal: >
+  Two Brad-approved, screenshot-backed asks against the National Show mega
+  menu (desktop), dispatched by the team lead 2026-09-11 as mission
+  menu-system-layout4 M2/F8:
+
+  F8a — the lead track's eyebrow ("The National Show") and serif heading
+  ("19th SAOC National Orchid Show") are replaced by the vertical NOS 2027
+  logo (branding/National Show 2027/Logo/NOS-2027-logo-full-colour-vertical.png),
+  sized to the lead track's real pixel budget. The venue/date meta line
+  keeps rendering below it, unchanged.
+
+  F8b — the feature rail (Track 5, currently a single "Buy tickets" CTA in a
+  mostly-empty grey box per Brad's screenshot) becomes three real
+  destinations — Tickets, Day Visitor, Weekend Pass — recoloured with the
+  NOS brand palette as a deliberate, narrowly scoped exception to this
+  project's standing "SAOC chrome site-wide" rule. Every other part of the
+  header/menu (including the rail's own structural border-left) stays SAOC.
+
+  See goldens/f8-lead-logo.json and goldens/f8-tickets-rail.json for the
+  full value tables, provenance, and scope rulings this contract's
+  assertions check against — @dev implements against those two files and
+  e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts, not against this prose.
+created_at: '2026-09-11'
+autonomy: high
+features:
+  - id: F8
+    name: >-
+      MegaMenu.tsx lead-block NOS logo + nav-config.ts's NavMegaFeatureRail
+      restructured from a single CTA to three NOS-coloured destination
+      links, plus four new --color-nos-* @theme tokens in app/globals.css.
+    status: pending
+  # RULING (2026-09-11, team lead asked whether F7's own golden spec needed
+  # updating as part of closing F8): F7's golden e2e spec formally updated
+  # in place by @architect (not @dev -- goldens/QA inputs are never a dev
+  # edit) -- 3 of its tests referenced the now-removed single "Buy tickets"
+  # CTA / blurb. One (CTA-specific button-shape assertions) is retired via
+  # test.skip with a comment pointing at this contract's A5/A6 as the
+  # successor. One (background-color + block-flow assertions) is updated in
+  # place -- its border-radius/padding/flow properties are still true
+  # post-F8, only backgroundColor moved from --bone to the NOS exception, so
+  # rewriting beats skipping. One (the sheet's horizontal-inset regression
+  # guard) had its measured elements swapped (lead eyebrow -> lead link,
+  # "Buy tickets" -> "Weekend Pass") because the PROPERTY it guards (real
+  # content flush against neither panel edge) is still real and still needs
+  # a live regression guard -- skipping it would have silently dropped
+  # coverage on an unrelated, still-live defect class. f7-layout4-visual-
+  # fidelity.json and contract-f7.yaml's A6 are left AS-WRITTEN with an
+  # added `supersededByF8` note each, rather than rewritten, so they stay
+  # the legible historical record of what F7 itself verified at close.
+  #
+  # AMENDMENT (2026-09-17, before F8a implementation started -- see A11): a
+  # design ruling from NOS Design (R21) arrived after this contract was
+  # originally written, requiring the F8a logo to render with NO plate/
+  # tinted rectangle behind it -- the supplied artwork ships transparent and
+  # the production sheet's tinted preview panel is preview-only. A11 closes
+  # this gap with a real getComputedStyle DOM-chain check (not a source
+  # grep). The pre-existing colourway choice (full-colour-vertical) was
+  # separately confirmed correct for the bg-parchment ground by contrast
+  # reasoning from documented ink/ground hex values -- see f8-lead-logo.json
+  # `backgroundRuling.colourwayFitDecision` -- not escalated to NOS Design as
+  # an open question, since NOS Design's own criterion ("pick a supplied
+  # colourway that works on your panel's ground") is met.
+  # AMENDMENT (2026-09-21, F8a landed and broke 5 tests in F7's own golden
+  # spec, e2e/mega-menu-layout4-visual-fidelity.spec.ts -- architect ruling
+  # below, A13-A19): F8a's implementation (asset placed, MegaMenu.tsx's lead
+  # block rewritten per A1-A3 above) is real and correct against ITS OWN
+  # spec, but it deleted the eyebrow <p> and serif <Link> text F7's spec had
+  # located several assertions through. Two different failure shapes, ruled
+  # per-test, not bulk-"update the tests":
+  #   (1) LOCATOR DEAD, PROPERTY STILL TRUE (border-left/padding on the lead
+  #       block container; the 1.05:1:1:1:.9 track-width ratio) -- repointed
+  #       to a new data-testid="mega-menu-lead" on the lead block container
+  #       (MegaMenu.tsx, the flex flex-col pr-6 div), added specifically so
+  #       future content/copy changes in the lead block don't re-break these
+  #       structural/layout assertions a third time -- this is the same
+  #       track-width test that already needed one locator swap in the F7
+  #       round-2 amendment above, and reusing dead-but-nearby text a second
+  #       time (this time the eyebrow) is exactly the pattern that keeps
+  #       recurring; a stable non-content anchor closes it for good.
+  #   (2) PROPERTY GENUINELY SUPERSEDED (the eyebrow's .dd-head pill-badge-
+  #       absence styling; the serif lead-link's font-size/weight/color/
+  #       font-family) -- retired via test.skip with a reason citing A1
+  #       above (the text is gone, replaced by an image) as the closure
+  #       record, following the existing skip pattern this same spec file
+  #       already uses for the F7->F8 CTA retirement (line ~364).
+  #   (3) MIXED (the leadLink/leadMeta combined typography test, and the
+  #       font-family-tokens test's serif branch) -- split. leadMeta's own
+  #       typography assertions are untouched by F8a (per f8-lead-logo.json
+  #       metaLineRuling: leadMeta stays, unchanged rendering logic) and are
+  #       extracted into their own standalone, still-live test rather than
+  #       skipped alongside the now-dead leadLink assertions they used to
+  #       share a test body with. The font-family-tokens test's serif branch
+  #       is REPOINTED, not retired -- MegaMenu.tsx still has exactly one
+  #       font-serif text element after F8a (the feature rail's <h4>Tickets
+  #       </h4> heading, MegaMenu.tsx:249, already targeted by the separate
+  #       "feature rail meta line and heading" test's looser .toContain
+  #       check) -- so the strict "terminates in a real generic serif
+  #       keyword, not a lucky substring" guard this test exists for still
+  #       has a live element to prove itself against; only WHICH element
+  #       changes. The mono and sans branches of that same test are
+  #       untouched (their elements -- a group heading, the page body --
+  #       were never part of F8a's change).
+  # See goldens/f8-lead-logo.json's newly-added asset.note correction (the
+  # branding/ read-denial claim A10's original note carried was WRONG and is
+  # retracted there -- absolute paths into branding/ read fine; the file is
+  # now copied to public/images/ and byte-verified) and repoWeightRuling
+  # (no action needed on the ~5MB public/images/ duplication -- deferred as
+  # a separate repo-hygiene backlog item, not this feature's call).
+  # AMENDMENT (2026-09-21, Codex FAIL on e2e/mega-menu-f8-logo-and-tickets-
+  # rail.spec.ts -- three findings, A3/A7/A8 amended and A21 added above):
+  # this is the THIRD distinct instance, found within this single feature's
+  # own QA pass, of this project's audited "assertion satisfiable without the
+  # property it claims to prove" defect class -- (1) A12's literal-coupling
+  # floor (400/200 not derived from each other in code), (2) the A1-A3
+  # naturalWidth gap A20 closed (element-presence-plus-src-attribute proving
+  # nothing about a real decode), and now (3) three separate vacuous/
+  # overclaiming tests in the SAME spec file Codex just reviewed. The first
+  # two were found by inspection (team lead, then this architect); this one
+  # by an independent model. Worth recording as a finding about THIS SPEC
+  # FILE specifically, not just three isolated fixes: its test titles have
+  # consistently overclaimed what their assertions verify (a bare `void`'d
+  # unused locator; a `rail.locator('span')` selector broad enough to miss
+  # the one span it needed and narrow enough to vacuous-pass when that span
+  # is absent; a title saying "anywhere" backed by three hand-picked
+  # elements and one hand-picked colour). Whoever next adds a test to this
+  # file should read each new assertion back against its own title before
+  # calling it done, the way this amendment had to do after the fact.
+  # AMENDMENT (2026-09-21, same day, hours later -- A21's dataset-null claim
+  # retracted): a FOURTH instance of a related-but-distinct shape, this time
+  # not "assertion satisfiable without the property it claims to prove" but
+  # "ruling written against a dataset snapshot goes stale exactly like a
+  # requirement written ahead of its code goes stale" -- both fail silently,
+  # both are only caught by someone re-checking, not by a gate. Concretely:
+  # A21's original text (and two golden notes citing it) stated the show
+  # dates were null, sourced from reading MegaMenu.tsx:84-93 -- a source
+  # comment (dated 2026-09-10) and a computation that reads a runtime value,
+  # neither of which can tell you what that value currently IS. @dev's live
+  # instrumented run measured the real DOM state and found the dates
+  # populated (metaCount: 1, "16–19 September 2027") -- A21 runs for real,
+  # it does not skip. Corrected in A21 above and in both goldens'
+  # metaLineTestDefectRuling / leadMetaTestDefectRuling. The `test.skip`
+  # mechanism itself was unaffected -- it was always justified on general
+  # grounds (report absence visibly IF it ever occurs), never on the
+  # (wrong) claim that it was occurring today -- only the prose describing
+  # today's state was wrong. Same lesson as the A20 near-miss recorded in
+  # f8-lead-logo.json's domLoadVerificationRequirement: a claim about
+  # runtime/data state must be tool-verified against the live system, not
+  # inferred from source text or memory, however plausible or however
+  # recently the source comment was written.
+  # AMENDMENT (2026-09-21, Codex re-run, sixth instance -- A4 amended above
+  # for the rail's missing cardinality assertion): the pattern across all six
+  # instances in this spec file is written up properly, once, as its own
+  # finding -- not as a seventh incident note here -- in
+  # goldens/f8-tickets-rail.json's `specFileAssertionAuthorshipFinding`. Read
+  # it before adding a new assertion to this spec file.
+goldens:
+  - .agent/memory/project/specs/menu-system-layout4/goldens/f8-lead-logo.json
+  - .agent/memory/project/specs/menu-system-layout4/goldens/f8-tickets-rail.json
+  - e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts
+  - e2e/mega-menu-layout4-visual-fidelity.spec.ts
+  - .agent/memory/project/specs/menu-system-layout4/goldens/f7-layout4-visual-fidelity.json
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        PROPERTY (F8a, core ask): the lead track's eyebrow and serif heading
+        text are both gone — replaced by the NOS vertical logo image, real
+        <img> rendered inside the existing lead link (href="/national-show"),
+        with the correct src and alt text (see f8-lead-logo.json's `render`
+        section for the exact alt string and its provenance — transcribed
+        directly from the artwork's own two text lines, not invented).
+        Real rendered-DOM check via Playwright — a source grep for the old
+        text strings being absent would not prove an image replaced them,
+        only that some text changed.
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "eyebrow and serif heading text are gone"
+      required: true
+
+    - id: A2
+      description: >
+        PROPERTY (F8a, container budget): the rendered logo's measured width
+        stays inside the lead track's real pixel budget (f8-lead-logo.json's
+        containerBudget: 231px true ceiling, 220px hard max asserted, 200px
+        specified) with margin against layout noise, and its aspect ratio is
+        close to the source PNG's true 1.13769 ratio — not distorted by a
+        careless width/height pair. Also confirms the image is the lead
+        link's OWN clickable content (href="/national-show" on an ancestor
+        <a>), not a second, separate anchor sitting next to the real link.
+        Measured via real getBoundingClientRect at the 1440px viewport F7
+        established for track-ratio measurement (same reasoning: resolves
+        fr tracks to intended proportions, not a viewport-constrained
+        shrink).
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "logo sits inside the lead link and stays inside its container budget"
+      required: true
+
+    - id: A3
+      description: >
+        PROPERTY (F8a, the regression this ruling exists to prevent) --
+        AMENDED 2026-09-21 after Codex found this test vacuous (finding 1,
+        verified directly against e2e/mega-menu-f8-logo-and-tickets-rail.
+        spec.ts:116-137 before the fix: the test builds a `leadTrack` locator
+        at line 126 and never uses it except a bare `void leadTrack;` at line
+        136 to silence the unused-var lint; what it actually asserts is only
+        that "The Show" heading sits below the logo -- it never locates the
+        leadMeta element itself, so deleting leadMeta from MegaMenu.tsx
+        entirely would leave this test green). Corrected requirement: @dev
+        adds `data-testid="mega-menu-lead-meta"` to the leadMeta `<span>`
+        (MegaMenu.tsx:156, mirroring A13's `mega-menu-lead` pattern), and the
+        test locates it directly and asserts (a) it is visible, (b) its
+        trimmed text content is non-empty, (c) its bounding-box sits between
+        the logo's bottom edge and "The Show" heading's top edge. This
+        assertion runs UNCONDITIONALLY -- no `if (count > 0)` guard. Per
+        MegaMenu.tsx:89 (`venueName = show?.venue?.name ?? null`) and project
+        memory project_national_show_venue (venue confirmed: "The Hangar,
+        Stellenbosch Flying Club"), the current dataset has a real, non-null
+        venue name, so `leadMeta` is genuinely non-null and renders today --
+        an empty/missing leadMeta under this dataset would be a real
+        regression, not an expected absence, and must FAIL the test, not be
+        silently skipped. (A21 below keeps a `test.skip(condition, reason)`
+        guard on the corresponding feature-rail meta-line check regardless
+        of the two values' current state -- see A21's own description,
+        corrected 2026-09-21, for why that guard's justification never
+        depended on either value being null today, and for a live-measured
+        correction to an earlier, wrongly-sourced claim that the show dates
+        were null.)
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "venue/date meta line still renders below the logo"
+      required: true
+
+    - id: A4
+      description: >
+        PROPERTY (F8b, core ask): the feature rail renders EXACTLY three real
+        links — with an accessible name equal to their visible label and the
+        exact hrefs verified live against beta.saoc.co.za on 2026-09-11 (see
+        f8-tickets-rail.json's `destinations.items` for each route's full
+        verification chain — Sanity query mechanism, seed-script active:true
+        provenance, and a live HTTP 200 curl, not assumption). The old
+        blurb copy and single "Buy tickets" CTA are both gone (this is what
+        directly closes Brad's "large amount of unused vertical space below
+        the single CTA" complaint — three real destinations now occupy that
+        space, not decoration).
+        AMENDED 2026-09-21 (Codex re-run, finding 5 of this file's pattern --
+        see the amendment note below assertions for the write-up): the test's
+        title says "exactly three" but the body only asserted three NAMED
+        links have the correct hrefs — it never measured the rail's total
+        link count, so a fourth destination added to nav-config.ts would
+        pass this test while making its own title false. Corrected
+        requirement: the test must additionally assert
+        `await expect(rail.getByRole('link')).toHaveCount(3)`, scoped to
+        `getRail(panel)` exactly as the three named-link lookups already are
+        (an unscoped count would also catch the lead block's own "Tickets"
+        leaf, per `duplicateLinkRuling` in f8-tickets-rail.json, and be
+        wrong for an unrelated reason). This is a genuine cardinality check,
+        not a restatement of the three named-link assertions already
+        present — those prove the three expected links exist with correct
+        hrefs; this proves nothing ELSE is also present.
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "renders exactly three destination links with the correct hrefs"
+      required: true
+
+    - id: A5
+      description: >
+        PROPERTY (F8b, NOS palette — primary row): the "Tickets" row's
+        computed background-color and color resolve to the real NOS
+        royal-purple (#211A57) fill / pale-gold (#F3F2D6) text, and its
+        hover state resolves to purple-700 (#33296F) — colour-for-colour
+        matches to the approved artifact's own .btn-primary/.btn-primary:hover
+        rules (re-verified directly against the artifact's saved HTML during
+        contract authoring, 2026-09-11 — see f8-tickets-rail.json `source`).
+        Real getComputedStyle read on the rendered link, not a className
+        source grep — this project's own F7 contract (A7) already found a
+        case where a token was declared but resolved to nothing usable at
+        runtime; declaration presence proves nothing on its own.
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "primary row .Tickets. carries real NOS royal-purple fill and pale-gold text"
+      required: true
+
+    - id: A6
+      description: >
+        PROPERTY (F8b, NOS palette — secondary rows): "Day Visitor" and
+        "Weekend Pass" are ghost-styled — transparent fill, 1.5px royal-purple
+        border, royal-purple text — matching the artifact's .btn-ghost rule.
+        Same real-computed-style method as A5.
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "secondary rows .Day Visitor, Weekend Pass. are ghost-styled"
+      required: true
+
+    - id: A7
+      description: >
+        PROPERTY (F8b, scope boundary — the rail's own fill, and what stays
+        SAOC) -- AMENDED 2026-09-21, SPLIT from its original form after Codex
+        found the meta-line half of this test vacuous (finding 2, verified
+        directly: MegaMenu.tsx:308 selected `rail.locator('span')` -- ANY
+        span in the rail, not the meta line specifically -- guarded by
+        `if (metaCount > 0)`. The rail's destination links render their label
+        text directly inside `<a>`, no `<span>` (MegaMenu.tsx:264), so the
+        meta line's own `<span>` (MegaMenu.tsx:245) is the ONLY span the rail
+        can ever contain -- but MegaMenu.tsx:84-93 confirms, directly in the
+        source, that `featureRailMeta = dateRange` and `dateRange` is
+        `formatShowDateRange(show?.showDate, show?.showEndDate)`, and both
+        fields are documented null in the current dataset. So `metaCount` is
+        0 today, the guarded block never executes, and the olive-700 colour
+        assertion has never actually run since this test was written.). The
+        meta-line assertion is extracted into its own standalone test, A21
+        below, with an honest (not silent) conditional. This assertion now
+        covers ONLY what genuinely runs unconditionally today: the rail's
+        outer container background resolves to NOS pale-gold, and the rail's
+        structural border-left — the same divider F7 put on every non-lead
+        track — stays SAOC --rule-soft (#e4e1d0), unchanged. This remains the
+        assertion that most directly proves the scope-boundary ruling in
+        f8-tickets-rail.json's `scopeBoundary` was actually implemented, not
+        merely stated in prose: a border that's part of the shared five-track
+        grid system is left alone, and only the rail's own content colours
+        move to NOS.
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "rail background is NOS pale-gold, structural border-left stays SAOC rule-soft"
+      required: true
+
+    - id: A21
+      description: >
+        PROPERTY (F8b, split off A7 2026-09-21 -- see A7's amendment note for
+        why): the rail's meta line resolves to real NOS olive-700 (#6A6829,
+        per f8-tickets-rail.json's `tokensToRegister` and
+        `rail.metaLine.colorClass`). Locates the meta line via a new stable
+        anchor, `data-testid="feature-rail-meta"` on MegaMenu.tsx:245's
+        `<span>` (@dev adds this, mirroring A13's `mega-menu-lead` pattern
+        and A3's `mega-menu-lead-meta` above -- `rail.locator('span')` is
+        explicitly disallowed as a locator here, since it is exactly the
+        "any span" mistake that made the original assertion vacuous).
+        CORRECTED 2026-09-21 (same day this assertion was first written):
+        this description originally stated the show dates were null in the
+        current dataset and that this assertion would therefore skip rather
+        than run. That was wrong -- checked against a source COMMENT
+        (MegaMenu.tsx:84-88, itself stale, dated 2026-09-10) rather than an
+        observed runtime value, the same category of error as A3's original
+        venueName citation (which happened to be right; this one was not).
+        @dev's live instrumented run (2026-09-21) measured the real DOM
+        state directly: `metaCount: 1, text: "16–19 September 2027"`. The
+        dates are populated. A21 runs for real today and asserts the real
+        olive-700 colour on that real text -- it does not skip.
+        The `test.skip(condition, reason)` mechanism stays required
+        regardless -- its justification was always general, not contingent
+        on today's data being null: IF `featureRailMeta` ever goes null
+        again (a CMS edit, a future dataset reset), the test must report a
+        visibly distinct SKIPPED result with a printed reason, not an
+        if-guarded block that silently never executes and looks identical to
+        a pass in the report -- precisely the shape that made findings 1 and
+        2 vacuous. That property holds whether or not the guard is currently
+        exercised; do not read this correction as license to drop it.
+        SCOPE NOTE ON DATE SEEDING: moot -- the original text declined
+        seeding real show-date data into Sanity as out-of-scope CMS work.
+        The dates are already populated in the live dataset (per @dev's
+        measurement above), so there is nothing left to seed; that scope
+        question does not apply to F8's current state.
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "meta line resolves NOS olive-700"
+      required: true
+
+    - id: A8
+      description: >
+        PROPERTY (scope boundary, negative — the exception did not leak) --
+        AMENDED 2026-09-21 after Codex found this test's coverage did not
+        match its own title (finding 3, verified directly against
+        e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts:320-344): the test is
+        titled "no NOS colour appears anywhere outside the tickets rail" but
+        actually checks exactly THREE elements (trigger, lead link, and --
+        itself guarded by `if (count > 0)` -- the "Visit" group heading)
+        against exactly ONE of the four NOS colours (royal-purple). The other
+        three registered NOS tokens (pale-gold, olive-700, purple-700) are
+        never checked outside the rail at all. Weaker defect than A3/A21's
+        (this is under-coverage the test is honest isn't complete only in the
+        sense that its own title overclaims -- it does not silently swallow
+        a check that ran), but a reader trusting the title would believe a
+        property this test does not verify.
+        Corrected requirement: the test must walk EVERY element inside the
+        open menu panel that is NOT a descendant of the rail (per `getRail`),
+        PLUS the trigger button, and for each assert that
+        `getComputedStyle(el).backgroundColor`, `.color`, and every border-*
+        Color property resolve to NONE of the four NOS hex constants already
+        declared at the top of this spec file (NOS_ROYAL_PURPLE,
+        NOS_PURPLE_700, NOS_PALE_GOLD, NOS_OLIVE_700) -- not a hand-picked
+        subset of elements checked against a hand-picked subset of colours.
+        No `if (count > 0)` special-casing of an element that unconditionally
+        exists per nav-config.ts: confirmed directly (nav-config.ts:167)
+        that `heading: 'Visit'` is a static string literal in the module's
+        top-level group array, not conditional/data-driven -- the "Visit"
+        heading renders every time the panel opens, so its existing
+        `if ((await visitHeading.count()) > 0)` guard must be removed, not
+        preserved. A genuinely optional element may still be count-guarded,
+        but the guard must be documented inline with why that specific
+        element is optional, and it must not be used as a shortcut to avoid
+        walking the panel exhaustively.
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "no NOS colour appears anywhere outside the tickets rail"
+      required: true
+
+    - id: A9
+      description: >
+        PROVENANCE (scope boundary, source-level — pairs with A7/A8, not a
+        substitute for them): components/chrome/MegaMenu.tsx and
+        components/chrome/nav-config.ts carry ZERO NOS hex literals after F8
+        lands — the four (five, including olive-700 — see f8-tickets-rail.json
+        `tokensToRegister`) NOS hex values live ONLY in app/globals.css's
+        @theme block, never as inline hex or bg-[#211a57]-style arbitrary
+        Tailwind syntax in the chrome components themselves. Run directly
+        against the pre-existing shared guard
+        (contracts/checks/menu-system-layout4-shared/check-no-nos-palette-mixing.mjs,
+        built for F1-F4 to keep SAOC/NOS palettes from mixing in exactly
+        these two files) — reused as-is, no checker edit needed, because it
+        only ever scans literal hex strings in the files it's given and
+        app/globals.css is deliberately never one of them (see
+        f8-tickets-rail.json's `styleValueProvenanceNote` for why running it
+        against globals.css itself would prove nothing). CONFIRMED during
+        contract authoring (2026-09-11) that this command exits 0 against
+        today's pre-F8 tree (no NOS hex present yet, trivially) — it must
+        ALSO still exit 0 once F8 lands, which is the property this
+        assertion actually exists to prove going forward.
+      command: >-
+        node contracts/checks/menu-system-layout4-shared/check-no-nos-palette-mixing.mjs
+        components/chrome/MegaMenu.tsx components/chrome/nav-config.ts
+      required: true
+
+    - id: A10
+      description: >
+        PROVENANCE (F8a asset dependency — fails closed, not silently): the
+        NOS logo PNG exists at its runtime-servable path,
+        public/images/nos-2027-logo-full-colour-vertical.png (branding/ is
+        not a runtime asset directory and is read-denied to agents per the
+        team lead's dispatch — see f8-lead-logo.json's `asset` section).
+        This is a precondition check, not a visual one — if it fails, @dev
+        must STOP and report the missing asset rather than reading from
+        branding/ directly, per .claude/rules/scope.md and project memory
+        project_design_folders_brad_active (Brad's active design
+        workstream). CONFIRMED during contract authoring (2026-09-11) that
+        this file does NOT yet exist at the runtime path — expected to fail
+        until the team lead (or Brad) copies it in, exactly as the dispatch
+        message says will happen.
+      command: test -f public/images/nos-2027-logo-full-colour-vertical.png
+      required: false
+
+    - id: A11
+      description: >
+        PROPERTY (F8a, NOS Design ruling R21, 2026-09-17 -- amendment, added
+        2026-09-17 before F8a implementation started; see
+        f8-lead-logo.json's `backgroundRuling` for the verbatim ruling and
+        the confirmed colourway-fit reasoning): no element between the
+        rendered <img> and the mega-menu panel (role="menu", bg-parchment)
+        carries an added background-color — the logo's own PNG element and
+        every ancestor up to the panel resolve to a transparent
+        background-color, proving NO plate/tinted rectangle sits behind the
+        artwork. NOS Design's ruling is explicit that the production sheet's
+        tinted preview panel is preview-only and must never be reproduced in
+        the shipped lead block, regardless of which of the eight supplied
+        colourways is used. Real getComputedStyle walk up the DOM chain, not
+        a source grep for an added className or bg-* utility — this
+        project's audited "assertion satisfiable without the property it
+        claims to prove" defect class applies here exactly as it does to
+        A5-A8's colour checks.
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "logo has no added background plate behind it"
+      required: true
+
+    - id: A12
+      description: >
+        PROVENANCE (F8a, file integrity + exact filename) -- RE-GROUNDED
+        2026-09-21 after NOS Design withdrew R22 in full (commit 0a79280,
+        relayed with Brad's direct instruction: "Keep the fucking branding
+        assets as I supplied them. Don't convert edit or change anything.
+        You place it on the page and that's it.") and asked for A12 and its
+        checker to be removed. See f8-lead-logo.json's `backgroundRuling
+        .servingResolutionRuling.withdrawalRecord` for the full withdrawal
+        record, NOS Design's own reasoning (the vertical master is ~16x
+        oversampled against its 200px render even before any Retina
+        multiplier, so the density problem this ruling policed never arises
+        when the file is used as supplied), and why this is the second time
+        R22 has been narrowed or withdrawn in this golden.
+        THE WIDTH FLOOR ITSELF IS FULLY REMOVED, not merely relaxed -- its
+        premise (derivatives must be cut from the master to specific target
+        widths) is dead, and Brad's stated asset policy ("place it, don't
+        process it") independently settles the question regardless of R22.
+        Do not re-add a width check on this reasoning's authority; if a
+        width-related concern resurfaces it needs its own new ruling, not a
+        revival of this one.
+        WHAT SURVIVES, RE-GROUNDED ON ITS OWN MERITS (never on R22): the
+        checker's other five checks -- PNG signature, IHDR-is-first-chunk,
+        IHDR length == 13, an IEND terminator present (truncation
+        detection), at least one IDAT chunk present (pixel data exists) --
+        plus the exact-basename check (`caseSensitivityRuling`, added
+        2026-09-19, unaffected by the R22 withdrawal). None of these police
+        export width; they catch a bad HAND-COPY of the master, which is
+        exactly the operation Brad's "place it, don't process it" policy
+        still requires a human to perform correctly, and a truncated or
+        interrupted copy is if anything MORE relevant under a
+        no-processing-step policy than before -- there is no build step
+        downstream that would ever notice a partial copy either.
+        WHY THIS STAYS A GATE-TIME FILE CHECK RATHER THAN FOLDING INTO A20:
+        re-tested against A20 now that A12's own purpose has changed (per
+        the team lead's instruction to re-test, not assume,
+        `relationshipToA12_notASubstitute` still holds) -- it still holds,
+        on a different basis than originally stated. The original basis (A12
+        runs before F8a exists, when no DOM exists to inspect) is now
+        historical, since F8a has shipped. The basis that survives: A12 is a
+        cheap, dependency-free, direct file read that runs without booting a
+        dev server or a browser, and when it fails it names the SPECIFIC
+        defect (not a PNG / truncated / mis-cased) rather than the single
+        undifferentiated symptom A20 gets (naturalWidth stayed at or near
+        0), which could mean a corrupt file, a 404 from a wrong src, a
+        Next.js image-optimizer failure, or a slow/flaky load -- A20 cannot
+        distinguish these from each other, A12 can. The two remain
+        complementary, not redundant: A12 diagnoses the file at rest, A20
+        proves the fully-wired page actually serves and decodes it.
+      command: >-
+        node contracts/checks/menu-system-layout4-f8/check-logo-source-resolution.mjs
+        public/images/nos-2027-logo-full-colour-vertical.png
+      required: true
+
+    - id: A13
+      description: >
+        PROVENANCE (F7-spec repair, stable locator): the lead block
+        container in MegaMenu.tsx carries data-testid="mega-menu-lead" --
+        added specifically so e2e assertions can locate the lead block
+        without depending on its current text content, which F8a already
+        changed once (eyebrow + serif heading -> logo image) and could
+        plausibly change again (e.g. a future copy edit to leadMeta, or a
+        second logo swap). A structural, content-independent anchor closes
+        this class of breakage for good rather than deferring the same
+        repoint work to the next content change.
+      command: grep -q 'data-testid="mega-menu-lead"' components/chrome/MegaMenu.tsx
+      required: true
+
+    - id: A14
+      description: >
+        PROPERTY (F7-spec repair, repoint not retire): "group columns and
+        feature rail carry a 1px rule-soft left border; lead block does
+        not" -- same title, same measured properties (border-left-width,
+        border-left-color, padding) as the original F7 test, now locating
+        the lead block via data-testid="mega-menu-lead" (A13) instead of
+        the removed eyebrow text `panel.getByText('The National Show')`.
+        The property (lead block has no left rule; group columns and the
+        feature rail do) is unaffected by F8a and must keep proving the
+        same thing, not a weaker existence check.
+      command: >-
+        npx playwright test e2e/mega-menu-layout4-visual-fidelity.spec.ts -g
+        "group columns and feature rail carry a 1px rule-soft left border; lead block does not"
+      required: true
+
+    - id: A15
+      description: >
+        PROPERTY (F7-spec repair, repoint not retire): "track widths follow
+        the artifact ratio 1.05 : 1 : 1 : 1 : 0.9, not 2 : 1 : 1 : 1 : 2" --
+        same title, same 1.05:1:1:1:.9 ratio computation and zero-gap
+        edge-to-edge checks as the original F7 test, now measuring the lead
+        track's bounding box via data-testid="mega-menu-lead" (A13) instead
+        of the removed eyebrow text. Do not let this repoint collapse into
+        an existence check -- the ratio math (colUnit, tolerance 0.06, all
+        five track-width comparisons) must be preserved exactly.
+      command: >-
+        npx playwright test e2e/mega-menu-layout4-visual-fidelity.spec.ts -g
+        "track widths follow the artifact ratio"
+      required: true
+
+    - id: A16
+      description: >
+        PROPERTY (F7-spec repair, repoint not retire, serif branch only):
+        "font-family tokens terminate in a real generic CSS keyword, not
+        just contain a lucky substring" -- the serif sub-check is repointed
+        from the removed lead-link text to the feature rail's <h4>Tickets
+        </h4> heading (MegaMenu.tsx:249, the only font-serif text element
+        remaining in the panel after F8a), asserting the same property (the
+        resolved font-family's LAST comma-separated entry is exactly
+        `serif`, not merely a substring match on a font name that happens
+        to contain "serif"). The mono branch (a group heading, e.g. "Visit")
+        and the sans branch (page body) are untouched by F8a and must stay
+        exactly as they were -- do not repoint elements that were never
+        affected.
+      command: >-
+        npx playwright test e2e/mega-menu-layout4-visual-fidelity.spec.ts -g
+        "font-family tokens terminate in a real generic CSS keyword"
+      required: true
+
+    - id: A17
+      description: >
+        PROVENANCE (F7-spec repair, genuine retirement): the eyebrow
+        pill-badge test ("the lead block eyebrow (.The National Show.) is
+        styled to the artifact's .dd-head treatment, not a pill badge") is
+        retired via test.skip, not deleted and not left failing -- its
+        target element (the eyebrow <p>) no longer exists after F8a; A1
+        above already proves the eyebrow text is gone, replaced by the logo
+        image, so there is nothing left for this test to assert about. The
+        skip reason must name A1 as the superseding assertion, following
+        the same retirement pattern this spec file already uses for the
+        F7->F8 CTA test (line ~364) -- a bare `test.skip` with no reason, or
+        a silent deletion, both fail this check.
+      command: >-
+        grep -q 'test.skip' e2e/mega-menu-layout4-visual-fidelity.spec.ts &&
+        grep -qi 'RETIRED' e2e/mega-menu-layout4-visual-fidelity.spec.ts &&
+        grep -q 'pill badge' e2e/mega-menu-layout4-visual-fidelity.spec.ts
+      required: true
+
+    - id: A18
+      description: >
+        PROPERTY (F7-spec repair, split -- leadMeta half survives as its own
+        live test): the combined "lead link and lead meta line match the
+        artifact's .dd-lead / .dd-lead-sub typography" test is split in two.
+        The leadLink half (font-size 23px, font-weight 600, color, serif
+        font-family, margin-top of the removed serif <Link>) is retired
+        alongside A17's eyebrow retirement, same reasoning (text replaced by
+        an image, nothing left to assert). The leadMeta half (font-size
+        12.5px, GOLD_MUTED color, non-mono font-family of the venue/date
+        span) is UNCHANGED by F8a per f8-lead-logo.json's metaLineRuling and
+        must survive as its own standalone, still-passing test -- not
+        skipped alongside the leadLink half it used to share a test body
+        with. This assertion proves the new standalone leadMeta test exists
+        and passes.
+      command: >-
+        npx playwright test e2e/mega-menu-layout4-visual-fidelity.spec.ts -g
+        "lead meta line"
+      required: true
+
+    - id: A19
+      description: >
+        PROPERTY (F7-spec repair, full-file regression gate): every test in
+        e2e/mega-menu-layout4-visual-fidelity.spec.ts passes or is
+        deliberately, legibly skipped (A17/A18's two retirements plus the
+        pre-existing F7->F8 CTA retirement at line ~364) -- no test is left
+        red, and no test silently vanished. This is the assertion that
+        closes the loop the team lead's dispatch opened: Codex's cross-model
+        pass caught 5 failures @dev's own narrow test run missed by running
+        only the F8 spec file; this check runs the WHOLE F7 spec file so the
+        same class of miss can't recur here.
+      command: npx playwright test e2e/mega-menu-layout4-visual-fidelity.spec.ts
+      required: true
+
+    - id: A20
+      description: >
+        PROPERTY (F8a, closes f8-lead-logo.json's `domLoadVerificationRequirement`
+        -- binding on A1-A3 since 2026-09-19, recorded as outstanding until now):
+        the rendered logo <img> actually loaded and decoded a real image, not
+        merely that a syntactically correct element with the right src exists
+        in markup. Asserts, on the live element after load, BOTH
+        `complete === true` AND `naturalWidth > 0` -- `complete` alone can be
+        true on a failed/errored load in some browsers, and `naturalWidth`
+        alone can transiently read 0 while a real image is still in flight, so
+        neither is sufficient alone; both together is the standard "did this
+        image genuinely decode" check and avoids a race that would make a
+        single-property version flaky (a flaky assertion gets disabled, which
+        is worse than no assertion). Also asserts a floor of
+        `naturalWidth >= 200` -- NOT the source master's 3272px, and NOT any
+        specific next/image srcset-derivative width. Per
+        .agent/memory/scratch/research-menu-system-layout4-f8-asset-provenance.md
+        finding 5, next/image with a fixed width={200} height={176} and no
+        `sizes` prop serves an optimizer-resized derivative through
+        /_next/image, generating only 1x/2x srcset candidates -- but the exact
+        pixel width Next.js snaps those candidates to (which imageSizes/
+        deviceSizes breakpoint) was explicitly NOT independently confirmed in
+        that research pass and must not be asserted as fact. What IS certain
+        without relying on that uncited detail: a "fixed-size image" 1x/2x
+        srcset by definition targets widths at or above the requested CSS
+        width, so naturalWidth >= 200 (this golden's own render.widthPx) is a
+        floor grounded in the render spec itself, not in an assumed breakpoint
+        table -- do not raise this to 400 (2x) or 3272 (master) without first
+        independently confirming, against a live Playwright run's actual
+        measured naturalWidth, which srcset candidate the test browser
+        actually loads (device pixel ratio dependent).
+        WHAT THE FLOOR ITSELF CATCHES (added 2026-09-21 -- see the declined
+        Codex finding below for why this was missing before and why that
+        omission is very likely what made the floor read as redundant): the
+        `>= 200` check is NOT redundant with `naturalWidth > 0` -- it exists
+        for the "decoded, but the wrong image" class, distinct from "failed
+        to decode". @qa's adversarial pass (scratch spec
+        .tmp/sandbox/f8-a20-qa/a20-break-test.spec.ts, this session) proved
+        this is not hypothetical: a genuinely valid, fully decodable 10x10
+        PNG swapped in at the expected src measures `complete: true,
+        naturalWidth: 10` -- it clears `naturalWidth > 0` cleanly and is
+        caught ONLY by the `>= 200` floor. A placeholder/favicon-swap class
+        of defect (small, valid, correctly-decoding image at the right path)
+        would pass every other assertion in this file and this test's own
+        `complete && naturalWidth > 0` check; only the floor catches it.
+        DECLINED CODEX FINDING (2026-09-21, third Codex pass on this spec
+        file): Codex flagged this floor as "not a valid proof of a
+        correctly decoded, rendered 200px-wide image... CSS can upscale a
+        smaller legitimate source... this extra floor can cause false
+        regressions," reading it as redundant with the preceding
+        `complete && naturalWidth > 0` check. Declined by the team lead, on
+        the record, for three reasons: (1) it refutes a stronger claim than
+        A20 makes -- A20 never claims to prove a "correctly rendered 200px
+        source," only that a real image decoded, above a floor; (2) the
+        redundancy claim is empirically false per @qa's 10x10 PNG
+        measurement above -- the floor catches a real case `> 0` alone does
+        not; (3) Codex's own justification argues the other way -- "CSS can
+        upscale a smaller legitimate source" describes exactly the
+        visibly-degraded-source defect the floor exists to catch, not a
+        reason to remove it. On Codex's "false regressions" concern:
+        naturalWidth can only read below 200 if the rendered width actually
+        drops below 200, which contradicts this golden's own render.widthPx
+        -- that would be a deliberate contract change, and this assertion
+        SHOULD fail until the contract and A20's floor are updated together;
+        failing on a silent spec change is the assertion working, not a
+        false regression. This declination is recorded here, not silently
+        dropped, so a future reader does not re-litigate it or quietly
+        delete the floor without seeing why it survived review.
+        CONVERGENCE NOTE: across three Codex passes on this spec file the
+        findings went 3 real -> 1 real -> 1 declined -- read as convergence,
+        not as license to keep running passes until one comes back clean. No
+        fourth pass was run to chase an unqualified PASS verdict; this
+        file's Codex verdict stands as FAIL with this one finding declined
+        on record, the same treatment given to the declined
+        check-logo-source-resolution.mjs findings earlier this session (see
+        f8-lead-logo.json `acceptedLimitations`). An honest FAIL-with-
+        declination is the accurate state to record.
+        WHAT THIS CLOSES THAT A12 CANNOT (A12 is a gate-time, pre-DOM IHDR
+        header read on the file at rest; this is a post-render, real-browser
+        decode of the live element -- neither substitutes for the other, see
+        f8-lead-logo.json `domLoadVerificationRequirement
+        .relationshipToA12_notASubstitute`): (1) wrong-directory placement --
+        a file present but at any path other than
+        public/images/nos-2027-logo-full-colour-vertical.png passes neither
+        A10 nor A12 today, but the <img> at the WRONG src simply 404s and
+        naturalWidth stays 0, which this assertion catches; (2) a mis-cased
+        filename on a case-sensitive host (Firebase App Hosting/Linux) that
+        slipped past caseSensitivityRuling's local-machine check for any
+        reason -- belt-and-suspenders against the same case class in
+        production, where A12 never runs; (3) a truncated or otherwise
+        corrupt file that happens to pass A12's structural IHDR-width-only
+        read (A12 never inflates IDAT, per f8-lead-logo.json
+        `acceptedLimitations.declaredWidthForgery`) -- a truncated/corrupt
+        file fails real browser decode and naturalWidth reads 0 even when
+        A12 reported a plausible declared width; (4) the declaredWidthForgery
+        class @qa demonstrated directly -- a forged IHDR width would still
+        decode to its REAL (different, smaller) dimensions in a real browser,
+        so naturalWidth would disagree with the declared width even though
+        A12's raw header read cannot see the disagreement.
+      command: >-
+        npx playwright test e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts -g
+        "logo image actually loaded and decoded"
+      required: true

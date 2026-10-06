@@ -24,10 +24,12 @@
     "/national-show/vendors",
     "/national-show/tickets",
     "/national-show/sponsors",
-    "/national-show/archive"
+    "/national-show/archive",
+    "/tickets/day-visitor",
+    "/tickets/weekend-pass"
   ],
-  "expectedHrefCount": 23,
-  "countNote": "23 = 6 flat SAOC top-level (about/societies/judging/events/members/sponsors) + 17 National Show entries (1 hub + 4 visit + 5 programme + 4 exhibit-trade + 3 the-show, matching the manifest's 17 listed:true rows exactly). Tickets' feature-rail CTA href (/national-show/tickets) is the SAME href as its theShow.links entry -- already counted once, per the existing f7 golden's own dedupe convention ('a href could in principle appear as both a mega item's own href and a column link... the test shouldn't assume that').",
+  "expectedHrefCount": 25,
+  "countNote": "25 = 6 flat SAOC top-level (about/societies/judging/events/members/sponsors) + 17 National Show entries (1 hub + 4 visit + 5 programme + 4 exhibit-trade + 3 the-show, matching the manifest's 17 listed:true rows exactly) + 2 feature-rail secondary destinations (/tickets/day-visitor, /tickets/weekend-pass) added at F9 once the checker started walking featureRail.destinations[]. Tickets' feature-rail primary destination href (/national-show/tickets) is the SAME href as its theShow.links entry -- already counted once, per the existing f7 golden's own dedupe convention ('a href could in principle appear as both a mega item's own href and a column link... the test shouldn't assume that').",
   "removedHrefsFromF7": {
     "_comment": "Hrefs that were in f7-nav-targets.json (the pre-Layout-4 F6 nav shape) and are GONE from this golden -- must not still appear anywhere in NAV after F1 lands.",
     "hrefs": ["/national-show/exhibitors/international", "/tickets"],

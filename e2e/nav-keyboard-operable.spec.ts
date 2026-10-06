@@ -34,7 +34,8 @@ const TRIGGER_NAME = 'National Show';
 // from NAV here (mirroring MegaMenu.tsx's render order exactly: lead.leadHref
 // is always a <Link>; lead.theShow.headingHref and each column's headingHref
 // render as a <Link> only when non-null, else a plain <span>; every leaf link
-// is always a <Link>; featureRail.ctaHref is always a <Link>), not hardcoded —
+// is always a <Link>; every featureRail.destinations entry is always a
+// <Link>), not hardcoded —
 // @qa independently drove this by hand and recorded the same order: lead ->
 // theShow -> Visit -> Programme -> Exhibit & Trade -> feature rail. Today that
 // resolves to lead.leadHref ('/national-show'), since theShow.headingHref is
@@ -50,7 +51,9 @@ function focusableHrefsInPanelOrder(item: Extract<NavItem, { type: 'mega' }>): s
     if (column.headingHref) hrefs.push(column.headingHref);
     for (const link of column.links) hrefs.push(link.href);
   }
-  if (item.featureRail) hrefs.push(item.featureRail.ctaHref);
+  if (item.featureRail) {
+    for (const destination of item.featureRail.destinations) hrefs.push(destination.href);
+  }
   return hrefs;
 }
 
@@ -196,5 +199,83 @@ test.describe('nav keyboard operability', () => {
 
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect(trigger).toBeFocused();
+  });
+
+  test('every focusable leaf in the open panel shows a visible focus indicator, not just the first', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/');
+
+    const trigger = await tabToAccessibleName(page, TRIGGER_NAME);
+    await page.keyboard.press('Enter');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+    const panel = page.getByRole('menu', { name: TRIGGER_NAME });
+    const expectedHrefs = focusableHrefsInPanelOrder(NATIONAL_SHOW_ITEM);
+    expect(expectedHrefs.length).toBeGreaterThan(1);
+
+    // Iterate the DOM anchors themselves, by position, not by href
+    // lookup -- focusableHrefsInPanelOrder does not dedupe, and
+    // /national-show/tickets legitimately appears twice (theShow.links
+    // AND the featureRail primary CTA, the ruled F8 duplication). A
+    // href-keyed `.first()` lookup silently collapses the second
+    // occurrence onto the same DOM node as the first, so it is never
+    // independently focus-tested. Asserting the DOM anchor count
+    // equals expectedHrefs.length (duplicates included) means this
+    // test cannot pass by rendering fewer anchors than the config
+    // declares, either.
+    const panelLinks = panel.locator('a[href]');
+    await expect(
+      panelLinks,
+      `panel DOM anchor count must equal the NAV-derived expected count ` +
+        `(${expectedHrefs.length}, duplicates included) -- a mismatch means this test is not ` +
+        `walking every rendered anchor.`,
+    ).toHaveCount(expectedHrefs.length);
+
+    const linkCount = await panelLinks.count();
+    for (let i = 0; i < linkCount; i++) {
+      const link = panelLinks.nth(i);
+      const href = await link.getAttribute('href');
+      await link.evaluate((el) => (el as HTMLElement).focus());
+      await expect(link).toBeFocused();
+
+      const style = await link.evaluate((el) => {
+        const s = getComputedStyle(el);
+        return { outlineStyle: s.outlineStyle, outlineWidth: s.outlineWidth, boxShadow: s.boxShadow };
+      });
+      const hasVisibleFocusRing =
+        (style.outlineStyle !== 'none' && style.outlineWidth !== '0px') || style.boxShadow !== 'none';
+
+      expect(
+        hasVisibleFocusRing,
+        `panel anchor #${i} (href=${href}) has no real focus indicator via getComputedStyle: ${JSON.stringify(style)}`,
+      ).toBe(true);
+    }
+  });
+
+  test('Tab past the last focusable leaf leaves the panel (no focus trap)', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/');
+
+    const trigger = await tabToAccessibleName(page, TRIGGER_NAME);
+    await page.keyboard.press('Enter');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+    const panel = page.getByRole('menu', { name: TRIGGER_NAME });
+    const allHrefs = focusableHrefsInPanelOrder(NATIONAL_SHOW_ITEM);
+    const lastHref = allHrefs[allHrefs.length - 1];
+
+    const lastLink = panel.locator(`a[href="${lastHref}"]`).first();
+    await lastLink.evaluate((el) => (el as HTMLElement).focus());
+    await expect(lastLink).toBeFocused();
+
+    await page.keyboard.press('Tab');
+
+    const stillInPanel = panel.locator(':focus');
+    await expect(
+      stillInPanel,
+      'focus is still inside the open panel after tabbing past its last leaf -- this is a focus trap',
+    ).toHaveCount(0);
   });
 });

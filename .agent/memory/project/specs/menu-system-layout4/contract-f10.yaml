@@ -1,0 +1,174 @@
+schema: athanor.contract/v1
+slug: menu-system-layout4
+goal: >
+  Fix a regression the Codex GPT-5.5 cross-model review of F9 caught: F9 rewrote
+  contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs's flattenNavHrefs()
+  to walk the F8 `featureRail.destinations[]` shape instead of the retired F7
+  `featureRail.ctaHref` field, but did not update the one negative fixture that hand-carries
+  its own `featureRail` block:
+  .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-good-control.mjs
+  (lines 173-178) still has the F7 shape:
+    "featureRail": { "meta": ..., "heading": "Tickets", "blurb": ..., "ctaLabel": ...,
+    "ctaHref": "/national-show/tickets" }
+  with no `destinations` array. Running the (now-correct) checker against this fixture
+  throws `TypeError: item.featureRail.destinations is not iterable` at
+  check-nav-hrefs-golden.mjs:40 instead of exercising the fixture's real purpose.
+
+  good-control.mjs's own header comment states its purpose precisely: "exact transcription
+  of goldens/f1-nav-config-target.json's target NAV shape ... used as the positive control
+  before pointing checkers at the negative fixtures ... if this fixture itself fails a
+  checker, the checker (or the golden) has a bug, not the fixture." It is not itself a
+  negative fixture -- it is the positive baseline the four real negative fixtures
+  (nav-config-dead-link-not-fixed.mjs, nav-config-invented-descriptor.mjs,
+  nav-config-missing-sponsors-href.mjs, nav-config-tickets-back-in-top-row.mjs) all
+  `import { NAV as GOOD } from './nav-config-good-control.mjs'` and `structuredClone(GOOD)`
+  before injecting their own single defect via targeted mutation -- none of the four
+  redefines `featureRail` itself, so all four inherit good-control's stale shape and would
+  hit the identical crash the moment their fixture is run, masking whatever single defect
+  each one actually exists to test (dead link not fixed, invented descriptor, tickets back
+  in top row, missing sponsors href respectively). Confirmed directly: `grep -n featureRail`
+  across every f1-negative-fixtures/*.mjs matches only good-control.mjs; the other four
+  fixtures are 10-13 lines of `structuredClone(GOOD)` plus one targeted mutation each, none
+  touching featureRail.
+
+  Fixing good-control.mjs's featureRail block to the F8 shape therefore fixes all five
+  fixtures in the directory at once -- there is exactly one file to change.
+
+  DECISION on the defensive-guard question raised in F9's Codex review (should
+  flattenNavHrefs() guard against featureRail.destinations being missing/non-iterable):
+  NO GUARD. NavMegaFeatureRail (components/chrome/nav-config.ts:102-108) declares
+  `destinations: NavMegaFeatureRailDestination[]` as a required, non-optional field --
+  TypeScript itself refuses to compile a `featureRail` object missing it anywhere in
+  production nav-config.ts, so the only place this shape can ever go stale is hand-authored
+  test fixtures that bypass the type checker by construction (a `.mjs` literal, not `.ts`).
+  A defensive guard in the checker would silently absorb exactly that drift -- the same
+  class of bug this feature is fixing -- turning a loud, immediate TypeError into a quiet
+  false pass or an empty destinations set that the golden diff might not even flag. Per
+  this project's coding standard ("fail fast: validate inputs at system boundaries"),
+  fixture data authored by the same test suite that consumes it is not a system boundary;
+  it is trusted internal data that must simply be kept in sync, the same way F9 itself was
+  a keep-in-sync fix. The crash is doing its job: it is what surfaced this regression before
+  it reached production. check-nav-hrefs-golden.mjs must NOT be modified by this feature.
+created_at: '2026-09-14'
+autonomy: high
+features:
+  - id: F10
+    name: >-
+      Update nav-config-good-control.mjs's featureRail block to the F8 {heading,
+      destinations[]} shape so it and the four fixtures that clone it stop crashing
+      check-nav-hrefs-golden.mjs; no change to the checker itself
+    status: pending
+goldens:
+  - .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-good-control.mjs
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        FIX SPEC (exact, no judgment call left to @dev): in
+        goldens/fixtures/f1-negative-fixtures/nav-config-good-control.mjs, replace the
+        featureRail block (currently lines 173-178:
+          "featureRail": {
+            "meta": "(placeholder pending Brad/Lee-Ann copy)",
+            "heading": "Tickets",
+            "blurb": "(placeholder pending Brad/Lee-Ann copy)",
+            "ctaLabel": "Buy tickets",
+            "ctaHref": "/national-show/tickets"
+          }
+        ) with the F8 shape, transcribed from the real nav-config.ts featureRail
+        (components/chrome/nav-config.ts:266-276) exactly as the file's own header comment
+        requires ("exact transcription of ... target NAV shape"):
+          "featureRail": {
+            "heading": "Tickets",
+            "destinations": [
+              {
+                "id": "tickets",
+                "label": "Tickets",
+                "href": "/national-show/tickets",
+                "variant": "primary"
+              },
+              {
+                "id": "day-visitor",
+                "label": "Day Visitor",
+                "href": "/tickets/day-visitor",
+                "variant": "secondary"
+              },
+              {
+                "id": "weekend-pass",
+                "label": "Weekend Pass",
+                "href": "/tickets/weekend-pass",
+                "variant": "secondary"
+              }
+            ]
+          }
+        Drop `meta`, `blurb`, `ctaLabel`, `ctaHref` entirely -- they do not exist on
+        NavMegaFeatureRail (components/chrome/nav-config.ts:102-108) or the real NAV
+        export. Do not add a `meta` key either: the real nav-config.ts featureRail has no
+        `meta` field (only NavMegaLead does) -- confirm against nav-config.ts:266-276
+        directly, not from memory, before writing the replacement.
+      command: >-
+        test -f .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-good-control.mjs
+      required: true
+
+    - id: A2
+      description: >
+        REGRESSION GUARD: the stale F7 fields are fully gone from the fixture.
+      command: >-
+        ! grep -qE "ctaHref|ctaLabel|\"blurb\"" .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-good-control.mjs
+      required: true
+
+    - id: A3
+      description: >
+        PROPERTY: the fixture now carries the F8 destinations array with all three real
+        hrefs, matching the live NAV's featureRail exactly.
+      command: >-
+        grep -q '"destinations"' .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-good-control.mjs
+        && grep -q '"/national-show/tickets"' .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-good-control.mjs
+        && grep -q '"/tickets/day-visitor"' .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-good-control.mjs
+        && grep -q '"/tickets/weekend-pass"' .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-good-control.mjs
+      required: true
+
+    - id: A4
+      description: >
+        PROPERTY (the actual gate this feature closes): running the golden checker
+        directly against the fixed positive-control fixture no longer throws and exits 0
+        (this is the crash reproduced in the goal -- it must now succeed since
+        good-control.mjs is a transcription of the golden target, not a defect fixture).
+      command: >-
+        node contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-good-control.mjs
+      required: true
+
+    - id: A5
+      description: >
+        PROPERTY: all four real negative fixtures, which clone good-control.mjs, also run
+        without crashing and each still exits 1 for its own single injected defect (proves
+        the fix did not accidentally paper over the intended failures, and that inheriting
+        the corrected featureRail did not change which check trips first).
+      command: >-
+        ! node contracts/checks/menu-system-layout4-f1/check-dead-link-fixed.mjs .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-dead-link-not-fixed.mjs
+        && ! node contracts/checks/menu-system-layout4-f1/check-descriptor-provenance.mjs .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-invented-descriptor.mjs
+        && ! node contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-missing-sponsors-href.mjs
+        && ! node contracts/checks/menu-system-layout4-f1/check-nav-top-level-golden.mjs .agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-negative-fixtures/nav-config-tickets-back-in-top-row.mjs
+      required: true
+
+    - id: A6
+      description: >
+        SCOPE GUARD: this is a fixture-only fix. The checker itself, the real nav config,
+        and the golden target/hrefs files must all be untouched -- confirms the diagnosis
+        that the drift was entirely in one stale hand-authored fixture, and enforces the
+        DECISION above (no defensive guard added to the checker).
+      command: >-
+        git diff --quiet HEAD -- contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs components/chrome/nav-config.ts .agent/memory/project/specs/menu-system-layout4/goldens/f1-nav-hrefs.json .agent/memory/project/specs/menu-system-layout4/goldens/f1-nav-config-target.json
+      required: true
+
+    - id: A7
+      description: >
+        Full F1 gate re-run stays green end to end after this fix (mirrors F9's A6 --
+        confirms the fixture fix did not disturb the base gate against the real,
+        unmodified NAV export).
+      command: >-
+        node contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs &&
+        node contracts/checks/menu-system-layout4-f1/check-nav-top-level-golden.mjs &&
+        node contracts/checks/menu-system-layout4-f1/check-descriptor-provenance.mjs &&
+        node contracts/checks/menu-system-layout4-f1/check-dead-link-fixed.mjs
+      required: true

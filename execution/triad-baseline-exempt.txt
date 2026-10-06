@@ -59,3 +59,46 @@ contracts/m2-next16-upgrade.yaml
 # re-arms enforcement until its sha256 pin is refreshed.
 .agent/memory/project/specs/nos-design-system/contract-m7.yaml
 .agent/memory/project/specs/nos-design-system/contract-m8.yaml
+# menu-system-layout4 contract-f11.yaml: ruling = Brad (operator), 2026-10-03,
+# "continue without me" accepting the orchestrator's recommendation ("exempt
+# gws_inbox_check alone for F11, same ruling as nos-design-system; codex_qa and
+# browser_deployed_check remain mandatory"). codex_qa and browser_deployed_check
+# are declared for real in the contract (A17/A18); only gws_inbox_check is
+# grandfathered here. Reason: no email surface -- this feature is navigation
+# menu test-infrastructure and gate bookkeeping only, it sends no email.
+# Baselined 2026-10-03, so the linter's missing-set at pin time was
+# {gws_inbox_check} alone (confirmed live via execution/verify_triad_coverage.py
+# against this file). Any further edit to the contract re-arms enforcement
+# until its sha256 pin is refreshed.
+.agent/memory/project/specs/menu-system-layout4/contract-f11.yaml
+# beta-password-wall contract-f2.yaml: ruling = orchestrator, under Brad's
+# standing "continue without me" (2026-10-03) and his direct request for this
+# wall (2026-10-06). Baselined 2026-10-06. codex_qa and browser_deployed_check
+# are declared for real in the contract (A_triad_codex/A_triad_browser); only
+# gws_inbox_check is grandfathered here. Reason: no email surface -- the
+# contract's own A_triad_gws explains why: lib/email.ts,
+# lib/confirmation-email.ts and lib/qr.ts embed QR codes inline (data URI) or
+# as CID attachments, never fetched from the site origin, so the wall has
+# nothing to break on an email-rendering path. Confirmed live via
+# execution/verify_triad_coverage.py against this file: missing-set at pin
+# time was {gws_inbox_check} alone. Any further edit to the contract re-arms
+# enforcement until its sha256 pin is refreshed.
+# 2026-10-06: re-pinned after retry 1 (CDN-cache fix); the missing set is unchanged.
+.agent/memory/project/specs/beta-password-wall/contract-f2.yaml
+# beta-password-wall contract-f1.yaml: same ruling as contract-f2.yaml above
+# (orchestrator, under Brad's standing "continue without me" (2026-10-03) and
+# his direct request for this wall (2026-10-06)). Baselined 2026-10-06. This
+# is NOT an exemption from review -- by contract design, F2 declares the
+# triad once to cover the combined F1+F2 diff, because nothing in F1 is live
+# before deploy (same single-end-of-mission precedent
+# menu-system-layout4/contract-f11.yaml set). F2's A_triad_codex reviews the
+# full diff including proxy.ts, lib/beta-public-launch.ts and app/robots.ts;
+# F2's A_triad_browser drives the deployed wall; gws is not applicable for the
+# same no-email-surface reason as contract-f2.yaml. Confirmed live via
+# execution/verify_triad_coverage.py against this file: missing-set at pin
+# time was {codex_qa, browser_deployed_check, gws_inbox_check} -- all three,
+# intentionally, because this feature's own review and deployed verification
+# live entirely in F2. Any further edit to the contract re-arms enforcement
+# until its sha256 pin is refreshed.
+# 2026-10-06: re-pinned after retry 1 (CDN-cache fix); the missing set is unchanged.
+.agent/memory/project/specs/beta-password-wall/contract-f1.yaml

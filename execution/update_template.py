@@ -1163,6 +1163,7 @@ def merge_line_union(src: Path, dst: Path, backup_dir: Path) -> str:
     return f"  merge  (line_union, +{len(new_lines)} lines): {dst}"
 
 
+HARNESS_HOOK_DIR = "execution/" + "hooks/"
 HOOK_SCRIPT_RE = re.compile(r"execution/hooks/([A-Za-z0-9_.-]+\.sh)")
 
 
@@ -1239,7 +1240,79 @@ def _is_hook_config(value) -> bool:
     return True
 
 
-def replace_hook_config(override_hooks: dict) -> dict:
+HOOK_SCRIPT_RE = re.compile(r"[\w./-]*hooks/([\w.-]+\.(?:sh|py))")
+
+
+def _hook_scripts_in(entry) -> set:
+    """Basenames of hook scripts a registration's command references."""
+    if not isinstance(entry, dict):
+        return set()
+    return set(HOOK_SCRIPT_RE.findall(str(entry.get("command", ""))))
+
+
+def _harness_hook_scripts(override_hooks: dict) -> set:
+    """Every hook script the template itself registers."""
+    scripts = set()
+    for groups in (override_hooks or {}).values():
+        if not isinstance(groups, list):
+            continue
+        for group in groups:
+            if isinstance(group, dict):
+                for entry in group.get("hooks", []):
+                    scripts |= _hook_scripts_in(entry)
+    return scripts
+
+
+def _hook_scripts_exist(entry, target_root) -> bool:
+    """True when at least one script this registration names is on disk."""
+    if target_root is None:
+        return True
+    for name in _hook_scripts_in(entry):
+        for base in ("execution/" + "hooks", ".claude/" + "hooks",
+                     ".gemini/" + "hooks", ".grok/" + "hooks"):
+            if (Path(target_root) / base / name).exists():
+                return True
+    return False
+
+
+def _drop_existing_registration(entry, harness_scripts: set, target_root) -> bool:
+    """Should this pre-existing registration be dropped during an update?
+
+    DIRECTORY IS NOT OWNERSHIP. The previous attempt keyed on the script living
+    in the harness hooks directory, and mumbl-ai-f0 measured the result on a
+    live update: every one of that project's own hooks lives there, so all
+    eight were classified harness-owned, then classified retired because the
+    current template does not ship them, then deregistered. Eleven hook events
+    went to six. The scripts stayed on disk, so an existence check reported a
+    false all-clear while nothing ran them -- the worst end state available,
+    because a session simply stops wrapping up and nothing says why.
+
+    Two narrow reasons to drop, and PRESERVE for everything else:
+
+    1. The current template ships this script. The template's own groups
+       supply it, so keeping the old registration duplicates it -- and this is
+       what collapses three old check_autonomy registrations (Bash, Write,
+       Edit) into the one `Bash|Edit|Write` group (#1394).
+
+    2. The script is gone from disk. That is a real retirement: the overlay
+       deleted the file, so the registration can only be a dead reference.
+
+    A registration naming no script at all is the project's and is preserved.
+    Ambiguity resolves to PRESERVE in every case, because the failure modes are
+    not symmetric: a stale registration is a no-op behind its own `[ -f X ]`
+    guard, while a deleted one goes unnoticed until a session ends without a
+    wrap-up.
+    """
+    referenced = _hook_scripts_in(entry)
+    if not referenced:
+        return False
+    if referenced & harness_scripts:
+        return True
+    return not _hook_scripts_exist(entry, target_root)
+
+
+def replace_hook_config(override_hooks: dict, existing_hooks=None,
+                        target_root=None) -> dict:
     """The `hooks` key of a settings file is REPLACED wholesale, never unioned.
 
     THE DEFECT (#1394). Unioning hook registrations by (event, matcher) let
@@ -1267,16 +1340,35 @@ def replace_hook_config(override_hooks: dict) -> dict:
     `[ -f X ] || exit 0` guard, but 22 of them, in a file the directive is
     cutting to six.
 
-    WHAT REPLACEMENT COSTS, AND WHY IT COSTS NOTHING. A downstream's own hooks
-    inside a template-declared matcher group do not survive this. They are not
-    meant to live here: `.claude/settings.json` is a MERGE path the harness
-    delivers, while `.claude/settings.local.json` is WORKSPACE in
-    .agent/update-manifest.yaml -- personal overrides, gitignored, and never
-    read or written by this module. Local hooks belong there, where no update
-    can reach them.
+    WHAT REPLACEMENT USED TO COST, AND WHY THAT WAS NOT ACCEPTABLE. This
+    function used to return a result that was a function of the template
+    ALONE, on the reasoning that a project's own hooks "are not meant to live
+    here" and belong in the WORKSPACE-category settings.local.json. The
+    reasoning was fine and the behaviour was not: nothing ever migrated an
+    existing project's hooks there, nothing warned that they were about to go,
+    and the strategy doing it is declared `json_deep_merge` on a MERGE-category
+    file. A merge that deletes keys is mislabelled.
 
-    Idempotent by definition: the result is a function of the template alone.
+    Measured by mumbl-ai-f0 2026-09-21, updating to 3.8.3: 77 deletions
+    against 5 insertions on .claude/settings.json. Nine project hooks were
+    destroyed, including the ENTIRE SessionEnd block -- that project's
+    session-end wrap-up and memory persistence, documented in its own memory.md
+    as the mechanism that runs automatically. Two of the five insertions were
+    genuine. Everything else was destruction, and fleet_acceptance passed 6/6
+    while it happened.
+
+    SO: HARNESS-OWNED REGISTRATIONS ARE STILL REPLACED -- that is what retires
+    a hook and what reconciles a changed matcher set, and both are still
+    required. Registrations the template does not own are CARRIED OVER. A
+    registration is harness-owned if its command names a script the template
+    ships under execution/hooks or .claude/hooks; anything else is the
+    project's and is none of the updater's business.
+
+    Still idempotent: replacing harness registrations and preserving the same
+    local ones twice gives the same file.
     """
+    harness_scripts = _harness_hook_scripts(override_hooks)
+
     out = {}
     for event, groups in override_hooks.items():
         rebuilt = []
@@ -1287,6 +1379,32 @@ def replace_hook_config(override_hooks: dict) -> dict:
             new_group["hooks"] = merge_hook_entries([], group.get("hooks", []))
             rebuilt.append(new_group)
         out[event] = rebuilt
+
+    # Carry over every registration the template does not own, in its original
+    # event and matcher group. A project-local hook sharing a matcher with a
+    # template group is appended to that group rather than dropped.
+    for event, groups in (existing_hooks or {}).items():
+        if not isinstance(groups, list):
+            continue
+        for group in groups:
+            if not isinstance(group, dict):
+                continue
+            local = [h for h in group.get("hooks", [])
+                     if not _drop_existing_registration(
+                         h, harness_scripts, target_root)]
+            if not local:
+                continue
+            matcher = group.get("matcher")
+            target = None
+            for candidate in out.setdefault(event, []):
+                if candidate.get("matcher") == matcher:
+                    target = candidate
+                    break
+            if target is None:
+                target = dict(group)
+                target["hooks"] = []
+                out[event].append(target)
+            target["hooks"] = merge_hook_entries(target.get("hooks", []), local)
     return out
 
 
@@ -1345,23 +1463,46 @@ def merge_list_union(base_list: list, override_list: list) -> list:
     return result
 
 
-def deep_merge(base: dict, override: dict) -> dict:
+def deep_merge(base: dict, override: dict, target_root=None) -> dict:
     """Deep merge: override values take priority; nested dicts are merged
     recursively; lists present on both sides are unioned (see
     merge_list_union) instead of replaced."""
     result = dict(base)
     for key, val in override.items():
         if key == "hooks" and _is_hook_config(val):
-            # Hook registrations are harness-owned and REPLACED, not unioned.
-            # See replace_hook_config() for why a union cannot work here.
-            result[key] = replace_hook_config(val)
+            # Harness registrations are REPLACED (only replacement retires a
+            # hook or reconciles a changed matcher set); project-local ones are
+            # preserved. See replace_hook_config().
+            result[key] = replace_hook_config(val, result.get(key),
+                                              target_root)
         elif key in result and isinstance(result[key], dict) and isinstance(val, dict):
-            result[key] = deep_merge(result[key], val)
+            result[key] = deep_merge(result[key], val, target_root)
         elif key in result and isinstance(result[key], list) and isinstance(val, list):
             result[key] = merge_list_union(result[key], val)
         else:
             result[key] = val
     return result
+
+
+def _count_hook_registrations(hooks_value) -> int:
+    """Count hook command entries across every event -> matcher -> hooks list.
+
+    Mirrors the counting rule in replace_hook_config()'s docstring: a
+    "registration" is one object in a matcher group's "hooks" list, summed
+    across every matcher group in every event array.
+    """
+    if not isinstance(hooks_value, dict):
+        return 0
+    total = 0
+    for groups in hooks_value.values():
+        if not isinstance(groups, list):
+            continue
+        for group in groups:
+            if isinstance(group, dict):
+                hooks_list = group.get("hooks")
+                if isinstance(hooks_list, list):
+                    total += len(hooks_list)
+    return total
 
 
 def merge_json_deep(src: Path, dst: Path, backup_dir: Path) -> str:
@@ -1388,7 +1529,23 @@ def merge_json_deep(src: Path, dst: Path, backup_dir: Path) -> str:
     else:
         dst_data = {}
 
-    merged = deep_merge(dst_data, src_data)
+    # The settings file sits one level inside the project root
+    # (.claude/settings.json), so its grandparent is that root --
+    # needed to tell a retired hook from a project hook by asking
+    # whether the script is still on disk.
+    merged = deep_merge(dst_data, src_data, dst.parent.parent)
+
+    # Hook-reconciliation telemetry (delivery-and-truth F1, #1410). Only
+    # emitted for a file that actually carries a `hooks` key on either side
+    # of the merge -- most json_deep_merge targets (e.g. statusline.json)
+    # never do. This callsite runs only on the --apply path: the MERGE
+    # branch in main()'s manifest loop prints "would merge (...)" and skips
+    # straight past this function under --dry-run, so no separate gating is
+    # needed here to keep the line off a dry-run preview.
+    if "hooks" in dst_data or "hooks" in merged:
+        n = _count_hook_registrations(dst_data.get("hooks"))
+        m = _count_hook_registrations(merged.get("hooks"))
+        print(f"hooks: {n} -> {m}")
 
     if merged == dst_data:
         return f"  unchanged (json_deep_merge): {dst}"
@@ -1446,11 +1603,15 @@ def apply_retractions(
 
     Runs as its own pass, AFTER the normal manifest loop (same shape as
     apply_missing_file_backstop). Reads manifest["retractions"] -- an
-    optional list of {path, key_path, bad_value, action, replacement,
-    reason, issue} entries (see .agent/update-manifest.yaml). For each
-    entry: load `path` (workspace-relative) as JSON, resolve the dotted
-    `key_path`, and act ONLY if the CURRENT value there is JSON-equal to
-    `bad_value` -- never on "key absent" (that would clobber a legitimate
+    optional list of {path, key_path, bad_value (optional), action,
+    replacement, reason, issue} entries (see .agent/update-manifest.yaml).
+    For each entry: load `path` (workspace-relative) as JSON, resolve the
+    dotted `key_path`, and act on the CURRENT value there. `bad_value` is
+    OPTIONAL: when present, act ONLY if the current value is JSON-equal to
+    it (exact-match mode -- e.g. the haiku-model entry); when omitted, act
+    on ANY present value at `key_path` (any-value mode -- e.g. retiring
+    CLAUDE_AUTOCOMPACT_PCT_OVERRIDE, fleet-observed at both 30 and 35). In
+    BOTH modes, never act on "key absent" (that would clobber a legitimate
     local customization upstream never shipped) and never dependent on any
     prior delivery record, so this fires correctly on a workspace that has
     never seen this mechanism before (every real affected workspace today).
@@ -1494,7 +1655,8 @@ def apply_retractions(
         try:
             rel_path = entry["path"]
             key_path = entry["key_path"]
-            bad_value = entry["bad_value"]
+            has_bad_value = "bad_value" in entry
+            bad_value = entry.get("bad_value")
         except (KeyError, TypeError) as e:
             print(
                 f"  WARN  retraction entry {entry!r} missing required field(s) "
@@ -1528,7 +1690,7 @@ def apply_retractions(
             continue
 
         current_value = parent[leaf]
-        if current_value != bad_value:
+        if has_bad_value and current_value != bad_value:
             print(
                 f"  retraction SKIP   {rel_path}::{key_path} (current value "
                 "differs from known-bad signature -- left untouched)"
@@ -2391,6 +2553,13 @@ def _walk_harness_manifest_files(manifest: dict, root: Path = Path(".")) -> list
                 if "__pycache__" in f.relative_to(dst_dir).parts:
                     continue
                 if f.suffix in (".pyc", ".pyo"):
+                    continue
+                if f.name == ".DS_Store":
+                    # macOS Finder junk, not harness content -- no exclusion
+                    # existed for it (found live 2026-09-17, jordanpumps-2e):
+                    # execution/.DS_Store and template/.DS_Store were adopted
+                    # as HARNESS baselines even though upstream ships neither,
+                    # dead bookkeeping that can never gate a real delivery.
                     continue
                 key = f"{path.rstrip('/')}/{f.relative_to(dst_dir).as_posix()}"
                 results.append((key, f))
@@ -3808,6 +3977,104 @@ def cmd_reconcile_from_history(targets: list[str]) -> int:
     return _reconcile_targets(targets, new_tree=None)
 
 
+# Ship-time content hash of THIS file, written by execution/bump_version.sh
+# at every version bump (updater-self-check F1). Independent of the
+# 587b1896 self-heal below (updater_self_stale / updater_disk_hash_before /
+# updater_had_baseline), which only detects drift during a real --apply
+# fetch -- this answers "does the code I am running match what my own
+# version number claims" on ANY invocation, no fetch or prior run required.
+UPDATER_HASH_PATH = Path("execution/update_template.sha256.json")
+
+
+def _self_check_updater_staleness() -> str | None:
+    """Compare the RUNNING execution/update_template.py's content hash
+    against the one recorded for the version .agent/version claims.
+
+    Returns the warning string if the recorded hash exists for the current
+    version and does not match -- the updater on disk is hand-patched,
+    truncated, or corrupted relative to what that version shipped. Returns
+    None when there is nothing to report: UPDATER_HASH_PATH is missing,
+    unreadable, not valid JSON, or its recorded version does not match
+    .agent/version (an ordinary behind-upstream workspace, already
+    surfaced by full_boot.sh's update banner and the version-regression
+    guard -- not the corruption case this check exists for), or the hashes
+    match.
+
+    Never raises: every failure mode collapses to "nothing to report".
+    Callers should still wrap the call in try/except (fail-open, mirroring
+    full_boot.sh/boot_panel.py's "steps never fatal" doctrine) since this is
+    pure diagnostic output that must never affect a normal run's exit code.
+    """
+    try:
+        version = Path(".agent/version").read_text().strip()
+        record = json.loads(UPDATER_HASH_PATH.read_text())
+    except (OSError, ValueError):
+        return None
+    if not isinstance(record, dict) or record.get("version") != version:
+        return None
+    try:
+        actual_hash = _sha256_of_file(Path(__file__).resolve())
+    except OSError:
+        return None
+    if record.get("sha256") == actual_hash:
+        return None
+    return (
+        f"⚠️  STALE UPDATER: execution/update_template.py claims version "
+        f"{version} but its content does not match what {version} shipped "
+        "(recorded hash mismatch). This updater may be hand-patched, "
+        "truncated, or corrupted. Run `python3 execution/update_template.py "
+        "--apply` to fetch a clean copy, or re-run `make update-template`."
+    )
+
+
+def _self_source_digest() -> str:
+    """SHA-256 of this module's own file, or "" if it cannot be read."""
+    try:
+        return hashlib.sha256(Path(__file__).resolve().read_bytes()).hexdigest()
+    except Exception:
+        return ""
+
+
+def _warn_if_self_replaced(before: str) -> bool:
+    """Say so, loudly, when the overlay replaced this module mid-run.
+
+    AN UPDATER FIX CANNOT PROTECT THE RUN THAT DELIVERS IT. Python loads this
+    module at process start; the overlay then rewrites the file on disk
+    partway through; every step after that still executes the OLD code. So the
+    run that installs a fix to the merge path is the one run guaranteed to
+    behave as though the fix does not exist -- silently, at exactly the moment
+    the operator is told it has landed.
+
+    Diagnosed by mumbl-ai-f0 2026-09-21 after three destructive settings
+    merges. The third was this: 099ac075 was on disk and irrelevant, because
+    the process had 6afb6870 in memory. They proved it by calling
+    replace_hook_config() directly on the same inputs and watching it behave
+    correctly while the live run did not. That investigation cost an evening
+    and produced a report that said a fix had failed when it had not.
+
+    Detection is cheap and re-exec is not, so this warns rather than restarts:
+    a re-run under the new code is always correct and always available.
+    """
+    after = _self_source_digest()
+    if not before or not after or before == after:
+        return False
+    print("")
+    print("  " + "!" * 68)
+    print("  !! update_template.py WAS REPLACED DURING THIS RUN.")
+    print("  !! Everything after the overlay ran under the PREVIOUS version,")
+    print("  !! including every MERGE-strategy file (.claude/settings.json).")
+    print("  !! Those results do NOT reflect the logic you just installed.")
+    print("  !!")
+    print("  !! Re-run `make update-template` to apply the new logic, then")
+    print("  !! check your hook registrations:")
+    print("  !!   python3 -c \"import json;d=json.load("
+          "open('.claude/settings.json'));print({k:sum(len(g.get('hooks',[])) "
+          "for g in v) for k,v in d.get('hooks',{}).items()})\"")
+    print("  " + "!" * 68)
+    print("")
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Athanor harness update driver — reads update-manifest.yaml, applies changes safely."
@@ -3974,6 +4241,20 @@ def main():
         ),
     )
     parser.add_argument(
+        "--self-check",
+        action="store_true",
+        default=False,
+        help=(
+            "Run ONLY the content-hash staleness check (updater-self-check "
+            "F1) against execution/update_template.sha256.json and exit -- "
+            "no fetch, manifest load, or writes. Prints OK and exits 0 if "
+            "the hash matches the recorded version (or the recorded/local "
+            "version don't line up -- not this check's problem); prints "
+            "the stale warning and exits 1 on a genuine hash mismatch for "
+            "a matching version."
+        ),
+    )
+    parser.add_argument(
         "--record-scaffold-baselines",
         default=None,
         metavar="PATH",
@@ -3988,6 +4269,41 @@ def main():
         ),
     )
     args = parser.parse_args()
+
+    # updater-self-check F1: standalone answer to "does the updater I am
+    # running match what my own version number claims" -- checked, and
+    # exited on, before any other main() logic (no fetch, no manifest load,
+    # no writes). Deliberately ahead of every other short-circuit below so
+    # --self-check never triggers any of their side effects either.
+    if args.self_check:
+        try:
+            _self_check_warning = _self_check_updater_staleness()
+        except Exception:
+            _self_check_warning = None
+        if _self_check_warning:
+            print(_self_check_warning, file=sys.stderr)
+            sys.exit(1)
+        try:
+            _self_check_version = Path(".agent/version").read_text().strip()
+        except OSError:
+            _self_check_version = "unknown"
+        print(
+            "OK — execution/update_template.py matches the hash recorded "
+            f"for version {_self_check_version}"
+        )
+        sys.exit(0)
+
+    # updater-self-check F1: passive top-of-main() pass, runs on EVERY
+    # invocation (--dry-run, --apply, or bare) -- warn-only, fail-open, and
+    # must never change a normal run's exit code. Covers the "no --apply has
+    # ever run against this hash file" case the 587b1896 self-heal below
+    # cannot see, since that heal only fires during a real fetch.
+    try:
+        _passive_staleness_warning = _self_check_updater_staleness()
+        if _passive_staleness_warning:
+            print(_passive_staleness_warning, file=sys.stderr)
+    except Exception:
+        pass
 
     # F6's two recovery affordances are standalone commands, not modifiers of
     # a normal --apply/--dry-run run: neither reads/writes HARNESS content,
@@ -4088,10 +4404,62 @@ def main():
             print(f"ERROR: source directory not found: {source}", file=sys.stderr)
             sys.exit(1)
 
+        # updater-self-staleness F1: does the RUNNING update_template.py
+        # (this process, already loaded into memory) differ from the
+        # payload's own copy? Captured HERE, before the manifest loop below
+        # can overwrite Path(__file__) on disk -- a comparison performed
+        # after delivery would always read "matches" and guard nothing. A
+        # payload tree missing execution/update_template.py is treated as
+        # NOT stale (guard skipped) so an incomplete source doesn't brick
+        # the run. Never set on --dry-run: nothing is delivered or stamped,
+        # so there is nothing to guard.
+        updater_self_stale = False
+        # fleet-heal F1: the digest of the RUNNING updater's own file as it
+        # stood BEFORE the manifest loop / bootstrap-reconcile could rewrite
+        # it. Compared against the same file at exit to tell the two stale
+        # outcomes apart: "stale and STILL stale" (the updater was withheld,
+        # nothing changed, a re-run would repeat this run exactly) from
+        # "stale but HEALED this run" (a fresh updater is now on disk and a
+        # re-run would behave differently). Only the second may re-exec.
+        updater_disk_hash_before: str | None = None
+        # ...and whether the updater carried a recorded baseline BEFORE this
+        # run. This is what separates the two populations that both arrive at
+        # `updater_self_stale`, and they must not be treated alike:
+        #
+        #   * baseline RECORDED -- an ordinary workspace that is simply behind.
+        #     The updater-self-staleness contract governs it: refuse, hold the
+        #     stamp, exit 1, so the operator re-runs deliberately with the new
+        #     updater. Unchanged by this feature.
+        #   * NO baseline -- the fleet-heal population (onboarded before
+        #     HARNESS baseline coverage). Its documented single command cannot
+        #     ever complete, because every run half-heals and exits 1 with the
+        #     stamp held. Only this population may re-exec.
+        updater_had_baseline = True
         if dry_run:
             print("[dry-run] No changes will be written. Pass --apply to apply changes.")
         else:
             print(f"[apply] Source: {source}. Backups created before overwriting.")
+
+            payload_updater = source / "execution" / "update_template.py"
+            if payload_updater.exists():
+                updater_self_stale = not _paths_have_identical_content(
+                    payload_updater, Path(__file__).resolve()
+                )
+                try:
+                    updater_disk_hash_before = _sha256_of_file(Path(__file__).resolve())
+                except OSError:
+                    # Unreadable own file: leave None, which the exit-time
+                    # check treats as "cannot prove a heal" and so never
+                    # re-execs. Degrading to today's exit 1 is always safe.
+                    updater_disk_hash_before = None
+                # Read the store ONCE, here, before the loop can write to it:
+                # the bootstrap-reconcile and the manifest loop both record
+                # baselines as they deliver, so the same question asked at
+                # exit time would answer "recorded" for every healed path and
+                # tell the two populations apart never.
+                updater_had_baseline = bool(
+                    load_template_baselines().get("execution/update_template.py")
+                )
 
             # Pre-apply version-regression guard: refuse to install a payload
             # whose declared template version is older than what's already
@@ -4549,17 +4917,89 @@ def main():
                 if key != ".agent/version"
                 and not _paths_have_identical_content(source / key, Path(key))
             ]
-            if stale_withheld:
-                version_msg = (
-                    "  HELD  template_version NOT bumped -- "
-                    f"{len(stale_withheld)} HARNESS file(s) withheld and "
-                    "stale this run: "
-                    + ", ".join(sorted(stale_withheld))
-                    + ". Stamping the new version now would claim this "
-                    "workspace is current while the file(s) above are still "
-                    "the old content. Resolve the withholding (see the "
-                    "WITHHELD block below) and re-run to advance the stamp."
-                )
+            if stale_withheld or updater_self_stale:
+                if updater_self_stale:
+                    # .agent/version is an ordinary HARNESS manifest entry --
+                    # the loop above already delivered it (it isn't
+                    # baseline-withheld in the common case), so skipping
+                    # update_profile_version() alone is not enough to hold
+                    # the stamp at its pre-run value. Restore it to its
+                    # PRE-LOOP state, captured before the manifest loop ran:
+                    # rewrite the old value if one existed, or -- when
+                    # prior_local_version is None because the file was
+                    # absent before this run -- delete the manifest-
+                    # delivered file so the workspace ends with no
+                    # .agent/version, matching pre-run state exactly (Codex
+                    # finding: the None case was previously left untouched,
+                    # so a stale run with no PRIOR .agent/version still
+                    # advanced the stamp from absent to the payload
+                    # version). Strict here (unlike the ordinary write
+                    # sites): never follow a symlink for this restore, not
+                    # even one the operator has allow-listed via
+                    # .agent/allowed-symlinks -- a restore must never write
+                    # or delete through a symlinked destination, so the
+                    # ancestor-walk check is used directly instead of
+                    # _refuse_symlinked_write()'s allow-list-consulting
+                    # wrapper.
+                    # The whole restore is wrapped: an exotic filesystem
+                    # edge (a symlink-loop RuntimeError out of
+                    # _contains_symlink_component(), a TOCTOU/permission
+                    # race on unlink(), ...) must fail LOUD, not crash
+                    # --apply with a bare traceback. The existing
+                    # `if updater_self_stale: sys.exit(1)` below already
+                    # guarantees a non-zero exit either way, so a failed
+                    # restore still ends as a loud, operator-visible,
+                    # non-zero failure -- never a silent stamp advance --
+                    # which is the acceptable degraded mode here.
+                    try:
+                        local_version_path = profile_file.parent / "version"
+                        symlinked, offending = _contains_symlink_component(
+                            local_version_path, stop_at=Path.cwd()
+                        )
+                        if symlinked:
+                            print(
+                                "  WARN  local .agent/version is reached through a "
+                                f"symlink at {offending} -- REFUSING to restore "
+                                "its pre-run state through a symlinked destination."
+                            )
+                        elif prior_local_version is not None:
+                            _write_text_nofollow(
+                                local_version_path, prior_local_version + "\n",
+                                "local .agent/version",
+                            )
+                        elif local_version_path.exists() and not local_version_path.is_symlink() \
+                                and local_version_path.is_file():
+                            local_version_path.unlink()
+                    except Exception as e:
+                        print(
+                            "  WARN  could not restore .agent/version to its "
+                            f"pre-run state ({e.__class__.__name__}): {e} -- the "
+                            "version stamp may be left at the payload value; "
+                            "re-run `make update-template` under the refreshed "
+                            "updater."
+                        )
+                    version_msg = (
+                        "  HELD  template_version NOT bumped -- "
+                        "UPDATER-SELF-STALE: the updater that ran this pass "
+                        "differs from the payload's execution/update_template.py. "
+                        "The refreshed updater has been delivered to disk, but "
+                        "its new logic did NOT execute this pass (this process "
+                        "already loaded the old code) -- template_version was "
+                        "NOT advanced. Re-run `make update-template` (or "
+                        "update_template.py --apply) now that the current "
+                        "updater is in place."
+                    )
+                else:
+                    version_msg = (
+                        "  HELD  template_version NOT bumped -- "
+                        f"{len(stale_withheld)} HARNESS file(s) withheld and "
+                        "stale this run: "
+                        + ", ".join(sorted(stale_withheld))
+                        + ". Stamping the new version now would claim this "
+                        "workspace is current while the file(s) above are still "
+                        "the old content. Resolve the withholding (see the "
+                        "WITHHELD block below) and re-run to advance the stamp."
+                    )
             else:
                 # prior_local_version was captured above, BEFORE the
                 # manifest loop -- .agent/version is a HARNESS path the loop
@@ -4588,7 +5028,8 @@ def main():
             paths_untracked = [key for key in paths_untracked if key in paths_withheld]
 
             delivery_status = (
-                DELIVERY_PARTIAL if (paths_withheld or paths_refused or paths_failed)
+                DELIVERY_PARTIAL
+                if (paths_withheld or paths_refused or paths_failed or updater_self_stale)
                 else DELIVERY_COMPLETE
             )
             try:
@@ -4740,6 +5181,92 @@ def main():
         if not dry_run:
             if stamp_divergent:
                 sys.exit(1)
+            if updater_self_stale:
+                # fleet-heal F1: a workspace onboarded before HARNESS
+                # baseline coverage reaches here on its FIRST `make
+                # update-template` -- the bootstrap-reconcile above proved
+                # its updater unmodified and delivered the current one, but
+                # THIS process is still the old code loaded into memory, so
+                # the stamp was held and everything the new updater knows
+                # (new guards, new manifest handling) did not apply. The
+                # operator's documented single command therefore ends at
+                # exit 1 having half-healed, and only a SECOND, undocumented
+                # run finishes the job.
+                #
+                # Re-exec the freshly delivered updater once, in place, so
+                # the heal completes under one command. Three conditions,
+                # all required, and each one is load-bearing:
+                #
+                #   1. The updater on disk actually CHANGED during this run
+                #      (digest differs from the pre-loop capture). A stale
+                #      updater that was WITHHELD is unchanged, so a re-exec
+                #      would re-run identical code to an identical exit 1 --
+                #      an infinite loop dressed as a recovery.
+                #   2. The new on-disk content MATCHES the payload, i.e. the
+                #      staleness this guard fired on is genuinely resolved.
+                #      Re-execing toward anything else is not a heal.
+                #   3. This process is not itself a re-exec (env guard). One
+                #      hop only: if the child still reports staleness, that
+                #      is a real defect and must surface as exit 1, never as
+                #      another hop.
+                #   4. The updater carried NO recorded baseline before this
+                #      run. A workspace that HAS one is an ordinary behind-
+                #      by-a-version install, and the updater-self-staleness
+                #      contract deliberately refuses it: hold the stamp, exit
+                #      1, let the operator re-run with the new updater. This
+                #      feature narrows to the population that contract leaves
+                #      with no way through at all -- it does not overrule it.
+                _REEXEC_ENV = "ATHANOR_UPDATER_SELF_HEAL_REEXEC"
+                updater_path = Path(__file__).resolve()
+                healed = False
+                if (updater_disk_hash_before is not None
+                        and not updater_had_baseline
+                        and os.environ.get(_REEXEC_ENV) != "1"):
+                    try:
+                        healed = (
+                            _sha256_of_file(updater_path) != updater_disk_hash_before
+                            and _paths_have_identical_content(
+                                source / "execution" / "update_template.py",
+                                updater_path,
+                            )
+                        )
+                    except OSError:
+                        healed = False
+                if healed:
+                    print(
+                        "[self-heal] the updater itself was stale and has been "
+                        "healed to the payload's copy during this run -- "
+                        "re-running the refreshed updater once so this update "
+                        "completes under a single command (stamp was held at "
+                        "its pre-run value; the re-run stamps it)"
+                    )
+                    # os.execv never returns, so the `finally` below will not
+                    # run. Clean the fetched tree here and clear the handle
+                    # so the accounting stays honest either way.
+                    if fetched_tmpdir is not None:
+                        shutil.rmtree(fetched_tmpdir, ignore_errors=True)
+                        fetched_tmpdir = None
+                    child_env = dict(os.environ)
+                    child_env[_REEXEC_ENV] = "1"
+                    sys.stdout.flush()
+                    sys.stderr.flush()
+                    try:
+                        os.execve(
+                            sys.executable,
+                            [sys.executable, str(updater_path)] + sys.argv[1:],
+                            child_env,
+                        )
+                    except OSError as e:
+                        # Exec failed: fall through to the historical exit 1
+                        # rather than crashing with a traceback. The heal is
+                        # still on disk, so the operator's re-run works.
+                        print(
+                            f"[self-heal] re-exec failed ({e}) -- the refreshed "
+                            "updater IS on disk; re-run `make update-template` "
+                            "to complete this update",
+                            file=sys.stderr,
+                        )
+                sys.exit(1)
             # --allow-skips acknowledges CONTENT the operator knowingly keeps;
             # it may not mute a compromised write path (F4c-2 C12).
             if paths_refused:
@@ -4753,4 +5280,13 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Digest taken BEFORE main() so the comparison spans the whole run,
+    # including the overlay that may rewrite this very file partway through.
+    # main() exits via sys.exit on most paths, so the check lives in `finally`
+    # -- a warning that only printed on the fall-through path would miss every
+    # run that matters.
+    _source_before = _self_source_digest()
+    try:
+        main()
+    finally:
+        _warn_if_self_replaced(_source_before)

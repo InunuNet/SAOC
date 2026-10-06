@@ -37,6 +37,7 @@ sys.path.insert(0, str(Path(__file__).parent / "checks"))
 
 RESULTS_DIR = Path(".agent/memory/scratch/contract-results")
 MAX_TIMEOUT_SECONDS = 86400  # 24h ceiling -- generous for CI, still finite
+EVIDENCE_DISPLAY_MAX = 2000  # console print cap; storage caps match, so print is a no-op
 
 # Top-level keys seen across the live 331-contract corpus (schema, goal-style
 # prose fields, retirement metadata, etc). An unrecognized top-level key is
@@ -458,8 +459,17 @@ def _attributed_and_chain_script(cmd: str) -> str:
 def _timeout_seconds_error(ts) -> str | None:
     """Same rule validate_cmd already enforces at file-scan time; now also
     callable at the point check_cmd is about to consume the value."""
-    if isinstance(ts, bool) or not isinstance(ts, int):
-        return f"must be an int, got {type(ts).__name__}"
+    # A float is accepted. subprocess.run's timeout takes one natively, and
+    # sub-second timeouts are how a test asserts that a declared timeout
+    # actually overrides the CLI default without sleeping for a whole second.
+    # Rejecting them made that assertion fail, and because it lives in the
+    # full-suite regression check it reddened the gate of EVERY feature that
+    # runs the whole suite, in every project, whatever the feature touched --
+    # each one paying for a pristine-worktree reproduction to establish that
+    # the failure was the harness's and not theirs. Reported by alembic-39
+    # 2026-09-21. bool is still rejected: True is not a timeout.
+    if isinstance(ts, bool) or not isinstance(ts, (int, float)):
+        return f"must be a number, got {type(ts).__name__}"
     if ts <= 0:
         return f"must be positive, got {ts}"
     if ts > MAX_TIMEOUT_SECONDS:
@@ -670,7 +680,7 @@ def check_cmd(args):
                 evidence = f"Invalid timeout_seconds: {ts_error}"
                 write_result(contract, assertion_id, "fail", evidence)
                 print(f"FAIL {assertion_id} ({kind}): FAIL")
-                print(f"   {evidence[:200]}")
+                print(f"   {evidence[:EVIDENCE_DISPLAY_MAX]}")
                 sys.exit(1)
         if timeout is None:
             timeout = getattr(args, "timeout_seconds", DEFAULT_TIMEOUT_SECONDS)
@@ -686,7 +696,7 @@ def check_cmd(args):
                         "bash script always exits 0, refusing to record a pass")
             write_result(contract, assertion_id, "fail", evidence)
             print(f"FAIL {assertion_id} ({kind}): FAIL")
-            print(f"   {evidence[:200]}")
+            print(f"   {evidence[:EVIDENCE_DISPLAY_MAX]}")
             sys.exit(1)
 
         # F5/F6: refuse to run (and never record a verdict for) an assertion
@@ -699,10 +709,10 @@ def check_cmd(args):
             lint_findings = []
         if lint_findings:
             evidence = ("assertion_lint rejected this command: " + "; ".join(
-                f"{f['rule']}: {f['message']}" for f in lint_findings))[:500]
+                f"{f['rule']}: {f['message']}" for f in lint_findings))[:EVIDENCE_DISPLAY_MAX]
             write_result(contract, assertion_id, "fail", evidence)
             print(f"FAIL {assertion_id} ({kind}): FAIL")
-            print(f"   {evidence[:200]}")
+            print(f"   {evidence[:EVIDENCE_DISPLAY_MAX]}")
             sys.exit(1)
 
         tf_name = None
@@ -731,7 +741,7 @@ def check_cmd(args):
                 run_env["PATH"] = str(venv_python.parent) + os.pathsep + run_env.get("PATH", "")
             result = subprocess.run(tf_name, shell=False, env=run_env,
                                     capture_output=True, text=True, timeout=timeout)
-            evidence = (result.stdout + result.stderr).strip()[:500]
+            evidence = (result.stdout + result.stderr).strip()[:EVIDENCE_DISPLAY_MAX]
             # Reserved skip exit code (autotools convention): checked BEFORE
             # comparison against expect_exit -- exit 77 always means skip,
             # regardless of what expect_exit was configured to.
@@ -766,10 +776,10 @@ def check_cmd(args):
                 evidence = "codex_qa PASS"
             elif rc == 1:
                 verdict = "fail"
-                evidence = "CODEX_QA_FAIL: " + result.stdout.strip()[:2000]
+                evidence = "CODEX_QA_FAIL: " + result.stdout.strip()[:EVIDENCE_DISPLAY_MAX]
             elif rc == 2:
                 verdict = "error"
-                evidence = "CODEX_QA_WRAPPER_ERROR: " + (result.stdout + result.stderr).strip()[:500]
+                evidence = "CODEX_QA_WRAPPER_ERROR: " + (result.stdout + result.stderr).strip()[:EVIDENCE_DISPLAY_MAX]
             else:
                 verdict = "error"
                 evidence = f"codex_qa wrapper exited {rc} (neither 0, 1, nor 2) -- treated as inconclusive, not a QA fail"
@@ -875,7 +885,7 @@ def check_cmd(args):
             "FAIL")
     print(f"{icon} {assertion_id} ({kind}): {verdict.upper()}")
     if evidence:
-        print(f"   {evidence[:200]}")
+        print(f"   {evidence[:EVIDENCE_DISPLAY_MAX]}")
     sys.exit(0 if verdict in ("pass", "skip") else 1)
 
 
@@ -1197,6 +1207,79 @@ def _gate_single_phase(contract: dict, args) -> bool:
         return True
 
 
+DELETION_WAIVER_NAME = "deletions-approved.txt"
+# Trees whose deletions are bookkeeping rather than capability: memory,
+# scratch, sandboxes, evidence. Everything else is treated as user-facing.
+DELETION_IGNORED_PREFIXES = (
+    ".agent/memory/",
+    ".agent/evidence/",
+    ".tmp/",
+)
+
+
+def _git_lines(args_list: list[str]) -> list[str]:
+    try:
+        proc = subprocess.run(["git"] + args_list, capture_output=True,
+                              text=True, timeout=30)
+    except Exception:
+        return []
+    if proc.returncode != 0:
+        return []
+    return [ln.strip() for ln in proc.stdout.splitlines() if ln.strip()]
+
+
+def _deleted_paths(contract_path: str) -> list[str]:
+    """Files this feature's work deleted, from the spec's first commit to now.
+
+    The spec directory's introducing commit is the feature's own start marker:
+    it is written before @dev is dispatched, so everything after it is this
+    feature's diff. Uncommitted and staged deletions are included, because a
+    gate run before the commit must see them too.
+    """
+    spec_dir = str(Path(contract_path).parent)
+    deleted: list[str] = []
+    if spec_dir and spec_dir != ".":
+        first = _git_lines(["log", "--reverse", "--format=%H", "--", spec_dir])
+        if first:
+            deleted += _git_lines(
+                ["log", "--diff-filter=D", "--name-only", "--format=",
+                 f"{first[0]}..HEAD"])
+    deleted += _git_lines(["diff", "--diff-filter=D", "--name-only", "HEAD"])
+    seen, out = set(), []
+    for path in deleted:
+        if path in seen or path.startswith(DELETION_IGNORED_PREFIXES):
+            continue
+        seen.add(path)
+        out.append(path)
+    return out
+
+
+def _uncovered_deletions(contract: dict, contract_path: str) -> list[str]:
+    """Deleted files that no assertion mentions and no waiver approves."""
+    deleted = _deleted_paths(contract_path)
+    if not deleted:
+        return []
+    haystack = []
+    for a in contract.get("assertions", []):
+        haystack.append(str(a.get("verify", {}).get("cmd", "")))
+        haystack.append(str(a.get("description", "")))
+        haystack.append(str(a.get("id", "")))
+    blob = "\n".join(haystack)
+
+    waived: set[str] = set()
+    waiver = Path(contract_path).parent / DELETION_WAIVER_NAME
+    try:
+        waived = {ln.strip() for ln in waiver.read_text().splitlines()
+                  if ln.strip() and not ln.strip().startswith("#")}
+    except Exception:
+        pass
+
+    return [d for d in deleted
+            if d not in waived
+            and d not in blob
+            and Path(d).name not in blob]
+
+
 def gate_cmd(args):
     # One report channel or the other, never both: a caller that asked for the
     # unforgeable descriptor channel must not silently also get the path one.
@@ -1224,6 +1307,34 @@ def gate_cmd(args):
         print("ERROR: gate refuses to run -- this contract is not valid "
               "(contract.py validate failed):", file=sys.stderr)
         print((_validate_proc.stdout + _validate_proc.stderr).strip(), file=sys.stderr)
+        sys.exit(1)
+
+    # Pre-flight: a diff that DESTROYS capability cannot gate green unnoticed.
+    #
+    # Reported by mumbl-ai-f0 2026-09-21: commit 70436901 deleted four
+    # user-facing renderers and an entire settings picker while this gate
+    # reported 43/43 green. The gate was not lying -- every assertion had been
+    # written for the component being built, and none existed for the
+    # components being removed, so it was structurally incapable of noticing.
+    # The operator paid for the same four files four times across two
+    # delete/restore cycles.
+    #
+    # Assertions describe the intended end state, so they can only ever grade
+    # added behaviour. Removed behaviour has to be graded from the diff. A
+    # deletion is covered if some assertion mentions the path or its basename
+    # -- proving someone thought about it -- or if the operator listed it in
+    # the spec's deletions-approved.txt.
+    _uncovered = _uncovered_deletions(contract, args.contract)
+    if _uncovered:
+        print("ERROR: gate refuses to run -- this feature deletes files that "
+              "no assertion covers:", file=sys.stderr)
+        for _path in _uncovered:
+            print(f"  deleted, ungraded: {_path}", file=sys.stderr)
+        _waiver_path = Path(args.contract).parent / DELETION_WAIVER_NAME
+        print("\nEither assert on the removal (that the capability is gone on "
+              "purpose, and what replaces it),", file=sys.stderr)
+        print(f"or have the operator approve it by listing the paths in "
+              f"{_waiver_path}.", file=sys.stderr)
         sys.exit(1)
 
     # Pre-flight: reject prohibited multiline python3 -c assertions before running

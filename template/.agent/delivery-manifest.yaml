@@ -1,6 +1,6 @@
 # .agent/delivery-manifest.yaml — the DECLARED expected delivery set.
 #
-# Regenerated ONLY by `make delivery-manifest ACCEPT=1`, never by `make sync`.
+# Regenerated ONLY by `python3 execution/delivery_manifest.py --accept`, never by `make sync`.
 # Read by execution/boot_panel.py as the denominator for the boot panel's
 # delivery counts. Adding a rule/skill/agent/workflow/hook is a two-file change
 # on purpose: the expected set is a decision, not an accident.

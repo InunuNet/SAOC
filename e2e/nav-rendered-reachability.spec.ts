@@ -32,7 +32,8 @@ import { NAV, type NavItem } from '@/components/chrome/nav-config';
 // Every href that must be a real, clickable anchor somewhere in NAV's rendered
 // surface — deliberately wider than e2e/nav-links-200.spec.ts's collectHrefs,
 // which only walks `item.href` + `columns[].links[].href` and would itself
-// silently miss lead.leadHref, lead.theShow's links, and featureRail.ctaHref.
+// silently miss lead.leadHref, lead.theShow's links, and featureRail's
+// destination hrefs.
 function collectAllNavHrefs(items: readonly NavItem[]): string[] {
   const hrefs: string[] = [];
   for (const item of items) {
@@ -54,7 +55,9 @@ function collectAllNavHrefs(items: readonly NavItem[]): string[] {
       if (column.headingHref) hrefs.push(column.headingHref);
       for (const link of column.links) hrefs.push(link.href);
     }
-    if (item.featureRail) hrefs.push(item.featureRail.ctaHref);
+    if (item.featureRail) {
+      for (const destination of item.featureRail.destinations) hrefs.push(destination.href);
+    }
   }
   return Array.from(new Set(hrefs));
 }

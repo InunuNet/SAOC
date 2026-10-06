@@ -1077,3 +1077,48 @@ the real theme keys from them) and all three must stay together — any one alon
 original bug.
 
 Full account: `docs/menu-system-layout4.md`, section "F7 — visual fidelity fix (2026-09-10/11)".
+
+## Menu System Layout 4 F8a — logo file missing, only thing blocking it (2026-09-19)
+
+#### RESOLVED 2026-10-03 — asset supplied, F8 shipped and gated green.
+`public/images/nos-2027-logo-full-colour-vertical.png` exists in the working tree (confirmed
+2026-10-03) and F8 landed in `db2d268f`; the mission (`menu-system-layout4`) closed out the
+same day with its M3 gate green. No further human action needed here.
+
+Brad must copy the NOS 2027 vertical lockup to
+`public/images/nos-2027-logo-full-colour-vertical.png`, **exactly that filename, all
+lowercase**. Three constraints, each with a real failure mode:
+
+- **Copy the master, not an export.** NOS Design ruling R22: the lockup renders at 200 CSS px
+  and needs a ≥400px source for Retina. The vertical master is 3272x2876. A downscaled export
+  produces a soft logo on every Retina screen. Assertion A12
+  (`contracts/checks/menu-system-layout4-f8/check-logo-source-resolution.mjs`) now catches
+  this at the gate.
+- **Filename case matters.** macOS resolves a mis-cased name silently; Firebase App Hosting
+  (Linux) 404s it. A12 catches this too, with a rename instruction in the failure message.
+- **Agents cannot do this step.** `branding/` is read-denied under the autonomy floor, so this
+  is necessarily manual, not an automation gap.
+
+Until this file exists at that exact path, F8a's assertions A1, A2, A3, A11 fail (nothing to
+assert against) and A10 fails (asset precondition). F8b is unaffected and already passes.
+
+## 🚨 2026-10-06 — `FIREBASE_ADMIN_PRIVATE_KEY` exposed in an agent transcript, needs rotation
+
+Found during `beta-password-wall` M1/F2 retry-1 close-out: an agent ran per-line `sed`
+redaction on `.env.local` to scrub secrets from a report, which did not redact the multi-line
+`FIREBASE_ADMIN_PRIVATE_KEY` (a PEM block spans many lines; line-at-a-time `sed` patterns miss
+it). Most of the PEM was printed into the agent transcript as a result.
+
+**Action needed (Brad):**
+1. `gcloud auth login` (reauth needed — this is blocked today because that step is
+   non-interactive for an agent).
+2. Create a new service-account key for the `FIREBASE_ADMIN_PRIVATE_KEY` credential.
+3. Update `.env.local` and the Secret Manager `FIREBASE_ADMIN_PRIVATE_KEY` value — real
+   newlines in the PEM, unquoted in Secret Manager (matches the existing secret-write
+   discipline in `docs/secret-corruption-incidents.md`).
+4. Roll out, then prove admin auth still works against the beta deployment.
+5. Delete the old key once the new one is confirmed working.
+
+Backlog mirror: see `backlog.md` → "[P1, needs Brad] Rotate the `FIREBASE_ADMIN_PRIVATE_KEY`...".
+Lesson recorded in `learned.md` under "beta-password-wall M1/F2 — retry 1 lessons (2026-10-06)":
+never `sed`/`grep`/`cat` `.env.local` except `grep -E '^EXACT_KEY='`-style single-line extraction.
