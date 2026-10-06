@@ -120,7 +120,7 @@ nothing at all — cleanly omitted, not a blank placeholder.
 Entering the real dates into the Studio makes the date line appear with
 **zero code change**. Inventing a placeholder date, or any wording for it,
 is exactly what `docs/rules/no-invention.md` forbids — the underlying facts
-(The Hangar, Stellenbosch Flying Club; Thu 16 – Sun 19 Sept 2027) are
+(The Hangar, Stellenbosch Flying Club; Thu 23 – Sun 26 Sept 2027) are
 confirmed elsewhere in project memory, but composing them into nav copy ahead
 of a Studio entry would be new copy, not sourced copy. Two other gaps are
 tracked the same way in

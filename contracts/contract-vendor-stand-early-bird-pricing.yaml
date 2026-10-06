@@ -28,10 +28,10 @@ assertions:
         resolveVendorStandPrice(boothSize, now, cutoffIso) reuses (unmodified)
         lib/checkout-reservation.ts's isWithinEarlyBirdWindow(now, cutoffIso) to decide the
         tier. deriveVendorStandEarlyBirdCutoffIso(showStartDate) derives 90 days before the
-        show's real start date, tracking a MOVED show date (not hardcoded 2027-06-18), and
+        show's real start date, tracking a MOVED show date (not hardcoded 2027-06-25), and
         emits an ISO string with an explicit +02:00 (SAST) offset. The last instant qualifying
         for early-bird and the first that does not are proven to land exactly at midnight SAST
-        (2027-06-18T22:00:00Z), catching a naive UTC-midnight boundary that would be wrong by
+        (2027-06-25T22:00:00Z), catching a naive UTC-midnight boundary that would be wrong by
         2 hours.
         FAILS ON: resolveVendorStandPrice not accepting (now, cutoffIso) arguments,
         deriveVendorStandEarlyBirdCutoffIso missing or not tracking a moved show date, the
@@ -67,7 +67,7 @@ assertions:
     - id: A3
       description: >-
         Static class assertion + behavioural (route-runner harness, with the show-window
-        fixture configured to a real show opening 2027-09-16). Statically: the request body
+        fixture configured to a real show opening 2027-09-23). Statically: the request body
         allow-list read by POST /api/vendors/stand-payment/initiate stays exactly
         {token, boothSize} -- no body.now/body.timestamp/body.clientNow/body.purchasedAt/
         body.clientTime/body.date access anywhere in the route file -- AND the route calls

@@ -33,13 +33,13 @@ The key design decision: track attendee rows **keyed per-day**, not as a flat ar
 
 ```ts
 type AttendeesByDay = Record<string, CartAttendee[]>;
-// Example state after buyer sets "2 for Thu 16, 1 for Sat 18":
+// Example state after buyer sets "2 for Thu 23, 1 for Sat 25":
 // {
-//   '2027-09-16': [
+//   '2027-09-23': [
 //     { attendeeName: 'Alice', attendeeEmail: 'alice@example.com' },
 //     { attendeeName: 'Bob', attendeeEmail: 'bob@example.com' }
 //   ],
-//   '2027-09-18': [
+//   '2027-09-25': [
 //     { attendeeName: 'Carla', attendeeEmail: 'carla@example.com' }
 //   ]
 // }
@@ -83,7 +83,7 @@ Four pure functions manage the `attendeesByDay` state:
 
 - Takes `showDays: string[]` as a second parameter (needed to resolve flat row indices back to days)
 - Tracks `attendeesByDay` state instead of a flat `attendees` + `quantitiesByDay` pair
-- Derives `quantitiesByDay` as a read: `{ '2027-09-16': 2, '2027-09-18': 1, ... }`
+- Derives `quantitiesByDay` as a read: `{ '2027-09-23': 2, '2027-09-25': 1, ... }`
 - Routes attendee-field updates (from `CartAttendeeFields`) to `attendeesByDay` via `updateAttendeeFieldByFlatIndex` when the day-quantity-picker is active
 - At submit time: calls `expandAttendeesByDayToLineItems()` to build the line items array
 
@@ -100,7 +100,7 @@ Four pure functions manage the `attendeesByDay` state:
 
 1. Visit `/tickets/day-visitor` (F2's dedicated single-type screen)
 2. See vertical card for Day Visitor with **no quantity stepper** (hid by F3)
-3. Below attendee panels, see `DayQuantityPicker`: one row per show day (e.g. "Thu 16", "Fri 17", "Sat 18", "Sun 19")
+3. Below attendee panels, see `DayQuantityPicker`: one row per show day (e.g. "Thu 23", "Fri 24", "Sat 25", "Sun 26")
 4. For each day: increment/decrement the quantity with +/− buttons or type directly
 5. As quantities change: `CartAttendeeFields` above re-renders to show N total panels (sum of all per-day quantities)
 6. Fill in each attendee's name and email across the total panels (no day labels on the panels themselves — out of scope)
@@ -124,13 +124,13 @@ Four pure functions manage the `attendeesByDay` state:
 - **Modify `CartDayPicker.tsx`** — unchanged; still used for Conferences/Workshops multi-type cart flow
 - **Modify `CartAttendeeFields.tsx`** — unchanged; still renders one panel per unit (total count, no day awareness on the panel itself)
 - **Change checkout validation** (F5) — `POST /api/tickets/checkout` still validates `chosenDay` per line item the same way
-- **Add day-of-week formatting** — shows ISO `YYYY-MM-DD` strings (e.g. "2027-09-16"), not "Thursday, 16 September" yet
+- **Add day-of-week formatting** — shows ISO `YYYY-MM-DD` strings (e.g. "2027-09-23"), not "Thursday, 23 September" yet
 
 ---
 
 ## Non-Blocking Follow-Up: Day Label Formatting
 
-Day labels currently render as raw ISO date strings (`2027-09-16`) instead of a friendly format. A future pass should compute day-of-week from the Date object and render as "Thu, 16 Sept" or similar. This is UX polish, not a correctness issue, and does not affect the data model or validation. Consider for a future quick-fix backlog item.
+Day labels currently render as raw ISO date strings (`2027-09-23`) instead of a friendly format. A future pass should compute day-of-week from the Date object and render as "Thu, 23 Sept" or similar. This is UX polish, not a correctness issue, and does not affect the data model or validation. Consider for a future quick-fix backlog item.
 
 ---
 

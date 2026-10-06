@@ -121,12 +121,12 @@ const VENUE = {
     'https://www.openstreetmap.org/?mlat=-33.9794&mlon=18.8196#map=15/-33.9794/18.8196',
 };
 
-// Dates are committee-confirmed (Lee-Ann, 2027-09-16 to 2027-09-19). confirmations.dates
+// Dates are committee-confirmed (Lee-Ann, 2027-09-23 to 2027-09-26). confirmations.dates
 // below seeds 'confirmed', and the landing page renders that marker beside the hero meta
 // grid.
 const SHOW_IDENTITY = {
-  showDate: '2027-09-16T09:00:00+02:00',
-  showEndDate: '2027-09-19T17:00:00+02:00',
+  showDate: '2027-09-23T09:00:00+02:00',
+  showEndDate: '2027-09-26T17:00:00+02:00',
   edition: 19,
   hostRegion: 'Western Cape',
 };
@@ -205,7 +205,7 @@ const OPENING_HOURS = [
 ];
 
 // One status per content block. The venue is client-confirmed (2026-08-12) and the
-// show dates are client-confirmed (Lee-Ann, 2027-09-16 to 2027-09-19); everything
+// show dates are client-confirmed (Lee-Ann, 2027-09-23 to 2027-09-26); everything
 // else is still pending — travel and accommodation research for the venue has not
 // been done yet, so those blocks are pending, not research.
 const CONFIRMATIONS = {
@@ -448,7 +448,7 @@ const FAQS: SeedFaq[] = [
     status: 'confirmed',
     question: 'When is the show?',
     answer:
-      'Thursday 16 to Sunday 19 September 2027, confirmed by the show committee.',
+      'Thursday 23 to Sunday 26 September 2027, confirmed by the show committee.',
   },
 ];
 

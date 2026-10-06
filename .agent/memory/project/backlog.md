@@ -167,13 +167,7 @@ Do not scope work from an entry that contradicts it.
 
 ---
 
-- [ ] **[P1, needs Brad] Rotate the `FIREBASE_ADMIN_PRIVATE_KEY` service-account key**, exposed
-  in an agent transcript on 2026-10-06 (`beta-password-wall` M1/F2 retry-1: per-line `sed`
-  redaction on `.env.local` did not redact the multi-line key; most of the PEM was printed into
-  the transcript). Blocked on `gcloud auth login` (reauth needed, non-interactive). Steps: create
-  a new key, update `.env.local` and the Secret Manager `FIREBASE_ADMIN_PRIVATE_KEY` (real-newline
-  PEM, unquoted in Secret Manager), roll out, prove admin auth works on beta, then delete the old
-  key. See `needs-human.md` for the same item.
+- [ ] **[P1, needs Brad] Rotate the `FIREBASE_ADMIN_PRIVATE_KEY` service-account key**… → [details](data/p1-needs-brad-rotate-the-firebase-admin.md)
 
 - [ ] **[P3] `contract-f2.yaml` A13's prose still describes the old discovered 4-target set**
   (`beta-password-wall` M1/F2 retry-1, 2026-10-06). Fold in the correction at the next edit; the
@@ -200,10 +194,6 @@ Do not scope work from an entry that contradicts it.
 - [ ] **[P2] National Show brand model.** Brad's unconfirmed hypothesis: a stable mast… → [details](data/p2-national-show-brand-model-brad-s-unco.md)
 - [ ] **[P2] Secure organisation-owned document custody.** Institutional records sit i… → [details](data/p2-secure-organisation-owned-document-cu.md)
 - [ ] **[P2] Real Show copy has arrived and is not yet loaded.** `About - 2027 Nationa… → [details](data/p2-real-show-copy-has-arrived-and-is-not.md)
-- [ ] **[P1, security] Lee-Ann's two supplied mailbox passwords were published in a pu… → [details](data/p1-security-lee-ann-s-two-supplied-mailb.md)
-- [ ] **[P3] `show@saoc.co.za` has been unused since 2020**; Lee-Ann suggests archiving. V3 also
-  asks for per-area show addresses (symposium, WOSA, bookings) so committee members get their own
-  area's registration notifications.
 
 ---
 
@@ -1909,3 +1899,4 @@ unparseable contracts" above.)
 > Truncated 12 items at trim time (2026-10-03). Restore from git history if needed.
 > Truncated 3 items at trim time (2026-10-03). Restore from git history if needed.
 > Truncated 1 items at trim time (2026-10-06). Restore from git history if needed.
+> Truncated 2 items at trim time (2026-10-06). Restore from git history if needed.

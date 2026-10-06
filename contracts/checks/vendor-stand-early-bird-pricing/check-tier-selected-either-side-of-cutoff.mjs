@@ -38,13 +38,13 @@ if (pricing) {
   if (typeof deriveVendorStandEarlyBirdCutoffIso !== 'function') {
     failures.push('lib/vendor-stand-pricing.ts does not export deriveVendorStandEarlyBirdCutoffIso');
   } else {
-    // Show opens Thursday 16 September 2027 -- 90 days before is 2027-06-18. The derived ISO
+    // Show opens Thursday 23 September 2027 -- 90 days before is 2027-06-25. The derived ISO
     // string must carry an explicit +02:00 (SAST) offset, never bare UTC/'Z'.
-    const showStart = new Date('2027-09-16T00:00:00Z');
+    const showStart = new Date('2027-09-23T00:00:00Z');
     const cutoffIso = deriveVendorStandEarlyBirdCutoffIso(showStart);
     assert(
-      typeof cutoffIso === 'string' && /2027-06-18T00:00:00\+02:00$/.test(cutoffIso),
-      `deriveVendorStandEarlyBirdCutoffIso(2027-09-16) should derive '...2027-06-18T00:00:00+02:00', got ${JSON.stringify(cutoffIso)}`,
+      typeof cutoffIso === 'string' && /2027-06-25T00:00:00\+02:00$/.test(cutoffIso),
+      `deriveVendorStandEarlyBirdCutoffIso(2027-09-23) should derive '...2027-06-25T00:00:00+02:00', got ${JSON.stringify(cutoffIso)}`,
     );
 
     // Derivation must track a MOVED show date, not a hardcoded value.
@@ -57,31 +57,31 @@ if (pricing) {
 
     if (typeof resolveVendorStandPrice === 'function') {
       try {
-        // Boundary: midnight SAST on 19 June 2027 == 2027-06-18T22:00:00Z. The last instant
+        // Boundary: midnight SAST on 26 June 2027 == 2027-06-25T22:00:00Z. The last instant
         // qualifying for early-bird is just before that; the first instant that does not is
-        // exactly that instant. A naive UTC-midnight boundary (2027-06-19T00:00:00Z) would be
+        // exactly that instant. A naive UTC-midnight boundary (2027-06-26T00:00:00Z) would be
         // WRONG by 2 hours -- this is exactly what A1 must catch.
-        const lastEarlyBirdInstant = new Date('2027-06-18T21:59:59.999Z');
-        const firstRegularInstant = new Date('2027-06-18T22:00:00.000Z');
+        const lastEarlyBirdInstant = new Date('2027-06-25T21:59:59.999Z');
+        const firstRegularInstant = new Date('2027-06-25T22:00:00.000Z');
 
         const beforeResult = resolveVendorStandPrice(1, lastEarlyBirdInstant, cutoffIso);
         assert(
           beforeResult.ok === true && beforeResult.tier === 'earlyBird' && beforeResult.amount === 1160,
-          `at the last qualifying instant (2027-06-18T21:59:59.999Z SAST-adjusted), expected {ok:true, tier:'earlyBird', amount:1160}, got ${JSON.stringify(beforeResult)}`,
+          `at the last qualifying instant (2027-06-25T21:59:59.999Z SAST-adjusted), expected {ok:true, tier:'earlyBird', amount:1160}, got ${JSON.stringify(beforeResult)}`,
         );
 
         const afterResult = resolveVendorStandPrice(1, firstRegularInstant, cutoffIso);
         assert(
           afterResult.ok === true && afterResult.tier === 'regular' && afterResult.amount === 1450,
-          `at the first non-qualifying instant (2027-06-18T22:00:00.000Z, midnight SAST 19 June), expected {ok:true, tier:'regular', amount:1450}, got ${JSON.stringify(afterResult)}`,
+          `at the first non-qualifying instant (2027-06-25T22:00:00.000Z, midnight SAST 26 June), expected {ok:true, tier:'regular', amount:1450}, got ${JSON.stringify(afterResult)}`,
         );
 
-        // A naive UTC-midnight boundary would wrongly still grant early-bird at 2027-06-18T23:00:00Z
-        // (1am SAST on the 19th) -- prove the fix actually rejects that.
-        const naiveBoundaryTrap = resolveVendorStandPrice(1, new Date('2027-06-18T23:00:00Z'), cutoffIso);
+        // A naive UTC-midnight boundary would wrongly still grant early-bird at 2027-06-25T23:00:00Z
+        // (1am SAST on the 26th) -- prove the fix actually rejects that.
+        const naiveBoundaryTrap = resolveVendorStandPrice(1, new Date('2027-06-25T23:00:00Z'), cutoffIso);
         assert(
           naiveBoundaryTrap.ok === true && naiveBoundaryTrap.tier === 'regular',
-          `at 2027-06-18T23:00:00Z (1am SAST on 19 June, after the SAST-midnight cutoff), a naive UTC-midnight-boundary implementation would still grant early-bird -- expected tier 'regular', got ${JSON.stringify(naiveBoundaryTrap)}`,
+          `at 2027-06-25T23:00:00Z (1am SAST on 26 June, after the SAST-midnight cutoff), a naive UTC-midnight-boundary implementation would still grant early-bird -- expected tier 'regular', got ${JSON.stringify(naiveBoundaryTrap)}`,
         );
       } catch (error) {
         failures.push(`resolveVendorStandPrice(boothSize, now, cutoffIso) threw: ${error.message}`);

@@ -76,7 +76,7 @@ export function showYearOf(value?: string | null): number | null {
 }
 
 /**
- * `2027-09-16` — a BARE calendar date in the show's own timezone, for schema.org.
+ * `2027-09-23` — a BARE calendar date in the show's own timezone, for schema.org.
  *
  * F18 wiring (nos-design-system, M6): Sanity stores `showDate`/`showEndDate` as `datetime`,
  * so the raw value carries a time-of-day. Google's Event guidance treats a midnight-stamped

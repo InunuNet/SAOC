@@ -24,12 +24,12 @@ Both validations run in the same per-line-item pass that `parseLineItems` alread
 
 The active show's `startDate` and `endDate` (from Sanity) are parsed via `buildShowWindow()` (reused from `lib/show-window-lookup.ts`, existing since F1). This function:
 
-1. Parses the raw Sanity datetime values (strings with UTC offset, e.g. `'2027-09-16T00:00:00Z'`) into JavaScript `Date` objects via `parseUtcDatetime()` — a strict validator that rejects bare-parsed datetimes (a real published bug from prior work, see project memory `reference_firestore_timestamps_are_utc`).
+1. Parses the raw Sanity datetime values (strings with UTC offset, e.g. `'2027-09-23T00:00:00Z'`) into JavaScript `Date` objects via `parseUtcDatetime()` — a strict validator that rejects bare-parsed datetimes (a real published bug from prior work, see project memory `reference_firestore_timestamps_are_utc`).
 2. Computes the inclusive list of calendar days via `computeShowDays(window)` using a **fixed UTC+2 offset** (South Africa Standard Time, no DST).
 
-**Why UTC+2 is not arbitrary:** The show runs in South Africa (SAST, UTC+2). A date boundary like "2027-09-16" on a ticket must mean "September 16 in South Africa" at visitor arrival time, not "September 16 in UTC." Without the +2h offset, a naive `.getUTCDate()` on a date string like `'2027-09-16T00:00:00Z'` would derive "2027-09-15" locally (16:00 UTC previous day = 18:00 SAST that same day). This was a real defect found in prior work; **any future change to the offset or date-parsing logic must verify against both SAST-local dates and UTC round-trips.**
+**Why UTC+2 is not arbitrary:** The show runs in South Africa (SAST, UTC+2). A date boundary like "2027-09-23" on a ticket must mean "September 23 in South Africa" at visitor arrival time, not "September 23 in UTC." Without the +2h offset, a naive `.getUTCDate()` on a date string like `'2027-09-23T00:00:00Z'` would derive "2027-09-22" locally (16:00 UTC previous day = 18:00 SAST that same day). This was a real defect found in prior work; **any future change to the offset or date-parsing logic must verify against both SAST-local dates and UTC round-trips.**
 
-Example: `computeShowDays()` for a show `2027-09-16T00:00:00Z` to `2027-09-19T23:59:59Z` returns `['2027-09-16', '2027-09-17', '2027-09-18', '2027-09-19']` (four days, SAST-local). A Day Visitor picking `chosenDay: '2027-09-17'` is valid.
+Example: `computeShowDays()` for a show `2027-09-23T00:00:00Z` to `2027-09-26T23:59:59Z` returns `['2027-09-23', '2027-09-24', '2027-09-25', '2027-09-26']` (four days, SAST-local). A Day Visitor picking `chosenDay: '2027-09-24'` is valid.
 
 ---
 

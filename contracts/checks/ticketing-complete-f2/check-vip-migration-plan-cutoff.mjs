@@ -37,7 +37,7 @@ import { buildMigrationPlan } from '../../../scripts/migrate-f2-ticket-taxonomy.
 
 const failures = [];
 
-const SHOW_START_DATE = new Date('2027-09-16T07:00:00Z');
+const SHOW_START_DATE = new Date('2027-09-23T07:00:00Z');
 const EXPECTED_CUTOFF = deriveAdmissionEarlyBirdCutoffIso(SHOW_START_DATE).slice(0, 10);
 
 // Never the real active show id: this check must never be mistakable for a live-data path.
@@ -83,7 +83,7 @@ if (fields.earlyBirdCutoff !== EXPECTED_CUTOFF) {
   failures.push(
     `migration plan would write earlyBirdCutoff = ${JSON.stringify(fields.earlyBirdCutoff)} to ` +
       `${VIP_OP_ID}, expected ${JSON.stringify(EXPECTED_CUTOFF)} (derived by the real engine ` +
-      'from the confirmed 2027-09-16 show start). resolveEffectivePrice() reads this stored ' +
+      'from the confirmed 2027-09-23 show start). resolveEffectivePrice() reads this stored ' +
       'field directly at checkout, so a wrong date here sells VIP at the early-bird price ' +
       'past the real cutoff.'
   );

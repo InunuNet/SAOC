@@ -83,7 +83,7 @@ export const EARLY_BIRD_CUTOFF = '2027-07-31';
 // already uses. The engine returns a full '+02:00' instant for its own SAST-aware comparator;
 // isWithinEarlyBirdWindow(), which gates VIP's runtime price via resolveEffectivePrice(),
 // expects the bare-date shape — so the slice is load-bearing, not cosmetic.
-const CONFIRMED_SHOW_START_2027 = new Date('2027-09-16T07:00:00Z');
+const CONFIRMED_SHOW_START_2027 = new Date('2027-09-23T07:00:00Z');
 const VIP_EARLY_BIRD_CUTOFF = deriveAdmissionEarlyBirdCutoffIso(CONFIRMED_SHOW_START_2027).slice(0, 10);
 
 export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [

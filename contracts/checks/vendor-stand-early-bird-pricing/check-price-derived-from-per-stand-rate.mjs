@@ -44,8 +44,8 @@ if (pricing && typeof pricing.resolveVendorStandPrice === 'function') {
   try {
     const cutoffIso =
       typeof deriveVendorStandEarlyBirdCutoffIso === 'function'
-        ? deriveVendorStandEarlyBirdCutoffIso(new Date('2027-09-16T00:00:00Z'))
-        : '2027-06-18T00:00:00+02:00'; // fallback fixture if the derive helper isn't shipped yet
+        ? deriveVendorStandEarlyBirdCutoffIso(new Date('2027-09-23T00:00:00Z'))
+        : '2027-06-25T00:00:00+02:00'; // fallback fixture if the derive helper isn't shipped yet
 
     const wellBeforeCutoff = new Date('2027-01-01T00:00:00Z');
     const wellAfterCutoff = new Date('2027-08-01T00:00:00Z');
