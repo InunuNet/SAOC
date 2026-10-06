@@ -3,7 +3,7 @@
 // THE DEFECT THIS TARGETS
 // lib/provisional-figures.ts's VIP entry set `earlyBirdCutoff: EARLY_BIRD_CUTOFF` — the
 // legacy shared constant '2027-07-31'. That date has no relationship to this mission's
-// confirmed rule (90 days before the confirmed 2027-09-16 show start = 2027-06-18). VIP's
+// confirmed rule (90 days before the confirmed 2027-09-23 show start = 2027-06-25). VIP's
 // cutoff is being freshly WRITTEN under Brad's 2026-09-08 ruling, not preserved as a legacy
 // value, so carrying the legacy constant sells VIP at the R500 early-bird price for 43 days
 // past the real cutoff once migrated.
@@ -37,7 +37,7 @@ const failures = [];
 // The real live show-19-2027 start instant, matching
 // goldens/fixtures/f1-pricing-boundary-cases.json's showStartDateIso verbatim and the
 // SHOW_START_DATE used by check-vip-computed-early-bird-price.mjs.
-const SHOW_START_DATE = new Date('2027-09-16T07:00:00Z');
+const SHOW_START_DATE = new Date('2027-09-23T07:00:00Z');
 
 // The bare YYYY-MM-DD shape every `earlyBirdCutoff` field in this module uses, and the shape
 // isWithinEarlyBirdWindow() — the comparator that actually gates VIP's runtime price — expects.
@@ -69,7 +69,7 @@ if (vip.earlyBirdCutoff !== EXPECTED_CUTOFF) {
     `vip.earlyBirdCutoff is ${JSON.stringify(vip.earlyBirdCutoff)}, expected ` +
       `${JSON.stringify(EXPECTED_CUTOFF)} — the value deriveAdmissionEarlyBirdCutoffIso() ` +
       `computes from the confirmed show start ${SHOW_START_DATE.toISOString()} ` +
-      '(90 days before 2027-09-16)'
+      '(90 days before 2027-09-23)'
   );
 }
 
@@ -90,7 +90,7 @@ if (failures.length > 0) {
 }
 console.log(
   `PASS: ADMISSION_PRODUCTS's VIP entry stores earlyBirdCutoff ${EXPECTED_CUTOFF}, derived by ` +
-    'the real deriveAdmissionEarlyBirdCutoffIso() engine from the confirmed 2027-09-16 show ' +
+    'the real deriveAdmissionEarlyBirdCutoffIso() engine from the confirmed 2027-09-23 show ' +
     `start — not the legacy EARLY_BIRD_CUTOFF constant (${EARLY_BIRD_CUTOFF}), which remains ` +
     'in place for the products whose cutoff is still an open decision.'
 );

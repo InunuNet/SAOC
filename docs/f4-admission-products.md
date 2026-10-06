@@ -19,7 +19,7 @@
 
 > **Superseded (F2, ticketing-complete M1, 2026-09-08):** the VIP row above is this feature's
 > original snapshot — VIP shipped with no early-bird cutoff (`∅`). F2 subsequently gave VIP a
-> freshly-derived cutoff (**2027-06-18**, computed by `deriveAdmissionEarlyBirdCutoffIso()`,
+> freshly-derived cutoff (**2027-06-25**, computed by `deriveAdmissionEarlyBirdCutoffIso()`,
 > not the legacy `2027-07-31` constant the other early-bird rows still use) as part of Brad's
 > direct pricing ruling. Within this doc's four admission products, VIP is the only one off the
 > legacy constant (`early-bird` and `weekend-pass` still carry it; `day-visitor` has no

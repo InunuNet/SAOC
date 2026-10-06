@@ -24,7 +24,7 @@ import { isWithinEarlyBirdWindow } from './checkout-reservation';
 export const ADMISSION_EARLY_BIRD_DISCOUNT_PERCENT = 20;
 
 // Confirmed, mission goal string (2026-09-08): 90 days before the show's confirmed
-// 2027-09-16 start = 2027-06-18 cutoff. This is its OWN constant -- deliberately NOT imported
+// 2027-09-23 start = 2027-06-25 cutoff. This is its OWN constant -- deliberately NOT imported
 // from, or shared with, the vendor-stand module's own early-bird cutoff day-count constant or
 // the provisional refund-policy module's day thresholds, even though all three currently
 // read "90" or similar -- three unrelated rules that happen to share a number today. Never

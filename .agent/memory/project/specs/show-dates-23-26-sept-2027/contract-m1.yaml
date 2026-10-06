@@ -1,0 +1,305 @@
+schema: athanor.contract/v1
+slug: show-dates-23-26-sept-2027
+goal: >
+  Replace the National Show 2027 dates Thu 16 - Sun 19 September 2027 with the correct dates
+  Thu 23 - Sun 26 September 2027 everywhere this project owns (Brad's direct instruction,
+  2026-10-06). The correction is a uniform +7-day shift (16->23, 17->24, 18->25, 19->26), so
+  anything DERIVED from the show start by a fixed day-count (the 90-day admission/vendor-stand
+  early-bird cutoffs) shifts by the same +7 days -- proven by running the real derive functions,
+  never by hand math. Independently-sourced dates (the legacy EARLY_BIRD_CUTOFF constant,
+  arbitrary test fixtures) are left untouched and flagged. Pages under
+  app/(marketing)/national-show/** belong to the NOS Site session (origin/nos-site) and are
+  notified via comms.md, not edited. See goldens/m1-golden.md for the full file-by-file
+  classification and exact target values.
+created_at: '2026-10-06'
+autonomy: high
+features:
+  - id: F1
+    name: >-
+      Source-of-truth code literals (lib/data/events.ts, lib/provisional-figures.ts,
+      lib/admission-early-bird-pricing.ts comment, lib/hooks/useCountdown.ts doc,
+      lib/show-identity.ts example, scripts/seed-show-visitor-info.ts,
+      scripts/seed-page-singletons.ts) plus the dependent regression-check fixtures that
+      independently recompute the same derived cutoff and would otherwise go falsely red
+      (contracts/checks/ticketing-complete-f2/*.mjs), plus truthfulness-only companion fixture
+      updates (f1-pricing-boundary-cases.json, vendor-stand-early-bird-pricing checks/README,
+      three companion goldens) that are not gate-critical but claim to mirror real data.
+    status: pending
+  - id: F2
+    name: >-
+      New idempotent Sanity patch script (scripts/fix-show-dates-23-26-sept-2027.ts) covering
+      nationalShow, show-19-2027, societyEvent-15, and the "When is the show?" FAQ answer;
+      live patch + read-back verification; deployed check on beta.saoc.co.za.
+    status: pending
+  - id: F3
+    name: >-
+      Docs sweep (current-fact statements only, historical narrative left untouched),
+      full-tree residue scan, and the NOS Site lane comms.md notice.
+    status: pending
+goldens:
+  - .agent/memory/project/specs/show-dates-23-26-sept-2027/goldens/m1-golden.md
+assertions:
+  phase: 4
+  checks:
+    # ================= F1: source-of-truth code literals =================
+    - id: A1
+      description: lib/data/events.ts's event id 15 no longer holds either stale literal.
+      command: '! grep -qE "date: .2027-09-16.|endDate: .2027-09-19." lib/data/events.ts'
+
+    - id: A2
+      description: lib/data/events.ts's event id 15 carries the corrected date/endDate pair.
+      command: "grep -q \"date: '2027-09-23'\" lib/data/events.ts && grep -q \"endDate: '2027-09-26'\" lib/data/events.ts"
+
+    - id: A3
+      description: lib/provisional-figures.ts's CONFIRMED_SHOW_START_2027 no longer holds the stale literal.
+      command: "! grep -q \"CONFIRMED_SHOW_START_2027 = new Date('2027-09-16T07:00:00Z')\" lib/provisional-figures.ts"
+
+    - id: A4
+      description: lib/provisional-figures.ts's CONFIRMED_SHOW_START_2027 carries the corrected literal.
+      command: "grep -q \"CONFIRMED_SHOW_START_2027 = new Date('2027-09-23T07:00:00Z')\" lib/provisional-figures.ts"
+
+    - id: A5
+      description: >-
+        lib/provisional-figures.ts's legacy EARLY_BIRD_CUTOFF ('2027-07-31') is untouched --
+        it is independently sourced, not derived from show start, and this mission must not
+        silently move it.
+      command: "grep -q \"EARLY_BIRD_CUTOFF = '2027-07-31'\" lib/provisional-figures.ts"
+
+    - id: A6
+      description: >-
+        DERIVED, proved by running the real engine, not hand math: deriveAdmissionEarlyBirdCutoffIso
+        called with the corrected 2027-09-23T07:00:00Z show start returns exactly
+        '2027-06-25T00:00:00+02:00'.
+      command: >-
+        node --import tsx/esm -e "import('./lib/admission-early-bird-pricing.ts').then((m) => { const r = m.deriveAdmissionEarlyBirdCutoffIso(new Date('2027-09-23T07:00:00Z')); if (r !== '2027-06-25T00:00:00+02:00') { console.error('got', r); process.exit(1); } process.exit(0); }).catch((e) => { console.error(e); process.exit(1); });"
+
+    - id: A7
+      description: >-
+        The production ADMISSION_PRODUCTS array's vip.earlyBirdCutoff reflects the recomputed
+        value end-to-end (not hand-edited) -- '2027-06-25', bare YYYY-MM-DD shape.
+      command: >-
+        node --import tsx/esm -e "import('./lib/provisional-figures.ts').then((m) => { const vip = m.ADMISSION_PRODUCTS.find((p) => p.slug === 'vip'); if (!vip || vip.earlyBirdCutoff !== '2027-06-25') { console.error('got', vip && vip.earlyBirdCutoff); process.exit(1); } process.exit(0); }).catch((e) => { console.error(e); process.exit(1); });"
+
+    - id: A8
+      description: lib/admission-early-bird-pricing.ts's comment no longer cites the stale instant/cutoff pair.
+      command: '! grep -q "2027-09-16 start = 2027-06-18 cutoff" lib/admission-early-bird-pricing.ts'
+
+    - id: A9
+      description: lib/admission-early-bird-pricing.ts's comment cites the corrected instant/cutoff pair.
+      command: 'grep -q "2027-09-23 start = 2027-06-25 cutoff" lib/admission-early-bird-pricing.ts'
+
+    - id: A10
+      description: lib/hooks/useCountdown.ts's doc example no longer shows the stale instant.
+      command: '! grep -q "2027-09-16T09:00:00+02:00" lib/hooks/useCountdown.ts'
+
+    - id: A11
+      description: lib/hooks/useCountdown.ts's doc example shows the corrected instant.
+      command: 'grep -q "2027-09-23T09:00:00+02:00" lib/hooks/useCountdown.ts'
+
+    - id: A12
+      description: >-
+        lib/show-identity.ts's schema.org bare-date example is corrected, AND the older,
+        explicitly-out-of-scope "18-21 September 2027" example on a different line is left
+        untouched -- confirms scope discipline, not an overzealous sweep.
+      command: "grep -q '`2027-09-23`' lib/show-identity.ts && grep -qF '18–21 September 2027' lib/show-identity.ts"
+
+    - id: A13
+      description: scripts/seed-show-visitor-info.ts no longer contains any stale literal (showDate, showEndDate, or FAQ answer text).
+      command: >-
+        ! grep -qE "2027-09-16T09:00:00\+02:00|2027-09-19T17:00:00\+02:00|Thursday 16 to Sunday 19 September 2027" scripts/seed-show-visitor-info.ts
+
+    - id: A14
+      description: scripts/seed-show-visitor-info.ts carries all three corrected values (showDate, showEndDate, FAQ answer text).
+      command: >-
+        grep -q "showDate: '2027-09-23T09:00:00+02:00'" scripts/seed-show-visitor-info.ts &&
+        grep -q "showEndDate: '2027-09-26T17:00:00+02:00'" scripts/seed-show-visitor-info.ts &&
+        grep -q "Thursday 23 to Sunday 26 September 2027" scripts/seed-show-visitor-info.ts
+
+    - id: A15
+      description: scripts/seed-page-singletons.ts's countdownDate is corrected.
+      command: >-
+        ! grep -q "countdownDate: '2027-09-16T09:00:00+02:00'" scripts/seed-page-singletons.ts &&
+        grep -q "countdownDate: '2027-09-23T09:00:00+02:00'" scripts/seed-page-singletons.ts
+
+    # --- F1: dependent ticketing-complete-f2 regression checks (load-bearing, must still PASS) ---
+    - id: A16
+      description: >-
+        check-vip-computed-early-bird-price.mjs's local SHOW_START_DATE ground truth moved with
+        the production constant it compares against, and the real check script still PASSES
+        when actually run (not just a grep on its source).
+      command: >-
+        grep -q "2027-09-23T07:00:00Z" contracts/checks/ticketing-complete-f2/check-vip-computed-early-bird-price.mjs &&
+        node --import tsx/esm contracts/checks/ticketing-complete-f2/check-vip-computed-early-bird-price.mjs
+
+    - id: A17
+      description: >-
+        check-vip-stored-cutoff-derived.mjs's local SHOW_START_DATE moved the same way and the
+        check still PASSES when actually run.
+      command: >-
+        grep -q "2027-09-23T07:00:00Z" contracts/checks/ticketing-complete-f2/check-vip-stored-cutoff-derived.mjs &&
+        node --import tsx/esm contracts/checks/ticketing-complete-f2/check-vip-stored-cutoff-derived.mjs
+
+    - id: A18
+      description: >-
+        check-vip-migration-plan-cutoff.mjs's local SHOW_START_DATE moved the same way and the
+        check still PASSES when actually run.
+      command: >-
+        grep -q "2027-09-23T07:00:00Z" contracts/checks/ticketing-complete-f2/check-vip-migration-plan-cutoff.mjs &&
+        node --import tsx/esm contracts/checks/ticketing-complete-f2/check-vip-migration-plan-cutoff.mjs
+
+    # --- F1: truthfulness-only companion fixtures (not gate-critical on their own; must still PASS after edit) ---
+    - id: A19
+      description: >-
+        f1-pricing-boundary-cases.json shifted +7 days throughout its STRUCTURAL fields
+        (showStartDateIso, expectedCutoffIso, cases[].purchaseDateIso,
+        cutoffDerivationCases[].showStartDateIso/expectedCutoffIso), and the two real check
+        scripts that consume it still PASS. AMENDED 2026-10-06 (QA finding, see
+        .agent/memory/scratch/qa-report-show-dates-f1-f2.md §1): the original version of this
+        assertion used a blanket whole-file substring grep for the old date, which made
+        "satisfy A19" and "preserve the file's own historical narrative" (the _comment field's
+        separate, past-tense claim about what an earlier, pre-2026-09-08 version of this fixture
+        used to hold) mutually exclusive -- dev correctly prioritised the grep, incorrectly
+        rewriting history to do it. Scoped to a real JSON parse of the named structural fields
+        only, so prose fields (_comment, note, boundarySweepVerdict, _boundarySweepSummary) are
+        never inspected by this check at all and cannot be forced to choose between the two.
+      command: >-
+        node -e "const fs=require('fs');const p='.agent/memory/project/specs/ticketing-complete/goldens/fixtures/f1-pricing-boundary-cases.json';const d=JSON.parse(fs.readFileSync(p,'utf8'));const bad=[];const stale=(s)=>typeof s==='string'&&/2027-09-16|2027-06-18/.test(s);if(d.showStartDateIso!=='2027-09-23T07:00:00Z')bad.push('showStartDateIso');if(d.expectedCutoffIso!=='2027-06-25T00:00:00+02:00')bad.push('expectedCutoffIso');for(const c of d.cases||[])if(stale(c.purchaseDateIso))bad.push('cases:'+c.id);for(const c of d.cutoffDerivationCases||[])if(stale(c.showStartDateIso)||stale(c.expectedCutoffIso))bad.push('cutoffDerivationCases:'+c.id);if(bad.length){console.error('stale structural field(s):',bad.join(', '));process.exit(1);}console.log('A19 structural fields OK');" &&
+        node --import tsx/esm contracts/checks/ticketing-complete-f1/check-pricing-boundaries.mjs &&
+        node --import tsx/esm contracts/checks/ticketing-complete-f1/check-cutoff-derivation.mjs
+
+    - id: A20
+      description: >-
+        vendor-stand-early-bird-pricing's two check files shifted +7 days (except the
+        deliberately-arbitrary movedShowStart pair, left untouched), and both still PASS when
+        actually run.
+      command: >-
+        grep -q "2027-09-23T00:00:00Z" contracts/checks/vendor-stand-early-bird-pricing/check-tier-selected-either-side-of-cutoff.mjs &&
+        grep -q "2027-10-01T00:00:00Z" contracts/checks/vendor-stand-early-bird-pricing/check-tier-selected-either-side-of-cutoff.mjs &&
+        grep -q "2027-09-23T00:00:00Z" contracts/checks/vendor-stand-early-bird-pricing/check-price-derived-from-per-stand-rate.mjs &&
+        node --import tsx/esm contracts/checks/vendor-stand-early-bird-pricing/check-tier-selected-either-side-of-cutoff.mjs &&
+        node --import tsx/esm contracts/checks/vendor-stand-early-bird-pricing/check-price-derived-from-per-stand-rate.mjs
+
+    - id: A21
+      description: Companion goldens for the F1 code edits are kept in sync (not gated elsewhere, but directly describe the changed scripts).
+      command: >-
+        grep -q "2027-09-23T09:00:00+02:00" contracts/golden/show-visitor-info/seed-show-visitor-info.golden.json &&
+        grep -q "2027-09-26T17:00:00+02:00" contracts/golden/show-visitor-info/seed-show-visitor-info.golden.json &&
+        grep -q "2027-09-23T09:00:00+02:00" contracts/golden/venue-seed-truth/expected-venue.json &&
+        grep -q "2027-09-23T09:00:00+02:00" contracts/golden/f4-seed-page-singletons/nationalShow.golden.json
+
+    - id: A22
+      description: TypeScript compiles clean after every F1 edit.
+      command: "pnpm exec tsc --noEmit"
+
+    # ================= F2: live Sanity + deployed check =================
+    - id: A23
+      description: >-
+        A new one-off patch script exists, following scripts/fix-show-dates-2027.ts's
+        convention (reads .env.local directly, never a hardcoded token; .set() not
+        .setIfMissing(), since the fields are already populated with stale values; supports
+        --dry-run; covers all four documents including the FAQ answer resolved by query, not a
+        guessed _id).
+      command: >-
+        test -f scripts/fix-show-dates-23-26-sept-2027.ts &&
+        grep -q "readFileSync" scripts/fix-show-dates-23-26-sept-2027.ts &&
+        grep -q "SANITY_API_TOKEN" scripts/fix-show-dates-23-26-sept-2027.ts &&
+        grep -q "dry-run" scripts/fix-show-dates-23-26-sept-2027.ts &&
+        grep -q "show-19-2027" scripts/fix-show-dates-23-26-sept-2027.ts &&
+        grep -q "\.set(" scripts/fix-show-dates-23-26-sept-2027.ts &&
+        grep -qi "When is the show" scripts/fix-show-dates-23-26-sept-2027.ts
+
+    - id: A24
+      description: The new script carries the corrected constants, not the stale ones.
+      command: >-
+        grep -q "SHOW_START_ISO = '2027-09-23T09:00:00+02:00'" scripts/fix-show-dates-23-26-sept-2027.ts &&
+        grep -q "SHOW_END_ISO = '2027-09-26T17:00:00+02:00'" scripts/fix-show-dates-23-26-sept-2027.ts &&
+        ! grep -qE "2027-09-16|2027-09-19" scripts/fix-show-dates-23-26-sept-2027.ts
+
+    - id: A25
+      description: >-
+        LIVE VERIFICATION -- queries the production Sanity dataset directly and asserts
+        nationalShow, show-19-2027, and societyEvent-15 all hold the corrected dates. This is
+        the real proof, not a proxy on script source: it only passes once the script has
+        actually been run for real (not --dry-run) against production.
+      command: "node --import tsx/esm scripts/fix-show-dates-23-26-sept-2027.ts --verify"
+
+    - id: A26
+      description: >-
+        DEPLOYED CHECK -- beta.saoc.co.za (Basic-auth walled) renders the corrected date on a
+        page this project owns (the home page, NOT app/(marketing)/national-show/**), and no
+        longer renders the stale one. Credentials sourced from .env.local per-command only,
+        never exported globally, never echoed.
+      command: >-
+        U=$(grep -m1 "^BETA_BASIC_AUTH_USER=" .env.local | cut -d= -f2-); U=${U%\"}; U=${U#\"};
+        P=$(grep -m1 "^BETA_BASIC_AUTH_PASSWORD=" .env.local | cut -d= -f2-); P=${P%\"}; P=${P#\"};
+        HTML=$(curl -s -u "$U:$P" https://beta.saoc.co.za/);
+        echo "$HTML" | grep -q "2027-09-23" && ! echo "$HTML" | grep -q "2027-09-16"
+
+    # ================= F3: docs sweep + residue scan + NOS notice =================
+    - id: A27
+      description: show-visitor-info.md and show-visitor-info-for-editors.md no longer state the stale date as current fact.
+      command: '! grep -q "16–19 September 2027" docs/show-visitor-info.md && ! grep -q "16–19 September 2027" docs/show-visitor-info-for-editors.md'
+
+    - id: A28
+      description: show-visitor-info.md and show-visitor-info-for-editors.md now state the corrected date.
+      command: 'grep -q "23–26 September 2027" docs/show-visitor-info.md && grep -q "23–26 September 2027" docs/show-visitor-info-for-editors.md'
+
+    - id: A29
+      description: >-
+        The historical-narrative docs (ticketing-complete-f1/-f2-open-decisions/-f8/-f8-morning-review,
+        f1-ticketing-pricing-migration, b4-national-show, f3-show-dates-purge-16-19-sept-2027)
+        are explicitly left untouched -- confirms the past-tense decision record was not
+        rewritten. README.md's changelog line is likewise untouched.
+      command: >-
+        grep -q "2027-06-18" docs/ticketing-complete-f1.md &&
+        grep -q "2027-06-18" docs/ticketing-complete-f2-open-decisions.md &&
+        grep -q "2027-06-18" docs/ticketing-complete-f8.md &&
+        grep -q "2027-09-16" docs/b4-national-show.md &&
+        grep -q "16–19 September 2027" docs/f3-show-dates-purge-16-19-sept-2027.md &&
+        grep -q "2027-09-18/21 → 2027-09-16/19" README.md
+
+    - id: A30
+      description: >-
+        The NOS Site lane comms.md notice was appended (append-only; this project's own block,
+        never rewriting anyone else's).
+      command: >-
+        grep -q "SAOC -> FLEET.*2026-10-06.*23-26 Sept" comms.md
+
+    - id: A31
+      description: >-
+        FULL-TREE RESIDUE SCAN -- no stray '2027-09-16'..'2027-09-19' or '2027-06-18' literal
+        survives anywhere in checked-in source or docs outside the documented, individually
+        justified exclusions (see goldens/m1-golden.md "Residue scan" for the full allowlist and
+        the reasoning behind each exclusion -- this is not a blanket exemption, every excluded
+        path was classified by what it actually asserts). AMENDED 2026-10-06 (QA finding, see
+        .agent/memory/scratch/qa-report-show-dates-f1-f2.md §2): (1) --include globs are now
+        quoted -- unquoted, zsh glob-expands them before grep sees them, which can empty the
+        captured output and make `test -z` falsely report PASS regardless of real residue; bash
+        (the real gate shell, execution/contract.py) was not affected by this specific bug, but
+        quoting removes the shell-dependence entirely. (2) allowlist extended for legitimate
+        gaps QA found: gitignored scratch paths (.agent/memory/scratch/, .tmp/), golden
+        companions of already-excluded check directories, illustrative anti-pattern comments
+        (content-matched, not line-numbered, so the exclusion survives future line shifts), a
+        tracked-but-scratch-named render helper, and design/design_handoff_saoc/README.md (see
+        golden's classification (e) -- Brad's approved handoff, off-limits to edit, see
+        docs/rules/no-invention.md and project memory project_design_folders_brad_active).
+        AMENDMENT 2 2026-10-06 (dev's F3 run FAILed
+        A31 under bash, 6 genuine allowlist gaps, none current-fact residue -- see
+        .agent/memory/scratch/dev-result-show-dates-f3.md and golden's Residue scan amendment #2):
+        Plans/valiant-squishing-thimble.md (whole file -- pre-existing staged plan narrating the
+        PRIOR 18-21->16-19 purge trigger, the only matching line in the only matching file in
+        Plans/), plus five content-matched excludes for historical sentences dev correctly
+        refused to edit: check-vip-fix-scope-containment.mjs's "90-day cutoff ('2027-06-18')"
+        comment (sibling of the already-allowlisted check files, missed because its exact wording
+        differs), seed-show-visitor-info.golden.json's and nationalShow.golden.json's
+        `datesAreNotConfirmed`/`note` fields quoting the PRIOR mission's Lee-Ann confirmation
+        (2027-09-16 to 2027-09-19 -- correct history, a second AMENDED-AGAIN clause already
+        covers the current dates separately), docs/show-visitor-info.md:110's description of the
+        unrelated, now-deleted DEFAULT_COUNTDOWN_DATE='2027-09-18' anti-pattern (different
+        placeholder, different reason, not this mission's date to move), and
+        lib/provisional-figures.ts:78's continuation line of the existing allowlisted comment
+        (the allowlisted substring "second hand-typed copy of '2027-06-18'" sits on the comment's
+        PREVIOUS source line due to line-wrapping, so grep's per-line match never saw it --
+        pre-existing allowlist bug, not introduced by this mission).
+      command: >-
+        test -z "$(grep -rnE '2027-09-1[6-9]|2027-06-18' --include='*.ts' --include='*.tsx' --include='*.md' --include='*.mjs' --include='*.json' --include='*.sh' . 2>/dev/null | grep -v node_modules | grep -v .claude/worktrees | grep -v '^./\.agent/memory/project/' | grep -v '^./\.agent/memory/scratch/' | grep -v '^./\.tmp/' | grep -v '^./docs/f3-show-dates-purge-16-19-sept-2027.md:' | grep -v '^./docs/payment-seam.md:' | grep -v '^./docs/f1-ticketing-conferences.md:' | grep -v '^./docs/f4-admission-products.md:' | grep -v '^./docs/f5-day-selection-attendees.md:' | grep -v '^./docs/ticketing-complete-f1.md:' | grep -v '^./docs/ticketing-complete-f2-open-decisions.md:' | grep -v '^./docs/ticketing-complete-f8.md:' | grep -v '^./docs/ticketing-complete-f8-morning-review.md:' | grep -v '^./docs/f1-ticketing-pricing-migration.md:' | grep -v '^./docs/b4-national-show.md:' | grep -v '^./README.md:' | grep -v '^./docs/nos-design-system.md:' | grep -v '^./e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts:' | grep -v '^./contracts/checks/ticketing-f4-admission-products/' | grep -v '^./contracts/checks/ticketing-flow-redesign-f3/' | grep -v '^./contracts/golden/ticketing-flow-redesign-f3/' | grep -v '^./contracts/checks/cms-loop-f3-national-show/' | grep -v '^./contracts/cms-loop-f3-national-show.yaml:' | grep -v '^./contracts/golden/dataset-residue-guard/' | grep -v '^./contracts/checks/vendor-gated-registration-flow/check-application-approval-email-copy.mjs:' | grep -v '^./\.scratch-render/render-email.mjs:' | grep -v '^./contracts/golden/f5-event-slugs/' | grep -v '^./contracts/golden/venue-never-changed-copy-fix-f1/' | grep -v '^./contracts/checks/ticketing-f5-day-attendees/' | grep -v '^./contracts/golden/ticketing-f5-day-attendees/' | grep -v '^./contracts/checks/ticketing-complete-f8/verify-walkthrough-figures.mjs:' | grep -v '^./contracts/golden/show-visitor-info/show-identity-surfaces.golden.md:' | grep -v '^./contracts/golden/show-visitor-info/show-identity-wiring.golden.md:' | grep -v 'countdownDate is 2027-09-18T09:00:00' | grep -v "second hand-typed copy of '2027-06-18'" | grep -v "hardcoded '2027-06-18'" | grep -v '^./design/design_handoff_saoc/README.md:' | grep -v '^./scripts/fix-show-dates-2027.ts:' | grep -v '^./scripts/fix-visitor-info-dates-confirmed.ts:' | grep -v '^./Plans/valiant-squishing-thimble.md:' | grep -v "90-day cutoff ('2027-06-18')" | grep -v "confirmed the dates (Lee-Ann, 2027-09-16 to 2027-09-19)" | grep -v "the show committee confirmed the real dates (Lee-Ann, 2027-09-16 to 2027-09-19)" | grep -v "DEFAULT_COUNTDOWN_DATE = '2027-09-18T09:00:00+02:00'" | grep -v 'The literal show start below is the same confirmed instant used as ground')"

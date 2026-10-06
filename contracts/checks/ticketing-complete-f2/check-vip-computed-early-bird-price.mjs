@@ -11,9 +11,9 @@
 // { amount: 500, tier: 'earlyBird' }, and the same basePrice with a purchaseDate just outside
 // the window must return { amount: 625, tier: 'regular' }. Uses the EXACT real show start
 // instant from goldens/fixtures/f1-pricing-boundary-cases.json
-// (showStartDateIso: '2027-09-16T07:00:00Z', i.e. 2027-09-16T09:00:00+02:00) and boundary
+// (showStartDateIso: '2027-09-23T07:00:00Z', i.e. 2027-09-23T09:00:00+02:00) and boundary
 // instants from that same fixture's own cases, rather than inventing new dates — this is the
-// real cutoff (2027-06-18T00:00:00+02:00), not a stand-in.
+// real cutoff (2027-06-25T00:00:00+02:00), not a stand-in.
 //
 // Also sanity-checks the ladder ordering Brad's ruling was meant to fix: VIP's regular price
 // (625) sits above Weekend Pass's regular price (400), and VIP's early-bird price (500)
@@ -36,12 +36,12 @@ if (!vip) {
 
 // The real live show-19-2027 start instant, matching
 // goldens/fixtures/f1-pricing-boundary-cases.json's showStartDateIso verbatim.
-const SHOW_START_DATE = new Date('2027-09-16T07:00:00Z');
+const SHOW_START_DATE = new Date('2027-09-23T07:00:00Z');
 
 // Two of the SAME boundary instants that fixture already golden-tests against the engine
 // for other products (early-bird admission ticket) — reused here for VIP specifically.
-const INSIDE_WINDOW_PURCHASE_DATE = new Date('2027-06-18T00:00:00+02:00'); // exactly on cutoff
-const OUTSIDE_WINDOW_PURCHASE_DATE = new Date('2027-06-19T08:00:00+02:00'); // one day past cutoff
+const INSIDE_WINDOW_PURCHASE_DATE = new Date('2027-06-25T00:00:00+02:00'); // exactly on cutoff
+const OUTSIDE_WINDOW_PURCHASE_DATE = new Date('2027-06-26T08:00:00+02:00'); // one day past cutoff
 
 if (typeof vip.regularPrice !== 'number') {
   failures.push(`vip.regularPrice is ${JSON.stringify(vip.regularPrice)} — expected a number (625)`);

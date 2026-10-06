@@ -20,8 +20,8 @@ bottom for exactly what is in scope now vs. deferred.
   price is **derived** as `N × R1450`, never stored as three independent standard figures.
 - **Early-bird = 20% less than standard**, i.e. exactly 80% of the standard price. Derived,
   not a second independently-maintained figure.
-- **Cutoff = 90 days before the show opens.** The show opens Thursday 16 September 2027, so
-  the cutoff is 18 June 2027 — but this must be **derived from the show's actual start date**
+- **Cutoff = 90 days before the show opens.** The show opens Thursday 23 September 2027, so
+  the cutoff is 25 June 2027 — but this must be **derived from the show's actual start date**
   (see "Cutoff derivation" below), never hardcoded as a literal date, because the show dates
   have already moved once on this project (the 18–21 September placeholder still being
   purged — see `.agent/memory/project/provisional-figures.md`).
@@ -148,17 +148,17 @@ export function deriveVendorStandEarlyBirdCutoffIso(showStartDate: Date): string
 
 Firebase App Hosting containers run UTC. If the cutoff were expressed as a bare UTC-midnight
 boundary (what `isWithinEarlyBirdWindow`'s own "+1 day" logic assumes when handed a plain
-`'2027-06-18'`-shaped string, since `new Date('2027-06-18')` parses as UTC midnight), the
+`'2027-06-25'`-shaped string, since `new Date('2027-06-25')` parses as UTC midnight), the
 computed boundary would be **2 hours later than intended**: a vendor paying between
-22:00–23:59:59 UTC on 18 June (i.e. midnight–01:59:59 SAST on the 19th) would wrongly still
+22:00–23:59:59 UTC on 25 June (i.e. midnight–01:59:59 SAST on the 26th) would wrongly still
 get the early-bird rate.
 
 The fix is not a new comparison function — it's that `deriveVendorStandEarlyBirdCutoffIso`
-emits the cutoff date with an **explicit `+02:00` suffix** (`'2027-06-18T00:00:00+02:00'`)
+emits the cutoff date with an **explicit `+02:00` suffix** (`'2027-06-25T00:00:00+02:00'`)
 instead of a bare date. `isWithinEarlyBirdWindow`'s existing, unmodified "+1 UTC day, exclusive"
-math then does exactly the right thing: `new Date('2027-06-18T00:00:00+02:00')` is
-`2027-06-17T22:00:00Z`; adding one UTC day gives `2027-06-18T22:00:00Z` — which **is** midnight
-SAST on 19 June, the correct exclusive boundary. No timezone library, no per-request TZ
+math then does exactly the right thing: `new Date('2027-06-25T00:00:00+02:00')` is
+`2027-06-24T22:00:00Z`; adding one UTC day gives `2027-06-25T22:00:00Z` — which **is** midnight
+SAST on 26 June, the correct exclusive boundary. No timezone library, no per-request TZ
 config, no user-facing zone display — one explicit offset, applied once, in
 `deriveVendorStandEarlyBirdCutoffIso`, with the reasoning captured in that function's comment.
 A1's checks assert both the derived ISO string's literal offset AND the actual boundary
