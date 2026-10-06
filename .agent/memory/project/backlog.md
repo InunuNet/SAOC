@@ -2,7 +2,7 @@
 
 Organised by **priority and subject**, not by session. Rebuilt 2026-08-19 from a 2,677-line
 session diary (pre-cleanup copy: `archive/backlog-2026-08-19-pre-cleanup.md`).
-_Last compacted: 2026-10-03 by backlog_trim.py. Full history: git log on this file._
+_Last compacted: 2026-10-06 by backlog_trim.py. Full history: git log on this file._
 
 **Rules for this file.** One line of stale information here misleads every agent, every session.
 Completed items are deleted, not ticked — git history is the record. Plan steps live in
@@ -73,6 +73,9 @@ Do not scope work from an entry that contradicts it.
 - [ ] **[P3] Dead `GOLD_BONE`/`GOLD_BLURB` residue in `e2e/mega-menu-layout4-visual-fidelity.spec.ts`**
   (menu-system-layout4 F8, 2026-09-21) — confirmed dead (`GOLD_BLURB` isn't even a colour;
   it's old CTA copy). Two eslint warnings. Trivial cleanup.
+
+- [ ] **[P3] Non-ASCII Basic Auth credentials never authenticate in `proxy.ts`**
+  (be… → [details](data/p3-non-ascii-basic-auth-credentials-neve.md)
 
 - [ ] **[P3] Pre-existing `next/image` warning on `components/chrome/Header.tsx`**
   (… → [details](data/p3-pre-existing-next-image-warning-on-co.md)
@@ -187,14 +190,10 @@ Do not scope work from an entry that contradicts it.
 - [ ] **[P3] `show@saoc.co.za` has been unused since 2020**; Lee-Ann suggests archiving. V3 also
   asks for per-area show addresses (symposium, WOSA, bookings) so committee members get their own
   area's registration notifications.
-- [ ] **[P3] Hero lede copy authority unresolved.** The design reference and
-  `components/home/Hero.tsx:84-86` differ. May be an intentional later revision, not drift — do
-  not change without confirming which is authoritative.
 
 ---
 
 ## Blocked on Brad (human action, not dispatchable)
-
 
 ---
 
@@ -844,6 +843,16 @@ flat-over-nested-submenu pattern.
   `workflow.md`/`sandbox.md`/`coding.md`) with real local edits — need either merging forward
   or pinning in `.agent/no-update`; `.agent/version` stays at 3.8.1 until one happens. See
   `learned.md` 2026-09-28 entry for full detail.
+- **[Athanor#1459](https://github.com/InunuNet/Athanor/issues/1459)** (filed 2026-10-06,
+  beta-password-wall M1/F2) — `execution/browser_deployed_check.sh` is HARNESS-owned
+  (`.agent/update-manifest.yaml:12-13` marks the whole `execution/` path HARNESS). Its own
+  independent live re-check (`~line 188-189`, a bare `curl -s -o /dev/null -w '%{http_code}'
+  --max-time 10 "${origin}${path_tested}"`) has no credential option at all, so it gets HTTP 401
+  against a password-walled beta the instant this mission ships — breaking the live re-check leg
+  of EVERY `browser_deployed_check` triad assertion across this whole project, not just this
+  mission's own. Workaround until upstream fixes it: export `BETA_BASIC_AUTH_USER`/
+  `BETA_BASIC_AUTH_PASSWORD` into the gate-running shell's environment before running any gate
+  that invokes this script against beta. Not patched locally per `.claude/rules/athanor.md`.
 
 ---
 
@@ -1885,3 +1894,4 @@ unparseable contracts" above.)
 > Truncated 5 items at trim time (2026-09-21). Restore from git history if needed.
 > Truncated 12 items at trim time (2026-10-03). Restore from git history if needed.
 > Truncated 3 items at trim time (2026-10-03). Restore from git history if needed.
+> Truncated 1 items at trim time (2026-10-06). Restore from git history if needed.

@@ -22,8 +22,8 @@ goal: 'Put a password wall in front of beta.saoc.co.za so search engines and the
   not 401.'
 created_at: '2026-10-06T17:53:27.838136+00:00'
 started_at: '2026-10-06T18:20:38.906297+00:00'
-last_active_at: '2026-10-06T19:07:53.703746+00:00'
-status: in_progress
+last_active_at: '2026-10-06T19:28:31.254572+00:00'
+status: done
 cost_estimate:
   features: 2
   milestones: 1
@@ -83,7 +83,10 @@ milestones:
   - F2
   name: Password wall live on beta.saoc.co.za — proxy.ts + robots/noindex (F1), secret
     plumbing + harness credential updates + deployed verification (F2)
-  status: pending
+  status: done
+  gate_ran_at: '2026-10-06T19:28:07.779090+00:00'
+  gate_result: pass
+completed_at: '2026-10-06T19:28:31.254349+00:00'
 ---
 
 # Mission: Put a password wall in front of beta.saoc.co.za so search engines and the public cannot find or browse it by accident (Brad, 2026-10-06, after a meeting with Lee-Ann). HTTP Basic auth enforced in Next.js 16 middleware/proxy for every page and asset, credential read from an App Hosting secret (Secret Manager, never in source), fail-closed if the secret is missing in production. Also send X-Robots-Tag: noindex, nofollow and serve a disallow-all robots.txt on the beta host. Exempt ONLY machine-to-machine endpoints that cannot authenticate: PayFast/Ozow ITN notification routes, the Sanity revalidate webhook, and the Cloud Scheduler reconcile-orders route (each already has its own signature/secret verification). Local dev and Playwright e2e must keep working (bypass when the secret env var is unset outside production, or credentials supplied by the test harness). Verify on the deployed beta: unauthenticated request -> 401 with WWW-Authenticate, authenticated -> 200, exempt webhook paths not 401.
