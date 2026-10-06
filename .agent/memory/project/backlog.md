@@ -167,6 +167,20 @@ Do not scope work from an entry that contradicts it.
 
 ---
 
+- [ ] **[P1, needs Brad] Rotate the `FIREBASE_ADMIN_PRIVATE_KEY` service-account key**, exposed
+  in an agent transcript on 2026-10-06 (`beta-password-wall` M1/F2 retry-1: per-line `sed`
+  redaction on `.env.local` did not redact the multi-line key; most of the PEM was printed into
+  the transcript). Blocked on `gcloud auth login` (reauth needed, non-interactive). Steps: create
+  a new key, update `.env.local` and the Secret Manager `FIREBASE_ADMIN_PRIVATE_KEY` (real-newline
+  PEM, unquoted in Secret Manager), roll out, prove admin auth works on beta, then delete the old
+  key. See `needs-human.md` for the same item.
+
+- [ ] **[P3] `contract-f2.yaml` A13's prose still describes the old discovered 4-target set**
+  (`beta-password-wall` M1/F2 retry-1, 2026-10-06). Fold in the correction at the next edit; the
+  sha256 pin depends on it.
+
+---
+
 ## Blocked on the council / Lee-Ann
 
 - [ ] **[P1] Ticket prices and capacities — estimate now, correct later (Brad's standi… → [details](data/p1-ticket-prices-and-capacities-estimate.md)

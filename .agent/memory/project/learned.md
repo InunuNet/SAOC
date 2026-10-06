@@ -4562,3 +4562,26 @@ deployed-site viewport check instead.
 - `execution/env_keys.py --has` reads `.env`, not `.env.local` — it gives false negatives for
   every key this project actually sets. Use `grep -q '^KEY=' .env.local` for presence checks
   instead.
+
+## beta-password-wall M1/F2 — retry 1 lessons (2026-10-06)
+
+- Point-in-time "anonymous gets 401" checks cannot detect CDN replay. A pass-through proxy that
+  leaves a page's own Cache-Control alone lets Firebase App Hosting's CDN store an authenticated
+  ISR page (`s-maxage=60`) and serve it to anonymous visitors — a cache hit never reaches
+  `proxy.ts`. The fix sets `Cache-Control: private, no-store, max-age=0` on every walled
+  response, plus a marker `Set-Cookie`: Cloud CDN never stores `Set-Cookie` responses, which
+  covers the image optimizer and `/og`, both of which overwrite Cache-Control. Next replaces
+  `Vary` on pages, so `Vary: Authorization` is useless. Verify any auth wall with
+  authenticated-then-anonymous pairs against the deployed CDN, not a single point-in-time check.
+- Next 16 copies proxy-set headers onto the response before rendering, and only writes its own
+  Cache-Control when none is already set.
+- The deployed App Hosting build returns 404 from `/_next/image`, and its pages carry no
+  optimizer refs. A local `next build` behaves differently. Checks must construct targets, not
+  discover them.
+- Exporting `CURL_HOME` with a `.curlrc` to authenticate a harness script (the Athanor#1459
+  workaround) silently authenticates EVERY curl in the same shell. It turned a contract's
+  deliberate unauthenticated check (F2 A7) into a false FAIL. Scope it to a single command only.
+- Credential incident: an agent ran per-line `sed` redaction on `.env.local`, which did not
+  redact the multi-line `FIREBASE_ADMIN_PRIVATE_KEY`. Most of the PEM was printed into the agent
+  transcript. Never `sed`/`grep`/`cat` `.env.local` except for `grep -E '^EXACT_KEY='`-style
+  single-line extraction. The key is pending rotation; it needs Brad to run `gcloud auth login`.

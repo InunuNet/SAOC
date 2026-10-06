@@ -577,3 +577,13 @@ for the four defect classes those rounds caught (transaction-retry stale variabl
 recipient assertions, stale contracts-excluded-from-typecheck fixtures, a swallowed `TypeError`
 in the failure-isolation wrapper). Full detail: mission file
 `.agent/memory/project/missions/2026-09-01-vendor-flow-notifications.md`.
+
+## Launch deadline — 1 December 2026 (Brad, 2026-10-06)
+
+Brad: "Deadline for launch is the 1st December" (2026-10-06, the same day as the Lee-Ann meeting
+that asked for the beta password wall). Until launch, the site sits behind the beta password wall
+(mission `beta-password-wall`). Launch is one deliberate act: set `SITE_PUBLIC_LAUNCH=true`
+(exact string) in apphosting.yaml and roll out. That lifts the wall, the X-Robots-Tag noindex
+header and the robots.txt disallow-all together. The saoc.co.za nameserver/domain migration
+(see the Resend DNS sequencing note) is a separate step and must not be treated as the launch.
+Plan backlog priority against this date.

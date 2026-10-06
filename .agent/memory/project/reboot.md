@@ -1,5 +1,5 @@
 # Reboot Context
-_Generated: 2026-10-03T13:50Z_
+_Generated: 2026-10-06T19:29Z_
 
 ## What happened last session
-Closed out mission menu-system-layout4 (M3 gate passed 4/4, F1-F11 all done, F8 NOS logo lead block shipped db2d268f). Resolved stale backlog/needs-human entries referencing the pre-fix F8 blocked state; added three new backlog items (triad baseline hash drift on contract-policy-pages.yaml, mobile drawer colour design question for Brad, A18 390px screenshot gap); recorded three durable lessons in learned.md (tripwire-fires-as-designed pattern, triad grandfathering decay-on-edit, browser_deployed_check commit_sha-must-equal-HEAD timing). Ran backlog-audit (clean) and backlog-trim (0 closed items, 50 open remain) manually since this was a direct mission.py close-out, not a wrap_mission.sh run.
+Closed out beta-password-wall mission (M1 gate green, F1 11/11, F2 17/17 incl. codex/browser/gws triad). Recorded retry-1 lessons: CDN-replay auth-bypass fix (Cache-Control private/no-store + marker Set-Cookie, since Cloud CDN never stores Set-Cookie and Next overwrites Vary), a CURL_HOME scoping hazard that false-FAILed an unauthenticated check, and a credential-exposure incident where per-line sed on .env.local missed the multi-line FIREBASE_ADMIN_PRIVATE_KEY, printing most of the PEM into an agent transcript. Added backlog items for key rotation (needs Brad, gcloud auth login blocked) and a stale contract-f2.yaml A13 prose fix; logged the key exposure to needs-human.md.

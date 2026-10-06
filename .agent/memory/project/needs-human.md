@@ -1101,3 +1101,24 @@ lowercase**. Three constraints, each with a real failure mode:
 
 Until this file exists at that exact path, F8a's assertions A1, A2, A3, A11 fail (nothing to
 assert against) and A10 fails (asset precondition). F8b is unaffected and already passes.
+
+## 🚨 2026-10-06 — `FIREBASE_ADMIN_PRIVATE_KEY` exposed in an agent transcript, needs rotation
+
+Found during `beta-password-wall` M1/F2 retry-1 close-out: an agent ran per-line `sed`
+redaction on `.env.local` to scrub secrets from a report, which did not redact the multi-line
+`FIREBASE_ADMIN_PRIVATE_KEY` (a PEM block spans many lines; line-at-a-time `sed` patterns miss
+it). Most of the PEM was printed into the agent transcript as a result.
+
+**Action needed (Brad):**
+1. `gcloud auth login` (reauth needed — this is blocked today because that step is
+   non-interactive for an agent).
+2. Create a new service-account key for the `FIREBASE_ADMIN_PRIVATE_KEY` credential.
+3. Update `.env.local` and the Secret Manager `FIREBASE_ADMIN_PRIVATE_KEY` value — real
+   newlines in the PEM, unquoted in Secret Manager (matches the existing secret-write
+   discipline in `docs/secret-corruption-incidents.md`).
+4. Roll out, then prove admin auth still works against the beta deployment.
+5. Delete the old key once the new one is confirmed working.
+
+Backlog mirror: see `backlog.md` → "[P1, needs Brad] Rotate the `FIREBASE_ADMIN_PRIVATE_KEY`...".
+Lesson recorded in `learned.md` under "beta-password-wall M1/F2 — retry 1 lessons (2026-10-06)":
+never `sed`/`grep`/`cat` `.env.local` except `grep -E '^EXACT_KEY='`-style single-line extraction.

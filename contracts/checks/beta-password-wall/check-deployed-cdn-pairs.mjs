@@ -10,9 +10,15 @@
 // cannot see that, so this script reproduces the exact trigger: an authenticated
 // GET, then IMMEDIATELY an anonymous GET of the byte-identical URL (no cache
 // buster), repeated for several rounds across every kind of response the CDN
-// could store — an ISR page, a year-long static page, a build chunk, and a remote
-// image through the optimizer (whose Cache-Control Next forces to `public`, so it
-// is protected only by proxy.ts's Set-Cookie marker).
+// could store — an ISR page, a year-long static page, a build chunk, a public
+// file, and a remote and a local image through the optimizer (whose Cache-Control
+// Next forces to `public` when it serves an image, so it is protected only by
+// proxy.ts's Set-Cookie marker).
+//
+// The optimizer URLs are CONSTRUCTED, not discovered: the deployed build emits no
+// /_next/image references at all and answers the optimizer with 404 (QA F2 retry 1),
+// while a local `next build` serves it. Whatever status comes back — 200, 400 or
+// 404 — the pair property is asserted on it unchanged, so neither shape can skip.
 //
 // Usage: BETA_BASIC_AUTH_USER=... BETA_BASIC_AUTH_PASSWORD=... \
 //   node contracts/checks/beta-password-wall/check-deployed-cdn-pairs.mjs [origin] [rounds]
@@ -25,6 +31,18 @@ const DEFAULT_ORIGIN = 'https://beta.saoc.co.za';
 const DEFAULT_ROUNDS = 5;
 const ROUND_PAUSE_MS = 1_000;
 const WALL_MARKER_COOKIE_NAME = 'saoc_beta_wall';
+const OPTIMIZER_WIDTH = 640;
+const OPTIMIZER_QUALITY = 75;
+// A Sanity asset that is live in the production dataset; the pair property does
+// not depend on the optimizer actually finding it.
+const REMOTE_IMAGE_SRC = 'https://cdn.sanity.io/images/26yfbug4/production/'
+  + 'a620a97f8df7b9cae76b892e97770d79af1fa793-3100x2325.jpg?w=1600';
+// Ships in public/ with the repo, so it exists on every deployment.
+const LOCAL_IMAGE_SRC = '/images/orchid-pink.jpg';
+
+function optimizerPath(src) {
+  return `/_next/image?url=${encodeURIComponent(src)}&w=${OPTIMIZER_WIDTH}&q=${OPTIMIZER_QUALITY}`;
+}
 
 function isUnstorable(cacheControl) {
   const directives = cacheControl.toLowerCase().split(',').map((d) => d.trim());
@@ -52,19 +70,21 @@ async function discoverTargets(origin, authorization) {
   const home = await get(`${origin}/`, authorization);
   if (home.status !== 200) throw new Error(`authenticated GET / returned ${home.status}, expected 200`);
   const chunk = home.body.match(/\/_next\/static\/[^"'\s]+\.js/);
-  const image = home.body.match(/\/_next\/image\?url=https%3A%2F%2Fcdn\.sanity\.io[^"'\s,]+/);
-  if (!chunk || !image) throw new Error('could not discover a build chunk and a remote optimized image from /');
+  if (!chunk) throw new Error('could not discover a /_next/static/*.js build chunk from /');
   return [
-    { kind: 'ISR page', path: '/', proxyCacheControl: true },
-    { kind: 'static page', path: '/privacy', proxyCacheControl: true },
-    { kind: 'build chunk', path: chunk[0], proxyCacheControl: true },
-    { kind: 'optimized image', path: image[0].replaceAll('&amp;', '&'), proxyCacheControl: false },
+    { kind: 'ISR page', path: '/', proxyCacheControl: true, expectAuthedOk: true },
+    { kind: 'static page', path: '/privacy', proxyCacheControl: true, expectAuthedOk: true },
+    { kind: 'build chunk', path: chunk[0], proxyCacheControl: true, expectAuthedOk: true },
+    { kind: 'public file', path: LOCAL_IMAGE_SRC, proxyCacheControl: true, expectAuthedOk: true },
+    { kind: 'optimizer (remote src)', path: optimizerPath(REMOTE_IMAGE_SRC), proxyCacheControl: false, expectAuthedOk: false },
+    { kind: 'optimizer (local src)', path: optimizerPath(LOCAL_IMAGE_SRC), proxyCacheControl: false, expectAuthedOk: false },
   ];
 }
 
 function checkPair(target, authed, anon) {
   const problems = [];
-  if (authed.status !== 200) problems.push(`authed status ${authed.status}`);
+  if (target.expectAuthedOk && authed.status !== 200) problems.push(`authed status ${authed.status}`);
+  if (authed.status === 401) problems.push('authed request was challenged');
   if (!authed.markerCookie) problems.push('authed response missing Set-Cookie marker');
   if (target.proxyCacheControl && !isUnstorable(authed.cacheControl)) {
     problems.push(`authed Cache-Control shared-cacheable: "${authed.cacheControl}"`);
