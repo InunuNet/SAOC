@@ -1,0 +1,371 @@
+schema: athanor.contract/v1
+slug: beta-password-wall
+goal: >
+  M1/F2 — deploy-time secret plumbing, test-harness credential updates for the
+  two existing project-owned live-browser check scripts that hit
+  https://beta.saoc.co.za, and deployed verification that the wall (F1) actually
+  works once live. This is the feature that turns F1's code into something
+  actually protecting the deployed site, and reconciles it with every other
+  script in this repo that already authenticates against beta for unrelated
+  reasons.
+
+  SECRET NAMING: `BETA_BASIC_AUTH_USER` / `BETA_BASIC_AUTH_PASSWORD`, RUNTIME-only
+  (never BUILD — same rationale as every other per-request secret in
+  apphosting.yaml: a BUILD entry would bake the value into the bundle). Generated
+  as a genuinely random value by the orchestrator directly via `firebase
+  apphosting:secrets:set` (an ops step, not code — see A1's exact command) and
+  NEVER printed to any log, chat transcript, or file in this repo. This is an
+  outward-facing, hard-to-reverse action (a live credential, on a site search
+  engines must never index) — per behaviour.md it needs confirmation before
+  running, not blanket deploy pre-authorisation; the mission file records that
+  "beta is a dev site, deploy pre-authorised" covers PUSHING code, not minting a
+  new production secret.
+
+  HARNESS DEFECT, FLAGGED NOT PATCHED (athanor.md: "A harness defect is filed,
+  not patched"): execution/browser_deployed_check.sh is HARNESS-owned (confirmed:
+  .agent/update-manifest.yaml:12-13 marks the whole `execution/` path HARNESS).
+  Its own independent live re-check (read directly: lines ~188-189, a bare
+  `curl -s -o /dev/null -w '%{http_code}' --max-time 10 "${origin}${path_tested}"`
+  with no credential option at all) will get HTTP 401 against a password-walled
+  beta the instant this mission ships — breaking the live re-check leg of EVERY
+  `browser_deployed_check` triad assertion across this whole project, not just
+  this mission's own A-series below (see A_triad's manifest note). F2 does NOT
+  edit this script. It:
+    (a) records the dependency in backlog.md's "Harness — upstream to
+        InunuNet/Athanor" section (A2, this contract);
+    (b) leaves filing the actual GitHub issue to whoever next has `gh` access and
+        upstream write permission (the architect agent that authored this
+        contract has neither network access nor standing to open issues on an
+        external org unilaterally) — flagged here, not done, per behaviour.md's
+        "ask before destructive/outward-facing actions" the same way a GitHub
+        issue against a third party's repo is outward-facing;
+    (c) is an explicitly ACCEPTED, mission-wide side effect for this gate cycle,
+        not something this feature can fix within its own scope (fixing it would
+        mean editing a HARNESS-owned file).
+created_at: '2026-10-06'
+autonomy: high
+features:
+  - id: F2
+    name: >-
+      apphosting.yaml + .env.local.example secret entries; Basic Auth
+      credentials added to check-live-viewport.mjs and check-live-chrome.mjs
+      (conditional on both env vars being set — unchanged otherwise); backlog
+      entry for the browser_deployed_check.sh harness gap; deployed
+      verification (401 unauthenticated, 200 authenticated, exempt paths never
+      challenged).
+    status: pending
+goldens: []
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >
+        OPS STEP (orchestrator runs this directly, not @dev — it mints a real
+        credential and must never be logged): generate a genuinely random
+        username and password (e.g. `openssl rand -base64 24` twice, or
+        equivalent), then run, once each:
+          firebase apphosting:secrets:set BETA_BASIC_AUTH_USER --data-file=-
+          firebase apphosting:secrets:set BETA_BASIC_AUTH_PASSWORD --data-file=-
+        piping the generated value via stdin (never argv, matching
+        execution/env_keys.py's own `--set KEY` convention of taking the value
+        from stdin so it never appears in a tool-call record). Grant the App
+        Hosting backend's service account access when prompted. This assertion
+        only confirms the secret NAMES exist in Secret Manager — it cannot and
+        must not try to read the values back.
+      command: >-
+        firebase apphosting:secrets:access BETA_BASIC_AUTH_USER --project saoc-webapp >/dev/null 2>&1
+        && firebase apphosting:secrets:access BETA_BASIC_AUTH_PASSWORD --project saoc-webapp >/dev/null 2>&1
+      required: true
+
+    - id: A2
+      description: >
+        apphosting.yaml declares both secrets as RUNTIME-only (never BUILD),
+        matching the existing style of every other per-request secret in this
+        file (e.g. SANITY_REVALIDATE_SECRET, RECOVERY_TOKEN_SECRET — read
+        directly before writing this spec). Exact block to add, placed after
+        the existing VENDOR_STAND_PAYMENT_TOKEN_SECRET entry:
+
+          # Beta password wall (mission beta-password-wall F1/F2) -- Basic Auth
+          # credentials read per-request by proxy.ts's decideBasicAuth(). RUNTIME
+          # only: the comparison happens per request, and a BUILD entry would bake
+          # the value into the bundle. If EITHER is unset, proxy.ts fails closed in
+          # production -- every request on every host (including the real
+          # saoc.co.za apex) is denied until SITE_PUBLIC_LAUNCH is explicitly set to
+          # 'true' (see lib/beta-public-launch.ts; that flag is NOT added here --
+          # it stays absent from this file until the council actually decides to
+          # launch publicly) -- never "no auth required". See
+          # docs/beta-password-wall.md.
+          - variable: BETA_BASIC_AUTH_USER
+            secret: BETA_BASIC_AUTH_USER
+            availability:
+              - RUNTIME
+          - variable: BETA_BASIC_AUTH_PASSWORD
+            secret: BETA_BASIC_AUTH_PASSWORD
+            availability:
+              - RUNTIME
+
+        Also append, to backlog.md's existing "## Harness — upstream to
+        InunuNet/Athanor" section, one new bullet recording the
+        browser_deployed_check.sh gap described in this contract's goal
+        section, in that section's existing citation style (one bullet per
+        defect, filed-date + mission name + description; mark it "not yet
+        filed" since no issue number exists yet).
+      command: >-
+        grep -q "secret: BETA_BASIC_AUTH_USER" apphosting.yaml
+        && grep -q "secret: BETA_BASIC_AUTH_PASSWORD" apphosting.yaml
+        && grep -qi "browser_deployed_check" .agent/memory/project/backlog.md
+      required: true
+
+    - id: A2b
+      description: >
+        REGRESSION GUARD: both secrets are RUNTIME-only, never BUILD — a BUILD
+        entry would bake the credential into the publicly-inspectable client
+        bundle, defeating the entire wall.
+      command: >-
+        ! grep -A3 "variable: BETA_BASIC_AUTH_USER" apphosting.yaml | grep -q "BUILD"
+        && grep -A3 "variable: BETA_BASIC_AUTH_USER" apphosting.yaml | grep -q "RUNTIME"
+        && ! grep -A3 "variable: BETA_BASIC_AUTH_PASSWORD" apphosting.yaml | grep -q "BUILD"
+        && grep -A3 "variable: BETA_BASIC_AUTH_PASSWORD" apphosting.yaml | grep -q "RUNTIME"
+      required: true
+
+    - id: A3
+      description: >
+        .env.local.example documents both new keys, unset by default (leaving
+        them unset locally is intentional — it is what keeps `pnpm dev` /
+        `pnpm dev:secure` and the Playwright e2e suite open with zero setup,
+        per F1's bypass design). Comment explains that setting them locally
+        opts a developer INTO testing the wall itself against a local server.
+      command: "grep -q 'BETA_BASIC_AUTH_USER=' .env.local.example && grep -q 'BETA_BASIC_AUTH_PASSWORD=' .env.local.example"
+      required: true
+
+    - id: A4
+      description: >
+        FIX SPEC (exact, no judgment call left to @dev) —
+        contracts/checks/door-checkin-one-handed-f1/check-live-viewport.mjs:
+        add, immediately after the existing `const BASE_URL = ...` line
+        (confirmed at line 59 today):
+
+          const BETA_WALL_USER = process.env.BETA_BASIC_AUTH_USER;
+          const BETA_WALL_PASSWORD = process.env.BETA_BASIC_AUTH_PASSWORD;
+          const betaWallCredentialsConfigured = Boolean(BETA_WALL_USER) && Boolean(BETA_WALL_PASSWORD);
+          const betaWallAuthorizationHeader = betaWallCredentialsConfigured
+            ? { Authorization: `Basic ${Buffer.from(`${BETA_WALL_USER}:${BETA_WALL_PASSWORD}`).toString('base64')}` }
+            : {};
+
+        Then, in the existing `sessionRes` fetch call (confirmed at lines
+        118-122 today), change:
+          headers: { 'Content-Type': 'application/json' },
+        to:
+          headers: { 'Content-Type': 'application/json', ...betaWallAuthorizationHeader },
+
+        Then, in the existing `browser.newContext({...})` call (confirmed at
+        lines 144-146 today), change:
+          const context = await browser.newContext({
+            viewport: { width: viewport.width, height: viewport.height },
+          });
+        to:
+          const context = await browser.newContext({
+            viewport: { width: viewport.width, height: viewport.height },
+            ...(betaWallCredentialsConfigured
+              ? { httpCredentials: { username: BETA_WALL_USER, password: BETA_WALL_PASSWORD } }
+              : {}),
+          });
+
+        When both env vars are unset (today's behaviour against any
+        non-walled target), every one of these three spread expressions
+        evaluates to `{}` — zero behaviour change. Do not change anything
+        else in this file.
+      command: >-
+        grep -q "betaWallCredentialsConfigured" contracts/checks/door-checkin-one-handed-f1/check-live-viewport.mjs
+        && grep -q "httpCredentials" contracts/checks/door-checkin-one-handed-f1/check-live-viewport.mjs
+        && grep -q "betaWallAuthorizationHeader" contracts/checks/door-checkin-one-handed-f1/check-live-viewport.mjs
+      required: true
+
+    - id: A5
+      description: >
+        FIX SPEC (exact, no judgment call left to @dev) — same three edits,
+        same exact shape, applied to
+        contracts/checks/admin-settings-deploy-and-chrome-fix-f1/check-live-chrome.mjs
+        (the `BASE_URL` const is confirmed at line 70 today, the `sessionRes`
+        fetch at lines 129-133, the `browser.newContext({...})` at lines
+        155-157 — identical structure to A4's target file). THIS FILE has a
+        THIRD call site A4's file does not: the plain `fetch()` at
+        `${BASE_URL}/api/admin/settings/ozow-sandbox-test-mode` (confirmed at
+        line 259 today). Change:
+          const apiRes = await fetch(`${BASE_URL}/api/admin/settings/ozow-sandbox-test-mode`, {
+            headers: { cookie: `session=${sessionCookieValue}` },
+          });
+        to:
+          const apiRes = await fetch(`${BASE_URL}/api/admin/settings/ozow-sandbox-test-mode`, {
+            headers: { cookie: `session=${sessionCookieValue}`, ...betaWallAuthorizationHeader },
+          });
+        Do not change anything else in this file.
+      command: >-
+        grep -q "betaWallCredentialsConfigured" contracts/checks/admin-settings-deploy-and-chrome-fix-f1/check-live-chrome.mjs
+        && grep -q "httpCredentials" contracts/checks/admin-settings-deploy-and-chrome-fix-f1/check-live-chrome.mjs
+        && grep -c "betaWallAuthorizationHeader" contracts/checks/admin-settings-deploy-and-chrome-fix-f1/check-live-chrome.mjs | grep -qE "^[3-9]$"
+      required: true
+
+    - id: A6
+      description: >
+        REGRESSION GUARD: neither modified check script changed behaviour when
+        the two env vars are unset — both scripts still run their existing
+        test suite against a local or otherwise-unwalled target (this is
+        exercised for real by whichever other mission's own gate already
+        calls these scripts; this assertion only confirms the spread-based
+        conditional shape compiles and does not always-apply the auth header,
+        i.e. the literal unconditional-header mistake is absent).
+      command: >-
+        ! grep -q "'Authorization': \`Basic" contracts/checks/door-checkin-one-handed-f1/check-live-viewport.mjs
+        && ! grep -q "'Authorization': \`Basic" contracts/checks/admin-settings-deploy-and-chrome-fix-f1/check-live-chrome.mjs
+      required: true
+
+    - id: A7
+      description: >
+        DEPLOYED VERIFICATION (run by the orchestrator AFTER pushing — it
+        needs the real deployed credential from Secret Manager, never
+        hardcoded, read here from local shell env vars BETA_BASIC_AUTH_USER /
+        BETA_BASIC_AUTH_PASSWORD, which must be exported from the same values
+        set in A1, e.g. via `.env.local` if mirrored there for operator
+        convenience): an unauthenticated request to the deployed beta origin
+        returns HTTP 401 with a Basic WWW-Authenticate challenge.
+      command: >-
+        status="$(curl -s -o /dev/null -w '%{http_code}' https://beta.saoc.co.za/)"
+        ; test "$status" = "401"
+        && curl -s -D - -o /dev/null https://beta.saoc.co.za/ | grep -qi '^WWW-Authenticate: Basic'
+      required: true
+
+    - id: A8
+      description: >
+        DEPLOYED VERIFICATION: the SAME request, authenticated with the real
+        deployed credential, returns HTTP 200.
+      command: >-
+        test -n "$BETA_BASIC_AUTH_USER" && test -n "$BETA_BASIC_AUTH_PASSWORD"
+        && status="$(curl -s -o /dev/null -w '%{http_code}' -u "$BETA_BASIC_AUTH_USER:$BETA_BASIC_AUTH_PASSWORD" https://beta.saoc.co.za/)"
+        && test "$status" = "200"
+      required: true
+
+    - id: A9
+      description: >
+        DEPLOYED VERIFICATION: none of the 6 exempt webhook paths are ever
+        challenged by the wall — checked by the ABSENCE of a WWW-Authenticate
+        header, not by status code alone (a route's OWN signature/secret
+        check may legitimately return a non-200 status, e.g. 400/401/405 for
+        an unauthenticated GET with no valid payload — that is the route's
+        own business logic, not the wall, and must not be confused with it;
+        the wall's own 401 is the only response shape that carries
+        WWW-Authenticate).
+      command: >-
+        for p in /api/tickets/itn /api/tickets/ozow-itn /api/vendors/stand-payment/payfast-itn /api/vendors/stand-payment/ozow-itn /api/revalidate /api/admin/reconcile-orders; do
+          if curl -s -D - -o /dev/null "https://beta.saoc.co.za$p" | grep -qi '^WWW-Authenticate:'; then
+            echo "FAIL: $p was challenged by the wall" ; exit 1 ;
+          fi
+        done
+        ; echo "PASS: none of the 6 exempt paths carry WWW-Authenticate" ; exit 0
+      required: true
+
+    - id: A10
+      description: >
+        DEPLOYED VERIFICATION: X-Robots-Tag: noindex is present on BOTH the
+        401 (unauthenticated) and the 200 (authenticated) response on the
+        beta host — the noindex guarantee must not depend on whether the
+        visitor has the password.
+      command: >-
+        test -n "$BETA_BASIC_AUTH_USER" && test -n "$BETA_BASIC_AUTH_PASSWORD"
+        && curl -s -D - -o /dev/null https://beta.saoc.co.za/ | grep -qi '^X-Robots-Tag: noindex, nofollow'
+        && curl -s -D - -o /dev/null -u "$BETA_BASIC_AUTH_USER:$BETA_BASIC_AUTH_PASSWORD" https://beta.saoc.co.za/ | grep -qi '^X-Robots-Tag: noindex, nofollow'
+      required: true
+
+    - id: A11
+      description: >
+        DEPLOYED VERIFICATION: /robots.txt on the beta host is disallow-all.
+      command: >-
+        test -n "$BETA_BASIC_AUTH_USER" && test -n "$BETA_BASIC_AUTH_PASSWORD"
+        && curl -s -u "$BETA_BASIC_AUTH_USER:$BETA_BASIC_AUTH_PASSWORD" https://beta.saoc.co.za/robots.txt | grep -q "Disallow: /"
+      required: true
+
+    - id: A_triad_codex
+      description: >
+        TRIAD — the mission's one Codex GPT-5.5 adversarial review, covering
+        BOTH features' combined diff (per docs/verification-triad-gate.md and
+        workflow.md; run by the orchestrator directly via
+        execution/codex_qa.sh, not a chain-dispatched subagent — see
+        workflow.md's own note). Scope matches the single-end-of-mission
+        precedent menu-system-layout4/contract-f11.yaml set.
+      verify:
+        kind: codex_qa
+        target: >-
+          Review the full git diff for mission beta-password-wall (both F1 and
+          F2), scoped to proxy.ts, lib/beta-public-launch.ts, app/robots.ts,
+          e2e/beta-password-wall-decision.spec.ts, apphosting.yaml,
+          .env.local.example,
+          contracts/checks/door-checkin-one-handed-f1/check-live-viewport.mjs,
+          and
+          contracts/checks/admin-settings-deploy-and-chrome-fix-f1/check-live-chrome.mjs,
+          for real bugs, security issues, and correctness risks — not style.
+          Specifically check: (1) whether the Edge-runtime constant-time
+          comparison (SHA-256 digest of both inputs, then a non-short-circuiting
+          XOR loop over the fixed-length digest bytes) actually avoids a timing
+          side-channel, or whether hashing introduces a different exploitable
+          timing signal; (2) whether the exact-match exempt-path check
+          (Set.has() against request.nextUrl.pathname) can be bypassed by any
+          request shape — trailing slashes, double slashes, URL-encoded
+          characters, or case variation — given that WHATWG URL parsing
+          normalises the pathname before this code ever sees it; (3) whether
+          the SITE_PUBLIC_LAUNCH exact-string-match design
+          (lib/beta-public-launch.ts's isPubliclyLaunched, `flagValue ===
+          'true'`) could ever be satisfied unintentionally — e.g. by a value
+          Firebase App Hosting itself might inject, coerce, or default for an
+          env var with no `value:`/`secret:` entry at all when the key is
+          undeclared in apphosting.yaml, as opposed to this feature's own
+          assumption that an undeclared RUNTIME var simply reads as
+          `undefined` in process.env; (4) whether the fail-closed-in-production
+          logic can ever be bypassed by an unset vs. empty-string distinction
+          (e.g. BETA_BASIC_AUTH_USER="" vs. unset) that Boolean() does not
+          treat identically to undefined in some code path; (5) whether the
+          conditional httpCredentials/Authorization-header spread added to the
+          two check scripts could regress their EXISTING behaviour when the new
+          env vars are unset. Cite file:line for every finding.
+      required: true
+
+    - id: A_triad_browser
+      description: >
+        TRIAD — deployed browser-run manifest proving, via a REAL browser
+        (not curl), that an unauthenticated visit to https://beta.saoc.co.za/
+        shows the browser-native Basic Auth prompt and a correctly-credentialed
+        visit reaches the real homepage. PENDING: the manifest at this path
+        does not exist yet — the deploying session produces it after driving a
+        real browser run against the deployed origin, same convention as
+        menu-system-layout4/contract-f11.yaml's A18. Until it exists this
+        assertion honestly errors (exit 2, wrapper usage error per
+        execution/browser_deployed_check.sh's own contract) — note this
+        script's OWN internal curl re-check will itself need BETA_BASIC_AUTH_USER/PASSWORD
+        exported in the gate-running shell to pass post-deploy, per this
+        contract's goal section's harness-defect note; if that upstream fix has
+        not landed by the time this gate runs, exporting the credential into
+        the gate-running shell's environment is the only available workaround,
+        and its absence is this contract's own documented, accepted limitation,
+        not a silent gap.
+      verify:
+        kind: browser_deployed_check
+        target: ".agent/memory/project/specs/beta-password-wall/browser-deployed-manifest.json"
+      required: true
+
+    - id: A_triad_gws
+      description: >
+        TRIAD — gws_inbox_check: NOT APPLICABLE. This mission touches no email
+        template or email-rendered-image path. Confirmed by reading
+        lib/email.ts, lib/confirmation-email.ts, and lib/qr.ts during contract
+        authoring: QR codes are embedded in the confirmation email as inline
+        PNG data URIs / Resend CID attachments (generateBookingRefQrPngBuffer),
+        never fetched from the site origin by the email client; lib/email.ts's
+        DEFAULT_SITE_URL is used only to build plain link hrefs in email body
+        TEXT for a human to click — clicking such a link is an ordinary browser
+        visit to the (now walled) site, identical to any other visitor, not an
+        email-client image-rendering path the wall could break silently.
+        Flagged here per team-lead instruction for the orchestrator to grant
+        the exemption explicitly (execution/ and its
+        triad-baseline-exempt.{txt,sha256} mechanism are HARNESS-owned; this
+        contract does not edit them).
+      command: "true"
+      required: false

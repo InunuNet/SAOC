@@ -4535,3 +4535,30 @@ Also confirmed directly, not newly learned: Claude-in-Chrome's resize floors at 
 true 390px mobile screenshot cannot be captured through it. `.claude/rules/shell-paths.md`
 already bans Claude-in-Chrome project-wide for this reason; use headless Playwright for any
 deployed-site viewport check instead.
+
+## beta-password-wall M1/F1 — six lessons (2026-10-06)
+
+- Next 16.2 deprecates `middleware.ts` in favour of `proxy.ts` exporting a `proxy` function —
+  that's the canonical path now, not a workaround. It runs on the Edge runtime, so
+  `node:crypto.timingSafeEqual` isn't available there; the constant-time compare used is
+  SHA-256-digest-then-XOR instead.
+- `node_modules/next/types/global.d.ts` declares `ProcessEnv.NODE_ENV` readonly, and tsconfig
+  type-checks `e2e/`. A test that needs to vary `NODE_ENV` must use
+  `Object.defineProperty(process.env, 'NODE_ENV', {...})` — a direct assignment fails
+  `pnpm type-check` with TS2540, and `pnpm build` does NOT catch it (only type-check does).
+- Launch gating must be host-agnostic: lift the password wall only on an explicit
+  `SITE_PUBLIC_LAUNCH === 'true'' env var, never keyed off the Host header — the saoc.co.za DNS
+  migration may land before the launch decision does, so public exposure has to be a deliberate
+  flag flip, not a side effect of a domain pointing somewhere.
+- Non-ASCII Basic Auth credentials never match: `atob` produces a binary string, and
+  `TextEncoder` then re-encodes it, corrupting anything outside ASCII. Keep Basic Auth
+  credentials ASCII-only.
+- `firebase apphosting:secrets:set --force --data-file=-` run without a TTY creates the secret
+  and IAM bindings fine, but the "add this to apphosting.yaml?" prompt gets answered by EOF, so
+  `apphosting.yaml` is left unchanged — add the entry by hand. Pipe values via stdin (never argv),
+  and verify by comparing hashes of `secrets:access` output against `.env.local` without printing
+  either value. (Consistent with the existing finding above that `secrets:set --force` never
+  touches `apphosting.yaml`.)
+- `execution/env_keys.py --has` reads `.env`, not `.env.local` — it gives false negatives for
+  every key this project actually sets. Use `grep -q '^KEY=' .env.local` for presence checks
+  instead.
