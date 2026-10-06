@@ -46,6 +46,37 @@ export function isExemptPath(pathname: string): boolean {
   return EXEMPT_PATHS.has(pathname);
 }
 
+// Firebase App Hosting puts Cloud CDN in front of this server, and a CDN hit never
+// reaches proxy() at all. So while the wall is up, no response may be storable by
+// a shared cache — otherwise one authenticated load of an ISR page (which Next
+// emits as `s-maxage=60, stale-while-revalidate=...`) is replayed to anonymous
+// visitors from the edge (observed live on beta, 2026-10-06). Two independent
+// mechanisms, both from Cloud CDN's documented "never cached" list
+// (https://firebase.google.com/docs/app-hosting/optimize-cache):
+//   1. Cache-Control private/no-store. Next copies proxy headers onto the response
+//      before rendering and only sets its own Cache-Control when none exists
+//      (node_modules/next/dist/server/send-payload.js:60,
+//      server/lib/router-server.js:394), so this survives on pages, static files
+//      and API routes.
+//   2. A Set-Cookie marker. Some paths overwrite Cache-Control after proxy runs —
+//      the image optimizer always sets `public, max-age=...`
+//      (server/image-optimizer.js:1180) and a route handler's own headers win (the
+//      ImageResponse at app/og). Cloud CDN never caches a response carrying
+//      Set-Cookie, whatever its Cache-Control says. The value carries no data.
+// `Vary: Authorization` is deliberately NOT used: Next replaces Vary on every page
+// (build/templates/app-page.js:446) and image response, so it would be absent
+// exactly where it mattered. Both mechanisms lift with SITE_PUBLIC_LAUNCH, at
+// runtime, restoring Next's own caching headers.
+export const WALL_CACHE_CONTROL = 'private, no-store, max-age=0';
+export const WALL_MARKER_COOKIE = 'saoc_beta_wall=1; Path=/; HttpOnly; Secure; SameSite=Lax';
+
+function applyWallHeaders(response: Response): Response {
+  response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  response.headers.set('Cache-Control', WALL_CACHE_CONTROL);
+  response.headers.append('Set-Cookie', WALL_MARKER_COOKIE);
+  return response;
+}
+
 async function sha256(value: string): Promise<Uint8Array> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
   return new Uint8Array(digest);
@@ -133,7 +164,7 @@ export async function proxy(request: NextRequest): Promise<Response> {
     publiclyLaunched,
   });
 
-  const applyNoindex = !publiclyLaunched;
+  const wallUp = !publiclyLaunched;
 
   if (!allowed) {
     const response = new Response('Authentication required.', {
@@ -143,11 +174,9 @@ export async function proxy(request: NextRequest): Promise<Response> {
         'Content-Type': 'text/plain; charset=utf-8',
       },
     });
-    if (applyNoindex) response.headers.set('X-Robots-Tag', 'noindex, nofollow');
-    return response;
+    return wallUp ? applyWallHeaders(response) : response;
   }
 
   const response = NextResponse.next();
-  if (applyNoindex) response.headers.set('X-Robots-Tag', 'noindex, nofollow');
-  return response;
+  return wallUp ? applyWallHeaders(response) : response;
 }

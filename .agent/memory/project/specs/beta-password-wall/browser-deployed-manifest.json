@@ -1,0 +1,9 @@
+{
+  "origin": "https://beta.saoc.co.za",
+  "path_tested": "/",
+  "screenshot_path": "evidence/beta-homepage-authenticated.jpg",
+  "commit_sha": "fd5b763f61294708a2eb807d94c742ab6885ff34",
+  "timestamp": "2026-10-06T18:54:00Z",
+  "http_status": 200,
+  "notes": "A_triad_browser for beta-password-wall M1/F2. Real headless Playwright session (not Claude-in-Chrome) against the deployed beta.saoc.co.za origin, confirmed at HEAD fd5b763f via git rev-parse HEAD match. Unauthenticated context: GET / returned HTTP 401 (browser-native Basic Auth challenge, not followed), screenshot at evidence/beta-homepage-401-unauthenticated.jpg. Separate context with Playwright's httpCredentials set from BETA_BASIC_AUTH_USER/PASSWORD (never logged): GET / returned HTTP 200, page.title() == 'South African Orchid Council | South African Orchid Council', real homepage content rendered -- screenshot at evidence/beta-homepage-authenticated.jpg, no credential visible in either image. ADVERSARIAL FINDING (see qa-report-beta-password-wall-f2.md): during this same QA pass, a plain curl GET to the bare https://beta.saoc.co.za/ (no query string) was independently observed returning HTTP 200 with cdn-cache-status: hit and no WWW-Authenticate challenge, for a window of at least ~15 seconds, before reverting to the correct 401/miss on subsequent requests -- a CDN-layer cache bypass of the password wall, root-caused to proxy.ts's pass-through response (NextResponse.next()) not stripping or overriding the downstream ISR page's own Cache-Control: s-maxage=60, stale-while-revalidate=31535940 header, and not varying the cache on the Authorization header. This manifest's own browser run captured the wall behaving correctly at the moment it ran; it does not supersede or disprove the cache-bypass finding, which was observed via direct header inspection (cdn-cache-status, age, cache-control) moments earlier in the same session."
+}

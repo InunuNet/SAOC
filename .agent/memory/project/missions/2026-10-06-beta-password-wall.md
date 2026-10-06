@@ -22,7 +22,7 @@ goal: 'Put a password wall in front of beta.saoc.co.za so search engines and the
   not 401.'
 created_at: '2026-10-06T17:53:27.838136+00:00'
 started_at: '2026-10-06T18:20:38.906297+00:00'
-last_active_at: '2026-10-06T18:28:24.376017+00:00'
+last_active_at: '2026-10-06T19:07:53.703746+00:00'
 status: in_progress
 cost_estimate:
   features: 2
@@ -30,8 +30,8 @@ cost_estimate:
   total_calls: 0
 last_checkpoint:
   milestone: M1
-  feature: F2
-  ts: '2026-10-06T18:28:24.376017+00:00'
+  feature: F1
+  ts: '2026-10-06T19:07:53.703746+00:00'
 features:
 - id: F1
   inline_brief: null
@@ -94,3 +94,12 @@ milestones:
 
 ## Notes
 
+
+- 2026-10-06 — F1 retry 1 (@architect): deployed QA found a CRITICAL Cloud CDN replay
+  (an anonymous request got the cached authenticated homepage, `cdn-cache-status: hit`).
+  Fix: while walled, proxy.ts sets `Cache-Control: private, no-store, max-age=0` plus a
+  `saoc_beta_wall=1` Set-Cookie marker on every response. The marker covers the image
+  optimizer and /og, which overwrite Cache-Control. Proven against local `next start`:
+  contracts/checks/beta-password-wall/check-cache-headers.mjs (F1 A9/A10). Deployed
+  authenticated-then-anonymous pair proof: check-deployed-cdn-pairs.mjs (F2 A12/A13).
+  Separate finding, not fixed: local-src next/image returns 400 behind the wall.

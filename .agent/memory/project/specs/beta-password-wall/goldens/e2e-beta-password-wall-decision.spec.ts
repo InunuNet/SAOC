@@ -11,11 +11,24 @@
 // host-based bypass anywhere in this suite — the wall, the noindex header, and
 // robots.ts's disallow-all all apply on every host until SITE_PUBLIC_LAUNCH is
 // exactly 'true'. See lib/beta-public-launch.ts's header comment for why.
+//
+// CDN CACHE HEADERS (F1 retry 1, 2026-10-06): the response-shape tests below only
+// prove what proxy() itself returns. Whether those headers SURVIVE Next's own
+// rendering is a separate question these unit tests cannot answer — that is
+// proven against a real `next start` build by
+// contracts/checks/beta-password-wall/check-cache-headers.mjs.
 import { expect, test } from '@playwright/test';
 import { NextRequest } from 'next/server';
 
 import { isPubliclyLaunched } from '../lib/beta-public-launch';
-import { constantTimeEqual, decideBasicAuth, isExemptPath, proxy } from '../proxy';
+import {
+  WALL_CACHE_CONTROL,
+  WALL_MARKER_COOKIE,
+  constantTimeEqual,
+  decideBasicAuth,
+  isExemptPath,
+  proxy,
+} from '../proxy';
 
 const EXEMPT_PATHS = [
   '/api/tickets/itn',
@@ -228,6 +241,8 @@ test.describe('proxy() end-to-end response shape', () => {
     expect(response.status).toBe(401);
     expect(response.headers.get('WWW-Authenticate')).toContain('Basic');
     expect(response.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+    expect(response.headers.get('Cache-Control')).toBe(WALL_CACHE_CONTROL);
+    expect(response.headers.getSetCookie()).toContain(WALL_MARKER_COOKIE);
   });
 
   test('allowed request (correct credentials): 200 and still noindex (not launched)', async () => {
@@ -242,6 +257,30 @@ test.describe('proxy() end-to-end response shape', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+    expect(response.headers.get('Cache-Control')).toBe(WALL_CACHE_CONTROL);
+    expect(response.headers.getSetCookie()).toContain(WALL_MARKER_COOKIE);
+  });
+
+  test('wall cache headers: private + no-store, never shared-cacheable', () => {
+    const directives = WALL_CACHE_CONTROL.split(',').map((d) => d.trim());
+    expect(directives).toContain('private');
+    expect(directives).toContain('no-store');
+    expect(directives).not.toContain('public');
+    expect(directives.some((d) => d.startsWith('s-maxage'))).toBe(false);
+    expect(WALL_MARKER_COOKIE.startsWith('saoc_beta_wall=')).toBe(true);
+  });
+
+  test('exempt webhook path while walled: passes through, still uncacheable', async () => {
+    delete process.env.SITE_PUBLIC_LAUNCH;
+    setNodeEnv('production');
+    process.env.BETA_BASIC_AUTH_USER = 'councilbeta';
+    process.env.BETA_BASIC_AUTH_PASSWORD = 's3cr3t-value';
+
+    const response = await proxy(requestFor('https://beta.saoc.co.za/api/tickets/itn'));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('WWW-Authenticate')).toBeNull();
+    expect(response.headers.get('Cache-Control')).toBe(WALL_CACHE_CONTROL);
   });
 
   test('SITE_PUBLIC_LAUNCH="true": never noindexed and never challenged, even on the real production host, even with no Authorization header', async () => {
@@ -255,6 +294,9 @@ test.describe('proxy() end-to-end response shape', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('X-Robots-Tag')).toBeNull();
     expect(response.headers.get('WWW-Authenticate')).toBeNull();
+    // Launch hands caching back to Next: proxy adds no Cache-Control and no marker.
+    expect(response.headers.get('Cache-Control')).toBeNull();
+    expect(response.headers.getSetCookie()).toEqual([]);
   });
 
   test('SITE_PUBLIC_LAUNCH="TRUE" (wrong case) still walls the site', async () => {
@@ -267,5 +309,6 @@ test.describe('proxy() end-to-end response shape', () => {
 
     expect(response.status).toBe(401);
     expect(response.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+    expect(response.headers.get('Cache-Control')).toBe(WALL_CACHE_CONTROL);
   });
 });

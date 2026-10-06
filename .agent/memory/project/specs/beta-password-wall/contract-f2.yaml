@@ -42,6 +42,18 @@ goal: >
     (c) is an explicitly ACCEPTED, mission-wide side effect for this gate cycle,
         not something this feature can fix within its own scope (fixing it would
         mean editing a HARNESS-owned file).
+  RETRY 1 (2026-10-06) — CDN CACHE BYPASS. This feature's first deployed QA pass
+  passed every point-in-time assertion below (A7-A11) and still FAILED: an
+  anonymous curl got the full homepage from the Cloud CDN (`cdn-cache-status:
+  hit`) for ~60s after one authenticated load. The design fix lives in F1
+  (contract-f1.yaml, RETRY 1 section). F2 adds the deployed proof that point-in-
+  time checks cannot give: A13 reproduces the exact trigger — authenticated GET,
+  then immediately an anonymous GET of the identical URL, for N rounds, across an
+  ISR page, a year-long static page, a build chunk and a remote optimized image.
+  A13 must run ONLY after the fixed build is rolled out: against the pre-fix build
+  its authenticated half re-opens the live bypass window it detects. No separate
+  CDN purge step exists or is needed — a rollout is App Hosting's only purge
+  (docs/f1-cdn-purge-api-findings.md).
 created_at: '2026-10-06'
 autonomy: high
 features:
@@ -54,7 +66,8 @@ features:
       verification (401 unauthenticated, 200 authenticated, exempt paths never
       challenged).
     status: pending
-goldens: []
+goldens:
+  - .agent/memory/project/specs/beta-password-wall/goldens/check-deployed-cdn-pairs.mjs
 assertions:
   phase: 4
   checks:
@@ -230,8 +243,8 @@ assertions:
         convenience): an unauthenticated request to the deployed beta origin
         returns HTTP 401 with a Basic WWW-Authenticate challenge.
       command: >-
-        status="$(curl -s -o /dev/null -w '%{http_code}' https://beta.saoc.co.za/)"
-        ; test "$status" = "401"
+        http_status_code="$(curl -s -o /dev/null -w '%{http_code}' https://beta.saoc.co.za/)"
+        ; test "$http_status_code" = "401"
         && curl -s -D - -o /dev/null https://beta.saoc.co.za/ | grep -qi '^WWW-Authenticate: Basic'
       required: true
 
@@ -241,8 +254,8 @@ assertions:
         deployed credential, returns HTTP 200.
       command: >-
         test -n "$BETA_BASIC_AUTH_USER" && test -n "$BETA_BASIC_AUTH_PASSWORD"
-        && status="$(curl -s -o /dev/null -w '%{http_code}' -u "$BETA_BASIC_AUTH_USER:$BETA_BASIC_AUTH_PASSWORD" https://beta.saoc.co.za/)"
-        && test "$status" = "200"
+        && http_status_code="$(curl -s -o /dev/null -w '%{http_code}' -u "$BETA_BASIC_AUTH_USER:$BETA_BASIC_AUTH_PASSWORD" https://beta.saoc.co.za/)"
+        && test "$http_status_code" = "200"
       required: true
 
     - id: A9
@@ -284,6 +297,32 @@ assertions:
         && curl -s -u "$BETA_BASIC_AUTH_USER:$BETA_BASIC_AUTH_PASSWORD" https://beta.saoc.co.za/robots.txt | grep -q "Disallow: /"
       required: true
 
+    - id: A12
+      description: >
+        RETRY 1: the deployed CDN pair checker exists at
+        contracts/checks/beta-password-wall/check-deployed-cdn-pairs.mjs and is
+        byte-identical to the golden.
+      command: >-
+        test -f contracts/checks/beta-password-wall/check-deployed-cdn-pairs.mjs
+        && diff -q .agent/memory/project/specs/beta-password-wall/goldens/check-deployed-cdn-pairs.mjs contracts/checks/beta-password-wall/check-deployed-cdn-pairs.mjs
+      required: true
+
+    - id: A13
+      description: >
+        RETRY 1 — DEPLOYED CDN REPLAY PROOF (orchestrator, AFTER the fixed build's
+        rollout is live; credentials exported into the gate shell from the same
+        values as A1, never printed). For 5 rounds, for each of `/`, `/privacy`,
+        a build chunk and a remote `/_next/image` URL (the last two discovered from
+        the live homepage): authenticated GET must be 200 with the saoc_beta_wall
+        Set-Cookie marker, private + no-store Cache-Control (except the optimized
+        image, whose Cache-Control Next forces to public — the marker is its
+        protection) and never `cdn-cache-status: hit`; then the IMMEDIATE anonymous
+        GET of the identical URL must be 401 + `WWW-Authenticate: Basic` and never
+        `cdn-cache-status: hit`. 20 pairs total. Exit 2 if the credentials are not
+        exported, so a missing credential cannot read as a pass.
+      command: "node contracts/checks/beta-password-wall/check-deployed-cdn-pairs.mjs https://beta.saoc.co.za 5"
+      required: true
+
     - id: A_triad_codex
       description: >
         TRIAD — the mission's one Codex GPT-5.5 adversarial review, covering
@@ -302,6 +341,8 @@ assertions:
           contracts/checks/door-checkin-one-handed-f1/check-live-viewport.mjs,
           and
           contracts/checks/admin-settings-deploy-and-chrome-fix-f1/check-live-chrome.mjs,
+          contracts/checks/beta-password-wall/check-cache-headers.mjs and
+          contracts/checks/beta-password-wall/check-deployed-cdn-pairs.mjs,
           for real bugs, security issues, and correctness risks — not style.
           Specifically check: (1) whether the Edge-runtime constant-time
           comparison (SHA-256 digest of both inputs, then a non-short-circuiting
@@ -325,7 +366,15 @@ assertions:
           treat identically to undefined in some code path; (5) whether the
           conditional httpCredentials/Authorization-header spread added to the
           two check scripts could regress their EXISTING behaviour when the new
-          env vars are unset. Cite file:line for every finding.
+          env vars are unset; (6) RETRY 1 — whether ANY response reachable
+          through proxy() while the wall is up can still be stored by Firebase
+          App Hosting's Cloud CDN and replayed to an anonymous visitor: look for
+          a Next code path (beyond the image optimizer and route handlers already
+          covered by the Set-Cookie marker) that drops or rewrites headers proxy()
+          set, a response type that strips Set-Cookie, and whether the
+          `saoc_beta_wall` marker cookie or the `private, no-store` header can be
+          suppressed by a request the attacker controls. Cite file:line for every
+          finding.
       required: true
 
     - id: A_triad_browser

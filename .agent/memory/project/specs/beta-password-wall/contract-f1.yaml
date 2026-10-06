@@ -81,6 +81,74 @@ goal: >
   boilerplate, not institutional copy — no further sign-off needed; keep as
   written in the golden below.
 
+  RETRY 1 (2026-10-06) — CDN CACHE BYPASS, CRITICAL. @qa (deployed, F2) watched
+  an UNAUTHENTICATED `curl https://beta.saoc.co.za/` return the full homepage
+  (200, `cdn-cache-status: hit`, no challenge) for ~60s after one authenticated
+  load. Firebase App Hosting fronts Cloud Run with Cloud CDN; proxy() passed the
+  ISR page's own `Cache-Control: s-maxage=60, stale-while-revalidate=31535940`
+  through untouched, the CDN stored the authenticated 200, and a cache hit never
+  reaches proxy() at all. Reproduced at the origin against a local `next start`
+  of the pre-fix build: `/` -> `s-maxage=60, ...`, `/privacy` ->
+  `s-maxage=31536000` (one year), `/_next/static/*` -> `public, max-age=31536000,
+  immutable`, robots/sitemap/favicon/og -> `public, max-age=0, must-revalidate`,
+  remote `/_next/image` -> `public, max-age=2592000`.
+
+  DESIGN DECISION — make every walled response unstorable at the edge, with two
+  independent mechanisms from Cloud CDN's documented never-cache list
+  (https://firebase.google.com/docs/app-hosting/optimize-cache, read via Alembic):
+    1. `Cache-Control: private, no-store, max-age=0` set in proxy(). Proven to
+       survive: Next copies proxy headers onto the response BEFORE rendering
+       (node_modules/next/dist/server/lib/router-server.js:331-333 via
+       resolve-routes.js:441-461) and only writes its own Cache-Control when none
+       exists (server/send-payload.js:60, router-server.js:394). Verified on ISR,
+       RSC payload, static, SSG, dynamic, robots, sitemap, API, public files and
+       build chunks. 404s get Next's own `private, no-cache, no-store, ...`
+       (base-server.js:1657) — equally unstorable.
+    2. A `Set-Cookie: saoc_beta_wall=1` marker on every walled response. Needed
+       because two paths overwrite Cache-Control after proxy runs: the image
+       optimizer always writes `public, max-age=...`
+       (server/image-optimizer.js:1180), and a route handler's own headers win
+       (app/og ImageResponse ends up `private, no-store, max-age=0, public,
+       max-age=0, must-revalidate`). Cloud CDN never caches a response carrying
+       Set-Cookie, whatever its Cache-Control says.
+  Both lift together with SITE_PUBLIC_LAUNCH at RUNTIME (verified: a launched
+  `next start` of the same build serves `/` with Next's own `s-maxage=60, ...`
+  restored and no marker cookie).
+
+  OPTIONS REJECTED:
+    (a-Vary) `Vary: Authorization`: Next REPLACES Vary on every page
+      (build/templates/app-page.js:446) and image response
+      (image-optimizer.js:1179), so it would be absent exactly where it matters.
+    (b) next.config `headers()`: applied by the same pre-render header copy, so it
+      is no stronger than setting it in proxy — and it cannot be conditional on a
+      runtime env var without a rebuild, and A5 forbids touching next.config.ts.
+    (c) force-dynamic everywhere: `dynamic` is a build-time segment config, so it
+      cannot lift with the runtime SITE_PUBLIC_LAUNCH flag, and it would not
+      cover static files, chunks or the image optimizer anyway.
+    (d) `CDN-Cache-Control`: not among the directives App Hosting documents as
+      honoured; the documented `private`/`no-store`/`Set-Cookie` rules are used
+      instead.
+
+  STATIC ASSETS: `/_next/static/*` stays walled AND private — not publicly cached.
+  Build chunks carry client-component copy (unreleased page text), and Brad's
+  instruction was "every page and asset". The cost is that beta testers' browsers
+  re-download chunks on full page loads (client-side navigation keeps loaded chunks
+  in memory). That is accepted for a pre-launch site and lifts with the flag.
+
+  KNOWN LIMITATION, NOT FIXED HERE (reported separately to the orchestrator):
+  `next/image` with a LOCAL src (e.g. the header logo /images/saoc-logo-ink-paper.png)
+  returns 400 while walled — the optimizer's internal self-fetch
+  (image-optimizer.js:994-1004, a mocked request with no headers) hits the wall
+  and gets the 401 body. Verified: same build with SITE_PUBLIC_LAUNCH='true'
+  serves it 200. Remote (cdn.sanity.io) sources are unaffected. Fixing it means
+  exempting some asset paths from the wall, which is a scope decision, not part of
+  this cache fix.
+
+  CDN PURGE ON DEPLOY: none needed and none available — App Hosting has no purge
+  API (docs/f1-cdn-purge-api-findings.md); a rollout is the purge. Entries stored
+  before the fix carry `s-maxage=60` and Cloud CDN does not serve s-maxage entries
+  stale, so nothing pre-fix survives the rollout.
+
   WHO WRITES WHAT: this contract's 4 golden files (`lib/beta-public-launch.ts`,
   `proxy.ts`, `app/robots.ts`, `e2e/beta-password-wall-decision.spec.ts`) are
   written directly by @architect, byte-for-byte, and stored under this spec's
@@ -115,6 +183,7 @@ goldens:
   - .agent/memory/project/specs/beta-password-wall/goldens/proxy.ts
   - .agent/memory/project/specs/beta-password-wall/goldens/app-robots.ts
   - .agent/memory/project/specs/beta-password-wall/goldens/e2e-beta-password-wall-decision.spec.ts
+  - .agent/memory/project/specs/beta-password-wall/goldens/check-cache-headers.mjs
 assertions:
   phase: 4
   checks:
@@ -221,5 +290,33 @@ assertions:
         differently — scoping this check to exactly what @dev wrote avoids a
         false negative from pre-existing, unrelated lint debt elsewhere in the
         repo).
-      command: "npx eslint proxy.ts lib/beta-public-launch.ts app/robots.ts"
+      command: "npx eslint proxy.ts lib/beta-public-launch.ts app/robots.ts contracts/checks/beta-password-wall/check-cache-headers.mjs"
+      required: true
+
+    - id: A9
+      description: >
+        RETRY 1: the production header checker exists at
+        contracts/checks/beta-password-wall/check-cache-headers.mjs and is
+        byte-identical to the golden (@dev copies it; @dev does not edit it).
+      command: >-
+        test -f contracts/checks/beta-password-wall/check-cache-headers.mjs
+        && diff -q .agent/memory/project/specs/beta-password-wall/goldens/check-cache-headers.mjs contracts/checks/beta-password-wall/check-cache-headers.mjs
+      required: true
+
+    - id: A10
+      description: >
+        RETRY 1 — PRODUCTION-SERVER HEADER PROOF. Builds, then starts a real
+        `next start` twice on a free port (throwaway random credentials, never
+        printed; the server is always killed) and asserts: (walled) every
+        authenticated and anonymous response across ISR, RSC, static, SSG,
+        dynamic, 404, robots, sitemap, API, public file, favicon, build chunk,
+        local + remote /_next/image and /og carries the Set-Cookie marker and
+        X-Robots-Tag noindex; every path whose Cache-Control Next honours ends
+        private + no-store with no public/s-maxage; every anonymous response is
+        401 + Basic challenge + the wall's exact Cache-Control; (launched,
+        SITE_PUBLIC_LAUNCH='true') `/` is 200 with Next's own s-maxage restored
+        and no marker or noindex. Negative control, run during design against the
+        pre-fix proxy: exit 1, 28 problems. The build log goes to .tmp/ so a build
+        failure is still visible.
+      command: "pnpm build > .tmp/beta-wall-build.log 2>&1 && node contracts/checks/beta-password-wall/check-cache-headers.mjs"
       required: true
