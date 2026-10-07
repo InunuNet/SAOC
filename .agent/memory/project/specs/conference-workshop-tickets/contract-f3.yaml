@@ -127,3 +127,31 @@ assertions:
     - id: A25
       description: type-check passes
       command: npx tsc --noEmit
+
+    # ============ Verification triad (added 2026-10-07, team-lead directive — ============
+    # ============ this contract references app/api/tickets/checkout/route.ts and ============
+    # ============ scripts/migrate-conference-workshop-tickets.ts, so it is classified ============
+    # ============ UI/workflow by execution/verify_triad_coverage.py and requires all three) ====
+
+    - id: A26
+      description: 'codex_qa verification ran against this feature''s diff (the new excludedDays rejection branch in app/api/tickets/checkout/route.ts, immediately after the existing isValidChosenDay() call, plus the conference/workshop retirement migration script)'
+      type: codex_qa
+      target: "Adversarially review the current git diff of app/api/tickets/checkout/route.ts and scripts/migrate-conference-workshop-tickets.ts (mission conference-workshop-tickets, feature F3): a new excludedDays rejection branch was added immediately after the existing isValidChosenDay() call, and a migration script retires four conference early-bird/joint-bundle Sanity documents plus sunset-cocktails-couple by setting active:false, patches seven pre-existing ticketType documents, and must never delete a document or create conferencePresenter/workshopSession documents. For each finding: cite exact file:line, state the concrete failure scenario, and rate confidence. If nothing real is wrong, say so plainly instead of inventing findings."
+
+    - id: A27
+      description: 'browser_deployed_check against the real deployed beta.saoc.co.za origin confirming /national-show/conferences (CORRECTED 2026-10-07 — not /tickets, which has zero mentions of Symposium; confirmed live) renders both saoc-symposium and wosa-conference at R2000.00 with no provisional-badge marker. Page-wide marker absence is safe to assert HERE specifically because this page only ever renders these two conference cards — unlike /tickets, which legitimately shows a "Provisional pricing" badge on Lee-Ann-sheet admission products, so a page-wide absence check must never be asserted there. A GET page render — fits the native kind''s live-recheck mechanism; see A28''s header comment for why the Thursday/Friday checkout behaviour does NOT go through this kind. NOTE: this native kind is currently blocked for ANY page on this site by a separate, already-logged harness defect (see .agent/memory/project/backlog.md, 2026-10-07 entry) — execution/browser_deployed_check.sh''s live re-check sends no Basic Auth header and every path is behind the beta wall, so verification will fail here until that lands, independent of this page-target correction'
+      type: browser_deployed_check
+      target: .agent/memory/project/specs/conference-workshop-tickets/goldens/fixtures/f3-a27-browser-manifest-conferences-pricing.json
+
+    - id: A28
+      description: 'DEPLOYED, LIVE proof (plain check, not the native browser_deployed_check kind — see the script''s own header comment for why: that kind''s live-recheck is an unparameterised GET and hard-fails on anything outside 2xx, so it cannot represent a POST or a 400 rejection) that a Thursday (2027-09-23) day-visitor checkout against the real beta.saoc.co.za origin is rejected 400, and the same shaped Friday (2027-09-24) checkout is accepted 200 with a real bookingRef'
+      command: node contracts/checks/conference-workshop-tickets-f3/check-deployed-thursday-rejected-friday-accepted.mjs
+
+    - id: A29
+      description: 'a real PayFast sandbox checkout-to-ITN-to-paid flow for a day-visitor purchase succeeds end to end, proving the new excludedDays branch did not regress the pre-existing accepted-day payment path. Uses a sentinel email (swept clean every run) — NOT the source purchase for A30 (correction, 2026-10-07 — sentinel addresses are never gws-readable; see A30)'
+      command: node contracts/checks/conference-workshop-tickets-f3/check-payfast-sandbox-e2e-day-visitor.mjs
+
+    - id: A30
+      description: 'gws_inbox_check: the confirmation email for a REAL (non-sentinel, brad@inunu.net) day-visitor Friday purchase actually arrives, proving the new excludedDays rejection branch did not regress the pre-existing accepted-day email path — a real, sourced purpose (team-lead''s own framing), not a fabricated check. Manual one-off source purchase (never gate-automated, never sentinel — gws only reads a real inbox): node contracts/checks/conference-workshop-tickets-f3/produce-a30-source-purchase.mjs, then gws mail read per that script''s own header comment'
+      type: gws_inbox_check
+      target: .agent/memory/project/specs/conference-workshop-tickets/goldens/fixtures/f3-a30-confirmation-email-manifest.json

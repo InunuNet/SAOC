@@ -35,6 +35,9 @@
 
 import { randomBytes } from 'node:crypto';
 import { promises as dns } from 'node:dns';
+import Module from 'node:module';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { config } from 'dotenv';
 import { Timestamp } from 'firebase-admin/firestore';
@@ -43,6 +46,37 @@ import { buildReservationDocs } from '@/lib/checkout-reservation';
 import type { TicketType } from '@/types/index';
 
 config({ path: new URL('../../../.env.local', import.meta.url).pathname, quiet: true });
+
+// WHY THIS PATCH EXISTS -- a real tsx defect, not a project misconfiguration.
+// tsx/esm's own tsconfig `paths` resolution (resolveTsPathsSync, patched onto
+// Module._resolveFilename) reliably resolves a TOP-LEVEL `@/...` import, but breaks for
+// an `@/...` import made FROM WITHIN a dynamically-`import()`-ed CJS-format .ts file (no
+// "type": "module" in package.json -> Node/tsx load every plain .ts file as CommonJS).
+// Reproduced concretely: `import('@/lib/payments/payfast')` succeeds standalone, but that
+// module's OWN internal `import ... from '@/lib/payfast'` (one level deeper, same alias,
+// same tsconfig) throws "Cannot find module '@/lib/payfast'" when the outer module is
+// reached via loadItnPost()'s dynamic import of app/api/tickets/itn/route.ts. Patch
+// Module._resolveFilename ourselves, ON TOP OF tsx's own patch (so ours runs first): any
+// `@/`-prefixed specifier is rewritten straight to its absolute path (mirroring
+// tsconfig.json's `"@/*": ["./*"]`) before ever reaching tsx's resolver, which then only
+// has to resolve an ordinary absolute path -- the one case it never fails on. Everything
+// else passes through untouched. Idempotent — safe if more than one caller imports this
+// module (every ESM import of the same specifier shares one module instance anyway).
+const REPO_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../');
+const originalResolveFilename = Module._resolveFilename;
+Module._resolveFilename = function patchedResolveFilename(
+  this: unknown,
+  request: string,
+  ...rest: unknown[]
+) {
+  if (typeof request === 'string' && request.startsWith('@/')) {
+    const absolute = path.join(REPO_ROOT, request.slice(2));
+    // @ts-expect-error -- Module._resolveFilename's real signature is internal/untyped
+    return originalResolveFilename.call(this, absolute, ...rest);
+  }
+  // @ts-expect-error -- same as above
+  return originalResolveFilename.call(this, request, ...rest);
+};
 
 /** Never a real PayFast address — TEST-NET-3 (RFC 5737), guaranteed unroutable/reserved. */
 export const BOGUS_SOURCE_IP = '203.0.113.1';

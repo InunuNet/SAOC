@@ -93,9 +93,9 @@ assertions:
       command: git diff --quiet HEAD -- lib/payfast.ts
 
     - id: A16
-      description: the confirmation email actually sends for the sandbox purchase above, via the existing Resend path
-      kind: gws_inbox_check
-      command: node contracts/checks/conference-workshop-tickets-f4/check-confirmation-email-sent.mjs
+      description: 'the confirmation email actually sends for the sandbox purchase above, via the existing Resend path. Manual helper: node contracts/checks/conference-workshop-tickets-f4/check-confirmation-email-sent.mjs locates/validates the manifest and prints instructions to produce one if absent — kept for human/agent use even though the native type below is what the gate itself dispatches.'
+      type: gws_inbox_check
+      target: .agent/memory/project/specs/conference-workshop-tickets/goldens/fixtures/f4-a16-confirmation-email-manifest.json
 
     - id: A17
       description: this feature does not touch app/(marketing)/national-show/** or lib/vendor-stand-pricing.ts
@@ -112,3 +112,18 @@ assertions:
     - id: A20
       description: type-check passes
       command: npx tsc --noEmit
+
+    # ============ Verification triad (added 2026-10-07, team-lead directive — this ============
+    # ============ contract references app/api/tickets/checkout/route.ts and ============
+    # ============ app/api/tickets/itn/route.ts, so it is classified UI/workflow by ============
+    # ============ execution/verify_triad_coverage.py and requires all three) ============
+
+    - id: A21
+      description: 'codex_qa verification ran against this feature''s diff (getPoolRemaining()/planPooledCapacity() in lib/checkout-reservation.ts and their call sites in the checkout/ITN routes)'
+      type: codex_qa
+      target: "Adversarially review the current git diff of lib/checkout-reservation.ts, app/api/tickets/checkout/route.ts, and app/api/tickets/itn/route.ts (mission conference-workshop-tickets, feature F4): a new exported getPoolRemaining() composes resolveDayQualifiedPoolKey() with the same sold-count functions the checkout transaction itself reads, early-bird resolves TWO independent ceilings (a day-qualified share of the per-day cap and an unqualified share of the shared pool) via two separate calls, and resolveEffectivePrice() must be called exactly once pre-transaction with no second, independent price computation. For each finding: cite exact file:line, state the concrete failure scenario, and rate confidence. If nothing real is wrong, say so plainly instead of inventing findings."
+
+    - id: A22
+      description: 'browser_deployed_check against the real deployed beta.saoc.co.za origin confirming /tickets still renders 200 after this feature''s checkout/pricing-engine changes (a GET page-load smoke check — this feature does not change any page''s visible content itself, see A17; browser_deployed_check''s own live-recheck mechanism is GET/2xx-only, so it cannot represent the POST-based checkout/ITN behaviour A14''s PayFast sandbox E2E already covers)'
+      type: browser_deployed_check
+      target: .agent/memory/project/specs/conference-workshop-tickets/goldens/fixtures/f4-a22-browser-manifest-tickets-smoke.json

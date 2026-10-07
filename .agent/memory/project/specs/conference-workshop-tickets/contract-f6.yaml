@@ -115,13 +115,12 @@ assertions:
       command: test -f docs/national-show-conference-workshop-tickets.md
 
     - id: A19
-      description: 'codex_qa verification ran against this feature''s diff'
-      kind: codex_qa
-      command: git diff HEAD -- lib/view-models/ "app/(marketing)/national-show/symposium/" "app/(marketing)/national-show/wosa-conference/" "app/(marketing)/national-show/workshops/" | execution/codex_qa.sh
+      description: 'codex_qa verification ran against this feature''s diff (view-model layer + the three inert loader-wiring call sites)'
+      type: codex_qa
+      target: "Adversarially review the current git diff of lib/view-models/ and the three loader-wiring call sites in app/(marketing)/national-show/symposium/, app/(marketing)/national-show/wosa-conference/, and app/(marketing)/national-show/workshops/ (mission conference-workshop-tickets, feature F6): a new view-model layer composes F1's computeEarlyBirdRemaining and F4's getPoolRemaining() with zero new capacity/counting computation of its own, each page gains exactly one additive server-side loader call whose result is passed as a prop, and the existing rendered JSX must stay byte-for-byte unchanged (zero JSX, zero styling, zero React component anywhere under lib/view-models/). For each finding: cite exact file:line, state the concrete failure scenario, and rate confidence. If nothing real is wrong, say so plainly instead of inventing findings."
 
     - id: A20
-      description: 'browser_deployed_check against the real deployed beta.saoc.co.za origin confirming the three wired pages render identically to before this feature (no visual change from the inert loader wiring)'
-      kind: browser_deployed_check
+      description: 'DEPLOYED, LIVE proof (plain check, not the native browser_deployed_check kind — see below) that all three wired pages render identically to before this feature on the real beta.saoc.co.za origin. NOT the native kind because execution/browser_deployed_check.sh verifies exactly ONE manifest per invocation and contract.py''s native dispatch passes exactly one `target` string — it cannot represent this check''s own deliberate three-page requirement (a single-manifest shortcut would leave two of the three pages unverified, per this script''s own header comment). This feature''s triad browser_deployed_check credit is instead A24''s single-page manifest below; this assertion remains the real, comprehensive three-page proof.'
       command: node contracts/checks/conference-workshop-tickets-f6/check-deployed-render-unchanged.mjs https://beta.saoc.co.za
 
     - id: A21
@@ -135,3 +134,8 @@ assertions:
     - id: A23
       description: 'weekend-pass ships a real, non-null scarcity when its own ticketType.capacity is set (A13''s existing case), and ships scarcity: null — never a fabricated ScarcityLine, never an "unlimited" claim, never a getPoolRemaining() call with an invented capacity — specifically and only when ticketType.capacity is itself unset/null; every other in-scope product''s scarcity/days reading is unaffected by this capacity-null branch'
       command: node contracts/checks/conference-workshop-tickets-f6/check-weekend-pass-null-capacity-scarcity.mjs
+
+    - id: A24
+      description: 'browser_deployed_check (native triad kind) against the real deployed beta.saoc.co.za origin confirming the symposium page (one of A20''s three wired pages) renders 200 — a genuine single-manifest GET page-render check, which is what this kind''s mechanism is actually built for (see A20''s header comment for why the full three-page proof cannot itself be this native kind)'
+      type: browser_deployed_check
+      target: .agent/memory/project/specs/conference-workshop-tickets/goldens/fixtures/f6-a20-browser-manifest-symposium.json

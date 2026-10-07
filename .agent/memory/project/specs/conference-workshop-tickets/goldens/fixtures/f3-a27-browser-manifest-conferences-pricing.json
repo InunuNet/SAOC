@@ -1,0 +1,10 @@
+{
+  "origin": "https://beta.saoc.co.za",
+  "path_tested": "/national-show/conferences",
+  "screenshot_path": "fixtures/f3-a27-screenshot.png",
+  "commit_sha": "3e18bacd2e0972090aadf0a5c5bfee3ce6b142b3",
+  "timestamp": "2026-10-07T01:48:37.229Z",
+  "http_status": 200,
+  "outcome": "pass",
+  "notes": "A27: both saoc-symposium and wosa-conference render R2000.00 with no provisional-badge marker on /national-show/conferences. NOTE: execution/browser_deployed_check.sh verification of this manifest will still FAIL independently of this content proof — its own live re-check sends no Basic Auth header and the beta wall gates this path 401 — see this script's header comment and .agent/memory/project/backlog.md (2026-10-07 entry)."
+}
