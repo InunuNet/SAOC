@@ -4606,3 +4606,33 @@ deployed-site viewport check instead.
   change in between — likely a stale ISR render from App Hosting's per-instance cache, not a
   real defect. A single-fetch deployed check can flake for this reason; see backlog for the
   retry/multi-sample follow-up.
+
+## conference-workshop-tickets M4/F6 close-out (2026-10-07)
+
+- **Run the milestone gate BEFORE committing deployed-check manifests, never after.** A manifest
+  must record the HEAD it was produced against; committing it first makes the recorded sha stale
+  the instant the commit lands, forcing a redeploy and a real re-run (a fresh sandbox purchase,
+  a fresh email) to get a manifest that actually matches HEAD. Never hand-edit `commit_sha` to
+  paper over the gap — that falsifies the evidence the manifest exists to provide. Sequence:
+  gate green against the deployed build → commit the manifests that proved it.
+- A check that diffs page files against literal `HEAD` passes only while the work is still
+  uncommitted, then false-FAILs the moment it's committed (HEAD moved past the compared state).
+  Pin the diff base to the pre-feature commit and add a `git merge-base --is-ancestor` guard so
+  the check fails loudly if its pinned base is ever wrong, instead of silently comparing against
+  the wrong thing. Pattern: `contracts/checks/conference-workshop-tickets-f6/_render-unchanged.mjs`.
+- When a `codex_qa` assertion's prompt embeds golden text inline, and the golden copy falls
+  behind a ratified code change (an addendum that deliberately diverges from the original
+  golden), Codex keeps failing the same non-defect round after round — it's grading against
+  stale truth. Whenever an addendum ratifies a divergence from a golden file, sweep the golden
+  body AND any `codex_qa` prompt that embeds it in the same pass, not just the code.
+- A view-model that displays counts or prices must read from the same live sources and
+  functions checkout uses — `resolveEffectivePrice()`, `effectiveCapacity()` over live Sanity
+  fields — never a static provisional-figures table. Codex caught three such desyncs in F6
+  (view-model and checkout silently drifting against the same product over time).
+- A fixture/stub that ignores `slug` (one stub serves every product) hides coupling bugs once
+  the real code branches on per-product live fields. Make stubs slug-aware and mirror real data
+  shape, not a single generic shape reused for every product.
+- When a fix is reported as done before its regression check exists, prove the check would
+  actually have caught the bug by running it against a deliberately-reintroduced mutant of the
+  defect (the A31/A32/A34 pattern) — a check that would pass against both the buggy and fixed
+  code is not a regression check, it's decoration.
