@@ -95,15 +95,31 @@ assertions:
       command: node contracts/checks/conference-workshop-tickets-f6/check-no-jsx-in-view-models.mjs
 
     - id: A9
-      description: the symposium page gains exactly one additive server-side loader call; its existing rendered JSX output is byte-for-byte unchanged (diff touches only the data-fetch/prop-pass lines, never the return/render tree)
+      description: 'the symposium page gains exactly one additive server-side loader call;
+        its existing rendered JSX output is byte-for-byte unchanged (diff touches only the
+        data-fetch/prop-pass lines, never the return/render tree). FIXED 2026-10-07
+        (team-lead''s post-commit gate sweep): the shared helper (_render-unchanged.mjs)
+        used to diff against the literal ''HEAD'', which only proves anything while F6 is
+        uncommitted — once F6 landed as 8104b07b, working tree == HEAD and the diff came
+        back empty, FAILing with "has no diff against HEAD yet" on the very commit that
+        wired the loader in. The diff base is now pinned to 138cbe62 (the last F5 commit,
+        verified an ancestor of HEAD via `git merge-base --is-ancestor`, failing loudly if
+        not), holding both before and after commit.'
       command: node contracts/checks/conference-workshop-tickets-f6/check-symposium-page-render-unchanged.mjs
 
     - id: A10
-      description: the wosa-conference page gains the same kind of additive loader call with the same unchanged-render guarantee
+      description: 'the wosa-conference page gains the same kind of additive loader call
+        with the same unchanged-render guarantee. Same base-pin fix as A9 (shared helper).'
       command: node contracts/checks/conference-workshop-tickets-f6/check-wosa-page-render-unchanged.mjs
 
     - id: A11
-      description: the workshops page gains the workshop-sessions loader call with the same unchanged-render guarantee, and components/show/CategoryTicketsPage.tsx stays byte-unchanged
+      description: 'NARROWED 2026-10-07 (team-lead''s post-commit gate sweep, A9/A10 fix):
+        this assertion''s command only proves components/show/CategoryTicketsPage.tsx (the
+        sibling-owned component) stays byte-unchanged against HEAD — it does NOT, on its
+        own, prove the workshops page gains the workshop-sessions loader call with an
+        additive-only diff; that half of the original description overclaimed what this
+        command checks. A35 (below) now covers that half, mirroring A9/A10''s own proof for
+        their pages.'
       command: git diff --quiet HEAD -- components/show/CategoryTicketsPage.tsx
 
     - id: A12
@@ -391,3 +407,16 @@ assertions:
         stale/wrong value) — confirmed this assertion catches a regression to the old
         stale-golden behaviour. Complementary to A22, not redundant — see A22''s note.'
       command: node contracts/checks/conference-workshop-tickets-f6/check-sibling-regular-price-uses-resolve-effective-price.mjs
+
+    - id: A35
+      description: 'the workshops page gains an additive-only loadWorkshopSessionViewModels()
+        loader-wiring diff — same proof as A9 (symposium) / A10 (wosa-conference), via the
+        same shared helper (_render-unchanged.mjs). Added 2026-10-07 (team-lead''s
+        post-commit gate sweep): closes the gap left once A11''s description was corrected
+        to its real, narrower scope (components/show/CategoryTicketsPage.tsx byte-unchanged
+        only) — nothing previously verified workshops/page.tsx''s OWN loader-wiring diff is
+        purely additive the way A9/A10 do for their own pages. Also fixed by the same
+        DIFF_BASE_COMMIT pin as A9/A10 (see below) — a workshops-specific version of this
+        check would have had the identical "no diff against HEAD" break post-commit if
+        written before that fix landed.'
+      command: node contracts/checks/conference-workshop-tickets-f6/check-workshops-page-render-unchanged.mjs

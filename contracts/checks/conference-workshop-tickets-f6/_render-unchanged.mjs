@@ -14,6 +14,17 @@
 // Deliberately does not special-case `git diff`'s own `@@ -a,b +c,d @@` hunk-header line —
 // callers only look at lines beginning with a literal '-' that aren't the `---` file-header
 // line, which this helper already filters.
+//
+// BASE PINNED TO A FIXED COMMIT, NOT 'HEAD' (fixed 2026-10-07, team-lead: post-commit gate
+// run, same defect class already found in F5's working-tree-scoped checks). Diffing against
+// the literal string 'HEAD' only proves anything while F6's changes are UNCOMMITTED — once
+// F6 lands and HEAD moves to include it, the working tree equals HEAD again and
+// `git diff HEAD -- relPath` returns empty, so this check would read "no diff" as "the
+// loader was never wired in" and FAIL on exactly the commit that landed it. The base must
+// instead be a fixed commit that predates F6 and stays an ancestor of HEAD forever after —
+// 138cbe62, the last F5 commit, verified below. This makes the check hold both BEFORE F6 is
+// committed (diffing the dirty working tree against an old ancestor) and AFTER (diffing the
+// committed F6 changes, still present relative to that same old ancestor, against HEAD).
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,17 +32,44 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.join(__dirname, '../../../');
 
+// Last F5 commit — an ancestor of F6's own commit (8104b07b) and of every commit after it.
+// Never 'HEAD': see the module header comment for why a moving base breaks this check the
+// moment F6 itself gets committed.
+const DIFF_BASE_COMMIT = '138cbe62';
+
+function assertDiffBaseIsAncestorOfHead() {
+  try {
+    execFileSync('git', ['merge-base', '--is-ancestor', DIFF_BASE_COMMIT, 'HEAD'], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+    });
+  } catch (error) {
+    // `git merge-base --is-ancestor` exits non-zero both when the base is missing from this
+    // repo AND when it exists but is NOT an ancestor of HEAD — either way, this check cannot
+    // trust its own diff base, so it fails loudly rather than silently falling back to a diff
+    // that would misreport "no change."
+    throw new Error(
+      `DIFF BASE COMMIT ${DIFF_BASE_COMMIT} is missing or is not an ancestor of HEAD in this ` +
+        `repo (git merge-base --is-ancestor failed: ${error.message}) — refusing to diff ` +
+        'against an unverified base.',
+    );
+  }
+}
+
 /**
- * Returns { diffExists, removedLines, addedLines } for `relPath`'s working-tree diff
- * against HEAD. `addedLines`/`removedLines` are the real content lines (the leading
- * +/- stripped), excluding the `+++`/`---` file-header lines.
+ * Returns { diffExists, removedLines, addedLines } for `relPath`'s diff between the pinned
+ * base commit (DIFF_BASE_COMMIT above, never the literal 'HEAD') and the working tree.
+ * `addedLines`/`removedLines` are the real content lines (the leading +/- stripped),
+ * excluding the `+++`/`---` file-header lines.
  */
 export function diffAgainstHead(relPath) {
+  assertDiffBaseIsAncestorOfHead();
+
   let raw;
   try {
-    raw = execFileSync('git', ['diff', 'HEAD', '--', relPath], { cwd: REPO_ROOT, encoding: 'utf8' });
+    raw = execFileSync('git', ['diff', DIFF_BASE_COMMIT, '--', relPath], { cwd: REPO_ROOT, encoding: 'utf8' });
   } catch (error) {
-    throw new Error(`git diff HEAD -- ${relPath} failed: ${error.message}`);
+    throw new Error(`git diff ${DIFF_BASE_COMMIT} -- ${relPath} failed: ${error.message}`);
   }
 
   if (raw.trim().length === 0) {

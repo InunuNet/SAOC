@@ -1,0 +1,11 @@
+{
+  "gws_subcommand": "mail read",
+  "message_id": "1a114fe9360f302c",
+  "subject": "Your SAOC National Show order is confirmed",
+  "from": "SAOC Tickets <tickets@tickets.saoc.co.za>",
+  "recipient": "brad@inunu.net",
+  "timestamp": "2026-10-07T06:13:08Z",
+  "content_sha256": "d3f4b423c5da869ef429e5632e2095305ee782feea35ebd6d9d2b9b79804e9ed",
+  "outcome": "pass",
+  "notes": "A28 (conference-workshop-tickets F6, gws_inbox_check): real PayFast sandbox ITN settled a fresh early-bird order (bookingRef CWT-F6-A28-muxpo7u5, attendee 'Brad (A28 manifest source purchase)', chosenDay 2027-09-24) to position.status='paid' via contracts/checks/conference-workshop-tickets-f6/produce-a28-source-purchase.mjs, run exactly once against deployed HEAD 8104b07b after F6's deploy. Confirmation email delivered to brad@inunu.net and read read-only via `gws gmail users messages list` (query) then `gws gmail users messages get` (fetch) -- never `send`. Email body confirms the exact bookingRef and ticket type, and references the QR-code check-in flow. content_sha256 is the SHA-256 of the plaintext MIME part's decoded body. This is the regression proof for F6's lib/data/tickets.ts firebase-admin import change (@/lib/firebase-admin -> relative ../firebase-admin.ts), which sits on the real checkout-to-ITN-to-email path (app/api/tickets/checkout/route.ts, lib/data/pool-remaining.ts)."
+}

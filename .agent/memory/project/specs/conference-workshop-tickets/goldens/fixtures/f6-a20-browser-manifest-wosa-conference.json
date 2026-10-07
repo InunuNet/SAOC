@@ -1,0 +1,10 @@
+{
+  "origin": "https://beta.saoc.co.za",
+  "path_tested": "/national-show/wosa-conference",
+  "screenshot_path": "fixtures/f6-a20-wosa-conference-screenshot.png",
+  "commit_sha": "8104b07b5d5b404832c0f099a3855a3e1ba0e720",
+  "timestamp": "2026-10-07T06:12:07.458Z",
+  "http_status": 200,
+  "outcome": "pass",
+  "notes": "F6 A20 (2 of 3): /national-show/wosa-conference renders 200 on deployed beta.saoc.co.za at HEAD 8104b07b (M4/F6 view-model loader wiring). Captured via headless Playwright (chromium.launch(), httpCredentials from the project's own CURL_HOME/.curlrc beta creds, networkidle wait). No console errors or warnings and no pageerror events observed during load. Page rendered identically to its pre-feature shape per A20's own static diff proofs (A9/A10/A11) — this loader call is additive and discarded, never passed into JSX. NOTE: execution/browser_deployed_check.sh's own live re-check sends no Basic Auth header and the beta wall gates this path 401 — tracked as InunuNet/Athanor#1459, same known blocker as F3's A27 and F4's A22. Run the gate with CURL_HOME=/Users/vetus/ai/SAOC/.tmp/sandbox/curlhome to carry Basic Auth through curl's own re-check."
+}

@@ -159,9 +159,9 @@ F7, blocked on the NOS design handoff — not contracted yet.
 | `wosa-conference` | `scarcity` | 80 |
 | each `workshopSession` | `scarcity` (via its linked `ticketCard`) | 10 |
 | `weekend-pass` | `scarcity`, **or `null` specifically when `ticketType.capacity` is itself unset/null** | 300 (needs-Brad carried-over estimate) |
-| `weekend-pass-early-bird` | `scarcity` + `regularPrice` (weekend-pass's live price) | 500 (shared `admission-early-bird` pool) |
+| `weekend-pass-early-bird` | `scarcity` + `regularPrice` (weekend-pass's **resolved** price — see below) | 500 (shared `admission-early-bird` pool) |
 | `day-visitor` | `days` only (`scarcity: null`) | 1000 per day, Fri/Sat/Sun independently |
-| `early-bird` | **both** `days` (1000/day) **and** `scarcity` (shared 500-pool) **and** `regularPrice` (day-visitor's live price) | two independent ceilings |
+| `early-bird` | **both** `days` (1000/day) **and** `scarcity` (shared 500-pool) **and** `regularPrice` (day-visitor's **resolved** price — see below) | two independent ceilings |
 
 `scarcity: null` means "no counter is shown," never "unlimited supply" — this fires only for
 weekend-pass, and only as the honest consequence of Brad not yet ruling the cap exists (one
@@ -184,16 +184,77 @@ price read must read `pricePending`, never `earlyBirdSoldOut`, and a day-qualifi
 `days[]` entries each resolve this independently (Saturday can be `soldOut` while Friday reads
 `available` on the very same card).
 
-### Why `days[].total` is a fixed per-day constant, never `ticketType.capacity`
+### Every displayed price goes through `resolveEffectivePrice()` — never a raw field read
 
-`early-bird`'s own `ticketType.capacity` field holds the shared 500-ticket early-bird pool's
-total (its `capacityPool` ceiling) — a completely different number from the 1000-per-day cap it
-shares with `day-visitor` via `DAY_VISITOR_SHAPED_SLUGS`. `load-ticket-card.ts` reads the
-per-day cap from `lib/provisional-figures.ts`'s `DAY_VISITOR_DAY_CAP` (derived from
-`day-visitor`'s own product entry), and a shared pool's own total from the same products array
-by `capacityPool` membership — never from the loaded slug's own `capacity` field when that slug
-belongs to a named pool. Conflating the two was the one concrete bug this feature's own fixture
-tests (A14/A15) were written to catch.
+The card's own `price`, and (for the two early-bird SKUs) the sibling's `regularPrice`, are both
+resolved through `lib/checkout-reservation.ts`'s `resolveEffectivePrice()` — the exact function
+`app/api/tickets/checkout/route.ts` calls before charging — reading that ticketType's own
+`price`/`regularPrice`/`earlyBirdCutoff` fields, never a raw, unconditional `ticketType.price`
+read (A27, A34). For the sibling specifically: `weekend-pass-early-bird`'s `regularPrice` is
+`weekend-pass`'s own resolved price, and `early-bird`'s `regularPrice` is `day-visitor`'s own
+resolved price — not the sibling's raw live `price` field passed straight through. The two only
+diverge once a sibling's `earlyBirdCutoff` has passed with its own `regularPrice` schema field
+set (today every in-scope product's `earlyBirdCutoff` is null, so the two mechanisms currently
+coincide — see Addendum 7 for the worked example where they don't). If the resolved `price`
+comes back `null` (a past cutoff with no `regularPrice` fallback), the state is always
+`pricePending`, even when the raw `ticketType.price` field was itself a usable number (A31).
+
+### Day cap and shared-pool total both come from live Sanity capacity, never a static table
+
+Both ceilings go through the same live-Sanity path checkout itself uses, `effectiveCapacity()`
+over the relevant ticketType's own `capacity`/`releasedQuantity` fields — never
+`lib/provisional-figures.ts`'s static figures:
+
+- **Day cap** (`days[].total`): read from `day-visitor`'s own live `capacity`/
+  `releasedQuantity` (reusing the already-fetched document when the loaded slug IS
+  `day-visitor`). If that capacity is missing or unusable, `days` stays `null` entirely —
+  never a `1000` fallback and never an invented figure (A25, A26).
+- **Shared early-bird pool total** (`scarcity.total` for `early-bird` /
+  `weekend-pass-early-bird`, and the `capacity` argument passed to `getPoolRemaining()`): read
+  from that product's own live `capacity`/`releasedQuantity` the same way — not from a static
+  `ADMISSION_EARLY_BIRD_POOL_CAPACITY`-keyed lookup across the provisional-figures product
+  arrays, which is what this loader used before this fix (A33, Addendum 6). A live Sanity edit
+  to either field now changes both what checkout will actually sell and what this card
+  displays, in the same direction.
+
+`early-bird`'s own `ticketType.capacity` field holds the shared 500-ticket pool's total — a
+completely different number from the 1000-per-day cap it shares with `day-visitor` via
+`DAY_VISITOR_SHAPED_SLUGS` — so the loader reads the per-day cap from `day-visitor`'s document
+and the pool total from the loaded slug's own document, never the loaded slug's `capacity`
+field for both purposes. Conflating the two, and reading either from the static table instead
+of live Sanity, were the concrete bugs this feature's own fixture tests (A14/A15/A25/A26/A33)
+were written to catch.
+
+### Loaders never throw — a backend failure degrades to an empty state, never a 500
+
+All three loaders (`loadTicketCardViewModel()`, `loadPresenterViewModels()`,
+`loadWorkshopSessionViewModels()`) catch every failure from their own Sanity/Firestore
+dependency inside their own boundary, log it via `console.error` with this project's
+`[module-tag] message` convention (`[load-ticket-card]`, `[load-presenters]`,
+`[load-workshop-sessions]`), and resolve to a safe default instead of rejecting:
+`loadTicketCardViewModel()` resolves to `null`; the two sibling loaders resolve to `[]` — the
+same empty default each already returns on its own pre-existing "no Sanity client configured"
+branch (A29, A30). None of the three pages that call these loaders has anything to do with
+ticket purchasing, so a real Sanity/Firestore outage can never turn `/national-show/symposium`,
+`/national-show/wosa-conference`, or `/national-show/workshops` into a 500 — see Addendum 4 for
+the full contract.
+
+### Page wiring: one loader call per data source, `void`-discarded, reserved for F7
+
+Each page makes one loader call per data source it needs — `symposium/page.tsx` and
+`wosa-conference/page.tsx` each call both `loadPresenterViewModels()` and
+`loadTicketCardViewModel()`; `workshops/page.tsx` calls `loadWorkshopSessionViewModels()` alone
+— and additionally wraps each call in its own try/catch on top of the loaders' own internal one
+(belt-and-braces around an inert, unrendered value). Every result is `void`-discarded, never
+passed as a prop to `ShowContentState` or `CategoryTicketsPage` — doing so isn't actually
+available without extending those components' own prop interfaces, and `CategoryTicketsPage` is
+explicitly owned by the sibling SAOC design session and not edited here (Addendum 5). The
+existing rendered JSX on all three pages is byte-for-byte unchanged (A9, A10, A11); F7's design
+handoff is what will actually render these values. All three pages are `export const dynamic =
+'force-dynamic'` — required, not scope creep, because `loadTicketCardViewModel()` reaches
+Firebase Admin via `getPoolRemaining()`, and without it `next build` attempts static
+prerendering and crashes where Secret-Manager-only credentials aren't present at build time, the
+same class of bug fixed in commit `08b7b8d9` (Addendum 0).
 
 ### Needs-Brad list carried forward, counter questions removed
 
