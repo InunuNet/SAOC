@@ -1,31 +1,19 @@
-// F2 (ticketing-complete, M1) defect repair — Codex GPT-5.5 cross-model FAIL, 2026-09-08.
+// F2 (ticketing-complete, M1) ORIGINAL — proved VIP's stored `earlyBirdCutoff` was the real,
+// engine-DERIVED 90-day cutoff (from `deriveAdmissionEarlyBirdCutoffIso()`), not the legacy
+// `EARLY_BIRD_CUTOFF` constant left over from an earlier design.
 //
-// THE DEFECT THIS TARGETS
-// lib/provisional-figures.ts's VIP entry set `earlyBirdCutoff: EARLY_BIRD_CUTOFF` — the
-// legacy shared constant '2027-07-31'. That date has no relationship to this mission's
-// confirmed rule (90 days before the confirmed 2027-09-23 show start = 2027-06-25). VIP's
-// cutoff is being freshly WRITTEN under Brad's 2026-09-08 ruling, not preserved as a legacy
-// value, so carrying the legacy constant sells VIP at the R500 early-bird price for 43 days
-// past the real cutoff once migrated.
+// SUPERSEDED (conference-workshop-tickets, M1/F2, 2026-10-07) — Brad's ticket news, verbatim,
+// message 6 (.agent/memory/scratch/brad-ticket-news-2026-10-07.md) and Lee-Ann's sheet, line
+// 19 (.agent/memory/scratch/leeann-notes-2026-10-07.md) replace the 2026-09-08 computed-
+// discount ruling with a flat R300 figure — VIP has NO early-bird mechanism of any kind any
+// more. The correct stored value is plain `null`, not the engine-derived date and not the
+// legacy constant either. This check now proves the union of both negative controls instead
+// of proving which one of the two VIP should carry.
 //
-// WHY THE PRE-EXISTING CHECK MISSED IT
-// check-vip-computed-early-bird-price.mjs proves the ENGINE returns the right numbers for
-// VIP's base price. It never inspects the cutoff DATE stored on the product — so it passed
-// green with the wrong date stored. Satisfiable without the property holding: this repo's
-// own audited defect class.
-//
-// THE PROPERTY THIS PROVES (one property, independently falsifiable)
-// ADMISSION_PRODUCTS's `vip` entry's `earlyBirdCutoff` equals the value the REAL engine
-// derives from the confirmed show start — computed here by calling
-// deriveAdmissionEarlyBirdCutoffIso(), never by comparing against a hardcoded '2027-06-18'
-// literal. A second hand-typed copy of the date would let this check and the source silently
-// agree on a wrong value; deriving it means they cannot.
-//
-// NEGATIVE CONTROL
-// Reverting VIP's field to EARLY_BIRD_CUTOFF must turn this check RED. The explicit
-// inequality assertion below is what makes that true and observable, and it is guarded by
-// first pinning EARLY_BIRD_CUTOFF itself to '2027-07-31' — if that legacy constant were ever
-// changed to the derived date, the inequality would be meaningless rather than merely wrong.
+// NEGATIVE CONTROLS: reverting VIP's `earlyBirdCutoff` to EITHER the engine-derived cutoff OR
+// the legacy `EARLY_BIRD_CUTOFF` constant must turn this check RED — both are stated as their
+// own explicit assertions below, not only implied by the `!== null` check, so the gate log
+// names which one regressed.
 //
 // Run as: npx tsx contracts/checks/ticketing-complete-f2/check-vip-stored-cutoff-derived.mjs
 
@@ -34,14 +22,11 @@ import { ADMISSION_PRODUCTS, EARLY_BIRD_CUTOFF } from '../../../lib/provisional-
 
 const failures = [];
 
-// The real live show-19-2027 start instant, matching
-// goldens/fixtures/f1-pricing-boundary-cases.json's showStartDateIso verbatim and the
-// SHOW_START_DATE used by check-vip-computed-early-bird-price.mjs.
+// The real live show-19-2027 start instant, matching the fixture other checks in this
+// directory already use, kept here only to compute the now-superseded derived cutoff for the
+// negative control below — never re-hardcoded as a literal date.
 const SHOW_START_DATE = new Date('2027-09-23T07:00:00Z');
-
-// The bare YYYY-MM-DD shape every `earlyBirdCutoff` field in this module uses, and the shape
-// isWithinEarlyBirdWindow() — the comparator that actually gates VIP's runtime price — expects.
-const EXPECTED_CUTOFF = deriveAdmissionEarlyBirdCutoffIso(SHOW_START_DATE).slice(0, 10);
+const SUPERSEDED_DERIVED_CUTOFF = deriveAdmissionEarlyBirdCutoffIso(SHOW_START_DATE).slice(0, 10);
 
 const LEGACY_CUTOFF = '2027-07-31';
 
@@ -52,34 +37,36 @@ if (!vip) {
   process.exit(1);
 }
 
-// Guard that the negative control below is meaningful: the legacy constant must still be the
-// legacy date. Weekend Pass and the three conference early-bird SKUs deliberately still carry
-// it (an open decision for Brad — see docs/ticketing-complete-f2-open-decisions.md §3), so it
-// must not have been quietly repointed at the derived date as a shortcut resolution.
+// Guard that the legacy-constant negative control below is meaningful: the legacy constant
+// must still be the legacy date (other products — weekend-pass's old mechanism, the
+// conference early-bird SKUs — may still reference it; whether they still should is a
+// separate, unrelated open question this check does not adjudicate).
 if (EARLY_BIRD_CUTOFF !== LEGACY_CUTOFF) {
   failures.push(
     `EARLY_BIRD_CUTOFF is ${JSON.stringify(EARLY_BIRD_CUTOFF)}, expected ${JSON.stringify(LEGACY_CUTOFF)} — ` +
-      'the legacy constant must stay put; repointing it silently resolves the open ' +
-      'weekend-pass/conference cutoff decision that is Brad\'s to make'
+      'the legacy constant must stay put for this negative control to mean anything'
   );
 }
 
-if (vip.earlyBirdCutoff !== EXPECTED_CUTOFF) {
+if (vip.earlyBirdCutoff !== null) {
   failures.push(
-    `vip.earlyBirdCutoff is ${JSON.stringify(vip.earlyBirdCutoff)}, expected ` +
-      `${JSON.stringify(EXPECTED_CUTOFF)} — the value deriveAdmissionEarlyBirdCutoffIso() ` +
-      `computes from the confirmed show start ${SHOW_START_DATE.toISOString()} ` +
-      '(90 days before 2027-09-23)'
+    `vip.earlyBirdCutoff is ${JSON.stringify(vip.earlyBirdCutoff)}, expected null — VIP has no early-bird ` +
+      "mechanism of any kind (Brad's ticket news, 2026-10-07, message 6; Lee-Ann's sheet line 19)"
   );
 }
 
-// Negative control, stated as its own assertion so the legacy-constant regression is named
-// explicitly in the gate log rather than only implied by the equality failure above.
+// Negative controls, each its own named assertion rather than only implied by the equality
+// failure above.
+if (vip.earlyBirdCutoff === SUPERSEDED_DERIVED_CUTOFF) {
+  failures.push(
+    `vip.earlyBirdCutoff still carries the now-superseded engine-derived cutoff ` +
+      `(${JSON.stringify(SUPERSEDED_DERIVED_CUTOFF)}) from the 2026-09-08 ruling this feature overrides`
+  );
+}
 if (vip.earlyBirdCutoff === EARLY_BIRD_CUTOFF) {
   failures.push(
-    `vip.earlyBirdCutoff is still the legacy EARLY_BIRD_CUTOFF constant ` +
-      `(${JSON.stringify(EARLY_BIRD_CUTOFF)}) — VIP's cutoff is freshly written under Brad's ` +
-      '2026-09-08 ruling and must carry the derived 90-day cutoff, not the legacy date'
+    `vip.earlyBirdCutoff still carries the legacy EARLY_BIRD_CUTOFF constant ` +
+      `(${JSON.stringify(EARLY_BIRD_CUTOFF)}) — VIP has no date-cutoff mechanism of any kind any more`
   );
 }
 
@@ -89,8 +76,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 console.log(
-  `PASS: ADMISSION_PRODUCTS's VIP entry stores earlyBirdCutoff ${EXPECTED_CUTOFF}, derived by ` +
-    'the real deriveAdmissionEarlyBirdCutoffIso() engine from the confirmed 2027-09-23 show ' +
-    `start — not the legacy EARLY_BIRD_CUTOFF constant (${EARLY_BIRD_CUTOFF}), which remains ` +
-    'in place for the products whose cutoff is still an open decision.'
+  "PASS: ADMISSION_PRODUCTS's VIP entry stores earlyBirdCutoff null — neither the superseded " +
+    `engine-derived cutoff (${SUPERSEDED_DERIVED_CUTOFF}) nor the legacy EARLY_BIRD_CUTOFF ` +
+    `constant (${EARLY_BIRD_CUTOFF}) — VIP has no early-bird mechanism of any kind.`
 );

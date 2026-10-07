@@ -1,0 +1,137 @@
+schema: athanor.contract/v1
+slug: conference-workshop-tickets
+goal: >
+  Ticket/presenter/workshop view-model layer + server-side loaders + inert placeholder
+  wiring into existing pages, per Brad's re-scope (2026-10-07, relayed by team-lead): this
+  mission builds payment/ticket data engineering only; the separate NOS design peer
+  session (saoc-nos-design-f1) owns ALL visual/UI design. Defines pure TypeScript
+  interfaces (TicketCardState with a pinned precedence order, ScarcityLine,
+  TicketCardViewModel [scarcity + days], PresenterCardViewModel,
+  WorkshopSessionViewModel) and LOW_STOCK_THRESHOLD_PERCENT (10), plus three server-side
+  loader functions (loadTicketCardViewModel, loadPresenterViewModels,
+  loadWorkshopSessionViewModels) reusing F1's computeEarlyBirdRemaining and F4's new
+  getPoolRemaining()/capacity-pool mechanisms — zero new capacity or counting
+  computation. REVISED for team-lead's third-pass correction (2026-10-07): the live "N
+  left" counters are confirmed in scope for EVERY in-scope product (VIP 200, Cocktails
+  200, Symposium 80, WOSA 80, workshop 10, shared EB pool 500, Day Pass per-day 1000 x3,
+  Weekend Pass's own 300-estimate) — NOT a flagged/optional idea, since Brad has
+  confirmed he wants them and the NOS design peer is designing cards that show them.
+  REVISED AGAIN per the design peer's own request (relayed by team-lead, same day): Day
+  Pass is one card with a Fri/Sat/Sun selector, so per-day scarcity is an ordered `days`
+  array on TicketCardViewModel (`Array<{day, state, remaining, total}> | null`), not a
+  bare Record — each day needs its OWN TicketCardState (Saturday can be soldOut while
+  Friday is available, which a single ScarcityLine can't express) and array order fixes
+  Fri/Sat/Sun order without relying on key-insertion order. day-visitor/early-bird get
+  `days` (true independent Friday/Saturday/Sunday counts); early-bird additionally gets
+  its own unqualified shared-pool `scarcity` simultaneously (two independent ceilings,
+  two readings). Wires each loader into its page
+  as one additive server call whose result is passed as a prop; the existing JSX output
+  stays byte-for-byte unchanged. Zero JSX, zero styling, zero visual component — that is
+  F7, blocked on the NOS design handoff. Carries the mission's comms.md handoff (to
+  saoc-nos-design-f1) and docs obligations, since this feature's output is exactly what
+  that design peer renders against. Declares codex_qa + browser_deployed_check (not
+  gws_inbox_check — no purchase/email path is touched here; that's F4's).
+created_at: '2026-10-07'
+autonomy: high
+features:
+  - id: F6
+    name: View-model layer + server-side loaders + inert placeholder wiring (no visual design)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/conference-workshop-tickets/goldens/f3-ui-render-states.golden.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: lib/view-models/ticket-card.ts exists and exports TicketCardState, ScarcityLine, TicketCardViewModel, PresenterCardViewModel, WorkshopSessionViewModel, LOW_STOCK_THRESHOLD_PERCENT
+      command: node contracts/checks/conference-workshop-tickets-f6/check-view-model-exports.mjs
+
+    - id: A2
+      description: LOW_STOCK_THRESHOLD_PERCENT equals 10
+      command: grep -q "LOW_STOCK_THRESHOLD_PERCENT = 10" lib/view-models/ticket-card.ts
+
+    - id: A3
+      description: TicketCardState precedence order (pricePending > soldOut > earlyBirdSoldOut > low > available) is enforced by loadTicketCardViewModel's resolution logic, verified against fixture cases covering every pairwise precedence collision
+      command: node contracts/checks/conference-workshop-tickets-f6/check-state-precedence-fixtures.mjs
+
+    - id: A4
+      description: loadTicketCardViewModel calls F4's exported getPoolRemaining() for every count it produces — no second, independently-constructed Firestore query exists in the loader
+      command: node contracts/checks/conference-workshop-tickets-f6/check-loader-calls-get-pool-remaining.mjs
+
+    - id: A5
+      description: loadTicketCardViewModel calls F1's computeEarlyBirdRemaining rather than reimplementing the arithmetic
+      command: grep -q "computeEarlyBirdRemaining" lib/view-models/load-ticket-card.ts
+
+    - id: A6
+      description: loadPresenterViewModels queries conferencePresenter filtered by event, ordered by order, and returns an empty array (not an error, not a fabricated entry) when none are seeded
+      command: node contracts/checks/conference-workshop-tickets-f6/check-load-presenters-empty-state.mjs
+
+    - id: A7
+      description: loadWorkshopSessionViewModels queries workshopSession and resolves each session's linked ticketType through loadTicketCardViewModel, returning an empty array when none exist
+      command: node contracts/checks/conference-workshop-tickets-f6/check-load-workshop-sessions-empty-state.mjs
+
+    - id: A8
+      description: zero JSX, zero Tailwind/CSS class string, and zero React component is introduced anywhere under lib/view-models/
+      command: "! grep -rlE \"className=|<[A-Z][a-zA-Z]*[ />]\" lib/view-models/"
+
+    - id: A9
+      description: the symposium page gains exactly one additive server-side loader call; its existing rendered JSX output is byte-for-byte unchanged (diff touches only the data-fetch/prop-pass lines, never the return/render tree)
+      command: node contracts/checks/conference-workshop-tickets-f6/check-symposium-page-render-unchanged.mjs
+
+    - id: A10
+      description: the wosa-conference page gains the same kind of additive loader call with the same unchanged-render guarantee
+      command: node contracts/checks/conference-workshop-tickets-f6/check-wosa-page-render-unchanged.mjs
+
+    - id: A11
+      description: the workshops page gains the workshop-sessions loader call with the same unchanged-render guarantee, and components/show/CategoryTicketsPage.tsx stays byte-unchanged
+      command: git diff --quiet HEAD -- components/show/CategoryTicketsPage.tsx
+
+    - id: A12
+      description: this feature does not touch the ticket-router/buy tree
+      command: "! git diff --name-only HEAD | grep -q \"app/(marketing)/national-show/tickets/buy/\""
+
+    - id: A13
+      description: every in-scope product's view-model carries a real, non-null scarcity (or days) reading per the §1a table — VIP (200), Cocktails (200), Symposium (80), WOSA (80), each workshop session (10), Weekend Pass when its capacity is set (300 estimate), and the shared EB pool (500) all resolve a real ScarcityLine, none ship a null placeholder for a slug with a real capacity
+      command: node contracts/checks/conference-workshop-tickets-f6/check-all-products-have-real-counters.mjs
+
+    - id: A14
+      description: day-visitor's view-model carries a `days` array with exactly three independent entries (Friday/Saturday/Sunday, in that order), each out of the per-day 1000 cap with its own independently-resolved state, and `scarcity` stays null for day-visitor (it has no single pool); early-bird carries BOTH `days` (same per-day 1000 reading) AND a non-null `scarcity` (its own share of the shared 500-pool) simultaneously
+      command: node contracts/checks/conference-workshop-tickets-f6/check-day-visitor-early-bird-dual-scarcity.mjs
+
+    - id: A15
+      description: each entry in a day-qualified product's `days` array has its remaining/total/state resolved INDEPENDENTLY per day via getPoolRemaining on that day's own day-qualified pool key — a fixture where Saturday is sold out and Friday/Sunday are not must yield days[] with Saturday's state soldOut and Friday/Sunday's state available/low in the same array, never a single collapsed card-level state applied to all three
+      command: node contracts/checks/conference-workshop-tickets-f6/check-days-array-independent-per-day-state.mjs
+
+    - id: A16
+      description: no EarlyBirdRemainingCounter component, data-early-bird-state attribute, or any other styled/rendered scarcity widget is introduced anywhere in this feature's diff — the counters are real data, their presentation is still F7's
+      command: "! git diff HEAD --name-only | xargs grep -lE \"EarlyBirdRemainingCounter|data-early-bird-state\" 2>/dev/null"
+
+    - id: A17
+      description: comms.md gets a new appended block handing the view-model interfaces to the NOS design peer session — prior blocks in the file are untouched (append-only)
+      command: grep -q "conference-workshop-tickets -> saoc-nos-design-f1" comms.md
+
+    - id: A18
+      description: docs/national-show-conference-workshop-tickets.md exists and documents the view-model precedence order, the §1a counter-ceiling table, and the full merged needs-Brad list (vendor R3500, Weekend-Pass-vs-day-cap counting, weekend-pass's own 300-estimate, workshop presenter scope, VIP override, cocktails-couple retirement, VIP/cocktails overlap) with the counter-build question explicitly removed as resolved
+      command: test -f docs/national-show-conference-workshop-tickets.md
+
+    - id: A19
+      description: 'codex_qa verification ran against this feature''s diff'
+      kind: codex_qa
+      command: git diff HEAD -- lib/view-models/ "app/(marketing)/national-show/symposium/" "app/(marketing)/national-show/wosa-conference/" "app/(marketing)/national-show/workshops/" | execution/codex_qa.sh
+
+    - id: A20
+      description: 'browser_deployed_check against the real deployed beta.saoc.co.za origin confirming the three wired pages render identically to before this feature (no visual change from the inert loader wiring)'
+      kind: browser_deployed_check
+      command: node contracts/checks/conference-workshop-tickets-f6/check-deployed-render-unchanged.mjs https://beta.saoc.co.za
+
+    - id: A21
+      description: type-check passes
+      command: npx tsc --noEmit
+
+    - id: A22
+      description: 'regularPrice is non-null ONLY for weekend-pass-early-bird (reading weekend-pass''s live price) and early-bird (reading day-visitor''s live price), null for every other in-scope product, and in both non-null cases is read straight through from the sibling ticketType''s own live price — never a second, independently-typed literal that could drift from it'
+      command: node contracts/checks/conference-workshop-tickets-f6/check-regular-price-sibling-passthrough.mjs
+
+    - id: A23
+      description: 'weekend-pass ships a real, non-null scarcity when its own ticketType.capacity is set (A13''s existing case), and ships scarcity: null — never a fabricated ScarcityLine, never an "unlimited" claim, never a getPoolRemaining() call with an invented capacity — specifically and only when ticketType.capacity is itself unset/null; every other in-scope product''s scarcity/days reading is unaffected by this capacity-null branch'
+      command: node contracts/checks/conference-workshop-tickets-f6/check-weekend-pass-null-capacity-scarcity.mjs

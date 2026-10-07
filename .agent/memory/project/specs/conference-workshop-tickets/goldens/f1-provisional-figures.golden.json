@@ -1,0 +1,73 @@
+{
+  "_comment": "F1 golden — exact lib/provisional-figures.ts shape after this mission. Source: Brad verbatim, .agent/memory/scratch/brad-ticket-news-2026-10-07.md (messages 1-5 AND message 6, 2026-10-07 — message 6 directly answers and SUPERSEDES the earlier scarcity-tranche design: 'No early bird for Symposiums and conferences'). SAOC Symposium and WOSA Conference are UPDATED IN PLACE (same slug, same document identity) — never retired+recreated, so any already-issued Firestore order referencing these exact slugs stays valid.",
+  "revisionNote": "SUPERSEDES this golden's own prior revision (2026-10-07, earlier same day), which gave each event an earlyBirdTrancheSize:10 scarcity-display threshold. Message 6 answers that open question directly: 'No early bird for Symposiums and conferences'. earlyBirdTrancheSize is DROPPED from both events entirely — not set to a different number, removed as a concept for these two products.",
+  "updatedInPlace": [
+    {
+      "slug": "saoc-symposium",
+      "name": "SAOC Symposium",
+      "category": "conference",
+      "price": 2000,
+      "regularPrice": null,
+      "capacity": 80,
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "earlyBirdTrancheSizeFieldMustBeAbsent": true,
+      "requiresDaySelection": false,
+      "requiresAttendeeNames": true,
+      "provisional": true,
+      "capacityPool": null,
+      "headcountPerUnit": null,
+      "sourceCitationMustBeNonNull": true,
+      "_note": "One sellable product, flat R2000, 80 places, NO early-bird mechanism of any kind (no tranche, no discount, no cutoff). Brad's original scarcity-motivation intent (message 4: 'MOTIVATION BY SCARSITY') is recorded as a FLAGGED, NOT-BUILT recommendation below — an honest 'N of 80 places left' running count — pending his explicit go-ahead, never built silently as a substitute for the early-bird mechanism he just removed."
+    },
+    {
+      "slug": "wosa-conference",
+      "name": "WOSA Conference",
+      "category": "conference",
+      "price": 2000,
+      "regularPrice": null,
+      "capacity": 80,
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "earlyBirdTrancheSizeFieldMustBeAbsent": true,
+      "requiresDaySelection": false,
+      "requiresAttendeeNames": true,
+      "provisional": true,
+      "capacityPool": null,
+      "headcountPerUnit": null,
+      "sourceCitationMustBeNonNull": true,
+      "_note": "Identical shape to saoc-symposium — separate product, Brad's message 3 explicit: 'separate products'."
+    }
+  ],
+  "retiredConferenceSlugs": [
+    "saoc-symposium-early-bird",
+    "wosa-conference-early-bird",
+    "saoc-wosa-joint-early-bird",
+    "saoc-wosa-joint"
+  ],
+  "retiredConferenceSlugsNote": "Unchanged by message 6 — these four were already retired for the joint-bundle/differential-price reasons message 3-4 gave; message 6 just also forecloses re-deriving a differential price from them. Exported as RETIRED_CONFERENCE_SLUGS. Migration script sets active:false on the existing Sanity documents — never deleted, same convention as RETIRED_FIELD_TRIP_SLUGS.",
+  "conferenceSeatsRemainingCounter": {
+    "proposal": "An honest 'N of 80 places left' running counter per event (saoc-symposium, wosa-conference), computed from real sold+reserved counts via the SAME generic computeEarlyBirdRemaining(poolSize, soldCount) pure export this feature adds (see below) — called with poolSize=80.",
+    "status": "SUPERSEDES the prior revision's 'flagged, not built' posture. Team-lead's correction (2026-10-07, second pass): this counter IS built as DATA (F6's ScarcityLine on the TicketCardViewModel), reading real sold+reserved counts — no visual/styled component is built in this mission (that is F7, blocked on the NOS design handoff). 'Built' here means: the number is real and live; 'not built' only applies to its on-page styling."
+  },
+  "workshopFieldTripProductsUnchanged": [
+    "sunset-cocktails-single",
+    "sunset-cocktails-couple",
+    "field-trip"
+  ],
+  "workshopFieldTripProductsNote": "Brad's message 1 verbatim menu text names 'Sunset Cocktails and guided Field Trip' — these three existing WORKSHOP_FIELD_TRIP_PRODUCTS entries are UNCHANGED by this mission (not retired, not edited). Flagged explicitly per architect brief, not silently left alone.",
+  "newWorkshopSessionConstants": {
+    "WORKSHOP_SESSION_PRICE": 100,
+    "WORKSHOP_SESSION_CAPACITY": 10,
+    "provisional": false,
+    "sourceCitationMustBeNonNull": true,
+    "_note": "Brad's message 2 verbatim: 'Workshops R100 each. Total 10 Tickets per session'. No early-bird concept for workshops in any of Brad's six messages — unaffected by message 6. Direct, unambiguous figures, settled per the VIP-ruling precedent (provisional: false + sourceCitation). Structure-only: zero workshopSession/ticketType documents are seeded for any specific session, because the full schedule has not been supplied — see F3 golden."
+  },
+  "workshopPricingStructureUpdate": {
+    "model": "per-session",
+    "estimatedSessionPrice": 100,
+    "provisional": false,
+    "sourceCitationMustBeNonNull": true,
+    "_note": "WORKSHOP_PRICING_STRUCTURE.estimatedSessionPrice updates from the old 120-estimate to the real Brad-given 100. The field name and object shape are UNCHANGED (no renamed export) — only its value/provisional/sourceCitation keys change, so no existing import breaks."
+  }
+}

@@ -1,0 +1,114 @@
+schema: athanor.contract/v1
+slug: conference-workshop-tickets
+goal: >
+  Race-safe capacity + pricing engine for every F1/F2/F3 product change, per Brad's
+  re-scope (2026-10-07, relayed by team-lead): this mission builds payment/ticket
+  engineering, a separate NOS design peer builds visuals. Covers: (1) the shared
+  500-ticket early-bird pool across weekend-pass-early-bird + early-bird — PROVEN, not
+  rebuilt, since the existing capacityPool/planPooledCapacity mechanism already reads pool
+  config generically and already enforces Sunset Cocktails race-safely in production; (2)
+  TRUE per-day 1000 caps for Day Visitor (Fri/Sat/Sun independently) — the one genuinely
+  NEW mechanism, via day-qualified pool keys fed into the UNMODIFIED planPooledCapacity(),
+  backed by a NEW getSoldCountsByTicketTypeAndDay() sold-count source (the existing
+  getSoldCountsByTicketType() has no notion of chosenDay at all); (3) existing per-product
+  caps (VIP 200, Cocktails 200, Symposium 80, WOSA 80, workshop 10) — assertion-only, zero
+  new mechanism; (4) price read from the same validated Sanity fetch that gated the
+  transaction, never a second time-sensitive computation — explicitly NOT an invented
+  EB-to-regular fallback purchase flow; (5) a mandatory concurrency assertion (N parallel
+  reservations against K remaining slots yield exactly K successes); (6) PayFast sandbox
+  end-to-end + confirmation email for one new product; (7) a new read-only
+  getPoolRemaining() accessor, reusing the SAME two sold-count functions the transaction
+  itself reads, so F6's live "N left" counters (confirmed in scope per team-lead's
+  third-pass correction — not a "needs Brad" question) read the SAME numbers the
+  transaction enforces, never a second counting mechanism.
+created_at: '2026-10-07'
+autonomy: high
+features:
+  - id: F4
+    name: Race-safe capacity + pricing engine (shared EB pool, per-day caps, concurrency-proven)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/conference-workshop-tickets/goldens/f4-capacity-pricing-engine.golden.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: resolveDayQualifiedPoolKey pure helper exists and returns `${poolKeyBase}::${chosenDay}` only when requiresDaySelection is true, poolKeyBase unchanged otherwise
+      command: node contracts/checks/conference-workshop-tickets-f4/check-day-qualified-pool-key.mjs
+
+    - id: A2
+      description: the checkout route runs the day-qualified capacity check AND the unqualified shared-pool check as two independent calls to planPooledCapacity, both required to pass
+      command: node contracts/checks/conference-workshop-tickets-f4/check-two-independent-capacity-checks.mjs
+
+    - id: A3
+      description: planPooledCapacity's own exported signature is byte-unchanged by this feature — reused, not modified
+      command: "! git diff HEAD -- lib/checkout-reservation.ts | grep -qE \"^[+-].*export function planPooledCapacity\""
+
+    - id: A4
+      description: a day-visitor reservation for Friday and one for Saturday draw from INDEPENDENT 1000-unit counters — selling out Friday does not block Saturday
+      command: node contracts/checks/conference-workshop-tickets-f4/check-day-caps-independent.mjs
+
+    - id: A5
+      description: getSoldCountsByTicketTypeAndDay() exists in lib/data/tickets.ts, reuses the EXACT same Firestore query shape (collection/showId/status/stillHoldsSeat filter) as the existing getSoldCountsByTicketType(), and keys its counts by `${ticketType}::${chosenDay}` only for slugs in its dayQualifiedTypes argument — every other ticket document is keyed by plain ticketType, so its output can merge into getSoldCountsByTicketType()'s with no key collision
+      command: node contracts/checks/conference-workshop-tickets-f4/check-get-sold-counts-by-type-and-day.mjs
+
+    - id: A6
+      description: the shared admission-early-bird pool check is NOT day-qualified — a weekend-pass-early-bird sale and an early-bird (day-visitor) sale on different days both draw from the SAME 500, regardless of day
+      command: node contracts/checks/conference-workshop-tickets-f4/check-shared-pool-not-day-qualified.mjs
+
+    - id: A7
+      description: Weekend Pass does NOT draw against day-visitor's per-day pool by default — this feature's shipped default, not a silent assumption left unstated
+      command: node contracts/checks/conference-workshop-tickets-f4/check-weekend-pass-excluded-from-day-cap-default.mjs
+
+    - id: A8
+      description: VIP (200), Sunset Cocktails (200, shared pool), SAOC Symposium (80), WOSA Conference (80), and a workshop session (10) each still resolve their correct ceiling against the post-F1/F2/F3 data
+      command: node contracts/checks/conference-workshop-tickets-f4/check-per-product-caps-unaffected.mjs
+
+    - id: A9
+      description: no automatic early-bird-to-regular fallback purchase path exists anywhere in the checkout route — a sold-out EB slug is rejected like any other sold-out product, never silently substituted
+      command: "! grep -rliE \"fallbackToRegular|fallThroughToRegular|substituteRegularSlug\" app/api/tickets/"
+
+    - id: A10
+      description: for vip/weekend-pass/weekend-pass-early-bird/day-visitor/early-bird, the charged amount is the SAME value that gated transaction entry — no second, independent price computation exists for these five slugs
+      command: node contracts/checks/conference-workshop-tickets-f4/check-price-read-once-pre-transaction.mjs
+
+    - id: A11
+      description: 'CONCURRENCY — N parallel reservations against the shared admission-early-bird pool with exactly K slots remaining yield exactly K successes and N-K over-capacity rejections, final sold+reserved count never exceeds the ceiling'
+      command: node contracts/checks/conference-workshop-tickets-f4/check-concurrency-no-oversell-shared-pool.mjs
+
+    - id: A12
+      description: 'CONCURRENCY — N parallel reservations against a single day-qualified day-visitor pool (e.g. Friday) with exactly K slots remaining yield exactly K successes, never oversold'
+      command: node contracts/checks/conference-workshop-tickets-f4/check-concurrency-no-oversell-day-cap.mjs
+
+    - id: A13
+      description: both concurrency checks run against the Firebase emulator or an equivalent transaction-faithful harness, not a plain in-memory mock of the transaction
+      command: node contracts/checks/conference-workshop-tickets-f4/check-concurrency-tests-use-real-transaction-harness.mjs
+
+    - id: A14
+      description: a full PayFast SANDBOX checkout-to-ITN-to-ticket-issued flow succeeds for the early-bird (day-visitor EB) product
+      command: node contracts/checks/conference-workshop-tickets-f4/check-payfast-sandbox-e2e-early-bird.mjs
+
+    - id: A15
+      description: lib/payfast.ts is byte-unchanged by this feature — the sandbox flow is exercised, not modified
+      command: git diff --quiet HEAD -- lib/payfast.ts
+
+    - id: A16
+      description: the confirmation email actually sends for the sandbox purchase above, via the existing Resend path
+      kind: gws_inbox_check
+      command: node contracts/checks/conference-workshop-tickets-f4/check-confirmation-email-sent.mjs
+
+    - id: A17
+      description: this feature does not touch app/(marketing)/national-show/** or lib/vendor-stand-pricing.ts
+      command: "! git diff --name-only HEAD | grep -E \"^app/\\(marketing\\)/national-show/|^lib/vendor-stand-pricing.ts\""
+
+    - id: A18
+      description: getPoolRemaining() is exported from lib/checkout-reservation.ts, takes {poolKeyBase, chosenDay, requiresDaySelection, capacity}, and reads via resolveDayQualifiedPoolKey plus the SAME getSoldCountsByTicketTypeAndDay()/getSoldCountsByTicketType() functions the checkout transaction itself reads — not a third, independently-constructed query
+      command: node contracts/checks/conference-workshop-tickets-f4/check-get-pool-remaining-reuses-query.mjs
+
+    - id: A19
+      description: a day-qualified call (requiresDaySelection true) and an unqualified call (false) against the SAME poolKeyBase return independently correct remaining counts for early-bird's two simultaneous ceilings (day cap + shared pool) — proven by fixture, not just type-checked
+      command: node contracts/checks/conference-workshop-tickets-f4/check-get-pool-remaining-early-bird-dual-ceiling.mjs
+
+    - id: A20
+      description: type-check passes
+      command: npx tsc --noEmit

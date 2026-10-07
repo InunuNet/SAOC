@@ -1,0 +1,129 @@
+schema: athanor.contract/v1
+slug: conference-workshop-tickets
+goal: >
+  Sanity schema (one new additive field, excludedDays) + correct-polarity migration +
+  checkout-route enforcement wiring, covering F1's conference/workshop figures and F2's
+  admission/evening-product reconciliation (REVISED for Brad's message 6: shared 500-ticket
+  early-bird pool across weekend-pass-early-bird + early-bird, no date cutoff; Thursday
+  excluded from Day Pass days). Add conferencePresenter + workshopSession document types
+  (carried forward, unaffected by message 6). Write
+  scripts/migrate-conference-workshop-tickets.ts with correct flag-before-client polarity
+  (default dry-run, --apply the only mutating path) — patching (never creating) the seven
+  pre-existing ticketType documents F1/F2 change values on. weekend-pass-early-bird is
+  deliberately NOT created by this script — scripts/seed-ticketing.ts's existing, unmodified
+  createIfNotExists loop over ADMISSION_PRODUCTS creates it with zero new code, once F2
+  ships. Wire app/api/tickets/checkout/route.ts with one small additive excludedDays
+  read-and-check alongside the existing isValidChosenDay() call (route.ts:645-662) — and
+  prove the shared-pool enforcement needs ZERO code change there, since
+  poolConfigByType/planPooledCapacity already read capacityPool/headcountPerUnit
+  generically from every ticketType's own Sanity document.
+created_at: '2026-10-07'
+autonomy: high
+features:
+  - id: F3
+    name: Sanity schema (excludedDays) + migration + checkout-route pool/day-exclusion enforcement wiring
+    status: pending
+goldens:
+  - .agent/memory/project/specs/conference-workshop-tickets/goldens/f2-sanity-schema-migration.golden.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: ticketType schema carries the new excludedDays field
+      command: grep -q "excludedDays" sanity/schemas/documents/ticketType.ts
+
+    - id: A2
+      description: ticketType schema already has capacityPool/headcountPerUnit (confirms reuse, not re-add) — this feature's diff does not touch either field's schema definition
+      command: "! git diff HEAD -- sanity/schemas/documents/ticketType.ts | grep -qE \"^\\+.*capacityPool|^\\+.*headcountPerUnit\""
+
+    - id: A3
+      description: earlyBirdTrancheSize is NOT present in the ticketType schema — it was dropped before ever being added (F1's message-6 revision)
+      command: "! grep -q \"earlyBirdTrancheSize\" sanity/schemas/documents/ticketType.ts"
+
+    - id: A4
+      description: conferencePresenter document schema file exists
+      command: test -f sanity/schemas/documents/conferencePresenter.ts
+
+    - id: A5
+      description: workshopSession document schema file exists
+      command: test -f sanity/schemas/documents/workshopSession.ts
+
+    - id: A6
+      description: both new document types are registered in the schema index
+      command: grep -q "conferencePresenter" sanity/schemas/index.ts
+
+    - id: A7
+      description: both new document types are registered in the schema index
+      command: grep -q "workshopSession" sanity/schemas/index.ts
+
+    - id: A8
+      description: conferencePresenter's provenance field has no initialValue
+      command: node contracts/checks/conference-workshop-tickets-f3/check-provenance-no-initial-value.mjs sanity/schemas/documents/conferencePresenter.ts
+
+    - id: A9
+      description: workshopSession's provenance field has no initialValue
+      command: node contracts/checks/conference-workshop-tickets-f3/check-provenance-no-initial-value.mjs sanity/schemas/documents/workshopSession.ts
+
+    - id: A10
+      description: migration script exists and checks --apply before any createClient construction
+      command: "test \"$(grep -n \"argv.includes('--apply')\" scripts/migrate-conference-workshop-tickets.ts | head -1 | cut -d: -f1)\" -lt \"$(grep -n \"createClient(\" scripts/migrate-conference-workshop-tickets.ts | head -1 | cut -d: -f1)\""
+
+    - id: A11
+      description: dry run (no --apply) needs zero Sanity env vars and exits 0
+      command: env -u SANITY_API_TOKEN -u NEXT_PUBLIC_SANITY_PROJECT_ID -u NEXT_PUBLIC_SANITY_DATASET node --import tsx/esm scripts/migrate-conference-workshop-tickets.ts
+
+    - id: A12
+      description: the migration script never mentions weekend-pass-early-bird — its creation is deliberately left to the unmodified seed-ticketing.ts, not special-cased here
+      command: "! grep -q \"weekend-pass-early-bird\" scripts/migrate-conference-workshop-tickets.ts"
+
+    - id: A13
+      description: scripts/seed-ticketing.ts itself is byte-unchanged by this feature — the new product's creation needs no new seeding code, only F2's data change
+      command: git diff --quiet HEAD -- scripts/seed-ticketing.ts
+
+    - id: A14
+      description: scripts/migrate-conference-workshop-tickets.ts exports a pure buildMigrationPatches() keyed by Sanity _id, built from lib/provisional-figures.ts's live exports — both the dry-run and --apply paths call this same function, so they cannot diverge
+      command: node contracts/checks/conference-workshop-tickets-f3/check-migration-plan-export-shape.mjs
+
+    - id: A15
+      description: buildMigrationPatches() patches every one of the seven pre-existing documents F1/F2 changed, with ticketType-saoc-symposium/ticketType-wosa-conference's patch explicitly setting price 2000, capacity 80, earlyBirdCutoff null, and no tranche-named key
+      command: node contracts/checks/conference-workshop-tickets-f3/check-migration-patches-all-slugs.mjs
+
+    - id: A16
+      description: 'GAP FOUND by a read-only Sanity query on the live dataset (2026-10-07): buildMigrationPatches() sets active:false on every one of the four RETIRED_CONFERENCE_SLUGS documents, with the four target _ids computed FROM the RETIRED_CONFERENCE_SLUGS constant (not a hand-typed duplicate list) — this is the gap this correction fixes'
+      command: node contracts/checks/conference-workshop-tickets-f3/check-migration-retires-conference-slugs.mjs
+
+    - id: A17
+      description: buildMigrationPatches() sets active:false on ticketType-sunset-cocktails-couple per RETIRED_SUNSET_COCKTAILS_SLUGS
+      command: node contracts/checks/conference-workshop-tickets-f3/check-migration-retires-sunset-cocktails-couple.mjs
+
+    - id: A18
+      description: the script never deletes a document
+      command: "! grep -qE \"\\.delete\\(\" scripts/migrate-conference-workshop-tickets.ts"
+
+    - id: A19
+      description: the script creates zero conferencePresenter or workshopSession documents
+      command: "! grep -qE \"conferencePresenter|workshopSession\" scripts/migrate-conference-workshop-tickets.ts"
+
+    - id: A20
+      description: the script makes no change to field-trip and imports nothing from lib/vendor-stand-pricing.ts
+      command: "! grep -qE \"field-trip|vendor-stand-pricing\" scripts/migrate-conference-workshop-tickets.ts"
+
+    - id: A21
+      description: the checkout route gained the new excludedDays check immediately after the existing isValidChosenDay() call, additively — isValidChosenDay's own call site line is still present unmodified
+      command: grep -q "isValidChosenDay(lineItem.chosenDay, showWindow)" app/api/tickets/checkout/route.ts
+
+    - id: A22
+      description: a new excludedDays rejection path exists in the checkout route, distinct from the existing show-window-outside error
+      command: node contracts/checks/conference-workshop-tickets-f3/check-excluded-days-checkout-rejection.mjs
+
+    - id: A23
+      description: this feature's diff does NOT touch poolConfigByType/planPooledCapacity construction — proves shared-pool enforcement needed zero code change, only Sanity data classification
+      command: "! git diff HEAD -- app/api/tickets/checkout/route.ts | grep -qE \"^[+-].*poolConfigByType\\s*=|^[+-].*planPooledCapacity\\(\""
+
+    - id: A24
+      description: a day-visitor-shaped ticket purchase for an excluded day (2027-09-23) is rejected end to end against a real dry-run of the updated validation logic
+      command: node contracts/checks/conference-workshop-tickets-f3/check-thursday-day-visitor-rejected.mjs
+
+    - id: A25
+      description: type-check passes
+      command: npx tsc --noEmit

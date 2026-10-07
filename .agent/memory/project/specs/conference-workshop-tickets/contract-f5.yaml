@@ -1,0 +1,64 @@
+schema: athanor.contract/v1
+slug: conference-workshop-tickets
+goal: >
+  Exhibitor/Vendor R3500 flagging — doc-only decision record, its own milestone (M3).
+  REVERTS this feature's own prior revision, which implemented R3500 as a flat fee
+  replacing the confirmed R1450-per-booth-size vendor stand model. Team-lead's correction
+  (2026-10-07, second pass): "F4 being doc-only for vendors is right until Brad answers
+  #10" — needs-Brad item #10 (the full Exhibitor/Vendor R3500 block: what "Same",
+  "Indoor/Outdoors" and "Full Access" mean, whether R3500 replaces or adds to the existing
+  model, and which field is "the vendor exhibitor") stays OPEN. This feature does
+  read-only research against the live vendor registration/stand-payment forms and schema
+  to produce a factual field-mapping table for Brad, and proves by assertion that
+  lib/vendor-stand-pricing.ts and the live vendor stand payment path are completely
+  untouched. No code change to any vendor pricing, form, or payment path.
+created_at: '2026-10-07'
+autonomy: high
+features:
+  - id: F5
+    name: Exhibitor/Vendor R3500 flagging (doc-only decision record, needs-Brad #10)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/conference-workshop-tickets/goldens/f4-exhibitor-vendor-flagging.golden.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: lib/vendor-stand-pricing.ts is byte-unchanged by this feature
+      command: git diff --quiet HEAD -- lib/vendor-stand-pricing.ts
+
+    - id: A2
+      description: app/api/vendors/stand-payment/initiate/route.ts is byte-unchanged by this feature
+      command: git diff --quiet HEAD -- app/api/vendors/stand-payment/initiate/route.ts
+
+    - id: A3
+      description: no vendor registration/application form component is touched by this feature's diff
+      command: "! git diff --name-only HEAD | grep -E \"components/vendors/|app/\\(marketing\\)/national-show/vendors/\""
+
+    - id: A4
+      description: no Sanity schema, UI field, or ticketType document is added for Exhibitors, Vendors, Indoor/Outdoor, or Full Access
+      command: "! git diff --name-only HEAD | xargs grep -liE \"Indoor.?Outdoor|FullAccess|'exhibitors'.*3500|'vendors'.*3500\" 2>/dev/null"
+
+    - id: A5
+      description: docs/national-show-conference-workshop-tickets.md's needs-Brad section records item #10 verbatim-sourced from Lee-Ann's sheet and Brad's message 6
+      command: grep -q "#10" docs/national-show-conference-workshop-tickets.md
+
+    - id: A6
+      description: the doc's field-mapping table names boothSize (stand-payment) as the ONLY price-driving field in the current vendor flow today
+      command: grep -q "boothSize" docs/national-show-conference-workshop-tickets.md
+
+    - id: A7
+      description: the doc states plainly that no Exhibitor-vs-Vendor role selector, "Indoor/Outdoors", or "Full Access" concept exists anywhere in the current codebase (factual finding, not a guess)
+      command: node contracts/checks/conference-workshop-tickets-f5/check-vendor-fact-finding-documented.mjs
+
+    - id: A8
+      description: the golden's full field-mapping table (six rows) is reproduced or referenced in the doc, not summarized away
+      command: node contracts/checks/conference-workshop-tickets-f5/check-vendor-table-present-in-doc.mjs
+
+    - id: A9
+      description: this feature's diff touches only docs/ and .agent/memory/ paths — no app/, lib/, components/, or sanity/ file is modified
+      command: "! git diff --name-only HEAD | grep -vE \"^docs/|^\\.agent/memory/\""
+
+    - id: A10
+      description: type-check passes (no change expected, but proves the doc-only diff introduced zero type regressions)
+      command: npx tsc --noEmit

@@ -1,0 +1,127 @@
+{
+  "_comment": "F2 golden — lib/provisional-figures.ts ADMISSION_PRODUCTS + WORKSHOP_FIELD_TRIP_PRODUCTS after Brad's message 6 (2026-10-07, verbatim in .agent/memory/scratch/brad-ticket-news-2026-10-07.md). SUPERSEDES this golden's own prior revision from earlier the same day (vip/weekend-pass/day-visitor/early-bird reconciled against Lee-Ann's sheet only) — message 6 changes the EARLY-BIRD MECHANISM for weekend-pass and day-visitor from date-cutoff to a shared sold-count pool, and excludes Thursday from Day Pass days. Conferences/Workshops (F1) are handled separately and are NOT touched here.",
+  "newSharedPoolConstant": {
+    "ADMISSION_EARLY_BIRD_POOL_CAPACITY": 500,
+    "_note": "Brad message 6: '500 early bird day v[i]stor tickets, 3 day booking and 1 day book[ing] all count to 500' and 'Earlybird now ends after 500 tickets are sold not at a specific date'. One shared pool, not a per-product tranche — see architectureChange below for why this needs a genuinely new product (weekend-pass-early-bird), not just a value edit."
+  },
+  "architectureChange_weekendPassSplit": {
+    "why": "Before message 6, 'weekend-pass' was a SINGLE product/SKU with two prices (price=early-bird, regularPrice=regular) switched by a date (earlyBirdCutoff). Message 6 makes weekend-pass's early-bird tier share ONE pool with day-visitor's early-bird tier, counted by units sold, with NO date at all. A single SKU's own two-price-by-date mechanism cannot express 'shared with a DIFFERENT product's sold count' — the project's EXISTING capacityPool/headcountPerUnit mechanism (already live for the Sunset Cocktails single/couple shared pool, enforced race-safely by lib/checkout-reservation.ts#planPooledCapacity, F3-golden-reused, not reinvented) can, but only across distinct SKUs. So weekend-pass SPLITS into two products, mirroring the shape day-visitor's early-bird already has (a separate slug, not a second price on one slug): 'weekend-pass' (regular only) and a NEW 'weekend-pass-early-bird' slug.",
+    "newDocumentIsGenuinelyNew": "weekend-pass-early-bird is a NEW product, not a renamed/retired/recreated one. Its live Sanity document does NOT need special-case migration code: scripts/seed-ticketing.ts already iterates ADMISSION_PRODUCTS generically and calls client.createIfNotExists() per product (scripts/seed-ticketing.ts:181) — once this feature adds the product to the array, re-running the EXISTING, unmodified seed script creates its document automatically. F3's migration script therefore keeps its patch-never-create rule with NO exception; it only patches documents that already exist."
+  },
+  "updatedInPlace": [
+    {
+      "slug": "vip",
+      "name": "VIP Ticket",
+      "price": 300,
+      "regularPrice": null,
+      "capacity": 200,
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "capacityPool": null,
+      "requiresDaySelection": false,
+      "requiresAttendeeNames": true,
+      "provisional": true,
+      "sourceCitationMustBeNonNull": true,
+      "_note": "UNCHANGED by message 6 (not mentioned in it). Still carried from the earlier-same-day Lee-Ann's-sheet reconciliation: sheet line 19, '23 VIP Thursday, Opening 3 Hours on thursday evening.(R300) 16h00-19h00 Total # 200 total'. Team-lead's second-pass instruction (2026-10-07): IMPLEMENT this as the working DEFAULT, explicitly recorded as an override of the 2026-09-08 Brad direct ruling (R625/R500/120cap) via sourceCitation naming both the override and the superseded ruling — the override itself stays on the needs-Brad list as not yet separately re-confirmed, but code proceeds with this default rather than blocking on it."
+    },
+    {
+      "slug": "weekend-pass",
+      "name": "Weekend Pass",
+      "price": 380,
+      "regularPrice": null,
+      "_regularPriceChangeNote": "Was 380 with regularPrice:400, then (earlier same day) 360/380. Now CLEARED to null — this slug no longer has a second price tier at all; its own early-bird price moved to the new weekend-pass-early-bird slug below. This single field itself still means 'the price', same as every other non-tiered product.",
+      "capacity": 300,
+      "_capacityNote": "Carried over unchanged. FLAGGED NEW QUESTION (message 6 did not address this): before the split, 300 was understood to cap BOTH price tiers combined on one SKU. Post-split, does 300 still cap the REGULAR weekend-pass alone, independent of the 500-pool early-bird sales — or should the two be read together some other way? Not assumed either way; see needs-Brad.",
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "_earlyBirdCutoffChangeNote": "Cleared to null — no date-based mechanism applies to this slug any more.",
+      "capacityPool": null,
+      "requiresDaySelection": false,
+      "requiresAttendeeNames": false,
+      "provisional": true,
+      "sourceCitationMustBeNonNull": true
+    },
+    {
+      "slug": "weekend-pass-early-bird",
+      "name": "Weekend Pass (Early Bird)",
+      "_isNewProduct": true,
+      "price": 360,
+      "regularPrice": null,
+      "capacity": 500,
+      "_capacityNote": "Declares the FULL shared-pool ceiling (500), per this codebase's existing capacityPool convention (every pool sibling declares the full pool ceiling as its own capacity field — see sunset-cocktails-single/couple precedent) — not a sub-allocation of 500 for this slug alone.",
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "capacityPool": "admission-early-bird",
+      "headcountPerUnit": 1,
+      "requiresDaySelection": false,
+      "requiresAttendeeNames": false,
+      "provisional": true,
+      "sourceCitationMustBeNonNull": true,
+      "_note": "Brad message 6, sheet line 22 price carried over (360). Shares the 'admission-early-bird' pool with the day-visitor early-bird slug below — every sale of EITHER counts toward the same 500. Once the pool is exhausted, this product becomes unavailable via the EXISTING pool-capacity-exhausted path (same behavior Sunset Cocktails already has on sellout) — buyers fall through to the independent 'weekend-pass' regular product, which is a separate SKU and is not blocked by this one's sellout."
+    },
+    {
+      "slug": "day-visitor",
+      "name": "Day Visitor Ticket",
+      "price": 150,
+      "capacity": 1000,
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "capacityPool": null,
+      "requiresDaySelection": true,
+      "excludedDays": ["2027-09-23"],
+      "_excludedDaysNote": "NEW field. Brad message 6: 'No Daypass on thursday it VIP meet ht e botoniosts and seperate cocktails tickets afterwards' + 'Day Pass days are Fri 24 to Sun 26 only'. 2027-09-23 is the confirmed Thursday of the 23-26 Sept 2027 show window (see project memory project_show_dates_placeholder.md). capacity=1000 is SUPERSEDED as a single-aggregate reading by team-lead's third-pass correction (2026-10-07): this pre-existing, long-flagged gap (docs/f4-admission-products.md 'Known scope gap') IS fixed by this mission's F4, via a day-qualified pool key (`${poolKeyBase}::${chosenDay}`) fed into the UNCHANGED planPooledCapacity() — true independent 1000-caps for Friday/Saturday/Sunday, proven by a mandatory concurrency assertion (F4 A11/A18). This field's own value (1000) is unchanged; what changed is that it is now enforced per-day, not as one aggregate pool.",
+      "requiresAttendeeNames": false,
+      "provisional": true,
+      "sourceCitationMustBeNonNull": true
+    },
+    {
+      "slug": "early-bird",
+      "name": "Day Visitor (Early Bird)",
+      "_nameChangeNote": "Same slug/_id preserved (continuity for any already-issued order) — this slug is the Day Visitor's own early-bird tier.",
+      "price": 120,
+      "capacity": 500,
+      "_capacityNote": "Declares the FULL shared-pool ceiling (500) — same convention as weekend-pass-early-bird above; this is the SAME pool, not a second independent 500.",
+      "releasedQuantity": null,
+      "earlyBirdCutoff": null,
+      "_earlyBirdCutoffChangeNote": "Cleared to null (was the legacy 2027-07-31 constant, carried over in the earlier-same-day revision). Message 6: 'Earlybird now ends after 500 tickets are sold not at a specific date' — supersedes the date-cutoff entirely for this slug.",
+      "capacityPool": "admission-early-bird",
+      "headcountPerUnit": 1,
+      "requiresDaySelection": true,
+      "excludedDays": ["2027-09-23"],
+      "_excludedDaysNote": "Same Thursday exclusion as its sibling day-visitor product — this is still a day-visitor-shaped ticket, just at the early-bird price.",
+      "requiresAttendeeNames": false,
+      "provisional": true,
+      "sourceCitationMustBeNonNull": true,
+      "_note": "Shares the 'admission-early-bird' pool with weekend-pass-early-bird — combined sold+reserved count across BOTH slugs is checked against the single 500 ceiling by the existing planPooledCapacity() mechanism (see F3). Once exhausted, falls through to the independent 'day-visitor' regular product at R150."
+    }
+  ],
+  "sunsetCocktailsReconciliation": {
+    "SUNSET_COCKTAILS_POOL_CAPACITY": 200,
+    "_poolCapacityNote": "Unchanged by message 6. CORRECTED (architect self-check, 2026-10-07): the live lib/provisional-figures.ts constant is 200, not 100 — Lee-Ann's sheet line 20 ('23 Thursday Sunset cocktails Evening R800 (18h00-21h00) # 100 total') sourced the ORIGINAL F2 interim conservative resize, but a later mission (ticketing-conferences-and-events, F5) restored it to the real physical ceiling of 200 once planPooledCapacity() could pool capacity correctly (see lib/provisional-figures.ts's own comment citing goldens/f5-checkout.golden.md 'Determination 2'). This mission (message 6) does not touch that number either way — 'unchanged' means unchanged at its CURRENT real value, 200, not a reversion to the superseded 100.",
+    "sunset-cocktails-single": {
+      "price": 800,
+      "capacity": 200,
+      "capacityPool": "sunset-cocktails",
+      "headcountPerUnit": 1,
+      "sourceCitationMustBeNonNull": true
+    },
+    "sunset-cocktails-couple": {
+      "price": 1500,
+      "_priceNote": "UNCHANGED figure. Team-lead's second-pass default (2026-10-07): set active:false via a NEW RETIRED_SUNSET_COCKTAILS_SLUGS export (see below), patched by F3's migration — NOT deleted, same convention as RETIRED_CONFERENCE_SLUGS/RETIRED_FIELD_TRIP_SLUGS. The product definition itself stays in WORKSHOP_FIELD_TRIP_PRODUCTS for any already-issued order's continuity; only the live Sanity document's `active` flag flips. Whether this tier should exist at all remains an open needs-Brad item — active:false is a working default, not a resolution.",
+      "capacity": 200,
+      "capacityPool": "sunset-cocktails",
+      "headcountPerUnit": 2
+    },
+    "_stillOpenTimeOverlap": "VIP (Thu 16h00-19h00) and Sunset Cocktails (Thu 18h00-21h00) overlap 18h00-19h00 on the same day — NOT addressed by message 6, still an open needs-Brad item, not assumed to be intentional or a conflict."
+  },
+  "newRetirementExport": {
+    "RETIRED_SUNSET_COCKTAILS_SLUGS": ["sunset-cocktails-couple"],
+    "_note": "New export, same shape/convention as RETIRED_CONFERENCE_SLUGS and RETIRED_FIELD_TRIP_SLUGS — a list of slugs F3's migration sets active:false on, never deletes. Kept in this figures file (not the migration script) so the retirement list has one source of truth alongside the product it names."
+  },
+  "fieldTripUnchanged": {
+    "slug": "field-trip",
+    "_note": "Not on Lee-Ann's sheet or in any of Brad's six messages. Flagged, NOT deleted or altered."
+  },
+  "schemaImpact": "Two new OPTIONAL fields on ProvisionalAdmissionProduct: `excludedDays?: string[] | null` (ISO date strings this product does not sell for, additive, defaults to no exclusion when absent — zero behavior change for every other existing product) and the already-existing `capacityPool`/`headcountPerUnit` pair, reused rather than re-invented, now also applied to weekend-pass-early-bird and the early-bird slug. No Sanity schema field is needed for capacityPool/headcountPerUnit (already exist, used by sunset-cocktails) — see F3. excludedDays DOES need one new, additive Sanity field — see F3.",
+  "_newOpenQuestion_weekendPassDayCap": "Added by team-lead (2026-10-07, second pass): does a Weekend Pass holder count against the Day Visitor's 1000-per-day cap on each of the three days they attend? NOT assumed either way. F4's true per-day capacity mechanism is designed to make weekend-pass's participation in the day cap an additive, easy-to-enable-later choice rather than requiring it be decided now — the DEFAULT this feature ships with is that weekend-pass does NOT draw against the day-visitor per-day pool (they are separate ticket types with separate historical capacity figures: 300 for the weekend pass overall vs. 1000/day for day visitors) — flagged, not a resolution."
+}

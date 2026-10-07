@@ -1,0 +1,91 @@
+schema: athanor.contract/v1
+slug: conference-workshop-tickets
+goal: >
+  Admission + evening-product figures in lib/provisional-figures.ts, per Brad's message 6
+  (2026-10-07, verbatim in .agent/memory/scratch/brad-ticket-news-2026-10-07.md), which
+  SUPERSEDES this feature's earlier-same-day revision (reconciliation against Lee-Ann's
+  sheet only). Message 6 changes the early-bird MECHANISM for weekend-pass and day-visitor
+  from a date cutoff to a single shared 500-ticket pool (counted by units sold across BOTH
+  products, no date at all), and excludes Thursday from Day Pass days. This requires
+  SPLITTING weekend-pass into two products — 'weekend-pass' (regular, R380, unchanged
+  slug/_id) and a genuinely NEW 'weekend-pass-early-bird' (R360) — because a single SKU's
+  own two-price-by-date shape cannot express "shared pool with a different product"; the
+  existing capacityPool/headcountPerUnit mechanism can, applied to this new slug and to
+  the existing 'early-bird' (day-visitor's own EB) slug. Day-visitor gains a new
+  excludedDays field (Thursday). VIP's R300/200cap default (team-lead, second pass) is
+  implemented with a sourceCitation explicitly naming it as an override of the 2026-09-08
+  Brad ruling — still an open needs-Brad item, but shipped as the working default rather
+  than blocked. Sunset Cocktails (Couple) gets a new RETIRED_SUNSET_COCKTAILS_SLUGS export
+  (active:false default, patched by F3, never deleted) — same convention as
+  RETIRED_CONFERENCE_SLUGS/RETIRED_FIELD_TRIP_SLUGS. Pure data-value + one new optional
+  interface field (excludedDays) — no network, no Sanity.
+created_at: '2026-10-07'
+autonomy: high
+features:
+  - id: F2
+    name: Admission + evening-product figures reconciled against Brad's shared-pool/no-Thursday ruling
+    status: pending
+goldens:
+  - .agent/memory/project/specs/conference-workshop-tickets/goldens/f2-admission-evening-figures.golden.json
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: vip's shape is unchanged by this feature (price 300, regularPrice null, capacity 200, no early-bird) and its sourceCitation names the override explicitly
+      command: node contracts/checks/conference-workshop-tickets-f2/check-vip-figures.mjs
+
+    - id: A2
+      description: weekend-pass is now a single-price product — price 380, regularPrice null, earlyBirdCutoff null, capacityPool null
+      command: node contracts/checks/conference-workshop-tickets-f2/check-weekend-pass-figures.mjs
+
+    - id: A3
+      description: a NEW weekend-pass-early-bird product exists — price 360, capacity 500, capacityPool 'admission-early-bird', headcountPerUnit 1, earlyBirdCutoff null
+      command: node contracts/checks/conference-workshop-tickets-f2/check-weekend-pass-early-bird-figures.mjs
+
+    - id: A4
+      description: day-visitor is 150/1000/requiresDaySelection true, and excludedDays contains exactly ['2027-09-23']
+      command: node contracts/checks/conference-workshop-tickets-f2/check-day-visitor-figures.mjs
+
+    - id: A5
+      description: the early-bird slug (day-visitor's own EB) is 120, capacityPool 'admission-early-bird', headcountPerUnit 1, capacity 500, earlyBirdCutoff null, excludedDays ['2027-09-23']
+      command: node contracts/checks/conference-workshop-tickets-f2/check-day-visitor-early-bird-figures.mjs
+
+    - id: A6
+      description: weekend-pass-early-bird and the early-bird slug share the IDENTICAL capacityPool string literal — a typo between them would silently create two separate pools instead of one shared pool
+      command: node contracts/checks/conference-workshop-tickets-f2/check-shared-pool-key-identical.mjs
+
+    - id: A7
+      description: ADMISSION_EARLY_BIRD_POOL_CAPACITY constant equals 500 and is the single source both pool-sibling capacity fields reference (not two independently hand-typed 500s)
+      command: grep -q "ADMISSION_EARLY_BIRD_POOL_CAPACITY = 500" lib/provisional-figures.ts
+
+    - id: A8
+      description: excludedDays is a new OPTIONAL field on ProvisionalAdmissionProduct — every product that does not set it is unaffected (no default exclusion introduced for any other product)
+      command: node contracts/checks/conference-workshop-tickets-f2/check-excluded-days-optional-and-scoped.mjs
+
+    - id: A9
+      description: SUNSET_COCKTAILS_POOL_CAPACITY is still 200 (the real post-F5 physical ceiling, not the superseded 100 interim estimate), sunset-cocktails-single/couple figures unchanged, field-trip unchanged — none of these three have their FIGURES touched by this feature (the couple SKU's retirement EXPORT is new, see A14)
+      command: node contracts/checks/conference-workshop-tickets-f2/check-sunset-cocktails-and-field-trip-unchanged.mjs
+
+    - id: A10
+      description: every updated/new ADMISSION_PRODUCTS entry carries a non-null sourceCitation
+      command: node contracts/checks/conference-workshop-tickets-f2/check-source-citations-present.mjs
+
+    - id: A11
+      description: ADMISSION_PRODUCTS now has exactly 5 entries (vip, weekend-pass, weekend-pass-early-bird, day-visitor, early-bird) — one genuinely new product added, none removed
+      command: node --import tsx/esm -e "import('./lib/provisional-figures.ts').then(m => { if (m.ADMISSION_PRODUCTS.length !== 5) throw new Error('count is ' + m.ADMISSION_PRODUCTS.length + ', expected 5'); })"
+
+    - id: A12
+      description: no duplicate/second interface declaration was introduced for this feature's one new field — excludedDays is added to the EXISTING ProvisionalAdmissionProduct interface, not a parallel type
+      command: "test \"$(grep -c 'interface ProvisionalAdmissionProduct' lib/provisional-figures.ts)\" = \"1\""
+
+    - id: A13
+      description: type-check passes
+      command: npx tsc --noEmit
+
+    - id: A14
+      description: RETIRED_SUNSET_COCKTAILS_SLUGS export exists and names exactly ['sunset-cocktails-couple'] — new retirement list, same convention as RETIRED_CONFERENCE_SLUGS/RETIRED_FIELD_TRIP_SLUGS
+      command: node contracts/checks/conference-workshop-tickets-f2/check-retired-sunset-cocktails-slugs.mjs
+
+    - id: A15
+      description: sunset-cocktails-couple's PRODUCT DEFINITION still exists in WORKSHOP_FIELD_TRIP_PRODUCTS (retirement is a migration-applied active:false, never a removal from this array)
+      command: grep -q "'sunset-cocktails-couple'" lib/provisional-figures.ts

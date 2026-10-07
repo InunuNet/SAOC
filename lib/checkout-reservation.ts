@@ -478,3 +478,31 @@ export function planPooledCapacity(input: {
     ? { kind: 'over-capacity', ticketTypes: overCapacityTypes }
     : { kind: 'ok' };
 }
+
+/**
+ * F1 (conference-workshop-tickets, M1) — a GENERIC pool-remainder calculator for an
+ * honest "N of X left" display. Deliberately named around a plain `poolSize`, not a
+ * tranche-specific term, so the same function serves any such display. See
+ * .agent/memory/project/specs/conference-workshop-tickets/goldens/f1-early-bird-remaining-cases.json
+ * for the full fixture set this must match.
+ *
+ * Two real consumers wire this in elsewhere (neither built in this feature): F4's shared
+ * 500-ticket admission early-bird pool (poolSize=500) and F6's per-event
+ * conference-seats-remaining data (poolSize=80, one call per saoc-symposium/wosa-conference).
+ * `soldCount` is always the caller's own real sold-plus-active-reserved count (e.g. the
+ * result of `getSoldCountsByTicketType()`) — this function never queries anything itself.
+ *
+ * Pure: no `Date.now()`, no `await`, no Firestore/firebase-admin import, no network call.
+ * `poolSize` of `null`/`undefined` passes through as `null` (no pool tracked for this
+ * product — distinct from a pool that is merely sold out, which returns `0`). Never
+ * returns a negative number.
+ */
+export function computeEarlyBirdRemaining(
+  poolSize: number | null | undefined,
+  soldCount: number,
+): number | null {
+  if (poolSize === null || poolSize === undefined) {
+    return null;
+  }
+  return Math.max(poolSize - soldCount, 0);
+}

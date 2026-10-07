@@ -8,13 +8,6 @@
  * including why a Child ticket is deliberately NOT included here.
  */
 
-// F2 (ticketing-complete, M1) defect repair 2026-09-08: relative, not '@/'-aliased, for the
-// same reason lib/admission-early-bird-pricing.ts states at its own import of
-// './checkout-reservation' — this module's check scripts import it directly via tsx/esm,
-// outside Next.js's module resolution, which is the only place the '@/*' alias is honoured.
-// Pulls in no I/O: the engine is pure, and its own single import is type-only (erased).
-import { deriveAdmissionEarlyBirdCutoffIso } from './admission-early-bird-pricing';
-
 export type ProvisionalProductCategory = 'admission' | 'conference' | 'workshop-field-trip';
 
 export interface ProvisionalAdmissionProduct {
@@ -66,39 +59,74 @@ export interface ProvisionalAdmissionProduct {
    *  sign-off — the two are not mutually exclusive. See
    *  .agent/memory/project/specs/ticketing-complete/goldens/f2-provisional-figures-decisions.json. */
   sourceCitation?: string | null;
+  /** F2 (conference-workshop-tickets, M1): ISO 8601 dates this product does NOT sell for,
+   *  e.g. '2027-09-23'. `null`/unset (the default for every existing product) means no
+   *  exclusion — zero behaviour change for any product that doesn't opt in. Additive to
+   *  `requiresDaySelection`, not a replacement for it: a product can require a day pick AND
+   *  exclude specific days from that pick (day-visitor and its early-bird sibling both do,
+   *  per Brad's 2026-10-07 ticket news: "No Daypass on thursday"). See
+   *  .agent/memory/project/specs/conference-workshop-tickets/goldens/f2-admission-evening-figures.golden.json. */
+  excludedDays?: string[] | null;
 }
 
 export const EARLY_BIRD_CUTOFF = '2027-07-31';
 
-// F2 (ticketing-complete, M1) defect repair 2026-09-08 (Codex GPT-5.5 finding, verified real):
-// VIP must NOT share the legacy EARLY_BIRD_CUTOFF constant (2027-07-31) — that date has no
-// relationship to this mission's confirmed 90-day-before-show rule. VIP's cutoff is being
-// freshly WRITTEN under Brad's 2026-09-08 ruling (not a preserved legacy value), so it must
-// carry the DERIVED cutoff, computed by the same engine — never a second hand-typed copy of
-// '2027-06-18'. The literal show start below is the same confirmed instant used as ground
-// truth by check-vip-computed-early-bird-price.mjs and by
-// goldens/fixtures/f1-pricing-boundary-cases.json's showStartDateIso.
-//
-// The `.slice(0, 10)` yields the bare `YYYY-MM-DD` shape every sibling `earlyBirdCutoff` field
-// already uses. The engine returns a full '+02:00' instant for its own SAST-aware comparator;
-// isWithinEarlyBirdWindow(), which gates VIP's runtime price via resolveEffectivePrice(),
-// expects the bare-date shape — so the slice is load-bearing, not cosmetic.
-const CONFIRMED_SHOW_START_2027 = new Date('2027-09-23T07:00:00Z');
-const VIP_EARLY_BIRD_CUTOFF = deriveAdmissionEarlyBirdCutoffIso(CONFIRMED_SHOW_START_2027).slice(0, 10);
+// F2 (conference-workshop-tickets, M1) — Brad's ticket news, 2026-10-07 (verbatim), message
+// 6: "500 early bird day v[i]stor tickets, 3 day booking and 1 day book[ing] all count to
+// 500" and "Earlybird now ends after 500 tickets are sold not at a specific date". ONE shared
+// pool, counted by units sold across BOTH the weekend-pass-early-bird and early-bird (day
+// visitor's own EB) slugs below — not a per-product tranche, and no date cutoff at all. The
+// single source both pool-sibling `capacity` fields reference, so the two 500s can never
+// independently drift apart.
+export const ADMISSION_EARLY_BIRD_POOL_CAPACITY = 500;
 
+// Exported (not a bare module-local const) so contract check scripts can assert against the
+// real pool-key literal instead of re-typing a second copy of 'admission-early-bird' — see
+// contracts/checks/ticketing-conferences-and-events-f5/check-pool-data-invariant.mjs's scope
+// guard, narrowed 2026-10-07 to read this constant directly.
+export const ADMISSION_EARLY_BIRD_POOL_KEY = 'admission-early-bird';
+
+// Brad's ticket news, 2026-10-07 (verbatim): "No Daypass on thursday it VIP meet ht e
+// botoniosts and seperate cocktails tickets afterwards" — 2027-09-23 is the confirmed
+// Thursday of the 23-26 Sept 2027 show window (project memory
+// project_show_dates_placeholder.md). Shared by day-visitor and its early-bird sibling below
+// — one literal, not two independently hand-typed copies.
+const DAY_VISITOR_EXCLUDED_DAYS = ['2027-09-23'];
+
+const DAY_VISITOR_SOURCE_CITATION =
+  "Lee-Ann's sheet (relayed by Brad, 2026-10-07), line 23: '1 day Pass any day...(R150) " +
+  "Early Bird(R120 only 500 available) 1000 Total per day'; Brad's ticket news, 2026-10-07 " +
+  "(verbatim), message 6: '500 early bird day v[i]stor tickets, 3 day booking and 1 day " +
+  "book[ing] all count to 500', 'No Daypass on thursday', and 'Earlybird now ends after 500 " +
+  'tickets are sold not at a specific date\'. See .agent/memory/scratch/leeann-notes-2026-10-07.md ' +
+  'and .agent/memory/scratch/brad-ticket-news-2026-10-07.md.';
+
+// F2 (conference-workshop-tickets, M1) — Brad's ticket news, 2026-10-07 (verbatim), message
+// 6 supersedes VIP's prior 2026-09-08 direct ruling (R625 regular / R500 computed early-bird,
+// 120 capacity) — see the VIP entry's `sourceCitation` below for the explicit override
+// citation. VIP no longer carries any early-bird mechanism, so the engine-derived cutoff this
+// block used to compute (`VIP_EARLY_BIRD_CUTOFF`, `CONFIRMED_SHOW_START_2027`) is dead code
+// now; removed along with the now-unused `deriveAdmissionEarlyBirdCutoffIso` import.
 export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'early-bird',
-    name: 'Early-Bird Exhibition Ticket',
+    name: 'Day Visitor (Early Bird)',
+    // Slug/_id preserved for continuity with any already-issued order — this is the Day
+    // Visitor's own early-bird tier, re-shaped in place to the new pool-based mechanism
+    // (not a new slug, unlike weekend-pass-early-bird below).
     category: 'admission',
-    description: 'Single-day admission to the National Show during the early-bird window.',
-    price: 130,
-    capacity: 400,
-    releasedQuantity: 400,
-    earlyBirdCutoff: EARLY_BIRD_CUTOFF,
-    requiresDaySelection: false,
+    description: 'Single-day general admission to the National Show during the early-bird window — choose your day.',
+    price: 120,
+    capacity: ADMISSION_EARLY_BIRD_POOL_CAPACITY,
+    releasedQuantity: null,
+    earlyBirdCutoff: null,
+    capacityPool: ADMISSION_EARLY_BIRD_POOL_KEY,
+    headcountPerUnit: 1,
+    requiresDaySelection: true,
+    excludedDays: DAY_VISITOR_EXCLUDED_DAYS,
     requiresAttendeeNames: false,
     provisional: true,
+    sourceCitation: DAY_VISITOR_SOURCE_CITATION,
   },
   {
     slug: 'day-visitor',
@@ -106,12 +134,14 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     category: 'admission',
     description: 'Single-day general admission to the National Show — choose your day.',
     price: 150,
-    capacity: 800,
+    capacity: 1000,
     releasedQuantity: null,
     earlyBirdCutoff: null,
     requiresDaySelection: true,
+    excludedDays: DAY_VISITOR_EXCLUDED_DAYS,
     requiresAttendeeNames: false,
     provisional: true,
+    sourceCitation: DAY_VISITOR_SOURCE_CITATION,
   },
   {
     slug: 'weekend-pass',
@@ -119,144 +149,158 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
     category: 'admission',
     description: 'Full-weekend admission to the National Show.',
     price: 380,
-    regularPrice: 400,
+    regularPrice: null,
+    // Carried over unchanged from before the early-bird split — FLAGGED OPEN QUESTION, not
+    // assumed: before the split this capped BOTH price tiers combined on one SKU; Brad's
+    // message 6 does not say whether 300 still caps this regular-price product alone,
+    // independent of weekend-pass-early-bird's own 500-ticket pool. See needs-Brad.
     capacity: 300,
     releasedQuantity: null,
-    earlyBirdCutoff: EARLY_BIRD_CUTOFF,
+    earlyBirdCutoff: null,
+    capacityPool: null,
     requiresDaySelection: false,
     requiresAttendeeNames: false,
     provisional: true,
+    sourceCitation:
+      "Lee-Ann's sheet (relayed by Brad, 2026-10-07), line 22: '24-26 3 Day Weekend " +
+      "pass(R380) Early Bird(R360) 9h00 -17h00, except Sunday 9h00-15h00'; Brad's ticket " +
+      "news, 2026-10-07 (verbatim), message 6 moves the R360 early-bird price to the new " +
+      "weekend-pass-early-bird product and removes the date-cutoff mechanism from this slug " +
+      'entirely. Capacity (300) is carried over unchanged — not re-confirmed against the ' +
+      'split; see the capacity comment above. See .agent/memory/scratch/leeann-notes-2026-10-07.md ' +
+      'and .agent/memory/scratch/brad-ticket-news-2026-10-07.md.',
+  },
+  {
+    // F2 (conference-workshop-tickets, M1) — genuinely NEW product/SKU, not a renamed or
+    // recreated one. Required because a single SKU's own two-price-by-date shape cannot
+    // express "shared pool with a DIFFERENT product's sold count" — see
+    // goldens/f2-admission-evening-figures.golden.json "architectureChange_weekendPassSplit".
+    slug: 'weekend-pass-early-bird',
+    name: 'Weekend Pass (Early Bird)',
+    category: 'admission',
+    description: 'Full-weekend admission to the National Show at the early-bird price.',
+    price: 360,
+    regularPrice: null,
+    // Declares the FULL shared-pool ceiling, same convention as every other pool sibling in
+    // this file (sunset-cocktails-single/couple) — not a sub-allocation of the 500 for this
+    // slug alone. Shares `ADMISSION_EARLY_BIRD_POOL_KEY` with the 'early-bird' slug above —
+    // combined sold+reserved units across BOTH count against the one ceiling.
+    capacity: ADMISSION_EARLY_BIRD_POOL_CAPACITY,
+    releasedQuantity: null,
+    earlyBirdCutoff: null,
+    capacityPool: ADMISSION_EARLY_BIRD_POOL_KEY,
+    headcountPerUnit: 1,
+    requiresDaySelection: false,
+    requiresAttendeeNames: false,
+    provisional: true,
+    sourceCitation:
+      "Lee-Ann's sheet (relayed by Brad, 2026-10-07), line 22 (R360 price); Brad's ticket " +
+      "news, 2026-10-07 (verbatim), message 6: '500 early bird day v[i]stor tickets, 3 day " +
+      "booking and 1 day book[ing] all count to 500' and 'Earlybird now ends after 500 " +
+      'tickets are sold not at a specific date\'. See .agent/memory/scratch/leeann-notes-2026-10-07.md ' +
+      'and .agent/memory/scratch/brad-ticket-news-2026-10-07.md.',
   },
   {
     slug: 'vip',
     name: 'VIP Ticket',
     category: 'admission',
     description: 'Reception access plus full-weekend admission to the National Show.',
-    // F2 (ticketing-complete, M1) — Brad's DIRECT RULING (2026-09-08, not a council
-    // confirmation, but settled — see docs/ticketing-complete-f2-open-decisions.md §1 for
-    // the incoherent-ladder history this resolves): VIP is R625, with the standard 20%
-    // early-bird discount applying (625 * 0.8 = 500 exactly — see
-    // contracts/checks/ticketing-complete-f2/check-vip-computed-early-bird-price.mjs, which
-    // exercises the REAL lib/admission-early-bird-pricing.ts engine against this exact
-    // number rather than assuming the arithmetic). This resolves the prior incoherent
-    // ladder (VIP was priced below both Weekend Pass SKUs despite including the full
-    // weekend plus a reception) — R625 sits above the R400 Weekend Pass, and the
-    // discounted R500 still sits above both Weekend Pass SKUs (R380/R400).
-    price: 500,
-    regularPrice: 625,
-    earlyBirdCutoff: VIP_EARLY_BIRD_CUTOFF,
-    capacity: 120,
+    price: 300,
+    regularPrice: null,
+    earlyBirdCutoff: null,
+    capacity: 200,
     releasedQuantity: null,
     requiresDaySelection: false,
     requiresAttendeeNames: true,
-    // Settled, not provisional-pending-council — mislabelling a decided figure as awaiting
-    // council confirmation would be the same provenance-loss shape sourceCitation exists to
-    // prevent, one layer up. Also drops the data-placeholder treatment on this card (F2's
-    // TicketTypeCard change gates data-placeholder on `provisional`, so this alone removes
-    // it — no separate component change needed).
-    provisional: false,
-    sourceCitation: "Brad's direct ruling, 2026-09-08: VIP Pass R625, 20% early-bird discount applies (R500 early-bird).",
+    // Still carried as `provisional: true` — this is team-lead's working DEFAULT (2026-10-07,
+    // second pass), not a council-confirmed figure: the override itself remains on the
+    // needs-Brad list, shipped as the default rather than blocked on it.
+    provisional: true,
+    sourceCitation:
+      "OVERRIDE of Brad's direct ruling, 2026-09-08 (VIP Pass R625, 20% early-bird discount, " +
+      "R500 early-bird, 120 capacity) — superseded by Lee-Ann's sheet (relayed by Brad, " +
+      "2026-10-07), line 19: '23 VIP Thursday, Opening 3 Hours on thursday evening.(R300) " +
+      "16h00-19h00 Total # 200 total'. Team-lead's second-pass default (2026-10-07): " +
+      'implemented as the working figure; the override itself is not yet separately ' +
+      're-confirmed by Brad and remains on the needs-Brad list. See ' +
+      '.agent/memory/scratch/leeann-notes-2026-10-07.md.',
   },
 ];
 
 /**
- * F1 (ticketing-conferences-and-events, M1) — the six Conferences category products (SAOC
- * Symposium, WOSA Conference, SAOC/WOSA Joint, each Early-Bird/Normal). Reuses
- * `ProvisionalAdmissionProduct` verbatim rather than a second interface — see
- * contracts/golden/ticketing-conferences-f1/README.md for the full pricing/capacity
- * rationale (our estimate, no client source; Joint is priced as a genuine bundle discount).
+ * F1 (conference-workshop-tickets, M1) — the two Conferences category products (SAOC
+ * Symposium, WOSA Conference). Reuses `ProvisionalAdmissionProduct` verbatim rather than a
+ * second interface. UPDATED IN PLACE (same slug, same document identity) from the earlier
+ * ticketing-conferences-and-events (M1/F1) six-SKU differential-early-bird-price/joint-bundle
+ * design, per Brad's verbatim 2026-10-07 ticket news (messages 1, 3 and 6, see
+ * .agent/memory/scratch/brad-ticket-news-2026-10-07.md): message 3 confirms SAOC Symposium
+ * and WOSA Conference are separate products, each R2000 flat, 80 places; message 6 directly
+ * supersedes message 4's same-day 10-ticket scarcity-tranche idea — "No early bird for
+ * Symposiums and conferences" — so neither product carries ANY early-bird mechanism (no
+ * cutoff, no second price, no reduced-capacity tranche field of any kind).
+ *
+ * The four retired differential-price/joint-bundle SKUs this replaces are named in
+ * `RETIRED_CONFERENCE_SLUGS` below — never deleted (their Sanity documents are flipped
+ * `active: false` by a migration script, same convention as `RETIRED_FIELD_TRIP_SLUGS`), but
+ * no longer present in this live array.
  */
 
-const SYMPOSIUM_CONFERENCE_EARLY_BIRD_PRICE = 450;
-const SYMPOSIUM_CONFERENCE_NORMAL_PRICE = 550;
-const JOINT_EARLY_BIRD_PRICE = 750;
-const JOINT_NORMAL_PRICE = 900;
+const SYMPOSIUM_WOSA_PRICE = 2000;
+const SYMPOSIUM_WOSA_CAPACITY = 80;
 
-const SINGLE_TRACK_CAPACITY = 150;
-const JOINT_CAPACITY = 80;
+const SYMPOSIUM_WOSA_SOURCE_CITATION =
+  "Brad's ticket news, 2026-10-07 (verbatim), messages 1/3/6 — R2000 each, 80 tickets, " +
+  "separate products ('Each cost R2000 symposium and Confernec' -> separate products), no " +
+  "early-bird mechanism of any kind (message 6 directly answers and supersedes message 4's " +
+  "earlier same-day scarcity-tranche design: 'No early bird for Symposiums and confernec'). " +
+  'See .agent/memory/scratch/brad-ticket-news-2026-10-07.md.';
 
 export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
-  {
-    slug: 'saoc-symposium-early-bird',
-    name: 'SAOC Symposium (Early-Bird)',
-    category: 'conference',
-    description: 'Full registration for the SAOC Symposium track during the early-bird window.',
-    price: SYMPOSIUM_CONFERENCE_EARLY_BIRD_PRICE,
-    capacity: SINGLE_TRACK_CAPACITY,
-    releasedQuantity: SINGLE_TRACK_CAPACITY,
-    earlyBirdCutoff: EARLY_BIRD_CUTOFF,
-    requiresDaySelection: false,
-    requiresAttendeeNames: true,
-    provisional: true,
-  },
   {
     slug: 'saoc-symposium',
     name: 'SAOC Symposium',
     category: 'conference',
     description: 'Full registration for the SAOC Symposium track.',
-    price: SYMPOSIUM_CONFERENCE_NORMAL_PRICE,
-    capacity: SINGLE_TRACK_CAPACITY,
+    price: SYMPOSIUM_WOSA_PRICE,
+    capacity: SYMPOSIUM_WOSA_CAPACITY,
     releasedQuantity: null,
     earlyBirdCutoff: null,
     requiresDaySelection: false,
     requiresAttendeeNames: true,
     provisional: true,
-  },
-  {
-    slug: 'wosa-conference-early-bird',
-    name: 'WOSA Conference (Early-Bird)',
-    category: 'conference',
-    description: 'Full registration for the WOSA Conference track during the early-bird window.',
-    price: SYMPOSIUM_CONFERENCE_EARLY_BIRD_PRICE,
-    capacity: SINGLE_TRACK_CAPACITY,
-    releasedQuantity: SINGLE_TRACK_CAPACITY,
-    earlyBirdCutoff: EARLY_BIRD_CUTOFF,
-    requiresDaySelection: false,
-    requiresAttendeeNames: true,
-    provisional: true,
+    sourceCitation: SYMPOSIUM_WOSA_SOURCE_CITATION,
   },
   {
     slug: 'wosa-conference',
     name: 'WOSA Conference',
     category: 'conference',
     description: 'Full registration for the WOSA Conference track.',
-    price: SYMPOSIUM_CONFERENCE_NORMAL_PRICE,
-    capacity: SINGLE_TRACK_CAPACITY,
+    price: SYMPOSIUM_WOSA_PRICE,
+    capacity: SYMPOSIUM_WOSA_CAPACITY,
     releasedQuantity: null,
     earlyBirdCutoff: null,
     requiresDaySelection: false,
     requiresAttendeeNames: true,
     provisional: true,
-  },
-  {
-    slug: 'saoc-wosa-joint-early-bird',
-    name: 'SAOC/WOSA Joint (Early-Bird)',
-    category: 'conference',
-    description:
-      'Combined registration for both the SAOC Symposium and WOSA Conference tracks during ' +
-      'the early-bird window.',
-    price: JOINT_EARLY_BIRD_PRICE,
-    capacity: JOINT_CAPACITY,
-    releasedQuantity: JOINT_CAPACITY,
-    earlyBirdCutoff: EARLY_BIRD_CUTOFF,
-    requiresDaySelection: false,
-    requiresAttendeeNames: true,
-    provisional: true,
-  },
-  {
-    slug: 'saoc-wosa-joint',
-    name: 'SAOC/WOSA Joint',
-    category: 'conference',
-    description: 'Combined registration for both the SAOC Symposium and WOSA Conference tracks.',
-    price: JOINT_NORMAL_PRICE,
-    capacity: JOINT_CAPACITY,
-    releasedQuantity: null,
-    earlyBirdCutoff: null,
-    requiresDaySelection: false,
-    requiresAttendeeNames: true,
-    provisional: true,
+    sourceCitation: SYMPOSIUM_WOSA_SOURCE_CITATION,
   },
 ];
+
+/**
+ * F1 (conference-workshop-tickets, M1) — the four retired Conferences SKUs: the old
+ * differential early-bird/normal price pair for each of SAOC Symposium and WOSA Conference,
+ * plus the SAOC/WOSA joint bundle's own early-bird/normal pair. Retired for two independent
+ * reasons that both landed the same day — the joint bundle and the differential price were
+ * already gone per messages 3-4, and message 6 additionally forecloses re-deriving any
+ * differential price from them. Never deleted — a migration script sets `active: false` on
+ * the existing Sanity documents, same convention as `RETIRED_FIELD_TRIP_SLUGS`.
+ */
+export const RETIRED_CONFERENCE_SLUGS = [
+  'saoc-symposium-early-bird',
+  'wosa-conference-early-bird',
+  'saoc-wosa-joint-early-bird',
+  'saoc-wosa-joint',
+] as const;
 
 /**
  * F2 (ticketing-conferences-and-events, M1) — the priceable Workshops & Field Trips
@@ -358,24 +402,56 @@ export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [
 export const RETIRED_FIELD_TRIP_SLUGS = ['field-trip-single', 'field-trip-all-outings'] as const;
 
 /**
+ * F2 (conference-workshop-tickets, M1) — the Sunset Cocktails (Couple) SKU, retired
+ * (`active: false`, never deleted/renamed — see F3's migration script), same convention as
+ * `RETIRED_CONFERENCE_SLUGS`/`RETIRED_FIELD_TRIP_SLUGS`. Team-lead's second-pass default
+ * (2026-10-07): whether this tier should exist at all remains an open needs-Brad item —
+ * `active: false` is a working default, not a resolution. The product definition itself
+ * stays in `WORKSHOP_FIELD_TRIP_PRODUCTS` above (byte-identical, figures untouched) for any
+ * already-issued order's continuity; only the live Sanity document's `active` flag flips.
+ * Kept here, not in the migration script, so the retirement list has exactly one source of
+ * truth alongside the product it names.
+ */
+export const RETIRED_SUNSET_COCKTAILS_SLUGS = ['sunset-cocktails-couple'] as const;
+
+/**
  * F2 (ticketing-conferences-and-events, M1) — the Workshops per-session pricing STRUCTURE.
  * Deliberately NOT a `ProvisionalAdmissionProduct` (no `slug`, no `capacity`): no real workshop
  * session (name, date, capacity) is council-confirmed yet, so no fabricated sellable ticketType
  * document is created for it. See contracts/golden/ticketing-workshops-f2/README.md "The crux
  * decision" for why Workshops is structured differently from Sunset Cocktails and Field Trips.
+ *
+ * F1 (conference-workshop-tickets, M1) UPDATE (2026-10-07): the old 120-estimate (web-team
+ * guess, no client source) is superseded by Brad's real, direct, unambiguous figures —
+ * verbatim message 2: "Workshops R100 each. Total 10 Tickets per session full workshop
+ * schedule to follow." No early-bird concept for workshops appears in any of Brad's six
+ * messages. `WORKSHOP_SESSION_PRICE`/`WORKSHOP_SESSION_CAPACITY` are exported as their own
+ * named constants (not just inlined into the structure object below) so a future per-session
+ * ticketType seeder can import the real figures directly. Still structure-only: zero
+ * workshopSession/ticketType documents are seeded for any specific session, because the full
+ * schedule has not been supplied.
  */
 
-const WORKSHOP_ESTIMATED_SESSION_PRICE = 120;
+const WORKSHOP_SESSION_SOURCE_CITATION =
+  "Brad's ticket news, 2026-10-07 (verbatim), message 2: 'Workshops R100 each. Total 10 " +
+  "Tickets per session full workshop schedule to follow.' See " +
+  '.agent/memory/scratch/brad-ticket-news-2026-10-07.md.';
+
+export const WORKSHOP_SESSION_PRICE = 100;
+export const WORKSHOP_SESSION_CAPACITY = 10;
 
 export const WORKSHOP_PRICING_STRUCTURE = {
   model: 'per-session',
-  estimatedSessionPrice: WORKSHOP_ESTIMATED_SESSION_PRICE,
+  estimatedSessionPrice: WORKSHOP_SESSION_PRICE,
   note:
     'No real workshop session (name, date, capacity) is council-confirmed yet, so none is ' +
-    'instantiated as a sellable ticketType here. This price is a starting anchor for a human ' +
-    'to adjust per session once real sessions are defined — not a figure to transcribe ' +
-    'verbatim into every future workshop regardless of its actual content.',
-  provisional: true,
+    'instantiated as a sellable ticketType here. The price/capacity figures themselves are ' +
+    "real and settled (Brad's direct 2026-10-07 ruling, not an estimate) — this object " +
+    'remains a starting structure for a human to instantiate per session once real sessions ' +
+    'are defined, not a figure to transcribe verbatim into every future workshop regardless ' +
+    'of its actual content.',
+  provisional: false,
+  sourceCitation: WORKSHOP_SESSION_SOURCE_CITATION,
 } as const;
 
 /**

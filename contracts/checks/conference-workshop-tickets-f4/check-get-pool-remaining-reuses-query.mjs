@@ -1,0 +1,78 @@
+// F4 (conference-workshop-tickets, M2) — A18: getPoolRemaining() is exported from
+// lib/checkout-reservation.ts, takes {poolKeyBase, chosenDay, requiresDaySelection,
+// capacity, showId}, and composes resolveDayQualifiedPoolKey() with the SAME
+// getSoldCountsByTicketTypeAndDay()/getSoldCountsByTicketType() functions the checkout
+// transaction itself reads — not a third, independently-constructed query. The DEFAULT
+// (no injected deps) path is proven structurally against source text — see the golden's
+// check-authoring addendum for why an optional `deps` DI parameter exists at all (A19
+// uses it; production call sites never pass it, so the DEFAULT path is what must prove
+// the real reuse).
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REL_PATH = 'lib/checkout-reservation.ts';
+const absPath = path.join(__dirname, '../../../', REL_PATH);
+
+const failures = [];
+let source;
+try {
+  source = readFileSync(absPath, 'utf8');
+} catch (error) {
+  console.error('FAIL: check-get-pool-remaining-reuses-query.mjs');
+  console.error(`  - could not read ${REL_PATH}: ${error.message}`);
+  process.exit(1);
+}
+
+const signatureMatch = source.match(/export\s+async\s+function\s+getPoolRemaining\s*\(([\s\S]*?)\)\s*:/);
+if (!signatureMatch) {
+  console.error('FAIL: check-get-pool-remaining-reuses-query.mjs');
+  console.error(`  - ${REL_PATH} does not export an async function getPoolRemaining(...)`);
+  process.exit(1);
+}
+
+const params = signatureMatch[1];
+for (const name of ['poolKeyBase', 'chosenDay', 'requiresDaySelection', 'capacity', 'showId']) {
+  if (!new RegExp(name).test(params)) failures.push(`signature does not name a ${name} parameter`);
+}
+
+const fnStart = signatureMatch.index;
+const braceOpenIdx = source.indexOf('{', fnStart + signatureMatch[0].length - 1);
+let depth = 0;
+let closeIdx = -1;
+for (let i = braceOpenIdx; i < source.length; i++) {
+  if (source[i] === '{') depth++;
+  else if (source[i] === '}') {
+    depth--;
+    if (depth === 0) {
+      closeIdx = i;
+      break;
+    }
+  }
+}
+const body = closeIdx === -1 ? '' : source.slice(braceOpenIdx, closeIdx + 1);
+
+if (closeIdx === -1) {
+  failures.push('could not find a balanced closing brace for getPoolRemaining() — unbalanced braces?');
+} else {
+  if (!/resolveDayQualifiedPoolKey\s*\(/.test(body)) {
+    failures.push('function body never calls resolveDayQualifiedPoolKey( — must compose with A1\'s helper, not re-derive the key itself');
+  }
+  if (!/getSoldCountsByTicketTypeAndDay/.test(body)) {
+    failures.push('function body never references getSoldCountsByTicketTypeAndDay — must reuse it for the day-qualified branch');
+  }
+  if (!/getSoldCountsByTicketType\b/.test(body)) {
+    failures.push('function body never references getSoldCountsByTicketType — must reuse it for the unqualified branch');
+  }
+  if (/\.collection\s*\(\s*['"`]tickets['"`]\s*\)/.test(body)) {
+    failures.push('function body queries the tickets collection directly — it must delegate to the two existing sold-count functions, never build a third, independent query');
+  }
+}
+
+if (failures.length > 0) {
+  console.error('FAIL: check-get-pool-remaining-reuses-query.mjs');
+  for (const f of failures) console.error(`  - ${f}`);
+  process.exit(1);
+}
+console.log('PASS: getPoolRemaining() composes resolveDayQualifiedPoolKey() with the two existing sold-count functions, never a third query.');

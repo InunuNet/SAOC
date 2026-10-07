@@ -1918,3 +1918,11 @@ unparseable contracts" above.)
 > Truncated 3 items at trim time (2026-10-03). Restore from git history if needed.
 > Truncated 1 items at trim time (2026-10-06). Restore from git history if needed.
 > Truncated 2 items at trim time (2026-10-06). Restore from git history if needed.
+
+- [ ] (2026-10-07, from saoc-nos-design-f1 page capture) `/national-show/vendors/payment` with no token shows a bare "This payment link is no longer valid" — correct behaviour, reads as broken. Needs a friendlier empty state with a route back; copy must be sourced (Lee-Ann/Brad) per no-invention, not drafted. Pattern: NOS rulings R18 (heading + one factual sentence + route back e.g. "Back to vendors" + contact link; never a void/placeholder) and R11 ("To be confirmed" chip on unconfirmed sentences); reuse the empty-state component arriving in the NOS ticket handoff (F7).
+
+- [ ] (2026-10-07, QA F1 conference-workshop-tickets) Three pre-existing contract checks are stale and FAIL on HEAD independent of current work (hardcoded catalogue counts from an older snapshot): `contracts/checks/ticketing-purchase-pages-f3/check-category-assignment.mjs`, `contracts/checks/ticketing-purchase-pages-f3/check-seed-category-field.mjs`, `contracts/checks/ticketing-conferences-and-events-f5/check-pool-data-invariant.mjs`. Update to read counts from the live exports, or retire with a note in their closed missions.
+
+- [ ] (2026-10-07, found by @architect during conference-workshop-tickets) Pre-existing: `contracts/checks/payfast-m1/*` checks that import `app/api/tickets/itn/route.ts` via tsx register fail with `Cannot find module '@/lib/payments/payfast'` — the `@/` path alias isn't resolved under the plain-node + tsx register() pattern. Reproduced on UNMODIFIED checks. Fix: resolve tsconfig paths in the check harness (e.g. tsconfig-paths / tsx tsconfig option) so those gates are real again.
+
+- [ ] (2026-10-07, F2 conference-workshop-tickets) `scripts/fix-vip-and-weekend-pass-pricing.ts` (manual --apply one-off) is now stale: it plans weekend-pass early-bird cutoff values, but weekend-pass.earlyBirdCutoff is intentionally null after the EB SKU split. Retire or update before anyone runs it with --apply.

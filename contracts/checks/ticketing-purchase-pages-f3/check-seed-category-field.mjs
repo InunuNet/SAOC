@@ -34,6 +34,8 @@ import {
   ADMISSION_PRODUCTS,
   CONFERENCE_PRODUCTS,
   WORKSHOP_FIELD_TRIP_PRODUCTS,
+  RETIRED_CONFERENCE_SLUGS,
+  RETIRED_FIELD_TRIP_SLUGS,
 } from '../../../lib/provisional-figures.ts';
 
 const failures = [];
@@ -69,8 +71,29 @@ const ALL_PRODUCTS = [
   ...WORKSHOP_FIELD_TRIP_PRODUCTS.map((p) => ({ groupName: 'WORKSHOP_FIELD_TRIP_PRODUCTS', product: p })),
 ];
 
-if (ALL_PRODUCTS.length !== 15) {
-  failures.push(`expected 15 total products across the three arrays, got ${ALL_PRODUCTS.length}`);
+// Codex GPT-5.5 cross-model review (conference-workshop-tickets M1/F1, 2026-10-07): the
+// literal `15` here was a point-in-time snapshot that goes stale the moment any of the three
+// live arrays legitimately changes size (an earlier, never-reconciled retirement had already
+// dropped the real total to 9 before F1 touched anything). Derive the expected total from the
+// three live arrays' own lengths instead — still catches a real bug in THIS script's own
+// `ALL_PRODUCTS` spread (e.g. an array omitted or doubled), just no longer catches "a feature
+// did its retirement bookkeeping correctly" as if it were a defect.
+const EXPECTED_TOTAL = ADMISSION_PRODUCTS.length + CONFERENCE_PRODUCTS.length + WORKSHOP_FIELD_TRIP_PRODUCTS.length;
+if (ALL_PRODUCTS.length !== EXPECTED_TOTAL) {
+  failures.push(
+    `expected ${EXPECTED_TOTAL} total products (sum of the three live arrays), got ${ALL_PRODUCTS.length}`
+  );
+}
+
+// The retired-slug lists are the OTHER half of "derive, don't snapshot": a retired slug must
+// never resurface in the seed path, built from a doc whose `category` would otherwise look
+// perfectly correct while seeding a product that should no longer exist.
+const retiredSlugSet = new Set([...(RETIRED_CONFERENCE_SLUGS ?? []), ...(RETIRED_FIELD_TRIP_SLUGS ?? [])]);
+const resurrectedInSeed = ALL_PRODUCTS.filter(({ product }) => retiredSlugSet.has(product.slug));
+if (resurrectedInSeed.length > 0) {
+  failures.push(
+    `retired slug(s) present in the seed path: ${JSON.stringify(resurrectedInSeed.map((r) => r.product.slug))}`
+  );
 }
 
 ALL_PRODUCTS.forEach(({ groupName, product }, index) => {
@@ -114,4 +137,7 @@ if (failures.length > 0) {
   for (const f of failures) console.error(`  - ${f}`);
   process.exit(1);
 }
-console.log('PASS: scripts/seed-ticketing.ts writes the correct category field onto all 15 built docs.');
+console.log(
+  `PASS: scripts/seed-ticketing.ts writes the correct category field onto all ${ALL_PRODUCTS.length} ` +
+    'built docs, with no retired slug resurrected into the seed path.'
+);

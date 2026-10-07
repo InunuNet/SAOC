@@ -1,0 +1,76 @@
+schema: athanor.contract/v1
+slug: conference-workshop-tickets
+goal: >
+  Pure pricing/capacity figures for SAOC Symposium, WOSA Conference and Workshop sessions
+  per Brad's verbatim 2026-10-07 ticket news, messages 1-6. REVISED (same day, message 6)
+  to drop early-bird entirely for Symposium/WOSA: "No early bird for Symposiums and
+  conferences" directly supersedes this feature's earlier 10-ticket scarcity-tranche
+  design. Update lib/provisional-figures.ts in place: SAOC Symposium and WOSA Conference
+  each become ONE flat-R2000, 80-capacity product with NO early-bird field, mechanism, or
+  display (document identity/slug UNCHANGED so any already-issued order stays valid).
+  Retire the old differential early-bird-price SKUs and the SAOC/WOSA joint bundle
+  (active:false, never deleted) via RETIRED_CONFERENCE_SLUGS. Add real, Brad-sourced
+  WORKSHOP_SESSION_PRICE (100) / WORKSHOP_SESSION_CAPACITY (10) constants, superseding the
+  old 120-estimate, while leaving sunset-cocktails-single/couple and field-trip untouched.
+  Keep one new pure export, computeEarlyBirdRemaining(poolSize, soldCount) — generic, never
+  negative, null-passthrough — with TWO real consumers: F4's shared admission early-bird
+  pool (poolSize=500) and F6's per-event conference-seats-remaining data (poolSize=80, one
+  call per saoc-symposium/wosa-conference) — an honest "N of 80 places left" figure, now
+  built as real DATA per team-lead's correction (2026-10-07, second pass), superseding the
+  prior revision's "flagged, not built" posture. No styled visual component is built in
+  this feature or this mission — that is F7, blocked on the NOS design handoff.
+created_at: '2026-10-07'
+autonomy: high
+features:
+  - id: F1
+    name: Symposium/WOSA/workshop figures (no early bird) + computeEarlyBirdRemaining pure engine
+    status: pending
+goldens:
+  - .agent/memory/project/specs/conference-workshop-tickets/goldens/f1-provisional-figures.golden.json
+  - .agent/memory/project/specs/conference-workshop-tickets/goldens/f1-early-bird-remaining-cases.json
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: earlyBirdTrancheSize is NOT present anywhere in lib/provisional-figures.ts — message 6 dropped the concept entirely, not just its value
+      command: "! grep -q \"earlyBirdTrancheSize\" lib/provisional-figures.ts"
+
+    - id: A2
+      description: RETIRED_CONFERENCE_SLUGS export exists, naming the four retired SKUs
+      command: grep -q "RETIRED_CONFERENCE_SLUGS" lib/provisional-figures.ts
+
+    - id: A3
+      description: All four retired slugs are named verbatim in the retirement export
+      command: node contracts/checks/conference-workshop-tickets-f1/check-retired-conference-slugs.mjs
+
+    - id: A4
+      description: saoc-symposium and wosa-conference carry the exact new shape (price 2000, capacity 80, earlyBirdCutoff null, no tranche field, sourceCitation set) per the f1 golden
+      command: node contracts/checks/conference-workshop-tickets-f1/check-symposium-wosa-figures.mjs
+
+    - id: A5
+      description: WORKSHOP_SESSION_PRICE (100) and WORKSHOP_SESSION_CAPACITY (10) exist, sourced to Brad, and WORKSHOP_FIELD_TRIP_PRODUCTS (sunset-cocktails-single/couple, field-trip) is byte-unchanged
+      command: node contracts/checks/conference-workshop-tickets-f1/check-workshop-session-pricing.mjs
+
+    - id: A6
+      description: computeEarlyBirdRemaining matches every fixture case in the f1 golden, including the never-negative clamp and the null-pool passthrough
+      command: node contracts/checks/conference-workshop-tickets-f1/check-early-bird-remaining-fixtures.mjs
+
+    - id: A7
+      description: computeEarlyBirdRemaining's own function body is pure — no Date.now, no await, no Firestore import, no network call within the function
+      command: "! grep -A8 \"function computeEarlyBirdRemaining\" lib/checkout-reservation.ts | grep -qE \"Date\\.now|Firestore|await|fetch\\(\""
+
+    - id: A8
+      description: no silent fabricated discount — the symposium/WOSA early-bird SKUs from the OLD model (differential 450/550 price) are gone from the live, non-retired product list
+      command: node contracts/checks/conference-workshop-tickets-f1/check-no-differential-early-bird-price.mjs
+
+    - id: A9
+      description: this feature itself ships zero UI/view-model code — computeEarlyBirdRemaining is pure data infrastructure only; F6 wires it into a view-model, F7 (blocked) styles it
+      command: "! grep -rlqE \"EarlyBirdRemainingCounter|TicketCardViewModel|data-early-bird-state\" lib/provisional-figures.ts"
+
+    - id: A10
+      description: lib/provisional-figures.ts and the new pure export both still import with zero network/env dependency (type-check only, no Sanity/firebase-admin pulled in by the new code)
+      command: npx tsc --noEmit
+
+    - id: A11
+      description: existing admission/conference/workshop contract checks from prior missions still pass against the updated file (no regression to ADMISSION_PRODUCTS or WORKSHOP_FIELD_TRIP_PRODUCTS shape)
+      command: node --import tsx/esm -e "import('./lib/provisional-figures.ts').then(m => { if (m.WORKSHOP_FIELD_TRIP_PRODUCTS.length !== 3) throw new Error('WORKSHOP_FIELD_TRIP_PRODUCTS count changed'); })"

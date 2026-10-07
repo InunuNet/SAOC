@@ -1,28 +1,32 @@
-// F2 (ticketing-complete, M1) — proves Brad's VIP ruling (2026-09-08: R625 regular, 20%
-// early-bird discount applies, computing to R500) is exercised by the REAL, contract-locked
-// computed pricing engine (lib/admission-early-bird-pricing.ts, F1 of this mission — NOT
-// modified here, only imported and called) rather than assumed arithmetic. F1's whole point
-// is that the discount is COMPUTED, not stored twice by hand — this check is what makes that
-// true for VIP specifically, not just documented as true.
+// F2 (ticketing-complete, M1) ORIGINAL — proved Brad's 2026-09-08 VIP ruling (R625 regular,
+// 20% early-bird discount, R500 early-bird) was exercised by the real computed-discount
+// engine (lib/admission-early-bird-pricing.ts) rather than assumed arithmetic.
 //
-// THE PROPERTY THIS PROVES
-// resolveComputedEarlyBirdPrice({ basePrice: 625, purchaseDate: <inside the real 90-day
-// window>, showStartDate: <the real live show-19-2027 start> }) must return
-// { amount: 500, tier: 'earlyBird' }, and the same basePrice with a purchaseDate just outside
-// the window must return { amount: 625, tier: 'regular' }. Uses the EXACT real show start
-// instant from goldens/fixtures/f1-pricing-boundary-cases.json
-// (showStartDateIso: '2027-09-23T07:00:00Z', i.e. 2027-09-23T09:00:00+02:00) and boundary
-// instants from that same fixture's own cases, rather than inventing new dates — this is the
-// real cutoff (2027-06-25T00:00:00+02:00), not a stand-in.
+// SUPERSEDED (conference-workshop-tickets, M1/F2, 2026-10-07) — Brad's ticket news, verbatim,
+// message 6 (.agent/memory/scratch/brad-ticket-news-2026-10-07.md) and Lee-Ann's sheet, line
+// 19 (.agent/memory/scratch/leeann-notes-2026-10-07.md: "23 VIP Thursday, Opening 3 Hours on
+// thursday evening.(R300) 16h00-19h00 Total # 200 total") replace the 2026-09-08 ruling with
+// a flat R300 figure and drop the early-bird tier entirely — VIP now carries no
+// `regularPrice` and no `earlyBirdCutoff` at all. This check now proves the OPPOSITE
+// property it originally did: no purchase date can ever change VIP's price.
 //
-// Also sanity-checks the ladder ordering Brad's ruling was meant to fix: VIP's regular price
-// (625) sits above Weekend Pass's regular price (400), and VIP's early-bird price (500)
-// still sits above BOTH Weekend Pass SKUs (380 early-bird / 400 regular) — reading the real
-// values from lib/provisional-figures.ts, not hardcoded twice.
+// WHY resolveEffectivePrice(), NOT resolveComputedEarlyBirdPrice()
+// `resolveComputedEarlyBirdPrice()` (lib/admission-early-bird-pricing.ts) is never called by
+// any live route in the app (confirmed by `grep -rl resolveComputedEarlyBirdPrice` across
+// app/**, lib/**, components/** finding only its own defining file) — it was a correctness
+// check on the ARITHMETIC, not the deployed mechanism. The real runtime price-resolution
+// function every checkout path actually calls is `resolveEffectivePrice()`
+// (lib/checkout-reservation.ts, imported by app/api/tickets/checkout/route.ts). This check
+// now exercises THAT function directly, proving VIP's stored shape makes it return the same
+// flat price regardless of `now` — the real mechanism, not a stand-in.
+//
+// NEGATIVE CONTROL: reverting VIP's `earlyBirdCutoff`/`regularPrice` to any non-null value
+// must turn this check RED (the probe-dates loop would then find at least one `now` where
+// resolveEffectivePrice() returns something other than the flat price).
 //
 // Run as: npx tsx contracts/checks/ticketing-complete-f2/check-vip-computed-early-bird-price.mjs
 
-import { resolveComputedEarlyBirdPrice } from '../../../lib/admission-early-bird-pricing.ts';
+import { resolveEffectivePrice } from '../../../lib/checkout-reservation.ts';
 import { ADMISSION_PRODUCTS } from '../../../lib/provisional-figures.ts';
 
 const failures = [];
@@ -34,82 +38,51 @@ if (!vip) {
   process.exit(1);
 }
 
-// The real live show-19-2027 start instant, matching
-// goldens/fixtures/f1-pricing-boundary-cases.json's showStartDateIso verbatim.
-const SHOW_START_DATE = new Date('2027-09-23T07:00:00Z');
+if (vip.regularPrice !== undefined && vip.regularPrice !== null) {
+  failures.push(`vip.regularPrice is ${JSON.stringify(vip.regularPrice)}, expected null/unset — no early-bird tier`);
+}
+if (vip.earlyBirdCutoff !== null) {
+  failures.push(`vip.earlyBirdCutoff is ${JSON.stringify(vip.earlyBirdCutoff)}, expected null — no date-based mechanism`);
+}
+if (vip.price !== 300) {
+  failures.push(`vip.price is ${JSON.stringify(vip.price)}, expected 300`);
+}
 
-// Two of the SAME boundary instants that fixture already golden-tests against the engine
-// for other products (early-bird admission ticket) — reused here for VIP specifically.
-const INSIDE_WINDOW_PURCHASE_DATE = new Date('2027-06-25T00:00:00+02:00'); // exactly on cutoff
-const OUTSIDE_WINDOW_PURCHASE_DATE = new Date('2027-06-26T08:00:00+02:00'); // one day past cutoff
-
-if (typeof vip.regularPrice !== 'number') {
-  failures.push(`vip.regularPrice is ${JSON.stringify(vip.regularPrice)} — expected a number (625)`);
-} else {
-  const insideResult = resolveComputedEarlyBirdPrice({
-    basePrice: vip.regularPrice,
-    purchaseDate: INSIDE_WINDOW_PURCHASE_DATE,
-    showStartDate: SHOW_START_DATE,
+// Three purchase dates spanning years either side of the show — including the OLD, now-
+// irrelevant 90-day cutoff instant this check used to probe — must all resolve to the SAME
+// flat price via the REAL runtime function. Proves no date can ever flip VIP onto a second
+// tier, rather than just asserting the stored fields look right.
+const PROBE_DATES = [
+  new Date('2020-01-01T00:00:00Z'),
+  new Date('2027-06-25T00:00:00+02:00'),
+  new Date('2030-12-31T00:00:00Z'),
+];
+for (const now of PROBE_DATES) {
+  const resolved = resolveEffectivePrice({
+    price: vip.price,
+    regularPrice: vip.regularPrice ?? null,
+    earlyBirdCutoff: vip.earlyBirdCutoff,
+    now,
   });
-  if (insideResult.amount !== 500 || insideResult.tier !== 'earlyBird') {
+  if (resolved !== vip.price) {
     failures.push(
-      `inside-window: resolveComputedEarlyBirdPrice(basePrice=${vip.regularPrice}) returned ` +
-        `${JSON.stringify(insideResult)}, expected { amount: 500, tier: 'earlyBird' }`
-    );
-  }
-
-  const outsideResult = resolveComputedEarlyBirdPrice({
-    basePrice: vip.regularPrice,
-    purchaseDate: OUTSIDE_WINDOW_PURCHASE_DATE,
-    showStartDate: SHOW_START_DATE,
-  });
-  if (outsideResult.amount !== 625 || outsideResult.tier !== 'regular') {
-    failures.push(
-      `outside-window: resolveComputedEarlyBirdPrice(basePrice=${vip.regularPrice}) returned ` +
-        `${JSON.stringify(outsideResult)}, expected { amount: 625, tier: 'regular' }`
+      `resolveEffectivePrice() at ${now.toISOString()} returned ${JSON.stringify(resolved)}, expected the flat ` +
+        `price ${vip.price} — a purchase date is still able to change VIP's price`
     );
   }
 }
 
-// vip.price is the STORED early-bird price this file's other consumers (the live /tickets
-// page today) read directly — it must agree with what the COMPUTED engine independently
-// derives from regularPrice, or the two pricing models have silently diverged.
-if (vip.price !== 500) {
-  failures.push(`vip.price (stored early-bird price) is ${vip.price}, expected 500 to match the computed engine's result`);
-}
-
-// Ladder ordering sanity check (Brad's stated reason for the ruling): VIP now sits above
-// Weekend Pass in both tiers.
-const weekendPass = ADMISSION_PRODUCTS.find((p) => p.slug === 'weekend-pass');
-if (!weekendPass) {
-  failures.push("no 'weekend-pass' entry in ADMISSION_PRODUCTS to compare against");
-} else {
-  if (!(vip.regularPrice > weekendPass.regularPrice)) {
-    failures.push(
-      `VIP regular (${vip.regularPrice}) does not sit above Weekend Pass regular ` +
-        `(${weekendPass.regularPrice}) — the ladder is still incoherent`
-    );
-  }
-  if (!(vip.price > weekendPass.price)) {
-    failures.push(
-      `VIP early-bird (${vip.price}) does not sit above Weekend Pass early-bird ` +
-        `(${weekendPass.price}) — the ladder is still incoherent`
-    );
-  }
-  if (!(vip.price > weekendPass.regularPrice)) {
-    failures.push(
-      `VIP early-bird (${vip.price}) does not sit above Weekend Pass regular ` +
-        `(${weekendPass.regularPrice}) — the ladder is still incoherent`
-    );
-  }
-}
-
-// Settled figures are never mislabelled as pending council confirmation.
-if (vip.provisional !== false) {
-  failures.push(`vip.provisional is ${JSON.stringify(vip.provisional)}, expected false — this is a settled ruling, not a guess`);
-}
-if (!vip.sourceCitation || !/brad/i.test(vip.sourceCitation)) {
-  failures.push(`vip.sourceCitation is ${JSON.stringify(vip.sourceCitation)} — expected it to cite Brad's ruling`);
+// VIP's current figure is an explicit OVERRIDE of the superseded 2026-09-08 ruling, not a
+// silent replacement — the citation must still name what it overrides.
+if (
+  typeof vip.sourceCitation !== 'string' ||
+  !/override/i.test(vip.sourceCitation) ||
+  !/2026-09-08/.test(vip.sourceCitation)
+) {
+  failures.push(
+    `vip.sourceCitation is ${JSON.stringify(vip.sourceCitation)} — expected it to explicitly name this as an ` +
+      'override of the 2026-09-08 ruling'
+  );
 }
 
 if (failures.length > 0) {
@@ -118,7 +91,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 console.log(
-  "PASS: VIP's R625/R500 pricing is exercised by the real computed early-bird engine, the " +
-    'stored figures agree with it, the ladder ordering is coherent, and the figure is ' +
-    "correctly marked settled (not provisional) with Brad's ruling cited."
+  'PASS: VIP carries no regularPrice/earlyBirdCutoff, resolveEffectivePrice() (the real ' +
+    'runtime mechanism) returns the flat R300 price for every probed purchase date, and the ' +
+    "override of Brad's 2026-09-08 ruling is explicitly cited."
 );

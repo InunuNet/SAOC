@@ -1,0 +1,28 @@
+{
+  "_comment": "F1 golden fixtures for the new pure export lib/checkout-reservation.ts#computeEarlyBirdRemaining(poolSize, soldCount) — a GENERIC pool-remainder calculator, deliberately not named 'tranche' in its parameters so the same function serves any 'N of X left' display. Message 6 (2026-10-07) removed this function's originally-intended consumer (Symposium/WOSA's 10-ticket tranche, dropped entirely — see F1 figures golden). Team-lead's second-pass correction gives it TWO real, live consumers within this mission: (1) F4's shared 500-ticket admission early-bird pool (weekend-pass-early-bird + the day-visitor early-bird slug, combined, poolSize=500) and (2) F6's per-event conference-seats-remaining data (poolSize=80, one call per saoc-symposium/wosa-conference). Both are real DATA consumers (F6's TicketCardViewModel.scarcity); NEITHER gets a styled visual component in this mission — that is F7, blocked on the NOS design handoff. Must read 'real sold plus active-reserved counts' (soldCount here is the caller's getSoldCountsByTicketType()-equivalent result, which already aggregates reserved+paid with lazy expiry) and never go negative, never be faked.",
+  "cases": [
+    { "name": "none sold yet", "trancheSize": 10, "soldCount": 0, "expected": 10 },
+    { "name": "partway through tranche", "trancheSize": 10, "soldCount": 7, "expected": 3 },
+    { "name": "exactly sold out of the tranche", "trancheSize": 10, "soldCount": 10, "expected": 0 },
+    {
+      "name": "oversold past the tranche (still selling at regular status, capacity 80 not yet hit) — must clamp at 0, never negative",
+      "trancheSize": 10,
+      "soldCount": 37,
+      "expected": 0
+    },
+    {
+      "name": "no tranche tracked for this product (e.g. a product with no early-bird concept) — passthrough null, not 0",
+      "trancheSize": null,
+      "soldCount": 5,
+      "expected": null
+    },
+    {
+      "name": "tranche unset (undefined) behaves identically to null",
+      "trancheSize": null,
+      "soldCountFromUndefinedTranche": true,
+      "soldCount": 0,
+      "expected": null
+    }
+  ],
+  "purityRequirement": "The function must be pure: no Date.now(), no await, no Firestore/firebase-admin import, no network — verified structurally by contract-f1 A6 (greps the function body for forbidden tokens), not just by these value fixtures."
+}
