@@ -872,9 +872,13 @@ flat-over-nested-submenu pattern.
   --max-time 10 "${origin}${path_tested}"`) has no credential option at all, so it gets HTTP 401
   against a password-walled beta the instant this mission ships — breaking the live re-check leg
   of EVERY `browser_deployed_check` triad assertion across this whole project, not just this
-  mission's own. Workaround until upstream fixes it: export `BETA_BASIC_AUTH_USER`/
-  `BETA_BASIC_AUTH_PASSWORD` into the gate-running shell's environment before running any gate
-  that invokes this script against beta. Not patched locally per `.claude/rules/athanor.md`.
+  mission's own. Not patched locally per `.claude/rules/athanor.md`.
+  **Workaround (verified 2026-10-07, F4 A22 went FAIL→PASS):** exporting the env vars does
+  NOTHING — the bare curl never reads them. curl DOES read `$CURL_HOME/.curlrc`, so: write
+  `user = "<USER>:<PASSWORD>"` (values from `.env.local`, never echoed) to the gitignored,
+  mode-600 `.tmp/sandbox/curlhome/.curlrc`, then run the gate with
+  `CURL_HOME=/Users/vetus/ai/SAOC/.tmp/sandbox/curlhome`. The re-check then genuinely
+  authenticates and verifies a real 2xx. Manifests must also record the current HEAD SHA.
 
 ---
 

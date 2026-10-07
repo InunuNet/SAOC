@@ -2,9 +2,9 @@
   "origin": "https://beta.saoc.co.za",
   "path_tested": "/national-show/tickets",
   "screenshot_path": "fixtures/f3-a27-tickets-smoke-screenshot.png",
-  "commit_sha": "661f0935d0c476353504c133bb4e4d413784bd52",
-  "timestamp": "2026-10-07T01:56:37.472Z",
+  "commit_sha": "08b7b8d9cc5d08dad76e1ba644b81ed781359d4e",
+  "timestamp": "2026-10-07T03:58:37.778Z",
   "http_status": 200,
   "outcome": "pass",
-  "notes": "A27: /national-show/tickets renders 2xx post-F3 (thin smoke check only — the R2000/provisional-marker content claim moved to F6/F7, where that UI ships). NOTE: execution/browser_deployed_check.sh verification of this manifest will still FAIL independently of this render proof — its own live re-check sends no Basic Auth header and the beta wall gates this path 401 — tracked as InunuNet/Athanor#1459. See this script's header comment and .agent/memory/project/backlog.md (2026-10-07 entry)."
+  "notes": "A27: /national-show/tickets renders 2xx post-F3 (thin smoke check only — the R2000/provisional-marker content claim moved to F6/F7, where that UI ships). Regenerated 2026-10-07 to record HEAD 08b7b8d9 (M2/F4 build-break fix) — commit_sha above is HEAD, not the prior stale 661f0935. Deployed-build identity independently confirmed via the Firebase App Hosting + Cloud Run control-plane cross-check (same method as contracts/checks/f2-deploy-next16/build-identity-deployed.mjs, also just used for F4's A22): App Hosting traffic names build build-2026-10-07-003 at 100%, Cloud Run's latestReadyRevision agrees, and that build's source.codebase.hash is 08b7b8d9cc5d08dad76e1ba644b81ed781359d4e exactly — a live signal from the serving infrastructure itself, not just this render's 200. NOTE: execution/browser_deployed_check.sh verification of this manifest will still FAIL independently of this render proof — its own live re-check sends no Basic Auth header and the beta wall gates this path 401 — tracked as InunuNet/Athanor#1459 (team-lead reports a gitignored CURL_HOME/.curlrc workaround now makes this pass for F4's A22; not yet re-verified here for A27). See this script's header comment and .agent/memory/project/backlog.md (2026-10-07 entry)."
 }
