@@ -6,6 +6,7 @@ import {
   aggregateRequestedQuantities,
   buildMultiReservationDocs,
   effectiveCapacity,
+  isChosenDayExcluded,
   isNamedAttendeeSatisfied,
   lineItemsMatchExistingPositions,
   planPooledCapacity,
@@ -114,6 +115,9 @@ interface SanityTicketType {
   // the same reason as every other field above, Sanity does not enforce types at the API level.
   capacityPool: unknown;
   headcountPerUnit: unknown;
+  // F3 (conference-workshop-tickets, M2): optional day-exclusion list — unknown for the same
+  // reason as every other field above.
+  excludedDays: unknown;
 }
 
 // F1 (ticketing-foundation): the currently sellable `show`, per resolveActiveShow()'s
@@ -204,6 +208,16 @@ function isUsableHeadcountPerUnit(value: unknown): value is number | null {
   return typeof value === 'number' && Number.isInteger(value) && value >= 1;
 }
 
+// F3 (conference-workshop-tickets, M2): `excludedDays` is optional — null/undefined means no
+// exclusion (the "optional, defaults to no exclusion" invariant). Same
+// fail-closed-on-garbage, typeof-load-bearing-twice posture as its sibling isUsableX
+// validators above: a non-array, or an array containing a non-string, is unusable rather than
+// silently coerced.
+function isUsableExcludedDays(value: unknown): value is string[] | null {
+  if (value === null || value === undefined) return true;
+  return Array.isArray(value) && value.every((entry) => typeof entry === 'string');
+}
+
 /**
  * 500, not 400: the request was well-formed and the CMS document is misconfigured, so a
  * 4xx would tell the buyer to fix something they cannot see.
@@ -220,6 +234,7 @@ function unusableTicketType(
     | 'showWindow'
     | 'capacityPool'
     | 'headcountPerUnit'
+    | 'excludedDays'
 ): NextResponse {
   console.error(
     `[tickets/checkout] ticketType '${slug}' has an unusable ${field}; refusing before any Firestore write.`
@@ -509,6 +524,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // (a line item's own chosenDay is what's being validated, not the type as a whole).
   const requiresDaySelectionByType: Record<string, boolean> = {};
   const requiresAttendeeNamesByType: Record<string, boolean> = {};
+  // F3 (conference-workshop-tickets, M2): per-type exclusion list, same population pattern as
+  // requiresDaySelectionByType/requiresAttendeeNamesByType above — enforced per LINE item below.
+  const excludedDaysByType: Record<string, string[]> = {};
   // F5 (ticketing-conferences-and-events, M2): capacityByType below is now keyed by resolved
   // POOL KEY (capacityPool ?? slug), not always by slug — see
   // goldens/f5-checkout.golden.md "Route.ts wiring".
@@ -541,6 +559,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       earlyBirdCutoff,
       capacityPool,
       headcountPerUnit,
+      excludedDays,
     } = ticketTypeDoc;
     if (!isUsableCapacity(capacity)) return unusableTicketType(slug, 'capacity');
     if (!isUsableAmount(price)) return unusableTicketType(slug, 'price');
@@ -560,6 +579,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (!isUsableHeadcountPerUnit(headcountPerUnit)) {
       return unusableTicketType(slug, 'headcountPerUnit');
     }
+    if (!isUsableExcludedDays(excludedDays)) {
+      return unusableTicketType(slug, 'excludedDays');
+    }
 
     // F5: capacityByType is keyed by resolved POOL KEY, not always by slug. Math.min against
     // any value already present at that key is a defensive floor — the pool-data invariant
@@ -576,6 +598,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     poolConfigByType[slug] = { pool: capacityPool ?? null, headcountPerUnit: headcountPerUnit ?? 1 };
     requiresDaySelectionByType[slug] = ticketTypeDoc.requiresDaySelection === true;
     requiresAttendeeNamesByType[slug] = ticketTypeDoc.requiresAttendeeNames === true;
+    excludedDaysByType[slug] = excludedDays ?? [];
 
     // F1 (ticketing-flow-redesign, M1): a closed early-bird window with no regularPrice
     // refuses the WHOLE cart, same "any one bad type refuses the whole request" posture as
@@ -656,6 +679,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (!isValidChosenDay(lineItem.chosenDay, showWindow)) {
         return NextResponse.json(
           { error: 'The chosen day is outside the show dates.' },
+          { status: 400 }
+        );
+      }
+      // F3 (conference-workshop-tickets, M2): additive — isValidChosenDay() above is
+      // UNCHANGED; this is a second, additive check, not a modification of it. Rejects a
+      // chosenDay this specific ticket type excludes (e.g. day-visitor on Thursday,
+      // 2027-09-23), even though that day is within the show window generally.
+      if (isChosenDayExcluded(lineItem.chosenDay, excludedDaysByType[lineItem.ticketType])) {
+        return NextResponse.json(
+          { error: 'Day Pass is not available on this day.' },
           { status: 400 }
         );
       }

@@ -197,7 +197,8 @@ export const ticketTypeBySlugQuery = defineQuery(`
     provisional,
     category,
     capacityPool,
-    headcountPerUnit
+    headcountPerUnit,
+    excludedDays
   }
 `);
 

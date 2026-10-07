@@ -14,11 +14,11 @@
       "earlyBirdTrancheSizeFieldMustBeAbsent": true,
       "requiresDaySelection": false,
       "requiresAttendeeNames": true,
-      "provisional": true,
+      "provisional": false,
       "capacityPool": null,
       "headcountPerUnit": null,
       "sourceCitationMustBeNonNull": true,
-      "_note": "One sellable product, flat R2000, 80 places, NO early-bird mechanism of any kind (no tranche, no discount, no cutoff). Brad's original scarcity-motivation intent (message 4: 'MOTIVATION BY SCARSITY') is recorded as a FLAGGED, NOT-BUILT recommendation below — an honest 'N of 80 places left' running count — pending his explicit go-ahead, never built silently as a substitute for the early-bird mechanism he just removed."
+      "_note": "One sellable product, flat R2000, 80 places, NO early-bird mechanism of any kind (no tranche, no discount, no cutoff). Brad's original scarcity-motivation intent (message 4: 'MOTIVATION BY SCARSITY') is recorded as a FLAGGED, NOT-BUILT recommendation below — an honest 'N of 80 places left' running count — pending his explicit go-ahead, never built silently as a substitute for the early-bird mechanism he just removed. provisional flipped to false 2026-10-07 (team-lead approved, architect rationale check): both price (R2000) AND capacity (80) are Brad's own direct, unambiguous verbatim ruling the same day as the workshop figures that already got provisional: false — direct, unambiguous figures, settled per the VIP-ruling precedent (provisional: false + sourceCitation), not a council/Lee-Ann-sheet-sourced estimate awaiting confirmation. The prior provisional: true on this entry had no sourced reason and was an oversight, not a deliberate withhold."
     },
     {
       "slug": "wosa-conference",
@@ -32,11 +32,11 @@
       "earlyBirdTrancheSizeFieldMustBeAbsent": true,
       "requiresDaySelection": false,
       "requiresAttendeeNames": true,
-      "provisional": true,
+      "provisional": false,
       "capacityPool": null,
       "headcountPerUnit": null,
       "sourceCitationMustBeNonNull": true,
-      "_note": "Identical shape to saoc-symposium — separate product, Brad's message 3 explicit: 'separate products'."
+      "_note": "Identical shape to saoc-symposium — separate product, Brad's message 3 explicit: 'separate products'. provisional flipped to false 2026-10-07 (team-lead approved) — same rationale as saoc-symposium's own note: direct, unambiguous Brad figures, settled per the VIP-ruling precedent."
     }
   ],
   "retiredConferenceSlugs": [

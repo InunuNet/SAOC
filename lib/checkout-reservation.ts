@@ -409,6 +409,26 @@ export function resolveChosenDayForPosition(
   return chosenDay ?? null;
 }
 
+/**
+ * F3 (conference-workshop-tickets, M2) — pure decision: is this `chosenDay` excluded for a
+ * ticket type carrying `excludedDays`? Same convention as `resolveChosenDayForPosition()`
+ * above — a small pure helper so the decision is directly unit-testable without mocking a
+ * Next.js request or a Sanity fetch. Returns `true` only when both a `chosenDay` and a
+ * non-empty `excludedDays` are present AND `excludedDays` includes it; `false` whenever
+ * `excludedDays` is null/undefined/empty (the "optional, defaults to no exclusion" invariant)
+ * or `chosenDay` is null/undefined. See
+ * .agent/memory/project/specs/conference-workshop-tickets/goldens/f2-sanity-schema-migration.golden.md
+ * "Addendum".
+ */
+export function isChosenDayExcluded(
+  chosenDay: string | null | undefined,
+  excludedDays: string[] | null | undefined
+): boolean {
+  if (!chosenDay) return false;
+  if (!excludedDays || excludedDays.length === 0) return false;
+  return excludedDays.includes(chosenDay);
+}
+
 // ---------------------------------------------------------------------------------------------
 // ticketing-conferences-and-events (F5, M2) — additive pure export. See
 // goldens/f5-checkout.golden.md for the full decision record.

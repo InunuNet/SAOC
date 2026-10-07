@@ -184,5 +184,19 @@ export const ticketType = defineType({
         '"Lee-Ann\'s 13.1 Ticketing system details.docx, line 305-314". Leave unset for a ' +
         'genuine web-team estimate with no client source.',
     }),
+    // F3 (conference-workshop-tickets, M2): additive, optional — unset means no exclusion,
+    // zero behavior change for every existing product that doesn't set it. Backs
+    // lib/provisional-figures.ts's ProvisionalAdmissionProduct.excludedDays (day-visitor and
+    // its early-bird sibling exclude Thursday, 2027-09-23, per Brad's message 6). See
+    // .agent/memory/project/specs/conference-workshop-tickets/goldens/f2-sanity-schema-migration.golden.md.
+    defineField({
+      name: 'excludedDays',
+      title: 'Excluded Days',
+      type: 'array',
+      of: [{ type: 'string' }],
+      description:
+        'ISO 8601 dates (e.g. "2027-09-23") this ticket type does NOT sell for. Leave unset ' +
+        'for no exclusion. Additive to requiresDaySelection, not a replacement for it.',
+    }),
   ],
 });

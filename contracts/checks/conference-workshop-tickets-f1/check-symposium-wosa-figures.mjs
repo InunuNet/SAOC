@@ -74,8 +74,13 @@ for (const [slug, expected] of Object.entries(EXPECTED)) {
   if (product.requiresAttendeeNames !== true) {
     failures.push(`'${slug}': requiresAttendeeNames is ${JSON.stringify(product.requiresAttendeeNames)}, expected true`);
   }
-  if (product.provisional !== true) {
-    failures.push(`'${slug}': provisional is ${JSON.stringify(product.provisional)}, expected true`);
+  // provisional: false — flipped 2026-10-07 (team-lead approved, architect rationale
+  // check): price (R2000) AND capacity (80) are both Brad's own direct, unambiguous
+  // verbatim ruling, same precedent as VIP's own provisional: false — never a
+  // council/Lee-Ann-sheet-sourced estimate awaiting confirmation. See
+  // goldens/f1-provisional-figures.golden.json's updated _note on both entries.
+  if (product.provisional !== false) {
+    failures.push(`'${slug}': provisional is ${JSON.stringify(product.provisional)}, expected false`);
   }
   // regularPrice: no regular/discounted-price concept at all for these two products —
   // either unset (undefined, the convention every other no-regular-price product in this

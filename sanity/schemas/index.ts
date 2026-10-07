@@ -19,6 +19,9 @@ import { showSponsor } from './documents/showSponsor';
 import { judge } from './documents/judge';
 import { province } from './documents/province';
 import { ticketType } from './documents/ticketType';
+// F3 (conference-workshop-tickets, M2)
+import { conferencePresenter } from './documents/conferencePresenter';
+import { workshopSession } from './documents/workshopSession';
 import { showVisitorInfo } from './documents/showVisitorInfo';
 import { showFaq } from './documents/showFaq';
 import { showExhibitorInfo } from './documents/showExhibitorInfo';
@@ -77,6 +80,9 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   showPage,
   // Ticketing
   ticketType,
+  // F3 (conference-workshop-tickets, M2)
+  conferencePresenter,
+  workshopSession,
   // Objects
   portableText,
   showVenue,

@@ -267,7 +267,11 @@ export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
     earlyBirdCutoff: null,
     requiresDaySelection: false,
     requiresAttendeeNames: true,
-    provisional: true,
+    // Settled, not a web-team estimate — Brad's direct, unambiguous ruling (messages 1/3/6),
+    // same "genuinely settled by a direct ruling, cited via sourceCitation, not a council
+    // confirmation" precedent the ProvisionalAdmissionProduct.provisional doc-comment above
+    // names (originally established for VIP's price, F2/ticketing-complete M1, 2026-09-08).
+    provisional: false,
     sourceCitation: SYMPOSIUM_WOSA_SOURCE_CITATION,
   },
   {
@@ -281,7 +285,11 @@ export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
     earlyBirdCutoff: null,
     requiresDaySelection: false,
     requiresAttendeeNames: true,
-    provisional: true,
+    // Settled, not a web-team estimate — Brad's direct, unambiguous ruling (messages 1/3/6),
+    // same "genuinely settled by a direct ruling, cited via sourceCitation, not a council
+    // confirmation" precedent the ProvisionalAdmissionProduct.provisional doc-comment above
+    // names (originally established for VIP's price, F2/ticketing-complete M1, 2026-09-08).
+    provisional: false,
     sourceCitation: SYMPOSIUM_WOSA_SOURCE_CITATION,
   },
 ];
