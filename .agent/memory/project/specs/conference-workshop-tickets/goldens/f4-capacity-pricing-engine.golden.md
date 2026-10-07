@@ -81,6 +81,28 @@ using the EXISTING `getSoldCountsByTicketType()` output unmodified — the two s
 sources are not interchangeable, and a day-qualified count must never be substituted into
 the unqualified check or vice versa.
 
+**Unqualified-check product list, explicit (Codex found a live regression here,
+2026-10-07, verified by team-lead against source):** route.ts's unqualified
+`planPooledCapacity()` call's `requestedQtyByType`/`capacityByType`/`poolConfigByType`
+must contain ONLY early-bird (pool `admission-early-bird`, §1) plus §3's existing
+singleton/pooled products (VIP, the Cocktails pair, Symposium, WOSA, each workshop).
+**`day-visitor`'s own slug must never appear in the unqualified call's
+`requestedQtyByType` at all** — not with its `capacity: 1000` read as a whole-show cap,
+not with any other ceiling. It has no unqualified pool, full stop; the per-day-qualified
+check above is its ONLY ceiling. The live bug this closes: route.ts's per-slug
+construction (route.ts:605-612) built `poolConfigByType`/`capacityByType` for EVERY
+distinct cart ticketType unconditionally, including day-visitor (`pool: null`,
+`capacityByType['day-visitor'] = 1000`), fed from `getSoldCountsByTicketType()` — an
+AGGREGATE count across all days. After 1000 day-visitor sales spread across Friday,
+Saturday and Sunday (e.g. 400+400+300, each day well under its own 1000 cap), every
+further sale on any day was wrongly refused by this aggregate, on top of the per-day
+check that already governs it correctly. Symmetrically, `getPoolRemaining()`'s
+unqualified branch (§7) must never be invoked with `poolKeyBase: 'day-visitor'` and
+`requiresDaySelection: false` — that combination names a pool that does not exist, and
+must fail loud (throw), not silently compute a wrong aggregate-based remaining count for
+display. See `check-day-visitor-excluded-from-unqualified-check.mjs` (A24) and
+`check-get-pool-remaining-rejects-unqualified-day-visitor.mjs` (A25).
+
 **Open question, NOT assumed:** does a Weekend Pass holder count against the Day Visitor
 per-day 1000 cap on each of the three days they attend? Team-lead's new needs-Brad item.
 **Default shipped by this feature: NO** — Weekend Pass does not draw against
@@ -174,6 +196,29 @@ query. This is the property "race-consistent" means here: the number a visitor s
 never diverge from the number the checkout transaction actually enforces, because both
 read from the same two sold-count functions. Called outside any transaction (a plain
 read, safe to call on every page render), it is the one and only counting path for:
+
+**Unqualified-branch membership, explicit (Codex found a live regression here,
+2026-10-07, A21, verified by team-lead against source):** `getSoldCountsByTicketType()`
+keys its output by each document's REAL ticketType slug (`lib/data/tickets.ts`) — it
+never returns an entry keyed by a pool name like `admission-early-bird` itself, because
+no ticket document's `ticketType` is ever literally that string. The unqualified branch
+must therefore NEVER read `soldCountsByType[poolKeyBase]` directly. Instead it must sum,
+across every product whose `capacityPool ?? slug` resolves to `poolKeyBase`, that
+product's own `soldCountsByType[slug]` weighted by its `headcountPerUnit ?? 1` — the
+SAME resolution `planPooledCapacity()`'s own `resolvePoolKey`/`resolveWeight` already use
+(`poolConfigByType[ticketType]?.pool ?? ticketType`, `?? 1`), just sourced from
+`lib/provisional-figures.ts`'s product arrays (the same `[...ADMISSION_PRODUCTS,
+...CONFERENCE_PRODUCTS, ...WORKSHOP_FIELD_TRIP_PRODUCTS]` spread `scripts/
+seed-ticketing.ts` already uses as the single source of every product's
+`capacityPool`/`headcountPerUnit`) rather than a runtime `poolConfigByType` map, since
+this read-only accessor takes no Sanity client and must not grow a third,
+independently-constructed query. This single membership-and-weight resolution serves
+BOTH cases with no special-casing: a real shared pool (e.g. `admission-early-bird`, two
+member slugs) sums every member; a singleton product with no pool (`capacityPool: null`,
+so `capacityPool ?? slug` resolves to its own slug) trivially "sums" over itself alone,
+same as before. See `check-get-pool-remaining-early-bird-dual-ceiling.mjs` (A19) for the
+fixture proof — keyed by real per-slug stubs (`early-bird`/`weekend-pass-early-bird`),
+never pre-merged by pool, or the fixture proves nothing about this defect class.
 
 - The shared `admission-early-bird` 500-pool (unqualified — `requiresDaySelection: false`
   for this call, regardless of the slug's own day-selection requirement, matching §1/§2's

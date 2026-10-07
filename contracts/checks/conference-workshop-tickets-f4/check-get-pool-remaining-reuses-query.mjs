@@ -68,6 +68,16 @@ if (closeIdx === -1) {
   if (/\.collection\s*\(\s*['"`]tickets['"`]\s*\)/.test(body)) {
     failures.push('function body queries the tickets collection directly — it must delegate to the two existing sold-count functions, never build a third, independent query');
   }
+  // Cross-slug regression (QA repro, 2026-10-07): the day-qualified branch must sum
+  // sold counts across EVERY sibling slug sharing this pool for chosenDay (e.g.
+  // day-visitor AND early-bird on the same Friday), not just the single poolKeyBase
+  // passed in — getSoldCountsByTicketTypeAndDay() returns one key PER REAL SLUG, never
+  // pre-merged. A body that reads only `soldCountsByType[resolvedKey]` silently drops
+  // every sibling slug's prior sales from the total (see A19's dual-slug fixture for
+  // the numeric proof).
+  if (!/DAY_VISITOR_SHAPED_SLUGS/.test(body)) {
+    failures.push('function body never references DAY_VISITOR_SHAPED_SLUGS — the day-qualified branch must sum sold counts across every sibling slug sharing this pool for chosenDay, not just the single poolKeyBase (see A19\'s dual-slug fixture)');
+  }
 }
 
 if (failures.length > 0) {

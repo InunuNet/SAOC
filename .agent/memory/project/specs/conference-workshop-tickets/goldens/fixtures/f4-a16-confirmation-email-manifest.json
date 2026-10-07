@@ -1,0 +1,11 @@
+{
+  "gws_subcommand": "mail read",
+  "message_id": "1a1145e8f7534866",
+  "subject": "Your SAOC National Show order is confirmed",
+  "from": "SAOC Tickets <tickets@tickets.saoc.co.za>",
+  "recipient": "brad@inunu.net",
+  "timestamp": "2026-10-07T03:18:22Z",
+  "content_sha256": "688cb83571177badc7bdbbc6e33545751b6c0fdb5935e9c730a3877542c7a0e7",
+  "outcome": "pass",
+  "notes": "A16 (conference-workshop-tickets F4): confirmation email for bookingRef CWT-F4-A16-muxjfgh8 (early-bird, requiresDaySelection product, Friday 2027-09-24, brad@inunu.net), produced by contracts/checks/conference-workshop-tickets-f4/produce-a16-source-purchase.mjs driving the real ITN-to-paid path via buildMultiReservationDocs()/LineItemPlan (the chosenDay-aware builder — F1's buildReservationDocs(), used by F3's A30, has no chosenDay field at all). Proves the confirmation-email path for a day-qualified, early-bird-priced product, distinct from A30's plain day-visitor coverage. Verified read-only via `gws gmail users messages get --params '{\"userId\":\"me\",\"id\":\"1a1145e8f7534866\",\"format\":\"full\"}'` (gws_subcommand recorded as the manifest schema's fixed 'mail read' label per gws_inbox_check.sh's READONLY_SUBCOMMAND convention, not the literal CLI invocation); content_sha256 is sha256 of the base64url-decoded text/plain body part. This message shares Gmail threadId 1a11410a8f9e93ed with A30's confirmation email (identical subject line) but is a distinct message with its own id."
+}

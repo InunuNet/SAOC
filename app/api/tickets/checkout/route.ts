@@ -11,6 +11,7 @@ import {
   lineItemsMatchExistingPositions,
   planPooledCapacity,
   resolveChosenDayForPosition,
+  resolveDayQualifiedPoolKey,
   resolveEffectivePrice,
   writeMultiReservationPair,
   type CapacityPoolConfig,
@@ -37,7 +38,11 @@ import {
   ticketTypesByPoolQuery,
   ticketsPageQuery,
 } from '@/sanity/queries';
-import { getSoldCountsByTicketType } from '@/lib/data/tickets';
+import { getSoldCountsByTicketType, getSoldCountsByTicketTypeAndDay } from '@/lib/data/tickets';
+import {
+  DAY_VISITOR_DAY_CAP_POOL_KEY,
+  DAY_VISITOR_SHAPED_SLUGS,
+} from '@/lib/provisional-figures';
 import { resolveActiveShow } from '@/lib/show-resolution';
 import { MAX_LINE_ITEMS, NATIONAL_SHOW_ID, RESERVATION_TTL_MINUTES } from '@/lib/tickets-constants';
 
@@ -387,6 +392,15 @@ interface ReservationInput {
    *  sandbox-test-mode flag read that also feeds resolveOzowInitiateAmount below. See
    *  README §3b. */
   expectedGatewayAmount: number | null;
+  /** F4 (conference-workshop-tickets, M2) — the TRUE per-day cap check's own
+   *  requested/pool/capacity maps, built pre-transaction from live Sanity reads exactly
+   *  like capacityByType/poolConfigByType above. Empty objects when the cart has no
+   *  day-selection line items, in which case reserveTicket() skips this second,
+   *  independent planPooledCapacity() call entirely — nothing to check. See
+   *  goldens/f4-capacity-pricing-engine.golden.md §2. */
+  dayCapRequestedQtyByType: Record<string, number>;
+  dayCapPoolConfigByType: Record<string, CapacityPoolConfig>;
+  dayCapCapacityByType: Record<string, number>;
 }
 
 /** F2 (ozow-payment-provider) — each provider's own NotifyUrl path. Ozow's NotifyUrl is set by
@@ -531,6 +545,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // POOL KEY (capacityPool ?? slug), not always by slug — see
   // goldens/f5-checkout.golden.md "Route.ts wiring".
   const poolConfigByType: Record<string, CapacityPoolConfig> = {};
+  // F4 round 3 (Codex + team-lead, 2026-10-07): day-visitor has NO unqualified pool at
+  // all (golden §2 "Unqualified-check product list") — its per-day cap below is its
+  // ONLY ceiling. Its own effective capacity is still needed (the day-cap block's reuse,
+  // avoiding a second Sanity round-trip when day-visitor IS in the cart), so it is
+  // captured into this dedicated variable INSTEAD of being written into
+  // capacityByType/poolConfigByType, which feed the UNQUALIFIED planPooledCapacity()
+  // call further down — an entry there would wrongly apply this figure as a whole-show
+  // aggregate on top of the correct per-day cap (the live bug Codex found).
+  let dayVisitorOwnCapacity: number | undefined;
 
   for (const slug of distinctTicketTypes) {
     let ticketTypeDoc: SanityTicketType | null;
@@ -591,11 +614,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // that invariant is ever violated by a future edit.
     const poolKey = capacityPool ?? slug;
     const thisTypeCeiling = effectiveCapacity(capacity, releasedQuantity);
-    capacityByType[poolKey] =
-      poolKey in capacityByType
-        ? Math.min(capacityByType[poolKey], thisTypeCeiling)
-        : thisTypeCeiling;
-    poolConfigByType[slug] = { pool: capacityPool ?? null, headcountPerUnit: headcountPerUnit ?? 1 };
+    if (slug === DAY_VISITOR_DAY_CAP_POOL_KEY) {
+      // See the dayVisitorOwnCapacity declaration above — captured, never written into
+      // the unqualified capacityByType/poolConfigByType maps.
+      dayVisitorOwnCapacity = thisTypeCeiling;
+    } else {
+      capacityByType[poolKey] =
+        poolKey in capacityByType
+          ? Math.min(capacityByType[poolKey], thisTypeCeiling)
+          : thisTypeCeiling;
+      poolConfigByType[slug] = {
+        pool: capacityPool ?? null,
+        headcountPerUnit: headcountPerUnit ?? 1,
+      };
+    }
     requiresDaySelectionByType[slug] = ticketTypeDoc.requiresDaySelection === true;
     requiresAttendeeNamesByType[slug] = ticketTypeDoc.requiresAttendeeNames === true;
     excludedDaysByType[slug] = excludedDays ?? [];
@@ -703,6 +735,91 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
   }
 
+  // F4 (conference-workshop-tickets, M2): TRUE per-day capacity for day-visitor-shaped
+  // products — day-visitor and early-bird share ONE physical 1000-seat-per-day pool (see
+  // goldens/f4-capacity-pricing-engine.golden.md §2). Built here, pre-transaction, from
+  // live Sanity reads — same posture as capacityByType/poolConfigByType above — and fed
+  // into reserveTicket() as a SECOND, independent planPooledCapacity() input. The
+  // existing capacityByType/poolConfigByType above are untouched: they serve the
+  // UNQUALIFIED shared admission-early-bird pool check only (§1), never the day cap.
+  // Every chosenDay read below was already validated present/in-window/not-excluded by
+  // the per-line-item pass just above — a requiresDaySelectionByType-true line item
+  // either reached here with a valid chosenDay or this function already returned.
+  const dayCapLineItems = lineItems.filter(
+    (lineItem) => requiresDaySelectionByType[lineItem.ticketType] === true
+  );
+  const dayCapRequestedQtyByType: Record<string, number> = {};
+  const dayCapPoolConfigByType: Record<string, CapacityPoolConfig> = {};
+  const dayCapCapacityByType: Record<string, number> = {};
+
+  if (dayCapLineItems.length > 0) {
+    // day-visitor's OWN capacity is the day-cap ceiling, read regardless of whether
+    // day-visitor itself is in THIS cart — an early-bird-only purchase still draws
+    // against it. Reuse the already-captured value when day-visitor IS in the cart (F4
+    // round 3: captured into `dayVisitorOwnCapacity` by the main loop above, never into
+    // capacityByType — see that declaration for why); otherwise fetch its ticketType
+    // document directly, same validation posture as the main loop above.
+    let dayCapCapacity: number;
+    if (dayVisitorOwnCapacity !== undefined) {
+      dayCapCapacity = dayVisitorOwnCapacity;
+    } else {
+      let dayVisitorDoc: SanityTicketType | null;
+      try {
+        dayVisitorDoc = await client.fetch<SanityTicketType | null>(ticketTypeBySlugQuery, {
+          slug: DAY_VISITOR_DAY_CAP_POOL_KEY,
+        });
+      } catch (error) {
+        console.error(
+          '[tickets/checkout] Failed to fetch day-visitor ticketType for the day-cap check:',
+          error
+        );
+        return NextResponse.json(
+          { error: 'Unable to look up ticket pricing. Please try again.' },
+          { status: 500 }
+        );
+      }
+      if (!dayVisitorDoc) {
+        return unusableTicketType(DAY_VISITOR_DAY_CAP_POOL_KEY, 'capacity');
+      }
+      if (!isUsableCapacity(dayVisitorDoc.capacity)) {
+        return unusableTicketType(DAY_VISITOR_DAY_CAP_POOL_KEY, 'capacity');
+      }
+      if (!isUsableReleasedQuantity(dayVisitorDoc.releasedQuantity)) {
+        return unusableTicketType(DAY_VISITOR_DAY_CAP_POOL_KEY, 'releasedQuantity');
+      }
+      dayCapCapacity = effectiveCapacity(dayVisitorDoc.capacity, dayVisitorDoc.releasedQuantity);
+    }
+
+    for (const lineItem of dayCapLineItems) {
+      // Type assertion, not a guess: the per-line-item validation pass above already
+      // refused the request with a 400 if this line item's chosenDay were missing or
+      // invalid, so every lineItem reaching this loop carries a real string.
+      const chosenDay = lineItem.chosenDay as string;
+      const requestKey = resolveDayQualifiedPoolKey(lineItem.ticketType, chosenDay, true);
+      const poolKey = resolveDayQualifiedPoolKey(DAY_VISITOR_DAY_CAP_POOL_KEY, chosenDay, true);
+      dayCapRequestedQtyByType[requestKey] = (dayCapRequestedQtyByType[requestKey] ?? 0) + 1;
+      dayCapCapacityByType[poolKey] = dayCapCapacity;
+
+      // Fix (post-F4, Codex review): `getSoldCountsByTicketTypeAndDay()` tags EVERY
+      // DAY_VISITOR_SHAPED_SLUGS document for this day with its own day-qualified key —
+      // e.g. an already-sold early-bird position on Friday comes back keyed
+      // `early-bird::2027-09-24`, a day-visitor one `day-visitor::2027-09-24` — never
+      // only the slug that happens to be in THIS cart. planPooledCapacity() only pools a
+      // sold document's key into the SAME pool as a requested key if poolConfigByType
+      // has an entry for it; building dayCapPoolConfigByType from only this cart's own
+      // ticketType would leave the OTHER day-visitor-shaped slug's prior sales for this
+      // day resolving to their own, unpooled key (their own slug::day), so they would
+      // never count against the shared day cap at all. Registering every
+      // DAY_VISITOR_SHAPED_SLUGS slug for this chosenDay — regardless of cart contents —
+      // closes that gap: both products' sold counts for the same day always resolve to
+      // the one shared `day-visitor::<day>` pool key.
+      for (const slug of DAY_VISITOR_SHAPED_SLUGS) {
+        const siblingKey = resolveDayQualifiedPoolKey(slug, chosenDay, true);
+        dayCapPoolConfigByType[siblingKey] = { pool: poolKey, headcountPerUnit: 1 };
+      }
+    }
+  }
+
   // The gateway credential guard, BEFORE any Firestore write — the position
   // contracts/golden/payment-seam-f1/fail-closed-guards.golden.md pins. initiate() cannot serve
   // here: it needs the booking reference and the server-derived amount, which only exist after
@@ -776,6 +893,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       recoveryTokenSecret,
       gateway: providerId,
       expectedGatewayAmount: resolveExpectedGatewayAmount(providerId, ozowSandboxTestModeEnabled),
+      dayCapRequestedQtyByType,
+      dayCapPoolConfigByType,
+      dayCapCapacityByType,
     });
   } catch (error) {
     console.error('[tickets/checkout] Failed to reserve ticket:', error);
@@ -989,7 +1109,66 @@ async function reserveTicket(input: ReservationInput): Promise<ReservationOutcom
         };
       }
 
-      const requestedQtyByType = aggregateRequestedQuantities(input.lineItems);
+      // F4 (conference-workshop-tickets, M2): the day-qualified TRUE per-day cap check —
+      // INDEPENDENT of, and run alongside, the unqualified shared-pool check below. Both
+      // must pass; either failing refuses the whole reservation before any write. Reads
+      // via getSoldCountsByTicketTypeAndDay(), never getSoldCountsByTicketType() (the
+      // unqualified check's own sold-count source) — a day-qualified count must never be
+      // substituted into the unqualified check or vice versa. See golden §2.
+      if (Object.keys(input.dayCapRequestedQtyByType).length > 0) {
+        const soldCountsByTypeAndDay = await getSoldCountsByTicketTypeAndDay(
+          input.showId,
+          new Set(DAY_VISITOR_SHAPED_SLUGS),
+          transaction
+        );
+
+        // Legacy carve-out (team-lead/QA, post-F4): early-bird's requiresDaySelection
+        // flipped false -> true in this very mission's own M1 (commit cbac259c,
+        // 2026-10-07) — any early-bird position reserved/paid before that deploy has no
+        // chosenDay field at all (docs/f5-day-selection-attendees.md "Decision 2" already
+        // treats such a document as chosenDay: null elsewhere in this route).
+        // getSoldCountsByTicketTypeAndDay() keeps such a document under its plain,
+        // unqualified slug key — which day it actually occupied can never be recovered,
+        // so it is added to EVERY day-cap pool this request is checking, never dropped
+        // and never guessed onto a single day.
+        const legacyNoChosenDayHeads = DAY_VISITOR_SHAPED_SLUGS.reduce(
+          (total, slug) => total + (soldCountsByTypeAndDay[slug] ?? 0),
+          0
+        );
+        const soldCountsByTypeAndDayWithLegacy = { ...soldCountsByTypeAndDay };
+        if (legacyNoChosenDayHeads > 0) {
+          const dayCapPoolKeys = new Set(
+            Object.values(input.dayCapPoolConfigByType)
+              .map((config) => config.pool)
+              .filter((pool): pool is string => pool !== null)
+          );
+          for (const poolKey of dayCapPoolKeys) {
+            soldCountsByTypeAndDayWithLegacy[poolKey] =
+              (soldCountsByTypeAndDayWithLegacy[poolKey] ?? 0) + legacyNoChosenDayHeads;
+          }
+        }
+
+        const dayCapResult = planPooledCapacity({
+          requestedQtyByType: input.dayCapRequestedQtyByType,
+          soldCountsByType: soldCountsByTypeAndDayWithLegacy,
+          capacityByType: input.dayCapCapacityByType,
+          poolConfigByType: input.dayCapPoolConfigByType,
+        });
+        if (dayCapResult.kind === 'over-capacity') {
+          return { kind: 'over-capacity', ticketTypes: dayCapResult.ticketTypes };
+        }
+      }
+
+      // F4 round 3: day-visitor's own slug must never reach the UNQUALIFIED check at
+      // all (golden §2) — it has no unqualified pool, and input.capacityByType/
+      // input.poolConfigByType already carry no entry for it (see the main loop's
+      // dayVisitorOwnCapacity capture above). Filtering it out of requestedQtyByType
+      // here too, rather than leaving it to resolve against an absent capacity (which
+      // would read as capacity 0 and wrongly refuse every day-visitor purchase), is
+      // what actually excludes it — every other product is unchanged.
+      const requestedQtyByType = aggregateRequestedQuantities(
+        input.lineItems.filter((lineItem) => lineItem.ticketType !== DAY_VISITOR_DAY_CAP_POOL_KEY)
+      );
       const capacityResult = planPooledCapacity({
         requestedQtyByType,
         soldCountsByType: soldCounts,

@@ -106,7 +106,7 @@ assertions:
       command: node contracts/checks/conference-workshop-tickets-f4/check-get-pool-remaining-reuses-query.mjs
 
     - id: A19
-      description: a day-qualified call (requiresDaySelection true) and an unqualified call (false) against the SAME poolKeyBase return independently correct remaining counts for early-bird's two simultaneous ceilings (day cap + shared pool) — proven by fixture, not just type-checked
+      description: 'a day-qualified call (requiresDaySelection true) and an unqualified call (false) against the SAME poolKeyBase return independently correct remaining counts for early-bird''s two simultaneous ceilings (day cap + shared pool) — proven by fixture, not just type-checked. Reworked 2026-10-07 (Codex found a real defect via A21, verified by team-lead): the unqualified fixture now stubs sold counts keyed by REAL per-slug keys (early-bird 200, weekend-pass-early-bird 150, matching how getSoldCountsByTicketType() actually keys its output) rather than a pre-merged pool-name key that never exists in the real sold-counts map — the earlier version passed without ever exercising getPoolRemaining()''s membership-summing logic. Expects 150 remaining (350/500 sold), not the old fixture''s 5.'
       command: node contracts/checks/conference-workshop-tickets-f4/check-get-pool-remaining-early-bird-dual-ceiling.mjs
 
     - id: A20
@@ -127,3 +127,21 @@ assertions:
       description: 'browser_deployed_check against the real deployed beta.saoc.co.za origin confirming /tickets still renders 200 after this feature''s checkout/pricing-engine changes (a GET page-load smoke check — this feature does not change any page''s visible content itself, see A17; browser_deployed_check''s own live-recheck mechanism is GET/2xx-only, so it cannot represent the POST-based checkout/ITN behaviour A14''s PayFast sandbox E2E already covers). KNOWN BLOCKER (2026-10-07): the live re-check sends no Basic Auth header and this path is behind the beta wall, so it will 401 and FAIL until InunuNet/Athanor#1459 lands upstream — same blocker as F3''s A27 and F6''s A24, see .agent/memory/project/backlog.md'
       type: browser_deployed_check
       target: .agent/memory/project/specs/conference-workshop-tickets/goldens/fixtures/f4-a22-browser-manifest-tickets-smoke.json
+
+    - id: A23
+      description: 'structural pins on app/api/tickets/checkout/route.ts''s day-cap construction (QA, 2026-10-07): (1) the sibling-registration loop registers EVERY DAY_VISITOR_SHAPED_SLUGS slug into dayCapPoolConfigByType per line item''s chosenDay, not just that line item''s own ticketType, and (2) the legacy no-chosenDay carve-out''s DAY_VISITOR_SHAPED_SLUGS.reduce(...) sum is actually added into the pool keys fed to planPooledCapacity() via soldCountsByTypeAndDayWithLegacy. Both pins run a second time against an in-memory mutated copy reverting each fix, proving the regex bites, before asserting the real source passes — route.ts itself is never written to.'
+      command: node contracts/checks/conference-workshop-tickets-f4/check-day-cap-route-structural-pins.mjs
+
+    # ============ Added 2026-10-07: Codex found a second real defect — route.ts's ============
+    # ============ unqualified check still applies an aggregate 1000-across-all-days ============
+    # ============ ceiling to day-visitor, on top of its correct per-day cap. See ============
+    # ============ golden §2's "Unqualified-check product list, explicit" addendum. ============
+    # ============ EXPECTED TO FAIL until @dev's fix lands — not yet made. ============
+
+    - id: A24
+      description: 'structural pins (reworked 2026-10-07, A23''s pattern — binds to real route.ts so it does not keep failing after @dev''s fix, nor pass without ever looking at source) on app/api/tickets/checkout/route.ts''s UNQUALIFIED planPooledCapacity() call: day-visitor''s own slug must be excluded from ALL THREE of capacityByType, poolConfigByType (per-slug construction loop) AND requestedQtyByType (the aggregateRequestedQuantities(...) call site) — day-visitor has no unqualified pool at all (golden §2). Each pin extracts the real source block/statement and is proven to bite against an in-memory mutated copy reverting to the exact pre-fix shape (unconditional assignment; unfiltered input.lineItems) — route.ts itself is never written to.'
+      command: node contracts/checks/conference-workshop-tickets-f4/check-day-visitor-excluded-from-unqualified-check.mjs
+
+    - id: A25
+      description: 'display-path companion to A24: getPoolRemaining() called with poolKeyBase: ''day-visitor'', requiresDaySelection: false must throw (day-visitor has no unqualified pool to measure against), not silently compute a wrong aggregate-based remaining count. Fails today — no such guard exists yet.'
+      command: node contracts/checks/conference-workshop-tickets-f4/check-get-pool-remaining-rejects-unqualified-day-visitor.mjs

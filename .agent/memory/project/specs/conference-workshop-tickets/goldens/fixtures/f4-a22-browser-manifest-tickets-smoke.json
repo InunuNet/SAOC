@@ -1,0 +1,10 @@
+{
+  "origin": "https://beta.saoc.co.za",
+  "path_tested": "/national-show/tickets",
+  "screenshot_path": "fixtures/f4-a22-tickets-smoke-screenshot.png",
+  "commit_sha": "3018b41d20a49f8d4084623c86e3003a9892e3cc",
+  "timestamp": "2026-10-07T03:23:34.259Z",
+  "http_status": 200,
+  "outcome": "pass",
+  "notes": "A22: /national-show/tickets renders 2xx post-F4 (thin smoke check only — this page directly calls F4's resolveEffectivePrice() from lib/checkout-reservation.ts to render its day-qualified pricing; /tickets/buy exercises more of the engine but is uncommitted as of this run and 404s live — see header comment). NOTE: execution/browser_deployed_check.sh verification of this manifest will still FAIL independently of this render proof — its own live re-check sends no Basic Auth header and the beta wall gates this path 401 — tracked as InunuNet/Athanor#1459. See this script's header comment and .agent/memory/project/backlog.md (2026-10-07 entry)."
+}

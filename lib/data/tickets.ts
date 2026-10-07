@@ -80,3 +80,49 @@ async function sequentialGet(
   }
   return snapshots;
 }
+
+/**
+ * F4 (conference-workshop-tickets, M2) — day-qualified sibling to
+ * getSoldCountsByTicketType() above, for TRUE per-day capacity caps (e.g. Day Visitor's
+ * 1000-per-day pool). Reuses the EXACT SAME query shape (tickets collection, showId
+ * equality, reserved/paid status, stillHoldsSeat() filter) — this is intentionally not a
+ * second, differently-constructed query. For each matching document whose `ticketType`
+ * is a member of `dayQualifiedTypes` AND which carries a `chosenDay`, the count is keyed
+ * `${ticketType}::${chosenDay}` instead of plain `ticketType`; every other document
+ * (either a non-day-qualified type, or a day-qualified type with no chosenDay recorded)
+ * keeps a plain `ticketType` key. This means the two functions' outputs can be merged
+ * with `Object.assign()` with no key collision — a day-qualified document never produces
+ * the same key as a plain one. See
+ * .agent/memory/project/specs/conference-workshop-tickets/goldens/f4-capacity-pricing-engine.golden.md
+ * §2.
+ */
+export async function getSoldCountsByTicketTypeAndDay(
+  showId: string,
+  dayQualifiedTypes: Set<string>,
+  transaction?: Transaction
+): Promise<Record<string, number>> {
+  const db = getFirestore(initAdmin());
+  const counts: Record<string, number> = {};
+
+  const queries = RESERVED_OR_PAID.map((status) =>
+    db.collection('tickets').where('showId', '==', showId).where('status', '==', status)
+  );
+
+  const snapshots = transaction
+    ? await sequentialGet(transaction, queries)
+    : await Promise.all(queries.map((query) => query.get()));
+
+  for (const snapshot of snapshots) {
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+      if (!stillHoldsSeat(data)) continue;
+      const ticketType = data['ticketType'] as string;
+      const chosenDay = data['chosenDay'] as string | null | undefined;
+      const key =
+        dayQualifiedTypes.has(ticketType) && chosenDay ? `${ticketType}::${chosenDay}` : ticketType;
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+  }
+
+  return counts;
+}

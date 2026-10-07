@@ -228,6 +228,25 @@ export const ADMISSION_PRODUCTS: ProvisionalAdmissionProduct[] = [
 ];
 
 /**
+ * F4 (conference-workshop-tickets, M2) — day-visitor and early-bird are "day-visitor-
+ * shaped" products: Lee-Ann's sheet (relayed by Brad, 2026-10-07), line 23, states Day
+ * Visitor's capacity as "1000 Total per day" across BOTH its regular and early-bird price
+ * tiers — ONE physical per-day pool, not two independently-tracked 1000s. Derived from
+ * `ADMISSION_PRODUCTS`'s own `requiresDaySelection` flags (not a second, independently
+ * maintained slug list) — every current and future day-selection admission product shares
+ * this one pool by default. `DAY_VISITOR_DAY_CAP_POOL_KEY` names the shared pool itself
+ * (the day-visitor product's own slug, since that's the product the physical 1000/day
+ * ceiling is read from); `DAY_VISITOR_SHAPED_SLUGS` is which real ticketType slugs' sold
+ * units draw against it. See
+ * .agent/memory/project/specs/conference-workshop-tickets/goldens/f4-capacity-pricing-engine.golden.md
+ * §2.
+ */
+export const DAY_VISITOR_DAY_CAP_POOL_KEY = 'day-visitor';
+export const DAY_VISITOR_SHAPED_SLUGS: readonly string[] = ADMISSION_PRODUCTS.filter(
+  (product) => product.requiresDaySelection
+).map((product) => product.slug);
+
+/**
  * F1 (conference-workshop-tickets, M1) — the two Conferences category products (SAOC
  * Symposium, WOSA Conference). Reuses `ProvisionalAdmissionProduct` verbatim rather than a
  * second interface. UPDATED IN PLACE (same slug, same document identity) from the earlier

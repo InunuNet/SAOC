@@ -58,11 +58,54 @@ if (fix.finalSold !== CAPACITY) {
   failures.push(`FIX: final Friday sold count is ${fix.finalSold}, expected exactly ${CAPACITY}`);
 }
 
+// Cross-slug regression (QA repro, 2026-10-07): the same burst, but alternating
+// BETWEEN day-visitor and early-bird — sibling slugs sharing Friday's one physical
+// day-qualified pool (DAY_VISITOR_SHAPED_SLUGS) — via the same poolConfigByType
+// mechanism A11 already exercises for the shared early-bird pool. Proves the
+// concurrency fix holds across sibling slugs, not just repeated requests for one slug.
+const earlyBirdFridayKey = mod.resolveDayQualifiedPoolKey('early-bird', '2027-09-24', true);
+const crossSlugPoolConfig = {
+  [FRIDAY_KEY]: { pool: FRIDAY_KEY, headcountPerUnit: 1 },
+  [earlyBirdFridayKey]: { pool: FRIDAY_KEY, headcountPerUnit: 1 },
+};
+const crossSlugTicketTypeForIndex = (i) => (i % 2 === 0 ? FRIDAY_KEY : earlyBirdFridayKey);
+
+const crossSlugControl = await runConcurrentBurst({
+  poolKey: FRIDAY_KEY,
+  capacity: CAPACITY,
+  sold: SOLD,
+  concurrentRequests: BURST_SIZE,
+  control: true,
+  ticketTypeForIndex: crossSlugTicketTypeForIndex,
+  poolConfigByType: crossSlugPoolConfig,
+});
+if (crossSlugControl.winners <= REMAINING) {
+  failures.push(
+    `CONTROL (cross-slug): the pre-fix no-recheck shape was expected to OVERSELL (more than ${REMAINING} winners) alternating day-visitor/early-bird against Friday's shared pool, got ${crossSlugControl.winners} — the harness proves nothing`,
+  );
+}
+
+const crossSlugFix = await runConcurrentBurst({
+  poolKey: FRIDAY_KEY,
+  capacity: CAPACITY,
+  sold: SOLD,
+  concurrentRequests: BURST_SIZE,
+  control: false,
+  ticketTypeForIndex: crossSlugTicketTypeForIndex,
+  poolConfigByType: crossSlugPoolConfig,
+});
+if (crossSlugFix.winners !== REMAINING) {
+  failures.push(`FIX (cross-slug): expected exactly ${REMAINING} winners out of ${BURST_SIZE} concurrent day-visitor/early-bird Friday requests, got ${crossSlugFix.winners}`);
+}
+if (crossSlugFix.finalSold !== CAPACITY) {
+  failures.push(`FIX (cross-slug): final Friday sold count is ${crossSlugFix.finalSold}, expected exactly ${CAPACITY}`);
+}
+
 if (failures.length > 0) {
   console.error('FAIL: check-concurrency-no-oversell-day-cap.mjs');
   for (const f of failures) console.error(`  - ${f}`);
   process.exit(1);
 }
 console.log(
-  `PASS: ${BURST_SIZE} concurrent Friday day-visitor requests against ${REMAINING} remaining day-cap slots yield exactly ${REMAINING} winners, never oversold.`,
+  `PASS: ${BURST_SIZE} concurrent Friday day-visitor requests against ${REMAINING} remaining day-cap slots yield exactly ${REMAINING} winners, never oversold; cross-slug day-visitor/early-bird alternation against the same shared pool holds too.`,
 );
