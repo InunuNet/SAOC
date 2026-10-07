@@ -1,0 +1,26 @@
+{
+  "schema": "athanor.mission-touched-files/v1",
+  "slug": "conference-workshop-tickets",
+  "pending_baselines": {},
+  "paths": [
+    ".agent/memory/project/backlog.md",
+    ".agent/memory/project/handoff/SESSION_STATE.md",
+    ".agent/memory/project/missions/conference-workshop-tickets.touched.json",
+    "contracts/checks/conference-workshop-tickets-f1/",
+    "contracts/checks/conference-workshop-tickets-f2/",
+    "contracts/checks/conference-workshop-tickets-f3/",
+    "contracts/checks/ticketing-complete-f2/check-conference-product-families.mjs",
+    "contracts/checks/ticketing-conferences-and-events-f5/check-pool-data-invariant.mjs",
+    "contracts/checks/ticketing-conferences-f1/check-conference-products.mjs",
+    "contracts/checks/ticketing-purchase-pages-f3/check-category-assignment.mjs",
+    "contracts/checks/ticketing-purchase-pages-f3/check-seed-category-field.mjs",
+    "lib/checkout-reservation.ts",
+    "lib/provisional-figures.ts",
+    "contracts/checks/ticketing-complete-f2/check-vip-computed-early-bird-price.mjs",
+    "contracts/checks/ticketing-complete-f2/check-vip-stored-cutoff-derived.mjs",
+    "contracts/checks/ticketing-f4-admission-products/check-admission-products-data.mjs",
+    "contracts/checks/ticketing-workshops-f2/check-workshop-products.mjs",
+    ".agent/memory/project/specs/conference-workshop-tickets/goldens/fixtures/f4-a22-browser-manifest-tickets-smoke.json",
+    ".agent/memory/project/missions/2026-10-06-conference-workshop-tickets.md"
+  ]
+}

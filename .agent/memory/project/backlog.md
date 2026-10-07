@@ -2,7 +2,7 @@
 
 Organised by **priority and subject**, not by session. Rebuilt 2026-08-19 from a 2,677-line
 session diary (pre-cleanup copy: `archive/backlog-2026-08-19-pre-cleanup.md`).
-_Last compacted: 2026-10-06 by backlog_trim.py. Full history: git log on this file._
+_Last compacted: 2026-10-07 by backlog_trim.py. Full history: git log on this file._
 
 **Rules for this file.** One line of stale information here misleads every agent, every session.
 Completed items are deleted, not ticked — git history is the record. Plan steps live in
@@ -165,17 +165,9 @@ Do not scope work from an entry that contradicts it.
 - [ ] **[P3] `docs/b4-national-show.md:57` describes a removed `TARGET_MS` literal**
   (pre-existing; found during `show-dates-23-26-sept-2027`, 2026-10-06).
 
-- [ ] **[P2, needs Brad] `design/design_handoff_saoc/README.md:141,200` still say the show
-  countdown target is `2027-09-16T09:00+02:00`** — his active design-prototype lane (same
-  standing exception as the `data.js`/`pages-show-events-contact.jsx` entries under Standing
-  rules above); he updates it or authorises the edit. Found during `show-dates-23-26-sept-2027`,
-  2026-10-06.
+- [ ] **[P2, needs Brad] `design/design_handoff_saoc/README.md:141,200` still say the … → [details](data/p2-needs-brad-design-design-handoff-saoc.md)
 
-- [ ] **[P3] A26-style single-fetch `browser_deployed_check` assertions can flake** — add a
-  retry or multi-sample. During `show-dates-23-26-sept-2027` M1/F2 (2026-10-06), A26 failed once
-  then passed on an immediate re-run with no code change in between; likely a stale ISR render
-  from App Hosting's per-instance cache rather than a real defect, but a single fetch can't tell
-  the difference.
+- [ ] **[P3] A26-style single-fetch `browser_deployed_check` assertions can flake** — … → [details](data/p3-a26-style-single-fetch-browser-deploy.md)
 
 ---
 
@@ -207,11 +199,6 @@ Do not scope work from an entry that contradicts it.
 - [ ] **[P1] Ticketing source document changed on 2026-08-26 (same day as the vendor d… → [details](data/p1-ticketing-source-document-changed-on.md)
 - [ ] **[P1, council-blocked] Two vendor-registration contradictions between the writt… → [details](data/p1-council-blocked-two-vendor-registrati.md)
 - [ ] **[P2] Two vendor-registration form ambiguities need Lee-Ann's answer before the… → [details](data/p2-two-vendor-registration-form-ambiguit.md)
-- [ ] **[P2] Vendor Terms & Conditions document does not exist.**
-  `VendorPaymentFiel… → [details](data/p2-vendor-terms-conditions-document-does.md)
-- [ ] **[P2] National Show brand model.** Brad's unconfirmed hypothesis: a stable mast… → [details](data/p2-national-show-brand-model-brad-s-unco.md)
-- [ ] **[P2] Secure organisation-owned document custody.** Institutional records sit i… → [details](data/p2-secure-organisation-owned-document-cu.md)
-- [ ] **[P2] Real Show copy has arrived and is not yet loaded.** `About - 2027 Nationa… → [details](data/p2-real-show-copy-has-arrived-and-is-not.md)
 
 ---
 
@@ -1922,17 +1909,4 @@ unparseable contracts" above.)
 > Truncated 3 items at trim time (2026-10-03). Restore from git history if needed.
 > Truncated 1 items at trim time (2026-10-06). Restore from git history if needed.
 > Truncated 2 items at trim time (2026-10-06). Restore from git history if needed.
-
-- [ ] (2026-10-07, from saoc-nos-design-f1 page capture) `/national-show/vendors/payment` with no token shows a bare "This payment link is no longer valid" — correct behaviour, reads as broken. Needs a friendlier empty state with a route back; copy must be sourced (Lee-Ann/Brad) per no-invention, not drafted. Pattern: NOS rulings R18 (heading + one factual sentence + route back e.g. "Back to vendors" + contact link; never a void/placeholder) and R11 ("To be confirmed" chip on unconfirmed sentences); reuse the empty-state component arriving in the NOS ticket handoff (F7).
-
-- [ ] (2026-10-07, QA F1 conference-workshop-tickets) Three pre-existing contract checks are stale and FAIL on HEAD independent of current work (hardcoded catalogue counts from an older snapshot): `contracts/checks/ticketing-purchase-pages-f3/check-category-assignment.mjs`, `contracts/checks/ticketing-purchase-pages-f3/check-seed-category-field.mjs`, `contracts/checks/ticketing-conferences-and-events-f5/check-pool-data-invariant.mjs`. Update to read counts from the live exports, or retire with a note in their closed missions.
-
-- [x] (2026-10-07, found by @architect during conference-workshop-tickets; FIXED 2026-10-07 same day) Pre-existing: `contracts/checks/payfast-m1/*` checks that import `app/api/tickets/itn/route.ts` via tsx register fail with `Cannot find module '@/lib/payments/payfast'` — the `@/` path alias isn't resolved under the plain-node + tsx register() pattern. Root cause: tsx/esm's `resolveTsPathsSync` (patched onto `Module._resolveFilename`) resolves a TOP-LEVEL `@/...` import fine but breaks for an `@/...` import made from WITHIN a dynamically-`import()`-ed CJS-format `.ts` file one level deeper (reproduced: `@/lib/payments/payfast` resolves standalone, but THAT module's own internal `@/lib/payfast` import fails). Fixed by patching `Module._resolveFilename` again, on top of tsx's own patch, inside `contracts/checks/payfast-m1/_itn-harness.mts` (rewrites any `@/`-prefixed specifier straight to its absolute path before tsx's resolver ever sees it) — every caller of `loadItnPost()` is fixed with zero caller-side changes, this harness is the only import point. Confirmed fixed: F3's A29 (`check-payfast-sandbox-e2e-day-visitor.mjs`) now passes end to end. Not yet re-run against every pre-existing payfast-m1 check individually, but they all route through the same `loadItnPost()`.
-
-- [ ] (2026-10-07, F2 conference-workshop-tickets) `scripts/fix-vip-and-weekend-pass-pricing.ts` (manual --apply one-off) is now stale: it plans weekend-pass early-bird cutoff values, but weekend-pass.earlyBirdCutoff is intentionally null after the EB SKU split. Retire or update before anyone runs it with --apply.
-
-- [x] **(2026-10-07, found + FIXED same day by @architect producing conference-workshop-tickets F3's A30 manifest) `contracts/checks/payfast-m1/_itn-harness.mts`'s `withFetchStub()` stubbed EVERY fetch call unconditionally, with no URL check.** The ITN route's `deliverConfirmationEmailAfterCommit()` fires its Resend SDK call (also the bare global `fetch`) from inside the same `POST()` execution `withFetchStub` wraps — so every confirmation-email send during an ITN-harness-driven check got PayFast's canned `{status, text: () => 'VALID'}` reply instead of a real Resend response, and threw "Unable to fetch data. The request could not be resolved." every time. Not a credentials/deliverability problem — a stub-scope bug. A29 never noticed (it only asserts ITN status + position `paid`, both unaffected — the email failure is caught and logged, same as a real Resend outage). It made A30 structurally impossible: no real Resend call could ever succeed, so no real gws-readable email could ever be produced. Fixed by scoping the stub to PayFast's own `PAYFAST_SANDBOX_VALIDATE_URL` only; everything else now passes through to the real fetch. Confirmed fixed: a real confirmation email landed in brad@inunu.net, read back via `gws gmail users messages get` (message id `1a11410a8f9e93ed`), A30's manifest produced and `execution/gws_inbox_check.sh` PASSes against it.
-
-- [ ] **(2026-10-07, HARNESS defect, found by @architect producing conference-workshop-tickets F3's A27 manifest) `execution/browser_deployed_check.sh`'s own independent live re-check cannot pass for ANY page on this site while the beta wall is up.** Its live re-fetch (`execution/browser_deployed_check.sh:188`, `curl -s -o /dev/null -w '%{http_code}' --max-time 10 "${origin}${path_tested}"`) sends no Authorization header at all, and `proxy.ts` (mission beta-password-wall, team-lead override 2026-10-06) gates EVERY path on beta.saoc.co.za behind Basic Auth except 6 exact-match webhook paths. Confirmed live: `curl -s -o /dev/null -w '%{http_code}' https://beta.saoc.co.za/tickets` → `401`. So the native `type: browser_deployed_check` triad kind cannot currently be satisfied for ANY in-scope page — a manifest can be produced with the real authenticated `http_status: 200`, but verification's own unauthenticated re-check will always see 401, declare a mismatch, and fail. This silently undermines every `browser_deployed_check` assertion added to this mission's contracts so far (F3 A27, F4 A22, F6 A24) — none can currently pass end to end, though the linter still credits them as declared. Per `.claude/rules/athanor.md` this is HARNESS-owned (`execution/`) and must not be patched locally — file upstream against `InunuNet/Athanor` (proposed fix: an optional `BROWSER_CHECK_AUTH_HEADER` env var the live re-check sends if set). Until that lands, these assertions should be plain-shell checks (same honest-labelling pattern as F3's A20/A28), not the native kind, or the beta wall needs a scoped bypass for the verifier's own live re-check specifically (team-lead/Brad decision, not an architect call).
-
-- [ ] (2026-10-07, F3 triad) Stray real orders from A30 producer runs on Firestore: `CWT-F3-A30-muxgc972` (paid, no email — pre-fix run) and `CWT-F3-A30-muxge14k` (paid, Friday day-visitor, real email to brad@inunu.net); `SAOC-2027-F6HZVA7K3RH5` left to expire. They count against Friday's day-visitor capacity on the pre-production dataset — clear before launch.
+> Truncated 12 items at trim time (2026-10-07). Restore from git history if needed.

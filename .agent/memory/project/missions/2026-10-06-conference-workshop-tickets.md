@@ -16,8 +16,8 @@ goal: 'Build SAOC Symposium, WOSA Conference and Workshops ticketing + NOS-brand
   pending/flagged, never invented.'
 created_at: '2026-10-06T22:55:40.960318+00:00'
 started_at: '2026-10-06T23:47:42.760004+00:00'
-last_active_at: '2026-10-07T06:25:15.118916+00:00'
-status: close_out
+last_active_at: '2026-10-07T06:41:23.335285+00:00'
+status: done
 cost_estimate:
   features: 0
   milestones: 0
@@ -118,6 +118,7 @@ milestones:
   status: done
   gate_ran_at: '2026-10-07T06:39:28.289984+00:00'
   gate_result: pass
+completed_at: '2026-10-07T06:41:23.335049+00:00'
 ---
 
 # Mission: Build SAOC Symposium, WOSA Conference and Workshops ticketing + NOS-branded brochure pages per Brad 2026-10-07 (verbatim: .agent/memory/scratch/brad-ticket-news-2026-10-07.md). Symposium and WOSA Conference: separate products, R2000 each, 80 tickets per event of which 10 are early-bird, with a live honest 'N of 10 early-bird tickets left' scarcity counter per event read from real sales. Brochure/tile layout in NOS branding; copy = one short card per presenter (photo + summary bio supplied by Lee-Ann; visibly flagged pending until supplied, never invented), each card clicking through to that event's ticket booking. Workshops: small exclusive sessions throughout the show, R100 each, 10 tickets per workshop, ticket-only booking; structure built now (Sanity-editable sessions), full schedule to follow from Brad/Lee-Ann. Replaces the provisional CONFERENCE_PRODUCTS estimates (R450-R900, joint bundle) in lib/provisional-figures.ts. Pages under app/(marketing)/national-show/** are the NOS Site lane: post a comms.md notice. Early-bird price not yet given -> pending/flagged, never invented.

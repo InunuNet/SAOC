@@ -1,0 +1,3 @@
+# 2026-10-07-from-saoc-nos-design-f1-page
+
+(2026-10-07, from saoc-nos-design-f1 page capture) `/national-show/vendors/payment` with no token shows a bare "This payment link is no longer valid" — correct behaviour, reads as broken. Needs a friendlier empty state with a route back; copy must be sourced (Lee-Ann/Brad) per no-invention, not drafted. Pattern: NOS rulings R18 (heading + one factual sentence + route back e.g. "Back to vendors" + contact link; never a void/placeholder) and R11 ("To be confirmed" chip on unconfirmed sentences); reuse the empty-state component arriving in the NOS ticket handoff (F7).
