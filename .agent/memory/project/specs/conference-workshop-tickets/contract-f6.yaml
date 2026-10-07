@@ -29,8 +29,15 @@ goal: >
   stays byte-for-byte unchanged. Zero JSX, zero styling, zero visual component — that is
   F7, blocked on the NOS design handoff. Carries the mission's comms.md handoff (to
   saoc-nos-design-f1) and docs obligations, since this feature's output is exactly what
-  that design peer renders against. Declares codex_qa + browser_deployed_check (not
-  gws_inbox_check — no purchase/email path is touched here; that's F4's).
+  that design peer renders against. Declares codex_qa + browser_deployed_check. REVISED
+  2026-10-07 (team-lead, triad-linter fix): gws_inbox_check IS declared too (A28) — this
+  feature changed lib/data/tickets.ts's firebase-admin import, and that file sits on the
+  real checkout-to-ITN-to-email path (app/api/tickets/checkout/route.ts and
+  lib/data/pool-remaining.ts both import it), not only inside this feature's own
+  check-script harness. A real post-deploy purchase settling to `paid` with a delivered
+  confirmation email is a genuine regression proof for that import change, not box-ticking
+  — the prior "no purchase/email path is touched here; that's F4's" framing undersold this
+  feature's actual reach into that path.
 created_at: '2026-10-07'
 autonomy: high
 features:
@@ -71,8 +78,21 @@ assertions:
       command: node contracts/checks/conference-workshop-tickets-f6/check-load-workshop-sessions-empty-state.mjs
 
     - id: A8
-      description: zero JSX, zero Tailwind/CSS class string, and zero React component is introduced anywhere under lib/view-models/
-      command: "! grep -rlE \"className=|<[A-Z][a-zA-Z]*[ />]\" lib/view-models/"
+      description: 'zero JSX, zero Tailwind/CSS class string, and zero React component is
+        introduced anywhere under lib/view-models/. REWRITTEN 2026-10-07 (team-lead: the
+        F6 gate run FAILed here as a false positive) — the original inline regex
+        (`<[A-Z][a-zA-Z]*[ />]`) matched the TypeScript generic `Promise<TicketCardViewModel>`
+        inside two plain comments (lib/view-models/load-ticket-card.ts:132, :152); a bare
+        angle-bracket regex cannot distinguish a JSX element from a generic type argument.
+        Replaced with a node script checking the structural signals real JSX would
+        actually require: no .tsx file (TypeScript requires this extension to parse JSX
+        syntax at all — a .ts file with real JSX is a compile error, the load-bearing
+        signal), no `className=` string (kept from the original), and no `react`
+        import/`React.createElement` call. Bite-proofed both ways: PASSES against the
+        current real files (confirming the false positive is gone); a sandboxed mutant
+        (`.tmp/sandbox/f6-a8-biteproof/`, not committed, not wired into any gate)
+        containing a real `<div className=...>` in a .ts file is correctly rejected.'
+      command: node contracts/checks/conference-workshop-tickets-f6/check-no-jsx-in-view-models.mjs
 
     - id: A9
       description: the symposium page gains exactly one additive server-side loader call; its existing rendered JSX output is byte-for-byte unchanged (diff touches only the data-fetch/prop-pass lines, never the return/render tree)
@@ -95,7 +115,25 @@ assertions:
       command: node contracts/checks/conference-workshop-tickets-f6/check-all-products-have-real-counters.mjs
 
     - id: A14
-      description: day-visitor's view-model carries a `days` array with exactly three independent entries (Friday/Saturday/Sunday, in that order), each out of the per-day 1000 cap with its own independently-resolved state, and `scarcity` stays null for day-visitor (it has no single pool); early-bird carries BOTH `days` (same per-day 1000 reading) AND a non-null `scarcity` (its own share of the shared 500-pool) simultaneously
+      description: 'day-visitor''s view-model carries a `days` array with exactly three
+        independent entries (Friday/Saturday/Sunday, in that order), each out of the
+        per-day 1000 cap with its own independently-resolved state, and `scarcity` stays
+        null for day-visitor (it has no single pool); early-bird carries BOTH `days` (same
+        per-day 1000 reading) AND a non-null `scarcity` (its own share of the shared
+        500-pool) simultaneously. FIXTURE UPDATED 2026-10-07 (team-lead, after A19/A33''s
+        fix landed): the `fetchTicketType` stub was slug-blind, returning capacity 1000 for
+        every product — harmless under the old static-table pool-total lookup, but once
+        the loader started reading THIS field for the pool total (A19/A33), a slug-blind
+        1000 made early-bird''s own live capacity equal the per-day cap, able to mask this
+        assertion''s own "collapsed into one ceiling" check by coincidence. Stub is now
+        slug-aware (day-visitor: 1000, early-bird/weekend-pass-early-bird: 500, mirroring
+        provisional-figures.ts:134/:202''s real ADMISSION_EARLY_BIRD_POOL_CAPACITY), and
+        early-bird''s scarcity.total is now pinned to the exact real figure (500), not just
+        "not equal to 1000" — kept, not weakened. Bite-proofed: a sandboxed mutant
+        (`.tmp/sandbox/f6-a14-biteproof/`, not committed, not wired into any gate) that
+        feeds day-visitor''s own live capacity into early-bird''s scarcity computation
+        (the exact "scarcity reads day-visitor''s cap" regression) still produces
+        scarcity.total === 1000, which this rewritten assertion still catches.'
       command: node contracts/checks/conference-workshop-tickets-f6/check-day-visitor-early-bird-dual-scarcity.mjs
 
     - id: A15
@@ -115,9 +153,9 @@ assertions:
       command: test -f docs/national-show-conference-workshop-tickets.md
 
     - id: A19
-      description: 'codex_qa verification ran against this feature''s diff (view-model layer + the three inert loader-wiring call sites)'
+      description: 'codex_qa verification ran against this feature''s diff (view-model layer + the three inert loader-wiring call sites). RE-SCOPED 2026-10-07 (Codex round-2 found the prompt''s own stated expectation didn''t match the real, correctly-ratified code — see goldens/f3-ui-render-states.golden.md Addendum 5): the prompt previously asserted "exactly one... call... passed as a prop" per §3''s original (now-superseded) text; the target text below now matches Addendum 5''s ratified shape instead, so a future run checks the real requirement, not a stale one.'
       type: codex_qa
-      target: "Adversarially review the current git diff of lib/view-models/ and the three loader-wiring call sites in app/(marketing)/national-show/symposium/, app/(marketing)/national-show/wosa-conference/, and app/(marketing)/national-show/workshops/ (mission conference-workshop-tickets, feature F6): a new view-model layer composes F1's computeEarlyBirdRemaining and F4's getPoolRemaining() with zero new capacity/counting computation of its own, each page gains exactly one additive server-side loader call whose result is passed as a prop, and the existing rendered JSX must stay byte-for-byte unchanged (zero JSX, zero styling, zero React component anywhere under lib/view-models/). For each finding: cite exact file:line, state the concrete failure scenario, and rate confidence. If nothing real is wrong, say so plainly instead of inventing findings."
+      target: "Adversarially review the current git diff of lib/view-models/ and the three loader-wiring call sites in app/(marketing)/national-show/symposium/, app/(marketing)/national-show/wosa-conference/, and app/(marketing)/national-show/workshops/ (mission conference-workshop-tickets, feature F6): a new view-model layer composes F1's computeEarlyBirdRemaining and F4's getPoolRemaining() with zero new capacity/counting computation of its own; each page gains one additive server-side call per data source it needs (two on symposium/wosa-conference — presenters + ticket card; one on workshops — workshop sessions), every result is computed and `void`-discarded (reserved for F7's design handoff, never passed as a prop — see golden Addendum 5 for why a prop-pass is not actually available against ShowContentState/CategoryTicketsPage without changing their own prop interfaces); and the existing rendered JSX must stay byte-for-byte unchanged (zero JSX, zero styling, zero React component anywhere under lib/view-models/). For each finding: cite exact file:line, state the concrete failure scenario, and rate confidence. If nothing real is wrong, say so plainly instead of inventing findings."
 
     - id: A20
       description: 'DEPLOYED, LIVE proof (plain check, not the native browser_deployed_check kind — see below) that all three wired pages render identically to before this feature on the real beta.saoc.co.za origin. NOT the native kind because execution/browser_deployed_check.sh verifies exactly ONE manifest per invocation and contract.py''s native dispatch passes exactly one `target` string — it cannot represent this check''s own deliberate three-page requirement (a single-manifest shortcut would leave two of the three pages unverified, per this script''s own header comment). This feature''s triad browser_deployed_check credit is instead A24''s single-page manifest below; this assertion remains the real, comprehensive three-page proof.'
@@ -128,7 +166,19 @@ assertions:
       command: npx tsc --noEmit
 
     - id: A22
-      description: 'regularPrice is non-null ONLY for weekend-pass-early-bird (reading weekend-pass''s live price) and early-bird (reading day-visitor''s live price), null for every other in-scope product, and in both non-null cases is read straight through from the sibling ticketType''s own live price — never a second, independently-typed literal that could drift from it'
+      description: 'regularPrice is non-null ONLY for weekend-pass-early-bird (sourced from
+        weekend-pass''s own resolved price) and early-bird (sourced from day-visitor''s own
+        resolved price), null for every other in-scope product, and in both non-null cases
+        is sourced from the sibling ticketType via the SAME `resolveEffectivePrice()` call
+        used for price itself (A27) — never a second, independently-typed literal that could
+        drift from it. NARROWED 2026-10-07 (Codex round-4 finding; see A34): this
+        assertion''s own fixture never gives the sibling an earlyBirdCutoff, so
+        resolveEffectivePrice() resolves to the sibling''s raw price in every case this
+        script drives — it proves "sourced from the sibling, not a second literal" but does
+        NOT by itself distinguish resolveEffectivePrice()-resolution from a raw passthrough.
+        A34 is the assertion that pins the resolution path itself, using a sibling with an
+        EXPIRED cutoff where raw price and resolveEffectivePrice()''s result diverge (380 vs
+        450) — the two assertions are complementary, not redundant.'
       command: node contracts/checks/conference-workshop-tickets-f6/check-regular-price-sibling-passthrough.mjs
 
     - id: A23
@@ -139,3 +189,205 @@ assertions:
       description: 'browser_deployed_check (native triad kind) against the real deployed beta.saoc.co.za origin confirming the symposium page (one of A20''s three wired pages) renders 200 — a genuine single-manifest GET page-render check, which is what this kind''s mechanism is actually built for (see A20''s header comment for why the full three-page proof cannot itself be this native kind). KNOWN BLOCKER (2026-10-07): the live re-check sends no Basic Auth header and this path is behind the beta wall, so it will 401 and FAIL until InunuNet/Athanor#1459 lands upstream — same blocker as F3''s A27 and F4''s A22, see .agent/memory/project/backlog.md'
       type: browser_deployed_check
       target: .agent/memory/project/specs/conference-workshop-tickets/goldens/fixtures/f6-a20-browser-manifest-symposium.json
+
+    - id: A25
+      description: 'the card''s day cap comes from the SAME live Sanity day-visitor capacity
+        checkout enforces, not a second, independently-constructed static path. Added
+        2026-10-07 per QA FAIL fix list item 1 (qa-report-conference-workshop-tickets-f6.md,
+        "Dead code" — resolveSharedPoolCapacity(DAY_VISITOR_DAY_CAP_POOL_KEY) ?? 1000 read a
+        static lib/provisional-figures.ts value, never the live Sanity document). Proven via
+        a DI fixture where day-visitor''s live-fetched capacity is 750 (a number that exists
+        nowhere in the static data) and ''early-bird'' (a different document sharing the same
+        day cap) correctly shows 750 per day, not 1000.'
+      command: node contracts/checks/conference-workshop-tickets-f6/check-day-cap-from-live-day-visitor-capacity.mjs
+
+    - id: A26
+      description: 'no `?? 1000` (or any other) magic fallback when day-visitor''s live
+        capacity is missing/unusable — the day-qualified reading comes back null, never a
+        fabricated number. Added 2026-10-07, same QA fix-list item 1 as A25, the other half
+        of its discipline (mirrors A23''s existing null-capacity-is-null pattern, applied here
+        to the day-cap mechanism). The ''early-bird'' slug''s OWN independent shared-pool
+        scarcity is asserted to keep resolving correctly in the same run, proving the two
+        ceilings stay independent even when one goes missing.'
+      command: node contracts/checks/conference-workshop-tickets-f6/check-day-cap-missing-capacity-is-null.mjs
+
+    - id: A27
+      description: 'the card''s displayed price resolves through lib/checkout-reservation.ts''s
+        resolveEffectivePrice() — the same function checkout''s own route.ts calls before
+        charging — never a raw, unconditional ticketType.price read. Added 2026-10-07 per QA
+        FAIL fix list item 2. Tested against ''day-visitor'' specifically (no
+        REGULAR_PRICE_SIBLING_SLUG entry, so the formula is unambiguous — see the check
+        script''s own header comment for why ''early-bird''/''weekend-pass-early-bird'' were
+        deliberately avoided here): with an earlyBirdCutoff set far in the past, price must
+        equal resolveEffectivePrice''s result (this ticketType''s own regularPrice schema
+        field), never the raw price; with no cutoff, price stays the raw price (regression
+        guard).'
+      command: node contracts/checks/conference-workshop-tickets-f6/check-price-uses-resolve-effective-price.mjs
+
+    - id: A28
+      description: 'gws_inbox_check: a real, deployed, post-F6 purchase settles to `paid`
+        and its confirmation email is delivered and readable. Added 2026-10-07 (team-lead,
+        triad-linter fix): this feature changed lib/data/tickets.ts''s firebase-admin
+        import (`@/lib/firebase-admin` -> a relative `../firebase-admin.ts`), and that file
+        is on the REAL checkout-to-ITN-to-email path (app/api/tickets/checkout/route.ts
+        imports it directly; lib/data/pool-remaining.ts, which this feature''s own loaders
+        call, imports it too) — not only inside this feature''s own check-script harness.
+        A real purchase driven to a delivered email is a genuine regression proof that the
+        import change didn''t break the live pipeline, which no source-text/static-analysis
+        check can prove on its own. NOT YET PRODUCED (2026-10-07): team-lead commits and
+        deploys F6 first; the producer script below is deliberately NOT run until then —
+        running it pre-deploy would prove the pre-feature code path, not the thing this
+        assertion exists to verify. Producer:
+        contracts/checks/conference-workshop-tickets-f6/produce-a28-source-purchase.mjs
+        (copied from F4''s produce-a16-source-purchase.mjs pattern).'
+      type: gws_inbox_check
+      target: .agent/memory/project/specs/conference-workshop-tickets/goldens/fixtures/f6-a28-confirmation-email-manifest.json
+
+    - id: A29
+      description: 'loadTicketCardViewModel() never throws past its own boundary — a
+        Sanity-side (fetchTicketType) or Firestore-side (getPoolRemaining) dependency
+        failure is caught, logged, and resolved to null, never propagated as an uncaught
+        rejection. Added 2026-10-07 (Codex finding, verified by team-lead): symposium and
+        wosa-conference await this loader with no try/catch of their own, so an unguarded
+        failure here would 500 those public content pages. Golden §2 did not specify this;
+        see Addendum 4 for the full contract this assertion pins — widened 2026-10-07
+        (team-lead) to cover loadPresenterViewModels() and loadWorkshopSessionViewModels()
+        too, since Codex''s finding was about the shared pattern, not this one file; see
+        A30 for those two siblings. Driven via the loader''s existing DI
+        seam (Addendum 2), forcing a failure from both documented dependency points.
+        Bite-proofed against the current (pre-fix) code: both cases correctly reject today
+        (FAIL), confirming the assertion exercises the real gap before @dev''s fix lands.'
+      command: node contracts/checks/conference-workshop-tickets-f6/check-loader-never-throws-on-failure.mjs
+
+    - id: A30
+      description: 'loadPresenterViewModels() (lib/view-models/load-presenters.ts) and
+        loadWorkshopSessionViewModels() (lib/view-models/load-workshop-sessions.ts) never
+        throw past their own boundary either — the same Codex finding behind A29 applies to
+        both siblings'' OWN unguarded top-level client.fetch() call, and all three loaders
+        are called by the same three pages (symposium/wosa-conference/workshops). Added
+        2026-10-07 (team-lead widened the residual gap A29 explicitly carved out into
+        scope). STRUCTURAL check, not DI-driven: neither loader takes a `deps` parameter or
+        has any injectable-fetch seam (confirmed by reading both files in full), so unlike
+        A29 there is no way to force a failure through dynamically. Per team-lead''s
+        explicit fallback instruction, this verifies by structure instead: the fetch call
+        must sit inside a try block whose immediately-following catch (a) calls
+        console.error, (b) with a string literal starting with a bracketed [module-tag]
+        prefix matching this project''s existing convention (not pinned to one exact tag
+        text — @dev chooses the tag per call site), and (c) returns the same empty-array
+        default (`return [];`) each function already uses for its own `!client` branch.
+        See Addendum 4 for the full shared contract across all three loaders. Bite-proofed
+        against the current (pre-fix) code: neither file has any try/catch today, so both
+        fail with "not preceded by a ''try {''" (confirmed FAIL before @dev''s fix lands).'
+      command: node contracts/checks/conference-workshop-tickets-f6/check-sibling-loaders-never-throw-on-failure.mjs
+
+    - id: A31
+      description: 'loadTicketCardViewModel() returns price: null if and only if state ===
+        ''pricePending'' — never price: null paired with any other state. This is
+        ticket-card.ts''s own documented invariant (TicketCardViewModel.price comment,
+        "null only when state === ''pricePending''"), not a new rule. Added 2026-10-07,
+        Codex round-2 finding verified by team-lead against lib/view-models/load-ticket-card.ts:
+        resolveEffectivePrice() can itself resolve to null (a past earlyBirdCutoff with no
+        regularPrice fallback) even when the raw ticketType.price field was a perfectly
+        usable number, and the loader was gating resolveTicketCardState''s `priceUsable`
+        input on that raw field''s mere type-validity rather than on whether a price
+        actually came out resolveEffectivePrice()''s other end (~line 335 at the time of
+        the finding). Driven via loadTicketCardViewModel''s existing DI seam (Addendum 2),
+        using the ''vip'' slug (no sibling relation, no day-selection, no shared pool, so
+        nothing else can interfere with this precedence rule). Two cases: a past cutoff
+        with no regularPrice fallback must yield price: null + state: ''pricePending''; a
+        regression guard with no cutoff must yield the raw price + a non-pending state.
+        Bite-proofed: run against a sandboxed mutant with the fix manually reverted
+        (`.tmp/sandbox/f6-a31-a32-biteproof/`, not committed, not wired into any gate) —
+        confirmed the mutant resolves price: null with state ''available'', reproducing the
+        pre-fix bug; the real current source already carries team-lead''s concurrent fix
+        and this assertion PASSES against it today (no committed pre-fix revision exists
+        to run the check against directly — the file is untracked/new).'
+      command: node contracts/checks/conference-workshop-tickets-f6/check-price-null-implies-price-pending.mjs
+
+    - id: A32
+      description: 'when the shared early-bird pool (ADMISSION_EARLY_BIRD_POOL_KEY) is
+        exhausted, ''early-bird'' and ''weekend-pass-early-bird'' must resolve to state
+        ''earlyBirdSoldOut'', never plain ''soldOut'' — per ticket-card.ts''s own documented
+        TicketCardState precedence (''soldOut'' is for "a non-early-bird product"; golden
+        §1). Added 2026-10-07, Codex round-2 finding verified by team-lead: for these two
+        pool siblings, `scarcity.remaining` and `earlyBirdRemaining` were the SAME pool
+        count, and resolveTicketCardState''s generic `remaining <= 0 -> soldOut` rule fires
+        before its `earlyBirdRemaining <= 0 -> earlyBirdSoldOut` rule, so the generic rule
+        always won. Also asserts (per team-lead''s explicit instruction) that
+        scarcity.remaining/total still report the real pool count (e.g. 0 of 500) even
+        when state resolution takes the early-bird branch — the displayed count is never
+        hidden just because the state resolver nulls its own internal input at the
+        exhaustion boundary. Third case, added per team-lead''s "if near-exhaustion should
+        read ''low'', pin that too": ticket-card.ts''s own resolveTicketCardState doc
+        comment (rule #4) says a pool product above zero but at/below the 10% low-stock
+        threshold resolves ''low''; the golden does not say otherwise, so this is pinned as
+        a regression guard, not left untested. Driven via loadTicketCardViewModel''s
+        existing DI seam (Addendum 2) for both slugs. Bite-proofed the same way as A31 (see
+        that assertion''s note): the sandboxed reverted mutant resolves plain ''soldOut''
+        on pool exhaustion, reproducing the pre-fix bug; the real current source carries
+        team-lead''s concurrent fix and PASSES today. FIXTURE UPDATED 2026-10-07
+        (team-lead, after A19/A33''s fix landed): the stub ticketType capacity was 999 with
+        a comment calling it "irrelevant" — true only while the loader read the pool total
+        from the static table; now that the loader reads this field via
+        effectiveCapacity() (A19/A33), 999 was stale and the field is load-bearing. Set to
+        ADMISSION_EARLY_BIRD_POOL_CAPACITY (matching A14''s and A33''s own fixtures, not an
+        invented stand-in), and scarcity.total is now asserted against
+        effectiveCapacity(ADMISSION_EARLY_BIRD_POOL_CAPACITY, null) directly rather than a
+        bare constant comparison, for consistency with how A33 states the same
+        requirement.'
+      command: node contracts/checks/conference-workshop-tickets-f6/check-early-bird-pool-exhaustion-state.mjs
+
+    - id: A33
+      description: 'the shared early-bird pool''s TOTAL (scarcity.total, and the `capacity`
+        argument passed to getPoolRemaining()) comes from the SAME live Sanity
+        capacity/releasedQuantity checkout itself reads via effectiveCapacity(), never from
+        the static lib/provisional-figures.ts pool table. Added 2026-10-07, Codex round-3
+        finding verified by team-lead against lib/view-models/load-ticket-card.ts:
+        `resolveSharedPoolCapacity(poolKey)` scans the static ADMISSION_PRODUCTS/
+        CONFERENCE_PRODUCTS/WORKSHOP_FIELD_TRIP_PRODUCTS arrays for a hand-typed `capacity`
+        field, while checkout (app/api/tickets/checkout/route.ts:615-626) computes each
+        cart item''s own pool ceiling from its LIVE ticketType document''s
+        `capacity`/`releasedQuantity` via `effectiveCapacity()` — the identical pure
+        function this loader already imports and already uses for the day-cap block, just
+        not for this pool-total computation. A live Sanity edit to capacity/releasedQuantity
+        changes what checkout will actually sell and what this card displays in two
+        different, divergent ways. Driven via loadTicketCardViewModel''s existing DI seam
+        (Addendum 2), using ''weekend-pass-early-bird'' (shares the pool, no
+        requiresDaySelection complexity to interfere). Two cases, each stubbing a live
+        capacity/releasedQuantity that deliberately differs from the static 500
+        (ADMISSION_EARLY_BIRD_POOL_CAPACITY): capacity 600/releasedQuantity null (expect
+        poolTotal 600); capacity 600/releasedQuantity 450 (expect poolTotal 450, the
+        narrower of the two per effectiveCapacity()''s own Math.min). Confirmed FAIL
+        against the current (pre-fix) code directly — no sandbox mutant needed, unlike
+        A31/A32, because @dev''s fix had not yet landed when this assertion was written:
+        both cases return scarcity.total === 500 and call getPoolRemaining with capacity
+        500, the static figure, ignoring the stubbed live values entirely.'
+      command: node contracts/checks/conference-workshop-tickets-f6/check-pool-total-from-live-capacity.mjs
+
+    - id: A34
+      description: 'weekend-pass-early-bird''s/early-bird''s `regularPrice` resolves through
+        the SAME `resolveEffectivePrice()` call used for price itself (A27''s rule),
+        reading the sibling''s own `price`/`regularPrice`/`earlyBirdCutoff` — never the
+        sibling''s raw `price` passed straight through once that sibling''s own cutoff has
+        closed. Added 2026-10-07, Codex round-4 finding; team-lead ratified the CODE as
+        correct and the GOLDEN as stale (see f3-ui-render-states.golden.md Addendum 7).
+        Codex flagged that golden §2''s pre-Addendum-7 text ("reads that sibling''s own live
+        `price` field straight through... SOURCED, never re-typed") does not match
+        lib/view-models/load-ticket-card.ts, which resolves the sibling''s regularPrice
+        through resolveEffectivePrice() instead. The code is right: A27 already requires
+        every DISPLAYED price to go through resolveEffectivePrice() so the card never shows
+        a figure checkout wouldn''t actually charge, and the sibling''s regularPrice IS "what
+        the regular ticket costs at checkout" — same rule, no special case. Concrete
+        scenario (team-lead''s own numbers): sibling (weekend-pass) has its own cutoff
+        expired, price 380, regularPrice 450 — checkout would charge 450 for a
+        weekend-pass purchase today, so 450, not the raw 380, is the only honest figure.
+        Driven via loadTicketCardViewModel''s existing DI seam (Addendum 2), using
+        ''weekend-pass-early-bird'' (sibling: ''weekend-pass''). Two cases: sibling cutoff
+        expired with price !== regularPrice (must resolve to the effective/regularPrice
+        figure, not the raw price); regression guard with no sibling cutoff (must resolve
+        to the sibling''s raw price, unchanged behaviour). Bite-proofed: a sandboxed mutant
+        (`.tmp/sandbox/f6-a34-biteproof/`, not committed, not wired into any gate) with the
+        sibling regularPrice reverted to a raw passthrough returns regularPrice: 380 (the
+        stale/wrong value) — confirmed this assertion catches a regression to the old
+        stale-golden behaviour. Complementary to A22, not redundant — see A22''s note.'
+      command: node contracts/checks/conference-workshop-tickets-f6/check-sibling-regular-price-uses-resolve-effective-price.mjs

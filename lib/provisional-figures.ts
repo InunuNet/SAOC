@@ -93,6 +93,20 @@ export const ADMISSION_EARLY_BIRD_POOL_KEY = 'admission-early-bird';
 // — one literal, not two independently hand-typed copies.
 const DAY_VISITOR_EXCLUDED_DAYS = ['2027-09-23'];
 
+// F6 (conference-workshop-tickets, M4) — the three real, confirmed sellable days for every
+// day-qualified admission product (day-visitor, early-bird): the live show's own confirmed
+// window (2027-09-23 Thursday through 2027-09-26 Sunday — see the live 'show-19-2027' Sanity
+// document) minus DAY_VISITOR_EXCLUDED_DAYS above ("No Daypass on thursday"). Derived by
+// filtering, never by hand-typing the three surviving dates a second time — same discipline
+// as DAY_VISITOR_SHAPED_SLUGS's own filter+map below. A compile-time-pure list (no live
+// Sanity show-window fetch) so lib/view-models/load-ticket-card.ts's loadTicketCardViewModel()
+// needs no fourth DI seam beyond fetchTicketType/getPoolRemaining/computeEarlyBirdRemaining
+// (its golden's Addendum 2).
+const SHOW_WINDOW_DAYS_2027 = ['2027-09-23', '2027-09-24', '2027-09-25', '2027-09-26'];
+export const DAY_VISITOR_SELLABLE_DAYS: readonly string[] = SHOW_WINDOW_DAYS_2027.filter(
+  (day) => !DAY_VISITOR_EXCLUDED_DAYS.includes(day),
+);
+
 const DAY_VISITOR_SOURCE_CITATION =
   "Lee-Ann's sheet (relayed by Brad, 2026-10-07), line 23: '1 day Pass any day...(R150) " +
   "Early Bird(R120 only 500 available) 1000 Total per day'; Brad's ticket news, 2026-10-07 " +

@@ -138,3 +138,101 @@ vendor exibitor for where is it") — reported here as a fact for him to resolve
   "Exhibitors", "Vendors", "Indoor/Outdoor", or "Full Access".
 - Does not touch `app/(marketing)/national-show/vendors/**` or
   `app/(marketing)/national-show/exhibitors/**`.
+
+## F6 (M4) — ticket/presenter/workshop view-model layer + server-side loaders
+
+F6 builds the data layer the separate NOS design peer session (`saoc-nos-design-f1`) renders
+against: pure TypeScript interfaces (`lib/view-models/ticket-card.ts`) and three server-side
+loaders (`lib/view-models/load-ticket-card.ts`, `load-presenters.ts`,
+`load-workshop-sessions.ts`). **Zero JSX, zero Tailwind class, zero styled component** — see
+`docs/rules/no-invention.md` and `.agent/memory/project/specs/conference-workshop-tickets/goldens/f3-ui-render-states.golden.md`
+for the full decision record this section summarises. Visual rendering of these view-models is
+F7, blocked on the NOS design handoff — not contracted yet.
+
+### Every in-scope product gets a real counter — none are flagged/skipped
+
+| Product | Counter shape | Ceiling |
+|---|---|---|
+| `vip` | `scarcity` | 200 |
+| `sunset-cocktails-single` / `-couple` | `scarcity` | 200 (shared `sunset-cocktails` pool) |
+| `saoc-symposium` | `scarcity` | 80 |
+| `wosa-conference` | `scarcity` | 80 |
+| each `workshopSession` | `scarcity` (via its linked `ticketCard`) | 10 |
+| `weekend-pass` | `scarcity`, **or `null` specifically when `ticketType.capacity` is itself unset/null** | 300 (needs-Brad carried-over estimate) |
+| `weekend-pass-early-bird` | `scarcity` + `regularPrice` (weekend-pass's live price) | 500 (shared `admission-early-bird` pool) |
+| `day-visitor` | `days` only (`scarcity: null`) | 1000 per day, Fri/Sat/Sun independently |
+| `early-bird` | **both** `days` (1000/day) **and** `scarcity` (shared 500-pool) **and** `regularPrice` (day-visitor's live price) | two independent ceilings |
+
+`scarcity: null` means "no counter is shown," never "unlimited supply" — this fires only for
+weekend-pass, and only as the honest consequence of Brad not yet ruling the cap exists (one
+shared capacity-based rule, not a slug-keyed exception).
+
+### `TicketCardState` precedence order (pinned, `lib/view-models/ticket-card.ts`)
+
+Each state masks every state below it — first match wins:
+
+1. `pricePending` — price/capacity data failed to resolve or is mid-fetch.
+2. `soldOut` — remaining <= 0 for a non-early-bird product/ceiling.
+3. `earlyBirdSoldOut` — remaining <= 0 specifically on an early-bird pool/slug, so the design
+   peer can render pool-exhaustion language different from a flat sellout.
+4. `low` — remaining > 0 and within `LOW_STOCK_THRESHOLD_PERCENT` (10%) of total capacity.
+5. `available` — otherwise.
+
+Pinned this way (rather than left to call-site judgment) because the states are NOT mutually
+exclusive conditions in the underlying numbers — a sold-out early-bird product with a pending
+price read must read `pricePending`, never `earlyBirdSoldOut`, and a day-qualified product's own
+`days[]` entries each resolve this independently (Saturday can be `soldOut` while Friday reads
+`available` on the very same card).
+
+### Why `days[].total` is a fixed per-day constant, never `ticketType.capacity`
+
+`early-bird`'s own `ticketType.capacity` field holds the shared 500-ticket early-bird pool's
+total (its `capacityPool` ceiling) — a completely different number from the 1000-per-day cap it
+shares with `day-visitor` via `DAY_VISITOR_SHAPED_SLUGS`. `load-ticket-card.ts` reads the
+per-day cap from `lib/provisional-figures.ts`'s `DAY_VISITOR_DAY_CAP` (derived from
+`day-visitor`'s own product entry), and a shared pool's own total from the same products array
+by `capacityPool` membership — never from the loaded slug's own `capacity` field when that slug
+belongs to a named pool. Conflating the two was the one concrete bug this feature's own fixture
+tests (A14/A15) were written to catch.
+
+### Needs-Brad list carried forward, counter questions removed
+
+The counter-build questions (does a product get a real counter at all; the pinned state
+precedence) are no longer open — Brad has confirmed he wants live "N left" counters, and the
+NOS design peer is actively designing cards around them. What remains open, merged with the
+F1–F5 list above:
+
+- **Item #10 — Exhibitor/Vendor R3500** (unchanged, still open — see above).
+- **Weekend-Pass-vs-day-cap counting** (F4 §2, open): does a Weekend Pass holder's purchase draw
+  against Day Visitor's per-day 1000 cap? Not re-litigated here — F6's `days[]` reads
+  `getPoolRemaining()` with F4's shipped default (Weekend Pass excluded), so the displayed
+  counters automatically follow whichever answer F4 ships, with no separate logic in this
+  feature to keep in sync.
+- **Weekend-pass's own 300-capacity** — carried-over pre-split estimate, not re-confirmed
+  against the early-bird split (see the F1–F5 field above).
+- **Workshop presenter scope** — no `workshopSession` document is council-confirmed yet; F6's
+  `loadWorkshopSessionViewModels()` returns an empty array today, matching that real state.
+- **VIP price/cap override** — the 2026-09-08 direct ruling remains superseded by Lee-Ann's
+  sheet per the F1–F5 section above; not re-opened by F6.
+- **sunset-cocktails-couple retirement** and **VIP/cocktails overlap** — carried forward
+  unresolved from prior features, untouched by F6.
+
+### Pre-existing import-resolution fix (`lib/data/tickets.ts`)
+
+F6 is the first feature to functionally `import()` the `getPoolRemaining()` chain end-to-end
+(every prior check against it was a source-text check, never a real import) through this
+feature's own DI-seam-driven fixture tests. Doing so surfaced that `lib/data/tickets.ts`'s
+`@/lib/firebase-admin` alias import fails to resolve under this project's `contracts/checks/
+*.mjs` harness (a bare `tsx/esm/api` `register()`, no tsconfig option — see
+`lib/data/pool-remaining.ts`'s own header comment on the same limitation) once it sits inside a
+fully-static import chain several modules deep. Changed to a relative, explicit-`.ts`-extension
+specifier in that one file/line only (zero behaviour change; Next.js resolves both identically,
+confirmed by `pnpm build`) — the other 35 call sites elsewhere in the codebase still using the
+alias are untouched.
+
+### Next step: F7 (blocked)
+
+F7 is the NOS design peer's handoff — the actual styled ticket/presenter/workshop cards, the
+scarcity badge, the Fri/Sat/Sun day selector UI. Not yet contracted. See `comms.md`'s
+`conference-workshop-tickets -> saoc-nos-design-f1` block for the exact interface/loader
+signatures this feature ships for that handoff to render against.

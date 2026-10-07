@@ -1,6 +1,17 @@
 import { getFirestore, Timestamp, type Transaction } from 'firebase-admin/firestore';
 
-import { initAdmin } from '@/lib/firebase-admin';
+// F6 (conference-workshop-tickets, M4) — changed from the `@/lib/firebase-admin` alias to
+// a relative, explicit-`.ts`-extension specifier (zero behaviour change; Next.js resolves
+// both identically). lib/view-models/load-ticket-card.ts statically imports
+// lib/data/pool-remaining.ts, which statically imports THIS file — under this feature's
+// own contracts/checks/*.mjs harness (a bare tsx/esm/api register(), no tsconfig option;
+// see lib/data/pool-remaining.ts's own header comment on the same limitation), resolving a
+// deep, fully-static `@/...` import chain in one linking pass fails with
+// `Cannot find module '@/lib/firebase-admin'` — this was never exercised end-to-end before
+// (every prior check against this file's import chain was a source-text check, never a
+// real `import()`). Scoped to this one file/line, not the other 35 call sites still using
+// the alias elsewhere in the codebase.
+import { initAdmin } from '../firebase-admin.ts';
 
 // F2 (ticketing-pages): server-only helper — imports firebase-admin, so it must only
 // ever be called from Server Components or Route Handlers, never from a 'use client'

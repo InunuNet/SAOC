@@ -16,16 +16,16 @@ goal: 'Build SAOC Symposium, WOSA Conference and Workshops ticketing + NOS-brand
   pending/flagged, never invented.'
 created_at: '2026-10-06T22:55:40.960318+00:00'
 started_at: '2026-10-06T23:47:42.760004+00:00'
-last_active_at: '2026-10-07T03:49:48.027469+00:00'
+last_active_at: '2026-10-07T04:27:45.379557+00:00'
 status: in_progress
 cost_estimate:
   features: 0
   milestones: 0
   total_calls: 0
 last_checkpoint:
-  milestone: M2
-  feature: F3
-  ts: '2026-10-07T03:49:48.027469+00:00'
+  milestone: M3
+  feature: F5
+  ts: '2026-10-07T04:27:45.379557+00:00'
 features:
 - id: F1
   inline_brief: null
@@ -72,11 +72,11 @@ features:
   name: Exhibitor/Vendor R3500 - DOC-ONLY fact-finding pending Brad (#10); no change
     to vendor pricing/payment paths
   milestone: M3
-  status: pending
+  status: done
   spec: .agent/memory/project/specs/conference-workshop-tickets/contract-f5.yaml
   contract: .agent/memory/project/specs/conference-workshop-tickets/contract-f5.yaml
   started_at: null
-  completed_at: null
+  completed_at: '2026-10-07T04:27:45.379410+00:00'
 - id: F6
   inline_brief: null
   name: TicketCard/Presenter/WorkshopSession view-models + server loaders with honest
@@ -108,9 +108,9 @@ milestones:
   features:
   - F5
   name: Vendor R3500 fact-finding (doc-only)
-  status: pending
-  gate_ran_at: null
-  gate_result: null
+  status: done
+  gate_ran_at: '2026-10-07T04:32:53.838101+00:00'
+  gate_result: pass
 - id: M4
   features:
   - F6

@@ -2,14 +2,23 @@
 // getPoolRemaining() for every count it produces — no second, independently-constructed
 // Firestore query exists in the loader.
 //
+// REPOINTED 2026-10-07 (F4 build-break fix, commit 08b7b8d9): getPoolRemaining() moved
+// from lib/checkout-reservation.ts to lib/data/pool-remaining.ts — that function's
+// lib/data/tickets.ts imports pulled firebase-admin into a client bundle
+// (lib/checkout-reservation.ts is reached by a client component via
+// lib/vendor-stand-pricing.ts) and broke `pnpm build`. See the F4 golden's build-break
+// addendum. planPooledCapacity()/resolveDayQualifiedPoolKey() stayed in
+// lib/checkout-reservation.ts, unmoved — only getPoolRemaining's import source changes
+// here.
+//
 // Proven structurally against the SOURCE TEXT of lib/view-models/load-ticket-card.ts:
-// (1) it imports getPoolRemaining from lib/checkout-reservation (F4's module — never a
-//     locally-redeclared function of the same name, which would defeat the point); (2) it
-//     calls getPoolRemaining( at least twice (once unqualified for every product, once per
-//     sellable day for day-visitor/early-bird — golden §2); (3) it contains no raw
-//     Firestore query of its own (`.collection(`, `.where(`, `getFirestore(`) — any count
-//     this loader needs must come through getPoolRemaining(), not a second hand-rolled
-//     query sitting beside it.
+// (1) it imports getPoolRemaining from lib/data/pool-remaining (F4's relocated module —
+//     never a locally-redeclared function of the same name, which would defeat the
+//     point); (2) it calls getPoolRemaining( at least twice (once unqualified for every
+//     product, once per sellable day for day-visitor/early-bird — golden §2); (3) it
+//     contains no raw Firestore query of its own (`.collection(`, `.where(`,
+//     `getFirestore(`) — any count this loader needs must come through
+//     getPoolRemaining(), not a second hand-rolled query sitting beside it.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,8 +41,8 @@ const sourceNoComments = source
   .map((line) => line.replace(/\/\/.*$/, ''))
   .join('\n');
 
-if (!/import\s*\{[^}]*\bgetPoolRemaining\b[^}]*\}\s*from\s*['"].*checkout-reservation['"]/.test(sourceNoComments)) {
-  failures.push(`${REL_PATH} does not import getPoolRemaining from lib/checkout-reservation — F4's shared counting path`);
+if (!/import\s*\{[^}]*\bgetPoolRemaining\b[^}]*\}\s*from\s*['"].*data\/pool-remaining(\.ts)?['"]/.test(sourceNoComments)) {
+  failures.push(`${REL_PATH} does not import getPoolRemaining from lib/data/pool-remaining.ts — F4's shared counting path (relocated 2026-10-07, build-break fix, commit 08b7b8d9)`);
 }
 
 const callCount = (sourceNoComments.match(/getPoolRemaining\s*\(/g) ?? []).length;
@@ -55,5 +64,5 @@ for (const pattern of RAW_FIRESTORE_PATTERNS) {
 finish(
   'check-loader-calls-get-pool-remaining.mjs',
   failures,
-  `${REL_PATH} imports and calls F4's getPoolRemaining() for every count it produces, with no second hand-rolled Firestore query.`,
+  `${REL_PATH} imports (from lib/data/pool-remaining.ts) and calls F4's getPoolRemaining() for every count it produces, with no second hand-rolled Firestore query.`,
 );

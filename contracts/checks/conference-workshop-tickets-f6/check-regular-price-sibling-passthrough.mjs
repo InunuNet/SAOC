@@ -1,9 +1,18 @@
 // F6 (conference-workshop-tickets, M4) — A22 (added 2026-10-07, design peer request,
 // relayed by team-lead): `regularPrice` is non-null ONLY for weekend-pass-early-bird
-// (reading weekend-pass's live price) and early-bird (reading day-visitor's live price),
-// null for every other in-scope product, and in both non-null cases is read straight
-// through from the sibling ticketType's own live price — never a second,
+// (sourced from weekend-pass's own resolved price) and early-bird (sourced from
+// day-visitor's own resolved price), null for every other in-scope product, and in both
+// non-null cases is sourced from the sibling ticketType — never a second,
 // independently-typed literal that could silently drift from it.
+//
+// NARROWED 2026-10-07 (Codex round-4 finding; see A34 and golden Addendum 7): none of
+// this script's fixtures give the sibling an earlyBirdCutoff, so resolveEffectivePrice()
+// resolves to the sibling's raw price in every case driven here — this proves the figure
+// comes FROM the sibling (not a second, hand-typed literal) but does not by itself
+// distinguish resolveEffectivePrice()-resolution from a raw passthrough, since the two
+// coincide whenever there's no cutoff. A34 is the complementary assertion that pins the
+// resolution path itself, using a sibling with an EXPIRED cutoff where raw price and
+// resolveEffectivePrice()'s result diverge.
 //
 // Driven via loadTicketCardViewModel's DI seam (golden Addendum 2): `deps.fetchTicketType`
 // is stubbed to return a DIFFERENT price depending on WHICH slug it's called with — the
@@ -85,7 +94,8 @@ for (const { slug, expectedRegularPrice } of CASES) {
   } else if (result.regularPrice !== expectedRegularPrice) {
     failures.push(
       `'${slug}': regularPrice is ${JSON.stringify(result.regularPrice)}, expected ${expectedRegularPrice} ` +
-        '(the sibling ticketType\'s own live price, read through — not a second, independently-typed literal)',
+        '(sourced from the sibling ticketType — not a second, independently-typed literal; ' +
+        'see A34 for the cutoff-expired resolveEffectivePrice() divergence case)',
     );
   }
 }

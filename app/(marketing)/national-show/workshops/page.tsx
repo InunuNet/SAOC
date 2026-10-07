@@ -4,6 +4,7 @@ import { CategoryTicketsPage } from '@/components/tickets';
 import { Card } from '@/components/nos/Card';
 import { ShowSectionNav } from '@/components/show';
 import { buildPageMetadata } from '@/lib/seo';
+import { loadWorkshopSessionViewModels } from '@/lib/view-models/load-workshop-sessions';
 
 // See app/(marketing)/tickets/page.tsx for why this stays force-dynamic — the shared
 // CategoryTicketsPage component calls getSoldCountsByTicketType() (Firebase Admin SDK,
@@ -33,6 +34,24 @@ const SESSIONS_NOTE =
 // as an NOS Card rather than the previous bare bordered box (design grammar: bare rules on a
 // flat ground read generic and were rejected).
 export default async function WorkshopsFieldTripsTicketsPage() {
+  // F6 (conference-workshop-tickets, M4) — additive, inert: computed and reserved for
+  // F7's design handoff, which renders real per-session cards. Zero JSX change — the
+  // CategoryTicketsPage render below (owned by the sibling SAOC session, per its own
+  // header comment above) is untouched.
+  //
+  // Codex finding (2026-10-07, relayed by team-lead) — same fix as symposium/page.tsx's
+  // identical note: loadWorkshopSessionViewModels() resolves each session's ticketCard
+  // through loadTicketCardViewModel() (lib/view-models/load-workshop-sessions.ts), which
+  // reaches Sanity/Firestore and can reject on a real backend failure; its unrendered
+  // result must never turn this public content page into a 500.
+  let workshopSessions: Awaited<ReturnType<typeof loadWorkshopSessionViewModels>> = [];
+  try {
+    workshopSessions = await loadWorkshopSessionViewModels();
+  } catch (error) {
+    console.error('[national-show/workshops] loadWorkshopSessionViewModels failed:', error);
+  }
+  void workshopSessions;
+
   return (
     <>
       <CategoryTicketsPage
