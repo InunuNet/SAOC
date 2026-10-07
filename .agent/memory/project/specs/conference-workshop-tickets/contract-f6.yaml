@@ -136,6 +136,6 @@ assertions:
       command: node contracts/checks/conference-workshop-tickets-f6/check-weekend-pass-null-capacity-scarcity.mjs
 
     - id: A24
-      description: 'browser_deployed_check (native triad kind) against the real deployed beta.saoc.co.za origin confirming the symposium page (one of A20''s three wired pages) renders 200 — a genuine single-manifest GET page-render check, which is what this kind''s mechanism is actually built for (see A20''s header comment for why the full three-page proof cannot itself be this native kind)'
+      description: 'browser_deployed_check (native triad kind) against the real deployed beta.saoc.co.za origin confirming the symposium page (one of A20''s three wired pages) renders 200 — a genuine single-manifest GET page-render check, which is what this kind''s mechanism is actually built for (see A20''s header comment for why the full three-page proof cannot itself be this native kind). KNOWN BLOCKER (2026-10-07): the live re-check sends no Basic Auth header and this path is behind the beta wall, so it will 401 and FAIL until InunuNet/Athanor#1459 lands upstream — same blocker as F3''s A27 and F4''s A22, see .agent/memory/project/backlog.md'
       type: browser_deployed_check
       target: .agent/memory/project/specs/conference-workshop-tickets/goldens/fixtures/f6-a20-browser-manifest-symposium.json

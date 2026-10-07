@@ -1,35 +1,35 @@
 #!/usr/bin/env node
 // F3 (conference-workshop-tickets, M2) — generator for A27's browser_deployed_check
 // manifest. Drives a real headless Playwright browser (per .claude/rules/shell-paths.md —
-// never Claude-in-Chrome in this project) against /national-show/conferences through the
-// real beta Basic-auth wall, verifies the actual rendered content, takes a real
-// screenshot, and only THEN writes the manifest — a manifest is never written for a page
-// that didn't actually show what it claims.
+// never Claude-in-Chrome in this project) against /national-show/tickets through the
+// real beta Basic-auth wall, confirms a real 2xx render, takes a real screenshot, and
+// only THEN writes the manifest.
 //
-// WHY /national-show/conferences, NOT /tickets (team-lead correction, 2026-10-07)
-// /tickets has zero mentions of "Symposium" — confirmed live. /national-show/conferences
-// is the real page: live content shows exactly two cards, slugs `saoc-symposium` and
-// `wosa-conference`, each rendering the visible text "R2000.00" immediately before its
-// own `id="ticket-type-qty-<slug>-desc"` element, and the page contains ZERO occurrences
-// of `data-testid="provisional-badge"` (TicketTypeCard's own visible marker attribute —
-// see components/tickets/TicketTypeCard.tsx:108) anywhere. A page-wide absence check for
-// that marker is safe ONLY on this page, because it renders nothing but these two cards —
-// /tickets legitimately shows a "Provisional pricing" badge on Lee-Ann-sheet admission
-// products and must never be asserted marker-free.
+// RETARGETED 2026-10-07 (team-lead decision), TWICE over
+// v1 pointed at /tickets (wrong — zero mentions of Symposium there). v2 pointed at
+// /national-show/conferences and asserted R2000 visibly with no provisional-badge marker
+// — correct content, but team-lead moved that content claim to F6/F7's own contracts,
+// where the pricing UI actually ships (confirmed live 2026-10-07: the conferences page's
+// JSON payload already carries `"price":2000`, but nothing renders it visibly yet — F6's
+// own goal states the visual layer is F7, blocked on the NOS design handoff). v3 (this
+// version) targets /national-show/tickets instead — a page F3 itself genuinely affects
+// (F3's own excludedDays enforcement governs the Day Pass day picker shown here) — and
+// deliberately only proves a 2xx render, the same thin scope as F4's A22, since F3 made
+// no UI change of its own (A17) and the native browser_deployed_check kind cannot verify
+// page CONTENT regardless (see execution/browser_deployed_check.sh — it checks origin,
+// path, commit_sha, timestamp, screenshot presence, and http_status only).
 //
 // KNOWN BLOCKER THIS SCRIPT DOES NOT TRY TO ROUTE AROUND
-// This script can produce a well-formed, honestly-verified manifest, but
 // execution/browser_deployed_check.sh's own independent live re-check
 // (execution/browser_deployed_check.sh:188) sends a bare unauthenticated curl, and
 // proxy.ts gates every path on beta.saoc.co.za behind Basic Auth except 6 webhook paths
 // — so that re-check will see 401 and FAIL regardless of how correct this manifest is,
-// until the harness gap is fixed upstream or the wall gets a scoped verifier exemption.
-// See .agent/memory/project/backlog.md (2026-10-07 entry) and
-// .agent/memory/scratch/triad-kind-field-bug.md's sibling note. Filed, not routed around,
-// per .claude/rules/athanor.md.
+// until InunuNet/Athanor#1459 lands upstream or the wall gets a scoped verifier
+// exemption. See .agent/memory/project/backlog.md (2026-10-07 entry). Filed, not routed
+// around, per .claude/rules/athanor.md. Same blocker annotated on F4's A22 and F6's A24.
 //
 // Usage: node contracts/checks/conference-workshop-tickets-f3/generate-a27-browser-manifest.mjs [origin]
-// Exit 0 = manifest written (content verified real), 1 = content verification failed
+// Exit 0 = manifest written (render verified real), 1 = render verification failed
 // (no manifest written), 2 = usage/setup error (missing credentials, missing playwright).
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -38,19 +38,14 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.join(__dirname, '../../../');
-const PATH_TESTED = '/national-show/conferences';
+const PATH_TESTED = '/national-show/tickets';
 const MANIFEST_DIR = path.join(
   REPO_ROOT,
   '.agent/memory/project/specs/conference-workshop-tickets/goldens/fixtures',
 );
-const MANIFEST_PATH = path.join(MANIFEST_DIR, 'f3-a27-browser-manifest-conferences-pricing.json');
-const SCREENSHOT_REL = 'fixtures/f3-a27-screenshot.png';
-const SCREENSHOT_PATH = path.join(MANIFEST_DIR, 'f3-a27-screenshot.png');
-
-const EXPECTED_CARDS = [
-  { slug: 'saoc-symposium', priceText: 'R2000.00' },
-  { slug: 'wosa-conference', priceText: 'R2000.00' },
-];
+const MANIFEST_PATH = path.join(MANIFEST_DIR, 'f3-a27-browser-manifest-tickets-smoke.json');
+const SCREENSHOT_REL = 'fixtures/f3-a27-tickets-smoke-screenshot.png';
+const SCREENSHOT_PATH = path.join(MANIFEST_DIR, 'f3-a27-tickets-smoke-screenshot.png');
 
 function usageError(message) {
   console.error(`usage error: ${message}`);
@@ -93,37 +88,9 @@ async function main() {
     const page = await context.newPage();
     const response = await page.goto(`${origin}${PATH_TESTED}`, { waitUntil: 'networkidle' });
     const httpStatus = response?.status() ?? 0;
-    const bodyText = await page.content();
 
-    const failures = [];
     if (httpStatus < 200 || httpStatus > 299) {
-      failures.push(`page returned HTTP ${httpStatus}, expected 2xx`);
-    }
-    for (const card of EXPECTED_CARDS) {
-      const descAnchor = `id="ticket-type-qty-${card.slug}-desc"`;
-      if (!bodyText.includes(descAnchor)) {
-        failures.push(`card for slug '${card.slug}' not found on the page (no ${descAnchor})`);
-        continue;
-      }
-      const anchorIndex = bodyText.indexOf(descAnchor);
-      const precedingWindow = bodyText.slice(Math.max(0, anchorIndex - 200), anchorIndex);
-      if (!precedingWindow.includes(card.priceText)) {
-        failures.push(
-          `card '${card.slug}' does not show '${card.priceText}' immediately before ${descAnchor} — found: ${JSON.stringify(precedingWindow.slice(-120))}`,
-        );
-      }
-    }
-    if (bodyText.includes('data-testid="provisional-badge"')) {
-      failures.push(
-        'page-wide check found data-testid="provisional-badge" on /national-show/conferences — this page must render ' +
-          'ONLY the two conference cards with provisional:false; a page-wide absence check is safe here specifically ' +
-          'because of that (never on /tickets, which legitimately shows the badge on admission products)',
-      );
-    }
-
-    if (failures.length > 0) {
-      console.error('FAIL: generate-a27-browser-manifest.mjs — content verification failed, no manifest written');
-      for (const f of failures) console.error(`  - ${f}`);
+      console.error(`FAIL: generate-a27-browser-manifest.mjs — page returned HTTP ${httpStatus}, expected 2xx, no manifest written`);
       process.exit(1);
     }
 
@@ -139,14 +106,15 @@ async function main() {
       http_status: httpStatus,
       outcome: 'pass',
       notes:
-        'A27: both saoc-symposium and wosa-conference render R2000.00 with no provisional-badge marker on /national-show/conferences. ' +
-        'NOTE: execution/browser_deployed_check.sh verification of this manifest will still FAIL independently of this content proof ' +
-        '— its own live re-check sends no Basic Auth header and the beta wall gates this path 401 — see this script\'s header comment ' +
-        'and .agent/memory/project/backlog.md (2026-10-07 entry).',
+        'A27: /national-show/tickets renders 2xx post-F3 (thin smoke check only — the R2000/provisional-marker content ' +
+        'claim moved to F6/F7, where that UI ships). NOTE: execution/browser_deployed_check.sh verification of this ' +
+        'manifest will still FAIL independently of this render proof — its own live re-check sends no Basic Auth header ' +
+        'and the beta wall gates this path 401 — tracked as InunuNet/Athanor#1459. See this script\'s header comment and ' +
+        '.agent/memory/project/backlog.md (2026-10-07 entry).',
     };
     writeFileSync(MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
-    console.log(`PASS: content verified, manifest written to ${MANIFEST_PATH}`);
-    console.log('Reminder: execution/browser_deployed_check.sh will still reject this manifest live until the auth-wall harness gap is resolved.');
+    console.log(`PASS: render verified, manifest written to ${MANIFEST_PATH}`);
+    console.log('Reminder: execution/browser_deployed_check.sh will still reject this manifest live until InunuNet/Athanor#1459 lands.');
   } finally {
     await browser.close();
   }

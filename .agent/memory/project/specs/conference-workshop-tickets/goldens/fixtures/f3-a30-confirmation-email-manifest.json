@@ -1,0 +1,11 @@
+{
+  "gws_subcommand": "mail read",
+  "message_id": "1a11410a8f9e93ed",
+  "subject": "Your SAOC National Show order is confirmed",
+  "from": "SAOC Tickets <tickets@tickets.saoc.co.za>",
+  "recipient": "brad@inunu.net",
+  "timestamp": "2026-10-07T01:53:16Z",
+  "content_sha256": "a3345a900ffed86098ab01a2b0b7e8aaf534db7834c03429ea9661e444b8a67c",
+  "outcome": "pass",
+  "notes": "A30 (conference-workshop-tickets F3): confirmation email for bookingRef CWT-F3-A30-muxge14k (day-visitor, Friday 2027-09-24, brad@inunu.net), produced by contracts/checks/conference-workshop-tickets-f3/produce-a30-source-purchase.mjs driving the real ITN-to-paid path, proving the new excludedDays rejection branch did not regress the pre-existing accepted-day confirmation-email path. Verified read-only via `gws gmail users messages get --params '{\"userId\":\"me\",\"id\":\"1a11410a8f9e93ed\"}'` (gws_subcommand recorded as the manifest schema's fixed 'mail read' label per gws_inbox_check.sh's READONLY_SUBCOMMAND convention, not the literal CLI invocation). This email only sent at all because of the same-day withFetchStub scoping fix in _itn-harness.mts (see backlog) — before that fix every confirmation-email send inside this harness's ITN call was silently swallowed by the over-broad PayFast fetch stub."
+}

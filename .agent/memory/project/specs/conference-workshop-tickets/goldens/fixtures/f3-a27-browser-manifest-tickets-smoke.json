@@ -1,0 +1,10 @@
+{
+  "origin": "https://beta.saoc.co.za",
+  "path_tested": "/national-show/tickets",
+  "screenshot_path": "fixtures/f3-a27-tickets-smoke-screenshot.png",
+  "commit_sha": "661f0935d0c476353504c133bb4e4d413784bd52",
+  "timestamp": "2026-10-07T01:56:37.472Z",
+  "http_status": 200,
+  "outcome": "pass",
+  "notes": "A27: /national-show/tickets renders 2xx post-F3 (thin smoke check only — the R2000/provisional-marker content claim moved to F6/F7, where that UI ships). NOTE: execution/browser_deployed_check.sh verification of this manifest will still FAIL independently of this render proof — its own live re-check sends no Basic Auth header and the beta wall gates this path 401 — tracked as InunuNet/Athanor#1459. See this script's header comment and .agent/memory/project/backlog.md (2026-10-07 entry)."
+}

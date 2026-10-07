@@ -168,16 +168,55 @@ export function confirmStub(body: string, status = 200): ConfirmStub {
   return async () => ({ status, text: async () => body });
 }
 
-/** Reassign the bare global `fetch` for the duration of `fn`, recording every call, then
- * restore the original regardless of outcome. */
+/** Best-effort extraction of the target URL from fetch's first argument, which can be a
+ * string, a URL, or a Request object — withFetchStub needs this to decide which calls
+ * are PayFast's own server-confirm request and which are an unrelated downstream fetch
+ * (e.g. the Resend SDK's call to api.resend.com, made from inside
+ * deliverConfirmationEmailAfterCommit() while the ITN route is still executing). */
+function extractFetchUrl(firstArg: unknown): string {
+  if (typeof firstArg === 'string') return firstArg;
+  if (firstArg instanceof URL) return firstArg.toString();
+  if (firstArg && typeof firstArg === 'object' && 'url' in firstArg) {
+    return String((firstArg as { url: unknown }).url);
+  }
+  return '';
+}
+
+/**
+ * Reassign the bare global `fetch` for the duration of `fn`, recording every call to
+ * PayFast's own server-confirm URL and stubbing ONLY those, then restore the original
+ * regardless of outcome.
+ *
+ * FIX (2026-10-07, found producing conference-workshop-tickets F3's A30 manifest): this
+ * used to stub EVERY fetch call unconditionally, with no URL check at all. That's wrong
+ * — the ITN route's own deliverConfirmationEmailAfterCommit() call fires from inside the
+ * same POST() execution this wraps, and its Resend SDK call also uses the bare global
+ * fetch, so it was getting PayFast's canned `{status, text: () => 'VALID'}` reply instead
+ * of a real Resend response and throwing "Unable to fetch data. The request could not be
+ * resolved." every single time — not a credentials or deliverability problem, a stub-
+ * scope bug. Confirmed: A29 never noticed because it only asserts the ITN POST's own
+ * status and the position's `paid` status (both unaffected — the confirmation-email
+ * failure is caught and logged, "payment already committed, not rolled back", same as a
+ * real Resend outage in production); A30 needs the REAL send to succeed, which this
+ * over-broad stub made structurally impossible. Now only a request whose URL matches
+ * PayFast's real sandbox validate endpoint (PAYFAST_SANDBOX_VALIDATE_URL) is stubbed —
+ * everything else, including Resend's call, passes through to the real global fetch
+ * untouched.
+ */
 export async function withFetchStub<T>(
   stub: ConfirmStub,
   fn: () => Promise<T>
 ): Promise<{ result: T; calls: unknown[][] }> {
+  const { PAYFAST_SANDBOX_VALIDATE_URL } = await import('@/lib/payfast');
   const original = globalThis.fetch;
   const calls: unknown[][] = [];
   // @ts-expect-error — intentionally narrowing the global fetch signature for the stub
   globalThis.fetch = async (...args: unknown[]) => {
+    const url = extractFetchUrl(args[0]);
+    if (url !== PAYFAST_SANDBOX_VALIDATE_URL) {
+      // @ts-expect-error — delegating to the real fetch with its real argument types
+      return original(...args);
+    }
     calls.push(args);
     return stub(...args);
   };

@@ -3,131 +3,138 @@
 // inbox-check manifest. NEVER part of the automated gate — no contract assertion calls
 // this script, and it must not be added as one.
 //
-// WHY A SEPARATE SCRIPT FROM A29
-// A29 (check-payfast-sandbox-e2e-day-visitor.mjs) uses a sentinel email
-// (shared.sentinelEmail(), the `...@sentinel.inunu.net` convention) and is swept clean
-// by withCleanup() every run — that's correct and must stay that way, since A29 runs
-// automatically on every gate pass and a sentinel address is what makes that safe
-// (contracts/checks/ticketing-hardening/_shared.mjs's sweepSentinels() finds and deletes
-// it by domain match). But `gws` only reads a REAL inbox (brad@inunu.net — see
-// .agent/memory/scratch or project memory "gws CLI reads Brad's email read-only"), so a
-// sentinel-addressed order's confirmation email is never readable by gws at all. A30
-// therefore needs its OWN real purchase, made once, by hand, with a real address — not
-// A29's automated sentinel run repurposed. This script is that one-off purchase, built
-// on the exact same live-POST shape as A28's script (same Idempotency-Key-header
-// requirement, same checkout body shape) but:
-//   - uses a FIXED included day (Friday, 2027-09-24) — proving the ACCEPTED-day path,
-//     the fact A30 exists to protect, same as A29;
-//   - sends attendeeEmail: 'brad@inunu.net' (real, readable) instead of a sentinel;
-//   - is NEVER run automatically and performs NO cleanup — the resulting order is a real,
-//     deliberately-kept artefact, read once via gws, then left as an ordinary real ticket
-//     sale (not deleted — this project's convention is "never delete a sandbox/produced
-//     artefact casually"; a stray R150 sandbox-gateway day-visitor order is immaterial and
-//     the PayFast/Ozow side is already sandbox-mode, see the live response's "IsTest":"true").
+// FIX (team-lead run, 2026-10-07): v1 of this script drove a plain checkout POST and
+// stopped at `reserved` — WRONG. app/api/tickets/checkout/route.ts never sends a
+// confirmation email on reservation; the send fires from the ITN handler on settlement
+// to `paid` (same as A29's own path). A real checkout POST against beta also resolves
+// the site's currently-active gateway (observed live: Ozow, not PayFast), and there is
+// no Ozow ITN test harness in this project — so driving that order to paid would need a
+// different route (`/api/tickets/ozow-itn`) this harness doesn't support.
 //
-// USAGE (run by hand, exactly once, whenever A30's manifest needs (re)producing):
-//   node contracts/checks/conference-workshop-tickets-f3/produce-a30-source-purchase.mjs [origin]
-// Prints the resulting bookingRef. After running:
-//   1. Wait for the confirmation email to arrive at brad@inunu.net (Resend -> gws-readable
-//      inbox — not instant; may take up to a few minutes).
-//   2. Find it: gws mail search "bookingRef <the one just printed>" (or search by subject/
-//      recent arrival — see reference_gws_cli_email_readonly in project memory).
-//   3. Read it: gws mail read <message_id>.
+// v2 (this version) drives the SAME ITN-to-paid path A29 uses
+// (contracts/checks/payfast-m1/_itn-harness.mts's loadItnPost() + PayFast ITN fields/
+// signature), against an order THIS script creates directly — same shape
+// createOrderAndPosition() builds (same buildReservationDocs() call, gateway: 'payfast'
+// explicitly, so the existing unmodified PayFast ITN route applies) — but NOT via
+// createOrderAndPosition() itself, which hard-refuses any non-sentinel email
+// (_itn-harness.mts:242-244, `Refusing to create an order/position without the sentinel
+// email marker`) — a real guard that exists for good reason and stays untouched. This
+// script owns its own one-off real-email write instead, entirely inside this file, so
+// every OTHER PayFast-m1 check keeps that guard exactly as before.
+//
+// NO CLEANUP, deliberately: the resulting order/position stays `paid` under a real
+// address (brad@inunu.net) so the confirmation email is real and gws-readable — the
+// entire point of this script. Not swept, not deleted.
+//
+// Settles SAOC-2027-F6HZVA7K3RH5 (v1's stranded `reserved` order, created via a real
+// checkout POST against beta): per team-lead's framing, left to expire naturally per this
+// project's own documented reservation-expiry rules (docs/order-reconciliation.md,
+// docs/ticketing-position-expiry-write.md) — it is an ordinary unsettled reservation,
+// exactly the shape those mechanisms already handle, so no manual action was taken on it.
+//
+// USAGE (run by hand, exactly once per manifest (re)production):
+//   node contracts/checks/conference-workshop-tickets-f3/produce-a30-source-purchase.mjs
+// Prints the resulting bookingRef once position.status === 'paid'. After running:
+//   1. Wait for the confirmation email to arrive at brad@inunu.net.
+//   2. Find it: gws gmail users messages list (read-only — never `send`).
+//   3. Read it: gws gmail users messages get <message_id>.
 //   4. Write the manifest at
 //      .agent/memory/project/specs/conference-workshop-tickets/goldens/fixtures/f3-a30-confirmation-email-manifest.json
 //      in the shape .agent/memory/project/specs/verification-triad-gate/goldens/fixtures/gws_manifest_good.json
 //      uses: {gws_subcommand, message_id, subject, from, recipient, timestamp,
-//      content_sha256, outcome, notes}. `recipient` must be brad@inunu.net (what this
-//      script actually sent) and `timestamp` must be within gws_inbox_check.sh's 4h
-//      freshness window at the moment A30 is gated, so this step must happen close to
-//      gate time, not once and reused indefinitely.
+//      content_sha256, outcome, notes}. `recipient` must be brad@inunu.net and
+//      `timestamp` must be within gws_inbox_check.sh's 4h freshness window at gate time.
 //
-// CREDENTIALS: same as check-deployed-thursday-rejected-friday-accepted.mjs — reads
-// BETA_BASIC_AUTH_USER/PASSWORD from the environment, falling back to .env.local, never
-// printed.
-import { randomUUID } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+// CREDENTIALS: PAYFAST_SANDBOX_PASSPHRASE + the FIREBASE_ADMIN_* triple from .env.local —
+// same as every other payfast-m1 behavioural check.
+import { register } from 'tsx/esm/api';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.join(__dirname, '../../../');
+register();
 
-const DEFAULT_ORIGIN = 'https://beta.saoc.co.za';
-const NATIONAL_SHOW_ID = 'nationalShow';
-const INCLUDED_FRIDAY = '2027-09-24';
+const harness = await import('../payfast-m1/_itn-harness.mts');
+const {
+  credentialsAvailable,
+  skipForMissingCredentials,
+  realPayfastIp,
+  buildXff,
+  buildItnRequest,
+  loadItnPost,
+  withFetchStub,
+  confirmStub,
+  itnFields,
+  signAndEncode,
+  waitUntilQueryable,
+} = harness;
+
+const ASSERTION_ID = 'A30 source purchase (conference-workshop-tickets F3, manual helper)';
+
+if (!credentialsAvailable()) skipForMissingCredentials(ASSERTION_ID);
+
+const { randomBytes } = await import('node:crypto');
+const { Timestamp } = await import('firebase-admin/firestore');
+const { buildReservationDocs } = await import('@/lib/checkout-reservation');
+const shared = await import('../ticketing-hardening/_shared.mjs');
+
+const { ADMISSION_PRODUCTS } = await import('../../../lib/provisional-figures.ts');
+const dayVisitor = ADMISSION_PRODUCTS.find((p) => p.slug === 'day-visitor');
+if (!dayVisitor) {
+  console.error('FAIL: produce-a30-source-purchase.mjs');
+  console.error("  - no 'day-visitor' product in ADMISSION_PRODUCTS — cannot exercise its real price");
+  process.exit(1);
+}
+
 const REAL_READABLE_RECIPIENT = 'brad@inunu.net';
+const database = shared.db();
+const bookingRef = `CWT-F3-A30-${Date.now().toString(36)}`;
+const orderRef = database.collection('orders').doc();
+const positionRef = database.collection('tickets').doc(bookingRef);
 
-function usageError(message) {
-  console.error(`usage error: ${message}`);
-  process.exit(2);
-}
+const now = Timestamp.now();
+const expiresAt = Timestamp.fromMillis(now.toMillis() + 30 * 60 * 1000);
 
-function readEnvLocalValue(key) {
-  const envPath = path.join(REPO_ROOT, '.env.local');
-  if (!existsSync(envPath)) return undefined;
-  const contents = readFileSync(envPath, 'utf8');
-  for (const line of contents.split('\n')) {
-    const match = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
-    if (match && match[1] === key) {
-      return match[2].replace(/^(['"])(.*)\1$/, '$2');
-    }
-  }
-  return undefined;
-}
-
-function resolveCredential(envVarName) {
-  return process.env[envVarName] ?? readEnvLocalValue(envVarName);
-}
-
-async function main() {
-  const origin = (process.argv[2] ?? DEFAULT_ORIGIN).replace(/\/$/, '');
-  const user = resolveCredential('BETA_BASIC_AUTH_USER');
-  const password = resolveCredential('BETA_BASIC_AUTH_PASSWORD');
-  if (!user || !password) {
-    usageError(
-      'BETA_BASIC_AUTH_USER / BETA_BASIC_AUTH_PASSWORD not found in the environment or .env.local',
-    );
-  }
-  const authorization = `Basic ${Buffer.from(`${user}:${password}`).toString('base64')}`;
-
-  const body = {
-    showId: NATIONAL_SHOW_ID,
-    lineItems: [
-      {
-        ticketType: 'day-visitor',
-        attendeeName: 'Brad (A30 manifest source purchase)',
-        attendeeEmail: REAL_READABLE_RECIPIENT,
-        chosenDay: INCLUDED_FRIDAY,
-      },
-    ],
-  };
-  const res = await fetch(`${origin}/api/tickets/checkout`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: authorization,
-      'Idempotency-Key': randomUUID(),
-    },
-    body: JSON.stringify(body),
-  });
-  const json = await res.json().catch(() => null);
-
-  if (res.status !== 200 && res.status !== 201) {
-    console.error(`FAIL: checkout returned ${res.status}, expected 200/201 — body: ${JSON.stringify(json)}`);
-    process.exit(1);
-  }
-  if (!json || typeof json.bookingRef !== 'string' || json.bookingRef.length === 0) {
-    console.error(`FAIL: checkout returned ${res.status} but no bookingRef — body: ${JSON.stringify(json)}`);
-    process.exit(1);
-  }
-
-  console.log(`Purchase created: bookingRef=${json.bookingRef}, recipient=${REAL_READABLE_RECIPIENT}`);
-  console.log('Next: wait for the confirmation email, then run `gws mail search`/`gws mail read` ' +
-    'per this script\'s own header comment to produce f3-a30-confirmation-email-manifest.json.');
-}
-
-main().catch((error) => {
-  console.error(`error: ${error.message}`);
-  process.exit(2);
+const { order, position } = buildReservationDocs({
+  orderId: orderRef.id,
+  bookingRef,
+  showId: shared.NATIONAL_SHOW_ID,
+  attendeeName: 'Brad (A30 manifest source purchase)',
+  attendeeEmail: REAL_READABLE_RECIPIENT,
+  ticketType: 'day-visitor',
+  amount: dayVisitor.price,
+  idempotencyKey: randomBytes(16).toString('hex'),
+  expiresAt,
+  recoveryToken: randomBytes(16).toString('hex'),
+  recoveryTokenExpiresAt: expiresAt,
+  now,
+  gateway: 'payfast',
 });
+
+await orderRef.set(order);
+await positionRef.set(position);
+await waitUntilQueryable(database, order.m_payment_id, orderRef.id);
+
+const POST = await loadItnPost();
+const realIp = await realPayfastIp();
+const xff = buildXff(realIp);
+
+const fields = itnFields({ mPaymentId: bookingRef, amountGross: dayVisitor.price.toFixed(2) });
+const body = await signAndEncode(fields);
+
+const { result: response } = await withFetchStub(confirmStub('VALID'), () =>
+  POST(buildItnRequest({ body, xff })),
+);
+
+if (response.status !== 200) {
+  console.error(`FAIL: produce-a30-source-purchase.mjs — ITN POST returned ${response.status}, expected 200`);
+  process.exit(1);
+}
+
+const snapshot = await positionRef.get();
+const data = snapshot.data();
+if (!data || data.status !== 'paid') {
+  console.error(`FAIL: produce-a30-source-purchase.mjs — position status is ${JSON.stringify(data?.status)}, expected 'paid'`);
+  process.exit(1);
+}
+
+console.log(`Purchase settled: bookingRef=${bookingRef}, recipient=${REAL_READABLE_RECIPIENT}, status=paid`);
+console.log('Next: wait for the confirmation email, then use gws gmail users messages list/get ' +
+  '(read-only) per this script\'s own header comment to produce f3-a30-confirmation-email-manifest.json.');
