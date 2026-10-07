@@ -1,10 +1,14 @@
 // F4 (conference-workshop-tickets, M2) — A25: display-path companion to A24.
-// getPoolRemaining()'s unqualified branch (lib/checkout-reservation.ts §7) reads
-// `soldCountsByType[resolvedKey] ?? 0` against the caller's `capacity` with no
-// awareness that day-visitor has no unqualified pool at all (golden §2) — called this
-// way, it would silently surface the SAME wrong aggregate-based figure A24 proves the
-// checkout transaction wrongly enforces (e.g. 0 remaining off an 1100-aggregate sold
-// count, when the true per-day pools still have hundreds of seats free).
+// getPoolRemaining()'s unqualified branch (lib/data/pool-remaining.ts §7 — RELOCATED
+// 2026-10-07, build-break fix: this function used to live in lib/checkout-reservation.ts,
+// which a client component reaches transitively via lib/vendor-stand-pricing.ts; its
+// lib/data/tickets.ts imports pulled firebase-admin into the client bundle and broke
+// `pnpm build`. See the golden's build-break addendum) reads `soldCountsByType[resolvedKey]
+// ?? 0` against the caller's `capacity` with no awareness that day-visitor has no
+// unqualified pool at all (golden §2) — called this way, it would silently surface the
+// SAME wrong aggregate-based figure A24 proves the checkout transaction wrongly enforces
+// (e.g. 0 remaining off an 1100-aggregate sold count, when the true per-day pools still
+// have hundreds of seats free).
 //
 // Design decision (architect, 2026-10-07): getPoolRemaining() must refuse (throw)
 // rather than silently compute a number for this invalid combination — a
@@ -12,15 +16,15 @@
 // unqualified pool (day-visitor is the only such product today) is a caller bug, not a
 // zero-seats-left fact, and must fail loud at the boundary (see coding.md "Fail fast").
 //
-// EXPECTED TO FAIL until @dev adds this guard — no such guard exists on the current
-// tree, so this call does not throw today.
+// Guard landed (confirmed 2026-10-07, same pass as the build-break relocation) — this
+// check now runs against the real guard, not the pre-fix absence of one.
 import { loadRepoModule, finish } from './_lib.mjs';
 
 let mod;
 try {
-  mod = await loadRepoModule('lib/checkout-reservation.ts');
+  mod = await loadRepoModule('lib/data/pool-remaining.ts');
 } catch (error) {
-  finish('check-get-pool-remaining-rejects-unqualified-day-visitor.mjs', [`could not import lib/checkout-reservation.ts: ${error.message}`]);
+  finish('check-get-pool-remaining-rejects-unqualified-day-visitor.mjs', [`could not import lib/data/pool-remaining.ts: ${error.message}`]);
 }
 
 if (typeof mod.getPoolRemaining !== 'function') {

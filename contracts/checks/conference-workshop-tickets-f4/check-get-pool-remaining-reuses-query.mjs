@@ -1,18 +1,22 @@
 // F4 (conference-workshop-tickets, M2) — A18: getPoolRemaining() is exported from
-// lib/checkout-reservation.ts, takes {poolKeyBase, chosenDay, requiresDaySelection,
-// capacity, showId}, and composes resolveDayQualifiedPoolKey() with the SAME
-// getSoldCountsByTicketTypeAndDay()/getSoldCountsByTicketType() functions the checkout
-// transaction itself reads — not a third, independently-constructed query. The DEFAULT
-// (no injected deps) path is proven structurally against source text — see the golden's
-// check-authoring addendum for why an optional `deps` DI parameter exists at all (A19
-// uses it; production call sites never pass it, so the DEFAULT path is what must prove
-// the real reuse).
+// lib/data/pool-remaining.ts (RELOCATED 2026-10-07, build-break fix — this function used
+// to live in lib/checkout-reservation.ts, which a client component reaches transitively
+// via lib/vendor-stand-pricing.ts; its lib/data/tickets.ts imports pulled firebase-admin
+// into the client bundle and broke `pnpm build`. See the golden's build-break addendum),
+// takes {poolKeyBase, chosenDay, requiresDaySelection, capacity, showId}, and composes
+// resolveDayQualifiedPoolKey() (still exported from lib/checkout-reservation.ts, pure,
+// unmoved) with the SAME getSoldCountsByTicketTypeAndDay()/getSoldCountsByTicketType()
+// functions the checkout transaction itself reads — not a third, independently-
+// constructed query. The DEFAULT (no injected deps) path is proven structurally against
+// source text — see the golden's check-authoring addendum for why an optional `deps` DI
+// parameter exists at all (A19 uses it; production call sites never pass it, so the
+// DEFAULT path is what must prove the real reuse).
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const REL_PATH = 'lib/checkout-reservation.ts';
+const REL_PATH = 'lib/data/pool-remaining.ts';
 const absPath = path.join(__dirname, '../../../', REL_PATH);
 
 const failures = [];

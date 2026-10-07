@@ -176,8 +176,13 @@ Brad has confirmed he wants them, and the NOS design peer is designing the cards
 show them. This feature exports the one accessor F6's loaders call; F6 does not grow a
 second, independent counting mechanism.
 
-`lib/checkout-reservation.ts` gains one new exported function, **read-only, no
-transaction**:
+**Relocated 2026-10-07 (build-break fix — see the addendum after §7's Addendum below):
+this function moved out of `lib/checkout-reservation.ts` into its own server-only
+module** — `lib/checkout-reservation.ts` is client-reachable (via
+`lib/vendor-stand-pricing.ts`) and this function's `lib/data/tickets.ts` imports pulled
+`firebase-admin` into the client bundle. The description below of what it does and how
+it's tested is otherwise unchanged; only its module location moved. One new exported
+function, **read-only, no transaction**:
 
 ```typescript
 export async function getPoolRemaining(args: {
@@ -275,6 +280,41 @@ third, independently-constructed query); A19's check injects stub functions to p
 early-bird's two simultaneous ceilings (its day-qualified share of the 1000 cap and its
 unqualified share of the shared 500-pool) resolve independently from one fixture, in
 one call each, with no live Firestore read.
+
+## Addendum (architect, 2026-10-07, build-break fix): `lib/checkout-reservation.ts` must stay client-safe
+
+`lib/vendor-stand-pricing.ts` — a module reached from a **client component** (F5's own
+lane, untouched by this feature) — imports `isWithinEarlyBirdWindow` from
+`lib/checkout-reservation.ts`. That makes `lib/checkout-reservation.ts` itself
+client-reachable: anything it imports at module scope ships in the client bundle, or the
+build breaks.
+
+§7's `getPoolRemaining()` was added to `lib/checkout-reservation.ts` importing
+`getSoldCountsByTicketType`/`getSoldCountsByTicketTypeAndDay` from `lib/data/tickets.ts`
+at module scope — which pulls in `firebase-admin`, a server-only dependency. That broke
+the production build (commit `8f978bbb`, rollout failure, 2026-10-07) because the client
+bundle now transitively required `firebase-admin` (components/vendors/
+VendorStandPaymentForm.tsx -> lib/vendor-stand-pricing.ts -> lib/checkout-reservation.ts,
+47 Turbopack errors).
+
+**Fix landed (@dev, 2026-10-07): `getPoolRemaining()` and its sold-count imports moved
+out of `lib/checkout-reservation.ts` into a new server-only sibling module,
+`lib/data/pool-remaining.ts`** — confirmed, final path. It imports
+`resolveDayQualifiedPoolKey` back from `lib/checkout-reservation.ts` (still pure,
+unmoved) and the product arrays from `lib/provisional-figures.ts`. `planPooledCapacity()`,
+`resolveEffectivePrice()`, `isWithinEarlyBirdWindow()`, `resolveDayQualifiedPoolKey()`,
+and the other pure/client-safe exports §1-§6 describe stayed in
+`lib/checkout-reservation.ts` exactly as before — only the two-`getSoldCounts*`-importing
+accessor moved, zero behaviour change. A18/A19/A25's checks were repointed to import from
+`lib/data/pool-remaining.ts`; A23/A24 read `app/api/tickets/checkout/route.ts` directly
+and never imported `getPoolRemaining`, so neither needed any change.
+
+**Standing invariant, enforced going forward:** `lib/checkout-reservation.ts` must never
+import, at any depth from its own module-scope imports, anything that reaches
+`firebase-admin` or `lib/data/*` (both server-only — Admin SDK). This is checked as a
+cheap static grep over the file's own top-level `import` lines (not a full build), proven
+to bite against an in-memory copy containing the current bad import before asserting the
+real file passes. See the new `A26` assertion in `contract-f4.yaml`.
 
 ## What this feature does NOT do
 

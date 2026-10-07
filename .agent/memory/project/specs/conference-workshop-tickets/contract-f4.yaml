@@ -143,5 +143,16 @@ assertions:
       command: node contracts/checks/conference-workshop-tickets-f4/check-day-visitor-excluded-from-unqualified-check.mjs
 
     - id: A25
-      description: 'display-path companion to A24: getPoolRemaining() called with poolKeyBase: ''day-visitor'', requiresDaySelection: false must throw (day-visitor has no unqualified pool to measure against), not silently compute a wrong aggregate-based remaining count. Fails today — no such guard exists yet.'
+      description: 'display-path companion to A24: getPoolRemaining() called with poolKeyBase: ''day-visitor'', requiresDaySelection: false must throw (day-visitor has no unqualified pool to measure against), not silently compute a wrong aggregate-based remaining count. Guard confirmed landed 2026-10-07 (same pass as the A26 build-break relocation of getPoolRemaining() to lib/data/pool-remaining.ts) — now passes against real source.'
       command: node contracts/checks/conference-workshop-tickets-f4/check-get-pool-remaining-rejects-unqualified-day-visitor.mjs
+
+    # ============ Added 2026-10-07 (architect, build-break fix): lib/checkout-reservation.ts ============
+    # ============ is reached by a CLIENT component (lib/vendor-stand-pricing.ts imports ============
+    # ============ isWithinEarlyBirdWindow from it, F5's own lane) and must never import ============
+    # ============ anything reaching firebase-admin or lib/data/* — see the golden's build-break ============
+    # ============ addendum. getPoolRemaining() and its lib/data/tickets.ts imports moved to the ============
+    # ============ new lib/data/pool-remaining.ts; A18/A19/A25 above were repointed to that path. ============
+
+    - id: A26
+      description: 'lib/checkout-reservation.ts has no top-level import reaching firebase-admin or lib/data/* (a cheap static grep over its own import lines, never a full build — this file is client-reachable via lib/vendor-stand-pricing.ts). Proven to bite against an in-memory copy with the build-breaking import re-added before asserting the real file passes.'
+      command: node contracts/checks/conference-workshop-tickets-f4/check-checkout-reservation-client-safe-imports.mjs

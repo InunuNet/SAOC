@@ -6,13 +6,20 @@
 // check-authoring addendum specifies, injecting stub sold-count functions so this runs
 // with no live Firestore read, while still exercising the REAL getPoolRemaining() and
 // the REAL resolveDayQualifiedPoolKey() it composes.
+//
+// RELOCATED 2026-10-07 (build-break fix): getPoolRemaining() moved from
+// lib/checkout-reservation.ts to lib/data/pool-remaining.ts — that function's
+// lib/data/tickets.ts imports pulled firebase-admin into the client bundle
+// (lib/checkout-reservation.ts is reached by a client component via
+// lib/vendor-stand-pricing.ts) and broke `pnpm build`. See the golden's build-break
+// addendum. resolveDayQualifiedPoolKey() it composes with is unmoved, still pure.
 import { loadRepoModule, finish } from './_lib.mjs';
 
 let mod;
 try {
-  mod = await loadRepoModule('lib/checkout-reservation.ts');
+  mod = await loadRepoModule('lib/data/pool-remaining.ts');
 } catch (error) {
-  finish('check-get-pool-remaining-early-bird-dual-ceiling.mjs', [`could not import lib/checkout-reservation.ts: ${error.message}`]);
+  finish('check-get-pool-remaining-early-bird-dual-ceiling.mjs', [`could not import lib/data/pool-remaining.ts: ${error.message}`]);
 }
 
 if (typeof mod.getPoolRemaining !== 'function') {
