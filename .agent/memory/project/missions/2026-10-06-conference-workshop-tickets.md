@@ -16,16 +16,16 @@ goal: 'Build SAOC Symposium, WOSA Conference and Workshops ticketing + NOS-brand
   pending/flagged, never invented.'
 created_at: '2026-10-06T22:55:40.960318+00:00'
 started_at: '2026-10-06T23:47:42.760004+00:00'
-last_active_at: '2026-10-07T04:27:45.379557+00:00'
-status: in_progress
+last_active_at: '2026-10-07T06:25:15.118916+00:00'
+status: close_out
 cost_estimate:
   features: 0
   milestones: 0
   total_calls: 0
 last_checkpoint:
-  milestone: M3
-  feature: F5
-  ts: '2026-10-07T04:27:45.379557+00:00'
+  milestone: M4
+  feature: F6
+  ts: '2026-10-07T06:25:15.118916+00:00'
 features:
 - id: F1
   inline_brief: null
@@ -82,11 +82,11 @@ features:
   name: TicketCard/Presenter/WorkshopSession view-models + server loaders with honest
     remaining counts; inert prop wiring; comms.md handoff to saoc-nos-design-f1
   milestone: M4
-  status: pending
+  status: done
   spec: .agent/memory/project/specs/conference-workshop-tickets/contract-f6.yaml
   contract: .agent/memory/project/specs/conference-workshop-tickets/contract-f6.yaml
   started_at: null
-  completed_at: null
+  completed_at: '2026-10-07T06:25:15.118773+00:00'
 milestones:
 - id: M1
   features:
@@ -115,9 +115,9 @@ milestones:
   features:
   - F6
   name: Ticket card view-models + design handoff
-  status: pending
-  gate_ran_at: null
-  gate_result: null
+  status: done
+  gate_ran_at: '2026-10-07T06:39:28.289984+00:00'
+  gate_result: pass
 ---
 
 # Mission: Build SAOC Symposium, WOSA Conference and Workshops ticketing + NOS-branded brochure pages per Brad 2026-10-07 (verbatim: .agent/memory/scratch/brad-ticket-news-2026-10-07.md). Symposium and WOSA Conference: separate products, R2000 each, 80 tickets per event of which 10 are early-bird, with a live honest 'N of 10 early-bird tickets left' scarcity counter per event read from real sales. Brochure/tile layout in NOS branding; copy = one short card per presenter (photo + summary bio supplied by Lee-Ann; visibly flagged pending until supplied, never invented), each card clicking through to that event's ticket booking. Workshops: small exclusive sessions throughout the show, R100 each, 10 tickets per workshop, ticket-only booking; structure built now (Sanity-editable sessions), full schedule to follow from Brad/Lee-Ann. Replaces the provisional CONFERENCE_PRODUCTS estimates (R450-R900, joint bundle) in lib/provisional-figures.ts. Pages under app/(marketing)/national-show/** are the NOS Site lane: post a comms.md notice. Early-bird price not yet given -> pending/flagged, never invented.
