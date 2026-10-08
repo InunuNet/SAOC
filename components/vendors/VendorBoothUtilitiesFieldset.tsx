@@ -64,17 +64,17 @@ export function VendorBoothUtilitiesFieldset({
           disabled={disabled}
         />
       ) : null}
+      {isElectricalEquipmentApplicable(state) ? (
+        <p className="font-sans text-[13px] leading-relaxed text-ink/70">
+          Important: All electrical equipment, cables, plugs and connections must comply with applicable South African electrical safety requirements and venue requirements. Vendors may be required to provide suitable extension cords and distribution equipment.
+        </p>
+      ) : null}
       {isGasEquipmentApplicable(state) ? (
         <VendorGasEquipmentTable
           value={state.gasEquipmentEntries}
           onChange={(rows) => onFieldChange('gasEquipmentEntries', rows)}
           disabled={disabled}
         />
-      ) : null}
-      {isElectricalEquipmentApplicable(state) ? (
-        <p className="font-sans text-[13px] leading-relaxed text-ink/70">
-          Important: All electrical equipment, cables, plugs and connections must comply with applicable South African electrical safety requirements and venue requirements. Vendors may be required to provide suitable extension cords and distribution equipment.
-        </p>
       ) : null}
       <VendorBooleanRadioField
         fieldKey="waterRequired"
