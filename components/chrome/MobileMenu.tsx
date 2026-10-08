@@ -102,14 +102,18 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
         className="ml-auto h-full w-full max-w-[360px] overflow-y-auto bg-parchment p-6"
         style={{ animation: 'slideInFromRight 250ms cubic-bezier(0.4,0,0.2,1) both' }}
       >
-        {/* Top row: wordmark + close */}
+        {/* Top row: lockup + close. Reverted to the raster combined lockup
+            (saoc-lockup-horizontal.png) at a fixed 220×40, matching
+            Header.tsx's revert — see Header.tsx's Zone 1 comment. Fixed
+            size here (not responsive) because this drawer stays ≤360px
+            wide regardless of the actual window width. */}
         <div className="flex items-center justify-between mb-8">
-          <span className="flex items-center gap-2">
-            <Image src="/images/saoc-logo-ink-paper.png" alt="" width={36} height={36} />
-            <span className="font-serif text-[16px] font-medium text-ink leading-tight">
-              SA Orchid Council
-            </span>
-          </span>
+          <Image
+            src="/images/saoc-lockup-horizontal.png"
+            alt="South African Orchid Council"
+            width={220}
+            height={40}
+          />
           <button
             type="button"
             aria-label="Close menu"
@@ -304,10 +308,10 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
         {/* Footer meta */}
         <div className="mt-8 pt-6 border-t border-rule flex flex-col gap-1">
           <a
-            href="mailto:council@saoc.co.za"
+            href="mailto:info@saoc.co.za"
             className="font-mono text-[12px] text-muted hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
           >
-            council@saoc.co.za
+            info@saoc.co.za
           </a>
           <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted/55">
             Est. 1968

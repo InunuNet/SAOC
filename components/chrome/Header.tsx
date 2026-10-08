@@ -83,21 +83,29 @@ export function Header({ show }: HeaderProps = {}) {
         ].join(' ')}
       >
         <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-6 px-8 py-3">
-          {/* Zone 1 — logo lockup */}
+          {/* Zone 1 — logo lockup. Reverted to the raster combined lockup
+              (saoc-lockup-horizontal.png, 2715×493 source, 352×64 display
+              at sm+) after the live-CSS SaocLockup version widened this
+              zone enough to squeeze the primary nav into two-line wraps at
+              1280px ("Judging & Awards", "National Show") — see
+              SaocLockup.tsx, which remains in use for the footer only.
+              Below `sm` (640px) the full lockup (incl. tagline) is shown
+              scaled down rather than hidden or cropped — 130px wide, within
+              the header's narrow-viewport budget alongside the search and
+              hamburger buttons (verified: no overflow at 320px). */}
           <Link
             href="/"
-            className="flex items-center gap-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-            aria-label="South African Orchid Council — home"
+            className="shrink-0 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            aria-label="South African Orchid Council — Making a difference since 1968"
           >
-            <Image src="/images/saoc-logo-ink-paper.png" alt="" width={48} height={48} priority />
-            <span className="hidden sm:flex flex-col leading-tight">
-              <span className="font-serif text-[22px] font-semibold text-ink">
-                SA Orchid Council
-              </span>
-              <span className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-muted">
-                Making a difference since 1968
-              </span>
-            </span>
+            <Image
+              src="/images/saoc-lockup-horizontal.png"
+              alt=""
+              width={352}
+              height={64}
+              priority
+              className="h-auto w-[130px] sm:w-[352px]"
+            />
           </Link>
 
           {/* Zone 2 — primary nav */}

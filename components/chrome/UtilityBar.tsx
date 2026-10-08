@@ -30,7 +30,7 @@ export function UtilityBar({ show }: UtilityBarProps) {
       <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-8 py-2">
         {/* Left: contact email */}
         <a
-          href="mailto:council@saoc.co.za"
+          href="mailto:info@saoc.co.za"
           className="flex items-center gap-1.5 font-mono text-[14px] text-ivory opacity-90 hover:opacity-100 transition-colors duration-150"
         >
           <svg
@@ -47,13 +47,8 @@ export function UtilityBar({ show }: UtilityBarProps) {
             <rect x="2" y="4" width="20" height="16" rx="2" />
             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
           </svg>
-          council@saoc.co.za
+          info@saoc.co.za
         </a>
-
-        {/* Centre: tagline (hidden on narrow viewports, matches reference) */}
-        <span className="hidden md:flex font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/60">
-          Making a difference since 1968
-        </span>
 
         {/* Right: action pills */}
         <div className="flex items-center gap-2">

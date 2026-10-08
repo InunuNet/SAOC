@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>SAOC lockup export harness</title>
+<!--
+  Headless export harness for the SAOC lockup (mission saoc-emblem-lockup).
+
+  Brad's own Claude Design artifact ("SAOC - Lockup explorer") is the single
+  source of truth for the lockup's exact proportions, font, colours and rule
+  — app.js (copied verbatim, byte-for-byte, into this directory, not
+  retyped) is that artifact's own code, including its own `exportPng()`
+  method (app.js:106-153). This page exists only to give that unmodified
+  code somewhere to run outside the claude.ai artifact sandbox: a DOM, the
+  real emblem source image at the path app.js's own SRC constant already
+  expects (assets/logo/saoc-emblem-colour.png, served by
+  scripts/export-saoc-lockup.mjs directly from the read-only branding
+  source — never copied into this directory), and the two fonts the
+  artifact's own NAME_FONTS/TAG_FONTS tables name (Lora, JetBrains Mono).
+
+  `DCLogic` below is a minimal stand-in for the real base class
+  (`StreamableLogic`, the claude.ai artifact runtime's state-management
+  class) — exportPng() never calls anything on it beyond `this.state` and
+  `this.setState()`, so a plain object-merge `setState` is sufficient; nothing
+  in app.js itself is touched to make this work.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap"
+  rel="stylesheet"
+/>
+</head>
+<body>
+<script>
+  class DCLogic {
+    setState(patch) {
+      Object.assign(this.state, patch);
+    }
+  }
+  // Component's class-field initialiser calls `React.createRef()`
+  // (app.js:47) purely for its own ResizeObserver wiring in
+  // componentDidMount — unrelated to exportPng(), but still evaluated at
+  // `new Component()` time, so a real React isn't loaded here just to
+  // satisfy that one call; a bare stand-in is enough.
+  window.React = { createRef: () => ({ current: null }) };
+</script>
+<script src="app.js"></script>
+<script>
+  // Controller — NOT part of the artifact's own code. Instantiates the
+  // artifact's unmodified Component class, waits for its own
+  // componentDidMount() to finish loading the emblem image, applies the
+  // state overrides passed in the URL (?kind=h|v&E=<n>&G=light|dark&
+  // transparent=true|false — everything else stays the artifact's own
+  // documented default state, app.js:46), then calls the artifact's own
+  // exportPng(), unmodified, which triggers a real browser download that
+  // scripts/export-saoc-lockup.mjs's Playwright driver captures.
+  window.__saocExportReady = (async () => {
+    const comp = new Component();
+    comp.componentDidMount();
+    const deadline = Date.now() + 15000;
+    while (!comp.img) {
+      if (Date.now() > deadline) throw new Error('emblem source image never loaded');
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    const params = new URLSearchParams(location.search);
+    const kind = params.get('kind') || 'h';
+    if (params.has('E')) comp.state.E = Number(params.get('E'));
+    if (params.has('G')) comp.state.G = params.get('G');
+    if (params.has('transparent')) comp.state.transparent = params.get('transparent') === 'true';
+    await comp.exportPng(kind);
+    document.title = 'saoc-lockup-export-done';
+  })();
+</script>
+</body>
+</html>

@@ -9,9 +9,9 @@
 // Col 4: Stay in touch (newsletter form + WOSA link)
 // =============================================================
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { partners } from '@/lib/data';
+import { SaocLockup } from './SaocLockup';
 
 const FOOTER_NAV = [
   { id: 'about', label: 'About', href: '/about' },
@@ -26,23 +26,17 @@ export function Footer() {
   return (
     <footer className="bg-primary-800 text-ivory">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 py-16 px-8 max-w-[1280px] mx-auto">
-        {/* Col 1 — logo lockup + mission */}
+        {/* Col 1 — lockup + mission. Live HTML/CSS lockup (SaocLockup,
+            orientation="vertical" tone="dark"): only the emblem (E4 Lapis
+            monotone) is an image, the wordmark/rule/tagline are real text
+            sized off the artifact's own metrics(). No background box — it
+            sits directly on this footer's own dark-sage background, per
+            Brad's instruction (the earlier raster export baked a navy box
+            behind it, which was wrong). See SaocLockup.tsx's own header
+            comment for the full metrics() derivation. */}
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col items-center gap-3 mb-4">
-            <Image
-              src="/images/saoc-logo-flat-paper.png"
-              alt="South African Orchid Council"
-              width={64}
-              height={64}
-            />
-            <div className="text-center">
-              <div className="font-serif text-[22px] font-semibold tracking-[0.005em] text-ivory leading-tight">
-                SA Orchid Council
-              </div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-ivory/65 mt-2">
-                Making a difference since 1968
-              </div>
-            </div>
+          <div className="mb-4 flex justify-center">
+            <SaocLockup orientation="vertical" tone="dark" />
           </div>
           <p className="font-sans text-[13.5px] leading-relaxed text-ivory/65">
             A national coordinating body for affiliated orchid societies across South Africa —
