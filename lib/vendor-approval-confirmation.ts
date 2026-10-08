@@ -32,7 +32,17 @@ export interface VendorApprovalConfirmationInput {
   contactEmail: string;
   boothNumber?: string | null;
   boothType?: VendorBoothType | null;
+  /** Deprecated-in-place (F1, vendor-form-copy-20261007) -- see the same prop on
+   *  emails/VendorApprovalConfirmation.tsx for why this is kept, never removed. */
   staffPerDay?: number | null;
+  /** F1 (vendor-form-copy-20261007) -- additive-only, alongside the kept staffPerDay above.
+   *  See emails/VendorApprovalConfirmation.tsx's resolveStaffAttendanceDisplay for the
+   *  backward-compatible priority rule between this and staffPerDay. */
+  staffCountSetupDay?: number | null;
+  staffCountDay1?: number | null;
+  staffCountDay2?: number | null;
+  staffCountDay3?: number | null;
+  staffCountBreakdownDay?: number | null;
   /** Nullable since vendor-gated-registration-flow M1 -- see the same prop on
    *  emails/VendorApprovalConfirmation.tsx for why. */
   powerRequired?: boolean | null;
@@ -80,6 +90,11 @@ export async function sendVendorApprovalConfirmationEmail(
       boothNumber: input.boothNumber ?? null,
       boothType: input.boothType ?? null,
       staffPerDay: input.staffPerDay ?? null,
+      staffCountSetupDay: input.staffCountSetupDay ?? null,
+      staffCountDay1: input.staffCountDay1 ?? null,
+      staffCountDay2: input.staffCountDay2 ?? null,
+      staffCountDay3: input.staffCountDay3 ?? null,
+      staffCountBreakdownDay: input.staffCountBreakdownDay ?? null,
       powerRequired: input.powerRequired ?? null,
       waterRequired: input.waterRequired ?? null,
       loadInSlot: input.loadInSlot ?? null,

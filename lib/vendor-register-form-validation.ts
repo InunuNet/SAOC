@@ -81,9 +81,21 @@ export function validateVendorRegisterFormClientSide(state: VendorRegisterFormSt
     errors.push('chairCount must be a non-negative integer');
   }
 
-  const staffPerDay = state.staffPerDay.trim();
-  if (staffPerDay !== '' && !STRICT_INTEGER_PATTERN.test(staffPerDay)) {
-    errors.push('staffPerDay must be a non-negative integer');
+  // F1 (vendor-form-copy-20261007) -- the 5-row per-day staff breakdown, replacing the single
+  // staffPerDay check above (deprecated in place on the server schema, retired from this
+  // live-form input-state layer). Same strict-whole-number convention as tableCount/chairCount.
+  const staffCountFields: Array<{ key: keyof VendorRegisterFormState; label: string }> = [
+    { key: 'staffCountSetupDay', label: 'staffCountSetupDay' },
+    { key: 'staffCountDay1', label: 'staffCountDay1' },
+    { key: 'staffCountDay2', label: 'staffCountDay2' },
+    { key: 'staffCountDay3', label: 'staffCountDay3' },
+    { key: 'staffCountBreakdownDay', label: 'staffCountBreakdownDay' },
+  ];
+  for (const { key, label } of staffCountFields) {
+    const value = (state[key] as string).trim();
+    if (value !== '' && !STRICT_INTEGER_PATTERN.test(value)) {
+      errors.push(`${label} must be a non-negative integer`);
+    }
   }
 
   if (state.powerRequired === '') {

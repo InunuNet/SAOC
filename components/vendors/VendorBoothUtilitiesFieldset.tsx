@@ -71,6 +71,11 @@ export function VendorBoothUtilitiesFieldset({
           disabled={disabled}
         />
       ) : null}
+      {isElectricalEquipmentApplicable(state) ? (
+        <p className="font-sans text-[13px] leading-relaxed text-ink/70">
+          Important: All electrical equipment, cables, plugs and connections must comply with applicable South African electrical safety requirements and venue requirements. Vendors may be required to provide suitable extension cords and distribution equipment.
+        </p>
+      ) : null}
       <VendorBooleanRadioField
         fieldKey="waterRequired"
         label="Water access required?"
@@ -113,17 +118,6 @@ export function VendorBoothUtilitiesFieldset({
           maxLength={500}
         />
       ) : null}
-      <VendorFormField
-        fieldKey="staffPerDay"
-        label="Number of staff attending per day"
-        htmlType="number"
-        min={0}
-        step={1}
-        value={state.staffPerDay}
-        onChange={(v) => onFieldChange('staffPerDay', v)}
-        disabled={disabled}
-        required={false}
-      />
     </>
   );
 }

@@ -22,7 +22,18 @@ interface VendorApprovalConfirmationProps {
   contactPersonName: string;
   boothNumber?: string | null;
   boothType?: VendorBoothType | null;
+  /** Deprecated-in-place (F1, vendor-form-copy-20261007): no fieldset on the live form collects
+   *  this any more, but every pre-feature vendorSubmissions document still has it, and
+   *  resolveStaffAttendanceDisplay below falls back to it ("stay readable", never removed). */
   staffPerDay?: number | null;
+  /** F1 (vendor-form-copy-20261007) -- the 5-row per-day breakdown that replaces staffPerDay on
+   *  the live form going forward. Additive only: see resolveStaffAttendanceDisplay below for
+   *  the backward-compatible priority rule between this and staffPerDay. */
+  staffCountSetupDay?: number | null;
+  staffCountDay1?: number | null;
+  staffCountDay2?: number | null;
+  staffCountDay3?: number | null;
+  staffCountBreakdownDay?: number | null;
   /** Nullable since vendor-gated-registration-flow M1: the application-approval call site has
    *  no logistics answers to report, and a non-nullable boolean forced it to assert a `false`
    *  the vendor was never asked for. Omitted/null renders LOGISTICS_NOT_SPECIFIED_LABEL. */
@@ -83,6 +94,68 @@ export function formatOptionalField(value: string | number | boolean | null | un
   return String(value);
 }
 
+/** Input shape for resolveStaffAttendanceDisplay -- deliberately narrower than the full
+ *  component props above (no booth/logistics fields), so the decision function can be
+ *  exercised directly by a fixture without constructing an entire props object. */
+export interface StaffAttendanceDisplayInput {
+  staffPerDay?: number | null;
+  staffCountSetupDay?: number | null;
+  staffCountDay1?: number | null;
+  staffCountDay2?: number | null;
+  staffCountDay3?: number | null;
+  staffCountBreakdownDay?: number | null;
+}
+
+export type StaffAttendanceDisplay =
+  | { mode: 'breakdown'; days: Array<{ label: string; value: string }> }
+  | { mode: 'legacy'; value: string }
+  | { mode: 'none' };
+
+const STAFF_COUNT_DAY_FIELDS: ReadonlyArray<{
+  key: keyof Omit<StaffAttendanceDisplayInput, 'staffPerDay'>;
+  label: string;
+}> = [
+  { key: 'staffCountSetupDay', label: 'Setup Day' },
+  { key: 'staffCountDay1', label: 'Day 1' },
+  { key: 'staffCountDay2', label: 'Day 2' },
+  { key: 'staffCountDay3', label: 'Day 3' },
+  { key: 'staffCountBreakdownDay', label: 'Breakdown Day' },
+];
+
+/**
+ * F1 (vendor-form-copy-20261007) -- additive, backward-compatible staff-attendance display
+ * decision, alongside this file's other formatting helpers (same convention: formatting logic
+ * lives here, not in lib/vendor-approval-confirmation.ts, so it is exercised identically
+ * whether the caller is sendVendorApprovalConfirmationEmail or a direct render() in a test).
+ *
+ * 'breakdown' wins whenever any staffCount* field is non-null -- the more granular, newer-
+ * shaped data -- even when the legacy staffPerDay is also present (architect's priority rule:
+ * this combination cannot arise from this feature's own write paths, but the function must
+ * still answer it rather than fall through to undefined). Falls back to 'legacy' (the single
+ * original "Staff per day" line) when only staffPerDay is set, and 'none' (the existing "Not
+ * specified" behaviour, unchanged) when neither is populated.
+ */
+export function resolveStaffAttendanceDisplay(
+  input: StaffAttendanceDisplayInput,
+): StaffAttendanceDisplay {
+  const hasBreakdown = STAFF_COUNT_DAY_FIELDS.some(
+    ({ key }) => input[key] !== null && input[key] !== undefined,
+  );
+  if (hasBreakdown) {
+    return {
+      mode: 'breakdown',
+      days: STAFF_COUNT_DAY_FIELDS.map(({ key, label }) => ({
+        label,
+        value: formatOptionalField(input[key]),
+      })),
+    };
+  }
+  if (input.staffPerDay !== null && input.staffPerDay !== undefined) {
+    return { mode: 'legacy', value: formatOptionalField(input.staffPerDay) };
+  }
+  return { mode: 'none' };
+}
+
 /**
  * Vendor approval confirmation email (mission vendor-registration F8). Modelled on
  * emails/VendorRegistrationConfirmation.tsx -- no invented brand colours/typography (project
@@ -98,6 +171,11 @@ export default function VendorApprovalConfirmation({
   boothNumber,
   boothType,
   staffPerDay,
+  staffCountSetupDay,
+  staffCountDay1,
+  staffCountDay2,
+  staffCountDay3,
+  staffCountBreakdownDay,
   powerRequired,
   waterRequired,
   loadInSlot,
@@ -166,9 +244,31 @@ export default function VendorApprovalConfirmation({
               <Text style={{ fontSize: '16px', color: '#333' }}>
                 Booth type: {formatOptionalField(boothType)}
               </Text>
-              <Text style={{ fontSize: '16px', color: '#333' }}>
-                Staff per day: {formatOptionalField(staffPerDay)}
-              </Text>
+              {(() => {
+                const staffAttendance = resolveStaffAttendanceDisplay({
+                  staffPerDay,
+                  staffCountSetupDay,
+                  staffCountDay1,
+                  staffCountDay2,
+                  staffCountDay3,
+                  staffCountBreakdownDay,
+                });
+                if (staffAttendance.mode === 'breakdown') {
+                  return staffAttendance.days.map((day) => (
+                    <Text key={day.label} style={{ fontSize: '16px', color: '#333' }}>
+                      Staff per day — {day.label}: {day.value}
+                    </Text>
+                  ));
+                }
+                return (
+                  <Text style={{ fontSize: '16px', color: '#333' }}>
+                    Staff per day:{' '}
+                    {staffAttendance.mode === 'legacy'
+                      ? staffAttendance.value
+                      : LOGISTICS_NOT_SPECIFIED_LABEL}
+                  </Text>
+                );
+              })()}
               <Text style={{ fontSize: '16px', color: '#333' }}>
                 Power required: {formatOptionalField(powerRequired)}
               </Text>

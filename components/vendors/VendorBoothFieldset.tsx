@@ -40,8 +40,8 @@ const VEHICLE_REGISTRATION_FIELDS: Array<{
   { key: 'carRegistrationNumber', label: 'Car registration number' },
   { key: 'suvBakkieRegistrationNumber', label: 'SUV / bakkie registration number' },
   { key: 'panelVanRegistrationNumber', label: 'Panel van registration number' },
-  { key: 'deliveryVanRegistrationNumber', label: 'Delivery van registration number' },
-  { key: 'truckRegistrationNumber', label: 'Truck registration number' },
+  { key: 'deliveryVanRegistrationNumber', label: 'Less than 1 ton Delivery Van registration Number' },
+  { key: 'truckRegistrationNumber', label: 'Above 1 ton Truck registration number' },
   { key: 'trailerRegistrationNumber', label: 'Trailer registration number' },
   { key: 'otherVehicleRegistrationNumber', label: 'Other vehicle registration number' },
 ];
@@ -91,6 +91,10 @@ export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBo
         required={false}
         maxLength={200}
       />
+
+      <p className="font-sans text-[13px] leading-relaxed text-ink/70">
+        Please note that delivery and collection time slots will be allocated a week before the set-up day. All vehicles and trailers needs to be removed to the allocated parking area immediately after your delivery slot time lapses.
+      </p>
 
       <VendorFormField
         fieldKey="loadInSlot"

@@ -32,7 +32,7 @@ export function VendorBusinessAddressFieldset({
     <>
       <VendorBooleanRadioField
         fieldKey="vatRegistered"
-        label="VAT registered"
+        label="VAT Vendor"
         options={VAT_REGISTERED_OPTIONS}
         value={state.vatRegistered}
         onChange={(v) => onFieldChange('vatRegistered', v)}
