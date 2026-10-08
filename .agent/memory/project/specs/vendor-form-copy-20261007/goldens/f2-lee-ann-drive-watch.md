@@ -26,7 +26,10 @@ disk at `content/drive-source/<folder name>/<folder name>/.../source.docx` — a
 becomes a literal filesystem path component, so a `/` inside one is unsafe
 (`UnsafePathComponentError`, by design, in that script). `lee-ann-drive-watch.py` never
 writes Drive content to disk at all — it only tracks **metadata** (id, name, mimeType,
-modifiedTime, md5Checksum, owners) in one flat JSON file keyed by Drive file id. A folder's
+modifiedTime, md5Checksum, parents, owners) in one flat JSON file keyed by Drive file id.
+`parents` was added 2026-10-09 (Orchestrator ruling, see "Change detection" below) to detect a
+rename/move as a CHANGED entry on the item's own id, rather than as a REMOVED+NEW pair. A
+folder's
 "path" is only ever a **display string** (folder names joined with `" / "`, purely for the
 printed report), never a filesystem path. A `/` inside a folder name is therefore
 structurally harmless here — there is no bug class to reintroduce.
@@ -79,7 +82,7 @@ command):
 ```python
 argv = ["gws", "drive", "files", "list", "--params", json.dumps({
     "q": f"'{folder_id}' in parents and trashed=false",
-    "fields": "files(id,name,mimeType,modifiedTime,md5Checksum,owners(emailAddress))",
+    "fields": "files(id,name,mimeType,modifiedTime,md5Checksum,parents,owners(emailAddress))",
     "pageSize": 100,
 }), "--page-all"]
 result = subprocess.run(argv, capture_output=True, text=True)
@@ -94,21 +97,44 @@ is `application/vnd.google-apps.folder`; track a `visited` set of folder ids wal
 
 ## Change detection
 
+**Revised 2026-10-09 (Orchestrator ruling, after a Codex QA retry flagged the original design
+below as self-contradictory — a flat file-id-keyed state map cannot produce a REMOVED+NEW pair
+from a move, because the id never changes; only one id-keyed entry exists either way).**
+
 - A file id present in the fresh walk but absent from the stored state → **NEW**.
-- A file id present in the stored state but absent from the fresh walk → **REMOVED**. (A
-  file removed from one folder and simultaneously added to another appears as both REMOVED
-  and NEW under this rule — same id, different id-keyed bucket, never coalesced into a
-  "moved" case. Simpler and more honest than guessing intent; Brad reads both lines.)
-- A file id present in both: compare `md5Checksum` when **both** the stored and fresh entries
-  have one (ordinary binary files — docx, xlsx, images, PDFs, …). When **either** side lacks
-  `md5Checksum` (Google-native Docs/Sheets/Slides never have one), fall back to comparing
-  `modifiedTime` instead. Either comparison differing → **CHANGED**.
-- A folder being renamed or moved (its own entry's `name`/parent changing) is tracked the
-  same way as any other item for NEW/CHANGED/REMOVED purposes, but a folder rename that only
-  changes its *descendants'* display `path` string, with no descendant's own
-  `md5Checksum`/`modifiedTime` touched, is **not** itself reported as a change on those
-  descendants — only the folder's own entry shows CHANGED. (Avoids a single rename at the top
-  of a large tree flooding the report with every file beneath it.)
+- A file id present in the stored state but absent from the fresh walk → **REMOVED**. Drive
+  file/folder ids are stable across both a rename and a move between parents, so this bucket
+  is reserved for genuine deletion/unshare from the watched tree — it is never a move's other
+  half.
+- A file id present in both is **CHANGED** when ANY of the following differ between the
+  stored and the fresh entry for that same id:
+  - **content** — `md5Checksum` when **both** sides have one (ordinary binary files — docx,
+    xlsx, images, PDFs, …); when **either** side lacks one (Google-native Docs/Sheets/Slides
+    never have an `md5Checksum`), fall back to comparing `modifiedTime` instead.
+  - **its own name** — the entry's `name` field differs.
+  - **its own parents** — the entry's `parents` list differs, compared **only when the
+    stored entry has a `parents` key at all**. A state entry with no `parents` key (written by
+    an older run, e.g. before `--init` started tracking this field) skips the parent
+    comparison entirely for that one entry — it falls back to name + content only, rather than
+    reporting every pre-existing entry as moved the first time this field is introduced.
+  - This single rule **is** "a renamed or moved item is reported as CHANGED" — one line, on
+    the item's own id, driven by its own `name`/`parents` fields. There is no coalescing with
+    NEW/REMOVED and no inferred "moved" label; a genuine move and a genuine rename both land
+    here, on the one id that changed.
+- The display `path` string (the " / "-joined ancestor-name chain, recomputed fresh on every
+  walk) is **never itself a comparison input** — `_is_entry_changed` does not read it. A child
+  whose *only* difference from stored state is a `path` recomputed because an ancestor folder
+  was renamed or moved is therefore silent by construction: its own `name`/`parents`/content
+  are untouched, so only the renamed/moved ancestor's own entry shows CHANGED. (This is what
+  "children whose only change is the path inherited from a renamed parent are NOT reported"
+  means operationally — path is excluded from the diff, not filtered after the fact. Avoids a
+  single rename at the top of a large tree flooding the report with every file beneath it.)
+
+Implemented exactly as specified — `scripts/lee-ann-drive-watch.py`'s `_is_entry_changed()`
+(content → name → parents-if-present, in that order) and `diff_drive_trees()` (NEW/REMOVED by
+id-set difference, CHANGED by `_is_entry_changed` on the shared ids) match this section
+verbatim; verified directly against the fixtures below (see "Fixture format" and the
+`RENAMEFOLDER`/`F7`/`F8` entries added 2026-10-09).
 
 ## Fixture format (`--fixture PATH`)
 
@@ -128,6 +154,14 @@ run — the walk starts there and recurses using `folders[<id>]` lookups instead
 calls; a folder id with no key in `folders` is treated as empty (no children), matching how
 an empty real Drive folder behaves.
 
+**`parents` in a fixture is optional per-entry — added 2026-10-09.** A fixture entry may omit
+`parents` entirely (every pre-existing fixture entry does); the walk fills it in as
+`sorted(child.get('parents') or [folder_id])`, i.e. the id of the folder bucket the entry is
+currently listed under in the fixture. This is exactly what makes "move a file between
+folders" expressible in a fixture with no new field: list the same `id` under a different
+folder key between the baseline and updated fixture, and its derived `parents` differs
+automatically.
+
 Two checked-in fixtures exercise every code path without network:
 `checks/fixtures/drive-watch-baseline.json` and `checks/fixtures/drive-watch-updated.json`
 (same tree, `--init` against the first then a normal run against the second must report):
@@ -142,6 +176,16 @@ Two checked-in fixtures exercise every code path without network:
 - `F4` (`Old Draft.docx`, in `baseline` only) → **REMOVED**.
 - `F5` (`New Photo.jpg`, in `updated` only) → **NEW** — proves an arbitrary non-document
   mimeType is covered, not just spreadsheets/docs.
+- `RENAMEFOLDER` (a folder, `"Logistics"` in `baseline`, `"Logistics (2026)"` in `updated`,
+  same id) → **CHANGED** (its own `name` differs) — proves a rename is one CHANGED entry on
+  its own id, never a REMOVED+NEW pair. Added 2026-10-09 for the Orchestrator ruling above.
+- `F7` (`Setup Schedule.pdf`, inside `RENAMEFOLDER` in both fixtures, itself byte-identical) →
+  **must not appear in any list** — proves a child whose only difference is the display path
+  inherited from its renamed parent is correctly silent. Added 2026-10-09.
+- `F8` (`Price List.pdf`, listed under `ROOT` in `baseline` and under `SUBSLASH` in `updated`,
+  same id, byte-identical content) → **CHANGED** (its own `parents` differ, derived from the
+  folder bucket it's nested under in each fixture) — proves a file moved between folders is
+  one CHANGED entry on its own id, never a REMOVED+NEW pair. Added 2026-10-09.
 
 ## Human-readable report format (default, no `--json`)
 

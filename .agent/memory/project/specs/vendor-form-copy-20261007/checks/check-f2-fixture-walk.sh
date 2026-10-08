@@ -7,6 +7,15 @@
 # name contains "/" is skipped or crashes the walk; a non-.docx file is dropped; a
 # Google-native file without md5Checksum is silently treated as unchanged; --init writes a
 # report instead of staying silent.
+#
+# Amendment 2026-10-09 (Orchestrator ruling, Codex QA retry): a renamed or moved item (its own
+# name or parents changed) is reported as CHANGED, never as REMOVED+NEW -- RENAMEFOLDER proves
+# the rename case and F8 proves the move-between-folders case. A child whose only difference is
+# the display path inherited from a renamed ancestor is NOT reported -- F7 (inside
+# RENAMEFOLDER, itself unchanged) proves that silence. State entries without a "parents" key
+# skip the parent comparison (exercised directly in lee-ann-drive-watch.py's own
+# _is_entry_changed, not re-proven here with a fixture since this harness's --fixture format
+# always derives a "parents" value for every entry it walks).
 set -euo pipefail
 
 SCRIPT="scripts/lee-ann-drive-watch.py"
@@ -52,6 +61,16 @@ if 'F4' not in ids['removed']:
     errors.append('F4 (absent from the updated fixture) must be REMOVED.')
 if 'F5' not in ids['new']:
     errors.append('F5 (image/jpeg, a non-document mimeType) must be NEW.')
+if 'RENAMEFOLDER' not in ids['changed']:
+    errors.append('RENAMEFOLDER (its own name changed, same id) must be CHANGED, not REMOVED+NEW.')
+if 'RENAMEFOLDER' in ids['new'] or 'RENAMEFOLDER' in ids['removed']:
+    errors.append('RENAMEFOLDER must never appear in new/removed -- a rename is one CHANGED entry on its own id.')
+if 'F7' in ids['new'] or 'F7' in ids['changed'] or 'F7' in ids['removed']:
+    errors.append('F7 (inside RENAMEFOLDER, itself unchanged) must not appear in any list -- a path change inherited from a renamed parent is not a change of its own.')
+if 'F8' not in ids['changed']:
+    errors.append('F8 (moved from ROOT to SUBSLASH, same id, unchanged content) must be CHANGED via its own parents differing.')
+if 'F8' in ids['new'] or 'F8' in ids['removed']:
+    errors.append('F8 must never appear in new/removed -- a move is one CHANGED entry on its own id, never a REMOVED+NEW pair.')
 if errors:
     print('\n'.join(errors), file=sys.stderr)
     sys.exit(1)

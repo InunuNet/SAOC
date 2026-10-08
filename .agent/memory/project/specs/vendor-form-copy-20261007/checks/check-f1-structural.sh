@@ -16,7 +16,11 @@ fail() {
   exit 1
 }
 
-# --- New fieldsets exist, reuse existing primitives, are exported and mounted ---
+# --- New fieldsets exist, reuse existing primitives, are exported and mounted at the
+# CORRECT host per fieldset -- resolved 2026-10-09 (Codex QA retry): VendorStaffPassesFieldset
+# mounts directly inside VendorBoothFieldset.tsx (same place staffPerDay used to live, one
+# level up from VendorBoothUtilitiesFieldset), NOT in VendorRegisterForm.tsx like the other
+# two -- a uniform "mounted in VendorRegisterForm.tsx" check was wrong for this one fieldset. ---
 for f in VendorStaffPassesFieldset VendorStorageFieldset VendorWasteFieldset; do
   FILE="components/vendors/${f}.tsx"
   [ -f "$FILE" ] || fail "$FILE does not exist."
@@ -25,8 +29,25 @@ for f in VendorStaffPassesFieldset VendorStorageFieldset VendorWasteFieldset; do
   LINE_COUNT=$(wc -l < "$FILE" | tr -d ' ')
   [ "$LINE_COUNT" -le 150 ] || fail "$FILE is $LINE_COUNT lines, exceeds the project's 150-line component convention."
   grep -q "$f" components/vendors/index.ts || fail "components/vendors/index.ts must export $f."
-  grep -q "<$f" components/vendors/VendorRegisterForm.tsx || fail "VendorRegisterForm.tsx must mount <$f .../>."
+
+  case "$f" in
+    VendorStaffPassesFieldset) MOUNT_HOST="components/vendors/VendorBoothFieldset.tsx" ;;
+    *) MOUNT_HOST="components/vendors/VendorRegisterForm.tsx" ;;
+  esac
+  grep -q "<$f" "$MOUNT_HOST" || fail "$MOUNT_HOST must mount <$f .../>."
 done
+
+# --- VendorStaffPassesFieldset must render BEFORE the vehicle registration fields inside
+# VendorBoothFieldset.tsx -- the source doc's own order is Staff & Exhibitor Passes, then
+# Booth & Logistics/Vehicles. Line-number comparison, not just presence, because a fieldset
+# mounted in the wrong order would still pass every other check in this script. ---
+BOOTH_FILE_FOR_ORDER="components/vendors/VendorBoothFieldset.tsx"
+STAFF_MOUNT_LINE=$(grep -n "<VendorStaffPassesFieldset" "$BOOTH_FILE_FOR_ORDER" | head -1 | cut -d: -f1)
+VEHICLE_FIELDS_LINE=$(grep -n "VEHICLE_REGISTRATION_FIELDS.map" "$BOOTH_FILE_FOR_ORDER" | head -1 | cut -d: -f1)
+[ -n "$STAFF_MOUNT_LINE" ] || fail "$BOOTH_FILE_FOR_ORDER must mount <VendorStaffPassesFieldset .../>."
+[ -n "$VEHICLE_FIELDS_LINE" ] || fail "$BOOTH_FILE_FOR_ORDER must still render VEHICLE_REGISTRATION_FIELDS.map(...)."
+[ "$STAFF_MOUNT_LINE" -lt "$VEHICLE_FIELDS_LINE" ] \
+  || fail "$BOOTH_FILE_FOR_ORDER must render <VendorStaffPassesFieldset .../> BEFORE the vehicle registration fields (source order: Staff & Exhibitor Passes precedes Vehicles)."
 
 # --- Item 1: staff per day, 5 fields wired to the existing staffCount* server fields ---
 grep -q "staffCountSetupDay" components/vendors/VendorStaffPassesFieldset.tsx || fail "VendorStaffPassesFieldset.tsx must render staffCountSetupDay."
