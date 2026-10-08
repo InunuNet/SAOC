@@ -142,3 +142,8 @@ content/drive-recovered/**/*.docx
 # Ignored wholesale so `git add -A` cannot re-commit it. Do not un-ignore without a
 # secret scan; the sync tool re-derives this tree on demand.
 content/drive-source/
+
+# F2 (vendor-form-copy-20261007) -- scripts/lee-ann-drive-watch.py's per-session metadata-only
+# state file. Mirrors the content/drive-source/ treatment above, though this tree carries only
+# Drive id/name/mimeType/modifiedTime/md5Checksum metadata, never file content.
+content/drive-watch/
