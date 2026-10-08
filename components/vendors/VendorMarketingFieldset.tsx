@@ -26,11 +26,11 @@ const MARKETING_PERMISSION_OPTIONS = [
   {
     value: 'full',
     label:
-      'I give permission for SAOC to use my business name, logo, and photos for marketing purposes.',
+      'I hereby give the 2027 SAOC National Show permission to use my business name, logo, supplied photographs and promotional information for reasonable event-related marketing and publicity.',
   },
   {
     value: 'listing-only',
-    label: 'I only want my business listed as a vendor, with no additional marketing use.',
+    label: 'I do not grant permission for use beyond the vendor listing.',
   },
 ];
 

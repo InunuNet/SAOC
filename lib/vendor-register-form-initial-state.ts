@@ -62,7 +62,11 @@ export const INITIAL_STATE: VendorRegisterFormState = {
   waterIntendedUse: '',
   wastewaterDrainageRequired: '',
   wastewaterDrainageDetails: '',
-  staffPerDay: '',
+  staffCountSetupDay: '',
+  staffCountDay1: '',
+  staffCountDay2: '',
+  staffCountDay3: '',
+  staffCountBreakdownDay: '',
 
   carRegistrationNumber: '',
   suvBakkieRegistrationNumber: '',
@@ -87,4 +91,8 @@ export const INITIAL_STATE: VendorRegisterFormState = {
   termsAccepted: false,
 
   signatureFullName: '',
+
+  wasteTypes: [],
+  wasteTypesOther: '',
+  storageRiskAcknowledged: false,
 };

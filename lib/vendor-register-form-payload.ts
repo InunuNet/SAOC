@@ -6,6 +6,7 @@ import type {
   VendorMarketingPermission,
   VendorPaymentMethod,
   VendorRegistrationBoothSize,
+  VendorWasteType,
 } from '@/types/index';
 
 // M2 F14 (vendor-gated-registration-flow) -- controlled-input-friendly row shapes for the two
@@ -103,7 +104,19 @@ export interface VendorRegisterFormState {
   waterIntendedUse: string;
   wastewaterDrainageRequired: '' | 'true' | 'false';
   wastewaterDrainageDetails: string;
-  staffPerDay: string;
+
+  // F1 (vendor-form-copy-20261007) -- the 5-row per-day staff breakdown from Lee-Ann's
+  // 2026-10-07 source doc's "STAFF & EXHIBITOR PASSES" table, replacing the single combined
+  // per-day count field this live form previously collected (deprecated in place on
+  // VendorSubmission/the server schema -- never removed there; only retired from this
+  // live-form input-state layer, since the current source no longer asks for one combined
+  // number). Wired onto the already-validated staffCountSetupDay/Day1/Day2/Day3/BreakdownDay
+  // server fields.
+  staffCountSetupDay: string;
+  staffCountDay1: string;
+  staffCountDay2: string;
+  staffCountDay3: string;
+  staffCountBreakdownDay: string;
 
   // M2 F14/F17 -- 7 discrete vehicle registration fields, replacing the single free-text
   // vehicleRegistrations above (deprecated in place).
@@ -140,6 +153,14 @@ export interface VendorRegisterFormState {
   // reflections rendered directly from contactPosition/businessName/submittedAt -- see golden
   // "The signature block" -- so they need no new state field here.
   signatureFullName: string;
+
+  // F1 (vendor-form-copy-20261007) -- "WASTE, CLEANING AND ENVIRONMENTAL IMPACTS" and
+  // "STORAGE & SECURITY", entirely missing from the live form before this feature. Wired onto
+  // already-validated server fields (wasteTypes/wasteTypesOther/storageRiskAcknowledged --
+  // types/index.ts, lib/vendor-submissions.ts, untouched by this feature).
+  wasteTypes: string[];
+  wasteTypesOther: string;
+  storageRiskAcknowledged: boolean;
 }
 
 /** Shared field-change handler signature every fieldset component receives. */
@@ -279,6 +300,16 @@ export function isWaterIntendedUseFieldApplicable(state: VendorRegisterFormState
 }
 
 /**
+ * F1 (vendor-form-copy-20261007) — shared render-gate + payload-exclusion guard for
+ * wasteTypesOther, mirroring isFoodRetailer's shape exactly: gated on the 'other' wasteTypes
+ * checkbox being selected. Leak-proof, same as every other gate in this file -- a stale typed
+ * value never reaches the payload once 'other' is deselected.
+ */
+export function isWasteTypesOtherFieldApplicable(state: VendorRegisterFormState): boolean {
+  return state.wasteTypes.includes('other');
+}
+
+/**
  * Coerces a VendorRegisterFormState into the wire payload the real
  * validateVendorSubmissionInput() (lib/vendor-submissions.ts, F4) expects: string form values
  * become number/boolean where the API requires it, and every optional field left blank by the
@@ -363,7 +394,11 @@ export function buildVendorRegistrationPayload(state: VendorRegisterFormState): 
     wastewaterDrainageDetails: isWastewaterDrainageDetailsFieldApplicable(state)
       ? omitBlank(state.wastewaterDrainageDetails)
       : undefined,
-    staffPerDay: toOptionalInt(state.staffPerDay),
+    staffCountSetupDay: toOptionalInt(state.staffCountSetupDay),
+    staffCountDay1: toOptionalInt(state.staffCountDay1),
+    staffCountDay2: toOptionalInt(state.staffCountDay2),
+    staffCountDay3: toOptionalInt(state.staffCountDay3),
+    staffCountBreakdownDay: toOptionalInt(state.staffCountBreakdownDay),
     carRegistrationNumber: omitBlank(state.carRegistrationNumber),
     suvBakkieRegistrationNumber: omitBlank(state.suvBakkieRegistrationNumber),
     panelVanRegistrationNumber: omitBlank(state.panelVanRegistrationNumber),
@@ -382,6 +417,11 @@ export function buildVendorRegistrationPayload(state: VendorRegisterFormState): 
     paymentReference: omitBlank(state.paymentReference),
     termsAccepted: state.termsAccepted,
     signatureFullName: omitBlank(state.signatureFullName),
+    wasteTypes: state.wasteTypes as VendorWasteType[],
+    wasteTypesOther: isWasteTypesOtherFieldApplicable(state)
+      ? omitBlank(state.wasteTypesOther)
+      : undefined,
+    storageRiskAcknowledged: state.storageRiskAcknowledged,
   };
 }
 

@@ -16,6 +16,9 @@ import { INITIAL_STATE } from '@/lib/vendor-register-form-initial-state';
 import { VendorContactFieldset } from './VendorContactFieldset';
 import { VendorCategoryFieldset } from './VendorCategoryFieldset';
 import { VendorBoothFieldset } from './VendorBoothFieldset';
+import { VendorStaffPassesFieldset } from './VendorStaffPassesFieldset';
+import { VendorStorageFieldset } from './VendorStorageFieldset';
+import { VendorWasteFieldset } from './VendorWasteFieldset';
 import { VendorMarketingFieldset } from './VendorMarketingFieldset';
 import { VendorPaymentFieldset } from './VendorPaymentFieldset';
 import { VendorDeclarationFieldset } from './VendorDeclarationFieldset';
@@ -108,6 +111,9 @@ export function VendorRegisterForm() {
       <VendorContactFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
       <VendorCategoryFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
       <VendorBoothFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
+      <VendorStaffPassesFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
+      <VendorStorageFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
+      <VendorWasteFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
       <VendorMarketingFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
       <VendorPaymentFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />
       <VendorDeclarationFieldset state={state} onFieldChange={handleFieldChange} disabled={disabled} />

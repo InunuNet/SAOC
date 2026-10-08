@@ -26,6 +26,14 @@ export function VendorPaymentFieldset({ state, onFieldChange, disabled }: Vendor
     <div className="space-y-5">
       <h2 className="font-serif text-[20px] font-semibold text-ink">Payment &amp; terms</h2>
 
+      {/* F1 (vendor-form-copy-20261007) -- Lee-Ann's 2026-10-07 source doc places this note
+          between the Gas section and VENDOR DECLARATION; thematically it is about payment
+          confirming the booth, and this fieldset is the section mounted immediately before
+          VendorDeclarationFieldset. */}
+      <p className="font-sans text-[13px] leading-relaxed text-ink/70">
+        Booths spaces are confirmed only once this registration form has been received and the payment has reflected in the bank account.
+      </p>
+
       {/* M2 F14/F19 (vendor-gated-registration-flow) -- two new insurance policy-number
           fields, alongside the unmodified M1 hasPublicLiabilityInsurance/
           productLiabilityInsuranceStatus fields (not yet rendered by any fieldset -- pre-
