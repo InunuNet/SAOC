@@ -110,23 +110,6 @@ export default async function WhatToExpectPage() {
           the long-term future of orchids.
         </p>
 
-        {/* WOSA is credited as a hosted guest presenting within the symposium, per
-            CLAUDE.md's scope boundary and docs/rules/no-invention.md — SAOC attributes
-            and links out, it never authors conservation content in its own voice. */}
-        <p className="border-t border-rule pt-6 font-sans text-[15px] leading-relaxed text-ink/70">
-          SAOC focuses on orchids in cultivation. For wild orchid identification, habitat and
-          conservation, visit our partner organisation{' '}
-          <a
-            href="https://wildorchids.co.za"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-link"
-          >
-            Wild Orchids of Southern Africa (WOSA)
-          </a>
-          .
-        </p>
-
         <p className="font-sans text-[16px] leading-relaxed text-ink/80">
           Visitors can further develop their knowledge through practical workshops, meet orchid societies from across the country,
           engage with researchers and conservationists, and discover how every aspect of the National Show reflects this

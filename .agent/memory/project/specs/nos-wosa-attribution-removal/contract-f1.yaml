@@ -1,0 +1,71 @@
+schema: athanor.contract/v1
+slug: nos-wosa-attribution-removal
+goal: Remove the invented SAOC/WOSA attribution paragraph (and its justifying comment) from the National Show about and what-to-expect pages, keeping Lee-Ann's own WOSA copy untouched.
+created_at: '2026-10-08'
+autonomy: high
+features:
+  - id: F1
+    name: Remove SAOC/WOSA attribution paragraph from about and what-to-expect pages
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-wosa-attribution-removal/goldens/f1-wosa-attribution-removal.md
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Attribution paragraph text ("SAOC focuses on orchids in cultivation...") removed from the about page
+      command: '! grep -q "SAOC focuses on orchids in cultivation" "app/(marketing)/national-show/about/page.tsx"'
+    - id: A2
+      description: Attribution paragraph text ("SAOC focuses on orchids in cultivation...") removed from the what-to-expect page
+      command: '! grep -q "SAOC focuses on orchids in cultivation" "app/(marketing)/national-show/what-to-expect/page.tsx"'
+    - id: A3
+      description: wildorchids.co.za link removed from the about page (it only ever appeared inside the removed paragraph)
+      command: '! grep -q "wildorchids.co.za" "app/(marketing)/national-show/about/page.tsx"'
+    - id: A4
+      description: wildorchids.co.za link removed from the what-to-expect page (it only ever appeared inside the removed paragraph)
+      command: '! grep -q "wildorchids.co.za" "app/(marketing)/national-show/what-to-expect/page.tsx"'
+    - id: A5
+      description: The "WOSA is credited as a hosted guest" justifying comment removed from the about page
+      command: '! grep -q "WOSA is credited as a hosted guest" "app/(marketing)/national-show/about/page.tsx"'
+    - id: A6
+      description: The "WOSA is credited as a hosted guest" justifying comment removed from the what-to-expect page
+      command: '! grep -q "WOSA is credited as a hosted guest" "app/(marketing)/national-show/what-to-expect/page.tsx"'
+    - id: A7
+      description: Lee-Ann's own WOSA sentence ("...participation of Wild Orchids...") still present, untouched, on the about page
+      command: 'grep -q "participation of Wild Orchids" "app/(marketing)/national-show/about/page.tsx"'
+    - id: A8
+      description: Lee-Ann's own WOSA sentence ("Integrated throughout the symposium, presentations by Wild Orchids...") still present, untouched, on the what-to-expect page
+      command: 'grep -q "Integrated throughout the symposium, presentations by Wild Orchids" "app/(marketing)/national-show/what-to-expect/page.tsx"'
+    - id: A9
+      description: Diff against 047d610e under app/, components/, lib/ touches only the two target page files, nothing in components/chrome or elsewhere
+      command: 'test "$(git diff --name-only 047d610e -- app components lib | sort | xargs echo)" = "app/(marketing)/national-show/about/page.tsx app/(marketing)/national-show/what-to-expect/page.tsx"'
+    - id: A10
+      description: TypeScript type-check is clean after the removal
+      command: 'pnpm run type-check'
+    - id: A11
+      description: Lint is clean after the removal
+      command: 'pnpm run lint'
+    - id: A12
+      description: Cross-model (Codex) review of the actual diff for the two pages — @dev must replace the placeholder in codex-target.md with the real diff before this can mean anything
+      type: codex_qa
+      target: .agent/memory/project/specs/nos-wosa-attribution-removal/triad/codex-target.md
+      timeout_seconds: 1200
+    - id: A13
+      description: >-
+        Browser-deployed check (verification triad, required by preflight because this
+        contract references app/ paths). Honestly post-beta-rollout: this is a copy-removal
+        with no visual/behavioural change, so there is nothing to screenshot against the
+        real deployed site until the beta carrying this change has rolled out. The manifest
+        at the path below does not exist yet and must not be fabricated to force a pass —
+        it is created for real, post-rollout, by whoever runs that check.
+      type: browser_deployed_check
+      command: 'bash execution/browser_deployed_check.sh .agent/memory/project/specs/nos-wosa-attribution-removal/triad/browser-manifest.json'
+    - id: A14
+      description: >-
+        GWS inbox check (verification triad, required by preflight because this contract
+        references app/ paths). Honestly inapplicable to this feature: no email is sent as
+        part of removing a paragraph, so there is no inbox evidence to produce. Declared
+        only because the triad preflight requires all three kinds to be present; the
+        manifest at the path below does not exist and must not be fabricated.
+      type: gws_inbox_check
+      command: 'bash execution/gws_inbox_check.sh .agent/memory/project/specs/nos-wosa-attribution-removal/triad/gws-manifest.json'
