@@ -1,16 +1,11 @@
 {
   "template_version": "3.8.23",
-  "applied_at": "2026-10-08T08:49:27Z",
+  "applied_at": "2026-10-08T08:50:59Z",
   "delivery": "partial",
   "workspace_id": "0508fe91e31545b0",
   "withheld": [
     ".agent/handoffs.yaml",
-    ".agent/providers/antigravity.json",
-    ".agent/providers/claude-code.json",
-    ".agent/providers/codex.json",
-    ".agent/providers/opencode.json",
     ".agent/update-manifest.yaml",
-    ".agent/version",
     "execution/contract.py",
     "execution/gh_closure_scan.py",
     "execution/ingest_pulse.sh",
@@ -18,12 +13,7 @@
   ],
   "untracked": [
     ".agent/handoffs.yaml",
-    ".agent/providers/antigravity.json",
-    ".agent/providers/claude-code.json",
-    ".agent/providers/codex.json",
-    ".agent/providers/opencode.json",
-    ".agent/update-manifest.yaml",
-    ".agent/version"
+    ".agent/update-manifest.yaml"
   ],
   "bootstrap_unresolved": {
     "anchor": "3.8.23",
