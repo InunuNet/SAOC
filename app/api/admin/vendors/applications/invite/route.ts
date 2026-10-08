@@ -11,13 +11,21 @@ import {
   validateVendorApplicationInviteInput,
 } from '@/lib/vendor-applications';
 import type { VendorApplicationInviteDraft } from '@/lib/vendor-applications';
-import { decideVendorApplicationInviteEligibility } from '@/lib/vendor-application-invite-eligibility';
+import {
+  decideVendorApplicationInviteEligibility,
+  vendorApplicationInviteConflictMessage,
+} from '@/lib/vendor-application-invite-eligibility';
 import type { VendorApplicationInviteCandidate } from '@/lib/vendor-application-invite-eligibility';
 import {
   generateVendorRegistrationCodeId,
   normalizeVendorCodeName,
   VENDOR_REGISTRATION_CODE_DEFAULT_TTL_MS,
 } from '@/lib/vendor-registration-code';
+import {
+  claimVendorInviteEmailLock,
+  VENDOR_INVITE_EMAIL_LOCKS_COLLECTION,
+  vendorInviteEmailLockId,
+} from '@/lib/vendor-invite-email-lock';
 import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
 import { sendVendorApprovalConfirmationEmail } from '@/lib/vendor-approval-confirmation';
 import type { VendorApplicationStatus } from '@/types/index';
@@ -27,10 +35,18 @@ import type { VendorApplicationStatus } from '@/types/index';
  * vendor-invite, M1/F1). Same getAdminSession()-then-hasCapability(...,
  * 'review-vendor-applications', ...) gate as the sibling review/reissue-code routes in this
  * same directory tree -- no new capability string is introduced anywhere. Creates a
- * `vendorApplications` document ALREADY `approved` (`origin: 'invited'`) in a single `.add()`
- * call, mints the same existing 4-digit registration code via the same mechanism the public
- * apply-then-approve path uses, and sends it with the same existing approval email -- no new
- * email template, no new institutional copy.
+ * `vendorApplications` document ALREADY `approved` (`origin: 'invited'`) in a single atomic
+ * transaction (lib/vendor-invite-email-lock.ts), mints the same existing 4-digit registration
+ * code via the same mechanism the public apply-then-approve path uses, and sends it with the
+ * same existing approval email -- no new email template, no new institutional copy.
+ *
+ * TOCTOU fix pass (2026-10-08): the duplicate-eligibility full-collection scan below and the
+ * write that follows it are NOT atomic with each other -- a window remains in which two
+ * concurrent invites for the SAME NEW email (no existing document for either to find) could
+ * both pass the scan. lib/vendor-invite-email-lock.ts closes that window with a canonical-
+ * email guard document, read and claimed inside the SAME transaction that creates the new
+ * application. The full-collection scan is kept as-is: it is still the only guard for a
+ * pre-existing PUBLIC application (which never had a guard doc written for it).
  *
  * See .agent/memory/project/specs/vendor-invite/goldens/README.md for the full decision
  * record, including why status is written 'approved' directly (never a fake intermediate
@@ -155,43 +171,44 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const built = buildVendorApplicationInvite(input, reviewerEmail, now);
 
+  // Pre-allocate the new document's ref (auto-id, no write yet) so the SAME id can be passed
+  // into the transaction below as `tx.create(newApplicationRef, ...)` -- Firestore transactions
+  // have no `.add()`; a create needs a ref decided in advance. The lock-guard doc's id is a
+  // deterministic hash of the canonical email, not a random id, so two concurrent requests for
+  // the SAME email are guaranteed to contend on the SAME guard document.
+  const applicationsCollection = db.collection(VENDOR_APPLICATIONS_COLLECTION);
+  const newApplicationRef = applicationsCollection.doc();
+  const lockRef = db
+    .collection(VENDOR_INVITE_EMAIL_LOCKS_COLLECTION)
+    .doc(vendorInviteEmailLockId(input.contactEmail));
+
+  const newApplicationData = {
+    ...built,
+    submittedAt: Timestamp.fromDate(built.submittedAt),
+    reviewedAt: built.reviewedAt ? Timestamp.fromDate(built.reviewedAt) : null,
+    registrationCodeId,
+    registrationCodeNameSlug: nameSlug,
+    registrationCodeIssuedAt: Timestamp.fromDate(now),
+    registrationCodeExpiresAt: Timestamp.fromDate(expiresAt),
+    registrationCodeFailedAttempts: 0,
+    registrationCodeLockedAt: null,
+    registrationCodeGeneration: 1,
+  };
+
+  let lockResult;
   try {
-    // ONE atomic write -- status 'approved', origin 'invited', and every code field land
-    // together in the SAME create call. There is no intermediate 'pending' state and no
-    // second write.
-    const ref = await db.collection(VENDOR_APPLICATIONS_COLLECTION).add({
-      ...built,
-      submittedAt: Timestamp.fromDate(built.submittedAt),
-      reviewedAt: built.reviewedAt ? Timestamp.fromDate(built.reviewedAt) : null,
-      registrationCodeId,
-      registrationCodeNameSlug: nameSlug,
-      registrationCodeIssuedAt: Timestamp.fromDate(now),
-      registrationCodeExpiresAt: Timestamp.fromDate(expiresAt),
-      registrationCodeFailedAttempts: 0,
-      registrationCodeLockedAt: null,
-      registrationCodeGeneration: 1,
+    // ONE atomic transaction -- status 'approved', origin 'invited', and every code field land
+    // together in the SAME create call, AND the canonical-email guard doc is claimed in the
+    // SAME transaction. There is no intermediate 'pending' state and no second write. See
+    // lib/vendor-invite-email-lock.ts for why this is the race-safe second gate, on top of
+    // (not instead of) the full-collection scan above.
+    lockResult = await claimVendorInviteEmailLock(db, {
+      lockRef,
+      applicationsCollection,
+      newApplicationRef,
+      newApplicationId: newApplicationRef.id,
+      newApplicationData,
     });
-
-    const registrationLink = `${resolveSiteUrl()}/national-show/vendors/register?name=${encodeURIComponent(input.businessName)}&code=${registrationCodeId}`;
-
-    await deliverConfirmationEmailAfterCommit(
-      () =>
-        sendVendorApprovalConfirmationEmail({
-          businessName: input.businessName,
-          contactPersonName: input.contactPersonName,
-          contactEmail: input.contactEmail,
-          registrationCode: registrationCodeId,
-          registrationLink,
-        }),
-      (error) => {
-        console.error(
-          '[admin/vendors/applications/invite] Failed to send approval confirmation email:',
-          error instanceof Error ? error.message : 'unknown error',
-        );
-      },
-    );
-
-    return NextResponse.json({ success: true, id: ref.id, registrationCodeId }, { status: 201 });
   } catch (error) {
     console.error(
       '[admin/vendors/applications/invite] Failed to save vendor invite:',
@@ -199,4 +216,40 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
     return NextResponse.json({ error: 'Failed to save vendor invite.' }, { status: 500 });
   }
+
+  if (!lockResult.ok) {
+    return NextResponse.json(
+      {
+        error: vendorApplicationInviteConflictMessage(
+          lockResult.conflict.status,
+          lockResult.conflict.applicationId,
+        ),
+      },
+      { status: 409 },
+    );
+  }
+
+  const registrationLink = `${resolveSiteUrl()}/national-show/vendors/register?name=${encodeURIComponent(input.businessName)}&code=${registrationCodeId}`;
+
+  await deliverConfirmationEmailAfterCommit(
+    () =>
+      sendVendorApprovalConfirmationEmail({
+        businessName: input.businessName,
+        contactPersonName: input.contactPersonName,
+        contactEmail: input.contactEmail,
+        registrationCode: registrationCodeId,
+        registrationLink,
+      }),
+    (error) => {
+      console.error(
+        '[admin/vendors/applications/invite] Failed to send approval confirmation email:',
+        error instanceof Error ? error.message : 'unknown error',
+      );
+    },
+  );
+
+  return NextResponse.json(
+    { success: true, id: newApplicationRef.id, registrationCodeId },
+    { status: 201 },
+  );
 }

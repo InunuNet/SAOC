@@ -122,6 +122,14 @@ function requireNonEmptyString(
   }
 }
 
+// vendor-invite TOCTOU fix pass -- used only by validateVendorApplicationInviteInput() above.
+// Private: the public-apply validator never trims, so this has no business being exported.
+function trimStringFieldInPlace(record: Record<string, unknown>, field: string): void {
+  if (typeof record[field] === 'string') {
+    record[field] = (record[field] as string).trim();
+  }
+}
+
 function validateOptionalStringMaxLength(
   record: Record<string, unknown>,
   field: string,
@@ -209,6 +217,16 @@ export interface VendorApplicationInviteDraft {
  * businessName/contactPersonName/contactEmail, reusing the SAME FIELD_MAX_LENGTHS values and
  * EMAIL_PATTERN already defined above. Never validates vendorCategory or
  * indicativeBoothCount -- those are not part of an invite payload at all.
+ *
+ * vendor-invite TOCTOU fix pass -- trims the three invite-only fields BEFORE every
+ * length/pattern check, in place, on the SAME object the caller passed in (`record` is `input`
+ * under a type-narrowing cast, not a clone). This is the invite path's own validator -- the
+ * public-apply validateVendorApplicationInput() above is untouched and does not trim. Trimming
+ * here, before the length/pattern checks run, means an admin pasting " jane@example.com " is
+ * validated AND later stored (the route builds the stored document from this same, now-
+ * mutated, object) as "jane@example.com" -- so the duplicate-eligibility email comparison, and
+ * the TOCTOU guard's canonical-email hash (lib/vendor-invite-email-lock.ts), never have to
+ * account for whitespace-only differences.
  */
 export function validateVendorApplicationInviteInput(input: unknown): {
   valid: boolean;
@@ -220,6 +238,10 @@ export function validateVendorApplicationInviteInput(input: unknown): {
     return { valid: false, errors: ['input must be an object'] };
   }
   const record = input as Record<string, unknown>;
+
+  trimStringFieldInPlace(record, 'businessName');
+  trimStringFieldInPlace(record, 'contactPersonName');
+  trimStringFieldInPlace(record, 'contactEmail');
 
   requireNonEmptyString(record, 'businessName', errors, FIELD_MAX_LENGTHS.businessName);
   requireNonEmptyString(record, 'contactPersonName', errors, FIELD_MAX_LENGTHS.contactPersonName);

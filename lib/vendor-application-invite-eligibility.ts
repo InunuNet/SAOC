@@ -22,6 +22,24 @@ export type VendorApplicationInviteEligibilityDecision =
   | { ok: false; error: string; conflictingId: string };
 
 /**
+ * vendor-invite TOCTOU fix pass -- the exact two conflict-message strings this module has
+ * always returned, factored out so lib/vendor-invite-email-lock.ts's transactional guard (the
+ * SECOND, race-safe gate for invite-vs-invite races on a brand-new email -- see that module's
+ * doc comment) can report the SAME wording for the SAME two statuses, instead of maintaining
+ * a second, driftable copy of this English. Pure string formatting only -- no behaviour
+ * change to decideVendorApplicationInviteEligibility() below, which now calls this too.
+ */
+export function vendorApplicationInviteConflictMessage(
+  status: 'pending' | 'approved',
+  conflictingId: string,
+): string {
+  if (status === 'pending') {
+    return `An application from this email is already pending review (id: ${conflictingId}). Approve or decline it instead of creating a duplicate invite.`;
+  }
+  return `An approved application from this email already exists (id: ${conflictingId}) with a live registration code. Use Reissue code to resend it instead of creating a duplicate invite.`;
+}
+
+/**
  * Compares `contactEmail` against each candidate's `contactEmail`, case-insensitively (an
  * admin may type -- or an earlier applicant may have submitted -- the same address in a
  * different case). A candidate whose status is `pending` or `approved` blocks the invite: a
@@ -46,7 +64,7 @@ export function decideVendorApplicationInviteEligibility(
     if (candidate.status === 'pending') {
       return {
         ok: false,
-        error: `An application from this email is already pending review (id: ${candidate.id}). Approve or decline it instead of creating a duplicate invite.`,
+        error: vendorApplicationInviteConflictMessage('pending', candidate.id),
         conflictingId: candidate.id,
       };
     }
@@ -54,7 +72,7 @@ export function decideVendorApplicationInviteEligibility(
     if (candidate.status === 'approved') {
       return {
         ok: false,
-        error: `An approved application from this email already exists (id: ${candidate.id}) with a live registration code. Use Reissue code to resend it instead of creating a duplicate invite.`,
+        error: vendorApplicationInviteConflictMessage('approved', candidate.id),
         conflictingId: candidate.id,
       };
     }
