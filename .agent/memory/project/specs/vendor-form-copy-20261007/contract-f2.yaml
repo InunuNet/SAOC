@@ -1,0 +1,94 @@
+schema: athanor.contract/v1
+slug: vendor-form-copy-20261007
+goal: >-
+  Give Brad a per-session Drive watch over Lee-Ann's document tree so a silent edit (like the
+  2026-10-07 vendor-form change this mission's F1 is fixing) is never invisible again. A new,
+  project-owned script, scripts/lee-ann-drive-watch.py, fixes the two gaps the HARNESS-owned
+  execution/drive_docx_sync.py has today (skips folder names containing "/"; ignores non-
+  .docx files) without touching that vendored script. Full design record, CLI contract, gws
+  invocation, change-detection rules, and fixture format:
+  .agent/memory/project/specs/vendor-form-copy-20261007/goldens/f2-lee-ann-drive-watch.md
+created_at: '2026-10-08'
+autonomy: high
+
+features:
+  - id: F2
+    name: >-
+      New file scripts/lee-ann-drive-watch.py (python3, stdlib only -- argparse, json,
+      subprocess, pathlib; no third-party dependency). Walks Drive folder
+      1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH recursively via `gws drive files list --params
+      '{"q":"\"<id>\" in parents and trashed=false","fields":"files(id,name,mimeType,
+      modifiedTime,md5Checksum,owners(emailAddress))","pageSize":100}' --page-all`, stripping
+      any leading non-JSON line from stdout (the "Using keyring backend: keyring" line) before
+      parsing. Recurses into every child whose mimeType is
+      application/vnd.google-apps.folder; tracks visited folder ids to guard against a cycle.
+      Compares the fresh walk against a flat, file-id-keyed JSON state file (default
+      content/drive-watch/state.json, add to .gitignore alongside the existing
+      content/drive-source/ entry) -- NOT a filesystem tree, so a folder NAME containing "/"
+      is only ever joined into a display-only "path" string (" / "-separated), never used as
+      a directory component, which is what makes the slash-skip bug structurally impossible
+      to reintroduce. Comparison: a file id present now but not in state -> NEW; present in
+      state but not now -> REMOVED; present in both -> compare md5Checksum when both sides
+      have one, else fall back to comparing modifiedTime (Google-native Docs/Sheets/Slides
+      never have an md5Checksum) -> CHANGED on any difference. Every mimeType is tracked, no
+      extension filter anywhere in the source -- this is what fixes the non-.docx gap. Flags:
+      --init (write the baseline, never compare/report, always exit 0 on success); --json
+      (emit {"new":[...],"changed":[...],"removed":[...]} instead of human-readable lines,
+      each entry carrying id/name/path/mimeType); --fixture PATH (read the exact JSON shape
+      documented in the golden instead of calling gws at all -- root_id + a
+      folder-id-keyed children map -- so every assertion below runs with zero network access,
+      per sandbox.md); --state-path PATH (override the state file location, default
+      content/drive-watch/state.json, required so tests never touch the real state file).
+      Exit codes: 0 (success, no changes, or --init), 10 (success, at least one change found),
+      1 (error -- gws failure/non-JSON output, missing/malformed fixture, or an unparseable
+      existing state file). No gws mutation verb is referenced anywhere in the source -- same
+      read-only posture execution/drive_docx_sync.py already documents for itself.
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/vendor-form-copy-20261007/goldens/f2-lee-ann-drive-watch.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: scripts/lee-ann-drive-watch.py exists and is valid Python 3 (syntax check only, no execution).
+      command: python3 -m py_compile scripts/lee-ann-drive-watch.py
+
+    - id: A2
+      description: >-
+        Zero third-party imports -- stdlib only, per the contract's explicit constraint.
+        Defeating mutation: reaching for requests/google-api-python-client instead of shelling
+        out to the already-installed gws CLI the way every other Drive-touching script in
+        this project does.
+      command: >-
+        ! grep -E "^import (requests|google|googleapiclient)|^from (requests|google|googleapiclient)" scripts/lee-ann-drive-watch.py
+
+    - id: A3
+      description: No gws mutation verb (create/update/delete/copy/trash) is referenced anywhere in the source -- read-only posture, matching execution/drive_docx_sync.py's own guarantee.
+      command: >-
+        ! grep -E '"(create|update|delete|copy|trash|untrash)"' scripts/lee-ann-drive-watch.py
+
+    - id: A4
+      description: >-
+        End-to-end fixture-driven proof (zero network): --init writes a baseline and reports
+        nothing; a run against an updated fixture detects CHANGED on a docx nested inside a
+        folder whose name contains "/" (the exact slash-skip bug), CHANGED via the
+        modifiedTime fallback on a Google-native file with no md5Checksum, REMOVED on an
+        absent file, NEW on an arbitrary non-document mimeType (image/jpeg), and leaves an
+        unchanged .xlsx out of every list; exit codes are 0/10/0 across the three runs; the
+        reported path for the slash-named-folder file literally contains the slash. Defeating
+        mutation: skipping the slash-named folder, filtering by extension, treating a
+        no-md5Checksum file as always-unchanged, or --init emitting a report.
+      command: >-
+        bash .agent/memory/project/specs/vendor-form-copy-20261007/checks/check-f2-fixture-walk.sh
+
+    - id: A5
+      description: content/drive-watch/ is gitignored, mirroring the existing content/drive-source/ treatment, so the real state file is never committed.
+      command: >-
+        grep -q "content/drive-watch" .gitignore
+
+    - id: A6
+      description: No stray console/debug output left in the script (coding.md's "leave nothing dead").
+      command: >-
+        ! grep -n "pdb.set_trace\|breakpoint()" scripts/lee-ann-drive-watch.py
