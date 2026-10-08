@@ -1,0 +1,68 @@
+{
+  "_comment": "Golden request/response/document shapes for POST /api/admin/vendors/applications/invite (mission vendor-invite, M1/F1). Timestamps are shown as ISO strings for readability; the real documents store Firestore Timestamp instances, converted to Date by lib/firestore-serialization.ts on read.",
+
+  "inviteRequest": {
+    "businessName": "Highveld Orchid Nursery",
+    "contactPersonName": "Thandi Nkosi",
+    "contactEmail": "thandi@highveldorchids.example"
+  },
+
+  "inviteRequest_missingContactEmail_400": {
+    "businessName": "Highveld Orchid Nursery",
+    "contactPersonName": "Thandi Nkosi"
+  },
+
+  "inviteResponse_201": {
+    "success": true,
+    "id": "abc123generatedFirestoreId",
+    "registrationCodeId": "4821"
+  },
+
+  "inviteResponse_400_fieldErrors": {
+    "error": "Invalid vendor invite submission.",
+    "fieldErrors": ["contactEmail is required and must be a non-empty string"]
+  },
+
+  "inviteResponse_409_pendingConflict": {
+    "error": "An application from this email is already pending review (id: xyz789). Approve or decline it instead of creating a duplicate invite."
+  },
+
+  "inviteResponse_409_approvedConflict": {
+    "error": "An approved application from this email already exists (id: xyz789) with a live registration code. Use Reissue code to resend it instead of creating a duplicate invite."
+  },
+
+  "inviteResponse_503_secretUnset": {
+    "error": "Cannot invite: VENDOR_REGISTRATION_TOKEN_SECRET is not configured, so the registration code could never be redeemed. No invite was created."
+  },
+
+  "invitedDocument_afterCreate": {
+    "businessName": "Highveld Orchid Nursery",
+    "contactPersonName": "Thandi Nkosi",
+    "contactEmail": "thandi@highveldorchids.example",
+    "status": "approved",
+    "origin": "invited",
+    "submittedAt": "2026-10-08T09:00:00.000Z",
+    "reviewedBy": "admin@saoc.co.za",
+    "reviewedAt": "2026-10-08T09:00:00.000Z",
+    "registrationCodeId": "4821",
+    "registrationCodeNameSlug": "highveldorchidnursery",
+    "registrationCodeIssuedAt": "2026-10-08T09:00:00.000Z",
+    "registrationCodeExpiresAt": "2026-10-22T09:00:00.000Z",
+    "registrationCodeFailedAttempts": 0,
+    "registrationCodeLockedAt": null,
+    "registrationCodeGeneration": 1,
+    "_note": "tradingName, vendorCategory, indicativeBoothCount are ENTIRELY ABSENT keys on this document -- not present with value undefined/null/[] -- see goldens/README.md 'Why vendorCategory and indicativeBoothCount become optional'."
+  },
+
+  "publiclyAppliedDocument_forComparison": {
+    "_note": "Shown only to contrast with invitedDocument_afterCreate above -- a pre-mission, publicly-submitted, still-pending document. Has no origin key at all (origin absent means 'public' by convention) and DOES carry vendorCategory/indicativeBoothCount because the public apply form always collects them.",
+    "businessName": "Lowveld Succulents & Orchids",
+    "contactPersonName": "Pieter van der Merwe",
+    "contactEmail": "pieter@lowveldsucculents.example",
+    "contactCellPhone": "+27 82 555 1234",
+    "vendorCategory": ["orchids", "succulents"],
+    "indicativeBoothCount": 2,
+    "status": "pending",
+    "submittedAt": "2026-09-20T14:00:00.000Z"
+  }
+}

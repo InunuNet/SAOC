@@ -22,6 +22,9 @@ import type {
   VendorApplicationDraft,
 } from '@/types/index';
 
+// vendor-invite M1/F1 -- admin "Invite a vendor" action, additive only (no existing export's
+// behaviour changes). See .agent/memory/project/specs/vendor-invite/goldens/README.md.
+
 export const VENDOR_APPLICATIONS_COLLECTION = 'vendorApplications';
 
 // Golden-exact literal list -- see contracts/golden/vendor-gated-registration-flow-f1/
@@ -187,5 +190,79 @@ export function buildVendorApplication(
     // Always system-set -- never read from `input`, see the function doc comment above.
     status: 'pending',
     submittedAt: now,
+  });
+}
+
+// vendor-invite M1/F1 -- admin "Invite a vendor" action. Deliberately a SMALLER, separate
+// draft/validator/builder than the public-apply trio above, not an alias of them -- an invite
+// payload has no vendorCategory and no indicativeBoothCount at all (see
+// goldens/README.md "Why vendorCategory and indicativeBoothCount become optional").
+
+export interface VendorApplicationInviteDraft {
+  businessName: string;
+  contactPersonName: string;
+  contactEmail: string;
+}
+
+/**
+ * Fail-fast validation of a raw, untyped invite payload -- validates ONLY
+ * businessName/contactPersonName/contactEmail, reusing the SAME FIELD_MAX_LENGTHS values and
+ * EMAIL_PATTERN already defined above. Never validates vendorCategory or
+ * indicativeBoothCount -- those are not part of an invite payload at all.
+ */
+export function validateVendorApplicationInviteInput(input: unknown): {
+  valid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+
+  if (typeof input !== 'object' || input === null) {
+    return { valid: false, errors: ['input must be an object'] };
+  }
+  const record = input as Record<string, unknown>;
+
+  requireNonEmptyString(record, 'businessName', errors, FIELD_MAX_LENGTHS.businessName);
+  requireNonEmptyString(record, 'contactPersonName', errors, FIELD_MAX_LENGTHS.contactPersonName);
+  requireNonEmptyString(record, 'contactEmail', errors, FIELD_MAX_LENGTHS.contactEmail);
+
+  if (
+    typeof record.contactEmail === 'string' &&
+    record.contactEmail.length > 0 &&
+    !EMAIL_PATTERN.test(record.contactEmail)
+  ) {
+    errors.push('contactEmail must be a valid email address');
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Builds a `vendorApplications/{id}` document (minus the Firestore-assigned `id`) for an
+ * admin-invited vendor. Copies each field explicitly, field by field -- never a `{ ...input }`
+ * spread, mirroring buildVendorApplication()'s own stated rationale above -- so a
+ * type-system-bypassing input can never smuggle its own status/origin/id/reviewedBy through.
+ * `tradingName`, `vendorCategory`, `indicativeBoothCount` are never assigned a key on the
+ * returned object at all -- not `undefined`, not `[]`, not `null` -- genuinely absent, matching
+ * what "not yet known" means for an invited vendor who has not yet filled in the full
+ * registration form. `status`/`origin`/`reviewedBy`/`reviewedAt`/`submittedAt` are always the
+ * forced values, regardless of anything present on `input`: the inviting admin's action IS the
+ * approval (see goldens/README.md "Why status: 'approved' directly, never 'pending'").
+ */
+export function buildVendorApplicationInvite(
+  input: VendorApplicationInviteDraft,
+  reviewerEmail: string,
+  now: Date,
+): Omit<VendorApplication, 'id'> {
+  return stripUndefinedProperties({
+    businessName: input.businessName,
+    contactPersonName: input.contactPersonName,
+    contactEmail: input.contactEmail,
+
+    // Always system-set -- never read from `input`, see the function doc comment above.
+    status: 'approved',
+    origin: 'invited',
+    submittedAt: now,
+    reviewedBy: reviewerEmail,
+    reviewedAt: now,
   });
 }

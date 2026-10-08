@@ -860,11 +860,28 @@ export interface VendorApplication {
   tradingName?: string;
   contactPersonName: string;
   contactEmail: string;
-  contactCellPhone: string;
-  vendorCategory: VendorApplicationCategory[];
+  // vendor-invite M1/F1 -- made optional alongside vendorCategory/indicativeBoothCount below.
+  // An invited vendor (origin: 'invited') has given the committee no cell phone either -- same
+  // genuine "not yet known" state, not an invented placeholder -- and the golden fixture's
+  // invitedDocument_afterCreate (goldens/vendor-application-invite.fixtures.json) omits this
+  // key entirely. The contract's own item (1) names only vendorCategory/indicativeBoothCount
+  // explicitly, but buildVendorApplicationInvite()'s declared `Omit<VendorApplication, 'id'>`
+  // return type cannot compile unless every field it does not supply is optional here; a
+  // repo-wide grep found no consumer outside lib/vendor-applications.ts's own public-apply
+  // validator (runtime-enforced, unaffected) that reads this field non-optionally.
+  contactCellPhone?: string;
+  vendorCategory?: VendorApplicationCategory[];
   /** "Indicative number of stands" -- a rough figure only; the real booth count is collected
-   *  on the full registration form after approval. */
-  indicativeBoothCount: number;
+   *  on the full registration form after approval. Optional since vendor-invite M1/F1: an
+   *  invited vendor has not yet reported a category or stand count -- see
+   *  contactCellPhone's comment above for the full rationale, which applies identically here. */
+  indicativeBoothCount?: number;
+
+  // vendor-invite M1/F1 -- 'invited' means this document was created directly by an admin's
+  // "Invite a vendor" action (already approved, no public submission ever happened). Absent on
+  // every pre-mission document means 'public' by convention -- never backfilled. See
+  // .agent/memory/project/specs/vendor-invite/goldens/README.md.
+  origin?: 'public' | 'invited';
 
   // System-owned fields -- never submitter-supplied. VendorApplicationDraft (below)
   // structurally excludes every field in this block, mirroring VendorSubmissionDraft's

@@ -162,14 +162,23 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
                     <br />
                     <span className="text-muted">{row.contactEmail}</span>
                   </td>
-                  <td className={BODY_CELL_CLASS}>{row.vendorCategory.join(', ')}</td>
-                  <td className={BODY_CELL_CLASS}>{row.indicativeBoothCount}</td>
+                  <td className={BODY_CELL_CLASS}>{row.vendorCategory?.join(', ') ?? '—'}</td>
+                  <td className={BODY_CELL_CLASS}>{row.indicativeBoothCount ?? '—'}</td>
                   <td className={BODY_CELL_CLASS}>
                     <span
                       className={`inline-flex items-center rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${style}`}
                     >
                       {row.status}
                     </span>
+                    {/* vendor-invite M1/F1 -- marks a row created directly by the admin
+                        "Invite a vendor" action. Absent for every pre-mission document and
+                        for origin: 'public'. Reuses the existing pending-pill styling
+                        vocabulary, no new color. */}
+                    {row.origin === 'invited' ? (
+                      <span className="ml-1.5 inline-flex items-center rounded-pill border border-rule bg-bone px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+                        Invited
+                      </span>
+                    ) : null}
                   </td>
                   <td className={BODY_CELL_CLASS}>
                     {row.status === 'approved' ? (

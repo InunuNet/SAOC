@@ -11,6 +11,7 @@ import { UtilityBar, Header, Footer } from '@/components/chrome';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery } from '@/sanity/queries';
 import { VendorApplicationReviewTable } from '@/components/admin/VendorApplicationReviewTable';
+import { VendorInviteForm } from '@/components/admin/VendorInviteForm';
 import { AdminNav } from '@/components/admin/AdminNav';
 import type { ShowIdentity } from '@/types';
 import type { VendorApplication } from '@/types/index';
@@ -73,6 +74,10 @@ export default async function VendorApplicationsAdminPage() {
             >
               View full registrations →
             </Link>
+          </div>
+
+          <div className="mt-8">
+            <VendorInviteForm />
           </div>
 
           <div className="mt-8">

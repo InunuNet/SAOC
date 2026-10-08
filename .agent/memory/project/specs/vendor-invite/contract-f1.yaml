@@ -1,0 +1,316 @@
+schema: athanor.contract/v1
+slug: vendor-invite
+goal: >-
+  Admin "Invite a vendor" action (Brad-approved 2026-10-08, mission vendor-invite M1/F1).
+  Lee-Ann's real process is invite-first: the committee identifies a known nursery and
+  invites them directly, rather than waiting for a public application. Today's site only
+  supports the reverse (public apply -> admin approve -> code emailed). This feature adds
+  an admin-only "Invite a vendor" action at /admin/vendors/applications that takes the
+  vendor's businessName/contactPersonName/contactEmail, creates a vendorApplications
+  document ALREADY approved (origin: 'invited'), mints the SAME existing 4-digit
+  registration code via the SAME mechanism the public-apply-then-approve path uses
+  (lib/vendor-registration-code.ts), and emails it with the SAME existing approval email
+  (lib/vendor-approval-confirmation.ts / emails/VendorApprovalConfirmation.tsx) -- no new
+  email template, no new institutional copy. The public /national-show/vendors/apply path
+  is unchanged and stays available. The full registration form at
+  /national-show/vendors/register remains the vendor's one and only path to the
+  SAOC-vendor contract (terms, declarations, signature) -- an invite shortcuts getting the
+  code, never the form itself.
+
+  HARD NO-TOUCH CONSTRAINT: a concurrent branch (NOS Site, vendor-form mission) is editing
+  lib/vendor-approval-confirmation.ts, emails/VendorApprovalConfirmation.tsx, and
+  app/api/admin/vendors/[id]/review/route.ts (per-day staff fields). This feature may CALL
+  sendVendorApprovalConfirmationEmail() -- exactly as
+  app/api/admin/vendors/applications/[id]/review/route.ts:223 already does today -- but
+  must NOT modify the CONTENT of any of those three files. A11 enforces this as a real diff
+  check against origin/main, not a promise.
+
+  Full decision record, the duplicate-invite eligibility rule, the two accepted
+  limitations, and the copy GAP for Brad:
+  .agent/memory/project/specs/vendor-invite/goldens/README.md
+created_at: '2026-10-08'
+autonomy: high
+
+features:
+  - id: F1
+    name: >-
+      Admin "Invite a vendor" action issuing the existing single-use registration code and
+      emailing the existing approval link directly, bypassing the public apply step.
+
+      (1) types/index.ts (edit) -- VendorApplication gains `origin?: 'public' | 'invited'`
+      (absent/undefined on every pre-mission document means 'public', by convention --
+      never backfilled). `vendorCategory: VendorApplicationCategory[]` and
+      `indicativeBoothCount: number` become OPTIONAL (`vendorCategory?:`,
+      `indicativeBoothCount?:`) -- an invited vendor has not reported either yet (they will,
+      on the full registration form, same as every other vendor); this is a genuine "not yet
+      known" state, not an invented placeholder value. The ONLY existing non-optional
+      consumer of either field outside lib/vendor-applications.ts's own public-apply
+      validator is components/admin/VendorApplicationReviewTable.tsx (confirmed by repo-wide
+      grep) -- see (6) below.
+
+      (2) lib/vendor-applications.ts (edit, additive only -- no existing export's behaviour
+      changes) -- adds:
+        - `VendorApplicationInviteDraft { businessName: string; contactPersonName: string;
+          contactEmail: string }`
+        - `validateVendorApplicationInviteInput(input: unknown): { valid: boolean; errors:
+          string[] }` -- validates ONLY businessName/contactPersonName/contactEmail, reusing
+          the SAME FIELD_MAX_LENGTHS values (200/150/254) and EMAIL_PATTERN already defined
+          in this file. Does NOT validate vendorCategory or indicativeBoothCount (they are
+          not part of an invite payload at all) -- this is what makes it genuinely a smaller
+          validator, not an alias of validateVendorApplicationInput.
+        - `buildVendorApplicationInvite(input: VendorApplicationInviteDraft, reviewerEmail:
+          string, now: Date): Omit<VendorApplication, 'id'>` -- field-by-field copy (never a
+          spread, mirroring buildVendorApplication's own stated rationale), forcing `status:
+          'approved'`, `submittedAt: now`, `reviewedBy: reviewerEmail`, `reviewedAt: now`,
+          `origin: 'invited'`. `tradingName`, `vendorCategory`, `indicativeBoothCount` are
+          NEVER assigned a key on the returned object -- not `undefined`, not `[]`, not
+          `null` -- genuinely absent, same as every other field this module already treats
+          this way. Wrapped in the existing `stripUndefinedProperties()` import from
+          lib/firestore-write-safety.ts (same import this file already has).
+
+      (3) lib/vendor-application-invite-eligibility.ts (NEW) -- pure, side-effect-free,
+      authorization-blind module, mirroring lib/vendor-application-review.ts's own stated
+      pattern exactly (no Firestore, no firebase-admin, no lib/admin-auth.ts import).
+      Exports:
+        - `VendorApplicationInviteCandidate { id: string; status: VendorApplicationStatus;
+          contactEmail: string }`
+        - `VendorApplicationInviteEligibilityDecision = { ok: true } | { ok: false; error:
+          string; conflictingId: string }`
+        - `decideVendorApplicationInviteEligibility(contactEmail: string, candidates:
+          VendorApplicationInviteCandidate[]): VendorApplicationInviteEligibilityDecision` --
+          compares `contactEmail.toLowerCase()` against each candidate's
+          `contactEmail.toLowerCase()`. A candidate whose status is `'pending'` or
+          `'approved'` makes the decision `{ ok: false }` (a 'pending' candidate should be
+          reviewed via the existing review action instead of inviting a duplicate; an
+          'approved' candidate already has a live code -- use the existing reissue-code
+          action to resend). A candidate whose status is `'declined'` is NOT a conflict --
+          Lee-Ann's committee may reasonably invite the same vendor again in a later cycle;
+          the new invite creates a fully independent document. No match at all is `{ ok:
+          true }`.
+
+      (4) app/api/admin/vendors/applications/invite/route.ts (NEW) -- POST handler, same
+      getAdminSession()-then-hasCapability(session.decodedToken, NATIONAL_SHOW_ID,
+      'review-vendor-applications', { now, lookupShowWindow }) gate as the existing
+      review/reissue-code routes in this same directory tree -- NO new capability string
+      introduced anywhere. Same `resolveSiteUrl()`/`DEFAULT_SITE_URL` local-duplication
+      convention already used in the review route. Order of operations, strictly:
+        a. Auth + capability gate (401/403, unchanged shape from sibling routes).
+        b. Parse body; validate via `validateVendorApplicationInviteInput()`; 400 with
+           `fieldErrors` on failure (same response shape convention as
+           app/api/vendors/apply/route.ts's own 400).
+        c. Resolve `reviewerEmail` from `session.decodedToken.email`; if absent, 500 with
+           the SAME "Unable to attribute this review." message and the SAME
+           console.error wording pattern as the existing review route (copy the guard, do
+           not invent new wording).
+        d. Fetch the full `vendorApplications` collection (same full-collection `.get()`
+           pattern the existing GET list route at
+           app/api/admin/vendors/applications/route.ts already uses -- no new Firestore
+           index). Map to `VendorApplicationInviteCandidate[]` and call
+           `decideVendorApplicationInviteEligibility()`. Not ok -> 409 with an error message
+           naming which existing application id conflicts and whether it is pending or
+           approved.
+        e. `VENDOR_REGISTRATION_TOKEN_SECRET` precondition: if unset, 503 with the SAME
+           "...registration code could never be redeemed..." wording pattern as the
+           existing review route's approve branch (copy the pattern; this is a shared
+           operational precondition, not new copy).
+        f. Mint `registrationCodeId` via `generateVendorRegistrationCodeId()` and
+           `nameSlug` via `normalizeVendorCodeName(businessName)`, BEFORE any write (same
+           "generate before committing" rule as the review route). Empty `nameSlug` -> 409
+           with the SAME "business name contains no letters or digits" wording pattern.
+        g. ONE atomic `.collection(VENDOR_APPLICATIONS_COLLECTION).add({ ...built,
+           registrationCodeId, registrationCodeNameSlug, registrationCodeIssuedAt:
+           Timestamp.fromDate(now), registrationCodeExpiresAt: Timestamp.fromDate(expiresAt),
+           registrationCodeFailedAttempts: 0, registrationCodeLockedAt: null,
+           registrationCodeGeneration: 1 })` where `built = buildVendorApplicationInvite(...)`
+           -- status 'approved', origin 'invited', and every code field land together in the
+           SAME create call. There is no intermediate 'pending' state and no second write --
+           an invite can never be left half-committed the way the brief's "approved but no
+           code" dead end was already closed for the public path.
+        h. AFTER the `.add()` resolves, `deliverConfirmationEmailAfterCommit(() =>
+           sendVendorApprovalConfirmationEmail({ businessName, contactPersonName,
+           contactEmail, registrationCode: registrationCodeId, registrationLink:
+           `${resolveSiteUrl()}/national-show/vendors/register?name=${encodeURIComponent(businessName)}&code=${registrationCodeId}` }),
+           onError)` -- the EXACT existing function and template, imported from
+           `@/lib/vendor-approval-confirmation`. No new email module. No admin-notice email
+           of any kind fires from this route (see goldens/README.md "Why no admin notice on
+           invite"). CALLING this function is required; EDITING
+           lib/vendor-approval-confirmation.ts, emails/VendorApprovalConfirmation.tsx, or
+           app/api/admin/vendors/[id]/review/route.ts is FORBIDDEN -- a concurrent branch
+           (NOS Site, vendor-form mission) is editing all three for per-day staff fields.
+           If this feature's needs ever seem to require a change to any of those three
+           files, STOP and flag it instead of editing them -- do not resolve the conflict
+           unilaterally. A11 proves this structurally.
+        i. 201 `{ success: true, id: ref.id, registrationCodeId }`. Firestore write failure
+           (step g only) -> 500 `{ error: 'Failed to save vendor invite.' }`, logged with the
+           generic-message-plus-error.message-only convention every sibling route already
+           follows (no businessName/contactEmail/contactPersonName in any log line, matching
+           the existing POPIA-relevant-PII logging rule).
+
+      (5) components/admin/VendorInviteForm.tsx (NEW, 'use client') -- three text inputs
+      (Business name, Contact name, Email) and a submit button. POSTs
+      `{ businessName, contactPersonName, contactEmail }` to
+      `/api/admin/vendors/applications/invite`. On a non-ok/non-success response, renders
+      the server's `error` (and any `fieldErrors`) the same error-banner way
+      VendorApplicationReviewTable.tsx already does (`role="alert"`, same class names). On
+      success: clears the form, shows a one-line success message naming the business and
+      the issued registrationCodeId (so the admin has it on screen even though the email
+      send is best-effort/non-blocking), and calls `router.refresh()` (from
+      `next/navigation`) so the server-rendered application list on the same page re-fetches
+      and the new row appears -- no second client-side state channel between this form and
+      VendorApplicationReviewTable. Submit button disabled while a request is in flight,
+      label changes to "Sending invite…" (mirrors the existing "Saving…" convention).
+
+      (6) components/admin/VendorApplicationReviewTable.tsx (edit) -- guards the two
+      newly-optional fields: `row.vendorCategory?.join(', ') ?? '—'` and
+      `row.indicativeBoothCount ?? '—'` (replacing the current unguarded
+      `row.vendorCategory.join(', ')` / `row.indicativeBoothCount`, which would throw on an
+      invited row). Also renders a small "Invited" marker (reusing the existing pending-pill
+      styling vocabulary -- `bg-bone text-muted border border-rule`, no new color) next to
+      the status pill whenever `row.origin === 'invited'`; nothing renders for
+      `origin === 'public'` or absent `origin` (every pre-mission document).
+
+      (7) app/admin/vendors/applications/page.tsx (edit) -- renders `<VendorInviteForm />`
+      above `<VendorApplicationReviewTable applications={applications} />`, unconditionally
+      (same pattern this page already follows: the table's action buttons are not
+      conditionally hidden by `canReviewVendors` either -- the real enforcement boundary is
+      the API route's own capability check, not client-side hiding).
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/vendor-invite/goldens/README.md
+  - .agent/memory/project/specs/vendor-invite/goldens/vendor-application-invite.fixtures.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The whole project still type-checks under strict TypeScript after the type change, the two new lib modules, the new route, and the two component edits.
+      command: pnpm type-check
+
+    - id: A2
+      description: >-
+        ROUTE-WIRING DISCRIMINATOR on app/api/admin/vendors/applications/invite/route.ts.
+        Source-level proof (a live Firestore project is outside this contract's
+        offline/credential-free constraint, same stated reason every sibling check in this
+        repo's vendor routes uses source analysis here). Proves: the admin-auth gate calls
+        hasCapability with the literal string 'review-vendor-applications' (no new
+        capability); the VENDOR_REGISTRATION_TOKEN_SECRET precondition check happens BEFORE
+        any `.add(` call; status:'approved' and origin:'invited' and every
+        registrationCode* field appear inside the SAME `.add(` call object literal (never a
+        separate update); sendVendorApprovalConfirmationEmail is imported from
+        '@/lib/vendor-approval-confirmation' and called wrapped in
+        deliverConfirmationEmailAfterCommit, positioned AFTER the `.add(` call. Self-tested
+        against a frozen KNOWN-UNWIRED fixture (must reject) before trusting it against the
+        real file. Defeating mutation: splitting the create into a pending-then-update pair;
+        checking the secret after minting; calling the email send unwrapped or before the
+        write; introducing a second capability string.
+      command: node contracts/checks/vendor-invite/check-invite-route-wiring.mjs
+
+    - id: A3
+      description: >-
+        BEHAVIOURAL proof of the real decideVendorApplicationInviteEligibility(): a
+        'pending' candidate for the same email (case-INSENSITIVE match, e.g.
+        'Jane@Example.com' vendor input against a stored 'jane@example.com' candidate)
+        blocks the invite; an 'approved' candidate blocks it; a 'declined' candidate does
+        NOT block it (a fresh, independent invite is allowed); no matching candidate does
+        not block it. RED-verified against a mutation that compares emails
+        case-sensitively (would wrongly allow the 'Jane@Example.com' case) and against a
+        mutation that also blocks on 'declined' (would wrongly refuse a legitimate
+        re-invite) -- both mutations must make this check fail.
+      command: npx tsx contracts/checks/vendor-invite/check-invite-eligibility-behavior.mjs
+
+    - id: A4
+      description: >-
+        BEHAVIOURAL proof of the real buildVendorApplicationInvite(): the returned object
+        has NO own-property at all (not `undefined`-valued, genuinely absent from
+        Object.keys()) for tradingName, vendorCategory, or indicativeBoothCount when the
+        caller's input never carried them, AND status/origin/reviewedBy/reviewedAt/
+        submittedAt are exactly the forced values even when a type-system-bypassing input
+        object attempts to smuggle its own status/origin/id/reviewedBy field. Defeating
+        mutation: `{ ...input }` spread anywhere in the builder (would let a smuggled status
+        through); omitting stripUndefinedProperties (would leave an undefined key behind
+        when some future caller does pass one explicitly).
+      command: npx tsx contracts/checks/vendor-invite/check-invite-builder-strips-undefined.mjs
+
+    - id: A5
+      description: >-
+        BEHAVIOURAL proof of the real validateVendorApplicationInviteInput(): rejects a
+        missing/empty businessName, contactPersonName, or contactEmail; rejects an
+        over-maxlength businessName (>200) and contactPersonName (>150); rejects a malformed
+        contactEmail; ACCEPTS a minimal valid 3-field payload; and — the discriminator that
+        proves this is genuinely the smaller invite validator, not
+        validateVendorApplicationInput under another name — accepts that same minimal
+        payload even though it carries no vendorCategory and no indicativeBoothCount at all.
+      command: npx tsx contracts/checks/vendor-invite/check-invite-validator-behavior.mjs
+
+    - id: A6
+      description: >-
+        Documentation-only, deliberately weak (type-source presence, not a compiled
+        behaviour check) — paired with A1's full strict build, which is the load-bearing
+        proof that the type change is actually consistent project-wide. Confirms
+        types/index.ts literally declares `vendorCategory?:` and `indicativeBoothCount?:`
+        (not left required with a builder-side `as any` cast working around it) and
+        declares an `origin?:` field on VendorApplication.
+      command: grep -q "vendorCategory?:" types/index.ts && grep -q "indicativeBoothCount?:" types/index.ts && grep -qE "origin\?:\s*'public'\s*\|\s*'invited'" types/index.ts
+
+    - id: A7
+      description: >-
+        RENDER-SAFETY proof of the real components/admin/VendorApplicationReviewTable.tsx,
+        via react-dom/server renderToStaticMarkup (no test framework required/available in
+        this repo). Renders the REAL component with a fixture VendorApplication that omits
+        vendorCategory and indicativeBoothCount entirely: must not throw, and the rendered
+        markup must contain the '—' fallback rather than crashing on `.join` of undefined.
+        Renders a second fixture with `origin: 'invited'`: the markup must contain an
+        "Invited" marker. Renders a third fixture with no `origin` key at all (every
+        pre-mission document): the markup must NOT contain "Invited". RED-verified against
+        the original unguarded `row.vendorCategory.join(', ')` source (throws on the first
+        fixture).
+      command: npx tsx contracts/checks/vendor-invite/check-review-table-render-safety.mjs
+
+    - id: A8
+      description: >-
+        ABSENCE proof across every new/edited file this feature touches
+        (lib/vendor-applications.ts, lib/vendor-application-invite-eligibility.ts,
+        app/api/admin/vendors/applications/invite/route.ts, components/admin/
+        VendorInviteForm.tsx): no capability string other than 'review-vendor-applications'
+        appears anywhere, and none of the three existing admin-notice sender modules
+        (vendor-application-admin-notice, vendor-submission-admin-notice,
+        vendor-payment-admin-notice) is imported anywhere — encodes the "no admin notice on
+        invite" decision (goldens/README.md) so a future edit cannot silently add that noise
+        without this contract being revisited.
+      command: node contracts/checks/vendor-invite/check-no-new-capability-or-admin-notice.mjs
+
+    - id: A9
+      description: pnpm lint passes with zero errors after the new/edited files.
+      command: pnpm lint
+
+    - id: A10
+      type: codex_qa
+      description: >-
+        Mandatory cross-model review (workflow.md's standing Codex GPT-5.5 pass,
+        non-optional). Reviews the full diff: the type change's blast radius beyond
+        VendorApplicationReviewTable.tsx, the Firestore full-collection-scan duplicate
+        check's cost at scale, the single-write atomicity claim in A2, and the email-reuse
+        decision (no new template, verbatim existing approval copy for an invited vendor who
+        never submitted an application).
+      target: vendor-invite F1 diff (types/index.ts, lib/vendor-applications.ts, lib/vendor-application-invite-eligibility.ts, app/api/admin/vendors/applications/invite/route.ts, components/admin/VendorInviteForm.tsx, components/admin/VendorApplicationReviewTable.tsx, app/admin/vendors/applications/page.tsx)
+      script: execution/codex_qa.sh
+      timeout_seconds: 200
+
+    - id: A11
+      description: >-
+        HARD NO-TOUCH CONSTRAINT, enforced as a real diff check, not a promise. A concurrent
+        branch (NOS Site, vendor-form mission) is editing lib/vendor-approval-confirmation.ts,
+        emails/VendorApprovalConfirmation.tsx, and
+        app/api/admin/vendors/[id]/review/route.ts (per-day staff fields) on top of the SAME
+        origin/main this branch is built from. This feature CALLS
+        sendVendorApprovalConfirmationEmail() (exactly as the existing
+        app/api/admin/vendors/applications/[id]/review/route.ts:223 already does) but must
+        never MODIFY any of those three files' content. `git -C <worktree> diff --quiet
+        origin/main -- <path>` exits 0 only when the current branch's version of that path
+        (working tree plus any commits -- the working tree is included, so an uncommitted
+        edit fails this too) is identical to origin/main's. `-C <worktree>` pins the absolute
+        worktree root so the command does not depend on the gate's cwd. Any edit to any of
+        the three files, however small, fails this assertion. Defeating mutation: any change
+        at all to any of the three files, including a comment-only edit or a reformat.
+      command: git -C /Users/vetus/ai/SAOC/.tmp/sandbox/wt-vendor-invite diff --quiet origin/main -- lib/vendor-approval-confirmation.ts emails/VendorApprovalConfirmation.tsx 'app/api/admin/vendors/[id]/review/route.ts'
