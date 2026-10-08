@@ -1,0 +1,46 @@
+{
+  "root_id": "ROOT",
+  "folders": {
+    "ROOT": [
+      {
+        "id": "SUBSLASH",
+        "name": "13. Registration/Booking/Tickets",
+        "mimeType": "application/vnd.google-apps.folder",
+        "modifiedTime": "2026-09-01T10:00:00.000Z"
+      },
+      {
+        "id": "F2",
+        "name": "Copy of Vendor Listing.xlsx",
+        "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "modifiedTime": "2026-09-01T09:00:00.000Z",
+        "md5Checksum": "bbb222",
+        "owners": [{"emailAddress": "lee-ann@saoc.example"}]
+      },
+      {
+        "id": "F3",
+        "name": "Vendor Area Notes",
+        "mimeType": "application/vnd.google-apps.document",
+        "modifiedTime": "2026-09-01T08:00:00.000Z",
+        "owners": [{"emailAddress": "lee-ann@saoc.example"}]
+      },
+      {
+        "id": "F4",
+        "name": "Old Draft.docx",
+        "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "modifiedTime": "2026-08-01T08:00:00.000Z",
+        "md5Checksum": "ccc333",
+        "owners": [{"emailAddress": "lee-ann@saoc.example"}]
+      }
+    ],
+    "SUBSLASH": [
+      {
+        "id": "F1",
+        "name": "13.2 Vendor Form - SAOC National Show Vendor Registration Form.docx",
+        "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "modifiedTime": "2026-09-08T12:00:00.000Z",
+        "md5Checksum": "aaa111",
+        "owners": [{"emailAddress": "lee-ann@saoc.example"}]
+      }
+    ]
+  }
+}

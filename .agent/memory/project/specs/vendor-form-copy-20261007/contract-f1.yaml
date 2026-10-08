@@ -1,0 +1,242 @@
+schema: athanor.contract/v1
+slug: vendor-form-copy-20261007
+goal: >-
+  Bring the live vendor registration form (components/vendors/, lib/vendor-register-form-
+  payload.ts, lib/vendor-register-form-initial-state.ts, lib/vendor-approval-confirmation.ts,
+  emails/VendorApprovalConfirmation.tsx, app/api/admin/vendors/[id]/review/route.ts) into line
+  with Lee-Ann's 2026-10-07 update to the "13.2 Vendor Form" Drive doc. Copy and structure
+  only -- no new visual design, no new leaf input component. Revised 2026-10-08 to honour two
+  constraints from the SAOC lead (who owns the vendor flow and cleared this work): pre-M2
+  vendorSubmissions documents must stay readable (staffPerDay is never renamed or removed, the
+  per-day fields are additive), and the existing VendorTermsFieldset.tsx:19 allocation note is
+  reconciled rather than duplicated. Also revised to respect a collision guard against
+  feat/vendor-invite (admin "invite a vendor" work touching app/admin/vendors/**,
+  app/api/admin/vendors/** and token issuance). Full decision record, field-by-field source
+  mapping, consumer trace, collision-guard footprint, handover note, and open questions for
+  Lee-Ann:
+  .agent/memory/project/specs/vendor-form-copy-20261007/goldens/f1-vendor-form-copy-update.md
+created_at: '2026-10-08'
+autonomy: high
+
+# NOTE (not a contract.py schema key -- "shared_files" is informational only, moved out of
+# the top-level schema after contract.py validate rejected it as unknown): this feature
+# touches exactly one file under either glob the SAOC lead is also working on
+# (feat/vendor-invite, off origin/main): app/api/admin/vendors/[id]/review/route.ts. The
+# change there is additive only -- 5 new "<field>: data.<field> ?? null" lines added to the
+# existing sendVendorApprovalConfirmationEmail({...}) call's object literal, alongside the
+# kept (not removed) staffPerDay line; no other line in the file changes. Cleared by SAOC
+# lead 2026-10-08, along with lib/vendor-approval-confirmation.ts and
+# emails/VendorApprovalConfirmation.tsx (both outside the collision-guarded globs, so their
+# clearance is a design sign-off rather than a glob clearance). Full write-up:
+# goldens/f1-vendor-form-copy-update.md, "Collision guard" section.
+
+features:
+  - id: F1
+    name: >-
+      Nine changes, all under components/vendors/ + lib/vendor-register-form-payload.ts +
+      lib/vendor-register-form-initial-state.ts + lib/vendor-approval-confirmation.ts +
+      emails/VendorApprovalConfirmation.tsx + app/api/admin/vendors/[id]/review/route.ts.
+      (1) Staff & Exhibitor Passes: new components/vendors/VendorStaffPassesFieldset.tsx
+      renders 5 numeric fields (Setup Day / Day 1 / Day 2 / Day 3 / Breakdown Day, each
+      "Number of Staff") wired to the ALREADY server-validated staffCountSetupDay/
+      staffCountDay1/staffCountDay2/staffCountDay3/staffCountBreakdownDay fields
+      (types/index.ts, lib/vendor-submissions.ts -- do not touch either file, they're already
+      correct); mounted inside VendorBoothFieldset.tsx in place of the removed single
+      staffPerDay VendorFormField call in VendorBoothUtilitiesFieldset.tsx. staffPerDay is
+      retired ONLY from the live form's own input-state types (VendorRegisterFormState /
+      buildVendorRegistrationPayload / INITIAL_STATE) -- it stops being collected from new
+      submissions because the current source no longer asks for one combined number. It is
+      NEVER renamed or removed from the server schema (types/index.ts, lib/vendor-
+      submissions.ts stay untouched -- see A5) and it is NEVER dropped from the read/display
+      side: see item (9) below for the additive-only email rewiring that keeps staffPerDay
+      exactly where it is so pre-feature vendorSubmissions documents stay fully readable.
+      exhibitorPassesRequired/exhibitorPassesCount stay unrendered (no source text asks for
+      them). (2) New components/vendors/VendorWasteFieldset.tsx -- wasteTypes
+      (VendorCheckboxGroupField, 6 verbatim-labelled options onto the existing
+      VENDOR_WASTE_TYPES enum), wasteTypesOther (VendorFormField, gated on a new
+      isWasteTypesOtherFieldApplicable(state) guard mirroring isFoodRetailer's shape exactly),
+      the verbatim advisory note, typo included. specialWasteRequirements stays unrendered (no
+      source text). (3) New components/vendors/VendorStorageFieldset.tsx -- one
+      VendorCheckboxField for storageRiskAcknowledged, required=false, label is the verbatim
+      advisory note. Both new fieldsets exported from components/vendors/index.ts and mounted
+      in VendorRegisterForm.tsx between VendorBoothFieldset and VendorMarketingFieldset, in the
+      order VendorStorageFieldset then VendorWasteFieldset. (4) Two vehicle-registration labels
+      in VendorBoothFieldset.tsx's VEHICLE_REGISTRATION_FIELDS array corrected to verbatim
+      source text ("Less than 1 ton Delivery Van registration Number" /
+      "Above 1 ton Truck registration number") -- keys/types unchanged. (5)
+      VendorBusinessAddressFieldset.tsx's vatRegistered radio relabelled from "VAT registered"
+      to "VAT Vendor" (verbatim source) -- gating behaviour unchanged. (6) RECONCILE, do not
+      duplicate: the source doc has two differently-worded "final booth allocation" sentences
+      (BOOTH REQUIREMENTS section, and the Terms & Conditions "Vendor Allocation" clause). Per
+      the SAOC lead's explicit instruction, the existing note at VendorTermsFieldset.tsx:19
+      renders the T&Cs sentence and is ALREADY byte-for-byte correct against it -- @dev
+      re-verifies this (diff it against the source clause) and corrects only if drift is
+      found; no new note is added anywhere, and VendorBoothPositionFieldset.tsx is NOT
+      touched on this point. The BOOTH REQUIREMENTS sentence stays unrendered and is a named
+      gap for Lee-Ann, not silently dropped (see golden "Gaps" item 4). (7)
+      VendorMarketingFieldset.tsx's MARKETING_PERMISSION_OPTIONS labels replaced with the
+      verbatim source sentences (full permission / listing-only) -- values/gating unchanged.
+      (8) Three new verbatim advisory <p> elements: electrical safety note in
+      VendorBoothUtilitiesFieldset.tsx (gated isElectricalEquipmentApplicable(state), after the
+      electrical equipment table, before the water radio); delivery/collection-slots note in
+      VendorBoothFieldset.tsx (after the vehicle fields and otherVehicleDescription, before
+      loadInSlot/loadOutSlot); booth-confirmed-on-payment note in VendorPaymentFieldset.tsx
+      (before the two insurance fields). (9) ADDITIVE consumer re-wire (backward-compat, SAOC
+      lead constraint): app/api/admin/vendors/[id]/review/route.ts KEEPS its existing
+      "staffPerDay: data.staffPerDay ?? null" line unchanged and ADDS 5 new "<field>: data.
+      <field> ?? null" lines for the staffCount* fields. lib/vendor-approval-confirmation.ts's
+      VendorApprovalConfirmationInput interface gains the same 5 fields as optional
+      (`?: number | null`) ONLY -- sendVendorApprovalConfirmationEmail's own signature
+      (parameters, return type, the injectable-mailer deps shape) does not change at all, and
+      its builder KEEPS passing staffPerDay through ("input.staffPerDay ?? null") and ADDS the
+      5 new fields alongside it with the same "?? null" pattern. emails/
+      VendorApprovalConfirmation.tsx gains a new exported pure function,
+      resolveStaffAttendanceDisplay(input), returning "{ mode: 'breakdown' | 'legacy' | 'none',
+      ... }": 'breakdown' when any of the 5 staffCount* fields is non-null (renders the 5-line
+      per-day table), else 'legacy' when staffPerDay is non-null (renders the single existing
+      "Staff per day: {value}" line via the existing formatOptionalField() helper -- unchanged
+      wording/position), else 'none' (existing "Not specified" behaviour, unchanged). If both
+      are ever non-null on one document, 'breakdown' wins (architect's priority rule: the more
+      granular, newer-shaped data takes precedence) -- this case cannot arise from this
+      feature's own write paths but the function must still answer it, not fall through
+      undefined. This logic lives in the email file, not the lib file, matching that file's own
+      existing convention (formatBoothNumber/formatOptionalField/
+      formatRegistrationCodeForReadAloud are already exported from there for the same reason:
+      the same formatting is exercised whether the caller is sendVendorApprovalConfirmationEmail
+      or a direct test render). (10) sendVendorApprovalConfirmationEmail is ALSO called, with a
+      narrower input shape (businessName/contactPersonName/contactEmail/registrationCode/
+      registrationLink -- no staff/booth/logistics fields at all), from
+      app/api/admin/vendors/applications/[id]/review/route.ts:223, on the registrationLink
+      branch -- a DIFFERENT branch of the same email component that never renders any staff
+      field regardless. This feature makes ZERO changes to that file (already enforced by A7/
+      A8) and, because the 5 new fields are optional-only on an existing interface, that call
+      site keeps compiling and rendering bit-for-bit unchanged with no edit of its own required
+      -- proved by A10, not just asserted. app/api/admin/vendors/[id]/review/route.ts, lib/
+      vendor-approval-confirmation.ts and emails/VendorApprovalConfirmation.tsx are the three
+      files the SAOC lead has cleared for this feature to edit; app/api/admin/vendors/[id]/
+      review/route.ts is additionally the one file in the whole feature that falls under the
+      feat/vendor-invite collision guard -- see the top-level shared_files: entry above.
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/vendor-form-copy-20261007/goldens/f1-vendor-form-copy-update.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: >-
+        The whole project still type-checks under strict TypeScript after retiring staffPerDay
+        from the live form's input-state layer, adding the two new fieldsets, and additively
+        rewiring the approval email.
+      command: pnpm run type-check
+
+    - id: A2
+      description: pnpm lint passes with zero errors after every changed/new file.
+      command: pnpm run lint
+
+    - id: A3
+      description: >-
+        Full structural proof: the 3 new fieldsets exist, reuse an existing Vendor*Field
+        primitive, stay under the 150-line component convention, are exported from the barrel
+        and mounted in VendorRegisterForm.tsx; every verbatim source string (2 relabels, 2
+        marketing-permission strings, 3 advisory notes, 2 waste labels, 1 waste advisory note,
+        1 storage advisory note) is present in the correct file; every superseded string (old
+        generic vehicle labels, old "VAT registered" label, old paraphrased marketing strings)
+        is gone; staffPerDay is retired from the live form's own input-state layer only
+        (VendorRegisterFormState/INITIAL_STATE/payload builder) while remaining present,
+        unmodified, in the approval-email consumer chain alongside the 5 new staffCount*
+        fields (additive, never a replacement); the existing VendorTermsFieldset.tsx allocation
+        clause is present and untouched, and no second allocation note was added to
+        VendorBoothPositionFieldset.tsx; no stray new file lands in components/vendors/ beyond
+        the 3 specified fieldsets; the collision-guard footprint is exactly the one cleared
+        file (no other change under app/admin/vendors/**, app/api/admin/vendors/**, token
+        issuance, the register page's token gate, or sanity/schemas/**). Defeating mutation:
+        adding the right field under the wrong label, fixing the label but not the value,
+        wiring render without wiring the payload gate, dropping staffPerDay from the email
+        chain instead of keeping it, duplicating the allocation note, or touching a file
+        outside the cleared shared_files list.
+      command: >-
+        bash .agent/memory/project/specs/vendor-form-copy-20261007/checks/check-f1-structural.sh
+
+    - id: A4
+      description: >-
+        Real calls to buildVendorRegistrationPayload() prove the 5 new staffCount* fields reach
+        the wire payload as numbers; staffPerDay is never set by the builder on new submissions
+        (that is the live-form input layer, not the stored-document schema -- see A5/A9);
+        wasteTypes survives untouched; the new isWasteTypesOtherFieldApplicable gate is
+        leak-proof (omits wasteTypesOther when 'other' is not selected, even with a stale typed
+        value, and sends it when 'other' is selected); storageRiskAcknowledged survives as a
+        real boolean both ways. Defeating mutation: gating render only without gating the
+        payload, or vice versa; summing the 5 staff counts into staffPerDay instead of simply
+        not setting it.
+      command: >-
+        npx tsx .agent/memory/project/specs/vendor-form-copy-20261007/checks/check-f1-payload-gates.mjs
+
+    - id: A5
+      description: >-
+        types/index.ts and lib/vendor-submissions.ts are untouched by this feature -- the 5
+        staffCount* fields, wasteTypes/wasteTypesOther/specialWasteRequirements, and
+        storageRiskAcknowledged were already added and validated by a prior mission; this
+        feature only wires the UI/payload/email layers onto them, and staffPerDay is never
+        renamed or removed from this schema. Confirms no accidental server-model drift and
+        satisfies the SAOC lead's "pre-M2 vendorSubmissions documents must stay readable"
+        constraint at the schema layer.
+      command: >-
+        git diff --stat origin/main -- types/index.ts lib/vendor-submissions.ts | grep -q . && exit 1 || exit 0
+
+    - id: A6
+      description: >-
+        No stray console.log/debugger left behind in any changed vendor file (coding.md's
+        "leave nothing dead").
+      command: >-
+        ! grep -rn "console\.log\|debugger" components/vendors/VendorStaffPassesFieldset.tsx components/vendors/VendorStorageFieldset.tsx components/vendors/VendorWasteFieldset.tsx
+
+    - id: A7
+      description: >-
+        Collision guard: token issuance and the register page's token gate are completely
+        untouched by this feature -- confirms F1 cannot interfere with the SAOC lead's
+        concurrent feat/vendor-invite work on token-issuing code.
+      command: >-
+        git diff --stat origin/main -- "app/api/admin/vendors/applications/[id]/reissue-code/route.ts" "app/api/admin/vendors/applications/[id]/review/route.ts" "app/(marketing)/national-show/vendors/register/page.tsx" "app/api/vendors/register/route.ts" "app/api/vendors/register/verify-code/route.ts" lib/vendor-registration-token.ts lib/vendor-registration-token-claim.ts lib/vendor-registration-code.ts lib/vendor-registration-code-verify-handler.ts | grep -q . && exit 1 || exit 0
+
+    - id: A8
+      description: >-
+        Collision guard: no change under app/admin/vendors/**, sanity/schemas/**, or
+        app/api/admin/vendors/** anywhere except the one cleared shared_files entry
+        ([id]/review/route.ts) -- confirms F1's footprint under the SAOC lead's
+        concurrently-worked directories is exactly what was disclosed for sign-off.
+      command: >-
+        git diff --name-only origin/main -- app/admin/vendors/ app/api/admin/vendors/ sanity/schemas/ | grep -v "^app/api/admin/vendors/\[id\]/review/route.ts$" | grep -q . && exit 1 || exit 0
+
+    - id: A9
+      description: >-
+        Amendment 2026-10-08 (SAOC lead, via team-lead): behavioural fixture proof -- not a
+        grep -- that the approval email's staff-attendance display is additive and backward-
+        compatible. Exercises the real resolveStaffAttendanceDisplay(input) function (emails/
+        VendorApprovalConfirmation.tsx) against four fixtures: legacy-only (pre-feature
+        document, staffPerDay set, staffCount* absent) must resolve to mode 'legacy'; breakdown-
+        only (post-feature document) must resolve to mode 'breakdown'; neither present must
+        resolve to mode 'none' (unchanged "Not specified" behaviour); both present must resolve
+        to mode 'breakdown' (architect's priority rule -- the more granular data wins).
+        Defeating mutation: a function that drops staffPerDay instead of falling back to it, one
+        that renders both the legacy line and the breakdown table at once, or one that answers
+        undefined when both fields are present.
+      command: >-
+        npx tsx .agent/memory/project/specs/vendor-form-copy-20261007/checks/check-f1-staffperday-fallback.mjs
+
+    - id: A10
+      description: >-
+        Amendment 2026-10-08 (SAOC lead, via team-lead): proves sendVendorApprovalConfirmationEmail's
+        signature did not change and the application-approval call site
+        (app/api/admin/vendors/applications/[id]/review/route.ts:223, untouched by this feature
+        and separately enforced by A7/A8) keeps compiling and rendering bit-for-bit unchanged.
+        Calls the real function via its existing injectable-mailer DI hook with the EXACT
+        literal input shape that call site passes today (no staff/booth/logistics fields at
+        all) and asserts: the call resolves without throwing, every one of the 5 new
+        staffCount* fields (and the kept staffPerDay field) renders through as null on the
+        captured React element exactly as before this feature, and registrationLink passes
+        through unchanged. Defeating mutation: turning any of the 5 new fields into a required
+        parameter, renaming/removing an existing field, or adding a second function overload.
+      command: >-
+        npx tsx .agent/memory/project/specs/vendor-form-copy-20261007/checks/check-f1-legacy-call-compiles.mjs
