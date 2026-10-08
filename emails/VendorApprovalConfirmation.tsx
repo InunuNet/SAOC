@@ -254,11 +254,16 @@ export default function VendorApprovalConfirmation({
                   staffCountBreakdownDay,
                 });
                 if (staffAttendance.mode === 'breakdown') {
-                  return staffAttendance.days.map((day) => (
-                    <Text key={day.label} style={{ fontSize: '16px', color: '#333' }}>
-                      Staff per day — {day.label}: {day.value}
-                    </Text>
-                  ));
+                  return (
+                    <>
+                      <Text style={{ fontSize: '16px', color: '#333' }}>Number of Staff</Text>
+                      {staffAttendance.days.map((day) => (
+                        <Text key={day.label} style={{ fontSize: '16px', color: '#333' }}>
+                          {day.label}: {day.value}
+                        </Text>
+                      ))}
+                    </>
+                  );
                 }
                 return (
                   <Text style={{ fontSize: '16px', color: '#333' }}>

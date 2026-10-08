@@ -7,7 +7,8 @@ import { VendorFormField } from './VendorFormField';
 import { VendorCheckboxGroupField } from './VendorCheckboxGroupField';
 
 // Lee-Ann's 2026-10-07 source doc (F1, vendor-form-copy-20261007), "WASTE, CLEANING AND
-// ENVIRONMENTAL IMPACTS" section -- entirely missing from the live form before this feature.
+// ENVIROMENTAL IMPACTS" section (source spelling kept) -- entirely missing from the live form
+// before this feature.
 // wasteTypes/wasteTypesOther wire onto already-validated server fields (lib/vendor-
 // submissions.ts's VENDOR_WASTE_TYPES enum, untouched by this feature -- see the golden's
 // "Finding that changes the shape of this feature"). The data model's other waste field under
@@ -32,7 +33,7 @@ export function VendorWasteFieldset({ state, onFieldChange, disabled }: VendorWa
   return (
     <div className="space-y-5">
       <h2 className="font-serif text-[20px] font-semibold text-ink">
-        Waste, cleaning &amp; environmental impacts
+        Waste, cleaning and enviromental impacts
       </h2>
 
       <VendorCheckboxGroupField
@@ -47,7 +48,7 @@ export function VendorWasteFieldset({ state, onFieldChange, disabled }: VendorWa
       {isWasteTypesOtherFieldApplicable(state) ? (
         <VendorFormField
           fieldKey="wasteTypesOther"
-          label="Other waste (please specify)"
+          label="Other"
           htmlType="text"
           value={state.wasteTypesOther}
           onChange={(v) => onFieldChange('wasteTypesOther', v)}
