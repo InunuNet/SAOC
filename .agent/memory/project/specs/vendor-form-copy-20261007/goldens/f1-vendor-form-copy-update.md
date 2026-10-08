@@ -82,8 +82,22 @@ collecting it; old stored submissions and their display stay fully intact). Extr
 out of `VendorBoothUtilitiesFieldset.tsx` into a new `VendorStaffPassesFieldset.tsx` is
 required to keep both files under the project's 150-line convention
 (`VendorBoothUtilitiesFieldset.tsx` is already 129 lines; swapping 1 field for 5 pushes it
-over). Mount `<VendorStaffPassesFieldset .../>` inside `VendorBoothFieldset.tsx` in place of
-the removed call, same position.
+over). **Mount `<VendorStaffPassesFieldset .../>` directly inside `VendorBoothFieldset.tsx`
+(imported there, same as `VendorBoothPositionFieldset`/`VendorBoothUtilitiesFieldset` already
+are) — NOT in `VendorRegisterForm.tsx`.** Delete the old single `staffPerDay` field from
+inside `VendorBoothUtilitiesFieldset.tsx` with no replacement there; the replacement is one
+level up. Position it as a direct sibling, immediately after the existing
+`<VendorBoothUtilitiesFieldset .../>` line and **before** the
+`VEHICLE_REGISTRATION_FIELDS.map(...)` block that follows it — this preserves the source
+doc's own section order (Staff & Exhibitor Passes precedes Booth & Logistics/Vehicles) without
+needing a slot prop: `VendorBoothFieldset.tsx` already imports and renders its three
+sub-fieldsets as plain sequential JSX siblings, so a fourth import-and-render follows the
+exact same, already-established pattern. Resolved 2026-10-09 after Codex QA flagged that
+`check-f1-structural.sh`'s original mount check greped `VendorRegisterForm.tsx` for all three
+new fieldsets uniformly, which contradicted this section's own "inside VendorBoothFieldset.tsx"
+instruction for this one fieldset specifically — the check (not this instruction) was wrong
+and is now fixed to grep the correct host file per fieldset, plus a new ordering assertion
+that the staff fieldset's JSX appears before the vehicle fields' JSX.
 Labels: "Setup Day", "Day 1", "Day 2", "Day 3", "Breakdown Day" — each paired with
 "Number of Staff" per the source table header; render as
 `label="Number of staff — Setup Day"` etc. (existing `VendorFormField` label convention

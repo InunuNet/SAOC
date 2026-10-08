@@ -30,6 +30,20 @@
         "modifiedTime": "2026-08-01T08:00:00.000Z",
         "md5Checksum": "ccc333",
         "owners": [{"emailAddress": "lee-ann@saoc.example"}]
+      },
+      {
+        "id": "RENAMEFOLDER",
+        "name": "Logistics",
+        "mimeType": "application/vnd.google-apps.folder",
+        "modifiedTime": "2026-09-01T10:00:00.000Z"
+      },
+      {
+        "id": "F8",
+        "name": "Price List.pdf",
+        "mimeType": "application/pdf",
+        "modifiedTime": "2026-09-01T09:00:00.000Z",
+        "md5Checksum": "fff666",
+        "owners": [{"emailAddress": "lee-ann@saoc.example"}]
       }
     ],
     "SUBSLASH": [
@@ -39,6 +53,16 @@
         "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "modifiedTime": "2026-09-08T12:00:00.000Z",
         "md5Checksum": "aaa111",
+        "owners": [{"emailAddress": "lee-ann@saoc.example"}]
+      }
+    ],
+    "RENAMEFOLDER": [
+      {
+        "id": "F7",
+        "name": "Setup Schedule.pdf",
+        "mimeType": "application/pdf",
+        "modifiedTime": "2026-09-01T09:00:00.000Z",
+        "md5Checksum": "eee555",
         "owners": [{"emailAddress": "lee-ann@saoc.example"}]
       }
     ]

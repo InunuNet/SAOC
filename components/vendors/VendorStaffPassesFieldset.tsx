@@ -10,10 +10,9 @@ import { VendorFormField } from './VendorFormField';
 // one combined per-day count field in this spot, to keep both components under this project's
 // 150-line convention (see .claude/rules/coding.md). Wires onto the 5 already-validated
 // staffCountSetupDay/Day1/Day2/Day3/BreakdownDay server fields (types/index.ts, lib/vendor-
-// submissions.ts -- untouched by this feature). Mounted top-level in VendorRegisterForm.tsx,
-// immediately after VendorBoothFieldset -- the structural assertion (check-f1-structural.sh)
-// requires the mount to appear there; see this feature's handover note for the golden-prose
-// ambiguity this resolves. Mirrors the source table: the "Number of Staff" column header is the
+// submissions.ts -- untouched by this feature). Mounted inside VendorBoothFieldset.tsx, after
+// VendorBoothUtilitiesFieldset and before the vehicle fields -- the source's Staff table comes
+// before its Vehicles section. Mirrors the source table: the "Number of Staff" column header is the
 // group legend and each input's visible label is the source row's day text, verbatim.
 interface VendorStaffPassesFieldsetProps {
   state: VendorRegisterFormState;

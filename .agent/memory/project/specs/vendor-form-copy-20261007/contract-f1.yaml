@@ -41,8 +41,13 @@ features:
       "Number of Staff") wired to the ALREADY server-validated staffCountSetupDay/
       staffCountDay1/staffCountDay2/staffCountDay3/staffCountBreakdownDay fields
       (types/index.ts, lib/vendor-submissions.ts -- do not touch either file, they're already
-      correct); mounted inside VendorBoothFieldset.tsx in place of the removed single
-      staffPerDay VendorFormField call in VendorBoothUtilitiesFieldset.tsx. staffPerDay is
+      correct); mounted DIRECTLY inside VendorBoothFieldset.tsx (imported there, same as
+      VendorBoothPositionFieldset/VendorBoothUtilitiesFieldset already are -- NOT in
+      VendorRegisterForm.tsx), positioned immediately after the existing
+      <VendorBoothUtilitiesFieldset .../> line and BEFORE the VEHICLE_REGISTRATION_FIELDS.map
+      block, preserving source order (Staff & Exhibitor Passes precedes Vehicles). The old
+      single staffPerDay VendorFormField call inside VendorBoothUtilitiesFieldset.tsx is
+      deleted with no replacement there. staffPerDay is
       retired ONLY from the live form's own input-state types (VendorRegisterFormState /
       buildVendorRegistrationPayload / INITIAL_STATE) -- it stops being collected from new
       submissions because the current source no longer asks for one combined number. It is
@@ -138,8 +143,10 @@ assertions:
     - id: A3
       description: >-
         Full structural proof: the 3 new fieldsets exist, reuse an existing Vendor*Field
-        primitive, stay under the 150-line component convention, are exported from the barrel
-        and mounted in VendorRegisterForm.tsx; every verbatim source string (2 relabels, 2
+        primitive, stay under the 150-line component convention, are exported from the barrel,
+        and mount at the correct host -- VendorStaffPassesFieldset directly inside
+        VendorBoothFieldset.tsx, before the vehicle registration fields (source order);
+        VendorStorageFieldset and VendorWasteFieldset in VendorRegisterForm.tsx; every verbatim source string (2 relabels, 2
         marketing-permission strings, 3 advisory notes, 2 waste labels, 1 waste advisory note,
         1 storage advisory note) is present in the correct file; every superseded string (old
         generic vehicle labels, old "VAT registered" label, old paraphrased marketing strings)

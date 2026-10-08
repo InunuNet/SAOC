@@ -6,6 +6,7 @@ import { VendorFormField } from './VendorFormField';
 import { VendorRadioGroupField } from './VendorRadioGroupField';
 import { VendorBoothPositionFieldset } from './VendorBoothPositionFieldset';
 import { VendorBoothUtilitiesFieldset } from './VendorBoothUtilitiesFieldset';
+import { VendorStaffPassesFieldset } from './VendorStaffPassesFieldset';
 
 // Lee-Ann's 26 Aug source form, "BOOTH & LOGISTICS" section. M2 F17 (vendor-gated-registration-
 // flow) -- boothSize (fixed 3-value radio: single/double/triple, source doc's own "1 Single
@@ -63,6 +64,7 @@ export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBo
 
       <VendorBoothPositionFieldset state={state} onFieldChange={onFieldChange} disabled={disabled} />
       <VendorBoothUtilitiesFieldset state={state} onFieldChange={onFieldChange} disabled={disabled} />
+      <VendorStaffPassesFieldset state={state} onFieldChange={onFieldChange} disabled={disabled} />
 
       {/* M2 F14/F17 -- 7 discrete vehicle registration inputs, replacing the single
           vehicleRegistrations free-text field (deprecated in place). Must stay inline in this
