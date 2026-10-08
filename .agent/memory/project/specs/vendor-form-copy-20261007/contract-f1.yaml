@@ -247,3 +247,33 @@ assertions:
         parameter, renaming/removing an existing field, or adding a second function overload.
       command: >-
         npx tsx .agent/memory/project/specs/vendor-form-copy-20261007/checks/check-f1-legacy-call-compiles.mjs
+
+    # ---- Verification triad (added 2026-10-08 after the single-command gate
+    # was blocked at the triad preflight, exit 6). A11 re-runs the cross-model
+    # review against the frozen F1 diff. A12/A13 can only go green AFTER the
+    # SAOC lead's beta rollout of this branch: their manifests are produced by
+    # driving /vendors/apply (or the live form route) on https://beta.saoc.co.za
+    # and by reading the resulting approval email via a read-only gws lookup. ----
+    - id: A11
+      type: codex_qa
+      description: >-
+        Cross-model (Codex gpt-5.6-terra) review of the frozen F1 vendor diff
+        (047d610e..ad0b158f, code only). Prior manual runs: FAIL (7 findings) ->
+        fixed in da37e75b/ad0b158f -> PASS.
+      target: .agent/memory/project/specs/vendor-form-copy-20261007/triad/codex-target.diff
+      timeout_seconds: 1200
+
+    - id: A12
+      type: browser_deployed_check
+      description: >-
+        Post-deploy: the vendor form with the 2026-10-07 copy was driven on the deployed beta
+        origin at this commit, with a screenshot. Manifest written after the SAOC lead's rollout.
+      command: bash execution/browser_deployed_check.sh .agent/memory/project/specs/vendor-form-copy-20261007/triad/browser-manifest.json
+
+    - id: A13
+      type: gws_inbox_check
+      description: >-
+        Post-deploy: a vendor approval confirmation email rendered by the changed template
+        (staff breakdown or legacy staffPerDay line) was received and opened via a read-only
+        gws lookup. Manifest written after the SAOC lead's rollout.
+      command: bash execution/gws_inbox_check.sh .agent/memory/project/specs/vendor-form-copy-20261007/triad/gws-manifest.json
