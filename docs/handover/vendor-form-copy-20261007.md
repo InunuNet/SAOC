@@ -131,3 +131,18 @@ feature's QA budget is spent, so this was not looped further.
 - The staff-section decision and A11, above.
 - A12/A13, after the beta rollout.
 - Review and merge: `main` and `beta`.
+
+## Lead ruling and final A11 (2026-10-08)
+
+The SAOC lead ruled: Lee-Ann's document outranks the golden. Keep her wording as built ("Number
+of Staff" legend, bare day labels). Do not render "STAFF & EXHIBITOR PASSES" until she supplies
+the exhibitor-pass fields. The golden is corrected to match (staff labels, waste heading
+"Waste, cleaning and enviromental impacts", waste free-text label "Other").
+
+Final A11 re-run, against the corrected golden and her source: one finding only, "the source
+heading STAFF & EXHIBITOR PASSES is omitted". That omission is the lead's deliberate ruling,
+so A11 is accepted on that basis and not looped further.
+
+Lee-Ann's source docx and the Codex target (which embeds her text) are no longer tracked. A
+spec-local `.gitignore` keeps them out. They remain in this branch's history at `2f261916`, so
+squash-merge, or ask for a history rewrite, to keep them out of main.
