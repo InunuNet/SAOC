@@ -1,12 +1,10 @@
 import type { Metadata } from 'next';
-import { PortableText } from '@portabletext/react';
-import type { PortableTextBlock } from '@portabletext/react';
 
 import { PageHero } from '@/components/ui/PageHero';
 import { PhotoBand } from '@/components/ui/PhotoBand';
 import { CTASection } from '@/components/ui/CTASection';
-import { BoardGrid, Timeline } from '@/components/about';
-import type { SanityBoardMember, TimelineNode } from '@/components/about';
+import { BoardGrid } from '@/components/about';
+import type { SanityBoardMember } from '@/components/about';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { aboutPageQuery, boardMembersQuery } from '@/sanity/queries';
 import { boardMembers as staticBoard } from '@/lib/data/board';
@@ -19,9 +17,6 @@ export const revalidate = 60;
 export const metadata: Metadata = { title: 'About SAOC' };
 
 interface AboutPageData {
-  title?: string | null;
-  pillars?: PortableTextBlock[] | null;
-  timelineNodes?: PortableTextBlock[] | null;
   boardIntroText?: string | null;
 }
 
@@ -34,47 +29,19 @@ interface BoardMemberData {
   placeholder: boolean | null;
 }
 
-// Heritage stats — the same real figures as Home's mission-block stat band,
-// reframed around the founding story rather than the "four ways in" story.
+// Founding facts stated verbatim in content.md (Lee-Ann's official About
+// copy, synced from Drive — see
+// .agent/memory/project/specs/saoc-about-page/goldens/f1-about-page-leeann-copy.golden.md
+// §4). Every value here traces to a sentence in that document; nothing is
+// invented. The pre-mission stats band (judging-standardisation year, shows
+// hosted, affiliated-society counts) is NOT in content.md and has been
+// removed.
 const HERITAGE_STATS = [
-  { value: '1968', label: 'Council Founded' },
-  { value: '1990', label: 'Judging Standardised' },
-  { value: '18', label: 'National Shows Hosted' },
-  { value: '21', label: 'Affiliated Societies' },
+  { value: '1968', label: 'Founded' },
+  { value: '28 July 1968', label: 'Founding date, Bloemfontein' },
+  { value: '4', label: 'Founding societies' },
+  { value: '15', label: 'Accredited SAOC Judges, Sept 1968' },
 ] as const;
-
-// Fallback founding-to-present timeline, rendered when the aboutPage Sanity
-// document's `timelineNodes` portable-text field has no content yet. Nodes
-// carrying invented (not council-confirmed) detail are marked `placeholder`
-// and render with a visible "Detail pending confirmation" badge.
-const FALLBACK_TIMELINE: TimelineNode[] = [
-  {
-    year: '1968',
-    heading: 'Four societies form a national council',
-    body: 'Delegates from four orchid societies meet in Bloemfontein on 29 July 1968 and agree to form the South African Orchid Council, giving the country’s growers a single federated body.',
-  },
-  {
-    year: '1978',
-    heading: 'Incorporated as a non-profit body',
-    body: 'SAOC is formally incorporated (Reg. 1978/004040/08), placing the young council on a permanent legal footing as more societies affiliate.',
-  },
-  {
-    year: '1970s–2000s',
-    heading: 'Growth to a national federation',
-    body: 'Membership expands steadily across all nine provinces as new societies affiliate, from the Cape to Limpopo.',
-    placeholder: true,
-  },
-  {
-    year: '1990',
-    heading: 'The judging system is standardised',
-    body: 'SAOC adopts a single, nationally consistent judging system and accreditation pathway, replacing regional variation with published criteria used at every affiliated show.',
-  },
-  {
-    year: 'Today',
-    heading: 'Twenty-one societies, one council',
-    body: 'SAOC now coordinates 21 affiliated societies and has hosted 18 national shows, continuing the work its founders began in 1968 — growing, showing, hybridising and judging orchids in cultivation.',
-  },
-];
 
 export default async function AboutPage() {
   const [about, board] = await Promise.all([
@@ -113,38 +80,90 @@ export default async function AboutPage() {
       <PageHero
         image="/images/orchid-violet.jpg"
         eyebrow="Our heritage"
-        heading={about?.title ?? 'A federated body of growers, since 1968.'}
-        lede="Four societies met in Bloemfontein on the 29th of July, 1968 to form a national council. Fifty-eight years later, that council coordinates twenty-one societies from the Cape to the Limpopo."
+        heading={<strong>About the South African Orchid Council</strong>}
       />
 
-      {/* Mission */}
+      {/*
+        Lee-Ann's official About copy (council-supplied), rendered verbatim —
+        title + 7 paragraphs, 8 bold spans as <strong> — from
+        content/drive-source/SAOC /2. About/About page - South African
+        Orchid Council/v1.0/content.md. Do not edit, trim, or paraphrase this
+        text. See the golden's §1/§4 for provenance and the per-slot
+        decisions that replaced the previous invented copy here.
+      */}
       <section className="bg-parchment px-8 py-24 md:px-16">
-        <div className="mx-auto max-w-[1280px]">
-          <div className="mb-3">
-            <span className="eyebrow">Our mission</span>
-          </div>
-          {about?.pillars && about.pillars.length > 0 ? (
-            <div className="max-w-3xl">
-              <PortableText value={about.pillars} />
-            </div>
-          ) : (
-            <p className="max-w-3xl font-serif text-[20px] leading-relaxed text-ink">
-              SAOC exists to promote the culture, hybridisation and appreciation of orchids in
-              cultivation across South Africa — uniting affiliated societies in growing,
-              showing, judging, and the community that grows up around a shared bench of plants.
-              Our remit stops at the greenhouse door: for indigenous species in the wild, our
-              partner organisation Wild Orchids of Southern Africa leads that work.
-            </p>
-          )}
+        <div className="mx-auto max-w-[760px] space-y-6 font-sans text-[16px] leading-relaxed text-ink/90">
+          <p>
+            The <strong>South African Orchid Council (SAOC)</strong> is the national coordinating
+            body for orchid societies and orchid enthusiasts in South Africa. Established in{' '}
+            <strong>1968</strong>, the Council has played a central role for more than half a
+            century in promoting the cultivation, hybridisation, conservation and appreciation of
+            orchids, while fostering the exchange of knowledge and expertise within the South
+            African orchid community.
+          </p>
+          <p>
+            The origins of the SAOC can be traced to <strong>28 July 1968</strong>, when
+            representatives of the{' '}
+            <strong>
+              Cape Orchid Society, Natal Orchid Society, Transvaal Orchid Society and Orchid
+              Society of the Northern Transvaal
+            </strong>{' '}
+            met in Bloemfontein. Recognising the need for cooperation and common standards, the
+            societies agreed to establish a national council to promote and coordinate the
+            activities and interests of orchid societies throughout South Africa.
+          </p>
+          <p>
+            From its earliest days, the SAOC placed particular emphasis on maintaining high
+            standards in orchid judging and exhibition. In September 1968, the first SAOC Award
+            Judging by-laws were drafted and{' '}
+            <strong>15 people were registered as Accredited SAOC Judges</strong>. A uniform
+            national judging system was regarded as important from the outset, providing a
+            consistent standard for the assessment and recognition of outstanding orchid plants.
+          </p>
+          <p>
+            Over the decades, the Council has developed into a national network supporting
+            orchid societies, growers, exhibitors, breeders, judges and conservationists. Its
+            activities encompass{' '}
+            <strong>
+              education, judging, exhibitions, hybridisation, conservation and the dissemination
+              of orchid knowledge
+            </strong>
+            . The SAOC also provides a national forum through which affiliated societies can
+            collaborate and share expertise.
+          </p>
+          <p>
+            The Council&apos;s work is particularly significant in a country with an exceptionally
+            diverse indigenous orchid flora. South Africa is home to a remarkable range of
+            terrestrial and epiphytic orchids, many of which have specialised habitats and face
+            increasing pressures from habitat loss and environmental change. The SAOC therefore
+            recognises that the future of orchids depends not only on their successful
+            cultivation, but also on understanding, protecting and conserving their natural
+            heritage.
+          </p>
+          <p>
+            Through its affiliated societies, national shows, judging programmes, publications,
+            educational initiatives and partnerships with orchid enthusiasts and conservation
+            organisations, the SAOC continues to promote a deeper understanding and appreciation
+            of orchids.
+          </p>
+          <p>
+            Today, the South African Orchid Council remains committed to the principles upon
+            which it was founded in 1968:{' '}
+            <strong>
+              bringing orchid enthusiasts together, sharing knowledge, encouraging excellence in
+              cultivation and exhibition, and ensuring that South Africa&apos;s extraordinary
+              orchid heritage is valued and conserved for future generations.
+            </strong>
+          </p>
         </div>
       </section>
 
-      {/* Heritage stats */}
+      {/* Heritage stats — 4 facts stated in content.md, see golden §4 */}
       <section className="bg-bone px-8 py-16 md:px-16">
         <dl className="mx-auto grid max-w-[1280px] grid-cols-2 gap-x-8 gap-y-8 border-y border-rule py-10 sm:grid-cols-4">
           {HERITAGE_STATS.map((stat) => (
             <div key={stat.label}>
-              <dt className="font-serif text-[clamp(36px,4vw,56px)] font-medium leading-none text-primary">
+              <dt className="font-serif text-[clamp(24px,2.6vw,38px)] font-medium leading-none text-primary">
                 {stat.value}
               </dt>
               <dd className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
@@ -161,27 +180,6 @@ export default async function AboutPage() {
         caption="Est. 1968 · Bloemfontein"
         minHeight="320px"
       />
-
-      {/* History / timeline */}
-      <section className="bg-parchment px-8 py-24 md:px-16">
-        <div className="mx-auto max-w-[1280px]">
-          <div className="mb-10">
-            <div className="mb-3">
-              <span className="eyebrow">Our history</span>
-            </div>
-            <h2 className="font-serif text-[clamp(30px,3.6vw,44px)] font-medium leading-[1.1] tracking-[-0.01em] text-primary">
-              From four societies to a national council
-            </h2>
-          </div>
-          {about?.timelineNodes && about.timelineNodes.length > 0 ? (
-            <div className="max-w-3xl">
-              <PortableText value={about.timelineNodes} />
-            </div>
-          ) : (
-            <Timeline nodes={FALLBACK_TIMELINE} />
-          )}
-        </div>
-      </section>
 
       {/* Board */}
       <section className="bg-bone px-8 py-24 md:px-16">
