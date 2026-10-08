@@ -1,7 +1,7 @@
 # Handover — vendor-form-copy-20261007
 
 **Branch:** `feat/vendor-form-copy-20261007-beta`
-**SHA:** `ad0b158f1ceb654eb7ae211883271db79100ffe8`
+**SHA:** see `git log -1 origin/feat/vendor-form-copy-20261007-beta` (code last changed in `92a8a3b5`)
 **Pushed:** yes, `origin/feat/vendor-form-copy-20261007-beta`
 
 ## What changed, in one paragraph
@@ -66,17 +66,18 @@ changes). Token issuance and the register page's token gate are untouched.
   `pnpm run lint` as the required gates and explicitly says not to run `pnpm run build` (a local
   dev server on :3003 depends on `.next`), so this note did not independently re-run it.
 
-**One finding beyond what was reported, worth flagging:** running the orchestrating
-`python3 execution/contract.py gate --phase all --run-checks contract-f1.yaml` (as opposed to
-checking each assertion individually, above) is currently **BLOCKED at the verification-triad
-preflight** (exit code 6): `contract-f1.yaml` references an `app/` path, is classified as a
-UI/workflow contract, and is missing the `codex_qa`/`browser_deployed_check`/`gws_inbox_check`
-triad kinds with no baseline-exemption pin. Every individual assertion passes (per above), but the
-single-command gate for F1 does not currently go green — see
-[docs/verification-triad-gate.md](../verification-triad-gate.md) for the mechanism. This is a
-contract-authoring gap (adding the triad assertions, or a justified
-`execution/triad-baseline-exempt.txt` entry), not a code defect; it is for `@architect` to close,
-not `@docs`.
+**Single-command gate (`contract.py gate --phase all --run-checks contract-f1.yaml`).** It was
+first blocked at the verification-triad preflight (exit 6). The contract now declares the triad
+(commit `c22b19c6`): A11 `codex_qa`, A12 `browser_deployed_check`, A13 `gws_inbox_check`. The
+preflight passes. Current state:
+
+- A1-A7, A9, A10: PASS.
+- A8: FAIL, base-branch caveat above.
+- A11 (Codex): FAIL. See "Codex QA" below: it is a conflict between the golden and Lee-Ann's
+  source text, for the lead to decide.
+- A12, A13: not runnable yet. They need manifests produced after the beta rollout: drive the
+  form on https://beta.saoc.co.za at this commit with a screenshot, and open a real approval
+  email with a read-only gws lookup. Manifest paths are in `contract-f1.yaml`.
 
 ## Codex QA
 
@@ -86,6 +87,30 @@ label instead of the source's plain "Other," an invented staff-passes legend/lab
 source's own day text, an inconsistent approval-email breakdown rendering) and 2 drive-watch
 defects (non-atomic state write, no rename/move detection via `parents`). All 7 were fixed in
 commit `da37e75b` ("fix(vendor): QA retry 1"). The re-review **PASSed**.
+
+**Gate-time reviews (A11, 2026-10-08).** The gate re-runs Codex. Three runs:
+
+1. Diff only, no source text. FAIL: 3 findings, all false. Codex guessed wording that is not in
+   Lee-Ann's document.
+2. Diff plus Lee-Ann's source plus the golden. FAIL: 1 real finding. The electrical-safety
+   advisory sat after the gas table; the golden says directly after the electrical table. Fixed
+   in `92a8a3b5`.
+   Note that Lee-Ann's document itself places this advisory after the water questions, slightly
+   later than the golden says. The golden was followed.
+3. Same input, after the fix. FAIL: 2 findings on the staff section, both caused by the golden
+   disagreeing with Lee-Ann's document:
+   - The golden specifies per-day labels "Number of staff — Setup Day". The first review
+     flagged that as invented wording, so retry 1 used her table as written: "Number of
+     Staff" as the group legend and the bare day names as labels. The golden was not updated
+     afterwards.
+   - Her section heading "STAFF & EXHIBITOR PASSES" is not rendered; the legend is her column
+     header "Number of Staff". The golden did not ask for the heading. Adding it is
+     source-backed, but the exhibitor-passes half has no fields (gap 1 above).
+
+**DECISION NEEDED (lead):** keep Lee-Ann's wording as built (recommended, per Brad's rule that
+her document is the source of truth) and have the golden corrected; or switch to the golden's
+combined labels. Also: whether to render her "STAFF & EXHIBITOR PASSES" heading. The
+feature's QA budget is spent, so this was not looped further.
 
 ## What this feature explicitly did not do
 
@@ -103,5 +128,6 @@ commit `da37e75b` ("fix(vendor): QA retry 1"). The re-review **PASSed**.
 ## What's still open
 
 - The 4 gaps/questions for Lee-Ann, above.
-- The verification-triad preflight gap on `contract-f1.yaml`, above.
+- The staff-section decision and A11, above.
+- A12/A13, after the beta rollout.
 - Review and merge: `main` and `beta`.

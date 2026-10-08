@@ -260,7 +260,7 @@ assertions:
         Cross-model (Codex gpt-5.6-terra) review of the frozen F1 vendor diff
         (047d610e..ad0b158f, code only). Prior manual runs: FAIL (7 findings) ->
         fixed in da37e75b/ad0b158f -> PASS.
-      target: .agent/memory/project/specs/vendor-form-copy-20261007/triad/codex-target.diff
+      target: .agent/memory/project/specs/vendor-form-copy-20261007/triad/codex-target.md
       timeout_seconds: 1200
 
     - id: A12
