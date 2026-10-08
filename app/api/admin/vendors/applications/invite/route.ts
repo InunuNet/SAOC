@@ -12,11 +12,6 @@ import {
 } from '@/lib/vendor-applications';
 import type { VendorApplicationInviteDraft } from '@/lib/vendor-applications';
 import {
-  decideVendorApplicationInviteEligibility,
-  vendorApplicationInviteConflictMessage,
-} from '@/lib/vendor-application-invite-eligibility';
-import type { VendorApplicationInviteCandidate } from '@/lib/vendor-application-invite-eligibility';
-import {
   generateVendorRegistrationCodeId,
   normalizeVendorCodeName,
   VENDOR_REGISTRATION_CODE_DEFAULT_TTL_MS,
@@ -28,7 +23,6 @@ import {
 } from '@/lib/vendor-invite-email-lock';
 import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
 import { sendVendorApprovalConfirmationEmail } from '@/lib/vendor-approval-confirmation';
-import type { VendorApplicationStatus } from '@/types/index';
 
 /**
  * POST /api/admin/vendors/applications/invite -- admin-only "Invite a vendor" action (mission
@@ -40,13 +34,14 @@ import type { VendorApplicationStatus } from '@/types/index';
  * code via the same mechanism the public apply-then-approve path uses, and sends it with the
  * same existing approval email -- no new email template, no new institutional copy.
  *
- * TOCTOU fix pass (2026-10-08): the duplicate-eligibility full-collection scan below and the
- * write that follows it are NOT atomic with each other -- a window remains in which two
- * concurrent invites for the SAME NEW email (no existing document for either to find) could
- * both pass the scan. lib/vendor-invite-email-lock.ts closes that window with a canonical-
- * email guard document, read and claimed inside the SAME transaction that creates the new
- * application. The full-collection scan is kept as-is: it is still the only guard for a
- * pre-existing PUBLIC application (which never had a guard doc written for it).
+ * TOCTOU fix pass (2026-10-08, two rounds): round 1 closed the invite-vs-invite race with a
+ * canonical-email guard document. Round 2 (Codex A10) found the duplicate-eligibility
+ * full-collection scan still ran BEFORE the transaction opened, leaving a window for a PUBLIC
+ * application (app/api/vendors/apply/route.ts, which has no guard doc at all) to commit
+ * between the scan and this route's write. The scan now runs AS A TRANSACTIONAL QUERY READ
+ * inside the SAME transaction as the guard claim and the create -- see
+ * lib/vendor-invite-email-lock.ts's file-level comment for why a transactional query read
+ * closes this without any change to the public-apply route.
  *
  * See .agent/memory/project/specs/vendor-invite/goldens/README.md for the full decision
  * record, including why status is written 'approved' directly (never a fake intermediate
@@ -104,35 +99,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const db = getFirestore(initAdmin());
-
-  // Full-collection scan, not an indexed query -- Firestore's equality where() is
-  // case-sensitive, so a case-insensitive duplicate check cannot be expressed as a single
-  // indexed query without a second, lowercased mirror field. Same accepted tradeoff the
-  // existing GET list route already makes at this collection's expected volume (dozens of
-  // invites per show cycle). See goldens/README.md "Known, accepted limitation".
-  let candidates: VendorApplicationInviteCandidate[];
-  try {
-    const snapshot = await db.collection(VENDOR_APPLICATIONS_COLLECTION).get();
-    candidates = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        status: data.status as VendorApplicationStatus,
-        contactEmail: String(data.contactEmail ?? ''),
-      };
-    });
-  } catch (error) {
-    console.error(
-      '[admin/vendors/applications/invite] Failed to load existing vendor applications for the duplicate check:',
-      error instanceof Error ? error.message : 'unknown error',
-    );
-    return NextResponse.json({ error: 'Failed to save vendor invite.' }, { status: 500 });
-  }
-
-  const eligibility = decideVendorApplicationInviteEligibility(input.contactEmail, candidates);
-  if (!eligibility.ok) {
-    return NextResponse.json({ error: eligibility.error }, { status: 409 });
-  }
 
   // Shared operational precondition, checked before any write -- same reasoning and wording
   // pattern as the sibling review route's approve branch: every precondition the vendor will
@@ -198,11 +164,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   let lockResult;
   try {
     // ONE atomic transaction -- status 'approved', origin 'invited', and every code field land
-    // together in the SAME create call, AND the canonical-email guard doc is claimed in the
-    // SAME transaction. There is no intermediate 'pending' state and no second write. See
-    // lib/vendor-invite-email-lock.ts for why this is the race-safe second gate, on top of
-    // (not instead of) the full-collection scan above.
+    // together in the SAME create call, the duplicate-eligibility full-collection scan runs as
+    // a transactional query read, AND the canonical-email guard doc is claimed, all in the SAME
+    // transaction. There is no intermediate 'pending' state and no second write. See
+    // lib/vendor-invite-email-lock.ts for why this closes both the invite-vs-invite and
+    // invite-vs-public races.
     lockResult = await claimVendorInviteEmailLock(db, {
+      contactEmail: input.contactEmail,
       lockRef,
       applicationsCollection,
       newApplicationRef,
@@ -218,15 +186,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   if (!lockResult.ok) {
-    return NextResponse.json(
-      {
-        error: vendorApplicationInviteConflictMessage(
-          lockResult.conflict.status,
-          lockResult.conflict.applicationId,
-        ),
-      },
-      { status: 409 },
-    );
+    return NextResponse.json({ error: lockResult.error }, { status: 409 });
   }
 
   const registrationLink = `${resolveSiteUrl()}/national-show/vendors/register?name=${encodeURIComponent(input.businessName)}&code=${registrationCodeId}`;
