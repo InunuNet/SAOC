@@ -4636,3 +4636,7 @@ deployed-site viewport check instead.
   actually have caught the bug by running it against a deliberately-reintroduced mutant of the
   defect (the A31/A32/A34 pattern) — a check that would pass against both the buggy and fixed
   code is not a regression check, it's decoration.
+
+- 2026-10-08 — DRAFT LANE adopted by Brad (docs/rules/draft-lane.md): uncommitted local work he reviews live on :3002 = one persistent @dev, tweaks forwarded via SendMessage with no per-tweak contract; full chain (contract/QA/Codex/docs/gate) runs once at approval before commit+beta. Gotcha: require_contract_for_write.sh is path-independent — it blocks ALL non-memory/docs writes whenever the globally active mission's current feature has no contract file, even writes for unrelated drafts. Write a lean contract skeleton first.
+
+- 2026-10-08 — ROLE SPLIT (Brad, verbatim via saoc-nos-site-e3): "Let NOS Design do the design... Copy will come from Lee-Ann and will be in the google drive folder https://drive.google.com/drive/folders/1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH NOS Does design you create structure bring in the copy as it lands. SAOC is the lead and builds the SAOC site, I'll likly add an SAOC Design as well...". So: NOS Design (saoc-nos-design-f1) designs NOS; NOS Site (saoc-nos-site-e3) builds NOS structure + copy intake; SAOC (this repo/session) leads and builds the SAOC site. National-show page changes belong to NOS Site — do not edit app/(marketing)/national-show/** from SAOC drafts.

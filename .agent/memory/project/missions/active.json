@@ -1,5 +1,9 @@
 {
-  "mission": null,
-  "checkpoint": null,
-  "note": "mission complete"
+  "mission": ".agent/memory/project/missions/2026-10-08-vendor-invite.md",
+  "checkpoint": {
+    "milestone": "M1",
+    "feature": "F1",
+    "ts": "2026-10-08T00:34:01.112025+00:00"
+  },
+  "activated_at": "2026-10-08T00:19:03.152245+00:00"
 }

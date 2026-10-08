@@ -24,6 +24,7 @@ Usage:
 Requires: pip install chromadb (installed in ~/.athanor-env)
 Database: .agent/memory/brain/ (project-local, persistent)
 """
+from __future__ import annotations
 
 import argparse
 import fcntl
@@ -37,31 +38,82 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-VENV_PATH = os.path.expanduser("~/.athanor-env")
+VENV_PATH = os.path.expanduser(os.environ.get("ATHANOR_BRAIN_VENV", "~/.athanor-env"))
+MIN_PYTHON = (3, 10)
+_REEXEC_FLAG = "ATHANOR_BRAIN_REEXEC"
+_PY_CANDIDATES = ("python3.14", "python3.13", "python3.12", "python3.11", "python3.10",
+                  "/opt/homebrew/bin/python3", "/usr/local/bin/python3", "python3")
+
+
+def _python_ok(exe):
+    """True when `exe` runs and is at least MIN_PYTHON."""
+    try:
+        r = subprocess.run([exe, "-c", "import sys; sys.exit(0 if sys.version_info >= %r else 1)"
+                            % (MIN_PYTHON,)], capture_output=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return r.returncode == 0
+
+
+def _python_version(exe):
+    try:
+        return subprocess.run([exe, "-V"], capture_output=True, text=True,
+                              timeout=30).stdout.strip() or "unknown"
+    except (OSError, subprocess.TimeoutExpired):
+        return "unrunnable"
+
+
+def _die(msg):
+    # Loud on purpose: a brain that cannot load must never look alive (GH #1437).
+    print("BRAIN UNAVAILABLE: " + msg, file=sys.stderr)
+    sys.exit(3)
+
+
+def _reexec(venv_python):
+    os.environ[_REEXEC_FLAG] = "1"
+    os.execv(venv_python, [venv_python] + sys.argv)
+
 
 def _ensure_chromadb():
-    """Auto-bootstrap: create shared venv + install chromadb if needed."""
+    """Auto-bootstrap: create shared venv + install chromadb if needed.
+
+    Every interpreter is version-checked before it is trusted. A venv built
+    from macOS's Xcode python (3.9) used to be re-exec'd blindly and died at
+    import with a TypeError naming syntax the caller supports (GH #1437).
+    """
     try:
         import chromadb
         return chromadb
     except ImportError:
         pass
 
-    # Check if venv exists but we're not running inside it
+    need = ".".join(map(str, MIN_PYTHON))
     venv_python = os.path.join(VENV_PATH, "bin", "python3")
+    if os.environ.get(_REEXEC_FLAG):
+        _die("re-exec'd into %s but chromadb still does not import. Run: %s -m pip install chromadb"
+             % (venv_python, venv_python))
     if os.path.exists(venv_python):
-        # Re-exec ourselves inside the venv
-        os.execv(venv_python, [venv_python] + sys.argv)
+        if not _python_ok(venv_python):
+            _die("%s is %s; brain.py needs Python %s+. Rebuild it from a newer interpreter: "
+                 "move %s aside, then run /opt/homebrew/bin/python3 -m venv %s && %s/bin/pip install chromadb"
+                 % (venv_python, _python_version(venv_python), need, VENV_PATH, VENV_PATH, VENV_PATH))
+        _reexec(venv_python)
 
-    # Create venv + install chromadb
-    import subprocess
-    print("🧠 First run — setting up brain environment...", file=sys.stderr)
-    subprocess.run([sys.executable, "-m", "venv", VENV_PATH], check=True)
+    # Create the venv from an interpreter that satisfies MIN_PYTHON -- not
+    # blindly from sys.executable, which on macOS is often the 3.9 Xcode python.
+    base = sys.executable if _python_ok(sys.executable) else None
+    if base is None:
+        base = next((shutil.which(c) for c in _PY_CANDIDATES
+                     if shutil.which(c) and _python_ok(shutil.which(c))), None)
+    if base is None:
+        _die("no Python %s+ interpreter found to build %s (this one is %s)"
+             % (need, VENV_PATH, sys.version.split()[0]))
+    print("🧠 First run — setting up brain environment (%s)..." % base, file=sys.stderr)
+    subprocess.run([base, "-m", "venv", VENV_PATH], check=True)
     pip = os.path.join(VENV_PATH, "bin", "pip")
     subprocess.run([pip, "install", "-q", "chromadb"], check=True)
     print("✅ Brain environment ready.", file=sys.stderr)
-    # Re-exec inside the new venv
-    os.execv(venv_python, [venv_python] + sys.argv)
+    _reexec(venv_python)
 
 _ensure_chromadb()
 import chromadb

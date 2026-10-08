@@ -112,7 +112,8 @@ partial_status_text_format)
   # for state=="ok", so a state=partial line always carries band=unknown.
   # See DECISIONS.md in this spec for why the check's expected string was
   # updated rather than the feature being reverted.
-  expected="quota: state=partial used=42% resets_in=unknown band=unknown"
+  # quota-counts-up (v3.8.16) adds left=N% beside used=N%.
+  expected="quota: state=partial used=42% left=58% resets_in=unknown band=unknown"
   if [ "$out" != "$expected" ]; then
     echo "FAIL: expected [$expected] got [$out]"; exit 1
   fi

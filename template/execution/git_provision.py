@@ -11,6 +11,7 @@ and the pre-push guard is armed.
     git_provision.py names   --project-name X            -> "<slug>\\t<local>"
     git_provision.py propose --project-name X            -> the three lines
     git_provision.py apply   --project-name X --path D --confirmed
+    git_provision.py sever-harness --path D   -> no push to the harness upstream
 
 Exit codes:
     0  done
@@ -626,6 +627,119 @@ def cmd_apply(args):
     return rc
 
 
+# The harness upstream. A downstream workspace may FETCH from it (nothing does
+# today -- update_template.py streams a tarball through `gh api`) but must never
+# PUSH to it: the `athanor` launcher scaffolds with `gh repo clone`, so every
+# new project used to arrive with `origin` pointing here, and one `git push`
+# wrote that project into the harness (backlog P1 #4).
+HARNESS_REPO = "InunuNet/Athanor"
+HARNESS_REMOTE_NAME = "athanor-upstream"
+# Not a URL git can reach, so a push fails locally and names the reason.
+PUSH_DISABLED_URL = "DISABLED-athanor-harness-is-read-only-from-a-downstream-project"
+# https://github.com/InunuNet/Athanor(.git), git@github.com:InunuNet/Athanor.git,
+# ssh://git@github.com/InunuNet/Athanor/ -- and never Athanor-anything-else.
+_HARNESS_URL_RE = re.compile(
+    r"(?:^|[/:])" + re.escape(HARNESS_REPO) + r"(?:\.git)?/?$", re.IGNORECASE
+)
+
+
+def is_harness_url(url):
+    return bool(url) and bool(_HARNESS_URL_RE.search(url.strip()))
+
+
+def _remotes(path):
+    got = _git(path, "remote")
+    if got.returncode != 0:
+        return []
+    return [name for name in got.stdout.split() if name]
+
+
+def _pushes_to_harness(path, remote):
+    """Does ANY effective push url of `remote` reach the harness?
+
+    `--all` because a remote may carry several pushurl values and git pushes to
+    every one; `get-url` applies insteadOf/pushInsteadOf rewriting, so this is
+    where the push really goes, not what the config literally says.
+    """
+    got = _git(path, "remote", "get-url", "--push", "--all", remote)
+    if got.returncode != 0:
+        return False
+    return any(is_harness_url(url) for url in got.stdout.splitlines())
+
+
+def cmd_sever_harness(args):
+    """Stop a downstream workspace from pushing to the harness upstream.
+
+    `origin` pointing at the harness is renamed to `athanor-upstream` -- which
+    frees `origin` for the project's own repository, the case init.sh already
+    proposes one for -- and every remote whose PUSH url is the harness gets
+    that url replaced with one git cannot reach. Fetch urls are left alone, and
+    nothing is deleted, so the change is reversible with `git remote`.
+
+    The harness checkout itself is refused (exit 0, no change): pushing is how
+    harness releases ship.
+    """
+    from update_template import is_harness_checkout
+
+    path = os.path.abspath(args.path)
+    top = _git(path, "rev-parse", "--show-toplevel")
+    if top.returncode != 0:
+        return RC_OK  # not a repository: nothing can be pushed
+    # Only ever the repository this folder IS. A folder nested inside another
+    # work tree would otherwise rewrite the OUTER repository's remotes -- run
+    # from a sandbox under the harness, that is the harness's own `origin`.
+    if os.path.realpath(top.stdout.strip()) != os.path.realpath(path):
+        return RC_OK
+    if is_harness_checkout(path):
+        return RC_OK
+
+    remotes = _remotes(path)
+    if "origin" in remotes and _pushes_to_harness(path, "origin"):
+        if HARNESS_REMOTE_NAME in remotes:
+            print(
+                "  ⚠️  `origin` pushes to the Athanor harness and `%s` already "
+                "exists; disabling push on `origin` in place." % HARNESS_REMOTE_NAME
+            )
+        else:
+            renamed = _git(path, "remote", "rename", "origin", HARNESS_REMOTE_NAME)
+            if renamed.returncode != 0:
+                _err("  ❌ could not rename `origin`: %s" % renamed.stderr.strip())
+                return RC_REFUSED
+            print(
+                "  🔒 `origin` pointed at the Athanor harness (%s). Renamed it to "
+                "`%s`; `origin` is free for this project's own repository."
+                % (HARNESS_REPO, HARNESS_REMOTE_NAME)
+            )
+            remotes = _remotes(path)
+
+    for remote in remotes:
+        if not _pushes_to_harness(path, remote):
+            continue
+        # Every pushurl goes, then exactly one sentinel: set-url --push alone
+        # replaces only the first of several.
+        _git(path, "config", "--unset-all", "remote.%s.pushurl" % remote)
+        done = _git(path, "remote", "set-url", "--push", remote, PUSH_DISABLED_URL)
+        if done.returncode != 0:
+            _err("  ❌ could not disable push on `%s`: %s" % (remote, done.stderr.strip()))
+            continue
+        print(
+            "  🔒 push to `%s` disabled: it targets the Athanor harness, which a "
+            "downstream project must never write to." % remote
+        )
+
+    # Verify the outcome, not the writes: a lock failure, or a pushInsteadOf
+    # rule that maps the sentinel back onto the harness, would leave a push
+    # route open with every command above having "succeeded".
+    still_open = [r for r in _remotes(path) if _pushes_to_harness(path, r)]
+    if still_open:
+        _err(
+            "  ❌ still pushes to the Athanor harness: %s -- fix with "
+            "`git remote -v` before any push." % ", ".join(still_open)
+        )
+        return RC_REFUSED
+    return RC_OK
+
+
 def build_parser():
     parser = argparse.ArgumentParser(
         prog="git_provision.py", description=__doc__.splitlines()[0]
@@ -651,14 +765,21 @@ def build_parser():
     apply_sp = common(sub.add_parser("apply", help="provision, once confirmed"))
     apply_sp.add_argument("--path", default=".")
     apply_sp.add_argument("--confirmed", action="store_true")
+    sever_sp = sub.add_parser(
+        "sever-harness", help="stop this workspace pushing to the Athanor harness"
+    )
+    sever_sp.add_argument("--path", default=".")
     return parser
 
 
 def main(argv):
     args = build_parser().parse_args(argv)
-    return {"names": cmd_names, "propose": cmd_propose, "apply": cmd_apply}[
-        args.command
-    ](args)
+    return {
+        "names": cmd_names,
+        "propose": cmd_propose,
+        "apply": cmd_apply,
+        "sever-harness": cmd_sever_harness,
+    }[args.command](args)
 
 
 if __name__ == "__main__":

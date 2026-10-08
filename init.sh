@@ -1152,7 +1152,6 @@ scaffold_core() {
         "$PROJECT_PATH/.agent/memory/project" \
         "$PROJECT_PATH/.agent/rules/_core" \
         "$PROJECT_PATH/.agent/rules/claude" \
-        "$PROJECT_PATH/.agent/rules/gemini" \
         "$PROJECT_PATH/.agent/skills" \
         "$PROJECT_PATH/.agent/workflows" \
         "$PROJECT_PATH/.agent/pulse/registry" \
@@ -1161,10 +1160,6 @@ scaffold_core() {
         "$PROJECT_PATH/.claude/agents" \
         "$PROJECT_PATH/.claude/rules" \
         "$PROJECT_PATH/.claude/skills" \
-        "$PROJECT_PATH/.gemini/agents" \
-        "$PROJECT_PATH/.gemini/skills" \
-        "$PROJECT_PATH/.gemini/rules" \
-        "$PROJECT_PATH/.gemini/policies" \
         "$PROJECT_PATH/execution/hooks" \
         "$PROJECT_PATH/.tmp"
 
@@ -1223,7 +1218,7 @@ scaffold_core() {
     seed_from_template ".agent/memory/project/rules.md"       "$PROJECT_PATH/.agent/memory/project/rules.md"
     seed_from_template ".agent/memory/project/session_log.md" "$PROJECT_PATH/.agent/memory/project/session_log.md"
 
-    # Paired-copy registry — declares CLAUDE.md/GEMINI.md as real-file clones of
+    # Paired-copy registry — declares CLAUDE.md as a real-file clone of
     # AGENTS.md so `make sync-clones` and `make audit` work in the new workspace.
     # Runtime config, not a seed: routed through install_preserving so a
     # re-run never silently overwrites an operator's edit (bootstrap-integrity
@@ -1263,15 +1258,17 @@ scaffold_core() {
     # Copying settings.json last prevents "No such file" errors on first
     # post-update session. (Fix for upstream issue #116.)
 
-    cp "$SCRIPT_DIR/.gemini/settings.json"  "$PROJECT_PATH/.gemini/settings.json"  2>/dev/null || true
-    cp "$SCRIPT_DIR/.gemini/policies/autonomy.toml" "$PROJECT_PATH/.gemini/policies/autonomy.toml" 2>/dev/null || true
+    # No autonomy policy is copied: a new project's level is undecided --
+    # "chosen, never defaulted". sync_autonomy.py writes the provider policies
+    # once the operator runs set_autonomy.py + make sync. (Gemini CLI, whose
+    # settings were copied here, was retired 2026-10-06.)
 
     # ── Canonical rules: ONE copy, from template/, then sync_all() fans out ──
     #
     # This used to copy $SCRIPT_DIR/.claude/rules/*.md into .claude/rules/ and
     # nothing else, which broke three ways at once (spec rules-canonical):
     # .agent/rules/_core/ was delivered EMPTY (so `make sync-rules` downstream
-    # was a permanent no-op), .gemini/rules/ got nothing, .grok/rules/ was never
+    # was a permanent no-op), .grok/rules/ was never
     # created, and the seed came from the harness's LIVE tree rather than the
     # sanitised template/ that §2 requires.
     #
@@ -1337,7 +1334,6 @@ scaffold_core() {
         for entry in "$SCRIPT_DIR/execution/hooks/"*.sh; do
             [ -f "$entry" ] || continue
             name="$(basename -- "$entry")"
-            install_preserving "$entry" "$name" "hooks-root/$name"
             install_preserving "$entry" "execution/hooks/$name" "hooks/$name"
         done
         # execution/hooks/lib/ holds non-.sh files (e.g. context_window.py) that
@@ -1601,8 +1597,8 @@ PYFILL
             "$SCRIPT_DIR/GITHUB.md"
     fi
 
-    # CLAUDE.md and GEMINI.md are CLONES of AGENTS.md — real files, never
-    # symlinks (platform-scoped-delivery F2). A tracked symlink checks out as a
+    # CLAUDE.md is a CLONE of AGENTS.md — a real file, never a
+    # symlink (platform-scoped-delivery F2). A tracked symlink checks out as a
     # 9-byte text stub on any default Windows clone, with `git status` empty, so
     # scaffolding one propagates the defect into every new workspace. Skip the
     # rewrite when the clone is already identical — pure churn reduction on
@@ -1613,7 +1609,7 @@ PYFILL
     # discovered the copy had nothing to copy, which destroyed both.
     [ -f "$PROJECT_PATH/AGENTS.md" ] || return 0
     local _f
-    for _f in CLAUDE.md GEMINI.md; do
+    for _f in CLAUDE.md; do
         if [ -f "$PROJECT_PATH/$_f" ] && [ ! -h "$PROJECT_PATH/$_f" ] && \
            cmp -s "$PROJECT_PATH/AGENTS.md" "$PROJECT_PATH/$_f"; then
             continue
@@ -1902,6 +1898,17 @@ setup_git() {
         git_clean -C "$PROJECT_PATH" init -q
     fi
 
+    # The `athanor` launcher scaffolds with `gh repo clone InunuNet/Athanor`,
+    # so `origin` arrives pointing at the harness and one `git push` writes
+    # this project into it (backlog P1 #4). Sever it BEFORE the origin check
+    # below, so a freed `origin` gets the normal proposal. Refuses on its own
+    # inside the harness checkout; never fatal to the scaffold.
+    if ! python3 "$SCRIPT_DIR/execution/git_provision.py" sever-harness \
+            --path "$PROJECT_PATH"; then
+        printf "${YELLOW}   ⚠️  Could not sever push access to the Athanor harness —\n"
+        printf "       check \`git remote -v\` before the first push.${NC}\n"
+    fi
+
     if ! git_clean -C "$PROJECT_PATH" remote get-url origin >/dev/null 2>&1; then
         # §3 step 2: the confirmation of the NAME is the authorisation, and
         # there is no second prompt — so the remote, the private-by-default
@@ -2164,7 +2171,7 @@ main() {
     # skipped, 0 delivered, on a workspace that had never touched a single
     # HARNESS file). Runs last, after scaffold_core AND sync_all, because
     # sync_all's agent/skill/rule regeneration is itself the final writer
-    # of several HARNESS paths (e.g. .claude/rules/, .gemini/rules/) --
+    # of several HARNESS paths (e.g. .claude/rules/, .grok/rules/) --
     # recording baselines any earlier would key off content sync_all is
     # about to overwrite again. Guarded, never fatal: a failure here
     # degrades to today's status quo (no baselines recorded, the first
@@ -2181,7 +2188,7 @@ main() {
     fi
 
     printf "\n${GREEN}✅ Workspace scaffolded: %s at %s${NC}\n\n" "$PROJECT_NAME" "$PROJECT_PATH"
-    printf "   Next: Open in Claude Code or Gemini CLI and run ${CYAN}/onboard${NC}\n"
+    printf "   Next: Open in Claude Code or Antigravity and run ${CYAN}/onboard${NC}\n"
     printf "   Or:   ${CYAN}make help${NC}\n\n"
 }
 

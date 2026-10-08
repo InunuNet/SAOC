@@ -1264,9 +1264,20 @@ def _harness_hook_scripts(override_hooks: dict) -> set:
 
 
 def _hook_scripts_exist(entry, target_root) -> bool:
-    """True when at least one script this registration names is on disk."""
+    """True when at least one script this registration names is on disk.
+
+    The path AS WRITTEN is checked first (#1453): a project hook registered
+    as `bash scripts/hooks/x.sh` was reduced to its basename and looked for in
+    the four harness hook directories only, so it read as retired and was
+    deregistered on every update while the file sat on disk.
+    """
     if target_root is None:
         return True
+    command = str(entry.get("command", "")) if isinstance(entry, dict) else ""
+    for tok in command.replace("'", " ").replace('"', " ").split():
+        tok = tok.replace("$CLAUDE_PROJECT_DIR/", "").replace("${CLAUDE_PROJECT_DIR}/", "")
+        if tok.endswith((".sh", ".py")) and (Path(target_root) / tok).is_file():
+            return True
     for name in _hook_scripts_in(entry):
         for base in ("execution/" + "hooks", ".claude/" + "hooks",
                      ".gemini/" + "hooks", ".grok/" + "hooks"):
@@ -1586,6 +1597,106 @@ def _resolve_retraction_key_path(data: dict, key_path: str) -> tuple[dict | None
     if not isinstance(parent, dict):
         return None, None
     return parent, parts[-1]
+
+
+SEEDED_AGENT_NAME = "Athanor Agent"
+
+
+def migrate_seeded_identity(project_root: Path, dry_run: bool) -> bool:
+    """Rename a project's agent away from the harness's seeded constant.
+
+    Until 2026-09-02 (8ea0b4fd) init.sh seeded identity.agent_name with the
+    constant "Athanor Agent" in every project, and nothing ever revisited it:
+    each session of those projects is told its agent IS the harness (backlog
+    P0, alembic-39 2026-09-22). Only that exact seeded value is replaced, by
+    "<project_name> Agent"; a name the operator chose is never touched, and
+    the harness's own checkout (project_name Athanor) is left alone.
+    """
+    profile = project_root / ".agent" / "profile.json"
+    tmp = profile.with_suffix(".json.tmp")
+    if not profile.exists() and not profile.is_symlink():
+        return False
+    # Full-path guard: a symlinked .agent/ (or a planted .tmp) must not
+    # redirect this write outside the project.
+    if (_refuse_symlinked_write(profile, "identity migration profile", stop_at=project_root)
+            or _refuse_symlinked_write(tmp, "identity migration temp file", stop_at=project_root)
+            or not profile.is_file()):
+        return False
+    try:
+        data = json.loads(profile.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        print(f"  WARN  identity migration: cannot read {profile} ({exc}) -- skipped",
+              file=sys.stderr)
+        return False
+    identity = data.get("identity") if isinstance(data, dict) else None
+    project = str(data.get("project_name") or "").strip() if isinstance(data, dict) else ""
+    if not isinstance(identity, dict) or identity.get("agent_name") != SEEDED_AGENT_NAME:
+        return False
+    if not project or project.lower() == "athanor":
+        return False
+    new_name = f"{project} Agent"
+    print(f"  MIGRATE identity.agent_name: {SEEDED_AGENT_NAME!r} -> {new_name!r} "
+          f"(the seeded harness name, never chosen){' (dry run)' if dry_run else ''}")
+    if dry_run:
+        return True
+    identity["agent_name"] = new_name
+    tmp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    os.replace(tmp, profile)
+    return True
+
+
+def apply_retired_paths(
+    manifest: dict,
+    project_root: Path,
+    backup_dir: Path | None,
+    dry_run: bool,
+) -> list[str]:
+    """Remove harness files the harness itself has deleted.
+
+    The manifest loop only ever adds or overwrites, so a file Athanor stops
+    shipping stays in every project forever -- and is still read. The retired
+    Gemini CLI provider JSON kept `make sync` failing in every project
+    (Alembic, 2026-10-07: sync_autonomy reported gemini-cli as BROKEN).
+    manifest["retired_paths"] lists such files as {path, reason, sha256}. A
+    file is removed (after a backup into backup_dir) only when its bytes match
+    a version Athanor shipped; a locally modified copy is kept and reported.
+    Files only, and never through a symlinked path component.
+    """
+    entries = manifest.get("retired_paths") or []
+    if not isinstance(entries, list):
+        print("  WARN  retired_paths: expected a list -- skipping", file=sys.stderr)
+        return []
+    removed = []
+    for entry in entries:
+        rel = entry.get("path") if isinstance(entry, dict) else None
+        if not rel or Path(rel).is_absolute() or ".." in Path(rel).parts:
+            print(f"  WARN  retired_paths: refusing entry {entry!r}", file=sys.stderr)
+            continue
+        target = project_root / rel
+        if not target.exists() and not target.is_symlink():
+            continue
+        if _refuse_symlinked_write(target, f"retired path {rel}", stop_at=project_root):
+            continue
+        if not target.is_file():
+            continue
+        shipped = set(entry.get("sha256") or [])
+        if hashlib.sha256(target.read_bytes()).hexdigest() not in shipped:
+            # Never delete a local edit: only bytes Athanor itself shipped.
+            print(f"  KEEP  {rel} -- retired upstream but locally modified; "
+                  f"delete it by hand if unused ({entry.get('reason', '')})")
+            continue
+        if dry_run:
+            print(f"  RETIRE {rel} (dry run) -- {entry.get('reason', '')}")
+            removed.append(rel)
+            continue
+        if backup_dir is not None:
+            backup_path = backup_dir / rel
+            backup_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(target, backup_path)
+        target.unlink()
+        print(f"  RETIRE {rel} -- {entry.get('reason', '')}")
+        removed.append(rel)
+    return removed
 
 
 def apply_retractions(
@@ -4494,6 +4605,24 @@ def main():
             print(f"ERROR: Failed to parse .agent/update-manifest.yaml: {e}", file=sys.stderr)
             sys.exit(1)
 
+        # Upstream DERIVED wins. The loop runs off the LOCAL manifest, so a
+        # path upstream reclassified HARNESS -> DERIVED was still delivered
+        # (and guarded, and withheld -> exit 1) on the very update that ships
+        # the reclassification. Only this direction is honoured: it can only
+        # stop a write, never start one. (WOSA 2026-09-28: generated autonomy
+        # policies, which carry each project's own level.)
+        try:
+            _upstream = yaml.safe_load((source / ".agent" / "update-manifest.yaml").read_text())
+            _upstream_derived = {e.get("path") for e in (_upstream or {}).get("paths", [])
+                                 if isinstance(e, dict) and e.get("category") == "DERIVED"}
+        except Exception:
+            _upstream_derived = set()
+        for _entry in manifest.get("paths", []):
+            if (isinstance(_entry, dict) and _entry.get("category") == "HARNESS"
+                    and _entry.get("path") in _upstream_derived):
+                _entry["category"] = "DERIVED"
+                print(f"  note  {_entry['path']} is DERIVED upstream -- not delivered")
+
         # --force-path validation (issue #1348 remediation / F6) — fail fast,
         # before touching disk, if a requested path does not correspond to
         # any real HARNESS manifest entry, is ambiguous, or would resolve
@@ -4883,6 +5012,13 @@ def main():
             backup_dir=backup_dir,
             dry_run=dry_run,
         )
+        apply_retired_paths(
+            manifest=retraction_manifest,
+            project_root=Path.cwd(),
+            backup_dir=backup_dir,
+            dry_run=dry_run,
+        )
+        migrate_seeded_identity(Path.cwd(), dry_run)
 
         # After applying all HARNESS/MERGE updates AND backstop,
         # bump template_version in profile.json
@@ -5173,6 +5309,36 @@ def main():
             elif prune_result.returncode not in (0, 2):
                 print(f"[prune] prune_foreign.py exited {prune_result.returncode} -- "
                       "not treated as fatal to this update.")
+
+        # Backlog P1 #4: workspaces scaffolded by the `athanor` launcher carry
+        # `origin` -> the harness repo, so a routine push writes the project
+        # into the harness. init.sh severs it for new scaffolds; this reaches
+        # every workspace that already exists. Never inside the harness.
+        if not dry_run and not is_template_repo:
+            sever = subprocess.run([
+                sys.executable, str(Path(__file__).parent / "git_provision.py"),
+                "sever-harness", "--path", str(Path.cwd()),
+            ])
+            if sever.returncode != 0:
+                print(f"[git] git_provision.py sever-harness exited {sever.returncode} -- "
+                      "this workspace may still push to the Athanor harness; check `git remote -v`.")
+
+        # Hook-loss heal (backlog P1, 2026-09-28: 67 registrations lost across
+        # NOS Site, NOS Design, WOSA). The FIRST pass of an update runs the OLD
+        # updater already in memory, and pre-6afb6870 code replaced the hooks
+        # block wholesale before this code could run. Re-register, additively,
+        # every hook the last COMMITTED settings.json held whose script is
+        # still on disk (--last-commit: a hook removed on purpose and
+        # committed stays removed). Runs in this (new) process, so it covers the re-exec and any
+        # manual second run. Never inside the harness; never fatal.
+        if not dry_run and not is_template_repo:
+            heal = subprocess.run([
+                sys.executable, str(Path(__file__).parent / "repair_hooks.py"),
+                "--apply", "--last-commit", "--root", str(Path.cwd()),
+            ])
+            if heal.returncode != 0:
+                print(f"[hooks] repair_hooks.py exited {heal.returncode} -- run "
+                      "`python3 execution/repair_hooks.py` and check .claude/settings.json.")
 
         # exit 0 for every --dry-run: a preview writes nothing, so it cannot
         # deliver partially. backstop_warns stays deliberately out of the

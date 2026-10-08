@@ -1,3 +1,7 @@
+---
+description: Wrap long, silent build or test commands in execution/heartbeat_wrap.sh so the subagent stream-watchdog does not kill the agent mid-build. Use before any Rust, xcodebuild, npm/cargo or long test-suite run.
+---
+
 # heartbeat-wrap
 
 Wrap heavy, silent build/test steps in `execution/heartbeat_wrap.sh` so Claude

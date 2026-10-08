@@ -11,7 +11,6 @@
 #
 # Usage:
 #   bash execution/pulse_mission_loop.sh                  # auto-detect
-#   bash execution/pulse_mission_loop.sh --platform gemini-cli
 #   bash execution/pulse_mission_loop.sh --platform claude-code
 #   bash execution/pulse_mission_loop.sh --platform codex
 #   bash execution/pulse_mission_loop.sh --dry-run
@@ -291,8 +290,6 @@ done
 if [[ -z "$PLATFORM" ]]; then
   if [[ -n "${CODEX_CI:-}" || -n "${CODEX_THREAD_ID:-}" || -n "${CODEX_SESSION_ID:-}" ]]; then
     PLATFORM="codex"
-  elif [[ -f ".gemini/settings.json" ]]; then
-    PLATFORM="gemini-cli"
   elif [[ -d ".codex" ]]; then
     PLATFORM="codex"
   else
@@ -302,7 +299,6 @@ fi
 
 case "$PLATFORM" in
   claude) PLATFORM="claude-code" ;;
-  gemini) PLATFORM="gemini-cli" ;;
 esac
 
 echo "[pulse-loop] Provider: $PLATFORM"

@@ -1,0 +1,56 @@
+{
+  "PostCompact": [
+    "post_compact_restore.sh"
+  ],
+  "PostToolUse": [
+    "post_agent_loop_continue.sh"
+  ],
+  "PreCompact": [
+    "brain.py",
+    "pre_compact_snapshot.sh"
+  ],
+  "PreToolUse": [
+    "allow_in_project_bash.sh",
+    "block_asq_in_loop.sh",
+    "check_autonomy.sh",
+    "require_contract.sh",
+    "require_contract_for_write.sh",
+    "require_dev_result.sh",
+    "require_docs.sh",
+    "require_maintainer.sh",
+    "require_qa_report.sh",
+    "require_research.sh",
+    "verify_workspace.sh"
+  ],
+  "SessionEnd": [
+    "require_maintainer.sh",
+    "session_clean_exit_marker.sh",
+    "session_token_log.sh"
+  ],
+  "SessionStart": [
+    "full_boot.sh",
+    "session_start_away_report.sh"
+  ],
+  "Stop": [
+    "blocker_scan.sh",
+    "turn_end_stamp.sh"
+  ],
+  "StopFailure": [
+    "quota_death_checkpoint.sh"
+  ],
+  "SubagentStart": [
+    "inject_no_invention.sh",
+    "subagent_start.sh"
+  ],
+  "SubagentStop": [
+    "subagent_stop.sh"
+  ],
+  "UserPromptSubmit": [
+    "compaction_backstop.sh",
+    "compaction_nudge.sh",
+    "harness_heartbeat.sh",
+    "inject_no_invention.sh",
+    "inject_pressure.sh",
+    "post_compact_inject.sh"
+  ]
+}

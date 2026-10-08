@@ -3,74 +3,17 @@
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 source execution/tests/lib/assert.sh
+source execution/tests/lib/sandbox_repo.sh
 
 echo "=== test_pulse_mission_loop_duplicate_slug_reconcile.sh ==="
 
-ACTIVE_JSON=".agent/memory/project/missions/active.json"
-OLD_MISSION=".agent/memory/project/missions/2026-05-19-test-dup-loop.md"
-NEW_MISSION=".agent/memory/project/missions/2026-05-20-test-dup-loop.md"
-QUEUE_FILE=".agent/mission_queue.txt"
-MISSIONS_DIR=".agent/memory/project/missions"
-
-ACTIVE_BACKUP="$(mktemp)"
-QUEUE_BACKUP="$(mktemp)"
-ACTIVE_EXISTS=0
-QUEUE_EXISTS=0
-
-# pulse_mission_loop.sh's fallback scan (lines ~155-190) globs the real
-# missions dir for ANY file with status: in_progress|active — not just this
-# test's fixtures. If a real mission is genuinely in progress (the harness's
-# normal operating state), the fallback finds it and repairs active.json to
-# point at it, so the script never reaches the "idle" branch this test
-# asserts on. Move any such real mission files aside for the duration of the
-# run and restore them afterward, same pattern as the active.json/queue
-# backup above.
-HOLD_DIR="$(mktemp -d)"
-MOVED_MISSIONS=()
-
-cleanup() {
-  rm -f "$OLD_MISSION" "$NEW_MISSION"
-  if [ "$ACTIVE_EXISTS" -eq 1 ]; then
-    cp "$ACTIVE_BACKUP" "$ACTIVE_JSON"
-  else
-    rm -f "$ACTIVE_JSON"
-  fi
-  if [ "$QUEUE_EXISTS" -eq 1 ]; then
-    cp "$QUEUE_BACKUP" "$QUEUE_FILE"
-  else
-    rm -f "$QUEUE_FILE"
-  fi
-  rm -f "$ACTIVE_BACKUP" "$QUEUE_BACKUP"
-  for mf in "${MOVED_MISSIONS[@]:-}"; do
-    [ -z "$mf" ] && continue
-    if [ -f "$HOLD_DIR/$(basename "$mf")" ]; then
-      mv "$HOLD_DIR/$(basename "$mf")" "$mf"
-    fi
-  done
-  rm -rf "$HOLD_DIR"
-}
-trap cleanup EXIT INT TERM
-
-if [ -f "$ACTIVE_JSON" ]; then
-  cp "$ACTIVE_JSON" "$ACTIVE_BACKUP"
-  ACTIVE_EXISTS=1
-fi
-
-if [ -f "$QUEUE_FILE" ]; then
-  cp "$QUEUE_FILE" "$QUEUE_BACKUP"
-  QUEUE_EXISTS=1
-fi
-
-for mf in "$MISSIONS_DIR"/*.md; do
-  [ -f "$mf" ] || continue
-  case "$mf" in
-    "$OLD_MISSION"|"$NEW_MISSION") continue ;;
-  esac
-  if grep -qE '^status:[[:space:]]*(in_progress|active)[[:space:]]*$' "$mf"; then
-    mv "$mf" "$HOLD_DIR/$(basename "$mf")"
-    MOVED_MISSIONS+=("$mf")
-  fi
-done
+# In a sandbox repo with an empty missions dir. The loop's fallback scan picks
+# up ANY in_progress mission, so this test used to MOVE the host project's
+# real in-progress missions out to a temp dir for the run and move them back
+# in a trap -- a killed run stranded the live mission outside the project.
+SB=$(make_sandbox_repo pulse_dup_slug execution)
+cd "$SB" || exit 1
+mkdir -p .agent/memory/project/missions
 
 python3 - <<'PY'
 import json

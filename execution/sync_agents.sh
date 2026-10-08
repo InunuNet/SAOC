@@ -58,7 +58,6 @@ MANIFESTS=$(enumerate_key agents_manifest)
 dialect_for() {
   case "$1" in
     claude-code) echo "claude" ;;
-    gemini-cli)  echo "gemini" ;;
     grok-cli)    echo "grok"   ;;
     *)           echo "default" ;;
   esac
@@ -68,7 +67,6 @@ dialect_for() {
 short_name_for() {
   case "$1" in
     claude-code) echo "claude" ;;
-    gemini-cli)  echo "gemini" ;;
     grok-cli)    echo "grok"   ;;
     *)           echo "$1"     ;;
   esac
@@ -85,23 +83,12 @@ map_claude_model() {
   esac
 }
 
-map_gemini_model() {
-  case "$1" in
-    apex) echo "gemini-2.5-pro" ;;
-    pro) echo "gemini-2.5-pro" ;;
-    flash) echo "gemini-2.5-flash" ;;
-    local) echo "gemini-2.5-flash-lite" ;;
-    *) echo "gemini-2.5-flash" ;;
-  esac
-}
-
 # The model a dialect writes into frontmatter. Empty means the dialect has no
 # model key at all (grok and the passthrough default), and --check therefore
 # has nothing to compare — silence, not a false drift report.
 model_for_dialect() {
   case "$1" in
     claude) map_claude_model "$2" ;;
-    gemini) map_gemini_model "$2" ;;
     *)      echo "" ;;
   esac
 }
@@ -115,19 +102,6 @@ map_claude_tool() {
     grep) echo "Grep" ;;
     search) echo "WebSearch" ;;
     web) echo "WebFetch" ;;
-    *) echo "$1" ;;
-  esac
-}
-
-map_gemini_tool() {
-  case "$1" in
-    read) echo "read_file" ;;
-    write) echo "write_file" ;;
-    edit) echo "replace" ;;
-    shell) echo "run_shell_command" ;;
-    grep) echo "grep_search" ;;
-    search) echo "google_web_search" ;;
-    web) echo "web_fetch" ;;
     *) echo "$1" ;;
   esac
 }
@@ -157,7 +131,6 @@ map_tools() {
     [ -z "$tool_item" ] && continue
     case "$platform" in
       claude) mapped=$(map_claude_tool "$tool_item") ;;
-      gemini) mapped=$(map_gemini_tool "$tool_item") ;;
       grok)   mapped=$(map_grok_tool "$tool_item") ;;
       *)      mapped="$tool_item" ;;
     esac

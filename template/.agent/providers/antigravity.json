@@ -1,9 +1,9 @@
 {
   "provider": "antigravity",
   "display_name": "Antigravity",
-  "headless_command": null,
-  "supports_headless": false,
-  "supports_continue": false,
+  "headless_command": ["agy", "-p", "{prompt}"],
+  "supports_headless": true,
+  "supports_continue": true,
   "supports_hooks": false,
   "supports_subagents": true,
   "supports_max_turns": false,

@@ -1,0 +1,182 @@
+schema: athanor.contract/v1
+slug: saoc-about-page
+goal: >
+  DRAFT, local-preview-only rebuild of /about on Lee-Ann's official copy
+  (content/drive-source/SAOC /2. About/About page - South African Orchid
+  Council/v1.0/content.md, Drive md5 c939ef9c921b701d80962cccfe691684),
+  implemented in the approved Claude Design handoff's visual structure
+  (design/design_handoff_saoc/src/pages-interior.jsx AboutPage()), replacing
+  the page's current non-Lee-Ann copy (an invented hero lede, an invented
+  mission-fallback paragraph, an invented 1990/18/21 stats band, and a mostly
+  invented 6-node timeline where only 1 of 6 nodes is real). Brad, 2026-10-08,
+  verbatim: "SAOC About has copy from Lee-Ann not whats on local host new
+  mission use the copy, use claude design skill lets finish the about
+  page... Lets keep it local till approved by me then we push to beta...
+  faster to fix.. shorter missions...". Every word of content.md (title + 7
+  paragraphs, 8 bold spans) must render verbatim on the page, checked against
+  the RENDERED HTML at http://localhost:3002/about, not just the source.
+  Handoff slots Lee-Ann's copy doesn't fill (stats, a timeline) are either
+  re-derived strictly from facts stated in content.md or explicitly removed
+  and named as a gap — never filled with invented specifics, even ones
+  carried over from the approved handoff's own placeholder prose (which is
+  itself invented: "21st World Orchid Conference to Sandton in 2014" etc. is
+  nowhere in Lee-Ann's copy). Full per-slot decision table, bold-span list,
+  and two open questions for Brad (conservation language vs. CLAUDE.md's WOSA
+  scope boundary; where a live Firestore-derived "21 societies today" stat
+  belongs) are in the golden — see goldens/f1-about-page-leeann-copy.golden.md
+  §4-5. Scope is strictly app/(marketing)/about/page.tsx plus any new
+  About-specific components; components/chrome/** (a parallel emblem-lockup
+  draft is actively editing it), app/globals.css, branding/** and comms.md
+  are out of scope and checked byte-unchanged against the pinned base
+  commit 67d355812974f417fc72edb75ecd5bc1deda7a11. Phase 1 (below) is the
+  full local gate: content/source assertions plus Playwright screenshots of
+  http://localhost:3002/about at 1280px and 320px — no pnpm build in phase 1,
+  since the dev server at :3002 is live for Brad's review and a production
+  build into the same .next/ can corrupt its running state (same pattern
+  established by the sibling saoc-emblem-lockup mission). Phase 2 is the
+  post-approval gate (pnpm build, codex_qa, browser_deployed_check against
+  beta.saoc.co.za/about) and does not run until Brad approves the local
+  render and team-lead commits + deploys. gws_inbox_check is not applicable —
+  this feature touches no email path.
+created_at: '2026-10-08'
+autonomy: high
+features:
+  - id: F1
+    name: /about rebuilt on Lee-Ann's copy, approved design handoff structure — local preview only
+    status: pending
+goldens:
+  - .agent/memory/project/specs/saoc-about-page/goldens/f1-about-page-leeann-copy.golden.md
+assertions:
+  phase: 1
+  checks:
+    - id: A1
+      description: >-
+        every block of content.md (the title + all 7 paragraphs) renders
+        verbatim in the RENDERED HTML at http://localhost:3002/about (not
+        just somewhere in the source tree), and every **bold** span from
+        content.md renders as real semantic emphasis (<strong> or <b>), not
+        a CSS-only bold. The script reads content.md itself at runtime and
+        derives both the plain-text blocks and the bold-phrase list from it
+        — single source of truth, no hand-transcribed fixture to drift.
+        Requires `pnpm dev` running on :3002. Confirmed FAILing against
+        current code (today's page.tsx contains none of Lee-Ann's copy).
+      phase: 1
+      command: node contracts/checks/saoc-about-page-f1/check-content-verbatim.mjs
+
+    - id: A2
+      description: >-
+        none of the specific invented strings from the page's current
+        non-Lee-Ann copy or from the design handoff's own invented
+        placeholder prose (the 1990/18/21 stats labels, the 6-node timeline's
+        5 invented nodes, the invented hero lede and mission-fallback
+        paragraph) appear anywhere under app/(marketing)/about/ or
+        components/about/ after the rebuild — a denylist, not an exhaustive
+        proof (A1's verbatim-presence check plus Brad's own review of
+        localhost:3002/about is the real gate for "nothing else snuck in").
+        Confirmed FAILing against current code (several of the denylisted
+        strings are present in today's page.tsx).
+      phase: 1
+      command: bash contracts/checks/saoc-about-page-f1/check-no-invented-copy.sh
+
+    - id: A3
+      description: >-
+        components/chrome/** (parallel emblem-lockup draft actively editing
+        it right now), app/globals.css, branding/** (Brad's active design
+        workstream, which already carries his own uncommitted changes in
+        the working tree) and comms.md stay byte-unchanged by THIS feature.
+        Deliberately a checksum-manifest check against an on-disk baseline
+        taken 2026-10-08
+        (goldens/fixtures/f1-out-of-scope-baseline-checksums.txt), NOT a
+        git-diff-against-a-commit check — branding/ and comms.md already had
+        pre-existing uncommitted changes before this feature started, and
+        components/chrome/** is concurrently being edited by an unrelated
+        mission, so a commit-diff version would incorrectly flag either as
+        this feature's violation (same problem the sibling
+        saoc-emblem-lockup mission's A4 solved the same way). Currently
+        PASSES (regression guard, nothing touched yet by this feature).
+      phase: 1
+      command: bash contracts/checks/saoc-about-page-f1/check-out-of-scope-unchanged.sh
+
+    - id: A4
+      description: >-
+        local draft render is captured at http://localhost:3002/about: full
+        page screenshots at 1280px and 320px viewport widths, written to
+        .tmp/sandbox/about-page/screenshots/. Requires `pnpm dev` already
+        running on :3002 (this script does not start the server). Reads
+        BETA_BASIC_AUTH_USER/PASSWORD from .env.local via dotenv and only
+        applies Basic Auth credentials when both are non-empty (same pattern
+        as the sibling saoc-emblem-lockup mission's capture script), since
+        the beta password wall has been confirmed to gate localhost dev too
+        when it's turned on. Confirmed working end-to-end against the
+        CURRENT (pre-change) render — both screenshots captured successfully
+        showing today's invented copy; re-run after @dev's change to see the
+        new one.
+      phase: 1
+      command: node contracts/checks/saoc-about-page-f1/capture-local-screenshots.mjs
+
+    - id: A5
+      description: >-
+        POST-APPROVAL ONLY — do not run until Brad has approved the local
+        render (A4) and team-lead has committed + deployed this feature.
+        Production build succeeds with the rebuilt About page in place.
+      phase: 2
+      command: pnpm -C /Users/vetus/ai/SAOC build
+
+    - id: A6
+      description: >-
+        POST-APPROVAL ONLY — do not run until Brad has approved and
+        team-lead has committed + deployed. codex_qa adversarial review of
+        the full diff: app/(marketing)/about/page.tsx and any new
+        About-specific components, checking specifically that every content
+        block traces to content.md verbatim (no paraphrase, no silently
+        re-added handoff placeholder prose), that the removed
+        pillars/timelineNodes Sanity-override branches didn't leave dead
+        code or an unreachable fallback, and that the out-of-scope files
+        (components/chrome/**, app/globals.css, branding/**, comms.md)
+        genuinely weren't touched.
+      type: codex_qa
+      phase: 2
+      target: >-
+        Adversarially review the current git diff (mission saoc-about-page,
+        feature F1): app/(marketing)/about/page.tsx is rebuilt to render
+        Lee-Ann's official About copy
+        (content/drive-source/SAOC /2. About/About page - South African
+        Orchid Council/v1.0/content.md) verbatim — title + 7 paragraphs, 8
+        bold spans as <strong> — inside the approved Claude Design handoff's
+        About section shell (design/design_handoff_saoc/src/pages-interior.jsx
+        AboutPage()), replacing an invented hero lede, an invented
+        mission-fallback paragraph, an invented 1990/18/21 stats band
+        (re-derived to 4 facts actually stated in content.md: 1968,
+        28 July 1968, 4 founding societies, 15 accredited judges), and a
+        6-node timeline where 5 of 6 nodes were invented (removed entirely
+        for this feature — see the golden's §4 "Our history timeline" row
+        for the rationale). The Sanity aboutPageQuery's pillars/timelineNodes
+        override branches and their invented static fallbacks are removed;
+        boardIntroText and the board section are untouched. Check
+        specifically: (1) every rendered content block actually traces to
+        content.md's current text, not a paraphrase or a reintroduced
+        handoff placeholder; (2) the bold spans are real <strong>/<b>
+        elements, not CSS-only bold; (3) components/chrome/**,
+        app/globals.css, branding/** and comms.md are genuinely untouched;
+        (4) no dead code (orphaned imports, an unreachable Sanity-fallback
+        branch) was left behind by removing the pillars/timelineNodes
+        wiring. For each finding: cite exact file:line, state the concrete
+        failure scenario, and rate confidence. If nothing real is wrong, say
+        so plainly instead of inventing findings.
+
+    - id: A7
+      description: >-
+        POST-APPROVAL ONLY — do not run until Brad has approved the local
+        render and team-lead has committed + deployed. browser_deployed_check
+        (native triad kind) against the real deployed origin confirming
+        beta.saoc.co.za/about renders 200 with Lee-Ann's copy present.
+        NOT YET PRODUCED (2026-10-08): this is a local-only draft with
+        nothing deployed yet — the fixture below is a placeholder, same
+        convention as saoc-emblem-lockup-f1's A12. Re-capture via
+        contracts/checks/saoc-about-page-f1/capture-deployed-screenshot.mjs
+        (to be written alongside the real deploy, mirroring
+        capture-local-screenshots.mjs's Basic Auth handling) once there's a
+        real deployed commit to point it at.
+      type: browser_deployed_check
+      phase: 2
+      target: .agent/memory/project/specs/saoc-about-page/goldens/fixtures/f1-browser-manifest-deployed-about.json

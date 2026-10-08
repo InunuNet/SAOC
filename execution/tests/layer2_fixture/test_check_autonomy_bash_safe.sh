@@ -3,6 +3,12 @@
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 source execution/tests/lib/assert.sh
+source execution/tests/lib/sandbox_repo.sh
+# In a sandbox repo: this flips profile.json and the autonomy policy. In the
+# host checkout that re-tiered every live session's hook for the duration,
+# and a killed run left the project at the wrong autonomy level.
+SB=$(make_sandbox_repo autonomy_bash_safe execution .claude/policies .agent/autonomy_matrix.json)
+cd "$SB" || exit 1
 
 echo "=== test_check_autonomy_bash_safe.sh ==="
 

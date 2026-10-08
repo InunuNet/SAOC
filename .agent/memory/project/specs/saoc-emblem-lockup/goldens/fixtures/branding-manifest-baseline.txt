@@ -1,0 +1,60 @@
+6e87df0e760e6060c9a8636b31c1ffaac8f4e02d090999982d39ec2a5b5cb537  branding/.DS_Store
+406c2a1f95d448edcc596cfa68174eecf9c34886c414598bf90477ea545b119a  branding/National Show 2027/.DS_Store
+ae7bf33cc8616e6d017356c402f33ad2d5c29fc392af9d7a22589bb1f7dbef48  branding/National Show 2027/emblem/Disa graminifolia large v0.png
+16bf99b554aa5fe02c024b278b056b05e7b65223aad2b4ea549aa91a5a4f8395  branding/National Show 2027/emblem/Disa graminifolia large v1.png
+a7f23f9b219c16b563185a1e5f5f291c9dc1c167ff7d31561808d2b864e148ce  branding/National Show 2027/emblem/Disa graminifolia.png
+2594621589c8f9eb06c1dafbb100bdf511cb2835e8a87e9890b16f44e115fe60  branding/National Show 2027/emblem/Disa graminifolia.svg
+024c933d77a657d5f402a4603c52fc9a152479a41250e90db758331aa0c5e40b  branding/National Show 2027/Logo/.DS_Store
+9a9cca3e206ec24aa50df97c027596ef47f659910fd924a6d078729578674d5e  branding/National Show 2027/Logo/National Orchid Show 2027 Logo.zip
+d7b4b2d7f72b08cb9971b4d21cc48ef63c368529e5655a39409f6939aa7775ec  branding/National Show 2027/Logo/NOS-2027-logo-full-colour-horizontal.jpg
+bb38b3e949e310aa598a7d9552090c20dabbd8f7a281eda54de7edc489d26f78  branding/National Show 2027/Logo/NOS-2027-logo-full-colour-horizontal.png
+30a1cc1a4b64b58a8985ce15a33da07350d72977a8c6225d65cfde82a63f70f2  branding/National Show 2027/Logo/NOS-2027-logo-full-colour-reversed-horizontal.jpg
+30927bc84460d1f506e756ce879fed08b91cdf6ee2a3259464a9a0ef2ce793f8  branding/National Show 2027/Logo/NOS-2027-logo-full-colour-reversed-horizontal.png
+0552e0b48d52348ed4879043c2dddebfe3ad81c4440014f57343b6b44ab87fc3  branding/National Show 2027/Logo/NOS-2027-logo-full-colour-reversed-vertical.jpg
+48b813dd3a1c500ec4b3095dde0ef8d3ef67313545af215ce8827b648fc2f859  branding/National Show 2027/Logo/NOS-2027-logo-full-colour-reversed-vertical.png
+9468c7ce4c843f78f13cf2b42d978d2c36e12e8781c7b1fa3bd9a26dba09cb02  branding/National Show 2027/Logo/NOS-2027-logo-full-colour-vertical.jpg
+97b69978f91f1c54c44a6afa47e5d916169a59d66c1c0273d616e71bc1cdf318  branding/National Show 2027/Logo/NOS-2027-logo-full-colour-vertical.png
+c1d866abf29e7ef5e4e20a26550e8a5e8d8b3dd522d6c15b71fcfe0226b04308  branding/National Show 2027/Logo/NOS-2027-logo-grayscale-horizontal.jpg
+9020344347e093b5a673b356acbadfe871af28ff041342c40fae7c6acae3ea1a  branding/National Show 2027/Logo/NOS-2027-logo-grayscale-horizontal.png
+5295a828ab881b10bb9c7118c47be4a427f21da40f78b97983e3fe6837481286  branding/National Show 2027/Logo/NOS-2027-logo-grayscale-vertical.jpg
+29b2041a4fc9642b88d9c774f1c7cddbdf96afab7eec7103111a57290720a607  branding/National Show 2027/Logo/NOS-2027-logo-grayscale-vertical.png
+b0c42ea0e7fdbaf6c8105baea38dd1c9392a68fd6ed9627e8f88ec6cb56127c4  branding/National Show 2027/Logo/NOS-2027-logo-ink-olive-horizontal.jpg
+a6da56de9dc22571079cdc2eea9f26b18e7ac76f76d3dd71b4ab665ca7678c80  branding/National Show 2027/Logo/NOS-2027-logo-ink-olive-horizontal.png
+a9ab6cd1a1b4d17b9e419e937744f94e97b858c1eb89c627c88db800217f54fc  branding/National Show 2027/Logo/NOS-2027-logo-ink-olive-vertical.jpg
+ae8acdd2426926bdc00e6b14a420a941c60d7d65adfad563ce9af67222e03ce0  branding/National Show 2027/Logo/NOS-2027-logo-ink-olive-vertical.png
+dc4f963384f9c5812f4607f2845bbee4ee6bd7ba40cbfa7c3e3d712379800176  branding/National Show 2027/Logo/NOS-2027-logo-ink-purple-horizontal.jpg
+b12896bb8159f3f581fe138942a2cf5f92db970fe535c507f02051632180ae37  branding/National Show 2027/Logo/NOS-2027-logo-ink-purple-horizontal.png
+618e624eaf743faea093ab1235437045decc85f11b901d74244515a71c4c5068  branding/National Show 2027/Logo/NOS-2027-logo-ink-purple-vertical.jpg
+80b0b4a5538d557d0f9d59bf04168ee63e098f49a156ddb66a77d4e6e3d7e10b  branding/National Show 2027/Logo/NOS-2027-logo-ink-purple-vertical.png
+a8166b5ec710fda84014f40390c6b36f5caf76a47ca7c99741e6b3d808f000b5  branding/National Show 2027/Logo/NOS-2027-logo-ink-violet-horizontal.jpg
+8d6b0e3ce0ad07c6deb2024107dc39662c5bbd454e47f4eba88f5e24d5dad3a1  branding/National Show 2027/Logo/NOS-2027-logo-ink-violet-horizontal.png
+65d20ed1e4440488cb0169ddb01a754f0c68f9798e3652dc1ee82d8f6f58dd9d  branding/National Show 2027/Logo/NOS-2027-logo-ink-violet-vertical.jpg
+23dd3f85975f004745dfa7ee6366bf3770707a13935b0272c70303024d473413  branding/National Show 2027/Logo/NOS-2027-logo-ink-violet-vertical.png
+138e0903822e6d6484feb32437107e3dadf806137195b37335bba10bd0d43373  branding/National Show 2027/Logo/NOS-2027-logo-reversed-gold-horizontal.jpg
+b15ea597c824457b27cd9b101db1b2bdc92ad71d6e1a6a027ec81fdaa3964ffd  branding/National Show 2027/Logo/NOS-2027-logo-reversed-gold-horizontal.png
+db5f68558441fe37a777168eb6dd07a6300e889c274596f6c72ac4eb468d98cc  branding/National Show 2027/Logo/NOS-2027-logo-reversed-gold-vertical.jpg
+fdf12524658cc9ce5f7c5360a360b531d7d0e94b801bb667fdc3f9bc58959ede  branding/National Show 2027/Logo/NOS-2027-logo-reversed-gold-vertical.png
+9422e72d0d1de407a825cfee8db9919afbb7ca0cc61c2e090f294d09a9c8229d  branding/National Show 2027/Logo/NOS-2027-logo-reversed-white-horizontal.jpg
+15a7468c68a76fd997ff82d042037fa0002d5acf76ca2ead6c3623ed2b927982  branding/National Show 2027/Logo/NOS-2027-logo-reversed-white-horizontal.png
+8c2ef0d9aee2d25d789f37773074d3c9a3c722599e0cb1df4ca265412bd3e651  branding/National Show 2027/Logo/NOS-2027-logo-reversed-white-vertical.jpg
+265102a6a344e966caf321544e42b095a3d2856da169f34439b8ac09bee91e1a  branding/National Show 2027/Logo/NOS-2027-logo-reversed-white-vertical.png
+cdf6b0a81f7bebe16d8a83e958179004a35d1bc54f0353421253edbf58b297ec  branding/National Show 2027/National Orchid Show 2027 Logo.pdf
+2f2d2611b0cb49016c30d4354fe7f7b72cf10088e26fd033815ee9ae3043c4a3  branding/National Show 2027/Old NOS 2027 Assets.zip
+2f3e8789c2f1aac98a47d4e27358b4e8eb2a7aebd1fe439742d2cb1d8462c1bb  branding/National Show 2027/Word Templates/.DS_Store
+85cddc3970edd6484b0b3e17c1a6cc1cddfa1cc6e9192227bae6110530f4050c  branding/National Show 2027/Word Templates/docx/.DS_Store
+37e1e8cd4009c05c2c1749e5d530f095c097d37329876c62c98eca7b08821910  branding/National Show 2027/Word Templates/docx/00 How to use this pack.docx
+b20b7d9626dd956b2c5e558692ad328b1f19e3275e2782db4fa07670d83f35e0  branding/National Show 2027/Word Templates/docx/fonts/CormorantGaramond.ttf
+6343b70971000b04c5d401c96ae08ce371086135e999d5e1e1413039c0213076  branding/National Show 2027/Word Templates/docx/fonts/Jost.ttf
+00384dfe1b1672ef44e8f3c3bd52c54e452a7c7695c184b6e2b7289808052241  branding/National Show 2027/Word Templates/docx/NOS-2027-Email-Signature.docx
+c70b392cb5dde13917a4701a2be449e96f531af85a18f4c9207354eb72dc0789  branding/National Show 2027/Word Templates/docx/NOS-2027-Letterhead.docx
+4a34d1ce0cd2cf154bd903d56968bfcddda9fe819bf9215615d70cd15ce9f2f4  branding/National Show 2027/Word Templates/docx/NOS-2027-Poster-A3.docx
+31a30ef6b72cad7ebb98f376652596888e678265116114647f7609560df6899f  branding/National Show 2027/Word Templates/docx/NOS-2027-Poster-A4.docx
+eea82c2a90664845a352d30923a386a01a30bcd8d73117b83a8dc0e5cb44df2d  branding/National Show 2027/Word Templates/docx/NOS-2027-Press-Release.docx
+344bfe6e91775df8518e835052e49ec084f32237bbff4e5dc68c97148804f028  branding/National Show 2027/Word Templates/docx/NOS-2027-Social-Posts.docx
+0ed6bb5b475fa298822e2a5e59b85e81c2dee9837cbc8b1845520f02eb6ab3f6  branding/National Show 2027/Word Templates/National Orchid Show 2027 docx templates.zip
+0f3d7cc8922e377ce477700f3cde7af937581a73f76fd39b9a16a26ef6701c53  branding/SA Orchid Council/.DS_Store
+d65165279105ca6773180500688df4bdc69a2c7b771752f0a46ef120b7fd8ec3  branding/SA Orchid Council/emblem/.DS_Store
+c64e8041ee1045fbc3ef247f46b59b6fa70f60321daa0fdfc20af5632170ce3f  branding/SA Orchid Council/emblem/Eulophia-speciosa-emblem.png
+9b3bee5b751535bd3f116ea3f36349758e6d23aa4f8d7e41cc3ad7fedda1985e  branding/SA Orchid Council/favicon.ico
+f628db2dd01c70b19f1f2b43d61b5543c855744455415137aad42acb4278c7ad  branding/SA Orchid Council/SA Orchid Council Logo Presentation.pdf
+815d523f18e50a65283d6bd345b21b754cf76756946fdce6d7a034fc3e9b2436  branding/SA Orchid Council/SAOC Logo Eulophia speciosa r1.0.pdf

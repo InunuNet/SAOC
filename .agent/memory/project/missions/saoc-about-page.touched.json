@@ -1,0 +1,31 @@
+{
+  "schema": "athanor.mission-touched-files/v1",
+  "slug": "saoc-about-page",
+  "pending_baselines": {
+    "F1": [
+      ".agent/memory/project/hook_watermark.json",
+      ".agent/memory/project/missions/2026-10-07-saoc-about-page.md",
+      ".agent/memory/project/missions/active.json",
+      ".agent/memory/project/reboot.md",
+      ".agent/memory/project/specs/national-show-ia-finalization/",
+      ".agent/memory/project/specs/national-show-ticket-router/",
+      ".agent/memory/project/specs/saoc-emblem-lockup/",
+      "app/(marketing)/national-show/tickets/buy/",
+      "app/apple-icon.png",
+      "app/favicon.ico",
+      "app/icon.png",
+      "branding/National Show 2027/Word Templates/",
+      "branding/SA Orchid Council/emblem/Eulophia-speciosa r1.png",
+      "branding/SA Orchid Council/emblem/Eulophia-speciosa r2.png",
+      "branding/SA Orchid Council/emblem/Eulophia-speciosa r3.png",
+      "branding/SA Orchid Council/emblem/Eulophia-speciosa r4.png",
+      "branding/SA Orchid Council/emblem/Eulophia-speciosa-emblem.png",
+      "comms.md",
+      "contracts/checks/saoc-emblem-lockup-f1/",
+      "contracts/checks/ticket-reachability/check-desktop-mega-tickets-link.mjs",
+      "docs/national-show-ticket-router.md",
+      "download.xml"
+    ]
+  },
+  "paths": []
+}

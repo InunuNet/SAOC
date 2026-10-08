@@ -1,0 +1,204 @@
+schema: athanor.contract/v1
+slug: national-show-ticket-router
+goal: >
+  Per the "SAOC Dev Status" Sheet (spreadsheetId 1CEq5_670M1Q-AA5ZyJ30ycASptsy2Is5sHJhMXNyClo,
+  tab Pages, rows "Buy tickets" / "Checkout step" / "Confirmation" / "Cancelled", build lane
+  "SAOC lead", re-pulled 2026-09-14 and cross-checked against
+  .agent/memory/project/specs/national-show-ia-finalization/national-show-final-structure.md
+  Flagged Conflict 3/4): relocate the visitor ticket-purchase flow from the top-level
+  /tickets/* route tree to /national-show/tickets/buy/* (a clean pre-alpha rename, no
+  redirect), update the two PayFast callback URLs in
+  app/api/tickets/checkout/route.ts that hard-code the old paths, and repoint every other
+  source location that links into the old tree. /national-show/tickets itself is NOT a new
+  page — it already exists and already is the audience router (visitor/exhibitor/vendor/
+  conferences/workshops chooser) built under the ticketing-nav-restructure mission
+  (2026-08-21); this feature only repoints its "visitor" option's href.
+created_at: '2026-09-14'
+autonomy: high
+features:
+  - id: F1
+    name: Move ticket buy/checkout/confirmation/cancelled routes under /national-show/tickets/buy/*, update PayFast callback URLs, repoint every link into the old tree
+    status: pending
+goldens:
+  - .agent/memory/project/specs/national-show-ticket-router/goldens/f1-route-move.json
+  - .agent/memory/project/specs/national-show-ticket-router/goldens/f1-link-and-payfast-updates.json
+open_questions:
+  - id: Q1
+    text: >
+      The mission brief's premise was that content/drive-source/13-booking-tickets.json
+      (sourced Lee-Ann/council copy) exists and sits unused on /national-show/tickets. On
+      inspection: no content/drive-source/ directory exists in this repo at all, and no
+      13-booking-tickets.json exists anywhere in the tree. The only folder-13 file actually
+      synced is docs/leeann-source/ticketing-system-details_2026-09-09.md (Drive's "13.1
+      Ticketing system details.docx") — and that file's own header explicitly disclaims
+      itself as page copy: "this is Lee-Ann's own design of the visitor booking system's
+      fields and flow, not page copy — do not treat as authorised public-facing copy without
+      confirmation." Per CLAUDE.md's no-invention rule, F1 does NOT wire this doc's content
+      onto the router page — there is no authorised copy to render, only a developer field
+      spec whose SECTION A-J form structure is a strong signal for a FUTURE feature (the
+      actual buy-flow's field set), not for router-page prose. Needs Brad/Lee-Ann to confirm
+      before any of that spec's copy is treated as public-facing.
+  - id: Q2
+    text: >
+      This is a pure route-and-link move — it does not touch the buy flow's field set,
+      pricing, or booking logic. The 700-line developer spec in
+      docs/leeann-source/ticketing-system-details_2026-09-09.md describes a substantially
+      richer visitor-booking form (contact details, exhibition tickets, Sunset Cocktails,
+      workshops with conflict detection, field trips, terms acceptance, QR confirmation) than
+      what app/(marketing)/tickets/page.tsx currently implements. Whether/when to build that
+      out is a separate, larger feature and explicitly out of scope for F1 — flagging so it
+      is not mistaken for done once this router/move ships.
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: New buy-flow root page exists at the moved location and preserves the force-dynamic directive (Admin SDK / live-inventory reasons, must not be dropped).
+      command: test -f "app/(marketing)/national-show/tickets/buy/page.tsx" && grep -q "force-dynamic" "app/(marketing)/national-show/tickets/buy/page.tsx"
+    - id: A2
+      description: New checkout-step page exists at the moved dynamic route.
+      command: test -f "app/(marketing)/national-show/tickets/buy/[slug]/page.tsx"
+    - id: A3
+      description: New confirmation page exists at the moved location and still uses ConfirmationPoller.
+      command: test -f "app/(marketing)/national-show/tickets/buy/confirmation/page.tsx" && grep -q "ConfirmationPoller" "app/(marketing)/national-show/tickets/buy/confirmation/page.tsx"
+    - id: A4
+      description: New cancelled page exists at the moved location.
+      command: test -f "app/(marketing)/national-show/tickets/buy/cancelled/page.tsx"
+    - id: A5
+      description: New loading.tsx exists at the moved location.
+      command: test -f "app/(marketing)/national-show/tickets/buy/loading.tsx"
+    - id: A6
+      description: Old top-level /tickets route directory is fully removed, not left as dead/duplicate code.
+      command: '! test -d "app/(marketing)/tickets"'
+    - id: A7
+      description: PayFast returnUrl now targets the moved confirmation path.
+      command: grep -q '/national-show/tickets/buy/confirmation?ref=' app/api/tickets/checkout/route.ts
+    - id: A8
+      description: PayFast cancelUrl now targets the moved cancelled path.
+      command: grep -q '/national-show/tickets/buy/cancelled?ref=' app/api/tickets/checkout/route.ts
+    - id: A9
+      description: No stale old-path callback strings remain in the checkout route.
+      command: '! grep -q "siteUrl}/tickets/confirmation" app/api/tickets/checkout/route.ts'
+    - id: A10
+      description: The (pre-existing, unmoved) audience router page's visitor option now points at the buy flow instead of the removed top-level path.
+      command: 'grep -q "href: ''/national-show/tickets/buy''" "app/(marketing)/national-show/tickets/page.tsx"'
+    - id: A11
+      description: Router page's non-visitor options (exhibitor/vendor/conferences/workshops) are untouched by this feature.
+      command: 'grep -q "href: ''/national-show/exhibitors''" "app/(marketing)/national-show/tickets/page.tsx" && grep -q "href: ''/national-show/vendors/apply''" "app/(marketing)/national-show/tickets/page.tsx" && grep -q "href: ''/national-show/conferences''" "app/(marketing)/national-show/tickets/page.tsx" && grep -q "href: ''/national-show/workshops''" "app/(marketing)/national-show/tickets/page.tsx"'
+    - id: A12
+      description: nav-config's ticket-rail day-visitor deep link repointed to the moved buy path.
+      command: grep -q "/national-show/tickets/buy/day-visitor" components/chrome/nav-config.ts
+    - id: A13
+      description: nav-config's ticket-rail weekend-pass deep link repointed to the moved buy path.
+      command: grep -q "/national-show/tickets/buy/weekend-pass" components/chrome/nav-config.ts
+    - id: A14
+      description: No stale old-path deep links remain in nav-config.
+      command: '! grep -qE "href: .\/tickets\/(day-visitor|weekend-pass)." components/chrome/nav-config.ts'
+    - id: A15
+      description: nav-config's router-page link (theShow.links "tickets" entry) is untouched — still /national-show/tickets, not repointed to /buy — since it should land the visitor on the chooser, not skip it.
+      command: 'grep -q "href: ''/national-show/tickets''," components/chrome/nav-config.ts'
+    - id: A16
+      description: ShowBand's "Book Tickets" homepage CTA repointed to the buy flow.
+      command: grep -q 'href="/national-show/tickets/buy"' components/home/ShowBand.tsx
+    - id: A17
+      description: ConfirmationPoller's "Back to tickets" link repointed to the buy flow.
+      command: grep -q 'href="/national-show/tickets/buy"' components/tickets/ConfirmationPoller.tsx
+    - id: A18
+      description: >
+        No remaining stale href/route-string references to the removed top-level /tickets tree
+        anywhere in app/ or components/. CORRECTED 2026-09-14 (was a bare substring grep on
+        "/tickets"): the original pattern also matched unrelated identifiers/module paths that
+        legitimately contain those six characters -- e.g. `@/lib/tickets-constants` and any
+        import from `@/components/tickets/*` -- producing a false FAIL against the current,
+        already-correct tree (confirmed: every surviving line under the old pattern was one of
+        these, not a real stale link). The rewritten pattern anchors on an actual href value
+        form (href="/tickets", href={`/tickets..., or href: '/tickets') instead of a bare
+        substring, and is hand-verified to return zero matches against the current tree.
+      command: |-
+        ! grep -rnE "href=\"/tickets\"|href='/tickets'|href=\{\`/tickets|href: '/tickets'|href: \"/tickets\"" app components 2>/dev/null | grep -q .
+    - id: A19
+      description: e2e fixture's placeholder anchor repointed to the moved buy path.
+      command: grep -q "/national-show/tickets/buy/early-bird-exhibition" e2e/fixtures/tickets-fixtures.ts
+    - id: A20
+      description: no-fabricated-content.spec.ts's scanned/mocked path repointed to the moved buy path.
+      command: grep -q "/national-show/tickets/buy" e2e/no-fabricated-content.spec.ts
+    - id: A21
+      description: sold-out-and-empty-states.spec.ts's mocked path repointed to the moved buy path.
+      command: grep -q "/national-show/tickets/buy" e2e/sold-out-and-empty-states.spec.ts
+    - id: A22
+      description: mega-menu-f8-logo-and-tickets-rail.spec.ts's day-visitor/weekend-pass href expectations repointed to match nav-config's new deep links (concurrent F8 work in this session touches the same file's other lines — this assertion is what proves the two features didn't clobber each other).
+      command: grep -q "/national-show/tickets/buy/day-visitor" e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts && grep -q "/national-show/tickets/buy/weekend-pass" e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts
+    - id: A23
+      description: mega-menu-f8-logo-and-tickets-rail.spec.ts's router-link assertion (the plain /national-show/tickets href) is untouched by this feature.
+      command: grep -q 'toHaveAttribute(.href., .\/national-show/tickets.)' e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts
+    - id: A24
+      description: No redirect was added for the old /tickets path — Sheet specifies a clean pre-alpha rename with no redirect needed.
+      command: '! grep -q "source: .\/tickets" next.config.ts'
+    - id: A25
+      description: Full test suite (typecheck + unit) still passes after the move — catches any remaining broken import path the grep-based checks above didn't enumerate.
+      command: pnpm exec tsc --noEmit
+
+    # ---------- Verification triad (.claude/rules/workflow.md mandatory triad) ----------
+    - id: A26
+      description: >
+        Codex GPT-5.5 cross-model adversarial review of the F1 route-move diff, scoped to the
+        moved page tree, the PayFast callback URL edits in app/api/tickets/checkout/route.ts,
+        and every repointed link (nav-config.ts, ShowBand.tsx, ConfirmationPoller.tsx, e2e
+        fixtures/specs). Target is a freshly captured `git diff HEAD -- <those paths>` snapshot
+        (nothing on this branch is committed yet, so HEAD is the correct base, not a symbolic
+        ref) — regenerate the target file immediately before this check runs so the review is
+        of the CURRENT tree, not a stale capture. This mission already had 9 rounds of ad hoc
+        Codex passes run directly by the orchestrator (final: PASS, .tmp/sandbox/codex-qa/
+        ticket-router-9.txt) — this assertion makes that review a first-class, re-runnable gate
+        check instead of only an orchestrator-side transcript.
+
+        RESOLVED FINDING (do not re-litigate on a future FAIL naming this): a live pass of this
+        exact assertion (2026-09-14) flagged that removing the legacy /tickets/confirmation and
+        /tickets/cancelled routes with no redirect could 404 a buyer whose PayFast transaction
+        was already in flight before deploy. This is already answered, not an open gap — the
+        Sheet's own note on this move states: "Move from /tickets. Ticketing belongs to the NOS
+        — no top-level URL. Clean rename: pre-alpha, no bookmarks, no redirect needed." There are
+        no live transactions pre-launch for a redirect to protect, matching A24's existing
+        assertion that no redirect was added. Codex has no visibility into the Sheet and will
+        likely re-raise this same finding on every future live pass — when it does, cross-check
+        it against this note and the Sheet before treating it as a new, unresolved defect.
+      type: codex_qa
+      target: .tmp/sandbox/codex-qa/ticket-router-f1-gate-diff.txt
+      timeout_seconds: 650
+      required: true
+
+    - id: A27
+      description: >
+        BrowserAgent-against-deployed-site leg of the triad. HONEST STATUS, not yet satisfiable:
+        this feature is local working-tree changes only (see git status) — nothing has been
+        merged to main or deployed to beta.saoc.co.za, and browser_deployed_check.sh's manifest
+        contract (docs/verification-triad-gate.md) requires a live re-fetch of the deployed
+        origin plus a commit_sha match against a real HEAD the feature actually shipped on. No
+        manifest can honestly be produced pre-deploy — writing one now would be exactly the
+        "self-report with no independent re-check" this script exists to prevent. This assertion
+        satisfies execution/verify_triad_coverage.py's coverage requirement (declares the kind so
+        the contract is not silently missing it) but will correctly ERROR at real `--run-checks`
+        time until a post-deploy pass writes a real manifest to the target path and this
+        description is updated to match. Do not fabricate a manifest to force a pass.
+      type: browser_deployed_check
+      target: .agent/memory/scratch/f1-ticket-router-browser-manifest.json
+      required: true
+
+    - id: A28
+      description: >
+        gws inbox-check leg of the triad. HONEST STATUS: F1 is a pure route move plus link
+        repointing — it sends no email and touches no notification path, so there is no real
+        inbox artefact this check could ever verify. This is the same shape as
+        site-content-alignment contract-f3.yaml's A16 (documented inapplicable_kinds), but
+        execution/verify_triad_coverage.py's declared_kinds() only recognises a literal
+        `type`/`verify.kind` field — a plain-shell `inapplicable_kinds` declaration (A16's own
+        pattern) does NOT register as gws_inbox_check coverage (confirmed by running the linter
+        against contract-f3.yaml directly: it FAILS, missing gws_inbox_check, despite carrying
+        A16). So this entry is declared with the real `type: gws_inbox_check` to satisfy the
+        linter, and will correctly ERROR at real `--run-checks` time (no manifest exists, none
+        is coming) rather than silently passing. This is a harness gap worth filing upstream:
+        there is no mechanism to declare a triad leg genuinely inapplicable in a way both the
+        coverage linter AND the real gate execution respect — inapplicable_kinds is
+        documentation-only, unread by either script.
+      type: gws_inbox_check
+      target: .agent/memory/scratch/f1-ticket-router-gws-manifest.json
+      required: true

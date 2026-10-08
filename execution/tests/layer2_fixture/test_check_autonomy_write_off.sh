@@ -3,6 +3,12 @@
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 source execution/tests/lib/assert.sh
+source execution/tests/lib/sandbox_repo.sh
+# In a sandbox repo: this sets autonomy to OFF. In the host checkout every
+# live session's writes were denied for the duration, and a killed run left
+# the project at OFF.
+SB=$(make_sandbox_repo autonomy_write_off execution .claude/policies .agent/autonomy_matrix.json)
+cd "$SB" || exit 1
 
 echo "=== test_check_autonomy_write_off.sh ==="
 

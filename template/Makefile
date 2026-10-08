@@ -11,7 +11,7 @@ VERSION := $(shell cat .agent/version 2>/dev/null || echo "UNKNOWN")
 # `make directives`. Without this target the published channel cannot be
 # confirmed as specified.
 
-.PHONY: help sync-clones check test commit mission-new mission-status update-template sync bump-version pulse-status backlog-trim onboard directives audit boot-report
+.PHONY: help sync-clones sync-agents sync-skills sync-rules check test commit mission-new mission-status update-template sync bump-version pulse-status backlog-trim onboard directives audit boot-report
 
 help:
 	@echo "🏭 Athanor v$(VERSION)"
@@ -108,6 +108,18 @@ sync:
 	@bash execution/sync_skills.sh
 	@bash execution/sync_rules.sh
 
+# One part of `sync` at a time. AGENTS.md, the docs and boot banners name these;
+# they did not exist, so following the advice hit "No rule to make target"
+# (Paradox, 2026-10-06).
+sync-agents:
+	@bash execution/sync_agents.sh
+
+sync-skills:
+	@bash execution/sync_skills.sh
+
+sync-rules:
+	@bash execution/sync_rules.sh
+
 commit:
 	@python3 execution/commit_helper.py $(TYPE) "$(MSG)"
 
@@ -165,7 +177,6 @@ directives:
 audit:
 	@echo "Running audit..."
 	@python3 -c "import json; json.load(open('.claude/settings.json')); print('✅ .claude/settings.json')"
-	@python3 -c "import json; json.load(open('.gemini/settings.json')); print('✅ .gemini/settings.json')"
 	@python3 execution/paired_copies.py --check
 	@python3 execution/brain.py stats
 	@bash execution/verify_agents.sh

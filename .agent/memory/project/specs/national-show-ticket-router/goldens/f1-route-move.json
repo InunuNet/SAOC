@@ -1,0 +1,56 @@
+{
+  "_purpose": "Exact file-move shape for F1 — the visitor ticket-purchase flow relocates from the top-level /tickets/* tree to /national-show/tickets/buy/*, and the existing /national-show/tickets page becomes (stays) the audience router. Source: 'SAOC Dev Status' Sheet, tab Pages, rows 'Buy tickets' / 'Checkout step' / 'Confirmation' / 'Cancelled' — all marked MOVE, build lane 'SAOC lead'. Verified against repo state 2026-09-14.",
+  "removed": [
+    "app/(marketing)/tickets/page.tsx",
+    "app/(marketing)/tickets/[slug]/page.tsx",
+    "app/(marketing)/tickets/confirmation/page.tsx",
+    "app/(marketing)/tickets/cancelled/page.tsx",
+    "app/(marketing)/tickets/loading.tsx"
+  ],
+  "removed_directory": "app/(marketing)/tickets",
+  "created_or_moved_to": [
+    {
+      "path": "app/(marketing)/national-show/tickets/buy/page.tsx",
+      "from": "app/(marketing)/tickets/page.tsx",
+      "must_preserve": [
+        "export const dynamic = 'force-dynamic'",
+        "AdmissionTicketsList",
+        "sanityFetch",
+        "getSoldCountsByTicketType"
+      ],
+      "note": "Move only — this is a pure relocation, not a rewrite. The force-dynamic directive and its explanatory comment (Admin SDK / live inventory / contract-build-without-secrets.yaml) are load-bearing and must not be dropped or altered."
+    },
+    {
+      "path": "app/(marketing)/national-show/tickets/buy/[slug]/page.tsx",
+      "from": "app/(marketing)/tickets/[slug]/page.tsx"
+    },
+    {
+      "path": "app/(marketing)/national-show/tickets/buy/confirmation/page.tsx",
+      "from": "app/(marketing)/tickets/confirmation/page.tsx",
+      "must_preserve": ["ConfirmationPoller"]
+    },
+    {
+      "path": "app/(marketing)/national-show/tickets/buy/cancelled/page.tsx",
+      "from": "app/(marketing)/tickets/cancelled/page.tsx"
+    },
+    {
+      "path": "app/(marketing)/national-show/tickets/buy/loading.tsx",
+      "from": "app/(marketing)/tickets/loading.tsx"
+    }
+  ],
+  "unchanged_router_page": {
+    "path": "app/(marketing)/national-show/tickets/page.tsx",
+    "note": "This file already exists and already IS the audience router (visitor/exhibitor/vendor/conferences/workshops chooser) — it was built under ticketing-nav-restructure (2026-08-21) and does not move. F1 only changes the 'visitor' option's href from '/tickets' to '/national-show/tickets/buy'. Every other option's href (exhibitor -> /national-show/exhibitors, vendor -> /national-show/vendors/apply, conferences -> /national-show/conferences, workshops -> /national-show/workshops) is out of scope and must not change.",
+    "required_href_change": {
+      "option_id": "visitor",
+      "old_href": "/tickets",
+      "new_href": "/national-show/tickets/buy"
+    },
+    "no_new_copy_permitted": "Do not add, rewrite, or 'source' any prose on this page from docs/leeann-source/ticketing-system-details_2026-09-09.md (Drive folder 13.1). That document's own header explicitly states it is a developer field/flow specification, 'not page copy — do not treat as authorised public-facing copy without confirmation.' It has no corresponding page-copy JSON (no 13-booking-tickets.json exists in this repo — the mission brief's premise that one exists and sits unused was not found on inspection; docs/leeann-source/ is the only synced Lee-Ann source, and this is the only folder-13 file in it). Router-page copy stays exactly as it is today except for the one href change above. See contract-f1.yaml open-questions for how to surface this back to Brad/Lee-Ann rather than inventing router copy from the dev spec."
+  },
+  "superseded_prior_assumption": {
+    "source": ".agent/memory/project/specs/ticketing-nav-restructure/contract-f1.yaml assertions A4/A6",
+    "old_assumption": "/tickets stays untouched, no route rename, forever",
+    "why_superseded": "That was correct for the 2026-08-21 mission's scope (nav restructure only). The 2026-09-14 Sheet now explicitly specifies the MOVE this contract implements. This is a later, more authoritative instruction on the same file, not a contradiction to resolve — F1's assertions supersede those two specifically for the route-location question only."
+  }
+}

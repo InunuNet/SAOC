@@ -367,7 +367,12 @@ def quota_window(block, label: str) -> str:
             return f"{DIM}{label}: --{R}"
     # The ↑ is not decoration: it states that the number counts UP as quota
     # is consumed. Without it, "5H 10%" is equally readable as "10% left".
-    out = f"{DIM}{label}: {R}{pressure(used)}{int(used)}%↑{R}"
+    # Even with it, agents kept reading a fresh window's "2%" as nearly
+    # exhausted and stopped work after every reset (operator, 2026-10-07), so
+    # both numbers are printed: "2% used · 98% left" cannot be read backwards.
+    left_pct = max(0, min(100, 100 - int(used)))
+    out = (f"{DIM}{label}: {R}{pressure(used)}{int(used)}% used↑{R}"
+           f" {DIM}·{R} {left_pct}% left")
     if isinstance(resets, str):
         try:
             when = datetime.fromisoformat(resets.replace("Z", "+00:00")).astimezone()
@@ -475,7 +480,8 @@ def quota(root: Path) -> str:
         return ""
     if age > QUOTA_STALE_AFTER_SECONDS:
         return ""
-    return f"{DIM}WK:{R}{pressure(used)}{int(used)}%{R}"
+    return (f"{DIM}WK:{R}{pressure(used)}{int(used)}% used↑{R}"
+            f" {DIM}·{R} {max(0, 100 - int(used))}% left")
 
 
 # ── Source 3: the project tree ────────────────────────────────────────────────

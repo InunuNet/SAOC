@@ -62,7 +62,6 @@ fi
 overlay_dir_for() {
     case "$1" in
         claude-code) echo ".agent/rules/claude" ;;
-        gemini-cli)  echo ".agent/rules/gemini" ;;
         grok-cli)    echo ".agent/rules/grok"   ;;
         *)           echo ".agent/rules/$1"     ;;
     esac

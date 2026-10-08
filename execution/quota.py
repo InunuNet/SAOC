@@ -100,7 +100,8 @@ def read_status(mirror_path):
         )
         if captured_at.tzinfo is None:
             captured_at = captured_at.replace(tzinfo=datetime.timezone.utc)
-        used_pct = int(data["used_pct"])
+        # Clamp: overage can report >100, and left must never go negative.
+        used_pct = max(0, min(100, int(data["used_pct"])))
         resets_at_raw = data["resets_at"]
         seconds_to_reset_raw = data["seconds_to_reset"]
 
@@ -135,17 +136,22 @@ def read_status(mirror_path):
     }
 
 
+def _left(used_pct):
+    """Quota counts UP from 0%; print what remains so nobody inverts it."""
+    return 100 - int(used_pct)
+
+
 def format_text(status):
     band = status.get("band", "unknown")
     if status["state"] == "ok":
         resets_hrs = status["seconds_to_reset"] / 3600.0
         return (
-            f"quota: state=ok used={status['used_pct']}% "
+            f"quota: state=ok used={status['used_pct']}% left={_left(status['used_pct'])}% "
             f"resets_in={resets_hrs:.1f}h band={band}"
         )
     if status["state"] == "partial":
         return (
-            f"quota: state=partial used={status['used_pct']}% "
+            f"quota: state=partial used={status['used_pct']}% left={_left(status['used_pct'])}% "
             f"resets_in=unknown band={band}"
         )
     return f"quota: state=unknown reason={status['reason']} band={band}"

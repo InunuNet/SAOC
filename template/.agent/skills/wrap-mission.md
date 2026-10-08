@@ -1,3 +1,7 @@
+---
+description: Finish a mission in one step: brain wrap-up, git commit, push, clear active.json. Use after every chain step is done and the gate has passed.
+---
+
 # wrap-mission
 
 Complete a mission cleanly in one step: brain wrap-up + git commit + git push + clear active.json.

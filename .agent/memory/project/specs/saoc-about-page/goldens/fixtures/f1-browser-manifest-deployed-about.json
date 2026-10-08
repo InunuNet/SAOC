@@ -1,0 +1,6 @@
+{
+  "_comment": "PLACEHOLDER — NOT YET PRODUCED (2026-10-08). Same convention as saoc-emblem-lockup-f1's A12 and conference-workshop-tickets-f6's A24/A28: this feature is a local-only draft with nothing deployed yet, so there is no real deployed-check manifest to point at. Re-capture via contracts/checks/saoc-about-page-f1/capture-deployed-screenshot.mjs (to be written alongside the real deploy) once Brad has approved the local render and team-lead has committed + deployed this feature, then replace this file with the real manifest shape documented in docs/verification-triad-gate.md.",
+  "status": "not_yet_produced",
+  "target_url": "https://beta.saoc.co.za/about",
+  "feature": "saoc-about-page/F1"
+}

@@ -9,11 +9,10 @@ cd "$ROOT"
 
 python3 execution/provider_manifest.py validate >/dev/null
 
-for provider in claude-code codex gemini-cli opencode antigravity; do
+for provider in claude-code codex opencode antigravity; do
   case "$provider" in
     claude-code) supported=architect; unsupported=__none__ ;;
     codex) supported=dev; unsupported=designer ;;
-    gemini-cli) supported=qa; unsupported=dev ;;
     opencode) supported=dev; unsupported=qa ;;
     antigravity) supported=architect; unsupported=__none__ ;;
   esac

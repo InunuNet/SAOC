@@ -724,7 +724,14 @@ def _collect_providers(root, classes, manifest, checks):
             if not dest:
                 continue
             canonical = classes[cls]["present"]
-            present = _md_names(root / dest)
+            if cls == "skills":
+                # Delivered as <name>/SKILL.md (sync_skills.sh, v3.8.17): the
+                # only layout a provider registers. A flat <name>.md is not a skill.
+                sdir = root / dest
+                present = sorted(f"{p.parent.name}.md" for p in sdir.glob("*/SKILL.md")) \
+                    if sdir.is_dir() else []
+            else:
+                present = _md_names(root / dest)
             missing = [n for n in canonical if n not in present]
             entry["classes"][cls] = {
                 "present": len(present), "expected": len(canonical), "dir": dest,
@@ -933,6 +940,16 @@ def _collect_essential(root, version, checks):
         "name": "Alembic", "kind": "service", "status": "ok" if rc == 0 else "fail",
         "detail": f"{ALEMBIC_URL} responds" if rc == 0 else f"{ALEMBIC_URL} unreachable",
         "blocking": True, "fix": "start Alembic (it must answer on localhost:7077)"})
+
+    # gws is default stack (rule gws.md), but a project that never touches
+    # Google Workspace must still boot: report it, never block on it. Missing
+    # is "unknown", so it adds no failing check.
+    rc, out = _run(["gws", "--version"], cwd=root, timeout=NETWORK_TIMEOUT_SECONDS)
+    version = (out or "").splitlines()[0].strip() if rc == 0 and out else ""
+    essential.append({
+        "name": "gws", "kind": "tool", "status": "ok" if version else "unknown",
+        "detail": version or "gws not on PATH (Google Workspace CLI)",
+        "blocking": False, "fix": "install gws (github.com/googleworkspace/cli), then gws auth login"})
 
     rc, _out = _run(["gh", "auth", "status"], cwd=root, timeout=NETWORK_TIMEOUT_SECONDS)
     essential.append({

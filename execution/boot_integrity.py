@@ -122,6 +122,11 @@ def report_drift(root):
         rows = paired_copies.load_registry(os.path.join(root, REGISTRY_REL))
     except OSError:
         return
+    # A mirror row pairs directories; classify() only reads files, so expand
+    # it first exactly as the CLI does, or every boot cries SOURCE-MISSING.
+    expand = getattr(paired_copies, "expand_rows", None)
+    if expand is not None:
+        rows, _notes = expand(root, rows)
     for row in rows:
         line, ok = paired_copies.classify(root, row)
         if ok:

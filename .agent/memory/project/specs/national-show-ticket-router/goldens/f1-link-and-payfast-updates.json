@@ -1,0 +1,95 @@
+{
+  "_purpose": "Every source location that hardcodes a link into the old /tickets/* tree, and its exact required replacement. Found by grepping app/, components/, e2e/, next.config.ts on 2026-09-14 for '/tickets' outside /api/tickets and /national-show/tickets. Each entry must be updated; nothing else should change on the named line.",
+  "payfast_callback_urls": {
+    "file": "app/api/tickets/checkout/route.ts",
+    "current_lines": {
+      "807": "returnUrl: `${siteUrl}/tickets/confirmation?ref=${reference}`,",
+      "808": "cancelUrl: `${siteUrl}/tickets/cancelled?ref=${reference}`,"
+    },
+    "required_lines": {
+      "returnUrl": "returnUrl: `${siteUrl}/national-show/tickets/buy/confirmation?ref=${reference}`,",
+      "cancelUrl": "cancelUrl: `${siteUrl}/national-show/tickets/buy/cancelled?ref=${reference}`,"
+    },
+    "note": "Line numbers are a locator as of 2026-09-14, not a hard requirement — the surrounding function may reflow. What must be true after the change is that the two template-literal strings resolve to the new /buy/ paths. Sandbox-only PayFast per prior architect note; no live-payment risk from this rename, but the ITN/webhook route itself (app/api/tickets/itn) is NOT moving and NOT touched by this feature — only these two outbound URLs the buyer's browser is redirected to."
+  },
+  "link_updates": [
+    {
+      "file": "components/home/ShowBand.tsx",
+      "locator": "Link with text \"Book Tickets\" in the show countdown CTA row (around line 149)",
+      "old_href": "/tickets",
+      "new_href": "/national-show/tickets/buy",
+      "rationale": "This is a direct 'go buy a ticket now' CTA, not a 'help me figure out which ticket' prompt — it should skip the router and land on the buy flow directly, same as the Sheet's audience-router design (router is for genuine ambiguity; a homepage countdown CTA already knows the visitor wants to buy)."
+    },
+    {
+      "file": "components/tickets/ConfirmationPoller.tsx",
+      "locator": "\"Back to tickets\" link at the bottom of the pending/timed-out/not-found states (around line 128)",
+      "old_href": "/tickets",
+      "new_href": "/national-show/tickets/buy",
+      "rationale": "This link is reached only from within the buy flow itself (confirmation page pre-paid states) — it returns the buyer to the ticket list, not to the top-level router."
+    },
+    {
+      "file": "components/chrome/nav-config.ts",
+      "locator": "featureRail.destinations, id 'day-visitor' (around line 273)",
+      "old_href": "/tickets/day-visitor",
+      "new_href": "/national-show/tickets/buy/day-visitor"
+    },
+    {
+      "file": "components/chrome/nav-config.ts",
+      "locator": "featureRail.destinations, id 'weekend-pass' (around line 279)",
+      "old_href": "/tickets/weekend-pass",
+      "new_href": "/national-show/tickets/buy/weekend-pass"
+    },
+    {
+      "file": "components/chrome/nav-config.ts",
+      "locator": "theShow.links, id 'tickets' (around line 146), and featureRail.destinations id 'tickets' (around line 269)",
+      "old_href": "/national-show/tickets",
+      "new_href": "/national-show/tickets",
+      "rationale": "UNCHANGED — these already point at the router page, not the buy flow. Listed here only to make explicit that F8's mega-menu work (menu-system-layout4, same nav-config.ts file, active in this session) and this feature touch different lines of the same file — do not let a merge revert either change."
+    },
+    {
+      "file": "e2e/fixtures/tickets-fixtures.ts",
+      "locator": "placeholder anchor with data-placeholder=\"true\" (around line 49)",
+      "old_href": "/tickets/early-bird-exhibition",
+      "new_href": "/national-show/tickets/buy/early-bird-exhibition"
+    },
+    {
+      "file": "e2e/no-fabricated-content.spec.ts",
+      "locator": "PAGES_TO_SCAN array and the page.route()/page.goto() calls for the ticket-fixture mock (lines ~24, 44, 52)",
+      "old_href": "/tickets",
+      "new_href": "/national-show/tickets/buy",
+      "rationale": "This spec mocks the whole document response for the ticket-listing page (see its own comment on why: force-dynamic + server-side Sanity/Firestore fetch). The mocked route and the scanned path must track wherever that page now actually lives."
+    },
+    {
+      "file": "e2e/sold-out-and-empty-states.spec.ts",
+      "locator": "page.route()/page.goto() calls for the ticket-fixture mock (lines ~22, 26, 32, 40)",
+      "old_href": "/tickets",
+      "new_href": "/national-show/tickets/buy",
+      "rationale": "Same mocking rationale as no-fabricated-content.spec.ts above — same page, same move."
+    },
+    {
+      "file": "e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts",
+      "locator": "dayVisitorLink / weekendPassLink href assertions and the ancestor xpath lookup (lines ~64, 158, 159)",
+      "old_href": ["/tickets/day-visitor", "/tickets/weekend-pass"],
+      "new_href": ["/national-show/tickets/buy/day-visitor", "/national-show/tickets/buy/weekend-pass"],
+      "rationale": "This spec is F8's (menu-system-layout4, active concurrently in this session) — it asserts the exact hrefs nav-config.ts renders for the tickets rail. F1 changes those hrefs at the source, so this spec's expectations must move with them or F8's own suite goes red for a reason unrelated to F8. The router link assertion at line 157 (href /national-show/tickets) is unaffected and must stay as-is."
+    }
+  ],
+  "not_in_scope_no_change": [
+    {
+      "file": "app/api/tickets/status/route.ts",
+      "why": "API route path, not a page route. Not listed in the Sheet's MOVE rows. ConfirmationPoller's fetch('/api/tickets/status?ref=...') is unchanged."
+    },
+    {
+      "file": "app/api/tickets/checkout/route.ts (route path itself, /api/tickets/checkout)",
+      "why": "Only the two outbound returnUrl/cancelUrl string VALUES change (see payfast_callback_urls above) — the API route's own URL is not moving."
+    },
+    {
+      "file": "app/api/tickets/itn",
+      "why": "PayFast's server-to-server notify_url target. Not a Sheet MOVE row, not touched by this feature."
+    },
+    {
+      "file": "next.config.ts redirects()",
+      "why": "Sheet's own note for this move: 'Clean rename: pre-alpha, no bookmarks, no redirect needed.' Do not add a /tickets -> /national-show/tickets/buy redirect entry."
+    }
+  ]
+}

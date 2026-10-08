@@ -1,3 +1,7 @@
+---
+description: Onboard this project into Athanor by running the onboarding program (execution/onboard_flow.py). Use when profile.json shows onboarding_complete false, or the user runs /onboard.
+---
+
 # /onboard Skill
 
 Onboarding is a **program**, not a form you fill in from memory. Run it, and

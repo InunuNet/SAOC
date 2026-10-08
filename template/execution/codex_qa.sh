@@ -11,7 +11,7 @@
 # usage error. See:
 #   .agent/memory/project/specs/cross-model-qa-codex/goldens/codex_qa_cli_contract.md
 #
-# Timeout: 600s by default, override with CODEX_QA_TIMEOUT=<seconds>. The
+# Timeout: 1200s by default (high effort), override with CODEX_QA_TIMEOUT=<seconds>. The
 # default covers open-ended full-review prompts (codex reading multiple
 # files, designing adversarial inputs); bounded single-question prompts
 # return in 7-14s regardless and are unaffected by a higher ceiling.
@@ -72,16 +72,20 @@ tmpfile="$(mktemp 2>/dev/null)" || usage_error "could not create tmpfile via mkt
 trap 'rm -f "$tmpfile"' EXIT
 
 # --- Step 4: run codex exec, bounded by timeout, output captured via -o -----
-timeout "${CODEX_QA_TIMEOUT:-600}" codex exec \
+# stdin is closed explicitly: `codex exec` otherwise blocks reading inherited
+# stdin from a non-TTY shell until the timeout kills it (GH #1455).
+# Effort is high: the gate's documented setting, and measured to catch defects
+# medium passes (GH #1438). CODEX_QA_EFFORT overrides for a quick sanity check.
+timeout "${CODEX_QA_TIMEOUT:-1200}" codex exec \
     -m gpt-5.6-terra \
-    -c model_reasoning_effort=medium \
+    -c model_reasoning_effort="${CODEX_QA_EFFORT:-high}" \
     -s read-only \
     -o "$tmpfile" \
-    "$prompt"
+    "$prompt" < /dev/null
 codex_rc=$?
 
 if [ "$codex_rc" -eq 124 ]; then
-    fail_safe "codex exec timed out after ${CODEX_QA_TIMEOUT:-600}s"
+    fail_safe "codex exec timed out after ${CODEX_QA_TIMEOUT:-1200}s"
 fi
 
 if [ "$codex_rc" -ne 0 ]; then

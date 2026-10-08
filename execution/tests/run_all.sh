@@ -5,6 +5,7 @@ set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 LAYER="${1:-all}"
+LIVE_STATE=".tmp/sandbox/tests/live_state.json"
 TOTAL_PASS=0; TOTAL_FAIL=0
 FAILED_TESTS=()
 
@@ -19,7 +20,13 @@ run_layer() {
     [ -f "$script" ] || continue
     echo ""
     echo ">> $(basename "$script")"
-    if bash "$script"; then
+    python3 execution/tests/lib/live_state.py snapshot "$LIVE_STATE"
+    bash "$script"
+    local rc=$?
+    # A test that passes but wrote the project's live mission or backlog still
+    # fails: the guard names the file and puts it back.
+    python3 execution/tests/lib/live_state.py check "$LIVE_STATE" || rc=1
+    if [ "$rc" -eq 0 ]; then
       ((layer_pass++))
     else
       ((layer_fail++))

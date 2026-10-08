@@ -1,82 +1,88 @@
-# Workflow Chain — Mandatory Every Session
+# The Workflow Chain
 
-## Decision Tree (run before ANY substantive work)
-
-```
-1. Active mission?   → python3 execution/mission.py resume → follow checkpoint
-2. Multi-session?    → /mission new FIRST
-3. 3+ files / design?→ /spec FIRST (autonomy=off until spec approved)
-4. <3 files, clear?  → write contract.yaml FIRST
-5. Trivial?          → handle directly (no chain)
-```
-
-## The Chain (skip nothing)
+## Classify first, before any substantive work
 
 ```
-[mission|spec] → @architect (contract + golden files)
-→ @dev (implement against golden files only)
-→ @qa (adversarial; inputs from orchestrator/@architect, NOT @dev)
-→ Codex GPT-5.5 cross-model review (mandatory, see below)
-→ @docs (README + docs/<feature>.md)
-→ contract.py gate (all assertions green)
-→ @maintainer (learned.md + brain wrap-up)
-→ commit
+1. Active mission?            → python3 execution/mission.py resume, follow the checkpoint
+2. Multi-session goal?        → /mission new FIRST
+3. Touches credentials, production config, or a shared/floor-protected/
+   enforcement file — OR a genuine design decision required?  → /spec FIRST
+   (autonomy stays off until the spec is approved). Raw file count is the
+   wrong signal — it can't tell six one-line config edits inside your own
+   project folder apart from three files that touch billing.
+4. Well-specified, single domain, stays inside the project folder?  → write
+   contract.yaml FIRST, whatever the file count
+5. Trivial: read, status      → handle it directly, no chain
 ```
 
-## Codex GPT-5.5 cross-model review — mandatory, not optional (added 2026-08-18)
-
-**Why:** on 2026-08-18, Claude wrote the vendor registration form, Claude's own @qa reviewed it,
-and a real submit-breaking bug still reached Brad in live testing. The same day, a Codex GPT-5.5
-pass against a diff Claude had already written AND already QA'd found four more real, correctly
-file:line-cited defects Claude's chain missed — including a React state-batching bug and two
-weak-check patterns matching this project's own audited "assertion satisfiable by something
-that isn't the real property" defect class. Same model writing and reviewing its own code does
-not reliably catch that class of bug; an independent model with no shared blind spots does.
-**Brad's standing instruction: every QA pass, no exceptions, runs this after Claude's @qa and
-before @docs.**
-
-Preferred (2026-08-18, pulled from Athanor's `execution/codex_qa.sh`): a structured wrapper
-with a bounded timeout and a parseable exit code, so it can be a real gate, not just advisory.
+## The chain, once classified
 
 ```
-execution/codex_qa.sh <file_path>          # review one file
-git diff | execution/codex_qa.sh           # review the current diff via stdin
+[mission | spec]
+  → @architect    contract + golden files
+  → @dev          implements against the goldens, never against tests it wrote
+  → @qa           adversarial; inputs from the orchestrator or @architect, not @dev.
+                  Cross-model by default: run `execution/codex_qa.sh` (Codex,
+                  gpt-5.6-terra pinned) against @dev's diff/output, NOT the
+                  Agent-tool @qa persona — a same-vendor Claude model checking
+                  another Claude model's work is not adversarial review, it is
+                  the same reasoning agreeing with itself. Fall back to the
+                  Agent-tool @qa persona only when `codex` is unavailable on
+                  PATH (codex_qa.sh exits 2), and say so in the verdict.
+  → @docs         README + docs/<feature>.md
+  → gate          python3 execution/contract.py gate — every assertion green
+  → @maintainer   learned.md + brain wrap-up
+  → commit
 ```
 
-Exit 0 = PASS, exit 1 = FAIL (findings printed after line 1), exit 2 = wrapper usage error
-(missing `codex` binary, empty prompt) — never silently swallowed. 180s timeout, `-m gpt-5.5
--c model_reasoning_effort=high -s read-only` under the hood, same as before.
+## Hard rules
 
-Fallback (if `execution/codex_qa.sh` is ever missing):
+- No contract, no `@dev` dispatch. No golden files, no `@dev` dispatch.
+  **Exception:** the draft lane below. One contract covers the whole draft at
+  approval, never one per tweak.
+- `@dev` never writes the contract and never writes the QA inputs.
+- Never skip to implementation because the change looks small.
+- Do not pause between chain steps for confirmation. Stop at a mission boundary
+  or on a BLOCKED verdict, nowhere else.
+- **DONE means the gate is green and the docs are updated.** Nothing less counts.
 
-```
-codex exec -m gpt-5.5 -c model_reasoning_effort=high -s read-only "Adversarially review the current git diff (or, if no diff, the most recently changed files) for real bugs, security issues, and correctness risks — not style. For each finding: cite exact file:line, state the concrete failure scenario (what input/state breaks it), and rate confidence. Do not flag anything you can't point to a specific line for. If nothing real is wrong, say so plainly instead of inventing findings."
-```
+The `chain-dispatch` skill delivered to `<project>/.claude/skills/`,
+`<project>/.gemini/skills/` and `<project>/.grok/skills/` is a shortcut for
+running this chain — not a substitute for it.
 
-- `-s read-only` — Codex cannot touch files, only read. Safe to run anytime, on anything.
-- `-c model_reasoning_effort=high` — worth the extra ~1 min per pass for a real feature review;
-  drop to `medium` for a quick sanity check on something low-stakes.
-- Treat findings the same as any human reviewer's comments — verify before acting, never
-  auto-apply. If a finding is wrong, say so and move on; don't silently discard it either.
-- The orchestrator runs this directly via Bash (it's a review command, not application code) —
-  it is not a chain-dispatched subagent.
-- Athanor's harness-level version of this (InunuNet/Athanor#1357) has shipped as
-  `execution/codex_qa.sh` + a `type: codex_qa` contract assertion kind — this project has pulled
-  the script but not yet wired the contract-assertion side in.
+## Draft lane: live local iteration (operator-adopted 2026-10-08)
 
-## Hard Rules
+The chain costs 15-20 minutes. That is the right price for a commit and the
+wrong price for "change the logo to this version" while the operator watches a
+hot-reloading localhost. The draft lane drops the per-change chain, whatever
+the file count, and keeps one gate at approval.
 
-- **No contract.yaml → no @dev dispatch.**
-- **No golden files → no @dev dispatch.**
-- **@dev never writes QA inputs or the contract.**
-- **No feature is DONE without a Codex GPT-5.5 pass, in addition to @qa.** Claude reviewing
-  Claude's own code is not sufficient QA on its own — see rationale above.
-- **DONE = gate green + Codex pass run + docs updated + brain wrapped. Nothing less.**
-- **Trivial = read, status, single command. Everything else uses the chain.**
-- **Chain Continuous** — Never pause between chain steps waiting for user confirmation. Once a mission is active, proceed @architect→@dev→@qa→Codex→@docs→gate→@maintainer without stopping. Only pause at mission boundaries or on BLOCKED verdict.
-- **Already-agreed follow-through doesn't need re-asking.** If a decision was made and approved earlier in a conversation (e.g. "build X, then deploy it"), completing it later is execution, not a new decision — don't pause to re-confirm something already settled.
-- **Orchestrator never implements, reviews, or deploys directly — dispatch @architect/@dev/@qa
-  always, even for urgent P0s.** Read-only investigation (grep, curl, log queries, browser
-  tests) is fine; the first Edit/Write to project source is where dispatch must happen instead.
-  Established 2026-08-18 after repeated direct implementation without the chain nearly cost the
-  session. See project memory feedback_orchestrator_only_hard_rule.
+**Switch: `.agent/DRAFT_LANE`.** It is on only while that file exists. Create
+it when the operator says "draft", "quick change" or similar: one line naming
+the draft, then their request verbatim. Boot announces it, so it survives
+compaction. Only the operator's words switch it on. Never infer it.
+
+**While it is on:**
+- No research file, no @architect, no contract or goldens, no @qa per change.
+- One persistent @dev per draft, kept alive. Forward each tweak with
+  SendMessage, quoting the operator verbatim. A one-line edit you may make
+  directly. No invention: change what was asked, nothing else.
+- The dev server stays up. Do not run a production build while it runs.
+- Take a screenshot after each change and show it.
+- **Nothing is committed, pushed or deployed.** It is all local, uncommitted work.
+
+**At approval** ("approved", "ship it", "commit it"), run the light check:
+1. The project's build passes.
+2. A screenshot of the approved state.
+3. One Codex review of the whole draft diff (`execution/codex_qa.sh`).
+
+Then delete `.agent/DRAFT_LANE` and commit. Push and deploy follow the
+project's own rules (SAOC: "keep it local till approved by me then we push to
+beta"). A FAIL from the light check goes back to the operator, not round the
+chain.
+
+**Never in the draft lane:** credentials, production config, and
+floor-protected or enforcement files. Those keep classification step 3
+(`/spec` first), whatever the operator calls the change. A real feature with
+a design decision gets the full chain; the draft lane is for changes the
+operator can judge by eye.

@@ -1,3 +1,7 @@
+---
+description: Valid Claude Code hook types, patterns and common mistakes. Use when writing or debugging hooks in .claude/settings.json.
+---
+
 # Claude Code Hooks Reference
 
 This skill documents valid hook types, patterns, and common mistakes for Claude Code hooks.

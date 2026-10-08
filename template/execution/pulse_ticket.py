@@ -15,7 +15,7 @@ from typing import Any
 
 
 SCHEMA = "athanor.pulse.ticket/v1"
-VALID_PROVIDERS = ("claude-code", "codex", "gemini-cli", "antigravity", "opencode")
+VALID_PROVIDERS = ("claude-code", "codex", "antigravity", "opencode")
 VALID_COMPLEXITY = ("trivial", "standard", "complex")
 CANONICAL_ROLES = ("lead", "analyst", "architect", "dev", "qa", "docs", "maintainer", "designer")
 

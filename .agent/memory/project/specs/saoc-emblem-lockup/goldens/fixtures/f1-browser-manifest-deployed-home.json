@@ -1,0 +1,10 @@
+{
+  "origin": "NOT YET PRODUCED",
+  "path_tested": "/",
+  "screenshot_path": "fixtures/f1-deployed-home-screenshot.png",
+  "commit_sha": "NOT YET PRODUCED",
+  "timestamp": "NOT YET PRODUCED",
+  "http_status": null,
+  "outcome": "not_yet_produced",
+  "notes": "Phase 2 (post-approval) manifest for A12's browser_deployed_check. Deliberately NOT produced yet, same convention as conference-workshop-tickets-f6's A28/A24: this feature is a local-only DRAFT (Brad, 2026-10-08: 'its a draft lets see how it looks before we commit') and nothing is committed or deployed until he approves what he sees on localhost:3002. Once Brad approves and team-lead commits + deploys, re-run contracts/checks/saoc-emblem-lockup-f1/capture-deployed-screenshot.mjs against the real deployed origin (beta.saoc.co.za today, carrying Basic Auth via CURL_HOME/.curlrc per the conference-workshop-tickets-f6 pattern) and replace this fixture with a real manifest before gating phase 2."
+}

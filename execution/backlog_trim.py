@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Archive closed [x] backlog items to brain, remove them, and cap open items at MAX_OPEN (default 50, env override via BACKLOG_TRIM_MAX_OPEN).
+"""Archive closed [x] backlog items to brain and remove them. Open items are never removed: above MAX_OPEN (default 50, env override via BACKLOG_TRIM_MAX_OPEN) it only warns.
 
 Backlog items may span multiple lines: a `- [ ]`/`- [x]` header followed by
 indented continuation lines. Every operation here works on whole ITEMS (a
@@ -133,9 +133,18 @@ def extract_sidecar(block: list[str]) -> list[str]:
     full item body to a sidecar. Returns the replacement block (one line)."""
     body = re.sub(r"^- \[ \] ", "", block_text(block))
     slug = re.sub(r"[^a-z0-9]+", "-", body.lower()).strip("-")[:40].rstrip("-")
-    sidecar_path = DATA_DIR / f"{slug}.md"
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    sidecar_path.write_text(f"# {slug}\n\n{body}\n", encoding="utf-8")
+    text = f"# {slug}\n\n{body}\n"
+    # Two long items can share a 40-char slug: never overwrite another item's
+    # sidecar, or that item's full text is lost.
+    base, n = slug, 2
+    while (DATA_DIR / f"{slug}.md").exists() and \
+            (DATA_DIR / f"{slug}.md").read_text(encoding="utf-8") != text:
+        slug = f"{base}-{n}"
+        n += 1
+        text = f"# {slug}\n\n{body}\n"
+    sidecar_path = DATA_DIR / f"{slug}.md"
+    sidecar_path.write_text(text, encoding="utf-8")
     # Pointer title: up to first '. ' sentence boundary, then truncate to 80 chars
     title = body.split(". ")[0]
     if len(title) > 80:
@@ -148,8 +157,9 @@ def main() -> None:
         print(f"ERROR: {BACKLOG_PATH} not found", file=sys.stderr)
         sys.exit(1)
 
-    content = BACKLOG_PATH.read_text(encoding="utf-8")
-    had_header = bool(re.search(r"^_Last compacted:", content, re.MULTILINE))
+    # newline="": keep the file's own line endings (CRLF stays CRLF).
+    with open(BACKLOG_PATH, encoding="utf-8", newline="") as fh:
+        content = fh.read()
     lines = content.splitlines(keepends=True)
 
     blocks = group_blocks(lines)
@@ -189,47 +199,15 @@ def main() -> None:
         collapsed.append(line)
         prev_blank = is_blank
 
-    # Cap open items at MAX_OPEN — but never on a project's first-ever trim run
-    # (no pre-existing header): that would silently delete real, never-reviewed
-    # backlog items the instant enforcement first turns on. First run: archive +
-    # sidecar-extract + stamp header as normal, skip truncation, just warn.
-    # Re-group after flattening so the cap removes whole items, not bare lines.
-    capped_blocks = group_blocks(collapsed)
-    open_positions = [i for i, (kind, _) in enumerate(capped_blocks) if kind == "open"]
-    truncated_count = 0
-    if len(open_positions) > MAX_OPEN:
-        if not had_header:
-            print(f"NOTE: first trim run — {len(open_positions)} open items exceed "
-                  f"MAX_OPEN={MAX_OPEN}, not auto-truncating. Raise BACKLOG_TRIM_MAX_OPEN "
-                  "or curate manually before next run.")
-        else:
-            truncated_count = len(open_positions) - MAX_OPEN
-            remove_positions = set(open_positions[MAX_OPEN:])
-            # Archive every about-to-be-dropped OPEN item to brain BEFORE
-            # removing it (GH #1413) -- same primitive and fail-closed
-            # semantics as the closed-item loop above. If any archival call
-            # fails, abort before the atomic write at the end of main(): the
-            # original file is never touched, so no undo logic is needed.
-            for i in remove_positions:
-                _, block = capped_blocks[i]
-                try:
-                    archive_to_brain(block_text(block))
-                except subprocess.CalledProcessError as exc:
-                    print(
-                        f"ERROR: brain.py remember failed for item: {block_text(block)[:120]}\n{exc}",
-                        file=sys.stderr,
-                    )
-                    sys.exit(1)
-            capped_blocks = [b for i, b in enumerate(capped_blocks) if i not in remove_positions]
-            today_str = date.today().isoformat()
-            truncation_marker = f"> Truncated {truncated_count} items at trim time ({today_str}). Restore from git history if needed.\n"
-            # Rebuild lines, strip trailing blanks, append marker.
-            collapsed = []
-            for _, block in capped_blocks:
-                collapsed.extend(block)
-            while collapsed and collapsed[-1].strip() == "":
-                collapsed.pop()
-            collapsed.append(truncation_marker)
+    # MAX_OPEN is a warning, never a deletion. An open item is unfinished work:
+    # removing it from the backlog -- even archived to brain -- drops it from the
+    # mission queue. Until v3.8.19 every trim after the first truncated to
+    # MAX_OPEN, and because wrap_mission.sh runs this on every close-out, SAOC
+    # lost 12 open items (2026-10-07). Curating the backlog is the operator's call.
+    open_count_now = sum(1 for kind, _ in group_blocks(collapsed) if kind == "open")
+    if open_count_now > MAX_OPEN:
+        print(f"WARN: {open_count_now} open backlog items exceed MAX_OPEN={MAX_OPEN}. "
+              "Nothing removed -- curate the backlog by hand (close, merge or drop items).")
 
     # Update _Last compacted: header
     today_str = date.today().isoformat()
@@ -237,7 +215,8 @@ def main() -> None:
 
     # Atomic write
     tmp_path = BACKLOG_PATH.with_suffix(".md.tmp")
-    tmp_path.write_text("".join(collapsed), encoding="utf-8")
+    with open(tmp_path, "w", encoding="utf-8", newline="") as fh:
+        fh.write("".join(collapsed))
     os.replace(tmp_path, BACKLOG_PATH)
 
     # Final counts (count open ITEMS, not lines)

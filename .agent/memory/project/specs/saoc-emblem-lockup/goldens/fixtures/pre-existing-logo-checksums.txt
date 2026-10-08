@@ -1,0 +1,7 @@
+ce58a4f3e47a08c6d9acc0c0a4bdbde3f67051477eed6032714a16e931a959e3  public/images/saoc-logo-ink-paper.png
+5de1f19997c35ecf223621c38243066724ee0e867539e028ca9417b5c774df7a  public/images/saoc-logo-flat-paper.png
+86b6e47f18c1f98d867bda4d51b5bf7abf959e825861bbd39dd423e9eed0e65c  public/images/saoc-logo-sage-paper.png
+312ce522f6b0c815d367ddb91bc7c34e48931b83c87b69c982a1cf58abeb79ec  public/images/saoc-logo-ink-brass.png
+55827a1a30e62542e33f2287c726399d481e949517cafb0795c425be46aa573b  public/images/saoc-logo-flat-brass.png
+ad999a002f56915765ddf091384d681c2c9af362449c70fe22ce62afaf05eda9  public/images/saoc-logo-sage-brass.png
+f1ee8702c4ee7276eeacd113f4153243eecc775120a5417498e6a9563012d43c  public/images/saoc-logo-flat-sage.png

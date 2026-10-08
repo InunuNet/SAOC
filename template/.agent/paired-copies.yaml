@@ -18,6 +18,3 @@ pairs:
   - copy: CLAUDE.md
     source: AGENTS.md
     enforce: clone
-  - copy: GEMINI.md
-    source: AGENTS.md
-    enforce: clone

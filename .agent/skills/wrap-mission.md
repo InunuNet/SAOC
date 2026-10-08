@@ -1,3 +1,7 @@
+---
+description: Finish a mission in one step: brain wrap-up, git commit, push, clear active.json. Use after every chain step is done and the gate has passed.
+---
+
 # wrap-mission
 
 > This skill wraps state OWNED by `execution/mission.py` — it is NOT a replacement for it.

@@ -1,0 +1,292 @@
+schema: athanor.contract/v1
+slug: saoc-emblem-lockup
+goal: >
+  DRAFT, local-preview-only rollout of the council-approved emblem lockup
+  (Brad's Claude Design artifact "SAOC · Lockup explorer",
+  https://claude.ai/artifact/86ZiRAXBRbam43es9JgWSX) into the site-wide SAOC
+  chrome, per Brad's scope decision "Lockup only" (2026-10-08, relayed by
+  team-lead): the new emblem + wordmark + tagline lockup replaces the current
+  mark in the header, footer, and mobile-menu mark-only spot, using the
+  EXISTING Sage & Paper palette and Crimson Pro / JetBrains Mono fonts — the
+  explorer's own "Lapis & Sun" palette and "Lora" name font are explicitly
+  out of scope and app/globals.css's tokens do not change. Two things are
+  genuinely new (the wordmark text, tagline text, and light/dark grounds
+  already match the explorer's default recommendation exactly, so none of
+  those are changes): (1) swapping the flat vector mark for a trimmed,
+  full-colour web export of the approved
+  `branding/SA Orchid Council/emblem/Eulophia-speciosa-emblem.png`, derived
+  via a scripted, reproducible Pillow step into two new files under
+  public/images/ (never overwriting the existing saoc-logo-*.png files, so
+  this draft stays trivially revertible); and (2) a new divider rule between
+  the mark and the wordmark/tagline text block. Sizes are derived by applying
+  the explorer's own es/ns/tsz percentage multipliers (140%/110%/140%) to
+  each chrome component's OWN existing, already-committed base pixel sizes
+  — see the golden's "Derivation method" section for why this is the one
+  honest translation of metrics()'s export-canvas units, named explicitly
+  rather than invented. Brad, 2026-10-08, verbatim: "its a draft lets see how
+  it looks before we commit" — nothing in this feature is committed or
+  deployed. Phase 1 (below) is the full local gate: assets, source
+  assertions, pnpm build, and Playwright screenshots of
+  http://localhost:3002 (which, confirmed by hand, sits behind the same
+  Basic Auth beta-password-wall as the deployed site even in local dev).
+  Phase 2 is the post-approval gate (codex_qa + browser_deployed_check
+  against the real deployed origin) and does not run until Brad approves the
+  local render and team-lead commits + deploys. gws_inbox_check is not
+  applicable — this feature touches no email path.
+created_at: '2026-10-08'
+autonomy: high
+features:
+  - id: F1
+    name: Emblem lockup draft — local preview only (header, footer, mobile-menu mark)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/saoc-emblem-lockup/goldens/f1-emblem-lockup-draft.golden.md
+assertions:
+  phase: 1
+  checks:
+    - id: A1
+      description: >-
+        the Pillow-based asset generator exists at
+        scripts/generate-saoc-emblem-web-assets.py, reads the approved
+        emblem source from branding/ (read-only) and writes only under
+        public/images/ — never into branding/. Confirmed FAILing against
+        current code (the script does not exist yet).
+      phase: 1
+      command: bash contracts/checks/saoc-emblem-lockup-f1/check-generator-script-exists.sh
+
+    - id: A2
+      description: >-
+        the generator's output file pairs exist, are trimmed (no transparent
+        padding on any edge), stay RGBA/transparent, each 2x file is exactly
+        double its 1x sibling's dimensions, and both match the source
+        emblem's own trimmed aspect ratio within 2%. Covers BOTH pairs:
+        the header/footer-echo full-colour E1 pair
+        (public/images/saoc-emblem-lockup[.png/-2x.png]) and the footer's
+        Lapis-monotone E4 pair
+        (public/images/saoc-emblem-footer-lapis[.png/-2x.png], added
+        2026-10-08 per Brad's footer reference image — see golden
+        Addendum 1 §3 and A16). Confirmed FAILing against current code (none
+        of the four files exist yet).
+      phase: 1
+      command: python3 contracts/checks/saoc-emblem-lockup-f1/check-new-emblem-assets.py
+
+    - id: A3
+      description: >-
+        every pre-existing saoc-logo-*.png file under public/images/ stays
+        byte-unchanged (sha256, pinned in
+        goldens/fixtures/pre-existing-logo-checksums.txt) — the generator
+        must never overwrite them, so this draft stays trivially revertible.
+        Currently PASSES (regression guard, nothing to break yet).
+      phase: 1
+      command: bash contracts/checks/saoc-emblem-lockup-f1/check-existing-logo-files-unchanged.sh
+
+    - id: A4
+      description: >-
+        branding/ (Brad's active design workstream) is never modified by
+        this feature, checked against a checksum manifest of the actual
+        on-disk tree taken 2026-10-08 (goldens/fixtures/branding-manifest-baseline.txt)
+        — deliberately NOT a git-diff-against-a-commit check, because
+        branding/ already had Brad's own uncommitted changes (the
+        Eulophia-speciosa r1-r4.png deletions, the new
+        Eulophia-speciosa-emblem.png addition) in the working tree before
+        this feature started; a commit-diff version of this check would
+        have incorrectly flagged his own unrelated work as this feature's
+        violation. Currently PASSES (regression guard).
+      phase: 1
+      command: bash contracts/checks/saoc-emblem-lockup-f1/check-branding-untouched.sh
+
+    - id: A5
+      description: >-
+        app/globals.css (colour/font @theme tokens — "Lockup only" means the
+        palette and fonts do not change) and
+        app/(marketing)/media-kit/page.tsx (lists the OLD logo files as
+        press downloads, a separate concern from the three explorer panels)
+        stay byte-unchanged against the pinned base commit 67d35581
+        (verified an ancestor of HEAD, never the literal string "HEAD" — see
+        golden's "Pinned base commit" note). Currently PASSES (regression
+        guard).
+      phase: 1
+      command: bash contracts/checks/saoc-emblem-lockup-f1/check-globals-and-media-kit-unchanged.sh
+
+    - id: A6
+      description: >-
+        components/chrome/Header.tsx references the new emblem asset, no
+        longer references the old saoc-logo-ink-paper.png, keeps its
+        accessible home-link name, is sized to the derived 67px
+        (48px × es 140%), and gains a new aria-hidden divider-rule element
+        between the mark and the text block (none exists today). Confirmed
+        FAILing against current code.
+      phase: 1
+      command: bash contracts/checks/saoc-emblem-lockup-f1/check-header-wiring.sh
+
+    - id: A7
+      description: >-
+        SUPERSEDED 2026-10-08 by Brad's footer reference image (see golden
+        Addendum 1 §3) — originally a horizontal/full-colour spec matching
+        the header, now the STACKED Lapis-monotone (E4) lockup:
+        components/chrome/Footer.tsx references the new
+        saoc-emblem-footer-lapis asset (not the header's full-colour one),
+        no longer references the old saoc-logo-flat-paper.png, is sized to
+        the derived 90px/24px/14px (emblem/wordmark/tagline), gains a
+        horizontal divider rule, keeps its own tagline text (only
+        UtilityBar's centred tagline was removed — see A13), stays on the
+        current dark-sage ground (bg-primary-800, never the reference
+        image's #172a5c navy — flagged as an open question for Brad, not
+        implemented), restyles the tagline/rule to accent-soft (Sage
+        palette's onDarkMuted, exact token match), and renders in DOM order
+        emblem → wordmark → rule → tagline. Confirmed FAILing against
+        current code.
+      phase: 1
+      command: bash contracts/checks/saoc-emblem-lockup-f1/check-footer-wiring.sh
+
+    - id: A8
+      description: >-
+        components/chrome/MobileMenu.tsx (the header's mark-only mobile
+        echo) references the new emblem asset, no longer references the
+        old saoc-logo-ink-paper.png, and is sized to the derived 50px
+        (36px × es 140%). Confirmed FAILing against current code.
+      phase: 1
+      command: bash contracts/checks/saoc-emblem-lockup-f1/check-mobilemenu-wiring.sh
+
+    - id: A9
+      description: production build succeeds with the new assets and chrome wiring in place
+      phase: 1
+      command: pnpm -C /Users/vetus/ai/SAOC build
+
+    - id: A10
+      description: >-
+        local draft render is captured: header + footer at 1280px, and
+        header + footer (+ opened mobile menu) at 320px, against
+        http://localhost:3002, plus a 320px footer-overflow guard ("sized
+        correctly" per Brad's footer instruction — the stacked Lapis lockup
+        must not widen the footer past the viewport). The beta-password-wall
+        can gate localhost dev too (confirmed by hand
+        `curl http://127.0.0.1:3002/` → 401 WWW-Authenticate: Basic
+        realm="SAOC Beta") — team-lead reports it's currently OFF locally,
+        so the script reads BETA_BASIC_AUTH_USER/PASSWORD from .env.local
+        via dotenv and only applies them when both are non-empty, treating
+        an unset/blank pair as "wall is off" rather than a hard failure.
+        Requires `pnpm dev` already running on :3002. Writes PNGs to
+        .tmp/sandbox/emblem-lockup/screenshots/. Confirmed working
+        end-to-end against the CURRENT (pre-feature) render — all five
+        screenshots captured successfully showing today's old mark, no
+        overflow false-positive; re-run after @dev's change to see the new
+        one.
+      phase: 1
+      command: node contracts/checks/saoc-emblem-lockup-f1/capture-local-screenshots.mjs
+
+    - id: A13
+      description: >-
+        Brad, 2026-10-08 (relayed by the NOS design peer), verbatim: "remove
+        Making a difference since 1968 from the header its already in the
+        logo, small changes." components/chrome/UtilityBar.tsx's centred
+        tagline span is removed; the email (left) and the two right-side
+        pills (National Show pill + "Join a society") are unchanged, and the
+        row's flex/justify-between layout mechanism survives. Confirmed
+        FAILing against current code.
+      phase: 1
+      command: bash contracts/checks/saoc-emblem-lockup-f1/check-utilitybar-tagline-removed.sh
+
+    - id: A14
+      description: >-
+        Brad's final ruling, 2026-10-08, verbatim: "info@saoc.co.za header
+        email" — "the header is info@ everywhere the header shows it. The
+        mobile menu is the header on phones, so it's in scope."
+        components/chrome/UtilityBar.tsx and components/chrome/MobileMenu.tsx
+        both get the mailto href and visible text changed from
+        council@saoc.co.za to info@saoc.co.za; neither file may still
+        contain the old address. Confirmed FAILing against current code.
+      phase: 1
+      command: bash contracts/checks/saoc-emblem-lockup-f1/check-header-email-info-at.sh
+
+    - id: A15
+      description: >-
+        components/societies/SocietyDetailsCallout.tsx stays explicitly OUT
+        of scope for the info@ email change — Brad answered for the header
+        specifically, not this society-page callout — byte-unchanged
+        against the pinned base commit 67d35581, so scope can't creep
+        without a deliberate contract edit. Currently PASSES (regression
+        guard).
+      phase: 1
+      command: bash contracts/checks/saoc-emblem-lockup-f1/check-society-callout-untouched.sh
+
+    - id: A16
+      description: >-
+        the footer's Lapis-monotone (E4) emblem is generated by reproducing
+        app.js's own duotone mapping exactly — the LAPIS constant
+        (app.js:3, #1f3a93) and the e===3 branch of variant()
+        (app.js:68-86: lo/hi colours at :76-77, the luminance/contrast loop
+        at :78-83) — not a hand-tuned recolour. Checked at the generator
+        script's source level (grep for the real constants: #1f3a93,
+        #eef1fa, luminance weights 0.3/0.59/0.11, contrast factor 1.35) —
+        deliberately not a post-resize pixel comparison, which would be
+        flaky against whatever resize algorithm the generator picks (see
+        golden Addendum 1 §3 for why). Confirmed FAILing against current
+        code (generator doesn't exist yet).
+      phase: 1
+      command: bash contracts/checks/saoc-emblem-lockup-f1/check-lapis-duotone-formula.sh
+
+    - id: A18
+      description: >-
+        guard against cross-contamination between the two new emblem
+        treatments: components/chrome/Header.tsx stays E1 full-colour
+        horizontal (unaffected by the footer's E4 Lapis-monotone change) and
+        must never reference the footer-only Lapis asset. Currently PASSES
+        (regression guard, nothing to break yet).
+      phase: 1
+      command: bash contracts/checks/saoc-emblem-lockup-f1/check-header-not-lapis.sh
+
+    - id: A11
+      description: >-
+        POST-APPROVAL ONLY — do not run until Brad has approved the local
+        render captured by A10 and team-lead has committed + deployed this
+        feature. codex_qa adversarial review of the full diff: the Pillow
+        asset-generation script, the two new public/images/ files, and the
+        Header/Footer/MobileMenu wiring changes, checking specifically that
+        no palette/font token was touched, branding/ was never written, the
+        old logo files were never overwritten, and the derived sizes/rule
+        match the golden's documented formulas rather than arbitrary
+        numbers.
+      type: codex_qa
+      phase: 2
+      target: >-
+        Adversarially review the current git diff (mission
+        saoc-emblem-lockup, feature F1): a new Pillow script
+        (scripts/generate-saoc-emblem-web-assets.py) derives a trimmed,
+        full-colour web export of
+        branding/SA Orchid Council/emblem/Eulophia-speciosa-emblem.png into
+        two new files (public/images/saoc-emblem-lockup.png 1x,
+        -2x.png 2x), and components/chrome/Header.tsx,
+        components/chrome/Footer.tsx, components/chrome/MobileMenu.tsx swap
+        to those files at derived sizes (67px/90px/50px, each the
+        component's own pre-existing base size × the explorer's es 140%)
+        and Header/Footer gain a new aria-hidden divider-rule element. Check
+        specifically: (1) app/globals.css and any other colour/font token
+        file is untouched — this is explicitly palette/font-out-of-scope
+        work; (2) nothing under branding/ was written, and no pre-existing
+        public/images/saoc-logo-*.png file was overwritten; (3) the derived
+        px sizes and the divider-rule styling actually trace to the
+        golden's documented formulas (goldens/f1-emblem-lockup-draft.golden.md
+        "Derivation method"), not arbitrary round numbers; (4) the new
+        divider rule is marked aria-hidden and doesn't regress the header's
+        existing accessible home-link name. For each finding: cite exact
+        file:line, state the concrete failure scenario, and rate
+        confidence. If nothing real is wrong, say so plainly instead of
+        inventing findings.
+
+    - id: A12
+      description: >-
+        POST-APPROVAL ONLY — do not run until Brad has approved the local
+        render and team-lead has committed + deployed. browser_deployed_check
+        (native triad kind) against the real deployed origin confirming the
+        home page (carrying the new header + footer lockup) renders 200.
+        NOT YET PRODUCED (2026-10-08): this is a local-only draft with
+        nothing deployed yet — the fixture below is a placeholder, same
+        convention as conference-workshop-tickets-f6's A24/A28. Re-capture
+        via contracts/checks/saoc-emblem-lockup-f1/capture-deployed-screenshot.mjs
+        (to be written alongside the real deploy, mirroring
+        capture-local-screenshots.mjs's own Basic Auth handling) once
+        there's a real deployed commit to point it at.
+      type: browser_deployed_check
+      phase: 2
+      target: .agent/memory/project/specs/saoc-emblem-lockup/goldens/fixtures/f1-browser-manifest-deployed-home.json

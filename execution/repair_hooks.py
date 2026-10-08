@@ -26,21 +26,31 @@ Additive is the whole safety argument. The failure being repaired was a merge
 that felt entitled to delete, and a repair that can also delete would be the
 same bug wearing a rescue jacket.
 
+INLINE HOOKS. A one-liner names no script, so nothing on disk proves it is
+still wanted. It is restored only when the LAST GOOD revision -- the newest
+one holding more registrations than the file does now, i.e. the state just
+before the damage -- still carried it. Inline hooks known only to older
+history are reported for a person to judge.
+
+update_template.py runs this after every --apply: the FIRST pass of an update
+runs the OLD updater already loaded in memory, and pre-6afb6870 code replaces
+the hooks block wholesale before the new updater can intervene. The repair is
+what the new code can still do about it.
+
 Usage:
-    python3 execution/repair_hooks.py                    # report on ~/ai/*
-    python3 execution/repair_hooks.py --apply            # repair them
-    python3 execution/repair_hooks.py --root <path> ...  # specific projects
+    python3 execution/repair_hooks.py                    # report on this project
+    python3 execution/repair_hooks.py --apply            # repair it
+    python3 execution/repair_hooks.py --root <path> ...  # other projects, by name
 """
 import argparse
 import json
 import shutil
 import subprocess
-import sys
 from datetime import datetime
 from pathlib import Path
 
 SETTINGS_REL = Path(".claude/settings.json")
-DEFAULT_SCAN = Path.home() / "ai"
+BACKUP_DIR = Path(".agent/memory/scratch")
 # Ten revisions reaches comfortably past the 3.8.x updates that caused this
 # without reaching back into harness eras whose conventions are gone. Deeper
 # history holds hooks that were retired on purpose, and a repair that drags
@@ -55,14 +65,20 @@ def git(root: Path, *args: str) -> str:
 
 
 def registrations(settings: dict) -> dict:
-    """{event: [entry, ...]} flattened one level, for counting and diffing."""
+    """{event: [(matcher, entry), ...]} flattened one level.
+
+    The matcher travels with the entry: restoring a `Write`-only guard into a
+    `Bash` group would make it fire on the wrong tool and never on its own.
+    """
     out = {}
     for event, groups in (settings.get("hooks") or {}).items():
         if not isinstance(groups, list):
             continue
         for group in groups:
             if isinstance(group, dict):
-                out.setdefault(event, []).extend(group.get("hooks") or [])
+                matcher = group.get("matcher", "")
+                out.setdefault(event, []).extend(
+                    (matcher, e) for e in (group.get("hooks") or []))
     return out
 
 
@@ -75,7 +91,7 @@ def entry_key(entry: dict) -> str:
     return (entry or {}).get("command", "") if isinstance(entry, dict) else str(entry)
 
 
-def identity(command: str) -> str:
+def identity(event: str, matcher: str, command: str, shipped: dict) -> str:
     """What a registration IS, for deciding whether it is already present.
 
     Deliberately NOT the command string. The same hook has been registered in
@@ -85,15 +101,51 @@ def identity(command: str) -> str:
     the hook fires twice: a wrap-up that writes memory twice, a token log that
     double-counts. Keyed on the SCRIPT, the variants collapse to one thing
     that either is or is not registered, which is the actual question.
+
+    Two keys, because ownership differs (Codex QA, 2026-09-29):
+    - a script the TEMPLATE ships is keyed on event + basename, matcher
+      ignored: the template consolidates its own matchers between versions
+      (check_autonomy's Bash, Write, Edit became `Bash|Edit|Write`), so an
+      old matcher is a respelling, not a second hook;
+    - a project's own script is keyed on event + matcher + normalised path,
+      so scripts/hooks/guard.sh and execution/hooks/guard.sh stay distinct,
+      and one script deliberately registered under two matchers is two hooks.
     """
     named = scripts_in(command)
     if named:
-        # set(), not list: the guarded spelling names the same script twice
-        # ("[ -f X ] || exit 0; bash X") and the bare one names it once, so a
-        # list here makes two spellings of one hook look like two hooks --
-        # which is the exact double-registration this function exists to stop.
-        return "|".join(sorted({Path(tok).name for tok in named}))
-    return " ".join(command.split())[:120]
+        # set(): the guarded spelling names the same script twice
+        # ("[ -f X ] || exit 0; bash X") and the bare one names it once.
+        paths = sorted({script_path(tok) for tok in named})
+        if any(Path(p).name in shipped for p in paths):
+            return f"{event}::" + "|".join(sorted({Path(p).name for p in paths}))
+        return f"{event}::{matcher}::" + "|".join(paths)
+    return f"{event}::{matcher}::" + " ".join(command.split())[:120]
+
+
+def script_path(tok: str) -> str:
+    """A script token as a project-relative path, whatever its spelling."""
+    for prefix in ("$CLAUDE_PROJECT_DIR/", "${CLAUDE_PROJECT_DIR}/", "./"):
+        if tok.startswith(prefix):
+            tok = tok[len(prefix):]
+    return tok
+
+
+def template_hooks(root: Path) -> dict:
+    """{script basename: {event, ...}} for every hook the template registers.
+
+    Read from the project's delivered template/ copy. Empty when absent, which
+    degrades to treating every script as the project's own.
+    """
+    try:
+        doc = json.loads((root / "template" / SETTINGS_REL).read_text())
+    except (OSError, ValueError):
+        return {}
+    shipped: dict = {}
+    for event, pairs in registrations(doc).items():
+        for _, entry in pairs:
+            for tok in scripts_in(entry_key(entry)):
+                shipped.setdefault(Path(tok).name, set()).add(event)
+    return shipped
 
 
 def scripts_in(command: str) -> list[str]:
@@ -121,7 +173,8 @@ def script_present(command: str, root: Path) -> bool:
     return True
 
 
-def best_historical(root: Path) -> tuple[str, dict] | None:
+def best_historical(root: Path, current_total: int = 0, depth: int = HISTORY_DEPTH,
+                    shipped: dict | None = None):
     """Every hook this project has registered, newest spelling of each.
 
     Walks history newest-first and keeps the FIRST spelling it sees of each
@@ -135,13 +188,14 @@ def best_historical(root: Path) -> tuple[str, dict] | None:
     script_present() is what holds it: retiring a hook removes its script, and
     a hook whose script is gone is never restored.
     """
-    log = git(root, "log", "--format=%H", f"-{HISTORY_DEPTH}", "--",
+    log = git(root, "log", "--format=%H", f"-{depth}", "--",
               str(SETTINGS_REL))
     shas = log.split()
     if not shas:
         return None
     seen: set[str] = set()
     union: dict[str, list] = {}
+    last_good: set[str] | None = None
     for sha in shas:
         blob = git(root, "show", f"{sha}:{SETTINGS_REL}")
         if not blob:
@@ -150,19 +204,24 @@ def best_historical(root: Path) -> tuple[str, dict] | None:
             data = json.loads(blob)
         except Exception:
             continue
-        for event, entries in registrations(data).items():
-            for entry in entries:
+        regs = registrations(data)
+        idents = {identity(ev, m, entry_key(e), shipped or {})
+                  for ev, pairs in regs.items() for m, e in pairs}
+        if last_good is None and total(regs) > current_total:
+            last_good = idents
+        for event, pairs in regs.items():
+            for matcher, entry in pairs:
                 if not entry_key(entry).strip():
                     continue  # a registration with no command is junk
-                ident = f"{event}::{identity(entry_key(entry))}"
+                ident = identity(event, matcher, entry_key(entry), shipped or {})
                 if ident in seen:
                     continue
                 seen.add(ident)
-                union.setdefault(event, []).append(entry)
-    return (shas[0], union) if union else None
+                union.setdefault(event, []).append((matcher, entry))
+    return (shas[0], union, last_good or set()) if union else None
 
 
-def repair(root: Path, apply: bool) -> bool:
+def repair(root: Path, apply: bool, depth: int = HISTORY_DEPTH) -> bool:
     """Report, and optionally restore. True when the project needed work."""
     path = root / SETTINGS_REL
     if not path.is_file() or not (root / ".git").is_dir():
@@ -174,28 +233,33 @@ def repair(root: Path, apply: bool) -> bool:
         return False
 
     current = registrations(current_doc)
-    hist = best_historical(root)
+    shipped = template_hooks(root)
+    hist = best_historical(root, total(current), depth, shipped)
     if hist is None:
         return False
-    sha, historical = hist
-    if total(historical) <= total(current):
-        return False
+    sha, historical, last_good = hist
 
-    have = {ev: {identity(entry_key(e)) for e in entries}
-            for ev, entries in current.items()}
-    missing, dangling, inline = {}, [], []
-    for event, entries in historical.items():
-        for entry in entries:
+    have = {identity(ev, m, entry_key(e), shipped)
+            for ev, pairs in current.items() for m, e in pairs}
+    missing, dangling, inline, moved = {}, [], [], []
+    for event, pairs in historical.items():
+        for matcher, entry in pairs:
             cmd = entry_key(entry)
-            ident = identity(cmd)
-            if ident in have.get(event, set()):
+            ident = identity(event, matcher, cmd, shipped)
+            if ident in have:
                 continue
-            if not scripts_in(cmd):
+            names = {Path(t).name for t in scripts_in(cmd)}
+            if any(n in shipped and event not in shipped[n] for n in names):
+                # The template ships this script under a different event now:
+                # it MOVED the hook. Restoring the old event would run it twice.
+                moved.append(f"{event}: {cmd[:70]}")
+                continue
+            if not scripts_in(cmd) and ident not in last_good:
                 # An inline one-liner names no script, so nothing on disk can
-                # confirm it is still wanted -- and several in history encode
-                # conventions that have since changed (old MEMORY paths, a
-                # brain call the boot hook now makes itself). Reinstating one
-                # silently re-imposes a dead convention, so these are
+                # confirm it is still wanted -- and several in older history
+                # encode conventions that have since changed (old MEMORY
+                # paths, a brain call the boot hook now makes itself). Only
+                # the last good revision vouches for one; older ones are
                 # reported and left for a person to judge.
                 inline.append(f"{event}: {cmd[:66]}")
                 continue
@@ -204,42 +268,51 @@ def repair(root: Path, apply: bool) -> bool:
                 continue
             # Claim it now, so two historical spellings of the same hook
             # cannot both be restored in this pass either.
-            have.setdefault(event, set()).add(ident)
-            missing.setdefault(event, []).append(entry)
+            have.add(ident)
+            missing.setdefault(event, []).append((matcher, entry))
 
     if not missing:
         return False
 
     print(f"\n{root.name}: {total(current)} registrations on disk, "
           f"{total(historical)} distinct hooks across history (tip {sha[:8]})")
-    for event, entries in sorted(missing.items()):
-        for entry in entries:
-            print(f"  + {event:18} {entry_key(entry)[:78]}")
+    for event, pairs in sorted(missing.items()):
+        for matcher, entry in pairs:
+            print(f"  + {event:18} [{matcher}] {entry_key(entry)[:70]}")
     for line in dangling:
         print(f"  . skipped, script gone: {line}")
     for line in inline:
         print(f"  . skipped, inline hook, judge by hand: {line}")
+    for line in moved:
+        print(f"  . skipped, template moved it to another event: {line}")
 
     if not apply:
         return True
 
     doc = json.loads(json.dumps(current_doc))
     hooks = doc.setdefault("hooks", {})
-    for event, entries in missing.items():
+    for event, pairs in missing.items():
         groups = hooks.setdefault(event, [])
-        if groups and isinstance(groups[0], dict):
-            groups[0].setdefault("hooks", []).extend(entries)
-        else:
-            groups.append({"matcher": "*", "hooks": list(entries)})
+        for matcher, entry in pairs:
+            home = next((g for g in groups if isinstance(g, dict)
+                         and g.get("matcher", "") == matcher), None)
+            if home is None:
+                home = {"matcher": matcher, "hooks": []}
+                groups.append(home)
+            home.setdefault("hooks", []).append(entry)
 
     rendered = json.dumps(doc, indent=2) + "\n"
     json.loads(rendered)  # never write something that will not parse back
 
+    # The backup goes to gitignored scratch, not beside settings.json: the
+    # updater runs this unattended, and a stray file in .claude/ is swept into
+    # the operator's next `git add -A` (Codex QA, 2026-09-29).
     stamp = datetime.now().strftime("%Y%m%dT%H%M%S")
-    backup = path.with_suffix(f".json.pre-repair-{stamp}")
+    backup = root / BACKUP_DIR / f"settings.json.pre-repair-{stamp}"
+    backup.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(path, backup)
     path.write_text(rendered)
-    print(f"  -> restored {total(missing)}; backup {backup.name}")
+    print(f"  -> restored {total(missing)}; backup {backup.relative_to(root)}")
     return True
 
 
@@ -248,18 +321,21 @@ def main() -> None:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--apply", action="store_true",
                     help="write the repair (default: report only)")
+    # Default is THIS project only. It used to scan every sibling workspace,
+    # so a bare `--apply` wrote into all of them (reported by WOSA and SAOC
+    # NOS Site, 2026-09-28) -- scope.md forbids exactly that.
     ap.add_argument("--root", action="append", default=[],
-                    help="a project to check; repeatable (default: ~/ai/*)")
+                    help="a project to check; repeatable (default: this one)")
+    # update_template.py passes this. Only the last COMMITTED settings.json
+    # is trusted -- the state before this update ran -- so a hook the operator
+    # removed and committed earlier is never resurrected by an update.
+    ap.add_argument("--last-commit", action="store_true",
+                    help="restore only what the last committed settings.json held")
     args = ap.parse_args()
 
-    roots = [Path(r).expanduser() for r in args.root]
-    if not roots:
-        if not DEFAULT_SCAN.is_dir():
-            print(f"{DEFAULT_SCAN} not found — pass --root", file=sys.stderr)
-            sys.exit(2)
-        roots = sorted(p for p in DEFAULT_SCAN.iterdir() if p.is_dir())
+    roots = [Path(r).expanduser() for r in args.root] or [Path.cwd()]
 
-    touched = sum(1 for r in roots if repair(r, args.apply))
+    touched = sum(1 for r in roots if repair(r, args.apply, 1 if args.last_commit else HISTORY_DEPTH))
     if not touched:
         print("No project is missing registrations its history recorded.")
     elif not args.apply:
