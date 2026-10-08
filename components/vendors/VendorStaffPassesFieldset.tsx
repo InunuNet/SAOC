@@ -13,22 +13,25 @@ import { VendorFormField } from './VendorFormField';
 // submissions.ts -- untouched by this feature). Mounted top-level in VendorRegisterForm.tsx,
 // immediately after VendorBoothFieldset -- the structural assertion (check-f1-structural.sh)
 // requires the mount to appear there; see this feature's handover note for the golden-prose
-// ambiguity this resolves.
+// ambiguity this resolves. Mirrors the source table: the "Number of Staff" column header is the
+// group legend and each input's visible label is the source row's day text, verbatim.
 interface VendorStaffPassesFieldsetProps {
   state: VendorRegisterFormState;
   onFieldChange: VendorRegisterFieldChangeHandler;
   disabled: boolean;
 }
 
+const legendClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
+
 const STAFF_COUNT_FIELDS: Array<{
   key: keyof VendorRegisterFormState;
   label: string;
 }> = [
-  { key: 'staffCountSetupDay', label: 'Number of staff — Setup Day' },
-  { key: 'staffCountDay1', label: 'Number of staff — Day 1' },
-  { key: 'staffCountDay2', label: 'Number of staff — Day 2' },
-  { key: 'staffCountDay3', label: 'Number of staff — Day 3' },
-  { key: 'staffCountBreakdownDay', label: 'Number of staff — Breakdown Day' },
+  { key: 'staffCountSetupDay', label: 'Setup Day' },
+  { key: 'staffCountDay1', label: 'Day 1' },
+  { key: 'staffCountDay2', label: 'Day 2' },
+  { key: 'staffCountDay3', label: 'Day 3' },
+  { key: 'staffCountBreakdownDay', label: 'Breakdown Day' },
 ];
 
 export function VendorStaffPassesFieldset({
@@ -37,7 +40,8 @@ export function VendorStaffPassesFieldset({
   disabled,
 }: VendorStaffPassesFieldsetProps) {
   return (
-    <>
+    <fieldset id="vendor-register-staffCounts" className="space-y-3">
+      <legend className={legendClass}>Number of Staff</legend>
       {STAFF_COUNT_FIELDS.map(({ key, label }) => (
         <VendorFormField
           key={key}
@@ -52,6 +56,6 @@ export function VendorStaffPassesFieldset({
           required={false}
         />
       ))}
-    </>
+    </fieldset>
   );
 }

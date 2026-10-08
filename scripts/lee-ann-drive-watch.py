@@ -12,7 +12,7 @@ same read-only posture execution/drive_docx_sync.py already documents for
 itself.
 
 It never writes Drive file content to disk (unlike drive_docx_sync.py) -- it
-tracks metadata only (id, name, mimeType, modifiedTime, md5Checksum) in one flat
+tracks metadata only (id, name, mimeType, modifiedTime, md5Checksum, parents) in one flat
 JSON state file keyed by Drive file id. A folder's "path" is only ever a
 display string (folder names joined with " / "), never a filesystem path, so a
 folder name containing a forward slash is structurally harmless here -- there is
@@ -35,7 +35,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
+import tempfile
 import sys
 from pathlib import Path
 from typing import Any, Callable
@@ -88,7 +90,7 @@ def _list_children_live(folder_id: str) -> list[DriveEntry]:
     """
     params = json.dumps({
         'q': f"'{folder_id}' in parents and trashed=false",
-        'fields': 'files(id,name,mimeType,modifiedTime,md5Checksum,owners(emailAddress))',
+        'fields': 'files(id,name,mimeType,modifiedTime,md5Checksum,parents,owners(emailAddress))',
         'pageSize': DRIVE_LIST_PAGE_SIZE,
     })
     argv = ['gws', 'drive', 'files', 'list', '--params', params, '--page-all']
@@ -140,6 +142,9 @@ def walk_drive_tree(root_id: str, list_children: ChildLister) -> DriveTree:
                 'mimeType': mime_type,
                 'modifiedTime': child.get('modifiedTime'),
                 'md5Checksum': child.get('md5Checksum'),
+                # Fixtures carry no "parents" field; the folder this walk found the child
+                # in is the same fact, so it stands in.
+                'parents': sorted(child.get('parents') or [folder_id]),
                 'path': display_path,
             }
             if mime_type == FOLDER_MIME_TYPE:
@@ -153,6 +158,27 @@ def _has_checksum(entry: DriveEntry) -> bool:
     return bool(entry.get('md5Checksum'))
 
 
+def _is_entry_changed(old_entry: DriveEntry, new_entry: DriveEntry) -> bool:
+    """An item is CHANGED when its content changed (md5Checksum when both
+    sides have one, else modifiedTime) or it was itself renamed or moved (its
+    own name or parents differ). A descendant whose only difference is the
+    display `path` -- because an ancestor folder was renamed or moved -- is
+    not changed, so one rename high in the tree reports only the folder.
+    A state entry written before parents were tracked has no "parents" key;
+    that comparison is skipped rather than reporting every item as moved.
+    """
+    if _has_checksum(old_entry) and _has_checksum(new_entry):
+        if old_entry['md5Checksum'] != new_entry['md5Checksum']:
+            return True
+    elif old_entry.get('modifiedTime') != new_entry.get('modifiedTime'):
+        return True
+    if old_entry.get('name') != new_entry.get('name'):
+        return True
+    if 'parents' in old_entry and old_entry['parents'] != new_entry.get('parents'):
+        return True
+    return False
+
+
 def diff_drive_trees(
     old_entries: DriveTree,
     new_entries: DriveTree,
@@ -161,12 +187,11 @@ def diff_drive_trees(
     removed) lists, each sorted by Drive file id for stable output.
 
     A file id present now but absent from the stored state is NEW. A file id
-    present in the stored state but absent now is REMOVED (a file moved
-    between folders in the same run therefore appears as both REMOVED and
-    NEW under the same id -- never coalesced into a "moved" case). A file id
-    present in both compares md5Checksum when both sides have one, else
-    falls back to comparing modifiedTime (Google-native Docs/Sheets/Slides
-    never have an md5Checksum).
+    present in the stored state but absent now is REMOVED (an item moved out
+    of the watched tree therefore shows as REMOVED, one moved in as NEW). A
+    file id present in both is CHANGED per _is_entry_changed: content via
+    md5Checksum, falling back to modifiedTime (Google-native Docs/Sheets/
+    Slides never have an md5Checksum), or its own rename/move within the tree.
     """
     old_ids = set(old_entries)
     new_ids = set(new_entries)
@@ -176,14 +201,8 @@ def diff_drive_trees(
 
     changed_list = []
     for file_id in sorted(new_ids & old_ids):
-        old_entry = old_entries[file_id]
-        new_entry = new_entries[file_id]
-        if _has_checksum(old_entry) and _has_checksum(new_entry):
-            is_changed = old_entry['md5Checksum'] != new_entry['md5Checksum']
-        else:
-            is_changed = old_entry.get('modifiedTime') != new_entry.get('modifiedTime')
-        if is_changed:
-            changed_list.append(new_entry)
+        if _is_entry_changed(old_entries[file_id], new_entries[file_id]):
+            changed_list.append(new_entries[file_id])
 
     return new_list, changed_list, removed_list
 
@@ -237,8 +256,21 @@ def _load_state(state_path: Path) -> DriveTree:
 
 
 def _write_state(state_path: Path, entries: DriveTree) -> None:
+    """Writes atomically: a temp file in the same directory, then
+    os.replace, so an interrupted run never leaves a truncated state file
+    that the next run would reject as invalid JSON.
+    """
     state_path.parent.mkdir(parents=True, exist_ok=True)
-    state_path.write_text(json.dumps(entries, indent=2, sort_keys=True))
+    file_descriptor, temp_name = tempfile.mkstemp(
+        dir=state_path.parent, prefix=f'.{state_path.name}.', suffix='.tmp'
+    )
+    try:
+        with os.fdopen(file_descriptor, 'w') as temp_file:
+            temp_file.write(json.dumps(entries, indent=2, sort_keys=True))
+        os.replace(temp_name, state_path)
+    except OSError as error:
+        Path(temp_name).unlink(missing_ok=True)
+        raise DriveWatchError(f'Failed to write state file {state_path}: {error}') from error
 
 
 def _resolve_child_lister(fixture_path: str | None) -> tuple[ChildLister, str]:
