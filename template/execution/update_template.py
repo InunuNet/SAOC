@@ -4605,6 +4605,34 @@ def main():
             print(f"ERROR: Failed to parse .agent/update-manifest.yaml: {e}", file=sys.stderr)
             sys.exit(1)
 
+        # Upstream HARNESS paths the local manifest never listed are added.
+        # The loop runs off the LOCAL manifest, and a downstream copy that
+        # predates its own self-listing never refreshes: SAOC's May manifest
+        # (23 paths, 2026-10-08) never received paired-copies.yaml or any
+        # later harness path. A local entry for the same path still wins, and
+        # an existing file with no recorded baseline is WITHHELD by the guard,
+        # never overwritten.
+        try:
+            _upstream_paths = yaml.safe_load(
+                (source / ".agent" / "update-manifest.yaml").read_text()).get("paths", [])
+        except Exception:
+            _upstream_paths = []
+        _local_paths = {e.get("path") for e in manifest.get("paths", []) if isinstance(e, dict)}
+        # A path the project declared non-HARNESS is never brought back under
+        # an added entry: an upstream directory containing it, or an upstream
+        # file inside a directory it declared, is skipped whole.
+        _local_owned = [str(e.get("path")) for e in manifest.get("paths", [])
+                        if isinstance(e, dict) and e.get("category") != "HARNESS" and e.get("path")]
+        def _overlaps(a, b):
+            return a == b or (a.endswith("/") and b.startswith(a)) or (b.endswith("/") and a.startswith(b))
+        for _entry in _upstream_paths:
+            if (isinstance(_entry, dict) and _entry.get("category") == "HARNESS"
+                    and _entry.get("path") and _entry["path"] not in _local_paths
+                    and not any(_overlaps(_entry["path"], o) for o in _local_owned)):
+                manifest.setdefault("paths", []).append(dict(_entry))
+                _local_paths.add(_entry["path"])
+                print(f"  note  {_entry['path']} is HARNESS upstream, absent from the local manifest -- added")
+
         # Upstream DERIVED wins. The loop runs off the LOCAL manifest, so a
         # path upstream reclassified HARNESS -> DERIVED was still delivered
         # (and guarded, and withheld -> exit 1) on the very update that ships
