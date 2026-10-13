@@ -9,9 +9,10 @@
  * design handoff (F7) lands.
  *
  * Verbatim rules (docs/rules/no-invention.md):
- *   - Words are copied as written, including the source's own typos and drafting
- *     notes. Only formatting is normalised for a plain-text field: markdown emphasis
- *     markers are dropped and list markers become "• ".
+ *   - Words are copied as written, including drafting notes. Only formatting is
+ *     normalised for a plain-text field (markdown emphasis markers dropped, list markers
+ *     become "• "), and obvious typos/US spellings are corrected to SA/UK English from
+ *     the explicit SPELLING_FIXES list below.
  *   - `role` is set only where the source carries one (Wijaya's "Position").
  *   - `photo` is each speaker's own Drive photograph, uploaded unedited (no crop, no
  *     hotspot), when --photos-dir is given. `order` is left unset: a gap for Lee-Ann.
@@ -42,6 +43,40 @@ const SPEAKERS_DIR = path.join('National Show', '6. SAOC Symposium', 'Speakers')
 const EVENT = 'saoc-symposium';
 const PROVENANCE = 'council-draft';
 const FUCHS_PDF_HEADER = ['Biographical Information', 'Robert Fuchs'];
+
+// Brad, 2026-10-13: "Use the correct spelling ... always use English SA/UK speclling".
+// Obvious typos and US spellings are corrected; wording and meaning stay verbatim.
+// Each pair must match exactly once in that speaker's source text, or the run aborts.
+const SPELLING_FIXES: Record<string, [string, string][]> = {
+  wijaya: [
+    ['form and color', 'form and colour'],
+    ['projects center on', 'projects centre on'],
+    ['distribution centered in', 'distribution centred in'],
+  ],
+  tibbs: [
+    ['Arnie LInsman', 'Arnie Linsman'],
+    ['Cultivation,\'', 'Cultivation,"'],
+    ['worked fulltime', 'worked full-time'],
+  ],
+  crous: [],
+  fuchs: [
+    ['Selby Botantical', 'Selby Botanical'],
+    ['in honor of', 'in honour of'],
+    ['a breeding program at', 'a breeding programme at'],
+    ['lectures and programs to', 'lectures and programmes to'],
+    ['orchid hybridizing', 'orchid hybridising'],
+  ],
+};
+
+function correctSpelling(slug: string, text: string): string {
+  let out = text;
+  for (const [from, to] of SPELLING_FIXES[slug] ?? []) {
+    const count = out.split(from).length - 1;
+    if (count !== 1) throw new Error(`Spelling fix "${from}" matched ${count} times in ${slug}`);
+    out = out.replace(from, to);
+  }
+  return out;
+}
 
 function readEnvLocal(): Record<string, string> {
   const raw = readFileSync(path.resolve(process.cwd(), '.env.local'), 'utf8');
@@ -153,6 +188,10 @@ interface PresenterSeed {
 }
 
 function buildSeeds(): PresenterSeed[] {
+  return rawSeeds().map((seed) => ({ ...seed, bio: correctSpelling(seed.slug, seed.bio) }));
+}
+
+function rawSeeds(): PresenterSeed[] {
   const wijaya = readSource('Copy of 2026-08-14 - Elbert 2026 CV Template');
   const tibbs = readSource('Copy of 2026-08-19 - Michaael Tibbs');
   const crous = readSource('Copy of 202608-26 - Hildagard Crous_biograhy');
