@@ -1,19 +1,13 @@
 {
-  "template_version": "3.8.23",
-  "applied_at": "2026-10-08T08:50:59Z",
+  "template_version": "3.8.26",
+  "applied_at": "2026-10-13T16:19:03Z",
   "delivery": "partial",
   "workspace_id": "0508fe91e31545b0",
   "withheld": [
-    ".agent/handoffs.yaml",
-    ".agent/update-manifest.yaml",
     "execution/contract.py",
     "execution/gh_closure_scan.py",
     "execution/ingest_pulse.sh",
     "execution/pulse_runner.sh"
-  ],
-  "untracked": [
-    ".agent/handoffs.yaml",
-    ".agent/update-manifest.yaml"
   ],
   "bootstrap_unresolved": {
     "anchor": "3.8.23",

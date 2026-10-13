@@ -5,6 +5,18 @@
       "harness_version": "3.7.152",
       "note": "channel verified: update-template applied, make directives lists the id, show prints the untrusted envelope",
       "result": "applied"
+    },
+    "ATH-20261013-floor-glob-fp": {
+      "at": "2026-10-13T16:19:53Z",
+      "harness_version": "3.8.26",
+      "note": "3.8.26 applied 2026-10-13; 4 deliberate holds remain (contract.py fork, gh_closure_scan.py, ingest_pulse.sh, pulse_runner.sh)",
+      "result": "applied"
+    },
+    "ATH-20261013-qa-gpt6-codex-tiers": {
+      "at": "2026-10-13T16:19:53Z",
+      "harness_version": "3.8.26",
+      "note": "3.8.26 applied 2026-10-13; 4 deliberate holds remain (contract.py fork, gh_closure_scan.py, ingest_pulse.sh, pulse_runner.sh)",
+      "result": "applied"
     }
   },
   "schema": "athanor.directives-applied/v1"

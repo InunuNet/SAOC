@@ -286,22 +286,112 @@ PROTECTED_DIR_COMPONENTS=(".ssh" ".aws" ".gnupg" "secrets")
 # fixed candidate tested against it — `[[ "$literal" == $pattern ]]` lets
 # bash's own glob engine answer "could this token ever denote that name"
 # using pure pattern matching, with no filesystem access and no execution.
+#
+# A WILDCARD component is then judged by what it can actually reach, not by
+# the pattern alone, whenever the directory it is expanded in is knowable:
+# a bare `*` pattern-matches `.ssh` too, and treating that as a hit denied
+# `ls -d */` and `file .tmp/sandbox/x/*` (SAOC, 2026-10-08). When the
+# location is unknown -- a relative path in a command that changes directory
+# -- the pattern-only verdict stands, exactly as before.
 component_glob_hit() {
-  local path="$1" comp lit hit restore
+  local path="$1" comp lit hit restore prefix="" i
   local -a comps
   IFS='/' read -r -a comps <<< "$path"
-  for comp in "${comps[@]}"; do
-    [ -z "$comp" ] && continue
+  for i in "${!comps[@]}"; do
+    comp="${comps[$i]}"
+    if [ -z "$comp" ]; then
+      [ "$i" = 0 ] && prefix="/"
+      continue
+    fi
     for lit in "${PROTECTED_DIR_COMPONENTS[@]}"; do
       hit=1
       restore=0; shopt -q nocasematch || restore=1
       shopt -s nocasematch
       [[ "$lit" == $comp ]] && hit=0
       [ "$restore" = 1 ] && shopt -u nocasematch
-      [ "$hit" = 0 ] && return 0
+      if [ "$hit" = 0 ]; then
+        tr_has_glob "$comp" || return 0
+        # A shell glob never matches a leading dot implicitly: `*` and `?ssh`
+        # cannot reach `.ssh` unless the command turns dotglob on. Relied on
+        # inside the project only -- outside it, a tool with fnmatch-style
+        # matching (find -path, rsync filters) could still reach a dot-name,
+        # and a false positive there costs nothing.
+        if [ "${lit:0:1}" = "." ] && [ "${comp:0:1}" != "." ] \
+           && [ "${TR_DOTGLOB:-1}" = 0 ] && tr_glob_location_known "${prefix:-.}" \
+           && path_in_project "${prefix:-.}"; then
+          continue
+        fi
+        tr_wildcard_reaches "$prefix" "$lit" && return 0
+      fi
     done
+    case "$prefix" in
+      "")  prefix="$comp" ;;
+      "/") prefix="/$comp" ;;
+      *)   prefix="$prefix/$comp" ;;
+    esac
   done
   return 1
+}
+
+# TR_CWD_KNOWN -- set to 1 by the caller when a relative path in the command
+# resolves against this process's own working directory: the hook's cwd is
+# the session's, and the command does not change directory first. Unset or 0
+# means unknown, and every wildcard is then judged by its pattern alone.
+# TR_DOTGLOB -- set to 0 by the caller when the command cannot make a
+# wildcard match hidden names (no dotglob / GLOB_DOTS). Unset means it can.
+TR_GLOB_CAP=500
+
+# tr_has_glob <string> -- does it carry a shell wildcard character?
+tr_has_glob() {
+  case "$1" in *[\*\?\[]*) return 0 ;; esac
+  return 1
+}
+
+# tr_glob_location_known <path> -- can a wildcard in <path> be expanded
+# against the real filesystem and get the same answer the command would?
+tr_glob_location_known() {
+  case "$1" in
+    *'$'*|'~'*) return 1 ;;
+    /*)         return 0 ;;
+  esac
+  [ "${TR_CWD_KNOWN:-0}" = 1 ]
+}
+
+# tr_glob_expand <pattern> -- every filesystem match, one per line, with
+# case folded (APFS). Hidden names are included unless TR_DOTGLOB is 0: the
+# command could switch dotglob on itself. Pure pattern expansion -- nothing
+# is executed. Returns 1, printing nothing, when the match count exceeds
+# TR_GLOB_CAP, so a caller can fall back conservatively.
+tr_glob_expand() {
+  local pat="$1" restore m
+  local -a matches
+  restore=$(shopt -p nullglob dotglob nocaseglob)
+  shopt -s nullglob nocaseglob
+  if [ "${TR_DOTGLOB:-1}" = 0 ]; then shopt -u dotglob; else shopt -s dotglob; fi
+  local IFS=
+  # shellcheck disable=SC2206  # the unquoted expansion IS the glob
+  matches=( $pat )
+  eval "$restore"
+  [ "${#matches[@]}" -gt "$TR_GLOB_CAP" ] && return 1
+  for m in "${matches[@]}"; do printf '%s\n' "$m"; done
+  return 0
+}
+
+# tr_wildcard_reaches <prefix> <name> -- 0 when a wildcard component below
+# <prefix> could reach an entry called <name>, or when that cannot be known.
+tr_wildcard_reaches() {
+  local prefix="$1" lit="$2" dirs d
+  tr_glob_location_known "${prefix:-.}" || return 0
+  [ -z "$prefix" ] && prefix="."
+  if tr_has_glob "$prefix"; then
+    dirs=$(tr_glob_expand "$prefix") || return 0
+    while IFS= read -r d; do
+      [ -z "$d" ] && continue
+      { [ -e "$d/$lit" ] || [ -L "$d/$lit" ]; } && return 0
+    done <<< "$dirs"
+    return 1
+  fi
+  [ -e "$prefix/$lit" ] || [ -L "$prefix/$lit" ]
 }
 
 # brace_variants <token> -- conservative, single-group {a,b,...} expansion,
