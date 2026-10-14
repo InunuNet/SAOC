@@ -16,9 +16,9 @@ export const OZOW_FIELD_MAX_LENGTH: Readonly<Record<string, number>> = {
   Optional4: 50,
   Optional5: 50,
   Customer: 100,
-  // Ozow's main post-variable table prints CancelUrl as String(50) while another says 150; the
-  // conservative reading is enforced because the true cap cannot be verified.
-  CancelUrl: 50,
+  // Ozow's main table prints CancelUrl as String(50) but the evidence shows 150 is enforced,
+  // matching its sibling ErrorUrl (which receives the same value).
+  CancelUrl: 150,
   ErrorUrl: 150,
   SuccessUrl: 150,
   NotifyUrl: 150,
