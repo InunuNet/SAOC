@@ -2,6 +2,11 @@ import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
 
 let adminApp: App;
 
+// Default Cloud Storage bucket name, or undefined when not configured.
+export function getStorageBucketName(): string | undefined {
+  return process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || undefined;
+}
+
 export function initAdmin(): App {
   if (getApps().length > 0) {
     adminApp = getApps()[0];
@@ -18,8 +23,11 @@ export function initAdmin(): App {
     );
   }
 
+  const storageBucket = getStorageBucketName();
+
   adminApp = initializeApp({
     credential: cert({ projectId, clientEmail, privateKey }),
+    ...(storageBucket ? { storageBucket } : {}),
   });
 
   return adminApp;

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
-import { initAdmin } from '@/lib/firebase-admin';
+import { getStorageBucketName, initAdmin } from '@/lib/firebase-admin';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import {
   handleMarketingAssetUpload,
@@ -95,6 +95,14 @@ export async function POST(
     body = (await request.json()) as MarketingAssetRequestBody;
   } catch {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
+  }
+
+  if (!getStorageBucketName()) {
+    console.error(
+      '[vendors/[id]/marketing-asset/route] Storage bucket not configured; upload refused. ' +
+        'Set NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET.',
+    );
+    return NextResponse.json({ error: 'File upload is temporarily unavailable.' }, { status: 500 });
   }
 
   const db = getFirestore(initAdmin());
