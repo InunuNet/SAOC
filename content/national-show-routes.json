@@ -346,6 +346,22 @@
       "specNumber": null
     },
     {
+      "slug": "/national-show/vendors/photos",
+      "label": "Vendor Product Photos",
+      "group": "exhibit-trade",
+      "parent": "/national-show",
+      "order": 8,
+      "listed": false,
+      "dynamic": false,
+      "indexable": false,
+      "status": "untouched",
+      "owner": "saoc-eb",
+      "archetype": "transactional",
+      "purpose": "Vendor product-photo upload for a registration whose code has been used.",
+      "pageKey": null,
+      "specNumber": null
+    },
+    {
       "slug": "/national-show/archive/[year]",
       "label": "Past Show — Year",
       "group": "the-show",
