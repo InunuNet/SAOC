@@ -107,10 +107,8 @@ function walkFiles(dir: string, exts: string[]): string[] {
   return out;
 }
 
-// ===========================================================================
-// Route manifest schema — content/national-show-routes.json
-// ===========================================================================
-
+// ====================================================================// Route manifest schema — content/national-show-routes.json
+// ====================================================================
 interface ManifestRoute {
   slug: string;
   label: string;
@@ -152,7 +150,7 @@ const EXPECTED_GROUPS: ManifestGroup[] = [
   { id: 'the-show', label: 'The Show', order: 4 },
 ];
 
-// The golden's own table (route-manifest-schema.golden.md "The 21 rows"), keyed by
+// The golden's own table (route-manifest-schema.golden.md "The 21 rows" plus the two unlisted vendor routes (payment/status, photos)), keyed by
 // slug, checked field-for-field against the generated manifest (RM1 direction 3).
 const GOLDEN_ROWS: Record<string, Partial<ManifestRoute>> = {
   '/national-show': { group: null, order: 1, listed: true, dynamic: false, status: 'restructured', owner: 'nos-design', archetype: 'hub', pageKey: '01-national-show-landing' },
@@ -176,6 +174,7 @@ const GOLDEN_ROWS: Record<string, Partial<ManifestRoute>> = {
   '/national-show/vendors/register': { group: 'exhibit-trade', listed: false, dynamic: false, indexable: false, owner: 'saoc-eb' },
   '/national-show/vendors/payment': { group: 'exhibit-trade', listed: false, dynamic: false, indexable: false, owner: 'saoc-eb' },
   '/national-show/vendors/payment/status': { group: 'exhibit-trade', listed: false, dynamic: false, indexable: false, owner: 'saoc-eb' },
+  '/national-show/vendors/photos': { group: 'exhibit-trade', listed: false, dynamic: false, indexable: false, owner: 'saoc-eb' },
   '/national-show/archive/[year]': { group: 'the-show', listed: false, dynamic: true, indexable: true, owner: 'saoc-eb' },
 };
 
@@ -204,10 +203,8 @@ function loadManifest(): RouteManifest {
   return readJson<RouteManifest>(MANIFEST_PATH);
 }
 
-// ===========================================================================
-// R — routes and reachability
-// ===========================================================================
-
+// ====================================================================// R — routes and reachability
+// ====================================================================
 function runRoutesChecks(manifest: RouteManifest): void {
   // R1 — every listed row has a page.tsx; counts hold.
   let r1ok = true;
@@ -342,10 +339,8 @@ function extractHrefLiterals(src: string): Set<string> {
   return out;
 }
 
-// ===========================================================================
-// RM / NAV — the route manifest
-// ===========================================================================
-
+// ====================================================================// RM / NAV — the route manifest
+// ====================================================================
 function runManifestChecks(manifest: RouteManifest): void {
   let rm1ok = true;
   const rm1fail: string[] = [];
@@ -359,10 +354,10 @@ function runManifestChecks(manifest: RouteManifest): void {
     rm1fail.push('groups array does not match exactly');
   }
 
-  if (manifest.routes.length !== 21) { rm1ok = false; rm1fail.push(`routes.length=${manifest.routes.length}, expected 21`); }
+  if (manifest.routes.length !== 23) { rm1ok = false; rm1fail.push(`routes.length=${manifest.routes.length}, expected 23`); }
   const listed = manifest.routes.filter((r) => r.listed).length;
   const unlisted = manifest.routes.filter((r) => !r.listed).length;
-  if (listed !== 17 || unlisted !== 4) { rm1ok = false; rm1fail.push(`listed=${listed} unlisted=${unlisted}`); }
+  if (listed !== 17 || unlisted !== 6) { rm1ok = false; rm1fail.push(`listed=${listed} unlisted=${unlisted}`); }
 
   // Direction 1: disk -> manifest. Every page.tsx under national-show/ has exactly one row.
   const diskPages = walkFiles(NOS_APP_DIR, ['page.tsx']).map((f) => {
@@ -456,10 +451,8 @@ function runManifestChecks(manifest: RouteManifest): void {
   check('RM3', rm3ok, 'manifest carries no deleted route; static/Sanity blocks still present in source', rm3ok ? '' : `deletedSlugInManifest=${deletedSlugInManifest}`);
 }
 
-// ===========================================================================
-// X — exhibitors / sa-exhibitors guard
-// ===========================================================================
-
+// ====================================================================// X — exhibitors / sa-exhibitors guard
+// ====================================================================
 function runExhibitorGuard(manifest: RouteManifest): void {
   const baseRef = process.env.M4_BASE_REF ?? 'origin/main';
   const x1changed = gitDiffNames(baseRef, 'app/(marketing)/national-show/exhibitors');
@@ -478,10 +471,8 @@ function runExhibitorGuard(manifest: RouteManifest): void {
   check('X2', x2ok, "exhibitors.purpose contains 'entry', sa-exhibitors.purpose contains 'directory', distinct, pageKey resolves uniquely", x2ok ? '' : 'purpose/pageKey distinction not found');
 }
 
-// ===========================================================================
-// H — the hub's four IA groups
-// ===========================================================================
-
+// ====================================================================// H — the hub's four IA groups
+// ====================================================================
 function runHubChecks(manifest: RouteManifest): void {
   const hubSrc = readFileSync(path.join(NOS_APP_DIR, 'page.tsx'), 'utf8');
 
@@ -546,10 +537,8 @@ function runHubChecks(manifest: RouteManifest): void {
   check('H3', h3ok, 'pre-M4 hub content still present — groups are added structure, not a replacement', h3ok ? '' : 'a known pre-M4 text run is missing');
 }
 
-// ===========================================================================
-// SP — show sponsors' own data scope
-// ===========================================================================
-
+// ====================================================================// SP — show sponsors' own data scope
+// ====================================================================
 function runSponsorChecks(): void {
   const schemaPath = path.resolve(PROJECT_ROOT, 'sanity/schemas/documents/showSponsor.ts');
   const indexSrc = readFileSync(path.resolve(PROJECT_ROOT, 'sanity/schemas/index.ts'), 'utf8');
@@ -574,10 +563,8 @@ function runSponsorChecks(): void {
   check('SP3', sp3changed.length === 0, 'app/(marketing)/sponsors/ unmodified', sp3changed.join('; '));
 }
 
-// ===========================================================================
-// EL — real empty listings
-// ===========================================================================
-
+// ====================================================================// EL — real empty listings
+// ====================================================================
 const LISTING_ROUTE_DIRS = ['sa-exhibitors', 'international-guests', 'sponsors'] as const;
 
 function runEmptyListingChecks(): void {
@@ -667,10 +654,8 @@ function findUnallowedProperNouns(text: string, allowlist: Set<string>): string[
   return violations;
 }
 
-// ===========================================================================
-// RS — retired seeds
-// ===========================================================================
-
+// ====================================================================// RS — retired seeds
+// ====================================================================
 interface RetiredEntry {
   pageKey: string;
   specNumber: number;
@@ -777,10 +762,8 @@ function runRetiredSeedChecks(manifest: RouteManifest): void {
   check('RS4', rs4ok, 'the four never-create slugs have no page.tsx', rs4fail.join('; '));
 }
 
-// ===========================================================================
-// CL — content linkage (via lib/data/show-pages.ts's real resolveNotice)
-// ===========================================================================
-
+// ====================================================================// CL — content linkage (via lib/data/show-pages.ts's real resolveNotice)
+// ====================================================================
 type ShowPagesModule = typeof import('../../lib/data/show-pages');
 
 interface SeedSectionJson {
@@ -947,10 +930,8 @@ function missingSourceSentences(sourceText: string, targetText: string): string[
   return sourceSentences.filter((s) => !normalizedTarget.includes(s.normalized)).map((s) => s.raw);
 }
 
-// ===========================================================================
-// SW — seed-write narrowing (via scripts/seed-show-pages.ts's real functions)
-// ===========================================================================
-
+// ====================================================================// SW — seed-write narrowing (via scripts/seed-show-pages.ts's real functions)
+// ====================================================================
 type SeedShowPagesModule = typeof import('../seed-show-pages');
 
 function runSeedWriteChecks(seedModule: SeedShowPagesModule): void {
@@ -1040,10 +1021,8 @@ function runSeedWriteChecks(seedModule: SeedShowPagesModule): void {
   );
 }
 
-// ===========================================================================
-// V — visitor-info mechanism unification (F16) — HONEST: not yet implemented
-// ===========================================================================
-
+// ====================================================================// V — visitor-info mechanism unification (F16) — HONEST: not yet implemented
+// ====================================================================
 function runVisitorInfoChecks(): void {
   const showFaqSrc = readFileSync(path.resolve(PROJECT_ROOT, 'sanity/schemas/documents/showFaq.ts'), 'utf8');
   const showVisitorInfoSrc = readFileSync(path.resolve(PROJECT_ROOT, 'sanity/schemas/documents/showVisitorInfo.ts'), 'utf8');
@@ -1073,10 +1052,8 @@ function runVisitorInfoChecks(): void {
   check('V5', false, 'pre/post-migration structural-field snapshot comparison — NOT YET RUN (no migration exists to compare against)', 'not implemented');
 }
 
-// ===========================================================================
-// CD — council-draft, the fourth provenance value
-// ===========================================================================
-
+// ====================================================================// CD — council-draft, the fourth provenance value
+// ====================================================================
 async function runCouncilDraftChecks(showPages: ShowPagesModule, seedModule: SeedShowPagesModule): Promise<void> {
   const { resolveNotice, FALLBACK_DRAFT_LABEL } = showPages;
 
@@ -1146,10 +1123,8 @@ async function runCouncilDraftChecks(showPages: ShowPagesModule, seedModule: See
   check('CD5', cd5ok, "17-faq's Q1 restored as council-draft, sourcePath set, resolves with the draft notice", `found=${Boolean(q1)} provenance=${q1?.provenance} noticeLabel=${cd5ok ? FALLBACK_DRAFT_LABEL : 'not draft'}`);
 }
 
-// ===========================================================================
-// G — R13 grid orphan rule (static half; G3b/G4/G5 are browser-measured elsewhere)
-// ===========================================================================
-
+// ====================================================================// G — R13 grid orphan rule (static half; G3b/G4/G5 are browser-measured elsewhere)
+// ====================================================================
 async function runGridChecks(): Promise<void> {
   const { resolveGridLayout } = await import('../../lib/grid-columns');
   const GOLDEN_TABLE: Record<number, [number, number]> = {
@@ -1178,10 +1153,8 @@ async function runGridChecks(): Promise<void> {
   check('G6', g6ok, 'c=2 is exempt (n=2 -> columns=2 directly); the orphan search never considers c=2 (n=5 -> columns=3, not 2)', `n2=${JSON.stringify(n2)} n5=${JSON.stringify(n5)}`);
 }
 
-// ===========================================================================
-// main
-// ===========================================================================
-
+// ====================================================================// main
+// ====================================================================
 async function main(): Promise<void> {
   writeResults(); // every id UNSET up front
 

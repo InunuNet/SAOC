@@ -5,6 +5,7 @@ import { useState } from 'react';
 import type { VendorSubmission, VendorSubmissionStatus, VendorStandOrderStatus } from '@/types/index';
 import type { VendorReviewAction } from '@/lib/vendor-review';
 import { VendorPaymentLinkControl } from './VendorPaymentLinkControl';
+import { VendorPhotoLinkControl } from './VendorPhotoLinkControl';
 
 // F32 (vendor-gated-registration-flow, M3) — read-only display labels only. This is NOT the
 // office-use `paymentReceived` (F7/EFT) signal, which the table renders separately below, so
@@ -78,6 +79,8 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
   // Hotfix (contracts/golden/vendor-stand-payment-link-visibility) -- fetched links, keyed by
   // vendorSubmissionId, so the manual-copy fallback stays visible after a successful fetch.
   const [paymentUrlById, setPaymentUrlById] = useState<Record<string, string>>({});
+  // Photo-resume links (vendor-flow-fixes F2), keyed by vendorSubmissionId, same fallback role.
+  const [photoUrlById, setPhotoUrlById] = useState<Record<string, string>>({});
 
   // Hotfix (contracts/golden/vendor-stand-payment-link-visibility, 2026-09-01) -- reuses the
   // same pendingId/error state as handleAction above (no second loading/error mechanism). The
@@ -105,6 +108,38 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
         } catch {
           // Clipboard write blocked (permissions, insecure context, etc.) -- the URL stays
           // visible inline as a manual-copy fallback, so this is not an error state.
+        }
+      }
+    } catch {
+      setError('Failed to reach the server. Please try again.');
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  // Same pendingId/error state and copy-with-visible-fallback behaviour as the payment link.
+  // The route ALWAYS mints a fresh link and sends no email.
+  async function handleGetPhotoLink(id: string) {
+    setPendingId(id);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/admin/vendors/${id}/resend-photo-link`, { method: 'POST' });
+      const body = (await res.json()) as { success?: boolean; photoUrl?: string; error?: string };
+
+      if (!res.ok || !body.success || !body.photoUrl) {
+        setError(body.error ?? 'Failed to generate the photo upload link.');
+        return;
+      }
+
+      const photoUrl = body.photoUrl;
+      setPhotoUrlById((current) => ({ ...current, [id]: photoUrl }));
+
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(photoUrl);
+        } catch {
+          // Clipboard write blocked -- the URL stays visible inline as a manual-copy fallback.
         }
       }
     } catch {
@@ -196,6 +231,7 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
               const standPaymentStatus = standPaymentStatusById[row.id] ?? 'not-started';
               const uploadedProductPhotoCount = countUploadedProductPhotos(row);
               const uploadsComplete = uploadedProductPhotoCount >= REQUIRED_PRODUCT_PHOTO_COUNT;
+              const showPhotoLink = !uploadsComplete && row.status !== 'rejected';
 
               return (
                 <tr key={row.id} className="hover:bg-parchment/60">
@@ -257,7 +293,9 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
                   </td>
                   <td className={BODY_CELL_CLASS}>
                     <div className="flex flex-wrap items-start gap-2">
-                      {actions.length === 0 && !(row.status === 'approved' && standPaymentStatus !== 'paid') && (
+                      {actions.length === 0 &&
+                        !(row.status === 'approved' && standPaymentStatus !== 'paid') &&
+                        !showPhotoLink && (
                         <span className="text-muted">—</span>
                       )}
                       {actions.map((action) => (
@@ -276,6 +314,13 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
                           isPending={pendingId === row.id}
                           paymentUrl={paymentUrlById[row.id] ?? null}
                           onRequestLink={() => handleResendPaymentLink(row.id)}
+                        />
+                      )}
+                      {showPhotoLink && (
+                        <VendorPhotoLinkControl
+                          isPending={pendingId === row.id}
+                          photoUrl={photoUrlById[row.id] ?? null}
+                          onRequestLink={() => handleGetPhotoLink(row.id)}
                         />
                       )}
                     </div>

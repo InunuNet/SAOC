@@ -2,6 +2,7 @@ import React from 'react';
 
 import { sendEmail, FORMS_FROM_ADDRESS } from '@/lib/email';
 import VendorRegistrationConfirmation from '@/emails/VendorRegistrationConfirmation';
+import { mintVendorPhotoUploadUrl } from '@/lib/vendor-photo-resume-link';
 
 /**
  * Confirmation email for POST /api/vendors/register (mission vendor-registration F5). See
@@ -14,12 +15,18 @@ import VendorRegistrationConfirmation from '@/emails/VendorRegistrationConfirmat
  * Contains no logging call of any kind anywhere in its body: businessName/contactEmail are
  * POPIA-relevant submitter PII and must never reach a log line -- see the golden README's
  * "design constraint 5" and its static source check.
+ *
+ * Photo-resume link (mission vendor-flow-fixes, F2): when `vendorSubmissionId` is supplied and
+ * VENDOR_STAND_PAYMENT_TOKEN_SECRET is set, a fresh photo-resume link is minted and passed to
+ * the email as `photoUploadUrl`. With the secret unset the link is silently omitted -- the
+ * acknowledgement email must still send.
  */
 
 export interface VendorRegistrationConfirmationInput {
   businessName: string;
   contactPersonName: string;
   contactEmail: string;
+  vendorSubmissionId?: string;
 }
 
 /** Deliberately narrow -- matches only what lib/email.ts's real `sendEmail` already satisfies
@@ -30,6 +37,16 @@ export interface VendorRegistrationConfirmationMailer {
 
 export interface SendVendorRegistrationConfirmationDeps {
   mailer?: VendorRegistrationConfirmationMailer;
+}
+
+const DEFAULT_SITE_URL = 'https://saoc.co.za';
+
+function resolvePhotoUploadUrl(vendorSubmissionId: string | undefined): string | undefined {
+  const secret = process.env.VENDOR_STAND_PAYMENT_TOKEN_SECRET;
+  if (!vendorSubmissionId || !secret) return undefined;
+
+  const siteUrl = process.env.SITE_URL?.trim() || DEFAULT_SITE_URL;
+  return mintVendorPhotoUploadUrl({ vendorSubmissionId, secret, now: new Date(), siteUrl }).url;
 }
 
 export async function sendVendorRegistrationConfirmationEmail(
@@ -44,6 +61,7 @@ export async function sendVendorRegistrationConfirmationEmail(
     react: React.createElement(VendorRegistrationConfirmation, {
       businessName: input.businessName,
       contactPersonName: input.contactPersonName,
+      photoUploadUrl: resolvePhotoUploadUrl(input.vendorSubmissionId),
     }),
     from: FORMS_FROM_ADDRESS,
   });

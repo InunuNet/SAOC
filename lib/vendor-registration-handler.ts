@@ -108,6 +108,7 @@ export async function handleVendorRegistration(
         businessName: built.businessName,
         contactPersonName: built.contactPersonName,
         contactEmail: built.contactEmail,
+        vendorSubmissionId: writeResult.id,
       }),
     deps.onEmailError,
   );

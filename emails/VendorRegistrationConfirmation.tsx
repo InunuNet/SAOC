@@ -4,6 +4,7 @@ import {
   Head,
   Heading,
   Hr,
+  Link,
   Html,
   Preview,
   Text,
@@ -12,6 +13,7 @@ import {
 interface VendorRegistrationConfirmationProps {
   businessName: string;
   contactPersonName: string;
+  photoUploadUrl?: string;
 }
 
 /**
@@ -21,6 +23,7 @@ interface VendorRegistrationConfirmationProps {
 export default function VendorRegistrationConfirmation({
   businessName,
   contactPersonName,
+  photoUploadUrl,
 }: VendorRegistrationConfirmationProps) {
   return (
     <Html>
@@ -41,6 +44,17 @@ export default function VendorRegistrationConfirmation({
           <Text style={{ fontSize: '16px', color: '#333' }}>
             Our team will review your registration and be in touch.
           </Text>
+          {photoUploadUrl && (
+            <>
+              <Text style={{ fontSize: '16px', color: '#333' }}>
+                Your registration is not complete until you have uploaded all 3 required product
+                photos. You can do this at any time using the link below.
+              </Text>
+              <Text style={{ fontSize: '16px', color: '#333' }}>
+                <Link href={photoUploadUrl}>Upload your product photos</Link>
+              </Text>
+            </>
+          )}
           <Text style={{ fontSize: '14px', color: '#555' }}>
             Any phytosanitary/import permit, CITES permit, or food-handling certificate numbers
             you supplied are recorded as submitted and are not verified by SAOC. Ensuring their
