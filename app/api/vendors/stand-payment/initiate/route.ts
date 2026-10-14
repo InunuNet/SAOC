@@ -13,6 +13,8 @@ import {
 import { deriveVendorStandEarlyBirdCutoffIso, resolveVendorStandPrice } from '@/lib/vendor-stand-pricing';
 import { verifyVendorStandPaymentToken } from '@/lib/vendor-stand-payment-token';
 import { resolveProvider } from '@/lib/payments';
+import { PAYFAST_FIELD_MAX_LENGTH, clampToMaxLength } from '@/lib/payments/gateway-field-limits';
+import { buildVendorStandReturnUrl } from '@/lib/vendor-stand-return';
 import { resolveActiveGateway } from '@/lib/payments/active-gateway';
 import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
@@ -230,9 +232,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const initiation = await paymentProvider.initiate({
     reference: attemptReference,
     amountFormatted: amount.toFixed(2),
-    itemName: `SAOC National Show — Vendor Stand (${submissionData.businessName ?? ''})`,
-    returnUrl: `${siteUrl}/national-show/vendors/payment?token=${encodeURIComponent(body.token)}&paid=1`,
-    cancelUrl: `${siteUrl}/national-show/vendors/payment?token=${encodeURIComponent(body.token)}`,
+    itemName: clampToMaxLength(
+      `SAOC National Show — Vendor Stand (${submissionData.businessName ?? ''})`,
+      PAYFAST_FIELD_MAX_LENGTH.item_name,
+    ),
+    returnUrl: buildVendorStandReturnUrl(siteUrl, attemptId),
+    cancelUrl: buildVendorStandReturnUrl(siteUrl, attemptId),
     notifyUrl: `${siteUrl}${NOTIFY_PATH_BY_PROVIDER_ID[activeGateway]}`,
   });
 

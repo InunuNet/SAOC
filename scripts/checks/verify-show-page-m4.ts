@@ -175,6 +175,7 @@ const GOLDEN_ROWS: Record<string, Partial<ManifestRoute>> = {
   '/national-show/vendors/apply': { group: 'exhibit-trade', listed: false, dynamic: false, indexable: true, owner: 'saoc-eb' },
   '/national-show/vendors/register': { group: 'exhibit-trade', listed: false, dynamic: false, indexable: false, owner: 'saoc-eb' },
   '/national-show/vendors/payment': { group: 'exhibit-trade', listed: false, dynamic: false, indexable: false, owner: 'saoc-eb' },
+  '/national-show/vendors/payment/status': { group: 'exhibit-trade', listed: false, dynamic: false, indexable: false, owner: 'saoc-eb' },
   '/national-show/archive/[year]': { group: 'the-show', listed: false, dynamic: true, indexable: true, owner: 'saoc-eb' },
 };
 

@@ -346,6 +346,22 @@
       "specNumber": null
     },
     {
+      "slug": "/national-show/vendors/payment/status",
+      "label": "Vendor Payment Status",
+      "group": "exhibit-trade",
+      "parent": "/national-show",
+      "order": 8,
+      "listed": false,
+      "dynamic": false,
+      "indexable": false,
+      "status": "untouched",
+      "owner": "saoc-eb",
+      "archetype": "transactional",
+      "purpose": "Gateway return page showing the stored stand-payment outcome.",
+      "pageKey": null,
+      "specNumber": null
+    },
+    {
       "slug": "/national-show/archive/[year]",
       "label": "Past Show — Year",
       "group": "the-show",

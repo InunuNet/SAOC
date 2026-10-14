@@ -7,6 +7,7 @@ import {
   OZOW_TRANSACTION_STATUS_URL,
 } from '@/lib/ozow';
 import { BOOKING_REF_PREFIX } from '@/lib/booking-ref';
+import { OZOW_FIELD_MAX_LENGTH, findFieldLengthViolations } from './gateway-field-limits';
 import {
   VENDOR_STAND_ORDER_REF_PREFIX,
   parseAttemptIdFromStandOrderRef,
@@ -263,6 +264,15 @@ export function createOzowProvider(deps?: OzowProviderDeps): PaymentProvider {
         NotifyUrl: input.notifyUrl,
         IsTest: OZOW_IS_TEST,
       };
+      // Ozow silently rejects over-length fields with a bare request-error. Fail loudly here
+      // instead, naming lengths only (never values, which can carry URLs and references).
+      const violations = findFieldLengthViolations(signedFields, OZOW_FIELD_MAX_LENGTH);
+      if (violations.length > 0) {
+        throw new Error(
+          '[payments/ozow] Outbound field(s) exceed Ozow caps: ' +
+            violations.map((v) => `${v.field} is ${v.length} chars (max ${v.max})`).join('; ')
+        );
+      }
       const hashCheck = generateOzowHash(signedFields, OZOW_OUTBOUND_FIELD_ORDER, privateKey);
 
       return {
