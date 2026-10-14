@@ -7,6 +7,10 @@ import {
   OZOW_TRANSACTION_STATUS_URL,
 } from '@/lib/ozow';
 import { BOOKING_REF_PREFIX } from '@/lib/booking-ref';
+import {
+  VENDOR_STAND_ORDER_REF_PREFIX,
+  parseAttemptIdFromStandOrderRef,
+} from '@/lib/vendor-stand-orders';
 
 import type {
   ConfirmResult,
@@ -159,6 +163,10 @@ function fieldOrNull(fields: Record<string, string>, key: string): string | null
   return value === undefined ? null : value;
 }
 
+const OZOW_BANK_REFERENCE_MAX_LENGTH = 20;
+// VENDOR_STAND_ORDER_REF_PREFIX (4 chars) + 16 = OZOW_BANK_REFERENCE_MAX_LENGTH.
+const OZOW_BANK_REFERENCE_VSO_ATTEMPT_CHARS = 16;
+
 /**
  * Ozow documents BankReference as String(20) — a hard cap. The full booking reference
  * (BOOKING_REF_PREFIX + a 12-char random segment) is always 22 characters, 2 over that
@@ -167,11 +175,33 @@ function fieldOrNull(fields: Record<string, string>, key: string): string | null
  * prefix and send only the random segment, which is unique on its own and safely under
  * the limit. TransactionReference is unaffected — it keeps the full reference, well
  * within its own 50-char limit.
+ *
+ * Vendor stand references (`VSO-<20-char submission id>::<16-hex attempt id>`, 42 chars) hit the
+ * same cap and the same silent request-error. They are sent as `VSO-` + the first
+ * OZOW_BANK_REFERENCE_VSO_ATTEMPT_CHARS of the attempt id — exactly 20 chars, no `::`. The attempt
+ * id is per-payment random, so it is unique on its own; the full reference still travels as
+ * TransactionReference, which is what settlement matches on (BankReference is never read back).
+ *
+ * Any other shape over the cap THROWS rather than truncating: a blind truncation could collide
+ * two different payments onto one BankReference, and sending it over-length just reproduces the
+ * silent sandbox rejection. A thrown error surfaces as a logged 500 at initiate time, which is
+ * loud and safe; a truncated or over-length value fails quietly at the gateway.
  */
 function deriveOzowBankReference(reference: string): string {
-  return reference.startsWith(BOOKING_REF_PREFIX)
-    ? reference.slice(BOOKING_REF_PREFIX.length)
-    : reference;
+  if (reference.startsWith(BOOKING_REF_PREFIX)) {
+    return reference.slice(BOOKING_REF_PREFIX.length);
+  }
+  const attemptId = parseAttemptIdFromStandOrderRef(reference);
+  if (attemptId !== null) {
+    return `${VENDOR_STAND_ORDER_REF_PREFIX}${attemptId.slice(0, OZOW_BANK_REFERENCE_VSO_ATTEMPT_CHARS)}`;
+  }
+  if (reference.length > OZOW_BANK_REFERENCE_MAX_LENGTH) {
+    throw new Error(
+      `[payments/ozow] Reference of ${reference.length} chars exceeds Ozow's BankReference cap ` +
+        `of ${OZOW_BANK_REFERENCE_MAX_LENGTH} and has no known derivation.`
+    );
+  }
+  return reference;
 }
 
 export function createOzowProvider(deps?: OzowProviderDeps): PaymentProvider {
