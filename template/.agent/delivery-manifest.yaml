@@ -10,12 +10,21 @@ rules:
   - behavior.md
   - coding.md
   - dispatch-naming.md
+  - gws.md
   - sandbox.md
   - scope.md
   - security.md
   - workflow.md
 skills:
   - alembic.md
+  - gws-calendar.md
+  - gws-docs.md
+  - gws-drive.md
+  - gws-gmail.md
+  - gws-shared.md
+  - gws-sheets-append.md
+  - gws-sheets-read.md
+  - gws-sheets.md
   - onboard.md
   - quick-gate.md
   - report-harness-bug.md

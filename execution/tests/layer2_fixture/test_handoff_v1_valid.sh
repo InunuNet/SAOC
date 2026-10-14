@@ -3,10 +3,16 @@
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 source execution/tests/lib/assert.sh
+source execution/tests/lib/sandbox_repo.sh
 
 echo "=== test_handoff_v1_valid.sh ==="
 
 FIXTURE="execution/tests/layer2_fixture/fixtures/handoff_v1_valid.txt"
+# In a sandbox repo: handoffs.py appends left_undone items to the cwd's
+# backlog.md and remembers into its brain, so run from the host checkout it
+# wrote a fake "Factory loop" item into that project's live backlog.
+SB=$(make_sandbox_repo handoff_v1_valid "$FIXTURE" execution/brain.py)
+cd "$SB" || exit 1
 HANDOFFS_DIR=".agent/memory/scratch/handoffs"
 
 mkdir -p "$HANDOFFS_DIR"
@@ -20,7 +26,7 @@ content = sys.stdin.read()
 print(json.dumps({'agent_type': 'dev', 'last_assistant_message': content}))
 " <<< "$FIXTURE_CONTENT")
 
-OUTPUT=$(echo "$PAYLOAD" | python3 execution/handoffs.py 2>&1)
+OUTPUT=$(echo "$PAYLOAD" | python3 "$HARNESS_ROOT/execution/handoffs.py" 2>&1)
 ACTUAL_EXIT=$?
 
 assert_exit "handoffs.py exits 0 for valid v1 handoff" 0 $ACTUAL_EXIT

@@ -81,6 +81,35 @@
             "type": "command",
             "command": "[ -f execution/hooks/compaction_backstop.sh ] && bash execution/hooks/compaction_backstop.sh || exit 0",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/permission_gate.sh ] || exit 0; bash execution/hooks/permission_gate.sh attended",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/permission_gate.sh ] || exit 0; bash execution/hooks/permission_gate.sh request",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/permission_gate.sh ] || exit 0; bash execution/hooks/permission_gate.sh notify",
+            "timeout": 10
           }
         ]
       }

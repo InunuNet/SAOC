@@ -125,6 +125,17 @@ def load_contract(path: str) -> dict:
             try:
                 with open(p) as f:
                     contract = yaml.safe_load(f)
+                # An unquoted leading `! ` is a YAML tag, not shell negation:
+                # `cmd: ! grep -q x f` loads as `grep -q x f`, silently
+                # inverting the check (GH #1440). Block literals (`|`) are
+                # untouched -- their content carries no tag.
+                for ev in yaml.parse(p.read_text()):
+                    if isinstance(ev, yaml.ScalarEvent) and ev.tag == "!":
+                        print(f"ERROR: {path} line {ev.start_mark.line + 1}: an unquoted "
+                              f"leading '! ' is read by YAML as a tag and dropped, so "
+                              f"'{ev.value[:60]}' would run WITHOUT its negation -- quote "
+                              f"the whole command or use a block literal (|-)", file=sys.stderr)
+                        sys.exit(1)
             except yaml.YAMLError as e:
                 from yaml_safe import diagnose_scalar_break
                 msg = f"ERROR: failed to parse {path}: {e}"
@@ -285,6 +296,21 @@ def normalize_contract(contract: dict) -> dict:
             else:
                 c["phases"] = [{"id": phase_id, "assertions": assertion_ids}]
 
+    # Anything else is a shape this loader does not understand. Say so here,
+    # once, for validate and gate alike -- the id-keyed mapping form
+    # (`assertions: {A1: {check:, expected:}}`) used to crash both with an
+    # AttributeError (GH #1450). Its `expected:` has no defined meaning, so it
+    # is rejected rather than guessed at.
+    shaped = c.get("assertions", [])
+    if isinstance(shaped, dict):
+        keys = ", ".join(list(map(str, shaped))[:3])
+        raise ValueError(
+            "assertions is a mapping keyed by id (%s); write a list instead -- "
+            "`assertions:` then `- id: A1` / `description:` / `verify: {kind: shell, "
+            "cmd: ...}` per item, with a command that exits 0 on success "
+            "(e.g. `test \"$(grep -c X f)\" = 1` rather than `expected: \"1\"`)" % keys)
+    if not isinstance(shaped, list) or not all(isinstance(a, dict) for a in shaped):
+        raise ValueError("assertions must be a list of mappings")
     return c
 
 

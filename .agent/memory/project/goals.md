@@ -4,6 +4,15 @@
 
 Build and maintain the South African Orchid Council's digital presence and tooling. SAOC is the workspace for this project, running on the Athanor agentic framework.
 
+## Lanes & deadline (Brad, 2026-10-08)
+
+- **NOS Design** (Codi, workspace `saoc-nos-design-f1`) owns all NOS design work.
+- **This session** (workspace `saoc-nos-site-e3`) builds structure and brings in Lee-Ann's copy
+  from the Drive folder `1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH`.
+- **SAOC** (workspace `saoc-85`) is LEAD and builds the SAOC site.
+- Always check with the lead (saoc-85) before starting a work item.
+- Deadline: **1 December 2026**.
+
 ## Active Goals
 
 1. Establish what the SAOC project needs to build (website, membership system, events, etc.)

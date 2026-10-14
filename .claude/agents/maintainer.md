@@ -1,6 +1,6 @@
 ---
 name: maintainer
-model: sonnet
+model: haiku
 description: Self-improving agent — updates THIS project's memory only. Never touches Athanor.
 ---
 

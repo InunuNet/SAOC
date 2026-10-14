@@ -53,7 +53,20 @@ else
   echo "$_BOOT_PROJECT | scaffolded by $_BOOT_HARNESS harness v$_BOOT_VERSION"
   echo "════ BOOT CONTEXT ($_BOOT_PROJECT) ════"
 fi
-echo "Core Mandates: Specialized agents, Tiered memory, Autonomous self-improvement, Alembic (URL distilling)."
+echo "Core Mandates: Specialized agents, Tiered memory, Autonomous self-improvement, Alembic (URL distilling), gws (Google Workspace)."
+# Quota is read backwards fleet-wide after every reset (operator 2026-10-07):
+# state the direction in the one place every session and every compaction sees.
+echo "QUOTA COUNTS UP in Athanor: every Athanor figure (statusline, python3 execution/quota.py status) is % USED, 0% = fresh window, 100% = exhausted. Codex and Antigravity native displays are the opposite (% LEFT). Check which one you are reading. After a reset you have a FULL window (~2% used = ~98% left): keep working at full scope."
+# Draft lane (operator-adopted 2026-10-08, rule: workflow.md "Draft lane"):
+# announced here so an active draft survives compaction.
+# A symlink is refused (a link to .env would print secrets into context), and
+# only printable ASCII of the first 300 bytes is shown.
+if [ -L .agent/DRAFT_LANE ]; then
+  echo "DRAFT LANE: .agent/DRAFT_LANE is a symlink -- ignored. Recreate it as a plain file."
+elif [ -f .agent/DRAFT_LANE ]; then
+  echo "DRAFT LANE ACTIVE: $(head -c 300 .agent/DRAFT_LANE | tr '\n' ' ' | LC_ALL=C tr -cd '[:print:]')"
+  echo "  No per-change chain: apply each tweak, screenshot it, commit nothing. At approval: build + screenshot + one Codex review, delete .agent/DRAFT_LANE, then commit (workflow.md \"Draft lane\")."
+fi
 echo ""
 
 # HARNESS-completeness check (issue #1311): a partially-propagated project can be
@@ -723,10 +736,10 @@ with open('.agent/profile.json') as f:
     p = json.load(f)
 i = p.get('identity', {})
 print('Identity: %s | Role: %s | Project: %s' % (
-    i.get('agent_name', 'Athanor Agent'),
-    i.get('project_role', 'project coordinator'),
+    i.get('agent_name') or 'unnamed (run /onboard)',
+    i.get('project_role') or 'unset',
     p.get('project_name', '?')))
-" 2>/dev/null || echo "Identity: Athanor Agent"
+" 2>/dev/null || echo "Identity: unreadable .agent/profile.json"
 echo ""
 
 # Hard blockers — the one section of the old dump that survives: a real

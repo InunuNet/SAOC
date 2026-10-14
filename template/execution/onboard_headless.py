@@ -342,6 +342,24 @@ def patch_profile(profile_path: str, project_name: str, agent_name: str,
     if "harness_name" not in data:
         data["harness_name"] = DEFAULT_HARNESS_NAME
 
+    # Mirrors update_template.py's own autonomy.level seed step: a profile
+    # with no recognised level fails `make sync`/`make update-template`
+    # hard (check_autonomy.sh has no valid fallback for None), so onboarding
+    # must never hand off a profile that lacks one.
+    autonomy = data.get("autonomy")
+    if not (isinstance(autonomy, dict) and autonomy.get("level")):
+        matrix_path = os.path.join(
+            os.path.dirname(os.path.abspath(profile_path)), "autonomy_matrix.json"
+        )
+        try:
+            with open(matrix_path, "r", encoding="utf-8") as fh:
+                seed_level = json.load(fh).get("onboarding_default", "interactive")
+        except Exception:
+            seed_level = "interactive"
+        if not isinstance(autonomy, dict):
+            data["autonomy"] = {}
+        data["autonomy"]["level"] = seed_level
+
     if "identity" not in data or not isinstance(data["identity"], dict):
         data["identity"] = {}
     data["identity"]["agent_name"] = agent_name

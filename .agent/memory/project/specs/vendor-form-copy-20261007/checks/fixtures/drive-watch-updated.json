@@ -1,0 +1,70 @@
+{
+  "root_id": "ROOT",
+  "folders": {
+    "ROOT": [
+      {
+        "id": "SUBSLASH",
+        "name": "13. Registration/Booking/Tickets",
+        "mimeType": "application/vnd.google-apps.folder",
+        "modifiedTime": "2026-09-01T10:00:00.000Z"
+      },
+      {
+        "id": "F2",
+        "name": "Copy of Vendor Listing.xlsx",
+        "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "modifiedTime": "2026-09-01T09:00:00.000Z",
+        "md5Checksum": "bbb222",
+        "owners": [{"emailAddress": "lee-ann@saoc.example"}]
+      },
+      {
+        "id": "F3",
+        "name": "Vendor Area Notes",
+        "mimeType": "application/vnd.google-apps.document",
+        "modifiedTime": "2026-10-07T08:00:00.000Z",
+        "owners": [{"emailAddress": "lee-ann@saoc.example"}]
+      },
+      {
+        "id": "F5",
+        "name": "New Photo.jpg",
+        "mimeType": "image/jpeg",
+        "modifiedTime": "2026-10-08T07:00:00.000Z",
+        "md5Checksum": "ddd444",
+        "owners": [{"emailAddress": "lee-ann@saoc.example"}]
+      },
+      {
+        "id": "RENAMEFOLDER",
+        "name": "Logistics (2026)",
+        "mimeType": "application/vnd.google-apps.folder",
+        "modifiedTime": "2026-10-08T10:00:00.000Z"
+      }
+    ],
+    "SUBSLASH": [
+      {
+        "id": "F1",
+        "name": "13.2 Vendor Form - SAOC National Show Vendor Registration Form.docx",
+        "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "modifiedTime": "2026-10-07T12:00:00.000Z",
+        "md5Checksum": "aaa999",
+        "owners": [{"emailAddress": "lee-ann@saoc.example"}]
+      },
+      {
+        "id": "F8",
+        "name": "Price List.pdf",
+        "mimeType": "application/pdf",
+        "modifiedTime": "2026-09-01T09:00:00.000Z",
+        "md5Checksum": "fff666",
+        "owners": [{"emailAddress": "lee-ann@saoc.example"}]
+      }
+    ],
+    "RENAMEFOLDER": [
+      {
+        "id": "F7",
+        "name": "Setup Schedule.pdf",
+        "mimeType": "application/pdf",
+        "modifiedTime": "2026-09-01T09:00:00.000Z",
+        "md5Checksum": "eee555",
+        "owners": [{"emailAddress": "lee-ann@saoc.example"}]
+      }
+    ]
+  }
+}

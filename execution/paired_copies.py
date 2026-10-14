@@ -25,8 +25,10 @@ Exit codes: 0 all pairs identical; 2 any pair wrong or any registry row
 invalid; 1 tool error.
 
 Pairs are DATA (.agent/paired-copies.yaml): adding a row requires no code
-change. Only `enforce: clone` is implemented and an unknown mode FAILS CLOSED
--- a pair that appears covered and is not is worse than an uncovered one.
+change. Two modes: `clone` (one file, byte-identical) and `mirror` (two
+directories; every file present in both is byte-identical -- see
+expand_rows()). An unknown mode FAILS CLOSED -- a pair that appears covered
+and is not is worse than an uncovered one.
 """
 
 import argparse
@@ -35,7 +37,10 @@ import subprocess
 import sys
 
 REGISTRY_REL = ".agent/paired-copies.yaml"
-SUPPORTED_MODES = ("clone",)
+# expand_rows() asks update_template.is_harness_checkout(), which lives beside
+# this file; make the import work however this script is invoked.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+SUPPORTED_MODES = ("clone", "mirror")
 DEFAULT_MODE = "clone"
 
 EXIT_OK = 0
@@ -106,6 +111,110 @@ def head_blob_text(root, relpath):
     if proc.returncode != 0:
         return None
     return norm(proc.stdout)
+
+
+def was_clone_of(root, text, source):
+    """True if `text` equals the source at HEAD or at any committed revision.
+
+    "Unchanged since HEAD" does not make a copy a clone. SAOC's committed
+    18KB developer guide CLAUDE.md was never a copy of its AGENTS.md (an agent
+    definition), and the stale-clone branch overwrote it (2026-10-08). A copy
+    is only a stale clone if its bytes once WERE the source. Returns None when
+    git cannot answer.
+    """
+    # --follow so a clone of a since-renamed source still matches: each
+    # revision is paired with the path the source had at that revision.
+    try:
+        log = subprocess.run(["git", "log", "--follow", "--name-only", "--format=%x00%H",
+                              "HEAD", "--", source], cwd=root,
+                             capture_output=True, text=True, timeout=GIT_TIMEOUT_SECONDS)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if log.returncode != 0:
+        return None
+    specs = ""
+    for entry in log.stdout.split("\0")[1:]:
+        lines = [l for l in entry.splitlines() if l]
+        if len(lines) >= 2:
+            specs += "%s:%s\n" % (lines[0], lines[-1])
+    if not specs:
+        return False
+    try:
+        cat = subprocess.run(["git", "cat-file", "--batch"], cwd=root, input=specs.encode(),
+                             capture_output=True, timeout=GIT_TIMEOUT_SECONDS)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if cat.returncode != 0:
+        return None
+    out, pos = cat.stdout, 0
+    while pos < len(out):
+        eol = out.index(b"\n", pos)
+        header = out[pos:eol].split()
+        pos = eol + 1
+        if len(header) < 3:          # "<spec> missing": no payload follows
+            continue
+        size = int(header[2])
+        if header[1] == b"blob" and norm(out[pos:pos + size]) == text:
+            return True
+        pos += size + 1              # consume every payload, blob or not
+    return False
+
+
+# Never compared by a mirror: build and OS residue, not source.
+MIRROR_IGNORED_NAMES = ("__pycache__", ".DS_Store")
+
+
+def expand_rows(root, rows):
+    """Turn every `enforce: mirror` row into per-file `clone` rows.
+
+    A mirror pairs two DIRECTORIES: every file present under both must be
+    byte-identical to its source. A file on only one side is allowed --
+    template/ carries a subset of execution/ by design. Expanding into clone
+    rows means the mirror inherits the clone rules unchanged, including the
+    refusal to overwrite a locally edited copy.
+
+    A mirror binds only the harness checkout. Downstream, both trees arrive
+    from the same release, and a project's own execution/ edits are its own
+    business, not drift (returns a skip note instead).
+    """
+    out, notes = [], []
+    for row in rows:
+        if row.get("enforce", DEFAULT_MODE) != "mirror":
+            out.append(row)
+            continue
+        from update_template import is_harness_checkout
+        if not is_harness_checkout(root):
+            notes.append("MIRROR-SKIPPED %s (not the harness checkout)" % row["copy"])
+            continue
+        copy_dir = os.path.join(root, row["copy"])
+        source_dir = os.path.join(root, row["source"])
+        if not os.path.isdir(source_dir) or not os.path.isdir(copy_dir):
+            notes.append("MIRROR-MISSING %s or %s" % (row["copy"], row["source"]))
+            out.append({"copy": row["copy"], "source": row["source"],
+                        "enforce": "mirror-missing"})
+            continue
+        for dirpath, dirnames, filenames in os.walk(copy_dir):
+            # os.walk never descends a symlinked directory, so the files
+            # behind one would silently drop out of the comparison. Fail it
+            # closed instead: a pair that looks covered and is not is worse
+            # than an uncovered one (Codex QA, 2026-09-29).
+            for d in dirnames:
+                if os.path.islink(os.path.join(dirpath, d)):
+                    rel = os.path.relpath(os.path.join(dirpath, d), copy_dir)
+                    out.append({"copy": os.path.join(row["copy"], rel),
+                                "source": os.path.join(row["source"], rel),
+                                "enforce": "mirror-symlinked-dir"})
+            dirnames[:] = sorted(d for d in dirnames if d not in MIRROR_IGNORED_NAMES
+                                 and not os.path.islink(os.path.join(dirpath, d)))
+            for name in sorted(filenames):
+                if name in MIRROR_IGNORED_NAMES:
+                    continue
+                rel = os.path.relpath(os.path.join(dirpath, name), copy_dir)
+                if os.path.isfile(os.path.join(source_dir, rel)):
+                    out.append({"copy": os.path.join(row["copy"], rel),
+                                "source": os.path.join(row["source"], rel),
+                                "enforce": "clone"})
+    return out, notes
 
 
 class PairProblem(Exception):
@@ -210,6 +319,19 @@ def sync_one(root, row, force):
                     "CLONE-EDITED-BLOCKED %s -- it differs from HEAD:%s, so "
                     "these bytes exist nowhere else. Move the edit into %s and "
                     "re-run, or discard it with --force." % (copy, copy, source))
+            provenance = was_clone_of(root, current, source)
+            if provenance is None:
+                raise PairProblem(
+                    "CLONE-UNVERIFIABLE %s -- git could not list the history of %s, "
+                    "so nothing proves these bytes were ever a copy of it. Re-run, "
+                    "or regenerate with --force if %s is only a clone." % (copy, source, copy))
+            if provenance is False:
+                raise PairProblem(
+                    "CLONE-FOREIGN-BLOCKED %s -- it was never a copy of %s: no "
+                    "committed version of %s matches it, so it is its own file, "
+                    "not a stale clone. Decide which one is the real content, "
+                    "make %s hold it, and re-run -- or discard %s with --force."
+                    % (copy, source, source, source, copy))
 
     parent = os.path.dirname(copy_path)
     if parent and not os.path.isdir(parent):
@@ -273,6 +395,9 @@ def main(argv=None):
         print("CLONE-TOOL-ERROR cannot read %s (%s)" % (REGISTRY_REL, exc))
         return EXIT_TOOL_ERROR
 
+    rows, notes = expand_rows(root, rows)
+    for note in notes:
+        print(note)
     if args.sync:
         return cmd_sync(root, rows, args.force)
     return cmd_check(root, rows)

@@ -15,7 +15,7 @@
     "complexity": ["trivial", "standard"],
     "domains": ["code", "docs", "maintenance"],
     "priority": 20,
-    "escalation_order": ["gemini-cli", "claude-code"]
+    "escalation_order": ["claude-code"]
   },
   "role_capabilities": {
     "schema": "athanor.role-capabilities/v1",

@@ -1,0 +1,213 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "Task",
+      "Skill",
+      "ToolSearch",
+      "SendMessage",
+      "ListAgents",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(ls:*)",
+      "Bash(sed:*)",
+      "Bash(awk:*)",
+      "Bash(wc:*)",
+      "Bash(diff:*)",
+      "Bash(test:*)",
+      "Bash(echo:*)",
+      "Bash(cd:*)",
+      "Bash(jq:*)",
+      "Bash(git:*)",
+      "Bash(python3:*)",
+      "Bash(node:*)",
+      "Bash(pnpm:*)",
+      "Bash(make:*)",
+      "Bash(codex:*)",
+      "Bash(gws:*)",
+      "Bash(curl:*)",
+      "Bash(gcloud:*)",
+      "Bash(gh:*)",
+      "Bash(mkdir:*)",
+      "Bash(chmod +x:*)",
+      "Bash(bash:*)",
+      "Bash(sh:*)",
+      "Bash(tee:*)",
+      "Bash(sort:*)",
+      "Bash(uniq:*)",
+      "Bash(cut:*)",
+      "Bash(tr:*)",
+      "Bash(xargs:*)",
+      "Bash(basename:*)",
+      "Bash(dirname:*)",
+      "Bash(realpath:*)",
+      "Bash(stat:*)",
+      "Bash(date:*)",
+      "Bash(env:*)",
+      "Bash(which:*)",
+      "Bash(command:*)",
+      "Bash(nl:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force *)",
+      "Bash(dd if=/dev/zero*)",
+      "Bash(curl * | sh)",
+      "Bash(curl * | bash)",
+      "Bash(wget * | sh)",
+      "Bash(wget * | bash)",
+      "Read(~/.ssh/*)",
+      "Read(~/.aws/*)",
+      "Read(~/.gnupg/*)"
+    ],
+    "ask": [
+      "Bash(chmod 777 *)"
+    ],
+    "defaultMode": "bypassPermissions"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/full_boot.sh ] || exit 0; bash execution/hooks/full_boot.sh"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/pre_compact_snapshot.sh ] && bash execution/hooks/pre_compact_snapshot.sh || true",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "input=$(cat); trigger=$(printf '%s' \"$input\" | python3 -c \"import sys,json; print(json.load(sys.stdin).get('compaction_trigger','unknown'))\" 2>/dev/null || echo 'unknown'); recent=$(git log --oneline -5 2>/dev/null | tr '\\n' '; ' || echo 'no git'); python3 execution/brain.py remember --summary \"Pre-compaction checkpoint ($trigger). Recent commits: $recent\" --tags \"compaction,checkpoint\" 2>/dev/null || true",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/post_compact_restore.sh ] || exit 0; bash execution/hooks/post_compact_restore.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/post_compact_inject.sh ] || exit 0; bash execution/hooks/post_compact_inject.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/compaction_backstop.sh ] && bash execution/hooks/compaction_backstop.sh || exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "analyst|architect|designer|dev|docs|lead|maintainer|qa",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/subagent_stop.sh ] || exit 0; bash execution/hooks/subagent_stop.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/check_autonomy.sh ] || exit 0; bash execution/hooks/check_autonomy.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/verify_workspace.sh ] || exit 0; bash execution/hooks/verify_workspace.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "BASH_DEFAULT_TIMEOUT_MS": "300000",
+    "PAI_CONTEXT_MODE": "coding"
+  },
+  "cleanupPeriodDays": 30,
+  "skipDangerousModePermissionPrompt": true,
+  "autoCompactEnabled": true,
+  "respondToBashCommands": false,
+  "sandbox": {
+    "credentials": {
+      "files": [
+        {
+          "path": "~/.aws/credentials",
+          "mode": "deny"
+        },
+        {
+          "path": "~/.ssh/",
+          "mode": "deny"
+        },
+        {
+          "path": "~/.netrc",
+          "mode": "deny"
+        }
+      ],
+      "envVars": [
+        {
+          "name": "ANTHROPIC_API_KEY",
+          "mode": "deny"
+        },
+        {
+          "name": "AWS_SECRET_ACCESS_KEY",
+          "mode": "deny"
+        }
+      ]
+    },
+    "enabled": false
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "python3 execution/statusline.py"
+  },
+  "autoCompactWindow": 400000
+}

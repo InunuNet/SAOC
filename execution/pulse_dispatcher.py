@@ -23,7 +23,7 @@ except ModuleNotFoundError:
 
 
 TICKET_SCHEMA = "athanor.pulse.ticket/v1"
-VALID_PROVIDERS = ("claude-code", "codex", "gemini-cli", "antigravity", "opencode", "auto")
+VALID_PROVIDERS = ("claude-code", "codex", "antigravity", "opencode", "auto")
 DEFAULT_MAX_LAUNCHES = 1
 
 # Fix 2: consecutive-failure provider backoff constants.
@@ -546,7 +546,6 @@ def provider_command(ticket: dict[str, Any], paths: Paths) -> tuple[list[str] | 
     overrides = {
         "claude-code": "ATHANOR_PULSE_PROVIDER_CLAUDE_CODE",
         "codex": "ATHANOR_PULSE_PROVIDER_CODEX",
-        "gemini-cli": "ATHANOR_PULSE_PROVIDER_GEMINI_CLI",
         "antigravity": "ATHANOR_PULSE_PROVIDER_ANTIGRAVITY",
         "opencode": "ATHANOR_PULSE_PROVIDER_OPENCODE",
     }

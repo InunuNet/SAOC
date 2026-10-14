@@ -48,6 +48,14 @@ MODEL_ABBR = {
     "claudehaiku4520251001": "Hai45",
     "fable5": "Fab5",
     "claudefable5": "Fab5",
+    "sonnet55": "Son55",
+    "claudesonnet55": "Son55",
+    "opus55": "Opu55",
+    "claudeopus55": "Opu55",
+    "haiku55": "Hai55",
+    "claudehaiku55": "Hai55",
+    "fable51": "Fab51",
+    "claudefable51": "Fab51",
 }
 
 

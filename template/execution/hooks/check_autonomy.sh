@@ -11,6 +11,36 @@ COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null || echo 
 # Trim leading whitespace — prevents bypass via "  sudo ..." or "  rm -rf ..."
 COMMAND="${COMMAND#"${COMMAND%%[! ]*}"}"
 
+# TR_CWD_KNOWN (lib/target_resolve.sh): a wildcard is judged against the
+# real filesystem only when the filesystem the hook sees IS the one the
+# command's glob will see:
+#   - the session reports this same cwd;
+#   - the command is ONE simple command: no ; & | newline, no $( ` <( >(,
+#     no eval/exec/source, no interpreter -c/-e. A shell expands a simple
+#     command's globs before running it, so nothing in it can create a
+#     symlink or directory first (Codex QA: `ln -s ~/.ssh l; cat l/*`);
+#   - it never changes directory (cd/pushd/popd, -C/--chdir style flags).
+# Otherwise the floor judges every wildcard by its pattern alone, as before.
+TR_CWD_KNOWN=0
+if [ "$TOOL" = "Bash" ]; then
+  _session_cwd=$(echo "$INPUT" | jq -r '.cwd // ""' 2>/dev/null || echo "")
+  _nl=$'\n'
+  if { [ -z "$_session_cwd" ] || [ "$_session_cwd" -ef "$(pwd)" ]; } \
+     && [[ "$COMMAND" != *[\;\&\|\`]* ]] && [[ "$COMMAND" != *"$_nl"* ]] \
+     && [[ "$COMMAND" != *'$('* ]] && [[ "$COMMAND" != *'<('* ]] && [[ "$COMMAND" != *'>('* ]] \
+     && ! [[ "$COMMAND" =~ (^|[^[:alnum:]_.-])(cd|pushd|popd|eval|exec|source|\.)([[:space:]\)]|$) ]] \
+     && ! [[ "$COMMAND" =~ (^|[[:space:]])(-[ce]|-C|--chdir|--directory|--cwd|--work-tree|--git-dir)([[:space:]=]|$) ]]; then
+    TR_CWD_KNOWN=1
+  fi
+  unset _session_cwd _nl
+fi
+# TR_DOTGLOB: 0 only when nothing in the command can make a wildcard match a
+# hidden name -- no dotglob/GLOB_DOTS, no zsh setopt, no glob library call.
+TR_DOTGLOB=1
+if [ "$TOOL" = "Bash" ] && ! [[ "$COMMAND" =~ [Dd][Oo][Tt][Gg][Ll][Oo][Bb]|[Gg][Ll][Oo][Bb]_?[Dd][Oo][Tt][Ss]|setopt|GLOBIGNORE|fnmatch|glob|[(]D[)] ]]; then
+  TR_DOTGLOB=0
+fi
+
 # Session cache. NOT /tmp: this is the enforcement layer's own trust state,
 # and a world-writable directory plus a predictable name let anyone on the
 # machine pre-create the file and hand the guard its answer. sandbox.md
@@ -633,6 +663,24 @@ check_target() {
       [ -n "$v" ] && [ "$v" != "$raw" ] && candidates+=("$v")
     done < <(brace_variants "$raw")
   fi
+  # Wildcard tokens (SAOC 2026-10-08): where the location is knowable, every
+  # real match is tested as a literal path too, so `> .agent/autonomy_*.json`
+  # is judged as the autonomy_matrix.json it writes. A write glob with more
+  # matches than the cap is denied outright, since it cannot be checked; a
+  # read glob keeps the pattern verdict below.
+  local m first
+  first=$(expand_target "$raw")
+  if tr_has_glob "$first" && tr_glob_location_known "$first"; then
+    local matches
+    if matches=$(tr_glob_expand "$first"); then
+      while IFS= read -r m; do
+        [ -n "$m" ] && candidates+=("$m")
+      done <<< "$matches"
+    elif [ "$kind" = "write" ]; then
+      _target_blk=1; _target_why="write through a wildcard with more than ${TR_GLOB_CAP} matches: '$first'"
+      return
+    fi
+  fi
   local cand resolved
   for cand in "${candidates[@]}"; do
     resolved=$(expand_target "$cand")
@@ -883,10 +931,40 @@ if [ -n "$COMMAND" ]; then
             --target-directory=*) tdir="${args[$ti]#--target-directory=}" ;;
           esac
         done
+        local dest="" dres s sm m
+        local -a srcs=() snames
         if [ -n "$tdir" ]; then
           check_target "write" "$tdir"
+          dest="$tdir"
+          for s in "${nonflag[@]}"; do [ "$s" != "$tdir" ] && srcs+=("$s"); done
         elif [ "${#nonflag[@]}" -gt 0 ]; then
           check_target "write" "${nonflag[-1]}"
+          dest="${nonflag[-1]}"
+          srcs=("${nonflag[@]:0:${#nonflag[@]}-1}")
+        fi
+        # Copying INTO a directory writes <dir>/<basename of each source>:
+        # `cp template/AGENTS.md .` overwrites ./AGENTS.md, which testing
+        # the directory alone never caught (Codex QA, 2026-10-13). A wildcard
+        # source is tested through its real matches where they are knowable,
+        # and by its pattern otherwise.
+        if [ "$_target_blk" != 1 ] && [ -n "$dest" ] && [ "${#srcs[@]}" -gt 0 ]; then
+          dres=$(expand_target "$dest")
+          [ -z "$dres" ] && dres="."
+          if [ -n "$tdir" ] || [ -d "$dres" ] || [[ "$dest" == */ ]] || [ "$dest" = "." ]; then
+            for s in "${srcs[@]}"; do
+              snames=("$s")
+              if tr_has_glob "$s" && tr_glob_location_known "$(expand_target "$s")" \
+                 && sm=$(tr_glob_expand "$(expand_target "$s")") && [ -n "$sm" ]; then
+                snames=()
+                while IFS= read -r m; do [ -n "$m" ] && snames+=("$m"); done <<< "$sm"
+              fi
+              for m in "${snames[@]}"; do
+                m="${m%/}"
+                check_target "write" "${dres%/}/${m##*/}"
+                [ "$_target_blk" = 1 ] && break 2
+              done
+            done
+          fi
         fi ;;
       # D35 finding 2: write verbs the classifier did not know. `install`,
       # `truncate` and friends create or clobber a file exactly as `cp` does,

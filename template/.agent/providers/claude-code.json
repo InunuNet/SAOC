@@ -17,7 +17,7 @@
     "complexity": ["standard", "complex"],
     "domains": ["architecture", "code", "docs", "qa", "research"],
     "priority": 30,
-    "escalation_order": ["opencode", "gemini-cli"]
+    "escalation_order": ["opencode"]
   },
   "role_capabilities": {
     "schema": "athanor.role-capabilities/v1",

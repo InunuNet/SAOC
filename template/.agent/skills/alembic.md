@@ -36,9 +36,20 @@ Query params: `q` (search), `js` (force JS render), `auto_js` (`false` disables 
 
 Request headers (JS-rendered requests only): `x-alembic-localstorage` / `x-alembic-sessionstorage` (`key=value` injected before fetch), `x-alembic-jq` (same as `?jq=`), `x-alembic-wait-for` (CSS selector to await; implicitly forces JS mode), `x-alembic-grace-ms` (post-render grace period, clamped 0-30000), `x-alembic-scroll` (scroll to bottom before extracting, for lazy-loaded content).
 
+Control params (`max_age`, `js`, `auto_js`, `saas`, `no_cache`, `jq`) are consumed by Alembic and never forwarded to the origin.
+
+## HTTP status mirrors the origin
+
+`GET /<url>` does not answer 200 for an origin error (since Alembic `e1358741`):
+
+- an origin **4xx** is passed through, so a 404 stays a 404;
+- an origin **5xx** becomes **502**.
+
+The distilled body is still returned in both cases, and `X-Alembic-Upstream-Status` carries the exact origin code. So `curl -f`, or any caller that treats non-2xx as failure, now fails where it used to get a 200 error page. Read the status code before the body. A service started before that change still answers 200 for an origin error: the `upstream_error_status` confidence reason flags the error under both behaviours, so check it as well as the status. To inspect the error page anyway, drop `-f` and check the body together with the confidence reasons (`upstream_error_status`). Details: `docs/origin-status.md` and `docs/control-params.md` in the Alembic repository.
+
 ## Response headers worth reading
 
-`X-Alembic-Strategy` (which cascade stage produced the content), `X-Alembic-Confidence` / `X-Alembic-Confidence-Reasons` (see Confidence section below), `X-Alembic-Blocked` / `X-Alembic-Blocked-By` (bot-wall/interstitial detection), `X-Alembic-Retry` (a second persona was auto-tried after a block and succeeded), `X-Alembic-JS-Hint-Score` (0-10; >=6 suggests retrying with `?js=true`), `X-Alembic-Quality-Score` (0-100 heuristic), `X-Alembic-Cached`, `X-Alembic-Original-Tokens` / `X-Alembic-Clean-Tokens`. 25 response headers exist in total (title, author, date, language, word/link counts, search backend/count, etc.) — full table in `docs/API.md` in the Alembic repository.
+`X-Alembic-Strategy` (which cascade stage produced the content), `X-Alembic-Confidence` / `X-Alembic-Confidence-Reasons` (see Confidence section below), `X-Alembic-Blocked` / `X-Alembic-Blocked-By` (bot-wall/interstitial detection), `X-Alembic-Retry` (a second persona was auto-tried after a block and succeeded), `X-Alembic-JS-Hint-Score` (0-10; >=6 suggests retrying with `?js=true`), `X-Alembic-Quality-Score` (0-100 heuristic), `X-Alembic-Upstream-Status` (origin HTTP code), `X-Alembic-Cached`, `X-Alembic-Original-Tokens` / `X-Alembic-Clean-Tokens`. 25 response headers exist in total (title, author, date, language, word/link counts, search backend/count, etc.) — full table in `docs/API.md` in the Alembic repository.
 
 ## Capability areas
 

@@ -1,7 +1,7 @@
 > {{PROJECT_NAME}} workspace — scaffolded by the {{HARNESS_NAME}} harness v{{TEMPLATE_VERSION}}. This project is NOT {{HARNESS_NAME}}.
 >
-> `AGENTS.md` is the single source of truth. `CLAUDE.md` and `GEMINI.md` are
-> clones generated from it — never edit a clone; edit this file and run
+> `AGENTS.md` is the single source of truth. `CLAUDE.md` is a
+> clone generated from it — never edit a clone; edit this file and run
 > `make sync-clones`.
 
 # {{PROJECT_NAME}} — Agent Instructions
@@ -74,6 +74,7 @@ Memory lives here — in this project's `.agent/memory/` and brain — not in an
 6. **Self-Anneal** — error → fix → update learned.md
 7. **Wrap Up** — store summary in brain at session end
 8. **Chain Continuous** — Never pause between chain steps waiting for user confirmation. Once a mission is active, proceed @architect→@dev→@qa→@docs→gate→@maintainer without stopping. Only pause at mission boundaries or on BLOCKED verdict.
+9. **Google Workspace = the `gws` CLI** — skills `gws-*` (start with `gws-shared`), rule `.agent/rules/_core/gws.md`. Never the claude.ai Google MCP connectors.
 
 Project-specific rules in `.agent/memory/project/rules.md` take precedence over these.
 
@@ -161,7 +162,7 @@ even if the Makefile is replaced by a project-specific one.
 |------|-------------|-----------------------|
 | List available targets | `make help` | — |
 | Sync agents/skills/rules to provider configs | `make sync` | `bash execution/sync_agents.sh`, `bash execution/sync_skills.sh`, `bash execution/sync_rules.sh` |
-| Regenerate CLAUDE.md / GEMINI.md from AGENTS.md | `make sync-clones` | `python3 execution/paired_copies.py --sync` |
+| Regenerate CLAUDE.md from AGENTS.md | `make sync-clones` | `python3 execution/paired_copies.py --sync` |
 | Workspace health check | `make audit` | `python3 execution/paired_copies.py --check` |
 | List harness directives addressed to this project | `make directives` | `python3 execution/directives.py list` |
 | Print the compact boot panel | `make boot-report` | `python3 execution/boot_panel.py --format report` |
@@ -176,6 +177,8 @@ even if the Makefile is replaced by a project-specific one.
 
 Alembic (URL distilling): [https://github.com/InunuNet/Alembic](https://github.com/InunuNet/Alembic)
 
+gws (Google Workspace CLI): [https://github.com/googleworkspace/cli](https://github.com/googleworkspace/cli)
+
 🛡️ **Alembic Active:** Use `@search` for web queries.
 
 ## 8. Provider Notes
@@ -185,12 +188,6 @@ Alembic (URL distilling): [https://github.com/InunuNet/Alembic](https://github.c
 - Agents: `.claude/agents/` | Skills: `.claude/skills/` | Rules: `.claude/rules/`
 - Provider constants: `.agent/providers/claude-code.json`
 - Continue: `claude -c` | Headless: `claude -p "prompt"`
-
-### Gemini CLI
-- Hooks in `.gemini/settings.json`
-- Agents: `.gemini/agents/` | Skills: `.gemini/skills/`
-- Provider constants: `.agent/providers/gemini-cli.json`
-- Headless: `gemini -p "prompt"`
 
 ### OpenCode
 - Reads this file natively as AGENTS.md
@@ -205,6 +202,7 @@ Alembic (URL distilling): [https://github.com/InunuNet/Alembic](https://github.c
   2. For each entry, call the `define_subagent` **LLM tool** with `name`, `description`, `system_prompt`
 - Regenerate the manifest after editing `.agent/agents/*.md`: `make sync-agents`
 - Dispatch via `invoke_subagent(TypeName, Prompt)` once agents are registered
+- Continue: `agy -c` | Headless: `agy -p "prompt"`
 
 ### Grok CLI
 - Reads this file natively as AGENTS.md

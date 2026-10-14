@@ -4316,3 +4316,38 @@ defect on this machine. Searched `learned.md` and the rest of `.agent/memory/pro
 diagnosis to correct it per instruction — **no such entry exists here to correct.** If it was
 recorded, it lives somewhere this search didn't cover (a different project, a scratch file
 already trimmed, or verbally only); nothing was changed under this heading.
+
+### 2026-10-08 — vendor-form-copy-20261007 session lessons
+
+- **Lee-Ann updates Drive docs without notice.** Owner-based `gws` queries MISSED the 2026-10-07
+  vendor-form copy drop entirely — her edits don't show up under a "modified by me/shared with
+  me" filter the way an owner-scoped query assumes. List the Drive folder's children recursively
+  instead of querying by owner. Once merged, run `python3 scripts/lee-ann-drive-watch.py` (first
+  run with `--init`) at the start of every session and report any changes to Brad unprompted —
+  do not wait for him to ask whether anything changed.
+- **Copy rule (Brad):** if Lee-Ann puts it in the docs it's confirmed; if it is not in her copy
+  it is not on the site. Gaps go back to Lee-Ann via Brad — never filled by invention, however
+  plausible. Internal admin data (e.g. the Vendor Listing xlsx) is not published, even though
+  it's real data in the same Drive tree.
+- **Beta deploys come from `origin/feat/conference-workshop-tickets`, not `main`** — the SAOC
+  lead (saoc-85) runs the rollout from that branch. Hand the lead a branch to review/merge, not a
+  PR against main. Cherry-pick the feature commits onto a new `-beta` branch rather than
+  force-pushing or rebasing something the lead already has checked out.
+- **`contract-f1` assertions with an A8-style footprint guard that diffs against `origin/main`
+  fail when the work is actually based on the beta branch**, because the beta base itself already
+  touched `sanity/schemas/**` etc. — the diff picks up the beta base's changes as if they were
+  this feature's footprint. Verify the real footprint separately with an explicit two-commit
+  `git diff <base-sha>..HEAD` instead of trusting an `origin/main`-relative assertion when the
+  work sits on a non-main base.
+- **UI/workflow contracts (anything referencing `app/`) must declare the verification triad**
+  (`codex_qa`, `browser_deployed_check`, `gws_inbox_check`) — `contract.py gate` stops at
+  preflight exit 6 otherwise. In the `assertions: {checks: [...]}` shape, use `type: <kind>` for
+  these, not `command:`. Note `browser_deployed_check`/`gws_inbox_check` can only pass **after**
+  a real deploy — they are not satisfiable pre-merge.
+- **Running `contract.py gate` from the main repo root** can pick up unrelated uncommitted
+  template-update deletions sitting in the working tree ("deletes files that no assertion
+  covers") that have nothing to do with the feature under test. Run gates with cwd set to the
+  feature's own worktree, not the shared repo root, when a template update is mid-flight.
+- **Codex QA in this repo needs stdin closed and a pre-generated diff file** — feed it
+  `< /dev/null` and point it at a diff file written to disk beforehand, because `git` itself
+  fails inside Codex's own sandbox (no repo access from in there).

@@ -59,7 +59,7 @@ while IFS=$'\n' read -r ISSUE_ID && read -r ISSUE_TITLE; do
         --source auto_fix_issues \
         --kind github_issue_fix \
         --project-path "$PROJECT_ROOT" \
-        --provider gemini-cli \
+        --provider claude-code \
         --requires-model true \
         --prompt "AUTONOMOUS FIX: Resolve GitHub Issue #$ISSUE_ID in the InunuNet/Athanor repository. Research, implement the fix, verify, and push to GitHub." \
         --dedupe-key "auto-fix-issue:InunuNet/Athanor:$ISSUE_ID" \

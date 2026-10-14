@@ -1,0 +1,893 @@
+{
+  "1-H3m-LHjtmjLw4E8OR0IIhv4gM3hn1cd": {
+    "id": "1-H3m-LHjtmjLw4E8OR0IIhv4gM3hn1cd",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-03T20:34:00.876Z",
+    "name": "13. Registration/Booking/Tickets",
+    "parents": [
+      "1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH"
+    ],
+    "path": "13. Registration/Booking/Tickets"
+  },
+  "1-n5Mtl3KIgiIwiyi19D0AsFuBLwc_2sP": {
+    "id": "1-n5Mtl3KIgiIwiyi19D0AsFuBLwc_2sP",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-03T20:29:10.639Z",
+    "name": "6. SAOC Symposium",
+    "parents": [
+      "1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH"
+    ],
+    "path": "6. SAOC Symposium"
+  },
+  "1-yPVBQ3O_ZlRPt3BnjQSoNxNh9vrDRh_": {
+    "id": "1-yPVBQ3O_ZlRPt3BnjQSoNxNh9vrDRh_",
+    "md5Checksum": "64c16aa0342dc3e26ea8a5b3549277d4",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-full-colour-reversed-vertical.png",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-full-colour-reversed-vertical.png"
+  },
+  "10Amp8Yw619s_MJTSwcVaPIN64iOEgdLb": {
+    "id": "10Amp8Yw619s_MJTSwcVaPIN64iOEgdLb",
+    "md5Checksum": "a9ff1aba666154b416f605c995395b12",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-full-colour-vertical.jpg",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-full-colour-vertical.jpg"
+  },
+  "10quxoci-DrAEk2Llxa_VeKRdOkswkaGQ": {
+    "id": "10quxoci-DrAEk2Llxa_VeKRdOkswkaGQ",
+    "md5Checksum": "838d235e14f3dd1e686f97b660f88d5b",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-08-26T17:37:22.000Z",
+    "name": "Theunis Oberholzer.jpg.jpeg",
+    "parents": [
+      "11zgePvn2UDCT5yOZ9fIHYIeJob_oJs7n"
+    ],
+    "path": "6. SAOC Symposium / Speakers / Theunis Oberholzer.jpg.jpeg"
+  },
+  "11zgePvn2UDCT5yOZ9fIHYIeJob_oJs7n": {
+    "id": "11zgePvn2UDCT5yOZ9fIHYIeJob_oJs7n",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-10-07T12:20:23.474Z",
+    "name": "Speakers",
+    "parents": [
+      "1-n5Mtl3KIgiIwiyi19D0AsFuBLwc_2sP"
+    ],
+    "path": "6. SAOC Symposium / Speakers"
+  },
+  "12f66T04mXex-L2JEKRzlixn6QzKNvQWq": {
+    "id": "12f66T04mXex-L2JEKRzlixn6QzKNvQWq",
+    "md5Checksum": "06d2b056187ee87522f1fa0ae1b3f280",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-full-colour-horizontal.png",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-full-colour-horizontal.png"
+  },
+  "138RAX1j-qkhuc40LBcpG7gTxB8MHKh-1": {
+    "id": "138RAX1j-qkhuc40LBcpG7gTxB8MHKh-1",
+    "md5Checksum": "a7e806f57c9b01bfafd33f3ec47890b8",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-09-03T21:41:58.000Z",
+    "name": "2027 Show Contact information.docx",
+    "parents": [
+      "1wknTTwrItjZI4qfDQlzjyF0GixEPKIVL"
+    ],
+    "path": "18. Contact / 2027 Show Contact information.docx"
+  },
+  "13E0eBbdO9ZyWxFbdY7uOvB1r6nCbA_47": {
+    "id": "13E0eBbdO9ZyWxFbdY7uOvB1r6nCbA_47",
+    "md5Checksum": "52b18b7720d7acbdb35b244c39be870a",
+    "mimeType": "application/octet-stream",
+    "modifiedTime": "2026-09-16T15:27:35.000Z",
+    "name": ".DS_Store",
+    "parents": [
+      "1wlVqUSYtpMpTwhjxXODCdgwItaauidMm"
+    ],
+    "path": "Branding Assets / Word Templates / docx / .DS_Store"
+  },
+  "144zLJuN01thNwystGThOkiqn2IDMl5n_": {
+    "id": "144zLJuN01thNwystGThOkiqn2IDMl5n_",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-16T13:54:11.800Z",
+    "name": "Branding Assets",
+    "parents": [
+      "1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH"
+    ],
+    "path": "Branding Assets"
+  },
+  "14xB-nRakVeRNDKDGDK_tajnvcWI4ER_0": {
+    "id": "14xB-nRakVeRNDKDGDK_tajnvcWI4ER_0",
+    "md5Checksum": "40d5709765c53934ba0118ae9ae35815",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-grayscale-vertical.jpg",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-grayscale-vertical.jpg"
+  },
+  "15QHuL2mT1sk1TUvwEgzYqP4Hf3lYOH85": {
+    "id": "15QHuL2mT1sk1TUvwEgzYqP4Hf3lYOH85",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-03T20:29:36.113Z",
+    "name": "7. WOSA Conference",
+    "parents": [
+      "1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH"
+    ],
+    "path": "7. WOSA Conference"
+  },
+  "15Q_LQyooCwA2Su7NmZCYpW5euzK-5jQq": {
+    "id": "15Q_LQyooCwA2Su7NmZCYpW5euzK-5jQq",
+    "md5Checksum": "03cfa991198cccb3195af102fc31c628",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-reversed-white-horizontal.png",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-reversed-white-horizontal.png"
+  },
+  "15cRA-EmoqZVPLp8MJkBrD88OFRduJKFf": {
+    "id": "15cRA-EmoqZVPLp8MJkBrD88OFRduJKFf",
+    "md5Checksum": "d649e60cf30873556980c2c6e762913b",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-09-03T21:38:16.965Z",
+    "name": "13.1 Ticketing system details.docx",
+    "parents": [
+      "1-H3m-LHjtmjLw4E8OR0IIhv4gM3hn1cd"
+    ],
+    "path": "13. Registration/Booking/Tickets / 13.1 Ticketing system details.docx"
+  },
+  "16wo1l4Krd3GDI-VMZvNhed9lzpTActeg": {
+    "id": "16wo1l4Krd3GDI-VMZvNhed9lzpTActeg",
+    "md5Checksum": "e734164aa164af636e83e0e67fafbc51",
+    "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "modifiedTime": "2026-10-07T12:52:36.843Z",
+    "name": "Copy of Vendor Listing.xlsx",
+    "parents": [
+      "1JUpx3hVIqNewIuv_l4tK3Tnydfd1QHZr"
+    ],
+    "path": "4. South African Exhibitors / Copy of Vendor Listing.xlsx"
+  },
+  "17mpnM2c-32YLkS6qLfvdAbEq0betmd7d": {
+    "id": "17mpnM2c-32YLkS6qLfvdAbEq0betmd7d",
+    "md5Checksum": "0b3e46dc99936f66e13316fcb70892c1",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-full-colour-vertical.png",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-full-colour-vertical.png"
+  },
+  "19gFRW1-sPqbQL2fEVzJ9n-MytzG-Cdnq": {
+    "id": "19gFRW1-sPqbQL2fEVzJ9n-MytzG-Cdnq",
+    "md5Checksum": "a976a844b56816546e844731779747ad",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-ink-olive-vertical.png",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-ink-olive-vertical.png"
+  },
+  "19sAyzXI_EAv_a-Cx82WpGMHf6qb9FFDB": {
+    "id": "19sAyzXI_EAv_a-Cx82WpGMHf6qb9FFDB",
+    "md5Checksum": "5deb485875e5e4adb9e76c7a08bb3a89",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-10-07T15:39:45.011Z",
+    "name": "3.1 Info - What to Expect.docx",
+    "parents": [
+      "1OTK9vSheGYoFQ7-NP7LvhECb1fwfADQQ"
+    ],
+    "path": "3. What to expect / 3.1 Info - What to Expect.docx"
+  },
+  "1AWpSXzxn3ZEjGBoaVDTp2345cAUt_kMJ": {
+    "id": "1AWpSXzxn3ZEjGBoaVDTp2345cAUt_kMJ",
+    "md5Checksum": "618588c6026366f173cd30e38d54cc28",
+    "mimeType": "font/ttf",
+    "modifiedTime": "2026-09-16T14:53:58.000Z",
+    "name": "CormorantGaramond.ttf",
+    "parents": [
+      "1chcPXrZ-RvZxDMoryxwlU6ERZerJlmla"
+    ],
+    "path": "Branding Assets / Word Templates / docx / fonts / CormorantGaramond.ttf"
+  },
+  "1CEgtQP0Sh4dKKvfZXUQNtVdxlm7Pjn2U": {
+    "id": "1CEgtQP0Sh4dKKvfZXUQNtVdxlm7Pjn2U",
+    "md5Checksum": "5d4ca039318db3bb17f4d7ee66bf1a05",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-ink-purple-vertical.jpg",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-ink-purple-vertical.jpg"
+  },
+  "1FQ9o5r5qylGkqNcKxzTL2zcIkKkGflDR": {
+    "id": "1FQ9o5r5qylGkqNcKxzTL2zcIkKkGflDR",
+    "md5Checksum": "b7ee822536c24520e5f3b97ef979a983",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-grayscale-vertical.png",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-grayscale-vertical.png"
+  },
+  "1Fv1CJLQ4-tIhFrum0SJRC4GybcQls3q5": {
+    "id": "1Fv1CJLQ4-tIhFrum0SJRC4GybcQls3q5",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-03T20:32:27.222Z",
+    "name": "17. Frequently Asked Questions",
+    "parents": [
+      "1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH"
+    ],
+    "path": "17. Frequently Asked Questions"
+  },
+  "1GFhSquqDSNDsAzcmeUZ7I4TfBILheKfq": {
+    "id": "1GFhSquqDSNDsAzcmeUZ7I4TfBILheKfq",
+    "md5Checksum": "36529dbd7b5136996b8f611fb5a6bb37",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-ink-olive-horizontal.jpg",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-ink-olive-horizontal.jpg"
+  },
+  "1HjFZWbJ6jjewClxBbt5TGLRtrf0TxoIP": {
+    "id": "1HjFZWbJ6jjewClxBbt5TGLRtrf0TxoIP",
+    "md5Checksum": "333ec1d0808efcbcdd4eef3ec44829f7",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-09-16T14:53:58.000Z",
+    "name": "NOS-2027-Email-Signature.docx",
+    "parents": [
+      "1wlVqUSYtpMpTwhjxXODCdgwItaauidMm"
+    ],
+    "path": "Branding Assets / Word Templates / docx / NOS-2027-Email-Signature.docx"
+  },
+  "1JUpx3hVIqNewIuv_l4tK3Tnydfd1QHZr": {
+    "id": "1JUpx3hVIqNewIuv_l4tK3Tnydfd1QHZr",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-03T20:27:42.931Z",
+    "name": "4. South African Exhibitors",
+    "parents": [
+      "1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH"
+    ],
+    "path": "4. South African Exhibitors"
+  },
+  "1JxbRZ9_fpDe9MWbZU9IsbBZ34bFLnQx5": {
+    "id": "1JxbRZ9_fpDe9MWbZU9IsbBZ34bFLnQx5",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-03T20:28:47.504Z",
+    "name": "5. International Exhibitors",
+    "parents": [
+      "1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH"
+    ],
+    "path": "5. International Exhibitors"
+  },
+  "1MRilNlBUYQbsB57UewZIUMd4FRdpYIe2": {
+    "id": "1MRilNlBUYQbsB57UewZIUMd4FRdpYIe2",
+    "md5Checksum": "962e4892fe33b46d3cf45632ce2d13d8",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-reversed-gold-horizontal.png",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-reversed-gold-horizontal.png"
+  },
+  "1N2ywAVOhGkMfGt3r0p4Mr_KjbUZz1ury": {
+    "id": "1N2ywAVOhGkMfGt3r0p4Mr_KjbUZz1ury",
+    "md5Checksum": "c6e3e06a18567e5754ba272be78a98d0",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-full-colour-reversed-horizontal.jpg",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-full-colour-reversed-horizontal.jpg"
+  },
+  "1OTK9vSheGYoFQ7-NP7LvhECb1fwfADQQ": {
+    "id": "1OTK9vSheGYoFQ7-NP7LvhECb1fwfADQQ",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-03T20:27:20.098Z",
+    "name": "3. What to expect",
+    "parents": [
+      "1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH"
+    ],
+    "path": "3. What to expect"
+  },
+  "1Q9BH-xUouF98m0L7pgYa1CCJReAdFP-h": {
+    "id": "1Q9BH-xUouF98m0L7pgYa1CCJReAdFP-h",
+    "md5Checksum": "909db4079c2c2507a485f685ab194af7",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-09-16T14:53:58.000Z",
+    "name": "NOS-2027-Poster-A4.docx",
+    "parents": [
+      "1wlVqUSYtpMpTwhjxXODCdgwItaauidMm"
+    ],
+    "path": "Branding Assets / Word Templates / docx / NOS-2027-Poster-A4.docx"
+  },
+  "1QgL2sQxiZBR6gJqMYnPvvlDlJOX_opRF": {
+    "id": "1QgL2sQxiZBR6gJqMYnPvvlDlJOX_opRF",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-03T20:30:39.891Z",
+    "name": "12. Workshops",
+    "parents": [
+      "1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH"
+    ],
+    "path": "12. Workshops"
+  },
+  "1RshMFF_N_v1wVtPMLpJl1oZVdURw66rK": {
+    "id": "1RshMFF_N_v1wVtPMLpJl1oZVdURw66rK",
+    "md5Checksum": "4df34ce5eb54ea6dce5eb0c67ed0f6fb",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-ink-violet-vertical.png",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-ink-violet-vertical.png"
+  },
+  "1U4SGkCSnqYGCtgAqnzhsJLtId1RZOh1M": {
+    "id": "1U4SGkCSnqYGCtgAqnzhsJLtId1RZOh1M",
+    "md5Checksum": "077337279516a7a21905500dc4ff03a8",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-reversed-white-horizontal.jpg",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-reversed-white-horizontal.jpg"
+  },
+  "1UBbftHWmvYObS75x89nb3LIm83qnhLQt": {
+    "id": "1UBbftHWmvYObS75x89nb3LIm83qnhLQt",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-16T15:28:08.199Z",
+    "name": "Word Templates",
+    "parents": [
+      "144zLJuN01thNwystGThOkiqn2IDMl5n_"
+    ],
+    "path": "Branding Assets / Word Templates"
+  },
+  "1UKUdzZ9NAJHsqWHSV0mN9tnTrp6NE8I4": {
+    "id": "1UKUdzZ9NAJHsqWHSV0mN9tnTrp6NE8I4",
+    "md5Checksum": "a7495d2bdc8d6726da2f103065affcdf",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-09-03T20:22:00.424Z",
+    "name": "1.1 Exhibitors - South African Exhibitors.docx",
+    "parents": [
+      "1JUpx3hVIqNewIuv_l4tK3Tnydfd1QHZr"
+    ],
+    "path": "4. South African Exhibitors / 1.1 Exhibitors - South African Exhibitors.docx"
+  },
+  "1ULZEMEVsTA8L2CTxB2YVZWhq4d7F7Lle": {
+    "id": "1ULZEMEVsTA8L2CTxB2YVZWhq4d7F7Lle",
+    "md5Checksum": "95d7f139f07a2dd5572168949b8e4594",
+    "mimeType": "application/msword",
+    "modifiedTime": "2026-08-27T09:43:51.000Z",
+    "name": "Resume - Tinus Oberholzer 2026.doc",
+    "parents": [
+      "11zgePvn2UDCT5yOZ9fIHYIeJob_oJs7n"
+    ],
+    "path": "6. SAOC Symposium / Speakers / Resume - Tinus Oberholzer 2026.doc"
+  },
+  "1Vyim2ni_MknJbCrld0jW85uHMlI2hvrO": {
+    "id": "1Vyim2ni_MknJbCrld0jW85uHMlI2hvrO",
+    "md5Checksum": "8c8201f97845863550c37b02e86c0867",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-grayscale-horizontal.jpg",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-grayscale-horizontal.jpg"
+  },
+  "1W9taSeaJsKh8pdBf2iKKfBom4FmTLzHa": {
+    "id": "1W9taSeaJsKh8pdBf2iKKfBom4FmTLzHa",
+    "md5Checksum": "7d2c4c7d8ec24773a03fe0d83f406047",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-reversed-gold-horizontal.jpg",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-reversed-gold-horizontal.jpg"
+  },
+  "1WUNqgNwlcl70OTPSOp9bBv5GE5GDxK2m": {
+    "id": "1WUNqgNwlcl70OTPSOp9bBv5GE5GDxK2m",
+    "md5Checksum": "430131a8dd790a8d6bd17878230ca447",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-10-07T12:21:09.186Z",
+    "name": "Copy of 2026-09-09 - Bob Fuchs_updated photograph.jpg",
+    "parents": [
+      "11zgePvn2UDCT5yOZ9fIHYIeJob_oJs7n"
+    ],
+    "path": "6. SAOC Symposium / Speakers / Copy of 2026-09-09 - Bob Fuchs_updated photograph.jpg"
+  },
+  "1X5gNDjXjofyKVRg2-5Jlg1Nz75FwH4Rw": {
+    "id": "1X5gNDjXjofyKVRg2-5Jlg1Nz75FwH4Rw",
+    "md5Checksum": "84b5455195ee7e9f69f7376ae7da6b4f",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-10-07T12:20:36.698Z",
+    "name": "Copy of 2026-08-14 - Elbert 2026 CV Template.docx",
+    "parents": [
+      "11zgePvn2UDCT5yOZ9fIHYIeJob_oJs7n"
+    ],
+    "path": "6. SAOC Symposium / Speakers / Copy of 2026-08-14 - Elbert 2026 CV Template.docx"
+  },
+  "1XNEYLEclqpfHGrM1UhcXqIshygMYMWTh": {
+    "id": "1XNEYLEclqpfHGrM1UhcXqIshygMYMWTh",
+    "md5Checksum": "ea35620f2deb3abdd029b67637f2f826",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-ink-olive-vertical.jpg",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-ink-olive-vertical.jpg"
+  },
+  "1XrV8pitQYcf0h7w7RWSD0zrxOyO3BqTg": {
+    "id": "1XrV8pitQYcf0h7w7RWSD0zrxOyO3BqTg",
+    "md5Checksum": "7d15b0d061159047a16fa1d73365276d",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-reversed-white-vertical.png",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-reversed-white-vertical.png"
+  },
+  "1XsJGNwCYILKmicbvtCdgBOFLtgxjGVik": {
+    "id": "1XsJGNwCYILKmicbvtCdgBOFLtgxjGVik",
+    "md5Checksum": "ab7f34a1f4c65b7bdc16dba6beca3fa3",
+    "mimeType": "font/ttf",
+    "modifiedTime": "2026-09-16T14:53:58.000Z",
+    "name": "Jost.ttf",
+    "parents": [
+      "1chcPXrZ-RvZxDMoryxwlU6ERZerJlmla"
+    ],
+    "path": "Branding Assets / Word Templates / docx / fonts / Jost.ttf"
+  },
+  "1Y7PW0K36HUslpbwbJT7us9H6_CTKbmVm": {
+    "id": "1Y7PW0K36HUslpbwbJT7us9H6_CTKbmVm",
+    "md5Checksum": "b4ed15f2f5710a1c03ab2506689d9a31",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-09-16T14:53:58.000Z",
+    "name": "00 How to use this pack.docx",
+    "parents": [
+      "1wlVqUSYtpMpTwhjxXODCdgwItaauidMm"
+    ],
+    "path": "Branding Assets / Word Templates / docx / 00 How to use this pack.docx"
+  },
+  "1YRdzzpEmlwK4Q86Pn-bWPAFMVeyEyof3": {
+    "id": "1YRdzzpEmlwK4Q86Pn-bWPAFMVeyEyof3",
+    "md5Checksum": "9039aaf51bd2d77172c42c5bf0c92e78",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-09-16T14:53:58.000Z",
+    "name": "NOS-2027-Poster-A3.docx",
+    "parents": [
+      "1wlVqUSYtpMpTwhjxXODCdgwItaauidMm"
+    ],
+    "path": "Branding Assets / Word Templates / docx / NOS-2027-Poster-A3.docx"
+  },
+  "1Z0FUhpsCM0Expv5s_9fzI1wQwItYbkAZ": {
+    "id": "1Z0FUhpsCM0Expv5s_9fzI1wQwItYbkAZ",
+    "md5Checksum": "50ea9cc8a5de3a4fc919ff2648f4d984",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-reversed-gold-vertical.png",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-reversed-gold-vertical.png"
+  },
+  "1_QuGSZ1rX-_2wTeosm0lxtf-jlhWfTbj": {
+    "id": "1_QuGSZ1rX-_2wTeosm0lxtf-jlhWfTbj",
+    "md5Checksum": "c0e6700ccb6f3365fb77b2608ec4e083",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-ink-purple-horizontal.jpg",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-ink-purple-horizontal.jpg"
+  },
+  "1_VVkfqxAk_2iyW-QDGbFttwAdT_l_70B": {
+    "id": "1_VVkfqxAk_2iyW-QDGbFttwAdT_l_70B",
+    "md5Checksum": "6bcb34f4a56bee0008e880769cf58364",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-09-16T14:53:58.000Z",
+    "name": "NOS-2027-Letterhead.docx",
+    "parents": [
+      "1wlVqUSYtpMpTwhjxXODCdgwItaauidMm"
+    ],
+    "path": "Branding Assets / Word Templates / docx / NOS-2027-Letterhead.docx"
+  },
+  "1_t_-DnBA5W6OqZjCrebUMPc4Fthth56F": {
+    "id": "1_t_-DnBA5W6OqZjCrebUMPc4Fthth56F",
+    "md5Checksum": "2651cdb32bb7005662600aa89e63956e",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-ink-purple-vertical.png",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-ink-purple-vertical.png"
+  },
+  "1aIJ0mttmL238GQlJQtsVaeArf9J7RZjK": {
+    "id": "1aIJ0mttmL238GQlJQtsVaeArf9J7RZjK",
+    "md5Checksum": "cb50fe879f91aaf81c1ada632ae7438f",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-reversed-gold-vertical.jpg",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-reversed-gold-vertical.jpg"
+  },
+  "1aqzjBl789qzFhRk-N44b5Y-Ajj242CAY": {
+    "id": "1aqzjBl789qzFhRk-N44b5Y-Ajj242CAY",
+    "md5Checksum": "370b33dfd735ab192a859081f3dc6f63",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-08-27T09:47:27.911Z",
+    "name": "Hildagard Crous photograph.png",
+    "parents": [
+      "11zgePvn2UDCT5yOZ9fIHYIeJob_oJs7n"
+    ],
+    "path": "6. SAOC Symposium / Speakers / Hildagard Crous photograph.png"
+  },
+  "1cA00da1Y-9v8K16RWEdEIGLan7q3WHHF": {
+    "id": "1cA00da1Y-9v8K16RWEdEIGLan7q3WHHF",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-03T20:26:45.774Z",
+    "name": "1. Home",
+    "parents": [
+      "1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH"
+    ],
+    "path": "1. Home"
+  },
+  "1cSQ4MW115drUwkR2js0GB_Kcm5wnvEJU": {
+    "id": "1cSQ4MW115drUwkR2js0GB_Kcm5wnvEJU",
+    "md5Checksum": "6ff1fee8e5b8acbfcdf5b8eac1a4a42d",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-full-colour-horizontal.jpg",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-full-colour-horizontal.jpg"
+  },
+  "1chcPXrZ-RvZxDMoryxwlU6ERZerJlmla": {
+    "id": "1chcPXrZ-RvZxDMoryxwlU6ERZerJlmla",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-16T15:28:37.581Z",
+    "name": "fonts",
+    "parents": [
+      "1wlVqUSYtpMpTwhjxXODCdgwItaauidMm"
+    ],
+    "path": "Branding Assets / Word Templates / docx / fonts"
+  },
+  "1dzhEVcC_d2EGaVIO1WBq4fStwr1DdylA": {
+    "id": "1dzhEVcC_d2EGaVIO1WBq4fStwr1DdylA",
+    "md5Checksum": "b6831f5b3448409511e9a5bdd2fc1b96",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-10-07T12:19:43.443Z",
+    "name": "Copy of Elbert Wijaya_photograph.png",
+    "parents": [
+      "11zgePvn2UDCT5yOZ9fIHYIeJob_oJs7n"
+    ],
+    "path": "6. SAOC Symposium / Speakers / Copy of Elbert Wijaya_photograph.png"
+  },
+  "1e1deTXHhGu1iRbuc2Wmi00UaSB5aY_55": {
+    "id": "1e1deTXHhGu1iRbuc2Wmi00UaSB5aY_55",
+    "md5Checksum": "e8c6c4b4a4995d2c064ae3a0aa3888da",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-ink-olive-horizontal.png",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-ink-olive-horizontal.png"
+  },
+  "1e4slymf6jdqGKQofqDnDFmWvo70wPFz_": {
+    "id": "1e4slymf6jdqGKQofqDnDFmWvo70wPFz_",
+    "md5Checksum": "77923ed3ccc494310ca99b7562fe9fee",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-ink-violet-vertical.jpg",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-ink-violet-vertical.jpg"
+  },
+  "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY": {
+    "id": "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-16T13:54:30.890Z",
+    "name": "Logo",
+    "parents": [
+      "144zLJuN01thNwystGThOkiqn2IDMl5n_"
+    ],
+    "path": "Branding Assets / Logo"
+  },
+  "1eHp2AmuZhsYZdZT03L-vEO9FKyKV6eD-": {
+    "id": "1eHp2AmuZhsYZdZT03L-vEO9FKyKV6eD-",
+    "md5Checksum": "6da02eafe8a70e7499370f854f5744ac",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-10-07T12:21:49.730Z",
+    "name": "Copy of 2026-08-20 - Michael Tibbs - Photograph_updated.png",
+    "parents": [
+      "11zgePvn2UDCT5yOZ9fIHYIeJob_oJs7n"
+    ],
+    "path": "6. SAOC Symposium / Speakers / Copy of 2026-08-20 - Michael Tibbs - Photograph_updated.png"
+  },
+  "1eQFz6ZjBmp6VCEQbzfT7IpoiAgUB3qw6": {
+    "id": "1eQFz6ZjBmp6VCEQbzfT7IpoiAgUB3qw6",
+    "md5Checksum": "459aab42cace3ea737a077b005494c69",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-grayscale-horizontal.png",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-grayscale-horizontal.png"
+  },
+  "1fHQWBgevfe3BmjoYSPrliFuH5r9uboyn": {
+    "id": "1fHQWBgevfe3BmjoYSPrliFuH5r9uboyn",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-03T20:32:01.535Z",
+    "name": "15. Sponsors",
+    "parents": [
+      "1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH"
+    ],
+    "path": "15. Sponsors"
+  },
+  "1ivYoZLTTrWYpH5IJmIC_3dmnaK3gL8ys": {
+    "id": "1ivYoZLTTrWYpH5IJmIC_3dmnaK3gL8ys",
+    "md5Checksum": "761b646e07306c786c8ba82a7a0d0592",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-ink-purple-horizontal.png",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-ink-purple-horizontal.png"
+  },
+  "1jK-Y2Zmc517o5yQBtWMkjUNe_6qOvuQu": {
+    "id": "1jK-Y2Zmc517o5yQBtWMkjUNe_6qOvuQu",
+    "md5Checksum": "1eae641fa0e1b61fa2b08e4ef92b702f",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-09-16T15:39:57.547Z",
+    "name": "NOS-2027-Social-Posts.docx",
+    "parents": [
+      "1wlVqUSYtpMpTwhjxXODCdgwItaauidMm"
+    ],
+    "path": "Branding Assets / Word Templates / docx / NOS-2027-Social-Posts.docx"
+  },
+  "1k02zzqII2XEAJw24QAnTjtRvT6qfFb_b": {
+    "id": "1k02zzqII2XEAJw24QAnTjtRvT6qfFb_b",
+    "md5Checksum": "ffca2e363a38447ed1b226bf2ab6413e",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-09-03T20:20:15.772Z",
+    "name": "1. Website Development SpecificationV3.docx",
+    "parents": [
+      "1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH"
+    ],
+    "path": "1. Website Development SpecificationV3.docx"
+  },
+  "1kJyneNkDy57jbjYvmIa-woDK-hIFyOt9": {
+    "id": "1kJyneNkDy57jbjYvmIa-woDK-hIFyOt9",
+    "md5Checksum": "944079170e14c863a573b0de8383dd54",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-full-colour-reversed-horizontal.png",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-full-colour-reversed-horizontal.png"
+  },
+  "1kju1zzN6HQsiTDbsdAH3EXCN2tvxmZfR": {
+    "id": "1kju1zzN6HQsiTDbsdAH3EXCN2tvxmZfR",
+    "md5Checksum": "6a9c15cc70c6526e3aa120eaacf3867d",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-ink-violet-horizontal.jpg",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-ink-violet-horizontal.jpg"
+  },
+  "1kniWXxqLdJDFmWA9LYnhIHdQAwJwtRmP": {
+    "id": "1kniWXxqLdJDFmWA9LYnhIHdQAwJwtRmP",
+    "md5Checksum": "cd55576589fdd9a5ffdcacf7375d473e",
+    "mimeType": "image/png",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-ink-violet-horizontal.png",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-ink-violet-horizontal.png"
+  },
+  "1nbw2_uAdaLxDkAZzHRP5WePd4OZzlVN_": {
+    "id": "1nbw2_uAdaLxDkAZzHRP5WePd4OZzlVN_",
+    "md5Checksum": "5fa473247ebadf39fc22f864304fa598",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-09-16T15:31:32.118Z",
+    "name": "NOS-2027-Press-Release.docx",
+    "parents": [
+      "1wlVqUSYtpMpTwhjxXODCdgwItaauidMm"
+    ],
+    "path": "Branding Assets / Word Templates / docx / NOS-2027-Press-Release.docx"
+  },
+  "1nebF2XdJKdIPvS6V7Byp24CM7m3MmR_5": {
+    "id": "1nebF2XdJKdIPvS6V7Byp24CM7m3MmR_5",
+    "md5Checksum": "8b34c9c8820ec0a3bbe98f0ec773cb64",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-10-07T15:42:42.606Z",
+    "name": "2.1 About - 2027 National Show.docx",
+    "parents": [
+      "1rsL4Bdyj87Be9WjjOGzV1nPhwfhkMCgd"
+    ],
+    "path": "2. About / 2.1 About - 2027 National Show.docx"
+  },
+  "1oWIwxX5aUzNLuXVoHoDp51IMNXwueQR1": {
+    "id": "1oWIwxX5aUzNLuXVoHoDp51IMNXwueQR1",
+    "md5Checksum": "d8c957c346e5998d6a4ddfc38787c492",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-full-colour-reversed-vertical.jpg",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-full-colour-reversed-vertical.jpg"
+  },
+  "1qmp9tzTMm-XgFl0QF1vQqmpxk7BcrjNC": {
+    "id": "1qmp9tzTMm-XgFl0QF1vQqmpxk7BcrjNC",
+    "md5Checksum": "ba3226c5da19a8c04a68921049da1156",
+    "mimeType": "image/jpeg",
+    "modifiedTime": "2026-09-10T17:33:09.000Z",
+    "name": "NOS-2027-logo-reversed-white-vertical.jpg",
+    "parents": [
+      "1e7oj4iC9iJQDy_MrSdwSGsJI7T13hQcY"
+    ],
+    "path": "Branding Assets / Logo / NOS-2027-logo-reversed-white-vertical.jpg"
+  },
+  "1rsL4Bdyj87Be9WjjOGzV1nPhwfhkMCgd": {
+    "id": "1rsL4Bdyj87Be9WjjOGzV1nPhwfhkMCgd",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-03T20:26:58.861Z",
+    "name": "2. About",
+    "parents": [
+      "1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH"
+    ],
+    "path": "2. About"
+  },
+  "1soLx8vKPs1jQBnYFTu88_LWxjzRFTHsf": {
+    "id": "1soLx8vKPs1jQBnYFTu88_LWxjzRFTHsf",
+    "md5Checksum": "27f4911dc51dfada43b242104b627c0e",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-09-03T21:46:32.862Z",
+    "name": "17.1 Frequently asked questions.docx",
+    "parents": [
+      "1Fv1CJLQ4-tIhFrum0SJRC4GybcQls3q5"
+    ],
+    "path": "17. Frequently Asked Questions / 17.1 Frequently asked questions.docx"
+  },
+  "1tbA4GNbplWkW-4Pv3LPsdV5RT_ZdViBe": {
+    "id": "1tbA4GNbplWkW-4Pv3LPsdV5RT_ZdViBe",
+    "md5Checksum": "693aaa2175ae20cfaeee34f7f9c9b965",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-10-07T16:38:31.579Z",
+    "name": "13.2 Vendor Form - SAOC National Show Vendor Registration Form.docx",
+    "parents": [
+      "1-H3m-LHjtmjLw4E8OR0IIhv4gM3hn1cd"
+    ],
+    "path": "13. Registration/Booking/Tickets / 13.2 Vendor Form - SAOC National Show Vendor Registration Form.docx"
+  },
+  "1ti_vdAkmaFL37uhXkJpAeeDLGejlBedw": {
+    "id": "1ti_vdAkmaFL37uhXkJpAeeDLGejlBedw",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-03T20:30:18.951Z",
+    "name": "11. Program of events",
+    "parents": [
+      "1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH"
+    ],
+    "path": "11. Program of events"
+  },
+  "1vrVkXWl1NlMBiBTxeto_2Bjvx1uf5mNN": {
+    "id": "1vrVkXWl1NlMBiBTxeto_2Bjvx1uf5mNN",
+    "md5Checksum": "fa20ec378fdd0f247d68cb287b329f0c",
+    "mimeType": "application/pdf",
+    "modifiedTime": "2026-10-07T12:21:11.670Z",
+    "name": "Copy of 2026-08-19 - Robert Fuchs biography.pdf",
+    "parents": [
+      "11zgePvn2UDCT5yOZ9fIHYIeJob_oJs7n"
+    ],
+    "path": "6. SAOC Symposium / Speakers / Copy of 2026-08-19 - Robert Fuchs biography.pdf"
+  },
+  "1wknTTwrItjZI4qfDQlzjyF0GixEPKIVL": {
+    "id": "1wknTTwrItjZI4qfDQlzjyF0GixEPKIVL",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-03T20:32:49.033Z",
+    "name": "18. Contact",
+    "parents": [
+      "1O2Lbzsbt57i8-7ZLFdhrcHjaMQ--TkJH"
+    ],
+    "path": "18. Contact"
+  },
+  "1wlVqUSYtpMpTwhjxXODCdgwItaauidMm": {
+    "id": "1wlVqUSYtpMpTwhjxXODCdgwItaauidMm",
+    "md5Checksum": null,
+    "mimeType": "application/vnd.google-apps.folder",
+    "modifiedTime": "2026-09-16T15:28:36.578Z",
+    "name": "docx",
+    "parents": [
+      "1UBbftHWmvYObS75x89nb3LIm83qnhLQt"
+    ],
+    "path": "Branding Assets / Word Templates / docx"
+  },
+  "1xeJwv9K0v69WSRHAb_b0mlug7gt6DBse": {
+    "id": "1xeJwv9K0v69WSRHAb_b0mlug7gt6DBse",
+    "md5Checksum": "8c7f6a02d91c830171b935ff5d1b18da",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-10-07T12:21:53.185Z",
+    "name": "Copy of 2026-08-19 - Michaael Tibbs.docx",
+    "parents": [
+      "11zgePvn2UDCT5yOZ9fIHYIeJob_oJs7n"
+    ],
+    "path": "6. SAOC Symposium / Speakers / Copy of 2026-08-19 - Michaael Tibbs.docx"
+  },
+  "1xnHd-KvrWT4A6QqpwR5RK0hj5ZO9Xt4J": {
+    "id": "1xnHd-KvrWT4A6QqpwR5RK0hj5ZO9Xt4J",
+    "md5Checksum": "62dc0fb5ddf6ff1dfea97803a3fe1d50",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-10-07T12:22:31.201Z",
+    "name": "Copy of 202608-26 - Hildagard Crous_biograhy.docx",
+    "parents": [
+      "11zgePvn2UDCT5yOZ9fIHYIeJob_oJs7n"
+    ],
+    "path": "6. SAOC Symposium / Speakers / Copy of 202608-26 - Hildagard Crous_biograhy.docx"
+  },
+  "1xsq61orMEGg_vS_vL0WSS8nmmbq0hlyk": {
+    "id": "1xsq61orMEGg_vS_vL0WSS8nmmbq0hlyk",
+    "md5Checksum": "5b10cd4cb2fcbadb0a9cd5fe8e271c39",
+    "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "modifiedTime": "2026-09-04T09:01:42.471Z",
+    "name": "Symposium Theme ",
+    "parents": [
+      "1-n5Mtl3KIgiIwiyi19D0AsFuBLwc_2sP"
+    ],
+    "path": "6. SAOC Symposium / Symposium Theme "
+  }
+}

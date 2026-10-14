@@ -3,43 +3,15 @@
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 source execution/tests/lib/assert.sh
+source execution/tests/lib/sandbox_repo.sh
 
 echo "=== test_pulse_mission_loop_codex_queue.sh ==="
 
-ACTIVE_JSON=".agent/memory/project/missions/active.json"
-QUEUE_FILE=".agent/mission_queue.txt"
-MISSION_FILE=".agent/memory/project/missions/$(date -u +%Y-%m-%d)-test-loop-queue.md"
-
-ACTIVE_BACKUP="$(mktemp)"
-QUEUE_BACKUP="$(mktemp)"
-ACTIVE_EXISTS=0
-QUEUE_EXISTS=0
-
-cleanup() {
-  rm -f "$MISSION_FILE"
-  if [ "$ACTIVE_EXISTS" -eq 1 ]; then
-    cp "$ACTIVE_BACKUP" "$ACTIVE_JSON"
-  else
-    rm -f "$ACTIVE_JSON"
-  fi
-  if [ "$QUEUE_EXISTS" -eq 1 ]; then
-    cp "$QUEUE_BACKUP" "$QUEUE_FILE"
-  else
-    rm -f "$QUEUE_FILE"
-  fi
-  rm -f "$ACTIVE_BACKUP" "$QUEUE_BACKUP"
-}
-trap cleanup EXIT
-
-if [ -f "$ACTIVE_JSON" ]; then
-  cp "$ACTIVE_JSON" "$ACTIVE_BACKUP"
-  ACTIVE_EXISTS=1
-fi
-
-if [ -f "$QUEUE_FILE" ]; then
-  cp "$QUEUE_FILE" "$QUEUE_BACKUP"
-  QUEUE_EXISTS=1
-fi
+# In a sandbox repo: this drives the real mission loop, which writes
+# active.json and a new mission file. Run in the host checkout, it wrote (and
+# then tried to undo) that project's live mission state (Alembic 2026-09-29).
+SB=$(make_sandbox_repo pulse_codex_queue execution)
+cd "$SB" || exit 1
 
 python3 - <<'PY'
 import json
@@ -57,6 +29,8 @@ PY
 OUTPUT="$(CODEX_CI=1 bash execution/pulse_mission_loop.sh --dry-run 2>&1)"
 ACTUAL_EXIT=$?
 
+# By glob, not by `date -u`: mission.py names the file from its own clock.
+MISSION_FILE="$(ls .agent/memory/project/missions/*-test-loop-queue.md 2>/dev/null | head -1)"
 ACTIVE_PATH="$(python3 - <<'PY'
 import json
 from pathlib import Path
@@ -68,7 +42,7 @@ PY
 assert_exit "pulse_mission_loop dry-run exits 0" 0 "$ACTUAL_EXIT"
 assert_output_contains "pulse_mission_loop selects Codex platform" "Platform: codex" "$OUTPUT"
 assert_output_contains "pulse_mission_loop activates queued mission" "activating next from queue: test-loop-queue" "$OUTPUT"
-assert_file_exists "pulse_mission_loop created queued mission file" "$MISSION_FILE"
+assert_file_exists "pulse_mission_loop created queued mission file" "${MISSION_FILE:-missing}"
 assert_output_contains "active.json points at queued mission" "test-loop-queue" "$ACTIVE_PATH"
 
 summary

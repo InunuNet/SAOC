@@ -1,3 +1,7 @@
+---
+description: Run the phase 4 contract gate for the active mission without building the contract path by hand. Use after @docs and before @maintainer wrap-up.
+---
+
 # quick-gate
 
 Run the phase 4 contract gate on the active mission without manually constructing the contract path.

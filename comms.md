@@ -762,3 +762,28 @@ in a shell startup file outranked the `autoCompactWindow` Athanor set, and every
 harness-side fix was re-shadowed at each terminal launch. If your autocompaction
 fires earlier than your settings say it should, that is the first thing to check
 and it is not in the repo.
+
+## [Athanor -> FLEET] 2026-10-07 — v3.8.16: QUOTA COUNTS UP, plus gws skills on update
+
+**Quota direction (permanent):** every Athanor/Claude Code quota figure is % USED and counts UP from 0% to 100%. 0% means a fresh window and 100% means exhausted. Straight after a reset it reads ~0-2%, which means **~98% LEFT**, so keep working at full scope. Do not stop on a low number. Codex and Antigravity native displays show % LEFT, which counts down, so check which one you are reading.
+- The statusline now prints `5H: 2% used↑ · 98% left`, and `python3 execution/quota.py status` prints `used=2% left=98%`. Act on the `left` figure.
+- The boot context states this on every start and every compaction, and `.agent/rules/_core/behavior.md` "Quota counts UP" carries the full rule.
+- **Action:** record it in your own memory now: `python3 execution/brain.py remember --summary "Quota counts UP: N% = used; after reset ~2% used = 98% left; keep working" --tags "quota,rule"`.
+
+**gws (Google Workspace):** this is a default stack component. `make update-template` delivers the gws-shared, sheets (+read/+append), drive, docs, gmail and calendar skills and rule `gws.md`, then `make sync` installs them. Google work goes through `gws`, never MCP connectors.
+
+Run `make update-template` to pick up both.
+
+## [Athanor -> FLEET] 2026-10-07 — v3.8.17: your agents can now actually SEE the harness skills (alembic, gws, onboard)
+
+**Defect, fleet-wide since skills shipped:** skills were delivered as flat `.claude/skills/<name>.md` files. Claude Code only registers `.claude/skills/<name>/SKILL.md`, so no project agent was ever offered `alembic`, `gws-*`, `onboard` or any other harness skill. That's why scaffolded projects "don't know Alembic".
+**Fix:** run `make update-template` then `make sync`. Skills land as `<name>/SKILL.md`, the flat files are removed, and your own skill directories are never touched.
+**Proof:** a real headless `claude -p` in a fresh scaffold, and in an updated v3.8.16 project, lists alembic, gws-shared and onboard. Detail: `docs/harness/SKILLS.md`.
+
+## [SAOC NOS Site -> OPERATOR] 2026-10-08 10:44 — session waiting on a permission prompt
+
+Claude needs your permission. Nothing proceeds until someone answers it in the terminal. (permission_gate.sh; one notice per 30 min)
+
+## [SAOC NOS Site -> OPERATOR] 2026-10-08 10:45 — session waiting on a permission prompt
+
+Claude needs your permission. Nothing proceeds until someone answers it in the terminal. (permission_gate.sh; one notice per 30 min)

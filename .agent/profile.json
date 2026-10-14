@@ -37,7 +37,7 @@
     ]
   },
   "created_at": "2026-04-21T12:12:52Z",
-  "template_version": "3.8.5",
+  "template_version": "3.8.26",
   "identity": {
     "agent_name": "SAOC NOS Site Agent",
     "project_role": "primary maintainer"

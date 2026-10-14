@@ -367,9 +367,26 @@ def cmd_prune(args) -> int:
               "true when a tree is compared against itself, so the trash copy "
               "would become the ONLY copy of every pruned file.")
         return 3
-    if (ws / "template" / "execution").is_dir():
-        print("PRUNE-REFUSED: this is a harness checkout (template/execution/ "
-              "present); the Athanor repo carries all platforms by design.")
+    # The WORKSPACE-file test update_template.py's self-update guard uses, not
+    # "template/execution/ exists": the update ships template/ to every
+    # downstream workspace, so that test refused everywhere and prune never ran
+    # outside the harness (GH #1454).
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from update_template import is_harness_checkout
+    # Fail closed for a deleter: a workspace with no readable WORKSPACE marker
+    # cannot be told apart from a damaged harness checkout. init.sh writes the
+    # marker into every scaffold, so a real downstream always has one.
+    try:
+        marker = (ws / "WORKSPACE").read_text().strip()
+    except OSError:
+        marker = ""
+    if not marker:
+        print("PRUNE-REFUSED: no WORKSPACE marker, so this cannot be proven "
+              "to be a downstream workspace rather than a harness checkout.")
+        return 3
+    if is_harness_checkout(ws):
+        print("PRUNE-REFUSED: this is a harness checkout (WORKSPACE names the "
+              "harness); the Athanor repo carries all platforms by design.")
         return 3
     if host == "unknown":
         print("PRUNE-REFUSED: platform is 'unknown' and ATHANOR_PLATFORM is "

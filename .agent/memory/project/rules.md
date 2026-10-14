@@ -136,3 +136,9 @@ merge stops being reviewable.
 **How to apply:** close-out order is seed/verify → evidence → PR → cross-lane review → CI green →
 merge → THEN open the next mission. If work genuinely cannot merge yet, say so explicitly and name
 what blocks it; do not silently start the next thing on top of it.
+
+## Brad's standing rules, 2026-10-13 (relayed by SAOC)
+- **Spelling:** correct obvious typos and US spellings in Lee-Ann's copy to SA/UK English. Don't ask her and don't reproduce them. Wording and meaning stay verbatim.
+- **Lee-Ann questions:** never ask about missing content (empty folders, unwritten sections), only about content she has supplied. Add to the shared doc https://docs.google.com/document/d/1C2_2EKYvJwzB5ejtwf0wpm5bk7z916-c8UQQrkQmSjc/edit, never a new list.
+- **Test emails:** always plus-addressed, never bare brad@inunu.net. The shape is `brad+<saoc|nos>-<ticket|form|approve|check-in>@inunu.net`. gws inbox checks search by that address.
+- **Contact:** all site contact (section 18, every audience) goes to info@saoc.co.za / brad+saoc@inunu.net for now. Not a question for Lee-Ann.

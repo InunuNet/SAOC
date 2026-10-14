@@ -66,8 +66,8 @@ echo "  ✅ Backup: .agent.bak"
 #
 # Step 1 covers .agent/{workflows,agents,rules,skills,reference}, so a
 # project-local file deleted from those is recoverable from .agent.bak.
-# Step 2 also runs `rsync --delete` over execution/hooks/, .claude/skills/
-# and .gemini/skills/, which that snapshot does NOT reach — so until this
+# Step 2 also runs `rsync --delete` over execution/hooks/ and .claude/skills/,
+# which that snapshot does NOT reach — so until this
 # step existed, a project-authored file in any of them was destroyed with no
 # backup, no prompt and no warning. mlilo-savant-0e lost 14 project-local
 # files under execution/hooks/ to exactly this (2026-09-21); they were only
@@ -78,8 +78,6 @@ echo "  ✅ Backup: .agent.bak"
 DELETE_TARGETS_OUTSIDE_AGENT=(
   "execution/hooks"
   ".claude/skills"
-  ".gemini/skills"
-  ".gemini/policies"
 )
 EXTERNAL_BAK="$TARGET/.agent.bak/_overlay_external"
 mkdir -p "$EXTERNAL_BAK"
@@ -93,7 +91,7 @@ echo "  ✅ Backup: .agent.bak/_overlay_external (execution/hooks, provider skil
 # Step 2: Overlay infrastructure dirs — rsync --delete mirrors source exactly,
 #          removing any orphan files from previous template versions.
 #          Guarded by -d to avoid failure if template dirs are missing (Issue #50).
-mkdir -p "$TARGET/.agent/workflows" "$TARGET/.agent/agents" "$TARGET/.agent/rules" "$TARGET/.agent/skills" "$TARGET/.agent/reference" "$TARGET/execution/hooks" "$TARGET/.claude/skills" "$TARGET/.gemini/skills" "$TARGET/.gemini/policies"
+mkdir -p "$TARGET/.agent/workflows" "$TARGET/.agent/agents" "$TARGET/.agent/rules" "$TARGET/.agent/skills" "$TARGET/.agent/reference" "$TARGET/execution/hooks" "$TARGET/.claude/skills"
 if [ -d "$TEMPLATE/.agent/workflows/" ]; then
   build_excludes ".agent/workflows/"
   rsync -a --delete "${EXC[@]}" "$TEMPLATE/.agent/workflows/" "$TARGET/.agent/workflows/"
@@ -105,10 +103,6 @@ fi
 if [ -d "$TEMPLATE/.claude/skills/" ]; then
   build_excludes ".claude/skills/"
   rsync -a --delete "${EXC[@]}" "$TEMPLATE/.claude/skills/" "$TARGET/.claude/skills/" 2>/dev/null || true
-fi
-if [ -d "$TEMPLATE/.gemini/skills/" ]; then
-  build_excludes ".gemini/skills/"
-  rsync -a --delete "${EXC[@]}" "$TEMPLATE/.gemini/skills/" "$TARGET/.gemini/skills/" 2>/dev/null || true
 fi
 if [ -d "$TEMPLATE/.agent/agents/" ]; then
   build_excludes ".agent/agents/"
@@ -193,11 +187,6 @@ fi
 # Claude Code adapter — hooks, permissions, env
 cp "$TEMPLATE/.claude/settings.json" "$TARGET/.claude/settings.json" 2>/dev/null || true
 
-# Gemini CLI adapter
-cp "$TEMPLATE/.gemini/settings.json" "$TARGET/.gemini/settings.json" 2>/dev/null || true
-mkdir -p "$TARGET/.gemini/policies"
-cp "$TEMPLATE/.gemini/policies/autonomy.toml" "$TARGET/.gemini/policies/autonomy.toml" 2>/dev/null || true
-
 # AGENTS.md — WORKSPACE-IDENTITY (scaffold-identity-integrity F3, D-F3-1/D-F3-2).
 # A workspace's AGENTS.md is project-owned: init.sh seeds it from template/ and
 # then FILLS it, and /onboard rewrites it again. The overlay must NOT rewrite it
@@ -218,7 +207,6 @@ fi
 # becomes a text stub on every default Windows clone of the updated workspace
 # (platform-scoped-delivery F2).
 cp "$TARGET/AGENTS.md" "$TARGET/CLAUDE.md" 2>/dev/null || true
-cp "$TARGET/AGENTS.md" "$TARGET/GEMINI.md" 2>/dev/null || true
 echo "  ✅ Infrastructure files overlaid"
 
 # Step 3: Restore brain (overlay may have reset it)

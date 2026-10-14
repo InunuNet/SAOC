@@ -34,6 +34,16 @@ Distinguish the two explicitly when you report:
 | the work is done but a judgment call is genuinely the operator's | **DECISION NEEDED** — state your recommendation first, then the alternative |
 | you simply were not sure | neither — make the call, say which assumption you used, and continue |
 
+## Operator away — set UNATTENDED
+
+When the operator says they are away ("i'm afk", "going to bed", "run
+overnight"), create `.agent/memory/scratch/UNATTENDED` before continuing.
+A permission prompt then comes back to you at once as a denial with a
+reason, where it would otherwise have frozen the session until morning.
+Do not retry a denied action. Take a route that needs no approval, or skip
+the step and list it in your report. The operator's next message removes
+the file. See `docs/harness/UNATTENDED.md`.
+
 ## Don't modify user content
 Quotes, prose the user wrote, text they supplied: reproduce it exactly. Do not
 edit it, do not improve it, do not fix its typos.
@@ -53,19 +63,36 @@ when it is money rather than tokens.
 
 ## Quota counts UP
 
-`SPENT: 5H 18%↑ | WK 23%↑` means **18% of the 5-hour window is gone and 82%
-remains**. It does not mean 18% left. The arrow says which way the number
-travels.
+**Quota counts UP from 0% to 100%, never down.** 0% is a fresh window and 100%
+is exhausted. The number is what has been SPENT, never what is left.
 
-Agents have inverted this for three months, and the inversion is expensive in
-one direction only: reading 18% as "nearly out" makes a session start
-rationing, cutting scope and hedging, against a quota that is four-fifths
-intact. That wastes the operator's evening more reliably than overspending
-would.
+| reading | means | do |
+|---|---|---|
+| `5H 2% used` just after a reset | 98% left. The window has only just started | work normally, at full scope |
+| `5H 18% used` | 82% left | work normally |
+| `5H 85% used` | 15% left | finish the current feature, commit, then pause |
+| `5H 100% used` | exhausted | stop and checkpoint |
 
-Never narrow scope, decline work, or announce that quota is short on a reading
-you have not checked the direction of. If the number is high, it is late. If
-it is low, there is room.
+The statusline prints both numbers (`5H: 2% used↑ · 98% left`), and so does
+`python3 execution/quota.py status`. Read the `left` figure.
+
+**Other providers count the other way.** Codex and Antigravity native
+displays show % LEFT, which counts down. Before acting on any quota number,
+establish whether it is used or left. Athanor's own figures always say which.
+
+**The reset trap.** When a 5-hour or weekly window resets, the figure drops to
+about 0-2%. That is the BEST possible state, not the end of quota. Agents have
+read that low number as "nearly out" and stopped work fleet-wide after every
+reset. This keeps recurring.
+
+The inversion is expensive in one direction only. Reading a low figure as
+"nearly out" makes a session ration, cut scope and hedge against a quota that
+is almost untouched. That wastes the operator's day more reliably than
+overspending would.
+
+Never narrow scope, decline work, pause, or announce that quota is short on a
+reading whose direction you have not checked. High number: late in the window.
+Low number: plenty of room.
 
 ## Minimal scope
 Change only what was asked. A bug fix is a bug fix, not an invitation to
