@@ -16,6 +16,11 @@ import { resolveProvider } from '@/lib/payments';
 import { PAYFAST_FIELD_MAX_LENGTH, clampToMaxLength } from '@/lib/payments/gateway-field-limits';
 import { buildVendorStandReturnUrl } from '@/lib/vendor-stand-return';
 import { resolveActiveGateway } from '@/lib/payments/active-gateway';
+import {
+  isOzowSandboxTestModeEnabled,
+  resolveExpectedGatewayAmount,
+  resolveOzowInitiateAmount,
+} from '@/lib/ozow-sandbox-test-mode';
 import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 
@@ -194,6 +199,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const attemptId = randomBytes(ATTEMPT_ID_ENTROPY_BYTES).toString('hex');
   const attemptReference = buildVendorStandOrderReference(vendorSubmissionId, attemptId);
 
+  // F5 -- Ozow Sandbox Test Mode. The flag is read ONCE, here, before the transaction, so the
+  // stored expectation and the amount sent to the gateway cannot disagree if the flag flips.
+  // `null` (flag off, flag unreadable, or PayFast) leaves amount and guards unchanged.
+  const ozowSandboxTestModeEnabled = await isOzowSandboxTestModeEnabled();
+  const expectedGatewayAmount = resolveExpectedGatewayAmount(
+    activeGateway,
+    ozowSandboxTestModeEnabled,
+  );
+
   // ONE Firestore transaction: re-read (a document that reached 'paid' between the earlier
   // read above and here must still be refused), then .set() -- create-or-overwrite -- never
   // .update(). A re-initiate before payment legitimately overwrites the prior pending attempt;
@@ -211,6 +225,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       contactEmail: submissionData.contactEmail ?? '',
       boothSize,
       amount,
+      expectedGatewayAmount,
       tier,
       status: 'pending',
       gateway: activeGateway,
@@ -231,7 +246,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const siteUrl = resolveSiteUrl();
   const initiation = await paymentProvider.initiate({
     reference: attemptReference,
-    amountFormatted: amount.toFixed(2),
+    amountFormatted: resolveOzowInitiateAmount(expectedGatewayAmount, amount.toFixed(2)),
     itemName: clampToMaxLength(
       `SAOC National Show — Vendor Stand (${submissionData.businessName ?? ''})`,
       PAYFAST_FIELD_MAX_LENGTH.item_name,

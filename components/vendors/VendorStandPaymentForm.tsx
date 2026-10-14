@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestModeBanner';
 import { PayfastRedirectForm } from '@/components/tickets/PayfastRedirectForm';
 import {
   VENDOR_STAND_BOOTH_SIZES,
@@ -79,6 +80,7 @@ export function VendorStandPaymentForm({ token, businessName }: VendorStandPayme
 
   return (
     <div className="space-y-8">
+      <OzowSandboxTestModeBanner />
       <p className="font-sans text-[15px] text-ink">
         Stand payment for <strong>{businessName}</strong>.
       </p>

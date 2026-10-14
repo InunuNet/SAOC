@@ -9,6 +9,7 @@ import {
   parseAttemptIdFromStandOrderRef,
 } from '@/lib/vendor-stand-orders';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
+import { vendorStandOrderAmountMatches } from '@/lib/vendor-stand-order-amount';
 import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
 import { sendVendorPaymentAdminNoticeEmail } from '@/lib/vendor-payment-admin-notice';
 import { sendVendorPaymentConfirmationEmail } from '@/lib/vendor-payment-confirmation';
@@ -150,7 +151,7 @@ export async function POST(
   // strictly AFTER that transaction resolves.
   let paidNotice: PaidNotice | null = null;
 
-  type StandOrder = { gateway?: string; status?: string; amount?: number; boothSize?: 1 | 2 | 3; attemptId?: string };
+  type StandOrder = { gateway?: string; status?: string; amount?: number; expectedGatewayAmount?: number | null; boothSize?: 1 | 2 | 3; attemptId?: string };
 
   // F6 -- everything below runs inside a nested, VOID-returning closure so every guard exit can
   // use a bare `return;` (mirroring the pre-F6 shape, where these same guards lived inside a
@@ -237,21 +238,17 @@ export async function POST(
     }
 
     if (status === 'paid') {
-      const preOrderAmountCents = Number.isFinite(preOrder?.amount) ? Math.round(Number(preOrder?.amount) * 100) : null;
       // Amount guard -- the stored, server-derived amount is the ONLY thing ever compared
       // against; the notification's amount is never written anywhere as authoritative. Runs
       // BEFORE confirmNotification() so a tampered-amount notification never spends a real
       // gateway round trip -- re-verified transactionally below.
-      if (
-        preOrderAmountCents === null ||
-        notification.grossAmountCents === null ||
-        notification.grossAmountCents !== preOrderAmountCents
-      ) {
+      if (!vendorStandOrderAmountMatches(preOrder ?? {}, notification.grossAmountCents)) {
         console.error('[vendors/stand-payment] Gross amount does not match stand order -- rejecting', {
           provider: paymentProvider.id,
           vendorSubmissionId,
           grossAmountCents: notification.grossAmountCents,
-          orderAmountCents: preOrderAmountCents,
+          orderAmount: preOrder?.amount ?? null,
+          expectedGatewayAmount: preOrder?.expectedGatewayAmount ?? null,
         });
         return;
       }
@@ -301,12 +298,7 @@ export async function POST(
             return;
           }
         }
-        const orderAmountCents = Number.isFinite(order?.amount) ? Math.round(Number(order?.amount) * 100) : null;
-        if (
-          orderAmountCents === null ||
-          notification.grossAmountCents === null ||
-          notification.grossAmountCents !== orderAmountCents
-        ) {
+        if (!vendorStandOrderAmountMatches(order ?? {}, notification.grossAmountCents)) {
           return;
         }
 
