@@ -12,6 +12,7 @@ interface VendorMarketingUploadFieldProps {
   submissionId: string;
   assetSlot: 'logo' | 'product-photo-1' | 'product-photo-2' | 'product-photo-3';
   label: string;
+  onUploaded?: () => void;
 }
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -35,6 +36,7 @@ export function VendorMarketingUploadField({
   submissionId,
   assetSlot,
   label,
+  onUploaded,
 }: VendorMarketingUploadFieldProps) {
   const [status, setStatus] = useState<UploadStatus>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -68,6 +70,7 @@ export function VendorMarketingUploadField({
       });
       if (res.ok) {
         setStatus('success');
+        onUploaded?.();
       } else {
         setStatus('error');
         setErrorMessage('Upload failed. Please try again.');
