@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 import {
   buildVendorRegistrationPayload,
@@ -32,12 +32,17 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
 // registration page only renders this component once that cookie already verifies
 // server-side, and POST /api/vendors/register re-verifies that same cookie itself -- never a
 // body field the browser controls.
+const subscribeNever = () => () => {};
+
 export function VendorRegisterForm() {
   const [state, setState] = useState<VendorRegisterFormState>(INITIAL_STATE);
   const [hp, setHp] = useState(''); // honeypot -- never sent to the API
   const [status, setStatus] = useState<Status>('idle');
   const [descriptor, setDescriptor] = useState<VendorRegisterResponseDescription | null>(null);
   const bannerRef = useRef<HTMLDivElement>(null);
+  // Submit stays disabled until React has attached the onSubmit handler, so a pre-hydration
+  // submit can never fall through to a native form submission.
+  const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
 
   // The form runs to 30+ fields -- long enough that a banner rendered above the fieldsets is
   // off-screen for anyone submitting from the bottom. Without this, a real validation error
@@ -100,7 +105,7 @@ export function VendorRegisterForm() {
   const disabled = status === 'submitting';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-10 sm:space-y-12" noValidate>
+    <form method="post" onSubmit={handleSubmit} className="space-y-10 sm:space-y-12" noValidate>
       {descriptor ? (
         <div ref={bannerRef} tabIndex={-1}>
           <VendorRegisterStatusBanner descriptor={descriptor} />
@@ -133,7 +138,7 @@ export function VendorRegisterForm() {
 
       <button
         type="submit"
-        disabled={disabled}
+        disabled={disabled || !hydrated}
         className="rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ivory hover:bg-accent-soft transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
       >
         {status === 'submitting' ? 'Submitting…' : 'Submit registration'}
