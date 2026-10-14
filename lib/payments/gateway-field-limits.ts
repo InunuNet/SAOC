@@ -16,9 +16,9 @@ export const OZOW_FIELD_MAX_LENGTH: Readonly<Record<string, number>> = {
   Optional4: 50,
   Optional5: 50,
   Customer: 100,
-  // Ozow prints CancelUrl as String(50) but ErrorUrl as 150 and the working ticket flow sends
-  // 63 chars; treated as a documentation typo and capped with its sibling.
-  CancelUrl: 150,
+  // Ozow's main post-variable table prints CancelUrl as String(50) while another says 150; the
+  // conservative reading is enforced because the true cap cannot be verified.
+  CancelUrl: 50,
   ErrorUrl: 150,
   SuccessUrl: 150,
   NotifyUrl: 150,
@@ -51,6 +51,17 @@ export function findFieldLengthViolations(
   return violations;
 }
 
+/**
+ * Truncates to at most `max` UTF-16 code units (the strictest reading of "String(n)": JS
+ * `.length`, never more than a code-point count either gateway could use), without ever
+ * splitting a surrogate pair.
+ */
 export function clampToMaxLength(value: string, max: number): string {
-  return value.length > max ? value.slice(0, max) : value;
+  if (value.length <= max) return value;
+  let out = '';
+  for (const codePoint of value) {
+    if (out.length + codePoint.length > max) break;
+    out += codePoint;
+  }
+  return out;
 }

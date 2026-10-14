@@ -4,7 +4,9 @@
  * server-minted attempt id; the page decides what to show from the stored order, never from the
  * URL. No imports: loadable by plain node.
  */
-export const VENDOR_STAND_RETURN_PATH = '/national-show/vendors/payment/status';
+// Top-level alias of /national-show/vendors/payment/status: Ozow may cap CancelUrl at 50 chars,
+// which no /national-show/... path can fit.
+export const VENDOR_STAND_RETURN_PATH = '/vsp';
 
 /** Attempt ids are `randomBytes(8).toString('hex')`: 16 lowercase hex characters. */
 export const ATTEMPT_ID_PATTERN = /^[0-9a-f]{16}$/;
