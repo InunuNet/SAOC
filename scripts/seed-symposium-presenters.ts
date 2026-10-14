@@ -65,6 +65,7 @@ const SPELLING_FIXES: Record<string, [string, string][]> = {
     ['a breeding program at', 'a breeding programme at'],
     ['lectures and programs to', 'lectures and programmes to'],
     ['orchid hybridizing', 'orchid hybridising'],
+    ['this prestigious honor.', 'this prestigious honour.'],
   ],
 };
 
