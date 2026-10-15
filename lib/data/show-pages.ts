@@ -194,7 +194,7 @@ function sourceFileExists(sourcePath: string | null | undefined): boolean {
   if (typeof sourcePath !== 'string' || sourcePath.trim().length === 0) return false;
   if (!isWellFormedSourcePath(sourcePath)) return false;
 
-  const resolved = path.resolve(process.cwd(), sourcePath);
+  const resolved = path.resolve(/*turbopackIgnore: true*/ process.cwd(), sourcePath);
   if (!existsSync(resolved)) return false;
 
   let resolvedReal: string;
@@ -205,7 +205,7 @@ function sourceFileExists(sourcePath: string | null | undefined): boolean {
   }
 
   const contained = ALLOWED_SOURCE_ROOTS.some((root) => {
-    const rootAbs = path.resolve(process.cwd(), root);
+    const rootAbs = path.resolve(/*turbopackIgnore: true*/ process.cwd(), root);
     let rootReal: string;
     try {
       rootReal = realpathSync(rootAbs);
@@ -298,7 +298,7 @@ function bodyLinkedToSource(body: unknown, sourceText: string): boolean {
 // after it.
 function readSourceTextForLinkage(sourcePath: string): string | null {
   try {
-    return readFileSync(path.resolve(process.cwd(), sourcePath), 'utf8');
+    return readFileSync(path.resolve(/*turbopackIgnore: true*/ process.cwd(), sourcePath), 'utf8');
   } catch {
     return null;
   }
