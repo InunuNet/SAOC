@@ -188,6 +188,55 @@ for (const value of ['1', 'yes', '']) {
   });
 }
 
+// Case 7 — the live GetTransactionByReference response is camelCase (beta 2026-10-15), not the
+// documented PascalCase: exactly the live shape must confirm, and every strictness property must
+// hold for camelCase rows too.
+const CAMEL_ROW = {
+  transactionId: '34c3acfa-2618-410c-80d0-521a08190b82',
+  transactionReference: 'SAOC-2027-74NG1P6W9RKK',
+  amount: 0.01,
+  status: 'Complete',
+  statusMessage: 'Test transaction completed',
+  subStatus: null,
+  createdDate: '2026-10-15T14:52:00',
+  paymentDate: '2026-10-15T14:52:30',
+};
+await runCase('camelCase live row, Complete -> confirmed:true', {
+  notification: notificationWith('True'),
+  fetchImpl: async () => jsonResponse([CAMEL_ROW]),
+  expect: { confirmed: true, sendsIsTestTrue: true },
+});
+await runCase('camelCase row, status Cancelled -> confirmed:false/not-valid', {
+  notification: notificationWith('True'),
+  fetchImpl: async () => jsonResponse([{ ...CAMEL_ROW, status: 'Cancelled' }]),
+  expect: { confirmed: false, reason: 'not-valid', sendsIsTestTrue: true },
+});
+await runCase('camelCase row, status "complete" (wrong case) -> confirmed:false/not-valid', {
+  notification: notificationWith('True'),
+  fetchImpl: async () => jsonResponse([{ ...CAMEL_ROW, status: 'complete' }]),
+  expect: { confirmed: false, reason: 'not-valid', sendsIsTestTrue: true },
+});
+await runCase('camelCase row, other reference -> confirmed:false/not-valid', {
+  notification: notificationWith('True'),
+  fetchImpl: async () => jsonResponse([{ ...CAMEL_ROW, transactionReference: 'SOME-OTHER-REF' }]),
+  expect: { confirmed: false, reason: 'not-valid', sendsIsTestTrue: true },
+});
+await runCase('two camelCase rows, one Cancelled, transactionId disambiguates -> confirmed:true', {
+  notification: notificationWith('True'),
+  fetchImpl: async () =>
+    jsonResponse([
+      { ...CAMEL_ROW, transactionId: 'other-attempt', status: 'Cancelled' },
+      CAMEL_ROW,
+    ]),
+  expect: { confirmed: true, sendsIsTestTrue: true },
+});
+await runCase('two camelCase rows, transactionId matches neither -> confirmed:false/not-valid', {
+  notification: notificationWith('True', { gatewayPaymentId: 'unknown-id' }),
+  fetchImpl: async () =>
+    jsonResponse([{ ...CAMEL_ROW, transactionId: 'a' }, { ...CAMEL_ROW, transactionId: 'b' }]),
+  expect: { confirmed: false, reason: 'not-valid', sendsIsTestTrue: true },
+});
+
 // Case 6 — SECURITY REGRESSION GUARD: a forged notification (bad/mismatched Hash) must still be
 // rejected by verifyNotification() regardless of IsTest, and must never reach confirmNotification()
 // at all — this fix touches only confirmNotification()'s GetTransactionByReference call, never

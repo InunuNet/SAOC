@@ -44,6 +44,17 @@ import type {
 
 /** Ozow's 3-value documented Status enum. Only these three exist; there is no Pending. */
 const STATUS_COMPLETE = 'Complete';
+
+/**
+ * Reads a field off a GetTransactionByReference row. Ozow's docs show PascalCase keys but the
+ * live API returns camelCase (transactionReference, transactionId, status, ...), so camelCase is
+ * read first with the documented PascalCase as fallback. Status-response rows only -- the
+ * hash-verified notify POST stays PascalCase.
+ */
+function statusField(row: Record<string, unknown>, pascalKey: string): unknown {
+  const camelKey = pascalKey.charAt(0).toLowerCase() + pascalKey.slice(1);
+  return row[camelKey] ?? row[pascalKey];
+}
 const STATUS_CANCELLED = 'Cancelled';
 const STATUS_ERROR = 'Error';
 
@@ -404,7 +415,8 @@ export function createOzowProvider(deps?: OzowProviderDeps): PaymentProvider {
         (transaction): transaction is Record<string, unknown> =>
           typeof transaction === 'object' &&
           transaction !== null &&
-          (transaction as Record<string, unknown>).TransactionReference === notification.reference
+          statusField(transaction as Record<string, unknown>, 'TransactionReference') ===
+            notification.reference
       );
 
       // A single row matching the reference is the common, unambiguous case — same behaviour as
@@ -419,7 +431,8 @@ export function createOzowProvider(deps?: OzowProviderDeps): PaymentProvider {
         // (contracts/golden/ozow-m1-f1/README.md §1). It is the specific identifier for THIS
         // attempt, so among the ambiguous rows require an exact match on it too.
         const disambiguated = referenceMatches.filter(
-          (transaction) => transaction.TransactionId === notification.gatewayPaymentId
+          (transaction) =>
+            statusField(transaction, 'TransactionId') === notification.gatewayPaymentId
         );
         if (disambiguated.length === 1) {
           matched = disambiguated[0];
@@ -455,7 +468,7 @@ export function createOzowProvider(deps?: OzowProviderDeps): PaymentProvider {
       }
 
       // Strict, case-sensitive equality — same discipline as mapStatus. No fuzzy match.
-      if (matched.Status !== STATUS_COMPLETE) {
+      if (statusField(matched, 'Status') !== STATUS_COMPLETE) {
         return { confirmed: false, reason: 'not-valid' };
       }
 
