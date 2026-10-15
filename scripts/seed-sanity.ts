@@ -21,7 +21,6 @@ import {
   awards,
   BOARD_PLACEHOLDER_NAME,
   boardMembers,
-  events,
   partners,
   provinces,
   showClasses,
@@ -97,18 +96,6 @@ function mapBoardMembers(): Record<string, unknown>[] {
     // Derived from the sentinel, not hardcoded — flips to false automatically once
     // lib/data/board.ts is updated with the real name, no separate flag to maintain.
     placeholder: m.name === BOARD_PLACEHOLDER_NAME,
-  }));
-}
-
-function mapEvents(): Record<string, unknown>[] {
-  return events.map((e) => ({
-    _id: safeid('societyEvent', `${e.id}-${slugify(e.title)}`),
-    _type: 'societyEvent',
-    title: e.title,
-    date: e.date,
-    ...(e.endDate ? { endDate: e.endDate } : {}),
-    kind: e.kind,
-    venue: e.venue,
   }));
 }
 
@@ -210,7 +197,6 @@ async function main(): Promise<void> {
   await seedBatch('boardMembers', mapBoardMembers());
   await seedBatch('provinces', mapProvinces());
   await seedBatch('societies', mapSocieties());
-  await seedBatch('events', mapEvents());
   await seedBatch('shows', mapShows());
   await seedBatch('showClasses', mapShowClasses());
   await seedBatch('partners (→ sponsor)', mapPartners());

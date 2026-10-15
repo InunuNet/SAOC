@@ -1,0 +1,22 @@
+{
+  "baseRefEnv": "BASE_REF",
+  "baseRefDefault": "origin/main",
+  "allowed": [
+    "^app/layout\\.tsx$",
+    "^app/globals\\.css$",
+    "^app/\\(marketing\\)/layout\\.tsx$",
+    "^app/\\(marketing\\)/societies/[^/]+\\.tsx$",
+    "^components/chrome/",
+    "^components/nos-chrome/ChromeFrame\\.tsx$",
+    "^components/societies/",
+    "^components/home/",
+    "^components/events/",
+    "^contracts/checks/launch-weekend/",
+    "^\\.agent/memory/project/specs/launch-weekend/",
+    "^docs/launch-weekend-a11y\\.md$"
+  ],
+  "colourOrTypeLiteral": "#[0-9a-fA-F]{3,8}\\b|\\brgba?\\(|\\bhsla?\\(|\\boklch\\(|font-family\\s*:|@font-face|next/font",
+  "literalCheckedPaths": "^(app|components)/.*\\.(css|tsx|ts)$",
+  "tokenBlocksUnchanged": ["^:root\\s*\\{", "^@theme\\s*\\{"],
+  "note": "Extra paths need an architect-approved allowlist amendment, justified by a failing A2 finding that names the element. NOS chrome (components/nos-chrome/* except ChromeFrame.tsx, components/nos/**, app/(marketing)/national-show/**) is owned by mission nos-own-brand-chrome and is never touched here."
+}

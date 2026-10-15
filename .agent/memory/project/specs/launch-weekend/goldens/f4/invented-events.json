@@ -1,0 +1,98 @@
+{
+  "keep": {
+    "id": "societyEvent-15-19th-south-african-national-orchid-show",
+    "title": "19th South African National Orchid Show",
+    "slug": "19th-south-african-national-orchid-show"
+  },
+  "baseSanity": {
+    "projectId": "26yfbug4",
+    "dataset": "production"
+  },
+  "invented": [
+    {
+      "id": "societyEvent-0-cape-orchid-society-autumn-show",
+      "title": "Cape Orchid Society Autumn Show",
+      "slug": "cape-orchid-society-autumn-show"
+    },
+    {
+      "id": "societyEvent-1-transvaal-autumn-orchid-show",
+      "title": "Transvaal Autumn Orchid Show",
+      "slug": "transvaal-autumn-orchid-show"
+    },
+    {
+      "id": "societyEvent-2-judging-workshop-paphiopedilum",
+      "title": "Judging Workshop — Paphiopedilum",
+      "slug": "judging-workshop-paphiopedilum"
+    },
+    {
+      "id": "societyEvent-1-cape-orchid-society-winter-show",
+      "title": "Cape Orchid Society Winter Show",
+      "slug": "cape-orchid-society-winter-show"
+    },
+    {
+      "id": "societyEvent-2-natal-winter-orchid-show",
+      "title": "Natal Winter Orchid Show",
+      "slug": "natal-winter-orchid-show"
+    },
+    {
+      "id": "societyEvent-3-saoc-council-agm-2026",
+      "title": "SAOC Council AGM 2026",
+      "slug": "saoc-council-agm-2026"
+    },
+    {
+      "id": "societyEvent-4-transvaal-spring-orchid-show",
+      "title": "Transvaal Spring Orchid Show",
+      "slug": "transvaal-spring-orchid-show"
+    },
+    {
+      "id": "societyEvent-5-judging-workshop-cattleya-alliance",
+      "title": "Judging Workshop — Cattleya Alliance",
+      "slug": "judging-workshop-cattleya-alliance"
+    },
+    {
+      "id": "societyEvent-6-cape-spring-orchid-show",
+      "title": "Cape Spring Orchid Show",
+      "slug": "cape-spring-orchid-show"
+    },
+    {
+      "id": "societyEvent-7-northern-transvaal-spring-show",
+      "title": "Northern Transvaal Spring Show",
+      "slug": "northern-transvaal-spring-show"
+    },
+    {
+      "id": "societyEvent-8-eastern-province-spring-show",
+      "title": "Eastern Province Spring Show",
+      "slug": "eastern-province-spring-show"
+    },
+    {
+      "id": "societyEvent-9-lowveld-spring-orchid-show",
+      "title": "Lowveld Spring Orchid Show",
+      "slug": "lowveld-spring-orchid-show"
+    },
+    {
+      "id": "societyEvent-10-midlands-orchid-show",
+      "title": "Midlands Orchid Show",
+      "slug": "midlands-orchid-show"
+    },
+    {
+      "id": "societyEvent-11-east-rand-cymbidium-show",
+      "title": "East Rand Cymbidium Show",
+      "slug": "east-rand-cymbidium-show"
+    },
+    {
+      "id": "societyEvent-12-hybridisation-symposium-2026",
+      "title": "Hybridisation Symposium 2026",
+      "slug": "hybridisation-symposium-2026"
+    },
+    {
+      "id": "societyEvent-13-summer-species-show",
+      "title": "Summer Species Show",
+      "slug": "summer-species-show"
+    },
+    {
+      "id": "societyEvent-14-judging-accreditation-exam-round-1",
+      "title": "Judging Accreditation Exam — Round 1",
+      "slug": "judging-accreditation-exam-round-1"
+    }
+  ]
+}

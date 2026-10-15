@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { PageHero } from '@/components/ui/PageHero';
 import { EventCard, MonthGroup } from '@/components/events';
+import { ConfirmationBadge } from '@/components/show';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { upcomingEventsQuery } from '@/sanity/queries';
 import type { SanityEvent } from '@/types';
@@ -39,34 +40,13 @@ function groupByMonth(events: SanityEvent[]): Array<{ month: string; events: San
   return Array.from(map.entries()).map(([month, evts]) => ({ month, events: evts }));
 }
 
-/** Convert the static SocietyEvent fallback shape to SanityEvent. */
-async function getFallbackEvents(): Promise<SanityEvent[]> {
-  const { events: staticEvents } = await import('@/lib/data/events');
-  return staticEvents.map((e) => ({
-    _id: String(e.id),
-    title: e.title,
-    slug: e.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, ''),
-    date: e.date,
-    endDate: e.endDate ?? null,
-    kind: e.kind ?? null,
-    description: e.description ?? null,
-    venue: e.venue ?? null,
-    location: null,
-    isFeatured: null,
-    hostSociety: null,
-  }));
-}
-
 export default async function EventsPage() {
   const raw = await sanityFetch<SanityEvent[]>({
     query: upcomingEventsQuery,
     tags: ['events', 'sanity'],
   });
 
-  const events: SanityEvent[] = raw && raw.length > 0 ? raw : await getFallbackEvents();
+  const events: SanityEvent[] = raw ?? [];
 
   const featured = events.filter((e) => e.isFeatured === true);
   const remaining = events.filter((e) => e.isFeatured !== true);
@@ -106,7 +86,10 @@ export default async function EventsPage() {
             ))}
           </div>
         ) : events.length === 0 ? (
-          <p className="font-sans text-[16px] text-ink/60">No upcoming events scheduled.</p>
+          <div className="space-y-3">
+            <p className="font-sans text-[16px] text-ink/60">No upcoming events scheduled.</p>
+            <ConfirmationBadge status="pending" />
+          </div>
         ) : null}
       </div>
     </>

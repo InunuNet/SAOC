@@ -1,0 +1,23 @@
+{
+  "baseRefEnv": "BASE_REF",
+  "baseRefDefault": "origin/main",
+  "allowed": [
+    "^app/\\(marketing\\)/events/page\\.tsx$",
+    "^app/\\(marketing\\)/societies/\\[slug\\]/page\\.tsx$",
+    "^app/api/events\\.ics/route\\.ts$",
+    "^app/api/events/\\[slug\\]/ics/route\\.ts$",
+    "^components/home/EventsStrip\\.tsx$",
+    "^components/societies/SocietyEvents\\.tsx$",
+    "^components/chrome/SearchOverlay\\.tsx$",
+    "^lib/data/events\\.ts$",
+    "^lib/data/index\\.ts$",
+    "^scripts/seed-sanity\\.ts$",
+    "^scripts/unpublish-invented-events\\.ts$",
+    "^public/llms-full\\.txt$",
+    "^docs/",
+    "^README\\.md$",
+    "^contracts/checks/launch-weekend/f4/",
+    "^\\.agent/memory/"
+  ],
+  "note": "Shared with other in-flight work: components/chrome/SearchOverlay.tsx (launch-weekend F1 a11y owns components/chrome). The wt-nos-chrome branch (feat/nos-own-brand-chrome) touches none of the other files. Rebase on origin/main immediately before merging."
+}

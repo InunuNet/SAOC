@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
+import { ConfirmationBadge } from '@/components/show';
 import { EventRow } from '@/components/ui/EventRow';
-import { events as staticEvents } from '@/lib/data';
 import type { SocietyEvent } from '@/types';
 
 const PREVIEW_COUNT = 5;
@@ -35,7 +35,7 @@ export function EventsStrip({ events }: EventsStripProps) {
     kind: e.kind,
     province: e.location ?? '',
   }));
-  const preview = (sanityMapped.length > 0 ? sanityMapped : staticEvents).slice(0, PREVIEW_COUNT);
+  const preview = sanityMapped.slice(0, PREVIEW_COUNT);
 
   return (
     <section className="py-24 px-8 md:px-16 bg-parchment">
@@ -57,11 +57,18 @@ export function EventsStrip({ events }: EventsStripProps) {
         </div>
 
         {/* Event rows */}
-        <div className="border-t border-rule">
-          {preview.map((e) => (
-            <EventRow key={e.id} event={e} />
-          ))}
-        </div>
+        {preview.length > 0 ? (
+          <div className="border-t border-rule">
+            {preview.map((e) => (
+              <EventRow key={e.id} event={e} />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3 border-t border-rule pt-6">
+            <p className="font-sans text-[16px] text-ink/60">No upcoming events scheduled.</p>
+            <ConfirmationBadge status="pending" />
+          </div>
+        )}
       </div>
     </section>
   );

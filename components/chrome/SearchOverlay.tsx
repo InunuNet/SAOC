@@ -7,15 +7,14 @@
 //   - "/" key when no input/textarea is focused
 //   - Header search button (via `open` prop from parent)
 // Closes on Esc, backdrop click, or close button.
-// Live-filters societies (by name + province) and events
-// (by title + host) from @/lib/data.
+// Live-filters societies (by name + province) from @/lib/data.
 // =============================================================
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
-import { societies, events } from '@/lib/data';
-import type { Society, SocietyEvent } from '@/types';
+import { societies } from '@/lib/data';
+import type { Society } from '@/types';
 
 interface SearchOverlayProps {
   open: boolean;
@@ -25,12 +24,6 @@ interface SearchOverlayProps {
 interface SocietyResult {
   kind: 'society';
   item: Society;
-  href: string;
-}
-
-interface EventResult {
-  kind: 'event';
-  item: SocietyEvent;
   href: string;
 }
 
@@ -91,27 +84,19 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
   }, [open]);
 
   // Live filter
-  const { societyResults, eventResults } = useMemo(() => {
+  const societyResults = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (term.length === 0)
-      return { societyResults: [] as SocietyResult[], eventResults: [] as EventResult[] };
+    if (term.length === 0) return [] as SocietyResult[];
 
-    const societyResults: SocietyResult[] = societies
+    return societies
       .filter((s) => s.name.toLowerCase().includes(term) || s.province.toLowerCase().includes(term))
       .slice(0, 5)
-      .map((item) => ({ kind: 'society', item, href: '/societies' }));
-
-    const eventResults: EventResult[] = events
-      .filter((e) => e.title.toLowerCase().includes(term) || e.venue.toLowerCase().includes(term))
-      .slice(0, 5)
-      .map((item) => ({ kind: 'event', item, href: '/events' }));
-
-    return { societyResults, eventResults };
+      .map((item): SocietyResult => ({ kind: 'society', item, href: '/societies' }));
   }, [q]);
 
   if (!open) return null;
 
-  const totalResults = societyResults.length + eventResults.length;
+  const totalResults = societyResults.length;
   const hasQuery = q.trim().length > 0;
 
   return (
@@ -191,35 +176,6 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                         <span className="block">{r.item.name}</span>
                         <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
                           {r.item.province} · {r.item.city}
-                        </span>
-                      </span>
-                      <span aria-hidden className="text-muted">
-                        →
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {hasQuery && eventResults.length > 0 && (
-            <section>
-              <div className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted mb-2">
-                Events
-              </div>
-              <ul className="flex flex-col gap-1">
-                {eventResults.map((r) => (
-                  <li key={`e-${r.item.id}`}>
-                    <Link
-                      href={r.href}
-                      onClick={onClose}
-                      className="flex items-center justify-between px-3 py-2 rounded-sm hover:bg-bone text-ink"
-                    >
-                      <span>
-                        <span className="block">{r.item.title}</span>
-                        <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-                          {r.item.venue}
                         </span>
                       </span>
                       <span aria-hidden className="text-muted">

@@ -5,26 +5,6 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { upcomingEventsQuery } from '@/sanity/queries';
 import type { SanityEvent } from '@/types';
 
-function slugify(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
-async function getFallbackInputs(): Promise<IcsEventInput[]> {
-  const { events: staticEvents } = await import('@/lib/data/events');
-  return staticEvents.map((e) => ({
-    slug: slugify(e.title),
-    title: e.title,
-    start: e.date,
-    end: e.endDate ?? null,
-    description: e.description ?? null,
-    venue: e.venue ?? null,
-    location: null,
-  }));
-}
-
 function toInput(event: SanityEvent): IcsEventInput {
   return {
     slug: event.slug,
@@ -43,8 +23,7 @@ export async function GET(): Promise<NextResponse> {
     tags: ['events', 'sanity'],
   });
 
-  const inputs: IcsEventInput[] =
-    raw && raw.length > 0 ? raw.map(toInput) : await getFallbackInputs();
+  const inputs: IcsEventInput[] = (raw ?? []).map(toInput);
 
   const body = buildVCalendar(inputs);
 

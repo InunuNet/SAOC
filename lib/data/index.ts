@@ -1,5 +1,4 @@
 export * from './societies';
-export * from './events';
 export * from './shows';
 export * from './board';
 export * from './awards';

@@ -1,0 +1,39 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: Accessibility basics on the SAOC chrome and SAOC/NOS routes before launch - a skip link to main-content, 44px (or WCAG 2.5.8) tap targets on SAOC routes, and a global prefers-reduced-motion guard - with no new visual design.
+created_at: '2026-10-16'
+autonomy: high
+features:
+  - id: F1
+    name: A11y basics - skip link, target size, reduced motion
+    status: pending
+goldens:
+  - .agent/memory/project/specs/launch-weekend/goldens/f1/f1-a11y-spec.md
+  - .agent/memory/project/specs/launch-weekend/goldens/f1/identity-baseline.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f1/motion-baseline.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f1/scope-allowlist.json
+assertions:
+  phase: 4
+  checks:
+    # A1-A4 are runtime (playwright) and need a server for the implementation tree at BASE_URL (default
+    # http://localhost:3002; a local production build is the reference). Exit 2 = server unreachable.
+    # A5 runs in the implementation worktree against BASE_REF (default origin/main).
+    - id: A1
+      description: Skip link is the first Tab stop on 7 SAOC and 4 /national-show routes at 390 and 1280, hidden until focused, then inside the viewport, uncovered, at least 44x44, contrast 4.5, token colours only; Enter moves focus to the single main#main-content; next Tab stays in main; no hydration errors.
+      command: node contracts/checks/launch-weekend/f1/check-a-skip-link.mjs
+      timeout_seconds: 300
+    - id: A2
+      description: Every visible interactive target on /, /societies, /societies/[slug], /events, /judging, /about, /contact at 390 and 1280 is at least 44x44 or WCAG 2.5.8 exempt (inline-in-sentence, or at least 24x24 with non-intersecting 24px circle); province chips at least 44x44 outright.
+      command: node contracts/checks/launch-weekend/f1/check-b-targets.mjs
+      timeout_seconds: 300
+    - id: A3
+      description: Under emulated prefers-reduced-motion reduce (fresh context and live emulateMedia flip) no element or pseudo-element has transition or animation over 1ms, no infinite animation, no scroll-behavior smooth, on SAOC and NOS routes; under no-preference the transition count and scroll-behavior match the golden baseline.
+      command: node contracts/checks/launch-weekend/f1/check-c-reduced-motion.mjs
+      timeout_seconds: 300
+    - id: A4
+      description: Visual identity guard - per SAOC route at 390 and 1280 the set of type and colour signatures equals the golden from the untouched tree, page height within tolerance, no horizontal scroll. Passes on today's tree by design; it fails if target sizing or the skip link leaks new colour or type.
+      command: node contracts/checks/launch-weekend/f1/check-d-identity.mjs
+      timeout_seconds: 300
+    - id: A5
+      description: Scope and token discipline against BASE_REF - changed files are all on the allowlist, no colour/font literal added under app or components, :root and @theme in globals.css byte-identical, and a prefers-reduced-motion reduce block exists.
+      command: node contracts/checks/launch-weekend/f1/check-e-scope.mjs

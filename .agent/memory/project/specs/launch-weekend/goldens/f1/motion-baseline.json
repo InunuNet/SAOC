@@ -1,0 +1,29 @@
+{
+  "capturedFrom": "http://localhost:3002",
+  "routes": {
+    "/": {
+      "transitioning": 63,
+      "smooth": []
+    },
+    "/societies": {
+      "transitioning": 48,
+      "smooth": []
+    },
+    "/about": {
+      "transitioning": 29,
+      "smooth": []
+    },
+    "/events": {
+      "transitioning": 33,
+      "smooth": []
+    },
+    "/national-show": {
+      "transitioning": 68,
+      "smooth": []
+    },
+    "/national-show/tickets": {
+      "transitioning": 21,
+      "smooth": []
+    }
+  }
+}

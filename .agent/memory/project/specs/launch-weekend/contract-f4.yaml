@@ -1,0 +1,46 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: Before the production launch (Sun 18 Oct 2026) no invented event appears on any surface - the 17 unsourced seeded societyEvent docs are unpublished, every static fallback onto them is removed, and the events page and home strip show only the sourced National Show or an honest empty state.
+created_at: '2026-10-16'
+autonomy: high
+features:
+  - id: F4
+    name: Events honesty and content cleanup (static fallback removal, empty state, Sanity unpublish script)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/launch-weekend/goldens/f4/f4-spec.md
+  - .agent/memory/project/specs/launch-weekend/goldens/f4/invented-events.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f4/scope-allowlist.json
+assertions:
+  phase: 4
+  checks:
+    - id: F4-A1
+      description: Events page lists only the National Show or the empty state with the standard marker; no invented title and no link to an unsourced event page (runtime, BASE_URL)
+      command: node contracts/checks/launch-weekend/f4/check-a-events-page.mjs
+    - id: F4-A2
+      description: No invented event name or slug on any route, society page, calendar feed, llms file, sitemap or client bundle; invented event pages and ics 404; QA fixture ticket type not listed (runtime, BASE_URL)
+      command: node contracts/checks/launch-weekend/f4/check-b-no-invented-anywhere.mjs
+    - id: F4-A3
+      description: Anonymous read of the production dataset returns exactly one published societyEvent, the National Show
+      command: node contracts/checks/launch-weekend/f4/check-c-sanity-only-nos.mjs
+    - id: F4-A4
+      description: Unpublish script dry run prints the contract output shape, keeps the National Show, targets only seeded ids, writes nothing, leaks no token, and refuses to run with no mode flag
+      command: node contracts/checks/launch-weekend/f4/check-d-unpublish-dry-run.mjs
+    - id: F4-A5
+      description: Every changed file is on the F4 scope allowlist (diff against origin/main)
+      command: node contracts/checks/launch-weekend/f4/check-e-scope.mjs
+    - id: F4-A6
+      description: lib/data/events.ts is deleted with no importer, no static fallback remains, the events page uses the StatusMarker, and the seed script cannot recreate societyEvent docs
+      command: node contracts/checks/launch-weekend/f4/check-f-code-honesty.mjs
+    - id: F4-A7
+      description: Lint passes
+      command: pnpm lint
+    - id: F4-A8
+      description: Type check passes
+      command: pnpm type-check
+    - id: F4-A9
+      description: Production build passes
+      command: pnpm build
+    - id: F4-A10
+      description: Script supports both modes and locks each mutation to the fetched revision
+      command: grep -q "ifRevisionID" scripts/unpublish-invented-events.ts
