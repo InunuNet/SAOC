@@ -66,21 +66,28 @@ const EMBLEM_SOURCE = path.join(
   'emblem',
   'Eulophia-speciosa-emblem.png',
 );
-const OUTPUT_DIR = path.join(REPO_ROOT, 'public', 'images');
+// SAOC_LOCKUP_OUT_DIR lets a verification run re-export into a sandbox without
+// touching the committed public/images assets.
+const OUTPUT_DIR = process.env.SAOC_LOCKUP_OUT_DIR
+  ? path.resolve(process.env.SAOC_LOCKUP_OUT_DIR)
+  : path.join(REPO_ROOT, 'public', 'images');
 
 // Variant 1 — header/mobile-menu horizontal lockup. Every field here is the
 // artifact's own documented default state (app.js:46) — WM:0, P:2, N:7,
-// F:0, T:0, rule:true, G:'light', E:0, transparent:true — so no overrides
-// beyond `kind` are strictly needed, but E/G/transparent are passed
-// explicitly anyway so this script's own intent is legible without having
-// to cross-reference app.js's defaults.
+// F:0, T:0, rule:true, G:'light', E:0, transparent:true — except WM, which
+// is 1 (wordmark W2, 'South African Orchid Council'; WM is the array INDEX,
+// the artifact's default 0 is W1 'SA Orchid Council'), per Lee-Ann's
+// 2026-10-15 instruction to use the full name. E/G/transparent are passed
+// explicitly so this script's own intent is legible without having to
+// cross-reference app.js's defaults.
 const HORIZONTAL = {
   kind: 'h',
+  WM: 1,
   E: 0,
   G: 'light',
   transparent: true,
   trimOuterPadding: true,
-  out: path.join(OUTPUT_DIR, 'saoc-lockup-horizontal.png'),
+  out: path.join(OUTPUT_DIR, 'saoc-lockup-horizontal-full-name.png'),
 };
 
 // Variant 2 — footer vertical lockup. Brad's instruction: E:3 (Lapis
@@ -92,6 +99,7 @@ const HORIZONTAL = {
 // navy ground is part of the image and the lockup is pixel-exact."
 const VERTICAL_DARK = {
   kind: 'v',
+  WM: 1,
   E: 3,
   G: 'dark',
   transparent: false,
@@ -215,6 +223,7 @@ async function exportVariant(browser, context, baseUrl, variant) {
   const qs = new URLSearchParams({
     kind: variant.kind,
     E: String(variant.E),
+    WM: String(variant.WM),
     G: variant.G,
     transparent: String(variant.transparent),
   });

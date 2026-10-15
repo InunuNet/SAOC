@@ -83,28 +83,33 @@ export function Header({ show }: HeaderProps = {}) {
         ].join(' ')}
       >
         <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-6 px-8 py-3">
-          {/* Zone 1 — logo lockup. Reverted to the raster combined lockup
-              (saoc-lockup-horizontal.png, 2715×493 source, 352×64 display
-              at sm+) after the live-CSS SaocLockup version widened this
-              zone enough to squeeze the primary nav into two-line wraps at
-              1280px ("Judging & Awards", "National Show") — see
-              SaocLockup.tsx, which remains in use for the footer only.
-              Below `sm` (640px) the full lockup (incl. tagline) is shown
-              scaled down rather than hidden or cropped — 130px wide, within
-              the header's narrow-viewport budget alongside the search and
-              hamburger buttons (verified: no overflow at 320px). */}
+          {/* Zone 1 — logo lockup. Raster combined lockup
+              (saoc-lockup-horizontal-full-name.png, 3757×493 source),
+              exported from Brad's lockup explorer at wordmark W2 ('South
+              African Orchid Council', WM:1) by scripts/export-saoc-lockup.mjs
+              — Lee-Ann's 2026-10-15 instruction to use the full name. Kept
+              as a raster rather than the live SaocLockup (which remains in
+              use for the footer only): the live version widened this zone
+              enough to squeeze the primary nav into two-line wraps at
+              1280px ("Judging & Awards", "National Show"), and W2 is ~1.6x
+              wider again. Display width by tier: 190px below `sm` (640px;
+              the link may shrink so 360px viewports never overflow), 460px
+              in hamburger mode (640-1239px), 340px once the inline nav
+              shows (1240-1279px) and 380px from 1280px, so the nav does
+              not wrap. Height follows the
+              true aspect via h-auto. */}
           <Link
             href="/"
-            className="shrink-0 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            className="min-w-0 shrink rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
             aria-label="South African Orchid Council — Making a difference since 1968"
           >
             <Image
-              src="/images/saoc-lockup-horizontal.png"
+              src="/images/saoc-lockup-horizontal-full-name.png"
               alt=""
-              width={352}
-              height={64}
+              width={3757}
+              height={493}
               priority
-              className="h-auto w-[130px] sm:w-[352px]"
+              className="h-auto w-[190px] max-w-full sm:max-[1239px]:w-[460px] min-[1240px]:w-[340px] min-[1280px]:w-[380px]"
             />
           </Link>
 
