@@ -48,12 +48,18 @@ const STATUS_COMPLETE = 'Complete';
 /**
  * Reads a field off a GetTransactionByReference row. Ozow's docs show PascalCase keys but the
  * live API returns camelCase (transactionReference, transactionId, status, ...), so camelCase is
- * read first with the documented PascalCase as fallback. Status-response rows only -- the
- * hash-verified notify POST stays PascalCase.
+ * accepted with the documented PascalCase as fallback. A row carrying BOTH casings with
+ * different values is ambiguous and yields undefined, so it can never match or confirm.
+ * Status-response rows only -- the hash-verified notify POST stays PascalCase.
  */
 function statusField(row: Record<string, unknown>, pascalKey: string): unknown {
   const camelKey = pascalKey.charAt(0).toLowerCase() + pascalKey.slice(1);
-  return row[camelKey] ?? row[pascalKey];
+  const camelValue = row[camelKey];
+  const pascalValue = row[pascalKey];
+  if (camelValue !== undefined && pascalValue !== undefined && camelValue !== pascalValue) {
+    return undefined;
+  }
+  return camelValue ?? pascalValue;
 }
 const STATUS_CANCELLED = 'Cancelled';
 const STATUS_ERROR = 'Error';

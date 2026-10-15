@@ -237,6 +237,49 @@ await runCase('two camelCase rows, transactionId matches neither -> confirmed:fa
   expect: { confirmed: false, reason: 'not-valid', sendsIsTestTrue: true },
 });
 
+// Case 8 — a row carrying BOTH casings: equal values are accepted, conflicting values are
+// ambiguous and must fail closed (never let one casing override the other).
+const PASCAL_ROW = {
+  TransactionId: CAMEL_ROW.transactionId,
+  TransactionReference: CAMEL_ROW.transactionReference,
+  Status: 'Complete',
+};
+await runCase('both casings present and equal -> confirmed:true', {
+  notification: notificationWith('True'),
+  fetchImpl: async () => jsonResponse([{ ...CAMEL_ROW, ...PASCAL_ROW }]),
+  expect: { confirmed: true, sendsIsTestTrue: true },
+});
+await runCase('conflicting reference casings (camel matches) -> confirmed:false/not-valid', {
+  notification: notificationWith('True'),
+  fetchImpl: async () => jsonResponse([{ ...CAMEL_ROW, ...PASCAL_ROW, TransactionReference: 'OTHER' }]),
+  expect: { confirmed: false, reason: 'not-valid', sendsIsTestTrue: true },
+});
+await runCase('conflicting reference casings (Pascal matches) -> confirmed:false/not-valid', {
+  notification: notificationWith('True'),
+  fetchImpl: async () =>
+    jsonResponse([{ ...CAMEL_ROW, ...PASCAL_ROW, transactionReference: 'OTHER' }]),
+  expect: { confirmed: false, reason: 'not-valid', sendsIsTestTrue: true },
+});
+await runCase('conflicting status casings (camel Complete) -> confirmed:false/not-valid', {
+  notification: notificationWith('True'),
+  fetchImpl: async () => jsonResponse([{ ...CAMEL_ROW, ...PASCAL_ROW, Status: 'Cancelled' }]),
+  expect: { confirmed: false, reason: 'not-valid', sendsIsTestTrue: true },
+});
+await runCase('conflicting status casings (Pascal Complete) -> confirmed:false/not-valid', {
+  notification: notificationWith('True'),
+  fetchImpl: async () => jsonResponse([{ ...CAMEL_ROW, ...PASCAL_ROW, status: 'Cancelled' }]),
+  expect: { confirmed: false, reason: 'not-valid', sendsIsTestTrue: true },
+});
+await runCase('conflicting transactionId casings among two rows -> confirmed:false/not-valid', {
+  notification: notificationWith('True'),
+  fetchImpl: async () =>
+    jsonResponse([
+      { ...CAMEL_ROW, ...PASCAL_ROW, TransactionId: 'conflicting-id' },
+      { ...CAMEL_ROW, transactionId: 'other-attempt', status: 'Cancelled' },
+    ]),
+  expect: { confirmed: false, reason: 'not-valid', sendsIsTestTrue: true },
+});
+
 // Case 6 — SECURITY REGRESSION GUARD: a forged notification (bad/mismatched Hash) must still be
 // rejected by verifyNotification() regardless of IsTest, and must never reach confirmNotification()
 // at all — this fix touches only confirmNotification()'s GetTransactionByReference call, never
