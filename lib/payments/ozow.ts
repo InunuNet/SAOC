@@ -61,6 +61,19 @@ function statusField(row: Record<string, unknown>, pascalKey: string): unknown {
   }
   return camelValue ?? pascalValue;
 }
+
+const CONFIRM_STATUS_FIELDS = ['TransactionReference', 'TransactionId', 'Status'] as const;
+
+/**
+ * True when any field the confirm path relies on carries both casings with different values.
+ * Applied to the row filter up front so no later branch can skip the ambiguity check.
+ */
+function hasConflictingCasings(row: Record<string, unknown>): boolean {
+  return CONFIRM_STATUS_FIELDS.some((key) => {
+    const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
+    return row[camelKey] !== undefined && row[key] !== undefined && row[camelKey] !== row[key];
+  });
+}
 const STATUS_CANCELLED = 'Cancelled';
 const STATUS_ERROR = 'Error';
 
@@ -421,6 +434,7 @@ export function createOzowProvider(deps?: OzowProviderDeps): PaymentProvider {
         (transaction): transaction is Record<string, unknown> =>
           typeof transaction === 'object' &&
           transaction !== null &&
+          !hasConflictingCasings(transaction as Record<string, unknown>) &&
           statusField(transaction as Record<string, unknown>, 'TransactionReference') ===
             notification.reference
       );

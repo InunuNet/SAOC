@@ -270,6 +270,11 @@ await runCase('conflicting status casings (Pascal Complete) -> confirmed:false/n
   fetchImpl: async () => jsonResponse([{ ...CAMEL_ROW, ...PASCAL_ROW, status: 'Cancelled' }]),
   expect: { confirmed: false, reason: 'not-valid', sendsIsTestTrue: true },
 });
+await runCase('conflicting transactionId casings on a SINGLE row -> confirmed:false/not-valid', {
+  notification: notificationWith('True'),
+  fetchImpl: async () => jsonResponse([{ ...CAMEL_ROW, ...PASCAL_ROW, TransactionId: 'conflicting-id' }]),
+  expect: { confirmed: false, reason: 'not-valid', sendsIsTestTrue: true },
+});
 await runCase('conflicting transactionId casings among two rows -> confirmed:false/not-valid', {
   notification: notificationWith('True'),
   fetchImpl: async () =>
