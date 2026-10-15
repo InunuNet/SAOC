@@ -284,3 +284,22 @@ export const NAV: readonly NavItem[] = [
   },
   { type: 'link', id: 'sponsors', label: 'Sponsors', href: '/sponsors' },
 ];
+
+/**
+ * Header primary CTA (NOS Design ruling R26): resolved from the mega's own
+ * Tickets leaf so the label and href are never restated. Throws at load if
+ * that leaf is ever removed rather than rendering a CTA with no destination.
+ */
+export const TICKETS_CTA: NavLeaf = (() => {
+  const mega = NAV.find((n) => n.type === 'mega');
+  const leaf =
+    mega?.type === 'mega' ? mega.lead?.theShow.links.find((l) => l.id === 'tickets') : undefined;
+  if (!leaf) throw new Error('nav-config: mega Tickets leaf missing; header CTA cannot resolve');
+  return leaf;
+})();
+
+/**
+ * Contact, rendered by Header and MobileMenu after the NAV items. Deliberately
+ * not a NAV entry: the NOS chrome maps NAV and appends its own Contact.
+ */
+export const CONTACT_LINK: NavLeaf = { id: 'contact-link', label: 'Contact', href: '/contact' };

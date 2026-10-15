@@ -3,7 +3,7 @@
 // =============================================================
 // SAOC — components/chrome/Header.tsx
 // Sticky parchment header. Three zones: logo lockup, primary nav,
-// actions (search / sign in / contact / hamburger).
+// actions (search / tickets CTA / hamburger). Contact is the last nav item.
 // Becomes elevated (shadow + hairline) on scroll > 4px.
 // Below 1240px: nav + Sign in hide, hamburger appears.
 // =============================================================
@@ -16,7 +16,7 @@ import { usePathname } from 'next/navigation';
 import { MobileMenu } from './MobileMenu';
 import { SearchOverlay } from './SearchOverlay';
 import { MegaMenu } from './MegaMenu';
-import { NAV } from './nav-config';
+import { CONTACT_LINK, NAV, TICKETS_CTA } from './nav-config';
 import type { ShowIdentity } from '@/types';
 
 interface HeaderProps {
@@ -114,7 +114,7 @@ export function Header({ show }: HeaderProps = {}) {
           </Link>
 
           {/* Zone 2 — primary nav */}
-          <nav aria-label="Primary" className="hidden min-[1240px]:flex items-center gap-7">
+          <nav aria-label="Primary" className="hidden min-[1240px]:flex shrink-0 items-center gap-4 whitespace-nowrap">
             {NAV.map((n) => {
               if (n.type === 'mega') {
                 return <MegaMenu key={n.id} item={n} show={show} />;
@@ -154,6 +154,21 @@ export function Header({ show }: HeaderProps = {}) {
                 </Link>
               );
             })}
+            <Link
+              href={CONTACT_LINK.href}
+              className={[
+                'relative inline-flex min-h-6 items-center rounded-sm font-sans text-[14px] transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment',
+                isActive(CONTACT_LINK.href) ? 'text-primary' : 'text-ink',
+              ].join(' ')}
+            >
+              {CONTACT_LINK.label}
+              {isActive(CONTACT_LINK.href) && (
+                <span
+                  aria-hidden="true"
+                  className="absolute left-0 right-0 -bottom-1 h-px bg-primary"
+                />
+              )}
+            </Link>
           </nav>
 
           {/* Zone 3 — actions */}
@@ -168,10 +183,10 @@ export function Header({ show }: HeaderProps = {}) {
             </button>
 
             <Link
-              href="/contact"
+              href={TICKETS_CTA.href}
               className="hidden sm:inline-block rounded-sm bg-primary px-4 py-2 font-sans text-[14px] font-medium text-ivory hover:bg-primary-800 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
             >
-              Contact
+              {TICKETS_CTA.label}
             </Link>
 
             <button

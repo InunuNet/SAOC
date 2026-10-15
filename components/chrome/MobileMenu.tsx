@@ -12,7 +12,7 @@ import Image from 'next/image';
 import { ChevronDown, X } from 'lucide-react';
 
 import { useFocusTrap } from '@/lib/hooks/useFocusTrap';
-import type { NavColumn, NavItem } from './nav-config';
+import { CONTACT_LINK, type NavColumn, type NavItem } from './nav-config';
 import { formatShowDateRange } from '@/lib/show-identity';
 import type { ShowIdentity } from '@/types';
 
@@ -297,11 +297,11 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
             })}
             <li>
               <Link
-                href="/contact"
+                href={CONTACT_LINK.href}
                 onClick={onClose}
                 className="flex items-center px-3 py-3 font-sans text-[15px] text-ink hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
               >
-                Contact
+                {CONTACT_LINK.label}
               </Link>
             </li>
           </ul>
