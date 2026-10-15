@@ -16,6 +16,7 @@ const fraunces = Fraunces({
   style: ['normal', 'italic'],
   variable: '--font-nos-fraunces',
   display: 'swap',
+  preload: false,
 });
 
 const karla = Karla({
@@ -23,6 +24,7 @@ const karla = Karla({
   weight: ['400', '500', '600', '700'],
   variable: '--font-nos-karla',
   display: 'swap',
+  preload: false,
 });
 
 // F1: the `.nos-theme` scope element redeclares the SAOC site's own semantic

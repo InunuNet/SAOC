@@ -28,7 +28,7 @@ await main('F2-S1 saoc-h2', async (r) => {
       }
     }
   });
-  if (capture) { writeFileSync(GOLDEN, JSON.stringify(got, null, 1) + '\n'); console.log(`captured ${Object.keys(got).length} route/viewport sets to ${GOLDEN}`); return; }
+  if (capture) { writeFileSync(GOLDEN, JSON.stringify({ _source: `clean origin/main build ${process.env.NOS_CAPTURE_SHA ?? 'unrecorded'}`, ...got }, null, 1) + '\n'); console.log(`captured ${Object.keys(got).length} route/viewport sets to ${GOLDEN}`); return; }
   const gold = JSON.parse(readFileSync(GOLDEN, 'utf8'));
   for (const [k, hs] of Object.entries(got)) {
     for (const h of hs) if (/fraunces|karla/i.test(h.family.split(',')[0])) r.fail(`${k}: SAOC h2 "${h.text}" computes to ${h.family.slice(0, 30)}; NOS fonts leaked onto a SAOC page`);

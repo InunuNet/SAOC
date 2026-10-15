@@ -8,7 +8,7 @@ import { chromium } from 'playwright';
 
 export const PORT = process.env.NOS_PORT || '3617';
 export const BASE = process.env.NOS_BASE || `http://localhost:${PORT}`;
-export const BASE_REF = process.env.NOS_BASE_REF || 'c0e48c39';
+export const BASE_REF = process.env.NOS_BASE_REF || 'b2e0e90d';
 export const SPEC_DIR = '.agent/memory/project/specs/nos-own-brand-chrome';
 export const GOLDEN_DIR = `${SPEC_DIR}/goldens/f1`;
 

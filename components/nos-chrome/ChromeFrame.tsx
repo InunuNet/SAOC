@@ -15,6 +15,7 @@ import { useSelectedLayoutSegment } from 'next/navigation';
 const NOS_SEGMENT = 'national-show';
 
 interface ChromePair {
+  skip: React.ReactNode;
   top: React.ReactNode;
   bottom: React.ReactNode;
 }
@@ -29,6 +30,7 @@ export function ChromeFrame({ saoc, nos, children }: ChromeFrameProps) {
   const chrome = useSelectedLayoutSegment() === NOS_SEGMENT ? nos : saoc;
   return (
     <>
+      {chrome.skip}
       {chrome.top}
       <main id="main-content" tabIndex={-1}>
         {children}

@@ -9,6 +9,11 @@ const GOLD_300 = [232, 230, 194];
 const rgbOf = (c) => (/rgb/.test(c) ? c.match(/[\d.]+/g).slice(0, 3).map(Number) : null);
 const isLabel = (x) => x.tt === 'uppercase' && x.size <= 14.01; // label-styled headings (FAQ category heads, group labels) are judged by the label rule, R25
 const isCardTitle = (x) => /(^|\s)nos-card-title(\s|$)/.test(x.cls ?? ''); // archive card names are h2s judged at the card-title role, not the section-h2 role (NOS Design, 2026-10-16); only this class is exempt
+// Symposium presenters (NOS Site session, presenters.css): .pc-title and .pc-name are component titles judged by the catch-all only (Fraunces, pinned opsz from the mock set,
+// weight 300|400, headings optical-sizing none); .pc-role keeps the label family/weight rules but not the .12-.18em tracking (it ships .08em). Exact classes only. These are not in
+// R14 or the mock; they are listed in the F2 spec section 7 item 13 for NOS Design to ratify or correct.
+const isPresenter = (x) => /(^|\s)(pc-title|pc-name)(\s|$)/.test(x.cls ?? '');
+const isPresenterRole = (x) => /(^|\s)pc-role(\s|$)/.test(x.cls ?? '');
 const sameRgb = (c, want) => { const v = rgbOf(c); return !!v && v.every((x, i) => near(x, want[i], 1)); };
 
 await main('F2-T3 type-roles', async (r) => {
@@ -73,7 +78,7 @@ await main('F2-T3 type-roles', async (r) => {
           if (!isKarla(t) || !near(t.size, 16, 0.1)) fail(`hero fact value "${t.text}" is ${t.family.slice(0, 16)} ${t.size}px, want Karla 16px (index.html:147)`);
         }
         // section h2 (index.html:158): Fraunces 400, opsz 48, clamp(2rem,1.5rem+1.6vw,2.4375rem) (closing-band h2 may be larger, <=61px, :231), lh 1.15
-        for (const t of texts.filter((x) => x.tag === 'h2' && !x.hero && !x.chrome && !isLabel(x) && !isCardTitle(x))) {
+        for (const t of texts.filter((x) => x.tag === 'h2' && !x.hero && !x.chrome && !isLabel(x) && !isCardTitle(x) && !isPresenter(x))) {
           if (!isFraunces(t) || t.weight !== 400 || opszOf(t.fvs) !== 48 || t.fos !== 'none') fail(`h2 ${describe(t)} is ${t.family.slice(0, 16)} ${t.weight} opsz ${opszOf(t.fvs)} sizing ${t.fos}, want Fraunces 400 opsz 48, optical-sizing none`);
           if (t.size < expectedH2(vw) - 0.7 || t.size > 61.2) fail(`h2 ${describe(t)} size ${t.size}px outside [${expectedH2(vw).toFixed(1)}, 61.2]`);
           if (!(t.lh <= t.size * 1.2)) fail(`h2 ${describe(t)} line-height ${t.lh}px, want about 1.15`);
@@ -83,7 +88,7 @@ await main('F2-T3 type-roles', async (r) => {
           if (!isFraunces(t) || t.weight !== 400 || opszOf(t.fvs) !== 24 || t.fos !== 'none' || !near(t.size, 22, 0.1) || !near(t.lh, 27.5, 0.6)) fail(`h2.nos-card-title ${describe(t)} is ${t.family.slice(0, 16)} ${t.weight} opsz ${opszOf(t.fvs)} ${t.size}px lh ${t.lh} sizing ${t.fos}, want Fraunces 400 opsz 24 22px lh 27.5px, optical-sizing none`);
         }
         // card/list titles h3-h6: Fraunces 400, opsz 24 at md (<=22px), 32 at lg (<=28px), 48 above (mapping "nearest role above")
-        for (const t of texts.filter((x) => /^h[3-6]$/.test(x.tag) && !x.hero && !x.chrome && !isLabel(x))) {
+        for (const t of texts.filter((x) => /^h[3-6]$/.test(x.tag) && !x.hero && !x.chrome && !isLabel(x) && !isPresenter(x))) {
           const want = t.size <= 22 ? 24 : t.size <= 28 ? 32 : 48;
           if (!isFraunces(t) || t.weight !== 400 || opszOf(t.fvs) !== want || t.fos !== 'none') fail(`${t.tag} ${describe(t)} (${t.size}px) is ${t.family.slice(0, 16)} ${t.weight} opsz ${opszOf(t.fvs)} sizing ${t.fos}, want Fraunces 400 opsz ${want}, optical-sizing none`);
         }
@@ -97,7 +102,7 @@ await main('F2-T3 type-roles', async (r) => {
         for (const t of texts.filter((x) => x.tt === 'uppercase' && !x.chrome && !x.button && !['input', 'textarea', 'select', 'button'].includes(x.tag) && x.size <= 14.01)) {
           if (!isKarla(t) || ![600, 700].includes(t.weight)) fail(`label ${describe(t)} is ${t.family.slice(0, 16)} ${t.weight}, want Karla 600|700`);
           const em = t.ls / t.size;
-          if (em < 0.115 || em > 0.185) fail(`label ${describe(t)} tracking ${em.toFixed(3)}em, want .12-.18em (mapping .14em; mock .12-.16em)`);
+          if ((em < 0.115 || em > 0.185) && !isPresenterRole(t)) fail(`label ${describe(t)} tracking ${em.toFixed(3)}em, want .12-.18em (mapping .14em; mock .12-.16em)`);
         }
         // .font-mono (R25): no mono family anywhere; the class maps to the label role, Karla 700 12px .14em uppercase
         const monos = await page.evaluate(() => [...document.querySelectorAll('.font-mono')].filter((e) => e.getClientRects().length).map((e) => { const cs = getComputedStyle(e); return { t: (e.textContent ?? '').trim().slice(0, 30), fam: cs.fontFamily.split(',')[0].replace(/["']/g, '').trim(), w: Number(cs.fontWeight), size: parseFloat(cs.fontSize), ls: parseFloat(cs.letterSpacing), tt: cs.textTransform }; }));

@@ -1,6 +1,7 @@
 // Breadcrumb component available from @/components/chrome for interior pages
 import { SkipLink, UtilityBar, Header, Footer } from '@/components/chrome';
 import { ChromeFrame } from '@/components/nos-chrome/ChromeFrame';
+import { NosSkipLink } from '@/components/nos-chrome/NosSkipLink';
 import { NosFooter } from '@/components/nos-chrome/NosFooter';
 import { NosHeader } from '@/components/nos-chrome/NosHeader';
 import { sanityFetch } from '@/sanity/lib/fetch';
@@ -18,22 +19,20 @@ export default async function MarketingLayout({ children }: { children: React.Re
   });
 
   return (
-    <>
-      <SkipLink />
-      <ChromeFrame
-        saoc={{
-          top: (
-            <>
-              <UtilityBar show={show} />
-              <Header show={show} />
-            </>
-          ),
-          bottom: <Footer />,
-        }}
-        nos={{ top: <NosHeader show={show} />, bottom: <NosFooter /> }}
-      >
-        {children}
-      </ChromeFrame>
-    </>
+    <ChromeFrame
+      saoc={{
+        skip: <SkipLink />,
+        top: (
+          <>
+            <UtilityBar show={show} />
+            <Header show={show} />
+          </>
+        ),
+        bottom: <Footer />,
+      }}
+      nos={{ skip: <NosSkipLink />, top: <NosHeader show={show} />, bottom: <NosFooter /> }}
+    >
+      {children}
+    </ChromeFrame>
   );
 }

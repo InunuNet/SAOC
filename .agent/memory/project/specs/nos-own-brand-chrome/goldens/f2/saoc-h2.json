@@ -1,4 +1,5 @@
 {
+ "_source": "clean origin/main build 61b0157e",
  "/@1280": [
   {
    "text": "Where South African growers br",
@@ -199,42 +200,6 @@
  ],
  "/events@1280": [
   {
-   "text": "October 2026",
-   "family": "\"JetBrains Mono\", \"JetBrains Mono Fallback\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
-   "size": "11px",
-   "weight": "400",
-   "lh": "17.05px",
-   "ls": "2.42px",
-   "fvs": "normal"
-  },
-  {
-   "text": "November 2026",
-   "family": "\"JetBrains Mono\", \"JetBrains Mono Fallback\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
-   "size": "11px",
-   "weight": "400",
-   "lh": "17.05px",
-   "ls": "2.42px",
-   "fvs": "normal"
-  },
-  {
-   "text": "February 2027",
-   "family": "\"JetBrains Mono\", \"JetBrains Mono Fallback\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
-   "size": "11px",
-   "weight": "400",
-   "lh": "17.05px",
-   "ls": "2.42px",
-   "fvs": "normal"
-  },
-  {
-   "text": "March 2027",
-   "family": "\"JetBrains Mono\", \"JetBrains Mono Fallback\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
-   "size": "11px",
-   "weight": "400",
-   "lh": "17.05px",
-   "ls": "2.42px",
-   "fvs": "normal"
-  },
-  {
    "text": "September 2027",
    "family": "\"JetBrains Mono\", \"JetBrains Mono Fallback\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
    "size": "11px",
@@ -245,42 +210,6 @@
   }
  ],
  "/events@390": [
-  {
-   "text": "October 2026",
-   "family": "\"JetBrains Mono\", \"JetBrains Mono Fallback\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
-   "size": "11px",
-   "weight": "400",
-   "lh": "17.05px",
-   "ls": "2.42px",
-   "fvs": "normal"
-  },
-  {
-   "text": "November 2026",
-   "family": "\"JetBrains Mono\", \"JetBrains Mono Fallback\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
-   "size": "11px",
-   "weight": "400",
-   "lh": "17.05px",
-   "ls": "2.42px",
-   "fvs": "normal"
-  },
-  {
-   "text": "February 2027",
-   "family": "\"JetBrains Mono\", \"JetBrains Mono Fallback\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
-   "size": "11px",
-   "weight": "400",
-   "lh": "17.05px",
-   "ls": "2.42px",
-   "fvs": "normal"
-  },
-  {
-   "text": "March 2027",
-   "family": "\"JetBrains Mono\", \"JetBrains Mono Fallback\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
-   "size": "11px",
-   "weight": "400",
-   "lh": "17.05px",
-   "ls": "2.42px",
-   "fvs": "normal"
-  },
   {
    "text": "September 2027",
    "family": "\"JetBrains Mono\", \"JetBrains Mono Fallback\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",

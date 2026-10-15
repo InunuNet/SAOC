@@ -7,7 +7,10 @@ import { chromium } from 'playwright';
 import { main, openPage } from './_lib.mjs';
 
 const TOL = 0.5;
-const edge = (page) => page.evaluate(() => { const b = document.querySelector('#nh-burger').getBoundingClientRect(); return { l: b.left, r: b.right, w: b.width }; });
+// Settle 200ms first: main's global prefers-reduced-motion rule (app/globals.css, transition-duration 0.01ms on every element, body included) makes the body padding-right
+// transition for a moment under the check's reducedMotion context, so a synchronous read sees the pre-padding edge. Real users never see it (10us); the edge IS stable once settled.
+const settle = (page) => page.waitForTimeout(200);
+const edge = async (page) => { await settle(page); return page.evaluate(() => { const b = document.querySelector('#nh-burger').getBoundingClientRect(); return { l: b.left, r: b.right, w: b.width }; }); };
 const scrollbar = (page) => page.evaluate(() => innerWidth - document.documentElement.clientWidth);
 
 await main('M menu-toggle-stable', async (r) => {
