@@ -4,6 +4,7 @@ import { NosMasthead } from '@/components/nos/NosMasthead';
 import { Logo } from '@/components/nos/Logo';
 
 import './nos-theme.css';
+import './presenters.css';
 
 // F1: NOS-only fonts, scoped via CSS variables so nothing outside `.nos-theme`
 // picks them up. Cormorant Garamond carries display/headline elegance (400–500
@@ -30,17 +31,19 @@ const jost = Jost({
 // ships in this feature (the one display headline this hero carried is now
 // the lockup image), but it loads here because `layout.tsx` is where R14's
 // eventual sitewide font decision lands. Karla is R14's body face and is
-// applied inside the flagship hero only (NosHero.tsx's `display` branch).
+// applied inside the flagship hero (NosHero.tsx's `display` branch) and the presenter
+// cards (presenters.css), which also use Fraunces as a variable font with the opsz axis
+// (weights 300/400 at opsz 24) and Karla 700.
 const fraunces = Fraunces({
   subsets: ['latin'],
-  weight: ['400', '500'],
+  axes: ['opsz'],
   variable: '--font-nos-fraunces',
   display: 'swap',
 });
 
 const karla = Karla({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-nos-karla',
   display: 'swap',
 });

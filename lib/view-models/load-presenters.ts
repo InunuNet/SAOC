@@ -10,6 +10,7 @@
 // tsx/esm/api register(), where `@/` alias specifiers never resolve).
 import { client } from '../../sanity/lib/client.ts';
 
+import { presenterPhoto } from './presenter-photo.ts';
 import type { PresenterCardViewModel } from './ticket-card.ts';
 
 interface SanityPresenterDoc {
@@ -18,6 +19,7 @@ interface SanityPresenterDoc {
   role: string | null;
   bioExcerpt: string | null;
   photoUrl: string | null;
+  photoAssetRef: string | null;
   event: 'saoc-symposium' | 'wosa-conference';
   order: number | null;
 }
@@ -29,6 +31,7 @@ const CONFERENCE_PRESENTERS_BY_EVENT_QUERY = `
     role,
     "bioExcerpt": bio,
     "photoUrl": photo.asset->url,
+    "photoAssetRef": photo.asset._ref,
     event,
     order
   }
@@ -59,8 +62,8 @@ export async function loadPresenterViewModels(
     name: doc.name,
     role: doc.role ?? null,
     bioExcerpt: doc.bioExcerpt ?? null,
-    photoUrl: doc.photoUrl ?? null,
+    photo: presenterPhoto(doc.photoUrl, doc.photoAssetRef),
     event: doc.event,
-    order: doc.order ?? 0,
+    order: doc.order ?? null,
   }));
 }
