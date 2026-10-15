@@ -19,8 +19,8 @@
 //   4. No matching TransactionReference in the (correctly IsTest-scoped) response -> still
 //      confirmed:false/not-valid — the fix changes what population of transactions is searched,
 //      never whether an unmatched reference confirms.
-//   5. Any non-'true' string for raw.IsTest (e.g. 'TRUE', '1', 'yes') -> treated as NOT a test
-//      transaction (strict equality, no truthy-string shortcut) -> no IsTest param sent.
+//   5. raw.IsTest in any casing of 'true' ('True' is Ozow's real .NET casing) -> IsTest=true sent;
+//      any other string (e.g. '1', 'yes', '') -> NOT a test transaction, no IsTest param sent.
 //
 // FAILS ON: confirmNotification() never adding an IsTest param for a real IsTest='true'
 // notification (the bug staying unfixed); adding IsTest=true unconditionally, which would be a
@@ -163,10 +163,22 @@ await runCase('IsTest=true, no matching TransactionReference -> confirmed:false/
   expect: { confirmed: false, reason: 'not-valid', sendsIsTestTrue: true },
 });
 
-// Case 5 — strict equality: a non-'true' string must not trigger the IsTest param (no
-// truthy-string shortcut).
-for (const value of ['TRUE', '1', 'yes']) {
-  await runCase(`IsTest='${value}' (not exactly 'true') -> no IsTest param sent (strict equality)`, {
+// Case 5 — Ozow's real notification posts .NET bool casing ('True', seen on beta 2026-10-15):
+// every casing of 'true' must send IsTest=true.
+for (const value of ['True', 'TRUE']) {
+  await runCase(`IsTest='${value}' (Ozow's casing) -> IsTest=true sent`, {
+    notification: notificationWith(value),
+    fetchImpl: async () =>
+      jsonResponse([
+        { TransactionReference: 'SAOC-2027-74NG1P6W9RKK', Status: 'Complete', Amount: '0.01' },
+      ]),
+    expect: { confirmed: true, sendsIsTestTrue: true },
+  });
+}
+
+// Case 5b — no truthy-string shortcut: anything that is not a casing of 'true' sends no param.
+for (const value of ['1', 'yes', '']) {
+  await runCase(`IsTest='${value}' (not a casing of 'true') -> no IsTest param sent`, {
     notification: notificationWith(value),
     fetchImpl: async () =>
       jsonResponse([
@@ -208,4 +220,4 @@ if (FAIL) {
   console.error('check-confirm-notification-istest-param.mjs: FAIL');
   process.exit(1);
 }
-console.log('check-confirm-notification-istest-param.mjs: PASS (9 cases)');
+console.log('check-confirm-notification-istest-param.mjs: PASS');

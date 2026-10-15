@@ -347,11 +347,11 @@ export function createOzowProvider(deps?: OzowProviderDeps): PaymentProvider {
       // Ozow's live docs (https://ozow.com/integrations, Step 3) document IsTest as an optional
       // GetTransactionByReference query param defaulting to false — omitting it silently scopes
       // the lookup to real (non-test) transactions only, which is why a real, hash-verified
-      // IsTest=true transaction 404'd (contracts/golden/ozow-m1-f4/README.md §8.1). Strict string
-      // equality against the already-hash-verified `raw.IsTest` field — no truthy-string
-      // shortcut, same discipline as mapStatus(). Real transactions send byte-identical requests
-      // to before this fix (README §8.3).
-      const isTest = notification.raw.IsTest === 'true';
+      // IsTest=true transaction 404'd (contracts/golden/ozow-m1-f4/README.md §8.1). Ozow posts the
+      // field with .NET bool casing ("True"), so it is compared to "true" case-insensitively — but
+      // still against the already-hash-verified `raw.IsTest` field with no truthy-string shortcut
+      // ("1"/"yes" never count). Real transactions send byte-identical requests to before.
+      const isTest = notification.raw.IsTest?.toLowerCase() === 'true';
       const url = `${OZOW_TRANSACTION_STATUS_URL}?siteCode=${encodeURIComponent(siteCode)}&transactionReference=${encodeURIComponent(notification.reference)}${isTest ? '&IsTest=true' : ''}`;
 
       let response: Response;
