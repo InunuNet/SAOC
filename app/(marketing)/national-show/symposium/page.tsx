@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { PresenterSection } from '@/components/nos/PresenterSection';
 import { ShowSectionNav } from '@/components/show';
 import { ShowContentState } from '@/components/show/nos/ShowContentState';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
@@ -15,10 +16,10 @@ import { loadTicketCardViewModel } from '@/lib/view-models/load-ticket-card';
 // <ShowContentState>, so an absent document renders a disclosed shell instead of a 404.
 // See goldens/m4/never-404-fallback.golden.md.
 //
-// F6 (conference-workshop-tickets, M4) — additive, inert data-fetch only (golden §3): the
-// two view-model loaders below are computed and reserved for F7's design handoff (the NOS
-// design peer session), which renders the real presenter/counter cards. Zero JSX change
-// here — the render tree below is byte-for-byte unchanged from before this feature.
+// F6 (conference-workshop-tickets, M4) — additive data-fetch (golden §3): the two
+// view-model loaders below are computed for F7's design handoff (the NOS design peer
+// session). nos-presenter-cards renders the presenters under the hero; the ticket card is
+// still reserved and unrendered.
 // `dynamic = 'force-dynamic'` is added because loadTicketCardViewModel() reaches Firebase
 // Admin (getPoolRemaining -> getSoldCountsByTicketType) — same rule this codebase already
 // applies everywhere else that call chain is reachable (see app/(marketing)/national-show/
@@ -38,14 +39,12 @@ export default async function SymposiumPage() {
     purpose: 'The SAOC Symposium — what it is, its theme, and who it is for.',
   });
 
-  // F6 (conference-workshop-tickets, M4) — additive, inert: computed and reserved for
-  // F7's design handoff. See the file-header comment above.
+  // F6 (conference-workshop-tickets, M4) — additive: see the file-header comment above.
   //
   // Codex finding (2026-10-07, relayed by team-lead): these loaders reach Sanity/Firestore
   // (getPoolRemaining -> getSoldCountsByTicketType) and can reject on a real backend
-  // failure. Their result isn't even rendered yet (F7 is what renders it) — an inert,
-  // unrendered data-fetch must never turn this public content page into a 500, which
-  // previously degraded gracefully via ShowContentState alone. Caught here at the call
+  // failure. Neither result may turn this public content page into a 500, which previously
+  // degraded gracefully via ShowContentState alone. Caught here at the call
   // site, same `console.error('[module/path] ...', error)` pattern already used elsewhere
   // in this route tree (e.g. vendors/register/page.tsx's isVendorRegistrationSessionUsable).
   let presenters: Awaited<ReturnType<typeof loadPresenterViewModels>> = [];
@@ -60,12 +59,13 @@ export default async function SymposiumPage() {
   } catch (error) {
     console.error('[national-show/symposium] loadTicketCardViewModel failed:', error);
   }
-  void presenters;
   void ticketCard;
 
   return (
     <>
       <ShowContentState result={result} heroImage="/images/orchid-dark.jpg" layout="prose" />
+
+      <PresenterSection eyebrow="Symposium" presenters={presenters} />
 
       <ShowSectionNav current="/national-show/symposium" />
     </>

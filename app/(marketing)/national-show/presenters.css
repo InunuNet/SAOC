@@ -1,0 +1,126 @@
+/*
+ * GOLDEN — app/(marketing)/national-show/presenters.css (nos-presenter-cards F1).
+ *
+ * Transcribed from Codi's approved reference render (claude.ai/artifact/KzuKQeqQbLBCbavB3TbSzX,
+ * read 2026-10-15). Every value below is Codi's; only these things differ from the reference:
+ *   - every selector is scoped under .nos-presenters (the reference styled bare elements);
+ *   - Codi's tokens are prefixed --pc-* so they cannot collide with nos-theme.css names
+ *     (nos-theme already declares --ink, --accent, --rule with different meanings);
+ *   - --pc-serif/--pc-sans lead with the next/font variables the national-show layout sets;
+ *   - .bio -> .pc-body, .role -> .pc-role, .link-btn -> .pc-more, .modal -> .pc-modal,
+ *     .sheet-* -> .pc-sheet-*, .wrap -> .pc-wrap, .sec-* -> .pc-sec-*, h2 -> .pc-title,
+ *     h3 -> .pc-name, .sheet-head h2 -> .pc-sheet-title (class names, not element names);
+ *   - EXCLUDED: .hero*, .flags*, .flag-*, .draft-note, .order-notes (one note only now),
+ *     the body/html/::selection globals, and the bare-element h1/h2/h3/p resets
+ *     (re-expressed on the classes that need them).
+ * @dev copies this file to app/(marketing)/national-show/presenters.css. Formatting may
+ * change; values may not. contracts/checks/nos-presenter-cards/check-styles.mjs pins them.
+ */
+.nos-presenters {
+  --pc-royal: #211A57;
+  --pc-black: #0B0A14;
+  --pc-gold-100: #FBFAF0;
+  --pc-gold-300: #E8E6C2;
+  --pc-green-1: #A7A841;
+  --pc-olive-700: #6A6829;
+  --pc-white: #FFFFFF;
+  --pc-ink-700: #3A3654;
+  --pc-ink-500: #6A6780;
+  --pc-line: #DAD7C8;
+  --pc-violet: #7E3F97;
+  --pc-backdrop: rgba(11, 10, 20, 0.62);
+  --pc-serif: var(--font-nos-fraunces), Georgia, "Times New Roman", serif;
+  --pc-sans: var(--font-nos-karla), "Helvetica Neue", Arial, sans-serif;
+  --pc-fs-xs: 0.8rem;
+  --pc-fs-sm: 0.9rem;
+  --pc-fs-lg: 1.563rem;
+  --pc-fs-xl: 1.953rem;
+  --pc-ls-wide: 0.08em;
+  --pc-ls-display: 0.14em;
+  --pc-radius-md: 10px;
+  --pc-radius-lg: 16px;
+  --pc-hairline: 1px;
+  --pc-shadow-md: 0 4px 10px rgba(33, 26, 87, 0.08), 0 2px 4px rgba(33, 26, 87, 0.06);
+  --pc-shadow-xl: 0 24px 60px rgba(33, 26, 87, 0.16);
+  --pc-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --pc-t-med: 200ms;
+  --pc-t-slow: 360ms;
+  --pc-gutter: clamp(16px, 4vw, 48px);
+  --pc-wide: 1320px;
+
+  display: block;
+  padding-block: 56px 88px;
+  font-family: var(--pc-sans);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--pc-ink-700);
+}
+.nos-presenters :focus-visible { outline: 2px solid var(--pc-violet); outline-offset: 3px; border-radius: 4px; }
+.nos-presenters .pc-wrap { width: 100%; max-width: calc(var(--pc-wide) + 2 * var(--pc-gutter)); margin-inline: auto; padding-inline: var(--pc-gutter); }
+
+/* Canvas SectionHeading: olive uppercase eyebrow over the title; order note on the right */
+.nos-presenters .pc-sec-top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 24px; margin-bottom: 32px; }
+.nos-presenters .pc-sec-head { display: grid; gap: 6px; }
+.nos-presenters .pc-eyebrow { margin: 0; font-size: var(--pc-fs-xs); font-weight: 700; letter-spacing: var(--pc-ls-display); text-transform: uppercase; color: var(--pc-olive-700); }
+.nos-presenters .pc-title { margin: 0; font-family: var(--pc-serif); font-weight: 400; font-size: var(--pc-fs-xl); line-height: 1.15; color: var(--pc-royal); text-wrap: balance; font-variation-settings: "opsz" 24; }
+.nos-presenters .pc-order-note { margin: 0; font-size: var(--pc-fs-sm); font-weight: 600; color: var(--pc-ink-500); }
+
+/* Cards: equal heights come from the script clamping every bio to the shortest full bio */
+.nos-presenters .pc-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; align-items: start; }
+@media (min-width: 1120px) { .nos-presenters .pc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.nos-presenters .pc-card { background: var(--pc-white); border: var(--pc-hairline) solid var(--pc-line); border-radius: var(--pc-radius-lg); box-shadow: var(--pc-shadow-md); padding: 32px; display: grid; grid-template-rows: auto auto auto; gap: 28px; }
+.nos-presenters .pc-head { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 24px; align-items: center; }
+.nos-presenters .pc-photo { margin: 0; aspect-ratio: 4 / 5; max-width: 100%; border-radius: var(--pc-radius-md); overflow: hidden; background: var(--pc-black); }
+.nos-presenters .pc-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.nos-presenters .pc-id { display: grid; gap: 10px; }
+.nos-presenters .pc-name { margin: 0; font-family: var(--pc-serif); font-weight: 300; font-size: clamp(2rem, 1.5rem + 1.1vw, 2.6rem); line-height: 1.04; letter-spacing: -0.01em; color: var(--pc-royal); text-wrap: balance; font-variation-settings: "opsz" 24; }
+.nos-presenters .pc-role { margin: 0; font-size: var(--pc-fs-xs); font-weight: 600; letter-spacing: var(--pc-ls-wide); text-transform: uppercase; color: var(--pc-violet); line-height: 1.45; text-wrap: balance; }
+.nos-presenters .pc-bio { padding-top: 24px; border-top: var(--pc-hairline) solid var(--pc-line); }
+.nos-presenters .pc-clip { max-height: var(--bio-h, none); overflow: hidden; }
+.nos-presenters .pc-clip.is-clipped { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 5.5em), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 5.5em), transparent); }
+.nos-presenters .pc-foot { min-height: 44px; margin-top: -12px; display: flex; align-items: center; }
+.nos-presenters .pc-body { display: grid; gap: 14px; }
+.nos-presenters .pc-body p { margin: 0; }
+.nos-presenters .pc-body p, .nos-presenters .pc-body li { max-width: 68ch; line-height: 1.68; }
+.nos-presenters .pc-body ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.nos-presenters .pc-body li { position: relative; padding-left: 22px; }
+.nos-presenters .pc-body li::before { content: ""; position: absolute; left: 2px; top: 0.8em; width: 8px; height: 2px; background: var(--pc-green-1); }
+.nos-presenters .pc-more { display: inline-flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer; font: inherit; font-weight: 700; color: var(--pc-violet); text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 6px; transition: color var(--pc-t-med) var(--pc-ease); }
+.nos-presenters .pc-more:hover { color: var(--pc-royal); }
+.nos-presenters .pc-more[hidden] { display: none; }
+@media (max-width: 560px) {
+  .nos-presenters .pc-card { padding: 20px; gap: 20px; }
+  .nos-presenters .pc-head { grid-template-columns: 104px minmax(0, 1fr); gap: 16px; }
+  .nos-presenters .pc-name { font-size: 1.85rem; }
+  .nos-presenters .pc-bio { padding-top: 20px; }
+  .nos-presenters .pc-foot { margin-top: -4px; }
+}
+
+/* The site's Tailwind preflight zeroes every margin, which cancels the UA dialog:modal margin: auto that centres it */
+/* Full bio dialog: native <dialog> traps focus and closes on Esc; focus returns to the opener */
+.nos-presenters .pc-modal { padding: 0; border: 0; color: var(--pc-ink-700); background: var(--pc-gold-100); width: min(760px, calc(100vw - 32px)); max-height: min(88vh, 900px); margin: auto; border-radius: var(--pc-radius-lg); box-shadow: var(--pc-shadow-xl); }
+.nos-presenters .pc-modal::backdrop { background: var(--pc-backdrop); }
+/* Codi's scroll lock while the dialog is open; the one selector not rooted at .nos-presenters */
+html:has(.nos-presenters .pc-modal[open]) { overflow: hidden; }
+.nos-presenters .pc-sheet-inner { display: grid; grid-template-rows: auto minmax(0, 1fr); max-height: inherit; }
+.nos-presenters .pc-sheet-head { position: relative; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 20px; align-items: end; padding: 28px 72px 22px 28px; border-bottom: var(--pc-hairline) solid var(--pc-line); }
+.nos-presenters .pc-sheet-face { aspect-ratio: 4 / 5; border-radius: var(--pc-radius-md); overflow: hidden; background: var(--pc-black); }
+.nos-presenters .pc-sheet-face img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.nos-presenters .pc-sheet-title { margin: 0; font-family: var(--pc-serif); font-weight: 300; font-size: var(--pc-fs-xl); line-height: 1.1; color: var(--pc-royal); text-wrap: balance; font-variation-settings: "opsz" 24; }
+.nos-presenters .pc-sheet-head .pc-role { margin-top: 6px; }
+.nos-presenters .pc-sheet-body { overflow-y: auto; padding: 24px 28px 32px; overscroll-behavior: contain; }
+.nos-presenters .pc-sheet-close { position: absolute; top: 16px; right: 16px; display: grid; place-items: center; width: 44px; height: 44px; border: var(--pc-hairline) solid var(--pc-line); border-radius: var(--pc-radius-md); background: var(--pc-white); color: var(--pc-royal); cursor: pointer; transition: background-color var(--pc-t-med) var(--pc-ease); }
+.nos-presenters .pc-sheet-close:hover { background: var(--pc-gold-300); }
+.nos-presenters .pc-sheet-close svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 600px) {
+  .nos-presenters .pc-modal { width: calc(100vw - 24px); max-height: 90dvh; }
+  .nos-presenters .pc-sheet-head { grid-template-columns: 72px minmax(0, 1fr); gap: 16px; padding: 20px 64px 18px 20px; }
+  .nos-presenters .pc-sheet-title { font-size: var(--pc-fs-lg); }
+  .nos-presenters .pc-sheet-body { padding: 20px 20px 28px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nos-presenters .pc-modal[open] { animation: pc-rise var(--pc-t-slow) var(--pc-ease); }
+  .nos-presenters .pc-modal[open]::backdrop { animation: pc-fade var(--pc-t-med) linear; }
+}
+@keyframes pc-rise { from { opacity: 0; transform: translateY(14px); } }
+@keyframes pc-fade { from { opacity: 0; } }

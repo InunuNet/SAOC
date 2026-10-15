@@ -6,6 +6,7 @@
 // .agent/memory/project/specs/conference-workshop-tickets/goldens/f3-ui-render-states.golden.md
 // §1/Addendum. These are data shapes only; the NOS design peer session's F7 handoff is
 // what actually renders them.
+import type { PresenterPhoto } from './presenter-photo.ts';
 
 /**
  * Precedence order is significant and MUST be applied in this exact sequence — each state
@@ -62,9 +63,9 @@ export interface PresenterCardViewModel {
   name: string;
   role: string | null;
   bioExcerpt: string | null; // raw text, no truncation/formatting applied here
-  photoUrl: string | null; // null when no photo asset exists yet (real state today)
+  photo: PresenterPhoto | null; // 4:5 crop request; null when no photo asset exists
   event: 'saoc-symposium' | 'wosa-conference';
-  order: number;
+  order: number | null; // null means "Lee-Ann has not set it"
 }
 
 export interface WorkshopSessionViewModel {

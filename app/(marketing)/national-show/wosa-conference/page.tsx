@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { PresenterSection } from '@/components/nos/PresenterSection';
 import { ShowSectionNav } from '@/components/show';
 import { ShowContentState } from '@/components/show/nos/ShowContentState';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
@@ -22,10 +23,9 @@ import { loadTicketCardViewModel } from '@/lib/view-models/load-ticket-card';
 // `afterProse` and rendered in the published branch only — an absent page shows the
 // disclosure alone. See goldens/m4/never-404-fallback.golden.md.
 //
-// F6 (conference-workshop-tickets, M4) — additive, inert data-fetch only; same note as
-// symposium/page.tsx's own identical comment (golden §3). Zero JSX change — the render
-// tree below, including the WOSA link-out, is byte-for-byte unchanged from before this
-// feature. `dynamic = 'force-dynamic'` added for the same Firebase-Admin-reachability
+// F6 (conference-workshop-tickets, M4) — additive data-fetch; same note as
+// symposium/page.tsx's own identical comment (golden §3). nos-presenter-cards renders the
+// presenters under the hero (none today, so the page is unchanged). `dynamic = 'force-dynamic'` added for the same Firebase-Admin-reachability
 // reason given there.
 export const dynamic = 'force-dynamic';
 export const revalidate = 60;
@@ -43,12 +43,12 @@ export default async function WosaConferencePage() {
       'What the WOSA Conference is and who it is for, with a link out to WOSA for wild-orchid content.',
   });
 
-  // F6 (conference-workshop-tickets, M4) — additive, inert; see symposium/page.tsx's
-  // identical note and the file-header comment above.
+  // F6 (conference-workshop-tickets, M4) — additive; see symposium/page.tsx's identical
+  // note and the file-header comment above.
   //
   // Codex finding (2026-10-07, relayed by team-lead) — same fix as symposium/page.tsx's
   // identical note: these loaders can reject on a real Sanity/Firestore backend failure;
-  // their unrendered result must never turn this public content page into a 500.
+  // neither result may turn this public content page into a 500.
   let presenters: Awaited<ReturnType<typeof loadPresenterViewModels>> = [];
   try {
     presenters = await loadPresenterViewModels('wosa-conference');
@@ -61,7 +61,6 @@ export default async function WosaConferencePage() {
   } catch (error) {
     console.error('[national-show/wosa-conference] loadTicketCardViewModel failed:', error);
   }
-  void presenters;
   void ticketCard;
 
   return (
@@ -88,6 +87,8 @@ export default async function WosaConferencePage() {
           </p>
         }
       />
+
+      <PresenterSection eyebrow="WOSA Conference" presenters={presenters} />
 
       <ShowSectionNav current="/national-show/wosa-conference" />
     </>
