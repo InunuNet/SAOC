@@ -430,13 +430,29 @@ export function createOzowProvider(deps?: OzowProviderDeps): PaymentProvider {
       // re-attempting checkout under the same TransactionReference is realistic, and this status
       // API can return one row per attempt — blindly taking body.find()'s first hit could confirm
       // against a stale/cancelled attempt instead of the one this notification is actually for.
-      const referenceMatches = body.filter(
+      const rows = body.filter(
         (transaction): transaction is Record<string, unknown> =>
-          typeof transaction === 'object' &&
-          transaction !== null &&
-          !hasConflictingCasings(transaction as Record<string, unknown>) &&
-          statusField(transaction as Record<string, unknown>, 'TransactionReference') ===
-            notification.reference
+          typeof transaction === 'object' && transaction !== null
+      );
+
+      // A row for this reference (in either casing) whose casings disagree makes the whole
+      // lookup untrustworthy -- aborting rather than dropping it, so a clean row for a different
+      // attempt can never be confirmed in its place.
+      const hasAmbiguousRow = rows.some(
+        (row) =>
+          hasConflictingCasings(row) &&
+          (row.transactionReference === notification.reference ||
+            row.TransactionReference === notification.reference)
+      );
+      if (hasAmbiguousRow) {
+        console.error('[payments/ozow] Status response row has conflicting field casings.', {
+          reference: notification.reference,
+        });
+        return { confirmed: false, reason: 'not-valid' };
+      }
+
+      const referenceMatches = rows.filter(
+        (row) => statusField(row, 'TransactionReference') === notification.reference
       );
 
       // A single row matching the reference is the common, unambiguous case — same behaviour as
