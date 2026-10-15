@@ -11,7 +11,7 @@ autonomy: high
 
 features:
   - id: F1
-    name: /tickets linked from header NAV, national-show hero CTA, and home ShowBand CTA
+    name: /tickets linked from header NAV, the NOS header Tickets CTA on /national-show, and home ShowBand CTA
     status: pending
 
 goldens:
@@ -56,20 +56,17 @@ assertions:
       command: '[ -n "$(node contracts/checks/ticket-reachability/extract-anchor-text.mjs http://localhost:3333/ /tickets)" ] && ! node contracts/checks/ticket-reachability/extract-anchor-text.mjs http://localhost:3333/ /tickets | grep -qi "click here"'
       timeout_seconds: 30
 
-    # ---- national-show landing page — real red-to-green ----
-    # Amended 2026-10-15 (nos-audit-fixes F2, fix/nos-audit-p1; authorised by the lead saoc-2b):
-    # Brad's directive moves NOS "Book tickets" off the bare /tickets listing onto the existing
-    # /tickets/[slug] flow, so these now prove /national-show -> /national-show/tickets ->
-    # /tickets/<slug> (each hop inside <main>, every slug link HTTP 200). They previously
-    # asserted /national-show contains href="/tickets".
+    # ---- national-show landing page: the hero ticket CTA is gone (mission nos-own-brand-chrome F1; HANDOFF "Tickets CTA"
+    # and "Hub hero": the NOS header carries the one Tickets CTA on every NOS page, so a hero CTA would be a second
+    # one on the first screen). The chain is now the NOS header's a.nh-cta -> /national-show/tickets. ----
     - id: TKT-06
-      description: "/national-show <main> links /national-show/tickets (and not bare /tickets), whose <main> links /tickets/<slug> pages that each return 200"
-      command: node contracts/checks/ticket-reachability/check-nos-ticket-chain.mjs http://localhost:3333
-      timeout_seconds: 60
+      description: "/national-show NOS header (header#nh) contains an a.nh-cta with href /national-show/tickets"
+      command: node contracts/checks/ticket-reachability/check-national-show-header-cta.mjs http://localhost:3333/national-show href
+      timeout_seconds: 30
 
     - id: TKT-07
-      description: "the /national-show/tickets anchor on /national-show has meaningful link text (non-empty, not \"click here\")"
-      command: '[ -n "$(node contracts/checks/ticket-reachability/extract-anchor-text.mjs http://localhost:3333/national-show /national-show/tickets)" ] && ! node contracts/checks/ticket-reachability/extract-anchor-text.mjs http://localhost:3333/national-show /national-show/tickets | grep -qi "click here"'
+      description: "the NOS header Tickets CTA on /national-show has meaningful link text (non-empty, not \"click here\")"
+      command: node contracts/checks/ticket-reachability/check-national-show-header-cta.mjs http://localhost:3333/national-show text
       timeout_seconds: 30
 
     # ---- destination proof: following any of the links above lands on a

@@ -7,20 +7,22 @@
 // Col 2: Explore nav links
 // Col 3: Partners list
 // Col 4: Stay in touch (newsletter form + WOSA link)
+// All copy and link lists live in ./footer-data (shared with the NOS footer).
 // =============================================================
 
 import Link from 'next/link';
 import { partners } from '@/lib/data';
 import { SaocLockup } from './SaocLockup';
-
-const FOOTER_NAV = [
-  { id: 'about', label: 'About', href: '/about' },
-  { id: 'societies', label: 'Societies', href: '/societies' },
-  { id: 'judging', label: 'Judging & Awards', href: '/judging' },
-  { id: 'show', label: 'National Show', href: '/national-show' },
-  { id: 'events', label: 'Events', href: '/events' },
-  { id: 'members', label: 'Members Portal', href: '/members' },
-];
+import {
+  FOOTER_BRAND_TEXT,
+  FOOTER_BULLETIN,
+  FOOTER_COPYRIGHT_TAIL,
+  FOOTER_HEADINGS,
+  FOOTER_LEGAL_LINKS,
+  FOOTER_NAV,
+  FOOTER_REG,
+  FOOTER_WOSA,
+} from './footer-data';
 
 export function Footer() {
   return (
@@ -39,19 +41,17 @@ export function Footer() {
             <SaocLockup orientation="vertical" tone="dark" />
           </div>
           <p className="font-sans text-[13.5px] leading-relaxed text-ivory/65">
-            A national coordinating body for affiliated orchid societies across South Africa —
-            promoting culture, hybridisation and appreciation of orchids in cultivation since
-            1968.
+            {FOOTER_BRAND_TEXT}
           </p>
           <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ivory/45">
-            REG# 1978/004040/08&nbsp;&nbsp;&nbsp;NPO 043-901
+            {FOOTER_REG}
           </span>
         </div>
 
         {/* Col 2 — Explore */}
         <div className="flex flex-col gap-3">
           <div className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory/55 mb-1">
-            Explore
+            {FOOTER_HEADINGS.explore}
           </div>
           <ul className="flex flex-col gap-2">
             {FOOTER_NAV.map((n) => (
@@ -70,7 +70,7 @@ export function Footer() {
         {/* Col 3 — Partners */}
         <div className="flex flex-col gap-3">
           <div className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory/55 mb-1">
-            Partners
+            {FOOTER_HEADINGS.partners}
           </div>
           <ul className="flex flex-col gap-2">
             {partners.map((p) => (
@@ -84,16 +84,16 @@ export function Footer() {
         {/* Col 4 — Stay in touch */}
         <div className="flex flex-col gap-3">
           <div className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory/55 mb-1">
-            Stay in touch
+            {FOOTER_HEADINGS.touch}
           </div>
           <p className="font-sans text-[13.5px] leading-relaxed text-ivory/65">
-            Quarterly bulletin — show dates, judging results and yearbook news.
+            {FOOTER_BULLETIN.blurb}
           </p>
           <form className="flex gap-0" onSubmit={(e) => e.preventDefault()}>
             <input
               type="email"
-              aria-label="Email address"
-              placeholder="your@email.co.za"
+              aria-label={FOOTER_BULLETIN.emailLabel}
+              placeholder={FOOTER_BULLETIN.placeholder}
               required
               className="min-w-0 flex-1 bg-ivory/10 border border-ivory/20 text-ivory placeholder:text-ivory/40 font-sans text-[13px] px-3 py-2 focus:outline-none focus:border-ivory/40"
             />
@@ -101,20 +101,20 @@ export function Footer() {
               type="submit"
               className="bg-primary text-ivory font-sans text-[13px] font-medium px-4 py-2 hover:bg-primary-800 transition-colors duration-150 shrink-0"
             >
-              Subscribe
+              {FOOTER_BULLETIN.submitLabel}
             </button>
           </form>
           <div className="mt-2">
             <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/55 mb-2">
-              Looking for wild orchids?
+              {FOOTER_WOSA.heading}
             </div>
             <a
-              href="https://wildorchids.co.za"
+              href={FOOTER_WOSA.href}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex min-h-6 items-center font-sans text-[14px] text-ivory/80 hover:text-ivory transition-colors duration-150"
             >
-              Visit Wild Orchids of Southern Africa →
+              {FOOTER_WOSA.linkLabel}
             </a>
           </div>
         </div>
@@ -124,39 +124,19 @@ export function Footer() {
       <div className="border-t border-ivory/10">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-8 py-4 flex-wrap">
           <span className="font-sans text-[13px] text-ivory/45">
-            &copy; {new Date().getFullYear()} South African Orchid Council. All rights reserved.
+            &copy; {new Date().getFullYear()}
+            {FOOTER_COPYRIGHT_TAIL}
           </span>
           <div className="flex items-center gap-4 flex-wrap">
-            <Link
-              href="/privacy"
-              className="inline-flex min-h-6 items-center font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
-            >
-              Privacy
-            </Link>
-            <Link
-              href="/terms"
-              className="inline-flex min-h-6 items-center font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
-            >
-              Terms
-            </Link>
-            <Link
-              href="/refunds"
-              className="inline-flex min-h-6 items-center font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
-            >
-              Refunds
-            </Link>
-            <Link
-              href="/constitution"
-              className="inline-flex min-h-6 items-center font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
-            >
-              Constitution
-            </Link>
-            <Link
-              href="/media-kit"
-              className="inline-flex min-h-6 items-center font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
-            >
-              Media kit
-            </Link>
+            {FOOTER_LEGAL_LINKS.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="inline-flex min-h-6 items-center font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
+              >
+                {l.label}
+              </Link>
+            ))}
           </div>
         </div>
       </div>

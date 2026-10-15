@@ -1,0 +1,136 @@
+schema: athanor.contract/v1
+slug: nos-own-brand-chrome
+goal: >
+  NOS own-brand chrome v4 on /national-show/*: the NOS header (lockup linking the hub, SAOC top-level nav in NOS type,
+  click-only National Show mega-menu, Tickets CTA, menu panel below 1260px) and the NOS footer (SAOC Footer content verbatim
+  in the NOS skin, two-img lockup switch) replace the SAOC header, footer and UtilityBar on those routes only, built from
+  Brad's approved 2026-10-15 handoff. SAOC routes' rendered chrome stays byte-identical. The hub hero redesign is F2.
+created_at: '2026-10-15'
+autonomy: high
+features:
+  - id: F1
+    name: NOS own-brand chrome v4 (header, mega-menu, menu panel, footer) on /national-show/*
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-own-brand-chrome/goldens/f1/f1-chrome-spec.md
+  - .agent/memory/project/specs/nos-own-brand-chrome/goldens/f1/chrome.css
+  - .agent/memory/project/specs/nos-own-brand-chrome/goldens/f1/HANDOFF.md
+  - .agent/memory/project/specs/nos-own-brand-chrome/goldens/f1/chrome-reference.js.txt
+  - .agent/memory/project/specs/nos-own-brand-chrome/goldens/f1/scope-allowlist.json
+  - .agent/memory/project/specs/nos-own-brand-chrome/goldens/f1/img/nos-full-colour-horizontal-1200.png
+  - .agent/memory/project/specs/nos-own-brand-chrome/goldens/f1/img/nos-reversed-horizontal-1200.png
+  - .agent/memory/project/specs/nos-own-brand-chrome/goldens/f1/img/nos-reversed-white-vertical-900.png
+  - .agent/memory/project/specs/nos-own-brand-chrome/goldens/f1/saoc-base/
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "[L] next build passes (runs first: every browser check serves this .next)"
+      command: "SITE_PUBLIC_LAUNCH=true pnpm build"
+      timeout_seconds: 1500
+
+    - id: A2
+      description: "[L] tsc --noEmit passes"
+      command: "npx tsc --noEmit"
+      timeout_seconds: 600
+
+    - id: A3
+      description: "[A] SAOC regression: header, footer and mobile-menu markup on /, /about, /societies, /contact byte-identical to base c0e48c39 (goldens/f1/saoc-base)"
+      command: "node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-a-saoc-regression.mjs"
+      timeout_seconds: 600
+
+    - id: A4
+      description: "[B] no SAOC logo/lockup src anywhere on /national-show, /vendors, /tickets (SSR HTML, DOM, both viewports, menus open); NOS lockups present as plain /images/nos/ paths, served byte-identical, footer pair eager and not <picture>"
+      command: "node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-b-logos.mjs"
+      timeout_seconds: 600
+
+    - id: A5
+      description: "[C] header lockup 448 @1280 / 390 @390; footer 448 horizontal @1280, 342 vertical (mono file) @390; aspect intact; inactive footer lockup display:none; all 17 NOS routes"
+      command: "node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-c-lockup-sizes.mjs"
+      timeout_seconds: 900
+
+    - id: A6
+      description: "[D] exactly one NOS logo (header) in the first viewport of every NOS page at 1280 and 390 (strict on the hub too; NOS_D_HUB_STRICT=0 relaxes it)"
+      command: "node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-d-one-logo.mjs"
+      timeout_seconds: 900
+
+    - id: A7
+      description: "[E] mega-menu: hover inert, click opens, Enter opens, Escape closes + focus returns, outside mousedown closes, labels/descriptors/hrefs from nav-config ('Exhibitors and Vendors'), meta equals SAOC mega, rail = Day Visitor + Weekend Pass text links only"
+      command: "node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-e-mega-menu.mjs"
+      timeout_seconds: 600
+
+    - id: A8
+      description: "[F] menu panel at 390: opens, rest inert, lockup stays visible, order, accordion, no 2nd Tickets button, Escape closes + focus to Menu + scroll restored, closes past 1260px"
+      command: "node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-f-menu-panel.mjs"
+      timeout_seconds: 600
+
+    - id: A9
+      description: "[G] every chrome link/button/input >= 44x44 and no chrome text < 12px (closed + mega/panel open, 1280 and 390)"
+      command: "node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-g-targets-type.mjs"
+      timeout_seconds: 900
+
+    - id: A10
+      description: "[H] no horizontal scroll (scrollWidth == clientWidth == innerWidth) at 360, 375, 390 and 768 on all NOS pages"
+      command: "node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-h-no-hscroll.mjs"
+      timeout_seconds: 900
+
+    - id: A11
+      description: "[I] chrome text is Fraunces/Karla only, both faces load, no console/page errors or same-origin 4xx/5xx on all NOS pages at 1280 and 390"
+      command: "node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-i-fonts-console.mjs"
+      timeout_seconds: 1200
+
+    - id: A12
+      description: "[J] Tickets CTA -> /national-show/tickets with aria-current only on that page; trigger data-current everywhere; mega leaf aria-current; sticky at 1280 / relative at 390; .is-scrolled"
+      command: "node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-j-aria-current.mjs"
+      timeout_seconds: 900
+
+    - id: A13
+      description: "[K] diff against c0e48c39 touches only goldens/f1/scope-allowlist.json files"
+      command: "node contracts/checks/nos-own-brand-chrome/check-k-scope.mjs"
+      timeout_seconds: 120
+
+    - id: A14
+      description: "font config: national-show/layout.tsx Fraunces axes ['opsz'] (no weight) and Karla 400/500/600/700, chrome font module config identical"
+      command: "node contracts/checks/nos-own-brand-chrome/check-static.mjs fonts"
+      timeout_seconds: 60
+
+    - id: A15
+      description: "no hard-coded show dates, venue or edition anywhere in components/nos-chrome"
+      command: "node contracts/checks/nos-own-brand-chrome/check-static.mjs dates"
+      timeout_seconds: 60
+
+    - id: A16
+      description: "chrome sources reference no Cormorant/Jost/Crimson/Manrope/JetBrains/font-mono|serif|sans"
+      command: "node contracts/checks/nos-own-brand-chrome/check-static.mjs fonts-clean"
+      timeout_seconds: 60
+
+    - id: A17
+      description: "chrome has no Search/UtilityBar/SaocLockup/ShowBand/next-image/picture/hover-open; old NosMasthead and colophon logo removed from national-show/layout.tsx"
+      command: "node contracts/checks/nos-own-brand-chrome/check-static.mjs exclusions"
+      timeout_seconds: 60
+
+    - id: A18
+      description: "footer copy lives once in components/chrome/footer-data.ts; Footer.tsx and the NOS footer both import it (no forked copy)"
+      command: "node contracts/checks/nos-own-brand-chrome/check-static.mjs footer-data"
+      timeout_seconds: 60
+
+    - id: A19
+      description: "mount: (marketing)/layout.tsx mounts the NOS chrome and still renders the SAOC chrome"
+      command: "node contracts/checks/nos-own-brand-chrome/check-static.mjs mount"
+      timeout_seconds: 60
+
+    - id: A20
+      description: "shipped stylesheet carries every approved declaration of goldens/f1/chrome.css (minus .np pill and the two font-family tokens, which must lead with the next/font variables)"
+      command: "node contracts/checks/nos-own-brand-chrome/check-static.mjs css"
+      timeout_seconds: 60
+
+    - id: A21
+      description: "[hub] the hub h1 text equals nav-config lead.leadLabel (single h1) and no lockup img/picture renders in the hub hero at 1280 and 390"
+      command: "node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-l-hub-h1.mjs"
+      timeout_seconds: 300
+
+    - id: A22
+      description: "[M] the Menu/Close toggle keeps the same right edge and width closed vs open (0.5px tolerance) at 390 and 1024"
+      command: "node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-m-menu-toggle-stable.mjs"
+      timeout_seconds: 300
+

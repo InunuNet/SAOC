@@ -234,7 +234,9 @@ export function NosHero({
                 typeset text, so it carries no type-scale classes of its own —
                 the call site's own CSS on that element controls its box.
                 hero-structure.md §4/§6. */}
-            <h1>{title}</h1>
+            <h1 className="font-[family-name:var(--font-nos-cormorant)] max-w-[20ch] text-[clamp(36px,5.6vw,64px)] font-medium leading-[1.05] text-ivory">
+              {title}
+            </h1>
             {/* Copy block capped at 720px — the mock's `.hero-copy` value — so
                 every line sits over the dark end of the R10 ramp (Codi,
                 legibility ruling 2026-09-29; hero-structure.md §10).

@@ -1,0 +1,21 @@
+{
+  "base": "c0e48c39",
+  "allowed": [
+    "app/(marketing)/layout.tsx",
+    "app/(marketing)/national-show/layout.tsx",
+    "components/nos-chrome/**",
+    "components/chrome/Footer.tsx",
+    "components/chrome/footer-data.ts",
+    "components/nos/NosMasthead.tsx",
+    "public/images/nos/nos-full-colour-horizontal-1200.png",
+    "public/images/nos/nos-reversed-horizontal-1200.png",
+    "public/images/nos/nos-reversed-white-vertical-900.png",
+    "docs/nos-own-brand-chrome.md",
+    ".agent/memory/**",
+    "contracts/checks/nos-own-brand-chrome/**",
+    "app/(marketing)/national-show/page.tsx",
+    "components/nos/NosHero.tsx",
+    "contracts/contract-ticket-reachability.yaml",
+    "contracts/checks/ticket-reachability/check-national-show-header-cta.mjs"
+  ]
+}

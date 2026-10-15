@@ -1,0 +1,82 @@
+<script>
+// NOS chrome on the SAOC site: header elevation, the National Show mega-menu (click only), the
+// menu panel and the proposal pill. The header lockup is always on screen; nothing hides it.
+(() => {
+  "use strict";
+  // Deep links: the artifact link passes a bare #token through, so #tickets, #plan-your-visit and
+  // #symposium on the hub open that page directly.
+  const DEEP = { tickets: "tickets.html", "plan-your-visit": "plan-your-visit.html", symposium: "symposium.html" };
+  const deep = DEEP[location.hash.slice(1)];
+  if (deep && document.querySelector("[data-hub]")) { location.replace(deep); return; }
+
+  const header = document.getElementById("nh");
+  const sentinel = document.getElementById("nh-sentinel");
+  new IntersectionObserver(([entry]) => header.classList.toggle("is-scrolled", !entry.isIntersecting)).observe(sentinel);
+
+  // National Show mega-menu.
+  const item = document.getElementById("nh-show");
+  const trigger = document.getElementById("nh-show-trigger");
+  const mega = document.getElementById("nh-mega");
+  const setMega = (open, focus = false) => {
+    mega.hidden = !open;
+    trigger.setAttribute("aria-expanded", String(open));
+    if (focus) trigger.focus();
+  };
+  trigger.addEventListener("click", () => setMega(mega.hidden));
+  item.addEventListener("focusout", (e) => { if (!item.contains(e.relatedTarget)) setMega(false); });
+  document.addEventListener("mousedown", (e) => { if (!mega.hidden && !item.contains(e.target)) setMega(false); });
+  mega.addEventListener("click", (e) => { if (e.target.closest("a")) setMega(false); });
+
+  // Menu panel (below 1260px). On phones the header is not sticky, so the page returns to the top
+  // while the menu is open and goes back to where it was when it closes.
+  const burger = document.getElementById("nh-burger");
+  const drawer = document.getElementById("nd");
+  const burgerLabel = burger.querySelector(".nh-burger-label");
+  let restoreY = null;
+  const setDrawer = (open, { keepPlace = true } = {}) => {
+    if (open && getComputedStyle(header).position !== "sticky") { restoreY = window.scrollY; window.scrollTo(0, 0); }
+    drawer.hidden = !open;
+    burger.setAttribute("aria-expanded", String(open));
+    burgerLabel.textContent = open ? "Close" : "Menu";
+    for (const c of document.body.children) {
+      if (c === header || c === drawer || c.tagName === "SCRIPT") continue;
+      if (open) c.setAttribute("inert", ""); else c.removeAttribute("inert");
+    }
+    document.body.style.overflow = open ? "hidden" : "";
+    if (open) {
+      drawer.style.top = `${Math.max(0, header.getBoundingClientRect().bottom)}px`;
+      const first = Array.from(drawer.querySelectorAll("a, button")).find((n) => n.offsetParent !== null);
+      if (first) first.focus();
+    } else {
+      if (restoreY !== null && keepPlace) window.scrollTo(0, restoreY);
+      restoreY = null;
+    }
+  };
+  burger.addEventListener("click", () => setDrawer(drawer.hidden));
+  drawer.addEventListener("click", (e) => { if (e.target.closest("a")) setDrawer(false, { keepPlace: false }); });
+  drawer.querySelectorAll("[data-sub]").forEach((b) => b.addEventListener("click", () => {
+    const open = b.getAttribute("aria-expanded") !== "true";
+    b.setAttribute("aria-expanded", String(open));
+    document.getElementById(b.getAttribute("aria-controls")).hidden = !open;
+  }));
+  window.matchMedia("(min-width: 1260px)").addEventListener("change", (m) => { if (m.matches && !drawer.hidden) setDrawer(false); });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (!drawer.hidden) { setDrawer(false); burger.focus({ preventScroll: true }); return; }
+    if (!mega.hidden) setMega(false, true);
+  });
+
+  // SAOC Footer.tsx: the bulletin form only prevents submission; the mock has no mailing list.
+  document.getElementById("nf-form").addEventListener("submit", (e) => e.preventDefault());
+
+  // Proposal pill.
+  const PILL_KEY = "nos-v4-proposal-dismissed";
+  const pill = document.getElementById("np");
+  try { if (sessionStorage.getItem(PILL_KEY)) pill.hidden = true; } catch (err) { /* storage blocked: the pill shows */ }
+  document.getElementById("np-close").addEventListener("click", () => {
+    pill.hidden = true;
+    try { sessionStorage.setItem(PILL_KEY, "1"); } catch (err) { /* storage blocked: dismissed for this page only */ }
+  });
+})();
+</script>

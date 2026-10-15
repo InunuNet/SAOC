@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { getImageProps } from 'next/image';
 import Link from 'next/link';
 
+import { NAV } from '@/components/chrome/nav-config';
 import { ConfirmationBadge, ShowCountdown, ShowSectionNav } from '@/components/show';
 import { Button } from '@/components/nos/Button';
 import { CtaBand } from '@/components/nos/CtaBand';
@@ -71,88 +71,16 @@ export const metadata: Metadata = buildPageMetadata({
  */
 const HERO_FOCAL_POINT = '68% 50%';
 
-/**
- * nos-hero-lockup (F1): the hero `<h1>` is the supplied NOS lockup artwork,
- * not typeset text — R22 ("place the supplied file, nothing else happens to
- * it") and R23 (stop hand-composing a lockup out of the emblem and type).
- * Served copies are byte-identical, uncropped, unresized copies of
- * `branding/National Show 2027/Logo/NOS-2027-logo-full-colour-reversed-*.png`
- * (see the repo root README/CI gate that diffs them against the masters).
- * Native dimensions below are the masters' own — passed as the `<img>`'s
- * `width`/`height` so there is no layout shift and `next/image` computes the
- * correct `sizes`-driven candidate (R22/8), never a resize of the file
- * itself. See hero-structure.md §4.
- */
-const HERO_LOCKUP_ALT = 'National Orchid Show, Western Cape 2027';
-const HERO_LOCKUP_HORIZONTAL_SRC =
-  '/images/nos/lockup/NOS-2027-logo-full-colour-reversed-horizontal.png';
-const HERO_LOCKUP_VERTICAL_SRC = '/images/nos/lockup/NOS-2027-logo-full-colour-reversed-vertical.png';
+/** The hub's `<h1>`: the show's name as nav-config carries it, never retyped here. */
+const HUB_MEGA = NAV.find((n) => n.type === 'mega');
+const HUB_HEADING = HUB_MEGA?.lead?.leadLabel;
 
-/**
- * Art-directed `<picture>`: a vertical file below 620px, a horizontal file
- * above it — native `<picture>` source-matching swaps the resource, so
- * exactly one `<img>` ever exists in the rendered DOM (one accessible name,
- * no screen-reader duplication). `getImageProps` gives each candidate its
- * automatic 2x `srcSet` entry.
- *
- * Placement (Brad, 2026-09-28, amended by Codi 2026-09-29 — see
- * placement-spec.md / hero-structure.md §5): desktop box `min(1140px, 93.75%)`
- * of the hero's content column, `-32px` margin-left (cancels the column's own
- * left padding so the box's left edge lands flush with the section's outer
- * edge), `46px` from the column's top (set on the column itself, see
- * NosHero.tsx). Box bottom sits `5px` above "The Flagship": NosHero keeps the
- * display `<h1>` outside its flex gap, so this margin is the whole gap, and the
- * file's own transparent clearspace below the ink (192/1008 of the box, 53.3px
- * at 1140) makes up the rest of Brad's ~58px visible clear.
- *
- * Below 620px the box is `min(365px, 100vw - 25px)` wide and centred on the
- * VIEWPORT, not the padded column: the column's padding is symmetric, so
- * `calc(50% - width/2)` of its content box lands on the viewport's centre. The
- * hero text stays left-aligned on the gutter. `margin-bottom: 8px` is the whole
- * box-to-eyebrow gap (256/2876 of the box, 28.6px at 365, is clearspace under
- * the ink, for ~37px visible). `max-w-none` overrides Preflight's
- * `img{max-width:100%}`: both boxes are deliberately wider than the column
- * (desktop's negative margin, mobile's viewport width), and without it the
- * browser clips the box back to 100% of the column.
- *
- * CLS: each `<source>` carries its own file's intrinsic `width`/`height`, so
- * below 620px the browser reserves the vertical file's aspect instead of the
- * fallback `<img>`'s horizontal 4108×1008 one.
- */
-function HeroLockup() {
-  const common = { alt: HERO_LOCKUP_ALT, priority: true } as const;
-
-  const {
-    props: { srcSet: mobileSrcSet },
-  } = getImageProps({
-    ...common,
-    src: HERO_LOCKUP_VERTICAL_SRC,
-    width: 3272,
-    height: 2876,
-    sizes: '365px',
-  });
-
-  const { props: desktopImgProps } = getImageProps({
-    ...common,
-    src: HERO_LOCKUP_HORIZONTAL_SRC,
-    width: 4108,
-    height: 1008,
-    sizes: '(min-width: 1280px) 1140px, 93.75vw',
-  });
-
-  return (
-    <picture data-nos-hero-lockup="" className="block">
-      <source media="(max-width: 620px)" srcSet={mobileSrcSet} width={3272} height={2876} />
-      <img
-        {...desktopImgProps}
-        alt={HERO_LOCKUP_ALT}
-        // `max-w-none` mirrors the reference artifact's own `.hero-wordmark img`
-        // rule (`max-width:none`) — see the placement note above.
-        className="-ml-8 mb-[5px] block h-auto w-[min(1140px,93.75%)] max-w-none max-[620px]:mb-[8px] max-[620px]:ml-[calc(50%_-_min(365px,100vw_-_25px)/2)] max-[620px]:w-[min(365px,100vw_-_25px)]"
-      />
-    </picture>
-  );
-}
+/** The hero's primary action: "Plan Your Visit", label and href as nav-config carries them. The
+ *  header's Tickets button is the one ticket action on these pages, so the hero has no ticket CTA. */
+const HUB_PLAN_LINK = {
+  label: HUB_MEGA?.columns.flatMap((c) => c.links).find((l) => l.id === 'plan-your-visit')?.label ?? 'Plan your visit',
+  href: HUB_MEGA?.columns.flatMap((c) => c.links).find((l) => l.id === 'plan-your-visit')?.href ?? '/national-show/plan-your-visit',
+};
 
 // ---------------------------------------------------------------------------------------
 // F18 wiring (nos-design-system, M6) — the site's ONE schema.org Event node lives on this
@@ -512,12 +440,9 @@ export default async function NationalShowPage() {
         priority
         focalPoint={HERO_FOCAL_POINT}
         eyebrow="The Flagship"
-        // The `<h1>` is the supplied NOS lockup artwork (nos-hero-lockup F1) —
-        // not typeset text, not the old EmblemBadge + text composite. R22/R23:
-        // place the supplied file, don't build a lockup out of parts. See
-        // hero-structure.md §3/§4. `brandMark` is no longer passed: the mark
-        // is already in the artwork.
-        title={<HeroLockup />}
+        // The `<h1>` is real text from nav-config (the NOS header carries the lockup; the hub
+        // hero carries none). The rest of the hub hero redesign is F2.
+        title={HUB_HEADING}
         titleSize="display"
         eyebrow2={edition ? `Edition ${toRomanOrdinal(edition)}` : undefined}
         lede={HERO_LEDE}
@@ -569,11 +494,8 @@ export default async function NationalShowPage() {
                 padding, same 15px label, same 2px radius), so the row reads as
                 one control group and each target clears the same touch area. */}
             <div className="flex flex-wrap items-center gap-3">
-              <Button<typeof Link> as={Link} href="/national-show/tickets" variant="on-dark" data-nos-hero-button="">
-                <span data-nos-hero-text="btn-primary-label">Book tickets →</span>
-              </Button>
-              <Button<typeof Link> as={Link} href="/contact" variant="ghost-on-dark" data-nos-hero-button="">
-                <span data-nos-hero-text="btn-register-label">Register interest</span>
+              <Button<typeof Link> as={Link} href={HUB_PLAN_LINK.href} variant="on-dark" data-nos-hero-button="">
+                <span data-nos-hero-text="btn-primary-label">{HUB_PLAN_LINK.label}</span>
               </Button>
               <Button<typeof Link> as={Link} href="/societies" variant="ghost-on-dark" data-nos-hero-button="">
                 <span data-nos-hero-text="btn-societies-label">Find your society</span>

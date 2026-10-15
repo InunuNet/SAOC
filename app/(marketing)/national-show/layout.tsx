@@ -1,8 +1,5 @@
 import { Cormorant_Garamond, Fraunces, Jost, Karla } from 'next/font/google';
 
-import { NosMasthead } from '@/components/nos/NosMasthead';
-import { Logo } from '@/components/nos/Logo';
-
 import './nos-theme.css';
 import './presenters.css';
 
@@ -24,16 +21,9 @@ const jost = Jost({
   display: 'swap',
 });
 
-// nos-hero-lockup (F1): additive to Cormorant/Jost above, not a replacement —
-// Cormorant/Jost stay reserved to Logo.tsx's wordmark artwork (R14/1) and to
-// the other eighteen routes' existing type, per this feature's scope boundary
-// (hero-structure.md §1/§7). Fraunces is R14's display face; no Fraunces text
-// ships in this feature (the one display headline this hero carried is now
-// the lockup image), but it loads here because `layout.tsx` is where R14's
-// eventual sitewide font decision lands. Karla is R14's body face and is
-// applied inside the flagship hero (NosHero.tsx's `display` branch) and the presenter
-// cards (presenters.css), which also use Fraunces as a variable font with the opsz axis
-// (weights 300/400 at opsz 24) and Karla 700.
+// nos-own-brand-chrome F1: Fraunces (variable, opsz axis) and Karla (400–700) are the NOS
+// chrome's faces. components/nos-chrome/fonts.ts declares the identical config for the
+// header and footer, which sit outside `.nos-theme`; keep the two in step.
 const fraunces = Fraunces({
   subsets: ['latin'],
   axes: ['opsz'],
@@ -54,41 +44,18 @@ const karla = Karla({
 // through those semantic names, and custom properties resolve at the element
 // that uses them, every descendant already using Tailwind utilities like
 // `bg-parchment` or `text-ink` re-skins automatically — with zero edits to
-// app/globals.css, components/chrome/*, or any page under national-show/.
-// F21: the full lockup (emblem + wordmark) is a signature, so it belongs in a
-// masthead and a colophon — not in a hero, where it competed with the `<h1>` for
-// the same job. It lives HERE and not in `components/chrome/Header.tsx` or
-// `components/chrome/Footer.tsx`: those render on every SAOC page, and the show
-// lockup on `/societies` or `/judging` is a show signature leaking onto pages
-// that are not the show's.
+// app/globals.css or any page under national-show/.
 //
-// `<header>`/`<footer>` rather than `<div>`: this layout renders inside the
-// marketing layout's `<main>`, and per HTML-AAM a `<header>`/`<footer>`
-// descended from `main` maps to `generic`, not `banner`/`contentinfo`. So these
-// group correctly without minting a second set of page landmarks alongside the
-// global chrome's.
-//
-// `data-nos-masthead` / `data-nos-colophon` are the M7 checker's handles — the
-// contract has to tell "lockup in the chrome bands" from "lockup in the hero"
-// and cannot do that from class names alone.
+// The site header and footer for these routes are the NOS own-brand chrome,
+// mounted by app/(marketing)/layout.tsx (components/nos-chrome). This layout
+// renders inside that layout's <main>, so it carries no header, footer, masthead
+// or lockup of its own.
 export default function NationalShowLayout({ children }: { children: React.ReactNode }) {
   return (
     <div
       className={`nos-theme ${cormorantGaramond.variable} ${jost.variable} ${fraunces.variable} ${karla.variable}`}
     >
-      {/* Route-scoped: renders on every route under this layout EXCEPT
-          `/national-show` itself, whose hero now carries the lockup artwork
-          directly — see NosMasthead.tsx and hero-structure.md §2. */}
-      <NosMasthead />
       {children}
-      {/* Colophon on the flat night ground — the one ground `Logo`'s on-dark
-          subtitle tint is cleared for (10.4:1); it is not cleared over
-          photography, which is why this band is a flat fill and not an image. */}
-      <footer data-nos-colophon="" className="bg-[var(--night)]">
-        <div className="mx-auto max-w-[1280px] px-8 py-12">
-          <Logo orientation="vertical" tone="on-dark" />
-        </div>
-      </footer>
     </div>
   );
 }
