@@ -7,6 +7,7 @@ import { Fraunces, Karla } from 'next/font/google';
 const fraunces = Fraunces({
   subsets: ['latin'],
   axes: ['opsz'],
+  style: ['normal', 'italic'],
   variable: '--font-nos-fraunces',
   display: 'swap',
 });

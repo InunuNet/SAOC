@@ -25,7 +25,7 @@ export function NosEventCard({ href, dateLabel, title, description, category }: 
     <Link href={href} className="group block focus-visible:outline-none">
       <Card className="flex h-full flex-col gap-3 transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-0.5 group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-[var(--ring-focus)]">
         <div className="flex items-center justify-between gap-2">
-          <span className="font-sans text-[12px] font-medium uppercase tracking-[0.2em] text-muted">
+          <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-muted">
             {dateLabel}
           </span>
           {category ? <Badge tone="olive">{category}</Badge> : null}

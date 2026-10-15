@@ -57,7 +57,7 @@ export function ShowFaqList({ faqs, pendingLabel, researchLabel }: ShowFaqListPr
           <section key={category} aria-labelledby={`faq-${category}`}>
             <h2
               id={`faq-${category}`}
-              className="font-mono text-[12px] uppercase tracking-[0.2em] text-accent"
+              className="nos-label font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-accent"
             >
               {CATEGORY_LABELS[category]}
             </h2>
@@ -82,13 +82,13 @@ export function ShowFaqList({ faqs, pendingLabel, researchLabel }: ShowFaqListPr
                       </span>
                       <span
                         aria-hidden="true"
-                        className="mt-1 shrink-0 font-mono text-[13px] text-muted group-open:hidden"
+                        className="mt-1 shrink-0 font-sans text-[13px] text-muted group-open:hidden"
                       >
                         +
                       </span>
                       <span
                         aria-hidden="true"
-                        className="mt-1 hidden shrink-0 font-mono text-[13px] text-muted group-open:inline"
+                        className="mt-1 hidden shrink-0 font-sans text-[13px] text-muted group-open:inline"
                       >
                         −
                       </span>

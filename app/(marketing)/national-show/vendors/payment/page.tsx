@@ -59,7 +59,6 @@ export default async function VendorStandPaymentPage({ searchParams }: VendorSta
           VendorStandPaymentForm is SAOC-owned and untouched. */}
       <NosHero
         image="/images/orchid-yellow.jpg"
-        eyebrow="National Show"
         title="Vendor Stand Payment"
         lede="Select your stand size and complete payment for the 2027 SAOC National Show."
         priority

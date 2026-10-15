@@ -49,9 +49,9 @@ export function AccommodationList({ options }: AccommodationListProps) {
 
         return (
           <section key={band}>
-            <h4 className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted">
+            <h3 className="nos-label font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-muted">
               {BAND_LABELS[band]}
-            </h4>
+            </h3>
             {/* No hardcoded column-count utility below lg: mobile/tablet stack via flex-col — the
                 only column-count class comes from lib/grid-columns.ts (D68). */}
             <ul className={`mt-3 flex flex-col gap-4 lg:grid ${COLUMN_CLASS[columns]}`}>
@@ -62,9 +62,9 @@ export function AccommodationList({ options }: AccommodationListProps) {
                     index === lastIndex && finalCardSpans > 1 ? SPAN_CLASS[finalCardSpans] : ''
                   }`}
                 >
-                  <p className="font-serif text-[18px] font-medium text-ink">{option.name}</p>
+                  <h4 className="font-serif text-[18px] font-medium text-ink">{option.name}</h4>
                   {option.area ? (
-                    <p className="mt-1 font-mono text-[12px] uppercase tracking-[0.16em] text-muted">
+                    <p className="mt-1 font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
                       {option.area}
                     </p>
                   ) : null}

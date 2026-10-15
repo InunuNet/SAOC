@@ -75,7 +75,6 @@ export default async function ExhibitorInfoPage() {
     <>
       <NosHero
         image="/images/orchid-purple.jpg"
-        eyebrow="National Show"
         title={info?.title ?? 'Exhibitor Information'}
         lede={info?.intro ?? undefined}
         priority
@@ -85,7 +84,7 @@ export default async function ExhibitorInfoPage() {
         <p>
           <Link
             href="/national-show"
-            className="inline-flex items-center gap-2 font-sans text-[12px] font-medium uppercase tracking-[0.2em] text-muted transition-colors duration-150 hover:text-primary"
+            className="inline-flex items-center gap-2 font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-muted transition-colors duration-150 hover:text-primary"
           >
             ← Show overview
           </Link>
@@ -96,7 +95,7 @@ export default async function ExhibitorInfoPage() {
             legal only on dark grounds or as large (≥24px) text. */}
         <Badge tone="purple" className="normal-case">
           <span aria-hidden="true">※</span>
-          <span className="tracking-[0.02em]">
+          <span className="normal-case tracking-[0.02em]">
             Exhibitor entries are not yet open — this page covers what to expect when they do.
             Contact the council to be notified.
           </span>

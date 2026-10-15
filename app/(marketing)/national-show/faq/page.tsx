@@ -33,7 +33,6 @@ export default async function ShowFaqPage() {
     <>
       <NosHero
         image="/images/orchid-pink.jpg"
-        eyebrow="National Show"
         title={info?.faqTitle ?? 'Frequently asked questions'}
         lede={info?.faqIntro ?? undefined}
         priority

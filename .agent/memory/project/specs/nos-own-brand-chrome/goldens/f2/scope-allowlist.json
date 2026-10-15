@@ -1,0 +1,22 @@
+{
+  "base": "c0e48c39",
+  "note": "F1 is uncommitted in the worktree, so F2 is judged against the same base as F1: the union of F1's allowlist and F2's additions. SAOC-shared files (components/ui/PageHero.tsx, components/tickets/* other than CategoryTicketsPage.tsx, components/vendors/**, components/chrome/{Header,MobileMenu,MegaMenu,UtilityBar,nav-config}.ts*, app/globals.css, every non-national-show route) stay unlisted so any edit to them fails the scope check.",
+  "allowed": [
+    "app/(marketing)/layout.tsx",
+    "app/(marketing)/national-show/**",
+    "components/nos-chrome/**",
+    "components/chrome/Footer.tsx",
+    "components/chrome/footer-data.ts",
+    "components/nos/**",
+    "components/show/**",
+    "components/tickets/CategoryTicketsPage.tsx",
+    "public/images/nos/nos-full-colour-horizontal-1200.png",
+    "public/images/nos/nos-reversed-horizontal-1200.png",
+    "public/images/nos/nos-reversed-white-vertical-900.png",
+    "docs/nos-own-brand-chrome.md",
+    ".agent/memory/**",
+    "contracts/checks/nos-own-brand-chrome/**",
+    "contracts/contract-ticket-reachability.yaml",
+    "contracts/checks/ticket-reachability/check-national-show-header-cta.mjs"
+  ]
+}

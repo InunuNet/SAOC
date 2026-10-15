@@ -60,17 +60,6 @@ export const metadata: Metadata = buildPageMetadata({
   path: '/national-show',
 });
 
-/**
- * `object-position` for the hero photograph, `/images/orchid-dark.jpg` — Codi's
- * value, verbatim, from the nos-hero-lockup amendment of 2026-09-29
- * (placement-spec.md "Amendment 2026-09-29"; source:
- * `.agent/memory/scratch/rulings-inbox/codi-hero-deltas-2026-09-29.md`). The
- * approved artifact's hero JPEG is orchid-dark.jpg downscaled (pixel diff 0), so
- * this is its crop, not a new measurement. One value at every width: the photo
- * is a full-bleed layer behind all the hero content at every breakpoint.
- */
-const HERO_FOCAL_POINT = '68% 50%';
-
 /** The hub's `<h1>`: the show's name as nav-config carries it, never retyped here. */
 const HUB_MEGA = NAV.find((n) => n.type === 'mega');
 const HUB_HEADING = HUB_MEGA?.lead?.leadLabel;
@@ -438,36 +427,21 @@ export default async function NationalShowPage() {
       <NosHero
         image="/images/orchid-dark.jpg"
         priority
-        focalPoint={HERO_FOCAL_POINT}
-        eyebrow="The Flagship"
         // The `<h1>` is real text from nav-config (the NOS header carries the lockup; the hub
-        // hero carries none). The rest of the hub hero redesign is F2.
+        // hero carries none). No eyebrow: ruling 2026-10-15 Q4.
         title={HUB_HEADING}
         titleSize="display"
-        eyebrow2={edition ? `Edition ${toRomanOrdinal(edition)}` : undefined}
         lede={HERO_LEDE}
         actions={
-          <div className="flex w-full flex-col gap-8">
-            {/* 2×2 at every width: Codi's legibility ruling (2026-09-29) keeps
-                4 columns inside the 720px cap unless a desktop cell fails, in
-                which case 2×2 — venue and cycle measured 2.0–4.1:1 over the
-                ramp's lighter end at 1280/1714 as 4 columns
-                (scripts/checks/nos-hero-contrast.mjs). */}
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-5">
+          <>
+            {/* 2x2 at every width (Codi's legibility ruling 2026-09-29; mock
+                index.html:145 `.hero-facts`). Rendered as a direct child of the hero
+                body so the stacked order can move it after the CTAs (I:307). */}
+            <dl className="nos-hero-facts">
               {heroMeta.map(({ label, value }, index) => (
-                <div key={label} className="border-l-[length:var(--border-primary)] border-[var(--olive)]/50 pl-4">
-                  <dt
-                    data-nos-hero-text={`meta-dt-${index}`}
-                    className="font-[family-name:var(--font-nos-karla)] text-[length:var(--fs-xs)] font-medium uppercase tracking-[0.2em] text-ivory/90"
-                  >
-                    {label}
-                  </dt>
-                  <dd
-                    data-nos-hero-text={`meta-dd-${index}`}
-                    className="mt-0.5 font-[family-name:var(--font-nos-karla)] text-[15px] text-ivory"
-                  >
-                    {value}
-                  </dd>
+                <div key={label}>
+                  <dt data-nos-hero-text={`meta-dt-${index}`}>{label}</dt>
+                  <dd data-nos-hero-text={`meta-dd-${index}`}>{value}</dd>
                 </div>
               ))}
             </dl>
@@ -476,7 +450,7 @@ export default async function NationalShowPage() {
                 An unmarked plausible date range is exactly the invention this section
                 must not ship — the marker is driven by showVisitorInfo.confirmations. */}
             {/* `contents`: no box of its own, so a confirmed status (badge
-                renders nothing) adds no empty flex item to the gap-8 column. */}
+                renders nothing) adds no empty flex item to the body grid. */}
             <div data-nos-hero-text="confirmation-badge" className="contents">
               <ConfirmationBadge
                 status={datesStatus}
@@ -493,7 +467,7 @@ export default async function NationalShowPage() {
                 now — `ghost-on-dark` shares every metric with `on-dark` (same
                 padding, same 15px label, same 2px radius), so the row reads as
                 one control group and each target clears the same touch area. */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="nos-hero-actions">
               <Button<typeof Link> as={Link} href={HUB_PLAN_LINK.href} variant="on-dark" data-nos-hero-button="">
                 <span data-nos-hero-text="btn-primary-label">{HUB_PLAN_LINK.label}</span>
               </Button>
@@ -503,20 +477,11 @@ export default async function NationalShowPage() {
             </div>
 
             <div>
-              {/* Same treatment as the countdown's own unit labels ("days",
-                  "hours", …) directly beneath it — font-mono 11px, uppercase,
-                  0.18em, ivory/90 (components/show/ShowCountdown.tsx). This
-                  label and those labels annotate one object, and a third
-                  micro-caps style (font-sans 10px/500, 0.2em, ivory/70) made
-                  them look like two unrelated systems stacked together (F22).
-                  Adopting the denser style also raises the alpha: 10px/500 at
-                  ivory/45 had measured 3.92–4.36:1 composited over the real
-                  photograph, and ivory/90 clears the 4.5:1 body bar with room
-                  — without darkening NosHero's scrim, which is tuned across the
-                  whole hero and would regress what already passes. */}
+              {/* Directly below the CTAs (ruling 2026-10-15 Q1/Q2). The label is the Karla
+                  label role, like the countdown's own unit labels. */}
               <p
                 data-nos-hero-text="countdown-opens-in"
-                className="mb-3 font-mono text-[12px] uppercase tracking-[0.18em] text-ivory/90"
+                className="mb-3 font-sans text-[12px] font-bold uppercase tracking-[0.14em] text-ivory/90"
               >
                 Opens in
               </p>
@@ -528,7 +493,7 @@ export default async function NationalShowPage() {
                 />
               </Suspense>
             </div>
-          </div>
+          </>
         }
       />
 
@@ -566,7 +531,7 @@ export default async function NationalShowPage() {
             { value: '1,240', label: 'Entries — 2024' },
           ].map(({ value, label }) => (
             <div key={label} className="bg-parchment px-8 py-10">
-              <div className="font-serif text-[46px] font-medium leading-none text-primary">
+              <div className="nos-figure font-serif text-[46px] text-primary">
                 {value}
               </div>
               <div className="mt-2 font-sans text-[12px] font-medium tracking-[0.16em] text-muted">
@@ -761,7 +726,7 @@ export default async function NationalShowPage() {
             </Button>
             <Link
               href="/contact"
-              className="font-sans text-[14px] font-medium text-ivory underline decoration-ivory/40 underline-offset-4 transition-colors duration-150 hover:decoration-ivory"
+              className="inline-flex min-h-[44px] items-center font-sans text-[14px] font-medium text-ivory underline decoration-ivory/40 underline-offset-4 transition-colors duration-150 hover:decoration-ivory"
             >
               Ask the council
             </Link>

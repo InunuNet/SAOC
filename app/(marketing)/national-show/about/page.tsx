@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { PageHero } from '@/components/ui/PageHero';
+import { NosHero } from '@/components/nos/NosHero';
 import { ShowSectionNav } from '@/components/show';
 
 // Content sourced verbatim from docs/leeann-source/about-national-show_2026-09-09.md
@@ -17,10 +17,10 @@ export const metadata: Metadata = {
 export default function NationalShowAboutPage() {
   return (
     <>
-      <PageHero
+      <NosHero
         image="/images/orchid-purple.jpg"
-        eyebrow="National Show"
-        heading="2027 South African National Orchid Show"
+        title="2027 South African National Orchid Show"
+        priority
       />
 
       <div className="mx-auto max-w-[900px] space-y-6 px-8 py-16">

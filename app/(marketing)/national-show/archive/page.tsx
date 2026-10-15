@@ -85,14 +85,13 @@ export default async function ShowArchivePage() {
     <>
       <NosHero
         image="/images/orchid-dark.jpg"
-        eyebrow="Show history"
         title="National Show archive"
         lede="Since 1974, the South African National Orchid Show has rotated across the country’s provinces every three years — a triennial celebration of orchid culture."
         priority
         actions={
           <Link
             href="/national-show"
-            className="font-sans text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
+            className="inline-flex min-h-[44px] items-center font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
           >
             ← National Show
           </Link>
@@ -126,9 +125,9 @@ export default async function ShowArchivePage() {
 
                 <div className="flex flex-col gap-4 p-6">
                   <div>
-                    <p className="font-serif text-[22px] font-medium leading-snug text-ink">
+                    <h2 className="nos-card-title font-serif text-[22px] font-medium leading-snug text-ink">
                       {show.month ? `${show.year} — ${show.month}` : show.year}
-                    </p>
+                    </h2>
                     {show.host && (
                       <p className="mt-1 font-sans text-[14px] text-muted">{show.host}</p>
                     )}

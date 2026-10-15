@@ -53,7 +53,6 @@ export default async function PlanYourVisitPage() {
     <>
       <NosHero
         image="/images/orchid-violet.jpg"
-        eyebrow="National Show"
         title={info?.planTitle ?? 'Plan your visit'}
         lede={info?.planIntro ?? undefined}
         priority
@@ -114,7 +113,7 @@ export default async function PlanYourVisitPage() {
               {attractions.map((attraction, index) => (
                 <li key={attraction._key ?? `${attraction.name}-${index}`}>
                   <Card className="h-full">
-                    <p className="font-serif text-[18px] font-medium text-ink">{attraction.name}</p>
+                    <h3 className="font-serif text-[18px] font-medium text-ink">{attraction.name}</h3>
                     {attraction.note ? (
                       <p className="mt-2 font-sans text-[14px] leading-relaxed text-muted">
                         {attraction.note}
@@ -148,7 +147,7 @@ export default async function PlanYourVisitPage() {
             <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {emergencyContacts.map((contact, index) => (
                 <Card key={contact._key ?? `${contact.label}-${index}`}>
-                  <dt className="font-sans text-[12px] font-medium uppercase tracking-[0.16em] text-muted">
+                  <dt className="font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
                     {contact.label}
                   </dt>
                   <dd className="mt-1 font-serif text-[26px] font-medium text-primary">

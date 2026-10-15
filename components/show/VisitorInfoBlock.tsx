@@ -35,7 +35,7 @@ export function VisitorInfoBlock({
 
   return (
     <section id={id} className="border-t border-rule pt-8">
-      <h3 className="font-serif text-[24px] font-medium leading-snug text-ink">{heading}</h3>
+      <h3 className="nos-opsz-32 font-serif text-[24px] text-ink">{heading}</h3>
       <ConfirmationBadge
         status={status}
         pendingLabel={pendingLabel}

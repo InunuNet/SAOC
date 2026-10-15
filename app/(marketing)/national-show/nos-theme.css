@@ -116,11 +116,20 @@
      utility and is inert; nothing reads it. An earlier version of this comment
      claimed the utilities read it. They do not.)
 
-     Redeclaring one pair without the other re-skins only that consumer. ---- */
-  --font-serif: var(--font-nos-cormorant);
-  --font-sans: var(--font-nos-jost);
-  --serif: var(--font-nos-cormorant), 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
-  --sans: var(--font-nos-jost), Jost, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+     Redeclaring one pair without the other re-skins only that consumer.
+
+     R14 (nos-own-brand-chrome F2): Fraunces and Karla are the only faces. The mono
+     names are redeclared too, to Karla: app/globals.css declares
+     `--font-mono: var(--mono)` on :root, so it resolves there to the SAOC mono stack
+     and inherits as an already-computed value. Every shared SAOC component under
+     components/tickets, components/vendors and components/ui that still says
+     font-mono or var(--mono) re-skins only because the NAME is redeclared here. ---- */
+  --font-serif: var(--font-nos-fraunces), Georgia, 'Times New Roman', serif;
+  --font-sans: var(--font-nos-karla), 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: var(--font-nos-karla), 'Helvetica Neue', Arial, sans-serif;
+  --serif: var(--font-nos-fraunces), Georgia, 'Times New Roman', serif;
+  --sans: var(--font-nos-karla), 'Helvetica Neue', Arial, sans-serif;
+  --mono: var(--font-nos-karla), 'Helvetica Neue', Arial, sans-serif;
   --serif-weight: 400;
 
   /* ---- Display type scale (F21). `--display-xl` is declared on `:root` in
@@ -151,7 +160,10 @@
      pages rendered SAOC ink on SAOC parchment in Manrope for every element not
      carrying an explicit utility class. ---- */
   font-family: var(--sans);
-  color: var(--fg);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: 1.65;
+  color: var(--ink-700);
   background-color: var(--bg);
 
   /* ---- Semantic layer — same names app/globals.css declares on :root,
@@ -288,4 +300,354 @@
      label in the NOS/show scope is a flat `text-[12px]` literal instead;
      this token is not a general small-text scale. ---- */
   --fs-xs: 0.8rem;
+
+  /* ---- R14 body scale and the two colours the type/hero layer adds (mock
+     index.html:21, :30). Body copy is ink-700 (ruling 2026-10-15 Q5); headings and
+     links stay royal. --black is the hero ground, never purple (R15). ---- */
+  --fs-body: 1.0625rem;
+  --ink-700: #3a3654;
+  --black: #0b0a14;
+}
+
+/* =====================================================================
+   nos-own-brand-chrome F2 — R14 type layer and R15 heroes.
+   Every value is cited to the approved mock (I:n = mock-index.html line n) or to the
+   R14 mapping (M:n = r14-type-mapping.md line n); goldens/f2/f2-type-hero-spec.md
+   section 2 carries the full table.
+   ===================================================================== */
+
+/* ---- Headings (R14 M:27, I:84). Unlayered, like the focus reset above, so these beat
+   the `font-medium` / `font-serif` utilities that shared components put on headings
+   without a call-site edit. Light-on-dark colour utilities are untouched here; the
+   royal default lives in `@layer base` below so a `text-ivory` class still wins. ---- */
+.nos-theme :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-optical-sizing: none;
+  text-wrap: balance;
+}
+.nos-theme :is(h3, h4, h5, h6) {
+  font-variation-settings: 'opsz' 24;
+}
+.nos-theme h2 {
+  /* Section h2 (M:13, I:158): the mapping's clamp; the h2 size utilities that shared and
+     page components carry are superseded here, so every section heading is one size. */
+  font-size: clamp(2rem, 1.5rem + 1.6vw, 2.4375rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  font-variation-settings: 'opsz' 48;
+}
+.nos-theme :is(h3, h4, h5, h6) {
+  line-height: 1.25;
+}
+/* A heading that is a group label (FAQ categories, accommodation bands): a real h2-h6 for
+   the outline, the Karla label role in type (R25). Colour stays on the call-site class. */
+.nos-theme :is(h2, h3, h4, h5, h6).nos-label {
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-variation-settings: normal;
+  text-wrap: wrap;
+}
+/* A card name that is an h2 (archive cards, which have no section h2 above them): the card-title
+   role, not the section-heading size. */
+.nos-theme :is(h2, h3).nos-card-title {
+  font-size: 1.375rem;
+  line-height: 1.25;
+  letter-spacing: 0;
+  font-variation-settings: 'opsz' 24;
+}
+/* opsz by role for card and list titles: 24 at md (20px), 32 at lg (25px), 48 above
+   (M:14, M:27 "nearest role above"). 24 is the default above; these two override it. */
+.nos-theme .nos-opsz-32 {
+  font-variation-settings: 'opsz' 32;
+}
+.nos-theme .nos-opsz-48 {
+  font-variation-settings: 'opsz' 48;
+}
+/* A heading clamped 28px..44px crosses the 28px band edge at 3.6vw = 28px (778px). */
+.nos-theme :is(h3, h4, h5, h6).nos-opsz-fluid {
+  font-variation-settings: 'opsz' 32;
+}
+@media (min-width: 778px) {
+  .nos-theme :is(h3, h4, h5, h6).nos-opsz-fluid {
+    font-variation-settings: 'opsz' 48;
+  }
+}
+
+/* Fraunces that is not a heading (card names, FAQ questions, figures): weight 400, opsz
+   pinned (I:143-216). Specificity is above the heading rules' so a `font-serif` heading
+   keeps its own role. Figures are the numerals role (M:15): 300, opsz 72, lining and
+   tabular, lh 1. */
+.nos-theme .font-serif:not(:is(h1, h2, h3, h4, h5, h6)) {
+  font-weight: 400;
+  font-variation-settings: 'opsz' 24;
+}
+.nos-theme .nos-light.font-serif {
+  font-weight: 300;
+}
+.nos-theme .nos-figure.font-serif {
+  font-weight: 300;
+  line-height: 1;
+  font-variation-settings: 'opsz' 72;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+/* Ruling Q5: a paragraph painted royal by `text-ink` / `text-primary` (shared ticket
+   notices included) is body copy, so it is ink-700. Title-like text that must stay
+   royal is not a <p>. */
+.nos-theme p:is(.text-ink, .text-primary),
+.nos-theme .prose p {
+  color: var(--ink-700);
+}
+
+@layer base {
+  /* Ruling Q5: body copy inherits ink-700 from the root; headings stay royal. */
+  .nos-theme :where(h1, h2, h3, h4, h5, h6) {
+    color: var(--primary);
+  }
+}
+
+/* ---- Shared SAOC components inside NOS pages (components/tickets, components/vendors,
+   components/ui) are re-fonted from here, never edited (F1 A3 byte-identical).
+   `font-mono` labels became the Karla label role (R25: Karla 700, 12px, .14em, uppercase), and the
+   10-11px literals they carry are raised to the 12px floor (M:24, M:27). Unlayered,
+   so they beat the utilities. ---- */
+.nos-theme .font-mono {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.nos-theme :is([class*='text-[9px]'], [class*='text-[10px]'], [class*='text-[10.5px]'], [class*='text-[11px]']) {
+  font-size: 0.75rem;
+}
+
+/* ---- Hero, shared (I:136-148, I:245-256; NOS Design R15/9 and R25, 2026-10-16). One ramp for
+   hub and inner: the second stop tracks the copy column cap, min(640px, 50%) + 48px, so the
+   text column stays on the dense end. Both heroes stack at <=1023px (copy on solid black,
+   photograph below it, no scrim); facts-after-CTAs, full-width CTAs and the small hub h1 stay
+   at the mock's 700px. The hero is a size container so `cqw` is a share of the hero's width. ---- */
+.nos-theme .nos-hero {
+  --hero-gutter: clamp(16px, 4vw, 48px);
+  --hero-col: 640px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  container-type: inline-size;
+  background-color: var(--black);
+  color: var(--ivory);
+}
+.nos-theme .nos-hero-media {
+  position: absolute;
+}
+.nos-theme .nos-hero-img {
+  object-fit: cover;
+}
+.nos-theme .nos-hero-copy {
+  position: relative;
+  width: 100%;
+  max-width: calc(1320px + 2 * var(--hero-gutter));
+  margin-inline: auto;
+  padding-inline: var(--hero-gutter);
+}
+.nos-theme .nos-hero-title {
+  margin: 0;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--ivory);
+  hyphens: manual;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.nos-theme .nos-hero-lede {
+  margin: 0;
+  max-width: min(34ch, var(--hero-col));
+}
+.nos-theme .nos-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.nos-theme .nos-hero-scrim,
+.nos-theme .nos-hero-inner::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    90deg,
+    rgba(11, 10, 20, 0.92) 0%,
+    rgba(11, 10, 20, 0.86) calc(min(640px, 50%) + 48px),
+    rgba(11, 10, 20, 0.42) 66%,
+    rgba(11, 10, 20, 0.18) 82%,
+    rgba(11, 10, 20, 0.06) 100%
+  );
+}
+
+@media (min-width: 1024px) {
+  .nos-theme .nos-hero {
+    --hero-col: min(640px, 50cqw);
+  }
+}
+
+/* ---- Hub hero (I:136-148). Header sits above it (97px), never over it. ---- */
+.nos-theme .nos-hero-hub {
+  display: flex;
+  min-height: clamp(600px, calc(100svh - 97px), 820px);
+}
+.nos-theme .nos-hero-hub .nos-hero-media {
+  inset: 0 0 0 22%;
+  z-index: -2;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 16%);
+}
+.nos-theme .nos-hero-hub .nos-hero-img {
+  object-position: 68% 50%;
+}
+.nos-theme .nos-hero-hub .nos-hero-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 28px;
+  padding-block: 72px 56px;
+}
+.nos-theme .nos-hero-hub .nos-hero-title {
+  max-width: min(11ch, var(--hero-col));
+  font-size: clamp(3.2rem, 2rem + 4vw, 5.5rem);
+  font-variation-settings: 'opsz' 96;
+}
+.nos-theme .nos-hero-body {
+  display: grid;
+  gap: 24px;
+  max-width: var(--hero-col);
+}
+.nos-theme .nos-hero-hub .nos-hero-lede {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(1.3rem, 1.1rem + 0.8vw, 1.625rem);
+  line-height: 1.42;
+  color: var(--bone);
+  font-variation-settings: 'opsz' 28;
+}
+.nos-theme .nos-hero-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 32px;
+  margin: 0;
+  max-width: 620px;
+}
+.nos-theme .nos-hero-facts > div {
+  border-left: 1.5px solid var(--olive-deep);
+  padding-left: 16px;
+}
+.nos-theme .nos-hero-facts dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--rule-soft);
+}
+.nos-theme .nos-hero-facts dd {
+  margin: 2px 0 0;
+  font-size: 1rem;
+  line-height: 1.45;
+  color: var(--ivory);
+}
+
+/* ---- Inner hero (I:245-256): the tickets masthead's type on a full-bleed
+   photograph; photo shown as shot (R5). ---- */
+.nos-theme .nos-hero-inner {
+  display: grid;
+  align-content: center;
+  min-height: clamp(360px, 32vw, 460px);
+}
+.nos-theme .nos-hero-inner .nos-hero-media {
+  inset: 0;
+}
+.nos-theme .nos-hero-inner .nos-hero-img {
+  object-position: 70% 50%;
+}
+.nos-theme .nos-hero-inner::before {
+  content: '';
+  z-index: 1;
+}
+.nos-theme .nos-hero-inner .nos-hero-copy {
+  z-index: 2;
+  display: grid;
+  gap: 22px;
+  padding-block: 64px;
+}
+.nos-theme .nos-hero-inner .nos-hero-title {
+  max-width: min(14ch, var(--hero-col));
+  font-size: clamp(2.6rem, 1.6rem + 4vw, 5.5rem);
+  font-variation-settings: 'opsz' 24;
+}
+.nos-theme .nos-hero-inner .nos-hero-lede {
+  font-size: 1.25rem;
+  line-height: 1.6;
+  color: var(--rule-soft);
+}
+
+/* ---- Stacked (R4/R15/9): copy on solid black, the photograph below it at 4:3, never
+   behind text, so no scrim at all. ---- */
+@media (max-width: 1023px) {
+  .nos-theme .nos-hero-hub {
+    flex-direction: column;
+    min-height: 0;
+  }
+  .nos-theme .nos-hero-hub .nos-hero-media {
+    position: relative;
+    inset: auto;
+    order: 2;
+    z-index: 0;
+    aspect-ratio: 4 / 3;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .nos-theme .nos-hero-hub .nos-hero-img {
+    object-position: 64% 50%;
+  }
+  .nos-theme .nos-hero-scrim {
+    display: none;
+  }
+  .nos-theme .nos-hero-hub .nos-hero-copy {
+    padding-block: 40px;
+    gap: 32px;
+  }
+  .nos-theme .nos-hero-inner {
+    min-height: 0;
+    align-content: start;
+  }
+  .nos-theme .nos-hero-inner::before {
+    content: none;
+  }
+  .nos-theme .nos-hero-inner .nos-hero-media {
+    position: relative;
+    inset: auto;
+    order: 2;
+    aspect-ratio: 4 / 3;
+  }
+  .nos-theme .nos-hero-inner .nos-hero-copy {
+    padding-block: 48px 32px;
+  }
+}
+@media (max-width: 700px) {
+  .nos-theme .nos-hero-hub .nos-hero-title {
+    font-size: clamp(2.8rem, 12vw, 3.4rem);
+  }
+  .nos-theme .nos-hero-body {
+    display: flex;
+    flex-direction: column;
+  }
+  .nos-theme .nos-hero-facts {
+    order: 1;
+    gap: 18px 20px;
+  }
+  .nos-theme .nos-hero-hub .nos-hero-actions [data-nos-hero-button] {
+    flex: 1 1 100%;
+  }
 }

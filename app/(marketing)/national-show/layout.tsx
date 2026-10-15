@@ -1,32 +1,19 @@
-import { Cormorant_Garamond, Fraunces, Jost, Karla } from 'next/font/google';
+import { Fraunces, Karla } from 'next/font/google';
 
 import './nos-theme.css';
 import './presenters.css';
 
-// F1: NOS-only fonts, scoped via CSS variables so nothing outside `.nos-theme`
-// picks them up. Cormorant Garamond carries display/headline elegance (400–500
-// only — see design grammar); Jost carries UI/labels/body and eyebrow tracking.
-const cormorantGaramond = Cormorant_Garamond({
-  subsets: ['latin'],
-  weight: ['400', '500'],
-  style: ['normal', 'italic'],
-  variable: '--font-nos-cormorant',
-  display: 'swap',
-});
-
-const jost = Jost({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-nos-jost',
-  display: 'swap',
-});
-
-// nos-own-brand-chrome F1: Fraunces (variable, opsz axis) and Karla (400–700) are the NOS
-// chrome's faces. components/nos-chrome/fonts.ts declares the identical config for the
-// header and footer, which sit outside `.nos-theme`; keep the two in step.
+// NOS-only fonts, scoped via CSS variables so nothing outside `.nos-theme` picks them up.
+// R14 (nos-own-brand-chrome F2): Cormorant and Jost are reserved for the logo artwork and are
+// never loaded on a content page.
+// Fraunces (variable, opsz axis; normal + italic, so the archive and card italics are a
+// real face) and Karla (400–700) are the NOS faces. components/nos-chrome/fonts.ts declares
+// the identical config for the header and footer, which sit outside `.nos-theme`; keep the
+// two in step.
 const fraunces = Fraunces({
   subsets: ['latin'],
   axes: ['opsz'],
+  style: ['normal', 'italic'],
   variable: '--font-nos-fraunces',
   display: 'swap',
 });
@@ -53,7 +40,7 @@ const karla = Karla({
 export default function NationalShowLayout({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className={`nos-theme ${cormorantGaramond.variable} ${jost.variable} ${fraunces.variable} ${karla.variable}`}
+      className={`nos-theme ${fraunces.variable} ${karla.variable}`}
     >
       {children}
     </div>

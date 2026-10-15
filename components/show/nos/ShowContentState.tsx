@@ -65,7 +65,6 @@ export function ShowContentState({
     <>
       <NosHero
         image={heroImage}
-        eyebrow="National Show"
         title={page.title}
         lede={page.summary ?? undefined}
         priority

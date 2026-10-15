@@ -48,7 +48,7 @@ export function ExhibitorKeyDates({
   return (
     <section id={id} className="border-t border-rule pt-8">
       {heading ? (
-        <h2 className="font-serif text-[clamp(24px,2.6vw,32px)] font-medium text-ink">{heading}</h2>
+        <h2 className="font-serif text-ink">{heading}</h2>
       ) : null}
 
       {note ? (
@@ -58,7 +58,7 @@ export function ExhibitorKeyDates({
       <div className="mt-6 sm:overflow-x-auto">
         <table className="w-full border-collapse text-left max-sm:block sm:min-w-[560px]">
           {caption ? (
-            <caption className="mb-3 text-left font-mono text-[12px] tracking-[0.16em] text-muted">
+            <caption className="mb-3 text-left font-sans text-[12px] tracking-[0.16em] text-muted">
               {caption}
             </caption>
           ) : null}
@@ -66,19 +66,19 @@ export function ExhibitorKeyDates({
             <tr className="border-b border-rule">
               <th
                 scope="col"
-                className="py-3 pr-4 font-mono text-[12px] tracking-[0.16em] text-muted"
+                className="py-3 pr-4 font-sans text-[12px] tracking-[0.16em] text-muted"
               >
                 Milestone
               </th>
               <th
                 scope="col"
-                className="py-3 pr-4 font-mono text-[12px] tracking-[0.16em] text-muted"
+                className="py-3 pr-4 font-sans text-[12px] tracking-[0.16em] text-muted"
               >
                 When
               </th>
               <th
                 scope="col"
-                className="py-3 font-mono text-[12px] tracking-[0.16em] text-muted"
+                className="py-3 font-sans text-[12px] tracking-[0.16em] text-muted"
               >
                 Detail
               </th>

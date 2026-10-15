@@ -1,0 +1,41 @@
+{
+ "refs": [
+  "/images/nos/nos-full-colour-horizontal-1200.png",
+  "/images/nos/nos-reversed-horizontal-1200.png",
+  "/images/nos/nos-reversed-white-vertical-900.png",
+  "/images/orchid-dark.jpg",
+  "/images/orchid-pink.jpg",
+  "/images/orchid-purple.jpg",
+  "/images/orchid-violet.jpg",
+  "/images/orchid-yellow.jpg",
+  "orchid-violet.jpg",
+  "orchid-yellow.jpg",
+  "orchid-yellow.jpg/orchid-pink.jpg"
+ ],
+ "files": [
+  "nos-2027-logo-full-colour-vertical.png",
+  "nos/disa-graminifolia-emblem.svg",
+  "nos/lockup/NOS-2027-logo-full-colour-reversed-horizontal.png",
+  "nos/lockup/NOS-2027-logo-full-colour-reversed-vertical.png",
+  "nos/nos-full-colour-horizontal-1200.png",
+  "nos/nos-reversed-horizontal-1200.png",
+  "nos/nos-reversed-white-vertical-900.png",
+  "orchid-dark.jpg",
+  "orchid-pink.jpg",
+  "orchid-purple.jpg",
+  "orchid-violet.jpg",
+  "orchid-yellow.jpg",
+  "saoc-emblem-footer-lapis-2x.png",
+  "saoc-emblem-footer-lapis.png",
+  "saoc-emblem-lockup-2x.png",
+  "saoc-emblem-lockup.png",
+  "saoc-lockup-horizontal-full-name.png",
+  "saoc-logo-flat-brass.png",
+  "saoc-logo-flat-paper.png",
+  "saoc-logo-flat-sage.png",
+  "saoc-logo-ink-brass.png",
+  "saoc-logo-ink-paper.png",
+  "saoc-logo-sage-brass.png",
+  "saoc-logo-sage-paper.png"
+ ]
+}

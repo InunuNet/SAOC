@@ -57,15 +57,15 @@ export function PastEditionCard({
             background: 'linear-gradient(to top, rgba(14,11,36,0.75) 0%, rgba(14,11,36,0) 45%)',
           }}
         />
-        <span className="absolute left-3 top-3 rounded-[length:var(--radius-pill)] bg-primary px-3 py-1 font-sans text-[12px] font-medium uppercase tracking-[0.18em] text-ivory">
+        <span className="absolute left-3 top-3 rounded-[length:var(--radius-pill)] bg-primary px-3 py-1 font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-ivory">
           {editionLabel}
         </span>
       </div>
       <div className="flex flex-col gap-3 p-5">
         <div>
-          <p className="font-serif text-[19px] font-medium text-ink">
+          <h3 className="font-serif text-[19px] font-medium text-ink">
             {year} — {month}
-          </p>
+          </h3>
           <p className="font-sans text-[13px] text-muted">{host}</p>
         </div>
         {stats.length > 0 && (
@@ -73,7 +73,7 @@ export function PastEditionCard({
             {stats.map((stat) => (
               <span
                 key={stat}
-                className="rounded-[length:var(--radius-pill)] bg-bone px-2.5 py-1 font-sans text-[12px] font-medium uppercase tracking-[0.14em] text-muted"
+                className="rounded-[length:var(--radius-pill)] bg-bone px-2.5 py-1 font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-muted"
               >
                 {stat}
               </span>

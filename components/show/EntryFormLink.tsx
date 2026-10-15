@@ -59,7 +59,7 @@ export function EntryFormLink({
   return (
     <section id={id} className="border-t border-rule pt-8">
       {heading ? (
-        <h2 className="font-serif text-[clamp(24px,2.6vw,32px)] font-medium text-ink">{heading}</h2>
+        <h2 className="font-serif text-ink">{heading}</h2>
       ) : null}
 
       <ExhibitorStatusBadge

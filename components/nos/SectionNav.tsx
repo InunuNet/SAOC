@@ -1,7 +1,7 @@
 // =============================================================
 // NOS — components/nos/SectionNav.tsx
 // Server Component. Sticky in-page anchor nav for long-form NOS pages
-// (landing, plan-your-visit, etc.). Jost, wide-tracked, small — the eyebrow
+// (landing, plan-your-visit, etc.). Karla, wide-tracked, small — the eyebrow
 // register, never the headline register.
 // =============================================================
 
@@ -33,7 +33,7 @@ export function SectionNav({ items, className = '' }: NosSectionNavProps) {
           <li key={item.href}>
             <a
               href={item.href}
-              className="font-sans text-[12px] font-medium uppercase tracking-[0.2em] text-muted transition-colors duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring-focus)]"
+              className="font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-muted transition-colors duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring-focus)]"
             >
               {item.label}
             </a>

@@ -111,7 +111,6 @@ export default async function NationalShowTicketsPage() {
     <>
       <NosHero
         image="/images/orchid-dark.jpg"
-        eyebrow="National Show"
         title="What are you here for?"
         lede="Choose the option that matches why you're coming to the 2027 SAOC National Show — we'll take you straight to the right form."
         priority
@@ -124,7 +123,7 @@ export default async function NationalShowTicketsPage() {
         <Card className="grid gap-8 p-8 sm:p-10 md:grid-cols-[1.15fr_0.85fr] md:items-center">
           <div className="flex flex-col gap-4">
             <Badge tone="purple">Visitor admission</Badge>
-            <h2 className="font-serif text-[clamp(28px,3.4vw,38px)] font-medium leading-[1.1] text-ink">
+            <h2 className="font-serif text-ink">
               I&rsquo;m coming to visit
             </h2>
             <p className="font-sans text-[16px] leading-relaxed text-muted">
@@ -154,7 +153,7 @@ export default async function NationalShowTicketsPage() {
           <div className="flex flex-col gap-2 border-t border-rule pt-6 md:border-l md:border-t-0 md:border-rule md:pl-8 md:pt-0">
             {salesOpen && dominant && dominantPrice !== null ? (
               <>
-                <span className="font-sans text-[12px] font-medium uppercase tracking-[0.2em] text-muted">
+                <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-muted">
                   From
                 </span>
                 <span

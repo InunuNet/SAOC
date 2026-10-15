@@ -24,7 +24,7 @@ export function ExhibitorQuestions({ heading, intro, questions, id }: ExhibitorQ
   return (
     <section id={id} className="border-t border-rule bg-bone px-6 py-10 sm:px-8">
       {heading ? (
-        <h2 className="font-serif text-[clamp(24px,2.6vw,32px)] font-medium text-ink">{heading}</h2>
+        <h2 className="font-serif text-ink">{heading}</h2>
       ) : null}
 
       {intro ? (
@@ -38,13 +38,13 @@ export function ExhibitorQuestions({ heading, intro, questions, id }: ExhibitorQ
             className="border border-rule bg-parchment p-5"
           >
             {item.topic ? (
-              <p className="font-mono text-[12px] uppercase tracking-[0.16em] text-muted">
+              <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
                 {item.topic.replace(/-/g, ' ')}
               </p>
             ) : null}
-            <p className="mt-2 font-serif text-[18px] font-medium leading-snug text-ink">
+            <span className="mt-2 block font-serif text-[18px] font-medium leading-snug text-ink">
               {item.question}
-            </p>
+            </span>
             {item.context ? (
               <p className="mt-2 font-sans text-[15px] leading-relaxed text-ink/70">
                 {item.context}

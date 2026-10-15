@@ -25,10 +25,10 @@ export function JudgingGroupCard({ code, group, name, description }: NosJudgingG
       {/* olive-deep is only legal at ≥24px on a white ground (4.30:1 here, "large
           text only" per nos-contrast.golden.md) — this 11px label needs violet
           instead, which clears 6.90:1 on white. */}
-      <p className="font-sans text-[12px] font-medium uppercase tracking-[0.16em] text-[var(--accent)]">
+      <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
         {group}
       </p>
-      <p className="font-serif text-[17px] font-medium leading-snug text-ink">{name}</p>
+      <h3 className="font-serif text-[17px] font-medium leading-snug text-ink">{name}</h3>
       <p className="font-sans text-[13px] leading-relaxed text-muted">{description}</p>
     </Card>
   );

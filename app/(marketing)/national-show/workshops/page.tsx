@@ -27,10 +27,8 @@ const SESSIONS_NOTE =
   'sellable Sunset Cocktails and Field Trip options. Per-session bookings are not yet ' +
   'available for purchase.';
 
-// F9 (nos-design-system, M3): CategoryTicketsPage is owned by the sibling SAOC session and
-// is not edited here — its `heroImage`/`eyebrow`/`heading`/`lede`/`note` props are this
-// route's only levers, and it already re-skins through the inherited nos-theme tokens with
-// zero changes to its own file. The `note` slot is a plain ReactNode, so it is restyled here
+// CategoryTicketsPage renders the NOS inner hero (nos-own-brand-chrome F2); its
+// `heroImage`/`heading`/`lede`/`note` props are this route's levers. The `note` slot is a plain ReactNode, so it is restyled here
 // as an NOS Card rather than the previous bare bordered box (design grammar: bare rules on a
 // flat ground read generic and were rejected).
 export default async function WorkshopsFieldTripsTicketsPage() {
@@ -57,7 +55,6 @@ export default async function WorkshopsFieldTripsTicketsPage() {
       <CategoryTicketsPage
         category="workshop-field-trip"
         heroImage="/images/orchid-pink.jpg"
-        eyebrow="2027 National Show"
         heading="Workshops & Field Trips"
         lede="Book Sunset Cocktails and guided Field Trip outings at the National Show."
         note={

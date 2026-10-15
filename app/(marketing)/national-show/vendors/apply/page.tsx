@@ -23,7 +23,6 @@ export default function VendorApplyPage() {
     <>
       <NosHero
         image="/images/orchid-purple.jpg"
-        eyebrow="National Show"
         title="Vendor Application"
         lede="Apply to exhibit as a vendor at the 2027 SAOC National Show. Once the committee reviews and approves your application, we'll email you a link to complete your full registration and agreement."
         priority

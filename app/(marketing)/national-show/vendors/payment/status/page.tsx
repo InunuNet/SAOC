@@ -60,7 +60,6 @@ export default async function VendorStandPaymentStatusPage({
     <>
       <NosHero
         image="/images/orchid-yellow.jpg"
-        eyebrow="National Show"
         title="Vendor Stand Payment"
         lede="Payment status for your 2027 SAOC National Show vendor stand."
         priority

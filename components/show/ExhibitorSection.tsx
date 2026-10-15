@@ -40,7 +40,7 @@ export function ExhibitorSection({
   return (
     <section id={id} className="border-t border-rule pt-8">
       {section?.heading ? (
-        <h3 className="font-serif text-[24px] font-medium leading-snug text-ink">
+        <h3 className="nos-opsz-32 font-serif text-[24px] text-ink">
           {section.heading}
         </h3>
       ) : null}

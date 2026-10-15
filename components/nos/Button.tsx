@@ -26,11 +26,11 @@
 // own fill (R9/3): outline-offset places the ring outside the button, so an
 // on-dark variant's ring lands on the dark ground and must be pale gold.
 //
-// F2 (Codi, 2026-09-29): `min-h-[44px]` is the WCAG touch-target floor,
-// fixed once here rather than per call site — this is the one shared
-// component behind every button on every NOS/show page. The three hero
-// CTAs used to be 39px tall (py-3 + a 15px line box); every other Button
-// call site was under the floor too, not just those three.
+// F2 (Codi, 2026-09-29): the touch-target floor is fixed once here rather than per
+// call site — this is the one shared component behind every button on every
+// NOS/show page. nos-own-brand-chrome F2 (R14, mock `.btn`, index.html:101-107):
+// Karla 700, 14px, .12em, uppercase, min-height 50px; `data-nos-button` marks the
+// root for the F2 checks.
 // =============================================================
 
 import type { ComponentPropsWithoutRef, ElementType } from 'react';
@@ -83,9 +83,10 @@ export function Button<E extends ElementType = 'button'>(props: NosButtonProps<E
 
   return (
     <Root
+      data-nos-button=""
       className={[
-        'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[length:var(--radius-button)] px-6 py-3',
-        'font-sans text-[15px] font-medium leading-none transition-colors',
+        'inline-flex min-h-[50px] items-center justify-center gap-2 rounded-[length:var(--radius-button)] px-[26px] py-[14px]',
+        'font-sans text-[14px] font-bold uppercase leading-none tracking-[0.12em] transition-colors',
         'duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
         ON_DARK_VARIANTS.has(variant)

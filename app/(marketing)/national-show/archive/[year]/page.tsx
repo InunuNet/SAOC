@@ -13,6 +13,7 @@ import type { ShowIdentity } from '@/types';
 import { Button } from '@/components/nos/Button';
 import { Card } from '@/components/nos/Card';
 import { CtaBand } from '@/components/nos/CtaBand';
+import { NosBreadcrumb } from '@/components/nos/NosBreadcrumb';
 import { NOS_HERO_IMAGES, NosHero } from '@/components/nos/NosHero';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
@@ -151,18 +152,25 @@ export default async function ShowYearPage({
     <>
       <NosHero
         image="/images/orchid-dark.jpg"
-        eyebrow={editionLabel(show)}
         title={`The ${show.year} South African National Orchid Show`}
         lede={subtitle(show)}
         priority
         actions={
           <Link
             href="/national-show/archive"
-            className="font-sans text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
+            className="inline-flex min-h-[44px] items-center font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
           >
             ← Archive
           </Link>
         }
+      />
+
+      {/* Ruling 2026-10-16 #6: the edition label is the current crumb, not a hero eyebrow. */}
+      <NosBreadcrumb
+        items={[
+          { label: 'Show history', href: '/national-show/archive' },
+          { label: editionLabel(show) },
+        ]}
       />
 
       {/* ── Stats ── */}
@@ -188,7 +196,7 @@ export default async function ShowYearPage({
                 <div className="font-serif text-[38px] font-medium leading-none text-primary">
                   {value}
                 </div>
-                <div className="mt-2 font-sans text-[12px] font-medium uppercase tracking-[0.16em] text-muted">
+                <div className="mt-2 font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
                   {label}
                 </div>
               </Card>
@@ -203,7 +211,7 @@ export default async function ShowYearPage({
           <div>
             {/* text-accent (violet, 6.90:1 on white) not olive-deep (4.30:1 — fails 4.5:1 body
                 text at this 12px size, see nos-contrast.golden.md note 1). */}
-            <p className="mb-4 font-sans text-[12px] font-medium uppercase tracking-[0.3em] text-accent">
+            <p className="mb-4 font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-accent">
               About the show
             </p>
             <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -239,7 +247,7 @@ export default async function ShowYearPage({
               href={`/national-show/archive/${prevShow.year}`}
               className="group flex flex-col gap-1"
             >
-              <span className="font-sans text-[12px] font-medium uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
+              <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
                 ← Earlier
               </span>
               <span className="font-serif text-[20px] font-medium text-ink transition-colors duration-150 group-hover:text-primary">
@@ -254,7 +262,7 @@ export default async function ShowYearPage({
               href={`/national-show/archive/${nextShow.year}`}
               className="group flex flex-col gap-1 text-right"
             >
-              <span className="font-sans text-[12px] font-medium uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
+              <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
                 Later →
               </span>
               <span className="font-serif text-[20px] font-medium text-ink transition-colors duration-150 group-hover:text-primary">

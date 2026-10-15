@@ -39,7 +39,7 @@ export function ExhibitorSteps({
   return (
     <section id={id} className="border-t border-rule pt-8">
       {heading ? (
-        <h2 className="font-serif text-[clamp(24px,2.6vw,32px)] font-medium text-ink">{heading}</h2>
+        <h2 className="font-serif text-ink">{heading}</h2>
       ) : null}
 
       <ol className="mt-6 space-y-8">
@@ -47,7 +47,7 @@ export function ExhibitorSteps({
           <li key={step._id} className="grid grid-cols-[auto_minmax(0,1fr)] gap-5">
             <span
               aria-hidden="true"
-              className="mt-1 flex h-8 w-8 items-center justify-center border border-rule bg-parchment font-mono text-[12px] text-muted"
+              className="mt-1 flex h-8 w-8 items-center justify-center border border-rule bg-parchment font-sans text-[12px] text-muted"
             >
               {index + 1}
             </span>
@@ -56,7 +56,7 @@ export function ExhibitorSteps({
                 {step.title}
               </h3>
               {step.when ? (
-                <p className="mt-1 font-mono text-[12px] tracking-[0.16em] text-muted">
+                <p className="mt-1 font-sans text-[12px] tracking-[0.16em] text-muted">
                   {step.when}
                 </p>
               ) : null}

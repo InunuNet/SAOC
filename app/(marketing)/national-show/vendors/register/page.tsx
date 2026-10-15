@@ -68,7 +68,6 @@ export default async function VendorRegisterPage({ searchParams }: VendorRegiste
           below is entirely SAOC-owned and untouched. */}
       <NosHero
         image="/images/orchid-yellow.jpg"
-        eyebrow="National Show"
         title="Vendor Registration"
         lede="Register your business as a vendor at the 2027 SAOC National Show."
         priority

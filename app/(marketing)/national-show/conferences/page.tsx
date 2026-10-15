@@ -20,15 +20,13 @@ export const metadata: Metadata = buildPageMetadata({
   path: '/national-show/conferences',
 });
 
-// F9 (nos-design-system, M3): CategoryTicketsPage is owned by the sibling SAOC session and
-// is not edited here — `heroImage` is this route's only visual lever, and the component
-// already re-skins through the inherited nos-theme tokens with zero changes to its own file.
+// CategoryTicketsPage renders the NOS inner hero (nos-own-brand-chrome F2); `heroImage` is
+// this route's only visual lever.
 export default async function ConferencesTicketsPage() {
   return (
     <CategoryTicketsPage
       category="conference"
       heroImage="/images/orchid-violet.jpg"
-      eyebrow="2027 National Show"
       heading="Conferences"
       lede="Register for the SAOC Symposium, the WOSA Conference, or the combined SAOC/WOSA Joint track at the National Show."
       note={<ConfirmationBadge status="pending" />}

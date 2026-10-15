@@ -58,7 +58,6 @@ export default async function VendorPhotosPage({ searchParams }: VendorPhotosPag
     <>
       <NosHero
         image="/images/orchid-yellow.jpg"
-        eyebrow="National Show"
         title="Vendor Product Photos"
         lede="Upload the product photos for your 2027 SAOC National Show vendor registration."
         priority

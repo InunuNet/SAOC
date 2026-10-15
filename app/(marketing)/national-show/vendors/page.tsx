@@ -40,7 +40,6 @@ export default async function VendorsPage() {
     <>
       <NosHero
         image="/images/orchid-violet.jpg"
-        eyebrow="National Show"
         title="Exhibitors and Vendors"
         lede="Meet the specialist nurseries showcasing their finest orchids at the South African National Orchid Show."
         priority

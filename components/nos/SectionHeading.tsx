@@ -1,9 +1,10 @@
 // =============================================================
 // NOS — components/nos/SectionHeading.tsx
-// Server Component. Cormorant Garamond headline, sentence case (design
-// grammar — the serif carries the elegance; it does not need capitals).
-// Tracked uppercase caps are reserved for the optional Jost eyebrow, never
-// applied to the headline itself.
+// Server Component. Fraunces headline, sentence case (design grammar — the
+// serif carries the elegance; it does not need capitals). Tracked uppercase
+// caps are reserved for the optional Karla eyebrow, never applied to the
+// headline itself. An `h2` takes the scoped section-h2 size from nos-theme.css;
+// the clamp below sizes the other heading levels.
 // =============================================================
 
 import type { ComponentPropsWithoutRef, ElementType } from 'react';
@@ -36,7 +37,7 @@ export function SectionHeading({
       {eyebrow ? (
         <span
           className={[
-            'font-sans text-[12px] font-medium uppercase tracking-[0.3em]',
+            'font-sans text-[12px] font-semibold uppercase tracking-[0.14em]',
             // On-dark: olive on royal purple/night is 6.16–7.62:1 (golden table,
             // "olive's one legal text use"). On light: olive-deep is only legal at
             // ≥24px (3.78–4.30:1 at this 12px size — FAIL). Violet clears 6.07:1 on
@@ -50,7 +51,7 @@ export function SectionHeading({
       ) : null}
       <TitleTag
         className={[
-          'font-serif text-[clamp(28px,3.6vw,44px)] font-medium leading-[1.1]',
+          'nos-opsz-fluid font-serif text-[clamp(28px,3.6vw,44px)] leading-[1.1]',
           isDark ? 'text-ivory' : 'text-ink',
         ].join(' ')}
       >

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { PageHero } from '@/components/ui/PageHero';
+import { NosHero, type NosHeroImage } from '@/components/nos/NosHero';
 import { SalesClosedNotice, TicketPurchaseForm } from '@/components/tickets';
 import type { TicketTypeCardData } from '@/components/tickets';
 import { sanityFetch } from '@/sanity/lib/fetch';
@@ -72,8 +72,7 @@ const FALLBACK_SALES_CLOSED = 'Ticket sales are not yet open — check back soon
 
 export interface CategoryTicketsPageProps {
   category: ProvisionalProductCategory;
-  heroImage: string;
-  eyebrow: string;
+  heroImage: NosHeroImage;
   /**
    * Admission (`/tickets`) uses this as the FALLBACK for the `ticketsPage` singleton's
    * `title` field, matching the page's pre-existing behavior byte-for-byte. Conference and
@@ -93,7 +92,6 @@ export interface CategoryTicketsPageProps {
 export async function CategoryTicketsPage({
   category,
   heroImage,
-  eyebrow,
   heading,
   lede,
   note,
@@ -196,7 +194,7 @@ export async function CategoryTicketsPage({
 
   return (
     <>
-      <PageHero image={heroImage} eyebrow={eyebrow} heading={title} lede={intro} />
+      <NosHero image={heroImage} title={title} lede={intro} priority />
 
       <div className="mx-auto max-w-[720px] px-8 py-16 space-y-10">
         {note}
