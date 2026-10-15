@@ -3,7 +3,7 @@
 // Self-contained on purpose, so F1's _lib.mjs can change without moving these checks.
 //
 // NOS_AF_ROOT overrides the scanned tree, so each check can be run against an exported copy
-// of the base (047d610e at authoring, 5ae1f3cf since the rebase; or a deliberately wrong fix) to prove it fails there. Unset in the gate.
+// of the base (047d610e at authoring, 9e619821 since the rebase; or a deliberately wrong fix) to prove it fails there. Unset in the gate.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,10 +13,10 @@ export const worktreeRoot = path.resolve(path.dirname(fileURLToPath(import.meta.
 
 export const repoRoot = process.env.NOS_AF_ROOT ? path.resolve(process.env.NOS_AF_ROOT) : worktreeRoot;
 
-// Rebased 2026-10-15: the branch now sits on origin/main 5ae1f3cf (which contains the original
+// Rebased 2026-10-15: the branch now sits on origin/main 9e619821 (which contains the original
 // base 047d610e plus upstream F7 and the chrome lockup). Base-relative guards mean "this branch
 // did not change X", so they compare against the rebase base.
-export const BASE_SHA = '5ae1f3cf';
+export const BASE_SHA = '9e619821';
 export const NOS_ROUTE_DIR = 'app/(marketing)/national-show';
 export const NOS_TICKETS_PATH = '/national-show/tickets';
 
