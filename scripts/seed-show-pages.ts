@@ -546,21 +546,21 @@ async function runSourceRelink(client: SanityClient, apply: boolean): Promise<vo
     console.log('DRY RUN — no write issued');
     return;
   }
-  for (const d of decisions) {
-    if (d.action !== 'relink') continue;
-    try {
-      await client
-        .patch(d.docId)
-        .ifRevisionId(d.rev)
-        .set(relinkSetPayload(d))
-        .commit({ autoGenerateArrayKeys: false });
-      console.log(`APPLIED ${d.docId}/${d.sectionKey}: ${d.to}`);
-    } catch (err) {
-      console.log(`REFUSE ${d.docId}/${d.sectionKey}: revision changed or commit rejected`);
-      console.error('  commit rejected —', err instanceof Error ? err.message : err);
-      process.exitCode = 1;
-      return;
-    }
+  // One transaction: Sanity applies all three patches or none, so a revision that moved
+  // between preflight and commit can never leave production half-relinked.
+  const planned = decisions.filter((d): d is Extract<RelinkDecision, { action: 'relink' }> => d.action === 'relink');
+  let transaction = client.transaction();
+  for (const d of planned) {
+    transaction = transaction.patch(d.docId, (p) => p.ifRevisionId(d.rev).set(relinkSetPayload(d)));
+  }
+  try {
+    const result = await transaction.commit({ autoGenerateArrayKeys: false });
+    console.log(`TRANSACTION ${result.transactionId}: ${planned.map((d) => d.docId).join(', ')}`);
+    for (const d of planned) console.log(`APPLIED ${d.docId}/${d.sectionKey}: ${d.to}`);
+  } catch (err) {
+    console.log('REFUSE transaction: revision changed or commit rejected, nothing written');
+    console.error('  commit rejected —', err instanceof Error ? err.message : err);
+    process.exitCode = 1;
   }
 }
 
