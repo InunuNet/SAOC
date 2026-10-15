@@ -11,6 +11,7 @@
     "^components/societies/",
     "^components/home/",
     "^components/events/",
+    "^components/vendors/VendorRegisterForm\\.tsx$",
     "^components/judging/JudgesDirectory\\.tsx$",
     "^app/\\(marketing\\)/societies/\\[slug\\]/page\\.tsx$",
     "^app/\\(marketing\\)/contact/page\\.tsx$",
@@ -20,6 +21,7 @@
   ],
   "colourOrTypeLiteral": "#[0-9a-fA-F]{3,8}\\b|\\brgba?\\(|\\bhsla?\\(|\\boklch\\(|font-family\\s*:|@font-face|next/font",
   "literalCheckedPaths": "^(app|components)/.*\\.(css|tsx|ts)$",
+  "jsSmoothScroll": {"paths": "^(app|components|lib)/.*\\.(tsx|ts|js|jsx)$", "pattern": "behavior\\s*:\\s*['\"]smooth['\"]", "gate": "prefers-reduced-motion"},
   "tokenBlocksUnchanged": ["^:root\\s*\\{", "^@theme\\s*\\{"],
   "note": "Extra paths need an architect-approved allowlist amendment, justified by a failing A2 finding that names the element. NOS chrome (components/nos-chrome/* except ChromeFrame.tsx, components/nos/**, app/(marketing)/national-show/**) is owned by mission nos-own-brand-chrome and is never touched here."
 }

@@ -34,6 +34,8 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
 // body field the browser controls.
 const subscribeNever = () => () => {};
 
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
 export function VendorRegisterForm() {
   const [state, setState] = useState<VendorRegisterFormState>(INITIAL_STATE);
   const [hp, setHp] = useState(''); // honeypot -- never sent to the API
@@ -49,7 +51,11 @@ export function VendorRegisterForm() {
   // (or network failure) reads as "the button did nothing."
   useEffect(() => {
     if (descriptor && descriptor.kind !== 'success') {
-      bannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const reduceMotion = window.matchMedia(REDUCED_MOTION_QUERY).matches;
+      bannerRef.current?.scrollIntoView({
+        behavior: reduceMotion ? 'auto' : 'smooth',
+        block: 'center',
+      });
       bannerRef.current?.focus({ preventScroll: true });
     }
   }, [descriptor]);

@@ -4,7 +4,9 @@
 //  2. No added line in app/ or components/ introduces a colour literal, font-family, @font-face or next/font:
 //     colour and type come from existing tokens.
 //  3. The :root and @theme blocks of app/globals.css are byte-identical to BASE_REF.
-//  4. A @media (prefers-reduced-motion: reduce) block exists in app/globals.css (runtime effect: A3).
+//  4. JS smooth scrolling (behavior: 'smooth') in app/components/lib is only allowed in a file that also references
+//     prefers-reduced-motion (the CSS guard cannot stop scrollIntoView/scrollTo).
+//  5. A @media (prefers-reduced-motion: reduce) block exists in app/globals.css (runtime effect: A3).
 // Usage: node contracts/checks/launch-weekend/f1/check-e-scope.mjs
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -39,5 +41,15 @@ const baseCss = git('show', `${base}:app/globals.css`);
 const nowCss = readFileSync('app/globals.css', 'utf8');
 for (const opener of cfg.tokenBlocksUnchanged) if (block(baseCss, opener) !== block(nowCss, opener)) problems.push(`app/globals.css: block ${opener} differs from ${base}`);
 if (!/@media\s*\(\s*prefers-reduced-motion\s*:\s*reduce\s*\)/.test(nowCss)) problems.push('app/globals.css has no @media (prefers-reduced-motion: reduce) block');
+
+const js = cfg.jsSmoothScroll;
+const jsPaths = new RegExp(js.paths), jsPattern = new RegExp(js.pattern);
+const tracked = new Set([...git('ls-files').split('\n'), ...git('ls-files', '--others', '--exclude-standard').split('\n')].filter(Boolean));
+for (const f of tracked) {
+  if (!jsPaths.test(f)) continue;
+  let src;
+  try { src = readFileSync(f, 'utf8'); } catch { continue; }
+  if (jsPattern.test(src) && !src.includes(js.gate)) problems.push(`${f}: JS smooth scroll not gated on ${js.gate}`);
+}
 
 report(problems, `${changed.size} changed file(s) all in scope against ${base}; tokens untouched; no colour/type literals`);

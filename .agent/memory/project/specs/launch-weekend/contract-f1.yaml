@@ -35,5 +35,5 @@ assertions:
       command: node contracts/checks/launch-weekend/f1/check-d-identity.mjs
       timeout_seconds: 300
     - id: A5
-      description: Scope and token discipline against BASE_REF - changed files are all on the allowlist, no colour/font literal added under app or components, :root and @theme in globals.css byte-identical, and a prefers-reduced-motion reduce block exists.
+      description: Scope and token discipline against BASE_REF - changed files are all on the allowlist, no colour/font literal added under app or components, :root and @theme in globals.css byte-identical, a prefers-reduced-motion reduce block exists, and no JS smooth scroll (smooth behavior option) in app/components/lib sits in a file that does not reference prefers-reduced-motion.
       command: node contracts/checks/launch-weekend/f1/check-e-scope.mjs
