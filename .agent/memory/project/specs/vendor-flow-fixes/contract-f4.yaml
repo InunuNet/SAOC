@@ -1,0 +1,78 @@
+schema: athanor.contract/v1
+slug: vendor-flow-fixes
+goal: Make vendor stand Pay Now work through Ozow by replacing the 239-246 character,
+  token-bearing gateway return URLs (over Ozow's String(150) SuccessUrl/ErrorUrl/CancelUrl caps,
+  which lands the vendor on pay.ozow.com/request-error) with one short, token-free status URL
+  (/vsp?a=<attemptId>, 23 chars of path and query) keyed by the per-attempt id, backed by a server-side status page, and guard every outbound Ozow
+  field and the PayFast item_name against their documented caps so the same class of silent
+  gateway rejection fails loudly.
+created_at: '2026-10-14'
+autonomy: high
+features:
+  - id: F4
+    name: Short, token-free Ozow/PayFast return URLs with a server-derived stand-payment status page
+    status: pending
+goldens:
+  - .agent/memory/project/specs/vendor-flow-fixes/goldens/f4/f4-short-return-urls.golden.md
+  - .agent/memory/project/specs/vendor-flow-fixes/goldens/f4/ozow-field-caps.json
+  - .agent/memory/project/specs/vendor-flow-fixes/goldens/f4/return-state-matrix.json
+  - .agent/memory/project/specs/vendor-flow-fixes/goldens/f4/copy-strings.json
+assertions:
+  phase: 4
+  checks:
+    # None touches live Firestore, Sanity, Storage, the gateways or the network: pure units, the
+    # in-memory route-runner harness, and static greps. Run on the fix branch based on a42694dc.
+    - id: A1
+      description: URL builder - path /vsp, exactly one query key `a` (16 lowercase hex attempt
+        id), path+query 23 chars so any siteUrl up to 127 chars stays <= 150,
+        verified on four hosts up to 60 chars; no token, status flag, id or PII
+        shape; trailing slash tolerated; every malformed attempt id throws; pattern anchored.
+      command: node contracts/checks/vendor-stand-return-url/check-return-url-builder.mjs
+    - id: A2
+      description: Status resolver against the golden 9-case matrix - paid only from stored
+        status exactly `paid`; pending; failed/cancelled/missing/unknown/case-variant fall to
+        not-completed, never paid; loader failure yields neutral pending; malformed and non-string
+        attempt ids never reach the loader; smuggled status/paid/token inputs are inert.
+      command: node contracts/checks/vendor-stand-return-url/check-return-state.mjs
+    - id: A3
+      description: Real initiate route via the in-memory route-runner, both gateways, 60-char
+        SITE_URL - returnUrl, cancelUrl and notifyUrl <= 150, path /vsp; no part of the signed token, no
+        token=/paid=, no submission id or PII; returnUrl equals cancelUrl and carries only the
+        order's own attemptId; notify path, reference length and itemName prefix unchanged;
+        itemName <= 100 (PayFast item_name) for a 200+ char business name. FAILS on a42694dc.
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-stand-return-url/check-initiate-route-urls.mjs
+      timeout_seconds: 300
+    - id: A4
+      description: Every outbound Ozow field vs Ozow's caps (golden table covers all 17
+        outbound fields plus HashCheck; CancelUrl 150 on live-sandbox evidence) using the real
+        adapter for vendor-stand inputs on a 60-char host AND the real, untouched ticket checkout
+        URL templates on prod, beta and 60-char hosts (ticket checkout must not break);
+        CancelUrl of 51, 63, 70 and 150 chars passes, 151 throws naming CancelUrl, 151 and 150, a
+        151-char SuccessUrl throws; over-length NotifyUrl and
+        TransactionReference each make initiate throw without echoing the value; clampToMaxLength
+        drops a surrogate pair straddling the cut, keeps one ending at max, never exceeds max; golden and
+        lib/payments/gateway-field-limits.ts tables are identical. FAILS on a42694dc.
+      command: npx tsx contracts/checks/vendor-stand-return-url/check-ozow-field-limits.mjs
+      timeout_seconds: 300
+    - id: A5
+      description: Static wiring - /vsp alias is a thin (<=20 line) re-export of the status page with its own
+        literal force-dynamic, metadata (noIndex) re-exported, no duplicated logic; long status
+        path still exists; status page is force-dynamic, noIndex, takes only `a`, looks up
+        by attemptId with limit(1), verifies/mints no token, reads no submission, PII or amount,
+        writes nothing, never redirects; initiate route uses the builder and clamp; no returnUrl/
+        cancelUrl/successUrl/errorUrl/notifyUrl in app/ or lib/ embeds a token; adapter guard runs
+        before the hash and throws; new libs are pure; route registries updated (listed:false,
+        indexable:false); token, ITN routes, payment page, payfast
+        adapter byte-identical to base a42694dc (ticket checkout byte-identical too).
+      command: node contracts/checks/vendor-stand-return-url/check-static-wiring.mjs
+    - id: A6
+      description: Every new user-facing string in copy-strings.json is present verbatim in the
+        status page and the page contains no promotional wording. Cannot prove no other string
+        was added; diff review covers that.
+      command: node contracts/checks/vendor-stand-return-url/check-copy-strings.mjs
+    - id: A7
+      description: Type check passes with the new libs and page in the tree.
+      command: node_modules/.bin/tsc --noEmit
+      timeout_seconds: 600

@@ -1,0 +1,63 @@
+schema: athanor.contract/v1
+slug: vendor-flow-fixes
+goal: Make vendor stand Pay Now complete on this Ozow sandbox merchant account, which rejects
+  any amount above R0.01, by honouring the existing admin Ozow Sandbox Test Mode toggle in the stand
+  initiate route and settlement handler exactly as ticket checkout does - reusing the existing
+  helpers, storing expectedGatewayAmount on vendorStandOrders, validating the notified amount
+  against it, leaving PayFast untouched, and showing the existing TEST MODE banner.
+created_at: '2026-10-14'
+autonomy: high
+features:
+  - id: F5
+    name: Vendor stand payment honours the Ozow Sandbox Test Mode toggle (initiate, settlement, banner)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/vendor-flow-fixes/goldens/f5/f5-vendor-stand-sandbox-amount.golden.md
+  - .agent/memory/project/specs/vendor-flow-fixes/goldens/f5/amount-match-matrix.json
+assertions:
+  phase: 4
+  checks:
+    # Run on the branch carrying F4 (revert to 150) + F5, based on 24123b74. None touches live
+    # Firestore, Sanity, the gateways or the network: pure units, the in-memory route-runner, greps.
+    - id: B1
+      description: Pure amount guard vs the golden 14-case matrix AND parity with the ticket
+        path's notificationAmountMatches on every case - test-mode order accepts only the R0.01
+        notification and rejects the real amount; normal order accepts only the real amount and
+        rejects one cent; a doc with no expectedGatewayAmount (or null) falls back to amount;
+        non-finite values and null gross never match. FAILS on 24123b74 (module absent).
+      command: npx tsx contracts/checks/vendor-stand-sandbox-amount/check-amount-match.mjs
+      timeout_seconds: 300
+    - id: B2
+      description: Real initiate route (in-memory fixtures) - ozow plus flag on sends 0.01 and
+        stores expectedGatewayAmount 0.01 with order.amount and the displayed response amount still
+        the real price; flag off, flag doc missing (fail closed) and PayFast with flag on send the
+        real amount and store null (own property, never undefined); re-initiate after the flag
+        flips re-derives both. FAILS on 24123b74.
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-stand-sandbox-amount/check-initiate-test-mode.mjs
+      timeout_seconds: 300
+    - id: B3
+      description: Real ozow-itn / payfast-itn routes and settlement handler - a test-mode order
+        REJECTS a real-amount (and 2-cent) notification without spending a confirm call and
+        settles on 1 cent; a normal order rejects 1 cent and settles on its real amount; legacy
+        docs (field absent or null) behave as normal orders; a NaN expectation never settles; PayFast
+        with the flag on needs the real amount; receipts keep the real price. FAILS on 24123b74.
+      command: >-
+        NODE_OPTIONS="--require $PWD/contracts/harness/route-runner/preload.cjs" npx tsx
+        contracts/checks/vendor-stand-sandbox-amount/check-settlement-amounts.mjs
+      timeout_seconds: 300
+    - id: B4
+      description: Static wiring - existing helpers reused from @/lib/ozow-sandbox-test-mode, flag
+        read exactly once before the initiate transaction, expectedGatewayAmount derived from the
+        active gateway id and stored on the order, amount sent derived from the stored expectation,
+        response keeps the real amount, both settlement guards use vendorStandOrderAmountMatches
+        before confirm, receipts keep order.amount, no literal 0.01 outside the shared helper, helper
+        pure, form renders the existing OzowSandboxTestModeBanner with no second copy of its text,
+        banner text unchanged, ticket and PayFast files and the toggle helpers byte-identical to
+        base a42694dc.
+      command: node contracts/checks/vendor-stand-sandbox-amount/check-static-wiring.mjs
+    - id: B5
+      description: Type check passes with the helper, route, handler and form changes.
+      command: node_modules/.bin/tsc --noEmit
+      timeout_seconds: 600

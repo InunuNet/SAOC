@@ -1,0 +1,19 @@
+{
+  "_comment": "vendorStandOrderAmountMatches(order, grossAmountCents) golden matrix. Mirrors lib/tickets-notification.ts notificationAmountMatches (ozow-sandbox-toggle F1 section 3b): the expected amount is order.expectedGatewayAmount when it is a non-null value, otherwise order.amount; compared in integer cents; null or non-finite on either side never matches. Stand orders compare EXACT cents (the ticket path's tolerance of < 1 cent is the same thing on integers).",
+  "cases": [
+    { "id": "M1", "order": { "amount": 1450, "expectedGatewayAmount": null }, "gross": 145000, "expect": true, "note": "normal real-amount order" },
+    { "id": "M2", "order": { "amount": 1450, "expectedGatewayAmount": 0.01 }, "gross": 1, "expect": true, "note": "test-mode order: gateway was told R0.01" },
+    { "id": "M3", "order": { "amount": 1450, "expectedGatewayAmount": 0.01 }, "gross": 145000, "expect": false, "note": "test-mode order must REJECT a real-amount notification" },
+    { "id": "M4", "order": { "amount": 1450, "expectedGatewayAmount": null }, "gross": 1, "expect": false, "note": "real-amount order must REJECT a one-cent notification" },
+    { "id": "M5", "order": { "amount": 1450 }, "gross": 145000, "expect": true, "note": "pre-existing doc with no field falls back to amount" },
+    { "id": "M6", "order": { "amount": 1450 }, "gross": 1, "expect": false },
+    { "id": "M7", "order": { "amount": 1450, "expectedGatewayAmount": 0.01 }, "gross": null, "expect": false },
+    { "id": "M8", "order": { "amount": 1450, "expectedGatewayAmount": 0.01 }, "gross": 2, "expect": false, "note": "off by one cent" },
+    { "id": "M9", "order": { "amount": 1450, "expectedGatewayAmount": null }, "gross": 145001, "expect": false },
+    { "id": "M10", "order": { "amount": 1450, "expectedGatewayAmount": "NaN-sentinel" }, "gross": 1, "expect": false, "note": "non-finite expected never matches (NaN substituted by the check)" },
+    { "id": "M11", "order": { "expectedGatewayAmount": 0.01 }, "gross": 1, "expect": true, "note": "expected present, amount missing: expected wins (as tickets)" },
+    { "id": "M12", "order": { "amount": "NaN-sentinel", "expectedGatewayAmount": null }, "gross": 1, "expect": false, "note": "non-finite amount, no expected: never matches" },
+    { "id": "M13", "order": {}, "gross": 0, "expect": false, "note": "nothing to compare against" },
+    { "id": "M14", "order": { "amount": 1160, "expectedGatewayAmount": null }, "gross": 116000, "expect": true, "note": "the R1160.00 amount seen on beta" }
+  ]
+}

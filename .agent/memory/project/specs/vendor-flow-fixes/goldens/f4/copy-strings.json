@@ -1,0 +1,15 @@
+{
+  "_comment": "Every NEW user-facing string F4 introduces, for Brad's review. Whitespace is collapsed before matching. Reused wording: 'Stand Payment Confirmed' is VendorPaymentConfirmation.tsx's heading; 'Your stand payment for the SAOC National Show has been received.' is that email's sentence; 'Vendor Stand Payment' is the existing payment page title; 'Please contact SAOC if you believe this is an error.' is the payment page's sentence; 'Use the payment link in your email' refers to the VendorStandPaymentReady email's 'Select your stand and pay' link. Genuinely new sentences are the two pending / not-completed lines. No apostrophes, so no entity-escaping variants. Page shows no business name, amount, email or reference.",
+  "strings": [
+    { "file": "app/(marketing)/national-show/vendors/payment/status/page.tsx", "text": "Vendor Stand Payment Status — National Show" },
+    { "file": "app/(marketing)/national-show/vendors/payment/status/page.tsx", "text": "Payment status for your 2027 SAOC National Show vendor stand." },
+    { "file": "app/(marketing)/national-show/vendors/payment/status/page.tsx", "text": "title=\"Vendor Stand Payment\"" },
+    { "file": "app/(marketing)/national-show/vendors/payment/status/page.tsx", "text": "Stand Payment Confirmed" },
+    { "file": "app/(marketing)/national-show/vendors/payment/status/page.tsx", "text": "Your stand payment for the SAOC National Show has been received." },
+    { "file": "app/(marketing)/national-show/vendors/payment/status/page.tsx", "text": "Payment Not Yet Confirmed" },
+    { "file": "app/(marketing)/national-show/vendors/payment/status/page.tsx", "text": "Your payment has not been confirmed yet. This can take a few minutes. Please check again shortly." },
+    { "file": "app/(marketing)/national-show/vendors/payment/status/page.tsx", "text": "Payment Not Completed" },
+    { "file": "app/(marketing)/national-show/vendors/payment/status/page.tsx", "text": "Your payment was not completed. Use the payment link in your email to try again." },
+    { "file": "app/(marketing)/national-show/vendors/payment/status/page.tsx", "text": "Please contact SAOC if you believe this is an error." }
+  ]
+}

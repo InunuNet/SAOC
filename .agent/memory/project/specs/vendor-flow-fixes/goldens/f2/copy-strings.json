@@ -1,0 +1,93 @@
+{
+  "_comment": "Every NEW user-facing string F2 introduces, for Brad's review. Whitespace is collapsed before matching, so JSX line-wraps do not matter. Wording mirrors existing vendor-flow copy: the 'not complete until ... all 3 required product photos' sentence is VendorRegisterSuccess.tsx's; the 'no longer valid ... contact SAOC if you believe this is an error' sentence is the stand-payment page's; 'Product photo N' labels and the 'N/3 photos' count are the success page and admin table's. No apostrophes in any string, so no entity-escaping variants. Amendment (beta c11b51bd live-count defect): the upload-state strings moved into the client component components/vendors/VendorPhotoResumeUploads.tsx so the count and completion update after each upload; the page keeps the invalid, server-side complete, hero and metadata strings. NO new wording was introduced by the amendment: the completion sentence is the page's existing server-complete sentence, now also shown by the component the moment the third upload succeeds. (VendorRegisterSuccess's 'Your registration is complete.' tail is NOT adopted, to avoid new copy on this page.)",
+  "strings": [
+    {
+      "file": "emails/VendorRegistrationConfirmation.tsx",
+      "text": "Your registration is not complete until you have uploaded all 3 required product photos. You can do this at any time using the link below."
+    },
+    {
+      "file": "emails/VendorRegistrationConfirmation.tsx",
+      "text": "Upload your product photos"
+    },
+    {
+      "file": "app/(marketing)/national-show/vendors/photos/page.tsx",
+      "text": "Vendor Product Photos — National Show"
+    },
+    {
+      "file": "app/(marketing)/national-show/vendors/photos/page.tsx",
+      "text": "Upload the product photos for your 2027 SAOC National Show vendor registration."
+    },
+    {
+      "file": "app/(marketing)/national-show/vendors/photos/page.tsx",
+      "text": "title=\"Vendor Product Photos\""
+    },
+    {
+      "file": "app/(marketing)/national-show/vendors/photos/page.tsx",
+      "text": "This photo upload link is no longer valid. Please contact SAOC if you believe this is an error."
+    },
+    {
+      "file": "components/vendors/VendorPhotoResumeUploads.tsx",
+      "text": "Your registration is not complete until you have uploaded all 3 required product photos."
+    },
+    {
+      "file": "components/vendors/VendorPhotoResumeUploads.tsx",
+      "text": "of 3 product photos uploaded."
+    },
+    {
+      "file": "app/(marketing)/national-show/vendors/photos/page.tsx",
+      "text": "All 3 required product photos have been uploaded."
+    },
+    {
+      "file": "components/vendors/VendorPhotoResumeUploads.tsx",
+      "text": "Product photo 1"
+    },
+    {
+      "file": "components/vendors/VendorPhotoResumeUploads.tsx",
+      "text": "Product photo 2"
+    },
+    {
+      "file": "components/vendors/VendorPhotoResumeUploads.tsx",
+      "text": "Product photo 3"
+    },
+    {
+      "file": "components/admin/VendorPhotoLinkControl.tsx",
+      "text": "Get photo upload link"
+    },
+    {
+      "file": "components/admin/VendorPhotoLinkControl.tsx",
+      "text": "Copy photo upload link"
+    },
+    {
+      "file": "components/admin/VendorPhotoLinkControl.tsx",
+      "text": "Generating…"
+    },
+    {
+      "file": "components/admin/VendorPhotoLinkControl.tsx",
+      "text": "Get vendor photo upload link and copy it to the clipboard"
+    },
+    {
+      "file": "components/admin/VendorPhotoLinkControl.tsx",
+      "text": "Vendor photo upload link"
+    },
+    {
+      "file": "components/admin/VendorReviewTable.tsx",
+      "text": "Failed to generate the photo upload link."
+    },
+    {
+      "file": "app/api/admin/vendors/[id]/resend-photo-link/route.ts",
+      "text": "Cannot generate a photo upload link: this submission has been rejected."
+    },
+    {
+      "file": "app/api/admin/vendors/[id]/resend-photo-link/route.ts",
+      "text": "Cannot generate a photo upload link: this submission already has all 3 product photos."
+    },
+    {
+      "file": "app/api/admin/vendors/[id]/resend-photo-link/route.ts",
+      "text": "Cannot generate a photo upload link: VENDOR_STAND_PAYMENT_TOKEN_SECRET is not configured, so a new link could never be redeemed."
+    },
+    {
+      "file": "components/vendors/VendorPhotoResumeUploads.tsx",
+      "text": "All 3 required product photos have been uploaded."
+    }
+  ]
+}

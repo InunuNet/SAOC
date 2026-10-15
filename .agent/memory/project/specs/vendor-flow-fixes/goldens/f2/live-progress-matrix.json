@@ -1,0 +1,19 @@
+{
+  "_comment": "Golden for lib/vendor-photo-resume-progress.ts. computeResumeProgress({serverUploadedCount, missingSlots, uploadedNowSlots}) -> {uploadedCount, complete}; addUploadedSlot(prevSet, slot) -> NEW Set. Defect: page showed '0 of 3' / 'not complete' after 3 successful uploads until reload. uploadedNowSlots = slots whose onUploaded fired this session. Only slots that were in the seeded missingSlots count (a slot already counted server-side must not be double counted); duplicates are idempotent; the logo never counts.",
+  "progress": [
+    { "name": "fresh, nothing yet", "server": 0, "missing": ["product-photo-1","product-photo-2","product-photo-3"], "now": [], "expect": { "uploadedCount": 0, "complete": false } },
+    { "name": "first upload", "server": 0, "missing": ["product-photo-1","product-photo-2","product-photo-3"], "now": ["product-photo-2"], "expect": { "uploadedCount": 1, "complete": false } },
+    { "name": "second upload", "server": 0, "missing": ["product-photo-1","product-photo-2","product-photo-3"], "now": ["product-photo-2","product-photo-1"], "expect": { "uploadedCount": 2, "complete": false } },
+    { "name": "third upload completes without reload", "server": 0, "missing": ["product-photo-1","product-photo-2","product-photo-3"], "now": ["product-photo-2","product-photo-1","product-photo-3"], "expect": { "uploadedCount": 3, "complete": true } },
+    { "name": "seeded with 2 server-side, last one uploaded", "server": 2, "missing": ["product-photo-2"], "now": ["product-photo-2"], "expect": { "uploadedCount": 3, "complete": true } },
+    { "name": "seeded with 2 server-side, none yet", "server": 2, "missing": ["product-photo-2"], "now": [], "expect": { "uploadedCount": 2, "complete": false } },
+    { "name": "slot not in the seeded missing set is not double counted", "server": 2, "missing": ["product-photo-2"], "now": ["product-photo-1"], "expect": { "uploadedCount": 2, "complete": false } },
+    { "name": "logo never counts", "server": 0, "missing": ["product-photo-1","product-photo-2","product-photo-3"], "now": ["logo"], "expect": { "uploadedCount": 0, "complete": false } },
+    { "name": "never exceeds 3", "server": 3, "missing": ["product-photo-1"], "now": ["product-photo-1"], "expect": { "uploadedCount": 3, "complete": true } }
+  ],
+  "addSlot": [
+    { "name": "adds once", "prev": [], "slot": "product-photo-1", "expect": ["product-photo-1"] },
+    { "name": "idempotent", "prev": ["product-photo-1"], "slot": "product-photo-1", "expect": ["product-photo-1"] },
+    { "name": "accumulates", "prev": ["product-photo-1"], "slot": "product-photo-3", "expect": ["product-photo-1","product-photo-3"] }
+  ]
+}

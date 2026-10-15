@@ -1,0 +1,24 @@
+{
+  "_comment": "Golden for lib/vendor-photo-resume-gate.ts resolveVendorPhotoResumeState(). `token` names a token the check mints at runtime; `submission` is what the injected loadSubmission returns for the token's submission id (null = no such doc). Every non-null submission carries PII and storage paths on purpose: the resolved state must never echo them. Missing-slot rule mirrors VendorReviewTable.countUploadedProductPhotos: a slot counts as uploaded only when its Path field is a non-empty string.",
+  "submissionId": "FixtureSubmission0001",
+  "now": "2026-10-14T10:00:00.000Z",
+  "cases": [
+    { "name": "empty token", "token": "empty", "submission": null, "expect": { "kind": "invalid" }, "loaderCalls": 0 },
+    { "name": "malformed token", "token": "malformed", "submission": null, "expect": { "kind": "invalid" }, "loaderCalls": 0 },
+    { "name": "tampered signature", "token": "tampered-signature", "submission": { "status": "submitted" }, "expect": { "kind": "invalid" }, "loaderCalls": 0 },
+    { "name": "tampered payload (other submission id, original signature)", "token": "tampered-payload", "submission": { "status": "submitted" }, "expect": { "kind": "invalid" }, "loaderCalls": 0 },
+    { "name": "expired token", "token": "expired", "submission": { "status": "submitted" }, "expect": { "kind": "invalid" }, "loaderCalls": 0 },
+    { "name": "stand-payment token is not a photo-resume token", "token": "stand-payment-shaped", "submission": { "status": "approved" }, "expect": { "kind": "invalid" }, "loaderCalls": 0 },
+    { "name": "registration-session-shaped token is not a photo-resume token", "token": "registration-shaped", "submission": { "status": "submitted" }, "expect": { "kind": "invalid" }, "loaderCalls": 0 },
+    { "name": "secret unset", "token": "valid", "secret": null, "submission": { "status": "submitted" }, "expect": { "kind": "invalid" }, "loaderCalls": 0 },
+    { "name": "valid token, submission does not exist", "token": "valid", "submission": null, "expect": { "kind": "invalid" }, "loaderCalls": 1 },
+    { "name": "valid token, submission rejected", "token": "valid", "submission": { "status": "rejected" }, "expect": { "kind": "invalid" }, "loaderCalls": 1 },
+    { "name": "valid token, 0 photos, submitted", "token": "valid", "submission": { "status": "submitted" }, "expect": { "kind": "upload", "missingSlots": ["product-photo-1", "product-photo-2", "product-photo-3"], "uploadedCount": 0 }, "loaderCalls": 1 },
+    { "name": "valid token, only photo 2 present", "token": "valid", "submission": { "status": "under-review", "productPhoto2Path": "vendor-marketing/FixtureSubmission0001/product-photo-2.jpg" }, "expect": { "kind": "upload", "missingSlots": ["product-photo-1", "product-photo-3"], "uploadedCount": 1 }, "loaderCalls": 1 },
+    { "name": "valid token, approved with 2 photos", "token": "valid", "submission": { "status": "approved", "productPhoto1Path": "p1.jpg", "productPhoto3Path": "p3.jpg" }, "expect": { "kind": "upload", "missingSlots": ["product-photo-2"], "uploadedCount": 2 }, "loaderCalls": 1 },
+    { "name": "empty-string and non-string paths count as missing", "token": "valid", "submission": { "status": "submitted", "productPhoto1Path": "", "productPhoto2Path": 7, "productPhoto3Path": null }, "expect": { "kind": "upload", "missingSlots": ["product-photo-1", "product-photo-2", "product-photo-3"], "uploadedCount": 0 }, "loaderCalls": 1 },
+    { "name": "logo present does not count toward the 3 photos", "token": "valid", "submission": { "status": "submitted", "logoPath": "logo.png" }, "expect": { "kind": "upload", "missingSlots": ["product-photo-1", "product-photo-2", "product-photo-3"], "uploadedCount": 0 }, "loaderCalls": 1 },
+    { "name": "valid token, all 3 photos present", "token": "valid", "submission": { "status": "submitted", "productPhoto1Path": "p1.jpg", "productPhoto2Path": "p2.jpg", "productPhoto3Path": "p3.jpg" }, "expect": { "kind": "complete" }, "loaderCalls": 1 }
+  ],
+  "piiSentinels": ["Leak Test Nursery", "Leak Person", "leak@example.test", "+27 82 000 0000", "p1.jpg", "p2.jpg", "p3.jpg", "logo.png", "vendor-marketing/"]
+}

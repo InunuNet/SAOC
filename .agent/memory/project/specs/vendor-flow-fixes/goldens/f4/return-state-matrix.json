@@ -1,0 +1,22 @@
+{
+  "_comment": "resolveVendorStandReturnState({ attemptId, loadOrderStatus }) golden matrix. loadOrderStatus(attemptId) is injected and returns the stored vendorStandOrders.status string, or null/undefined when no order carries that attemptId, or throws. The resolver takes NO status from the request: the only inputs are the attempt id and the loader. Output is exactly one of paid | pending | not-completed.",
+  "validAttemptId": "0123456789abcdef",
+  "cases": [
+    { "id": "S1", "stored": "paid", "expect": "paid" },
+    { "id": "S2", "stored": "pending", "expect": "pending" },
+    { "id": "S3", "stored": "failed", "expect": "not-completed" },
+    { "id": "S4", "stored": "cancelled", "expect": "not-completed" },
+    { "id": "S5", "stored": null, "expect": "not-completed", "note": "no order carries this attempt id (unknown, or superseded by a newer attempt)" },
+    { "id": "S6", "stored": "refunded", "expect": "not-completed", "note": "unknown status string fails to the retry copy, never to paid" },
+    { "id": "S7", "stored": "PAID", "expect": "not-completed", "note": "case-sensitive, like mapStatus" },
+    { "id": "S8", "stored": " paid", "expect": "not-completed" },
+    { "id": "S9", "loaderThrows": true, "expect": "pending", "note": "a transient read failure must never tell a possibly-paid vendor to pay again; neutral copy" }
+  ],
+  "malformedAttemptIds": [
+    "", "short", "0123456789ABCDEF", "0123456789abcdeg", "0123456789abcdef0", "0123456789abcde",
+    "0123456789abcdef&paid=1", "../../etc/passwd", "0123456789abcde\n", "%30123456789abcdef",
+    "0123456789abcdef.eyJ1IjoiYSJ9"
+  ],
+  "malformedExpect": "not-completed",
+  "malformedLoaderCalls": 0
+}

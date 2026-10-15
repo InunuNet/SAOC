@@ -1,0 +1,43 @@
+{
+  "_comment": "Ozow's documented POST variables and their maximum lengths, transcribed from https://ozow.com/integrations (fetched via Alembic 2026-10-14). This table is the oracle for contracts/checks/vendor-stand-return-url/check-ozow-field-limits.mjs and must equal OZOW_FIELD_MAX_LENGTH in lib/payments/gateway-field-limits.ts. Every name in OZOW_OUTBOUND_FIELD_ORDER plus HashCheck MUST have an entry, so a field added later cannot escape the length check.",
+  "source": "https://ozow.com/integrations",
+  "fetchedAt": "2026-10-14",
+  "caps": {
+    "SiteCode": 50,
+    "CountryCode": 2,
+    "CurrencyCode": 3,
+    "Amount": 10,
+    "TransactionReference": 50,
+    "BankReference": 20,
+    "Optional1": 50,
+    "Optional2": 50,
+    "Optional3": 50,
+    "Optional4": 50,
+    "Optional5": 50,
+    "Customer": 100,
+    "CancelUrl": 150,
+    "ErrorUrl": 150,
+    "SuccessUrl": 150,
+    "NotifyUrl": 150,
+    "IsTest": 5,
+    "HashCheck": 250
+  },
+  "notes": {
+    "Amount": "Documented as Decimal (9,2): at most 9 digits plus the decimal point = 10 characters.",
+    "CancelUrl": "Ozow's main post-variable table prints CancelUrl as String (50) while ErrorUrl, SuccessUrl and NotifyUrl are String (150) and another table differs. DECISION (orchestrator, 2026-10-14): CancelUrl is enforced at 150. Evidence: learned.md and docs/payment-seam.md (F3/F4 live-purchase testing, line ~253) record live Ozow sandbox ticket purchases reaching `paid` while sending the 63-68 char ticket CancelUrl (https://saoc.co.za/tickets/cancelled?ref=SAOC-2027-xxxxxxxxxxxx; 68 on beta), so Ozow does not enforce 50. lib/payments/ozow.ts maps cancelUrl to both CancelUrl and ErrorUrl, so one URL feeds both. The /vsp alias is kept anyway: short URLs add margin and cost nothing."
+  },
+  "payfast": {
+    "source": "https://developers.payfast.co.za/docs",
+    "caps": {
+      "item_name": 100,
+      "m_payment_id": 100
+    },
+    "unbounded": [
+      "return_url",
+      "cancel_url",
+      "notify_url"
+    ]
+  },
+  "cancelUrlEnforcedCap": 150,
+  "cancelUrlDocumentedAlternateCap": 50
+}
