@@ -340,8 +340,8 @@ async function runGateChecks(): Promise<void> {
   }
   const { resolveNotice, resolvePageProvenance, FALLBACK_PLACEHOLDER_LABEL, FALLBACK_PLACEHOLDER_NOTICE, FALLBACK_RESEARCH_LABEL, FALLBACK_RESEARCH_NOTICE } = mod;
 
-  const realExistingFile = 'content/drive-source/National Show/2. About/2.1 About - 2027 National Show/v1.0/content.md';
-  const differentRealFile = 'content/drive-source/National Show/3. What to expect/3.1 Info - What to Expect/v1.0/content.md';
+  const realExistingFile = 'content/drive-recovered/02-about-the-national-show/about/content.md';
+  const differentRealFile = 'content/drive-recovered/03-what-to-expect/what-to-expect/content.md';
   const nonexistentFile = 'content/drive-source/does-not-exist.md';
 
   // A genuine verbatim sentence from realExistingFile's opening paragraph — used to
@@ -555,7 +555,7 @@ async function runGateChecks(): Promise<void> {
   const realAbsolutePathToRealFile = path.resolve(PROJECT_ROOT, realExistingFile);
   const g11Cases: Array<[string, boolean, boolean]> = [
     // [label, expectAccepted (notice === null), actualIsNull]
-    ['clean: repo-relative path under content/drive-source/, body actually linked', true, resolveNotice({ provenance: 'council-supplied', sourcePath: realExistingFile, body: linkedBody }) === null],
+    ['clean: repo-relative path under content/drive-recovered/, body actually linked', true, resolveNotice({ provenance: 'council-supplied', sourcePath: realExistingFile, body: linkedBody }) === null],
     ['reject: absolute path to a real in-repo file', false, resolveNotice({ provenance: 'council-supplied', sourcePath: realAbsolutePathToRealFile, body: linkedBody }) === null],
     ['reject: absolute path outside the repo', false, resolveNotice({ provenance: 'council-supplied', sourcePath: '/etc/hosts' }) === null],
     ['reject: traversal with no valid prefix at all', false, resolveNotice({ provenance: 'council-supplied', sourcePath: '../../../etc/hosts' }) === null],
@@ -741,9 +741,12 @@ const RECOVERY_ENTRIES = [
   { dir: '13-booking-tickets/vendor-form', specPage: 13 },
   { dir: '06-saoc-symposium/theme', specPage: 6 },
   { dir: '17-faq/faq', specPage: 17 },
+  { dir: '02-about-the-national-show/about', specPage: 2 },
+  { dir: '03-what-to-expect/what-to-expect', specPage: 3 },
+  { dir: '04-south-african-exhibitors/sa-exhibitors', specPage: 4 },
 ] as const;
 
-const RECOVERY_METHODS = ['manual-salvage-from-zip-headers', 'manual-docx-extract', 'unsafe-drive-path-workaround'];
+const RECOVERY_METHODS = ['manual-salvage-from-zip-headers', 'manual-docx-extract', 'unsafe-drive-path-workaround', 'drive-source-verbatim-extract'];
 
 type SupersessionStatus = 'match' | 'superseded' | 'no-manifest';
 
@@ -768,7 +771,7 @@ function runDriveRecoveryChecks(): void {
     const dir = path.join(base, entry.dir);
     return existsSync(path.join(dir, 'content.md')) && existsSync(path.join(dir, 'recovery.json'));
   });
-  check('D1', d1ok, 'all 4 content.md + recovery.json pairs exist', d1ok ? 'all present' : 'one or more missing');
+  check('D1', d1ok, `all ${RECOVERY_ENTRIES.length} content.md + recovery.json pairs exist`, d1ok ? 'all present' : 'one or more missing');
 
   // D2
   let d2ok = true;

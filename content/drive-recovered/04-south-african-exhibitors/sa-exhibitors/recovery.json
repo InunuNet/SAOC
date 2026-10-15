@@ -1,0 +1,10 @@
+{
+  "specPage": 4,
+  "sourceDrivePath": "National Show/4. South African Exhibitors/1.1 Exhibitors - South African Exhibitors/source.docx",
+  "sourceMd5": "a7495d2bdc8d6726da2f103065affcdf",
+  "method": "drive-source-verbatim-extract",
+  "recoveredAt": "2026-10-16",
+  "recoveredBy": "athanor:nos-provenance-fix",
+  "supersededBy": null,
+  "note": "Verbatim extract of content/drive-source/National Show/4. South African Exhibitors/1.1 Exhibitors - South African Exhibitors/v1.0/content.md: only the 3 sentences the published section body quotes, each byte-identical to the source and in source order, one per paragraph. Everything else in the source is omitted (public-repo condition, nos-provenance-fix F3). No .docx or manifest is copied."
+}

@@ -1,0 +1,10 @@
+{
+  "specPage": 2,
+  "sourceDrivePath": "National Show/2. About/2.1 About - 2027 National Show/source.docx",
+  "sourceMd5": "8b34c9c8820ec0a3bbe98f0ec773cb64",
+  "method": "drive-source-verbatim-extract",
+  "recoveredAt": "2026-10-16",
+  "recoveredBy": "athanor:nos-provenance-fix",
+  "supersededBy": null,
+  "note": "Verbatim extract of content/drive-source/National Show/2. About/2.1 About - 2027 National Show/v1.1/content.md: only the 11 sentences the published section body quotes, each byte-identical to the source and in source order, one per paragraph. Everything else in the source is omitted (public-repo condition, nos-provenance-fix F3). No .docx or manifest is copied."
+}

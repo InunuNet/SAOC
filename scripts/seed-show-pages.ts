@@ -31,6 +31,7 @@
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { SanityClient } from '@sanity/client';
 
@@ -155,6 +156,99 @@ export function decideSectionAction(
     sourcePath: existing.sourcePath ?? null,
   });
   return currentHash === seedHash ? 'update' : 'skip-edited';
+}
+
+// ---------------------------------------------------------------------------
+// Source relink (nos-provenance-fix F3) — repoints the sourcePath of three
+// council-supplied sections at their tracked recovered copy. Pure planning only;
+// normal seeding and Rule 1 above are untouched.
+// ---------------------------------------------------------------------------
+
+export interface SourceRelink {
+  docId: string;
+  sectionKey: string;
+  from: string;
+  to: string;
+}
+
+export const SOURCE_RELINKS: readonly SourceRelink[] = [
+  {
+    docId: 'showPage-02-about-the-national-show',
+    sectionKey: 'overview',
+    from: 'content/drive-source/National Show/2. About/2.1 About - 2027 National Show/v1.0/content.md',
+    to: 'content/drive-recovered/02-about-the-national-show/about/content.md',
+  },
+  {
+    docId: 'showPage-03-what-to-expect',
+    sectionKey: 'overview',
+    from: 'content/drive-source/National Show/3. What to expect/3.1 Info - What to Expect/v1.0/content.md',
+    to: 'content/drive-recovered/03-what-to-expect/what-to-expect/content.md',
+  },
+  {
+    docId: 'showPage-04-south-african-exhibitors',
+    sectionKey: 'overview',
+    from: 'content/drive-source/National Show/4. South African Exhibitors/1.1 Exhibitors - South African Exhibitors/v1.0/content.md',
+    to: 'content/drive-recovered/04-south-african-exhibitors/sa-exhibitors/content.md',
+  },
+];
+
+export type RelinkDecision =
+  | { action: 'relink'; docId: string; sectionKey: string; rev: string; setPath: string; from: string; to: string }
+  | { action: 'already-linked'; docId: string; sectionKey: string }
+  | { action: 'refuse'; docId: string; sectionKey: string; reason: string };
+
+/**
+ * Decides whether one relink is safe. Pure. Refuses on anything unexpected, including a live
+ * body that no longer links to the target (a Studio edit), so the relink can never make an
+ * edited body look sourced.
+ */
+export function planSourceRelink(
+  relink: SourceRelink,
+  doc: {
+    _id: string;
+    _rev: string;
+    sections?: Array<{
+      _key: string;
+      sectionKey: string;
+      provenance?: string | null;
+      sourcePath?: string | null;
+      body?: unknown;
+    }>;
+  } | null,
+  isLinked: (sourcePath: string, body: unknown) => boolean,
+): RelinkDecision {
+  const { docId, sectionKey, from, to } = relink;
+  const refuse = (reason: string): RelinkDecision => ({ action: 'refuse', docId, sectionKey, reason });
+
+  if (!doc) return refuse('document missing');
+  if (doc._id !== docId) return refuse(`document id ${doc._id} is not ${docId}`);
+  const matches = (doc.sections ?? []).filter((s) => s.sectionKey === sectionKey);
+  if (matches.length !== 1) return refuse(`expected exactly one section, found ${matches.length}`);
+  const section = matches[0];
+  if (section.provenance !== 'council-supplied') {
+    return refuse(`provenance is ${section.provenance ?? 'unset'}, not council-supplied`);
+  }
+  if (section.sourcePath === to) {
+    return isLinked(to, section.body)
+      ? { action: 'already-linked', docId, sectionKey }
+      : refuse('already on the target path but the live body does not link to it');
+  }
+  if (section.sourcePath !== from) return refuse(`unexpected current sourcePath ${section.sourcePath ?? 'unset'}`);
+  if (!isLinked(to, section.body)) return refuse('live body does not link to the target file');
+  return {
+    action: 'relink',
+    docId,
+    sectionKey,
+    rev: doc._rev,
+    setPath: `sections[_key=="${section._key}"].sourcePath`,
+    from,
+    to,
+  };
+}
+
+/** The write payload for a relink: exactly the one sourcePath field, nothing else. */
+export function relinkSetPayload(d: Extract<RelinkDecision, { action: 'relink' }>): Record<string, string> {
+  return { [d.setPath]: d.to };
 }
 
 // ---------------------------------------------------------------------------
@@ -427,8 +521,55 @@ async function reconcilePage(client: SanityClient, seedPage: SeedPage): Promise<
   return skips;
 }
 
+async function runSourceRelink(client: SanityClient, apply: boolean): Promise<void> {
+  // Dynamic import keeps module load credential-free and gives the real linkage oracle.
+  const { resolveNotice } = await import('@/lib/data/show-pages.ts');
+  const isLinked = (sourcePath: string, body: unknown): boolean =>
+    resolveNotice({ provenance: 'council-supplied', sourcePath, body }) === null;
+
+  const decisions: RelinkDecision[] = [];
+  for (const relink of SOURCE_RELINKS) {
+    const doc = await client.getDocument<ExistingShowPageDoc>(relink.docId);
+    const decision = planSourceRelink(relink, doc ?? null, isLinked);
+    decisions.push(decision);
+    const id = `${decision.docId}/${decision.sectionKey}`;
+    if (decision.action === 'relink') console.log(`RELINK ${id}: ${decision.from} -> ${decision.to} (rev ${decision.rev})`);
+    else if (decision.action === 'already-linked') console.log(`ALREADY ${id}: ${relink.to}`);
+    else console.log(`REFUSE ${id}: ${decision.reason}`);
+  }
+
+  if (decisions.some((d) => d.action === 'refuse')) {
+    process.exitCode = 1;
+    return;
+  }
+  if (!apply) {
+    console.log('DRY RUN — no write issued');
+    return;
+  }
+  for (const d of decisions) {
+    if (d.action !== 'relink') continue;
+    try {
+      await client
+        .patch(d.docId)
+        .ifRevisionId(d.rev)
+        .set(relinkSetPayload(d))
+        .commit({ autoGenerateArrayKeys: false });
+      console.log(`APPLIED ${d.docId}/${d.sectionKey}: ${d.to}`);
+    } catch (err) {
+      console.log(`REFUSE ${d.docId}/${d.sectionKey}: revision changed or commit rejected`);
+      console.error('  commit rejected —', err instanceof Error ? err.message : err);
+      process.exitCode = 1;
+      return;
+    }
+  }
+}
+
 async function main(): Promise<void> {
   const client = await getClient();
+  if (process.argv.includes('--relink-sources')) {
+    await runSourceRelink(client, process.argv.includes('--apply'));
+    return;
+  }
   const seedPages = loadSeedPages();
   console.log(`Seeding ${seedPages.length} show pages...`);
 
@@ -457,6 +598,21 @@ const isDirectlyExecuted =
 if (isDirectlyExecuted) {
   main().catch((err: unknown) => {
     console.error('Seed failed:', err);
+    process.exitCode = 1;
+  });
+}
+
+// The check above compares the percent-encoded import.meta.url with a raw argv path, so it
+// is false whenever the project path contains a space (as this one does). --relink-sources
+// compares decoded paths instead; normal seeding keeps the guard above exactly as it was.
+const isRelinkInvocation =
+  process.argv.includes('--relink-sources') &&
+  typeof process.argv[1] === 'string' &&
+  fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+
+if (isRelinkInvocation && !isDirectlyExecuted) {
+  main().catch((err: unknown) => {
+    console.error('Relink failed:', err);
     process.exitCode = 1;
   });
 }

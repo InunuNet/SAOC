@@ -1,0 +1,10 @@
+{
+  "specPage": 3,
+  "sourceDrivePath": "National Show/3. What to expect/3.1 Info - What to Expect/source.docx",
+  "sourceMd5": "5deb485875e5e4adb9e76c7a08bb3a89",
+  "method": "drive-source-verbatim-extract",
+  "recoveredAt": "2026-10-16",
+  "recoveredBy": "athanor:nos-provenance-fix",
+  "supersededBy": null,
+  "note": "Verbatim extract of content/drive-source/National Show/3. What to expect/3.1 Info - What to Expect/v1.1/content.md: only the 4 sentences the published section body quotes, each byte-identical to the source and in source order, one per paragraph. Everything else in the source is omitted (public-repo condition, nos-provenance-fix F3). No .docx or manifest is copied."
+}
