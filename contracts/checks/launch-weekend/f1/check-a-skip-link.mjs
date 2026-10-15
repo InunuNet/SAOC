@@ -86,7 +86,7 @@ for (const vp of VIEWPORTS) {
     if (!t.focusIsMain) bad(where, 'after Enter document.activeElement is not #main-content (focus did not move)');
     await page.keyboard.press('Tab');
     const next = await page.evaluate(() => { const a = document.activeElement; return { inMain: !!a && !!a.closest('main'), inChrome: !!a && !!a.closest('header,nav,footer'), tag: a ? a.tagName : null }; });
-    if (next.inChrome || (next.tag !== 'BODY' && !next.inMain)) bad(where, 'Tab after the skip jumped back into chrome instead of continuing from <main>');
+    if ((next.inChrome && !next.inMain) || (next.tag !== 'BODY' && !next.inMain)) bad(where, 'Tab after the skip jumped back into chrome instead of continuing from <main>');
 
     const hydration = errors.filter((e) => /hydrat|did not match|server rendered HTML/i.test(e));
     if (hydration.length) bad(where, `hydration error: ${hydration[0].slice(0, 160)}`);

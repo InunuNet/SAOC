@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Captures the identity and motion baselines from a server running the UNTOUCHED tree (origin/main chrome).
-// Run once, before @dev starts; never re-run after the implementation (it would bless the new look).
+// Run against a clean origin/main build; set GOLDEN_SOURCE_DIR to its worktree so the recorded SHA is that tree's.
+// Re-capture only when origin/main legitimately changes SAOC content, never from the implementation tree.
 // Usage: BASE_URL=http://localhost:3002 node contracts/checks/launch-weekend/f1/capture-golden.mjs
 import { writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -13,7 +14,7 @@ const societySlug = (await probe.page.evaluate(() => document.querySelector('a[h
 await probe.ctx.close();
 if (!societySlug) { console.error('no society link found on /societies'); process.exit(2); }
 
-const identity = { societySlug, capturedFrom: BASE, capturedAt: new Date().toISOString(), head: execFileSync('git', ['rev-parse', 'HEAD']).toString().trim(), pages: {} };
+const identity = { societySlug, capturedFrom: BASE, capturedAt: new Date().toISOString(), head: execFileSync('git', ['-C', process.env.GOLDEN_SOURCE_DIR || '.', 'rev-parse', 'HEAD']).toString().trim(), pages: {} };
 const motion = { capturedFrom: BASE, routes: {} };
 for (const vp of VIEWPORTS) {
   for (const route of SAOC_ROUTES) {

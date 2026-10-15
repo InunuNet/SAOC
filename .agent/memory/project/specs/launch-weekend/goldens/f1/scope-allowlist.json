@@ -11,6 +11,9 @@
     "^components/societies/",
     "^components/home/",
     "^components/events/",
+    "^components/judging/JudgesDirectory\\.tsx$",
+    "^app/\\(marketing\\)/societies/\\[slug\\]/page\\.tsx$",
+    "^app/\\(marketing\\)/contact/page\\.tsx$",
     "^contracts/checks/launch-weekend/",
     "^\\.agent/memory/project/specs/launch-weekend/",
     "^docs/launch-weekend-a11y\\.md$"

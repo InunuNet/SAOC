@@ -1,8 +1,8 @@
 {
-  "capturedFrom": "http://localhost:3002",
+  "capturedFrom": "http://localhost:3318",
   "routes": {
     "/": {
-      "transitioning": 63,
+      "transitioning": 59,
       "smooth": []
     },
     "/societies": {
@@ -14,15 +14,15 @@
       "smooth": []
     },
     "/events": {
-      "transitioning": 33,
+      "transitioning": 28,
       "smooth": []
     },
     "/national-show": {
-      "transitioning": 68,
+      "transitioning": 85,
       "smooth": []
     },
     "/national-show/tickets": {
-      "transitioning": 21,
+      "transitioning": 42,
       "smooth": []
     }
   }
