@@ -1,0 +1,27 @@
+{
+  "note": "NOS audit P1 figures as reported for the approved brief; before/after reference only. The checks measure live.",
+  "base": "d2071be5",
+  "minTargetPx": 44,
+  "viewports": [390, 1440],
+  "apply": {
+    "path": "/national-show/vendors/apply",
+    "checkboxCount": 14,
+    "checkboxVisualBoxPx": [16, 16],
+    "hitTarget": "input.labels[0]",
+    "requiredLabelBoxPx": "w >= 44 and h >= 44"
+  },
+  "register": {
+    "path": "/national-show/vendors/register",
+    "continueButtonPxOnBase": [96, 42],
+    "requiredPx": "w >= 44 and h >= 44"
+  },
+  "payment": {
+    "path": "/national-show/vendors/payment",
+    "invalidSentence": "This payment link is no longer valid. Please contact SAOC if you believe this is an error.",
+    "allowedContactHrefs": ["/contact", "mailto:info@saoc.co.za"]
+  },
+  "label": {
+    "new": "Exhibitors and Vendors",
+    "replaces": ["Exhibiting Nurseries", "Trade Vendors"]
+  }
+}

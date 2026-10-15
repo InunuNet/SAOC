@@ -316,7 +316,7 @@ const NOS_GROUPS: readonly { id: string; label: string; members: readonly NosHub
       { href: '/national-show/sa-exhibitors', label: 'South African Exhibitors' },
       { href: '/national-show/international-guests', label: 'International Guests' },
       { href: '/national-show/exhibitors', label: 'Exhibitor Entry Guide' },
-      { href: '/national-show/vendors', label: 'Trade Vendors' },
+      { href: '/national-show/vendors', label: 'Exhibitors and Vendors' },
     ],
   },
   {

@@ -280,6 +280,29 @@ the first end-to-end proof against Ozow's sandbox.
 
 ---
 
+## Vendor page label, tap targets and payment link (F7)
+
+- **Label.** The vendors page is now called "Exhibitors and Vendors", on the page title and h1 and at
+  every other place the old label appeared: the show hub list (`national-show/page.tsx`),
+  `ShowSectionNav`, `nav-config`, `content/national-show-routes.json` and
+  `scripts/generate-nos-route-manifest.ts`. The heading covers exhibitors only, vendors only (for
+  example food), or both (for example nurseries), as Brad directed.
+- **Tap targets.** `VendorCheckboxGroupField` gives its label `min-h-11` (44px). The input stays
+  16x16 and gets `shrink-0`. Before this, a wrapping label squeezed one input to 15x16 at 1440px.
+  The register Continue button gets `min-h-11` (42px to 44px), as the golden prescribes. The handoff's
+  primary button is taller than 44px, so this moves toward the design. The apply Submit button (about
+  42px) is out of scope and is a follow-up candidate.
+- **Codex QA.** The Codex review flagged the 2px growth on Continue. It is overridden because the
+  golden prescribes the 44px height.
+- **Payment invalid-link state.** The existing words "contact SAOC" are now a link to `/contact`. The
+  sentence is unchanged.
+- **Apply form.** It has 14 categories, from Lee-Ann's source of 26 August.
+
+Checks: `contracts/checks/vendor-p1-targets/`. The A5 and A6 checks run with
+`VENDOR_P1_PORT=3517 SITE_PUBLIC_LAUNCH=true`. Port 3417 may be held by another server that returns 401.
+
+---
+
 ## Known limits of these fixes
 
 - The contract checks prove static wiring and behaviour against fakes. None of them calls a gateway,

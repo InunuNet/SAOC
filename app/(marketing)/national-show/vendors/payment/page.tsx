@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
@@ -69,8 +70,11 @@ export default async function VendorStandPaymentPage({ searchParams }: VendorSta
           <VendorStandPaymentForm token={token} businessName={businessName} />
         ) : (
           <p className="font-sans text-[15px] text-ink">
-            This payment link is no longer valid. Please contact SAOC if you believe this is an
-            error.
+            This payment link is no longer valid. Please{' '}
+            <Link href="/contact" className="text-ink underline underline-offset-2">
+              contact SAOC
+            </Link>{' '}
+            if you believe this is an error.
           </p>
         )}
       </div>

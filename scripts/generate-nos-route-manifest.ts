@@ -272,7 +272,7 @@ const ROUTE_TABLE: RouteRow[] = [
   },
   {
     slug: '/national-show/vendors',
-    label: 'Trade Vendors',
+    label: 'Exhibitors and Vendors',
     group: 'exhibit-trade',
     parent: '/national-show',
     order: 4,

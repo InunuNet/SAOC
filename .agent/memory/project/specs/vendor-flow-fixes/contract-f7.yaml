@@ -1,0 +1,54 @@
+schema: athanor.contract/v1
+slug: vendor-flow-fixes
+goal: Rename the /national-show/vendors label to "Exhibitors and Vendors" everywhere it appears, bring
+  the /vendors/apply checkboxes and the /vendors/register Continue button to a 44x44 CSS px hit
+  target without enlarging their visual box, and give the /vendors/payment invalid-link state a
+  contact action built from existing copy and the existing link pattern only.
+created_at: '2026-10-15'
+autonomy: high
+features:
+  - id: F7
+    name: Vendor P1s - "Exhibitors and Vendors" label, 44px tap targets, payment invalid-link contact action
+    status: pending
+goldens:
+  - .agent/memory/project/specs/vendor-flow-fixes/goldens/f7/f7-vendor-p1-labels-targets.golden.md
+  - .agent/memory/project/specs/vendor-flow-fixes/goldens/f7/measurements.base.json
+assertions:
+  phase: 4
+  checks:
+    # Base integ/vendor-flow-fixes d2071be5, branch fix/vendor-p1-labels-targets. Run from the
+    # worktree root. A1/A2 are static; A5-A6 need the local build from A4 and drive real Chromium
+    # against `next start` (no deployed site, no Firestore, no gateway, no network).
+    - id: A1
+      description: Label strings - "Exhibitors and Vendors" at all seven sites (vendors page title
+        and h1, show hub list, ShowSectionNav, nav-config, content manifest, manifest generator);
+        no "Exhibiting Nurseries" or "Trade Vendors" left in shipped source; the nav hint and
+        descriptor unchanged; every changed line is the old line with only the label swapped.
+        FAILS on d2071be5.
+      command: node contracts/checks/vendor-p1-targets/check-labels-static.mjs
+    - id: A2
+      description: Scope - the diff against base touches only the label files, the three vendor
+        form components, the payment page, the check dir, docs and memory. FAILS on any stray file.
+      command: node contracts/checks/vendor-p1-targets/check-scope.mjs
+    - id: A3
+      description: Type check passes with the form-component and payment-page changes.
+      command: node_modules/.bin/tsc --noEmit
+      timeout_seconds: 600
+    - id: A4
+      description: Local production build succeeds (the browser checks serve it with `next start`).
+      command: node_modules/.bin/next build
+      timeout_seconds: 900
+    - id: A5
+      description: Tap targets in real Chromium at 390 and 1440 on the local build, after
+        hydration and animations settle - 14 apply checkboxes each have an associated label box
+        >= 44x44 that is what a pointer lands on and whose padding strip toggles the checkbox
+        when really clicked, with the input still 16x16; the register Continue button is
+        >= 44x44 and uncovered. FAILS on d2071be5 (label ~15px tall, Continue 42px tall).
+      command: VENDOR_P1_PORT=3517 SITE_PUBLIC_LAUNCH=true npx tsx contracts/checks/vendor-p1-targets/check-target-sizes.mjs
+      timeout_seconds: 600
+    - id: A6
+      description: Payment invalid-link state at 390 and 1440, for no token and a garbage token -
+        the existing sentence is still word for word present, and a visible link to /contact or
+        mailto:info@saoc.co.za sits in the same block. FAILS on d2071be5 (no link).
+      command: VENDOR_P1_PORT=3517 SITE_PUBLIC_LAUNCH=true npx tsx contracts/checks/vendor-p1-targets/check-payment-invalid-contact.mjs
+      timeout_seconds: 600
