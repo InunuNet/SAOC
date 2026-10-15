@@ -3,9 +3,9 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
 import { NosHero } from '@/components/nos/NosHero';
-import { VendorMarketingUploadField } from '@/components/vendors/VendorMarketingUploadField';
+import { VendorPhotoResumeUploads } from '@/components/vendors/VendorPhotoResumeUploads';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
-import { resolveVendorPhotoResumeState, type ProductPhotoSlot } from '@/lib/vendor-photo-resume-gate';
+import { resolveVendorPhotoResumeState } from '@/lib/vendor-photo-resume-gate';
 import { buildPageMetadata } from '@/lib/seo';
 
 /**
@@ -25,12 +25,6 @@ export const metadata: Metadata = buildPageMetadata({
 
 // Reads Firestore at request time -- must never be prerendered at build time.
 export const dynamic = 'force-dynamic';
-
-const SLOT_LABELS: Record<ProductPhotoSlot, string> = {
-  'product-photo-1': 'Product photo 1',
-  'product-photo-2': 'Product photo 2',
-  'product-photo-3': 'Product photo 3',
-};
 
 interface VendorPhotosPageProps {
   searchParams: Promise<{ token?: string | string[] }>;
@@ -83,23 +77,11 @@ export default async function VendorPhotosPage({ searchParams }: VendorPhotosPag
           </p>
         )}
         {state.kind === 'upload' && (
-          <div className="space-y-4">
-            <p className="font-sans text-[14px] text-ink/80">
-              Your registration is not complete until you have uploaded all 3 required product
-              photos.
-            </p>
-            <p className="font-sans text-[14px] text-ink/80">
-              {state.uploadedCount} of 3 product photos uploaded.
-            </p>
-            {state.missingSlots.map((slot) => (
-              <VendorMarketingUploadField
-                key={slot}
-                submissionId={state.vendorSubmissionId}
-                assetSlot={slot}
-                label={SLOT_LABELS[slot]}
-              />
-            ))}
-          </div>
+          <VendorPhotoResumeUploads
+            submissionId={state.vendorSubmissionId}
+            missingSlots={state.missingSlots}
+            serverUploadedCount={state.uploadedCount}
+          />
         )}
       </div>
     </>
