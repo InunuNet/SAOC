@@ -1,5 +1,5 @@
 // Breadcrumb component available from @/components/chrome for interior pages
-import { UtilityBar, Header, Footer } from '@/components/chrome';
+import { SkipLink, UtilityBar, Header, Footer } from '@/components/chrome';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery } from '@/sanity/queries';
 import type { ShowIdentity } from '@/types';
@@ -14,10 +14,13 @@ export default async function MarketingLayout({ children }: { children: React.Re
 
   return (
     <>
+      <SkipLink />
       <UtilityBar show={show} />
       <Header show={show} />
       {/* Breadcrumb injected by individual page layouts in M4+ */}
-      <main>{children}</main>
+      <main id="main-content" tabIndex={-1}>
+        {children}
+      </main>
       <Footer />
     </>
   );

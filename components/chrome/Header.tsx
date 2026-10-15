@@ -139,7 +139,7 @@ export function Header({ show }: HeaderProps = {}) {
                   key={n.id}
                   href={n.href}
                   className={[
-                    'relative rounded-sm font-sans text-[14px] transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment',
+                    'relative inline-flex min-h-6 items-center rounded-sm font-sans text-[14px] transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment',
                     n.quiet ? 'text-muted' : 'text-ink',
                     active ? 'text-primary' : '',
                   ].join(' ')}

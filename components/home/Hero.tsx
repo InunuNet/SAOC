@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import type { SanityImageSource } from '@sanity/image-url';
 
 import { heroImages as staticHeroImages } from '@/lib/data';
@@ -11,6 +11,13 @@ import { urlFor } from '@/sanity/lib/image';
 import type { ShowIdentity } from '@/types';
 
 const CAROUSEL_INTERVAL_MS = 5500;
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
+function subscribeReducedMotion(onChange: () => void): () => void {
+  const query = window.matchMedia(REDUCED_MOTION_QUERY);
+  query.addEventListener('change', onChange);
+  return () => query.removeEventListener('change', onChange);
+}
 
 interface HeroSlide {
   src: string;
@@ -38,12 +45,20 @@ export function Hero({ images, show }: HeroProps) {
 
   const [activeIdx, setActiveIdx] = useState(0);
 
+  // WCAG 2.2.2: autoplay stops under prefers-reduced-motion, and follows live changes.
+  const reduceMotion = useSyncExternalStore(
+    subscribeReducedMotion,
+    () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
+    () => false,
+  );
+
   useEffect(() => {
+    if (reduceMotion) return undefined;
     const timer = setInterval(() => {
       setActiveIdx((prev) => (prev + 1) % (slides.length || 1));
     }, CAROUSEL_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [slides.length]);
+  }, [slides.length, reduceMotion]);
 
   return (
     <section className="relative min-h-[720px] flex items-center overflow-hidden bg-primary on-dark">
@@ -108,7 +123,7 @@ export function Hero({ images, show }: HeroProps) {
         </div>
 
         {/* Dot indicators */}
-        <div className="flex gap-3 justify-start" role="tablist" aria-label="Carousel navigation">
+        <div className="flex gap-1 justify-start" role="tablist" aria-label="Carousel navigation">
           {slides.map((slide, i) => (
             <button
               key={slide.key}
@@ -116,12 +131,18 @@ export function Hero({ images, show }: HeroProps) {
               aria-label={`Image ${i + 1}`}
               aria-selected={activeIdx === i}
               onClick={() => setActiveIdx(i)}
-              className="h-[2px] transition-all duration-300"
-              style={{
-                width: activeIdx === i ? '24px' : '16px',
-                backgroundColor: activeIdx === i ? 'var(--accent)' : 'rgba(244, 243, 236, 0.40)',
-              }}
-            />
+              className="-my-[11px] flex h-6 items-center px-1"
+            >
+              {/* Hit area is the 24px-tall button; the painted bar stays 2px. */}
+              <span
+                aria-hidden="true"
+                className={[
+                  'block h-[2px] transition-all duration-300',
+                  activeIdx === i ? 'bg-accent' : 'bg-ivory/40',
+                ].join(' ')}
+                style={{ width: activeIdx === i ? '24px' : '16px' }}
+              />
+            </button>
           ))}
         </div>
       </div>

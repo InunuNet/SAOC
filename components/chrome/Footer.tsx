@@ -58,7 +58,7 @@ export function Footer() {
               <li key={n.id}>
                 <Link
                   href={n.href}
-                  className="font-sans text-[14px] text-ivory/80 hover:text-ivory transition-colors duration-150"
+                  className="inline-flex min-h-6 items-center font-sans text-[14px] text-ivory/80 hover:text-ivory transition-colors duration-150"
                 >
                   {n.label}
                 </Link>
@@ -112,7 +112,7 @@ export function Footer() {
               href="https://wildorchids.co.za"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-sans text-[14px] text-ivory/80 hover:text-ivory transition-colors duration-150"
+              className="inline-flex min-h-6 items-center font-sans text-[14px] text-ivory/80 hover:text-ivory transition-colors duration-150"
             >
               Visit Wild Orchids of Southern Africa →
             </a>
@@ -129,31 +129,31 @@ export function Footer() {
           <div className="flex items-center gap-4 flex-wrap">
             <Link
               href="/privacy"
-              className="font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
+              className="inline-flex min-h-6 items-center font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
             >
               Privacy
             </Link>
             <Link
               href="/terms"
-              className="font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
+              className="inline-flex min-h-6 items-center font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
             >
               Terms
             </Link>
             <Link
               href="/refunds"
-              className="font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
+              className="inline-flex min-h-6 items-center font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
             >
               Refunds
             </Link>
             <Link
               href="/constitution"
-              className="font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
+              className="inline-flex min-h-6 items-center font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
             >
               Constitution
             </Link>
             <Link
               href="/media-kit"
-              className="font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
+              className="inline-flex min-h-6 items-center font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
             >
               Media kit
             </Link>

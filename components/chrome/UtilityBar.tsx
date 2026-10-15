@@ -31,7 +31,7 @@ export function UtilityBar({ show }: UtilityBarProps) {
         {/* Left: contact email */}
         <a
           href="mailto:info@saoc.co.za"
-          className="flex items-center gap-1.5 font-mono text-[14px] text-ivory opacity-90 hover:opacity-100 transition-colors duration-150"
+          className="flex min-h-6 items-center gap-1.5 font-mono text-[14px] text-ivory opacity-90 hover:opacity-100 transition-colors duration-150"
         >
           <svg
             width="14"

@@ -34,7 +34,7 @@ export function SocietyEvents({ societyName, events }: SocietyEventsProps) {
             {societyName} has no upcoming events listed yet. Check the full SAOC calendar for
             shows and workshops across every affiliated society.
           </p>
-          <Link href="/events" className="inline-link font-sans text-[14px] font-medium text-ink">
+          <Link href="/events" className="inline-link inline-flex min-h-6 items-center font-sans text-[14px] font-medium text-ink">
             View the SAOC events calendar →
           </Link>
         </div>
