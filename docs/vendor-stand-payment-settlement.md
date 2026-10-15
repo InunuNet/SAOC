@@ -322,7 +322,6 @@ Carried forward honestly from the golden READMEs — do not treat any of these a
   means F1's gate has never been exercised against a real, live Ozow confirm response in this
   environment, only against the fixture and (for PayFast, the active gateway) whatever
   `lib/payments/payfast.ts`'s own confirm implementation does against the real sandbox.
-- **Ozow sandbox settlement on beta is open (`vendor-flow-fixes`).** Ozow returns `Complete` with
-  `IsTest`, but the order stays `pending`. The cause is undiagnosed. The candidates are a missing
-  notification, a signature rejection, or a confirm lookup failing on `IsTest`. See
-  [vendor-flow-fixes.md](vendor-flow-fixes.md).
+- **Ozow sandbox settlement on beta was broken and is now fixed (`vendor-flow-fixes`).** The confirm
+  lookup omitted `IsTest=true`, and the status response's camelCase keys were read as PascalCase. The
+  order now settles on beta. See [vendor-flow-fixes.md](vendor-flow-fixes.md).

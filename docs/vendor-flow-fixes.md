@@ -252,18 +252,31 @@ Checks: `contracts/checks/vendor-register-p2-f1/check-completion-state.mjs` and
 
 ---
 
-## Open: Ozow sandbox settlement on beta
+## Resolved: Ozow sandbox settlement on beta
 
-**Not resolved.** On beta, an Ozow sandbox payment returns `Complete` with `IsTest` set, but the
-`vendorStandOrders` document stays `pending`. The cause has not been diagnosed. The candidates are:
+On beta, an Ozow sandbox payment returned `Complete` with `IsTest` set, but the `vendorStandOrders`
+document stayed `pending`. Two causes were found from the beta logs and a live API probe. Both are
+fixed on `integ/vendor-flow-fixes` (tip `4a57bb21`).
 
-1. Ozow's notification (ITN) does not reach `/api/vendors/stand-payment/ozow-itn`.
-2. The notification's hash check is rejected.
-3. The confirm lookup (`GetTransactionByReference`) fails when `IsTest` is set.
+1. **The status lookup omitted `IsTest=true`.** `GetTransactionByReference` was called without the
+   parameter, because `raw.IsTest === 'true'` was a strict comparison. Ozow returns 404 for test
+   transactions without it. Fixed in `3ef1e100` with a case-insensitive comparison.
+2. **Ozow's status API returns camelCase keys.** The response carries `transactionReference`,
+   `transactionId`, `status` and `amount`, but the code read PascalCase. Fixed in `b7f76850`,
+   `f7db03b9`, `3fd1f84c` and `4a57bb21`. A `statusField` accessor reads camelCase first and falls back
+   to PascalCase. If a row that matches the reference carries the same key in both casings with
+   different values, the whole lookup fails closed.
 
-The logs needed to tell these apart are pending. Until they are read, do not treat F5 as proven on
-beta. The F5 checks prove the amount logic against fixtures and the in-memory route runner. They do not
-call Ozow.
+Verified end to end on beta at 2026-10-15 15:10Z:
+
+- the order moved to `paid`, with gateway `ozow` and amount `0.01`;
+- `/vsp` showed "Stand Payment Confirmed";
+- the admin view showed Paid;
+- the vendor email "Your SAOC National Show stand payment is confirmed" and the admin email "Vendor
+  stand payment received — SAOC" both arrived.
+
+The F5 checks prove the amount logic against fixtures and the in-memory route runner. The beta run is
+the first end-to-end proof against Ozow's sandbox.
 
 ---
 
