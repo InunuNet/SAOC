@@ -37,7 +37,7 @@ export function DayQuantityPicker({
                 onClick={() => onQuantityChange(day, Math.max(0, quantity - 1))}
                 disabled={disabled}
                 aria-label={`Decrease quantity for ${day}`}
-                className="flex h-8 w-8 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
+                className="flex h-11 w-11 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
               >
                 −
               </button>
@@ -54,14 +54,14 @@ export function DayQuantityPicker({
                   const parsed = Number.parseInt(e.target.value, 10);
                   onQuantityChange(day, Number.isNaN(parsed) ? 0 : Math.max(0, parsed));
                 }}
-                className="w-12 rounded-sm border border-rule bg-ivory px-1 py-1 text-center font-sans text-[15px] text-ink disabled:opacity-60"
+                className="h-11 w-12 rounded-sm border border-rule bg-ivory px-1 py-1 text-center font-sans text-[15px] text-ink disabled:opacity-60"
               />
               <button
                 type="button"
                 onClick={() => onQuantityChange(day, quantity + 1)}
                 disabled={disabled}
                 aria-label={`Increase quantity for ${day}`}
-                className="flex h-8 w-8 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
+                className="flex h-11 w-11 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
               >
                 +
               </button>

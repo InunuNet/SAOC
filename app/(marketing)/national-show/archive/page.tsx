@@ -16,6 +16,7 @@ import { Badge } from '@/components/nos/Badge';
 import { Button } from '@/components/nos/Button';
 import { CtaBand } from '@/components/nos/CtaBand';
 import { NOS_HERO_IMAGES, NosHero, type NosHeroImage } from '@/components/nos/NosHero';
+import { ConfirmationBadge } from '@/components/show';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -137,22 +138,25 @@ export default async function ShowArchivePage() {
                   </div>
 
                   {(show.entries || show.exhibitors || show.visitors || show.trophies) && (
-                    // tone="purple" not "olive": olive-deep is 4.30:1 on white, which fails
-                    // body-text contrast at this pill's 11px size (needs 4.5:1) — see
-                    // nos-contrast.golden.md note 1. Olive text is legal only on dark grounds
-                    // or as large (≥24px) text.
-                    <div className="flex flex-wrap gap-2 border-t border-rule pt-3">
-                      {show.entries && (
-                        <Badge tone="purple">{show.entries.toLocaleString()} entries</Badge>
-                      )}
-                      {show.exhibitors && (
-                        <Badge tone="purple">{show.exhibitors.toLocaleString()} exhibitors</Badge>
-                      )}
-                      {show.visitors && (
-                        <Badge tone="purple">{show.visitors.toLocaleString()} visitors</Badge>
-                      )}
-                      {show.trophies && <Badge tone="purple">{show.trophies} trophies</Badge>}
-                    </div>
+                    <>
+                      {/* tone="purple" not "olive": olive-deep is 4.30:1 on white, which fails
+                          body-text contrast at this pill's 11px size (needs 4.5:1) — see
+                          nos-contrast.golden.md note 1. Olive text is legal only on dark grounds
+                          or as large (≥24px) text. */}
+                      <div className="flex flex-wrap gap-2 border-t border-rule pt-3">
+                        {show.entries && (
+                          <Badge tone="purple">{show.entries.toLocaleString()} entries</Badge>
+                        )}
+                        {show.exhibitors && (
+                          <Badge tone="purple">{show.exhibitors.toLocaleString()} exhibitors</Badge>
+                        )}
+                        {show.visitors && (
+                          <Badge tone="purple">{show.visitors.toLocaleString()} visitors</Badge>
+                        )}
+                        {show.trophies && <Badge tone="purple">{show.trophies} trophies</Badge>}
+                      </div>
+                      <ConfirmationBadge status="pending" />
+                    </>
                   )}
 
                   {show.note && (

@@ -6,6 +6,7 @@ import { Button } from '@/components/nos/Button';
 import { Card } from '@/components/nos/Card';
 import { NosHero } from '@/components/nos/NosHero';
 import { resolveEffectivePrice } from '@/lib/checkout-reservation';
+import { filterPubliclyListableTicketTypes } from '@/lib/demo-ticket-type';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { activeTicketTypesByCategoryQuery, nationalShowSalesQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
@@ -92,8 +93,10 @@ export default async function NationalShowTicketsPage() {
 
   const salesOpen = salesState?.salesOpen === true;
   // `order asc` from the query — the first, lowest-numbered public (non-demo) product is the
-  // one the dominant visitor journey ("I'm coming to visit") is anchored on.
-  const dominant = (ticketTypes ?? []).find((t) => !t.demo) ?? null;
+  // one the dominant visitor journey ("I'm coming to visit") is anchored on. The same filter
+  // /tickets uses drops demo products, so every link below resolves on /tickets/[slug].
+  const admissionProducts = filterPubliclyListableTicketTypes(ticketTypes ?? []);
+  const dominant = admissionProducts[0] ?? null;
 
   const dominantPrice = dominant
     ? (resolveEffectivePrice({
@@ -127,9 +130,25 @@ export default async function NationalShowTicketsPage() {
             <p className="font-sans text-[16px] leading-relaxed text-muted">
               Buy an admission ticket to browse the show floor, exhibits, and displays.
             </p>
-            <Button as={Link} href="/tickets" variant="primary" className="w-fit">
-              Get visitor tickets
-            </Button>
+            {admissionProducts.length > 0 ? (
+              <div className="flex flex-wrap gap-3">
+                {admissionProducts.map((p) => (
+                  <Button
+                    key={p._id}
+                    as={Link}
+                    href={`/tickets/${p.slug}`}
+                    variant={p._id === dominant?._id ? 'primary' : 'ghost'}
+                    className="w-fit"
+                  >
+                    {p.name}
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <Button as={Link} href="/tickets" variant="primary" className="w-fit">
+                Get visitor tickets
+              </Button>
+            )}
           </div>
 
           <div className="flex flex-col gap-2 border-t border-rule pt-6 md:border-l md:border-t-0 md:border-rule md:pl-8 md:pt-0">

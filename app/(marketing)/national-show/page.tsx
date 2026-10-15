@@ -569,7 +569,7 @@ export default async function NationalShowPage() {
                 padding, same 15px label, same 2px radius), so the row reads as
                 one control group and each target clears the same touch area. */}
             <div className="flex flex-wrap items-center gap-3">
-              <Button<typeof Link> as={Link} href="/tickets" variant="on-dark" data-nos-hero-button="">
+              <Button<typeof Link> as={Link} href="/national-show/tickets" variant="on-dark" data-nos-hero-button="">
                 <span data-nos-hero-text="btn-primary-label">Book tickets →</span>
               </Button>
               <Button<typeof Link> as={Link} href="/contact" variant="ghost-on-dark" data-nos-hero-button="">
