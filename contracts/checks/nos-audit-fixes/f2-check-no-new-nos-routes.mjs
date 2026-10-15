@@ -1,7 +1,7 @@
 // F2 / A5 — guard: no new route files under app/(marketing)/national-show, and no
 // /national-show/tickets/buy. Brad 2026-10-15: "no new NOS routes" and "leave the uncommitted
 // /national-show/tickets/buy relocation alone". Compares route-convention files on disk with
-// the tree at base 047d610e. This is a regression GUARD: it passes on base by design.
+// the tree at the rebase base (BASE_SHA, 5ae1f3cf). This is a regression GUARD: it passes on base by design.
 import { execFileSync } from 'node:child_process';
 import { BASE_SHA, NOS_ROUTE_DIR, fail, pass, walk, worktreeRoot } from './f2-_lib.mjs';
 

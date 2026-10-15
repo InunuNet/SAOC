@@ -2,7 +2,7 @@
 // @dev must not edit them). Static source checks only: no tsx, no network, no Sanity.
 //
 // NOS_AF_ROOT overrides the repo root, so each check can be run against an exported copy of
-// the base 047d610e to prove it fails there (mutation proof). Unset in the gate.
+// the base (047d610e at authoring, 5ae1f3cf since the rebase) to prove it fails there (mutation proof). Unset in the gate.
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

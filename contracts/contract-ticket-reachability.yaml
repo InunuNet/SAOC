@@ -57,14 +57,19 @@ assertions:
       timeout_seconds: 30
 
     # ---- national-show landing page — real red-to-green ----
+    # Amended 2026-10-15 (nos-audit-fixes F2, fix/nos-audit-p1; authorised by the lead saoc-2b):
+    # Brad's directive moves NOS "Book tickets" off the bare /tickets listing onto the existing
+    # /tickets/[slug] flow, so these now prove /national-show -> /national-show/tickets ->
+    # /tickets/<slug> (each hop inside <main>, every slug link HTTP 200). They previously
+    # asserted /national-show contains href="/tickets".
     - id: TKT-06
-      description: "/national-show rendered HTML contains an <a href=\"/tickets\">"
-      command: curl -s http://localhost:3333/national-show | grep -q 'href="/tickets"'
-      timeout_seconds: 30
+      description: "/national-show <main> links /national-show/tickets (and not bare /tickets), whose <main> links /tickets/<slug> pages that each return 200"
+      command: node contracts/checks/ticket-reachability/check-nos-ticket-chain.mjs http://localhost:3333
+      timeout_seconds: 60
 
     - id: TKT-07
-      description: "the /tickets anchor on /national-show has meaningful link text (non-empty, not \"click here\")"
-      command: '[ -n "$(node contracts/checks/ticket-reachability/extract-anchor-text.mjs http://localhost:3333/national-show /tickets)" ] && ! node contracts/checks/ticket-reachability/extract-anchor-text.mjs http://localhost:3333/national-show /tickets | grep -qi "click here"'
+      description: "the /national-show/tickets anchor on /national-show has meaningful link text (non-empty, not \"click here\")"
+      command: '[ -n "$(node contracts/checks/ticket-reachability/extract-anchor-text.mjs http://localhost:3333/national-show /national-show/tickets)" ] && ! node contracts/checks/ticket-reachability/extract-anchor-text.mjs http://localhost:3333/national-show /national-show/tickets | grep -qi "click here"'
       timeout_seconds: 30
 
     # ---- destination proof: following any of the links above lands on a

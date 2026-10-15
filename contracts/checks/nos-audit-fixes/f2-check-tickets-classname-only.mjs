@@ -1,7 +1,7 @@
 // F2 / A15 — guard: F1's tap-target edits to the shared ticket flow are className-only.
 // F2-A8 excludes these three files from its "existing flow unchanged" diff because F1's golden
 // (audit-fixes.golden.md, tap targets) legitimately resizes their controls. This check keeps
-// the exclusion honest: compared with base 047d610e, each file keeps its line count, and every
+// the exclusion honest: compared with the rebase base (BASE_SHA, 5ae1f3cf), each file keeps its line count, and every
 // line that differs is a plain `className="..."` attribute line on both sides, with the same
 // indentation. Any other edit (an onClick, an href, a handler, an added or removed line) fails.
 import { execFileSync } from 'node:child_process';
