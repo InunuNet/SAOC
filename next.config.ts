@@ -45,6 +45,22 @@ const NEVER_SHIP = [
   '.sops.yaml',
 ];
 
+// Report-only: violations log to the browser console, nothing is blocked. Verbatim from the F5
+// golden (csp-report-only.txt). No enforcing CSP and no COOP (it breaks Firebase Auth popups).
+const CONTENT_SECURITY_POLICY_REPORT_ONLY =
+  "default-src 'self'; script-src 'self' 'unsafe-inline' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://cdn.sanity.io https://firebasestorage.googleapis.com; connect-src 'self' https://*.sanity.io https://*.apicdn.sanity.io https://*.googleapis.com https://*.firebaseapp.com wss://*.sanity.io; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com https://*.sanity.io; form-action 'self' https://www.payfast.co.za https://sandbox.payfast.co.za https://pay.ozow.com https://stagingpay.ozow.com; frame-ancestors 'self'; object-src 'none'; base-uri 'self'";
+
+const SECURITY_HEADERS = [
+  // No includeSubDomains or preload: old cPanel subdomains still exist.
+  { key: 'Strict-Transport-Security', value: 'max-age=31536000' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+  // camera=(self) is required: the /admin/door scanner uses getUserMedia.
+  { key: 'Permissions-Policy', value: 'camera=(self), microphone=(), geolocation=()' },
+  { key: 'Content-Security-Policy-Report-Only', value: CONTENT_SECURITY_POLICY_REPORT_ONLY },
+];
+
 const nextConfig: NextConfig = {
   outputFileTracingRoot: process.cwd(),
   outputFileTracingExcludes: {
@@ -58,6 +74,9 @@ const nextConfig: NextConfig = {
   // it is not localhost. Dev-only — it has no effect on a production build.
   allowedDevOrigins: ['dev.saoc.co.za'],
   images: {
+    formats: ['image/avif', 'image/webp'],
+    // Capped at 2048: the default src width (largest deviceSize) was 3840.
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     remotePatterns: [
       {
         protocol: 'https',
@@ -68,6 +87,9 @@ const nextConfig: NextConfig = {
         hostname: 'cdn.sanity.io',
       },
     ],
+  },
+  async headers() {
+    return [{ source: '/:path*', headers: SECURITY_HEADERS }];
   },
   async redirects() {
     return [

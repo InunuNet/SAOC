@@ -46,6 +46,7 @@ export const metadata: Metadata = {
     default: 'South African Orchid Council',
   },
   description: DEFAULT_DESCRIPTION,
+  alternates: { canonical: './' },
   openGraph: {
     siteName: 'South African Orchid Council',
     locale: 'en_ZA',

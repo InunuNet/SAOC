@@ -1,0 +1,16 @@
+{
+  "baseRefEnv": "BASE_REF",
+  "baseRefDefault": "origin/main",
+  "allowed": [
+    "^next\\.config\\.ts$",
+    "^sanity/lib/image\\.ts$",
+    "^app/layout\\.tsx$",
+    "^app/\\(marketing\\)/societies/page\\.tsx$",
+    "^app/\\(marketing\\)/societies/SocietiesFallback\\.tsx$",
+    "^components/societies/SocietiesFallback\\.tsx$",
+    "^docs/",
+    "^README\\.md$",
+    "^contracts/checks/launch-weekend/f5/",
+    "^\\.agent/memory/project/specs/launch-weekend/"
+  ]
+}

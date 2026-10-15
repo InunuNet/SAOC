@@ -1,0 +1,48 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: Before the production launch (Sun 18 Oct 2026) hero images are served resized in modern formats with a srcset, the site sends security headers (CSP report-only only), every page carries one correct canonical, and /societies no longer shifts its footer.
+created_at: '2026-10-16'
+autonomy: high
+features:
+  - id: F5
+    name: Launch performance and headers (image delivery config, security headers, sitewide canonical, societies CLS fallback)
+    status: pending
+# GATE: runtime assertions need a local production build serving on BASE_URL (default http://localhost:3411):
+# SITE_PUBLIC_LAUNCH=true pnpm build && SITE_PUBLIC_LAUNCH=true pnpm start -p 3411. Never 3000 or 3002.
+goldens:
+  - .agent/memory/project/specs/launch-weekend/goldens/f5/f5-spec.md
+  - .agent/memory/project/specs/launch-weekend/goldens/f5/csp-report-only.txt
+  - .agent/memory/project/specs/launch-weekend/goldens/f5/scope-allowlist.json
+assertions:
+  phase: 4
+  checks:
+    - id: F5-A1
+      description: Hero images use srcset via the optimiser, default src width capped at 2048, AVIF or WebP on request, resized payload under 300 KB, w=3840 refused (runtime, BASE_URL)
+      command: node contracts/checks/launch-weekend/f5/check-a-images.mjs
+    - id: F5-A2
+      description: HSTS, nosniff, Referrer-Policy, X-Frame-Options, Permissions-Policy (camera=(self)) and CSP Report-Only present on 5 routes; no enforcing CSP, no COOP; /studio and /admin/login still served (runtime, BASE_URL)
+      command: node contracts/checks/launch-weekend/f5/check-b-headers.mjs
+    - id: F5-A3
+      description: Exactly one canonical per page equal to https://saoc.co.za plus path on SAOC and National Show routes, query ignored, buildPageMetadata pages not doubled (runtime, BASE_URL)
+      command: node contracts/checks/launch-weekend/f5/check-c-canonical.mjs
+    - id: F5-A4
+      description: Societies Suspense fallback is an element and CLS stays under 0.05 at 390 and 1440 wide (runtime, Playwright)
+      command: node contracts/checks/launch-weekend/f5/check-d-societies-cls.mjs
+    - id: F5-A5
+      description: Static pins - images.formats avif+webp, deviceSizes without 3840, no unoptimized, headers() with report-only CSP and no enforcing key or COOP, Sanity auto('format'), layout canonical, events.ics redirect kept
+      command: node contracts/checks/launch-weekend/f5/check-f-config.mjs
+    - id: F5-A6
+      description: Every changed file is on the F5 scope allowlist (diff against origin/main)
+      command: node contracts/checks/launch-weekend/f5/check-e-scope.mjs
+    - id: F5-A7
+      description: Lint passes
+      command: pnpm lint
+    - id: F5-A8
+      description: Type check passes
+      command: pnpm type-check
+    - id: F5-A9
+      description: Production build passes
+      command: pnpm build
+    - id: F5-A10
+      description: The CSP golden is a single line (it is pasted verbatim into a header value)
+      command: test "$(wc -l < .agent/memory/project/specs/launch-weekend/goldens/f5/csp-report-only.txt)" -eq 1

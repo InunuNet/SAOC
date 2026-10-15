@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 
 import { PageHero } from '@/components/ui/PageHero';
 import { SocietiesClient } from './SocietiesClient';
+import { SocietiesFallback } from './SocietiesFallback';
 import type { SanitySociety } from '@/components/societies';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { provinceListQuery, societyListQuery } from '@/sanity/queries';
@@ -93,7 +94,7 @@ export default async function SocietiesPage() {
         lede="21 societies across South Africa — growing, showing, and judging together since 1968."
       />
       <div className="mx-auto max-w-[1280px] px-8 py-16">
-        <Suspense fallback={null}>
+        <Suspense fallback={<SocietiesFallback count={societies.length} />}>
           <SocietiesClient societies={societies} provinces={provinceChips} />
         </Suspense>
       </div>
