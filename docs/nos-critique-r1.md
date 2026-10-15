@@ -1,12 +1,12 @@
 # NOS critique round 1 (F1)
 
-Closes items (b)#3, #9 and #12 of the round 1 critique report, plus Codi's R9 ruling of 2026-10-16.
+Closes items (b)#3, #9 and #12 of the round 1 critique report.
 
 ## What changed
 
 - **Sponsors empty state (#3).** `/national-show/sponsors` no longer uses `RealEmptyListing`. When there are no Show sponsors it renders a page-local G2 block in a NOS `Card`: the heading "Become a sponsor", an R11 pending chip ("To be confirmed by the show committee"), one line ("No Show sponsors have been confirmed for 2027 yet."), and a `mailto:info@saoc.co.za` button labelled "Talk to us about sponsorship". The unsourced second sentence of the old absence statement and the "Each entry will show" scaffold are gone.
 - **Prose measure (#9).** Sponsors, symposium and wosa-conference wrap `ShowContentState` in a `contents` div that caps every `<p>` and `<li>` in the content region at 60ch (bar B3). `contents` adds no box, so layout is unchanged.
-- **Presenters focus ring (#12).** `presenters.css` sets `--ring-focus: var(--pc-royal)` on `.nos-presenters`, so the theme's 2px solid ring with 2px offset renders royal. The dead `--pc-violet` / 3px-offset outline is removed; only `border-radius: 4px` remains on that rule. `.pc-role` and `.pc-more` keep `--pc-violet`.
+- **Presenters focus ring (#12).** The ring stays the theme's R9/3 ring: 2px solid, 2px offset, violet `#7E3F97` on light grounds and pale gold `#fbfaf0` on dark grounds. In `presenters.css` the dead presenters outline (`--pc-violet`, 3px offset) was removed because `.nos-theme :focus-visible` already wins, so the render is unchanged; only `border-radius: 4px` remains on that rule. `.pc-role` and `.pc-more` keep `--pc-violet`. Codi corrected the earlier ruling: "R9/3 stands ... 'Royal on light' in my bar D3 and in my presenters ruling was my error." Presenter bios stay at 68ch, per the approved presenters handoff.
 
 ## Sourced strings
 
@@ -20,4 +20,4 @@ Closes items (b)#3, #9 and #12 of the round 1 critique report, plus Codi's R9 ru
 
 ## Known gaps
 
-The R11 chip anatomy (G1), the sitewide light-ground ring colour, the 68ch presenter bio measure and the hub measure live in files outside this change and are not addressed here.
+The R11 chip anatomy (G1) and the hub measure live in files outside this change and are not addressed here.

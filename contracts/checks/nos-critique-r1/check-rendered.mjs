@@ -9,8 +9,9 @@
 //       a [data-confirmation-badge="pending"] reading "To be confirmed by the show committee",
 //       a <p> "No Show sponsors have been confirmed for 2027 yet." and a 44x44+ link
 //       "Talk to us about sponsorship" -> mailto:info@saoc.co.za;
-//   D3  a probe button inside .nos-presenters (symposium), focused with keyboard modality,
-//       computes outline 2px solid rgb(33, 26, 87) with a 2px offset.
+//   D3  probe buttons inside .nos-presenters (symposium), focused with keyboard modality:
+//       on the light ground the ring computes 2px solid rgb(126, 63, 151) (theme violet,
+//       R9/3) at a 2px offset; inside a .nos-on-dark probe it flips to rgb(251, 250, 240).
 // Screenshots land in .tmp/sandbox/critique-r1-shots/ for the design review.
 //
 // Requires a current build: run `pnpm build` first (A8). Fails if .next/BUILD_ID is older
@@ -175,22 +176,36 @@ try {
         if (!has) failures.push(`${tag}: .nos-presenters not rendered — D3 cannot be measured`);
         else {
           await page.evaluate(() => {
-            const b = document.createElement('button');
-            b.type = 'button';
-            b.id = 'nos-cr1-focus-probe';
-            b.textContent = 'probe';
-            document.querySelector('.nos-presenters').prepend(b);
+            const host = document.querySelector('.nos-presenters');
+            const light = document.createElement('button');
+            light.type = 'button';
+            light.id = 'nos-cr1-probe-light';
+            light.textContent = 'probe';
+            const dark = document.createElement('div');
+            dark.className = 'nos-on-dark';
+            const darkBtn = document.createElement('button');
+            darkBtn.type = 'button';
+            darkBtn.id = 'nos-cr1-probe-dark';
+            darkBtn.textContent = 'probe';
+            dark.append(darkBtn);
+            host.prepend(light, dark);
           });
-          await page.keyboard.press('Shift');
-          await page.focus('#nos-cr1-focus-probe');
-          const f = await page.evaluate(() => {
-            const el = document.getElementById('nos-cr1-focus-probe');
-            const cs = getComputedStyle(el);
-            return { fv: el.matches(':focus-visible'), style: cs.outlineStyle, width: cs.outlineWidth, color: cs.outlineColor, offset: cs.outlineOffset, shadow: cs.boxShadow };
-          });
-          if (!f.fv) failures.push(`${tag}: D3 probe did not reach :focus-visible — measurement invalid`);
-          else if (f.style !== 'solid' || f.width !== '2px' || f.color !== 'rgb(33, 26, 87)' || f.offset !== '2px') {
-            failures.push(`${tag}: D3 presenters ring is ${f.width} ${f.style} ${f.color} offset ${f.offset}; want 2px solid rgb(33, 26, 87) offset 2px`);
+          const probes = [
+            ['light', '#nos-cr1-probe-light', 'rgb(126, 63, 151)'],
+            ['on-dark', '#nos-cr1-probe-dark', 'rgb(251, 250, 240)'],
+          ];
+          for (const [ground, sel, want] of probes) {
+            await page.keyboard.press('Shift');
+            await page.focus(sel);
+            const f = await page.evaluate((s) => {
+              const el = document.querySelector(s);
+              const cs = getComputedStyle(el);
+              return { fv: el.matches(':focus-visible'), style: cs.outlineStyle, width: cs.outlineWidth, color: cs.outlineColor, offset: cs.outlineOffset };
+            }, sel);
+            if (!f.fv) failures.push(`${tag}: D3 ${ground} probe did not reach :focus-visible — measurement invalid`);
+            else if (f.style !== 'solid' || f.width !== '2px' || f.color !== want || f.offset !== '2px') {
+              failures.push(`${tag}: D3 presenters ${ground} ring is ${f.width} ${f.style} ${f.color} offset ${f.offset}; want 2px solid ${want} offset 2px`);
+            }
           }
         }
       }
@@ -204,4 +219,4 @@ try {
   server.kill('SIGTERM');
 }
 
-finish(NAME, failures, `rendered at 375/768/1280 (+360 overflow) on :${port}: prose <= 60ch, ledes <= 58ch, no overflow, sponsors G2 sourced and ordered, presenters ring 2px royal at 2px offset. Shots: ${SHOTS}`);
+finish(NAME, failures, `rendered at 375/768/1280 (+360 overflow) on :${port}: prose <= 60ch, ledes <= 58ch, no overflow, sponsors G2 sourced and ordered, presenters ring theme violet (gold on dark) 2px at 2px offset. Shots: ${SHOTS}`);

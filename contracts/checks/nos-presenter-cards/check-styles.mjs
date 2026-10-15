@@ -174,12 +174,14 @@ want('.pc-more', 'color', '#7E3F97');
 want('.pc-more', 'text-decoration-thickness', '1.5px');
 want('.pc-more', 'text-underline-offset', '6px');
 want('.pc-more', 'min-height', '44px');
-// Focus: superseded 2026-10-16 by Codi's R9 ruling (nos-critique-r1 golden §4): "a solid 2px
-// ring with a 2px offset, royal on light grounds and gold on dark ones. Remove --pc-violet and
-// the 3px offset." The .nos-theme ring paints it; presenters.css only re-points --ring-focus.
-want('.nos-presenters', '--ring-focus', '#211A57');
+// Focus: Codi's corrected R9/3 ruling, 2026-10-16 (nos-critique-r1 golden §4) — presenters take
+// the theme violet ring (2px solid, 2px offset) painted by `.nos-theme :focus-visible:not(.group)`,
+// which already outranked this file's rule. The dead outline/3px offset is removed; the live
+// border-radius stays; --ring-focus is never re-pointed here.
 want(':focus-visible', 'outline', undefined);
 want(':focus-visible', 'outline-offset', undefined);
+want(':focus-visible', 'border-radius', '4px');
+want('.nos-presenters', '--ring-focus', undefined);
 // small screens
 want('.pc-card', 'padding', '20px', '(max-width: 560px)');
 want('.pc-card', 'gap', '20px', '(max-width: 560px)');

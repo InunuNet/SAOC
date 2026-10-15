@@ -17,7 +17,6 @@
  * change; values may not. contracts/checks/nos-presenter-cards/check-styles.mjs pins them.
  */
 .nos-presenters {
-  --ring-focus: var(--pc-royal);
   --pc-royal: #211A57;
   --pc-black: #0B0A14;
   --pc-gold-100: #FBFAF0;
