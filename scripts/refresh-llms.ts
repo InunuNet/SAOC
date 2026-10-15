@@ -7,6 +7,7 @@ const client = createClient({
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET ?? 'production',
   apiVersion: '2024-10-01',
   useCdn: false,
+  perspective: 'published',
   token: process.env.SANITY_API_TOKEN,
 });
 

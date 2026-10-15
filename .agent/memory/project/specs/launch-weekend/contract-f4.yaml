@@ -7,6 +7,8 @@ features:
   - id: F4
     name: Events honesty and content cleanup (static fallback removal, empty state, Sanity unpublish script)
     status: pending
+# GATE: contract.py runs shell assertions in the process cwd. Run the gate with cwd set to the implementation
+# worktree (.tmp/sandbox/wt-events), not the main checkout, and with BASE_URL pointing at a server built from it.
 goldens:
   - .agent/memory/project/specs/launch-weekend/goldens/f4/f4-spec.md
   - .agent/memory/project/specs/launch-weekend/goldens/f4/invented-events.json
@@ -18,7 +20,7 @@ assertions:
       description: Events page lists only the National Show or the empty state with the standard marker; no invented title and no link to an unsourced event page (runtime, BASE_URL)
       command: node contracts/checks/launch-weekend/f4/check-a-events-page.mjs
     - id: F4-A2
-      description: No invented event name or slug on any route, society page, calendar feed, llms file, sitemap or client bundle; invented event pages and ics 404; QA fixture ticket type not listed (runtime, BASE_URL)
+      description: No invented event name or slug on any route, society page (slugs from the sitemap), calendar feed, llms file, sitemap or client bundle; invented event pages and ics 404; QA fixture ticket type not listed (runtime, BASE_URL)
       command: node contracts/checks/launch-weekend/f4/check-b-no-invented-anywhere.mjs
     - id: F4-A3
       description: Anonymous read of the production dataset returns exactly one published societyEvent, the National Show
@@ -44,3 +46,6 @@ assertions:
     - id: F4-A10
       description: Script supports both modes and locks each mutation to the fetched revision
       command: grep -q "ifRevisionID" scripts/unpublish-invented-events.ts
+    - id: F4-A11
+      description: scripts/refresh-llms.ts reads the published perspective; run with a write token it yields no invented title in public/llms-full.txt (the nightly workflow passes the token, which returns drafts)
+      command: node contracts/checks/launch-weekend/f4/check-g-llms-published-only.mjs

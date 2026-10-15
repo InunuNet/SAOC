@@ -13,6 +13,7 @@
     "^lib/data/index\\.ts$",
     "^scripts/seed-sanity\\.ts$",
     "^scripts/unpublish-invented-events\\.ts$",
+    "^scripts/refresh-llms\\.ts$",
     "^public/llms-full\\.txt$",
     "^docs/",
     "^README\\.md$",

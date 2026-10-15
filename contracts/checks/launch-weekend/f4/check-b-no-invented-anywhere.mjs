@@ -14,9 +14,10 @@ const scan = (label, body) => { for (const t of inventedIn(body)) problems.push(
 const bodies = {};
 for (const r of ROUTES) { bodies[r] = (await get(r)).text; scan(r, bodies[r]); }
 
-// Every society page, discovered from the societies index (static fallback matched events by host name).
-const slugs = [...new Set([...bodies['/societies'].matchAll(/href="\/societies\/([^"/?#]+)"/g)].map((m) => m[1]))];
-if (slugs.length < 5) problems.push(`societies index yielded only ${slugs.length} society links - cannot sweep society pages`);
+// Every society page. /societies renders client-side (useSearchParams bailout), so its markup has no
+// links: take the slugs from the sitemap instead (static fallback matched events by host name).
+const slugs = [...new Set([...bodies['/sitemap.xml'].matchAll(/<loc>[^<]*\/societies\/([^/<]+)<\/loc>/g)].map((m) => m[1]))];
+if (slugs.length < 5) problems.push(`sitemap yielded only ${slugs.length} society URLs - cannot sweep society pages`);
 for (const s of slugs) scan(`/societies/${s}`, (await get(`/societies/${s}`)).text);
 
 // Per-event pages and per-event ics for every invented slug must not resolve.
