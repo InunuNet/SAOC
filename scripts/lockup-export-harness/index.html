@@ -50,7 +50,7 @@
   // Controller — NOT part of the artifact's own code. Instantiates the
   // artifact's unmodified Component class, waits for its own
   // componentDidMount() to finish loading the emblem image, applies the
-  // state overrides passed in the URL (?kind=h|v&E=<n>&G=light|dark&
+  // state overrides passed in the URL (?kind=h|v&E=<n>&WM=<n>&G=light|dark&
   // transparent=true|false — everything else stays the artifact's own
   // documented default state, app.js:46), then calls the artifact's own
   // exportPng(), unmodified, which triggers a real browser download that
@@ -67,6 +67,7 @@
     const kind = params.get('kind') || 'h';
     if (params.has('E')) comp.state.E = Number(params.get('E'));
     if (params.has('G')) comp.state.G = params.get('G');
+    if (params.has('WM')) comp.state.WM = Number(params.get('WM'));
     if (params.has('transparent')) comp.state.transparent = params.get('transparent') === 'true';
     await comp.exportPng(kind);
     document.title = 'saoc-lockup-export-done';

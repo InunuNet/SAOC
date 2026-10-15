@@ -1,0 +1,29 @@
+schema: athanor.contract/v1
+slug: saoc-full-name-lockup
+goal: Show the SAOC lockup with the full wordmark "South African Orchid Council" (artifact wordmark W2, state WM:1) in the header, mobile drawer and footer, keeping every other approved lockup parameter unchanged and the layout free of overflow at 1440, 1024, 768 and 390px.
+created_at: '2026-10-15'
+autonomy: high
+features:
+  - id: F1
+    name: Full-name SAOC lockup (header/drawer raster regenerated at W2, footer live wordmark)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/saoc-full-name-lockup/goldens/f1/f1-full-name-lockup.golden.md
+assertions:
+  phase: 4
+  checks:
+    # Run from the fix/saoc-full-name-lockup worktree (base integ/vendor-flow-fixes f5622860).
+    - id: A1
+      description: No W0 wordmark 'SA Orchid Council' remains in any .ts/.tsx/.css under components, app, lib or sanity; SaocLockup WORDMARK is exactly the W2 string; every other lockup parameter literal (colours, tagline, Lora 500, tracking, all px sizes, emblem assets) matches base; app.js artifact, branding/ and design handoff unmodified. A1-A3 share this script.
+      command: bash contracts/checks/saoc-full-name-lockup/check-wordmark-source.sh
+    - id: A4
+      description: Header/mobile raster regenerated under the new filename saoc-lockup-horizontal-full-name.png (aspect in the W2 band), old W0 PNG deleted, Header and MobileMenu reference the new file with width/height matching its aspect, accessible label/alt unchanged, exporter passes WM:1 and honours SAOC_LOCKUP_OUT_DIR, harness reads the WM query param.
+      command: node contracts/checks/saoc-full-name-lockup/check-raster-and-wiring.mjs
+    - id: A7
+      description: Re-running the exporter into a sandbox reproduces the committed raster dimensions (+-2px), proving W2 and the unchanged es/ns/tsz/rs/font/palette produced it. Needs network for web fonts.
+      command: node contracts/checks/saoc-full-name-lockup/check-reexport-matches.mjs
+      timeout_seconds: 240
+    - id: A8
+      description: Playwright against a local production build (pnpm start, BASE_URL or :3002) at 1440/1280/1240/1024/768/390/360 - no horizontal overflow, hamburger inside the viewport, primary nav items do not wrap or touch the logo, footer full-name wordmark visible and unclipped, mobile drawer lockup clear of the close button and inside the drawer.
+      command: node contracts/checks/saoc-full-name-lockup/check-fit.mjs
+      timeout_seconds: 300

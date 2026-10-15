@@ -103,16 +103,18 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
         style={{ animation: 'slideInFromRight 250ms cubic-bezier(0.4,0,0.2,1) both' }}
       >
         {/* Top row: lockup + close. Reverted to the raster combined lockup
-            (saoc-lockup-horizontal.png) at a fixed 220×40, matching
-            Header.tsx's revert — see Header.tsx's Zone 1 comment. Fixed
-            size here (not responsive) because this drawer stays ≤360px
-            wide regardless of the actual window width. */}
+            (saoc-lockup-horizontal-full-name.png, wordmark W2) at a
+            fixed 210px wide, height from the PNG's true aspect — see
+            Header.tsx's Zone 1 comment. Fixed size here (not responsive)
+            because this drawer stays ≤360px wide regardless of the actual
+            window width. */}
         <div className="flex items-center justify-between mb-8">
           <Image
-            src="/images/saoc-lockup-horizontal.png"
+            src="/images/saoc-lockup-horizontal-full-name.png"
             alt="South African Orchid Council"
-            width={220}
-            height={40}
+            width={3757}
+            height={493}
+            className="h-auto w-[210px] min-w-0"
           />
           <button
             type="button"

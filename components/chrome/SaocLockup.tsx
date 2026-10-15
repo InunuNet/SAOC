@@ -14,7 +14,7 @@ import { Lora } from 'next/font/google';
 //
 // Every size below is drawn directly from the artifact's metrics()/colours()
 // (app.js:89-101) at its DEFAULT state — es:140, ns:110, tsz:140, rs:100,
-// WM:0 'SA Orchid Council', N:7 Lora/500, F:0 JetBrains Mono/500, T:0
+// WM:1 'South African Orchid Council' (W2), N:7 Lora/500, F:0 JetBrains Mono/500, T:0
 // tagline on, P:2 'Lapis & Sun', rule:true — never re-derived by hand. The
 // *_UNITS objects are that formula's raw output; each is then multiplied by
 // a render-scale factor per breakpoint (SCALE below) and rounded to the
@@ -42,7 +42,7 @@ const TONE_COLOURS = {
   dark: { name: '#fbf8ea', tag: '#f0d35a', rule: 'rgba(255,255,255,0.35)' },
 } as const;
 
-const WORDMARK = 'SA Orchid Council';
+const WORDMARK = 'South African Orchid Council';
 const TAGLINE = 'Making a difference since 1968';
 const ACCESSIBLE_LABEL = `South African Orchid Council — ${TAGLINE}`;
 
@@ -159,15 +159,22 @@ export function SaocLockup({ orientation, tone, compact = false, className, prio
     <Link
       href="/"
       aria-label={ACCESSIBLE_LABEL}
-      className={[LINK_CLASSES, 'flex flex-col items-center', className ?? ''].join(' ')}
+      className={[LINK_CLASSES, 'flex w-full min-w-0 flex-col items-center [container-type:inline-size]', className ?? ''].join(' ')}
     >
       <span aria-hidden="true" className="flex flex-col items-center">
         <span className="relative shrink-0 w-[166px] h-[160px]">
           <Image src={emblemSrc} alt="" fill sizes="166px" className="object-contain" priority={priority} />
         </span>
+        {/* W2 ('South African Orchid Council') at 30px is ≈410px wide —
+            wider than a footer column on narrow viewports. The artifact's
+            own answer is `data-fit` (shrink-to-parent: zoom = min(1,
+            parentWidth / contentWidth)); reproduced here as a container-
+            query font size: 30px when the column has room, otherwise 7cqw
+            (30px × 1/410 of the wordmark's natural width per px ≈ 7.3cqw,
+            rounded down so it never touches the column edge). */}
         <span
-          className={[lora.className, 'mt-[12px] text-[30px] leading-[1.02] whitespace-nowrap'].join(' ')}
-          style={{ letterSpacing: '-0.005em', color: col.name }}
+          className={[lora.className, 'mt-[12px] leading-[1.02] whitespace-nowrap'].join(' ')}
+          style={{ fontSize: 'min(30px, 7cqw)', letterSpacing: '-0.005em', color: col.name }}
         >
           {WORDMARK}
         </span>
