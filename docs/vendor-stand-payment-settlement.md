@@ -209,11 +209,11 @@ version/variant nibbles and yields less real entropy than the character count su
 reference is now 42 characters, comfortably under Ozow's 50-char cap (A13 requires at least 5
 characters of margin, i.e. a built reference of at most 45 characters).
 
-**Known, pre-existing, out of scope:** Ozow's `BankReference` field (fed the same reference via
-`deriveOzowBankReference`, documented `String(20)`) already exceeds its cap at 24 characters even
-with the *pre-F3* base reference (`VSO-` + a 20-character id), independent of anything F3 or this
-mission added. This is a real gap, logged here rather than silently folded into F7's fix, and is
-not something this mission introduced or closed.
+**Ozow `BankReference` overflow: resolved by `vendor-flow-fixes`.** Ozow's `BankReference` field (fed
+the same reference via `deriveOzowBankReference`, documented `String(20)`) exceeded its cap for vendor
+stand references. `deriveOzowBankReference` now sends `VSO-` plus the first 16 characters of the attempt
+id, and throws on any other reference over 20 characters. `TransactionReference` keeps the full
+reference, which is what settlement matches on. See [vendor-flow-fixes.md](vendor-flow-fixes.md).
 
 ---
 
@@ -283,6 +283,12 @@ per payment attempt at `/api/vendors/stand-payment/initiate`, never reused acros
 Documents written before this mission have no `attemptId` — see the "F3" migration-window
 paragraph above for exactly how the settlement handler treats that case.
 
+The document also carries `expectedGatewayAmount: number | null` (`vendor-flow-fixes` F5). It is `0.01`
+only when the active gateway is Ozow and the Ozow Sandbox Test Mode toggle was on at initiate. It is
+`null` otherwise, including for legacy documents with no such field. The amount guard compares the
+notification against `expectedGatewayAmount ?? amount`, so `null` and a missing field behave the same.
+`order.amount` is always the real price. See [vendor-flow-fixes.md](vendor-flow-fixes.md).
+
 ---
 
 ## What these contracts do NOT prove
@@ -316,5 +322,7 @@ Carried forward honestly from the golden READMEs — do not treat any of these a
   means F1's gate has never been exercised against a real, live Ozow confirm response in this
   environment, only against the fixture and (for PayFast, the active gateway) whatever
   `lib/payments/payfast.ts`'s own confirm implementation does against the real sandbox.
-- **`BankReference`'s pre-existing 20-char overflow** (see F7 above) is real, predates this
-  mission, and is not fixed here.
+- **Ozow sandbox settlement on beta is open (`vendor-flow-fixes`).** Ozow returns `Complete` with
+  `IsTest`, but the order stays `pending`. The cause is undiagnosed. The candidates are a missing
+  notification, a signature rejection, or a confirm lookup failing on `IsTest`. See
+  [vendor-flow-fixes.md](vendor-flow-fixes.md).

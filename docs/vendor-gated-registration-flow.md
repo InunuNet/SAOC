@@ -728,6 +728,29 @@ The full registration form now renders:
 
 ---
 
+## Photo-resume link and `/register` completion (vendor-flow-fixes)
+
+The 3 product photos are uploaded after the registration code is spent, so a vendor who left before
+uploading them had no route back. `vendor-flow-fixes` adds a signed, single-purpose photo-resume link
+at `/national-show/vendors/photos?token=…`. It is sent in the registration-received email and can be
+re-issued by an admin. It authorises that page only, for one submission id, and it does not reopen the
+single-use registration code. The upload API is unchanged.
+
+- Token: `lib/vendor-photo-resume-token.ts`. It is HMAC-signed with `VENDOR_STAND_PAYMENT_TOKEN_SECRET`
+  under the domain prefix `vendor-photo-resume:v1:`, valid for 30 days, and not single-use.
+- Page: `app/(marketing)/national-show/vendors/photos/page.tsx`, resolved by `lib/vendor-photo-resume-gate.ts`.
+- Admin re-issue: `POST /api/admin/vendors/[id]/resend-photo-link`, gated by `review-vendor-applications`.
+  It returns a fresh `photoUrl`, sends no email and writes nothing.
+- Live count on the page: `lib/vendor-photo-resume-progress.ts` and `components/vendors/VendorPhotoResumeUploads.tsx`.
+
+`/register` also shows "All 3 required product photos have been uploaded. Your registration is complete."
+once all 3 succeed (the logo does not count). `VendorRegisterForm` uses `method="post"` and keeps submit
+disabled until hydration, so a pre-hydration submit cannot put the form in the URL.
+
+Full detail, checks and the open Ozow item are in [vendor-flow-fixes.md](vendor-flow-fixes.md).
+
+---
+
 ## Related Documentation
 
 - `docs/vendor-registration.md` — Pre-M1 flow (F1-F9); now documenting the old, ungated system; will be superseded or merged into this doc once M1 is live
