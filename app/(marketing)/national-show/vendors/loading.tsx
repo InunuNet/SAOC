@@ -10,7 +10,7 @@ export default function VendorsLoading() {
         <div className="h-56 animate-pulse border border-rule bg-bone" aria-hidden="true" />
         <div className="h-56 animate-pulse border border-rule bg-bone" aria-hidden="true" />
       </div>
-      <span className="sr-only">Loading exhibiting nurseries…</span>
+      <span className="sr-only">Loading exhibitors and vendors…</span>
     </div>
   );
 }
