@@ -65,28 +65,30 @@ export default async function WosaConferencePage() {
 
   return (
     <>
-      <ShowContentState
-        result={result}
-        heroImage="/images/orchid-pink.jpg"
-        layout="prose"
-        afterProse={
-          // SAOC attributes and links out; it never authors conservation content in its
-          // own voice — the same standing rule the /about page's WOSA credit follows.
-          <p className="border-t border-rule pt-6 font-sans text-[15px] leading-relaxed text-ink/70">
-            For wild orchid identification, habitat and conservation, visit our partner
-            organisation{' '}
-            <a
-              href="https://wildorchids.co.za"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-link"
-            >
-              Wild Orchids of Southern Africa (WOSA)
-            </a>
-            .
-          </p>
-        }
-      />
+      <div className="contents [&_[data-nos-content-state]_p]:max-w-[60ch] [&_[data-nos-content-state]_li]:max-w-[60ch]">
+        <ShowContentState
+          result={result}
+          heroImage="/images/orchid-pink.jpg"
+          layout="prose"
+          afterProse={
+            // SAOC attributes and links out; it never authors conservation content in its
+            // own voice — the same standing rule the /about page's WOSA credit follows.
+            <p className="border-t border-rule pt-6 font-sans text-[15px] leading-relaxed text-ink/70">
+              For wild orchid identification, habitat and conservation, visit our partner
+              organisation{' '}
+              <a
+                href="https://wildorchids.co.za"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-link"
+              >
+                Wild Orchids of Southern Africa (WOSA)
+              </a>
+              .
+            </p>
+          }
+        />
+      </div>
 
       <PresenterSection eyebrow="WOSA Conference" presenters={presenters} />
 

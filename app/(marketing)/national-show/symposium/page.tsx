@@ -63,7 +63,9 @@ export default async function SymposiumPage() {
 
   return (
     <>
-      <ShowContentState result={result} heroImage="/images/orchid-dark.jpg" layout="prose" />
+      <div className="contents [&_[data-nos-content-state]_p]:max-w-[60ch] [&_[data-nos-content-state]_li]:max-w-[60ch]">
+        <ShowContentState result={result} heroImage="/images/orchid-dark.jpg" layout="prose" />
+      </div>
 
       <PresenterSection eyebrow="Symposium" presenters={presenters} />
 

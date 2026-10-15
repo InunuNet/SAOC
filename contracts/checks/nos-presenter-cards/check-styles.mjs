@@ -76,7 +76,7 @@ function lookup(selectorEnd, prop, media = null) {
 }
 function want(selectorEnd, prop, expected, media = null) {
   const got = lookup(selectorEnd, prop, media);
-  const ok = Array.isArray(expected) ? expected.some((e) => norm(e) === got) : norm(expected) === got;
+  const ok = expected === undefined ? got === undefined : Array.isArray(expected) ? expected.some((e) => norm(e) === got) : norm(expected) === got;
   if (!ok) {
     failures.push(`${media ? `@media ${media} ` : ''}${selectorEnd} { ${prop} } want ${JSON.stringify(expected)}, got ${JSON.stringify(got)}`);
   }
@@ -174,8 +174,12 @@ want('.pc-more', 'color', '#7E3F97');
 want('.pc-more', 'text-decoration-thickness', '1.5px');
 want('.pc-more', 'text-underline-offset', '6px');
 want('.pc-more', 'min-height', '44px');
-want(':focus-visible', 'outline', '2px solid #7E3F97');
-want(':focus-visible', 'outline-offset', '3px');
+// Focus: superseded 2026-10-16 by Codi's R9 ruling (nos-critique-r1 golden §4): "a solid 2px
+// ring with a 2px offset, royal on light grounds and gold on dark ones. Remove --pc-violet and
+// the 3px offset." The .nos-theme ring paints it; presenters.css only re-points --ring-focus.
+want('.nos-presenters', '--ring-focus', '#211A57');
+want(':focus-visible', 'outline', undefined);
+want(':focus-visible', 'outline-offset', undefined);
 // small screens
 want('.pc-card', 'padding', '20px', '(max-width: 560px)');
 want('.pc-card', 'gap', '20px', '(max-width: 560px)');

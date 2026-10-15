@@ -17,6 +17,7 @@
  * change; values may not. contracts/checks/nos-presenter-cards/check-styles.mjs pins them.
  */
 .nos-presenters {
+  --ring-focus: var(--pc-royal);
   --pc-royal: #211A57;
   --pc-black: #0B0A14;
   --pc-gold-100: #FBFAF0;
@@ -55,7 +56,7 @@
   line-height: 1.65;
   color: var(--pc-ink-700);
 }
-.nos-presenters :focus-visible { outline: 2px solid var(--pc-violet); outline-offset: 3px; border-radius: 4px; }
+.nos-presenters :focus-visible { border-radius: 4px; }
 .nos-presenters .pc-wrap { width: 100%; max-width: calc(var(--pc-wide) + 2 * var(--pc-gutter)); margin-inline: auto; padding-inline: var(--pc-gutter); }
 
 /* Canvas SectionHeading: olive uppercase eyebrow over the title; order note on the right */
