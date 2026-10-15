@@ -60,9 +60,10 @@ test.describe('mega menu — F8 logo lead block + NOS tickets rail (mission menu
   // own DOM, never queried unscoped against the whole panel (which would hit
   // Playwright's strict-mode violation on two matching elements).
   function getRail(panel: import('@playwright/test').Locator) {
+    // Hrefs match main's nav-config (/tickets/...); the /buy router mission is unsanctioned and not on main.
     const railHeading = panel.getByRole('heading', { level: 4, name: 'Tickets' });
     return railHeading.locator(
-      'xpath=ancestor::div[.//a[@href="/national-show/tickets/buy/day-visitor"]][1]'
+      'xpath=ancestor::div[.//a[@href="/tickets/day-visitor"]][1]'
     );
   }
 
@@ -264,10 +265,10 @@ test.describe('mega menu — F8 logo lead block + NOS tickets rail (mission menu
     const weekendPassLink = rail.getByRole('link', { name: 'Weekend Pass', exact: true });
 
     await expect(ticketsLink).toHaveAttribute('href', '/national-show/tickets');
-    await expect(dayVisitorLink).toHaveAttribute('href', '/national-show/tickets/buy/day-visitor');
+    await expect(dayVisitorLink).toHaveAttribute('href', '/tickets/day-visitor');
     await expect(weekendPassLink).toHaveAttribute(
       'href',
-      '/national-show/tickets/buy/weekend-pass'
+      '/tickets/weekend-pass'
     );
 
     // The old single-CTA blurb copy is gone.
