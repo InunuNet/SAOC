@@ -33,7 +33,8 @@ import { buildPageMetadata } from '@/lib/seo';
 // confirmation-status-model.golden.md:28), and the line is the first sentence of the
 // statement this page already carried — its wording has no council source, which the chip
 // discloses. The prose wrapper caps the measure at 60ch (bar B3) without touching
-// ShowContentState. See .agent/memory/project/specs/nos-critique-r1/goldens/critique-r1.golden.md.
+// ShowContentState — scoped to .nos-show-page-prose (PortableText prose) so it never reaches
+// the ShowEntityGrid <li> cards, which must keep filling their grid tracks. See .agent/memory/project/specs/nos-critique-r1/goldens/critique-r1.golden.md.
 export const revalidate = 60;
 
 const NO_SPONSORS_YET = 'No Show sponsors have been confirmed for 2027 yet.';
@@ -60,7 +61,7 @@ export default async function ShowSponsorsPage() {
 
   return (
     <>
-      <div className="contents [&_[data-nos-content-state]_p]:max-w-[60ch] [&_[data-nos-content-state]_li]:max-w-[60ch]">
+      <div className="contents [&_.nos-show-page-prose_p]:max-w-[60ch] [&_.nos-show-page-prose_li]:max-w-[60ch]">
         <ShowContentState
           result={result}
           heroImage="/images/orchid-dark.jpg"
@@ -76,7 +77,7 @@ export default async function ShowSponsorsPage() {
               <Card data-nos-empty-state="sponsors" className="mx-auto max-w-[900px] p-8">
                 <SectionHeading title="Become a sponsor" />
                 <ConfirmationBadge status="pending" pendingLabel="To be confirmed by the show committee" />
-                <p className="mt-3 font-sans text-[17px] leading-[1.65] text-ink/80">{NO_SPONSORS_YET}</p>
+                <p className="mt-3 max-w-[60ch] font-sans text-[17px] leading-[1.65] text-ink/80">{NO_SPONSORS_YET}</p>
                 <div className="mt-6">
                   <Button as="a" href="mailto:info@saoc.co.za">
                     Talk to us about sponsorship

@@ -63,7 +63,7 @@ export default async function SymposiumPage() {
 
   return (
     <>
-      <div className="contents [&_[data-nos-content-state]_p]:max-w-[60ch] [&_[data-nos-content-state]_li]:max-w-[60ch]">
+      <div className="contents [&_.nos-show-page-prose_p]:max-w-[60ch] [&_.nos-show-page-prose_li]:max-w-[60ch]">
         <ShowContentState result={result} heroImage="/images/orchid-dark.jpg" layout="prose" />
       </div>
 

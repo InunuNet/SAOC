@@ -19,7 +19,8 @@ const CHIP = 'To be confirmed by the show committee';
 const LINE = 'No Show sponsors have been confirmed for 2027 yet.';
 const CTA = 'Talk to us about sponsorship';
 const ALLOWED_NEW_COPY = new Set([HEADING, CHIP, LINE, CTA]);
-const WRAPPER_RE = /<div\s+className="contents\s+\[&_\[data-nos-content-state\]_p\]:max-w-\[60ch\]\s+\[&_\[data-nos-content-state\]_li\]:max-w-\[60ch\]"\s*>\s*<ShowContentState\b/;
+const WRAPPER = 'contents [&_.nos-show-page-prose_p]:max-w-[60ch] [&_.nos-show-page-prose_li]:max-w-[60ch]';
+const WRAPPER_RE = /<div\s+className="contents\s+\[&_\.nos-show-page-prose_p\]:max-w-\[60ch\]\s+\[&_\.nos-show-page-prose_li\]:max-w-\[60ch\]"\s*>\s*<ShowContentState\b/;
 
 function noNewCopy(rel, src) {
   const base = copyStrings(readBaseFile(rel));
@@ -38,7 +39,12 @@ for (const key of ['sponsors', 'symposium', 'wosa']) {
   const src = stripComments(raw);
   noNewCopy(rel, raw);
   if (!WRAPPER_RE.test(src)) {
-    failures.push(`${rel}: <ShowContentState> must be the first child of <div className="contents [&_[data-nos-content-state]_p]:max-w-[60ch] [&_[data-nos-content-state]_li]:max-w-[60ch]">`);
+    failures.push(`${rel}: <ShowContentState> must be the first child of <div className="${WRAPPER}">`);
+  }
+  // Codex P2 (7c3a25d9): a cap scoped to the whole content region reaches ShowEntityGrid's
+  // <li> cards. The measure is for PortableText prose only.
+  if (/\[&_\[data-nos-content-state\]/.test(src) || /\[&_(li|ul|ol)[\]_]/.test(src)) {
+    failures.push(`${rel}: prose cap must be scoped to .nos-show-page-prose, never [data-nos-content-state] or bare li/ul/ol`);
   }
   if ((src.match(/<ShowContentState\b/g) || []).length !== 1) failures.push(`${rel}: exactly one <ShowContentState>`);
   if (/max-w-\[(6[1-9]|[7-9]\d|\d{3})ch\]/.test(src)) failures.push(`${rel}: no prose cap wider than 60ch`);
@@ -57,13 +63,13 @@ for (const key of ['sponsors', 'symposium', 'wosa']) {
     const card = src.indexOf('<Card data-nos-empty-state="sponsors"');
     const heading = src.indexOf(`<SectionHeading title="${HEADING}" />`);
     const chip = src.indexOf(`<ConfirmationBadge status="pending" pendingLabel="${CHIP}" />`);
-    const line = src.search(/<p className="[^"]*">\{NO_SPONSORS_YET\}<\/p>/);
+    const line = src.search(/<p className="[^"]*\bmax-w-\[60ch\][^"]*">\{NO_SPONSORS_YET\}<\/p>/);
     const cta = src.search(new RegExp(`<Button as="a" href="mailto:info@saoc\\.co\\.za">\\s*${CTA}\\s*</Button>`));
     const close = src.indexOf('</Card>');
     if (card < 0) failures.push(`${rel}: G2 container <Card data-nos-empty-state="sponsors" ...> not found`);
     if (heading < 0) failures.push(`${rel}: <SectionHeading title="${HEADING}" /> not found`);
     if (chip < 0) failures.push(`${rel}: <ConfirmationBadge status="pending" pendingLabel="${CHIP}" /> not found`);
-    if (line < 0) failures.push(`${rel}: <p className="...">{NO_SPONSORS_YET}</p> not found`);
+    if (line < 0) failures.push(`${rel}: <p className="... max-w-[60ch] ...">{NO_SPONSORS_YET}</p> not found`);
     if (cta < 0) failures.push(`${rel}: <Button as="a" href="mailto:info@saoc.co.za">${CTA}</Button> not found`);
     if ([card, heading, chip, line, cta, close].every((n) => n >= 0) && !(card < heading && heading < chip && chip < line && line < cta && cta < close)) {
       failures.push(`${rel}: G2 order must be Card > heading > R11 chip > line > CTA`);
@@ -75,6 +81,15 @@ for (const key of ['sponsors', 'symposium', 'wosa']) {
     if (/href="\/contact"/.test(src)) failures.push(`${rel}: all contact goes to info@saoc.co.za (Brad), not /contact`);
     if (/\b(January|February|March|April|May|June|July|August|September|October|November|December)\b/.test(src)) failures.push(`${rel}: no date may be written`);
     if (!/list\.length > 0 \?\s*\(?\s*<ShowEntityGrid/.test(src)) failures.push(`${rel}: the real sponsor grid must still render when sponsors exist`);
+  }
+}
+
+// ---- wosa afterProse credit: outside .nos-show-page-prose, so it takes the cap itself ----
+{
+  const rel = FILES.wosa;
+  const raw = readRepoFile(rel);
+  if (raw && !/<p className="[^"]*\bmax-w-\[60ch\][^"]*">\s*For wild orchid identification/.test(stripComments(raw))) {
+    failures.push(`${rel}: the afterProse WOSA credit <p> must carry max-w-[60ch]`);
   }
 }
 

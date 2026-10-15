@@ -65,7 +65,7 @@ export default async function WosaConferencePage() {
 
   return (
     <>
-      <div className="contents [&_[data-nos-content-state]_p]:max-w-[60ch] [&_[data-nos-content-state]_li]:max-w-[60ch]">
+      <div className="contents [&_.nos-show-page-prose_p]:max-w-[60ch] [&_.nos-show-page-prose_li]:max-w-[60ch]">
         <ShowContentState
           result={result}
           heroImage="/images/orchid-pink.jpg"
@@ -73,7 +73,7 @@ export default async function WosaConferencePage() {
           afterProse={
             // SAOC attributes and links out; it never authors conservation content in its
             // own voice — the same standing rule the /about page's WOSA credit follows.
-            <p className="border-t border-rule pt-6 font-sans text-[15px] leading-relaxed text-ink/70">
+            <p className="max-w-[60ch] border-t border-rule pt-6 font-sans text-[15px] leading-relaxed text-ink/70">
               For wild orchid identification, habitat and conservation, visit our partner
               organisation{' '}
               <a

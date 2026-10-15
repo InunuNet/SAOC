@@ -4,6 +4,9 @@
 //   B3  every <p>/<li> inside [data-nos-content-state] is <= 60ch of its own font, and the
 //       hero lede (the <p> after the <h1>) is <= 58ch — sponsors, symposium, wosa-conference;
 //   C4  document scrollWidth <= clientWidth on all three routes at all four widths;
+//   SCOPE (1280) an injected grid <ul><li> under [data-nos-content-state] (outside
+//       .nos-show-page-prose) fills its track, while an injected <li> inside
+//       .nos-show-page-prose is <= 60ch — the cap never reaches grid cards (Codex P2);
 //   G2  sponsors (zero showSponsor records): "Each entry will show" is absent; the
 //       [data-nos-empty-state="sponsors"] card holds, in DOM order, an <h2> "Become a sponsor",
 //       a [data-confirmation-badge="pending"] reading "To be confirmed by the show committee",
@@ -133,6 +136,46 @@ try {
       for (const p of m.prose) if (p.chars > 60.5) failures.push(`${tag}: B3 prose measure ${p.chars.toFixed(1)}ch > 60ch ("${p.text}…")`);
       if (!m.lede) failures.push(`${tag}: hero lede (<p> after <h1>) not found`);
       else if (m.lede.chars > 58.5) failures.push(`${tag}: B3 lede measure ${m.lede.chars.toFixed(1)}ch > 58ch ("${m.lede.text}…")`);
+
+      if (vp.width === 1280) {
+        const s = await page.evaluate(() => {
+          const region = document.querySelector('[data-nos-content-state]');
+          const prose = region && region.querySelector('.nos-show-page-prose');
+          if (!region || !prose) return null;
+          const long = 'Probe text that is deliberately long enough to wrap across a wide grid track and well past sixty characters of measure. '.repeat(3);
+          const grid = document.createElement('ul');
+          grid.style.cssText = 'display:grid;grid-template-columns:minmax(0,1fr);list-style:none;margin:0;padding:0';
+          const gli = document.createElement('li');
+          gli.textContent = long;
+          grid.append(gli);
+          region.prepend(grid);
+          const pul = document.createElement('ul');
+          const pli = document.createElement('li');
+          pli.textContent = long;
+          pul.append(pli);
+          prose.append(pul);
+          const zero = (el) => {
+            const probe = document.createElement('span');
+            probe.textContent = '0'.repeat(100);
+            const cs = getComputedStyle(el);
+            Object.assign(probe.style, { font: cs.font, letterSpacing: cs.letterSpacing, position: 'absolute', visibility: 'hidden', whiteSpace: 'nowrap' });
+            document.body.appendChild(probe);
+            const w = probe.getBoundingClientRect().width / 100;
+            probe.remove();
+            return w;
+          };
+          const out = { track: grid.clientWidth, gridLi: gli.getBoundingClientRect().width, trackCh: grid.clientWidth / zero(gli), proseCh: pli.getBoundingClientRect().width / zero(pli) };
+          grid.remove();
+          pul.remove();
+          return out;
+        });
+        if (!s) failures.push(`${tag}: SCOPE probe could not find [data-nos-content-state] .nos-show-page-prose`);
+        else {
+          if (s.trackCh <= 61) failures.push(`${tag}: SCOPE probe invalid — grid track only ${s.trackCh.toFixed(1)}ch`);
+          else if (s.gridLi < s.track - 1) failures.push(`${tag}: SCOPE grid <li> is ${s.gridLi.toFixed(0)}px in a ${s.track}px track — the prose cap reaches grid cards`);
+          if (s.proseCh > 60.5) failures.push(`${tag}: SCOPE prose <li> measure ${s.proseCh.toFixed(1)}ch > 60ch`);
+        }
+      }
 
       if (route.endsWith('/sponsors')) {
         const g = await page.evaluate(() => {
