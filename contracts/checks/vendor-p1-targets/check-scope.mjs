@@ -18,6 +18,9 @@ const ALLOWED_EXACT = new Set([
   'components/vendors/VendorCheckboxField.tsx',
   'components/vendors/VendorCheckboxGroupField.tsx',
   'components/vendors/VendorRegistrationCodeEntryForm.tsx',
+  // label rename follow-up (Brad: "Exhibitors and Vendors" everywhere)
+  'app/(marketing)/national-show/vendors/loading.tsx',
+  'components/vendors/VendorEmptyState.tsx',
   // payment invalid-link action
   'app/(marketing)/national-show/vendors/payment/page.tsx',
 ]);

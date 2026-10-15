@@ -45,6 +45,17 @@ for (const dir of ['app', 'components', 'lib', 'sanity', 'content', 'scripts', '
   for (const line of hits.split('\n').filter(Boolean)) failures.push(`old label survives: ${line}`);
 }
 
+// Lowercase prose form of the old label must not survive either.
+for (const dir of ['app', 'components', 'lib', 'content', 'scripts']) {
+  let hits = '';
+  try {
+    hits = execFileSync('grep', ['-rn', 'exhibiting nurseries', dir], { encoding: 'utf8' });
+  } catch (error) {
+    if (error.status !== 1) throw error; // 1 = no match, which is what we want
+  }
+  for (const line of hits.split('\n').filter(Boolean)) failures.push(`old lowercase label survives: ${line}`);
+}
+
 // Only the label changed: every removed line in the diff against base is an old-label line, and
 // its added counterpart is the same line with the label swapped -- no other copy touched.
 const LABEL_FILES = [
