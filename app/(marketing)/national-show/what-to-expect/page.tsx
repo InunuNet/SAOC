@@ -175,7 +175,7 @@ export default async function WhatToExpectPage() {
           pendingLabel={pendingLabel}
           researchLabel={researchLabel}
         >
-          <Button as={Link} href="/tickets" className="mt-4">
+          <Button as={Link} href="/national-show/tickets" className="mt-4">
             {info?.admissionLinkLabel ?? 'See ticket prices and book'} →
           </Button>
         </VisitorInfoBlock>

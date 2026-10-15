@@ -55,14 +55,14 @@ export function ExhibitorKeyDates({
         <p className="mt-3 max-w-3xl font-sans text-[16px] leading-relaxed text-ink/80">{note}</p>
       ) : null}
 
-      <div className="mt-6 overflow-x-auto">
-        <table className="w-full min-w-[560px] border-collapse text-left">
+      <div className="mt-6 sm:overflow-x-auto">
+        <table className="w-full border-collapse text-left max-sm:block sm:min-w-[560px]">
           {caption ? (
             <caption className="mb-3 text-left font-mono text-[12px] tracking-[0.16em] text-muted">
               {caption}
             </caption>
           ) : null}
-          <thead>
+          <thead className="max-sm:sr-only">
             <tr className="border-b border-rule">
               <th
                 scope="col"
@@ -84,16 +84,16 @@ export function ExhibitorKeyDates({
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="max-sm:block">
             {dates.map((row, index) => (
-              <tr key={row._key ?? `${row.label}-${index}`} className="border-b border-rule">
+              <tr key={row._key ?? `${row.label}-${index}`} className="border-b border-rule max-sm:block">
                 <th
                   scope="row"
-                  className="py-4 pr-4 align-top font-serif text-[17px] font-medium text-ink"
+                  className="py-4 pr-4 align-top max-sm:block max-sm:pb-1 font-serif text-[17px] font-medium text-ink"
                 >
                   {row.label}
                 </th>
-                <td className="py-4 pr-4 align-top font-sans text-[15px] leading-relaxed text-ink/80">
+                <td className="py-4 pr-4 align-top max-sm:block max-sm:py-1 font-sans text-[15px] leading-relaxed text-ink/80">
                   {row.dateNote}
                   <ExhibitorStatusBadge
                     status={row.status}
@@ -102,7 +102,7 @@ export function ExhibitorKeyDates({
                     questionLabel={questionLabel}
                   />
                 </td>
-                <td className="py-4 align-top font-sans text-[15px] leading-relaxed text-ink/70">
+                <td className="py-4 align-top max-sm:block max-sm:py-1 max-sm:pb-4 font-sans text-[15px] leading-relaxed text-ink/70">
                   {row.detail}
                 </td>
               </tr>

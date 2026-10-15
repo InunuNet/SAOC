@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
-import { ShowSectionNav } from '@/components/show';
+import { ConfirmationBadge, ShowSectionNav } from '@/components/show';
+import { Button } from '@/components/nos/Button';
 import { ShowContentState } from '@/components/show/nos/ShowContentState';
 import { RealEmptyListing } from '@/components/show/nos/RealEmptyListing';
 import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
@@ -65,7 +66,16 @@ export default async function ShowSponsorsPage() {
               renderCard={(sponsor) => <ShowSponsorCard sponsor={sponsor} />}
             />
           ) : (
-            <RealEmptyListing fieldLabels={CARD_FIELD_LABELS} absenceStatement={ABSENCE_STATEMENT} />
+            <RealEmptyListing
+              fieldLabels={CARD_FIELD_LABELS}
+              absenceStatement={ABSENCE_STATEMENT}
+              absenceMarker={<ConfirmationBadge status="pending" />}
+              action={
+                <Button as="a" href="mailto:info@saoc.co.za">
+                  Talk to us about sponsorship
+                </Button>
+              }
+            />
           )
         }
       />

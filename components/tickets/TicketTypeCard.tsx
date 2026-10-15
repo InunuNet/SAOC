@@ -144,7 +144,7 @@ export function TicketTypeCard({
           onClick={decrease}
           disabled={soldOut || quantity === 0}
           aria-label={`${decreaseLabel ?? 'Decrease quantity of'} ${name}`}
-          className="flex h-8 w-8 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
+          className="flex h-11 w-11 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
         >
           −
         </button>
@@ -162,14 +162,14 @@ export function TicketTypeCard({
             const parsed = Number.parseInt(e.target.value, 10);
             onQuantityChange?.(slug, Number.isNaN(parsed) ? 0 : Math.max(0, parsed));
           }}
-          className="w-12 rounded-sm border border-rule bg-ivory px-1 py-1 text-center font-sans text-[15px] text-ink disabled:opacity-60"
+          className="h-11 w-12 rounded-sm border border-rule bg-ivory px-1 py-1 text-center font-sans text-[15px] text-ink disabled:opacity-60"
         />
         <button
           type="button"
           onClick={increase}
           disabled={soldOut}
           aria-label={`${increaseLabel ?? 'Increase quantity of'} ${name}`}
-          className="flex h-8 w-8 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
+          className="flex h-11 w-11 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
         >
           +
         </button>

@@ -12,17 +12,29 @@
 // "coming soon" as its only statement.
 // =============================================================
 
+import type { ReactNode } from 'react';
+
 export interface RealEmptyListingProps {
   /** The field labels the eventual record card will carry, in display order. */
   fieldLabels: readonly string[];
   /** What will appear here, stated in words. Never "no results" or a bare "coming soon". */
   absenceStatement: string;
+  /** Optional marker rendered directly after the absence statement. */
+  absenceMarker?: ReactNode;
+  /** Optional action rendered after the field-label block. */
+  action?: ReactNode;
 }
 
-export function RealEmptyListing({ fieldLabels, absenceStatement }: RealEmptyListingProps) {
+export function RealEmptyListing({
+  fieldLabels,
+  absenceStatement,
+  absenceMarker,
+  action,
+}: RealEmptyListingProps) {
   return (
     <div className="border-[length:var(--border-primary)] border-dashed border-rule bg-parchment p-8">
       <p className="font-sans text-[15px] leading-relaxed text-ink/80">{absenceStatement}</p>
+      {absenceMarker ? <div className="mt-2">{absenceMarker}</div> : null}
 
       <div className="mt-6 border-[length:var(--border-primary)] border-rule bg-white p-6">
         <p className="font-mono text-[12px] uppercase tracking-[0.18em] text-muted">
@@ -36,6 +48,7 @@ export function RealEmptyListing({ fieldLabels, absenceStatement }: RealEmptyLis
           ))}
         </dl>
       </div>
+      {action ? <div className="mt-6">{action}</div> : null}
     </div>
   );
 }
