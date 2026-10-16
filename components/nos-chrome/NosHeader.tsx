@@ -61,13 +61,15 @@ export function NosHeader({ show }: NosHeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [subOpen, setSubOpen] = useState(false);
+  // The header only renders on NOS routes, so National Show is always the current section: its
+  // disclosure starts open (aria-expanded follows the state).
+  const [subOpen, setSubOpen] = useState(true);
   const headerRef = useRef<HTMLElement>(null);
   const sentinelRef = useRef<HTMLSpanElement>(null);
   const itemRef = useRef<HTMLLIElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const burgerRef = useRef<HTMLButtonElement>(null);
-  const drawerRef = useRef<HTMLDivElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
   // Set only by an explicit close (Menu button, Escape); every other close (a followed link, a
   // navigation, the viewport widening, unmount) leaves the scroll position alone.
   const restoreOnCloseRef = useRef(false);
@@ -329,8 +331,9 @@ export function NosHeader({ show }: NosHeaderProps) {
         </div>
       </header>
 
-      <div
+      <nav
         id="nd"
+        aria-label="Main menu"
         ref={drawerRef}
         className={`nd ${nosChromeFontClass}`}
         hidden={!drawerOpen}
@@ -338,7 +341,7 @@ export function NosHeader({ show }: NosHeaderProps) {
           if (e.target instanceof Element && e.target.closest('a')) setDrawerOpen(false);
         }}
       >
-        <nav className="nd-inner" aria-label="Menu">
+        <div className="nd-inner">
           <ul className="nd-list">
             {NAV.map((n) => {
               if (n.type === 'link') {
@@ -403,8 +406,8 @@ export function NosHeader({ show }: NosHeaderProps) {
               </Link>
             </li>
           </ul>
-        </nav>
-      </div>
+        </div>
+      </nav>
     </>
   );
 }
