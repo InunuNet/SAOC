@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { JsonLd, faqPageJsonLd, portableTextToPlainText } from '@/components/seo/JsonLd';
 import { ShowFaqList } from '@/components/show';
 import { hasFaqAnswer } from '@/components/show/ShowFaqList';
 import { HoldingState } from '@/components/show/nos/HoldingState';
@@ -15,6 +16,15 @@ import { buildPageMetadata } from '@/lib/seo';
 import type { ShowFaq, ShowVisitorInfo } from '@/types';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
+
+// The order ShowFaqList lays its category sections out in; the FAQPage node follows it so the
+// markup reads in the order the page does.
+const FAQ_CATEGORY_ORDER = ['getting-there', 'tickets', 'accessibility', 'plant-sales', 'general'];
+
+function faqCategoryRank(faq: ShowFaq): number {
+  const rank = FAQ_CATEGORY_ORDER.indexOf(faq.category ?? '');
+  return rank === -1 ? FAQ_CATEGORY_ORDER.indexOf('general') : rank;
+}
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
@@ -42,8 +52,27 @@ export default async function ShowFaqPage() {
   const hideUnanswered = withholdPlaceholderProse();
   const holds = hideUnanswered && !(faqs ?? []).some((faq) => faq?.question && hasFaqAnswer(faq));
 
+  // SEO: only the entries the page presents as settled, from the same `faqs` array the list
+  // renders: answered and carrying no confirmation badge. A public build (`hideUnanswered`)
+  // renders no badges, so every answered entry there reads as settled; a beta build badges
+  // everything that is not 'confirmed'.
+  const faqEntries = holds
+    ? []
+    : [...(faqs ?? [])]
+        .sort((a, b) => faqCategoryRank(a) - faqCategoryRank(b))
+        .filter(
+          (faq) =>
+            faq?.question && hasFaqAnswer(faq) && (hideUnanswered || faq.status === 'confirmed')
+        )
+        .map((faq) => ({
+          question: faq.question as string,
+          answer: portableTextToPlainText(faq.answer ?? []),
+        }))
+        .filter((entry) => entry.answer !== '');
+
   return (
     <>
+      {faqEntries.length > 0 ? <JsonLd data={faqPageJsonLd(faqEntries)} /> : null}
       <NosHero
         route="/national-show/faq"
         title={info?.faqTitle ?? 'Frequently asked questions'}

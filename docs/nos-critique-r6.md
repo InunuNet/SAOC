@@ -22,3 +22,22 @@ capitals; F18b reuses it on the ticket forms. The register form keeps its existi
 `tradingName` gains `autoComplete="organization"` as specified; businessName already carries the same
 token, so a browser may offer the business name in the "(if different)" field, and flipping that prop
 to `off` is the alternative. The POST payload is unchanged. Source: lead saoc-2b 2026-10-17.
+
+## f4 — SEO: FAQPage and BreadcrumbList JSON-LD (and R61)
+
+`faqPageJsonLd()` and `portableTextToPlainText()` are added to `components/seo/JsonLd.tsx`.
+`/national-show/faq` emits a FAQPage built from the same `faqs` array the list renders: only entries
+with a question, an answer (`hasFaqAnswer`) and `status === 'confirmed'`, the one status that carries no
+confirmation badge. In the holding state, or when none qualify, no FAQPage node is emitted.
+One BreadcrumbList is emitted on every `/national-show/*` page by `components/nos/NosBreadcrumbJsonLd.tsx`,
+mounted once by the national-show layout with a href-to-label map built from nav-config. The trail starts at
+National Show and ends at the nearest labelled ancestor; an unlabelled segment is dropped, never invented.
+
+Event offers were already delivered on the hub (ZAR price via `resolveEffectivePrice`, availability from
+released quantity, none while sales are closed) and are untouched. `validFrom` was not added: no Sanity field
+carries a sale-start date, and the builder deliberately emits `validThrough` from `earlyBirdCutoff`.
+
+R61 (font preloads and LCP): no font preload was removed. Crimson Pro, JetBrains Mono and Manrope are declared in
+the shared root layout and Lora in SaocLockup; Next.js computes font preloads per page entry, so no change inside
+the cleared files can drop them on `/national-show/*` while keeping them on SAOC routes. Reported to the lead.
+Source: lead saoc-2b 2026-10-17.
