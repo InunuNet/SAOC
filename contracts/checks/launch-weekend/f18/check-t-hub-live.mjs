@@ -54,6 +54,7 @@ function measure(a) {
       stubImgs: stub ? [...stub.querySelectorAll('img')].map((i) => ({ src: i.currentSrc || i.getAttribute('src') || '', alt: i.getAttribute('alt') })).filter((i) => !/disa|emblem/i.test(i.src)) : [],
     };
   });
+  const ids = { 'ticket-day': document.querySelectorAll('[id="ticket-day"]').length, 'ticket-weekend': document.querySelectorAll('[id="ticket-weekend"]').length };
   const pool = q(a.poolBanner);
   const bracket = q(a.poolBracket);
   const sections = ['thursday', 'passes', 'programme'].map((id) => { const s = document.getElementById(id); return s ? { id, top: rc(s).top, h2: (q('h2', s)?.textContent ?? '').replace(/\s+/g, ' ').trim() } : null; });
@@ -89,6 +90,7 @@ function measure(a) {
     h1: (q('main h1')?.textContent ?? '').replace(/\s+/g, ' ').trim(),
     fan: fan ? { grid: getComputedStyle(fan).display, cols: getComputedStyle(fan).gridTemplateColumns.split(' ').length, links: links.map((l) => ({ href: l.getAttribute('href'), rect: rc(l), label: l.getAttribute('aria-label'), img: [...l.querySelectorAll('img')].map((i) => i.currentSrc || i.getAttribute('src') || '').filter((x) => !/disa|emblem/i.test(x))[0] ?? null })) } : null,
     cards, sections,
+    ids,
     pool: pool ? { h: rc(pool).height, num: parseFloat(getComputedStyle(q('[aria-hidden="true"]', pool) ?? pool).fontSize) } : null,
     bracket: bracket ? { shown: getComputedStyle(bracket).display !== 'none' && rc(bracket).height > 0 } : null,
     visit: visit ? [...visit.querySelectorAll('a')].map((x) => x.getAttribute('href')) : null,
@@ -123,7 +125,7 @@ await main('F18-A29 v13 tickets hub', async (r) => {
           const id = (l.href ?? '').slice(1);
           if (!K.anchors.includes(id) || !m.cards.some((c) => c.id === id)) r.fail(`${tag}: fan link ${l.href} has no matching card id`);
           if (l.rect.left < -1 || l.rect.right > m.vw + 1) r.fail(`${tag}: fan link ${l.href} leaves the viewport (${Math.round(l.rect.left)}..${Math.round(l.rect.right)} of ${m.vw})`);
-          if (!l.label || !/, (R\d+|price to follow|sold out)$/.test(l.label)) r.fail(`${tag}: fan link label "${l.label}" is not "<name>, R<price> | price to follow | sold out"`);
+          if (!l.label || !/, (R\d+|price to follow|sold out|sales closed)$/.test(l.label)) r.fail(`${tag}: fan link label "${l.label}" is not "<name>, R<price> | price to follow | sold out | sales closed"`);
         }
         if (w < K.fan.deckBelowPx + 1 && w <= 700) {
           if (m.fan.cols !== K.fan.deckColumns) r.fail(`${tag}: the fan deck has ${m.fan.cols} columns, want ${K.fan.deckColumns}`);
@@ -138,7 +140,14 @@ await main('F18-A29 v13 tickets hub', async (r) => {
       for (const s of tops) { const want = C.strings.sections[s.id]; if (s.h2 !== want) r.fail(`${tag}: #${s.id} h2 reads "${s.h2}", want "${want}"`); }
       if (w === K.viewports[0] && m.sections.some((s) => !s)) r.note(`${tag}: a section is absent (its products are not in the CMS): ${m.sections.map((s, i) => (s ? '' : ['thursday', 'passes', 'programme'][i])).filter(Boolean).join(', ')}`);
       if (!m.visit || K.beforeYouVisit.hrefs.some((x) => !m.visit.includes(x))) r.fail(`${tag}: the "Before you visit" nav is missing or lacks ${K.beforeYouVisit.hrefs.join(', ')}`);
-      for (const need of ['ticket-day', 'ticket-weekend']) if (!m.cards.some((c) => c.id === need)) r.note(`${tag}: no #${need} card (the CMS lacks that product): the mega-menu rail link would not resolve`);
+      // site-77's mega-menu rail links land on #ticket-day and #ticket-weekend: each id exists ONCE, on the Day card and the Weekend card (F18b keeps the ids stable and never edits nav-config)
+      const idOwner = { 'ticket-day': ['early-bird', 'day-visitor'], 'ticket-weekend': ['weekend-pass-early-bird', 'weekend-pass'] };
+      for (const [need, slugs] of Object.entries(idOwner)) {
+        const hits = m.cards.filter((c) => c.id === need);
+        if (hits.length !== 1) r.fail(`${tag}: #${need} exists ${hits.length} times on the hub, want exactly once (the mega-menu rail link depends on it)`);
+        else if (!slugs.includes(hits[0].slug ?? '')) r.fail(`${tag}: #${need} is on the card for "${hits[0].slug}", want the ${need === 'ticket-day' ? 'Day' : 'Weekend'} card (${slugs.join(' or ')})`);
+        if (m.ids?.[need] !== 1) r.fail(`${tag}: document id "${need}" appears ${m.ids?.[need]} times, want exactly once`);
+      }
       if (m.groups.some((x) => !x)) r.fail(`${tag}: the existing #exhibit / #trade option groups are gone`);
       for (const c of m.cards) {
         const t = `${tag} ${c.id}`;
@@ -265,7 +274,7 @@ await main('F18-A29 v13 tickets hub', async (r) => {
           if (!f.focusInside) r.fail(`${tag}: focus did not move into the target card's name`);
           if (f.top !== null && (f.top < 0 || f.top > 400)) r.fail(`${tag}: the target card is at y=${Math.round(f.top)} after the jump, want it in view under the header`);
         }
-        const cta = page.locator(`${H.card}:not([data-ticket-state="soldOut"]):not([data-ticket-state="pricePending"]):not([data-ticket-state="earlyBirdSoldOut"]) ${H.cta}`).filter({ hasText: K.cta.text }).first();
+        const cta = page.locator(`${H.card}:not([data-ticket-state="soldOut"]):not([data-ticket-state="pricePending"]):not([data-ticket-state="earlyBirdSoldOut"]):not([data-ticket-state="salesClosed"]) ${H.cta}`).filter({ hasText: K.cta.text }).first();
         if (await cta.count()) {
           const card = cta.locator('xpath=ancestor::*[@data-ticket-card][1]');
           const more = card.locator('button[aria-label="One more"]');

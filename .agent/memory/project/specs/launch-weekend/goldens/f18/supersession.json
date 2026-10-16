@@ -86,7 +86,7 @@
   },
   {
    "file": "contracts/checks/nos-own-brand-chrome/f3/check-f3-tickets.mjs",
-   "reason": "REBASED onto v13 (design-cb final ruling 7). The old fan pins are superseded: the old hero fan geometry and its \"Add to booking\" equal-weight rule no longer exist; F18-A29 owns the fan geometry (arc, 2x2 deck, reserved cells, one link per card). Edit: the off-palette violet fill rule (rgb 126,63,151) now skips elements inside [data-ticket-stub], because the approved Sunset stub field colour #7E3F97 is that violet. The anchor visibility at 390 and #ticket-<id> resolution still hold on the v13 fan; the NOS button role (Karla 700 14px uppercase), 12px text floor, 44px steppers and the sales-closed posture (no price, form or quantity control while salesOpen=false) are unchanged and stay in A12."
+   "reason": "REBASED onto v13 (design-cb final ruling 7), then RE-PINNED for the sales-closed ruling: while closed the v13 cards stay (masked: no CTA, stepper, button or price) beside one [data-sales-status] line. The old fan pins are superseded: the old hero fan geometry and its \"Add to booking\" equal-weight rule no longer exist; F18-A29 owns the fan geometry (arc, 2x2 deck, reserved cells, one link per card). Edit: the off-palette violet fill rule (rgb 126,63,151) now skips elements inside [data-ticket-stub], because the approved Sunset stub field colour #7E3F97 is that violet. The anchor visibility at 390 and #ticket-<id> resolution still hold on the v13 fan; the NOS button role (Karla 700 14px uppercase), 12px text floor, 44px steppers and the sales-closed posture (no price, form or quantity control while salesOpen=false) are unchanged and stay in A12."
   },
   {
    "file": "R28 (no motion on NOS) - R84 exception",

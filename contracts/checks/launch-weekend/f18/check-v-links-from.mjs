@@ -16,7 +16,7 @@ const K = JSON.parse(readFileSync('.agent/memory/project/specs/launch-weekend/go
 const C = JSON.parse(readFileSync('.agent/memory/project/specs/launch-weekend/goldens/f18b/v13-copy.json', 'utf8'));
 const L = K.links;
 const PRICE = /^R\d+(\.\d{2})?$/;
-const JOINT = 'Register for the SAOC Symposium, the WOSA Conference, or the combined SAOC/WOSA Joint track at the National Show.';
+const JOINT = 'Register for the National Orchid Show Symposium, the WOSA Conference, or the combined SAOC/WOSA Joint track at the National Show.';
 
 await main('F18-A31 R30, R54, R59 links and hub items', async (r) => {
   await withBrowser(async (browser) => {

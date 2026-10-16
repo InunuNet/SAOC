@@ -5,7 +5,7 @@
 //   low         -> tag "Few left" and the server-supplied scarcity text; soldOut/pricePending/earlyBirdSoldOut -> NO stepper and NO CTA of any kind, the state's words (stamp, "Price to follow" + chip, "Early bird sold out")
 //   early bird  -> struck "Early-bird price" line on the sold-out state, "Early-bird R360, then R380" under the price on the live early-bird SKU, "Shared with the <partner>" only on early-bird SKUs
 //   Day Pass    -> fieldset legend "Choose a day", one native radio per days[] entry ("Fri 24" + "58 of 1000"), disabled radios for soldOut/pricePending/earlyBirdSoldOut, no count when remaining is null, first selectable checked
-//   CTA         -> "Buy ticket" on every paid product including SAOC Symposium, WOSA Conference and session cards; never "Register" or "Add to booking"; the Workshops product card says "Choose a session" and links #sessions
+//   CTA         -> "Buy ticket" on every paid product including the National Orchid Show Symposium, WOSA Conference and session cards; never "Register" or "Add to booking"; the Workshops product card says "Choose a session" and links #sessions
 //   PoolBanner  -> role group, numeral + "of <total>", "Early-bird tickets left"; out state "Early bird sold out"; null pool renders nothing; data-pool-bracket present when a pool renders
 //   TicketFan   -> [data-nos-ticket-fan] with 4 [data-fan-link] anchors #ticket-vip, #ticket-sunset, #ticket-weekend, #ticket-day labelled "<name>, R<price>" / ", price to follow" / ", sold out"
 //   sessions    -> every WorkshopSessionViewModel null case of HANDOFF 3.7
@@ -31,7 +31,7 @@ const R = (name: string, props: Obj) => {
   return renderToStaticMarkup(createElement(C as never, props as never));
 };
 const PART_C = process.env.F18_PART === 'c';
-const CMS: Record<string, string> = { vip: 'VIP Ticket', sunset: 'Sunset Cocktails (Single)', weekend: 'Weekend Pass', day: 'Day Visitor Ticket', symposium: 'SAOC Symposium', wosa: 'WOSA Conference', workshops: 'Workshops' };
+const CMS: Record<string, string> = { vip: 'VIP Ticket', sunset: 'Sunset Cocktails (Single)', weekend: 'Weekend Pass', day: 'Day Visitor Ticket', symposium: 'National Orchid Show Symposium', wosa: 'WOSA Conference', workshops: 'Workshops' };
 const vm = (o: Obj): Obj => ({ slug: 'vip', state: 'available', price: 300, regularPrice: null, scarcity: { remaining: 146, total: 200, label: 'places left' }, days: null, ...o });
 const card = (productId: string, v: Obj, extra: Obj = {}) => R('TicketCard', { productId, vm: v, name: CMS[productId], partnerName: productId === 'weekend' ? CMS.day : productId === 'day' ? CMS.weekend : undefined, regularName: CMS.weekend, ...extra });
 const has = (h: string, s: string) => txt(h).includes(s);
@@ -73,6 +73,11 @@ h = card('vip', vm({ state: 'pricePending', price: null }));
 if (buttons(h).length || /data-ticket-cta/.test(h)) fail('pricePending: a button or CTA renders');
 if (!has(h, S.pricePending) || !has(h, S.chip) || !has(h, S.pendingNote)) fail('pricePending: "Price to follow", chip or note missing');
 if (/R\d/.test(txt(h))) fail('pricePending: a price numeral renders');
+h = card('vip', vm({ state: 'salesClosed', price: null, scarcity: null }));
+if (buttons(h).length || /data-ticket-cta|data-ticket-stepper|<input/.test(h)) fail('salesClosed: a button, stepper, input or CTA renders (same masking as pricePending)');
+if (/R\s?\d/.test(txt(h))) fail('salesClosed: a price numeral renders');
+if (/data-ticket-count|waitlist/i.test(h)) fail('salesClosed: a scarcity slot or waitlist wording renders');
+if (!/VIP Ticket/.test(txt(h))) fail('salesClosed: the card lost its name (the v13 card still renders, masked)');
 h = card('weekend', vm({ slug: 'weekend-pass-early-bird', state: 'earlyBirdSoldOut', price: 360, regularPrice: 380, scarcity: null }), { name: 'Weekend Pass (Early Bird)' });
 if (buttons(h).length || /data-ticket-cta/.test(h)) fail('earlyBirdSoldOut: a button or CTA renders');
 if (!has(h, S.earlyBirdSoldOut) || !/<s[^>]*>\s*Early-bird price/.test(h) || !has(h, 'The Weekend Pass is now R380.')) fail('earlyBirdSoldOut: struck "Early-bird price", "Early bird sold out" or "The Weekend Pass is now R380." missing');

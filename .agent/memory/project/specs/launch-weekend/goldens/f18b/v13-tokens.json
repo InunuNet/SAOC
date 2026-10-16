@@ -76,6 +76,7 @@
     "stub": "[data-ticket-stub]",
     "fan": "[data-nos-ticket-fan]",
     "fanLink": "[data-fan-link]",
+    "salesStatus": "[data-sales-status]",
     "poolBanner": "[data-pool-banner]",
     "poolBracket": "[data-pool-bracket]",
     "dayCell": "[data-ticket-day]",

@@ -54,7 +54,7 @@
       "partner": "Weekend Pass"
     },
     "symposium": {
-      "name": "SAOC Symposium",
+      "name": "National Orchid Show Symposium",
       "when": "Dates to follow",
       "theme": "From Wild Origins to Cultivated Excellence",
       "numeral": "XIX",
@@ -124,7 +124,13 @@
     },
     "beforeYouVisit": "Before you visit",
     "dayPassFrom": "Day Pass from",
-    "buyHint": "Choose at least one ticket"
+    "buyHint": "Choose at least one ticket",
+    "salesClosed": {
+      "label": "Sales closed",
+      "bandLink": "Be the first to know",
+      "hook": "[data-sales-status]",
+      "note": "The existing components/tickets/SalesClosedNotice 'Sales closed' string and the existing 'Be the first to know' band title (HoldingState). No new sentence: the status line carries those two strings only."
+    }
   },
   "dataGaps": {
     "R7": "Sections with numbers that have no real source (the 500 pool total, the 300 weekend ceiling, the 1000 per-day ceiling, workshop 10 places, symposium/WOSA 80) are shown ONLY if the number is a real stored value (ticketType.capacity/releasedQuantity or Firestore sold counts). The pool total in poolText is a CMS/Firestore-derived value; where it is not available the banner and the pool wording are not rendered at all."
@@ -160,9 +166,9 @@
     {
       "product": "symposium",
       "handoff": "SAOC Symposium",
-      "cms": "SAOC Symposium",
+      "cms": "National Orchid Show Symposium",
       "slug": "saoc-symposium",
-      "note": "CMS also has SAOC Symposium (Early-Bird), WOSA Conference (Early-Bird) and SAOC/WOSA Joint (+ Early-Bird): v13 has no card for them (R54 Joint clause, for Lee-Ann)."
+      "note": "Sanity was renamed on 2026-10-17 (design-cb): the CMS now reads \"National Orchid Show Symposium\" and \"National Orchid Show Symposium (Early-Bird)\". The HANDOFF string stays only as the record of the difference. The CMS also has WOSA Conference (Early-Bird) and SAOC/WOSA Joint (+ Early-Bird): v13 has no card for them (R54 Joint clause, for Lee-Ann)."
     },
     {
       "product": "wosa",

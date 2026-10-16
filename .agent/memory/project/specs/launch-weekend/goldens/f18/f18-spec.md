@@ -54,10 +54,10 @@ Golden: `goldens/f18b/v13-tickets.html` (the approved mock, 2054 lines, measure 
 - **Checkout stays identical.** `useTicketCart`, the `/api/tickets/checkout` payload (`items[].ticketTypeId`, `items[].quantity`, chosenDay), reservation and ITN are untouched (A10 forbids `app/api/`, gateway and order libraries). e2e ticket journeys stay green (A14).
 - **R81 carried over.** SA-English dates ("Thu 23 Sept 2027", `formatShowDay`, ISO only in `<time datetime>`), zero-cent prices (`R150`, `R250.50`), NOS chrome on `/tickets/*` and the return pages.
 - **Vote 2 (checkout screen).** On a `/tickets/*` checkout screen that can reach quantity 0 the Buy button is ENABLED; pressing it shows exactly `Choose at least one ticket` (design-cb final ruling: no "Please"; `v13-copy.json` `strings.buyHint`) inline in `[data-buy-hint]`, tied by `aria-describedby`, and moves focus to the first quantity field. The old disabled-with-reason pattern is removed (`supersession.json` amends F7 `check-d-ticket-form`).
-- **Sales closed (F3 posture, unchanged).** While `nationalShow.salesOpen` is false no keepsake card renders a price, stepper or CTA, and the fan shows no price: the existing Sales closed state stands in their place (the F3-T 1a check in A12 enforces it with `NOS_SALES_CLOSED=1`). DECISION NEEDED, recommendation first: keep the posture. The alternative (browse-only cards with prices while closed) contradicts the launch runbook.
+- **Sales closed (design-cb ruling, replaces the stand-in-place posture).** While `nationalShow.salesOpen` is false the v13 cards STILL render (fan, sections, stubs, names, sub-ledes, day and session descriptions). Each is masked like `pricePending`: no price, no stepper, no CTA, no input or form (builder state `salesClosed`, outranking every other state; `price`, `regularPrice` and `scarcity` null; `pool` and `dayPassFrom` null). One page-level R11 status line `[data-sales-status]` (`role="status"`) sits after the hero and before the first card, reading the existing "Sales closed" string with a "Be the first to know" link; no new sentence. The pool banner is hidden and the fan labels end ", sales closed". The runbook guarantee holds: no price, form or quantity control. Asserted in both modes: A27 (builder `salesOpen` true and false), A28 (`salesClosed` card render), A35 (live, `NOS_SALES_CLOSED=1` or `0`) and the re-pinned F3-T 1a check in A12.
 - **No waitlist (design-cb ruling 5).** soldOut shows the stamp and `This ticket has sold out.`, no CTA, no waitlist wording or link (A28, A29).
 - **One name end to end (design-cb ruling 4).** Card, fan, checkout, confirmation and email show the same string, the CMS ticketType name of the SKU rendered (`data-ticket-slug`); the HANDOFF section 2 name never wins. A29 asserts card, fan label and the `/tickets/<slug>` page against the CMS. HANDOFF-vs-CMS differences are listed in 4.10.
-- **Vote 3.** The card CTA reads `Buy ticket` (sentence case) on EVERY paid product including SAOC Symposium, WOSA Conference and workshop session cards. Never "Register" or "Add to booking". The Workshops product card says `Choose a session` and links `#sessions`.
+- **Vote 3.** The card CTA reads `Buy ticket` (sentence case) on EVERY paid product including the National Orchid Show Symposium, WOSA Conference and workshop session cards. Never "Register" or "Add to booking". The Workshops product card says `Choose a session` and links `#sessions`.
 
 ### 4.2 Data layer (pure, A27; live loader, A21)
 `lib/data/ticket-card-view-models.ts` exports the pure `buildTicketCardViewModels(input)` returning `{ cards, pool }`, shapes locked by HANDOFF section 2 and the ten cases of `v13-viewmodel-fixtures.json`. Precedence `pricePending > soldOut > earlyBirdSoldOut > low > available`; `low` at <= 10% remaining; one early-bird pool shared by `weekend-pass-early-bird` and `early-bird` (total = smallest effective capacity of its members, sold = sum of member sold x headcountPerUnit); the early-bird SKU shows while the pool lasts and the regular SKU takes the slot at 0 (banner "Early bird sold out"); `regularPrice` only on early-bird SKUs; `scarcity` null without a real capacity; per-day remaining from real sold-by-day counts or null; never a negative remaining; a product whose type does not exist yields no card.
@@ -107,7 +107,7 @@ The one-line scope under each h2 in `#thursday`, `#passes` and `#programme`: `[d
 |---|---|---|---|
 | thursday | `Two evening events on Thursday 23 September.` | day and month: `nationalShow.showDate` (must be a Thursday); "Two": the VIP and Sunset cards both present | no showDate, not a Thursday, or either card absent |
 | passes | `Friday 24 to Sunday 26 September.` | start = showDate + 1 day, end = `nationalShow.showEndDate`; weekday and day from the calendar dates | either date missing, or the range crosses a month or year |
-| programme | `The SAOC Symposium, the WOSA Conference and workshops.` | CMS ticketType names of the Symposium and WOSA cards, the Workshops card name lower-cased | any of the three cards absent |
+| programme | `The National Orchid Show Symposium, the WOSA Conference and workshops.` | CMS ticketType names of the Symposium and WOSA cards, the Workshops card name lower-cased | any of the three cards absent |
 | sessions (F18c) | mock: "Workshop titles, times and presenters are still to be confirmed. These cards show each field, and each missing field, with sample counts." | none: design-mock commentary about sample counts | always omitted |
 
 An omitted lede leaves no empty node and no spacer in the head (A29: the h2 is the only child). No date literal in `lib/data/ticket-section-ledes.ts` or the hub page source (A27 static scan). Recommendation: card date lines (the stub numerals and "Thursday 23 September" style lines) derive from the same show dates; not mechanically asserted except through A29's no-sample-number rule.
@@ -119,7 +119,7 @@ An omitted lede leaves no empty node and no spacer in the head (A29: the h2 is t
 | Sunset | Sunset Cocktails | Sunset Cocktails (Single) (the CMS also has a Couple type with no v13 card) |
 | Weekend | Weekend Pass | Weekend Pass (Early Bird) while the pool lasts, then Weekend Pass |
 | Day | Day Pass | Early-Bird Exhibition Ticket while the pool lasts, then Day Visitor Ticket |
-| Symposium | SAOC Symposium | SAOC Symposium (its Early-Bird, the WOSA Early-Bird and the SAOC/WOSA Joint types have no v13 card) |
+| Symposium | SAOC Symposium | National Orchid Show Symposium, renamed in Sanity on 2026-10-17 by design-cb (its Early-Bird, the WOSA Early-Bird and the SAOC/WOSA Joint types have no v13 card) |
 | WOSA | WOSA Conference | WOSA Conference |
 | Workshops | Workshops | none: a link card to the sessions, not a purchasable type |
 The partner wording ("Shared with the Day Pass") and "The Weekend Pass is now R380." therefore read the partner's and the regular SKU's CMS names too. Lee-Ann may want renamed CMS entries (for example Day Pass) so the pass names read well; that is a CMS edit, not code.
@@ -166,7 +166,7 @@ Build and serve: `SITE_PUBLIC_LAUNCH=true pnpm run build && SITE_PUBLIC_LAUNCH=t
 2. Stub photos (F18b): `[data-ticket-stub]` is a third image role, ticket routes only, the five production photos only. `check-f3-imagery` excludes `[data-ticket-stub]` too. F16 `check-f-cards` is retired: it pinned the old card photo rule and the F16 rows.
 3. RESOLVED (design-cb ruling 1): `#exhibit` / `#trade` stay at the foot of the hub as the compact 2-card row (4.4).
 4. DECISION NEEDED (4.2): helper failure semantics stay tolerant. Recommendation: keep.
-5. DECISION NEEDED (4.1 sales closed): keep the F3 posture (no price, stepper or CTA while salesOpen=false). Recommendation: keep.
+5. CLOSED (4.1 sales closed): design-cb ruled that the v13 cards stay, masked, with one page-level status line (section 7).
 6. The vendors pending chip and the sponsors marker are beta-only; reversal is a one-line golden edit.
 7. F12/F17/F3 checks that survive were measured green on 76ad8b98 but could not be run against an F18 build in this branch. If the dev finds one red because of an intended F18 change, stop and report it to the lead as an amendment candidate; do not edit checks.
 
@@ -178,7 +178,7 @@ Copy comes only from `longform-copy.json`, `v13-copy.json`, existing strings (`s
 
 - Nine summaries dropped from public heroes as builder briefs: pages 01, 02, 05, 06, 07, 11, 12, 13, 15. Page 07 has no source in her Drive.
 - /vendors and /sa-exhibitors carry the same copy (4 vs 3 paragraphs); confirm or supply distinct text.
-- The conferences page lede and metadata say "SAOC Symposium"; confirm the product naming.
+- The Symposium is now "National Orchid Show Symposium" end to end (design-cb, Sanity renamed 2026-10-17; section 7). The WOSA Conference and "SAOC/WOSA Joint" names are unruled and stay as the CMS has them; the three remaining HANDOFF-vs-CMS name differences (4.10) go to Lee-Ann, and the CMS names render until she answers.
 - The WOSA conference metadata "held alongside" is unsourced.
 - Ticket facts with no source, therefore NOT shown: the early-bird pool ceiling, the Weekend Pass ceiling, the per-day ceiling, workshop places, symposium and WOSA places. They appear only when the real stored capacity exists.
 
@@ -209,3 +209,10 @@ Copy comes only from `longform-copy.json`, `v13-copy.json`, existing strings (`s
 - /national-show/wosa-conference (Athanor 2): public mode shows the F18a holding state (existing strings, R11) and keeps the "Buy ticket" link to `#ticket-wosa` that A31 requires. A3 asserts both.
 - Heading order (Athanor 3): A3 asserts the first heading is h1 and levels never skip on /national-show/about and /national-show/workshops.
 - `check-f3-imagery.mjs` line 9 no longer describes the break rule.
+
+## 7. F18b follow-up (design-cb rulings, 2026-10-17)
+
+- Stable ids (A29). `#ticket-day` and `#ticket-weekend` each exist exactly once on the hub, on the Day card (early-bird or day-visitor SKU) and the Weekend card (weekend-pass-early-bird or weekend-pass SKU), and as a document id. site-77's mega-menu rail links depend on them. F18b does not edit nav-config or NosHeader.
+- Sales closed (A27, A28, A35, F3-T 1a re-pin). See the 4.1 bullet above. New hook `[data-sales-status]` in `v13-tokens.json`; `salesCases` in `v13-viewmodel-fixtures.json`; the existing strings "Sales closed" (`components/tickets/SalesClosedNotice.tsx`) and "Be the first to know" (`HoldingState`) are the only copy. `check-f3-tickets.mjs` is re-pinned: while closed the cards still render with no CTA, stepper or button and exactly one status line on `/tickets`.
+- Symposium naming sweep (A36). The product is "National Orchid Show Symposium" in the card, fan, sub-lede, checkout and receipt, because the CMS name wins (ruling 4) and Sanity was renamed. Code that hardcodes "SAOC Symposium" desyncs from the CMS. The dev changes only that phrase, in code (comments excluded): `lib/ticket-taxonomy.ts` (`symposium`), `lib/provisional-figures.ts` (the fallback name and description), the conferences, programme and symposium pages (the symposium h1 stays Brad's "National Orchid Show Symposium"), `lib/data/builder-brief-summaries.ts`, and any other hit the A36 scan prints. Two hits are site-77's (`components/chrome/nav-config.ts`, `components/show/ShowSectionNav.tsx`) and print as notes. The programme sub-lede interpolates the CMS name (`The {symposium}, the {wosa} and workshops.`) and must not type "SAOC" before it (A36 scans `lib/data/ticket-section-ledes.ts`). A10 treats "National Orchid Show Symposium" and "SAOC Symposium" as the same phrase when diffing copy, with probes. "SAOC/WOSA Joint" is untouched. The fixtures in `v13-viewmodel-fixtures.json` and `v13-copy.json` carry the new name.
+- Typographic quotes: already exempt in A10 (c325df87).

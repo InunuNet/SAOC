@@ -113,6 +113,12 @@ assertions:
   - id: F18-A34
     description: '[F18c] Workshop sessions live - #sessions after #programme and before #exhibit with h2 "Workshop sessions", session cards with the 150px stub and "Buy ticket" only when on sale, the Workshops card links /national-show/workshops#sessions, /national-show/workshops on the session cards with no F16 catalogue rows, and the workshops page takes its cards from loadTicketCardViewModels'
     command: F18_PART=c node --import tsx/esm contracts/checks/launch-weekend/f18/check-m-availability.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-x-sessions-live.mjs
+  - id: F18-A35
+    description: Sales closed and open modes live (design-cb ruling, replaces the stand-in-place posture) - with salesOpen false the v13 cards still render, each masked like pricePending (no price, stepper, CTA, input, form or price numeral), one role=status line [data-sales-status] after the hero and before the first card reading the existing "Sales closed" string with a "Be the first to know" link, the pool banner hidden, no TEST MODE banner and fan labels ending ", sales closed"; with salesOpen true no status line and no salesClosed card; NOS_SALES_CLOSED=1 or 0 pins the dataset
+    command: NOS_SALES_CLOSED=1 NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-y-sales-closed.mjs
+  - id: F18-A36
+    description: Symposium naming sweep - 0 occurrences of "SAOC Symposium" in the code (comments excluded) of app/, components/ and lib/ except site-77's nav-config and ShowSectionNav (reported as notes), the F18-owned sites say "National Orchid Show Symposium", the symposium h1 is unchanged, and the section sub-lede source never types SAOC before a name
+    command: node contracts/checks/launch-weekend/f18/check-z-naming-sweep.mjs
   - id: F18-A13
     description: Check hygiene - supersession.json names the rebased, amended and retired checks (F16 hub checks, F7 check-d-ticket-form vote 2, F3 imagery stub exclusion), check-labels-static is structural and exits 0, check-f3-imagery excludes the image break and [data-ticket-stub], retired F16 files carry RETIRED headers
     command: node --import tsx/esm contracts/checks/launch-weekend/f18/check-l-supersession.mjs

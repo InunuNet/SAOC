@@ -8,7 +8,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import * as mod from '../../../../lib/data/ticket-card-view-models';
 
 type Obj = Record<string, unknown>;
-const fx = JSON.parse(readFileSync('.agent/memory/project/specs/launch-weekend/goldens/f18b/v13-viewmodel-fixtures.json', 'utf8')) as { showDays: string[]; types: Obj[]; cases: Obj[]; ledeCases: Obj[] };
+const fx = JSON.parse(readFileSync('.agent/memory/project/specs/launch-weekend/goldens/f18b/v13-viewmodel-fixtures.json', 'utf8')) as { showDays: string[]; types: Obj[]; cases: Obj[]; ledeCases: Obj[]; salesCases: Obj[] };
 const problems: string[] = [];
 const fail = (m: string) => problems.push(m);
 const build = (mod as unknown as { buildTicketCardViewModels?: (i: Obj) => { cards: Record<string, Obj | undefined>; pool: Obj | null; dayPassFrom: number | null } }).buildTicketCardViewModels;
@@ -53,6 +53,23 @@ if (typeof build === 'function') {
       if (card && card.state === 'pricePending' && card.price !== null) fail(`${name}: ${k} pricePending with a non-null price`);
     }
   }
+  // sales closed (design-cb): salesOpen false masks EVERY card (state salesClosed, no price, no scarcity), hides the pool and the Day Pass 'from' price; salesOpen true changes nothing
+  const closed = build({ showDays: fx.showDays, types: fx.types, soldByType: {}, soldByDay: null, thresholdPercent: 10, salesOpen: false });
+  const closedCards = Object.entries(closed.cards).filter(([, c]) => c);
+  if (!closedCards.length) fail('salesOpen false returned no cards (the v13 cards still render while sales are closed)');
+  for (const [k, c] of closedCards) {
+    if (c?.state !== 'salesClosed') fail(`salesOpen false: ${k} state is ${JSON.stringify(c?.state)}, want salesClosed`);
+    if (c?.price !== null && c?.price !== undefined) fail(`salesOpen false: ${k} still carries a price`);
+    if (c?.regularPrice !== null && c?.regularPrice !== undefined) fail(`salesOpen false: ${k} still carries a regularPrice`);
+    if (c?.scarcity !== null && c?.scarcity !== undefined) fail(`salesOpen false: ${k} still carries scarcity`);
+  }
+  if (closed.pool !== null) fail('salesOpen false: the pool banner data is not null (the pool banner is hidden)');
+  if (closed.dayPassFrom !== null) fail('salesOpen false: dayPassFrom is not null (no price may render while closed)');
+  const open = build({ showDays: fx.showDays, types: fx.types, soldByType: {}, soldByDay: null, thresholdPercent: 10, salesOpen: true });
+  const dflt = build({ showDays: fx.showDays, types: fx.types, soldByType: {}, soldByDay: null, thresholdPercent: 10 });
+  if (JSON.stringify(open) !== JSON.stringify(dflt)) fail('salesOpen true differs from the omitted default (default must be open)');
+  if (Object.values(open.cards).some((c) => (c as Obj | undefined)?.state === 'salesClosed')) fail('salesOpen true produced a salesClosed card');
+  if (!fx.salesCases?.length) fail('v13-viewmodel-fixtures.json has no salesCases');
   const a = build({ showDays: fx.showDays, types: fx.types, soldByType: {}, soldByDay: null, thresholdPercent: 10 });
   const b = build({ showDays: fx.showDays, types: fx.types, soldByType: {}, soldByDay: null, thresholdPercent: 10 });
   if (JSON.stringify(a) !== JSON.stringify(b)) fail('buildTicketCardViewModels is not pure (two identical calls differ)');
