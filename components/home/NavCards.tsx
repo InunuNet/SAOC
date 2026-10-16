@@ -89,54 +89,63 @@ export function NavCards({ show }: NavCardsProps) {
   const cards = buildNavCards(show);
 
   return (
-    <section className="py-24 px-8 md:px-16 bg-bone">
+    <section data-home-section="nav-cards" className="py-24 px-8 md:px-16 bg-bone">
       <div className="max-w-[1280px] mx-auto">
         <div className="mb-12">
           <div className="mb-3">
-            <span className="eyebrow">Find your way in</span>
+            <span className="eyebrow eyebrow--on-tint">Find your way in</span>
           </div>
           <h2 className="font-serif text-[clamp(34px,4.4vw,54px)] font-medium leading-[1.08] tracking-[-0.01em] text-primary">
             Four ways into SAOC
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 min-[560px]:grid-cols-2 min-[1100px]:grid-cols-4 gap-5">
           {cards.map((card) => (
             <Link
               key={card.href}
               href={card.href}
-              className="group flex flex-col bg-parchment hover:shadow-md transition-shadow duration-200"
+              data-nav-card
+              className="group flex flex-col bg-parchment border border-rule transition-[translate,box-shadow,border-color] duration-150 ease-(--ease) hover:-translate-y-1 hover:border-accent hover:shadow-[0_20px_50px_rgba(34,40,31,0.08)] focus-visible:-translate-y-1 focus-visible:border-accent focus-visible:shadow-[0_20px_50px_rgba(34,40,31,0.08)] active:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 motion-reduce:active:translate-y-0"
             >
-              {/* Image with badge overlay */}
-              <div className="relative aspect-[4/5] overflow-hidden">
+              <div className="relative aspect-[3/2] min-[560px]:aspect-[4/5] overflow-hidden">
                 <Image
                   src={card.image}
                   alt={card.alt}
                   fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                  sizes="(min-width: 1024px) 25vw, 50vw"
+                  className="object-cover transition-[scale] duration-150 ease-(--ease) group-hover:scale-[1.03] group-focus-visible:scale-[1.03] motion-reduce:group-hover:scale-100 motion-reduce:group-focus-visible:scale-100"
+                  sizes="(min-width: 1100px) 25vw, (min-width: 560px) 50vw, 100vw"
                 />
-                <span className="absolute top-3 left-3 font-mono text-[10px] uppercase tracking-[0.18em] text-ivory bg-primary/80 px-2.5 py-1">
+                <span
+                  data-nav-card-badge
+                  className="absolute top-3 left-3 font-mono text-[10.5px] uppercase tracking-[0.16em] text-ivory bg-primary/80 px-[11px] py-[5px] rounded-[2px]"
+                >
                   {card.badge}
                 </span>
               </div>
 
-              {/* Text area */}
-              <div className="flex flex-col flex-1 p-5">
-                <h3 className="font-serif text-[18px] font-medium text-primary leading-snug mb-2 flex-1">
+              <div className="flex flex-col flex-1 p-[22px]">
+                <h3
+                  data-nav-card-title
+                  className="font-serif text-[24px] font-semibold leading-[1.18] text-primary mb-3 underline decoration-transparent decoration-1 underline-offset-4 transition-[color,text-decoration-color] duration-150 ease-(--ease) group-hover:text-primary-800 group-hover:decoration-accent group-focus-visible:text-primary-800 group-focus-visible:decoration-accent text-pretty"
+                >
                   {card.title}
                 </h3>
 
-                <p className="font-sans text-[16px] text-ink/70 leading-relaxed mb-4">
+                <p className="font-sans text-[16px] leading-[1.55] text-muted mb-auto pb-5">
                   {card.body}
                 </p>
 
-                <div className="flex items-center justify-between border-t border-rule pt-3">
-                  <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+                <div className="flex items-center justify-between gap-3 border-t border-rule pt-4">
+                  <span
+                    data-nav-card-meta
+                    className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted"
+                  >
                     {card.meta}
                   </span>
                   <span
-                    className="font-serif text-[15px] text-primary group-hover:translate-x-1 transition-transform duration-150"
+                    data-nav-card-arrow
+                    className="font-serif text-[18px] text-primary transition-[translate,color] duration-150 ease-(--ease) group-hover:translate-x-1 group-hover:text-accent group-focus-visible:translate-x-1 group-focus-visible:text-accent motion-reduce:group-hover:translate-x-0 motion-reduce:group-focus-visible:translate-x-0"
                     aria-hidden="true"
                   >
                     →

@@ -55,26 +55,39 @@ function toCards(partners?: SanityPartner[] | null): PartnerCard[] {
 
 export function PartnersSection({ partners }: PartnersSectionProps) {
   const cards = toCards(partners);
+  const rowBase =
+    'grid grid-cols-[1fr_auto] min-[900px]:grid-cols-[5fr_6fr_auto] items-baseline gap-x-10 gap-y-3 border-b border-rule py-7 px-3 min-h-[44px]';
 
   return (
-    <section className="py-20 px-8 md:px-16 bg-bone border-t border-rule">
+    <section data-home-section="partners" className="py-20 px-8 md:px-16 bg-parchment">
       <div className="max-w-[1280px] mx-auto">
         <div className="mb-10">
           <span className="eyebrow">In collaboration with</span>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="border-t border-rule -mx-3">
           {cards.map((card) => {
-            const content = (
+            const body = (
               <>
-                <span className="font-serif text-lg text-ink leading-snug">{card.name}</span>
+                <span
+                  data-partner-name
+                  className="font-serif text-[clamp(26px,3vw,36px)] font-medium leading-[1.15] text-primary underline decoration-transparent decoration-1 underline-offset-[6px] transition-[color,text-decoration-color] duration-150 ease-(--ease) group-hover:text-primary-800 group-hover:decoration-accent group-focus-visible:text-primary-800 group-focus-visible:decoration-accent"
+                >
+                  {card.name}
+                </span>
                 {card.description ? (
-                  <>
-                    {' '}
-                    <span className="mt-3 block text-[16px] text-muted leading-relaxed">
-                      {card.description}
-                    </span>
-                  </>
+                  <span className="col-span-2 min-[900px]:col-span-1 min-[900px]:col-start-2 row-start-2 min-[900px]:row-start-1 font-sans text-[16px] leading-[1.55] text-muted">
+                    {card.description}
+                  </span>
+                ) : null}
+                {card.website ? (
+                  <span
+                    data-partner-arrow
+                    aria-hidden="true"
+                    className="col-start-2 row-start-1 min-[900px]:col-start-3 font-serif text-[20px] text-primary transition-[translate,color] duration-150 ease-(--ease) group-hover:translate-x-1 group-hover:text-accent group-focus-visible:translate-x-1 group-focus-visible:text-accent motion-reduce:group-hover:translate-x-0 motion-reduce:group-focus-visible:translate-x-0"
+                  >
+                    →
+                  </span>
                 ) : null}
               </>
             );
@@ -85,13 +98,14 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
                 href={card.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block border border-rule p-8 transition-colors duration-150 hover:bg-parchment"
+                data-partner-row
+                className={`group ${rowBase} transition-colors duration-150 ease-(--ease) hover:bg-accent/8 focus-visible:bg-accent/8 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]`}
               >
-                {content}
+                {body}
               </a>
             ) : (
-              <div key={card._id} className="border border-rule p-8">
-                {content}
+              <div key={card._id} data-partner-row className={rowBase}>
+                {body}
               </div>
             );
           })}

@@ -21,7 +21,7 @@ const NO_TARGET = new Date(0);
 
 const MS_PER_DAY = 86_400_000;
 
-const BOX_CLASSES = 'bg-primary/40 border border-ivory/10 px-6 py-5 mb-8';
+const BOX_CLASSES = 'bg-ivory/8 p-[2px] rounded-[2px] mb-8';
 
 export interface ShowBandProps {
   show?: ShowIdentity | null;
@@ -43,7 +43,10 @@ function CountdownBox({ target, edition }: { target: Date | null; edition?: numb
 
   if (!target) {
     return (
-      <p className={`${BOX_CLASSES} font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/60`}>
+      <p
+        data-show-band-countdown
+        className={`${BOX_CLASSES} px-6 py-5 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/65`}
+      >
         Show dates to be confirmed
       </p>
     );
@@ -57,22 +60,29 @@ function CountdownBox({ target, edition }: { target: Date | null; edition?: numb
   ];
 
   return (
-    <div className={BOX_CLASSES}>
-      <div
-        className="flex gap-3 sm:gap-8"
-        aria-label={`Countdown to the ${showLabelWithEdition(edition)}`}
-      >
-        {cells.map((cell) => (
-          <div key={cell.label} className="flex flex-col items-center">
-            <span className="font-serif text-[clamp(26px,7vw,42px)] text-accent-soft leading-none">
-              {cell.value}
-            </span>
-            <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/60 mt-1">
-              {cell.label}
-            </span>
+    <div
+      data-show-band-countdown
+      role="group"
+      aria-label={`Countdown to the ${showLabelWithEdition(edition)}`}
+      className={`${BOX_CLASSES} flex gap-[2px]`}
+    >
+      {cells.map((cell) => (
+        <div
+          key={cell.label}
+          data-countdown-cell
+          className="flex-1 min-w-0 bg-ivory/4 rounded-[1px] px-1.5 sm:px-3 py-[18px] text-center"
+        >
+          <div
+            data-countdown-value
+            className="font-serif text-[34px] sm:text-[42px] font-medium leading-none text-accent-soft tabular-nums"
+          >
+            {cell.value}
           </div>
-        ))}
-      </div>
+          <div className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/65">
+            {cell.label}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -92,65 +102,65 @@ export function ShowBand({ show }: ShowBandProps) {
   ];
 
   return (
-    <section className="bg-primary-800">
-      <div className="max-w-[1280px] mx-auto grid grid-cols-1 md:grid-cols-2">
-        {/* Image left */}
-        <div className="relative w-full max-w-full aspect-[4/3] md:aspect-auto md:w-auto md:max-w-none min-h-[400px]">
+    <section data-home-section="show-band" className="bg-primary-800">
+      <div className="grid grid-cols-1 min-[1100px]:grid-cols-[1fr_1.1fr] min-[1100px]:min-h-[620px]">
+        {/* Photo: flush to the viewport edge, no scrim (no text sits on it) */}
+        <div data-show-band-image className="relative w-full aspect-[3/2] min-[1100px]:aspect-auto min-[1100px]:min-h-[620px]">
           <Image
             src="/images/orchid-yellow.jpg"
             alt="Yellow orchid on the show bench"
             fill
             className="object-cover"
-            sizes="(min-width: 768px) 50vw, 100vw"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-r from-transparent to-primary-800/60 hidden md:block"
+            sizes="(min-width: 1100px) 48vw, 100vw"
           />
         </div>
 
-        {/* Content right */}
-        <div className="flex flex-col justify-center px-10 py-16 on-dark">
-          <div className="mb-6">
-            <span className="eyebrow eyebrow--light">Flagship Event</span>
-          </div>
+        <div className="flex flex-col justify-center px-8 py-[60px] min-[1100px]:px-20 min-[1100px]:py-[90px] on-dark">
+          <div data-show-band-content className="w-full max-w-[720px]">
+            <div className="mb-6">
+              <span className="eyebrow eyebrow--light">Flagship Event</span>
+            </div>
 
-          <h2 className="font-serif text-[clamp(32px,3.8vw,48px)] font-medium leading-[1.1] tracking-[-0.01em] text-ivory mb-8">
-            {showTitleWithEdition(show?.edition, 'South African National Orchid Show')}
-          </h2>
+            <h2 className="font-serif text-[clamp(32px,3.8vw,48px)] font-medium leading-[1.1] tracking-[-0.01em] text-ivory mb-8 text-balance">
+              {showTitleWithEdition(show?.edition, 'South African National Orchid Show')}
+            </h2>
 
-          <dl className="grid grid-cols-2 gap-x-8 gap-y-4 mb-8">
-            {meta.map((item) => (
-              <div key={item.label}>
-                <dt className="font-mono text-[10px] uppercase tracking-[0.22em] text-ivory/65 mb-1">
-                  {item.label}
-                </dt>
-                <dd className="font-sans text-[15px] text-ivory">{item.value}</dd>
-              </div>
-            ))}
-          </dl>
+            <dl data-show-band-facts className="grid grid-cols-2 gap-x-10 gap-y-5 mb-8">
+              {meta.map((item) => (
+                <div key={item.label} className="border-t border-ivory/15 pt-3">
+                  <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/65 mb-1">
+                    {item.label}
+                  </dt>
+                  <dd className="font-sans text-[16px] leading-[1.55] text-ivory">{item.value}</dd>
+                </div>
+              ))}
+            </dl>
 
-          <CountdownBox target={target} edition={show?.edition} />
+            <CountdownBox target={target} edition={show?.edition} />
 
-          <div className="flex flex-wrap gap-4">
-            <Link
-              href="/national-show"
-              className="font-sans text-[14px] font-medium bg-accent text-ink px-6 py-3 hover:bg-accent-soft transition-colors duration-150"
-            >
-              Show details
-            </Link>
-            <Link
-              href="/national-show/exhibitors"
-              className="font-sans text-[14px] font-medium border border-ivory/30 text-ivory px-6 py-3 hover:bg-ivory/10 transition-colors duration-150"
-            >
-              Exhibitor info
-            </Link>
-            <Link
-              href="/tickets"
-              className="font-sans text-[14px] font-medium border border-ivory/30 text-ivory px-6 py-3 hover:bg-ivory/10 transition-colors duration-150"
-            >
-              Book Tickets
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="/tickets"
+                data-show-band-cta="primary"
+                className="inline-flex items-center justify-center text-[14px] font-medium tracking-[0.01em] rounded-[2px] border transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-accent-soft focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 px-[22px] py-[14px] max-[559px]:w-full border-transparent bg-accent text-ink hover:bg-accent-soft hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0"
+              >
+                Book tickets
+              </Link>
+              <Link
+                href="/national-show"
+                data-show-band-cta="secondary"
+                className="inline-flex items-center justify-center text-[14px] font-medium tracking-[0.01em] rounded-[2px] border transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-accent-soft focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 px-[22px] py-[14px] text-ivory border-ivory/45 hover:border-ivory hover:bg-white/6 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0"
+              >
+                Show details
+              </Link>
+              <Link
+                href="/national-show/exhibitors"
+                data-show-band-cta="tertiary"
+                className="inline-flex items-center justify-center text-[14px] font-medium tracking-[0.01em] rounded-[2px] border transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-accent-soft focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 min-h-[44px] px-1 border-transparent text-ivory underline decoration-accent decoration-1 underline-offset-4 hover:text-accent-soft hover:decoration-accent-soft"
+              >
+                Exhibitor info
+              </Link>
+            </div>
           </div>
         </div>
       </div>

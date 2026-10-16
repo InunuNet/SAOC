@@ -332,3 +332,10 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* F14: on a bone section the bone eyebrow pill is invisible and the visible text reads indented off the axis;
+   a parchment pill with a rule border keeps its left edge on the axis. */
+.eyebrow--on-tint {
+  background: var(--parchment);
+  border: 1px solid var(--rule);
+}
