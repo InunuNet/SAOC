@@ -40,7 +40,10 @@ await withBrowser(async (ctx) => {
   const href = await page.evaluate(() => [...document.querySelectorAll('a[href^="/tickets/"]')].map((a) => a.getAttribute('href')).find((h) => !/confirmation|cancelled/.test(h)));
   if (!href) return;
   await open(page, href);
-  const buy = page.locator('form button[type="submit"]').first();
+  // the route suspends first (tickets/loading.tsx); scope to the purchase form in <main>, never the footer newsletter form
+  const purchase = page.locator('main form').filter({ hasText: 'Estimated total' }).first();
+  try { await purchase.waitFor({ timeout: 15_000 }); } catch { return; }
+  const buy = purchase.locator('button[type="submit"]').first();
   if (!(await buy.count())) return;
   runtime = 'runtime verified';
   if (!(await buy.isDisabled())) problems.push(`runtime ${href}: Buy is enabled at quantity 0`);
