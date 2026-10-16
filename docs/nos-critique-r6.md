@@ -102,3 +102,20 @@ sticky) header geometry is unchanged.
   `/national-show/tickets#ticket-day` and `#ticket-weekend`. nav-config is shared, so the SAOC menus read the
   same strings (lead-approved site-wide naming); the closed SAOC header is unchanged.
 Source: lead saoc-2b 2026-10-17.
+
+## f6 — R34: exhibitors "On this page" jump chips
+
+`/national-show/exhibitors` is a long guide, so it gets the same wrapping jump chips the FAQ uses.
+The R52 chip class string now lives in one file, `components/show/ShowJumpChips.tsx`;
+`ShowFaqList` imports it and its output is unchanged. `ExhibitorJumpNav.tsx` shows the chips
+from 768px and, below 768px, the same chips inside a collapsed native `<details>` ("On this page",
+44px summary with a chevron) that works without JavaScript. One chip per section heading: the four
+page h2s plus the nine reference-section h3s (13 in preview), in page order, only for blocks that
+render. Each heading carries an id and the r4 scroll offset (62px / 74px from 768) so a chip
+lands clear of the sticky header. The R11 banner now carries the existing "Contact the council"
+button (the end CTA stays), and the step numerals are Fraunces at 16px.
+
+Public build: `withholdPlaceholderProse()` (called once, in the page) switches the per-row
+markers off. Rows carrying an open-question marker are not rendered, the research markers become
+one status line and the "to be confirmed" chips become one status line, both under the banner
+(`ShowStatusLine.tsx`, the existing marker). Preview keeps today's 3 / 9 / 11 markers.

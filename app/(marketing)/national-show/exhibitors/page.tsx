@@ -1,12 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { connection } from 'next/server';
 
 import {
   EntryFormLink,
+  ExhibitorJumpNav,
   ExhibitorKeyDates,
   ExhibitorQuestions,
   ExhibitorSection,
   ExhibitorSteps,
+  ShowStatusLine,
 } from '@/components/show';
 import { Badge } from '@/components/nos/Badge';
 import { Button } from '@/components/nos/Button';
@@ -15,6 +18,7 @@ import { NosSection } from '@/components/nos/NosSection';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { showExhibitorInfoQuery, showExhibitorStepsQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import type { ShowExhibitorInfo, ShowExhibitorStep } from '@/types';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
@@ -58,7 +62,21 @@ const REFERENCE_SECTIONS = [
   'permits',
 ] as const;
 
+const CONTACT_LABEL = 'Contact the council';
+
+type Marker = 'pending' | 'research' | 'question';
+
+// The marker StatusMarker would draw for a status; confirmed draws none and anything
+// unrecognised falls to pending, the same fail-closed rule.
+function markerOf(status?: string | null): Marker | null {
+  if (status === 'confirmed') return null;
+  return status === 'research' || status === 'question' ? status : 'pending';
+}
+
 export default async function ExhibitorInfoPage() {
+  // The public-versus-preview switch reads the environment, so this page renders per request
+  // rather than being frozen at build time with whichever setting the build happened to have.
+  await connection();
   const [info, steps] = await Promise.all([
     sanityFetch<ShowExhibitorInfo>({
       query: showExhibitorInfoQuery,
@@ -74,6 +92,48 @@ export default async function ExhibitorInfoPage() {
   const researchLabel = info?.researchLabel;
   const questionLabel = info?.questionLabel;
   const status = info?.confirmations ?? {};
+
+  // Public build: rows carrying an open-question marker are not rendered, and the research and
+  // pending chips collapse into one line each under the banner (R11). Preview keeps every marker.
+  const publicMode = withholdPlaceholderProse();
+  const keyDates = (info?.keyDates ?? []).filter(
+    (row) => row?.label && !(publicMode && markerOf(row.status) === 'question')
+  );
+  const journey = (steps ?? []).filter(
+    (step) => step?.title && !(publicMode && markerOf(step.status) === 'question')
+  );
+  const sections = REFERENCE_SECTIONS.filter((name) => {
+    const section = info?.[name];
+    const renders = !!section?.heading || (section?.body ?? []).length > 0;
+    return renders && !(publicMode && markerOf(status[name]) === 'question');
+  });
+  const openQuestions = (info?.openQuestions ?? []).filter((item) => item?.question);
+  const entryFormStatus = status.entryForm;
+
+  const stepsHeading = 'From deciding to enter, to taking your plants home';
+  const chips = [
+    keyDates.length > 0 && info?.keyDatesHeading
+      ? { href: '#exhibitor-key-dates', label: info.keyDatesHeading }
+      : null,
+    info?.entryFormHeading ? { href: '#exhibitor-entry-form', label: info.entryFormHeading } : null,
+    journey.length > 0 ? { href: '#exhibitor-steps', label: stepsHeading } : null,
+    ...sections.map((name) => {
+      const heading = info?.[name]?.heading;
+      return heading ? { href: `#exhibitor-${name}`, label: heading } : null;
+    }),
+    openQuestions.length > 0 && info?.questionsHeading
+      ? { href: '#exhibitor-questions', label: info.questionsHeading }
+      : null,
+  ].filter((chip): chip is { href: string; label: string } => chip !== null);
+
+  const shown: (Marker | null)[] = publicMode
+    ? [
+        ...keyDates.map((row) => markerOf(row.status)),
+        ...journey.map((step) => markerOf(step.status)),
+        ...sections.map((name) => markerOf(status[name])),
+        markerOf(entryFormStatus),
+      ]
+    : [];
 
   return (
     <>
@@ -95,22 +155,40 @@ export default async function ExhibitorInfoPage() {
           </Link>
         </p>
 
-        {/* tone="purple" not "olive": olive-deep is 4.30:1 on white/parchment, which fails
-            body-text contrast (needs 4.5:1) — see nos-contrast.golden.md note 1. Olive text is
-            legal only on dark grounds or as large (≥24px) text. */}
-        <Badge tone="purple" className="normal-case">
-          <span aria-hidden="true">※</span>
-          <span className="normal-case tracking-[0.02em]">
-            Exhibitor entries are not yet open — this page covers what to expect when they do.
-            Contact the council to be notified.
-          </span>
-        </Badge>
+        <div className="space-y-4">
+          {/* tone="purple" not "olive": olive-deep is 4.30:1 on white/parchment, which fails
+              body-text contrast (needs 4.5:1) — see nos-contrast.golden.md note 1. Olive text is
+              legal only on dark grounds or as large (≥24px) text. */}
+          <Badge tone="purple" className="normal-case">
+            <span aria-hidden="true">※</span>
+            <span className="normal-case tracking-[0.02em]">
+              Exhibitor entries are not yet open — this page covers what to expect when they do.
+              Contact the council to be notified.
+            </span>
+          </Badge>
+          <p>
+            <Button as={Link} href="/contact" variant="primary" className="max-md:min-h-[44px]">
+              {CONTACT_LABEL}
+            </Button>
+          </p>
+
+          {shown.includes('research') ? (
+            <ShowStatusLine status="research" researchLabel={researchLabel} />
+          ) : null}
+          {shown.includes('pending') ? (
+            <ShowStatusLine status="pending" pendingLabel={pendingLabel} />
+          ) : null}
+        </div>
+
+        <ExhibitorJumpNav items={chips} />
 
         <ExhibitorKeyDates
           heading={info?.keyDatesHeading}
           note={info?.keyDatesNote}
           caption={info?.keyDatesCaption}
-          rows={info?.keyDates}
+          rows={keyDates}
+          headingId="exhibitor-key-dates"
+          hideMarkers={publicMode}
           pendingLabel={pendingLabel}
           researchLabel={researchLabel}
           questionLabel={questionLabel}
@@ -122,24 +200,30 @@ export default async function ExhibitorInfoPage() {
           fileName={info?.entryFormFileName}
           url={info?.entryFormUrl}
           entryFormPendingNote={info?.entryFormPendingNote}
-          status={status.entryForm}
+          status={entryFormStatus}
+          headingId="exhibitor-entry-form"
+          hideMarkers={publicMode}
           pendingLabel={pendingLabel}
           researchLabel={researchLabel}
           questionLabel={questionLabel}
         />
 
         <ExhibitorSteps
-          heading="From deciding to enter, to taking your plants home"
-          steps={steps}
+          heading={stepsHeading}
+          steps={journey}
+          headingId="exhibitor-steps"
+          hideMarkers={publicMode}
           pendingLabel={pendingLabel}
           researchLabel={researchLabel}
           questionLabel={questionLabel}
         />
 
         <div className="space-y-10">
-          {REFERENCE_SECTIONS.map((name) => (
+          {sections.map((name) => (
             <ExhibitorSection
               key={name}
+              headingId={`exhibitor-${name}`}
+              hideMarkers={publicMode}
               section={info?.[name]}
               status={status[name]}
               pendingLabel={pendingLabel}
@@ -185,6 +269,7 @@ export default async function ExhibitorInfoPage() {
           heading={info?.questionsHeading}
           intro={info?.questionsIntro}
           questions={info?.openQuestions}
+          headingId="exhibitor-questions"
         />
 
         <section className="border-t border-rule pt-8">
@@ -195,7 +280,7 @@ export default async function ExhibitorInfoPage() {
           ) : null}
           <div className="mt-6 flex flex-wrap gap-4">
             <Button as={Link} href="/contact" variant="primary">
-              Contact the council
+              {CONTACT_LABEL}
             </Button>
             <Button as={Link} href="/judging" variant="ghost">
               {info?.judgingLinkLabel ?? 'SAOC judging standards'}

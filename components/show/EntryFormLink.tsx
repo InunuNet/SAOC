@@ -29,6 +29,9 @@ export interface EntryFormLinkProps {
   researchLabel?: string | null;
   questionLabel?: string | null;
   id?: string;
+  headingId?: string;
+  /** Public build: the per-row marker is replaced by one page-level status line. */
+  hideMarkers?: boolean;
 }
 
 function resolveTarget(fileUrl?: string | null, url?: string | null) {
@@ -50,19 +53,27 @@ export function EntryFormLink({
   researchLabel,
   questionLabel,
   id,
+  headingId,
+  hideMarkers = false,
 }: EntryFormLinkProps) {
   const target = resolveTarget(fileUrl, url);
 
   return (
     <section id={id} className="nos-surface">
-      {heading ? <h2 className="font-serif text-ink">{heading}</h2> : null}
+      {heading ? (
+        <h2 id={headingId} className="scroll-mt-[62px] font-serif text-ink md:scroll-mt-[74px]">
+          {heading}
+        </h2>
+      ) : null}
 
-      <ExhibitorStatusBadge
-        status={status}
-        pendingLabel={pendingLabel}
-        researchLabel={researchLabel}
-        questionLabel={questionLabel}
-      />
+      {hideMarkers ? null : (
+        <ExhibitorStatusBadge
+          status={status}
+          pendingLabel={pendingLabel}
+          researchLabel={researchLabel}
+          questionLabel={questionLabel}
+        />
+      )}
 
       {target === null ? (
         <p className="mt-3 max-w-3xl font-sans text-[16px] leading-[1.55] text-ink/80">
