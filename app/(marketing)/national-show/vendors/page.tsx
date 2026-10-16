@@ -42,6 +42,9 @@ export const metadata: Metadata = buildPageMetadata({
 // carries the same copy; the paragraphs below are word-for-word the same, written with the
 // same straight apostrophes (react-dom/server would encode a plain apostrophe as &#x27;, so
 // they are set as HTML like VendorIntro sets them).
+const VENDORS_LEDE =
+  'Meet the specialist nurseries showcasing their finest orchids at the South African National Orchid Show.';
+
 const INTRO_HEADING = 'Showcasing the Finest in South African Orchid Growing';
 
 const INTRO_PARAGRAPHS = [
@@ -78,13 +81,15 @@ export default async function VendorsPage() {
   ]);
 
   const list = nurseries ?? [];
+  // R56 #1: a public page with no confirmed vendor holds without the lede that promises them.
+  const holding = withholdPlaceholderProse() && list.length === 0;
 
   return (
     <>
       <NosHero
         route="/national-show/vendors"
         title="Exhibitors and Vendors"
-        lede="Meet the specialist nurseries showcasing their finest orchids at the South African National Orchid Show."
+        lede={holding ? undefined : VENDORS_LEDE}
         priority
         actions={
           <Button<typeof Link>
