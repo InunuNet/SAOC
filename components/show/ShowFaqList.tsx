@@ -12,6 +12,10 @@
 // Category display order is presentation, not editor content, so it is the one
 // hardcoded list this feature permits. An unrecognised category coming back from Sanity
 // is appended under General rather than silently dropped.
+//
+// R44-A3: a wrapping set of in-page jump chips, one per category that has questions, sits above
+// the sections. Chips are built from the same CATEGORY_ORDER / CATEGORY_LABELS as the sections and
+// point at each heading's existing `faq-<category>` id. No filter field; no client code.
 // =============================================================
 
 import { PortableText } from '@portabletext/react';
@@ -47,17 +51,36 @@ export function ShowFaqList({ faqs, pendingLabel, researchLabel }: ShowFaqListPr
   const entries = (faqs ?? []).filter((faq) => faq?.question);
   if (entries.length === 0) return null;
 
-  return (
-    <div className="space-y-12">
-      {CATEGORY_ORDER.map((category) => {
-        const inCategory = entries.filter((faq) => categoryOf(faq) === category);
-        if (inCategory.length === 0) return null;
+  const groups = CATEGORY_ORDER.map((category) => ({
+    category,
+    inCategory: entries.filter((faq) => categoryOf(faq) === category),
+  })).filter(({ inCategory }) => inCategory.length > 0);
 
-        return (
+  return (
+    <>
+      {groups.length > 1 ? (
+        <nav aria-label="FAQ categories" className="mb-10">
+          <ul className="flex flex-wrap gap-2">
+            {groups.map(({ category }) => (
+              <li key={category}>
+                <a
+                  href={`#faq-${category}`}
+                  className="inline-flex min-h-[44px] items-center rounded-[length:var(--radius-pill)] bg-bone px-3 font-sans text-[14px] font-semibold text-primary hover:text-accent motion-safe:transition-[color] motion-safe:duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring-focus)]"
+                >
+                  {CATEGORY_LABELS[category]}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : null}
+
+      <div className="space-y-12">
+        {groups.map(({ category, inCategory }) => (
           <section key={category} aria-labelledby={`faq-${category}`}>
             <h2
               id={`faq-${category}`}
-              className="nos-label font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-accent"
+              className="nos-label scroll-mt-[62px] font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-accent md:scroll-mt-[74px]"
             >
               {CATEGORY_LABELS[category]}
             </h2>
@@ -106,8 +129,8 @@ export function ShowFaqList({ faqs, pendingLabel, researchLabel }: ShowFaqListPr
               ))}
             </ul>
           </section>
-        );
-      })}
-    </div>
+        ))}
+      </div>
+    </>
   );
 }
