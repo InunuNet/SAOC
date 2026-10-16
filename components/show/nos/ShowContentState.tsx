@@ -132,10 +132,9 @@ export function ShowContentState({
         {hero}
         {afterHero}
         <HoldingState
-          route={route}
           facts={holding.facts}
           statement={holding.statement}
-          afterCards={holding.keepAfterProse ? afterProse : null}
+          afterStatement={holding.keepAfterProse ? afterProse : null}
           contentState={state}
         />
       </>

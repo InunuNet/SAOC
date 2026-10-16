@@ -53,7 +53,7 @@ export default async function ShowFaqPage() {
       />
 
       {holds ? (
-        <HoldingState route="/national-show/faq" facts={facts} contentState="published" />
+        <HoldingState facts={facts} contentState="published" />
       ) : (
         <NosSection wrapClassName="[&_details_p]:max-w-[60ch]">
           <ShowFaqList
