@@ -26,3 +26,34 @@ P0: 0
 P1: 0
 P2: 0
 Score: 37/40
+
+## Pass 3
+
+Method as above (impeccable critique, inline; launcher binary still missing). Input: design-cb's audit of 47cf7f1b plus the released P2 rulings, taken as this pass's findings, then fixed on `fix/lw-f18a-audit` and re-shot on the public build at 390 and 1280.
+
+Findings:
+- P1: R16, the four long-form image breaks reuse stock photos that already head other routes (no unused photo exists).
+- P1: /archive shows a facts rail and a two-item mini list that duplicate the Explore index.
+- P1: /sa-exhibitors repeats the h1 as the first h2.
+- P1: /vendors hero lede promises nurseries while none are confirmed.
+- P2: /workshops transfer note is 13px muted.
+- P2: /faq question cards are 138px tall for one line (an own regression: un-scoping the FAQ rules lowered `.nos-faq-item` below `.nos-theme .nos-surface`, so 32px of padding came back).
+- P2: /about hero has no lede, unlike every other long-form hero.
+
+P0: 0
+P1: 4
+P2: 3
+Score: 31/40
+
+## Pass 4
+
+Fixes (commits eb98149f, 5747651b, f738b500, 468d3139, 0b8f27e9): breaks dropped; archive shows the single committee-records card; the h2 is skipped when it equals the h1; the vendors lede is hidden while empty in public; terms note 14px/1.55 ink-700; FAQ card 66px for one line with the 44px+ summary as hit area and the gap kept; about hero lede reuses the existing description string.
+
+Re-shot all 12 routes at 390 and 1280 on the rebuilt public build and re-read archive, vendors, sa-exhibitors, about and what-to-expect at both widths, plus faq and workshops at 1280. No new defect on the five routes: hierarchy is one h1, then the lede, then the facts aside beside the body; the archive card is a single quiet block above the Explore index; the sa-exhibitors body starts straight under the sub-nav without a repeated heading.
+
+Accepted, not a finding: the about hero lede repeats the opening of the first body paragraph (the design ruling reused the existing description string, with no new words). Outside F18 scope, recorded for the lead: the Sanity logistics block on /what-to-expect still shows "To be confirmed by the show committee" chips in the public build; the F18 spec lists it as untouched.
+
+P0: 0
+P1: 0
+P2: 0
+Score: 39/40
