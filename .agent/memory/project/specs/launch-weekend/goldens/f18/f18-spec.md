@@ -205,7 +205,7 @@ Copy comes only from `longform-copy.json`, `v13-copy.json`, existing strings (`s
 - Unsourced hub facts (Athanor 1), checked 2026-10-17 against `content/drive-source/`, `content/show-pages/` and live Sanity (26yfbug4/production):
   - Sourced and kept: "19th show" (Sanity `nationalShow.edition` = 19, ordinal derived); "ten classes" (Sanity holds exactly 10 `showClass` docs, count derived); triennial / 3 yr cycle (Drive 2.1 About v1.0, paragraph 1, "premier triennial event").
   - Unsourced, withheld in public through `withholdPlaceholderProse()` and marked on beta: "18 shows hosted" (inference from edition minus one, Sanity has 0 `pastShow`), "100-point scale", "Grand Champion", the judging-criteria line (cultural quality, presentation, species accuracy; /judging says form, colour, size, cultural condition), and "nine provinces" (page and og descriptions).
-  - A3 asserts public `/` and `/national-show` HTML contain none of the unsourced strings (`holding-audit.json` `hubFacts.unsourced`).
+  - A3 asserts the public `/national-show` HTML contains none (the SAOC home `/` is F19's: its "nine provinces" is in `components/home/NavCards.tsx`) of the unsourced strings (`holding-audit.json` `hubFacts.unsourced`).
 - /national-show/wosa-conference (Athanor 2): public mode shows the F18a holding state (existing strings, R11) and keeps the "Buy ticket" link to `#ticket-wosa` that A31 requires. A3 asserts both.
 - Heading order (Athanor 3): A3 asserts the first heading is h1 and levels never skip on /national-show/about and /national-show/workshops.
 - `check-f3-imagery.mjs` line 9 no longer describes the break rule.

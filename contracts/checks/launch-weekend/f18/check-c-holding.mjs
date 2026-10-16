@@ -12,7 +12,7 @@
 //     no related-page mini list, no planning band, no [data-nos-holding] section. The beta and with-editions branches are unchanged (design-cb audit, F18a amendment)
 //  wosa-conference: the holding state AND A31's "Buy ticket" link to #ticket-wosa (Athanor review item 2)
 //  heading order: /about and /workshops never skip a level (h1 to h3), Athanor review item 3
-//  unsourced hub facts: public / and /national-show render none of audit.hubFacts.unsourced anywhere in the HTML (Athanor review item 1; sourced facts are cited in the audit)
+//  unsourced hub facts: public /national-show renders none of audit.hubFacts.unsourced anywhere in the HTML (Athanor review item 1; sourced facts are cited in the audit)
 //  routes that supply a body never hold (mustNotHold)
 //  public rule: none of the banned placeholder strings renders on the eight publicNoPlaceholderRoutes (no TBC note, no gap sentence, no "Placeholder copy", no schema preview)
 // Usage: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-c-holding.mjs
@@ -27,6 +27,9 @@ function measure({ S }) {
   const t = (e) => (e?.textContent ?? '').replace(/\s+/g, ' ').trim();
   const cs = (e) => getComputedStyle(e);
   const main = q('main');
+  // every NOS route wraps its page in ONE div (DIV.nos-theme, national-show/layout.tsx): count blocks inside that wrapper, not main's single child
+  let contentRoot = main;
+  while (contentRoot.children.length === 1 && contentRoot.firstElementChild.tagName === 'DIV') contentRoot = contentRoot.firstElementChild;
   const root = qa(S.root);
   const out = {
     holding: root.length,
@@ -40,7 +43,7 @@ function measure({ S }) {
     miniLists: qa(S.cards).length + qa('main h2, main h3, main p, main span').filter((e) => t(e).toLowerCase() === 'explore the show' && !e.closest('nav[aria-label="Explore the show pages"]')).length,
     levels: qa('main h1, main h2, main h3, main h4, main h5, main h6').map((h) => Number(h.tagName[1])),
     buyLinks: qa('main a').filter((x) => t(x) === 'Buy ticket').map((x) => x.getAttribute('href') ?? ''),
-    kids: [...main.children].map((k) => ({
+    kids: [...contentRoot.children].map((k) => ({
       hero: !!(k.matches('[data-nos-hero]') || k.querySelector('[data-nos-hero]')),
       awaiting: t(k).includes('Show history awaiting committee records'),
       index: !!k.querySelector('nav[aria-label="Explore the show pages"]') || k.matches('nav[aria-label="Explore the show pages"]'),
@@ -67,10 +70,35 @@ function measure({ S }) {
   }
   out.orphans = orphans;
   const idx = q('nav[aria-label="Explore the show pages"]');
-  const kids = [...main.children];
+  const kids = [...contentRoot.children];
   out.indexLast = !!idx && kids.length > 0 && (kids[kids.length - 1] === idx || kids[kids.length - 1].contains(idx));
   return out;
 }
+
+// the archive shape judgement, pure so a probe can prove a wrong shape still fails
+function judgeArchiveShape(k, string) {
+  const out = [];
+  const heroAt = k.findIndex((x) => x.hero);
+  const cardAt = k.findIndex((x) => x.awaiting && !x.hero && !x.index);
+  const idxAt = k.findIndex((x) => x.index);
+  if (heroAt !== 0) out.push('the hero is not the first block in main');
+  if (cardAt < 0) out.push(`no card reading "${string}"`);
+  if (k.filter((x) => x.awaiting).length !== 1) out.push(`"${string}" appears in ${k.filter((x) => x.awaiting).length} blocks, want exactly 1`);
+  if (idxAt !== k.length - 1 || idxAt < 0) out.push('the Explore index is not the last block');
+  if (!(heroAt < cardAt && cardAt < idxAt)) out.push('block order is not hero, card, Explore index');
+  if (k.length !== 3) out.push(`${k.length} blocks in main, want exactly 3 (hero, card, Explore index)`);
+  if (k.some((x) => x.facts)) out.push('a facts rail renders on the archive holding shape');
+  if (k.some((x) => x.miniList)) out.push('a related-page mini list renders on the archive holding shape');
+  if (k.some((x) => x.royal)) out.push('a planning band renders on the archive holding shape');
+  return out;
+}
+const blk = (o) => ({ hero: false, awaiting: false, index: false, royal: false, facts: false, miniList: false, ...o });
+const SHAPE_STRING = 'Show history awaiting committee records';
+const good = [blk({ hero: true }), blk({ awaiting: true }), blk({ index: true })];
+if (judgeArchiveShape(good, SHAPE_STRING).length) throw new Error('probe: the correct 3-block archive shape is wrongly rejected');
+if (!judgeArchiveShape([...good.slice(0, 2), blk({}), good[2]], SHAPE_STRING).length) throw new Error('probe: a 4-block archive page is NOT rejected');
+if (!judgeArchiveShape([good[0], good[1], blk({ royal: true }), good[2]], SHAPE_STRING).length) throw new Error('probe: an extra planning band is NOT rejected');
+if (!judgeArchiveShape([blk({ hero: true }), blk({ hero: false })], SHAPE_STRING).length) throw new Error('probe: a single-wrapper count of 1 is NOT rejected');
 
 await main('F18-A3 holding state and public placeholder rule', async (r) => {
   await withBrowser(async (browser) => {
@@ -114,19 +142,7 @@ await main('F18-A3 holding state and public placeholder rule', async (r) => {
         if (route === AUDIT.archiveHolding.route && m.editionCards === 0) {
           const AH = AUDIT.archiveHolding;
           if (m.holding) r.fail(`${tag}: archive renders the standard [data-nos-holding] section; the audit shape is hero, one card, Explore index`);
-          const k = m.kids;
-          const heroAt = k.findIndex((x) => x.hero);
-          const cardAt = k.findIndex((x) => x.awaiting && !x.hero && !x.index);
-          const idxAt = k.findIndex((x) => x.index);
-          if (heroAt !== 0) r.fail(`${tag}: the hero is not the first block in main`);
-          if (cardAt < 0) r.fail(`${tag}: no card reading "${AH.string}"`);
-          if (k.filter((x) => x.awaiting).length !== 1) r.fail(`${tag}: "${AH.string}" appears in ${k.filter((x) => x.awaiting).length} blocks, want exactly 1`);
-          if (idxAt !== k.length - 1 || idxAt < 0) r.fail(`${tag}: the Explore index is not the last block`);
-          if (!(heroAt < cardAt && cardAt < idxAt)) r.fail(`${tag}: block order is not hero, card, Explore index`);
-          if (k.length !== 3) r.fail(`${tag}: ${k.length} blocks in main, want exactly 3 (hero, card, Explore index)`);
-          if (k.some((x) => x.facts)) r.fail(`${tag}: a facts rail renders on the archive holding shape`);
-          if (k.some((x) => x.miniList)) r.fail(`${tag}: a related-page mini list renders on the archive holding shape`);
-          if (k.some((x) => x.royal)) r.fail(`${tag}: a planning band renders on the archive holding shape`);
+          for (const f of judgeArchiveShape(m.kids, AH.string)) r.fail(`${tag}: ${f}`);
           await ctx.close();
           continue;
         }
