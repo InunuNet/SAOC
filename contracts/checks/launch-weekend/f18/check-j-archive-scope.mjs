@@ -12,12 +12,14 @@ import { T, baseRef, git, gitLines, readGolden, readText } from './_lib.mjs';
 const BASE = baseRef();
 const problems = [];
 const ROUTE_PAGES = ['', 'about', 'what-to-expect', 'vendors', 'sa-exhibitors', 'programme', 'international-guests', 'wosa-conference', 'faq', 'archive', 'conferences', 'workshops', 'exhibitors', 'sponsors', 'symposium'].map((s) => `app/(marketing)/national-show/${s ? `${s}/` : ''}page.tsx`);
-const ALLOWED = [...ROUTE_PAGES, 'app/(marketing)/national-show/nos-structure.css', 'app/(marketing)/national-show/nos-theme.css', 'public/images/national-show/'];
+const ALLOWED = [...ROUTE_PAGES, 'app/(marketing)/tickets/', 'app/(marketing)/layout.tsx', 'app/(marketing)/national-show/layout.tsx', 'app/(marketing)/national-show/not-found.tsx', 'app/(marketing)/national-show/[', 'components/nos-chrome/ChromeFrame.tsx', 'app/(marketing)/national-show/nos-structure.css', 'app/(marketing)/national-show/nos-theme.css', 'public/images/national-show/'];
 const PREFIX = ['components/show/', 'components/nos/', 'components/tickets/', 'lib/data/', 'lib/', 'contracts/checks/', 'e2e/', 'docs/', 'README.md', '.agent/memory/project/specs/', '.tmp/'];
-const FORBIDDEN = ['components/chrome/nav-config.ts', 'components/chrome/footer-data.ts', 'components/nos-chrome/', 'components/vendors/'];
+// Payment, checkout and the ITN stay behaviourally identical (F18b): no API route, gateway or order library may change. The SAOC not-found stays as is.
+const FORBIDDEN = ['components/chrome/nav-config.ts', 'components/chrome/footer-data.ts', 'components/nos-chrome/', 'components/vendors/', 'app/api/', 'app/not-found.tsx', 'lib/payfast', 'lib/ozow', 'lib/orders', 'lib/checkout', 'lib/payment', 'lib/reconciliation', 'lib/confirmation-email'];
+const FORBIDDEN_EXCEPT = ['components/nos-chrome/ChromeFrame.tsx'];
 const names = [...new Set([...gitLines('diff', '--name-only', `${BASE}...HEAD`), ...gitLines('diff', '--name-only', 'HEAD'), ...gitLines('ls-files', '--others', '--exclude-standard')])];
 for (const f of names) {
-  if (FORBIDDEN.some((p) => f.startsWith(p))) problems.push(`forbidden file changed: ${f}`);
+  if (FORBIDDEN.some((p) => f.startsWith(p)) && !FORBIDDEN_EXCEPT.includes(f)) problems.push(`forbidden file changed: ${f}`);
   else if (!ALLOWED.some((a) => f === a || (a.endsWith('/') && f.startsWith(a))) && !PREFIX.some((p) => f.startsWith(p))) problems.push(`file outside the F18 allowlist changed: ${f}`);
   if (/^(content|sanity)\//.test(f)) problems.push(`copy/CMS file changed (F18 changes no copy): ${f}`);
 }

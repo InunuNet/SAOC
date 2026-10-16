@@ -7,7 +7,8 @@ Base: main 76ad8b98. Architect: Sonnet 5.5. Skills the dev MUST load and apply (
 | | scope | contract assertions |
 |---|---|---|
 | F18a | items 1-5, 7, 8: long-form template, holding state, ledes, FAQ, exhibitors, sponsors guard, archive card | A1-A7, A10-A13 |
-| F18b | item 6: catalogue rows (workshops, conferences) | A8, A9 (and A10 to A13 again) |
+| F18b | item 6: catalogue rows, one sold-out helper, NOS chrome on /tickets/* and the ticket-screen fixes (3.10, 3.12, 3.13) | A8, A9, A14, A21, A22, A23, A24 |
+| F18c | hub hero image-first below 768 (3.14) and the NOS not-found (3.15); the hub page and nos-theme.css are F18a files, so F18c runs after F18a and can run beside F18b | A25, A26 |
 
 Sequential, one dev, one QA each, F18a first (it owns the shared files). One contract; F18b starts after A1-A7 are green. If the lead prefers one dev pass, F18b is simply the second half of the same pass.
 
@@ -57,6 +58,24 @@ Remove `NosShowIndex` (import and element) from `app/(marketing)/national-show/p
 ### 3.11 Conferences lede (F17 leftover)
 The lede in `conferences/page.tsx` ("Register for the SAOC Symposium, the WOSA Conference, or the combined SAOC/WOSA Joint track at the National Show.") is a code literal naming the products for the visitor, not a builder brief, so it does NOT drop (R76b judges `summary` fields only). It is left verbatim and goes on the For-Lee-Ann list: confirm whether product names read "SAOC Symposium" or "Symposium" now that the event is the "National Orchid Show" (F17 swapped the event name only). Same for the metadata description in that file. The conferences `note` chip (pending ConfirmationBadge) is shown to the public today; "TBC notes beta-only" would hide it: flagged, not in the checks (lead call).
 
+### 3.12 NOS chrome on the ticket routes (R62 #1, F18b, lead addition)
+`ChromeFrame` (`components/nos-chrome/ChromeFrame.tsx`, the only file under nos-chrome that may change) picks the NOS pair for the `national-show` segment today; it also picks it for the `tickets` segment, so `/tickets`, `/tickets/<slug>`, `/tickets/cancelled` and `/tickets/confirmation` render `header#nh` / `footer#nf`. The NOS CSS and fonts (`nos-theme.css`, `nos-structure.css`, the Fraunces/Karla variables) are imported by `national-show/layout.tsx` only today; the `.nos-theme` scope must also wrap these pages (suggest `app/(marketing)/tickets/layout.tsx` reusing one shared wrapper; do not duplicate the font config). The hero is the typographic NOS inner hero (`NosHero`, `route` = the real pathname, type variant, no sub-nav): compact, no stock photo, no card photo, so the steppers sit high. The F3 imagery rule (R29: a stock photo only as a route's hero) therefore holds on these routes with no exemption: `ticketCardPhotos.exempt` is already `false` at base (F16 re-pinned it); F16 check-f-cards in A12 keeps it so. Payment, the checkout payload, the PayFast/Ozow redirect, the ITN and the confirmation maths are behaviourally identical: A10 forbids changes under `app/api/`, the gateway and order libraries.
+Hooks: A22 reads `header#nh`, `footer#nf`, `.nos-theme`, `[data-nos-hero="inner"][data-nos-hero-variant="type"]`.
+
+### 3.13 Ticket-screen fixes (R62 #2-#6, R81, F18b)
+- **Dates.** New `lib/show-day-format.ts` exporting `formatShowDay(iso)`: `"2027-09-23"` becomes `"Thu 23 Sept 2027"` (weekday from the calendar date computed in UTC, so it never depends on the machine; month names `Jan Feb Mar Apr May Jun Jul Aug Sept Oct Nov Dec`; no leading zero on the day; a non-`YYYY-MM-DD` input is returned unchanged). The six cases are in `tokens.json` `tickets.dayFormat`. Used in `DayQuantityPicker` (row `aria-label`, visible text, and the stepper labels "Decrease/Increase quantity for <label>", "Quantity for <label>") and `CartDayPicker` (option text) and the attendee rows. The ISO stays the data value (state keys, ids, form values, the checkout payload) and is carried on `<time datetime="YYYY-MM-DD">`; each day row carries `data-day-row`. The weekday names are the confirmed Thursday-to-Sunday window of the 23-26 Sept 2027 show (project memory; `lib/provisional-figures.ts`); no new weekday source.
+- **Buy reason.** The Buy button stays disabled at quantity 0 and is tied by `aria-describedby` to a visible `[data-buy-hint]` whose text is the EXISTING string `Please select at least one ticket.` (`useTicketCart.ts` cartError). No new microcopy. The hint is hidden (not rendered) once a ticket is chosen.
+- **Total.** Within the F18b `[data-catalogue-total]` block (3.6): a single `Total` label and amount (`Total R450`), `aria-live="polite"`, the Buy button inside the block next to it. "Estimated total", "(estimate)" and "estimate" in any form are gone. The existing "Provisional pricing - subject to change" note renders at most once in the form (beside the total when any type is provisional; the per-card badge is removed in buy mode so it does not double). F7 `check-d-ticket-form` is amended to match (supersession.json).
+- **Prices.** Every R price on the ticket screens goes through `formatRand` (`R150`, `R250.50`, never `R150.00`), including `TicketTypeCard` list mode. `confirmation/page.tsx` order totals are left as they are (money record, not a price tag).
+- **Label.** The "Tickets per day" legend is the 14px sentence-case form-label role (no uppercase, no mono tracking).
+- **Layout.** First stepper at y <= 600 at 1280x800 and <= 844 at 390x844 (A23).
+
+### 3.14 Hub hero image-first below 768 (R80 #1, F18c)
+`nos-theme.css`, a pure addition under an F18 comment in a `@media (max-width: 767px)` block: for `.nos-hero-hub`, `.nos-hero-media` gets `order: -1`, height about 300px (260-340 allowed), `object-position: 64% 50%` kept (the bloom). Then h1, lede, the actions (Tickets fully above the fold at 390x844), then countdown, then facts: vertical order measured by A25. 768 to 1023 keeps the F3 copy-first stack and 1024+ the F12 overlay (A25 guards both). Inner photo heroes (`nos-hero-photo`) are MEASURED, not prescribed: the h1 top must stay inside 70% of the viewport at 390 (they are copy-first today and pass); if one fails, report it to the lead. F12 `check-b-hub-hero` asserts the 390 stack order of actions, price, countdown, facts and the phone h1 size, none of which change.
+
+### 3.15 NOS-scoped not-found (R63, F18c)
+`app/(marketing)/national-show/not-found.tsx` renders inside the NOS chrome (the marketing layout already wraps it) and inside `.nos-theme`: a typographic NOS inner-hero-style heading, one sentence, and recovery links to `/national-show`, `/national-show/tickets`, `/national-show/plan-your-visit` whose texts are the nav-config labels ("National Show", "Tickets", "Plan your visit"; read them from `nav-config.ts`, do not retype). Copy: reuse the existing not-found strings only (the SAOC `app/not-found.tsx` has "404 - Page not found" and "The page you're looking for doesn't exist or may have moved."); no "orchid has left the bench" invention for NOS, no stock photo. Mechanism: Next's segment not-found only handles `notFound()` thrown inside the segment, so an unmatched `/national-show/<anything>` needs a catch-all (`app/(marketing)/national-show/[...missing]/page.tsx` calling `notFound()`); the dev confirms the status is 404 for both probes (A26). `app/not-found.tsx` is not edited (A10 forbids it): the SAOC 404 is unchanged. DECISION NEEDED if the catch-all collides with an existing route; recommendation: keep it narrow (`[...missing]` only).
+
 ## 4. Check inventory (all in `contracts/checks/launch-weekend/f18/`)
 
 | id | file | proves | needs |
@@ -75,6 +94,11 @@ The lede in `conferences/page.tsx` ("Register for the SAOC Symposium, the WOSA C
 | A12 | regression chain | F17-A4/A5/A6/A7/A8/A17/A19/A20, F12, F3 imagery/tickets/rhythm | public build |
 | A13 | check-l-supersession.mjs | hygiene recorded and applied (check-labels-static rebased) | none |
 | A20 | F17 check-m-index.mjs (amended) | 3.9 hub index absent, 16 inner present | public build |
+| A22 | check-n-ticket-chrome.mjs | 3.12 NOS chrome on /tickets/* | public build |
+| A23 | check-o-ticket-buy.mjs | 3.13 live buy screen | public build, sales open (skips otherwise, says so) |
+| A24 | check-p-tickets-render.mts | 3.13 render level, two TZ values | tsx only |
+| A25 | check-q-hero-mobile.mjs | 3.14 | public build |
+| A26 | check-r-not-found.mjs | 3.15 | public build |
 | A21 | check-m-availability.mjs | 3.10 one sold-out helper | none |
 
 Build and serve: `SITE_PUBLIC_LAUNCH=true pnpm run build && SITE_PUBLIC_LAUNCH=true pnpm exec next start -p 3672` (never raw `next build`: image variants). Ports 3670-3679 only; stop by exact PID. Runtime checks read the CMS read-only and never mutate it. Because the live CMS content decides which routes hold (e.g. FAQ answers), the render-level checks (A4, A5, A9) are the deterministic proof, the runtime checks (A1-A3, A6-A8) prove the build.
@@ -108,10 +132,18 @@ Copy comes only from `longform-copy.json`, existing strings (`strings-allowed.js
 - The WOSA conference metadata "held alongside" is unsourced.
 - The conferences page lede and metadata still say "SAOC Symposium" (F17 kept her product naming); confirm the form.
 
+## 8b. For Brad (microcopy and calls)
+
+- **Microcopy needed: none new.** The Buy reason reuses `Please select at least one ticket.` (already in `useTicketCart.ts`). The not-found reuses the SAOC 404's own sentence and the nav-config labels. "Total" is a one-word label, not copy.
+- Weekday names ("Thu", "Fri", "Sat", "Sun") are derived from the dates, not typed copy.
+- Calls recorded: the /tickets/* hero is the typographic NOS hero (not the purple-scrim photo), so no stock photo appears on ticket routes; inner photo heroes at 390 are measured not changed; the conferences pending note stays public.
+
 ## 9. Source gaps and risks
 
 - Break-photo choice per route is the architect's mapping; no Lee-Ann source names imagery.
 - The holding cards depend on nav-config descriptors being present on every leaf; A3 and A4 fail loudly if one is missing.
 - Sticky aside plus sticky catalogue total at 390px: A1/A8 measure; the critique loop must look.
 - The runtime catalogue check cannot exercise checkout where attendee-name fields are required (it notes this; A9 and the e2e carry it).
+- `/tickets/confirmation` needs an order to render; A22 skips it with a note and the segment rule (ChromeFrame) covers it. A23 skips when no purchasable ticket renders (sales closed): A24 is then the deterministic proof.
+- Moving /tickets/* onto NOS chrome changes the header and footer on payment pages; the checkout redirect, ITN and confirmation email are untouched (A10 forbids their files), but the e2e ticket journeys (untracked in the main checkout) must be run by @qa where available.
 - Dev worktrees lack `.env.local`; the build needs Sanity read access (copy it in, delete it at the end).

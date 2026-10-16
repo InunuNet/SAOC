@@ -44,6 +44,10 @@
   {
    "file": "contracts/checks/launch-weekend/f12/check-a-static.mjs (vendors loop)",
    "reason": "The r5 loop required [&_p]:max-w-[60ch] and a diff limited to the F17 event-name swap on vendors/page.tsx and exhibitors/page.tsx. /vendors moves onto the F18 long-form template, so the loop now covers exhibitors only. F18-A1 owns the vendors page (verbatim copy, 60ch body, layout)."
+  },
+  {
+   "file": "contracts/checks/launch-weekend/f7/check-d-ticket-form.mjs",
+   "reason": "Pinned the 'Estimated total:' paragraph and the 'Estimated total' text in the live region. R62 makes the label 'Total' (one word, no estimate) in the live region beside Buy. The amended check finds the aria-live=polite block containing 'Total' (static) and the [data-catalogue-total] form (runtime). Buy-disabled-at-0, cartError, title and banner rules unchanged."
   }
  ],
  "notRerunInF18": [

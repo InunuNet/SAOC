@@ -1,7 +1,7 @@
 // F18-A9 (R77 #4, render level, no CMS, no server): TicketPurchaseForm rendered with goldens/f18/catalogue-fixtures.json produces the catalogue row vocabulary.
 //   every fixture type -> one [data-catalogue-row] carrying its name, its price (expectPrice, formatRand style: R2000 / R200 / R250.50, never "R200.00"), its description, a stepper pair with
 //                         aria-labels "Increase quantity of <name>" / "Decrease quantity of <name>"; the sold-out fixture shows "Sold out" and a disabled + (or no stepper)
-//   form chrome        -> still form[data-nos-ticket-form], the legend, the sticky [data-catalogue-total] holding "Estimated total" and the submit button with the buy label; no old "(estimate)" paragraph left outside it
+//   form chrome        -> still form[data-nos-ticket-form], the legend, the sticky [data-catalogue-total] holding "Total" and the submit button with the buy label; no old "(estimate)" paragraph left outside it
 //   no regression      -> a single requiresDaySelection type still hides the row stepper (the day picker owns quantity), exactly as before
 // Run: pnpm exec tsx contracts/checks/launch-weekend/f18/check-i-catalogue-render.mts   (cwd = implementation worktree)
 import { createElement } from 'react';
@@ -45,10 +45,12 @@ if (!/data-catalogue-total/.test(html)) fail('no [data-catalogue-total]');
 else {
   const tot = txt(html.slice(html.indexOf('data-catalogue-total')));
   if (!tot.includes(C.labels.total)) fail(`the total block does not say "${C.labels.total}"`);
+  if (/estimat/i.test(tot.split(G.buyButtonLabel)[0])) fail('the total block still says "estimate" (R62: one Total, no double estimate)');
+  if (!/aria-live="polite"/.test(html.slice(html.indexOf('data-catalogue-total') - 400))) fail('the total is not in an aria-live="polite" region');
   if (!/type="submit"/.test(html.slice(html.indexOf('data-catalogue-total')))) fail('the submit button is not after the [data-catalogue-total] marker (it must sit inside the sticky total)');
   if (!tot.includes(G.buyButtonLabel)) fail('submit button lost the buy label');
 }
-if (/\(estimate\)/.test(html.slice(0, html.indexOf('data-catalogue-total')))) fail('the old "(estimate)" paragraph still renders before the total');
+if (/\(estimate\)|Estimated total/.test(html)) fail('the old "Estimated total ... (estimate)" wording still renders');
 
 const day = render([{ ...G.types[0], requiresDaySelection: true }]);
 if (new RegExp(`aria-label="${C.labels.increase} `).test(day)) fail('a single requiresDaySelection type shows a row stepper again (the day picker owns quantity)');
