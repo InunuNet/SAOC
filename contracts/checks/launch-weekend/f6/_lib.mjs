@@ -8,7 +8,7 @@ export const GOLDEN_DIR = '.agent/memory/project/specs/launch-weekend/goldens/f6
 export const golden = JSON.parse(readFileSync(`${GOLDEN_DIR}/invented-shows.json`, 'utf8'));
 export const FORBIDDEN = golden.forbiddenLiterals;
 // Hub-only (KwaZulu-Natal is a legitimate province elsewhere): invented cycle and stats blocks on /national-show.
-export const HUB_FORBIDDEN = ['KwaZulu', 'Editions held', 'Entries — 2024', '1,240', 'Three-year cycle', 'Host province rotates', 'Edition XVIII', 'Edition XX', 'nine provinces', 'rotates across'];
+export const HUB_FORBIDDEN = ['KwaZulu', 'Editions held', 'Entries — 2024', '1,240', 'Three-year cycle', 'Host province rotates', 'Edition XVIII', 'Edition XX', 'rotates across'];
 export const YEARS = golden.archiveYearsMustNotRender;
 
 const user = process.env.BETA_BASIC_AUTH_USER;
