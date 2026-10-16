@@ -45,8 +45,8 @@ export interface ShowContentStateProps {
   listingContent?: ReactNode;
   /**
    * Prose-layout routes only: static content the route always wants after its prose,
-   * independent of the ShowPage (e.g. wosa-conference's WOSA link-out). Rendered in the
-   * published branch only, same rule as listingContent.
+   * independent of the ShowPage (e.g. wosa-conference's WOSA link-out). Rendered in both
+   * the published and the fallback branch; listingContent stays published-only.
    */
   afterProse?: ReactNode;
   /**
@@ -83,6 +83,7 @@ export function ShowContentState({
             {page.sections.map((section) => (
               <ShowPageProse key={section.sectionKey} section={section} />
             ))}
+            {layout === 'prose' ? afterProse : null}
           </div>
         ) : layout === 'listing' ? (
           <div className="mx-auto max-w-[1280px] space-y-12 px-8 py-16">
