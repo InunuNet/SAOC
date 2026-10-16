@@ -861,7 +861,7 @@
   }
 }
 
-.nos-faq-item {
+li.nos-faq-item.nos-surface {
   padding: 0;
 }
 .nos-faq-summary {
@@ -870,7 +870,7 @@
   justify-content: space-between;
   gap: 16px;
   min-height: 44px;
-  padding: clamp(16px, 2.4vw, 24px) clamp(20px, 3vw, 32px);
+  padding: 20px clamp(20px, 3vw, 32px);
   list-style: none;
 }
 .nos-faq-summary::-webkit-details-marker {
