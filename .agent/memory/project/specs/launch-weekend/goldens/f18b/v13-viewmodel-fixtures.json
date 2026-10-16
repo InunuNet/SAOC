@@ -356,7 +356,7 @@
      "workshops": true
     },
     "names": {
-     "symposium": "SAOC Symposium",
+     "symposium": "National Orchid Show Symposium",
      "wosa": "WOSA Conference",
      "workshops": "Workshops"
     }
@@ -364,7 +364,7 @@
    "expect": {
     "thursday": "Two evening events on Thursday 23 September.",
     "passes": "Friday 24 to Sunday 26 September.",
-    "programme": "The SAOC Symposium, the WOSA Conference and workshops."
+    "programme": "The National Orchid Show Symposium, the WOSA Conference and workshops."
    }
   },
   {
@@ -380,7 +380,7 @@
      "workshops": true
     },
     "names": {
-     "symposium": "SAOC Symposium",
+     "symposium": "National Orchid Show Symposium",
      "wosa": "WOSA Conference",
      "workshops": "Workshops"
     }
@@ -388,7 +388,7 @@
    "expect": {
     "thursday": null,
     "passes": "Thursday 23 to Sunday 26 September.",
-    "programme": "The SAOC Symposium, the WOSA Conference and workshops."
+    "programme": "The National Orchid Show Symposium, the WOSA Conference and workshops."
    }
   },
   {
@@ -404,7 +404,7 @@
      "workshops": true
     },
     "names": {
-     "symposium": "SAOC Symposium",
+     "symposium": "National Orchid Show Symposium",
      "wosa": "WOSA Conference",
      "workshops": "Workshops"
     }
@@ -412,7 +412,7 @@
    "expect": {
     "thursday": null,
     "passes": null,
-    "programme": "The SAOC Symposium, the WOSA Conference and workshops."
+    "programme": "The National Orchid Show Symposium, the WOSA Conference and workshops."
    }
   },
   {
@@ -428,7 +428,7 @@
      "workshops": true
     },
     "names": {
-     "symposium": "SAOC Symposium",
+     "symposium": "National Orchid Show Symposium",
      "wosa": "WOSA Conference",
      "workshops": "Workshops"
     }
@@ -436,7 +436,7 @@
    "expect": {
     "thursday": "Two evening events on Thursday 30 September.",
     "passes": null,
-    "programme": "The SAOC Symposium, the WOSA Conference and workshops."
+    "programme": "The National Orchid Show Symposium, the WOSA Conference and workshops."
    }
   },
   {
@@ -452,7 +452,7 @@
      "workshops": true
     },
     "names": {
-     "symposium": "SAOC Symposium",
+     "symposium": "National Orchid Show Symposium",
      "wosa": "WOSA Conference",
      "workshops": "Workshops"
     }
@@ -460,7 +460,7 @@
    "expect": {
     "thursday": null,
     "passes": "Friday 24 to Sunday 26 September.",
-    "programme": "The SAOC Symposium, the WOSA Conference and workshops."
+    "programme": "The National Orchid Show Symposium, the WOSA Conference and workshops."
    }
   },
   {
@@ -476,7 +476,7 @@
      "workshops": false
     },
     "names": {
-     "symposium": "SAOC Symposium",
+     "symposium": "National Orchid Show Symposium",
      "wosa": "WOSA Conference",
      "workshops": "Workshops"
     }
@@ -500,7 +500,7 @@
      "workshops": true
     },
     "names": {
-     "symposium": "SAOC Symposium (Early-Bird)",
+     "symposium": "National Orchid Show Symposium (Early-Bird)",
      "wosa": "WOSA Conference",
      "workshops": "Workshops"
     }
@@ -508,7 +508,33 @@
    "expect": {
     "thursday": "Two evening events on Thursday 23 September.",
     "passes": "Friday 24 to Sunday 26 September.",
-    "programme": "The SAOC Symposium (Early-Bird), the WOSA Conference and workshops."
+    "programme": "The National Orchid Show Symposium (Early-Bird), the WOSA Conference and workshops."
+   }
+  }
+ ],
+ "salesCases": [
+  {
+   "name": "salesOpen false masks every card (design-cb sales-closed ruling)",
+   "input": {
+    "salesOpen": false
+   },
+   "expect": {
+    "state": "salesClosed",
+    "price": null,
+    "regularPrice": null,
+    "scarcity": null,
+    "pool": null,
+    "dayPassFrom": null,
+    "note": "every card the builder returns, whatever its price, stock or sold-out state; salesClosed outranks pricePending, soldOut, earlyBirdSoldOut, low and available"
+   }
+  },
+  {
+   "name": "salesOpen true is unchanged",
+   "input": {
+    "salesOpen": true
+   },
+   "expect": {
+    "note": "the 11 cases above are all run with salesOpen true and must still hold"
    }
   }
  ]

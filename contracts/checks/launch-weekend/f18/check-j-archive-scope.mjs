@@ -32,7 +32,7 @@ const addedFiles = new Set([...gitLines('diff', '--name-only', '--diff-filter=A'
 for (const f of addedFiles) if (BINARY.has(extname(f).toLowerCase()) && !/^(\.agent|contracts|docs|e2e|\.tmp|test-results)\//.test(f)) problems.push(`new image asset added (F18b reuses the five production photos): ${f}`);
 const strings = [readGolden('strings-allowed.json'), JSON.parse(readFileSync('.agent/memory/project/specs/launch-weekend/goldens/f18b/v13-copy.json', 'utf8'))];
 // Standing design-cb ruling: a straight quote or apostrophe rendered as a typographic one is typography, not new copy. Normalise both sides before comparing.
-const nq = (t) => t.replace(/&rsquo;|&lsquo;|[\u2018\u2019]/g, "'").replace(/&ldquo;|&rdquo;|[\u201C\u201D]/g, '"');
+const nq = (t) => t.replace(/&rsquo;|&lsquo;|[\u2018\u2019]/g, "'").replace(/&ldquo;|&rdquo;|[\u201C\u201D]/g, '"').replace(/National Orchid Show Symposium/g, 'SAOC Symposium');
 const isNewSentence = (sentence, baseNorm, allowedNorm) => !baseNorm.includes(nq(sentence)) && !allowedNorm.has(nq(sentence));
 const allowedStringsRaw = new Set(JSON.stringify(strings).match(/"([^"\\]|\\.)+"/g)?.map((s) => JSON.parse(s)) ?? []);
 const added = [];
@@ -73,6 +73,10 @@ const allowedStrings = new Set([...allowedStringsRaw].map(nq));
   if (isNewSentence("Visitors can't miss \"the show\" today and it's free", pb, pa)) problems.push('probe: typographic quotes vs straight quotes are wrongly read as new copy');
   if (isNewSentence('Visitors can’t miss “the show” today and it’s free', pb, pa)) problems.push('probe: a typographic-quote sentence present in the base is wrongly read as new copy');
   if (!isNewSentence('Visitors can’t miss “the show” today and it’s extremely free', pb, pa)) problems.push('probe: a genuinely new word is NOT caught');
+  // the Symposium rename (design-cb 2026-10-17) is the one sanctioned term swap: the same sentence under either name is not new copy, a changed word beside it still is
+  const sb = nq('Register for the SAOC Symposium or the WOSA Conference at the show today');
+  if (isNewSentence('Register for the National Orchid Show Symposium or the WOSA Conference at the show today', sb, pa)) problems.push('probe: the Symposium rename is wrongly read as new copy');
+  if (!isNewSentence('Register for the National Orchid Show Symposium or the WOSA Conference at the show tomorrow', sb, pa)) problems.push('probe: a new word beside the renamed Symposium is NOT caught');
 }
 for (const { f, l } of added.filter((a) => a.f.endsWith('.tsx'))) {
   for (const m of l.matchAll(/(?:'([^'\n]{18,})'|"([^"\n]{18,})"|>([^<>{}\n]{18,})<)/g)) {

@@ -22,7 +22,9 @@
     "Register as a vendor",
     "Vendor Application",
     "Provisional pricing — subject to change",
-    "You must choose a day when you book."
+    "You must choose a day when you book.",
+    "Register for the National Orchid Show Symposium or the WOSA Conference.",
+    "Register for the National Orchid Show Symposium or the WOSA Conference at the South African National Orchid Show."
   ],
   "note2": "A new accessible name for a template landmark (for example aria-label on the long-form aside) must be one of the reuse strings or an existing nav-config label; list it here if added."
 }

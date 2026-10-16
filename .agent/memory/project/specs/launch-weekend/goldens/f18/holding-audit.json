@@ -181,10 +181,10 @@
     ],
     "unsourcedNote": "'18 shows hosted' is edition-1 inference: Sanity has 0 pastShow documents and no Drive document states a count. '100-point scale', 'Grand Champion', and the criteria line (cultural quality, presentation, species accuracy) appear in no Drive document, and /judging contradicts the criteria line (form, colour, size, cultural condition). 'nine provinces' appears only in the page descriptions: the Drive spec mentions provinces solely as a society-directory filter.",
     "routes": [
-      "/",
       "/national-show"
     ],
-    "withheldSurfaces": "page.tsx body paragraph (scale, Grand Champion), the section lede (criteria line), the hero/og description (nine provinces) and any '18 shows hosted' stat"
+    "withheldSurfaces": "page.tsx body paragraph (scale, Grand Champion), the section lede (criteria line), the hero/og description (nine provinces) and any '18 shows hosted' stat",
+    "_routesNote": "'/' (the SAOC home) is not an F18 route: its 'nine provinces' comes from components/home/NavCards.tsx, which F19 owns (SAOC home provenance)."
   },
   "wosa": {
     "route": "/national-show/wosa-conference",

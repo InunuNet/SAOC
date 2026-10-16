@@ -1,7 +1,6 @@
 // F18-A4 (render level, no CMS, no server): the holding state and the beta/public split, proved with fixture pages built the way hydratePage builds them
 // (applyContentGaps(sections, withhold)), so the proof does not depend on live Sanity content or on a rebuilt server. Both modes, both layouts.
-//   public, no real prose            -> exactly one [data-nos-holding]: facts, the other leaves of the route's nav-config group (label + descriptor), the existing
-//                                       "Be the first to know" band; NO [data-nos-content-gap], NO TBC label, NO gap sentence, NO builder purpose sentence
+//   public, no real prose            -> exactly one [data-nos-holding]: facts, the existing "Be the first to know" band, NO related-page mini list (the full Explore index is the one list); NO [data-nos-content-gap], NO TBC label, NO gap sentence, NO builder purpose sentence
 //   public, real prose + gap block   -> no holding; with hideContentGap the gap goes, without it F17's default holds (the gap renders)
 //   beta (placeholders visible)      -> never a holding state; the labelled placeholder and its notice render
 //   listing layout                   -> holding only when the listing is empty (listingEmpty) and no prose remains; the listing renders when it is not empty
@@ -13,7 +12,6 @@ import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import { NAV } from '../../../../components/chrome/nav-config';
 import { ShowContentState } from '../../../../components/show/nos/ShowContentState';
 import { RealEmptyListing } from '../../../../components/show/nos/RealEmptyListing';
 import { wrapShowPageResult } from '../../../../components/show/nos/show-content-state-internal';
@@ -27,16 +25,6 @@ const verdicts = JSON.parse(readFileSync(`${G}/lede-verdicts.json`, 'utf8')) as 
 const H = tokens.holding;
 const problems: string[] = [];
 const fail = (m: string) => problems.push(m);
-
-const descriptors = new Map<string, string>();
-const labels = new Map<string, string>();
-(function walk(n: unknown) {
-  if (!n || typeof n !== 'object') return;
-  const o = n as Record<string, unknown>;
-  if (typeof o.href === 'string' && typeof o.descriptor === 'string' && !descriptors.has(o.href)) descriptors.set(o.href, o.descriptor);
-  if (typeof o.href === 'string' && typeof o.label === 'string' && !labels.has(o.href)) labels.set(o.href, o.label);
-  for (const v of Object.values(o)) walk(v);
-})(NAV);
 
 const block = (text: string) => ({ _type: 'block', _key: `k-${text.length}`, style: 'normal', markDefs: [], children: [{ _type: 'span', _key: `s-${text.length}`, text, marks: [] }] });
 const real = (key = 'overview'): ShowPageSection => ({ sectionKey: key, heading: 'A real heading', kind: 'prose', body: wrapGatedProse([block('A real sentence supplied by the Council.') as never], null), notice: null });
@@ -56,17 +44,9 @@ for (const bad of ['data-nos-content-gap', CONTENT_GAP_LABEL, ABSENT_SHOW_PAGE_F
 if (!/data-nos-content-state="published"/.test(pub)) fail('public holding render lost data-nos-content-state="published"');
 if (!/<h1\b/.test(pub)) fail('public holding render lost the hero h1');
 for (const f of facts) if (!has(pub, f.label) || !has(pub, f.value)) fail(`holding facts: "${f.label}" / "${f.value}" not rendered`);
-const group = (NAV.find((n: { type?: string }) => n.type === 'mega') as unknown as { lead: { theShow: { heading: string; links: { label: string; href: string }[] } }; columns: { heading: string; links: { label: string; href: string }[] }[] });
-const groups = [group.lead.theShow, ...group.columns];
-const mine = groups.find((g) => g.links.some((l) => l.href === '/national-show/programme'));
-for (const l of (mine?.links ?? [])) {
-  const shown = has(pub, `href="${l.href}"`);
-  if (l.href === '/national-show/programme') { if (new RegExp(`data-nos-holding-card[^>]*>[\\s\\S]*?href="${l.href}"`).test(pub) && /data-nos-holding-card/.test(pub) && pub.split('data-nos-holding-card').slice(1).some((c) => c.includes(`href="${l.href}"`))) fail('holding cards list the route itself'); continue; }
-  if (!shown) fail(`holding cards miss the sibling ${l.href}`);
-  const d = descriptors.get(l.href);
-  if (!d || !has(pub, d)) fail(`holding card ${l.href} misses its nav-config descriptor "${d}"`);
-  if (!has(pub, l.label)) fail(`holding card ${l.href} misses its label "${l.label}"`);
-}
+// no related-page mini list (design-cb rotation ruling 4, F18b commit 4): the full Explore index below the page is the one list
+if (/data-nos-holding-cards?/.test(pub)) fail('the holding state still renders the related-page mini list (data-nos-holding-card[s]); the full Explore index is the one list');
+if (has(pub, H.strings.cardsEyebrow)) fail(`the holding state still carries the "${H.strings.cardsEyebrow}" eyebrow of the retired mini list`);
 for (const s of [H.strings.ctaEyebrow, H.strings.ctaTitle, H.strings.ctaAction]) if (!has(pub, s)) fail(`holding band misses "${s}"`);
 if (!has(pub, `href="${H.strings.ctaHref}"`)) fail('holding band misses its /contact action');
 
