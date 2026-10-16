@@ -19,7 +19,8 @@ if (!base) {
 const src = execFileSync('git', ['show', `${base}:components/chrome/UtilityBar.tsx`], { encoding: 'utf8' });
 mkdirSync('.tmp/sandbox/f12-utility', { recursive: true });
 const baseFile = '.tmp/sandbox/f12-utility/UtilityBarBase.tsx';
-writeFileSync(baseFile, src);
+// the generated file compiles with the classic JSX runtime, so it needs React in scope on a clean checkout
+writeFileSync(baseFile, /import\s+React\b/.test(src) ? src : `import React from 'react';\n${src}`);
 const BaseBar = (await import(pathToFileURL(`${process.cwd()}/${baseFile}`).href)).UtilityBar as typeof UtilityBar;
 unlinkSync(baseFile);
 

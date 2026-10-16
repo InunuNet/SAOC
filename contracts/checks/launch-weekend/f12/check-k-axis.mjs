@@ -29,9 +29,22 @@ function measure() {
     if (w.closest('[data-nos-hero]')) continue;
     push('section wrap content edge', edgeOf(w), { maxWidth: cs(w).maxWidth, pad: parseFloat(cs(w).paddingLeft), width: rc(w).width, centred: Math.abs(rc(w).left - (innerWidth - rc(w).width) / 2) <= 1.5 });
   }
+  // R71 (lead ruling): the axis applies to the OUTER edge of the first block in each section wrap. A heading inside a card (.nos-surface, .nos-card, a padded Card) is
+  // exempt, its card edge is what sits on the axis; deliberately centred blocks (CtaBand, max-w mx-auto CTA blocks, a centred card) are exempt; the Ozow sandbox TEST MODE banner is skipped.
+  const TEST_BANNER = /TEST MODE/;
+  const isCentred = (e) => { const b = rc(e); return b.width < innerWidth - 2 && Math.abs(b.left - (innerWidth - b.width) / 2) <= 1.5 && b.left > 1; };
   for (const sec of [...root.children].filter((e) => e !== hero && e.tagName === 'SECTION')) {
+    const wrap = sec.querySelector('[data-nos-wrap]');
+    const blocks = wrap ? [...wrap.children].filter((e) => rc(e).height > 0 && !TEST_BANNER.test(e.textContent ?? '')) : [];
+    const first = blocks[0];
+    if (first) {
+      const wrapInner = rc(wrap).width - parseFloat(cs(wrap).paddingLeft) - parseFloat(cs(wrap).paddingRight);
+      if (isCentred(first) && rc(first).width < wrapInner - 2) continue;
+      push(`first block <${first.tagName.toLowerCase()}> "${(first.textContent ?? '').trim().slice(0, 30)}"`, rc(first).left);
+      continue;
+    }
     const h2 = sec.querySelector('h2');
-    if (h2 && rc(h2).height > 0 && !h2.closest('.nos-surface.mx-auto')) push(`first h2 "${(h2.textContent ?? '').trim().slice(0, 30)}"`, rc(h2).left);
+    if (h2 && rc(h2).height > 0 && !h2.closest('.nos-surface, .nos-card') && !isCentred(h2)) push(`first h2 "${(h2.textContent ?? '').trim().slice(0, 30)}"`, rc(h2).left);
   }
   for (const w of document.querySelectorAll('.nos-presenters .pc-wrap')) push('presenters wrap content edge', edgeOf(w));
   const idx = document.querySelector('nav[aria-label="Explore the show pages"]');
@@ -75,6 +88,24 @@ await main('F12-A15 single axis', async (r) => {
       }
       await ctx.close();
     }
+    // Negative case: a non-card section whose own h2 starts off-axis must still fail the first-block rule.
+    {
+      const { ctx, page, status } = await openPage(browser, { width: 1280, height: 800 }, '/national-show/about');
+      if (status !== 200) r.fail(`negative case: /national-show/about HTTP ${status}`);
+      else {
+        await page.evaluate(() => {
+          const hero = document.querySelector('[data-nos-hero]');
+          const sec = document.createElement('section');
+          sec.innerHTML = '<div data-nos-wrap=""><h2 style="margin-left:24px">F12 negative probe</h2></div>';
+          hero.parentElement.appendChild(sec);
+        });
+        const m = await page.evaluate(measure);
+        const probe = m.items.find((i) => i.what.includes('F12 negative probe'));
+        if (!probe) r.fail('negative case: the injected off-axis h2 was not measured as a first block, the check is blind');
+        else if (near(probe.left, m.header.edge, 1)) r.fail('negative case: an h2 24px off the axis was measured on the axis, the check does not bite');
+      }
+      await ctx.close();
+    }
     // /national-show/tickets (design audit: content column ~790px centred, 350-1138 on a 1500 frame, header 263-1226): the content column fills the axis wrap, container and axis only
     for (const [w, h] of [[1280, 800], [1920, 1080], [2056, 1100]]) {
       const { ctx, page, status } = await openPage(browser, { width: w, height: h }, '/national-show/tickets');
@@ -85,7 +116,7 @@ await main('F12-A15 single axis', async (r) => {
         if (!bar || !wrap) return { error: 'no .nh-bar or section wrap' };
         const cs = getComputedStyle(wrap);
         const inner = wrap.getBoundingClientRect().width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-        const kids = [...wrap.children].filter((e) => e.getBoundingClientRect().height > 0).map((e) => ({ tag: e.tagName.toLowerCase(), left: e.getBoundingClientRect().left, width: e.getBoundingClientRect().width }));
+        const kids = [...wrap.children].filter((e) => e.getBoundingClientRect().height > 0 && !/TEST MODE/.test(e.textContent ?? '')).map((e) => ({ tag: e.tagName.toLowerCase(), left: e.getBoundingClientRect().left, width: e.getBoundingClientRect().width }));
         const b = bar.getBoundingClientRect();
         const bs = getComputedStyle(bar);
         return { inner, kids, headerEdge: b.left + parseFloat(bs.paddingLeft), headerRight: b.right - parseFloat(bs.paddingRight) };
