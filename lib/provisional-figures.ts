@@ -443,6 +443,14 @@ export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [
 export const RETIRED_FIELD_TRIP_SLUGS = ['field-trip-single', 'field-trip-all-outings'] as const;
 
 /**
+ * Launch-weekend F10 (Brad, 2026-10-16): the older stand-alone Early-Bird Weekend Pass
+ * document, superseded by the live `weekend-pass-early-bird` product above. Retired
+ * (`active: false`, never deleted) in the Sanity dataset; listed here so a check can enforce
+ * that exactly one active product exists per logical product.
+ */
+export const RETIRED_ADMISSION_SLUGS = ['early-bird-weekend-pass'] as const;
+
+/**
  * F2 (conference-workshop-tickets, M1) — the Sunset Cocktails (Couple) SKU, retired
  * (`active: false`, never deleted/renamed — see F3's migration script), same convention as
  * `RETIRED_CONFERENCE_SLUGS`/`RETIRED_FIELD_TRIP_SLUGS`. Team-lead's second-pass default

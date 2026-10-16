@@ -1,0 +1,21 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: The ticket catalogue holds exactly one active Sanity product per logical product - one day early-bird, one weekend early-bird and one Field Trip - with the superseded duplicates retired (active false, never deleted) and named in the RETIRED_* lists.
+created_at: '2026-10-16'
+autonomy: high
+features:
+  - id: F10
+    name: Retire duplicate early-bird and Field Trip ticket products (Brad, 2026-10-16)
+    status: pending
+# GATE: cwd = the implementation worktree, with Sanity credentials in the environment or a local .env.local (read-only query; no writes).
+goldens:
+  - lib/provisional-figures.ts
+assertions:
+  phase: 4
+  checks:
+    - id: F10-A1
+      description: Live Sanity query - no retired slug is active, exactly one active document each for the day early-bird, weekend early-bird and field trip products, no duplicate active slug, every active admission, workshop or conference document maps to a live product slug
+      command: pnpm exec tsx contracts/checks/launch-weekend/f10/check-catalogue.mts
+    - id: F10-A2
+      description: Type check passes, including the new check file (tsconfig excludes contracts)
+      command: pnpm type-check && pnpm exec tsc --noEmit --strict --skipLibCheck --target es2022 --module esnext --moduleResolution bundler --types node contracts/checks/launch-weekend/f10/check-catalogue.mts
