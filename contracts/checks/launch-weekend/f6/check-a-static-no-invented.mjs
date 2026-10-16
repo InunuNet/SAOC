@@ -2,7 +2,7 @@
 // A1 - static: no invented venue, visitor, trophy or "Since 1974" literal remains in shipped source; the static
 // seed file is gone and nothing imports it; the archive pages no longer use stock photos.
 import { readFileSync, existsSync } from 'node:fs';
-import { FORBIDDEN, walk, report } from './_lib.mjs';
+import { FORBIDDEN, HUB_FORBIDDEN, walk, report } from './_lib.mjs';
 
 const problems = [];
 const files = ['app', 'lib', 'components', 'sanity', 'types'].flatMap((d) => walk(d, ['.ts', '.tsx']));
@@ -30,6 +30,9 @@ if (!idx.includes('Show history awaiting committee records')) problems.push('arc
 if (!/ConfirmationBadge/.test(idx)) problems.push('archive index does not use ConfirmationBadge');
 if (/Since 1974|every three years/.test(idx)) problems.push('archive lede still carries the unsourced 1974 / rotation claim');
 const nsp = readFileSync('app/(marketing)/national-show/page.tsx', 'utf8');
+for (const l of [...HUB_FORBIDDEN, 'CYCLE_YEARS', 'CycleStep', 'toRomanOrdinal']) if (nsp.includes(l)) problems.push(`/national-show page.tsx still contains "${l}" (invented cycle/stat block)`);
+if (existsSync('components/nos/CycleStep.tsx')) problems.push('components/nos/CycleStep.tsx is dead after the cycle section removal and must be deleted');
+if (/champion|galler/i.test(readFileSync('public/llms.txt', 'utf8'))) problems.push('public/llms.txt still promises champions or galleries');
 if (/Past editions|PastEditionCard|pastEditionImage/.test(nsp)) problems.push('/national-show still renders the past editions section');
 const merge = readFileSync('lib/data/mergeShows.ts', 'utf8');
 if (/staticShows|lib\/data\/shows/.test(merge)) problems.push('mergeShows still merges a static record');

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // A2 - runtime (BASE_URL): archive index shows the honest state and no invented fact or stock photo; every invented
 // archive year 404s; /national-show carries no past-editions section; sitemap and llms files list no archive year.
-import { FORBIDDEN, YEARS, get, forbiddenIn, mainOf, stripTags, report } from './_lib.mjs';
+import { FORBIDDEN, HUB_FORBIDDEN, YEARS, get, forbiddenIn, mainOf, stripTags, report } from './_lib.mjs';
 
 const problems = [];
 const idx = await get('/national-show/archive');
@@ -27,6 +27,7 @@ for (const y of YEARS.concat([2027])) {
 const ns = await get('/national-show');
 if (ns.status !== 200) problems.push(`/national-show answered ${ns.status}`);
 for (const l of forbiddenIn(ns.text)) problems.push(`/national-show contains "${l}"`);
+for (const l of HUB_FORBIDDEN) if (stripTags(mainOf(ns.text)).includes(l)) problems.push(`/national-show hub contains "${l}"`);
 if (stripTags(mainOf(ns.text)).includes('Past editions')) problems.push('/national-show still shows "Past editions"');
 
 const sm = await get('/sitemap.xml');
@@ -35,6 +36,7 @@ if (!sm.text.includes('/national-show')) problems.push('sitemap lost /national-s
 
 for (const f of ['/llms.txt', '/llms-full.txt']) {
   const r = await get(f);
+  if (r.status === 200 && f === '/llms.txt' && /champion|galler/i.test(r.text)) problems.push('/llms.txt promises champions or galleries');
   if (r.status === 200) for (const l of FORBIDDEN) if (r.text.includes(l)) problems.push(`${f} contains "${l}"`);
 }
 report(problems, 'archive index honest, invented years 404, sitemap and llms clean');

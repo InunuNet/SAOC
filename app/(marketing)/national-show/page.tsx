@@ -6,7 +6,6 @@ import { NAV } from '@/components/chrome/nav-config';
 import { ConfirmationBadge, ShowCountdown, ShowSectionNav } from '@/components/show';
 import { Button } from '@/components/nos/Button';
 import { CtaBand } from '@/components/nos/CtaBand';
-import { CycleStep } from '@/components/nos/CycleStep';
 import { ExhibitorStageCard } from '@/components/nos/ExhibitorStageCard';
 import { JudgingGroupCard } from '@/components/nos/JudgingGroupCard';
 import { COLUMN_CLASS, SPAN_CLASS, resolveGridLayout } from '@/lib/grid-columns';
@@ -30,7 +29,6 @@ import {
   formatShowDateRange,
   formatShowMonthYear,
   formatVenueAddress,
-  showYearOf,
   toOrdinal,
   toShowIsoDate,
 } from '@/lib/show-identity';
@@ -265,28 +263,6 @@ const EXHIBITOR_STAGES = [
   },
 ];
 
-// The past and future rows are historical/constitutional record. The CURRENT row is
-// overlaid from the nationalShow singleton at render time — its host, year and edition
-// are per-edition values an editor owns, not code.
-const CYCLE_YEARS = [
-  { year: 2024, edition: 18, host: 'KwaZulu-Natal', status: 'past' as const },
-  { year: 2027, edition: 19, host: null as string | null, status: 'current' as const },
-  { year: 2030, edition: 20, host: 'TBC', status: 'future' as const },
-];
-
-function toRomanOrdinal(n: number): string {
-  const val = [50, 40, 10, 9, 5, 4, 1];
-  const sym = ['L', 'XL', 'X', 'IX', 'V', 'IV', 'I'];
-  let result = '';
-  for (let i = 0; i < val.length; i++) {
-    while (n >= val[i]) {
-      result += sym[i];
-      n -= val[i];
-    }
-  }
-  return result;
-}
-
 export default async function NationalShowPage() {
   const [sanityClasses, sanityShow, visitorInfo, salesState, admissionTicketTypes] =
     await Promise.all([
@@ -323,7 +299,6 @@ export default async function NationalShowPage() {
   const dateRange = formatShowDateRange(sanityShow?.showDate, sanityShow?.showEndDate);
   const monthYear = formatShowMonthYear(sanityShow?.showDate);
   const hostRegion = sanityShow?.hostRegion || 'Host region to be confirmed';
-  const showYear = showYearOf(sanityShow?.showDate);
   const venueCity = sanityShow?.venue?.city ?? null;
   const datesStatus = visitorInfo?.confirmations?.dates;
 
@@ -335,17 +310,6 @@ export default async function NationalShowPage() {
     // not a per-edition value — deliberately not a Sanity field.
     { label: 'Cycle', value: 'Triennial' },
   ];
-
-  const cycle = CYCLE_YEARS.map((entry) =>
-    entry.status === 'current'
-      ? {
-          ...entry,
-          year: showYear ?? entry.year,
-          edition: edition ?? entry.edition,
-          host: sanityShow?.hostRegion || 'To be confirmed',
-        }
-      : entry,
-  );
 
   const ctaSentence = [
     edition ? `The ${toOrdinal(edition)} National Orchid Show` : 'The National Orchid Show',
@@ -488,10 +452,8 @@ export default async function NationalShowPage() {
         {/* 4-up stats */}
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[length:var(--radius-lg)] bg-rule">
           {[
-            { value: '18', label: 'Editions held' },
             { value: '3 yr', label: 'Cycle' },
             { value: '10', label: 'Judging classes' },
-            { value: '1,240', label: 'Entries — 2024' },
           ].map(({ value, label }) => (
             <div key={label} className="bg-parchment px-8 py-10">
               <div className="nos-figure font-serif text-[46px] text-primary">
@@ -553,31 +515,6 @@ export default async function NationalShowPage() {
           </Link>
           .
         </p>
-      </section>
-
-      {/* ── Three-year cycle ── */}
-      <section className="bg-bone py-20">
-        <div className="mx-auto max-w-[1280px] px-8">
-          <SectionHeading eyebrow="The rotation" title="Three-year cycle" />
-
-          <div className="relative mt-14 grid grid-cols-1 gap-6 sm:grid-cols-3">
-            {/* Connecting rail — hidden below sm, where cards stack */}
-            <div className="absolute left-[calc(16.7%+1rem)] right-[calc(16.7%+1rem)] top-1 hidden h-px bg-rule sm:block" />
-
-            {cycle.map(({ year, edition: cycleEdition, host, status }) => (
-              <CycleStep
-                key={year}
-                year={year}
-                editionLabel={`Edition ${toRomanOrdinal(cycleEdition)}`}
-                host={host}
-                status={status}
-              />
-            ))}
-          </div>
-          <p className="mt-6 font-sans text-[13px] text-muted">
-            Host province rotates among regional orchid societies nominated by the SAOC board.
-          </p>
-        </div>
       </section>
 
       {/* ── Classes & Judging — a botanical index, not placeholder tiles ── */}

@@ -22,7 +22,7 @@
 
 - [National Show](https://saoc.co.za/national-show): Overview of the SAOC national orchid show.
 - [Upcoming National Show](https://saoc.co.za/national-show/upcoming): Details for the next national show (2027).
-- [National Show Archive](https://saoc.co.za/national-show/archive): Past national shows, champions, and galleries.
+- [National Show Archive](https://saoc.co.za/national-show/archive): Previous editions.
 
 ## Contact
 
