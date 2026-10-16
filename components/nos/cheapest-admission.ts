@@ -1,5 +1,5 @@
-import { resolveEffectivePrice } from '@/lib/checkout-reservation';
-import { filterPubliclyListableTicketTypes } from '@/lib/demo-ticket-type';
+import { resolveEffectivePrice } from '../../lib/checkout-reservation';
+import { filterPubliclyListableTicketTypes } from '../../lib/demo-ticket-type';
 
 interface AdmissionPriceFields {
   name: string;
@@ -16,8 +16,8 @@ export interface CheapestAdmission<T extends AdmissionPriceFields> {
 }
 
 /**
- * The publicly listable admission product with the lowest price checkout would charge `now`,
- * or null when there is none. The hub's "{title} from R{min}" anchor and the tickets page's
+ * The publicly listable admission product with the lowest price checkout would accept `now`,
+ * or null when there is none (products with no effective price are excluded). The hub's "{title} from R{min}" anchor and the tickets page's
  * own price block both read this, so the two can never disagree about the cheapest ticket.
  */
 export function cheapestAdmission<T extends AdmissionPriceFields>(
@@ -26,13 +26,15 @@ export function cheapestAdmission<T extends AdmissionPriceFields>(
 ): CheapestAdmission<T> | null {
   let best: CheapestAdmission<T> | null = null;
   for (const type of filterPubliclyListableTicketTypes(types)) {
-    const price =
-      resolveEffectivePrice({
-        price: type.price,
-        regularPrice: type.regularPrice ?? null,
-        earlyBirdCutoff: type.earlyBirdCutoff ?? null,
-        now,
-      }) ?? type.price;
+    const price = resolveEffectivePrice({
+      price: type.price,
+      regularPrice: type.regularPrice ?? null,
+      earlyBirdCutoff: type.earlyBirdCutoff ?? null,
+      now,
+    });
+    // A closed early bird with no regular price has no effective price: checkout refuses it
+    // (409), so it is never advertised at its expired price.
+    if (price === null) continue;
     if (best === null || price < best.price) best = { type, price };
   }
   return best;

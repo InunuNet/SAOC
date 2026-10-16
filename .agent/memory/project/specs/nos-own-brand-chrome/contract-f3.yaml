@@ -126,6 +126,10 @@ assertions:
     description: '[F3 R67] /national-show hero holds exactly two links in order: "Tickets" -> /national-show/tickets, "Plan your visit" -> /national-show/plan-your-visit; no /societies link in the hero (1280 and 390)'
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-hero-ctas.mjs
     timeout_seconds: 300
+  - id: A28
+    description: '[F3 price teaser] cheapestAdmission advertises only prices checkout accepts now: expired early bird with a standard price shows the standard price; expired early bird with a null standard price is excluded; nothing priceable renders no teaser'
+    command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-cheapest-admission.mjs
+    timeout_seconds: 120
   - id: F2-A3
     description: '[regress F2 A3] no Cormorant/Jost/JetBrains/Crimson/Manrope/font-mono/var(--mono) in the NOS sources (comments stripped; components/nos/Logo.tsx exempt)'
     command: node contracts/checks/nos-own-brand-chrome/f2/check-f2-static.mjs type-clean

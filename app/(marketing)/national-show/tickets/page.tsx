@@ -190,9 +190,9 @@ export default async function NationalShowTicketsPage() {
                   </p>
                 ) : null}
               </>
-            ) : (
+            ) : !salesOpen ? (
               <SalesClosedNotice message="Ticket sales are not yet open — check back soon." />
-            )}
+            ) : null}
           </div>
         </Card>
 
