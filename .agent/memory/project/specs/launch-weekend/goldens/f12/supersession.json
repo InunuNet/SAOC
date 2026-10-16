@@ -50,6 +50,16 @@
       "f3": "conferences/workshops container (CategoryTicketsPage 720px column inside the F3 1080 wrap)",
       "reason": "NOS Design ruling relayed 2026-10-16: R70's 1280 container and 60ch measure apply to conferences and workshops too",
       "replacedBy": "F12-A7"
+    },
+    {
+      "f3": "check-f3-container.mjs (whole file, all routes) and every F2/F3 check that pins --hero-gutter, the 1080 wrap or the typographic hero's 1080 copy grid (R29)",
+      "reason": "R71: body, hero and sub-nav share the NOS header container (1320 + 2*gutter, gutter clamp(16px,2.5vw,32px)) on every NOS route; the 1080 wrap and the separate hero gutter are retired",
+      "replacedBy": "F12-A7, F12-A15"
+    },
+    {
+      "f3": "R15/R29 inner hero geometry: inner h1 max-width 14ch and the older inner title clamp; lede 34ch",
+      "reason": "R71: at >=1024 inner h1 max-width none, clamp(48px,4.4vw,88px), balance, lede 46ch, min-height 380 (check-f2-hero-layout and any INNER_H1_CH assertion)",
+      "replacedBy": "F12-A16"
     }
   ]
 }

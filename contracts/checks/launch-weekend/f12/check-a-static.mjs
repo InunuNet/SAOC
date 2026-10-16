@@ -21,6 +21,8 @@ for (const [label, alts] of [
   ['hero facts 4 max-content columns', ['repeat(4,max-content)']],
   ['hero title text-wrap balance', ['text-wrap:balance', 'text-balance']],
   ['symposium lede clamp', ['clamp(22px,2vw,30px)']],
+  ['inner hero title clamp', ['clamp(48px,4.4vw,88px)']],
+  ['inner hero lede 46ch', ['46ch']],
   ['symposium lede 30ch', ['30ch']],
   ['template 4fr:7fr columns', ['minmax(0,4fr)minmax(0,7fr)']],
 ]) need(alts.some((a) => surface.includes(a)), `no source carries ${label} (${alts.join(' | ')})`);
@@ -48,7 +50,15 @@ for (const f of gitLines('ls-files', 'app', 'components')) {
 const TEMPLATE_FILES = ['programme', 'symposium', 'wosa-conference', 'sa-exhibitors', 'international-guests', 'sponsors', 'faq'].map((s) => `${NS}/${s}/page.tsx`)
   .concat(['components/show/nos/ShowContentState.tsx', 'components/nos/ShowPageProse.tsx']);
 for (const f of TEMPLATE_FILES) need(!/max-w-\[900px\]/.test(read(f)), `${f} still sets max-w-[900px]`);
-for (const f of ['faq', 'programme', 'sa-exhibitors']) need(/max-w-\[1280px\]|1280px/.test(read(`${NS}/${f}/page.tsx`) + read('components/show/nos/ShowContentState.tsx') + css), `no 1280px container reachable from ${f}`);
+// R71: ONE axis token pair, defined once from the header's own tokens; no second container literal left behind
+const axisCss = css + '\n' + stripComments(read(`${NS}/presenters.css`));
+need(/--nos-axis-max\s*:[^;]*var\(--nc-wide\)[^;]*var\(--nc-gutter\)/.test(axisCss), 'no --nos-axis-max defined from var(--nc-wide) and var(--nc-gutter) (the header container is the single source)');
+need(/--nos-axis-pad\s*:\s*var\(--nc-gutter\)/.test(axisCss), 'no --nos-axis-pad defined from var(--nc-gutter)');
+need((axisCss.match(/--nos-axis-max\s*:/g) ?? []).length === 1 && (axisCss.match(/--nos-axis-pad\s*:/g) ?? []).length === 1, 'the axis tokens must each be defined exactly once');
+need((axisCss.match(/--nc-wide/g) ?? []).length === 1 && (axisCss.match(/--nc-gutter/g) ?? []).length === 2, 'the header tokens may be referenced only by the axis definition (consumers use --nos-axis-*)');
+need(!/clamp\(16px,\s*4vw,\s*48px\)/.test(axisCss), 'a second container gutter clamp(16px, 4vw, 48px) is still defined (it must derive from the axis)');
+need(/--nos-axis-/.test(stripComments(read(`${NS}/presenters.css`))), 'presenters.css does not use the axis tokens');
+need(/--nos-axis-max/.test(css) && (css.match(/--nos-axis-max/g) ?? []).length >= 4, 'the axis token is not consumed by the wrap, hero copy, presenters and index rules (expected 4+ uses)');
 const sym = stripComments(read(`${NS}/symposium/page.tsx`));
 need(!/PresenterJumpLink/.test(sym), 'symposium page still renders PresenterJumpLink');
 for (const line of sym.split('\n')) if (/\btitle\s*:|nosOgImage\(|heroTitle/.test(line)) need(!line.includes(V.symposium.removedTitleText), `symposium title/og line still says "SAOC Symposium": ${line.trim()}`);

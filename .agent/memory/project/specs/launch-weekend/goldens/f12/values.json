@@ -125,7 +125,8 @@
     "ariaLabel": "Explore the show pages",
     "component": "components/nos/NosShowIndex.tsx",
     "exportName": "NosShowIndex",
-    "currentProp": "current"
+    "currentProp": "current",
+    "container": "the same axis (not 1280/px-8)"
   },
   "symposium": {
     "h1": "National Orchid Show Symposium",
@@ -162,8 +163,17 @@
       "/national-show/exhibitors"
     ],
     "container": {
-      "maxWidth": 1280,
-      "paddingInline": 32
+      "source": "R71 (NOS Design, relayed 2026-10-16): the NOS header's container as F3 renders it (.nh-bar), not a separate 1280",
+      "maxContentPx": 1320,
+      "gutterClamp": "clamp(16px,2.5vw,32px)",
+      "maxWidthFormula": "1320 + 2*gutter",
+      "tokens": "--nos-axis-max / --nos-axis-pad, each defined once from --nc-wide / --nc-gutter",
+      "measuredLeftEdge": {
+        "1280": 32,
+        "1920": 300,
+        "2056": 368,
+        "390": 16
+      }
     },
     "prose": {
       "breakpoint": 900,
@@ -266,5 +276,62 @@
       "padGapUnchanged": true,
       "allowedClassTokens": "tokens starting max-[479px]"
     }
+  },
+  "axis": {
+    "viewports": [
+      [
+        1280,
+        800
+      ],
+      [
+        1920,
+        1080
+      ],
+      [
+        2056,
+        1100
+      ],
+      [
+        390,
+        844
+      ]
+    ],
+    "tolerancePx": 1,
+    "members": [
+      "header .nh-bar content edge",
+      "hero h1",
+      "hero copy content edge",
+      "sub-nav first link",
+      "every [data-nos-wrap] content edge on every NOS route",
+      "first h2 of every section",
+      "presenters .pc-wrap",
+      "hub index container and eyebrow"
+    ],
+    "previouslyNoteOnly": "hero axis offset (ruling 2 of 2026-10-16) is now a FAIL"
+  },
+  "innerHero": {
+    "fromWidth": 1024,
+    "widths": [
+      1024,
+      1280,
+      1920,
+      2056
+    ],
+    "title": {
+      "maxWidth": "none",
+      "clamp": "clamp(48px,4.4vw,88px)",
+      "minPx": 48,
+      "maxPx": 88,
+      "vw": 4.4,
+      "textWrap": "balance"
+    },
+    "ledeMaxCh": 46,
+    "ledeExemption": "symposium keeps its R70 theme lede (30ch)",
+    "minHeight": 380,
+    "twoLineMax": [
+      "/national-show/international-guests",
+      "/national-show/about"
+    ],
+    "twoLineAt": 1280
   }
 }

@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-// F12-A7 - R70 shared show-page template on the six ShowContentState routes plus the FAQ container: 1280 / px-8 container,
+// F12-A7 - R70 shared show-page template on the six ShowContentState routes plus the FAQ container: container on the NOS header's axis (R71),
 // the 4fr:7fr prose grid at >=900 (stacked below), h2 in column 1, everything else and the TBC / gap notices in column 2, 60ch paragraphs.
 // Also: vendors and exhibitors keep their 60ch paragraph cap (conflict a), conferences and workshops are not on the template (conflict c).
 import { main, openPage, withBrowser, VP, V, near, rgbOf, rgbNear, RULE, px, trackCount } from './_lib.mjs';
 
 const T = V.template;
+// R71: the container IS the NOS header's container (F3 .nh-bar): 1320 + two gutters, gutter clamp(16px, 2.5vw, 32px), centred
+const axisBox = (vw) => { const g = Math.min(Math.max(16, 0.025 * vw), 32); const max = 1320 + g + g; return { g, max, w: Math.min(vw, max) }; };
 
 function measure(opts) {
   const cs = (e) => getComputedStyle(e);
@@ -98,12 +100,11 @@ await main('F12-A7 template', async (r) => {
         if (!m.container) r.fail(`${tag}: no bounded container around the content`);
         else {
           const c = m.container;
-          const want = Math.min(w, T.container.maxWidth);
-          if (px(c.maxWidth) !== T.container.maxWidth) r.fail(`${tag}: container max-width ${c.maxWidth}, want 1280px`);
-          if (!near(c.width, want, 1)) r.fail(`${tag}: container ${c.width.toFixed(0)}px wide, want ${want}px`);
-          if (c.padL !== T.container.paddingInline || c.padR !== T.container.paddingInline) r.fail(`${tag}: container padding ${c.padL}/${c.padR}, want px-8 (32px)`);
+          const ax = axisBox(w);
+          if (!near(px(c.maxWidth), ax.max, 1)) r.fail(`${tag}: container max-width ${c.maxWidth}, want the NOS header container ${ax.max.toFixed(0)}px (R71)`);
+          if (!near(c.width, ax.w, 1)) r.fail(`${tag}: container ${c.width.toFixed(0)}px wide, want ${ax.w.toFixed(0)}px`);
+          if (!near(c.padL, ax.g, 0.6) || !near(c.padR, ax.g, 0.6)) r.fail(`${tag}: container padding ${c.padL}/${c.padR}, want the header gutter ${ax.g.toFixed(1)}px`);
           if (!c.centred) r.fail(`${tag}: container is not centred`);
-          if (w === 1280 || w === 1920) r.note(`${route} @${w}: hero text axis ${m.heroAxis?.toFixed(0)}px, content axis ${c.contentLeft.toFixed(0)}px (offset ${(c.contentLeft - (m.heroAxis ?? 0)).toFixed(0)}px, informational)`);
         }
         if (isTemplate) {
           if (w >= 1024 && m.heroKind === 'inner' && (m.heroMinH < 379.5 || m.heroH < 379.5)) r.fail(`${tag}: inner hero min-height ${m.heroMinH}px / height ${m.heroH?.toFixed(0)}px, want >= 380px at >=1024`);
@@ -122,7 +123,7 @@ await main('F12-A7 template', async (r) => {
       for (const p of m.paras) if (p.w > p.ch60 + 1.5) r.fail(`${route}: a paragraph is ${p.w.toFixed(0)}px wide, over 60ch (${p.ch60.toFixed(0)}px) - r5's [&_p]:max-w-[60ch] must survive`);
       await ctx.close();
     }
-    // conferences and workshops (NOS Design ruling relayed 2026-10-16): the 1280 container for alignment, 60ch for measure; not the prose grid
+    // conferences and workshops (NOS Design ruling relayed 2026-10-16): the header-axis container for alignment, 60ch for measure; not the prose grid
     for (const route of T.widenedRoutes) {
       const { ctx, page, status } = await openPage(browser, VP.desktop, route);
       if (status !== 200) { r.fail(`${route}: HTTP ${status}`); await ctx.close(); continue; }
@@ -136,21 +137,21 @@ await main('F12-A7 template', async (r) => {
         const c = m.container;
         if (!c) r.fail(`${tag}: no bounded container around the content`);
         else {
-          if (px(c.maxWidth) !== T.container.maxWidth || !near(c.width, Math.min(w, T.container.maxWidth), 1)) r.fail(`${tag}: container ${c.maxWidth} / ${c.width.toFixed(0)}px wide, want 1280px`);
-          if (c.padL !== T.container.paddingInline || c.padR !== T.container.paddingInline || !c.centred) r.fail(`${tag}: container padding ${c.padL}/${c.padR} centred ${c.centred}, want px-8 and centred`);
+          const ax = axisBox(w);
+          if (!near(px(c.maxWidth), ax.max, 1) || !near(c.width, ax.w, 1)) r.fail(`${tag}: container ${c.maxWidth} / ${c.width.toFixed(0)}px wide, want the header container ${ax.max.toFixed(0)}px`);
+          if (!near(c.padL, ax.g, 0.6) || !near(c.padR, ax.g, 0.6) || !c.centred) r.fail(`${tag}: container padding ${c.padL}/${c.padR} centred ${c.centred}, want the header gutter ${ax.g.toFixed(1)}px and centred`);
         }
         for (const p of m.paras) if (p.w > p.ch60 + 1.5) r.fail(`${tag}: a paragraph is ${p.w.toFixed(0)}px wide, over 60ch (${p.ch60.toFixed(0)}px)`);
       }
       await ctx.close();
     }
-    // tickets shares CategoryTicketsPage: it must keep the F3 container, 1080 plus two gutters
+    // tickets shares CategoryTicketsPage and every NosSection wrap: it sits on the same header axis (R71), not a separate 1080 column
     for (const route of T.untouchedContainerRoutes) {
       const { ctx, page, status } = await openPage(browser, VP.desktop, route);
       if (status !== 200) { r.fail(`${route}: HTTP ${status}`); await ctx.close(); continue; }
       const m = await page.evaluate(measure, { paras: false });
-      const gutter = Math.min(Math.max(16, 0.04 * 1280), 48);
-      const want = 1080 + gutter + gutter;
-      if (!m.container || !near(px(m.container.maxWidth), want, 1)) r.fail(`${route}: container ${m.container?.maxWidth ?? 'none'}, want the unchanged F3 wrap ${want}px`);
+      const ax = axisBox(1280);
+      if (!m.container || !near(px(m.container.maxWidth), ax.max, 1)) r.fail(`${route}: container ${m.container?.maxWidth ?? 'none'}, want the header container ${ax.max}px`);
       await ctx.close();
     }
   });

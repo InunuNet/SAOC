@@ -27,7 +27,8 @@
     "app/(marketing)/layout.tsx",
     "app/(marketing)/national-show/conferences/page.tsx",
     "app/(marketing)/national-show/workshops/page.tsx",
-    "components/tickets/CategoryTicketsPage.tsx"
+    "components/tickets/CategoryTicketsPage.tsx",
+    "app/(marketing)/national-show/presenters.css"
   ],
   "mustBeUnchanged": [
     "app/(marketing)/national-show/vendors/page.tsx",
@@ -64,7 +65,7 @@
     "components/nos-chrome/",
     "components/tickets/"
   ],
-  "note": "SAOC routes byte-identical: no SAOC page, SAOC chrome or shared global stylesheet changes; every F12 CSS rule is scoped under .nos-theme (nos-theme.css / nos-structure.css only). Vendor apply/register/payment/photos untouched. content/show-pages JSON and sanity are NOT edited: the symposium presentation (title, hero lede, theme-section heading and block drop) is applied at render in lib/data/show-page-presentation.ts, so the data stays reversible and Sanity-sourced pages get the same result. ShowContentState.tsx, ShowPageProse.tsx and lib/data/show-pages.ts are F8 hot files: F12 lands after F8 or rebases onto it, and F8's withhold/gap logic must be preserved. scripts/checks/verify-nos-content-state.ts may change only where an existing assertion pins the old symposium title or the old template markup. Needing a file outside this list is a stop-and-ask. UTILITY BAR (Brad 2026-10-16): UtilityBar.tsx gains an optional `variant` prop (default saoc, output byte-identical) and app/(marketing)/layout.tsx mounts it above NosHeader for the NOS chrome; components/nos-chrome/** stays untouched (F1 check-static forbids UtilityBar there), SAOC Header/Footer/menus are unedited (F13 owns the header Tickets removal). CategoryTicketsPage.tsx is shared with /national-show/tickets: it may change only behind an opt-in prop that conferences and workshops pass, tickets/page.tsx stays byte-identical and measured at the F3 1080 container.",
+  "note": "SAOC routes byte-identical: no SAOC page, SAOC chrome or shared global stylesheet changes; every F12 CSS rule is scoped under .nos-theme (nos-theme.css / nos-structure.css only). Vendor apply/register/payment/photos untouched. content/show-pages JSON and sanity are NOT edited: the symposium presentation (title, hero lede, theme-section heading and block drop) is applied at render in lib/data/show-page-presentation.ts, so the data stays reversible and Sanity-sourced pages get the same result. ShowContentState.tsx, ShowPageProse.tsx and lib/data/show-pages.ts are F8 hot files: F12 lands after F8 or rebases onto it, and F8's withhold/gap logic must be preserved. scripts/checks/verify-nos-content-state.ts may change only where an existing assertion pins the old symposium title or the old template markup. Needing a file outside this list is a stop-and-ask. UTILITY BAR (Brad 2026-10-16): UtilityBar.tsx gains an optional `variant` prop (default saoc, output byte-identical) and app/(marketing)/layout.tsx mounts it above NosHeader for the NOS chrome; components/nos-chrome/** stays untouched (F1 check-static forbids UtilityBar there), SAOC Header/Footer/menus are unedited (F13 owns the header Tickets removal). CategoryTicketsPage.tsx is shared with /national-show/tickets: it may change only behind an opt-in prop that conferences and workshops pass, tickets/page.tsx stays byte-identical and measured at the F3 1080 container. R71: the axis tokens live in nos-structure.css (defined once from the header's --nc-wide/--nc-gutter in nos-chrome.css, which stays untouched; a check measures the header against the formula). presenters.css is allowed only to consume them.",
   "allowedExceptionsToPrefixes": [
     "components/tickets/CategoryTicketsPage.tsx"
   ]

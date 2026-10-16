@@ -71,3 +71,18 @@ SAOC utility bar on NOS pages (Brad, direct, with screenshot): the dark band (ma
 - The skip link stays first in DOM and the first Tab stop; #nh stays sticky (the bar scrolls away, the header pins at top 0). Measured at 1280 and 390 on all 17 routes (F12-A14).
 - SAOC pages: bar unchanged; Header/Footer/menus unedited; the header Tickets CTA is removed by F13 (landing before F12), so F12-A14 expects none on /, /about, /societies, /contact.
 - Phones (rulings 2026-10-16): the pill is visible at every width (390 and 360 included). To make the row fit, in the nos variant ONLY and below 480px the email text collapses to the existing mail icon: the link stays mailto:info@saoc.co.za with aria-label="Email info@saoc.co.za", the address text is visually hidden (a span with a max-[479px] sr-only style), and the target is at least 24px. Padding and gap stay identical to the SAOC bar; the only class additions allowed are tokens starting max-[479px]. From 480px up the bar is exactly as before. F12-A13/A14 allow exactly this one difference and assert the aria-label. The bar must be one row with no wrap or overflow at 360, 390, 479, 480 and 1280, every link target at least 24px tall and wide (44px preferred; shorter ones print a NOTE).
+
+## R71 (NOS Design, relayed 2026-10-16) - single axis and inner hero. Supersedes R70 #5's container and the "hero axis NOTE-only" ruling
+Verified against F3's actual containers (the 3002 measure was pre-F3):
+| surface | F3 today | left content edge at 1280 / 1920 / 2056 |
+|---|---|---|
+| header .nh-bar | max-width 1320 + 2g, g = clamp(16px,2.5vw,32px), padding g | 32 / 300 / 368 |
+| hero copy | 1320 + 2h, h = clamp(16px,4vw,48px) | 48 / 300 / 368 (16px off at 1280) |
+| body [data-nos-wrap] | 1080 + 2h | 48 / 420 / 488 |
+| typographic hero copy | 1080 + 2h | same as body |
+Target: all of them equal the header's: 32 / 300 / 368 (and 16 at 390).
+- ONE shared token pair in nos-structure.css, defined once from the header's own tokens: --nos-axis-max: calc(var(--nc-wide) + 2 * var(--nc-gutter)); --nos-axis-pad: var(--nc-gutter). components/nos-chrome stays untouched (F12-A15 measures the header against the formula, so the axis cannot drift from it). Consumers: [data-nos-wrap] (so every NosSection on every NOS route: template pages, FAQ, hub sections, conferences/workshops, tickets, ...), .nos-hero-copy (both kinds; the typographic hero's 1080 grid goes too), the sub-nav row, presenters.css (--pc-wide/--pc-gutter derive from the axis), NosShowIndex. The second gutter clamp(16px,4vw,48px) is retired. Prose keeps its 60ch caps.
+- Assumption flagged to the lead: one rule on [data-nos-wrap] widens ALL NosSection pages, not only the ones R71 lists, because a per-page exception would reintroduce a second axis. The centred CTA bands stay centred inside the wider wrap.
+- Asserted (F12-A15): header, hero h1, sub-nav, section wraps, first h2 of every section, presenters, index share one edge +-1px at 1280, 1920, 2056, 390.
+- Inner hero (F12-A16), every inner-hero route, at >=1024: h1 max-width none, font-size clamp(48px,4.4vw,88px), text-wrap balance; lede 46ch (the symposium theme lede keeps its R70 30ch); min-height >= 380; International Guests and About h1 <= 2 lines at 1280. The R70 symposium checks (A6) still hold: its h1 never ends in a lone word.
+- Not F12: prose under 16px (NOS Site r6 / R65). CTA bands are left as they are.
