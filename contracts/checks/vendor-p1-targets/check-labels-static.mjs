@@ -30,7 +30,7 @@ for (const [file, needle] of REQUIRED) {
 
 // nav-config: the vendors item keeps its descriptor and href (only the label moves).
 const nav = readFileSync('components/chrome/nav-config.ts', 'utf8');
-if (!/id: 'vendors',\s*label: 'Exhibitors and vendors',\s*href: '\/national-show\/vendors',\s*descriptor: 'Trade vendor showcase, application and gated registration\.',/.test(nav)) {
+if (!/id: 'vendors',\s*label: 'Exhibitors and Vendors',\s*href: '\/national-show\/vendors',\s*descriptor: 'Trade vendor showcase, application and gated registration\.',/.test(nav)) {
   failures.push("components/chrome/nav-config.ts: the 'vendors' item is not {label: new, href and descriptor unchanged}");
 }
 

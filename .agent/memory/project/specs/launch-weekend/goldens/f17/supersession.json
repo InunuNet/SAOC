@@ -35,18 +35,6 @@
       "reason": "R74-3 sentence-case labels, B1 Symposium label, R74-6 sponsors descriptor. Recaptured from the reference build with check-f11.mjs --capture; the diff vs the old baseline is 30 text strings and 0 numbers (no geometry moved)."
     },
     {
-      "file": "contracts/checks/nos-own-brand-chrome/check-e-mega-menu.mjs",
-      "reason": "label 'Exhibitors and Vendors' is now compared case-insensitively ('Exhibitors and vendors' is the new nav label)."
-    },
-    {
-      "file": "contracts/checks/nos-own-brand-chrome/check-f-menu-panel.mjs",
-      "reason": "same, in the panel check."
-    },
-    {
-      "file": "contracts/checks/vendor-p1-targets/check-labels-static.mjs",
-      "reason": "the nav-config 'vendors' item now reads label: 'Exhibitors and vendors' (R74-3). The page titles keep 'Exhibitors and Vendors' (Brad 2026-10-15)."
-    },
-    {
       "file": "contracts/checks/vendor-stand-return-url/check-initiate-route-urls.mjs",
       "reason": "the stand-payment itemName prefix is now 'National Orchid Show — Vendor Stand' (R73)."
     },
@@ -77,6 +65,10 @@
     {
       "file": "contracts/checks/launch-weekend/f12/check-a-static.mjs",
       "reason": "F12-A1 asserted national-show/vendors/page.tsx was never edited; F17 R73 swaps the event name in its lede. The edit is now allowed only when every changed word is the event-name swap."
+    },
+    {
+      "file": "lead ruling 2026-10-16 #2",
+      "reason": "The nav label \"Exhibitors and Vendors\" is EXEMPT from sentence case (Brad capitalised it), so check-e-mega-menu, check-labels-static and the nav label stay at their base values; only the f11 baseline text and nav-labels.json carry the exempt casing."
     }
   ],
   "unchanged_by_design": [

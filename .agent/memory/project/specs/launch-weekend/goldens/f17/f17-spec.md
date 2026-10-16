@@ -117,3 +117,11 @@ Measured on 41a7a08f at 1280 and 1920: the table computes `display:block`, the c
 Cause (differs from the lead's suspicion): not the Tailwind `max-sm:block` utility (it only applies below 640px). `nos-structure.css:225` has `.nos-theme [data-nos-keydates] :is(table, tbody) { display: block; min-width: 0 }`, deliberate: each date row is its own card (`[data-nos-keydate-row]` is `display:grid`, header row `thead` is screen-reader-only). A `<caption>` inside a block-level table has no table box to size against and shrink-wraps.
 Ruling: keep the table display:block (making it display:table would break the card rows and bring back the visible header), and make the caption a full-width block: `.nos-theme [data-nos-keydates] caption { display: block; width: 100% }` as a pure addition under an F17 comment. Assertion F17-A20 (`check-n-keydates.mjs`): at 1280 and 1920 the caption has one line (Range rects) and spans at least 90% of the table, the table is still `display:block`, the header is still sr-only; at 390 the stacked layout is unchanged.
 Files: `app/(marketing)/national-show/nos-structure.css` only.
+
+## 11. Lead rulings on the first draft (2026-10-16, accepted)
+
+1. buyButtonLabel: the ticketsPage singleton label is used for every action; the accessible name carries the SKU name; per-SKU labels are out of scope.
+2. "Exhibitors and Vendors" is EXEMPT from sentence case (Brad capitalised it): nav-config keeps `label: 'Exhibitors and Vendors'`; nav-labels.json, the f11 baseline and the base-pinned checks reflect that. Every other National Show menu label is sentence case as in section 2 C3.
+3. Symposium public mode: dropping the whole gap block, notice included, is accepted (the notice is beta-only).
+4. The legal-text naming mix (Lee-Ann's "SAOC National Show" / "SAOC National Orchid Show") is logged for Brad and Lee-Ann and stays unchanged.
+5. Scope G: the lead reads G1 as "restore the Explore-the-show index on all 16 inner routes, off the hub, which keeps NosShowIndex". Section 10 does exactly that with the NosShowIndex component as the equivalent explore index (ShowSectionNav's card wall stays retired, per the F3 ruling), so the lead's DECISION NEEDED is answered.
