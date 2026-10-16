@@ -97,7 +97,19 @@ export function VendorApplyForm() {
   const summaryRef = useRef<HTMLDivElement>(null);
 
   function handleChange(key: keyof VendorApplyFormState, value: string | string[]) {
-    setState((prev) => ({ ...prev, [key]: value }));
+    const next = { ...state, [key]: value };
+    setState(next);
+    // After an invalid submit, re-validate as the user corrects: a field that is now valid
+    // drops its inline error, aria-invalid and summary entry. Fields not already flagged
+    // never gain an error while typing.
+    if (clientErrors.length > 0) {
+      const flagged = new Set(clientErrors.map((entry) => entry.key));
+      setClientErrors(
+        vendorApplyErrorsByField(validateVendorApplyFormClientSide(next)).filter((entry) =>
+          flagged.has(entry.key),
+        ),
+      );
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
