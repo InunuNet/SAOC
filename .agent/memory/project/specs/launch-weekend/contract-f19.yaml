@@ -11,8 +11,8 @@ features:
 # TWO BUILDS. BASE_URL = the BETA PREVIEW build on port 3619: `SHOW_PLACEHOLDER_PREVIEW=true pnpm build && SHOW_PLACEHOLDER_PREVIEW=true pnpm exec next start -p 3619` (not public, wall up, so withholdPlaceholderProse() is false and the marked placeholders show). PUBLIC_URL = the PUBLIC build on port 3620 from a second worktree of the same commit (`.tmp/sandbox/wt-lw-f19-public`, copy .env.local in, delete at the end): `SITE_PUBLIC_LAUNCH=true pnpm build && SITE_PUBLIC_LAUNCH=true pnpm exec next start -p 3620`. Home is ISR, so the mode is fixed at build time: do not reuse one build for both. A21 and A12 read PUBLIC_URL; every other runtime check reads BASE_URL. Beta preview details (3619): the beta basic-auth wall fails closed without BETA_BASIC_AUTH_* in .env.local, _lib.mjs sends them). Stop by exact PID (lsof -ti tcp:3619 -sTCP:LISTEN). Do not rebuild while it runs. Runtime checks read the CMS READ-ONLY.
 # Stop each server by exact PID (lsof -ti tcp:3619 -sTCP:LISTEN, lsof -ti tcp:3620 -sTCP:LISTEN).
 # BASE_REF defaults to origin/main for the scope and critique-evidence checks; pin it to 76ad8b98 if main has moved.
-# Font load split (design-cb P1) is NOT an assertion here: it cannot be met inside F19's allowlist; see goldens/f19/f19-spec.md section 8 and check-p-fonts.mjs (informational, red on main).
-# Every runtime check was run RED against untouched main 76ad8b98 (:3012); A1, A2, A3-A6, A9 and A11 were run GREEN against goldens/f19/simulate.js (a throwaway in-page patch, not a reference build). A21 and A22 were proven red on main (:3013 public, :3012 preview-less) and their green paths are reasoned, not simulated; A23, A24, A25 were proven red only. A7's positive path was proven on the already-compliant routes; A8 was proven red only. See goldens/f19/f19-spec.md section 6. A11 and A12 are regression guards, green on main by design.
+# Font split is A26 (lead confirmed the layout files into the allowlist). It still needs the NOS utility bar to resolve to Karla or a generic without editing UtilityBar.tsx; if that is impossible the dev stops and tells the lead the exact diff (spec section 8).
+# Every runtime check was run RED against untouched main 76ad8b98 (:3012); A1, A2, A3-A6, A9 and A11 were run GREEN against goldens/f19/simulate.js (a throwaway in-page patch, not a reference build). A21 and A22 were proven red on main (:3013 public, :3012 preview-less) and their green paths are reasoned, not simulated; A23, A24, A25, A26 were proven red only; A27 is red on main and green under simulate.js; A11p is green on main (:3013). A7's positive path was proven on the already-compliant routes; A8 was proven red only. See goldens/f19/f19-spec.md section 6. A11 and A12 are regression guards, green on main by design.
 # The brief verbatim (README l.125) measured 2.0 to 3.8:1, so the scrim adds a text-zone veil (R1 in the spec). The lead may reverse a ruling by editing tokens.json and the spec, not the contract.
 # F18 (NOS pages) is in flight on other branches. If F18 lands first, rebase and re-capture goldens/f19/nos-baseline.json from that main before the gate (supersession.json mergeOrder).
 # Skills @dev must load and use: impeccable (craft-floor, polish, critique), frontend-design, web-design-guidelines, accessibility.
@@ -83,6 +83,15 @@ assertions:
     - id: F19-A25
       description: SAOC footer tap targets at 390 - every link, button and input in the SAOC footer on home, about, contact and events is at least 44x44
       command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-s-taps.mjs
+    - id: F19-A11p
+      description: Copy guard on the PUBLIC build - same comparison as A11 (typographic quotes folded to straight on both sides, a built-in probe proves a new word still fails) with the vote-1C withholding allowed - a removed leaf may match provenance.unsourced, every other removal and every addition beyond the markers and the ABSENT sentence fails
+      command: F19_COPY_PUBLIC=1 PUBLIC_URL=http://localhost:3620 node contracts/checks/launch-weekend/f19/check-m-copy.mjs
+    - id: F19-A26
+      description: Font load split (design-cb P1) - every NOS route declares and loads only Fraunces and Karla and no NOS element computes a first family outside Fraunces, Karla or a generic; every SAOC route declares the same faces as main (Crimson Pro, Lora, Manrope, JetBrains Mono) and computes an identical hash-stripped font-family on h1, h2, main p, .eyebrow, header a, footer a and button at 390 and 1280
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-p-fonts.mjs
+    - id: F19-A27
+      description: Hero CTA on the veil (design-cb ruling) - on all 4 slides at 390 and 1280 the primary is an ivory/bone fill with primary-colour label (fill vs the veil at least 3:1, label vs fill at least 4.5:1), the secondary an ivory outline (alpha at least .85, 1px or more, text at least 4.5:1), same height and radius, both sentence case
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-t-cta.mjs
     - id: F19-A15
       description: End-to-end suite green (starts its own dev server on a free port)
       command: pnpm test:e2e

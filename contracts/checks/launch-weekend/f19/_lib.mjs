@@ -39,6 +39,9 @@ export async function newPage(browser, vp, extra = {}) {
   return { ctx, page: await ctx.newPage() };
 }
 
+// Typographic quotes are typography, not copy (design-cb standing rule): fold ’ ‘ “ ” to ' and " before any copy comparison.
+export const normText = (t) => t.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+
 export const PUBLIC_BASE = (process.env.PUBLIC_URL || 'http://localhost:3620').replace(/\/$/, '');
 
 export async function open(page, path = '/', base = BASE) {

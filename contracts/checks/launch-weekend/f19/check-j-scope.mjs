@@ -13,7 +13,7 @@ const BASE_REF = process.env.BASE_REF || 'origin/main';
 const T = loadGolden('tokens.json').scope;
 const git = (...a) => execFileSync('git', ['-C', ROOT, ...a], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 const problems = [];
-const names = [...new Set([...git('diff', '--name-only', `${BASE_REF}...HEAD`).split('\n'), ...git('diff', '--name-only', 'HEAD').split('\n'), ...git('ls-files', '--others', '--exclude-standard').split('\n')].filter(Boolean))];
+const names = [...new Set([...git('diff', '-M', '--name-only', `${BASE_REF}...HEAD`).split('\n'), ...git('diff', '-M', '--name-only', 'HEAD').split('\n'), ...git('ls-files', '--others', '--exclude-standard').split('\n')].filter(Boolean))];
 const nosHit = (f) => !T.allowOverride.includes(f) && T.forbidPrefix.some((p) => f.startsWith(p)) || f.endsWith('nos-structure.css');
 for (const f of names) {
   if (nosHit(f)) problems.push(`forbidden path changed (NOS / chrome / data layer): ${f}`);

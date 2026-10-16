@@ -1,37 +1,61 @@
 #!/usr/bin/env node
-// F19-F1 (design-cb P1 vs the v4 acceptance check) - font load split. NOT IN THE GATE: it cannot be met inside F19's allowlist (see f19-spec.md
-// section 8 for the exact diff the lead has to route). Informational until then: prints the measured faces per route.
-// Target: on every NOS route the preload and stylesheet font requests are only Fraunces and Karla, and the loaded families are only those; on
-// the SAOC routes the loaded face set equals golden-fonts (Crimson Pro, Manrope, JetBrains Mono, as today) with identical computed
-// font-family on h1, p and .eyebrow at 390 and 1280.
+// F19-A26 (design-cb P1, lead-confirmed) - font load split. On every NOS route the @font-face families DECLARED (any load status) and the families
+// LOADED are only Fraunces and Karla. On every SAOC route the declared set equals the golden set (goldens/f19/fonts-baseline.json, captured from untouched
+// main) and the computed font-family (hash-stripped) of h1, h2, main p, .eyebrow, header a, footer a and button is identical to the golden at 390 and 1280:
+// SAOC type rendering does not move. F19_CAPTURE=1 rewrites the golden from the running build (used once, against main).
+// The NOS UtilityBar and chrome files are off limits, so a NOS element that today resolves to Manrope or JetBrains Mono (the utility bar) must resolve to
+// Karla or a system fallback once the faces are gone: the check also fails if any NOS-route element computes a first family outside Fraunces, Karla, serif/sans/monospace generics.
 // Usage: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-p-fonts.mjs
-import { launch, BASE, report, loadGolden } from './_lib.mjs';
+import { writeFileSync } from 'node:fs';
+import { launch, newPage, open, report, loadGolden, GOLDEN_DIR, VIEWPORTS } from './_lib.mjs';
 import { NOS_ROUTES } from './_nos.mjs';
 import { SAOC_ROUTES } from './_routes.mjs';
 
 const T = loadGolden('tokens.json').fonts;
+const CAPTURE = process.env.F19_CAPTURE === '1';
+const SELS = ['h1', 'h2', 'main p', '.eyebrow', 'header a', 'footer a', 'button'];
 const problems = [];
 const browser = await launch();
-const user = process.env.BETA_BASIC_AUTH_USER, pass = process.env.BETA_BASIC_AUTH_PASSWORD;
-async function faces(route) {
-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, httpCredentials: user && pass ? { username: user, password: pass } : undefined });
-  const p = await ctx.newPage(); const reqs = [];
-  p.on('request', (r) => { if (r.resourceType() === 'font') reqs.push(r.url()); });
-  await p.goto(`${BASE}${route}`, { waitUntil: 'networkidle' });
-  const fam = await p.evaluate(async () => { await document.fonts.ready; return [...new Set([...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/ Fallback$/, '')))].sort(); });
-  const cssFonts = await p.evaluate(() => [...document.querySelectorAll('link[rel=preload][as=font]')].length);
-  const stacks = await p.evaluate(() => ['h1', 'main p', '.eyebrow'].map((s) => { const e = document.querySelector(s); return e ? getComputedStyle(e).fontFamily : null; }));
+const strip = (s) => s.replace(/ Fallback/g, '').replace(/__([A-Za-z_]+?)_[0-9a-f]{6,}/g, (_, n) => n.replace(/_/g, ' '));
+async function probe(route, vp) {
+  const { ctx, page } = await newPage(browser, vp);
+  await open(page, route);
+  const r = await page.evaluate(async (sels) => {
+    await document.fonts.ready;
+    const faces = [...document.fonts];
+    return {
+      declared: [...new Set(faces.map((f) => f.family))].sort(),
+      loaded: [...new Set(faces.filter((f) => f.status === 'loaded').map((f) => f.family))].sort(),
+      stacks: sels.map((s) => { const e = document.querySelector(s); return e ? getComputedStyle(e).fontFamily : null; }),
+      firsts: [...new Set([...document.querySelectorAll('body *')].slice(0, 4000).map((e) => getComputedStyle(e).fontFamily.split(',')[0].trim().replace(/^["']|["']$/g, '')))].sort(),
+    };
+  }, SELS);
   await ctx.close();
-  return { fam, reqs: reqs.length, preloads: cssFonts, stacks };
+  const u = (a) => [...new Set(a.map(strip))].sort();
+  return { declared: u(r.declared), loaded: u(r.loaded), stacks: r.stacks.map((s) => (s === null ? null : strip(s))), firsts: u(r.firsts) };
 }
+if (CAPTURE) {
+  const out = { routes: {} };
+  for (const r of SAOC_ROUTES) { out.routes[r] = { declared: (await probe(r, VIEWPORTS[1])).declared }; for (const vp of VIEWPORTS) out.routes[r][vp.name] = (await probe(r, vp)).stacks; }
+  writeFileSync(`${GOLDEN_DIR}/fonts-baseline.json`, JSON.stringify(out, null, 1));
+  await browser.close(); console.log('captured fonts-baseline.json'); process.exit(0);
+}
+const gold = loadGolden('fonts-baseline.json');
+const nosOk = [...T.nos, 'serif', 'sans-serif', 'monospace', 'system-ui', 'ui-monospace', 'ui-sans-serif', 'ui-serif', 'Georgia', 'Arial', 'Helvetica', 'Times New Roman', 'Courier New'];
 for (const r of NOS_ROUTES) {
-  const f = await faces(r);
-  const extra = f.fam.filter((x) => !T.nos.includes(x));
-  if (extra.length) problems.push(`${r}: NOS route loads ${extra.join(', ')} (allowed: ${T.nos.join(', ')})`);
+  const f = await probe(r, VIEWPORTS[1]);
+  const d = f.declared.filter((x) => !T.nos.includes(x)), l = f.loaded.filter((x) => !T.nos.includes(x));
+  if (d.length) problems.push(`${r}: NOS route declares ${d.join(', ')} (allowed: ${T.nos.join(', ')})`);
+  if (l.length) problems.push(`${r}: NOS route loads ${l.join(', ')}`);
+  const stray = f.firsts.filter((x) => x && !nosOk.some((o) => x === o || x.startsWith(o)));
+  if (stray.length) problems.push(`${r}: NOS elements compute a first family outside Fraunces/Karla/generics: ${stray.join(', ')}`);
 }
 for (const r of SAOC_ROUTES) {
-  const f = await faces(r);
-  if (JSON.stringify(f.fam.filter((x) => T.saoc.includes(x))) !== JSON.stringify([...T.saoc].sort())) problems.push(`${r}: SAOC route face set is ${f.fam.join(', ')}, want at least ${T.saoc.join(', ')}`);
+  for (const vp of VIEWPORTS) {
+    const f = await probe(r, vp);
+    if (vp.name === '1280' && JSON.stringify(f.declared) !== JSON.stringify(gold.routes[r].declared)) problems.push(`${r}: SAOC declared faces ${f.declared.join(', ')} != golden ${gold.routes[r].declared.join(', ')}`);
+    SELS.forEach((s, i) => { if (f.stacks[i] !== gold.routes[r][vp.name][i]) problems.push(`${r} @${vp.name} ${s}: font-family "${f.stacks[i]}" != golden "${gold.routes[r][vp.name][i]}"`); });
+  }
 }
 await browser.close();
-report(problems, 'NOS routes load only Fraunces and Karla; SAOC routes keep their face set');
+report(problems, 'NOS routes declare and load only Fraunces and Karla; SAOC computed font families identical to main');

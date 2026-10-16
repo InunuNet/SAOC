@@ -1,0 +1,256 @@
+{
+ "routes": {
+  "/": {
+   "390": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "\"JetBrains Mono\", \"JetBrains Mono\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "1280": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "\"JetBrains Mono\", \"JetBrains Mono\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "declared": [
+    "Crimson Pro",
+    "Fraunces",
+    "JetBrains Mono",
+    "Karla",
+    "Lora",
+    "Manrope"
+   ]
+  },
+  "/about": {
+   "390": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "\"JetBrains Mono\", \"JetBrains Mono\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "1280": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "\"JetBrains Mono\", \"JetBrains Mono\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "declared": [
+    "Crimson Pro",
+    "Fraunces",
+    "JetBrains Mono",
+    "Karla",
+    "Lora",
+    "Manrope"
+   ]
+  },
+  "/societies": {
+   "390": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    null,
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "1280": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    null,
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "declared": [
+    "Crimson Pro",
+    "Fraunces",
+    "JetBrains Mono",
+    "Karla",
+    "Lora",
+    "Manrope"
+   ]
+  },
+  "/events": {
+   "390": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"JetBrains Mono\", \"JetBrains Mono\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    null,
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "1280": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"JetBrains Mono\", \"JetBrains Mono\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    null,
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "declared": [
+    "Crimson Pro",
+    "Fraunces",
+    "JetBrains Mono",
+    "Karla",
+    "Lora",
+    "Manrope"
+   ]
+  },
+  "/judging": {
+   "390": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"JetBrains Mono\", \"JetBrains Mono\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "\"JetBrains Mono\", \"JetBrains Mono\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "1280": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"JetBrains Mono\", \"JetBrains Mono\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "\"JetBrains Mono\", \"JetBrains Mono\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "declared": [
+    "Crimson Pro",
+    "Fraunces",
+    "JetBrains Mono",
+    "Karla",
+    "Lora",
+    "Manrope"
+   ]
+  },
+  "/contact": {
+   "390": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    null,
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "1280": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    null,
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "declared": [
+    "Crimson Pro",
+    "Fraunces",
+    "JetBrains Mono",
+    "Karla",
+    "Lora",
+    "Manrope"
+   ]
+  },
+  "/sponsors": {
+   "390": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    null,
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "1280": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    null,
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "declared": [
+    "Crimson Pro",
+    "Fraunces",
+    "JetBrains Mono",
+    "Karla",
+    "Lora",
+    "Manrope"
+   ]
+  },
+  "/members": {
+   "390": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "\"JetBrains Mono\", \"JetBrains Mono\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "1280": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "\"JetBrains Mono\", \"JetBrains Mono\", \"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, monospace",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "declared": [
+    "Crimson Pro",
+    "Fraunces",
+    "JetBrains Mono",
+    "Karla",
+    "Lora",
+    "Manrope"
+   ]
+  },
+  "/media-kit": {
+   "390": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    null,
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "1280": [
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "\"Crimson Pro\", \"Crimson Pro\", \"Crimson Pro\", Georgia, \"Times New Roman\", serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    null,
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif",
+    "Manrope, \"Manrope\", Manrope, -apple-system, \"system-ui\", system-ui, sans-serif"
+   ],
+   "declared": [
+    "Crimson Pro",
+    "Fraunces",
+    "JetBrains Mono",
+    "Karla",
+    "Lora",
+    "Manrope"
+   ]
+  }
+ }
+}

@@ -101,12 +101,18 @@ A11 and A12 are regression guards that are green on main by design.
 6. e2e: `pnpm test:e2e` starts its own dev server on a free port; expect it to be the slowest assertion (timeout 1500s).
 7. Flags: the tracked Drive spec doc holds plaintext passwords (values not repeated here; rotate and scrub). Hero "SINCE 1968 · BLOEMFONTEIN" is sourced only as the founding meeting place. "21" is derivable from the societies listing but not from Drive. secretary@saoc.co.za (privacy, constitution, JSON-LD) is unsourced and untouched. Societies member counts and footer "Reg#" are unsourced and untouched. Contact fallback labels "SAOC Secretariat / General enquiries" are unsourced and withheld in public. 17 draft events are unpublished (editorial, not code). Green paths of A21 to A25 are unproven (red-only on main).
 
-## 8. Font load split (design-cb P1) - infeasible inside F19, exact diff for the lead
+## 8. Font load split (A26, design-cb P1, lead-confirmed)
 
-Target: NOS routes load only Fraunces and Karla. Today the root layout (`app/layout.tsx`) loads Crimson Pro, Manrope and JetBrains Mono on every route, and NOS routes also get Manrope and JetBrains Mono through `UtilityBar variant="nos"`. All of those are forbidden files for F19, so this is NOT an assertion. `check-p-fonts.mjs` is informational (red on main).
-Diff for the lead (or a later feature that owns chrome):
-1. Create route group `app/(marketing)/(saoc)/` and move the SAOC page dirs into it (about, societies, judging, events, media-kit, sponsors, members, contact, constitution, privacy, terms, home `page.tsx`), excluding `tickets/` (F18b).
-2. Give that group its own `layout.tsx` holding the three font loaders (Crimson Pro, Manrope, JetBrains Mono) and the SAOC chrome; remove those loaders from `app/layout.tsx`.
-3. Edit `app/(marketing)/layout.tsx`, `national-show/layout.tsx`, `ChromeFrame.tsx` and `UtilityBar.tsx` so the `variant="nos"` UtilityBar uses Karla instead of Manrope/JetBrains Mono.
-4. Root layout fonts also serve admin, studio, not-found and tickets: each needs its own loader or an explicit decision.
-SAOC rendering must stay identical (A11 and the NOS fingerprint guard it). Keep `check-p-fonts.mjs` out of the gate until this diff lands.
+Target: NOS routes declare and load only Fraunces and Karla; SAOC type rendering is unchanged (same declared faces, same computed font-family; `fonts-baseline.json` was captured from main :3013). Today `app/layout.tsx` loads Crimson Pro, Manrope and JetBrains Mono for every route (Lora is declared too, from main's own SAOC styles) and the `UtilityBar variant="nos"` uses them on NOS.
+Allowed files for this item (added to A10): `app/layout.tsx`, `app/(marketing)/layout.tsx`, `app/(marketing)/national-show/layout.tsx`, and anything under `app/(marketing)/(saoc)/`. NOT allowed: `ChromeFrame.tsx`, `UtilityBar.tsx`, NOS header components, `nos-theme.css`.
+Recommended shape: route group `app/(marketing)/(saoc)/` for the SAOC pages (git mv, excluding `tickets/`), its own `layout.tsx` holding the font loaders and wrapping children in the font-variable classes; loaders removed from `app/layout.tsx`; the SAOC chrome elements built in `app/(marketing)/layout.tsx` are wrapped with the same variable classes (a `display: contents` wrapper) so Header, UtilityBar and Footer still render SAOC faces.
+The unavoidable risk: the NOS utility bar (forbidden file) uses `font-sans` and `font-mono`, so on NOS routes those stacks must resolve to Karla or a generic, not Manrope or JetBrains Mono. A26 fails on any NOS element whose first computed family is outside Fraunces, Karla or a generic. If that cannot be met without editing UtilityBar.tsx or nos-theme.css, the dev STOPS and sends the lead the exact diff (a scoped `--font-sans` and `--font-mono` remap in the NOS scope).
+Admin, studio, not-found and tickets also sit under the root layout today: they must keep a working font (own loader or generic fallback); not asserted.
+
+## 9. Hero CTA on the veil (A27, design-cb ruling, final)
+
+R1 stands as Option A: README diagonal plus the radial veil, no large-text exemption (A2 stays 4.5:1 on the italic accent). On the veil the PRIMARY CTA inverts to an ivory/bone fill with primary-colour text, same size and radius as before; the SECONDARY is an ivory outline with ivory text; both sentence case. A27 measures fill vs veil at least 3:1, label vs fill at least 4.5:1, secondary border ivory and text at least 4.5:1, all 4 slides at 390 and 1280.
+
+## 10. Typographic quotes (standing design-cb rule)
+
+Rendering straight quotes and apostrophes as typographic ones is typography, not new copy. A11 and A11p fold the curly quotes and apostrophes to straight ones on both sides before comparing; the check carries a built-in probe proving curly equals straight and a genuinely new word still fails. A10 has no copy comparison (it diffs added lines for colour, font, animation, duration, emoji), so nothing to normalise there.

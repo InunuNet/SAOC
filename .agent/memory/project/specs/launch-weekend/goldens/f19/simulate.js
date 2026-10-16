@@ -22,6 +22,7 @@
     const h1 = hero.querySelector('h1'); h1.style.marginBottom = '20px';
     const a0 = hero.querySelector('a[href]');
     if (a0) { const wrap = a0.parentElement; wrap.setAttribute('data-hero-ctas', ''); [...wrap.children].forEach((a, i) => a.setAttribute('data-hero-cta', i ? 'secondary' : 'primary')); }
+    if (a0) { const kids = [...a0.parentElement.children]; Object.assign(kids[0].style, { background: '#e8e6dc', color: '#383f38', border: '1px solid #e8e6dc' }); if (kids[1]) Object.assign(kids[1].style, { background: 'transparent', color: '#f4f3ec', border: '1px solid #f4f3ec' }); }
     const walker = document.createTreeWalker(hero, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) if (walker.currentNode.textContent.includes('Find Your Society')) walker.currentNode.textContent = walker.currentNode.textContent.replace('Find Your Society', 'Find your society');
   }
