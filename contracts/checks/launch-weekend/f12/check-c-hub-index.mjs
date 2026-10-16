@@ -1,3 +1,4 @@
+// RETIRED by launch-weekend F18 (R74 #2): the hub no longer renders the Explore index, so its hub geometry has nothing to measure. The index itself is asserted by F17 check-m-index (amended) on the 16 inner routes. Runs in no gate.
 #!/usr/bin/env node
 // F12-A4 - R69 grouped index on the hub, measured: structure, groups, labels from nav-config, geometry at 1280/1920/1024 (3 columns) and
 // 899/390 (1 column), type roles, rules, arrow hover, and "no descriptions".

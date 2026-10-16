@@ -39,7 +39,7 @@ need(!/\bhint\b|description/i.test(stripComments(idx)), 'index carries per-item 
 need(/<h3\b/.test(idx), 'group headings are not h3');
 need(!/ShowSectionNav/.test(idx), 'NosShowIndex must not reuse ShowSectionNav');
 const hub = read(`${NS}/page.tsx`);
-need(/NosShowIndex/.test(hub), 'the hub page does not render NosShowIndex');
+need(!/NosShowIndex/.test(hub), 'the hub page still renders NosShowIndex (F18 amendment, R74 #2: the Explore index is on the inner routes only)');
 need(hub.includes(`'${V.hubHero.h1}'`) || hub.includes(`"${V.hubHero.h1}"`), `hub page lacks the h1 constant "${V.hubHero.h1}"`);
 for (const f of gitLines('ls-files', 'app', 'components')) {
   if (!/\.(tsx?|css)$/.test(f) || /components\/show\/ShowSectionNav\.tsx$/.test(f) || f.startsWith('components/show/index.ts')) continue;
@@ -95,7 +95,8 @@ for (const f of [`${NS}/nos-theme.css`, `${NS}/nos-structure.css`]) {
 const addedCss = [`${NS}/nos-theme.css`, `${NS}/nos-structure.css`].flatMap(added).join('\n');
 const blocks = addedCss.split('}');
 for (const b of blocks) if (/(\.nos-show-page-prose\s+(p|li)\b|^\s*body\b|\.nos-theme\s+p\b)[^{]*\{[^}]*font-size/m.test(b + '}')) problems.push(`added CSS sets a font-size on running copy (R65 lands separately): ${b.trim().slice(0, 120)}`);
-for (const f of [`${NS}/vendors/page.tsx`, `${NS}/exhibitors/page.tsx`]) {
+// F18 amendment: /vendors moved onto the F18 long-form template (F18-A1 owns its copy and layout), so only exhibitors stays under the r5 / F17 edit limits.
+for (const f of [`${NS}/exhibitors/page.tsx`]) {
   need(/\[&_p\]:max-w-\[60ch\]/.test(read(f)), `${f} lost [&_p]:max-w-[60ch] (r5)`);
   // launch-weekend F17 (R73, G1): the only permitted edits are the event name ("SAOC National Show" -> "National Orchid Show") and the Explore-index mount (NosShowIndex import + element); any other changed word fails.
   const dl = gitLines('diff', '-U0', base, '--', f).filter((l) => /^[-+]/.test(l) && !/^(---|\+\+\+)/.test(l) && !/NosShowIndex/.test(l));

@@ -48,6 +48,15 @@ Export `restatesPending(note, status)` (any module under lib/ or components/; th
 
 ### 3.8 Archive (R78, P3): the beta TBC card (`app/(marketing)/national-show/archive/page.tsx:128`, `nos-surface max-w-[720px]`) spans the column: remove the width cap on the card and its wrapper.
 
+### 3.9 Hub drops the Explore index (R74 #2, P2, lead addition)
+Remove `NosShowIndex` (import and element) from `app/(marketing)/national-show/page.tsx` only. The 16 inner routes keep it, last, unchanged; `NosShowIndex.tsx` itself is not touched. The mega-menu description copy ("The SAOC Symposium - ...") stays as it is. A20 asserts hub absent (DOM and server HTML) and the 16 inner present. Check amendments (spec branch, `supersession.json`): F17 check-m-index and check-d-hub, F12 check-a-static; F12 check-c-hub-index retired.
+
+### 3.10 One sold-out helper (F17 leftover, with item 6)
+`app/(marketing)/tickets/page.tsx` (~line 144) and `CategoryTicketsPage` (~line 190) each re-run `planPooledCapacity`; both move to `getAdmissionSoldOutBySlug` from `lib/data/admission-availability.ts` (already used by the tickets hub). Same verdicts expected. DECISION NEEDED, recommendation first: accept the helper's failure semantics (it catches, logs by error name and yields no sold-out flags; checkout re-checks capacity authoritatively). The alternative is to rethrow in the helper, which would change the hub's tolerant behaviour. The dev reports any /tickets or catalogue difference in the critique log. A21 is static; the e2e sold-out spec (A14) and A8/A9 prove behaviour.
+
+### 3.11 Conferences lede (F17 leftover)
+The lede in `conferences/page.tsx` ("Register for the SAOC Symposium, the WOSA Conference, or the combined SAOC/WOSA Joint track at the National Show.") is a code literal naming the products for the visitor, not a builder brief, so it does NOT drop (R76b judges `summary` fields only). It is left verbatim and goes on the For-Lee-Ann list: confirm whether product names read "SAOC Symposium" or "Symposium" now that the event is the "National Orchid Show" (F17 swapped the event name only). Same for the metadata description in that file. The conferences `note` chip (pending ConfirmationBadge) is shown to the public today; "TBC notes beta-only" would hide it: flagged, not in the checks (lead call).
+
 ## 4. Check inventory (all in `contracts/checks/launch-weekend/f18/`)
 
 | id | file | proves | needs |
@@ -65,6 +74,8 @@ Export `restatesPending(note, status)` (any module under lib/ or components/; th
 | A11 | check-k-critique-artefacts.mjs | impeccable critique evidence | `capture-shots.mjs` |
 | A12 | regression chain | F17-A4/A5/A6/A7/A8/A17/A19/A20, F12, F3 imagery/tickets/rhythm | public build |
 | A13 | check-l-supersession.mjs | hygiene recorded and applied (check-labels-static rebased) | none |
+| A20 | F17 check-m-index.mjs (amended) | 3.9 hub index absent, 16 inner present | public build |
+| A21 | check-m-availability.mjs | 3.10 one sold-out helper | none |
 
 Build and serve: `SITE_PUBLIC_LAUNCH=true pnpm run build && SITE_PUBLIC_LAUNCH=true pnpm exec next start -p 3672` (never raw `next build`: image variants). Ports 3670-3679 only; stop by exact PID. Runtime checks read the CMS read-only and never mutate it. Because the live CMS content decides which routes hold (e.g. FAQ answers), the render-level checks (A4, A5, A9) are the deterministic proof, the runtime checks (A1-A3, A6-A8) prove the build.
 
@@ -95,6 +106,7 @@ Copy comes only from `longform-copy.json`, existing strings (`strings-allowed.js
 - The /sa-exhibitors section heading "South African Exhibitors" equals the hero h1.
 - Legal naming mixes forms in places (F17 left her legal sentences untouched).
 - The WOSA conference metadata "held alongside" is unsourced.
+- The conferences page lede and metadata still say "SAOC Symposium" (F17 kept her product naming); confirm the form.
 
 ## 9. Source gaps and risks
 
