@@ -39,7 +39,7 @@ need(!/\bhint\b|description/i.test(stripComments(idx)), 'index carries per-item 
 need(/<h3\b/.test(idx), 'group headings are not h3');
 need(!/ShowSectionNav/.test(idx), 'NosShowIndex must not reuse ShowSectionNav');
 const hub = read(`${NS}/page.tsx`);
-need(/NosShowIndex/.test(hub), 'the hub page does not render NosShowIndex');
+need(!/NosShowIndex/.test(hub), 'the hub page still renders NosShowIndex (F18 amendment, R74 #2: the Explore index is on the inner routes only)');
 need(hub.includes(`'${V.hubHero.h1}'`) || hub.includes(`"${V.hubHero.h1}"`), `hub page lacks the h1 constant "${V.hubHero.h1}"`);
 for (const f of gitLines('ls-files', 'app', 'components')) {
   if (!/\.(tsx?|css)$/.test(f) || /components\/show\/ShowSectionNav\.tsx$/.test(f) || f.startsWith('components/show/index.ts')) continue;

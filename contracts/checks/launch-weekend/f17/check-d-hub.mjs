@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // F17-A4 (R74-2, R74-4). Runtime on the hub.
 //  R74-2  /national-show renders no ShowSectionNav ("More on the National Show", nav[aria-label="National Show section"]); the grouped index
-//         (nav[aria-label="Explore the show pages"], F12 R69) is still there once; inner pages still carry their "<group> pages" sub-nav.
+//         (nav[aria-label="Explore the show pages"], F12 R69) is NO LONGER on the hub (F18 amendment: it stays on the 16 inner routes, asserted by check-m-index); inner pages still carry their "<group> pages" sub-nav.
 //  R74-4  On the hub, where two ADJACENT <section>s share a ground (same computed background-color, gold+gold and royal+royal on today's hub) the
 //         gap between the last content of the first and the first content of the second is ONE section rhythm unit (clamp(72px, 9vw, 120px)), not two.
 //         Every other adjacent pair on the hub keeps two units, and no other NOS route changes (every pair there keeps two units).
@@ -54,7 +54,7 @@ await main('F17-A4 hub', async (r) => {
       if (m.error) { r.fail(`${tag}: ${m.error}`); continue; }
       if (m.sectionNav !== 0) r.fail(`${tag}: ${m.sectionNav} ShowSectionNav landmark(s) rendered`);
       if (m.moreText) r.fail(`${tag}: the text "${T.hub.noSectionNavText}" renders`);
-      if (m.explore !== 1) r.fail(`${tag}: ${m.explore} grouped index landmarks, want exactly 1 (F12 R69 stays)`);
+      if (m.explore !== 0) r.fail(`${tag}: ${m.explore} grouped index landmarks, want 0 (F18 R74 #2: the Explore index is on the 16 inner routes only; the hub has its own section links)`);
       if (m.subnav !== 0) r.fail(`${tag}: the hub carries a "<group> pages" sub-nav (F3: none on the hub)`);
       if (m.overflowX > 1) r.fail(`${tag}: horizontal overflow ${m.overflowX}px`);
       const pad = sectionPadOf(m.vw);

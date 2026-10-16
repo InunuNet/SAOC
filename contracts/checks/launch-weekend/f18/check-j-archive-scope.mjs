@@ -11,7 +11,7 @@ import { T, baseRef, git, gitLines, readGolden, readText } from './_lib.mjs';
 
 const BASE = baseRef();
 const problems = [];
-const ROUTE_PAGES = ['about', 'what-to-expect', 'vendors', 'sa-exhibitors', 'programme', 'international-guests', 'wosa-conference', 'faq', 'archive', 'conferences', 'workshops', 'exhibitors', 'sponsors', 'symposium'].map((s) => `app/(marketing)/national-show/${s}/page.tsx`);
+const ROUTE_PAGES = ['', 'about', 'what-to-expect', 'vendors', 'sa-exhibitors', 'programme', 'international-guests', 'wosa-conference', 'faq', 'archive', 'conferences', 'workshops', 'exhibitors', 'sponsors', 'symposium'].map((s) => `app/(marketing)/national-show/${s ? `${s}/` : ''}page.tsx`);
 const ALLOWED = [...ROUTE_PAGES, 'app/(marketing)/national-show/nos-structure.css', 'app/(marketing)/national-show/nos-theme.css', 'public/images/national-show/'];
 const PREFIX = ['components/show/', 'components/nos/', 'components/tickets/', 'lib/data/', 'lib/', 'contracts/checks/', 'e2e/', 'docs/', 'README.md', '.agent/memory/project/specs/', '.tmp/'];
 const FORBIDDEN = ['components/chrome/nav-config.ts', 'components/chrome/footer-data.ts', 'components/nos-chrome/', 'components/vendors/'];
