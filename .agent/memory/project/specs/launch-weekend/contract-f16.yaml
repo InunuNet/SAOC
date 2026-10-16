@@ -1,0 +1,66 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: /national-show/tickets gains an audience index (Visit / Exhibit / Trade / Conference & Workshops) directly under the hero with the first choice above the 390x844 fold, shows the visitor admissions as typographic ruled rows (Day / Weekend / VIP) with early-bird and standard prices from resolveEffectivePrice and exactly one primary action per row while sales are open (no button wall, no orphan FROM block), drops every stock photograph from the shared ticket cards, shows the Ozow test-mode strip to verified admins only (inside its container) via lib/admin-auth.ts, re-words the standfirst to "2027 National Orchid Show" and deletes the retired Joint clause, changes no other copy, and the dev's self-critique loop is evidenced by fresh screenshots and a clean final-pass critique log.
+created_at: '2026-10-16'
+autonomy: high
+features:
+  - id: F16
+    name: Tickets hub R31-A2 (audience index, typographic admission rows, typographic ticket cards, admin-only test-mode strip, standfirst and Joint copy)
+    status: pending
+# GATE: cwd = the implementation worktree (branch from origin/main with spec/lw-f16 merged in, so goldens/f16 and contracts/checks/launch-weekend/f16 exist).
+# BASE_URL = a production build of that worktree on port 3620: `SITE_PUBLIC_LAUNCH=true pnpm build && pnpm exec next start -p 3620` (the flag drops the beta wall so the F3 checks can reuse the server; the F16 checks send beta creds when present and work either way). Stop by exact PID (lsof -ti tcp:3620 -sTCP:LISTEN). Do not rebuild while it runs. Ports 3620-3699 only.
+# BASE_REF defaults to origin/main for the scope check. Runtime checks read the CMS READ-ONLY (never a mutation) and branch on the live salesOpen; the sales-closed path is proven without any CMS toggle by check-d-render.mts (render-level fixtures).
+# All checks were run red against untouched origin/main ef040964 (check-d and check-e fail on the missing lib modules, which is the feature) and green against a throwaway reference build (reference-prototype.patch, not a deliverable). A9 is red until the dev runs the critique loop.
+# F3 re-pin (done in this spec branch, not by the dev): goldens/f3/hero-photo-map.json ticketCardPhotos.exempt=false, and check-f3-tickets.mjs banner block now asserts "public never sees the strip". A10 re-runs the F3 imagery, tickets, rhythm and container checks on the F16 build.
+# Rulings that are architect decisions for the lead to confirm are listed in f16-spec.md section 2 (R1-R9); a reversal is a tokens.json plus spec edit, not a contract rewrite.
+goldens:
+  - .agent/memory/project/specs/launch-weekend/goldens/f16/f16-spec.md
+  - .agent/memory/project/specs/launch-weekend/goldens/f16/tokens.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f16/copy.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f16/copy-base.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f16/rows-fixtures.json
+assertions:
+  phase: 4
+  checks:
+    - id: F16-A1
+      description: Copy - standfirst reads "2027 National Orchid Show" (and the metadata description that restates it), the conference card reads "Register for the SAOC Symposium or the WOSA Conference.", Joint and the FROM block and the public test-mode text are gone, and every other visible text node is unchanged, CMS data, a price, or the hidden buy-action suffix
+      command: node --import tsx/esm contracts/checks/launch-weekend/f16/check-a-copy.mjs
+    - id: F16-A2
+      description: Audience index - one nav landmark named by the h1 text directly under the hero inside a wrap, four anchors Visit / Exhibit / Trade / Conference & Workshops (words traced to nav-config) resolving to unique group ids that hold the existing headings, 2x2 equal cells all above the 844px fold at 390, one row from 1024, every chip at least 44px, real clicks land the heading clear of the sticky header, index before every row action in DOM order
+      command: node --import tsx/esm contracts/checks/launch-weekend/f16/check-b-index.mjs
+    - id: F16-A3
+      description: Visit rows against the live render - one row per product family, exactly one equal-weight buy action per row (at least 50px, full width when stacked, below the prices), each CMS product's price equals resolveEffectivePrice and dual early-bird plus standard where a sibling exists, Fraunces type roles, a single provisional note, day-choice note, no media or background image in main, no FROM block, no overflow at 390/1280/1920; sales-closed branch asserted if the live dataset is closed
+      command: node --import tsx/esm contracts/checks/launch-weekend/f16/check-c-rows.mjs
+    - id: F16-A4
+      description: Render-level fixtures - rows model for sibling pairs, early-bird window open, passed with and without a regular price, lone early SKU; sales-open markup has one action per row and the dual prices; sales-CLOSED markup has no price, no ticket link, no action, no early-bird date but still lists the products; TicketTypeCard renders no photograph in either mode (no CMS access)
+      command: node --import tsx/esm contracts/checks/launch-weekend/f16/check-d-render.mts
+    - id: F16-A5
+      description: Test-mode strip is admin-only - absent for public and forged-session visitors on six ticket routes even when the status API says enabled (DOM and raw HTML), viewerIsVerifiedAdmin true only for ok:true and false for every refusal reason and a throw, getAdminSession is the only auth path, hub and form render the banner only behind the flag, banner box has no w-screen or translate or fixed or absolute or sticky, vendor form untouched
+      command: node --import tsx/esm contracts/checks/launch-weekend/f16/check-e-testmode.mts
+    - id: F16-A6
+      description: Typographic ticket cards - no next/image or orchid photo map in TicketTypeCard, lib/tickets-orchid-image.ts deleted, ticketCardPhotos.exempt is false, and on /national-show/conferences, /workshops and /tickets/<slug> the cards carry no image, name is Fraunces 400 22px (NOS routes), price figure at least 34px, description 16px, first card at most 340px tall
+      command: node --import tsx/esm contracts/checks/launch-weekend/f16/check-f-cards.mjs
+    - id: F16-A7
+      description: Scope and no-invention - only the allowlisted ticket files, lib modules and an additive F16 block in nos-structure.css change (header axis, nos-theme.css, vendors, conferences page, SEO untouched); added lines hold no hex colour, rgb literal, new font family, animation, duration other than 150ms, shadow or emoji
+      command: node --import tsx/esm contracts/checks/launch-weekend/f16/check-g-scope.mjs
+    - id: F16-A8
+      description: States and contrast of the new controls - chips and row actions change background on hover with 150ms transitions, real keyboard Tab shows a 2px or thicker outline at 3:1 or better, chip border 3:1 and text 4.5:1, all Visit text 4.5:1 (3:1 large), no transform under prefers-reduced-motion
+      command: node --import tsx/esm contracts/checks/launch-weekend/f16/check-h-states.mjs
+    - id: F16-A9
+      description: Self-critique loop evidence - 10 fresh after/ screenshots newer than the last source edit and a critique log (f16-critique-log.md) with at least 2 passes whose final pass reads P0 0, P1 0, P2 0 and Score at least 36/40
+      command: node contracts/checks/launch-weekend/f16/check-i-critique-artefacts.mjs
+    - id: F16-A10
+      description: F3 guards still hold on the F16 build with the ticket-card exemption removed - imagery A12, tickets (banner re-pinned to admin-only), section rhythm and container
+      command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3620 node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-imagery.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3620 node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-tickets.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3620 node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-rhythm.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3620 node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-container.mjs
+    - id: F16-A11
+      description: F3 static guards (banner driven by the status API, banner inside the purchase form behind the sales gate)
+      command: node contracts/checks/nos-own-brand-chrome/f3/check-f3-static.mjs ozow-banner && node contracts/checks/nos-own-brand-chrome/f3/check-f3-static.mjs sales-gate
+    - id: F16-A12
+      description: Lint passes
+      command: pnpm lint
+    - id: F16-A13
+      description: Type check passes
+      command: pnpm type-check
+    - id: F16-A14
+      description: Production build passes
+      command: SITE_PUBLIC_LAUNCH=true pnpm build

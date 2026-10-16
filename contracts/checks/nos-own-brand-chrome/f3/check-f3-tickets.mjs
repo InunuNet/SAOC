@@ -1,5 +1,5 @@
 // F3-T (NOS Site beta critique, 2026-10-16): the shared ticket UI as it renders on /national-show/conferences, /workshops and /tickets.
-//  1. The "TEST MODE — Ozow charges R0.01" banner (components/tickets/OzowSandboxTestModeBanner.tsx) is gated on PAYMENT MODE only (NOS Design
+//  1. [F16 re-pin: public never sees it; admin-only] The "TEST MODE — Ozow charges R0.01" banner (components/tickets/OzowSandboxTestModeBanner.tsx) is gated on PAYMENT MODE only (NOS Design
 //     ruling): driven by /api/tickets/ozow-sandbox-test-mode, never on hostname or NODE_ENV. Proven by mocking that status route:
 //       enabled:false -> no banner at all; enabled:true -> a thin full-width bar in flow (not fixed/sticky/absolute), Karla 700 12px uppercase,
 //       ink (royal) text on gold-100, 1px --line rule, covering no content.
@@ -83,14 +83,9 @@ await main('F3-T tickets', async (r) => {
             const bs = getComputedStyle(bar); const br = bar.getBoundingClientRect();
             return { family: s.fontFamily, weight: Number(s.fontWeight), size: parseFloat(s.fontSize), tt: s.textTransform, colour: s.color, bg: bs.backgroundColor, bw: parseFloat(bs.borderTopWidth) + parseFloat(bs.borderBottomWidth), bcol: bs.borderTopColor === 'rgba(0, 0, 0, 0)' || parseFloat(bs.borderTopWidth) === 0 ? bs.borderBottomColor : bs.borderTopColor, position: bs.position, w: br.width, h: br.height, vw: innerWidth, x: br.left };
           });
-          if (!enabled) { if (b) r.fail(`${tag}: a TEST MODE banner renders while payment mode is live`); await ctx.close(); continue; }
-          if (!b) { r.fail(`${tag}: no TEST MODE banner while the status API says enabled:true`); await ctx.close(); continue; }
-          if (!/karla/i.test(firstFamily(b.family)) || b.weight !== 700 || Math.abs(b.size - 12) > 0.3 || b.tt !== 'uppercase') r.fail(`${tag}: banner type is ${firstFamily(b.family)} ${b.weight} ${b.size}px ${b.tt}, want Karla 700 12px uppercase`);
-          if (!rgbNear(rgbOf(b.colour), ROYAL_RGB, 2) || !rgbNear(rgbOf(b.bg), GOLD_100_RGB, 2)) r.fail(`${tag}: banner is ${b.colour} on ${b.bg}, want ink (royal) on gold-100`);
-          if (b.bw < 0.9 || !rgbNear(rgbOf(b.bcol), LINE_RGB, 3)) r.fail(`${tag}: banner rule is ${b.bw}px ${b.bcol}, want a 1px --line rule`);
-          if (['fixed', 'sticky', 'absolute'].includes(b.position)) r.fail(`${tag}: banner is position:${b.position}; it must sit in flow and not cover content`);
-          if (b.w < b.vw - 2 || b.x > 1) r.fail(`${tag}: banner is ${Math.round(b.w)}px wide at x=${Math.round(b.x)}, want full width of the ${b.vw}px viewport`);
-          if (b.h > 56) r.fail(`${tag}: banner is ${Math.round(b.h)}px tall, want a thin bar (<=56px)`);
+          // RE-PINNED by launch-weekend F16: the strip is for verified admins only (lib/admin-viewer.ts), so a public visitor never sees it,
+          // whatever the status API says. The admin-positive path and the in-container geometry are proven by launch-weekend/f16 check-e-testmode.
+          if (b) r.fail(`${tag}: a TEST MODE banner renders for a public visitor (F16: admin-only)`);
           await ctx.close();
         }
       }
