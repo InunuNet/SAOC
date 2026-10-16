@@ -21,6 +21,9 @@ build/
 next-env.d.ts
 *.tsbuildinfo
 
+# ---- Generated image variants (scripts/generate-image-variants.mjs) ----
+public/images/_opt/
+
 # ---- Local env (never commit) ----
 # .env is already ignored above; also ignore any *.local variants
 .env*.local

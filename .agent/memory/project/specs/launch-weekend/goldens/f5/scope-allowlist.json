@@ -3,6 +3,12 @@
   "baseRefDefault": "origin/main",
   "allowed": [
     "^next\\.config\\.ts$",
+    "^package\\.json$",
+    "^pnpm-lock\\.yaml$",
+    "^\\.gitignore$",
+    "^lib/image-loader\\.ts$",
+    "^lib/image-widths\\.json$",
+    "^scripts/generate-image-variants\\.mjs$",
     "^sanity/lib/image\\.ts$",
     "^app/layout\\.tsx$",
     "^app/\\(marketing\\)/societies/page\\.tsx$",

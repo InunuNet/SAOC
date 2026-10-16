@@ -1,5 +1,7 @@
 import type { NextConfig } from 'next';
 
+import imageWidths from './lib/image-widths.json';
+
 // Server traces must carry only what the server reads. lib/data/show-pages.ts is the one
 // runtime fs reader (content/drive-recovered); everything below is private, tooling, or
 // client source documents and must never reach the App Hosting image.
@@ -74,9 +76,13 @@ const nextConfig: NextConfig = {
   // it is not localhost. Dev-only — it has no effect on a production build.
   allowedDevOrigins: ['dev.saoc.co.za'],
   images: {
+    // Custom loader, not the optimiser: App Hosting's adapter disables the optimiser unless a
+    // loader is set (docs/image-delivery.md). Widths are capped at 2048.
+    loader: 'custom',
+    loaderFile: './lib/image-loader.ts',
     formats: ['image/avif', 'image/webp'],
-    // Capped at 2048: the default src width (largest deviceSize) was 3840.
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    deviceSizes: imageWidths.deviceSizes,
+    imageSizes: imageWidths.imageSizes,
     remotePatterns: [
       {
         protocol: 'https',

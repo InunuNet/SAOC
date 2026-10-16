@@ -11,7 +11,9 @@ const problems = [];
 const need = (ok, msg) => { if (!ok) problems.push(msg); };
 
 need(/formats:\s*\[\s*'image\/avif'\s*,\s*'image\/webp'\s*\]/.test(cfg), "next.config.ts images.formats must be ['image/avif','image/webp']");
-need(/deviceSizes:\s*\[[^\]]*\]/.test(cfg) && !/deviceSizes:\s*\[[^\]]*3840/.test(cfg), 'next.config.ts deviceSizes must be set and exclude 3840');
+const widths = JSON.parse(readFileSync('lib/image-widths.json', 'utf8'));
+need(/deviceSizes:\s*imageWidths\.deviceSizes/.test(cfg) && !widths.deviceSizes.includes(3840) && Math.max(...widths.deviceSizes) <= 2048, 'next.config.ts deviceSizes must come from lib/image-widths.json, capped at 2048, no 3840');
+need(/loader:\s*'custom'/.test(cfg) && /loaderFile:\s*'\.\/lib\/image-loader\.ts'/.test(cfg), 'next.config.ts must set images.loader custom + loaderFile (App Hosting adapter forces unoptimized otherwise)');
 need(!/unoptimized/.test(cfg), 'next.config.ts must not set unoptimized');
 need(/async headers\(\)/.test(cfg), 'next.config.ts has no headers()');
 need(/Content-Security-Policy-Report-Only/.test(cfg), 'next.config.ts has no Content-Security-Policy-Report-Only');
