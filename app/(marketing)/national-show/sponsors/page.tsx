@@ -76,7 +76,7 @@ export default async function ShowSponsorsPage() {
                 renderCard={(sponsor) => <ShowSponsorCard sponsor={sponsor} />}
               />
             ) : (
-              <div className="nos-surface mx-auto max-w-[900px]">
+              <div className="nos-surface mx-auto">
                 <ConfirmationBadge
                   status="pending"
                   pendingLabel="To be confirmed by the show committee"

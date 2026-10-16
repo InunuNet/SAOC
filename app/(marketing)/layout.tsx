@@ -12,6 +12,7 @@ import type { ShowIdentity } from '@/types';
 // facts it needs are fetched once here rather than hardcoded into the component.
 // nos-own-brand-chrome F1: /national-show/* swaps the SAOC header, footer and utility bar for
 // the NOS own-brand chrome (ChromeFrame picks by route segment); every other route is unchanged.
+// Brad (2026-10-16) keeps the SAOC utility bar above the NOS header, as its `nos` variant.
 export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
   const show = await sanityFetch<ShowIdentity>({
     query: nationalShowQuery,
@@ -30,7 +31,16 @@ export default async function MarketingLayout({ children }: { children: React.Re
         ),
         bottom: <Footer />,
       }}
-      nos={{ skip: <NosSkipLink />, top: <NosHeader show={show} />, bottom: <NosFooter /> }}
+      nos={{
+        skip: <NosSkipLink />,
+        top: (
+          <>
+            <UtilityBar variant="nos" />
+            <NosHeader show={show} />
+          </>
+        ),
+        bottom: <NosFooter />,
+      }}
     >
       {children}
     </ChromeFrame>

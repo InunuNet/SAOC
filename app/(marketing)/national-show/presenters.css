@@ -35,7 +35,7 @@
   --pc-shadow-md: 0 4px 10px rgba(33, 26, 87, 0.08), 0 2px 4px rgba(33, 26, 87, 0.06);
   --pc-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --pc-t-med: 200ms;
-  --pc-gutter: clamp(16px, 4vw, 48px);
+  --pc-gutter: var(--nos-axis-pad);
   --pc-wide: 1320px;
   --pc-bio-lines: 4;
   --pc-bio-lh: 1.68;

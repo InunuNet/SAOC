@@ -17,9 +17,21 @@ import type { ShowIdentity } from '@/types';
 
 export interface UtilityBarProps {
   show?: ShowIdentity | null;
+  /**
+   * `saoc` (default) is the bar every SAOC page carries. `nos` is the same bar on the National
+   * Show's own-brand pages (Brad, 2026-10-16): the show pill becomes a pill home to saoc.co.za,
+   * visible at every width, and below 480px the email collapses to its icon so the row fits.
+   */
+  variant?: 'saoc' | 'nos';
 }
 
-export function UtilityBar({ show }: UtilityBarProps) {
+const SHOW_PILL_CLASS =
+  'border border-ivory/30 text-ivory rounded-full px-3 py-1 text-[13px] font-sans hover:border-ivory/60 transition-colors duration-150';
+const SAOC_PILL_LABEL = 'saoc.co.za';
+const CONTACT_EMAIL = 'info@saoc.co.za';
+
+export function UtilityBar({ show, variant = 'saoc' }: UtilityBarProps) {
+  const isNos = variant === 'nos';
   const monthYear = formatShowShortMonthYear(show?.showDate);
   const showPillLabel = [showLabelWithEdition(show?.edition), monthYear]
     .filter((part): part is string => Boolean(part))
@@ -30,8 +42,9 @@ export function UtilityBar({ show }: UtilityBarProps) {
       <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-8 py-2">
         {/* Left: contact email */}
         <a
-          href="mailto:info@saoc.co.za"
-          className="flex min-h-6 items-center gap-1.5 font-mono text-[14px] text-ivory opacity-90 hover:opacity-100 transition-colors duration-150"
+          href={`mailto:${CONTACT_EMAIL}`}
+          aria-label={isNos ? `Email ${CONTACT_EMAIL}` : undefined}
+          className={`flex min-h-6 items-center gap-1.5 font-mono text-[14px] text-ivory opacity-90 hover:opacity-100 transition-colors duration-150${isNos ? ' max-[480px]:min-w-6' : ''}`}
         >
           <svg
             width="14"
@@ -47,17 +60,29 @@ export function UtilityBar({ show }: UtilityBarProps) {
             <rect x="2" y="4" width="20" height="16" rx="2" />
             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
           </svg>
-          info@saoc.co.za
+          {isNos ? (
+            // The aria-label above names the link, so below 480px the address text leaves layout
+            // entirely (sr-only alone still lays the text out at its full width).
+            <span className="max-[480px]:sr-only max-[480px]:hidden">{CONTACT_EMAIL}</span>
+          ) : (
+            CONTACT_EMAIL
+          )}
         </a>
 
         {/* Right: action pills */}
         <div className="flex items-center gap-2">
-          <Link
-            href="/national-show"
-            className="hidden min-[900px]:inline-block border border-ivory/30 text-ivory rounded-full px-3 py-1 text-[13px] font-sans hover:border-ivory/60 transition-colors duration-150"
-          >
-            {showPillLabel}
-          </Link>
+          {isNos ? (
+            <Link href="/" className={`inline-block ${SHOW_PILL_CLASS}`}>
+              {SAOC_PILL_LABEL}
+            </Link>
+          ) : (
+            <Link
+              href="/national-show"
+              className={`hidden min-[900px]:inline-block ${SHOW_PILL_CLASS}`}
+            >
+              {showPillLabel}
+            </Link>
+          )}
           <Link
             href="/societies"
             className="bg-accent text-ink rounded-full px-3 py-1 text-[13px] font-sans font-medium hover:bg-accent-soft transition-colors duration-150"

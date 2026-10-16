@@ -10,6 +10,7 @@ import { ExhibitorStageCard } from '@/components/nos/ExhibitorStageCard';
 import { JudgingGroupCard } from '@/components/nos/JudgingGroupCard';
 import { COLUMN_CLASS, SPAN_CLASS, resolveGridLayout } from '@/lib/grid-columns';
 import { NosHero } from '@/components/nos/NosHero';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { NosSection } from '@/components/nos/NosSection';
 import { SectionHeading } from '@/components/nos/SectionHeading';
 import { JsonLd, nationalShowEventJsonLd, type NationalShowOffer } from '@/components/seo/JsonLd';
@@ -57,9 +58,11 @@ export const metadata: Metadata = buildPageMetadata({
   path: '/national-show',
 });
 
-/** The hub's `<h1>`: the show's name as nav-config carries it, never retyped here. */
+/** The hub's `<h1>` (R68, Brad): the show's plain name. nav-config keeps its own longer label
+ *  as the mega-menu lead, so the two are deliberately separate. */
+const HUB_HEADING = 'National Orchid Show';
+
 const HUB_MEGA = NAV.find((n) => n.type === 'mega');
-const HUB_HEADING = HUB_MEGA?.lead?.leadLabel;
 
 /** The mega's own Tickets leaf (the removed header CTA used to resolve it the same way). Throws at
  *  load if the leaf is ever removed rather than rendering a hero CTA with no destination. */
@@ -345,55 +348,60 @@ export default async function NationalShowPage() {
       <NosHero
         route="/national-show"
         priority
-        // The `<h1>` is real text from nav-config (the NOS header carries the lockup; the hub
-        // hero carries none). No eyebrow: ruling 2026-10-15 Q4.
+        // The `<h1>` is real text (the NOS header carries the lockup; the hub hero carries none).
+        // No eyebrow: ruling 2026-10-15 Q4.
         title={HUB_HEADING}
         titleSize="display"
         lede={HERO_LEDE}
         actions={
           <>
-            {/* Order at every width: CTAs, price, countdown, facts (C-2). Tickets is the one
+            {/* Order at every width: CTAs, price, countdown, facts (C-2). R68: the CTA cluster
+                and the countdown share one flex row (stacked under 640px). Tickets is the one
                 primary; Plan your visit is the ghost beside it. */}
-            <div className="nos-hero-actions">
-              <Button<typeof Link>
-                as={Link}
-                href={TICKETS_CTA.href}
-                variant="on-dark"
-                data-nos-hero-button=""
-              >
-                <span data-nos-hero-text="btn-primary-label">{TICKETS_CTA.label}</span>
-              </Button>
-              <Button<typeof Link>
-                as={Link}
-                href={HUB_PLAN_LINK.href}
-                variant="ghost-on-dark"
-                data-nos-hero-button=""
-              >
-                <span data-nos-hero-text="btn-plan-label">{HUB_PLAN_LINK.label}</span>
-              </Button>
-            </div>
+            <div className="nos-hero-row">
+              <div className="nos-hero-cta-group">
+                <div className="nos-hero-actions">
+                  <Button<typeof Link>
+                    as={Link}
+                    href={TICKETS_CTA.href}
+                    variant="on-dark"
+                    data-nos-hero-button=""
+                  >
+                    <span data-nos-hero-text="btn-primary-label">{TICKETS_CTA.label}</span>
+                  </Button>
+                  <Button<typeof Link>
+                    as={Link}
+                    href={HUB_PLAN_LINK.href}
+                    variant="ghost-on-dark"
+                    data-nos-hero-button=""
+                  >
+                    <span data-nos-hero-text="btn-plan-label">{HUB_PLAN_LINK.label}</span>
+                  </Button>
+                </div>
 
-            {priceAnchor ? (
-              <p data-nos-hero-text="price" className="nos-hero-price">
-                {priceAnchor}
-              </p>
-            ) : null}
+                {priceAnchor ? (
+                  <p data-nos-hero-text="price" className="nos-hero-price">
+                    {priceAnchor}
+                  </p>
+                ) : null}
+              </div>
 
-            <div>
-              {/* The label is the Karla label role, like the countdown's own unit labels. */}
-              <p
-                data-nos-hero-text="countdown-opens-in"
-                className="mb-3 font-sans text-[12px] font-bold uppercase tracking-[0.14em] text-ivory/90"
-              >
-                Opens in
-              </p>
-              <Suspense fallback={null}>
-                <ShowCountdown
-                  countdownDate={sanityShow?.countdownDate}
-                  edition={edition}
-                  pendingLabel={visitorInfo?.pendingLabel}
-                />
-              </Suspense>
+              <div>
+                {/* The label is the Karla label role, like the countdown's own unit labels. */}
+                <p
+                  data-nos-hero-text="countdown-opens-in"
+                  className="mb-3 font-sans text-[12px] font-bold uppercase tracking-[0.14em] text-ivory/90"
+                >
+                  Opens in
+                </p>
+                <Suspense fallback={null}>
+                  <ShowCountdown
+                    countdownDate={sanityShow?.countdownDate}
+                    edition={edition}
+                    pendingLabel={visitorInfo?.pendingLabel}
+                  />
+                </Suspense>
+              </div>
             </div>
 
             {/* 2x2 at every width (Codi's legibility ruling 2026-09-29; mock
@@ -585,6 +593,9 @@ export default async function NationalShowPage() {
           </div>
         }
       />
+
+      {/* ── R69: the grouped index of the show's pages, last block before the footer ── */}
+      <NosShowIndex current="/national-show" />
     </>
   );
 }

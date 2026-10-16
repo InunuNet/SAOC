@@ -55,6 +55,8 @@ export interface ShowContentStateProps {
    * "Presenters (N)" jump link, R44-A5). No wrapper or styling of its own.
    */
   afterHero?: ReactNode;
+  /** `theme` renders the page summary as the show's theme line in the hero (R70, symposium). */
+  ledeKind?: 'theme';
 }
 
 export function ShowContentState({
@@ -64,13 +66,20 @@ export function ShowContentState({
   listingContent,
   afterProse,
   afterHero,
+  ledeKind,
 }: ShowContentStateProps) {
   const page = unwrapShowPageResult(result);
   const state = page.isFallback === true ? 'fallback-unpublished' : 'published';
 
   return (
     <>
-      <NosHero route={route} title={page.title} lede={page.summary ?? undefined} priority />
+      <NosHero
+        route={route}
+        title={page.title}
+        lede={page.summary ?? undefined}
+        ledeKind={ledeKind}
+        priority
+      />
 
       {state === 'fallback-unpublished' ? (
         <NosSection data-nos-content-state={state} wrapClassName="space-y-10">

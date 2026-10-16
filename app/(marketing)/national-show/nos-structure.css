@@ -8,8 +8,10 @@
  */
 
 .nos-theme {
-  --nos-gutter: clamp(16px, 4vw, 48px); /* I:91 */
-  --nos-default: 1080px; /* I:61 */
+  /* R71: ONE alignment axis, the NOS header's own container (.nh-bar in nos-chrome.css), so the
+     header, hero, sub-nav, section wraps, presenters and the hub index share one left edge. */
+  --nos-axis-max: calc(var(--nc-wide) + 2 * var(--nc-gutter));
+  --nos-axis-pad: var(--nc-gutter);
   --shadow-sm: 0 1px 2px rgba(33, 26, 87, 0.06), 0 2px 8px rgba(33, 26, 87, 0.05); /* I:46 */
   --shadow-md: 0 2px 4px rgba(33, 26, 87, 0.06), 0 10px 28px rgba(33, 26, 87, 0.09); /* I:47 */
   /* S1: cards are 16px with a shadow, never a border alone (I:41, I:46-47). */
@@ -20,9 +22,9 @@
 /* C1: ONE container. Carries no vertical padding (the section does, C2). */
 .nos-theme [data-nos-wrap] {
   width: 100%;
-  max-width: calc(var(--nos-default) + 2 * var(--nos-gutter));
+  max-width: var(--nos-axis-max);
   margin-inline: auto;
-  padding-inline: var(--nos-gutter);
+  padding-inline: var(--nos-axis-pad);
 }
 
 /* C2: ONE section rhythm, on the section itself (I:156). */
@@ -44,10 +46,9 @@
   color: var(--ivory);
 }
 
-/* R29 typographic hero: solid ground, no media, no scrim; copy on the 1080 grid shared with
-   the sections below (h1 and standfirst left edges equal the wrap content edge). */
+/* R29 typographic hero: solid ground, no media, no scrim; copy on the axis shared with the
+   sections below (h1 and standfirst left edges equal the wrap content edge). */
 .nos-theme .nos-hero-type .nos-hero-copy {
-  max-width: calc(var(--nos-default) + 2 * var(--hero-gutter));
   padding-block: 64px 56px;
 }
 @media (max-width: 1023px) {
@@ -102,11 +103,11 @@
 @media (max-width: 700px) {
   .nos-theme .nos-subnav-row {
     flex-wrap: nowrap;
-    margin-inline: calc(-1 * var(--nos-gutter));
-    padding-inline: var(--nos-gutter);
+    margin-inline: calc(-1 * var(--nos-axis-pad));
+    padding-inline: var(--nos-axis-pad);
     overflow-x: auto;
     scroll-snap-type: x proximity;
-    scroll-padding-inline: var(--nos-gutter);
+    scroll-padding-inline: var(--nos-axis-pad);
     scrollbar-width: none;
   }
   .nos-theme .nos-subnav-row::-webkit-scrollbar {
@@ -413,4 +414,109 @@
    them, so the marker stays in the head of the surface (R19). */
 .nos-theme .nos-surface > :is(h2, h3):first-child {
   margin-bottom: 0;
+}
+
+/* R70 show-page template: each prose block is ruled off from the last (1px --rule, 40px air).
+   From 900px the heading takes the narrow column and everything else (copy, lists, the TBC and
+   gap notices) the wide one; below 900px the block stacks, heading first. The block's own
+   surface (the notice variant) is flattened so the heading sits on the axis. */
+.nos-theme .nos-show-page-prose {
+  padding: 40px 0 0;
+  border-top: 1px solid var(--rule);
+  border-radius: 0;
+  background-color: transparent;
+  box-shadow: none;
+}
+@media (min-width: 900px) {
+  .nos-theme .nos-show-page-prose {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+    column-gap: 64px;
+  }
+  .nos-theme .nos-show-page-prose > h2 {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+    font-size: 32px;
+  }
+  .nos-theme .nos-show-page-prose > :not(h2) {
+    grid-column: 2;
+  }
+}
+
+/* R69 grouped index on the hub: three ruled columns of titled links, no descriptions. The
+   container is the shared axis ([data-nos-wrap]). */
+.nos-theme .nos-index {
+  padding-block: 88px;
+  border-top: 1px solid var(--rule);
+}
+.nos-theme .nos-index > [data-nos-wrap] {
+  max-width: var(--nos-axis-max);
+}
+.nos-theme .nos-index-eyebrow,
+.nos-theme .nos-index-group > h3 {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-variation-settings: normal;
+}
+.nos-theme .nos-index-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 48px;
+  margin-top: 40px;
+}
+@media (min-width: 900px) {
+  .nos-theme .nos-index-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 56px;
+  }
+}
+.nos-theme .nos-index-group > h3 {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+}
+.nos-theme .nos-index-group > ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nos-theme .nos-index-group li {
+  border-bottom: 1px solid var(--rule);
+}
+.nos-theme .nos-index-group a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  font-family: var(--serif);
+  font-size: 20px;
+  line-height: 1.25;
+  color: var(--ink);
+  text-decoration: none;
+}
+.nos-theme .nos-index-group a:is(:hover, :focus-visible, [aria-current='page']) {
+  color: var(--accent);
+}
+.nos-theme .nos-index-arrow {
+  flex: none;
+  display: inline-flex;
+  opacity: 0.35;
+}
+.nos-theme .nos-index-group a:is(:hover, :focus-visible) .nos-index-arrow {
+  opacity: 1;
+  transform: translateX(4px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nos-theme .nos-index-arrow {
+    transition:
+      opacity 200ms var(--ease-nos),
+      transform 200ms var(--ease-nos);
+  }
 }

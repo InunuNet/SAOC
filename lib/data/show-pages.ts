@@ -9,6 +9,8 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { wrapGatedProse } from '@/components/nos/gated-prose-internal';
 import { wrapShowPageResult } from '@/components/show/nos/show-content-state-internal';
 
+import { presentRawShowPage } from './show-page-presentation';
+
 // F3 (national-show-ia-alignment, M1) — THE GATE.
 //
 // See:
@@ -416,7 +418,7 @@ export function resolvePageProvenance(sections: SectionProvenanceInput[]): Prove
 // Raw document shape as read from Sanity, and hydration into the public ShowPage type.
 // ---------------------------------------------------------------------------
 
-type RawShowPageSection = {
+export type RawShowPageSection = {
   sectionKey: string;
   heading?: string | null;
   kind?: string | null;
@@ -425,7 +427,7 @@ type RawShowPageSection = {
   sourcePath?: string | null;
 };
 
-type RawShowPage = {
+export type RawShowPage = {
   pageKey: string;
   specNumber: number;
   title: string;
@@ -541,7 +543,10 @@ function hydrateSection(
   };
 }
 
-function hydratePage(raw: RawShowPage, settings: ShowPageSettingsFields | null): ShowPage {
+function hydratePage(rawDocument: RawShowPage, settings: ShowPageSettingsFields | null): ShowPage {
+  // R70: render-time presentation (symposium title, theme line, theme heading) lives in
+  // show-page-presentation, before any section is wrapped as GatedProse.
+  const raw = presentRawShowPage(rawDocument);
   const rawSections = raw.sections ?? [];
   const sections = applyContentGaps(
     rawSections.map((section) => hydrateSection(section, settings)),

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 
-import { PresenterJumpLink } from '@/components/nos/PresenterSection';
 import { PresenterSection } from '@/components/nos/PresenterSection';
 import { ShowContentState } from '@/components/show/nos/ShowContentState';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
@@ -29,15 +28,15 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 60;
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'SAOC Symposium — National Orchid Show',
-  image: nosOgImage('SAOC Symposium — National Orchid Show'),
+  title: 'National Orchid Show Symposium',
+  image: nosOgImage('National Orchid Show Symposium'),
   description: 'What the SAOC Symposium is, and who it is for.',
   path: '/national-show/symposium',
 });
 
 export default async function SymposiumPage() {
   const result = await loadShowPageOrFallback('06-saoc-symposium', {
-    label: 'SAOC Symposium',
+    label: 'National Orchid Show Symposium',
     purpose: 'The SAOC Symposium — what it is, its theme, and who it is for.',
   });
 
@@ -70,7 +69,7 @@ export default async function SymposiumPage() {
           result={result}
           route="/national-show/symposium"
           layout="prose"
-          afterHero={<PresenterJumpLink presenters={presenters} />}
+          ledeKind="theme"
         />
       </div>
 

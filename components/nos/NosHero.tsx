@@ -43,6 +43,8 @@ export interface NosHeroProps {
    */
   titleSize?: 'default' | 'display';
   lede?: string;
+  /** `theme` sets the inner lede as a show's theme line (italic serif, R70) rather than a standfirst. */
+  ledeKind?: 'theme';
   /**
    * Hub: the hero body's remaining children (facts, CTAs, countdown) — rendered as
    * direct children of the body grid so the stacked order can move the facts after
@@ -59,6 +61,7 @@ export function NosHero({
   title,
   titleSize = 'default',
   lede,
+  ledeKind,
   actions,
   priority = false,
   className = '',
@@ -107,7 +110,12 @@ export function NosHero({
           ) : (
             <>
               {lede ? (
-                <p data-nos-hero-lede="" data-nos-hero-text="lede" className="nos-hero-lede">
+                <p
+                  data-nos-hero-lede=""
+                  data-nos-hero-text="lede"
+                  data-nos-lede={ledeKind}
+                  className="nos-hero-lede"
+                >
                   {lede}
                 </p>
               ) : null}
