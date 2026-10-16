@@ -6,9 +6,9 @@
 // no image, svg, canvas, picture, background-image or scrim. Photo heroes carry data-nos-hero-variant="photo". Edition cards carry no photo.
 // The emblem is never a photo substitute. No stock flower anywhere else: not in <img>, not in CSS backgrounds, not in preloads.
 // Measured over every route (17 + archive years + public vendor sub-routes) at 1280 and 1440 (grid) and 390.
-// AMENDED by launch-weekend F18 (goldens/f18/supersession.json): an <img> inside [data-nos-image-break] is a long-form image break, a second, separate role from the hero photo.
+// AMENDED by launch-weekend F18 (goldens/f18/supersession.json): the F18 long-form image break is RETIRED (R16, one photo per route); F18-A2 asserts zero [data-nos-image-break] on every NOS route. The hero rules below are unchanged and still own every stock photo outside the ticket stubs.
 // AMENDED by launch-weekend F18b (goldens/f18/supersession.json): an <img> inside [data-ticket-stub] is a keepsake-ticket stub photo, a third, separate role (ticket routes only; the five production photos, see goldens/f18b/v13-photo-map.json).
-// Its own rule (each stock photo at most once as a break, never on the route whose hero shows it) is asserted by F18-A2 (launch-weekend/f18/check-b-imagery.mjs); the hero rules here are unchanged.
+// The inert [data-nos-image-break] exclusion is kept only so the F18-A13 supersession check stays structural; F18-A2 (launch-weekend/f18/check-b-imagery.mjs) is what forbids the element.
 import { allRoutes, assetPath, STOCK_PHOTO_RE, readGolden, main, openPage, withBrowser, VP_DESKTOP, VP_PHONE, rgbOf, rgbNear, BLACK_RGB, ROYAL_RGB } from './_f3lib.mjs';
 
 function measure() {

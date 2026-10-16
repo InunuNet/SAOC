@@ -48,8 +48,8 @@
  "amended": [
   {
    "file": "contracts/checks/nos-own-brand-chrome/f3/check-f3-imagery.mjs",
-   "reason": "Images inside [data-nos-image-break] (the F18 long-form break) are excluded from the hero-photo rules (they would otherwise read as a stock photo on a route with no hero photo, or on the wrong route). Everything else in that check is unchanged and still gates the hero photos.",
-   "replacedBy": "F18-A2 (check-b-imagery.mjs) owns the break rule: goldens/f18/break-photo-map.json"
+   "reason": "The F18 long-form image break is RETIRED by the F18a amendment (design-cb audit, R16 one photo per route). The [data-nos-image-break] exclusion stays in the check as an inert selector so F18-A13 stays structural; the comment on line 9 is corrected. Everything else in that check is unchanged and still gates the hero photos.",
+   "replacedBy": "F18-A2 (check-b-imagery.mjs) forbids the element: exactly 0 [data-nos-image-break] on every NOS route"
   },
   {
    "file": "contracts/checks/launch-weekend/f17/check-h-symposium-render.mts (static list)",

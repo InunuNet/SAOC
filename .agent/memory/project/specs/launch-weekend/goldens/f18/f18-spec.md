@@ -26,7 +26,7 @@ Everything "beta-only" is gated on `!withholdPlaceholderProse()` from `lib/data/
 New server component (suggest `components/show/nos/LongFormPage.tsx`). Copy per route is `goldens/f18/longform-copy.json`, verbatim (typographic quotes and whitespace compare equal). DOM: head (`[data-nos-longform-head]` = section h2 + `[data-nos-longform-lede]`, first paragraph 20px / 1.5), aside (`[data-nos-longform-aside]`), body (`[data-nos-longform-body]`).
 - >= 900px: two columns 4fr / 7fr, 64px gap, aside sticky, body paragraphs 16px / 1.55 at <= 60ch. < 900px: one column, aside stacks, not sticky.
 - Aside: facts `[data-nos-facts]` (Dates / Host / Venue / Cycle, equal to the hub hero facts), pull quote `[data-nos-pullquote]` where the golden names one, CTA pair `[data-nos-longform-cta]` (Tickets primary + Plan your visit ghost) on about, what-to-expect, sa-exhibitors. /vendors keeps its royal CtaBand to `/national-show/vendors/apply`.
-- One image break `[data-nos-image-break]` after `breakAfter` paragraphs: 21:9, `alt=""`, photo from `break-photo-map.json`. The "Explore the show" index stays last.
+- No image break (F18a amendment, design-cb audit, R16 one photo per route): `long-form-breaks.ts` is deleted, `breakAfter` is gone from `longform-copy.json`, and A1/A2 assert exactly 0 `[data-nos-image-break]`. /sa-exhibitors has no template h2 and no h2 on the four routes equals the h1. /about has no hero lede (design-cb ruling). The "Explore the show" index stays last.
 - Vendors and sa-exhibitors carry the same Lee-Ann copy; do not merge or dedupe (For Lee-Ann).
 
 ### 3.2 Public holding state (R76)
@@ -134,7 +134,7 @@ The partner wording ("Shared with the Day Pass") and "The Weekend Pass is now R3
 | id | file | proves | needs |
 |---|---|---|---|
 | A1 | check-a-longform.mjs | 3.1 | public build, 3672 |
-| A2 | check-b-imagery.mjs | break-photo rule + R29 hero rule | public build |
+| A2 | check-b-imagery.mjs | zero image breaks (R16) + R29 hero rule | public build |
 | A3 | check-c-holding.mjs | 3.2 live | public build |
 | A4 | check-d-holding-render.mts | 3.2 + 3.3 render level | tsx |
 | A5 | check-e-faq.mts | 3.4 | public build + tsx |
@@ -162,7 +162,7 @@ Build and serve: `SITE_PUBLIC_LAUNCH=true pnpm run build && SITE_PUBLIC_LAUNCH=t
 
 ## 6. Rulings and decisions needing the lead
 
-1. R29 and the image break (F18a): a break photo is allowed only inside `[data-nos-image-break]` on the four long-form routes; `check-f3-imagery` excludes that selector.
+1. R29 and the image break (F18a): RETIRED by the amendment. One photo per route; A2 asserts 0 breaks. `check-f3-imagery` keeps an inert exclusion only for A13.
 2. Stub photos (F18b): `[data-ticket-stub]` is a third image role, ticket routes only, the five production photos only. `check-f3-imagery` excludes `[data-ticket-stub]` too. F16 `check-f-cards` is retired: it pinned the old card photo rule and the F16 rows.
 3. RESOLVED (design-cb ruling 1): `#exhibit` / `#trade` stay at the foot of the hub as the compact 2-card row (4.4).
 4. DECISION NEEDED (4.2): helper failure semantics stay tolerant. Recommendation: keep.
@@ -198,3 +198,14 @@ Copy comes only from `longform-copy.json`, `v13-copy.json`, existing strings (`s
 - `/tickets/confirmation` needs an order and is not probed live; the segment rule covers it.
 - Moving `/tickets/*` onto NOS chrome changes the header and footer on payment pages; the checkout redirect, ITN and confirmation email are untouched, but the e2e ticket journeys (untracked in the main checkout) must be run by @qa where available.
 - Dev worktrees lack `.env.local`; the build needs Sanity read access (copy it in, delete it at the end).
+
+## 6. F18a amendment (design-cb audit and Athanor review, 2026-10-17)
+
+- Archive, public, no past show: the page is the hero, then ONE card carrying the existing string "Show history awaiting committee records", then the Explore index. No facts rail, no related-page mini list, no planning band, no `[data-nos-holding]` section. Archive leaves `holdingConditional` in `holding-audit.json` and has its own `archiveHolding` shape asserted in A3. Beta and with-editions branches are unchanged.
+- Unsourced hub facts (Athanor 1), checked 2026-10-17 against `content/drive-source/`, `content/show-pages/` and live Sanity (26yfbug4/production):
+  - Sourced and kept: "19th show" (Sanity `nationalShow.edition` = 19, ordinal derived); "ten classes" (Sanity holds exactly 10 `showClass` docs, count derived); triennial / 3 yr cycle (Drive 2.1 About v1.0, paragraph 1, "premier triennial event").
+  - Unsourced, withheld in public through `withholdPlaceholderProse()` and marked on beta: "18 shows hosted" (inference from edition minus one, Sanity has 0 `pastShow`), "100-point scale", "Grand Champion", the judging-criteria line (cultural quality, presentation, species accuracy; /judging says form, colour, size, cultural condition), and "nine provinces" (page and og descriptions).
+  - A3 asserts public `/` and `/national-show` HTML contain none of the unsourced strings (`holding-audit.json` `hubFacts.unsourced`).
+- /national-show/wosa-conference (Athanor 2): public mode shows the F18a holding state (existing strings, R11) and keeps the "Buy ticket" link to `#ticket-wosa` that A31 requires. A3 asserts both.
+- Heading order (Athanor 3): A3 asserts the first heading is h1 and levels never skip on /national-show/about and /national-show/workshops.
+- `check-f3-imagery.mjs` line 9 no longer describes the break rule.

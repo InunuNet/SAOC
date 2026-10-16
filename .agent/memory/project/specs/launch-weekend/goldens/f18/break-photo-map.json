@@ -1,11 +1,6 @@
 {
-  "_note": "F18 image breaks. A SECOND role beside the five hero photos (goldens/f3/hero-photo-map.json is unchanged and still asserted). Rule: each rights-cleared stock photo is used at most once as a break; a break never shows the photo that is the hero of the SAME route; hero routes keep their one hero photo. The four mappings are a design call under Brad's design autonomy: /about takes orchid-violet because R75 names the orchid-violet image; the rest are the unused combinations that keep each page from repeating its own hero. orchid-pink stays hero-only (what-to-expect). DECISION NEEDED if the lead reads R29 (\"five photos, once each\") as forbidding a second placement of any photo: then the breaks are dropped and the template ships without one (one golden edit, one CSS rule).",
-  "breaks": {
-    "/national-show/about": "/images/orchid-violet.jpg",
-    "/national-show/what-to-expect": "/images/orchid-dark.jpg",
-    "/national-show/vendors": "/images/orchid-purple.jpg",
-    "/national-show/sa-exhibitors": "/images/orchid-yellow.jpg"
-  },
+  "_note": "RETIRED by the F18a amendment (design-cb audit, R16: one photo per route). The F18 long-form image break is removed and long-form-breaks.ts is deleted. 'breaks' is intentionally empty and F18-A2 asserts zero [data-nos-image-break] on every NOS route. The hero map is unchanged.",
+  "breaks": {},
   "heroRoutes": {
     "/national-show": "/images/orchid-dark.jpg",
     "/national-show/plan-your-visit": "/images/orchid-yellow.jpg",
