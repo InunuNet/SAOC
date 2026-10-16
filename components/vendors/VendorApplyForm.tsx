@@ -1,10 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { VendorFormField } from './VendorFormField';
 import { VendorCheckboxGroupField } from './VendorCheckboxGroupField';
 import { VENDOR_APPLICATION_CATEGORIES } from '@/lib/vendor-applications';
+import {
+  validateVendorApplyFormClientSide,
+  vendorApplyErrorsByField,
+  type VendorApplyFieldKey,
+  type VendorApplyFormValues,
+} from '@/lib/vendor-apply-form-validation';
 import type { VendorApplicationCategory } from '@/types/index';
 
 /**
@@ -41,15 +47,12 @@ const CATEGORY_OPTIONS = VENDOR_APPLICATION_CATEGORIES.map((value) => ({
   label: CATEGORY_LABELS[value],
 }));
 
-interface VendorApplyFormState {
-  businessName: string;
-  tradingName: string;
-  contactPersonName: string;
-  contactEmail: string;
-  contactCellPhone: string;
-  vendorCategory: string[];
-  indicativeBoothCount: string;
-}
+type VendorApplyFormState = VendorApplyFormValues;
+
+const REQUIRED_SENTENCE = 'All fields are required unless marked optional.';
+const SUMMARY_ID = 'vendor-apply-error-summary';
+// Existing string: humaniseFieldError()'s own fallback sentence (lib/vendor-register-response.ts).
+const SUMMARY_HEADING = 'Please check the highlighted fields.';
 
 const INITIAL_STATE: VendorApplyFormState = {
   businessName: '',
@@ -67,12 +70,31 @@ function omitBlank(value: string): string | undefined {
   return value === '' ? undefined : value;
 }
 
+interface FieldError {
+  key: VendorApplyFieldKey;
+  message: string;
+}
+
+/** Moves focus to the field an error summary link points at (the first checkbox for the group). */
+function focusField(key: VendorApplyFieldKey) {
+  const target = document.getElementById(`vendor-register-${key}`);
+  if (!target) return;
+  const focusable =
+    target instanceof HTMLFieldSetElement
+      ? target.querySelector<HTMLInputElement>('input[type="checkbox"]')
+      : target;
+  focusable?.focus();
+  focusable?.scrollIntoView({ block: 'center' });
+}
+
 export function VendorApplyForm() {
   const [state, setState] = useState<VendorApplyFormState>(INITIAL_STATE);
   const [hp, setHp] = useState(''); // honeypot -- never sent to the API
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
+  const [clientErrors, setClientErrors] = useState<FieldError[]>([]);
+  const summaryRef = useRef<HTMLDivElement>(null);
 
   function handleChange(key: keyof VendorApplyFormState, value: string | string[]) {
     setState((prev) => ({ ...prev, [key]: value }));
@@ -86,6 +108,17 @@ export function VendorApplyForm() {
       setStatus('error');
       setErrorMessage('Something went wrong. Please try again.');
       setFieldErrors([]);
+      return;
+    }
+
+    const invalid = vendorApplyErrorsByField(validateVendorApplyFormClientSide(state));
+    setClientErrors(invalid);
+    if (invalid.length > 0) {
+      setStatus('idle');
+      setErrorMessage(null);
+      setFieldErrors([]);
+      // The summary mounts on this render; focus it once it is in the DOM.
+      requestAnimationFrame(() => summaryRef.current?.focus());
       return;
     }
 
@@ -104,9 +137,7 @@ export function VendorApplyForm() {
           contactEmail: state.contactEmail.trim(),
           contactCellPhone: state.contactCellPhone.trim(),
           vendorCategory: state.vendorCategory,
-          indicativeBoothCount: state.indicativeBoothCount
-            ? Number.parseInt(state.indicativeBoothCount, 10)
-            : undefined,
+          indicativeBoothCount: Number(state.indicativeBoothCount),
         }),
       });
       const body = (await res.json().catch(() => undefined)) as
@@ -141,9 +172,42 @@ export function VendorApplyForm() {
   }
 
   const disabled = status === 'submitting';
+  const errorFor = (key: VendorApplyFieldKey) =>
+    clientErrors.find((entry) => entry.key === key)?.message;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8" noValidate>
+      <p className="font-sans text-[15px] text-ink">{REQUIRED_SENTENCE}</p>
+
+      {clientErrors.length > 0 ? (
+        <div ref={summaryRef} id={SUMMARY_ID} tabIndex={-1} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40">
+          <div
+            role="alert"
+            className="space-y-2 rounded-sm border border-[var(--status-error)] bg-bone p-4"
+          >
+            <p className="font-sans text-[15px] font-medium text-[var(--status-error)]">
+              {SUMMARY_HEADING}
+            </p>
+            <ul className="list-disc space-y-1 pl-5 font-sans text-[14px] text-ink">
+              {clientErrors.map((entry) => (
+                <li key={entry.key}>
+                  <a
+                    href={`#vendor-register-${entry.key}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      focusField(entry.key);
+                    }}
+                    className="underline underline-offset-2"
+                  >
+                    {entry.message}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+
       {status === 'error' && errorMessage ? (
         <div
           role="alert"
@@ -171,6 +235,9 @@ export function VendorApplyForm() {
         disabled={disabled}
         required
         maxLength={200}
+        showRequirement
+        error={errorFor('businessName')}
+        autoComplete="organization"
       />
 
       <VendorFormField
@@ -182,6 +249,8 @@ export function VendorApplyForm() {
         disabled={disabled}
         required={false}
         maxLength={200}
+        showRequirement
+        error={errorFor('tradingName')}
       />
 
       <VendorFormField
@@ -193,6 +262,9 @@ export function VendorApplyForm() {
         disabled={disabled}
         required
         maxLength={150}
+        showRequirement
+        error={errorFor('contactPersonName')}
+        autoComplete="name"
       />
 
       <VendorFormField
@@ -204,6 +276,9 @@ export function VendorApplyForm() {
         disabled={disabled}
         required
         maxLength={254}
+        showRequirement
+        error={errorFor('contactEmail')}
+        autoComplete="email"
       />
 
       <VendorFormField
@@ -215,6 +290,9 @@ export function VendorApplyForm() {
         disabled={disabled}
         required
         maxLength={30}
+        showRequirement
+        error={errorFor('contactCellPhone')}
+        autoComplete="tel"
       />
 
       <VendorCheckboxGroupField
@@ -225,6 +303,8 @@ export function VendorApplyForm() {
         onChange={(value) => handleChange('vendorCategory', value)}
         disabled={disabled}
         required
+        showRequirement
+        error={errorFor('vendorCategory')}
       />
 
       <VendorFormField
@@ -237,6 +317,9 @@ export function VendorApplyForm() {
         required
         min={1}
         step={1}
+        inputMode="numeric"
+        showRequirement
+        error={errorFor('indicativeBoothCount')}
       />
 
       {/* Honeypot -- visually hidden, tab-unreachable, aria-hidden. Mirrors VendorRegisterForm. */}
@@ -257,7 +340,7 @@ export function VendorApplyForm() {
       <button
         type="submit"
         disabled={disabled}
-        className="rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ivory hover:bg-accent-soft transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
+        className="min-h-12 rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink hover:bg-accent-soft transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
       >
         {status === 'submitting' ? 'Submitting…' : 'Submit application'}
       </button>

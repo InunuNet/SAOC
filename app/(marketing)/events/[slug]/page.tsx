@@ -100,7 +100,7 @@ export default async function EventDetailPage({
       {event.kind ? (
         <p
           className="mt-6 inline-block rounded px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em]"
-          style={{ backgroundColor: 'var(--bone)', color: 'var(--accent)' }}
+          style={{ backgroundColor: 'var(--bone)', color: 'var(--muted)' }}
         >
           {event.kind}
         </p>

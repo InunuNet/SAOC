@@ -92,6 +92,7 @@ export function formatRetryAfter(ms: number): string {
 const VENDOR_FIELD_LABELS: Record<string, string> = {
   businessName: 'Business name',
   tradingName: 'Trading name',
+  indicativeBoothCount: 'Indicative number of stands',
   businessEntityType: 'Business entity type',
   businessEntityTypeOther: 'Business entity type (other)',
   countryOfBusinessRegistration: 'Country of business registration',

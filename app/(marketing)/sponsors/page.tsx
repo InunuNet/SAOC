@@ -98,7 +98,7 @@ export default async function SponsorsPage() {
               </li>
             ))}
           </ul>
-          <p className="mt-4 font-sans text-[13px] leading-relaxed text-ink/60">
+          <p className="mt-4 font-sans text-[13px] leading-relaxed text-ink/70">
             Indicative benefits — final sponsorship tiers and pricing are confirmed when you get
             in touch.
           </p>

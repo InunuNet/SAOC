@@ -100,7 +100,7 @@ export function Hero({ images, show }: HeroProps) {
       {/* Dark sage scrim */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-b from-primary/60 via-primary/60 to-primary/85"
+        className="absolute inset-0 bg-gradient-to-b from-primary/75 via-primary/75 to-primary/85"
       />
 
       {/* Content */}

@@ -148,6 +148,12 @@ body {
 html {
   scroll-padding-top: 5rem;
 }
+/* Ink on the brass accent fill is the handoff .btn--accent. On the National Show pages the accent
+   fill is violet (nos-theme.css), where ink is only 2.25:1 and the ivory text the pages already
+   had is the readable pairing, so the show scope keeps it. */
+.nos-theme .bg-accent.text-ink {
+  color: var(--ivory);
+}
 body {
   font-family: var(--sans);
   background: var(--bg);

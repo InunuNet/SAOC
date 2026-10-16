@@ -87,7 +87,7 @@ export default async function EventsPage() {
           </div>
         ) : events.length === 0 ? (
           <div className="space-y-3">
-            <p className="font-sans text-[16px] text-ink/60">No upcoming events scheduled.</p>
+            <p className="font-sans text-[16px] text-ink/70">No upcoming events scheduled.</p>
             <ConfirmationBadge status="pending" />
           </div>
         ) : null}
