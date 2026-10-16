@@ -7,7 +7,7 @@
 //   R54       /national-show/conferences: each of the symposium and WOSA ticket cards carries a link to /national-show/symposium and /national-show/wosa-conference; the "SAOC/WOSA Joint" clause is gone, or the
 //             original lede sentence stays verbatim (it is on Lee-Ann's list).
 //   R59       /national-show/wosa-conference: a link with the text "Buy ticket" to /national-show/tickets#ticket-wosa or /national-show/conferences#ticket-wosa, on the page whether it holds or not; the anchor
-//             exists on the destination when the WOSA card renders there.
+//             MUST exist on the destination (id="ticket-wosa"): a dead anchor fails (design-cb, F18b A29 asserts the same id on the hub).
 // Usage: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-v-links-from.mjs   (cwd = implementation worktree)
 import { readFileSync } from 'node:fs';
 import { main, openPage, withBrowser, fetchHtml, norm } from './_lib.mjs';
@@ -87,7 +87,7 @@ await main('F18-A31 R30, R54, R59 links and hub items', async (r) => {
     if (!buy) r.fail(`/national-show/wosa-conference: no "${C.strings.buy}" link to ${L.wosaBuy.hrefs.join(' or ')} (R59)`);
     else {
       const dest = await fetchHtml(buy.href.split('#')[0]);
-      if (dest.status === 200 && /id="ticket-wosa"/.test(dest.html) === false) r.note(`${buy.href}: destination renders no #ticket-wosa card (CMS has none), anchor not probed`);
+      if (buy.href.includes('#ticket-wosa') && (dest.status !== 200 || /id="ticket-wosa"/.test(dest.html) === false)) r.fail(`${buy.href}: the Buy ticket link points at a dead anchor (destination HTTP ${dest.status} renders no id="ticket-wosa")`);
     }
   }
 });
