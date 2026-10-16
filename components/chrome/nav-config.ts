@@ -132,7 +132,7 @@ export const NAV: readonly NavItem[] = [
     href: '/national-show',
     lead: {
       eyebrow: 'The National Show',
-      leadLabel: '19th SAOC National Orchid Show',
+      leadLabel: '19th National Orchid Show',
       leadHref: '/national-show',
       theShow: {
         id: 'the-show',
@@ -213,7 +213,7 @@ export const NAV: readonly NavItem[] = [
             id: 'symposium',
             label: 'Symposium',
             href: '/national-show/symposium',
-            descriptor: 'The SAOC Symposium — what it is, its theme, and who it is for.',
+            descriptor: 'The National Orchid Show Symposium — what it is, its theme, and who it is for.',
           },
           {
             id: 'wosa-conference',
@@ -269,13 +269,13 @@ export const NAV: readonly NavItem[] = [
         {
           id: 'day-visitor',
           label: 'Day Visitor',
-          href: '/tickets/day-visitor',
+          href: '/national-show/tickets#ticket-day',
           variant: 'secondary',
         },
         {
           id: 'weekend-pass',
           label: 'Weekend Pass',
-          href: '/tickets/weekend-pass',
+          href: '/national-show/tickets#ticket-weekend',
           variant: 'secondary',
         },
       ],

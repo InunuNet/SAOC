@@ -87,3 +87,18 @@ inputs and the exact Trading name label) so main is never red. F18's supersessio
 The recovery links now follow the hero's R67 order: Tickets (primary), National Show, Plan your visit. Below
 480px they stack full width at 48px with a 12px gap. The not-found is noindex, still a real 404, and does not
 shadow `archive/[year]`.
+
+## f9 — NOS chrome: utility bar and Search off, nav-config naming
+
+Source: Brad chrome decision #2 and #6 (2026-10-15), via NOS Design 2026-10-17, from the NOS v4 pack. HANDOFF
+"Approved decisions (Brad, 2026-10-15)", decision 2: "Left off NOS pages: Search and SAOC's utility bar."
+Decision 6: "Phone header: two rows and not sticky, so the logo stays at 390px with a 6.27px cap." The one-row
+mobile header (R74 #7) was withdrawn and is not built; the 97px (sticky from 700px) and 146px (two rows, not
+sticky) header geometry is unchanged.
+- The NOS variant of `UtilityBar` renders nothing, so the NOS header sits at y=0. The SAOC path is untouched.
+  The NOS header carries no Search.
+- `nav-config.ts`: leadLabel "19th National Orchid Show"; "SAOC Symposium" becomes "National Orchid Show
+  Symposium" in the Symposium descriptor; the rail's Day Visitor and Weekend Pass link to
+  `/national-show/tickets#ticket-day` and `#ticket-weekend`. nav-config is shared, so the SAOC menus read the
+  same strings (lead-approved site-wide naming); the closed SAOC header is unchanged.
+Source: lead saoc-2b 2026-10-17.
