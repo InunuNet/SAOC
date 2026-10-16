@@ -5,20 +5,20 @@ created_at: '2026-10-16'
 autonomy: high
 features:
   - id: F13
-    name: Remove the Tickets CTA button from the SAOC header
+    name: Remove the Tickets CTA button from the SAOC header and the brand paragraph from the SAOC footer
     status: pending
 # GATE: cwd = the implementation worktree (based on origin/main). BASE_URL = a production build of that worktree started on its own port (default 3613)
 # with SITE_PUBLIC_LAUNCH=true and BETA_BASIC_AUTH_USER/PASSWORD empty: `pnpm build` then `pnpm exec next start -p 3613`. Do not run `pnpm build` while that server runs.
-# Scope: components/chrome/Header.tsx and the now-unused TICKETS_CTA export in components/chrome/nav-config.ts. components/nos-chrome/, the mega-menu Tickets panel and THE SHOW column are untouched.
+# Scope: components/chrome/Footer.tsx (brand paragraph; footer-data.ts untouched because NosFooter shares FOOTER_BRAND_TEXT), components/chrome/Header.tsx and the now-unused TICKETS_CTA export in components/chrome/nav-config.ts. components/nos-chrome/, the mega-menu Tickets panel and THE SHOW column are untouched.
 assertions:
   phase: 4
   checks:
     - id: F13-A1
-      description: Runtime on /, /about and /societies at 390, 1024, 1280 and 1920 - no visible "Tickets" link in the SAOC header bar, no horizontal overflow (also with the menu open), the National Show menu (desktop) or mobile menu still exposes a Tickets link to /national-show/tickets; the NOS header on /national-show keeps its Tickets CTA, and has no overflow
+      description: Runtime on /, /about and /societies at 390, 1024, 1280 and 1920 - no visible "Tickets" link in the SAOC header bar, no horizontal overflow (also with the menu open), the SAOC footer has no \"A national coordinating body...\" paragraph but keeps the REG#/NPO line, the National Show menu (desktop) or mobile menu still exposes a Tickets link to /national-show/tickets; the NOS header on /national-show keeps its Tickets CTA, and has no overflow
       command: node contracts/checks/launch-weekend/f13/check-f13.mjs
     - id: F13-A2
       description: Type check passes
       command: pnpm type-check
     - id: F13-A3
       description: Lint passes on the changed files
-      command: pnpm exec eslint components/chrome/Header.tsx components/chrome/nav-config.ts
+      command: pnpm exec eslint components/chrome/Header.tsx components/chrome/Footer.tsx components/chrome/nav-config.ts

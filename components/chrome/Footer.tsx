@@ -14,7 +14,6 @@ import Link from 'next/link';
 import { partners } from '@/lib/data';
 import { SaocLockup } from './SaocLockup';
 import {
-  FOOTER_BRAND_TEXT,
   FOOTER_BULLETIN,
   FOOTER_COPYRIGHT_TAIL,
   FOOTER_HEADINGS,
@@ -28,7 +27,7 @@ export function Footer() {
   return (
     <footer className="bg-primary-800 text-ivory">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 py-16 px-8 max-w-[1280px] mx-auto">
-        {/* Col 1 — lockup + mission. Live HTML/CSS lockup (SaocLockup,
+        {/* Col 1 — lockup + registration line. Live HTML/CSS lockup (SaocLockup,
             orientation="vertical" tone="dark"): only the emblem (E4 Lapis
             monotone) is an image, the wordmark/rule/tagline are real text
             sized off the artifact's own metrics(). No background box — it
@@ -40,9 +39,6 @@ export function Footer() {
           <div className="mb-4 flex justify-center">
             <SaocLockup orientation="vertical" tone="dark" />
           </div>
-          <p className="font-sans text-[13.5px] leading-relaxed text-ivory/65">
-            {FOOTER_BRAND_TEXT}
-          </p>
           <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ivory/65">
             {FOOTER_REG}
           </span>

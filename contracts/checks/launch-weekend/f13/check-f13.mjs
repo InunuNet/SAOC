@@ -16,6 +16,8 @@ const WIDTHS = [390, 1024, 1280, 1920];
 const DESKTOP_NAV_MIN_WIDTH = 1240;
 const TICKETS_HREF = '/national-show/tickets';
 const VIEWPORT_HEIGHT = 900;
+const FOOTER_PARAGRAPH = 'A national coordinating body for affiliated orchid societies';
+const FOOTER_REG = /REG# 1978\/004040\/08\s+NPO 043-901/;
 
 const shotsIdx = process.argv.indexOf('--shots');
 const shotsDir = shotsIdx === -1 ? null : process.argv[shotsIdx + 1];
@@ -55,6 +57,10 @@ async function checkSaoc(browser, width, route) {
   if (visibleTickets.length) fail(`${tag}: header shows a "Tickets" link/button (${visibleTickets})`);
 
   if ((await overflow(page)) > 0) fail(`${tag}: horizontal overflow`);
+
+  const footer = (await page.locator('footer').last().innerText()).replace(/\s+/g, ' ');
+  if (footer.includes(FOOTER_PARAGRAPH)) fail(`${tag}: footer still shows the brand paragraph`);
+  if (!FOOTER_REG.test(footer)) fail(`${tag}: footer lacks the REG#/NPO line`);
 
   if (width >= DESKTOP_NAV_MIN_WIDTH) {
     await bar.locator('button[aria-haspopup="true"]', { hasText: 'National Show' }).click();
