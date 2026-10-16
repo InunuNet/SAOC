@@ -4,10 +4,10 @@
 //  holding routes (programme, international-guests, wosa-conference; archive and faq when they have nothing): exactly one [data-nos-holding] section (it also carries the existing
 //     data-nos-content-state marker), built only from existing parts:
 //       - the hub's facts (Dates, Host, Venue, Cycle; values identical to the hub hero facts)
-//       - related-page cards = the OTHER leaves of the route's own nav-config group, each the nav-config label as a link and the nav-config descriptor, nothing else
+//       - NO related-page mini list (the cards under the "Explore the show" eyebrow): the full Explore index below it is the one list (design-cb rotation ruling 4, F18b commit 4)
 //       - the existing "Be the first to know" band (eyebrow "Stay informed", action "Ask the council" to /contact)
 //       - the page's own absence sentence where it has one (international-guests), the WOSA link-out where it has one
-//     no [data-nos-content-gap], no orphan rule (no element that has only a border and nothing in it), no horizontal overflow at 1280 and 390, the explore index last
+//     no [data-nos-content-gap], no mini list wherever the full Explore index renders (every route in the audit: holding, long-form, archive, international-guests), no orphan rule (no element that has only a border and nothing in it), no horizontal overflow at 1280 and 390, the explore index last
 //  archive (public, no past show) is NOT the standard holding state: hero, then ONE card reading "Show history awaiting committee records", then the Explore index. No facts rail,
 //     no related-page mini list, no planning band, no [data-nos-holding] section. The beta and with-editions branches are unchanged (design-cb audit, F18a amendment)
 //  wosa-conference: the holding state AND A31's "Buy ticket" link to #ticket-wosa (Athanor review item 2)
@@ -17,18 +17,9 @@
 //  public rule: none of the banned placeholder strings renders on the eight publicNoPlaceholderRoutes (no TBC note, no gap sentence, no "Placeholder copy", no schema preview)
 // Usage: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-c-holding.mjs
 import { main, openPage, withBrowser, readGolden, T, flat } from './_lib.mjs';
-import { NAV } from '../../../../components/chrome/nav-config.ts';
-import { groupFor } from '../../nos-own-brand-chrome/f3/_f3lib.mjs';
 
 const H = T.holding;
 const AUDIT = readGolden('holding-audit.json');
-
-const descriptors = new Map();
-(function walk(n) {
-  if (!n || typeof n !== 'object') return;
-  if (typeof n.href === 'string' && typeof n.descriptor === 'string' && !descriptors.has(n.href)) descriptors.set(n.href, n.descriptor);
-  for (const v of Object.values(n)) walk(v);
-})(NAV);
 
 function measure({ S }) {
   const q = (s) => document.querySelector(s);
@@ -45,6 +36,8 @@ function measure({ S }) {
     details: qa('main details').length,
     gaps: qa('[data-nos-content-gap]').length,
     h1: t(q('h1')),
+    fullIndex: !!q('nav[aria-label="Explore the show pages"]'),
+    miniLists: qa(S.cards).length + qa('main h2, main h3, main p, main span').filter((e) => t(e).toLowerCase() === 'explore the show' && !e.closest('nav[aria-label="Explore the show pages"]')).length,
     levels: qa('main h1, main h2, main h3, main h4, main h5, main h6').map((h) => Number(h.tagName[1])),
     buyLinks: qa('main a').filter((x) => t(x) === 'Buy ticket').map((x) => x.getAttribute('href') ?? ''),
     kids: [...main.children].map((k) => ({
@@ -61,11 +54,10 @@ function measure({ S }) {
   out.state = r.getAttribute('data-nos-content-state');
   const facts = r.querySelector(S.facts);
   out.facts = facts ? { labels: [...facts.querySelectorAll('dt')].map(t), values: [...facts.querySelectorAll('dd')].map(t) } : null;
-  const cards = r.querySelector(S.cards);
-  out.cards = cards ? [...cards.querySelectorAll(S.card)].map((c) => ({ label: t(c.querySelector('a')), href: c.querySelector('a')?.getAttribute('href'), text: t(c), links: c.querySelectorAll('a').length })) : null;
   const cta = q(S.cta) ?? [...document.querySelectorAll('main section.nos-section-royal')].find((s) => r.compareDocumentPosition(s) & Node.DOCUMENT_POSITION_FOLLOWING);
   out.cta = cta ? { text: t(cta), links: [...cta.querySelectorAll('a')].map((a) => ({ text: t(a), href: a.getAttribute('href') })) } : null;
   out.rootText = t(r);
+  out.holdSentences = [...r.querySelectorAll('p')].filter((e) => !e.closest(S.cta) && !e.closest(S.facts) && t(e).split(' ').length >= 4).length;
   out.hrefs = [...r.querySelectorAll('a')].map((a) => a.getAttribute('href'));
   const orphans = [];
   for (const e of [r, ...r.querySelectorAll('*')]) {
@@ -105,6 +97,7 @@ await main('F18-A3 holding state and public placeholder rule', async (r) => {
         const m = await page.evaluate(measure, { S: H.selectors });
         if (m.overflow > 1) r.fail(`${tag}: horizontal overflow ${m.overflow}px`);
         if (m.gaps) r.fail(`${tag}: ${m.gaps} [data-nos-content-gap] block(s) in a public build`);
+        if (m.fullIndex && m.miniLists) r.fail(`${tag}: the full Explore index renders AND ${m.miniLists} mini "Explore the show" list/cards do (one list only)`);
         if (AUDIT.publicNoPlaceholderRoutes.includes(route)) for (const s of H.bannedPublic) if (flat(m.mainText).includes(s)) r.fail(`${tag}: public build renders the placeholder string "${s}"`);
         const definite = AUDIT.holdingDefinite.includes(route);
         const cond = AUDIT.holdingConditional.find((c) => c.route === route);
@@ -146,20 +139,7 @@ await main('F18-A3 holding state and public placeholder rule', async (r) => {
           if (JSON.stringify(m.facts.labels) !== JSON.stringify(T.longform.factLabels)) r.fail(`${tag}: fact labels ${JSON.stringify(m.facts.labels)}`);
           if (JSON.stringify(m.facts.values) !== JSON.stringify(hub.values)) r.fail(`${tag}: fact values differ from the hub hero facts`);
         }
-        const group = groupFor(route);
-        const want = group ? group.group.links.filter((l) => l.href !== route) : [];
-        if (!m.cards) r.fail(`${tag}: no related-page cards`);
-        else {
-          if (JSON.stringify(m.cards.map((c) => c.href)) !== JSON.stringify(want.map((l) => l.href))) r.fail(`${tag}: cards ${JSON.stringify(m.cards.map((c) => c.href))}, want the other leaves of "${group?.group.heading}": ${JSON.stringify(want.map((l) => l.href))}`);
-          for (const c of m.cards) {
-            const leaf = want.find((l) => l.href === c.href);
-            if (!leaf) continue;
-            if (c.label !== leaf.label) r.fail(`${tag}: card "${c.label}" is not the nav-config label "${leaf.label}"`);
-            const d = descriptors.get(c.href);
-            if (!d || flat(c.text) !== flat(`${leaf.label} ${d}`) && !flat(c.text).includes(flat(d))) r.fail(`${tag}: card ${c.href} does not carry its nav-config descriptor "${d}"`);
-            if (c.links !== 1) r.fail(`${tag}: card ${c.href} has ${c.links} links, want exactly 1`);
-          }
-        }
+        if (!m.holdSentences) r.fail(`${tag}: the holding state lost its holding sentence`);
         if (!m.cta) r.fail(`${tag}: no "Be the first to know" band after the holding content`);
         else {
           for (const s of [H.strings.ctaEyebrow, H.strings.ctaTitle]) if (!m.cta.text.includes(s)) r.fail(`${tag}: the closing band does not read "${s}"`);

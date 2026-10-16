@@ -16,7 +16,7 @@ const K = JSON.parse(readFileSync('.agent/memory/project/specs/launch-weekend/go
 const C = JSON.parse(readFileSync('.agent/memory/project/specs/launch-weekend/goldens/f18b/v13-copy.json', 'utf8'));
 const L = K.links;
 const PRICE = /^R\d+(\.\d{2})?$/;
-const JOINT = 'Register for the National Orchid Show Symposium, the WOSA Conference, or the combined SAOC/WOSA Joint track at the National Show.';
+const CONF_LEDE = C.strings.conferencesLede;
 
 await main('F18-A31 R30, R54, R59 links and hub items', async (r) => {
   await withBrowser(async (browser) => {
@@ -75,7 +75,8 @@ await main('F18-A31 R30, R54, R59 links and hub items', async (r) => {
       if (!card[0].includes(`href="${href}"`)) r.fail(`/national-show/conferences: the ${slug} card has no link to ${href} (R54)`);
     }
     const flat = norm(conf.html.replace(/<[^>]+>/g, ' '));
-    if (/SAOC\/WOSA Joint/.test(flat) && !flat.includes(norm(JOINT))) r.fail('/national-show/conferences: a "SAOC/WOSA Joint" fragment survives but not the original lede sentence verbatim (drop it, or keep the sentence exactly)');
+    if (/Joint/.test(flat)) r.fail('/national-show/conferences: a "Joint" track fragment renders but no combined track exists (design-cb rotation ruling 1; F18-A37 owns the lede)');
+    if (!flat.includes(norm(CONF_LEDE))) r.fail(`/national-show/conferences: the lede "${CONF_LEDE}" is missing`);
   }
 
   const wosa = await fetchHtml('/national-show/wosa-conference');
