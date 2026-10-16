@@ -150,7 +150,7 @@ export function MegaMenu({ item, show }: MegaMenuProps) {
                   <Link
                     href={item.lead.leadHref}
                     onClick={close}
-                    className="mb-[6px] inline-flex min-h-11 w-fit items-center rounded-sm font-serif text-[1.35rem] leading-[1.15] text-nos-royal-purple underline underline-offset-[5px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                    className="mb-[6px] inline-flex min-h-11 w-fit items-center rounded-sm font-serif text-[1.35rem] leading-[1.15] text-ink underline transition-colors duration-150 hover:text-primary underline-offset-[5px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
                   >
                     {item.lead.leadLabel}
                   </Link>

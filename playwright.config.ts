@@ -61,8 +61,6 @@ async function buildConfig() {
 
   return defineConfig({
     testDir: './e2e',
-    // Serial warm of the logo image key; see e2e/support/warm-image-optimiser.ts.
-    globalSetup: './e2e/support/warm-image-optimiser.ts',
     fullyParallel: true,
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 1 : 0,
