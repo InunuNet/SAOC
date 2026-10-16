@@ -16,7 +16,8 @@
 // order: the notice text precedes the body text in the rendered markup (assertion G6).
 // =============================================================
 
-import { PortableText } from '@portabletext/react';
+import { PortableText, type PortableTextComponents } from '@portabletext/react';
+import type { ReactNode } from 'react';
 
 import type { ShowPageSection } from '@/lib/data/show-pages';
 
@@ -66,4 +67,34 @@ export function ShowPageProse({ section }: ShowPageProseProps) {
       <PortableText value={blocks} />
     </div>
   );
+}
+
+// F18 (launch-weekend): the long-form template (components/nos/LongFormPage.tsx) lays a section's
+// paragraphs out itself, so it needs the heading and the inline content of each paragraph. Same
+// gate, same file: a section that carries a notice returns null and keeps ShowPageProse's
+// disclosure, and so does any section that is not plain paragraphs (a list, a heading, a quote),
+// which the template cannot split without losing structure.
+const INLINE_PARAGRAPH: PortableTextComponents = {
+  block: { normal: ({ children }) => <>{children}</> },
+};
+
+export interface ShowPageProseParts {
+  heading: string | null;
+  paragraphs: ReactNode[];
+}
+
+export function showPageProseParts(section: ShowPageSection): ShowPageProseParts | null {
+  const { blocks, notice } = unwrapGatedProse(section.body);
+  if (notice || blocks.length === 0) return null;
+  const plain = blocks.every(
+    (block) =>
+      block._type === 'block' && (block.style ?? 'normal') === 'normal' && !('listItem' in block)
+  );
+  if (!plain) return null;
+  return {
+    heading: section.heading,
+    paragraphs: blocks.map((block) => (
+      <PortableText key={block._key} value={[block]} components={INLINE_PARAGRAPH} />
+    )),
+  };
 }

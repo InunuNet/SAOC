@@ -47,14 +47,32 @@ function categoryOf(faq: ShowFaq): KnownCategory {
   return category && CATEGORY_ORDER.includes(category) ? category : 'general';
 }
 
+/** A question carries an answer when its portable text has at least one block. */
+export function hasFaqAnswer(faq: ShowFaq): boolean {
+  return Array.isArray(faq.answer) && faq.answer.length > 0;
+}
+
 export interface ShowFaqListProps {
   faqs?: ShowFaq[] | null;
   pendingLabel?: string | null;
   researchLabel?: string | null;
+  /**
+   * R77 #2 (F18): a question with no answer renders no row at all. The route passes
+   * `withholdPlaceholderProse()`, so beta keeps every row with its chip and a public build
+   * shows only what the Council has answered.
+   */
+  hideUnanswered?: boolean;
 }
 
-export function ShowFaqList({ faqs, pendingLabel, researchLabel }: ShowFaqListProps) {
-  const entries = (faqs ?? []).filter((faq) => faq?.question);
+export function ShowFaqList({
+  faqs,
+  pendingLabel,
+  researchLabel,
+  hideUnanswered = false,
+}: ShowFaqListProps) {
+  const entries = (faqs ?? []).filter(
+    (faq) => faq?.question && (!hideUnanswered || hasFaqAnswer(faq))
+  );
   if (entries.length === 0) return null;
 
   const groups = CATEGORY_ORDER.map((category) => ({
@@ -93,37 +111,44 @@ export function ShowFaqList({ faqs, pendingLabel, researchLabel }: ShowFaqListPr
 
             <ul className="mt-4 space-y-4">
               {inCategory.map((faq) => (
-                <li key={faq._id} className="nos-surface">
-                  <details className="group">
-                    <summary className="flex min-h-[44px] cursor-pointer list-none items-start justify-between gap-4 font-serif text-[19px] font-medium leading-snug text-ink hover:text-primary">
-                      <span className="flex flex-col items-start">
-                        {/* In the summary, above the question, not in the panel: a marker
-                            inside a closed disclosure is invisible to a visitor scanning the
-                            list, so fourteen unconfirmed answers read as settled fact until
-                            each one is opened. */}
-                        <ConfirmationBadge
-                          as="span"
-                          status={faq.status}
-                          pendingLabel={pendingLabel}
-                          researchLabel={researchLabel}
-                        />
+                <li key={faq._id} className="nos-surface nos-faq-item">
+                  <details>
+                    <summary
+                      data-faq-summary=""
+                      className="nos-faq-summary cursor-pointer font-serif text-[19px] font-medium leading-snug text-ink hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--ring-focus)]"
+                    >
+                      {/* The marker sits inline after the question, inside the summary, not in
+                          the panel: a marker inside a closed disclosure is invisible to a visitor
+                          scanning the list, so fourteen unconfirmed answers read as settled fact
+                          until each one is opened. */}
+                      <span data-faq-question="" className="nos-faq-question">
                         <span>{faq.question}</span>
+                        {hideUnanswered ? null : (
+                          <ConfirmationBadge
+                            as="span"
+                            status={faq.status}
+                            pendingLabel={pendingLabel}
+                            researchLabel={researchLabel}
+                          />
+                        )}
                       </span>
-                      <span
-                        aria-hidden="true"
-                        className="mt-1 shrink-0 font-sans text-[13px] text-muted group-open:hidden"
-                      >
-                        +
-                      </span>
-                      <span
-                        aria-hidden="true"
-                        className="mt-1 hidden shrink-0 font-sans text-[13px] text-muted group-open:inline"
-                      >
-                        −
+                      <span data-faq-icon="" aria-hidden="true" className="nos-faq-icon">
+                        <svg
+                          viewBox="0 0 20 20"
+                          width="20"
+                          height="20"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.75"
+                          strokeLinecap="round"
+                        >
+                          <path d="M4 10h12" />
+                          <path className="nos-faq-icon-v" d="M10 4v12" />
+                        </svg>
                       </span>
                     </summary>
 
-                    <div className="pb-6 pr-8">
+                    <div className="nos-faq-answer">
                       {faq.answer && faq.answer.length > 0 ? (
                         <div className="max-w-3xl font-sans text-[17px] leading-relaxed text-ink/80">
                           <PortableText value={faq.answer} />

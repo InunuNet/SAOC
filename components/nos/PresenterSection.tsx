@@ -1,5 +1,6 @@
 import { PresenterGrid } from '@/components/nos/PresenterGrid';
 import { ConfirmationBadge } from '@/components/show';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { hasProvisionalOrder, orderPresenters } from '@/lib/view-models/presenter-order';
 import type { PresenterCardViewModel } from '@/lib/view-models/ticket-card';
 
@@ -51,7 +52,8 @@ export function PresenterSection({
               Presenters
             </h2>
           </div>
-          {provisional ? (
+          {/* A TBC note never reaches the public site (R76); beta keeps the chip. */}
+          {provisional && !withholdPlaceholderProse() ? (
             <ConfirmationBadge
               status="pending"
               pendingLabel="To be confirmed by the show committee"

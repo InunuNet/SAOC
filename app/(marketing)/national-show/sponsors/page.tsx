@@ -9,7 +9,7 @@ import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
 import { ShowSponsorCard, type ShowSponsorCardData } from '@/components/show/nos/ShowSponsorCard';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { showSponsorsQuery } from '@/sanity/queries';
-import { loadShowPageOrFallback } from '@/lib/data/show-pages';
+import { loadShowPageOrFallback, withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
@@ -78,10 +78,13 @@ export default async function ShowSponsorsPage() {
               />
             ) : (
               <div>
-                <ConfirmationBadge
-                  status="pending"
-                  pendingLabel="To be confirmed by the show committee"
-                />
+                {/* A TBC marker is a beta-only note: a public build renders none. */}
+                {withholdPlaceholderProse() ? null : (
+                  <ConfirmationBadge
+                    status="pending"
+                    pendingLabel="To be confirmed by the show committee"
+                  />
+                )}
                 <Card data-nos-empty-state="sponsors" className="mt-6 p-8">
                   <SectionHeading title="Become a sponsor" />
                   <p className="mt-3 max-w-[60ch] font-sans text-[17px] leading-[1.65] text-ink/80">

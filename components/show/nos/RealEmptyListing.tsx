@@ -14,6 +14,8 @@
 
 import type { ReactNode } from 'react';
 
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+
 export interface RealEmptyListingProps {
   /** The field labels the eventual record card will carry, in display order. */
   fieldLabels: readonly string[];
@@ -23,6 +25,11 @@ export interface RealEmptyListingProps {
   absenceMarker?: ReactNode;
   /** Optional action rendered after the field-label block. */
   action?: ReactNode;
+  /**
+   * The "Each entry will show" field-label block is a builder's schema preview: beta only.
+   * Defaults to `!withholdPlaceholderProse()`, so a public build shows the absence sentence alone.
+   */
+  showSchemaPreview?: boolean;
 }
 
 export function RealEmptyListing({
@@ -30,24 +37,27 @@ export function RealEmptyListing({
   absenceStatement,
   absenceMarker,
   action,
+  showSchemaPreview = !withholdPlaceholderProse(),
 }: RealEmptyListingProps) {
   return (
     <div data-nos-empty-state="" className="nos-surface">
       <p className="font-sans text-[17px] leading-relaxed text-ink/80">{absenceStatement}</p>
       {absenceMarker ? <div className="mt-2">{absenceMarker}</div> : null}
 
-      <div className="mt-6 border-[length:var(--border-primary)] border-rule bg-white p-6">
-        <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-muted">
-          Each entry will show
-        </p>
-        <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
-          {fieldLabels.map((label) => (
-            <div key={label} className="min-w-[7rem]">
-              <dt className="font-sans text-[13px] font-medium text-ink/70">{label}</dt>
-            </div>
-          ))}
-        </dl>
-      </div>
+      {showSchemaPreview ? (
+        <div className="mt-6 border-[length:var(--border-primary)] border-rule bg-white p-6">
+          <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-muted">
+            Each entry will show
+          </p>
+          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+            {fieldLabels.map((label) => (
+              <div key={label} className="min-w-[7rem]">
+                <dt className="font-sans text-[13px] font-medium text-ink/70">{label}</dt>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ) : null}
       {action ? <div className="mt-6">{action}</div> : null}
     </div>
   );

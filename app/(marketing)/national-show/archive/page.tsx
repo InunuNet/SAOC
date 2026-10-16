@@ -13,8 +13,11 @@ import { CtaBand } from '@/components/nos/CtaBand';
 import { EditionCard } from '@/components/nos/EditionCard';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
+import { HoldingState } from '@/components/show/nos/HoldingState';
 import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
 import { ConfirmationBadge } from '@/components/show';
+import { loadShowFacts } from '@/lib/data/show-facts';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
@@ -28,8 +31,7 @@ export const revalidate = 60;
 export const metadata: Metadata = buildPageMetadata({
   title: 'National Show Archive',
   image: nosOgImage('National Show Archive'),
-  description:
-    'Past editions of the South African National Orchid Show.',
+  description: 'Past editions of the South African National Orchid Show.',
   path: '/national-show/archive',
 });
 
@@ -50,9 +52,10 @@ export default async function ShowArchivePage() {
   // F7: the CTA band advertised the edition, the month/year and the city as literals.
   // Every one of them is a Studio edit away from being wrong, so all three come from
   // the nationalShow singleton. See show-identity-surfaces.golden.md.
-  const [sanityShows, upcoming] = await Promise.all([
+  const [sanityShows, upcoming, facts] = await Promise.all([
     sanityFetch<SanityShowProjection[]>({ query: pastShowsQuery, tags: ['show', 'sanity'] }),
     sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
+    loadShowFacts(),
   ]);
 
   const upcomingLabel = showLabelWithEdition(upcoming?.edition);
@@ -68,6 +71,9 @@ export default async function ShowArchivePage() {
   // The same record set the detail page reads. Only a published Sanity past show appears
   // here; there is no static fallback. See lib/data/mergeShows.ts.
   const pastShows = mergePastShows(sanityShows);
+  // R76: with no published past show, a public build holds with real navigation instead of an
+  // empty card; the beta card (below) keeps its committee-records heading.
+  const holds = withholdPlaceholderProse() && pastShows.length === 0;
 
   return (
     <>
@@ -88,66 +94,74 @@ export default async function ShowArchivePage() {
       />
 
       {/* ── Show grid ── */}
-      <NosSection>
-        {pastShows.length > 0 ? (
-          <>
-            <h2 className="sr-only">National Show editions</h2>
-            <div className="nos-surface mb-10">
+      {holds ? (
+        <HoldingState route="/national-show/archive" facts={facts} contentState="published" />
+      ) : (
+        <NosSection>
+          {pastShows.length > 0 ? (
+            <>
+              <h2 className="sr-only">National Show editions</h2>
+              <div className="nos-surface mb-10">
+                <ConfirmationBadge status="pending" />
+              </div>
+              <ShowEntityGrid
+                items={pastShows}
+                itemKey={(show) => String(show.year)}
+                renderCard={(show) => (
+                  <EditionCard
+                    href={`/national-show/archive/${show.year}`}
+                    year={show.year}
+                    title={
+                      show.title ??
+                      (show.edition
+                        ? `Edition ${toRomanOrdinal(show.edition)}`
+                        : 'National Orchid Show')
+                    }
+                    venue={
+                      [show.host, show.venue && show.venue !== show.host ? show.venue : null]
+                        .filter(Boolean)
+                        .join(' · ') || undefined
+                    }
+                    chips={[
+                      ...(show.entries ? [`${show.entries.toLocaleString()} entries`] : []),
+                      ...(show.exhibitors
+                        ? [`${show.exhibitors.toLocaleString()} exhibitors`]
+                        : []),
+                      ...(show.visitors ? [`${show.visitors.toLocaleString()} visitors`] : []),
+                      ...(show.trophies ? [`${show.trophies} trophies`] : []),
+                    ]}
+                    note={show.note}
+                  />
+                )}
+              />
+            </>
+          ) : (
+            <div className="nos-surface">
               <ConfirmationBadge status="pending" />
+              <h2 className="mt-3 font-serif text-[28px] font-medium text-ink">
+                Show history awaiting committee records
+              </h2>
             </div>
-            <ShowEntityGrid
-              items={pastShows}
-              itemKey={(show) => String(show.year)}
-              renderCard={(show) => (
-                <EditionCard
-                  href={`/national-show/archive/${show.year}`}
-                  year={show.year}
-                  title={
-                    show.title ??
-                    (show.edition
-                      ? `Edition ${toRomanOrdinal(show.edition)}`
-                      : 'National Orchid Show')
-                  }
-                  venue={
-                    [show.host, show.venue && show.venue !== show.host ? show.venue : null]
-                      .filter(Boolean)
-                      .join(' · ') || undefined
-                  }
-                  chips={[
-                    ...(show.entries ? [`${show.entries.toLocaleString()} entries`] : []),
-                    ...(show.exhibitors ? [`${show.exhibitors.toLocaleString()} exhibitors`] : []),
-                    ...(show.visitors ? [`${show.visitors.toLocaleString()} visitors`] : []),
-                    ...(show.trophies ? [`${show.trophies} trophies`] : []),
-                  ]}
-                  note={show.note}
-                />
-              )}
-            />
-          </>
-        ) : (
-          <div className="nos-surface max-w-[720px]">
-            <ConfirmationBadge status="pending" />
-            <h2 className="mt-3 font-serif text-[28px] font-medium text-ink">
-              Show history awaiting committee records
-            </h2>
-          </div>
-        )}
-      </NosSection>
+          )}
+        </NosSection>
+      )}
 
-      <CtaBand
-        title={`Planning for the ${upcomingLabel}?`}
-        lede={upcomingSentence}
-        action={
-          <div className="flex flex-wrap justify-center gap-4">
-            <Button as={Link} href="/national-show" variant="on-dark">
-              View {upcomingLabel} details
-            </Button>
-            <Button as={Link} href="/contact" variant="ghost-on-dark">
-              Ask the council
-            </Button>
-          </div>
-        }
-      />
+      {holds ? null : (
+        <CtaBand
+          title={`Planning for the ${upcomingLabel}?`}
+          lede={upcomingSentence}
+          action={
+            <div className="flex flex-wrap justify-center gap-4">
+              <Button as={Link} href="/national-show" variant="on-dark">
+                View {upcomingLabel} details
+              </Button>
+              <Button as={Link} href="/contact" variant="ghost-on-dark">
+                Ask the council
+              </Button>
+            </div>
+          }
+        />
+      )}
       <NosShowIndex current="/national-show/archive" />
     </>
   );
