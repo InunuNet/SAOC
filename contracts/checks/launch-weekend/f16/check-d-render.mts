@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// RETIRED by launch-weekend F18 (goldens/f18/supersession.json): replaced by the v13 keepsake ticket checks; no gate runs this file.
 /* eslint-disable @typescript-eslint/no-explicit-any -- fixture-driven check; component props are loosely typed on purpose */
 // A4 (amended by F17 scope E: a captioned price and its own ghost action per tier, sold-out on its own action): render-level proof of lib/admission-rows.ts and components/tickets/AdmissionRows.tsx against goldens/f16/rows-fixtures.json.
 // No server, no CMS: this is how the sales-closed path (and the early-bird window edges) are proven WITHOUT toggling live Sanity.

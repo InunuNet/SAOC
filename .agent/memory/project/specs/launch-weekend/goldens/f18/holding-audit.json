@@ -12,10 +12,6 @@
   ],
   "holdingConditional": [
     {
-      "route": "/national-show/archive",
-      "when": "no published past show (no [data-nos-edition-card])"
-    },
-    {
       "route": "/national-show/faq",
       "when": "no answered question (no <details>) after unanswered ones are hidden"
     }
@@ -153,5 +149,56 @@
   },
   "keepLinks": {
     "/national-show/wosa-conference": "https://wildorchids.co.za"
+  },
+  "archiveHolding": {
+    "route": "/national-show/archive",
+    "when": "public mode with no published past show (no [data-nos-edition-card])",
+    "shape": "hero, then ONE card carrying the existing string, then the Explore index (design-cb audit ruling, F18a amendment)",
+    "string": "Show history awaiting committee records",
+    "mustNotHave": [
+      "facts rail ([data-nos-facts])",
+      "related-page mini list ([data-nos-holding-cards])",
+      "planning band (the \"Be the first to know\" royal band)",
+      "[data-nos-holding] section"
+    ],
+    "unchanged": "beta mode (TBC card spans the axis column) and the with-editions branch keep their F18a shape"
+  },
+  "hubFacts": {
+    "_note": "Athanor review item 1 (REPORT-F18a.md). Each /national-show hub fact checked against content/drive-source (Lee-Ann's .docx mirror), content/show-pages and the live Sanity dataset (project 26yfbug4, production) on 2026-10-17. A sourced fact stays. An unsourced fact is withheld through withholdPlaceholderProse() in public mode and keeps its marker on beta (R7 no invention, no-invention rule).",
+    "sourced": {
+      "19th show": "Sanity nationalShow singleton: edition = 19 (rendered through toOrdinal, never hard-coded)",
+      "ten classes": "Sanity: exactly 10 showClass documents (the count is derived from the CMS list, not typed)",
+      "triennial / 3 yr cycle": "content/drive-source/National Show/2. About/2.1 About - 2027 National Show/v1.0/content.md, paragraph 1: 'premier triennial event'"
+    },
+    "unsourced": [
+      "18 shows",
+      "100-point",
+      "100 point",
+      "Grand Champion",
+      "nine provinces",
+      "cultural quality",
+      "species accuracy"
+    ],
+    "unsourcedNote": "'18 shows hosted' is edition-1 inference: Sanity has 0 pastShow documents and no Drive document states a count. '100-point scale', 'Grand Champion', and the criteria line (cultural quality, presentation, species accuracy) appear in no Drive document, and /judging contradicts the criteria line (form, colour, size, cultural condition). 'nine provinces' appears only in the page descriptions: the Drive spec mentions provinces solely as a society-directory filter.",
+    "routes": [
+      "/",
+      "/national-show"
+    ],
+    "withheldSurfaces": "page.tsx body paragraph (scale, Grand Champion), the section lede (criteria line), the hero/og description (nine provinces) and any '18 shows hosted' stat"
+  },
+  "wosa": {
+    "route": "/national-show/wosa-conference",
+    "buyLink": {
+      "label": "Buy ticket",
+      "hrefSuffix": "#ticket-wosa"
+    },
+    "note": "Athanor review item 2: public mode was a bare link hub. It carries the F18a holding state (the existing strings, R11) AND keeps A31's 'Buy ticket' link to #ticket-wosa."
+  },
+  "headingOrder": {
+    "routes": [
+      "/national-show/about",
+      "/national-show/workshops"
+    ],
+    "note": "Athanor review item 3: heading levels never skip (h1 to h3) on these routes."
   }
 }

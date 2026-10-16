@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// RETIRED by launch-weekend F18 (goldens/f18/supersession.json): replaced by the v13 keepsake ticket checks; no gate runs this file.
 // A6: typographic ticket cards (R53 #2). The shared TicketTypeCard has no photograph on /national-show/conferences and /workshops (open sales
 // render the cards) and /tickets/<slug>; names are the R35 card-title role (Fraunces 400, 22px), the price figure is the hub price clamp,
 // descriptions 16px (R65). /tickets/<slug> is an SAOC-chrome page (R62, out of scope): its hero photo stays, only the card is judged there. Statically: no next/image, no lib/tickets-orchid-image, the orphaned map is deleted, and the F3 imagery golden

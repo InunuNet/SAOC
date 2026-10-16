@@ -8,6 +8,11 @@
 //       - the existing "Be the first to know" band (eyebrow "Stay informed", action "Ask the council" to /contact)
 //       - the page's own absence sentence where it has one (international-guests), the WOSA link-out where it has one
 //     no [data-nos-content-gap], no orphan rule (no element that has only a border and nothing in it), no horizontal overflow at 1280 and 390, the explore index last
+//  archive (public, no past show) is NOT the standard holding state: hero, then ONE card reading "Show history awaiting committee records", then the Explore index. No facts rail,
+//     no related-page mini list, no planning band, no [data-nos-holding] section. The beta and with-editions branches are unchanged (design-cb audit, F18a amendment)
+//  wosa-conference: the holding state AND A31's "Buy ticket" link to #ticket-wosa (Athanor review item 2)
+//  heading order: /about and /workshops never skip a level (h1 to h3), Athanor review item 3
+//  unsourced hub facts: public / and /national-show render none of audit.hubFacts.unsourced anywhere in the HTML (Athanor review item 1; sourced facts are cited in the audit)
 //  routes that supply a body never hold (mustNotHold)
 //  public rule: none of the banned placeholder strings renders on the eight publicNoPlaceholderRoutes (no TBC note, no gap sentence, no "Placeholder copy", no schema preview)
 // Usage: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-c-holding.mjs
@@ -40,6 +45,16 @@ function measure({ S }) {
     details: qa('main details').length,
     gaps: qa('[data-nos-content-gap]').length,
     h1: t(q('h1')),
+    levels: qa('main h1, main h2, main h3, main h4, main h5, main h6').map((h) => Number(h.tagName[1])),
+    buyLinks: qa('main a').filter((x) => t(x) === 'Buy ticket').map((x) => x.getAttribute('href') ?? ''),
+    kids: [...main.children].map((k) => ({
+      hero: !!(k.matches('[data-nos-hero]') || k.querySelector('[data-nos-hero]')),
+      awaiting: t(k).includes('Show history awaiting committee records'),
+      index: !!k.querySelector('nav[aria-label="Explore the show pages"]') || k.matches('nav[aria-label="Explore the show pages"]'),
+      royal: k.matches('.nos-section-royal') || !!k.querySelector('.nos-section-royal'),
+      facts: !!k.querySelector('[data-nos-facts]'),
+      miniList: !!k.querySelector('[data-nos-holding-cards]'),
+    })),
   };
   if (!root.length) return out;
   const r = root[0];
@@ -71,7 +86,17 @@ await main('F18-A3 holding state and public placeholder rule', async (r) => {
     const hub = await hubPage.page.evaluate(() => ({ values: [...document.querySelectorAll('.nos-hero-facts dd')].map((e) => e.textContent.replace(/\s+/g, ' ').trim()) }));
     await hubPage.ctx.close();
 
-    const routes = [...AUDIT.holdingDefinite, ...AUDIT.holdingConditional.map((c) => c.route), ...AUDIT.mustNotHold, ...AUDIT.publicNoPlaceholderRoutes].filter((v, i, a) => a.indexOf(v) === i);
+    for (const route of AUDIT.hubFacts.routes) {
+      const { ctx, page, status } = await openPage(browser, { width: 1280, height: 800 }, route);
+      if (status !== 200) r.fail(`${route}: HTTP ${status}`);
+      else {
+        const html = flat(await page.evaluate(() => document.documentElement.outerHTML));
+        for (const s of AUDIT.hubFacts.unsourced) if (html.toLowerCase().includes(flat(s).toLowerCase())) r.fail(`${route}: public build renders the unsourced hub fact "${s}" (withhold via withholdPlaceholderProse)`);
+      }
+      await ctx.close();
+    }
+
+    const routes = [...AUDIT.holdingDefinite, ...AUDIT.holdingConditional.map((c) => c.route), ...AUDIT.mustNotHold, ...AUDIT.publicNoPlaceholderRoutes, ...AUDIT.headingOrder.routes].filter((v, i, a) => a.indexOf(v) === i);
     for (const route of routes) {
       for (const [name, [w, h]] of [['1280', T.viewports.desktop], ['390', T.viewports.phone]]) {
         const { ctx, page, status } = await openPage(browser, { width: w, height: h }, route);
@@ -84,7 +109,34 @@ await main('F18-A3 holding state and public placeholder rule', async (r) => {
         const definite = AUDIT.holdingDefinite.includes(route);
         const cond = AUDIT.holdingConditional.find((c) => c.route === route);
         let expectHold = definite;
-        if (cond) expectHold = route.endsWith('/archive') ? m.editionCards === 0 : m.details === 0;
+        if (cond) expectHold = m.details === 0;
+        if (AUDIT.headingOrder.routes.includes(route)) {
+          for (let i = 1; i < m.levels.length; i++) if (m.levels[i] > m.levels[i - 1] + 1) { r.fail(`${tag}: heading level skips from h${m.levels[i - 1]} to h${m.levels[i]}`); break; }
+          if (m.levels[0] !== 1) r.fail(`${tag}: the first heading in main is h${m.levels[0]}, want h1`);
+        }
+        if (route === AUDIT.wosa.route) {
+          const want = AUDIT.wosa.buyLink;
+          if (!m.buyLinks.some((h) => h.endsWith(want.hrefSuffix))) r.fail(`${tag}: no "${want.label}" link to ${want.hrefSuffix} (A31 requires it on the WOSA holding state)`);
+        }
+        if (route === AUDIT.archiveHolding.route && m.editionCards === 0) {
+          const AH = AUDIT.archiveHolding;
+          if (m.holding) r.fail(`${tag}: archive renders the standard [data-nos-holding] section; the audit shape is hero, one card, Explore index`);
+          const k = m.kids;
+          const heroAt = k.findIndex((x) => x.hero);
+          const cardAt = k.findIndex((x) => x.awaiting && !x.hero && !x.index);
+          const idxAt = k.findIndex((x) => x.index);
+          if (heroAt !== 0) r.fail(`${tag}: the hero is not the first block in main`);
+          if (cardAt < 0) r.fail(`${tag}: no card reading "${AH.string}"`);
+          if (k.filter((x) => x.awaiting).length !== 1) r.fail(`${tag}: "${AH.string}" appears in ${k.filter((x) => x.awaiting).length} blocks, want exactly 1`);
+          if (idxAt !== k.length - 1 || idxAt < 0) r.fail(`${tag}: the Explore index is not the last block`);
+          if (!(heroAt < cardAt && cardAt < idxAt)) r.fail(`${tag}: block order is not hero, card, Explore index`);
+          if (k.length !== 3) r.fail(`${tag}: ${k.length} blocks in main, want exactly 3 (hero, card, Explore index)`);
+          if (k.some((x) => x.facts)) r.fail(`${tag}: a facts rail renders on the archive holding shape`);
+          if (k.some((x) => x.miniList)) r.fail(`${tag}: a related-page mini list renders on the archive holding shape`);
+          if (k.some((x) => x.royal)) r.fail(`${tag}: a planning band renders on the archive holding shape`);
+          await ctx.close();
+          continue;
+        }
         if (AUDIT.mustNotHold.includes(route) && m.holding) r.fail(`${tag}: renders a holding state but supplies a body (mustNotHold)`);
         if (!expectHold) { await ctx.close(); continue; }
         if (m.holding !== 1) { r.fail(`${tag}: ${m.holding} ${H.selectors.root} sections, want exactly 1`); await ctx.close(); continue; }

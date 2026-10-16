@@ -1,5 +1,5 @@
 {
-  "_note": "R16 audit (design-cb, 2026-10-17): all five rights-cleared photos are already hero photos on five routes and each photo appears on exactly one route, so no unused photo exists for a long-form break. The four breaks are dropped; the template carries none.",
+  "_note": "RETIRED by the F18a amendment (design-cb audit, R16: one photo per route). The F18 long-form image break is removed and long-form-breaks.ts is deleted. 'breaks' is intentionally empty and F18-A2 asserts zero [data-nos-image-break] on every NOS route. The hero map is unchanged.",
   "breaks": {},
   "heroRoutes": {
     "/national-show": "/images/orchid-dark.jpg",

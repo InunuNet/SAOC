@@ -10,6 +10,9 @@
 //     is not closed. The static twin (check-f3-static.mjs sales-gate) proves the code path.
 //  1b. /tickets: no single primary - every "Add to booking" button has the same background, colour and size; no new hero CTA. If a hero fan
 //     ([data-nos-ticket-fan]) exists its cards are visible at 390 and anchor to a resolving #ticket-{id}.
+//  AMENDED by launch-weekend F18b (goldens/f18/supersession.json): the v13 keepsake stub of the Sunset ticket is filled with the approved field colour #7E3F97, which is this violet. A fill inside
+//     [data-ticket-stub] is exempt (its geometry, photo and colour rules are owned by F18-A29); the violet stays banned on every other control. The hero fan is the v13 fan ([data-fan-link] anchors, same
+//     [data-nos-ticket-fan] hook): visible at 390 and resolving to an existing #ticket-<id> still holds.
 //  2. "Buy Ticket" and every ticket control use the NOS button role (F2 Button.tsx: Karla 700 14px uppercase), never the off-palette violet
 //     rgb(126, 63, 151) as a fill, text or border colour.
 //  3. No visible text under 12px (the 10.5px pill, the 11px legends and labels).
@@ -31,7 +34,7 @@ function measure() {
   }
   const violet = [];
   for (const e of document.querySelectorAll('main a, main button, main input, main label, main span, main div')) {
-    if (!vis(e)) continue;
+    if (!vis(e) || e.closest('[data-ticket-stub]')) continue;
     const s = getComputedStyle(e);
     for (const [k, v] of [['background', s.backgroundColor], ['colour', s.color], ['border', s.borderTopColor]]) if (/rgb\(126, 63, 151\)/.test(v) && (k !== 'border' || parseFloat(s.borderTopWidth) > 0) && (k !== 'colour' || (e.textContent ?? '').trim())) violet.push(`${e.tagName.toLowerCase()} ${k}`);
   }
