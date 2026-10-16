@@ -52,22 +52,26 @@ export default async function SouthAfricanExhibitorsPage() {
 
   return (
     <>
-      <ShowContentState
-        result={result}
-        heroImage="/images/orchid-violet.jpg"
-        layout="listing"
-        listingContent={
-          list.length > 0 ? (
-            <ShowEntityGrid
-              items={list}
-              itemKey={(nursery) => nursery._id}
-              renderCard={(nursery) => <NurseryCard nursery={nursery} />}
-            />
-          ) : (
-            <RealEmptyListing fieldLabels={CARD_FIELD_LABELS} absenceStatement={ABSENCE_STATEMENT} />
-          )
-        }
-      />
+      <div className="contents [&_.nos-show-page-prose_p]:max-w-[60ch] [&_.nos-show-page-prose_li]:max-w-[60ch]">
+        <ShowContentState
+          result={result}
+          heroImage="/images/orchid-violet.jpg"
+          layout="listing"
+          listingContent={
+            list.length > 0 ? (
+              <ShowEntityGrid
+                items={list}
+                itemKey={(nursery) => nursery._id}
+                renderCard={(nursery) => <NurseryCard nursery={nursery} />}
+              />
+            ) : (
+              <div className="[&_p]:max-w-[60ch]">
+                <RealEmptyListing fieldLabels={CARD_FIELD_LABELS} absenceStatement={ABSENCE_STATEMENT} />
+              </div>
+            )
+          }
+        />
+      </div>
 
       <ShowSectionNav current="/national-show/sa-exhibitors" />
     </>

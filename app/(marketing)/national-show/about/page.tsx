@@ -23,7 +23,7 @@ export default function NationalShowAboutPage() {
         priority
       />
 
-      <div className="mx-auto max-w-[900px] space-y-6 px-8 py-16">
+      <div className="mx-auto max-w-[900px] space-y-6 px-8 py-16 [&>p]:max-w-[60ch]">
         <p className="font-sans text-[16px] leading-relaxed text-ink/80">
           The 2027 South African National Orchid Show is the South African Orchid
           Council&rsquo;s premier triennial event, bringing together orchid enthusiasts,

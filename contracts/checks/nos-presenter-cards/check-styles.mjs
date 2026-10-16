@@ -115,7 +115,12 @@ want('.pc-eyebrow', 'letter-spacing', '0.14em');
 want('.pc-eyebrow', 'text-transform', 'uppercase');
 wantIncludes('.pc-title', 'font-family', FRAUNCES);
 want('.pc-title', 'font-weight', '400');
-want('.pc-title', 'font-size', '1.953rem');
+// R36 (NOS Design via the lead, 2026-10-16) corrects R35: .pc-title ("Presenters") is a section heading and takes the
+// nos-theme section-h2 role (nos-theme.css `.nos-theme h2`), not card-title.
+want('.pc-title', 'font-size', 'clamp(2rem, 1.5rem + 1.6vw, 2.4375rem)');
+want('.pc-title', 'line-height', '1.15');
+want('.pc-title', 'letter-spacing', '-0.01em');
+want('.pc-title', 'font-variation-settings', '"opsz" 48');
 want('.pc-title', 'color', '#211A57');
 want('.pc-order-note', 'font-size', '0.9rem');
 want('.pc-order-note', 'font-weight', '600');
@@ -141,16 +146,20 @@ want('.pc-photo', 'background', '#0B0A14');
 want('.pc-photo img', 'object-fit', 'cover');
 want('.pc-id', 'gap', '10px');
 wantIncludes('.pc-name', 'font-family', FRAUNCES);
-want('.pc-name', 'font-weight', '300');
-want('.pc-name', 'font-size', 'clamp(2rem, 1.5rem + 1.1vw, 2.6rem)');
-want('.pc-name', 'line-height', '1.04');
+// R35 (NOS Design via the lead, 2026-10-16, nos-critique-r2 item 4) supersedes: .pc-name meets the card-title role,
+// Fraunces 400 22/1.25, opsz 24 (was 300, clamp(2rem..2.6rem), 1.04).
+want('.pc-name', 'font-weight', '400');
+want('.pc-name', 'font-size', '1.375rem');
+want('.pc-name', 'line-height', '1.25');
 want('.pc-name', 'letter-spacing', '-0.01em');
 want('.pc-name', 'color', '#211A57');
 want('.pc-name', 'text-wrap', 'balance');
 want('.pc-name', 'font-variation-settings', '"opsz" 24');
-want('.pc-role', 'font-size', '0.8rem');
-want('.pc-role', 'font-weight', '600');
-want('.pc-role', 'letter-spacing', '0.08em');
+// R35 (NOS Design via the lead, 2026-10-16, nos-critique-r2 item 4) supersedes: .pc-role is uppercase, so it takes the label
+// role, Karla 700 12px .14em (was 0.8rem 600 .08em).
+want('.pc-role', 'font-size', '0.75rem');
+want('.pc-role', 'font-weight', '700');
+want('.pc-role', 'letter-spacing', '0.14em');
 want('.pc-role', 'text-transform', 'uppercase');
 want('.pc-role', 'color', '#7E3F97');
 want('.pc-role', 'line-height', '1.45');
@@ -187,7 +196,9 @@ want('.pc-card', 'padding', '20px', '(max-width: 560px)');
 want('.pc-card', 'gap', '20px', '(max-width: 560px)');
 want('.pc-head', 'grid-template-columns', '104px minmax(0, 1fr)', '(max-width: 560px)');
 want('.pc-head', 'gap', '16px', '(max-width: 560px)');
-want('.pc-name', 'font-size', '1.85rem', '(max-width: 560px)');
+// R35 (NOS Design via the lead, 2026-10-16, nos-critique-r2 item 4) supersedes: the card-title size holds on small screens; no
+// .pc-name font-size override (was 1.85rem).
+want('.pc-name', 'font-size', undefined, '(max-width: 560px)');
 // dialog
 want('.pc-modal', 'width', 'min(760px, calc(100vw - 32px))');
 want('.pc-modal', 'max-height', 'min(88vh, 900px)');

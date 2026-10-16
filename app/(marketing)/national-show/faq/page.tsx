@@ -38,7 +38,7 @@ export default async function ShowFaqPage() {
         priority
       />
 
-      <div className="mx-auto max-w-[900px] px-8 py-16">
+      <div className="mx-auto max-w-[900px] px-8 py-16 [&_details_p]:max-w-[60ch]">
         <ShowFaqList
           faqs={faqs}
           pendingLabel={info?.pendingLabel}
@@ -47,7 +47,7 @@ export default async function ShowFaqPage() {
 
         <div className="mt-14 border-t border-rule pt-8">
           {info?.faqContactNote ? (
-            <p className="font-sans text-[16px] leading-relaxed text-ink/80">
+            <p className="max-w-[60ch] font-sans text-[16px] leading-relaxed text-ink/80">
               {info.faqContactNote}
             </p>
           ) : null}

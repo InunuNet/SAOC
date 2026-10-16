@@ -82,7 +82,7 @@ export default async function WhatToExpectPage() {
           they are; this section adds the doc's narrative, which the page previously
           carried none of. Do not paraphrase or tighten this copy — see
           docs/rules/no-invention.md. */}
-      <div className="mx-auto max-w-[900px] space-y-6 px-8 pt-16">
+      <div className="mx-auto max-w-[900px] space-y-6 px-8 pt-16 [&>p]:max-w-[60ch]">
         <p className="font-sans text-[16px] leading-relaxed text-ink/80">
           The 2027 South African National Orchid Show promises an immersive experience celebrating the beauty, science and future of orchids.
         </p>
@@ -128,7 +128,7 @@ export default async function WhatToExpectPage() {
         </p>
       </div>
 
-      <div className="mx-auto max-w-[1280px] space-y-10 px-8 py-16">
+      <div className="mx-auto max-w-[1280px] space-y-10 px-8 py-16 [&_p]:max-w-[60ch]">
         {dateRange ? (
           <section>
             <SectionHeading as="h2" title="Show dates" />

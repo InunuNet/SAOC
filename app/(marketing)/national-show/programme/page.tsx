@@ -28,7 +28,9 @@ export default async function ProgrammePage() {
 
   return (
     <>
-      <ShowContentState result={result} heroImage="/images/orchid-yellow.jpg" layout="prose" />
+      <div className="contents [&_.nos-show-page-prose_p]:max-w-[60ch] [&_.nos-show-page-prose_li]:max-w-[60ch]">
+        <ShowContentState result={result} heroImage="/images/orchid-yellow.jpg" layout="prose" />
+      </div>
 
       <ShowSectionNav current="/national-show/programme" />
     </>

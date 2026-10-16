@@ -62,7 +62,8 @@
 .nos-presenters .pc-sec-top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 24px; margin-bottom: 32px; }
 .nos-presenters .pc-sec-head { display: grid; gap: 6px; }
 .nos-presenters .pc-eyebrow { margin: 0; font-size: var(--pc-fs-xs); font-weight: 700; letter-spacing: var(--pc-ls-display); text-transform: uppercase; color: var(--pc-olive-700); }
-.nos-presenters .pc-title { margin: 0; font-family: var(--pc-serif); font-weight: 400; font-size: var(--pc-fs-xl); line-height: 1.15; color: var(--pc-royal); text-wrap: balance; font-variation-settings: "opsz" 24; }
+/* R36: "Presenters" is a section heading, so it takes the nos-theme section-h2 role (nos-theme.css .nos-theme h2), not card-title. */
+.nos-presenters .pc-title { margin: 0; font-family: var(--pc-serif); font-weight: 400; font-size: clamp(2rem, 1.5rem + 1.6vw, 2.4375rem); line-height: 1.15; letter-spacing: -0.01em; color: var(--pc-royal); text-wrap: balance; font-variation-settings: "opsz" 48; }
 .nos-presenters .pc-order-note { margin: 0; font-size: var(--pc-fs-sm); font-weight: 600; color: var(--pc-ink-500); }
 
 /* Cards: equal heights come from the script clamping every bio to the shortest full bio */
@@ -73,8 +74,8 @@
 .nos-presenters .pc-photo { margin: 0; aspect-ratio: 4 / 5; max-width: 100%; border-radius: var(--pc-radius-md); overflow: hidden; background: var(--pc-black); }
 .nos-presenters .pc-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .nos-presenters .pc-id { display: grid; gap: 10px; }
-.nos-presenters .pc-name { margin: 0; font-family: var(--pc-serif); font-weight: 300; font-size: clamp(2rem, 1.5rem + 1.1vw, 2.6rem); line-height: 1.04; letter-spacing: -0.01em; color: var(--pc-royal); text-wrap: balance; font-variation-settings: "opsz" 24; }
-.nos-presenters .pc-role { margin: 0; font-size: var(--pc-fs-xs); font-weight: 600; letter-spacing: var(--pc-ls-wide); text-transform: uppercase; color: var(--pc-violet); line-height: 1.45; text-wrap: balance; }
+.nos-presenters .pc-name { margin: 0; font-family: var(--pc-serif); font-weight: 400; font-size: 1.375rem; line-height: 1.25; letter-spacing: -0.01em; color: var(--pc-royal); text-wrap: balance; font-variation-settings: "opsz" 24; }
+.nos-presenters .pc-role { margin: 0; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pc-violet); line-height: 1.45; text-wrap: balance; }
 .nos-presenters .pc-bio { padding-top: 24px; border-top: var(--pc-hairline) solid var(--pc-line); }
 .nos-presenters .pc-clip { max-height: var(--bio-h, none); overflow: hidden; }
 .nos-presenters .pc-clip.is-clipped { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 5.5em), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 5.5em), transparent); }
@@ -91,7 +92,6 @@
 @media (max-width: 560px) {
   .nos-presenters .pc-card { padding: 20px; gap: 20px; }
   .nos-presenters .pc-head { grid-template-columns: 104px minmax(0, 1fr); gap: 16px; }
-  .nos-presenters .pc-name { font-size: 1.85rem; }
   .nos-presenters .pc-bio { padding-top: 20px; }
   .nos-presenters .pc-foot { margin-top: -4px; }
 }
