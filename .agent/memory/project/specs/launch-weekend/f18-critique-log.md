@@ -57,3 +57,17 @@ P0: 0
 P1: 0
 P2: 0
 Score: 39/40
+
+## Pass 5
+
+Scope: the F18a amendment (hub facts withheld in public, WOSA holding state with the Buy ticket link, heading order). Method as above (impeccable critique inline, launcher binary missing). Re-shot on the public build at 390 and 1280 and re-read /national-show (hub), /national-show/wosa-conference and /national-show/about.
+
+Findings, then fixed in the same pass:
+- P1: public hub still stated "100-point scale", "Grand Champion", the criteria line and "nine provinces" (body paragraph, section lede, hero lede, page and og descriptions). Fixed by dropping each whole sentence or clause that carries an unsourced fact in public builds; beta keeps them with a pending marker.
+- P2: /about and /workshops jumped from h1 to h3 (the Explore index eyebrow was a paragraph). Fixed: the eyebrow is the h2.
+- P2: /wosa-conference had no purchase path in public. Fixed: a Buy ticket button to the WOSA ticket anchor sits before the WOSA link-out.
+
+P0: 0
+P1: 0
+P2: 0
+Score: 39/40

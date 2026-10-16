@@ -22,6 +22,7 @@ import {
   showVisitorInfoQuery,
 } from '@/sanity/queries';
 import { buildShowFacts } from '@/lib/data/show-facts';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { showClasses as staticClasses } from '@/lib/data/showClasses';
 import { cheapestAdmission, formatRand } from '@/components/nos/cheapest-admission';
 import { effectiveCapacity, resolveEffectivePrice } from '@/lib/checkout-reservation';
@@ -41,14 +42,30 @@ import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 // propagates within F6's 120s round-trip window. See contracts/cms-loop-f1-cdn-purge.yaml.
 export const revalidate = 60;
 
-const PAGE_DESCRIPTION =
-  'The South African National Orchid Show — the flagship triennial competition bringing together growers, judges and enthusiasts from all nine provinces.';
+// "from all nine provinces" is unsourced (no Drive document or Sanity record states it), so a public
+// build drops the whole clause that carries it and keeps the rest verbatim; beta shows it all.
+const WITHHOLD_UNSOURCED = withholdPlaceholderProse();
+
+const PAGE_DESCRIPTION_LEAD =
+  'The South African National Orchid Show — the flagship triennial competition';
+const PAGE_DESCRIPTION_CLAUSE =
+  ' bringing together growers, judges and enthusiasts from all nine provinces';
+const PAGE_DESCRIPTION = WITHHOLD_UNSOURCED
+  ? `${PAGE_DESCRIPTION_LEAD}.`
+  : `${PAGE_DESCRIPTION_LEAD}${PAGE_DESCRIPTION_CLAUSE}.`;
 
 // Display-hero lede only (Brad, 2026-09-29): PAGE_DESCRIPTION repeats the
 // lockup's "National Orchid Show" and the eyebrow's "flagship", so the hero
 // carries this instead. Metadata and JSON-LD keep PAGE_DESCRIPTION.
-const HERO_LEDE =
-  'South Africa’s triennial orchid competition, bringing together growers, judges and enthusiasts from all nine provinces.';
+const HERO_LEDE_LEAD = 'South Africa’s triennial orchid competition';
+const HERO_LEDE_CLAUSE =
+  ', bringing together growers, judges and enthusiasts from all nine provinces';
+const HERO_LEDE = WITHHOLD_UNSOURCED
+  ? `${HERO_LEDE_LEAD}.`
+  : `${HERO_LEDE_LEAD}${HERO_LEDE_CLAUSE}.`;
+
+// Sourced: Sanity holds exactly ten showClass documents.
+const JUDGING_LEDE = 'Every exhibit is entered in one of ten botanical classes.';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'National Orchid Show',
@@ -427,14 +444,21 @@ export default async function NationalShowPage() {
             every three years, it brings together growers, hybridisers, judges and collectors for
             four days of competition, education, and community.
           </p>
-          <p className="mt-4 font-sans text-[16px] leading-relaxed text-ink/80">
-            Every plant is assessed by{' '}
-            <Link href="/judging" className="text-[var(--accent)] underline underline-offset-2">
-              accredited SAOC judges
-            </Link>{' '}
-            against the 100-point scale across ten botanical classes. The Grand Champion is the
-            highest-scoring exhibit across all classes.
-          </p>
+          {/* The 100-point scale and the Grand Champion are unsourced: public builds drop the
+              whole paragraph, beta keeps it with a pending marker. */}
+          {WITHHOLD_UNSOURCED ? null : (
+            <>
+              <p className="mt-4 font-sans text-[16px] leading-relaxed text-ink/80">
+                Every plant is assessed by{' '}
+                <Link href="/judging" className="text-[var(--accent)] underline underline-offset-2">
+                  accredited SAOC judges
+                </Link>{' '}
+                against the 100-point scale across ten botanical classes. The Grand Champion is the
+                highest-scoring exhibit across all classes.
+              </p>
+              <ConfirmationBadge status="pending" pendingLabel={visitorInfo?.pendingLabel} />
+            </>
+          )}
         </div>
 
         {/* 4-up stats */}
@@ -491,8 +515,15 @@ export default async function NationalShowPage() {
       <NosSection tone="gold" className="nos-section-joined">
         <SectionHeading
           title="Ten judging groups"
-          lede="Every exhibit is entered in one of ten botanical classes. Judges score on a 100-point scale covering cultural quality, presentation, and species accuracy."
+          lede={
+            WITHHOLD_UNSOURCED
+              ? JUDGING_LEDE
+              : `${JUDGING_LEDE} Judges score on a 100-point scale covering cultural quality, presentation, and species accuracy.`
+          }
         />
+        {WITHHOLD_UNSOURCED ? null : (
+          <ConfirmationBadge status="pending" pendingLabel={visitorInfo?.pendingLabel} />
+        )}
 
         <div className={`mt-10 grid grid-cols-2 gap-4 ${judgingColumnsClass}`}>
           {classes.map((cls, index) => {
