@@ -80,7 +80,7 @@ export default async function WosaConferencePage() {
           afterProse={
             // SAOC attributes and links out; it never authors conservation content in its
             // own voice — the same standing rule the /about page's WOSA credit follows.
-            <p className="max-w-[60ch] border-t border-rule pt-6 font-sans text-[15px] leading-relaxed text-ink/70">
+            <p className="max-w-[60ch] border-t border-rule pt-6 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70">
               For wild orchid identification, habitat and conservation, visit our partner
               organisation{' '}
               <a

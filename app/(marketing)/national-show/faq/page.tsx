@@ -94,7 +94,7 @@ export default async function ShowFaqPage() {
 
           <div className="mt-14 border-t border-rule pt-8">
             {info?.faqContactNote ? (
-              <p className="max-w-[60ch] font-sans text-[16px] leading-relaxed text-ink/80">
+              <p className="max-w-[60ch] font-sans text-[16px] leading-[1.55] text-ink/80">
                 {info.faqContactNote}
               </p>
             ) : null}

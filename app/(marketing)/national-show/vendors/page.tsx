@@ -126,7 +126,7 @@ export default async function VendorsPage() {
           <VendorGrid nurseries={list} />
         ) : (
           <div data-nos-empty-state="" className="nos-surface">
-            <p className="font-sans text-[15px] leading-relaxed text-ink/80">
+            <p className="font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/80">
               No nurseries have been confirmed for the South African Exhibitors Pavilion yet.
             </p>
             <div className="mt-6">

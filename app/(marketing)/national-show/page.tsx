@@ -422,12 +422,12 @@ export default async function NationalShowPage() {
       <NosSection wrapClassName="grid grid-cols-1 gap-16 lg:grid-cols-2">
         <div>
           <SectionHeading title="Three years in the making, four days on the bench" />
-          <p className="mt-6 font-sans text-[16px] leading-relaxed text-ink/80">
+          <p className="mt-6 font-sans text-[16px] leading-[1.55] text-ink/80">
             The National Orchid Show is the country&rsquo;s premier competitive orchid event. Held
             every three years, it brings together growers, hybridisers, judges and collectors for
             four days of competition, education, and community.
           </p>
-          <p className="mt-4 font-sans text-[16px] leading-relaxed text-ink/80">
+          <p className="mt-4 font-sans text-[16px] leading-[1.55] text-ink/80">
             Every plant is assessed by{' '}
             <Link href="/judging" className="text-[var(--accent)] underline underline-offset-2">
               accredited SAOC judges

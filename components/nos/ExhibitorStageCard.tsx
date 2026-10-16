@@ -27,7 +27,7 @@ export function ExhibitorStageCard({
         Stage {stage}
       </p>
       <h3 className="font-serif text-[19px] font-medium leading-snug text-ivory">{title}</h3>
-      <p className="font-sans text-[17px] leading-relaxed text-[var(--lilac-pale)]">
+      <p className="font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-[var(--lilac-pale)]">
         {description}
       </p>
       {confirmation}

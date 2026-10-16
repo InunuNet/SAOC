@@ -87,7 +87,7 @@ export default async function ShowSponsorsPage() {
                 )}
                 <Card data-nos-empty-state="sponsors" className="mt-6 p-8">
                   <SectionHeading title="Become a sponsor" />
-                  <p className="mt-3 max-w-[60ch] font-sans text-[17px] leading-[1.65] text-ink/80">
+                  <p className="mt-3 max-w-[60ch] font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/80">
                     {NO_SPONSORS_YET}
                   </p>
                   <div className="mt-6">

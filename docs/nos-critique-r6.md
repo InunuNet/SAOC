@@ -54,3 +54,20 @@ Every hero lede below 768px is 18px/1.5 with max-width 60ch (Codi); 768px and up
 only below 768px. The positions come from `goldens/measure-bloom.py` (`goldens/bloom-marginals.json`),
 scored against the best possible crop of the 390x300 window. NosHero also sets `fetchPriority="high"`
 on a priority hero image (R61 LCP). Source: lead saoc-2b 2026-10-17.
+
+## f1 — R65: body text 16px / 1.55 across the NOS pages
+
+Brad, R65: "Body text should be standard across both sites." The value is the design handoff's, verbatim from
+`design/design_handoff_saoc/design_system_README.md` line 100: "Sans body — Manrope — running copy, buttons, nav.
+16px base, 1.55 line-height." NOS body text is therefore 16px / 1.55; Karla stays the NOS face (R14).
+- `nos-theme.css`: two lines only, the `.nos-theme` root `line-height` 1.65 to 1.55 and `--fs-body` 1.0625rem to 1rem.
+  `presenters.css` follows (leading 1.55, `--pc-bio-lh` 1.55, the stale 17px fallback and comment).
+- Body role routing: size comes from the one token, `text-[length:var(--fs-body,1rem)]` (the `1rem` fallback because
+  `VenueCard` also renders on /contact, outside `.nos-theme`), and the leading is an explicit `leading-[1.55]` on
+  each body element rather than inherited, because components set their own. Existing 16px lines keep `text-[16px]`
+  and take the same leading.
+- Prose that was 13-15px (accommodation, travel routes, nursery and sponsor cards, event description, page notice,
+  workshops note, WOSA closing paragraph, vendor grid and empty state) is raised to 16. Labels, meta lines, links,
+  controls, tracked-caps markers and the R52 FAQ chips keep their sizes. The 17px serif names and titles are unchanged.
+- /contact's venue card moves from 17px to 16px because `VenueCard` is shared.
+Source: lead saoc-2b 2026-10-17.

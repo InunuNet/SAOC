@@ -162,7 +162,7 @@
   font-family: var(--sans);
   font-size: var(--fs-body);
   font-weight: 400;
-  line-height: 1.65;
+  line-height: 1.55;
   color: var(--ink-700);
   background-color: var(--bg);
 
@@ -309,7 +309,7 @@
   /* ---- R14 body scale and the two colours the type/hero layer adds (mock
      index.html:21, :30). Body copy is ink-700 (ruling 2026-10-15 Q5); headings and
      links stay royal. --black is the hero ground, never purple (R15). ---- */
-  --fs-body: 1.0625rem;
+  --fs-body: 1rem;
   --ink-700: #3a3654;
   --black: #0b0a14;
 }

@@ -65,7 +65,7 @@ export function ExhibitorSteps({
                 questionLabel={questionLabel}
               />
               {step.body && step.body.length > 0 ? (
-                <div className="mt-3 max-w-3xl space-y-3 font-sans text-[16px] leading-relaxed text-ink/80">
+                <div className="mt-3 max-w-3xl space-y-3 font-sans text-[16px] leading-[1.55] text-ink/80">
                   <PortableText value={step.body} />
                 </div>
               ) : null}

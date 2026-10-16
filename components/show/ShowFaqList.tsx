@@ -150,7 +150,7 @@ export function ShowFaqList({
 
                     <div className="nos-faq-answer">
                       {faq.answer && faq.answer.length > 0 ? (
-                        <div className="max-w-3xl font-sans text-[17px] leading-relaxed text-ink/80">
+                        <div className="max-w-3xl font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/80">
                           <PortableText value={faq.answer} />
                         </div>
                       ) : null}

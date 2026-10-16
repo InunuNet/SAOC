@@ -9,7 +9,7 @@ export function VendorEmptyState() {
       <h2 className="font-serif text-[26px] font-medium text-ink">
         Nurseries will be announced soon
       </h2>
-      <p className="mx-auto mt-3 max-w-xl font-sans text-[15px] leading-relaxed text-ink/70">
+      <p className="mx-auto mt-3 max-w-xl font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70">
         No nurseries have been confirmed for the South African Exhibitors Pavilion yet.
         Check back closer to the show for the full list of exhibitors and vendors.
       </p>
