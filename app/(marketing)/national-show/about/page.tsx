@@ -15,15 +15,11 @@ import { NosShowIndex } from '@/components/nos/NosShowIndex';
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site (the facts read Sanity).
 export const revalidate = 60;
 
-// The opening words of the first source paragraph. One string serves the page description and
-// the hero lede, so the lede adds no words that were not already shipped.
-const ABOUT_LEDE =
-  "The 2027 South African National Orchid Show is the South African Orchid Council's " +
-  'premier triennial event.';
-
 export const metadata: Metadata = buildPageMetadata({
   title: 'About the National Show',
-  description: ABOUT_LEDE,
+  description:
+    "The 2027 South African National Orchid Show is the South African Orchid Council's " +
+    'premier triennial event.',
   path: '/national-show/about',
   image: nosOgImage('About the National Show'),
 });
@@ -36,7 +32,6 @@ export default async function NationalShowAboutPage() {
       <NosHero
         route="/national-show/about"
         title="2027 South African National Orchid Show"
-        lede={ABOUT_LEDE}
         priority
       />
 
