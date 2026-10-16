@@ -24,7 +24,7 @@ export async function get(route) {
   return { status: res.status, text: await res.text() };
 }
 
-export const stripTags = (html) => html.replace(/<!--.*?-->/g, '').replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
+export const stripTags = (html) => html.replace(/<!--.*?-->/g, '').replace(/<[^>]+>/g, ' ').replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16))).replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d))).replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
 
 // Chrome (mega-menu, footer) is out of scope for stat/ordinal scans: only the page's own <main>.
 export const mainOf = (html) => { const m = html.match(/<main[\s\S]*?<\/main>/); return m ? m[0] : html; };
