@@ -416,6 +416,11 @@
   .nos-theme :is(h2, h3, h4):not(.nos-label, .nos-card-title, [class*='text-[']) {
     margin-block-end: 0.5em;
   }
+  /* Consecutive paragraphs in gated page prose (placeholder and notice blocks) take the 24px the
+     other NOS prose already uses (`space-y-6`, as on /about). The notice line keeps its own mb-4. */
+  .nos-theme .nos-show-page-prose p:not(.nos-show-page-notice) + p {
+    margin-block-start: 1.5rem;
+  }
 }
 
 /* ---- Shared SAOC components inside NOS pages (components/tickets, components/vendors,
