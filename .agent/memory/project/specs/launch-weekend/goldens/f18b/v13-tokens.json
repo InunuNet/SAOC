@@ -85,7 +85,11 @@
     "price": "[data-ticket-price]",
     "numeral": "[data-ticket-numeral]",
     "name": "[data-ticket-name]",
-    "body": "[data-ticket-body]"
+    "body": "[data-ticket-body]",
+    "slug": "[data-ticket-slug]",
+    "lede": "[data-section-lede]",
+    "closeBand": "[data-nos-ticket-close]",
+    "dayPassFrom": "[data-day-pass-from]"
   },
   "stepper": {
     "min": 1,
@@ -101,7 +105,7 @@
   },
   "checkout": {
     "href": "/tickets/<slug>?quantity=<n>[&day=<iso>]",
-    "hint": "Please select at least one ticket.",
+    "hint": "Choose at least one ticket",
     "hintSelector": "[data-buy-hint]"
   },
   "retired": [
@@ -188,7 +192,7 @@
       "wosa": "#6A6829",
       "workshops": "#33296F"
     },
-    "note": "Audit checklist: the only new hex literals the F18b diff may add, only on a custom-property line (--ticket-field-*) or inside components/tickets/keepsake/. rgba() is allowed only on a drop-shadow( or --t-rule / --t-edge line (v13 CSS l.47-91, l.463). Shadows are filter: drop-shadow, never box-shadow."
+    "note": "Audit checklist field colours. Hex lives ONLY in a lib/data/*.ts constant (passed to the components as inline style vars): A10 forbids hex in components and CSS and allows only these seven in lib/. rgba only on drop-shadow / --t-rule / --t-edge, inside the keepsake paths. Shadows are filter: drop-shadow, never box-shadow."
   },
   "lineMap": {
     "file": "goldens/f18b/v13-tickets.html",
@@ -208,5 +212,17 @@
   "auditChecklist": {
     "file": "goldens/f18b/F18B-AUDIT-CHECKLIST.md",
     "note": "design-cb checklist; an input for @qa and Codex (A19) so QA and design-cb test the same things. Mapping in f18-spec.md section 4.8. A11 requires a \"design-cb audit: PASS\" line in f18-critique-log.md."
+  },
+  "programmeCards": [
+    "ticket-symposium",
+    "ticket-wosa",
+    "ticket-workshops"
+  ],
+  "exhibitRow": {
+    "ids": [
+      "exhibit",
+      "trade"
+    ],
+    "rule": "design-cb ruling 1: after #programme (and #sessions once F18c ships), before the closing band and the footer; a compact 2-card row (side by side from 701): name, ONE existing line, an arrow link >= 44px, the v13 card radius and drop-shadow, NO stub or ticket card."
   }
 }

@@ -123,9 +123,81 @@
       "sessions": "Workshop sessions"
     },
     "beforeYouVisit": "Before you visit",
-    "dayPassFrom": "Day Pass from"
+    "dayPassFrom": "Day Pass from",
+    "buyHint": "Choose at least one ticket"
   },
   "dataGaps": {
     "R7": "Sections with numbers that have no real source (the 500 pool total, the 300 weekend ceiling, the 1000 per-day ceiling, workshop 10 places, symposium/WOSA 80) are shown ONLY if the number is a real stored value (ticketType.capacity/releasedQuantity or Firestore sold counts). The pool total in poolText is a CMS/Firestore-derived value; where it is not available the banner and the pool wording are not rendered at all."
+  },
+  "_nameNote": "design-cb ruling 4: one product name end to end (card, fan, checkout, confirmation, email). The CMS ticketType name wins. products[*].name below is the HANDOFF section 2 name, kept for reference and as an OPTIONAL fixture input only; the page never hard-codes it. A29 asserts card and fan names equal the CMS names.",
+  "nameDifferences": [
+    {
+      "product": "vip",
+      "handoff": "VIP Opening",
+      "cms": "VIP Ticket",
+      "slug": "vip"
+    },
+    {
+      "product": "sunset",
+      "handoff": "Sunset Cocktails",
+      "cms": "Sunset Cocktails (Single)",
+      "slug": "sunset-cocktails-single",
+      "note": "The CMS also has Sunset Cocktails (Couple): v13 has no card for it."
+    },
+    {
+      "product": "weekend",
+      "handoff": "Weekend Pass",
+      "cms": "Weekend Pass (Early Bird) while the pool lasts, then Weekend Pass",
+      "slug": "weekend-pass-early-bird / weekend-pass",
+      "note": "CMS also has Early-Bird Weekend Pass (early-bird-weekend-pass, capacity 150): not a v13 SKU."
+    },
+    {
+      "product": "day",
+      "handoff": "Day Pass",
+      "cms": "Early-Bird Exhibition Ticket while the pool lasts, then Day Visitor Ticket",
+      "slug": "early-bird / day-visitor"
+    },
+    {
+      "product": "symposium",
+      "handoff": "SAOC Symposium",
+      "cms": "SAOC Symposium",
+      "slug": "saoc-symposium",
+      "note": "CMS also has SAOC Symposium (Early-Bird), WOSA Conference (Early-Bird) and SAOC/WOSA Joint (+ Early-Bird): v13 has no card for them (R54 Joint clause, for Lee-Ann)."
+    },
+    {
+      "product": "wosa",
+      "handoff": "WOSA Conference",
+      "cms": "WOSA Conference",
+      "slug": "wosa-conference"
+    },
+    {
+      "product": "workshops",
+      "handoff": "Workshops",
+      "cms": "(no ticketType)",
+      "slug": "workshops",
+      "note": "A link card to the sessions, not a purchasable type: its name is the mock name; nothing to match."
+    }
+  ],
+  "sectionLedes": {
+    "note": "design-cb ruling: the one-line scope under each h2 is part of v13 (Karla 16/1.55, ink-700, <=60ch, 8px under the h2, [data-section-lede]). Mock wording verbatim; facts only from the sources below; a lede whose fact cannot be sourced is omitted (no empty node, no spacer).",
+    "thursday": {
+      "template": "Two evening events on Thursday {d} {Month}.",
+      "sources": "{d} {Month}: nationalShow.showDate (Sanity singleton, R24; must be a Thursday); \"Two\": the two Thursday products present (VIP and Sunset cards)",
+      "omitWhen": "showDate missing or not a Thursday, or either Thursday card absent"
+    },
+    "passes": {
+      "template": "{Weekday} {d} to {Weekday} {d} {Month}.",
+      "sources": "start = showDate + 1 day, end = nationalShow.showEndDate (Sanity, R24); weekday and day computed from the calendar dates",
+      "omitWhen": "either date missing, the range is not within one month and year, or start is after end"
+    },
+    "programme": {
+      "template": "The {symposium name}, the {WOSA name} and {workshops name lower-cased}.",
+      "sources": "the CMS ticketType names of the Symposium and WOSA cards; the Workshops card name",
+      "omitWhen": "any of the three programme cards absent"
+    },
+    "sessions": {
+      "mock": "Workshop titles, times and presenters are still to be confirmed. These cards show each field, and each missing field, with sample counts.",
+      "decision": "OMITTED: it is design-mock commentary about sample counts, not a fact the site can source (and #sessions is F18c)."
+    }
   }
 }

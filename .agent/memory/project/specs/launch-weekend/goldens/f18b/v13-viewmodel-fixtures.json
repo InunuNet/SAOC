@@ -1,5 +1,5 @@
 {
- "_note": "Pure builder fixtures for lib/data/ticket-card-view-models.ts buildTicketCardViewModels(input) -> { cards, pool }. Numbers here are test inputs, never page copy. The early-bird pool is the capacityPool 'eb' shared by weekend-pass-early-bird and early-bird (total = the smallest effective capacity of its members, sold = sum of member sold x headcountPerUnit). Day pass per-day total = the type's effective capacity (capacity, or releasedQuantity when smaller). A missing type yields no card for that product; an unknown count yields null and renders nothing (R7). dayPassFrom (R30, top-level of the builder output) is the effective price of the Day Pass card (the early-bird SKU while the pool lasts, the regular SKU after), null when that price is null; the hub renders the \"Day Pass from R{min}\" line only when it is a number.",
+ "_note": "Pure builder fixtures for lib/data/ticket-card-view-models.ts buildTicketCardViewModels(input) -> { cards, pool }. Numbers here are test inputs, never page copy. The early-bird pool is the capacityPool 'eb' shared by weekend-pass-early-bird and early-bird (total = the smallest effective capacity of its members, sold = sum of member sold x headcountPerUnit). Day pass per-day total = the type's effective capacity (capacity, or releasedQuantity when smaller). A missing type yields no card for that product; an unknown count yields null and renders nothing (R7). dayPassFrom (R30, top-level of the builder output) is the effective price of the Day Pass card (the early-bird SKU while the pool lasts, the regular SKU after), null when that price is null; the hub renders the \"Day Pass from R{min}\" line only when it is a number. ledeCases drive buildSectionLedes (lib/data/ticket-section-ledes.ts): dates only from showDate/showEndDate, names only from the CMS ticketType names; a lede whose fact cannot be sourced is null and renders nothing.",
  "showDays": [
   "2027-09-24",
   "2027-09-25",
@@ -339,6 +339,176 @@
      "state": "pricePending",
      "price": null
     }
+   }
+  }
+ ],
+ "ledeCases": [
+  {
+   "name": "all sourced",
+   "input": {
+    "showDate": "2027-09-23",
+    "showEndDate": "2027-09-26",
+    "has": {
+     "vip": true,
+     "sunset": true,
+     "symposium": true,
+     "wosa": true,
+     "workshops": true
+    },
+    "names": {
+     "symposium": "SAOC Symposium",
+     "wosa": "WOSA Conference",
+     "workshops": "Workshops"
+    }
+   },
+   "expect": {
+    "thursday": "Two evening events on Thursday 23 September.",
+    "passes": "Friday 24 to Sunday 26 September.",
+    "programme": "The SAOC Symposium, the WOSA Conference and workshops."
+   }
+  },
+  {
+   "name": "show starts on a Wednesday: no Thursday claim, passes follow the dates",
+   "input": {
+    "showDate": "2027-09-22",
+    "showEndDate": "2027-09-26",
+    "has": {
+     "vip": true,
+     "sunset": true,
+     "symposium": true,
+     "wosa": true,
+     "workshops": true
+    },
+    "names": {
+     "symposium": "SAOC Symposium",
+     "wosa": "WOSA Conference",
+     "workshops": "Workshops"
+    }
+   },
+   "expect": {
+    "thursday": null,
+    "passes": "Thursday 23 to Sunday 26 September.",
+    "programme": "The SAOC Symposium, the WOSA Conference and workshops."
+   }
+  },
+  {
+   "name": "no show dates: only the programme lede",
+   "input": {
+    "showDate": null,
+    "showEndDate": null,
+    "has": {
+     "vip": true,
+     "sunset": true,
+     "symposium": true,
+     "wosa": true,
+     "workshops": true
+    },
+    "names": {
+     "symposium": "SAOC Symposium",
+     "wosa": "WOSA Conference",
+     "workshops": "Workshops"
+    }
+   },
+   "expect": {
+    "thursday": null,
+    "passes": null,
+    "programme": "The SAOC Symposium, the WOSA Conference and workshops."
+   }
+  },
+  {
+   "name": "range crosses a month: passes omitted (wording unsourced)",
+   "input": {
+    "showDate": "2027-09-30",
+    "showEndDate": "2027-10-03",
+    "has": {
+     "vip": true,
+     "sunset": true,
+     "symposium": true,
+     "wosa": true,
+     "workshops": true
+    },
+    "names": {
+     "symposium": "SAOC Symposium",
+     "wosa": "WOSA Conference",
+     "workshops": "Workshops"
+    }
+   },
+   "expect": {
+    "thursday": "Two evening events on Thursday 30 September.",
+    "passes": null,
+    "programme": "The SAOC Symposium, the WOSA Conference and workshops."
+   }
+  },
+  {
+   "name": "a Thursday product missing: no Thursday lede",
+   "input": {
+    "showDate": "2027-09-23",
+    "showEndDate": "2027-09-26",
+    "has": {
+     "vip": true,
+     "sunset": false,
+     "symposium": true,
+     "wosa": true,
+     "workshops": true
+    },
+    "names": {
+     "symposium": "SAOC Symposium",
+     "wosa": "WOSA Conference",
+     "workshops": "Workshops"
+    }
+   },
+   "expect": {
+    "thursday": null,
+    "passes": "Friday 24 to Sunday 26 September.",
+    "programme": "The SAOC Symposium, the WOSA Conference and workshops."
+   }
+  },
+  {
+   "name": "a programme card missing: no programme lede",
+   "input": {
+    "showDate": "2027-09-23",
+    "showEndDate": "2027-09-26",
+    "has": {
+     "vip": true,
+     "sunset": true,
+     "symposium": true,
+     "wosa": true,
+     "workshops": false
+    },
+    "names": {
+     "symposium": "SAOC Symposium",
+     "wosa": "WOSA Conference",
+     "workshops": "Workshops"
+    }
+   },
+   "expect": {
+    "thursday": "Two evening events on Thursday 23 September.",
+    "passes": "Friday 24 to Sunday 26 September.",
+    "programme": null
+   }
+  },
+  {
+   "name": "CMS names are interpolated verbatim",
+   "input": {
+    "showDate": "2027-09-23",
+    "showEndDate": "2027-09-26",
+    "has": {
+     "vip": true,
+     "sunset": true,
+     "symposium": true,
+     "wosa": true,
+     "workshops": true
+    },
+    "names": {
+     "symposium": "SAOC Symposium (Early-Bird)",
+     "wosa": "WOSA Conference",
+     "workshops": "Workshops"
+    }
+   },
+   "expect": {
+    "thursday": "Two evening events on Thursday 23 September.",
+    "passes": "Friday 24 to Sunday 26 September.",
+    "programme": "The SAOC Symposium (Early-Bird), the WOSA Conference and workshops."
    }
   }
  ]

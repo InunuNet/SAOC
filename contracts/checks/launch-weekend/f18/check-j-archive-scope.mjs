@@ -9,6 +9,7 @@
 // Usage: F18_BASE_REF=<sha> node --import tsx/esm contracts/checks/launch-weekend/f18/check-j-archive-scope.mjs   (cwd = implementation worktree)
 import { existsSync, readFileSync } from 'node:fs';
 import { extname } from 'node:path';
+import { STRUCTURE_CSS, guardedLines, isExemptPath, judgeMotion, keepsakeBlock, probeMotionRules } from './motion-rules.mjs';
 import { T, baseRef, git, gitLines, readGolden, readText } from './_lib.mjs';
 
 const BASE = baseRef();
@@ -38,18 +39,26 @@ for (const f of names.filter((n) => existsSync(n) && /^(app|components)\/.*\.(ts
 }
 const V13 = JSON.parse(readFileSync('.agent/memory/project/specs/launch-weekend/goldens/f18b/v13-tokens.json', 'utf8'));
 const FIELD_HEX = new Set(Object.values(V13.palette.stubFieldColours).map((h) => h.toLowerCase()));
-const R84 = /fan-(out|up)\b|\b1\.1s\b|\b360ms\b|\b0?\.36s\b|scale\(\s*0?\.98\s*\)|translateY\(\s*-5px\s*\)|-translate-y-\[5px\]/;
+problems.push(...probeMotionRules());
+const structureBlock = keepsakeBlock(readText(STRUCTURE_CSS) ?? '');
+const guardCache = new Map();
+const guardOf = (f, l) => { if (!guardCache.has(f)) { const src = readText(f) ?? ''; guardCache.set(f, { lines: src.split('\n'), g: guardedLines(src) }); } const c = guardCache.get(f); const i = c.lines.indexOf(l); return i >= 0 ? c.g[i] : false; };
 for (const { f, l } of added) {
   const tag = `${f}: "${l.trim().slice(0, 90)}"`;
-  const keepsake = f.startsWith('components/tickets/keepsake/');
-  const customProp = /^\s*--[\w-]+\s*:/.test(l);
-  for (const m of l.replace(/&#\d+;/g, '').matchAll(/#[0-9a-fA-F]{3,8}\b/g)) if (!(FIELD_HEX.has(m[0].toLowerCase()) && (customProp || keepsake))) problems.push(`hex colour added (only the seven v13 stub field colours, on a custom property or in components/tickets/keepsake/): ${tag}`);
-  if (/\brgba?\(/.test(l) && !(/drop-shadow\(|--t-(rule|edge)/.test(l) && (customProp || keepsake))) problems.push(`rgb literal added (use tokens; v13 allows rgba only on drop-shadow or --t-rule / --t-edge): ${tag}`);
+  const exempt = isExemptPath(f, l, structureBlock);
+  // Hex stays OUT of components and CSS: presentation hex lives in lib/data/*.ts constants and inline style vars (as the golden does).
+  if (/#[0-9a-fA-F]{3,8}\b/.test(l.replace(/&#\d+;/g, ''))) problems.push(`hex colour added in a component or CSS file (put the seven v13 stub colours in a lib/data/*.ts constant and pass them as inline style vars): ${tag}`);
+  if (/\brgba?\(/.test(l) && !(exempt && /drop-shadow\(|color-mix\(|--t-(rule|edge)/.test(l))) problems.push(`rgb literal added (use tokens or color-mix of existing tokens; rgba only on drop-shadow / --t-rule / --t-edge inside the keepsake paths): ${tag}`);
   if (/font-family\s*:/.test(l) && !/var\(--(serif|sans)\)/.test(l)) problems.push(`new font family: ${tag}`);
-  if (/@keyframes|\banimate-|animation:/.test(l) && !R84.test(l)) problems.push(`animation added (R84 allows only the hero fan-out; A32 checks its guard): ${tag}`);
-  for (const m of l.matchAll(/duration-\[?(\d+)|transition[^;]*?\b(\d+)ms/g)) { const d = m[1] || m[2]; if (d && d !== '150' && !R84.test(l)) problems.push(`duration ${d}ms (only 150ms, plus the R84 hover 360ms): ${tag}`); }
+  const motion = judgeMotion({ line: l, guarded: guardOf(f, l), exempt });
+  if (motion) problems.push(`${motion}: ${tag}`);
   if (/box-shadow\s*:|shadow-(sm|md|lg|xl|2xl)\b/.test(l) && !/drop-shadow/.test(l)) problems.push(`shadow added (NOS elevation is a border; v13 tickets use filter: drop-shadow): ${tag}`);
   if (/\p{Extended_Pictographic}/u.test(l)) problems.push(`emoji added: ${tag}`);
+}
+for (const f of names.filter((n) => /^lib\/.*\.ts$/.test(n) && existsSync(n))) {
+  for (const l of git('diff', '--unified=0', BASE, '--', f).split('\n').filter((x) => x.startsWith('+') && !x.startsWith('+++'))) {
+    for (const m of l.matchAll(/#[0-9a-fA-F]{6}\b/g)) if (!FIELD_HEX.has(m[0].toLowerCase())) problems.push(`${f}: hex ${m[0]} is not one of the seven v13 stub field colours`);
+  }
 }
 // no NEW user-visible sentence literal in a .tsx: a JSX text or string literal of 4+ words must exist in the base tree or strings-allowed.json
 const baseBlob = gitLines('ls-tree', '-r', '--name-only', BASE).filter((p) => /\.(tsx|ts|json)$/.test(p) && /^(app|components|lib|content)\//.test(p)).map((p) => { try { return git('show', `${BASE}:${p}`); } catch { return ''; } }).join('\n');

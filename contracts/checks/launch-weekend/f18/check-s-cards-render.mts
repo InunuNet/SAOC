@@ -1,4 +1,4 @@
-// F18-A28 (F18b, v13 components at render level, no CMS, no server): TicketCard, SessionTicketCard, PoolBanner and TicketFan from components/tickets/keepsake (index exports all four) rendered with
+// F18-A28 (F18b; F18_PART=c runs the F18c session part only as A33) (v13 components at render level, no CMS, no server): TicketCard, SessionTicketCard, PoolBanner and TicketFan from components/tickets/keepsake (index exports all four) rendered with
 // view-model fixtures in every state of HANDOFF section 2. Strings are those of goldens/f18b/v13-copy.json only. Fixture numbers here are test inputs, never page copy.
 //   every card  -> article[data-ticket-card][data-ticket-state][aria-label=name] with id ticket-<productId>, stub [data-ticket-stub] aria-hidden, price "R300" (integer rand, no decimals), name h3
 //   available   -> stepper group labelled "<name> quantity", buttons "One fewer" (disabled at the minimum 1) and "One more", output aria-live polite, max = min(10, remaining); CTA text "Buy ticket"
@@ -9,7 +9,9 @@
 //   PoolBanner  -> role group, numeral + "of <total>", "Early-bird tickets left"; out state "Early bird sold out"; null pool renders nothing; data-pool-bracket present when a pool renders
 //   TicketFan   -> [data-nos-ticket-fan] with 4 [data-fan-link] anchors #ticket-vip, #ticket-sunset, #ticket-weekend, #ticket-day labelled "<name>, R<price>" / ", price to follow" / ", sold out"
 //   sessions    -> every WorkshopSessionViewModel null case of HANDOFF 3.7
-// Run: pnpm exec tsx contracts/checks/launch-weekend/f18/check-s-cards-render.mts   (cwd = implementation worktree)
+//   NAMES    -> the visible product name is the CMS ticketType name passed in as props (name, partnerName, regularName, and TicketFan names); HANDOFF names never appear in code (design-cb: CMS wins).
+//   HOOKS    -> data-ticket-slug on the article carries the SKU slug it renders; a soldOut card says the stamp and "This ticket has sold out." and has no CTA and no waitlist link or wording.
+// Run: [F18_PART=c] pnpm exec tsx contracts/checks/launch-weekend/f18/check-s-cards-render.mts   (cwd = implementation worktree)
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
@@ -28,22 +30,27 @@ const R = (name: string, props: Obj) => {
   if (!C) { fail(`components/tickets/keepsake does not export ${name}`); return ''; }
   return renderToStaticMarkup(createElement(C as never, props as never));
 };
+const PART_C = process.env.F18_PART === 'c';
+const CMS: Record<string, string> = { vip: 'VIP Ticket', sunset: 'Sunset Cocktails (Single)', weekend: 'Weekend Pass', day: 'Day Visitor Ticket', symposium: 'SAOC Symposium', wosa: 'WOSA Conference', workshops: 'Workshops' };
 const vm = (o: Obj): Obj => ({ slug: 'vip', state: 'available', price: 300, regularPrice: null, scarcity: { remaining: 146, total: 200, label: 'places left' }, days: null, ...o });
-const card = (productId: string, v: Obj) => R('TicketCard', { productId, vm: v });
+const card = (productId: string, v: Obj, extra: Obj = {}) => R('TicketCard', { productId, vm: v, name: CMS[productId], partnerName: productId === 'weekend' ? CMS.day : productId === 'day' ? CMS.weekend : undefined, regularName: CMS.weekend, ...extra });
 const has = (h: string, s: string) => txt(h).includes(s);
 const buttons = (h: string) => [...h.matchAll(/<button[^>]*>/g)].map((m) => m[0]);
 const BANNED = [...(JSON.parse(readFileSync(`${G}/v13-tokens.json`, 'utf8')).cta.bannedOnPaid as string[])];
 
+let h = '';
+if (!PART_C) {
 // available
-let h = card('vip', vm({}));
-if (!/<article[^>]*data-ticket-card/.test(h) || !/data-ticket-state="available"/.test(h) || !/aria-label="VIP Opening"/.test(h) || !/id="ticket-vip"/.test(h)) fail('available: article hooks, aria-label "VIP Opening" or id ticket-vip missing');
+h = card('vip', vm({}));
+if (!/<article[^>]*data-ticket-card/.test(h) || !/data-ticket-state="available"/.test(h) || !/aria-label="VIP Ticket"/.test(h) || !/id="ticket-vip"/.test(h)) fail('available: article hooks, aria-label "VIP Ticket" or id ticket-vip missing');
+if (!/data-ticket-slug="vip"/.test(h)) fail('available: the article carries no data-ticket-slug="vip" (the SKU it renders)');
 if (!/data-ticket-stub[^>]*aria-hidden="true"|aria-hidden="true"[^>]*data-ticket-stub/.test(h)) fail('available: the stub is not aria-hidden');
-if (!/<h3[^>]*>\s*VIP Opening/.test(h)) fail('available: the name is not an h3');
+if (!/<h3[^>]*>\s*VIP Ticket/.test(h)) fail('available: the name is not an h3');
 if (!/>R<\/span>300|R300/.test(h.replace(/<[^>]+>/g, '')) && !/R300/.test(txt(h).replace(/\s/g, ''))) fail('available: price does not read R300');
 if (/R300\.00|300\.00/.test(h)) fail('available: price carries decimals');
 if (!has(h, S.buy)) fail(`available: CTA text "${S.buy}" missing`);
 for (const b of BANNED) if (has(h, b)) fail(`available: banned CTA wording "${b}"`);
-if (!/role="group"[^>]*aria-label="VIP Opening quantity"/.test(h)) fail('available: stepper group is not labelled "VIP Opening quantity"');
+if (!/role="group"[^>]*aria-label="VIP Ticket quantity"/.test(h)) fail('available: stepper group is not labelled "VIP Ticket quantity"');
 if (!/aria-label="One fewer"[^>]*disabled|disabled[^>]*aria-label="One fewer"/.test(h)) fail('available: "One fewer" is not disabled at the minimum quantity 1');
 if (!/aria-label="One more"/.test(h) || /aria-label="One more"[^>]*disabled/.test(h)) fail('available: "One more" missing or disabled at 1 of 146');
 if (!/<output[^>]*aria-live="polite"[^>]*>\s*1\s*</.test(h)) fail('available: quantity output is not aria-live polite starting at 1');
@@ -60,19 +67,21 @@ if (!/data-max="10"/.test(h)) fail('scarcity null: max is not 10');
 h = card('vip', vm({ state: 'soldOut' }));
 if (buttons(h).length || /data-ticket-cta|data-ticket-stepper/.test(h)) fail('soldOut: a button, stepper or CTA renders (cards not on sale have none, not a disabled one)');
 if (!has(h, S.soldOutStamp) || !has(h, S.soldOutLine)) fail('soldOut: stamp or "This ticket has sold out." missing');
+if (/waitlist|wait list/i.test(h)) fail('soldOut: waitlist wording or link renders (no waitlist, design-cb)');
 if (/data-ticket-count/.test(h)) fail('soldOut: the scarcity slot is not masked');
 h = card('vip', vm({ state: 'pricePending', price: null }));
 if (buttons(h).length || /data-ticket-cta/.test(h)) fail('pricePending: a button or CTA renders');
 if (!has(h, S.pricePending) || !has(h, S.chip) || !has(h, S.pendingNote)) fail('pricePending: "Price to follow", chip or note missing');
 if (/R\d/.test(txt(h))) fail('pricePending: a price numeral renders');
-h = card('weekend', vm({ slug: 'weekend-pass-early-bird', state: 'earlyBirdSoldOut', price: 360, regularPrice: 380, scarcity: null }));
+h = card('weekend', vm({ slug: 'weekend-pass-early-bird', state: 'earlyBirdSoldOut', price: 360, regularPrice: 380, scarcity: null }), { name: 'Weekend Pass (Early Bird)' });
 if (buttons(h).length || /data-ticket-cta/.test(h)) fail('earlyBirdSoldOut: a button or CTA renders');
 if (!has(h, S.earlyBirdSoldOut) || !/<s[^>]*>\s*Early-bird price/.test(h) || !has(h, 'The Weekend Pass is now R380.')) fail('earlyBirdSoldOut: struck "Early-bird price", "Early bird sold out" or "The Weekend Pass is now R380." missing');
 
 // early-bird SKU live, regular SKU
-h = card('weekend', vm({ slug: 'weekend-pass-early-bird', price: 360, regularPrice: 380, scarcity: { remaining: 312, total: 500, label: 'early-bird left' } }));
+h = card('weekend', vm({ slug: 'weekend-pass-early-bird', price: 360, regularPrice: 380, scarcity: { remaining: 312, total: 500, label: 'early-bird left' } }), { name: 'Weekend Pass (Early Bird)' });
+if (!/aria-label="Weekend Pass \(Early Bird\)"/.test(h) || !/data-ticket-slug="weekend-pass-early-bird"/.test(h)) fail('early-bird SKU: the card name is not the CMS name of the SKU it renders ("Weekend Pass (Early Bird)") or data-ticket-slug is wrong');
 if (!has(h, 'Early-bird R360, then R380')) fail('early-bird SKU: "Early-bird R360, then R380" missing under the price');
-if (!has(h, `${S.sharedWith} Day Pass`)) fail('early-bird SKU: "Shared with the Day Pass" missing');
+if (!has(h, `${S.sharedWith} Day Visitor Ticket`)) fail('early-bird SKU: "Shared with the Day Pass" missing');
 if (!has(h, '312 of 500 early-bird left')) fail('early-bird SKU: the pool line is not rendered from the view model');
 h = card('weekend', vm({ slug: 'weekend-pass', price: 380, regularPrice: null, scarcity: { remaining: 214, total: 300, label: 'places left' } }));
 if (has(h, S.sharedWith) || has(h, 'Early-bird')) fail('regular weekend pass: "Shared with" or an early-bird line renders');
@@ -101,8 +110,10 @@ for (const id of ['symposium', 'wosa']) {
   if (!/>R<\/span>2000|R2000/.test(txt(x).replace(/\s/g, ''))) fail(`${id}: price does not read R2000`);
 }
 h = card('workshops', vm({ slug: 'workshops', price: 100 }));
-if (!has(h, S.chooseSession) || !/href="#sessions"/.test(h) || has(h, S.buy)) fail('Workshops product card: want "Choose a session" linking #sessions and no "Buy ticket"');
+if (!has(h, S.chooseSession) || !/href="\/national-show\/workshops#sessions"/.test(h) || has(h, S.buy)) fail('Workshops product card: want "Choose a session" linking /national-show/workshops#sessions and no "Buy ticket"');
 
+}
+if (PART_C) {
 // sessions
 const sess = (o: Obj) => R('SessionTicketCard', { session: { id: 'w1', title: 'Fixture workshop', description: 'Fixture description.', presenterId: null, timeSlot: 'Fixture slot', ticketCard: vm({ slug: 'workshop-w1', price: 100, scarcity: { remaining: 6, total: 10, label: 'places left' } }), ...o }, presenterName: o.presenterName ?? null });
 h = sess({});
@@ -117,6 +128,8 @@ if (buttons(h).length || !has(h, S.soldOutLine)) fail('session soldOut: a button
 h = sess({ presenterId: 'p1', presenterName: 'Fixture Presenter' });
 if (!has(h, 'With Fixture Presenter')) fail('session: "With <presenter name>" missing');
 
+}
+if (!PART_C) {
 // pool banner
 h = R('PoolBanner', { pool: { remaining: 312, total: 500 } });
 if (!/role="group"/.test(h) || !has(h, S.poolTitle) || !has(h, '312') || !has(h, 'of 500') || !/data-pool-banner/.test(h)) fail('PoolBanner: group, title, numeral, "of 500" or hook missing');
@@ -127,12 +140,13 @@ if (R('PoolBanner', { pool: null }).replace(/<!--.*?-->/g, '').trim() !== '') fa
 
 // hero fan
 const fanCards = { vip: vm({ price: 300 }), sunset: vm({ slug: 'sunset-cocktails-single', price: 800, state: 'soldOut' }), weekend: vm({ slug: 'weekend-pass-early-bird', price: 360, regularPrice: 380 }), day: vm({ slug: 'early-bird', price: 120, state: 'pricePending' }) };
-h = R('TicketFan', { cards: fanCards });
+h = R('TicketFan', { cards: fanCards, names: { ...CMS, weekend: 'Weekend Pass (Early Bird)', day: 'Early-Bird Exhibition Ticket' } });
 const links = [...h.matchAll(/<a[^>]*data-fan-link[^>]*>/g)].map((m) => m[0]);
 if (!/data-nos-ticket-fan/.test(h) || links.length !== 4) fail(`TicketFan: want [data-nos-ticket-fan] with 4 [data-fan-link], got ${links.length}`);
 ['#ticket-vip', '#ticket-sunset', '#ticket-weekend', '#ticket-day'].forEach((a, i) => { if (!links[i]?.includes(`href="${a}"`)) fail(`TicketFan: link ${i + 1} does not point to ${a}`); });
-for (const l of ['VIP Opening, R300', 'Sunset Cocktails, sold out', 'Weekend Pass, R360', 'Day Pass, price to follow']) if (!h.includes(`aria-label="${l}"`)) fail(`TicketFan: aria-label "${l}" missing`);
+for (const l of ['VIP Ticket, R300', 'Sunset Cocktails (Single), sold out', 'Weekend Pass (Early Bird), R360', 'Early-Bird Exhibition Ticket, price to follow']) if (!h.includes(`aria-label="${l}"`)) fail(`TicketFan: aria-label "${l}" missing`);
 if (/data-ticket-stepper|data-ticket-cta|<button/.test(h)) fail('TicketFan: the mini tickets carry a stepper, CTA or button (the whole ticket is one link)');
 
-if (problems.length) { console.error(`FAIL F18-A28 (${problems.length}):\n- ${problems.join('\n- ')}`); process.exit(1); }
+}
+if (problems.length) { console.error(`FAIL F18-A28${PART_C ? ' (F18c part, A33)' : ''} (${problems.length}):\n- ${problems.join('\n- ')}`); process.exit(1); }
 console.log('PASS F18-A28 keepsake ticket components (render level)');
