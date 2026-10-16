@@ -444,20 +444,25 @@ export default async function NationalShowPage() {
             every three years, it brings together growers, hybridisers, judges and collectors for
             four days of competition, education, and community.
           </p>
-          {/* The 100-point scale and the Grand Champion are unsourced: public builds drop the
-              whole paragraph, beta keeps it with a pending marker. */}
-          {WITHHOLD_UNSOURCED ? null : (
-            <>
-              <p className="mt-4 font-sans text-[16px] leading-relaxed text-ink/80">
-                Every plant is assessed by{' '}
-                <Link href="/judging" className="text-[var(--accent)] underline underline-offset-2">
-                  accredited SAOC judges
-                </Link>{' '}
+          {/* "against the 100-point scale" and the Grand Champion sentence are unsourced: a public
+              build drops just those and keeps the rest of the paragraph; beta keeps all of it with
+              a pending marker. */}
+          <p className="mt-4 font-sans text-[16px] leading-relaxed text-ink/80">
+            Every plant is assessed by{' '}
+            <Link href="/judging" className="text-[var(--accent)] underline underline-offset-2">
+              accredited SAOC judges
+            </Link>{' '}
+            {WITHHOLD_UNSOURCED ? (
+              <>across ten botanical classes.</>
+            ) : (
+              <>
                 against the 100-point scale across ten botanical classes. The Grand Champion is the
                 highest-scoring exhibit across all classes.
-              </p>
-              <ConfirmationBadge status="pending" pendingLabel={visitorInfo?.pendingLabel} />
-            </>
+              </>
+            )}
+          </p>
+          {WITHHOLD_UNSOURCED ? null : (
+            <ConfirmationBadge status="pending" pendingLabel={visitorInfo?.pendingLabel} />
           )}
         </div>
 
