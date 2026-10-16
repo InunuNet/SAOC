@@ -12,7 +12,17 @@ function snap(arg) {
   const bar = document.querySelector(arg.sel);
   if (!bar) return { error: 'no utility bar' };
   const rc = (e) => { const b = e.getBoundingClientRect(); return { top: b.top + scrollY, bottom: b.bottom + scrollY, width: b.width, height: b.height }; };
-  const nodes = [bar, ...bar.querySelectorAll('*')];
+  const EMAIL = 'mailto:info@saoc.co.za';
+  const nodes = [bar, ...bar.querySelectorAll('*')].filter((e) => !(e.tagName === 'SPAN' && e.parentElement?.getAttribute('href') === EMAIL));
+  const emailA = bar.querySelector('a[href="' + EMAIL + '"]');
+  let email = null;
+  if (emailA) {
+    const rg = document.createRange();
+    let textW = 0;
+    const tw = document.createTreeWalker(emailA, NodeFilter.SHOW_TEXT);
+    for (let n = tw.nextNode(); n; n = tw.nextNode()) { if (!n.textContent.trim() || n.parentElement.closest('svg')) continue; rg.selectNodeContents(n); textW += rg.getBoundingClientRect().width; }
+    email = { aria: emailA.getAttribute('aria-label'), textW, w: emailA.getBoundingClientRect().width, h: emailA.getBoundingClientRect().height };
+  }
   const els = nodes.map((e) => {
     const cs = getComputedStyle(e);
     const o = { w: e.getBoundingClientRect().width, h: e.getBoundingClientRect().height, top: e.getBoundingClientRect().top, tag: e.tagName.toLowerCase(), cls: String(e.getAttribute('class') ?? ''), href: e.getAttribute('href'), text: e.children.length ? '' : (e.textContent ?? '').replace(/\s+/g, ' ').trim() };
@@ -23,7 +33,7 @@ function snap(arg) {
   const focusables = [...document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')];
   const first = focusables[0];
   return {
-    els, barBox: rc(bar), barCount: document.querySelectorAll(arg.sel).length,
+    els, email, barBox: rc(bar), barCount: document.querySelectorAll(arg.sel).length,
     overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     barPrecedesHeader: header ? !!(bar.compareDocumentPosition(header) & Node.DOCUMENT_POSITION_FOLLOWING) : null,
     header: header ? { top: rc(header).top, id: header.id } : null,
@@ -32,11 +42,12 @@ function snap(arg) {
   };
 }
 const ARG = { sel: BAR, keys: STYLE_KEYS };
+const dropBelow480 = (c) => c.split(/\s+/).filter((t) => t && !/^max-\[4[78]\d(\.\d+)?px\]:/.test(t)).join(' ');
 const isPill = (e) => e.tag === 'a' && e.href === '/national-show';
 
 await main('F12-A14 utility bar', async (r) => {
   await withBrowser(async (browser) => {
-    for (const vp of [VP.desktop, VP.phone, { width: 360, height: 780 }]) {
+    for (const vp of [VP.desktop, { width: 480, height: 800 }, { width: 479, height: 800 }, VP.phone, { width: 360, height: 780 }]) {
       const saoc = await openPage(browser, vp, '/about');
       const ref = await saoc.page.evaluate(snap, ARG);
       await saoc.ctx.close();
@@ -68,13 +79,24 @@ await main('F12-A14 utility bar', async (r) => {
             const o = ref.els[i];
             const where = `${tag}: bar element ${i} <${e.tag}>`;
             const pill = isPill(o);
-            if (!pill && (e.tag !== o.tag || e.cls !== o.cls)) r.fail(`${where} class differs from the SAOC bar ("${e.cls}" vs "${o.cls}")`);
+            if (!pill && (e.tag !== o.tag || dropBelow480(e.cls) !== dropBelow480(o.cls))) r.fail(`${where} class differs from the SAOC bar ("${e.cls}" vs "${o.cls}")`);
             for (const k of STYLE_KEYS) if (e[k] !== o[k] && !(pill && k === 'display')) { r.fail(`${where} ${k} ${e[k]} vs SAOC ${o[k]}`); break; }
             if (pill) {
               if (e.href !== U.pill.href || e.text !== U.pill.label) r.fail(`${where} is "${e.text}" -> ${e.href}, want pill "${U.pill.label}" -> ${U.pill.href}`);
               if (e.display === 'none' || !(e.w > 0)) r.fail(`${where} the saoc.co.za pill is not visible at ${vp.width}px (ruling: visible at every width)`);
             } else if (e.href !== o.href || e.text !== o.text) r.fail(`${where} href/text "${e.href}" "${e.text}" differ from the SAOC bar`);
           });
+        }
+        // the one other allowed difference: below 480px the email text is visually hidden, the link keeps its icon, a mailto target and an aria-label
+        const em = m.email;
+        if (!em) r.fail(`${tag}: no email mailto link`);
+        else if (vp.width < 480) {
+          if (em.aria !== 'Email info@saoc.co.za') r.fail(`${tag}: email aria-label is "${em.aria}", want "Email info@saoc.co.za"`);
+          if (em.textW > 2) r.fail(`${tag}: the email text is still visible below 480px (${em.textW.toFixed(0)}px wide)`);
+          if (em.w < 24 - 0.5 || em.h < 24 - 0.5) r.fail(`${tag}: the collapsed email target is ${em.w.toFixed(0)}x${em.h.toFixed(0)}px, want at least 24px`);
+        } else {
+          if (em.textW < 40) r.fail(`${tag}: the email text is hidden at ${vp.width}px, it must show from 480px up`);
+          if (em.aria !== null && em.aria !== 'Email info@saoc.co.za') r.fail(`${tag}: unexpected email aria-label "${em.aria}"`);
         }
         // one row, no wrap, no overflow, every target at least 24px (44px preferred)
         const targets = m.els.filter((e) => e.tag === 'a' && e.display !== 'none');

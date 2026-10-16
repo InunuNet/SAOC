@@ -47,8 +47,26 @@ else {
     const got = nosTokens.filter((t) => !GATING(t) && !DISPLAY(t)).sort().join(' ');
     if (want !== got) problems.push(`the saoc.co.za pill style differs from the replaced pill: "${got}" vs "${want}"`);
     const expected = nos.replace(nosPill, pillBase);
-    const rest = (h: string) => h.replace(/<a\b[^>]*href="\/(national-show)?"[^>]*>[^<]*<\/a>/, '<PILL/>');
-    if (rest(nos) !== rest(saocBase)) problems.push('nos variant differs from the SAOC bar in more than the pill (markup, tokens and styles must be reused)');
+    // the ONE other allowed difference: below 480px the email text is visually hidden (aria-label carries the name)
+    const emailRe = /<a\b([^>]*)href="mailto:info@saoc\.co\.za"([^>]*)>([\s\S]*?)<\/a>/;
+    const em = emailRe.exec(nos);
+    let nosNorm = nos;
+    if (!em) problems.push('nos variant lost the email link');
+    else {
+      const attrs = `${em[1]}${em[2]}`;
+      if (!/aria-label="Email info@saoc\.co\.za"/.test(attrs)) problems.push('the nos email link has no aria-label="Email info@saoc.co.za"');
+      const span = /<span\b[^>]*class="([^"]*)"[^>]*>info@saoc\.co\.za<\/span>/.exec(em[3]);
+      if (!span) problems.push('the nos email text is not wrapped in a span that can be visually hidden');
+      else if (!/sr-only/.test(span[1]) || !/max-\[4[78]\d(\.\d+)?px\]:/.test(span[1])) problems.push(`the email text span is not visually hidden below 480px (class "${span[1]}", want a max-[479px]:sr-only style token)`);
+      const dropBelow480 = (c: string) => c.split(/\s+/).filter((t) => t && !/^max-\[4[78]\d(\.\d+)?px\]:/.test(t)).join(' ');
+      nosNorm = nos.replace(emailRe, (_m, a: string, b: string, inner: string) => {
+        const open = `${a}${b}`.replace(/\s*aria-label="[^"]*"/, '').replace(/class="([^"]*)"/, (_c, cls: string) => `class="${dropBelow480(cls)}"`);
+        return `<a${open.startsWith(' ') ? '' : ' '}${open.replace(/\s+/g, ' ').replace(/\s+$/, '')} href="mailto:info@saoc.co.za">${inner.replace(/<span\b[^>]*>(info@saoc\.co\.za)<\/span>/, '$1')}</a>`;
+      });
+    }
+    const emailNorm = (h: string) => h.replace(emailRe, (_m, a: string, b: string, inner: string) => `<EMAIL ${`${a}${b}`.replace(/\s+/g, ' ').trim().split(' ').filter((t) => !t.startsWith('href=')).sort().join(' ')}>${inner}</EMAIL>`);
+    const rest = (h: string) => emailNorm(h).replace(/<a\b[^>]*href="\/(national-show)?"[^>]*>[^<]*<\/a>/, '<PILL/>');
+    if (rest(nosNorm) !== rest(saocBase)) problems.push('nos variant differs from the SAOC bar in more than the pill and the sub-480px email text (markup, tokens and styles must be reused)');
     void expected;
   }
 }
