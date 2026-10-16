@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // F18-A23 (R62, R81, vote 2, F18b): the checkout screen /tickets/<slug>, measured at 1280 and 390. Skips with a note when no purchasable ticket renders (sales closed).
 //   dates     -> every per-day label reads "Thu 23 Sept 2027" form (tokens.tickets.dayFormat.regex); no raw ISO date is visible or in an aria-label; each day carries <time datetime="YYYY-MM-DD">
-//   Buy       -> ENABLED at quantity 0 (vote 2); a click shows the inline hint "Choose at least one ticket" ([data-buy-hint]), tied to Buy by aria-describedby, and moves focus to the first quantity field
+//   Buy       -> ENABLED at quantity 0 (vote 2); a click shows the inline hint "Please select at least one ticket." (the existing useTicketCart string) ([data-buy-hint]), tied to Buy by aria-describedby, and moves focus to the first quantity field
 //   prefill   -> /tickets/<slug>?quantity=2 opens with 2 selected (the v13 card CTA's destination); an invalid or out-of-range quantity falls back to the default, never an error page
 //   total     -> [data-catalogue-total] reads "Total R..." (no "estimate", no zero cents), aria-live polite, holds the Buy button; "Provisional pricing" appears at most once in the form
 //   label     -> the "Tickets per day" label is 14px, sentence case (text-transform none)

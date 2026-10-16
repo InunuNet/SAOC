@@ -2,6 +2,8 @@
 
 Base: main 76ad8b98 (F18a) with spec/lw-f18 merged in. Architect: Sonnet 5.5. Skills the dev MUST load and apply (name them in the critique log): `impeccable` (craft-floor, polish, critique), `frontend-design`, `web-design-guidelines`, `accessibility`. No new brand asset, colour, font, shadow, animation or emoji beyond what the approved v13 golden itself carries; no invented copy (section 7).
 
+design-cb is the design lead and its rulings are final (Brad): implement v13 one-to-one; any deviation needs design-cb's yes first. The critique bar for F18b is P0/P1/P2 = 0, impeccable >= 39/40 and design-cb's audit PASS against `goldens/f18b/F18B-AUDIT-CHECKLIST.md`; iteration is uncapped. site-77 owns `components/chrome/UtilityBar.tsx` and the NOS header components (R74 #7): never edit them (A10).
+
 Dropped from this contract (Brad pivot, 2026-10-17): hub mobile hero image-first (R80), NOS-scoped not-found (R63), vendor apply form polish (R82). The old F16 dual-price catalogue rows, the F17 captions and the old "Estimated total" bar are REPLACED by the v13 keepsake tickets.
 
 ## 1. Split (recommended, stated not asked)
@@ -9,7 +11,7 @@ Dropped from this contract (Brad pivot, 2026-10-17): hub mobile hero image-first
 | | scope | contract assertions |
 |---|---|---|
 | F18a | long-form template, holding state, ledes, FAQ, exhibitors, sponsors guard, archive card, Explore index off the hub | A1-A7, A10-A13, A20 |
-| F18b | v13 keepsake tickets on the hub, programme and workshop sessions: view-model data layer, cards, pool banner, hero fan, hub page body, conferences and workshops pages, the single-ticket checkout screen, NOS chrome on `/tickets/*`, the retired bare `/tickets` | A14, A21-A24, A27-A30 |
+| F18b | v13 keepsake tickets on the hub, programme and workshop sessions: view-model data layer, cards, pool banner, hero fan, hub page body, "Day Pass from" line and ticket close band (R30), conferences and workshops pages with the R54 links, the R59 WOSA Buy link, the single-ticket checkout screen, NOS chrome on `/tickets/*`, the retired bare `/tickets`, the R84 motion exception | A14, A21-A24, A27-A32 |
 
 F18b is large. If the lead wants a smaller first pass, cut it as F18b (data layer A27, cards A28, hub passes + fan + pool + checkout and chrome A21-A24, A29, A30) and F18c (the `#programme` brochure tiles, presenters and the workshop sessions list on `/national-show/conferences` and `/national-show/workshops`). The checks already separate these: A28 renders all four components, A29 measures the hub only. One contract, sequential, F18a first (it owns the shared hub page file).
 
@@ -50,7 +52,7 @@ Golden: `goldens/f18b/v13-tickets.html` (the approved mock, 2054 lines, measure 
 - **Photos.** Only the five production photos, mapped in `v13-photo-map.json` (VIP orchid-dark, Sunset orchid-yellow, Weekend orchid-purple, Day orchid-pink, Workshops orchid-violet; Symposium and WOSA none, field colour). No new binary asset anywhere (A10). An `<img>` inside `[data-ticket-stub]` is a THIRD image role beside the hero photo and the long-form break; allowed only on the ticket routes (hub, conferences, workshops, `/tickets/<slug>`), alt empty. `check-f3-imagery` excludes `[data-ticket-stub]` (amended in this spec branch, `supersession.json`); A29 owns the stub rule.
 - **Checkout stays identical.** `useTicketCart`, the `/api/tickets/checkout` payload (`items[].ticketTypeId`, `items[].quantity`, chosenDay), reservation and ITN are untouched (A10 forbids `app/api/`, gateway and order libraries). e2e ticket journeys stay green (A14).
 - **R81 carried over.** SA-English dates ("Thu 23 Sept 2027", `formatShowDay`, ISO only in `<time datetime>`), zero-cent prices (`R150`, `R250.50`), NOS chrome on `/tickets/*` and the return pages.
-- **Vote 2 (checkout screen).** On a `/tickets/*` checkout screen that can reach quantity 0 the Buy button is ENABLED; pressing it shows the inline hint `Choose at least one ticket` (`[data-buy-hint]`, tied by `aria-describedby`) and moves focus to the first quantity field. The old disabled-with-reason pattern is removed (`supersession.json` amends F7 `check-d-ticket-form`).
+- **Vote 2 (checkout screen).** On a `/tickets/*` checkout screen that can reach quantity 0 the Buy button is ENABLED; pressing it shows the EXISTING string `Please select at least one ticket.` (from `useTicketCart.ts` cartError; no new copy) inline in `[data-buy-hint]`, tied by `aria-describedby`, and moves focus to the first quantity field. The old disabled-with-reason pattern is removed (`supersession.json` amends F7 `check-d-ticket-form`).
 - **Vote 3.** The card CTA reads `Buy ticket` (sentence case) on EVERY paid product including SAOC Symposium, WOSA Conference and workshop session cards. Never "Register" or "Add to booking". The Workshops product card says `Choose a session` and links `#sessions`.
 
 ### 4.2 Data layer (pure, A27; live loader, A21)
@@ -71,6 +73,29 @@ Only the bare `/tickets` listing is retired. `app/(marketing)/tickets/page.tsx` 
 ### 4.6 NOS chrome and the checkout screen (A22-A24)
 `ChromeFrame` picks the NOS pair for the `tickets` segment; the `.nos-theme` scope wraps the `/tickets/*` pages (shared wrapper, do not duplicate font config); the typographic NOS inner hero, compact, no stock photo. Single-ticket buy screen: dates via `lib/show-day-format.ts` `formatShowDay` ("Thu 23 Sept 2027"; weekday from the calendar date in UTC; `tokens.json` `tickets.dayFormat` has the cases); one `Total R...` in `[data-catalogue-total]`, `aria-live="polite"`, holding the Buy button, no "estimate"; "Provisional pricing" at most once; "Tickets per day" label 14px sentence case; every R price through `formatRand`; first stepper above `tickets.stepperMaxTop`; day rows `data-day-row`.
 
+### 4.7 R30, R54, R59 (A31)
+- **R30 (1).** `[data-day-pass-from]` under the hub hero CTAs reads `Day Pass from R<amount>` (`v13-copy.json` `dayPassFrom` + the price in zero-cent form). The amount is the builder's top-level `dayPassFrom` (A27): the effective price of the Day Pass card (the early-bird SKU while the pool lasts, never an expired early bird; `resolveEffectivePrice`), `null` when there is no price, in which case the line is NOT rendered (R7).
+- **R30 (2).** The hub's closing band is a ticket close: the existing `CtaBand` wrapped in `[data-nos-ticket-close]`, a Tickets link to `#passes` labelled with the nav-config "Tickets" label, no new sentence; nothing renders after it but the footer.
+- **R54.** On `/national-show/conferences` the Symposium and WOSA cards link to `/national-show/symposium` and `/national-show/wosa-conference`. The "SAOC/WOSA Joint" clause (`conferences/page.tsx:21,35`) goes where the v13 brochure supersedes the page copy: gone, or the original lede sentence kept verbatim (on Lee-Ann's list).
+- **R59.** `/national-show/wosa-conference` carries a link `Buy ticket` to `/national-show/tickets#ticket-wosa` (or `/national-show/conferences#ticket-wosa`), present whether the page holds or not (suggest alongside the WOSA link-out in `afterProse`).
+
+### 4.8 R84 motion, line map, design-cb checklist
+- **R84 (A32), the single motion exception to R28.** Three motions only, every one inside `@media (prefers-reduced-motion: no-preference)` (or a `motion-safe:` class): the hero fan-out once on load (`@keyframes fan-out` for the arc, `fan-up` for the 2x2 deck, 1.1s, `cubic-bezier(0.16, 1, 0.3, 1)`), the ticket hover lift (`translateY(-5px)`, 360ms), the button press (`scale(0.98)`). Reduced motion shows the final fanned state. No other `@keyframes` or animation on NOS. A32 checks the CSS statically (names, guard) and the hub at runtime in both motion modes; A10 lets exactly these tokens through its no-animation / no-360ms rules.
+- **Colour.** The only new hex literals are the seven stub field colours (`v13-tokens.json` `palette`), on a custom-property line or inside `components/tickets/keepsake/`; rgba only on `drop-shadow(`, `--t-rule`, `--t-edge`; elevation is `filter: drop-shadow`, never `box-shadow`.
+- **Line map (design-cb, binding).** Against `goldens/f18b/v13-tickets.html`: tokens and field colours l.47-91; buttons l.295 (R17); masthead, countdown, facts and Before-you-visit CSS l.312-361; hero fan CSS l.362-437 (four cards VIP, Sunset, Weekend, Day on one arc pivoting 205px down, cards 326px tall, names and prices legible at >=701, hero stacked below 1240 and side by side with a hard gutter at >=1240, 2x2 deck with reserved cells at <=700, each card one link, hover or focus to the front), markup l.997-1001; sections CSS l.438-461, `#thursday` l.1015 (2 col), `#passes` l.1029 (pool banner l.1035-1040, bracket >=960, 2 col), `#programme` l.1049 (3 col), `#sessions` l.1151; ticket anatomy CSS l.462-545, stub right at container >=470 l.553-566, states l.567-577 (build the states, not the specimen section); view models l.1317-1370 (LOCKED), render l.1371 on, day selector `fieldset.days` legend "Choose a day" l.1394, stepper `role=group` "<name> quantity" l.1441, `article.ticket[data-state]` l.1462; responsive l.728 on. EXCLUDE the review drawer (l.673-727) and the mock SAOC header and footer (l.92-233, l.628-672): the live chrome is used. The same map is in `v13-tokens.json` `lineMap`.
+- **design-cb checklist -> assertions** (`goldens/f18b/F18B-AUDIT-CHECKLIST.md`, also an input for @qa and the Codex review A19):
+
+| checklist group | assertion |
+|---|---|
+| Structure: masthead, fan order and one link per card, <1240 stacked, >=1240 side by side, <=700 2x2 deck and CLS 0, section order, no F16 rows or F17 captions, old URLs redirect | A29, A30, A21 |
+| TicketCard: aria-label, h3 under group h2, aria-hidden stub, photo alt, notches, drop-shadow, stub side by container, states and no CTA when not on sale, words not colour alone | A28, A29 |
+| Field colours and approved photos only | A29 (photo map), A10 (palette) |
+| Controls: Day selector (fieldset, radios, 58px, disabled keep size), stepper (44px, min 1, max min(10, remaining)), CTA 50px, vote 2B on checkout, focus ring | A28, A29, A23, A24 |
+| Data R7: no sample numbers, struck regular price, pool 0 swap, scarcity polite | A27, A28, A29 |
+| Motion R84 | A32 |
+| Layout: 390 no horizontal scroll, 16px gutters, fan tickets 196px | A29 |
+| Contrast spot checks (HANDOFF 5), focus colours, greyscale | A11 critique (impeccable + design-cb audit PASS); not mechanically asserted |
+
 ## 5. Check inventory (`contracts/checks/launch-weekend/f18/`)
 
 | id | file | proves | needs |
@@ -83,7 +108,7 @@ Only the bare `/tickets` listing is retired. `app/(marketing)/tickets/page.tsx` 
 | A6 | check-f-exhibitors.mts | 3.5 | public build + tsx |
 | A7 | check-g-ledes.mjs | 3.3 live | public build |
 | A10 | check-j-archive-scope.mjs | allowlist, no invention, no new binary image, archive card | `F18_BASE_REF` |
-| A11 | check-k-critique-artefacts.mjs | impeccable evidence: page routes at 390 and 1280, ticket routes at 390, 701, 960, 1280, 1920 | `capture-shots.mjs` |
+| A11 | check-k-critique-artefacts.mjs | impeccable evidence (score >= 39/40, design-cb audit PASS line): page routes at 390 and 1280, ticket routes at 390, 701, 960, 1280, 1920 | `capture-shots.mjs` |
 | A12 | regression chain | surviving F17, F12, F3 checks | public build |
 | A13 | check-l-supersession.mjs | hygiene recorded and applied | none |
 | A20 | F17 check-m-index.mjs (amended) | 3.7 | public build |
@@ -95,6 +120,8 @@ Only the bare `/tickets` listing is retired. `app/(marketing)/tickets/page.tsx` 
 | A28 | check-s-cards-render.mts | 4.3 components in every state | tsx |
 | A29 | check-t-hub-live.mjs | 4.3 and 4.4 live at 390, 701, 960, 1280, 1920 | public build |
 | A30 | check-u-redirects.mjs | 4.5 | public build |
+| A31 | check-v-links-from.mjs | 4.7 R30 line and close band, R54 links, R59 Buy link | public build |
+| A32 | check-w-motion.mjs | 4.8 R84 static guard and runtime in both motion modes | public build, `F18_BASE_REF` |
 
 Build and serve: `SITE_PUBLIC_LAUNCH=true pnpm run build && SITE_PUBLIC_LAUNCH=true pnpm exec next start -p 3672` (never raw `next build`). Ports 3670-3679 only; stop by exact PID. Runtime checks read the CMS read-only. Live content decides which sections exist, so the render-level checks (A4, A5, A24, A27, A28) are the deterministic proof; the live checks prove the build and skip, loudly, a section the CMS lacks.
 
@@ -121,7 +148,7 @@ Copy comes only from `longform-copy.json`, `v13-copy.json`, existing strings (`s
 
 ## 8b. For Brad (microcopy and calls)
 
-- Microcopy with no source: `Choose at least one ticket` (the checkout inline hint; it replaces the existing `Please select at least one ticket.` per vote 2). All other new strings are the v13 golden's own (`v13-copy.json`).
+- Microcopy with no source: none. The checkout inline hint reuses the existing `Please select at least one ticket.` (lead ruling). The design-cb checklist item still quotes "Choose at least one ticket": the lead's string wins and design-cb should confirm. New strings are the v13 golden's own (`v13-copy.json`) plus `Day Pass from` (R30, with the live price).
 - Product names on the cards follow the HANDOFF section 2 table (for example "VIP Opening"); the CMS ticket-type names are not renamed.
 - The 300 / 500 / 1000 ceilings in the mock are sample numbers: they appear only from real stock, otherwise nothing shows.
 - Waitlist is "Proposed" in the mock and is not built.

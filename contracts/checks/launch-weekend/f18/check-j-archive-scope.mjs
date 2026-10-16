@@ -3,7 +3,7 @@
 //  - allowlist: the route pages named in goldens/f18/tokens.json, the keepsake ticket hub (app/(marketing)/national-show/tickets/), components/show/, components/nos/, components/tickets/ (incl. keepsake/), components/home/ShowBand.tsx (link repoint), lib/data/ (show-pages, show-page-presentation, ticket-card-view-models, admission-availability),
 //    app/(marketing)/national-show/nos-structure.css (pure addition under an F18 comment, or the marked nos-ticket-row block), content copy swaps listed nowhere (NO copy file changes: a changed
 //    content/ or sanity/ file fails), contracts/checks, specs, docs, e2e/. The header axis, nav-config, footer-data, the vendor legal components, SEO JSON-LD, the F16 rows' price maths stay untouched.
-//  - no invention in added lines of code: no hex, rgb, new font family, animation, duration other than 150ms, shadow, emoji; no NEW string literal in a .tsx outside strings-allowed.json / base text.
+//  - no invention in added lines of code: no hex (except the seven v13 stub field colours), rgb (except v13 drop-shadow / --t-rule / --t-edge), new font family, animation (except the R84 hero fan-out, guarded per A32), duration other than 150ms (except R84 360ms / 1.1s), box-shadow, emoji; no NEW string literal in a .tsx outside strings-allowed.json / base text.
 //  - F18b: NO new binary image asset (png, jpg, jpeg, webp, avif, gif, svg, ico): the keepsake stubs reuse the five production photos (goldens/f18b/v13-photo-map.json).
 //  - archive: the beta TBC card spans the column (no max-w-* on the card or its wrapper) in app/(marketing)/national-show/archive/page.tsx.
 // Usage: F18_BASE_REF=<sha> node --import tsx/esm contracts/checks/launch-weekend/f18/check-j-archive-scope.mjs   (cwd = implementation worktree)
@@ -16,8 +16,9 @@ const problems = [];
 const ROUTE_PAGES = ['', 'about', 'what-to-expect', 'vendors', 'sa-exhibitors', 'programme', 'international-guests', 'wosa-conference', 'faq', 'archive', 'conferences', 'workshops', 'exhibitors', 'sponsors', 'symposium'].map((s) => `app/(marketing)/national-show/${s ? `${s}/` : ''}page.tsx`);
 const ALLOWED = [...ROUTE_PAGES, 'app/(marketing)/tickets/', 'app/(marketing)/layout.tsx', 'app/(marketing)/national-show/layout.tsx', 'app/(marketing)/national-show/not-found.tsx', 'app/(marketing)/national-show/[', 'app/(marketing)/national-show/tickets/', 'components/home/ShowBand.tsx', 'components/nos-chrome/ChromeFrame.tsx', 'app/(marketing)/national-show/nos-structure.css', 'app/(marketing)/national-show/nos-theme.css'];
 const PREFIX = ['components/show/', 'components/nos/', 'components/tickets/', 'lib/data/', 'lib/', 'contracts/checks/', 'e2e/', 'docs/', 'README.md', '.agent/memory/project/specs/', '.tmp/'];
+// UtilityBar (NOS variant) and the NOS header components (components/nos-chrome/NosHeader.tsx, covered by the nos-chrome prefix) belong to the site-77 session (R74 #7): never edited here.
 // Payment, checkout and the ITN stay behaviourally identical (F18b): no API route, gateway or order library may change. The SAOC not-found stays as is.
-const FORBIDDEN = ['components/chrome/nav-config.ts', 'components/chrome/footer-data.ts', 'components/nos-chrome/', 'components/vendors/', 'app/api/', 'app/not-found.tsx', 'lib/payfast', 'lib/ozow', 'lib/orders', 'lib/checkout', 'lib/payment', 'lib/reconciliation', 'lib/confirmation-email'];
+const FORBIDDEN = ['components/chrome/nav-config.ts', 'components/chrome/footer-data.ts', 'components/chrome/UtilityBar.tsx', 'components/nos-chrome/', 'components/vendors/', 'app/api/', 'app/not-found.tsx', 'lib/payfast', 'lib/ozow', 'lib/orders', 'lib/checkout', 'lib/payment', 'lib/reconciliation', 'lib/confirmation-email'];
 const FORBIDDEN_EXCEPT = ['components/nos-chrome/ChromeFrame.tsx'];
 const names = [...new Set([...gitLines('diff', '--name-only', `${BASE}...HEAD`), ...gitLines('diff', '--name-only', 'HEAD'), ...gitLines('ls-files', '--others', '--exclude-standard')])];
 for (const f of names) {
@@ -35,14 +36,19 @@ for (const f of names.filter((n) => existsSync(n) && /^(app|components)\/.*\.(ts
   const adds = git('diff', '--unified=0', BASE, '--', f).split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++')).map((l) => l.slice(1));
   adds.forEach((l) => added.push({ f, l }));
 }
+const V13 = JSON.parse(readFileSync('.agent/memory/project/specs/launch-weekend/goldens/f18b/v13-tokens.json', 'utf8'));
+const FIELD_HEX = new Set(Object.values(V13.palette.stubFieldColours).map((h) => h.toLowerCase()));
+const R84 = /fan-(out|up)\b|\b1\.1s\b|\b360ms\b|\b0?\.36s\b|scale\(\s*0?\.98\s*\)|translateY\(\s*-5px\s*\)|-translate-y-\[5px\]/;
 for (const { f, l } of added) {
   const tag = `${f}: "${l.trim().slice(0, 90)}"`;
-  if (/#[0-9a-fA-F]{3,8}\b/.test(l.replace(/&#\d+;/g, ''))) problems.push(`hex colour added: ${tag}`);
-  if (/\brgba?\(/.test(l)) problems.push(`rgb literal added (use tokens): ${tag}`);
+  const keepsake = f.startsWith('components/tickets/keepsake/');
+  const customProp = /^\s*--[\w-]+\s*:/.test(l);
+  for (const m of l.replace(/&#\d+;/g, '').matchAll(/#[0-9a-fA-F]{3,8}\b/g)) if (!(FIELD_HEX.has(m[0].toLowerCase()) && (customProp || keepsake))) problems.push(`hex colour added (only the seven v13 stub field colours, on a custom property or in components/tickets/keepsake/): ${tag}`);
+  if (/\brgba?\(/.test(l) && !(/drop-shadow\(|--t-(rule|edge)/.test(l) && (customProp || keepsake))) problems.push(`rgb literal added (use tokens; v13 allows rgba only on drop-shadow or --t-rule / --t-edge): ${tag}`);
   if (/font-family\s*:/.test(l) && !/var\(--(serif|sans)\)/.test(l)) problems.push(`new font family: ${tag}`);
-  if (/@keyframes|\banimate-|animation:/.test(l)) problems.push(`animation added: ${tag}`);
-  for (const m of l.matchAll(/duration-\[?(\d+)|transition[^;]*?\b(\d+)ms/g)) { const d = m[1] || m[2]; if (d && d !== '150') problems.push(`duration ${d}ms (only 150ms): ${tag}`); }
-  if (/box-shadow\s*:|shadow-(sm|md|lg|xl|2xl)\b/.test(l)) problems.push(`shadow added (NOS elevation is a border): ${tag}`);
+  if (/@keyframes|\banimate-|animation:/.test(l) && !R84.test(l)) problems.push(`animation added (R84 allows only the hero fan-out; A32 checks its guard): ${tag}`);
+  for (const m of l.matchAll(/duration-\[?(\d+)|transition[^;]*?\b(\d+)ms/g)) { const d = m[1] || m[2]; if (d && d !== '150' && !R84.test(l)) problems.push(`duration ${d}ms (only 150ms, plus the R84 hover 360ms): ${tag}`); }
+  if (/box-shadow\s*:|shadow-(sm|md|lg|xl|2xl)\b/.test(l) && !/drop-shadow/.test(l)) problems.push(`shadow added (NOS elevation is a border; v13 tickets use filter: drop-shadow): ${tag}`);
   if (/\p{Extended_Pictographic}/u.test(l)) problems.push(`emoji added: ${tag}`);
 }
 // no NEW user-visible sentence literal in a .tsx: a JSX text or string literal of 4+ words must exist in the base tree or strings-allowed.json

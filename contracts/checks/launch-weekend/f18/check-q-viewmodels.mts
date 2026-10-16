@@ -1,7 +1,7 @@
 // F18-A27 (F18b, v13 data layer, pure, no CMS, no server): buildTicketCardViewModels from lib/data/ticket-card-view-models.ts against goldens/f18b/v13-viewmodel-fixtures.json.
 // Proves the locked interface of HANDOFF section 2 on real-shaped inputs: state precedence (pricePending > soldOut > earlyBirdSoldOut > low > available), low at <=10% remaining, the shared early-bird
 // pool (total = smallest effective capacity of its members, sold = sum of member sold x headcount), the early-bird SKU while the pool lasts and the regular SKU at 0, regularPrice only on early-bird
-// SKUs, scarcity null when there is no real capacity (R7), per-day remaining from real sold-by-day counts or null (no count rendered) when there is no source, never a negative remaining, and no card
+// SKUs, scarcity null when there is no real capacity (R7), dayPassFrom (R30: the Day Pass card's effective price or null), per-day remaining from real sold-by-day counts or null (no count rendered) when there is no source, never a negative remaining, and no card
 // for a product whose type does not exist (nothing invented). Run: pnpm exec tsx contracts/checks/launch-weekend/f18/check-q-viewmodels.mts   (cwd = implementation worktree)
 import { readFileSync } from 'node:fs';
 
@@ -11,7 +11,7 @@ type Obj = Record<string, unknown>;
 const fx = JSON.parse(readFileSync('.agent/memory/project/specs/launch-weekend/goldens/f18b/v13-viewmodel-fixtures.json', 'utf8')) as { showDays: string[]; types: Obj[]; cases: Obj[] };
 const problems: string[] = [];
 const fail = (m: string) => problems.push(m);
-const build = (mod as unknown as { buildTicketCardViewModels?: (i: Obj) => { cards: Record<string, Obj | undefined>; pool: Obj | null } }).buildTicketCardViewModels;
+const build = (mod as unknown as { buildTicketCardViewModels?: (i: Obj) => { cards: Record<string, Obj | undefined>; pool: Obj | null; dayPassFrom: number | null } }).buildTicketCardViewModels;
 if (typeof build !== 'function') fail('lib/data/ticket-card-view-models.ts does not export buildTicketCardViewModels');
 
 const subset = (got: unknown, want: unknown, path: string) => {
@@ -42,6 +42,7 @@ if (typeof build === 'function') {
     if (expect.pool !== undefined) subset(out.pool, expect.pool, `${name}: pool`);
     for (const [k, v] of Object.entries(expect)) {
       if (k === 'pool') continue;
+      if (k === 'dayPassFrom') { if (out.dayPassFrom !== v) fail(`${name}: dayPassFrom want ${JSON.stringify(v)}, got ${JSON.stringify(out.dayPassFrom)}`); continue; }
       if (k === 'absent') { for (const a of v as string[]) if (out.cards[a]) fail(`${name}: a card exists for ${a} though its type is absent`); continue; }
       subset(out.cards[k], v, `${name}: ${k}`);
     }

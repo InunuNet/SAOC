@@ -122,7 +122,8 @@
       "programme": "Programme",
       "sessions": "Workshop sessions"
     },
-    "beforeYouVisit": "Before you visit"
+    "beforeYouVisit": "Before you visit",
+    "dayPassFrom": "Day Pass from"
   },
   "dataGaps": {
     "R7": "Sections with numbers that have no real source (the 500 pool total, the 300 weekend ceiling, the 1000 per-day ceiling, workshop 10 places, symposium/WOSA 80) are shown ONLY if the number is a real stored value (ticketType.capacity/releasedQuantity or Firestore sold counts). The pool total in poolText is a CMS/Firestore-derived value; where it is not available the banner and the pool wording are not rendered at all."

@@ -101,7 +101,7 @@
   },
   "checkout": {
     "href": "/tickets/<slug>?quantity=<n>[&day=<iso>]",
-    "hint": "Choose at least one ticket",
+    "hint": "Please select at least one ticket.",
     "hintSelector": "[data-buy-hint]"
   },
   "retired": [
@@ -143,5 +143,70 @@
   "keptGroups": [
     "exhibit",
     "trade"
-  ]
+  ],
+  "links": {
+    "dayPassFrom": {
+      "selector": "[data-day-pass-from]",
+      "note": "R30 (1): under the hub hero CTAs; amount = the effective price of the Day Pass card (builder output dayPassFrom, resolveEffectivePrice, never an expired early bird); not rendered when null (R7)."
+    },
+    "closeBand": {
+      "selector": "[data-nos-ticket-close]",
+      "label": "Tickets",
+      "href": "#passes",
+      "note": "R30 (2): the hub closing band is a ticket close built from the existing CtaBand and the nav-config label; no new sentence."
+    },
+    "conferenceLinks": {
+      "symposium": "/national-show/symposium",
+      "wosa": "/national-show/wosa-conference"
+    },
+    "wosaBuy": {
+      "hrefs": [
+        "/national-show/tickets#ticket-wosa",
+        "/national-show/conferences#ticket-wosa"
+      ]
+    }
+  },
+  "motion": {
+    "rule": "R84, the single motion exception to R28 on NOS routes. Only these three, every one inside @media (prefers-reduced-motion: no-preference) (or a motion-safe: class): the hero fan-out once on load (keyframes fan-out for the arc and fan-up for the 2x2 deck, 1.1s, cubic-bezier(0.16,1,0.3,1)), the ticket hover lift (translateY(-5px), 360ms), the button press (scale(0.98)). Reduced motion shows the final fanned state. No other @keyframes or animation on NOS.",
+    "allowedKeyframes": [
+      "fan-out",
+      "fan-up"
+    ],
+    "fanDuration": "1.1s",
+    "fanEase": "cubic-bezier(0.16, 1, 0.3, 1)",
+    "hoverLiftPx": 5,
+    "hoverMs": 360,
+    "pressScale": 0.98
+  },
+  "palette": {
+    "stubFieldColours": {
+      "vip": "#0B0A14",
+      "sunset": "#7E3F97",
+      "weekend": "#211A57",
+      "day": "#7F7D33",
+      "symposium": "#4A3D8C",
+      "wosa": "#6A6829",
+      "workshops": "#33296F"
+    },
+    "note": "Audit checklist: the only new hex literals the F18b diff may add, only on a custom-property line (--ticket-field-*) or inside components/tickets/keepsake/. rgba() is allowed only on a drop-shadow( or --t-rule / --t-edge line (v13 CSS l.47-91, l.463). Shadows are filter: drop-shadow, never box-shadow."
+  },
+  "lineMap": {
+    "file": "goldens/f18b/v13-tickets.html",
+    "source": "design-cb (design lead), 2026-10-17",
+    "items": {
+      "ticketTokensAndStubFieldColours": "CSS l.47-91 (CSS variables on .nos-theme)",
+      "buttons": "l.295 (R17)",
+      "mastheadCountdownFactsBeforeYouVisit": "CSS l.312-361",
+      "heroFan": "CSS l.362-437 (4 cards, order VIP Sunset Weekend Day, one arc pivoting 205px down, cards 326px tall; names and prices legible at >=701; hero stacks below 1240, side by side with a hard gutter at >=1240; 2x2 deck with reserved cells at <=700; each card one link, hover or focus brings it to the front); markup l.997-1001",
+      "sections": "CSS l.438-461; #thursday l.1015 (cols-2 VIP + Sunset); #passes l.1029 (pool banner l.1035-1040: pool-num, \"of N\", pool-bracket at >=960; then cols-2 Weekend + Day); #programme l.1049 (cols-3 Symposium / WOSA / Workshops); #sessions l.1151",
+      "ticketAnatomy": "CSS l.462-545 (stub, perforation, notches, numeral, Disa emblem, \"Admit one\"); stub to the right at container >=470 l.553-566; card states l.567-577 (build the states, not the specimen section)",
+      "renderLogic": "view models l.1317-1370 (LOCKED); render l.1371 on; day selector fieldset.days legend \"Choose a day\" l.1394; stepper role=group \"<name> quantity\" l.1441; article.ticket[data-state] l.1462; state masking HANDOFF 3.1; stepper 3.3",
+      "responsive": "l.728 on",
+      "exclude": "review drawer l.673-727; mock SAOC header/footer l.92-233 and l.628-672 (use the live chrome)"
+    }
+  },
+  "auditChecklist": {
+    "file": "goldens/f18b/F18B-AUDIT-CHECKLIST.md",
+    "note": "design-cb checklist; an input for @qa and Codex (A19) so QA and design-cb test the same things. Mapping in f18-spec.md section 4.8. A11 requires a \"design-cb audit: PASS\" line in f18-critique-log.md."
+  }
 }
