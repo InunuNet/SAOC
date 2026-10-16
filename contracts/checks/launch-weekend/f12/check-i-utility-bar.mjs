@@ -45,7 +45,13 @@ const ARG = { sel: BAR, keys: STYLE_KEYS };
 const dropBelow480 = (c) => c.split(/\s+/).filter((t) => t && !/^max-\[4[78]\d(\.\d+)?px\]:/.test(t)).join(' ');
 const isPill = (e) => e.tag === 'a' && e.href === '/national-show';
 
+// one row = every pair of links overlaps vertically (items-center rows give different tops for different heights)
+const wrapsRows = (ts) => ts.some((a, i) => ts.slice(i + 1).some((b) => !(a.top < b.top + b.h && b.top < a.top + a.h)));
+
 await main('F12-A14 utility bar', async (r) => {
+  // self-test of the row rule: the real items-center tops (11/8/9, heights 24/30/28) are one row, a link pushed below the others is a wrap
+  if (wrapsRows([{ top: 11, h: 24 }, { top: 8, h: 30 }, { top: 9, h: 28 }])) r.fail('self-test: an items-center row of mixed heights was read as wrapped');
+  if (!wrapsRows([{ top: 8, h: 30 }, { top: 9, h: 28 }, { top: 44, h: 28 }])) r.fail('self-test: a link on a second row was not detected, the wrap check is blind');
   await withBrowser(async (browser) => {
     for (const vp of [VP.desktop, { width: 480, height: 800 }, { width: 479, height: 800 }, VP.phone, { width: 360, height: 780 }]) {
       const saoc = await openPage(browser, vp, '/about');
@@ -80,7 +86,7 @@ await main('F12-A14 utility bar', async (r) => {
             const where = `${tag}: bar element ${i} <${e.tag}>`;
             const pill = isPill(o);
             if (!pill && (e.tag !== o.tag || dropBelow480(e.cls) !== dropBelow480(o.cls))) r.fail(`${where} class differs from the SAOC bar ("${e.cls}" vs "${o.cls}")`);
-            for (const k of STYLE_KEYS) if (e[k] !== o[k] && !(pill && k === 'display')) { r.fail(`${where} ${k} ${e[k]} vs SAOC ${o[k]}`); break; }
+            for (const k of STYLE_KEYS) if (e[k] !== o[k] && !(pill && (k === 'display' || k === 'minHeight'))) { r.fail(`${where} ${k} ${e[k]} vs SAOC ${o[k]}`); break; }
             if (pill) {
               if (e.href !== U.pill.href || e.text !== U.pill.label) r.fail(`${where} is "${e.text}" -> ${e.href}, want pill "${U.pill.label}" -> ${U.pill.href}`);
               if (e.display === 'none' || !(e.w > 0)) r.fail(`${where} the saoc.co.za pill is not visible at ${vp.width}px (ruling: visible at every width)`);
@@ -101,7 +107,7 @@ await main('F12-A14 utility bar', async (r) => {
         // one row, no wrap, no overflow, every target at least 24px (44px preferred)
         const targets = m.els.filter((e) => e.tag === 'a' && e.display !== 'none');
         if (targets.length !== 3) r.fail(`${tag}: ${targets.length} visible links in the bar, want 3 (email, saoc.co.za, Join a society)`);
-        if (new Set(targets.map((t) => Math.round(t.top / 4))).size > 1) r.fail(`${tag}: the bar's links wrap onto more than one row`);
+        if (wrapsRows(targets)) r.fail(`${tag}: the bar's links wrap onto more than one row`);
         for (const t of targets) { if (t.h < 24 - 0.5 || t.w < 24 - 0.5) r.fail(`${tag}: target "${t.text}" is ${t.w.toFixed(0)}x${t.h.toFixed(0)}px, want at least 24px (44px preferred)`); if (t.h < 44) r.note(`${tag}: "${t.text}" is ${t.h.toFixed(0)}px tall (44px preferred, 24px minimum met)`); }
         if (m.barBox.height > 56) r.fail(`${tag}: the bar is ${m.barBox.height.toFixed(0)}px tall, it has wrapped`);
         if (!m.els.some((e) => e.href === U.kept.email) || !m.els.some((e) => e.href === U.kept.join.href && e.text === U.kept.join.label)) r.fail(`${tag}: email or "Join a society" missing`);

@@ -29,7 +29,8 @@ function measure(opts) {
   const probe = document.querySelector('.nos-show-page-prose') ?? document.querySelector('main details') ?? document.querySelector('main section:not([data-nos-hero]) [data-nos-wrap] > :first-child') ?? document.querySelector('main section:not([data-nos-hero]) > :first-child') ?? null;
   if (probe) {
     let e = probe.parentElement;
-    while (e && e.tagName !== 'SECTION' && e !== document.body && cs(e).maxWidth === 'none') e = e.parentElement;
+    // stop at the section wrap: ShowFaqList renders a <section> per category, so a SECTION stop would never reach [data-nos-wrap]
+    while (e && e !== document.body && cs(e).maxWidth === 'none' && !e.hasAttribute('data-nos-wrap')) e = e.parentElement;
     if (e && cs(e).maxWidth !== 'none') {
       const c = cs(e), b = rc(e);
       out.container = { maxWidth: c.maxWidth, padL: parseFloat(c.paddingLeft), padR: parseFloat(c.paddingRight), left: b.left, width: b.width, centred: Math.abs(b.left - (vw - b.width) / 2) <= 1.5, contentLeft: b.left + parseFloat(c.paddingLeft) };
@@ -146,6 +147,19 @@ await main('F12-A7 template', async (r) => {
       await ctx.close();
     }
     // tickets shares CategoryTicketsPage and every NosSection wrap: it sits on the same header axis (R71), not a separate 1080 column
+    // Negative case: a bare-wrap FAQ (wrap max-width removed) must read as NO bounded container, so the walk-up cannot pass by luck
+    {
+      const { ctx, page, status } = await openPage(browser, VP.desktop, '/national-show/faq');
+      if (status !== 200) r.fail(`negative case: /national-show/faq HTTP ${status}`);
+      else {
+        const ok = await page.evaluate(measure, { paras: false });
+        if (!ok.container) r.fail('negative case: the real FAQ shows no bounded container');
+        await page.evaluate(() => { for (const w of document.querySelectorAll('[data-nos-wrap]')) w.style.maxWidth = 'none'; });
+        const bad = await page.evaluate(measure, { paras: false });
+        if (bad.container) r.fail('negative case: a FAQ whose wrap has no max-width still reported a bounded container, the check is blind');
+      }
+      await ctx.close();
+    }
     for (const route of T.untouchedContainerRoutes) {
       const { ctx, page, status } = await openPage(browser, VP.desktop, route);
       if (status !== 200) { r.fail(`${route}: HTTP ${status}`); await ctx.close(); continue; }
