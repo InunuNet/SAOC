@@ -50,7 +50,7 @@ export function EventsStrip({ events }: EventsStripProps) {
           </div>
           <Link
             href="/events"
-            className="inline-flex min-h-6 items-center font-mono text-[11px] uppercase tracking-[0.18em] text-accent hover:text-primary transition-colors duration-150 mt-1 shrink-0"
+            className="inline-flex min-h-6 items-center font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150 mt-1 shrink-0"
           >
             Full calendar →
           </Link>
@@ -65,7 +65,7 @@ export function EventsStrip({ events }: EventsStripProps) {
           </div>
         ) : (
           <div className="space-y-3 border-t border-rule pt-6">
-            <p className="font-sans text-[16px] text-ink/60">No upcoming events scheduled.</p>
+            <p className="font-sans text-[16px] text-ink/70">No upcoming events scheduled.</p>
             <ConfirmationBadge status="pending" />
           </div>
         )}

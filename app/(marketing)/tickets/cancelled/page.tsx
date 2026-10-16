@@ -47,7 +47,7 @@ export default async function TicketCancelledPage({
 
       <Link
         href="/tickets"
-        className="mt-8 inline-block rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ivory transition-colors hover:bg-accent-soft"
+        className="mt-8 inline-block rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink transition-colors hover:bg-accent-soft"
       >
         {cancelledButtonLabel}
       </Link>

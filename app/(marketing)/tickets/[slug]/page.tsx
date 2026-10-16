@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { PageHero } from '@/components/ui/PageHero';
@@ -67,6 +68,16 @@ interface SanityTicketType {
 
 interface Props {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const ticketType = await sanityFetch<SanityTicketType | null>({
+    query: ticketTypeBySlugQuery,
+    params: { slug },
+    tags: ['ticketType', 'sanity'],
+  });
+  return { title: ticketType?.name ?? 'Tickets' };
 }
 
 export default async function TicketBuyPage({ params }: Props) {

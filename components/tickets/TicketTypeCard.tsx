@@ -112,7 +112,7 @@ export function TicketTypeCard({
         </span>
       ) : null}
       {soldOut ? (
-        <span className="inline-block font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
+        <span className="inline-block font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
           {soldOutLabel}
         </span>
       ) : null}
@@ -127,7 +127,7 @@ export function TicketTypeCard({
         {...placeholderAttrs}
       >
         {cardContent}
-        <span className="mt-1 font-sans text-[14px] font-medium text-accent underline-offset-2">
+        <span className="mt-1 font-sans text-[14px] font-medium text-primary underline-offset-2">
           View tickets →
         </span>
       </Link>

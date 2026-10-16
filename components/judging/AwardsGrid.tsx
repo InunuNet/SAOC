@@ -22,11 +22,11 @@ export function AwardsGrid({ awards }: AwardsGridProps) {
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
             {award.code}
           </p>
-          <h3 className="mt-2 font-serif text-[20px] font-semibold leading-snug text-ink">
+          <h2 className="mt-2 font-serif text-[20px] font-semibold leading-snug text-ink">
             {award.name}
-          </h3>
+          </h2>
           {award.threshold && award.threshold !== '—' ? (
-            <p className="mt-1 font-mono text-[12px] text-ink/60">{award.threshold}</p>
+            <p className="mt-1 font-mono text-[12px] text-ink/70">{award.threshold}</p>
           ) : null}
           <p className="mt-3 font-sans text-[14px] leading-relaxed text-ink/75">
             {award.description}

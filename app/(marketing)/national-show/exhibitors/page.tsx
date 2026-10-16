@@ -84,7 +84,7 @@ export default async function ExhibitorInfoPage() {
         <p>
           <Link
             href="/national-show"
-            className="inline-flex items-center gap-2 font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-muted transition-colors duration-150 hover:text-primary"
+            className="inline-flex min-h-6 items-center gap-2 font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-muted transition-colors duration-150 hover:text-primary"
           >
             ← Show overview
           </Link>

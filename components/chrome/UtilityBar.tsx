@@ -26,7 +26,7 @@ export function UtilityBar({ show }: UtilityBarProps) {
     .join(' · ');
 
   return (
-    <div className="bg-primary-800 text-ivory">
+    <div role="region" aria-label="Utility bar" className="bg-primary-800 text-ivory">
       <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-8 py-2">
         {/* Left: contact email */}
         <a
@@ -60,7 +60,7 @@ export function UtilityBar({ show }: UtilityBarProps) {
           </Link>
           <Link
             href="/societies"
-            className="bg-accent text-primary rounded-full px-3 py-1 text-[13px] font-sans font-medium hover:bg-accent-soft transition-colors duration-150"
+            className="bg-accent text-ink rounded-full px-3 py-1 text-[13px] font-sans font-medium hover:bg-accent-soft transition-colors duration-150"
           >
             Join a society
           </Link>

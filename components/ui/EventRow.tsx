@@ -40,7 +40,7 @@ export function EventRow({ event }: EventRowProps) {
         <p className="font-serif text-[20px] font-medium text-primary leading-snug">
           {event.title}
         </p>
-        <p className="font-sans text-[14px] text-ink/60 mt-1">{event.venue}</p>
+        <p className="font-sans text-[14px] text-ink/70 mt-1">{event.venue}</p>
       </div>
 
       {/* Right: host (hidden when empty) + arrow */}

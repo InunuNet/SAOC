@@ -35,7 +35,7 @@ export function CTASection({ eyebrow, heading, body, primaryCta, secondaryCta }:
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           <Link
             href={primaryCta.href}
-            className="font-sans text-[14px] font-medium bg-accent text-ivory px-6 py-3 hover:bg-accent-soft transition-colors duration-150"
+            className="font-sans text-[14px] font-medium bg-accent text-ink px-6 py-3 hover:bg-accent-soft transition-colors duration-150"
           >
             {primaryCta.label}
           </Link>

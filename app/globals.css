@@ -144,6 +144,10 @@ body {
   margin: 0;
   padding: 0;
 }
+/* WCAG 2.4.11: the sticky header (74px desktop / 62px mobile) must not cover a focused element. */
+html {
+  scroll-padding-top: 5rem;
+}
 body {
   font-family: var(--sans);
   background: var(--bg);

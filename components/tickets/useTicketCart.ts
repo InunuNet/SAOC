@@ -218,6 +218,7 @@ export function useTicketCart(ticketTypes: TicketTypeCardData[], showDays: strin
     errorMessage,
     redirect,
     estimatedTotal: computeCartTotal(quantities, ticketTypes),
+    cartItemCount: cartItemCount(quantities),
     updateQuantity,
     updateAttendeeField,
     updateChosenDay,

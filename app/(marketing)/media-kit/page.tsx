@@ -119,7 +119,7 @@ export default function MediaKitPage() {
                     sizes="(min-width: 1024px) 25vw, 50vw"
                   />
                 </div>
-                <h3 className="mt-4 font-serif text-[16px] font-medium text-ink">{asset.name}</h3>
+                <h2 className="mt-4 font-serif text-[16px] font-medium text-ink">{asset.name}</h2>
                 <p className="mt-1 font-sans text-[13px] leading-relaxed text-ink/70 flex-1">
                   {asset.description}
                 </p>
@@ -129,14 +129,14 @@ export default function MediaKitPage() {
                 <a
                   href={asset.href}
                   download
-                  className="mt-4 inline-block text-ink underline underline-offset-2 font-sans text-[14px]"
+                  className="mt-4 inline-flex min-h-6 items-center text-ink underline underline-offset-2 font-sans text-[14px]"
                 >
                   Download →
                 </a>
               </div>
             ))}
           </div>
-          <p className="mt-6 font-sans text-[13px] leading-relaxed text-ink/60 max-w-[600px]">
+          <p className="mt-6 font-sans text-[13px] leading-relaxed text-ink/70 max-w-[600px]">
             Vector masters (SVG/EPS) are not yet available — the PNG files above are print-usable
             at their native resolution. Contact us if you need a size or format not listed here.
           </p>

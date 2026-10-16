@@ -91,7 +91,7 @@ export default async function EventDetailPage({
       {/* Back link */}
       <Link
         href="/events"
-        className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted hover:text-ink"
+        className="inline-flex min-h-6 items-center font-mono text-[11px] uppercase tracking-[0.18em] text-muted hover:text-ink"
       >
         ← All events
       </Link>

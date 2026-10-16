@@ -13,7 +13,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Search, Menu } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { MobileMenu } from './MobileMenu';
+import { MobileMenu, MOBILE_MENU_ID } from './MobileMenu';
 import { SearchOverlay } from './SearchOverlay';
 import { MegaMenu } from './MegaMenu';
 import { CONTACT_LINK, NAV, TICKETS_CTA } from './nav-config';
@@ -193,6 +193,8 @@ export function Header({ show }: HeaderProps = {}) {
               ref={hamburgerRef}
               type="button"
               aria-label="Open menu"
+              aria-expanded={mobileOpen}
+              aria-controls={MOBILE_MENU_ID}
               className="rounded-sm p-2 text-ink min-[1240px]:hidden hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
               onClick={() => setMobileOpen(true)}
             >

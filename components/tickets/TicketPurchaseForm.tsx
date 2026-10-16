@@ -62,7 +62,7 @@ export function TicketPurchaseForm({
         ))}
       </fieldset>
 
-      <p className="font-sans text-[15px] text-ink">
+      <p aria-live="polite" aria-atomic="true" className="font-sans text-[15px] text-ink">
         Estimated total: <strong>R{cart.estimatedTotal.toFixed(2)}</strong>{' '}
         <span className="font-mono text-[11px] tracking-[0.16em] text-muted">(estimate)</span>
       </p>
@@ -109,8 +109,8 @@ export function TicketPurchaseForm({
 
       <button
         type="submit"
-        disabled={cart.status === 'submitting'}
-        className="min-h-[44px] rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ivory transition-colors hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={cart.status === 'submitting' || cart.cartItemCount === 0}
+        className="min-h-[44px] rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink transition-colors hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-60"
       >
         {cart.status === 'submitting' ? 'Redirecting…' : buyButtonLabel}
       </button>

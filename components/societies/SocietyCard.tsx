@@ -49,9 +49,9 @@ export function SocietyCard({ society }: SocietyCardProps) {
         </p>
       ) : null}
 
-      <h3 className="mt-2 font-serif text-[20px] font-semibold leading-snug text-ink">
+      <h2 className="mt-2 font-serif text-[20px] font-semibold leading-snug text-ink">
         {society.name}
-      </h3>
+      </h2>
 
       {society.region || society.founded || society.memberCount !== null ? (
         <p

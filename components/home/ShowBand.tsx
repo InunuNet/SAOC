@@ -122,7 +122,7 @@ export function ShowBand({ show }: ShowBandProps) {
           <dl className="grid grid-cols-2 gap-x-8 gap-y-4 mb-8">
             {meta.map((item) => (
               <div key={item.label}>
-                <dt className="font-mono text-[10px] uppercase tracking-[0.22em] text-ivory/50 mb-1">
+                <dt className="font-mono text-[10px] uppercase tracking-[0.22em] text-ivory/65 mb-1">
                   {item.label}
                 </dt>
                 <dd className="font-sans text-[15px] text-ivory">{item.value}</dd>
@@ -135,7 +135,7 @@ export function ShowBand({ show }: ShowBandProps) {
           <div className="flex flex-wrap gap-4">
             <Link
               href="/national-show"
-              className="font-sans text-[14px] font-medium bg-accent text-ivory px-6 py-3 hover:bg-accent-soft transition-colors duration-150"
+              className="font-sans text-[14px] font-medium bg-accent text-ink px-6 py-3 hover:bg-accent-soft transition-colors duration-150"
             >
               Show details
             </Link>

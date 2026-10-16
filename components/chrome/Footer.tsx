@@ -43,7 +43,7 @@ export function Footer() {
           <p className="font-sans text-[13.5px] leading-relaxed text-ivory/65">
             {FOOTER_BRAND_TEXT}
           </p>
-          <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ivory/45">
+          <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ivory/65">
             {FOOTER_REG}
           </span>
         </div>
@@ -123,7 +123,7 @@ export function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-ivory/10">
         <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-8 py-4 flex-wrap">
-          <span className="font-sans text-[13px] text-ivory/45">
+          <span className="font-sans text-[13px] text-ivory/65">
             &copy; {new Date().getFullYear()}
             {FOOTER_COPYRIGHT_TAIL}
           </span>
@@ -132,7 +132,7 @@ export function Footer() {
               <Link
                 key={l.href}
                 href={l.href}
-                className="inline-flex min-h-6 items-center font-sans text-[13px] text-ivory/45 hover:text-ivory/70 transition-colors duration-150"
+                className="inline-flex min-h-6 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150"
               >
                 {l.label}
               </Link>

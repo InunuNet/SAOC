@@ -16,6 +16,8 @@ import { CONTACT_LINK, type NavColumn, type NavItem } from './nav-config';
 import { formatShowDateRange } from '@/lib/show-identity';
 import type { ShowIdentity } from '@/types';
 
+export const MOBILE_MENU_ID = 'mobile-menu';
+
 interface MobileMenuProps {
   open: boolean;
   onClose: () => void;
@@ -93,6 +95,7 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
   return (
     <div
       ref={containerRef}
+      id={MOBILE_MENU_ID}
       role="dialog"
       aria-modal="true"
       className="fixed inset-0 z-50 bg-black/45"
