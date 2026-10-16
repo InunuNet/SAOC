@@ -169,6 +169,7 @@ export function ShowContentState({
               route={route}
               facts={longform.facts}
               heading={leadParts.heading}
+              pageTitle={page.title}
               paragraphs={leadParts.paragraphs}
             />
           ) : null}
