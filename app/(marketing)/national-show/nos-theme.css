@@ -331,8 +331,9 @@
 }
 .nos-theme h2 {
   /* Section h2 (M:13, I:158): the mapping's clamp; the h2 size utilities that shared and
-     page components carry are superseded here, so every section heading is one size. */
-  font-size: clamp(2rem, 1.5rem + 1.6vw, 2.4375rem);
+     page components carry are superseded here, so every section heading is one size (R36: it
+     reaches the 48px role at a 1080px viewport). */
+  font-size: clamp(2rem, 1.2rem + 2.667vw, 3rem);
   line-height: 1.15;
   letter-spacing: -0.01em;
   font-variation-settings: 'opsz' 48;
@@ -407,6 +408,12 @@
   /* Ruling Q5: body copy inherits ink-700 from the root; headings stay royal. */
   .nos-theme :where(h1, h2, h3, h4, h5, h6) {
     color: var(--primary);
+  }
+  /* R36: a heading gives the content after it the role's bottom margin (.5em). In the base
+     layer, so a call-site margin utility still wins; label heads and card titles keep their
+     own tight rhythm. */
+  .nos-theme :is(h2, h3, h4):not(.nos-label, .nos-card-title) {
+    margin-block-end: 0.5em;
   }
 }
 

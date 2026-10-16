@@ -172,3 +172,15 @@
 .nh-brand { overflow: clip; }
 /* Menu/Close: a fixed width that fits the longer label keeps the button's right edge on the gutter. */
 .nh-burger { min-width: 104px; justify-content: center; }
+
+/* Skip link (launch-weekend F1, NOS look): royal fill, pale-gold text, the R9/3 violet ring. It sits
+   outside .nh, so it carries its own Karla stack; off-screen until focused. */
+.nh-skip {
+  position: fixed; left: 16px; top: 16px; z-index: 100;
+  display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; padding: 0 24px;
+  border-radius: 10px; background: var(--nc-royal); color: var(--nc-gold);
+  font: 700 14px/1 var(--font-nos-karla), "Karla", "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0.04em; text-decoration: none; transform: translateY(-300%);
+}
+.nh-skip:focus { transform: translateY(0); }
+.nh-skip:focus-visible { outline: 2px solid var(--nc-violet); outline-offset: 2px; }
