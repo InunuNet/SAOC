@@ -1,5 +1,7 @@
-// F7 -- the /national-show/vendors label is "Exhibitors and Vendors" everywhere, and nothing else
-// in the copy moved. Brad (2026-10-15): "Exhibitors and Vendors as a heading, some might just
+// F7 -- the /national-show/vendors label is "Exhibitors and Vendors" everywhere.
+// REBASED by launch-weekend F18 (goldens/f18/supersession.json): this file used to diff six files against the ancient base d2071be5 ("nothing else moved"),
+// which can never pass on a tree that has had F8-F17. It is now purely structural: the label pins, the nav item, and the absence of the old labels.
+// The hub's literal label list was replaced by the R69 index (NosShowIndex reads nav-config), so that pin is gone. Brad (2026-10-15): "Exhibitors and Vendors as a heading, some might just
 // Exhibit some may just be vendors eg Food, some may be both like nurseries".
 //
 // Static, no build needed. Run as: node contracts/checks/vendor-p1-targets/check-labels-static.mjs
@@ -7,7 +9,6 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
-const BASE = 'd2071be5';
 const NEW = 'Exhibitors and Vendors';
 const OLD_PATTERN = /Exhibiting Nurseries|Trade Vendors/;
 const failures = [];
@@ -16,7 +17,6 @@ const failures = [];
 const REQUIRED = [
   ['app/(marketing)/national-show/vendors/page.tsx', `title: '${NEW} — National Show',`],
   ['app/(marketing)/national-show/vendors/page.tsx', `title="${NEW}"`],
-  ['app/(marketing)/national-show/page.tsx', `{ href: '/national-show/vendors', label: '${NEW}' }`],
   ['components/show/ShowSectionNav.tsx', `{ href: '/national-show/vendors', label: '${NEW}', hint: 'The trade floor and how to exhibit' }`],
   ['components/chrome/nav-config.ts', `label: '${NEW}',`],
   // The nav's own comment says its labels match this manifest exactly, and the generator is the
@@ -54,31 +54,6 @@ for (const dir of ['app', 'components', 'lib', 'content', 'scripts']) {
     if (error.status !== 1) throw error; // 1 = no match, which is what we want
   }
   for (const line of hits.split('\n').filter(Boolean)) failures.push(`old lowercase label survives: ${line}`);
-}
-
-// Only the label changed: every removed line in the diff against base is an old-label line, and
-// its added counterpart is the same line with the label swapped -- no other copy touched.
-const LABEL_FILES = [
-  'app/(marketing)/national-show/vendors/page.tsx',
-  'app/(marketing)/national-show/page.tsx',
-  'components/show/ShowSectionNav.tsx',
-  'components/chrome/nav-config.ts',
-  'content/national-show-routes.json',
-  'scripts/generate-nos-route-manifest.ts',
-];
-for (const file of LABEL_FILES) {
-  const diff = execFileSync('git', ['diff', '-U0', BASE, '--', file], { encoding: 'utf8' });
-  const removed = diff.split('\n').filter((l) => l.startsWith('-') && !l.startsWith('---')).map((l) => l.slice(1));
-  const added = diff.split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++')).map((l) => l.slice(1));
-  if (removed.length !== added.length || removed.length === 0) {
-    failures.push(`${file}: diff vs ${BASE} has ${removed.length} removed / ${added.length} added lines (expected equal, non-zero)`);
-    continue;
-  }
-  removed.forEach((line, i) => {
-    if (!OLD_PATTERN.test(line)) failures.push(`${file}: a removed line is not an old-label line: ${line.trim()}`);
-    const swapped = line.replace(/Exhibiting Nurseries|Trade Vendors/g, NEW);
-    if (swapped !== added[i]) failures.push(`${file}: line changed beyond the label swap: "${line.trim()}" -> "${added[i].trim()}"`);
-  });
 }
 
 if (failures.length > 0) {

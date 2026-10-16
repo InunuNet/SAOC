@@ -1,0 +1,91 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: One shared long-form template on /about, /what-to-expect, /vendors and /sa-exhibitors, a public holding state (no TBC gap blocks, no builder-brief ledes, TBC notes beta-only) on the empty show pages, a tidied FAQ, exhibitors key dates and archive card, and the workshops and conferences catalogues on the F16 row component with a sticky total, with the purchase behaviour unchanged.
+created_at: '2026-10-16'
+autonomy: high
+features:
+  - id: F18a
+    name: Long-form template (R75), holding state (R76), ledes (R76b), FAQ, exhibitors duplicates, sponsors guard, archive card (R77 #2, #3, #6, R78), check hygiene
+    status: pending
+  - id: F18b
+    name: Workshops and conferences catalogue rows, sticky total, transfer note moved to /tickets (R77 #4); starts after A1-A7 are green
+    status: pending
+# SPEC: goldens/f18/f18-spec.md (read it first; sections 3 and 4 are the contract of hooks and props the checks drive).
+# GATE: cwd = the implementation worktree (branch from main 76ad8b98 with spec/lw-f18 merged in, so goldens/f18 and contracts/checks/launch-weekend/f18 exist). Export F18_BASE_REF=76ad8b98 (A10 and A11 refuse to run without it).
+# BASE_URL = a PUBLIC production build of that worktree on port 3672: `SITE_PUBLIC_LAUNCH=true pnpm run build && SITE_PUBLIC_LAUNCH=true pnpm exec next start -p 3672` (never raw next build: the image variants must exist; a fresh worktree can fail once on a Google Fonts flake, re-run). Stop by exact PID (lsof -ti tcp:3672 -sTCP:LISTEN). Do not rebuild while it runs. Ports 3670-3679 only.
+# Runtime checks read the CMS READ-ONLY. Live content decides which routes hold, so A4, A5 and A9 (render level) are the deterministic proof; A1-A3, A6-A8 prove the build.
+# The spec branch already amends check-f3-imagery, F17 check-h and F17 check-f-sponsors and rebases check-labels-static (goldens/f18/supersession.json). The dev must not edit any check or golden.
+# Run the F12/F16/F17 regression chain (A12) against the F18 build. A red there caused by an intended F18 change goes to the lead as an amendment candidate, never edited by the dev.
+# A11 is red until the dev runs the impeccable critique loop and writes f18-critique-log.md; AFTER_DIR defaults to .tmp/sandbox/lw-f18/after (capture-shots.mjs fills it).
+goldens:
+  - .agent/memory/project/specs/launch-weekend/goldens/f18/f18-spec.md
+  - .agent/memory/project/specs/launch-weekend/goldens/f18/tokens.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f18/longform-copy.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f18/break-photo-map.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f18/lede-verdicts.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f18/holding-audit.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f18/exhibitors-tbc.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f18/catalogue-fixtures.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f18/strings-allowed.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f18/supersession.json
+assertions:
+  phase: 4
+  checks:
+    - id: F18-A1
+      description: Long-form template on /about, /what-to-expect, /vendors, /sa-exhibitors - copy verbatim from longform-copy.json, two columns 4fr/7fr with 64px gap at >=900px and stacked below, aside sticky only at >=900px, lede 20px/1.5 and body 16px/1.55 at <=60ch, facts equal to the hub hero facts, pull quote where named, one 21:9 image break after the named paragraph, CTA pair (Tickets primary, Plan your visit ghost; vendors keeps its royal band), "Explore the show" index last
+      command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-a-longform.mjs
+    - id: F18-A2
+      description: Imagery - a stock photo appears only as a route's hero (R29) or inside [data-nos-image-break] on the four long-form routes at the break-photo-map.json mapping, statically and at runtime on every NOS route
+      command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-b-imagery.mjs
+    - id: F18-A3
+      description: Public holding state live - programme, international-guests and wosa-conference (and archive/faq when empty) render [data-nos-holding] with facts, sibling cards from nav-config (label + descriptor) and the Be-the-first-to-know band; no gap block, TBC label, placeholder notice, purpose line or schema preview in public HTML; mustNotHold routes never hold; WOSA link-out kept
+      command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-c-holding.mjs
+    - id: F18-A4
+      description: Holding state and ledes at render level in both modes - public no-prose holds (published and fallback marker kept), real prose never holds, hideContentGap and F17 default intact, beta never holds and keeps labelled placeholders, listing holds only when empty, RealEmptyListing schema preview beta-only, publicHeroLede drops every builder brief and keeps the four public summaries, symposium theme line untouched
+      command: pnpm exec tsx contracts/checks/launch-weekend/f18/check-d-holding-render.mts
+    - id: F18-A5
+      description: FAQ rows - public hides unanswered questions, beta keeps them with chips, native details/summary kept with the answer in the DOM, summary row >=44px spanning the list, icon 20px centred, chip inline <=12px, a click on the middle of the row toggles it, at 1280 and 390
+      command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 pnpm exec tsx contracts/checks/launch-weekend/f18/check-e-faq.mts
+    - id: F18-A6
+      description: Exhibitors key dates - restatesPending drops restating dateNotes per the exhibitors-tbc.json table (research and question rows untouched, empty note false), live pending rows keep their chip and render no restating sentence
+      command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 pnpm exec tsx contracts/checks/launch-weekend/f18/check-f-exhibitors.mts
+    - id: F18-A7
+      description: No builder-brief lede (the nine dropped summaries) appears anywhere in the public server HTML of any NOS route (hero, meta, og, JSON-LD)
+      command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-g-ledes.mjs
+    - id: F18-A8
+      description: Catalogue live - /conferences and /workshops rows with R-format prices, steppers with the unchanged aria-labels that move quantity, sticky total <=96px inside the viewport with the submit button, checkout payload shape unchanged (intercepted), transfer note gone from both and present on /tickets, at 1280 and 390
+      command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-h-catalogue.mjs
+    - id: F18-A9
+      description: Catalogue render level with catalogue-fixtures.json - one row per type with name, price R2000/R200/R250.50 (no .00), description, stepper aria-labels, sold-out disabled, sticky total block with Estimated total and the buy button, no old estimate paragraph, single requiresDaySelection type still hides the row stepper
+      command: pnpm exec tsx contracts/checks/launch-weekend/f18/check-i-catalogue-render.mts
+    - id: F18-A10
+      description: Scope - only allowlisted files change (no nav-config, footer-data, vendor components, content/ or sanity/), no hex, rgb, new font, animation, non-150ms duration, shadow or emoji added, no new user-visible sentence outside the base tree and strings-allowed.json, the archive TBC card has no width cap
+      command: node --import tsx/esm contracts/checks/launch-weekend/f18/check-j-archive-scope.mjs
+    - id: F18-A11
+      description: Critique evidence - fresh PNGs of the 12 critique routes at 390 and 1280 newer than the last source edit, f18-critique-log.md with >=2 impeccable passes (390, 1280) and a final pass P0 0, P1 0, P2 0, Score >= 36/40
+      command: node --import tsx/esm contracts/checks/launch-weekend/f18/check-k-critique-artefacts.mjs
+    - id: F18-A12
+      description: Regression - F17 hub, footer, sponsors, symposium, symposium render, Members, explore-index on every route and key dates; F17 supersession; F3 imagery, tickets and rhythm; F12 axis and heroes; F16 copy and index; the F16 rows; all green on the F18 build
+      command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f17/check-d-hub.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f17/check-e-footer.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f17/check-f-sponsors.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f17/check-g-symposium.mjs && pnpm exec tsx contracts/checks/launch-weekend/f17/check-h-symposium-render.mts && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f17/check-l-members.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f17/check-m-index.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f17/check-n-keydates.mjs && node contracts/checks/launch-weekend/f17/check-k-supersession.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-imagery.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-tickets.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-rhythm.mjs && node --import tsx/esm contracts/checks/launch-weekend/f12/check-a-static.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f12/check-k-axis.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f12/check-j-inner-hero.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f16/check-b-index.mjs && BASE_URL=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f16/check-c-rows.mjs && node --import tsx/esm contracts/checks/launch-weekend/f16/check-d-render.mts
+    - id: F18-A13
+      description: Check hygiene - supersession.json names the rebased and amended checks, check-labels-static is structural and exits 0, check-f3-imagery excludes the image break, F17 check-h and check-f-sponsors carry the amendments
+      command: node --import tsx/esm contracts/checks/launch-weekend/f18/check-l-supersession.mjs
+    - id: F18-A14
+      description: Ticket and catalogue journeys - the tracked sold-out and empty-state e2e spec passes on the F18 tree (spins its own dev server; run after the 3672 server is stopped if memory is tight)
+      command: pnpm exec playwright test e2e/sold-out-and-empty-states.spec.ts
+    - id: F18-A15
+      description: Lint
+      command: pnpm lint
+    - id: F18-A16
+      description: Type-check
+      command: pnpm type-check
+    - id: F18-A17
+      description: Public production build
+      command: SITE_PUBLIC_LAUNCH=true pnpm run build
+    - id: F18-A18
+      description: Docs - the feature is documented
+      command: test -f docs/national-show-long-form-and-holding.md
+    - id: F18-A19
+      description: Codex adversarial review ran against the F18 diff (cross-model; falls back to the QA persona only if codex is unavailable, and says so)
+      type: codex_qa
+      target: "Adversarially review the F18 diff of mission launch-weekend: (1) the shared long-form template on /about, /what-to-expect, /vendors and /sa-exhibitors must render Lee-Ann's copy verbatim (goldens/f18/longform-copy.json), add no copy, keep the Explore index last and use the break photo only inside [data-nos-image-break]; (2) the public holding state must appear only in public mode (withholdPlaceholderProse() is the single switch), must never hide real prose or the F24 fallback marker, and must leave beta mode byte-for-byte as today; (3) publicHeroLede must drop only the nine builder briefs and never the four public summaries or the symposium theme line; (4) the catalogue rows must keep the useTicketCart payload, the aria-labels and the sold-out and sales-closed branches intact, and the transfer note must still render on /tickets; (5) no invented copy, colour, font, shadow or animation. For each finding cite file:line, the concrete failure scenario and a confidence rating. If nothing real is wrong say so plainly."

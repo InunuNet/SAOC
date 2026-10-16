@@ -1,0 +1,36 @@
+// Shared helpers for the launch-weekend F18 (long-form template, holding state, ledes, FAQ, exhibitors, catalogue rows) checks.
+// Run from the implementation worktree root, after `SITE_PUBLIC_LAUNCH=true pnpm run build` (never raw `next build`: the image variants must exist):
+//   node --import tsx/esm contracts/checks/launch-weekend/f18/<check>.mjs        (pnpm exec tsx for the .mts render checks: they import with the "@/" alias)
+// Runtime checks reuse the F17 lib (and through it the NOS F3 lib): NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 against a server you started
+// (ports 3670-3679 only). Exit 1 = finding, 2 = infrastructure. cwd = the tree under test. Runtime checks read the CMS read-only and never mutate it.
+import { execFileSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+
+process.env.F17_PORT = process.env.F18_PORT || process.env.F17_PORT || '3672';
+const f17 = await import('../f17/_lib.mjs');
+
+export const { main, openPage, withBrowser, BASE, norm, near, VP } = f17;
+
+export const GOLDEN_DIR = '.agent/memory/project/specs/launch-weekend/goldens/f18';
+export const readGolden = (name) => JSON.parse(readFileSync(`${GOLDEN_DIR}/${name}`, 'utf8'));
+export const T = readGolden('tokens.json');
+
+export const git = (...a) => execFileSync('git', a, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+export const gitLines = (...a) => git(...a).split('\n').filter(Boolean);
+export const readText = (file) => (existsSync(file) ? readFileSync(file, 'utf8') : null);
+
+// The diff base: F18_BASE_REF pins the commit the dev branched from (main 76ad8b98 plus this spec branch merged in).
+export function baseRef() {
+  if (process.env.F18_BASE_REF) return process.env.F18_BASE_REF;
+  console.error('INFRA: set F18_BASE_REF to the commit the F18 dev branched from (the spec records main 76ad8b98)');
+  process.exit(2);
+}
+
+// Typographic normalisation for copy comparison: straight and curly quotes and all whitespace compare equal, the words may not differ.
+export const flat = (t) => (t ?? '').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').trim();
+
+export const httpAuth = () => (process.env.BETA_BASIC_AUTH_USER ? { authorization: `Basic ${Buffer.from(`${process.env.BETA_BASIC_AUTH_USER}:${process.env.BETA_BASIC_AUTH_PASSWORD}`).toString('base64')}` } : {});
+export async function fetchHtml(route) {
+  const res = await fetch(`${BASE}${route}`, { headers: httpAuth() });
+  return { status: res.status, html: await res.text() };
+}

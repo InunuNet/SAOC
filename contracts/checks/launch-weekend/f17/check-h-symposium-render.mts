@@ -56,8 +56,10 @@ if (!/data-nos-content-state="fallback-unpublished"/.test(d)) problems.push('fal
 
 const only = (file: string) => readFileSync(file, 'utf8').includes(PROP);
 if (!only('app/(marketing)/national-show/symposium/page.tsx')) problems.push(`symposium/page.tsx does not pass ${PROP}`);
-for (const f of ['programme', 'wosa-conference', 'sa-exhibitors', 'international-guests', 'sponsors']) {
-  if (only(`app/(marketing)/national-show/${f}/page.tsx`)) problems.push(`${f}/page.tsx passes ${PROP}: the hide is symposium-only`);
+// AMENDED by launch-weekend F18 (goldens/f18/supersession.json): sa-exhibitors (real overview prose plus a placeholder gap) also passes the prop; programme, wosa-conference, international-guests
+// and sponsors never do (they either carry no prose and render the F18 holding state, or have their own designed panel).
+for (const f of ['programme', 'wosa-conference', 'international-guests', 'sponsors']) {
+  if (only(`app/(marketing)/national-show/${f}/page.tsx`)) problems.push(`${f}/page.tsx passes ${PROP}: only symposium and sa-exhibitors may`);
 }
 
 if (problems.length) { console.error(`FAIL F17-A8 (${problems.length}):\n- ${problems.join('\n- ')}`); process.exit(1); }

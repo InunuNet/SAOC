@@ -1,0 +1,57 @@
+{
+  "_note": "Render-level fixtures for the F18b catalogue rows (no CMS, no server). Types follow TicketTypeCardData. The expected strings are what the F16 row vocabulary produces (formatRand: whole rand without cents).",
+  "soldOutMessage": "Sold out",
+  "buyButtonLabel": "Buy Ticket",
+  "showDays": [
+    "2027-09-23",
+    "2027-09-24",
+    "2027-09-25",
+    "2027-09-26"
+  ],
+  "types": [
+    {
+      "slug": "fx-symposium",
+      "name": "Fixture Symposium",
+      "price": 2000,
+      "regularPrice": null,
+      "description": "Full registration for the Fixture track.",
+      "soldOut": false,
+      "provisional": false,
+      "requiresDaySelection": false,
+      "expectPrice": "R2000"
+    },
+    {
+      "slug": "fx-field-trip",
+      "name": "Fixture Field Trip",
+      "price": 200,
+      "regularPrice": null,
+      "description": "Transport and entry for one outing.",
+      "soldOut": false,
+      "provisional": true,
+      "requiresDaySelection": false,
+      "expectPrice": "R200"
+    },
+    {
+      "slug": "fx-cocktails",
+      "name": "Fixture Cocktails",
+      "price": 250.5,
+      "regularPrice": null,
+      "description": "Evening reception.",
+      "soldOut": false,
+      "provisional": true,
+      "requiresDaySelection": false,
+      "expectPrice": "R250.50"
+    },
+    {
+      "slug": "fx-sold",
+      "name": "Fixture Sold Out",
+      "price": 100,
+      "regularPrice": null,
+      "description": "No places left.",
+      "soldOut": true,
+      "provisional": false,
+      "requiresDaySelection": false,
+      "expectPrice": "R100"
+    }
+  ]
+}

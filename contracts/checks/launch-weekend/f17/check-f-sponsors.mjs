@@ -57,7 +57,8 @@ await main('F17-A6 sponsors panel axis', async (r) => {
       if (m.heading !== T.sponsors.headingText) r.fail(`${tag}: panel heading "${m.heading}", want "${T.sponsors.headingText}"`);
       if (!m.hasSentence) r.fail(`${tag}: the panel lost its sentence`);
       if (!m.action.some((a) => a === 'Talk to us about sponsorship')) r.fail(`${tag}: the "Talk to us about sponsorship" action is gone (${JSON.stringify(m.action)})`);
-      if (!(m.markerText ?? '').includes('To be confirmed by the show committee') || !m.markerBefore) r.fail(`${tag}: the "To be confirmed by the show committee" marker must still precede the panel (got ${JSON.stringify(m.markerText)}, before=${m.markerBefore})`);
+      // AMENDED by launch-weekend F18 (goldens/f18/supersession.json): the TBC marker is a beta-only note now (SHOW_PLACEHOLDER_PREVIEW); a public build renders none. When one renders it must still precede the panel.
+      if (m.markerText !== null && (!m.markerText.includes('To be confirmed by the show committee') || !m.markerBefore)) r.fail(`${tag}: a TBC marker renders but does not precede the panel (got ${JSON.stringify(m.markerText)}, before=${m.markerBefore})`);
     }
     if (!seen) console.log('NOTE: the sponsor list is not empty, so the "Become a sponsor" panel does not render and nothing was measured (axis behaviour of the listing grid is covered by F12-A15)');
     await ctx.close();

@@ -1,0 +1,56 @@
+{
+  "note": "F18 retires, rebases or amends the checks below. Edits are made in this spec branch (the architect's); the F18 dev must not edit any file listed here. Retired checks run in no gate.",
+  "retired": [],
+  "rebased": [
+    {
+      "file": "contracts/checks/vendor-p1-targets/check-labels-static.mjs",
+      "was": "diffed six files against the ancient base d2071be5 (\"nothing else moved\"); measured 2026-10-16 on 76ad8b98: 5 diff failures plus a stale hub-page pin, so it could never pass on any F8-F17 tree (F17 listed it as not-gated-already-red).",
+      "now": "purely structural: the label pins (vendors page title and h1, nav-config vendors item with its descriptor, the manifest and its generator, ShowSectionNav), and no \"Exhibiting Nurseries\" / \"Trade Vendors\" / \"exhibiting nurseries\" anywhere in shipped source. The hub literal pin is dropped (the R69 index reads nav-config, so the hub holds no label literal). Measured: exits 0 on 76ad8b98 + this branch.",
+      "gatedBy": "F18-A13 (and the vendor-flow-fixes contract-f7 assertion that already ran it)"
+    }
+  ],
+  "amended": [
+    {
+      "file": "contracts/checks/nos-own-brand-chrome/f3/check-f3-imagery.mjs",
+      "reason": "Images inside [data-nos-image-break] (the F18 long-form break) are excluded from the hero-photo rules (they would otherwise read as a stock photo on a route with no hero photo, or on the wrong route). Everything else in that check is unchanged and still gates the hero photos.",
+      "replacedBy": "F18-A2 (check-b-imagery.mjs) owns the break rule: goldens/f18/break-photo-map.json"
+    },
+    {
+      "file": "contracts/checks/launch-weekend/f17/check-h-symposium-render.mts (static list)",
+      "reason": "F17 asserted that only symposium passes hideContentGap. sa-exhibitors (real overview prose plus a placeholder gap block) now passes it too. programme, wosa-conference, international-guests and sponsors still must not: they render the holding state or their own panel."
+    },
+    {
+      "file": "contracts/checks/launch-weekend/f17/check-f-sponsors.mjs",
+      "reason": "F17-A6 required the \"To be confirmed by the show committee\" marker before the sponsors panel. The marker is a beta-only note now (Brad: TBC notes on beta only); a public build renders none. The check now allows no marker and still requires one that renders to precede the panel."
+    }
+  ],
+  "notRerunInF18": [
+    {
+      "file": "F17-A1, F17-A2, F17-A3 (naming, legal text, labels)",
+      "reason": "They diff against F17's own base (F17_BASE_REF) and swap-file lists. F18 adds copy only by reusing existing strings (F18-A11 is the stricter no-new-copy gate) and edits no nav label or legal fieldset. F18-A12 re-runs the F17 guards that are measured against the build, not against a base."
+    },
+    {
+      "file": "F17-A9 (scope allowlist)",
+      "reason": "Base-pinned to the F17 diff. F18-A11 is the scope authority for this branch."
+    },
+    {
+      "file": "F16-A7 check-g-scope.mjs",
+      "reason": "Already superseded by F17-A9; same here."
+    }
+  ],
+  "stillGated": {
+    "note": "The F17 checks measured against the build rather than a base remain in the F18 gate (F18-A12): F12 axis (check-k-axis), hub hero and hub index, inner hero, symposium F12, F16 copy and index, F17-A4 hub, A5 footer, A6 sponsors, A7 symposium, A8 render, A17 members, A19 explore index, A20 key dates, and the surviving F3 imagery, tickets and rhythm checks."
+  },
+  "notGatedStillRed": {
+    "note": "Unchanged from goldens/f17/supersession.json not_gated_already_red_on_41a7a08f except check-labels-static, which F18 fixed.",
+    "checks": [
+      "contracts/checks/nos-own-brand-chrome/f3/check-f3-subnav.mjs",
+      "contracts/checks/nos-own-brand-chrome/f3/check-f3-hub-links.mjs",
+      "contracts/checks/nos-own-brand-chrome/f3/check-f3-hub-conversion.mjs",
+      "contracts/checks/nos-own-brand-chrome/f3/check-f3-audit.mjs",
+      "contracts/checks/menu-system-layout4-f1/check-descriptor-provenance.mjs",
+      "contracts/checks/vendor-stand-return-url/check-initiate-route-urls.mjs"
+    ]
+  },
+  "e2eJourneysNote": "e2e/journeys/ (j11-tickets-proof, j12-vendors-proof, journeys.spec.ts and their config) is UNTRACKED in the main working tree, so it is absent from any worktree branched from main. Both proofs are headed and skip unless E2E_PROOF=1; j11 clicks the first button named /increase quantity/i and fills \"attendee name\" and \"email address\" labels. F18b preserves those accessible names (F18-A9 asserts them), so the journey keeps working when it is committed."
+}

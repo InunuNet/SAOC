@@ -1,0 +1,126 @@
+{
+  "_note": "R76b. Every content/show-pages/*.json \"summary\" judged. verdict \"drop\" = no hero lede is rendered for that summary (a builder brief, or an unsourced claim); \"keep\" = it reads publicly and may be a lede or page meta. Rendering rule: lib/data/show-page-presentation.ts exports publicHeroLede(summary) (undefined for every \"drop\" summary, the summary itself otherwise); ShowContentState passes its result to NosHero. The decision is by summary TEXT, not page key, so a summary rewritten in Studio to real copy shows again. The \"drop\" list is reported to Lee-Ann in f18-spec.md. renderedAsHeroLedeToday records which summaries reached a hero lede on F17 main (ShowContentState routes: sa-exhibitors, international-guests, programme, wosa-conference, sponsors, symposium).",
+  "fn": {
+    "module": "lib/data/show-page-presentation.ts",
+    "export": "publicHeroLede"
+  },
+  "pages": [
+    {
+      "pageKey": "01-national-show-landing",
+      "file": "content/show-pages/01-national-show-landing.json",
+      "summary": "The primary gateway to the 2027 South African National Orchid Show, showcasing the event theme and linking to every part of the show.",
+      "v3Purpose": "Primary gateway and evolving hub for the National Show, showcasing the event theme.",
+      "verdict": "drop",
+      "renderedAsHeroLedeToday": false,
+      "reason": "A rewording of the V3 4.1 Purpose line (\"primary gateway ... showcasing the event theme\"): a builder brief about the page, not a sentence for a visitor."
+    },
+    {
+      "pageKey": "02-about-the-national-show",
+      "file": "content/show-pages/02-about-the-national-show.json",
+      "summary": "The Orchid Council's introduction to the 2027 National Show and its theme, \"From Wild Origins to Cultivated Excellence: The Future of Orchids.\"",
+      "v3Purpose": "Visitor's introduction to the event and its theme; a secondary navigation gateway.",
+      "verdict": "drop",
+      "renderedAsHeroLedeToday": false,
+      "reason": "Describes the page (\"the Orchid Council's introduction to ...\") in the third person; a rewording of the V3 4.2 Purpose line."
+    },
+    {
+      "pageKey": "03-what-to-expect",
+      "file": "content/show-pages/03-what-to-expect.json",
+      "summary": "What visitors will find at the 2027 National Orchid Show.",
+      "v3Purpose": "Practical visitor orientation page covering the essentials of attending.",
+      "verdict": "keep",
+      "renderedAsHeroLedeToday": false,
+      "reason": "Reads as a plain sentence to a visitor. Not rendered as a lede (the route uses the Sanity expectIntro); kept as page meta only."
+    },
+    {
+      "pageKey": "04-south-african-exhibitors",
+      "file": "content/show-pages/04-south-african-exhibitors.json",
+      "summary": "Showcasing the finest in South African orchid growing.",
+      "v3Purpose": "Showcases local growers, nurseries and societies exhibiting at the Show.",
+      "verdict": "keep",
+      "renderedAsHeroLedeToday": true,
+      "reason": "\"Showcasing the finest in South African orchid growing.\" is Lee-Ann's own heading in her South African Exhibitors document (docs/leeann-source/south-african-exhibitors_2026-08-25.md), so it is sourced and reads publicly."
+    },
+    {
+      "pageKey": "05-international-guests-and-exhibitors",
+      "file": "content/show-pages/05-international-guests-and-exhibitors.json",
+      "summary": "Profiles of international speakers, judges, exhibitors and researchers attending the Show.",
+      "v3Purpose": "Profiles international speakers, judges, exhibitors and researchers attending the Show.",
+      "verdict": "drop",
+      "renderedAsHeroLedeToday": true,
+      "reason": "Near-verbatim V3 4.5 Purpose (\"Profiles international speakers, judges, exhibitors and researchers attending the Show\"): a builder brief, and a claim about guests no one has confirmed."
+    },
+    {
+      "pageKey": "06-saoc-symposium",
+      "file": "content/show-pages/06-saoc-symposium.json",
+      "summary": "Programme and registration hub for the SAOC Symposium.",
+      "v3Purpose": "Programme and registration hub for the SAOC Symposium.",
+      "verdict": "drop",
+      "renderedAsHeroLedeToday": false,
+      "reason": "Verbatim V3 4.6 Purpose. Already replaced by the theme line at render time (R70, show-page-presentation.ts), so the route never shows it."
+    },
+    {
+      "pageKey": "07-wosa-conference",
+      "file": "content/show-pages/07-wosa-conference.json",
+      "summary": "The Wild Orchids of Southern Africa Conference, held alongside the National Show.",
+      "v3Purpose": "Dedicated section for the Wild Orchids of Southern Africa Conference, reinforcing the “wild origins” strand of the event theme.",
+      "verdict": "drop",
+      "renderedAsHeroLedeToday": true,
+      "reason": "No Drive source for \"held alongside the National Show\" (Lee-Ann's About says WOSA contributes within the symposium) and it is not her wording: an unsourced claim, treated like a brief."
+    },
+    {
+      "pageKey": "11-programme",
+      "file": "content/show-pages/11-programme.json",
+      "summary": "The master timetable across all National Show activities.",
+      "v3Purpose": "Master timetable across all National Show activities.",
+      "verdict": "drop",
+      "renderedAsHeroLedeToday": true,
+      "reason": "Builder brief: V3 4.11 Purpose reworded (\"master timetable across all ... activities\")."
+    },
+    {
+      "pageKey": "12-workshops",
+      "file": "content/show-pages/12-workshops.json",
+      "summary": "Detailed, bookable workshop listings for the 2027 National Show.",
+      "v3Purpose": "Detailed, bookable workshop listings.",
+      "verdict": "drop",
+      "renderedAsHeroLedeToday": false,
+      "reason": "Builder brief: V3 4.12 Purpose reworded (\"detailed, bookable workshop listings\")."
+    },
+    {
+      "pageKey": "13-booking-tickets",
+      "file": "content/show-pages/13-booking-tickets.json",
+      "summary": "Ticket categories and activities available to book for the 2027 National Show.",
+      "v3Purpose": "Single, unified booking and payment experience across all ticketed elements.",
+      "verdict": "drop",
+      "renderedAsHeroLedeToday": false,
+      "reason": "Builder brief: V3 4.13 Purpose reworded; the tickets routes do not render show-page summaries."
+    },
+    {
+      "pageKey": "15-sponsors",
+      "file": "content/show-pages/15-sponsors.json",
+      "summary": "Recognising the headline and supporting sponsors and donors of the 2027 National Show.",
+      "v3Purpose": "Recognises headline and supporting sponsors and donors.",
+      "verdict": "drop",
+      "renderedAsHeroLedeToday": true,
+      "reason": "Builder brief: V3 4.15 Purpose reworded (\"recognising the headline and supporting sponsors and donors\")."
+    },
+    {
+      "pageKey": "16-plan-your-visit",
+      "file": "content/show-pages/16-plan-your-visit.json",
+      "summary": "Travel, accommodation and itinerary guidance for visitors to the 2027 National Show.",
+      "v3Purpose": "Positions the National Show as a destination event rather than a single-day exhibition.",
+      "verdict": "keep",
+      "renderedAsHeroLedeToday": false,
+      "reason": "A plain description a visitor could read; the route uses its own Sanity copy, so it is page meta only."
+    },
+    {
+      "pageKey": "17-faq",
+      "file": "content/show-pages/17-faq.json",
+      "summary": "Answers to the questions visitors ask us most about the 2027 National Show.",
+      "v3Purpose": "Reduces repetitive enquiries with a living, searchable resource.",
+      "verdict": "keep",
+      "renderedAsHeroLedeToday": false,
+      "reason": "\"Answers to the questions visitors ask us most\" reads publicly; the route uses the Sanity faqIntro, so it is page meta only."
+    }
+  ]
+}

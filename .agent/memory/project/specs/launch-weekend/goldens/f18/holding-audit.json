@@ -1,0 +1,157 @@
+{
+  "_note": "R76 audit of all 17 NOS routes plus the vendor sub-routes, measured on F17 main 76ad8b98 by reading each page module, its content/show-pages seed and ShowContentState/applyContentGaps. \"publicBody\" is what a SITE_PUBLIC_LAUNCH=true build can render once AI placeholder prose is withheld (lib/data/show-pages.ts withholdPlaceholderProse): placeholder-ai sections collapse to one muted \"To be confirmed by the show committee\" gap block. Beta mode (SHOW_PLACEHOLDER_PREVIEW=true behind the wall) keeps today's labelled placeholders, the notice, the gap-free page and the field-label schema preview; the holding state never renders there.",
+  "modes": {
+    "public": "SITE_PUBLIC_LAUNCH=true, or the beta wall not configured, or SHOW_PLACEHOLDER_PREVIEW not \"true\"",
+    "beta": "SHOW_PLACEHOLDER_PREVIEW=true AND both BETA_BASIC_AUTH credentials set AND SITE_PUBLIC_LAUNCH not \"true\"",
+    "oneRule": "Everything marked beta-only below is gated on !withholdPlaceholderProse() (exported from lib/data/show-pages.ts); no second switch is introduced."
+  },
+  "holdingDefinite": [
+    "/national-show/programme",
+    "/national-show/international-guests",
+    "/national-show/wosa-conference"
+  ],
+  "holdingConditional": [
+    {
+      "route": "/national-show/archive",
+      "when": "no published past show (no [data-nos-edition-card])"
+    },
+    {
+      "route": "/national-show/faq",
+      "when": "no answered question (no <details>) after unanswered ones are hidden"
+    }
+  ],
+  "mustNotHold": [
+    "/national-show",
+    "/national-show/about",
+    "/national-show/what-to-expect",
+    "/national-show/plan-your-visit",
+    "/national-show/exhibitors",
+    "/national-show/vendors",
+    "/national-show/sa-exhibitors",
+    "/national-show/symposium",
+    "/national-show/sponsors",
+    "/national-show/tickets",
+    "/national-show/workshops",
+    "/national-show/conferences"
+  ],
+  "publicNoPlaceholderRoutes": [
+    "/national-show/programme",
+    "/national-show/international-guests",
+    "/national-show/wosa-conference",
+    "/national-show/symposium",
+    "/national-show/sa-exhibitors",
+    "/national-show/sponsors",
+    "/national-show/archive",
+    "/national-show/faq"
+  ],
+  "routes": [
+    {
+      "route": "/national-show",
+      "source": "page.tsx (Sanity facts, ticket rows)",
+      "publicBody": "supplied",
+      "treatment": "unchanged; no ShowSectionNav, keeps its own R69 index"
+    },
+    {
+      "route": "/national-show/about",
+      "source": "static Lee-Ann copy (6 paragraphs)",
+      "publicBody": "supplied",
+      "treatment": "long-form template"
+    },
+    {
+      "route": "/national-show/what-to-expect",
+      "source": "static Lee-Ann copy (7 paragraphs) + Sanity logistics",
+      "publicBody": "supplied",
+      "treatment": "long-form template for the narrative; the Sanity logistics sections below it are untouched"
+    },
+    {
+      "route": "/national-show/plan-your-visit",
+      "source": "Sanity visitor info; CtaBand \"Be the first to know\" is the source of the holding CTA",
+      "publicBody": "supplied",
+      "treatment": "unchanged"
+    },
+    {
+      "route": "/national-show/programme",
+      "source": "11-programme (all placeholder-ai)",
+      "publicBody": "EMPTY",
+      "treatment": "holding state"
+    },
+    {
+      "route": "/national-show/workshops",
+      "source": "ticket catalogue (no show page)",
+      "publicBody": "catalogue",
+      "treatment": "F18b catalogue rows; not a holding route"
+    },
+    {
+      "route": "/national-show/conferences",
+      "source": "ticket catalogue (no show page)",
+      "publicBody": "catalogue",
+      "treatment": "F18b catalogue rows; not a holding route"
+    },
+    {
+      "route": "/national-show/symposium",
+      "source": "06 (theme council-supplied; rest placeholder-ai)",
+      "publicBody": "supplied",
+      "treatment": "F17 hideContentGap, unchanged"
+    },
+    {
+      "route": "/national-show/wosa-conference",
+      "source": "07 (all placeholder-ai) + static WOSA link-out",
+      "publicBody": "EMPTY",
+      "treatment": "holding state, WOSA link-out paragraph (afterProse) kept after the cards"
+    },
+    {
+      "route": "/national-show/exhibitors",
+      "source": "Sanity exhibitor info (chips are the R11 confirmation model)",
+      "publicBody": "supplied",
+      "treatment": "R77 #3 duplicate sentences dropped, chips kept in both modes"
+    },
+    {
+      "route": "/national-show/vendors",
+      "source": "VendorIntro (Lee-Ann copy) + vendor grid",
+      "publicBody": "supplied",
+      "treatment": "long-form template; the pending chip over the intro is beta-only (TBC placeholder)"
+    },
+    {
+      "route": "/national-show/sa-exhibitors",
+      "source": "04 (overview council-supplied; directory placeholder-ai) + nursery listing",
+      "publicBody": "supplied",
+      "treatment": "long-form template; the gap block is hidden (hideContentGap); the empty listing shows only its absence sentence in public, the field-label schema preview in beta"
+    },
+    {
+      "route": "/national-show/international-guests",
+      "source": "05 (all placeholder-ai) + nursery listing",
+      "publicBody": "EMPTY",
+      "treatment": "holding state with the page's own absence sentence as its first line; the field-label schema preview (R77 #5) is beta-only"
+    },
+    {
+      "route": "/national-show/sponsors",
+      "source": "15 (all placeholder-ai) + showSponsor list",
+      "publicBody": "panel",
+      "treatment": "F17 axis panel unchanged; its TBC chip is beta-only; one panel on the axis (R77 #6, closed by F17-A6, guarded again here)"
+    },
+    {
+      "route": "/national-show/archive",
+      "source": "Sanity past shows",
+      "publicBody": "conditional",
+      "treatment": "public: holding when empty. beta: the TBC card spans the axis column (max-width removed)"
+    },
+    {
+      "route": "/national-show/faq",
+      "source": "Sanity showFaq + visitor info",
+      "publicBody": "conditional",
+      "treatment": "public: unanswered questions are not rendered, holding when none remain. beta: unanswered rows render with the inline chip"
+    },
+    {
+      "route": "/national-show/tickets",
+      "source": "F16/F17 audience index and rows",
+      "publicBody": "supplied",
+      "treatment": "unchanged"
+    }
+  ],
+  "statements": {
+    "/national-show/international-guests": "No international guests or exhibitors have been confirmed for 2027 yet. Confirmed guests will appear here, one card per exhibitor, as they register ahead of the show."
+  },
+  "keepLinks": {
+    "/national-show/wosa-conference": "https://wildorchids.co.za"
+  }
+}

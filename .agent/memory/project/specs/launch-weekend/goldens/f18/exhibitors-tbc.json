@@ -1,0 +1,49 @@
+{
+  "_note": "R77 #3. In the key-dates table every row with a pending marker (status pending, missing or unrecognised) already says so in a chip (\"To be confirmed by the show committee\"). When the row's dateNote only RESTATES that the date is unset, the sentence is dropped and the chip stays. A dateNote that carries information (a pointer, a research value) is kept. research and question rows are never touched. restatesPending is the one predicate; the cases below are its table, taken from the live Sanity rows measured at F17 main.",
+  "predicate": "restatesPending",
+  "pattern": "(\\bnot (yet )?set\\b|\\bto be set\\b|will confirm)",
+  "flags": "i",
+  "cases": [
+    {
+      "dateNote": "To be set by the show committee",
+      "status": "pending",
+      "rendered": false
+    },
+    {
+      "dateNote": "Staging start not set — the show committee will confirm it",
+      "status": "pending",
+      "rendered": false
+    },
+    {
+      "dateNote": "Staging cut-off not set — the show committee will confirm it",
+      "status": "pending",
+      "rendered": false
+    },
+    {
+      "dateNote": "Judging schedule not set — the show committee will confirm it",
+      "status": "pending",
+      "rendered": false
+    },
+    {
+      "dateNote": "Removal time not set — the show committee will confirm it",
+      "status": "pending",
+      "rendered": false
+    },
+    {
+      "dateNote": "See the show overview page",
+      "status": "pending",
+      "rendered": true
+    },
+    {
+      "dateNote": "To be set by the show committee",
+      "status": "research",
+      "rendered": true
+    },
+    {
+      "dateNote": "To be set by the show committee",
+      "status": "confirmed",
+      "rendered": true
+    }
+  ],
+  "chipKept": true
+}

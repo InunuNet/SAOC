@@ -1,0 +1,28 @@
+{
+  "_note": "The no-invention gate (F18-A11) extracts every multi-word string an F18 diff ADDS to a rendered file and requires it to exist verbatim somewhere in the base tree (git grep -F at F18_BASE_REF) or to be listed here. This list names the strings F18 reuses from nav-config or existing components and the words a new template unavoidably needs. Anything else is invented copy and fails.",
+  "reuse": [
+    "Stay informed",
+    "Be the first to know",
+    "Ask the council",
+    "Explore the show",
+    "Tickets",
+    "Plan your visit",
+    "Dates",
+    "Host",
+    "Venue",
+    "Cycle",
+    "Triennial",
+    "Show history awaiting committee records",
+    "Estimated total",
+    "(estimate)",
+    "Increase quantity of",
+    "Decrease quantity of",
+    "Buy Ticket",
+    "Sold out",
+    "Register as a vendor",
+    "Vendor Application",
+    "Provisional pricing — subject to change",
+    "You must choose a day when you book."
+  ],
+  "note2": "A new accessible name for a template landmark (for example aria-label on the long-form aside) must be one of the reuse strings or an existing nav-config label; list it here if added."
+}
