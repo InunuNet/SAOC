@@ -11,16 +11,21 @@
 
 export interface NosHeroPhoto {
   src: string;
-  /** Hub only: the mock's `object-position: 68% 50%` is carried by `.nos-hero-hub`. */
+  /**
+   * The photograph's focal point in the stacked hero below 768px (NosHero passes it to the CSS
+   * as `--nos-hero-pos`), measured from the pixels: the position that keeps the most bloom mass in
+   * the 390px-wide hero crop (goldens/measure-bloom.py, bloom-marginals.json). At 768px and up
+   * the hero CSS keeps its own positions; the hub's mock `object-position: 68% 50%` lives there.
+   */
   objectPosition?: string;
 }
 
 export const HERO_PHOTOS: Readonly<Record<string, NosHeroPhoto>> = {
   '/national-show': { src: '/images/orchid-dark.jpg', objectPosition: '68% 50%' },
-  '/national-show/plan-your-visit': { src: '/images/orchid-yellow.jpg' },
-  '/national-show/symposium': { src: '/images/orchid-violet.jpg' },
-  '/national-show/programme': { src: '/images/orchid-purple.jpg' },
-  '/national-show/what-to-expect': { src: '/images/orchid-pink.jpg' },
+  '/national-show/plan-your-visit': { src: '/images/orchid-yellow.jpg', objectPosition: '6% 50%' },
+  '/national-show/symposium': { src: '/images/orchid-violet.jpg', objectPosition: '12% 50%' },
+  '/national-show/programme': { src: '/images/orchid-purple.jpg', objectPosition: '50% 50%' },
+  '/national-show/what-to-expect': { src: '/images/orchid-pink.jpg', objectPosition: '50% 63%' },
 };
 
 export function heroPhotoFor(route: string): NosHeroPhoto | null {

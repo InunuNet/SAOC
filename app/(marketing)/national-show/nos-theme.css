@@ -709,6 +709,34 @@
   }
 }
 
+/* ---- R80 #1 (lead saoc-2b 2026-10-17): below 768px the photograph LEADS, fixed-height, then the
+   h1, lede and CTAs, then (hub) the countdown and facts. 768-1023px keeps the stacked rules
+   above. The photograph's object-position is the per-photo focal point NosHero passes in
+   `--nos-hero-pos` (measured from the pixels, hero-photos.ts); the lede is 18px/1.5 (Codi). ---- */
+@media (max-width: 767px) {
+  .nos-theme .nos-hero-hub .nos-hero-media {
+    order: -1;
+    height: 300px;
+    aspect-ratio: auto;
+  }
+  .nos-theme .nos-hero-inner .nos-hero-media {
+    order: -1;
+    height: 300px;
+    aspect-ratio: auto;
+  }
+  .nos-theme .nos-hero-hub .nos-hero-img,
+  .nos-theme .nos-hero-inner .nos-hero-img {
+    object-position: var(--nos-hero-pos, 50% 50%);
+  }
+  .nos-theme .nos-hero-hub .nos-hero-lede,
+  .nos-theme .nos-hero-inner .nos-hero-lede,
+  .nos-theme .nos-hero-inner .nos-hero-lede[data-nos-lede='theme'] {
+    max-width: 60ch;
+    font-size: 18px;
+    line-height: 1.5;
+  }
+}
+
 /* ---- R68 hub hero and R71 inner hero, at >=1024 (NOS Design, 2026-10-16). Below 1024 the F3
    stacked hero above is unchanged. ---- */
 @media (min-width: 1024px) {

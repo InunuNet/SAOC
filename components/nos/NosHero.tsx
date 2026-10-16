@@ -24,7 +24,7 @@
 // =============================================================
 
 import Image from 'next/image';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 import { heroPhotoFor } from './hero-photos';
 import { NosSubNav } from './NosSubNav';
@@ -84,12 +84,21 @@ export function NosHero({
           .join(' ')}
       >
         {photo ? (
-          <div data-nos-hero-media="" className="nos-hero-media">
+          <div
+            data-nos-hero-media=""
+            className="nos-hero-media"
+            style={
+              photo.objectPosition
+                ? ({ '--nos-hero-pos': photo.objectPosition } as CSSProperties)
+                : undefined
+            }
+          >
             <Image
               src={photo.src}
               alt=""
               fill
               priority={priority}
+              fetchPriority={priority ? 'high' : undefined}
               sizes="100vw"
               className="nos-hero-img"
             />

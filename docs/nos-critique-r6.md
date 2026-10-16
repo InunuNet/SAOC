@@ -41,3 +41,16 @@ R61 (font preloads and LCP): no font preload was removed. Crimson Pro, JetBrains
 the shared root layout and Lora in SaocLockup; Next.js computes font preloads per page entry, so no change inside
 the cleared files can drop them on `/national-show/*` while keeping them on SAOC routes. Reported to the lead.
 Source: lead saoc-2b 2026-10-17.
+
+## f5 — R80 #1: hub and photo heroes below 768px
+
+Below 768px the hub hero and the four photographic inner heroes (plan-your-visit, symposium, programme,
+what-to-expect) lead with the photograph, fixed at 300px (`order: -1`, `aspect-ratio: auto`), then the
+h1, lede and CTAs, then on the hub the countdown and the facts. At 390x844 the Tickets button ends at
+y=812, inside the 828 fold line. The 768-1023px stacked rules and the 1024px-and-up heroes are unchanged.
+Every hero lede below 768px is 18px/1.5 with max-width 60ch (Codi); 768px and up keep their sizes.
+`object-position` per photograph is its measured bloom focal point: `HERO_PHOTOS` in
+`components/nos/hero-photos.ts` carries it and NosHero passes it to the CSS as `--nos-hero-pos`, used
+only below 768px. The positions come from `goldens/measure-bloom.py` (`goldens/bloom-marginals.json`),
+scored against the best possible crop of the 390x300 window. NosHero also sets `fetchPriority="high"`
+on a priority hero image (R61 LCP). Source: lead saoc-2b 2026-10-17.
