@@ -80,7 +80,7 @@ export default async function ExhibitorInfoPage() {
         priority
       />
 
-      <div className="mx-auto max-w-[1280px] space-y-12 px-8 py-16">
+      <div className="mx-auto max-w-[1280px] space-y-12 px-8 py-16 [&_p]:max-w-[60ch]">
         <p>
           <Link
             href="/national-show"

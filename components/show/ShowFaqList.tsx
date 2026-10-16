@@ -65,7 +65,7 @@ export function ShowFaqList({ faqs, pendingLabel, researchLabel }: ShowFaqListPr
               <li key={category}>
                 <a
                   href={`#faq-${category}`}
-                  className="inline-flex min-h-[44px] items-center rounded-[length:var(--radius-pill)] bg-bone px-3 font-sans text-[14px] font-semibold text-primary hover:text-accent motion-safe:transition-[color] motion-safe:duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring-focus)]"
+                  className="inline-flex min-h-[44px] items-center rounded-[length:var(--radius-pill)] border-[length:var(--border-primary)] border-primary bg-transparent px-3 font-sans text-[14px] font-semibold tracking-normal text-ink hover:bg-bone motion-safe:transition-[color,background-color] motion-safe:duration-150 focus-visible:bg-bone focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring-focus)]"
                 >
                   {CATEGORY_LABELS[category]}
                 </a>

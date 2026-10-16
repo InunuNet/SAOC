@@ -45,7 +45,7 @@ export default async function VendorsPage() {
         priority
       />
 
-      <div className="mx-auto max-w-[1280px] px-8 py-16 space-y-16">
+      <div className="mx-auto max-w-[1280px] px-8 py-16 space-y-16 [&_p]:max-w-[60ch]">
         <VendorIntro />
 
         {list.length > 0 ? <VendorGrid nurseries={list} /> : <VendorEmptyState />}
