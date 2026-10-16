@@ -13,7 +13,7 @@ const scrollRestoreWaived = (() => {
 
 const mega = NAV.find((n) => n.type === 'mega');
 const squash = (s) => (s ?? '').replace(/\s+/g, ' ').trim();
-const ORDER = ['About', 'Societies', 'Judging & Awards', 'Events', 'Members', 'National Show', 'Sponsors', 'Contact'];
+const ORDER = ['About', 'Societies', 'Judging & Awards', 'Events', 'National Show', 'Sponsors', 'Contact'];
 const burgerOpen = (page) => page.locator('#nh-burger').getAttribute('aria-expanded');
 
 await main('F menu-panel', async (r) => {
@@ -100,7 +100,7 @@ await main('F menu-panel', async (r) => {
     for (const d of mega.featureRail.destinations.filter((x) => x.variant === 'secondary')) {
       if (!(await visibleLinks(`a[href="${d.href}"]`, d.label))) r.fail(`panel missing visible ${d.label} -> ${d.href}`);
     }
-    if (!text.includes('Exhibitors and Vendors') || /Trade Vendors/i.test(text)) r.fail('panel must say "Exhibitors and Vendors", never "Trade Vendors"');
+    if (!/Exhibitors and vendors/i.test(text) || /Trade Vendors/i.test(text)) r.fail('panel must say "Exhibitors and Vendors", never "Trade Vendors"');
     if (!(await visibleLinks('a[href="/contact"]'))) r.fail('panel missing visible Contact -> /contact');
     // Collapsed, the submenu's leaves must drop out of the visible text (proves the visibility assertions are not vacuous).
     await sub.click();

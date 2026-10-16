@@ -1,0 +1,218 @@
+{
+  "_note": "Expected nav-config state after F17. Sentence case, same words (R74-3). Proper nouns kept: National Show, WOSA, SAOC (none left in a label), South African. Top-level SAOC header items, the mega eyebrow and lead title, and the Tickets feature rail are unchanged (rail destinations are ticket product names). Descriptors are unchanged except Show sponsors (R74-6) and the Symposium label drops SAOC (B1) while its descriptor still reads \"The SAOC Symposium - ...\" (a trimmed prefix of the manifest purpose; no ruling to change it).",
+  "topLevel": [
+    {
+      "id": "about",
+      "label": "About",
+      "href": "/about",
+      "type": "link"
+    },
+    {
+      "id": "societies",
+      "label": "Societies",
+      "href": "/societies",
+      "type": "link"
+    },
+    {
+      "id": "judging",
+      "label": "Judging & Awards",
+      "href": "/judging",
+      "type": "link"
+    },
+    {
+      "id": "events",
+      "label": "Events",
+      "href": "/events",
+      "type": "link"
+    },
+    {
+      "id": "national-show",
+      "label": "National Show",
+      "href": "/national-show",
+      "type": "mega"
+    },
+    {
+      "id": "sponsors",
+      "label": "Sponsors",
+      "href": "/sponsors",
+      "type": "link"
+    }
+  ],
+  "lead": {
+    "eyebrow": "The National Show",
+    "leadLabel": "19th SAOC National Orchid Show",
+    "leadHref": "/national-show"
+  },
+  "groups": [
+    {
+      "id": "the-show",
+      "headingBefore": "The Show",
+      "heading": "The show",
+      "links": [
+        {
+          "id": "tickets",
+          "href": "/national-show/tickets",
+          "labelBefore": "Tickets",
+          "label": "Tickets",
+          "descriptor": "Buy admission tickets."
+        },
+        {
+          "id": "show-sponsors",
+          "href": "/national-show/sponsors",
+          "labelBefore": "Show Sponsors",
+          "label": "Show sponsors",
+          "descriptor": "The sponsors behind the National Show."
+        },
+        {
+          "id": "past-shows",
+          "href": "/national-show/archive",
+          "labelBefore": "Past Shows",
+          "label": "Past shows",
+          "descriptor": "Previous editions."
+        }
+      ]
+    },
+    {
+      "id": "visit",
+      "headingBefore": "Visit",
+      "heading": "Visit",
+      "links": [
+        {
+          "id": "about-the-show",
+          "href": "/national-show/about",
+          "labelBefore": "About the Show",
+          "label": "About the show",
+          "descriptor": "The show's theme, what it brings together, and who takes part."
+        },
+        {
+          "id": "what-to-expect",
+          "href": "/national-show/what-to-expect",
+          "labelBefore": "What to Expect",
+          "label": "What to expect",
+          "descriptor": "Hours, admission and on-the-day detail for visitors."
+        },
+        {
+          "id": "plan-your-visit",
+          "href": "/national-show/plan-your-visit",
+          "labelBefore": "Plan Your Visit",
+          "label": "Plan your visit",
+          "descriptor": "Travel, parking, accommodation and nearby attractions."
+        },
+        {
+          "id": "faq",
+          "href": "/national-show/faq",
+          "labelBefore": "FAQ",
+          "label": "FAQ",
+          "descriptor": "The questions visitors ask us most."
+        }
+      ]
+    },
+    {
+      "id": "programme",
+      "headingBefore": "Programme",
+      "heading": "Programme",
+      "links": [
+        {
+          "id": "programme",
+          "href": "/national-show/programme",
+          "labelBefore": "Programme",
+          "label": "Programme",
+          "descriptor": "The overall schedule of sessions across the four show days."
+        },
+        {
+          "id": "workshops",
+          "href": "/national-show/workshops",
+          "labelBefore": "Workshops",
+          "label": "Workshops",
+          "descriptor": "Book Sunset Cocktails and guided Field Trip outings."
+        },
+        {
+          "id": "symposium",
+          "href": "/national-show/symposium",
+          "labelBefore": "SAOC Symposium",
+          "label": "Symposium",
+          "descriptor": "The SAOC Symposium — what it is, its theme, and who it is for."
+        },
+        {
+          "id": "wosa-conference",
+          "href": "/national-show/wosa-conference",
+          "labelBefore": "WOSA Conference",
+          "label": "WOSA Conference",
+          "descriptor": "What the WOSA Conference is and who it is for, with a link out to WOSA for wild-orchid content."
+        },
+        {
+          "id": "conferences",
+          "href": "/national-show/conferences",
+          "labelBefore": "Conference Registration",
+          "label": "Conference registration",
+          "descriptor": "Register for the Symposium and WOSA Conference."
+        }
+      ]
+    },
+    {
+      "id": "exhibit-trade",
+      "headingBefore": "Exhibit & Trade",
+      "heading": "Exhibit & trade",
+      "links": [
+        {
+          "id": "sa-exhibitors",
+          "href": "/national-show/sa-exhibitors",
+          "labelBefore": "South African Exhibitors",
+          "label": "South African exhibitors",
+          "descriptor": "Public directory of South African nurseries exhibiting at the show."
+        },
+        {
+          "id": "international-guests",
+          "href": "/national-show/international-guests",
+          "labelBefore": "International Guests",
+          "label": "International guests",
+          "descriptor": "Public directory of international guests and exhibitors attending the show."
+        },
+        {
+          "id": "exhibitors",
+          "href": "/national-show/exhibitors",
+          "labelBefore": "Exhibitor Entry Guide",
+          "label": "Exhibitor entry guide",
+          "descriptor": "Entry process, fees, classes, judging and eligibility for growers entering plants."
+        },
+        {
+          "id": "vendors",
+          "href": "/national-show/vendors",
+          "labelBefore": "Exhibitors and Vendors",
+          "label": "Exhibitors and vendors",
+          "descriptor": "Trade vendor showcase, application and gated registration."
+        }
+      ]
+    }
+  ],
+  "featureRail": {
+    "heading": "Tickets",
+    "destinations": [
+      {
+        "id": "tickets",
+        "label": "Tickets",
+        "href": "/national-show/tickets"
+      },
+      {
+        "id": "day-visitor",
+        "label": "Day Visitor",
+        "href": "/tickets/day-visitor"
+      },
+      {
+        "id": "weekend-pass",
+        "label": "Weekend Pass",
+        "href": "/tickets/weekend-pass"
+      }
+    ]
+  },
+  "sponsorsDescriptor": {
+    "text": "The sponsors behind the National Show.",
+    "before": "The Show's own sponsors — a separate list from SAOC's site-level sponsors.",
+    "manifestRow": "/national-show/sponsors",
+    "_sync": "content/national-show-routes.json purpose, scripts/generate-nos-route-manifest.ts purpose and the sponsors page loadShowPageOrFallback purpose all carry the same sentence so check-descriptor-provenance (descriptor = trimmed prefix of purpose) stays green."
+  },
+  "contact": {
+    "label": "Contact"
+  },
+  "_f17members": "Brad 2026-10-16 \"Hide the members link\": the top-level Members item is removed from nav-config (not hidden by CSS). The /members route stays."
+}

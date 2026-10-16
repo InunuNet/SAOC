@@ -1,0 +1,79 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: Scope E and F added by lead rulings (below); the event reads "National Orchid Show" in every builder-copy string (Lee-Ann's legal sentences and the mega lead title untouched), the National Show nav labels are sentence case with the Show sponsors descriptor "The sponsors behind the National Show.", the Symposium label drops "SAOC", the hub has no ShowSectionNav and no doubled section gap, the footer WOSA arrow cannot orphan, the sponsors empty-state panel sits on the R71 axis, the symposium public page renders no TBC gap block, check-f3-container and the f3-imagery h1-left test are formally retired (F12-A15 is the axis authority), and the dev's self-critique loop is evidenced by fresh screenshots and a clean final-pass log.
+created_at: '2026-10-16'
+autonomy: high
+features:
+  - id: F17
+    name: Naming and polish (R73 National Orchid Show, F12-audit P2s, R74 2-6, retirement of the superseded F3 container and h1-left checks)
+    status: pending
+# Scope E (tickets rows) and F (Members link) were added after the first draft by lead rulings; see goldens/f17/f17-spec.md sections 8 and 9. F16-A3, A4 and A8 are amended in place (check-c-rows, check-d-render, rows-fixtures) and run as F17-A18.
+# GATE: cwd = the implementation worktree (branch from origin/main with spec/lw-f17 merged in, so goldens/f17 and contracts/checks/launch-weekend/f17 exist).
+# BASE_URL = a production build of that worktree on port 3662: `SITE_PUBLIC_LAUNCH=true pnpm run build && SITE_PUBLIC_LAUNCH=true pnpm exec next start -p 3662` (a first build in a fresh worktree can fail on a Google Fonts flake: re-run it). Stop by exact PID (lsof -ti tcp:3662 -sTCP:LISTEN). Do not rebuild while it runs. Ports 3660-3669 only.
+# F17_BASE_REF defaults to origin/main for the scope and delta checks; pin it to 41a7a08f if main has moved. Runtime checks read the CMS READ-ONLY.
+# Every F17 check was run red against untouched 41a7a08f (A2 and A10 are green there by design: legal text unchanged, retired checks green) and green against a throwaway reference build (not a deliverable). A11 is red until the dev runs the critique loop.
+# The spec branch already re-pins the checks and e2e specs listed in goldens/f17/supersession.json (labels, the item name prefix, the f11 baseline, the rhythm class, the F16 A1 conference sentence). The dev must not edit them.
+# Rulings that the lead confirms are in goldens/f17/f17-spec.md section 2; a reversal is a golden edit, not a contract rewrite.
+goldens:
+  - .agent/memory/project/specs/launch-weekend/goldens/f17/f17-spec.md
+  - .agent/memory/project/specs/launch-weekend/goldens/f17/tokens.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f17/naming.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f17/nav-labels.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f17/supersession.json
+assertions:
+  phase: 4
+  checks:
+    - id: F17-A1
+      description: Naming (R73) - no "SAOC National Show" / "SAOC National Orchid Show" survives outside Lee-Ann's legal sentences and the mega lead title, every swap file equals its base text with only the naming rules applied (no other word changed), the email subjects, previews, hub sentence and PayFast item name carry "National Orchid Show", the item_name stays clamped to the gateway limit for 0 to 5000 character business names, Ozow sends no itemName
+      command: node --import tsx/esm contracts/checks/launch-weekend/f17/check-a-naming.mjs
+    - id: F17-A2
+      description: Legal text untouched - the seven Lee-Ann sentences in the four vendor fieldsets are byte-identical to base and each quote matches her source line (docs/leeann-source), the vendor components change nowhere else
+      command: node --import tsx/esm contracts/checks/launch-weekend/f17/check-b-legal.mjs
+    - id: F17-A3
+      description: Nav labels - the National Show mega, mobile drawer, Programme sub-nav and hub index carry the sentence-case labels of nav-labels.json (same words), "Symposium" without SAOC, the five top-level items, the lead title and the Tickets rail unchanged, descriptors still a trimmed prefix of the manifest purpose, Show sponsors descriptor "The sponsors behind the National Show."
+      command: node --import tsx/esm contracts/checks/launch-weekend/f17/check-c-nav-labels.mjs
+    - id: F17-A4
+      description: Hub - no ShowSectionNav on /national-show, the "Explore the show pages" index renders once, the two same-ground pairs (gold, royal) are separated by ONE rhythm unit (clamp(72px,9vw,120px), not two) at 1920, 1280, 768 and 390 and the joined sections carry nos-section-joined
+      command: node --import tsx/esm contracts/checks/launch-weekend/f17/check-d-hub.mjs
+    - id: F17-A5
+      description: Footer WOSA link - the arrow is joined to "Africa" by a no-break space and never sits alone on a line at 390, 768, 1280, 1440 and 1920 in both the NOS and SAOC footers, accessible name unchanged
+      command: node --import tsx/esm contracts/checks/launch-weekend/f17/check-e-footer.mjs
+    - id: F17-A6
+      description: Sponsors empty state - the marker and the Card start on the R71 axis and fill the axis column at 390, 1280, 1920 and 2056 with no surrounding .nos-surface (reports a NOTE if sponsors are listed)
+      command: node --import tsx/esm contracts/checks/launch-weekend/f17/check-f-sponsors.mjs
+    - id: F17-A7
+      description: Symposium public mode - /national-show/symposium has no [data-nos-content-gap], no TBC note, no empty grid row, the real theme section and presenters are still rendered, programme and WOSA conference keep their gap block
+      command: node --import tsx/esm contracts/checks/launch-weekend/f17/check-g-symposium.mjs
+    - id: F17-A8
+      description: Render-level symposium proof with fixtures (no CMS) - hideContentGap removes only the gap block, the default render is unchanged, preview-mode placeholders still render with their notice, the fallback page still emits fallback-unpublished
+      command: pnpm exec tsx contracts/checks/launch-weekend/f17/check-h-symposium-render.mts
+    - id: F17-A9
+      description: Scope and no-invention - only the allowlisted files change (header axis, nos-theme.css, ShowPageProse, tickets hub, vendor legal components, SEO and the Members link untouched), nos-structure.css by pure addition under an F17 comment, no hex or rgb literal, new font family, animation, non-150ms duration, shadow or emoji in added lines
+      command: node --import tsx/esm contracts/checks/launch-weekend/f17/check-i-scope.mjs
+    - id: F17-A10
+      description: Retirement and the F3 guards that remain - check-f3-container and the f3-imagery h1-left test are formally retired (supersession.json, RETIRED headers, F16 A10 no longer runs the container check), and the surviving F3 imagery, tickets and rhythm checks run green on the F17 build
+      command: node contracts/checks/launch-weekend/f17/check-k-supersession.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3662 node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-imagery.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3662 node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-tickets.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3662 node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-rhythm.mjs
+    - id: F17-A11
+      description: Self-critique loop evidence - fresh after/ screenshots (hub, sponsors, symposium at 390/1280/1920, footer, mega, mobile menu) newer than the last source edit and a critique log (f17-critique-log.md) naming impeccable with at least 2 passes whose final pass reads P0 0, P1 0, P2 0 and Score at least 36/40
+      command: node contracts/checks/launch-weekend/f17/check-j-critique-artefacts.mjs
+    - id: F17-A12
+      description: F12 axis authority and the F12 and F16 guards still hold with the new labels and structure - static scope (the event-name swap is the only edit allowed on vendors/page.tsx), single-axis (F12-A15), hub hero, hub index, symposium, inner hero, utility bar, plus the F16 copy and audience-index checks (the F16 row checks moved to F17-A18)
+      command: node --import tsx/esm contracts/checks/launch-weekend/f12/check-a-static.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3662 node --import tsx/esm contracts/checks/launch-weekend/f12/check-k-axis.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3662 node --import tsx/esm contracts/checks/launch-weekend/f12/check-b-hub-hero.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3662 node --import tsx/esm contracts/checks/launch-weekend/f12/check-c-hub-index.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3662 node --import tsx/esm contracts/checks/launch-weekend/f12/check-e-symposium.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3662 node --import tsx/esm contracts/checks/launch-weekend/f12/check-j-inner-hero.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3662 node --import tsx/esm contracts/checks/launch-weekend/f16/check-a-copy.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3662 node --import tsx/esm contracts/checks/launch-weekend/f16/check-b-index.mjs
+    - id: F17-A13
+      description: Menu system and chrome guards on the new labels and without Members - mega menu, menu panel, top-level and href goldens (6 items, 24 hrefs), F11 mega baseline (recaptured in this spec branch). Not gated, already red on origin/main 41a7a08f and unrelated to F17 (listed in supersession.json) - f3-subnav, f3-hub-links, f3-hub-conversion, f3-audit, descriptor-provenance (archive descriptor), vendor-labels, and the PayFast item-name route check (needs Firebase admin env; A1 proves the clamp)
+      command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3662 node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-e-mega-menu.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3662 node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-f-menu-panel.mjs && node contracts/checks/menu-system-layout4-f1/check-nav-top-level-golden.mjs && node contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3662 BASE_URL=http://localhost:3662 node contracts/checks/launch-weekend/f11/check-f11.mjs
+    - id: F17-A14
+      description: Lint passes
+      command: pnpm lint
+    - id: F17-A15
+      description: Type check passes
+      command: pnpm type-check
+    - id: F17-A16
+      description: Production build passes
+      command: SITE_PUBLIC_LAUNCH=true pnpm run build
+    - id: F17-A17
+      description: Members link hidden (scope F, Brad 2026-10-16) - nav-config and footer-data hold no Members entry (removed from the config, not hidden by CSS), no a[href="/members"] and no Members or Members Portal item in any SAOC or NOS header, mobile menu (opened by a real click) or footer on seven pages at 390 and 1280, and the /members route still answers 200
+      command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3662 node --import tsx/esm contracts/checks/launch-weekend/f17/check-l-members.mjs
+    - id: F17-A18
+      description: Tickets rows (scope E, amends F16-A3/A4/A8) - every price in a dual row has a visible CMS-name caption and its OWN secondary ghost action to its own /tickets/<slug> (accessible name includes the SKU name, label from buyButtonLabel else "Buy Ticket"), early-bird and standard captions and prices share one computed style, no filled button in the group, a sold-out SKU shows "Sold out" on its own non-link action while the sibling stays live, one SKU with two prices has one action, the provisional note sits under the group h2 and lede before the rows with the same text, sales-closed markup is unchanged; render-level fixtures run without the CMS; hover, focus and contrast states hold
+      command: BASE_URL=http://localhost:3662 node --import tsx/esm contracts/checks/launch-weekend/f16/check-c-rows.mjs && node --import tsx/esm contracts/checks/launch-weekend/f16/check-d-render.mts && BASE_URL=http://localhost:3662 node --import tsx/esm contracts/checks/launch-weekend/f16/check-h-states.mjs

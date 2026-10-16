@@ -104,7 +104,7 @@ test.describe('mega menu — F8 logo lead block + NOS tickets rail (mission menu
     // "The Show" group heading (always renders — F1/F7 golden) must sit
     // below the title's bottom edge, proving nothing was removed from the
     // lead track's vertical flow.
-    const theShowHeading = panel.getByRole('heading', { level: 3, name: 'The Show' });
+    const theShowHeading = panel.getByRole('heading', { level: 3, name: 'The show' });
     const titleBox = await title.boundingBox();
     const metaBox = await leadMeta.boundingBox();
     const headingBox = await theShowHeading.boundingBox();

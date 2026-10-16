@@ -236,7 +236,7 @@ test.describe('mega menu — Layout 4 visual fidelity (mission menu-system-layou
     await expect(programmeColumn).toHaveCSS('border-left-width', '1px');
     await expect(programmeColumn).toHaveCSS('border-left-color', GOLD_RULE_SOFT);
 
-    const tradeHeading = panel.getByRole('heading', { level: 3, name: 'Exhibit & Trade', exact: true });
+    const tradeHeading = panel.getByRole('heading', { level: 3, name: 'Exhibit & trade', exact: true });
     const tradeColumn = tradeHeading.locator('xpath=..');
     await expect(tradeColumn).toHaveCSS('border-left-width', '1px');
     await expect(tradeColumn).toHaveCSS('border-left-color', GOLD_RULE_SOFT);
@@ -264,12 +264,12 @@ test.describe('mega menu — Layout 4 visual fidelity (mission menu-system-layou
     await expect(leadBlock).toHaveCSS('padding-right', '24px');
   });
 
-  test('the lead block\'s "The Show" heading and every group heading render as real <h3> elements styled to the artifact\'s .dd-head treatment', async ({
+  test('the lead block\'s "The show" heading and every group heading render as real <h3> elements styled to the artifact\'s .dd-head treatment', async ({
     page,
   }) => {
     const panel = await openNationalShowMenu(page);
 
-    for (const name of ['The Show', 'Visit', 'Programme', 'Exhibit & Trade']) {
+    for (const name of ['The show', 'Visit', 'Programme', 'Exhibit & trade']) {
       const heading = panel.getByRole('heading', { level: 3, name, exact: true });
       await expect(heading).toHaveCSS('font-size', '10px');
       await expect(heading).toHaveCSS('text-transform', 'uppercase');
@@ -413,7 +413,7 @@ test.describe('mega menu — Layout 4 visual fidelity (mission menu-system-layou
       .locator('xpath=..')
       .boundingBox();
     const tradeBox = await panel
-      .getByRole('heading', { level: 3, name: 'Exhibit & Trade', exact: true })
+      .getByRole('heading', { level: 3, name: 'Exhibit & trade', exact: true })
       .locator('xpath=..')
       .boundingBox();
     const featureBox = await panel

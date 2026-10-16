@@ -3,7 +3,7 @@
   "lede": "Choose the option that matches why you're coming to the 2027 National Orchid Show — we'll take you straight to the right form.",
   "ledeBefore": "2027 SAOC National Show",
   "metadataDescription": "Choose the option that matches why you're coming to the 2027 National Orchid Show — we'll take you straight to the right form.",
-  "conferenceBody": "Register for the SAOC Symposium or the WOSA Conference.",
+  "conferenceBody": "Register for the Symposium or the WOSA Conference.",
   "conferenceBodyBefore": "Register for the SAOC Symposium, the WOSA Conference, or the combined Joint track.",
   "forbiddenEverywhere": ["Joint", "SAOC National Show"],
   "removedNodes": ["From", "TEST MODE — Ozow charges R0.01 instead of the displayed price"],

@@ -1,3 +1,5 @@
+// RETIRED (launch-weekend F17, goldens/f17/supersession.json): this 1080px-container assertion is superseded by F12-A15 (R71 single axis, 1320 + 2*gutter).
+// It fails by design on every NOS route since F12 (about 383 findings on 2effaec3) and is no longer part of any gate. Kept for the history of F3 only.
 // F3-C1 (NOS Design Acceptance bar rev 2, C1): ONE content container across every NOS section. Content max-width 1080px (--default, I:61)
 // plus a gutter of clamp(16px, 4vw, 48px) (I:91, wrap rule I:92). Today's build mixes max-w-[1280px] px-8 wraps and ad-hoc max-w-2xl wraps.
 // DOM contract: the page-content root is the parent of [data-nos-hero]; every rendered child block of that root (except the hero and the

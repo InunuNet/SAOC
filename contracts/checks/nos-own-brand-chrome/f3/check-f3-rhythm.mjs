@@ -18,7 +18,7 @@ function measure() {
     vw,
     blocks: blocks.map((b) => {
       const cs = getComputedStyle(b);
-      return { tag: b.tagName.toLowerCase(), cls: String(b.className).slice(0, 50), pt: parseFloat(cs.paddingTop), pb: parseFloat(cs.paddingBottom) };
+      return { tag: b.tagName.toLowerCase(), cls: String(b.className).slice(0, 160), pt: parseFloat(cs.paddingTop), pb: parseFloat(cs.paddingBottom) };
     }),
   };
 }
@@ -41,7 +41,9 @@ await main('F3-C2 rhythm', async (r) => {
           const id = `${tag} <${b.tag} class="${b.cls}">`;
           if (b.tag === 'nav') continue;
           if (b.tag !== 'section') { r.fail(`${id}: a content block must be a <section> carrying the rhythm (only a <nav> is exempt)`); continue; }
-          if (Math.abs(b.pt - want) > 1 || Math.abs(b.pb - want) > 1) r.fail(`${id}: padding-block ${b.pt.toFixed(1)}/${b.pb.toFixed(1)}px, want clamp(72px, 9vw, 120px) = ${want.toFixed(1)}px`);
+          // launch-weekend F17 (R74-4): on the hub a section carrying nos-section-joined follows a section with the same ground, so its padding-top is 0 and the pair is separated by ONE rhythm unit (goldens/f17/supersession.json).
+          const wantTop = /\bnos-section-joined\b/.test(b.cls) ? 0 : want;
+          if (Math.abs(b.pt - wantTop) > 1 || Math.abs(b.pb - want) > 1) r.fail(`${id}: padding-block ${b.pt.toFixed(1)}/${b.pb.toFixed(1)}px, want ${wantTop.toFixed(1)}/${want.toFixed(1)}px (clamp(72px, 9vw, 120px) = ${want.toFixed(1)}px)`);
         }
       }
       await ctx.close();

@@ -44,7 +44,7 @@ await main('E mega-menu', async (r) => {
       if (l.descriptor && !text.includes(squash(l.descriptor))) r.fail(`descriptor of "${l.label}" missing or altered`);
       if (!(await page.locator(`#nh-mega a[href="${l.href}"]`).count())) r.fail(`no link to ${l.href} ("${l.label}") in the mega-menu`);
     }
-    if (!text.includes('Exhibitors and Vendors')) r.fail('"Exhibitors and Vendors" label missing');
+    if (!/Exhibitors and vendors/i.test(text)) r.fail('"Exhibitors and Vendors" label missing');
     if (/Trade Vendors/i.test(text)) r.fail('"Trade Vendors" present: the handoff text is overridden by nav-config');
 
     const leadMeta = squash(await page.locator('#nh-mega .nh-mega-lead .nh-mega-meta').first().textContent().catch(() => null));

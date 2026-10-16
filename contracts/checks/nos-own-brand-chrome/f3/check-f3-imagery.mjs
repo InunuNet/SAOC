@@ -6,7 +6,7 @@
 // no image, svg, canvas, picture, background-image or scrim. Photo heroes carry data-nos-hero-variant="photo". Edition cards carry no photo.
 // The emblem is never a photo substitute. No stock flower anywhere else: not in <img>, not in CSS backgrounds, not in preloads.
 // Measured over every route (17 + archive years + public vendor sub-routes) at 1280 and 1440 (grid) and 390.
-import { allRoutes, assetPath, STOCK_PHOTO_RE, readGolden, main, openPage, withBrowser, VP_DESKTOP, VP_PHONE, rgbOf, rgbNear, BLACK_RGB, ROYAL_RGB, gutterOf, WRAP_DEFAULT } from './_f3lib.mjs';
+import { allRoutes, assetPath, STOCK_PHOTO_RE, readGolden, main, openPage, withBrowser, VP_DESKTOP, VP_PHONE, rgbOf, rgbNear, BLACK_RGB, ROYAL_RGB } from './_f3lib.mjs';
 
 function measure() {
   const hero = document.querySelector('[data-nos-hero]');
@@ -119,9 +119,8 @@ await main('F3-R29 imagery', async (r) => {
           if (m.h1Left == null) r.fail(`${tag}: typographic hero has no h1`);
           else {
             if (m.ledeLeft != null && Math.abs(m.h1Left - m.ledeLeft) > 1) r.fail(`${tag}: h1 left ${m.h1Left.toFixed(1)} and standfirst left ${m.ledeLeft.toFixed(1)} are not on the same grid`);
-            const gutter = gutterOf(m.vw);
-            const gridLeft = Math.max((m.vw - Math.min(WRAP_DEFAULT + 2 * gutter, m.vw)) / 2 + gutter, gutter);
-            if (Math.abs(m.h1Left - gridLeft) > 1) r.fail(`${tag}: h1 left ${m.h1Left.toFixed(1)}, want the 1080px container's content edge ${gridLeft.toFixed(1)} (grid shared with the sections below)`);
+            // RETIRED by launch-weekend F17 (goldens/f17/supersession.json; F12-A15 is the axis authority): the 1080px container content-edge test.
+            // R71 moved the shared container to the NOS header axis (1320 + 2*gutter); the check below still proves hero and section share one edge.
             if (m.wrapContentLeft != null && Math.abs(m.h1Left - m.wrapContentLeft) > 1) r.fail(`${tag}: h1 left ${m.h1Left.toFixed(1)} differs from the first [data-nos-wrap] content edge ${m.wrapContentLeft.toFixed(1)}`);
           }
         }

@@ -1,0 +1,129 @@
+{
+  "note": "F17 retires or re-pins existing assertions. Retired ones are NOT run in any gate; re-pinned ones keep running with the new value. All edits below are made in the F17 spec branch (the architect's), never by the F17 dev, who must not edit contracts/checks/nos-own-brand-chrome/** or any file listed here.",
+  "retired": [
+    {
+      "f3": "contracts/checks/nos-own-brand-chrome/f3/check-f3-container.mjs (whole file, all routes)",
+      "reason": "It asserts the F3 1080px container (1080 + 2 x clamp(16px,4vw,48px)) on every NOS route. R70/R71 (F12) moved every route to the NOS header axis, 1320 + 2 x clamp(16px,2.5vw,32px). Proven stale: run on main 2effaec3 it reported about 383 failures, every one of them the new axis. F12 listed it as superseded in goldens/f12/supersession.json but nobody retired it, so F16-A10 ran a check that can only fail.",
+      "replacedBy": "F12-A15 (single alignment axis, check-k-axis.mjs)",
+      "how": "header comment RETIRED added to the file; removed from contract-f16 A10; nos-own-brand-chrome contract-f3.yaml still lists it but that mission is closed and its gate is not run."
+    },
+    {
+      "f3": "contracts/checks/nos-own-brand-chrome/f3/check-f3-imagery.mjs, the typographic-hero 'h1 left == 1080px container content edge' test (three lines: gutter, gridLeft, the fail)",
+      "reason": "Same R70/R71 move: on main every typographic inner hero h1 sits at the header axis (32px at 1280, 60px at 1440), the test expected 100 and 180.",
+      "replacedBy": "F12-A15. The two sibling tests stay: h1 and standfirst share one left edge, and h1 left equals the first [data-nos-wrap] content edge (both still true and still run)."
+    }
+  ],
+  "amended": [
+    {
+      "f3": "contracts/checks/nos-own-brand-chrome/f3/check-f3-rhythm.mjs",
+      "reason": "R74-4: a section carrying nos-section-joined (the hub's second gold section and its CtaBand, each following a same-ground section) has padding-top 0 and padding-bottom of one rhythm unit; every other section keeps clamp(72px, 9vw, 120px) both sides. The class name is pinned in tokens.json hub.joinedSectionClass.",
+      "replacedBy": "F17-A4 measures the resulting gaps (one unit for same-ground pairs, two for every other pair on every NOS route)."
+    },
+    {
+      "f16": "contracts/checks/launch-weekend/f16/check-c-rows.mjs, check-d-render.mts, goldens/f16/rows-fixtures.json, contract-f16 F16-A3 and F16-A4",
+      "reason": "Scope E (E1 caption + own action per tier, E2 ghost actions, E3 provisional note under the lede): the single-primary-action-per-row and 34-48px dominant / 22px secondary rules are replaced by the F17 rows model (goldens/f17/tokens.json rows). F16-A2 (index before every action), A5 to A9 are unchanged.",
+      "replacedBy": "the same files, edited in this spec branch; F17-A17 adds the equal-style and own-action assertions"
+    },
+    {
+      "f16": "contracts/checks/launch-weekend/f16/check-g-scope.mjs",
+      "reason": "Scope E touches the F16 files again (admission-rows.ts, AdmissionRows.tsx, the tickets hub page, nos-structure.css). F17-A9 is the scope authority for them in this branch; if F16-A7 is run it must be run against the F16 base, not the F17 diff."
+    }
+  ],
+  "repinned": [
+    {
+      "file": "contracts/checks/launch-weekend/f11/nos-menu-baseline.json",
+      "reason": "R74-3 sentence-case labels, B1 Symposium label, R74-6 sponsors descriptor. Recaptured from the reference build with check-f11.mjs --capture; the diff vs the old baseline is 30 text strings and 0 numbers (no geometry moved)."
+    },
+    {
+      "file": "contracts/checks/nos-own-brand-chrome/check-e-mega-menu.mjs",
+      "reason": "label 'Exhibitors and Vendors' is now compared case-insensitively ('Exhibitors and vendors' is the new nav label)."
+    },
+    {
+      "file": "contracts/checks/nos-own-brand-chrome/check-f-menu-panel.mjs",
+      "reason": "same, in the panel check."
+    },
+    {
+      "file": "contracts/checks/vendor-p1-targets/check-labels-static.mjs",
+      "reason": "the nav-config 'vendors' item now reads label: 'Exhibitors and vendors' (R74-3). The page titles keep 'Exhibitors and Vendors' (Brad 2026-10-15)."
+    },
+    {
+      "file": "contracts/checks/vendor-stand-return-url/check-initiate-route-urls.mjs",
+      "reason": "the stand-payment itemName prefix is now 'National Orchid Show — Vendor Stand' (R73)."
+    },
+    {
+      "file": "e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts, e2e/mega-menu-layout4-visual-fidelity.spec.ts",
+      "reason": "heading names 'The Show' and 'Exhibit & Trade' are now 'The show' and 'Exhibit & trade' (exact-match lookups)."
+    },
+    {
+      "file": "goldens/f16/copy.json (conferenceBody), contract-f16 F16-A1 description",
+      "reason": "B1: the conference card reads 'Register for the Symposium or the WOSA Conference.'"
+    },
+    {
+      "file": "contract-f16 F16-A10",
+      "reason": "container check removed; imagery retains its remaining tests. Runs green on origin/main 41a7a08f (imagery, tickets, rhythm all PASS on a production build of that commit)."
+    },
+    {
+      "file": ".agent/memory/project/specs/menu-system-layout4/goldens/f1-nav-config-target.json and f1-nav-hrefs.json",
+      "reason": "Scope F: Members top-level item removed (6 top-level items, 24 hrefs)."
+    },
+    {
+      "file": "contracts/checks/nos-own-brand-chrome/check-f-menu-panel.mjs",
+      "reason": "Scope F: the panel order list no longer holds \"Members\"."
+    },
+    {
+      "file": "goldens/f17/nav-labels.json topLevel",
+      "reason": "Scope F."
+    },
+    {
+      "file": "contracts/checks/launch-weekend/f12/check-a-static.mjs",
+      "reason": "F12-A1 asserted national-show/vendors/page.tsx was never edited; F17 R73 swaps the event name in its lede. The edit is now allowed only when every changed word is the event-name swap."
+    }
+  ],
+  "unchanged_by_design": [
+    {
+      "what": "components/show/ShowSectionNav.tsx labels and content/national-show-routes.json labels",
+      "reason": "ShowSectionNav is rendered by no page on main (dead code); the manifest label column feeds it only. nav-config is the live menu source. Labels there were not in the ruling."
+    },
+    {
+      "what": "check-f3-hub-conversion.mjs",
+      "reason": "already compares 'Plan your visit' case-insensitively."
+    },
+    {
+      "what": "check-f3-subnav.mjs",
+      "reason": "reads labels and aria-labels from nav-config at run time, so it follows the new case without an edit."
+    }
+  ],
+  "not_gated_already_red_on_41a7a08f": {
+    "note": "Measured red on a production build of origin/main 41a7a08f (and on the F17 reference build, identically), unrelated to F17. They are NOT in the F17 gate; a future clean-up mission should retire or re-pin them.",
+    "checks": [
+      {
+        "file": "contracts/checks/nos-own-brand-chrome/f3/check-f3-subnav.mjs",
+        "symptom": "asserts the hub has no <nav>; the hub renders the R69 \"Explore the show pages\" index (F12-A4 owns it)"
+      },
+      {
+        "file": "contracts/checks/nos-own-brand-chrome/f3/check-f3-hub-links.mjs",
+        "symptom": "same R69 index, reported as duplicate link groups"
+      },
+      {
+        "file": "contracts/checks/nos-own-brand-chrome/f3/check-f3-hub-conversion.mjs",
+        "symptom": "price anchor and countdown order while sales are closed"
+      },
+      {
+        "file": "contracts/checks/nos-own-brand-chrome/f3/check-f3-audit.mjs",
+        "symptom": "hub h1 now \"National Orchid Show\" (F12 R68), and the F16 audience-index <nav> on /national-show/tickets"
+      },
+      {
+        "file": "contracts/checks/menu-system-layout4-f1/check-descriptor-provenance.mjs",
+        "symptom": "the archive descriptor \"Previous editions.\" is not a prefix of its manifest purpose; F17-A3 asserts the prefix rule for every descriptor it touches"
+      },
+      {
+        "file": "contracts/checks/vendor-p1-targets/check-labels-static.mjs",
+        "symptom": "diffs against the ancient base d2071be5 (hundreds of lines); only its nav label pin was re-pinned here"
+      },
+      {
+        "file": "contracts/checks/vendor-stand-return-url/check-initiate-route-urls.mjs",
+        "symptom": "needs FIREBASE_ADMIN_* credentials in the environment; F17-A1 proves the item-name clamp without them"
+      }
+    ]
+  }
+}

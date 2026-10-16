@@ -1,12 +1,11 @@
 {
   "_comment": "Mission menu-system-layout4, M1/F1. Flattened, deduplicated href golden for the target NAV shape -- mirrors the pattern of .agent/memory/project/specs/ticketing-complete/goldens/f7-nav-targets.json (independent audit-trail cross-check, NOT the source of truth -- e2e specs must import NAV directly, per that file's own established convention). This mission's own checker, contracts/checks/menu-system-layout4-f1/check-nav-hrefs-golden.mjs, imports the real NAV export at runtime and diffs its flattened hrefs against expectedHrefs below in both directions, exactly like check-nav-targets-golden.mjs does for f7. Supersedes f7-nav-targets.json's list for the National Show scope only -- the 6 flat SAOC links (about/societies/judging/events/members) plus /sponsors stay a direct comparison; F6's old three-mega-plus-standalone-Tickets shape is gone.",
-  "expectedTopLevelCount": 7,
+  "expectedTopLevelCount": 6,
   "expectedHrefs": [
     "/about",
     "/societies",
     "/judging",
     "/events",
-    "/members",
     "/sponsors",
     "/national-show",
     "/national-show/about",
@@ -28,8 +27,8 @@
     "/tickets/day-visitor",
     "/tickets/weekend-pass"
   ],
-  "expectedHrefCount": 25,
-  "countNote": "25 = 6 flat SAOC top-level (about/societies/judging/events/members/sponsors) + 17 National Show entries (1 hub + 4 visit + 5 programme + 4 exhibit-trade + 3 the-show, matching the manifest's 17 listed:true rows exactly) + 2 feature-rail secondary destinations (/tickets/day-visitor, /tickets/weekend-pass) added at F9 once the checker started walking featureRail.destinations[]. Tickets' feature-rail primary destination href (/national-show/tickets) is the SAME href as its theShow.links entry -- already counted once, per the existing f7 golden's own dedupe convention ('a href could in principle appear as both a mega item's own href and a column link... the test shouldn't assume that').",
+  "expectedHrefCount": 24,
+  "countNote": "F17 (Members link hidden, Brad 2026-10-16): now 24 hrefs and 6 top-level items; the historical derivation follows and included /members. 25 = 6 flat SAOC top-level (about/societies/judging/events/members/sponsors) + 17 National Show entries (1 hub + 4 visit + 5 programme + 4 exhibit-trade + 3 the-show, matching the manifest's 17 listed:true rows exactly) + 2 feature-rail secondary destinations (/tickets/day-visitor, /tickets/weekend-pass) added at F9 once the checker started walking featureRail.destinations[]. Tickets' feature-rail primary destination href (/national-show/tickets) is the SAME href as its theShow.links entry -- already counted once, per the existing f7 golden's own dedupe convention ('a href could in principle appear as both a mega item's own href and a column link... the test shouldn't assume that').",
   "removedHrefsFromF7": {
     "_comment": "Hrefs that were in f7-nav-targets.json (the pre-Layout-4 F6 nav shape) and are GONE from this golden -- must not still appear anywhere in NAV after F1 lands.",
     "hrefs": ["/national-show/exhibitors/international", "/tickets"],

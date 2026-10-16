@@ -97,7 +97,10 @@ const blocks = addedCss.split('}');
 for (const b of blocks) if (/(\.nos-show-page-prose\s+(p|li)\b|^\s*body\b|\.nos-theme\s+p\b)[^{]*\{[^}]*font-size/m.test(b + '}')) problems.push(`added CSS sets a font-size on running copy (R65 lands separately): ${b.trim().slice(0, 120)}`);
 for (const f of [`${NS}/vendors/page.tsx`, `${NS}/exhibitors/page.tsx`]) {
   need(/\[&_p\]:max-w-\[60ch\]/.test(read(f)), `${f} lost [&_p]:max-w-[60ch] (r5)`);
-  need(gitLines('diff', '--name-only', base, '--', f).length === 0, `${f} was edited`);
+  // launch-weekend F17 (R73): the only permitted edit is the event name ("SAOC National Show" -> "National Orchid Show"); any other changed word fails.
+  const dl = gitLines('diff', '-U0', base, '--', f).filter((l) => /^[-+]/.test(l) && !/^(---|\+\+\+)/.test(l));
+  const flat = (sign) => dl.filter((l) => l[0] === sign).map((l) => l.slice(1)).join(' ').replace(/\bSAOC National (Orchid )?Show\b/g, 'National Orchid Show').replace(/\s+/g, ' ').trim();
+  need(flat('-') === flat('+'), `${f} was edited beyond the F17 event-name swap`);
 }
 need(gitLines('diff', '--name-only', base, '--', 'components/show/ShowSectionNav.tsx').length === 0, 'components/show/ShowSectionNav.tsx was edited (legacy, must stay byte-identical)');
 

@@ -6,7 +6,6 @@
     { "type": "link", "id": "societies", "label": "Societies", "href": "/societies", "source": "unchanged from current nav-config.ts" },
     { "type": "link", "id": "judging", "label": "Judging & Awards", "href": "/judging", "source": "mission section 3 F1 literal top-level label list; href unchanged (route already exists at app/(marketing)/judging)" },
     { "type": "link", "id": "events", "label": "Events", "href": "/events", "source": "unchanged from current nav-config.ts" },
-    { "type": "link", "id": "members", "label": "Members", "href": "/members", "source": "mission section 3 F1 literal top-level label list (was 'Members Portal'); href unchanged" },
     { "type": "mega", "id": "national-show", "label": "National Show", "href": "/national-show", "source": "mission section 3 F1 + section 1; href is the manifest hub route content/national-show-routes.json (origin/nos-site) slug '/national-show', order 1, group null -- THE SPECIFIC DEFECT Brad reported: no nav item points here today" },
     { "type": "link", "id": "sponsors", "label": "Sponsors", "href": "/sponsors", "source": "mission section 3 F1 literal top-level label list; route already exists at app/(marketing)/sponsors (new top-level item, was not in prior NAV)" }
   ],

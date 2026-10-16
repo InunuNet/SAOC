@@ -72,7 +72,7 @@ for (const gateway of ['payfast', 'ozow']) {
   expect(new URL(call.returnUrl).pathname === '/vsp', `[${gateway}] return URL path must be /vsp.`);
   expect(call.notifyUrl.endsWith(gateway === 'ozow' ? '/api/vendors/stand-payment/ozow-itn' : '/api/vendors/stand-payment/payfast-itn'), `[${gateway}] notifyUrl path must be unchanged.`);
   expect(call.itemName.length <= PAYFAST_ITEM_NAME_CAP, `[${gateway}] itemName is ${call.itemName.length} chars (> PayFast item_name cap ${PAYFAST_ITEM_NAME_CAP}).`);
-  expect(call.itemName.startsWith('SAOC National Show — Vendor Stand'), `[${gateway}] itemName must keep its existing prefix.`);
+  expect(call.itemName.startsWith('National Orchid Show — Vendor Stand'), `[${gateway}] itemName must keep its existing prefix.`);
   expect(call.reference.length <= 45, `[${gateway}] reference must keep its existing <= 45 length (got ${call.reference.length}).`);
 }
 

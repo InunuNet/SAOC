@@ -1,0 +1,82 @@
+{
+  "_note": "R73 naming sweep. Brad's ruling: the event is 'National Orchid Show', not 'SAOC National Show'. The delta rule is: in every swap file, the current text (whitespace-normalised) equals the base text with the rules applied and nothing else changed. Legal text from Lee-Ann's vendor documents is not touched.",
+  "scanDirs": ["app", "components", "lib", "emails", "types"],
+  "scanSkipComments": true,
+  "oldNameRegex": "SAOC National (Orchid )?Show",
+  "newName": "National Orchid Show",
+  "globalRule": ["SAOC National Show", "National Orchid Show"],
+  "swapFiles": [
+    { "file": "app/(marketing)/tickets/page.tsx", "provenance": "builder fallback copy (FALLBACK_INTRO)" },
+    {
+      "file": "app/(marketing)/national-show/tickets/page.tsx",
+      "provenance": "builder copy: the F16 lead-approved conference card sentence; Lee-Ann's Drive has no such sentence. Her spec v3 uses the bare word \"Symposium\" for the section's quick link (website-development-specification-v3 lines 159, 174)",
+      "deltaExempt": "scope E (F17-A18) also rewrites the visit group of this page, so the base-plus-naming delta cannot hold; the naming is proven by mustContain and the global scan, the rows by F17-A18",
+      "rules": [["Register for the SAOC Symposium or the WOSA Conference.", "Register for the Symposium or the WOSA Conference."]]
+    },
+    { "file": "app/(marketing)/national-show/vendors/apply/page.tsx", "provenance": "builder copy, no Drive source" },
+    { "file": "app/(marketing)/national-show/vendors/payment/page.tsx", "provenance": "builder copy" },
+    { "file": "app/(marketing)/national-show/vendors/payment/status/page.tsx", "provenance": "builder copy" },
+    { "file": "app/(marketing)/national-show/vendors/photos/page.tsx", "provenance": "builder copy" },
+    { "file": "app/(marketing)/national-show/vendors/page.tsx", "provenance": "builder copy" },
+    { "file": "app/(marketing)/national-show/vendors/register/page.tsx", "provenance": "builder copy" },
+    { "file": "app/api/vendors/stand-payment/initiate/route.ts", "provenance": "builder string: PayFast item_name" },
+    {
+      "file": "app/(marketing)/national-show/page.tsx",
+      "provenance": "builder copy: no Drive source for 'premier competitive orchid event' (grep of docs/leeann-source finds none)",
+      "rules": [["The SAOC National Orchid Show is", "The National Orchid Show is"]],
+      "stripCurrent": ["\\s?className=\"nos-section-joined\""],
+      "expectStrip": 2,
+      "_strip": "R74-4 also touches this file: the two hub sections that follow a same-ground section carry className=\"nos-section-joined\" (goldens/f17/tokens.json hub.joinedSectionClass). Those two insertions are removed from the current text before the delta comparison and counted."
+    },
+    { "file": "lib/vendor-stand-payment-notice.ts", "provenance": "builder email subject" },
+    { "file": "lib/confirmation-email.ts", "provenance": "builder email subject" },
+    { "file": "lib/vendor-payment-confirmation.ts", "provenance": "builder email subject" },
+    { "file": "lib/vendor-submissions.ts", "provenance": "code comment (never rendered); swapped for consistency" },
+    { "file": "types/index.ts", "provenance": "code comment (never rendered); swapped for consistency" },
+    { "file": "emails/OrderConfirmation.tsx", "provenance": "builder email body and preview" },
+    { "file": "emails/VendorPaymentAdminNotice.tsx", "provenance": "builder email body" },
+    { "file": "emails/VendorApplicationAdminNotice.tsx", "provenance": "builder email body" },
+    { "file": "emails/VendorStandPaymentReady.tsx", "provenance": "builder email body and preview" },
+    { "file": "emails/VendorSubmissionAdminNotice.tsx", "provenance": "builder email body" },
+    { "file": "emails/VendorApplicationConfirmation.tsx", "provenance": "builder email body" },
+    { "file": "emails/VendorApprovalConfirmation.tsx", "provenance": "builder email body" },
+    { "file": "emails/VendorPaymentConfirmation.tsx", "provenance": "builder email body and preview" },
+    { "file": "emails/VendorRegistrationConfirmation.tsx", "provenance": "builder email body (the old name wraps across two JSX lines, found by the whitespace-collapsed scan)" }
+  ],
+  "mustContain": [
+    { "file": "lib/confirmation-email.ts", "text": "subject: 'Your National Orchid Show order is confirmed'" },
+    { "file": "app/(marketing)/national-show/tickets/page.tsx", "text": "body: 'Register for the Symposium or the WOSA Conference.'," },
+    { "file": "lib/vendor-payment-confirmation.ts", "text": "subject: 'Your National Orchid Show stand payment is confirmed'" },
+    { "file": "lib/vendor-stand-payment-notice.ts", "text": "subject: 'Pay for your National Orchid Show stand'" },
+    { "file": "emails/OrderConfirmation.tsx", "text": "<Preview>Your National Orchid Show order is confirmed</Preview>" },
+    { "file": "emails/VendorStandPaymentReady.tsx", "text": "<Preview>Pay for your National Orchid Show stand</Preview>" },
+    { "file": "emails/VendorPaymentConfirmation.tsx", "text": "<Preview>Your National Orchid Show stand payment is confirmed</Preview>" },
+    { "file": "app/(marketing)/tickets/page.tsx", "text": "Secure your seat at the National Orchid Show." },
+    { "file": "app/(marketing)/national-show/page.tsx", "text": "The National Orchid Show is the country&rsquo;s premier competitive orchid event." },
+    { "file": "app/api/vendors/stand-payment/initiate/route.ts", "text": "`National Orchid Show — Vendor Stand (${submissionData.businessName ?? ''})`" }
+  ],
+  "itemName": {
+    "file": "app/api/vendors/stand-payment/initiate/route.ts",
+    "oldPrefix": "SAOC National Show — Vendor Stand (",
+    "newPrefix": "National Orchid Show — Vendor Stand (",
+    "maxLengthKey": "item_name",
+    "maxLengthFile": "lib/payments/gateway-field-limits.ts",
+    "_note": "item_name is clamped to PAYFAST_FIELD_MAX_LENGTH.item_name (100) by clampToMaxLength; Ozow does not send itemName at all (lib/payments/ozow.ts). The new prefix is 2 characters longer and adds no character class (the em dash was already there)."
+  },
+  "legal": [
+    { "file": "components/vendors/VendorTermsFieldset.tsx", "quote": "participation in the 2027 SAOC National Show.", "source": { "file": "docs/leeann-source/2027-vendor-registration-form_2026-08-26.md", "line": 222 } },
+    { "file": "components/vendors/VendorTermsFieldset.tsx", "quote": "general management of the 2027 SAOC National Show.", "source": { "file": "docs/leeann-source/2027-vendor-registration-form_2026-08-26.md", "line": 224 } },
+    { "file": "components/vendors/VendorTermsFieldset.tsx", "quote": "other legitimate requirements of the 2027 SAOC National Show.", "source": { "file": "docs/leeann-source/2027-vendor-registration-form_2026-08-26.md", "line": 258 } },
+    { "file": "components/vendors/VendorDeclarationFieldset.tsx", "quote": "undertaken at the 2027 SAOC National Show.", "source": { "file": "docs/leeann-source/2027-vendor-registration-form_2026-08-26.md", "line": 215 } },
+    { "file": "components/vendors/VendorDeclarationFieldset.tsx", "quote": "agree to comply with the 2027 SAOC National Show Vendor Terms & Conditions set out below.", "source": { "file": "docs/leeann-source/2027-vendor-registration-form_2026-08-26.md", "line": 216 } },
+    { "file": "components/vendors/VendorMarketingFieldset.tsx", "quote": "I hereby give the 2027 SAOC National Show permission to use my business name", "source": { "file": "docs/leeann-source/2027-vendor-registration-form_2026-08-26.md", "line": 183 } },
+    { "file": "components/vendors/VendorPaymentFieldset.tsx", "quote": "agree to the Vendor Terms & Conditions of the 2027 SAOC National Show.", "source": { "file": "docs/leeann-source/south-african-exhibitors_2026-08-25.md", "line": 101 } }
+  ],
+  "keep": [
+    { "file": "components/chrome/nav-config.ts", "text": "19th SAOC National Orchid Show", "why": "the mega-menu lead title; Brad's own reference #35. Not touched by R73." }
+  ],
+  "forBradAndLeeAnn": [
+    "Lee-Ann's own vendor registration form names the event two ways: 'the 2027 SAOC National Orchid Show' in its opening and closing paragraphs (2027-vendor-registration-form_2026-08-26.md lines 54, 57, 58) and 'the 2027 SAOC National Show' in the agreement text, declaration and consents (lines 183, 215, 216, 222, 224, 258). The site keeps her agreement text verbatim, so it still says 'SAOC National Show' in seven sentences (list in 'legal'). Whether the agreement should be re-worded to 'National Orchid Show' is Lee-Ann's call, because it is the formal vendor agreement; it is NOT changed by F17.",
+    "docs/leeann-source/ticketing-system-details_2026-09-09.md line 434 ('the 2027 SAOC National Orchid Show', the ticket purchase terms) is Lee-Ann's wording and lives in Sanity, not in code. F17 does not touch CMS content; the read-only CMS scan in check A1 lists every Sanity string that still holds the old name so Brad can decide."
+  ]
+}

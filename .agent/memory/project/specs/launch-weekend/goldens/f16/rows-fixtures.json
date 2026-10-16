@@ -2,37 +2,207 @@
   "_note": "Render-level fixtures for lib/admission-rows.ts buildAdmissionRows(types, { now }) and components/tickets/AdmissionRows.tsx. 'now' is fixed so the early-bird window is deterministic. No CMS access: this is how the sales-closed path is proven without mutating Sanity.",
   "now": "2027-03-01T10:00:00+02:00",
   "base": [
-    { "slug": "early-bird", "name": "Early-Bird Exhibition Ticket", "price": 120, "regularPrice": null, "earlyBirdCutoff": null, "requiresDaySelection": true, "provisional": true, "order": 1 },
-    { "slug": "day-visitor", "name": "Day Visitor Ticket", "price": 150, "regularPrice": null, "earlyBirdCutoff": null, "requiresDaySelection": true, "provisional": true, "order": 2 },
-    { "slug": "weekend-pass", "name": "Weekend Pass", "price": 380, "regularPrice": null, "earlyBirdCutoff": null, "requiresDaySelection": false, "provisional": true, "order": 4 },
-    { "slug": "weekend-pass-early-bird", "name": "Weekend Pass (Early Bird)", "price": 360, "regularPrice": null, "earlyBirdCutoff": null, "requiresDaySelection": false, "provisional": true, "order": 4 },
-    { "slug": "vip", "name": "VIP Ticket", "price": 300, "regularPrice": null, "earlyBirdCutoff": null, "requiresDaySelection": false, "provisional": true, "order": 5 }
+    {
+      "slug": "early-bird",
+      "name": "Early-Bird Exhibition Ticket",
+      "price": 120,
+      "regularPrice": null,
+      "earlyBirdCutoff": null,
+      "requiresDaySelection": true,
+      "provisional": true,
+      "order": 1
+    },
+    {
+      "slug": "day-visitor",
+      "name": "Day Visitor Ticket",
+      "price": 150,
+      "regularPrice": null,
+      "earlyBirdCutoff": null,
+      "requiresDaySelection": true,
+      "provisional": true,
+      "order": 2
+    },
+    {
+      "slug": "weekend-pass",
+      "name": "Weekend Pass",
+      "price": 380,
+      "regularPrice": null,
+      "earlyBirdCutoff": null,
+      "requiresDaySelection": false,
+      "provisional": true,
+      "order": 4
+    },
+    {
+      "slug": "weekend-pass-early-bird",
+      "name": "Weekend Pass (Early Bird)",
+      "price": 360,
+      "regularPrice": null,
+      "earlyBirdCutoff": null,
+      "requiresDaySelection": false,
+      "provisional": true,
+      "order": 4
+    },
+    {
+      "slug": "vip",
+      "name": "VIP Ticket",
+      "price": 300,
+      "regularPrice": null,
+      "earlyBirdCutoff": null,
+      "requiresDaySelection": false,
+      "provisional": true,
+      "order": 5
+    }
   ],
   "cases": {
     "siblingPairs": {
       "expectRows": [
-        { "key": "day-visitor", "name": "Day Visitor Ticket", "tiers": [["earlyBird", "early-bird", 120], ["standard", "day-visitor", 150]], "actionSlug": "early-bird", "requiresDaySelection": true },
-        { "key": "weekend-pass", "name": "Weekend Pass", "tiers": [["earlyBird", "weekend-pass-early-bird", 360], ["standard", "weekend-pass", 380]], "actionSlug": "weekend-pass-early-bird", "requiresDaySelection": false },
-        { "key": "vip", "name": "VIP Ticket", "tiers": [["standard", "vip", 300]], "actionSlug": "vip", "requiresDaySelection": false }
+        {
+          "key": "day-visitor",
+          "name": "Day Visitor Ticket",
+          "tiers": [
+            [
+              "earlyBird",
+              "early-bird",
+              120
+            ],
+            [
+              "standard",
+              "day-visitor",
+              150
+            ]
+          ],
+          "requiresDaySelection": true
+        },
+        {
+          "key": "weekend-pass",
+          "name": "Weekend Pass",
+          "tiers": [
+            [
+              "earlyBird",
+              "weekend-pass-early-bird",
+              360
+            ],
+            [
+              "standard",
+              "weekend-pass",
+              380
+            ]
+          ],
+          "requiresDaySelection": false
+        },
+        {
+          "key": "vip",
+          "name": "VIP Ticket",
+          "tiers": [
+            [
+              "standard",
+              "vip",
+              300
+            ]
+          ],
+          "requiresDaySelection": false
+        }
       ]
     },
     "cutoffOpenWithRegular": {
-      "override": [{ "slug": "vip", "price": 250, "regularPrice": 300, "earlyBirdCutoff": "2027-06-25T00:00:00+02:00" }],
-      "expectRow": { "key": "vip", "tiers": [["earlyBird", "vip", 250], ["standard", "vip", 300]], "earlyBirdEnds": "2027-06-25T00:00:00+02:00", "actionSlug": "vip" }
+      "override": [
+        {
+          "slug": "vip",
+          "price": 250,
+          "regularPrice": 300,
+          "earlyBirdCutoff": "2027-06-25T00:00:00+02:00"
+        }
+      ],
+      "expectRow": {
+        "key": "vip",
+        "tiers": [
+          [
+            "earlyBird",
+            "vip",
+            250
+          ],
+          [
+            "standard",
+            "vip",
+            300
+          ]
+        ],
+        "earlyBirdEnds": "2027-06-25T00:00:00+02:00",
+        "actionSlug": "vip",
+        "singleSkuActions": 1
+      }
     },
     "cutoffPassedWithRegular": {
       "now": "2027-07-01T10:00:00+02:00",
-      "override": [{ "slug": "vip", "price": 250, "regularPrice": 300, "earlyBirdCutoff": "2027-06-25T00:00:00+02:00" }],
-      "expectRow": { "key": "vip", "tiers": [["standard", "vip", 300]], "earlyBirdEnds": null }
+      "override": [
+        {
+          "slug": "vip",
+          "price": 250,
+          "regularPrice": 300,
+          "earlyBirdCutoff": "2027-06-25T00:00:00+02:00"
+        }
+      ],
+      "expectRow": {
+        "key": "vip",
+        "tiers": [
+          [
+            "standard",
+            "vip",
+            300
+          ]
+        ],
+        "earlyBirdEnds": null
+      }
     },
     "cutoffPassedNoRegular": {
       "now": "2027-07-01T10:00:00+02:00",
-      "override": [{ "slug": "vip", "price": 250, "regularPrice": null, "earlyBirdCutoff": "2027-06-25T00:00:00+02:00" }],
+      "override": [
+        {
+          "slug": "vip",
+          "price": 250,
+          "regularPrice": null,
+          "earlyBirdCutoff": "2027-06-25T00:00:00+02:00"
+        }
+      ],
       "expectRowAbsent": "vip"
     },
     "earlyWithoutSibling": {
-      "drop": ["day-visitor"],
-      "expectRow": { "key": "early-bird", "name": "Early-Bird Exhibition Ticket", "tiers": [["earlyBird", "early-bird", 120]] }
+      "drop": [
+        "day-visitor"
+      ],
+      "expectRow": {
+        "key": "early-bird",
+        "name": "Early-Bird Exhibition Ticket",
+        "tiers": [
+          [
+            "earlyBird",
+            "early-bird",
+            120
+          ]
+        ]
+      }
+    },
+    "earlySoldOut": {
+      "override": [
+        {
+          "slug": "early-bird",
+          "soldOut": true
+        },
+        {
+          "slug": "weekend-pass-early-bird",
+          "soldOut": false
+        }
+      ],
+      "soldOutSlugs": [
+        "early-bird"
+      ],
+      "liveSlugs": [
+        "day-visitor",
+        "weekend-pass-early-bird",
+        "weekend-pass",
+        "vip"
+      ]
     }
-  }
+  },
+  "_f17": "F17 scope E: actionSlug removed (every tier with its own SKU carries its own action); earlySoldOut added; cutoffOpenWithRegular is one SKU with two prices so it has exactly ONE action."
 }
