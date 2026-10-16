@@ -37,7 +37,6 @@ features:
 
 goldens:
   - contracts/golden/ticketing-f1-show-collision/README.md
-  - contracts/golden/ticketing-f1-show-collision/expected-past-show-ids.json
   - contracts/golden/ticketing-f1-show-collision/active-show-fixtures/positive-single-active.json
   - contracts/golden/ticketing-f1-show-collision/active-show-fixtures/negative-none-active.json
   - contracts/golden/ticketing-f1-show-collision/active-show-fixtures/negative-two-active.json
@@ -69,15 +68,9 @@ assertions:
         shape), and two shows both marked active (an editor mistake).
       command: node --import tsx/esm contracts/checks/ticketing-f1-show-collision/check-active-show-resolver.mjs
 
-    - id: A4
-      description: >-
-        Backward compatibility, per enumerated query surface (one assertion per
-        surface, not one blanket claim): sanity/queries.ts's pastShowsQuery AND
-        scripts/refresh-llms.ts's inline query — the only two surfaces anywhere in
-        app/, lib/, sanity/, scripts/, components/ that fetch `_type == "show"` — each
-        still return exactly the 5 pre-existing `status == "past"` documents, read
-        live off the real dataset, after the schema extension.
-      command: node --import tsx/esm contracts/checks/ticketing-f1-show-collision/check-backward-compat-past-shows.mjs
+    # A4 (backward-compat of the 5 past `show` docs) RETIRED by launch-weekend F6: those five docs were invented
+    # seed data and are unpublished. pastShowsQuery and refresh-llms keep the `status == "past"` filter, now
+    # returning none; honesty is asserted by contracts/checks/launch-weekend/f6/.
 
     - id: A5
       description: >-

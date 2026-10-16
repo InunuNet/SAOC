@@ -144,24 +144,16 @@ assertions:
     # ---------- F2: archive/[year] ----------
     - id: A1
       description: >-
-        F2 POSITIVE PATH (mutating) — a `show` document created for a year absent from
-        lib/data/shows renders a real detail page at /national-show/archive/<year>.
+        F2 POSITIVE PATH (mutating) — a `show` document created for a year with no existing show renders a real detail page at /national-show/archive/<year>.
         Creates a temp doc for 1979, polls the page for its sentinel, deletes it, and
         proves the sentinel is gone from both the detail page and the archive list.
         Refuses to run if a real show already occupies that year. Confirmed live to
         FAIL today (404) for the honest pre-implementation reason.
       command: node contracts/checks/cms-wiring-cleanup/check-archive-year-round-trip.mjs
 
-    - id: A2
-      description: >-
-        F2 MERGE FIDELITY (read-only) — the archive list and detail page must agree
-        about the same show, and the merge must lose neither side's fields. Asserts
-        /national-show/archive/2024 still renders the static-only Roman edition "XVIII"
-        AND the Sanity-owned 1240 entry count, that the LIST renders "Edition XVIII"
-        rather than a bare year, and that the hardcoded `month: 'September'` no longer
-        overrides October for 2021. Confirmed live: the list half fails today, the
-        detail half passes — neither vacuous nor pass-by-default.
-      command: node contracts/checks/cms-wiring-cleanup/check-archive-merge-fidelity.mjs
+    # A2 (archive merge fidelity) RETIRED by launch-weekend F6: it asserted the invented static edition
+    # (XVIII) and 1240 entries render. The static seed and the five Sanity docs are removed; honesty is
+    # asserted by contracts/checks/launch-weekend/f6/ instead.
 
     - id: A3
       description: >-

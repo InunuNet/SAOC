@@ -173,7 +173,7 @@ Every surface that fetches `_type == "show"`, found by grep across `app/`, `lib/
 
 Both filters exclude `show-19-2027` (`status: "upcoming"`) — only the 5 `status:
 "past"` documents are in scope for these two surfaces' backward-compatibility proof.
-Expected ids: see `expected-past-show-ids.json`.
+Retired (launch-weekend F6): the five past documents were invented seed data and are unpublished, so no expected-id list is kept.
 
 No component or lib helper fetches `_type == "show"` directly — every consumer goes
 through one of the two query surfaces above.
