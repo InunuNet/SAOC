@@ -124,6 +124,11 @@ An omitted lede leaves no empty node and no spacer in the head (A29: the h2 is t
 | Workshops | Workshops | none: a link card to the sessions, not a purchasable type |
 The partner wording ("Shared with the Day Pass") and "The Weekend Pass is now R380." therefore read the partner's and the regular SKU's CMS names too. Lee-Ann may want renamed CMS entries (for example Day Pass) so the pass names read well; that is a CMS edit, not code.
 
+### 4.11 Design pack, rail ids, typographic quotes
+- **NOS chrome v4 pack** (Brad approved 2026-10-15; `goldens/nos-v4/`: DESIGN-PACK.md, handoff/HANDOFF.md + chrome.css with 13 decisions and acceptance checks, index, plan-your-visit, symposium and tickets mocks). Rulings after 2026-10-15 override v4 where they conflict: the hub h1, the CTAs, Members hidden, 16/1.55 and no hub index. `tickets.html` there is pre-v13; v13 supersedes it.
+- **Mega-menu rail.** The v4 rail's "Day Visitor" and "Weekend Pass" text links land on the ticket cards: F18b only provides the stable ids `#ticket-day` and `#ticket-weekend` on the v13 Day and Weekend cards (A29 asserts the ids exist). site-77 owns the nav-config href change; F18b does not edit nav-config or NosHeader.
+- **Typographic quotes (standing design-cb ruling, both F18 commits).** Rendering straight quotes and apostrophes as typographic ones is typography, not new copy: A10 normalises the curly quotes to straight before its copy diff, with probes (a typographic form of an existing sentence passes, a genuinely new word still fails).
+
 ## 5. Check inventory (`contracts/checks/launch-weekend/f18/`)
 
 | id | file | proves | needs |

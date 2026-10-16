@@ -31,7 +31,10 @@ const BINARY = new Set(['.png', '.jpg', '.jpeg', '.webp', '.avif', '.gif', '.svg
 const addedFiles = new Set([...gitLines('diff', '--name-only', '--diff-filter=A', `${BASE}...HEAD`), ...gitLines('diff', '--name-only', '--diff-filter=A', 'HEAD'), ...gitLines('ls-files', '--others', '--exclude-standard')]);
 for (const f of addedFiles) if (BINARY.has(extname(f).toLowerCase()) && !/^(\.agent|contracts|docs|e2e|\.tmp|test-results)\//.test(f)) problems.push(`new image asset added (F18b reuses the five production photos): ${f}`);
 const strings = [readGolden('strings-allowed.json'), JSON.parse(readFileSync('.agent/memory/project/specs/launch-weekend/goldens/f18b/v13-copy.json', 'utf8'))];
-const allowedStrings = new Set(JSON.stringify(strings).match(/"([^"\\]|\\.)+"/g)?.map((s) => JSON.parse(s)) ?? []);
+// Standing design-cb ruling: a straight quote or apostrophe rendered as a typographic one is typography, not new copy. Normalise both sides before comparing.
+const nq = (t) => t.replace(/&rsquo;|&lsquo;|[\u2018\u2019]/g, "'").replace(/&ldquo;|&rdquo;|[\u201C\u201D]/g, '"');
+const isNewSentence = (sentence, baseNorm, allowedNorm) => !baseNorm.includes(nq(sentence)) && !allowedNorm.has(nq(sentence));
+const allowedStringsRaw = new Set(JSON.stringify(strings).match(/"([^"\\]|\\.)+"/g)?.map((s) => JSON.parse(s)) ?? []);
 const added = [];
 for (const f of names.filter((n) => existsSync(n) && /^(app|components)\/.*\.(tsx|css)$/.test(n))) {
   const adds = git('diff', '--unified=0', BASE, '--', f).split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++')).map((l) => l.slice(1));
@@ -61,13 +64,22 @@ for (const f of names.filter((n) => /^lib\/.*\.ts$/.test(n) && existsSync(n))) {
   }
 }
 // no NEW user-visible sentence literal in a .tsx: a JSX text or string literal of 4+ words must exist in the base tree or strings-allowed.json
-const baseBlob = gitLines('ls-tree', '-r', '--name-only', BASE).filter((p) => /\.(tsx|ts|json)$/.test(p) && /^(app|components|lib|content)\//.test(p)).map((p) => { try { return git('show', `${BASE}:${p}`); } catch { return ''; } }).join('\n');
+const baseBlobRaw = gitLines('ls-tree', '-r', '--name-only', BASE).filter((p) => /\.(tsx|ts|json)$/.test(p) && /^(app|components|lib|content)\//.test(p)).map((p) => { try { return git('show', `${BASE}:${p}`); } catch { return ''; } }).join('\n');
+const baseBlob = nq(baseBlobRaw);
+const allowedStrings = new Set([...allowedStringsRaw].map(nq));
+{
+  const pb = nq("Visitors can’t miss “the show” today and it’s free");
+  const pa = new Set();
+  if (isNewSentence("Visitors can't miss \"the show\" today and it's free", pb, pa)) problems.push('probe: typographic quotes vs straight quotes are wrongly read as new copy');
+  if (isNewSentence('Visitors can’t miss “the show” today and it’s free', pb, pa)) problems.push('probe: a typographic-quote sentence present in the base is wrongly read as new copy');
+  if (!isNewSentence('Visitors can’t miss “the show” today and it’s extremely free', pb, pa)) problems.push('probe: a genuinely new word is NOT caught');
+}
 for (const { f, l } of added.filter((a) => a.f.endsWith('.tsx'))) {
   for (const m of l.matchAll(/(?:'([^'\n]{18,})'|"([^"\n]{18,})"|>([^<>{}\n]{18,})<)/g)) {
     const s = (m[1] ?? m[2] ?? m[3]).trim();
     if (s.split(/\s+/).length < 4 || /^[a-z0-9_.\-:/ [\]()*@#%,]+$/.test(s) || /^(use client|@\/|\.\/|\.\.\/)/.test(s)) continue;
     if (/\b(className|aria-|data-|href|import|from|var\(|calc\()/.test(s)) continue;
-    if (!baseBlob.includes(s) && !allowedStrings.has(s)) problems.push(`new user-visible sentence in ${f}: "${s.slice(0, 80)}" (reuse copy from the base tree or strings-allowed.json; invented copy is forbidden)`);
+    if (isNewSentence(s, baseBlob, allowedStrings)) problems.push(`new user-visible sentence in ${f}: "${s.slice(0, 80)}" (reuse copy from the base tree or strings-allowed.json; invented copy is forbidden)`);
   }
 }
 const arch = readText('app/(marketing)/national-show/archive/page.tsx') ?? '';

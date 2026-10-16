@@ -10,6 +10,7 @@
 //   R7         -> none of the v13 sample numbers or sample notes appear in the HTML or the DOM
 //   photos     -> images inside [data-ticket-stub] are only the product's file from v13-photo-map.json, alt empty; Symposium and WOSA stubs carry no photo
 //   buy        -> choosing quantity 2 and pressing the CTA of the first buyable card goes to /tickets/<slug>?quantity=2 (&day=<iso> for the Day Pass)
+//   rail ids   -> the Day and Weekend cards carry the stable ids #ticket-day and #ticket-weekend (the NOS mega-menu rail's Day Visitor and Weekend Pass links land on them; site-77 owns the nav-config href change, F18b only provides the ids)
 //   names      -> a card's visible name equals the CMS ticketType name of the SKU it renders (data-ticket-slug), and so do the fan label and the /tickets/<slug> checkout page (CMS wins over HANDOFF names; one name end to end)
 //   photos     -> the fan mini and the section card of the same product share one photo (and field colour fallback for symposium and WOSA: the stub background is the palette colour)
 //   soldOut    -> stamp and "This ticket has sold out." only: no CTA, no stepper, no waitlist wording or link anywhere
@@ -137,6 +138,7 @@ await main('F18-A29 v13 tickets hub', async (r) => {
       for (const s of tops) { const want = C.strings.sections[s.id]; if (s.h2 !== want) r.fail(`${tag}: #${s.id} h2 reads "${s.h2}", want "${want}"`); }
       if (w === K.viewports[0] && m.sections.some((s) => !s)) r.note(`${tag}: a section is absent (its products are not in the CMS): ${m.sections.map((s, i) => (s ? '' : ['thursday', 'passes', 'programme'][i])).filter(Boolean).join(', ')}`);
       if (!m.visit || K.beforeYouVisit.hrefs.some((x) => !m.visit.includes(x))) r.fail(`${tag}: the "Before you visit" nav is missing or lacks ${K.beforeYouVisit.hrefs.join(', ')}`);
+      for (const need of ['ticket-day', 'ticket-weekend']) if (!m.cards.some((c) => c.id === need)) r.note(`${tag}: no #${need} card (the CMS lacks that product): the mega-menu rail link would not resolve`);
       if (m.groups.some((x) => !x)) r.fail(`${tag}: the existing #exhibit / #trade option groups are gone`);
       for (const c of m.cards) {
         const t = `${tag} ${c.id}`;
