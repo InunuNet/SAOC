@@ -4,7 +4,7 @@ import path from 'node:path';
 import type { PortableTextBlock } from '@portabletext/react';
 import type { SanityImageSource } from '@sanity/image-url';
 
-import { isPubliclyLaunched } from '@/lib/beta-public-launch';
+import { isBetaWallConfigured, isPubliclyLaunched } from '@/lib/beta-public-launch';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { wrapGatedProse } from '@/components/nos/gated-prose-internal';
 import { wrapShowPageResult } from '@/components/show/nos/show-content-state-internal';
@@ -480,15 +480,17 @@ async function loadShowPageSettings(options?: {
 // F8 (launch-weekend, R51) — AI-generated placeholder prose is withheld at render.
 // Default is withhold everywhere. SHOW_PLACEHOLDER_PREVIEW=true brings the labelled
 // placeholders back only while the beta wall is up; SITE_PUBLIC_LAUNCH=true always forces
-// withhold. Both matches are exact and fail closed, like lib/beta-public-launch.ts.
+// withhold, and the preview also needs the wall to actually be up (both basic-auth
+// credentials set, the same predicate proxy.ts uses). Matches are exact and fail closed,
+// like lib/beta-public-launch.ts.
 export function withholdPlaceholderProse(
-  env: { SHOW_PLACEHOLDER_PREVIEW?: string; SITE_PUBLIC_LAUNCH?: string } = {
-    SHOW_PLACEHOLDER_PREVIEW: process.env.SHOW_PLACEHOLDER_PREVIEW,
-    SITE_PUBLIC_LAUNCH: process.env.SITE_PUBLIC_LAUNCH,
-  },
+  env: Record<string, string | undefined> = process.env,
 ): boolean {
   const previewOptedIn = env.SHOW_PLACEHOLDER_PREVIEW === 'true';
-  return !(previewOptedIn && !isPubliclyLaunched(env.SITE_PUBLIC_LAUNCH));
+  const wallUp =
+    !isPubliclyLaunched(env.SITE_PUBLIC_LAUNCH) &&
+    isBetaWallConfigured(env.BETA_BASIC_AUTH_USER, env.BETA_BASIC_AUTH_PASSWORD);
+  return !(previewOptedIn && wallUp);
 }
 
 // Replaces every warning-toned (placeholder-class) section with ONE muted R11 gap section
@@ -634,7 +636,7 @@ export const ABSENT_SHOW_PAGE_FIXED_SENTENCE =
 
 const ABSENT_SHOW_PAGE_SECTION_KEY = 'content-not-yet-published';
 
-function absentShowPageBody(purpose: string): PortableTextBlock[] {
+function absentShowPageBody(purpose: string, withSentence: boolean): PortableTextBlock[] {
   const block = (key: string, text: string): PortableTextBlock =>
     ({
       _type: 'block',
@@ -644,7 +646,12 @@ function absentShowPageBody(purpose: string): PortableTextBlock[] {
       children: [{ _type: 'span', _key: `${key}-s1`, text, marks: [] }],
     }) as unknown as PortableTextBlock;
 
-  return [block(`${ABSENT_SHOW_PAGE_SECTION_KEY}-purpose`, purpose)];
+  const purposeBlock = block(`${ABSENT_SHOW_PAGE_SECTION_KEY}-purpose`, purpose);
+  if (!withSentence) return [purposeBlock];
+  return [
+    purposeBlock,
+    block(`${ABSENT_SHOW_PAGE_SECTION_KEY}-sentence`, ABSENT_SHOW_PAGE_FIXED_SENTENCE),
+  ];
 }
 
 // Builds a REAL ShowPage for a listed route whose document is absent, so the route can
@@ -654,7 +661,7 @@ function absentShowPageBody(purpose: string): PortableTextBlock[] {
 // resolvePageProvenance() derives the page-level rollup exactly as it would for any
 // other zero-confirmed-content page. The gate decides; this builder does not get to
 // declare itself clean. See never-404-fallback.golden.md §2-3.
-function buildAbsentShowPage(pageKey: string, fallback: ShowPageFallbackInput, settings: ShowPageSettingsFields | null): ShowPage {
+export function buildAbsentShowPage(pageKey: string, fallback: ShowPageFallbackInput, settings: ShowPageSettingsFields | null): ShowPage {
   const sectionInput: SectionProvenanceInput = {
     provenance: 'placeholder-ai',
     sourcePath: null,
@@ -663,19 +670,29 @@ function buildAbsentShowPage(pageKey: string, fallback: ShowPageFallbackInput, s
   };
   const notice = resolveNotice(sectionInput, settings);
   const pageProvenance = resolvePageProvenance([sectionInput]);
+  // Withheld: the warning section collapses to the R11 gap block, and the manifest
+  // `purpose` (route-manifest text, not AI prose) stays as its own section after it.
+  const withhold = withholdPlaceholderProse();
   const section: ShowPageSection = {
     sectionKey: ABSENT_SHOW_PAGE_SECTION_KEY,
     heading: null,
     kind: 'prose',
-    body: wrapGatedProse(absentShowPageBody(fallback.purpose), notice),
+    body: wrapGatedProse(absentShowPageBody(fallback.purpose, !withhold), notice),
     notice,
+  };
+  const purposeSection: ShowPageSection = {
+    sectionKey: `${ABSENT_SHOW_PAGE_SECTION_KEY}-purpose`,
+    heading: null,
+    kind: 'prose',
+    body: wrapGatedProse(absentShowPageBody(fallback.purpose, false), null),
+    notice: null,
   };
   return {
     pageKey,
     specNumber: 0,
     title: fallback.label,
     summary: null,
-    sections: applyContentGaps([section], withholdPlaceholderProse()),
+    sections: [...applyContentGaps([section], withhold), ...(withhold ? [purposeSection] : [])],
     pageProvenance,
     notice,
     seoTitle: null,
