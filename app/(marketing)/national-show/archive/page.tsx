@@ -103,11 +103,12 @@ export default async function ShowArchivePage() {
             ))}
           </div>
         ) : (
-          <div className="space-y-3 py-16 text-center">
+          <div className="max-w-[720px] space-y-3 border-l-2 border-dashed border-[color:var(--status-muted)] py-2 pl-5">
+            {/* R11 disclosure: chip, one sentence, dashed 2px rail (see ShowPageProse). */}
+            <ConfirmationBadge status="pending" />
             <h2 className="font-serif text-[28px] font-medium text-ink">
               Show history awaiting committee records
             </h2>
-            <ConfirmationBadge status="pending" />
           </div>
         )}
       </section>
