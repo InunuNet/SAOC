@@ -24,7 +24,7 @@ function measure(opts) {
   const out = { vw, overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth, prose: [], paras: [] };
   if (heroCopy) { const b = rc(heroCopy); out.heroAxis = b.left + parseFloat(cs(heroCopy).paddingLeft); out.heroMinH = hero ? parseFloat(cs(hero).minHeight) : null; out.heroH = hero ? hero.getBoundingClientRect().height : null; out.heroKind = hero.getAttribute('data-nos-hero'); }
   // container: nearest ancestor of the first content element that bounds its width
-  const probe = document.querySelector('.nos-show-page-prose') ?? document.querySelector('main details') ?? null;
+  const probe = document.querySelector('.nos-show-page-prose') ?? document.querySelector('main details') ?? document.querySelector('main section:not([data-nos-hero]) [data-nos-wrap] > :first-child') ?? document.querySelector('main section:not([data-nos-hero]) > :first-child') ?? null;
   if (probe) {
     let e = probe.parentElement;
     while (e && e.tagName !== 'SECTION' && e !== document.body && cs(e).maxWidth === 'none') e = e.parentElement;
@@ -122,11 +122,35 @@ await main('F12-A7 template', async (r) => {
       for (const p of m.paras) if (p.w > p.ch60 + 1.5) r.fail(`${route}: a paragraph is ${p.w.toFixed(0)}px wide, over 60ch (${p.ch60.toFixed(0)}px) - r5's [&_p]:max-w-[60ch] must survive`);
       await ctx.close();
     }
-    for (const route of ['/national-show/conferences', '/national-show/workshops']) {
-      const { ctx, page, status } = await openPage(browser, VP.wide, route);
+    // conferences and workshops (NOS Design ruling relayed 2026-10-16): the 1280 container for alignment, 60ch for measure; not the prose grid
+    for (const route of T.widenedRoutes) {
+      const { ctx, page, status } = await openPage(browser, VP.desktop, route);
+      if (status !== 200) { r.fail(`${route}: HTTP ${status}`); await ctx.close(); continue; }
+      for (const w of [390, 1280, 1920]) {
+        await page.setViewportSize({ width: w, height: w >= 1024 ? 900 : 844 });
+        await page.waitForTimeout(150);
+        const m = await page.evaluate(measure, { paras: true });
+        const tag = `${route} @${w}`;
+        if (m.overflowX > 1) r.fail(`${tag}: horizontal overflow ${m.overflowX}px`);
+        if (m.prose.length) r.fail(`${tag}: has .nos-show-page-prose blocks, but it is not a prose-template page`);
+        const c = m.container;
+        if (!c) r.fail(`${tag}: no bounded container around the content`);
+        else {
+          if (px(c.maxWidth) !== T.container.maxWidth || !near(c.width, Math.min(w, T.container.maxWidth), 1)) r.fail(`${tag}: container ${c.maxWidth} / ${c.width.toFixed(0)}px wide, want 1280px`);
+          if (c.padL !== T.container.paddingInline || c.padR !== T.container.paddingInline || !c.centred) r.fail(`${tag}: container padding ${c.padL}/${c.padR} centred ${c.centred}, want px-8 and centred`);
+        }
+        for (const p of m.paras) if (p.w > p.ch60 + 1.5) r.fail(`${tag}: a paragraph is ${p.w.toFixed(0)}px wide, over 60ch (${p.ch60.toFixed(0)}px)`);
+      }
+      await ctx.close();
+    }
+    // tickets shares CategoryTicketsPage: it must keep the F3 container, 1080 plus two gutters
+    for (const route of T.untouchedContainerRoutes) {
+      const { ctx, page, status } = await openPage(browser, VP.desktop, route);
       if (status !== 200) { r.fail(`${route}: HTTP ${status}`); await ctx.close(); continue; }
       const m = await page.evaluate(measure, { paras: false });
-      if (m.prose.length) r.fail(`${route}: has .nos-show-page-prose blocks, but it is not a template page`);
+      const gutter = Math.min(Math.max(16, 0.04 * 1280), 48);
+      const want = 1080 + gutter + gutter;
+      if (!m.container || !near(px(m.container.maxWidth), want, 1)) r.fail(`${route}: container ${m.container?.maxWidth ?? 'none'}, want the unchanged F3 wrap ${want}px`);
       await ctx.close();
     }
   });

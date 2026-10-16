@@ -1,6 +1,6 @@
 {
   "baseRefEnv": "F12_BASE_REF",
-  "baseRefDefault": "merge-base of HEAD and branch feat/nos-f3-hub-tickets (F12 is built on F3's tip); falls back to origin/main",
+  "baseRefDefault": "F12_BASE_REF = the commit the F12 dev branched from (record it at dispatch; F13 and F3 land beneath it, so their diffs are not F12's). Fallback: merge-base of HEAD and feat/nos-f3-hub-tickets, then origin/main",
   "allowed": [
     "app/(marketing)/national-show/page.tsx",
     "app/(marketing)/national-show/nos-structure.css",
@@ -22,13 +22,16 @@
     "contracts/checks/launch-weekend/f12/**",
     "docs/**",
     "README.md",
-    ".agent/memory/**"
+    ".agent/memory/**",
+    "components/chrome/UtilityBar.tsx",
+    "app/(marketing)/layout.tsx",
+    "app/(marketing)/national-show/conferences/page.tsx",
+    "app/(marketing)/national-show/workshops/page.tsx",
+    "components/tickets/CategoryTicketsPage.tsx"
   ],
   "mustBeUnchanged": [
     "app/(marketing)/national-show/vendors/page.tsx",
     "app/(marketing)/national-show/exhibitors/page.tsx",
-    "app/(marketing)/national-show/conferences/page.tsx",
-    "app/(marketing)/national-show/workshops/page.tsx",
     "app/(marketing)/national-show/tickets/page.tsx",
     "app/(marketing)/national-show/vendors/apply/page.tsx",
     "app/(marketing)/national-show/vendors/register/page.tsx",
@@ -37,13 +40,17 @@
     "app/(marketing)/national-show/vendors/photos/page.tsx",
     "components/show/ShowSectionNav.tsx",
     "components/chrome/nav-config.ts",
-    "components/tickets/CategoryTicketsPage.tsx"
+    "components/chrome/Header.tsx",
+    "components/chrome/Footer.tsx",
+    "components/chrome/MegaMenu.tsx",
+    "components/chrome/MobileMenu.tsx",
+    "components/chrome/SkipLink.tsx",
+    "components/chrome/SearchOverlay.tsx",
+    "components/chrome/SaocLockup.tsx"
   ],
   "mustBeUnchangedPrefixes": [
     "app/api/",
     "components/vendors/",
-    "components/tickets/",
-    "components/chrome/",
     "components/nos-chrome/",
     "content/show-pages/",
     "sanity/",
@@ -53,8 +60,12 @@
     "app/(marketing)/about/",
     "app/(marketing)/societies/",
     "app/(marketing)/contact/",
-    "app/(marketing)/layout.tsx",
-    "apphosting.yaml"
+    "apphosting.yaml",
+    "components/nos-chrome/",
+    "components/tickets/"
   ],
-  "note": "SAOC routes byte-identical: no SAOC page, SAOC chrome or shared global stylesheet changes; every F12 CSS rule is scoped under .nos-theme (nos-theme.css / nos-structure.css only). Vendor apply/register/payment/photos untouched. content/show-pages JSON and sanity are NOT edited: the symposium presentation (title, hero lede, theme-section heading and block drop) is applied at render in lib/data/show-page-presentation.ts, so the data stays reversible and Sanity-sourced pages get the same result. ShowContentState.tsx, ShowPageProse.tsx and lib/data/show-pages.ts are F8 hot files: F12 lands after F8 or rebases onto it, and F8's withhold/gap logic must be preserved. scripts/checks/verify-nos-content-state.ts may change only where an existing assertion pins the old symposium title or the old template markup. Needing a file outside this list is a stop-and-ask."
+  "note": "SAOC routes byte-identical: no SAOC page, SAOC chrome or shared global stylesheet changes; every F12 CSS rule is scoped under .nos-theme (nos-theme.css / nos-structure.css only). Vendor apply/register/payment/photos untouched. content/show-pages JSON and sanity are NOT edited: the symposium presentation (title, hero lede, theme-section heading and block drop) is applied at render in lib/data/show-page-presentation.ts, so the data stays reversible and Sanity-sourced pages get the same result. ShowContentState.tsx, ShowPageProse.tsx and lib/data/show-pages.ts are F8 hot files: F12 lands after F8 or rebases onto it, and F8's withhold/gap logic must be preserved. scripts/checks/verify-nos-content-state.ts may change only where an existing assertion pins the old symposium title or the old template markup. Needing a file outside this list is a stop-and-ask. UTILITY BAR (Brad 2026-10-16): UtilityBar.tsx gains an optional `variant` prop (default saoc, output byte-identical) and app/(marketing)/layout.tsx mounts it above NosHeader for the NOS chrome; components/nos-chrome/** stays untouched (F1 check-static forbids UtilityBar there), SAOC Header/Footer/menus are unedited (F13 owns the header Tickets removal). CategoryTicketsPage.tsx is shared with /national-show/tickets: it may change only behind an opt-in prop that conferences and workshops pass, tickets/page.tsx stays byte-identical and measured at the F3 1080 container.",
+  "allowedExceptionsToPrefixes": [
+    "components/tickets/CategoryTicketsPage.tsx"
+  ]
 }

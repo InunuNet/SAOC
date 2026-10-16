@@ -60,3 +60,14 @@ Template: the six routes that render through ShowContentState (programme, sympos
 2. Hero copy axis vs content axis: hero copy uses its own gutter clamp(16px,4vw,48px) (48px at 1280) and a 1320 cap; R70's content container is 32px / 1280. At 1280 the hero text starts at 48px, the content at 32px: a 16px offset remains and wider screens differ more. R70 does not ask to change the hero container, so F12 does not; check-f prints the offsets as NOTE lines, it does not fail on them.
 3. "Inner hero min-height ~380px" is applied to all inner heroes at >=1024 (assumed), and asserted on the symposium and the other five template pages.
 4. The hub <title> / og title still read the F3 metadata (not in R68); only the visible h1 changes.
+
+## Added 2026-10-16 (lead relay)
+Conflict (c), NOS Design: conferences and workshops take the R70 container (1280, px-8) for alignment and 60ch for measure; they do not get the prose grid. They render through components/tickets/CategoryTicketsPage.tsx, which /national-show/tickets also uses: change it only behind an opt-in prop passed by the two pages; tickets stays on the F3 1080 wrap (measured in F12-A7). The inner column cap for the ticket form is left to the dev; only container and paragraph measure are asserted.
+
+SAOC utility bar on NOS pages (Brad, direct, with screenshot): the dark band (mail icon + info@saoc.co.za left; pills right) renders above the NOS header on every /national-show/* route.
+- Reuse components/chrome/UtilityBar.tsx, add optional prop `variant: 'saoc' | 'nos'` (default 'saoc', output byte-identical to base: proven by render check F12-A13 against `git show <base>:components/chrome/UtilityBar.tsx`). No restyle, no copy of the markup.
+- 'nos' replaces only the show pill: href "/" (same origin; the SAOC home is saoc.co.za), label "saoc.co.za", the same className (so hidden under 900px exactly like the pill it replaces). Email and "Join a society" stay.
+- Mount: app/(marketing)/layout.tsx, nos.top = UtilityBar variant="nos" then NosHeader. Not inside the components/nos-chrome directory (F1 check-static forbids a UtilityBar reference there; F12 keeps that true).
+- The skip link stays first in DOM and the first Tab stop; #nh stays sticky (the bar scrolls away, the header pins at top 0). Measured at 1280 and 390 on all 17 routes (F12-A14).
+- SAOC pages: bar unchanged; Header/Footer/menus unedited; the header Tickets CTA is removed by F13 (landing before F12), so F12-A14 expects none on /, /about, /societies, /contact.
+- Open for the lead: at 390 the pill is hidden by the existing min-[900px] rule (same as SAOC today), so on phones the NOS bar shows email + Join only and has no way back to saoc.co.za from the bar. If Brad wants the back-link visible on phones, that is a one-class change plus a check change; F12 follows "same pill style" literally.

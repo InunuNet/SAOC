@@ -13,7 +13,7 @@ const allow = cfg.allowed.map(re);
 const problems = [];
 for (const f of changed) if (!allow.some((x) => x.test(f))) problems.push(`out-of-scope change: ${f}`);
 for (const f of cfg.mustBeUnchanged) if (changed.has(f)) problems.push(`must be unchanged but differs from base: ${f}`);
-for (const f of changed) for (const p of cfg.mustBeUnchangedPrefixes) if (f.startsWith(p)) problems.push(`must be unchanged (${p}): ${f}`);
+for (const f of changed) for (const p of cfg.mustBeUnchangedPrefixes) if (f.startsWith(p) && !(cfg.allowedExceptionsToPrefixes ?? []).includes(f)) problems.push(`must be unchanged (${p}): ${f}`);
 
 // every added selector line in the two NOS stylesheets stays under .nos-theme (SAOC routes cannot be reached)
 for (const f of ['app/(marketing)/national-show/nos-theme.css', 'app/(marketing)/national-show/nos-structure.css']) {

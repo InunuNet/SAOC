@@ -43,8 +43,15 @@ features:
 #   and the council-supplied 'theme' section of content/show-pages/06-saoc-symposium.json. It stays exactly as the showPage data carries it (never retyped into code); the lead
 #   should confirm it against Lee-Ann's live Symposium doc before launch.
 #
+# SCOPE ADDS (lead relay, 2026-10-16):
+#   (c) RESOLVED by NOS Design: conferences and workshops get the R70 1280 / px-8 container for alignment AND keep 60ch paragraphs (assert both; not the prose grid). They render through
+#       CategoryTicketsPage, shared with /national-show/tickets, so any change sits behind an opt-in prop and tickets stays on the F3 container (measured).
+#   UTILITY BAR (Brad, direct, with screenshot): keep the SAOC top utility bar on the NOS site. Reuse components/chrome/UtilityBar.tsx via an optional variant prop (default output byte-identical),
+#       mounted from app/(marketing)/layout.tsx above NosHeader on every /national-show/* route. The "19th National Show · Sept 2027" pill becomes a pill linking to "/" labelled "saoc.co.za" (Brad's wording)
+#       with the SAME className. Email and "Join a society" stay. Skip link stays first focusable; NOS header stays sticky. F13 (landing first) removes the SAOC header Tickets CTA: checks expect none.
+#   F12_BASE_REF: set it to the commit F12's dev branched from (F3 and F13 beneath it), else the scope diff would count their changes.
 # CONFLICTS RESOLVED (f12-spec.md): (a) r5 [&_p]:max-w-[60ch] on vendors/exhibitors survives (files unchanged + measured). (b) body size untouched (no font-size on running copy in the diff).
-#   (c) template pages = programme, symposium, wosa-conference, sa-exhibitors, international-guests, sponsors + the FAQ container; conferences/workshops are CategoryTicketsPage, untouched.
+#   (c) prose-template pages = programme, symposium, wosa-conference, sa-exhibitors, international-guests, sponsors + the FAQ container; conferences/workshops take the 1280 container and 60ch measure (no prose grid).
 #   (d) F8's withhold/gap logic preserved (data-nos-content-gap on the grid element, notice before heading, G7 one-key props, F8 checks run when present).
 # F3 ASSERTIONS REPLACED BY THIS CONTRACT: see goldens/f12/supersession.json. F12's dev must not edit contracts/checks/nos-own-brand-chrome/**.
 # HOT FILES: ShowContentState.tsx, ShowPageProse.tsx and lib/data/show-pages.ts are also F8's; land after F8 or rebase onto it and keep its logic.
@@ -77,7 +84,7 @@ assertions:
       description: Symposium measured at 1280, 1920, 1440, 1024 and 390 - h1 "National Orchid Show Symposium", no "SAOC Symposium" in title, og:title, twitter:title or og:image, hero lede is the theme line with no quote characters in Fraunces italic clamp(22px,2vw,30px)/1.3, 30ch, bone, Purpose line gone, theme line gone from the body, body section h2 "Symposium theme" holding only the council description sentence (when published), inner hero min-height >= 380 and h1 max-width none, balanced and never ending in a lone word at >=1024, "Presenters (N)" jump link gone
       command: node --import tsx/esm contracts/checks/launch-weekend/f12/check-e-symposium.mjs
     - id: F12-A7
-      description: Shared template measured on programme, symposium, wosa-conference, sa-exhibitors, international-guests, sponsors and the FAQ container at 390, 899, 900, 1024, 1280 and 1920 - 1280 / px-8 centred container, 4fr:7fr two-column grid with 64px gap, 40px top padding and --rule top border at >=900 (h2 32px margin 0 in column 1, other children and the TBC / gap notices in column 2, paragraphs <= 60ch), stacked below 900, inner hero >= 380 at >=1024; vendors and exhibitors paragraphs stay <= 60ch; conferences and workshops carry no template blocks
+      description: Shared template measured on programme, symposium, wosa-conference, sa-exhibitors, international-guests, sponsors and the FAQ container at 390, 899, 900, 1024, 1280 and 1920 - 1280 / px-8 centred container, 4fr:7fr two-column grid with 64px gap, 40px top padding and --rule top border at >=900 (h2 32px margin 0 in column 1, other children and the TBC / gap notices in column 2, paragraphs <= 60ch), stacked below 900, inner hero >= 380 at >=1024; vendors and exhibitors paragraphs stay <= 60ch; conferences and workshops get the 1280 / px-8 container with paragraphs <= 60ch and no prose-grid blocks; tickets keeps the F3 container
       command: node --import tsx/esm contracts/checks/launch-weekend/f12/check-f-template.mjs
     - id: F12-A8
       description: Footprint - every changed file is on the F12 allowlist; SAOC pages and chrome, vendor apply/register/payment/photos, vendors/exhibitors/conferences/workshops/tickets pages, nav-config, content/show-pages, sanity and apphosting.yaml have zero diff; every added CSS selector is under .nos-theme
@@ -94,3 +101,9 @@ assertions:
     - id: F12-A12
       description: Type check passes
       command: pnpm type-check
+    - id: F12-A13
+      description: The real UtilityBar module server-rendered - default and variant saoc output byte-identical to the base file's render; variant nos differs only in the show pill (label saoc.co.za, href /, the replaced pill's className), keeps the email and Join a society, no National Show text
+      command: pnpm exec tsx contracts/checks/launch-weekend/f12/check-h-utility-render.mts
+    - id: F12-A14
+      description: Utility bar measured on all 17 NOS routes at 1280 and 390 - exactly one, before the NOS header in the DOM and not overlapping it, element-for-element the same classes and computed styles as the SAOC bar on /about except the pill (saoc.co.za to /, same visibility rule), email and Join kept, skip link first focusable and first Tab target, NOS header still sticky at top 0; the four SAOC routes keep the original National Show pill and show no header Tickets CTA
+      command: node --import tsx/esm contracts/checks/launch-weekend/f12/check-i-utility-bar.mjs

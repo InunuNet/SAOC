@@ -91,5 +91,15 @@ for (const f of [`${NS}/vendors/page.tsx`, `${NS}/exhibitors/page.tsx`]) {
 }
 need(gitLines('diff', '--name-only', base, '--', 'components/show/ShowSectionNav.tsx').length === 0, 'components/show/ShowSectionNav.tsx was edited (legacy, must stay byte-identical)');
 
+// ---- SAOC utility bar on NOS pages (Brad, 2026-10-16) ----
+const bar = read('components/chrome/UtilityBar.tsx');
+need(/variant/.test(bar) && />\s*saoc\.co\.za\s*</.test(bar) || /['"]saoc\.co\.za['"]/.test(bar), 'UtilityBar.tsx has no variant prop / "saoc.co.za" pill label');
+need(/href=["']\/["']/.test(bar), 'UtilityBar.tsx has no href="/" pill link');
+const layout = read('app/(marketing)/layout.tsx');
+const nosTop = layout.slice(layout.indexOf('nos={{'));
+need(/<UtilityBar[^>]*variant=\{?["']nos["']\}?/.test(nosTop), 'app/(marketing)/layout.tsx does not mount <UtilityBar variant="nos"> in the NOS chrome');
+need(nosTop.indexOf('<UtilityBar') !== -1 && nosTop.indexOf('<UtilityBar') < nosTop.indexOf('<NosHeader'), 'the NOS utility bar is not mounted before NosHeader');
+for (const f of gitLines('ls-files', 'components/nos-chrome')) if (/\.(tsx?|css)$/.test(f)) need(!/UtilityBar/.test(read(f)), `${f} references UtilityBar (mount it from the marketing layout only)`);
+
 if (problems.length) { console.error(`FAIL F12-A1 (${problems.length}):\n- ${problems.join('\n- ')}`); process.exit(1); }
 console.log('PASS F12-A1 static');
