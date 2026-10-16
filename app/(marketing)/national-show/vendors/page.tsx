@@ -105,7 +105,6 @@ export default async function VendorsPage() {
 
       <NosSection>
         <LongFormPage
-          route="/national-show/vendors"
           facts={facts}
           heading={INTRO_HEADING}
           cta={false}

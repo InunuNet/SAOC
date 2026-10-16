@@ -718,20 +718,6 @@
 .nos-theme .nos-longform-body > * + * {
   margin-top: 24px;
 }
-.nos-theme .nos-longform-body > .nos-image-break {
-  margin-block: 40px;
-}
-.nos-theme .nos-image-break {
-  aspect-ratio: 21 / 9;
-  overflow: hidden;
-  border-radius: var(--radius-card);
-}
-.nos-theme .nos-image-break > img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
 .nos-theme .nos-pullquote {
   margin: 32px 0 0;
   padding-top: 24px;

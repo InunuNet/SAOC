@@ -86,7 +86,6 @@ export default async function WhatToExpectPage() {
           docs/rules/no-invention.md. */}
       <NosSection>
         <LongFormPage
-          route="/national-show/what-to-expect"
           facts={facts}
           paragraphs={[
             <>

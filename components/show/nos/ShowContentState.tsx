@@ -166,7 +166,6 @@ export function ShowContentState({
           {afterHero}
           {leadParts && longform ? (
             <LongFormPage
-              route={route}
               facts={longform.facts}
               heading={leadParts.heading}
               pageTitle={page.title}
