@@ -52,6 +52,7 @@ export function ShowPageProse({ section }: ShowPageProseProps) {
           : 'nos-show-page-prose'
       }
       data-section-key={section.sectionKey}
+      data-nos-content-gap={notice?.gap ? 'true' : undefined}
     >
       {notice ? (
         <p className="nos-show-page-notice mb-4 flex flex-wrap items-baseline gap-2" role="note">

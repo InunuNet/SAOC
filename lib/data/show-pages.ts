@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { PortableTextBlock } from '@portabletext/react';
 import type { SanityImageSource } from '@sanity/image-url';
 
+import { isPubliclyLaunched } from '@/lib/beta-public-launch';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { wrapGatedProse } from '@/components/nos/gated-prose-internal';
 import { wrapShowPageResult } from '@/components/show/nos/show-content-state-internal';
@@ -40,7 +41,14 @@ export type Provenance = 'council-supplied' | 'council-draft' | 'research' | 'pl
 // provenance and cannot drift from the classification that produced the notice text.
 export type ShowPageNoticeTone = 'warning' | 'muted';
 
-export type ShowPageNotice = { label: string; text: string; tone: ShowPageNoticeTone };
+// `gap` marks the one R11 content-gap notice applyContentGaps() substitutes for withheld
+// placeholder prose; ShowPageProse turns it into a data attribute.
+export type ShowPageNotice = {
+  label: string;
+  text: string;
+  tone: ShowPageNoticeTone;
+  gap?: true;
+};
 
 // Opaque brand. There is no value of this type anyone outside this module can construct
 // or destructure through the type system alone — the only legitimate way to get useful
@@ -121,6 +129,8 @@ export const FALLBACK_RESEARCH_LABEL = 'Not yet confirmed';
 export const FALLBACK_RESEARCH_NOTICE =
   'This information was researched by the web team and has not yet been confirmed by the ' +
   'South African Orchid Council.';
+// The pending chip already used on the exhibitor and sponsor pages; the R11 gap block reuses it.
+export const CONTENT_GAP_LABEL = 'To be confirmed by the show committee';
 export const FALLBACK_DRAFT_LABEL = 'Council draft';
 export const FALLBACK_DRAFT_NOTICE =
   'This text was supplied by the South African Orchid Council and is still a working draft. ' +
@@ -467,6 +477,49 @@ async function loadShowPageSettings(options?: {
   });
 }
 
+// F8 (launch-weekend, R51) — AI-generated placeholder prose is withheld at render.
+// Default is withhold everywhere. SHOW_PLACEHOLDER_PREVIEW=true brings the labelled
+// placeholders back only while the beta wall is up; SITE_PUBLIC_LAUNCH=true always forces
+// withhold. Both matches are exact and fail closed, like lib/beta-public-launch.ts.
+export function withholdPlaceholderProse(
+  env: { SHOW_PLACEHOLDER_PREVIEW?: string; SITE_PUBLIC_LAUNCH?: string } = {
+    SHOW_PLACEHOLDER_PREVIEW: process.env.SHOW_PLACEHOLDER_PREVIEW,
+    SITE_PUBLIC_LAUNCH: process.env.SITE_PUBLIC_LAUNCH,
+  },
+): boolean {
+  const previewOptedIn = env.SHOW_PLACEHOLDER_PREVIEW === 'true';
+  return !(previewOptedIn && !isPubliclyLaunched(env.SITE_PUBLIC_LAUNCH));
+}
+
+// Replaces every warning-toned (placeholder-class) section with ONE muted R11 gap section
+// at the position of the first, built only from existing strings. Clean, research and
+// council-draft sections are untouched. A no-op when `withhold` is false or nothing is
+// warning-toned. The gap has no heading: the hero h1 titles the page.
+export function applyContentGaps(sections: ShowPageSection[], withhold: boolean): ShowPageSection[] {
+  if (!withhold) return sections;
+  const isWithheld = (section: ShowPageSection) => section.notice?.tone === 'warning';
+  const first = sections.find(isWithheld);
+  if (!first) return sections;
+
+  const notice: ShowPageNotice = {
+    label: CONTENT_GAP_LABEL,
+    text: ABSENT_SHOW_PAGE_FIXED_SENTENCE,
+    tone: 'muted',
+    gap: true,
+  };
+  const gap: ShowPageSection = {
+    sectionKey: first.sectionKey,
+    heading: null,
+    kind: 'prose',
+    body: wrapGatedProse([], notice),
+    notice,
+  };
+  return sections.flatMap((section) => {
+    if (section === first) return [gap];
+    return isWithheld(section) ? [] : [section];
+  });
+}
+
 function hydrateSection(
   raw: RawShowPageSection,
   settings: ShowPageSettingsFields | null,
@@ -488,7 +541,10 @@ function hydrateSection(
 
 function hydratePage(raw: RawShowPage, settings: ShowPageSettingsFields | null): ShowPage {
   const rawSections = raw.sections ?? [];
-  const sections = rawSections.map((section) => hydrateSection(section, settings));
+  const sections = applyContentGaps(
+    rawSections.map((section) => hydrateSection(section, settings)),
+    withholdPlaceholderProse(),
+  );
   const pageProvenance = resolvePageProvenance(
     rawSections.map((section) => ({
       provenance: section.provenance,
@@ -588,10 +644,7 @@ function absentShowPageBody(purpose: string): PortableTextBlock[] {
       children: [{ _type: 'span', _key: `${key}-s1`, text, marks: [] }],
     }) as unknown as PortableTextBlock;
 
-  return [
-    block(`${ABSENT_SHOW_PAGE_SECTION_KEY}-purpose`, purpose),
-    block(`${ABSENT_SHOW_PAGE_SECTION_KEY}-sentence`, ABSENT_SHOW_PAGE_FIXED_SENTENCE),
-  ];
+  return [block(`${ABSENT_SHOW_PAGE_SECTION_KEY}-purpose`, purpose)];
 }
 
 // Builds a REAL ShowPage for a listed route whose document is absent, so the route can
@@ -622,7 +675,7 @@ function buildAbsentShowPage(pageKey: string, fallback: ShowPageFallbackInput, s
     specNumber: 0,
     title: fallback.label,
     summary: null,
-    sections: [section],
+    sections: applyContentGaps([section], withholdPlaceholderProse()),
     pageProvenance,
     notice,
     seoTitle: null,
