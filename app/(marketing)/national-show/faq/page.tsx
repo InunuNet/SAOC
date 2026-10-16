@@ -21,7 +21,7 @@ import { NosShowIndex } from '@/components/nos/NosShowIndex';
 // markup reads in the order the page does.
 const FAQ_CATEGORY_ORDER = ['getting-there', 'tickets', 'accessibility', 'plant-sales', 'general'];
 
-function faqCategoryRank(faq: ShowFaq): number {
+function categoryRank(faq: ShowFaq): number {
   const rank = FAQ_CATEGORY_ORDER.indexOf(faq.category ?? '');
   return rank === -1 ? FAQ_CATEGORY_ORDER.indexOf('general') : rank;
 }
@@ -50,25 +50,24 @@ export default async function ShowFaqPage() {
 
   // R77 #2: a public build shows only answered questions; with none left the page holds.
   const hideUnanswered = withholdPlaceholderProse();
-  const holds = hideUnanswered && !(faqs ?? []).some((faq) => faq?.question && hasFaqAnswer(faq));
+  // ONE derived list: what the page shows, in the order it shows it (ShowFaqList lays its
+  // sections out by category, and keeps this order within each). The list and the FAQPage node
+  // both come from it, so a future hide rule applies to both.
+  const visibleFaqs = [...(faqs ?? [])]
+    .filter((faq) => faq?.question && (!hideUnanswered || hasFaqAnswer(faq)))
+    .sort((a, b) => categoryRank(a) - categoryRank(b));
+  const holds = hideUnanswered && visibleFaqs.length === 0;
 
-  // SEO: only the entries the page presents as settled, from the same `faqs` array the list
-  // renders: answered and carrying no confirmation badge. A public build (`hideUnanswered`)
-  // renders no badges, so every answered entry there reads as settled; a beta build badges
-  // everything that is not 'confirmed'.
-  const faqEntries = holds
-    ? []
-    : [...(faqs ?? [])]
-        .sort((a, b) => faqCategoryRank(a) - faqCategoryRank(b))
-        .filter(
-          (faq) =>
-            faq?.question && hasFaqAnswer(faq) && (hideUnanswered || faq.status === 'confirmed')
-        )
-        .map((faq) => ({
-          question: faq.question as string,
-          answer: portableTextToPlainText(faq.answer ?? []),
-        }))
-        .filter((entry) => entry.answer !== '');
+  // SEO: the entries the page presents as settled. A public build (`hideUnanswered`) renders no
+  // badges, so every answered entry there reads as settled; a beta build badges everything that
+  // is not 'confirmed'.
+  const faqEntries = visibleFaqs
+    .filter((faq) => hasFaqAnswer(faq) && (hideUnanswered || faq.status === 'confirmed'))
+    .map((faq) => ({
+      question: faq.question as string,
+      answer: portableTextToPlainText(faq.answer ?? []),
+    }))
+    .filter((entry) => entry.answer !== '');
 
   return (
     <>
@@ -86,7 +85,7 @@ export default async function ShowFaqPage() {
       ) : (
         <NosSection wrapClassName="[&_details_p]:max-w-[60ch]">
           <ShowFaqList
-            faqs={faqs}
+            faqs={visibleFaqs}
             pendingLabel={info?.pendingLabel}
             researchLabel={info?.researchLabel}
             hideUnanswered={hideUnanswered}
