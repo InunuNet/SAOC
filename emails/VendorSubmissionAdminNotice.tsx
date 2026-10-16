@@ -40,7 +40,7 @@ export default function VendorSubmissionAdminNotice({
           </Heading>
           <Text style={{ fontSize: '16px', color: '#333' }}>
             <strong>{businessName}</strong> ({contactPersonName}) has submitted a full vendor
-            registration for the SAOC National Show.
+            registration for the National Orchid Show.
           </Text>
           <Text style={{ fontSize: '14px', color: '#555' }}>
             Vendor submission ID: {vendorSubmissionId}

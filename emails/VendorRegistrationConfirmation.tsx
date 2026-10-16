@@ -38,8 +38,7 @@ export default function VendorRegistrationConfirmation({
             Dear {contactPersonName},
           </Text>
           <Text style={{ fontSize: '16px', color: '#333' }}>
-            Thank you for registering <strong>{businessName}</strong> as a vendor for the SAOC
-            National Show. We have received your submission.
+            Thank you for registering <strong>{businessName}</strong> as a vendor for the National Orchid Show. We have received your submission.
           </Text>
           <Text style={{ fontSize: '16px', color: '#333' }}>
             Our team will review your registration and be in touch.

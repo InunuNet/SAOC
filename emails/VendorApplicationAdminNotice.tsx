@@ -41,7 +41,7 @@ export default function VendorApplicationAdminNotice({
           </Heading>
           <Text style={{ fontSize: '16px', color: '#333' }}>
             <strong>{businessName}</strong> ({contactPersonName}) has submitted a new vendor
-            application for the SAOC National Show.
+            application for the National Orchid Show.
           </Text>
           <Text style={{ fontSize: '14px', color: '#555' }}>
             Application ID: {applicationId}

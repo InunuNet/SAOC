@@ -11,12 +11,20 @@ import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestM
 import { AdmissionRows } from '@/components/tickets/AdmissionRows';
 import { TicketAudienceIndex } from '@/components/tickets/TicketAudienceIndex';
 import { buildAdmissionRows } from '@/lib/admission-rows';
+import { getAdmissionSoldOutBySlug } from '@/lib/data/admission-availability';
+import { resolveActiveShow } from '@/lib/show-resolution';
 import { viewerIsVerifiedAdmin } from '@/lib/admin-viewer';
 import { filterPubliclyListableTicketTypes } from '@/lib/demo-ticket-type';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { activeTicketTypesByCategoryQuery, nationalShowSalesQuery, ticketsPageQuery } from '@/sanity/queries';
+import {
+  activeShowWindowQuery,
+  activeTicketTypesByCategoryQuery,
+  nationalShowSalesQuery,
+  ticketsPageQuery,
+} from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // F16: the Ozow test-mode strip is shown to verified admins only, which reads the session
 // cookie, so this route renders per request (Sanity reads stay in the data cache).
@@ -55,7 +63,7 @@ const SECONDARY_OPTIONS = [
   {
     id: 'conferences',
     heading: "I'm attending a conference",
-    body: 'Register for the SAOC Symposium or the WOSA Conference.',
+    body: 'Register for the Symposium or the WOSA Conference.',
     cta: 'Conferences tickets',
     href: '/national-show/conferences',
   },
@@ -78,7 +86,16 @@ interface SanityAdmissionTicketType {
   requiresDaySelection?: boolean | null;
   provisional?: boolean | null;
   demo?: boolean | null;
+  capacity: number;
+  releasedQuantity?: number | null;
+  capacityPool?: string | null;
+  headcountPerUnit?: number | null;
   order: number;
+}
+
+interface ShowActivation {
+  _id: string;
+  active: boolean | null;
 }
 
 interface NationalShowSalesState {
@@ -86,7 +103,7 @@ interface NationalShowSalesState {
 }
 
 export default async function NationalShowTicketsPage() {
-  const [ticketTypes, salesState, pageData, isAdmin] = await Promise.all([
+  const [ticketTypes, salesState, pageData, allShows, isAdmin] = await Promise.all([
     sanityFetch<SanityAdmissionTicketType[]>({
       query: activeTicketTypesByCategoryQuery,
       params: { category: 'admission' },
@@ -96,15 +113,29 @@ export default async function NationalShowTicketsPage() {
       query: nationalShowSalesQuery,
       tags: ['nationalShow', 'sanity'],
     }),
-    sanityFetch<{ buyButtonLabel?: string | null }>({ query: ticketsPageQuery, tags: ['ticketsPage', 'sanity'] }),
+    sanityFetch<{ buyButtonLabel?: string | null; soldOutMessage?: string | null }>({
+      query: ticketsPageQuery,
+      tags: ['ticketsPage', 'sanity'],
+    }),
+    sanityFetch<ShowActivation[]>({ query: activeShowWindowQuery, tags: ['show', 'sanity'] }),
     viewerIsVerifiedAdmin(),
   ]);
 
   const salesOpen = salesState?.salesOpen === true;
   // The same filter /tickets uses drops demo products, so every link below resolves on /tickets/[slug].
   const admissionProducts = filterPubliclyListableTicketTypes(ticketTypes ?? []);
-  const rows = buildAdmissionRows(admissionProducts, { now: new Date() });
+  // Display hint only (checkout re-checks capacity): which SKUs are sold out, so a sold-out
+  // early-bird shows its state on its own action while the regular ticket stays live.
+  const soldOutBySlug = salesOpen
+    ? await getAdmissionSoldOutBySlug(admissionProducts, resolveActiveShow(allShows ?? []))
+    : {};
+  const rows = buildAdmissionRows(
+    admissionProducts.map((t) => ({ ...t, soldOut: soldOutBySlug[t.slug] === true })),
+    { now: new Date() },
+  );
   const buyLabel = pageData?.buyButtonLabel ?? 'Buy Ticket';
+  const soldOutLabel = pageData?.soldOutMessage ?? 'Sold out';
+  const showProvisionalNote = salesOpen && rows.some((r) => r.provisional);
 
   return (
     <>
@@ -125,10 +156,18 @@ export default async function NationalShowTicketsPage() {
             <p className="font-sans text-[16px] leading-relaxed text-muted">
               Buy an admission ticket to browse the show floor, exhibits, and displays.
             </p>
+            {showProvisionalNote ? (
+              <p className="font-sans text-[12px] italic text-muted">Provisional pricing — subject to change.</p>
+            ) : null}
           </div>
           <div className="mt-8">
             {rows.length > 0 ? (
-              <AdmissionRows rows={rows} salesOpen={salesOpen} buyLabel={buyLabel} />
+              <AdmissionRows
+                rows={rows}
+                salesOpen={salesOpen}
+                buyLabel={buyLabel}
+                soldOutLabel={soldOutLabel}
+              />
             ) : (
               <Button as={Link} href="/tickets" variant="primary" className="w-fit whitespace-nowrap max-sm:w-full max-sm:!px-2">
                 Get visitor tickets
@@ -138,8 +177,6 @@ export default async function NationalShowTicketsPage() {
               <div data-ticket-closed="" className="mt-8">
                 <SalesClosedNotice message="Ticket sales are not yet open — check back soon." />
               </div>
-            ) : rows.some((r) => r.provisional) ? (
-              <p className="mt-6 font-sans text-[12px] italic text-muted">Provisional pricing — subject to change.</p>
             ) : null}
           </div>
         </div>
@@ -157,6 +194,7 @@ export default async function NationalShowTicketsPage() {
           </div>
         </div>
       </NosSection>
+      <NosShowIndex current="/national-show/tickets" currentTone="ink" />
     </>
   );
 }

@@ -112,7 +112,7 @@ export async function sendConfirmationEmail(
 
   await mailer.send({
     to: input.buyerEmail,
-    subject: 'Your SAOC National Show order is confirmed',
+    subject: 'Your National Orchid Show order is confirmed',
     react: OrderConfirmation({ buyerName: input.buyerName, positions, recoveryUrl }),
     from: TICKETS_FROM_ADDRESS,
     attachments,

@@ -437,7 +437,7 @@ export default async function NationalShowPage() {
         <div>
           <SectionHeading title="Three years in the making, four days on the bench" />
           <p className="mt-6 font-sans text-[16px] leading-relaxed text-ink/80">
-            The SAOC National Orchid Show is the country&rsquo;s premier competitive orchid event.
+            The National Orchid Show is the country&rsquo;s premier competitive orchid event.
             Held every three years, it brings together growers, hybridisers, judges and
             collectors for four days of competition, education, and community.
           </p>
@@ -502,7 +502,7 @@ export default async function NationalShowPage() {
       </NosSection>
 
       {/* ── Classes & Judging — a botanical index, not placeholder tiles ── */}
-      <NosSection tone="gold">
+      <NosSection tone="gold" className="nos-section-joined">
         <SectionHeading
           title="Ten judging groups"
           lede="Every exhibit is entered in one of ten botanical classes. Judges score on a 100-point scale covering cultural quality, presentation, and species accuracy."
@@ -581,6 +581,7 @@ export default async function NationalShowPage() {
 
       {/* ── Closing band: the ticket close. Its h2 is the show's own line from page data. ── */}
       <CtaBand
+        className="nos-section-joined"
         title={ctaSentence}
         action={
           <div className="flex flex-wrap justify-center gap-4">

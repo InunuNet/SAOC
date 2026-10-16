@@ -48,8 +48,10 @@ for (const sf of NAMING.swapFiles) {
   expected = expected.split(NAMING.globalRule[0]).join(NAMING.globalRule[1]);
   let actual = wsNorm(cur);
   // scope G1: the Explore-index mount (one import, one element per inner page) is the only other change a swap file may carry.
-  actual = actual.replace(/import \{ NosShowIndex \} from '@\/components\/nos\/NosShowIndex';/g, '').replace(/<NosShowIndex current="[^"]*" \/>/g, '');
-  actual = wsNorm(actual);
+  // The hub already carried both at the base ref, so the same strip is applied to the expected text.
+  const stripIndex = (t) => wsNorm(t.replace(/import \{ NosShowIndex \} from '@\/components\/nos\/NosShowIndex';/g, '').replace(/<NosShowIndex current="[^"]*" \/>/g, ''));
+  actual = stripIndex(actual);
+  expected = stripIndex(expected);
   for (const pat of sf.stripCurrent ?? []) {
     const rx = new RegExp(pat, "g");
     const n = (actual.match(rx) ?? []).length;

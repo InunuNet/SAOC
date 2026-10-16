@@ -12,6 +12,7 @@ import { showSponsorsQuery } from '@/sanity/queries';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // F14 (national-show-ia-alignment, M4) — created route, reinstated by Brad. Its OWN data
 // scope: showSponsor, never the site-level `sponsor` type site-level /sponsors reads —
@@ -51,7 +52,7 @@ export default async function ShowSponsorsPage() {
   const [result, sponsors] = await Promise.all([
     loadShowPageOrFallback('15-sponsors', {
       label: 'Show Sponsors',
-      purpose: "The Show's own sponsors — a separate list from SAOC's site-level sponsors.",
+      purpose: 'The sponsors behind the National Show.',
     }),
     sanityFetch<ShowSponsorCardData[]>({
       query: showSponsorsQuery,
@@ -76,7 +77,7 @@ export default async function ShowSponsorsPage() {
                 renderCard={(sponsor) => <ShowSponsorCard sponsor={sponsor} />}
               />
             ) : (
-              <div className="nos-surface mx-auto">
+              <div>
                 <ConfirmationBadge
                   status="pending"
                   pendingLabel="To be confirmed by the show committee"
@@ -101,6 +102,7 @@ export default async function ShowSponsorsPage() {
           }
         />
       </div>
+      <NosShowIndex current="/national-show/sponsors" />
     </>
   );
 }

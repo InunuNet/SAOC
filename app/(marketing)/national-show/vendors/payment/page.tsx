@@ -28,7 +28,7 @@ import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 export const metadata: Metadata = buildPageMetadata({
   title: 'Vendor Stand Payment — National Show',
   image: nosOgImage('Vendor Stand Payment — National Show'),
-  description: 'Select your stand size and complete payment for the 2027 SAOC National Show.',
+  description: 'Select your stand size and complete payment for the 2027 National Orchid Show.',
   path: '/national-show/vendors/payment',
   noIndex: true,
 });
@@ -64,7 +64,7 @@ export default async function VendorStandPaymentPage({
       <NosHero
         route="/national-show/vendors/payment"
         title="Vendor Stand Payment"
-        lede="Select your stand size and complete payment for the 2027 SAOC National Show."
+        lede="Select your stand size and complete payment for the 2027 National Orchid Show."
         priority
       />
 

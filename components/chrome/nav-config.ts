@@ -125,7 +125,6 @@ export const NAV: readonly NavItem[] = [
   { type: 'link', id: 'societies', label: 'Societies', href: '/societies' },
   { type: 'link', id: 'judging', label: 'Judging & Awards', href: '/judging' },
   { type: 'link', id: 'events', label: 'Events', href: '/events' },
-  { type: 'link', id: 'members', label: 'Members', href: '/members' },
   {
     type: 'mega',
     id: 'national-show',
@@ -137,7 +136,7 @@ export const NAV: readonly NavItem[] = [
       leadHref: '/national-show',
       theShow: {
         id: 'the-show',
-        heading: 'The Show',
+        heading: 'The show',
         headingHref: null,
         links: [
           {
@@ -148,13 +147,13 @@ export const NAV: readonly NavItem[] = [
           },
           {
             id: 'show-sponsors',
-            label: 'Show Sponsors',
+            label: 'Show sponsors',
             href: '/national-show/sponsors',
-            descriptor: "The Show's own sponsors — a separate list from SAOC's site-level sponsors.",
+            descriptor: 'The sponsors behind the National Show.',
           },
           {
             id: 'past-shows',
-            label: 'Past Shows',
+            label: 'Past shows',
             href: '/national-show/archive',
             descriptor: 'Previous editions.',
           },
@@ -169,19 +168,19 @@ export const NAV: readonly NavItem[] = [
         links: [
           {
             id: 'about-the-show',
-            label: 'About the Show',
+            label: 'About the show',
             href: '/national-show/about',
             descriptor: "The show's theme, what it brings together, and who takes part.",
           },
           {
             id: 'what-to-expect',
-            label: 'What to Expect',
+            label: 'What to expect',
             href: '/national-show/what-to-expect',
             descriptor: 'Hours, admission and on-the-day detail for visitors.',
           },
           {
             id: 'plan-your-visit',
-            label: 'Plan Your Visit',
+            label: 'Plan your visit',
             href: '/national-show/plan-your-visit',
             descriptor: 'Travel, parking, accommodation and nearby attractions.',
           },
@@ -212,7 +211,7 @@ export const NAV: readonly NavItem[] = [
           },
           {
             id: 'symposium',
-            label: 'SAOC Symposium',
+            label: 'Symposium',
             href: '/national-show/symposium',
             descriptor: 'The SAOC Symposium — what it is, its theme, and who it is for.',
           },
@@ -225,7 +224,7 @@ export const NAV: readonly NavItem[] = [
           },
           {
             id: 'conferences',
-            label: 'Conference Registration',
+            label: 'Conference registration',
             href: '/national-show/conferences',
             descriptor: 'Register for the Symposium and WOSA Conference.',
           },
@@ -233,24 +232,24 @@ export const NAV: readonly NavItem[] = [
       },
       {
         id: 'exhibit-trade',
-        heading: 'Exhibit & Trade',
+        heading: 'Exhibit & trade',
         headingHref: null,
         links: [
           {
             id: 'sa-exhibitors',
-            label: 'South African Exhibitors',
+            label: 'South African exhibitors',
             href: '/national-show/sa-exhibitors',
             descriptor: 'Public directory of South African nurseries exhibiting at the show.',
           },
           {
             id: 'international-guests',
-            label: 'International Guests',
+            label: 'International guests',
             href: '/national-show/international-guests',
             descriptor: 'Public directory of international guests and exhibitors attending the show.',
           },
           {
             id: 'exhibitors',
-            label: 'Exhibitor Entry Guide',
+            label: 'Exhibitor entry guide',
             href: '/national-show/exhibitors',
             descriptor: 'Entry process, fees, classes, judging and eligibility for growers entering plants.',
           },

@@ -12,7 +12,7 @@ export const metadata: Metadata = buildPageMetadata({
   title: 'Vendor Application — National Show',
   image: nosOgImage('Vendor Application — National Show'),
   description:
-    'Apply to exhibit as a vendor at the 2027 SAOC National Show. Once the committee ' +
+    'Apply to exhibit as a vendor at the 2027 National Orchid Show. Once the committee ' +
     'reviews and approves your application, we will email you a link to complete your full ' +
     'registration and agreement.',
   path: '/national-show/vendors/apply',
@@ -27,7 +27,7 @@ export default function VendorApplyPage() {
       <NosHero
         route="/national-show/vendors/apply"
         title="Vendor Application"
-        lede="Apply to exhibit as a vendor at the 2027 SAOC National Show. Once the committee reviews and approves your application, we'll email you a link to complete your full registration and agreement."
+        lede="Apply to exhibit as a vendor at the 2027 National Orchid Show. Once the committee reviews and approves your application, we'll email you a link to complete your full registration and agreement."
         priority
       />
 

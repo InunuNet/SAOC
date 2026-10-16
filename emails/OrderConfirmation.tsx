@@ -44,7 +44,7 @@ export default function OrderConfirmation({
   return (
     <Html>
       <Head />
-      <Preview>Your SAOC National Show order is confirmed</Preview>
+      <Preview>Your National Orchid Show order is confirmed</Preview>
       <Body style={{ fontFamily: 'sans-serif', backgroundColor: '#f9f9f9', margin: '0', padding: '0' }}>
         <Container style={{ maxWidth: '600px', margin: '0 auto', padding: '24px', backgroundColor: '#ffffff' }}>
           <Heading style={{ fontSize: '24px', color: '#1a1a1a' }}>Order Confirmation</Heading>

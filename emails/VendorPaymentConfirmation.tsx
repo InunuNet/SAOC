@@ -36,15 +36,14 @@ export default function VendorPaymentConfirmation({
   return (
     <Html>
       <Head />
-      <Preview>Your SAOC National Show stand payment is confirmed</Preview>
+      <Preview>Your National Orchid Show stand payment is confirmed</Preview>
       <Body style={{ fontFamily: 'sans-serif', backgroundColor: '#f9f9f9', margin: '0', padding: '0' }}>
         <Container style={{ maxWidth: '600px', margin: '0 auto', padding: '24px', backgroundColor: '#ffffff' }}>
           <Heading style={{ fontSize: '24px', color: '#1a1a1a' }}>
             Stand Payment Confirmed
           </Heading>
           <Text style={{ fontSize: '16px', color: '#333' }}>
-            Thank you -- <strong>{businessName}</strong>&rsquo;s stand payment for the SAOC
-            National Show has been received.
+            Thank you -- <strong>{businessName}</strong>&rsquo;s stand payment for the National Orchid Show has been received.
           </Text>
           <Text style={{ fontSize: '14px', color: '#555' }}>
             Booth size: {boothSize}

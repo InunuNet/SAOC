@@ -7,6 +7,7 @@ import { buildPageMetadata } from '@/lib/seo';
 import { loadPresenterViewModels } from '@/lib/view-models/load-presenters';
 import { loadTicketCardViewModel } from '@/lib/view-models/load-ticket-card';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // F12 (national-show-ia-alignment, M4) — created route.
 //
@@ -92,6 +93,7 @@ export default async function WosaConferencePage() {
       </div>
 
       <PresenterSection eyebrow="WOSA Conference" presenters={presenters} />
+      <NosShowIndex current="/national-show/wosa-conference" />
     </>
   );
 }

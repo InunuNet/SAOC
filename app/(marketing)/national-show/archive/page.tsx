@@ -16,6 +16,7 @@ import { NosSection } from '@/components/nos/NosSection';
 import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
 import { ConfirmationBadge } from '@/components/show';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -147,6 +148,7 @@ export default async function ShowArchivePage() {
           </div>
         }
       />
+      <NosShowIndex current="/national-show/archive" />
     </>
   );
 }

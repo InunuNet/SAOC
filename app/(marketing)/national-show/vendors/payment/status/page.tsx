@@ -19,7 +19,7 @@ import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 export const metadata: Metadata = buildPageMetadata({
   title: 'Vendor Stand Payment Status — National Show',
   image: nosOgImage('Vendor Stand Payment Status — National Show'),
-  description: 'Payment status for your 2027 SAOC National Show vendor stand.',
+  description: 'Payment status for your 2027 National Orchid Show vendor stand.',
   path: '/national-show/vendors/payment/status',
   noIndex: true,
 });
@@ -34,7 +34,7 @@ interface VendorStandPaymentStatusPageProps {
 const COPY: Record<VendorStandReturnState, { heading: string; body: string }> = {
   paid: {
     heading: 'Stand Payment Confirmed',
-    body: 'Your stand payment for the SAOC National Show has been received.',
+    body: 'Your stand payment for the National Orchid Show has been received.',
   },
   pending: {
     heading: 'Payment Not Yet Confirmed',
@@ -63,7 +63,7 @@ export default async function VendorStandPaymentStatusPage({
       <NosHero
         route="/national-show/vendors/payment/status"
         title="Vendor Stand Payment"
-        lede="Payment status for your 2027 SAOC National Show vendor stand."
+        lede="Payment status for your 2027 National Orchid Show vendor stand."
         priority
       />
 

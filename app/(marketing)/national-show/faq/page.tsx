@@ -10,6 +10,7 @@ import { showFaqsQuery, showVisitorInfoQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
 import type { ShowFaq, ShowVisitorInfo } from '@/types';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
@@ -64,6 +65,7 @@ export default async function ShowFaqPage() {
           </div>
         </div>
       </NosSection>
+      <NosShowIndex current="/national-show/faq" />
     </>
   );
 }

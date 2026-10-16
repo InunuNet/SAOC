@@ -37,7 +37,7 @@ export default function VendorApplicationConfirmation({
             Dear {contactPersonName},
           </Text>
           <Text style={{ fontSize: '16px', color: '#333' }}>
-            Thank you for applying to be a vendor at the SAOC National Show as{' '}
+            Thank you for applying to be a vendor at the National Orchid Show as{' '}
             <strong>{businessName}</strong>. We have received your application.
           </Text>
           <Text style={{ fontSize: '16px', color: '#333' }}>

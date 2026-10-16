@@ -9,6 +9,7 @@ import { internationalNurseriesQuery } from '@/sanity/queries';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // F14 (national-show-ia-alignment, M4) — created route. Placeholder prose plus a REAL
 // empty listing over vendorNursery, filtered to guests outside South Africa. Zero
@@ -74,6 +75,7 @@ export default async function InternationalGuestsPage() {
           )
         }
       />
+      <NosShowIndex current="/national-show/international-guests" />
     </>
   );
 }

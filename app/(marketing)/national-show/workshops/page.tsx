@@ -5,6 +5,7 @@ import { Card } from '@/components/nos/Card';
 import { buildPageMetadata } from '@/lib/seo';
 import { loadWorkshopSessionViewModels } from '@/lib/view-models/load-workshop-sessions';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // See app/(marketing)/tickets/page.tsx for why this stays force-dynamic — the shared
 // CategoryTicketsPage component calls getSoldCountsByTicketType() (Firebase Admin SDK,
@@ -64,6 +65,7 @@ export default async function WorkshopsFieldTripsTicketsPage() {
           </Card>
         }
       />
+      <NosShowIndex current="/national-show/workshops" currentTone="ink" />
     </>
   );
 }

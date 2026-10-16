@@ -21,7 +21,7 @@ import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 export const metadata: Metadata = buildPageMetadata({
   title: 'Vendor Product Photos — National Show',
   image: nosOgImage('Vendor Product Photos — National Show'),
-  description: 'Upload the product photos for your 2027 SAOC National Show vendor registration.',
+  description: 'Upload the product photos for your 2027 National Orchid Show vendor registration.',
   path: '/national-show/vendors/photos',
   noIndex: true,
 });
@@ -62,7 +62,7 @@ export default async function VendorPhotosPage({ searchParams }: VendorPhotosPag
       <NosHero
         route="/national-show/vendors/photos"
         title="Vendor Product Photos"
-        lede="Upload the product photos for your 2027 SAOC National Show vendor registration."
+        lede="Upload the product photos for your 2027 National Orchid Show vendor registration."
         priority
       />
 

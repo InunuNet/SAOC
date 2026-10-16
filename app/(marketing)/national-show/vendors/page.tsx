@@ -12,6 +12,7 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { vendorNurseriesQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
@@ -87,13 +88,14 @@ export default async function VendorsPage() {
       </NosSection>
 
       <CtaBand
-        title="Interested in exhibiting at the 2027 SAOC National Show?"
+        title="Interested in exhibiting at the 2027 National Orchid Show?"
         action={
           <Button as={Link} href="/national-show/vendors/apply" variant="on-dark">
             Register as a vendor
           </Button>
         }
       />
+      <NosShowIndex current="/national-show/vendors" />
     </>
   );
 }

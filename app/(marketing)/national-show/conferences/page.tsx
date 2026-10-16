@@ -4,6 +4,7 @@ import { ConfirmationBadge } from '@/components/show';
 import { CategoryTicketsPage } from '@/components/tickets';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // See app/(marketing)/tickets/page.tsx for why this stays force-dynamic — the shared
 // CategoryTicketsPage component calls getSoldCountsByTicketType() (Firebase Admin SDK,
@@ -26,16 +27,19 @@ export const metadata: Metadata = buildPageMetadata({
 // its kind (photo or typographic) and its sub-nav group.
 export default async function ConferencesTicketsPage() {
   return (
-    <CategoryTicketsPage
-      category="conference"
-      route="/national-show/conferences"
-      heading="Conferences"
-      lede="Register for the SAOC Symposium, the WOSA Conference, or the combined SAOC/WOSA Joint track at the National Show."
-      note={
-        <div className="nos-surface">
-          <ConfirmationBadge status="pending" />
-        </div>
-      }
-    />
+    <>
+      <CategoryTicketsPage
+        category="conference"
+        route="/national-show/conferences"
+        heading="Conferences"
+        lede="Register for the SAOC Symposium, the WOSA Conference, or the combined SAOC/WOSA Joint track at the National Show."
+        note={
+          <div className="nos-surface">
+            <ConfirmationBadge status="pending" />
+          </div>
+        }
+      />
+      <NosShowIndex current="/national-show/conferences" currentTone="ink" />
+    </>
   );
 }

@@ -9,6 +9,7 @@ import { southAfricanNurseriesQuery } from '@/sanity/queries';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // F14 (national-show-ia-alignment, M4) — created route. THE PUBLIC NURSERY DIRECTORY,
 // distinct from /national-show/exhibitors (the grower entry guide — see D45/D46/X2) and
@@ -72,6 +73,7 @@ export default async function SouthAfricanExhibitorsPage() {
           )
         }
       />
+      <NosShowIndex current="/national-show/sa-exhibitors" />
     </>
   );
 }

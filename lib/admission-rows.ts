@@ -13,6 +13,8 @@ export interface AdmissionRowSource {
   earlyBirdCutoff?: string | null;
   requiresDaySelection?: boolean | null;
   provisional?: boolean | null;
+  /** Pooled-capacity verdict for this SKU (lib/data/admission-availability.ts); absent = live. */
+  soldOut?: boolean | null;
   order: number;
 }
 
@@ -21,13 +23,13 @@ export interface AdmissionTier {
   slug: string;
   name: string;
   price: number;
+  soldOut: boolean;
 }
 
 export interface AdmissionRow {
   key: string;
   name: string;
   tiers: AdmissionTier[];
-  actionSlug: string;
   requiresDaySelection: boolean;
   provisional: boolean;
   earlyBirdEnds: string | null;
@@ -50,18 +52,21 @@ function effective(t: AdmissionRowSource, now: Date): number | null {
 function tiersOf(t: AdmissionRowSource, now: Date, isEarlySku: boolean): { tiers: AdmissionTier[]; ends: string | null } {
   const price = effective(t, now);
   if (price === null) return { tiers: [], ends: null };
+  const soldOut = t.soldOut === true;
   const inWindow = Boolean(t.earlyBirdCutoff) && price === t.price;
   if (inWindow && t.regularPrice != null && t.regularPrice !== t.price) {
     return {
       tiers: [
-        { kind: 'earlyBird', slug: t.slug, name: t.name, price: t.price },
-        { kind: 'standard', slug: t.slug, name: t.name, price: t.regularPrice },
+        { kind: 'earlyBird', slug: t.slug, name: t.name, price: t.price, soldOut },
+        { kind: 'standard', slug: t.slug, name: t.name, price: t.regularPrice, soldOut },
       ],
       ends: t.earlyBirdCutoff ?? null,
     };
   }
   return {
-    tiers: [{ kind: isEarlySku || inWindow ? 'earlyBird' : 'standard', slug: t.slug, name: t.name, price }],
+    tiers: [
+      { kind: isEarlySku || inWindow ? 'earlyBird' : 'standard', slug: t.slug, name: t.name, price, soldOut },
+    ],
     ends: inWindow ? (t.earlyBirdCutoff ?? null) : null,
   };
 }
@@ -93,7 +98,6 @@ export function buildAdmissionRows(types: AdmissionRowSource[], opts: { now: Dat
       key: t.slug,
       name: t.name,
       tiers,
-      actionSlug: tiers[0].slug,
       requiresDaySelection: members.some((m) => m.requiresDaySelection === true),
       provisional: members.some((m) => m.provisional === true),
       earlyBirdEnds: ends,

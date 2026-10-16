@@ -1,5 +1,5 @@
 /**
- * `vendorSubmissions/{id}` document shape — 2027 SAOC National Show vendor registration.
+ * `vendorSubmissions/{id}` document shape — 2027 National Orchid Show vendor registration.
  * See contracts/golden/vendor-f4-submissions-model/README.md for the field-by-field
  * verification against the source form and every judgement call recorded here.
  *

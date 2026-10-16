@@ -40,7 +40,7 @@ export default function VendorPaymentAdminNotice({
           </Heading>
           <Text style={{ fontSize: '16px', color: '#333' }}>
             <strong>{businessName}</strong> ({contactPersonName}) has paid for their stand at the
-            SAOC National Show.
+            National Orchid Show.
           </Text>
           <Text style={{ fontSize: '14px', color: '#555' }}>
             Stand order reference: {standOrderRef}

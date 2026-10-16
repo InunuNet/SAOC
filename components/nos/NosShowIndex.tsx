@@ -78,9 +78,15 @@ const LABELS = (() => {
 export interface NosShowIndexProps {
   /** The pathname of the page rendering the index; its item is marked, not omitted. */
   current?: string;
+  /**
+   * How the current item is marked. `accent` (default) is the violet of the R69 hub index.
+   * Ticket-flow routes (tickets, workshops, conferences) pass `ink`: F3-T keeps violet out of
+   * every ticket surface, so the item is marked by an underline in ink instead.
+   */
+  currentTone?: 'accent' | 'ink';
 }
 
-export function NosShowIndex({ current }: NosShowIndexProps) {
+export function NosShowIndex({ current, currentTone = 'accent' }: NosShowIndexProps) {
   return (
     <nav aria-label="Explore the show pages" className="nos-index">
       <div data-nos-wrap="">
@@ -97,7 +103,8 @@ export function NosShowIndex({ current }: NosShowIndexProps) {
                       <Link
                         href={href}
                         aria-current={isCurrent ? 'page' : undefined}
-                        className={isCurrent ? 'text-accent' : undefined}
+                        className={isCurrent && currentTone === 'accent' ? 'text-accent' : undefined}
+                        data-current-ink={isCurrent && currentTone === 'ink' ? '' : undefined}
                       >
                         {LABELS.get(href)}
                         <span aria-hidden="true" className="nos-index-arrow">

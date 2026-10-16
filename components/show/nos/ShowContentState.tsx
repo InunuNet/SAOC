@@ -57,6 +57,12 @@ export interface ShowContentStateProps {
   afterHero?: ReactNode;
   /** `theme` renders the page summary as the show's theme line in the hero (R70, symposium). */
   ledeKind?: 'theme';
+  /**
+   * Drops the R11 content-gap section (the muted "To be confirmed by the show committee"
+   * block that applyContentGaps() substitutes for withheld copy) so the page ends on its
+   * real content. Only the gap is hidden: a labelled placeholder section never is.
+   */
+  hideContentGap?: boolean;
 }
 
 export function ShowContentState({
@@ -67,8 +73,12 @@ export function ShowContentState({
   afterProse,
   afterHero,
   ledeKind,
+  hideContentGap,
 }: ShowContentStateProps) {
   const page = unwrapShowPageResult(result);
+  const sections = hideContentGap
+    ? page.sections.filter((section) => !section.notice?.gap)
+    : page.sections;
   const state = page.isFallback === true ? 'fallback-unpublished' : 'published';
 
   return (
@@ -84,7 +94,7 @@ export function ShowContentState({
       {state === 'fallback-unpublished' ? (
         <NosSection data-nos-content-state={state} wrapClassName="space-y-10">
           {afterHero}
-          {page.sections.map((section) => (
+          {sections.map((section) => (
             <ShowPageProse key={section.sectionKey} section={section} />
           ))}
           {layout === 'prose' ? afterProse : null}
@@ -93,7 +103,7 @@ export function ShowContentState({
         <NosSection data-nos-content-state={state} wrapClassName="space-y-12">
           {afterHero}
           <div className="space-y-10">
-            {page.sections
+            {sections
               .filter((section) => section.kind === 'prose')
               .map((section) => (
                 <ShowPageProse key={section.sectionKey} section={section} />
@@ -104,7 +114,7 @@ export function ShowContentState({
       ) : (
         <NosSection data-nos-content-state={state} wrapClassName="space-y-10">
           {afterHero}
-          {page.sections.map((section) => (
+          {sections.map((section) => (
             <ShowPageProse key={section.sectionKey} section={section} />
           ))}
           {afterProse}

@@ -39,7 +39,7 @@ export async function sendVendorStandPaymentNoticeEmail(
 
   await mailer.send({
     to: input.contactEmail,
-    subject: 'Pay for your SAOC National Show stand',
+    subject: 'Pay for your National Orchid Show stand',
     react: React.createElement(VendorStandPaymentReady, {
       businessName: input.businessName,
       contactPersonName: input.contactPersonName,

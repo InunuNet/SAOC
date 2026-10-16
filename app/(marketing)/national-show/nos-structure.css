@@ -596,49 +596,69 @@
 }
 .nos-theme .nos-ticket-prices {
   display: grid;
-  gap: 6px;
+  gap: 24px;
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
-.nos-theme .nos-ticket-prices > div {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
+.nos-theme .nos-ticket-prices > li {
+  display: grid;
+  gap: 8px;
+  align-content: start;
 }
-.nos-theme .nos-ticket-prices dt {
-  order: 2;
+.nos-theme .nos-ticket-caption {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
 }
-.nos-theme .nos-ticket-prices dd {
-  order: 1;
-  margin: 0;
+.nos-theme [data-ticket-price] {
   font-family: var(--serif);
-  font-size: 22px;
+  font-size: 32px;
   font-weight: 400;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
-  color: var(--muted);
-}
-.nos-theme .nos-ticket-prices [data-dominant='true'] dd {
-  font-size: clamp(34px, 4.4vw, 48px);
   color: var(--ink);
 }
 .nos-theme .nos-ticket-action {
   width: 100%;
+  margin-top: 8px;
 }
 @media (min-width: 1024px) {
   .nos-theme .nos-ticket-row {
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 56px;
+    align-items: start;
+  }
+  .nos-theme .nos-ticket-prices {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(220px, auto);
     column-gap: 40px;
   }
   .nos-theme .nos-ticket-action {
     width: auto;
-    min-width: 180px;
   }
 }
 .nos-theme #visit-heading {
   margin-bottom: 0;
+}
+
+/* F17 (launch-weekend): a section that follows a same-ground section shares ONE rhythm unit with
+   it (the first section's padding-bottom), not two stacked units. Key-dates caption: the table is
+   display:block (row cards above), so the caption has no table box to size against and
+   shrink-wrapped to a word per line; it is a full-width block instead. */
+.nos-theme .nos-section-joined {
+  padding-top: 0;
+}
+.nos-theme [data-nos-keydates] caption {
+  display: block;
+  width: 100%;
+}
+/* F17: on ticket-flow routes the index marks the current item in ink with an underline (no violet). */
+.nos-theme .nos-index-group a[data-current-ink][aria-current='page'] {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
 }

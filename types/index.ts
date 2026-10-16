@@ -470,7 +470,7 @@ export type ShowIdentity = {
 
 // ---------------------------------------------------------------------------
 // F4 (vendor-registration) — vendorSubmissions data model.
-// Mirrors the 2027 SAOC National Show vendor registration form's 31 fields,
+// Mirrors the 2027 National Orchid Show vendor registration form's 31 fields,
 // grouped by the form's own five sections. See
 // contracts/golden/vendor-f4-submissions-model/README.md for the field-by-field
 // verification against the source document and every judgement call recorded

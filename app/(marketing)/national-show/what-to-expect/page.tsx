@@ -12,6 +12,7 @@ import { nationalShowVenueQuery, showVisitorInfoQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
 import type { ShowVisitorInfo } from '@/types';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
@@ -225,6 +226,7 @@ export default async function WhatToExpectPage() {
           researchLabel={researchLabel}
         />
       </NosSection>
+      <NosShowIndex current="/national-show/what-to-expect" />
     </>
   );
 }

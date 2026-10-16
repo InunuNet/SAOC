@@ -7,6 +7,7 @@ import { buildPageMetadata } from '@/lib/seo';
 import { loadPresenterViewModels } from '@/lib/view-models/load-presenters';
 import { loadTicketCardViewModel } from '@/lib/view-models/load-ticket-card';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // F12 (national-show-ia-alignment, M4) — created route. One sentence of real source
 // (the `theme` section) exists; everything else is placeholder under an R11 disclosure
@@ -70,10 +71,12 @@ export default async function SymposiumPage() {
           route="/national-show/symposium"
           layout="prose"
           ledeKind="theme"
+          hideContentGap
         />
       </div>
 
       <PresenterSection eyebrow="Symposium" presenters={presenters} />
+      <NosShowIndex current="/national-show/symposium" />
     </>
   );
 }

@@ -12,7 +12,7 @@ const BASE = baseRef();
 const SWAP = NAMING.swapFiles.map((s) => s.file);
 const CODE = [
   'components/chrome/nav-config.ts', 'content/national-show-routes.json', 'scripts/generate-nos-route-manifest.ts', 'app/(marketing)/national-show/sponsors/page.tsx',
-  'components/chrome/footer-data.ts', 'lib/admission-rows.ts', 'components/tickets/AdmissionRows.tsx', 'app/(marketing)/national-show/tickets/page.tsx', 'lib/data/admission-availability.ts', 'components/show/nos/ShowContentState.tsx', 'app/(marketing)/national-show/symposium/page.tsx', 'app/(marketing)/national-show/nos-structure.css',
+  'components/chrome/footer-data.ts', 'lib/admission-rows.ts', 'components/tickets/AdmissionRows.tsx', 'app/(marketing)/national-show/tickets/page.tsx', 'lib/data/admission-availability.ts', 'components/show/nos/ShowContentState.tsx', 'components/nos/NosShowIndex.tsx', 'app/(marketing)/national-show/symposium/page.tsx', 'app/(marketing)/national-show/nos-structure.css',
 ];
 const INNER = readGolden('tokens.json').exploreIndex.innerRoutes.map((r) => `app/(marketing)${r}/page.tsx`);
 const ALLOWED = [...SWAP, ...CODE, ...INNER, 'app/(marketing)/national-show/tickets/buy/page.tsx', 'app/(marketing)/tickets/page.tsx'];
@@ -23,10 +23,11 @@ for (const f of names) if (!ALLOWED.includes(f) && !ALLOWED_PREFIX.some((p) => f
 
 // Scope G1: an inner page that is neither a swap file nor a code file may only gain the Explore-index mount (an import line and an element).
 for (const f of INNER.filter((p) => names.includes(p) && !SWAP.includes(p) && !CODE.includes(p) && existsSync(p))) {
-  const adds = git('diff', '--unified=0', BASE, '--', f).split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++')).map((l) => l.slice(1).trim()).filter(Boolean);
-  const dels = git('diff', '--unified=0', BASE, '--', f).split('\n').filter((l) => l.startsWith('-') && !l.startsWith('---'));
+  // -w: wrapping a single-component page (conferences) in the fragment that holds the mount re-indents it; whitespace is not a change.
+  const adds = git('diff', '--unified=0', '-w', BASE, '--', f).split('\n').filter((l) => l.startsWith('+') && !l.startsWith('+++')).map((l) => l.slice(1).trim()).filter(Boolean);
+  const dels = git('diff', '--unified=0', '-w', BASE, '--', f).split('\n').filter((l) => l.startsWith('-') && !l.startsWith('---'));
   if (dels.length) problems.push(`${f}: ${dels.length} line(s) removed, the Explore-index mount is additive`);
-  for (const l of adds) if (!/NosShowIndex/.test(l)) problems.push(`${f}: added line other than the Explore-index mount: "${l.slice(0, 80)}"`);
+  for (const l of adds) if (!/NosShowIndex|^<\/?>$/.test(l)) problems.push(`${f}: added line other than the Explore-index mount: "${l.slice(0, 80)}"`);
 }
 
 const added = [];

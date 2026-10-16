@@ -38,7 +38,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Tickets' };
 
 const FALLBACK_TITLE = 'Get Your Tickets';
-const FALLBACK_INTRO = "Secure your seat at the SAOC National Show.";
+const FALLBACK_INTRO = "Secure your seat at the National Orchid Show.";
 const FALLBACK_SOLD_OUT = 'Sold out';
 const FALLBACK_SALES_CLOSED = 'Ticket sales are not yet open — check back soon.';
 

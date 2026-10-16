@@ -4,6 +4,7 @@ import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // Content sourced verbatim from docs/leeann-source/about-national-show_2026-09-09.md
 // (Drive: "2.1 About - 2027 National Show.docx", snapshot 2026-09-09). Do not paraphrase
@@ -79,6 +80,7 @@ export default function NationalShowAboutPage() {
           orchids.
         </p>
       </NosSection>
+      <NosShowIndex current="/national-show/about" />
     </>
   );
 }

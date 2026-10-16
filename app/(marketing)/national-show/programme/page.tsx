@@ -5,6 +5,7 @@ import { ShowContentState } from '@/components/show/nos/ShowContentState';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // F12 (national-show-ia-alignment, M4) — created route. Placeholder copy under an R11
 // disclosure until the Council supplies the finished programme; see
@@ -48,6 +49,7 @@ export default async function ProgrammePage() {
           </p>
         }
       />
+      <NosShowIndex current="/national-show/programme" />
     </>
   );
 }

@@ -248,7 +248,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     reference: attemptReference,
     amountFormatted: resolveOzowInitiateAmount(expectedGatewayAmount, amount.toFixed(2)),
     itemName: clampToMaxLength(
-      `SAOC National Show — Vendor Stand (${submissionData.businessName ?? ''})`,
+      `National Orchid Show — Vendor Stand (${submissionData.businessName ?? ''})`,
       PAYFAST_FIELD_MAX_LENGTH.item_name,
     ),
     returnUrl: buildVendorStandReturnUrl(siteUrl, attemptId),

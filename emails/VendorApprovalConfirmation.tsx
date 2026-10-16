@@ -203,7 +203,7 @@ export default function VendorApprovalConfirmation({
             <>
               <Text style={{ fontSize: '16px', color: '#333' }}>
                 Good news -- your vendor application for <strong>{businessName}</strong> at the
-                SAOC National Show has been approved.
+                National Orchid Show has been approved.
               </Text>
               <Heading as="h2" style={{ fontSize: '18px', color: '#1a1a1a' }}>
                 Your registration code
@@ -225,7 +225,7 @@ export default function VendorApprovalConfirmation({
             <>
               <Text style={{ fontSize: '16px', color: '#333' }}>
                 Good news -- your vendor registration for <strong>{businessName}</strong> at the
-                SAOC National Show has been approved.
+                National Orchid Show has been approved.
               </Text>
               <Text style={{ fontSize: '16px', color: '#333' }}>
                 Your booth number: <strong>{formatBoothNumber(boothNumber)}</strong>

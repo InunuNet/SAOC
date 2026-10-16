@@ -51,7 +51,7 @@ export async function sendVendorPaymentConfirmationEmail(
 
   await mailer.send({
     to: input.contactEmail,
-    subject: 'Your SAOC National Show stand payment is confirmed',
+    subject: 'Your National Orchid Show stand payment is confirmed',
     react: React.createElement(VendorPaymentConfirmation, {
       businessName: input.businessName,
       boothSize: input.boothSize,

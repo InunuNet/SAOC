@@ -316,7 +316,7 @@ const ROUTE_TABLE: RouteRow[] = [
     status: 'created',
     owner: 'nos-design',
     archetype: 'listing',
-    purpose: "The Show's own sponsors — a separate list from SAOC's site-level sponsors.",
+    purpose: 'The sponsors behind the National Show.',
     pageKey: '15-sponsors',
     specNumber: 15,
     diskPath: 'sponsors',

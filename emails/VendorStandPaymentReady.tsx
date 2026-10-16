@@ -31,7 +31,7 @@ export default function VendorStandPaymentReady({
   return (
     <Html>
       <Head />
-      <Preview>Pay for your SAOC National Show stand</Preview>
+      <Preview>Pay for your National Orchid Show stand</Preview>
       <Body style={{ fontFamily: 'sans-serif', backgroundColor: '#f9f9f9', margin: '0', padding: '0' }}>
         <Container style={{ maxWidth: '600px', margin: '0 auto', padding: '24px', backgroundColor: '#ffffff' }}>
           <Heading style={{ fontSize: '24px', color: '#1a1a1a' }}>
@@ -41,8 +41,7 @@ export default function VendorStandPaymentReady({
             Dear {contactPersonName},
           </Text>
           <Text style={{ fontSize: '16px', color: '#333' }}>
-            <strong>{businessName}</strong>&rsquo;s vendor registration for the SAOC National
-            Show has been approved. The next step is to select your stand size and complete
+            <strong>{businessName}</strong>&rsquo;s vendor registration for the National Orchid Show has been approved. The next step is to select your stand size and complete
             payment.
           </Text>
           <Text style={{ fontSize: '16px', color: '#333' }}>

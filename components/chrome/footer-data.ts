@@ -13,7 +13,6 @@ export const FOOTER_NAV = [
   { id: 'judging', label: 'Judging & Awards', href: '/judging' },
   { id: 'show', label: 'National Show', href: '/national-show' },
   { id: 'events', label: 'Events', href: '/events' },
-  { id: 'members', label: 'Members Portal', href: '/members' },
 ];
 
 export const FOOTER_HEADINGS = {
@@ -36,7 +35,7 @@ export const FOOTER_BULLETIN = {
 
 export const FOOTER_WOSA = {
   heading: 'Looking for wild orchids?',
-  linkLabel: 'Visit Wild Orchids of Southern Africa →',
+  linkLabel: 'Visit Wild Orchids of Southern Africa →',
   href: 'https://wildorchids.co.za',
 };
 

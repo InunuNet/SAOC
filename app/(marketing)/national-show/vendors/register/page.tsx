@@ -41,7 +41,7 @@ import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 export const metadata: Metadata = buildPageMetadata({
   title: 'Vendor Registration — National Show',
   image: nosOgImage('Vendor Registration — National Show'),
-  description: 'Register your business as a vendor at the 2027 SAOC National Show.',
+  description: 'Register your business as a vendor at the 2027 National Orchid Show.',
   path: '/national-show/vendors/register',
   noIndex: true,
 });
@@ -73,7 +73,7 @@ export default async function VendorRegisterPage({ searchParams }: VendorRegiste
       <NosHero
         route="/national-show/vendors/register"
         title="Vendor Registration"
-        lede="Register your business as a vendor at the 2027 SAOC National Show."
+        lede="Register your business as a vendor at the 2027 National Orchid Show."
         priority
       />
 

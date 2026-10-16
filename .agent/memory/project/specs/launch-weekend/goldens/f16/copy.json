@@ -5,19 +5,63 @@
   "metadataDescription": "Choose the option that matches why you're coming to the 2027 National Orchid Show — we'll take you straight to the right form.",
   "conferenceBody": "Register for the Symposium or the WOSA Conference.",
   "conferenceBodyBefore": "Register for the SAOC Symposium, the WOSA Conference, or the combined Joint track.",
-  "forbiddenEverywhere": ["Joint", "SAOC National Show"],
-  "removedNodes": ["From", "TEST MODE — Ozow charges R0.01 instead of the displayed price"],
+  "forbiddenEverywhere": [
+    "Joint",
+    "SAOC National Show"
+  ],
+  "removedNodes": [
+    "From",
+    "TEST MODE — Ozow charges R0.01 instead of the displayed price"
+  ],
   "keptVerbatim": [
-    "What are you here for?", "Visitor admission", "I’m coming to visit",
+    "What are you here for?",
+    "Visitor admission",
+    "I’m coming to visit",
     "Buy an admission ticket to browse the show floor, exhibits, and displays.",
-    "You must choose a day when you book.", "Provisional pricing — subject to change.",
+    "You must choose a day when you book.",
+    "Provisional pricing — subject to change.",
     "I'm exhibiting orchids",
     "See what is involved in exhibiting at the National Show. Entry sales are not yet open — they open closer to the show.",
-    "Exhibitor entry", "I'm a nursery or trader",
-    "Register a trade booth to sell plants and supplies at the show.", "Vendor registration",
-    "I'm attending a conference", "Conferences tickets", "I want workshops or a field trip",
-    "Book Sunset Cocktails or a guided Field Trip outing at the show.", "Workshops & Field Trips tickets"
+    "Exhibitor entry",
+    "I'm a nursery or trader",
+    "Register a trade booth to sell plants and supplies at the show.",
+    "Vendor registration",
+    "I'm attending a conference",
+    "Conferences tickets",
+    "I want workshops or a field trip",
+    "Book Sunset Cocktails or a guided Field Trip outing at the show.",
+    "Workshops & Field Trips tickets"
   ],
-  "addedAllowed": ["Visit", "Exhibit", "Trade", "Conference & Workshops", "Buy Ticket", "Ticket sales are not yet open — check back soon.", "Sold out"],
-  "noSource": ["tier captions are CMS ticket names (no 'Standard' word exists in any source)"]
+  "addedAllowed": [
+    "Visit",
+    "Exhibit",
+    "Trade",
+    "Conference & Workshops",
+    "Buy Ticket",
+    "Ticket sales are not yet open — check back soon.",
+    "Sold out",
+    "Explore the show",
+    "Tickets",
+    "Plan your visit",
+    "What to expect",
+    "Programme",
+    "FAQ",
+    "Take part",
+    "Exhibitor entry guide",
+    "Exhibitors and Vendors",
+    "Workshops",
+    "Conference registration",
+    "The show",
+    "About the show",
+    "Symposium",
+    "WOSA Conference",
+    "South African exhibitors",
+    "International guests",
+    "Show sponsors",
+    "Past shows"
+  ],
+  "noSource": [
+    "tier captions are CMS ticket names (no 'Standard' word exists in any source)"
+  ],
+  "_f17": "F17 scope G1: the grouped Explore index (NosShowIndex) now renders at the foot of /national-show/tickets; its eyebrow, group headings and nav-config labels are allowed."
 }
