@@ -14,6 +14,8 @@ interface TicketPurchaseFormProps {
   buyButtonLabel: string;
   soldOutMessage: string;
   showDays: string[];
+  /** F16: true only for a verified admin viewer (resolved server-side); the Ozow test-mode strip is never public. */
+  showTestModeBanner?: boolean;
 }
 
 export function TicketPurchaseForm({
@@ -21,6 +23,7 @@ export function TicketPurchaseForm({
   buyButtonLabel,
   soldOutMessage,
   showDays,
+  showTestModeBanner = false,
 }: TicketPurchaseFormProps) {
   const cart = useTicketCart(ticketTypes, showDays);
   // F3 (ticketing-flow-redesign) — same derived condition used in useTicketCart.submit():
@@ -46,7 +49,7 @@ export function TicketPurchaseForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate data-nos-ticket-form="">
-      <OzowSandboxTestModeBanner />
+      {showTestModeBanner ? <OzowSandboxTestModeBanner /> : null}
       <fieldset className="space-y-3">
         <legend className="font-mono text-[12px] tracking-[0.16em] text-muted">Ticket types</legend>
         {ticketTypes.map((t) => (

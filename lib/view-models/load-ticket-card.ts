@@ -23,6 +23,7 @@ import {
   DAY_VISITOR_DAY_CAP_POOL_KEY,
   DAY_VISITOR_SELLABLE_DAYS,
 } from '../provisional-figures.ts';
+import { REGULAR_PRICE_SIBLING_SLUG } from '../admission-siblings.ts';
 import { NATIONAL_SHOW_ID } from '../tickets-constants.ts';
 
 import { resolveTicketCardState } from './ticket-card.ts';
@@ -89,13 +90,6 @@ function isUsableEarlyBirdCutoff(value: unknown): value is string | null {
 function buildScarcityLabel(remaining: number, total: number): string {
   return `${remaining} of ${total} places left`;
 }
-
-/** The sibling slug whose live price backs `regularPrice` (golden §2 "regularPrice") — the
- *  two early-bird SKUs only. Every other slug has no sibling relation. */
-const REGULAR_PRICE_SIBLING_SLUG: Record<string, string> = {
-  'weekend-pass-early-bird': 'weekend-pass',
-  'early-bird': 'day-visitor',
-};
 
 // No explicit Promise-wrapped return-type annotation here — same angle-bracket-dodge
 // reasoning as LoadTicketCardViewModelDeps.fetchTicketType above; TS infers the identical

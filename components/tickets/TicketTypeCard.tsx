@@ -8,10 +8,7 @@
 // The stepper's soldOut disable is UX only — real capacity enforcement stays entirely
 // server-side. No hooks/browser APIs of its own beyond next/image, so it needs no
 // 'use client' directive — it inherits the client boundary from its parent form.
-import Image from 'next/image';
 import Link from 'next/link';
-
-import { getOrchidImageForTicketType } from '@/lib/tickets-orchid-image';
 
 export interface TicketTypeCardData {
   slug: string;
@@ -86,15 +83,11 @@ export function TicketTypeCard({
 
   const cardContent = (
     <>
-      <div className="relative aspect-[4/3] w-full overflow-hidden">
-        <Image src={getOrchidImageForTicketType(slug)} alt={name} fill className="object-cover" />
-      </div>
-
-      <p className="font-serif text-[18px] font-semibold text-ink">{name}</p>
-      <p className="font-serif text-[20px] font-medium text-ink">
+      <p className="font-serif text-[22px] font-normal leading-tight text-ink">{name}</p>
+      <p className="font-serif text-[clamp(34px,4.4vw,48px)] font-normal leading-none tabular-nums text-ink">
         {price === 0 ? 'Free' : `R${price.toFixed(2)}`}
       </p>
-      <p id={`${inputId}-desc`} className="font-sans text-[14px] text-ink/70">
+      <p id={`${inputId}-desc`} className="font-sans text-[16px] leading-[1.55] text-muted">
         {description}
       </p>
 

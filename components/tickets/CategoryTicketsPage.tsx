@@ -23,6 +23,7 @@ import {
 } from '@/lib/checkout-reservation';
 import { buildShowWindow, computeShowDays } from '@/lib/show-window-lookup';
 import { resolveActiveShow } from '@/lib/show-resolution';
+import { viewerIsVerifiedAdmin } from '@/lib/admin-viewer';
 import type { ProvisionalProductCategory } from '@/lib/provisional-figures';
 
 // F3 (ticketing-conferences-and-events, M2) — extracted from /tickets/page.tsx's original
@@ -127,6 +128,7 @@ export async function CategoryTicketsPage({
   const showDays = showWindow ? computeShowDays(showWindow) : [];
 
   const salesOpen = salesState?.salesOpen === true;
+  const isAdmin = await viewerIsVerifiedAdmin();
   const title = category === 'admission' ? (pageData?.title ?? heading) : heading;
   const intro = category === 'admission' ? (pageData?.intro ?? lede) : lede;
   const buyButtonLabel = pageData?.buyButtonLabel ?? FALLBACK_BUY_LABEL;
@@ -224,6 +226,7 @@ export async function CategoryTicketsPage({
               buyButtonLabel={buyButtonLabel}
               soldOutMessage={soldOutMessage}
               showDays={showDays}
+              showTestModeBanner={isAdmin}
             />
           )}
 

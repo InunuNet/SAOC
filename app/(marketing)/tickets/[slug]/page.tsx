@@ -1,3 +1,4 @@
+import { viewerIsVerifiedAdmin } from '@/lib/admin-viewer';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -189,6 +190,7 @@ export default async function TicketBuyPage({ params }: Props) {
             buyButtonLabel={buyButtonLabel}
             soldOutMessage={soldOutMessage}
             showDays={showDays}
+            showTestModeBanner={await viewerIsVerifiedAdmin()}
           />
         )}
       </div>
