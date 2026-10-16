@@ -1,0 +1,22 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: Before the production launch (Sun 18 Oct 2026) the hosted backend keeps one server instance always running and the beta keeps the labelled placeholder prose for Lee-Ann, with production still withholding it.
+created_at: '2026-10-16'
+autonomy: high
+features:
+  - id: F9
+    name: apphosting.yaml minInstances 1 and beta placeholder preview (Brad approved in chat 2026-10-16)
+    status: pending
+# F9-A2 is a minimal launch-safety slice, self-contained so it runs on a tree without F8's fuller matrix (f8/check-d-gap-logic.mts).
+assertions:
+  phase: 4
+  checks:
+    - id: F9-A1
+      description: apphosting.yaml has minInstances 1, maxInstances 2, SHOW_PLACEHOLDER_PREVIEW "true" with RUNTIME only
+      command: node contracts/checks/launch-weekend/f9/check-a-apphosting.mjs
+    - id: F9-A2
+      description: withholdPlaceholderProse withholds when SITE_PUBLIC_LAUNCH=true even with the preview on, and releases only with the preview on, the wall up and launch off
+      command: pnpm exec tsx contracts/checks/launch-weekend/f9/check-b-withhold.mts
+    - id: F9-A3
+      description: Type check passes
+      command: pnpm exec tsc --noEmit

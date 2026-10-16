@@ -2,7 +2,7 @@ runConfig:
   runtime: nodejs22
   cpu: 1
   memoryMiB: 1024
-  minInstances: 0
+  minInstances: 1
   maxInstances: 2
 env:
   - variable: NEXT_PUBLIC_SANITY_PROJECT_ID
@@ -186,5 +186,13 @@ env:
       - RUNTIME
   - variable: BETA_BASIC_AUTH_PASSWORD
     secret: BETA_BASIC_AUTH_PASSWORD
+    availability:
+      - RUNTIME
+  # Beta-only preview of the labelled AI placeholder prose on the National Show pages, kept
+  # on for Lee-Ann's review. Safe at launch: withholdPlaceholderProse() in
+  # lib/data/show-pages.ts withholds whenever SITE_PUBLIC_LAUNCH=true, or whenever the beta
+  # basic-auth wall is not configured, so production never shows the placeholders.
+  - variable: SHOW_PLACEHOLDER_PREVIEW
+    value: "true"
     availability:
       - RUNTIME
