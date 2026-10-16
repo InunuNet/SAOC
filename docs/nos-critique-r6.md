@@ -119,3 +119,20 @@ Public build: `withholdPlaceholderProse()` (called once, in the page) switches t
 markers off. Rows carrying an open-question marker are not rendered, the research markers become
 one status line and the "to be confirmed" chips become one status line, both under the banner
 (`ShowStatusLine.tsx`, the existing marker). Preview keeps today's 3 / 9 / 11 markers.
+
+## f8 — R50: what-to-expect logistics first
+
+On `/national-show/what-to-expect` the visit logistics (Show dates, Opening hours, Admission, Food
+and refreshments, Photography, Cloakroom and plant holding, Accessibility) now render straight under
+the hero and ahead of the Drive narrative. This is a reorder in the page; `LongFormPage`, `ShowFacts`
+and `HoldingState` are untouched. The seven narrative paragraphs are unchanged and the Dates fact is
+dropped from the aside while the Show dates block carries it. All seven headings are siblings at h2
+in one type (`VisitorInfoBlock` takes an additive `headingLevel`, default h3, so plan-your-visit is
+unchanged). The dates read with weekdays, derived from `showDate` / `showEndDate` with
+`Intl.DateTimeFormat`, never retyped.
+
+Preview keeps one status line per unconfirmed block. In a public build (`withholdPlaceholderProse()`,
+called once in the page) every unconfirmed row is withheld and `ShowHoldingNote` shows one R11 line
+naming exactly those rows, then the existing "Be the first to know" link. The hero lede and the
+concession and photography text, which have no Drive source, are withheld there too. No copy was
+added. Venue and parking, family and pensioner prices, and online-versus-door booking remain gaps.

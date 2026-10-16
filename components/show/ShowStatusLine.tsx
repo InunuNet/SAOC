@@ -8,15 +8,22 @@
 import { StatusMarker } from './_shared/StatusMarker';
 
 export interface ShowStatusLineProps {
+  /** Which marker family to draw: the exhibitor guide's (default) or the visitor pages'. */
+  kind?: 'exhibitor' | 'confirmation';
   status: 'pending' | 'research';
   pendingLabel?: string | null;
   researchLabel?: string | null;
 }
 
-export function ShowStatusLine({ status, pendingLabel, researchLabel }: ShowStatusLineProps) {
+export function ShowStatusLine({
+  kind = 'exhibitor',
+  status,
+  pendingLabel,
+  researchLabel,
+}: ShowStatusLineProps) {
   return (
     <StatusMarker
-      kind="exhibitor"
+      kind={kind}
       status={status}
       pendingLabel={pendingLabel}
       researchLabel={researchLabel}
