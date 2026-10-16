@@ -411,8 +411,9 @@
   }
   /* R36: a heading gives the content after it the role's bottom margin (.5em). In the base
      layer, so a call-site margin utility still wins; label heads and card titles keep their
-     own tight rhythm. */
-  .nos-theme :is(h2, h3, h4):not(.nos-label, .nos-card-title) {
+     own tight rhythm. Card and block titles are the headings that carry an explicit size
+     class (`text-[20px]`, `nos-card-title`); section headings from content carry none. */
+  .nos-theme :is(h2, h3, h4):not(.nos-label, .nos-card-title, [class*='text-[']) {
     margin-block-end: 0.5em;
   }
 }
