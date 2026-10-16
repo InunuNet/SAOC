@@ -24,7 +24,6 @@ import {
   partners,
   provinces,
   showClasses,
-  shows,
   societies,
 } from '../lib/data';
 
@@ -139,22 +138,6 @@ function mapSocieties(): Record<string, unknown>[] {
   }));
 }
 
-function mapShows(): Record<string, unknown>[] {
-  return shows.map((sh) => {
-    const title = `National Show ${sh.edition} (${sh.year})`;
-    return {
-      _id: safeid('show', `${sh.edition}-${sh.year}`),
-      _type: 'show',
-      title,
-      year: sh.year,
-      location: sh.venue,
-      status: sh.status,
-      ...(typeof sh.entries === 'number' ? { entries: sh.entries } : {}),
-      slug: { _type: 'slug', current: slugify(title) },
-    };
-  });
-}
-
 function mapShowClasses(): Record<string, unknown>[] {
   return showClasses.map((c) => ({
     _id: safeid('showClass', c.code),
@@ -197,7 +180,6 @@ async function main(): Promise<void> {
   await seedBatch('boardMembers', mapBoardMembers());
   await seedBatch('provinces', mapProvinces());
   await seedBatch('societies', mapSocieties());
-  await seedBatch('shows', mapShows());
   await seedBatch('showClasses', mapShowClasses());
   await seedBatch('partners (→ sponsor)', mapPartners());
 

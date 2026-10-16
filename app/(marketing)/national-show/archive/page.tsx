@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 
 import { mergePastShows } from '@/lib/data/mergeShows';
@@ -12,10 +11,9 @@ import {
   showLabelWithEdition,
 } from '@/lib/show-identity';
 import type { ShowIdentity } from '@/types';
-import { Badge } from '@/components/nos/Badge';
 import { Button } from '@/components/nos/Button';
 import { CtaBand } from '@/components/nos/CtaBand';
-import { NOS_HERO_IMAGES, NosHero, type NosHeroImage } from '@/components/nos/NosHero';
+import { NosHero } from '@/components/nos/NosHero';
 import { ConfirmationBadge } from '@/components/show';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
@@ -28,33 +26,9 @@ export const revalidate = 60;
 export const metadata: Metadata = buildPageMetadata({
   title: 'National Show Archive',
   description:
-    'A record of every South African National Orchid Show — past editions, host provinces, entry numbers, and winners.',
+    'Past editions of the South African National Orchid Show.',
   path: '/national-show/archive',
 });
-
-function toRomanOrdinal(n: number): string {
-  const val = [50, 40, 10, 9, 5, 4, 1];
-  const sym = ['L', 'XL', 'X', 'IX', 'V', 'IV', 'I'];
-  let result = '';
-  for (let i = 0; i < val.length; i++) {
-    while (n >= val[i]) {
-      result += sym[i];
-      n -= val[i];
-    }
-  }
-  return result;
-}
-
-/**
- * Deterministic photo per edition, keyed off edition (falling back to year for a
- * Sanity-only show with no edition number) — so a given show always gets the same one
- * of the five cleared photographs, on this page and on its own /archive/[year] page.
- * Never randomised: a card that changed image on reload would look broken.
- */
-function archivePhotoFor(show: { edition?: number | null; year: number }): NosHeroImage {
-  const key = show.edition ?? show.year;
-  return NOS_HERO_IMAGES[key % NOS_HERO_IMAGES.length];
-}
 
 export default async function ShowArchivePage() {
   // F7: the CTA band advertised the edition, the month/year and the city as literals.
@@ -75,10 +49,8 @@ export default async function ShowArchivePage() {
     upcomingCity ? ` in ${upcomingCity}.` : '.',
   ].join('');
 
-  // The same merge the detail page reads — the two pages previously disagreed about
-  // the same show because the list took the Sanity branch wholesale and substituted
-  // edition 0, a hardcoded month, and the host/venue and visitors/exhibitors
-  // conflations. See lib/data/mergeShows.ts.
+  // The same record set the detail page reads. Only a published Sanity past show appears
+  // here; there is no static fallback. See lib/data/mergeShows.ts.
   const pastShows = mergePastShows(sanityShows);
 
   return (
@@ -86,7 +58,7 @@ export default async function ShowArchivePage() {
       <NosHero
         image="/images/orchid-dark.jpg"
         title="National Show archive"
-        lede="Since 1974, the South African National Orchid Show has rotated across the country’s provinces every three years — a triennial celebration of orchid culture."
+        lede="The South African National Orchid Show is the council’s triennial event."
         priority
         actions={
           <Link
@@ -100,77 +72,43 @@ export default async function ShowArchivePage() {
 
       {/* ── Show grid ── */}
       <section className="mx-auto max-w-[1280px] px-8 py-24">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {pastShows.map((show) => (
-            <Link
-              key={show.year}
-              href={`/national-show/archive/${show.year}`}
-              className="group block focus-visible:outline-none"
-            >
-              <div className="flex h-full flex-col overflow-hidden rounded-[length:var(--radius-card)] border-[length:var(--border-primary)] border-[var(--rule)] bg-white transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-0.5 group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-[var(--ring-focus)]">
-                <div className="relative aspect-[3/2] overflow-hidden bg-[var(--night)]">
-                  <Image
-                    src={archivePhotoFor(show)}
-                    alt={`${show.year} National Orchid Show`}
-                    fill
-                    className="object-cover opacity-70"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
-                  <span className="absolute left-3 top-3">
-                    <Badge tone="purple">
-                      {show.edition ? `Edition ${toRomanOrdinal(show.edition)}` : show.year}
-                    </Badge>
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-4 p-6">
-                  <div>
-                    <h2 className="nos-card-title font-serif text-[22px] font-medium leading-snug text-ink">
-                      {show.month ? `${show.year} — ${show.month}` : show.year}
-                    </h2>
-                    {show.host && (
-                      <p className="mt-1 font-sans text-[14px] text-muted">{show.host}</p>
-                    )}
-                    {show.venue && show.venue !== show.host && (
-                      <p className="font-sans text-[13px] text-muted/70">{show.venue}</p>
-                    )}
+        {pastShows.length > 0 ? (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {pastShows.map((show) => (
+              <Link
+                key={show.year}
+                href={`/national-show/archive/${show.year}`}
+                className="group block focus-visible:outline-none"
+              >
+                <div className="flex h-full flex-col overflow-hidden rounded-[length:var(--radius-card)] border-[length:var(--border-primary)] border-[var(--rule)] bg-white transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-0.5 group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-[var(--ring-focus)]">
+                  <div className="flex aspect-[3/2] items-center justify-center bg-[var(--night)]">
+                    <span className="font-serif text-[56px] font-medium leading-none text-ivory">
+                      {show.year}
+                    </span>
                   </div>
 
-                  {(show.entries || show.exhibitors || show.visitors || show.trophies) && (
-                    <>
-                      {/* tone="purple" not "olive": olive-deep is 4.30:1 on white, which fails
-                          body-text contrast at this pill's 11px size (needs 4.5:1) — see
-                          nos-contrast.golden.md note 1. Olive text is legal only on dark grounds
-                          or as large (≥24px) text. */}
-                      <div className="flex flex-wrap gap-2 border-t border-rule pt-3">
-                        {show.entries && (
-                          <Badge tone="purple">{show.entries.toLocaleString()} entries</Badge>
-                        )}
-                        {show.exhibitors && (
-                          <Badge tone="purple">{show.exhibitors.toLocaleString()} exhibitors</Badge>
-                        )}
-                        {show.visitors && (
-                          <Badge tone="purple">{show.visitors.toLocaleString()} visitors</Badge>
-                        )}
-                        {show.trophies && <Badge tone="purple">{show.trophies} trophies</Badge>}
-                      </div>
-                      <ConfirmationBadge status="pending" />
-                    </>
-                  )}
-
-                  {show.note && (
-                    <p className="font-serif text-[14px] italic text-muted">{show.note}</p>
-                  )}
+                  <div className="flex flex-col gap-4 p-6">
+                    <div>
+                      <h2 className="nos-card-title font-serif text-[22px] font-medium leading-snug text-ink">
+                        {show.title ?? show.year}
+                      </h2>
+                      {show.venue && (
+                        <p className="mt-1 font-sans text-[14px] text-muted">{show.venue}</p>
+                      )}
+                    </div>
+                    <ConfirmationBadge status="pending" />
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        {pastShows.length === 0 && (
-          <p className="py-16 text-center font-sans text-[16px] text-muted">
-            Archive records coming soon.
-          </p>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3 py-16 text-center">
+            <h2 className="font-serif text-[28px] font-medium text-ink">
+              Show history awaiting committee records
+            </h2>
+            <ConfirmationBadge status="pending" />
+          </div>
         )}
       </section>
 

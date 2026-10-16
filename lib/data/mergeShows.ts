@@ -1,19 +1,14 @@
 // =============================================================
 // SAOC — lib/data/mergeShows.ts
-// Union-on-year merge of the static show record and the Sanity `show` documents.
+// Builds the archive record set from the Sanity `show` documents, keyed on year.
 //
-// Neither source is a superset of the other. `lib/data/shows` carries seven fields the
-// `show` schema cannot express (edition, month, host, days, visitors, trophies, note);
-// Sanity owns title, exhibitors and awards, and is authoritative for year, status,
-// venue and entries. Replacing one with the other loses data — which is why both
-// archive pages read this helper rather than either source directly.
-//
-// Precedence rule: a DEFINED Sanity value wins; otherwise the static value; otherwise
-// undefined. Never the reverse — a published edit must not be masked by a literal.
-// See .agent/memory/project/specs/cms-wiring-cleanup/goldens/archive-show-merge.golden.md
+// The former static seed record was invented design-mock data with no
+// committee source and has been removed (mission launch-weekend F6, docs/rules/no-invention.md).
+// A Sanity-only year has no edition, month, host, days, visitors or trophies, so those
+// fields stay undefined and the pages degrade rather than invent them.
+// See .agent/memory/project/specs/launch-weekend/goldens/f6/f6-spec.md
 // =============================================================
 
-import { shows as staticShows } from '@/lib/data/shows';
 import type { NationalShow } from '@/types';
 
 /** A `show` document as projected by `pastShowsQuery`. */
@@ -30,9 +25,9 @@ export interface SanityShowProjection {
 }
 
 /**
- * A merged archive record. `edition`, `month`, `host` and `venue` are required on
- * `NationalShow` because every static entry has them — but a Sanity-only year has no
- * static counterpart to supply them, so they are optional here and the pages degrade.
+ * An archive record. `edition`, `month`, `host` and `venue` are required on
+ * `NationalShow`, but a Sanity-only year does not carry them, so they are optional
+ * here and the pages degrade.
  */
 export type ArchiveShow = Omit<NationalShow, 'edition' | 'month' | 'host' | 'venue'> & {
   edition?: number;
@@ -58,20 +53,12 @@ function definedFieldsOf(doc: SanityShowProjection): Partial<ArchiveShow> {
   return mapped;
 }
 
-/**
- * Merges the static array with the supplied Sanity documents, keyed on year, and
- * returns the result newest-first.
- */
+/** Maps the supplied Sanity documents onto archive records, keyed on year, newest first. */
 export function mergeShows(sanityShows: SanityShowProjection[] | null | undefined): ArchiveShow[] {
   const byYear = new Map<number, ArchiveShow>();
 
-  for (const entry of staticShows) {
-    byYear.set(entry.year, { ...entry });
-  }
-
   for (const doc of sanityShows ?? []) {
     if (typeof doc?.year !== 'number') continue;
-    // A Sanity-only year has no static base: it starts empty and degrades in the UI.
     const base: ArchiveShow = byYear.get(doc.year) ?? { year: doc.year, status: 'past' };
     byYear.set(doc.year, { ...base, ...definedFieldsOf(doc) });
   }

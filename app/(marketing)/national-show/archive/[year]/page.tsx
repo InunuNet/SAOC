@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -14,25 +13,13 @@ import { Button } from '@/components/nos/Button';
 import { Card } from '@/components/nos/Card';
 import { CtaBand } from '@/components/nos/CtaBand';
 import { NosBreadcrumb } from '@/components/nos/NosBreadcrumb';
-import { NOS_HERO_IMAGES, NosHero } from '@/components/nos/NosHero';
+import { NosHero } from '@/components/nos/NosHero';
+import { ConfirmationBadge } from '@/components/show';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
 // propagates within F6's 120s round-trip window. See contracts/cms-loop-f1-cdn-purge.yaml.
 export const revalidate = 60;
-
-const NOT_RECORDED = '—';
-
-/**
- * Deterministic photo per edition, keyed off edition (falling back to year for a
- * Sanity-only show with no edition number) — matches the same picker on the archive
- * index page, so a given show's tile there and its detail photo here always agree.
- * Never randomised: a photo that changed on reload would look broken.
- */
-function archivePhotoFor(show: { edition?: number | null; year: number }) {
-  const key = show.edition ?? show.year;
-  return NOS_HERO_IMAGES[key % NOS_HERO_IMAGES.length];
-}
 
 function toRomanOrdinal(n: number): string {
   const val = [50, 40, 10, 9, 5, 4, 1];
@@ -63,15 +50,21 @@ function subtitle(show: ArchiveShow): string {
     .join(' · ');
 }
 
-function summarySentence(show: ArchiveShow): string {
+/**
+ * One sentence built only from recorded facts. Returns null when nothing beyond the year
+ * is recorded, so the page shows the pending marker instead of an invented sentence.
+ */
+function summarySentence(show: ArchiveShow): string | null {
+  const facts = [
+    show.month ? `in ${show.month} ${show.year}` : null,
+    show.venue ? `at ${show.venue}` : null,
+    show.host ? `hosted by the orchid societies of ${show.host}` : null,
+  ].filter((fact): fact is string => fact !== null);
+  if (facts.length === 0) return null;
   const name = show.edition
     ? `The ${toRomanOrdinal(show.edition)} National Orchid Show`
     : `The ${show.year} National Orchid Show`;
-  const when = show.month ? ` in ${show.month} ${show.year}` : ` in ${show.year}`;
-  const where = show.venue ? ` at ${show.venue}` : '';
-  const host = show.host ? `, hosted by the orchid societies of ${show.host}` : '';
-  const trophies = show.trophies ? ` ${show.trophies} trophies and awards were presented.` : '';
-  return `${name} was held${when}${where}${host}.${trophies}`;
+  return `${name} was held ${facts.join(', ')}.`;
 }
 
 async function loadPastShows(): Promise<ArchiveShow[]> {
@@ -83,8 +76,7 @@ async function loadPastShows(): Promise<ArchiveShow[]> {
 }
 
 export async function generateStaticParams(): Promise<Array<{ year: string }>> {
-  // Unions the static years and the Sanity `status == "past"` years, so a show added in
-  // the Studio is prerendered rather than left to the dynamic fallback.
+  // The Sanity `status == "past"` years only; empty until a real edition is published.
   const pastShows = await loadPastShows();
   return pastShows.map((s) => ({ year: String(s.year) }));
 }
@@ -117,7 +109,7 @@ export async function generateMetadata({
     title: show.host
       ? `${year} National Orchid Show — ${show.host}`
       : `${year} National Orchid Show`,
-    description: summarySentence(show),
+    description: summarySentence(show) ?? `The ${year} National Orchid Show.`,
     path,
   });
 }
@@ -143,6 +135,14 @@ export default async function ShowYearPage({
     .filter((part): part is string => Boolean(part))
     .join(' ');
   const upcomingWhere = upcomingPlaceAndYear ? `, ${upcomingPlaceAndYear}` : '';
+
+  const summary = summarySentence(show);
+  const stats = [
+    show.edition ? { value: toRomanOrdinal(show.edition), label: 'Edition' } : null,
+    show.days ? { value: `${show.days} days`, label: 'Duration' } : null,
+    show.entries ? { value: show.entries.toLocaleString(), label: 'Entries' } : null,
+    show.visitors ? { value: show.visitors.toLocaleString(), label: 'Visitors' } : null,
+  ].filter((stat): stat is { value: string; label: string } => stat !== null);
 
   const currentIdx = pastShows.findIndex((s) => s.year === show.year);
   const nextShow = pastShows[currentIdx - 1] ?? null;
@@ -173,69 +173,47 @@ export default async function ShowYearPage({
         ]}
       />
 
-      {/* ── Stats ── */}
-      <section className="bg-bone">
-        <div className="mx-auto max-w-[1280px] px-8 py-16">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {[
-              {
-                value: show.edition ? toRomanOrdinal(show.edition) : NOT_RECORDED,
-                label: 'Edition',
-              },
-              { value: show.days ? `${show.days} days` : NOT_RECORDED, label: 'Duration' },
-              {
-                value: show.entries ? show.entries.toLocaleString() : NOT_RECORDED,
-                label: 'Entries',
-              },
-              {
-                value: show.visitors ? show.visitors.toLocaleString() : NOT_RECORDED,
-                label: 'Visitors',
-              },
-            ].map(({ value, label }) => (
-              <Card key={label} className="text-center">
-                <div className="font-serif text-[38px] font-medium leading-none text-primary">
-                  {value}
-                </div>
-                <div className="mt-2 font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
-                  {label}
-                </div>
-              </Card>
-            ))}
+      {/* ── Recorded stats: only values that exist ── */}
+      {stats.length > 0 && (
+        <section className="bg-bone">
+          <div className="mx-auto max-w-[1280px] px-8 py-16">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {stats.map(({ value, label }) => (
+                <Card key={label} className="text-center">
+                  <div className="font-serif text-[38px] font-medium leading-none text-primary">
+                    {value}
+                  </div>
+                  <div className="mt-2 font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
+                    {label}
+                  </div>
+                </Card>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── Show details ── */}
       <section className="mx-auto max-w-[1280px] px-8 py-20">
-        <div className="grid grid-cols-1 gap-16 lg:grid-cols-2">
-          <div>
-            {/* text-accent (violet, 6.90:1 on white) not olive-deep (4.30:1 — fails 4.5:1 body
-                text at this 12px size, see nos-contrast.golden.md note 1). */}
-            <p className="mb-4 font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-accent">
-              About the show
+        <div className="max-w-[720px]">
+          {/* text-accent (violet, 6.90:1 on white) not olive-deep (4.30:1 — fails 4.5:1 body
+              text at this 12px size, see nos-contrast.golden.md note 1). */}
+          <p className="mb-4 font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-accent">
+            About the show
+          </p>
+          {summary ? (
+            <p className="font-sans text-[16px] leading-relaxed text-ink/80">{summary}</p>
+          ) : (
+            <ConfirmationBadge status="pending" />
+          )}
+          {show.exhibitors ? (
+            <p className="mt-4 font-sans text-[16px] leading-relaxed text-ink/80">
+              {show.exhibitors.toLocaleString()} exhibitors took part.
             </p>
-            <p className="font-sans text-[16px] leading-relaxed text-ink/80">
-              {summarySentence(show)}
-            </p>
-            {show.exhibitors ? (
-              <p className="mt-4 font-sans text-[16px] leading-relaxed text-ink/80">
-                {show.exhibitors.toLocaleString()} exhibitors took part.
-              </p>
-            ) : null}
-            {show.note && (
-              <p className="mt-4 font-serif text-[16px] italic text-muted">{show.note}</p>
-            )}
-          </div>
-
-          <div className="relative aspect-[4/3] overflow-hidden rounded-[length:var(--radius-lg)] bg-[var(--night)]">
-            <Image
-              src={archivePhotoFor(show)}
-              alt={`${show.year} National Orchid Show`}
-              fill
-              className="object-cover opacity-80"
-              sizes="(max-width: 1024px) 100vw, 50vw"
-            />
-          </div>
+          ) : null}
+          {show.note && (
+            <p className="mt-4 font-serif text-[16px] italic text-muted">{show.note}</p>
+          )}
         </div>
       </section>
 

@@ -10,9 +10,8 @@ import { CycleStep } from '@/components/nos/CycleStep';
 import { ExhibitorStageCard } from '@/components/nos/ExhibitorStageCard';
 import { JudgingGroupCard } from '@/components/nos/JudgingGroupCard';
 import { COLUMN_CLASS, SPAN_CLASS, resolveGridLayout } from '@/lib/grid-columns';
-import { NosHero, NOS_HERO_IMAGES, type NosHeroImage } from '@/components/nos/NosHero';
+import { NosHero } from '@/components/nos/NosHero';
 import { NosHubGroup, type NosHubGroupMember } from '@/components/show/nos/NosHubGroup';
-import { PastEditionCard } from '@/components/nos/PastEditionCard';
 import { SectionHeading } from '@/components/nos/SectionHeading';
 import { VisitorLinkCard } from '@/components/nos/VisitorLinkCard';
 import { JsonLd, nationalShowEventJsonLd, type NationalShowOffer } from '@/components/seo/JsonLd';
@@ -20,13 +19,11 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import {
   activeTicketTypesByCategoryQuery,
   showClassesQuery,
-  pastShowsQuery,
   nationalShowQuery,
   nationalShowSalesQuery,
   showVisitorInfoQuery,
 } from '@/sanity/queries';
 import { showClasses as staticClasses } from '@/lib/data/showClasses';
-import { shows as staticShows } from '@/lib/data/shows';
 import { effectiveCapacity, resolveEffectivePrice } from '@/lib/checkout-reservation';
 import { buildPageMetadata } from '@/lib/seo';
 import {
@@ -37,7 +34,7 @@ import {
   toOrdinal,
   toShowIsoDate,
 } from '@/lib/show-identity';
-import type { ShowClass, NationalShow, ShowVenue, ShowVisitorInfo } from '@/types';
+import type { ShowClass, ShowVenue, ShowVisitorInfo } from '@/types';
 import type { SanityImageSource } from '@sanity/image-url';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
@@ -144,17 +141,6 @@ interface SanityShowClass {
   code: string;
   name: string;
   description: string;
-}
-
-interface SanityPastShow {
-  _id: string;
-  title: string | null;
-  slug: string | null;
-  year: number;
-  location: string | null;
-  entries: number | null;
-  exhibitors: number | null;
-  awards: number | null;
 }
 
 interface SanityNationalShow {
@@ -301,18 +287,10 @@ function toRomanOrdinal(n: number): string {
   return result;
 }
 
-// Rotates through the five rights-cleared production photographs so the past-editions
-// grid does not repeat a single image across every card — none of the five is tied to a
-// specific edition, so the mapping is presentational only.
-function pastEditionImage(index: number): NosHeroImage {
-  return NOS_HERO_IMAGES[(index + 1) % NOS_HERO_IMAGES.length];
-}
-
 export default async function NationalShowPage() {
-  const [sanityClasses, sanityShows, sanityShow, visitorInfo, salesState, admissionTicketTypes] =
+  const [sanityClasses, sanityShow, visitorInfo, salesState, admissionTicketTypes] =
     await Promise.all([
       sanityFetch<SanityShowClass[]>({ query: showClassesQuery, tags: ['showClass', 'sanity'] }),
-      sanityFetch<SanityPastShow[]>({ query: pastShowsQuery, tags: ['show', 'sanity'] }),
       sanityFetch<SanityNationalShow>({
         query: nationalShowQuery,
         tags: ['nationalShow', 'sanity'],
@@ -401,21 +379,6 @@ export default async function NationalShowPage() {
   // — DERIVED from the live count, never a hardcoded `lg:grid-cols-N` literal, so a
   // future change in the number of judging groups can't silently reintroduce an orphan.
   const judgingGridLayout = resolveGridLayout(classes.length);
-
-  const pastShows: NationalShow[] =
-    sanityShows && sanityShows.length > 0
-      ? sanityShows.map((s) => ({
-          edition: 0,
-          year: s.year,
-          month: 'September',
-          host: s.location ?? '',
-          venue: s.location ?? '',
-          status: 'past',
-          entries: s.entries ?? undefined,
-          visitors: s.exhibitors ?? undefined,
-          trophies: s.awards ?? undefined,
-        }))
-      : staticShows.filter((s) => s.status === 'past').slice(0, 5);
 
   return (
     <>
@@ -690,30 +653,6 @@ export default async function NationalShowPage() {
           </div>
         </div>
       </section>
-
-      {/* ── Past shows ── */}
-      {pastShows.length > 0 && (
-        <section className="mx-auto max-w-[1280px] px-8 py-24">
-          <SectionHeading eyebrow="Show history" title="Past editions" />
-
-          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {pastShows.slice(0, 6).map((show, index) => (
-              <PastEditionCard
-                key={show.year}
-                image={pastEditionImage(index)}
-                editionLabel={show.edition > 0 ? `Edition ${toRomanOrdinal(show.edition)}` : String(show.year)}
-                year={show.year}
-                month={show.month}
-                host={show.host}
-                entries={show.entries}
-                visitors={show.visitors}
-                trophies={show.trophies}
-                note={show.note}
-              />
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* ── CTA band ── */}
       <CtaBand
