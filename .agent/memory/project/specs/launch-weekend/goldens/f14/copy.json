@@ -1,6 +1,6 @@
 {
   "capturedFrom": "http://localhost:3614",
-  "head": "e9f7d4f98dfd26f53d457923706fee85af1e3df7",
+  "head": "b9d600cb01715600a36f7bfc4d6b79d867c8e5a8",
   "nav": [
     "Find your way in",
     "Four ways into SAOC",
@@ -43,5 +43,34 @@
     "Show details",
     "Exhibitor info",
     "Book Tickets"
+  ],
+  "yearbook": [
+    "In print",
+    "Orchids South Africa",
+    "· 2025 yearbook",
+    "Our annual record of award-winning plants, hybridisation notes, society reports and judges' commentary. 184 pages. Available to members or via direct subscription.",
+    "Editor",
+    "Lindiwe Khumalo",
+    "Pages",
+    "184",
+    "ISSN",
+    "1816-0336",
+    "Subscribe",
+    "Past editions",
+    "EST. 1968"
+  ],
+  "partners": [
+    "In collaboration with",
+    "Wild Orchids of Southern Africa",
+    "Partner organisation hosting the WOSA Conference at the 2027 National Show.",
+    "South African National Biodiversity Institute",
+    "South Africa's national institute for biodiversity science, conservation planning and botanical gardens.",
+    "Kirstenbosch NBG",
+    "One of the world's great botanical gardens, managed by SANBI at the foot of Table Mountain."
+  ],
+  "partnerLinks": [
+    "https://wildorchids.co.za|_blank|noopener noreferrer",
+    "https://www.sanbi.org|_blank|noopener noreferrer",
+    "https://www.sanbi.org/gardens/kirstenbosch|_blank|noopener noreferrer"
   ]
 }

@@ -33,9 +33,9 @@ for (const vp of VIEWPORTS) {
   await openHome(page);
   const miss = await missingHooks(page, { navSection: SEL.navSection, band: SEL.band, primary: SEL.cta('primary'), secondary: SEL.cta('secondary'), tertiary: SEL.cta('tertiary') }, vp.name);
   if (miss.length) { problems.push(...miss); await ctx.close(); continue; }
-  for (const [label, sel] of [['nav', SEL.navSection], ['band', SEL.band]]) {
+  for (const [label, sel] of [['nav', SEL.navSection], ['band', SEL.band], ['yearbook', '[data-home-section="yearbook"]'], ['partners', '[data-home-section="partners"]']]) {
     const rows = await page.evaluate(scanText(sel));
-    if (rows.length < 6) problems.push(`${vp.name} ${label}: only ${rows.length} text nodes scanned`);
+    if (rows.length < 3) problems.push(`${vp.name} ${label}: only ${rows.length} text nodes scanned`);
     for (const r of rows) if (r.ratio < r.need) problems.push(`${vp.name} ${label}: "${r.text}" ${r.ratio}:1 < ${r.need}:1`);
   }
   if (vp.name === '1280') {

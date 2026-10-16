@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Captures copy.json (every text node of the NavCards and ShowBand sections, countdown digits excluded) and
+// Captures copy.json (every text node of the NavCards, ShowBand, YearbookStrip and PartnersSection sections, countdown digits excluded) and
 // other-sections.json (sha256 of every OTHER home section's normalised markup, captured under reduced motion so the
 // hero carousel is static) from a server running the UNTOUCHED tree (origin/main, e9f7d4f9). Captures twice and refuses
 // to write if the two passes differ (a flaky golden is worse than none).
@@ -18,7 +18,7 @@ for (let i = 0; i < 2; i++) {
   const { ctx, page } = await newPage(browser, VIEWPORTS[1], { reducedMotion: 'reduce' });
   await openHome(page);
   const x = await page.evaluate(EXTRACT_SRC);
-  passes.push({ nav: x.nav, band: x.band, others: Object.fromEntries(Object.entries(x.others).map(([k, v]) => [k, sha(v)])) });
+  passes.push({ nav: x.nav, band: x.band, yearbook: x.yearbook, partners: x.partners, partnerLinks: x.partnerLinks, others: Object.fromEntries(Object.entries(x.others).map(([k, v]) => [k, sha(v)])) });
   await ctx.close();
 }
 await browser.close();
@@ -29,6 +29,6 @@ if (JSON.stringify(passes[0]) !== JSON.stringify(passes[1])) {
 }
 const head = execFileSync('git', ['-C', process.env.GOLDEN_SOURCE_DIR || '.', 'rev-parse', 'HEAD']).toString().trim();
 const meta = { capturedFrom: process.env.BASE_URL || 'http://localhost:3614', head };
-writeFileSync(`${GOLDEN_DIR}/copy.json`, JSON.stringify({ ...meta, nav: passes[0].nav, band: passes[0].band }, null, 2) + '\n');
+writeFileSync(`${GOLDEN_DIR}/copy.json`, JSON.stringify({ ...meta, nav: passes[0].nav, band: passes[0].band, yearbook: passes[0].yearbook, partners: passes[0].partners, partnerLinks: passes[0].partnerLinks }, null, 2) + '\n');
 writeFileSync(`${GOLDEN_DIR}/other-sections.json`, JSON.stringify({ ...meta, sections: passes[0].others }, null, 2) + '\n');
 console.log(`captured ${passes[0].nav.length} nav texts, ${passes[0].band.length} band texts, ${Object.keys(passes[0].others).length} other sections @ ${head.slice(0, 8)}`);

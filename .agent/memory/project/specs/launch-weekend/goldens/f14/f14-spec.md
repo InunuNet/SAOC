@@ -1,6 +1,6 @@
-# F14 design spec: home NavCards and ShowBand
+# F14 design spec: home NavCards, ShowBand, YearbookStrip and PartnersSection
 
-Base: origin/main e9f7d4f9. Files: `components/home/NavCards.tsx`, `components/home/ShowBand.tsx` (plus an optional F14-commented block in `app/globals.css`; the reference build needed none). Every value is cited to the handoff (`design/design_handoff_saoc/`): README = `design_system_README.md`, src = `src/styles.css`, tokens = `colors_and_type.css`. Machine-readable targets: `tokens.json` (the checks read it).
+Base: origin/main e9f7d4f9. Files: `components/home/NavCards.tsx`, `ShowBand.tsx`, `YearbookStrip.tsx`, `PartnersSection.tsx`, plus one F14-commented block in `app/globals.css` (the `.eyebrow--on-tint` modifier, section 7). Every value is cited to the handoff (`design/design_handoff_saoc/`): README = `design_system_README.md`, src = `src/styles.css`, tokens = `colors_and_type.css`. Machine-readable targets: `tokens.json` (the checks read it).
 
 Skills applied: impeccable (critique, audit, polish, craft-floor; launcher unavailable, so context was read directly), frontend-design, web-design-guidelines, accessibility. Critique ran single-context, not as two isolated sub-agents (degraded: sub-agent cost not justified for a two-section pass). Measurements are from a production build of e9f7d4f9 at 390, 1280 and 1920. Before shots: `.tmp/sandbox/lw-f14/before/`. A throwaway reference build proving the spec is satisfiable: `.tmp/sandbox/lw-f14/after/` shots and `reference-prototype.patch` (uncommitted, not a deliverable; the dev implements against this spec).
 
@@ -74,20 +74,63 @@ Section `bg-primary-800`. Grid `1fr` below 1100; `1fr 1.1fr`, min-height 620 fro
   - Focus-visible on all three: outline 2px solid `--accent-soft`, offset 3px (primary and secondary also lift, equal to hover).
   - Transitions 150ms; reduced motion removes the lift only.
 
+## 4b. YearbookStrip target
+
+Critique (before, shots in `before/*-yearbook.png`): (1) the copy column is vertically centred against a 4/5 photo (680px tall at 1280), so the text floats about 220px from the photo's top and bottom with no relationship to its edges; (2) the "In print" eyebrow is a bone pill on a bone section: the pill is invisible, so its text reads 14px indented off the heading axis (the same defect hits "Find your way in" on NavCards, also bone); (3) both buttons are hover-colour-only (`primary/85`, `primary/5`), no lift, no focus-visible; "Past editions" has a 30% border that nearly vanishes; (4) facts are a `flex gap-8` with ragged columns (ISSN crowds PAGES), labels 10px; (5) no structure: no hairline, no rhythm.
+
+Target (src `.yearbook-strip__*`, README l.141-145):
+- Section stays `bg-bone`, `py-24 px-8 md:px-16`, container 1280. Grid: 1 col below 1100 (photo below the copy, 4/3), 2 cols `1fr 1fr` gap 80px from 1100 (src `.yearbook-strip__grid`), **`items-stretch`**.
+- Copy column (`data-yearbook-content`): flex column, `justify-between`. Top group (eyebrow, h2, prose) starts on the photo's top edge; bottom group (facts then CTAs) ends on the photo's bottom edge (both within 2px). The air between them is deliberate negative space anchored to both edges.
+- Eyebrow: `eyebrow eyebrow--on-tint` (section 7). h2 unchanged plus `text-wrap: balance`. Prose stays 18/1.65 ink, `max-width: 520px` (src).
+- Facts `<dl data-yearbook-meta>`: 3 equal columns, gap 20px, `border-top: 1px solid --rule`, padding-top 24px (src `.yearbook-strip__meta`), margin-bottom 24; dt mono 11px tracking .18em `--muted`; dd 16/1.55 ink.
+- CTAs, gap 12px, padding 14/22, radius 2px, 14px/500, 150ms, same grammar as the ShowBand: **Subscribe** `bg --primary`, ivory text, 1px transparent border; hover `--primary-800` (README l.86) and lift 1px; **Past editions** transparent, `--primary` text and 1px `--primary` border; hover fills `--primary` with ivory text and lifts 1px (src `.btn--outline:hover`). Focus-visible: outline 2px solid `--primary`, offset 3px, plus the hover state. Reduced motion: no lift, colours stay.
+- Photo (`data-yearbook-image`): `aspect-[4/5]` from 1100 (src), `overflow-hidden`; the tag "EST. 1968" per src `.yearbook-strip__tag`: mono 10.5px, tracking .2em, ink on ivory, padding 8/14, offset 20px. The photo is not a link, so it gets no hover.
+
+## 4c. PartnersSection target
+
+Critique: (1) three bordered text boxes whose 1px `--rule` borders are about 1.1:1 on bone, so they read as empty rectangles; (2) the section is bone directly after the bone yearbook, so two bands merge (handoff alternates parchment and bone; `.partners` has no tint, i.e. parchment); (3) the same invisible-eyebrow indent; (4) the only hover is `hover:bg-parchment`, a barely visible wash; (5) names are 18px, so a partner list is set like body text; (6) uniform cards with no hierarchy.
+
+Hard constraints: **there are no partner logos. Never draw, fetch, generate or fake any**; check A12 fails on any `img`, `svg`, `canvas` or background image in the section. Copy unchanged (names, descriptions, hrefs, `target="_blank" rel="noopener noreferrer"`). **Content note for the lead and Lee-Ann (not a design decision):** only WOSA is a confirmed partner. SANBI and Kirstenbosch NBG trace only to the design mock; they stay as-is for now and are logged for Lee-Ann.
+
+Target: a deliberate typographic partner feature, an editorial ruled list (the name is the visual), not cards.
+- Section `bg --parchment` (handoff rhythm: parchment, bone yearbook, parchment partners; the old `border-t` goes), `py-20 px-8 md:px-16`.
+- Eyebrow "In collaboration with" stays a plain `.eyebrow` (bone pill, visible on parchment), left aligned on the axis, margin-bottom 40.
+- List: one container `border-top: 1px solid --rule`, extended 12px each side (`-mx-3`) so every rule and the hover wash share edges; each row is `border-bottom: 1px solid --rule`, `padding: 28px 12px` (text stays on the axis). No box, no side borders.
+- Row (`data-partner-row`, the one `<a>`; a partner without a website renders the same row as a `<div>` with no arrow): grid `5fr 6fr auto` from 900px (name, description, arrow), gap 40px, baseline aligned; below 900px: name and arrow on line 1, description on line 2 across both.
+- Name (`data-partner-name`): serif 500, `clamp(26px, 3vw, 36px)` (`--display-sm`, tokens), line-height 1.15, `--primary`. Description: sans 16/1.55 `--muted` (5.24:1 on parchment). Arrow (`data-partner-arrow`, aria-hidden): serif 20px `--primary`, the handoff's Unicode arrow (README Iconography).
+- Hover and focus-visible (src `.event-row:hover`, `.partners__item:hover`, README l.143): row wash `rgba(158,140,107,.08)` (src `.event-row:hover` background); name `--primary-800` with a 1px `--accent` underline at 6px offset (underline is transparent at rest so it transitions); arrow translateX(4px) and `--accent` (src `.event-row:hover .event-row__arrow`). 150ms. The src `.event-row` padding shift is dropped (it reflows text). Focus-visible adds outline 2px solid `--primary`, offset 3px. Reduced motion: no arrow shift; wash, underline and colour stay.
+- Contrast on the hovered wash: muted prose about 4.8:1, checked by A12.
+
+## 5b. Self-critique loop (required, Brad's bar: "beautiful and worthy of the orchid council")
+
+The dev may not hand off on green checks alone. For all four sections:
+1. Implement.
+2. Build, serve on 3614, run `OUT=.tmp/sandbox/lw-f14/after node contracts/checks/launch-weekend/f14/capture-shots.mjs`: each section at 390, 1280 and 1920, the four hover shots and the nav-cards focus shot (17 PNGs; names fixed by the script).
+3. Look at every screenshot (Read the PNGs) and run an impeccable critique on them: impeccable `critique.md` heuristic scoring (10 heuristics x 0-4 = /40), craft-floor, `audit.md` for the technical pass, `polish.md` for the finish; plus frontend-design, web-design-guidelines, accessibility. Judge composition, hierarchy, alignment to the axis, spacing rhythm, type, state quality, mobile, and whether the result reads as an orchid council's garden journal (README: "editorial, botanical, a little slow"), not a template.
+4. Fix everything P0, P1 or P2 in one batch; re-shoot; critique again. Repeat until a pass finds no P0, P1 or P2 craft finding. Only handoff-sanctioned values may be used to fix a finding; where a finding cannot be fixed inside the handoff, record it as a P3 with the reason and tell the lead.
+5. Write `.agent/memory/project/specs/launch-weekend/f14-critique-log.md`: `## Pass N` blocks, each listing findings by severity with `P0: n`, `P1: n`, `P2: n` lines and `Score: NN/40`; it must mention 390, 1280, 1920, hover, focus and reduced-motion; the final pass must read `P0: 0`, `P1: 0`, `P2: 0`, `Score` at least 36/40. Check A13 enforces the artefacts: fresh screenshots (newer than the last component edit) and the log's shape. @qa re-runs the critique independently, so the log is evidence, not the verdict.
+
 ## 5. Contrast ledger (measured on the tokens)
 
 ink/brass 5.40; ink/accent-soft 8.56; ivory/primary-800 13.57; accent-soft/primary-800 7.30; ivory .65 on primary-800 6.57; muted/parchment 5.24; muted/bone 4.66; primary/parchment 9.53; badge worst case over white 5.23; brass on primary-800 (UI) 4.61; ivory .45 border on primary-800 3.92; primary outline on bone 8.47. The brass border/underline on parchment is 2.94 and is therefore never the only hover signal (lift, shadow and title colour also change).
 
 ## 6. Test hooks the dev adds (markup only)
 
+Previous hooks for NavCards and ShowBand, plus: `data-nav-card-title/-badge/-meta/-arrow` (inside cards); YearbookStrip: `data-home-section="yearbook"`, `data-yearbook-image`, `-content`, `-meta`, `data-yearbook-cta="primary|secondary"`; PartnersSection: `data-home-section="partners"`, `data-partner-row` (the anchor itself), `data-partner-name`, `data-partner-arrow`.
+
+Original list:
+
 `data-home-section="nav-cards"` / `"show-band"` on the sections; `data-nav-card` on each card anchor; `data-nav-card-title`, `-badge`, `-meta`, `-arrow` inside; `data-show-band-image`, `-content`, `-facts`, `-countdown`; `data-countdown-cell`, `data-countdown-value`; `data-show-band-cta="primary|secondary|tertiary"`.
 
-## 7. Dev may touch
+## 7. Eyebrow pills and the files the dev may touch
 
-`components/home/NavCards.tsx`, `components/home/ShowBand.tsx`, and `app/globals.css` only by pure addition under an `F14` comment. Nothing else (A-H enforces). No new colour, font, shadow, animation or duration other than 150ms.
+The bone `.eyebrow` pill is invisible on a bone section (NavCards, YearbookStrip), indenting the visible text 14px off the axis. Add to `app/globals.css`, under an `F14` comment, one modifier: `.eyebrow--on-tint { background: var(--parchment); border: 1px solid var(--rule); }` and apply it to the NavCards and YearbookStrip eyebrows. (`.eyebrow` is unlayered CSS, so a Tailwind utility cannot override it.) The ShowBand `eyebrow--light` is already visible; the PartnersSection pill is visible on parchment. Check A12 asserts every pill is visible against its section and its edge sits on the heading (or first partner name) axis.
+
+Dev may touch: `components/home/NavCards.tsx`, `ShowBand.tsx`, `YearbookStrip.tsx`, `PartnersSection.tsx`, and `app/globals.css` only by pure addition under an `F14` comment. Nothing else (A-H enforces). No new colour, font, shadow, animation or duration other than 150ms.
 
 ## 8. Pitfalls found while proving the spec
 
 - `border border-transparent` plus `border-ivory/45` on the same element resolves by stylesheet order, not class order: the secondary border rendered invisible (1.00:1) until the transparent border was moved to the variants that want it. Checks b and f caught this.
 - Tailwind v4 `hover:-translate-y-*` and `scale-*` set `translate` and `scale`, not `transform`; asserting `transform` alone would pass a card that never moves.
+- A negative-margin row inside a negative-margin list doubles the inset: the partner rules overhung the top rule by 12px until the list alone carried `-mx-3` (check A12 asserts shared edges).
 - Reduced motion cannot rely on the global 0.01ms collapse: it makes the lift instant, not absent.

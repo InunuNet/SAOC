@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 
 const BASE_REF = process.env.BASE_REF || 'origin/main';
 const T = JSON.parse(readFileSync('.agent/memory/project/specs/launch-weekend/goldens/f14/tokens.json', 'utf8'));
-const ALLOWED = ['components/home/NavCards.tsx', 'components/home/ShowBand.tsx', 'app/globals.css'];
+const ALLOWED = ['components/home/NavCards.tsx', 'components/home/ShowBand.tsx', 'components/home/YearbookStrip.tsx', 'components/home/PartnersSection.tsx', 'app/globals.css'];
 const ALLOWED_PREFIX = ['contracts/checks/launch-weekend/f14/', '.agent/memory/project/specs/launch-weekend/', 'docs/', '.tmp/'];
 const git = (...a) => execFileSync('git', a, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 const problems = [];
