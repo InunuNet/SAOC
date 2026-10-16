@@ -83,6 +83,7 @@ async function checkSaoc(browser, width, route) {
     await ctx.close();
     const shot = await openPage(browser, width, route);
     await shot.page.screenshot({ path: `${shotsDir}/saoc-header-1280.png`, clip: { x: 0, y: 0, width, height: 140 } });
+    await shot.page.locator('footer').last().screenshot({ path: `${shotsDir}/saoc-footer-1280.png` });
     await shot.ctx.close();
     return;
   }
@@ -99,6 +100,8 @@ async function checkNos(browser, width) {
   } else if (!(await page.locator('header#nh').count())) {
     fail(`${tag}: NOS header missing`);
   }
+  const footer = (await page.locator('footer').last().innerText()).replace(/\s+/g, ' ');
+  if (!footer.includes(FOOTER_PARAGRAPH)) fail(`${tag}: NOS footer lost its brand paragraph`);
   if ((await overflow(page)) > 0) fail(`${tag}: horizontal overflow`);
   await ctx.close();
 }
