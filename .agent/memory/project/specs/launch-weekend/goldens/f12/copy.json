@@ -1,0 +1,34 @@
+{
+  "rule": "docs/rules/no-invention.md - every new visible string is Brad's wording (R68-R70 brief), an existing nav-config label, or Lee-Ann's verbatim copy. Nothing else.",
+  "bradCopy": {
+    "hubH1": "National Orchid Show",
+    "symposiumH1": "National Orchid Show Symposium"
+  },
+  "rulingCopy": {
+    "indexEyebrow": "Explore the show",
+    "indexGroupHeadings": ["Visit", "Take part", "The show"],
+    "symposiumThemeH2": "Symposium theme"
+  },
+  "themeLine": {
+    "text": "From Wild Origins to Cultivated Excellence: The Future of Orchids",
+    "sources": [
+      "content/drive-source/National Show/2. About/2.1 About - 2027 National Show/v1.0/content.md (line 7, inside curly quotes; trailing comma is sentence punctuation, not part of the theme)",
+      "content/drive-source/National Show/1. Website Development SpecificationV3/v1.0/content.md (line 225, inside curly quotes; trailing full stop is sentence punctuation)"
+    ],
+    "sourceStatus": "VERIFIED verbatim in Lee-Ann's Drive export (both files).",
+    "quotes": "Rendered with NO quote characters of any kind (straight or curly)."
+  },
+  "themeDescriptionSentence": {
+    "text": "Uniting conservation, science, and horticulture to explore how orchids in their natural environments inform responsible growing, breeding, and the sustainability of the orchid industry.",
+    "sources": [
+      "content/drive-recovered/06-saoc-symposium/theme/content.md (committee-supplied recovered source, sourcePath of the council-supplied 'theme' section)",
+      "content/show-pages/06-saoc-symposium.json section 'theme', block symposium-theme-b15 (provenance council-supplied)"
+    ],
+    "sourceStatus": "NOT FOUND in content/drive-source/ (the versioned Drive .docx export) - grep for 'Uniting conservation' and 'Symposium Theme' there returns nothing. It exists only in the recovered committee file and the showPage seed that cites it. It is the section's existing council-supplied copy; the architect cannot independently prove it against a current Drive export. F12 must NOT retype, reword or move it into code: it keeps rendering from the showPage data, unchanged. Lead to confirm against Lee-Ann's live Symposium doc before launch.",
+    "mustNotAppearInCode": true
+  },
+  "neverRender": [
+    "Programme and registration hub for the SAOC Symposium.",
+    "19th SAOC National Orchid Show (as the HUB h1; stays in nav-config as the mega-menu lead label)"
+  ]
+}

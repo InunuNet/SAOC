@@ -1,0 +1,13 @@
+{
+  "note": "F12 is built on F3. These F3 assertions encode values R68-R70 replace; they are NOT run in the F12 gate (the F12 checks measure the replacement). The lead amends or retires the F3 copies when F12 merges; F12's dev must not edit contracts/checks/nos-own-brand-chrome/**.",
+  "superseded": [
+    { "f3": "check-f3-audit.mjs (H1 for the hub)", "reason": "hub h1 is now 'National Orchid Show' (Brad), not '19th SAOC National Orchid Show'", "replacedBy": "F12-A3" },
+    { "f3": "check-f3-audit.mjs (RULING-nav: no <nav> in <main> except '* pages' and breadcrumb)", "reason": "kept: the R69 index is <nav aria-label='Explore the show pages'>, which satisfies the existing '* pages' exemption; no change needed", "replacedBy": "none, still passes" },
+    { "f3": "check-f3-hub-conversion.mjs C-2 (CTAs -> price -> countdown -> facts by top coordinate)", "reason": "R68 puts CTAs and countdown on one flex row at >=640; the order test holds only below 640 (390 measured)", "replacedBy": "F12-A3" },
+    { "f3": "check-f3-hub-conversion.mjs C-3 (no 'Explore the National Show' / 'More on the National Show' h2)", "reason": "still passes: the eyebrow is 'Explore the show' in a <p>, not an h2; no change needed", "replacedBy": "none, still passes" },
+    { "f3": "check-f3-hub-links.mjs (no <nav> on the hub, no other link group of 4+ /national-show/* links)", "reason": "R69 deliberately restores one grouped index on the hub", "replacedBy": "F12-A4" },
+    { "f3": "check-f3-container.mjs (every [data-nos-wrap] is 1080 + 2*gutter)", "reason": "R70 moves the six template pages and FAQ to a 1280 container with px-8", "replacedBy": "F12-A7" },
+    { "f3": "check-f3-rhythm.mjs", "reason": "still passes: the index is a <nav> ending in ' pages' (exempt); template pages keep their <section> rhythm", "replacedBy": "none, still passes" },
+    { "f3": "check-f3-subnav.mjs / check-f3-targets.mjs", "reason": "unaffected; sub-nav and 44px targets are not changed", "replacedBy": "none, still passes" }
+  ]
+}

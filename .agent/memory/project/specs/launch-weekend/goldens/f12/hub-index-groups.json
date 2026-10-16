@@ -1,0 +1,10 @@
+{
+  "note": "R69 groups. hrefs are the existing routes; the visible title of each item is the label nav-config.ts carries for that href (single source, so the pending vendors relabel flows through), never retyped.",
+  "groups": [
+    { "heading": "Visit", "hrefs": ["/national-show/tickets", "/national-show/plan-your-visit", "/national-show/what-to-expect", "/national-show/programme", "/national-show/faq"] },
+    { "heading": "Take part", "hrefs": ["/national-show/exhibitors", "/national-show/vendors", "/national-show/workshops", "/national-show/conferences"] },
+    { "heading": "The show", "hrefs": ["/national-show/about", "/national-show/symposium", "/national-show/wosa-conference", "/national-show/sa-exhibitors", "/national-show/international-guests", "/national-show/sponsors", "/national-show/archive"] }
+  ],
+  "total": 16,
+  "excluded": ["/national-show (the hub itself)"]
+}

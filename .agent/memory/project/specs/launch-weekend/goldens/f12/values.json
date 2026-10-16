@@ -1,0 +1,71 @@
+{
+  "rulings": "NOS Design R68 (hub hero), R69 (grouped index), R70 (symposium + shared show-page template), 2026-10-16, quoted in contract-f12.yaml header",
+  "viewports": { "desktop": [1280, 800], "wide": [1920, 1080], "phone": [390, 844] },
+  "tokens": {
+    "ruleRgb": [218, 215, 200],
+    "accentRgb": [126, 63, 151],
+    "inkRgb": [33, 26, 87],
+    "boneRgb": [243, 242, 214],
+    "tokenSource": "app/(marketing)/national-show/nos-theme.css --rule #dad7c8, --accent #7e3f97, --ink #211a57, --bone #f3f2d6"
+  },
+  "hubHero": {
+    "h1": "National Orchid Show",
+    "minWidthForGeometry": 1024,
+    "copy": { "justifyContent": "center", "paddingTop": 96, "paddingBottom": 88, "gap": 36 },
+    "title": { "maxWidth": "none", "fontSizeClamp": "clamp(52px,4.9vw,96px)", "fontSizeMinPx": 52, "fontSizeMaxPx": 96, "fontSizeVw": 4.9, "lineHeight": 1, "letterSpacingEm": -0.01, "textWrap": "balance", "oneLineFromWidth": 1280 },
+    "phoneTitleClamp": "clamp(2.8rem,12vw,3.4rem)  (F3 value at <=700px, unchanged by R68)",
+    "body": { "maxWidth": 760, "rowGap": 32 },
+    "lede": { "maxWidthCh": 46 },
+    "facts": { "desktopColumns": 4, "desktopColumnGap": 40, "desktopRowGap": 0, "belowDesktopColumns": 2, "template": "repeat(4,max-content)" },
+    "actionsRow": { "display": "flex", "alignItems": "flex-end", "justifyContent": "space-between", "gap": 48, "flexWrap": "wrap", "stackBelow": 640 },
+    "buttons": ["Tickets", "Plan your visit"]
+  },
+  "index": {
+    "eyebrow": "Explore the show",
+    "columnsDesktop": 3,
+    "columnsBelowBreakpoint": 1,
+    "breakpoint": 900,
+    "columnGap": 56,
+    "section": { "paddingBlock": 88, "borderTopWidth": 1, "borderTopColor": "--rule" },
+    "groupHeading": { "tag": "h3", "fontSize": 12, "fontWeight": 600, "letterSpacingEm": 0.14, "textTransform": "uppercase", "colorToken": "accent", "paddingBottom": 16, "borderBottomWidth": 1, "borderBottomColor": "--rule", "family": "Karla" },
+    "item": { "borderBottomWidth": 1, "borderBottomColor": "--rule", "minHeight": 56, "display": "flex", "justifyContent": "space-between", "family": "Fraunces", "fontSize": 20, "colorToken": "ink", "arrowOpacity": 0.35, "arrowHoverOpacity": 1, "arrowHoverTranslateX": 4, "hoverTextColorToken": "accent" },
+    "ariaLabel": "Explore the show pages",
+    "component": "components/nos/NosShowIndex.tsx",
+    "exportName": "NosShowIndex",
+    "currentProp": "current"
+  },
+  "symposium": {
+    "h1": "National Orchid Show Symposium",
+    "removedTitleText": "SAOC Symposium",
+    "removedLede": "Programme and registration hub for the SAOC Symposium.",
+    "themeH2": "Symposium theme",
+    "ledeClamp": "clamp(22px,2vw,30px)",
+    "ledeSizeMinPx": 22,
+    "ledeSizeMaxPx": 30,
+    "ledeSizeVw": 2,
+    "ledeLineHeight": 1.3,
+    "ledeMaxWidthCh": 30,
+    "ledeFontStyle": "italic",
+    "ledeFamily": "Fraunces",
+    "ledeColorToken": "bone",
+    "heroMinHeight": 380,
+    "heroMinHeightFromWidth": 1024,
+    "removedJumpLinkPattern": "^Presenters \\(\\d+\\)$"
+  },
+  "template": {
+    "routes": [
+      "/national-show/programme",
+      "/national-show/symposium",
+      "/national-show/wosa-conference",
+      "/national-show/sa-exhibitors",
+      "/national-show/international-guests",
+      "/national-show/sponsors"
+    ],
+    "containerOnlyRoutes": ["/national-show/faq"],
+    "notOnTemplate": ["/national-show/conferences", "/national-show/workshops", "/national-show/vendors", "/national-show/exhibitors"],
+    "container": { "maxWidth": 1280, "paddingInline": 32 },
+    "prose": { "breakpoint": 900, "columns": [4, 7], "columnGap": 64, "paddingTop": 40, "borderTopWidth": 1, "borderTopColor": "--rule", "h2FontSize": 32, "h2Margin": 0, "pMaxWidthCh": 60 },
+    "proseWidths": [900, 1024, 1280, 1920],
+    "stackedWidths": [899, 390]
+  }
+}

@@ -1,0 +1,96 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: The NOS hub hero, a grouped "Explore the show" index, the symposium page and the shared show-page template meet NOS Design R68-R70 as measured values on a production build at 1280, 1920 and 390, with Brad's two copy changes, no invented copy, and no change to SAOC routes or the vendor flow.
+created_at: '2026-10-16'
+autonomy: high
+features:
+  - id: F12
+    name: R68 hub hero + R69 grouped index + R70 symposium and show-page template (built on F3)
+    status: pending
+# BASE: F12 is built ON TOP OF F3 (branch feat/nos-f3-hub-tickets, bf2faf26, unpushed). The implementation worktree branches from F3's tip.
+#   The scope check diffs against merge-base(HEAD, feat/nos-f3-hub-tickets); F12_BASE_REF pins one explicitly.
+# GATE: cwd = the implementation worktree; this contract's goldens and contracts/checks/launch-weekend/f12/ must be present in that tree (merge or copy spec/lw-f12 in).
+#   Runtime checks need `SITE_PUBLIC_LAUNCH=true pnpm build` (F12-A2) first, then spawn `next start` on F12_PORT (default 3632; never 3000/3002) with SITE_PUBLIC_LAUNCH=true,
+#   or NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:<port> against a server you started (stop it by exact PID; do not build while it runs).
+# GOLDENS: goldens/f12/f12-spec.md (the table), values.json (checks read it), copy.json (provenance), hub-index-groups.json, scope-allowlist.json, supersession.json.
+#
+# CITED SOURCES
+#   docs/rules/no-invention.md   no new visible copy except Brad's wording, existing nav-config labels, and Lee-Ann's verbatim copy (copy.json).
+#   design/design_handoff_saoc/design_system_README.md   "Page max width: 1280px. Gutter: 32px." (the layout container R70 names).
+#   branding/   read-only; F12 touches no brand asset and adds no colour literal (tokens only).
+#   NOS rulings R68-R70 (NOS Design, 2026-10-16), quoted from the lead's brief:
+#     R68 /national-show hub hero (.nos-hero-hub), live mock at 2056px: h1 copy exactly "National Orchid Show". .nos-hero-copy justify-content:center;
+#       padding-top:96px; padding-bottom:88px; gap:36px. .nos-hero-title max-width:none; font-size:clamp(52px,4.9vw,96px); line-height:1; letter-spacing:-0.01em;
+#       text-wrap:balance; one line at >=1280. .nos-hero-body max-width:760px; row-gap:32px. .nos-hero-lede max-width:46ch. .nos-hero-facts >=1024
+#       grid-template-columns:repeat(4,max-content); column-gap:40px; row-gap:0; below 1024 keep the 2x2. Wrap .nos-hero-actions and the countdown in one flex
+#       row: align-items:flex-end; justify-content:space-between; gap:48px; flex-wrap:wrap; under 640 they stack. Buttons per R67: Tickets primary, then Plan your visit.
+#     R69 replace the "More on the National Show" 16-card wall with a grouped index: eyebrow "Explore the show"; three columns minmax(0,1fr), gap 56px, one column
+#       under 900px; group h3 12px Karla 600 .14em uppercase text-accent, 16px bottom padding, 1px --rule bottom border; items li with 1px --rule bottom border and
+#       an a flex space-between, min-height 56px, Fraunces 20px text-ink; arrow opacity .35, hover opacity 1 + translateX(4px), text turns text-accent; per-card
+#       descriptions dropped; the current page marked with aria-current and text-accent, not omitted; section padding 88px 0 with a --rule top border; groups
+#       Visit / Take part / The show with the existing hrefs and titles.
+#     R70 /national-show/symposium and the shared template: (1) h1 exactly "National Orchid Show Symposium"; "SAOC Symposium" removed from the visible h1 and <title>.
+#       (2) hero lede "Programme and registration hub for the SAOC Symposium." removed, replaced by the theme line in Fraunces italic clamp(22px,2vw,30px)/1.3,
+#       max 30ch, bone, no straight quotes; the body keeps only Lee-Ann's description sentence under an h2 "Symposium theme". (3) inner hero min-height ~380px;
+#       at >=1024 the title has max-width:none so "Symposium" never sits alone on a line. (4) the single-item in-page nav "Presenters (4)" removed. (5) template
+#       on all show pages using it: container mx-auto max-w-[1280px] px-8; each .nos-show-page-prose a grid at >=900 minmax(0,4fr) minmax(0,7fr), column-gap 64px,
+#       padding-top 40px, border-top 1px --rule; h2 in column 1 (32px, margin 0, sticky optional), everything else in column 2, p max-width 60ch, stacks below 900;
+#       beta-only TBC notes in column 2; the FAQ page container gets the same container.
+#
+# COPY SOURCING (verified by the architect, see goldens/f12/copy.json)
+#   Theme line "From Wild Origins to Cultivated Excellence: The Future of Orchids": VERIFIED verbatim in content/drive-source/ (About 2.1 v1.0 line 7; Spec V3 v1.0 line 225).
+#   Description sentence "Uniting conservation, science, and horticulture ...": NOT FOUND in content/drive-source/. It exists only in content/drive-recovered/06-saoc-symposium/theme/content.md
+#   and the council-supplied 'theme' section of content/show-pages/06-saoc-symposium.json. It stays exactly as the showPage data carries it (never retyped into code); the lead
+#   should confirm it against Lee-Ann's live Symposium doc before launch.
+#
+# CONFLICTS RESOLVED (f12-spec.md): (a) r5 [&_p]:max-w-[60ch] on vendors/exhibitors survives (files unchanged + measured). (b) body size untouched (no font-size on running copy in the diff).
+#   (c) template pages = programme, symposium, wosa-conference, sa-exhibitors, international-guests, sponsors + the FAQ container; conferences/workshops are CategoryTicketsPage, untouched.
+#   (d) F8's withhold/gap logic preserved (data-nos-content-gap on the grid element, notice before heading, G7 one-key props, F8 checks run when present).
+# F3 ASSERTIONS REPLACED BY THIS CONTRACT: see goldens/f12/supersession.json. F12's dev must not edit contracts/checks/nos-own-brand-chrome/**.
+# HOT FILES: ShowContentState.tsx, ShowPageProse.tsx and lib/data/show-pages.ts are also F8's; land after F8 or rebase onto it and keep its logic.
+goldens:
+  - .agent/memory/project/specs/launch-weekend/goldens/f12/f12-spec.md
+  - .agent/memory/project/specs/launch-weekend/goldens/f12/values.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f12/copy.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f12/hub-index-groups.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f12/scope-allowlist.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f12/supersession.json
+assertions:
+  phase: 4
+  checks:
+    - id: F12-A1
+      description: Static - NosShowIndex exists (nav aria-label "Explore the show pages", eyebrow, three h3 groups, 16 href literals, aria-current handling, no descriptions, not ShowSectionNav); hub renders it and holds the h1 constant; the R68-R70 values that are code-level exist; no max-w-[900px] left on the template files; theme-line constant verbatim with a Drive source comment and no quote characters; council description sentence and removed Purpose line not retyped in code; no PresenterJumpLink on the symposium page; no "SAOC Symposium" in symposium title/og strings; G7 and F8 invariants in ShowPageProse; no colour literal and no running-copy font-size added; vendors and exhibitors keep [&_p]:max-w-[60ch] and are unedited; legacy ShowSectionNav unedited
+      command: node --import tsx/esm contracts/checks/launch-weekend/f12/check-a-static.mjs
+    - id: F12-A2
+      description: Production build passes with the public-launch flag (the runtime checks serve this build)
+      command: SITE_PUBLIC_LAUNCH=true pnpm build
+    - id: F12-A3
+      description: R68 hub hero measured at 1280, 1920, 390, 1024 and 1023 - h1 "National Orchid Show" on one line from 1280, copy padding 96/88 and gap 36 and justify center, title clamp(52px,4.9vw,96px)/1/-0.01em/balance/max-width none, body 760 and row-gap 32, lede 46ch, facts 4 max-content columns gap 0/40 on one row at >=1024 and 2 columns below, actions and countdown in one flex row (flex-end, space-between, gap 48, wrap) side by side at >=1024 and stacked under 640 in order actions, price, countdown, facts, buttons Tickets then Plan your visit above the fold, no horizontal overflow
+      command: node --import tsx/esm contracts/checks/launch-weekend/f12/check-b-hub-hero.mjs
+    - id: F12-A4
+      description: R69 grouped index measured on the hub at 1280, 1920, 1024, 900, 899 and 390 - last block, nav "Explore the show pages", eyebrow, three groups with golden hrefs in order and nav-config labels, 3 equal columns with 56px gap at >=900 and one stacked column below, section padding 88 and --rule top border, h3 and item type roles and rules, 56px items, arrow .35 then hover 1 + translateX(4px) + text-accent, and no description text
+      command: node --import tsx/esm contracts/checks/launch-weekend/f12/check-c-hub-index.mjs
+    - id: F12-A5
+      description: The real NosShowIndex module server-rendered - 16 anchors always kept, exactly one aria-current="page" with text-accent on the current item when the pathname is in the list, none otherwise
+      command: pnpm exec tsx contracts/checks/launch-weekend/f12/check-d-index-render.mts
+    - id: F12-A6
+      description: Symposium measured at 1280, 1920, 1440, 1024 and 390 - h1 "National Orchid Show Symposium", no "SAOC Symposium" in title, og:title, twitter:title or og:image, hero lede is the theme line with no quote characters in Fraunces italic clamp(22px,2vw,30px)/1.3, 30ch, bone, Purpose line gone, theme line gone from the body, body section h2 "Symposium theme" holding only the council description sentence (when published), inner hero min-height >= 380 and h1 max-width none, balanced and never ending in a lone word at >=1024, "Presenters (N)" jump link gone
+      command: node --import tsx/esm contracts/checks/launch-weekend/f12/check-e-symposium.mjs
+    - id: F12-A7
+      description: Shared template measured on programme, symposium, wosa-conference, sa-exhibitors, international-guests, sponsors and the FAQ container at 390, 899, 900, 1024, 1280 and 1920 - 1280 / px-8 centred container, 4fr:7fr two-column grid with 64px gap, 40px top padding and --rule top border at >=900 (h2 32px margin 0 in column 1, other children and the TBC / gap notices in column 2, paragraphs <= 60ch), stacked below 900, inner hero >= 380 at >=1024; vendors and exhibitors paragraphs stay <= 60ch; conferences and workshops carry no template blocks
+      command: node --import tsx/esm contracts/checks/launch-weekend/f12/check-f-template.mjs
+    - id: F12-A8
+      description: Footprint - every changed file is on the F12 allowlist; SAOC pages and chrome, vendor apply/register/payment/photos, vendors/exhibitors/conferences/workshops/tickets pages, nav-config, content/show-pages, sanity and apphosting.yaml have zero diff; every added CSS selector is under .nos-theme
+      command: node --import tsx/esm contracts/checks/launch-weekend/f12/check-g-scope.mjs
+    - id: F12-A9
+      description: F3 carry-forward - hero CTAs still exactly Tickets then Plan your visit (R67), SAOC computed styles unchanged, F3 static facts (no ShowSectionNav on NOS routes) still hold
+      command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-hero-ctas.mjs && node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-saoc-computed.mjs && node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-static.mjs
+    - id: F12-A10
+      description: F8 interlock - when F8's checks are present in the tree (F8 merged beneath F12) its static, runtime and gap-logic checks still pass unchanged, so withheld-placeholder and gap blocks survive the new template
+      command: test ! -f contracts/checks/launch-weekend/f8/check-d-gap-logic.mts || (node contracts/checks/launch-weekend/f8/check-a-static.mjs && node contracts/checks/launch-weekend/f8/check-b-runtime.mjs && pnpm exec tsx contracts/checks/launch-weekend/f8/check-d-gap-logic.mts)
+    - id: F12-A11
+      description: Lint passes
+      command: pnpm lint
+    - id: F12-A12
+      description: Type check passes
+      command: pnpm type-check
