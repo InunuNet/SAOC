@@ -16,15 +16,15 @@ export interface PhotoBandProps {
 
 export function PhotoBand({ image, alt, caption, minHeight = '360px' }: PhotoBandProps) {
   return (
-    <section className="relative isolate overflow-hidden" style={{ minHeight }}>
+    <figure className="relative isolate m-0 overflow-hidden" style={{ minHeight }}>
       <Image src={image} alt={alt} fill sizes="100vw" className="object-cover" />
       {caption ? (
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[var(--primary-800)]/85 to-transparent px-8 pb-6 pt-16 md:px-16">
-          <p className="mx-auto max-w-[1280px] font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/90">
+          <figcaption className="mx-auto max-w-[1280px] font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/90">
             {caption}
-          </p>
+          </figcaption>
         </div>
       ) : null}
-    </section>
+    </figure>
   );
 }

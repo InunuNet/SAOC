@@ -89,10 +89,17 @@ export function Footer() {
           <p className="font-sans text-[13.5px] leading-relaxed text-ivory/65">
             {FOOTER_BULLETIN.blurb}
           </p>
-          <form className="flex gap-0" onSubmit={(e) => e.preventDefault()}>
+          <form className="flex flex-wrap items-end gap-0" onSubmit={(e) => e.preventDefault()}>
+            <label
+              htmlFor="footer-newsletter-email"
+              className="mb-1.5 block w-full font-mono text-[11px] tracking-[0.16em] text-ivory/65"
+            >
+              {FOOTER_BULLETIN.placeholder}
+            </label>
             <input
+              id="footer-newsletter-email"
               type="email"
-              aria-label={FOOTER_BULLETIN.emailLabel}
+              autoComplete="email"
               placeholder={FOOTER_BULLETIN.placeholder}
               required
               className="min-w-0 flex-1 bg-ivory/10 border border-ivory/20 text-ivory placeholder:text-ivory/40 font-sans text-[13px] px-3 py-2 focus:outline-none focus:border-ivory/40"

@@ -73,7 +73,7 @@ export default async function JudgingPage() {
       <section className="bg-parchment px-8 py-24 md:px-16">
         <div className="mx-auto max-w-[1280px]">
           <div className="mb-3">
-            <span className="eyebrow">Overview</span>
+            <h2 className="eyebrow">Overview</h2>
           </div>
           {data?.intro && data.intro.length > 0 ? (
             <div className="max-w-3xl">
@@ -111,7 +111,7 @@ export default async function JudgingPage() {
       <section className="bg-parchment px-8 py-24 md:px-16">
         <div className="mx-auto max-w-[1280px]">
           <div className="mb-6">
-            <span className="eyebrow">How judging works</span>
+            <h2 className="eyebrow">How judging works</h2>
           </div>
           {data?.howItWorks && data.howItWorks.length > 0 ? (
             <div className="max-w-3xl">
@@ -143,7 +143,7 @@ export default async function JudgingPage() {
       <section className="bg-bone px-8 py-24 md:px-16">
         <div className="mx-auto max-w-[1280px]">
           <div className="mb-10">
-            <span className="eyebrow">SAOC awards</span>
+            <h2 className="eyebrow">SAOC awards</h2>
           </div>
           <AwardsGrid awards={awardsList} />
         </div>
@@ -153,7 +153,7 @@ export default async function JudgingPage() {
       <section className="bg-parchment px-8 py-24 md:px-16">
         <div className="mx-auto max-w-[1280px]">
           <div className="mb-6">
-            <span className="eyebrow">Becoming a judge</span>
+            <h2 className="eyebrow">Becoming a judge</h2>
           </div>
           {data?.becomingAJudge && data.becomingAJudge.length > 0 ? (
             <div className="max-w-3xl">
@@ -177,7 +177,7 @@ export default async function JudgingPage() {
       <section className="bg-bone px-8 py-16 md:px-16">
         <div className="mx-auto max-w-[1280px]">
           <div className="mb-6">
-            <span className="eyebrow">Accredited judges</span>
+            <h2 className="eyebrow">Accredited judges</h2>
           </div>
           <JudgesDirectory judges={judges} showPublicDirectory={showDirectory} />
         </div>

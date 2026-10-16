@@ -17,7 +17,7 @@ export interface SocietyFactsProps {
 export function SocietyFacts({ society }: SocietyFactsProps) {
   const hasConfirmedMeeting = Boolean(society.meets || society.venue);
   const estimateParts: string[] = [];
-  if (society.founded) estimateParts.push(`est. ${society.founded}`);
+  if (society.founded) estimateParts.push(`Founded ${society.founded}`);
   if (society.memberCount !== null && society.memberCount !== undefined) {
     estimateParts.push(`~${society.memberCount} members`);
   }

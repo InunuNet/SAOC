@@ -94,6 +94,7 @@ export function SuggestionForm() {
           id="msf-name"
           type="text"
           name="name"
+          autoComplete="name"
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -112,6 +113,7 @@ export function SuggestionForm() {
           id="msf-email"
           type="email"
           name="email"
+          autoComplete="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}

@@ -9,6 +9,7 @@ import type { Province } from '@/types';
 
 // The "All" chip is a UI affordance, not a province document — it is synthesised here
 // so no editor can delete it and break filtering.
+const SEARCH_PLACEHOLDER = 'Search by name or region…';
 const ALL_CHIP: Province = { code: 'ALL', name: 'All provinces' };
 
 export interface SocietiesClientProps {
@@ -51,16 +52,23 @@ export function SocietiesClient({ societies, provinces }: SocietiesClientProps) 
   return (
     <div className="space-y-8">
       {/* Search input */}
-      <div>
+      <div className="space-y-1.5">
+        <label htmlFor="societies-search" className="block font-mono text-[11px] tracking-[0.16em] text-muted">
+          {SEARCH_PLACEHOLDER}
+        </label>
         <input
+          id="societies-search"
           type="search"
           value={q}
           onChange={(e) => setParam('q', e.target.value)}
-          placeholder="Search by name or region…"
-          aria-label="Search societies"
-          className="w-full max-w-md rounded-sm border border-rule bg-parchment px-4 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none focus:border-ink/40"
+          placeholder={SEARCH_PLACEHOLDER}
+          className="w-full max-w-md rounded-sm border border-muted bg-parchment px-4 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none focus:border-ink/40"
         />
       </div>
+
+      <p role="status" aria-live="polite" className="sr-only">
+        {filtered.length} {filtered.length === 1 ? 'society' : 'societies'}
+      </p>
 
       {/* Province chips */}
       <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by province">
@@ -79,7 +87,14 @@ export function SocietiesClient({ societies, provinces }: SocietiesClientProps) 
                   : 'inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-rule bg-parchment px-3.5 py-1.5 font-mono text-[11px] tracking-[0.16em] text-muted hover:border-ink/40'
               }
             >
-              {p.code === 'ALL' ? 'All' : p.code}
+              {/* Full name from 481px up, abbreviation at 480px and below; the accessible name
+                  (aria-label) is the full name at every width. */}
+              <span aria-hidden="true" className="min-[481px]:hidden">
+                {p.code === 'ALL' ? 'All' : p.code}
+              </span>
+              <span aria-hidden="true" className="hidden min-[481px]:inline">
+                {p.name}
+              </span>
             </button>
           );
         })}

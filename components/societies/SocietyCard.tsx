@@ -62,7 +62,7 @@ export function SocietyCard({ society }: SocietyCardProps) {
         >
           {[
             society.region,
-            society.founded ? `est. ${society.founded}` : null,
+            society.founded ? `Founded ${society.founded}` : null,
             society.memberCount !== null && society.memberCount !== undefined
               ? `${society.memberCount} members`
               : null,
