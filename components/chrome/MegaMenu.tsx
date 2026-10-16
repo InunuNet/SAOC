@@ -26,7 +26,6 @@
 // =============================================================
 
 import { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -136,31 +135,24 @@ export function MegaMenu({ item, show }: MegaMenuProps) {
         <div
           role="menu"
           aria-label={item.label}
-          className="absolute inset-x-0 top-full z-50 border-t border-rule bg-parchment shadow-sheet"
+          className="absolute inset-x-0 top-full z-50 whitespace-normal border-t border-rule bg-parchment shadow-sheet"
         >
           <div className="mx-auto max-w-[1280px] px-8">
-            <div className="grid grid-cols-[1.05fr_1fr_1fr_1fr_.9fr] gap-x-0 pt-8 pb-6">
+            <div className="grid grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,.9fr)] gap-x-0 pt-8 pb-6">
               {/* Track 1 — lead block: eyebrow, serif lead linking the hub, meta
                 line, "The Show" group folded in underneath. */}
               {item.lead && (
                 <div data-testid="mega-menu-lead" className="flex flex-col pr-6">
-                  {/* F8a: the NOS lockup replaces the eyebrow + serif heading
-                    pair entirely — the artwork already carries the identity
-                    text ("National Orchid Show", "Western Cape · 2027"), and
-                    the image is the clickable lead link, not a second anchor.
-                    See .agent/memory/project/specs/menu-system-layout4/
-                    goldens/f8-lead-logo.json `render`/`reading.ruling`. */}
+                  {/* R66: the lead is the show title as a text link to the hub,
+                    the same nav-config leadLabel the NOS header's mega-menu
+                    renders (components/nos-chrome/NosHeader.tsx). It replaces
+                    the F8a lockup image. */}
                   <Link
                     href={item.lead.leadHref}
                     onClick={close}
-                    className="mb-[6px] block w-fit rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                    className="mb-[6px] inline-flex min-h-11 w-fit items-center rounded-sm font-serif text-[1.35rem] leading-[1.15] text-nos-royal-purple underline underline-offset-[5px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
                   >
-                    <Image
-                      src="/images/nos-2027-logo-full-colour-vertical.png"
-                      alt="National Orchid Show — Western Cape · 2027"
-                      width={200}
-                      height={176}
-                    />
+                    {item.lead.leadLabel}
                   </Link>
                   {leadMeta && (
                     <span

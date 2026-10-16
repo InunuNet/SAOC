@@ -1,0 +1,25 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: The National Show mega-menu opened from the SAOC header fits the viewport and shows the same content and layout as the NOS-header one (title column, Visit / Programme / Exhibit & Trade, tinted Tickets panel), while the NOS-header menu renders unchanged.
+created_at: '2026-10-16'
+autonomy: high
+features:
+  - id: F11
+    name: R66 SAOC-header Show mega-menu - whitespace-normal panel, minmax(0,fr) tracks, title link in place of the lockup image
+    status: pending
+# GATE: cwd = the implementation worktree (based on origin/main). BASE_URL = a production build of that worktree started on its own port (default 3612)
+# with SITE_PUBLIC_LAUNCH=true and BETA_BASIC_AUTH_USER/PASSWORD empty: `pnpm build` then `pnpm exec next start -p 3612`. Do not run `pnpm build` while that server runs.
+# nos-menu-baseline.json was captured on origin/main (before the change) with `check-f11.mjs --capture`; re-capture only on a deliberate NOS-chrome change.
+# Scope: components/chrome/MegaMenu.tsx only. components/nos-chrome/ is untouched, so the NOS menu cannot drift except through shared nav-config data.
+assertions:
+  phase: 4
+  checks:
+    - id: F11-A1
+      description: Runtime at 1280 and 1920 - the SAOC-header National Show menu has 5 columns all inside the viewport, no horizontal overflow, every text run wraps to 3 lines or fewer, the lead column is the "19th SAOC National Orchid Show" link with no image, and the last column is the Tickets panel (Day Visitor, Weekend Pass); the NOS-header menu on /national-show matches the pre-change column positions, widths and text at both widths
+      command: node contracts/checks/launch-weekend/f11/check-f11.mjs
+    - id: F11-A2
+      description: Type check passes
+      command: pnpm type-check
+    - id: F11-A3
+      description: Lint passes on the changed files
+      command: pnpm exec eslint components/chrome/MegaMenu.tsx e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts

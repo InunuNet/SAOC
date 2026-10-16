@@ -68,50 +68,18 @@ test.describe('mega menu — F8 logo lead block + NOS tickets rail (mission menu
   }
 
   // ---------------------------------------------------------------
-  // F8a — lead block logo
+  // R66 (launch-weekend F11) — lead block is the show title, not the logo
   // ---------------------------------------------------------------
 
-  test('lead block: eyebrow and serif heading text are gone, replaced by the logo image', async ({
+  test('lead block: the show title is a text link to the hub, and no lockup image renders', async ({
     page,
   }) => {
     const panel = await openNationalShowMenu(page);
 
-    // The old eyebrow caption and serif heading link must not render as text
-    // anywhere in the lead track — a full replacement, not an addition.
-    await expect(panel.getByText('The National Show', { exact: true })).toHaveCount(0);
-    await expect(
-      panel.getByText('19th SAOC National Orchid Show', { exact: true }),
-    ).toHaveCount(0);
-
-    const logo = panel.getByRole('img', { name: 'National Orchid Show — Western Cape · 2027' });
-    await expect(logo).toBeVisible();
-    await expect(logo).toHaveAttribute('src', /nos-2027-logo-full-colour-vertical\.png/);
-  });
-
-  test('lead block: logo sits inside the lead link and stays inside its container budget', async ({
-    page,
-  }) => {
-    const panel = await openNationalShowMenu(page);
-    const logo = panel.getByRole('img', { name: 'National Orchid Show — Western Cape · 2027' });
-
-    // The image must be the clickable element carrying the lead link's own
-    // navigation — an <a> ancestor pointing at /national-show, not a second,
-    // separate anchor.
-    const anchor = logo.locator('xpath=ancestor::a[1]');
-    await expect(anchor).toHaveAttribute('href', '/national-show');
-
-    const box = await logo.boundingBox();
-    expect(box).not.toBeNull();
-    // f8-lead-logo.json's containerBudget: 231px available, 220px hard max,
-    // 200px specified — assert well inside budget with margin for sub-pixel
-    // grid rounding, and never at or beyond the 231px true ceiling.
-    expect(box!.width).toBeGreaterThan(150);
-    expect(box!.width).toBeLessThanOrEqual(220);
-    // Aspect ratio close to the source PNG's true 1.13769 (w/h) — generous
-    // tolerance for rendered sub-pixel rounding.
-    const ratio = box!.width / box!.height;
-    expect(ratio).toBeGreaterThan(1.05);
-    expect(ratio).toBeLessThan(1.22);
+    const title = panel.getByRole('link', { name: '19th SAOC National Orchid Show', exact: true });
+    await expect(title).toBeVisible();
+    await expect(title).toHaveAttribute('href', '/national-show');
+    await expect(panel.getByRole('img')).toHaveCount(0);
   });
 
   // AMENDED (contract-f8.yaml A3, 2026-09-21) after Codex found this test
@@ -123,10 +91,10 @@ test.describe('mega menu — F8 logo lead block + NOS tickets rail (mission menu
   // venue name is real and non-null (MegaMenu.tsx:89, project memory
   // project_national_show_venue), so an empty/missing leadMeta here is a
   // real regression, not an expected absence.
-  test('lead block: venue/date meta line still renders below the logo', async ({ page }) => {
+  test('lead block: venue/date meta line still renders below the title', async ({ page }) => {
     const panel = await openNationalShowMenu(page);
-    const logo = panel.getByRole('img', { name: 'National Orchid Show — Western Cape · 2027' });
-    await expect(logo).toBeVisible();
+    const title = panel.getByRole('link', { name: '19th SAOC National Orchid Show', exact: true });
+    await expect(title).toBeVisible();
 
     const leadMeta = panel.getByTestId('mega-menu-lead-meta');
     await expect(leadMeta).toBeVisible();
@@ -134,108 +102,20 @@ test.describe('mega menu — F8 logo lead block + NOS tickets rail (mission menu
     expect(metaText.length).toBeGreaterThan(0);
 
     // "The Show" group heading (always renders — F1/F7 golden) must sit
-    // below the logo's bottom edge, proving nothing was removed from the
+    // below the title's bottom edge, proving nothing was removed from the
     // lead track's vertical flow.
     const theShowHeading = panel.getByRole('heading', { level: 3, name: 'The Show' });
-    const logoBox = await logo.boundingBox();
+    const titleBox = await title.boundingBox();
     const metaBox = await leadMeta.boundingBox();
     const headingBox = await theShowHeading.boundingBox();
-    expect(logoBox).not.toBeNull();
+    expect(titleBox).not.toBeNull();
     expect(metaBox).not.toBeNull();
     expect(headingBox).not.toBeNull();
 
-    // leadMeta itself sits between the logo's bottom edge and the heading's
+    // leadMeta itself sits between the title's bottom edge and the heading's
     // top edge — 1px slop for sub-pixel rendering/rounding.
-    expect(metaBox!.y).toBeGreaterThanOrEqual(logoBox!.y + logoBox!.height - 1);
+    expect(metaBox!.y).toBeGreaterThanOrEqual(titleBox!.y + titleBox!.height - 1);
     expect(metaBox!.y + metaBox!.height).toBeLessThanOrEqual(headingBox!.y + 1);
-  });
-
-  // NOS Design ruling, R21 (2026-09-17): the supplied logo files ship
-  // transparent with clearspace built in; no plate/tinted rectangle may sit
-  // behind the artwork, regardless of which of the eight colourways is used.
-  // See f8-lead-logo.json's `backgroundRuling`.
-  test('lead block: logo has no added background plate behind it', async ({ page }) => {
-    const panel = await openNationalShowMenu(page);
-    const logo = panel.getByRole('img', { name: 'National Orchid Show — Western Cape · 2027' });
-    await expect(logo).toBeVisible();
-
-    // Walk the image itself and every ancestor up to (but not including) the
-    // menu panel -- none may resolve to a non-transparent background-color.
-    // The panel's own bg-parchment ground is the only permitted background
-    // in this chain. Real getComputedStyle reads, not a source grep for an
-    // added className -- this project's audited defect class is an
-    // assertion satisfiable without the property it claims to prove.
-    const backgrounds = await logo.evaluate((img) => {
-      const results: string[] = [getComputedStyle(img).backgroundColor];
-      let el: Element | null = img.parentElement;
-      while (el && el.getAttribute('role') !== 'menu') {
-        results.push(getComputedStyle(el).backgroundColor);
-        el = el.parentElement;
-      }
-      return results;
-    });
-
-    for (const bg of backgrounds) {
-      expect(['rgba(0, 0, 0, 0)', 'transparent'], `unexpected plate: ${bg}`).toContain(bg);
-    }
-  });
-
-  // A20 (contract-f8.yaml, closes f8-lead-logo.json's
-  // domLoadVerificationRequirement): the four tests above all pass on a
-  // completely broken image — toBeVisible() passes because next/image
-  // reserves the layout box from its width/height props, the src-regex
-  // passes because it reads the component's own prop, and the bounding-box/
-  // aspect-ratio checks above read the component's own hardcoded 200x176
-  // literals back to itself. Delete the file from public/images/ and all
-  // four stay green. This is the only assertion that opens the live element
-  // post-render and proves a real image actually decoded behind that src.
-  test('lead block: logo image actually loaded and decoded', async ({ page }) => {
-    const panel = await openNationalShowMenu(page);
-    const logo = panel.getByRole('img', { name: 'National Orchid Show — Western Cape · 2027' });
-    await expect(logo).toBeVisible();
-
-    // Wait for the element's own load state rather than a fixed timeout —
-    // avoids asserting against an in-flight load, which is the exact race
-    // that would make a single-property check (complete, or naturalWidth,
-    // alone) flaky.
-    await logo.evaluate((img: HTMLImageElement) =>
-      img.complete ? Promise.resolve() : new Promise((resolve) => {
-        img.addEventListener('load', resolve, { once: true });
-        img.addEventListener('error', resolve, { once: true });
-      }),
-    );
-
-    const measured = await logo.evaluate((img: HTMLImageElement) => ({
-      complete: img.complete,
-      naturalWidth: img.naturalWidth,
-    }));
-
-    // Measured for the record only — NOT asserted as the floor. Encoding the
-    // observed number as the assertion in the same pass that measures it
-    // would recreate the literal-coupling defect this test exists to close.
-    // Deliberate: surfaces the real observed naturalWidth in CI/report
-    // output so the floor can later be raised from evidence, not guessed.
-    console.log(`A20 measured naturalWidth: ${measured.naturalWidth}`);
-
-    // `complete` alone can be true on a failed/errored load in some browsers;
-    // `naturalWidth` alone can transiently read 0 while a real image is
-    // still in flight. Both together is the standard "did this genuinely
-    // decode" check.
-    expect(measured.complete).toBe(true);
-    expect(measured.naturalWidth).toBeGreaterThan(0);
-    // Floor grounded in this golden's own render.widthPx (200), NOT the
-    // source master's 3272px and NOT any specific next/image srcset-
-    // derivative width — see contract-f8.yaml A20 for why raising this
-    // requires independently confirming the live measured naturalWidth
-    // first, not guessing a tighter number.
-    // WHAT THIS FLOOR CATCHES THAT `naturalWidth > 0` ALONE CANNOT (Codex
-    // pass 3 flagged this line as redundant with the `> 0` check above; @qa
-    // demonstrated it is not — a genuinely valid, fully-decodable 10x10 PNG,
-    // the class of defect a swapped favicon or a wrong placeholder asset
-    // would produce, measures `complete: true, naturalWidth: 10` and passes
-    // `> 0` cleanly while being the wrong image entirely). Only the floor
-    // catches that class: a real decode at the wrong (much smaller) size.
-    expect(measured.naturalWidth).toBeGreaterThanOrEqual(200);
   });
 
   // ---------------------------------------------------------------
