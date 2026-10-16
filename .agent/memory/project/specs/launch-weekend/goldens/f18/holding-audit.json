@@ -184,7 +184,34 @@
       "/national-show"
     ],
     "withheldSurfaces": "page.tsx body paragraph (scale, Grand Champion), the section lede (criteria line), the hero/og description (nine provinces) and any '18 shows hosted' stat",
-    "_routesNote": "'/' (the SAOC home) is not an F18 route: its 'nine provinces' comes from components/home/NavCards.tsx, which F19 owns (SAOC home provenance)."
+    "_routesNote": "'/' (the SAOC home) is not an F18 route: its 'nine provinces' comes from components/home/NavCards.tsx, which F19 owns (SAOC home provenance).",
+    "previewGroups": [
+      [
+        "18 shows"
+      ],
+      [
+        "100-point",
+        "100 point"
+      ],
+      [
+        "Grand Champion"
+      ],
+      [
+        "nine provinces"
+      ],
+      [
+        "cultural quality"
+      ],
+      [
+        "species accuracy"
+      ]
+    ],
+    "previewNote": "Preview half (design-cb P1): on a SHOW_PLACEHOLDER_PREVIEW=true build each unsourced fact is PRESENT on /national-show (one spelling per group) and sits inside a marker: an ancestor with [data-placeholder], or a block whose own text carries the 'To be confirmed' or 'Placeholder' chip. Public stays at 0 hits.",
+    "env": {
+      "public": "NOS_BASE (the public build, SITE_PUBLIC_LAUNCH=true); a gate that holds PUBLIC_URL passes NOS_BASE=$PUBLIC_URL",
+      "preview": "PREVIEW_URL, falling back to BASE_URL (a SHOW_PLACEHOLDER_PREVIEW=true build with the beta wall credentials in BETA_BASIC_AUTH_USER/PASSWORD)",
+      "require": "F18_REQUIRE_PREVIEW=1 turns a missing preview URL into a failure"
+    }
   },
   "wosa": {
     "route": "/national-show/wosa-conference",

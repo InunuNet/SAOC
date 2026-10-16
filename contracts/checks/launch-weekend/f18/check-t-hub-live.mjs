@@ -54,7 +54,7 @@ function measure(a) {
       stubImgs: stub ? [...stub.querySelectorAll('img')].map((i) => ({ src: i.currentSrc || i.getAttribute('src') || '', alt: i.getAttribute('alt') })).filter((i) => !/disa|emblem/i.test(i.src)) : [],
     };
   });
-  const ids = { 'ticket-day': document.querySelectorAll('[id="ticket-day"]').length, 'ticket-weekend': document.querySelectorAll('[id="ticket-weekend"]').length };
+  const ids = { 'ticket-day': document.querySelectorAll('[id="ticket-day"]').length, 'ticket-weekend': document.querySelectorAll('[id="ticket-weekend"]').length, 'ticket-wosa': document.querySelectorAll('[id="ticket-wosa"]').length };
   const pool = q(a.poolBanner);
   const bracket = q(a.poolBracket);
   const sections = ['thursday', 'passes', 'programme'].map((id) => { const s = document.getElementById(id); return s ? { id, top: rc(s).top, h2: (q('h2', s)?.textContent ?? '').replace(/\s+/g, ' ').trim() } : null; });
@@ -148,6 +148,9 @@ await main('F18-A29 v13 tickets hub', async (r) => {
         else if (!slugs.includes(hits[0].slug ?? '')) r.fail(`${tag}: #${need} is on the card for "${hits[0].slug}", want the ${need === 'ticket-day' ? 'Day' : 'Weekend'} card (${slugs.join(' or ')})`);
         if (m.ids?.[need] !== 1) r.fail(`${tag}: document id "${need}" appears ${m.ids?.[need]} times, want exactly once`);
       }
+      // the WOSA page's "Buy ticket" link (R59, A31) lands on #ticket-wosa: the id must exist on the hub, once, on the WOSA card (a dead anchor is a defect)
+      if (m.ids?.['ticket-wosa'] !== 1) r.fail(`${tag}: document id "ticket-wosa" appears ${m.ids?.['ticket-wosa']} times on the hub, want exactly once (the WOSA Buy ticket link depends on it)`);
+      else if (!m.cards.some((c) => c.id === 'ticket-wosa')) r.fail(`${tag}: #ticket-wosa is not on a ticket card`);
       if (m.groups.some((x) => !x)) r.fail(`${tag}: the existing #exhibit / #trade option groups are gone`);
       for (const c of m.cards) {
         const t = `${tag} ${c.id}`;

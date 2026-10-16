@@ -13,10 +13,12 @@
 //  wosa-conference: the holding state AND A31's "Buy ticket" link to #ticket-wosa (Athanor review item 2)
 //  heading order: /about and /workshops never skip a level (h1 to h3), Athanor review item 3
 //  unsourced hub facts: public /national-show renders none of audit.hubFacts.unsourced anywhere in the HTML (Athanor review item 1; sourced facts are cited in the audit)
+//     PREVIEW half (design-cb P1): on a SHOW_PLACEHOLDER_PREVIEW=true build (PREVIEW_URL, falling back to BASE_URL) each fact group is PRESENT on /national-show inside a [data-placeholder] or R11 'To be confirmed' marker;
+//     the public build is NOS_BASE (a gate that holds PUBLIC_URL passes NOS_BASE=$PUBLIC_URL). F18_REQUIRE_PREVIEW=1 makes a missing preview URL a failure instead of a note.
 //  routes that supply a body never hold (mustNotHold)
 //  public rule: none of the banned placeholder strings renders on the eight publicNoPlaceholderRoutes (no TBC note, no gap sentence, no "Placeholder copy", no schema preview)
 // Usage: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-c-holding.mjs
-import { main, openPage, withBrowser, readGolden, T, flat } from './_lib.mjs';
+import { main, openPage, withBrowser, readGolden, T, flat, httpAuth } from './_lib.mjs';
 
 const H = T.holding;
 const AUDIT = readGolden('holding-audit.json');
@@ -114,6 +116,43 @@ await main('F18-A3 holding state and public placeholder rule', async (r) => {
         for (const s of AUDIT.hubFacts.unsourced) if (html.toLowerCase().includes(flat(s).toLowerCase())) r.fail(`${route}: public build renders the unsourced hub fact "${s}" (withhold via withholdPlaceholderProse)`);
       }
       await ctx.close();
+    }
+
+    // preview half: the same facts, now visible and marked (withheld facts must not vanish on the preview build)
+    const previewBase = process.env.PREVIEW_URL ?? process.env.BASE_URL;
+    if (!previewBase) {
+      if (process.env.F18_REQUIRE_PREVIEW === '1') r.fail('F18_REQUIRE_PREVIEW=1 but neither PREVIEW_URL nor BASE_URL names a SHOW_PLACEHOLDER_PREVIEW=true build');
+      else r.note('no PREVIEW_URL or BASE_URL: the preview half of the hub-facts rule was not measured');
+    } else {
+      const pctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, extraHTTPHeaders: httpAuth() });
+      const ppage = await pctx.newPage();
+      const resp = await ppage.goto(`${previewBase}/national-show`, { waitUntil: 'networkidle' });
+      if (!resp || resp.status() !== 200) r.fail(`preview /national-show: HTTP ${resp?.status()}`);
+      else {
+        const res = await ppage.evaluate((groups) => {
+          const norm = (x) => (x ?? '').replace(/\s+/g, ' ').toLowerCase();
+          return groups.map((g) => {
+            const hits = [];
+            for (const word of g) {
+              const w = norm(word);
+              for (const e of document.querySelectorAll('main p, main li, main span, main h2, main h3, main div')) {
+                if ([...e.children].some((c) => norm(c.textContent).includes(w))) continue;
+                if (!norm(e.textContent).includes(w)) continue;
+                const block = e.closest('p, li, section, article, div') ?? e;
+                const scope = e.closest('section, article') ?? block;
+                const marked = !!e.closest('[data-placeholder]') || /to be confirmed|placeholder/i.test(block.textContent ?? '') || !!scope.querySelector('[data-placeholder]');
+                hits.push({ word, marked });
+              }
+            }
+            return { group: g.join(' / '), hits };
+          });
+        }, AUDIT.hubFacts.previewGroups);
+        for (const g of res) {
+          if (!g.hits.length) r.fail(`preview /national-show: the unsourced hub fact "${g.group}" is withheld on the preview build (it must show, marked)`);
+          else if (g.hits.some((x) => !x.marked)) r.fail(`preview /national-show: the unsourced hub fact "${g.group}" renders without a [data-placeholder] or To-be-confirmed marker`);
+        }
+      }
+      await pctx.close();
     }
 
     const routes = [...AUDIT.holdingDefinite, ...AUDIT.holdingConditional.map((c) => c.route), ...AUDIT.mustNotHold, ...AUDIT.publicNoPlaceholderRoutes, ...AUDIT.headingOrder.routes].filter((v, i, a) => a.indexOf(v) === i);
