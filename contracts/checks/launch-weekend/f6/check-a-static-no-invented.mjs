@@ -15,6 +15,7 @@ for (const f of files) {
 if (existsSync('lib/data/shows.ts')) problems.push('lib/data/shows.ts still exists');
 for (const f of ['app/(marketing)/national-show/archive/page.tsx', 'app/(marketing)/national-show/archive/[year]/page.tsx']) {
   const src = readFileSync(f, 'utf8');
+  if (/alt=\{`/.test(src)) problems.push(`${f} builds a templated alt (a fabricated "<year> National Orchid Show" photo caption)`);
   if (/NOS_HERO_IMAGES|archivePhotoFor|next\/image/.test(src)) problems.push(`${f} still uses a stock photo path`);
 }
 // Nav copy must not promise champions or galleries the archive does not have (descriptions are trimmed to "Previous editions", no new copy).

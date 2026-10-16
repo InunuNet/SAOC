@@ -24,6 +24,11 @@ for (const y of YEARS.concat([2027])) {
   for (const l of forbiddenIn(r.text)) problems.push(`/archive/${y} body contains "${l}"`);
 }
 
+// The shared NosHero image is decorative (alt=""): every <img> inside <main> on the archive index must have an empty alt.
+for (const m of mainOf(idx.text).matchAll(/<img\b[^>]*>/gi)) {
+  const alt = m[0].match(/\balt="([^"]*)"/i);
+  if (alt && alt[1].trim() !== '') problems.push(`archive index <img> carries a non-empty alt: "${alt[1]}"`);
+}
 const ns = await get('/national-show');
 if (ns.status !== 200) problems.push(`/national-show answered ${ns.status}`);
 for (const l of forbiddenIn(ns.text)) problems.push(`/national-show contains "${l}"`);

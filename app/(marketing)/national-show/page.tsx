@@ -435,9 +435,8 @@ export default async function NationalShowPage() {
           />
           <p className="mt-6 font-sans text-[16px] leading-relaxed text-ink/80">
             The SAOC National Orchid Show is the country&rsquo;s premier competitive orchid event.
-            Held every three years, it rotates across South Africa&rsquo;s nine provinces, bringing
-            together growers, hybridisers, judges and collectors for four days of competition,
-            education, and community.
+            Held every three years, it brings together growers, hybridisers, judges and
+            collectors for four days of competition, education, and community.
           </p>
           <p className="mt-4 font-sans text-[16px] leading-relaxed text-ink/80">
             Every plant is assessed by{' '}
