@@ -19,11 +19,9 @@ export function PhotoBand({ image, alt, caption, minHeight = '360px' }: PhotoBan
     <figure className="relative isolate m-0 overflow-hidden" style={{ minHeight }}>
       <Image src={image} alt={alt} fill sizes="100vw" className="object-cover" />
       {caption ? (
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[var(--primary-800)]/85 to-transparent px-8 pb-6 pt-16 md:px-16">
-          <figcaption className="mx-auto max-w-[1280px] font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/90">
-            {caption}
-          </figcaption>
-        </div>
+        <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[var(--primary-800)]/85 to-transparent px-8 pb-6 pt-16 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/90 md:px-16">
+          <span className="mx-auto block max-w-[1280px]">{caption}</span>
+        </figcaption>
       ) : null}
     </figure>
   );
