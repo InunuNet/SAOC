@@ -747,3 +747,14 @@
     max-width: 46ch;
   }
 }
+
+/* R82: the form-label role. One class for every NOS form label (vendor application now, ticket
+   forms in F18b): Karla 14px/500 in full ink, no tracking, no capitals. */
+.nos-theme .nos-form-label {
+  font-family: var(--font-nos-karla), 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: 0;
+  text-transform: none;
+}

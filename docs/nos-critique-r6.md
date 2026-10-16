@@ -12,3 +12,13 @@ with HTTP 404. Copy is the SAOC root not-found eyebrow, headline and first sente
 the second sentence is cut because it points at SAOC society links this page does not carry.
 Recovery links use the nav-config labels: National Show, Tickets, Plan your visit.
 `app/not-found.tsx` is unchanged.
+
+## f3 — R82: /national-show/vendors/apply form
+
+The intro sentence is unchanged. With `showRequirement` a required field's label is just its text and
+an optional one keeps " (optional)" (VendorFormField, VendorCheckboxGroupField). Labels and legends
+use one new class, `.nos-form-label` (nos-theme.css): Karla 14px/500 in full ink, no tracking, no
+capitals; F18b reuses it on the ticket forms. The register form keeps its existing label class.
+`tradingName` gains `autoComplete="organization"` as specified; businessName already carries the same
+token, so a browser may offer the business name in the "(if different)" field, and flipping that prop
+to `off` is the alternative. The POST payload is unchanged. Source: lead saoc-2b 2026-10-17.

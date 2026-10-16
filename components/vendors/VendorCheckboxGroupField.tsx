@@ -3,7 +3,7 @@
 // <input id="vendor-register-<key>-<optionValue>"> with its own <label htmlFor>.
 //
 // Opt-in accessibility props (VendorApplyForm uses them; other callers do not, so their legends
-// do not change): `showRequirement` appends "(required)" to the legend, `error` renders a linked
+// do not change): `showRequirement` marks an optional legend "(optional)" and uses the shared `.nos-form-label` class, `error` renders a linked
 // inline message. A fieldset takes no required-state ARIA attribute, so the requirement is stated in the legend.
 interface VendorCheckboxGroupOption {
   value: string;
@@ -23,6 +23,7 @@ interface VendorCheckboxGroupFieldProps {
 }
 
 const legendClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
+const requirementLegendClass = 'nos-form-label';
 const optionLabelClass = 'flex min-h-11 items-center gap-2 font-sans text-[15px] text-ink';
 // Native control (exempt from WCAG 1.4.11); the label row keeps a 44px hit area.
 const checkboxClass =
@@ -42,7 +43,7 @@ export function VendorCheckboxGroupField({
 }: VendorCheckboxGroupFieldProps) {
   const id = `vendor-register-${fieldKey}`;
   const errorId = `${id}-error`;
-  const requirement = required ? '(required)' : '(optional)';
+  const requirement = required ? '' : ' (optional)';
 
   function toggle(optionValue: string, checked: boolean) {
     if (checked) {
@@ -59,8 +60,8 @@ export function VendorCheckboxGroupField({
       aria-invalid={error ? true : undefined}
       aria-describedby={error ? errorId : undefined}
     >
-      <legend className={legendClass}>
-        {showRequirement ? `${label} ${requirement}` : label}
+      <legend className={showRequirement ? requirementLegendClass : legendClass}>
+        {showRequirement ? `${label}${requirement}` : label}
       </legend>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {options.map((option) => {

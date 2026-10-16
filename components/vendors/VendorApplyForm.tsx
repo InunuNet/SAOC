@@ -261,6 +261,7 @@ export function VendorApplyForm() {
         disabled={disabled}
         required={false}
         maxLength={200}
+        autoComplete="organization"
         showRequirement
         error={errorFor('tradingName')}
       />
