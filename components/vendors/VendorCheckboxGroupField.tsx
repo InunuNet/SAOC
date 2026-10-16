@@ -3,7 +3,7 @@
 // <input id="vendor-register-<key>-<optionValue>"> with its own <label htmlFor>.
 //
 // Opt-in accessibility props (VendorApplyForm uses them; other callers do not, so their legends
-// do not change): `showRequirement` marks an optional legend "(optional)" and uses the shared `.nos-form-label` class, `error` renders a linked
+// do not change): `showRequirement` swaps the legend to the shared `.nos-form-label` class (R82: no visible suffix), `error` renders a linked
 // inline message. A fieldset takes no required-state ARIA attribute, so the requirement is stated in the legend.
 interface VendorCheckboxGroupOption {
   value: string;
@@ -37,13 +37,11 @@ export function VendorCheckboxGroupField({
   value,
   onChange,
   disabled,
-  required,
   showRequirement = false,
   error,
 }: VendorCheckboxGroupFieldProps) {
   const id = `vendor-register-${fieldKey}`;
   const errorId = `${id}-error`;
-  const requirement = required ? '' : ' (optional)';
 
   function toggle(optionValue: string, checked: boolean) {
     if (checked) {
@@ -61,7 +59,7 @@ export function VendorCheckboxGroupField({
       aria-describedby={error ? errorId : undefined}
     >
       <legend className={showRequirement ? requirementLegendClass : legendClass}>
-        {showRequirement ? `${label}${requirement}` : label}
+        {label}
       </legend>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {options.map((option) => {

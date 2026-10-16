@@ -254,7 +254,7 @@ export function VendorApplyForm() {
 
       <VendorFormField
         fieldKey="tradingName"
-        label="Trading name (if different)"
+        label="Trading name (if different, optional)"
         htmlType="text"
         value={state.tradingName}
         onChange={(value) => handleChange('tradingName', value)}

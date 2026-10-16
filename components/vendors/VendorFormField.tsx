@@ -3,8 +3,9 @@
 // focus-visible ring) rather than inventing a new one. id contract: id="vendor-register-<key>".
 //
 // Opt-in accessibility props (the vendor application form uses them; VendorRegisterForm does not,
-// so its labels do not change): `showRequirement` marks an optional field's label "(optional)"
-// (R82: a required field's label is just its text) and uses the shared `.nos-form-label` class, `error` renders a linked inline message (aria-describedby + aria-invalid).
+// so its labels do not change): `showRequirement` swaps the label to the shared `.nos-form-label` class and
+// puts aria-required on a required input (R82: no visible suffix; the one optional field's label
+// says so in its own text), `error` renders a linked inline message (aria-describedby + aria-invalid).
 interface VendorFormFieldProps {
   fieldKey: string;
   label: string;
@@ -53,18 +54,18 @@ export function VendorFormField({
   const errorId = `${id}-error`;
   const describedBy = error ? errorId : undefined;
   const fieldClass = error ? `${inputClass} ${inputErrorClass}` : inputClass;
-  const requirement = required ? '' : ' (optional)';
 
   return (
     <div className="space-y-1.5">
       <label htmlFor={id} className={showRequirement ? requirementLabelClass : labelClass}>
-        {showRequirement ? `${label}${requirement}` : label}
+        {label}
       </label>
       {htmlType === 'textarea' ? (
         <textarea
           id={id}
           name={fieldKey}
           required={required}
+          aria-required={required ? true : undefined}
           rows={4}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -82,6 +83,7 @@ export function VendorFormField({
           name={fieldKey}
           type={htmlType}
           required={required}
+          aria-required={required ? true : undefined}
           min={min}
           step={step}
           value={value}
