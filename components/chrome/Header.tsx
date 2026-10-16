@@ -16,7 +16,7 @@ import { usePathname } from 'next/navigation';
 import { MobileMenu, MOBILE_MENU_ID } from './MobileMenu';
 import { SearchOverlay } from './SearchOverlay';
 import { MegaMenu } from './MegaMenu';
-import { CONTACT_LINK, NAV, TICKETS_CTA } from './nav-config';
+import { CONTACT_LINK, NAV } from './nav-config';
 import type { ShowIdentity } from '@/types';
 
 interface HeaderProps {
@@ -181,13 +181,6 @@ export function Header({ show }: HeaderProps = {}) {
             >
               <Search size={18} strokeWidth={1.5} />
             </button>
-
-            <Link
-              href={TICKETS_CTA.href}
-              className="hidden sm:inline-block rounded-sm bg-primary px-4 py-2 font-sans text-[14px] font-medium text-ivory hover:bg-primary-800 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-            >
-              {TICKETS_CTA.label}
-            </Link>
 
             <button
               ref={hamburgerRef}
