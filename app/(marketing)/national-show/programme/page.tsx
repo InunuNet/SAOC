@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { ShowSectionNav } from '@/components/show';
 import { ShowContentState } from '@/components/show/nos/ShowContentState';
@@ -29,7 +30,24 @@ export default async function ProgrammePage() {
   return (
     <>
       <div className="contents [&_.nos-show-page-prose_p]:max-w-[60ch] [&_.nos-show-page-prose_li]:max-w-[60ch]">
-        <ShowContentState result={result} heroImage="/images/orchid-yellow.jpg" layout="prose" />
+        <ShowContentState
+          result={result}
+          heroImage="/images/orchid-yellow.jpg"
+          layout="prose"
+          afterProse={
+            <p
+              data-nos-programme-links
+              className="flex max-w-[60ch] flex-wrap gap-x-6 gap-y-2 border-t border-rule pt-6 font-sans text-[15px] leading-relaxed"
+            >
+              <Link href="/national-show/symposium" className="inline-link">
+                SAOC Symposium
+              </Link>
+              <Link href="/national-show/workshops" className="inline-link">
+                Workshops
+              </Link>
+            </p>
+          }
+        />
       </div>
 
       <ShowSectionNav current="/national-show/programme" />
