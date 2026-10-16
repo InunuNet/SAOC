@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 // F19-A10: scope, no-invention and the static half of the NOS regression guard, on the diff against BASE_REF (default origin/main).
-// Only tokens.json scope.allow files and scope.allowPrefix directories may change; NOTHING under the National Show (app/(marketing)/
-// national-show/**, components/nos/**, components/nos-chrome/**, components/show/**, nos-structure.css), the chrome (components/chrome/**,
-// the header is the axis authority), lib/**, sanity/**, app/api/** or ShowBand.tsx. Added lines hold no hex colour, no rgb()/rgba() that is
+// Only tokens.json scope.allow files (plus the two SAOC footer files in scope.allowOverride: tap targets) and scope.allowPrefix directories may change; NOTHING under the National Show (app/(marketing)/
+// national-show/**, components/nos/**, components/nos-chrome/**, components/show/**, nos-structure.css), the rest of the chrome (components/chrome/** except Footer.tsx and footer-data.ts: Header, UtilityBar, MegaMenu, MobileMenu are other lanes and the header is the axis authority; VenueCard lives under components/show/**), lib/**, sanity/**, app/api/** or ShowBand.tsx. Added lines hold no hex colour, no rgb()/rgba() that is
 // not a palette token value, no new font family, no @keyframes / animate-, no duration other than 150ms (the carousel's existing
 // duration-[1400ms] and the pause button are untouched lines) and no emoji; globals.css additions sit under an F19 comment except the
 // ruled in-place line-height edit.
@@ -15,7 +14,7 @@ const T = loadGolden('tokens.json').scope;
 const git = (...a) => execFileSync('git', ['-C', ROOT, ...a], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 const problems = [];
 const names = [...new Set([...git('diff', '--name-only', `${BASE_REF}...HEAD`).split('\n'), ...git('diff', '--name-only', 'HEAD').split('\n'), ...git('ls-files', '--others', '--exclude-standard').split('\n')].filter(Boolean))];
-const nosHit = (f) => T.forbidPrefix.some((p) => f.startsWith(p)) || f.endsWith('nos-structure.css');
+const nosHit = (f) => !T.allowOverride.includes(f) && T.forbidPrefix.some((p) => f.startsWith(p)) || f.endsWith('nos-structure.css');
 for (const f of names) {
   if (nosHit(f)) problems.push(`forbidden path changed (NOS / chrome / data layer): ${f}`);
   else if (!T.allow.includes(f) && !T.allowPrefix.some((p) => f.startsWith(p))) problems.push(`file outside the F19 allowlist changed: ${f}`);

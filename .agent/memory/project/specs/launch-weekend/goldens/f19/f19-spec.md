@@ -9,7 +9,7 @@ Gate cwd = the implementation worktree (branch from main with spec/lw-f19 merged
 in and delete it at the end). BASE_URL = production build on **port 3619**: `pnpm build && pnpm exec next start -p 3619`; stop by exact PID
 (`lsof -ti tcp:3619 -sTCP:LISTEN`); do not rebuild while it runs. Runtime checks read the CMS read-only.
 
-## 1. Measured baselines (main 76ad8b98, served on :3012)
+## 1. Measured baselines (main 47cf7f1b; :3012 = beta preview, :3013 = public)
 
 Hero contrast, 2nd-percentile worst pixel, text composited, 4 slides (min over slides): current scrim is `from-primary/75 via-primary/75 to-primary/85`.
 
@@ -59,18 +59,26 @@ YearbookStrip 18px/1.65, hero lede 20px/1.5; about and others 16px/1.63 (`leadin
 - **R8 Type (A9).** 16px / 1.55 (24.8px). `app/globals.css` `.p-lg` 1.65 to 1.55 (in-place edit, the only allowed non-additive edit); MissionBlock 17px to 16; YearbookStrip 18px to 16; `ui/PageHero` lede 17px to 16 with root `data-page-hero`; every SAOC prose under 16px (judging, contact, sponsors, members, about) to 16; 16px prose that carries `leading-relaxed` (1.63) to 1.55. Labels, meta, mono eyebrows stay 12-14px; the societies card meta lines and media-kit captions are meta and not asserted. NOS side excluded.
   **PageHero is shared**: `/national-show/about` and `/national-show/tickets/buy` use it, so its lede goes 17px to 16px there too. That is the settled R65 value on both sites and A12 ignores paragraphs inside a PageHero root for exactly this reason.
 
+- **R9 Provenance (A21, A22).** Every fact the Drive does not source is wrapped in `withholdPlaceholderProse()` (lib/data/show-pages.ts): withheld on the public build and on :3012, shown only on the beta preview (`SHOW_PLACEHOLDER_PREVIEW=true`, wall up) inside an element carrying `data-placeholder` and one existing marker string ("Not confirmed by SAOC", "To be confirmed", "Not yet confirmed", "Awaiting confirmation"). No new marker copy. The unsourced regex list is `tokens.json provenance.unsourced`; sourced facts with citations (About doc l.3 and l.5 for 1968 and the Bloemfontein founding meeting; Spec V3 l.714 for info@saoc.co.za) are in `provenance.sourced` and stay public. Home: the whole yearbook band is withheld in public (editor, 184 pages, ISSN, "Orchids South Africa" copy), as are "federated network of 21 societies", the 1990 standardisation, "56 accredited" and the "EST. 1968" ornament unless cited. No bare 18, 21, 56 or 184 leaf may survive in public.
+- **R10 Gap states.** Where a section is withheld the page shows the existing `ABSENT_SHOW_PAGE_FIXED_SENTENCE` in one `[data-content-gap]` element. /about: the six TBC committee h3s are hidden in public and the grid reflows with no orphan h3; on preview all six cards show, each marked. /sponsors: neutral h1 "Sponsors" in both modes (not content-gated), the R18 designed empty state, no stat list. /judging and /events: the unsourced claims (100-point scale, 56 judges, 1990, "overhauled" vs "standardised", criteria, award thresholds) follow R9.
+- **R11 Events (A23).** /events shows 1 row because 17 of 18 societyEvent docs are unpublished drafts; the count is correct and A23 asserts it equals the published Sanity count (read-only query). The National Show row title links to /national-show; each row gets `<time datetime>`; one Event JSON-LD per row via the existing `eventJsonLd` helper.
+- **R12 Contact (A24).** name/email `autoComplete`; field boundary 3:1; button 44px; a `role="status"` region present before submit that carries the success message; error element with an id listed in the textarea's `aria-describedby` plus `aria-invalid`. Address: a sourced address only, otherwise a holding state (`data-content-gap`). Only info@saoc.co.za is sourced. VenueCard is not edited. There is no tel field, so tel autocomplete is N/A (adding one would be new copy).
+- **R13 Taps (A25).** SAOC footer links, newsletter input and button at least 44x44 at 390 on /, /about, /contact, /events. Footer.tsx and footer-data.ts are allowed (see allowlist); the rest of `components/chrome/**` stays forbidden.
+
 ## 3. Hooks the dev adds (checks depend on them)
 
 `data-hero-scrim="diagonal|veil|bone"`, `data-hero-lede`, `data-hero-ctas`, `data-hero-cta="primary|secondary"`, `data-home-section="events"`, `data-yearbook-copy`,
-`data-page-hero` (PageHero root), `data-judging-split`, class `saoc-container`. Existing hooks (`data-home-section`, `data-yearbook-*`) stay.
+`data-page-hero` (PageHero root), `data-judging-split`, class `saoc-container`, `data-content-gap`, `data-placeholder`. Existing hooks (`data-home-section`, `data-yearbook-*`) stay.
 
 ## 4. File allowlist (A10 enforces; anything else changed fails)
 
 `app/globals.css` (additive under an F19 comment, plus the `.p-lg` 1.65 to 1.55 edit); `components/home/{Hero,MissionBlock,NavCards,EventsStrip,YearbookStrip,PartnersSection}.tsx`;
-`components/ui/{PageHero,CTASection,PhotoBand}.tsx`; `app/(marketing)/page.tsx`; `app/(marketing)/{about,societies,events,judging,contact,sponsors,members,media-kit}/page.tsx`;
+`components/ui/**`; `components/chrome/Footer.tsx` and `components/chrome/footer-data.ts` (only these two chrome files; Header.tsx only after the lead is told); `app/(marketing)/page.tsx`; `app/(marketing)/{about,societies,events,judging,contact,sponsors,members,media-kit}/page.tsx`;
 prefixes `components/{about,contact,events,judging,members,societies,sponsors}/`, `contracts/checks/launch-weekend/{f19,f14,f17}/` (f14 and f17 only for the re-pins already in this branch), `.agent/memory/project/specs/launch-weekend/`, `docs/`, `.tmp/`, `e2e/f19-`.
-**Forbidden outright:** `app/(marketing)/national-show/**`, `components/nos/**`, `components/nos-chrome/**`, `components/show/**`, any `nos-structure.css`, `components/chrome/**`, `components/tickets/**`, `components/vendors/**`, `lib/**`, `sanity/**`, `app/api/**`, `components/home/ShowBand.tsx`.
+**Forbidden outright:** `app/(marketing)/national-show/**`, `components/nos/**`, `components/nos-chrome/**`, `components/show/**`, any `nos-structure.css`, the rest of `components/chrome/**` (UtilityBar.tsx, NOS header components, ChromeFrame.tsx), `app/(marketing)/tickets/**`, `components/VenueCard*`, `nos-theme.css`, `components/tickets/**`, `components/vendors/**`, `lib/**`, `sanity/**`, `app/api/**`, `components/home/ShowBand.tsx`.
 Added lines: no hex colour, no rgb()/rgba() other than palette values (56 65 56, 34 40 31, 232 230 220, 244 243 236), no new font, no keyframes or animate-, no duration other than 150ms, no emoji. No new copy (A11 measures it against `copy-baseline.json`).
+
+NOS guard: if the globals.css `.p-lg` edit cascades into NOS pages, A11b and A12 assert NOS computed type is unchanged against `nos-baseline.json`.
 
 ## 5. Self-critique loop (A14)
 
@@ -89,5 +97,16 @@ A11 and A12 are regression guards that are green on main by design.
 2. The italic accent at 4.5:1 (R1) forces the veil to ~85-90% behind the copy. Relaxing it to 3:1 (WCAG large text) lets the veil drop to ~70%.
 3. The hero's primary CTA (`bg-primary`) is nearly invisible as a shape on a veiled sage field; its label passes (9.5:1) but the button edge is a non-text-contrast P3 for the critique loop, not asserted.
 4. Legal pages off the axis (R6) and the societies/media-kit meta sizes (R8) are left alone by ruling; say so if either should move.
-5. Unsourced figures untouched and asserted still present: "56 accredited judges", "1990", "184 pages", the yearbook editor and ISSN (check-m `mustSurvive`).
+5. SUPERSEDED by R9: unsourced figures are now withheld in public and shown marked on preview (A21, A22).
 6. e2e: `pnpm test:e2e` starts its own dev server on a free port; expect it to be the slowest assertion (timeout 1500s).
+7. Flags: the tracked Drive spec doc holds plaintext passwords (values not repeated here; rotate and scrub). Hero "SINCE 1968 · BLOEMFONTEIN" is sourced only as the founding meeting place. "21" is derivable from the societies listing but not from Drive. secretary@saoc.co.za (privacy, constitution, JSON-LD) is unsourced and untouched. Societies member counts and footer "Reg#" are unsourced and untouched. Contact fallback labels "SAOC Secretariat / General enquiries" are unsourced and withheld in public. 17 draft events are unpublished (editorial, not code). Green paths of A21 to A25 are unproven (red-only on main).
+
+## 8. Font load split (design-cb P1) - infeasible inside F19, exact diff for the lead
+
+Target: NOS routes load only Fraunces and Karla. Today the root layout (`app/layout.tsx`) loads Crimson Pro, Manrope and JetBrains Mono on every route, and NOS routes also get Manrope and JetBrains Mono through `UtilityBar variant="nos"`. All of those are forbidden files for F19, so this is NOT an assertion. `check-p-fonts.mjs` is informational (red on main).
+Diff for the lead (or a later feature that owns chrome):
+1. Create route group `app/(marketing)/(saoc)/` and move the SAOC page dirs into it (about, societies, judging, events, media-kit, sponsors, members, contact, constitution, privacy, terms, home `page.tsx`), excluding `tickets/` (F18b).
+2. Give that group its own `layout.tsx` holding the three font loaders (Crimson Pro, Manrope, JetBrains Mono) and the SAOC chrome; remove those loaders from `app/layout.tsx`.
+3. Edit `app/(marketing)/layout.tsx`, `national-show/layout.tsx`, `ChromeFrame.tsx` and `UtilityBar.tsx` so the `variant="nos"` UtilityBar uses Karla instead of Manrope/JetBrains Mono.
+4. Root layout fonts also serve admin, studio, not-found and tickets: each needs its own loader or an explicit decision.
+SAOC rendering must stay identical (A11 and the NOS fingerprint guard it). Keep `check-p-fonts.mjs` out of the gate until this diff lands.

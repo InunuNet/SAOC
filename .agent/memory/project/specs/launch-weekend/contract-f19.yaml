@@ -1,16 +1,18 @@
 schema: athanor.contract/v1
 slug: launch-weekend
-goal: The SAOC pages get one design pass inside the approved handoff vocabulary - the home hero shows the carousel through the README's diagonal 60-to-25 sage scrim with a short bone pull and a text-zone veil that keeps the h1, accent, lede and both CTAs at least 4.5:1 on all four slides at 1280 and 390, the CTAs and spacing are fixed at 390, "Find Your Society" is sentence case, the events strip is headed "What's on", the yearbook meta sits 32px under its copy, every SAOC body heading and eyebrow starts on the header logo's x via one .saoc-container, /judging is a 4fr/7fr heading-and-prose layout, SAOC prose is 16px/1.55 - with no copy invented, nothing under the National Show touched, and the dev's self-critique loop evidenced by fresh screenshots and a clean final-pass log.
+goal: The SAOC pages get one design pass and one provenance pass inside the approved handoff vocabulary - the home hero shows the carousel through the README's diagonal 60-to-25 sage scrim with a short bone pull and a text-zone veil that keeps the h1, accent, lede and both CTAs at least 4.5:1 on all four slides at 1280 and 390, the CTAs and spacing are fixed at 390, "Find Your Society" is sentence case, the events strip is headed "What's on", the yearbook meta sits 32px under its copy, every SAOC body heading and eyebrow starts on the header logo's x via one .saoc-container, /judging is a 4fr/7fr heading-and-prose layout, SAOC prose is 16px/1.55 - with every unsourced fact withheld on the public build and shown marked on the beta preview, /events linking and describing the National Show, /about, /sponsors and /contact holding designed states, the contact form autofilling and announcing errors, 44px footer targets, no copy invented, nothing under the National Show touched, and the dev's self-critique loop evidenced by fresh screenshots and a clean final-pass log.
 created_at: '2026-10-17'
 autonomy: high
 features:
   - id: F19
     name: SAOC design pass (R79 hero scrim, R64 casing, R79 events heading and yearbook band, R80 hero at 390, R72 shared axis and /judging layout, R65 SAOC type 16/1.55)
     status: pending
-# GATE: cwd = the implementation worktree (branch from main 76ad8b98 with spec/lw-f19 merged in, so goldens/f19 and contracts/checks/launch-weekend/f19 exist). Copy .env.local in, delete it at the end.
-# BASE_URL = a production build of that worktree on port 3619 (`pnpm build && pnpm exec next start -p 3619`; the beta basic-auth wall fails closed without BETA_BASIC_AUTH_* in .env.local, _lib.mjs sends them). Stop by exact PID (lsof -ti tcp:3619 -sTCP:LISTEN). Do not rebuild while it runs. Runtime checks read the CMS READ-ONLY.
+# GATE: cwd = the implementation worktree (branch from main 47cf7f1b with spec/lw-f19 merged in, so goldens/f19 and contracts/checks/launch-weekend/f19 exist). Copy .env.local in, delete it at the end.
+# TWO BUILDS. BASE_URL = the BETA PREVIEW build on port 3619: `SHOW_PLACEHOLDER_PREVIEW=true pnpm build && SHOW_PLACEHOLDER_PREVIEW=true pnpm exec next start -p 3619` (not public, wall up, so withholdPlaceholderProse() is false and the marked placeholders show). PUBLIC_URL = the PUBLIC build on port 3620 from a second worktree of the same commit (`.tmp/sandbox/wt-lw-f19-public`, copy .env.local in, delete at the end): `SITE_PUBLIC_LAUNCH=true pnpm build && SITE_PUBLIC_LAUNCH=true pnpm exec next start -p 3620`. Home is ISR, so the mode is fixed at build time: do not reuse one build for both. A21 and A12 read PUBLIC_URL; every other runtime check reads BASE_URL. Beta preview details (3619): the beta basic-auth wall fails closed without BETA_BASIC_AUTH_* in .env.local, _lib.mjs sends them). Stop by exact PID (lsof -ti tcp:3619 -sTCP:LISTEN). Do not rebuild while it runs. Runtime checks read the CMS READ-ONLY.
+# Stop each server by exact PID (lsof -ti tcp:3619 -sTCP:LISTEN, lsof -ti tcp:3620 -sTCP:LISTEN).
 # BASE_REF defaults to origin/main for the scope and critique-evidence checks; pin it to 76ad8b98 if main has moved.
-# Every runtime check was run RED against untouched main 76ad8b98 (:3012); A1, A2, A3-A6, A9 and A11 were run GREEN against goldens/f19/simulate.js (a throwaway in-page patch, not a reference build). A7's positive path was proven on the already-compliant routes; A8 was proven red only. See goldens/f19/f19-spec.md section 6. A11 and A12 are regression guards, green on main by design.
+# Font load split (design-cb P1) is NOT an assertion here: it cannot be met inside F19's allowlist; see goldens/f19/f19-spec.md section 8 and check-p-fonts.mjs (informational, red on main).
+# Every runtime check was run RED against untouched main 76ad8b98 (:3012); A1, A2, A3-A6, A9 and A11 were run GREEN against goldens/f19/simulate.js (a throwaway in-page patch, not a reference build). A21 and A22 were proven red on main (:3013 public, :3012 preview-less) and their green paths are reasoned, not simulated; A23, A24, A25 were proven red only. A7's positive path was proven on the already-compliant routes; A8 was proven red only. See goldens/f19/f19-spec.md section 6. A11 and A12 are regression guards, green on main by design.
 # The brief verbatim (README l.125) measured 2.0 to 3.8:1, so the scrim adds a text-zone veil (R1 in the spec). The lead may reverse a ruling by editing tokens.json and the spec, not the contract.
 # F18 (NOS pages) is in flight on other branches. If F18 lands first, rebase and re-capture goldens/f19/nos-baseline.json from that main before the gate (supersession.json mergeOrder).
 # Skills @dev must load and use: impeccable (craft-floor, polish, critique), frontend-design, web-design-guidelines, accessibility.
@@ -59,13 +61,28 @@ assertions:
       command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-m-copy.mjs
     - id: F19-A12
       description: Runtime half of the NOS guard - 17 National Show routes at 1280 and 390 keep their type signatures and left edges (PageHero ledes excluded)
-      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-l-nos-runtime.mjs
+      command: BASE_URL=http://localhost:3620 node contracts/checks/launch-weekend/f19/check-l-nos-runtime.mjs
     - id: F19-A13
       description: F14 home guards still hold on the F19 build - card and CTA states, reduced motion, structure, geometry, contrast, other-section pin (re-pinned for the F19-owned sections), copy, yearbook and partners (re-pinned for the yearbook bottom edge); F14 scope and critique-evidence checks are retired (supersession.json)
       command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f14/check-b-states.mjs && BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f14/check-c-reduced-motion.mjs && BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f14/check-d-structure.mjs && BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f14/check-e-geometry.mjs && BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f14/check-f-contrast.mjs && BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f14/check-g-others.mjs && BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f14/check-i-copy.mjs && BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f14/check-j-yearbook-partners.mjs
     - id: F19-A14
       description: Self-critique loop evidence - 24 fresh after/ screenshots (8 routes and 4 hero slides, at 390 and 1280) newer than the last source edit, and an impeccable critique log (f19-critique-log.md) naming every route, scrim and slide with at least 2 passes whose final pass reads P0 0, P1 0, P2 0 and Score at least 36/40
       command: node contracts/checks/launch-weekend/f19/check-k-critique-artefacts.mjs
+    - id: F19-A21
+      description: Public build withholds every unsourced fact (vote 1C, withholdPlaceholderProse) - on home, about, judging, sponsors, media-kit, events, contact and members the text of main holds 0 hits for the editor, 184 pages, ISSN, yearbook, Orchids South Africa, federated, 1990 standardised or overhauled, 21 or twenty-one societies, 56 judges, shows hosted, judges stat, 100-point, triennial, scoring thresholds and criteria, TBC committee, SAOC Secretariat labels and the partners claim; no bare 18/21/56/184 leaf; yearbook band absent; about shows no committee h3 and one [data-content-gap] with the ABSENT sentence; sponsors h1 is "Sponsors" with the same empty state and no stat list; contact lists only info@saoc.co.za; no overflow at 390 or 1280
+      command: PUBLIC_URL=http://localhost:3620 node contracts/checks/launch-weekend/f19/check-n-public.mjs
+    - id: F19-A22
+      description: Beta preview shows the withheld facts marked - each unsourced fact present on the preview build sits inside a [data-placeholder] element carrying an existing marker string (Not confirmed by SAOC, To be confirmed, Not yet confirmed, Awaiting confirmation); /about shows its 6 committee cards each marked; /sponsors is headed "Sponsors" in both modes
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-o-preview.mjs
+    - id: F19-A23
+      description: /events (R47) - the National Show row's title links to /national-show, every row has a valid time datetime, one Event JSON-LD per row built with the existing eventJsonLd helper (absolute url, startDate matches), and the row count equals the published upcoming societyEvent documents read-only from Sanity (17 of the 18 documents are unpublished drafts)
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-q-events.mjs
+    - id: F19-A24
+      description: /contact form (R55) - autocomplete name and email, every field boundary at least 3:1, submit button at least 44px, a role=status region present before submit that carries the success message, and after a short message an error element with an id named in the textarea's aria-describedby with its hint and aria-invalid true
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-r-contact.mjs
+    - id: F19-A25
+      description: SAOC footer tap targets at 390 - every link, button and input in the SAOC footer on home, about, contact and events is at least 44x44
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-s-taps.mjs
     - id: F19-A15
       description: End-to-end suite green (starts its own dev server on a free port)
       command: pnpm test:e2e
@@ -82,7 +99,7 @@ assertions:
       timeout_seconds: 900
     - id: F19-A19
       description: Docs - docs/launch-weekend-f19.md exists and covers the scrim and veil, the .saoc-container axis, the judging split, the 16/1.55 type rule, the shared PageHero effect on two NOS pages, and the legal-pages and societies/media-kit exclusions
-      command: test -s docs/launch-weekend-f19.md && grep -q "veil" docs/launch-weekend-f19.md && grep -q "saoc-container" docs/launch-weekend-f19.md && grep -q "4fr" docs/launch-weekend-f19.md && grep -q "1.55" docs/launch-weekend-f19.md && grep -q "PageHero" docs/launch-weekend-f19.md && grep -qi "legal" docs/launch-weekend-f19.md
+      command: test -s docs/launch-weekend-f19.md && grep -q "veil" docs/launch-weekend-f19.md && grep -q "saoc-container" docs/launch-weekend-f19.md && grep -q "4fr" docs/launch-weekend-f19.md && grep -q "1.55" docs/launch-weekend-f19.md && grep -q "PageHero" docs/launch-weekend-f19.md && grep -qi "legal" docs/launch-weekend-f19.md && grep -q "withholdPlaceholderProse" docs/launch-weekend-f19.md && grep -q "data-content-gap" docs/launch-weekend-f19.md
     - id: F19-A20
       description: Codex adversarial review of the whole F19 diff (cross-model, execution/codex_qa.sh)
       type: codex_qa

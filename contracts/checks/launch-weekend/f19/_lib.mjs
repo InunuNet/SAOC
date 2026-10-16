@@ -39,12 +39,14 @@ export async function newPage(browser, vp, extra = {}) {
   return { ctx, page: await ctx.newPage() };
 }
 
-export async function open(page, path = '/') {
+export const PUBLIC_BASE = (process.env.PUBLIC_URL || 'http://localhost:3620').replace(/\/$/, '');
+
+export async function open(page, path = '/', base = BASE) {
   try {
-    const res = await page.goto(`${BASE}${path}`, { waitUntil: 'networkidle', timeout: 45000 });
+    const res = await page.goto(`${base}${path}`, { waitUntil: 'networkidle', timeout: 45000 });
     if (!res || res.status() >= 400) throw new Error(`HTTP ${res ? res.status() : 'none'}`);
   } catch (e) {
-    console.error(`INFRA: cannot load ${BASE}${path} (${e.message})`);
+    console.error(`INFRA: cannot load ${base}${path} (${e.message})`);
     process.exit(2);
   }
   if (process.env.F19_SIMULATE === '1') await page.evaluate(readFileSync(`${GOLDEN_DIR}/simulate.js`, 'utf8'));

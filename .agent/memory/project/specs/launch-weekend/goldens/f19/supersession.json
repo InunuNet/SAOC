@@ -9,5 +9,5 @@
     { "check": "f17 check-i-scope (F17-A9), check-j-critique-artefacts (F17-A11)", "why": "Same: scope and evidence checks for a shipped feature." }
   ],
   "stillRunInF19Gate": ["f14 A1 states, A2 reduced motion, A3 structure, A4/A5 geometry+contrast, A6 others (re-pinned), A8 copy, A12 yearbook/partners (re-pinned)"],
-  "mergeOrder": "F19 branches from main 76ad8b98 and does not include F18. nos-baseline.json is main's National Show fingerprint. If F18 lands first, rebase F19 and re-capture nos-baseline.json (capture-nos-baseline.mjs) from the F18 main BEFORE the gate, otherwise A11b reports F18's own NOS changes as leaks."
+  "mergeOrder": "F19 is rebased on main 47cf7f1b; nos-baseline.json and copy-baseline.json were re-captured there (unchanged versus the old baselines). If F18 lands first, rebase F19 and re-capture nos-baseline.json (capture-nos-baseline.mjs) from the F18 main BEFORE the gate, otherwise A11b reports F18's own NOS changes as leaks."
 }
