@@ -6,6 +6,7 @@ import { RealEmptyListing } from '@/components/show/nos/RealEmptyListing';
 import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { internationalNurseriesQuery } from '@/sanity/queries';
+import { loadShowFacts } from '@/lib/data/show-facts';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
@@ -41,7 +42,7 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default async function InternationalGuestsPage() {
-  const [result, nurseries] = await Promise.all([
+  const [result, nurseries, facts] = await Promise.all([
     loadShowPageOrFallback('05-international-guests-and-exhibitors', {
       label: 'International Guests',
       purpose: 'Public directory of international guests and exhibitors attending the show.',
@@ -50,6 +51,7 @@ export default async function InternationalGuestsPage() {
       query: internationalNurseriesQuery,
       tags: ['vendorNursery', 'sanity'],
     }),
+    loadShowFacts(),
   ]);
 
   const list = nurseries ?? [];
@@ -60,6 +62,8 @@ export default async function InternationalGuestsPage() {
         result={result}
         route="/national-show/international-guests"
         layout="listing"
+        listingEmpty={list.length === 0}
+        holding={{ facts, statement: ABSENCE_STATEMENT }}
         listingContent={
           list.length > 0 ? (
             <ShowEntityGrid

@@ -6,6 +6,7 @@ import { RealEmptyListing } from '@/components/show/nos/RealEmptyListing';
 import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { southAfricanNurseriesQuery } from '@/sanity/queries';
+import { loadShowFacts } from '@/lib/data/show-facts';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
@@ -39,7 +40,7 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default async function SouthAfricanExhibitorsPage() {
-  const [result, nurseries] = await Promise.all([
+  const [result, nurseries, facts] = await Promise.all([
     loadShowPageOrFallback('04-south-african-exhibitors', {
       label: 'South African Exhibitors',
       purpose: 'Public directory of South African nurseries exhibiting at the show.',
@@ -48,6 +49,7 @@ export default async function SouthAfricanExhibitorsPage() {
       query: southAfricanNurseriesQuery,
       tags: ['vendorNursery', 'sanity'],
     }),
+    loadShowFacts(),
   ]);
 
   const list = nurseries ?? [];
@@ -58,6 +60,10 @@ export default async function SouthAfricanExhibitorsPage() {
         result={result}
         route="/national-show/sa-exhibitors"
         layout="listing"
+        // R75/R77: the council-supplied overview is laid out by the long-form template; the
+        // placeholder directory block (a gap in a public build) is not rendered.
+        longform={{ facts }}
+        hideContentGap
         listingContent={
           list.length > 0 ? (
             <ShowEntityGrid

@@ -17,6 +17,7 @@
 // sanity/schemas/objects/showExhibitorDate.ts.
 // =============================================================
 
+import { restatesPending } from '@/lib/data/exhibitor-keydates-note';
 import type { ShowExhibitorDate } from '@/types';
 
 import { ExhibitorStatusBadge } from './ExhibitorStatusBadge';
@@ -93,7 +94,9 @@ export function ExhibitorKeyDates({
                   {row.label}
                 </th>
                 <td className="py-4 pr-4 align-top max-sm:block max-sm:py-1 font-sans text-[17px] leading-relaxed text-ink/80">
-                  {row.dateNote}
+                  {/* R77 #3: a pending row's chip already says the date is unset, so a note that
+                      only restates it is dropped; a note that carries information stays. */}
+                  {restatesPending(row.dateNote, row.status) ? null : row.dateNote}
                   <ExhibitorStatusBadge
                     status={row.status}
                     pendingLabel={pendingLabel}

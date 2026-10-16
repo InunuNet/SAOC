@@ -662,3 +662,259 @@
   text-decoration-thickness: 2px;
   text-underline-offset: 6px;
 }
+
+/* F18 (launch-weekend): the shared long-form template (R75), the public holding state (R76) and the
+   FAQ row (R77 #2). Tokens only (rule, primary, ink, muted, accent, olive-deep); type roles reuse the
+   handoff lede (sans 20/1.5) and the destinations title; elevation is a border; motion is the NOS 150ms. */
+.nos-theme .nos-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 24px;
+  margin: 0;
+}
+.nos-theme .nos-facts > div {
+  padding-left: 16px;
+  border-left: 1.5px solid var(--olive-deep);
+}
+.nos-theme .nos-facts dt {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.nos-theme .nos-facts dd {
+  margin: 4px 0 0;
+  font-family: var(--serif);
+  font-size: 19px;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.nos-theme .nos-longform {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
+}
+.nos-theme .nos-longform-head > h2 {
+  margin: 0 0 20px;
+}
+.nos-theme .nos-longform-head > [data-confirmation-badge] {
+  margin: 0 0 20px;
+}
+.nos-theme .nos-longform-lede {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.nos-theme .nos-longform-body > p {
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.nos-theme .nos-longform-body > * + * {
+  margin-top: 24px;
+}
+.nos-theme .nos-longform-body > .nos-image-break {
+  margin-block: 40px;
+}
+.nos-theme .nos-image-break {
+  aspect-ratio: 21 / 9;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+}
+.nos-theme .nos-image-break > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.nos-theme .nos-pullquote {
+  margin: 32px 0 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--serif);
+  font-size: 24px;
+  font-style: italic;
+  line-height: 1.3;
+  color: var(--primary);
+  font-variation-settings: 'opsz' 32;
+}
+.nos-theme .nos-longform-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+@media (min-width: 900px) {
+  .nos-theme .nos-longform {
+    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+    column-gap: 64px;
+  }
+  .nos-theme .nos-longform-head {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .nos-theme .nos-longform-aside {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    position: sticky;
+    top: 96px;
+    align-self: start;
+  }
+  .nos-theme .nos-longform-aside .nos-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nos-theme .nos-longform-body {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .nos-theme .nos-longform-cta {
+    grid-column: 2;
+    grid-row: 3;
+  }
+}
+
+.nos-theme .nos-holding {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 48px;
+}
+.nos-theme .nos-holding-statement {
+  margin: 0 0 40px;
+  font-family: var(--sans);
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.nos-theme .nos-holding-eyebrow {
+  margin: 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-variation-settings: normal;
+}
+.nos-theme .nos-holding-cards {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nos-theme .nos-holding-cards > li {
+  position: relative;
+  padding: 24px 68px 24px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.nos-theme .nos-holding-cards h3 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--primary);
+}
+.nos-theme .nos-holding-cards h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+.nos-theme .nos-holding-cards h3 a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.nos-theme .nos-holding-cards h3 a:focus-visible {
+  outline: none;
+}
+.nos-theme .nos-holding-cards h3 a:focus-visible::after {
+  outline: 2px solid var(--ring-focus);
+  outline-offset: -2px;
+}
+.nos-theme .nos-holding-cards p {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 16px;
+  color: var(--ink-700);
+}
+.nos-theme .nos-holding-arrow {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  color: var(--primary);
+  transition:
+    background-color 150ms var(--ease-nos),
+    color 150ms var(--ease-nos);
+}
+.nos-theme .nos-holding-cards > li:hover .nos-holding-arrow {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: var(--parchment);
+}
+.nos-theme .nos-holding-cards + * {
+  margin-top: 32px;
+}
+@media (min-width: 900px) {
+  .nos-theme .nos-holding {
+    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+    column-gap: 64px;
+  }
+  .nos-theme .nos-holding-facts .nos-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.nos-faq-item {
+  padding: 0;
+}
+.nos-faq-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 44px;
+  padding: clamp(16px, 2.4vw, 24px) clamp(20px, 3vw, 32px);
+  list-style: none;
+}
+.nos-faq-summary::-webkit-details-marker {
+  display: none;
+}
+.nos-faq-question {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  min-width: 0;
+}
+.nos-faq-question [data-confirmation-badge] {
+  margin: 0;
+  padding-block: 2px;
+  line-height: 1.35;
+}
+.nos-faq-icon {
+  flex: none;
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  color: var(--muted);
+}
+.nos-faq-icon > svg {
+  display: block;
+}
+details[open] > .nos-faq-summary .nos-faq-icon-v {
+  display: none;
+}
+.nos-faq-answer {
+  padding: 0 clamp(20px, 3vw, 32px) 24px;
+}

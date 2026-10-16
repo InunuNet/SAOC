@@ -10,7 +10,6 @@ import { ExhibitorStageCard } from '@/components/nos/ExhibitorStageCard';
 import { JudgingGroupCard } from '@/components/nos/JudgingGroupCard';
 import { COLUMN_CLASS, SPAN_CLASS, resolveGridLayout } from '@/lib/grid-columns';
 import { NosHero } from '@/components/nos/NosHero';
-import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { NosSection } from '@/components/nos/NosSection';
 import { SectionHeading } from '@/components/nos/SectionHeading';
 import { JsonLd, nationalShowEventJsonLd, type NationalShowOffer } from '@/components/seo/JsonLd';
@@ -22,12 +21,12 @@ import {
   nationalShowSalesQuery,
   showVisitorInfoQuery,
 } from '@/sanity/queries';
+import { buildShowFacts } from '@/lib/data/show-facts';
 import { showClasses as staticClasses } from '@/lib/data/showClasses';
 import { cheapestAdmission, formatRand } from '@/components/nos/cheapest-admission';
 import { effectiveCapacity, resolveEffectivePrice } from '@/lib/checkout-reservation';
 import { buildPageMetadata } from '@/lib/seo';
 import {
-  formatShowDateRange,
   formatShowMonthYear,
   formatVenueAddress,
   toOrdinal,
@@ -68,7 +67,8 @@ const HUB_MEGA = NAV.find((n) => n.type === 'mega');
  *  load if the leaf is ever removed rather than rendering a hero CTA with no destination. */
 const TICKETS_CTA = (() => {
   const leaf = HUB_MEGA?.lead?.theShow.links.find((l) => l.id === 'tickets');
-  if (!leaf) throw new Error('national-show hub: mega Tickets leaf missing; hero CTA cannot resolve');
+  if (!leaf)
+    throw new Error('national-show hub: mega Tickets leaf missing; hero CTA cannot resolve');
   return leaf;
 })();
 
@@ -265,27 +265,13 @@ export default async function NationalShowPage() {
   // Sanity wins in every fallback below. The dataset value always comes first and the
   // literal is only the right-hand side — the reverse order would mask a published
   // Studio edit behind a hardcoded default.
-  // S1: one fact, two fields. The hero read the LEGACY `location` string while the CTA
-  // sentence a screen below read `venue.city`, so a venue change in Studio rendered both
-  // the new and the old venue in a single viewport. `venue.name` is the source; `location`
-  // is fallback only. See show-identity-surfaces.golden.md.
-  const venueLine = sanityShow?.venue?.name || sanityShow?.location || 'Venue to be confirmed';
-
   const edition = sanityShow?.edition ?? null;
-  const dateRange = formatShowDateRange(sanityShow?.showDate, sanityShow?.showEndDate);
   const monthYear = formatShowMonthYear(sanityShow?.showDate);
-  const hostRegion = sanityShow?.hostRegion || 'Host region to be confirmed';
   const venueCity = sanityShow?.venue?.city ?? null;
   const datesStatus = visitorInfo?.confirmations?.dates;
 
-  const heroMeta = [
-    { label: 'Dates', value: dateRange ?? 'Dates to be confirmed' },
-    { label: 'Host', value: hostRegion },
-    { label: 'Venue', value: venueLine },
-    // Triennial is a standing constitutional fact about how the show is constituted,
-    // not a per-edition value — deliberately not a Sanity field.
-    { label: 'Cycle', value: 'Triennial' },
-  ];
+  // One source for the four facts: the long-form template and the holding state read the same module.
+  const heroMeta = buildShowFacts(sanityShow);
 
   // The price anchor shows only while sales are open and the cheapest admission has a price.
   const anchor =
@@ -437,9 +423,9 @@ export default async function NationalShowPage() {
         <div>
           <SectionHeading title="Three years in the making, four days on the bench" />
           <p className="mt-6 font-sans text-[16px] leading-relaxed text-ink/80">
-            The National Orchid Show is the country&rsquo;s premier competitive orchid event.
-            Held every three years, it brings together growers, hybridisers, judges and
-            collectors for four days of competition, education, and community.
+            The National Orchid Show is the country&rsquo;s premier competitive orchid event. Held
+            every three years, it brings together growers, hybridisers, judges and collectors for
+            four days of competition, education, and community.
           </p>
           <p className="mt-4 font-sans text-[16px] leading-relaxed text-ink/80">
             Every plant is assessed by{' '}
@@ -594,9 +580,6 @@ export default async function NationalShowPage() {
           </div>
         }
       />
-
-      {/* ── R69: the grouped index of the show's pages, last block before the footer ── */}
-      <NosShowIndex current="/national-show" />
     </>
   );
 }

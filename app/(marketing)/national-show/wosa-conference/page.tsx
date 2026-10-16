@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { PresenterSection } from '@/components/nos/PresenterSection';
 import { ShowContentState } from '@/components/show/nos/ShowContentState';
+import { loadShowFacts } from '@/lib/data/show-facts';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { loadPresenterViewModels } from '@/lib/view-models/load-presenters';
@@ -39,11 +40,14 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default async function WosaConferencePage() {
-  const result = await loadShowPageOrFallback('07-wosa-conference', {
-    label: 'WOSA Conference',
-    purpose:
-      'What the WOSA Conference is and who it is for, with a link out to WOSA for wild-orchid content.',
-  });
+  const [result, facts] = await Promise.all([
+    loadShowPageOrFallback('07-wosa-conference', {
+      label: 'WOSA Conference',
+      purpose:
+        'What the WOSA Conference is and who it is for, with a link out to WOSA for wild-orchid content.',
+    }),
+    loadShowFacts(),
+  ]);
 
   // F6 (conference-workshop-tickets, M4) — additive; see symposium/page.tsx's identical
   // note and the file-header comment above.
@@ -72,6 +76,7 @@ export default async function WosaConferencePage() {
           result={result}
           route="/national-show/wosa-conference"
           layout="prose"
+          holding={{ facts, keepAfterProse: true }}
           afterProse={
             // SAOC attributes and links out; it never authors conservation content in its
             // own voice — the same standing rule the /about page's WOSA credit follows.

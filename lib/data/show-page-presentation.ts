@@ -14,6 +14,7 @@
 
 import type { PortableTextBlock } from '@portabletext/react';
 
+import { BUILDER_BRIEF_SUMMARIES } from './builder-brief-summaries';
 import type { RawShowPage, RawShowPageSection } from './show-pages';
 
 const SYMPOSIUM_PAGE_KEY = '06-saoc-symposium';
@@ -56,7 +57,22 @@ export function presentRawShowPage(raw: RawShowPage): RawShowPage {
     title: SYMPOSIUM_TITLE,
     summary: SYMPOSIUM_THEME_LINE,
     sections: raw.sections?.map((section) =>
-      section.sectionKey === THEME_SECTION_KEY ? presentThemeSection(section) : section,
+      section.sectionKey === THEME_SECTION_KEY ? presentThemeSection(section) : section
     ),
   };
+}
+
+// R76b (launch-weekend F18): a show page's `summary` is a builder brief when it only restates the
+// page's purpose in the third person (a rewording of the V3 spec's Purpose line) or makes a claim no
+// Drive source supports. Such a summary never reaches a public hero lede. The decision is by summary
+// TEXT, not by page key, so a summary rewritten in Studio to real copy shows again. Every other
+// summary (03, 04, 16, 17) is a plain sentence a visitor can read and passes through unchanged. The set lives in ./builder-brief-summaries.
+function flatSummary(text: string): string {
+  return text.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').trim();
+}
+
+/** The hero lede a PUBLIC page may show for `summary`, or `undefined` when it is a builder brief. */
+export function publicHeroLede(summary: string | null | undefined): string | undefined {
+  if (!summary) return undefined;
+  return BUILDER_BRIEF_SUMMARIES.has(flatSummary(summary)) ? undefined : summary;
 }

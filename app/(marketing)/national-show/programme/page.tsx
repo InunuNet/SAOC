@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { ShowContentState } from '@/components/show/nos/ShowContentState';
+import { loadShowFacts } from '@/lib/data/show-facts';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
@@ -24,10 +25,13 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default async function ProgrammePage() {
-  const result = await loadShowPageOrFallback('11-programme', {
-    label: 'Programme',
-    purpose: 'The overall schedule of sessions across the four show days.',
-  });
+  const [result, facts] = await Promise.all([
+    loadShowPageOrFallback('11-programme', {
+      label: 'Programme',
+      purpose: 'The overall schedule of sessions across the four show days.',
+    }),
+    loadShowFacts(),
+  ]);
 
   return (
     <>
@@ -35,6 +39,7 @@ export default async function ProgrammePage() {
         result={result}
         route="/national-show/programme"
         layout="prose"
+        holding={{ facts }}
         afterProse={
           <p
             data-nos-programme-links
