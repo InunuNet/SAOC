@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { NAV, TICKETS_CTA } from '@/components/chrome/nav-config';
+import { NAV } from '@/components/chrome/nav-config';
 import { ConfirmationBadge, ShowCountdown } from '@/components/show';
 import { Button } from '@/components/nos/Button';
 import { CtaBand } from '@/components/nos/CtaBand';
@@ -60,6 +60,14 @@ export const metadata: Metadata = buildPageMetadata({
 /** The hub's `<h1>`: the show's name as nav-config carries it, never retyped here. */
 const HUB_MEGA = NAV.find((n) => n.type === 'mega');
 const HUB_HEADING = HUB_MEGA?.lead?.leadLabel;
+
+/** The mega's own Tickets leaf (the removed header CTA used to resolve it the same way). Throws at
+ *  load if the leaf is ever removed rather than rendering a hero CTA with no destination. */
+const TICKETS_CTA = (() => {
+  const leaf = HUB_MEGA?.lead?.theShow.links.find((l) => l.id === 'tickets');
+  if (!leaf) throw new Error('national-show hub: mega Tickets leaf missing; hero CTA cannot resolve');
+  return leaf;
+})();
 
 /** The hub's two actions, label and href as nav-config carries them: the header's Tickets leaf
  *  (primary, gold) and Plan Your Visit (secondary, ghost). Used by the hero and the closing band. */
