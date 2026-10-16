@@ -45,7 +45,7 @@ export function TicketPurchaseForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-6" noValidate data-nos-ticket-form="">
       <OzowSandboxTestModeBanner />
       <fieldset className="space-y-3">
         <legend className="font-mono text-[12px] tracking-[0.16em] text-muted">Ticket types</legend>

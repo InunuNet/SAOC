@@ -44,7 +44,7 @@ export function PresenterSection({
   return (
     <section className="nos-presenters" aria-labelledby={titleId}>
       <div className="pc-wrap">
-        <div id={idBase} className="pc-sec-top">
+        <div id={idBase} className={provisional ? 'pc-sec-top nos-surface' : 'pc-sec-top'}>
           <div className="pc-sec-head">
             <p className="pc-eyebrow">{eyebrow}</p>
             <h2 id={titleId} className="pc-title">
@@ -52,7 +52,10 @@ export function PresenterSection({
             </h2>
           </div>
           {provisional ? (
-            <ConfirmationBadge status="pending" pendingLabel="To be confirmed by the show committee" />
+            <ConfirmationBadge
+              status="pending"
+              pendingLabel="To be confirmed by the show committee"
+            />
           ) : null}
         </div>
         <PresenterGrid presenters={ordered} idBase={idBase} />

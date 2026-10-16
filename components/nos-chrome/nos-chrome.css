@@ -186,4 +186,4 @@
   letter-spacing: 0.04em; text-decoration: none; transform: translateY(-300%);
 }
 .nh-skip:focus { transform: translateY(0); }
-.nh-skip:focus-visible { outline: 2px solid var(--nc-violet); outline-offset: 2px; }
+.nh-skip:focus-visible { outline: 2px solid var(--nc-violet); outline-offset: 2px; transition: none; }

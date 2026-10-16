@@ -179,8 +179,8 @@
 }
 
 /* S7: form labels and legends are sentence case (vendors/apply, vendors/register). */
-.nos-theme form :is(label, legend),
-.nos-theme form :is(label, legend).font-mono {
+.nos-theme form:not([data-nos-ticket-form]) :is(label, legend),
+.nos-theme form:not([data-nos-ticket-form]) :is(label, legend).font-mono {
   text-transform: none;
   letter-spacing: normal;
 }
@@ -407,4 +407,10 @@
   .nos-theme .nos-hero-body > [data-confirmation-badge] {
     order: 2;
   }
+}
+
+/* A surface's own heading sits directly above its status marker: no heading margin between
+   them, so the marker stays in the head of the surface (R19). */
+.nos-theme .nos-surface > :is(h2, h3):first-child {
+  margin-bottom: 0;
 }

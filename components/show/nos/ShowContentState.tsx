@@ -71,10 +71,10 @@ export function ShowContentState({
   return (
     <>
       <NosHero route={route} title={page.title} lede={page.summary ?? undefined} priority />
-      {afterHero}
 
       {state === 'fallback-unpublished' ? (
         <NosSection data-nos-content-state={state} wrapClassName="space-y-10">
+          {afterHero}
           {page.sections.map((section) => (
             <ShowPageProse key={section.sectionKey} section={section} />
           ))}
@@ -82,6 +82,7 @@ export function ShowContentState({
         </NosSection>
       ) : layout === 'listing' ? (
         <NosSection data-nos-content-state={state} wrapClassName="space-y-12">
+          {afterHero}
           <div className="space-y-10">
             {page.sections
               .filter((section) => section.kind === 'prose')
@@ -93,6 +94,7 @@ export function ShowContentState({
         </NosSection>
       ) : (
         <NosSection data-nos-content-state={state} wrapClassName="space-y-10">
+          {afterHero}
           {page.sections.map((section) => (
             <ShowPageProse key={section.sectionKey} section={section} />
           ))}
