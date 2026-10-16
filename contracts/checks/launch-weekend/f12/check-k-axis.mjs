@@ -75,5 +75,28 @@ await main('F12-A15 single axis', async (r) => {
       }
       await ctx.close();
     }
+    // /national-show/tickets (design audit: content column ~790px centred, 350-1138 on a 1500 frame, header 263-1226): the content column fills the axis wrap, container and axis only
+    for (const [w, h] of [[1280, 800], [1920, 1080], [2056, 1100]]) {
+      const { ctx, page, status } = await openPage(browser, { width: w, height: h }, '/national-show/tickets');
+      if (status !== 200) { r.fail(`/national-show/tickets @${w}: HTTP ${status}`); await ctx.close(); continue; }
+      const t = await page.evaluate(() => {
+        const bar = document.querySelector('.nh-bar');
+        const wrap = document.querySelector('main [data-nos-wrap]:not([data-nos-hero] [data-nos-wrap])');
+        if (!bar || !wrap) return { error: 'no .nh-bar or section wrap' };
+        const cs = getComputedStyle(wrap);
+        const inner = wrap.getBoundingClientRect().width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        const kids = [...wrap.children].filter((e) => e.getBoundingClientRect().height > 0).map((e) => ({ tag: e.tagName.toLowerCase(), left: e.getBoundingClientRect().left, width: e.getBoundingClientRect().width }));
+        const b = bar.getBoundingClientRect();
+        const bs = getComputedStyle(bar);
+        return { inner, kids, headerEdge: b.left + parseFloat(bs.paddingLeft), headerRight: b.right - parseFloat(bs.paddingRight) };
+      });
+      const tag = `/national-show/tickets @${w}`;
+      if (t.error) { r.fail(`${tag}: ${t.error}`); await ctx.close(); continue; }
+      for (const k of t.kids) {
+        if (!near(k.left, t.headerEdge, 1)) r.fail(`${tag}: a ${k.tag} content block starts at ${k.left.toFixed(1)}px, the header axis is ${t.headerEdge.toFixed(1)}px`);
+        if (!near(k.width, t.inner, 1) || !near(k.left + k.width, t.headerRight, 1)) r.fail(`${tag}: a ${k.tag} content block is ${k.width.toFixed(0)}px wide, it must fill the axis column (${t.inner.toFixed(0)}px, right edge ${t.headerRight.toFixed(1)}px)`);
+      }
+      await ctx.close();
+    }
   });
 });

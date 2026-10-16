@@ -86,3 +86,6 @@ Target: all of them equal the header's: 32 / 300 / 368 (and 16 at 390).
 - Asserted (F12-A15): header, hero h1, sub-nav, section wraps, first h2 of every section, presenters, index share one edge +-1px at 1280, 1920, 2056, 390.
 - Inner hero (F12-A16), every inner-hero route, at >=1024: h1 max-width none, font-size clamp(48px,4.4vw,88px), text-wrap balance; lede 46ch (the symposium theme lede keeps its R70 30ch); min-height >= 380; International Guests and About h1 <= 2 lines at 1280. The R70 symposium checks (A6) still hold: its h1 never ends in a lone word.
 - Not F12: prose under 16px (NOS Site r6 / R65). CTA bands are left as they are.
+
+
+R71 tickets addendum (lead, 2026-10-16): the design audit measured /national-show/tickets with a content column of about 790px centred (350-1138 on a 1500 frame) while the header runs 263-1226. The route is in the R71 axis scope: every direct child of its section wrap starts on the header content edge and fills the axis column (F12-A15, check-k-axis.mjs, 1280, 1920, 2056). F12 touches container and axis only on this route; F16 (spec/lw-f16) owns the tickets page content and will not touch the axis tokens.
