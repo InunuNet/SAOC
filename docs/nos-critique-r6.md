@@ -71,3 +71,19 @@ Brad, R65: "Body text should be standard across both sites." The value is the de
   controls, tracked-caps markers and the R52 FAQ chips keep their sizes. The 17px serif names and titles are unchanged.
 - /contact's venue card moves from 17px to 16px because `VenueCard` is shared.
 Source: lead saoc-2b 2026-10-17.
+
+### R82 supersedes launch-weekend F7
+
+Codi (final): the Trading name label reads exactly "Trading name (if different, optional)" and no label
+carries ") (". The field components append nothing to a label, and every required input keeps `required` and
+gains `aria-required="true"`, so dropping the visible "(required)" suffix loses no semantics (a fieldset takes
+no aria-required, so the vendor category group stays as it was). R82 supersedes launch-weekend F7's
+`check-h-vendor-static.mjs` and `check-i-vendor-runtime.mjs`, which pinned the "(required)" and "(optional)"
+suffixes; both are amended in this branch (now asserting no "(required)" suffix, aria-required on required
+inputs and the exact Trading name label) so main is never red. F18's supersession.json is untouched.
+
+### f2 update (Codi, final)
+
+The recovery links now follow the hero's R67 order: Tickets (primary), National Show, Plan your visit. Below
+480px they stack full width at 48px with a 12px gap. The not-found is noindex, still a real 404, and does not
+shadow `archive/[year]`.

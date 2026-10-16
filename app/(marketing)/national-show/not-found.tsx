@@ -1,12 +1,18 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { Button } from '@/components/nos/Button';
 import { NosSection } from '@/components/nos/NosSection';
 
+// Below 480px the three links stack at full width, 48px tall; the Button's own 50px floor stays above.
+const LINK_CLASS = 'w-full max-[479px]:min-h-[48px]! min-[480px]:w-auto';
+
 // R63: the not-found for every /national-show/* route, rendered inside the NOS chrome and
 // `.nos-theme`. Copy is the SAOC root not-found copy (app/not-found.tsx) minus its second
 // sentence, which points at SAOC society links this page does not carry. Link labels are the
-// nav-config labels.
+// nav-config labels, in the hero's R67 order: Tickets (primary), National Show, Plan your visit.
+export const metadata: Metadata = { robots: { index: false, follow: false } };
+
 export default function NationalShowNotFound() {
   return (
     <NosSection>
@@ -21,14 +27,19 @@ export default function NationalShowNotFound() {
           The page you’re looking for doesn’t exist or may have moved.
         </p>
       </div>
-      <div className="mt-8 flex flex-wrap gap-4">
-        <Button as={Link} href="/national-show" variant="ghost">
-          National Show
-        </Button>
-        <Button as={Link} href="/national-show/tickets">
+      <div className="mt-8 flex flex-col gap-3 min-[480px]:flex-row min-[480px]:flex-wrap min-[480px]:gap-4">
+        <Button as={Link} href="/national-show/tickets" variant="primary" className={LINK_CLASS}>
           Tickets
         </Button>
-        <Button as={Link} href="/national-show/plan-your-visit" variant="ghost">
+        <Button as={Link} href="/national-show" variant="ghost" className={LINK_CLASS}>
+          National Show
+        </Button>
+        <Button
+          as={Link}
+          href="/national-show/plan-your-visit"
+          variant="ghost"
+          className={LINK_CLASS}
+        >
           Plan your visit
         </Button>
       </div>
