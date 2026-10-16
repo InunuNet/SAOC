@@ -1,0 +1,10 @@
+{
+  "waivers": {
+    "F1-R8": {
+      "scope": "check-f-menu-panel.mjs line 'scroll not restored: was Y0, now Y1' (the pointer-close scroll restore) ONLY; every other assertion in the check still fails the gate",
+      "ruling": "Lead, 2026-10-16: waived for F3 as a proven pre-existing main defect; a separate fix is dispatched on main.",
+      "evidence": "On a production build of origin/main e9f7d4f9 alone (no F3 code) the check fails identically: 'scroll not restored: was 60, now 0', 4 of 4 runs across :3011 (F3) and :3012 (main). F3 does not touch components/nos-chrome/NosHeader.tsx (git diff 6af92875..HEAD shows only nos-chrome.css, a skip-link focus transition).",
+      "lapse": "Delete this entry when the main fix lands; the check then enforces the restore again. Set NOS_WAIVERS=off to enforce it now."
+    }
+  }
+}

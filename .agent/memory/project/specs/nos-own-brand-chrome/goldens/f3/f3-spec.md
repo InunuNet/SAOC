@@ -90,3 +90,9 @@ Each is a correction to a check that mis-measured a state the later rulings or F
 - F1-R21: hero CTAs are Tickets (nav-config label and href) then Plan your visit, no "Find your society" (C-1, R67).
 - A6: scripts/checks/verify-nos-content-state.ts joins the allowlist for its two ShowContentState call sites only (`heroImage` became `route`; tsc, A2, fails otherwise).
 - Re-baselined against an origin/main (e9f7d4f9) production build, after proving each fails on that build alone: A15 saoc-computed.json, F2-A21 saoc-h2.json, F1-R3 goldens/f1/saoc-base/. F1-R8 (mobile menu scroll restore) also fails on origin/main alone but is behaviour, not a golden, so it cannot be re-baselined: it is a main defect.
+
+## 12. Rulings on 4133064f (lead, 2026-10-16)
+
+- A12: ticketCardPhotos.exempt = true for F3. Ticket-card photos are pre-existing SAOC product imagery, not an F3 change; their removal (R53 #2 / R62, typographic cards) belongs to the R31-A2 tickets feature that follows F3, which flips the flag back to false.
+- F1-R8: the pointer-close scroll-restore line is waived for F3 (goldens/f3/waivers.json): it fails identically on an origin/main e9f7d4f9 production build alone, and F3 does not touch NosHeader. Only that one line is downgraded to a note; NOS_WAIVERS=off enforces it; delete the entry when the main fix lands. Verified: waived run passes with a WAIVED note, NOS_WAIVERS=off fails with the same message.
+- A6: the verify-nos-content-state.ts allowlist ruling is accepted.

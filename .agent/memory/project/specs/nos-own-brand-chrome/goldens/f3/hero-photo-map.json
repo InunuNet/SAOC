@@ -15,12 +15,12 @@
     "/national-show/tickets"
   ],
   "ticketCardPhotos": {
-    "exempt": false,
+    "exempt": true,
     "routes": [
       "/national-show/conferences",
       "/national-show/workshops"
     ],
-    "status": "DECISION NEEDED (NOS Design): components/tickets/TicketTypeCard.tsx renders a stock photo per ticket type from lib/tickets-orchid-image.ts (the five rights-cleared photos, a pre-existing SAOC product feature, restyled but not removed by F3). R29 says each photo once and the accepted R16 exception covers only the tickets-page fan. Architect recommendation: treat ticket-type-card images as product imagery in the same exception class as the fan, i.e. set exempt to true. Until ruled, the check FAILS these routes.",
+    "status": "RULED 2026-10-16 (lead, F3): exempt. Ticket-card photos are pre-existing SAOC product imagery, not an F3 change. Their removal (R53 #2 / R62: typographic cards) belongs to the R31-A2 tickets feature that follows F3, which flips this flag back to false.",
     "hook": "an <img> inside an element that also holds an 'Add to booking' or 'Buy Ticket' control"
   }
 }

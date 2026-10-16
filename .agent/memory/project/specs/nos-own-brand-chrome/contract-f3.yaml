@@ -62,7 +62,7 @@ assertions:
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-vendors.mjs
     timeout_seconds: 600
   - id: A12
-    description: '[F3-R29 imagery] CONFIRMED map (hub dark @68% 50%, plan-your-visit yellow, symposium violet, programme purple, what-to-expect pink; tickets = royal ground + [data-nos-ticket-fan], fan photos exempt): every route x 1280/1440/390: each stock photo on exactly its mapped route and once; all other routes typographic (variant "type": solid #0B0A14, no img/svg/background/gradient, h1 and standfirst on the 1080 grid edge); no stock photo in CSS, edition cards or unmapped HTML; emblem never a photo substitute; rendered img/picture/preload references only (not the RSC payload), image-loader variants resolved to the source asset, tickets variant fan or type; ticket-card photos on /conferences and /workshops are a DECISION NEEDED (golden ticketCardPhotos.exempt)'
+    description: '[F3-R29 imagery] CONFIRMED map (hub dark @68% 50%, plan-your-visit yellow, symposium violet, programme purple, what-to-expect pink; tickets = royal ground + [data-nos-ticket-fan], fan photos exempt): every route x 1280/1440/390: each stock photo on exactly its mapped route and once; all other routes typographic (variant "type": solid #0B0A14, no img/svg/background/gradient, h1 and standfirst on the 1080 grid edge); no stock photo in CSS, edition cards or unmapped HTML; emblem never a photo substitute; rendered img/picture/preload references only (not the RSC payload), image-loader variants resolved to the source asset, tickets variant fan or type; ticket-card photos on /conferences and /workshops are exempt by ruling (golden ticketCardPhotos.exempt=true, removal belongs to the R31-A2 tickets feature)'
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-imagery.mjs
     timeout_seconds: 3000
   - id: A13
@@ -227,7 +227,7 @@ assertions:
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-e-mega-menu.mjs
     timeout_seconds: 600
   - id: F1-R8
-    description: '[regress F1 R8] menu panel at 390'
+    description: '[regress F1 R8] menu panel at 390; the pointer-close scroll-restore line is WAIVED for F3 (goldens/f3/waivers.json): it fails identically on origin/main e9f7d4f9 alone, F3 does not touch NosHeader, a fix is dispatched on main; NOS_WAIVERS=off enforces it'
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-f-menu-panel.mjs
     timeout_seconds: 600
   - id: F1-R9
