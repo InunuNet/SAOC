@@ -24,10 +24,9 @@ interface VendorCheckboxGroupFieldProps {
 
 const legendClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 const optionLabelClass = 'flex min-h-11 items-center gap-2 font-sans text-[15px] text-ink';
-// A native checkbox ignores author borders (computed border-width 0), so the box is drawn: a
-// 1px muted border (5.2:1, WCAG 1.4.11), primary fill when checked, ivory tick.
+// Native control (exempt from WCAG 1.4.11); the label row keeps a 44px hit area.
 const checkboxClass =
-  "grid h-5 w-5 shrink-0 appearance-none place-content-center rounded-sm border border-muted bg-ivory outline-none checked:bg-primary after:-mt-0.5 after:block after:h-2.5 after:w-1.5 after:rotate-45 after:border-b-2 after:border-r-2 after:border-ivory after:opacity-0 after:content-[''] checked:after:opacity-100 focus:ring-2 focus:ring-ink/40 disabled:opacity-60";
+  'h-4 w-4 shrink-0 accent-primary outline-none focus:ring-2 focus:ring-ink/40 disabled:opacity-60';
 const errorClass = 'font-sans text-[14px] text-[var(--status-error)]';
 
 export function VendorCheckboxGroupField({
