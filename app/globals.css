@@ -154,6 +154,10 @@ html {
 .nos-theme .bg-accent.text-ink {
   color: var(--ivory);
 }
+/* The lighter accent-soft hover is only 4.2:1 under ivory text; the darker show primary keeps it above 4.5:1. */
+.nos-theme .bg-accent.text-ink:hover {
+  background-color: var(--primary-700);
+}
 body {
   font-family: var(--sans);
   background: var(--bg);
