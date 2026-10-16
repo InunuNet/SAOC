@@ -25,7 +25,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-import { isPubliclyLaunched } from '@/lib/beta-public-launch';
+import { isBetaWallConfigured, isPubliclyLaunched } from '@/lib/beta-public-launch';
 
 // Exact-match only — never a prefix/startsWith check. A prefix match would also
 // exempt /api/tickets/itn-evil or (pre-URL-normalisation) a traversal attempt like
@@ -125,7 +125,7 @@ export async function decideBasicAuth(input: AuthDecisionInput): Promise<boolean
   if (isExemptPath(input.pathname)) return true;
   if (input.publiclyLaunched) return true;
 
-  const credentialsConfigured = Boolean(input.expectedUser) && Boolean(input.expectedPassword);
+  const credentialsConfigured = isBetaWallConfigured(input.expectedUser, input.expectedPassword);
   if (!credentialsConfigured) {
     return !input.isProduction;
   }

@@ -20,6 +20,15 @@
 // string 'true': 'TRUE', '1', an empty string, or unset all mean "stay walled".
 // Fail closed — anything other than the one exact value keeps every
 // protection up.
+// The wall is only up when BOTH basic-auth credentials are set and non-empty. proxy.ts
+// uses this same predicate to decide whether credentials are configured.
+export function isBetaWallConfigured(
+  user: string | undefined,
+  password: string | undefined,
+): boolean {
+  return Boolean(user) && Boolean(password);
+}
+
 export function isPubliclyLaunched(flagValue: string | undefined): boolean {
   return flagValue === 'true';
 }
