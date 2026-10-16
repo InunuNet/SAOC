@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { PresenterJumpLink } from '@/components/nos/PresenterSection';
 import { PresenterSection } from '@/components/nos/PresenterSection';
 import { ShowSectionNav } from '@/components/show';
 import { ShowContentState } from '@/components/show/nos/ShowContentState';
@@ -64,7 +65,12 @@ export default async function SymposiumPage() {
   return (
     <>
       <div className="contents [&_.nos-show-page-prose_p]:max-w-[60ch] [&_.nos-show-page-prose_li]:max-w-[60ch]">
-        <ShowContentState result={result} heroImage="/images/orchid-dark.jpg" layout="prose" />
+        <ShowContentState
+          result={result}
+          heroImage="/images/orchid-dark.jpg"
+          layout="prose"
+          afterHero={<PresenterJumpLink presenters={presenters} />}
+        />
       </div>
 
       <PresenterSection eyebrow="Symposium" presenters={presenters} />

@@ -93,7 +93,7 @@ export function ExhibitorKeyDates({
                 >
                   {row.label}
                 </th>
-                <td className="py-4 pr-4 align-top max-sm:block max-sm:py-1 font-sans text-[15px] leading-relaxed text-ink/80">
+                <td className="py-4 pr-4 align-top max-sm:block max-sm:py-1 font-sans text-[17px] leading-relaxed text-ink/80">
                   {row.dateNote}
                   <ExhibitorStatusBadge
                     status={row.status}
@@ -102,7 +102,7 @@ export function ExhibitorKeyDates({
                     questionLabel={questionLabel}
                   />
                 </td>
-                <td className="py-4 align-top max-sm:block max-sm:py-1 max-sm:pb-4 font-sans text-[15px] leading-relaxed text-ink/70">
+                <td className="py-4 align-top max-sm:block max-sm:py-1 max-sm:pb-4 font-sans text-[17px] leading-relaxed text-ink/70">
                   {row.detail}
                 </td>
               </tr>

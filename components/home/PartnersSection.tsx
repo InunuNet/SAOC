@@ -71,7 +71,7 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
                 {card.description ? (
                   <>
                     {' '}
-                    <span className="mt-3 block text-[15px] text-muted leading-relaxed">
+                    <span className="mt-3 block text-[16px] text-muted leading-relaxed">
                       {card.description}
                     </span>
                   </>

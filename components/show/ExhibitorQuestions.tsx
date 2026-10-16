@@ -46,7 +46,7 @@ export function ExhibitorQuestions({ heading, intro, questions, id }: ExhibitorQ
               {item.question}
             </span>
             {item.context ? (
-              <p className="mt-2 font-sans text-[15px] leading-relaxed text-ink/70">
+              <p className="mt-2 font-sans text-[17px] leading-relaxed text-ink/70">
                 {item.context}
               </p>
             ) : null}

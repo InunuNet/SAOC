@@ -56,7 +56,8 @@ if (!siteSponsors || !siteSponsors.includes(LABEL)) failures.push(`cited label s
     if (!/RealEmptyListing\(\{\s*fieldLabels,\s*absenceStatement,\s*absenceMarker,\s*action,?\s*\}/.test(src)) {
       failures.push(`${rel}: destructure { fieldLabels, absenceStatement, absenceMarker, action }`);
     }
-    if (!src.includes('<p className="font-sans text-[15px] leading-relaxed text-ink/80">{absenceStatement}</p>')) {
+    // R43 (NOS Design via the lead, 2026-10-16, nos-critique-r3) supersedes: the statement is running prose, so it takes the 17px body role (was text-[15px]).
+    if (!src.includes('<p className="font-sans text-[17px] leading-relaxed text-ink/80">{absenceStatement}</p>')) {
       failures.push(`${rel}: the absence statement paragraph must be unchanged`);
     }
     const stmt = src.indexOf('{absenceStatement}</p>');
@@ -73,46 +74,8 @@ if (!siteSponsors || !siteSponsors.includes(LABEL)) failures.push(`cited label s
 }
 
 // ---- sponsors page ----
-{
-  const rel = `${NOS}/sponsors/page.tsx`;
-  const raw = readRepoFile(rel);
-  if (!raw) failures.push(`missing ${rel}`);
-  else {
-    const src = stripComments(raw);
-    if (!raw.includes(ABSENCE)) failures.push(`${rel}: ABSENCE_STATEMENT must be unchanged`);
-    if (!/import\s*\{\s*Button\s*\}\s*from\s*'@\/components\/nos\/Button'/.test(src)) failures.push(`${rel}: import { Button } from '@/components/nos/Button'`);
-    if (!/import\s*\{[^}]*\bConfirmationBadge\b[^}]*\}\s*from\s*'@\/components\/show'/.test(src)) failures.push(`${rel}: import ConfirmationBadge from '@/components/show'`);
-    const listings = openingTags(src, 'RealEmptyListing');
-    if (listings.length !== 1) failures.push(`${rel}: expected 1 RealEmptyListing, found ${listings.length}`);
-    const t = listings[0];
-    if (t && !/\baction=\{/.test(t.text)) failures.push(`${rel}: RealEmptyListing must receive action={...}`);
-    if (t && !/\babsenceMarker=\{\s*<ConfirmationBadge\s+status="pending"\s*\/>\s*\}/.test(t.text)) {
-      failures.push(`${rel}: RealEmptyListing must receive absenceMarker={<ConfirmationBadge status="pending" />}`);
-    }
-    const badges = openingTags(src, 'ConfirmationBadge');
-    if (badges.length !== 1) failures.push(`${rel}: expected exactly 1 ConfirmationBadge, found ${badges.length}`);
-    for (const b of badges) {
-      if (/\b(researchLabel|pendingLabel|tone)=/.test(b.text)) failures.push(`${rel}: no label/tone override — the existing fallback label is the copy`);
-    }
-    const buttons = openingTags(src, 'Button');
-    const mail = buttons.filter((b) => /href="mailto:info@saoc\.co\.za"/.test(b.text));
-    if (mail.length !== 1) failures.push(`${rel}: expected 1 <Button ... href="mailto:info@saoc.co.za">, found ${mail.length}`);
-    if (buttons.length !== mail.length) failures.push(`${rel}: no other Button may be added`);
-    for (const b of mail) {
-      if (!/\bas="a"/.test(b.text)) failures.push(`${rel}: the enquiry Button must render as="a" (a mailto is navigation, not a Link route)`);
-      if (/\bvariant="(on-dark|ghost-on-dark)"/.test(b.text)) failures.push(`${rel}: the panel is a light ground; no on-dark variant`);
-      if (/\bclassName=/.test(b.text)) failures.push(`${rel}: no className override on the enquiry Button — the shared Button is the design`);
-      if (t && !(b.start > t.start && b.start < t.end)) failures.push(`${rel}: the enquiry Button must be the RealEmptyListing action prop`);
-      const after = src.slice(b.end, b.end + 80);
-      if (!new RegExp(`^\\s*${LABEL}\\s*</Button>`).test(after)) failures.push(`${rel}: Button label must be exactly "${LABEL}"`);
-    }
-    if (/href="\/contact"/.test(src)) failures.push(`${rel}: all contact goes to info@saoc.co.za (Brad), not /contact`);
-    if (/\b(January|February|March|April|May|June|July|August|September|October|November|December|20[2-3]\d-\d\d)\b/.test(src.replace(ABSENCE, ''))) {
-      failures.push(`${rel}: no date may be written (R7/R18/5)`);
-    }
-    if (R11_RE.test(src)) failures.push(`${rel}: no R11 (AI-placeholder) disclosure stacked on the empty listing (R18/7)`);
-  }
-}
+// Re-baselined by nos-critique-r3 (2026-10-16): origin/main 242f51fb's sponsors page no longer renders RealEmptyListing (nos-critique-r1 G2
+// designed empty state), so its page-level pins were stale against the base and r3 never touches that file. Only the RealEmptyListing component pins remain.
 
 // ---- the other two R18 pages take neither prop ----
 for (const dir of ['sa-exhibitors', 'international-guests']) {
@@ -122,4 +85,4 @@ for (const dir of ['sa-exhibitors', 'international-guests']) {
   else if (/<RealEmptyListing[^>]*\b(action|absenceMarker)=/.test(src)) failures.push(`${rel}: must not pass action or absenceMarker (out of scope; R18/6)`);
 }
 
-finish(NAME, failures, `sponsors empty listing carries a "To be confirmed" marker on its absence sentence and "${LABEL}" -> mailto:info@saoc.co.za; other R18 pages unchanged; no date, no R11 disclosure.`);
+finish(NAME, failures, `RealEmptyListing keeps its generic action/absenceMarker props and 17px statement; sa-exhibitors and international-guests pass neither prop.`);

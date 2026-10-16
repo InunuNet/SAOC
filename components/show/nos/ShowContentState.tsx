@@ -49,6 +49,11 @@ export interface ShowContentStateProps {
    * published branch only, same rule as listingContent.
    */
   afterProse?: ReactNode;
+  /**
+   * Static content rendered straight after the hero, in every state (e.g. symposium's
+   * "Presenters (N)" jump link, R44-A5). No wrapper or styling of its own.
+   */
+  afterHero?: ReactNode;
 }
 
 export function ShowContentState({
@@ -57,6 +62,7 @@ export function ShowContentState({
   layout,
   listingContent,
   afterProse,
+  afterHero,
 }: ShowContentStateProps) {
   const page = unwrapShowPageResult(result);
   const state = page.isFallback === true ? 'fallback-unpublished' : 'published';
@@ -69,6 +75,7 @@ export function ShowContentState({
         lede={page.summary ?? undefined}
         priority
       />
+      {afterHero}
 
       <div data-nos-content-state={state}>
         {state === 'fallback-unpublished' ? (

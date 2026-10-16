@@ -507,7 +507,7 @@ export default async function NationalShowPage() {
         {/* Spec entry 14 (/societies) gets a link and no page of its own — visibly
             not one of the four groups' members, per hub-groups.golden.md §"Structural
             requirements" 3. */}
-        <p className="mt-14 border-t border-rule pt-8 font-sans text-[15px] text-ink/70">
+        <p className="mt-14 border-t border-rule pt-8 font-sans text-[17px] text-ink/70">
           Looking for your local orchid society?{' '}
           <Link href="/societies" className="text-[var(--accent)] underline underline-offset-2">
             Find your society

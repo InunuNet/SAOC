@@ -157,7 +157,7 @@ export default async function WhatToExpectPage() {
                   </dt>
                   <dd className="mt-1 font-serif text-[22px] font-medium text-ink">{entry.hours}</dd>
                   {entry.note ? (
-                    <p className="mt-2 font-sans text-[13px] leading-snug text-muted">
+                    <p className="mt-2 font-sans text-[17px] leading-snug text-muted">
                       {entry.note}
                     </p>
                   ) : null}

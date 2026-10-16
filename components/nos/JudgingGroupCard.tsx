@@ -29,7 +29,7 @@ export function JudgingGroupCard({ code, group, name, description }: NosJudgingG
         {group}
       </p>
       <h3 className="font-serif text-[17px] font-medium leading-snug text-ink">{name}</h3>
-      <p className="font-sans text-[13px] leading-relaxed text-muted">{description}</p>
+      <p className="font-sans text-[16px] leading-relaxed text-muted">{description}</p>
     </Card>
   );
 }

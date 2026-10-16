@@ -127,7 +127,7 @@ export function NavCards({ show }: NavCardsProps) {
                   {card.title}
                 </h3>
 
-                <p className="font-sans text-[13px] text-ink/70 leading-relaxed mb-4">
+                <p className="font-sans text-[16px] text-ink/70 leading-relaxed mb-4">
                   {card.body}
                 </p>
 

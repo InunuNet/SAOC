@@ -1,18 +1,28 @@
 'use client';
 
 import Image from 'next/image';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 import { parseBio } from '@/lib/view-models/presenter-bio';
 import type { PresenterPhoto } from '@/lib/view-models/presenter-photo';
 import type { PresenterCardViewModel } from '@/lib/view-models/ticket-card';
 
-// nos-presenter-cards (F1) — presenter cards plus the single full-bio dialog (golden §2, §8).
-// Cards level themselves: every bio is clamped to the shortest full bio, and only the cards
-// that actually overflow show "Read full bio". Server render and no-JS show every bio in
-// full with every button hidden.
-const BIO_HEIGHT_VAR = '--bio-h';
-const CLIP_TOLERANCE_PX = 1;
+// nos-presenter-cards (F1) / nos-critique-r3 (R39) — presenter cards with an inline bio
+// disclosure. Each bio is clamped to MAX_LINES lines once the grid has mounted, and only the
+// cards that overflow show "Read full bio", a button whose aria-expanded flips the clamp.
+// Server render and no-JS show every bio in full with every button hidden.
+const MAX_LINES = 4;
+const OVERFLOW_TOLERANCE_PX = 1;
+
+// False on the server and during hydration, true once mounted: the clamp is progressive
+// enhancement, so the server render and no-JS keep every bio in full.
+function subscribeNever() {
+  return () => {};
+}
+
+function useMounted() {
+  return useSyncExternalStore(subscribeNever, () => true, () => false);
+}
 
 function PresenterBody({ bio }: { bio: string | null }) {
   return (
@@ -35,11 +45,9 @@ function PresenterBody({ bio }: { bio: string | null }) {
 function PresenterImage({
   photo,
   presenter,
-  eager,
 }: {
   photo: PresenterPhoto;
   presenter: PresenterCardViewModel;
-  eager?: boolean;
 }) {
   return (
     <Image
@@ -47,44 +55,55 @@ function PresenterImage({
       width={photo.width}
       height={photo.height}
       alt={`Portrait of ${presenter.name}`}
-      loading={eager ? 'eager' : undefined}
       unoptimized
     />
   );
 }
 
+function PresenterClip({
+  id,
+  bio,
+  overflowing,
+  open,
+}: {
+  id: string;
+  bio: string | null;
+  overflowing: boolean;
+  open: boolean;
+}) {
+  return (
+    <div id={id} className={`pc-clip${overflowing ? ' is-clipped' : ''}${open ? ' is-open' : ''}`}>
+      <PresenterBody bio={bio} />
+    </div>
+  );
+}
+
 export function PresenterGrid({
   presenters,
-  dialogIdBase,
+  idBase,
 }: {
   presenters: PresenterCardViewModel[];
-  dialogIdBase: string;
+  idBase: string;
 }) {
+  const clampReady = useMounted();
+  const [overflowIds, setOverflowIds] = useState<string[]>([]);
+  const [openIds, setOpenIds] = useState<string[]>([]);
   const gridRef = useRef<HTMLUListElement>(null);
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const sheetBodyRef = useRef<HTMLDivElement>(null);
-  const closeRef = useRef<HTMLButtonElement>(null);
-  const openerRef = useRef<HTMLButtonElement | null>(null);
-  const [clippedIds, setClippedIds] = useState<string[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
 
-  const level = useCallback(() => {
+  const measure = useCallback(() => {
     const grid = gridRef.current;
     if (!grid) return;
-    grid.style.removeProperty(BIO_HEIGHT_VAR);
     const clips = Array.from(grid.querySelectorAll<HTMLElement>('.pc-clip'));
-    if (clips.length === 0) return;
-    // A presenter published without a bio has an empty clip; it must not set the clamp.
-    const filled = clips.map((clip) => clip.scrollHeight).filter((height) => height > 0);
-    const bioHeight = filled.length > 0 ? Math.min(...filled) : null;
-    if (bioHeight !== null) grid.style.setProperty(BIO_HEIGHT_VAR, `${bioHeight}px`);
     const next = presenters
-      .filter(
-        (_, index) =>
-          bioHeight !== null && clips[index].scrollHeight > bioHeight + CLIP_TOLERANCE_PX,
-      )
+      .filter((_, index) => {
+        const clip = clips[index];
+        const block = clip?.querySelector<HTMLElement>('p,li');
+        if (!clip || !block) return false;
+        const lineHeightPx = parseFloat(getComputedStyle(block).lineHeight);
+        return clip.scrollHeight > MAX_LINES * lineHeightPx + OVERFLOW_TOLERANCE_PX;
+      })
       .map((presenter) => presenter.id);
-    setClippedIds((prev) =>
+    setOverflowIds((prev) =>
       prev.length === next.length && prev.every((id, index) => id === next[index]) ? prev : next,
     );
   }, [presenters]);
@@ -95,7 +114,7 @@ export function PresenterGrid({
     let frame = 0;
     const schedule = () => {
       cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(level);
+      frame = requestAnimationFrame(measure);
     };
     const observer = new ResizeObserver(schedule);
     observer.observe(grid);
@@ -106,33 +125,19 @@ export function PresenterGrid({
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [level]);
+  }, [measure]);
 
-  // Opens once the active presenter's content is in the dialog.
-  useEffect(() => {
-    if (activeId === null) return;
-    sheetBodyRef.current?.scrollTo(0, 0);
-    dialogRef.current?.showModal();
-    closeRef.current?.focus();
-  }, [activeId]);
-
-  const active = presenters.find((presenter) => presenter.id === activeId) ?? null;
-  const dialogTitleId = `${dialogIdBase}-dialog-title`;
-
-  function openBio(id: string, opener: HTMLButtonElement) {
-    openerRef.current = opener;
-    setActiveId(id);
-  }
-
-  function handleDialogClose() {
-    setActiveId(null);
-    openerRef.current?.focus();
+  function toggle(id: string) {
+    setOpenIds((prev) => (prev.includes(id) ? prev.filter((openId) => openId !== id) : [...prev, id]));
   }
 
   return (
-    <>
-      <ul ref={gridRef} className="pc-grid">
-        {presenters.map((presenter) => (
+    <ul ref={gridRef} className="pc-grid" data-clamp={clampReady ? '' : undefined}>
+      {presenters.map((presenter) => {
+        const bioId = `${idBase}-bio-${presenter.id}`;
+        const isOpen = openIds.includes(presenter.id);
+        const isOverflowing = overflowIds.includes(presenter.id);
+        return (
           <li key={presenter.id} className="pc-card">
             <div className="pc-head">
               <figure className="pc-photo" aria-hidden={presenter.photo ? undefined : true}>
@@ -146,64 +151,28 @@ export function PresenterGrid({
               </div>
             </div>
             <div className="pc-bio">
-              <div className={`pc-clip${clippedIds.includes(presenter.id) ? ' is-clipped' : ''}`}>
-                <PresenterBody bio={presenter.bioExcerpt} />
-              </div>
+              <PresenterClip
+                id={bioId}
+                bio={presenter.bioExcerpt}
+                overflowing={isOverflowing}
+                open={isOpen}
+              />
             </div>
             <div className="pc-foot">
               <button
                 type="button"
                 className="pc-more"
-                aria-haspopup="dialog"
-                hidden={!clippedIds.includes(presenter.id)}
-                onClick={(event) => openBio(presenter.id, event.currentTarget)}
+                aria-expanded={isOpen}
+                aria-controls={bioId}
+                hidden={!isOverflowing}
+                onClick={() => toggle(presenter.id)}
               >
                 Read full bio<span className="sr-only"> of {presenter.name}</span>
               </button>
             </div>
           </li>
-        ))}
-      </ul>
-
-      <dialog
-        ref={dialogRef}
-        className="pc-modal"
-        aria-labelledby={dialogTitleId}
-        onClose={handleDialogClose}
-        onClick={(event) => {
-          if (event.target === event.currentTarget) event.currentTarget.close();
-        }}
-      >
-        {active ? (
-          <div className="pc-sheet-inner">
-            <div className="pc-sheet-head">
-              <div className="pc-sheet-face">
-                {active.photo ? <PresenterImage photo={active.photo} presenter={active} eager /> : null}
-              </div>
-              <div>
-                <h2 id={dialogTitleId} className="pc-sheet-title">
-                  {active.name}
-                </h2>
-                {active.role ? <p className="pc-role">{active.role}</p> : null}
-              </div>
-              <button
-                ref={closeRef}
-                type="button"
-                className="pc-sheet-close"
-                onClick={() => dialogRef.current?.close()}
-              >
-                <svg aria-hidden="true" viewBox="0 0 24 24">
-                  <path d="M6 6l12 12M18 6L6 18" />
-                </svg>
-                <span className="sr-only">Close</span>
-              </button>
-            </div>
-            <div ref={sheetBodyRef} className="pc-sheet-body">
-              <PresenterBody bio={active.bioExcerpt} />
-            </div>
-          </div>
-        ) : null}
-      </dialog>
-    </>
+        );
+      })}
+    </ul>
   );
 }

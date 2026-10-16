@@ -61,7 +61,8 @@ const cells = openingTags(src, 'td');
 if (cells.length !== 2) failures.push(`expected two <td> (When, Detail), found ${cells.length}`);
 for (const c of cells) {
   if (!has(c, 'max-sm:block')) failures.push(`<td> must carry max-sm:block (${c.className})`);
-  if (!has(c, 'font-sans') || !has(c, 'text-[15px]')) failures.push(`<td> lost existing type classes (${c.className})`);
+  // R43 (NOS Design via the lead, 2026-10-16, nos-critique-r3) supersedes: running prose takes the 17px body role (was text-[15px]).
+  if (!has(c, 'font-sans') || !has(c, 'text-[17px]')) failures.push(`<td> lost existing type classes (${c.className})`);
 }
 
 // ---- semantics kept ----

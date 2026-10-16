@@ -96,7 +96,7 @@ export function ShowFaqList({ faqs, pendingLabel, researchLabel }: ShowFaqListPr
 
                     <div className="pb-6 pr-8">
                       {faq.answer && faq.answer.length > 0 ? (
-                        <div className="max-w-3xl font-sans text-[15px] leading-relaxed text-ink/80">
+                        <div className="max-w-3xl font-sans text-[17px] leading-relaxed text-ink/80">
                           <PortableText value={faq.answer} />
                         </div>
                       ) : null}

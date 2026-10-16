@@ -115,7 +115,7 @@ export default async function PlanYourVisitPage() {
                   <Card className="h-full">
                     <h3 className="font-serif text-[18px] font-medium text-ink">{attraction.name}</h3>
                     {attraction.note ? (
-                      <p className="mt-2 font-sans text-[14px] leading-relaxed text-muted">
+                      <p className="mt-2 font-sans text-[17px] leading-relaxed text-muted">
                         {attraction.note}
                       </p>
                     ) : null}
@@ -154,7 +154,7 @@ export default async function PlanYourVisitPage() {
                     {contact.number}
                   </dd>
                   {contact.note ? (
-                    <p className="mt-2 font-sans text-[13px] leading-snug text-muted">
+                    <p className="mt-2 font-sans text-[17px] leading-snug text-muted">
                       {contact.note}
                     </p>
                   ) : null}

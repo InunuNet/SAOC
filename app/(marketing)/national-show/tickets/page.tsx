@@ -185,7 +185,7 @@ export default async function NationalShowTicketsPage() {
                 ) : null}
               </>
             ) : (
-              <p className="font-sans text-[14px] leading-relaxed text-muted">
+              <p className="font-sans text-[17px] leading-relaxed text-muted">
                 Ticket sales are not yet open — check back soon.
               </p>
             )}
@@ -196,7 +196,7 @@ export default async function NationalShowTicketsPage() {
           {SECONDARY_OPTIONS.map((option) => (
             <Card key={option.id} className="flex flex-col gap-4">
               <h3 className="font-serif text-[20px] font-medium text-ink">{option.heading}</h3>
-              <p className="font-sans text-[14px] leading-relaxed text-muted">{option.body}</p>
+              <p className="font-sans text-[17px] leading-relaxed text-muted">{option.body}</p>
               <Button as={Link} href={option.href} variant="ghost" className="mt-auto w-fit">
                 {option.cta}
               </Button>
