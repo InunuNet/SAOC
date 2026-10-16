@@ -2,13 +2,14 @@
 //   node --import tsx/esm contracts/checks/nos-own-brand-chrome/<check>.mjs
 // from the worktree root. Spawns `next start` on NOS_PORT (default 3617) unless
 // NOS_REUSE_SERVER=1 (then it uses whatever already answers on NOS_BASE).
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { chromium } from 'playwright';
 
 export const PORT = process.env.NOS_PORT || '3617';
 export const BASE = process.env.NOS_BASE || `http://localhost:${PORT}`;
-export const BASE_REF = process.env.NOS_BASE_REF || 'b2e0e90d';
+// merge-base with origin/main, so the scope base follows every rebase instead of going stale; NOS_BASE_REF pins one explicitly.
+export const BASE_REF = process.env.NOS_BASE_REF || execFileSync('git', ['merge-base', 'HEAD', 'origin/main'], { encoding: 'utf8' }).trim();
 export const SPEC_DIR = '.agent/memory/project/specs/nos-own-brand-chrome';
 export const GOLDEN_DIR = `${SPEC_DIR}/goldens/f1`;
 

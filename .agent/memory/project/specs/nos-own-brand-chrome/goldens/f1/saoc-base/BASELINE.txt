@@ -1,0 +1,1 @@
+Re-baselined 2026-10-16 from a clean build of 609ee9eb (main: pre-generated WebP srcset via custom loader; earlier 61b0157e min-h-6 target-size work).

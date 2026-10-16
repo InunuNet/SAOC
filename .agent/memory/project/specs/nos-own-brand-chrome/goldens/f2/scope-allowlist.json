@@ -1,5 +1,5 @@
 {
-  "base": "b2e0e90d",
+  "base": "merge-base HEAD origin/main",
   "note": "F1 is uncommitted in the worktree, so F2 is judged against the same base as F1: the union of F1's allowlist and F2's additions. SAOC-shared files (components/ui/PageHero.tsx, components/tickets/* other than CategoryTicketsPage.tsx, components/vendors/**, components/chrome/{Header,MobileMenu,MegaMenu,UtilityBar,nav-config}.ts*, app/globals.css, every non-national-show route) stay unlisted so any edit to them fails the scope check.",
   "allowed": [
     "app/(marketing)/layout.tsx",

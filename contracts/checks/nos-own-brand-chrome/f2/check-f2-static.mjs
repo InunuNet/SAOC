@@ -25,7 +25,7 @@ function scanPhotoRefs() {
   const dirs = ['app/(marketing)/national-show', 'components/nos', 'components/show', 'components/nos-chrome', 'components/tickets'];
   const refs = new Set();
   for (const f of dirs.flatMap((d) => walk(d)).filter((p) => /\.(tsx?|css)$/.test(p))) for (const t of readFileSync(f, 'utf8').match(IMG_RE) ?? []) refs.add(t);
-  return { refs: [...refs].sort(), files: walk('public/images').map((p) => p.replace(/^public\/images\//, '')).sort() };
+  return { refs: [...refs].sort(), files: walk('public/images').filter((p) => !p.startsWith('public/images/_opt/')).map((p) => p.replace(/^public\/images\//, '')).sort() };
 }
 
 const modes = {
@@ -84,6 +84,7 @@ const modes = {
     need(!!card, `${acc}: the card name ({option.name}) must be an h3 or h4, not a <div>`);
     if (grp && card) need(Number(card[1]) > Number(grp[1]), `${acc}: card name h${card[1]} must sit below the group label h${grp[1]} (no level skip, no inversion)`);
   },
+  // public/images/_opt/ is gitignored build output of main's image loader and is excluded from the file list.
   // R15/9: any route still failing contrast goes to NOS Design before a photo swap (R16). Photo references (image paths in the NOS sources, plus the
   // public/images tree) must equal goldens/f2/photo-refs.json, captured at F2 start (F1 complete), unless goldens/f2/r16-photo-swap-ruling.md exists;
   // the lead writes that file from NOS Design's R16. `capture-photo-refs` regenerates the golden and is for the architect/lead only.
