@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 // A1 — skip link: first focusable element on every route type (SAOC and /national-show/*), hidden until
 // focused, visible and uncovered when focused, styled from existing :root tokens, Enter moves focus into the
-// single <main id="main-content">. Also fails on hydration errors (a client SkipLink/ChromeFrame mismatch).
+// single <main id="main-content">. /national-show/* routes validate against the NOS token set (NOS_TOKENS), every other route keeps the SAOC set. Also fails on hydration errors (a client SkipLink/ChromeFrame mismatch).
 // Usage: BASE_URL=http://localhost:3002 node contracts/checks/launch-weekend/f1/check-a-skip-link.mjs
 import { BASE, VIEWPORTS, SAOC_ROUTES, NOS_ROUTES, launch, newPage, open, loadGolden, resolveRoute, report } from './_lib.mjs';
 
 const TOKENS = ['--primary', '--primary-800', '--primary-700', '--primary-100', '--accent', '--accent-soft', '--parchment', '--ivory', '--bone', '--ink', '--muted'];
+// NOS palette (--nc-*, declared on :root by components/nos-chrome/nos-chrome.css), defined in the NOS chrome handoff:
+// .agent/memory/project/specs/nos-own-brand-chrome/goldens/f1/HANDOFF.md ("Colours" table: royal #211A57, ground #FBFAF0, gold #F3F2D6, violet #7E3F97)
+// and goldens/f1/chrome.css:8-11. NosSkipLink is royal on gold per the NOS rulings; a SAOC route must never use these.
+const NOS_TOKENS = ['--nc-royal', '--nc-gold', '--nc-ground', '--nc-violet'];
 const problems = [];
 const bad = (where, m) => problems.push(`${where}: ${m}`);
 const { societySlug } = loadGolden('identity-baseline.json');
@@ -31,6 +35,7 @@ for (const vp of VIEWPORTS) {
     if (!pre.hiddenInViewport) bad(where, 'skip link is visible before focus (must be visible on focus only)');
 
     await page.keyboard.press('Tab');
+    const tokenSet = path.startsWith('/national-show') ? NOS_TOKENS : TOKENS;
     const f = await page.evaluate((tokens) => {
       const a = document.activeElement;
       if (!a) return { isSkip: false };
@@ -58,7 +63,7 @@ for (const vp of VIEWPORTS) {
         tokenColours: allowed.has(cs.color) && allowed.has(bg),
         contrast: bgOpaque ? ratio(cs.color, bg) : 0,
       };
-    }, TOKENS);
+    }, tokenSet);
     if (!f.isSkip) bad(where, `first Tab did not land on the skip link (focused: ${JSON.stringify(f.text ?? null)})`);
     else {
       if (!f.inViewport) bad(where, 'focused skip link is not fully inside the viewport');
@@ -66,7 +71,7 @@ for (const vp of VIEWPORTS) {
       if (!f.visible) bad(where, 'focused skip link is not visible (visibility/opacity/clip-path)');
       if (f.w < 44 || f.h < 44) bad(where, `focused skip link ${f.w.toFixed(1)}x${f.h.toFixed(1)} is under 44x44`);
       if (!f.bgOpaque || f.contrast < 4.5) bad(where, `skip link contrast ${f.contrast.toFixed(2)} < 4.5 or non-opaque background (${f.color} on ${f.bg})`);
-      if (!f.tokenColours) bad(where, `skip link colours ${f.color} on ${f.bg} are not existing :root tokens`);
+      if (!f.tokenColours) bad(where, `skip link colours ${f.color} on ${f.bg} are not ${path.startsWith('/national-show') ? 'NOS' : 'existing SAOC'} :root tokens`);
     }
 
     await page.keyboard.press('Enter');

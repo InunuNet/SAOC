@@ -49,9 +49,15 @@ await main('F menu-panel', async (r) => {
     if (await page.locator('#nd .nh-cta, #nd button', { hasText: /^\s*Tickets\s*$/ }).count()) r.fail('panel must not carry a second Tickets button');
 
     const sub = page.locator('#nd [data-sub]');
-    if ((await sub.getAttribute('aria-expanded')) !== 'false') r.fail('National Show accordion must start collapsed');
+    // R40 (supersedes "start collapsed"): the header only renders on NOS routes, so National Show is the current section and its disclosure starts open.
+    if ((await sub.getAttribute('aria-expanded')) !== 'true') r.fail('R40: National Show accordion must start open (aria-expanded="true")');
     await sub.click();
-    if ((await sub.getAttribute('aria-expanded')) !== 'true') r.fail('accordion did not expand');
+    if ((await sub.getAttribute('aria-expanded')) !== 'false') r.fail('R40: accordion did not collapse on click');
+    await sub.click();
+    if ((await sub.getAttribute('aria-expanded')) !== 'true') r.fail('R40: accordion did not re-open on a second click');
+    const nd = await page.evaluate(() => { const e = document.querySelector('#nd'); return { tag: e?.tagName, label: e?.getAttribute('aria-label') ?? '', nested: e ? e.querySelectorAll('nav').length : -1 }; });
+    if (nd.tag !== 'NAV' || !nd.label.trim()) r.fail(`R40: #nd must be a <nav> with an aria-label (got <${nd.tag}> label "${nd.label}")`);
+    if (nd.nested) r.fail(`R40: #nd contains ${nd.nested} nested <nav> (one labelled landmark only)`);
     const text = squash(await page.locator('#nd').textContent());
     const leaves = [...mega.lead.theShow.links, ...mega.columns.flatMap((c) => c.links)];
     for (const l of leaves) {
