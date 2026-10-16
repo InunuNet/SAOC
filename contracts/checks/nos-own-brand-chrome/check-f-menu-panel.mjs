@@ -49,26 +49,60 @@ await main('F menu-panel', async (r) => {
     if (await page.locator('#nd .nh-cta, #nd button', { hasText: /^\s*Tickets\s*$/ }).count()) r.fail('panel must not carry a second Tickets button');
 
     const sub = page.locator('#nd [data-sub]');
+    // The disclosure state is read from the DOM, not only from aria-expanded: aria-controls must resolve to an element, and that element must be
+    // genuinely visible when expanded and genuinely hidden (hidden attribute and computed display/visibility) when collapsed.
+    const subState = () => page.evaluate(() => {
+      const btn = document.querySelector('#nd [data-sub]');
+      const id = btn?.getAttribute('aria-controls') ?? '';
+      const target = id ? document.getElementById(id) : null;
+      const cs = target ? getComputedStyle(target) : null;
+      const rect = target ? target.getBoundingClientRect() : null;
+      return {
+        expanded: btn?.getAttribute('aria-expanded'),
+        id,
+        resolves: !!target && !!btn && target.closest('#nd') !== null && btn.closest('li')?.contains(target) === true,
+        hiddenAttr: target ? target.hidden : null,
+        visible: !!target && cs.display !== 'none' && cs.visibility === 'visible' && rect.width > 0 && rect.height > 0 && !target.hidden,
+      };
+    });
+    const expect = async (want, when) => {
+      const st = await subState();
+      if (st.expanded !== String(want)) r.fail(`${when}: aria-expanded is "${st.expanded}", want "${want}"`);
+      if (!st.id || !st.resolves) r.fail(`${when}: aria-controls "${st.id}" does not resolve to an element inside the same list item in #nd`);
+      if (st.visible !== want) r.fail(`${when}: controlled submenu is ${st.visible ? 'visible' : 'not visible'} (hidden attr ${st.hiddenAttr}), want ${want ? 'visible' : 'hidden'}`);
+      return st;
+    };
     // R40 (supersedes "start collapsed"): the header only renders on NOS routes, so National Show is the current section and its disclosure starts open.
-    if ((await sub.getAttribute('aria-expanded')) !== 'true') r.fail('R40: National Show accordion must start open (aria-expanded="true")');
+    await expect(true, 'R40 start');
     await sub.click();
-    if ((await sub.getAttribute('aria-expanded')) !== 'false') r.fail('R40: accordion did not collapse on click');
+    await expect(false, 'R40 after first click');
     await sub.click();
-    if ((await sub.getAttribute('aria-expanded')) !== 'true') r.fail('R40: accordion did not re-open on a second click');
+    await expect(true, 'R40 after second click');
     const nd = await page.evaluate(() => { const e = document.querySelector('#nd'); return { tag: e?.tagName, label: e?.getAttribute('aria-label') ?? '', nested: e ? e.querySelectorAll('nav').length : -1 }; });
     if (nd.tag !== 'NAV' || !nd.label.trim()) r.fail(`R40: #nd must be a <nav> with an aria-label (got <${nd.tag}> label "${nd.label}")`);
     if (nd.nested) r.fail(`R40: #nd contains ${nd.nested} nested <nav> (one labelled landmark only)`);
-    const text = squash(await page.locator('#nd').textContent());
+    // Only visible content counts: innerText and visible-link counts, so a hidden submenu cannot satisfy a leaf assertion.
+    const text = squash(await page.locator('#nd').evaluate((e) => e.innerText));
+    const visibleLinks = (sel, hasText) => page.locator(`#nd ${sel}`).evaluateAll((els, t) => els.filter((e) => e.getClientRects().length > 0 && getComputedStyle(e).visibility === 'visible' && (!t || (e.textContent ?? '').includes(t))).length, hasText ?? null);
     const leaves = [...mega.lead.theShow.links, ...mega.columns.flatMap((c) => c.links)];
     for (const l of leaves) {
-      if (!text.includes(l.label)) r.fail(`panel leaf "${l.label}" missing`);
-      if (!(await page.locator(`#nd a[href="${l.href}"]`).count())) r.fail(`panel has no link to ${l.href}`);
+      if (!text.includes(l.label)) r.fail(`panel leaf "${l.label}" missing from the visible text`);
+      if (!(await visibleLinks(`a[href="${l.href}"]`))) r.fail(`panel has no visible link to ${l.href}`);
     }
     for (const d of mega.featureRail.destinations.filter((x) => x.variant === 'secondary')) {
-      if (!(await page.locator(`#nd a[href="${d.href}"]`, { hasText: d.label }).count())) r.fail(`panel missing ${d.label} -> ${d.href}`);
+      if (!(await visibleLinks(`a[href="${d.href}"]`, d.label))) r.fail(`panel missing visible ${d.label} -> ${d.href}`);
     }
     if (!text.includes('Exhibitors and Vendors') || /Trade Vendors/i.test(text)) r.fail('panel must say "Exhibitors and Vendors", never "Trade Vendors"');
-    if (!(await page.locator('#nd a[href="/contact"]').count())) r.fail('panel missing Contact -> /contact');
+    if (!(await visibleLinks('a[href="/contact"]'))) r.fail('panel missing visible Contact -> /contact');
+    // Collapsed, the submenu's leaves must drop out of the visible text (proves the visibility assertions are not vacuous).
+    await sub.click();
+    await expect(false, 'collapse probe');
+    // Match whole visible link labels (anchor by anchor), not substrings of the flattened text, where "National Show" + "Sponsors" would read as "Show Sponsors".
+    const closedLinks = await page.locator('#nd a').evaluateAll((els) => els.filter((e) => e.getClientRects().length > 0 && getComputedStyle(e).visibility === 'visible').map((e) => (e.textContent ?? '').replace(/\s+/g, ' ').trim()));
+    const still = leaves.filter((l) => closedLinks.includes(l.label)).map((l) => l.label);
+    if (still.length) r.fail(`collapsed: submenu leaf links still visible: ${JSON.stringify(still)}`);
+    await sub.click();
+    await expect(true, 'reopen probe');
 
     await page.keyboard.press('Escape');
     if ((await burgerOpen(page)) !== 'false') r.fail('Escape did not collapse the Menu button');
