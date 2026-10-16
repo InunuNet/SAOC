@@ -40,6 +40,10 @@
   {
    "file": "contracts/checks/launch-weekend/f12/check-a-static.mjs",
    "reason": "The hub page must NOT render NosShowIndex (was: must). NosShowIndex remains exported and unchanged."
+  },
+  {
+   "file": "contracts/checks/launch-weekend/f12/check-a-static.mjs (vendors loop)",
+   "reason": "The r5 loop required [&_p]:max-w-[60ch] and a diff limited to the F17 event-name swap on vendors/page.tsx and exhibitors/page.tsx. /vendors moves onto the F18 long-form template, so the loop now covers exhibitors only. F18-A1 owns the vendors page (verbatim copy, 60ch body, layout)."
   }
  ],
  "notRerunInF18": [
