@@ -122,6 +122,10 @@ assertions:
       at <=1023; h1 and CTAs above the 1280x800 fold'
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-hub-conversion.mjs
     timeout_seconds: 900
+  - id: A27
+    description: '[F3 R67] /national-show hero holds exactly two links in order: "Tickets" -> /national-show/tickets, "Plan your visit" -> /national-show/plan-your-visit; no /societies link in the hero (1280 and 390)'
+    command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-hero-ctas.mjs
+    timeout_seconds: 300
   - id: F2-A3
     description: '[regress F2 A3] no Cormorant/Jost/JetBrains/Crimson/Manrope/font-mono/var(--mono) in the NOS sources (comments stripped; components/nos/Logo.tsx exempt)'
     command: node contracts/checks/nos-own-brand-chrome/f2/check-f2-static.mjs type-clean
