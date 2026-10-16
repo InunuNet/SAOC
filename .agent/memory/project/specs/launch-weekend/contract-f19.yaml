@@ -1,0 +1,99 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: The SAOC pages get one design pass inside the approved handoff vocabulary - the home hero shows the carousel through the README's diagonal 60-to-25 sage scrim with a short bone pull and a text-zone veil that keeps the h1, accent, lede and both CTAs at least 4.5:1 on all four slides at 1280 and 390, the CTAs and spacing are fixed at 390, "Find Your Society" is sentence case, the events strip is headed "What's on", the yearbook meta sits 32px under its copy, every SAOC body heading and eyebrow starts on the header logo's x via one .saoc-container, /judging is a 4fr/7fr heading-and-prose layout, SAOC prose is 16px/1.55 - with no copy invented, nothing under the National Show touched, and the dev's self-critique loop evidenced by fresh screenshots and a clean final-pass log.
+created_at: '2026-10-17'
+autonomy: high
+features:
+  - id: F19
+    name: SAOC design pass (R79 hero scrim, R64 casing, R79 events heading and yearbook band, R80 hero at 390, R72 shared axis and /judging layout, R65 SAOC type 16/1.55)
+    status: pending
+# GATE: cwd = the implementation worktree (branch from main 76ad8b98 with spec/lw-f19 merged in, so goldens/f19 and contracts/checks/launch-weekend/f19 exist). Copy .env.local in, delete it at the end.
+# BASE_URL = a production build of that worktree on port 3619 (`pnpm build && pnpm exec next start -p 3619`; the beta basic-auth wall fails closed without BETA_BASIC_AUTH_* in .env.local, _lib.mjs sends them). Stop by exact PID (lsof -ti tcp:3619 -sTCP:LISTEN). Do not rebuild while it runs. Runtime checks read the CMS READ-ONLY.
+# BASE_REF defaults to origin/main for the scope and critique-evidence checks; pin it to 76ad8b98 if main has moved.
+# Every runtime check was run RED against untouched main 76ad8b98 (:3012); A1, A2, A3-A6, A9 and A11 were run GREEN against goldens/f19/simulate.js (a throwaway in-page patch, not a reference build). A7's positive path was proven on the already-compliant routes; A8 was proven red only. See goldens/f19/f19-spec.md section 6. A11 and A12 are regression guards, green on main by design.
+# The brief verbatim (README l.125) measured 2.0 to 3.8:1, so the scrim adds a text-zone veil (R1 in the spec). The lead may reverse a ruling by editing tokens.json and the spec, not the contract.
+# F18 (NOS pages) is in flight on other branches. If F18 lands first, rebase and re-capture goldens/f19/nos-baseline.json from that main before the gate (supersession.json mergeOrder).
+# Skills @dev must load and use: impeccable (craft-floor, polish, critique), frontend-design, web-design-guidelines, accessibility.
+goldens:
+  - .agent/memory/project/specs/launch-weekend/goldens/f19/f19-spec.md
+  - .agent/memory/project/specs/launch-weekend/goldens/f19/tokens.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f19/copy-baseline.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f19/nos-baseline.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f19/supersession.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f19/simulate.js
+assertions:
+  phase: 4
+  checks:
+    - id: F19-A1
+      description: Hero scrim (R79 #1, README l.125) - three aria-hidden data-hero-scrim layers after the slides and before the content (diagonal sage gradient to bottom right, first stop alpha .60 last .25 never rising; radial text-zone veil transparent at its rim; bone pull to top from --bone to transparent, at least 32px and clear of every text, CTA, pause and dot), the legacy uniform layer deleted, and at 1280 the solved overlay alpha is .50-.72 top-left and .18-.40 bottom-right so the carousel shows
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-a-scrim.mjs
+    - id: F19-A2
+      description: Hero contrast - on all 4 carousel slides at 1280 and 390 the h1 roman, h1 italic accent, lede and both CTAs measure at least 4.5:1 on rendered pixels (glyphs hidden, 2nd-percentile worst pixel)
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-b-contrast.mjs
+    - id: F19-A3
+      description: Sentence-case buttons (R64, R79 #2) - every button-like control on 9 SAOC routes is sentence case with no uppercase transform, the hero primary reads "Find your society", Hero.tsx no longer holds "Find Your Society"
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-c-casing.mjs
+    - id: F19-A4
+      description: Home events strip (R79 #3) - section[data-home-section="events"] has one h2 "What's on", no duplicate eyebrow, no "Upcoming society shows", the Full calendar link and the show-band to yearbook order intact
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-d-events-heading.mjs
+    - id: F19-A5
+      description: Yearbook band (R79 #4) - meta starts 32px under the copy, actions 16-32px under the meta, no justify-between, copy column top-aligned with the photo at 1280 and no taller than it, at 1280 and 390
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-e-yearbook.mjs
+    - id: F19-A6
+      description: Home hero at 390 and 1280 (R80 #2) - h1 to lede gap 16-20px at 390 and 16-32px at 1280, hero CTAs at least 44px tall, equal width at 390 and either full width or centred, side by side at 1280
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-f-hero-mobile.mjs
+    - id: F19-A7
+      description: Shared left axis (R72 #1) - at 390, 1280, 1920 and 2056 every left-aligned SAOC h1/h2 and eyebrow pill outside cards, the hero and the show band starts on the header logo x on home, about, societies, events, judging, contact, sponsors, members and media-kit; one .saoc-container rule in globals.css built from --container-max and --container-pad under an F19 comment, used in at least 6 files; legal pages reported as NOTE
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-g-axis.mjs
+    - id: F19-A8
+      description: /judging layout (R72 #2) - Overview, How judging works and Becoming a judge are data-judging-split grids, 4fr/7fr at 1024, 1280 and 1920 with the heading on the axis in the left column and prose at most 60ch in the right, tops aligned, one column at 390
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-h-judging.mjs
+    - id: F19-A9
+      description: Type (R65 SAOC, R72 #3) - on home, about, events, judging, contact, sponsors and members at 1280 and 390 every prose element is at least 16px, 16px prose leads at 24.8px, PageHero lede (data-page-hero) is 16/24.8 on 8 routes, all home prose outside the hero is 16/24.8, globals.css has no line-height 1.65
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-i-type.mjs
+    - id: F19-A10
+      description: Scope and no-invention, static half of the NOS guard - only the allowlisted files change, nothing under app/(marketing)/national-show, components/nos, nos-chrome, show, chrome, tickets, vendors, lib, sanity, api or ShowBand.tsx, nos-structure.css untouched, added lines hold no hex colour, unruled rgb, new font, animation, non-150ms duration or emoji, globals.css only under an F19 comment plus the .p-lg leading edit
+      command: node contracts/checks/launch-weekend/f19/check-j-scope.mjs
+    - id: F19-A11
+      description: No copy invented or lost - on 9 SAOC routes the leaf-text set of main equals the main baseline except "Find Your Society" to "Find your society" and "Upcoming society shows" gone; the unsourced figures (Lindiwe Khumalo, ISSN 1816-0336, 184 pages, Accredited Judges) are still present
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-m-copy.mjs
+    - id: F19-A12
+      description: Runtime half of the NOS guard - 17 National Show routes at 1280 and 390 keep their type signatures and left edges (PageHero ledes excluded)
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-l-nos-runtime.mjs
+    - id: F19-A13
+      description: F14 home guards still hold on the F19 build - card and CTA states, reduced motion, structure, geometry, contrast, other-section pin (re-pinned for the F19-owned sections), copy, yearbook and partners (re-pinned for the yearbook bottom edge); F14 scope and critique-evidence checks are retired (supersession.json)
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f14/check-b-states.mjs && BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f14/check-c-reduced-motion.mjs && BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f14/check-d-structure.mjs && BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f14/check-e-geometry.mjs && BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f14/check-f-contrast.mjs && BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f14/check-g-others.mjs && BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f14/check-i-copy.mjs && BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f14/check-j-yearbook-partners.mjs
+    - id: F19-A14
+      description: Self-critique loop evidence - 24 fresh after/ screenshots (8 routes and 4 hero slides, at 390 and 1280) newer than the last source edit, and an impeccable critique log (f19-critique-log.md) naming every route, scrim and slide with at least 2 passes whose final pass reads P0 0, P1 0, P2 0 and Score at least 36/40
+      command: node contracts/checks/launch-weekend/f19/check-k-critique-artefacts.mjs
+    - id: F19-A15
+      description: End-to-end suite green (starts its own dev server on a free port)
+      command: pnpm test:e2e
+      timeout_seconds: 1500
+    - id: F19-A16
+      description: Lint passes
+      command: pnpm lint
+    - id: F19-A17
+      description: Type check passes
+      command: pnpm type-check
+    - id: F19-A18
+      description: Production build passes
+      command: pnpm build
+      timeout_seconds: 900
+    - id: F19-A19
+      description: Docs - docs/launch-weekend-f19.md exists and covers the scrim and veil, the .saoc-container axis, the judging split, the 16/1.55 type rule, the shared PageHero effect on two NOS pages, and the legal-pages and societies/media-kit exclusions
+      command: test -s docs/launch-weekend-f19.md && grep -q "veil" docs/launch-weekend-f19.md && grep -q "saoc-container" docs/launch-weekend-f19.md && grep -q "4fr" docs/launch-weekend-f19.md && grep -q "1.55" docs/launch-weekend-f19.md && grep -q "PageHero" docs/launch-weekend-f19.md && grep -qi "legal" docs/launch-weekend-f19.md
+    - id: F19-A20
+      description: Codex adversarial review of the whole F19 diff (cross-model, execution/codex_qa.sh)
+      type: codex_qa
+      timeout_seconds: 900
+      target: >-
+        Adversarially review the current git diff (mission launch-weekend, feature F19, SAOC design pass) against
+        .agent/memory/project/specs/launch-weekend/goldens/f19/f19-spec.md. Check specifically: the home hero scrim is three aria-hidden
+        data-hero-scrim layers (diagonal 60 to 25 sage, text-zone veil, short bone pull clear of content) and the old uniform layer is gone, not hidden;
+        h1, accent, lede and both CTAs measure at least 4.5:1 on all four slides at 1280 and 390 with the carousel still visible in the corners;
+        nothing under app/(marketing)/national-show, components/nos, components/nos-chrome, components/show, components/chrome or ShowBand.tsx changed;
+        no copy was added or removed except "Find Your Society" to "Find your society" and the events heading; .saoc-container is built from the header's tokens and
+        the header itself is untouched; /judging splits 4fr/7fr with prose at most 60ch and no new heading copy; SAOC prose is 16px/1.55 and labels and meta were not inflated;
+        added lines hold no hex colour, unruled rgb, new font, animation or non-150ms duration; the shared PageHero change is the only effect on NOS pages; reduced-motion,
+        carousel pause and focus behaviour are unchanged.
