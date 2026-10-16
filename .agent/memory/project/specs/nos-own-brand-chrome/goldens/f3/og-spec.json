@@ -1,0 +1,26 @@
+{
+  "_source": "NOS Design J3 (Acceptance bar rev 2, comms.md 2026-10-16) and the F3 brief. Lockup file: branding/National Show 2027/ reversed NOS horizontal, vendored at goldens/f1/img/nos-reversed-horizontal-1200.png (1200x294, ink box (54,54)-(1139,241) = 1085x187, aspect 5.80; F1 spec line 128).",
+  "width": 1200,
+  "height": 630,
+  "ground": [33, 26, 87],
+  "groundHex": "#211A57",
+  "lockup": {
+    "file": "public/images/nos/nos-reversed-horizontal-1200.png",
+    "renderedWidthPx": 560,
+    "inkWidthMin": 470,
+    "inkWidthMax": 600,
+    "inkAspect": 5.8,
+    "inkAspectTol": 0.4,
+    "leftMin": 16,
+    "leftMax": 120,
+    "topMin": 16,
+    "topMax": 120,
+    "_note": "'about 560px wide' is the <img> box; the ink is 1085/1200 of it (about 506px). Ink 470..600 accepts both readings of the brief."
+  },
+  "title": { "font": "Fraunces", "weight": 300, "_note": "Not measurable from pixels; asserted on the generator source (F3 static og-source)." },
+  "titleMinInkPixels": 300,
+  "url": { "text": "saoc.co.za/national-show", "font": "Karla", "sizePx": 12, "colour": "gold (--gold #F3F2D6)", "minInkPixels": 40 },
+  "saocGreens": [[26, 46, 30], [15, 26, 17], [74, 124, 89], [107, 143, 117]],
+  "_saocGreensNote": "The four greens of the SAOC /og card (app/og/route.tsx: #1a2e1e, #0f1a11, #4A7C59, #6b8f75). The NOS lockup's own olive (#A7A841) is more than 80 RGB units from every one of them.",
+  "forbidden": ["saoc-lockup", "saoc-emblem", "saoc-logo", "eulophia", "linear-gradient"]
+}

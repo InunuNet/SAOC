@@ -87,32 +87,24 @@ export function TicketTypeCard({
   const cardContent = (
     <>
       <div className="relative aspect-[4/3] w-full overflow-hidden">
-        <Image
-          src={getOrchidImageForTicketType(slug)}
-          alt={name}
-          fill
-          className="object-cover"
-        />
+        <Image src={getOrchidImageForTicketType(slug)} alt={name} fill className="object-cover" />
       </div>
 
       <p className="font-serif text-[18px] font-semibold text-ink">{name}</p>
       <p className="font-serif text-[20px] font-medium text-ink">
         {price === 0 ? 'Free' : `R${price.toFixed(2)}`}
       </p>
-      <p id={`${inputId}-desc`} className="font-sans text-[13px] text-ink/70">
+      <p id={`${inputId}-desc`} className="font-sans text-[14px] text-ink/70">
         {description}
       </p>
 
       {provisional ? (
-        <span
-          data-testid="provisional-badge"
-          className="font-sans text-[12px] italic text-ink/70"
-        >
+        <span data-testid="provisional-badge" className="font-sans text-[12px] italic text-ink/70">
           Provisional pricing — subject to change
         </span>
       ) : null}
       {soldOut ? (
-        <span className="inline-block font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
+        <span className="inline-block font-mono text-[12px] uppercase tracking-[0.16em] text-accent">
           {soldOutLabel}
         </span>
       ) : null}
@@ -123,7 +115,7 @@ export function TicketTypeCard({
     return (
       <Link
         href={`/tickets/${slug}`}
-        className={`${cardClassName} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2`}
+        className={`${cardClassName} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring-focus)]`}
         {...placeholderAttrs}
       >
         {cardContent}
@@ -138,42 +130,43 @@ export function TicketTypeCard({
     <div className={cardClassName} {...placeholderAttrs}>
       {cardContent}
       {hideQuantityStepper ? null : (
-      <div className="flex items-center gap-2" role="group" aria-label={`${name} quantity`}>
-        <button
-          type="button"
-          onClick={decrease}
-          disabled={soldOut || quantity === 0}
-          aria-label={`${decreaseLabel ?? 'Decrease quantity of'} ${name}`}
-          className="flex h-11 w-11 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
-        >
-          −
-        </button>
-        <input
-          id={inputId}
-          type="number"
-          inputMode="numeric"
-          min={0}
-          step={1}
-          value={quantity}
-          disabled={soldOut}
-          aria-describedby={`${inputId}-desc`}
-          aria-label={`${name} quantity`}
-          onChange={(e) => {
-            const parsed = Number.parseInt(e.target.value, 10);
-            onQuantityChange?.(slug, Number.isNaN(parsed) ? 0 : Math.max(0, parsed));
-          }}
-          className="h-11 w-12 rounded-sm border border-rule bg-ivory px-1 py-1 text-center font-sans text-[15px] text-ink disabled:opacity-60"
-        />
-        <button
-          type="button"
-          onClick={increase}
-          disabled={soldOut}
-          aria-label={`${increaseLabel ?? 'Increase quantity of'} ${name}`}
-          className="flex h-11 w-11 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
-        >
-          +
-        </button>
-      </div>
+        <div className="flex items-center gap-2" role="group" aria-label={`${name} quantity`}>
+          <button
+            type="button"
+            onClick={decrease}
+            disabled={soldOut}
+            aria-disabled={quantity === 0 || undefined}
+            aria-label={`${decreaseLabel ?? 'Decrease quantity of'} ${name}`}
+            className="flex h-11 w-11 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 aria-disabled:cursor-not-allowed aria-disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring-focus)]"
+          >
+            −
+          </button>
+          <input
+            id={inputId}
+            type="number"
+            inputMode="numeric"
+            min={0}
+            step={1}
+            value={quantity}
+            disabled={soldOut}
+            aria-describedby={`${inputId}-desc`}
+            aria-label={`${name} quantity`}
+            onChange={(e) => {
+              const parsed = Number.parseInt(e.target.value, 10);
+              onQuantityChange?.(slug, Number.isNaN(parsed) ? 0 : Math.max(0, parsed));
+            }}
+            className="h-11 w-12 rounded-sm border border-rule bg-ivory px-1 py-1 text-center font-sans text-[15px] text-ink disabled:opacity-60"
+          />
+          <button
+            type="button"
+            onClick={increase}
+            disabled={soldOut}
+            aria-label={`${increaseLabel ?? 'Increase quantity of'} ${name}`}
+            className="flex h-11 w-11 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring-focus)]"
+          >
+            +
+          </button>
+        </div>
       )}
     </div>
   );

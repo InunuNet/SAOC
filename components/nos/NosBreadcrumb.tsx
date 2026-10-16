@@ -26,8 +26,11 @@ export interface NosBreadcrumbProps {
 
 export function NosBreadcrumb({ items }: NosBreadcrumbProps) {
   return (
-    <nav aria-label="Breadcrumb" className="border-b border-rule">
-      <ol className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-x-3 gap-y-1 px-8 py-4 font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-700)]">
+    <nav aria-label="Breadcrumb" className="border-b border-rule py-2">
+      <ol
+        data-nos-wrap=""
+        className="flex flex-wrap items-center gap-x-3 gap-y-1 font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--ink-700)]"
+      >
         {items.map(({ label, href }, index) => (
           <li key={label} className="flex items-center gap-3">
             {index > 0 ? <span aria-hidden="true">—</span> : null}

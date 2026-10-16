@@ -601,7 +601,7 @@ async function main(): Promise<void> {
     // NF6 — negative discriminator, end-to-end, real loader + real component.
     const negativeResult = await loadShowPageOrFallback(PROBE_KEY, fallbackInput);
     const negativeHtml = renderToStaticMarkup(
-      React.createElement(ShowContentState, { result: negativeResult, heroImage: '/images/orchid-yellow.jpg', layout: 'prose' }),
+      React.createElement(ShowContentState, { result: negativeResult, route: '/national-show/programme', layout: 'prose' }),
     );
     const negativeMarked = extractMarkedSubtreeHtml(negativeHtml, FALLBACK);
     const nf6Ok =
@@ -617,7 +617,7 @@ async function main(): Promise<void> {
     // NF7 — positive discriminator, same code path, a pageKey that exists.
     const positiveResult = await loadShowPageOrFallback(probeRoute.pageKey as string, fallbackInput);
     const positiveHtml = renderToStaticMarkup(
-      React.createElement(ShowContentState, { result: positiveResult, heroImage: '/images/orchid-yellow.jpg', layout: 'prose' }),
+      React.createElement(ShowContentState, { result: positiveResult, route: '/national-show/programme', layout: 'prose' }),
     );
     // Real seed body text (content/show-pages/11-programme.json, section "intro") —
     // >= 40 chars, quoted verbatim so this can only pass against the real document.

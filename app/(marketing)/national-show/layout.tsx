@@ -1,6 +1,7 @@
 import { Fraunces, Karla } from 'next/font/google';
 
 import './nos-theme.css';
+import './nos-structure.css';
 import './presenters.css';
 
 // NOS-only fonts, scoped via CSS variables so nothing outside `.nos-theme` picks them up.
@@ -40,11 +41,5 @@ const karla = Karla({
 // renders inside that layout's <main>, so it carries no header, footer, masthead
 // or lockup of its own.
 export default function NationalShowLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      className={`nos-theme ${fraunces.variable} ${karla.variable}`}
-    >
-      {children}
-    </div>
-  );
+  return <div className={`nos-theme ${fraunces.variable} ${karla.variable}`}>{children}</div>;
 }

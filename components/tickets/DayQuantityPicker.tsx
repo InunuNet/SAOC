@@ -17,7 +17,7 @@ export function DayQuantityPicker({
 }: DayQuantityPickerProps) {
   return (
     <fieldset className="space-y-3">
-      <legend className="font-mono text-[11px] tracking-[0.16em] text-muted">
+      <legend className="font-mono text-[12px] tracking-[0.16em] text-muted">
         Tickets per day
       </legend>
       {showDays.map((day) => {
@@ -37,7 +37,7 @@ export function DayQuantityPicker({
                 onClick={() => onQuantityChange(day, Math.max(0, quantity - 1))}
                 disabled={disabled}
                 aria-label={`Decrease quantity for ${day}`}
-                className="flex h-11 w-11 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
+                className="flex h-11 w-11 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring-focus)]"
               >
                 −
               </button>
@@ -61,7 +61,7 @@ export function DayQuantityPicker({
                 onClick={() => onQuantityChange(day, quantity + 1)}
                 disabled={disabled}
                 aria-label={`Increase quantity for ${day}`}
-                className="flex h-11 w-11 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
+                className="flex h-11 w-11 items-center justify-center rounded-sm border border-rule font-sans text-[16px] text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring-focus)]"
               >
                 +
               </button>

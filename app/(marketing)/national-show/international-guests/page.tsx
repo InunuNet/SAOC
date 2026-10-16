@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 
-import { ShowSectionNav } from '@/components/show';
 import { ShowContentState } from '@/components/show/nos/ShowContentState';
 import { NurseryCard, type NurseryCardData } from '@/components/show/nos/NurseryCard';
 import { RealEmptyListing } from '@/components/show/nos/RealEmptyListing';
@@ -9,6 +8,7 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { internationalNurseriesQuery } from '@/sanity/queries';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 // F14 (national-show-ia-alignment, M4) — created route. Placeholder prose plus a REAL
 // empty listing over vendorNursery, filtered to guests outside South Africa. Zero
@@ -21,7 +21,12 @@ import { buildPageMetadata } from '@/lib/seo';
 // goldens/m4/never-404-fallback.golden.md.
 export const revalidate = 60;
 
-const CARD_FIELD_LABELS = ['Nursery / guest', 'Country', 'Specialisation', "What they'll bring"] as const;
+const CARD_FIELD_LABELS = [
+  'Nursery / guest',
+  'Country',
+  'Specialisation',
+  "What they'll bring",
+] as const;
 
 const ABSENCE_STATEMENT =
   'No international guests or exhibitors have been confirmed for 2027 yet. Confirmed ' +
@@ -29,6 +34,7 @@ const ABSENCE_STATEMENT =
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'International Guests — National Orchid Show',
+  image: nosOgImage('International Guests — National Orchid Show'),
   description: 'International guests and exhibitors attending the National Orchid Show.',
   path: '/national-show/international-guests',
 });
@@ -49,28 +55,25 @@ export default async function InternationalGuestsPage() {
 
   return (
     <>
-      <div className="contents [&_.nos-show-page-prose_p]:max-w-[60ch] [&_.nos-show-page-prose_li]:max-w-[60ch]">
-        <ShowContentState
-          result={result}
-          heroImage="/images/orchid-purple.jpg"
-          layout="listing"
-          listingContent={
-            list.length > 0 ? (
-              <ShowEntityGrid
-                items={list}
-                itemKey={(nursery) => nursery._id}
-                renderCard={(nursery) => <NurseryCard nursery={nursery} />}
-              />
-            ) : (
-              <div className="[&_p]:max-w-[60ch]">
-                <RealEmptyListing fieldLabels={CARD_FIELD_LABELS} absenceStatement={ABSENCE_STATEMENT} />
-              </div>
-            )
-          }
-        />
-      </div>
-
-      <ShowSectionNav current="/national-show/international-guests" />
+      <ShowContentState
+        result={result}
+        route="/national-show/international-guests"
+        layout="listing"
+        listingContent={
+          list.length > 0 ? (
+            <ShowEntityGrid
+              items={list}
+              itemKey={(nursery) => nursery._id}
+              renderCard={(nursery) => <NurseryCard nursery={nursery} />}
+            />
+          ) : (
+            <RealEmptyListing
+              fieldLabels={CARD_FIELD_LABELS}
+              absenceStatement={ABSENCE_STATEMENT}
+            />
+          )
+        }
+      />
     </>
   );
 }

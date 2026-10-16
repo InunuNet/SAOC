@@ -4,11 +4,13 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
 import { NosHero } from '@/components/nos/NosHero';
+import { NosSection } from '@/components/nos/NosSection';
 import { VendorRegisterForm, VendorRegistrationCodeEntryForm } from '@/components/vendors';
 import { VENDOR_APPLICATIONS_COLLECTION } from '@/lib/vendor-applications';
 import { verifyVendorRegistrationToken } from '@/lib/vendor-registration-token';
 import { VENDOR_REGISTRATION_SESSION_COOKIE_NAME } from '@/lib/vendor-registration-code-verify-handler';
 import { buildPageMetadata } from '@/lib/seo';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 /**
  * F23 (vendor-gated-registration-flow, M4) -- REWRITTEN from the M1/F7 `?token=` gate. The
@@ -38,6 +40,7 @@ import { buildPageMetadata } from '@/lib/seo';
 // (M6/B8c).
 export const metadata: Metadata = buildPageMetadata({
   title: 'Vendor Registration — National Show',
+  image: nosOgImage('Vendor Registration — National Show'),
   description: 'Register your business as a vendor at the 2027 SAOC National Show.',
   path: '/national-show/vendors/register',
   noIndex: true,
@@ -56,7 +59,8 @@ export default async function VendorRegisterPage({ searchParams }: VendorRegiste
   const resolvedSearchParams = await searchParams;
   const initialBusinessName =
     typeof resolvedSearchParams.name === 'string' ? resolvedSearchParams.name : '';
-  const initialCodeId = typeof resolvedSearchParams.code === 'string' ? resolvedSearchParams.code : '';
+  const initialCodeId =
+    typeof resolvedSearchParams.code === 'string' ? resolvedSearchParams.code : '';
 
   const usable = await isVendorRegistrationSessionUsable();
 
@@ -67,22 +71,24 @@ export default async function VendorRegisterPage({ searchParams }: VendorRegiste
           hero treatment as every other NOS page and nothing more decorative. The gate/form
           below is entirely SAOC-owned and untouched. */}
       <NosHero
-        image="/images/orchid-yellow.jpg"
+        route="/national-show/vendors/register"
         title="Vendor Registration"
         lede="Register your business as a vendor at the 2027 SAOC National Show."
         priority
       />
 
-      <div className="mx-auto max-w-2xl px-6 py-16 sm:px-8 sm:py-20">
-        {usable ? (
-          <VendorRegisterForm />
-        ) : (
-          <VendorRegistrationCodeEntryForm
-            initialBusinessName={initialBusinessName}
-            initialCodeId={initialCodeId}
-          />
-        )}
-      </div>
+      <NosSection>
+        <div className="max-w-2xl">
+          {usable ? (
+            <VendorRegisterForm />
+          ) : (
+            <VendorRegistrationCodeEntryForm
+              initialBusinessName={initialBusinessName}
+              initialCodeId={initialCodeId}
+            />
+          )}
+        </div>
+      </NosSection>
     </>
   );
 }
@@ -98,7 +104,7 @@ async function isVendorRegistrationSessionUsable(): Promise<boolean> {
   const secret = process.env.VENDOR_REGISTRATION_TOKEN_SECRET;
   if (!secret) {
     console.error(
-      '[vendors/register/page] VENDOR_REGISTRATION_TOKEN_SECRET is unset; refusing all registration sessions.',
+      '[vendors/register/page] VENDOR_REGISTRATION_TOKEN_SECRET is unset; refusing all registration sessions.'
     );
     return false;
   }
@@ -109,7 +115,11 @@ async function isVendorRegistrationSessionUsable(): Promise<boolean> {
     return false;
   }
 
-  const verification = verifyVendorRegistrationToken({ token: sessionToken, secret, now: new Date() });
+  const verification = verifyVendorRegistrationToken({
+    token: sessionToken,
+    secret,
+    now: new Date(),
+  });
   if (!verification.ok) {
     return false;
   }

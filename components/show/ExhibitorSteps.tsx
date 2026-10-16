@@ -37,14 +37,12 @@ export function ExhibitorSteps({
   if (journey.length === 0) return null;
 
   return (
-    <section id={id} className="border-t border-rule pt-8">
-      {heading ? (
-        <h2 className="font-serif text-ink">{heading}</h2>
-      ) : null}
+    <section id={id}>
+      {heading ? <h2 className="font-serif text-ink">{heading}</h2> : null}
 
-      <ol className="mt-6 space-y-8">
+      <ol className="mt-6 space-y-6">
         {journey.map((step, index) => (
-          <li key={step._id} className="grid grid-cols-[auto_minmax(0,1fr)] gap-5">
+          <li key={step._id} className="nos-surface grid grid-cols-[auto_minmax(0,1fr)] gap-5">
             <span
               aria-hidden="true"
               className="mt-1 flex h-8 w-8 items-center justify-center border border-rule bg-parchment font-sans text-[12px] text-muted"

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 
-import { ShowSectionNav } from '@/components/show';
 import { ShowContentState } from '@/components/show/nos/ShowContentState';
 import { NurseryCard, type NurseryCardData } from '@/components/show/nos/NurseryCard';
 import { RealEmptyListing } from '@/components/show/nos/RealEmptyListing';
@@ -9,6 +8,7 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { southAfricanNurseriesQuery } from '@/sanity/queries';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 // F14 (national-show-ia-alignment, M4) — created route. THE PUBLIC NURSERY DIRECTORY,
 // distinct from /national-show/exhibitors (the grower entry guide — see D45/D46/X2) and
@@ -32,6 +32,7 @@ const ABSENCE_STATEMENT =
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'South African Exhibitors — National Orchid Show',
+  image: nosOgImage('South African Exhibitors — National Orchid Show'),
   description: 'The South African nurseries exhibiting at the National Orchid Show.',
   path: '/national-show/sa-exhibitors',
 });
@@ -52,28 +53,25 @@ export default async function SouthAfricanExhibitorsPage() {
 
   return (
     <>
-      <div className="contents [&_.nos-show-page-prose_p]:max-w-[60ch] [&_.nos-show-page-prose_li]:max-w-[60ch]">
-        <ShowContentState
-          result={result}
-          heroImage="/images/orchid-violet.jpg"
-          layout="listing"
-          listingContent={
-            list.length > 0 ? (
-              <ShowEntityGrid
-                items={list}
-                itemKey={(nursery) => nursery._id}
-                renderCard={(nursery) => <NurseryCard nursery={nursery} />}
-              />
-            ) : (
-              <div className="[&_p]:max-w-[60ch]">
-                <RealEmptyListing fieldLabels={CARD_FIELD_LABELS} absenceStatement={ABSENCE_STATEMENT} />
-              </div>
-            )
-          }
-        />
-      </div>
-
-      <ShowSectionNav current="/national-show/sa-exhibitors" />
+      <ShowContentState
+        result={result}
+        route="/national-show/sa-exhibitors"
+        layout="listing"
+        listingContent={
+          list.length > 0 ? (
+            <ShowEntityGrid
+              items={list}
+              itemKey={(nursery) => nursery._id}
+              renderCard={(nursery) => <NurseryCard nursery={nursery} />}
+            />
+          ) : (
+            <RealEmptyListing
+              fieldLabels={CARD_FIELD_LABELS}
+              absenceStatement={ABSENCE_STATEMENT}
+            />
+          )
+        }
+      />
     </>
   );
 }

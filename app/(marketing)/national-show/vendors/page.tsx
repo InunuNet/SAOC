@@ -4,11 +4,14 @@ import Link from 'next/link';
 import { Button } from '@/components/nos/Button';
 import { CtaBand } from '@/components/nos/CtaBand';
 import { NosHero } from '@/components/nos/NosHero';
-import { VendorEmptyState, VendorGrid, VendorIntro } from '@/components/vendors';
+import { NosSection } from '@/components/nos/NosSection';
+import { ConfirmationBadge } from '@/components/show';
+import { VendorGrid, VendorIntro } from '@/components/vendors';
 import type { SanityVendorNursery } from '@/components/vendors';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { vendorNurseriesQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
@@ -18,6 +21,7 @@ export const revalidate = 60;
 // experience (M6/B8c).
 export const metadata: Metadata = buildPageMetadata({
   title: 'Exhibitors and Vendors — National Show',
+  image: nosOgImage('Exhibitors and Vendors — National Show'),
   description:
     'Meet the specialist nurseries showcasing their finest orchids at the South African ' +
     'National Orchid Show.',
@@ -26,8 +30,8 @@ export const metadata: Metadata = buildPageMetadata({
 
 // F10 (nos-design-system, M3): borrows the World Orchid Conference's prestige framing
 // (research item D) — a curated trade floor of named nurseries, not a bureaucratic listing.
-// VendorIntro/VendorGrid/VendorEmptyState are SAOC-owned, untouched, and already re-skin
-// through the inherited nos-theme tokens; this page only composes NOS chrome around them.
+// VendorIntro/VendorGrid are SAOC-owned, untouched, and already re-skin through the
+// inherited nos-theme tokens; this page only composes NOS chrome around them.
 export default async function VendorsPage() {
   const nurseries = await sanityFetch<SanityVendorNursery[]>({
     query: vendorNurseriesQuery,
@@ -39,20 +43,50 @@ export default async function VendorsPage() {
   return (
     <>
       <NosHero
-        image="/images/orchid-violet.jpg"
+        route="/national-show/vendors"
         title="Exhibitors and Vendors"
         lede="Meet the specialist nurseries showcasing their finest orchids at the South African National Orchid Show."
         priority
+        actions={
+          <Button<typeof Link>
+            as={Link}
+            href="/national-show/vendors/apply"
+            variant="on-dark"
+            data-nos-hero-button=""
+          >
+            Vendor Application
+          </Button>
+        }
       />
 
-      <div className="mx-auto max-w-[1280px] px-8 py-16 space-y-16 [&_p]:max-w-[60ch]">
-        <VendorIntro />
+      <NosSection wrapClassName="space-y-16 [&_p]:max-w-[60ch]">
+        {/* R11: the prose describes a trade floor the committee has not confirmed, so the chip
+            sits in the head of the one surface that carries it. */}
+        <div className="nos-surface">
+          <ConfirmationBadge
+            status="pending"
+            pendingLabel="To be confirmed by the show committee"
+          />
+          <VendorIntro />
+        </div>
 
-        {list.length > 0 ? <VendorGrid nurseries={list} /> : <VendorEmptyState />}
-      </div>
+        {list.length > 0 ? (
+          <VendorGrid nurseries={list} />
+        ) : (
+          <div data-nos-empty-state="" className="nos-surface">
+            <p className="font-sans text-[15px] leading-relaxed text-ink/80">
+              No nurseries have been confirmed for the South African Exhibitors Pavilion yet.
+            </p>
+            <div className="mt-6">
+              <Button<typeof Link> as={Link} href="/national-show/vendors/apply" variant="primary">
+                Vendor Application
+              </Button>
+            </div>
+          </div>
+        )}
+      </NosSection>
 
       <CtaBand
-        eyebrow="Trade floor"
         title="Interested in exhibiting at the 2027 SAOC National Show?"
         action={
           <Button as={Link} href="/national-show/vendors/apply" variant="on-dark">

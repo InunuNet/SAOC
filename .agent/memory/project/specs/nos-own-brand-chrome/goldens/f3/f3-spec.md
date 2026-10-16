@@ -1,0 +1,79 @@
+# F3 golden: NOS structure, sub-nav, imagery and og card (mission nos-own-brand-chrome)
+
+Authority: NOS Design rulings R26-R29 and "Acceptance bar rev 2" (comms.md, 2026-10-16), Brad's approved v4 mock. Mock citations are **I:n** (line n of `.tmp/sandbox/nos-chrome-handoff/index.html`; F2 vendors the same file at `goldens/f2/mock-index.html`). `docs/rules/no-invention.md` applies: every visual value below is the mock's or a ruling's; copy comes from existing page data or Lee-Ann's docs; a copy gap shows the awaiting-committee-copy marker. Deadline: production-ready Sun 18 Oct 2026.
+
+## 1. Decisions
+
+| Question | Decision | Why |
+|---|---|---|
+| Container (C1) | One container, `[data-nos-wrap]`: `width:100%; max-width: calc(1080px + 2 * gutter); margin-inline:auto; padding-inline: gutter`, `gutter = clamp(16px, 4vw, 48px)` (I:61, I:91, I:92). It carries no vertical padding. Every rendered child block of the page-content root (the parent of `[data-nos-hero]`) except the hero and the sub-nav contains one. Full-bleed backgrounds are `[data-nos-bleed]` or aria-hidden and hold no text. The hero keeps `--wide` (I:140) except the typographic hero (below). | Ruling C1; the hub mixes `max-w-[1280px] px-8` wraps and the vendors/register pages use ad-hoc `max-w-2xl`. |
+| Rhythm (C2) | Every content block is a `<section>` with `padding-block: clamp(72px, 9vw, 120px)` on the section itself (I:156). Measured +-1px at 1440/1280/1024/768/390. The mock's `.section-tight` (I:157, 32px 0 0) is a `<div>` there (I:577), so a `<section>` has no exception; a `<nav>` block (the foot ShowSectionNav, R21) is exempt from padding but not from the wrap rule. The hub measured 96/96, 0/32, 64/64, 80/80, 96/96. | Ruling C2; cite I:156 (and I:230, which uses the same token for the closing copy). |
+| Hub destinations (R27) | The hub keeps ONE list in the v4 "Planning a visit" pattern (I:176-190 CSS, I:604-618 markup): `section.planning` on `--gold`, `h2` "Planning a visit", `ul[data-nos-destinations] > li > a > (title, description, .go[aria-hidden])`. 3-6 items; the page's existing five `VISITOR_CARDS` (About the show, Plan your visit, What to expect, Visitor questions, Past shows) are the items, title and description verbatim from page data. Removed from the hub: the "Explore the National Show" four-group block (`NosHubGroup`, 16 links) and the foot `ShowSectionNav` (17 links); the old 3-column card grid becomes this list. The mock's planning photo is NOT carried over (it would be a second photo on the hub, against R29). | R27 "remove the bottom duplicate link grid; ONE list, at most 5-6 items". |
+| Sub-nav (R27) | `components/nos/NosSubNav.tsx` (new, server component plus the tiny client effect that scrolls the current item into view). `<nav aria-label="{Group} pages">` directly after the hero, inside `<main>`, one row of the current page's group (Visit / Programme / Exhibit & Trade / The Show) read from `components/chrome/nav-config.ts` (`lead.theShow` + `columns`): labels and hrefs verbatim, in order, current item included. Absent on the hub and on tickets. Sub-routes (`/archive/[year]`, `/vendors/apply|register|photos`) show their parent leaf's group with the parent leaf `aria-current="true"` (an exact leaf route gets `"page"`); token-gated payment pages are unspecified. Full spec in section 3. | R27. |
+| ShowSectionNav on inner pages | Not touched by F3 (the ruling removes only the hub's). It stays at the page foot as the existing R21 foot nav; F3-C1 requires it to sit in a wrap. If NOS Design wants it gone from inner pages too (it now duplicates the sub-nav) that is a one-line follow-up. See risks. | R27 names the hub only; no invention. |
+| Vendors (R27) | Case measured by `check-f3-vendors.mjs`, evidence in `vendors-cta.json`: `/vendors/register` is LIVE and working (200, code-entry form, verify-code API answers 400 on `{}`), but it is invitation-gated and its form has no way forward for an unapproved visitor. The hero's single primary CTA is gold "Register as a vendor" to **`/national-show/vendors/apply`** (a live, public route). The literal `/vendors/register` is a one-line change in the golden if NOS Design insists. The "Nurseries will be announced soon" dead end (SAOC `VendorEmptyState`, rendering live today) is replaced on the vendors page by a NOS empty state `[data-nos-empty-state]`: the page's own existing sentence "No nurseries have been confirmed for the South African Exhibitors Pavilion yet." plus a next-step link to a live route (e.g. the apply route). `components/vendors/**` is not edited; the page just stops importing `VendorEmptyState`. If registration were not live: no CTA, the R11 chip "To be confirmed by the show committee" plus the one real sentence. | R27; the dead-route rule. |
+| Imagery (R29) | `hero-photo-map.json` (CONFIRMED by NOS Design): hub orchid-dark at object-position 68% 50%, plan-your-visit orchid-yellow, symposium orchid-violet, programme orchid-purple, what-to-expect orchid-pink. Tickets has no hero photo: `data-nos-hero-variant="fan"`, royal ground, `[data-nos-ticket-fan]` whose 4 product photos are exempt (accepted R16 exception). Each photo on exactly one route, once. Every other route has a typographic hero: `<section data-nos-hero="inner" data-nos-hero-variant="type">`, solid `#0B0A14` ground, h1 and standfirst on the 1080 grid (same left edge, equal to the wrap content edge), no img, svg, picture, background or scrim. Photo heroes carry `data-nos-hero-variant="photo"`. Edition cards typographic. Emblem never a photo substitute. | R29. |
+| og card (J3) | Generated per route through `ImageResponse`: a shared route handler `app/(marketing)/national-show/og/route.tsx` taking `?title=` (recommended, mirrors the SAOC `/og` route), pointed to by each NOS page through the existing `buildPageMetadata({ image })` option. Not `lib/seo.ts` (SAOC, off limits). A per-segment `opengraph-image.tsx` is acceptable if every route still gets its own title. 1200x630. Spec in section 5. | J3. |
+| F2 checks and typographic heroes | F2's A11 (exactly one scrim) and A12 (photo geometry) assumed a photo on every hero. The architect added a `variant === 'type'` branch to `f2/_f2lib.mjs` (`heroInfo().variant`), `f2/check-f2-hero-scrim.mjs` (no scrim, solid ground, any width) and `f2/check-f2-hero-layout.mjs` (h1 14ch and no eyebrow kept, photo geometry skipped). Photo heroes are unchanged byte for byte in behaviour. | Both cannot hold otherwise. |
+
+## 2. Typographic hero (R29)
+
+DOM: `section[data-nos-hero="inner"][data-nos-hero-variant="type"]` > the same `h1` and optional `[data-nos-hero-lede]` as the photo hero, nothing else. No `[data-nos-hero-media]`. Type roles stay F2's (inner h1 Fraunces 300 opsz 24, 14ch, gold-100; standfirst Karla 400 20px, gold-300; no eyebrow). The copy column is on the same grid as the sections below it: h1 left == lede left == the first `[data-nos-wrap]` content edge. Height is unspecified by the rulings: no min-height is asserted (no invention).
+
+## 3. Sub-nav (R27, every value from the ruling)
+
+| Property | Value |
+|---|---|
+| Landmark | `<nav aria-label="{Group} pages">`, e.g. "Exhibit & Trade pages"; on the `<nav>` itself |
+| Placement | directly under the hero (nav top == hero bottom +-1), inside `<main>`, not sticky or fixed anywhere up the tree, scrolls away |
+| Items | the group's links from nav-config, labels and hrefs verbatim, in order |
+| Item type | Karla 700, 14.5px, royal `#211A57`; item height 44px; gap 24px between items |
+| Current | `aria-current="page"` (exact route) or `"true"` (sub-route) plus a 2px `--green-1` `#A7A841` underline (text-decoration, border or pseudo-element; the check accepts any); no other item carries either |
+| Base | ground gold-100 `#FBFAF0`, 1px solid `--line` `#DAD7C8` bottom rule |
+| >700px | the row fits without scrolling; no fade visible |
+| <=700px | one row: `overflow-x: auto`, `scroll-snap-type: x ...`, items `scroll-snap-align`, hidden scrollbar (`scrollbar-width: none` or `::-webkit-scrollbar { display: none }`); an 8px right-edge gradient fade (`[data-nos-subnav-fade]` or `::after`) visible only while the row overflows; the current item scrolled fully into view after load |
+| None | hub, tickets |
+
+## 4. Edition cards
+
+`[data-nos-edition-card]` > `[data-nos-edition-year]` (Fraunces 300, opsz 72, `lining-nums tabular-nums`, clamp(2.6rem, 2rem + 2vw, 3.8125rem), I:171) then `h3[data-nos-edition-title]` (Fraunces 400) then `[data-nos-edition-venue]` (Karla 400, >=14px). White or gold-100 surface, 1px `--line`, 16px radius (D1). Used by `/national-show/archive` and the hub's past-editions section (today `PastEditionCard`, which stamps a stock photo and a purple-tinted gradient on each card).
+
+## 5. og card
+
+1200x630 PNG. Royal `#211A57` ground, no gradient or decoration, no green. The supplied reversed NOS horizontal lockup (`public/images/nos/nos-reversed-horizontal-1200.png`, byte-identical to `branding/National Show 2027/`) top-left at about 560px wide (ink 470-600px, aspect 5.8). Page title in Fraunces 300 below it, separated from the lockup block by at least 24px of clear ground (the check ends the lockup block at the first 24px band with no ink). "saoc.co.za/national-show" in Karla 12px gold bottom-left. Never the SAOC logo, never green. Metadata: `og:image`, `og:image:width=1200`, `og:image:height=630`, `twitter:image` equal to `og:image`. SAOC routes keep the existing `/og` card (it is the comparison baseline). `ImageResponse` (satori) reads TTF/OTF/WOFF only, not WOFF2, and not variable opsz axes: the dev must supply a static Fraunces 300 and a static Karla file; where they live is the dev's call inside `app/(marketing)/national-show/**`.
+
+## 6. Gate shape
+
+All browser checks are measured at runtime with Playwright against `NOS_BASE` (default: spawn `next start` on `NOS_PORT`); route set = the 17 listed routes + every `/archive/[year]` the index links + `/vendors/apply|register|photos`. Regression: every F1 and F2 assertion except F2-S (superseded by F3-S) and F2's A1/A2 (re-run as F3's own).
+
+## 7. Additions from the NOS Site beta critique (2026-10-16)
+
+- **Ticket UI** (`components/tickets/**`, shared with SAOC /tickets/*, whose pages change too): the Ozow "TEST MODE" banner is driven by the public `/api/tickets/ozow-sandbox-test-mode` flag (Firestore `adminSettings.ozowSandboxTestMode`, currently `enabled: true`) and renders for every visitor. Gate it in the component on `NODE_ENV !== 'production'` (A17 static, A18 runtime on the production server); the API route is not touched. "Buy Ticket" drops the off-palette violet rgb(126,63,151) for the F2 NOS button role; the 10.5px pill and 11px labels go to 12px; steppers and quantity inputs become >=44x44. Note: the flag also makes Ozow charge R0.01 for real buyers; hiding the banner does not change that, which is the operator's call.
+- **Orphans (A20)**: no display:grid card grid may end on a single card; the hub's single list and the typographic archive cards must not orphan at 768 (5 -> 2+2+1).
+- **Targets (A19)**: exhibitors and archive back-links and breadcrumbs >=44px.
+- **Media (A21)**: explicit image dimensions or aspect-ratio, every `<picture><source>` has a `srcset`, CLS < 0.05.
+- **Contrast (A16)**: programme (purple) and what-to-expect (pink) are measured with F2's brightest-pixel method.
+- **Out of scope for the F3 dev**: `national-show/{sponsors,symposium,wosa-conference}` and `presenters.css` belong to NOS Site's own contract. F3's checks still measure those routes (symposium owns the violet photo; sponsors and wosa-conference must be typographic), so the two contracts depend on each other.
+
+## 8. NOS Design rulings and route audit, 2026-10-16 (A17, A18, A22, A23)
+
+- Vendors CTA: href /national-show/vendors/apply, one gold CTA, label = the apply page h1 verbatim, "Vendor Application" (no nav-config entry exists for the apply route). /register stays reachable only from inside the apply flow or the invitation. See vendors-cta.json.
+- TEST MODE banner: gated on payment mode only (GET /api/tickets/ozow-sandbox-test-mode enabled === true), never NODE_ENV or hostname. Thin full-width in-flow bar, Karla 700 12px uppercase, ink on gold-100, 1px --line rule, covers no content. A18 proves it by mocking the status route both ways.
+- ShowSectionNav removed from every NOS route; the "Explore the National Show" grid is gone (A22 runtime, A23 static). Only the sub-nav and Breadcrumb navs remain in main.
+- Exhibitors: the 13 committee questions are an `<ol>`, one column; Fraunces numeral (300, opsz 72, ~2rem, green-2), h3 in the card-title role, Karla body, 1px --line dividers.
+- /tickets: no single primary; equal-weight "Add to booking" buttons; no new hero CTA. The v13 hero fan (per-ticket photos, countdown, #ticket-{id} anchors) is a large build and is deferred to F5; in F3 tickets accepts variant "fan" or "type", and if [data-nos-ticket-fan] exists its cards must be visible at 390 with resolving anchors.
+- Audit items asserted in A22: S1, S2, S3, S5b, S7, EMPTY, NOWRAP, VEND (R11 chip), PRES (symposium Presenters regression, merged in 038fd169, arrives with the F2 rebase).
+- Out of F3 scope: sponsors, symposium and wosa-conference page.tsx and presenters.css.
+
+## 9. Later NOS Design corrections (A17, A18, A24, A25)
+
+- Banner gate is payment mode (status API), not NODE_ENV; launch posture is sales closed: with salesOpen=false no banner, form or price on the ticket routes even when the status API says enabled:true. Runtime measured against the served state (NOS_SALES_CLOSED=1 demands the closed state); static twin A24.
+- D3 focus (R9/3): 2px solid, 2px offset; violet #7E3F97 on light grounds, pale gold #FBFAF0 on dark; --ring-focus-on-light stays violet.
+- R19 markers: 1px solid pill, Karla 700 12px .14em uppercase (never mono), attached to the head of ONE low-tint surface per governed extent (16px radius, lightest shadow, no border); replaces dashed rails. StatusMarker/ConfirmationBadge change is scoped to .nos-theme; the SAOC guard now also covers /events and /societies/border-orchid-society (golden re-captured with --merge).
+- Prose measure <= 60ch; presenter bios <= 68ch.
+
+## 10. Exhibitors correction and hub conversion C-1..C-10 (A22, A26)
+
+- Exhibitors: the 13 committee questions are a single-column `<ul>`, no numerals (they are not a sequence); question as h3 in the card-title role, answer in Karla, 1px --line dividers. The 7 ExhibitorSteps keep their `<ol>`. This supersedes the numeral spec in section 8.
+- Hub, measured by check-f3-hub-conversion.mjs: hero CTAs gold "Tickets" then ghost "Plan your visit" (labels from nav-config; Plan is compared case-insensitively because nav-config carries "Plan Your Visit"); "Find your society" leaves the hero. Price anchor "{ticketType title} from R{min}" (cheapest ticket type's own title from data, e.g. "Day Visitor"; never hand-typed) renders only when salesOpen is true and a price exists, omitted when closed. Order CTAs, price, countdown, facts. Only "Planning a visit" remains of the link grids. Ten judging groups 5x2 at >=1024 and 2x5 at 390. Past editions typographic with an entries chip. No section eyebrows. h2 order: stats, Planning a visit, Three-year cycle, Ten judging groups, exhibitor band, Past editions, closing band. Closing band is the ticket close; its h2 comes from page data or the awaiting-copy marker (no invented line). "Start planning your entry now." moves into the exhibitor band with CTAs "Find your society" + "Exhibitor information". Stacked hero image capped 4:3 at <=1023. Fold: h1 and both CTAs above 800px at 1280x800.
+- Sales state for the price-anchor assertion is read from /national-show/tickets ("Sales closed"); NOS_SALES_CLOSED=1 demands the closed case, so the gate should run both datasets.

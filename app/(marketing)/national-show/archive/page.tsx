@@ -6,15 +6,16 @@ import type { SanityShowProjection } from '@/lib/data/mergeShows';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery, pastShowsQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
-import {
-  formatShowMonthYear,
-  showLabelWithEdition,
-} from '@/lib/show-identity';
+import { formatShowMonthYear, showLabelWithEdition } from '@/lib/show-identity';
 import type { ShowIdentity } from '@/types';
 import { Button } from '@/components/nos/Button';
 import { CtaBand } from '@/components/nos/CtaBand';
+import { EditionCard } from '@/components/nos/EditionCard';
 import { NosHero } from '@/components/nos/NosHero';
+import { NosSection } from '@/components/nos/NosSection';
+import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
 import { ConfirmationBadge } from '@/components/show';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -25,10 +26,24 @@ export const revalidate = 60;
 // and a second Event under the live show's own name would compete with it. See M6/B8e.
 export const metadata: Metadata = buildPageMetadata({
   title: 'National Show Archive',
+  image: nosOgImage('National Show Archive'),
   description:
     'Past editions of the South African National Orchid Show.',
   path: '/national-show/archive',
 });
+
+function toRomanOrdinal(n: number): string {
+  const val = [50, 40, 10, 9, 5, 4, 1];
+  const sym = ['L', 'XL', 'X', 'IX', 'V', 'IV', 'I'];
+  let result = '';
+  for (let i = 0; i < val.length; i++) {
+    while (n >= val[i]) {
+      result += sym[i];
+      n -= val[i];
+    }
+  }
+  return result;
+}
 
 export default async function ShowArchivePage() {
   // F7: the CTA band advertised the edition, the month/year and the city as literals.
@@ -56,13 +71,14 @@ export default async function ShowArchivePage() {
   return (
     <>
       <NosHero
-        image="/images/orchid-dark.jpg"
+        route="/national-show/archive"
         title="National Show archive"
         lede="The South African National Orchid Show is the council’s triennial event."
         priority
         actions={
           <Link
             href="/national-show"
+            data-nos-backlink=""
             className="inline-flex min-h-[44px] items-center font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
           >
             ← National Show
@@ -71,50 +87,53 @@ export default async function ShowArchivePage() {
       />
 
       {/* ── Show grid ── */}
-      <section className="mx-auto max-w-[1280px] px-8 py-24">
+      <NosSection>
         {pastShows.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {pastShows.map((show) => (
-              <Link
-                key={show.year}
-                href={`/national-show/archive/${show.year}`}
-                className="group block focus-visible:outline-none"
-              >
-                <div className="flex h-full flex-col overflow-hidden rounded-[length:var(--radius-card)] border-[length:var(--border-primary)] border-[var(--rule)] bg-white transition-transform duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-0.5 group-focus-visible:outline group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-[var(--ring-focus)]">
-                  <div className="flex aspect-[3/2] items-center justify-center bg-[var(--night)]">
-                    <span className="font-serif text-[56px] font-medium leading-none text-ivory">
-                      {show.year}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col gap-4 p-6">
-                    <div>
-                      <h2 className="nos-card-title font-serif text-[22px] font-medium leading-snug text-ink">
-                        {show.title ?? show.year}
-                      </h2>
-                      {show.venue && (
-                        <p className="mt-1 font-sans text-[14px] text-muted">{show.venue}</p>
-                      )}
-                    </div>
-                    <ConfirmationBadge status="pending" />
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <>
+            <h2 className="sr-only">National Show editions</h2>
+            <div className="nos-surface mb-10">
+              <ConfirmationBadge status="pending" />
+            </div>
+            <ShowEntityGrid
+              items={pastShows}
+              itemKey={(show) => String(show.year)}
+              renderCard={(show) => (
+                <EditionCard
+                  href={`/national-show/archive/${show.year}`}
+                  year={show.year}
+                  title={
+                    show.title ??
+                    (show.edition
+                      ? `Edition ${toRomanOrdinal(show.edition)}`
+                      : 'National Orchid Show')
+                  }
+                  venue={
+                    [show.host, show.venue && show.venue !== show.host ? show.venue : null]
+                      .filter(Boolean)
+                      .join(' · ') || undefined
+                  }
+                  chips={[
+                    ...(show.entries ? [`${show.entries.toLocaleString()} entries`] : []),
+                    ...(show.exhibitors ? [`${show.exhibitors.toLocaleString()} exhibitors`] : []),
+                    ...(show.visitors ? [`${show.visitors.toLocaleString()} visitors`] : []),
+                    ...(show.trophies ? [`${show.trophies} trophies`] : []),
+                  ]}
+                  note={show.note}
+                />
+              )}
+            />
+          </>
         ) : (
-          <div className="max-w-[720px] space-y-3 border-l-2 border-dashed border-[color:var(--status-muted)] py-2 pl-5">
-            {/* R11 disclosure: chip, one sentence, dashed 2px rail (see ShowPageProse). */}
+          <div className="nos-surface max-w-[720px]">
             <ConfirmationBadge status="pending" />
-            <h2 className="font-serif text-[28px] font-medium text-ink">
+            <h2 className="mt-3 font-serif text-[28px] font-medium text-ink">
               Show history awaiting committee records
             </h2>
           </div>
         )}
-      </section>
+      </NosSection>
 
       <CtaBand
-        eyebrow="What's next"
         title={`Planning for the ${upcomingLabel}?`}
         lede={upcomingSentence}
         action={
@@ -122,7 +141,7 @@ export default async function ShowArchivePage() {
             <Button as={Link} href="/national-show" variant="on-dark">
               View {upcomingLabel} details
             </Button>
-            <Button as={Link} href="/contact" variant="ghost" className="border-[var(--lilac-muted)] text-ivory hover:bg-white/5">
+            <Button as={Link} href="/contact" variant="ghost-on-dark">
               Ask the council
             </Button>
           </div>

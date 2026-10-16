@@ -13,8 +13,7 @@ export function Card({ className = '', children, ...rest }: NosCardProps) {
   return (
     <div
       className={[
-        'rounded-[length:var(--radius-card)] border-[length:var(--border-primary)]',
-        'border-[var(--rule)] bg-white p-6',
+        'nos-card p-6',
         'transition-colors duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]',
         className,
       ]

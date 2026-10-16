@@ -14,7 +14,9 @@ import { Card } from '@/components/nos/Card';
 import { CtaBand } from '@/components/nos/CtaBand';
 import { NosBreadcrumb } from '@/components/nos/NosBreadcrumb';
 import { NosHero } from '@/components/nos/NosHero';
+import { NosSection } from '@/components/nos/NosSection';
 import { ConfirmationBadge } from '@/components/show';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -40,7 +42,9 @@ function toRomanOrdinal(n: number): string {
  * inventing one or rendering "Edition " with nothing after it would both be wrong.
  */
 function editionLabel(show: ArchiveShow): string {
-  return show.edition ? `Edition ${toRomanOrdinal(show.edition)} · ${show.year}` : String(show.year);
+  return show.edition
+    ? `Edition ${toRomanOrdinal(show.edition)} · ${show.year}`
+    : String(show.year);
 }
 
 /** Joins only the facts that are actually recorded, so nothing renders as "undefined". */
@@ -100,25 +104,24 @@ export async function generateMetadata({
   if (!show) {
     return buildPageMetadata({
       title: `National Show ${year}`,
+      image: nosOgImage(`National Show ${year}`),
       description: 'The South African National Orchid Show archive.',
       path,
     });
   }
 
+  const title = show.host
+    ? `${year} National Orchid Show — ${show.host}`
+    : `${year} National Orchid Show`;
   return buildPageMetadata({
-    title: show.host
-      ? `${year} National Orchid Show — ${show.host}`
-      : `${year} National Orchid Show`,
+    title,
+    image: nosOgImage(title),
     description: summarySentence(show) ?? `The ${year} National Orchid Show.`,
     path,
   });
 }
 
-export default async function ShowYearPage({
-  params,
-}: {
-  params: Promise<{ year: string }>;
-}) {
+export default async function ShowYearPage({ params }: { params: Promise<{ year: string }> }) {
   const { year } = await params;
   const [pastShows, upcoming] = await Promise.all([
     loadPastShows(),
@@ -151,13 +154,14 @@ export default async function ShowYearPage({
   return (
     <>
       <NosHero
-        image="/images/orchid-dark.jpg"
+        route={`/national-show/archive/${show.year}`}
         title={`The ${show.year} South African National Orchid Show`}
         lede={subtitle(show)}
         priority
         actions={
           <Link
             href="/national-show/archive"
+            data-nos-backlink=""
             className="inline-flex min-h-[44px] items-center font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
           >
             ← Archive
@@ -175,32 +179,25 @@ export default async function ShowYearPage({
 
       {/* ── Recorded stats: only values that exist ── */}
       {stats.length > 0 && (
-        <section className="bg-bone">
-          <div className="mx-auto max-w-[1280px] px-8 py-16">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {stats.map(({ value, label }) => (
-                <Card key={label} className="text-center">
-                  <div className="font-serif text-[38px] font-medium leading-none text-primary">
-                    {value}
-                  </div>
-                  <div className="mt-2 font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
-                    {label}
-                  </div>
-                </Card>
-              ))}
-            </div>
+        <NosSection tone="gold">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {stats.map(({ value, label }) => (
+              <Card key={label} className="text-center">
+                <div className="font-serif text-[38px] font-medium leading-none text-primary">
+                  {value}
+                </div>
+                <div className="mt-2 font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
+                  {label}
+                </div>
+              </Card>
+            ))}
           </div>
-        </section>
+        </NosSection>
       )}
 
       {/* ── Show details ── */}
-      <section className="mx-auto max-w-[1280px] px-8 py-20">
-        <div className="max-w-[720px]">
-          {/* text-accent (violet, 6.90:1 on white) not olive-deep (4.30:1 — fails 4.5:1 body
-              text at this 12px size, see nos-contrast.golden.md note 1). */}
-          <p className="mb-4 font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-accent">
-            About the show
-          </p>
+      <NosSection>
+        <div className="max-w-[60ch]">
           {summary ? (
             <p className="font-sans text-[16px] leading-relaxed text-ink/80">{summary}</p>
           ) : (
@@ -215,58 +212,53 @@ export default async function ShowYearPage({
             <p className="mt-4 font-serif text-[16px] italic text-muted">{show.note}</p>
           )}
         </div>
-      </section>
+      </NosSection>
 
       {/* ── Pagination ── */}
-      <section className="border-t border-rule">
-        <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-8 py-12">
-          {prevShow ? (
-            <Link
-              href={`/national-show/archive/${prevShow.year}`}
-              className="group flex flex-col gap-1"
-            >
-              <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
-                ← Earlier
-              </span>
-              <span className="font-serif text-[20px] font-medium text-ink transition-colors duration-150 group-hover:text-primary">
-                {prevShow.host ? `${prevShow.year} — ${prevShow.host}` : prevShow.year}
-              </span>
-            </Link>
-          ) : (
-            <div />
-          )}
-          {nextShow ? (
-            <Link
-              href={`/national-show/archive/${nextShow.year}`}
-              className="group flex flex-col gap-1 text-right"
-            >
-              <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
-                Later →
-              </span>
-              <span className="font-serif text-[20px] font-medium text-ink transition-colors duration-150 group-hover:text-primary">
-                {nextShow.host ? `${nextShow.year} — ${nextShow.host}` : nextShow.year}
-              </span>
-            </Link>
-          ) : (
-            <div />
-          )}
-        </div>
-      </section>
+      <NosSection
+        className="border-t border-rule"
+        wrapClassName="flex items-center justify-between gap-4"
+      >
+        {prevShow ? (
+          <Link
+            href={`/national-show/archive/${prevShow.year}`}
+            className="group flex flex-col gap-1"
+          >
+            <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
+              ← Earlier
+            </span>
+            <span className="font-serif text-[20px] font-medium text-ink transition-colors duration-150 group-hover:text-primary">
+              {prevShow.host ? `${prevShow.year} — ${prevShow.host}` : prevShow.year}
+            </span>
+          </Link>
+        ) : (
+          <div />
+        )}
+        {nextShow ? (
+          <Link
+            href={`/national-show/archive/${nextShow.year}`}
+            className="group flex flex-col gap-1 text-right"
+          >
+            <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
+              Later →
+            </span>
+            <span className="font-serif text-[20px] font-medium text-ink transition-colors duration-150 group-hover:text-primary">
+              {nextShow.host ? `${nextShow.year} — ${nextShow.host}` : nextShow.year}
+            </span>
+          </Link>
+        ) : (
+          <div />
+        )}
+      </NosSection>
 
       <CtaBand
-        eyebrow="What's next"
         title={`Next up: the ${upcomingLabel}${upcomingWhere}`}
         action={
           <div className="flex flex-wrap justify-center gap-4">
             <Button as={Link} href="/national-show" variant="on-dark">
               View {upcomingLabel}
             </Button>
-            <Button
-              as={Link}
-              href="/national-show/archive"
-              variant="ghost"
-              className="border-[var(--lilac-muted)] text-ivory hover:bg-white/5"
-            >
+            <Button as={Link} href="/national-show/archive" variant="ghost-on-dark">
               Full archive
             </Button>
           </div>

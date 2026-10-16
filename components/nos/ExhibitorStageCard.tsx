@@ -22,7 +22,7 @@ export function ExhibitorStageCard({
   confirmation,
 }: NosExhibitorStageCardProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-[length:var(--radius-lg)] border border-white/10 bg-white/[0.06] p-6">
+    <div className="nos-stage-card">
       <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--olive)]">
         Stage {stage}
       </p>

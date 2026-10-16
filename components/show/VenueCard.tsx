@@ -37,7 +37,7 @@ export function VenueCard({
   const cityLine = [venue.city, venue.postalCode].filter(Boolean).join(', ');
 
   return (
-    <section className="border border-rule bg-parchment p-6">
+    <section className="nos-surface">
       <h3 className="font-serif text-[22px] font-medium text-ink">{heading}</h3>
       <ConfirmationBadge
         status={status}

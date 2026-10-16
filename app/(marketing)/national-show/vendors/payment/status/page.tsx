@@ -9,6 +9,7 @@ import {
   type VendorStandReturnState,
 } from '@/lib/vendor-stand-return';
 import { buildPageMetadata } from '@/lib/seo';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 /**
  * Gateway return page for vendor stand payments. Success, cancel and error all land here with
@@ -17,6 +18,7 @@ import { buildPageMetadata } from '@/lib/seo';
  */
 export const metadata: Metadata = buildPageMetadata({
   title: 'Vendor Stand Payment Status — National Show',
+  image: nosOgImage('Vendor Stand Payment Status — National Show'),
   description: 'Payment status for your 2027 SAOC National Show vendor stand.',
   path: '/national-show/vendors/payment/status',
   noIndex: true,
@@ -59,7 +61,7 @@ export default async function VendorStandPaymentStatusPage({
   return (
     <>
       <NosHero
-        image="/images/orchid-yellow.jpg"
+        route="/national-show/vendors/payment/status"
         title="Vendor Stand Payment"
         lede="Payment status for your 2027 SAOC National Show vendor stand."
         priority

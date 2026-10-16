@@ -7,8 +7,11 @@ interface SalesClosedNoticeProps {
 
 export function SalesClosedNotice({ message }: SalesClosedNoticeProps) {
   return (
-    <div className="border border-rule bg-bone px-6 py-8 text-center" role="status">
-      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+    <div
+      className="rounded-[16px] bg-bone px-6 py-8 text-center shadow-[var(--shadow-sm)]"
+      role="status"
+    >
+      <p className="font-sans text-[12px] font-bold uppercase tracking-[0.14em] text-ink">
         Sales closed
       </p>
       <p className="mt-3 font-serif text-[20px] leading-relaxed text-ink">{message}</p>

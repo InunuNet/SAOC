@@ -24,7 +24,13 @@ import type { ShowFaq } from '@/types';
 
 import { ConfirmationBadge } from './ConfirmationBadge';
 
-const CATEGORY_ORDER = ['getting-there', 'tickets', 'accessibility', 'plant-sales', 'general'] as const;
+const CATEGORY_ORDER = [
+  'getting-there',
+  'tickets',
+  'accessibility',
+  'plant-sales',
+  'general',
+] as const;
 
 const CATEGORY_LABELS: Record<(typeof CATEGORY_ORDER)[number], string> = {
   'getting-there': 'Getting there',
@@ -85,23 +91,23 @@ export function ShowFaqList({ faqs, pendingLabel, researchLabel }: ShowFaqListPr
               {CATEGORY_LABELS[category]}
             </h2>
 
-            <ul className="mt-4 border-t border-rule">
+            <ul className="mt-4 space-y-4">
               {inCategory.map((faq) => (
-                <li key={faq._id} className="border-b border-rule">
+                <li key={faq._id} className="nos-surface">
                   <details className="group">
-                    <summary className="flex cursor-pointer list-none items-start justify-between gap-4 py-4 font-serif text-[19px] font-medium leading-snug text-ink hover:text-primary">
+                    <summary className="flex min-h-[44px] cursor-pointer list-none items-start justify-between gap-4 font-serif text-[19px] font-medium leading-snug text-ink hover:text-primary">
                       <span className="flex flex-col items-start">
-                        <span>{faq.question}</span>
-                        {/* In the summary, not the panel: a marker inside a closed
-                            disclosure is invisible to a visitor scanning the list, so
-                            fourteen unconfirmed answers read as settled fact until each
-                            one is opened. */}
+                        {/* In the summary, above the question, not in the panel: a marker
+                            inside a closed disclosure is invisible to a visitor scanning the
+                            list, so fourteen unconfirmed answers read as settled fact until
+                            each one is opened. */}
                         <ConfirmationBadge
                           as="span"
                           status={faq.status}
                           pendingLabel={pendingLabel}
                           researchLabel={researchLabel}
                         />
+                        <span>{faq.question}</span>
                       </span>
                       <span
                         aria-hidden="true"

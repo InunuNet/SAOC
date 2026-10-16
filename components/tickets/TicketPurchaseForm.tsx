@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@/components/nos/Button';
 import { TicketTypeCard, type TicketTypeCardData } from '@/components/tickets/TicketTypeCard';
 import { CartAttendeeFields } from '@/components/tickets/CartAttendeeFields';
 import { CartDayPicker } from '@/components/tickets/CartDayPicker';
@@ -24,7 +25,8 @@ export function TicketPurchaseForm({
   const cart = useTicketCart(ticketTypes, showDays);
   // F3 (ticketing-flow-redesign) — same derived condition used in useTicketCart.submit():
   // exactly one day-selection type in this screen's cart (README §3).
-  const useDayQuantityPicker = ticketTypes.length === 1 && ticketTypes[0].requiresDaySelection === true;
+  const useDayQuantityPicker =
+    ticketTypes.length === 1 && ticketTypes[0].requiresDaySelection === true;
 
   if (cart.redirect) {
     return (
@@ -46,7 +48,7 @@ export function TicketPurchaseForm({
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
       <OzowSandboxTestModeBanner />
       <fieldset className="space-y-3">
-        <legend className="font-mono text-[11px] tracking-[0.16em] text-muted">Ticket types</legend>
+        <legend className="font-mono text-[12px] tracking-[0.16em] text-muted">Ticket types</legend>
         {ticketTypes.map((t) => (
           <TicketTypeCard
             key={t.slug}
@@ -64,7 +66,7 @@ export function TicketPurchaseForm({
 
       <p aria-live="polite" aria-atomic="true" className="font-sans text-[15px] text-ink">
         Estimated total: <strong>R{cart.estimatedTotal.toFixed(2)}</strong>{' '}
-        <span className="font-mono text-[11px] tracking-[0.16em] text-muted">(estimate)</span>
+        <span className="font-mono text-[12px] tracking-[0.16em] text-muted">(estimate)</span>
       </p>
 
       <CartAttendeeFields
@@ -96,24 +98,30 @@ export function TicketPurchaseForm({
       )}
 
       {cart.cartError ? (
-        <p role="alert" className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[13px] text-primary-800">
+        <p
+          role="alert"
+          className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[13px] text-primary-800"
+        >
           {cart.cartError}
         </p>
       ) : null}
 
       {cart.status === 'error' && cart.errorMessage ? (
-        <p role="alert" className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800">
+        <p
+          role="alert"
+          className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800"
+        >
           {cart.errorMessage}
         </p>
       ) : null}
 
-      <button
+      <Button
         type="submit"
         disabled={cart.status === 'submitting' || cart.cartItemCount === 0}
-        className="min-h-[44px] rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink transition-colors hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-60"
+        className="disabled:cursor-not-allowed disabled:opacity-60"
       >
         {cart.status === 'submitting' ? 'Redirecting…' : buyButtonLabel}
-      </button>
+      </Button>
     </form>
   );
 }

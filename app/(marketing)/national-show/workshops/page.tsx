@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 
 import { CategoryTicketsPage } from '@/components/tickets';
 import { Card } from '@/components/nos/Card';
-import { ShowSectionNav } from '@/components/show';
 import { buildPageMetadata } from '@/lib/seo';
 import { loadWorkshopSessionViewModels } from '@/lib/view-models/load-workshop-sessions';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 // See app/(marketing)/tickets/page.tsx for why this stays force-dynamic — the shared
 // CategoryTicketsPage component calls getSoldCountsByTicketType() (Firebase Admin SDK,
@@ -16,6 +16,7 @@ export const dynamic = 'force-dynamic';
 // unlock a rich result is exactly what M6/B8d forbids.
 export const metadata: Metadata = buildPageMetadata({
   title: 'Workshops & Field Trips — National Show',
+  image: nosOgImage('Workshops & Field Trips — National Show'),
   description:
     'Book Sunset Cocktails and guided Field Trip outings at the South African National ' +
     'Orchid Show.',
@@ -54,7 +55,7 @@ export default async function WorkshopsFieldTripsTicketsPage() {
     <>
       <CategoryTicketsPage
         category="workshop-field-trip"
-        heroImage="/images/orchid-pink.jpg"
+        route="/national-show/workshops"
         heading="Workshops & Field Trips"
         lede="Book Sunset Cocktails and guided Field Trip outings at the National Show."
         note={
@@ -63,11 +64,6 @@ export default async function WorkshopsFieldTripsTicketsPage() {
           </Card>
         }
       />
-
-      {/* F13 (M4) reconciliation — R3/L7 reachability. CategoryTicketsPage itself is
-          owned by the sibling SAOC session and is not edited (see the comment above);
-          this route's own page.tsx owns adding the section nav. */}
-      <ShowSectionNav current="/national-show/workshops" />
     </>
   );
 }

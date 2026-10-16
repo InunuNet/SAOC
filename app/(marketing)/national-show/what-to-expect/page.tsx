@@ -1,21 +1,24 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { ConfirmationBadge, ShowSectionNav, VisitorInfoBlock } from '@/components/show';
+import { ConfirmationBadge, VisitorInfoBlock } from '@/components/show';
 import { Button } from '@/components/nos/Button';
 import { Card } from '@/components/nos/Card';
 import { NosHero } from '@/components/nos/NosHero';
+import { NosSection } from '@/components/nos/NosSection';
 import { SectionHeading } from '@/components/nos/SectionHeading';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowVenueQuery, showVisitorInfoQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
 import type { ShowVisitorInfo } from '@/types';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'What to Expect — National Orchid Show',
+  image: nosOgImage('What to Expect — National Orchid Show'),
   description:
     'Opening hours, admission, food, photography, cloakroom and accessibility at the South ' +
     'African National Orchid Show.',
@@ -69,7 +72,7 @@ export default async function WhatToExpectPage() {
   return (
     <>
       <NosHero
-        image="/images/orchid-yellow.jpg"
+        route="/national-show/what-to-expect"
         title={info?.expectTitle ?? 'What to expect'}
         lede={info?.expectIntro ?? undefined}
         priority
@@ -82,55 +85,64 @@ export default async function WhatToExpectPage() {
           they are; this section adds the doc's narrative, which the page previously
           carried none of. Do not paraphrase or tighten this copy — see
           docs/rules/no-invention.md. */}
-      <div className="mx-auto max-w-[900px] space-y-6 px-8 pt-16 [&>p]:max-w-[60ch]">
+      <NosSection wrapClassName="space-y-6 [&>p]:max-w-[60ch]">
         <p className="font-sans text-[16px] leading-relaxed text-ink/80">
-          The 2027 South African National Orchid Show promises an immersive experience celebrating the beauty, science and future of orchids.
+          The 2027 South African National Orchid Show promises an immersive experience celebrating
+          the beauty, science and future of orchids.
         </p>
 
         <p className="font-sans text-[16px] leading-relaxed text-ink/80">
-          Explore breathtaking displays showcasing thousands of flowering orchids, from rare species found in nature to award-winning
-          cultivated hybrids that demonstrate decades of careful breeding and horticultural achievement. Watch South Africa&rsquo;s
-          leading judges evaluate exceptional plants as exhibitors compete for prestigious national awards that recognise excellence in
-          orchid cultivation.
+          Explore breathtaking displays showcasing thousands of flowering orchids, from rare species
+          found in nature to award-winning cultivated hybrids that demonstrate decades of careful
+          breeding and horticultural achievement. Watch South Africa&rsquo;s leading judges evaluate
+          exceptional plants as exhibitors compete for prestigious national awards that recognise
+          excellence in orchid cultivation.
         </p>
 
         <p className="font-sans text-[16px] leading-relaxed text-ink/80">
-          Browse the extensive plant sales area, where specialist nurseries from across South Africa will be joined by selected
-          international orchid vendors, offering an exceptional range of orchid species, hybrids, companion plants, growing media and
-          specialist supplies. Whether you are purchasing your very first orchid or searching for a rare collector&rsquo;s specimen,
-          knowledgeable growers from around the world will be on hand to share their expertise and passion.
+          Browse the extensive plant sales area, where specialist nurseries from across South Africa
+          will be joined by selected international orchid vendors, offering an exceptional range of
+          orchid species, hybrids, companion plants, growing media and specialist supplies. Whether
+          you are purchasing your very first orchid or searching for a rare collector&rsquo;s
+          specimen, knowledgeable growers from around the world will be on hand to share their
+          expertise and passion.
         </p>
 
         <p className="font-sans text-[16px] leading-relaxed text-ink/80">
-          The National Show Symposium will feature an outstanding programme of presentations by respected local and international
-          speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific
-          research. Integrated throughout the symposium, presentations by Wild Orchids of Southern Africa (WOSA) will highlight the ecology and conservation of indigenous orchids,
-          illustrating how research undertaken in natural habitats continues to influence cultivation practices, breeding programmes and
-          the long-term future of orchids.
+          The National Show Symposium will feature an outstanding programme of presentations by
+          respected local and international speakers covering orchid cultivation, breeding,
+          conservation, taxonomy, judging, sustainability and emerging scientific research.
+          Integrated throughout the symposium, presentations by Wild Orchids of Southern Africa
+          (WOSA) will highlight the ecology and conservation of indigenous orchids, illustrating how
+          research undertaken in natural habitats continues to influence cultivation practices,
+          breeding programmes and the long-term future of orchids.
         </p>
 
         <p className="font-sans text-[16px] leading-relaxed text-ink/80">
-          Visitors can further develop their knowledge through practical workshops, meet orchid societies from across the country,
-          engage with researchers and conservationists, and discover how every aspect of the National Show reflects this
-          year&rsquo;s theme—from the protection of orchids in the wild to the pursuit of cultivated excellence.
+          Visitors can further develop their knowledge through practical workshops, meet orchid
+          societies from across the country, engage with researchers and conservationists, and
+          discover how every aspect of the National Show reflects this year&rsquo;s theme—from the
+          protection of orchids in the wild to the pursuit of cultivated excellence.
         </p>
 
         <p className="font-sans text-[16px] leading-relaxed text-ink/80">
-          The 2027 National Show is made possible through the generous support of our headline sponsors, donors and partners, whose
-          commitment to horticulture, conservation, education and scientific advancement enables the South African Orchid Council to
-          present a truly world-class event.
+          The 2027 National Show is made possible through the generous support of our headline
+          sponsors, donors and partners, whose commitment to horticulture, conservation, education
+          and scientific advancement enables the South African Orchid Council to present a truly
+          world-class event.
         </p>
 
         <p className="font-sans text-[16px] leading-relaxed text-ink/80">
-          Whether your passion lies in conservation, scientific discovery, judging, growing or simply enjoying the extraordinary beauty
-          of orchids, the 2027 South African National Orchid Show offers an unforgettable experience that celebrates the complete
-          journey of orchids and the people dedicated to their future.
+          Whether your passion lies in conservation, scientific discovery, judging, growing or
+          simply enjoying the extraordinary beauty of orchids, the 2027 South African National
+          Orchid Show offers an unforgettable experience that celebrates the complete journey of
+          orchids and the people dedicated to their future.
         </p>
-      </div>
+      </NosSection>
 
-      <div className="mx-auto max-w-[1280px] space-y-10 px-8 py-16 [&_p]:max-w-[60ch]">
+      <NosSection wrapClassName="space-y-10 [&_p]:max-w-[60ch]">
         {dateRange ? (
-          <section>
+          <section className="nos-surface">
             <SectionHeading as="h2" title="Show dates" />
             <p className="meta mt-3 font-serif text-[28px] font-medium text-primary">{dateRange}</p>
             <ConfirmationBadge
@@ -142,7 +154,7 @@ export default async function WhatToExpectPage() {
         ) : null}
 
         {openingHours.length > 0 ? (
-          <section className="border-t border-rule pt-8">
+          <section className="nos-surface">
             <SectionHeading as="h3" title="Opening hours" />
             <ConfirmationBadge
               status={status.openingHours}
@@ -155,7 +167,9 @@ export default async function WhatToExpectPage() {
                   <dt className="font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
                     {entry.label}
                   </dt>
-                  <dd className="mt-1 font-serif text-[22px] font-medium text-ink">{entry.hours}</dd>
+                  <dd className="mt-1 font-serif text-[22px] font-medium text-ink">
+                    {entry.hours}
+                  </dd>
                   {entry.note ? (
                     <p className="mt-2 font-sans text-[17px] leading-snug text-muted">
                       {entry.note}
@@ -210,9 +224,7 @@ export default async function WhatToExpectPage() {
           pendingLabel={pendingLabel}
           researchLabel={researchLabel}
         />
-      </div>
-
-      <ShowSectionNav current="/national-show/what-to-expect" />
+      </NosSection>
     </>
   );
 }

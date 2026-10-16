@@ -4,7 +4,6 @@ import Link from 'next/link';
 import {
   AccommodationList,
   ConfirmationBadge,
-  ShowSectionNav,
   TravelRoutes,
   VenueCard,
   VisitorInfoBlock,
@@ -13,17 +12,20 @@ import { Button } from '@/components/nos/Button';
 import { Card } from '@/components/nos/Card';
 import { CtaBand } from '@/components/nos/CtaBand';
 import { NosHero } from '@/components/nos/NosHero';
+import { NosSection } from '@/components/nos/NosSection';
 import { SectionHeading } from '@/components/nos/SectionHeading';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowVenueQuery, showVisitorInfoQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
 import type { ShowVenue, ShowVisitorInfo } from '@/types';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Plan Your Visit — National Orchid Show',
+  image: nosOgImage('Plan Your Visit — National Orchid Show'),
   description:
     'Getting to the South African National Orchid Show: travel from the airports, parking, ' +
     'public transport, where to stay and what else to see while you are in town.',
@@ -52,17 +54,21 @@ export default async function PlanYourVisitPage() {
   return (
     <>
       <NosHero
-        image="/images/orchid-violet.jpg"
+        route="/national-show/plan-your-visit"
         title={info?.planTitle ?? 'Plan your visit'}
         lede={info?.planIntro ?? undefined}
         priority
       />
 
-      <div className="mx-auto max-w-[1280px] space-y-12 px-8 py-16">
+      <NosSection wrapClassName="space-y-12">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           <div className="space-y-10">
             <section>
-              <SectionHeading as="h2" title="Getting there" lede={info?.gettingThereIntro ?? undefined} />
+              <SectionHeading
+                as="h2"
+                title="Getting there"
+                lede={info?.gettingThereIntro ?? undefined}
+              />
               <TravelRoutes routes={info?.airportRoutes} />
             </section>
 
@@ -102,7 +108,7 @@ export default async function PlanYourVisitPage() {
         </VisitorInfoBlock>
 
         {attractions.length > 0 ? (
-          <section className="border-t border-rule pt-8">
+          <section className="nos-surface">
             <SectionHeading as="h3" title="While you are here" />
             <ConfirmationBadge
               status={status.attractions}
@@ -113,7 +119,9 @@ export default async function PlanYourVisitPage() {
               {attractions.map((attraction, index) => (
                 <li key={attraction._key ?? `${attraction.name}-${index}`}>
                   <Card className="h-full">
-                    <h3 className="font-serif text-[18px] font-medium text-ink">{attraction.name}</h3>
+                    <h3 className="font-serif text-[18px] font-medium text-ink">
+                      {attraction.name}
+                    </h3>
                     {attraction.note ? (
                       <p className="mt-2 font-sans text-[17px] leading-relaxed text-muted">
                         {attraction.note}
@@ -137,7 +145,7 @@ export default async function PlanYourVisitPage() {
         ) : null}
 
         {emergencyContacts.length > 0 ? (
-          <section className="border-t border-rule pt-8">
+          <section className="nos-surface">
             <SectionHeading as="h3" title="In an emergency" />
             <ConfirmationBadge
               status={status.emergencyContacts}
@@ -163,7 +171,7 @@ export default async function PlanYourVisitPage() {
             </dl>
           </section>
         ) : null}
-      </div>
+      </NosSection>
 
       <CtaBand
         eyebrow="Stay informed"
@@ -175,8 +183,6 @@ export default async function PlanYourVisitPage() {
           </Button>
         }
       />
-
-      <ShowSectionNav current="/national-show/plan-your-visit" />
     </>
   );
 }

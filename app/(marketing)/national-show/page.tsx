@@ -2,17 +2,16 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { NAV } from '@/components/chrome/nav-config';
-import { ConfirmationBadge, ShowCountdown, ShowSectionNav } from '@/components/show';
+import { NAV, TICKETS_CTA } from '@/components/chrome/nav-config';
+import { ConfirmationBadge, ShowCountdown } from '@/components/show';
 import { Button } from '@/components/nos/Button';
 import { CtaBand } from '@/components/nos/CtaBand';
 import { ExhibitorStageCard } from '@/components/nos/ExhibitorStageCard';
 import { JudgingGroupCard } from '@/components/nos/JudgingGroupCard';
 import { COLUMN_CLASS, SPAN_CLASS, resolveGridLayout } from '@/lib/grid-columns';
 import { NosHero } from '@/components/nos/NosHero';
-import { NosHubGroup, type NosHubGroupMember } from '@/components/show/nos/NosHubGroup';
+import { NosSection } from '@/components/nos/NosSection';
 import { SectionHeading } from '@/components/nos/SectionHeading';
-import { VisitorLinkCard } from '@/components/nos/VisitorLinkCard';
 import { JsonLd, nationalShowEventJsonLd, type NationalShowOffer } from '@/components/seo/JsonLd';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import {
@@ -23,6 +22,7 @@ import {
   showVisitorInfoQuery,
 } from '@/sanity/queries';
 import { showClasses as staticClasses } from '@/lib/data/showClasses';
+import { cheapestAdmission, formatRand } from '@/components/nos/cheapest-admission';
 import { effectiveCapacity, resolveEffectivePrice } from '@/lib/checkout-reservation';
 import { buildPageMetadata } from '@/lib/seo';
 import {
@@ -34,6 +34,7 @@ import {
 } from '@/lib/show-identity';
 import type { ShowClass, ShowVenue, ShowVisitorInfo } from '@/types';
 import type { SanityImageSource } from '@sanity/image-url';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -51,6 +52,7 @@ const HERO_LEDE =
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'National Orchid Show',
+  image: nosOgImage('National Orchid Show'),
   description: PAGE_DESCRIPTION,
   path: '/national-show',
 });
@@ -59,11 +61,15 @@ export const metadata: Metadata = buildPageMetadata({
 const HUB_MEGA = NAV.find((n) => n.type === 'mega');
 const HUB_HEADING = HUB_MEGA?.lead?.leadLabel;
 
-/** The hero's primary action: "Plan Your Visit", label and href as nav-config carries them. The
- *  header's Tickets button is the one ticket action on these pages, so the hero has no ticket CTA. */
+/** The hub's two actions, label and href as nav-config carries them: the header's Tickets leaf
+ *  (primary, gold) and Plan Your Visit (secondary, ghost). Used by the hero and the closing band. */
 const HUB_PLAN_LINK = {
-  label: HUB_MEGA?.columns.flatMap((c) => c.links).find((l) => l.id === 'plan-your-visit')?.label ?? 'Plan your visit',
-  href: HUB_MEGA?.columns.flatMap((c) => c.links).find((l) => l.id === 'plan-your-visit')?.href ?? '/national-show/plan-your-visit',
+  label:
+    HUB_MEGA?.columns.flatMap((c) => c.links).find((l) => l.id === 'plan-your-visit')?.label ??
+    'Plan your visit',
+  href:
+    HUB_MEGA?.columns.flatMap((c) => c.links).find((l) => l.id === 'plan-your-visit')?.href ??
+    '/national-show/plan-your-visit',
 };
 
 // ---------------------------------------------------------------------------------------
@@ -106,7 +112,7 @@ interface SanityAdmissionTicketType {
  */
 function buildAdmissionOffers(
   ticketTypes: SanityAdmissionTicketType[],
-  now: Date,
+  now: Date
 ): NationalShowOffer[] {
   return ticketTypes.flatMap<NationalShowOffer>((ticketType) => {
     if (ticketType.demo || !ticketType.slug) return [];
@@ -153,6 +159,10 @@ interface SanityNationalShow {
   countdownDate: string | null;
 }
 
+// C-4: ten judging groups lay out 5x2 from 1024px and 2x5 below it. Any count that divides by
+// five keeps the five-up grid; anything else falls back to the derived, orphan-free layout.
+const JUDGING_WIDE_COLUMNS = 5;
+
 // F5 (show-visitor-info): the landing page is the section's front door. These four
 // edges are what makes the visitor pages — and /national-show/archive, which returned
 // 200 for months while nothing linked to it — reachable by clicking.
@@ -165,7 +175,8 @@ const VISITOR_CARDS = [
   {
     href: '/national-show/plan-your-visit',
     title: 'Plan your visit',
-    description: 'Travel from the airports, parking, public transport, where to stay and what else to see.',
+    description:
+      'Travel from the airports, parking, public transport, where to stay and what else to see.',
   },
   {
     href: '/national-show/what-to-expect',
@@ -175,59 +186,13 @@ const VISITOR_CARDS = [
   {
     href: '/national-show/faq',
     title: 'Visitor questions',
-    description: 'The questions we are asked most, answered — and honestly marked where they are not yet settled.',
+    description:
+      'The questions we are asked most, answered — and honestly marked where they are not yet settled.',
   },
   {
     href: '/national-show/archive',
     title: 'Past shows',
     description: 'Previous editions.',
-  },
-];
-
-// F12 (M4) — the hub's four IA groups, exact ids/labels/order per
-// goldens/m4/route-manifest-schema.golden.md's `groups` array and its `listed: true` rows.
-// Member counts (4, 5, 4, 3) are the load-bearing case for G3b — the `programme` group
-// with 5 members must derive 3 columns, not the 4 a hardcoded class would render.
-const NOS_GROUPS: readonly { id: string; label: string; members: readonly NosHubGroupMember[] }[] = [
-  {
-    id: 'visit',
-    label: 'Visit',
-    members: [
-      { href: '/national-show/about', label: 'About the Show' },
-      { href: '/national-show/what-to-expect', label: 'What to Expect' },
-      { href: '/national-show/plan-your-visit', label: 'Plan Your Visit' },
-      { href: '/national-show/faq', label: 'FAQ' },
-    ],
-  },
-  {
-    id: 'programme',
-    label: 'Programme',
-    members: [
-      { href: '/national-show/programme', label: 'Programme' },
-      { href: '/national-show/workshops', label: 'Workshops' },
-      { href: '/national-show/symposium', label: 'SAOC Symposium' },
-      { href: '/national-show/wosa-conference', label: 'WOSA Conference' },
-      { href: '/national-show/conferences', label: 'Conference Registration' },
-    ],
-  },
-  {
-    id: 'exhibit-trade',
-    label: 'Exhibit & Trade',
-    members: [
-      { href: '/national-show/sa-exhibitors', label: 'South African Exhibitors' },
-      { href: '/national-show/international-guests', label: 'International Guests' },
-      { href: '/national-show/exhibitors', label: 'Exhibitor Entry Guide' },
-      { href: '/national-show/vendors', label: 'Exhibitors and Vendors' },
-    ],
-  },
-  {
-    id: 'the-show',
-    label: 'The Show',
-    members: [
-      { href: '/national-show/tickets', label: 'Tickets' },
-      { href: '/national-show/sponsors', label: 'Show Sponsors' },
-      { href: '/national-show/archive', label: 'Past Shows' },
-    ],
   },
 ];
 
@@ -311,6 +276,14 @@ export default async function NationalShowPage() {
     { label: 'Cycle', value: 'Triennial' },
   ];
 
+  // The price anchor shows only while sales are open and the cheapest admission has a price.
+  const anchor =
+    salesState?.salesOpen === true
+      ? cheapestAdmission(admissionTicketTypes ?? [], new Date())
+      : null;
+  const priceAnchor =
+    anchor && anchor.price > 0 ? `${anchor.type.name} from ${formatRand(anchor.price)}` : null;
+
   const ctaSentence = [
     edition ? `The ${toOrdinal(edition)} National Orchid Show` : 'The National Orchid Show',
     monthYear ? ` opens in ${monthYear}` : ' opens soon',
@@ -335,7 +308,13 @@ export default async function NationalShowPage() {
 
   const classes: ShowClass[] =
     sanityClasses && sanityClasses.length > 0
-      ? sanityClasses.map((c) => ({ id: c._id, code: c.code, name: c.name, group: '', description: c.description }))
+      ? sanityClasses.map((c) => ({
+          id: c._id,
+          code: c.code,
+          name: c.name,
+          group: '',
+          description: c.description,
+        }))
       : staticClasses;
 
   // R13 (goldens/m4/grid-orphan-rule.golden.md): text-bearing cards (JudgingGroupCard
@@ -343,6 +322,10 @@ export default async function NationalShowPage() {
   // — DERIVED from the live count, never a hardcoded `lg:grid-cols-N` literal, so a
   // future change in the number of judging groups can't silently reintroduce an orphan.
   const judgingGridLayout = resolveGridLayout(classes.length);
+  const judgingColumnsClass =
+    classes.length % JUDGING_WIDE_COLUMNS === 0
+      ? 'lg:grid-cols-5'
+      : COLUMN_CLASS[judgingGridLayout.columns];
 
   return (
     <>
@@ -352,7 +335,7 @@ export default async function NationalShowPage() {
           narrative (Kew pattern from research item 3: a visitor's first
           question is "can I come and what does it cost"). ── */}
       <NosHero
-        image="/images/orchid-dark.jpg"
+        route="/national-show"
         priority
         // The `<h1>` is real text from nav-config (the NOS header carries the lockup; the hub
         // hero carries none). No eyebrow: ruling 2026-10-15 Q4.
@@ -361,51 +344,35 @@ export default async function NationalShowPage() {
         lede={HERO_LEDE}
         actions={
           <>
-            {/* 2x2 at every width (Codi's legibility ruling 2026-09-29; mock
-                index.html:145 `.hero-facts`). Rendered as a direct child of the hero
-                body so the stacked order can move it after the CTAs (I:307). */}
-            <dl className="nos-hero-facts">
-              {heroMeta.map(({ label, value }, index) => (
-                <div key={label}>
-                  <dt data-nos-hero-text={`meta-dt-${index}`}>{label}</dt>
-                  <dd data-nos-hero-text={`meta-dd-${index}`}>{value}</dd>
-                </div>
-              ))}
-            </dl>
-
-            {/* The dates above are our working assumption, not a committee decision.
-                An unmarked plausible date range is exactly the invention this section
-                must not ship — the marker is driven by showVisitorInfo.confirmations. */}
-            {/* `contents`: no box of its own, so a confirmed status (badge
-                renders nothing) adds no empty flex item to the body grid. */}
-            <div data-nos-hero-text="confirmation-badge" className="contents">
-              <ConfirmationBadge
-                status={datesStatus}
-                pendingLabel={visitorInfo?.pendingLabel}
-                researchLabel={visitorInfo?.researchLabel}
-                tone="dark"
-              />
-            </div>
-
-            {/* Three actions, one grammar (F22). These were a filled Button plus
-                two underlined inline links: three different heights, three
-                different type sizes and two different hit areas for what are
-                three peer destinations. Secondary is expressed by fill alone
-                now — `ghost-on-dark` shares every metric with `on-dark` (same
-                padding, same 15px label, same 2px radius), so the row reads as
-                one control group and each target clears the same touch area. */}
+            {/* Order at every width: CTAs, price, countdown, facts (C-2). Tickets is the one
+                primary; Plan your visit is the ghost beside it. */}
             <div className="nos-hero-actions">
-              <Button<typeof Link> as={Link} href={HUB_PLAN_LINK.href} variant="on-dark" data-nos-hero-button="">
-                <span data-nos-hero-text="btn-primary-label">{HUB_PLAN_LINK.label}</span>
+              <Button<typeof Link>
+                as={Link}
+                href={TICKETS_CTA.href}
+                variant="on-dark"
+                data-nos-hero-button=""
+              >
+                <span data-nos-hero-text="btn-primary-label">{TICKETS_CTA.label}</span>
               </Button>
-              <Button<typeof Link> as={Link} href="/societies" variant="ghost-on-dark" data-nos-hero-button="">
-                <span data-nos-hero-text="btn-societies-label">Find your society</span>
+              <Button<typeof Link>
+                as={Link}
+                href={HUB_PLAN_LINK.href}
+                variant="ghost-on-dark"
+                data-nos-hero-button=""
+              >
+                <span data-nos-hero-text="btn-plan-label">{HUB_PLAN_LINK.label}</span>
               </Button>
             </div>
+
+            {priceAnchor ? (
+              <p data-nos-hero-text="price" className="nos-hero-price">
+                {priceAnchor}
+              </p>
+            ) : null}
 
             <div>
-              {/* Directly below the CTAs (ruling 2026-10-15 Q1/Q2). The label is the Karla
-                  label role, like the countdown's own unit labels. */}
+              {/* The label is the Karla label role, like the countdown's own unit labels. */}
               <p
                 data-nos-hero-text="countdown-opens-in"
                 className="mb-3 font-sans text-[12px] font-bold uppercase tracking-[0.14em] text-ivory/90"
@@ -420,19 +387,39 @@ export default async function NationalShowPage() {
                 />
               </Suspense>
             </div>
+
+            {/* 2x2 at every width (Codi's legibility ruling 2026-09-29; mock
+                index.html:145 `.hero-facts`). */}
+            <dl className="nos-hero-facts">
+              {heroMeta.map(({ label, value }, index) => (
+                <div key={label}>
+                  <dt data-nos-hero-text={`meta-dt-${index}`}>{label}</dt>
+                  <dd data-nos-hero-text={`meta-dd-${index}`}>{value}</dd>
+                </div>
+              ))}
+            </dl>
+
+            {/* The dates above are our working assumption, not a committee decision.
+                An unmarked plausible date range is exactly the invention this section
+                must not ship — the marker is driven by showVisitorInfo.confirmations.
+                `contents`: no box of its own, so a confirmed status (badge renders
+                nothing) adds no empty flex item to the body grid. */}
+            <div data-nos-hero-text="confirmation-badge" className="contents">
+              <ConfirmationBadge
+                status={datesStatus}
+                pendingLabel={visitorInfo?.pendingLabel}
+                researchLabel={visitorInfo?.researchLabel}
+                tone="dark"
+              />
+            </div>
           </>
         }
       />
 
       {/* ── What it is ── */}
-      <section className="mx-auto grid max-w-[1280px] grid-cols-1 gap-16 px-8 py-24 lg:grid-cols-2">
+      <NosSection wrapClassName="grid grid-cols-1 gap-16 lg:grid-cols-2">
         <div>
-          <SectionHeading
-            eyebrow="About the show"
-            title={
-              'Three years in the making, four days on the bench'
-            }
-          />
+          <SectionHeading title="Three years in the making, four days on the bench" />
           <p className="mt-6 font-sans text-[16px] leading-relaxed text-ink/80">
             The SAOC National Orchid Show is the country&rsquo;s premier competitive orchid event.
             Held every three years, it brings together growers, hybridisers, judges and
@@ -455,76 +442,57 @@ export default async function NationalShowPage() {
             { value: '10', label: 'Judging classes' },
           ].map(({ value, label }) => (
             <div key={label} className="bg-parchment px-8 py-10">
-              <div className="nos-figure font-serif text-[46px] text-primary">
-                {value}
-              </div>
+              <div className="nos-figure font-serif text-[46px] text-primary">{value}</div>
               <div className="mt-2 font-sans text-[12px] font-medium tracking-[0.16em] text-muted">
                 {label}
               </div>
             </div>
           ))}
         </div>
-      </section>
+      </NosSection>
 
-      {/* ── Planning a visit — the section's front door (F5 reachability) ── */}
-      <section className="mx-auto max-w-[1280px] px-8 pb-8">
-        <SectionHeading eyebrow="Coming to the show" title="Planning a visit" />
-        {/* R13 (Codi item 6, F2): 5 cards in a hardcoded 4-col grid orphaned the
-            last row (5 mod 4 = 1). Derived via the same resolveGridLayout helper
-            every other card grid in this file already uses, rather than a new
-            hardcoded literal — resolveGridLayout(5).columns === 3 (5 mod 3 = 2
-            holds), so this becomes a 3-column grid at lg. */}
-        <ul
-          className={`mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 ${COLUMN_CLASS[resolveGridLayout(VISITOR_CARDS.length).columns]}`}
+      {/* ── Planning a visit — the hub's one destinations list (v4 pattern, I:176-190) ── */}
+      <NosSection tone="gold" aria-labelledby="planning-title">
+        <h2
+          id="planning-title"
+          className="nos-opsz-fluid font-serif text-[clamp(28px,3.6vw,44px)] leading-[1.1] text-ink"
         >
+          Planning a visit
+        </h2>
+        <ul data-nos-destinations="">
           {VISITOR_CARDS.map(({ href, title: cardTitle, description }) => (
             <li key={href}>
-              <VisitorLinkCard href={href} title={cardTitle} description={description} />
+              <Link href={href}>
+                <strong>{cardTitle}</strong>
+                <span>{description}</span>
+                <i className="go" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M9 5l7 7-7 7" />
+                  </svg>
+                </i>
+              </Link>
             </li>
           ))}
         </ul>
-      </section>
-
-      {/* ── F12/M4 — the hub restructured into four IA groups. This is ADDED
-          structure alongside the show's existing copy above (H3) — with a flat
-          six-item header and no dropdown, these four groups plus
-          ShowSectionNav ARE the subsection's entire primary navigation (R3/R4).
-          href literals are KEPT here (not rendered from
-          content/national-show-routes.json) because site-content-alignment's
-          A12 greps for a literal `href: '/national-show/about'` entry in this
-          file — NAV1 asserts at gate time that these literals equal the
-          manifest's listed slugs exactly, in both directions. See
-          goldens/m4/hub-groups.golden.md. ── */}
-      <section className="mx-auto max-w-[1280px] px-8 py-16">
-        <SectionHeading eyebrow="Find your way" title="Explore the National Show" />
-
-        <div className="mt-10 space-y-14">
-          {NOS_GROUPS.map(({ id, label, members }) => (
-            <NosHubGroup key={id} id={id} label={label} members={members} />
-          ))}
-        </div>
-
-        {/* Spec entry 14 (/societies) gets a link and no page of its own — visibly
-            not one of the four groups' members, per hub-groups.golden.md §"Structural
-            requirements" 3. */}
-        <p className="mt-14 border-t border-rule pt-8 font-sans text-[17px] text-ink/70">
-          Looking for your local orchid society?{' '}
-          <Link href="/societies" className="text-[var(--accent)] underline underline-offset-2">
-            Find your society
-          </Link>
-          .
-        </p>
-      </section>
+      </NosSection>
 
       {/* ── Classes & Judging — a botanical index, not placeholder tiles ── */}
-      <section className="mx-auto max-w-[1280px] px-8 py-24">
+      <NosSection tone="gold">
         <SectionHeading
-          eyebrow="Competition structure"
           title="Ten judging groups"
           lede="Every exhibit is entered in one of ten botanical classes. Judges score on a 100-point scale covering cultural quality, presentation, and species accuracy."
         />
 
-        <div className={`mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 ${COLUMN_CLASS[judgingGridLayout.columns]}`}>
+        <div className={`mt-10 grid grid-cols-2 gap-4 ${judgingColumnsClass}`}>
           {classes.map((cls, index) => {
             // Only the final card in the spanning tie-break case (n = 13, 25, 37, ...)
             // gets a span class — the exact case resolveGridLayout falls back to a
@@ -532,8 +500,10 @@ export default async function NationalShowPage() {
             // partial row. See components/show/nos/ShowEntityGrid.tsx for the same
             // pattern applied to entity listings.
             const isFinal = index === classes.length - 1;
-            const isSpanningTieBreak = judgingGridLayout.finalCardSpans > 1;
-            const spanClass = isFinal && isSpanningTieBreak ? SPAN_CLASS[judgingGridLayout.finalCardSpans] : '';
+            const isSpanningTieBreak =
+              classes.length % JUDGING_WIDE_COLUMNS !== 0 && judgingGridLayout.finalCardSpans > 1;
+            const spanClass =
+              isFinal && isSpanningTieBreak ? SPAN_CLASS[judgingGridLayout.finalCardSpans] : '';
             return (
               <div key={cls.id} className={spanClass}>
                 <JudgingGroupCard
@@ -546,73 +516,67 @@ export default async function NationalShowPage() {
             );
           })}
         </div>
-      </section>
+      </NosSection>
 
-      {/* ── Exhibitor information ── */}
-      {/* nos-on-dark (R9/3, R8/3): royal-purple ground — any focus ring or
-          status colour inside must read the on-dark alias. See
-          nos-theme.css's `.nos-theme .nos-on-dark` block. */}
-      <section className="nos-on-dark bg-primary py-24">
-        <div className="mx-auto max-w-[1280px] px-8">
-          <SectionHeading eyebrow="Entering the show" title="Exhibitor information" tone="on-dark" />
+      {/* ── Exhibitor information (royal ground: NosSection tone="royal" carries nos-on-dark) ── */}
+      <NosSection tone="royal">
+        <SectionHeading title="Exhibitor information" tone="on-dark" />
 
-          {/* Retiring nationalShow.exhibitorStages (exhibitor F-7): this page no longer reads
-              that field. The exhibitor journey has one source — showExhibitorStep, rendered at
-              /national-show/exhibitors — and what stays here is a process summary that links
-              there, not a second copy an editor would have to keep in step. */}
-          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {EXHIBITOR_STAGES.map(({ stage, title: stageTitle, description }) => (
-              <ExhibitorStageCard
-                key={stage}
-                stage={stage}
-                title={stageTitle}
-                description={description}
-                confirmation={
-                  <ConfirmationBadge
-                    status={datesStatus}
-                    pendingLabel={visitorInfo?.pendingLabel}
-                    researchLabel={visitorInfo?.researchLabel}
-                    tone="dark"
-                  />
-                }
-              />
-            ))}
-          </div>
-
-          {/* The full exhibitor guide. The stages above are a summary; without this link
-              /national-show/exhibitors is reachable from the home page only — the same
-              built-but-unlinked hole /national-show/archive had. */}
-          <div className="mt-10">
-            <Button<typeof Link> as={Link} href="/national-show/exhibitors" variant="on-dark">
-              Exhibitor information →
-            </Button>
-          </div>
+        {/* Retiring nationalShow.exhibitorStages (exhibitor F-7): this page no longer reads
+            that field. The exhibitor journey has one source — showExhibitorStep, rendered at
+            /national-show/exhibitors — and what stays here is a process summary that links
+            there, not a second copy an editor would have to keep in step. */}
+        <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {EXHIBITOR_STAGES.map(({ stage, title: stageTitle, description }) => (
+            <ExhibitorStageCard
+              key={stage}
+              stage={stage}
+              title={stageTitle}
+              description={description}
+              confirmation={
+                <ConfirmationBadge
+                  status={datesStatus}
+                  pendingLabel={visitorInfo?.pendingLabel}
+                  researchLabel={visitorInfo?.researchLabel}
+                  tone="dark"
+                />
+              }
+            />
+          ))}
         </div>
-      </section>
 
-      {/* ── CTA band ── */}
-      <CtaBand
-        title="Start planning your entry now."
-        lede={`${ctaSentence} Register your interest through your society or contact the council directly.`}
-        action={
-          <div className="flex flex-wrap justify-center gap-4">
+        <div className="mt-14 flex flex-col items-start gap-5">
+          <p className="font-serif text-[clamp(1.5rem,1.2rem+1.2vw,2rem)] leading-tight text-ivory">
+            Start planning your entry now.
+          </p>
+          <p className="max-w-[58ch] font-sans text-[18px] leading-[1.55] text-[var(--lilac-muted)]">
+            Register your interest through your society or contact the council directly.
+          </p>
+          <div className="flex flex-wrap gap-4">
             <Button<typeof Link> as={Link} href="/societies" variant="on-dark">
               Find your society
             </Button>
-            <Link
-              href="/contact"
-              className="inline-flex min-h-[44px] items-center font-sans text-[14px] font-medium text-ivory underline decoration-ivory/40 underline-offset-4 transition-colors duration-150 hover:decoration-ivory"
-            >
-              Ask the council
-            </Link>
+            <Button<typeof Link> as={Link} href="/national-show/exhibitors" variant="ghost-on-dark">
+              Exhibitor information
+            </Button>
+          </div>
+        </div>
+      </NosSection>
+
+      {/* ── Closing band: the ticket close. Its h2 is the show's own line from page data. ── */}
+      <CtaBand
+        title={ctaSentence}
+        action={
+          <div className="flex flex-wrap justify-center gap-4">
+            <Button<typeof Link> as={Link} href={TICKETS_CTA.href} variant="on-dark">
+              {TICKETS_CTA.label}
+            </Button>
+            <Button<typeof Link> as={Link} href={HUB_PLAN_LINK.href} variant="ghost-on-dark">
+              {HUB_PLAN_LINK.label}
+            </Button>
           </div>
         }
       />
-
-      {/* N15 — exactly one navigation landmark inside the NOS content region, on every
-          one of the 17 routes including the hub itself. R21/4 — full-bleed only at the
-          foot of the page, which is why this is the very last element rendered. */}
-      <ShowSectionNav current="/national-show" />
     </>
   );
 }

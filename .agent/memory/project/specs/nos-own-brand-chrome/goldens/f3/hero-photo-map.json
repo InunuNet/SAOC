@@ -1,0 +1,13 @@
+{
+  "_status": "CONFIRMED by NOS Design (relayed by the lead, 2026-10-16), superseding the first draft. A swap is a one-line edit here; the dev mirrors it in one map (components/nos/hero-photos.ts) and F3-R29 imagery fails on whichever side is stale.",
+  "_rule": "Each photo is used at most once across NOS routes, on the route below. Tickets has NO hero photo: its hero is a royal #211A57 ground with the ticket fan ([data-nos-ticket-fan]); the fan cards keep their 4 product photos, an accepted R16 exception, exempt from the used-once rule. Every route not listed here or tickets has a TYPOGRAPHIC hero (solid #0B0A14, h1 + standfirst on the 1080px grid, no image). The hub's destinations list carries no photo. Archive edition cards are typographic. The emblem is never a photo substitute.",
+  "routes": {
+    "/national-show": "/images/orchid-dark.jpg",
+    "/national-show/plan-your-visit": "/images/orchid-yellow.jpg",
+    "/national-show/symposium": "/images/orchid-violet.jpg",
+    "/national-show/programme": "/images/orchid-purple.jpg",
+    "/national-show/what-to-expect": "/images/orchid-pink.jpg"
+  },
+  "objectPosition": { "/national-show": "68% 50%" },
+  "fanRoutes": ["/national-show/tickets"]
+}

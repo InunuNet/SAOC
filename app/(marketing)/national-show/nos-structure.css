@@ -1,0 +1,410 @@
+/*
+ * nos-own-brand-chrome F3 — structure (C1/C2), typographic hero (R29), group sub-nav (R27),
+ * and the shared surfaces the NOS pages compose from.
+ *
+ * Every value is the approved mock's (I:n = line n of goldens/f2/mock-index.html) or an NOS
+ * Design ruling's; goldens/f3/f3-spec.md carries the full table. Loaded after nos-theme.css
+ * and scoped to `.nos-theme` like it, so nothing here reaches a SAOC route.
+ */
+
+.nos-theme {
+  --nos-gutter: clamp(16px, 4vw, 48px); /* I:91 */
+  --nos-default: 1080px; /* I:61 */
+  --shadow-sm: 0 1px 2px rgba(33, 26, 87, 0.06), 0 2px 8px rgba(33, 26, 87, 0.05); /* I:46 */
+  --shadow-md: 0 2px 4px rgba(33, 26, 87, 0.06), 0 10px 28px rgba(33, 26, 87, 0.09); /* I:47 */
+  /* S1: cards are 16px with a shadow, never a border alone (I:41, I:46-47). */
+  --radius-card: 16px;
+  --radius-lg: 16px;
+}
+
+/* C1: ONE container. Carries no vertical padding (the section does, C2). */
+.nos-theme [data-nos-wrap] {
+  width: 100%;
+  max-width: calc(var(--nos-default) + 2 * var(--nos-gutter));
+  margin-inline: auto;
+  padding-inline: var(--nos-gutter);
+}
+
+/* C2: ONE section rhythm, on the section itself (I:156). */
+.nos-theme .nos-section {
+  padding-block: clamp(72px, 9vw, 120px);
+  overflow-x: clip; /* the full-bleed test-mode banner never widens the page */
+}
+.nos-theme .nos-section-gold {
+  background-color: var(--bone);
+}
+.nos-theme .nos-section-royal {
+  background-color: var(--primary);
+}
+.nos-theme .nos-section-black {
+  background-color: var(--black);
+}
+.nos-theme .nos-section-royal :is(h2, h3),
+.nos-theme .nos-section-black :is(h2, h3) {
+  color: var(--ivory);
+}
+
+/* R29 typographic hero: solid ground, no media, no scrim; copy on the 1080 grid shared with
+   the sections below (h1 and standfirst left edges equal the wrap content edge). */
+.nos-theme .nos-hero-type .nos-hero-copy {
+  max-width: calc(var(--nos-default) + 2 * var(--hero-gutter));
+  padding-block: 64px 56px;
+}
+@media (max-width: 1023px) {
+  .nos-theme .nos-hero-type .nos-hero-copy {
+    padding-block: 48px 40px;
+  }
+}
+
+/* R27 group sub-nav: directly under the inner hero, not sticky. Karla 700 14.5px royal,
+   44px items, 24px gap, 1px --line rule on gold-100. <=700px: one snap-scrolling row, hidden
+   scrollbar, an 8px right-edge fade only while the row overflows. */
+.nos-theme .nos-subnav {
+  position: relative;
+  background-color: var(--parchment);
+  border-bottom: 1px solid var(--rule);
+}
+.nos-theme .nos-subnav-row {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nos-theme .nos-subnav-link {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  font-family: var(--sans);
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--primary);
+  text-decoration: none;
+}
+.nos-theme .nos-subnav-link:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 8px;
+}
+.nos-theme .nos-subnav-link[aria-current] {
+  text-decoration: underline;
+  text-decoration-color: #a7a841; /* --green-1, I:22 */
+  text-decoration-thickness: 2px;
+  text-underline-offset: 8px;
+}
+.nos-theme .nos-subnav-fade {
+  display: none;
+}
+@media (max-width: 700px) {
+  .nos-theme .nos-subnav-row {
+    flex-wrap: nowrap;
+    margin-inline: calc(-1 * var(--nos-gutter));
+    padding-inline: var(--nos-gutter);
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: var(--nos-gutter);
+    scrollbar-width: none;
+  }
+  .nos-theme .nos-subnav-row::-webkit-scrollbar {
+    display: none;
+  }
+  .nos-theme .nos-subnav-row > li {
+    flex: none;
+    scroll-snap-align: start;
+  }
+  .nos-theme .nos-subnav[data-overflowing] .nos-subnav-fade {
+    display: block;
+    position: absolute;
+    inset-block: 0;
+    right: 0;
+    width: 8px;
+    pointer-events: none;
+    background: linear-gradient(90deg, rgba(251, 250, 240, 0), var(--parchment));
+  }
+}
+
+/* Running copy holds the 60ch measure (NOS Design measure ruling); presenter bios are held
+   to 68ch in presenters.css, which this does not touch. */
+.nos-theme p {
+  max-width: 60ch;
+}
+
+/* R17: controls are 10px (mock .btn, I:99-107). nos-theme.css carries the older 2px. */
+.nos-theme {
+  --radius-button: 10px;
+}
+
+/* S1/R19 surface: one low-tint card, 16px radius, the lightest shadow, never a border. A
+   status marker sits in its head; one marker per surface. */
+.nos-theme .nos-surface,
+.nos-theme .nos-card {
+  border: 0;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+}
+.nos-theme .nos-surface {
+  background-color: var(--parchment);
+  padding: clamp(20px, 3vw, 32px);
+}
+.nos-theme .nos-card {
+  background-color: #fff;
+}
+
+/* R19 status marker: a 1px solid pill, Karla 700 12px .14em uppercase. Scoped to .nos-theme so
+   the shared StatusMarker classNames (and the SAOC pages that use them) are untouched. */
+.nos-theme [data-confirmation-badge],
+.nos-theme [data-exhibitor-marker] {
+  margin-top: 8px;
+  padding: 4px 12px;
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+  background-color: var(--bone);
+  color: var(--primary);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+.nos-theme .nos-on-dark [data-confirmation-badge],
+.nos-theme .nos-on-dark [data-exhibitor-marker] {
+  border-color: var(--ivory);
+  background-color: transparent;
+  color: var(--ivory);
+}
+
+/* S7: form labels and legends are sentence case (vendors/apply, vendors/register). */
+.nos-theme form :is(label, legend),
+.nos-theme form :is(label, legend).font-mono {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* S2: the shared vendor forms' submit buttons take the one NOS button anatomy
+   (components/nos/Button.tsx) without editing components/vendors. */
+.nos-theme form button[type='submit']:not([data-nos-button]) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 14px 26px;
+  border-radius: var(--radius-button);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* NOWRAP: the workshops-and-field-trips ticket link never breaks mid-label. */
+.nos-theme [data-nos-nowrap] {
+  white-space: nowrap;
+}
+
+/* Back-links and breadcrumbs meet the 44px target floor. */
+.nos-theme [data-nos-backlink] {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* Key dates keep their real <table> (header scope, caption); each row is drawn as its own
+   surface, because each row carries its own status marker. */
+.nos-theme [data-nos-keydates] {
+  border-top: 0;
+  padding-top: 0;
+}
+.nos-theme [data-nos-keydates] :is(table, tbody) {
+  display: block;
+  min-width: 0;
+}
+.nos-theme [data-nos-keydates] thead {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.nos-theme [data-nos-keydate-row] {
+  display: grid;
+  gap: 4px 24px;
+  margin-bottom: 16px;
+  padding: clamp(20px, 3vw, 32px);
+  border: 0;
+  border-radius: var(--radius-card);
+  background-color: var(--parchment);
+  box-shadow: var(--shadow-sm);
+}
+.nos-theme [data-nos-keydate-row] :is(th, td) {
+  display: block;
+  padding: 0;
+}
+@media (min-width: 640px) {
+  .nos-theme [data-nos-keydate-row] {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.5fr);
+  }
+}
+
+/* R29 edition card (I:171): typographic, white, 1px --line, 16px radius with the card shadow. */
+.nos-theme .nos-edition-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  padding: clamp(24px, 3vw, 32px);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-card);
+  background-color: #fff;
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  text-decoration: none;
+}
+.nos-theme .nos-edition-card--link {
+  padding: 0;
+}
+.nos-theme .nos-edition-card--link:hover {
+  box-shadow: var(--shadow-md);
+}
+.nos-theme .nos-edition-card-link {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  padding: clamp(24px, 3vw, 32px);
+  border-radius: inherit;
+  color: inherit;
+  text-decoration: none;
+}
+.nos-theme .nos-edition-year {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(2.6rem, 2rem + 2vw, 3.8125rem);
+  line-height: 1;
+  color: var(--primary);
+  font-variant-numeric: lining-nums tabular-nums;
+  font-variation-settings: 'opsz' 72;
+}
+.nos-theme .nos-edition-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.375rem;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.nos-theme .nos-edition-venue {
+  margin: 0;
+  font-family: var(--sans);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-700);
+}
+.nos-theme .nos-edition-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 12px;
+}
+.nos-theme .nos-edition-note {
+  margin: 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15px;
+  font-variation-settings: 'opsz' 24;
+  color: var(--ink-700);
+}
+/* v4 "Planning a visit" destinations (I:176-190): a ruled list of titled links with an arrow box. */
+.nos-theme [data-nos-destinations] {
+  list-style: none;
+  margin: 32px 0 0;
+  padding: 0;
+}
+.nos-theme [data-nos-destinations] li + li {
+  border-top: 1px solid var(--rule);
+}
+.nos-theme [data-nos-destinations] a {
+  position: relative;
+  display: block;
+  padding: 24px 68px 24px 0;
+  border-radius: 4px;
+  text-decoration: none;
+}
+.nos-theme [data-nos-destinations] strong {
+  display: block;
+  margin-bottom: 6px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 25px;
+  line-height: 1.2;
+  color: var(--primary);
+  font-variation-settings: 'opsz' 32;
+  transition: transform 320ms var(--ease-nos);
+}
+.nos-theme [data-nos-destinations] span:not(.go) {
+  display: block;
+  max-width: 52ch;
+  font-size: 16px;
+  color: var(--ink-700);
+}
+.nos-theme [data-nos-destinations] .go {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(33, 26, 87, 0.28);
+  border-radius: 10px;
+  color: var(--primary);
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    border-color 200ms ease;
+}
+.nos-theme [data-nos-destinations] a:hover strong {
+  transform: translateX(6px);
+}
+.nos-theme [data-nos-destinations] a:hover .go {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: var(--parchment);
+}
+
+/* Exhibitor stage cards sit on the royal ground: borderless, faintly lifted, with the shadow
+   surface the status marker needs. */
+.nos-theme .nos-stage-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: clamp(20px, 3vw, 28px);
+  border: 0;
+  border-radius: var(--radius-card);
+  background-color: rgba(255, 255, 255, 0.07);
+  box-shadow: var(--shadow-sm);
+}
+
+/* The hub hero keeps its order at every width: CTAs, price, countdown, facts, marker. */
+.nos-theme .nos-hero-price {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ivory);
+}
+@media (max-width: 700px) {
+  .nos-theme .nos-hero-body > [data-confirmation-badge] {
+    order: 2;
+  }
+}

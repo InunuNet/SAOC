@@ -18,7 +18,7 @@ export interface NosJudgingGroupCardProps {
 
 export function JudgingGroupCard({ code, group, name, description }: NosJudgingGroupCardProps) {
   return (
-    <Card className="flex h-full flex-col gap-3 p-5">
+    <Card className="flex h-full flex-col gap-3">
       <div className="flex h-10 w-10 items-center justify-center rounded-[length:var(--radius-card)] bg-[var(--primary-100)]">
         <span className="font-serif text-[15px] font-medium italic text-primary">{code}</span>
       </div>

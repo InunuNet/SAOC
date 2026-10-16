@@ -36,21 +36,12 @@ export interface ShowPageProseProps {
 // `notice.tone` ('warning' | 'muted'), NEVER `--status-error-*` (N14): the two Tailwind
 // arbitrary-value classes below resolve to `--status-warning`/`--status-muted`, which
 // `.nos-on-dark` flips per ground — never a literal hex, never `red-*`.
-const RAIL_TONE_CLASS: Record<'warning' | 'muted', string> = {
-  warning: 'border-[color:var(--status-warning)]',
-  muted: 'border-[color:var(--status-muted)]',
-};
-
 export function ShowPageProse({ section }: ShowPageProseProps) {
   const { blocks, notice } = unwrapGatedProse(section.body);
 
   return (
     <div
-      className={
-        notice
-          ? `nos-show-page-prose border-l-2 border-dashed pl-5 ${RAIL_TONE_CLASS[notice.tone]}`
-          : 'nos-show-page-prose'
-      }
+      className={notice ? 'nos-show-page-prose nos-surface' : 'nos-show-page-prose'}
       data-section-key={section.sectionKey}
       data-nos-content-gap={notice?.gap ? 'true' : undefined}
     >
@@ -58,7 +49,9 @@ export function ShowPageProse({ section }: ShowPageProseProps) {
         <p className="nos-show-page-notice mb-4 flex flex-wrap items-baseline gap-2" role="note">
           <span
             className={`inline-block rounded-[length:var(--radius-1)] border px-2 py-0.5 font-sans text-[12px] font-semibold uppercase tracking-[0.14em] ${
-              notice.tone === 'warning' ? 'text-[var(--status-warning)]' : 'text-[var(--status-muted)]'
+              notice.tone === 'warning'
+                ? 'text-[var(--status-warning)]'
+                : 'text-[var(--status-muted)]'
             }`}
             style={{ borderColor: 'currentColor' }}
           >

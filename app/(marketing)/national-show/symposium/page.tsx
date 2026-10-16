@@ -2,12 +2,12 @@ import type { Metadata } from 'next';
 
 import { PresenterJumpLink } from '@/components/nos/PresenterSection';
 import { PresenterSection } from '@/components/nos/PresenterSection';
-import { ShowSectionNav } from '@/components/show';
 import { ShowContentState } from '@/components/show/nos/ShowContentState';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { loadPresenterViewModels } from '@/lib/view-models/load-presenters';
 import { loadTicketCardViewModel } from '@/lib/view-models/load-ticket-card';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 // F12 (national-show-ia-alignment, M4) — created route. One sentence of real source
 // (the `theme` section) exists; everything else is placeholder under an R11 disclosure
@@ -30,6 +30,7 @@ export const revalidate = 60;
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'SAOC Symposium — National Orchid Show',
+  image: nosOgImage('SAOC Symposium — National Orchid Show'),
   description: 'What the SAOC Symposium is, and who it is for.',
   path: '/national-show/symposium',
 });
@@ -67,15 +68,13 @@ export default async function SymposiumPage() {
       <div className="contents [&_.nos-show-page-prose_p]:max-w-[60ch] [&_.nos-show-page-prose_li]:max-w-[60ch]">
         <ShowContentState
           result={result}
-          heroImage="/images/orchid-dark.jpg"
+          route="/national-show/symposium"
           layout="prose"
           afterHero={<PresenterJumpLink presenters={presenters} />}
         />
       </div>
 
       <PresenterSection eyebrow="Symposium" presenters={presenters} />
-
-      <ShowSectionNav current="/national-show/symposium" />
     </>
   );
 }

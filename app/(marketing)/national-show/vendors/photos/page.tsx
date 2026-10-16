@@ -3,10 +3,12 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
 import { NosHero } from '@/components/nos/NosHero';
+import { NosSection } from '@/components/nos/NosSection';
 import { VendorPhotoResumeUploads } from '@/components/vendors/VendorPhotoResumeUploads';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import { resolveVendorPhotoResumeState } from '@/lib/vendor-photo-resume-gate';
 import { buildPageMetadata } from '@/lib/seo';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 /**
  * Public product-photo resume page (mission vendor-flow-fixes, F2). Token-gated via a `?token=`
@@ -18,6 +20,7 @@ import { buildPageMetadata } from '@/lib/seo';
 // noIndex: token-gated, not public content, and excluded from the sitemap.
 export const metadata: Metadata = buildPageMetadata({
   title: 'Vendor Product Photos — National Show',
+  image: nosOgImage('Vendor Product Photos — National Show'),
   description: 'Upload the product photos for your 2027 SAOC National Show vendor registration.',
   path: '/national-show/vendors/photos',
   noIndex: true,
@@ -43,7 +46,7 @@ export default async function VendorPhotosPage({ searchParams }: VendorPhotosPag
   const secret = process.env.VENDOR_STAND_PAYMENT_TOKEN_SECRET;
   if (!secret) {
     console.error(
-      '[vendors/photos/page] VENDOR_STAND_PAYMENT_TOKEN_SECRET is unset; refusing all photo-resume sessions.',
+      '[vendors/photos/page] VENDOR_STAND_PAYMENT_TOKEN_SECRET is unset; refusing all photo-resume sessions.'
     );
   }
 
@@ -57,32 +60,34 @@ export default async function VendorPhotosPage({ searchParams }: VendorPhotosPag
   return (
     <>
       <NosHero
-        image="/images/orchid-yellow.jpg"
+        route="/national-show/vendors/photos"
         title="Vendor Product Photos"
         lede="Upload the product photos for your 2027 SAOC National Show vendor registration."
         priority
       />
 
-      <div className="mx-auto max-w-2xl px-6 py-16 sm:px-8 sm:py-20">
-        {state.kind === 'invalid' && (
-          <p className="font-sans text-[15px] text-ink">
-            This photo upload link is no longer valid. Please contact SAOC if you believe this is an
-            error.
-          </p>
-        )}
-        {state.kind === 'complete' && (
-          <p role="status" className="font-sans text-[15px] text-ink">
-            All 3 required product photos have been uploaded.
-          </p>
-        )}
-        {state.kind === 'upload' && (
-          <VendorPhotoResumeUploads
-            submissionId={state.vendorSubmissionId}
-            missingSlots={state.missingSlots}
-            serverUploadedCount={state.uploadedCount}
-          />
-        )}
-      </div>
+      <NosSection>
+        <div className="max-w-2xl">
+          {state.kind === 'invalid' && (
+            <p className="font-sans text-[15px] text-ink">
+              This photo upload link is no longer valid. Please contact SAOC if you believe this is
+              an error.
+            </p>
+          )}
+          {state.kind === 'complete' && (
+            <p role="status" className="font-sans text-[15px] text-ink">
+              All 3 required product photos have been uploaded.
+            </p>
+          )}
+          {state.kind === 'upload' && (
+            <VendorPhotoResumeUploads
+              submissionId={state.vendorSubmissionId}
+              missingSlots={state.missingSlots}
+              serverUploadedCount={state.uploadedCount}
+            />
+          )}
+        </div>
+      </NosSection>
     </>
   );
 }

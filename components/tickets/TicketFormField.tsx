@@ -22,7 +22,7 @@ export function TicketFormField({
 }: TicketFormFieldProps) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="font-mono text-[11px] tracking-[0.16em] text-muted">
+      <label htmlFor={id} className="font-mono text-[12px] tracking-[0.16em] text-muted">
         {label}
       </label>
       <input
@@ -38,7 +38,7 @@ export function TicketFormField({
       {error ? (
         <p
           role="alert"
-          className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[13px] text-primary-800"
+          className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800"
         >
           {error}
         </p>

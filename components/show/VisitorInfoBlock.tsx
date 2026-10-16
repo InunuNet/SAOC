@@ -34,7 +34,7 @@ export function VisitorInfoBlock({
   if (!body && !children) return null;
 
   return (
-    <section id={id} className="border-t border-rule pt-8">
+    <section id={id} className="nos-surface">
       <h3 className="nos-opsz-32 font-serif text-[24px] text-ink">{heading}</h3>
       <ConfirmationBadge
         status={status}

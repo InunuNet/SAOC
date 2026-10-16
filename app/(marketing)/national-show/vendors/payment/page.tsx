@@ -9,6 +9,7 @@ import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import { VENDOR_STAND_ORDERS_COLLECTION } from '@/lib/vendor-stand-orders';
 import { verifyVendorStandPaymentToken } from '@/lib/vendor-stand-payment-token';
 import { buildPageMetadata } from '@/lib/seo';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 /**
  * Public stand-payment page (mission vendor-gated-registration-flow, M3/F29). Token-gated via
@@ -26,6 +27,7 @@ import { buildPageMetadata } from '@/lib/seo';
 // (M6/B8c).
 export const metadata: Metadata = buildPageMetadata({
   title: 'Vendor Stand Payment — National Show',
+  image: nosOgImage('Vendor Stand Payment — National Show'),
   description: 'Select your stand size and complete payment for the 2027 SAOC National Show.',
   path: '/national-show/vendors/payment',
   noIndex: true,
@@ -45,7 +47,9 @@ interface UsabilityResult {
   businessName: string;
 }
 
-export default async function VendorStandPaymentPage({ searchParams }: VendorStandPaymentPageProps) {
+export default async function VendorStandPaymentPage({
+  searchParams,
+}: VendorStandPaymentPageProps) {
   const resolvedSearchParams = await searchParams;
   const token = typeof resolvedSearchParams.token === 'string' ? resolvedSearchParams.token : '';
 
@@ -58,7 +62,7 @@ export default async function VendorStandPaymentPage({ searchParams }: VendorSta
           same conventional hero treatment as the rest of the site, nothing more decorative.
           VendorStandPaymentForm is SAOC-owned and untouched. */}
       <NosHero
-        image="/images/orchid-yellow.jpg"
+        route="/national-show/vendors/payment"
         title="Vendor Stand Payment"
         lede="Select your stand size and complete payment for the 2027 SAOC National Show."
         priority
@@ -95,7 +99,7 @@ async function resolveUsability(token: string): Promise<UsabilityResult> {
   const secret = process.env.VENDOR_STAND_PAYMENT_TOKEN_SECRET;
   if (!secret) {
     console.error(
-      '[vendors/payment/page] VENDOR_STAND_PAYMENT_TOKEN_SECRET is unset; refusing all stand-payment sessions.',
+      '[vendors/payment/page] VENDOR_STAND_PAYMENT_TOKEN_SECRET is unset; refusing all stand-payment sessions.'
     );
     return fallback;
   }

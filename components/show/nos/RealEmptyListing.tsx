@@ -32,7 +32,7 @@ export function RealEmptyListing({
   action,
 }: RealEmptyListingProps) {
   return (
-    <div className="border-[length:var(--border-primary)] border-dashed border-rule bg-parchment p-8">
+    <div data-nos-empty-state="" className="nos-surface">
       <p className="font-sans text-[17px] leading-relaxed text-ink/80">{absenceStatement}</p>
       {absenceMarker ? <div className="mt-2">{absenceMarker}</div> : null}
 

@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 
 import { PresenterSection } from '@/components/nos/PresenterSection';
-import { ShowSectionNav } from '@/components/show';
 import { ShowContentState } from '@/components/show/nos/ShowContentState';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { loadPresenterViewModels } from '@/lib/view-models/load-presenters';
 import { loadTicketCardViewModel } from '@/lib/view-models/load-ticket-card';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 // F12 (national-show-ia-alignment, M4) — created route.
 //
@@ -32,6 +32,7 @@ export const revalidate = 60;
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'WOSA Conference — National Orchid Show',
+  image: nosOgImage('WOSA Conference — National Orchid Show'),
   description: 'The WOSA Conference, held alongside the National Show, and what it is for.',
   path: '/national-show/wosa-conference',
 });
@@ -68,7 +69,7 @@ export default async function WosaConferencePage() {
       <div className="contents [&_.nos-show-page-prose_p]:max-w-[60ch] [&_.nos-show-page-prose_li]:max-w-[60ch]">
         <ShowContentState
           result={result}
-          heroImage="/images/orchid-pink.jpg"
+          route="/national-show/wosa-conference"
           layout="prose"
           afterProse={
             // SAOC attributes and links out; it never authors conservation content in its
@@ -91,8 +92,6 @@ export default async function WosaConferencePage() {
       </div>
 
       <PresenterSection eyebrow="WOSA Conference" presenters={presenters} />
-
-      <ShowSectionNav current="/national-show/wosa-conference" />
     </>
   );
 }

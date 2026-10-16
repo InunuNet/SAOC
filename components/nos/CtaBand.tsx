@@ -7,6 +7,7 @@
 
 import type { ReactNode } from 'react';
 
+import { NosSection } from './NosSection';
 import { SectionHeading } from './SectionHeading';
 
 export interface NosCtaBandProps {
@@ -20,22 +21,17 @@ export interface NosCtaBandProps {
 
 export function CtaBand({ eyebrow, title, lede, action, className = '' }: NosCtaBandProps) {
   return (
-    <section
-      className={[
-        // nos-on-dark (R9/3, R8/3): this band is always a royal-purple
-        // ground, so any focus ring or status colour rendered inside it
-        // must read the on-dark alias, not the on-light default — see
-        // nos-theme.css's `.nos-theme .nos-on-dark` block.
-        'nos-on-dark bg-primary px-8 py-16 text-center',
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
-    >
+    <NosSection tone="royal" className={['text-center', className].filter(Boolean).join(' ')}>
       <div className="mx-auto flex max-w-[720px] flex-col items-center gap-6">
-        <SectionHeading eyebrow={eyebrow} title={title} lede={lede} tone="on-dark" className="items-center text-center" />
+        <SectionHeading
+          eyebrow={eyebrow}
+          title={title}
+          lede={lede}
+          tone="on-dark"
+          className="items-center text-center"
+        />
         {action}
       </div>
-    </section>
+    </NosSection>
   );
 }

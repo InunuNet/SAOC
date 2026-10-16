@@ -11,10 +11,12 @@ import {
 import { Badge } from '@/components/nos/Badge';
 import { Button } from '@/components/nos/Button';
 import { NosHero } from '@/components/nos/NosHero';
+import { NosSection } from '@/components/nos/NosSection';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { showExhibitorInfoQuery, showExhibitorStepsQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
 import type { ShowExhibitorInfo, ShowExhibitorStep } from '@/types';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
@@ -31,6 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return buildPageMetadata({
     title: `${info?.title ?? 'Exhibitor Information'} — National Orchid Show`,
+    image: nosOgImage(`${info?.title ?? 'Exhibitor Information'} — National Orchid Show`),
     description:
       'Entering plants in the South African National Orchid Show: how entry works, what is ' +
       'still to be confirmed by the show committee, and the questions we are asking them.',
@@ -74,17 +77,18 @@ export default async function ExhibitorInfoPage() {
   return (
     <>
       <NosHero
-        image="/images/orchid-purple.jpg"
+        route="/national-show/exhibitors"
         title={info?.title ?? 'Exhibitor Information'}
         lede={info?.intro ?? undefined}
         priority
       />
 
-      <div className="mx-auto max-w-[1280px] space-y-12 px-8 py-16 [&_p]:max-w-[60ch]">
+      <NosSection wrapClassName="space-y-12 [&_p]:max-w-[60ch]">
         <p>
           <Link
             href="/national-show"
-            className="inline-flex min-h-6 items-center gap-2 font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-muted transition-colors duration-150 hover:text-primary"
+            data-nos-backlink=""
+            className="inline-flex items-center gap-2 font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-muted transition-colors duration-150 hover:text-primary"
           >
             ← Show overview
           </Link>
@@ -197,7 +201,7 @@ export default async function ExhibitorInfoPage() {
             </Button>
           </div>
         </section>
-      </div>
+      </NosSection>
     </>
   );
 }

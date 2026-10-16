@@ -39,7 +39,7 @@ export function CartDayPicker({
         const rows = chosenDayByType[type.slug] ?? [];
         return (
           <fieldset key={type.slug} className="space-y-3">
-            <legend className="font-mono text-[11px] tracking-[0.16em] text-muted">
+            <legend className="font-mono text-[12px] tracking-[0.16em] text-muted">
               {type.name} — chosen day
             </legend>
             {Array.from({ length: quantity }, (_, index) => {
@@ -51,7 +51,7 @@ export function CartDayPicker({
                 <div key={key} className="space-y-1.5 border border-rule/60 p-4">
                   <label
                     htmlFor={inputId}
-                    className="font-mono text-[11px] tracking-[0.16em] text-muted"
+                    className="font-mono text-[12px] tracking-[0.16em] text-muted"
                   >
                     {type.name} {index + 1} — day
                   </label>
@@ -76,7 +76,7 @@ export function CartDayPicker({
                   {error ? (
                     <p
                       role="alert"
-                      className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[13px] text-primary-800"
+                      className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800"
                     >
                       {error}
                     </p>

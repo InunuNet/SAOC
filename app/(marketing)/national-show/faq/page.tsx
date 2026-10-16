@@ -1,19 +1,22 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { ShowFaqList, ShowSectionNav } from '@/components/show';
+import { ShowFaqList } from '@/components/show';
 import { Button } from '@/components/nos/Button';
 import { NosHero } from '@/components/nos/NosHero';
+import { NosSection } from '@/components/nos/NosSection';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { showFaqsQuery, showVisitorInfoQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
 import type { ShowFaq, ShowVisitorInfo } from '@/types';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Visitor Questions — National Orchid Show',
+  image: nosOgImage('Visitor Questions — National Orchid Show'),
   description:
     'Answers to the questions visitors ask most about the South African National Orchid Show — ' +
     'getting there, tickets, accessibility and plant sales.',
@@ -32,13 +35,13 @@ export default async function ShowFaqPage() {
   return (
     <>
       <NosHero
-        image="/images/orchid-pink.jpg"
+        route="/national-show/faq"
         title={info?.faqTitle ?? 'Frequently asked questions'}
         lede={info?.faqIntro ?? undefined}
         priority
       />
 
-      <div className="mx-auto max-w-[900px] px-8 py-16 [&_details_p]:max-w-[60ch]">
+      <NosSection wrapClassName="[&_details_p]:max-w-[60ch]">
         <ShowFaqList
           faqs={faqs}
           pendingLabel={info?.pendingLabel}
@@ -60,9 +63,7 @@ export default async function ShowFaqPage() {
             </Button>
           </div>
         </div>
-      </div>
-
-      <ShowSectionNav current="/national-show/faq" />
+      </NosSection>
     </>
   );
 }

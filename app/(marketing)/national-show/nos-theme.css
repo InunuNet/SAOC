@@ -258,6 +258,11 @@
   outline: 2px solid var(--ring-focus);
   outline-offset: 2px;
   box-shadow: none;
+  /* The ring paints at once. A transition on `all` (the initial value, which the reduced-motion
+     rule in globals.css stretches to 0.01ms) would report the UA default 3px / offset 0 /
+     currentColor for the first frame. */
+  transition-property:
+    color, background-color, border-color, text-decoration-color, opacity, transform, translate;
 }
 
 .nos-theme {
@@ -434,7 +439,13 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
-.nos-theme :is([class*='text-[9px]'], [class*='text-[10px]'], [class*='text-[10.5px]'], [class*='text-[11px]']) {
+.nos-theme
+  :is(
+    [class*='text-[9px]'],
+    [class*='text-[10px]'],
+    [class*='text-[10.5px]'],
+    [class*='text-[11px]']
+  ) {
   font-size: 0.75rem;
 }
 
@@ -487,7 +498,7 @@
   gap: 12px;
 }
 .nos-theme .nos-hero-scrim,
-.nos-theme .nos-hero-inner::before {
+.nos-theme .nos-hero-inner.nos-hero-photo::before {
   position: absolute;
   inset: 0;
   z-index: -1;
@@ -576,6 +587,8 @@
 .nos-theme .nos-hero-inner {
   display: grid;
   align-content: center;
+}
+.nos-theme .nos-hero-inner.nos-hero-photo {
   min-height: clamp(360px, 32vw, 460px);
 }
 .nos-theme .nos-hero-inner .nos-hero-media {
@@ -584,7 +597,7 @@
 .nos-theme .nos-hero-inner .nos-hero-img {
   object-position: 70% 50%;
 }
-.nos-theme .nos-hero-inner::before {
+.nos-theme .nos-hero-inner.nos-hero-photo::before {
   content: '';
   z-index: 1;
 }
@@ -631,11 +644,12 @@
     padding-block: 40px;
     gap: 32px;
   }
-  .nos-theme .nos-hero-inner {
+  .nos-theme .nos-hero-inner,
+  .nos-theme .nos-hero-inner.nos-hero-photo {
     min-height: 0;
     align-content: start;
   }
-  .nos-theme .nos-hero-inner::before {
+  .nos-theme .nos-hero-inner.nos-hero-photo::before {
     content: none;
   }
   .nos-theme .nos-hero-inner .nos-hero-media {

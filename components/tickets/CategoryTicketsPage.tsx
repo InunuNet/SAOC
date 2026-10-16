@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
-import { NosHero, type NosHeroImage } from '@/components/nos/NosHero';
+import { NosHero } from '@/components/nos/NosHero';
+import { NosSection } from '@/components/nos/NosSection';
 import { SalesClosedNotice, TicketPurchaseForm } from '@/components/tickets';
 import type { TicketTypeCardData } from '@/components/tickets';
 import { sanityFetch } from '@/sanity/lib/fetch';
@@ -15,7 +16,11 @@ import { getSoldCountsByTicketType } from '@/lib/data/tickets';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import { warnMissingCategoryFallback } from '@/lib/tickets-category-warning';
 import { filterPubliclyListableTicketTypes } from '@/lib/demo-ticket-type';
-import { effectiveCapacity, planPooledCapacity, type CapacityPoolConfig } from '@/lib/checkout-reservation';
+import {
+  effectiveCapacity,
+  planPooledCapacity,
+  type CapacityPoolConfig,
+} from '@/lib/checkout-reservation';
 import { buildShowWindow, computeShowDays } from '@/lib/show-window-lookup';
 import { resolveActiveShow } from '@/lib/show-resolution';
 import type { ProvisionalProductCategory } from '@/lib/provisional-figures';
@@ -72,7 +77,8 @@ const FALLBACK_SALES_CLOSED = 'Ticket sales are not yet open — check back soon
 
 export interface CategoryTicketsPageProps {
   category: ProvisionalProductCategory;
-  heroImage: NosHeroImage;
+  /** The NOS route this page heads (hero kind and sub-nav group follow from it). */
+  route: string;
   /**
    * Admission (`/tickets`) uses this as the FALLBACK for the `ticketsPage` singleton's
    * `title` field, matching the page's pre-existing behavior byte-for-byte. Conference and
@@ -91,7 +97,7 @@ export interface CategoryTicketsPageProps {
 
 export async function CategoryTicketsPage({
   category,
-  heroImage,
+  route,
   heading,
   lede,
   note,
@@ -147,7 +153,10 @@ export async function CategoryTicketsPage({
   const capacityByType: Record<string, number> = {};
   for (const t of types) {
     const poolKey = t.capacityPool ?? t.slug;
-    poolConfigByType[t.slug] = { pool: t.capacityPool ?? null, headcountPerUnit: t.headcountPerUnit ?? 1 };
+    poolConfigByType[t.slug] = {
+      pool: t.capacityPool ?? null,
+      headcountPerUnit: t.headcountPerUnit ?? 1,
+    };
     const ceiling = effectiveCapacity(t.capacity, t.releasedQuantity);
     capacityByType[poolKey] =
       poolKey in capacityByType ? Math.min(capacityByType[poolKey], ceiling) : ceiling;
@@ -168,7 +177,10 @@ export async function CategoryTicketsPage({
       })) ?? [];
     for (const sibling of siblingDocs) {
       if (!sibling.slug || sibling.slug in poolConfigByType) continue;
-      poolConfigByType[sibling.slug] = { pool: poolKey, headcountPerUnit: sibling.headcountPerUnit ?? 1 };
+      poolConfigByType[sibling.slug] = {
+        pool: poolKey,
+        headcountPerUnit: sibling.headcountPerUnit ?? 1,
+      };
     }
   }
 
@@ -194,32 +206,34 @@ export async function CategoryTicketsPage({
 
   return (
     <>
-      <NosHero image={heroImage} title={title} lede={intro} priority />
+      <NosHero route={route} title={title} lede={intro} priority />
 
-      <div className="mx-auto max-w-[720px] px-8 py-16 space-y-10">
-        {note}
+      <NosSection>
+        <div className="max-w-[720px] space-y-10">
+          {note}
 
-        {!salesOpen ? (
-          <SalesClosedNotice message={salesClosedMessage} />
-        ) : allSoldOut ? (
-          <div className="border border-rule bg-bone px-6 py-8 text-center" role="status">
-            <p className="font-serif text-[20px] text-ink">{soldOutMessage}</p>
-          </div>
-        ) : (
-          <TicketPurchaseForm
-            ticketTypes={cardData}
-            buyButtonLabel={buyButtonLabel}
-            soldOutMessage={soldOutMessage}
-            showDays={showDays}
-          />
-        )}
+          {!salesOpen ? (
+            <SalesClosedNotice message={salesClosedMessage} />
+          ) : allSoldOut ? (
+            <div className="border border-rule bg-bone px-6 py-8 text-center" role="status">
+              <p className="font-serif text-[20px] text-ink">{soldOutMessage}</p>
+            </div>
+          ) : (
+            <TicketPurchaseForm
+              ticketTypes={cardData}
+              buyButtonLabel={buyButtonLabel}
+              soldOutMessage={soldOutMessage}
+              showDays={showDays}
+            />
+          )}
 
-        {termsNote ? (
-          <p className="border-t border-rule pt-6 font-sans text-[13px] leading-relaxed text-muted">
-            {termsNote}
-          </p>
-        ) : null}
-      </div>
+          {termsNote ? (
+            <p className="border-t border-rule pt-6 font-sans text-[13px] leading-relaxed text-muted">
+              {termsNote}
+            </p>
+          ) : null}
+        </div>
+      </NosSection>
     </>
   );
 }

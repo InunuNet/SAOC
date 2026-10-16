@@ -22,29 +22,27 @@ export function ExhibitorQuestions({ heading, intro, questions, id }: ExhibitorQ
   if (open.length === 0) return null;
 
   return (
-    <section id={id} className="border-t border-rule bg-bone px-6 py-10 sm:px-8">
-      {heading ? (
-        <h2 className="font-serif text-ink">{heading}</h2>
-      ) : null}
+    <section id={id}>
+      {heading ? <h2 className="font-serif text-ink">{heading}</h2> : null}
 
       {intro ? (
         <p className="mt-3 max-w-3xl font-sans text-[16px] leading-relaxed text-ink/80">{intro}</p>
       ) : null}
 
-      <ul className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+      <ul className="mt-8 border-t border-rule">
         {open.map((item, index) => (
           <li
             key={item._key ?? `${item.topic ?? 'question'}-${index}`}
-            className="border border-rule bg-parchment p-5"
+            className="border-b border-rule py-6"
           >
             {item.topic ? (
               <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
                 {item.topic.replace(/-/g, ' ')}
               </p>
             ) : null}
-            <span className="mt-2 block font-serif text-[18px] font-medium leading-snug text-ink">
+            <h3 className="mt-2 font-serif text-[20px] font-medium leading-snug text-ink">
               {item.question}
-            </span>
+            </h3>
             {item.context ? (
               <p className="mt-2 font-sans text-[17px] leading-relaxed text-ink/70">
                 {item.context}

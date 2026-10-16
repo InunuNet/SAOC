@@ -14,13 +14,13 @@
 // It also owns the hero (NosHero) and the section-prose rendering for BOTH branches,
 // which is what keeps `.sections`/`.title`/`.isFallback` out of every route module —
 // ShowPageResult is opaque, so a route could not reach them even if it tried (NF15).
-// The marker itself wraps the CONTENT region only, never the hero or ShowSectionNav
-// (never-404-fallback.golden.md §2) — those render outside the marked div, and
-// ShowSectionNav is still rendered by each route, unaffected by this component.
+// The marker itself sits on the CONTENT region only (F3: the <section> that carries the
+// rhythm), never the hero or the sub-nav (never-404-fallback.golden.md §2).
 // =============================================================
 import type { ReactNode } from 'react';
 
-import { NosHero, type NosHeroImage } from '@/components/nos/NosHero';
+import { NosHero } from '@/components/nos/NosHero';
+import { NosSection } from '@/components/nos/NosSection';
 import { ShowPageProse } from '@/components/nos/ShowPageProse';
 import type { ShowPageResult } from '@/lib/data/show-pages';
 
@@ -28,12 +28,13 @@ import { unwrapShowPageResult } from './show-content-state-internal';
 
 export interface ShowContentStateProps {
   result: ShowPageResult;
-  heroImage: NosHeroImage;
+  /** The route the hero heads; it decides photo or typographic hero and the sub-nav group. */
+  route: string;
   /**
-   * `'prose'` (programme, symposium, wosa-conference) renders every section in a single
-   * 900px column. `'listing'` (sa-exhibitors, international-guests, sponsors) renders
-   * only the `prose`-kind sections in that column, then `listingContent` below it in a
-   * 1280px outer wrapper — matching each route's pre-F24 layout exactly.
+   * `'prose'` (programme, symposium, wosa-conference) renders every section in the one
+   * content container. `'listing'` (sa-exhibitors, international-guests, sponsors) renders
+   * only the `prose`-kind sections first, then `listingContent` below them in the same
+   * container.
    */
   layout: 'prose' | 'listing';
   /**
@@ -58,7 +59,7 @@ export interface ShowContentStateProps {
 
 export function ShowContentState({
   result,
-  heroImage,
+  route,
   layout,
   listingContent,
   afterProse,
@@ -69,42 +70,35 @@ export function ShowContentState({
 
   return (
     <>
-      <NosHero
-        image={heroImage}
-        title={page.title}
-        lede={page.summary ?? undefined}
-        priority
-      />
+      <NosHero route={route} title={page.title} lede={page.summary ?? undefined} priority />
       {afterHero}
 
-      <div data-nos-content-state={state}>
-        {state === 'fallback-unpublished' ? (
-          <div className="mx-auto max-w-[900px] space-y-10 px-8 py-16">
-            {page.sections.map((section) => (
-              <ShowPageProse key={section.sectionKey} section={section} />
-            ))}
-            {layout === 'prose' ? afterProse : null}
+      {state === 'fallback-unpublished' ? (
+        <NosSection data-nos-content-state={state} wrapClassName="space-y-10">
+          {page.sections.map((section) => (
+            <ShowPageProse key={section.sectionKey} section={section} />
+          ))}
+          {layout === 'prose' ? afterProse : null}
+        </NosSection>
+      ) : layout === 'listing' ? (
+        <NosSection data-nos-content-state={state} wrapClassName="space-y-12">
+          <div className="space-y-10">
+            {page.sections
+              .filter((section) => section.kind === 'prose')
+              .map((section) => (
+                <ShowPageProse key={section.sectionKey} section={section} />
+              ))}
           </div>
-        ) : layout === 'listing' ? (
-          <div className="mx-auto max-w-[1280px] space-y-12 px-8 py-16">
-            <div className="mx-auto max-w-[900px] space-y-10">
-              {page.sections
-                .filter((section) => section.kind === 'prose')
-                .map((section) => (
-                  <ShowPageProse key={section.sectionKey} section={section} />
-                ))}
-            </div>
-            {listingContent}
-          </div>
-        ) : (
-          <div className="mx-auto max-w-[900px] space-y-10 px-8 py-16">
-            {page.sections.map((section) => (
-              <ShowPageProse key={section.sectionKey} section={section} />
-            ))}
-            {afterProse}
-          </div>
-        )}
-      </div>
+          {listingContent}
+        </NosSection>
+      ) : (
+        <NosSection data-nos-content-state={state} wrapClassName="space-y-10">
+          {page.sections.map((section) => (
+            <ShowPageProse key={section.sectionKey} section={section} />
+          ))}
+          {afterProse}
+        </NosSection>
+      )}
     </>
   );
 }

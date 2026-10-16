@@ -1,0 +1,20 @@
+{
+  "_status": "RULED by NOS Design: href /national-show/vendors/apply, single gold CTA, label = apply page h1. /register stays reachable only from inside the apply flow or the invitation.",
+  "case": "live",
+  "registerRoute": "/national-show/vendors/register",
+  "evidence": {
+    "GET /national-show/vendors/register": "200, h1 'Vendor Registration', input[name=codeId] and a 'Continue' submit (the code-entry form; the session-gated registration form shows only after a valid emailed code), noindex",
+    "POST /api/vendors/register/verify-code with {}": "400 {\"error\":\"businessName and codeId are required.\"} (route exists and validates; the probe writes nothing)",
+    "GET /national-show/vendors/apply": "200, the public application form (the page already behind the existing 'Register as a vendor' CtaBand button)",
+    "live links to /vendors/register today": "none in any public NOS page: app/(marketing)/national-show/vendors/register/page.tsx documents it as deliberately unlinked (F8); the only inbound reference is components/vendors/VendorRegisterForm.tsx / VendorRegistrationCodeEntryForm.tsx",
+    "code-entry form copy": "has no 'apply first' guidance and no link to /vendors/apply, so an unapproved visitor who lands there has no way forward"
+  },
+  "decision": "Route is LIVE and working, so the vendors hero gets ONE gold primary CTA 'Vendor Application' (NOT 'Register as a vendor', per NOS Design ruling). The href is /national-show/vendors/apply, NOT /vendors/register: /register is the invitation-gated second step (it needs an emailed code from an approved application) and the form it serves offers an unapproved visitor no path, i.e. a dead end for everyone who has not already applied. Recommendation to NOS Design / Brad. If NOS Design wants the literal /vendors/register href, change cta.href below and the dev mirrors it; the check is otherwise unchanged.",
+  "cta": {
+    "label": "Vendor Application",
+    "href": "/national-show/vendors/apply",
+    "labelSource": "No nav-config entry exists for /national-show/vendors/apply (grep of components/chrome/nav-config.ts), so per NOS Design ruling the label is the apply page's h1 verbatim: 'Vendor Application' (measured 2026-10-16 on :3002)."
+  },
+  "rulingLiteralHref": "/national-show/vendors/register",
+  "emptySentence": "No nurseries have been confirmed for the South African Exhibitors Pavilion yet."
+}

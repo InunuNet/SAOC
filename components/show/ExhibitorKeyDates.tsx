@@ -46,10 +46,8 @@ export function ExhibitorKeyDates({
   if (dates.length === 0) return null;
 
   return (
-    <section id={id} className="border-t border-rule pt-8">
-      {heading ? (
-        <h2 className="font-serif text-ink">{heading}</h2>
-      ) : null}
+    <section id={id} data-nos-keydates="" className="border-t border-rule pt-8">
+      {heading ? <h2 className="font-serif text-ink">{heading}</h2> : null}
 
       {note ? (
         <p className="mt-3 max-w-3xl font-sans text-[16px] leading-relaxed text-ink/80">{note}</p>
@@ -76,17 +74,18 @@ export function ExhibitorKeyDates({
               >
                 When
               </th>
-              <th
-                scope="col"
-                className="py-3 font-sans text-[12px] tracking-[0.16em] text-muted"
-              >
+              <th scope="col" className="py-3 font-sans text-[12px] tracking-[0.16em] text-muted">
                 Detail
               </th>
             </tr>
           </thead>
           <tbody className="max-sm:block">
             {dates.map((row, index) => (
-              <tr key={row._key ?? `${row.label}-${index}`} className="border-b border-rule max-sm:block">
+              <tr
+                data-nos-keydate-row=""
+                key={row._key ?? `${row.label}-${index}`}
+                className="border-b border-rule max-sm:block"
+              >
                 <th
                   scope="row"
                   className="py-4 pr-4 align-top max-sm:block max-sm:pb-1 font-serif text-[17px] font-medium text-ink"

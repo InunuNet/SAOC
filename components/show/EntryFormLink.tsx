@@ -13,6 +13,7 @@
 // is only constructed once a non-empty target has been resolved.
 // =============================================================
 
+import { Button } from '@/components/nos/Button';
 import type { ExhibitorStatus } from '@/types';
 
 import { ExhibitorStatusBadge } from './ExhibitorStatusBadge';
@@ -29,10 +30,6 @@ export interface EntryFormLinkProps {
   questionLabel?: string | null;
   id?: string;
 }
-
-const LINK_CLASSES =
-  'mt-4 inline-flex items-center gap-2 border border-ink/30 px-6 py-3 font-sans ' +
-  'text-[14px] font-medium text-ink transition-colors duration-150 hover:bg-ink/5';
 
 function resolveTarget(fileUrl?: string | null, url?: string | null) {
   const file = typeof fileUrl === 'string' ? fileUrl.trim() : '';
@@ -57,10 +54,8 @@ export function EntryFormLink({
   const target = resolveTarget(fileUrl, url);
 
   return (
-    <section id={id} className="border-t border-rule pt-8">
-      {heading ? (
-        <h2 className="font-serif text-ink">{heading}</h2>
-      ) : null}
+    <section id={id} className="nos-surface">
+      {heading ? <h2 className="font-serif text-ink">{heading}</h2> : null}
 
       <ExhibitorStatusBadge
         status={status}
@@ -74,13 +69,15 @@ export function EntryFormLink({
           {entryFormPendingNote}
         </p>
       ) : (
-        <a
+        <Button
+          as="a"
           href={target.href}
-          className={LINK_CLASSES}
+          variant="ghost"
+          className="mt-4"
           {...(target.download ? { download: fileName ?? true } : { rel: 'noopener noreferrer' })}
         >
           Download the entry form
-        </a>
+        </Button>
       )}
     </section>
   );

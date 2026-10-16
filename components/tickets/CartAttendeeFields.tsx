@@ -15,12 +15,7 @@ interface CartAttendeeFieldsProps {
   attendeesByType: Record<string, CartAttendee[]>;
   errors: AttendeeFieldErrors;
   disabled: boolean;
-  onAttendeeChange: (
-    slug: string,
-    index: number,
-    field: keyof CartAttendee,
-    value: string
-  ) => void;
+  onAttendeeChange: (slug: string, index: number, field: keyof CartAttendee, value: string) => void;
 }
 
 export function attendeeRowKey(slug: string, index: number): string {
@@ -44,7 +39,7 @@ export function CartAttendeeFields({
         const rows = attendeesByType[type.slug] ?? [];
         return (
           <fieldset key={type.slug} className="space-y-3">
-            <legend className="font-mono text-[11px] tracking-[0.16em] text-muted">
+            <legend className="font-mono text-[12px] tracking-[0.16em] text-muted">
               {type.name} attendees
             </legend>
             {rows.map((row, index) => {
@@ -52,7 +47,7 @@ export function CartAttendeeFields({
               const rowErrors = errors[key] ?? {};
               return (
                 <div key={key} className="space-y-3 border border-rule/60 p-4">
-                  <p className="font-sans text-[13px] font-medium text-ink/70">
+                  <p className="font-sans text-[14px] font-medium text-ink/70">
                     Attendee {index + 1} — {type.name}
                   </p>
                   <TicketFormField

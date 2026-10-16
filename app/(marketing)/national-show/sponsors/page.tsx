@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { ConfirmationBadge, ShowSectionNav } from '@/components/show';
+import { ConfirmationBadge } from '@/components/show';
 import { Button } from '@/components/nos/Button';
 import { Card } from '@/components/nos/Card';
 import { SectionHeading } from '@/components/nos/SectionHeading';
@@ -11,6 +11,7 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { showSponsorsQuery } from '@/sanity/queries';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
 // F14 (national-show-ia-alignment, M4) — created route, reinstated by Brad. Its OWN data
 // scope: showSponsor, never the site-level `sponsor` type site-level /sponsors reads —
@@ -41,6 +42,7 @@ const NO_SPONSORS_YET = 'No Show sponsors have been confirmed for 2027 yet.';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Show Sponsors — National Orchid Show',
+  image: nosOgImage('Show Sponsors — National Orchid Show'),
   description: "The National Show's own sponsors.",
   path: '/national-show/sponsors',
 });
@@ -64,7 +66,7 @@ export default async function ShowSponsorsPage() {
       <div className="contents [&_.nos-show-page-prose_p]:max-w-[60ch] [&_.nos-show-page-prose_li]:max-w-[60ch]">
         <ShowContentState
           result={result}
-          heroImage="/images/orchid-dark.jpg"
+          route="/national-show/sponsors"
           layout="listing"
           listingContent={
             list.length > 0 ? (
@@ -74,22 +76,31 @@ export default async function ShowSponsorsPage() {
                 renderCard={(sponsor) => <ShowSponsorCard sponsor={sponsor} />}
               />
             ) : (
-              <Card data-nos-empty-state="sponsors" className="mx-auto max-w-[900px] p-8">
-                <SectionHeading title="Become a sponsor" />
-                <ConfirmationBadge status="pending" pendingLabel="To be confirmed by the show committee" />
-                <p className="mt-3 max-w-[60ch] font-sans text-[17px] leading-[1.65] text-ink/80">{NO_SPONSORS_YET}</p>
-                <div className="mt-6">
-                  <Button as="a" href="mailto:info@saoc.co.za">
-                    Talk to us about sponsorship
-                  </Button>
-                </div>
-              </Card>
+              <div className="nos-surface mx-auto max-w-[900px]">
+                <ConfirmationBadge
+                  status="pending"
+                  pendingLabel="To be confirmed by the show committee"
+                />
+                <Card data-nos-empty-state="sponsors" className="mt-6 p-8">
+                  <SectionHeading title="Become a sponsor" />
+                  <p className="mt-3 max-w-[60ch] font-sans text-[17px] leading-[1.65] text-ink/80">
+                    {NO_SPONSORS_YET}
+                  </p>
+                  <div className="mt-6">
+                    <Button
+                      as="a"
+                      href="mailto:info@saoc.co.za"
+                      className="whitespace-nowrap max-sm:w-full max-sm:!px-2"
+                    >
+                      Talk to us about sponsorship
+                    </Button>
+                  </div>
+                </Card>
+              </div>
             )
           }
         />
       </div>
-
-      <ShowSectionNav current="/national-show/sponsors" />
     </>
   );
 }

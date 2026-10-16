@@ -38,11 +38,9 @@ export function ExhibitorSection({
   if (!section?.heading && body.length === 0) return null;
 
   return (
-    <section id={id} className="border-t border-rule pt-8">
+    <section id={id} className="nos-surface">
       {section?.heading ? (
-        <h3 className="nos-opsz-32 font-serif text-[24px] text-ink">
-          {section.heading}
-        </h3>
+        <h3 className="nos-opsz-32 font-serif text-[24px] text-ink">{section.heading}</h3>
       ) : null}
 
       <ExhibitorStatusBadge
