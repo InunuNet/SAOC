@@ -182,7 +182,7 @@ const VISITOR_CARDS = [
   {
     href: '/national-show/archive',
     title: 'Past shows',
-    description: 'Previous editions, their grand champions and the galleries that went with them.',
+    description: 'Previous editions.',
   },
 ];
 

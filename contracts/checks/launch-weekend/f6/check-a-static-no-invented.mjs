@@ -17,6 +17,14 @@ for (const f of ['app/(marketing)/national-show/archive/page.tsx', 'app/(marketi
   const src = readFileSync(f, 'utf8');
   if (/NOS_HERO_IMAGES|archivePhotoFor|next\/image/.test(src)) problems.push(`${f} still uses a stock photo path`);
 }
+// Nav copy must not promise champions or galleries the archive does not have (descriptions are trimmed to "Previous editions", no new copy).
+for (const f of ['components/chrome/nav-config.ts', 'components/show/ShowSectionNav.tsx', 'app/(marketing)/national-show/page.tsx']) {
+  const lines = readFileSync(f, 'utf8').split('\n');
+  lines.forEach((l, i) => {
+    const near = lines.slice(Math.max(0, i - 4), i + 5).join('\n');
+    if (/champion|galler/i.test(l) && /national-show\/archive/.test(near)) problems.push(`${f}:${i + 1} nav copy still promises champions or galleries`);
+  });
+}
 const idx = readFileSync('app/(marketing)/national-show/archive/page.tsx', 'utf8');
 if (!idx.includes('Show history awaiting committee records')) problems.push('archive index lacks the "Show history awaiting committee records" state');
 if (!/ConfirmationBadge/.test(idx)) problems.push('archive index does not use ConfirmationBadge');

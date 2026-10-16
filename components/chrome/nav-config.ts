@@ -156,7 +156,7 @@ export const NAV: readonly NavItem[] = [
             id: 'past-shows',
             label: 'Past Shows',
             href: '/national-show/archive',
-            descriptor: 'Previous editions and their champions.',
+            descriptor: 'Previous editions.',
           },
         ],
       },

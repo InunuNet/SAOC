@@ -52,7 +52,7 @@ const SECTION_LINKS: readonly SectionLink[] = [
   { href: '/national-show/vendors', label: 'Exhibitors and Vendors', hint: 'The trade floor and how to exhibit' },
   { href: '/national-show/tickets', label: 'Tickets', hint: 'Buy admission tickets' },
   { href: '/national-show/sponsors', label: 'Show Sponsors', hint: "The Show's own sponsors" },
-  { href: '/national-show/archive', label: 'Past Shows', hint: 'Previous editions and their champions' },
+  { href: '/national-show/archive', label: 'Past Shows', hint: 'Previous editions' },
 ];
 
 export interface ShowSectionNavProps {
