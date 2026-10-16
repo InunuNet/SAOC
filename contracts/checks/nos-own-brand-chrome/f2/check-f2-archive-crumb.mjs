@@ -11,7 +11,17 @@ await main('F2-C archive-crumb', async (r) => {
     const probe = await openPage(browser, VP_DESKTOP, '/national-show/archive');
     const years = await probe.page.evaluate(() => [...new Set([...document.querySelectorAll('a[href^="/national-show/archive/"]')].map((a) => a.getAttribute('href')))]);
     await probe.ctx.close();
-    if (!years.length) { r.fail('/national-show/archive links no year routes to test'); return; }
+    // F6 honest archive: a year route exists only for a published past show, so an empty archive links none. That is a legitimate state, not a failure; it must be
+    // the honest empty state (no year link at all, an awaiting-records marker). NOS_EXPECT_PAST_SHOWS=1 (gate dataset with published past shows) still demands year routes.
+    if (!years.length) {
+      if (process.env.NOS_EXPECT_PAST_SHOWS === '1') { r.fail('NOS_EXPECT_PAST_SHOWS=1 but /national-show/archive links no year routes to test'); return; }
+      const empty = await openPage(browser, VP_DESKTOP, '/national-show/archive');
+      const marker = await empty.page.evaluate(() => !!document.querySelector('main [data-confirmation-badge], main [data-exhibitor-marker]'));
+      await empty.ctx.close();
+      if (!marker) r.fail('/national-show/archive links no year routes and shows no awaiting-records marker; an empty archive must say so honestly');
+      r.note('no published past shows: no year routes to test; honest empty state asserted');
+      return;
+    }
     for (const route of years) {
       for (const [name, vp] of [['1280', VP_DESKTOP], ['390', VP_PHONE]]) {
         const { ctx, page, status } = await openPage(browser, vp, route);

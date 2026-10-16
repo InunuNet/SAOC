@@ -1,7 +1,7 @@
 // F2-H2: hub hero items 3-7 and the inner hero's structure, measured in real Chromium.
 //  NOS Design R15/9 (2026-10-16): BOTH heroes stack at <=1023 (hub and inner), photo 4:3 (4:3 or 16:9 at 768-1023); at >=1024 the copy
 //       column is capped at min(640px, 50%). Facts-after-CTAs and full-width CTAs stay at the mock's <=700.
-//  Rulings 2026-10-15: fold = h1, lede, facts and both CTAs by y=800, countdown directly below the CTAs (may be below the fold); inner h1 14ch, no inner eyebrow.
+//  Rulings 2026-10-15: fold = h1, lede and both CTAs by y=800 (facts left the fold: F3 C-2 orders CTAs, price, countdown, facts), countdown directly below the CTAs; inner h1 14ch, no inner eyebrow.
 //  Hub  (index.html:136-148, 304-318): no eyebrow / edition line; h1 is the first text and sits >=72px below the top (>=40 stacked);
 //       h1 max 11ch; countdown (if rendered) sits below the facts and inside the fold; at 1280x800 the whole hero ends at
 //       or above y=800 and min-height = clamp(600px, 100svh - 97px, 820px); photo inset 22% and masked at >=701; stacked
@@ -69,6 +69,7 @@ await main('F2-H2 hero-layout', async (r) => {
             if (!h.orderOk) fail('countdown precedes the CTAs in the DOM; it goes directly below them');
             for (const c of h.countdown) {
               if (c.top < lastBtn - 1) fail('countdown ' + c['key'] + ' top ' + c.top.toFixed(0) + ' is above the CTAs bottom ' + lastBtn.toFixed(0) + '; it sits directly below the CTAs');
+              if (h.dl && h.dl.top < c.bottom - 1) fail('facts top ' + h.dl.top.toFixed(0) + ' is above the countdown ' + c['key'] + ' bottom ' + c.bottom.toFixed(0) + '; F3 C-2 puts the facts below the countdown');
               if (h.dl && c.top < h.dl.bottom - 1 && c.bottom > h.dl.top + 1) fail('countdown ' + c['key'] + ' overlaps the facts vertically (beside them); never beside the facts');
             }
           }
@@ -87,7 +88,9 @@ await main('F2-H2 hero-layout', async (r) => {
             if (h.mask === 'none') fail('photo has no left feather mask at desktop (index.html:137)');
             if (w === 1280) {
               // NOS Design ruling 2026-10-15 (Q1): the first screen shows h1, lede, facts and BOTH CTAs; the countdown may fall below the fold.
-              const parts = [['h1', h.h1], ['lede', h.lede], ['facts', h.dl], ...h.buttons.map((b, i) => ['CTA ' + (i + 1), b])];
+              // F3 C-2 (NOS Design, 2026-10-16) supersedes the facts-in-the-fold part of the Q1 ruling: the hub order is CTAs, (price), countdown, then facts, so the facts
+              // fall below the countdown and may fall below the fold. The fold holds the h1, the lede and BOTH CTAs.
+              const parts = [['h1', h.h1], ['lede', h.lede], ...h.buttons.map((b, i) => ['CTA ' + (i + 1), b])];
               for (const [k, el] of parts) {
                 if (el && el.bottom > 800.5) fail(k + ' bottom ' + el.bottom.toFixed(1) + ' is below the 800px fold (hero ' + h.hero.height.toFixed(0) + 'px from y=' + h.hero.top.toFixed(0) + '); report this measured px, do not move other values');
               }

@@ -3,6 +3,10 @@
 // size clamp(2.6rem, 2rem + 2vw, 3.8125rem) per index.html:171), then [data-nos-edition-title] (an h3, Fraunces 400), then
 // [data-nos-edition-venue] (Karla 400, >=14px). No img, svg, canvas, picture or background-image inside. Card surface (R17/D1): white or gold-100,
 // 1px --line border, 16px radius. Asserted on /national-show/archive and on the hub's past-editions section, 1280 and 390.
+// HONEST EMPTY STATE (F6): only a published Sanity past show produces a card; there is no static fallback. With no published show there are no cards and
+// the page must say so honestly: /archive renders ONE surface with an awaiting-records marker ([data-confirmation-badge]) and an h2, no year link and no
+// placeholder card; the hub renders no past-editions section at all (no empty "Past editions" h2, no year link). NOS_EXPECT_PAST_SHOWS=1 (set by the
+// gate against a dataset with published past shows) additionally FAILS an empty page, so the card assertions cannot be skipped silently.
 import { main, openPage, withBrowser, VP_DESKTOP, VP_PHONE, rgbOf, rgbNear, LINE_RGB, GOLD_100_RGB, opszOf, firstFamily } from './_f3lib.mjs';
 
 const ROUTES = ['/national-show/archive', '/national-show'];
@@ -24,6 +28,13 @@ function measure() {
   });
 }
 
+function emptyState() {
+  const n = (t) => (t ?? '').replace(/\s+/g, ' ').trim();
+  const main = document.querySelector('main');
+  const h2s = [...main.querySelectorAll('h2')].map((h) => n(h.textContent));
+  return { h2s, badge: !!main.querySelector('[data-confirmation-badge], [data-exhibitor-marker]'), yearLinks: main.querySelectorAll('a[href*="/national-show/archive/"]').length, media: main.querySelectorAll('[data-nos-edition-card]').length };
+}
+
 await main('F3-R29 edition-cards', async (r) => {
   await withBrowser(async (browser) => {
     for (const route of ROUTES) {
@@ -32,7 +43,18 @@ await main('F3-R29 edition-cards', async (r) => {
         const tag = `${route} @${name}`;
         if (status !== 200) { r.fail(`${tag}: HTTP ${status}`); await ctx.close(); continue; }
         const cards = await page.evaluate(measure);
-        if (!cards.length) { r.fail(`${tag}: no [data-nos-edition-card] rendered`); await ctx.close(); continue; }
+        if (!cards.length) {
+          if (process.env.NOS_EXPECT_PAST_SHOWS === '1') r.fail(`${tag}: NOS_EXPECT_PAST_SHOWS=1 but no [data-nos-edition-card] rendered`);
+          const e = await page.evaluate(emptyState);
+          if (e.yearLinks) r.fail(`${tag}: no edition cards but ${e.yearLinks} archive year link(s) render`);
+          if (route === '/national-show/archive') {
+            if (!e.badge) r.fail(`${tag}: honest empty state: no awaiting-records marker ([data-confirmation-badge]) on the empty archive`);
+            if (!e.h2s.length) r.fail(`${tag}: honest empty state: no h2 stating the history is awaiting records`);
+          } else if (e.h2s.some((t) => /past editions/i.test(t))) r.fail(`${tag}: honest empty state: an empty "Past editions" section renders with no cards (omit the section until a past show is published)`);
+          r.note(`${tag}: no published past shows; honest empty state asserted (h2: ${e.h2s.join(' | ').slice(0, 80)})`);
+          await ctx.close();
+          continue;
+        }
         cards.forEach((c, i) => {
           const id = `${tag} card ${i + 1}`;
           for (const k of ['year', 'title', 'venue']) if (!c[k] || !c[k].text) r.fail(`${id}: missing or empty [data-nos-edition-${k}]`);

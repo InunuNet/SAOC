@@ -17,6 +17,7 @@ function measure() {
     inHero: !!e.closest('[data-nos-hero]'),
     inCard: !!e.closest('[data-nos-edition-card]'),
     inFan: !!e.closest('[data-nos-ticket-fan]'),
+    inTicketCard: (() => { for (let x = e.parentElement, i = 0; x && x !== document.body && i < 8; x = x.parentElement, i++) if ([...x.querySelectorAll('a, button')].some((c) => /^(add to booking|buy ticket)/i.test((c.textContent ?? '').trim()))) return true; return false; })(),
     pos: e.tagName === 'IMG' ? getComputedStyle(e).objectPosition : null,
     alt: e.getAttribute('alt') ?? null,
     tag: e.tagName.toLowerCase(),
@@ -40,7 +41,9 @@ function measure() {
   const lede = hero?.querySelector('[data-nos-hero-lede]');
   const wrap = document.querySelector('main [data-nos-wrap]');
   const wcs = wrap ? getComputedStyle(wrap) : null;
-  const html = document.documentElement.outerHTML;
+  // Rendered references only (<img>/<picture><source> sources and image preloads). The serialized document also carries the RSC flight payload and
+  // not-found shell as <script> text, which names the photo map without rendering any photo, so it is not counted.
+  const rendered = [...document.querySelectorAll('img, source, link[rel="preload"][as="image"]')].filter((e) => !e.closest('#nh, #nd, #nf')).map((e) => [e.getAttribute('src'), e.getAttribute('srcset'), e.getAttribute('imagesrcset'), e.getAttribute('href')].filter(Boolean).join(' ')).join(' ');
   return {
     vw: document.documentElement.clientWidth,
     variant: hero?.getAttribute('data-nos-hero-variant') ?? null,
@@ -51,7 +54,7 @@ function measure() {
     ledeLeft: lede ? R(lede).left : null,
     wrapContentLeft: wrap ? R(wrap).left + parseFloat(wcs.paddingLeft) : null,
     hasFan: !!document.querySelector('[data-nos-hero] [data-nos-ticket-fan]'),
-    orchidInHtml: (html.match(/orchid-(dark|pink|purple|violet|yellow)/gi) ?? []).length,
+    orchidInHtml: (decodeURIComponent(rendered).match(/orchid-(dark|pink|purple|violet|yellow)/gi) ?? []).length,
     emblems: [...document.querySelectorAll('main img, main svg[role="img"], main svg[aria-label]')].filter((e) => /emblem|eulophia|disa-?graminifolia/i.test([e.getAttribute('src'), e.getAttribute('alt'), e.getAttribute('aria-label')].join(' ')) && (e.closest('[data-nos-hero]') || e.closest('[data-nos-edition-card]'))).length,
   };
 }
@@ -72,15 +75,18 @@ await main('F3-R29 imagery', async (r) => {
         if (status !== 200) { r.fail(`${tag}: HTTP ${status}`); await ctx.close(); continue; }
         const m = await page.evaluate(measure);
         const assigned = map[route] ?? null;
-        const photos = m.imgs.filter((i) => !i.inFan).map((i) => assetPath(i.cur || i.src)).filter((p) => STOCK_PHOTO_RE.test(p));
+        // Ticket product cards (shared TicketTypeCard) carry a per-ticket stock photo; they are exempt ONLY when NOS Design ruled so (golden ticketCardPhotos.exempt).
+        const cardExempt = golden.ticketCardPhotos?.exempt === true && (golden.ticketCardPhotos.routes ?? []).includes(route);
+        const photos = m.imgs.filter((i) => !i.inFan && !(cardExempt && i.inTicketCard)).map((i) => assetPath(i.cur || i.src)).filter((p) => STOCK_PHOTO_RE.test(p));
         const photoSet = [...new Set(photos)];
         if (name === '1280') for (const p of photoSet) seen.set(p, [...(seen.get(p) ?? []), route]);
         if (photoSet.length > 1) r.fail(`${tag}: ${photoSet.length} different stock photos on one route (${photoSet.join(', ')}); a route uses at most one`);
         for (const p of photoSet) if (photoOwner.get(p) !== route) r.fail(`${tag}: stock photo ${p} appears here but is assigned to ${photoOwner.get(p) ?? 'no route'}`);
         if (m.bgs.some((b) => STOCK_PHOTO_RE.test(b.bi))) r.fail(`${tag}: a stock photo is used as a CSS background-image`);
-        if (fans.includes(route)) {
+        // Tickets accepts variant "fan" (royal ground + [data-nos-ticket-fan]) or "type" (typographic like every other route); the v13 fan is deferred to F5.
+        if (fans.includes(route) && !['fan', 'type'].includes(m.variant ?? '')) r.fail(`${tag}: ticket hero variant "${m.variant}", want "fan" or "type"`);
+        if (fans.includes(route) && m.variant === 'fan') {
           // Tickets: royal ground with the ticket fan; no hero photo. The fan's own product photos are exempt (accepted R16 exception).
-          if (m.variant !== 'fan') r.fail(`${tag}: ticket hero variant "${m.variant}", want "fan"`);
           if (!rgbNear(rgbOf(m.bg ?? ''), ROYAL_RGB, 1)) r.fail(`${tag}: ticket hero ground ${m.bg}, want solid royal rgb(33, 26, 87)`);
           if (m.imgs.some((i) => i.inHero && !i.inFan)) r.fail(`${tag}: ticket hero has a photo outside the fan`);
           if (photoSet.length) r.fail(`${tag}: stock photo outside the ticket fan (${photoSet.join(', ')})`);
@@ -102,7 +108,7 @@ await main('F3-R29 imagery', async (r) => {
           if (!heroPhotos.some((p) => p === assigned)) r.fail(`${tag}: hero photo is ${JSON.stringify(heroPhotos)}, want ${assigned}`);
         } else {
           if (m.variant !== 'type') r.fail(`${tag}: no photo is assigned, so the hero must be typographic (variant "${m.variant}")`);
-          if (m.orchidInHtml) r.fail(`${tag}: ${m.orchidInHtml} reference(s) to a stock photo in the page HTML on a route with no photo`);
+          if (m.orchidInHtml && !(cardExempt && m.imgs.filter((i) => !i.inTicketCard).every((i) => !STOCK_PHOTO_RE.test(assetPath(i.cur || i.src))))) r.fail(`${tag}: ${m.orchidInHtml} rendered <img>/<picture>/preload reference(s) to a stock photo on a route with no photo`);
         }
         if (m.variant === 'type') {
           if (m.kind !== 'inner') r.fail(`${tag}: typographic hero must be data-nos-hero="inner", is "${m.kind}"`);

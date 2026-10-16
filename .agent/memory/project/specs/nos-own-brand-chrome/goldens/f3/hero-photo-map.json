@@ -8,6 +8,19 @@
     "/national-show/programme": "/images/orchid-purple.jpg",
     "/national-show/what-to-expect": "/images/orchid-pink.jpg"
   },
-  "objectPosition": { "/national-show": "68% 50%" },
-  "fanRoutes": ["/national-show/tickets"]
+  "objectPosition": {
+    "/national-show": "68% 50%"
+  },
+  "fanRoutes": [
+    "/national-show/tickets"
+  ],
+  "ticketCardPhotos": {
+    "exempt": false,
+    "routes": [
+      "/national-show/conferences",
+      "/national-show/workshops"
+    ],
+    "status": "DECISION NEEDED (NOS Design): components/tickets/TicketTypeCard.tsx renders a stock photo per ticket type from lib/tickets-orchid-image.ts (the five rights-cleared photos, a pre-existing SAOC product feature, restyled but not removed by F3). R29 says each photo once and the accepted R16 exception covers only the tickets-page fan. Architect recommendation: treat ticket-type-card images as product imagery in the same exception class as the fan, i.e. set exempt to true. Until ruled, the check FAILS these routes.",
+    "hook": "an <img> inside an element that also holds an 'Add to booking' or 'Buy Ticket' control"
+  }
 }

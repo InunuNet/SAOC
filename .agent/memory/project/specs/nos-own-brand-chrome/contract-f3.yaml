@@ -38,7 +38,7 @@ assertions:
     command: node contracts/checks/nos-own-brand-chrome/f3/check-f3-static.mjs photo-map
     timeout_seconds: 60
   - id: A6
-    description: '[F3-S] diff against c0e48c39 touches only goldens/f3/scope-allowlist.json files (lib/seo.ts, app/og/route.tsx, components/vendors/**, components/ui/**, app/globals.css untouched). Supersedes F2 A7'
+    description: '[F3-S] diff against c0e48c39 touches only goldens/f3/scope-allowlist.json files (lib/seo.ts, app/og/route.tsx, components/vendors/**, components/ui/**, app/globals.css untouched). Supersedes F2 A7; scripts/checks/verify-nos-content-state.ts is allowed for its two ShowContentState call sites only (heroImage became route)'
     command: node contracts/checks/nos-own-brand-chrome/f3/check-f3-scope.mjs
     timeout_seconds: 120
   - id: A7
@@ -62,11 +62,11 @@ assertions:
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-vendors.mjs
     timeout_seconds: 600
   - id: A12
-    description: '[F3-R29 imagery] CONFIRMED map (hub dark @68% 50%, plan-your-visit yellow, symposium violet, programme purple, what-to-expect pink; tickets = royal ground + [data-nos-ticket-fan], fan photos exempt): every route x 1280/1440/390: each stock photo on exactly its mapped route and once; all other routes typographic (variant "type": solid #0B0A14, no img/svg/background/gradient, h1 and standfirst on the 1080 grid edge); no stock photo in CSS, edition cards or unmapped HTML; emblem never a photo substitute'
+    description: '[F3-R29 imagery] CONFIRMED map (hub dark @68% 50%, plan-your-visit yellow, symposium violet, programme purple, what-to-expect pink; tickets = royal ground + [data-nos-ticket-fan], fan photos exempt): every route x 1280/1440/390: each stock photo on exactly its mapped route and once; all other routes typographic (variant "type": solid #0B0A14, no img/svg/background/gradient, h1 and standfirst on the 1080 grid edge); no stock photo in CSS, edition cards or unmapped HTML; emblem never a photo substitute; rendered img/picture/preload references only (not the RSC payload), image-loader variants resolved to the source asset, tickets variant fan or type; ticket-card photos on /conferences and /workshops are a DECISION NEEDED (golden ticketCardPhotos.exempt)'
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-imagery.mjs
     timeout_seconds: 3000
   - id: A13
-    description: '[F3-R29 cards] /archive and hub 1280/390: [data-nos-edition-card] is typographic (year Fraunces 300 opsz 72 lining tabular in the numerals size, h3 title Fraunces 400, venue Karla), in that order, no img/svg/background, white or gold-100, 1px --line, 16px radius'
+    description: '[F3-R29 cards] /archive and hub 1280/390: [data-nos-edition-card] is typographic (year Fraunces 300 opsz 72 lining tabular in the numerals size, h3 title Fraunces 400, venue Karla), in that order, no img/svg/background, white or gold-100, 1px --line, 16px radius; with no published past show the honest empty state is asserted instead (NOS_EXPECT_PAST_SHOWS=1 demands the cards)'
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-edition-cards.mjs
     timeout_seconds: 600
   - id: A14
@@ -74,7 +74,7 @@ assertions:
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-og.mjs
     timeout_seconds: 1800
   - id: A15
-    description: '[F3-S2] SAOC /, /societies, /about at 1280 and 390: per-element computed style equals goldens/f3/saoc-computed.json (byte-identical); extended to /events and /societies/border-orchid-society (shared StatusMarker/ConfirmationBadge stay unchanged outside .nos-theme)'
+    description: '[F3-S2] SAOC /, /societies, /about at 1280 and 390: per-element computed style equals goldens/f3/saoc-computed.json (byte-identical); extended to /events and /societies/border-orchid-society (shared StatusMarker/ConfirmationBadge stay unchanged outside .nos-theme); golden re-baselined against an origin/main build (e9f7d4f9)'
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-saoc-computed.mjs
     timeout_seconds: 900
   - id: A16
@@ -102,7 +102,7 @@ assertions:
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-media.mjs
     timeout_seconds: 3000
   - id: A22
-    description: '[F3 audit] every NOS route at 1280/390: no ShowSectionNav / "Explore the National Show" (only sub-nav + Breadcrumb navs in main); h1 <= 3 lines at 1280 and <= 4 at 390, hub h1 "19th SAOC National Orchid Show" with no lockup; S1 cards 16px radius + shadow and --radius-card 16px; S2 one 50px/10px Karla 14px/700/.12em uppercase button anatomy; S3 one disclosure surface per page; S5b solid >=2px stepper focus outline; S7 vendors/apply + register labels not uppercase; EXH the 13 committee questions are a single-column <ul> (not <ol>) with no numerals, question as h3, Karla answer, 1px --line dividers, and the 7 ExhibitorSteps keep their <ol>; EMPTY empty-listing panels are card surfaces; NOWRAP "Workshops & Field Trips tickets"; VEND vendors prose carries the R11 chip; PRES /symposium Presenters h2 + ul.pc-grid (1 col at 390, 2 at 1120)'
+    description: '[F3 audit] every NOS route at 1280/390: no ShowSectionNav / "Explore the National Show" (only sub-nav + Breadcrumb navs in main); h1 <= 3 lines at 1280 and <= 4 at 390, hub h1 "19th SAOC National Orchid Show" with no lockup; S1 cards 16px radius + shadow and --radius-card 16px; S2 one 50px/10px Karla 14px/700/.12em uppercase button anatomy; S3 one disclosure surface per page; S5b solid >=2px stepper focus outline; S7 vendors/apply + register labels not uppercase; EXH the 13 committee questions are a single-column <ul> (not <ol>) with no numerals, question as h3, Karla answer, 1px --line dividers, and the 7 ExhibitorSteps keep their <ol>; EMPTY empty-listing panels are card surfaces; NOWRAP "Workshops & Field Trips tickets"; VEND vendors prose carries the R11 chip; PRES /symposium Presenters h2 + ul.pc-grid (1 col at 390, 2 at 1120); the /faq FAQ categories jump nav is allowed and the vendors R11 chip matches case-insensitively'
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-audit.mjs
     timeout_seconds: 1200
   - id: A23
@@ -119,7 +119,7 @@ assertions:
     timeout_seconds: 1500
   - id: A26
     description: '[F3 hub C-1..C-10] /national-show: hero CTAs primary gold "Tickets" -> /national-show/tickets then ghost "Plan your visit", no "Find your society" in hero; price anchor "{ticketType title} from R{min}" (title is the cheapest ticket type''s own title from data, never hand-typed "Day Pass"; amount equals the cheapest price) only when sales open and a price exists (absent when closed; NOS_SALES_CLOSED=1 demands closed); order CTAs, price, countdown, facts at 1280 and 390; no "Explore/More on the National Show"; Ten judging groups 5x2 at >=1024 and 2x5 at 390; past-edition cards typographic with entries chip; no section eyebrows; h2 order (stats, Planning a visit, Three-year cycle, Ten judging groups, exhibitor band, Past editions, closing band); closing band is the ticket close (Tickets + Plan your visit, h2 from data or awaiting-copy marker); "Start planning your entry now." plus Find your society + Exhibitor information in the exhibitor band; stacked hero image capped 4:3
-      at <=1023; h1 and CTAs above the 1280x800 fold'
+      at <=1023; h1 and CTAs above the 1280x800 fold; price source is the rendered cheapest-price block on /national-show/tickets; Three-year cycle and Past editions are optional (F6 honest empty, NOS_EXPECT_PAST_SHOWS=1 requires Past editions); C-6 is scoped to eyebrow elements above an h2'
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-hub-conversion.mjs
     timeout_seconds: 900
   - id: A27
@@ -163,7 +163,7 @@ assertions:
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f2/check-f2-hero-scrim.mjs
     timeout_seconds: 1500
   - id: F2-A12
-    description: '[regress F2 A12] hub: no eyebrow/edition, h1 11ch, >=72px top padding, min-height clamp(600px,100svh-97px,820px), 22% inset + mask, h1, lede, facts and both CTAs end by y=800 at 1280x800, countdown directly below the CTAs, <=1023 stack with 4:3 photo below the copy (16:9 allowed 768-1023), >=1024 copy column <= min(640px,50%), facts-after-CTAs and full-width CTAs <=700; inner: no eyebrow, min-height clamp(360px,32vw,460px) at >=1024, h1 14ch, <=1023 stack (R15/9)'
+    description: '[regress F2 A12] hub: no eyebrow/edition, h1 11ch, >=72px top padding, min-height clamp(600px,100svh-97px,820px), 22% inset + mask, h1, lede, facts and both CTAs end by y=800 at 1280x800, countdown directly below the CTAs, <=1023 stack with 4:3 photo below the copy (16:9 allowed 768-1023), >=1024 copy column <= min(640px,50%), facts-after-CTAs and full-width CTAs <=700; inner: no eyebrow, min-height clamp(360px,32vw,460px) at >=1024, h1 14ch, <=1023 stack (R15/9); facts sit below the countdown and left the fold (F3 C-2)'
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f2/check-f2-hero-layout.mjs
     timeout_seconds: 1800
   - id: F2-A13
@@ -175,7 +175,7 @@ assertions:
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f2/check-f2-h1-words.mjs
     timeout_seconds: 900
   - id: F2-A15
-    description: '[regress F2 A15] every linked /national-show/archive/[year] (1280 and 390): breadcrumb has a Show history link to /national-show/archive and an unlinked aria-current crumb with the verbatim editionLabel in Karla (>=12px); the label is not repeated in the h1 or standfirst; no hero eyebrow'
+    description: '[regress F2 A15] every linked /national-show/archive/[year] (1280 and 390): breadcrumb has a Show history link to /national-show/archive and an unlinked aria-current crumb with the verbatim editionLabel in Karla (>=12px); the label is not repeated in the h1 or standfirst; no hero eyebrow; an empty archive links no year routes and is asserted as the honest empty state (NOS_EXPECT_PAST_SHOWS=1 demands year routes)'
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f2/check-f2-archive-crumb.mjs
     timeout_seconds: 600
   - id: F2-A16
@@ -199,15 +199,15 @@ assertions:
     command: node contracts/checks/nos-own-brand-chrome/f2/check-f2-static.mjs colour-by-class
     timeout_seconds: 60
   - id: F2-A21
-    description: '[regress F2 A21] SAOC h2 computed size/weight/line-height/tracking/family unchanged against goldens/f2/saoc-h2.json (6 routes x 1280/390); no SAOC h2 computes to Fraunces or Karla'
+    description: '[regress F2 A21] SAOC h2 computed size/weight/line-height/tracking/family unchanged against goldens/f2/saoc-h2.json (6 routes x 1280/390); no SAOC h2 computes to Fraunces or Karla; golden re-baselined against an origin/main build (e9f7d4f9)'
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/f2/check-f2-saoc-h2.mjs
     timeout_seconds: 600
   - id: F2-A22
-    description: '[regress F2 A22] no hero photo swap: image references and public/images files equal goldens/f2/photo-refs.json unless goldens/f2/r16-photo-swap-ruling.md (NOS Design R16) exists'
+    description: '[regress F2 A22] no hero photo swap: image references and public/images files equal goldens/f2/photo-refs.json unless goldens/f2/r16-photo-swap-ruling.md (NOS Design R16) exists; photo-refs.json includes the og card lockup nos-reversed-horizontal-1200.png'
     command: node contracts/checks/nos-own-brand-chrome/f2/check-f2-static.mjs no-photo-swap
     timeout_seconds: 60
   - id: F1-R3
-    description: '[regress F1 R3] SAOC header, footer and mobile-menu markup byte-identical to base c0e48c39'
+    description: '[regress F1 R3] SAOC header, footer and mobile-menu markup byte-identical to base c0e48c39; goldens re-baselined against an origin/main build (e9f7d4f9)'
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-a-saoc-regression.mjs
     timeout_seconds: 600
   - id: F1-R4
@@ -247,7 +247,7 @@ assertions:
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-j-aria-current.mjs
     timeout_seconds: 900
   - id: F1-R21
-    description: '[regress F1 R21] hub h1 equals nav-config leadLabel, no hero lockup, exactly two CTAs Plan your visit then Find your society'
+    description: '[regress F1 R21] hub h1 equals nav-config leadLabel, no hero lockup, exactly two CTAs Plan your visit then Find your society; hero CTAs are Tickets then Plan your visit, no Find your society (F3 C-1, R67)'
     command: node --import tsx/esm contracts/checks/nos-own-brand-chrome/check-l-hub-h1.mjs
     timeout_seconds: 300
   - id: F1-R22

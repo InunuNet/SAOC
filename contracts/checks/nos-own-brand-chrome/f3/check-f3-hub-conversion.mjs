@@ -7,9 +7,11 @@
 //  C-2  order CTAs -> (price) -> countdown -> facts, at 1280 and 390.
 //  C-3  only "Planning a visit" remains; no "Explore the National Show" / "More on the National Show".
 //  C-4  "Ten judging groups": 5 columns (5x2) at >=1024, 2 columns (2x5) at 390, no orphan row.
-//  C-5  past-edition cards typographic (no images) and carry an entries chip (layout in check-f3-edition-cards.mjs).
+//  C-5  past-edition cards typographic (no images) and carry an entries chip (layout in check-f3-edition-cards.mjs); with no published show the section is omitted.
+//  C-6  scoped to eyebrow elements directly above an h2, not any text containing the words.
 //  C-6  none of the section eyebrows (ABOUT THE SHOW ...) render.
-//  C-7  h2 order: stats lead, Planning a visit, Three-year cycle, Ten judging groups, exhibitor band, Past editions, closing band.
+//  C-7  h2 order: stats lead, Planning a visit, [Three-year cycle], Ten judging groups, exhibitor band, [Past editions], closing band. The bracketed two are
+//       optional (F6 removed the cycle content; the archive is honestly empty): present = in slot, absent = not rendered. NOS_EXPECT_PAST_SHOWS=1 requires Past editions.
 //  C-8  closing band = ticket close: its h2 from page data (or the awaiting-copy marker, never an invented line), primary "Tickets", secondary "Plan your visit";
 //       "Start planning your entry now." sits in the exhibitor band with the CTA row "Find your society" + "Exhibitor information".
 //  C-10 stacked hero image at <=1023 is capped at 4:3.
@@ -39,8 +41,11 @@ function measure() {
   out.countdownTop = cd ? top(cd) : null;
   const facts = hero?.querySelector('[data-nos-hero-text="meta-dt-0"]');
   out.factsTop = facts ? top(facts) : null;
-  const text = document.querySelector('main')?.innerText ?? '';
-  out.eyebrowText = [...new Set((text.match(/ABOUT THE SHOW|COMING TO THE SHOW|FIND YOUR WAY|THE ROTATION|COMPETITION STRUCTURE|ENTERING THE SHOW|SHOW HISTORY/gi) ?? []).map((x) => x.toUpperCase()))];
+  // C-6 is about a section EYEBROW: a short label element directly above an h2 (its previous sibling, or its wrapper's previous sibling when the h2 opens
+  // the wrapper) whose whole text is one of the listed labels. Body and destination-list copy that merely contains "about the show" is not an eyebrow.
+  const EYEBROWS = ['ABOUT THE SHOW', 'COMING TO THE SHOW', 'FIND YOUR WAY', 'THE ROTATION', 'COMPETITION STRUCTURE', 'ENTERING THE SHOW', 'SHOW HISTORY'];
+  const eyebrowAbove = (h) => [h.previousElementSibling, h.parentElement?.firstElementChild === h ? h.parentElement.previousElementSibling : null].filter(Boolean);
+  out.eyebrowText = [...new Set([...document.querySelectorAll('main h2')].flatMap((h) => eyebrowAbove(h).map((e) => n(e.textContent).toUpperCase()).filter((t) => EYEBROWS.includes(t))))];
   out.h2 = [...document.querySelectorAll('main h2')].map((h) => n(h.textContent));
   const secOf = (h) => h.closest('section') ?? h.parentElement?.parentElement;
   const h2s = [...document.querySelectorAll('main h2')];
@@ -59,11 +64,37 @@ function measure() {
 }
 
 await main('F3 hub conversion', async (r) => {
-  const tp = await fetch(`${BASE}/national-show/tickets`).then((x) => x.text()).catch(() => '');
-  const closed = process.env.NOS_SALES_CLOSED === '1' || /sales (are )?closed/i.test(tp);
-  const titles = [...tp.matchAll(/<h[23][^>]*>([\s\S]*?)<\/h[23]>/g)].map((m) => m[1].replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim()).filter(Boolean);
-  const prices = [...tp.matchAll(/R\s?(\d[\d\s,]*)/g)].map((m) => Number(m[1].replace(/[\s,]/g, ''))).filter((v) => v > 0);
-  r.note(`sales ${closed ? 'CLOSED' : 'open'}; ticket-page prices: ${prices.slice(0, 6).join(', ') || 'none'}`);
+  // The price source is the RENDERED price block on /national-show/tickets ("From" / R{price} / h3 {title}), the element the hub teaser reads through the
+  // same cheapestAdmission(), never the raw HTML (which also contains unrelated "R..." amounts such as the venue's R44) and never every price on the page.
+  const src = await withBrowser(async (browser) => {
+    const { ctx, page, status } = await openPage(browser, VP_DESKTOP, '/national-show/tickets');
+    const out = { status, closed: false, block: null, titles: [] };
+    if (status === 200) {
+      await page.waitForTimeout(300);
+      Object.assign(out, await page.evaluate(() => {
+        const n = (t) => (t ?? '').replace(/\s+/g, ' ').trim();
+        const main = document.querySelector('main');
+        const from = [...main.querySelectorAll('span')].find((e) => /^from$/i.test(n(e.textContent)));
+        const price = from?.nextElementSibling;
+        const name = price?.nextElementSibling;
+        const priceText = price ? n(price.textContent) : null;
+        return {
+          closed: /sales (are )?closed|not yet open/i.test(main.innerText),
+          block: priceText && /^R\s?\d/.test(priceText) && name ? { price: priceText, name: n(name.textContent) } : null,
+          titles: [...main.querySelectorAll('a[href^="/tickets/"]')].map((a) => n(a.textContent)).filter(Boolean),
+        };
+      }));
+    }
+    await ctx.close();
+    return out;
+  });
+  if (src.status !== 200) r.fail(`/national-show/tickets: HTTP ${src.status}`);
+  // The price block renders only while salesOpen is true AND a product is priceable, so its presence proves sales are open; unrelated copy that merely
+  // contains the words "not yet open" must not flip the state. NOS_SALES_CLOSED=1 demands the closed case and fails a page that still shows the block.
+  const closed = process.env.NOS_SALES_CLOSED === '1' || (!src.block && src.closed);
+  if (process.env.NOS_SALES_CLOSED === '1' && src.block) r.fail(`NOS_SALES_CLOSED=1 but /national-show/tickets still renders the price block "${src.block.name} ${src.block.price}"`);
+  const expectAnchor = !closed && !!src.block;
+  r.note(`sales ${closed ? 'CLOSED' : 'open'}; ticket page price block: ${src.block ? `${src.block.name} ${src.block.price}` : 'none'}`);
   await withBrowser(async (browser) => {
     for (const [name, vp] of [['1280', VP_DESKTOP], ['1024', { width: 1024, height: 800 }], ['1023', { width: 1023, height: 800 }], ['768', { width: 768, height: 1024 }], ['390', VP_PHONE]]) {
       const { ctx, page, status } = await openPage(browser, vp, HUB_ROUTE);
@@ -81,15 +112,16 @@ await main('F3 hub conversion', async (r) => {
         if (c2 && (c2.text.toLowerCase() !== PLAN.label.toLowerCase() || c2.href !== PLAN.href)) r.fail(`${tag}: C-1: secondary CTA is "${c2.text}" -> ${c2.href}, want "${PLAN.label}" -> ${PLAN.href}`);
         if (c2 && !(c2.bw >= 0.9 && /rgba\(0, 0, 0, 0\)|rgba\(\d+, \d+, \d+, 0/.test(c2.bg))) r.fail(`${tag}: C-1: secondary CTA is not a ghost (bg ${c2.bg}, border ${c2.bw}px)`);
         if (m.heroLinks.some((t) => /find your society/i.test(t))) r.fail(`${tag}: C-1: "Find your society" is still in the hero`);
-        if (closed && m.price) r.fail(`${tag}: C-1: price anchor "${m.price.text}" renders while sales are closed`);
-        if (!closed && prices.length) {
-          if (!m.price) r.fail(`${tag}: C-1: sales open with a price but no "{ticket title} from R{min}" anchor under the CTAs`);
+        if (!expectAnchor && m.price) r.fail(`${tag}: C-1: price anchor "${m.price.text}" renders while ${closed ? 'sales are closed' : 'no ticket page price block exists'}`);
+        if (expectAnchor) {
+          if (!m.price) r.fail(`${tag}: C-1: sales open with a priced cheapest ticket (${src.block.name} ${src.block.price}) but no "{ticket title} from R{min}" anchor under the CTAs`);
           else {
-            const pm = /^(.+?) from R\s?(\d[\d\s,]*)$/i.exec(m.price.text);
+            const pm = /^(.+?) from (R\s?\d[\d\s,]*)$/i.exec(m.price.text);
             if (!pm) r.fail(`${tag}: C-1: price anchor "${m.price.text}" is not "{ticket title} from R{min}"`);
             else {
-              if (!titles.some((t) => t.toLowerCase() === pm[1].toLowerCase())) r.fail(`${tag}: C-1: price anchor title "${pm[1]}" is not a ticket type title on /national-show/tickets (${titles.slice(0, 8).join(' | ')}); no hand-typed label such as "Day Pass"`);
-              if (Number(pm[2].replace(/[\s,]/g, '')) !== Math.min(...prices)) r.fail(`${tag}: C-1: price anchor amount R${pm[2]} is not the cheapest ticket price R${Math.min(...prices)}`);
+              if (!src.titles.some((t) => t.toLowerCase() === pm[1].toLowerCase())) r.fail(`${tag}: C-1: price anchor title "${pm[1]}" is not a ticket type title on /national-show/tickets (${src.titles.slice(0, 8).join(' | ')}); no hand-typed label such as "Day Pass"`);
+              const amount = (t) => Number(t.replace(/[^\d]/g, ''));
+              if (pm[1].toLowerCase() !== src.block.name.toLowerCase() || amount(pm[2]) !== amount(src.block.price)) r.fail(`${tag}: C-1: price anchor "${m.price.text}" differs from the tickets page's cheapest block "${src.block.name} from ${src.block.price}"`);
             }
             if (c2 && m.price.top < c2.bottom - 1) r.fail(`${tag}: C-1: price anchor sits above the CTAs`);
           }
@@ -100,10 +132,17 @@ await main('F3 hub conversion', async (r) => {
         if (m.factsTop == null) r.fail(`${tag}: C-2: no facts row in the hero`);
         for (const re of REMOVED_H2) if (m.h2.some((t) => re.test(t))) r.fail(`${tag}: C-3: h2 matching ${re} still renders`);
         for (const e of m.eyebrowText) r.fail(`${tag}: C-6: section eyebrow "${e}" still renders`);
-        const order = H2_ORDER.map((re) => m.h2.findIndex((t) => re.test(t)));
-        order.forEach((idx, i) => { if (idx < 0) r.fail(`${tag}: C-7: h2 ${H2_ORDER[i]} is missing (h2s: ${m.h2.join(' | ')})`); });
-        if (order.every((x) => x >= 0) && order.some((x, i) => i && x < order[i - 1])) r.fail(`${tag}: C-7: h2 order is ${m.h2.join(' | ')}; want stats, Planning a visit, Three-year cycle, Ten judging groups, exhibitor band, Past editions, closing band`);
-        if (m.h2.length !== 7) r.fail(`${tag}: C-7: ${m.h2.length} h2s, want 7 (${m.h2.join(' | ')})`);
+        // F6 removed the Three-year cycle content and the archive is honestly empty, so those two sections are OPTIONAL: when present they hold their slot,
+        // when absent they are simply not rendered (never an empty placeholder). NOS_EXPECT_PAST_SHOWS=1 makes Past editions required.
+        const required = [H2_ORDER[0], H2_ORDER[1], H2_ORDER[3], H2_ORDER[4]];
+        const optional = [H2_ORDER[2], H2_ORDER[5]];
+        required.forEach((re) => { if (!m.h2.some((t) => re.test(t))) r.fail(`${tag}: C-7: h2 ${re} is missing (h2s: ${m.h2.join(' | ')})`); });
+        if (process.env.NOS_EXPECT_PAST_SHOWS === '1' && !m.h2.some((t) => H2_ORDER[5].test(t))) r.fail(`${tag}: C-7: NOS_EXPECT_PAST_SHOWS=1 but no "Past editions" h2`);
+        const present = H2_ORDER.filter((re) => m.h2.some((t) => re.test(t)));
+        const idx = present.map((re) => m.h2.findIndex((t) => re.test(t)));
+        if (idx.some((x, i) => i && x < idx[i - 1])) r.fail(`${tag}: C-7: h2 order is ${m.h2.join(' | ')}; want stats, Planning a visit, [Three-year cycle], Ten judging groups, exhibitor band, [Past editions], closing band`);
+        const wantCount = required.length + optional.filter((re) => m.h2.some((t) => re.test(t))).length + 1;
+        if (m.h2.length !== wantCount) r.fail(`${tag}: C-7: ${m.h2.length} h2s, want ${wantCount} (${m.h2.join(' | ')})`);
         const cl = m.closing;
         if (!cl || cl.sectionIsExh) r.fail(`${tag}: C-8: no separate closing band after Past editions`);
         else {
@@ -123,8 +162,10 @@ await main('F3 hub conversion', async (r) => {
           if (e < 0) r.fail(`${tag}: C-8: exhibitor band lacks the "Exhibitor information" CTA`);
           if (f >= 0 && e >= 0 && f > e) r.fail(`${tag}: C-8: exhibitor CTA row order is "Exhibitor information" then "Find your society"; want the reverse`);
         }
-        if (!m.past || !m.past.cards) r.fail(`${tag}: C-5: no past-edition cards`);
-        else { if (m.past.images) r.fail(`${tag}: C-5: ${m.past.images} image(s) in the past-editions section (typographic only)`); if (m.past.chips < m.past.cards) r.fail(`${tag}: C-5: ${m.past.chips}/${m.past.cards} past-edition cards carry an entries chip`); }
+        if (m.past) {
+          if (!m.past.cards) r.fail(`${tag}: C-5: an empty "Past editions" section renders; with no published past show the section is omitted (honest empty state)`);
+          else { if (m.past.images) r.fail(`${tag}: C-5: ${m.past.images} image(s) in the past-editions section (typographic only)`); if (m.past.chips < m.past.cards) r.fail(`${tag}: C-5: ${m.past.chips}/${m.past.cards} past-edition cards carry an entries chip`); }
+        }
       }
       if (m.judging) {
         if (!m.judging.found) r.fail(`${tag}: C-4: no 10-item grid under "Ten judging groups"`);

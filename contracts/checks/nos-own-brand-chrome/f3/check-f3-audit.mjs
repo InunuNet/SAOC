@@ -1,6 +1,6 @@
 // F3 route-audit + NOS Design rulings (2026-10-16), measured on the rendered pages. One browser pass per route, assertions grouped by id:
 //  RULING-nav   ShowSectionNav and its "Explore the National Show" 10-card grid are gone from EVERY NOS route: the only <nav> in <main> are the
-//               sub-nav (aria-label "... pages") and the Breadcrumb.
+//               sub-nav (aria-label "... pages"), the Breadcrumb and the /faq in-page "FAQ categories" jump nav (ShowFaqList, a page-local aid, not site nav).
 //  H1           every route: h1 <= 3 lines at 1280 and <= 4 lines at 390; hub h1 text is "19th SAOC National Orchid Show" with no lockup in the hero.
 //  S1           cards: border-radius 16px and a box-shadow (elevation is a shadow, never a border); --radius-card resolves to 16px.
 //  S2           one button anatomy: every filled link/button in <main> outside nav/steppers/disclosure is 50px tall, 10px radius, Karla 14px/700,
@@ -56,7 +56,8 @@ function measure(route) {
     const ul = h2 ? (h2.closest('section') ?? h2.parentElement).querySelector('ul.pc-grid') : null;
     out.pres = { h2: !!h2, ul: !!ul, cols: ul ? new Set([...ul.children].filter(vis).map((l) => Math.round(l.getBoundingClientRect().left))).size : 0, items: ul ? ul.children.length : 0 };
   }
-  if (route === '/national-show/vendors') out.vend = { chip: document.body.innerText.includes('To be confirmed by the show committee'), prose: /Showcasing the Finest/i.test(document.body.innerText) };
+  // R19 renders the marker uppercase (text-transform), so innerText is uppercase: compare case-insensitively, or accept the marker's data attribute.
+  if (route === '/national-show/vendors') out.vend = { chip: document.body.innerText.toLowerCase().includes('to be confirmed by the show committee') || !!document.querySelector('main [data-confirmation-badge], main [data-exhibitor-marker]'), prose: /Showcasing the Finest/i.test(document.body.innerText) };
   const steppers = [...document.querySelectorAll('main button[aria-label*="quantity" i]')].filter(vis);
   out.hasStepper = steppers.length > 0;
   return out;
@@ -73,7 +74,7 @@ await main('F3 audit', async (r) => {
         await page.waitForTimeout(250);
         const m = await page.evaluate(measure, route);
         if (name !== '1120') {
-          for (const n of m.navs) if (!/ pages$|breadcrumb/i.test(n)) r.fail(`${tag}: RULING-nav: <nav aria-label="${n}"> in <main> (ShowSectionNav must be gone; only the sub-nav and Breadcrumb remain)`);
+          for (const n of m.navs) if (!/ pages$|breadcrumb|^FAQ categories$/i.test(n)) r.fail(`${tag}: RULING-nav: <nav aria-label="${n}"> in <main> (ShowSectionNav must be gone; only the sub-nav, the Breadcrumb and the FAQ categories jump nav remain)`);
           if (m.exploreText) r.fail(`${tag}: RULING-nav: "Explore the National Show" still renders`);
           if (m.h1) {
             const max = w >= 1000 ? 3 : 4;

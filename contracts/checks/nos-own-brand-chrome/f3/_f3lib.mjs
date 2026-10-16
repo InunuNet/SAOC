@@ -46,12 +46,15 @@ export async function allRoutes(browser) {
   return [...NOS_ROUTES, ...years, ...VENDOR_SUBROUTES];
 }
 
-// next/image serves /_next/image?url=%2Fimages%2Forchid-dark.jpg&w=...; resolve to the underlying asset path.
+// next/image serves /_next/image?url=%2Fimages%2Forchid-dark.jpg&w=... (default loader) or /images/_opt/orchid-dark.jpg-1920.webp (lib/image-loader.ts); resolve to the underlying asset path.
 export function assetPath(src) {
   if (!src) return '';
   try {
     const u = new URL(src, BASE);
     if (u.pathname === '/_next/image') return u.searchParams.get('url') ?? '';
+    // lib/image-loader.ts (main) serves pre-generated variants /images/_opt/{name.ext}-{width}.webp for /images/{name.ext}; resolve back to the source asset.
+    const variant = /^\/images\/_opt\/(.+)-\d+\.webp$/.exec(u.pathname);
+    if (variant) return `/images/${variant[1]}`;
     return u.pathname;
   } catch {
     return src;
