@@ -19,7 +19,9 @@ Hero contrast, 2nd-percentile worst pixel, text composited, 4 slides (min over s
 | h1 italic accent (accent-soft) | **2.53 - 3.30** | **2.76 - 3.20** |
 | lede | 4.86 - 7.32 | 4.64 - 6.52 |
 | CTA 1 (primary fill) | 9.53 | 8.17 - 9.53 |
-| CTA 2 (outline) | 5.38 | 5.81 |
+| CTA 2 (old styling, outline) | 5.38 | 5.81 |
+
+These CTA numbers describe the OLD styling and are superseded by section 9 (primary inverts to an ivory fill, secondary becomes an ivory outline; A26).
 
 So the current scrim passes everything except the italic accent, and it passes by hiding the carousel.
 What the brief literally says (README l.125) measured on the same four slides, min over slides at 1280 / 390:
@@ -93,25 +95,22 @@ A11 and A12 are regression guards that are green on main by design.
 
 ## 7. Source gaps and open points for the lead
 
-1. README l.125 (diagonal 60 to 25 + bone pull) conflicts with the handoff prototype `src/styles.css` `.hero__scrim` (a vertical ink gradient .58 / .42 / .78) and with the 4.5:1 bar. R1 keeps the README gradient and adds the veil. Brad's call if he prefers the prototype's vertical scrim.
+1. README l.125 (diagonal 60 to 25 + bone pull) conflicts with the handoff prototype `src/styles.css` `.hero__scrim` (a vertical ink gradient .58 / .42 / .78) and with the 4.5:1 bar. R1 keeps the README gradient and adds the veil. RULED by design-cb: R1 (the veil) stands, no large-text exemption.
 2. The italic accent at 4.5:1 (R1) forces the veil to ~85-90% behind the copy. Relaxing it to 3:1 (WCAG large text) lets the veil drop to ~70%.
 3. The hero's primary CTA (`bg-primary`) is nearly invisible as a shape on a veiled sage field; its label passes (9.5:1) but the button edge is a non-text-contrast P3 for the critique loop, not asserted.
 4. Legal pages off the axis (R6) and the societies/media-kit meta sizes (R8) are left alone by ruling; say so if either should move.
 5. SUPERSEDED by R9: unsourced figures are now withheld in public and shown marked on preview (A21, A22).
 6. e2e: `pnpm test:e2e` starts its own dev server on a free port; expect it to be the slowest assertion (timeout 1500s).
-7. Flags: the tracked Drive spec doc holds plaintext passwords (values not repeated here; rotate and scrub). Hero "SINCE 1968 · BLOEMFONTEIN" is sourced only as the founding meeting place. "21" is derivable from the societies listing but not from Drive. secretary@saoc.co.za (privacy, constitution, JSON-LD) is unsourced and untouched. Societies member counts and footer "Reg#" are unsourced and untouched. Contact fallback labels "SAOC Secretariat / General enquiries" are unsourced and withheld in public. 17 draft events are unpublished (editorial, not code). Green paths of A21 to A25 are unproven (red-only on main).
+7. Flags: (the plaintext-passwords flag is closed by the lead: content/drive-source/ is gitignored, not live mailbox passwords, rotation is Lee-Ann's.) Hero "SINCE 1968 · BLOEMFONTEIN" is sourced only as the founding meeting place. "21" is derivable from the societies listing but not from Drive. secretary@saoc.co.za (privacy, constitution, JSON-LD) is unsourced and untouched. Societies member counts and footer "Reg#" are unsourced and untouched. Contact fallback labels "SAOC Secretariat / General enquiries" are unsourced and withheld in public. 17 draft events are unpublished (editorial, not code). Green paths of A21 to A25 are unproven (red-only on main).
 
-## 8. Font load split (A26, design-cb P1, lead-confirmed)
+## 8. Font load split - NOT in F19 (taken by the lead as feature F23, after F18b)
 
-Target: NOS routes declare and load only Fraunces and Karla; SAOC type rendering is unchanged (same declared faces, same computed font-family; `fonts-baseline.json` was captured from main :3013). Today `app/layout.tsx` loads Crimson Pro, Manrope and JetBrains Mono for every route (Lora is declared too, from main's own SAOC styles) and the `UtilityBar variant="nos"` uses them on NOS.
-Allowed files for this item (added to A10): `app/layout.tsx`, `app/(marketing)/layout.tsx`, `app/(marketing)/national-show/layout.tsx`, and anything under `app/(marketing)/(saoc)/`. NOT allowed: `ChromeFrame.tsx`, `UtilityBar.tsx`, NOS header components, `nos-theme.css`.
-Recommended shape: route group `app/(marketing)/(saoc)/` for the SAOC pages (git mv, excluding `tickets/`), its own `layout.tsx` holding the font loaders and wrapping children in the font-variable classes; loaders removed from `app/layout.tsx`; the SAOC chrome elements built in `app/(marketing)/layout.tsx` are wrapped with the same variable classes (a `display: contents` wrapper) so Header, UtilityBar and Footer still render SAOC faces.
-The unavoidable risk: the NOS utility bar (forbidden file) uses `font-sans` and `font-mono`, so on NOS routes those stacks must resolve to Karla or a generic, not Manrope or JetBrains Mono. A26 fails on any NOS element whose first computed family is outside Fraunces, Karla or a generic. If that cannot be met without editing UtilityBar.tsx or nos-theme.css, the dev STOPS and sends the lead the exact diff (a scoped `--font-sans` and `--font-mono` remap in the NOS scope).
-Admin, studio, not-found and tickets also sit under the root layout today: they must keep a working font (own loader or generic fallback); not asserted.
+Target: NOS routes declare and load only Fraunces and Karla; SAOC type unchanged. It needs `ChromeFrame.tsx` and `UtilityBar.tsx` (both forbidden here), so F19 does not carry it and the layout files are NOT on the F19 allowlist. `check-p-fonts.mjs` and `goldens/f19/fonts-baseline.json` (captured from main) are kept for F23 and stay informational: red on main (51 findings, all on NOS routes), SAOC compares clean against main.
+Shape for F23: route group `app/(marketing)/(saoc)/` for the SAOC pages with its own layout holding the three loaders (Crimson Pro, Manrope, JetBrains Mono; Lora is declared on main too); loaders out of `app/layout.tsx`; SAOC chrome wrapped in the variable classes; the NOS utility bar (`variant="nos"`, `font-sans` and `font-mono`) resolved to Karla. Admin, studio, not-found and tickets also sit under the root layout today and need their own loader or a generic fallback.
 
-## 9. Hero CTA on the veil (A27, design-cb ruling, final)
+## 9. Hero CTA on the veil (A26, design-cb ruling, final)
 
-R1 stands as Option A: README diagonal plus the radial veil, no large-text exemption (A2 stays 4.5:1 on the italic accent). On the veil the PRIMARY CTA inverts to an ivory/bone fill with primary-colour text, same size and radius as before; the SECONDARY is an ivory outline with ivory text; both sentence case. A27 measures fill vs veil at least 3:1, label vs fill at least 4.5:1, secondary border ivory and text at least 4.5:1, all 4 slides at 390 and 1280.
+R1 stands as Option A: README diagonal plus the radial veil, no large-text exemption (A2 stays 4.5:1 on the italic accent). On the veil the PRIMARY CTA inverts to an ivory/bone fill with primary-colour text, same size and radius as before; the SECONDARY is an ivory outline with ivory text; both sentence case. A26 measures fill vs veil at least 3:1, label vs fill at least 4.5:1, secondary border (vs the veil) and text at least 4.5:1, all 4 slides at 390 and 1280.
 
 ## 10. Typographic quotes (standing design-cb rule)
 
