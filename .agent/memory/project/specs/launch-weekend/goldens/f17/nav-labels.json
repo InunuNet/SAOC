@@ -40,7 +40,7 @@
   ],
   "lead": {
     "eyebrow": "The National Show",
-    "leadLabel": "19th SAOC National Orchid Show",
+    "leadLabel": "19th National Orchid Show",
     "leadHref": "/national-show"
   },
   "groups": [
@@ -131,7 +131,7 @@
           "href": "/national-show/symposium",
           "labelBefore": "SAOC Symposium",
           "label": "Symposium",
-          "descriptor": "The SAOC Symposium — what it is, its theme, and who it is for."
+          "descriptor": "The National Orchid Show Symposium — what it is, its theme, and who it is for."
         },
         {
           "id": "wosa-conference",
@@ -196,12 +196,12 @@
       {
         "id": "day-visitor",
         "label": "Day Visitor",
-        "href": "/tickets/day-visitor"
+        "href": "/national-show/tickets#ticket-day"
       },
       {
         "id": "weekend-pass",
         "label": "Weekend Pass",
-        "href": "/tickets/weekend-pass"
+        "href": "/national-show/tickets#ticket-weekend"
       }
     ]
   },

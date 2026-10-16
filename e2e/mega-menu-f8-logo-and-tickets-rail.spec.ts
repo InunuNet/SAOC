@@ -63,7 +63,7 @@ test.describe('mega menu — F8 logo lead block + NOS tickets rail (mission menu
     // Hrefs match main's nav-config (/tickets/...); the /buy router mission is unsanctioned and not on main.
     const railHeading = panel.getByRole('heading', { level: 4, name: 'Tickets' });
     return railHeading.locator(
-      'xpath=ancestor::div[.//a[@href="/tickets/day-visitor"]][1]'
+      'xpath=ancestor::div[.//a[@href="/national-show/tickets#ticket-day"]][1]'
     );
   }
 
@@ -76,7 +76,7 @@ test.describe('mega menu — F8 logo lead block + NOS tickets rail (mission menu
   }) => {
     const panel = await openNationalShowMenu(page);
 
-    const title = panel.getByRole('link', { name: '19th SAOC National Orchid Show', exact: true });
+    const title = panel.getByRole('link', { name: '19th National Orchid Show', exact: true });
     await expect(title).toBeVisible();
     await expect(title).toHaveAttribute('href', '/national-show');
     await expect(panel.getByRole('img')).toHaveCount(0);
@@ -93,7 +93,7 @@ test.describe('mega menu — F8 logo lead block + NOS tickets rail (mission menu
   // real regression, not an expected absence.
   test('lead block: venue/date meta line still renders below the title', async ({ page }) => {
     const panel = await openNationalShowMenu(page);
-    const title = panel.getByRole('link', { name: '19th SAOC National Orchid Show', exact: true });
+    const title = panel.getByRole('link', { name: '19th National Orchid Show', exact: true });
     await expect(title).toBeVisible();
 
     const leadMeta = panel.getByTestId('mega-menu-lead-meta');
@@ -145,10 +145,10 @@ test.describe('mega menu — F8 logo lead block + NOS tickets rail (mission menu
     const weekendPassLink = rail.getByRole('link', { name: 'Weekend Pass', exact: true });
 
     await expect(ticketsLink).toHaveAttribute('href', '/national-show/tickets');
-    await expect(dayVisitorLink).toHaveAttribute('href', '/tickets/day-visitor');
+    await expect(dayVisitorLink).toHaveAttribute('href', '/national-show/tickets#ticket-day');
     await expect(weekendPassLink).toHaveAttribute(
       'href',
-      '/tickets/weekend-pass'
+      '/national-show/tickets#ticket-weekend'
     );
 
     // The old single-CTA blurb copy is gone.
