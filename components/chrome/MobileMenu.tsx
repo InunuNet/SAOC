@@ -70,7 +70,8 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
     returnFocusRef: triggerRef,
   });
 
-  if (!open) return null;
+  // Closed: keep an empty, hidden element so the hamburger's aria-controls always resolves.
+  if (!open) return <div id={MOBILE_MENU_ID} hidden />;
 
   const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
