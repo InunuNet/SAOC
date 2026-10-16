@@ -79,6 +79,9 @@
 @media (max-width: 699px) {
   :root { --nc-logo-w: 390px; }
   .nh { position: relative; }
+  /* Not sticky here, so nothing covers a focused element; the global 5rem scroll-padding-top would
+     only make a click on Menu (near the top) scroll the page before the panel's saved position. */
+  html:has(#nh) { scroll-padding-top: 0; }
   .nh-bar { flex-wrap: wrap; gap: 12px; padding-block: 16px 12px; }
   .nh-brand { flex-basis: 100%; }
   .nh-cta { margin-left: 0; }
