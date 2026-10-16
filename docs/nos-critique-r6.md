@@ -45,7 +45,7 @@ Source: lead saoc-2b 2026-10-17.
 ## f5 — R80 #1: hub and photo heroes below 768px
 
 Below 768px the hub hero and the four photographic inner heroes (plan-your-visit, symposium, programme,
-what-to-expect) lead with the photograph, fixed at 300px (`order: -1`, `aspect-ratio: auto`), then the
+what-to-expect) lead with the photograph, fixed at 300px on the hub and 220px on the inner heroes (Codi) (`order: -1`, `aspect-ratio: auto`), then the
 h1, lede and CTAs, then on the hub the countdown and the facts. At 390x844 the Tickets button ends at
 y=812, inside the 828 fold line. The 768-1023px stacked rules and the 1024px-and-up heroes are unchanged.
 Every hero lede below 768px is 18px/1.5 with max-width 60ch (Codi); 768px and up keep their sizes.

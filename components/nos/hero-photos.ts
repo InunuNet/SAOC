@@ -22,9 +22,9 @@ export interface NosHeroPhoto {
 
 export const HERO_PHOTOS: Readonly<Record<string, NosHeroPhoto>> = {
   '/national-show': { src: '/images/orchid-dark.jpg', objectPosition: '68% 50%' },
-  '/national-show/plan-your-visit': { src: '/images/orchid-yellow.jpg', objectPosition: '6% 50%' },
-  '/national-show/symposium': { src: '/images/orchid-violet.jpg', objectPosition: '12% 50%' },
-  '/national-show/programme': { src: '/images/orchid-purple.jpg', objectPosition: '50% 50%' },
+  '/national-show/plan-your-visit': { src: '/images/orchid-yellow.jpg', objectPosition: '50% 99%' },
+  '/national-show/symposium': { src: '/images/orchid-violet.jpg', objectPosition: '50% 98%' },
+  '/national-show/programme': { src: '/images/orchid-purple.jpg', objectPosition: '50% 39%' },
   '/national-show/what-to-expect': { src: '/images/orchid-pink.jpg', objectPosition: '50% 63%' },
 };
 
