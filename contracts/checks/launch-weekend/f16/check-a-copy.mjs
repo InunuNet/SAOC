@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// RETIRED by launch-weekend F18 (goldens/f18/supersession.json): replaced by the v13 keepsake ticket checks; no gate runs this file.
 // A1: copy. The standfirst reads "2027 National Orchid Show" (and the metadata description that restates it), the Joint
 // clause is gone from the conference card and from the whole route, the FROM block and the public test-mode strip are gone,
 // and NO other copy changed: every visible text node on /national-show/tickets is in the origin/main golden, in the ruled

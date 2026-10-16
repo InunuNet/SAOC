@@ -1,0 +1,14 @@
+{
+  "_note": "R16 one photo per product; R29 rights-cleared set only. The five production photographs are the only rights-cleared images (goldens/f3/hero-photo-map.json); the 13-photo Ormerod set in branding/ is NOT rights-cleared. The map follows HANDOFF section 2. Symposium and WOSA have no photo (field colour). A product without its file renders its field colour.",
+  "stubPhotos": {
+    "vip": "/images/orchid-dark.jpg",
+    "sunset": "/images/orchid-yellow.jpg",
+    "weekend": "/images/orchid-purple.jpg",
+    "day": "/images/orchid-pink.jpg",
+    "workshops": "/images/orchid-violet.jpg",
+    "symposium": null,
+    "wosa": null
+  },
+  "emblem": "/images/nos/disa-graminifolia-emblem.svg",
+  "newBinaryAssetsAllowed": false
+}

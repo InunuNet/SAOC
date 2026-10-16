@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// F18-A22 (R62 #1, F18b): no brand switch at payment. /tickets, the single-ticket buy screen, /tickets/cancelled (and /tickets/confirmation when it renders without an order) carry the NOS chrome
+// F18-A22 (R62 #1, F18b): no brand switch at payment. the single-ticket buy screen /tickets/<slug>, /tickets/cancelled (and /tickets/confirmation when it renders without an order) carry the NOS chrome
 // instead of the SAOC chrome: header#nh and footer#nf, the only banner and contentinfo, no SAOC lockup/emblem image anywhere, the .nos-theme scope around <main> content, a typographic NOS inner hero
 // ([data-nos-hero="inner"][data-nos-hero-variant="type"], one h1, no photo, no card stock photo anywhere on the route), no horizontal overflow, at 1280 and 390. The SAOC site chrome stays on /about.
 // Usage: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-n-ticket-chrome.mjs
@@ -29,10 +29,10 @@ function measure(c) {
 }
 
 await main('F18-A22 NOS chrome on /tickets/*', async (r) => {
-  const hub = await fetchHtml(K.routes.hub);
-  const slugHref = [...hub.html.matchAll(/href="(\/tickets\/[a-z0-9-]+)"/g)].map((m) => m[1]).find((h) => !new RegExp(K.routes.slugExclude).test(h));
-  const routes = [K.routes.hub, ...(slugHref ? [slugHref] : []), K.routes.cancelled, K.routes.confirmation];
-  if (!slugHref) r.note('no /tickets/<slug> link on /tickets (sales closed or no ticket types): the single-ticket route was not measured');
+  let slugHref = null;
+  for (const slug of K.slugCandidates) { const x = await fetchHtml(`/tickets/${slug}`); if (x.status === 200 && x.html.includes('data-nos-ticket-form')) { slugHref = `/tickets/${slug}`; break; } }
+  const routes = [...(slugHref ? [slugHref] : []), K.routes.cancelled, K.routes.confirmation];
+  if (!slugHref) r.note('no purchasable /tickets/<slug> rendered (sales closed or no ticket types): the single-ticket route was not measured');
   await withBrowser(async (browser) => {
     for (const route of routes) {
       for (const [w, h] of [[1280, 800], [390, 844]]) {

@@ -1,20 +1,23 @@
 // F18-A24 (R62, R81, render level, no CMS, no server): the ticket-screen rules on the real components with fixtures. Run under two TZ values (the command sets TZ) so the weekday never depends on the machine.
 //   formatShowDay        -> exported from lib/show-day-format.ts; the six cases of tokens.tickets.dayFormat.cases ("Thu 23 Sept 2027"), SA English month names (Sept), weekday computed from the calendar date in UTC, input that is not YYYY-MM-DD returned unchanged
 //   DayQuantityPicker    -> each row's aria-label and visible text is the formatted day; <time datetime="ISO"> carries the ISO; no ISO text outside the datetime attribute; the stepper aria-labels read "... for Thu 23 Sept 2027"; legend "Tickets per day" has no uppercase class and no tracking-[0.16em] mono role (14px sentence-case form label)
-//   TicketPurchaseForm   -> Buy disabled at quantity 0 with aria-describedby pointing at [data-buy-hint] whose text is the existing "Please select at least one ticket."; one Total in aria-live polite beside the Buy button; no "estimate"; "Provisional pricing" at most once for a provisional fixture
+//   TicketPurchaseForm   -> Buy ENABLED at quantity 0 (vote 2) with aria-describedby resolving to an empty [data-buy-hint] region (filled by a click, A23 proves the click); the string "Choose at least one ticket" exists in the source; one Total in aria-live polite beside the Buy button; no "estimate"; "Provisional pricing" at most once
 //   TicketTypeCard (list) -> prices through formatRand: R150 and R250.50, never R150.00
 // Run: TZ=Pacific/Auckland pnpm exec tsx contracts/checks/launch-weekend/f18/check-p-tickets-render.mts && TZ=America/Los_Angeles pnpm exec tsx ...   (cwd = implementation worktree)
+import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { DayQuantityPicker } from '../../../../components/tickets/DayQuantityPicker';
 import { TicketPurchaseForm } from '../../../../components/tickets/TicketPurchaseForm';
 import { TicketTypeCard } from '../../../../components/tickets/TicketTypeCard';
-import { readGolden, T } from './_lib.mjs';
+import { T } from './_lib.mjs';
 
 const K = T.tickets;
 const D = K.dayFormat;
-const G = readGolden('catalogue-fixtures.json') as { buyButtonLabel: string; soldOutMessage: string; showDays: string[]; types: Record<string, unknown>[] };
+// Inline fixtures (test inputs, never page copy).
+const fixtureType = { slug: 'fx-day', name: 'Fixture Day Pass', price: 150, regularPrice: null, description: 'Fixture description.', soldOut: false, provisional: false, requiresDaySelection: false };
+const G = { buyButtonLabel: 'Buy Ticket', soldOutMessage: 'Sold out', showDays: ['2027-09-23', '2027-09-24', '2027-09-25', '2027-09-26'], types: [fixtureType, { ...fixtureType, slug: 'fx-prov', name: 'Fixture Provisional', price: 250.5, provisional: true }] as Record<string, unknown>[] };
 const problems: string[] = [];
 const fail = (m: string) => problems.push(m);
 const txt = (h: string) => h.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, "'").replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
@@ -50,14 +53,15 @@ if (!/text-\[14px\]/.test(legend)) fail('DayQuantityPicker: the legend does not 
 const form = (types: Record<string, unknown>[]) => renderToStaticMarkup(createElement(TicketPurchaseForm as never, { ticketTypes: types, buyButtonLabel: G.buyButtonLabel, soldOutMessage: G.soldOutMessage, showDays: days }));
 const single = form([{ ...G.types[1], requiresDaySelection: true }]);
 const buy = /<button[^>]*type="submit"[^>]*>/.exec(single)?.[0] ?? '';
-if (!/disabled/.test(buy)) fail('TicketPurchaseForm: Buy is not disabled at quantity 0');
+if (/disabled/.test(buy)) fail('TicketPurchaseForm: Buy is disabled at quantity 0 (vote 2: Buy stays enabled)');
 const ref = /aria-describedby="([^"]+)"/.exec(buy)?.[1];
-if (!ref) fail('TicketPurchaseForm: the disabled Buy has no aria-describedby');
-else {
-  const target = new RegExp(`<[a-z]+[^>]*id="${ref.split(' ')[0]}"[^>]*>([\\s\\S]*?)</[a-z]+>`).exec(single)?.[1] ?? '';
-  if (txt(target) !== K.buyHint.text) fail(`TicketPurchaseForm: the Buy reason reads "${txt(target)}", want "${K.buyHint.text}" (an existing string)`);
-  if (!/data-buy-hint/.test(single)) fail('TicketPurchaseForm: the reason carries no [data-buy-hint] hook');
-}
+if (!ref) fail('TicketPurchaseForm: Buy has no aria-describedby tied to the hint region');
+else if (!new RegExp(`id="${ref.split(' ').pop()}"`).test(single) || !/data-buy-hint/.test(single)) fail('TicketPurchaseForm: aria-describedby does not resolve to a [data-buy-hint] region in the markup');
+const hintRegion = /<[a-z]+[^>]*data-buy-hint[^>]*>([\s\S]*?)<\/[a-z]+>/.exec(single)?.[1] ?? '';
+if (txt(hintRegion) !== '') fail('TicketPurchaseForm: the hint region must be empty until a click at quantity 0 (it announces, it does not shout at load)');
+const src = readFileSync('components/tickets/TicketPurchaseForm.tsx', 'utf8') + readFileSync('components/tickets/useTicketCart.ts', 'utf8');
+if (!src.includes(K.buyHint.text)) fail(`the string "${K.buyHint.text}" is not in TicketPurchaseForm.tsx or useTicketCart.ts`);
+if (/disabled=\{[^}]*(cartItemCount|itemCount)/.test(readFileSync('components/tickets/TicketPurchaseForm.tsx', 'utf8'))) fail('TicketPurchaseForm.tsx still disables Buy on the item count');
 const totalAt = single.indexOf('data-catalogue-total');
 if (totalAt < 0) fail('TicketPurchaseForm: no [data-catalogue-total]');
 else {

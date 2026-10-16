@@ -1,18 +1,20 @@
 #!/usr/bin/env node
 // F18-A10: scope and no-invention hygiene on the diff against F18_BASE_REF, plus the static archive and sponsors rules.
-//  - allowlist: the 13 route pages named in goldens/f18/tokens.json plus components/show/, components/nos/, components/tickets/, lib/data/ (show-pages, show-page-presentation, a new presentation helper),
+//  - allowlist: the route pages named in goldens/f18/tokens.json, the keepsake ticket hub (app/(marketing)/national-show/tickets/), components/show/, components/nos/, components/tickets/ (incl. keepsake/), components/home/ShowBand.tsx (link repoint), lib/data/ (show-pages, show-page-presentation, ticket-card-view-models, admission-availability),
 //    app/(marketing)/national-show/nos-structure.css (pure addition under an F18 comment, or the marked nos-ticket-row block), content copy swaps listed nowhere (NO copy file changes: a changed
 //    content/ or sanity/ file fails), contracts/checks, specs, docs, e2e/. The header axis, nav-config, footer-data, the vendor legal components, SEO JSON-LD, the F16 rows' price maths stay untouched.
 //  - no invention in added lines of code: no hex, rgb, new font family, animation, duration other than 150ms, shadow, emoji; no NEW string literal in a .tsx outside strings-allowed.json / base text.
+//  - F18b: NO new binary image asset (png, jpg, jpeg, webp, avif, gif, svg, ico): the keepsake stubs reuse the five production photos (goldens/f18b/v13-photo-map.json).
 //  - archive: the beta TBC card spans the column (no max-w-* on the card or its wrapper) in app/(marketing)/national-show/archive/page.tsx.
 // Usage: F18_BASE_REF=<sha> node --import tsx/esm contracts/checks/launch-weekend/f18/check-j-archive-scope.mjs   (cwd = implementation worktree)
 import { existsSync, readFileSync } from 'node:fs';
+import { extname } from 'node:path';
 import { T, baseRef, git, gitLines, readGolden, readText } from './_lib.mjs';
 
 const BASE = baseRef();
 const problems = [];
 const ROUTE_PAGES = ['', 'about', 'what-to-expect', 'vendors', 'sa-exhibitors', 'programme', 'international-guests', 'wosa-conference', 'faq', 'archive', 'conferences', 'workshops', 'exhibitors', 'sponsors', 'symposium'].map((s) => `app/(marketing)/national-show/${s ? `${s}/` : ''}page.tsx`);
-const ALLOWED = [...ROUTE_PAGES, 'app/(marketing)/tickets/', 'app/(marketing)/layout.tsx', 'app/(marketing)/national-show/layout.tsx', 'app/(marketing)/national-show/not-found.tsx', 'app/(marketing)/national-show/[', 'components/nos-chrome/ChromeFrame.tsx', 'app/(marketing)/national-show/nos-structure.css', 'app/(marketing)/national-show/nos-theme.css', 'public/images/national-show/'];
+const ALLOWED = [...ROUTE_PAGES, 'app/(marketing)/tickets/', 'app/(marketing)/layout.tsx', 'app/(marketing)/national-show/layout.tsx', 'app/(marketing)/national-show/not-found.tsx', 'app/(marketing)/national-show/[', 'app/(marketing)/national-show/tickets/', 'components/home/ShowBand.tsx', 'components/nos-chrome/ChromeFrame.tsx', 'app/(marketing)/national-show/nos-structure.css', 'app/(marketing)/national-show/nos-theme.css'];
 const PREFIX = ['components/show/', 'components/nos/', 'components/tickets/', 'lib/data/', 'lib/', 'contracts/checks/', 'e2e/', 'docs/', 'README.md', '.agent/memory/project/specs/', '.tmp/'];
 // Payment, checkout and the ITN stay behaviourally identical (F18b): no API route, gateway or order library may change. The SAOC not-found stays as is.
 const FORBIDDEN = ['components/chrome/nav-config.ts', 'components/chrome/footer-data.ts', 'components/nos-chrome/', 'components/vendors/', 'app/api/', 'app/not-found.tsx', 'lib/payfast', 'lib/ozow', 'lib/orders', 'lib/checkout', 'lib/payment', 'lib/reconciliation', 'lib/confirmation-email'];
@@ -23,7 +25,10 @@ for (const f of names) {
   else if (!ALLOWED.some((a) => f === a || (a.endsWith('/') && f.startsWith(a))) && !PREFIX.some((p) => f.startsWith(p))) problems.push(`file outside the F18 allowlist changed: ${f}`);
   if (/^(content|sanity)\//.test(f)) problems.push(`copy/CMS file changed (F18 changes no copy): ${f}`);
 }
-const strings = readGolden('strings-allowed.json');
+const BINARY = new Set(['.png', '.jpg', '.jpeg', '.webp', '.avif', '.gif', '.svg', '.ico']);
+const addedFiles = new Set([...gitLines('diff', '--name-only', '--diff-filter=A', `${BASE}...HEAD`), ...gitLines('diff', '--name-only', '--diff-filter=A', 'HEAD'), ...gitLines('ls-files', '--others', '--exclude-standard')]);
+for (const f of addedFiles) if (BINARY.has(extname(f).toLowerCase()) && !/^(\.agent|contracts|docs|e2e|\.tmp|test-results)\//.test(f)) problems.push(`new image asset added (F18b reuses the five production photos): ${f}`);
+const strings = [readGolden('strings-allowed.json'), JSON.parse(readFileSync('.agent/memory/project/specs/launch-weekend/goldens/f18b/v13-copy.json', 'utf8'))];
 const allowedStrings = new Set(JSON.stringify(strings).match(/"([^"\\]|\\.)+"/g)?.map((s) => JSON.parse(s)) ?? []);
 const added = [];
 for (const f of names.filter((n) => existsSync(n) && /^(app|components)\/.*\.(tsx|css)$/.test(n))) {

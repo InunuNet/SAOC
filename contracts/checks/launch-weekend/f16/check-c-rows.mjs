@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// RETIRED by launch-weekend F18 (goldens/f18/supersession.json): replaced by the v13 keepsake ticket checks; no gate runs this file.
 // A3 (F16 R31-A2, amended by F17 scope E): the Visit group as typographic rows, against the live render.
 //  One row per product family; every price carries a VISIBLE caption that is its own CMS SKU name (a single-tier row may hide a caption equal to its row name)
 //  and its OWN secondary (ghost) action to its own /tickets/<slug> (a sold-out SKU shows its sold-out state on that action, the sibling stays live);

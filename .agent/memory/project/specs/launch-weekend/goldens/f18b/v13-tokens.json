@@ -1,0 +1,147 @@
+{
+  "_note": "Numbers measured from v13-tickets.html (the golden CSS) and HANDOFF.md section 3-6. Checks read these, not the mock's pixels. Container queries decide the stub side, so card measurements are taken per card, never per viewport.",
+  "viewports": [
+    390,
+    701,
+    960,
+    1280,
+    1920
+  ],
+  "card": {
+    "stubHeightPx": 168,
+    "sessionStubHeightPx": 150,
+    "bandHeightPx": 50,
+    "notchRadiusPx": 11,
+    "horizontalFromContainerPx": 470,
+    "horizontalStubMinPx": 300,
+    "numeral": {
+      "px": 58,
+      "weight": 300,
+      "family": "Fraunces"
+    },
+    "name": {
+      "px": 29,
+      "weight": 400,
+      "family": "Fraunces"
+    },
+    "price": {
+      "px": 46,
+      "weight": 300,
+      "family": "Fraunces"
+    },
+    "ctaHeightPx": 50,
+    "stepperButtonPx": 44,
+    "dayCellMinPx": 58,
+    "radiusPx": 10,
+    "tolerancePx": 1.5
+  },
+  "fan": {
+    "count": 4,
+    "order": [
+      "vip",
+      "sunset",
+      "weekend",
+      "day"
+    ],
+    "deckBelowPx": 700,
+    "deckColumns": 2,
+    "reservedCellMinPx": {
+      "700": 322,
+      "560": 354,
+      "419": 377
+    },
+    "miniWrapPx": 212
+  },
+  "pool": {
+    "bracketFromPx": 960,
+    "numeralMinPx": 48
+  },
+  "sections": [
+    "thursday",
+    "passes",
+    "programme",
+    "sessions"
+  ],
+  "anchors": [
+    "ticket-vip",
+    "ticket-sunset",
+    "ticket-weekend",
+    "ticket-day",
+    "ticket-symposium",
+    "ticket-wosa",
+    "ticket-workshops"
+  ],
+  "hooks": {
+    "card": "[data-ticket-card]",
+    "stub": "[data-ticket-stub]",
+    "fan": "[data-nos-ticket-fan]",
+    "fanLink": "[data-fan-link]",
+    "poolBanner": "[data-pool-banner]",
+    "poolBracket": "[data-pool-bracket]",
+    "dayCell": "[data-ticket-day]",
+    "count": "[data-ticket-count]",
+    "cta": "[data-ticket-cta]",
+    "stepper": "[data-ticket-stepper]",
+    "price": "[data-ticket-price]",
+    "numeral": "[data-ticket-numeral]",
+    "name": "[data-ticket-name]",
+    "body": "[data-ticket-body]"
+  },
+  "stepper": {
+    "min": 1,
+    "maxCap": 10
+  },
+  "cta": {
+    "text": "Buy ticket",
+    "bannedOnPaid": [
+      "Register",
+      "Add to booking"
+    ],
+    "workshopsProductCard": "Choose a session"
+  },
+  "checkout": {
+    "href": "/tickets/<slug>?quantity=<n>[&day=<iso>]",
+    "hint": "Choose at least one ticket",
+    "hintSelector": "[data-buy-hint]"
+  },
+  "retired": [
+    "/tickets"
+  ],
+  "redirectTarget": "/national-show/tickets",
+  "lowStockThresholdPercent": 10,
+  "stubPhotoRule": "An <img> inside [data-ticket-stub] is a third image role beside the hero photo and the long-form break. It is allowed only on the ticket routes (/national-show/tickets, /national-show/conferences, /national-show/workshops, /tickets/<slug>), only the file v13-photo-map.json assigns that product, alt empty, and never anywhere else on the site.",
+  "sampleNumbersBanned": [
+    "312 of 500",
+    "214 of 300",
+    "146 of 200",
+    "742 of 1000",
+    "905 of 1000",
+    "388 of 1000",
+    "64 of 1000",
+    "58 of 1000",
+    "14 of 100",
+    "41 of 80",
+    "27 of 80",
+    "Places left are sample numbers for this design.",
+    "Proposed",
+    "Join the waitlist"
+  ],
+  "photoRoutes": [
+    "/national-show/tickets",
+    "/national-show/conferences",
+    "/national-show/workshops"
+  ],
+  "beforeYouVisit": {
+    "hrefs": [
+      "/national-show/about",
+      "/national-show/what-to-expect",
+      "/national-show/plan-your-visit",
+      "/national-show/faq"
+    ],
+    "labelledBy": "Before you visit"
+  },
+  "keptGroups": [
+    "exhibit",
+    "trade"
+  ]
+}

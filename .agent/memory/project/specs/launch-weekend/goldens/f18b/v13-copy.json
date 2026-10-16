@@ -1,0 +1,130 @@
+{
+  "_note": "The static presentation of each product and every fixed string of the v13 golden (HANDOFF section 2 table and v13-tickets.html markup). Nothing outside this file, strings-allowed.json, nav-config, the CMS and the base tree may appear as new copy (R7). Mock sample values are NOT copy.",
+  "products": {
+    "vip": {
+      "name": "VIP Opening",
+      "when": "Thursday 23 September",
+      "meta": "16h00 to 19h00",
+      "numeral": "23",
+      "caption": "Thursday",
+      "photo": "/images/orchid-dark.jpg",
+      "field": "#0B0A14",
+      "slugs": [
+        "vip"
+      ]
+    },
+    "sunset": {
+      "name": "Sunset Cocktails",
+      "when": "Thursday 23 September",
+      "meta": "18h00 to 21h00",
+      "numeral": "23",
+      "caption": "Thursday",
+      "photo": "/images/orchid-yellow.jpg",
+      "field": "#7E3F97",
+      "slugs": [
+        "sunset-cocktails-single"
+      ]
+    },
+    "weekend": {
+      "name": "Weekend Pass",
+      "when": "Friday 24 to Sunday 26 September",
+      "meta": "Entry on all three show days",
+      "numeral": "24",
+      "caption": "to 26 Sept",
+      "photo": "/images/orchid-purple.jpg",
+      "field": "#211A57",
+      "slugs": [
+        "weekend-pass-early-bird",
+        "weekend-pass"
+      ],
+      "partner": "Day Pass"
+    },
+    "day": {
+      "name": "Day Pass",
+      "when": "Friday, Saturday or Sunday",
+      "meta": "Entry on the day you choose",
+      "numeral": "chosen day",
+      "caption": "chosen day",
+      "photo": "/images/orchid-pink.jpg",
+      "field": "#7F7D33",
+      "slugs": [
+        "early-bird",
+        "day-visitor"
+      ],
+      "partner": "Weekend Pass"
+    },
+    "symposium": {
+      "name": "SAOC Symposium",
+      "when": "Dates to follow",
+      "theme": "From Wild Origins to Cultivated Excellence",
+      "numeral": "XIX",
+      "caption": "19th Show",
+      "photo": null,
+      "field": "#4A3D8C",
+      "slugs": [
+        "saoc-symposium"
+      ]
+    },
+    "wosa": {
+      "name": "WOSA Conference",
+      "when": "Dates to follow",
+      "theme": "With Wild Orchids of Southern Africa",
+      "numeral": "XIX",
+      "caption": "19th Show",
+      "photo": null,
+      "field": "#6A6829",
+      "slugs": [
+        "wosa-conference"
+      ]
+    },
+    "workshops": {
+      "name": "Workshops",
+      "when": "Schedule to follow",
+      "meta": "10 places in each session",
+      "numeral": "10",
+      "caption": "places a session",
+      "photo": "/images/orchid-violet.jpg",
+      "field": "#33296F",
+      "slugs": [
+        "workshops"
+      ]
+    }
+  },
+  "strings": {
+    "admit": "Admit one",
+    "admitSession": "One place",
+    "buy": "Buy ticket",
+    "chooseSession": "Choose a session",
+    "fewLeft": "Few left",
+    "soldOutStamp": "Sold out",
+    "soldOutLine": "This ticket has sold out.",
+    "pricePending": "Price to follow",
+    "chip": "To be confirmed",
+    "pendingNote": "The Council has not confirmed this price yet. Booking opens once",
+    "earlyBirdEnded": "Early bird ended",
+    "earlyBirdSoldOut": "Early bird sold out",
+    "earlyBirdPriceStruck": "Early-bird price",
+    "sharedWith": "Shared with the",
+    "chooseDay": "Choose a day",
+    "stepperLabelSuffix": "quantity",
+    "fewer": "One fewer",
+    "more": "One more",
+    "poolTitle": "Early-bird tickets left",
+    "poolText": "One pool of 500 early-bird tickets is shared by the Weekend Pass and the Day Pass. The early bird ends when the pool sells out.",
+    "poolOutTitle": "Early bird sold out",
+    "poolOutText": "All 500 early-bird tickets, shared by the Weekend Pass and the Day Pass, have sold. Both passes are now at their normal price.",
+    "sessionNotOpen": "Booking for this session is not open yet.",
+    "timeTba": "Time to be announced",
+    "presenterNone": "Presenters will be announced here",
+    "sections": {
+      "thursday": "Thursday evening",
+      "passes": "Show passes",
+      "programme": "Programme",
+      "sessions": "Workshop sessions"
+    },
+    "beforeYouVisit": "Before you visit"
+  },
+  "dataGaps": {
+    "R7": "Sections with numbers that have no real source (the 500 pool total, the 300 weekend ceiling, the 1000 per-day ceiling, workshop 10 places, symposium/WOSA 80) are shown ONLY if the number is a real stored value (ticketType.capacity/releasedQuantity or Firestore sold counts). The pool total in poolText is a CMS/Firestore-derived value; where it is not available the banner and the pool wording are not rendered at all."
+  }
+}

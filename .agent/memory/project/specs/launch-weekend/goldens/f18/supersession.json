@@ -5,6 +5,36 @@
    "file": "contracts/checks/launch-weekend/f12/check-c-hub-index.mjs",
    "reason": "F12-A4 measured the Explore index on the hub (structure, groups, geometry at 1280/1920/1024). F18 removes the index from the hub (R74 #2), so nothing is left to measure. RETIRED header added; it was in the F17-A12 chain, and F18-A12 does not run it.",
    "replacedBy": "F17 check-m-index (amended) asserts hub absent, 16 inner routes present, same destination set, aria-current, index last"
+  },
+  {
+   "file": "contracts/checks/launch-weekend/f16/check-a-copy.mjs",
+   "reason": "F16-A1 pinned the F16 hub copy (audience index, Visit rows, captions) that the v13 keepsake hub replaces. RETIRED header added; F18-A12 does not run it.",
+   "replacedBy": "F18-A27 (builder), A28 (components), A29 (hub live), A23/A24 (checkout screen)"
+  },
+  {
+   "file": "contracts/checks/launch-weekend/f16/check-b-index.mjs",
+   "reason": "F16-A2 pinned the F16 audience index on the hub; v13 replaces it with the \"Before you visit\" nav. RETIRED header added; F18-A12 does not run it.",
+   "replacedBy": "F18-A27 (builder), A28 (components), A29 (hub live), A23/A24 (checkout screen)"
+  },
+  {
+   "file": "contracts/checks/launch-weekend/f16/check-c-rows.mjs",
+   "reason": "F16-A3 pinned the F16 dual-price catalogue rows and sticky \"Estimated total\" bar on /conferences and /workshops; the v13 keepsake cards replace them. RETIRED header added; F18-A12 does not run it.",
+   "replacedBy": "F18-A27 (builder), A28 (components), A29 (hub live), A23/A24 (checkout screen)"
+  },
+  {
+   "file": "contracts/checks/launch-weekend/f16/check-d-render.mts",
+   "reason": "F16-A4 rendered the F16 row component in fixtures; the component is replaced. RETIRED header added; F18-A12 does not run it.",
+   "replacedBy": "F18-A27 (builder), A28 (components), A29 (hub live), A23/A24 (checkout screen)"
+  },
+  {
+   "file": "contracts/checks/launch-weekend/f16/check-f-cards.mjs",
+   "reason": "F16-A6 pinned the old ticket-card photo and caption rules (ticketCardPhotos.exempt stays false at base); v13 stub photos are a third image role owned by F18-A29. RETIRED header added; F18-A12 does not run it.",
+   "replacedBy": "F18-A27 (builder), A28 (components), A29 (hub live), A23/A24 (checkout screen)"
+  },
+  {
+   "file": "contracts/checks/launch-weekend/f18/check-h-catalogue.mjs, check-i-catalogue-render.mts, check-q-hero-mobile.mjs, check-r-not-found.mjs and goldens/f18/catalogue-fixtures.json",
+   "reason": "F18 spec checks deleted before any dev ran them: the catalogue rows (item 6) are replaced by the v13 keepsake system; the hub mobile hero (R80) and NOS not-found (R63) were dropped from F18 by the lead.",
+   "replacedBy": "F18-A27 to A30"
   }
  ],
  "rebased": [
@@ -47,7 +77,16 @@
   },
   {
    "file": "contracts/checks/launch-weekend/f7/check-d-ticket-form.mjs",
-   "reason": "Pinned the 'Estimated total:' paragraph and the 'Estimated total' text in the live region. R62 makes the label 'Total' (one word, no estimate) in the live region beside Buy. The amended check finds the aria-live=polite block containing 'Total' (static) and the [data-catalogue-total] form (runtime). Buy-disabled-at-0, cartError, title and banner rules unchanged."
+   "reason": "Pinned the 'Estimated total:' paragraph and the 'Estimated total' text in the live region. R62 makes the label 'Total' (one word, no estimate) in the live region beside Buy. The amended check finds the aria-live=polite block containing 'Total' (static) and the [data-catalogue-total] form (runtime). Buy-disabled-at-0, cartError, title and banner rules unchanged. RE-AMENDED (F18b vote 2): the Buy button is ENABLED at quantity 0 and shows the inline hint \"Choose at least one ticket\" ([data-buy-hint]); the disabled-at-0 expression and the disabled-reason rule are removed. F18-A23 and A24 own the behaviour."
+  },
+  {
+   "file": "contracts/checks/nos-own-brand-chrome/f3/check-f3-imagery.mjs (stub photos)",
+   "reason": "Images inside [data-ticket-stub] (the v13 keepsake ticket stubs) are excluded from the hero-photo rules: a third image role beside the hero photo and the long-form break, ticket routes only, the five production photos only. Everything else in that check is unchanged.",
+   "replacedBy": "F18-A29 (check-t-hub-live.mjs) owns the stub photo rule: goldens/f18b/v13-photo-map.json"
+  },
+  {
+   "file": "contracts/checks/nos-own-brand-chrome/f3/check-f3-tickets.mjs",
+   "reason": "NOT edited. It pins the old hero fan; the v13 hero fan keeps the [data-nos-ticket-fan] hook. If it measures the old fan geometry and goes red in the F18b build, the dev stops and the lead decides the amendment (spec section 9)."
   }
  ],
  "notRerunInF18": [
@@ -65,7 +104,7 @@
   }
  ],
  "stillGated": {
-  "note": "The F17 checks measured against the build rather than a base remain in the F18 gate (F18-A12): F12 axis (check-k-axis), hub hero and hub index, inner hero, symposium F12, F16 copy and index, F17-A4 hub, A5 footer, A6 sponsors, A7 symposium, A8 render, A17 members, A19 explore index, A20 key dates, and the surviving F3 imagery, tickets and rhythm checks."
+  "note": "The F17 checks measured against the build rather than a base remain in the F18 gate (F18-A12): F12 axis (check-k-axis), hub hero and hub index, inner hero, symposium F12, F16 copy and index, F17-A4 hub, A5 footer, A6 sponsors, A7 symposium, A8 render, A17 members, A19 explore index, A20 key dates, and the surviving F3 imagery, tickets and rhythm checks. The F16 hub checks are no longer in that list (retired above)."
  },
  "notGatedStillRed": {
   "note": "Unchanged from goldens/f17/supersession.json not_gated_already_red_on_41a7a08f except check-labels-static, which F18 fixed.",

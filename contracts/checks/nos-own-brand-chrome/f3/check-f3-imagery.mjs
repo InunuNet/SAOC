@@ -7,13 +7,14 @@
 // The emblem is never a photo substitute. No stock flower anywhere else: not in <img>, not in CSS backgrounds, not in preloads.
 // Measured over every route (17 + archive years + public vendor sub-routes) at 1280 and 1440 (grid) and 390.
 // AMENDED by launch-weekend F18 (goldens/f18/supersession.json): an <img> inside [data-nos-image-break] is a long-form image break, a second, separate role from the hero photo.
+// AMENDED by launch-weekend F18b (goldens/f18/supersession.json): an <img> inside [data-ticket-stub] is a keepsake-ticket stub photo, a third, separate role (ticket routes only; the five production photos, see goldens/f18b/v13-photo-map.json).
 // Its own rule (each stock photo at most once as a break, never on the route whose hero shows it) is asserted by F18-A2 (launch-weekend/f18/check-b-imagery.mjs); the hero rules here are unchanged.
 import { allRoutes, assetPath, STOCK_PHOTO_RE, readGolden, main, openPage, withBrowser, VP_DESKTOP, VP_PHONE, rgbOf, rgbNear, BLACK_RGB, ROYAL_RGB } from './_f3lib.mjs';
 
 function measure() {
   const hero = document.querySelector('[data-nos-hero]');
   const R = (e) => { const r = e.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top + scrollY, width: r.width }; };
-  const imgs = [...document.querySelectorAll('img, source')].filter((e) => !e.closest('#nh, #nd, #nf, [data-nos-image-break]')).map((e) => ({
+  const imgs = [...document.querySelectorAll('img, source')].filter((e) => !e.closest('#nh, #nd, #nf, [data-nos-image-break], [data-ticket-stub]')).map((e) => ({
     src: e.getAttribute('src') ?? e.getAttribute('srcset') ?? '',
     cur: e.currentSrc || '',
     inHero: !!e.closest('[data-nos-hero]'),
@@ -45,7 +46,7 @@ function measure() {
   const wcs = wrap ? getComputedStyle(wrap) : null;
   // Rendered references only (<img>/<picture><source> sources and image preloads). The serialized document also carries the RSC flight payload and
   // not-found shell as <script> text, which names the photo map without rendering any photo, so it is not counted.
-  const rendered = [...document.querySelectorAll('img, source, link[rel="preload"][as="image"]')].filter((e) => !e.closest('#nh, #nd, #nf, [data-nos-image-break]')).map((e) => [e.getAttribute('src'), e.getAttribute('srcset'), e.getAttribute('imagesrcset'), e.getAttribute('href')].filter(Boolean).join(' ')).join(' ');
+  const rendered = [...document.querySelectorAll('img, source, link[rel="preload"][as="image"]')].filter((e) => !e.closest('#nh, #nd, #nf, [data-nos-image-break], [data-ticket-stub]')).map((e) => [e.getAttribute('src'), e.getAttribute('srcset'), e.getAttribute('imagesrcset'), e.getAttribute('href')].filter(Boolean).join(' ')).join(' ');
   return {
     vw: document.documentElement.clientWidth,
     variant: hero?.getAttribute('data-nos-hero-variant') ?? null,

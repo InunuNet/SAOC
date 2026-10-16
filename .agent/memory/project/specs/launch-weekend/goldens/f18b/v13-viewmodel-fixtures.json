@@ -1,0 +1,322 @@
+{
+  "_note": "Pure builder fixtures for lib/data/ticket-card-view-models.ts buildTicketCardViewModels(input) -> { cards, pool }. Numbers here are test inputs, never page copy. The early-bird pool is the capacityPool 'eb' shared by weekend-pass-early-bird and early-bird (total = the smallest effective capacity of its members, sold = sum of member sold x headcountPerUnit). Day pass per-day total = the type's effective capacity (capacity, or releasedQuantity when smaller). A missing type yields no card for that product; an unknown count yields null and renders nothing (R7).",
+  "showDays": [
+    "2027-09-24",
+    "2027-09-25",
+    "2027-09-26"
+  ],
+  "types": [
+    {
+      "slug": "vip",
+      "price": 300,
+      "regularPrice": null,
+      "capacity": 200,
+      "releasedQuantity": null,
+      "capacityPool": null,
+      "headcountPerUnit": 1
+    },
+    {
+      "slug": "sunset-cocktails-single",
+      "price": 800,
+      "regularPrice": null,
+      "capacity": 100,
+      "releasedQuantity": null,
+      "capacityPool": null,
+      "headcountPerUnit": 1
+    },
+    {
+      "slug": "weekend-pass-early-bird",
+      "price": 360,
+      "regularPrice": 380,
+      "capacity": 500,
+      "releasedQuantity": null,
+      "capacityPool": "eb",
+      "headcountPerUnit": 1
+    },
+    {
+      "slug": "weekend-pass",
+      "price": 380,
+      "regularPrice": null,
+      "capacity": 300,
+      "releasedQuantity": null,
+      "capacityPool": null,
+      "headcountPerUnit": 1
+    },
+    {
+      "slug": "early-bird",
+      "price": 120,
+      "regularPrice": 150,
+      "capacity": 500,
+      "releasedQuantity": null,
+      "capacityPool": "eb",
+      "headcountPerUnit": 1
+    },
+    {
+      "slug": "day-visitor",
+      "price": 150,
+      "regularPrice": null,
+      "capacity": 1000,
+      "releasedQuantity": null,
+      "capacityPool": null,
+      "headcountPerUnit": 1
+    }
+  ],
+  "cases": [
+    {
+      "name": "pool open",
+      "soldByType": {
+        "weekend-pass-early-bird": 100,
+        "early-bird": 88
+      },
+      "soldByDay": null,
+      "expect": {
+        "pool": {
+          "remaining": 312,
+          "total": 500
+        },
+        "weekend": {
+          "slug": "weekend-pass-early-bird",
+          "state": "available",
+          "price": 360,
+          "regularPrice": 380,
+          "scarcity": {
+            "remaining": 312,
+            "total": 500,
+            "label": "early-bird left"
+          }
+        },
+        "day": {
+          "slug": "early-bird",
+          "state": "available",
+          "price": 120,
+          "regularPrice": 150,
+          "scarcity": {
+            "remaining": 312,
+            "total": 500,
+            "label": "early-bird left"
+          },
+          "days": [
+            {
+              "day": "2027-09-24",
+              "state": "available",
+              "remaining": null,
+              "total": null
+            },
+            {
+              "day": "2027-09-25",
+              "state": "available",
+              "remaining": null,
+              "total": null
+            },
+            {
+              "day": "2027-09-26",
+              "state": "available",
+              "remaining": null,
+              "total": null
+            }
+          ]
+        },
+        "vip": {
+          "slug": "vip",
+          "state": "available",
+          "price": 300,
+          "scarcity": {
+            "remaining": 200,
+            "total": 200,
+            "label": "places left"
+          }
+        }
+      }
+    },
+    {
+      "name": "pool low (8%)",
+      "soldByType": {
+        "weekend-pass-early-bird": 400,
+        "early-bird": 60
+      },
+      "soldByDay": null,
+      "expect": {
+        "pool": {
+          "remaining": 40,
+          "total": 500
+        },
+        "weekend": {
+          "slug": "weekend-pass-early-bird",
+          "state": "low"
+        }
+      }
+    },
+    {
+      "name": "pool exhausted: regular SKUs take the slot",
+      "soldByType": {
+        "weekend-pass-early-bird": 300,
+        "early-bird": 200,
+        "weekend-pass": 214
+      },
+      "soldByDay": null,
+      "expect": {
+        "pool": {
+          "remaining": 0,
+          "total": 500
+        },
+        "weekend": {
+          "slug": "weekend-pass",
+          "state": "available",
+          "price": 380,
+          "regularPrice": null,
+          "scarcity": {
+            "remaining": 86,
+            "total": 300,
+            "label": "places left"
+          }
+        },
+        "day": {
+          "slug": "day-visitor",
+          "state": "available",
+          "price": 150,
+          "regularPrice": null,
+          "scarcity": null
+        }
+      }
+    },
+    {
+      "name": "regular weekend pass sold out",
+      "soldByType": {
+        "weekend-pass-early-bird": 500,
+        "weekend-pass": 300
+      },
+      "soldByDay": null,
+      "expect": {
+        "weekend": {
+          "slug": "weekend-pass",
+          "state": "soldOut"
+        }
+      }
+    },
+    {
+      "name": "per-day counts from real sold-by-day",
+      "soldByType": {
+        "weekend-pass-early-bird": 500
+      },
+      "soldByDay": {
+        "day-visitor": {
+          "2027-09-24": 942,
+          "2027-09-25": 1000,
+          "2027-09-26": 95
+        }
+      },
+      "expect": {
+        "day": {
+          "slug": "day-visitor",
+          "state": "available",
+          "days": [
+            {
+              "day": "2027-09-24",
+              "state": "low",
+              "remaining": 58,
+              "total": 1000
+            },
+            {
+              "day": "2027-09-25",
+              "state": "soldOut",
+              "remaining": 0,
+              "total": 1000
+            },
+            {
+              "day": "2027-09-26",
+              "state": "available",
+              "remaining": 905,
+              "total": 1000
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "every day sold out -> card soldOut",
+      "soldByType": {
+        "weekend-pass-early-bird": 500
+      },
+      "soldByDay": {
+        "day-visitor": {
+          "2027-09-24": 1000,
+          "2027-09-25": 1000,
+          "2027-09-26": 1000
+        }
+      },
+      "expect": {
+        "day": {
+          "slug": "day-visitor",
+          "state": "soldOut"
+        }
+      }
+    },
+    {
+      "name": "price null -> pricePending",
+      "typesOverride": {
+        "vip": {
+          "price": null
+        }
+      },
+      "soldByType": {},
+      "soldByDay": null,
+      "expect": {
+        "vip": {
+          "slug": "vip",
+          "state": "pricePending",
+          "price": null
+        }
+      }
+    },
+    {
+      "name": "no capacity -> no scarcity",
+      "typesOverride": {
+        "weekend-pass": {
+          "capacity": null
+        }
+      },
+      "soldByType": {
+        "weekend-pass-early-bird": 500
+      },
+      "soldByDay": null,
+      "expect": {
+        "weekend": {
+          "slug": "weekend-pass",
+          "state": "available",
+          "scarcity": null
+        }
+      }
+    },
+    {
+      "name": "sold above capacity never goes negative",
+      "soldByType": {
+        "vip": 260
+      },
+      "soldByDay": null,
+      "expect": {
+        "vip": {
+          "slug": "vip",
+          "state": "soldOut",
+          "scarcity": {
+            "remaining": 0,
+            "total": 200,
+            "label": "places left"
+          }
+        }
+      }
+    },
+    {
+      "name": "missing type yields no card",
+      "omitTypes": [
+        "sunset-cocktails-single"
+      ],
+      "soldByType": {},
+      "soldByDay": null,
+      "expect": {
+        "absent": [
+          "sunset"
+        ]
+      }
+    }
+  ]
+}

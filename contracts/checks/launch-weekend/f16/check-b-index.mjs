@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// RETIRED by launch-weekend F18 (goldens/f18/supersession.json): replaced by the v13 keepsake ticket checks; no gate runs this file.
 // A2: audience index (R31 #1b). Four anchors directly under the hero, labels and order from tokens.json (each label's words appear in
 // components/chrome/nav-config.ts), hrefs resolve to unique group ids that each contain the existing heading, one landmark named by the
 // h1 text. Geometry: 2x2 at 390 with equal cells, every chip >=44px tall and fully above the fold (bottom <= 844); one row from 1024.

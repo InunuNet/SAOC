@@ -34,3 +34,11 @@ export async function fetchHtml(route) {
   const res = await fetch(`${BASE}${route}`, { headers: httpAuth() });
   return { status: res.status, html: await res.text() };
 }
+
+// F18-A11: every (route, width) the critique evidence must cover: the page routes at 390/1280 plus the keepsake ticket routes at the five v13 widths.
+export function critiquePairs() {
+  const pairs = new Map();
+  for (const route of T.critique.routes) for (const w of T.critique.viewports) pairs.set(`${w}-${route.split('/').pop()}`, { route, w });
+  for (const route of T.critique.ticketRoutes) for (const w of T.critique.ticketViewports) pairs.set(`${w}-${route.split('/').pop()}`, { route, w });
+  return [...pairs.values()];
+}
