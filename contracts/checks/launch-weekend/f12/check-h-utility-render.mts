@@ -33,12 +33,24 @@ const nos = render(UtilityBar, { show, variant: 'nos' });
 const pillBase = /<a\b[^>]*href="\/national-show"[^>]*>[^<]*<\/a>/.exec(saocBase)?.[0];
 if (!pillBase) problems.push('could not find the show pill in the base markup');
 else {
-  const cls = /class="([^"]*)"/.exec(pillBase)?.[1];
+  const baseTokens = (/class="([^"]*)"/.exec(pillBase)?.[1] ?? '').split(/\s+/).filter(Boolean);
+  const GATING = (t: string) => t === 'hidden' || /^min-\[[^\]]+\]:(inline|block|flex)/.test(t) || /^(sm|md|lg|xl):(inline|block|flex)/.test(t);
+  const DISPLAY = (t: string) => ['inline-block', 'inline-flex', 'inline', 'block', 'flex'].includes(t);
   const nosPillRe = /<a\b[^>]*href="\/"[^>]*>saoc\.co\.za<\/a>/;
-  const replaced = nos.replace(nosPillRe, pillBase);
-  if (replaced === nos) problems.push('nos variant has no <a href="/">saoc.co.za</a> pill');
-  else if (replaced !== saocBase) problems.push('nos variant differs from the SAOC bar in more than the pill (markup, tokens and styles must be reused)');
-  if (cls && !(nosPillRe.exec(nos)?.[0] ?? '').includes(`class="${cls}"`)) problems.push('the saoc.co.za pill does not carry the className of the pill it replaces');
+  const nosPill = nosPillRe.exec(nos)?.[0];
+  if (!nosPill) problems.push('nos variant has no <a href="/">saoc.co.za</a> pill');
+  else {
+    const nosTokens = (/class="([^"]*)"/.exec(nosPill)?.[1] ?? '').split(/\s+/).filter(Boolean);
+    if (nosTokens.some(GATING)) problems.push(`the saoc.co.za pill is still width-gated (${nosTokens.filter(GATING).join(' ')}); it must show at every width`);
+    if (!nosTokens.some(DISPLAY)) problems.push('the saoc.co.za pill has no display class (inline-block expected)');
+    const want = baseTokens.filter((t) => !GATING(t) && !DISPLAY(t)).sort().join(' ');
+    const got = nosTokens.filter((t) => !GATING(t) && !DISPLAY(t)).sort().join(' ');
+    if (want !== got) problems.push(`the saoc.co.za pill style differs from the replaced pill: "${got}" vs "${want}"`);
+    const expected = nos.replace(nosPill, pillBase);
+    const rest = (h: string) => h.replace(/<a\b[^>]*href="\/(national-show)?"[^>]*>[^<]*<\/a>/, '<PILL/>');
+    if (rest(nos) !== rest(saocBase)) problems.push('nos variant differs from the SAOC bar in more than the pill (markup, tokens and styles must be reused)');
+    void expected;
+  }
 }
 if (/National Show/.test(nos)) problems.push('nos variant still contains "National Show"');
 if (!nos.includes('href="mailto:info@saoc.co.za"') || !nos.includes('Join a society') || !nos.includes('href="/societies"')) problems.push('nos variant lost the email or "Join a society"');

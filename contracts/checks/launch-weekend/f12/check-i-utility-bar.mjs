@@ -15,7 +15,7 @@ function snap(arg) {
   const nodes = [bar, ...bar.querySelectorAll('*')];
   const els = nodes.map((e) => {
     const cs = getComputedStyle(e);
-    const o = { tag: e.tagName.toLowerCase(), cls: String(e.getAttribute('class') ?? ''), href: e.getAttribute('href'), text: e.children.length ? '' : (e.textContent ?? '').replace(/\s+/g, ' ').trim() };
+    const o = { w: e.getBoundingClientRect().width, h: e.getBoundingClientRect().height, top: e.getBoundingClientRect().top, tag: e.tagName.toLowerCase(), cls: String(e.getAttribute('class') ?? ''), href: e.getAttribute('href'), text: e.children.length ? '' : (e.textContent ?? '').replace(/\s+/g, ' ').trim() };
     for (const p of arg.keys) o[p] = cs[p];
     return o;
   });
@@ -36,7 +36,7 @@ const isPill = (e) => e.tag === 'a' && e.href === '/national-show';
 
 await main('F12-A14 utility bar', async (r) => {
   await withBrowser(async (browser) => {
-    for (const vp of [VP.desktop, VP.phone]) {
+    for (const vp of [VP.desktop, VP.phone, { width: 360, height: 780 }]) {
       const saoc = await openPage(browser, vp, '/about');
       const ref = await saoc.page.evaluate(snap, ARG);
       await saoc.ctx.close();
@@ -67,14 +67,21 @@ await main('F12-A14 utility bar', async (r) => {
           m.els.forEach((e, i) => {
             const o = ref.els[i];
             const where = `${tag}: bar element ${i} <${e.tag}>`;
-            if (e.tag !== o.tag || e.cls !== o.cls) r.fail(`${where} class differs from the SAOC bar ("${e.cls}" vs "${o.cls}")`);
-            for (const k of STYLE_KEYS) if (e[k] !== o[k]) { r.fail(`${where} ${k} ${e[k]} vs SAOC ${o[k]}`); break; }
-            if (isPill(o)) {
+            const pill = isPill(o);
+            if (!pill && (e.tag !== o.tag || e.cls !== o.cls)) r.fail(`${where} class differs from the SAOC bar ("${e.cls}" vs "${o.cls}")`);
+            for (const k of STYLE_KEYS) if (e[k] !== o[k] && !(pill && k === 'display')) { r.fail(`${where} ${k} ${e[k]} vs SAOC ${o[k]}`); break; }
+            if (pill) {
               if (e.href !== U.pill.href || e.text !== U.pill.label) r.fail(`${where} is "${e.text}" -> ${e.href}, want pill "${U.pill.label}" -> ${U.pill.href}`);
-              if ((e.display === 'none') !== (o.display === 'none')) r.fail(`${where} pill visibility differs from the SAOC bar at this width`);
+              if (e.display === 'none' || !(e.w > 0)) r.fail(`${where} the saoc.co.za pill is not visible at ${vp.width}px (ruling: visible at every width)`);
             } else if (e.href !== o.href || e.text !== o.text) r.fail(`${where} href/text "${e.href}" "${e.text}" differ from the SAOC bar`);
           });
         }
+        // one row, no wrap, no overflow, every target at least 24px (44px preferred)
+        const targets = m.els.filter((e) => e.tag === 'a' && e.display !== 'none');
+        if (targets.length !== 3) r.fail(`${tag}: ${targets.length} visible links in the bar, want 3 (email, saoc.co.za, Join a society)`);
+        if (new Set(targets.map((t) => Math.round(t.top / 4))).size > 1) r.fail(`${tag}: the bar's links wrap onto more than one row`);
+        for (const t of targets) { if (t.h < 24 - 0.5 || t.w < 24 - 0.5) r.fail(`${tag}: target "${t.text}" is ${t.w.toFixed(0)}x${t.h.toFixed(0)}px, want at least 24px (44px preferred)`); if (t.h < 44) r.note(`${tag}: "${t.text}" is ${t.h.toFixed(0)}px tall (44px preferred, 24px minimum met)`); }
+        if (m.barBox.height > 56) r.fail(`${tag}: the bar is ${m.barBox.height.toFixed(0)}px tall, it has wrapped`);
         if (!m.els.some((e) => e.href === U.kept.email) || !m.els.some((e) => e.href === U.kept.join.href && e.text === U.kept.join.label)) r.fail(`${tag}: email or "Join a society" missing`);
         if (m.els.some((e) => /National Show/.test(e.text))) r.fail(`${tag}: the "National Show" pill text is still in the bar`);
         if (!m.firstFocusable || m.firstFocusable.href !== '#main-content') r.fail(`${tag}: first focusable element is ${JSON.stringify(m.firstFocusable)}, want the skip link`);

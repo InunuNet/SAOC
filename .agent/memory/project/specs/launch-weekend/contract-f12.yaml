@@ -48,7 +48,7 @@ features:
 #       CategoryTicketsPage, shared with /national-show/tickets, so any change sits behind an opt-in prop and tickets stays on the F3 container (measured).
 #   UTILITY BAR (Brad, direct, with screenshot): keep the SAOC top utility bar on the NOS site. Reuse components/chrome/UtilityBar.tsx via an optional variant prop (default output byte-identical),
 #       mounted from app/(marketing)/layout.tsx above NosHeader on every /national-show/* route. The "19th National Show · Sept 2027" pill becomes a pill linking to "/" labelled "saoc.co.za" (Brad's wording)
-#       with the SAME className. Email and "Join a society" stay. Skip link stays first focusable; NOS header stays sticky. F13 (landing first) removes the SAOC header Tickets CTA: checks expect none.
+#       with the same pill style but visible at every width (ruling: the width gating is dropped so phones keep a way back). Email and "Join a society" stay. Skip link stays first focusable; NOS header stays sticky. F13 (landing first) removes the SAOC header Tickets CTA: checks expect none.
 #   F12_BASE_REF: set it to the commit F12's dev branched from (F3 and F13 beneath it), else the scope diff would count their changes.
 # CONFLICTS RESOLVED (f12-spec.md): (a) r5 [&_p]:max-w-[60ch] on vendors/exhibitors survives (files unchanged + measured). (b) body size untouched (no font-size on running copy in the diff).
 #   (c) prose-template pages = programme, symposium, wosa-conference, sa-exhibitors, international-guests, sponsors + the FAQ container; conferences/workshops take the 1280 container and 60ch measure (no prose grid).
@@ -102,8 +102,8 @@ assertions:
       description: Type check passes
       command: pnpm type-check
     - id: F12-A13
-      description: The real UtilityBar module server-rendered - default and variant saoc output byte-identical to the base file's render; variant nos differs only in the show pill (label saoc.co.za, href /, the replaced pill's className), keeps the email and Join a society, no National Show text
+      description: The real UtilityBar module server-rendered - default and variant saoc output byte-identical to the base file's render; variant nos differs only in the show pill (label saoc.co.za, href /, the replaced pill's style minus its width gating: no hidden / min-[900px] classes, an inline-block display class instead), keeps the email and Join a society, no National Show text
       command: pnpm exec tsx contracts/checks/launch-weekend/f12/check-h-utility-render.mts
     - id: F12-A14
-      description: Utility bar measured on all 17 NOS routes at 1280 and 390 - exactly one, before the NOS header in the DOM and not overlapping it, element-for-element the same classes and computed styles as the SAOC bar on /about except the pill (saoc.co.za to /, same visibility rule), email and Join kept, skip link first focusable and first Tab target, NOS header still sticky at top 0; the four SAOC routes keep the original National Show pill and show no header Tickets CTA
+      description: Utility bar measured on all 17 NOS routes at 1280, 390 and 360 - exactly one, before the NOS header in the DOM and not overlapping it, element-for-element the same classes and computed styles as the SAOC bar on /about except the pill (saoc.co.za to /, visible at every width incl. 390 and 360), one row with no wrap or overflow, every link target at least 24px, email and Join kept, skip link first focusable and first Tab target, NOS header still sticky at top 0; the four SAOC routes keep the original National Show pill and show no header Tickets CTA
       command: node --import tsx/esm contracts/checks/launch-weekend/f12/check-i-utility-bar.mjs

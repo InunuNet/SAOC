@@ -212,7 +212,9 @@
       "label": "saoc.co.za",
       "href": "/",
       "sameClassNameAsReplacedPill": true,
-      "visibleFromWidth": 900
+      "visibleFromWidth": 0,
+      "widthGating": "dropped in the nos variant (ruling 2026-10-16): visible at every width",
+      "dropClasses": "hidden, min-[900px]:inline-block (replaced by inline-block)"
     },
     "kept": {
       "email": "mailto:info@saoc.co.za",
@@ -230,6 +232,10 @@
       [
         390,
         844
+      ],
+      [
+        360,
+        780
       ]
     ],
     "saocRoutes": [
@@ -238,6 +244,11 @@
       "/societies",
       "/contact"
     ],
-    "saocHeaderTicketsCta": "absent (F13 removes it; F12 expects none on SAOC pages)"
+    "saocHeaderTicketsCta": "absent (F13 removes it; F12 expects none on SAOC pages)",
+    "targets": {
+      "minPx": 24,
+      "preferredPx": 44,
+      "oneRow": true
+    }
   }
 }
