@@ -38,10 +38,15 @@ export function CartAttendeeFields({
       {activeTypes.map((type) => {
         const rows = attendeesByType[type.slug] ?? [];
         return (
-          <fieldset key={type.slug} className="space-y-3">
-            <legend className="font-mono text-[12px] tracking-[0.16em] text-muted">
+          <div
+            key={type.slug}
+            role="group"
+            aria-label={`${type.name} attendees`}
+            className="space-y-3"
+          >
+            <p className="font-mono text-[12px] tracking-[0.16em] text-muted">
               {type.name} attendees
-            </legend>
+            </p>
             {rows.map((row, index) => {
               const key = attendeeRowKey(type.slug, index);
               const rowErrors = errors[key] ?? {};
@@ -71,7 +76,7 @@ export function CartAttendeeFields({
                 </div>
               );
             })}
-          </fieldset>
+          </div>
         );
       })}
     </div>

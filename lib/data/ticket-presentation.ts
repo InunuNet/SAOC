@@ -209,6 +209,8 @@ export const TICKET_COPY = {
   admitSession: 'One place',
   buy: 'Buy ticket',
   buyHint: 'Choose at least one ticket',
+  continuePayment: 'Continue to payment',
+  provisionalPricing: 'Provisional pricing — subject to change',
   dayPassFrom: 'from',
   salesClosedLabel: 'Sales closed',
   salesClosedLink: 'Be the first to know',

@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { NosHero } from '@/components/nos/NosHero';
 import { SalesClosedNotice, TicketPurchaseForm } from '@/components/tickets';
 import type { TicketTypeCardData } from '@/components/tickets';
+import { TicketCard } from '@/components/tickets/keepsake';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import {
   activeShowWindowQuery,
@@ -15,6 +16,7 @@ import {
 import { getAdmissionSoldOutBySlug } from '@/lib/data/admission-availability';
 import { CART_MAX_LINE_ITEMS } from '@/lib/cart';
 import { resolveEffectivePrice } from '@/lib/checkout-reservation';
+import { productIdForSlug } from '@/lib/data/ticket-presentation';
 import { buildShowWindow, computeShowDays } from '@/lib/show-window-lookup';
 import { resolveActiveShow } from '@/lib/show-resolution';
 
@@ -23,12 +25,10 @@ import { resolveActiveShow } from '@/lib/show-resolution';
 // (Firebase Admin SDK, runtime-only credentials) means this route can never be prerendered.
 export const dynamic = 'force-dynamic';
 
-const FALLBACK_BUY_LABEL = 'Buy Ticket';
 const FALLBACK_SOLD_OUT = 'Sold out';
 const FALLBACK_SALES_CLOSED = 'Ticket sales are not yet open — check back soon.';
 
 interface TicketsPageData {
-  buyButtonLabel?: string | null;
   soldOutMessage?: string | null;
   salesClosedMessage?: string | null;
 }
@@ -115,7 +115,6 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
   );
 
   const salesOpen = salesState?.salesOpen === true;
-  const buyButtonLabel = pageData?.buyButtonLabel ?? FALLBACK_BUY_LABEL;
   const soldOutMessage = pageData?.soldOutMessage ?? FALLBACK_SOLD_OUT;
   const salesClosedMessage = pageData?.salesClosedMessage ?? FALLBACK_SALES_CLOSED;
 
@@ -144,7 +143,9 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
 
   const quantity = parseQuantity(query.quantity);
   const day = typeof query.day === 'string' && showDays.includes(query.day) ? query.day : null;
-  const prefill = quantity ? { quantity, day } : undefined;
+  const productId = productIdForSlug(ticketType.slug);
+  const summaryDay = cardData.requiresDaySelection ? (day ?? showDays[0] ?? null) : null;
+  const purchasable = salesOpen && !cardData.soldOut;
 
   return (
     <>
@@ -155,23 +156,43 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
         className="nk-hero-compact"
       />
 
-      <div className="mx-auto max-w-[560px] px-8 pb-12 pt-6">
+      <div className="mx-auto max-w-[560px] px-8 pb-12 pt-4">
         {!salesOpen ? (
           <SalesClosedNotice message={salesClosedMessage} />
         ) : cardData.soldOut ? (
           <div className="nk-closed" role="status">
             <p className="font-serif text-[20px] text-ink">{soldOutMessage}</p>
           </div>
-        ) : (
+        ) : null}
+        {purchasable && productId ? (
+          <div className="nk-wrap nk-checkout-summary">
+            <TicketCard
+              productId={productId}
+              variant="summary"
+              day={summaryDay}
+              provisionalPrice={cardData.provisional}
+              name={ticketType.name}
+              vm={{
+                slug: ticketType.slug,
+                name: ticketType.name,
+                state: 'available',
+                price: effectivePrice,
+                regularPrice: null,
+                scarcity: null,
+                days: null,
+              }}
+            />
+          </div>
+        ) : null}
+        {purchasable ? (
           <TicketPurchaseForm
             ticketTypes={[cardData]}
-            buyButtonLabel={buyButtonLabel}
-            soldOutMessage={soldOutMessage}
             showDays={showDays}
-            prefill={prefill}
+            initialQuantity={quantity ?? undefined}
+            initialDay={day}
             showTestModeBanner={await viewerIsVerifiedAdmin()}
           />
-        )}
+        ) : null}
       </div>
     </>
   );

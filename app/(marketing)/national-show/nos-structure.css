@@ -1902,6 +1902,106 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     display: inline;
   }
 }
+/* The checkout step (/tickets/<slug>): the read-only summary card, then the form (design-cb FINAL,
+   goldens/f18b/v13-checkout.json). */
+.nos-theme .nk-checkout-summary {
+  margin-bottom: 12px;
+}
+.nos-theme .nk-checkout-summary .nk-main {
+  padding-block: 20px;
+}
+.nos-theme .nk-summary-price {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1.5px solid var(--nk-acc);
+}
+.nos-theme .nk-provisional {
+  margin: 8px 0 0;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink-700);
+}
+.nos-theme .nk-qty {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid var(--nk-rule);
+  border-radius: var(--radius-ticket);
+}
+.nos-theme .nk-qty button {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--nk-ink);
+  font-family: var(--sans);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.nos-theme .nk-qty button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.nos-theme .nk-qty input {
+  width: 56px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  text-align: center;
+  font-family: var(--sans);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--nk-ink);
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.nos-theme .nk-qty input::-webkit-inner-spin-button,
+.nos-theme .nk-qty input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.nos-theme .nk-checkout-total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.nos-theme .nk-checkout-total p {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 18px;
+  color: var(--nk-ink);
+}
+.nos-theme .nk-checkout-total strong {
+  font-variant-numeric: tabular-nums;
+}
+.nos-theme .nk-checkout-total .nk-cta {
+  width: auto;
+  grid-column: auto;
+}
+.nos-theme .nk-hint {
+  margin: 0;
+  min-height: 1.4em;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--primary-800);
+}
+.nos-theme .nk-card[data-ticket-variant='summary'] .nk-ticket {
+  --stub: 112px;
+}
+@container (min-width: 470px) {
+  .nos-theme .nk-card[data-ticket-variant='summary'] .nk-ticket {
+    --stub: 168px;
+  }
+  .nos-theme .nk-card[data-ticket-variant='summary'] .nk-stub {
+    min-height: 0;
+  }
+}
 /* F18-KEEPSAKE-END */
 /* Hub "What it is" row and its figures (v4 about and figures): prose and figures share a
    baseline, each figure sits under a hairline, two per row. */

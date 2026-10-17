@@ -6,7 +6,7 @@
 // drives the stub numeral and the checkout link.
 
 import Link from 'next/link';
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 import { formatShowDayShort, showDayStub } from '@/lib/show-day-format';
 import {
@@ -17,8 +17,9 @@ import {
 } from '@/lib/data/ticket-presentation';
 
 import { BuyBlock } from './BuyBlock';
+import { CHECKOUT_DAY_EVENT } from './checkout-day';
 import { countDisplay, daySubline, firstSelectableDay, isDayClosed } from './days';
-import { TicketCount, TicketStub } from './parts';
+import { TicketCount, TicketPrice, TicketStub } from './parts';
 import type { CountDisplay, KeepsakeCardVm, KeepsakeDay } from './types';
 
 export interface TicketCardProps {
@@ -32,6 +33,13 @@ export interface TicketCardProps {
   regularName?: string | null;
   // Beta preview: counts from provisional totals show, marked "Not yet confirmed". Public: hidden.
   showProvisional?: boolean;
+  // `summary` is the checkout page's read-only card: the same stub, name, when-line and price,
+  // with no stepper, no day picker and no button.
+  variant?: 'default' | 'summary';
+  // Summary only: the day the checkout opened on (it follows the form's day choice), and
+  // whether the price is provisional (its note sits under the price).
+  day?: string | null;
+  provisionalPrice?: boolean;
 }
 
 interface DayPickerProps {
@@ -92,14 +100,29 @@ export function TicketCard({
   partnerName,
   regularName,
   showProvisional = false,
+  variant = 'default',
+  day: summaryDay = null,
+  provisionalPrice = false,
 }: TicketCardProps) {
   const product = TICKET_PRODUCTS[productId];
   const name = nameProp ?? vm.name ?? product.name;
   const detailHref = TICKET_DETAIL_HREFS[productId];
   const groupName = useId();
-  const [day, setDay] = useState<string | null>(() => firstSelectableDay(vm.days));
+  const summary = variant === 'summary';
+  const [day, setDay] = useState<string | null>(() =>
+    summary ? summaryDay : firstSelectableDay(vm.days)
+  );
 
-  const dayStub = vm.days ? showDayStub(day ?? vm.days[0]?.day ?? '') : null;
+  useEffect(() => {
+    if (!summary) return undefined;
+    function follow(event: Event) {
+      setDay((event as CustomEvent<string>).detail);
+    }
+    window.addEventListener(CHECKOUT_DAY_EVENT, follow);
+    return () => window.removeEventListener(CHECKOUT_DAY_EVENT, follow);
+  }, [summary]);
+
+  const dayStub = vm.days || (summary && day) ? showDayStub(day ?? vm.days?.[0]?.day ?? '') : null;
   const numeral = dayStub ? dayStub.numeral : product.numeral;
   const caption = dayStub ? dayStub.caption : product.caption;
 
@@ -107,6 +130,7 @@ export function TicketCard({
     <article
       id={`ticket-${productId}`}
       data-ticket-card=""
+      data-ticket-variant={summary ? 'summary' : undefined}
       data-ticket-state={vm.state}
       data-ticket-slug={vm.slug}
       aria-label={name}
@@ -126,31 +150,44 @@ export function TicketCard({
         <div data-ticket-body="" className="nk-main">
           <p className="nk-when">{product.when}</p>
           <h3 data-ticket-name="" className="nk-name">
-            {detailHref ? <Link href={detailHref}>{name}</Link> : name}
+            {detailHref && !summary ? <Link href={detailHref}>{name}</Link> : name}
           </h3>
-          {product.theme ? <p className="nk-theme">{product.theme}</p> : null}
-          {product.meta ? <p className="nk-meta">{product.meta}</p> : null}
-          <TicketCount
-            vm={vm}
-            partner={partnerName ?? product.partner}
-            counts={countDisplay(vm.scarcity?.provisional, showProvisional)}
-          />
-          {vm.days ? (
-            <DayPicker
-              groupName={groupName}
-              days={vm.days}
-              chosen={day}
-              onChoose={setDay}
-              showProvisional={showProvisional}
-            />
-          ) : null}
-          <BuyBlock
-            vm={vm}
-            name={name}
-            product={product}
-            day={day}
-            regularName={regularName ?? vm.regularName ?? null}
-          />
+          {product.theme && !summary ? <p className="nk-theme">{product.theme}</p> : null}
+          {product.meta && !summary ? <p className="nk-meta">{product.meta}</p> : null}
+          {summary ? (
+            <div className="nk-summary-price">
+              {vm.price !== null ? (
+                <TicketPrice price={vm.price} each={product.each} muted={false} />
+              ) : null}
+              {provisionalPrice ? (
+                <p className="nk-provisional">{TICKET_COPY.provisionalPricing}</p>
+              ) : null}
+            </div>
+          ) : (
+            <>
+              <TicketCount
+                vm={vm}
+                partner={partnerName ?? product.partner}
+                counts={countDisplay(vm.scarcity?.provisional, showProvisional)}
+              />
+              {vm.days ? (
+                <DayPicker
+                  groupName={groupName}
+                  days={vm.days}
+                  chosen={day}
+                  onChoose={setDay}
+                  showProvisional={showProvisional}
+                />
+              ) : null}
+              <BuyBlock
+                vm={vm}
+                name={name}
+                product={product}
+                day={day}
+                regularName={regularName ?? vm.regularName ?? null}
+              />
+            </>
+          )}
         </div>
       </div>
     </article>
