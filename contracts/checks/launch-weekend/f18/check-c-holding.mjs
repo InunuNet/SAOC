@@ -14,6 +14,7 @@
 //  heading order: /about and /workshops never skip a level (h1 to h3), Athanor review item 3
 //  unsourced hub facts: public /national-show renders none of audit.hubFacts.unsourced anywhere in the HTML (Athanor review item 1; sourced facts are cited in the audit)
 //     PREVIEW half (design-cb P1): on a SHOW_PLACEHOLDER_PREVIEW=true build (PREVIEW_URL, falling back to BASE_URL) each fact group is PRESENT on /national-show inside a [data-placeholder] or R11 'To be confirmed' marker;
+//     the count of [data-placeholder] blocks equals the number of those blocks containing a visible R11 chip (non-zero size, not hidden, not aria-hidden; probe included);
 //     the public build is NOS_BASE (a gate that holds PUBLIC_URL passes NOS_BASE=$PUBLIC_URL). F18_REQUIRE_PREVIEW=1 makes a missing preview URL a failure instead of a note.
 //  routes that supply a body never hold (mustNotHold)
 //  public rule: none of the banned placeholder strings renders on the eight publicNoPlaceholderRoutes (no TBC note, no gap sentence, no "Placeholder copy", no schema preview)
@@ -107,6 +108,18 @@ if (!judgeArchiveShape(dropChrome([good[0], blk({ chrome: true }), good[1], blk(
 if (!judgeArchiveShape([good[0], good[1], blk({ royal: true }), good[2]], SHAPE_STRING).length) throw new Error('probe: an extra planning band is NOT rejected');
 if (!judgeArchiveShape([blk({ hero: true }), blk({ hero: false })], SHAPE_STRING).length) throw new Error('probe: a single-wrapper count of 1 is NOT rejected');
 
+// design-cb: the number of [data-placeholder] blocks equals the number of those blocks that contain a visible R11 chip (pure, so a probe can prove it)
+function judgePlaceholderChips(blocks) {
+  const out = [];
+  if (!blocks.length) out.push('no [data-placeholder] block on the preview hub (the unsourced facts must render marked)');
+  const withChip = blocks.filter((b) => b.chips > 0).length;
+  if (withChip !== blocks.length) out.push(`${blocks.length} [data-placeholder] block(s) but only ${withChip} contain a visible R11 chip (unmarked: ${blocks.filter((b) => !b.chips).map((b) => `"${b.text}"`).join(', ')})`);
+  return out;
+}
+if (judgePlaceholderChips([{ text: 'a', chips: 1 }, { text: 'b', chips: 2 }]).length) throw new Error('probe: marked blocks that all carry a chip are wrongly rejected');
+if (!judgePlaceholderChips([{ text: 'a', chips: 1 }, { text: 'no chip here', chips: 0 }]).length) throw new Error('probe: a [data-placeholder] block without a visible chip is NOT rejected');
+if (!judgePlaceholderChips([]).length) throw new Error('probe: an empty preview hub (nothing marked) is NOT rejected');
+
 await main('F18-A3 holding state and public placeholder rule', async (r) => {
   await withBrowser(async (browser) => {
     const hubPage = await openPage(browser, { width: 1280, height: 800 }, '/national-show');
@@ -134,6 +147,16 @@ await main('F18-A3 holding state and public placeholder rule', async (r) => {
       const resp = await ppage.goto(`${previewBase}/national-show`, { waitUntil: 'networkidle' });
       if (!resp || resp.status() !== 200) r.fail(`preview /national-show: HTTP ${resp?.status()}`);
       else {
+        // design-cb pass condition: every [data-placeholder] block on the hub carries a VISIBLE R11 chip (non-zero size, not hidden, not under aria-hidden)
+        const blocks = await ppage.evaluate(() => [...document.querySelectorAll('main [data-placeholder]')].map((b) => {
+          const chips = [...b.querySelectorAll('*')].filter((e) => !e.children.length && /to be confirmed|placeholder|pending/i.test(e.textContent ?? ''));
+          const visible = chips.filter((e) => {
+            const r = e.getBoundingClientRect(); const cs = getComputedStyle(e);
+            return r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden' && !e.closest('[aria-hidden="true"]');
+          });
+          return { text: (b.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 50), chips: visible.length };
+        }));
+        for (const f of judgePlaceholderChips(blocks)) r.fail(`preview /national-show: ${f}`);
         const res = await ppage.evaluate((groups) => {
           const norm = (x) => (x ?? '').replace(/\s+/g, ' ').toLowerCase();
           return groups.map((g) => {
