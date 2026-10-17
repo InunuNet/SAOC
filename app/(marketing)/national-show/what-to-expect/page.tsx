@@ -248,7 +248,7 @@ export default async function WhatToExpectPage() {
 
       {/* Narrative content sourced verbatim from
           docs/leeann-source/what-to-expect_2026-09-09.md (Drive: "3.1 Info - What to
-          Expect.docx", snapshot 2026-09-09) — the pre-existing sections below (dates,
+          Expect.docx", snapshot 2026-09-09) — the pre-existing sections above (dates,
           hours, admission, food, etc.) are Sanity-driven visitor logistics and stay as
           they are; this section adds the doc's narrative, which the page previously
           carried none of. Do not paraphrase or tighten this copy — see

@@ -114,13 +114,16 @@ export default async function ExhibitorInfoPage() {
   });
   const openQuestions = (info?.openQuestions ?? []).filter((item) => item?.question);
   const entryFormStatus = status.entryForm;
+  const entryFormShown = !(publicMode && markerOf(entryFormStatus) === 'question');
 
   const stepsHeading = 'From deciding to enter, to taking your plants home';
   const chips = [
     keyDates.length > 0 && info?.keyDatesHeading
       ? { href: '#exhibitor-key-dates', label: info.keyDatesHeading }
       : null,
-    info?.entryFormHeading ? { href: '#exhibitor-entry-form', label: info.entryFormHeading } : null,
+    entryFormShown && info?.entryFormHeading
+      ? { href: '#exhibitor-entry-form', label: info.entryFormHeading }
+      : null,
     journey.length > 0 ? { href: '#exhibitor-steps', label: stepsHeading } : null,
     ...sections.map((name) => {
       const heading = info?.[name]?.heading;
@@ -141,7 +144,7 @@ export default async function ExhibitorInfoPage() {
           name: info?.[name]?.heading,
           marker: markerOf(status[name]),
         })),
-        { name: info?.entryFormHeading, marker: markerOf(entryFormStatus) },
+        { name: entryFormShown ? info?.entryFormHeading : null, marker: markerOf(entryFormStatus) },
       ]
     : [];
   const namesFor = (marker: Marker) => [
@@ -220,19 +223,21 @@ export default async function ExhibitorInfoPage() {
           questionLabel={questionLabel}
         />
 
-        <EntryFormLink
-          heading={info?.entryFormHeading}
-          fileUrl={info?.entryFormFileUrl}
-          fileName={info?.entryFormFileName}
-          url={info?.entryFormUrl}
-          entryFormPendingNote={info?.entryFormPendingNote}
-          status={entryFormStatus}
-          headingId="exhibitor-entry-form"
-          hideMarkers={publicMode}
-          pendingLabel={pendingLabel}
-          researchLabel={researchLabel}
-          questionLabel={questionLabel}
-        />
+        {entryFormShown ? (
+          <EntryFormLink
+            heading={info?.entryFormHeading}
+            fileUrl={info?.entryFormFileUrl}
+            fileName={info?.entryFormFileName}
+            url={info?.entryFormUrl}
+            entryFormPendingNote={info?.entryFormPendingNote}
+            status={entryFormStatus}
+            headingId="exhibitor-entry-form"
+            hideMarkers={publicMode}
+            pendingLabel={pendingLabel}
+            researchLabel={researchLabel}
+            questionLabel={questionLabel}
+          />
+        ) : null}
 
         <ExhibitorSteps
           heading={stepsHeading}

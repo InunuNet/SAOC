@@ -9,9 +9,9 @@
 // to the NOS Design ruling.
 //
 // Below 768px the row scrolls. The effect sets the row's scrollLeft so the current item is
-// fully in view with a lead equal to the row gutter (directly, not with scrollIntoView, which can also scroll
-// the page vertically past the hero), and keeps two flags, data-fade-start and
-// data-fade-end, that say which edge hides items; the 24px edge fade shows only there.
+// fully in view with a lead equal to the row gutter (directly, not with scrollIntoView, which
+// can also scroll the page vertically past the hero), and keeps two flags, data-fade-start and
+// data-fade-end, that say which edge hides items; the 40px mask fade shows only there.
 // Without JavaScript the row simply scrolls with no fade, which is safe.
 // =============================================================
 
