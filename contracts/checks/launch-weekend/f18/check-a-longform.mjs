@@ -5,7 +5,7 @@
 //  grid      : DOM order head, aside, body; from 900px two columns 4fr/7fr with a 64px gap, below 900px one column (aside after the lede, above the body); the aside is
 //              position:sticky with a top offset of 62-120px from 900px (and really sticks when the body is tall enough), and is NOT sticky below 900px
 //  body      : paragraphs 16px / 1.55, at most 60ch wide, full-ink (opaque, the --ink token, not an /80 alpha)
-//  facts     : [data-nos-facts] in the aside, labels Dates / Host / Venue / Cycle, values identical to the hub's hero facts (one source)
+//  facts     : [data-nos-facts] in the aside, labels Dates / Host / Venue / Cycle, values identical to the hub's hero facts (one source). /what-to-expect (tokens longform.factsWithoutDates, NOS batch 2) drops Dates from the aside because its logistics block states them: labels Host / Venue / Cycle, the remaining hub values, and the hub month and year present in main text
 //  pull-quote: /about carries exactly one [data-nos-pullquote], the theme line, verbatim from paragraph 2; any other page may carry one only if its text is verbatim in the body
 //  image     : NO [data-nos-image-break] (R16: one photo per route; the F18 break role is retired, long-form-breaks.ts is deleted); exactly 0 on all four routes
 //  headings  : /sa-exhibitors has no template h2 (heading null); no h2 on any of the four routes equals the page h1 (design-cb audit)
@@ -58,6 +58,7 @@ function measure({ S, K }) {
   const a = rc(aside), b = rc(body);
   out.geo = { asideW: a.width, bodyW: b.width, gap: b.left - a.right, asideLeft: a.left, bodyLeft: b.left, asideBottom: a.bottom, bodyTop: b.top, position: cs(aside).position, top: parseFloat(cs(aside).top) };
   const fx = aside.querySelector(S.facts);
+  out.mainText = t(q('main'));
   out.facts = fx ? { labels: [...fx.querySelectorAll('dt')].map(t), values: [...fx.querySelectorAll('dd')].map(t) } : null;
   const pq = qa(S.pullQuote);
   out.pullQuotes = pq.map((e) => ({ text: t(e), inAside: !!e.closest(S.aside) }));
@@ -127,8 +128,15 @@ await main('F18-A1 long-form template', async (r) => {
           // facts
           if (!m.facts) r.fail(`${tag}: no ${L.selectors.facts} in the aside`);
           else {
-            if (JSON.stringify(m.facts.labels) !== JSON.stringify(L.factLabels)) r.fail(`${tag}: fact labels ${JSON.stringify(m.facts.labels)}, want ${JSON.stringify(L.factLabels)}`);
-            if (JSON.stringify(m.facts.values) !== JSON.stringify(hub.values)) r.fail(`${tag}: fact values ${JSON.stringify(m.facts.values)} differ from the hub hero facts ${JSON.stringify(hub.values)}`);
+            const noDates = L.factsWithoutDates.routes.includes(route);
+            const wantLabels = noDates ? L.factLabels.filter((x) => x !== 'Dates') : L.factLabels;
+            const wantValues = noDates ? hub.values.slice(1) : hub.values;
+            if (JSON.stringify(m.facts.labels) !== JSON.stringify(wantLabels)) r.fail(`${tag}: fact labels ${JSON.stringify(m.facts.labels)}, want ${JSON.stringify(wantLabels)}`);
+            if (JSON.stringify(m.facts.values) !== JSON.stringify(wantValues)) r.fail(`${tag}: fact values ${JSON.stringify(m.facts.values)} differ from the hub hero facts ${JSON.stringify(wantValues)}`);
+            if (noDates) {
+              const monthYear = (hub.values[0].match(/([A-Za-z]+)\s+(\d{4})\s*$/) ?? []).slice(1).join(' ');
+              if (!monthYear || !flat(m.mainText).includes(monthYear)) r.fail(`${tag}: the aside omits Dates, so the page must state the show dates itself (main text lacks "${monthYear}")`);
+            }
           }
           // pull-quote
           const bodyText = flat(m.paras.join(' ')).replace(/["']/g, '');

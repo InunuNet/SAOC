@@ -33,7 +33,9 @@ await withBrowser(async (browser) => {
     const rows = await page.evaluate(({ rowSel, markerSel }) => [...document.querySelectorAll(rowSel)].map((r) => ({ text: (r.textContent ?? '').replace(/\s+/g, ' ').trim(), marker: !!r.querySelector(markerSel), note: [...r.querySelectorAll('[data-nos-keydate-note], p, small')].map((n) => (n.textContent ?? '').trim()) })), { rowSel: E.rowSelector, markerSel: E.markerSelector });
     if (!rows.length) fail('no key-date rows on /exhibitors');
     for (const r of rows) if (r.marker) for (const n of r.note) if (n && re.test(n) && !/confirmed by the show committee/i.test(n)) fail(`a pending row still renders a restating sentence: "${n}"`);
-    if (rows.some((r) => !r.marker && /not (yet )?set|to be set/i.test(r.text))) fail('a row without a chip says it is unset: the chip is the single marker');
+    // NOS batch 2 (main bcf8684b, ExhibitorKeyDates hideMarkers): a public build drops the per-row chips and says it once in the page-level R11 disclosure (ShowStatusLine, [data-status-disclosure]); the rows then keep their own "not set" note, which is the row's only marker. Reconciled, not relaxed: a chipless unset row is allowed only when that disclosure renders on the page.
+    const disclosure = await page.evaluate(() => !!document.querySelector('main [data-status-disclosure]'));
+    if (rows.some((r) => !r.marker && /not (yet )?set|to be set/i.test(r.text)) && !disclosure) fail('a row without a chip says it is unset and the page carries no [data-status-disclosure]: the chip (or the page-level R11 line) is the single marker');
   }
   await ctx.close();
 });

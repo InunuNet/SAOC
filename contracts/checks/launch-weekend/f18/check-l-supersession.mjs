@@ -27,6 +27,6 @@ for (const p of ['programme', 'wosa-conference', 'international-guests', 'sponso
 if (/sa-exhibitors['"]?\s*[,\]]/.test(h.split('hideContentGap')[1] ?? '') && /mustNot[^\n]*sa-exhibitors/.test(h)) problems.push('F17 check-h still forbids hideContentGap on sa-exhibitors');
 const sp = readFileSync('contracts/checks/launch-weekend/f17/check-f-sponsors.mjs', 'utf8');
 if (!/optional|beta-only|may be absent|no marker/i.test(sp)) problems.push('F17 check-f-sponsors does not treat the TBC marker as optional');
-try { execFileSync('node', ['contracts/checks/vendor-p1-targets/check-labels-static.mjs'], { stdio: 'pipe' }); } catch (e) { problems.push(`check-labels-static fails: ${String(e.stdout ?? e.message).slice(0, 300)}`); }
+try { execFileSync('node', ['contracts/checks/vendor-p1-targets/check-labels-static.mjs'], { stdio: 'pipe' }); } catch (e) { problems.push(`check-labels-static fails: ${String(e.stderr || e.stdout || e.message).slice(0, 300)}`); }
 if (problems.length) { console.error(`FAIL F18-A13 (${problems.length}):\n- ${problems.join('\n- ')}`); process.exit(1); }
 console.log('PASS F18-A13: check hygiene recorded and applied');
