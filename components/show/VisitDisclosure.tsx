@@ -279,6 +279,11 @@ export function VisitEmergency({
   const onSiteContacts = shown.filter((contact) => !PHONE_SHAPED.test(contact.number ?? ''));
   const keyOf = (contact: VisitEmergencyContact, index: number) =>
     contact._key ?? `${contact.label}-${index}`;
+  // Index first keeps ids unique; the key is made safe for an id (as the attraction ids are).
+  const idOf = (contact: VisitEmergencyContact, index: number) => {
+    const safe = (contact._key ?? '').toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
+    return safe ? `visit-emergency-${index}-${safe}` : `visit-emergency-${index}`;
+  };
 
   return (
     <NosSection className="bg-[var(--gold)]" wrapClassName="space-y-6">
@@ -287,11 +292,15 @@ export function VisitEmergency({
         <dl className="grid grid-cols-1 gap-x-10 gap-y-7 sm:grid-cols-3">
           {dialContacts.map((contact, index) => (
             <div key={keyOf(contact, index)} className="flex flex-col gap-1">
-              <dt className="font-sans text-[16px] leading-[1.55] text-[var(--ink-700)]">
+              <dt
+                id={`${idOf(contact, index)}-label`}
+                className="font-sans text-[16px] leading-[1.55] text-[var(--ink-700)]">
                 {contact.label}
               </dt>
               <dd className="order-first font-serif text-primary">
                 <a
+                  id={`${idOf(contact, index)}-number`}
+                  aria-labelledby={`${idOf(contact, index)}-number ${idOf(contact, index)}-label`}
                   href={`tel:${(contact.number ?? '').replace(/[^\d+]/g, '')}`}
                   className="inline-flex min-h-[44px] min-w-[44px] items-center text-[clamp(2.4rem,3vw,3rem)] font-light leading-[1.1] underline-offset-4 hover:underline"
                 >
