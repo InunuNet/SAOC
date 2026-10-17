@@ -94,8 +94,14 @@ function isPriceUsable(price: number | null): boolean {
   return price !== null && price >= 0;
 }
 
+// Only the Weekend Pass and Day Pass SKUs share the early-bird pool; another product that happens
+// to carry a capacity pool (Sunset Cocktails, a field trip) must not change its count.
+const POOL_SKUS: ReadonlySet<string> = new Set(
+  Object.values(PASS_SKUS).flatMap((sku) => [sku.earlyBird, sku.regular]),
+);
+
 function buildPool(input: TicketCardsInput): EarlyBirdPool | null {
-  const members = input.types.filter((t) => t.capacityPool !== null);
+  const members = input.types.filter((t) => t.capacityPool !== null && POOL_SKUS.has(t.slug));
   const capacities = members
     .map(effectiveCapacity)
     .filter((c): c is number => c !== null);
