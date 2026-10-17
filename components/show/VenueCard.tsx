@@ -11,6 +11,7 @@
 
 import Image from 'next/image';
 
+import { Button } from '@/components/nos/Button';
 import { urlFor } from '@/sanity/lib/image';
 import type { ConfirmationStatus, ShowVenue } from '@/types';
 
@@ -22,6 +23,8 @@ export interface VenueCardProps {
   status?: ConfirmationStatus | string | null;
   pendingLabel?: string | null;
   researchLabel?: string | null;
+  /** `link` (default) is the plain text link /contact uses; `button` is the ghost NOS Button. */
+  mapAction?: 'link' | 'button';
 }
 
 export function VenueCard({
@@ -30,6 +33,7 @@ export function VenueCard({
   status,
   pendingLabel,
   researchLabel,
+  mapAction = 'link',
 }: VenueCardProps) {
   if (!venue?.name) return null;
 
@@ -45,7 +49,7 @@ export function VenueCard({
         researchLabel={researchLabel}
       />
 
-      <address className="mt-4 not-italic font-sans text-[17px] leading-relaxed text-ink/80">
+      <address className="mt-4 not-italic font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/80">
         <span className="block font-serif text-[18px] text-ink">{venue.name}</span>
         {addressLines.map((line) => (
           <span key={line} className="block">
@@ -77,12 +81,24 @@ export function VenueCard({
       ) : null}
 
       {venue.directionsNote ? (
-        <p className="mt-5 font-sans text-[17px] leading-relaxed text-ink/70">
+        <p className="mt-5 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70">
           {venue.directionsNote}
         </p>
       ) : null}
 
-      {venue.mapsUrl ? (
+      {venue.mapsUrl && mapAction === 'button' ? (
+        <Button
+          as="a"
+          href={venue.mapsUrl}
+          target="_blank"
+          rel="noreferrer noopener"
+          variant="ghost"
+          className="mt-5"
+        >
+          Open in a map ↗
+        </Button>
+      ) : null}
+      {venue.mapsUrl && mapAction === 'link' ? (
         <a
           href={venue.mapsUrl}
           target="_blank"

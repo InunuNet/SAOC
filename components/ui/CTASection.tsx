@@ -8,6 +8,8 @@
 
 import Link from 'next/link';
 
+import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
+
 export interface CTALink {
   href: string;
   label: string;
@@ -16,22 +18,31 @@ export interface CTALink {
 export interface CTASectionProps {
   eyebrow: string;
   heading: string;
-  body: string;
+  /** Omitted when the only sentence available states a fact the Council has not supplied. */
+  body?: string;
+  /** Beta preview: the body states a fact the Council has not supplied, so it is marked. */
+  marked?: boolean;
   primaryCta: CTALink;
   secondaryCta?: CTALink;
 }
 
-export function CTASection({ eyebrow, heading, body, primaryCta, secondaryCta }: CTASectionProps) {
+export function CTASection({ eyebrow, heading, body, marked = false, primaryCta, secondaryCta }: CTASectionProps) {
   return (
     <section className="bg-primary-800">
-      <div className="on-dark mx-auto max-w-[1280px] px-8 py-20 text-center md:px-16">
+      <div className="on-dark saoc-container py-20 text-center">
         <span className="eyebrow eyebrow--light">{eyebrow}</span>
         <h2 className="mt-6 font-serif text-[clamp(30px,3.6vw,46px)] font-medium leading-[1.1] tracking-[-0.01em] text-ivory">
           {heading}
         </h2>
-        <p className="mx-auto mt-5 max-w-2xl font-sans text-[16px] leading-relaxed text-ivory/80">
-          {body}
-        </p>
+        {body ? (
+          <div
+            data-placeholder={marked ? 'true' : undefined}
+            className="mx-auto mt-5 flex max-w-2xl flex-col items-center gap-2"
+          >
+            <p className="font-sans text-[16px] leading-[1.55] text-ivory/80">{body}</p>
+            {marked ? <PlaceholderMarker tone="dark" /> : null}
+          </div>
+        ) : null}
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           <Link
             href={primaryCta.href}

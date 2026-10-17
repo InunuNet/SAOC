@@ -49,12 +49,12 @@ export function Footer() {
           <div className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory/55 mb-1">
             {FOOTER_HEADINGS.explore}
           </div>
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col">
             {FOOTER_NAV.map((n) => (
               <li key={n.id}>
                 <Link
                   href={n.href}
-                  className="inline-flex min-h-6 items-center font-sans text-[14px] text-ivory/80 hover:text-ivory transition-colors duration-150"
+                  className="inline-flex min-h-11 min-w-11 items-center font-sans text-[14px] text-ivory/80 hover:text-ivory transition-colors duration-150"
                 >
                   {n.label}
                 </Link>
@@ -98,11 +98,11 @@ export function Footer() {
               autoComplete="email"
               placeholder={FOOTER_BULLETIN.placeholder}
               required
-              className="min-w-0 flex-1 bg-ivory/10 border border-ivory/20 text-ivory placeholder:text-ivory/40 font-sans text-[13px] px-3 py-2 focus:outline-none focus:border-ivory/40"
+              className="min-h-11 min-w-0 flex-1 bg-ivory/10 border border-ivory/20 text-ivory placeholder:text-ivory/40 font-sans text-[13px] px-3 py-2 focus:outline-none focus:border-ivory/40"
             />
             <button
               type="submit"
-              className="bg-primary text-ivory font-sans text-[13px] font-medium px-4 py-2 hover:bg-primary-800 transition-colors duration-150 shrink-0"
+              className="min-h-11 min-w-11 bg-primary text-ivory font-sans text-[13px] font-medium px-4 py-2 hover:bg-primary-800 transition-colors duration-150 shrink-0"
             >
               {FOOTER_BULLETIN.submitLabel}
             </button>
@@ -115,7 +115,7 @@ export function Footer() {
               href={FOOTER_WOSA.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-6 items-center font-sans text-[14px] text-ivory/80 hover:text-ivory transition-colors duration-150"
+              className="inline-flex min-h-11 min-w-11 items-center font-sans text-[14px] text-ivory/80 hover:text-ivory transition-colors duration-150"
             >
               {FOOTER_WOSA.linkLabel}
             </a>
@@ -135,7 +135,7 @@ export function Footer() {
               <Link
                 key={l.href}
                 href={l.href}
-                className="inline-flex min-h-6 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150"
+                className="inline-flex min-h-11 min-w-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150"
               >
                 {l.label}
               </Link>

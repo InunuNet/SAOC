@@ -1,3 +1,5 @@
+import type { PortableTextBlock } from '@portabletext/react';
+
 type JsonLdProps = {
   data: Record<string, unknown>;
 };
@@ -6,7 +8,7 @@ export function JsonLd({ data }: JsonLdProps) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, '\\u003c') }}
     />
   );
 }
@@ -43,6 +45,40 @@ export function breadcrumbJsonLd(items: BreadcrumbItem[]) {
       item: item.url,
     })),
   };
+}
+
+type FaqEntry = { question: string; answer: string };
+
+export function faqPageJsonLd(entries: FaqEntry[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: entries.map((entry) => ({
+      '@type': 'Question',
+      name: entry.question,
+      acceptedAnswer: { '@type': 'Answer', text: entry.answer },
+    })),
+  };
+}
+
+/** The plain text of Portable Text blocks: each block's span text joined, blocks split by one space. */
+export function portableTextToPlainText(blocks: readonly PortableTextBlock[]): string {
+  return blocks
+    .map((block) => {
+      const children = (block as { children?: unknown }).children;
+      if (!Array.isArray(children)) return '';
+      return children
+        .map((child) =>
+          child &&
+          typeof child === 'object' &&
+          typeof (child as { text?: unknown }).text === 'string'
+            ? (child as { text: string }).text
+            : ''
+        )
+        .join('');
+    })
+    .filter((text) => text.trim() !== '')
+    .join(' ');
 }
 
 type EventJsonLdProps = {

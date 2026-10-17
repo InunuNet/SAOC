@@ -38,19 +38,16 @@ export function EventsStrip({ events }: EventsStripProps) {
   const preview = sanityMapped.slice(0, PREVIEW_COUNT);
 
   return (
-    <section className="py-24 px-8 md:px-16 bg-parchment">
-      <div className="max-w-[1280px] mx-auto">
-        {/* Section header */}
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <div className="mb-4"><span className="eyebrow">What&apos;s on</span></div>
-            <h2 className="font-serif text-[clamp(32px,4vw,48px)] font-medium leading-[1.08] tracking-[-0.01em] text-primary">
-              Upcoming society shows
-            </h2>
-          </div>
+    <section data-home-section="events" className="py-24 bg-parchment">
+      <div className="saoc-container">
+        {/* Section header: the label that used to be the eyebrow is the heading */}
+        <div className="flex items-end justify-between gap-6 mb-8">
+          <h2 className="font-serif text-[clamp(32px,4vw,48px)] font-medium leading-[1.08] tracking-[-0.01em] text-primary">
+            What&apos;s on
+          </h2>
           <Link
             href="/events"
-            className="inline-flex min-h-6 items-center font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150 mt-1 shrink-0"
+            className="inline-flex min-h-6 items-center font-mono text-[11px] uppercase tracking-[0.18em] text-primary hover:text-primary-800 transition-colors duration-150 shrink-0"
           >
             Full calendar →
           </Link>

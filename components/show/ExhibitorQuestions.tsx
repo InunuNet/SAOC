@@ -15,18 +15,29 @@ export interface ExhibitorQuestionsProps {
   intro?: string | null;
   questions?: ExhibitorQuestion[] | null;
   id?: string;
+  headingId?: string;
 }
 
-export function ExhibitorQuestions({ heading, intro, questions, id }: ExhibitorQuestionsProps) {
+export function ExhibitorQuestions({
+  heading,
+  intro,
+  questions,
+  id,
+  headingId,
+}: ExhibitorQuestionsProps) {
   const open = (questions ?? []).filter((item) => item?.question);
   if (open.length === 0) return null;
 
   return (
     <section id={id}>
-      {heading ? <h2 className="font-serif text-ink">{heading}</h2> : null}
+      {heading ? (
+        <h2 id={headingId} className="scroll-mt-[62px] font-serif text-ink md:scroll-mt-[74px]">
+          {heading}
+        </h2>
+      ) : null}
 
       {intro ? (
-        <p className="mt-3 max-w-3xl font-sans text-[16px] leading-relaxed text-ink/80">{intro}</p>
+        <p className="mt-3 max-w-3xl font-sans text-[16px] leading-[1.55] text-ink/80">{intro}</p>
       ) : null}
 
       <ul className="mt-8 border-t border-rule">
@@ -44,7 +55,7 @@ export function ExhibitorQuestions({ heading, intro, questions, id }: ExhibitorQ
               {item.question}
             </h3>
             {item.context ? (
-              <p className="mt-2 font-sans text-[17px] leading-relaxed text-ink/70">
+              <p className="mt-2 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70">
                 {item.context}
               </p>
             ) : null}

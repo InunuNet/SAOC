@@ -1,0 +1,34 @@
+{
+  "note": "F14/F17 checks that F19 legitimately changes. Re-pinned in this spec branch: the dev must not edit them.",
+  "repinned": [
+    {
+      "check": "contracts/checks/launch-weekend/f14/check-g-others.mjs",
+      "assertion": "F14-A6",
+      "why": "F19 owns the home hero, mission and events strip (scrim, type, heading, axis container), so golden sections 0:, 1: and 4: are no longer byte-pinned; the non-section nodes stay pinned."
+    },
+    {
+      "check": "contracts/checks/launch-weekend/f14/check-j-yearbook-partners.mjs",
+      "assertion": "F14-A12",
+      "why": "R79 #4: the yearbook copy column no longer stretches to the photo (meta and actions sit 32px under the copy, the photo carries the height). 'Last CTA bottom on the photo bottom' becomes 'never below the photo bottom'."
+    },
+    {
+      "check": "contracts/checks/launch-weekend/f14/_sections.mjs (used by f14 check-i-copy, check-g-others, capture-golden)",
+      "assertion": "F14-A8",
+      "why": "A22 requires the beta preview to show 'Not confirmed by SAOC' style markers beside withheld facts; those marker leaves (inside [data-placeholder-marker]) are not copy and are skipped when extracting section leaves. The dev puts data-placeholder-marker on each marker element. Any other text change to NavCards, YearbookStrip or PartnersSection still fails."
+    }
+  ],
+  "notRunInF19Gate": [
+    {
+      "check": "f14 check-h-scope (F14-A7) and check-k-critique-artefacts (F14-A13)",
+      "why": "They diff against origin/main for F14's own allowlist and demand screenshots newer than F14's components; both are spent evidence for a shipped feature and would fail on any later edit."
+    },
+    {
+      "check": "f17 check-i-scope (F17-A9), check-j-critique-artefacts (F17-A11)",
+      "why": "Same: scope and evidence checks for a shipped feature."
+    }
+  ],
+  "stillRunInF19Gate": [
+    "f14 A1 states, A2 reduced motion, A3 structure, A4/A5 geometry+contrast, A6 others (re-pinned), A8 copy, A12 yearbook/partners (re-pinned)"
+  ],
+  "mergeOrder": "F19 is rebased on main 47cf7f1b; nos-baseline.json and copy-baseline.json were re-captured there (unchanged versus the old baselines). If F18 lands first, rebase F19 and re-capture nos-baseline.json (capture-nos-baseline.mjs) from the F18 main BEFORE the gate, otherwise A11b reports F18's own NOS changes as leaks."
+}

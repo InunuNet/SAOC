@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -22,6 +22,7 @@ import {
   showVisitorInfoQuery,
 } from '@/sanity/queries';
 import { buildShowFacts } from '@/lib/data/show-facts';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { showClasses as staticClasses } from '@/lib/data/showClasses';
 import { cheapestAdmission, formatRand } from '@/components/nos/cheapest-admission';
 import { effectiveCapacity, resolveEffectivePrice } from '@/lib/checkout-reservation';
@@ -41,14 +42,38 @@ import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 // propagates within F6's 120s round-trip window. See contracts/cms-loop-f1-cdn-purge.yaml.
 export const revalidate = 60;
 
-const PAGE_DESCRIPTION =
-  'The South African National Orchid Show — the flagship triennial competition bringing together growers, judges and enthusiasts from all nine provinces.';
+// "from all nine provinces" is unsourced (no Drive document or Sanity record states it), so a public
+// build drops the whole clause that carries it and keeps the rest verbatim; beta shows it all.
+const WITHHOLD_UNSOURCED = withholdPlaceholderProse();
+
+const PAGE_DESCRIPTION_LEAD =
+  'The South African National Orchid Show — the flagship triennial competition';
+const PAGE_DESCRIPTION_CLAUSE =
+  ' bringing together growers, judges and enthusiasts from all nine provinces';
+const PAGE_DESCRIPTION = WITHHOLD_UNSOURCED
+  ? `${PAGE_DESCRIPTION_LEAD}.`
+  : `${PAGE_DESCRIPTION_LEAD}${PAGE_DESCRIPTION_CLAUSE}.`;
 
 // Display-hero lede only (Brad, 2026-09-29): PAGE_DESCRIPTION repeats the
 // lockup's "National Orchid Show" and the eyebrow's "flagship", so the hero
 // carries this instead. Metadata and JSON-LD keep PAGE_DESCRIPTION.
-const HERO_LEDE =
-  'South Africa’s triennial orchid competition, bringing together growers, judges and enthusiasts from all nine provinces.';
+const HERO_LEDE_LEAD = 'South Africa’s triennial orchid competition';
+const HERO_LEDE_CLAUSE =
+  ', bringing together growers, judges and enthusiasts from all nine provinces';
+const heroLede = (chip: ReactNode) =>
+  WITHHOLD_UNSOURCED ? (
+    `${HERO_LEDE_LEAD}.`
+  ) : (
+    <>
+      {HERO_LEDE_LEAD}
+      <span data-placeholder="true">
+        {HERO_LEDE_CLAUSE}.{chip}
+      </span>
+    </>
+  );
+
+// Sourced: Sanity holds exactly ten showClass documents.
+const JUDGING_LEDE = 'Every exhibit is entered in one of ten botanical classes.';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'National Orchid Show',
@@ -273,6 +298,18 @@ export default async function NationalShowPage() {
   // One source for the four facts: the long-form template and the holding state read the same module.
   const heroMeta = buildShowFacts(sanityShow);
 
+  // Every withheld-fact block carries its own visible chip (beta preview only; public renders none).
+  const pendingChip = (tone: 'light' | 'dark') => (
+    <span className="block">
+      <ConfirmationBadge
+        status="pending"
+        pendingLabel={visitorInfo?.pendingLabel}
+        tone={tone}
+        as="span"
+      />
+    </span>
+  );
+
   // The price anchor shows only while sales are open and the cheapest admission has a price.
   const anchor =
     salesState?.salesOpen === true
@@ -338,7 +375,7 @@ export default async function NationalShowPage() {
         // No eyebrow: ruling 2026-10-15 Q4.
         title={HUB_HEADING}
         titleSize="display"
-        lede={HERO_LEDE}
+        lede={heroLede(pendingChip('dark'))}
         actions={
           <>
             {/* Order at every width: CTAs, price, countdown, facts (C-2). R68: the CTA cluster
@@ -419,38 +456,53 @@ export default async function NationalShowPage() {
       />
 
       {/* ── What it is ── */}
-      <NosSection wrapClassName="grid grid-cols-1 gap-16 lg:grid-cols-2">
+      <NosSection wrapClassName="nos-about">
         <div>
           <SectionHeading title="Three years in the making, four days on the bench" />
-          <p className="mt-6 font-sans text-[16px] leading-relaxed text-ink/80">
+          <p className="mt-6 font-sans text-[16px] leading-[1.55] text-ink/80">
             The National Orchid Show is the country&rsquo;s premier competitive orchid event. Held
             every three years, it brings together growers, hybridisers, judges and collectors for
             four days of competition, education, and community.
           </p>
-          <p className="mt-4 font-sans text-[16px] leading-relaxed text-ink/80">
+          {/* "against the 100-point scale" and the Grand Champion sentence are unsourced: a public
+              build drops just those and keeps the rest of the paragraph; beta keeps all of it with
+              a pending marker. */}
+          <p className="mt-4 font-sans text-[16px] leading-[1.55] text-ink/80">
             Every plant is assessed by{' '}
             <Link href="/judging" className="text-[var(--accent)] underline underline-offset-2">
               accredited SAOC judges
             </Link>{' '}
-            against the 100-point scale across ten botanical classes. The Grand Champion is the
-            highest-scoring exhibit across all classes.
+            {WITHHOLD_UNSOURCED ? (
+              <>across ten botanical classes.</>
+            ) : (
+              <span data-placeholder="true">
+                against the 100-point scale across ten botanical classes. The Grand Champion is the
+                highest-scoring exhibit across all classes.
+                {pendingChip('light')}
+              </span>
+            )}
           </p>
         </div>
 
-        {/* 4-up stats */}
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[length:var(--radius-lg)] bg-rule">
+        {/* Figures row (v4 `.figures`): the sourced figures, plus the unsourced edition count on a
+            beta preview only, where it carries the pending marker. */}
+        <dl className="nos-figures">
           {[
-            { value: '3 yr', label: 'Cycle' },
-            { value: '10', label: 'Judging classes' },
-          ].map(({ value, label }) => (
-            <div key={label} className="bg-parchment px-8 py-10">
-              <div className="nos-figure font-serif text-[46px] text-primary">{value}</div>
-              <div className="mt-2 font-sans text-[12px] font-medium tracking-[0.16em] text-muted">
-                {label}
-              </div>
+            { value: '3 yr', label: 'Cycle', unsourced: false },
+            { value: '10', label: 'Judging classes', unsourced: false },
+            ...(WITHHOLD_UNSOURCED
+              ? []
+              : [{ value: '18', label: 'Editions held', unsourced: true }]),
+          ].map(({ value, label, unsourced }) => (
+            <div key={label} data-placeholder={unsourced ? 'true' : undefined}>
+              <dt>
+                <span>{label}</span>
+                {unsourced ? pendingChip('light') : null}
+              </dt>{' '}
+              <dd className="nos-figure font-serif">{value}</dd>
             </div>
           ))}
-        </div>
+        </dl>
       </NosSection>
 
       {/* ── Planning a visit — the hub's one destinations list (v4 pattern, I:176-190) ── */}
@@ -491,7 +543,20 @@ export default async function NationalShowPage() {
       <NosSection tone="gold" className="nos-section-joined">
         <SectionHeading
           title="Ten judging groups"
-          lede="Every exhibit is entered in one of ten botanical classes. Judges score on a 100-point scale covering cultural quality, presentation, and species accuracy."
+          lede={
+            WITHHOLD_UNSOURCED ? (
+              JUDGING_LEDE
+            ) : (
+              <>
+                {JUDGING_LEDE}{' '}
+                <span data-placeholder="true">
+                  Judges score on a 100-point scale covering cultural quality, presentation, and
+                  species accuracy.
+                  {pendingChip('light')}
+                </span>
+              </>
+            )
+          }
         />
 
         <div className={`mt-10 grid grid-cols-2 gap-4 ${judgingColumnsClass}`}>

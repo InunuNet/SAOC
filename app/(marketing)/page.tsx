@@ -11,6 +11,7 @@ import {
   PartnersSection,
 } from '@/components/home';
 import { JsonLd, organizationJsonLd } from '@/components/seo/JsonLd';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import {
   homePageQuery,
@@ -64,15 +65,18 @@ export default async function HomePage() {
     sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
   ]);
 
+  // F19 (vote 1C): facts the Council has not supplied render on the beta preview only, marked.
+  const withhold = withholdPlaceholderProse();
+
   return (
     <>
       <JsonLd data={organizationJsonLd()} />
-      <Hero images={home?.heroImages} show={show} />
-      <MissionBlock missionText={home?.missionText} />
-      <NavCards show={show} />
+      <Hero images={home?.heroImages} show={show} showLede={!withhold} />
+      <MissionBlock missionText={home?.missionText} withhold={withhold} />
+      <NavCards show={show} withhold={withhold} />
       <ShowBand show={show} />
       <EventsStrip events={eventsData} />
-      <YearbookStrip />
+      {withhold ? null : <YearbookStrip />}
       <PartnersSection partners={partnersData} />
     </>
   );

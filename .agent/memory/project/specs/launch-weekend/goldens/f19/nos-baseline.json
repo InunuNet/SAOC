@@ -1,0 +1,555 @@
+{
+ "head": "bcf8684b",
+ "routes": {
+  "390/national-show": {
+   "sig": [
+    "h1|46.8px|46.8px",
+    "h2|32px|36.8px",
+    "h3|17px|21.25px",
+    "h3|19px|23.75px",
+    "p|12px|18.6px",
+    "p|16px|24.8px",
+    "p|18px|27.9px",
+    "p|18px|27px",
+    "p|24px|30px"
+   ],
+   "left": [
+    "16",
+    "36",
+    "40",
+    "227"
+   ]
+  },
+  "390/national-show/about": {
+   "sig": [
+    "h1|41.6px|41.6px",
+    "h2|12px|18px",
+    "h3|12px|18px",
+    "p|16px|24.8px",
+    "p|20px|30px"
+   ],
+   "left": [
+    "16"
+   ]
+  },
+  "390/national-show/what-to-expect": {
+   "sig": [
+    "h1|41.6px|41.6px",
+    "h2|12px|18px",
+    "h2|32px|36.8px",
+    "h3|12px|18px",
+    "p|12px|18px",
+    "p|16px|24.8px",
+    "p|20px|30px",
+    "p|28px|43.4px"
+   ],
+   "left": [
+    "16",
+    "32",
+    "36"
+   ]
+  },
+  "390/national-show/plan-your-visit": {
+   "sig": [
+    "h1|41.6px|41.6px",
+    "h2|12px|18px",
+    "h2|32px|36.8px",
+    "h3|12px|18px",
+    "h3|22px|27.5px",
+    "h3|24px|30px",
+    "h3|28px|35px",
+    "p|12px|18px",
+    "p|16px|24.8px",
+    "p|18px|27.9px",
+    "p|18px|27px"
+   ],
+   "left": [
+    "16",
+    "36",
+    "60"
+   ]
+  },
+  "390/national-show/programme": {
+   "sig": [
+    "h1|41.6px|41.6px",
+    "h2|12px|18px",
+    "h2|32px|36.8px",
+    "h3|12px|18px",
+    "p|20px|30px"
+   ],
+   "left": [
+    "16"
+   ]
+  },
+  "390/national-show/workshops": {
+   "sig": [
+    "h1|41.6px|41.6px",
+    "h2|12px|18px",
+    "h3|12px|18px",
+    "p|14px|21.7px",
+    "p|15px|23.25px",
+    "p|16px|24.8px",
+    "p|18px|27px",
+    "p|22px|27.5px",
+    "p|34px|34px"
+   ],
+   "left": [
+    "16",
+    "37"
+   ]
+  },
+  "390/national-show/conferences": {
+   "sig": [
+    "h1|41.6px|41.6px",
+    "h2|12px|18px",
+    "h3|12px|18px",
+    "p|12px|18px",
+    "p|14px|21.7px",
+    "p|15px|23.25px",
+    "p|16px|24.8px",
+    "p|18px|27px",
+    "p|22px|27.5px",
+    "p|34px|34px"
+   ],
+   "left": [
+    "16",
+    "37"
+   ]
+  },
+  "390/national-show/symposium": {
+   "sig": [
+    "h1|41.6px|41.6px",
+    "h2|12px|18px",
+    "h2|32px|36.8px",
+    "h3|12px|18px",
+    "h3|22px|27.5px",
+    "p|12.8px|19.84px",
+    "p|12px|17.4px",
+    "p|16px|24.8px",
+    "p|18px|27px"
+   ],
+   "left": [
+    "16",
+    "36",
+    "37",
+    "157"
+   ]
+  },
+  "390/national-show/wosa-conference": {
+   "sig": [
+    "h1|41.6px|41.6px",
+    "h2|12px|18px",
+    "h2|32px|36.8px",
+    "h3|12px|18px",
+    "p|16px|24.8px"
+   ],
+   "left": [
+    "16"
+   ]
+  },
+  "390/national-show/exhibitors": {
+   "sig": [
+    "h1|41.6px|41.6px",
+    "h2|12px|18px",
+    "h2|32px|36.8px",
+    "h3|12px|18px",
+    "h3|20px|25px",
+    "h3|22px|27.5px",
+    "h3|24px|30px",
+    "p|12px|18.6px",
+    "p|12px|18px",
+    "p|14px|20.3px",
+    "p|15px|23.25px",
+    "p|16px|24.8px",
+    "p|18px|27px"
+   ],
+   "left": [
+    "16",
+    "32",
+    "36",
+    "88"
+   ]
+  },
+  "390/national-show/vendors": {
+   "sig": [
+    "h1|41.6px|41.6px",
+    "h2|12px|18px",
+    "h2|32px|36.8px",
+    "h3|12px|18px",
+    "p|16px|24.8px",
+    "p|20px|30px"
+   ],
+   "left": [
+    "16",
+    "36"
+   ]
+  },
+  "390/national-show/sa-exhibitors": {
+   "sig": [
+    "h1|41.6px|41.6px",
+    "h2|12px|18px",
+    "h3|12px|18px",
+    "p|16px|24.8px",
+    "p|18px|27px",
+    "p|20px|30px"
+   ],
+   "left": [
+    "16",
+    "36"
+   ]
+  },
+  "390/national-show/international-guests": {
+   "sig": [
+    "h1|41.6px|41.6px",
+    "h2|12px|18px",
+    "h2|32px|36.8px",
+    "h3|12px|18px",
+    "p|20px|30px"
+   ],
+   "left": [
+    "16"
+   ]
+  },
+  "390/national-show/sponsors": {
+   "sig": [
+    "h1|41.6px|41.6px",
+    "h2|12px|18px",
+    "h2|32px|36.8px",
+    "h3|12px|18px",
+    "p|16px|24.8px"
+   ],
+   "left": [
+    "16",
+    "48"
+   ]
+  },
+  "390/national-show/archive": {
+   "sig": [
+    "h1|41.6px|41.6px",
+    "h2|12px|18px",
+    "h2|32px|36.8px",
+    "h3|12px|18px",
+    "p|18px|27px"
+   ],
+   "left": [
+    "16",
+    "36"
+   ]
+  },
+  "390/national-show/faq": {
+   "sig": [
+    "h1|41.6px|41.6px",
+    "h2|12px|18px",
+    "h3|12px|18px",
+    "p|16px|24.8px"
+   ],
+   "left": [
+    "16",
+    "36"
+   ]
+  },
+  "390/national-show/tickets": {
+   "sig": [
+    "h1|41.6px|41.6px",
+    "h2|12px|18px",
+    "h2|32px|36.8px",
+    "h3|12px|18px",
+    "h3|20px|25px",
+    "h3|22px|27.5px",
+    "p|12px|18.6px",
+    "p|13px|20.15px",
+    "p|16px|26px",
+    "p|17px|27.625px",
+    "p|18px|27px"
+   ],
+   "left": [
+    "16",
+    "40"
+   ]
+  },
+  "1280/national-show": {
+   "sig": [
+    "h1|62.72px|62.72px",
+    "h2|48px|55.2px",
+    "h3|17px|21.25px",
+    "h3|19px|23.75px",
+    "p|12px|18.6px",
+    "p|16px|24.8px",
+    "p|18px|27.9px",
+    "p|26px|36.92px",
+    "p|32px|40px"
+   ],
+   "left": [
+    "32",
+    "56",
+    "60",
+    "302",
+    "368",
+    "549",
+    "676",
+    "795",
+    "984",
+    "1042"
+   ]
+  },
+  "1280/national-show/about": {
+   "sig": [
+    "h1|56.32px|56.32px",
+    "h2|12px|18px",
+    "h3|12px|18px",
+    "p|16px|24.8px",
+    "p|20px|30px"
+   ],
+   "left": [
+    "32",
+    "515"
+   ]
+  },
+  "1280/national-show/what-to-expect": {
+   "sig": [
+    "h1|56.32px|56.32px",
+    "h2|12px|18px",
+    "h2|48px|55.2px",
+    "h3|12px|18px",
+    "p|12px|18px",
+    "p|16px|24.8px",
+    "p|20px|30px",
+    "p|28px|43.4px"
+   ],
+   "left": [
+    "32",
+    "64",
+    "515"
+   ]
+  },
+  "1280/national-show/plan-your-visit": {
+   "sig": [
+    "h1|56.32px|56.32px",
+    "h2|12px|18px",
+    "h2|48px|55.2px",
+    "h3|12px|18px",
+    "h3|22px|27.5px",
+    "h3|24px|30px",
+    "h3|44px|55px",
+    "p|12px|18px",
+    "p|16px|24.8px",
+    "p|18px|27.9px",
+    "p|20px|32px"
+   ],
+   "left": [
+    "32",
+    "64",
+    "672",
+    "790",
+    "964"
+   ]
+  },
+  "1280/national-show/programme": {
+   "sig": [
+    "h1|56.32px|56.32px",
+    "h2|12px|18px",
+    "h2|48px|55.2px",
+    "h3|12px|18px",
+    "p|20px|30px"
+   ],
+   "left": [
+    "32",
+    "515"
+   ]
+  },
+  "1280/national-show/workshops": {
+   "sig": [
+    "h1|56.32px|56.32px",
+    "h2|12px|18px",
+    "h3|12px|18px",
+    "p|14px|21.7px",
+    "p|15px|23.25px",
+    "p|16px|24.8px",
+    "p|20px|32px",
+    "p|22px|27.5px",
+    "p|48px|48px"
+   ],
+   "left": [
+    "32",
+    "53"
+   ]
+  },
+  "1280/national-show/conferences": {
+   "sig": [
+    "h1|56.32px|56.32px",
+    "h2|12px|18px",
+    "h3|12px|18px",
+    "p|12px|18px",
+    "p|14px|21.7px",
+    "p|15px|23.25px",
+    "p|16px|24.8px",
+    "p|20px|32px",
+    "p|22px|27.5px",
+    "p|48px|48px"
+   ],
+   "left": [
+    "32",
+    "53"
+   ]
+  },
+  "1280/national-show/symposium": {
+   "sig": [
+    "h1|56.32px|56.32px",
+    "h2|12px|18px",
+    "h2|32px|36.8px",
+    "h2|48px|55.2px",
+    "h3|12px|18px",
+    "h3|22px|27.5px",
+    "p|12.8px|19.84px",
+    "p|12px|17.4px",
+    "p|16px|24.8px",
+    "p|25.6px|33.28px"
+   ],
+   "left": [
+    "32",
+    "64",
+    "65",
+    "249",
+    "515",
+    "689",
+    "873"
+   ]
+  },
+  "1280/national-show/wosa-conference": {
+   "sig": [
+    "h1|56.32px|56.32px",
+    "h2|12px|18px",
+    "h2|48px|55.2px",
+    "h3|12px|18px",
+    "p|16px|24.8px"
+   ],
+   "left": [
+    "32",
+    "515"
+   ]
+  },
+  "1280/national-show/exhibitors": {
+   "sig": [
+    "h1|56.32px|56.32px",
+    "h2|12px|18px",
+    "h2|48px|55.2px",
+    "h3|12px|18px",
+    "h3|20px|25px",
+    "h3|22px|27.5px",
+    "h3|24px|30px",
+    "p|12px|18.6px",
+    "p|12px|18px",
+    "p|14px|20.3px",
+    "p|15px|23.25px",
+    "p|16px|24.8px",
+    "p|20px|32px"
+   ],
+   "left": [
+    "32",
+    "64",
+    "116"
+   ]
+  },
+  "1280/national-show/vendors": {
+   "sig": [
+    "h1|56.32px|56.32px",
+    "h2|12px|18px",
+    "h2|48px|55.2px",
+    "h3|12px|18px",
+    "p|16px|24.8px",
+    "p|20px|30px"
+   ],
+   "left": [
+    "32",
+    "64",
+    "515"
+   ]
+  },
+  "1280/national-show/sa-exhibitors": {
+   "sig": [
+    "h1|56.32px|56.32px",
+    "h2|12px|18px",
+    "h3|12px|18px",
+    "p|16px|24.8px",
+    "p|20px|30px",
+    "p|20px|32px"
+   ],
+   "left": [
+    "32",
+    "64",
+    "515"
+   ]
+  },
+  "1280/national-show/international-guests": {
+   "sig": [
+    "h1|56.32px|56.32px",
+    "h2|12px|18px",
+    "h2|48px|55.2px",
+    "h3|12px|18px",
+    "p|20px|30px"
+   ],
+   "left": [
+    "32",
+    "515"
+   ]
+  },
+  "1280/national-show/sponsors": {
+   "sig": [
+    "h1|56.32px|56.32px",
+    "h2|12px|18px",
+    "h2|48px|55.2px",
+    "h3|12px|18px",
+    "p|16px|24.8px"
+   ],
+   "left": [
+    "32",
+    "64"
+   ]
+  },
+  "1280/national-show/archive": {
+   "sig": [
+    "h1|56.32px|56.32px",
+    "h2|12px|18px",
+    "h2|48px|55.2px",
+    "h3|12px|18px",
+    "p|20px|32px"
+   ],
+   "left": [
+    "32",
+    "64"
+   ]
+  },
+  "1280/national-show/faq": {
+   "sig": [
+    "h1|56.32px|56.32px",
+    "h2|12px|18px",
+    "h3|12px|18px",
+    "p|16px|24.8px"
+   ],
+   "left": [
+    "32",
+    "64"
+   ]
+  },
+  "1280/national-show/tickets": {
+   "sig": [
+    "h1|56.32px|56.32px",
+    "h2|12px|18px",
+    "h2|48px|55.2px",
+    "h3|12px|18px",
+    "h3|20px|25px",
+    "h3|22px|27.5px",
+    "p|12px|18.6px",
+    "p|13px|20.15px",
+    "p|16px|26px",
+    "p|17px|27.625px",
+    "p|20px|32px"
+   ],
+   "left": [
+    "32",
+    "56",
+    "676"
+   ]
+  }
+ }
+}

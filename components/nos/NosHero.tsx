@@ -24,7 +24,7 @@
 // =============================================================
 
 import Image from 'next/image';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 import { heroPhotoFor } from './hero-photos';
 import { NosSubNav } from './NosSubNav';
@@ -42,7 +42,7 @@ export interface NosHeroProps {
    * renders the hub hero (6-stop ramp, 22% photo inset) — reserve for the one flagship hero.
    */
   titleSize?: 'default' | 'display';
-  lede?: string;
+  lede?: ReactNode;
   /** `theme` sets the inner lede as a show's theme line (italic serif, R70) rather than a standfirst. */
   ledeKind?: 'theme';
   /**
@@ -84,12 +84,21 @@ export function NosHero({
           .join(' ')}
       >
         {photo ? (
-          <div data-nos-hero-media="" className="nos-hero-media">
+          <div
+            data-nos-hero-media=""
+            className="nos-hero-media"
+            style={
+              photo.objectPosition
+                ? ({ '--nos-hero-pos': photo.objectPosition } as CSSProperties)
+                : undefined
+            }
+          >
             <Image
               src={photo.src}
               alt=""
               fill
               priority={priority}
+              fetchPriority={priority ? 'high' : undefined}
               sizes="100vw"
               className="nos-hero-img"
             />

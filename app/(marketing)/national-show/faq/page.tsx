@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { JsonLd, faqPageJsonLd, portableTextToPlainText } from '@/components/seo/JsonLd';
 import { ShowFaqList } from '@/components/show';
 import { hasFaqAnswer } from '@/components/show/ShowFaqList';
 import { HoldingState } from '@/components/show/nos/HoldingState';
@@ -15,6 +16,15 @@ import { buildPageMetadata } from '@/lib/seo';
 import type { ShowFaq, ShowVisitorInfo } from '@/types';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
+
+// The order ShowFaqList lays its category sections out in; the FAQPage node follows it so the
+// markup reads in the order the page does.
+const FAQ_CATEGORY_ORDER = ['getting-there', 'tickets', 'accessibility', 'plant-sales', 'general'];
+
+function categoryRank(faq: ShowFaq): number {
+  const rank = FAQ_CATEGORY_ORDER.indexOf(faq.category ?? '');
+  return rank === -1 ? FAQ_CATEGORY_ORDER.indexOf('general') : rank;
+}
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
@@ -40,10 +50,28 @@ export default async function ShowFaqPage() {
 
   // R77 #2: a public build shows only answered questions; with none left the page holds.
   const hideUnanswered = withholdPlaceholderProse();
-  const holds = hideUnanswered && !(faqs ?? []).some((faq) => faq?.question && hasFaqAnswer(faq));
+  // ONE derived list: what the page shows, in the order it shows it (ShowFaqList lays its
+  // sections out by category, and keeps this order within each). The list and the FAQPage node
+  // both come from it, so a future hide rule applies to both.
+  const visibleFaqs = [...(faqs ?? [])]
+    .filter((faq) => faq?.question && (!hideUnanswered || hasFaqAnswer(faq)))
+    .sort((a, b) => categoryRank(a) - categoryRank(b));
+  const holds = hideUnanswered && visibleFaqs.length === 0;
+
+  // SEO: the entries the page presents as settled. A public build (`hideUnanswered`) renders no
+  // badges, so every answered entry there reads as settled; a beta build badges everything that
+  // is not 'confirmed'.
+  const faqEntries = visibleFaqs
+    .filter((faq) => hasFaqAnswer(faq) && (hideUnanswered || faq.status === 'confirmed'))
+    .map((faq) => ({
+      question: faq.question as string,
+      answer: portableTextToPlainText(faq.answer ?? []),
+    }))
+    .filter((entry) => entry.answer !== '');
 
   return (
     <>
+      {faqEntries.length > 0 ? <JsonLd data={faqPageJsonLd(faqEntries)} /> : null}
       <NosHero
         route="/national-show/faq"
         title={info?.faqTitle ?? 'Frequently asked questions'}
@@ -53,11 +81,11 @@ export default async function ShowFaqPage() {
       />
 
       {holds ? (
-        <HoldingState route="/national-show/faq" facts={facts} contentState="published" />
+        <HoldingState facts={facts} contentState="published" />
       ) : (
         <NosSection wrapClassName="[&_details_p]:max-w-[60ch]">
           <ShowFaqList
-            faqs={faqs}
+            faqs={visibleFaqs}
             pendingLabel={info?.pendingLabel}
             researchLabel={info?.researchLabel}
             hideUnanswered={hideUnanswered}
@@ -65,7 +93,7 @@ export default async function ShowFaqPage() {
 
           <div className="mt-14 border-t border-rule pt-8">
             {info?.faqContactNote ? (
-              <p className="max-w-[60ch] font-sans text-[16px] leading-relaxed text-ink/80">
+              <p className="max-w-[60ch] font-sans text-[16px] leading-[1.55] text-ink/80">
                 {info.faqContactNote}
               </p>
             ) : null}

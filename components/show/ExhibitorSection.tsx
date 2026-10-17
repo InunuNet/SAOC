@@ -23,6 +23,9 @@ export interface ExhibitorSectionProps {
   questionLabel?: string | null;
   children?: ReactNode;
   id?: string;
+  headingId?: string;
+  /** Public build: the per-row marker is replaced by one page-level status line. */
+  hideMarkers?: boolean;
 }
 
 export function ExhibitorSection({
@@ -33,6 +36,8 @@ export function ExhibitorSection({
   questionLabel,
   children,
   id,
+  headingId,
+  hideMarkers = false,
 }: ExhibitorSectionProps) {
   const body = section?.body ?? [];
   if (!section?.heading && body.length === 0) return null;
@@ -40,18 +45,25 @@ export function ExhibitorSection({
   return (
     <section id={id} className="nos-surface">
       {section?.heading ? (
-        <h3 className="nos-opsz-32 font-serif text-[24px] text-ink">{section.heading}</h3>
+        <h3
+          id={headingId}
+          className="nos-opsz-32 scroll-mt-[62px] font-serif text-[24px] text-ink md:scroll-mt-[74px]"
+        >
+          {section.heading}
+        </h3>
       ) : null}
 
-      <ExhibitorStatusBadge
-        status={status}
-        pendingLabel={pendingLabel}
-        researchLabel={researchLabel}
-        questionLabel={questionLabel}
-      />
+      {hideMarkers ? null : (
+        <ExhibitorStatusBadge
+          status={status}
+          pendingLabel={pendingLabel}
+          researchLabel={researchLabel}
+          questionLabel={questionLabel}
+        />
+      )}
 
       {body.length > 0 ? (
-        <div className="mt-3 max-w-3xl space-y-4 font-sans text-[16px] leading-relaxed text-ink/80">
+        <div className="mt-3 max-w-3xl space-y-4 font-sans text-[16px] leading-[1.55] text-ink/80">
           <PortableText value={body} />
         </div>
       ) : null}

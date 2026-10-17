@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 
 import { PageHero } from '@/components/ui/PageHero';
-import { EventCard, MonthGroup } from '@/components/events';
+import { EventCard, MonthGroup, eventHref } from '@/components/events';
+import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
 import { ConfirmationBadge } from '@/components/show';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { upcomingEventsQuery } from '@/sanity/queries';
@@ -13,6 +14,8 @@ import type { SanityEvent } from '@/types';
 export const revalidate = 60;
 
 export const metadata: Metadata = { title: 'Events' };
+
+const BASE_URL = 'https://saoc.co.za';
 
 /** Month label from an ISO date string, e.g. "June 2026" */
 function monthLabel(dateStr: string): string {
@@ -61,7 +64,24 @@ export default async function EventsPage() {
         lede="Shows, workshops, and council meetings across South Africa's affiliated orchid societies."
       />
 
-      <div className="mx-auto max-w-[1280px] px-8 py-16 space-y-16">
+      <div className="saoc-container py-16 space-y-16">
+        {/* One Event node per listed row, so search engines read what the page lists. */}
+        {events.map((event) => (
+          <JsonLd
+            key={event._id}
+            data={eventJsonLd({
+              name: event.title,
+              startDate: event.date,
+              endDate: event.endDate,
+              location: event.location,
+              venue: event.venue,
+              description: event.description,
+              organizer: event.hostSociety?.name,
+              url: `${BASE_URL}${eventHref(event)}`,
+            })}
+          />
+        ))}
+
         {/* Featured events */}
         {featured.length > 0 ? (
           <section>

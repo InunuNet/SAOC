@@ -227,7 +227,7 @@ body {
 }
 .p-lg {
   font-size: var(--body-lg);
-  line-height: 1.65;
+  line-height: 1.55;
 }
 .p {
   font-size: var(--body-md);
@@ -338,4 +338,63 @@ body {
 .eyebrow--on-tint {
   background: var(--parchment);
   border: 1px solid var(--rule);
+}
+
+/* ============================================================
+   F19 (launch-weekend): SAOC design pass.
+   ============================================================ */
+
+/* F19 shared left axis: the header's own container tokens, so every SAOC section heading and eyebrow
+   starts on the header logo's x. The section keeps its full-bleed background; this sits on the inner wrapper. */
+.saoc-container {
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--container-pad);
+}
+
+/* F19 hero scrim (design_system_README l.125): the README's sage diagonal 60% to 25%, a text-zone veil
+   that keeps the copy at 4.5:1 over the carousel, and a short bone pull inside the section's bottom padding. */
+[data-hero-scrim='diagonal'] {
+  background-image: linear-gradient(135deg, rgb(56 65 56 / 0.6), rgb(56 65 56 / 0.25));
+}
+[data-hero-scrim='veil'] {
+  background-image: radial-gradient(
+    ellipse 100% 62% at 50% 50%,
+    rgb(34 40 31 / 0.9) 0%,
+    rgb(34 40 31 / 0.86) 70%,
+    rgb(34 40 31 / 0) 100%
+  );
+}
+@media (min-width: 768px) {
+  [data-hero-scrim='veil'] {
+    background-image: radial-gradient(
+      ellipse 56% 54% at 50% 50%,
+      rgb(34 40 31 / 0.88) 0%,
+      rgb(34 40 31 / 0.84) 62%,
+      rgb(34 40 31 / 0) 100%
+    );
+  }
+}
+[data-hero-scrim='bone'] {
+  background-image: linear-gradient(to top, var(--bone) 0, rgb(232 230 220 / 0) 72px);
+}
+
+/* F19 /judging: heading left, prose right (4fr/7fr), one column below 1024. */
+[data-judging-split] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5) var(--space-8);
+}
+@media (min-width: 1024px) {
+  [data-judging-split] {
+    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+    align-items: start;
+  }
+}
+
+/* F19 gap state: a section withheld on the public build shows the Council's own absence sentence, muted. */
+[data-content-gap] {
+  border-top: 1px solid var(--rule);
+  padding-block: var(--space-5);
+  color: var(--fg-muted);
 }

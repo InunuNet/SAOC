@@ -231,7 +231,7 @@ export async function CategoryTicketsPage({
           )}
 
           {termsNote ? (
-            <p className="border-t border-rule pt-6 font-sans text-[13px] leading-relaxed text-muted">
+            <p className="border-t border-rule pt-6 font-sans text-[14px] leading-[1.55] text-[color:var(--ink-700)]">
               {termsNote}
             </p>
           ) : null}

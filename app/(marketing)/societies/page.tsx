@@ -93,7 +93,7 @@ export default async function SocietiesPage() {
         heading="Find an orchid society near you"
         lede="21 societies across South Africa — growing, showing, and judging together since 1968."
       />
-      <div className="mx-auto max-w-[1280px] px-8 py-16">
+      <div className="saoc-container py-16">
         <Suspense fallback={<SocietiesFallback count={societies.length} />}>
           <SocietiesClient societies={societies} provinces={provinceChips} />
         </Suspense>

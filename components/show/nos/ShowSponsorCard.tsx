@@ -23,7 +23,7 @@ export function ShowSponsorCard({ sponsor }: { sponsor: ShowSponsorCardData }) {
         </p>
       ) : null}
       {sponsor.description ? (
-        <p className="font-sans text-[14px] leading-relaxed text-ink/75">{sponsor.description}</p>
+        <p className="font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/75">{sponsor.description}</p>
       ) : null}
       {sponsor.website ? (
         <a

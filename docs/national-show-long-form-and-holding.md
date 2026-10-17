@@ -11,10 +11,10 @@ Mission launch-weekend, feature F18a (R75, R76, R77). F18b (catalogue rows) is s
 ## Long-form template (R75)
 
 `components/nos/LongFormPage.tsx` lays out a page as head (h2 and lede), aside (the show facts and
-a pull quote), body (the remaining paragraphs with one 21:9 image break) and a Tickets / Plan your
+a pull quote), body (the remaining paragraphs) and a Tickets / Plan your
 visit pair. Routes: `/about`, `/what-to-expect`, `/vendors` (own `cta={false}`, keeps its CtaBand)
-and `/sa-exhibitors` (through `ShowContentState longform`). The break photo per route lives in
-`components/nos/long-form-breaks.ts` and only ever renders inside `[data-nos-image-break]`.
+and `/sa-exhibitors` (through `ShowContentState longform`). The template carries no image break: each approved stock photo already heads one route (R16),
+so none was free. A heading that only repeats the page h1 (case and spacing aside) is not rendered.
 
 Copy is Lee-Ann's, verbatim, from `goldens/f18/longform-copy.json`. The facts (Dates, Host, Venue,
 Cycle) come from `lib/data/show-facts.ts`, which the hub hero also uses, so the two never differ.
@@ -23,7 +23,8 @@ Cycle) come from `lib/data/show-facts.ts`, which the hub hero also uses, so the 
 
 `components/show/nos/HoldingState.tsx` replaces a gap block when a public page has no real prose:
 facts, sibling cards from `nav-config`, and a "Be the first to know" band. Used by programme,
-wosa-conference, international-guests, the archive and the FAQ. It never hides real prose and a
+wosa-conference, international-guests and the FAQ. The archive shows only the committee-records
+card in public. It never hides real prose and a
 fallback page keeps its `data-nos-content-state` marker on the holding section.
 
 Public mode also drops:

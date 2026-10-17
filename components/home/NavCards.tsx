@@ -6,6 +6,7 @@ import {
   showLabelWithEdition,
   showYearOf,
 } from '@/lib/show-identity';
+import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import type { ShowIdentity } from '@/types';
 
 interface NavCardData {
@@ -16,6 +17,8 @@ interface NavCardData {
   meta: string;
   image: string;
   alt: string;
+  /** Title and meta state figures the Council's copy does not source (F19, vote 1C). */
+  unsourced?: boolean;
 }
 
 // F7: the National Show card's title and meta line are show-identity facts (edition,
@@ -33,6 +36,7 @@ const NAV_CARDS: NavCardData[] = [
     meta: '21 societies',
     image: '/images/orchid-pink.jpg',
     alt: 'Pink orchid',
+    unsourced: true,
   },
   {
     href: '/national-show',
@@ -52,6 +56,7 @@ const NAV_CARDS: NavCardData[] = [
     meta: '56 accredited judges',
     image: '/images/orchid-dark.jpg',
     alt: 'Dark orchid',
+    unsourced: true,
   },
   {
     href: '/about',
@@ -61,12 +66,13 @@ const NAV_CARDS: NavCardData[] = [
     meta: 'Reg# 1978/004040/08',
     image: '/images/orchid-violet.jpg',
     alt: 'Violet orchid',
+    unsourced: true,
   },
 ];
 
 const SHOW_CARD_HREF = '/national-show';
 
-function buildNavCards(show?: ShowIdentity | null): NavCardData[] {
+function buildNavCards(show: ShowIdentity | null | undefined, withhold: boolean): NavCardData[] {
   const year = showYearOf(show?.showDate);
   const title = [
     `The ${showLabelWithEdition(show?.edition, 'National Orchid Show')}`,
@@ -76,21 +82,29 @@ function buildNavCards(show?: ShowIdentity | null): NavCardData[] {
     .filter((part): part is string => Boolean(part))
     .join(' · ');
 
-  return NAV_CARDS.map((card) =>
-    card.href === SHOW_CARD_HREF ? { ...card, title, meta: meta || TBC } : card,
-  );
+  return NAV_CARDS.map((card) => {
+    if (card.href === SHOW_CARD_HREF) return { ...card, title, meta: meta || TBC };
+    // The About card's registration number is not a headline claim, so only its title is withheld;
+    // the card's own badge string stands in as its heading.
+    if (card.unsourced && withhold) {
+      return { ...card, title: card.badge, meta: card.badge === 'About' ? card.meta : '' };
+    }
+    return card;
+  });
 }
 
 export interface NavCardsProps {
   show?: ShowIdentity | null;
+  /** True on the public build: unsourced titles and figures are not rendered. */
+  withhold?: boolean;
 }
 
-export function NavCards({ show }: NavCardsProps) {
-  const cards = buildNavCards(show);
+export function NavCards({ show, withhold = false }: NavCardsProps) {
+  const cards = buildNavCards(show, withhold);
 
   return (
-    <section data-home-section="nav-cards" className="py-24 px-8 md:px-16 bg-bone">
-      <div className="max-w-[1280px] mx-auto">
+    <section data-home-section="nav-cards" className="py-24 bg-bone">
+      <div className="saoc-container">
         <div className="mb-12">
           <div className="mb-3">
             <span className="eyebrow eyebrow--on-tint">Find your way in</span>
@@ -106,6 +120,7 @@ export function NavCards({ show }: NavCardsProps) {
               key={card.href}
               href={card.href}
               data-nav-card
+              data-placeholder={card.unsourced && !withhold ? 'true' : undefined}
               className="group flex flex-col bg-parchment border border-rule transition-[translate,box-shadow,border-color] duration-150 ease-(--ease) hover:-translate-y-1 hover:border-accent hover:shadow-[0_20px_50px_rgba(34,40,31,0.08)] focus-visible:-translate-y-1 focus-visible:border-accent focus-visible:shadow-[0_20px_50px_rgba(34,40,31,0.08)] active:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 motion-reduce:active:translate-y-0"
             >
               <div className="relative aspect-[3/2] min-[560px]:aspect-[4/5] overflow-hidden">
@@ -125,16 +140,23 @@ export function NavCards({ show }: NavCardsProps) {
               </div>
 
               <div className="flex flex-col flex-1 p-[22px]">
-                <h3
-                  data-nav-card-title
-                  className="font-serif text-[24px] font-semibold leading-[1.18] text-primary mb-3 underline decoration-transparent decoration-1 underline-offset-4 transition-[color,text-decoration-color] duration-150 ease-(--ease) group-hover:text-primary-800 group-hover:decoration-accent group-focus-visible:text-primary-800 group-focus-visible:decoration-accent text-pretty"
-                >
-                  {card.title}
-                </h3>
+                {card.title ? (
+                  <h3
+                    data-nav-card-title
+                    className="font-serif text-[24px] font-semibold leading-[1.18] text-primary mb-3 underline decoration-transparent decoration-1 underline-offset-4 transition-[color,text-decoration-color] duration-150 ease-(--ease) group-hover:text-primary-800 group-hover:decoration-accent group-focus-visible:text-primary-800 group-focus-visible:decoration-accent text-pretty"
+                  >
+                    {card.title}
+                  </h3>
+                ) : null}
 
                 <p className="font-sans text-[16px] leading-[1.55] text-muted mb-auto pb-5">
                   {card.body}
                 </p>
+                {card.unsourced && !withhold ? (
+                  <div className="pb-4">
+                    <PlaceholderMarker />
+                  </div>
+                ) : null}
 
                 <div className="flex items-center justify-between gap-3 border-t border-rule pt-4">
                   <span

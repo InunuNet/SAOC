@@ -1,17 +1,21 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
+import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
+
 const YEARBOOK_META = [
   { label: 'Editor', value: 'Lindiwe Khumalo' },
   { label: 'Pages', value: '184' },
   { label: 'ISSN', value: '1816-0336' },
 ] as const;
 
+// F19 (vote 1C): nothing in this band is in the Council's Drive (no yearbook, editor, page count or
+// ISSN), so the page renders it only on the beta preview, where the whole band is marked.
 export function YearbookStrip() {
   return (
-    <section data-home-section="yearbook" className="py-24 px-8 md:px-16 bg-bone">
-      <div className="max-w-[1280px] mx-auto grid grid-cols-1 min-[1100px]:grid-cols-2 gap-12 min-[1100px]:gap-20 items-stretch">
-        <div data-yearbook-content className="flex flex-col justify-between gap-10">
+    <section data-home-section="yearbook" data-placeholder="true" className="py-24 bg-bone">
+      <div className="saoc-container grid grid-cols-1 min-[1100px]:grid-cols-2 gap-12 min-[1100px]:gap-20 items-start">
+        <div data-yearbook-content className="flex flex-col justify-start gap-8 self-start">
           <div>
             <div className="mb-5">
               <span className="eyebrow eyebrow--on-tint">In print</span>
@@ -20,7 +24,10 @@ export function YearbookStrip() {
               <em className="whitespace-nowrap">Orchids South Africa</em>
               &nbsp;· 2025 yearbook
             </h2>
-            <p className="font-sans text-[18px] leading-[1.65] text-ink max-w-[520px]">
+            <p
+              data-yearbook-copy
+              className="font-sans text-[16px] leading-[1.55] text-ink max-w-[520px]"
+            >
               Our annual record of award-winning plants, hybridisation notes, society reports and
               judges&apos; commentary. 184 pages. Available to members or via direct subscription.
             </p>
@@ -65,6 +72,9 @@ export function YearbookStrip() {
             className="object-cover"
             sizes="(min-width: 1100px) 50vw, 100vw"
           />
+          <div className="absolute bottom-5 left-5 z-10">
+            <PlaceholderMarker />
+          </div>
         </div>
       </div>
     </section>

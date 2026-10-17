@@ -3,8 +3,9 @@
 // focus-visible ring) rather than inventing a new one. id contract: id="vendor-register-<key>".
 //
 // Opt-in accessibility props (the vendor application form uses them; VendorRegisterForm does not,
-// so its labels do not change): `showRequirement` appends "(required)" / "(optional)" to the
-// label, `error` renders a linked inline message (aria-describedby + aria-invalid).
+// so its labels do not change): `showRequirement` swaps the label to the shared `.nos-form-label` class and
+// puts aria-required on a required input (R82: no visible suffix; the one optional field's label
+// says so in its own text), `error` renders a linked inline message (aria-describedby + aria-invalid).
 interface VendorFormFieldProps {
   fieldKey: string;
   label: string;
@@ -25,6 +26,7 @@ interface VendorFormFieldProps {
 }
 
 const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
+const requirementLabelClass = 'nos-form-label';
 const inputClass =
   'w-full rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60';
 const inputErrorClass = 'border-[var(--status-error)]';
@@ -52,18 +54,18 @@ export function VendorFormField({
   const errorId = `${id}-error`;
   const describedBy = error ? errorId : undefined;
   const fieldClass = error ? `${inputClass} ${inputErrorClass}` : inputClass;
-  const requirement = required ? '(required)' : '(optional)';
 
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className={labelClass}>
-        {showRequirement ? `${label} ${requirement}` : label}
+      <label htmlFor={id} className={showRequirement ? requirementLabelClass : labelClass}>
+        {label}
       </label>
       {htmlType === 'textarea' ? (
         <textarea
           id={id}
           name={fieldKey}
           required={required}
+          aria-required={required ? true : undefined}
           rows={4}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -81,6 +83,7 @@ export function VendorFormField({
           name={fieldKey}
           type={htmlType}
           required={required}
+          aria-required={required ? true : undefined}
           min={min}
           step={step}
           value={value}
