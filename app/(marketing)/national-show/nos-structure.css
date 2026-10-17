@@ -58,8 +58,9 @@
 }
 
 /* R27 group sub-nav: directly under the inner hero, not sticky. Karla 700 14.5px royal,
-   44px items, 24px gap, 1px --line rule on gold-100. <=700px: one snap-scrolling row, hidden
-   scrollbar, an 8px right-edge fade only while the row overflows. */
+   44px items, 24px gap, 1px --line rule on gold-100. <768px: one snap-scrolling row, hidden
+   scrollbar, a 40px edge fade only on an edge that hides items. 767 rather than the R27 700
+   because the Show-group row overflows at 701-767 (goldens/f10-breakpoint.json). */
 .nos-theme .nos-subnav {
   position: relative;
   background-color: var(--parchment);
@@ -97,11 +98,9 @@
   text-decoration-thickness: 2px;
   text-underline-offset: 8px;
 }
-.nos-theme .nos-subnav-fade {
-  display: none;
-}
-@media (max-width: 700px) {
+@media (max-width: 767px) {
   .nos-theme .nos-subnav-row {
+    position: relative;
     flex-wrap: nowrap;
     margin-inline: calc(-1 * var(--nos-axis-pad));
     padding-inline: var(--nos-axis-pad);
@@ -117,14 +116,23 @@
     flex: none;
     scroll-snap-align: start;
   }
-  .nos-theme .nos-subnav[data-overflowing] .nos-subnav-fade {
-    display: block;
-    position: absolute;
-    inset-block: 0;
-    right: 0;
-    width: 8px;
-    pointer-events: none;
-    background: linear-gradient(90deg, rgba(251, 250, 240, 0), var(--parchment));
+  /* A 40px fade to fully transparent on an edge that hides items only; NosSubNav sets the two
+     flags from the row's scroll position, so an edge with nothing beyond it stays clear. */
+  .nos-theme .nos-subnav-row[data-fade-start] {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 40px);
+    mask-image: linear-gradient(to right, transparent 0, #000 40px);
+  }
+  .nos-theme .nos-subnav-row[data-fade-end] {
+    -webkit-mask-image: linear-gradient(to left, transparent 0, #000 40px);
+    mask-image: linear-gradient(to left, transparent 0, #000 40px);
+  }
+  .nos-theme .nos-subnav-row[data-fade-start][data-fade-end] {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 40px),
+      linear-gradient(to left, transparent 0, #000 40px);
+    mask-image: linear-gradient(to right, transparent 0, #000 40px),
+      linear-gradient(to left, transparent 0, #000 40px);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
   }
 }
 

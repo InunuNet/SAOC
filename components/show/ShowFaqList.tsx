@@ -23,6 +23,7 @@ import { PortableText } from '@portabletext/react';
 import type { ShowFaq } from '@/types';
 
 import { ConfirmationBadge } from './ConfirmationBadge';
+import { ShowJumpChips } from './ShowJumpChips';
 
 const CATEGORY_ORDER = [
   'getting-there',
@@ -83,20 +84,13 @@ export function ShowFaqList({
   return (
     <>
       {groups.length > 1 ? (
-        <nav aria-label="FAQ categories" className="mb-10">
-          <ul className="flex flex-wrap gap-2">
-            {groups.map(({ category }) => (
-              <li key={category}>
-                <a
-                  href={`#faq-${category}`}
-                  className="inline-flex min-h-[44px] items-center rounded-[length:var(--radius-pill)] border-[length:var(--border-primary)] border-primary bg-transparent px-3 font-sans text-[14px] font-semibold tracking-normal text-ink hover:bg-bone motion-safe:transition-[color,background-color] motion-safe:duration-150 focus-visible:bg-bone focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring-focus)]"
-                >
-                  {CATEGORY_LABELS[category]}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <ShowJumpChips
+          label="FAQ categories"
+          items={groups.map(({ category }) => ({
+            href: `#faq-${category}`,
+            label: CATEGORY_LABELS[category],
+          }))}
+        />
       ) : null}
 
       <div className="space-y-12">
