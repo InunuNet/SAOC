@@ -8,7 +8,7 @@ import { CtaBand } from '@/components/nos/CtaBand';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { SectionHeading } from '@/components/nos/SectionHeading';
-import { VisitDisclosure } from '@/components/show/VisitDisclosure';
+import { VisitDisclosure, VisitGettingThere } from '@/components/show/VisitDisclosure';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowVenueQuery, showVisitorInfoQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
@@ -30,7 +30,6 @@ export const metadata: Metadata = buildPageMetadata({
 
 // Codi P3 H8: the pending items on this page are grouped under ONE chip per disclosure, to the
 // nos-v4/plan-your-visit.html golden (l.575-616). The two aria-labels are the golden's.
-const GETTING_THERE_LABEL = 'Details to be confirmed by the show committee';
 const EMERGENCY_LABEL = 'Emergency contacts, to be confirmed by the show committee';
 
 // A number worth dialling: digits, with an optional leading + and spaces between groups.
@@ -59,21 +58,17 @@ export default async function PlanYourVisitPage() {
   const dialContacts = emergencyContacts.filter((c) => PHONE_SHAPED.test(c.number ?? ''));
   const onSiteContacts = emergencyContacts.filter((c) => !PHONE_SHAPED.test(c.number ?? ''));
 
-  // The Getting-there items, in page order; an item without a body or list is not drawn.
+  // The Getting-there items, in page order; an item with no body or list is not drawn.
   const gettingThereItems = [
-    { heading: 'Parking', body: info?.parking, children: null },
-    { heading: 'Public transport', body: info?.publicTransport, children: null },
+    { heading: 'Parking', body: info?.parking, status: status.parking },
+    { heading: 'Public transport', body: info?.publicTransport, status: status.publicTransport },
     {
       heading: 'Where to stay',
       body: info?.accommodationIntro,
+      status: status.accommodation,
       children: <AccommodationList options={info?.accommodation} />,
     },
   ].filter((item) => item.body || (item.children && (info?.accommodation ?? []).length > 0));
-  const gettingThereStatus = [status.parking, status.publicTransport, status.accommodation].every(
-    (value) => value === 'confirmed'
-  )
-    ? 'confirmed'
-    : 'pending';
 
   return (
     <>
@@ -93,30 +88,11 @@ export default async function PlanYourVisitPage() {
               lede={info?.gettingThereIntro ?? undefined}
             />
             <TravelRoutes routes={info?.airportRoutes} />
-            {gettingThereItems.length > 0 ? (
-              <VisitDisclosure label={GETTING_THERE_LABEL}>
-                <div>
-                  <ConfirmationBadge
-                    status={gettingThereStatus}
-                    pendingLabel={pendingLabel}
-                    researchLabel={researchLabel}
-                  />
-                </div>
-                {gettingThereItems.map((item) => (
-                  <div key={item.heading} className="grid gap-2">
-                    <h3 className="nos-opsz-32 font-serif text-[22px] leading-[1.2] text-ink">
-                      {item.heading}
-                    </h3>
-                    {item.body ? (
-                      <p className="font-sans text-[16px] leading-[1.55] text-[var(--ink-700)]">
-                        {item.body}
-                      </p>
-                    ) : null}
-                    {item.children}
-                  </div>
-                ))}
-              </VisitDisclosure>
-            ) : null}
+            <VisitGettingThere
+              items={gettingThereItems}
+              pendingLabel={pendingLabel}
+              researchLabel={researchLabel}
+            />
           </section>
 
           <aside>

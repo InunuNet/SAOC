@@ -8,15 +8,18 @@ Round 7 of the National Orchid Show critique. Specs and checks live in
 Golden: `nos-v4/plan-your-visit.html` l.575-616. This is a structural ruling, so it applies in
 preview and public alike: nothing on the page reads the environment.
 
-**Getting there.** After the h2, the lede and the travel routes, one `role="group"` surface
-(`components/show/VisitDisclosure.tsx`, labelled "Details to be confirmed by the show committee")
-holds one full status chip first, then three items in order: Parking, Public transport and Where
-to stay, each with its existing Sanity body. The accommodation list stays under Where to stay. An
-item with no body (and, for Where to stay, no options) is not drawn. The three separate
-`VisitorInfoBlock` cards are gone from this page only; `what-to-expect` still uses that component.
-No card, border or shadow sits around an individual item, because the surface is the one container.
-The golden's closing sentence is not drawn: in the seed it is already the second sentence of the
-section lede, and Sanity holds no separate field for it.
+**Getting there.** After the h2, the lede and the travel routes, `VisitGettingThere`
+(`components/show/VisitDisclosure.tsx`) splits the three items (Parking, Public transport, Where
+to stay, each with its Sanity body; the accommodation list stays under Where to stay) by status
+(Codi's ruling on Codex's P2). Confirmed items are plain headings with their body, first, with no
+surface and no chip. Every other item, whether pending, research or unset, shares ONE
+`role="group"` surface labelled "Details to be confirmed by the show committee", with one chip: the
+pending chip when any of them is pending or unset, otherwise the research chip. All confirmed means
+no surface. Order inside each part is Parking, Public transport, Where to stay. The component is
+driven by props only, so no production switch exists. No card, border or shadow sits around an
+individual item. The three separate `VisitorInfoBlock` cards are gone from this page only;
+`what-to-expect` still uses that component. The golden's closing sentence is not drawn: in the seed
+it is already the second sentence of the section lede, and Sanity holds no separate field for it.
 
 **Venue aside.** DOM order is the Getting-there group, then the venue aside, then the emergency
 section.
