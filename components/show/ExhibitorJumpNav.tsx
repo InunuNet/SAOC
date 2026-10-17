@@ -38,7 +38,7 @@ export function ExhibitorJumpNav({ items }: ExhibitorJumpNavProps) {
             <path d="M5 8l5 5 5-5" />
           </svg>
         </summary>
-        <div role="group" aria-label={LABEL} className="pt-4">
+        <div className="pt-4">
           <ShowJumpChips label={LABEL} items={items} className="mb-0" />
         </div>
       </details>
