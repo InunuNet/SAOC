@@ -32,7 +32,8 @@ const H = K.hooks;
 const ROUTE = '/national-show/tickets';
 void _T; void readGolden;
 
-function measure(a) {
+// runs in the browser: every outer value it needs (the selectors a, the tokens K) arrives as the one evaluate argument, never as a closure
+function measure({ a, K }) {
   const q = (s, r = document) => r.querySelector(s);
   const rc = (e) => { const b = e.getBoundingClientRect(); return { left: b.left, right: b.right, top: b.top + scrollY, bottom: b.bottom + scrollY, width: b.width, height: b.height }; };
   const fan = q(a.fan);
@@ -99,6 +100,16 @@ function measure(a) {
   };
 }
 
+
+// load-time probe: the evaluate callback must be self-contained (a free module variable throws ReferenceError in the page)
+{
+  const src = measure.toString();
+  const free = ['H', 'C', 'P', 'ROUTE', 'D'].filter((v) => new RegExp(`(?<![\\w.$'"])${v}(?![\\w'"$:])`).test(src.replace(/\{ a, K \}/, '')));
+  if (free.length) throw new Error(`probe: measure() reads module variable(s) ${free.join(', ')} that do not exist in the browser`);
+  const inner = new Function(`const document = { getElementById: () => null }; return (${src.replace(/^function measure/, 'function')});`);
+  if (typeof inner() !== 'function') throw new Error('probe: measure() does not parse as a stand-alone function');
+}
+
 await main('F18-A29 v13 tickets hub', async (r) => {
   const cms = await loadCmsNames();
   if (!cms) r.note('CMS names and show dates unreachable (no Sanity project id in the environment): name and sub-lede source checks skipped');
@@ -114,7 +125,7 @@ await main('F18-A29 v13 tickets hub', async (r) => {
       if (st !== 200) { r.fail(`${ROUTE} @${w}: HTTP ${st}`); await ctx.close(); continue; }
       const early = await page.evaluate(() => [...document.querySelectorAll('[data-nos-ticket-fan] [data-fan-link]')].map((l) => l.getBoundingClientRect().height));
       await page.waitForLoadState('networkidle');
-      const m = await page.evaluate(measure, H);
+      const m = await page.evaluate(measure, { a: H, K: { keptGroups: K.keptGroups } });
       const tag = `${ROUTE} @${w}`;
       if (m.overflow > 1) r.fail(`${tag}: horizontal overflow ${m.overflow}px`);
       if (m.h1 !== 'Tickets') r.fail(`${tag}: h1 is "${m.h1}", want "Tickets"`);

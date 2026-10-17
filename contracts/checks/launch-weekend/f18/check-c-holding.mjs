@@ -146,7 +146,7 @@ await main('F18-A3 holding state and public placeholder rule', async (r) => {
                 const block = e.closest('p, li, section, article, div') ?? e;
                 const scope = e.closest('section, article') ?? block;
                 const marked = !!e.closest('[data-placeholder]') || /to be confirmed|placeholder/i.test(block.textContent ?? '') || !!scope.querySelector('[data-placeholder]');
-                hits.push({ word, marked });
+                hits.push({ word, marked, figure: /\b18\b/.test(block.textContent ?? '') });
               }
             }
             return { group: g.join(' / '), hits };
@@ -154,6 +154,7 @@ await main('F18-A3 holding state and public placeholder rule', async (r) => {
         }, AUDIT.hubFacts.previewGroups);
         for (const g of res) {
           if (!g.hits.length) r.fail(`preview /national-show: the unsourced hub fact "${g.group}" is withheld on the preview build (it must show, marked)`);
+          else if (g.group === 'Editions held' && !g.hits.some((x) => x.marked && x.figure)) r.fail('preview /national-show: the "Editions held" block does not carry the figure 18 beside it');
           else if (g.hits.some((x) => !x.marked)) r.fail(`preview /national-show: the unsourced hub fact "${g.group}" renders without a [data-placeholder] or To-be-confirmed marker`);
         }
       }
