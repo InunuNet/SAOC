@@ -5,7 +5,7 @@
 // items it covers, so the items carry no card, border or shadow of their own. The caller
 // supplies every string (the aria-label and all copy); nothing is typed here.
 //
-// At <=700px the chip inside is tightened (0.06em tracking, 10px inline padding) and the
+// At <=700px (inclusive) the chip inside is tightened (0.06em tracking, 10px inline padding) and the
 // surface takes 16px inline padding, so the verbatim chip label stays on one line at 390.
 // The chip rule is important: the NOS marker rule in nos-structure.css outranks a utility.
 // =============================================================
@@ -25,8 +25,11 @@ const TONE_CLASSES: Record<NonNullable<VisitDisclosureProps['tone']>, string> = 
   pale: 'on-pale bg-[var(--gold-100)]',
 };
 
+// `max-[700px]` compiles to width < 700px; the ruling is <=700px, so the media query is spelled out.
+// Whole class names, so Tailwind's source scan finds them.
 const CHIP_FIT_CLASSES =
-  'max-[700px]:[&_[data-confirmation-badge]]:!px-[10px] max-[700px]:[&_[data-confirmation-badge]]:!tracking-[0.06em]';
+  '[@media(max-width:700px)]:[&_[data-confirmation-badge]]:!px-[10px] [@media(max-width:700px)]:[&_[data-confirmation-badge]]:!tracking-[0.06em]';
+const NARROW_PADDING_CLASS = '[@media(max-width:700px)]:px-4';
 
 export function VisitDisclosure({ label, tone = 'gold', children }: VisitDisclosureProps) {
   return (
@@ -35,7 +38,8 @@ export function VisitDisclosure({ label, tone = 'gold', children }: VisitDisclos
       aria-label={label}
       data-tone={tone}
       className={[
-        'grid gap-5 rounded-[16px] px-[clamp(20px,3vw,32px)] pb-6 pt-5 shadow-sm max-[700px]:px-4',
+        'grid gap-5 rounded-[16px] px-[clamp(20px,3vw,32px)] pb-6 pt-5 shadow-sm',
+        NARROW_PADDING_CLASS,
         TONE_CLASSES[tone],
         CHIP_FIT_CLASSES,
       ].join(' ')}
