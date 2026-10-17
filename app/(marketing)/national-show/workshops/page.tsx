@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 
-import { Card } from '@/components/nos/Card';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
@@ -31,6 +30,12 @@ const SESSIONS_NOTE =
   'Individual session times are still being finalised — the products below are the ' +
   'sellable Sunset Cocktails and Field Trip options. Per-session bookings are not yet ' +
   'available for purchase.';
+// Its first sentence is the disclosure body and its second the foot line (the wording is unchanged).
+const [SESSIONS_NOTE_BODY, SESSIONS_NOTE_FOOT] = SESSIONS_NOTE.match(/[^.]+\./g) ?? [
+  SESSIONS_NOTE,
+  '',
+];
+const SESSIONS_NOTE_CHIP = 'To be confirmed by the show committee';
 
 const WORKSHOP_PAGE_PRODUCTS: readonly TicketProductId[] = ['sunset', 'workshops'];
 
@@ -47,12 +52,13 @@ export default async function WorkshopsFieldTripsTicketsPage() {
         priority
       />
       <NosSection>
-        <Card
-          role="note"
-          className="font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-muted"
-        >
-          {SESSIONS_NOTE}
-        </Card>
+        <div className="nos-surface nk-disclosure">
+          <span className="nk-chip">{SESSIONS_NOTE_CHIP}</span>
+          <div role="note" className="nk-disclosure-text">
+            <p className="nk-disclosure-body">{SESSIONS_NOTE_BODY.trim()}</p>{' '}
+            <p className="nk-disclosure-foot">{SESSIONS_NOTE_FOOT.trim()}</p>
+          </div>
+        </div>
       </NosSection>
       {!salesOpen ? <SalesStatusLine /> : null}
       <TicketSection id="programme" title={TICKET_COPY.sections.programme} columns={2}>

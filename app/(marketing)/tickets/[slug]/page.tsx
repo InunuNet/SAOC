@@ -59,6 +59,7 @@ interface SanityTicketType {
   category?: string | null;
   capacityPool?: string | null;
   headcountPerUnit?: number | null;
+  excludedDays?: string[] | null;
 }
 
 interface Props {
@@ -107,7 +108,11 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
   const activeShowId = resolveActiveShow(allShows ?? []);
   const activeShowDoc = activeShowId ? (allShows ?? []).find((s) => s._id === activeShowId) : null;
   const showWindow = buildShowWindow(activeShowDoc ?? null);
-  const showDays = showWindow ? computeShowDays(showWindow) : [];
+  // A day the product excludes (the Day Pass has no Thursday) is not offered: checkout rejects it.
+  const excludedDays = ticketType.excludedDays ?? [];
+  const showDays = (showWindow ? computeShowDays(showWindow) : []).filter(
+    (day) => !excludedDays.includes(day)
+  );
 
   const salesOpen = salesState?.salesOpen === true;
   const buyButtonLabel = pageData?.buyButtonLabel ?? FALLBACK_BUY_LABEL;

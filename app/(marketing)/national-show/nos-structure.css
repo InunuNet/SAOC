@@ -1894,6 +1894,31 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     display: inline;
   }
 }
+/* The workshops sessions disclosure (v4 .disclosure): chip, 16/1.55 body, 15/1.55 foot line. */
+.nos-theme .nk-disclosure {
+  display: grid;
+  gap: 20px;
+  justify-items: start;
+}
+.nos-theme .nk-disclosure-text {
+  display: grid;
+  gap: 20px;
+}
+.nos-theme .nk-disclosure-body {
+  font-size: var(--fs-body, 1rem);
+  line-height: 1.55;
+  color: var(--ink-700);
+}
+.nos-theme .nk-disclosure-foot {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+@media (max-width: 700px) {
+  .nos-theme .nk-disclosure {
+    padding-inline: 16px;
+  }
+}
 /* F18-KEEPSAKE-END */
 /* Hub "What it is" row and its figures (v4 about and figures): prose and figures share a
    baseline, each figure sits under a hairline, two per row. */
