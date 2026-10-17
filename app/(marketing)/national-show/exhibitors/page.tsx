@@ -131,8 +131,9 @@ export default async function ExhibitorInfoPage() {
   // Public build: every row that would have carried a marker, by the heading it carries.
   const covered: { name: string | null | undefined; marker: Marker | null }[] = publicMode
     ? [
-        ...keyDates.map((row) => ({ name: row.label, marker: markerOf(row.status) })),
-        ...journey.map((step) => ({ name: step.title, marker: markerOf(step.status) })),
+        // A group is named by its own heading, once per marker that one of its rows carried.
+        ...keyDates.map((row) => ({ name: info?.keyDatesHeading, marker: markerOf(row.status) })),
+        ...journey.map((step) => ({ name: stepsHeading, marker: markerOf(step.status) })),
         ...sections.map((name) => ({
           name: info?.[name]?.heading,
           marker: markerOf(status[name]),
