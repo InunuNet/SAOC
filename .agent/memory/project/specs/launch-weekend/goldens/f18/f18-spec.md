@@ -1,6 +1,6 @@
 # F18 spec: long-form template, public holding state, ledes, FAQ, exhibitors (F18a) and the v13 keepsake ticket system (F18b)
 
-Base: main 76ad8b98 (F18a) with spec/lw-f18 merged in. Architect: Sonnet 5.5. Skills the dev MUST load and apply (name them in the critique log): `impeccable` (craft-floor, polish, critique), `frontend-design`, `web-design-guidelines`, `accessibility`. No new brand asset, colour, font, shadow, animation or emoji beyond what the approved v13 golden itself carries; no invented copy (section 7).
+Base: main 63f3e74d (F18a; was 76ad8b98, which fails A10 on main's own vendor-component and Karla changes) with spec/lw-f18 merged in. Architect: Sonnet 5.5. Skills the dev MUST load and apply (name them in the critique log): `impeccable` (craft-floor, polish, critique), `frontend-design`, `web-design-guidelines`, `accessibility`. No new brand asset, colour, font, shadow, animation or emoji beyond what the approved v13 golden itself carries; no invented copy (section 7).
 
 design-cb is the design lead and its rulings are final (Brad): implement v13 one-to-one; any deviation needs design-cb's yes first. The critique bar for F18b is P0/P1/P2 = 0, impeccable >= 39/40 and design-cb's audit PASS against `goldens/f18b/F18B-AUDIT-CHECKLIST.md`; iteration is uncapped. site-77 owns `components/chrome/UtilityBar.tsx` and the NOS header components (R74 #7): never edit them (A10).
 

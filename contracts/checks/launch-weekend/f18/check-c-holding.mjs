@@ -31,8 +31,9 @@ function measure({ S }) {
   const cs = (e) => getComputedStyle(e);
   const main = q('main');
   // every NOS route wraps its page in ONE div (DIV.nos-theme, national-show/layout.tsx): count blocks inside that wrapper, not main's single child
+  const NON_BLOCK = 'nav.nos-subnav, script, style, template';
   let contentRoot = main;
-  while (contentRoot.children.length === 1 && contentRoot.firstElementChild.tagName === 'DIV') contentRoot = contentRoot.firstElementChild;
+  while ([...contentRoot.children].filter((k) => !k.matches('script, style, template')).length === 1 && [...contentRoot.children].find((k) => !k.matches('script, style, template')).tagName === 'DIV') contentRoot = [...contentRoot.children].find((k) => !k.matches('script, style, template'));
   const root = qa(S.root);
   const out = {
     holding: root.length,
@@ -46,8 +47,8 @@ function measure({ S }) {
     miniLists: qa(S.cards).length + qa('main h2, main h3, main p, main span').filter((e) => t(e).toLowerCase() === 'explore the show' && !e.closest('nav[aria-label="Explore the show pages"]')).length,
     levels: qa('main h1, main h2, main h3, main h4, main h5, main h6').map((h) => Number(h.tagName[1])),
     buyLinks: qa('main a').filter((x) => t(x) === 'Buy ticket').map((x) => x.getAttribute('href') ?? ''),
-    // nav.nos-subnav is route chrome (the standard inner-route sub-nav), not a content block
-    kids: [...contentRoot.children].filter((k) => !k.matches('nav.nos-subnav')).map((k) => ({
+    // route chrome and non-rendering elements are not content blocks: nav.nos-subnav (the inner-route sub-nav), script (the JSON-LD node main 63f3e74d adds first in the wrapper), style, template
+    kids: [...contentRoot.children].filter((k) => !k.matches(NON_BLOCK)).map((k) => ({
       hero: !!(k.matches('[data-nos-hero]') || k.querySelector('[data-nos-hero]')),
       awaiting: t(k).includes('Show history awaiting committee records'),
       index: !!k.querySelector('nav[aria-label="Explore the show pages"]') || k.matches('nav[aria-label="Explore the show pages"]'),
@@ -74,7 +75,7 @@ function measure({ S }) {
   }
   out.orphans = orphans;
   const idx = q('nav[aria-label="Explore the show pages"]');
-  const kids = [...contentRoot.children].filter((k) => !k.matches('nav.nos-subnav'));
+  const kids = [...contentRoot.children].filter((k) => !k.matches(NON_BLOCK));
   out.indexLast = !!idx && kids.length > 0 && (kids[kids.length - 1] === idx || kids[kids.length - 1].contains(idx));
   return out;
 }
@@ -103,6 +104,8 @@ if (judgeArchiveShape(good, SHAPE_STRING).length) throw new Error('probe: the co
 if (!judgeArchiveShape([...good.slice(0, 2), blk({}), good[2]], SHAPE_STRING).length) throw new Error('probe: a 4-block archive page is NOT rejected');
 // the sub-nav is filtered out before counting (measure), so a page of hero, sub-nav, card, index judges as the 3 content blocks; an extra CONTENT block beside them still fails
 const dropChrome = (blocks) => blocks.filter((b) => !b.chrome);
+if (judgeArchiveShape(dropChrome([blk({ chrome: true }), good[0], blk({ chrome: true }), good[1], good[2]]), SHAPE_STRING).length) throw new Error('probe: a leading JSON-LD script or the sub-nav wrongly counts as a content block');
+if (!judgeArchiveShape(dropChrome([blk({ chrome: true }), good[0], blk({ chrome: true }), good[1], blk({}), good[2]]), SHAPE_STRING).length) throw new Error('probe: an extra content block beside a leading script and the sub-nav is NOT rejected');
 if (judgeArchiveShape(dropChrome([good[0], blk({ chrome: true }), good[1], good[2]]), SHAPE_STRING).length) throw new Error('probe: the route sub-nav wrongly counts as a content block');
 if (!judgeArchiveShape(dropChrome([good[0], blk({ chrome: true }), good[1], blk({}), good[2]]), SHAPE_STRING).length) throw new Error('probe: an extra content block beside the sub-nav is NOT rejected');
 if (!judgeArchiveShape([good[0], good[1], blk({ royal: true }), good[2]], SHAPE_STRING).length) throw new Error('probe: an extra planning band is NOT rejected');
