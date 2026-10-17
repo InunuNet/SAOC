@@ -4,6 +4,9 @@ import { useState } from 'react';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
+const HINT_ID = 'cf-message-hint';
+const ERROR_ID = 'cf-message-error';
+
 export function ContactForm() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -12,12 +15,14 @@ export function ContactForm() {
   const [hp, setHp] = useState(''); // honeypot — never sent to the API
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [messageInvalid, setMessageInvalid] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (status === 'submitting') return;
 
     // 1. Honeypot — if filled, a bot did it. Show generic error, DO NOT call the API.
+    setMessageInvalid(false);
     if (hp.trim() !== '') {
       setStatus('error');
       setErrorMessage('Something went wrong. Please try again.');
@@ -27,6 +32,7 @@ export function ContactForm() {
     // 2. Client guard mirrors the API (cheap UX, API is still source of truth)
     if (message.trim().length < 10) {
       setStatus('error');
+      setMessageInvalid(true);
       setErrorMessage('Please write a message of at least 10 characters.');
       return;
     }
@@ -55,22 +61,27 @@ export function ContactForm() {
     }
   }
 
-  if (status === 'success') {
-    return (
-      <div className="border border-rule bg-parchment p-8">
-        <h3 className="font-serif text-[22px] font-semibold text-ink">Thank you</h3>
-        <p className="mt-3 font-sans text-[15px] leading-relaxed text-ink/80">
-          Your message has reached the SAOC secretariat. We&apos;ll be in touch soon.
-        </p>
-      </div>
-    );
-  }
-
+  // The field boundary is --muted (a 3:1 non-text contrast, WCAG 1.4.11); the hairline --rule is too faint for an input.
   const inputClass =
-    'w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none focus:border-ink/40 transition-colors disabled:opacity-60';
+    'w-full rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[16px] text-ink placeholder:text-muted outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2 transition-colors disabled:opacity-60';
   const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 
+  const showError = status === 'error' && errorMessage !== '';
+
   return (
+    <>
+      {/* Live region: present before submit so the success message is announced when it arrives. */}
+      <div role="status" aria-live="polite">
+        {status === 'success' ? (
+          <div className="border border-rule bg-parchment p-8">
+            <h3 className="font-serif text-[22px] font-semibold text-ink">Thank you</h3>
+            <p className="mt-3 font-sans text-[16px] leading-[1.55] text-ink/80">
+              Your message has reached the SAOC secretariat. We&apos;ll be in touch soon.
+            </p>
+          </div>
+        ) : null}
+      </div>
+      {status === 'success' ? null : (
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>
       {/* Name */}
       <div className="space-y-1.5">
@@ -81,6 +92,7 @@ export function ContactForm() {
           id="cf-name"
           type="text"
           name="name"
+          autoComplete="name"
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -99,6 +111,7 @@ export function ContactForm() {
           id="cf-email"
           type="email"
           name="email"
+          autoComplete="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -137,13 +150,17 @@ export function ContactForm() {
           required
           minLength={10}
           rows={6}
+          aria-describedby={showError && messageInvalid ? `${HINT_ID} ${ERROR_ID}` : HINT_ID}
+          aria-invalid={messageInvalid ? 'true' : undefined}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           disabled={status === 'submitting'}
           placeholder="Write your message here…"
           className={`${inputClass} resize-y`}
         />
-        <p className="font-mono text-[11px] text-muted">Minimum 10 characters.</p>
+        <p id={HINT_ID} className="font-mono text-[11px] text-muted">
+          Minimum 10 characters.
+        </p>
       </div>
 
       {/* Honeypot — visually hidden, tab-unreachable, aria-hidden */}
@@ -162,8 +179,12 @@ export function ContactForm() {
       </div>
 
       {/* Inline error */}
-      {status === 'error' && errorMessage ? (
-        <p role="alert" className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800">
+      {showError ? (
+        <p
+          id={ERROR_ID}
+          role="alert"
+          className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[16px] leading-[1.55] text-primary-800"
+        >
           {errorMessage}
         </p>
       ) : null}
@@ -171,10 +192,12 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={status === 'submitting'}
-        className="rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink hover:bg-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60 disabled:cursor-not-allowed"
+        className="inline-flex min-h-11 items-center rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink hover:bg-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {status === 'submitting' ? 'Sending…' : 'Send message'}
       </button>
     </form>
+      )}
+    </>
   );
 }

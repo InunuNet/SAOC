@@ -2,6 +2,8 @@ import Link from 'next/link';
 
 import type { SanityEvent } from '@/types';
 
+import { eventHref } from './event-link';
+
 export interface EventCardProps {
   event: SanityEvent;
 }
@@ -20,21 +22,21 @@ export function EventCard({ event }: EventCardProps) {
   return (
     <article className="flex gap-5 border border-rule bg-parchment px-5 py-4 transition hover:bg-bone">
       {/* Date column */}
-      <div
+      <time
+        dateTime={event.date}
         className="flex w-12 shrink-0 flex-col items-center justify-start pt-0.5"
-        aria-hidden="true"
       >
         <span className="font-serif text-[28px] font-medium leading-none text-primary">{day}</span>
         <span className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
           {month}
         </span>
-      </div>
+      </time>
 
       {/* Content column */}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-start gap-2">
           <Link
-            href={`/events/${event.slug}`}
+            href={eventHref(event)}
             className="font-serif text-[18px] font-semibold leading-snug text-ink hover:underline"
           >
             {event.title}

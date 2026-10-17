@@ -5,12 +5,14 @@ import Link from 'next/link';
 import { PageHero } from '@/components/ui/PageHero';
 import { ContactForm } from '@/components/contact';
 import { VenueCard } from '@/components/show';
+import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import {
   contactPageQuery,
   nationalShowVenueQuery,
   showVisitorInfoQuery,
 } from '@/sanity/queries';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import type { ShowVenue, ShowVisitorInfo } from '@/types';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
@@ -30,6 +32,9 @@ interface ContactPageData {
   title: string | null;
   directContacts: DirectContact[] | null;
 }
+
+// Role labels the Council's Drive does not source (mirrors provenance.unsourced "contact-labels").
+const UNSOURCED_LABEL = /SAOC Secretariat|General enquiries/;
 
 // Static fallback when Sanity returns null — SAOC secretariat.
 const FALLBACK_CONTACTS: DirectContact[] = [
@@ -52,10 +57,13 @@ export default async function ContactPage() {
     }),
   ]);
 
+  // F19 (vote 1C): only the mailbox is sourced (Spec V3). The "SAOC Secretariat" and "General
+  // enquiries" labels are not in the Council's Drive, whether they come from the CMS or the
+  // fallback, so the public build shows the address alone and the beta preview marks the labels.
+  const withhold = withholdPlaceholderProse();
   const contacts: DirectContact[] =
-    data?.directContacts && data.directContacts.length > 0
-      ? data.directContacts
-      : FALLBACK_CONTACTS;
+    data?.directContacts && data.directContacts.length > 0 ? data.directContacts : FALLBACK_CONTACTS;
+  const isLabelUnsourced = (text: string | null) => text !== null && UNSOURCED_LABEL.test(text);
 
   return (
     <>
@@ -65,32 +73,38 @@ export default async function ContactPage() {
         heading={data?.title ?? 'Contact SAOC'}
         lede="Questions about societies, shows, judging, or membership? Reach the right person, or send us a message."
       />
-      <div className="mx-auto max-w-[1280px] px-8 py-16">
+      <div className="saoc-container py-16">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
           {/* LEFT — direct contacts sidebar */}
           <aside className="space-y-6">
             <h2 className="font-serif text-[22px] font-semibold text-ink">Direct contacts</h2>
             <ul className="space-y-5">
-              {contacts.map((c, i) => (
-                <li key={i} className="border-b border-rule pb-5 last:border-0">
-                  {c.role ? (
-                    <p className="font-mono text-[11px] tracking-[0.16em] text-muted">
-                      {c.role}
-                    </p>
-                  ) : null}
-                  {c.name ? (
-                    <p className="mt-1 font-serif text-[17px] text-ink">{c.name}</p>
-                  ) : null}
-                  {c.email ? (
-                    <a
-                      href={`mailto:${c.email}`}
-                      className="mt-1 inline-flex min-h-6 items-center font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent"
-                    >
-                      {c.email}
-                    </a>
-                  ) : null}
-                </li>
-              ))}
+              {contacts.map((c, i) => {
+                const marked = isLabelUnsourced(c.role) || isLabelUnsourced(c.name);
+                const role = withhold && isLabelUnsourced(c.role) ? null : c.role;
+                const name = withhold && isLabelUnsourced(c.name) ? null : c.name;
+                return (
+                  <li
+                    key={i}
+                    data-placeholder={marked && !withhold ? 'true' : undefined}
+                    className="flex flex-col items-start gap-1 border-b border-rule pb-5 last:border-0"
+                  >
+                    {role ? (
+                      <p className="font-mono text-[11px] tracking-[0.16em] text-muted">{role}</p>
+                    ) : null}
+                    {name ? <p className="mt-1 font-serif text-[17px] text-ink">{name}</p> : null}
+                    {c.email ? (
+                      <a
+                        href={`mailto:${c.email}`}
+                        className="mt-1 inline-flex min-h-6 items-center font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent"
+                      >
+                        {c.email}
+                      </a>
+                    ) : null}
+                    {marked && !withhold ? <PlaceholderMarker /> : null}
+                  </li>
+                );
+              })}
             </ul>
 
             <VenueCard
@@ -100,7 +114,7 @@ export default async function ContactPage() {
               pendingLabel={info?.pendingLabel}
               researchLabel={info?.researchLabel}
             />
-            <p className="font-sans text-[14px] text-ink/70">
+            <p className="font-sans text-[16px] leading-[1.55] text-ink/70">
               Visiting the show?{' '}
               <Link
                 href="/national-show"

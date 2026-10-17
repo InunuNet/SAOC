@@ -66,7 +66,8 @@ for (const vp of VIEWPORTS) {
     if (asp < T.yearbook.photoAspect[0] || asp > T.yearbook.photoAspect[1]) problems.push(`${vp.name}: yearbook photo aspect ${asp.toFixed(2)} not 4/5`);
     if (!near(m.eyebrow.y, m.img.y, T.yearbook.alignTolPx)) problems.push(`${vp.name}: copy column top (${Math.round(m.eyebrow.y)}) is not on the photo top (${Math.round(m.img.y)})`);
     const lastBottom = Math.max(...m.ctas.map((c) => c.b));
-    if (!near(lastBottom, m.img.b, T.yearbook.alignTolPx)) problems.push(`${vp.name}: CTA bottom (${Math.round(lastBottom)}) is not on the photo bottom (${Math.round(m.img.b)})`);
+    // F19 RE-PIN (spec/lw-f19, R79 #4): the copy column no longer stretches to the photo; the actions sit under the meta and the photo carries the height, so the last CTA may end ABOVE the photo bottom (never below it).
+    if (lastBottom > m.img.b + T.yearbook.alignTolPx) problems.push(`${vp.name}: CTA bottom (${Math.round(lastBottom)}) is below the photo bottom (${Math.round(m.img.b)})`);
     if (m.img.y - m.ybBox.y !== m.ybBox.b - m.img.b && !near(m.img.y - m.ybBox.y, m.ybBox.b - m.img.b, 2)) problems.push(`${vp.name}: yearbook section padding is asymmetric around the photo`);
     if (!(m.img.x > m.content.r)) problems.push(`${vp.name}: photo must sit right of the copy`);
   } else {
