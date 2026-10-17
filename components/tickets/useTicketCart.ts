@@ -19,7 +19,11 @@ import {
   type CartAttendee,
 } from '@/lib/cart';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
-import { emptyAttendee, validateAttendees, validateChosenDays } from '@/components/tickets/cartValidation';
+import {
+  emptyAttendee,
+  validateAttendees,
+  validateChosenDays,
+} from '@/components/tickets/cartValidation';
 import type { AttendeeFieldErrors } from '@/components/tickets/CartAttendeeFields';
 import type { DayPickerErrors } from '@/components/tickets/CartDayPicker';
 import type { TicketTypeCardData } from '@/components/tickets/TicketTypeCard';
@@ -36,12 +40,52 @@ export interface CheckoutRedirect {
   providerId: string;
 }
 
-export function useTicketCart(ticketTypes: TicketTypeCardData[], showDays: string[]) {
+/** F18b — a hub card's "Buy ticket" link opens the screen with its quantity (and day) chosen. */
+export interface CartPrefill {
+  quantity: number;
+  day: string | null;
+}
+
+interface PrefilledCart {
+  quantities: Record<string, number>;
+  attendeesByType: Record<string, CartAttendee[]>;
+  attendeesByDay: AttendeesByDay;
+}
+
+// Applies a prefill to a single-type screen only: with several types there is no one type the
+// quantity could mean. A Day Pass opens with its quantity on the chosen day (the first show day
+// when the link carries none, or one that is not a show day).
+function prefillCart(
+  ticketTypes: TicketTypeCardData[],
+  showDays: string[],
+  prefill: CartPrefill | undefined
+): PrefilledCart {
+  const empty: PrefilledCart = { quantities: {}, attendeesByType: {}, attendeesByDay: {} };
+  if (!prefill || prefill.quantity < 1 || ticketTypes.length !== 1) return empty;
+  const type = ticketTypes[0];
+  const rows = Array.from({ length: prefill.quantity }, emptyAttendee);
+  const quantities = { [type.slug]: prefill.quantity };
+  if (!type.requiresDaySelection) {
+    return { quantities, attendeesByType: { [type.slug]: rows }, attendeesByDay: {} };
+  }
+  const day = prefill.day && showDays.includes(prefill.day) ? prefill.day : showDays[0];
+  if (!day) return empty;
+  return { quantities, attendeesByType: {}, attendeesByDay: { [day]: rows } };
+}
+
+export function useTicketCart(
+  ticketTypes: TicketTypeCardData[],
+  showDays: string[],
+  prefill?: CartPrefill
+) {
   const typesOrder = ticketTypes.map((t) => t.slug);
   const useDayQuantityPicker =
     ticketTypes.length === 1 && ticketTypes[0].requiresDaySelection === true;
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [attendeesByTypeState, setAttendeesByType] = useState<Record<string, CartAttendee[]>>({});
+  const [initial] = useState(() => prefillCart(ticketTypes, showDays, prefill));
+  const [quantities, setQuantities] = useState<Record<string, number>>(initial.quantities);
+  const [attendeesByTypeState, setAttendeesByType] = useState<Record<string, CartAttendee[]>>(
+    initial.attendeesByType
+  );
   const [attendeeErrors, setAttendeeErrors] = useState<AttendeeFieldErrors>({});
   const [chosenDayByType, setChosenDayByType] = useState<Record<string, string[]>>({});
   const [chosenDayErrors, setChosenDayErrors] = useState<DayPickerErrors>({});
@@ -50,12 +94,15 @@ export function useTicketCart(ticketTypes: TicketTypeCardData[], showDays: strin
   // read of each day's own row-array length, so it cannot drift from attendeesByDay by
   // construction. Coexists with, and is independent of, chosenDayByType above (F5's
   // per-unit day-assignment model, still used by CartDayPicker's multi-type cart path).
-  const [attendeesByDay, setAttendeesByDay] = useState<AttendeesByDay>({});
+  const [attendeesByDay, setAttendeesByDay] = useState<AttendeesByDay>(initial.attendeesByDay);
   const quantitiesByDay = Object.fromEntries(
     showDays.map((day) => [day, attendeesByDay[day]?.length ?? 0])
   );
   const attendeesByType = useDayQuantityPicker
-    ? { ...attendeesByTypeState, [ticketTypes[0].slug]: flattenAttendeesByDay(attendeesByDay, showDays) }
+    ? {
+        ...attendeesByTypeState,
+        [ticketTypes[0].slug]: flattenAttendeesByDay(attendeesByDay, showDays),
+      }
     : attendeesByTypeState;
   const [cartError, setCartError] = useState('');
   const [status, setStatus] = useState<CheckoutStatus>('idle');
@@ -115,14 +162,24 @@ export function useTicketCart(ticketTypes: TicketTypeCardData[], showDays: strin
     setQuantities((prev) => ({ ...prev, [slug]: (prev[slug] ?? 0) + delta }));
   }
 
-  function updateAttendeeField(slug: string, index: number, field: keyof CartAttendee, value: string) {
+  function updateAttendeeField(
+    slug: string,
+    index: number,
+    field: keyof CartAttendee,
+    value: string
+  ) {
     if (useDayQuantityPicker && slug === ticketTypes[0].slug) {
-      setAttendeesByDay((prev) => updateAttendeeFieldByFlatIndex(prev, showDays, index, field, value));
+      setAttendeesByDay((prev) =>
+        updateAttendeeFieldByFlatIndex(prev, showDays, index, field, value)
+      );
       return;
     }
     setAttendeesByType((prev) => {
       const rows = prev[slug] ?? [];
-      return { ...prev, [slug]: rows.map((row, i) => (i === index ? { ...row, [field]: value } : row)) };
+      return {
+        ...prev,
+        [slug]: rows.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
+      };
     });
   }
 
@@ -163,10 +220,17 @@ export function useTicketCart(ticketTypes: TicketTypeCardData[], showDays: strin
           showDays,
         });
       } else {
-        lineItems = buildLineItemsFromCart(quantities, attendeesByType, typesOrder, chosenDayByType);
+        lineItems = buildLineItemsFromCart(
+          quantities,
+          attendeesByType,
+          typesOrder,
+          chosenDayByType
+        );
       }
     } catch {
-      setCartError('Something is off with your ticket selection. Please review your entries and try again.');
+      setCartError(
+        'Something is off with your ticket selection. Please review your entries and try again.'
+      );
       return;
     }
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+import { NosSection } from '@/components/nos/NosSection';
 import { client } from '@/sanity/lib/client';
 import { ticketsPageQuery } from '@/sanity/queries';
 
@@ -43,7 +44,10 @@ export function ConfirmationPoller({ bookingRef }: ConfirmationPollerProps) {
   const [state, setState] = useState<PollState>('checking');
 
   useEffect(() => {
-    client?.fetch<TicketsPageCopy>(ticketsPageQuery).then(setCopy).catch(() => setCopy(null));
+    client
+      ?.fetch<TicketsPageCopy>(ticketsPageQuery)
+      .then(setCopy)
+      .catch(() => setCopy(null));
   }, []);
 
   useEffect(() => {
@@ -95,41 +99,51 @@ export function ConfirmationPoller({ bookingRef }: ConfirmationPollerProps) {
     copy?.confirmationNotFoundMessage ?? "We couldn't find a booking for that reference.";
 
   return (
-    <div className="mx-auto max-w-[600px] px-8 py-20 text-center">
-      {(state === 'checking' || state === 'reserved') && (
-        <div role="status" aria-live="polite">
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Reserved</p>
-          <h1 className="mt-3 font-serif text-[32px] font-medium text-ink">{confirmationPendingHeading}</h1>
-          <p className="mt-4 font-sans text-[15px] leading-relaxed text-ink/80">{confirmationPendingMessage}</p>
-        </div>
-      )}
+    <NosSection>
+      <div className="mx-auto max-w-[600px] text-center">
+        {(state === 'checking' || state === 'reserved') && (
+          <div role="status" aria-live="polite">
+            <p className="font-sans text-[13px] font-semibold text-muted">Reserved</p>
+            <h2 className="mt-3 font-serif text-[32px] font-medium text-ink">
+              {confirmationPendingHeading}
+            </h2>
+            <p className="mt-4 font-sans text-[15px] leading-relaxed text-ink/80">
+              {confirmationPendingMessage}
+            </p>
+          </div>
+        )}
 
-      {state === 'timed-out' && (
-        <div role="status" aria-live="polite">
-          <h1 className="font-serif text-[32px] font-medium text-ink">{confirmationPendingHeading}</h1>
-          <p className="mt-4 font-sans text-[15px] leading-relaxed text-ink/80">
-            This is taking longer than expected. Please don&apos;t resubmit payment — contact
-            info@saoc.co.za with your booking reference if this doesn&apos;t resolve soon.
-          </p>
-          {bookingRef ? (
-            <p className="mt-3 font-mono text-[13px] text-muted">Booking ref: {bookingRef}</p>
-          ) : null}
-        </div>
-      )}
+        {state === 'timed-out' && (
+          <div role="status" aria-live="polite">
+            <h2 className="font-serif text-[32px] font-medium text-ink">
+              {confirmationPendingHeading}
+            </h2>
+            <p className="mt-4 font-sans text-[15px] leading-relaxed text-ink/80">
+              This is taking longer than expected. Please don&apos;t resubmit payment — contact
+              info@saoc.co.za with your booking reference if this doesn&apos;t resolve soon.
+            </p>
+            {bookingRef ? (
+              <p className="mt-3 font-sans text-[13px] text-muted">Booking ref: {bookingRef}</p>
+            ) : null}
+          </div>
+        )}
 
-      {state === 'not-found' && (
-        <div>
-          <h1 className="font-serif text-[28px] font-medium text-ink">Booking not found</h1>
-          <p className="mt-4 font-sans text-[15px] leading-relaxed text-ink/80">{confirmationNotFoundMessage}</p>
-        </div>
-      )}
+        {state === 'not-found' && (
+          <div>
+            <h2 className="font-serif text-[28px] font-medium text-ink">Booking not found</h2>
+            <p className="mt-4 font-sans text-[15px] leading-relaxed text-ink/80">
+              {confirmationNotFoundMessage}
+            </p>
+          </div>
+        )}
 
-      <Link
-        href="/tickets"
-        className="mt-8 inline-block font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent"
-      >
-        Back to tickets
-      </Link>
-    </div>
+        <Link
+          href="/national-show/tickets"
+          className="mt-8 inline-block font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent"
+        >
+          Back to tickets
+        </Link>
+      </div>
+    </NosSection>
   );
 }

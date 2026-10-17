@@ -10,6 +10,8 @@
 // 'use client' directive — it inherits the client boundary from its parent form.
 import Link from 'next/link';
 
+import { formatRand } from '@/components/nos/cheapest-admission';
+
 export interface TicketTypeCardData {
   slug: string;
   name: string;
@@ -44,6 +46,12 @@ interface TicketTypeCardProps {
    *  source of truth for "how many" instead — see contracts/golden/
    *  ticketing-flow-redesign-f3/README.md §3. */
   hideQuantityStepper?: boolean;
+  /** F18b — a screen with several provisional types states "Provisional pricing" once, so
+   *  the form turns the badge off on every card after the first. Default: shown. */
+  showProvisionalBadge?: boolean;
+  /** F18b — a single-type screen already shows the description as the hero standfirst, so the
+   *  card keeps it for assistive technology only. Default: shown. */
+  descriptionAssistiveOnly?: boolean;
 }
 
 export function TicketTypeCard({
@@ -55,6 +63,8 @@ export function TicketTypeCard({
   decreaseLabel,
   increaseLabel,
   hideQuantityStepper = false,
+  showProvisionalBadge = true,
+  descriptionAssistiveOnly = false,
 }: TicketTypeCardProps) {
   const { slug, name, price, description, soldOut, provisional } = ticketType;
   const inputId = `ticket-type-qty-${slug}`;
@@ -84,14 +94,22 @@ export function TicketTypeCard({
   const cardContent = (
     <>
       <p className="font-serif text-[22px] font-normal leading-tight text-ink">{name}</p>
-      <p className="font-serif text-[clamp(34px,4.4vw,48px)] font-normal leading-none tabular-nums text-ink">
-        {price === 0 ? 'Free' : `R${price.toFixed(2)}`}
+      <p
+        data-ticket-price=""
+        className="font-serif text-[clamp(34px,4.4vw,48px)] font-normal leading-none tabular-nums text-ink"
+      >
+        {price === 0 ? 'Free' : formatRand(price)}
       </p>
-      <p id={`${inputId}-desc`} className="font-sans text-[16px] leading-[1.55] text-muted">
+      <p
+        id={`${inputId}-desc`}
+        className={
+          descriptionAssistiveOnly ? 'sr-only' : 'font-sans text-[16px] leading-[1.55] text-muted'
+        }
+      >
         {description}
       </p>
 
-      {provisional ? (
+      {provisional && showProvisionalBadge ? (
         <span data-testid="provisional-badge" className="font-sans text-[12px] italic text-ink/70">
           Provisional pricing — subject to change
         </span>

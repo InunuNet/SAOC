@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { NosHero } from '@/components/nos/NosHero';
+import { NosSection } from '@/components/nos/NosSection';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { ticketsPageQuery } from '@/sanity/queries';
 
@@ -37,20 +39,24 @@ export default async function TicketCancelledPage({
   const cancelledButtonLabel = copy?.cancelledButtonLabel ?? 'Back to tickets';
 
   return (
-    <div className="mx-auto max-w-[600px] px-8 py-20 text-center">
-      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-        No charge made
-      </p>
-      <h1 className="mt-3 font-serif text-[32px] font-medium text-ink">{cancelledHeading}</h1>
-      <p className="mt-4 font-sans text-[15px] leading-relaxed text-ink/80">{cancelledMessage}</p>
-      {ref ? <p className="mt-3 font-mono text-[13px] text-muted">Booking ref: {ref}</p> : null}
-
-      <Link
-        href="/tickets"
-        className="mt-8 inline-block rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink transition-colors hover:bg-accent-soft"
-      >
-        {cancelledButtonLabel}
-      </Link>
-    </div>
+    <>
+      <NosHero
+        route="/tickets/cancelled"
+        title={cancelledHeading}
+        lede={cancelledMessage}
+        priority
+      />
+      <NosSection>
+        <div className="mx-auto max-w-[600px] text-center">
+          {ref ? <p className="font-sans text-[15px] text-muted">Booking ref: {ref}</p> : null}
+          <Link
+            href="/national-show/tickets"
+            className="nk-btn nk-cta mt-8 inline-flex w-auto"
+          >
+            {cancelledButtonLabel}
+          </Link>
+        </div>
+      </NosSection>
+    </>
   );
 }

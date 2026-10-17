@@ -1,15 +1,18 @@
 import type { Metadata } from 'next';
 
-import { CategoryTicketsPage } from '@/components/tickets';
-import { Card } from '@/components/nos/Card';
-import { buildPageMetadata } from '@/lib/seo';
-import { loadWorkshopSessionViewModels } from '@/lib/view-models/load-workshop-sessions';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { NosHero } from '@/components/nos/NosHero';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
+import { SalesClosedNotice } from '@/components/tickets';
+import { TicketCard, TicketSection } from '@/components/tickets/keepsake';
+import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
+import { TICKET_COPY, type TicketProductId } from '@/lib/data/ticket-presentation';
+import { sanityFetch } from '@/sanity/lib/fetch';
+import { nationalShowSalesQuery } from '@/sanity/queries';
+import { buildPageMetadata } from '@/lib/seo';
+import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
-// See app/(marketing)/tickets/page.tsx for why this stays force-dynamic — the shared
-// CategoryTicketsPage component calls getSoldCountsByTicketType() (Firebase Admin SDK,
-// runtime-only credentials).
+// Live stock reaches this page through Firebase Admin credentials that exist only at runtime,
+// so it can never be prerendered at build time.
 export const dynamic = 'force-dynamic';
 
 // Description restates the page's own rendered lede below — no new claim is introduced here.
@@ -24,47 +27,48 @@ export const metadata: Metadata = buildPageMetadata({
   path: '/national-show/workshops',
 });
 
-const SESSIONS_NOTE =
-  'Individual session times are still being finalised — the products below are the ' +
-  'sellable Sunset Cocktails and Field Trip options. Per-session bookings are not yet ' +
-  'available for purchase.';
+const WORKSHOP_PAGE_PRODUCTS: readonly TicketProductId[] = ['sunset', 'workshops'];
 
-// CategoryTicketsPage renders the NOS inner hero (nos-own-brand-chrome F2); its
-// `heroImage`/`heading`/`lede`/`note` props are this route's levers. The `note` slot is a plain ReactNode, so it is restyled here
-// as an NOS Card rather than the previous bare bordered box (design grammar: bare rules on a
-// flat ground read generic and were rejected).
+interface SalesState {
+  salesOpen?: boolean | null;
+}
+
 export default async function WorkshopsFieldTripsTicketsPage() {
-  // F6 (conference-workshop-tickets, M4) — additive, inert: computed and reserved for
-  // F7's design handoff, which renders real per-session cards. Zero JSX change — the
-  // CategoryTicketsPage render below (owned by the sibling SAOC session, per its own
-  // header comment above) is untouched.
-  //
-  // Codex finding (2026-10-07, relayed by team-lead) — same fix as symposium/page.tsx's
-  // identical note: loadWorkshopSessionViewModels() resolves each session's ticketCard
-  // through loadTicketCardViewModel() (lib/view-models/load-workshop-sessions.ts), which
-  // reaches Sanity/Firestore and can reject on a real backend failure; its unrendered
-  // result must never turn this public content page into a 500.
-  let workshopSessions: Awaited<ReturnType<typeof loadWorkshopSessionViewModels>> = [];
-  try {
-    workshopSessions = await loadWorkshopSessionViewModels();
-  } catch (error) {
-    console.error('[national-show/workshops] loadWorkshopSessionViewModels failed:', error);
-  }
-  void workshopSessions;
+  const [{ cards }, salesState] = await Promise.all([
+    loadTicketCardViewModels(),
+    sanityFetch<SalesState>({ query: nationalShowSalesQuery, tags: ['nationalShow', 'sanity'] }),
+  ]);
+  const salesOpen = salesState?.salesOpen === true;
 
   return (
     <>
-      <CategoryTicketsPage
-        category="workshop-field-trip"
+      <NosHero
         route="/national-show/workshops"
-        heading="Workshops & Field Trips"
+        title="Workshops & Field Trips"
         lede="Book Sunset Cocktails and guided Field Trip outings at the National Show."
-        note={
-          <Card role="note" className="font-sans text-[13px] leading-relaxed text-muted">
-            {SESSIONS_NOTE}
-          </Card>
-        }
+        priority
       />
+      <TicketSection
+        id="programme"
+        title={TICKET_COPY.sections.programme}
+        columns={2}
+        lead={
+          !salesOpen ? (
+            <div className="nk-lead">
+              <SalesClosedNotice message="Ticket sales are not yet open — check back soon." />
+            </div>
+          ) : null
+        }
+      >
+        {WORKSHOP_PAGE_PRODUCTS.map((id) => {
+          const vm = cards[id];
+          return vm ? (
+            <div key={id} className="nk-wrap">
+              <TicketCard productId={id} vm={vm} />
+            </div>
+          ) : null;
+        })}
+      </TicketSection>
       <NosShowIndex current="/national-show/workshops" currentTone="ink" />
     </>
   );

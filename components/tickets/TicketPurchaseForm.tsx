@@ -1,19 +1,29 @@
 'use client';
 
+import { useRef, useState } from 'react';
+
 import { Button } from '@/components/nos/Button';
+import { formatRand } from '@/components/nos/cheapest-admission';
 import { TicketTypeCard, type TicketTypeCardData } from '@/components/tickets/TicketTypeCard';
 import { CartAttendeeFields } from '@/components/tickets/CartAttendeeFields';
 import { CartDayPicker } from '@/components/tickets/CartDayPicker';
 import { DayQuantityPicker } from '@/components/tickets/DayQuantityPicker';
 import { CheckoutRedirectNotice } from '@/components/tickets/CheckoutRedirectNotice';
 import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestModeBanner';
-import { useTicketCart } from '@/components/tickets/useTicketCart';
+import { useTicketCart, type CartPrefill } from '@/components/tickets/useTicketCart';
+import { TICKET_COPY } from '@/lib/data/ticket-presentation';
+
+// Buy stays enabled at quantity 0; a click there fills the hint (TICKET_COPY.buyHint, Choose at least one ticket).
+const BUY_HINT_ID = 'ticket-buy-hint';
+const FIRST_QUANTITY_FIELD = 'input[id^="ticket-type-qty-"], input[id^="day-quantity-"]';
 
 interface TicketPurchaseFormProps {
   ticketTypes: TicketTypeCardData[];
   buyButtonLabel: string;
   soldOutMessage: string;
   showDays: string[];
+  /** F18b: quantity (and day) a hub card's "Buy ticket" link opened the screen with. */
+  prefill?: CartPrefill;
   /** F16: true only for a verified admin viewer (resolved server-side); the Ozow test-mode strip is never public. */
   showTestModeBanner?: boolean;
 }
@@ -23,13 +33,19 @@ export function TicketPurchaseForm({
   buyButtonLabel,
   soldOutMessage,
   showDays,
+  prefill,
   showTestModeBanner = false,
 }: TicketPurchaseFormProps) {
-  const cart = useTicketCart(ticketTypes, showDays);
+  const cart = useTicketCart(ticketTypes, showDays, prefill);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [hintRequested, setHintRequested] = useState(false);
   // F3 (ticketing-flow-redesign) — same derived condition used in useTicketCart.submit():
   // exactly one day-selection type in this screen's cart (README §3).
   const useDayQuantityPicker =
     ticketTypes.length === 1 && ticketTypes[0].requiresDaySelection === true;
+  // "Provisional pricing" is stated once, on the first provisional type only.
+  const firstProvisionalSlug = ticketTypes.find((t) => t.provisional)?.slug ?? null;
+  const hintVisible = hintRequested && cart.cartItemCount === 0;
 
   if (cart.redirect) {
     return (
@@ -44,11 +60,22 @@ export function TicketPurchaseForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (cart.cartItemCount === 0) {
+      setHintRequested(true);
+      formRef.current?.querySelector<HTMLInputElement>(FIRST_QUANTITY_FIELD)?.focus();
+      return;
+    }
     void cart.submit();
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" noValidate data-nos-ticket-form="">
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      className="space-y-6"
+      noValidate
+      data-nos-ticket-form=""
+    >
       {showTestModeBanner ? <OzowSandboxTestModeBanner /> : null}
       <fieldset className="space-y-3">
         <legend className="font-mono text-[12px] tracking-[0.16em] text-muted">Ticket types</legend>
@@ -63,23 +90,11 @@ export function TicketPurchaseForm({
             decreaseLabel="Decrease quantity of"
             increaseLabel="Increase quantity of"
             hideQuantityStepper={useDayQuantityPicker}
+            showProvisionalBadge={t.slug === firstProvisionalSlug}
+            descriptionAssistiveOnly={ticketTypes.length === 1}
           />
         ))}
       </fieldset>
-
-      <p aria-live="polite" aria-atomic="true" className="font-sans text-[15px] text-ink">
-        Estimated total: <strong>R{cart.estimatedTotal.toFixed(2)}</strong>{' '}
-        <span className="font-mono text-[12px] tracking-[0.16em] text-muted">(estimate)</span>
-      </p>
-
-      <CartAttendeeFields
-        ticketTypes={ticketTypes}
-        quantities={cart.quantities}
-        attendeesByType={cart.attendeesByType}
-        errors={cart.attendeeErrors}
-        disabled={cart.status === 'submitting'}
-        onAttendeeChange={cart.updateAttendeeField}
-      />
 
       {useDayQuantityPicker ? (
         <DayQuantityPicker
@@ -100,6 +115,15 @@ export function TicketPurchaseForm({
         />
       )}
 
+      <CartAttendeeFields
+        ticketTypes={ticketTypes}
+        quantities={cart.quantities}
+        attendeesByType={cart.attendeesByType}
+        errors={cart.attendeeErrors}
+        disabled={cart.status === 'submitting'}
+        onAttendeeChange={cart.updateAttendeeField}
+      />
+
       {cart.cartError ? (
         <p
           role="alert"
@@ -118,13 +142,31 @@ export function TicketPurchaseForm({
         </p>
       ) : null}
 
-      <Button
-        type="submit"
-        disabled={cart.status === 'submitting' || cart.cartItemCount === 0}
-        className="disabled:cursor-not-allowed disabled:opacity-60"
+      <div
+        data-catalogue-total=""
+        aria-live="polite"
+        aria-atomic="true"
+        className="flex flex-wrap items-center justify-between gap-4"
       >
-        {cart.status === 'submitting' ? 'Redirecting…' : buyButtonLabel}
-      </Button>
+        <p className="font-sans text-[15px] text-ink">
+          Total <strong className="tabular-nums">{formatRand(cart.estimatedTotal)}</strong>
+        </p>
+        <Button
+          type="submit"
+          disabled={cart.status === 'submitting'}
+          aria-describedby={BUY_HINT_ID}
+        >
+          {cart.status === 'submitting' ? 'Redirecting…' : buyButtonLabel}
+        </Button>
+      </div>
+      <p
+        id={BUY_HINT_ID}
+        data-buy-hint=""
+        role="status"
+        className="font-sans text-[14px] text-primary-800"
+      >
+        {hintVisible ? TICKET_COPY.buyHint : ''}
+      </p>
     </form>
   );
 }

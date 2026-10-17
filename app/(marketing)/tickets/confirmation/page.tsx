@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { NosHero } from '@/components/nos/NosHero';
+import { NosSection } from '@/components/nos/NosSection';
 import { ConfirmationPoller } from '@/components/tickets/ConfirmationPoller';
 import { DownloadTicketButton } from '@/components/tickets/DownloadTicketButton';
 import { client } from '@/sanity/lib/client';
@@ -31,10 +33,16 @@ export default async function TicketConfirmationPage({
   const { ref } = await searchParams;
   const bookingRef = normalizeBookingRefParam(ref);
 
-  const confirmedOrder = bookingRef.length > 0 ? await getConfirmedOrderForDisplay(bookingRef) : null;
+  const confirmedOrder =
+    bookingRef.length > 0 ? await getConfirmedOrderForDisplay(bookingRef) : null;
 
   if (!confirmedOrder) {
-    return <ConfirmationPoller bookingRef={bookingRef} />;
+    return (
+      <>
+        <NosHero route="/tickets/confirmation" title="Tickets" priority />
+        <ConfirmationPoller bookingRef={bookingRef} />
+      </>
+    );
   }
 
   const copy = await client?.fetch<TicketsPageCopy>(ticketsPageQuery).catch(() => null);
@@ -48,58 +56,73 @@ export default async function TicketConfirmationPage({
   const orderTotal = positions.reduce((sum, position) => sum + position.amount, 0);
 
   return (
-    <div className="mx-auto max-w-[600px] px-8 py-20 text-center">
-      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">Paid</p>
-      <h1 className="mt-3 font-serif text-[32px] font-medium text-ink">{confirmationSuccessHeading}</h1>
-      <p className="mt-4 font-sans text-[15px] leading-relaxed text-ink/80">{confirmationSuccessMessage}</p>
-      <p className="mt-4 font-sans text-[15px] font-medium text-ink">
-        {positions.length} {positions.length === 1 ? 'ticket' : 'tickets'} · Total R{orderTotal.toFixed(2)}
-      </p>
+    <>
+      <NosHero
+        route="/tickets/confirmation"
+        title={confirmationSuccessHeading}
+        lede={confirmationSuccessMessage}
+        priority
+      />
+      <NosSection>
+        <div className="mx-auto max-w-[600px] text-center">
+          <p className="font-sans text-[15px] font-medium text-ink">
+            {positions.length} {positions.length === 1 ? 'ticket' : 'tickets'} · Total R
+            {orderTotal.toFixed(2)}
+          </p>
 
-      <div className="mt-8 space-y-10">
-        {positions.map((position) => (
-          <div key={position.bookingRef} className="border-t border-rule pt-8 first:border-t-0 first:pt-0">
-            <img
-              src={position.qrDataUri}
-              alt={`QR code for booking reference ${position.bookingRef} — scan at the door for check-in`}
-              width={240}
-              height={240}
-              className="mx-auto"
-            />
+          <div className="mt-8 space-y-10">
+            {positions.map((position) => (
+              <div
+                key={position.bookingRef}
+                className="border-t border-rule pt-8 first:border-t-0 first:pt-0"
+              >
+                <img
+                  src={position.qrDataUri}
+                  alt={`QR code for booking reference ${position.bookingRef} — scan at the door for check-in`}
+                  width={240}
+                  height={240}
+                  className="mx-auto"
+                />
 
-            <div className="mt-6 space-y-1">
-              <p className="font-serif text-[18px] font-medium text-ink">{position.attendeeName}</p>
-              <p className="font-sans text-[14px] text-ink/80">
-                {position.ticketType} · R{position.amount.toFixed(2)}
-              </p>
-              <p className="font-mono text-[13px] text-muted">Booking ref: {position.bookingRef}</p>
-            </div>
+                <div className="mt-6 space-y-1">
+                  <p className="font-serif text-[18px] font-medium text-ink">
+                    {position.attendeeName}
+                  </p>
+                  <p className="font-sans text-[14px] text-ink/80">
+                    {position.ticketType} · R{position.amount.toFixed(2)}
+                  </p>
+                  <p className="font-sans text-[13px] text-muted">
+                    Booking ref: {position.bookingRef}
+                  </p>
+                </div>
 
-            <div className="mt-6">
-              <DownloadTicketButton
-                bookingRef={position.bookingRef}
-                attendeeName={position.attendeeName}
-                ticketType={position.ticketType}
-                qrDataUri={position.qrDataUri}
-                label={downloadTicketButtonLabel}
-              />
-            </div>
+                <div className="mt-6">
+                  <DownloadTicketButton
+                    bookingRef={position.bookingRef}
+                    attendeeName={position.attendeeName}
+                    ticketType={position.ticketType}
+                    qrDataUri={position.qrDataUri}
+                    label={downloadTicketButtonLabel}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {ticketIncludesNote ? (
-        <p className="mt-6 border-t border-rule pt-6 font-sans text-[13px] leading-relaxed text-muted">
-          {ticketIncludesNote}
-        </p>
-      ) : null}
+          {ticketIncludesNote ? (
+            <p className="mt-6 border-t border-rule pt-6 font-sans text-[13px] leading-relaxed text-muted">
+              {ticketIncludesNote}
+            </p>
+          ) : null}
 
-      <Link
-        href="/tickets"
-        className="mt-8 inline-block font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent"
-      >
-        Back to tickets
-      </Link>
-    </div>
+          <Link
+            href="/national-show/tickets"
+            className="mt-8 inline-block font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent"
+          >
+            Back to tickets
+          </Link>
+        </div>
+      </NosSection>
+    </>
   );
 }

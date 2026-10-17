@@ -26,3 +26,30 @@ P0: 0
 P1: 0
 P2: 0
 Score: 37/40
+
+## Pass 3 (F18b keepsake tickets)
+
+Method: impeccable critique (craft-floor, polish) applied inline, same degraded method as above (no launcher binary). Shots: `.tmp/sandbox/lw-f18/after/{390,701,960,1280,1920}-{tickets,conferences,workshops,day-visitor}.png`, public build on port 3682. Detail in `f18b-critique-log.md`.
+
+Findings:
+- P1: checkout hero was 380px high (inner-hero min-height) and the first quantity control sat at y=894 at 1280.
+- P1: bare /tickets answered 200 with a meta refresh (a route-level loading boundary flushed the shell before the redirect).
+- P2: ticket CTA 53px high (inherited line-height), want 50.
+- P2: 390 hero fan cells changed height during the fan-out transition (layout shift).
+- P2: ticket sections used 64/0 padding where the site rhythm is 72/72 and the masthead carried no hero hooks.
+
+P0: 0
+P1: 2
+P2: 3
+Score: 31/40
+
+## Pass 4 (F18b keepsake tickets)
+
+Fixes: compact hero on /tickets/[slug] (min-height 0, tighter padding), description kept for assistive tech only on a single-type screen; loading.tsx moved into [slug]/ so /tickets is a 308; button line-height 1; fan-out disabled on the phone deck; section padding symmetric at the site rhythm; masthead carries data-nos-hero="inner" / variant "fan". Rebuilt, re-shot all ticket routes at 390, 701, 960, 1280, 1920 and re-read the hub, conferences, workshops and checkout.
+
+Findings: none open. Hub: masthead fan, three titled sections, early-bird pool banner only with real stock, foot cards, index. Checkout: compact hero, card, per-day steppers, one Total beside Buy.
+
+P0: 0
+P1: 0
+P2: 0
+Score: 37/40

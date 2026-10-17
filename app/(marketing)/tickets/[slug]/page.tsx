@@ -2,7 +2,7 @@ import { viewerIsVerifiedAdmin } from '@/lib/admin-viewer';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { PageHero } from '@/components/ui/PageHero';
+import { NosHero } from '@/components/nos/NosHero';
 import { SalesClosedNotice, TicketPurchaseForm } from '@/components/tickets';
 import type { TicketTypeCardData } from '@/components/tickets';
 import { sanityFetch } from '@/sanity/lib/fetch';
@@ -11,16 +11,10 @@ import {
   nationalShowSalesQuery,
   ticketsPageQuery,
   ticketTypeBySlugQuery,
-  ticketTypesByPoolQuery,
 } from '@/sanity/queries';
-import { getSoldCountsByTicketType } from '@/lib/data/tickets';
-import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
-import {
-  effectiveCapacity,
-  planPooledCapacity,
-  resolveEffectivePrice,
-  type CapacityPoolConfig,
-} from '@/lib/checkout-reservation';
+import { getAdmissionSoldOutBySlug } from '@/lib/data/admission-availability';
+import { CART_MAX_LINE_ITEMS } from '@/lib/cart';
+import { resolveEffectivePrice } from '@/lib/checkout-reservation';
 import { buildShowWindow, computeShowDays } from '@/lib/show-window-lookup';
 import { resolveActiveShow } from '@/lib/show-resolution';
 
@@ -69,6 +63,15 @@ interface SanityTicketType {
 
 interface Props {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ quantity?: string | string[]; day?: string | string[] }>;
+}
+
+// A hub card's "Buy ticket" link carries ?quantity (and ?day for a Day Pass). Anything that
+// is not a whole number in 1..CART_MAX_LINE_ITEMS falls back to an empty cart.
+function parseQuantity(raw: string | string[] | undefined): number | null {
+  if (typeof raw !== 'string' || !/^\d+$/.test(raw)) return null;
+  const quantity = Number.parseInt(raw, 10);
+  return quantity >= 1 && quantity <= CART_MAX_LINE_ITEMS ? quantity : null;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -81,8 +84,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: ticketType?.name ?? 'Tickets' };
 }
 
-export default async function TicketBuyPage({ params }: Props) {
-  const { slug } = await params;
+export default async function TicketBuyPage({ params, searchParams }: Props) {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
 
   const [ticketType, pageData, salesState, allShows] = await Promise.all([
     sanityFetch<SanityTicketType | null>({
@@ -95,11 +98,9 @@ export default async function TicketBuyPage({ params }: Props) {
     sanityFetch<SanityShowActivation[]>({ query: activeShowWindowQuery, tags: ['show', 'sanity'] }),
   ]);
 
-  // Null category defaults to admission, matching activeTicketTypesByCategoryQuery's own
-  // read-time fallback (sanity/queries.ts) — see lib/tickets-category-warning.ts. A real,
-  // non-admission category (Conferences/Workshops products) is NOT reachable via this route.
-  const category = ticketType?.category ?? 'admission';
-  if (!ticketType || category !== 'admission') {
+  // Every product, admission or programme, buys through this one screen: the hub's Thursday
+  // evening, Symposium, WOSA and Workshops cards all link here.
+  if (!ticketType) {
     notFound();
   }
 
@@ -113,41 +114,9 @@ export default async function TicketBuyPage({ params }: Props) {
   const soldOutMessage = pageData?.soldOutMessage ?? FALLBACK_SOLD_OUT;
   const salesClosedMessage = pageData?.salesClosedMessage ?? FALLBACK_SALES_CLOSED;
 
-  const soldCounts = salesOpen ? await getSoldCountsByTicketType(NATIONAL_SHOW_ID) : {};
-
-  const poolKey = ticketType.capacityPool ?? ticketType.slug;
-  const poolConfigByType: Record<string, CapacityPoolConfig> = {
-    [ticketType.slug]: {
-      pool: ticketType.capacityPool ?? null,
-      headcountPerUnit: ticketType.headcountPerUnit ?? 1,
-    },
-  };
-  const capacityByType: Record<string, number> = {
-    [poolKey]: effectiveCapacity(ticketType.capacity, ticketType.releasedQuantity),
-  };
-
-  if (ticketType.capacityPool) {
-    const siblingDocs =
-      (await sanityFetch<{ slug: string | null; headcountPerUnit?: number | null }[]>({
-        query: ticketTypesByPoolQuery,
-        params: { pool: ticketType.capacityPool, showId: activeShowId },
-        tags: ['ticketType', 'sanity'],
-      })) ?? [];
-    for (const sibling of siblingDocs) {
-      if (!sibling.slug || sibling.slug in poolConfigByType) continue;
-      poolConfigByType[sibling.slug] = {
-        pool: ticketType.capacityPool,
-        headcountPerUnit: sibling.headcountPerUnit ?? 1,
-      };
-    }
-  }
-
-  const poolCheck = planPooledCapacity({
-    requestedQtyByType: { [ticketType.slug]: 1 },
-    soldCountsByType: soldCounts,
-    capacityByType,
-    poolConfigByType,
-  });
+  const soldOutBySlug = salesOpen
+    ? await getAdmissionSoldOutBySlug([ticketType], activeShowId)
+    : {};
 
   const effectivePrice =
     resolveEffectivePrice({
@@ -163,25 +132,29 @@ export default async function TicketBuyPage({ params }: Props) {
     price: effectivePrice,
     regularPrice: ticketType.regularPrice ?? null,
     description: ticketType.description,
-    soldOut: poolCheck.kind === 'over-capacity',
+    soldOut: soldOutBySlug[ticketType.slug] === true,
     provisional: ticketType.provisional === true,
     requiresDaySelection: ticketType.requiresDaySelection === true,
   };
 
+  const quantity = parseQuantity(query.quantity);
+  const day = typeof query.day === 'string' && showDays.includes(query.day) ? query.day : null;
+  const prefill = quantity ? { quantity, day } : undefined;
+
   return (
     <>
-      <PageHero
-        image="/images/orchid-purple.jpg"
-        eyebrow="2027 National Show"
-        heading={ticketType.name}
+      <NosHero
+        route={`/tickets/${ticketType.slug}`}
+        title={ticketType.name}
         lede={ticketType.description}
+        className="nk-hero-compact"
       />
 
-      <div className="mx-auto max-w-[560px] px-8 py-16">
+      <div className="mx-auto max-w-[560px] px-8 pb-12 pt-6">
         {!salesOpen ? (
           <SalesClosedNotice message={salesClosedMessage} />
         ) : cardData.soldOut ? (
-          <div className="border border-rule bg-bone px-6 py-8 text-center" role="status">
+          <div className="nk-closed" role="status">
             <p className="font-serif text-[20px] text-ink">{soldOutMessage}</p>
           </div>
         ) : (
@@ -190,6 +163,7 @@ export default async function TicketBuyPage({ params }: Props) {
             buyButtonLabel={buyButtonLabel}
             soldOutMessage={soldOutMessage}
             showDays={showDays}
+            prefill={prefill}
             showTestModeBanner={await viewerIsVerifiedAdmin()}
           />
         )}
