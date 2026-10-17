@@ -78,6 +78,17 @@ if (buttons(h).length || /data-ticket-cta|data-ticket-stepper|<input/.test(h)) f
 if (/R\s?\d/.test(txt(h))) fail('salesClosed: a price numeral renders');
 if (/data-ticket-count|waitlist/i.test(h)) fail('salesClosed: a scarcity slot or waitlist wording renders');
 if (!/VIP Ticket/.test(txt(h))) fail('salesClosed: the card lost its name (the v13 card still renders, masked)');
+// the page-level sales-closed status line (A35 measures it live only on a closed dataset, so its render is proved here for both modes' sake): role=status, the existing strings only
+{
+  const line = R('SalesStatusLine', {});
+  if (line) {
+    if (!/data-sales-status/.test(line)) fail('SalesStatusLine: no [data-sales-status] hook');
+    if (!/role="status"/.test(line)) fail('SalesStatusLine: not role="status"');
+    if (!/Sales closed/.test(txt(line))) fail('SalesStatusLine: the existing "Sales closed" string is missing');
+    if (!/<a\b[^>]*href="\/[^"]*"[^>]*>[^<]*Be the first to know/.test(line)) fail('SalesStatusLine: no "Be the first to know" link');
+    if (/R\s?\d|<button|<input/.test(line)) fail('SalesStatusLine: a price, button or input renders');
+  }
+}
 h = card('weekend', vm({ slug: 'weekend-pass-early-bird', state: 'earlyBirdSoldOut', price: 360, regularPrice: 380, scarcity: null }), { name: 'Weekend Pass (Early Bird)' });
 if (buttons(h).length || /data-ticket-cta/.test(h)) fail('earlyBirdSoldOut: a button or CTA renders');
 if (!has(h, S.earlyBirdSoldOut) || !/<s[^>]*>\s*Early-bird price/.test(h) || !has(h, 'The Weekend Pass is now R380.')) fail('earlyBirdSoldOut: struck "Early-bird price", "Early bird sold out" or "The Weekend Pass is now R380." missing');

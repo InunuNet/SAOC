@@ -4,7 +4,7 @@
 //                 their reserved height between first paint and full load (CLS); clicking a fan link scrolls to the card and focuses its name
 //   sections   -> #thursday, #passes, #programme in that order with the v13 h2 texts (a section whose products are absent from the CMS is skipped and said so); "Before you visit" nav with the 4 links; the
 //                 existing #exhibit and #trade option groups still render
-//   cards      -> per card: id ticket-<id>, stub 168px (150 on session cards) with a 50px band when stacked, stub moved to the right and >=300px wide when the card is >=470px; numeral Fraunces 300 58px, name 29px,
+//   cards      -> per card: id ticket-<id>, stub 168px (150 on session cards) with a 50px band when stacked, stub moved to the right, --stub wide (168px, 150 on sessions) and at least 300px high (min-height) when the card is >=470px; numeral Fraunces 300 58px, name 29px,
 //                 price 46px; CTA 50px, stepper buttons >=44px, day cells >=58px; the CTA reads "Buy ticket" (Workshops product card: "Choose a session"); never Register / Add to booking / waitlist / Proposed
 //   pool       -> banner [data-pool-banner] only when real; its bracket shows from 960 up and not below
 //   R7         -> none of the v13 sample numbers or sample notes appear in the HTML or the DOM
@@ -171,7 +171,9 @@ await main('F18-A29 v13 tickets hub', async (r) => {
         if (!c.stub || !c.body) { r.fail(`${t}: no stub or body`); continue; }
         if (horizontal) {
           if (!(c.stub.left > c.body.left)) r.fail(`${t}: container ${Math.round(c.width)}px >= ${K.card.horizontalFromContainerPx}: the stub is not on the right`);
-          if (c.stub.width < K.card.horizontalStubMinPx - 1) r.fail(`${t}: horizontal stub ${Math.round(c.stub.width)}px, want >= ${K.card.horizontalStubMinPx}`);
+          // golden: --stub is the stub's WIDTH on the right (168px; 150 on session cards) and .t-stub has min-height 300px (v13-tickets.html l.562)
+          if (Math.abs(c.stub.width - stubH) > K.card.tolerancePx) r.fail(`${t}: horizontal stub is ${Math.round(c.stub.width)}px wide, want ${stubH}`);
+          if (!c.session && c.stub.height < K.card.horizontalStubMinPx - 1) r.fail(`${t}: horizontal stub is ${Math.round(c.stub.height)}px high, want >= ${K.card.horizontalStubMinPx}`);
         } else {
           if (Math.abs(c.stub.height - stubH) > K.card.tolerancePx) r.fail(`${t}: stacked stub is ${Math.round(c.stub.height)}px, want ${stubH}`);
           if (c.band.length && Math.abs(c.band[c.band.length - 1] - K.card.bandHeightPx) > K.card.tolerancePx) r.fail(`${t}: stub band is ${Math.round(c.band[c.band.length - 1])}px, want ${K.card.bandHeightPx}`);
