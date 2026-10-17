@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 
+import { Card } from '@/components/nos/Card';
 import { NosHero } from '@/components/nos/NosHero';
+import { NosSection } from '@/components/nos/NosSection';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { SalesStatusLine, TicketCard, TicketSection } from '@/components/tickets/keepsake';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
@@ -24,6 +26,11 @@ export const metadata: Metadata = buildPageMetadata({
   path: '/national-show/workshops',
 });
 
+const SESSIONS_NOTE =
+  'Individual session times are still being finalised — the products below are the ' +
+  'sellable Sunset Cocktails and Field Trip options. Per-session bookings are not yet ' +
+  'available for purchase.';
+
 const WORKSHOP_PAGE_PRODUCTS: readonly TicketProductId[] = ['sunset', 'workshops'];
 
 export default async function WorkshopsFieldTripsTicketsPage() {
@@ -37,6 +44,14 @@ export default async function WorkshopsFieldTripsTicketsPage() {
         lede="Book Sunset Cocktails and guided Field Trip outings at the National Show."
         priority
       />
+      <NosSection>
+        <Card
+          role="note"
+          className="font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-muted"
+        >
+          {SESSIONS_NOTE}
+        </Card>
+      </NosSection>
       {!salesOpen ? <SalesStatusLine /> : null}
       <TicketSection id="programme" title={TICKET_COPY.sections.programme} columns={2}>
         {WORKSHOP_PAGE_PRODUCTS.map((id) => {

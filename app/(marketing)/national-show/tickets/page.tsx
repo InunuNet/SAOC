@@ -6,7 +6,6 @@ import { Card } from '@/components/nos/Card';
 import { NosSection } from '@/components/nos/NosSection';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { NAV } from '@/components/chrome/nav-config';
-import { SectionHeading } from '@/components/nos/SectionHeading';
 import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestModeBanner';
 import {
   ArrowIcon,
@@ -88,15 +87,6 @@ interface ShowIdentityFields extends ShowFactsSource {
   showDate?: string | null;
   showEndDate?: string | null;
 }
-
-function ticketsNavLabel(): string {
-  const mega = NAV.find((n) => n.type === 'mega');
-  const dest = mega?.featureRail?.destinations.find((d) => d.id === 'tickets');
-  if (!dest) throw new Error('no Tickets destination');
-  return dest.label;
-}
-
-const TICKETS_LABEL = ticketsNavLabel();
 
 export default async function NationalShowTicketsPage() {
   const [show, loaded, isAdmin] = await Promise.all([
@@ -205,18 +195,6 @@ export default async function NationalShowTicketsPage() {
               </Button>
             </Card>
           ))}
-        </div>
-      </NosSection>
-      <NosSection tone="royal" className="text-center" data-nos-ticket-close="">
-        <div className="mx-auto flex max-w-[720px] flex-col items-center gap-6">
-          <SectionHeading
-            title={TICKET_COPY.sections.passes}
-            tone="on-dark"
-            className="items-center text-center"
-          />
-          <Button as={Link} href="#passes" variant="on-dark">
-            {TICKETS_LABEL}
-          </Button>
         </div>
       </NosSection>
       <NosShowIndex current="/national-show/tickets" currentTone="ink" />

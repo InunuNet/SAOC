@@ -38,7 +38,7 @@ export function TicketMini({ productId, vm, name: nameProp }: TicketMiniProps) {
       <span className="nk-perf" aria-hidden="true" />
       <div className="nk-main">
         <p className="nk-when">{product.when}</p>
-        <p className="nk-name">{name}</p>
+        <p className="nk-name">{faceName(name)}</p>
         <div className="nk-buy">
           {closed ? null : price === null ? (
             <div className="nk-pending">
@@ -57,6 +57,12 @@ export function TicketMini({ productId, vm, name: nameProp }: TicketMiniProps) {
 }
 
 /** The accessible name of a fan link: "<name>, R<price>", ", price to follow" or ", sold out". */
+// The fan face drops a trailing parenthetical (the full name stays in the link label and on
+// the card below).
+export function faceName(name: string): string {
+  return name.replace(/\s*\([^)]*\)\s*$/, '');
+}
+
 export function fanLinkLabel(
   productId: TicketProductId,
   vm: KeepsakeCardVm,

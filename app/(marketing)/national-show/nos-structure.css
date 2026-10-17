@@ -1360,10 +1360,9 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   position: absolute;
   left: 50%;
   top: 0;
-  width: 1.5px;
+  width: 0;
   height: 12px;
-  background: var(--nk-acc);
-  transform: translateX(-50%);
+  border-left: 1.5px solid var(--nk-acc);
 }
 .nos-theme .nk-pool-bracket::after {
   content: '';
@@ -1655,10 +1654,10 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   display: none;
 }
 .nos-theme .nk-fan .nk-name {
-  max-width: 88px;
+  max-width: 112px;
   font-size: calc(22px * var(--nk-ts));
   line-height: 1.1;
-  min-height: 2lh;
+  min-height: 3lh;
 }
 .nos-theme .nk-fan .nk-price {
   font-size: calc(32px * var(--nk-ts));

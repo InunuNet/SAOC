@@ -13,3 +13,8 @@ Pass 6 (after spec f8b6fb14: card shadow now a filter on the article with the no
 P0: 0
 P1: 0
 P2: 0
+
+Pass 7 (after Codi's pre-audit: fan face names without the trailing parenthetical, min-height 3lh, all four fan wraps 350px tall at 960, 1280 and 1920; closing band removed from the hub; one-pixel pool stem; workshops disclosure restored): viewed 1280-tickets and 1280-conferences against v13-tickets.html. Fan names read "VIP Ticket", "Sunset Cocktails", "Weekend Pass", "Early-Bird Exhibition Ticket" on one arc with equal ticket heights; the hub ends with the compact #exhibit / #trade row and the Explore index. Score: 39/40.
+P0: 0
+P1: 0
+P2: 0
