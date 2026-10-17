@@ -482,7 +482,9 @@ export default async function NationalShowPage() {
               : [{ value: '18', label: 'Editions held', unsourced: true }]),
           ].map(({ value, label, unsourced }) => (
             <div key={label} data-placeholder={unsourced ? 'true' : undefined}>
-              <dt>{label}</dt>
+              <dt>
+                <span>{label}</span>
+              </dt>{' '}
               <dd className="nos-figure font-serif">{value}</dd>
             </div>
           ))}
