@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 import { NosHero } from '@/components/nos/NosHero';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
-import { SalesClosedStatus, TicketCard, TicketSection } from '@/components/tickets/keepsake';
+import { SalesStatusLine, TicketCard, TicketSection } from '@/components/tickets/keepsake';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
 import { TICKET_COPY, partnerNameOf, type TicketProductId } from '@/lib/data/ticket-presentation';
 import { buildPageMetadata } from '@/lib/seo';
@@ -37,7 +37,7 @@ export default async function WorkshopsFieldTripsTicketsPage() {
         lede="Book Sunset Cocktails and guided Field Trip outings at the National Show."
         priority
       />
-      {!salesOpen ? <SalesClosedStatus /> : null}
+      {!salesOpen ? <SalesStatusLine /> : null}
       <TicketSection id="programme" title={TICKET_COPY.sections.programme} columns={2}>
         {WORKSHOP_PAGE_PRODUCTS.map((id) => {
           const vm = cards[id];

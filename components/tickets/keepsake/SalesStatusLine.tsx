@@ -8,7 +8,7 @@ import { TICKET_COPY } from '@/lib/data/ticket-presentation';
 
 const CONTACT_HREF = '/contact';
 
-export function SalesClosedStatus() {
+export function SalesStatusLine() {
   return (
     <div data-nos-wrap="" className="nk-status-wrap">
       <p data-sales-status="" role="status" className="nk-status">

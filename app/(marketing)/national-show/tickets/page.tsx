@@ -11,7 +11,7 @@ import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestM
 import {
   ArrowIcon,
   PoolBanner,
-  SalesClosedStatus,
+  SalesStatusLine,
   TicketCard,
   TicketSection,
   TicketsMasthead,
@@ -147,7 +147,7 @@ export default async function NationalShowTicketsPage() {
         cards={cards}
         dayPassFrom={dayPassFrom}
       />
-      {!salesOpen ? <SalesClosedStatus /> : null}
+      {!salesOpen ? <SalesStatusLine /> : null}
 
       {has(THURSDAY_PRODUCTS) ? (
         <TicketSection
