@@ -44,7 +44,7 @@ export function CartAttendeeFields({
             aria-label={`${type.name} attendees`}
             className="space-y-3"
           >
-            <h2 className="font-sans text-[14px] font-bold text-[var(--nk-ink)]">
+            <h2 className="nk-attendees-title">
               {type.name} attendees
             </h2>
             {rows.map((row, index) => {

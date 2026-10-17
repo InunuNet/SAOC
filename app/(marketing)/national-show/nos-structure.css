@@ -2016,11 +2016,20 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 @media (max-width: 700px) {
   .nos-theme .nk-checkout-total {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 12px;
   }
   .nos-theme .nk-checkout-total .nk-cta {
     width: 100%;
   }
+}
+/* Attendees section subhead: the NOS section-subhead size, not the display h2. */
+.nos-theme .nk-attendees-title {
+  font-family: var(--serif);
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--nk-ink);
+  margin: 32px 0 16px;
 }
 /* F18-KEEPSAKE-END */
 /* Hub "What it is" row and its figures (v4 about and figures): prose and figures share a

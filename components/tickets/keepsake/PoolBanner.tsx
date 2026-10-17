@@ -37,7 +37,9 @@ export function PoolBanner({ pool, names, showProvisional = false }: PoolBannerP
   const dayName = faceName(names?.day ?? TICKET_PRODUCTS.day.name);
 
   let title: string = out ? TICKET_COPY.poolOutTitle : TICKET_COPY.poolTitle;
-  let text: string = out ? poolOutText(pool.total) : poolText(pool.total);
+  let text: string = out
+    ? poolOutText(pool.total, weekendName, dayName)
+    : poolText(pool.total, weekendName, dayName);
   if (withheld) {
     title = out ? TICKET_COPY.poolOutTitle : TICKET_COPY.poolTitleProvisional;
     text = out

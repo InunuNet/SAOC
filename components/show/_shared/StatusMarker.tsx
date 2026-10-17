@@ -60,6 +60,9 @@ const TONE_CLASSES: Record<StatusMarkerTone, string> = {
   dark: 'border-ivory/30 bg-ivory/10 text-ivory/80',
 };
 
+const NARROW_FULL_CLASSES = '[@media(max-width:359px)]:sr-only';
+const NARROW_SHORT_CLASSES = 'hidden [@media(max-width:359px)]:inline';
+
 export interface StatusMarkerProps {
   /** Which pre-unification component's vocabulary/labels/data-attribute to reproduce. */
   kind: 'exhibitor' | 'confirmation';
@@ -71,6 +74,11 @@ export interface StatusMarkerProps {
   tone?: StatusMarkerTone;
   /** Confirmation-only (`ExhibitorStatusBadge` always renders `p`, as before). */
   as?: StatusMarkerRoot;
+  /**
+   * Below 360px the visible text shortens to the pending fallback while the full label stays
+   * in the accessibility tree (sr-only, not display:none).
+   */
+  shortOnNarrow?: boolean;
 }
 
 export function StatusMarker({
@@ -81,6 +89,7 @@ export function StatusMarker({
   questionLabel,
   tone = 'light',
   as: Root = 'p',
+  shortOnNarrow = false,
 }: StatusMarkerProps) {
   // The ONLY early return, shared by both kinds — never split into a second branch.
   if (status === 'confirmed') return null;
@@ -120,7 +129,16 @@ export function StatusMarker({
       ].join(' ')}
     >
       <span aria-hidden="true">※</span>
-      <span>{label}</span>
+      {shortOnNarrow ? (
+        <>
+          <span className={NARROW_FULL_CLASSES}>{label}</span>
+          <span aria-hidden="true" className={NARROW_SHORT_CLASSES}>
+            {FALLBACK_PENDING_LABEL}
+          </span>
+        </>
+      ) : (
+        <span>{label}</span>
+      )}
     </Root>
   );
 }

@@ -250,8 +250,8 @@ export const TICKET_COPY = {
 } as const;
 
 /** The pool wording quotes the real stored total, never the design's sample 500 (R7). */
-export function poolText(total: number): string {
-  return `One pool of ${total} early-bird tickets is shared by the Weekend Pass and the Day Pass. The early bird ends when the pool sells out.`;
+export function poolText(total: number, weekendName: string, dayName: string): string {
+  return `One pool of ${total} early-bird tickets is shared by the ${weekendName} and the ${dayName}. The early bird ends when the pool sells out.`;
 }
 
 export function poolTextProvisional(weekendName: string, dayName: string): string {
@@ -262,8 +262,8 @@ export function poolOutTextProvisional(weekendName: string, dayName: string): st
   return `All early-bird tickets, shared by the ${weekendName} and the ${dayName}, have sold. Both passes are now at their normal price.`;
 }
 
-export function poolOutText(total: number): string {
-  return `All ${total} early-bird tickets, shared by the Weekend Pass and the Day Pass, have sold. Both passes are now at their normal price.`;
+export function poolOutText(total: number, weekendName: string, dayName: string): string {
+  return `All ${total} early-bird tickets, shared by the ${weekendName} and the ${dayName}, have sold. Both passes are now at their normal price.`;
 }
 
 /** The "Before you visit" destinations of the hub masthead (labels come from nav-config). */

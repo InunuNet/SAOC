@@ -15,13 +15,15 @@ import { StatusMarker } from './_shared/StatusMarker';
 
 const DEFAULT_SEPARATOR = ' · ';
 
-// At <=700px the chip is tightened (0.06em tracking, 10px inline padding) so the verbatim label
-// stays on one line inside the 16px-padded surface. Important: the NOS marker rule in
-// nos-structure.css (.nos-theme [data-...]) otherwise outranks a plain utility.
+// Chip-fit ladder so the verbatim label stays on one line inside the 16px-padded surface:
+// 10px inline padding at <=700px; tracking 0.06em at 420-700px, 0.02em at 375-419px, 0 at
+// <=374px. Important: the NOS marker rule in nos-structure.css (.nos-theme [data-...])
+// otherwise outranks a plain utility.
 const CHIP_FIT_CLASSES = [
   '[@media(max-width:700px)]:[&>p]:!px-[10px]',
   '[@media(min-width:420px)_and_(max-width:700px)]:[&>p]:!tracking-[0.06em]',
-  '[@media(max-width:419px)]:[&>p]:!tracking-[0.02em]',
+  '[@media(min-width:375px)_and_(max-width:419px)]:[&>p]:!tracking-[0.02em]',
+  '[@media(max-width:374px)]:[&>p]:!tracking-[0]',
 ].join(' ');
 
 export interface ShowStatusLineProps {
@@ -67,6 +69,7 @@ export function ShowStatusLine({
       status={status}
       pendingLabel={pendingLabel}
       researchLabel={researchLabel}
+      shortOnNarrow
     />
   );
   if (!items || items.length === 0) return marker;

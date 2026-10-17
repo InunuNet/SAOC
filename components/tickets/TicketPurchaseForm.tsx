@@ -8,7 +8,7 @@ import { CheckoutRedirectNotice } from '@/components/tickets/CheckoutRedirectNot
 import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestModeBanner';
 import type { TicketTypeCardData } from '@/components/tickets/TicketTypeCard';
 import { useTicketCart } from '@/components/tickets/useTicketCart';
-import { ArrowIcon } from '@/components/tickets/keepsake/parts';
+import { ArrowIcon, MinusIcon, PlusIcon } from '@/components/tickets/keepsake/parts';
 import { CHECKOUT_DAY_EVENT } from '@/components/tickets/keepsake/checkout-day';
 import { CART_MAX_LINE_ITEMS } from '@/lib/cart';
 import { TICKET_COPY } from '@/lib/data/ticket-presentation';
@@ -137,7 +137,7 @@ export function TicketPurchaseForm({
             disabled={submitting || cart.quantity <= MIN_QUANTITY}
             onClick={() => cart.setQuantity(cart.quantity - 1)}
           >
-            −
+            <MinusIcon />
           </button>
           <input
             id="ticket-quantity"
@@ -159,7 +159,7 @@ export function TicketPurchaseForm({
             disabled={submitting || cart.quantity >= CART_MAX_LINE_ITEMS}
             onClick={() => cart.setQuantity(cart.quantity + 1)}
           >
-            +
+            <PlusIcon />
           </button>
         </div>
       </div>
