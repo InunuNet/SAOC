@@ -19,7 +19,7 @@ for (const r of T.routes) {
   const m = await page.evaluate(() => {
     const main = document.querySelector('main');
     const leaves = []; const w = document.createTreeWalker(main, NodeFilter.SHOW_TEXT);
-    while (w.nextNode()) { const t = w.currentNode.textContent.replace(/\s+/g, ' ').trim(); if (t) leaves.push(t); }
+    while (w.nextNode()) { const t = w.currentNode.textContent.replace(/\s+/g, ' ').trim(); if (t && !w.currentNode.parentElement.closest('[data-home-section="show-band"]')) leaves.push(t); }
     return { text: main.innerText, leaves, h1: [...main.querySelectorAll('h1')].map((h) => h.textContent.trim()),
       gaps: [...main.querySelectorAll('[data-content-gap]')].map((g) => g.textContent.replace(/\s+/g, ' ').trim()), placeholders: main.querySelectorAll('[data-placeholder]').length,
       h3: [...main.querySelectorAll('h3')].map((h) => h.textContent.trim()), yearbook: main.querySelectorAll('[data-home-section="yearbook"]').length,
