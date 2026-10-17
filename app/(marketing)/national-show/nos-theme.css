@@ -313,6 +313,9 @@
   --ink-700: #3a3654;
   /* nos-v4 index.html:23 --ink-500; the quieter foot line of the R11 disclosure. */
   --ink-500: #6a6780;
+  /* nos-v4 index.html:16-17 --gold and --gold-100: the R11 disclosure fill, and its pale variant. */
+  --gold: #f3f2d6;
+  --gold-100: #fbfaf0;
   --black: #0b0a14;
 }
 
