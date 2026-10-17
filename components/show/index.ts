@@ -15,5 +15,5 @@ export { ExhibitorQuestions } from './ExhibitorQuestions';
 export { EntryFormLink } from './EntryFormLink';
 export { ShowJumpChips } from './ShowJumpChips';
 export { ExhibitorJumpNav } from './ExhibitorJumpNav';
-export { ShowStatusLine } from './ShowStatusLine';
+export { ShowStatusFoot, ShowStatusLine } from './ShowStatusLine';
 export { ShowHoldingNote } from './ShowHoldingNote';

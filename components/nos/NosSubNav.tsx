@@ -44,20 +44,35 @@ export function NosSubNav({ label, items, currentHref, exact }: NosSubNavProps) 
       );
     };
 
-    const current = row.querySelector<HTMLElement>('[aria-current]');
-    if (current && row.scrollWidth > row.clientWidth + OVERFLOW_SLACK_PX) {
+    const isOverflowing = () => row.scrollWidth > row.clientWidth + OVERFLOW_SLACK_PX;
+
+    const alignCurrent = () => {
+      const current = row.querySelector<HTMLElement>('[aria-current]');
+      if (!current || !isOverflowing()) return;
       // The lead is the row's own gutter, the same as its scroll-padding-inline in nos-structure.css.
       const lead = parseFloat(getComputedStyle(row).paddingLeft);
       const target = current.offsetLeft - lead;
       row.scrollLeft = Math.max(0, Math.min(target, row.scrollWidth - row.clientWidth));
-    }
+    };
+
+    let wasOverflowing = isOverflowing();
+    alignCurrent();
     syncFade();
 
+    // Crossing the breakpoint downwards makes the row overflow for the first time, so the
+    // current item is aligned again then (no smooth scrolling); later resizes only update fades.
+    const onResize = () => {
+      const nowOverflowing = isOverflowing();
+      if (nowOverflowing && !wasOverflowing) alignCurrent();
+      wasOverflowing = nowOverflowing;
+      syncFade();
+    };
+
     row.addEventListener('scroll', syncFade, { passive: true });
-    window.addEventListener('resize', syncFade);
+    window.addEventListener('resize', onResize);
     return () => {
       row.removeEventListener('scroll', syncFade);
-      window.removeEventListener('resize', syncFade);
+      window.removeEventListener('resize', onResize);
     };
   }, []);
 

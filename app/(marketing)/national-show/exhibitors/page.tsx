@@ -9,6 +9,7 @@ import {
   ExhibitorQuestions,
   ExhibitorSection,
   ExhibitorSteps,
+  ShowStatusFoot,
   ShowStatusLine,
 } from '@/components/show';
 import { Badge } from '@/components/nos/Badge';
@@ -152,6 +153,7 @@ export default async function ExhibitorInfoPage() {
     index === 0 ? name : name.toLowerCase()
   );
 
+  const researchFoot = namesFor('research').length > 0 ? (researchLabel ?? undefined) : undefined;
   const contactButton = (
     <p>
       <Button as={Link} href="/contact" variant="primary" className="min-h-[44px]">
@@ -186,7 +188,7 @@ export default async function ExhibitorInfoPage() {
             pendingLabel={pendingLabel}
             items={pendingItems}
             body={ENTRIES_NOT_OPEN}
-            foot={namesFor('research').length > 0 ? (researchLabel ?? undefined) : undefined}
+            foot={researchFoot}
           >
             {contactButton}
           </ShowStatusLine>
@@ -200,6 +202,7 @@ export default async function ExhibitorInfoPage() {
               <span className="normal-case tracking-[0.02em]">{ENTRIES_NOT_OPEN}</span>
             </Badge>
             {contactButton}
+            {publicMode && researchFoot ? <ShowStatusFoot>{researchFoot}</ShowStatusFoot> : null}
           </div>
         )}
 

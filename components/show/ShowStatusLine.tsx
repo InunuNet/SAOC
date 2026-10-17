@@ -37,6 +37,15 @@ export interface ShowStatusLineProps {
   children?: ReactNode;
 }
 
+/** The quieter closing line of the R11 disclosure; also used where no disclosure renders. */
+export function ShowStatusFoot({ children }: { children: ReactNode }) {
+  return (
+    <p data-status-foot="" className="text-[15px] leading-[1.55] text-[var(--ink-500)]">
+      {children}
+    </p>
+  );
+}
+
 export function ShowStatusLine({
   kind = 'exhibitor',
   status,
@@ -73,11 +82,7 @@ export function ShowStatusLine({
           {body}
         </p>
       ) : null}
-      {foot ? (
-        <p data-status-foot="" className="text-[15px] leading-[1.55] text-[var(--ink-500)]">
-          {foot}
-        </p>
-      ) : null}
+      {foot ? <ShowStatusFoot>{foot}</ShowStatusFoot> : null}
       {children}
     </div>
   );

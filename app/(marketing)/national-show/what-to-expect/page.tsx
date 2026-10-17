@@ -104,6 +104,8 @@ export default async function WhatToExpectPage() {
     !confirmed(status.openingHours) &&
     !!hours?.trim() &&
     !!pendingLabel?.toLowerCase().startsWith(hours.trim().toLowerCase());
+  // A row whose hours only restate the status line is left out whole (its term and its value).
+  const hoursRows = openingHours.filter((entry) => !restatesStatus(entry.hours));
   // Each logistics block in page order: whether it renders at all, and whether it is confirmed.
   const blocks = [
     { heading: HEADING_HOURS, present: openingHours.length > 0, status: status.openingHours },
@@ -162,25 +164,25 @@ export default async function WhatToExpectPage() {
               pendingLabel={pendingLabel}
               researchLabel={researchLabel}
             />
-            <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {openingHours.map((entry, index) => (
-                <Card key={entry._key ?? `${entry.label}-${index}`}>
-                  <dt className="font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
-                    {entry.label}
-                  </dt>
-                  {restatesStatus(entry.hours) ? null : (
+            {hoursRows.length > 0 ? (
+              <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {hoursRows.map((entry, index) => (
+                  <Card key={entry._key ?? `${entry.label}-${index}`}>
+                    <dt className="font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
+                      {entry.label}
+                    </dt>
                     <dd className="mt-1 font-serif text-[22px] font-medium text-ink">
                       {entry.hours}
                     </dd>
-                  )}
-                  {entry.note ? (
-                    <p className="mt-2 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-muted">
-                      {entry.note}
-                    </p>
-                  ) : null}
-                </Card>
-              ))}
-            </dl>
+                    {entry.note ? (
+                      <p className="mt-2 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-muted">
+                        {entry.note}
+                      </p>
+                    ) : null}
+                  </Card>
+                ))}
+              </dl>
+            ) : null}
           </section>
         ) : null}
 
