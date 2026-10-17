@@ -116,9 +116,11 @@ lands clear of the sticky header. The R11 banner now carries the existing "Conta
 button (the end CTA stays), and the step numerals are Fraunces at 16px.
 
 Public build: `withholdPlaceholderProse()` (called once, in the page) switches the per-row
-markers off. Rows carrying an open-question marker are not rendered, the research markers become
-one status line and the "to be confirmed" chips become one status line, both under the banner
-(`ShowStatusLine.tsx`, the existing marker). Preview keeps today's 3 / 9 / 11 markers.
+markers off. Rows carrying an open-question marker are not rendered, and the banner, the research
+line and the "to be confirmed" chips merge into ONE surface above "On this page"
+(`ShowStatusLine.tsx`, the existing marker): chip, the list of affected headings, the banner
+sentence as plain body text, the research label as a quieter foot line, then the "Contact the
+council" button. Preview keeps today's 3 / 9 / 11 markers and the banner pill.
 
 ## f8 — R50: what-to-expect logistics first
 

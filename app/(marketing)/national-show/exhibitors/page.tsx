@@ -63,6 +63,8 @@ const REFERENCE_SECTIONS = [
 ] as const;
 
 const CONTACT_LABEL = 'Contact the council';
+const ENTRIES_NOT_OPEN =
+  'Exhibitor entries are not yet open — this page covers what to expect when they do. Contact the council to be notified.';
 
 type Marker = 'pending' | 'research' | 'question';
 
@@ -147,6 +149,14 @@ export default async function ExhibitorInfoPage() {
     index === 0 ? name : name.toLowerCase()
   );
 
+  const contactButton = (
+    <p>
+      <Button as={Link} href="/contact" variant="primary" className="max-md:min-h-[44px]">
+        {CONTACT_LABEL}
+      </Button>
+    </p>
+  );
+
   return (
     <>
       <NosHero
@@ -167,30 +177,28 @@ export default async function ExhibitorInfoPage() {
           </Link>
         </p>
 
-        <div className="space-y-4">
-          {/* tone="purple" not "olive": olive-deep is 4.30:1 on white/parchment, which fails
-              body-text contrast (needs 4.5:1) — see nos-contrast.golden.md note 1. Olive text is
-              legal only on dark grounds or as large (≥24px) text. */}
-          <Badge tone="purple" className="normal-case">
-            <span aria-hidden="true">※</span>
-            <span className="normal-case tracking-[0.02em]">
-              Exhibitor entries are not yet open — this page covers what to expect when they do.
-              Contact the council to be notified.
-            </span>
-          </Badge>
-          <p>
-            <Button as={Link} href="/contact" variant="primary" className="max-md:min-h-[44px]">
-              {CONTACT_LABEL}
-            </Button>
-          </p>
-
-          {namesFor('research').length > 0 ? (
-            <ShowStatusLine status="research" researchLabel={researchLabel} />
-          ) : null}
-          {pendingItems.length > 0 ? (
-            <ShowStatusLine status="pending" pendingLabel={pendingLabel} items={pendingItems} />
-          ) : null}
-        </div>
+        {publicMode && pendingItems.length > 0 ? (
+          <ShowStatusLine
+            status="pending"
+            pendingLabel={pendingLabel}
+            items={pendingItems}
+            body={ENTRIES_NOT_OPEN}
+            foot={namesFor('research').length > 0 ? (researchLabel ?? undefined) : undefined}
+          >
+            {contactButton}
+          </ShowStatusLine>
+        ) : (
+          <div className="space-y-4">
+            {/* tone="purple" not "olive": olive-deep is 4.30:1 on white/parchment, which fails
+                body-text contrast (needs 4.5:1) — see nos-contrast.golden.md note 1. Olive text
+                is legal only on dark grounds or as large (≥24px) text. */}
+            <Badge tone="purple" className="normal-case">
+              <span aria-hidden="true">※</span>
+              <span className="normal-case tracking-[0.02em]">{ENTRIES_NOT_OPEN}</span>
+            </Badge>
+            {contactButton}
+          </div>
+        )}
 
         <ExhibitorJumpNav items={chips} />
 

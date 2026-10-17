@@ -5,7 +5,8 @@
 // It renders the shared StatusMarker, so it is the same marker, not a new chip.
 //
 // With `items` it is the v4 R11 disclosure: the marker as a one-line chip on a gold surface,
-// then a sentence-case list of what the marker covers, then any `children` (a closing link).
+// then a sentence-case list of what the marker covers, then an optional body sentence, a quieter foot line, and any `children` (a closing link
+// or button).
 // =============================================================
 
 import type { ReactNode } from 'react';
@@ -27,6 +28,10 @@ export interface ShowStatusLineProps {
   researchLabel?: string | null;
   /** What the marker covers, already cased; shown as one sentence under the chip. */
   items?: string[];
+  /** A plain sentence under the list: 16px, no pill, border or fill. */
+  body?: string;
+  /** A quieter closing line under the body: 15px, no text-transform. */
+  foot?: string;
   /** What goes between the items; a middle dot by default. */
   separator?: string;
   children?: ReactNode;
@@ -38,6 +43,8 @@ export function ShowStatusLine({
   pendingLabel,
   researchLabel,
   items,
+  body,
+  foot,
   separator = DEFAULT_SEPARATOR,
   children,
 }: ShowStatusLineProps) {
@@ -61,6 +68,16 @@ export function ShowStatusLine({
       <p data-status-list="" className="text-[16px] leading-[1.55] text-[var(--ink-700)]">
         {items.join(separator)}.
       </p>
+      {body ? (
+        <p data-status-body="" className="text-[16px] leading-[1.55] text-[var(--ink-700)]">
+          {body}
+        </p>
+      ) : null}
+      {foot ? (
+        <p data-status-foot="" className="text-[15px] leading-[1.55] text-[var(--ink-500,#6a6780)]">
+          {foot}
+        </p>
+      ) : null}
       {children}
     </div>
   );
