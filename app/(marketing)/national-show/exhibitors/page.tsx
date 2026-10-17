@@ -78,6 +78,15 @@ function markerOf(status?: string | null): Marker | null {
   return status === 'research' || status === 'question' ? status : 'pending';
 }
 
+const SENTENCE_BOUNDARY = /\.\s+(?=[A-Z])/;
+
+// A public build leads with the intro's first sentence only; the committee provenance that
+// follows is preview material. No boundary found: the whole string, never a guess.
+function firstSentence(text: string): string {
+  const boundary = SENTENCE_BOUNDARY.exec(text);
+  return boundary ? text.slice(0, boundary.index + 1) : text;
+}
+
 export default async function ExhibitorInfoPage() {
   // The public-versus-preview switch reads the environment, so this page renders per request
   // rather than being frozen at build time with whichever setting the build happened to have.
@@ -170,7 +179,7 @@ export default async function ExhibitorInfoPage() {
       <NosHero
         route="/national-show/exhibitors"
         title={info?.title ?? 'Exhibitor Information'}
-        lede={info?.intro ?? undefined}
+        lede={info?.intro ? (publicMode ? firstSentence(info.intro) : info.intro) : undefined}
         priority
       />
 
