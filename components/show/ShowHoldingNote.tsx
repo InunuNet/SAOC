@@ -51,7 +51,7 @@ export function ShowHoldingNote({ hidden, pendingLabel }: ShowHoldingNoteProps) 
       <p>
         <Link
           href="/contact"
-          className="font-sans text-[15px] font-medium text-primary underline decoration-[var(--green-1,#a7a841)] decoration-2 underline-offset-4"
+          className="inline-flex min-h-[44px] items-center font-sans text-[15px] font-medium text-primary underline decoration-[var(--green-1,#a7a841)] decoration-2 underline-offset-4"
         >
           Be the first to know
         </Link>

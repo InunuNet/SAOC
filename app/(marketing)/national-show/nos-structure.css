@@ -106,7 +106,7 @@
     padding-inline: var(--nos-axis-pad);
     overflow-x: auto;
     scroll-snap-type: x proximity;
-    scroll-padding-inline: 16px;
+    scroll-padding-inline: var(--nos-axis-pad);
     scrollbar-width: none;
   }
   .nos-theme .nos-subnav-row::-webkit-scrollbar {

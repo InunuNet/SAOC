@@ -9,7 +9,7 @@
 // to the NOS Design ruling.
 //
 // Below 768px the row scrolls. The effect sets the row's scrollLeft so the current item is
-// fully in view with a 16px lead (directly, not with scrollIntoView, which can also scroll
+// fully in view with a lead equal to the row gutter (directly, not with scrollIntoView, which can also scroll
 // the page vertically past the hero), and keeps two flags, data-fade-start and
 // data-fade-end, that say which edge hides items; the 24px edge fade shows only there.
 // Without JavaScript the row simply scrolls with no fade, which is safe.
@@ -46,8 +46,9 @@ export function NosSubNav({ label, items, currentHref, exact }: NosSubNavProps) 
 
     const current = row.querySelector<HTMLElement>('[aria-current]');
     if (current && row.scrollWidth > row.clientWidth + OVERFLOW_SLACK_PX) {
-      // 16px lead, the same as the row's scroll-padding-inline in nos-structure.css.
-      const target = current.offsetLeft - 16;
+      // The lead is the row's own gutter, the same as its scroll-padding-inline in nos-structure.css.
+      const lead = parseFloat(getComputedStyle(row).paddingLeft);
+      const target = current.offsetLeft - lead;
       row.scrollLeft = Math.max(0, Math.min(target, row.scrollWidth - row.clientWidth));
     }
     syncFade();

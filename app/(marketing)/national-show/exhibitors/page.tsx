@@ -151,7 +151,7 @@ export default async function ExhibitorInfoPage() {
 
   const contactButton = (
     <p>
-      <Button as={Link} href="/contact" variant="primary" className="max-md:min-h-[44px]">
+      <Button as={Link} href="/contact" variant="primary" className="min-h-[44px]">
         {CONTACT_LABEL}
       </Button>
     </p>
