@@ -32,9 +32,9 @@ export function TravelRoutes({ routes }: TravelRoutesProps) {
             index === lastIndex && finalCardSpans > 1 ? SPAN_CLASS[finalCardSpans] : ''
           }`}
         >
-          <h4 className="font-serif text-[19px] font-medium leading-snug text-ink">
+          <h3 className="font-serif text-[19px] font-medium leading-snug text-ink">
             {route.origin}
-          </h4>
+          </h3>
 
           {route.distance || route.duration ? (
             <dl className="mt-3 space-y-1 font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-muted">
@@ -62,7 +62,10 @@ export function TravelRoutes({ routes }: TravelRoutesProps) {
           {route.transportOptions && route.transportOptions.length > 0 ? (
             <ul className="mt-3 space-y-2 border-t border-rule pt-3">
               {route.transportOptions.map((option) => (
-                <li key={option} className="font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70">
+                <li
+                  key={option}
+                  className="font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70"
+                >
                   {option}
                 </li>
               ))}

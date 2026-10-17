@@ -11,6 +11,7 @@ import {
   VisitAttractions,
   VisitDisclosure,
   VisitGettingThere,
+  gettingThereLede,
 } from '@/components/show/VisitDisclosure';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowVenueQuery, showVisitorInfoQuery } from '@/sanity/queries';
@@ -32,7 +33,8 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 // Codi P3 H8: the pending items on this page are grouped under ONE chip per disclosure, to the
-// nos-v4/plan-your-visit.html golden (l.575-616). The two aria-labels are the golden's.
+// nos-v4/plan-your-visit.html golden (l.575-616). The Getting-there label lives in
+// VisitDisclosure.tsx; the emergency label, which the golden also names, is defined here.
 const EMERGENCY_LABEL = 'Emergency contacts, to be confirmed by the show committee';
 
 // A number worth dialling: digits, with an optional leading + and spaces between groups.
@@ -88,7 +90,7 @@ export default async function PlanYourVisitPage() {
             <SectionHeading
               as="h2"
               title="Getting there"
-              lede={info?.gettingThereIntro ?? undefined}
+              lede={gettingThereLede(info?.gettingThereIntro, gettingThereItems)}
             />
             <TravelRoutes routes={info?.airportRoutes} />
             <VisitGettingThere
