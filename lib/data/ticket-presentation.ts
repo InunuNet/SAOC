@@ -209,7 +209,7 @@ export const TICKET_COPY = {
   admitSession: 'One place',
   buy: 'Buy ticket',
   buyHint: 'Choose at least one ticket',
-  dayPassFrom: 'Day Pass from',
+  dayPassFrom: 'from',
   salesClosedLabel: 'Sales closed',
   salesClosedLink: 'Be the first to know',
   chooseSession: 'Choose a session',
@@ -228,8 +228,8 @@ export const TICKET_COPY = {
   fewer: 'One fewer',
   more: 'One more',
   poolTitle: 'Early-bird tickets left',
-  poolTitleNoCount: 'Early-bird tickets',
-  unconfirmed: 'Not yet confirmed',
+  poolTitleProvisional: 'Early-bird tickets',
+  notYetConfirmed: 'Not yet confirmed',
   poolOutTitle: 'Early bird sold out',
   sessionNotOpen: 'Booking for this session is not open yet.',
   timeTba: 'Time to be announced',
@@ -251,11 +251,13 @@ export function poolText(total: number): string {
   return `One pool of ${total} early-bird tickets is shared by the Weekend Pass and the Day Pass. The early bird ends when the pool sells out.`;
 }
 
-export const POOL_TEXT_NO_COUNT =
-  'One pool of early-bird tickets is shared by the Weekend Pass and the Day Pass. The early bird ends when the pool sells out.';
+export function poolTextProvisional(weekendName: string, dayName: string): string {
+  return `One pool of early-bird tickets is shared by the ${weekendName} and the ${dayName}. The early bird ends when the pool sells out.`;
+}
 
-export const POOL_OUT_TEXT_NO_COUNT =
-  'All early-bird tickets, shared by the Weekend Pass and the Day Pass, have sold. Both passes are now at their normal price.';
+export function poolOutTextProvisional(weekendName: string, dayName: string): string {
+  return `All early-bird tickets, shared by the ${weekendName} and the ${dayName}, have sold. Both passes are now at their normal price.`;
+}
 
 export function poolOutText(total: number): string {
   return `All ${total} early-bird tickets, shared by the Weekend Pass and the Day Pass, have sold. Both passes are now at their normal price.`;

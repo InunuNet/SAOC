@@ -18,3 +18,8 @@ Pass 7 (after Codi's pre-audit: fan face names without the trailing parenthetica
 P0: 0
 P1: 0
 P2: 0
+
+Pass 8 (after spec 49ec4690: provisional stock counts withheld on public and marked on beta, masthead line reads the card's CMS name): re-viewed 1280-tickets; the masthead reads "Early-Bird Exhibition Ticket from R120", the pool banner, cards and day cells show Sanity-sourced counts as before and degrade to state words and a bare pool banner for a provisional total (render-level A28). Score: 39/40.
+P0: 0
+P1: 0
+P2: 0

@@ -142,7 +142,7 @@ export function TicketCount({ vm, partner, counts = 'real' }: TicketCountProps) 
         <span className="nk-n">{figure}</span>
         {` ${scarcity.label}`}
         {counts === 'placeholder' ? (
-          <span className="nk-unconfirmed">{TICKET_COPY.unconfirmed}</span>
+          <span className="nk-unconfirmed">{TICKET_COPY.notYetConfirmed}</span>
         ) : null}
       </span>
       {tag ? <span className="nk-tag">{tag}</span> : null}

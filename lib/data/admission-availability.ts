@@ -23,13 +23,17 @@ import {
   type TicketCardsOutput,
   type TicketTypeInput,
 } from '@/lib/data/ticket-card-view-models';
-import { PASS_SKUS, WORKSHOPS_PRODUCT_SLUG } from '@/lib/data/ticket-presentation';
+import { WORKSHOPS_PRODUCT_SLUG } from '@/lib/data/ticket-presentation';
 import { getSoldCountsByTicketType, getSoldCountsByTicketTypeAndDay } from '@/lib/data/tickets';
 import { filterPubliclyListableTicketTypes } from '@/lib/demo-ticket-type';
 import {
+  ADMISSION_PRODUCTS,
+  CONFERENCE_PRODUCTS,
   DAY_VISITOR_SELLABLE_DAYS,
   DAY_VISITOR_SHAPED_SLUGS,
+  WORKSHOP_FIELD_TRIP_PRODUCTS,
   WORKSHOP_SESSION_PRICE,
+  type ProvisionalAdmissionProduct,
 } from '@/lib/provisional-figures';
 import { resolveActiveShow } from '@/lib/show-resolution';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
@@ -116,7 +120,6 @@ interface SanityCardTicketType {
   capacityPool?: string | null;
   headcountPerUnit?: number | null;
   demo?: boolean | null;
-  provisional?: boolean | null;
 }
 
 interface ShowActivation {
@@ -129,18 +132,7 @@ export interface TicketCardViewModelsResult extends TicketCardsOutput {
   stockKnown: boolean;
   // The CMS sales switch the cards were masked with; false while it cannot be read.
   salesOpen: boolean;
-  // Which stock totals are placeholders (a provisional ticket type). Display only: the sales
-  // logic keeps using the real totals.
-  provisionalTotals: ProvisionalTotals;
 }
-
-export interface ProvisionalTotals {
-  bySlug: Record<string, boolean>;
-  pool: boolean;
-  day: boolean;
-}
-
-const NO_PROVISIONAL_TOTALS: ProvisionalTotals = { bySlug: {}, pool: false, day: false };
 
 const EMPTY_RESULT: TicketCardViewModelsResult = {
   cards: {},
@@ -148,8 +140,17 @@ const EMPTY_RESULT: TicketCardViewModelsResult = {
   dayPassFrom: null,
   stockKnown: false,
   salesOpen: false,
-  provisionalTotals: NO_PROVISIONAL_TOTALS,
 };
+
+// Totals a ticket type carries when Sanity has none: the figures of lib/provisional-figures.ts.
+// They still drive the sales logic; the keepsake components decide what to show (hidden on a
+// public build, marked on the beta preview).
+const PROVISIONAL_STOCK: Readonly<Record<string, ProvisionalAdmissionProduct>> = Object.fromEntries(
+  [...ADMISSION_PRODUCTS, ...CONFERENCE_PRODUCTS, ...WORKSHOP_FIELD_TRIP_PRODUCTS].map((p) => [
+    p.slug,
+    p,
+  ])
+);
 
 function toTypeInput(
   t: SanityCardTicketType,
@@ -157,15 +158,18 @@ function toTypeInput(
   withStock: boolean
 ): TicketTypeInput {
   const sibling = REGULAR_PRICE_SIBLING_SLUG[t.slug];
+  const sanityStock = typeof t.capacity === 'number' || typeof t.releasedQuantity === 'number';
+  const fallback = sanityStock ? undefined : PROVISIONAL_STOCK[t.slug];
   return {
     slug: t.slug,
     name: t.name,
     price: t.price ?? null,
     // The early-bird SKUs carry no regular price of their own: the sibling SKU's live price is it.
     regularPrice: sibling ? (priceBySlug[sibling] ?? null) : null,
-    capacity: withStock ? (t.capacity ?? null) : null,
-    releasedQuantity: withStock ? (t.releasedQuantity ?? null) : null,
-    capacityPool: t.capacityPool ?? null,
+    capacity: withStock ? (t.capacity ?? fallback?.capacity ?? null) : null,
+    releasedQuantity: withStock ? (t.releasedQuantity ?? fallback?.releasedQuantity ?? null) : null,
+    capacityPool: t.capacityPool ?? fallback?.capacityPool ?? null,
+    capacitySource: fallback ? 'provisional' : 'sanity',
     headcountPerUnit: t.headcountPerUnit ?? 1,
   };
 }
@@ -199,22 +203,6 @@ async function readStock(): Promise<StockReading | null> {
     console.error(`[lib/data/admission-availability] stock read failed (${name})`);
     return null;
   }
-}
-
-const POOL_SLUGS: ReadonlySet<string> = new Set(
-  Object.values(PASS_SKUS).flatMap((sku) => [sku.earlyBird, sku.regular])
-);
-
-function readProvisionalTotals(types: readonly SanityCardTicketType[]): ProvisionalTotals {
-  const bySlug: Record<string, boolean> = {};
-  for (const t of types) {
-    if (typeof t.capacity === 'number' && t.provisional === true) bySlug[t.slug] = true;
-  }
-  return {
-    bySlug,
-    pool: [...POOL_SLUGS].some((slug) => bySlug[slug] === true),
-    day: bySlug['day-visitor'] === true,
-  };
 }
 
 /**
@@ -296,12 +284,7 @@ export async function loadTicketCardViewModels(): Promise<TicketCardViewModelsRe
         }
       }
     }
-    return {
-      ...built,
-      stockKnown: stock !== null,
-      salesOpen,
-      provisionalTotals: readProvisionalTotals(cmsTypes),
-    };
+    return { ...built, stockKnown: stock !== null, salesOpen };
   } catch (error) {
     const name = error instanceof Error ? error.name : 'UnknownError';
     console.error(`[lib/data/admission-availability] ticket cards load failed (${name})`);

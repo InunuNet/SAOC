@@ -8,11 +8,12 @@ import { Suspense } from 'react';
 
 import { formatRand } from '@/components/nos/cheapest-admission';
 import { ShowCountdown } from '@/components/show';
-import { TICKET_COPY } from '@/lib/data/ticket-presentation';
+import { TICKET_COPY, TICKET_PRODUCTS } from '@/lib/data/ticket-presentation';
 import type { ShowFact } from '@/lib/data/show-facts';
 
 import { ArrowIcon } from './parts';
 import { TicketFan, type TicketFanProps } from './TicketFan';
+import { faceName } from './TicketMini';
 
 const VISIT_LABEL_ID = 'nk-visit-label';
 const HEADING_ID = 'page-title';
@@ -77,7 +78,7 @@ export function TicketsMasthead({
       {dayPassFrom !== null ? (
         <div data-nos-wrap="" className="nk-from-row">
           <p data-day-pass-from="" className="nk-from">
-            {`${TICKET_COPY.dayPassFrom} ${formatRand(dayPassFrom)}`}
+            {`${faceName(cards.day?.name ?? TICKET_PRODUCTS.day.name)} ${TICKET_COPY.dayPassFrom} ${formatRand(dayPassFrom)}`}
           </p>
         </div>
       ) : null}

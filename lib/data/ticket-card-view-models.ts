@@ -27,6 +27,9 @@ export interface TicketTypeInput {
   releasedQuantity: number | null;
   capacityPool: string | null;
   headcountPerUnit: number;
+  // Where the total comes from: Sanity (default) or lib/provisional-figures.ts. The builder only
+  // flags it; the components decide what to show, by mode.
+  capacitySource?: 'sanity' | 'provisional';
 }
 
 export interface TicketCardsInput {
@@ -44,6 +47,7 @@ export interface CardScarcity {
   remaining: number;
   total: number;
   label: string;
+  provisional: boolean;
 }
 
 export interface CardDay {
@@ -52,6 +56,7 @@ export interface CardDay {
   /** null when there is no real per-day count: the cell renders no number. */
   remaining: number | null;
   total: number | null;
+  provisional: boolean;
 }
 
 export interface TicketCard {
@@ -69,6 +74,7 @@ export interface TicketCard {
 export interface EarlyBirdPool {
   remaining: number;
   total: number;
+  provisional: boolean;
 }
 
 export interface TicketCardsOutput {
@@ -95,6 +101,10 @@ function effectiveCapacity(type: TicketTypeInput): number | null {
   return Math.min(capacity, releasedQuantity);
 }
 
+function isProvisional(type: TicketTypeInput): boolean {
+  return type.capacitySource === 'provisional';
+}
+
 function isPriceUsable(price: number | null): boolean {
   return price !== null && price >= 0;
 }
@@ -114,13 +124,19 @@ function buildPool(input: TicketCardsInput): EarlyBirdPool | null {
     (sum, t) => sum + (input.soldByType[t.slug] ?? 0) * t.headcountPerUnit,
     0
   );
-  return { remaining: Math.max(0, total - sold), total };
+  const provisional = members.some((t) => isProvisional(t));
+  return { remaining: Math.max(0, total - sold), total, provisional };
 }
 
 function ownScarcity(type: TicketTypeInput, sold: number): CardScarcity | null {
   const total = effectiveCapacity(type);
   if (total === null) return null;
-  return { remaining: Math.max(0, total - sold), total, label: PLACES_LABEL };
+  return {
+    remaining: Math.max(0, total - sold),
+    total,
+    label: PLACES_LABEL,
+    provisional: isProvisional(type),
+  };
 }
 
 /** Day Pass per-day readings: of the day-visitor ceiling, from real sold-by-day counts only. */
@@ -131,6 +147,7 @@ function buildDays(
 ): CardDay[] {
   const ceilingType = input.types.find((t) => t.slug === DAY_VISITOR_SLUG) ?? type;
   const total = effectiveCapacity(ceilingType);
+  const provisional = isProvisional(type) || isProvisional(ceilingType);
   const bySku = input.soldByDay;
   const hasSource = bySku !== null && total !== null;
   return input.showDays.map((day) => {
@@ -141,7 +158,7 @@ function buildDays(
         total: 0,
         earlyBirdRemaining: null,
       });
-      return { day, state, remaining: null, total: null };
+      return { day, state, remaining: null, total: null, provisional };
     }
     const sold = [PASS_SKUS.day.earlyBird, PASS_SKUS.day.regular].reduce(
       (sum, slug) => sum + (bySku[slug]?.[day] ?? 0),
@@ -154,7 +171,7 @@ function buildDays(
       total,
       earlyBirdRemaining: null,
     });
-    return { day, state, remaining, total };
+    return { day, state, remaining, total, provisional };
   });
 }
 
@@ -209,7 +226,12 @@ function buildPassCard(
   let scarcity: CardScarcity | null;
   let state: TicketCardState;
   if (isEarlyBirdSku && pool) {
-    scarcity = { remaining: pool.remaining, total: pool.total, label: POOL_LABEL };
+    scarcity = {
+      remaining: pool.remaining,
+      total: pool.total,
+      label: POOL_LABEL,
+      provisional: pool.provisional,
+    };
     state = poolOpen
       ? resolveTicketCardState({
           priceUsable,

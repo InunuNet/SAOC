@@ -10,6 +10,8 @@ export interface KeepsakeScarcity {
   remaining: number;
   total: number;
   label: string;
+  /** The total comes from provisional figures: hidden in public, marked on beta. */
+  provisional?: boolean;
 }
 
 export interface KeepsakeDay {
@@ -18,6 +20,7 @@ export interface KeepsakeDay {
   /** null when there is no real per-day count: the cell shows no number (R7). */
   remaining: number | null;
   total: number | null;
+  provisional?: boolean;
 }
 
 export interface KeepsakeCardVm {
@@ -40,6 +43,7 @@ export type CountDisplay = 'real' | 'withhold' | 'placeholder';
 export interface KeepsakePool {
   remaining: number;
   total: number;
+  provisional?: boolean;
 }
 
 export interface KeepsakeSessionVm {

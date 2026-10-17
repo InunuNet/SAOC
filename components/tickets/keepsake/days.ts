@@ -11,6 +11,15 @@ export function isDayClosed(day: KeepsakeDay): boolean {
   );
 }
 
+/** What a count shows: its figure, nothing (withheld in public), or the figure marked. */
+export function countDisplay(
+  provisional: boolean | undefined,
+  showProvisional: boolean
+): CountDisplay {
+  if (!provisional) return 'real';
+  return showProvisional ? 'placeholder' : 'withhold';
+}
+
 /** The cell's second line: the state's words, or the real count, or nothing (R7). */
 export function daySubline(day: KeepsakeDay, counts: CountDisplay = 'real'): string | null {
   if (day.state === 'soldOut') return TICKET_COPY.soldOutStamp;

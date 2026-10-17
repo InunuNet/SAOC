@@ -8,6 +8,7 @@
 import { TICKET_COPY, TICKET_PRODUCTS } from '@/lib/data/ticket-presentation';
 
 import { BuyBlock } from './BuyBlock';
+import { countDisplay } from './days';
 import { TicketCount, TicketStub } from './parts';
 import type { KeepsakeSessionVm } from './types';
 
@@ -15,13 +16,20 @@ export interface SessionTicketCardProps {
   session: KeepsakeSessionVm;
   /** The presenter's name, resolved by the page from `session.presenterId`. */
   presenterName?: string | null;
+  // Beta preview: a provisional place count shows, marked. Public: hidden.
+  showProvisional?: boolean;
 }
 
 const product = TICKET_PRODUCTS.workshops;
 
-export function SessionTicketCard({ session, presenterName = null }: SessionTicketCardProps) {
+export function SessionTicketCard({
+  session,
+  presenterName = null,
+  showProvisional = false,
+}: SessionTicketCardProps) {
   const card = session.ticketCard;
-  const places = card?.scarcity ? String(card.scarcity.total) : '';
+  const counts = countDisplay(card?.scarcity?.provisional, showProvisional);
+  const places = card?.scarcity && counts !== 'withhold' ? String(card.scarcity.total) : '';
   const state = card ? card.state : 'none';
 
   return (
@@ -49,7 +57,7 @@ export function SessionTicketCard({ session, presenterName = null }: SessionTick
         {presenterName ? (
           <p className="nk-theme">{`${TICKET_COPY.presenterWith} ${presenterName}`}</p>
         ) : null}
-        {card ? <TicketCount vm={card} partner={null} /> : null}
+        {card ? <TicketCount vm={card} partner={null} counts={counts} /> : null}
         {card ? (
           <BuyBlock vm={card} name={session.title} product={product} session />
         ) : (

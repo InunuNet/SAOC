@@ -17,7 +17,7 @@ import {
 } from '@/lib/data/ticket-presentation';
 
 import { BuyBlock } from './BuyBlock';
-import { daySubline, firstSelectableDay, isDayClosed } from './days';
+import { countDisplay, daySubline, firstSelectableDay, isDayClosed } from './days';
 import { TicketCount, TicketStub } from './parts';
 import type { CountDisplay, KeepsakeCardVm, KeepsakeDay } from './types';
 
@@ -30,9 +30,8 @@ export interface TicketCardProps {
   partnerName?: string | null;
   // The name of the regular SKU an early-bird SKU gives way to.
   regularName?: string | null;
-  // How the scarcity line and the day-cell counts are shown (default: the real figures).
-  counts?: CountDisplay;
-  dayCounts?: CountDisplay;
+  // Beta preview: counts from provisional totals show, marked "Not yet confirmed". Public: hidden.
+  showProvisional?: boolean;
 }
 
 interface DayPickerProps {
@@ -40,16 +39,17 @@ interface DayPickerProps {
   days: KeepsakeDay[];
   chosen: string | null;
   onChoose: (day: string) => void;
-  counts: CountDisplay;
+  showProvisional: boolean;
 }
 
-function DayPicker({ groupName, days, chosen, onChoose, counts }: DayPickerProps) {
+function DayPicker({ groupName, days, chosen, onChoose, showProvisional }: DayPickerProps) {
   return (
     <fieldset className="nk-days">
       <legend>{TICKET_COPY.chooseDay}</legend>
       <div className="nk-days-row">
         {days.map((d) => {
           const closed = isDayClosed(d);
+          const counts = countDisplay(d.provisional, showProvisional);
           const sub = daySubline(d, counts);
           const classes = ['nk-day', closed ? 'is-out' : '', d.state === 'low' ? 'is-low' : '']
             .filter(Boolean)
@@ -73,8 +73,8 @@ function DayPicker({ groupName, days, chosen, onChoose, counts }: DayPickerProps
           );
         })}
       </div>
-      {counts === 'placeholder' ? (
-        <p className="nk-unconfirmed">{TICKET_COPY.unconfirmed}</p>
+      {showProvisional && days.some((d) => d.provisional && daySubline(d, 'placeholder')) ? (
+        <p className="nk-unconfirmed">{TICKET_COPY.notYetConfirmed}</p>
       ) : null}
     </fieldset>
   );
@@ -86,8 +86,7 @@ export function TicketCard({
   name: nameProp,
   partnerName,
   regularName,
-  counts = 'real',
-  dayCounts = 'real',
+  showProvisional = false,
 }: TicketCardProps) {
   const product = TICKET_PRODUCTS[productId];
   const name = nameProp ?? vm.name ?? product.name;
@@ -126,14 +125,18 @@ export function TicketCard({
           </h3>
           {product.theme ? <p className="nk-theme">{product.theme}</p> : null}
           {product.meta ? <p className="nk-meta">{product.meta}</p> : null}
-          <TicketCount vm={vm} partner={partnerName ?? product.partner} counts={counts} />
+          <TicketCount
+            vm={vm}
+            partner={partnerName ?? product.partner}
+            counts={countDisplay(vm.scarcity?.provisional, showProvisional)}
+          />
           {vm.days ? (
             <DayPicker
               groupName={groupName}
               days={vm.days}
               chosen={day}
               onChoose={setDay}
-              counts={dayCounts}
+              showProvisional={showProvisional}
             />
           ) : null}
           <BuyBlock
