@@ -74,7 +74,7 @@ export function ShowStatusLine({
         </p>
       ) : null}
       {foot ? (
-        <p data-status-foot="" className="text-[15px] leading-[1.55] text-[var(--ink-500,#6a6780)]">
+        <p data-status-foot="" className="text-[15px] leading-[1.55] text-[var(--ink-500)]">
           {foot}
         </p>
       ) : null}
