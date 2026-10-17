@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { AccommodationList, ConfirmationBadge, TravelRoutes, VenueCard } from '@/components/show';
+import { AccommodationList, TravelRoutes, VenueCard } from '@/components/show';
 import { Button } from '@/components/nos/Button';
 import { CtaBand } from '@/components/nos/CtaBand';
 import { NosHero } from '@/components/nos/NosHero';
@@ -9,7 +9,7 @@ import { NosSection } from '@/components/nos/NosSection';
 import { SectionHeading } from '@/components/nos/SectionHeading';
 import {
   VisitAttractions,
-  VisitDisclosure,
+  VisitEmergency,
   VisitGettingThere,
   gettingThereLede,
 } from '@/components/show/VisitDisclosure';
@@ -35,10 +35,9 @@ export const metadata: Metadata = buildPageMetadata({
 // Codi P3 H8: the pending items on this page are grouped under ONE chip per disclosure, to the
 // nos-v4/plan-your-visit.html golden (l.575-616). The Getting-there label lives in
 // VisitDisclosure.tsx; the emergency label, which the golden also names, is defined here.
+// The emergency section deviates from golden l.605-616 per Codi's FINAL ruling: the national
+// numbers are plain, and only the on-site contact sits in the pale disclosure (VisitEmergency).
 const EMERGENCY_LABEL = 'Emergency contacts, to be confirmed by the show committee';
-
-// A number worth dialling: digits, with an optional leading + and spaces between groups.
-const PHONE_SHAPED = /^\+?\d[\d\s]*$/;
 
 interface ShowVenueData {
   venue: ShowVenue | null;
@@ -58,10 +57,6 @@ export default async function PlanYourVisitPage() {
   const status = info?.confirmations ?? {};
   const attractions = (info?.attractions ?? []).filter((a) => a?.name);
   const emergencyContacts = (info?.emergencyContacts ?? []).filter((c) => c?.label);
-  // Numbers worth dialling get a tel: link; any other contact is drawn as its label plus the
-  // value Sanity holds for it, as a short tag.
-  const dialContacts = emergencyContacts.filter((c) => PHONE_SHAPED.test(c.number ?? ''));
-  const onSiteContacts = emergencyContacts.filter((c) => !PHONE_SHAPED.test(c.number ?? ''));
 
   // The Getting-there items, in page order; an item with no body or list is not drawn.
   const gettingThereItems = [
@@ -119,72 +114,14 @@ export default async function PlanYourVisitPage() {
           researchLabel={researchLabel}
         />
 
-        {emergencyContacts.length > 0 ? (
-          <section>
-            <SectionHeading as="h2" title="In an emergency" className="mb-6" />
-            <VisitDisclosure label={EMERGENCY_LABEL} tone="pale">
-              <div>
-                <ConfirmationBadge
-                  status={status.emergencyContacts}
-                  pendingLabel={pendingLabel}
-                  researchLabel={researchLabel}
-                />
-              </div>
-              {dialContacts.length > 0 ? (
-                <dl className="grid grid-cols-1 gap-x-10 gap-y-7 sm:grid-cols-3">
-                  {dialContacts.map((contact, index) => (
-                    <div
-                      key={contact._key ?? `${contact.label}-${index}`}
-                      className="flex flex-col gap-1"
-                    >
-                      <dt className="font-sans text-[16px] leading-[1.55] text-[var(--ink-700)]">
-                        {contact.label}
-                      </dt>
-                      <dd className="order-first font-serif text-primary">
-                        <a
-                          href={`tel:${(contact.number ?? '').replace(/[^\d+]/g, '')}`}
-                          className="inline-flex min-h-[44px] min-w-[44px] items-center text-[clamp(2.4rem,3vw,3rem)] font-light leading-[1.1] underline-offset-4 hover:underline"
-                        >
-                          {contact.number}
-                        </a>
-                      </dd>
-                      {contact.note ? (
-                        <dd className="font-sans text-[14px] leading-[1.55] text-[var(--ink-500)]">
-                          {contact.note}
-                        </dd>
-                      ) : null}
-                    </div>
-                  ))}
-                </dl>
-              ) : null}
-              {onSiteContacts.map((contact, index) => (
-                <div
-                  key={contact._key ?? `${contact.label}-${index}`}
-                  className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-baseline sm:gap-x-6"
-                >
-                  <h3 className="nos-opsz-32 font-serif text-[20px] leading-[1.2] text-ink">
-                    {contact.label}
-                  </h3>
-                  {contact.number ? (
-                    <span className="font-sans text-[16px] font-semibold text-[var(--ink-500)]">
-                      {contact.number}
-                    </span>
-                  ) : null}
-                </div>
-              ))}
-              {onSiteContacts.map((contact, index) =>
-                contact.note ? (
-                  <p
-                    key={contact._key ?? `${contact.label}-note-${index}`}
-                    className="font-sans text-[15px] leading-[1.55] text-[var(--ink-500)]"
-                  >
-                    {contact.note}
-                  </p>
-                ) : null
-              )}
-            </VisitDisclosure>
-          </section>
-        ) : null}
+        <VisitEmergency
+          title="In an emergency"
+          label={EMERGENCY_LABEL}
+          contacts={emergencyContacts}
+          status={status.emergencyContacts}
+          pendingLabel={pendingLabel}
+          researchLabel={researchLabel}
+        />
       </NosSection>
 
       <CtaBand

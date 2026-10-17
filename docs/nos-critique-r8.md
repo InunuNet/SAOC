@@ -32,3 +32,12 @@ Attraction ids are `visit-attraction-<index>-<safe key>`, index first so duplica
 collide, with the key lower-cased and every run outside `[a-z0-9_-]` replaced by a dash (no key, no
 suffix). `TravelRoutes` headings are h3 under the page's h2 (they were h4). The stale comment on
 plan-your-visit's labels is reworded.
+
+## F5 - the emergency section
+
+`VisitEmergency` (`components/show/VisitDisclosure.tsx`) draws the section. The national dial numbers
+sit directly under the h2 as plain tel links (44px targets, Fraunces numerals, no surface, no chip),
+whatever the status says. The on-site contact follows `status.emergencyContacts`: unconfirmed, it is
+one pale disclosure with one chip, the contact label as an h3 and the note as the foot (the inline
+value tag is dropped); confirmed, it is plain. No on-site contact means no disclosure; no contacts
+renders nothing. This deviates from nos-v4 golden l.605-616 per Codi's FINAL ruling.

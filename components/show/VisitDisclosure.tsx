@@ -234,3 +234,117 @@ export function VisitAttractions({
     </section>
   );
 }
+
+export interface VisitEmergencyContact {
+  _key?: string;
+  label?: string | null;
+  number?: string | null;
+  note?: string | null;
+}
+
+export interface VisitEmergencyProps {
+  // The section's h2, passed in by the page.
+  title: string;
+  // The disclosure's aria-label, defined by the page.
+  label: string;
+  contacts: VisitEmergencyContact[];
+  status?: string | null;
+  pendingLabel?: string | null;
+  researchLabel?: string | null;
+}
+
+// A number worth dialling: digits, with an optional leading + and spaces between groups.
+const PHONE_SHAPED = /^\+?\d[\d\s]*$/;
+
+// The national numbers are facts, not the show committee's to confirm: always plain tel targets,
+// whatever the status says. Only the on-site contact follows the status.
+export function VisitEmergency({
+  title,
+  label,
+  contacts,
+  status,
+  pendingLabel,
+  researchLabel,
+}: VisitEmergencyProps) {
+  const shown = contacts.filter((contact) => contact.label);
+  if (shown.length === 0) return null;
+
+  const dialContacts = shown.filter((contact) => PHONE_SHAPED.test(contact.number ?? ''));
+  const onSiteContacts = shown.filter((contact) => !PHONE_SHAPED.test(contact.number ?? ''));
+  const keyOf = (contact: VisitEmergencyContact, index: number) =>
+    contact._key ?? `${contact.label}-${index}`;
+
+  return (
+    <section className="space-y-6">
+      <SectionHeading as="h2" title={title} />
+      {dialContacts.length > 0 ? (
+        <dl className="grid grid-cols-1 gap-x-10 gap-y-7 sm:grid-cols-3">
+          {dialContacts.map((contact, index) => (
+            <div key={keyOf(contact, index)} className="flex flex-col gap-1">
+              <dt className="font-sans text-[16px] leading-[1.55] text-[var(--ink-700)]">
+                {contact.label}
+              </dt>
+              <dd className="order-first font-serif text-primary">
+                <a
+                  href={`tel:${(contact.number ?? '').replace(/[^\d+]/g, '')}`}
+                  className="inline-flex min-h-[44px] min-w-[44px] items-center text-[clamp(2.4rem,3vw,3rem)] font-light leading-[1.1] underline-offset-4 hover:underline"
+                >
+                  {contact.number}
+                </a>
+              </dd>
+              {contact.note ? (
+                <dd className="font-sans text-[14px] leading-[1.55] text-[var(--ink-500)]">
+                  {contact.note}
+                </dd>
+              ) : null}
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {onSiteContacts.length > 0 && status === 'confirmed' ? (
+        <div className="space-y-4">
+          {onSiteContacts.map((contact, index) => (
+            <div key={keyOf(contact, index)} className="grid gap-2">
+              <h3 className="nos-opsz-32 font-serif text-[20px] leading-[1.2] text-ink">
+                {contact.label}
+              </h3>
+              {contact.number ? (
+                <p className="font-sans text-[16px] font-semibold text-[var(--ink-500)]">
+                  {contact.number}
+                </p>
+              ) : null}
+              {contact.note ? (
+                <p className="font-sans text-[15px] leading-[1.55] text-[var(--ink-500)]">
+                  {contact.note}
+                </p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {onSiteContacts.length > 0 && status !== 'confirmed' ? (
+        <VisitDisclosure label={label} tone="pale">
+          <div>
+            <ConfirmationBadge
+              status={status === 'research' ? 'research' : 'pending'}
+              pendingLabel={pendingLabel}
+              researchLabel={researchLabel}
+            />
+          </div>
+          {onSiteContacts.map((contact, index) => (
+            <div key={keyOf(contact, index)} className="grid gap-2">
+              <h3 className="nos-opsz-32 font-serif text-[20px] leading-[1.2] text-ink">
+                {contact.label}
+              </h3>
+              {contact.note ? (
+                <p className="font-sans text-[15px] leading-[1.55] text-[var(--ink-500)]">
+                  {contact.note}
+                </p>
+              ) : null}
+            </div>
+          ))}
+        </VisitDisclosure>
+      ) : null}
+    </section>
+  );
+}
