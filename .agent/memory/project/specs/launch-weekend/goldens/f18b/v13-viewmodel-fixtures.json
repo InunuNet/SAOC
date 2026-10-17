@@ -1,5 +1,5 @@
 {
- "_note": "Pure builder fixtures for lib/data/ticket-card-view-models.ts buildTicketCardViewModels(input) -> { cards, pool }. Numbers here are test inputs, never page copy. The early-bird pool is the capacityPool 'eb' shared by weekend-pass-early-bird and early-bird (total = the smallest effective capacity of its members, sold = sum of member sold x headcountPerUnit). Day pass per-day total = the type's effective capacity (capacity, or releasedQuantity when smaller). A missing type yields no card for that product; an unknown count yields null and renders nothing (R7). dayPassFrom (R30, top-level of the builder output) is the effective price of the Day Pass card (the early-bird SKU while the pool lasts, the regular SKU after), null when that price is null; the hub renders the \"Day Pass from R{min}\" line only when it is a number. ledeCases drive buildSectionLedes (lib/data/ticket-section-ledes.ts): dates only from showDate/showEndDate, names only from the CMS ticketType names; a lede whose fact cannot be sourced is null and renders nothing.",
+ "_note": "Pure builder fixtures for lib/data/ticket-card-view-models.ts buildTicketCardViewModels(input) -> { cards, pool }. Numbers here are test inputs, never page copy. The early-bird pool is the capacityPool 'eb' shared by weekend-pass-early-bird and early-bird (total = the smallest effective capacity of its members, sold = sum of member sold x headcountPerUnit). Day pass per-day total = the type's effective capacity (capacity, or releasedQuantity when smaller). A missing type yields no card for that product; an unknown count yields null and renders nothing (R7). dayPassFrom (R30, top-level of the builder output) is the effective price of the Day Pass card (the early-bird SKU while the pool lasts, the regular SKU after), null when that price is null; the hub renders the \"Day Pass from R{min}\" line only when it is a number. ledeCases drive buildSectionLedes (lib/data/ticket-section-ledes.ts): dates only from showDate/showEndDate, names only from the CMS ticketType names; a lede whose fact cannot be sourced is null and renders nothing. Each type may carry capacitySource 'sanity' (default) or 'provisional' (the total comes from lib/provisional-figures.ts); the builder sets scarcity.provisional, days[].provisional and pool.provisional (true when any pool member is provisional) and never hides anything itself: the components do, by mode.",
  "showDays": [
   "2027-09-24",
   "2027-09-25",
@@ -338,6 +338,84 @@
     "day": {
      "state": "pricePending",
      "price": null
+    }
+   }
+  },
+  {
+   "name": "sanity capacity is not provisional (default)",
+   "soldByType": {
+    "weekend-pass-early-bird": 100,
+    "early-bird": 88,
+    "vip": 54
+   },
+   "soldByDay": null,
+   "expect": {
+    "pool": {
+     "remaining": 312,
+     "total": 500,
+     "provisional": false
+    },
+    "vip": {
+     "scarcity": {
+      "remaining": 146,
+      "total": 200,
+      "provisional": false
+     }
+    }
+   }
+  },
+  {
+   "name": "provisional capacity is flagged on the card scarcity, the day cells and the pool (design-cb P2-3)",
+   "typesOverride": {
+    "vip": {
+     "capacitySource": "provisional"
+    },
+    "weekend-pass-early-bird": {
+     "capacitySource": "provisional"
+    },
+    "early-bird": {
+     "capacitySource": "provisional"
+    }
+   },
+   "soldByType": {
+    "weekend-pass-early-bird": 100,
+    "early-bird": 88,
+    "vip": 54
+   },
+   "soldByDay": null,
+   "expect": {
+    "pool": {
+     "remaining": 312,
+     "total": 500,
+     "provisional": true
+    },
+    "vip": {
+     "state": "available",
+     "scarcity": {
+      "remaining": 146,
+      "total": 200,
+      "provisional": true
+     }
+    },
+    "weekend": {
+     "slug": "weekend-pass-early-bird",
+     "scarcity": {
+      "provisional": true
+     }
+    },
+    "day": {
+     "slug": "early-bird",
+     "days": [
+      {
+       "provisional": true
+      },
+      {
+       "provisional": true
+      },
+      {
+       "provisional": true
+      }
+     ]
     }
    }
   }
