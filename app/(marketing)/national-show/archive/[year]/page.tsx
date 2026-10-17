@@ -199,12 +199,12 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
       <NosSection>
         <div className="max-w-[60ch]">
           {summary ? (
-            <p className="font-sans text-[16px] leading-relaxed text-ink/80">{summary}</p>
+            <p className="font-sans text-[16px] leading-[1.55] text-ink/80">{summary}</p>
           ) : (
             <ConfirmationBadge status="pending" />
           )}
           {show.exhibitors ? (
-            <p className="mt-4 font-sans text-[16px] leading-relaxed text-ink/80">
+            <p className="mt-4 font-sans text-[16px] leading-[1.55] text-ink/80">
               {show.exhibitors.toLocaleString()} exhibitors took part.
             </p>
           ) : null}

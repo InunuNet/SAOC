@@ -33,7 +33,10 @@ for (const [token, attr] of Object.entries({ organization: 'businessName', name:
 if (!/inputMode=["']numeric["']/.test(form + field)) problems.push('stands field: inputMode="numeric" missing');
 if (!/min=\{1\}/.test(form)) problems.push('stands field: min={1} missing');
 if (!form.includes(copy.requiredSentence)) problems.push(`VendorApplyForm: verbatim sentence missing: "${copy.requiredSentence}"`);
-if (!/\(required\)/.test(form + field) || !/\(optional\)/.test(form + field)) problems.push('labels: "(required)" / "(optional)" text not produced by the form');
+// R82 (nos-critique-r6 f3) supersedes launch-weekend F7 here: no visible "(required)" suffix; required inputs carry aria-required, and the one optional field says so in its own label.
+if (/\(required\)/.test(form + field)) problems.push('labels: a "(required)" suffix is still produced by the form (R82 removed it)');
+if (!/aria-required=\{required/.test(field)) problems.push('VendorFormField: required inputs must carry aria-required (R82)');
+if (!form.includes('label="Trading name (if different, optional)"')) problems.push('labels: the tradingName label must read exactly "Trading name (if different, optional)" (R82)');
 
 // contrast of borders and button
 if (/border-rule\b/.test(field)) problems.push('VendorFormField: input border still uses border-rule (1.3:1); use an existing token that reaches 3:1 (muted 5.2:1, primary-700, ink)');

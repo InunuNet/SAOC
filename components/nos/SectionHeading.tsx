@@ -7,14 +7,14 @@
 // the clamp below sizes the other heading levels.
 // =============================================================
 
-import type { ComponentPropsWithoutRef, ElementType } from 'react';
+import type { ComponentPropsWithoutRef, ElementType, ReactNode } from 'react';
 
 export interface NosSectionHeadingProps extends ComponentPropsWithoutRef<'div'> {
   eyebrow?: string;
   /** Sentence-case headline copy — do not transform to caps. */
   title: string;
   /** Optional supporting lede sentence beneath the title. */
-  lede?: string;
+  lede?: ReactNode;
   /** Heading level for the title element. Defaults to `h2`. */
   as?: ElementType;
   /** `on-dark` for use over the royal-purple/night ground. */

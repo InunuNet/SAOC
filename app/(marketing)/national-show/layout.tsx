@@ -1,5 +1,8 @@
 import { Fraunces, Karla } from 'next/font/google';
 
+import { NAV } from '@/components/chrome/nav-config';
+import { NosBreadcrumbJsonLd } from '@/components/nos/NosBreadcrumbJsonLd';
+
 import './nos-theme.css';
 import './nos-structure.css';
 import './presenters.css';
@@ -40,6 +43,33 @@ const karla = Karla({
 // mounted by app/(marketing)/layout.tsx (components/nos-chrome). This layout
 // renders inside that layout's <main>, so it carries no header, footer, masthead
 // or lockup of its own.
+const NATIONAL_SHOW_ROOT = '/national-show';
+
+/** First label nav-config carries for each /national-show href, depth first. */
+function collectLabels(node: unknown, into: Record<string, string>): void {
+  if (!node || typeof node !== 'object') return;
+  // Narrowing an arbitrary nav node to a string-keyed record; the typeof checks guard every read.
+  const record = node as Record<string, unknown>;
+  const { href, label } = record;
+  if (
+    typeof href === 'string' &&
+    typeof label === 'string' &&
+    href.startsWith(NATIONAL_SHOW_ROOT) &&
+    !(href in into)
+  ) {
+    into[href] = label;
+  }
+  for (const value of Object.values(record)) collectLabels(value, into);
+}
+
+const BREADCRUMB_LABELS: Record<string, string> = {};
+collectLabels(NAV, BREADCRUMB_LABELS);
+
 export default function NationalShowLayout({ children }: { children: React.ReactNode }) {
-  return <div className={`nos-theme ${fraunces.variable} ${karla.variable}`}>{children}</div>;
+  return (
+    <div className={`nos-theme ${fraunces.variable} ${karla.variable}`}>
+      <NosBreadcrumbJsonLd labels={BREADCRUMB_LABELS} />
+      {children}
+    </div>
+  );
 }

@@ -5,11 +5,14 @@
 //       ink (royal) text on gold-100, 1px --line rule, covering no content.
 //  1a. Launch posture: with nationalShow.salesOpen=false (the launch runbook default) NO TEST MODE banner, form, quantity control or price renders on
 //     /tickets, /national-show/tickets, /conferences or /workshops, even when the status API says enabled:true (the banner lives inside the purchase
-//     form, which is not rendered while sales are closed). salesOpen is Sanity-side, so this is measured on whatever the server serves: a page showing
+//     form, which is not rendered while sales are closed). RE-PINNED by F18b (design-cb): the v13 cards stay on /tickets while closed, masked (no CTA, stepper, button or price) beside one [data-sales-status] line. salesOpen is Sanity-side, so this is measured on whatever the server serves: a page showing
 //     "Sales closed" must pass the assertion; NOS_SALES_CLOSED=1 (set by the gate against a salesOpen=false dataset) additionally FAILS a page that
 //     is not closed. The static twin (check-f3-static.mjs sales-gate) proves the code path.
 //  1b. /tickets: no single primary - every "Add to booking" button has the same background, colour and size; no new hero CTA. If a hero fan
 //     ([data-nos-ticket-fan]) exists its cards are visible at 390 and anchor to a resolving #ticket-{id}.
+//  AMENDED by launch-weekend F18b (goldens/f18/supersession.json): the v13 keepsake stub of the Sunset ticket is filled with the approved field colour #7E3F97, which is this violet. A fill inside
+//     [data-ticket-stub] is exempt (its geometry, photo and colour rules are owned by F18-A29); the violet stays banned on every other control. The hero fan is the v13 fan ([data-fan-link] anchors, same
+//     [data-nos-ticket-fan] hook): visible at 390 and resolving to an existing #ticket-<id> still holds.
 //  2. "Buy Ticket" and every ticket control use the NOS button role (F2 Button.tsx: Karla 700 14px uppercase), never the off-palette violet
 //     rgb(126, 63, 151) as a fill, text or border colour.
 //  3. No visible text under 12px (the 10.5px pill, the 11px legends and labels).
@@ -31,7 +34,7 @@ function measure() {
   }
   const violet = [];
   for (const e of document.querySelectorAll('main a, main button, main input, main label, main span, main div')) {
-    if (!vis(e)) continue;
+    if (!vis(e) || e.closest('[data-ticket-stub]')) continue;
     const s = getComputedStyle(e);
     for (const [k, v] of [['background', s.backgroundColor], ['colour', s.color], ['border', s.borderTopColor]]) if (/rgb\(126, 63, 151\)/.test(v) && (k !== 'border' || parseFloat(s.borderTopWidth) > 0) && (k !== 'colour' || (e.textContent ?? '').trim())) violet.push(`${e.tagName.toLowerCase()} ${k}`);
   }
@@ -104,13 +107,17 @@ await main('F3-T tickets', async (r) => {
         const tag = `${route} @${name} (status enabled:true)`;
         const m = await page.evaluate(() => {
           const txt = document.querySelector('main')?.innerText ?? '';
-          return { closed: /sales (are )?closed/i.test(txt), banner: /TEST MODE|Ozow charges/i.test(document.body.innerText), form: !!document.querySelector('main form, main input[type="number"], main button[aria-label*="quantity" i]'), price: /\bR\s?\d[\d\s,.]*/.test(txt) };
+          return { closed: /sales (are )?closed/i.test(txt), banner: /TEST MODE|Ozow charges/i.test(document.body.innerText), form: !!document.querySelector('main form, main input[type="number"], main button[aria-label*="quantity" i]'), price: /\bR\s?\d[\d\s,.]*/.test(txt), cards: document.querySelectorAll('[data-ticket-card]').length, controls: document.querySelectorAll('[data-ticket-card] [data-ticket-cta], [data-ticket-card] [data-ticket-stepper], [data-ticket-card] button').length, status: document.querySelectorAll('[data-sales-status]').length };
         });
         if (process.env.NOS_SALES_CLOSED === '1' && !m.closed) r.fail(`${tag}: NOS_SALES_CLOSED=1 but the page is not in the sales-closed state`);
         if (m.closed || process.env.NOS_SALES_CLOSED === '1') {
           if (m.banner) r.fail(`${tag}: sales closed but a TEST MODE banner renders`);
           if (m.form) r.fail(`${tag}: sales closed but a ticket form / quantity control renders`);
           if (m.price) r.fail(`${tag}: sales closed but a price (R...) renders`);
+          // re-pinned on the v13 markup (design-cb sales-closed ruling): the keepsake cards STILL render while closed, masked like pricePending, with one page-level status line
+          if (m.controls) r.fail(`${tag}: sales closed but ${m.controls} card CTA, stepper or button element(s) render`);
+          if (route === '/tickets' && m.cards < 1) r.fail(`${tag}: sales closed but no v13 ticket cards render (they stay, masked)`);
+          if (route === '/tickets' && m.status !== 1) r.fail(`${tag}: sales closed but ${m.status} [data-sales-status] line(s), want exactly 1`);
         }
         await ctx.close();
       }

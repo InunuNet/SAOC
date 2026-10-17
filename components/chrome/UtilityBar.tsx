@@ -32,6 +32,8 @@ const CONTACT_EMAIL = 'info@saoc.co.za';
 
 export function UtilityBar({ show, variant = 'saoc' }: UtilityBarProps) {
   const isNos = variant === 'nos';
+  // Brad chrome decision #2 (2026-10-15): the SAOC utility bar is left off NOS pages, at every width.
+  if (isNos) return null;
   const monthYear = formatShowShortMonthYear(show?.showDate);
   const showPillLabel = [showLabelWithEdition(show?.edition), monthYear]
     .filter((part): part is string => Boolean(part))

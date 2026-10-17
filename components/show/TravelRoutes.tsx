@@ -54,7 +54,7 @@ export function TravelRoutes({ routes }: TravelRoutesProps) {
           ) : null}
 
           {route.directions ? (
-            <p className="mt-3 font-sans text-[15px] leading-relaxed text-ink/80">
+            <p className="mt-3 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/80">
               {route.directions}
             </p>
           ) : null}
@@ -62,7 +62,7 @@ export function TravelRoutes({ routes }: TravelRoutesProps) {
           {route.transportOptions && route.transportOptions.length > 0 ? (
             <ul className="mt-3 space-y-2 border-t border-rule pt-3">
               {route.transportOptions.map((option) => (
-                <li key={option} className="font-sans text-[14px] leading-relaxed text-ink/70">
+                <li key={option} className="font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70">
                   {option}
                 </li>
               ))}

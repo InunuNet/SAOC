@@ -315,7 +315,7 @@ test.describe('mega menu — Layout 4 visual fidelity (mission menu-system-layou
   }) => {
     const panel = await openNationalShowMenu(page);
 
-    const leadLink = panel.getByRole('link', { name: '19th SAOC National Orchid Show', exact: true });
+    const leadLink = panel.getByRole('link', { name: '19th National Orchid Show', exact: true });
     await expect(leadLink).toHaveCSS('font-size', '23px');
     await expect(leadLink).toHaveCSS('font-weight', '600');
     await expect(leadLink).toHaveCSS('color', GOLD_INK);

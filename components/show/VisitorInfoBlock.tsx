@@ -42,7 +42,7 @@ export function VisitorInfoBlock({
         researchLabel={researchLabel}
       />
       {body ? (
-        <p className="mt-3 max-w-3xl font-sans text-[16px] leading-relaxed text-ink/80">{body}</p>
+        <p className="mt-3 max-w-3xl font-sans text-[16px] leading-[1.55] text-ink/80">{body}</p>
       ) : null}
       {children}
     </section>

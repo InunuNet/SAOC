@@ -37,7 +37,6 @@ export default async function NationalShowAboutPage() {
 
       <NosSection>
         <LongFormPage
-          route="/national-show/about"
           facts={facts}
           pullQuote="From Wild Origins to Cultivated Excellence: The Future of Orchids"
           paragraphs={[

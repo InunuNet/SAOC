@@ -54,22 +54,22 @@ export function VendorGrid({ nurseries }: VendorGridProps) {
             </p>
           ) : null}
           {nursery.owner ? (
-            <p className="mt-2 font-sans text-[14px] leading-relaxed text-ink/70">
+            <p className="mt-2 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70">
               {nursery.owner}
             </p>
           ) : null}
           {nursery.history ? (
-            <p className="mt-2 font-sans text-[14px] leading-relaxed text-ink/70">
+            <p className="mt-2 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70">
               {nursery.history}
             </p>
           ) : null}
           {nursery.specialisation ? (
-            <p className="mt-2 font-sans text-[14px] leading-relaxed text-ink/70">
+            <p className="mt-2 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70">
               {nursery.specialisation}
             </p>
           ) : null}
           {nursery.plantsBrought ? (
-            <p className="mt-2 font-sans text-[14px] leading-relaxed text-ink/70">
+            <p className="mt-2 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70">
               {nursery.plantsBrought}
             </p>
           ) : null}

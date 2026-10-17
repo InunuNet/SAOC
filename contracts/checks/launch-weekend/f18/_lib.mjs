@@ -19,10 +19,10 @@ export const git = (...a) => execFileSync('git', a, { encoding: 'utf8', maxBuffe
 export const gitLines = (...a) => git(...a).split('\n').filter(Boolean);
 export const readText = (file) => (existsSync(file) ? readFileSync(file, 'utf8') : null);
 
-// The diff base: F18_BASE_REF pins the commit the dev branched from (main 76ad8b98 plus this spec branch merged in).
+// The diff base: F18_BASE_REF pins the commit the dev branched from (main 63f3e74d plus this spec branch merged in).
 export function baseRef() {
   if (process.env.F18_BASE_REF) return process.env.F18_BASE_REF;
-  console.error('INFRA: set F18_BASE_REF to the commit the F18 dev branched from (the spec records main 76ad8b98)');
+  console.error('INFRA: set F18_BASE_REF to the commit the F18 dev branched from (the spec records main 63f3e74d)');
   process.exit(2);
 }
 
@@ -33,4 +33,12 @@ export const httpAuth = () => (process.env.BETA_BASIC_AUTH_USER ? { authorizatio
 export async function fetchHtml(route) {
   const res = await fetch(`${BASE}${route}`, { headers: httpAuth() });
   return { status: res.status, html: await res.text() };
+}
+
+// F18-A11: every (route, width) the critique evidence must cover: the page routes at 390/1280 plus the keepsake ticket routes at the five v13 widths.
+export function critiquePairs() {
+  const pairs = new Map();
+  for (const route of T.critique.routes) for (const w of T.critique.viewports) pairs.set(`${w}-${route.split('/').pop()}`, { route, w });
+  for (const route of T.critique.ticketRoutes) for (const w of T.critique.ticketViewports) pairs.set(`${w}-${route.split('/').pop()}`, { route, w });
+  return [...pairs.values()];
 }

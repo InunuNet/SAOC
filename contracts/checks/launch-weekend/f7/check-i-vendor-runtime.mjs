@@ -23,13 +23,16 @@ await withBrowser(async (ctx) => {
   const text = await page.locator('main').innerText();
   if (text.split(copy.requiredSentence).length !== 2) problems.push(`sentence "${copy.requiredSentence}" must appear exactly once`);
   for (const k of [...REQUIRED, 'tradingName']) {
-    const want = k === 'tradingName' ? '(optional)' : '(required)';
+    // R82 (nos-critique-r6 f3) supersedes launch-weekend F7: no "(required)" suffix; the optional field's label says so itself.
+    const want = k === 'tradingName' ? 'Trading name (if different, optional)' : null;
     const labelText = await page.evaluate((id) => {
       const el = document.getElementById(id);
       const l = el && el.tagName === 'FIELDSET' ? el.querySelector('legend') : document.querySelector(`label[for="${id}"]`);
       return l ? l.textContent : null;
     }, `vendor-register-${k}`);
-    if (!labelText || !labelText.includes(want)) problems.push(`${k}: label/legend "${labelText}" lacks "${want}"`);
+    if (!labelText) problems.push(`${k}: no label/legend`);
+    else if (want && labelText.trim() !== want) problems.push(`${k}: label/legend "${labelText}" is not exactly "${want}"`);
+    else if (/\(required\)/.test(labelText) || /\) \(/.test(labelText)) problems.push(`${k}: label/legend "${labelText}" carries a "(required)" suffix or ") ("`);
   }
   const attrs = await page.evaluate(() => Object.fromEntries(['businessName', 'contactPersonName', 'contactEmail', 'contactCellPhone', 'indicativeBoothCount'].map((k) => {
     const e = document.getElementById(`vendor-register-${k}`);

@@ -18,8 +18,9 @@ if (!/cartItemCount|itemCount/.test(hook) ) problems.push('useTicketCart: no ite
 if (!/cartError/.test(form)) problems.push('TicketPurchaseForm: the existing cartError alert was removed (it must stay)');
 
 // total in a polite live region
-const totalBlock = /<p[^>]*>\s*Estimated total:[\s\S]*?<\/p>/.exec(form)?.[0] ?? '';
-if (!/aria-live=["']polite["']/.test(totalBlock) && !/role=["']status["']/.test(totalBlock)) problems.push('TicketPurchaseForm: the "Estimated total" paragraph has no aria-live="polite" (or role="status")');
+// AMENDED by launch-weekend F18: the label is "Total" (R62: one word, no "estimate"), inside the live region that sits next to Buy.
+const totalBlock = /<[a-zA-Z]+[^>]*aria-live=["']polite["'][^>]*>[\s\S]*?\bTotal\b[\s\S]*?<\/[a-zA-Z]+>/.exec(form)?.[0] ?? '';
+if (!/aria-live=["']polite["']/.test(totalBlock) && !/role=["']status["']/.test(totalBlock)) problems.push('TicketPurchaseForm: the "Total" block has no aria-live="polite" (or role="status")');
 
 // specific page title on the single-ticket route
 if (!/export (async )?function generateMetadata/.test(slugPage)) problems.push('tickets/[slug]/page.tsx: no generateMetadata, so the title is the bare site name');
@@ -41,7 +42,7 @@ await withBrowser(async (ctx) => {
   if (!href) return;
   await open(page, href);
   // the route suspends first (tickets/loading.tsx); scope to the purchase form in <main>, never the footer newsletter form
-  const purchase = page.locator('main form').filter({ hasText: 'Estimated total' }).first();
+  const purchase = page.locator('main form').filter({ has: page.locator('[data-catalogue-total]') }).first();
   try { await purchase.waitFor({ timeout: 15_000 }); } catch { return; }
   const buy = purchase.locator('button[type="submit"]').first();
   if (!(await buy.count())) return;
@@ -51,7 +52,7 @@ await withBrowser(async (ctx) => {
   if (await inc.count()) {
     await inc.click();
     if (await buy.isDisabled()) problems.push(`runtime ${href}: Buy stays disabled after quantity 1`);
-    const total = await page.locator('[aria-live="polite"], [role="status"]').filter({ hasText: /Estimated total/ }).count();
+    const total = await page.locator('[aria-live="polite"], [role="status"]').filter({ hasText: /\bTotal\b/ }).count();
     if (!total) problems.push(`runtime ${href}: no live region carries the total`);
     await page.locator('button[aria-label^="Decrease quantity"]').first().click();
     if (!(await buy.isDisabled())) problems.push(`runtime ${href}: Buy not disabled again at quantity 0`);

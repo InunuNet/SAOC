@@ -1,0 +1,2055 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Tickets · National Orchid Show 2027 · SA Orchid Council</title>
+<meta name="description" content="Tickets for the 19th National Orchid Show, Thursday 23 to Sunday 26 September 2027 at The Hangar, Stellenbosch Flying Club.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..500;1,9..144,300..500&family=Karla:wght@400..700&family=Crimson+Pro:wght@500;600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:wght@500&family=Jost:wght@500&family=Lora:wght@500&display=swap">
+<style>
+/* National Orchid Show 2027, Tickets (nos.saoc.co.za/tickets). Design mock for review.
+   Single-theme brand world by choice, as NOS v2: the committee palette has no dark mode, so every colour is painted explicitly. */
+:root {
+  color-scheme: light;
+  --royal: #211A57;
+  --royal-900: #1A1445;
+  --royal-700: #33296F;
+  --royal-600: #4A3D8C;
+  --black: #0B0A14;
+  --gold: #F3F2D6;
+  --gold-100: #FBFAF0;
+  --gold-300: #E8E6C2;
+  --green-1: #A7A841;
+  --green-2: #7F7D33;
+  --olive-700: #6A6829;
+  --white: #FFFFFF;
+  --ink-700: #3A3654;
+  --ink-500: #6A6780;
+  --line: #DAD7C8;
+  --lilac-200: #D2CBE8;
+  --violet: #7E3F97;
+  --warn-light: #714a1e;   /* R8 --status-warning-on-light */
+  --warn-dark: #d6a164;    /* R8 --status-warning-on-dark */
+
+  --serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --sans: "Karla", "Helvetica Neue", Arial, sans-serif;
+
+  --fs-xs: 0.75rem; --fs-sm: 0.875rem; --fs-base: 1rem; --fs-body: 1.0625rem;
+  --fs-md: 1.25rem; --fs-lg: 1.5625rem; --fs-xl: 1.9375rem; --fs-2xl: 2.4375rem; --fs-3xl: 3.0625rem;
+  --track-caps: 0.14em;
+  --radius-md: 10px; --radius-lg: 16px; --radius-pill: 999px;
+  --border: 1.5px; --hairline: 1px;
+  --shadow-sm: 0 1px 2px rgba(33, 26, 87, 0.06), 0 2px 8px rgba(33, 26, 87, 0.05);
+  --shadow-md: 0 2px 4px rgba(33, 26, 87, 0.06), 0 10px 28px rgba(33, 26, 87, 0.09);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --t-fast: 120ms; --t-med: 200ms; --t-slow: 360ms;
+  --gutter: clamp(16px, 4vw, 48px);
+  --wide: 1320px; --default: 1080px;
+
+  /* Ticket tokens, driven by the design-review drawer (see HANDOFF.md). */
+  --rt: 10px;          /* ticket radius */
+  --ts: 1;             /* ticket type scale */
+  --pad: 24px;         /* ticket inner padding */
+  --acc: var(--green-1);
+  --t-bg: var(--gold); --t-ink: var(--royal); --t-sub: var(--ink-700); --t-muted: var(--ink-500);
+  --t-rule: rgba(33, 26, 87, 0.16); --t-btn-bg: var(--royal); --t-btn-fg: var(--gold-100); --t-warn: var(--warn-light);
+  --t-edge: transparent;
+  --behind: var(--gold-100);
+}
+:root[data-ground="white"] { --t-bg: var(--white); }
+:root[data-ground="royal"] {
+  --t-bg: var(--royal); --t-ink: var(--gold-100); --t-sub: var(--gold-300); --t-muted: var(--lilac-200);
+  --t-rule: rgba(232, 230, 194, 0.22); --t-btn-bg: var(--gold); --t-btn-fg: var(--royal); --t-warn: var(--warn-dark);
+  --t-edge: rgba(232, 230, 194, 0.28);
+}
+:root[data-accent="green2"] { --acc: var(--green-2); }
+:root[data-accent="violet"] { --acc: var(--violet); }
+:root[data-radius="16"] { --rt: 16px; }
+:root[data-density="compact"] { --pad: 16px; }
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 100px; }
+body {
+  margin: 0; background: var(--gold-100); color: var(--ink-700);
+  font-family: var(--sans); font-size: var(--fs-body); line-height: 1.65;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; overflow-x: clip;
+}
+body.menu-open { overflow: hidden; }
+img { max-width: 100%; display: block; }
+a { color: inherit; }
+::selection { background: var(--royal); color: var(--gold); }
+.on-dark ::selection { background: var(--gold); color: var(--royal); }
+h1, h2, h3, h4 { margin: 0; font-family: var(--serif); font-weight: 400; color: var(--royal); text-wrap: balance; font-optical-sizing: none; }
+p { margin: 0; }
+:focus-visible { outline: 2px solid var(--violet); outline-offset: 3px; border-radius: 4px; }
+.on-dark :focus-visible, :root[data-ground="royal"] .ticket :focus-visible { outline-color: var(--gold-100); }
+.wrap { width: 100%; max-width: calc(var(--default) + 2 * var(--gutter)); margin-inline: auto; padding-inline: var(--gutter); }
+.wrap-wide { width: 100%; max-width: calc(var(--wide) + 2 * var(--gutter)); margin-inline: auto; padding-inline: var(--gutter); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip { position: absolute; left: 16px; top: -60px; z-index: 100; background: var(--gold); color: var(--royal); padding: 10px 16px; border-radius: var(--radius-md); font-weight: 700; transition: top var(--t-med) var(--ease); }
+.skip:focus { top: 12px; }
+.icon { width: 1.1em; height: 1.1em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- v3 header, layer 1: the SAOC site chrome ----------
+   Recreated from SAOC source (components/chrome/UtilityBar.tsx, Header.tsx, MegaMenu.tsx,
+   MobileMenu.tsx, SearchOverlay.tsx; app/globals.css tokens). Token names are prefixed
+   --sc-* so they never collide with this page's NOS tokens (R21/2). */
+:root {
+  --sc-primary: #384138; --sc-primary-800: #22281f; --sc-accent: #9e8c6b; --sc-accent-soft: #c2b393;
+  --sc-parchment: #f4f3ec; --sc-bone: #e8e6dc; --sc-ink: #171917; --sc-muted: #636660;
+  --sc-rule: #d9d7c9; --sc-rule-soft: #e4e1d0;
+  --sc-nos-royal: #211a57; --sc-nos-purple-700: #33296f; --sc-nos-pale-gold: #f3f2d6; --sc-nos-olive-700: #6a6829;
+  --sc-serif: "Crimson Pro", Georgia, "Times New Roman", serif;
+  --sc-sans: "Manrope", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --sc-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --sc-shadow-float: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+  --sc-shadow-sheet: 0 20px 44px rgba(23, 25, 23, 0.09);
+  --sc-ring: 0 0 0 2px var(--sc-parchment), 0 0 0 4px rgba(23, 25, 23, 0.4);
+}
+.sc { font-family: var(--sc-sans); font-size: 16px; color: var(--sc-ink); line-height: 1.55; }
+:where(.sc) a { text-decoration: none; }
+:where(.sc) button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.sc :focus-visible { outline: none; box-shadow: var(--sc-ring); border-radius: 4px; }
+.sc ::selection { background: var(--sc-primary); color: var(--sc-parchment); }
+.sc-icon { display: block; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+.sc-wrap { max-width: 1280px; margin-inline: auto; padding-inline: 32px; }
+.scroll-sentinel { position: absolute; top: 4px; left: 0; width: 1px; height: 1px; pointer-events: none; }
+
+/* Utility bar */
+.sc-util { background: var(--sc-primary-800); color: var(--sc-parchment); }
+.sc-util .sc-wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 8px; }
+.sc-util-mail { display: flex; align-items: center; gap: 6px; font-family: var(--sc-mono); font-size: 14px; color: var(--sc-parchment); opacity: 0.9; transition: opacity 150ms; }
+.sc-util-mail:hover { opacity: 1; }
+.sc-util-pills { display: flex; align-items: center; gap: 8px; }
+.sc-pill { border-radius: 999px; padding: 4px 12px; font-size: 13px; line-height: 20px; transition: border-color 150ms, background-color 150ms; }
+.sc-pill-show { display: none; border: 1px solid rgba(244, 243, 236, 0.3); color: var(--sc-parchment); }
+.sc-pill-show:hover { border-color: rgba(244, 243, 236, 0.6); }
+.sc-pill-join { background: var(--sc-accent); color: var(--sc-primary); font-weight: 500; }
+.sc-pill-join:hover { background: var(--sc-accent-soft); }
+
+/* Header */
+.sc-header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 40; background: var(--sc-parchment); transition: box-shadow 150ms; }
+.sc-header.is-scrolled { box-shadow: var(--sc-shadow-float); border-bottom: 1px solid var(--sc-rule); }
+.sc-brand { display: flex; align-items: center; gap: 12px; border-radius: 2px; }
+.sc-brand img { width: 48px; height: auto; }
+.sc-brand-text { display: none; flex-direction: column; line-height: 1.25; }
+.sc-brand-name { font-family: var(--sc-serif); font-size: 22px; font-weight: 600; color: var(--sc-ink); }
+.sc-brand-tag { font-family: var(--sc-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.22em; color: var(--sc-muted); }
+.sc-nav { display: none; align-items: center; gap: 28px; }
+.sc-nav-link, .sc-mega-trigger { position: relative; font-family: var(--sc-sans); font-size: 14px; color: var(--sc-ink); transition: color 150ms; border-radius: 2px; }
+.sc-nav-link:hover, .sc-mega-trigger:hover, .sc-mega-trigger[aria-expanded="true"] { color: var(--sc-primary); }
+.sc-actions { display: flex; align-items: center; gap: 12px; }
+.sc-icon-btn { padding: 8px; border-radius: 2px; color: var(--sc-ink); transition: color 150ms; }
+.sc-icon-btn:hover { color: var(--sc-primary); }
+.sc-contact { display: none; border-radius: 4px; background: var(--sc-primary); padding: 8px 16px; font-size: 14px; font-weight: 500; color: var(--sc-parchment); transition: background-color 150ms; }
+.sc-contact:hover { background: var(--sc-primary-800); }
+.sc-burger { display: block; }
+
+/* National Show mega menu: full-width sheet anchored to the sticky header */
+.sc-mega-panel { position: absolute; left: 0; right: 0; top: 100%; z-index: 50; border-top: 1px solid var(--sc-rule); background: var(--sc-parchment); box-shadow: var(--sc-shadow-sheet); font-size: 14px; }
+.sc-mega-grid { display: grid; grid-template-columns: 1.05fr 1fr 1fr 1fr 0.9fr; padding-block: 32px 24px; }
+.sc-mega-lead { display: flex; flex-direction: column; padding-right: 24px; }
+.sc-mega-lead-logo { display: block; width: fit-content; margin-bottom: 6px; border-radius: 2px; line-height: 0; }
+.sc-mega-lead-logo img { width: 200px; height: 176px; }
+.sc-mega-lead-meta { display: block; max-width: 32ch; margin-bottom: 16px; font-size: 12.5px; color: var(--sc-muted); }
+.sc-mega-col { border-left: 1px solid var(--sc-rule-soft); padding-inline: 24px; }
+.sc-mega-head { margin: 0 0 12px; font-family: var(--sc-mono); font-size: 10px; font-weight: 400; line-height: 1.5; text-transform: uppercase; letter-spacing: 0.18em; color: var(--sc-accent); }
+.sc-mega-lead .sc-mega-head { margin-top: 20px; }
+.sc-mega-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; }
+.sc-mega-list li:not(:last-child) { border-bottom: 1px solid var(--sc-rule-soft); }
+.sc-mega-leaf { display: block; padding-block: 8px; font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--sc-ink); border-radius: 2px; transition: color 150ms; }
+.sc-mega-leaf:hover { color: var(--sc-primary); }
+.sc-mega-desc { display: block; margin-top: 2px; padding-bottom: 8px; font-size: 12px; line-height: 16px; color: var(--sc-muted); }
+.sc-mega-rail { border-left: 1px solid var(--sc-rule-soft); background: var(--sc-nos-pale-gold); padding: 24px; }
+.sc-mega-rail-meta { display: block; margin-bottom: 12px; font-family: var(--sc-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--sc-nos-olive-700); }
+.sc-mega-rail h4 { margin: 0 0 16px; font-family: var(--sc-serif); font-size: 18px; font-weight: 600; line-height: 1.15; color: var(--sc-nos-royal); }
+.sc-mega-rail-links { display: flex; flex-direction: column; gap: 12px; }
+.sc-rail-btn { display: inline-flex; width: 100%; align-items: center; justify-content: center; border-radius: 999px; padding: 12px 16px; font-size: 12px; line-height: 16px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; transition: background-color 150ms, color 150ms; }
+.sc-rail-btn.is-primary { background: var(--sc-nos-royal); color: var(--sc-nos-pale-gold); }
+.sc-rail-btn.is-primary:hover { background: var(--sc-nos-purple-700); color: #fff; }
+.sc-rail-btn.is-secondary { border: 1.5px solid var(--sc-nos-royal); color: var(--sc-nos-royal); }
+.sc-rail-btn.is-secondary:hover { background: var(--sc-nos-royal); color: var(--sc-nos-pale-gold); }
+
+/* Mobile drawer */
+.sc-drawer { position: fixed; inset: 0; z-index: 85; background: rgba(0, 0, 0, 0.45); }
+.sc-drawer-panel { margin-left: auto; height: 100%; width: 100%; max-width: 360px; overflow-y: auto; background: var(--sc-parchment); padding: 24px; animation: sc-slide-in 250ms cubic-bezier(0.4, 0, 0.2, 1) both; }
+@keyframes sc-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.sc-drawer-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+.sc-drawer-brand { display: flex; align-items: center; gap: 8px; font-family: var(--sc-serif); font-size: 16px; font-weight: 500; line-height: 1.25; }
+.sc-drawer-brand img { width: 36px; height: auto; }
+.sc-drawer-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.sc-drawer-item { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 12px; font-size: 15px; line-height: 22px; color: var(--sc-ink); border-radius: 4px; transition: color 150ms, background-color 150ms; }
+.sc-drawer-item:hover { color: var(--sc-primary); background: var(--sc-bone); }
+.sc-drawer-item .sc-icon { transition: transform 150ms; }
+.sc-drawer-item[aria-expanded="true"] .sc-icon { transform: rotate(180deg); }
+.sc-drawer-sub { padding: 0 0 16px 12px; }
+.sc-drawer-feature { margin-top: 8px; border-radius: 4px; background: var(--sc-bone); padding: 16px; }
+.sc-drawer-feature-meta { font-family: var(--sc-mono); font-size: 12px; color: var(--sc-muted); }
+.sc-drawer-feature p { margin: 4px 0 0; font-family: var(--sc-serif); font-size: 16px; font-weight: 500; color: var(--sc-ink); }
+.sc-drawer-feature-links { margin-top: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.sc-drawer-btn { display: inline-flex; border-radius: 4px; padding: 8px 16px; font-size: 14px; line-height: 20px; font-weight: 500; transition: background-color 150ms, color 150ms; }
+.sc-drawer-btn.is-primary { background: var(--sc-primary); color: var(--sc-parchment); }
+.sc-drawer-btn.is-primary:hover { background: var(--sc-primary-800); }
+.sc-drawer-btn.is-secondary { border: 1px solid var(--sc-primary); color: var(--sc-primary); }
+.sc-drawer-btn.is-secondary:hover { background: var(--sc-primary); color: var(--sc-parchment); }
+.sc-drawer-lead { margin-top: 16px; padding-inline: 12px; }
+.sc-drawer-eyebrow { display: inline-flex; border-radius: 999px; background: var(--sc-bone); padding: 4px 12px; font-family: var(--sc-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--sc-primary); }
+.sc-drawer-lead-link { display: block; width: fit-content; margin-top: 8px; font-family: var(--sc-serif); font-size: 16px; font-weight: 500; color: var(--sc-ink); }
+.sc-drawer-lead-meta { display: block; margin-top: 4px; font-family: var(--sc-mono); font-size: 12px; color: var(--sc-muted); }
+.sc-drawer-group { margin-top: 16px; }
+.sc-drawer-group-head { display: block; padding: 8px 12px; font-family: var(--sc-serif); font-size: 14px; font-weight: 500; color: var(--sc-ink); }
+.sc-drawer-group ul { list-style: none; margin: 0; padding: 0; }
+.sc-drawer-leaf { border-radius: 4px; padding: 8px 24px; transition: background-color 150ms; }
+.sc-drawer-leaf:hover { background: var(--sc-bone); }
+.sc-drawer-leaf a { display: block; font-size: 14px; font-weight: 700; color: var(--sc-ink); }
+.sc-drawer-leaf span { display: block; margin-top: 2px; font-size: 12px; line-height: 16px; color: var(--sc-muted); }
+.sc-drawer-foot { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--sc-rule); display: flex; flex-direction: column; gap: 4px; }
+.sc-drawer-foot a { font-family: var(--sc-mono); font-size: 12px; color: var(--sc-muted); }
+.sc-drawer-foot span { font-family: var(--sc-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: rgba(99, 102, 96, 0.55); }
+
+/* Search overlay */
+.sc-search { position: fixed; inset: 0; z-index: 85; display: flex; align-items: flex-start; justify-content: center; padding: 10vh 16px 0; background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.sc-search-box { width: 100%; max-width: 680px; border-radius: 4px; border: 1px solid var(--sc-rule); background: var(--sc-parchment); box-shadow: var(--sc-shadow-float); }
+.sc-search-row { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--sc-rule); padding: 16px 20px; color: var(--sc-muted); }
+.sc-search-row input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; font: 16px var(--sc-sans); color: var(--sc-ink); }
+.sc-search-row input::placeholder { color: var(--sc-muted); }
+.sc-search-row kbd { font-family: var(--sc-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.18em; border: 1px solid var(--sc-rule); border-radius: 4px; padding: 2px 6px; }
+.sc-search-body { max-height: 60vh; overflow-y: auto; padding: 16px 20px; }
+.sc-search-label { margin-bottom: 12px; font-family: var(--sc-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--sc-muted); }
+.sc-search-body ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.sc-search-body a { display: flex; justify-content: space-between; padding: 8px 12px; border-radius: 4px; color: var(--sc-ink); }
+.sc-search-body a:hover { background: var(--sc-bone); }
+.sc-search-body a span:last-child { color: var(--sc-muted); }
+.sc-search-empty { padding-block: 8px; font-size: 14px; color: var(--sc-muted); }
+
+@media (min-width: 640px) {
+  .sc-brand-text { display: flex; }
+  .sc-contact { display: inline-block; }
+}
+@media (min-width: 900px) { .sc-pill-show { display: inline-block; } }
+@media (min-width: 1240px) {
+  .sc-nav { display: flex; }
+  .sc-burger { display: none; }
+}
+
+/* ---------- NOS pages: the NOS lockup takes the SAOC brand slot ----------
+   html[data-page="saoc"] previews an ordinary SAOC page (Tweak drawer, Look).
+   One row, as SAOC's, and the same 68px bar: the lockup slot is at least as tall as SAOC's
+   48px-wide mark (767 x 700 file). About stays exactly where SAOC puts it. SAOC lays the bar
+   out with justify-between: brand 318.3px, nav 638.6px, actions 132.3px (1089.2px together),
+   so About sits at gutter + 318.3 + (row - 1089.2) / 2. The nav's left margin restores that
+   position after the lockup (its fitted width, --lk-w, set by lockup.js) and the 24px gap;
+   the actions keep the right edge. */
+.sc-header > .sc-bar { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 12px; }
+html:not([data-page="saoc"]) .sc-bar { justify-content: flex-start; }
+html:not([data-page="saoc"]) .sc-actions { margin-left: auto; }
+/* From Lockup Proportion Studio, 6cca8eaa — change these to match Brad's studio.
+   Horizontal lockup, full colour. Values are studio px; --lk-scale turns them into page px
+   and is fitted by script: on desktop the emblem is --lk-fit-h px tall, matching SAOC's mark;
+   on phones the lockup is --lk-fit px wide. Either way it is capped so --lk-clear px stay
+   free before About (or before the header actions when the nav is hidden).
+   Vertical lockup (not used in the header): emblem 82% of wordmark width, gap 40,
+   rule 600 at rgba(33, 26, 87, 0.28) with 16 above and below, showRule true. */
+.nos-lockup {
+  --lk-emblem-h: 120; --lk-emblem-ratio: 1137 / 865;
+  --lk-gap: 20; --lk-stack: 6;
+  --lk-word: 60; --lk-word-track: 0.04; --lk-word-color: #211A57;
+  --lk-loc: 36; --lk-loc-track: 0.10; --lk-loc-color: #7F7D33;
+  --lk-fit-h: 44; --lk-clear: 40;
+  --lk-scale: 0.3667;
+  --lk-u: calc(var(--lk-scale) * 1px);
+}
+.sc-brand-nos { display: flex; align-items: center; gap: calc(var(--lk-gap) * var(--lk-u)); flex: 0 0 auto; width: max-content; min-width: 0; line-height: 1; text-decoration: none; border-radius: 4px; }
+/* The emblem is the art in the supplied horizontal lockup PNG, shown through a window at
+   the studio's 1137 / 865 ratio; the file itself is unaltered. Its ink spans 820 x 624 px
+   from (192, 192) of the 4108 x 1008 file. */
+.lk-emblem { flex: none; height: calc(var(--lk-emblem-h) * var(--lk-u)); aspect-ratio: var(--lk-emblem-ratio); background: url("img/NOS-2027-logo-full-colour-horizontal.png") no-repeat 5.839% 50% / 500.976% auto; }
+.lk-type { display: grid; justify-items: start; gap: calc(var(--lk-stack) * var(--lk-u)); }
+.lk-word, .lk-loc { display: block; line-height: 1; white-space: nowrap; text-transform: uppercase; }
+.lk-word { font-family: "Cormorant Garamond", Garamond, "Times New Roman", serif; font-weight: 500; font-size: calc(var(--lk-word) * var(--lk-u)); letter-spacing: calc(var(--lk-word-track) * 1em); margin-right: calc(var(--lk-word-track) * -1em); color: var(--lk-word-color); }
+.lk-loc { font-family: Jost, Futura, "Century Gothic", sans-serif; font-weight: 500; font-size: calc(var(--lk-loc) * var(--lk-u)); letter-spacing: calc(var(--lk-loc-track) * 1em); margin-right: calc(var(--lk-loc-track) * -1em); color: var(--lk-loc-color); }
+@media (max-width: 639px) {
+  .nos-lockup { --lk-fit-h: 0; --lk-fit: 270; --lk-clear: 24; --lk-scale: 0.2738; }
+  /* Search moves into the menu drawer, so the lockup can widen into the room it frees. */
+  html:not([data-page="saoc"]) #sc-search-open { display: none; }
+  html:not([data-page="saoc"]) .sc-drawer-search { display: list-item; }
+}
+.sc-drawer-search { display: none; }
+html:not([data-page="saoc"]) .sc-brand-nos { min-height: calc(48px * 700 / 767); }
+html:not([data-page="saoc"]) .sc-brand { display: none; }
+html:not([data-page="saoc"]) .sc-mega-lead-logo { display: none; }
+html[data-page="saoc"] .sc-brand-nos { display: none; }
+@media (min-width: 1240px) {
+  html:not([data-page="saoc"]) .sc-nav { margin-left: calc((100% - 1089.2px) / 2 + 318.3px - var(--lk-w, 353.6px) - 24px); }
+}
+/* You are in National Show: on NOS pages the trigger carries a current-section underline in
+   SAOC sage, and a chevron that flips while the mega-menu is open. The SAOC-page preview
+   keeps SAOC's plain trigger. */
+.sc-mega-chev { display: none; }
+html:not([data-page="saoc"]) .sc-mega-trigger { display: inline-flex; align-items: center; gap: 4px; }
+html:not([data-page="saoc"]) .sc-mega-chev { display: block; transition: transform 150ms; }
+html:not([data-page="saoc"]) .sc-mega-trigger[aria-expanded="true"] .sc-mega-chev { transform: rotate(180deg); }
+.sc-mega-label { position: relative; }
+html:not([data-page="saoc"]) .sc-mega-trigger[aria-current] .sc-mega-label::after,
+html:not([data-page="saoc"]) .sc-mega-trigger[aria-expanded="true"] .sc-mega-label::after { content: ""; position: absolute; left: 0; right: 0; bottom: -7px; height: 2px; border-radius: 1px; background: var(--sc-primary); }
+
+/* ---------- Buttons (R17: controls 10px; pill reserved for chips) ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 50px; padding: 14px 26px; font-family: var(--sans); font-size: var(--fs-sm); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; white-space: nowrap; border: var(--border) solid transparent; border-radius: var(--radius-md); cursor: pointer; transition: background-color var(--t-med) var(--ease), color var(--t-med) var(--ease), border-color var(--t-med) var(--ease), transform var(--t-fast) var(--ease); }
+.btn:active { transform: scale(0.98); }
+.btn .icon { width: 16px; height: 16px; transition: transform var(--t-slow) var(--ease); }
+.btn:hover .icon { transform: translateX(3px); }
+.btn-sm { min-height: 44px; padding: 10px 18px; font-size: 13px; }
+.btn-gold { background: var(--gold); color: var(--royal); border-color: var(--gold); }
+.btn-gold:hover { background: var(--gold-300); border-color: var(--gold-300); }
+.btn-royal { background: var(--royal); color: var(--gold-100); border-color: var(--royal); }
+.btn-royal:hover { background: var(--royal-900); border-color: var(--royal-900); }
+.btn-outline { background: transparent; color: var(--royal); border-color: var(--royal); }
+.btn-outline:hover { background: var(--royal); color: var(--gold-100); }
+
+.chip { display: inline-flex; align-items: center; min-height: 26px; padding: 3px 12px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: var(--track-caps); text-transform: uppercase; line-height: 1.3; color: var(--ink-500); border: var(--hairline) solid currentColor; border-radius: var(--radius-pill); }
+.disclosure { background: var(--gold); border-radius: var(--radius-lg); padding: 18px 20px 20px; display: grid; gap: 12px; justify-items: start; }
+.disclosure p { font-size: 15px; line-height: 1.55; color: var(--ink-700); }
+
+/* ---------- Masthead ---------- */
+.masthead { position: relative; background: var(--royal); color: var(--gold-100); overflow: hidden; --behind: var(--royal); }
+.masthead-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 32px; align-items: center; min-height: 520px; padding-block: 64px 72px; }
+.crumbs { display: flex; gap: 10px; align-items: center; font-size: 15px; font-weight: 600; color: var(--gold-300); }
+.crumbs a { color: var(--gold-300); text-decoration: none; padding-block: 10px; }
+.crumbs a:hover { color: var(--gold-100); text-decoration: underline; text-decoration-color: var(--green-1); text-underline-offset: 4px; }
+.crumbs .sep { width: 24px; height: 1.5px; background: var(--green-1); }
+.masthead h1 { font-weight: 300; font-size: clamp(3.2rem, 2rem + 4vw, 5.5rem); line-height: 1; color: var(--gold-100); font-variation-settings: "opsz" 96; letter-spacing: -0.01em; }
+.masthead-copy { display: grid; gap: 26px; align-content: center; }
+/* Countdown: Fraunces light, lining tabular figures, so the digits never shuffle width. */
+.countdown { display: grid; gap: 10px; }
+.cd-units { display: flex; align-items: flex-start; }
+.cd-unit { display: grid; gap: 6px; padding-inline: 22px; border-left: var(--hairline) solid rgba(232, 230, 194, 0.22); }
+.cd-unit:first-child { padding-left: 0; border-left: 0; }
+.cd-num { font-family: var(--serif); font-weight: 300; font-size: 2.5rem; line-height: 0.9; color: var(--gold-100); font-variant-numeric: lining-nums tabular-nums; font-variation-settings: "opsz" 96; letter-spacing: -0.01em; }
+.cd-lab { font-size: 14px; font-weight: 600; letter-spacing: 0.02em; color: var(--lilac-200); }
+.cd-caption { font-size: var(--fs-base); color: var(--gold-300); }
+.countdown:not([data-state="before"]) .cd-units { display: none; }
+.countdown:not([data-state="before"]) .cd-caption { font-family: var(--serif); font-weight: 300; font-size: var(--fs-xl); line-height: 1.15; color: var(--gold-100); }
+/* Facts: three labelled rows on hairlines. */
+.mh-facts { margin: 0; display: grid; border-top: var(--hairline) solid rgba(232, 230, 194, 0.22); }
+.mh-facts > div { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 16px; align-items: baseline; padding-block: 12px; border-bottom: var(--hairline) solid rgba(232, 230, 194, 0.22); }
+.mh-facts dt { font-size: 14px; font-weight: 600; letter-spacing: 0.02em; color: var(--lilac-200); }
+.mh-facts dd { margin: 0; font-size: var(--fs-base); font-weight: 500; line-height: 1.45; color: var(--gold-100); }
+.mh-facts .chip { color: var(--lilac-200); vertical-align: middle; }
+/* Before you visit: one flat row centred along the foot of the hero, under both columns. */
+.masthead-grid { padding-block: 56px 8px; }
+.mh-visit { position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 36px; padding-block: 8px 40px; }
+.mh-visit-label { font-size: 14px; font-weight: 600; letter-spacing: 0.02em; color: var(--lilac-200); }
+.mh-visit ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 32px; }
+.mh-visit a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: var(--fs-base); font-weight: 600; color: var(--gold-100); text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 1.5px; text-underline-offset: 6px; transition: text-decoration-color var(--t-med) var(--ease); }
+.mh-visit a .icon { width: 15px; height: 15px; color: var(--green-1); transition: transform var(--t-slow) var(--ease); }
+.mh-visit a:hover { text-decoration-color: var(--green-1); }
+.mh-visit a:hover .icon { transform: translateX(3px); }
+@media (prefers-reduced-motion: reduce) { .mh-visit a .icon { transition: none; } .mh-visit a:hover .icon { transform: none; } }
+@media (max-width: 700px) {
+  .mh-visit { flex-direction: column; gap: 4px; padding-block: 4px 32px; }
+  .mh-visit ul { gap: 0 24px; }
+}
+.fan { position: relative; height: 420px; }
+.fan .ticket-wrap { position: absolute; top: 20px; left: 50%; width: 232px; height: auto; transform: translate(calc(-50% + var(--x)), var(--y)) rotate(var(--r)); }
+.fan .ticket-wrap:nth-child(1) { --x: -176px; --y: 44px; --r: -9deg; }
+.fan .ticket-wrap:nth-child(2) { --x: 0px; --y: 0px; --r: -1deg; z-index: 2; }
+.fan .ticket-wrap:nth-child(3) { --x: 176px; --y: 52px; --r: 8deg; }
+@media (prefers-reduced-motion: no-preference) {
+  .fan .ticket-wrap { animation: fan-out 1.1s var(--ease) both; animation-delay: 160ms; }
+  .fan .ticket-wrap:nth-child(2) { animation-delay: 60ms; }
+}
+@keyframes fan-out { from { transform: translate(-50%, 36px) rotate(0deg); } }
+@keyframes fan-up { from { transform: translateY(24px) rotate(0deg); } }
+/* Four-card fan, left to right VIP, Sunset, Weekend, Day, on one arc: each card hangs from a
+   common pivot 890px below the fan at -12, -4, +4 and +12deg, so x = R sin(a) and
+   y = R (1 - cos a). Equal 8deg steps give equal spacing; the stack runs left to right. */
+.fan .ticket-wrap { width: 212px; }
+.fan .ticket-wrap:nth-child(1) { --x: -185px; --y: 40px; --r: -12deg; z-index: 1; }
+.fan .ticket-wrap:nth-child(2) { --x: -62px; --y: 22px; --r: -4deg; z-index: 2; }
+.fan .ticket-wrap:nth-child(3) { --x: 62px; --y: 22px; --r: 4deg; z-index: 3; }
+.fan .ticket-wrap:nth-child(4) { --x: 185px; --y: 40px; --r: 12deg; z-index: 4; }
+@media (prefers-reduced-motion: no-preference) {
+  .fan .ticket-wrap:nth-child(2), .fan .ticket-wrap:nth-child(3) { animation-delay: 60ms; }
+}
+/* Equal card heights keep the arc symmetric (Day's shorter copy would otherwise lift its
+   foot), and the fan box holds the whole arc so it never overlaps the visit row below. */
+.masthead .fan { height: 500px; }
+.fan .ticket-wrap { height: 410px; }
+.fan .fan-link { height: 100%; }
+/* Phones: the 2x2 deck reserves each cell at the tallest card's height for its width band,
+   so the hero has its final height before the tickets mount and nothing below moves (CLS). */
+@media (max-width: 700px) {
+  .masthead .fan { height: auto; grid-auto-rows: minmax(var(--fan-cell), auto); --fan-cell: 322px; }
+  .fan .ticket-wrap { height: auto; }
+}
+@media (max-width: 560px) { .masthead .fan { --fan-cell: 354px; } }
+@media (max-width: 419px) { .masthead .fan { --fan-cell: 377px; } }
+/* Mini tickets, 701px and up: the cards overlap, so each card's name and price are set
+   inside its exposed column (the strip left of the next card, about 123px at the top and
+   narrower at the foot, where the next card's steeper tilt leans in). The name runs smaller
+   on two lines, the price drops a size, and the date sub-line goes: the stub already shows
+   the date. Arc, heights, hover and anatomy are unchanged. */
+@media (min-width: 701px) {
+  .fan { --mini-col: 88px; }
+  .fan .t-when { display: none; }
+  .fan .t-name { max-width: var(--mini-col); font-size: calc(22px * var(--ts)); line-height: 1.1; }
+  .fan .t-price { font-size: calc(32px * var(--ts)); }
+  /* Name, rule and price read as one block: the price no longer sinks to the foot of a fixed
+     card. Every name reserves two lines, so the four cards keep one height. */
+  /* Each card still turns about the point 205px down (the old 410px card's centre), so the
+     arc above the price is the one v12 measured clear; only the foot is shorter. */
+  .fan .ticket-wrap { height: auto; transform-origin: 50% 205px; }
+  .fan .t-name { min-height: 2lh; }
+  .fan .t-buy { margin-top: 0; padding-top: 12px; }
+  .fan .t-main { padding-bottom: 28px; }
+  /* The cards lost 84px (410 to 326), so the fan box does too and keeps its 12px of air. */
+  .masthead .fan { height: 416px; }
+}
+/* Below 1240px the copy and the fan stack: there is no width at which a 662px fan sits
+   beside the copy without running under it or past the viewport. */
+@media (max-width: 1239px) {
+  .masthead-grid { grid-template-columns: minmax(0, 1fr); min-height: 0; padding-block: 48px 24px; }
+}
+/* 1240px and up: side by side, with a hard gutter. The fan box is exactly as wide as the
+   arc it holds (2 x 185px offset + one 212px card, rotated: 662px), so its left edge is the
+   leftmost card's edge and the 40px column gap is real clear space. The pair is 1122px,
+   which runs 42px into the wrap's right gutter; the cards stay inside the viewport. */
+@media (min-width: 1240px) {
+  .masthead-grid { --copy-w: 420px; --fan-w: 662px; grid-template-columns: var(--copy-w) var(--fan-w); column-gap: 40px; }
+  .masthead .fan { width: var(--fan-w); }
+}
+
+/* Hero fan: each mini ticket is one link to its checkout. Hover or focus brings a card to the
+   front at its own tilt: no straightening, lift or scale, only a deeper shadow while the
+   other cards dim. They dim by brightness rather than opacity: the cards overlap, and
+   opacity lets the card behind show through. */
+.fan-link { display: block; color: inherit; text-decoration: none; border-radius: var(--rt); filter: drop-shadow(0 0 0 rgba(11, 10, 20, 0)) brightness(1); }
+.fan .ticket-wrap:has(.fan-link:focus-visible) { z-index: 5; }
+.on-dark .fan-link:focus-visible { outline: 2px solid var(--gold-100); outline-offset: 4px; filter: drop-shadow(0 24px 32px rgba(11, 10, 20, 0.45)) brightness(1); }
+.fan:has(.fan-link:focus-visible) .fan-link:not(:focus-visible) { filter: drop-shadow(0 0 0 rgba(11, 10, 20, 0)) brightness(0.85); }
+@media (prefers-reduced-motion: no-preference) {
+  .fan-link { transition: filter 300ms var(--ease); }
+}
+@media (hover: hover) and (pointer: fine) {
+  .fan .ticket-wrap:has(.fan-link:hover) { z-index: 5; }
+  .fan-link:hover { filter: drop-shadow(0 24px 32px rgba(11, 10, 20, 0.45)) brightness(1); }
+  .fan:has(.fan-link:hover) .fan-link:not(:hover) { filter: drop-shadow(0 0 0 rgba(11, 10, 20, 0)) brightness(0.85); }
+}
+
+/* ---------- Ticket sections ---------- */
+.tk-section { padding-block: clamp(64px, 8vw, 104px) 0; }
+.tk-section:last-of-type { padding-bottom: clamp(72px, 9vw, 120px); }
+.tk-head { display: grid; gap: 8px; margin-bottom: 36px; max-width: 62ch; }
+.h2 { font-size: clamp(2rem, 1.5rem + 1.6vw, var(--fs-2xl)); line-height: 1.15; letter-spacing: -0.01em; font-variation-settings: "opsz" 48; }
+.tk-head p { color: var(--ink-700); font-size: var(--fs-md); line-height: 1.5; }
+.tk-grid { display: grid; gap: 28px; align-items: stretch; }
+.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sample-note { margin-top: 20px; font-size: 13px; color: var(--ink-500); }
+:root[data-layout="stacked"] .tk-grid.cols-2, :root[data-layout="stacked"] .tk-grid.cols-3 { grid-template-columns: minmax(0, 1fr); max-width: 760px; }
+:root[data-layout="stacked"] .pool-bracket { display: none; }
+
+/* Shared early-bird pool: one statement spanning both pass cards */
+.pool { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 24px; align-items: center; padding: 22px 26px; border-radius: var(--radius-lg); background: var(--royal); color: var(--gold-300); margin-bottom: 0; }
+.pool-num { grid-row: span 2; font-family: var(--serif); font-weight: 300; font-size: clamp(3rem, 2.4rem + 2vw, 4.25rem); line-height: 0.95; color: var(--gold); font-variant-numeric: lining-nums tabular-nums; font-variation-settings: "opsz" 96; }
+.pool-num small { font-size: 0.42em; color: var(--gold-300); margin-left: 6px; letter-spacing: 0.01em; }
+.pool strong { font-family: var(--serif); font-weight: 400; font-size: var(--fs-lg); line-height: 1.2; color: var(--gold-100); font-variation-settings: "opsz" 32; }
+.pool p { font-size: var(--fs-base); line-height: 1.5; max-width: 60ch; }
+.pool.is-out .pool-num { color: var(--lilac-200); }
+.pool-bracket { height: 26px; margin: 0 25%; border: var(--border) solid var(--acc); border-top: 0; border-bottom: 0; position: relative; }
+.pool-bracket::before { content: ""; position: absolute; left: 50%; top: 0; width: 1.5px; height: 12px; background: var(--acc); transform: translateX(-50%); }
+.pool-bracket::after { content: ""; position: absolute; left: 0; right: 0; top: 12px; height: 1.5px; background: var(--acc); }
+
+/* ---------- The ticket ---------- */
+.ticket-wrap { container-type: inline-size; height: 100%; filter: drop-shadow(0 2px 3px rgba(33, 26, 87, 0.08)) drop-shadow(0 14px 22px rgba(33, 26, 87, 0.13)); transition: transform var(--t-slow) var(--ease), filter var(--t-slow) var(--ease); }
+.masthead .ticket-wrap { filter: drop-shadow(0 18px 30px rgba(11, 10, 20, 0.42)); }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .tk-grid .ticket-wrap:hover, .spec-grid .ticket-wrap:hover { transform: translateY(-5px); filter: drop-shadow(0 4px 6px rgba(33, 26, 87, 0.1)) drop-shadow(0 24px 34px rgba(33, 26, 87, 0.18)); }
+}
+.ticket {
+  --stub: 168px; --notch: 11px; --band: 50px;
+  position: relative; height: 100%;
+  display: grid; grid-template-rows: var(--stub) 1fr; grid-template-areas: "stub" "main";
+  background: var(--t-bg); color: var(--t-ink); border-radius: var(--rt);
+  box-shadow: inset 0 0 0 1px var(--t-edge);
+  -webkit-mask: radial-gradient(circle at 0 var(--stub), transparent var(--notch), #000 calc(var(--notch) + 0.5px)), radial-gradient(circle at 100% var(--stub), transparent var(--notch), #000 calc(var(--notch) + 0.5px));
+  -webkit-mask-composite: source-in;
+  mask: radial-gradient(circle at 0 var(--stub), transparent var(--notch), #000 calc(var(--notch) + 0.5px)), radial-gradient(circle at 100% var(--stub), transparent var(--notch), #000 calc(var(--notch) + 0.5px));
+  mask-composite: intersect;
+}
+.t-perf { position: absolute; pointer-events: none; left: calc(var(--notch) + 6px); right: calc(var(--notch) + 6px); top: var(--stub); height: 6px; transform: translateY(-50%); background: radial-gradient(circle, var(--behind) 2.2px, transparent 2.8px) 0 50% / 11px 6px repeat-x; z-index: 2; }
+.t-stub { grid-area: stub; position: relative; display: grid; grid-template-rows: minmax(0, 1fr) var(--band); background: var(--field, var(--royal)); color: var(--gold-100); border-radius: var(--rt) var(--rt) 0 0; overflow: hidden; }
+.t-face { position: relative; display: flex; align-items: flex-end; gap: 10px; padding: 14px 18px 12px; overflow: hidden; }
+.t-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.t-face.has-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(11, 10, 20, 0.78) 0%, rgba(11, 10, 20, 0.36) 46%, rgba(11, 10, 20, 0) 78%); }
+.t-num { position: relative; z-index: 1; font-family: var(--serif); font-weight: 300; font-size: calc(58px * var(--ts)); line-height: 0.86; letter-spacing: -0.02em; color: var(--gold-100); font-variant-numeric: lining-nums; font-variation-settings: "opsz" 120; }
+.t-numlab { position: relative; z-index: 1; padding-bottom: 3px; font-size: calc(13px * var(--ts)); font-weight: 700; letter-spacing: 0.06em; line-height: 1.3; color: var(--gold); }
+.t-band { display: flex; align-items: center; gap: 12px; padding: 0 18px; background: var(--royal-900); box-shadow: inset 0 1px 0 rgba(232, 230, 194, 0.32); }
+.t-band img { height: 30px; width: auto; flex: none; }
+.t-admit { white-space: nowrap; font-family: var(--serif); font-style: italic; font-size: calc(16px * var(--ts)); color: var(--gold-100); font-variation-settings: "opsz" 18; }
+.t-stamp { white-space: nowrap; position: absolute; z-index: 3; top: 18px; right: 16px; transform: rotate(-9deg); padding: 6px 12px 5px; border: 2.5px double var(--gold-100); border-radius: 6px; font-family: var(--serif); font-size: calc(19px * var(--ts)); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold-100); background: rgba(11, 10, 20, 0.55); }
+
+.t-main { grid-area: main; display: flex; flex-direction: column; gap: 10px; padding: calc(var(--pad) + 4px) var(--pad) var(--pad); min-width: 0; }
+.t-when { font-size: calc(14px * var(--ts)); font-weight: 700; letter-spacing: 0.02em; color: var(--t-ink); }
+.t-name { font-size: calc(29px * var(--ts)); line-height: 1.08; color: var(--t-ink); font-variation-settings: "opsz" 40; letter-spacing: -0.01em; }
+.t-theme { font-family: var(--serif); font-size: calc(17px * var(--ts)); line-height: 1.35; color: var(--t-sub); font-variation-settings: "opsz" 20; }
+.t-meta { font-size: calc(15px * var(--ts)); line-height: 1.5; color: var(--t-sub); }
+.t-count { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: calc(15px * var(--ts)); font-weight: 600; line-height: 1.4; color: var(--t-ink); font-variant-numeric: tabular-nums; }
+.t-count .shared { flex-basis: 100%; font-weight: 400; font-size: calc(14px * var(--ts)); color: var(--t-muted); }
+.t-tag { display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 2px 10px; border: var(--border) solid var(--acc); border-radius: 6px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; color: var(--t-ink); }
+.t-tag::before { content: ""; width: 7px; height: 7px; background: var(--acc); transform: rotate(45deg); }
+.ticket[data-state="low"] .t-count .n { color: var(--t-warn); font-weight: 700; }
+.t-note { font-size: calc(14px * var(--ts)); line-height: 1.5; color: var(--t-sub); max-width: 46ch; }
+.t-pending { display: grid; gap: 8px; justify-items: start; }
+.t-pending .chip { color: var(--t-muted); }
+
+.t-buy { margin-top: auto; padding-top: 16px; border-top: var(--border) solid var(--acc); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px 12px; align-items: end; }
+.t-price { font-family: var(--serif); font-weight: 300; font-size: calc(46px * var(--ts)); line-height: 0.95; color: var(--t-ink); font-variant-numeric: lining-nums tabular-nums; font-variation-settings: "opsz" 96; letter-spacing: -0.01em; white-space: nowrap; }
+.t-price .cur { font-size: 0.56em; margin-right: 2px; vertical-align: 0.42em; }
+.t-price .each { font-family: var(--sans); font-size: calc(14px * var(--ts)); font-weight: 600; letter-spacing: 0; margin-left: 6px; color: var(--t-sub); }
+.t-price.is-muted { color: var(--t-muted); }
+.t-price.is-pending { font-size: calc(26px * var(--ts)); font-weight: 400; line-height: 1.15; white-space: normal; }
+.t-was { margin-top: 6px; font-size: calc(14px * var(--ts)); line-height: 1.4; color: var(--t-sub); }
+.t-was s { color: var(--t-muted); text-decoration-thickness: 1.5px; }
+.t-cta { grid-column: 1 / -1; width: 100%; background: var(--t-btn-bg); color: var(--t-btn-fg); border-color: var(--t-btn-bg); }
+.t-cta:hover { filter: brightness(1.18); }
+:root[data-ground="royal"] .t-cta:hover { filter: none; background: var(--gold-300); border-color: var(--gold-300); }
+.t-wait { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.t-wait button { min-height: 44px; padding: 0; background: none; border: 0; font: 600 calc(15px * var(--ts)) / 1.4 var(--sans); color: var(--t-sub); text-decoration: underline; text-decoration-color: var(--t-rule); text-decoration-thickness: 1.5px; text-underline-offset: 5px; cursor: pointer; }
+.t-wait button:hover { color: var(--t-ink); text-decoration-color: currentColor; }
+.t-wait { padding-top: 4px; border-top: var(--hairline) dashed var(--t-rule); }
+.t-wait .chip { color: var(--t-muted); min-height: 22px; font-size: 12px; padding: 2px 9px; }
+
+.stepper { display: inline-flex; align-items: center; border: var(--border) solid var(--t-rule); border-radius: var(--radius-md); }
+.stepper button { width: 44px; height: 44px; display: grid; place-items: center; background: none; border: 0; color: var(--t-ink); cursor: pointer; border-radius: 8px; }
+.stepper button:hover { background: var(--t-rule); }
+.stepper button:disabled { color: var(--t-muted); opacity: 0.5; cursor: not-allowed; background: none; }
+.stepper output { min-width: 30px; text-align: center; font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; color: var(--t-ink); }
+.stepper .icon { width: 18px; height: 18px; }
+
+.days { border: 0; margin: 2px 0 0; padding: 0; min-width: 0; }
+.days legend { padding: 0; margin-bottom: 8px; font-size: calc(14px * var(--ts)); font-weight: 700; color: var(--t-ink); }
+.days-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.day { position: relative; display: grid; gap: 1px; min-height: 58px; padding: 8px 10px; border: var(--border) solid var(--t-rule); border-radius: 8px; cursor: pointer; transition: border-color var(--t-med) var(--ease), background-color var(--t-med) var(--ease); }
+.day input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.day b { font-size: calc(15px * var(--ts)); color: var(--t-ink); }
+.day span { font-size: 13px; line-height: 1.3; color: var(--t-sub); font-variant-numeric: tabular-nums; }
+.day:hover { border-color: var(--t-ink); }
+.day:has(input:checked) { border: 2px solid var(--t-ink); padding: 7.5px 9.5px; background: color-mix(in srgb, var(--acc) 16%, transparent); }
+.day:has(input:checked) b::after { content: " \2713"; }
+.day:has(input:focus-visible) { outline: 2px solid var(--violet); outline-offset: 2px; }
+:root[data-ground="royal"] .day:has(input:focus-visible) { outline-color: var(--gold-100); }
+.day.is-out { cursor: not-allowed; opacity: 0.62; }
+.day.is-out b { text-decoration: line-through; }
+.day.is-low span { color: var(--t-warn); font-weight: 700; }
+.day .sub { font-size: 12px; font-weight: 600; color: var(--t-muted); }
+
+/* Look switches */
+:root[data-stub="off"] .ticket { -webkit-mask: none; mask: none; }
+:root[data-stub="off"] .t-perf, :root[data-stub="off"] .t-band { display: none; }
+:root[data-stub="off"] .t-stub { grid-template-rows: minmax(0, 1fr); }
+:root[data-stub="off"] .ticket { --stub: 128px; }
+:root[data-emblem="off"] .t-band img { display: none; }
+
+/* Wide container: the stub moves to the right-hand end, as on a printed ticket. */
+@container (min-width: 470px) {
+  .ticket { grid-template-rows: none; grid-template-columns: minmax(0, 1fr) var(--stub); grid-template-areas: "main stub";
+    -webkit-mask: radial-gradient(circle at calc(100% - var(--stub)) 0, transparent var(--notch), #000 calc(var(--notch) + 0.5px)), radial-gradient(circle at calc(100% - var(--stub)) 100%, transparent var(--notch), #000 calc(var(--notch) + 0.5px));
+    -webkit-mask-composite: source-in;
+    mask: radial-gradient(circle at calc(100% - var(--stub)) 0, transparent var(--notch), #000 calc(var(--notch) + 0.5px)), radial-gradient(circle at calc(100% - var(--stub)) 100%, transparent var(--notch), #000 calc(var(--notch) + 0.5px));
+    mask-composite: intersect; }
+  .t-perf { left: calc(100% - var(--stub)); right: auto; top: calc(var(--notch) + 6px); bottom: calc(var(--notch) + 6px); width: 6px; height: auto; transform: translateX(-50%); background: radial-gradient(circle, var(--behind) 2.2px, transparent 2.8px) 50% 0 / 6px 11px repeat-y; }
+  .t-stub { border-radius: 0 var(--rt) var(--rt) 0; min-height: 300px; }
+  .t-face { flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 4px; }
+  .t-main { padding: calc(var(--pad) + 4px); }
+}
+:root[data-stub="off"] .ticket { -webkit-mask: none !important; mask: none !important; }
+
+/* ---------- Card states specimen ---------- */
+.states { padding-block: clamp(72px, 9vw, 120px); background: var(--white); border-top: var(--hairline) solid var(--line); --behind: var(--white); }
+.states-head { display: grid; gap: 10px; max-width: 62ch; margin-bottom: 48px; }
+.states-head p { color: var(--ink-700); }
+.spec-block + .spec-block { margin-top: 64px; }
+.spec-block h3 { font-size: var(--fs-lg); margin-bottom: 24px; font-variation-settings: "opsz" 32; }
+.spec-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px 28px; align-items: stretch; }
+.spec-grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 760px; }
+.spec { display: grid; grid-template-rows: auto 1fr; gap: 10px; min-width: 0; }
+.spec-label { font-size: 13px; font-weight: 600; color: var(--ink-500); }
+
+/* ---------- Brochure, presenters ---------- */
+.programme-pages { padding-block: clamp(72px, 9vw, 120px); background: var(--gold); --behind: var(--gold); }
+.programme-pages .h2 { margin-bottom: 12px; }
+.programme-pages > .wrap > p { color: var(--ink-700); max-width: 60ch; margin-bottom: 40px; }
+.brochure-list { display: grid; gap: 28px; }
+.brochure { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; }
+.brochure-field { position: relative; display: grid; align-content: end; gap: 32px; padding: 32px; background: var(--field); color: var(--gold-100); min-height: 340px; }
+.brochure-field .bf-kind { font-size: var(--fs-sm); font-weight: 700; letter-spacing: 0.04em; color: var(--gold); }
+.brochure-field .bf-title { font-family: var(--serif); font-weight: 300; font-size: clamp(2rem, 1.6rem + 1.4vw, 2.75rem); line-height: 1.05; color: var(--gold-100); font-variation-settings: "opsz" 72; }
+.brochure-body { padding: clamp(24px, 3.4vw, 40px); display: grid; gap: 18px; align-content: start; }
+.brochure-body h3 { font-size: var(--fs-xl); line-height: 1.15; font-variation-settings: "opsz" 40; }
+.brochure-body .quote { font-size: var(--fs-base); line-height: 1.6; color: var(--ink-700); max-width: 58ch; }
+.topics { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.topics li { padding: 6px 14px; border-radius: 8px; background: var(--gold); color: var(--royal); font-size: var(--fs-sm); font-weight: 700; }
+.topics-label { font-size: var(--fs-sm); font-weight: 700; color: var(--royal); }
+.promise { display: grid; gap: 4px; padding: 16px 18px; border-radius: var(--radius-md); background: var(--gold-100); box-shadow: inset 0 0 0 1px var(--line); }
+.promise strong { font-family: var(--serif); font-weight: 400; font-size: var(--fs-md); color: var(--royal); font-variation-settings: "opsz" 24; }
+.promise p { font-size: 15px; line-height: 1.55; color: var(--ink-700); }
+.brochure-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
+.textlink { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 600; color: var(--royal); text-decoration: underline; text-decoration-color: var(--green-1); text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
+.textlink:hover { text-decoration-color: var(--royal); }
+.textlink .icon { width: 15px; height: 15px; }
+
+.presenters { margin-top: clamp(64px, 8vw, 96px); }
+.presenters h3.h3 { font-size: var(--fs-xl); margin-bottom: 10px; font-variation-settings: "opsz" 40; }
+.presenters-note { color: var(--ink-700); max-width: 60ch; margin-bottom: 32px; }
+.presenter-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px 28px; align-items: stretch; }
+.pcard { display: grid; grid-template-rows: auto 1fr; height: 100%; background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; }
+.pcard-face { position: relative; aspect-ratio: 16 / 10; display: grid; place-items: center; background: var(--field); color: var(--gold-100); overflow: hidden; }
+.pcard-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pcard-ring { width: 40%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; box-shadow: inset 0 0 0 1.5px var(--gold-300), 0 0 0 10px rgba(232, 230, 194, 0.08), 0 0 0 11.5px rgba(232, 230, 194, 0.3); }
+.pcard-initials { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(3rem, 2.4rem + 2vw, 4.5rem); line-height: 1; color: var(--gold-100); letter-spacing: 0.02em; font-variation-settings: "opsz" 120; }
+.pcard-event { position: absolute; left: 18px; bottom: 14px; font-size: var(--fs-sm); font-weight: 700; letter-spacing: 0.02em; color: var(--gold); }
+.pcard-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pcard-body { display: flex; flex-direction: column; gap: 6px; padding: 22px 22px 18px; }
+.pcard-body h4 { font-size: var(--fs-lg); line-height: 1.15; font-variation-settings: "opsz" 32; }
+.pcard-body .role { font-size: 15px; font-weight: 700; color: var(--ink-700); }
+.pcard-body .bio { font-size: 15px; line-height: 1.55; color: var(--ink-700); }
+.pcard-body .textlink { margin-top: auto; padding-top: 6px; align-self: flex-start; }
+.pcard.is-awaiting { grid-template-rows: auto; align-content: center; gap: 10px; padding: 32px 28px; background: var(--gold-100); box-shadow: inset 0 0 0 1px var(--line); }
+.pcard.is-awaiting h4 { font-size: var(--fs-lg); line-height: 1.2; font-variation-settings: "opsz" 32; }
+.pcard.is-awaiting p { font-size: var(--fs-base); color: var(--ink-700); max-width: 44ch; }
+
+/* ---------- Workshop sessions ---------- */
+.sessions { padding-block: clamp(72px, 9vw, 120px); --behind: var(--gold-100); }
+.sessions .h2 { margin-bottom: 12px; }
+.sessions .wrap > p { color: var(--ink-700); max-width: 60ch; margin-bottom: 40px; }
+.session-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px 28px; }
+.ticket.is-session { --stub: 150px; }
+
+/* ---------- SAOC site footer ----------
+   Recreated from SAOC source (components/chrome/Footer.tsx and SaocLockup.tsx, vertical,
+   dark tone; lib/data/partners.ts). The same footer on NOS and SAOC pages: NOS is a section
+   of saoc.co.za, so the site's footer closes every page. Tailwind classes are written out as
+   the values they compile to; ivory is --sc-parchment. */
+:root {
+  --sc-ivory-rgb: 244, 243, 236;
+  --sc-lockup-name: #fbf8ea; --sc-lockup-tag: #f0d35a; --sc-lockup-rule: rgba(255, 255, 255, 0.35);
+  --sc-lora: "Lora", Georgia, "Times New Roman", serif;
+}
+.sc-footer { background: var(--sc-primary-800); color: var(--sc-parchment); }
+.sc-footer ul { list-style: none; margin: 0; padding: 0; }
+.sc-footer p { margin: 0; }
+.sc-footer-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; max-width: 1280px; margin-inline: auto; padding: 64px 32px; }
+.sc-footer-col { display: flex; flex-direction: column; gap: 12px; }
+.sc-footer-brand { gap: 16px; }
+.sc-footer-lockup { display: flex; flex-direction: column; align-items: center; align-self: center; margin-bottom: 16px; border-radius: 2px; }
+.sc-footer-lockup-art { display: flex; flex-direction: column; align-items: center; }
+.sc-footer-lockup img { width: 166px; height: 160px; object-fit: contain; }
+.sc-footer-lockup-name { margin-top: 12px; font-family: var(--sc-lora); font-weight: 500; font-size: 30px; line-height: 1.02; letter-spacing: -0.005em; white-space: nowrap; color: var(--sc-lockup-name); }
+.sc-footer-lockup-rule { margin-top: 8px; width: 133px; height: 1px; background: var(--sc-lockup-rule); }
+.sc-footer-lockup-tag { margin-top: 9px; font-family: var(--sc-mono); font-weight: 500; font-size: 9px; line-height: 1.3; letter-spacing: 0.22em; text-transform: uppercase; white-space: nowrap; color: var(--sc-lockup-tag); }
+.sc-footer-text { font-size: 13.5px; line-height: 1.625; color: rgba(var(--sc-ivory-rgb), 0.65); }
+.sc-footer-reg { font-family: var(--sc-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(var(--sc-ivory-rgb), 0.45); }
+.sc-footer-head { margin-bottom: 4px; font-family: var(--sc-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.18em; color: rgba(var(--sc-ivory-rgb), 0.55); }
+.sc-footer-list { display: flex; flex-direction: column; gap: 8px; }
+.sc-footer-list a, .sc-footer-list span, .sc-footer-wild a { font-size: 14px; color: rgba(var(--sc-ivory-rgb), 0.8); transition: color 150ms; }
+.sc-footer-list a:hover, .sc-footer-wild a:hover { color: var(--sc-parchment); }
+.sc-footer-form { display: flex; }
+.sc-footer-form input { flex: 1; min-width: 0; padding: 8px 12px; border: 1px solid rgba(var(--sc-ivory-rgb), 0.2); border-radius: 0; background: rgba(var(--sc-ivory-rgb), 0.1); color: var(--sc-parchment); font: 13px var(--sc-sans); outline: none; }
+.sc-footer-form input::placeholder { color: rgba(var(--sc-ivory-rgb), 0.4); }
+.sc-footer-form input:focus { border-color: rgba(var(--sc-ivory-rgb), 0.4); }
+.sc-footer-form button { flex-shrink: 0; padding: 8px 16px; border-radius: 0; background: var(--sc-primary); color: var(--sc-parchment); font-size: 13px; font-weight: 500; transition: background-color 150ms; }
+.sc-footer-form button:hover { background: var(--sc-primary-800); }
+.sc-footer-wild { margin-top: 8px; }
+.sc-footer-head-wild { margin-bottom: 8px; font-size: 11px; }
+.sc-footer-base { border-top: 1px solid rgba(var(--sc-ivory-rgb), 0.1); }
+.sc-footer-base-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; max-width: 1280px; margin-inline: auto; padding: 16px 32px; font-size: 13px; color: rgba(var(--sc-ivory-rgb), 0.45); }
+.sc-footer-legal { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.sc-footer-legal a { color: rgba(var(--sc-ivory-rgb), 0.45); transition: color 150ms; }
+.sc-footer-legal a:hover { color: rgba(var(--sc-ivory-rgb), 0.7); }
+@media (min-width: 768px) { .sc-footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .sc-footer-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+
+/* ---------- Design-review drawer (not part of the build) ---------- */
+.tweak-open { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 70; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: var(--radius-md); background: rgba(11, 10, 20, 0.92); color: var(--gold-100); border: var(--hairline) solid rgba(243, 242, 214, 0.24); font: 700 13px/1 var(--sans); letter-spacing: 0.04em; cursor: pointer; box-shadow: 0 8px 24px rgba(11, 10, 20, 0.25); }
+.tweak-open:hover { background: var(--black); }
+.tweak-open:focus-visible { outline-color: var(--violet); }
+.tweak-open .icon { width: 16px; height: 16px; }
+@media (max-width: 700px) {
+  .tweak-open { width: 44px; padding: 0; justify-content: center; gap: 0; font-size: 0; letter-spacing: 0; }
+  .tweak-open .icon { width: 18px; height: 18px; }
+}
+/* Review chrome only: the footer's last row clears the fixed pill (16px offset + 44px) by 16px. */
+.sc-footer-base { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+dialog.tweak { position: fixed; inset: 0 0 0 auto; width: 340px; max-width: 100%; height: 100dvh; max-height: none; margin: 0; padding: 0; border: 0; z-index: 90; background: var(--gold-100); color: var(--ink-700); box-shadow: -16px 0 48px rgba(11, 10, 20, 0.28); overflow: hidden; font-size: 15px; line-height: 1.45; }
+dialog.tweak[open] { display: flex; flex-direction: column; }
+@media (prefers-reduced-motion: no-preference) { dialog.tweak[open] { animation: drawer-in var(--t-slow) var(--ease) both; } }
+@keyframes drawer-in { from { transform: translateX(24px); opacity: 0; } }
+.tw-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 12px 12px 20px; border-bottom: var(--hairline) solid var(--line); background: var(--gold-100); }
+.tw-head h2 { font-size: var(--fs-md); }
+.tw-close { width: 44px; height: 44px; display: grid; place-items: center; border: var(--border) solid var(--line); border-radius: var(--radius-md); background: transparent; color: var(--royal); cursor: pointer; }
+.tw-close:hover { border-color: var(--royal); }
+.tw-scroll { flex: 1; overflow-y: auto; padding: 8px 20px 24px; overscroll-behavior: contain; scrollbar-color: var(--lilac-200) transparent; }
+.tw-group { padding-block: 18px; border-bottom: var(--hairline) solid var(--line); display: grid; gap: 14px; }
+.tw-group > h3 { font-family: var(--sans); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; color: var(--royal); }
+.tw-field { display: grid; gap: 6px; border: 0; margin: 0; padding: 0; min-width: 0; }
+.tw-field > legend, .tw-field > label, .tw-lab { padding: 0; font-size: 13px; font-weight: 600; color: var(--ink-700); }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; padding: 3px; border-radius: var(--radius-md); background: var(--gold); }
+.seg label { position: relative; display: grid; place-items: center; min-height: 40px; padding: 4px 6px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--ink-700); text-align: center; cursor: pointer; line-height: 1.2; }
+.seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.seg label:has(input:checked) { background: var(--white); color: var(--royal); box-shadow: var(--shadow-sm); }
+.seg label:has(input:focus-visible) { outline: 2px solid var(--violet); outline-offset: 1px; }
+.sw { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; font-size: 14px; font-weight: 600; color: var(--ink-700); cursor: pointer; }
+.sw input { appearance: none; width: 44px; height: 26px; border-radius: 13px; background: var(--line); position: relative; cursor: pointer; transition: background-color var(--t-med) var(--ease); flex: none; margin: 0; }
+.sw input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--white); box-shadow: var(--shadow-sm); transition: transform var(--t-med) var(--ease); }
+.sw input:checked { background: var(--royal); }
+.sw input:checked::after { transform: translateX(18px); }
+.range-row { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 10px; align-items: center; }
+input[type="range"] { width: 100%; accent-color: var(--royal); min-height: 32px; margin: 0; }
+.tw input[type="number"], .tw select, .tweak input[type="number"], .tweak select { width: 100%; min-height: 40px; padding: 6px 8px; border: var(--border) solid var(--line); border-radius: 8px; background: var(--white); color: var(--royal); font: 600 14px/1.2 var(--sans); font-variant-numeric: tabular-nums; }
+.tweak input[type="number"]:focus-visible, .tweak select:focus-visible { outline: 2px solid var(--violet); outline-offset: 1px; }
+.prod { display: grid; gap: 8px; padding: 12px; border-radius: var(--radius-md); background: var(--white); box-shadow: inset 0 0 0 1px var(--line); }
+.prod-name { font-family: var(--serif); font-size: 17px; color: var(--royal); }
+.prod-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.prod-fields .full { grid-column: 1 / -1; }
+.prod-fields label { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: var(--ink-700); }
+.setall { display: flex; flex-wrap: wrap; gap: 6px; }
+.setall button, .tw-btn { min-height: 40px; padding: 6px 12px; border-radius: 8px; border: var(--border) solid var(--line); background: var(--white); color: var(--royal); font: 600 13px/1.2 var(--sans); cursor: pointer; }
+.setall button:hover, .tw-btn:hover { border-color: var(--royal); }
+.days-tw { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.days-tw label { display: grid; gap: 4px; font-size: 12px; font-weight: 600; }
+.tw-foot { padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px)); border-top: var(--hairline) solid var(--line); background: var(--white); display: grid; gap: 10px; }
+.tw-foot .btn { width: 100%; min-height: 46px; }
+.tw-foot-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tw-foot-row .tw-btn { min-height: 44px; }
+.tw-status { font-size: 13px; color: var(--ink-700); min-height: 1.4em; }
+.tw-json { width: 100%; min-height: 120px; font: 12px/1.4 ui-monospace, Menlo, monospace; border: var(--hairline) solid var(--line); border-radius: 8px; padding: 8px; color: var(--royal); background: var(--gold-100); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 960px) {
+  .masthead-grid { grid-template-columns: minmax(0, 1fr); min-height: 0; padding-block: 48px 24px; }
+  .fan { height: 400px; }
+  .cols-2, .cols-3 { grid-template-columns: minmax(0, 1fr); }
+  .pool-bracket { display: none; }
+  .pool { margin-bottom: 20px; }
+  .spec-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .brochure { grid-template-columns: minmax(0, 1fr); }
+  .brochure-field { min-height: 0; }
+  .presenter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .session-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+  .chip { letter-spacing: 0.06em; padding-inline: 10px; }
+  .fan { height: auto; overflow-x: clip; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px 14px; padding-block: 12px 20px; }
+  .fan .ticket-wrap { position: relative; top: auto; left: auto; width: auto; transform: rotate(var(--r)); animation-name: fan-up; }
+  .fan .ticket-wrap:nth-child(odd) { --r: -3deg; }
+  .fan .ticket-wrap:nth-child(even) { --r: 3deg; }
+  .fan .ticket { --stub: 112px; }
+  .pool { grid-template-columns: minmax(0, 1fr); padding: 20px; }
+  .pool-num { grid-row: auto; }
+  .spec-grid, .spec-grid.cols-2 { grid-template-columns: minmax(0, 1fr); }
+  .presenter-grid { grid-template-columns: minmax(0, 1fr); }
+  dialog.tweak { inset: auto 0 0 0; width: 100%; height: 74dvh; border-radius: 16px 16px 0 0; box-shadow: 0 -16px 48px rgba(11, 10, 20, 0.28); }
+  @keyframes drawer-in { from { transform: translateY(24px); opacity: 0; } }
+}
+</style>
+
+<a class="skip" href="#main">Skip to content</a>
+<span class="scroll-sentinel" id="scroll-sentinel" aria-hidden="true"></span>
+<div class="sc sc-util">
+  <div class="sc-wrap">
+    <a class="sc-util-mail" href="mailto:info@saoc.co.za">
+      <svg class="sc-icon" width="14" height="14" viewBox="0 0 24 24" stroke-width="1.6" aria-hidden="true" focusable="false"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+      info@saoc.co.za
+    </a>
+    <div class="sc-util-pills">
+      <a class="sc-pill sc-pill-show" href="https://saoc.co.za/national-show">19th National Show · Sept 2027</a>
+      <a class="sc-pill sc-pill-join" href="https://saoc.co.za/societies">Join a society</a>
+    </div>
+  </div>
+</div>
+<header class="sc sc-header" id="sc-header">
+  <div class="sc-wrap sc-bar">
+    <a class="sc-brand-nos nos-lockup" id="nos-lockup" href="https://saoc.co.za/national-show" aria-label="National Orchid Show, Western Cape 2027">
+      <span class="lk-emblem" aria-hidden="true"></span>
+      <span class="lk-type" aria-hidden="true"><span class="lk-word">National Orchid Show</span><span class="lk-loc">Western Cape · 2027</span></span>
+    </a>
+    <a class="sc-brand" href="https://saoc.co.za/" aria-label="South African Orchid Council — home">
+      <img src="img/saoc-logo-ink-paper.png" alt="" width="48" height="48">
+      <span class="sc-brand-text">
+        <span class="sc-brand-name">SA Orchid Council</span>
+        <span class="sc-brand-tag">Making a difference since 1968</span>
+      </span>
+    </a>
+    <nav class="sc-nav" aria-label="Primary">
+      <a class="sc-nav-link" href="https://saoc.co.za/about">About</a>
+      <a class="sc-nav-link" href="https://saoc.co.za/societies">Societies</a>
+      <a class="sc-nav-link" href="https://saoc.co.za/judging">Judging &amp; Awards</a>
+      <a class="sc-nav-link" href="https://saoc.co.za/events">Events</a>
+      <a class="sc-nav-link" href="https://saoc.co.za/members">Members</a>
+      <div class="sc-mega" id="sc-mega">
+        <button class="sc-mega-trigger" type="button" aria-expanded="false" aria-controls="sc-mega-panel" id="sc-mega-trigger"><span class="sc-mega-label">National Show</span><svg class="sc-icon sc-mega-chev" width="14" height="14" viewBox="0 0 24 24" stroke-width="1.6" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="sc-mega-panel" id="sc-mega-panel" hidden>
+          <div class="sc-wrap">
+            <div class="sc-mega-grid">
+              <div class="sc-mega-lead">
+                <a class="sc-mega-lead-logo" href="https://saoc.co.za/national-show">
+                  <img src="img/nos-2027-logo-full-colour-vertical.png" alt="National Orchid Show — Western Cape · 2027" width="200" height="176" loading="lazy">
+                </a>
+                <span class="sc-mega-lead-meta">The Hangar, Stellenbosch Flying Club · 23–26 September 2027</span>
+                <div>
+                  <h3 class="sc-mega-head">The Show</h3>
+                  <ul class="sc-mega-list">
+                    <li><a class="sc-mega-leaf" href="https://saoc.co.za/national-show/tickets">Tickets</a><span class="sc-mega-desc">Buy admission tickets.</span></li>
+                    <li><a class="sc-mega-leaf" href="https://saoc.co.za/national-show/sponsors">Show Sponsors</a><span class="sc-mega-desc">The Show's own sponsors — a separate list from SAOC's site-level sponsors.</span></li>
+                    <li><a class="sc-mega-leaf" href="https://saoc.co.za/national-show/archive">Past Shows</a><span class="sc-mega-desc">Previous editions and their champions.</span></li>
+                  </ul>
+                </div>
+              </div>
+              <div class="sc-mega-col">
+                <h3 class="sc-mega-head">Visit</h3>
+                <ul class="sc-mega-list">
+                  <li><a class="sc-mega-leaf" href="https://saoc.co.za/national-show/about">About the Show</a><span class="sc-mega-desc">The show's theme, what it brings together, and who takes part.</span></li>
+                  <li><a class="sc-mega-leaf" href="https://saoc.co.za/national-show/what-to-expect">What to Expect</a><span class="sc-mega-desc">Hours, admission and on-the-day detail for visitors.</span></li>
+                  <li><a class="sc-mega-leaf" href="https://saoc.co.za/national-show/plan-your-visit">Plan Your Visit</a><span class="sc-mega-desc">Travel, parking, accommodation and nearby attractions.</span></li>
+                  <li><a class="sc-mega-leaf" href="https://saoc.co.za/national-show/faq">FAQ</a><span class="sc-mega-desc">The questions visitors ask us most.</span></li>
+                </ul>
+              </div>
+              <div class="sc-mega-col">
+                <h3 class="sc-mega-head">Programme</h3>
+                <ul class="sc-mega-list">
+                  <li><a class="sc-mega-leaf" href="https://saoc.co.za/national-show/programme">Programme</a><span class="sc-mega-desc">The overall schedule of sessions across the four show days.</span></li>
+                  <li><a class="sc-mega-leaf" href="https://saoc.co.za/national-show/workshops">Workshops</a><span class="sc-mega-desc">Book Sunset Cocktails and guided Field Trip outings.</span></li>
+                  <li><a class="sc-mega-leaf" href="https://saoc.co.za/national-show/symposium">SAOC Symposium</a><span class="sc-mega-desc">The SAOC Symposium — what it is, its theme, and who it is for.</span></li>
+                  <li><a class="sc-mega-leaf" href="https://saoc.co.za/national-show/wosa-conference">WOSA Conference</a><span class="sc-mega-desc">What the WOSA Conference is and who it is for, with a link out to WOSA for wild-orchid content.</span></li>
+                  <li><a class="sc-mega-leaf" href="https://saoc.co.za/national-show/conferences">Conference Registration</a><span class="sc-mega-desc">Register for the Symposium and WOSA Conference.</span></li>
+                </ul>
+              </div>
+              <div class="sc-mega-col">
+                <h3 class="sc-mega-head">Exhibit &amp; Trade</h3>
+                <ul class="sc-mega-list">
+                  <li><a class="sc-mega-leaf" href="https://saoc.co.za/national-show/sa-exhibitors">South African Exhibitors</a><span class="sc-mega-desc">Public directory of South African nurseries exhibiting at the show.</span></li>
+                  <li><a class="sc-mega-leaf" href="https://saoc.co.za/national-show/international-guests">International Guests</a><span class="sc-mega-desc">Public directory of international guests and exhibitors attending the show.</span></li>
+                  <li><a class="sc-mega-leaf" href="https://saoc.co.za/national-show/exhibitors">Exhibitor Entry Guide</a><span class="sc-mega-desc">Entry process, fees, classes, judging and eligibility for growers entering plants.</span></li>
+                  <li><a class="sc-mega-leaf" href="https://saoc.co.za/national-show/vendors">Trade Vendors</a><span class="sc-mega-desc">Trade vendor showcase, application and gated registration.</span></li>
+                </ul>
+              </div>
+              <div class="sc-mega-rail">
+                <span class="sc-mega-rail-meta">23–26 September 2027</span>
+                <h4>Tickets</h4>
+                <div class="sc-mega-rail-links">
+                  <a class="sc-rail-btn is-primary" href="https://saoc.co.za/national-show/tickets">Tickets</a>
+                  <a class="sc-rail-btn is-secondary" href="https://saoc.co.za/tickets/day-visitor">Day Visitor</a>
+                  <a class="sc-rail-btn is-secondary" href="https://saoc.co.za/tickets/weekend-pass">Weekend Pass</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <a class="sc-nav-link" href="https://saoc.co.za/sponsors">Sponsors</a>
+    </nav>
+    <div class="sc-actions">
+      <button class="sc-icon-btn" type="button" aria-label="Open search" id="sc-search-open">
+        <svg class="sc-icon" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </button>
+      <a class="sc-contact" href="https://saoc.co.za/contact">Contact</a>
+      <button class="sc-icon-btn sc-burger" type="button" aria-label="Open menu" id="sc-menu-open">
+        <svg class="sc-icon" width="22" height="22" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true" focusable="false"><path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="sc sc-drawer" id="sc-drawer" role="dialog" aria-modal="true" aria-label="Menu" hidden>
+  <aside class="sc-drawer-panel">
+    <div class="sc-drawer-top">
+      <span class="sc-drawer-brand"><img src="img/saoc-logo-ink-paper.png" alt="" width="36" height="36">SA Orchid Council</span>
+      <button class="sc-icon-btn" type="button" aria-label="Close menu" id="sc-menu-close">
+        <svg class="sc-icon" width="22" height="22" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <nav aria-label="Mobile primary">
+      <ul class="sc-drawer-list">
+        <li class="sc-drawer-search"><button class="sc-drawer-item" type="button" id="sc-drawer-search">Search
+            <svg class="sc-icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </button></li>
+        <li><a class="sc-drawer-item" href="https://saoc.co.za/about">About</a></li>
+        <li><a class="sc-drawer-item" href="https://saoc.co.za/societies">Societies</a></li>
+        <li><a class="sc-drawer-item" href="https://saoc.co.za/judging">Judging &amp; Awards</a></li>
+        <li><a class="sc-drawer-item" href="https://saoc.co.za/events">Events</a></li>
+        <li><a class="sc-drawer-item" href="https://saoc.co.za/members">Members</a></li>
+        <li>
+          <button class="sc-drawer-item" type="button" aria-expanded="false" aria-controls="sc-drawer-show" id="sc-drawer-show-btn">National Show
+            <svg class="sc-icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="sc-drawer-sub" id="sc-drawer-show" hidden>
+            <div class="sc-drawer-feature">
+              <span class="sc-drawer-feature-meta">23–26 September 2027</span>
+              <p>Tickets</p>
+              <div class="sc-drawer-feature-links">
+                <a class="sc-drawer-btn is-primary" href="https://saoc.co.za/national-show/tickets">Tickets</a>
+                <a class="sc-drawer-btn is-secondary" href="https://saoc.co.za/tickets/day-visitor">Day Visitor</a>
+                <a class="sc-drawer-btn is-secondary" href="https://saoc.co.za/tickets/weekend-pass">Weekend Pass</a>
+              </div>
+            </div>
+            <div class="sc-drawer-lead">
+              <span class="sc-drawer-eyebrow">The National Show</span>
+              <a class="sc-drawer-lead-link" href="https://saoc.co.za/national-show">19th SAOC National Orchid Show</a>
+              <span class="sc-drawer-lead-meta">The Hangar, Stellenbosch Flying Club · 23–26 September 2027</span>
+            </div>
+            <div class="sc-drawer-group">
+              <span class="sc-drawer-group-head">The Show</span>
+              <ul>
+                <li><div class="sc-drawer-leaf"><a href="https://saoc.co.za/national-show/tickets">Tickets</a><span>Buy admission tickets.</span></div></li>
+                <li><div class="sc-drawer-leaf"><a href="https://saoc.co.za/national-show/sponsors">Show Sponsors</a><span>The Show's own sponsors — a separate list from SAOC's site-level sponsors.</span></div></li>
+                <li><div class="sc-drawer-leaf"><a href="https://saoc.co.za/national-show/archive">Past Shows</a><span>Previous editions and their champions.</span></div></li>
+              </ul>
+            </div>
+            <div class="sc-drawer-group">
+              <span class="sc-drawer-group-head">Visit</span>
+              <ul>
+                <li><div class="sc-drawer-leaf"><a href="https://saoc.co.za/national-show/about">About the Show</a><span>The show's theme, what it brings together, and who takes part.</span></div></li>
+                <li><div class="sc-drawer-leaf"><a href="https://saoc.co.za/national-show/what-to-expect">What to Expect</a><span>Hours, admission and on-the-day detail for visitors.</span></div></li>
+                <li><div class="sc-drawer-leaf"><a href="https://saoc.co.za/national-show/plan-your-visit">Plan Your Visit</a><span>Travel, parking, accommodation and nearby attractions.</span></div></li>
+                <li><div class="sc-drawer-leaf"><a href="https://saoc.co.za/national-show/faq">FAQ</a><span>The questions visitors ask us most.</span></div></li>
+              </ul>
+            </div>
+            <div class="sc-drawer-group">
+              <span class="sc-drawer-group-head">Programme</span>
+              <ul>
+                <li><div class="sc-drawer-leaf"><a href="https://saoc.co.za/national-show/programme">Programme</a><span>The overall schedule of sessions across the four show days.</span></div></li>
+                <li><div class="sc-drawer-leaf"><a href="https://saoc.co.za/national-show/workshops">Workshops</a><span>Book Sunset Cocktails and guided Field Trip outings.</span></div></li>
+                <li><div class="sc-drawer-leaf"><a href="https://saoc.co.za/national-show/symposium">SAOC Symposium</a><span>The SAOC Symposium — what it is, its theme, and who it is for.</span></div></li>
+                <li><div class="sc-drawer-leaf"><a href="https://saoc.co.za/national-show/wosa-conference">WOSA Conference</a><span>What the WOSA Conference is and who it is for, with a link out to WOSA for wild-orchid content.</span></div></li>
+                <li><div class="sc-drawer-leaf"><a href="https://saoc.co.za/national-show/conferences">Conference Registration</a><span>Register for the Symposium and WOSA Conference.</span></div></li>
+              </ul>
+            </div>
+            <div class="sc-drawer-group">
+              <span class="sc-drawer-group-head">Exhibit &amp; Trade</span>
+              <ul>
+                <li><div class="sc-drawer-leaf"><a href="https://saoc.co.za/national-show/sa-exhibitors">South African Exhibitors</a><span>Public directory of South African nurseries exhibiting at the show.</span></div></li>
+                <li><div class="sc-drawer-leaf"><a href="https://saoc.co.za/national-show/international-guests">International Guests</a><span>Public directory of international guests and exhibitors attending the show.</span></div></li>
+                <li><div class="sc-drawer-leaf"><a href="https://saoc.co.za/national-show/exhibitors">Exhibitor Entry Guide</a><span>Entry process, fees, classes, judging and eligibility for growers entering plants.</span></div></li>
+                <li><div class="sc-drawer-leaf"><a href="https://saoc.co.za/national-show/vendors">Trade Vendors</a><span>Trade vendor showcase, application and gated registration.</span></div></li>
+              </ul>
+            </div>
+          </div>
+        </li>
+        <li><a class="sc-drawer-item" href="https://saoc.co.za/sponsors">Sponsors</a></li>
+        <li><a class="sc-drawer-item" href="https://saoc.co.za/contact">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="sc-drawer-foot">
+      <a href="mailto:info@saoc.co.za">info@saoc.co.za</a>
+      <span>Est. 1968</span>
+    </div>
+  </aside>
+</div>
+
+<div class="sc sc-search" id="sc-search" role="dialog" aria-modal="true" aria-label="Search SAOC" hidden>
+  <div class="sc-search-box">
+    <div class="sc-search-row">
+      <svg class="sc-icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="sc-search-input" type="search" placeholder="Search societies, shows, classes, awards..." aria-label="Search query" autocomplete="off">
+      <kbd>Esc</kbd>
+    </div>
+    <div class="sc-search-body">
+      <div class="sc-search-label" id="sc-search-label">Try</div>
+      <ul id="sc-search-list">
+        <li><a href="https://saoc.co.za/about"><span>About SAOC</span><span aria-hidden="true">→</span></a></li>
+        <li><a href="https://saoc.co.za/societies"><span>Find a society</span><span aria-hidden="true">→</span></a></li>
+        <li><a href="https://saoc.co.za/national-show"><span>National Show</span><span aria-hidden="true">→</span></a></li>
+        <li><a href="https://saoc.co.za/national-show/plan-your-visit"><span>Plan your visit to the show</span><span aria-hidden="true">→</span></a></li>
+        <li><a href="https://saoc.co.za/national-show/what-to-expect"><span>What to expect at the show</span><span aria-hidden="true">→</span></a></li>
+        <li><a href="https://saoc.co.za/national-show/faq"><span>Visitor questions</span><span aria-hidden="true">→</span></a></li>
+        <li><a href="https://saoc.co.za/national-show/exhibitors"><span>Exhibit at the National Show</span><span aria-hidden="true">→</span></a></li>
+        <li><a href="https://saoc.co.za/events"><span>Events calendar</span><span aria-hidden="true">→</span></a></li>
+        <li><a href="https://saoc.co.za/contact"><span>Contact the council</span><span aria-hidden="true">→</span></a></li>
+      </ul>
+      <p class="sc-search-empty" id="sc-search-empty" hidden></p>
+    </div>
+  </div>
+</div>
+
+
+<main id="main">
+<section class="masthead on-dark" aria-labelledby="page-title">
+  <div class="wrap masthead-grid">
+    <div class="masthead-copy">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="https://saoc.co.za/national-show">National Show</a><span class="sep" aria-hidden="true"></span><span aria-current="page">Tickets</span></nav>
+      <h1 id="page-title">Tickets</h1>
+      <div class="countdown" id="countdown" data-state="before">
+        <div class="cd-units" aria-hidden="true">
+          <span class="cd-unit"><span class="cd-num" data-cd="days">0</span><span class="cd-lab" data-cd-lab="days">days</span></span>
+          <span class="cd-unit"><span class="cd-num" data-cd="hours">00</span><span class="cd-lab" data-cd-lab="hours">hours</span></span>
+          <span class="cd-unit"><span class="cd-num" data-cd="minutes">00</span><span class="cd-lab" data-cd-lab="minutes">minutes</span></span>
+        </div>
+        <p class="cd-caption" id="cd-caption">until the show opens</p>
+        <p class="sr-only" id="cd-live"></p>
+      </div>
+      <dl class="mh-facts">
+        <div><dt>Dates</dt><dd>Thursday 23 to Sunday 26 September 2027</dd></div>
+        <div><dt>Venue</dt><dd>The Hangar, Stellenbosch Flying Club</dd></div>
+        <div><dt>Host</dt><dd>South African Orchid Council</dd></div>
+      </dl>
+    </div>
+    <div class="fan">
+      <div class="ticket-wrap" data-mount data-product="vip" data-uid="h-vip" data-mini></div>
+      <div class="ticket-wrap" data-mount data-product="sunset" data-uid="h-sunset" data-mini></div>
+      <div class="ticket-wrap" data-mount data-product="weekend" data-uid="h-weekend" data-mini></div>
+      <div class="ticket-wrap" data-mount data-product="day" data-uid="h-day" data-mini></div>
+    </div>
+  </div>
+  <nav class="wrap mh-visit" aria-labelledby="mh-visit-label">
+    <p class="mh-visit-label" id="mh-visit-label">Before you visit</p>
+    <ul>
+        <li><a href="https://saoc.co.za/national-show/about">About the Show<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a></li>
+        <li><a href="https://saoc.co.za/national-show/what-to-expect">What to Expect<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a></li>
+        <li><a href="https://saoc.co.za/national-show/plan-your-visit">Plan Your Visit<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a></li>
+        <li><a href="https://saoc.co.za/national-show/faq">FAQ<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a></li>
+    </ul>
+  </nav>
+</section>
+
+<section class="tk-section" id="thursday" aria-labelledby="thursday-title">
+  <div class="wrap">
+    <div class="tk-head">
+      <h2 class="h2" id="thursday-title">Thursday evening</h2>
+      <p>Two evening events on Thursday 23 September.</p>
+    </div>
+    <div class="tk-grid cols-2">
+      <div class="ticket-wrap" data-mount data-product="vip" data-uid="m-vip"></div>
+      <div class="ticket-wrap" data-mount data-product="sunset" data-uid="m-sunset"></div>
+    </div>
+    <p class="sample-note">Places left are sample numbers for this design.</p>
+  </div>
+</section>
+
+<section class="tk-section" id="passes" aria-labelledby="passes-title">
+  <div class="wrap">
+    <div class="tk-head">
+      <h2 class="h2" id="passes-title">Show passes</h2>
+      <p>Friday 24 to Sunday 26 September.</p>
+    </div>
+    <div class="pool" id="pool" role="group" aria-labelledby="pool-title">
+      <div class="pool-num" aria-hidden="true"><span id="pool-n">312</span><small>of 500</small></div>
+      <strong id="pool-title">Early-bird tickets left</strong>
+      <p id="pool-text">One pool of 500 early-bird tickets is shared by the Weekend Pass and the Day Pass. The early bird ends when the pool sells out.</p>
+    </div>
+    <div class="pool-bracket" aria-hidden="true"></div>
+    <div class="tk-grid cols-2">
+      <div class="ticket-wrap" data-mount data-product="weekend" data-uid="m-weekend"></div>
+      <div class="ticket-wrap" data-mount data-product="day" data-uid="m-day"></div>
+    </div>
+    <p class="sample-note">The pool and day counts are sample numbers for this design.</p>
+  </div>
+</section>
+
+<section class="tk-section" id="programme" aria-labelledby="programme-title">
+  <div class="wrap">
+    <div class="tk-head">
+      <h2 class="h2" id="programme-title">Programme</h2>
+      <p>The SAOC Symposium, the WOSA Conference and workshops.</p>
+    </div>
+    <div class="tk-grid cols-3">
+      <div class="ticket-wrap" data-mount data-product="symposium" data-uid="m-symposium"></div>
+      <div class="ticket-wrap" data-mount data-product="wosa" data-uid="m-wosa"></div>
+      <div class="ticket-wrap" data-mount data-product="workshops" data-uid="m-workshops"></div>
+    </div>
+    <p class="sample-note">Places left are sample numbers for this design.</p>
+  </div>
+</section>
+</main>
+
+<section class="states" aria-labelledby="states-title">
+  <div class="wrap">
+    <div class="states-head">
+      <h2 class="h2" id="states-title">Card states</h2>
+      <p>Every state a ticket can take, shown with sample counts. The small labels are for review and do not ship.</p>
+    </div>
+    <div class="spec-block">
+      <h3>Thursday evening ticket</h3>
+      <div class="spec-grid cols-2" data-spec="vip"></div>
+    </div>
+    <div class="spec-block">
+      <h3>Weekend Pass, early-bird and regular</h3>
+      <div class="spec-grid" data-spec="weekend"></div>
+    </div>
+    <div class="spec-block">
+      <h3>Day Pass, early-bird and regular, with the day picker</h3>
+      <div class="spec-grid" data-spec="day"></div>
+    </div>
+    <div class="spec-block">
+      <h3>Programme ticket</h3>
+      <div class="spec-grid cols-2" data-spec="symposium"></div>
+    </div>
+  </div>
+</section>
+
+<section class="programme-pages" aria-labelledby="pages-title">
+  <div class="wrap">
+    <h2 class="h2" id="pages-title">Symposium and conference pages</h2>
+    <p>The brochure tile opens each programme page and links through to its ticket.</p>
+    <div class="brochure-list">
+      <article class="brochure" aria-labelledby="b-sym">
+        <div class="brochure-field" style="--field: var(--royal-600)">
+          <div>
+            <p class="bf-kind">SAOC Symposium</p>
+            <p class="bf-title">From Wild Origins to Cultivated Excellence</p>
+          </div>
+        </div>
+        <div class="brochure-body">
+          <h3 id="b-sym">From Wild Origins to Cultivated Excellence: The Future of Orchids</h3>
+          <p class="quote">Uniting conservation, science, and horticulture to explore how orchids in their natural environments inform responsible growing, breeding, and the sustainability of the orchid industry.</p>
+          <p class="topics-label">The theme brings together</p>
+          <ul class="topics"><li>Conservation</li><li>Science</li><li>Horticulture</li></ul>
+          <div class="promise">
+            <strong>Sessions and presenters to follow</strong>
+            <p>The full programme will be published here once the Council confirms it.</p>
+          </div>
+          <div class="brochure-actions">
+            <a class="btn btn-royal" href="#programme">Book the Symposium</a>
+            <span class="sample-note" style="margin:0">80 places, R2000</span>
+          </div>
+        </div>
+      </article>
+      <article class="brochure" aria-labelledby="b-wosa">
+        <div class="brochure-field" style="--field: var(--olive-700)">
+          <div>
+            <p class="bf-kind">WOSA Conference</p>
+            <p class="bf-title">Wild Orchids of Southern Africa</p>
+          </div>
+        </div>
+        <div class="brochure-body">
+          <h3 id="b-wosa">The WOSA Conference</h3>
+          <div class="disclosure">
+            <span class="chip">AI placeholder</span>
+            <p>This text is an AI-generated placeholder. It has not been written or approved by the South African Orchid Council, and it may be inaccurate. Final copy is still to be supplied by the Council.</p>
+          </div>
+          <p class="quote">The WOSA Conference is organised in partnership with Wild Orchids of Southern Africa and runs as its own dedicated strand of the Show, distinct from the SAOC Symposium.</p>
+          <div class="promise">
+            <strong>Sessions and speakers to follow</strong>
+            <p>The conference programme will be published here once it is confirmed.</p>
+          </div>
+          <div class="brochure-actions">
+            <a class="btn btn-royal" href="#programme">Book the Conference</a>
+            <a class="textlink" href="https://wildorchids.co.za" rel="noopener">Visit WOSA <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="presenters">
+      <h3 class="h3">Presenter card</h3>
+      <p class="presenters-note">No presenter photos exist yet, so the card without a photo is the primary design. Names, roles and biographies below are field slots, not people.</p>
+      <div class="presenter-grid" data-presenters></div>
+    </div>
+  </div>
+</section>
+
+<section class="sessions" id="sessions" aria-labelledby="sessions-title">
+  <div class="wrap">
+    <h2 class="h2" id="sessions-title">Workshop sessions</h2>
+    <p>Workshop titles, times and presenters are still to be confirmed. These cards show each field, and each missing field, with sample counts.</p>
+    <div class="session-grid" data-spec="session"></div>
+  </div>
+</section>
+
+<footer class="sc sc-footer">
+  <div class="sc-footer-grid">
+    <div class="sc-footer-col sc-footer-brand">
+      <a class="sc-footer-lockup" href="https://saoc.co.za/" aria-label="South African Orchid Council — Making a difference since 1968">
+        <span class="sc-footer-lockup-art" aria-hidden="true">
+          <img src="img/saoc-emblem-footer-lapis-2x.png" alt="" width="166" height="160" loading="lazy">
+          <span class="sc-footer-lockup-name">SA Orchid Council</span>
+          <span class="sc-footer-lockup-rule"></span>
+          <span class="sc-footer-lockup-tag">Making a difference since 1968</span>
+        </span>
+      </a>
+      <p class="sc-footer-text">A national coordinating body for affiliated orchid societies across South Africa — promoting culture, hybridisation and appreciation of orchids in cultivation since 1968.</p>
+      <span class="sc-footer-reg">REG# 1978/004040/08&nbsp;&nbsp;&nbsp;NPO 043-901</span>
+    </div>
+    <div class="sc-footer-col">
+      <div class="sc-footer-head">Explore</div>
+      <ul class="sc-footer-list">
+        <li><a href="https://saoc.co.za/about">About</a></li>
+        <li><a href="https://saoc.co.za/societies">Societies</a></li>
+        <li><a href="https://saoc.co.za/judging">Judging &amp; Awards</a></li>
+        <li><a href="https://saoc.co.za/national-show">National Show</a></li>
+        <li><a href="https://saoc.co.za/events">Events</a></li>
+        <li><a href="https://saoc.co.za/members">Members Portal</a></li>
+      </ul>
+    </div>
+    <div class="sc-footer-col">
+      <div class="sc-footer-head">Partners</div>
+      <ul class="sc-footer-list">
+        <li><span>Wild Orchids of Southern Africa</span></li>
+        <li><span>South African National Biodiversity Institute</span></li>
+        <li><span>Kirstenbosch NBG</span></li>
+      </ul>
+    </div>
+    <div class="sc-footer-col">
+      <div class="sc-footer-head">Stay in touch</div>
+      <p class="sc-footer-text">Quarterly bulletin — show dates, judging results and yearbook news.</p>
+      <form class="sc-footer-form" id="sc-footer-form">
+        <input id="sc-footer-email" type="email" aria-label="Email address" placeholder="your@email.co.za" required>
+        <button type="submit">Subscribe</button>
+      </form>
+      <div class="sc-footer-wild">
+        <div class="sc-footer-head sc-footer-head-wild">Looking for wild orchids?</div>
+        <a href="https://wildorchids.co.za" target="_blank" rel="noopener noreferrer">Visit Wild Orchids of Southern Africa →</a>
+      </div>
+    </div>
+  </div>
+  <div class="sc-footer-base">
+    <div class="sc-footer-base-row">
+      <span>&copy; 2026 South African Orchid Council. All rights reserved.</span>
+      <div class="sc-footer-legal">
+        <a href="https://saoc.co.za/privacy">Privacy</a>
+        <a href="https://saoc.co.za/terms">Terms</a>
+        <a href="https://saoc.co.za/refunds">Refunds</a>
+        <a href="https://saoc.co.za/constitution">Constitution</a>
+        <a href="https://saoc.co.za/media-kit">Media kit</a>
+      </div>
+    </div>
+  </div>
+</footer>
+<script>
+// SAOC Footer.tsx: the bulletin form only prevents submission; the mock has no mailing list.
+document.getElementById("sc-footer-form").addEventListener("submit", (e) => e.preventDefault());
+</script>
+
+<button class="tweak-open" type="button" id="tweak-open" aria-haspopup="dialog" aria-controls="tweak">
+  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h9"/><path d="M17 6h3"/><circle cx="15" cy="6" r="2"/><path d="M4 12h3"/><path d="M11 12h9"/><circle cx="9" cy="12" r="2"/><path d="M4 18h11"/><path d="M19 18h1"/><circle cx="17" cy="18" r="2"/></svg>
+  Tweak design
+</button>
+<dialog class="tweak" id="tweak" aria-labelledby="tweak-title">
+  <div class="tw-head">
+    <h2 id="tweak-title">Tweak design</h2>
+    <button class="tw-close" type="button" id="tweak-close"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg><span class="sr-only">Close</span></button>
+  </div>
+  <form class="tw-scroll" id="tw-form" novalidate>
+    <div class="tw-group" id="tw-look"><h3>Look</h3></div>
+    <div class="tw-group" id="tw-counts"><h3>Live counts</h3></div>
+    <div class="tw-group" id="tw-cards"><h3>Each card</h3></div>
+  </form>
+  <div class="tw-foot">
+    <button class="btn btn-royal" type="button" id="tw-save">Save these settings</button>
+    <div class="tw-foot-row">
+      <button class="tw-btn" type="button" id="tw-copy">Copy settings JSON</button>
+      <button class="tw-btn" type="button" id="tw-reset">Reset to defaults</button>
+    </div>
+    <textarea class="tw-json" id="tw-json" readonly hidden aria-label="Settings JSON"></textarea>
+    <p class="tw-status" id="tw-status" role="status" aria-live="polite"></p>
+  </div>
+</dialog>
+
+<script>
+(() => {
+  "use strict";
+  const STORAGE_KEY = "nos-tickets-tweaks";
+  const POOL_TOTAL = 500;
+  const WEEKEND_TOTAL = 300; // regular weekend-pass ceiling, provisional until Brad confirms
+  const DAY_TOTAL = 1000;
+  const LOW_STOCK_THRESHOLD_PERCENT = 10; // locked data interface default
+  const EMBLEM = "img/disa-graminifolia-90x60.png";
+  const PHOTO_640 = {
+    "img/orchid-dark-1400.jpg": "img/orchid-dark-640.webp",
+    "img/orchid-yellow-1600.jpg": "img/orchid-yellow-640.webp",
+    "img/orchid-purple-1600.jpg": "img/orchid-purple-640.webp",
+    "img/orchid-pink-1600.jpg": "img/orchid-pink-640.webp",
+    "img/orchid-violet-1600.jpg": "img/orchid-violet-640.webp"
+  };
+
+  const ICON = {
+    minus: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/></svg>',
+    plus: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="M12 5v14"/></svg>',
+    arrow: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>'
+  };
+
+  // Static presentation per slug. Everything that changes comes from the TicketCardViewModel.
+  const PRODUCTS = {
+    vip: { slug: "vip", name: "VIP Opening", kind: "event", when: "Thursday 23 September", meta: "16h00 to 19h00", total: 200, num: "23", numLab: "Thursday", photo: "img/orchid-dark-1400.jpg", pos: "62% 45%", field: "#0B0A14" },
+    sunset: { slug: "sunset-cocktails-single", name: "Sunset Cocktails", kind: "event", when: "Thursday 23 September", meta: "18h00 to 21h00", total: 100, num: "23", numLab: "Thursday", photo: "img/orchid-yellow-1600.jpg", pos: "45% 50%", field: "#7E3F97" },
+    weekend: { slug: "weekend-pass", name: "Weekend Pass", kind: "pass", when: "Friday 24 to Sunday 26 September", meta: "Entry on all three show days", total: WEEKEND_TOTAL, num: "24", numLab: "to 26 Sept", photo: "img/orchid-purple-1600.jpg", pos: "50% 40%", field: "#211A57", partner: "Day Pass" },
+    day: { slug: "day-visitor", name: "Day Pass", kind: "pass", when: "Friday, Saturday or Sunday", meta: "Entry on the day you choose", total: POOL_TOTAL, photo: "img/orchid-pink-1600.jpg", pos: "50% 30%", field: "#7F7D33", partner: "Weekend Pass", days: true },
+    symposium: { slug: "saoc-symposium", name: "SAOC Symposium", kind: "programme", when: "Dates to follow", theme: "From Wild Origins to Cultivated Excellence", total: 80, num: "XIX", numLab: "19th Show", photo: null, field: "#4A3D8C" },
+    wosa: { slug: "wosa-conference", name: "WOSA Conference", kind: "programme", when: "Dates to follow", theme: "With Wild Orchids of Southern Africa", total: 80, num: "XIX", numLab: "19th Show", photo: null, field: "#6A6829" },
+    workshops: { slug: "workshops", name: "Workshops", kind: "workshop", when: "Schedule to follow", meta: "10 places in each session", total: 10, num: "10", numLab: "places a session", photo: "img/orchid-violet-1600.jpg", pos: "40% 50%", field: "#33296F", each: true }
+  };
+  const ORDER = ["vip", "sunset", "weekend", "day", "symposium", "wosa", "workshops"];
+  const DAYS = [
+    { id: "fri", iso: "2027-09-24", short: "Fri 24", num: "24", lab: "Friday" },
+    { id: "sat", iso: "2027-09-25", short: "Sat 25", num: "25", lab: "Saturday" },
+    { id: "sun", iso: "2027-09-26", short: "Sun 26", num: "26", lab: "Sunday" }
+  ];
+
+  // TicketCardState, highest precedence first: each state masks every state below it.
+  const STATES = ["pricePending", "soldOut", "earlyBirdSoldOut", "low", "available"];
+  const STATE_LABEL = { auto: "Derive from counts", pricePending: "pricePending", soldOut: "soldOut", earlyBirdSoldOut: "earlyBirdSoldOut", low: "low", available: "available" };
+  const statesFor = (id) => ["auto", ...STATES.filter((s) => s !== "earlyBirdSoldOut" || PRODUCTS[id].kind === "pass")];
+
+  const DEFAULTS = {
+    look: { ground: "gold", accent: "green1", radius: 10, stub: true, photo: true, emblem: true, scale: 100, density: "comfortable", layout: "grid", saocPage: false },
+    threshold: LOW_STOCK_THRESHOLD_PERCENT,
+    pool: 312,
+    days: { fri: 742, sat: 64, sun: 905 },
+    dayStates: { fri: "auto", sat: "auto", sun: "auto" },
+    products: {
+      vip: { state: "auto", price: 300, remaining: 146 },
+      sunset: { state: "auto", price: 800, remaining: 14 },
+      weekend: { state: "auto", price: 380, earlyBird: 360, remaining: 214, capped: true },
+      day: { state: "auto", price: 150, earlyBird: 120 },
+      symposium: { state: "auto", price: 2000, remaining: 41 },
+      wosa: { state: "auto", price: 2000, remaining: 27 },
+      workshops: { state: "auto", price: 100, remaining: 10 }
+    }
+  };
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  let cfg = clone(DEFAULTS);
+  const ui = {}; // per-mount quantity and chosen day; presentational only
+
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const known = (v) => typeof v === "number" && isFinite(v) && v >= 0;
+  const isLow = (remaining, total, thr) => known(remaining) && total > 0 && remaining > 0 && (remaining / total) * 100 <= thr;
+
+  /* ---------- View models: the exact shapes of the locked data interface ---------- */
+
+  // Simulates what the server sends. ctx = { pool, days, dayStates, threshold }.
+  // Passes are two SKUs: the early-bird SKU while the shared pool lasts, then the regular SKU takes over.
+  const SKU_SLUG = { weekend: { earlyBird: "weekend-pass-early-bird", regular: "weekend-pass" }, day: { earlyBird: "early-bird", regular: "day-visitor" } };
+  function ticketVM(id, p, ctx) {
+    const meta = PRODUCTS[id];
+    const isPass = meta.kind === "pass";
+    const poolOut = isPass && ctx.pool <= 0;
+    const sku = isPass ? (p.sku || (poolOut ? "regular" : "earlyBird")) : null;
+    const eb = sku === "earlyBird";
+    let days = null;
+    if (meta.days) {
+      days = DAYS.map((d) => {
+        const remaining = ctx.days[d.id];
+        const forced = ctx.dayStates && ctx.dayStates[d.id];
+        let state;
+        if (forced && forced !== "auto") state = forced;
+        else if (!known(p.price)) state = "pricePending";
+        else if (remaining === 0) state = "soldOut";
+        else if (eb && poolOut) state = "earlyBirdSoldOut";
+        else if (isLow(remaining, DAY_TOTAL, ctx.threshold)) state = "low";
+        else state = "available";
+        return { day: d.iso, state, remaining, total: DAY_TOTAL };
+      });
+    }
+    let scarcity = null;
+    if (eb) scarcity = { remaining: Math.max(0, ctx.pool), total: POOL_TOTAL, label: "early-bird left" };
+    else if (!isPass || (!meta.days && p.capped)) scarcity = { remaining: p.remaining, total: meta.total, label: "places left" };
+    let state;
+    if (p.state !== "auto") state = p.state;
+    else if (!known(p.price) || (eb && !known(p.earlyBird))) state = "pricePending";
+    else if ((!eb && scarcity && scarcity.remaining === 0) || (days && days.every((d) => d.state === "soldOut"))) state = "soldOut";
+    else if (eb && poolOut) state = "earlyBirdSoldOut";
+    else if (scarcity && isLow(scarcity.remaining, scarcity.total, ctx.threshold)) state = "low";
+    else state = "available";
+    // price is null only when pricePending; regularPrice is non-null only on an early-bird SKU
+    const price = state === "pricePending" ? null : (eb ? p.earlyBird : p.price);
+    const regularPrice = eb && known(p.price) ? p.price : null;
+    const vm = { slug: isPass ? SKU_SLUG[id][sku] : meta.slug, state, price, regularPrice, scarcity };
+    if (meta.days) vm.days = days;
+    return vm;
+  }
+  const globalCtx = () => ({ pool: cfg.pool, days: cfg.days, dayStates: cfg.dayStates, threshold: cfg.threshold });
+
+  // Sample PresenterCardViewModel records: field slots, never invented people (R7).
+  const PRESENTERS = [
+    { label: "photoUrl null (primary design)", vm: { id: "p1", name: "Presenter name", role: "Role, as supplied", bioExcerpt: "Biography excerpt supplied by the presenter, one or two sentences long.", photoUrl: null, event: "saoc-symposium", order: 1 } },
+    { label: "bioExcerpt null", vm: { id: "p2", name: "Presenter name", role: "Role, as supplied", bioExcerpt: null, photoUrl: null, event: "wosa-conference", order: 2 } },
+    { label: "role null", vm: { id: "p3", name: "Presenter name", role: null, bioExcerpt: "Biography excerpt supplied by the presenter, one or two sentences long.", photoUrl: null, event: "saoc-symposium", order: 3 } },
+    { label: "role null, bioExcerpt null", vm: { id: "p4", name: "Presenter name", role: null, bioExcerpt: null, photoUrl: null, event: "wosa-conference", order: 4 } }
+  ];
+  const EVENT = { "saoc-symposium": { name: "SAOC Symposium", field: "#4A3D8C", book: "Book the Symposium" }, "wosa-conference": { name: "WOSA Conference", field: "#6A6829", book: "Book the Conference" } };
+
+  /* ---------- Ticket rendering, from a view model ---------- */
+
+  function scarcityLine(meta, vm) {
+    const sc = vm.scarcity;
+    if (!sc || vm.state === "soldOut" || vm.state === "pricePending" || vm.state === "earlyBirdSoldOut") return "";
+    const body = `<span class="n">${sc.remaining} of ${sc.total}</span> ${esc(sc.label)}`;
+    const shared = vm.regularPrice != null || vm.slug.endsWith("early-bird") ? `<span class="shared">Shared with the ${meta.partner}</span>` : "";
+    return `<p class="t-count" aria-live="polite">${body}${vm.state === "low" ? ' <span class="t-tag">Few left</span>' : ""}${shared}</p>`;
+  }
+
+  function dayPicker(uid, vm) {
+    const cells = vm.days.map((d, i) => {
+      const def = DAYS[i];
+      const closed = d.state === "soldOut" || d.state === "pricePending" || d.state === "earlyBirdSoldOut";
+      const chosen = ui[uid].day === def.id && !closed;
+      let sub;
+      if (d.state === "soldOut") sub = "Sold out";
+      else if (d.state === "pricePending") sub = "Price to follow";
+      else if (d.state === "earlyBirdSoldOut") sub = "Early bird ended";
+      else sub = `${d.remaining} of ${d.total}`;
+      const extra = d.state === "low" ? '<span class="sub">Few left</span>' : "";
+      return `<label class="day${closed ? " is-out" : ""}${d.state === "low" ? " is-low" : ""}" data-state="${d.state}"><input type="radio" name="${uid}-day" value="${def.id}"${chosen ? " checked" : ""}${closed ? " disabled" : ""}><b>${def.short}</b><span>${sub}</span>${extra}</label>`;
+    }).join("");
+    return `<fieldset class="days"><legend>Choose a day</legend><div class="days-row">${cells}</div></fieldset>`;
+  }
+
+  function stubHTML(meta, uid, vm, opts) {
+    let num = opts.stubNum != null ? opts.stubNum : meta.num;
+    let lab = opts.stubLab != null ? opts.stubLab : meta.numLab;
+    if (meta.days) { const d = DAYS.find((x) => x.id === ui[uid].day) || DAYS[0]; num = d.num; lab = d.lab; }
+    const photo = cfg.look.photo && meta.photo;
+    return `<div class="t-stub" aria-hidden="true" style="--field:${meta.field}">
+      <div class="t-face${photo ? " has-photo" : ""}">${photo ? `<picture><source type="image/webp" srcset="${PHOTO_640[meta.photo]} 640w" sizes="(max-width: 700px) 50vw, 300px"><img src="${meta.photo}" alt="" style="object-position:${meta.pos}" loading="lazy"></picture>` : ""}<span class="t-num">${esc(num)}</span><span class="t-numlab">${esc(lab)}</span></div>
+      <div class="t-band"><img src="${EMBLEM}" alt="" width="45" height="30"><span class="t-admit">${opts.admit || "Admit one"}</span></div>
+      ${vm && vm.state === "soldOut" ? '<span class="t-stamp">Sold out</span>' : ""}
+    </div>`;
+  }
+
+  function priceHTML(meta, vm) {
+    return `<p class="t-price${vm.state === "soldOut" || vm.state === "earlyBirdSoldOut" ? " is-muted" : ""}"><span class="cur">R</span>${Math.round(vm.price)}${meta.each ? '<span class="each">each</span>' : ""}</p>`;
+  }
+
+  function buyHTML(meta, vm, uid, opts) {
+    if (vm.state === "pricePending") {
+      return `<div class="t-buy"><div class="t-pending" style="grid-column:1/-1"><span class="t-price is-pending">Price to follow</span><span class="chip">To be confirmed</span><p class="t-note">The Council has not confirmed this price yet. Booking opens once it has.</p></div></div>`;
+    }
+    const price = priceHTML(meta, vm);
+    if (opts.mini) return `<div class="t-buy"><div>${price}</div></div>`;
+    const isPass = meta.kind === "pass";
+    let was = "";
+    if (vm.state === "earlyBirdSoldOut") {
+      const now = known(vm.regularPrice) ? `<p class="t-was">The ${esc(meta.name)} is now R${Math.round(vm.regularPrice)}.</p>` : "";
+      return `<div class="t-buy"><div>${price}<p class="t-was"><s>Early-bird price</s> Early bird sold out</p>${now}</div></div>`;
+    }
+    if (isPass && vm.slug.endsWith("early-bird") && vm.state !== "soldOut") {
+      was = known(vm.regularPrice) ? `<p class="t-was">Early-bird R${Math.round(vm.price)}, then R${Math.round(vm.regularPrice)}</p>` : `<p class="t-was">Early-bird price</p>`;
+    }
+    if (vm.state === "soldOut") {
+      const wait = opts.spec ? `<div class="t-wait"><button type="button">Join the waitlist</button><span class="chip">Proposed</span></div>` : "";
+      return `<div class="t-buy"><div>${price}<p class="t-was">This ticket has sold out.</p></div>${wait}</div>`;
+    }
+    if (meta.kind === "workshop" && !opts.session) {
+      return `<div class="t-buy"><div>${price}</div><a class="btn t-cta" href="#sessions">Choose a session ${ICON.arrow}</a></div>`;
+    }
+    const sc = vm.scarcity;
+    const max = !isPass && sc && known(sc.remaining) ? Math.max(1, Math.min(10, sc.remaining)) : 10;
+    const q = Math.min(ui[uid].qty, max);
+    ui[uid].qty = q;
+    return `<div class="t-buy">
+      <div>${price}${was}</div>
+      <div class="stepper" role="group" aria-label="${esc(meta.name)} quantity">
+        <button type="button" data-step="-1" data-uid="${uid}" aria-label="One fewer"${q <= 1 ? " disabled" : ""}>${ICON.minus}</button>
+        <output aria-live="polite" id="${uid}-qty">${q}</output>
+        <button type="button" data-step="1" data-uid="${uid}" data-max="${max}" aria-label="One more"${q >= max ? " disabled" : ""}>${ICON.plus}</button>
+      </div>
+      <button class="btn t-cta" type="button">Add to booking ${ICON.arrow}</button>
+    </div>`;
+  }
+
+  function ensureUI(uid, vm) {
+    if (!ui[uid]) ui[uid] = { qty: 1, day: "fri" };
+    if (vm && vm.days) {
+      const closed = (st) => st === "soldOut" || st === "pricePending";
+      const i = DAYS.findIndex((d) => d.id === ui[uid].day);
+      if (closed(vm.days[i].state)) { const open = vm.days.findIndex((d) => !closed(d.state)); if (open >= 0) ui[uid].day = DAYS[open].id; }
+    }
+  }
+
+  function renderTicket(id, uid, vm, opts = {}) {
+    const meta = PRODUCTS[id];
+    ensureUI(uid, vm);
+    return `<article class="ticket" data-state="${vm.state}" aria-label="${esc(meta.name)}">
+      ${stubHTML(meta, uid, vm, opts)}
+      <span class="t-perf" aria-hidden="true"></span>
+      <div class="t-main">
+        <p class="t-when">${esc(meta.when)}</p>
+        <h3 class="t-name">${esc(meta.name)}</h3>
+        ${meta.theme ? `<p class="t-theme">${esc(meta.theme)}</p>` : ""}
+        ${meta.meta && !opts.mini ? `<p class="t-meta">${esc(meta.meta)}</p>` : ""}
+        ${!opts.mini ? scarcityLine(meta, vm) : ""}
+        ${vm.days && !opts.mini ? dayPicker(uid, vm) : ""}
+        ${buyHTML(meta, vm, uid, opts)}
+      </div>
+    </article>`;
+  }
+
+  // WorkshopSessionViewModel samples: title, description|null, presenterId|null, timeSlot|null, ticketCard|null.
+  const SESSIONS = [
+    { label: "Every field present", vm: { id: "w1", title: "Workshop title", description: "Session description from the schedule, one or two sentences.", presenterId: "p1", timeSlot: "Day, 00h00 to 00h00", ticketCard: { slug: "workshop-w1", state: "available", price: 100, scarcity: { remaining: 6, total: 10, label: "places left" } } } },
+    { label: "ticketCard.state low", vm: { id: "w2", title: "Workshop title", description: "Session description from the schedule, one or two sentences.", presenterId: "p2", timeSlot: "Day, 00h00 to 00h00", ticketCard: { slug: "workshop-w2", state: "low", price: 100, scarcity: { remaining: 1, total: 10, label: "places left" } } } },
+    { label: "timeSlot null, description null", vm: { id: "w3", title: "Workshop title", description: null, presenterId: "p1", timeSlot: null, ticketCard: { slug: "workshop-w3", state: "available", price: 100, scarcity: { remaining: 10, total: 10, label: "places left" } } } },
+    { label: "presenterId null, ticketCard.state soldOut", vm: { id: "w4", title: "Workshop title", description: "Session description from the schedule, one or two sentences.", presenterId: null, timeSlot: "Day, 00h00 to 00h00", ticketCard: { slug: "workshop-w4", state: "soldOut", price: 100, scarcity: { remaining: 0, total: 10, label: "places left" } } } },
+    { label: "ticketCard null (no booking yet)", vm: { id: "w5", title: "Workshop title", description: "Session description from the schedule, one or two sentences.", presenterId: "p2", timeSlot: "Day, 00h00 to 00h00", ticketCard: null } },
+    { label: "ticketCard.state pricePending, other fields null", vm: { id: "w6", title: "Workshop title", description: null, presenterId: null, timeSlot: null, ticketCard: { slug: "workshop-w6", state: "pricePending", price: null, scarcity: { remaining: 10, total: 10, label: "places left" } } } }
+  ];
+
+  function renderSession(s, uid) {
+    const meta = PRODUCTS.workshops;
+    const tc = s.ticketCard;
+    ensureUI(uid, tc);
+    const presenter = s.presenterId ? PRESENTERS.find((x) => x.vm.id === s.presenterId) : null;
+    const buy = tc
+      ? buyHTML({ ...meta, name: s.title }, tc, uid, { session: true, spec: true })
+      : `<div class="t-buy"><p class="t-note" style="grid-column:1/-1">Booking for this session is not open yet.</p></div>`;
+    const stubNum = tc && tc.scarcity ? String(tc.scarcity.total) : "";
+    return `<article class="ticket is-session" data-state="${tc ? tc.state : "none"}" aria-label="${esc(s.title)}">
+      ${stubHTML(meta, uid, tc, { stubNum, stubLab: stubNum ? "places" : "Workshop", admit: "One place" })}
+      <span class="t-perf" aria-hidden="true"></span>
+      <div class="t-main">
+        <p class="t-when">${esc(s.timeSlot || "Time to be announced")}</p>
+        <h3 class="t-name">${esc(s.title)}</h3>
+        ${s.description ? `<p class="t-meta">${esc(s.description)}</p>` : ""}
+        ${presenter ? `<p class="t-theme">With ${esc(presenter.vm.name)}</p>` : ""}
+        ${tc ? scarcityLine(meta, tc) : ""}
+        ${buy}
+      </div>
+    </article>`;
+  }
+
+  const initials = (name) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
+  function renderPresenter(p) {
+    const ev = EVENT[p.event];
+    const face = p.photoUrl
+      ? `<div class="pcard-face" style="--field:${ev.field}"><img src="${esc(p.photoUrl)}" alt="" loading="lazy"></div>`
+      : `<div class="pcard-face" style="--field:${ev.field}" aria-hidden="true"><span class="pcard-ring"><span class="pcard-initials">${esc(initials(p.name))}</span></span><span class="pcard-event">${ev.name}</span></div>`;
+    return `<article class="pcard" aria-labelledby="pc-${p.id}">${face}<div class="pcard-body">
+      <h4 id="pc-${p.id}">${esc(p.name)}</h4>
+      ${p.role ? `<p class="role">${esc(p.role)}</p>` : ""}
+      ${p.bioExcerpt ? `<p class="bio">${esc(p.bioExcerpt)}</p>` : ""}
+      <a class="textlink" href="#programme">${ev.book} ${ICON.arrow}</a>
+    </div></article>`;
+  }
+
+  // Specimen inputs. Every specimen derives its state from data, so it shows the real precedence.
+  const BASE_DAYS = { fri: 742, sat: 388, sun: 905 };
+  const SPECS = {
+    vip: [
+      ["available", { remaining: 146 }],
+      ["low", { remaining: 12 }],
+      ["soldOut", { remaining: 0 }],
+      ["pricePending", { price: null }]
+    ],
+    weekend: [
+      ["available", { sku: "earlyBird", ctx: { pool: 312 } }],
+      ["low", { sku: "earlyBird", ctx: { pool: 41 } }],
+      ["earlyBirdSoldOut", { sku: "earlyBird", ctx: { pool: 0 } }],
+      ["available, with scarcity", { sku: "regular", remaining: 214, capped: true, ctx: { pool: 0 } }],
+      ["available, scarcity null", { sku: "regular", capped: false, ctx: { pool: 0 } }],
+      ["soldOut", { sku: "regular", remaining: 0, capped: true, ctx: { pool: 0 } }]
+    ],
+    day: [
+      ["available", { sku: "earlyBird", ctx: { pool: 312, days: BASE_DAYS } }],
+      ["low", { sku: "earlyBird", ctx: { pool: 41, days: BASE_DAYS } }],
+      ["earlyBirdSoldOut", { sku: "earlyBird", ctx: { pool: 0, days: BASE_DAYS } }],
+      ["available (mixed days[])", { sku: "regular", ctx: { pool: 0, days: { fri: 58, sat: 0, sun: 905 } } }],
+      ["soldOut", { sku: "regular", ctx: { pool: 0, days: { fri: 0, sat: 0, sun: 0 } } }],
+      ["pricePending", { sku: "regular", price: null, ctx: { pool: 0, days: BASE_DAYS } }]
+    ],
+    symposium: [
+      ["available", {}],
+      ["low", { remaining: 6 }],
+      ["soldOut", { remaining: 0 }],
+      ["pricePending", { price: null }]
+    ]
+  };
+
+  // Hero fan card: the whole ticket is one link to the same ticket's card in the sections
+  // below, so there is one booking flow. fanJump (after renderAll) scrolls and moves focus.
+  function fanLink(id, vm, card) {
+    const name = PRODUCTS[id].name;
+    const label = vm.state === "pricePending" ? `${name}, price to follow`
+      : vm.state === "soldOut" ? `${name}, sold out`
+      : `${name}, R${Math.round(vm.price)}`;
+    return `<a class="fan-link" href="#ticket-${id}" aria-label="${esc(label)}">${card}</a>`;
+  }
+
+  const FAN_JUMP_GAP = 24;
+  document.addEventListener("click", (e) => {
+    const link = e.target.closest(".fan-link");
+    const target = link && document.getElementById(link.getAttribute("href").slice(1));
+    if (!target) return;
+    e.preventDefault();
+    const header = document.querySelector(".sc-header");
+    const top = target.getBoundingClientRect().top + window.scrollY - (header ? header.offsetHeight : 0) - FAN_JUMP_GAP;
+    const smooth = window.matchMedia("(prefers-reduced-motion: no-preference)").matches;
+    window.scrollTo({ top, behavior: smooth ? "smooth" : "auto" });
+    const heading = target.querySelector(".t-name");
+    if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
+  });
+
+  function renderAll() {
+    const ctx = globalCtx();
+    document.querySelectorAll("[data-mount]").forEach((el) => {
+      const id = el.dataset.product;
+      const mini = el.hasAttribute("data-mini");
+      const vm = ticketVM(id, cfg.products[id], ctx);
+      const card = renderTicket(id, el.dataset.uid, vm, { mini });
+      if (!mini) el.id = `ticket-${id}`;
+      el.innerHTML = mini ? fanLink(id, vm, card) : card;
+    });
+    document.querySelectorAll("[data-spec]").forEach((grid) => {
+      const id = grid.dataset.spec;
+      if (id === "session") {
+        grid.innerHTML = SESSIONS.map((s, i) => `<div class="spec"><p class="spec-label">${s.label}</p><div class="ticket-wrap">${renderSession(s.vm, "s-ws-" + i)}</div></div>`).join("");
+        return;
+      }
+      grid.innerHTML = SPECS[id].map(([label, o], i) => {
+        const cur = cfg.products[id];
+        const p = { ...DEFAULTS.products[id], price: cur.price, earlyBird: cur.earlyBird, ...o, state: "auto" };
+        delete p.ctx;
+        const c = { pool: ctx.pool, days: ctx.days, dayStates: null, threshold: LOW_STOCK_THRESHOLD_PERCENT, ...(o.ctx || {}) };
+        const vm = ticketVM(id, p, c);
+        const slug = PRODUCTS[id].kind === "pass" ? `, ${vm.slug}` : "";
+        return `<div class="spec"><p class="spec-label">${label}${slug}</p><div class="ticket-wrap">${renderTicket(id, `sp-${id}-${i}`, vm, { spec: true })}</div></div>`;
+      }).join("");
+    });
+    const pg = document.querySelector("[data-presenters]");
+    if (pg) {
+      pg.innerHTML = PRESENTERS.map((x) => `<div class="spec"><p class="spec-label">${x.label}</p>${renderPresenter(x.vm)}</div>`).join("") +
+        `<div class="spec"><p class="spec-label">No presenters yet (empty list)</p><article class="pcard is-awaiting" aria-labelledby="pc-none"><h4 id="pc-none">Presenters will be announced here</h4><p>Names and biographies follow once the Council confirms the programme.</p></article></div>`;
+    }
+    const poolEl = document.getElementById("pool");
+    document.getElementById("pool-n").textContent = cfg.pool;
+    poolEl.classList.toggle("is-out", cfg.pool <= 0);
+    document.getElementById("pool-title").textContent = cfg.pool <= 0 ? "Early bird sold out" : "Early-bird tickets left";
+    document.getElementById("pool-text").textContent = cfg.pool <= 0
+      ? "All 500 early-bird tickets, shared by the Weekend Pass and the Day Pass, have sold. Both passes are now at their normal price."
+      : "One pool of 500 early-bird tickets is shared by the Weekend Pass and the Day Pass. The early bird ends when the pool sells out.";
+  }
+
+  function applyLook() {
+    const L = cfg.look, r = document.documentElement;
+    r.dataset.ground = L.ground; r.dataset.accent = L.accent; r.dataset.radius = String(L.radius);
+    r.dataset.stub = L.stub ? "on" : "off"; r.dataset.photo = L.photo ? "on" : "off"; r.dataset.emblem = L.emblem ? "on" : "off";
+    r.dataset.density = L.density; r.dataset.layout = L.layout; r.dataset.page = L.saocPage ? "saoc" : "nos";
+    r.style.setProperty("--ts", String(L.scale / 100));
+  }
+  function applyAll() { applyLook(); renderAll(); }
+
+  // Untrusted input (shared store, localStorage): copy only known keys with valid values onto the defaults.
+  function sanitize(src) {
+    const out = clone(DEFAULTS);
+    if (!src || typeof src !== "object") return out;
+    const L = src.look || {};
+    const pick = (v, allowed, d) => (allowed.includes(v) ? v : d);
+    const num = (v, lo, hi, d) => (typeof v === "number" && isFinite(v) ? Math.min(hi, Math.max(lo, Math.round(v))) : d);
+    const bool = (v, d) => (typeof v === "boolean" ? v : d);
+    out.look = {
+      ground: pick(L.ground, ["gold", "white", "royal"], out.look.ground),
+      accent: pick(L.accent, ["green1", "green2", "violet"], out.look.accent),
+      radius: pick(L.radius, [10, 16], out.look.radius),
+      stub: bool(L.stub, true), photo: bool(L.photo, true), emblem: bool(L.emblem, true),
+      scale: num(L.scale, 90, 115, 100),
+      density: pick(L.density, ["comfortable", "compact"], out.look.density),
+      layout: pick(L.layout, ["grid", "stacked"], out.look.layout),
+      saocPage: bool(L.saocPage, false)
+    };
+    out.threshold = num(src.threshold, 1, 50, out.threshold);
+    out.pool = num(src.pool, 0, POOL_TOTAL, out.pool);
+    const d = src.days || {}, ds = src.dayStates || {};
+    DAYS.forEach(({ id }) => {
+      out.days[id] = num(d[id], 0, DAY_TOTAL, out.days[id]);
+      out.dayStates[id] = ["auto", ...STATES].includes(ds[id]) ? ds[id] : "auto";
+    });
+    const P = src.products || {};
+    ORDER.forEach((id) => {
+      const s = P[id] || {}; const o = out.products[id];
+      o.state = statesFor(id).includes(s.state) ? s.state : "auto";
+      o.price = s.price === null ? null : num(s.price, 0, 100000, o.price);
+      if ("earlyBird" in o) o.earlyBird = s.earlyBird === null ? null : num(s.earlyBird, 0, 100000, o.earlyBird);
+      if ("remaining" in o) o.remaining = num(s.remaining, 0, PRODUCTS[id].total, o.remaining);
+      if ("capped" in o) o.capped = bool(s.capped, true);
+    });
+    return out;
+  }
+
+  // Presentational steppers and day picker.
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-step]");
+    if (!b) return;
+    const uid = b.dataset.uid, st = ui[uid]; if (!st) return;
+    const group = b.parentElement, plus = group.querySelector('[data-step="1"]');
+    const max = Number(plus.dataset.max) || 10;
+    st.qty = Math.min(max, Math.max(1, st.qty + Number(b.dataset.step)));
+    group.querySelector("output").textContent = st.qty;
+    group.querySelector('[data-step="-1"]').disabled = st.qty <= 1;
+    plus.disabled = st.qty >= max;
+  });
+  document.addEventListener("change", (e) => {
+    const r = e.target;
+    if (!r.matches || !r.matches('.days input[type="radio"]')) return;
+    const uid = r.name.replace(/-day$/, "");
+    ui[uid].day = r.value;
+    renderAll();
+    const again = document.querySelector(`input[name="${uid}-day"][value="${r.value}"]`);
+    if (again) again.focus();
+  });
+
+  /* ---------- Design-review drawer ---------- */
+  const form = document.getElementById("tw-form");
+  const statusEl = document.getElementById("tw-status");
+  const say = (msg) => { statusEl.textContent = msg; };
+
+  function seg(name, label, options) {
+    return `<fieldset class="tw-field"><legend>${label}</legend><div class="seg">${options.map(([v, t]) => `<label><input type="radio" name="${name}" value="${v}">${t}</label>`).join("")}</div></fieldset>`;
+  }
+  const sw = (name, label) => `<label class="sw">${label}<input type="checkbox" role="switch" name="${name}"></label>`;
+  const optList = (vals, labels) => vals.map((v) => `<option value="${v}">${labels[v]}</option>`).join("");
+
+  function buildForm() {
+    document.getElementById("tw-look").insertAdjacentHTML("beforeend",
+      seg("ground", "Card ground", [["gold", "Pale gold"], ["white", "White"], ["royal", "Royal purple"]]) +
+      seg("accent", "Accent", [["green1", "Green 1"], ["green2", "Green 2"], ["violet", "Violet"]]) +
+      seg("radius", "Corner radius", [["10", "10px"], ["16", "16px"]]) +
+      `<div>${sw("stub", "Ticket stub and perforation")}${sw("photo", "Photo on cards")}${sw("emblem", "Emblem on stub")}${sw("saocPage", "Preview as SAOC page")}</div>` +
+      `<div class="tw-field"><label for="tw-scale">Type scale</label><div class="range-row"><input type="range" id="tw-scale" name="scale" min="90" max="115" step="5"><output for="tw-scale" id="tw-scale-out"></output></div></div>` +
+      seg("density", "Card density", [["comfortable", "Comfortable"], ["compact", "Compact"]]) +
+      seg("layout", "Layout", [["grid", "Grid"], ["stacked", "Stacked"]]));
+    document.getElementById("tw-counts").insertAdjacentHTML("beforeend",
+      `<div class="tw-field"><label for="tw-pool">Shared early-bird pool, of ${POOL_TOTAL}</label><div class="range-row"><input type="range" id="tw-pool" name="pool" min="0" max="${POOL_TOTAL}" step="1"><input type="number" id="tw-pool-n" name="poolN" min="0" max="${POOL_TOTAL}" aria-label="Early-bird pool remaining"></div></div>` +
+      `<div class="tw-field"><label for="tw-thr">Low stock at or below</label><div class="range-row"><input type="range" id="tw-thr" name="threshold" min="1" max="50" step="1"><output for="tw-thr" id="tw-thr-out"></output></div></div>` +
+      `<fieldset class="tw-field"><legend>Day Pass days, remaining of ${DAY_TOTAL}</legend><div class="days-tw">${DAYS.map((d) => `<label>${d.short}<input type="number" name="day-${d.id}" min="0" max="${DAY_TOTAL}"></label>`).join("")}</div>
+       <div class="days-tw">${DAYS.map((d) => `<label>${d.short} state<select name="dstate-${d.id}">${optList(["auto", ...STATES], STATE_LABEL)}</select></label>`).join("")}</div></fieldset>`);
+    const cards = document.getElementById("tw-cards");
+    cards.insertAdjacentHTML("beforeend", `<div class="tw-field"><span class="tw-lab" id="setall-lab">Set every card's state to</span><div class="setall" role="group" aria-labelledby="setall-lab">${["auto", ...STATES].map((s) => `<button type="button" data-setall="${s}">${s === "auto" ? "Auto" : s}</button>`).join("")}</div></div>`);
+    ORDER.forEach((id) => {
+      const meta = PRODUCTS[id], p = DEFAULTS.products[id];
+      cards.insertAdjacentHTML("beforeend", `<div class="prod"><span class="prod-name">${meta.name}</span><div class="prod-fields">
+        <label class="full">state<select name="state-${id}">${optList(statesFor(id), STATE_LABEL)}</select></label>
+        <label>${"earlyBird" in p ? "Regular price (R)" : "price (R)"}<input type="number" name="price-${id}" min="0" step="10" placeholder="null"></label>
+        ${"earlyBird" in p ? `<label>Early bird (R)<input type="number" name="eb-${id}" min="0" step="10"></label>` : ""}
+        ${"capped" in p ? `<label class="sw full">Regular SKU has a ceiling<input type="checkbox" role="switch" name="cap-${id}"></label>` : ""}
+        ${"remaining" in p ? `<label>${meta.kind === "pass" ? "regular remaining" : "remaining"}, of ${meta.total}<input type="number" name="rem-${id}" min="0" max="${meta.total}"></label>` : ""}
+      </div></div>`);
+    });
+  }
+
+  function syncForm() {
+    const f = form.elements, L = cfg.look;
+    ["ground", "accent", "density", "layout"].forEach((n) => { f[n].value = L[n]; });
+    f.radius.value = String(L.radius);
+    f.stub.checked = L.stub; f.photo.checked = L.photo; f.emblem.checked = L.emblem; f.saocPage.checked = L.saocPage;
+    f.scale.value = L.scale; document.getElementById("tw-scale-out").textContent = L.scale + "%";
+    f.pool.value = cfg.pool; f.poolN.value = cfg.pool;
+    f.threshold.value = cfg.threshold; document.getElementById("tw-thr-out").textContent = cfg.threshold + "%";
+    DAYS.forEach((d) => { f["day-" + d.id].value = cfg.days[d.id]; f["dstate-" + d.id].value = cfg.dayStates[d.id]; });
+    ORDER.forEach((id) => {
+      const p = cfg.products[id];
+      f["state-" + id].value = p.state;
+      f["price-" + id].value = known(p.price) ? p.price : "";
+      if (f["eb-" + id]) f["eb-" + id].value = known(p.earlyBird) ? p.earlyBird : "";
+      if (f["rem-" + id]) f["rem-" + id].value = p.remaining;
+      if (f["cap-" + id]) f["cap-" + id].checked = p.capped;
+    });
+  }
+
+  function readForm(changed) {
+    const f = form.elements, L = cfg.look;
+    const int = (v, lo, hi, d) => { const n = parseInt(v, 10); return isNaN(n) ? d : Math.min(hi, Math.max(lo, n)); };
+    ["ground", "accent", "density", "layout"].forEach((n) => { L[n] = f[n].value; });
+    L.radius = Number(f.radius.value);
+    L.stub = f.stub.checked; L.photo = f.photo.checked; L.emblem = f.emblem.checked; L.saocPage = f.saocPage.checked;
+    L.scale = int(f.scale.value, 90, 115, 100);
+    cfg.pool = changed === "poolN" ? int(f.poolN.value, 0, POOL_TOTAL, cfg.pool) : int(f.pool.value, 0, POOL_TOTAL, cfg.pool);
+    cfg.threshold = int(f.threshold.value, 1, 50, LOW_STOCK_THRESHOLD_PERCENT);
+    DAYS.forEach((d) => { cfg.days[d.id] = int(f["day-" + d.id].value, 0, DAY_TOTAL, cfg.days[d.id]); cfg.dayStates[d.id] = f["dstate-" + d.id].value; });
+    ORDER.forEach((id) => {
+      const p = cfg.products[id];
+      p.state = f["state-" + id].value;
+      const pv = f["price-" + id].value.trim();
+      p.price = pv === "" ? null : int(pv, 0, 100000, p.price);
+      if (f["eb-" + id]) { const ev = f["eb-" + id].value.trim(); p.earlyBird = ev === "" ? null : int(ev, 0, 100000, p.earlyBird); }
+      if (f["rem-" + id]) p.remaining = int(f["rem-" + id].value, 0, PRODUCTS[id].total, p.remaining);
+      if (f["cap-" + id]) p.capped = f["cap-" + id].checked;
+    });
+  }
+
+  form.addEventListener("input", (e) => {
+    readForm(e.target.name);
+    if (e.target.name === "pool") form.elements.poolN.value = cfg.pool;
+    if (e.target.name === "poolN") form.elements.pool.value = cfg.pool;
+    document.getElementById("tw-scale-out").textContent = cfg.look.scale + "%";
+    document.getElementById("tw-thr-out").textContent = cfg.threshold + "%";
+    applyAll();
+  });
+  form.addEventListener("submit", (e) => e.preventDefault());
+  form.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-setall]");
+    if (!b) return;
+    const s = b.dataset.setall;
+    ORDER.forEach((id) => { if (statesFor(id).includes(s)) cfg.products[id].state = s; });
+    syncForm(); applyAll();
+    say(s === "earlyBirdSoldOut" ? "Passes set to earlyBirdSoldOut. It applies to passes only." : `Every card set to ${s === "auto" ? "Derive from counts" : s}.`);
+  });
+
+  const dlg = document.getElementById("tweak");
+  const opener = document.getElementById("tweak-open");
+  const openDrawer = () => { if (typeof dlg.show === "function") dlg.show(); else dlg.setAttribute("open", ""); opener.setAttribute("aria-expanded", "true"); opener.hidden = true; document.getElementById("tweak-close").focus(); };
+  const closeDrawer = () => { if (typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open"); opener.setAttribute("aria-expanded", "false"); opener.hidden = false; opener.focus(); };
+  opener.setAttribute("aria-expanded", "false");
+  opener.addEventListener("click", openDrawer);
+  document.getElementById("tweak-close").addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && dlg.open) { e.preventDefault(); closeDrawer(); } });
+
+  let db = null;
+  document.getElementById("tw-save").addEventListener("click", async () => {
+    const payload = { ...clone(cfg), savedAt: new Date().toISOString() };
+    if (db) {
+      try { await db.doc("tweaks/current").set(payload); say(`Saved for Codi at ${payload.savedAt.slice(11, 16)} UTC.`); return; }
+      catch (err) { console.error("tweaks save failed", err && err.code); say("Could not reach the shared store. Saved in this browser instead."); }
+    }
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); if (!db) say("Saved in this browser only. Use Copy settings JSON to send them."); }
+    catch (err) { say("This browser blocked saving. Use Copy settings JSON instead."); }
+  });
+  document.getElementById("tw-copy").addEventListener("click", () => {
+    const text = JSON.stringify(cfg, null, 2), ta = document.getElementById("tw-json");
+    const fallback = () => { ta.hidden = false; ta.value = text; ta.focus(); ta.select(); say("Copying is blocked here. The JSON is selected below."); };
+    try { navigator.clipboard.writeText(text).then(() => { ta.hidden = true; say("Settings JSON copied."); }, fallback); }
+    catch (err) { fallback(); }
+  });
+  document.getElementById("tw-reset").addEventListener("click", () => {
+    cfg = clone(DEFAULTS); syncForm(); applyAll(); say("Design defaults restored. Not saved yet.");
+  });
+
+  // Boot: render at rest, then apply any saved review settings. Never writes on load.
+  buildForm();
+  try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) cfg = sanitize(JSON.parse(raw)); } catch (err) { /* storage unavailable: defaults stand */ }
+  syncForm(); applyAll();
+
+
+  if (window.claude && typeof window.claude.use === "function") {
+    window.claude.use("db").then(async (ns) => {
+      if (!ns) return;
+      db = ns;
+      try {
+        const snap = await db.doc("tweaks/current").get();
+        if (snap.exists) { cfg = sanitize(snap.data()); syncForm(); applyAll(); say("Loaded the last saved settings."); }
+      } catch (err) { console.error("tweaks load failed", err && err.code); }
+    }, () => {});
+  }
+})();
+</script>
+<script>
+// v3 header: SAOC chrome behaviour, mirroring Header.tsx, MegaMenu.tsx, MobileMenu.tsx and
+// SearchOverlay.tsx.
+(() => {
+  "use strict";
+  const FOCUSABLE = 'a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])';
+
+  // Elevated header once the page leaves the top (Header.tsx: scrollY > 4).
+  const header = document.getElementById("sc-header");
+  const sentinel = document.getElementById("scroll-sentinel");
+  new IntersectionObserver(([entry]) => {
+    header.classList.toggle("is-scrolled", !entry.isIntersecting);
+  }).observe(sentinel);
+
+  // National Show mega menu.
+  const mega = document.getElementById("sc-mega");
+  const trigger = document.getElementById("sc-mega-trigger");
+  const panel = document.getElementById("sc-mega-panel");
+  const setMega = (open, { focusTrigger = false } = {}) => {
+    panel.hidden = !open;
+    trigger.setAttribute("aria-expanded", String(open));
+    if (focusTrigger) trigger.focus();
+  };
+  trigger.addEventListener("click", () => setMega(panel.hidden));
+  // NOS pages sit in the National Show section: mark it current. The SAOC-page preview does not.
+  const root = document.documentElement;
+  const syncCurrent = () => {
+    if (root.dataset.page === "saoc") trigger.removeAttribute("aria-current");
+    else trigger.setAttribute("aria-current", "page");
+  };
+  syncCurrent();
+  new MutationObserver(syncCurrent).observe(root, { attributes: true, attributeFilter: ["data-page"] });
+  mega.addEventListener("focusout", (e) => { if (!mega.contains(e.relatedTarget)) setMega(false); });
+  document.addEventListener("mousedown", (e) => { if (!panel.hidden && !mega.contains(e.target)) setMega(false); });
+  panel.addEventListener("click", (e) => { if (e.target.closest("a")) setMega(false); });
+
+  // Shared by the drawer and the search overlay: inert background, focus trap.
+  const others = (el) => Array.from(document.body.children).filter((c) => c !== el && c instanceof HTMLElement && c.tagName !== "SCRIPT");
+  const trap = (el, onEscape) => (e) => {
+    if (e.key === "Escape") { e.preventDefault(); onEscape(); return; }
+    if (e.key !== "Tab") return;
+    const items = Array.from(el.querySelectorAll(FOCUSABLE)).filter((n) => n.offsetParent !== null);
+    if (!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
+  // Mobile drawer.
+  const drawer = document.getElementById("sc-drawer");
+  const menuOpen = document.getElementById("sc-menu-open");
+  const menuClose = document.getElementById("sc-menu-close");
+  const showBtn = document.getElementById("sc-drawer-show-btn");
+  const showSub = document.getElementById("sc-drawer-show");
+  let drawerKey = null;
+  const setDrawer = (open) => {
+    drawer.hidden = !open;
+    for (const c of others(drawer)) {
+      if (open) { c.setAttribute("inert", ""); c.setAttribute("aria-hidden", "true"); }
+      else { c.removeAttribute("inert"); c.removeAttribute("aria-hidden"); }
+    }
+    document.body.style.overflow = open ? "hidden" : "";
+    if (open) {
+      drawerKey = trap(drawer, () => setDrawer(false));
+      document.addEventListener("keydown", drawerKey);
+      menuClose.focus();
+    } else {
+      document.removeEventListener("keydown", drawerKey);
+      showSub.hidden = true;
+      showBtn.setAttribute("aria-expanded", "false");
+      menuOpen.focus();
+    }
+  };
+  menuOpen.addEventListener("click", () => setDrawer(true));
+  menuClose.addEventListener("click", () => setDrawer(false));
+  drawer.addEventListener("click", (e) => { if (e.target === drawer || e.target.closest("a")) setDrawer(false); });
+  showBtn.addEventListener("click", () => {
+    const open = showSub.hidden;
+    showSub.hidden = !open;
+    showBtn.setAttribute("aria-expanded", String(open));
+  });
+
+  // Search overlay: Cmd/Ctrl+K or "/" opens it; Esc, backdrop or a result closes it.
+  const search = document.getElementById("sc-search");
+  const searchOpen = document.getElementById("sc-search-open");
+  const input = document.getElementById("sc-search-input");
+  const list = document.getElementById("sc-search-list");
+  const label = document.getElementById("sc-search-label");
+  const empty = document.getElementById("sc-search-empty");
+  let searchKey = null;
+  const setSearch = (open) => {
+    search.hidden = !open;
+    for (const c of others(search)) {
+      if (open) { c.setAttribute("inert", ""); c.setAttribute("aria-hidden", "true"); }
+      else { c.removeAttribute("inert"); c.removeAttribute("aria-hidden"); }
+    }
+    document.body.style.overflow = open ? "hidden" : "";
+    if (open) {
+      input.value = ""; filter();
+      searchKey = trap(search, () => setSearch(false));
+      document.addEventListener("keydown", searchKey);
+      window.setTimeout(() => input.focus(), 50);
+    } else {
+      document.removeEventListener("keydown", searchKey);
+      // On NOS phones search lives in the drawer, so focus returns to the menu button.
+      (searchOpen.offsetParent ? searchOpen : menuOpen).focus();
+    }
+  };
+  // The mock carries no societies or events data, so it filters the suggestion list only.
+  function filter() {
+    const q = input.value.trim().toLowerCase();
+    let shown = 0;
+    for (const li of list.children) {
+      const hit = !q || li.textContent.toLowerCase().includes(q);
+      li.hidden = !hit;
+      if (hit) shown += 1;
+    }
+    label.hidden = Boolean(q) && shown === 0;
+    empty.hidden = !(q && shown === 0);
+    if (q && shown === 0) empty.textContent = `No matches for “${input.value.trim()}”. Try “Cape”, “Durban”, or “judging”.`;
+  }
+  input.addEventListener("input", filter);
+  searchOpen.addEventListener("click", () => setSearch(true));
+  document.getElementById("sc-drawer-search").addEventListener("click", () => { setDrawer(false); setSearch(true); });
+  search.addEventListener("click", (e) => { if (e.target === search || e.target.closest("a")) setSearch(false); });
+  document.addEventListener("keydown", (e) => {
+    const t = e.target;
+    const typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+    if (!search.hidden || !drawer.hidden) return;
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setSearch(true); }
+    else if (e.key === "/" && !typing) { e.preventDefault(); setSearch(true); }
+    else if (e.key === "Escape" && !panel.hidden) setMega(false, { focusTrigger: true });
+  });
+})();
+</script>
+<script>
+// Hero countdown to the show opening (the VIP Opening start). The visible figures update once
+// a minute and are aria-hidden; the sr-only sentence is written once on load and is not a
+// live region, so a screen reader is never interrupted by the minute tick.
+(() => {
+  "use strict";
+  const SHOW_OPENS = Date.parse("2027-09-23T16:00:00+02:00");
+  const SHOW_ENDS = Date.parse("2027-09-26T21:00:00+02:00");
+  const MINUTE = 60000;
+  const root = document.getElementById("countdown");
+  const caption = document.getElementById("cd-caption");
+  const live = document.getElementById("cd-live");
+  const num = (k) => root.querySelector(`[data-cd="${k}"]`);
+  const lab = (k) => root.querySelector(`[data-cd-lab="${k}"]`);
+  const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+  const once = (text) => { if (!live.textContent) live.textContent = text; };
+
+  function render() {
+    const now = Date.now();
+    if (now >= SHOW_ENDS) { root.dataset.state = "ended"; caption.textContent = "The 2027 show has ended"; once(caption.textContent); return; }
+    if (now >= SHOW_OPENS) { root.dataset.state = "on"; caption.textContent = "The show is on"; once(caption.textContent); return; }
+    root.dataset.state = "before";
+    const total = Math.floor((SHOW_OPENS - now) / MINUTE);
+    const parts = { days: Math.floor(total / 1440), hours: Math.floor((total % 1440) / 60), minutes: total % 60 };
+    num("days").textContent = String(parts.days);
+    num("hours").textContent = String(parts.hours).padStart(2, "0");
+    num("minutes").textContent = String(parts.minutes).padStart(2, "0");
+    lab("days").textContent = parts.days === 1 ? "day" : "days";
+    lab("hours").textContent = parts.hours === 1 ? "hour" : "hours";
+    lab("minutes").textContent = parts.minutes === 1 ? "minute" : "minutes";
+    caption.textContent = "until the show opens";
+    once(`${plural(parts.days, "day")}, ${plural(parts.hours, "hour")} and ${plural(parts.minutes, "minute")} until the show opens`);
+  }
+
+  let timer = 0;
+  function schedule() {
+    window.clearTimeout(timer);
+    render();
+    timer = window.setTimeout(schedule, MINUTE - (Date.now() % MINUTE) + 50);
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) schedule(); });
+  schedule();
+})();
+</script>
+<script>
+// Fit the typeset NOS lockup: lay it out at studio scale 1, then set --lk-scale so the emblem
+// is --lk-fit-h px tall (desktop, matching SAOC's mark) or the lockup is --lk-fit px wide
+// (phones). Every studio value scales linearly, so one measurement fits. The result is then
+// capped so --lk-clear px stay free before About, or before the header actions when the nav
+// is hidden. The fitted width goes to the bar as --lk-w, which keeps About where SAOC has it.
+(() => {
+  "use strict";
+  const lockup = document.getElementById("nos-lockup");
+  const actions = document.querySelector(".sc-actions");
+  const about = document.querySelector(".sc-nav a");
+  if (!lockup) return;
+  const bar = lockup.parentElement;
+  const apply = (scale) => {
+    lockup.style.setProperty("--lk-scale", String(scale));
+    const width = lockup.getBoundingClientRect().width;
+    bar.style.setProperty("--lk-w", `${width}px`);
+    return width;
+  };
+  function fit() {
+    if (!lockup.offsetParent) return; // hidden on SAOC-page preview
+    const style = getComputedStyle(lockup);
+    const fitH = parseFloat(style.getPropertyValue("--lk-fit-h"));
+    const fitW = parseFloat(style.getPropertyValue("--lk-fit"));
+    const clear = parseFloat(style.getPropertyValue("--lk-clear")) || 0;
+    lockup.style.setProperty("--lk-scale", "1");
+    const natural = lockup.getBoundingClientRect().width;
+    const emblem = lockup.querySelector(".lk-emblem").getBoundingClientRect().height;
+    const scale = fitH > 0 ? fitH / emblem : fitW / natural;
+    const width = apply(scale);
+    // About's x does not depend on the lockup width (see --lk-w), so it can be read now.
+    let limit;
+    if (about && about.offsetParent) limit = about.getBoundingClientRect().left;
+    else if (actions) limit = bar.getBoundingClientRect().right - parseFloat(getComputedStyle(bar).paddingRight) - actions.getBoundingClientRect().width;
+    const room = limit - clear - lockup.getBoundingClientRect().left;
+    if (room < width) apply(scale * Math.floor(room) / width);
+  }
+  fit();
+  if (document.fonts) document.fonts.ready.then(fit);
+  window.addEventListener("resize", fit);
+  new MutationObserver(fit).observe(document.documentElement, { attributes: true, attributeFilter: ["data-page"] });
+})();
+</script>
+
+</body></html>

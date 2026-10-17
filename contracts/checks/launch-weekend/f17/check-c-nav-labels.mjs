@@ -16,7 +16,7 @@ await main('F17-A3 nav labels', async (r) => {
   // ---- static
   const top = NAV.map((n) => ({ id: n.id, label: n.label, href: n.href, type: n.type }));
   if (JSON.stringify(top) !== JSON.stringify(LABELS.topLevel)) r.fail(`top-level nav items changed: ${JSON.stringify(top)}`);
-  if (mega.lead.eyebrow !== LABELS.lead.eyebrow || mega.lead.leadLabel !== LABELS.lead.leadLabel || mega.lead.leadHref !== LABELS.lead.leadHref) r.fail(`the mega lead block changed (the "19th SAOC National Orchid Show" title is kept by ruling): ${JSON.stringify(mega.lead)}`);
+  if (mega.lead.eyebrow !== LABELS.lead.eyebrow || mega.lead.leadLabel !== LABELS.lead.leadLabel || mega.lead.leadHref !== LABELS.lead.leadHref) r.fail(`the mega lead block changed (the "19th National Orchid Show" title is kept by ruling): ${JSON.stringify(mega.lead)}`);
   const groups = [mega.lead.theShow, ...mega.columns];
   if (groups.length !== LABELS.groups.length) r.fail(`${groups.length} groups, want ${LABELS.groups.length}`);
   LABELS.groups.forEach((g, i) => {

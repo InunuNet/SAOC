@@ -31,7 +31,7 @@ export function NosEventCard({ href, dateLabel, title, description, category }: 
           {category ? <Badge tone="olive">{category}</Badge> : null}
         </div>
         <h3 className="font-serif text-[22px] font-medium leading-[1.15] text-ink">{title}</h3>
-        {description ? <p className="text-[15px] leading-[1.5] text-muted">{description}</p> : null}
+        {description ? <p className="text-[length:var(--fs-body,1rem)] leading-[1.55] text-muted">{description}</p> : null}
       </Card>
     </Link>
   );
