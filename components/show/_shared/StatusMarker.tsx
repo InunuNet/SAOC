@@ -80,6 +80,11 @@ export interface StatusMarkerProps {
    * when the label already is the short tag; any other marker keeps its label at every width.
    */
   shortOnNarrow?: boolean;
+  /**
+   * Opt-in, for a marker inside a disclosure that draws the full research wording in its foot. A
+   * research marker then shows FALLBACK_RESEARCH_LABEL as its only label at every width.
+   */
+  shortResearch?: boolean;
 }
 
 export interface ResolvedStatusMarker {
@@ -98,12 +103,17 @@ export function resolveStatusMarker({
   pendingLabel,
   researchLabel,
   questionLabel,
+  shortResearch = false,
 }: Pick<
   StatusMarkerProps,
-  'kind' | 'status' | 'pendingLabel' | 'researchLabel' | 'questionLabel'
+  'kind' | 'status' | 'pendingLabel' | 'researchLabel' | 'questionLabel' | 'shortResearch'
 >): ResolvedStatusMarker | null {
   // The ONLY early return, shared by both kinds — never split into a second branch.
   if (status === 'confirmed') return null;
+
+  if (shortResearch && status === 'research') {
+    return { marker: 'research', label: FALLBACK_RESEARCH_LABEL };
+  }
 
   if (kind === 'exhibitor') {
     // Deliberately not a lookup keyed on `status`: an unrecognised key must resolve to
@@ -134,8 +144,16 @@ export function StatusMarker({
   tone = 'light',
   as: Root = 'p',
   shortOnNarrow = false,
+  shortResearch = false,
 }: StatusMarkerProps) {
-  const resolved = resolveStatusMarker({ kind, status, pendingLabel, researchLabel, questionLabel });
+  const resolved = resolveStatusMarker({
+    kind,
+    status,
+    pendingLabel,
+    researchLabel,
+    questionLabel,
+    shortResearch,
+  });
   if (resolved === null) return null;
   const { marker, label } = resolved;
 

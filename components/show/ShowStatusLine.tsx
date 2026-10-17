@@ -63,6 +63,7 @@ export function ShowStatusLine({
   separator = DEFAULT_SEPARATOR,
   children,
 }: ShowStatusLineProps) {
+  const inDisclosure = Boolean(items && items.length > 0);
   const marker = (
     <StatusMarker
       kind={kind}
@@ -70,9 +71,11 @@ export function ShowStatusLine({
       pendingLabel={pendingLabel}
       researchLabel={researchLabel}
       shortOnNarrow
+      shortResearch={inDisclosure}
     />
   );
   if (!items || items.length === 0) return marker;
+  const researchWording = status === 'research' ? researchLabel?.trim() : undefined;
 
   return (
     <div
@@ -91,6 +94,7 @@ export function ShowStatusLine({
         </p>
       ) : null}
       {foot ? <ShowStatusFoot>{foot}</ShowStatusFoot> : null}
+      {researchWording ? <ShowStatusFoot>{researchWording}</ShowStatusFoot> : null}
       {children}
     </div>
   );
