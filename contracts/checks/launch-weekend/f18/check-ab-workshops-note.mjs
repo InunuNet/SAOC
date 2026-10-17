@@ -36,7 +36,13 @@ export function judgeNote(text) {
 }
 
 function measure(note) {
-  const t = (e) => (e?.textContent ?? '').replace(/\s+/g, ' ').trim();
+  // aria-hidden descendants (the StatusMarker glyph) are decoration, not text: strip them before comparing.
+  const t = (e) => {
+    if (!e) return '';
+    const c = e.cloneNode(true);
+    c.querySelectorAll('[aria-hidden="true"]').forEach((n) => n.remove());
+    return (c.textContent ?? '').replace(/\s+/g, ' ').trim();
+  };
   const hits = [...document.querySelectorAll('main [role="note"]')].filter((e) => t(e).replace(/[\u2018\u2019]/g, "'").includes(note.slice(0, 40)));
   const hero = document.querySelector('[data-nos-hero]');
   const firstCard = document.querySelector('[data-ticket-card]');

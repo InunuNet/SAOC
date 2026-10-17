@@ -38,7 +38,8 @@ function readPage({ co, qty, ink }) {
   const prov = [...document.querySelectorAll('main *')].filter((e) => !e.children.length && txt(e).includes(co.provisional.text));
   const probe = document.createElement('span');
   probe.style.cssText = `position:absolute;visibility:hidden;color:var(${co.provisional.colourVar})`;
-  main.appendChild(probe);
+  // The probe must sit inside the .nos-theme scope (where --ink-700 is the NOS ink, rgb(58,54,84)); under <main> alone it can resolve to the SAOC root token.
+  (sum ?? main.closest('.nos-theme') ?? document.querySelector('.nos-theme') ?? main).appendChild(probe);
   const inkRgb = getComputedStyle(probe).color;
   probe.remove();
   const buy = f?.querySelector('button[type="submit"]');
