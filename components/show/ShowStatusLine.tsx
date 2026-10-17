@@ -16,13 +16,14 @@ import { StatusMarker } from './_shared/StatusMarker';
 const DEFAULT_SEPARATOR = ' · ';
 
 // At <=700px (inclusive, spelled out as a media query) the chip is tightened (0.06em tracking,
-// 10px inline padding), and at <=419px the tracking drops to 0.02em, so the verbatim label stays
-// on one line inside the 16px-padded surface down to 360px. Important: the NOS marker rule in
+// 10px inline padding), below 420px the tracking drops to 0.02em and below 375px to 0, so the
+// label stays on one line inside the 16px-padded surface. The narrow steps use range syntax
+// (width<420px), so no fractional width falls between two integer steps. Important: the NOS marker rule in
 // nos-structure.css (.nos-theme [data-...]) otherwise outranks a plain utility.
-// The :not([hidden]) on the 374 step raises its specificity so it beats the 419 step, which
-// Tailwind emits later in the sheet.
+// Each narrower step adds a :not([hidden]) to raise its specificity over the wider one, so the
+// order Tailwind emits them in does not matter.
 const CHIP_FIT_CLASSES =
-  '[@media(max-width:700px)]:[&>p]:!px-[10px] [@media(min-width:420px)_and_(max-width:700px)]:[&>p]:!tracking-[0.06em] [@media(max-width:419px)]:[&>p]:!tracking-[0.02em] [@media(max-width:374px)]:[&>p:not([hidden])]:!tracking-[0]';
+  '[@media(max-width:700px)]:[&>p]:!px-[10px] [@media(max-width:700px)]:[&>p]:!tracking-[0.06em] [@media(width<420px)]:[&>p:not([hidden])]:!tracking-[0.02em] [@media(width<375px)]:[&>p:not([hidden]):not([hidden])]:!tracking-[0]';
 
 export interface ShowStatusLineProps {
   /** Which marker family to draw: the exhibitor guide's (default) or the visitor pages'. */

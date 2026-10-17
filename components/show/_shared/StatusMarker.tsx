@@ -73,7 +73,7 @@ export interface StatusMarkerProps {
   as?: StatusMarkerRoot;
   /**
    * Opt-in. A pending marker also carries the short tag (FALLBACK_PENDING_LABEL); CSS shows it
-   * instead of the full label at <=359px, so only one string is in the accessibility tree.
+   * instead of the full label below 360px, so only one string is in the accessibility tree.
    */
   shortOnNarrow?: boolean;
   /**
@@ -136,9 +136,9 @@ export function StatusMarker({
       ].join(' ')}
     >
       <span aria-hidden="true">※</span>
-      <span className={showShort ? '[@media(max-width:359px)]:hidden' : undefined}>{label}</span>
+      <span className={showShort ? '[@media(width<360px)]:hidden' : undefined}>{label}</span>
       {showShort ? (
-        <span className="hidden [@media(max-width:359px)]:inline">{FALLBACK_PENDING_LABEL}</span>
+        <span className="hidden [@media(width<360px)]:inline">{FALLBACK_PENDING_LABEL}</span>
       ) : null}
     </Root>
   );
