@@ -3,7 +3,7 @@
 // instead of the SAOC chrome: header#nh and footer#nf, the only banner and contentinfo, no SAOC lockup/emblem image anywhere, the .nos-theme scope around <main> content, a typographic NOS inner hero
 // ([data-nos-hero="inner"][data-nos-hero-variant="type"], one h1, no photo, no card stock photo anywhere on the route), no horizontal overflow, at 1280 and 390. The SAOC site chrome stays on /about.
 // Usage: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-n-ticket-chrome.mjs
-import { main, openPage, withBrowser, T, fetchHtml } from './_lib.mjs';
+import { main, openPage, withBrowser, T, findCheckout } from './_lib.mjs';
 
 const K = T.tickets;
 const C = K.chrome;
@@ -29,8 +29,8 @@ function measure(c) {
 }
 
 await main('F18-A22 NOS chrome on /tickets/*', async (r) => {
-  let slugHref = null;
-  for (const slug of K.slugCandidates) { const x = await fetchHtml(`/tickets/${slug}`); if (x.status === 200 && x.html.includes('data-nos-ticket-form')) { slugHref = `/tickets/${slug}`; break; } }
+  const found = await findCheckout();
+  const slugHref = found?.route ?? null;
   const routes = [...(slugHref ? [slugHref] : []), K.routes.cancelled, K.routes.confirmation];
   if (!slugHref) r.note('no purchasable /tickets/<slug> rendered (sales closed or no ticket types): the single-ticket route was not measured');
   await withBrowser(async (browser) => {

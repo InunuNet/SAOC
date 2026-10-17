@@ -15,14 +15,23 @@ export const GOLDEN_DIR = '.agent/memory/project/specs/launch-weekend/goldens/f1
 export const readGolden = (name) => JSON.parse(readFileSync(`${GOLDEN_DIR}/${name}`, 'utf8'));
 export const T = readGolden('tokens.json');
 
+// The single-ticket checkout page keeps its route (design-cb): /tickets/<slug>, pinned by the lead (the /national-show/ prefix in the ruling was a slip). It must answer 200 with the form marker.
+export const CHECKOUT_PATH_RE = /^\/tickets\/[^/]+$/;
+export async function findCheckout() {
+  for (const slug of T.tickets.slugCandidates) {
+    const x = await fetchHtml(`/tickets/${slug}`);
+    if (x.status === 200 && x.html.includes('data-nos-ticket-form')) return { slug, route: `/tickets/${slug}` };
+  }
+  return null;
+}
 export const git = (...a) => execFileSync('git', a, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 export const gitLines = (...a) => git(...a).split('\n').filter(Boolean);
 export const readText = (file) => (existsSync(file) ? readFileSync(file, 'utf8') : null);
 
-// The diff base: F18_BASE_REF pins the commit the dev branched from (main 63f3e74d plus this spec branch merged in).
+// The diff base: F18_BASE_REF pins the commit the dev branched from (main bcf8684b, NOS batch 2 merged, plus this spec branch merged in).
 export function baseRef() {
   if (process.env.F18_BASE_REF) return process.env.F18_BASE_REF;
-  console.error('INFRA: set F18_BASE_REF to the commit the F18 dev branched from (the spec records main 63f3e74d)');
+  console.error('INFRA: set F18_BASE_REF to the commit the F18 dev branched from (the spec records main bcf8684b)');
   process.exit(2);
 }
 

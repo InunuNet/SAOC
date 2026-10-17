@@ -64,6 +64,18 @@ h = card('vip', vm({ scarcity: null }));
 if (/data-ticket-count/.test(h)) fail('scarcity null: the count slot still renders');
 if (!/data-max="10"/.test(h)) fail('scarcity null: max is not 10');
 
+// summary variant (design-cb FINAL checkout ruling): the checkout page's read-only card. Same stub, name and price, NO stepper, NO CTA, NO form control; the provisional note once, under the price.
+const CO = JSON.parse(readFileSync(`${G}/v13-checkout.json`, 'utf8')) as { provisional: { text: string } };
+h = card('vip', vm({}), { variant: 'summary' });
+if ((h.match(/data-ticket-card/g) ?? []).length !== 1 || !/data-ticket-variant="summary"/.test(h)) fail('summary: want exactly one [data-ticket-card] carrying data-ticket-variant="summary"');
+if (/<(button|input|form|select|output)\b|data-ticket-stepper|data-ticket-cta|role="group"/.test(h)) fail('summary: the card holds a button, input, form, output or stepper; it is read-only');
+for (const hook of ['data-ticket-stub', 'data-ticket-name', 'data-ticket-price']) if (!h.includes(hook)) fail(`summary: missing ${hook}`);
+if (!/<h3[^>]*>\s*VIP Ticket/.test(h) || !has(h, 'R300') && !/R300/.test(txt(h).replace(/\s/g, ''))) fail('summary: the name or the R300 price is missing');
+if (has(h, S.buy)) fail(`summary: carries the CTA text "${S.buy}"`);
+if (/data-ticket-variant="summary"/.test(card('vip', vm({}))) ) fail('summary: the default variant must not be summary');
+h = card('vip', vm({ provisional: true, scarcity: { remaining: 146, total: 200, label: 'places left', provisional: true } }), { variant: 'summary' });
+if ((txt(h).match(new RegExp(CO.provisional.text, 'g')) ?? []).length > 1) fail('summary: the provisional note renders more than once in the card');
+
 // masked states
 h = card('vip', vm({ state: 'soldOut' }));
 if (buttons(h).length || /data-ticket-cta|data-ticket-stepper/.test(h)) fail('soldOut: a button, stepper or CTA renders (cards not on sale have none, not a disabled one)');

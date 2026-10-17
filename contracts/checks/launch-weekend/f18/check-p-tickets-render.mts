@@ -1,6 +1,8 @@
 // F18-A24 (R62, R81, render level, no CMS, no server): the ticket-screen rules on the real components with fixtures. Run under two TZ values (the command sets TZ) so the weekday never depends on the machine.
 //   formatShowDay        -> exported from lib/show-day-format.ts; the six cases of tokens.tickets.dayFormat.cases ("Thu 23 Sept 2027"), SA English month names (Sept), weekday computed from the calendar date in UTC, input that is not YYYY-MM-DD returned unchanged
-//   DayQuantityPicker    -> each row's aria-label and visible text is the formatted day; <time datetime="ISO"> carries the ISO; no ISO text outside the datetime attribute; the stepper aria-labels read "... for Thu 23 Sept 2027"; legend "Tickets per day" has no uppercase class and no tracking-[0.16em] mono role (14px sentence-case form label)
+//   TicketPurchaseForm (day) -> one .days fieldset (legend "Choose a day", native radios, a <time datetime=ISO> per cell, labels "Thu 23 Sept 2027", no raw ISO as text or aria-label) only for requiresDaySelection products; initialDay preselects that day, an initialDay outside showDays falls back to the first; no per-day rows, no "Tickets per day"
+//   TicketPurchaseForm (quantity) -> ONE stepper, input min 1, a real minus sign U+2212 on the decrease button, initialQuantity fills it (clamped), the per-day rows and the 0 default are gone
+//   (the summary variant of TicketCard is proved in A28)
 //   TicketPurchaseForm   -> Buy ENABLED at quantity 0 (vote 2) with aria-describedby resolving to an empty [data-buy-hint] region (filled by a click, A23 proves the click); the string "Choose at least one ticket" exists in the source; one Total in aria-live polite beside the Buy button; no "estimate"; "Provisional pricing" at most once
 //   TicketTypeCard (list) -> prices through formatRand: R150 and R250.50, never R150.00
 // Run: TZ=Pacific/Auckland pnpm exec tsx contracts/checks/launch-weekend/f18/check-p-tickets-render.mts && TZ=America/Los_Angeles pnpm exec tsx ...   (cwd = implementation worktree)
@@ -8,7 +10,6 @@ import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import { DayQuantityPicker } from '../../../../components/tickets/DayQuantityPicker';
 import { TicketPurchaseForm } from '../../../../components/tickets/TicketPurchaseForm';
 import { TicketTypeCard } from '../../../../components/tickets/TicketTypeCard';
 import { T } from './_lib.mjs';
@@ -31,51 +32,57 @@ else {
 }
 
 const days = G.showDays;
-const picker = renderToStaticMarkup(createElement(DayQuantityPicker as never, { showDays: days, quantitiesByDay: {}, onQuantityChange: () => undefined, disabled: false }));
-if (typeof fmt === 'function') {
-  for (const iso of days) {
-    const label = fmt(iso);
-    if (!picker.includes(`aria-label="${label}"`)) fail(`DayQuantityPicker: the row for ${iso} has no aria-label="${label}"`);
-    if (!new RegExp(`<time[^>]*dateTime="${iso}"|<time[^>]*datetime="${iso}"`, 'i').test(picker)) fail(`DayQuantityPicker: no <time datetime="${iso}">`);
-    for (const verb of ['Decrease quantity for', 'Increase quantity for', 'Quantity for']) if (!picker.includes(`aria-label="${verb} ${label}"`)) fail(`DayQuantityPicker: aria-label "${verb} ${label}" missing`);
-  }
-  const visible = picker.replace(/<[^>]+>/g, ' ');
-  if (new RegExp(D.isoRegex).test(visible)) fail('DayQuantityPicker: a raw ISO date is visible text');
-  const stripped = picker.replace(/(dateTime|datetime|id|value|name|for)="[^"]*"/gi, '');
-  if (new RegExp(D.isoRegex).test(stripped.replace(/aria-label="[^"]*"/g, (m) => m))) fail('DayQuantityPicker: an ISO date survives outside datetime/id/value attributes (aria-label or text)');
-}
-const legend = /<legend[^>]*>/.exec(picker)?.[0] ?? '';
-if (!legend) fail('DayQuantityPicker: no <legend>');
-if (!txt(picker).includes(K.label.text)) fail(`DayQuantityPicker: legend text "${K.label.text}" missing`);
-if (/uppercase|tracking-\[0\.16em\]|font-mono/.test(legend)) fail('DayQuantityPicker: the legend still carries the uppercase mono role (want the 14px sentence-case form label)');
-if (!/text-\[14px\]/.test(legend)) fail('DayQuantityPicker: the legend does not set text-[14px]');
-
-const form = (types: Record<string, unknown>[]) => renderToStaticMarkup(createElement(TicketPurchaseForm as never, { ticketTypes: types, buyButtonLabel: G.buyButtonLabel, soldOutMessage: G.soldOutMessage, showDays: days }));
+const CO = JSON.parse(readFileSync('.agent/memory/project/specs/launch-weekend/goldens/f18b/v13-checkout.json', 'utf8'));
+const form = (types: Record<string, unknown>[], extra: Record<string, unknown> = {}) => renderToStaticMarkup(createElement(TicketPurchaseForm as never, { ticketTypes: types, buyButtonLabel: G.buyButtonLabel, soldOutMessage: G.soldOutMessage, showDays: days, ...extra }));
 const single = form([{ ...G.types[1], requiresDaySelection: true }]);
-const buy = /<button[^>]*type="submit"[^>]*>/.exec(single)?.[0] ?? '';
-if (/disabled/.test(buy)) fail('TicketPurchaseForm: Buy is disabled at quantity 0 (vote 2: Buy stays enabled)');
-const ref = /aria-describedby="([^"]+)"/.exec(buy)?.[1];
-if (!ref) fail('TicketPurchaseForm: Buy has no aria-describedby tied to the hint region');
-else if (!new RegExp(`id="${ref.split(' ').pop()}"`).test(single) || !/data-buy-hint/.test(single)) fail('TicketPurchaseForm: aria-describedby does not resolve to a [data-buy-hint] region in the markup');
-const hintRegion = /<[a-z]+[^>]*data-buy-hint[^>]*>([\s\S]*?)<\/[a-z]+>/.exec(single)?.[1] ?? '';
-if (txt(hintRegion) !== '') fail('TicketPurchaseForm: the hint region must be empty until a click at quantity 0 (it announces, it does not shout at load)');
-const src = readFileSync('components/tickets/TicketPurchaseForm.tsx', 'utf8') + readFileSync('components/tickets/useTicketCart.ts', 'utf8');
-if (!src.includes(K.buyHint.text)) fail(`the string "${K.buyHint.text}" is not in TicketPurchaseForm.tsx or useTicketCart.ts`);
-if (/disabled=\{[^}]*(cartItemCount|itemCount)/.test(readFileSync('components/tickets/TicketPurchaseForm.tsx', 'utf8'))) fail('TicketPurchaseForm.tsx still disables Buy on the item count');
-const totalAt = single.indexOf('data-catalogue-total');
-if (totalAt < 0) fail('TicketPurchaseForm: no [data-catalogue-total]');
+const dayType = { ...G.types[1], requiresDaySelection: true };
+const dayForm = (extra: Record<string, unknown> = {}) => form([dayType], extra);
+const base = dayForm();
+const fieldset = /<fieldset[^>]*>[\s\S]*?<\/fieldset>/.exec(base)?.[0] ?? '';
+if (!fieldset) fail('TicketPurchaseForm: a day-specific product renders no <fieldset> day picker');
 else {
-  const region = single.slice(Math.max(0, totalAt - 300));
-  if (!/aria-live="polite"/.test(region.slice(0, 700))) fail('TicketPurchaseForm: the total is not in an aria-live="polite" region');
-  const block = txt(single.slice(totalAt));
-  if (!/\bTotal\b/.test(block)) fail('TicketPurchaseForm: the total block does not say "Total"');
-  if (/estimat/i.test(block)) fail('TicketPurchaseForm: the total block says "estimate"');
-  if (!/type="submit"/.test(single.slice(totalAt))) fail('TicketPurchaseForm: Buy is not inside or after the total block');
-  if (/R\d+\.00\b/.test(block)) fail('TicketPurchaseForm: the total shows zero cents');
+  const legend = /<legend[^>]*>([\s\S]*?)<\/legend>/.exec(fieldset)?.[1] ?? '';
+  if (txt(legend) !== CO.form.dayLegend) fail(`TicketPurchaseForm: the day legend reads "${txt(legend)}", want "${CO.form.dayLegend}"`);
+  if ((fieldset.match(/type="radio"/g) ?? []).length !== days.length) fail(`TicketPurchaseForm: want ${days.length} native day radios`);
+  if (typeof fmt === 'function') for (const iso of days) {
+    const label = fmt(iso);
+    if (!txt(fieldset).includes(label)) fail(`TicketPurchaseForm: day "${label}" missing from the day fieldset`);
+    if (!new RegExp(`<time[^>]*datetime="${iso}"`, 'i').test(fieldset)) fail(`TicketPurchaseForm: no <time datetime="${iso}"> in the day fieldset`);
+  }
+  if (new RegExp(D.isoRegex).test(txt(fieldset))) fail('TicketPurchaseForm: a raw ISO date is visible in the day fieldset');
+  if (new RegExp(D.isoRegex).test((fieldset.match(/aria-label="[^"]*"/g) ?? []).join(' '))) fail('TicketPurchaseForm: an ISO date is in an aria-label of the day fieldset');
 }
-if ((txt(single).match(new RegExp(K.provisionalNote, 'g')) ?? []).length > 1) fail(`TicketPurchaseForm: "${K.provisionalNote}" renders more than once`);
-if (/Estimated total|\(estimate\)/.test(single)) fail('TicketPurchaseForm: the old "Estimated total ... (estimate)" wording renders');
+const checkedDay = (h: string) => /<input[^>]*type="radio"[^>]*>/g.exec(h) && [...h.matchAll(/<input[^>]*type="radio"[^>]*>/g)].map((m) => m[0]).filter((t) => /checked/.test(t)).map((t) => /value="([^"]+)"/.exec(t)?.[1]);
+const pre = checkedDay(dayForm({ initialDay: days[2] })) ?? [];
+if (pre.length !== 1 || pre[0] !== days[2]) fail(`TicketPurchaseForm: initialDay=${days[2]} checked [${pre.join()}], want exactly [${days[2]}]`);
+const bad = checkedDay(dayForm({ initialDay: '2020-01-01' })) ?? [];
+if (bad.length !== 1 || bad[0] !== days[0]) fail(`TicketPurchaseForm: an initialDay outside the show falls back to the first day (checked [${bad.join()}])`);
+const flat = form([{ ...G.types[0], requiresDaySelection: false }]);
+if (/<fieldset/.test(flat)) fail('TicketPurchaseForm: a product without day selection renders a day fieldset');
+if (/data-day-row/.test(base + flat)) fail('TicketPurchaseForm: [data-day-row] per-day rows still render');
+for (const gone of CO.removed) if (txt(base + flat).includes(gone)) fail(`TicketPurchaseForm: "${gone}" still renders`);
+const qtyInput = (h: string) => /<input[^>]*(type="number"|inputMode="numeric"|inputmode="numeric")[^>]*>/.exec(h)?.[0] ?? '';
+const q0 = qtyInput(base);
+if (!q0) fail('TicketPurchaseForm: no quantity input');
+else {
+  if (!new RegExp(`min="${CO.form.quantityMin}"`).test(q0)) fail(`TicketPurchaseForm: the quantity input lacks min="${CO.form.quantityMin}"`);
+  if (!/value="1"/.test(q0)) fail('TicketPurchaseForm: the quantity input does not default to 1');
+}
+if (!base.includes(CO.form.minus)) fail('TicketPurchaseForm: no real minus sign U+2212 on the decrease button');
+if (/>\s*(\u2013|-)\s*</.test(base)) fail('TicketPurchaseForm: the decrease button still shows an en dash or hyphen');
+const q2 = qtyInput(dayForm({ initialQuantity: 2 }));
+if (!/value="2"/.test(q2)) fail(`TicketPurchaseForm: initialQuantity=2 did not fill the stepper (${q2})`);
+for (const [v, want] of [[0, '1'], [-4, '1']] as [number, string][]) {
+  const q = qtyInput(dayForm({ initialQuantity: v }));
+  const got = /value="(\d+)"/.exec(q)?.[1];
+  if (got !== want) fail(`TicketPurchaseForm: initialQuantity=${v} gave ${got}, want ${want} (min 1)`);
+}
+const submitText = txt(/<button[^>]*type="submit"[^>]*>[\s\S]*?<\/button>/.exec(base)?.[0] ?? '');
+if (!submitText.startsWith(CO.cta.text)) fail(`TicketPurchaseForm: the CTA reads "${submitText}", want "${CO.cta.text}"`);
+if (!/<svg|\u2192/.test(/<button[^>]*type="submit"[^>]*>[\s\S]*?<\/button>/.exec(base)?.[0] ?? '')) fail('TicketPurchaseForm: the CTA carries no arrow');
+if (/Provisional pricing/.test(txt(base))) fail('TicketPurchaseForm: the provisional note renders inside the form (it lives once in the summary card)');
 
+// The read-only summary variant of the keepsake TicketCard is proved in A28 (check-s-cards-render.mts).
 const card = (price: number) => renderToStaticMarkup(createElement(TicketTypeCard as never, { ticketType: { ...G.types[0], price, soldOut: false, provisional: false, requiresDaySelection: false, regularPrice: null }, mode: 'list', soldOutLabel: 'Sold out' }));
 if (!/>R150</.test(card(150).replace(/<!-- -->/g, ''))) fail('TicketTypeCard (list): price 150 does not render as "R150"');
 if (/R150\.00/.test(card(150))) fail('TicketTypeCard (list): price 150 renders with zero cents');

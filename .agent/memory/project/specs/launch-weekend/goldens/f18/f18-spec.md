@@ -1,6 +1,6 @@
 # F18 spec: long-form template, public holding state, ledes, FAQ, exhibitors (F18a) and the v13 keepsake ticket system (F18b)
 
-Base: main 63f3e74d (F18a; was 76ad8b98, which fails A10 on main's own vendor-component and Karla changes) with spec/lw-f18 merged in. Architect: Sonnet 5.5. Skills the dev MUST load and apply (name them in the critique log): `impeccable` (craft-floor, polish, critique), `frontend-design`, `web-design-guidelines`, `accessibility`. No new brand asset, colour, font, shadow, animation or emoji beyond what the approved v13 golden itself carries; no invented copy (section 7).
+Base: main bcf8684b (NOS batch 2 merged, so A10 does not flag batch 2 files as F18b scope; earlier 63f3e74d, F18a; was 76ad8b98, which fails A10 on main's own vendor-component and Karla changes) with spec/lw-f18 merged in. Architect: Sonnet 5.5. Skills the dev MUST load and apply (name them in the critique log): `impeccable` (craft-floor, polish, critique), `frontend-design`, `web-design-guidelines`, `accessibility`. No new brand asset, colour, font, shadow, animation or emoji beyond what the approved v13 golden itself carries; no invented copy (section 7).
 
 design-cb is the design lead and its rulings are final (Brad): implement v13 one-to-one; any deviation needs design-cb's yes first. The critique bar for F18b is P0/P1/P2 = 0, impeccable >= 39/40 and design-cb's audit PASS against `goldens/f18b/F18B-AUDIT-CHECKLIST.md`; iteration is uncapped. site-77 owns `components/chrome/UtilityBar.tsx` and the NOS header components (R74 #7): never edit them (A10).
 
@@ -258,3 +258,19 @@ Copy comes only from `longform-copy.json`, `v13-copy.json`, existing strings (`s
   - Beta: the same counts render inside `[data-placeholder]` with the "Not yet confirmed" marker (`notYetConfirmed`).
   - The old "Early-bird tickets left" heading and "One pool of 500 early-bird tickets..." sentence apply only when the pool total comes from Sanity.
   - Asserted by A27 (flags), A28 (both modes, card, day cells, pool banner, session card) and A29 (live public: for every type without Sanity capacity, no count line, no "of N" in the day cells, no placeholder marker, and the provisional pool banner text; the Sanity capacity set comes from the read-only `loadCmsNames`).
+
+## 14. Checkout step, design-cb FINAL ruling (2026-10-17)
+
+Golden: goldens/f18b/v13-checkout.json. The redirect is withdrawn and the route stays. The checkout is pinned to /tickets/<slug>, the route the repo serves (the lead's /national-show/ prefix was a slip). findCheckout requires a 200 with form[data-nos-ticket-form] there and the hub CTA must go to it. Do not move the route.
+
+Anatomy, top to bottom: NOS chrome, hero, ONE read-only TicketCard (prop variant="summary": same stub, photo, field colour, name, when-line and price as the hub card; no stepper, no Buy; horizontal with the stub on the right at >= 470px container width, stacked at 390), then TicketPurchaseForm.
+
+Form: day-specific products show ONE .days fieldset (legend "Choose a day", native radios, 58px cells, formatted labels with <time datetime>); day=D preselects, an unknown day falls back to the first. The weekend pass has no picker. ONE 44px stepper (real minus U+2212, input min 1); quantity=N fills it. DayQuantityPicker, [data-day-row], the "Tickets per day" legend, the "Ticket types" eyebrow and box, and the 0 default are removed. Assumption the dev may not break: the stepper holds a typeable input so quantity 0 is reachable by typing, which is what the CTA rule needs.
+
+Total: [data-catalogue-total], aria-live polite, under the stepper, beside the CTA, "Total R150" format. CTA "Continue to payment" with an arrow, enabled at 0; a click at 0 fills [data-buy-hint] with "Choose at least one ticket" (tabindex=-1, aria-describedby tie) and moves focus to it, no submit.
+
+Provisional: "Provisional pricing - subject to change" (the existing em dash string) stays on public at checkout, 14px / 500 / --ink-700, under the price in the summary card, exactly once per page, never also in the form.
+
+Unchanged and asserted: the POST payload (body showId + lineItems; line items ticketType, attendeeName, attendeeEmail, optional chosenDay; Idempotency-Key header), server validation (excludedDays, caps), the test-mode banner and admin gating (showTestModeBanner default false on TicketPurchaseForm, viewerIsVerifiedAdmin on the checkout page). A23 intercepts the POST and answers 400 so nothing is reserved.
+
+New props the dev adds: TicketPurchaseForm initialDay and initialQuantity; TicketCard variant "summary". Checks that moved: A22 and A29 use findCheckout; A23 rewritten; A24 form section rewritten; A28 gains the summary variant; f16/check-e-testmode.mts amended (see supersession.json).

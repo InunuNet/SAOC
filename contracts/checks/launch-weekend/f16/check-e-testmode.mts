@@ -55,15 +55,16 @@ const read = (f: string) => { try { return readFileSync(f, 'utf8'); } catch { pr
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 const viewer = strip(read('lib/admin-viewer.ts'));
 if (!/getAdminSession/.test(viewer) || !/from '\.\/admin-auth'/.test(viewer)) problems.push('lib/admin-viewer.ts must delegate to getAdminSession from lib/admin-auth');
-for (const f of ['lib/admin-viewer.ts', 'app/(marketing)/national-show/tickets/page.tsx', 'components/tickets/CategoryTicketsPage.tsx', 'components/tickets/TicketPurchaseForm.tsx', 'components/tickets/OzowSandboxTestModeBanner.tsx']) {
+for (const f of ['lib/admin-viewer.ts', 'app/(marketing)/national-show/tickets/page.tsx', 'components/tickets/TicketPurchaseForm.tsx', 'components/tickets/OzowSandboxTestModeBanner.tsx']) {
   const t = strip(read(f));
   if (/firebase-admin\/auth|verifySessionCookie|verifyIdToken|cookies\(|ADMIN_EMAIL_ALLOWLIST|isAdminToken/.test(t)) problems.push(`${f}: a second admin auth path (cookie, token or allowlist read) was added`);
 }
 const hub = strip(read('app/(marketing)/national-show/tickets/page.tsx'));
-if (!/viewerIsVerifiedAdmin/.test(hub) || !/isAdmin\s*\?\s*<OzowSandboxTestModeBanner/.test(hub)) problems.push('hub: the banner must render only behind the verified-admin flag');
+// F18b (design-cb checkout ruling): the hub may drop its banner; if it renders one it stays behind the verified-admin flag, and the checkout page keeps the gated banner.
+if (/OzowSandboxTestModeBanner/.test(hub) && (!/viewerIsVerifiedAdmin/.test(hub) || !/isAdmin\s*\?\s*<OzowSandboxTestModeBanner/.test(hub))) problems.push('hub: if the banner renders it must be behind the verified-admin flag');
 const form = strip(read('components/tickets/TicketPurchaseForm.tsx'));
 if (!/showTestModeBanner\s*=\s*false/.test(form) || !/showTestModeBanner\s*\?\s*<OzowSandboxTestModeBanner/.test(form)) problems.push('TicketPurchaseForm: the banner must default off and render only when showTestModeBanner is true');
-for (const f of ['components/tickets/CategoryTicketsPage.tsx', 'app/(marketing)/tickets/[slug]/page.tsx']) if (!/showTestModeBanner=\{/.test(read(f)) || !/viewerIsVerifiedAdmin/.test(read(f))) problems.push(`${f}: must pass showTestModeBanner from viewerIsVerifiedAdmin()`);
+for (const f of ['app/(marketing)/tickets/[slug]/page.tsx']) if (!/showTestModeBanner=\{/.test(read(f)) || !/viewerIsVerifiedAdmin/.test(read(f))) problems.push(`${f}: must pass showTestModeBanner from viewerIsVerifiedAdmin()`);
 const ban = read('components/tickets/OzowSandboxTestModeBanner.tsx');
 const cls: string = (ban.match(/className="([^"]*)"/) || [])[1] || '';
 for (const bad of T.forbiddenClasses) if (cls.includes(bad)) problems.push(`banner className still has "${bad}" (breaks out of its container)`);
