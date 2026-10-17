@@ -40,7 +40,6 @@ const VERTICAL_HEIGHT = 791;
 // The rendered boxes: the horizontal is 448px wide, the vertical 342px (nos-chrome.css).
 const HORIZONTAL_SIZES = '448px';
 const VERTICAL_SIZES = '342px';
-const NARROW_MEDIA = '(max-width: 700px)';
 
 export function NosFooter() {
   const { props: horizontal } = getImageProps({
@@ -66,7 +65,7 @@ export function NosFooter() {
             <Link className="nf-lockup" href={HUB_HREF}>
               <picture>
                 <source
-                  media={NARROW_MEDIA}
+                  media="(max-width: 700px)"
                   srcSet={vertical.srcSet}
                   sizes={VERTICAL_SIZES}
                   width={VERTICAL_WIDTH}

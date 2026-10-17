@@ -217,6 +217,7 @@ export function NosHeader({ show }: NosHeaderProps) {
               height={LOCKUP_HEIGHT}
               sizes={LOCKUP_SIZES}
               priority
+              fetchPriority="high"
             />
           </Link>
 
