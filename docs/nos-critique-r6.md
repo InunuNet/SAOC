@@ -148,3 +148,13 @@ follow scroll and resize. The scroller breakpoint is 767px rather than 700: the 
 sa-exhibitors row overflowing at 701 and 720 (687px of links against 666 and 684 of room), recorded in
 `goldens/f10-breakpoint.json`. Everything from 768px up is untouched. Also, `ShowSectionNav` reads
 "National Orchid Show Symposium" in place of "SAOC Symposium" (Brad's naming ruling); no page renders it.
+
+## f7 — R33: plan-your-visit emergency numbers and the venue map button
+
+Source: lead saoc-2b 2026-10-17; NOS Design R34/R33 sign-off 2026-10-17. On `/national-show/plan-your-visit`
+each emergency number that is phone-shaped becomes a `tel:` link built from `contact.number` (every
+character except digits and + stripped) with a 44px target. The numeral is set in Fraunces, light, from
+2.4rem, above its label; a number that is not phone-shaped stays plain text. The venue card sits in an
+`<aside>` beside "Getting there", and its "Open in a map ↗" becomes a ghost NOS Button (50px, new tab, on
+the existing `mapsUrl`) through a new optional `mapAction` prop on `VenueCard`. The prop defaults to the
+plain link, so `/contact` is unchanged. No copy was added and no Button variant was created.

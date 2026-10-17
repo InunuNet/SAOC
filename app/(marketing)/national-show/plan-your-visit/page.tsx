@@ -33,6 +33,9 @@ export const metadata: Metadata = buildPageMetadata({
   path: '/national-show/plan-your-visit',
 });
 
+// A number worth dialling: digits, with an optional leading + and spaces between groups.
+const PHONE_SHAPED = /^\+?\d[\d\s]*$/;
+
 interface ShowVenueData {
   venue: ShowVenue | null;
 }
@@ -90,12 +93,15 @@ export default async function PlanYourVisitPage() {
             />
           </div>
 
-          <VenueCard
-            venue={show?.venue}
-            status={status.venue}
-            pendingLabel={pendingLabel}
-            researchLabel={researchLabel}
-          />
+          <aside>
+            <VenueCard
+              venue={show?.venue}
+              status={status.venue}
+              pendingLabel={pendingLabel}
+              researchLabel={researchLabel}
+              mapAction="button"
+            />
+          </aside>
         </div>
 
         <VisitorInfoBlock
@@ -155,12 +161,21 @@ export default async function PlanYourVisitPage() {
             />
             <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {emergencyContacts.map((contact, index) => (
-                <Card key={contact._key ?? `${contact.label}-${index}`}>
-                  <dt className="font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
+                <Card key={contact._key ?? `${contact.label}-${index}`} className="flex flex-col">
+                  <dt className="mt-1 font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
                     {contact.label}
                   </dt>
-                  <dd className="mt-1 font-serif text-[26px] font-medium text-primary">
-                    {contact.number}
+                  <dd className="order-first font-serif text-primary">
+                    {PHONE_SHAPED.test(contact.number ?? '') ? (
+                      <a
+                        href={`tel:${(contact.number ?? '').replace(/[^\d+]/g, '')}`}
+                        className="inline-flex min-h-[44px] min-w-[44px] items-center text-[clamp(2.4rem,3vw,3rem)] font-light leading-[1.1] underline-offset-4 hover:underline"
+                      >
+                        {contact.number}
+                      </a>
+                    ) : (
+                      <span className="text-[26px] font-medium">{contact.number}</span>
+                    )}
                   </dd>
                   {contact.note ? (
                     <p className="mt-2 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-muted">
