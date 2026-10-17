@@ -23,6 +23,8 @@ function measure() {
   if (title) push('hero h1', rc(title).left);
   const copy = hero.querySelector('.nos-hero-copy');
   if (copy) push('hero copy content edge', edgeOf(copy), { maxWidth: cs(copy).maxWidth, pad: parseFloat(cs(copy).paddingLeft) });
+  // NosSubNav (NOS batch 2) scrolls its row so the current item is in view below 768px, which moves the first link off the axis by design. The axis is a property of the row at rest, so measure it with the row scrolled back to its start.
+  for (const row of document.querySelectorAll('.nos-subnav-row')) row.scrollTo({ left: 0, behavior: 'instant' });
   const sub = document.querySelector('.nos-subnav .nos-subnav-link');
   if (sub) push('sub-nav first link', rc(sub).left);
   for (const w of document.querySelectorAll('main [data-nos-wrap]')) {

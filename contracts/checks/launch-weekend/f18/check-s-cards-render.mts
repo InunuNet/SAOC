@@ -5,7 +5,7 @@
 //   low         -> tag "Few left" and the server-supplied scarcity text; soldOut/pricePending/earlyBirdSoldOut -> NO stepper and NO CTA of any kind, the state's words (stamp, "Price to follow" + chip, "Early bird sold out")
 //   early bird  -> struck "Early-bird price" line on the sold-out state, "Early-bird R360, then R380" under the price on the live early-bird SKU, "Shared with the <partner>" only on early-bird SKUs
 //   Day Pass    -> fieldset legend "Choose a day", one native radio per days[] entry ("Fri 24" + "58 of 1000"), disabled radios for soldOut/pricePending/earlyBirdSoldOut, no count when remaining is null, first selectable checked
-//   CTA         -> "Buy ticket" on every paid product including the National Orchid Show Symposium, WOSA Conference and session cards; never "Register" or "Add to booking"; the Workshops product card says "Choose a session" and links #sessions
+//   CTA         -> "Buy ticket" on every paid product including the National Orchid Show Symposium, WOSA Conference and session cards; never "Register" or "Add to booking"; the Workshops product card (design-cb FINAL) has NO CTA, NO link, NO stepper and NO pendingNote: its when-line "Schedule to follow" and R100 each
 //   provisional -> a count whose total is provisional (scarcity/days/pool .provisional) is hidden in public (no count line, day cells show the day only, pool banner has no numeral and reads "Early-bird tickets" + the shared-pool sentence with the CMS names) and shown in beta inside [data-placeholder] with "Not yet confirmed"; state words still show
 //   PoolBanner  -> role group, numeral + "of <total>", "Early-bird tickets left"; out state "Early bird sold out"; null pool renders nothing; data-pool-bracket present when a pool renders
 //   TicketFan   -> [data-nos-ticket-fan] with 4 [data-fan-link] anchors #ticket-vip, #ticket-sunset, #ticket-weekend, #ticket-day labelled "<name>, R<price>" / ", price to follow" / ", sold out"
@@ -139,7 +139,13 @@ for (const id of ['symposium', 'wosa']) {
   if (!/>R<\/span>2000|R2000/.test(txt(x).replace(/\s/g, ''))) fail(`${id}: price does not read R2000`);
 }
 h = card('workshops', vm({ slug: 'workshops', price: 100 }));
-if (!has(h, S.chooseSession) || !/href="\/national-show\/workshops#sessions"/.test(h) || has(h, S.buy)) fail('Workshops product card: want "Choose a session" linking /national-show/workshops#sessions and no "Buy ticket"');
+// design-cb FINAL: the Workshops product card is information only until sessions ship.
+if (!has(h, copy.products.workshops.when as string)) fail(`Workshops product card: the when-line "${copy.products.workshops.when}" is missing`);
+if (!/R100/.test(txt(h).replace(/\s/g, ''))) fail('Workshops product card: price does not read R100');
+if (has(h, S.buy) || has(h, S.chooseSession)) fail('Workshops product card: carries a "Buy ticket" or "Choose a session" call to action');
+if (/<a\b|href=/.test(h)) fail('Workshops product card: carries a link (no CTA, no #sessions link)');
+if (buttons(h).length || /data-ticket-cta|data-ticket-stepper|<input/.test(h)) fail('Workshops product card: a button, stepper, input or CTA renders');
+if (has(h, S.pendingNote) || has(h, S.pricePending)) fail('Workshops product card: shows the pending-price note (it is a priced product, not price-pending)');
 
 }
 if (PART_C) {
