@@ -42,7 +42,7 @@ export interface NosHeroProps {
    * renders the hub hero (6-stop ramp, 22% photo inset) — reserve for the one flagship hero.
    */
   titleSize?: 'default' | 'display';
-  lede?: string;
+  lede?: ReactNode;
   /** `theme` sets the inner lede as a show's theme line (italic serif, R70) rather than a standfirst. */
   ledeKind?: 'theme';
   /**

@@ -831,3 +831,41 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-faq-answer {
   padding: 0 clamp(20px, 3vw, 32px) 24px;
 }
+
+/* Hub "What it is" row and its figures (v4 about and figures): prose and figures share a
+   baseline, each figure sits under a hairline, two per row. */
+.nos-theme .nos-about {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(40px, 7vw, 96px);
+  align-items: end;
+}
+@media (min-width: 1024px) {
+  .nos-theme .nos-about {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  }
+}
+.nos-theme .nos-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 32px;
+  margin: 0;
+}
+.nos-theme .nos-figures > div {
+  flex: 1 1 calc(50% - 32px);
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  border-top: 1px solid var(--rule);
+  padding: 20px 0 28px;
+}
+.nos-theme .nos-figures dd {
+  margin: 0;
+  font-size: clamp(2.6rem, 2rem + 2vw, 61px);
+  color: var(--primary);
+}
+.nos-theme .nos-figures dt {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--muted);
+}

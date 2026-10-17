@@ -60,9 +60,14 @@ const PAGE_DESCRIPTION = WITHHOLD_UNSOURCED
 const HERO_LEDE_LEAD = 'South Africa’s triennial orchid competition';
 const HERO_LEDE_CLAUSE =
   ', bringing together growers, judges and enthusiasts from all nine provinces';
-const HERO_LEDE = WITHHOLD_UNSOURCED
-  ? `${HERO_LEDE_LEAD}.`
-  : `${HERO_LEDE_LEAD}${HERO_LEDE_CLAUSE}.`;
+const HERO_LEDE = WITHHOLD_UNSOURCED ? (
+  `${HERO_LEDE_LEAD}.`
+) : (
+  <>
+    {HERO_LEDE_LEAD}
+    <span data-placeholder="true">{HERO_LEDE_CLAUSE}</span>.
+  </>
+);
 
 // Sourced: Sanity holds exactly ten showClass documents.
 const JUDGING_LEDE = 'Every exhibit is entered in one of ten botanical classes.';
@@ -436,7 +441,7 @@ export default async function NationalShowPage() {
       />
 
       {/* ── What it is ── */}
-      <NosSection wrapClassName="grid grid-cols-1 gap-16 lg:grid-cols-2">
+      <NosSection wrapClassName="nos-about">
         <div>
           <SectionHeading title="Three years in the making, four days on the bench" />
           <p className="mt-6 font-sans text-[16px] leading-relaxed text-ink/80">
@@ -455,10 +460,10 @@ export default async function NationalShowPage() {
             {WITHHOLD_UNSOURCED ? (
               <>across ten botanical classes.</>
             ) : (
-              <>
+              <span data-placeholder="true">
                 against the 100-point scale across ten botanical classes. The Grand Champion is the
                 highest-scoring exhibit across all classes.
-              </>
+              </span>
             )}
           </p>
           {WITHHOLD_UNSOURCED ? null : (
@@ -466,20 +471,22 @@ export default async function NationalShowPage() {
           )}
         </div>
 
-        {/* 4-up stats */}
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[length:var(--radius-lg)] bg-rule">
+        {/* Figures row (v4 `.figures`): the sourced figures, plus the unsourced edition count on a
+            beta preview only, where it carries the pending marker. */}
+        <dl className="nos-figures">
           {[
-            { value: '3 yr', label: 'Cycle' },
-            { value: '10', label: 'Judging classes' },
-          ].map(({ value, label }) => (
-            <div key={label} className="bg-parchment px-8 py-10">
-              <div className="nos-figure font-serif text-[46px] text-primary">{value}</div>
-              <div className="mt-2 font-sans text-[12px] font-medium tracking-[0.16em] text-muted">
-                {label}
-              </div>
+            { value: '3 yr', label: 'Cycle', unsourced: false },
+            { value: '10', label: 'Judging classes', unsourced: false },
+            ...(WITHHOLD_UNSOURCED
+              ? []
+              : [{ value: '18', label: 'Editions held', unsourced: true }]),
+          ].map(({ value, label, unsourced }) => (
+            <div key={label} data-placeholder={unsourced ? 'true' : undefined}>
+              <dt>{label}</dt>
+              <dd className="nos-figure font-serif">{value}</dd>
             </div>
           ))}
-        </div>
+        </dl>
       </NosSection>
 
       {/* ── Planning a visit — the hub's one destinations list (v4 pattern, I:176-190) ── */}
@@ -521,9 +528,17 @@ export default async function NationalShowPage() {
         <SectionHeading
           title="Ten judging groups"
           lede={
-            WITHHOLD_UNSOURCED
-              ? JUDGING_LEDE
-              : `${JUDGING_LEDE} Judges score on a 100-point scale covering cultural quality, presentation, and species accuracy.`
+            WITHHOLD_UNSOURCED ? (
+              JUDGING_LEDE
+            ) : (
+              <>
+                {JUDGING_LEDE}{' '}
+                <span data-placeholder="true">
+                  Judges score on a 100-point scale covering cultural quality, presentation, and
+                  species accuracy.
+                </span>
+              </>
+            )
           }
         />
         {WITHHOLD_UNSOURCED ? null : (
