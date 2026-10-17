@@ -1,0 +1,89 @@
+// =============================================================
+// NOS — components/show/ShowStatusLine.tsx
+// Server Component — ONE existing R11 marker standing for a whole page. In a public build
+// the per-row "not yet confirmed" chips are withheld and this line says it once instead.
+// It renders the shared StatusMarker, so it is the same marker, not a new chip.
+//
+// With `items` it is the v4 R11 disclosure: the marker as a one-line chip on a gold surface,
+// then a sentence-case list of what the marker covers, then an optional body sentence, a quieter foot line, and any `children` (a closing link
+// or button).
+// =============================================================
+
+import type { ReactNode } from 'react';
+
+import { StatusMarker } from './_shared/StatusMarker';
+
+const DEFAULT_SEPARATOR = ' · ';
+
+// At <=700px the chip is tightened (0.06em tracking, 10px inline padding) so the verbatim label
+// stays on one line inside the 16px-padded surface. Important: the NOS marker rule in
+// nos-structure.css (.nos-theme [data-...]) otherwise outranks a plain utility.
+const CHIP_FIT_CLASSES = 'max-[700px]:[&>p]:!px-[10px] max-[700px]:[&>p]:!tracking-[0.06em]';
+
+export interface ShowStatusLineProps {
+  /** Which marker family to draw: the exhibitor guide's (default) or the visitor pages'. */
+  kind?: 'exhibitor' | 'confirmation';
+  status: 'pending' | 'research';
+  pendingLabel?: string | null;
+  researchLabel?: string | null;
+  /** What the marker covers, already cased; shown as one sentence under the chip. */
+  items?: string[];
+  /** A plain sentence under the list: 16px, no pill, border or fill. */
+  body?: string;
+  /** A quieter closing line under the body: 15px, no text-transform. */
+  foot?: string;
+  /** What goes between the items; a middle dot by default. */
+  separator?: string;
+  children?: ReactNode;
+}
+
+/** The quieter closing line of the R11 disclosure; also used where no disclosure renders. */
+export function ShowStatusFoot({ children }: { children: ReactNode }) {
+  return (
+    <p data-status-foot="" className="text-[15px] leading-[1.55] text-[var(--ink-500)]">
+      {children}
+    </p>
+  );
+}
+
+export function ShowStatusLine({
+  kind = 'exhibitor',
+  status,
+  pendingLabel,
+  researchLabel,
+  items,
+  body,
+  foot,
+  separator = DEFAULT_SEPARATOR,
+  children,
+}: ShowStatusLineProps) {
+  const marker = (
+    <StatusMarker
+      kind={kind}
+      status={status}
+      pendingLabel={pendingLabel}
+      researchLabel={researchLabel}
+    />
+  );
+  if (!items || items.length === 0) return marker;
+
+  return (
+    <div
+      data-status-disclosure=""
+      role="note"
+      className="grid gap-5 rounded-[16px] bg-[var(--gold)] px-[clamp(20px,3vw,32px)] pb-6 pt-5 shadow-sm max-[700px]:px-4"
+    >
+      <div className={CHIP_FIT_CLASSES}>{marker}</div>
+      <p data-status-list="" className="text-[16px] leading-[1.55] text-[var(--ink-700)]">
+        {items.join(separator)}.
+      </p>
+      {body ? (
+        <p data-status-body="" className="text-[16px] leading-[1.55] text-[var(--ink-700)]">
+          {body}
+        </p>
+      ) : null}
+      {foot ? <ShowStatusFoot>{foot}</ShowStatusFoot> : null}
+      {children}
+    </div>
+  );
+}

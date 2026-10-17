@@ -15,15 +15,26 @@ export interface ExhibitorQuestionsProps {
   intro?: string | null;
   questions?: ExhibitorQuestion[] | null;
   id?: string;
+  headingId?: string;
 }
 
-export function ExhibitorQuestions({ heading, intro, questions, id }: ExhibitorQuestionsProps) {
+export function ExhibitorQuestions({
+  heading,
+  intro,
+  questions,
+  id,
+  headingId,
+}: ExhibitorQuestionsProps) {
   const open = (questions ?? []).filter((item) => item?.question);
   if (open.length === 0) return null;
 
   return (
     <section id={id}>
-      {heading ? <h2 className="font-serif text-ink">{heading}</h2> : null}
+      {heading ? (
+        <h2 id={headingId} className="scroll-mt-[62px] font-serif text-ink md:scroll-mt-[74px]">
+          {heading}
+        </h2>
+      ) : null}
 
       {intro ? (
         <p className="mt-3 max-w-3xl font-sans text-[16px] leading-[1.55] text-ink/80">{intro}</p>

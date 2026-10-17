@@ -102,3 +102,62 @@ sticky) header geometry is unchanged.
   `/national-show/tickets#ticket-day` and `#ticket-weekend`. nav-config is shared, so the SAOC menus read the
   same strings (lead-approved site-wide naming); the closed SAOC header is unchanged.
 Source: lead saoc-2b 2026-10-17.
+
+## f6 — R34: exhibitors "On this page" jump chips
+
+`/national-show/exhibitors` is a long guide, so it gets the same wrapping jump chips the FAQ uses.
+The R52 chip class string now lives in one file, `components/show/ShowJumpChips.tsx`;
+`ShowFaqList` imports it and its output is unchanged. `ExhibitorJumpNav.tsx` shows the chips
+from 768px and, below 768px, the same chips inside a collapsed native `<details>` ("On this page",
+44px summary with a chevron) that works without JavaScript. One chip per section heading: the four
+page h2s plus the nine reference-section h3s (13 in preview), in page order, only for blocks that
+render. Each heading carries an id and the r4 scroll offset (62px / 74px from 768) so a chip
+lands clear of the sticky header. The R11 banner now carries the existing "Contact the council"
+button (the end CTA stays), and the step numerals are Fraunces at 16px.
+
+Public build: `withholdPlaceholderProse()` (called once, in the page) switches the per-row
+markers off. Rows carrying an open-question marker are not rendered, and the banner, the research
+line and the "to be confirmed" chips merge into ONE surface above "On this page"
+(`ShowStatusLine.tsx`, the existing marker): chip, the list of affected headings, the banner
+sentence as plain body text, the research label as a quieter foot line, then the "Contact the
+council" button. Preview keeps today's 3 / 9 / 11 markers and the banner pill.
+
+## f8 — R50: what-to-expect logistics first
+
+On `/national-show/what-to-expect` the visit logistics (Show dates, Opening hours, Admission, Food
+and refreshments, Photography, Cloakroom and plant holding, Accessibility) now render straight under
+the hero and ahead of the Drive narrative. This is a reorder in the page; `LongFormPage`, `ShowFacts`
+and `HoldingState` are untouched. The seven narrative paragraphs are unchanged and the Dates fact is
+dropped from the aside while the Show dates block carries it. All seven headings are siblings at h2
+in one type (`VisitorInfoBlock` takes an additive `headingLevel`, default h3, so plan-your-visit is
+unchanged). The dates read with weekdays, derived from `showDate` / `showEndDate` with
+`Intl.DateTimeFormat`, never retyped.
+
+Preview keeps one status line per unconfirmed block. In a public build (`withholdPlaceholderProse()`,
+called once in the page) every unconfirmed row is withheld and `ShowHoldingNote` shows one R11 line
+naming exactly those rows, then the existing "Be the first to know" link. The hero lede and the
+concession and photography text, which have no Drive source, are withheld there too. No copy was
+added. Venue and parking, family and pensioner prices, and online-versus-door booking remain gaps.
+
+## f10 — group sub-nav below 768px (critique H1, audit 2.4.7)
+
+The R27 group sub-nav under every inner hero (`NosSubNav`; `ShowSectionNav` is the footer grid) now
+brings the current item fully into view on load, with a lead equal to the row's own gutter. The
+effect sets the row's `scrollLeft` directly to the item's `offsetLeft` minus the row's computed left
+padding, clamped, and only when the row overflows;
+there is no `scrollIntoView` (it can scroll the page past the hero) and nothing is smooth. A 40px mask
+fade (to fully transparent) shows only on an edge that hides items, driven by `data-fade-start` and `data-fade-end`, which
+follow scroll and resize. The scroller breakpoint is 767px rather than 700: the capture run measured the
+sa-exhibitors row overflowing at 701 and 720 (687px of links against 666 and 684 of room), recorded in
+`goldens/f10-breakpoint.json`. Everything from 768px up is untouched. Also, `ShowSectionNav` reads
+"National Orchid Show Symposium" in place of "SAOC Symposium" (Brad's naming ruling); no page renders it.
+
+## f7 — R33: plan-your-visit emergency numbers and the venue map button
+
+Source: lead saoc-2b 2026-10-17; NOS Design R34/R33 sign-off 2026-10-17. On `/national-show/plan-your-visit`
+each emergency number that is phone-shaped becomes a `tel:` link built from `contact.number` (every
+character except digits and + stripped) with a 44px target. The numeral is set in Fraunces, light, from
+2.4rem, above its label; a number that is not phone-shaped stays plain text. The venue card sits in an
+`<aside>` beside "Getting there", and its "Open in a map ↗" becomes a ghost NOS Button (50px, new tab, on
+the existing `mapsUrl`) through a new optional `mapAction` prop on `VenueCard`. The prop defaults to the
+plain link, so `/contact` is unchanged. No copy was added and no Button variant was created.

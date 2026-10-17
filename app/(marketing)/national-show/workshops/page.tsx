@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
+import { ShowStatusLine } from '@/components/show/ShowStatusLine';
 import { SalesStatusLine, TicketCard, TicketSection } from '@/components/tickets/keepsake';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
@@ -52,13 +53,12 @@ export default async function WorkshopsFieldTripsTicketsPage() {
         priority
       />
       <NosSection>
-        <div className="nos-surface nk-disclosure">
-          <span className="nk-chip">{SESSIONS_NOTE_CHIP}</span>
-          <div role="note" className="nk-disclosure-text">
-            <p className="nk-disclosure-body">{SESSIONS_NOTE_BODY.trim()}</p>{' '}
-            <p className="nk-disclosure-foot">{SESSIONS_NOTE_FOOT.trim()}</p>
-          </div>
-        </div>
+        <ShowStatusLine
+          status="pending"
+          pendingLabel={SESSIONS_NOTE_CHIP}
+          items={[SESSIONS_NOTE_BODY.trim().replace(/\.$/, '')]}
+          foot={SESSIONS_NOTE_FOOT.trim()}
+        />
       </NosSection>
       {!salesOpen ? <SalesStatusLine /> : null}
       <TicketSection id="programme" title={TICKET_COPY.sections.programme} columns={2}>
