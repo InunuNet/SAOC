@@ -7,7 +7,8 @@
 //  body      : paragraphs 16px / 1.55, at most 60ch wide, full-ink (opaque, the --ink token, not an /80 alpha)
 //  facts     : [data-nos-facts] in the aside, labels Dates / Host / Venue / Cycle, values identical to the hub's hero facts (one source)
 //  pull-quote: /about carries exactly one [data-nos-pullquote], the theme line, verbatim from paragraph 2; any other page may carry one only if its text is verbatim in the body
-//  image     : exactly one [data-nos-image-break] after paragraph breakAfter, inside the body column, 21:9, alt="", lazy, width and height attributes, no filter or overlay
+//  image     : NO [data-nos-image-break] (R16: one photo per route; the F18 break role is retired, long-form-breaks.ts is deleted); exactly 0 on all four routes
+//  headings  : /sa-exhibitors has no template h2 (heading null); no h2 on any of the four routes equals the page h1 (design-cb audit)
 //  closing   : the Tickets + Plan your visit pair (primary then ghost) in [data-nos-longform-cta] (vendors: its existing royal CtaBand to /national-show/vendors/apply),
 //              then exactly one "Explore the show pages" index as the last block in main (about's index was missing on 41a7a08f: F17 G1 restored it, asserted again here)
 //  public    : no content-gap block, no horizontal overflow at 1280, 900, 899 and 390.
@@ -41,6 +42,8 @@ function measure({ S, K }) {
   const paras = [lede, ...bodyP.filter((p) => p !== lede)].map(t);
   const h2 = head.querySelector('h2');
   out.heading = h2 ? t(h2) : null;
+  out.h1 = t(q('main h1') ?? q('h1'));
+  out.h2s = qa('main h2').map(t);
   out.paras = paras;
   out.lede = { size: parseFloat(cs(lede).fontSize), lh: parseFloat(cs(lede).lineHeight) / parseFloat(cs(lede).fontSize) };
   out.body = bodyP.slice(0, 6).map((p) => {
@@ -138,19 +141,9 @@ await main('F18-A1 long-form template', async (r) => {
               if (!flat(m.paras[spec.pullQuoteParagraph - 1] ?? '').replace(/["',.]/g, '').includes(q)) r.fail(`${tag}: the pull-quote is not verbatim in paragraph ${spec.pullQuoteParagraph}`);
             }
           } else for (const pq of m.pullQuotes) if (!bodyText.replace(/[,.]/g, '').includes(flat(pq.text).replace(/["',.]/g, '').trim())) r.fail(`${tag}: pull-quote "${pq.text}" is not verbatim in the body copy (invention)`);
-          // image break
-          if (m.breaks.length !== 1) r.fail(`${tag}: ${m.breaks.length} image breaks, want exactly 1`);
-          else {
-            const b = m.breaks[0];
-            const ratio = b.w / b.h;
-            if (!near(ratio, L.imageAspect.w / L.imageAspect.h, L.imageAspect.tolerance * (L.imageAspect.w / L.imageAspect.h))) r.fail(`${tag}: image break is ${b.w.toFixed(0)}x${b.h.toFixed(0)} (${ratio.toFixed(2)}), want 21:9`);
-            if (b.paragraphsBefore !== spec.breakAfter) r.fail(`${tag}: image break follows ${b.paragraphsBefore} paragraphs, want ${spec.breakAfter}`);
-            if (b.alt !== '') r.fail(`${tag}: image break alt is ${JSON.stringify(b.alt)}, want "" (decorative)`);
-            if (b.loading !== 'lazy') r.fail(`${tag}: image break loading is ${b.loading}, want lazy (it is below the fold)`);
-            if (!b.hasWH) r.fail(`${tag}: image break <img> has no width and height attributes`);
-            if (b.filter !== 'none' || b.wrapFilter !== 'none' || b.blend !== 'normal' || b.bg !== 'none' || b.overlay) r.fail(`${tag}: image break carries a filter, blend, background or overlay (filter ${b.filter}, blend ${b.blend}, ${b.overlay} extra node(s))`);
-            if (b.left < m.bodyBox.left - 1 || b.right > m.bodyBox.right + 1) r.fail(`${tag}: image break leaves the body column`);
-          }
+          // image break (retired: R16 one photo per route)
+          if (m.breaks.length !== 0) r.fail(`${tag}: ${m.breaks.length} image break(s), want exactly 0 (R16: one photo per route)`);
+          if (m.h2s.some((h) => flat(h) === flat(m.h1))) r.fail(`${tag}: an h2 repeats the page h1 "${m.h1}"`);
           // closing
           const pair = L.ctaPair[route];
           if (pair === 'existing-ctaband') {

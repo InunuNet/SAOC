@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en-ZA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plan your visit · National Orchid Show 2027</title>
+<meta name="description" content="The 19th National Orchid Show, 23–26 September 2027 at The Hangar, Stellenbosch Flying Club, Western Cape.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..500;1,9..144,300..500&family=Karla:wght@400..700&display=swap">
+<style>
+/* National Orchid Show 2027, standalone site (nos.saoc.co.za). Single-theme brand world by choice:
+   the committee palette has no dark mode, so every colour is painted explicitly. */
+:root {
+  color-scheme: light;
+  --royal: #211A57;
+  --royal-900: #1A1445;
+  --royal-700: #33296F;
+  --black: #0B0A14;
+  --gold: #F3F2D6;
+  --gold-100: #FBFAF0;
+  --gold-300: #E8E6C2;
+  --green-1: #A7A841;
+  --green-2: #7F7D33;
+  --white: #FFFFFF;
+  --ink-700: #3A3654;
+  --ink-500: #6A6780;
+  --line: #DAD7C8;
+  --lilac-200: #D2CBE8;
+  --violet: #7E3F97;
+  --research-dark: #A49DBE;
+
+  --serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --sans: "Karla", "Helvetica Neue", Arial, sans-serif;
+
+  --fs-xs: 0.75rem;   /* 12 */
+  --fs-sm: 0.875rem;  /* 14 */
+  --fs-base: 1rem;    /* 16 */
+  --fs-body: 1.0625rem; /* 17 */
+  --fs-md: 1.25rem;   /* 20 */
+  --fs-lg: 1.5625rem; /* 25 */
+  --fs-xl: 1.9375rem; /* 31 */
+  --fs-2xl: 2.4375rem; /* 39 */
+  --fs-3xl: 3.0625rem; /* 49 */
+  --fs-4xl: 3.8125rem; /* 61 */
+
+  --track-caps: 0.14em;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --border: 1.5px;
+  --hairline: 1px;
+
+  --shadow-sm: 0 1px 2px rgba(33, 26, 87, 0.06), 0 2px 8px rgba(33, 26, 87, 0.05);
+  --shadow-md: 0 2px 4px rgba(33, 26, 87, 0.06), 0 10px 28px rgba(33, 26, 87, 0.09);
+  --shadow-lg: 0 6px 12px rgba(33, 26, 87, 0.08), 0 24px 56px rgba(33, 26, 87, 0.14);
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --t-fast: 120ms;
+  --t-med: 200ms;
+  --t-slow: 360ms;
+
+  --gutter: clamp(16px, 4vw, 48px);
+  --wide: 1320px;
+  --default: 1080px;
+  --narrow: 720px;
+  --hh: 84px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 96px; }
+body {
+  margin: 0;
+  background: var(--gold-100);
+  color: var(--ink-700);
+  font-family: var(--sans);
+  font-size: var(--fs-body);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; }
+::selection { background: var(--royal); color: var(--gold); }
+.on-dark ::selection { background: var(--gold); color: var(--royal); }
+h1, h2, h3, h4 { margin: 0; font-family: var(--serif); font-weight: 400; color: var(--royal); text-wrap: balance; font-optical-sizing: none; }
+p { margin: 0; }
+i { font-style: italic; }
+
+/* R9: solid outline, never box-shadow; violet on light, pale gold on dark. */
+:focus-visible { outline: 2px solid var(--violet); outline-offset: 3px; border-radius: 4px; }
+.on-dark :focus-visible { outline-color: var(--gold-100); }
+
+.wrap { width: 100%; max-width: calc(var(--default) + 2 * var(--gutter)); margin-inline: auto; padding-inline: var(--gutter); }
+.wrap-wide { width: 100%; max-width: calc(var(--wide) + 2 * var(--gutter)); margin-inline: auto; padding-inline: var(--gutter); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip { position: absolute; left: 16px; top: -60px; z-index: 100; background: var(--gold); color: var(--royal); padding: 10px 16px; border-radius: var(--radius-md); font-weight: 700; transition: top var(--t-med) var(--ease); }
+.skip:focus { top: 12px; }
+.icon { width: 1.1em; height: 1.1em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+
+
+/* ---------- Buttons (R17: controls 10px; pill reserved for chips) ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 50px; padding: 14px 26px;
+  font-family: var(--sans); font-size: var(--fs-sm); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; white-space: nowrap;
+  border: var(--border) solid transparent; border-radius: var(--radius-md); cursor: pointer;
+  transition: background-color var(--t-med) var(--ease), color var(--t-med) var(--ease), border-color var(--t-med) var(--ease), transform var(--t-fast) var(--ease);
+}
+.btn:active { transform: scale(0.98); }
+.btn .icon { width: 16px; height: 16px; transition: transform var(--t-slow) var(--ease); }
+.btn:hover .icon { transform: translateX(3px); }
+.btn-sm { min-height: 44px; padding: 10px 18px; font-size: 13px; }
+.btn-gold { background: var(--gold); color: var(--royal); border-color: var(--gold); }
+.btn-gold:hover { background: var(--gold-300); border-color: var(--gold-300); }
+.btn-ghost { background: transparent; color: var(--gold-100); border-color: rgba(243, 242, 214, 0.62); }
+.btn-ghost:hover { border-color: var(--gold); background: rgba(243, 242, 214, 0.08); }
+.btn-royal { background: var(--royal); color: var(--gold-100); border-color: var(--royal); }
+.btn-royal:hover { background: var(--royal-900); border-color: var(--royal-900); }
+.btn-outline { background: transparent; color: var(--royal); border-color: var(--royal); }
+.btn-outline:hover { background: var(--royal); color: var(--gold-100); }
+
+/* ---------- R11 / R19 disclosure: chip + surface + closing sentence ---------- */
+.chip {
+  display: inline-flex; align-items: center; min-height: 26px; padding: 3px 12px;
+  font-size: var(--fs-xs); font-weight: 600; letter-spacing: var(--track-caps); text-transform: uppercase; line-height: 1.3;
+  color: var(--ink-500); border: var(--hairline) solid currentColor; border-radius: var(--radius-pill);
+}
+.disclosure { background: var(--gold); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 20px clamp(20px, 3vw, 32px) 24px; display: grid; gap: 20px; }
+.disclosure.on-pale { background: var(--gold-100); }
+.disclosure-foot { font-size: 15px; line-height: 1.55; color: var(--ink-500); }
+
+/* ---------- Hub hero ----------
+   Under the light header, never behind it. The header carries the one NOS lockup, so the hero
+   leads with the show's name in type. The photograph sits 22% in from the left and is feathered
+   into the black ground; the copy stands in the dark text column, clear of the bloom.
+   R15: one near-black ramp. */
+.hero { position: relative; isolation: isolate; overflow: hidden; display: flex; min-height: clamp(600px, calc(100svh - 97px), 820px); background: var(--black); color: var(--gold-100); }
+.hero-media { position: absolute; inset: 0 0 0 22%; z-index: -2; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16%); mask-image: linear-gradient(90deg, transparent 0, #000 16%); }
+.hero-media img { width: 100%; height: 100%; object-fit: cover; object-position: 68% 50%; }
+.hero-scrim { position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(11, 10, 20, 0.94) 0%, rgba(11, 10, 20, 0.92) 30%, rgba(11, 10, 20, 0.8) 44%, rgba(11, 10, 20, 0.4) 58%, rgba(11, 10, 20, 0.14) 78%, rgba(11, 10, 20, 0.04) 100%); }
+.hero-inner { position: relative; display: flex; flex-direction: column; justify-content: flex-end; gap: 28px; padding-block: 72px 56px; }
+.hero-title { margin: 0; max-width: 11ch; font-weight: 300; font-size: clamp(3.2rem, 2rem + 4vw, 5.5rem); line-height: 1; letter-spacing: -0.01em; color: var(--gold-100); font-variation-settings: "opsz" 96; }
+.hero-body { display: grid; gap: 24px; max-width: 640px; }
+.hero-lede { font-family: var(--serif); font-weight: 300; font-size: clamp(1.3rem, 1.1rem + 0.8vw, 1.625rem); line-height: 1.42; color: var(--gold); max-width: 34ch; font-variation-settings: "opsz" 28; }
+.hero-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 32px; margin: 0; max-width: 620px; }
+.hero-facts div { border-left: var(--border) solid var(--green-2); padding-left: 16px; }
+.hero-facts dt { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold-300); }
+.hero-facts dd { margin: 2px 0 0; font-size: var(--fs-base); color: var(--gold-100); line-height: 1.45; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .rise { animation: rise 1s var(--ease) both; animation-delay: calc(var(--i, 0) * 90ms + 120ms); }
+}
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Section rhythm ---------- */
+.section { padding-block: clamp(72px, 9vw, 120px); }
+.section-tight { padding-block: 32px 0; }
+.h2 { font-size: clamp(2rem, 1.5rem + 1.6vw, var(--fs-2xl)); line-height: 1.15; font-weight: 400; letter-spacing: -0.01em; font-variation-settings: "opsz" 48; }
+.lead { font-size: var(--fs-md); line-height: 1.6; color: var(--ink-700); max-width: 58ch; }
+.prose { display: grid; gap: 18px; max-width: 60ch; }
+.prose a { color: var(--royal); text-decoration: underline; text-decoration-color: var(--green-1); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+.prose a:hover { text-decoration-color: var(--royal); }
+.on-dark { color: var(--gold-300); }
+.on-dark h2, .on-dark h3 { color: var(--gold-100); }
+
+/* About */
+.about { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(40px, 7vw, 96px); align-items: end; }
+.about .h2 { margin-bottom: 28px; max-width: 16ch; }
+.figures { display: flex; flex-wrap: wrap; gap: 0 32px; margin: 0; }
+.figures div { flex: 1 1 calc(50% - 32px); display: flex; flex-direction: column-reverse; justify-content: flex-end; border-top: var(--hairline) solid var(--line); padding: 20px 0 28px; }
+.figures dd { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(2.6rem, 2rem + 2vw, var(--fs-4xl)); line-height: 1; color: var(--royal); font-variant-numeric: lining-nums tabular-nums; font-variation-settings: "opsz" 72; }
+.figures dd small { font-size: var(--fs-lg); font-weight: 400; margin-left: 4px; }
+.figures dt { margin-top: 10px; font-size: var(--fs-sm); color: var(--ink-500); }
+
+/* Planning a visit */
+.planning { background: var(--gold); }
+.planning-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(40px, 6vw, 88px); align-items: start; }
+.planning-photo { position: sticky; top: 104px; border-radius: var(--radius-lg); overflow: hidden; aspect-ratio: 4 / 5; box-shadow: var(--shadow-md); background: var(--black); }
+.planning-photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; }
+.planning .h2 { margin-bottom: 20px; }
+.destinations { list-style: none; margin: 32px 0 0; padding: 0; }
+.destinations li + li { border-top: var(--hairline) solid var(--line); }
+.destinations a { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 24px; align-items: center; padding: 24px 0; text-decoration: none; border-radius: 4px; }
+.destinations strong { font-family: var(--serif); font-weight: 400; font-size: var(--fs-lg); line-height: 1.2; color: var(--royal); transition: transform var(--t-slow) var(--ease); font-variation-settings: "opsz" 32; }
+.destinations span { grid-column: 1; font-size: var(--fs-base); color: var(--ink-700); max-width: 52ch; }
+.destinations .go { grid-column: 2; grid-row: 1 / span 2; width: 44px; height: 44px; border-radius: var(--radius-md); display: grid; place-items: center; color: var(--royal); border: var(--border) solid rgba(33, 26, 87, 0.28); transition: background-color var(--t-med) var(--ease), color var(--t-med) var(--ease), border-color var(--t-med) var(--ease); }
+.destinations a:hover strong { transform: translateX(6px); }
+.destinations a:hover .go { background: var(--royal); color: var(--gold-100); border-color: var(--royal); }
+
+/* History: rotation + ledger on royal purple */
+.history { background: var(--royal); }
+.history-head { display: grid; gap: 16px; margin-bottom: 48px; }
+.rotation { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+.rotation li { border-top: var(--border) solid rgba(167, 168, 65, 0.55); padding-top: 24px; display: grid; gap: 6px; }
+.rotation li.is-next { border-top: 3px solid var(--green-1); padding-top: 22.5px; }
+.rotation .year { font-size: var(--fs-sm); font-weight: 600; letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--gold-300); display: flex; gap: 12px; align-items: center; }
+.rotation .next { font-size: var(--fs-xs); color: var(--royal); background: var(--green-1); border-radius: var(--radius-pill); padding: 2px 10px; letter-spacing: 0.12em; }
+.rotation .numeral { font-family: var(--serif); font-weight: 300; font-size: clamp(3rem, 2rem + 3vw, 4.75rem); line-height: 1; color: var(--gold); font-variation-settings: "opsz" 96; letter-spacing: 0.02em; }
+.rotation .place { font-size: var(--fs-md); color: var(--gold-100); }
+.rotation li:not(.is-next) .numeral { color: var(--lilac-200); }
+.history-note { margin-top: 28px; font-size: var(--fs-base); color: var(--lilac-200); max-width: 60ch; }
+.ledger-head { margin: clamp(72px, 8vw, 104px) 0 32px; }
+.ledger { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; border-top: var(--hairline) solid rgba(210, 203, 232, 0.24); }
+.ledger li { padding: 24px 20px 8px 0; display: grid; gap: 4px; }
+.ledger li + li { border-left: var(--hairline) solid rgba(210, 203, 232, 0.24); padding-left: 20px; }
+.ledger .yr { font-family: var(--serif); font-weight: 300; font-size: var(--fs-2xl); line-height: 1.1; color: var(--gold); font-variant-numeric: lining-nums; }
+.ledger .where { font-size: var(--fs-base); color: var(--gold-100); line-height: 1.4; min-height: 2.8em; }
+.ledger .entries { font-size: var(--fs-sm); color: var(--lilac-200); font-variant-numeric: tabular-nums; }
+
+/* Judging groups: a register, two columns */
+.judging-head { display: grid; gap: 20px; margin-bottom: 48px; }
+.register { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(32px, 5vw, 72px); grid-auto-flow: column; grid-template-rows: repeat(5, auto); }
+.register li { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 20px; padding: 22px 0; border-top: var(--hairline) solid var(--line); }
+.register .sym { width: 60px; height: 60px; border-radius: var(--radius-md); background: var(--gold); display: grid; place-items: center; font-family: var(--serif); font-size: 26px; font-weight: 400; color: var(--royal); font-variation-settings: "opsz" 36; }
+.register .grp { font-size: var(--fs-xs); font-weight: 600; letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--ink-500); }
+.register h3 { font-size: var(--fs-md); line-height: 1.25; margin: 2px 0 6px; font-variation-settings: "opsz" 24; }
+.register p { font-size: 15.5px; line-height: 1.55; color: var(--ink-700); }
+
+/* Entering the show: a real four-stage sequence */
+.entering { background: var(--gold); }
+.stages { list-style: none; margin: 48px 0 40px; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px; counter-reset: stage; }
+.stages li { position: relative; padding-top: 28px; border-top: var(--border) solid var(--green-1); display: grid; gap: 10px; align-content: start; }
+.stages .n { font-family: var(--serif); font-weight: 300; font-size: var(--fs-3xl); line-height: 1; color: var(--green-2); font-variant-numeric: lining-nums; font-variation-settings: "opsz" 72; }
+.stages h3 { font-size: var(--fs-md); line-height: 1.25; font-variation-settings: "opsz" 24; }
+.stages p { font-size: 15.5px; line-height: 1.6; }
+
+/* Closing band */
+.closing { background: var(--black); position: relative; overflow: hidden; }
+.closing-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 520px; }
+.closing-copy { padding: clamp(72px, 9vw, 120px) clamp(24px, 5vw, 72px) clamp(72px, 9vw, 120px) max(var(--gutter), calc((100vw - var(--default)) / 2)); display: grid; gap: 24px; align-content: center; }
+.closing-copy .h2 { font-size: clamp(2.2rem, 1.6rem + 2vw, var(--fs-3xl)); max-width: 14ch; }
+.closing-copy p { max-width: 44ch; color: var(--gold-300); }
+.closing-copy .btn { justify-self: start; margin-top: 8px; }
+.closing-photo { position: relative; }
+.closing-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 40% 50%; }
+
+/* Hub notice (R11 page level, directly beneath the hero) */
+.notice { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 16px 24px; }
+
+
+/* ---------- Plan your visit ---------- */
+/* Inner-page hero (approved presenters template): the tickets masthead's type on a full-bleed
+   photograph, one 90deg near-black ramp (R10/R15), photo shown as shot (R5). Below 620px the photo
+   stacks under the type on solid black (R4), so no scrim is needed there. */
+.ihero { position: relative; display: grid; align-content: center; min-height: clamp(360px, 32vw, 460px); background: var(--black); overflow: hidden; }
+.ihero-photo { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: var(--focus, 70% 50%); }
+.ihero::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, rgba(11, 10, 20, 0.92) 0%, rgba(11, 10, 20, 0.78) 28%, rgba(11, 10, 20, 0.42) 52%, rgba(11, 10, 20, 0.20) 75%, rgba(11, 10, 20, 0.06) 100%); }
+.ihero-copy { position: relative; z-index: 2; display: grid; gap: 22px; padding-block: 64px; }
+.ihero h1 { max-width: 9ch; font-weight: 300; font-size: clamp(3.2rem, 2rem + 4vw, 5.5rem); line-height: 1; letter-spacing: -0.01em; color: var(--gold-100); font-variation-settings: "opsz" 24; }
+.ihero-stand { max-width: 34ch; font-size: var(--fs-md); line-height: 1.6; color: var(--gold-300); }
+@media (max-width: 620px) {
+  .ihero { min-height: 0; align-content: start; }
+  .ihero::before { content: none; }
+  .ihero-photo { position: static; order: 2; height: auto; aspect-ratio: 4 / 3; object-position: var(--focus-sm, var(--focus, 70% 50%)); }
+  .ihero-copy { padding-block: 48px 32px; }
+}
+
+.visit-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(40px, 6vw, 80px); align-items: start; }
+.visit-intro { display: grid; gap: 16px; margin-bottom: 32px; }
+.pending-item { display: grid; gap: 6px; }
+.pending-item + .pending-item { padding-top: 20px; border-top: var(--hairline) solid var(--line); }
+.pending-item h3 { font-size: var(--fs-lg); line-height: 1.2; font-variation-settings: "opsz" 32; }
+.pending-item p { font-size: var(--fs-base); }
+.venue { position: sticky; top: 100px; background: var(--white); border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: clamp(24px, 3vw, 36px); display: grid; gap: 18px; }
+.venue .label { display: flex; align-items: center; gap: 8px; font-size: var(--fs-xs); font-weight: 700; letter-spacing: var(--track-caps); text-transform: uppercase; color: var(--ink-500); }
+.venue .label .icon { color: var(--green-2); width: 16px; height: 16px; }
+.venue h3 { font-size: var(--fs-lg); line-height: 1.2; font-variation-settings: "opsz" 32; }
+.venue address { font-style: normal; font-size: var(--fs-base); line-height: 1.6; color: var(--ink-700); }
+.venue p { font-size: 15.5px; line-height: 1.6; }
+.venue a.maplink { display: inline-flex; align-items: center; gap: 8px; justify-self: start; min-height: 44px; font-size: var(--fs-sm); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--royal); text-decoration: underline; text-decoration-color: var(--green-1); text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
+.venue a.maplink:hover { text-decoration-color: var(--royal); }
+
+.emergency { background: var(--gold); }
+.emergency .h2 { margin-bottom: 32px; }
+.numbers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 40px; margin: 0; }
+.numbers div { display: grid; gap: 6px; align-content: start; }
+.numbers dd { order: -1; margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(2.4rem, 1.8rem + 2vw, var(--fs-4xl)); line-height: 1; color: var(--royal); font-variant-numeric: lining-nums tabular-nums; letter-spacing: 0.01em; font-variation-settings: "opsz" 72; }
+.numbers dt { font-size: var(--fs-base); color: var(--ink-700); }
+.numbers .note { font-size: var(--fs-sm); color: var(--ink-500); }
+.onsite { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 24px; align-items: baseline; padding-top: 20px; border-top: var(--hairline) solid var(--line); }
+.onsite h3 { font-size: var(--fs-md); font-variation-settings: "opsz" 24; }
+.onsite .tbc { font-size: var(--fs-base); color: var(--ink-500); font-weight: 600; }
+
+.inform { background: var(--black); }
+.inform-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 32px 64px; align-items: end; }
+.inform-grid p { color: var(--lilac-200); max-width: 54ch; margin-top: 20px; }
+.inform-grid .btn { justify-self: start; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 960px) {
+  .about, .planning-grid, .visit-grid, .footer-top, .inform-grid { grid-template-columns: minmax(0, 1fr); }
+  .planning-photo { position: relative; top: 0; aspect-ratio: 16 / 11; }
+  .venue { position: relative; top: 0; }
+  .stages { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px 32px; }
+  .ledger { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ledger li + li { border-left: 0; padding-left: 0; }
+  .ledger li { border-bottom: var(--hairline) solid rgba(210, 203, 232, 0.24); padding: 20px 16px 16px 0; }
+  .ledger li:nth-child(even) { padding-left: 20px; border-left: var(--hairline) solid rgba(210, 203, 232, 0.24); }
+  .ledger li:last-child { grid-column: 1 / -1; }
+  .closing-grid, .masthead-grid { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .closing-photo { order: -1; aspect-ratio: 16 / 10; }
+  .closing-copy, .masthead-copy { padding: 56px var(--gutter) 64px; }
+}
+@media (max-width: 700px) {
+  .chip { letter-spacing: 0.06em; padding-inline: 10px; }
+  .disclosure { padding-inline: 16px; }
+  .hero-facts { order: 1; }
+  .hero-body { display: flex; flex-direction: column; }
+  /* R4 stack: the copy on solid black, the photograph below it, never behind. */
+  .hero { flex-direction: column; min-height: 0; }
+  .hero-media { position: relative; inset: auto; order: 2; z-index: 0; aspect-ratio: 4 / 3; -webkit-mask-image: none; mask-image: none; }
+  .hero-media img { object-position: 64% 50%; }
+  .hero-scrim { display: none; }
+  .hero-inner { padding-block: 40px; gap: 32px; }
+  .hero-title { font-size: clamp(2.8rem, 12vw, 3.4rem); }
+  .hero-body { gap: 24px; }
+  .hero-facts { gap: 18px 20px; }
+  .hero-actions .btn { flex: 1 1 100%; }
+  .figures div { flex-basis: calc(50% - 32px); }
+  .rotation { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .register { grid-template-columns: minmax(0, 1fr); grid-auto-flow: row; grid-template-rows: none; }
+  .register li { grid-template-columns: 52px minmax(0, 1fr); gap: 16px; }
+  .register .sym { width: 52px; height: 52px; font-size: 22px; }
+  .stages { grid-template-columns: minmax(0, 1fr); }
+  .numbers { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .onsite { grid-template-columns: minmax(0, 1fr); }
+  .destinations strong { font-size: var(--fs-md); }
+  .destinations a { padding: 20px 0; }
+  .notice { padding: 16px 20px; }
+}
+
+/* ---------- NOS chrome on the SAOC site (v4) ----------
+   The NOS pages of saoc.co.za, with the SAOC header and footer replaced by NOS-branded versions of
+   the same structure: SAOC's menu and footer content, NOS ground, type and the supplied NOS lockup
+   files (never typeset, never altered). Tokens are prefixed --nc-* so the chrome drops into the
+   tickets page without touching its own tokens. Single-theme brand world: the committee palette has
+   no dark mode, so every colour is painted explicitly. */
+:root {
+  --nc-royal: #211A57; --nc-royal-900: #1A1445; --nc-black: #0B0A14;
+  --nc-ground: #FBFAF0; --nc-gold: #F3F2D6; --nc-gold-300: #E8E6C2;
+  --nc-ink: #3A3654; --nc-ink-500: #6A6780; --nc-line: #DAD7C8; --nc-lilac: #D2CBE8;
+  --nc-green-1: #A7A841; --nc-green-2: #7F7D33; --nc-olive-700: #6A6829; --nc-violet: #7E3F97; --nc-white: #FFFFFF;
+  --nc-serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --nc-sans: "Karla", "Helvetica Neue", Arial, sans-serif;
+  --nc-shadow-md: 0 2px 4px rgba(33, 26, 87, 0.06), 0 10px 28px rgba(33, 26, 87, 0.09);
+  --nc-shadow-float: 0 8px 24px rgba(33, 26, 87, 0.08);
+  --nc-gutter: clamp(16px, 2.5vw, 32px);
+  --nc-wide: 1320px;
+  --nc-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Header lockup: the supplied full-colour horizontal file (1200 x 294, ink 54..1139 x 54..241).
+     448px puts the location line's cap at 7.2px; the transparent margin is pulled back so the ink
+     box (405 x 70) is what the bar lays out. */
+  --nc-logo-w: 448px;
+}
+.nc-chev { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; transition: transform 200ms var(--nc-ease); }
+.nh-sentinel { position: absolute; top: 4px; left: 0; width: 1px; height: 1px; pointer-events: none; }
+
+/* Header */
+.nh { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 60; background: var(--nc-ground); color: var(--nc-royal); font-family: var(--nc-sans); border-bottom: 1px solid var(--nc-line); transition: box-shadow 150ms; }
+.nh.is-scrolled { box-shadow: var(--nc-shadow-float); }
+.nh :focus-visible, .nd :focus-visible { outline: 2px solid var(--nc-violet); outline-offset: 2px; border-radius: 4px; box-shadow: none; }
+.nh-bar { display: flex; align-items: center; gap: 24px; max-width: calc(var(--nc-wide) + 2 * var(--nc-gutter)); margin-inline: auto; padding: 13px var(--nc-gutter); }
+.nh-bar > * { flex: none; }
+.nh-brand { display: block; line-height: 0; border-radius: 4px; }
+.nh-brand img { width: var(--nc-logo-w); max-width: none; height: auto; margin: calc(var(--nc-logo-w) * -0.045) calc(var(--nc-logo-w) * -0.0508) calc(var(--nc-logo-w) * -0.0442) calc(var(--nc-logo-w) * -0.045); }
+
+/* SAOC's menu, in NOS type. National Show opens its full mega-menu on click only (R12). */
+.nh-nav { display: none; margin-left: auto; }
+.nh-nav > ul { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 2px; }
+.nh-link, .nh-trigger { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 9px; border: 0; border-radius: 10px; background: none; color: var(--nc-royal); font: 600 14.5px/1 var(--nc-sans); text-decoration: none; white-space: nowrap; cursor: pointer; transition: background-color 150ms; }
+.nh-link:hover, .nh-trigger:hover, .nh-trigger[aria-expanded="true"] { background: var(--nc-gold); }
+.nh-trigger[aria-expanded="true"] .nc-chev { transform: rotate(180deg); }
+.nh-label { position: relative; }
+.nh-trigger[data-current] .nh-label::after { content: ""; position: absolute; left: 0; right: 0; bottom: -8px; height: 2px; border-radius: 1px; background: var(--nc-green-1); }
+
+.nh-mega { position: absolute; left: 0; right: 0; top: 100%; z-index: 61; background: var(--nc-ground); border-top: 1px solid var(--nc-line); box-shadow: 0 20px 44px rgba(33, 26, 87, 0.12); }
+.nh-mega-grid { display: grid; grid-template-columns: 1.05fr 1fr 1fr 1fr 0.9fr; max-width: calc(var(--nc-wide) + 2 * var(--nc-gutter)); margin-inline: auto; padding: 28px var(--nc-gutter) 28px; }
+.nh-mega-col { padding-inline: 24px; border-left: 1px solid var(--nc-line); }
+.nh-mega-lead { padding-right: 24px; }
+.nh-mega-lead-link { display: inline-flex; align-items: center; min-height: 44px; font: 400 1.35rem/1.15 var(--nc-serif); color: var(--nc-royal); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
+.nh-mega-meta { display: block; max-width: 30ch; margin: 4px 0 20px; font-size: 13px; line-height: 1.45; color: var(--nc-ink-500); }
+.nh-mega-head { margin: 0 0 4px; font: 700 12px/1.4 var(--nc-sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--nc-olive-700); }
+.nh-mega-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.nh-mega-list li + li { border-top: 1px solid var(--nc-line); }
+.nh-mega-list a { display: grid; gap: 2px; padding: 9px 8px; margin-inline: -8px; border-radius: 10px; text-decoration: none; }
+.nh-mega-list a:hover { background: var(--nc-gold); }
+.nh-leaf { font-size: 14.5px; font-weight: 700; line-height: 1.3; color: var(--nc-royal); }
+.nh-desc { font-size: 12.5px; line-height: 1.4; color: var(--nc-ink-500); }
+.nh-mega-list a[aria-current="page"] .nh-leaf, .nd-sub a[aria-current="page"] { text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 2px; text-underline-offset: 5px; }
+.nh-mega-rail { padding: 22px 24px; border-left: 1px solid var(--nc-line); background: var(--nc-gold); border-radius: 0 16px 16px 0; }
+.nh-mega-rail .nh-mega-meta { margin: 0 0 6px; }
+.nh-mega-rail .nh-mega-list a { min-height: 44px; align-content: center; }
+.nh-mega-rail h4 { margin: 0 0 8px; font: 400 1.35rem/1.15 var(--nc-serif); color: var(--nc-royal); }
+
+/* The one primary action: Tickets. On the tickets page it is the current page, so it drops to outline. */
+.nh-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 24px; border-radius: 10px; background: var(--nc-royal); color: var(--nc-ground); font: 700 13px/1 var(--nc-sans); letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; white-space: nowrap; transition: background-color 200ms var(--nc-ease), color 200ms var(--nc-ease); }
+.nh-cta:hover { background: var(--nc-royal-900); }
+.nh-cta[aria-current="page"] { background: transparent; color: var(--nc-royal); box-shadow: inset 0 0 0 1.5px var(--nc-royal); }
+.nh-cta[aria-current="page"]:hover { background: var(--nc-gold); }
+.nh-cta { margin-left: auto; }
+.nh-burger { display: inline-flex; align-items: center; gap: 8px; min-width: 44px; min-height: 44px; padding: 0 12px; border: 1.5px solid rgba(33, 26, 87, 0.28); border-radius: 10px; background: none; color: var(--nc-royal); font: 700 13px/1 var(--nc-sans); letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; }
+.nh-burger svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; }
+.nh-burger .is-x, .nh-burger[aria-expanded="true"] .is-bars { display: none; }
+.nh-burger[aria-expanded="true"] .is-x { display: block; }
+@media (min-width: 1260px) {
+  .nh-nav { display: block; }
+  .nh-cta { margin-left: 0; }
+  .nh-burger { display: none; }
+}
+/* Phones: the lockup takes the full first row at a legible size, the actions sit below it, and
+   the header scrolls with the page rather than holding a sixth of the screen. */
+@media (max-width: 699px) {
+  :root { --nc-logo-w: 390px; }
+  .nh { position: relative; }
+  .nh-bar { flex-wrap: wrap; gap: 12px; padding-block: 16px 12px; }
+  .nh-brand { flex-basis: 100%; }
+  .nh-cta { margin-left: 0; }
+  .nh-burger { margin-left: auto; }
+}
+@media (max-width: 420px) { :root { --nc-logo-w: min(390px, calc((100vw - 32px) / 0.904)); } }
+
+/* Menu panel (below 1260px): SAOC's drawer list, NOS type. */
+.nd { position: fixed; left: 0; right: 0; bottom: 0; top: 0; z-index: 59; overflow-y: auto; overscroll-behavior: contain; background: var(--nc-ground); color: var(--nc-royal); font-family: var(--nc-sans); padding: 16px var(--nc-gutter) calc(40px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--nc-line); }
+.nd-inner { max-width: 720px; }
+.nd-list { list-style: none; margin: 0; padding: 0; }
+.nd-list > li + li { border-top: 1px solid var(--nc-line); }
+.nd-item { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; padding: 0; border: 0; background: none; color: var(--nc-royal); font: 400 1.375rem/1.2 var(--nc-serif); text-decoration: none; cursor: pointer; text-align: left; }
+.nd-item .nc-chev { width: 18px; height: 18px; }
+.nd-item[aria-expanded="true"] .nc-chev { transform: rotate(180deg); }
+.nd-item[data-current] { text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 2px; text-underline-offset: 7px; }
+.nd-sub { padding: 4px 0 20px; display: grid; gap: 18px; }
+.nd-lead { display: grid; gap: 2px; }
+.nd-lead a { display: inline-flex; align-items: center; min-height: 44px; font: 400 1.2rem/1.2 var(--nc-serif); color: var(--nc-royal); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
+.nd-lead span { font-size: 14px; color: var(--nc-ink-500); }
+.nd-group h3 { margin: 0 0 2px; font: 700 12px/1.4 var(--nc-sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--nc-olive-700); }
+.nd-group ul { list-style: none; margin: 0; padding: 0; display: grid; }
+.nd-group a { display: grid; gap: 2px; padding: 9px 0; text-decoration: none; }
+.nd-group a .nh-leaf { font-size: 16px; }
+.nd-group a .nh-desc { font-size: 13px; }
+@media (prefers-reduced-motion: no-preference) {
+  .nd:not([hidden]) { animation: nd-in 260ms var(--nc-ease) both; }
+}
+@keyframes nd-in { from { opacity: 0; transform: translateY(-8px); } }
+
+/* Footer: SAOC's footer content and structure on royal, the supplied reversed NOS lockup in the brand slot. */
+.nf { background: var(--nc-royal); color: var(--nc-lilac); font-family: var(--nc-sans); padding-block: clamp(56px, 7vw, 88px) calc(76px + env(safe-area-inset-bottom, 0px)); }
+.nf :focus-visible { outline: 2px solid var(--nc-ground); outline-offset: 3px; border-radius: 4px; }
+.nf ::selection { background: var(--nc-gold); color: var(--nc-royal); }
+.nf-wrap { max-width: calc(var(--nc-wide) + 2 * var(--nc-gutter)); margin-inline: auto; padding-inline: var(--nc-gutter); }
+.nf-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 48px 40px; }
+.nf-brand { display: grid; gap: 20px; align-content: start; justify-items: start; }
+.nf-lockup { display: block; line-height: 0; border-radius: 4px; }
+.nf-lockup img { display: block; }
+.nf-lockup .nf-v { display: none; }
+.nf-lockup img { width: var(--nc-logo-w); max-width: none; height: auto; margin: calc(var(--nc-logo-w) * -0.045) calc(var(--nc-logo-w) * -0.0508) calc(var(--nc-logo-w) * -0.0442) calc(var(--nc-logo-w) * -0.045); }
+.nf-text { margin: 0; max-width: 44ch; font-size: 15px; line-height: 1.6; color: var(--nc-lilac); }
+.nf-reg { font-size: 12px; letter-spacing: 0.08em; color: rgba(210, 203, 232, 0.78); font-variant-numeric: tabular-nums; }
+.nf-org { display: grid; gap: 8px; justify-items: inherit; }
+.nf-org .nf-reg { margin-top: 6px; }
+.nf-head { margin: 0 0 6px; font: 700 12px/1.3 var(--nc-sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--nc-green-1); }
+.nf-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.nf-list a, .nf-list span { display: flex; align-items: center; min-height: 44px; font-size: 15px; line-height: 1.35; color: var(--nc-lilac); text-decoration: none; }
+.nf-list span { min-height: 0; padding-block: 11px; }
+.nf a:hover { color: var(--nc-ground); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-underline-offset: 4px; }
+.nf-col .nf-text { margin-bottom: 14px; }
+.nf-form { display: flex; gap: 8px; max-width: 360px; }
+.nf-form input { flex: 1; min-width: 0; min-height: 44px; padding: 0 14px; border: 1px solid rgba(210, 203, 232, 0.36); border-radius: 10px; background: rgba(11, 10, 20, 0.22); color: var(--nc-ground); font: 15px var(--nc-sans); }
+.nf-form input::placeholder { color: rgba(210, 203, 232, 0.72); }
+.nf-form input:focus-visible { outline: 2px solid var(--nc-ground); outline-offset: 2px; }
+.nf-form button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--nc-gold); color: var(--nc-royal); font: 700 13px/1 var(--nc-sans); letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }
+.nf-form button:hover { background: var(--nc-gold-300); }
+.nf-wild { margin-top: 28px; }
+.nf-wild a { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; color: var(--nc-ground); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+.nf-base { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 32px; margin-top: clamp(48px, 6vw, 72px); padding-top: 16px; border-top: 1px solid rgba(210, 203, 232, 0.2); font-size: 13px; letter-spacing: 0.02em; }
+.nf-legal { display: flex; flex-wrap: wrap; gap: 0 24px; }
+.nf-legal a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; color: var(--nc-lilac); text-decoration: none; }
+@media (min-width: 701px) { .nf-form { flex-direction: column; } .nf-form input, .nf-form button { width: 100%; } }
+@media (min-width: 701px) { .nf-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .nf-brand { grid-column: 1 / -1; } }
+@media (min-width: 1180px) { .nf-grid { grid-template-columns: var(--nc-logo-w) repeat(3, minmax(0, 1fr)); } .nf-brand { grid-column: auto; } }
+@media (max-width: 700px) {
+  .nf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px 20px; }
+  .nf-brand { grid-column: 1 / -1; justify-items: center; text-align: center; }
+  .nf-brand .nf-text { max-width: 36ch; }
+  /* The supplied reversed vertical lockup at 342px: cap 7.0px. */
+  .nf-lockup .nf-h { display: none; }
+  .nf-lockup .nf-v { display: block; width: min(342px, 100%); margin: 0; }
+  .nf-col-touch { grid-column: 1 / -1; }
+  .nf-base { flex-direction: column; align-items: flex-start; }
+}
+
+/* Proposal pill: the one review element. Dismissed once, it stays gone for this visit. */
+.np { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 70; display: inline-flex; align-items: center; min-height: 44px; padding-left: 16px; border-radius: 999px; background: rgba(11, 10, 20, 0.92); color: var(--nc-gold-300); border: 1px solid rgba(243, 242, 214, 0.22); font: 600 12px/1.2 var(--nc-sans); letter-spacing: 0.04em; box-shadow: 0 8px 24px rgba(11, 10, 20, 0.25); }
+.np button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: none; color: inherit; cursor: pointer; }
+.np button:hover { color: var(--nc-ground); }
+.np button:focus-visible { outline: 2px solid var(--nc-ground); outline-offset: -6px; }
+.np svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<span class="nh-sentinel" id="nh-sentinel" aria-hidden="true"></span>
+<header class="nh" id="nh">
+  <div class="nh-bar">
+    <a class="nh-brand" href="./" aria-label="National Orchid Show, Western Cape 2027, National Show home">
+      <img src="img/nos-full-colour-horizontal-1200.png" alt="National Orchid Show, Western Cape 2027" width="1200" height="294">
+    </a>
+    <nav class="nh-nav" aria-label="Primary"><ul>
+      <li><a class="nh-link" href="https://saoc.co.za/about">About</a></li>
+      <li><a class="nh-link" href="https://saoc.co.za/societies">Societies</a></li>
+      <li><a class="nh-link" href="https://saoc.co.za/judging">Judging &amp; Awards</a></li>
+      <li><a class="nh-link" href="https://saoc.co.za/events">Events</a></li>
+      <li><a class="nh-link" href="https://saoc.co.za/members">Members</a></li>
+      <li class="nh-show" id="nh-show"><button class="nh-trigger" type="button" id="nh-show-trigger" aria-expanded="false" aria-controls="nh-mega" data-current><span class="nh-label">National Show</span><svg class="nc-chev" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="nh-mega" id="nh-mega" hidden>
+          <div class="nh-mega-grid">
+            <div class="nh-mega-lead">
+              <a class="nh-mega-lead-link" href="./">19th SAOC National Orchid Show</a>
+              <span class="nh-mega-meta">The Hangar, Stellenbosch Flying Club · 23–26 September 2027</span>
+              <h3 class="nh-mega-head">The Show</h3><ul class="nh-mega-list"><li><a href="tickets.html"><span class="nh-leaf">Tickets</span><span class="nh-desc">Buy admission tickets.</span></a></li><li><a href="https://saoc.co.za/national-show/sponsors"><span class="nh-leaf">Show Sponsors</span><span class="nh-desc">The Show's own sponsors — a separate list from SAOC's site-level sponsors.</span></a></li><li><a href="https://saoc.co.za/national-show/archive"><span class="nh-leaf">Past Shows</span><span class="nh-desc">Previous editions and their champions.</span></a></li></ul>
+            </div>
+            <div class="nh-mega-col"><h3 class="nh-mega-head">Visit</h3><ul class="nh-mega-list"><li><a href="https://saoc.co.za/national-show/about"><span class="nh-leaf">About the Show</span><span class="nh-desc">The show's theme, what it brings together, and who takes part.</span></a></li><li><a href="https://saoc.co.za/national-show/what-to-expect"><span class="nh-leaf">What to Expect</span><span class="nh-desc">Hours, admission and on-the-day detail for visitors.</span></a></li><li><a href="plan-your-visit.html" aria-current="page"><span class="nh-leaf">Plan Your Visit</span><span class="nh-desc">Travel, parking, accommodation and nearby attractions.</span></a></li><li><a href="https://saoc.co.za/national-show/faq"><span class="nh-leaf">FAQ</span><span class="nh-desc">The questions visitors ask us most.</span></a></li></ul></div><div class="nh-mega-col"><h3 class="nh-mega-head">Programme</h3><ul class="nh-mega-list"><li><a href="https://saoc.co.za/national-show/programme"><span class="nh-leaf">Programme</span><span class="nh-desc">The overall schedule of sessions across the four show days.</span></a></li><li><a href="https://saoc.co.za/national-show/workshops"><span class="nh-leaf">Workshops</span><span class="nh-desc">Book Sunset Cocktails and guided Field Trip outings.</span></a></li><li><a href="symposium.html"><span class="nh-leaf">SAOC Symposium</span><span class="nh-desc">The SAOC Symposium — what it is, its theme, and who it is for.</span></a></li><li><a href="https://saoc.co.za/national-show/wosa-conference"><span class="nh-leaf">WOSA Conference</span><span class="nh-desc">What the WOSA Conference is and who it is for, with a link out to WOSA for wild-orchid content.</span></a></li><li><a href="https://saoc.co.za/national-show/conferences"><span class="nh-leaf">Conference Registration</span><span class="nh-desc">Register for the Symposium and WOSA Conference.</span></a></li></ul></div><div class="nh-mega-col"><h3 class="nh-mega-head">Exhibit &amp; Trade</h3><ul class="nh-mega-list"><li><a href="https://saoc.co.za/national-show/sa-exhibitors"><span class="nh-leaf">South African Exhibitors</span><span class="nh-desc">Public directory of South African nurseries exhibiting at the show.</span></a></li><li><a href="https://saoc.co.za/national-show/international-guests"><span class="nh-leaf">International Guests</span><span class="nh-desc">Public directory of international guests and exhibitors attending the show.</span></a></li><li><a href="https://saoc.co.za/national-show/exhibitors"><span class="nh-leaf">Exhibitor Entry Guide</span><span class="nh-desc">Entry process, fees, classes, judging and eligibility for growers entering plants.</span></a></li><li><a href="https://saoc.co.za/national-show/vendors"><span class="nh-leaf">Trade Vendors</span><span class="nh-desc">Trade vendor showcase, application and gated registration.</span></a></li></ul></div>
+            <div class="nh-mega-rail">
+              <span class="nh-mega-meta">23–26 September 2027</span>
+              <h4>Tickets</h4>
+              <ul class="nh-mega-list"><li><a href="tickets.html#ticket-day"><span class="nh-leaf">Day Visitor</span></a></li><li><a href="tickets.html#ticket-weekend"><span class="nh-leaf">Weekend Pass</span></a></li></ul>
+            </div>
+          </div>
+        </div></li>
+      <li><a class="nh-link" href="https://saoc.co.za/sponsors">Sponsors</a></li>
+    </ul></nav>
+    <a class="nh-cta" href="tickets.html">Tickets</a>
+    <button class="nh-burger" type="button" id="nh-burger" aria-expanded="false" aria-controls="nd">
+      <svg class="is-bars" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
+      <svg class="is-x" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      <span class="nh-burger-label">Menu</span>
+    </button>
+  </div>
+</header>
+<div class="nd" id="nd" hidden>
+  <nav class="nd-inner" aria-label="Menu"><ul class="nd-list">
+    <li><a class="nd-item" href="https://saoc.co.za/about">About</a></li>
+    <li><a class="nd-item" href="https://saoc.co.za/societies">Societies</a></li>
+    <li><a class="nd-item" href="https://saoc.co.za/judging">Judging &amp; Awards</a></li>
+    <li><a class="nd-item" href="https://saoc.co.za/events">Events</a></li>
+    <li><a class="nd-item" href="https://saoc.co.za/members">Members</a></li>
+    <li><button class="nd-item" type="button" data-sub aria-expanded="false" aria-controls="nd-show" data-current>National Show<svg class="nc-chev" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></button>
+      <div class="nd-sub" id="nd-show" hidden>
+        <div class="nd-lead"><a href="./">19th SAOC National Orchid Show</a><span>The Hangar, Stellenbosch Flying Club · 23–26 September 2027</span></div>
+        <div class="nd-group"><h3>The Show</h3><ul class=""><li><a href="tickets.html"><span class="nh-leaf">Tickets</span><span class="nh-desc">Buy admission tickets.</span></a></li><li><a href="https://saoc.co.za/national-show/sponsors"><span class="nh-leaf">Show Sponsors</span><span class="nh-desc">The Show's own sponsors — a separate list from SAOC's site-level sponsors.</span></a></li><li><a href="https://saoc.co.za/national-show/archive"><span class="nh-leaf">Past Shows</span><span class="nh-desc">Previous editions and their champions.</span></a></li></ul></div><div class="nd-group"><h3>Visit</h3><ul class=""><li><a href="https://saoc.co.za/national-show/about"><span class="nh-leaf">About the Show</span><span class="nh-desc">The show's theme, what it brings together, and who takes part.</span></a></li><li><a href="https://saoc.co.za/national-show/what-to-expect"><span class="nh-leaf">What to Expect</span><span class="nh-desc">Hours, admission and on-the-day detail for visitors.</span></a></li><li><a href="plan-your-visit.html" aria-current="page"><span class="nh-leaf">Plan Your Visit</span><span class="nh-desc">Travel, parking, accommodation and nearby attractions.</span></a></li><li><a href="https://saoc.co.za/national-show/faq"><span class="nh-leaf">FAQ</span><span class="nh-desc">The questions visitors ask us most.</span></a></li></ul></div><div class="nd-group"><h3>Programme</h3><ul class=""><li><a href="https://saoc.co.za/national-show/programme"><span class="nh-leaf">Programme</span><span class="nh-desc">The overall schedule of sessions across the four show days.</span></a></li><li><a href="https://saoc.co.za/national-show/workshops"><span class="nh-leaf">Workshops</span><span class="nh-desc">Book Sunset Cocktails and guided Field Trip outings.</span></a></li><li><a href="symposium.html"><span class="nh-leaf">SAOC Symposium</span><span class="nh-desc">The SAOC Symposium — what it is, its theme, and who it is for.</span></a></li><li><a href="https://saoc.co.za/national-show/wosa-conference"><span class="nh-leaf">WOSA Conference</span><span class="nh-desc">What the WOSA Conference is and who it is for, with a link out to WOSA for wild-orchid content.</span></a></li><li><a href="https://saoc.co.za/national-show/conferences"><span class="nh-leaf">Conference Registration</span><span class="nh-desc">Register for the Symposium and WOSA Conference.</span></a></li></ul></div><div class="nd-group"><h3>Exhibit &amp; Trade</h3><ul class=""><li><a href="https://saoc.co.za/national-show/sa-exhibitors"><span class="nh-leaf">South African Exhibitors</span><span class="nh-desc">Public directory of South African nurseries exhibiting at the show.</span></a></li><li><a href="https://saoc.co.za/national-show/international-guests"><span class="nh-leaf">International Guests</span><span class="nh-desc">Public directory of international guests and exhibitors attending the show.</span></a></li><li><a href="https://saoc.co.za/national-show/exhibitors"><span class="nh-leaf">Exhibitor Entry Guide</span><span class="nh-desc">Entry process, fees, classes, judging and eligibility for growers entering plants.</span></a></li><li><a href="https://saoc.co.za/national-show/vendors"><span class="nh-leaf">Trade Vendors</span><span class="nh-desc">Trade vendor showcase, application and gated registration.</span></a></li></ul></div><div class="nd-group"><h3>Tickets</h3><ul><li><a href="tickets.html#ticket-day"><span class="nh-leaf">Day Visitor</span></a></li><li><a href="tickets.html#ticket-weekend"><span class="nh-leaf">Weekend Pass</span></a></li></ul></div>
+      </div></li>
+    <li><a class="nd-item" href="https://saoc.co.za/sponsors">Sponsors</a></li>
+    <li><a class="nd-item" href="https://saoc.co.za/contact">Contact</a></li>
+  </ul></nav>
+</div>
+<main id="main">
+<section class="ihero" aria-labelledby="page-title" style="--focus: 62% 40%; --focus-sm: 58% 40%">
+  <img class="ihero-photo" src="img/orchid-purple-1600.jpg" alt="" width="1600" height="1254" fetchpriority="high">
+  <div class="wrap ihero-copy">
+    <h1 id="page-title">Plan your visit</h1>
+    <p class="ihero-stand">Everything you need to get to the National Orchid Show and make a day of it. Travel and accommodation guidance for the venue is still being put together; the show committee will confirm the final details.</p>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="getting-title">
+  <div class="wrap visit-grid">
+    <div>
+      <div class="visit-intro">
+        <h2 class="h2" id="getting-title">Getting there</h2>
+        <p class="lead">Travel, parking and accommodation guidance for the Stellenbosch Flying Club has not been worked out yet.</p>
+      </div>
+      <div class="disclosure" role="group" aria-label="Details to be confirmed by the show committee">
+        <span class="chip" style="justify-self:start">To be confirmed by the show committee</span>
+        <div class="pending-item">
+          <h3>Parking</h3>
+          <p>Parking arrangements have not been confirmed.</p>
+        </div>
+        <div class="pending-item">
+          <h3>Public transport</h3>
+          <p>Public transport options to Stellenbosch Airfield have not been confirmed.</p>
+        </div>
+        <div class="pending-item">
+          <h3>Where to stay</h3>
+          <p>Accommodation guidance for the Stellenbosch area is still being put together.</p>
+        </div>
+        <p class="disclosure-foot">It will be published here once it is ready.</p>
+      </div>
+    </div>
+
+    <aside class="venue" aria-labelledby="venue-title">
+      <h3 id="venue-title">The Hangar, Stellenbosch Flying Club</h3>
+      <address>Stellenbosch Airfield<br>R44<br>Stellenbosch, 7600<br>Western Cape</address>
+      <p>The show is held at the hangar at Stellenbosch Flying Club, on the R44 at Stellenbosch Airfield in the Cape Winelands. The pin is the airfield reference point; the exact entrance and on-site directions will be confirmed closer to the time.</p>
+      <a class="maplink" href="https://www.openstreetmap.org/?mlat=-33.9794&amp;mlon=18.8196#map=15/-33.9794/18.8196" target="_blank" rel="noreferrer noopener">Open in a map <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+    </aside>
+  </div>
+</section>
+
+<section class="section emergency" aria-labelledby="emergency-title">
+  <div class="wrap">
+    <h2 class="h2" id="emergency-title">In an emergency</h2>
+    <div class="disclosure on-pale" role="group" aria-label="Emergency contacts, to be confirmed by the show committee">
+      <span class="chip" style="justify-self:start">To be confirmed by the show committee</span>
+      <dl class="numbers">
+        <div><dt>Police (national)</dt><dd>10111</dd></div>
+        <div><dt>Ambulance and fire (national)</dt><dd>10177</dd></div>
+        <div><dt>All emergencies, from a mobile phone</dt><dd>112</dd><span class="note">Works from any mobile, including one with no airtime.</span></div>
+      </dl>
+      <div class="onsite">
+        <h3>On-site first aid and show duty contact</h3>
+        <span class="tbc">To be confirmed</span>
+      </div>
+      <p class="disclosure-foot">The committee will supply the on-site contact before the show.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section inform on-dark" aria-labelledby="inform-title">
+  <div class="wrap inform-grid">
+    <div>
+      <h2 class="h2" id="inform-title">Be the first to know</h2>
+      <p>Parking, public transport and accommodation are confirmed by the show committee as the event draws closer. Ask the council to be notified the moment they are settled, or point out anything missing here.</p>
+    </div>
+    <a class="btn btn-gold" href="https://saoc.co.za/contact">Ask the council</a>
+  </div>
+</section>
+
+</main>
+<footer class="nf">
+  <div class="nf-wrap">
+    <div class="nf-grid">
+      <div class="nf-brand">
+        <a class="nf-lockup" href="./" aria-label="National Orchid Show, Western Cape 2027, National Show home">
+          <img class="nf-h" src="img/nos-reversed-horizontal-1200.png" alt="National Orchid Show, Western Cape 2027" width="1200" height="294">
+          <img class="nf-v" src="img/nos-reversed-white-vertical-900.png" alt="National Orchid Show, Western Cape 2027" width="900" height="791">
+        </a>
+        <div class="nf-org">
+          <h2 class="nf-head">South African Orchid Council</h2>
+          <p class="nf-text">A national coordinating body for affiliated orchid societies across South Africa — promoting culture, hybridisation and appreciation of orchids in cultivation since 1968.</p>
+          <span class="nf-reg">REG# 1978/004040/08&nbsp;&nbsp;&nbsp;NPO 043-901</span>
+        </div>
+      </div>
+      <div class="nf-col"><h2 class="nf-head">Explore</h2><ul class="nf-list"><li><a href="https://saoc.co.za/about">About</a></li><li><a href="https://saoc.co.za/societies">Societies</a></li><li><a href="https://saoc.co.za/judging">Judging &amp; Awards</a></li><li><a href="./">National Show</a></li><li><a href="https://saoc.co.za/events">Events</a></li><li><a href="https://saoc.co.za/members">Members Portal</a></li></ul></div>
+      <div class="nf-col"><h2 class="nf-head">Partners</h2><ul class="nf-list"><li><span>Wild Orchids of Southern Africa</span></li><li><span>South African National Biodiversity Institute</span></li><li><span>Kirstenbosch NBG</span></li></ul></div>
+      <div class="nf-col nf-col-touch">
+        <h2 class="nf-head">Stay in touch</h2>
+        <p class="nf-text">Quarterly bulletin — show dates, judging results and yearbook news.</p>
+        <form class="nf-form" id="nf-form">
+          <input id="nf-email" type="email" aria-label="Email address" placeholder="your@email.co.za" required>
+          <button type="submit">Subscribe</button>
+        </form>
+        <div class="nf-wild">
+          <h2 class="nf-head">Looking for wild orchids?</h2>
+          <a href="https://wildorchids.co.za" target="_blank" rel="noopener noreferrer">Visit Wild Orchids of Southern Africa →</a>
+        </div>
+      </div>
+    </div>
+    <div class="nf-base">
+      <span>&copy; 2026 South African Orchid Council. All rights reserved.</span>
+      <div class="nf-legal"><a href="https://saoc.co.za/privacy">Privacy</a><a href="https://saoc.co.za/terms">Terms</a><a href="https://saoc.co.za/refunds">Refunds</a><a href="https://saoc.co.za/constitution">Constitution</a><a href="https://saoc.co.za/media-kit">Media kit</a></div>
+    </div>
+  </div>
+</footer>
+<div class="np" id="np" role="note">
+  <span>Proposal &middot; NOS branding on the SAOC site</span>
+  <button type="button" id="np-close" aria-label="Dismiss proposal note"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+</div>
+<script>
+// NOS chrome on the SAOC site: header elevation, the National Show mega-menu (click only), the
+// menu panel and the proposal pill. The header lockup is always on screen; nothing hides it.
+(() => {
+  "use strict";
+  // Deep links: the artifact link passes a bare #token through, so #tickets, #plan-your-visit and
+  // #symposium on the hub open that page directly.
+  const DEEP = { tickets: "tickets.html", "plan-your-visit": "plan-your-visit.html", symposium: "symposium.html" };
+  const deep = DEEP[location.hash.slice(1)];
+  if (deep && document.querySelector("[data-hub]")) { location.replace(deep); return; }
+
+  const header = document.getElementById("nh");
+  const sentinel = document.getElementById("nh-sentinel");
+  new IntersectionObserver(([entry]) => header.classList.toggle("is-scrolled", !entry.isIntersecting)).observe(sentinel);
+
+  // National Show mega-menu.
+  const item = document.getElementById("nh-show");
+  const trigger = document.getElementById("nh-show-trigger");
+  const mega = document.getElementById("nh-mega");
+  const setMega = (open, focus = false) => {
+    mega.hidden = !open;
+    trigger.setAttribute("aria-expanded", String(open));
+    if (focus) trigger.focus();
+  };
+  trigger.addEventListener("click", () => setMega(mega.hidden));
+  item.addEventListener("focusout", (e) => { if (!item.contains(e.relatedTarget)) setMega(false); });
+  document.addEventListener("mousedown", (e) => { if (!mega.hidden && !item.contains(e.target)) setMega(false); });
+  mega.addEventListener("click", (e) => { if (e.target.closest("a")) setMega(false); });
+
+  // Menu panel (below 1260px). On phones the header is not sticky, so the page returns to the top
+  // while the menu is open and goes back to where it was when it closes.
+  const burger = document.getElementById("nh-burger");
+  const drawer = document.getElementById("nd");
+  const burgerLabel = burger.querySelector(".nh-burger-label");
+  let restoreY = null;
+  const setDrawer = (open, { keepPlace = true } = {}) => {
+    if (open && getComputedStyle(header).position !== "sticky") { restoreY = window.scrollY; window.scrollTo(0, 0); }
+    drawer.hidden = !open;
+    burger.setAttribute("aria-expanded", String(open));
+    burgerLabel.textContent = open ? "Close" : "Menu";
+    for (const c of document.body.children) {
+      if (c === header || c === drawer || c.tagName === "SCRIPT") continue;
+      if (open) c.setAttribute("inert", ""); else c.removeAttribute("inert");
+    }
+    document.body.style.overflow = open ? "hidden" : "";
+    if (open) {
+      drawer.style.top = `${Math.max(0, header.getBoundingClientRect().bottom)}px`;
+      const first = Array.from(drawer.querySelectorAll("a, button")).find((n) => n.offsetParent !== null);
+      if (first) first.focus();
+    } else {
+      if (restoreY !== null && keepPlace) window.scrollTo(0, restoreY);
+      restoreY = null;
+    }
+  };
+  burger.addEventListener("click", () => setDrawer(drawer.hidden));
+  drawer.addEventListener("click", (e) => { if (e.target.closest("a")) setDrawer(false, { keepPlace: false }); });
+  drawer.querySelectorAll("[data-sub]").forEach((b) => b.addEventListener("click", () => {
+    const open = b.getAttribute("aria-expanded") !== "true";
+    b.setAttribute("aria-expanded", String(open));
+    document.getElementById(b.getAttribute("aria-controls")).hidden = !open;
+  }));
+  window.matchMedia("(min-width: 1260px)").addEventListener("change", (m) => { if (m.matches && !drawer.hidden) setDrawer(false); });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (!drawer.hidden) { setDrawer(false); burger.focus({ preventScroll: true }); return; }
+    if (!mega.hidden) setMega(false, true);
+  });
+
+  // SAOC Footer.tsx: the bulletin form only prevents submission; the mock has no mailing list.
+  document.getElementById("nf-form").addEventListener("submit", (e) => e.preventDefault());
+
+  // Proposal pill.
+  const PILL_KEY = "nos-v4-proposal-dismissed";
+  const pill = document.getElementById("np");
+  try { if (sessionStorage.getItem(PILL_KEY)) pill.hidden = true; } catch (err) { /* storage blocked: the pill shows */ }
+  document.getElementById("np-close").addEventListener("click", () => {
+    pill.hidden = true;
+    try { sessionStorage.setItem(PILL_KEY, "1"); } catch (err) { /* storage blocked: dismissed for this page only */ }
+  });
+})();
+</script>
+
+</body>
+</html>

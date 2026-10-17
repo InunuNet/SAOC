@@ -1,322 +1,541 @@
 {
-  "_note": "Pure builder fixtures for lib/data/ticket-card-view-models.ts buildTicketCardViewModels(input) -> { cards, pool }. Numbers here are test inputs, never page copy. The early-bird pool is the capacityPool 'eb' shared by weekend-pass-early-bird and early-bird (total = the smallest effective capacity of its members, sold = sum of member sold x headcountPerUnit). Day pass per-day total = the type's effective capacity (capacity, or releasedQuantity when smaller). A missing type yields no card for that product; an unknown count yields null and renders nothing (R7).",
-  "showDays": [
-    "2027-09-24",
-    "2027-09-25",
-    "2027-09-26"
-  ],
-  "types": [
-    {
-      "slug": "vip",
-      "price": 300,
-      "regularPrice": null,
-      "capacity": 200,
-      "releasedQuantity": null,
-      "capacityPool": null,
-      "headcountPerUnit": 1
+ "_note": "Pure builder fixtures for lib/data/ticket-card-view-models.ts buildTicketCardViewModels(input) -> { cards, pool }. Numbers here are test inputs, never page copy. The early-bird pool is the capacityPool 'eb' shared by weekend-pass-early-bird and early-bird (total = the smallest effective capacity of its members, sold = sum of member sold x headcountPerUnit). Day pass per-day total = the type's effective capacity (capacity, or releasedQuantity when smaller). A missing type yields no card for that product; an unknown count yields null and renders nothing (R7). dayPassFrom (R30, top-level of the builder output) is the effective price of the Day Pass card (the early-bird SKU while the pool lasts, the regular SKU after), null when that price is null; the hub renders the \"Day Pass from R{min}\" line only when it is a number. ledeCases drive buildSectionLedes (lib/data/ticket-section-ledes.ts): dates only from showDate/showEndDate, names only from the CMS ticketType names; a lede whose fact cannot be sourced is null and renders nothing.",
+ "showDays": [
+  "2027-09-24",
+  "2027-09-25",
+  "2027-09-26"
+ ],
+ "types": [
+  {
+   "slug": "vip",
+   "price": 300,
+   "regularPrice": null,
+   "capacity": 200,
+   "releasedQuantity": null,
+   "capacityPool": null,
+   "headcountPerUnit": 1
+  },
+  {
+   "slug": "sunset-cocktails-single",
+   "price": 800,
+   "regularPrice": null,
+   "capacity": 100,
+   "releasedQuantity": null,
+   "capacityPool": null,
+   "headcountPerUnit": 1
+  },
+  {
+   "slug": "weekend-pass-early-bird",
+   "price": 360,
+   "regularPrice": 380,
+   "capacity": 500,
+   "releasedQuantity": null,
+   "capacityPool": "eb",
+   "headcountPerUnit": 1
+  },
+  {
+   "slug": "weekend-pass",
+   "price": 380,
+   "regularPrice": null,
+   "capacity": 300,
+   "releasedQuantity": null,
+   "capacityPool": null,
+   "headcountPerUnit": 1
+  },
+  {
+   "slug": "early-bird",
+   "price": 120,
+   "regularPrice": 150,
+   "capacity": 500,
+   "releasedQuantity": null,
+   "capacityPool": "eb",
+   "headcountPerUnit": 1
+  },
+  {
+   "slug": "day-visitor",
+   "price": 150,
+   "regularPrice": null,
+   "capacity": 1000,
+   "releasedQuantity": null,
+   "capacityPool": null,
+   "headcountPerUnit": 1
+  }
+ ],
+ "cases": [
+  {
+   "name": "pool open",
+   "soldByType": {
+    "weekend-pass-early-bird": 100,
+    "early-bird": 88
+   },
+   "soldByDay": null,
+   "expect": {
+    "pool": {
+     "remaining": 312,
+     "total": 500
     },
-    {
-      "slug": "sunset-cocktails-single",
-      "price": 800,
-      "regularPrice": null,
-      "capacity": 100,
-      "releasedQuantity": null,
-      "capacityPool": null,
-      "headcountPerUnit": 1
+    "weekend": {
+     "slug": "weekend-pass-early-bird",
+     "state": "available",
+     "price": 360,
+     "regularPrice": 380,
+     "scarcity": {
+      "remaining": 312,
+      "total": 500,
+      "label": "early-bird left"
+     }
     },
-    {
-      "slug": "weekend-pass-early-bird",
-      "price": 360,
-      "regularPrice": 380,
-      "capacity": 500,
-      "releasedQuantity": null,
-      "capacityPool": "eb",
-      "headcountPerUnit": 1
+    "day": {
+     "slug": "early-bird",
+     "state": "available",
+     "price": 120,
+     "regularPrice": 150,
+     "scarcity": {
+      "remaining": 312,
+      "total": 500,
+      "label": "early-bird left"
+     },
+     "days": [
+      {
+       "day": "2027-09-24",
+       "state": "available",
+       "remaining": null,
+       "total": null
+      },
+      {
+       "day": "2027-09-25",
+       "state": "available",
+       "remaining": null,
+       "total": null
+      },
+      {
+       "day": "2027-09-26",
+       "state": "available",
+       "remaining": null,
+       "total": null
+      }
+     ]
     },
-    {
-      "slug": "weekend-pass",
-      "price": 380,
-      "regularPrice": null,
-      "capacity": 300,
-      "releasedQuantity": null,
-      "capacityPool": null,
-      "headcountPerUnit": 1
+    "vip": {
+     "slug": "vip",
+     "state": "available",
+     "price": 300,
+     "scarcity": {
+      "remaining": 200,
+      "total": 200,
+      "label": "places left"
+     }
     },
-    {
-      "slug": "early-bird",
-      "price": 120,
-      "regularPrice": 150,
-      "capacity": 500,
-      "releasedQuantity": null,
-      "capacityPool": "eb",
-      "headcountPerUnit": 1
+    "dayPassFrom": 120
+   }
+  },
+  {
+   "name": "pool low (8%)",
+   "soldByType": {
+    "weekend-pass-early-bird": 400,
+    "early-bird": 60
+   },
+   "soldByDay": null,
+   "expect": {
+    "pool": {
+     "remaining": 40,
+     "total": 500
     },
-    {
-      "slug": "day-visitor",
-      "price": 150,
-      "regularPrice": null,
-      "capacity": 1000,
-      "releasedQuantity": null,
-      "capacityPool": null,
-      "headcountPerUnit": 1
+    "weekend": {
+     "slug": "weekend-pass-early-bird",
+     "state": "low"
     }
-  ],
-  "cases": [
-    {
-      "name": "pool open",
-      "soldByType": {
-        "weekend-pass-early-bird": 100,
-        "early-bird": 88
-      },
-      "soldByDay": null,
-      "expect": {
-        "pool": {
-          "remaining": 312,
-          "total": 500
-        },
-        "weekend": {
-          "slug": "weekend-pass-early-bird",
-          "state": "available",
-          "price": 360,
-          "regularPrice": 380,
-          "scarcity": {
-            "remaining": 312,
-            "total": 500,
-            "label": "early-bird left"
-          }
-        },
-        "day": {
-          "slug": "early-bird",
-          "state": "available",
-          "price": 120,
-          "regularPrice": 150,
-          "scarcity": {
-            "remaining": 312,
-            "total": 500,
-            "label": "early-bird left"
-          },
-          "days": [
-            {
-              "day": "2027-09-24",
-              "state": "available",
-              "remaining": null,
-              "total": null
-            },
-            {
-              "day": "2027-09-25",
-              "state": "available",
-              "remaining": null,
-              "total": null
-            },
-            {
-              "day": "2027-09-26",
-              "state": "available",
-              "remaining": null,
-              "total": null
-            }
-          ]
-        },
-        "vip": {
-          "slug": "vip",
-          "state": "available",
-          "price": 300,
-          "scarcity": {
-            "remaining": 200,
-            "total": 200,
-            "label": "places left"
-          }
-        }
-      }
+   }
+  },
+  {
+   "name": "pool exhausted: regular SKUs take the slot",
+   "soldByType": {
+    "weekend-pass-early-bird": 300,
+    "early-bird": 200,
+    "weekend-pass": 214
+   },
+   "soldByDay": null,
+   "expect": {
+    "pool": {
+     "remaining": 0,
+     "total": 500
     },
-    {
-      "name": "pool low (8%)",
-      "soldByType": {
-        "weekend-pass-early-bird": 400,
-        "early-bird": 60
-      },
-      "soldByDay": null,
-      "expect": {
-        "pool": {
-          "remaining": 40,
-          "total": 500
-        },
-        "weekend": {
-          "slug": "weekend-pass-early-bird",
-          "state": "low"
-        }
-      }
+    "weekend": {
+     "slug": "weekend-pass",
+     "state": "available",
+     "price": 380,
+     "regularPrice": null,
+     "scarcity": {
+      "remaining": 86,
+      "total": 300,
+      "label": "places left"
+     }
     },
-    {
-      "name": "pool exhausted: regular SKUs take the slot",
-      "soldByType": {
-        "weekend-pass-early-bird": 300,
-        "early-bird": 200,
-        "weekend-pass": 214
-      },
-      "soldByDay": null,
-      "expect": {
-        "pool": {
-          "remaining": 0,
-          "total": 500
-        },
-        "weekend": {
-          "slug": "weekend-pass",
-          "state": "available",
-          "price": 380,
-          "regularPrice": null,
-          "scarcity": {
-            "remaining": 86,
-            "total": 300,
-            "label": "places left"
-          }
-        },
-        "day": {
-          "slug": "day-visitor",
-          "state": "available",
-          "price": 150,
-          "regularPrice": null,
-          "scarcity": null
-        }
-      }
+    "day": {
+     "slug": "day-visitor",
+     "state": "available",
+     "price": 150,
+     "regularPrice": null,
+     "scarcity": null
     },
-    {
-      "name": "regular weekend pass sold out",
-      "soldByType": {
-        "weekend-pass-early-bird": 500,
-        "weekend-pass": 300
-      },
-      "soldByDay": null,
-      "expect": {
-        "weekend": {
-          "slug": "weekend-pass",
-          "state": "soldOut"
-        }
-      }
-    },
-    {
-      "name": "per-day counts from real sold-by-day",
-      "soldByType": {
-        "weekend-pass-early-bird": 500
-      },
-      "soldByDay": {
-        "day-visitor": {
-          "2027-09-24": 942,
-          "2027-09-25": 1000,
-          "2027-09-26": 95
-        }
-      },
-      "expect": {
-        "day": {
-          "slug": "day-visitor",
-          "state": "available",
-          "days": [
-            {
-              "day": "2027-09-24",
-              "state": "low",
-              "remaining": 58,
-              "total": 1000
-            },
-            {
-              "day": "2027-09-25",
-              "state": "soldOut",
-              "remaining": 0,
-              "total": 1000
-            },
-            {
-              "day": "2027-09-26",
-              "state": "available",
-              "remaining": 905,
-              "total": 1000
-            }
-          ]
-        }
-      }
-    },
-    {
-      "name": "every day sold out -> card soldOut",
-      "soldByType": {
-        "weekend-pass-early-bird": 500
-      },
-      "soldByDay": {
-        "day-visitor": {
-          "2027-09-24": 1000,
-          "2027-09-25": 1000,
-          "2027-09-26": 1000
-        }
-      },
-      "expect": {
-        "day": {
-          "slug": "day-visitor",
-          "state": "soldOut"
-        }
-      }
-    },
-    {
-      "name": "price null -> pricePending",
-      "typesOverride": {
-        "vip": {
-          "price": null
-        }
-      },
-      "soldByType": {},
-      "soldByDay": null,
-      "expect": {
-        "vip": {
-          "slug": "vip",
-          "state": "pricePending",
-          "price": null
-        }
-      }
-    },
-    {
-      "name": "no capacity -> no scarcity",
-      "typesOverride": {
-        "weekend-pass": {
-          "capacity": null
-        }
-      },
-      "soldByType": {
-        "weekend-pass-early-bird": 500
-      },
-      "soldByDay": null,
-      "expect": {
-        "weekend": {
-          "slug": "weekend-pass",
-          "state": "available",
-          "scarcity": null
-        }
-      }
-    },
-    {
-      "name": "sold above capacity never goes negative",
-      "soldByType": {
-        "vip": 260
-      },
-      "soldByDay": null,
-      "expect": {
-        "vip": {
-          "slug": "vip",
-          "state": "soldOut",
-          "scarcity": {
-            "remaining": 0,
-            "total": 200,
-            "label": "places left"
-          }
-        }
-      }
-    },
-    {
-      "name": "missing type yields no card",
-      "omitTypes": [
-        "sunset-cocktails-single"
-      ],
-      "soldByType": {},
-      "soldByDay": null,
-      "expect": {
-        "absent": [
-          "sunset"
-        ]
-      }
+    "dayPassFrom": 150
+   }
+  },
+  {
+   "name": "regular weekend pass sold out",
+   "soldByType": {
+    "weekend-pass-early-bird": 500,
+    "weekend-pass": 300
+   },
+   "soldByDay": null,
+   "expect": {
+    "weekend": {
+     "slug": "weekend-pass",
+     "state": "soldOut"
     }
-  ]
+   }
+  },
+  {
+   "name": "per-day counts from real sold-by-day",
+   "soldByType": {
+    "weekend-pass-early-bird": 500
+   },
+   "soldByDay": {
+    "day-visitor": {
+     "2027-09-24": 942,
+     "2027-09-25": 1000,
+     "2027-09-26": 95
+    }
+   },
+   "expect": {
+    "day": {
+     "slug": "day-visitor",
+     "state": "available",
+     "days": [
+      {
+       "day": "2027-09-24",
+       "state": "low",
+       "remaining": 58,
+       "total": 1000
+      },
+      {
+       "day": "2027-09-25",
+       "state": "soldOut",
+       "remaining": 0,
+       "total": 1000
+      },
+      {
+       "day": "2027-09-26",
+       "state": "available",
+       "remaining": 905,
+       "total": 1000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "every day sold out -> card soldOut",
+   "soldByType": {
+    "weekend-pass-early-bird": 500
+   },
+   "soldByDay": {
+    "day-visitor": {
+     "2027-09-24": 1000,
+     "2027-09-25": 1000,
+     "2027-09-26": 1000
+    }
+   },
+   "expect": {
+    "day": {
+     "slug": "day-visitor",
+     "state": "soldOut"
+    }
+   }
+  },
+  {
+   "name": "price null -> pricePending",
+   "typesOverride": {
+    "vip": {
+     "price": null
+    }
+   },
+   "soldByType": {},
+   "soldByDay": null,
+   "expect": {
+    "vip": {
+     "slug": "vip",
+     "state": "pricePending",
+     "price": null
+    }
+   }
+  },
+  {
+   "name": "no capacity -> no scarcity",
+   "typesOverride": {
+    "weekend-pass": {
+     "capacity": null
+    }
+   },
+   "soldByType": {
+    "weekend-pass-early-bird": 500
+   },
+   "soldByDay": null,
+   "expect": {
+    "weekend": {
+     "slug": "weekend-pass",
+     "state": "available",
+     "scarcity": null
+    }
+   }
+  },
+  {
+   "name": "sold above capacity never goes negative",
+   "soldByType": {
+    "vip": 260
+   },
+   "soldByDay": null,
+   "expect": {
+    "vip": {
+     "slug": "vip",
+     "state": "soldOut",
+     "scarcity": {
+      "remaining": 0,
+      "total": 200,
+      "label": "places left"
+     }
+    }
+   }
+  },
+  {
+   "name": "missing type yields no card",
+   "omitTypes": [
+    "sunset-cocktails-single"
+   ],
+   "soldByType": {},
+   "soldByDay": null,
+   "expect": {
+    "absent": [
+     "sunset"
+    ]
+   }
+  },
+  {
+   "name": "day pass price null -> dayPassFrom null (R30, R7)",
+   "soldByType": {},
+   "soldByDay": null,
+   "typesOverride": {
+    "early-bird": {
+     "price": null,
+     "regularPrice": null
+    },
+    "day-visitor": {
+     "price": null
+    }
+   },
+   "expect": {
+    "dayPassFrom": null,
+    "day": {
+     "state": "pricePending",
+     "price": null
+    }
+   }
+  }
+ ],
+ "ledeCases": [
+  {
+   "name": "all sourced",
+   "input": {
+    "showDate": "2027-09-23",
+    "showEndDate": "2027-09-26",
+    "has": {
+     "vip": true,
+     "sunset": true,
+     "symposium": true,
+     "wosa": true,
+     "workshops": true
+    },
+    "names": {
+     "symposium": "National Orchid Show Symposium",
+     "wosa": "WOSA Conference",
+     "workshops": "Workshops"
+    }
+   },
+   "expect": {
+    "thursday": "Two evening events on Thursday 23 September.",
+    "passes": "Friday 24 to Sunday 26 September.",
+    "programme": "The National Orchid Show Symposium, the WOSA Conference and workshops."
+   }
+  },
+  {
+   "name": "show starts on a Wednesday: no Thursday claim, passes follow the dates",
+   "input": {
+    "showDate": "2027-09-22",
+    "showEndDate": "2027-09-26",
+    "has": {
+     "vip": true,
+     "sunset": true,
+     "symposium": true,
+     "wosa": true,
+     "workshops": true
+    },
+    "names": {
+     "symposium": "National Orchid Show Symposium",
+     "wosa": "WOSA Conference",
+     "workshops": "Workshops"
+    }
+   },
+   "expect": {
+    "thursday": null,
+    "passes": "Thursday 23 to Sunday 26 September.",
+    "programme": "The National Orchid Show Symposium, the WOSA Conference and workshops."
+   }
+  },
+  {
+   "name": "no show dates: only the programme lede",
+   "input": {
+    "showDate": null,
+    "showEndDate": null,
+    "has": {
+     "vip": true,
+     "sunset": true,
+     "symposium": true,
+     "wosa": true,
+     "workshops": true
+    },
+    "names": {
+     "symposium": "National Orchid Show Symposium",
+     "wosa": "WOSA Conference",
+     "workshops": "Workshops"
+    }
+   },
+   "expect": {
+    "thursday": null,
+    "passes": null,
+    "programme": "The National Orchid Show Symposium, the WOSA Conference and workshops."
+   }
+  },
+  {
+   "name": "range crosses a month: passes omitted (wording unsourced)",
+   "input": {
+    "showDate": "2027-09-30",
+    "showEndDate": "2027-10-03",
+    "has": {
+     "vip": true,
+     "sunset": true,
+     "symposium": true,
+     "wosa": true,
+     "workshops": true
+    },
+    "names": {
+     "symposium": "National Orchid Show Symposium",
+     "wosa": "WOSA Conference",
+     "workshops": "Workshops"
+    }
+   },
+   "expect": {
+    "thursday": "Two evening events on Thursday 30 September.",
+    "passes": null,
+    "programme": "The National Orchid Show Symposium, the WOSA Conference and workshops."
+   }
+  },
+  {
+   "name": "a Thursday product missing: no Thursday lede",
+   "input": {
+    "showDate": "2027-09-23",
+    "showEndDate": "2027-09-26",
+    "has": {
+     "vip": true,
+     "sunset": false,
+     "symposium": true,
+     "wosa": true,
+     "workshops": true
+    },
+    "names": {
+     "symposium": "National Orchid Show Symposium",
+     "wosa": "WOSA Conference",
+     "workshops": "Workshops"
+    }
+   },
+   "expect": {
+    "thursday": null,
+    "passes": "Friday 24 to Sunday 26 September.",
+    "programme": "The National Orchid Show Symposium, the WOSA Conference and workshops."
+   }
+  },
+  {
+   "name": "a programme card missing: no programme lede",
+   "input": {
+    "showDate": "2027-09-23",
+    "showEndDate": "2027-09-26",
+    "has": {
+     "vip": true,
+     "sunset": true,
+     "symposium": true,
+     "wosa": true,
+     "workshops": false
+    },
+    "names": {
+     "symposium": "National Orchid Show Symposium",
+     "wosa": "WOSA Conference",
+     "workshops": "Workshops"
+    }
+   },
+   "expect": {
+    "thursday": "Two evening events on Thursday 23 September.",
+    "passes": "Friday 24 to Sunday 26 September.",
+    "programme": null
+   }
+  },
+  {
+   "name": "CMS names are interpolated verbatim",
+   "input": {
+    "showDate": "2027-09-23",
+    "showEndDate": "2027-09-26",
+    "has": {
+     "vip": true,
+     "sunset": true,
+     "symposium": true,
+     "wosa": true,
+     "workshops": true
+    },
+    "names": {
+     "symposium": "National Orchid Show Symposium (Early-Bird)",
+     "wosa": "WOSA Conference",
+     "workshops": "Workshops"
+    }
+   },
+   "expect": {
+    "thursday": "Two evening events on Thursday 23 September.",
+    "passes": "Friday 24 to Sunday 26 September.",
+    "programme": "The National Orchid Show Symposium (Early-Bird), the WOSA Conference and workshops."
+   }
+  }
+ ],
+ "salesCases": [
+  {
+   "name": "salesOpen false masks every card (design-cb sales-closed ruling)",
+   "input": {
+    "salesOpen": false
+   },
+   "expect": {
+    "state": "salesClosed",
+    "price": null,
+    "regularPrice": null,
+    "scarcity": null,
+    "pool": null,
+    "dayPassFrom": null,
+    "note": "every card the builder returns, whatever its price, stock or sold-out state; salesClosed outranks pricePending, soldOut, earlyBirdSoldOut, low and available"
+   }
+  },
+  {
+   "name": "salesOpen true is unchanged",
+   "input": {
+    "salesOpen": true
+   },
+   "expect": {
+    "note": "the 11 cases above are all run with salesOpen true and must still hold"
+   }
+  }
+ ]
 }

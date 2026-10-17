@@ -48,8 +48,8 @@
  "amended": [
   {
    "file": "contracts/checks/nos-own-brand-chrome/f3/check-f3-imagery.mjs",
-   "reason": "Images inside [data-nos-image-break] (the F18 long-form break) are excluded from the hero-photo rules (they would otherwise read as a stock photo on a route with no hero photo, or on the wrong route). Everything else in that check is unchanged and still gates the hero photos.",
-   "replacedBy": "F18-A2 (check-b-imagery.mjs) owns the break rule: goldens/f18/break-photo-map.json"
+   "reason": "The F18 long-form image break is RETIRED by the F18a amendment (design-cb audit, R16 one photo per route). The [data-nos-image-break] exclusion stays in the check as an inert selector so F18-A13 stays structural; the comment on line 9 is corrected. Everything else in that check is unchanged and still gates the hero photos.",
+   "replacedBy": "F18-A2 (check-b-imagery.mjs) forbids the element: exactly 0 [data-nos-image-break] on every NOS route"
   },
   {
    "file": "contracts/checks/launch-weekend/f17/check-h-symposium-render.mts (static list)",
@@ -86,7 +86,30 @@
   },
   {
    "file": "contracts/checks/nos-own-brand-chrome/f3/check-f3-tickets.mjs",
-   "reason": "NOT edited. It pins the old hero fan; the v13 hero fan keeps the [data-nos-ticket-fan] hook. If it measures the old fan geometry and goes red in the F18b build, the dev stops and the lead decides the amendment (spec section 9)."
+   "reason": "REBASED onto v13 (design-cb final ruling 7), then RE-PINNED for the sales-closed ruling: while closed the v13 cards stay (masked: no CTA, stepper, button or price) beside one [data-sales-status] line. The old fan pins are superseded: the old hero fan geometry and its \"Add to booking\" equal-weight rule no longer exist; F18-A29 owns the fan geometry (arc, 2x2 deck, reserved cells, one link per card). Edit: the off-palette violet fill rule (rgb 126,63,151) now skips elements inside [data-ticket-stub], because the approved Sunset stub field colour #7E3F97 is that violet. The anchor visibility at 390 and #ticket-<id> resolution still hold on the v13 fan; the NOS button role (Karla 700 14px uppercase), 12px text floor, 44px steppers and the sales-closed posture (no price, form or quantity control while salesOpen=false) are unchanged and stay in A12."
+  },
+  {
+   "file": "R28 (no motion on NOS) - R84 exception",
+   "reason": "Design lead ruling: exactly three motions on NOS, all inside prefers-reduced-motion: no-preference: the v13 hero fan-out (fan-out / fan-up, 1.1s), the ticket hover lift (5px, 360ms), the button press (0.98). F18-A10 passes those tokens through its animation and duration rules; F18-A32 owns the guard and the runtime proof. Older reduced-motion checks (f1 and f14 check-c-reduced-motion) are not in any F18 gate and were not edited."
+  },
+  {
+   "file": "contracts/checks/launch-weekend/f18/check-m-availability.mjs and contracts/checks/launch-weekend/f18/check-j-archive-scope.mjs (design-cb / lead 2026-10-17)",
+   "reason": "A21 now exempts app/api/ (the checkout capacity re-check is required) with negative probes; A10 exempts components/tickets/keepsake/ and the F18-KEEPSAKE block of nos-structure.css for R84 keyframes (guarded), the duration allowlist {120,150,200,300,360,1100}ms and drop-shadow, keeps hex out of components (stub colours live in lib/data constants), and carries negative probes (motion-rules.mjs)."
+  },
+  {
+   "file": "goldens/f18 conferences lede (check-v-links-from.mjs, F18 verbatim hold)",
+   "reason": "design-cb rotation ruling 1 (F18b commit 4): F18 held the /national-show/conferences lede verbatim, 'Register for the SAOC Symposium, the WOSA Conference, or the combined SAOC/WOSA Joint track at the National Show.' That copy states a combined track that does not exist, so the verbatim hold is superseded. The lede is now 'Register for the National Orchid Show Symposium or the WOSA Conference.' (the same sentence minus the Joint clause, with Brad's name) and the meta description follows. The old Joint tolerance in check-v is replaced by a no-Joint assertion; F18-A37 owns the lede. Added to the Lee-Ann list in the spec.",
+   "replacedBy": "F18-A37 (check-aa-conferences-live.mjs); strings in goldens/f18b/v13-copy.json"
+  },
+  {
+   "file": "contracts/checks/launch-weekend/f18/check-c-holding.mjs and check-d-holding-render.mts (related-page cards)",
+   "reason": "design-cb rotation ruling 4 (F18b commit 4): when the full Explore index renders, the mini 'Explore the show' list (the holding state's related-page cards) does not. The sibling-card assertions (nav-config label and descriptor per card) are removed; A3 and A4 now assert the cards and their eyebrow are ABSENT, that no route renders both lists, and that the holding sentence and the Be-the-first-to-know band stay.",
+   "replacedBy": "F18-A3 and F18-A4"
+  },
+  {
+   "file": "contracts/checks/launch-weekend/f18/check-o-ticket-buy.mjs (total label)",
+   "reason": "A23's 'Total R...' (R62) governs the /tickets/<slug> checkout. The conferences page follows design-cb rotation ruling 3 instead: where a total renders it reads 'Estimated total' exactly once, with no '(ESTIMATE)' suffix and no R0.00. The two surfaces are asserted separately (A23 and A37).",
+   "replacedBy": "F18-A37"
   }
  ],
  "notRerunInF18": [
