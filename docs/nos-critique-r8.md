@@ -11,3 +11,24 @@ rule, spelled out as `[@media(max-width:700px)]` (0.06em tracking, 10px inline p
 Tailwind's bare 700px variant compiles to `width < 700px` and left exactly 700px untightened. A
 `[@media(max-width:419px)]` step drops the tracking to 0.02em; the 12px size and the 10px padding
 stay. No bare 700px variant is left under the NOS trees. CSS only, no copy change.
+
+## F2 — the Getting-there lede follows the status rule
+
+The section lede ("... has not been worked out yet") is false once any item is confirmed.
+`gettingThereLede(intro, items)` (`components/show/VisitDisclosure.tsx`) returns the trimmed intro
+only while every item is unconfirmed (pending, research or unset), and the page passes its result
+to the heading. No items counts as every item unconfirmed; a missing or blank intro stays withheld.
+Live data has nothing confirmed, so the lede still shows.
+
+## F3 — --green-1 and --green-2
+
+`--green-1: #a7a841` and `--green-2: #7f7d33` are defined in `nos-theme.css` next to the gold tokens,
+from nos-v4 `index.html` l.19-20. The holding note's link underline uses plain `var(--green-1)`,
+without the inline fallback that hid the missing token.
+
+## F4 — small fixes from the interim QA
+
+Attraction ids are `visit-attraction-<index>-<safe key>`, index first so duplicate keys cannot
+collide, with the key lower-cased and every run outside `[a-z0-9_-]` replaced by a dash (no key, no
+suffix). `TravelRoutes` headings are h3 under the page's h2 (they were h4). The stale comment on
+plan-your-visit's labels is reworded.

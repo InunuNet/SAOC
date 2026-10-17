@@ -316,6 +316,9 @@
   /* nos-v4 index.html:16-17 --gold and --gold-100: the R11 disclosure fill, and its pale variant. */
   --gold: #f3f2d6;
   --gold-100: #fbfaf0;
+  /* nos-v4 index.html:19-20 --green, the underline on the holding note's link, and its darker step. */
+  --green-1: #a7a841;
+  --green-2: #7f7d33;
   --black: #0b0a14;
 }
 

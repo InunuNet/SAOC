@@ -83,6 +83,18 @@ function GettingThereItem({ item }: { item: VisitGettingThereItem }) {
   );
 }
 
+// The section lede ("... has not been worked out yet") is only true while every item is
+// unconfirmed, so it is withheld as soon as any item is confirmed. No items counts as every item
+// unconfirmed; a missing or blank intro stays withheld.
+export function gettingThereLede(
+  intro: string | null | undefined,
+  items: VisitGettingThereItem[]
+): string | undefined {
+  const text = intro?.trim();
+  if (!text) return undefined;
+  return items.every((item) => item.status !== 'confirmed') ? text : undefined;
+}
+
 // The Getting-there items, split by status. Confirmed items are plain headings with their body,
 // first. Every other item (pending, research or unset) shares ONE gold group with one chip: the
 // pending chip when any of them is pending or unset, else the research chip. All confirmed means
@@ -179,8 +191,11 @@ export function VisitAttractions({
 
   const keyOf = (attraction: VisitAttraction, index: number) =>
     attraction._key ?? `${attraction.name}-${index}`;
-  const headingId = (attraction: VisitAttraction, index: number) =>
-    `visit-attraction-${attraction._key ?? index}`;
+  const headingId = (attraction: VisitAttraction, index: number) => {
+    // The index first keeps ids unique even for duplicate keys; the key is made safe for an id.
+    const safe = (attraction._key ?? '').toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
+    return safe ? `visit-attraction-${index}-${safe}` : `visit-attraction-${index}`;
+  };
 
   if (status === 'confirmed') {
     return (
