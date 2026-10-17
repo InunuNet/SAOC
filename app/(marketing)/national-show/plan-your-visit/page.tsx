@@ -1,19 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import {
-  AccommodationList,
-  ConfirmationBadge,
-  TravelRoutes,
-  VenueCard,
-  VisitorInfoBlock,
-} from '@/components/show';
+import { AccommodationList, ConfirmationBadge, TravelRoutes, VenueCard } from '@/components/show';
 import { Button } from '@/components/nos/Button';
 import { Card } from '@/components/nos/Card';
 import { CtaBand } from '@/components/nos/CtaBand';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { SectionHeading } from '@/components/nos/SectionHeading';
+import { VisitDisclosure } from '@/components/show/VisitDisclosure';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowVenueQuery, showVisitorInfoQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
@@ -32,6 +27,11 @@ export const metadata: Metadata = buildPageMetadata({
     'public transport, where to stay and what else to see while you are in town.',
   path: '/national-show/plan-your-visit',
 });
+
+// Codi P3 H8: the pending items on this page are grouped under ONE chip per disclosure, to the
+// nos-v4/plan-your-visit.html golden (l.575-616). The two aria-labels are the golden's.
+const GETTING_THERE_LABEL = 'Details to be confirmed by the show committee';
+const EMERGENCY_LABEL = 'Emergency contacts, to be confirmed by the show committee';
 
 // A number worth dialling: digits, with an optional leading + and spaces between groups.
 const PHONE_SHAPED = /^\+?\d[\d\s]*$/;
@@ -54,6 +54,26 @@ export default async function PlanYourVisitPage() {
   const status = info?.confirmations ?? {};
   const attractions = (info?.attractions ?? []).filter((a) => a?.name);
   const emergencyContacts = (info?.emergencyContacts ?? []).filter((c) => c?.label);
+  // Numbers worth dialling get a tel: link; any other contact is drawn as its label plus the
+  // value Sanity holds for it, as a short tag.
+  const dialContacts = emergencyContacts.filter((c) => PHONE_SHAPED.test(c.number ?? ''));
+  const onSiteContacts = emergencyContacts.filter((c) => !PHONE_SHAPED.test(c.number ?? ''));
+
+  // The Getting-there items, in page order; an item without a body or list is not drawn.
+  const gettingThereItems = [
+    { heading: 'Parking', body: info?.parking, children: null },
+    { heading: 'Public transport', body: info?.publicTransport, children: null },
+    {
+      heading: 'Where to stay',
+      body: info?.accommodationIntro,
+      children: <AccommodationList options={info?.accommodation} />,
+    },
+  ].filter((item) => item.body || (item.children && (info?.accommodation ?? []).length > 0));
+  const gettingThereStatus = [status.parking, status.publicTransport, status.accommodation].every(
+    (value) => value === 'confirmed'
+  )
+    ? 'confirmed'
+    : 'pending';
 
   return (
     <>
@@ -66,32 +86,38 @@ export default async function PlanYourVisitPage() {
 
       <NosSection wrapClassName="space-y-12">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-          <div className="space-y-10">
-            <section>
-              <SectionHeading
-                as="h2"
-                title="Getting there"
-                lede={info?.gettingThereIntro ?? undefined}
-              />
-              <TravelRoutes routes={info?.airportRoutes} />
-            </section>
-
-            <VisitorInfoBlock
-              heading="Parking"
-              body={info?.parking}
-              status={status.parking}
-              pendingLabel={pendingLabel}
-              researchLabel={researchLabel}
+          <section className="space-y-8">
+            <SectionHeading
+              as="h2"
+              title="Getting there"
+              lede={info?.gettingThereIntro ?? undefined}
             />
-
-            <VisitorInfoBlock
-              heading="Public transport"
-              body={info?.publicTransport}
-              status={status.publicTransport}
-              pendingLabel={pendingLabel}
-              researchLabel={researchLabel}
-            />
-          </div>
+            <TravelRoutes routes={info?.airportRoutes} />
+            {gettingThereItems.length > 0 ? (
+              <VisitDisclosure label={GETTING_THERE_LABEL}>
+                <div>
+                  <ConfirmationBadge
+                    status={gettingThereStatus}
+                    pendingLabel={pendingLabel}
+                    researchLabel={researchLabel}
+                  />
+                </div>
+                {gettingThereItems.map((item) => (
+                  <div key={item.heading} className="grid gap-2">
+                    <h3 className="nos-opsz-32 font-serif text-[22px] leading-[1.2] text-ink">
+                      {item.heading}
+                    </h3>
+                    {item.body ? (
+                      <p className="font-sans text-[16px] leading-[1.55] text-[var(--ink-700)]">
+                        {item.body}
+                      </p>
+                    ) : null}
+                    {item.children}
+                  </div>
+                ))}
+              </VisitDisclosure>
+            ) : null}
+          </section>
 
           <aside>
             <VenueCard
@@ -103,16 +129,6 @@ export default async function PlanYourVisitPage() {
             />
           </aside>
         </div>
-
-        <VisitorInfoBlock
-          heading="Where to stay"
-          body={info?.accommodationIntro}
-          status={status.accommodation}
-          pendingLabel={pendingLabel}
-          researchLabel={researchLabel}
-        >
-          <AccommodationList options={info?.accommodation} />
-        </VisitorInfoBlock>
 
         {attractions.length > 0 ? (
           <section className="nos-surface">
@@ -152,39 +168,69 @@ export default async function PlanYourVisitPage() {
         ) : null}
 
         {emergencyContacts.length > 0 ? (
-          <section className="nos-surface">
-            <SectionHeading as="h3" title="In an emergency" />
-            <ConfirmationBadge
-              status={status.emergencyContacts}
-              pendingLabel={pendingLabel}
-              researchLabel={researchLabel}
-            />
-            <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {emergencyContacts.map((contact, index) => (
-                <Card key={contact._key ?? `${contact.label}-${index}`} className="flex flex-col">
-                  <dt className="mt-1 font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
+          <section>
+            <SectionHeading as="h2" title="In an emergency" className="mb-6" />
+            <VisitDisclosure label={EMERGENCY_LABEL} tone="pale">
+              <div>
+                <ConfirmationBadge
+                  status={status.emergencyContacts}
+                  pendingLabel={pendingLabel}
+                  researchLabel={researchLabel}
+                />
+              </div>
+              {dialContacts.length > 0 ? (
+                <dl className="grid grid-cols-1 gap-x-10 gap-y-7 sm:grid-cols-3">
+                  {dialContacts.map((contact, index) => (
+                    <div
+                      key={contact._key ?? `${contact.label}-${index}`}
+                      className="flex flex-col gap-1"
+                    >
+                      <dt className="font-sans text-[16px] leading-[1.55] text-[var(--ink-700)]">
+                        {contact.label}
+                      </dt>
+                      <dd className="order-first font-serif text-primary">
+                        <a
+                          href={`tel:${(contact.number ?? '').replace(/[^\d+]/g, '')}`}
+                          className="inline-flex min-h-[44px] min-w-[44px] items-center text-[clamp(2.4rem,3vw,3rem)] font-light leading-[1.1] underline-offset-4 hover:underline"
+                        >
+                          {contact.number}
+                        </a>
+                      </dd>
+                      {contact.note ? (
+                        <dd className="font-sans text-[14px] leading-[1.55] text-[var(--ink-500)]">
+                          {contact.note}
+                        </dd>
+                      ) : null}
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
+              {onSiteContacts.map((contact, index) => (
+                <div
+                  key={contact._key ?? `${contact.label}-${index}`}
+                  className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-baseline sm:gap-x-6"
+                >
+                  <h3 className="nos-opsz-32 font-serif text-[20px] leading-[1.2] text-ink">
                     {contact.label}
-                  </dt>
-                  <dd className="order-first font-serif text-primary">
-                    {PHONE_SHAPED.test(contact.number ?? '') ? (
-                      <a
-                        href={`tel:${(contact.number ?? '').replace(/[^\d+]/g, '')}`}
-                        className="inline-flex min-h-[44px] min-w-[44px] items-center text-[clamp(2.4rem,3vw,3rem)] font-light leading-[1.1] underline-offset-4 hover:underline"
-                      >
-                        {contact.number}
-                      </a>
-                    ) : (
-                      <span className="text-[26px] font-medium">{contact.number}</span>
-                    )}
-                  </dd>
-                  {contact.note ? (
-                    <p className="mt-2 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-muted">
-                      {contact.note}
-                    </p>
+                  </h3>
+                  {contact.number ? (
+                    <span className="font-sans text-[16px] font-semibold text-[var(--ink-500)]">
+                      {contact.number}
+                    </span>
                   ) : null}
-                </Card>
+                </div>
               ))}
-            </dl>
+              {onSiteContacts.map((contact, index) =>
+                contact.note ? (
+                  <p
+                    key={contact._key ?? `${contact.label}-note-${index}`}
+                    className="font-sans text-[15px] leading-[1.55] text-[var(--ink-500)]"
+                  >
+                    {contact.note}
+                  </p>
+                ) : null
+              )}
+            </VisitDisclosure>
           </section>
         ) : null}
       </NosSection>
