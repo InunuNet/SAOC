@@ -52,7 +52,7 @@ export function ShowStatusLine({
       role="note"
       className="grid gap-5 rounded-[16px] bg-[var(--gold)] px-[clamp(20px,3vw,32px)] pb-6 pt-5 shadow-sm max-[700px]:px-4"
     >
-      <div className="max-[700px]:[&>p]:px-[10px] max-[700px]:[&>p]:tracking-[0.06em]">{marker}</div>
+      <div>{marker}</div>
       <p data-status-list="" className="text-[16px] leading-[1.55] text-[var(--ink-700)]">
         {items.join(separator)}.
       </p>
