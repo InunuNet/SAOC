@@ -180,7 +180,7 @@ export default async function JudgingPage() {
         <section className="bg-bone py-16">
           <div className="saoc-container">
             <div data-placeholder={withhold ? undefined : 'true'} className="flex flex-col items-start gap-4">
-              <dl className="grid grid-cols-2 gap-x-8 gap-y-8 border-y border-rule py-10 sm:grid-cols-4">
+              <dl className="grid w-full grid-cols-2 gap-x-8 gap-y-8 border-y border-rule py-10 sm:grid-cols-4">
                 {stats.map((stat, i) => (
                   <div key={`${stat.label}-${i}`}>
                     <dt className="font-serif text-[clamp(36px,4vw,56px)] font-medium leading-none text-primary">
