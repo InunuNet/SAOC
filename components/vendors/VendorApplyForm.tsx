@@ -189,7 +189,9 @@ export function VendorApplyForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8" noValidate>
-      <p className="font-sans text-[15px] text-ink">{REQUIRED_SENTENCE}</p>
+      <p className="font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink">
+        {REQUIRED_SENTENCE}
+      </p>
 
       {clientErrors.length > 0 ? (
         <div ref={summaryRef} id={SUMMARY_ID} tabIndex={-1} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40">
@@ -254,13 +256,14 @@ export function VendorApplyForm() {
 
       <VendorFormField
         fieldKey="tradingName"
-        label="Trading name (if different)"
+        label="Trading name (if different, optional)"
         htmlType="text"
         value={state.tradingName}
         onChange={(value) => handleChange('tradingName', value)}
         disabled={disabled}
         required={false}
         maxLength={200}
+        autoComplete="organization"
         showRequirement
         error={errorFor('tradingName')}
       />

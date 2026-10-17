@@ -7,7 +7,7 @@ import { HUB, VP_DESKTOP, VP_PHONE, main, openPage, withBrowser } from './_lib.m
 const planHref = NAV.find((n) => n.type === 'mega').columns.flatMap((c) => c.links).find((l) => l.id === 'plan-your-visit').href;
 const findLink = (node, id) => { if (!node || typeof node !== 'object') return null; if (node.id === id && node.href) return node; for (const v of Object.values(node)) { const f = findLink(v, id); if (f) return f; } return null; };
 const tickets = findLink(NAV, 'tickets');
-const label = NAV.find((n) => n.type === 'mega').lead.leadLabel;
+const label = 'National Orchid Show'; // R68 (Brad): the hub h1 is the plain show name; the mega lead label is separate (nos-critique-r6 f9)
 
 await main('L hub-h1', async (r) => {
   await withBrowser(async (browser) => {
@@ -15,7 +15,7 @@ await main('L hub-h1', async (r) => {
       const { ctx, page } = await openPage(browser, vp, HUB);
       const h1s = await page.locator('main h1').evaluateAll((els) => els.map((e) => (e.textContent ?? '').replace(/\s+/g, ' ').trim()));
       if (h1s.length !== 1) r.fail(`@${name}: want exactly one <h1> in main, found ${h1s.length}`);
-      else if (h1s[0] !== label) r.fail(`@${name}: h1 is "${h1s[0]}", want nav-config lead.leadLabel "${label}"`);
+      else if (h1s[0] !== label) r.fail(`@${name}: h1 is "${h1s[0]}", want the R68 hub heading "${label}"`);
       const lockups = await page.evaluate(() => {
         const h1 = document.querySelector('main h1');
         const hero = h1?.closest('section, header') ?? h1?.parentElement;

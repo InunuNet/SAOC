@@ -189,7 +189,7 @@ export default async function ExhibitorInfoPage() {
 
         <section className="border-t border-rule pt-8">
           {info?.contactNote ? (
-            <p className="max-w-3xl font-sans text-[16px] leading-relaxed text-ink/80">
+            <p className="max-w-3xl font-sans text-[16px] leading-[1.55] text-ink/80">
               {info.contactNote}
             </p>
           ) : null}

@@ -24,12 +24,12 @@ export function NurseryCard({ nursery }: { nursery: NurseryCardData }) {
         </p>
       ) : null}
       {nursery.specialisation ? (
-        <p className="font-sans text-[14px] leading-relaxed text-ink/75">
+        <p className="font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/75">
           {nursery.specialisation}
         </p>
       ) : null}
       {nursery.plantsBrought ? (
-        <p className="font-sans text-[13px] leading-relaxed text-ink/60">
+        <p className="font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/60">
           {nursery.plantsBrought}
         </p>
       ) : null}

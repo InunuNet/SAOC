@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-// F12-A14 - the SAOC utility bar on every /national-show route (Brad, 2026-10-16), measured at 1280 and 390: rendered above the NOS header, same
-// markup and computed styles as on SAOC pages, the show pill replaced by a "saoc.co.za" pill to "/", email and "Join a society" kept, the skip link
-// still the first focusable element, the NOS header still sticky and not overlapped. SAOC pages keep the original pill and carry no header Tickets CTA (F13).
+// F12-A14 - SUPERSEDED by v4 decision #2 (nos-critique-r6 f9): NO SAOC utility bar on any /national-show route, at every width; the NOS header
+// sits at y=0 and the skip link is still the first focusable element. SAOC pages keep the original pill and carry no header Tickets CTA (F13).
 import { main, openPage, withBrowser, VP, V, NOS_ROUTES, near } from './_lib.mjs';
 
 const U = V.utilityBar;
@@ -72,47 +71,24 @@ await main('F12-A14 utility bar', async (r) => {
         const { ctx, page, status } = await openPage(browser, vp, route);
         const tag = `${route} @${vp.width}`;
         if (status !== 200) { r.fail(`${tag}: HTTP ${status}`); await ctx.close(); continue; }
-        const m = await page.evaluate(snap, ARG);
-        if (m.error) { r.fail(`${tag}: ${m.error}`); await ctx.close(); continue; }
-        if (m.barCount !== 1) r.fail(`${tag}: ${m.barCount} utility bars`);
+        // v4 decision #2 (nos-critique-r6 f9) supersedes F12-A14: the SAOC utility bar is left off NOS pages at every width.
+        const m = await page.evaluate((barSel) => {
+          const h = document.querySelector('#nh');
+          const first = document.querySelector('a[href], button, input, select, textarea, [tabindex]');
+          return {
+            bars: document.querySelectorAll(barSel).length,
+            saocLinks: [...document.querySelectorAll('a[href^="mailto:info@saoc.co.za"], a[href="/societies"]')].filter((a) => !a.closest('footer')).length,
+            headerTop: h ? h.getBoundingClientRect().top : null,
+            overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+            firstHref: first ? first.getAttribute('href') : null,
+          };
+        }, BAR);
+        if (m.bars !== 0) r.fail(`${tag}: ${m.bars} utility bar element(s), want none (v4 decision #2)`);
+        if (m.saocLinks !== 0) r.fail(`${tag}: ${m.saocLinks} SAOC utility link(s) outside the footer, want none`);
+        if (m.headerTop === null) r.fail(`${tag}: NOS header #nh not found`);
+        else if (!near(m.headerTop, 0, 1.5)) r.fail(`${tag}: NOS header top is ${m.headerTop}px, want 0 with no bar above it`);
         if (m.overflowX > 1) r.fail(`${tag}: horizontal overflow ${m.overflowX}px`);
-        if (m.barPrecedesHeader !== true) r.fail(`${tag}: the bar is not before the NOS header in the DOM`);
-        if (m.header?.id !== 'nh') r.fail(`${tag}: NOS header #nh not found`);
-        else if (m.barBox.bottom > m.header.top + 1) r.fail(`${tag}: the bar overlaps the NOS header (bar bottom ${m.barBox.bottom.toFixed(0)} > header top ${m.header.top.toFixed(0)})`);
-        if (m.els.length !== ref.els.length) r.fail(`${tag}: ${m.els.length} elements in the bar, SAOC bar has ${ref.els.length}`);
-        else {
-          m.els.forEach((e, i) => {
-            const o = ref.els[i];
-            const where = `${tag}: bar element ${i} <${e.tag}>`;
-            const pill = isPill(o);
-            if (!pill && (e.tag !== o.tag || dropBelow480(e.cls) !== dropBelow480(o.cls))) r.fail(`${where} class differs from the SAOC bar ("${e.cls}" vs "${o.cls}")`);
-            for (const k of STYLE_KEYS) if (e[k] !== o[k] && !(pill && (k === 'display' || k === 'minHeight'))) { r.fail(`${where} ${k} ${e[k]} vs SAOC ${o[k]}`); break; }
-            if (pill) {
-              if (e.href !== U.pill.href || e.text !== U.pill.label) r.fail(`${where} is "${e.text}" -> ${e.href}, want pill "${U.pill.label}" -> ${U.pill.href}`);
-              if (e.display === 'none' || !(e.w > 0)) r.fail(`${where} the saoc.co.za pill is not visible at ${vp.width}px (ruling: visible at every width)`);
-            } else if (e.href !== o.href || e.text !== o.text) r.fail(`${where} href/text "${e.href}" "${e.text}" differ from the SAOC bar`);
-          });
-        }
-        // the one other allowed difference: below 480px the email text is visually hidden, the link keeps its icon, a mailto target and an aria-label
-        const em = m.email;
-        if (!em) r.fail(`${tag}: no email mailto link`);
-        else if (vp.width < 480) {
-          if (em.aria !== 'Email info@saoc.co.za') r.fail(`${tag}: email aria-label is "${em.aria}", want "Email info@saoc.co.za"`);
-          if (em.textW > 2) r.fail(`${tag}: the email text is still visible below 480px (${em.textW.toFixed(0)}px wide)`);
-          if (em.w < 24 - 0.5 || em.h < 24 - 0.5) r.fail(`${tag}: the collapsed email target is ${em.w.toFixed(0)}x${em.h.toFixed(0)}px, want at least 24px`);
-        } else {
-          if (em.textW < 40) r.fail(`${tag}: the email text is hidden at ${vp.width}px, it must show from 480px up`);
-          if (em.aria !== null && em.aria !== 'Email info@saoc.co.za') r.fail(`${tag}: unexpected email aria-label "${em.aria}"`);
-        }
-        // one row, no wrap, no overflow, every target at least 24px (44px preferred)
-        const targets = m.els.filter((e) => e.tag === 'a' && e.display !== 'none');
-        if (targets.length !== 3) r.fail(`${tag}: ${targets.length} visible links in the bar, want 3 (email, saoc.co.za, Join a society)`);
-        if (wrapsRows(targets)) r.fail(`${tag}: the bar's links wrap onto more than one row`);
-        for (const t of targets) { if (t.h < 24 - 0.5 || t.w < 24 - 0.5) r.fail(`${tag}: target "${t.text}" is ${t.w.toFixed(0)}x${t.h.toFixed(0)}px, want at least 24px (44px preferred)`); if (t.h < 44) r.note(`${tag}: "${t.text}" is ${t.h.toFixed(0)}px tall (44px preferred, 24px minimum met)`); }
-        if (m.barBox.height > 56) r.fail(`${tag}: the bar is ${m.barBox.height.toFixed(0)}px tall, it has wrapped`);
-        if (!m.els.some((e) => e.href === U.kept.email) || !m.els.some((e) => e.href === U.kept.join.href && e.text === U.kept.join.label)) r.fail(`${tag}: email or "Join a society" missing`);
-        if (m.els.some((e) => /National Show/.test(e.text))) r.fail(`${tag}: the "National Show" pill text is still in the bar`);
-        if (!m.firstFocusable || m.firstFocusable.href !== '#main-content') r.fail(`${tag}: first focusable element is ${JSON.stringify(m.firstFocusable)}, want the skip link`);
+        if (m.firstHref !== '#main-content') r.fail(`${tag}: first focusable element is ${m.firstHref}, want the skip link`);
         await ctx.close();
       }
     }

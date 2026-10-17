@@ -8,7 +8,7 @@
 //                                     the first paragraph at the handoff lede role
 //   aside  [data-nos-longform-aside]  the show facts, a pull quote where the page names one;
 //                                     sticky from 900px, stacked above the body below it
-//   body   [data-nos-longform-body]   the remaining paragraphs, with one 21:9 image break
+//   body   [data-nos-longform-body]   the remaining paragraphs
 //   cta    [data-nos-longform-cta]    Tickets (primary) + Plan your visit (ghost)
 //
 // DOM order is head, aside, body, cta at every width; from 900px the grid places the aside in
@@ -17,27 +17,24 @@
 // Geometry lives in nos-structure.css (`.nos-longform`).
 // =============================================================
 
-import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { Button } from '@/components/nos/Button';
 import { ShowFacts } from '@/components/nos/ShowFacts';
-import { longFormBreakFor } from '@/components/nos/long-form-breaks';
 import type { ShowFact } from '@/lib/data/show-facts';
 
-// The break is decorative and below the fold; 21:9 is its box (the aspect-ratio lives in CSS),
-// the intrinsic size only reserves the ratio before the image loads.
-const BREAK_WIDTH = 2100;
-const BREAK_HEIGHT = 900;
-const BREAK_SIZES = '(min-width: 900px) 58vw, 100vw';
+function sameText(a: string, b: string): boolean {
+  const flat = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase();
+  return flat(a) === flat(b);
+}
 
 export interface LongFormPageProps {
-  /** The pathname this template renders, e.g. `/national-show/about`; it selects the image break. */
-  route: string;
   facts: readonly ShowFact[];
   /** The section heading, where the source copy has one. */
   heading?: string | null;
+  /** The page h1; a heading that only repeats it (case and spacing aside) is not rendered. */
+  pageTitle?: string | null;
   /** Inline content of each paragraph, in order; the first is the lede. */
   paragraphs: readonly ReactNode[];
   /** A pull quote for the aside, verbatim from one paragraph of the copy. */
@@ -49,23 +46,22 @@ export interface LongFormPageProps {
 }
 
 export function LongFormPage({
-  route,
   facts,
   heading,
+  pageTitle,
   paragraphs,
   pullQuote,
   marker,
   cta = true,
 }: LongFormPageProps) {
   const [lede, ...rest] = paragraphs;
-  const photo = longFormBreakFor(route);
-  const beforeBreak = Math.max(photo.after - 1, 0);
+  const showHeading = heading && !(pageTitle && sameText(heading, pageTitle));
 
   return (
     <div data-nos-longform="" className="nos-longform">
       <div data-nos-longform-head="" className="nos-longform-head">
         {marker}
-        {heading ? <h2>{heading}</h2> : null}
+        {showHeading ? <h2>{heading}</h2> : null}
         <p data-nos-longform-lede="" className="nos-longform-lede">
           {lede}
         </p>
@@ -81,21 +77,8 @@ export function LongFormPage({
       </aside>
 
       <div data-nos-longform-body="" className="nos-longform-body">
-        {rest.slice(0, beforeBreak).map((content, index) => (
-          <p key={`before-${index}`}>{content}</p>
-        ))}
-        <div data-nos-image-break="" className="nos-image-break">
-          <Image
-            src={photo.src}
-            alt=""
-            width={BREAK_WIDTH}
-            height={BREAK_HEIGHT}
-            sizes={BREAK_SIZES}
-            loading="lazy"
-          />
-        </div>
-        {rest.slice(beforeBreak).map((content, index) => (
-          <p key={`after-${index}`}>{content}</p>
+        {rest.map((content, index) => (
+          <p key={`para-${index}`}>{content}</p>
         ))}
       </div>
 

@@ -162,7 +162,7 @@
   font-family: var(--sans);
   font-size: var(--fs-body);
   font-weight: 400;
-  line-height: 1.65;
+  line-height: 1.55;
   color: var(--ink-700);
   background-color: var(--bg);
 
@@ -309,7 +309,7 @@
   /* ---- R14 body scale and the two colours the type/hero layer adds (mock
      index.html:21, :30). Body copy is ink-700 (ruling 2026-10-15 Q5); headings and
      links stay royal. --black is the hero ground, never purple (R15). ---- */
-  --fs-body: 1.0625rem;
+  --fs-body: 1rem;
   --ink-700: #3a3654;
   --black: #0b0a14;
 }
@@ -709,6 +709,34 @@
   }
 }
 
+/* ---- R80 #1 (lead saoc-2b 2026-10-17): below 768px the photograph LEADS, fixed-height, then the
+   h1, lede and CTAs, then (hub) the countdown and facts. 768-1023px keeps the stacked rules
+   above. The photograph's object-position is the per-photo focal point NosHero passes in
+   `--nos-hero-pos` (measured from the pixels, hero-photos.ts); the lede is 18px/1.5 (Codi). ---- */
+@media (max-width: 767px) {
+  .nos-theme .nos-hero-hub .nos-hero-media {
+    order: -1;
+    height: 300px;
+    aspect-ratio: auto;
+  }
+  .nos-theme .nos-hero-inner .nos-hero-media {
+    order: -1;
+    height: 220px;
+    aspect-ratio: auto;
+  }
+  .nos-theme .nos-hero-hub .nos-hero-img,
+  .nos-theme .nos-hero-inner .nos-hero-img {
+    object-position: var(--nos-hero-pos, 50% 50%);
+  }
+  .nos-theme .nos-hero-hub .nos-hero-lede,
+  .nos-theme .nos-hero-inner .nos-hero-lede,
+  .nos-theme .nos-hero-inner .nos-hero-lede[data-nos-lede='theme'] {
+    max-width: 60ch;
+    font-size: 18px;
+    line-height: 1.5;
+  }
+}
+
 /* ---- R68 hub hero and R71 inner hero, at >=1024 (NOS Design, 2026-10-16). Below 1024 the F3
    stacked hero above is unchanged. ---- */
 @media (min-width: 1024px) {
@@ -746,4 +774,15 @@
   .nos-theme .nos-hero-inner .nos-hero-lede {
     max-width: 46ch;
   }
+}
+
+/* R82: the form-label role. One class for every NOS form label (vendor application now, ticket
+   forms in F18b): Karla 14px/500 in full ink, no tracking, no capitals. */
+.nos-theme .nos-form-label {
+  font-family: var(--font-nos-karla), 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: 0;
+  text-transform: none;
 }

@@ -1,7 +1,7 @@
 // F3 route-audit + NOS Design rulings (2026-10-16), measured on the rendered pages. One browser pass per route, assertions grouped by id:
 //  RULING-nav   ShowSectionNav and its "Explore the National Show" 10-card grid are gone from EVERY NOS route: the only <nav> in <main> are the
 //               sub-nav (aria-label "... pages"), the Breadcrumb and the /faq in-page "FAQ categories" jump nav (ShowFaqList, a page-local aid, not site nav).
-//  H1           every route: h1 <= 3 lines at 1280 and <= 4 lines at 390; hub h1 text is "19th SAOC National Orchid Show" with no lockup in the hero.
+//  H1           every route: h1 <= 3 lines at 1280 and <= 4 lines at 390; hub h1 text is "National Orchid Show" (R68) with no lockup in the hero.
 //  S1           cards: border-radius 16px and a box-shadow (elevation is a shadow, never a border); --radius-card resolves to 16px.
 //  S2           one button anatomy: every filled link/button in <main> outside nav/steppers/disclosure is 50px tall, 10px radius, Karla 14px/700,
 //               .12em tracking, uppercase (the F2 Button.tsx role).
@@ -17,7 +17,7 @@
 import { allRoutes, main, openPage, withBrowser, rgbOf, rgbNear, firstFamily, LINE_RGB } from './_f3lib.mjs';
 
 const CHIP = 'To be confirmed by the show committee';
-const HUB_H1 = '19th SAOC National Orchid Show';
+const HUB_H1 = 'National Orchid Show';
 
 function measure(route) {
   const norm = (t) => (t ?? '').replace(/\s+/g, ' ').trim();

@@ -1,3 +1,5 @@
+import { NAV } from '@/components/chrome/nav-config';
+import { NosBreadcrumbJsonLd } from '@/components/nos/NosBreadcrumbJsonLd';
 import { NosThemeScope } from '@/components/nos/NosThemeScope';
 
 // F1: the `.nos-theme` scope element redeclares the SAOC site's own semantic
@@ -15,6 +17,33 @@ import { NosThemeScope } from '@/components/nos/NosThemeScope';
 // mounted by app/(marketing)/layout.tsx (components/nos-chrome). This layout
 // renders inside that layout's <main>, so it carries no header, footer, masthead
 // or lockup of its own.
+const NATIONAL_SHOW_ROOT = '/national-show';
+
+/** First label nav-config carries for each /national-show href, depth first. */
+function collectLabels(node: unknown, into: Record<string, string>): void {
+  if (!node || typeof node !== 'object') return;
+  // Narrowing an arbitrary nav node to a string-keyed record; the typeof checks guard every read.
+  const record = node as Record<string, unknown>;
+  const { href, label } = record;
+  if (
+    typeof href === 'string' &&
+    typeof label === 'string' &&
+    href.startsWith(NATIONAL_SHOW_ROOT) &&
+    !(href in into)
+  ) {
+    into[href] = label;
+  }
+  for (const value of Object.values(record)) collectLabels(value, into);
+}
+
+const BREADCRUMB_LABELS: Record<string, string> = {};
+collectLabels(NAV, BREADCRUMB_LABELS);
+
 export default function NationalShowLayout({ children }: { children: React.ReactNode }) {
-  return <NosThemeScope>{children}</NosThemeScope>;
+  return (
+    <NosThemeScope>
+      <NosBreadcrumbJsonLd labels={BREADCRUMB_LABELS} />
+      {children}
+    </NosThemeScope>
+  );
 }

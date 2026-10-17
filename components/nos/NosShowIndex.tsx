@@ -90,7 +90,7 @@ export function NosShowIndex({ current, currentTone = 'accent' }: NosShowIndexPr
   return (
     <nav aria-label="Explore the show pages" className="nos-index">
       <div data-nos-wrap="">
-        <p className="nos-index-eyebrow">{EYEBROW}</p>
+        <h2 className="nos-index-eyebrow">{EYEBROW}</h2>
         <div className="nos-index-grid">
           {GROUPS.map(({ heading, hrefs }) => (
             <div key={heading} className="nos-index-group">

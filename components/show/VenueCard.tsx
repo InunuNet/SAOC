@@ -45,7 +45,7 @@ export function VenueCard({
         researchLabel={researchLabel}
       />
 
-      <address className="mt-4 not-italic font-sans text-[17px] leading-relaxed text-ink/80">
+      <address className="mt-4 not-italic font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/80">
         <span className="block font-serif text-[18px] text-ink">{venue.name}</span>
         {addressLines.map((line) => (
           <span key={line} className="block">
@@ -77,7 +77,7 @@ export function VenueCard({
       ) : null}
 
       {venue.directionsNote ? (
-        <p className="mt-5 font-sans text-[17px] leading-relaxed text-ink/70">
+        <p className="mt-5 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70">
           {venue.directionsNote}
         </p>
       ) : null}

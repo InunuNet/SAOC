@@ -24,11 +24,13 @@ export const metadata: Metadata = buildPageMetadata({
   path: '/national-show/programme',
 });
 
+const PROGRAMME_PURPOSE = 'The overall schedule of sessions across the four show days.';
+
 export default async function ProgrammePage() {
   const [result, facts] = await Promise.all([
     loadShowPageOrFallback('11-programme', {
       label: 'Programme',
-      purpose: 'The overall schedule of sessions across the four show days.',
+      purpose: PROGRAMME_PURPOSE,
     }),
     loadShowFacts(),
   ]);
@@ -39,7 +41,7 @@ export default async function ProgrammePage() {
         result={result}
         route="/national-show/programme"
         layout="prose"
-        holding={{ facts }}
+        holding={{ facts, statement: PROGRAMME_PURPOSE }}
         afterProse={
           <p
             data-nos-programme-links

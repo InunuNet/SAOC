@@ -69,7 +69,7 @@ export function AccommodationList({ options }: AccommodationListProps) {
                     </p>
                   ) : null}
                   {option.note ? (
-                    <p className="mt-2 font-sans text-[14px] leading-relaxed text-ink/70">
+                    <p className="mt-2 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70">
                       {option.note}
                     </p>
                   ) : null}
