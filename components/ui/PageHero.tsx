@@ -42,7 +42,7 @@ export function PageHero({ image, eyebrow, heading, lede, minHeight = '480px' }:
           {heading}
         </h1>
         {lede ? (
-          <p className="mt-5 max-w-2xl font-sans text-[16px] leading-[1.55] text-ivory/85">
+          <p className="mt-5 max-w-2xl font-sans text-[16px] leading-[1.55] text-ivory/85 text-pretty">
             {lede}
           </p>
         ) : null}

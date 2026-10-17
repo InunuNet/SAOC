@@ -126,7 +126,7 @@ export function Hero({ images, show, showLede = false }: HeroProps) {
           <div data-placeholder="true" className="mt-4 flex flex-col items-center gap-3 md:mt-5">
             <p
               data-hero-lede
-              className="font-sans text-[20px] leading-[1.5] text-ivory max-w-[52ch]"
+              className="font-sans text-[20px] leading-[1.5] text-ivory max-w-[52ch] text-pretty"
             >
               Uniting twenty-one affiliated societies in the cultivation, exhibition, and appreciation of orchids across South Africa since 1968.
             </p>
