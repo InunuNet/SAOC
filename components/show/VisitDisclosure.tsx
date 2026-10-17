@@ -132,9 +132,10 @@ export interface VisitAttractionsProps {
   researchLabel?: string | null;
 }
 
-// The link's visible text is the same on every attraction, so it is described by its own
-// attraction's heading (aria-describedby), never by a composed label.
+// The link's visible text is the same on every attraction, so its accessible name is that text
+// followed by its own attraction's heading (aria-labelledby, existing text only, no composed label).
 function AttractionBody({ attraction, id }: { attraction: VisitAttraction; id: string }) {
+  const linkId = `${id}-link`;
   return (
     <>
       <h3 id={id} className="font-serif text-[18px] font-medium text-ink">
@@ -150,7 +151,8 @@ function AttractionBody({ attraction, id }: { attraction: VisitAttraction; id: s
           href={attraction.url}
           target="_blank"
           rel="noreferrer noopener"
-          aria-describedby={id}
+          id={linkId}
+          aria-labelledby={`${linkId} ${id}`}
           className="mt-1 inline-flex min-h-[44px] items-center font-sans text-[13px] underline underline-offset-2 hover:text-accent"
         >
           Visit website ↗
