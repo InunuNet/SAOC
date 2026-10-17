@@ -78,7 +78,8 @@ export function ShowStatusLine({
     <div
       data-status-disclosure=""
       role="note"
-      className="grid gap-5 rounded-[16px] bg-[var(--gold)] px-[clamp(20px,3vw,32px)] pb-6 pt-5 shadow-sm max-[700px]:px-4"
+      aria-label={(status === 'research' ? researchLabel : pendingLabel) || undefined}
+      className="grid gap-5 rounded-[16px] bg-[var(--gold)] px-[clamp(20px,3vw,32px)] pb-6 pt-5 shadow-sm [@media(max-width:700px)]:px-4"
     >
       <div className={CHIP_FIT_CLASSES}>{marker}</div>
       <p data-status-list="" className="text-[16px] leading-[1.55] text-[var(--ink-700)]">
