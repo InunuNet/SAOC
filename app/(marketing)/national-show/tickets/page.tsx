@@ -6,25 +6,30 @@ import { Card } from '@/components/nos/Card';
 import { NosSection } from '@/components/nos/NosSection';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { NAV } from '@/components/chrome/nav-config';
-import { SalesClosedNotice } from '@/components/tickets';
+import { SectionHeading } from '@/components/nos/SectionHeading';
 import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestModeBanner';
 import {
+  ArrowIcon,
   PoolBanner,
+  SalesClosedStatus,
   TicketCard,
   TicketSection,
   TicketsMasthead,
   type VisitLink,
 } from '@/components/tickets/keepsake';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
+import { buildSectionLedes } from '@/lib/data/ticket-section-ledes';
 import { buildShowFacts, type ShowFactsSource } from '@/lib/data/show-facts';
 import {
   BEFORE_YOU_VISIT_HREFS,
   TICKET_COPY,
+  TICKET_PRODUCTS,
   type TicketProductId,
+  partnerNameOf,
 } from '@/lib/data/ticket-presentation';
 import { viewerIsVerifiedAdmin } from '@/lib/admin-viewer';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { nationalShowQuery, nationalShowSalesQuery } from '@/sanity/queries';
+import { nationalShowQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
@@ -54,7 +59,7 @@ const FOOT_OPTIONS = [
   {
     id: 'trade',
     heading: "I'm a nursery or trader",
-    body: 'Register a trade booth to sell plants and supplies at the show.',
+    body: 'Trade vendor showcase, application and gated registration.',
     cta: 'Vendor registration',
     href: '/national-show/vendors/apply',
   },
@@ -70,41 +75,64 @@ function resolveVisitLinks(): VisitLink[] {
   const leaves = mega?.columns.flatMap((c) => c.links) ?? [];
   return BEFORE_YOU_VISIT_HREFS.map((href) => {
     const leaf = leaves.find((l) => l.href === href);
-    if (!leaf) throw new Error(`tickets hub: nav-config has no leaf for ${href}`);
+    if (!leaf) throw new Error(`no leaf for ${href}`);
     return { label: leaf.label, href };
   });
 }
 
 const VISIT_LINKS = resolveVisitLinks();
 
-interface NationalShowSalesState {
-  salesOpen?: boolean | null;
-}
-
 interface ShowIdentityFields extends ShowFactsSource {
   edition?: number | null;
   countdownDate?: string | null;
+  showDate?: string | null;
+  showEndDate?: string | null;
 }
 
+function ticketsNavLabel(): string {
+  const mega = NAV.find((n) => n.type === 'mega');
+  const dest = mega?.featureRail?.destinations.find((d) => d.id === 'tickets');
+  if (!dest) throw new Error('no Tickets destination');
+  return dest.label;
+}
+
+const TICKETS_LABEL = ticketsNavLabel();
+
 export default async function NationalShowTicketsPage() {
-  const [show, salesState, loaded, isAdmin] = await Promise.all([
+  const [show, loaded, isAdmin] = await Promise.all([
     sanityFetch<ShowIdentityFields>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
-    sanityFetch<NationalShowSalesState>({
-      query: nationalShowSalesQuery,
-      tags: ['nationalShow', 'sanity'],
-    }),
     loadTicketCardViewModels(),
     viewerIsVerifiedAdmin(),
   ]);
-  const { cards, pool } = loaded;
-  const salesOpen = salesState?.salesOpen === true;
+  const { cards, pool, dayPassFrom, salesOpen } = loaded;
+  const ledes = buildSectionLedes({
+    showDate: show?.showDate ?? null,
+    showEndDate: show?.showEndDate ?? null,
+    has: {
+      vip: Boolean(cards.vip),
+      sunset: Boolean(cards.sunset),
+      symposium: Boolean(cards.symposium),
+      wosa: Boolean(cards.wosa),
+      workshops: Boolean(cards.workshops),
+    },
+    names: {
+      symposium: cards.symposium?.name ?? null,
+      wosa: cards.wosa?.name ?? null,
+      workshops: cards.workshops?.name ?? TICKET_PRODUCTS.workshops.name,
+    },
+  });
   const has = (ids: readonly TicketProductId[]) => ids.some((id) => cards[id]);
   const renderCards = (ids: readonly TicketProductId[]) =>
     ids.map((id) => {
       const vm = cards[id];
       return vm ? (
         <div key={id} className="nk-wrap">
-          <TicketCard productId={id} vm={vm} />
+          <TicketCard
+            productId={id}
+            vm={vm}
+            name={vm.name}
+            partnerName={partnerNameOf(id, cards)}
+          />
         </div>
       ) : null;
     });
@@ -117,19 +145,17 @@ export default async function NationalShowTicketsPage() {
         edition={show?.edition ?? null}
         visitLinks={VISIT_LINKS}
         cards={cards}
+        dayPassFrom={dayPassFrom}
       />
-      {!salesOpen ? (
-        <div data-nos-wrap="" data-ticket-closed="" className="nk-closed">
-          <SalesClosedNotice message="Ticket sales are not yet open — check back soon." />
-        </div>
-      ) : null}
+      {!salesOpen ? <SalesClosedStatus /> : null}
 
       {has(THURSDAY_PRODUCTS) ? (
         <TicketSection
           id="thursday"
           title={TICKET_COPY.sections.thursday}
+          lede={ledes.thursday}
           columns={2}
-          lead={isAdmin ? <OzowSandboxTestModeBanner /> : null}
+          lead={isAdmin && salesOpen ? <OzowSandboxTestModeBanner /> : null}
         >
           {renderCards(THURSDAY_PRODUCTS)}
         </TicketSection>
@@ -138,6 +164,7 @@ export default async function NationalShowTicketsPage() {
         <TicketSection
           id="passes"
           title={TICKET_COPY.sections.passes}
+          lede={ledes.passes}
           columns={2}
           lead={<PoolBanner pool={pool} />}
         >
@@ -145,7 +172,12 @@ export default async function NationalShowTicketsPage() {
         </TicketSection>
       ) : null}
       {has(PROGRAMME_PRODUCTS) ? (
-        <TicketSection id="programme" title={TICKET_COPY.sections.programme} columns={3}>
+        <TicketSection
+          id="programme"
+          title={TICKET_COPY.sections.programme}
+          lede={ledes.programme}
+          columns={3}
+        >
           {renderCards(PROGRAMME_PRODUCTS)}
         </TicketSection>
       ) : null}
@@ -153,7 +185,12 @@ export default async function NationalShowTicketsPage() {
       <NosSection>
         <div className="nk-grid-foot">
           {FOOT_OPTIONS.map((option) => (
-            <Card key={option.id} id={option.id} data-nos-group="" className="flex flex-col gap-4">
+            <Card
+              key={option.id}
+              id={option.id}
+              data-nos-group=""
+              className="nk-opt flex flex-col gap-4"
+            >
               <h3 className="font-serif text-[20px] font-medium text-ink">{option.heading}</h3>
               <p className="font-sans text-[17px] leading-relaxed text-muted">{option.body}</p>
               <Button
@@ -164,9 +201,22 @@ export default async function NationalShowTicketsPage() {
                 className="mt-auto w-fit whitespace-nowrap max-sm:w-full max-sm:!px-2"
               >
                 <span>{option.cta}</span>
+                <ArrowIcon />
               </Button>
             </Card>
           ))}
+        </div>
+      </NosSection>
+      <NosSection tone="royal" className="text-center" data-nos-ticket-close="">
+        <div className="mx-auto flex max-w-[720px] flex-col items-center gap-6">
+          <SectionHeading
+            title={TICKET_COPY.sections.passes}
+            tone="on-dark"
+            className="items-center text-center"
+          />
+          <Button as={Link} href="#passes" variant="on-dark">
+            {TICKETS_LABEL}
+          </Button>
         </div>
       </NosSection>
       <NosShowIndex current="/national-show/tickets" currentTone="ink" />

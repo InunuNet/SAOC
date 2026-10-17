@@ -15,6 +15,7 @@ import type { PresenterPhoto } from './presenter-photo.ts';
  * price is 'soldOut', never 'low'.
  */
 export type TicketCardState =
+  | 'salesClosed' // 0 (highest) — ticket sales are not open: every card is masked, nothing sells
   | 'pricePending' // 1 (highest) — price/capacity data failed to resolve or is mid-fetch
   | 'soldOut' // 2 — remaining <= 0 for a non-early-bird product, or for an
   //     early-bird-ineligible product's own ceiling

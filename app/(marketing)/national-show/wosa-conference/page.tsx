@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
+import { Button } from '@/components/nos/Button';
 import { PresenterSection } from '@/components/nos/PresenterSection';
 import { ShowContentState } from '@/components/show/nos/ShowContentState';
+import { TICKET_COPY } from '@/lib/data/ticket-presentation';
 import { loadShowFacts } from '@/lib/data/show-facts';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
@@ -78,21 +81,28 @@ export default async function WosaConferencePage() {
           layout="prose"
           holding={{ facts, keepAfterProse: true }}
           afterProse={
-            // SAOC attributes and links out; it never authors conservation content in its
-            // own voice — the same standing rule the /about page's WOSA credit follows.
-            <p className="max-w-[60ch] border-t border-rule pt-6 font-sans text-[15px] leading-relaxed text-ink/70">
-              For wild orchid identification, habitat and conservation, visit our partner
-              organisation{' '}
-              <a
-                href="https://wildorchids.co.za"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-link"
-              >
-                Wild Orchids of Southern Africa (WOSA)
-              </a>
-              .
-            </p>
+            <>
+              <div className="mb-8">
+                <Button as={Link} href="/national-show/conferences#ticket-wosa">
+                  {TICKET_COPY.buy}
+                </Button>
+              </div>
+              {/* SAOC attributes and links out; it never authors conservation content in its
+                  own voice — the same standing rule the /about page's WOSA credit follows. */}
+              <p className="max-w-[60ch] border-t border-rule pt-6 font-sans text-[15px] leading-relaxed text-ink/70">
+                For wild orchid identification, habitat and conservation, visit our partner
+                organisation{' '}
+                <a
+                  href="https://wildorchids.co.za"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-link"
+                >
+                  Wild Orchids of Southern Africa (WOSA)
+                </a>
+                .
+              </p>
+            </>
           }
         />
       </div>

@@ -800,6 +800,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   padding: 0 clamp(20px, 3vw, 32px) 24px;
 }
 
+/* F18-KEEPSAKE-START */
 /* F18b (launch-weekend, v13 keepsake tickets): the ticket, the pool banner, the hero fan and the
    tickets masthead, ported from the approved mock (goldens/f18b/v13-tickets.html) onto theme tokens.
    Stub field colours and the royal-600 / olive-700 steps arrive as custom properties from the scope
@@ -822,8 +823,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   --nk-warn: var(--status-warning-on-light);
   --nk-behind: var(--ivory);
   --nk-fan-dur: 1100ms;
-  --nk-fan-delay: 160ms;
-  --nk-fan-delay-mid: 60ms;
+  --nk-fan-delay: 120ms;
+  --nk-fan-delay-mid: 0ms;
 }
 .nos-theme .nk-icon {
   width: 1.1em;
@@ -904,12 +905,28 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   color: var(--nk-ink);
   border-radius: var(--radius-ticket);
   -webkit-mask:
-    radial-gradient(circle at 0 var(--stub), transparent var(--notch), black calc(var(--notch) + 0.5px)),
-    radial-gradient(circle at 100% var(--stub), transparent var(--notch), black calc(var(--notch) + 0.5px));
+    radial-gradient(
+      circle at 0 var(--stub),
+      transparent var(--notch),
+      black calc(var(--notch) + 0.5px)
+    ),
+    radial-gradient(
+      circle at 100% var(--stub),
+      transparent var(--notch),
+      black calc(var(--notch) + 0.5px)
+    );
   -webkit-mask-composite: source-in;
   mask:
-    radial-gradient(circle at 0 var(--stub), transparent var(--notch), black calc(var(--notch) + 0.5px)),
-    radial-gradient(circle at 100% var(--stub), transparent var(--notch), black calc(var(--notch) + 0.5px));
+    radial-gradient(
+      circle at 0 var(--stub),
+      transparent var(--notch),
+      black calc(var(--notch) + 0.5px)
+    ),
+    radial-gradient(
+      circle at 100% var(--stub),
+      transparent var(--notch),
+      black calc(var(--notch) + 0.5px)
+    );
   mask-composite: intersect;
 }
 .nos-theme .nk-ticket.is-session {
@@ -923,7 +940,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   top: var(--stub);
   height: 6px;
   transform: translateY(-50%);
-  background: radial-gradient(circle, var(--nk-behind) 2.2px, transparent 2.8px) 0 50% / 11px 6px repeat-x;
+  background: radial-gradient(circle, var(--nk-behind) 2.2px, transparent 2.8px) 0 50% / 11px 6px
+    repeat-x;
   z-index: 2;
 }
 .nos-theme .nk-stub {
@@ -1319,12 +1337,28 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     grid-template-columns: minmax(0, 1fr) var(--stub);
     grid-template-areas: 'main stub';
     -webkit-mask:
-      radial-gradient(circle at calc(100% - var(--stub)) 0, transparent var(--notch), black calc(var(--notch) + 0.5px)),
-      radial-gradient(circle at calc(100% - var(--stub)) 100%, transparent var(--notch), black calc(var(--notch) + 0.5px));
+      radial-gradient(
+        circle at calc(100% - var(--stub)) 0,
+        transparent var(--notch),
+        black calc(var(--notch) + 0.5px)
+      ),
+      radial-gradient(
+        circle at calc(100% - var(--stub)) 100%,
+        transparent var(--notch),
+        black calc(var(--notch) + 0.5px)
+      );
     -webkit-mask-composite: source-in;
     mask:
-      radial-gradient(circle at calc(100% - var(--stub)) 0, transparent var(--notch), black calc(var(--notch) + 0.5px)),
-      radial-gradient(circle at calc(100% - var(--stub)) 100%, transparent var(--notch), black calc(var(--notch) + 0.5px));
+      radial-gradient(
+        circle at calc(100% - var(--stub)) 0,
+        transparent var(--notch),
+        black calc(var(--notch) + 0.5px)
+      ),
+      radial-gradient(
+        circle at calc(100% - var(--stub)) 100%,
+        transparent var(--notch),
+        black calc(var(--notch) + 0.5px)
+      );
     mask-composite: intersect;
   }
   .nos-theme .nk-perf {
@@ -1335,7 +1369,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     width: 6px;
     height: auto;
     transform: translateX(-50%);
-    background: radial-gradient(circle, var(--nk-behind) 2.2px, transparent 2.8px) 50% 0 / 6px 11px repeat-y;
+    background: radial-gradient(circle, var(--nk-behind) 2.2px, transparent 2.8px) 50% 0 / 6px 11px
+      repeat-y;
   }
   .nos-theme .nk-stub {
     border-radius: 0 var(--radius-ticket) var(--radius-ticket) 0;
@@ -1748,7 +1783,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 @media (prefers-reduced-motion: no-preference) {
   .nos-theme .nk-fan-link {
-    transition: filter var(--dur-med) var(--ease-nos);
+    transition: filter 200ms var(--ease-nos);
   }
 }
 /* Phones: a 2x2 deck. Each cell is reserved at the tallest card's height for its width band, so
@@ -1810,26 +1845,30 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 
 /* ---------- Motion: three moments, inside no-preference ---------- */
 @media (prefers-reduced-motion: no-preference) {
-  .nos-theme .nk-fan .nk-wrap {
-    transition-property: transform;
-    transition-duration: var(--nk-fan-dur);
-    transition-timing-function: var(--ease-nos);
-    transition-delay: var(--nk-fan-delay);
-  }
-  .nos-theme .nk-fan .nk-wrap:nth-child(2),
-  .nos-theme .nk-fan .nk-wrap:nth-child(3) {
-    transition-delay: var(--nk-fan-delay-mid);
-  }
-  @starting-style {
-    .nos-theme .nk-fan .nk-wrap {
+  @keyframes fan-out {
+    from {
       transform: translate(-50%, 36px) rotate(0deg);
     }
   }
+  @keyframes fan-up {
+    from {
+      transform: translateY(24px) rotate(0deg);
+    }
+  }
+  .nos-theme .nk-fan .nk-wrap {
+    animation-name: fan-out;
+    animation-duration: var(--nk-fan-dur);
+    animation-timing-function: var(--ease-nos);
+    animation-delay: var(--nk-fan-delay);
+    animation-fill-mode: backwards;
+  }
+  .nos-theme .nk-fan .nk-wrap:nth-child(2),
+  .nos-theme .nk-fan .nk-wrap:nth-child(3) {
+    animation-delay: var(--nk-fan-delay-mid);
+  }
   @media (max-width: 700px) {
-    @starting-style {
-      .nos-theme .nk-fan .nk-wrap {
-        transform: translateY(0) rotate(var(--r));
-      }
+    .nos-theme .nk-fan .nk-wrap {
+      animation-name: fan-up;
     }
   }
   .nos-theme .nk-btn:active {
@@ -1848,14 +1887,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
       drop-shadow(0 24px 34px color-mix(in srgb, var(--primary) 18%, transparent));
   }
 }
-@media (prefers-reduced-motion: no-preference) and (max-width: 700px) {
-  @starting-style {
-    .nos-theme .nk-fan .nk-wrap {
-      transform: translateY(24px) rotate(0deg);
-    }
-  }
-}
-
 .nos-theme .nk-lead {
   margin-bottom: 28px;
 }
@@ -1878,3 +1909,46 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nk-hero-compact .nos-hero-lede {
   max-width: 64ch;
 }
+
+/* ---------- Section ledes, the sales-closed line and the Day Pass "from" figure ---------- */
+.nos-theme [data-section-lede] {
+  margin: 0;
+  max-width: 60ch;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink-700);
+}
+.nos-theme [data-sales-status] {
+  margin: 0;
+  padding: 14px clamp(20px, 3vw, 32px);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink-700);
+  background-color: var(--bone);
+  border-bottom: 1px solid var(--rule-soft);
+}
+.nos-theme [data-sales-status] a {
+  margin-left: 8px;
+  font-weight: 700;
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.nos-theme .nk-from-row {
+  padding-bottom: 8px;
+}
+.nos-theme [data-day-pass-from] {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ivory);
+}
+.nos-theme .nk-opt {
+  border-radius: var(--radius-ticket);
+  filter: drop-shadow(0 2px 3px color-mix(in srgb, var(--primary) 8%, transparent))
+    drop-shadow(0 14px 22px color-mix(in srgb, var(--primary) 13%, transparent));
+}
+/* F18-KEEPSAKE-END */

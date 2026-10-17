@@ -31,14 +31,14 @@ export const revalidate = 60;
 export const metadata: Metadata = buildPageMetadata({
   title: 'National Orchid Show Symposium',
   image: nosOgImage('National Orchid Show Symposium'),
-  description: 'What the SAOC Symposium is, and who it is for.',
+  description: 'What the National Orchid Show Symposium is, and who it is for.',
   path: '/national-show/symposium',
 });
 
 export default async function SymposiumPage() {
   const result = await loadShowPageOrFallback('06-saoc-symposium', {
     label: 'National Orchid Show Symposium',
-    purpose: 'The SAOC Symposium — what it is, its theme, and who it is for.',
+    purpose: 'The National Orchid Show Symposium — what it is, its theme, and who it is for.',
   });
 
   // F6 (conference-workshop-tickets, M4) — additive: see the file-header comment above.

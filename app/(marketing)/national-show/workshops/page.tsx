@@ -2,12 +2,9 @@ import type { Metadata } from 'next';
 
 import { NosHero } from '@/components/nos/NosHero';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
-import { SalesClosedNotice } from '@/components/tickets';
-import { TicketCard, TicketSection } from '@/components/tickets/keepsake';
+import { SalesClosedStatus, TicketCard, TicketSection } from '@/components/tickets/keepsake';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
-import { TICKET_COPY, type TicketProductId } from '@/lib/data/ticket-presentation';
-import { sanityFetch } from '@/sanity/lib/fetch';
-import { nationalShowSalesQuery } from '@/sanity/queries';
+import { TICKET_COPY, partnerNameOf, type TicketProductId } from '@/lib/data/ticket-presentation';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 
@@ -29,16 +26,8 @@ export const metadata: Metadata = buildPageMetadata({
 
 const WORKSHOP_PAGE_PRODUCTS: readonly TicketProductId[] = ['sunset', 'workshops'];
 
-interface SalesState {
-  salesOpen?: boolean | null;
-}
-
 export default async function WorkshopsFieldTripsTicketsPage() {
-  const [{ cards }, salesState] = await Promise.all([
-    loadTicketCardViewModels(),
-    sanityFetch<SalesState>({ query: nationalShowSalesQuery, tags: ['nationalShow', 'sanity'] }),
-  ]);
-  const salesOpen = salesState?.salesOpen === true;
+  const { cards, salesOpen } = await loadTicketCardViewModels();
 
   return (
     <>
@@ -48,23 +37,18 @@ export default async function WorkshopsFieldTripsTicketsPage() {
         lede="Book Sunset Cocktails and guided Field Trip outings at the National Show."
         priority
       />
-      <TicketSection
-        id="programme"
-        title={TICKET_COPY.sections.programme}
-        columns={2}
-        lead={
-          !salesOpen ? (
-            <div className="nk-lead">
-              <SalesClosedNotice message="Ticket sales are not yet open — check back soon." />
-            </div>
-          ) : null
-        }
-      >
+      {!salesOpen ? <SalesClosedStatus /> : null}
+      <TicketSection id="programme" title={TICKET_COPY.sections.programme} columns={2}>
         {WORKSHOP_PAGE_PRODUCTS.map((id) => {
           const vm = cards[id];
           return vm ? (
             <div key={id} className="nk-wrap">
-              <TicketCard productId={id} vm={vm} />
+              <TicketCard
+                productId={id}
+                vm={vm}
+                name={vm.name}
+                partnerName={partnerNameOf(id, cards)}
+              />
             </div>
           ) : null;
         })}

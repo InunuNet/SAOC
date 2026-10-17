@@ -36,7 +36,13 @@ export function FanLink({ targetId, label, children }: FanLinkProps) {
   }
 
   return (
-    <a data-fan-link="" className="nk-fan-link" href={`#${targetId}`} aria-label={label} onClick={jumpToCard}>
+    <a
+      data-fan-link=""
+      className="nk-fan-link"
+      href={`#${targetId}`}
+      aria-label={label}
+      onClick={jumpToCard}
+    >
       {children}
     </a>
   );

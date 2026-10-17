@@ -10,9 +10,11 @@ import type { KeepsakeCardVm } from './types';
 
 export interface TicketFanProps {
   cards: Partial<Record<TicketProductId, KeepsakeCardVm>>;
+  // CMS ticket-type names by product; they win over the card's own name.
+  names?: Partial<Record<TicketProductId, string | null>>;
 }
 
-export function TicketFan({ cards }: TicketFanProps) {
+export function TicketFan({ cards, names }: TicketFanProps) {
   return (
     <div data-nos-ticket-fan="" className="nk-fan">
       {TICKET_FAN_ORDER.map((id) => {
@@ -20,8 +22,8 @@ export function TicketFan({ cards }: TicketFanProps) {
         if (!vm) return null;
         return (
           <div key={id} className="nk-wrap">
-            <FanLink targetId={`ticket-${id}`} label={fanLinkLabel(id, vm)}>
-              <TicketMini productId={id} vm={vm} />
+            <FanLink targetId={`ticket-${id}`} label={fanLinkLabel(id, vm, names?.[id])}>
+              <TicketMini productId={id} vm={vm} name={names?.[id]} />
             </FanLink>
           </div>
         );

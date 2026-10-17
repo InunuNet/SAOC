@@ -30,7 +30,7 @@ export const TICKET_CATEGORY_LABELS: Record<TicketCategory, string> = {
   exhibitor: 'Exhibitor Entry',
   workshop: 'Workshop',
   'field-trip': 'Field Trip',
-  symposium: 'SAOC Symposium',
+  symposium: 'National Orchid Show Symposium',
   'wosa-conference': 'WOSA Conference',
   'cocktail-reception': 'Cocktail / Reception',
 };

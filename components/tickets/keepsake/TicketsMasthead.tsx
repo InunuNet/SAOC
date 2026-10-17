@@ -6,6 +6,7 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 
+import { formatRand } from '@/components/nos/cheapest-admission';
 import { ShowCountdown } from '@/components/show';
 import { TICKET_COPY } from '@/lib/data/ticket-presentation';
 import type { ShowFact } from '@/lib/data/show-facts';
@@ -29,6 +30,8 @@ export interface TicketsMastheadProps {
   edition: number | null;
   visitLinks: readonly VisitLink[];
   cards: TicketFanProps['cards'];
+  // The Day Pass card's effective price; null renders no line (R7).
+  dayPassFrom?: number | null;
 }
 
 export function TicketsMasthead({
@@ -37,6 +40,7 @@ export function TicketsMasthead({
   edition,
   visitLinks,
   cards,
+  dayPassFrom = null,
 }: TicketsMastheadProps) {
   const shown = FACT_LABELS.map((label) => facts.find((f) => f.label === label)).filter(
     (f): f is ShowFact => f !== undefined
@@ -70,6 +74,13 @@ export function TicketsMasthead({
         </div>
         <TicketFan cards={cards} />
       </div>
+      {dayPassFrom !== null ? (
+        <div data-nos-wrap="" className="nk-from-row">
+          <p data-day-pass-from="" className="nk-from">
+            {`${TICKET_COPY.dayPassFrom} ${formatRand(dayPassFrom)}`}
+          </p>
+        </div>
+      ) : null}
       <nav data-nos-wrap="" className="nk-visit" aria-labelledby={VISIT_LABEL_ID}>
         <p className="nk-visit-label" id={VISIT_LABEL_ID}>
           {TICKET_COPY.beforeYouVisit}

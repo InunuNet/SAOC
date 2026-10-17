@@ -13,13 +13,18 @@ import type { KeepsakeCardVm } from './types';
 export interface TicketMiniProps {
   productId: TicketProductId;
   vm: KeepsakeCardVm;
+  name?: string | null;
 }
 
-export function TicketMini({ productId, vm }: TicketMiniProps) {
+export function TicketMini({ productId, vm, name: nameProp }: TicketMiniProps) {
   const product = TICKET_PRODUCTS[productId];
-  const name = vm.name ?? product.name;
-  const dayStub = vm.days ? showDayStub(firstSelectableDay(vm.days) ?? vm.days[0]?.day ?? '') : null;
+  const name = nameProp ?? vm.name ?? product.name;
+  const dayStub = vm.days
+    ? showDayStub(firstSelectableDay(vm.days) ?? vm.days[0]?.day ?? '')
+    : null;
   const muted = vm.state === 'soldOut' || vm.state === 'earlyBirdSoldOut';
+  const closed = vm.state === 'salesClosed';
+  const price = vm.state === 'pricePending' ? null : vm.price;
 
   return (
     <div data-ticket-mini="" data-ticket-state={vm.state} className="nk-ticket">
@@ -35,14 +40,14 @@ export function TicketMini({ productId, vm }: TicketMiniProps) {
         <p className="nk-when">{product.when}</p>
         <p className="nk-name">{name}</p>
         <div className="nk-buy">
-          {vm.state === 'pricePending' || vm.price === null ? (
+          {closed ? null : price === null ? (
             <div className="nk-pending">
               <span className="nk-price is-pending">{TICKET_COPY.pricePending}</span>
               <span className="nk-chip">{TICKET_COPY.chip}</span>
             </div>
           ) : (
             <div>
-              <TicketPrice price={vm.price} each={product.each} muted={muted} />
+              <TicketPrice price={price} each={product.each} muted={muted} />
             </div>
           )}
         </div>
@@ -52,8 +57,13 @@ export function TicketMini({ productId, vm }: TicketMiniProps) {
 }
 
 /** The accessible name of a fan link: "<name>, R<price>", ", price to follow" or ", sold out". */
-export function fanLinkLabel(productId: TicketProductId, vm: KeepsakeCardVm): string {
-  const name = vm.name ?? TICKET_PRODUCTS[productId].name;
+export function fanLinkLabel(
+  productId: TicketProductId,
+  vm: KeepsakeCardVm,
+  nameProp?: string | null
+): string {
+  const name = nameProp ?? vm.name ?? TICKET_PRODUCTS[productId].name;
+  if (vm.state === 'salesClosed') return `${name}, ${TICKET_COPY.salesClosedLabel}`;
   if (vm.state === 'pricePending' || vm.price === null) return `${name}, price to follow`;
   if (vm.state === 'soldOut') return `${name}, sold out`;
   return `${name}, ${formatRand(vm.price)}`;

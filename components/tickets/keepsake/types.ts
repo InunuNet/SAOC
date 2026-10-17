@@ -27,6 +27,8 @@ export interface KeepsakeCardVm {
   state: TicketCardState;
   price: number | null;
   regularPrice: number | null;
+  // The CMS name of the regular SKU, on an early-bird card.
+  regularName?: string | null;
   scarcity: KeepsakeScarcity | null;
   days: KeepsakeDay[] | null;
 }

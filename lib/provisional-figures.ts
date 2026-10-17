@@ -266,7 +266,7 @@ export const DAY_VISITOR_SHAPED_SLUGS: readonly string[] = ADMISSION_PRODUCTS.fi
  * second interface. UPDATED IN PLACE (same slug, same document identity) from the earlier
  * ticketing-conferences-and-events (M1/F1) six-SKU differential-early-bird-price/joint-bundle
  * design, per Brad's verbatim 2026-10-07 ticket news (messages 1, 3 and 6, see
- * .agent/memory/scratch/brad-ticket-news-2026-10-07.md): message 3 confirms SAOC Symposium
+ * .agent/memory/scratch/brad-ticket-news-2026-10-07.md): message 3 confirms National Orchid Show Symposium
  * and WOSA Conference are separate products, each R2000 flat, 80 places; message 6 directly
  * supersedes message 4's same-day 10-ticket scarcity-tranche idea — "No early bird for
  * Symposiums and conferences" — so neither product carries ANY early-bird mechanism (no
@@ -291,9 +291,9 @@ const SYMPOSIUM_WOSA_SOURCE_CITATION =
 export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
   {
     slug: 'saoc-symposium',
-    name: 'SAOC Symposium',
+    name: 'National Orchid Show Symposium',
     category: 'conference',
-    description: 'Full registration for the SAOC Symposium track.',
+    description: 'Full registration for the National Orchid Show Symposium track.',
     price: SYMPOSIUM_WOSA_PRICE,
     capacity: SYMPOSIUM_WOSA_CAPACITY,
     releasedQuantity: null,
@@ -329,7 +329,7 @@ export const CONFERENCE_PRODUCTS: ProvisionalAdmissionProduct[] = [
 
 /**
  * F1 (conference-workshop-tickets, M1) — the four retired Conferences SKUs: the old
- * differential early-bird/normal price pair for each of SAOC Symposium and WOSA Conference,
+ * differential early-bird/normal price pair for each of National Orchid Show Symposium and WOSA Conference,
  * plus the SAOC/WOSA joint bundle's own early-bird/normal pair. Retired for two independent
  * reasons that both landed the same day — the joint bundle and the differential price were
  * already gone per messages 3-4, and message 6 additionally forecloses re-deriving any

@@ -9,6 +9,7 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import {
   activeShowWindowQuery,
   activeTicketTypesByCategoryQuery,
+  nationalShowSalesQuery,
   ticketTypesByPoolQuery,
 } from '@/sanity/queries';
 import {
@@ -23,10 +24,7 @@ import {
   type TicketTypeInput,
 } from '@/lib/data/ticket-card-view-models';
 import { WORKSHOPS_PRODUCT_SLUG } from '@/lib/data/ticket-presentation';
-import {
-  getSoldCountsByTicketType,
-  getSoldCountsByTicketTypeAndDay,
-} from '@/lib/data/tickets';
+import { getSoldCountsByTicketType, getSoldCountsByTicketTypeAndDay } from '@/lib/data/tickets';
 import { filterPubliclyListableTicketTypes } from '@/lib/demo-ticket-type';
 import {
   DAY_VISITOR_SELLABLE_DAYS,
@@ -51,7 +49,7 @@ interface PoolSibling {
 
 export async function getAdmissionSoldOutBySlug(
   types: AdmissionAvailabilitySource[],
-  activeShowId: string | null,
+  activeShowId: string | null
 ): Promise<Record<string, boolean>> {
   try {
     const soldCounts = await getSoldCountsByTicketType(NATIONAL_SHOW_ID);
@@ -69,7 +67,7 @@ export async function getAdmissionSoldOutBySlug(
     }
 
     const poolKeys = new Set(
-      types.map((t) => t.capacityPool).filter((pool): pool is string => Boolean(pool)),
+      types.map((t) => t.capacityPool).filter((pool): pool is string => Boolean(pool))
     );
     for (const poolKey of poolKeys) {
       const siblings =
@@ -128,14 +126,22 @@ interface ShowActivation {
 export interface TicketCardViewModelsResult extends TicketCardsOutput {
   /** False when the CMS or the stock read failed: the cards then carry no stock numbers. */
   stockKnown: boolean;
+  // The CMS sales switch the cards were masked with; false while it cannot be read.
+  salesOpen: boolean;
 }
 
-const EMPTY_RESULT: TicketCardViewModelsResult = { cards: {}, pool: null, stockKnown: false };
+const EMPTY_RESULT: TicketCardViewModelsResult = {
+  cards: {},
+  pool: null,
+  dayPassFrom: null,
+  stockKnown: false,
+  salesOpen: false,
+};
 
 function toTypeInput(
   t: SanityCardTicketType,
   priceBySlug: Record<string, number | null>,
-  withStock: boolean,
+  withStock: boolean
 ): TicketTypeInput {
   const sibling = REGULAR_PRICE_SIBLING_SLUG[t.slug];
   return {
@@ -190,26 +196,31 @@ async function readStock(): Promise<StockReading | null> {
  */
 export async function loadTicketCardViewModels(): Promise<TicketCardViewModelsResult> {
   try {
-    const [byCategory, shows] = await Promise.all([
+    const [byCategory, shows, salesState] = await Promise.all([
       Promise.all(
         TICKET_CATEGORIES.map((category) =>
           sanityFetch<SanityCardTicketType[]>({
             query: activeTicketTypesByCategoryQuery,
             params: { category },
             tags: ['ticketType', 'sanity'],
-          }),
-        ),
+          })
+        )
       ),
       sanityFetch<ShowActivation[]>({ query: activeShowWindowQuery, tags: ['show', 'sanity'] }),
+      sanityFetch<{ salesOpen?: boolean | null }>({
+        query: nationalShowSalesQuery,
+        tags: ['nationalShow', 'sanity'],
+      }),
     ]);
+    const salesOpen = salesState?.salesOpen === true;
     const cmsTypes = filterPubliclyListableTicketTypes(byCategory.flatMap((rows) => rows ?? []));
     const priceBySlug: Record<string, number | null> = Object.fromEntries(
-      cmsTypes.map((t) => [t.slug, t.price ?? null]),
+      cmsTypes.map((t) => [t.slug, t.price ?? null])
     );
     const stock = await readStock();
 
     const types: TicketTypeInput[] = cmsTypes.map((t) =>
-      toTypeInput(t, priceBySlug, stock !== null),
+      toTypeInput(t, priceBySlug, stock !== null)
     );
     // Workshops are priced per session; the product card carries the per-session price and no
     // stock figure (each session shows its own places).
@@ -229,6 +240,7 @@ export async function loadTicketCardViewModels(): Promise<TicketCardViewModelsRe
       types,
       soldByType: stock ? stock.sold : {},
       soldByDay: stock ? stock.byDay : null,
+      salesOpen,
     });
 
     if (stock) {
@@ -245,12 +257,17 @@ export async function loadTicketCardViewModels(): Promise<TicketCardViewModelsRe
       }
       const verdict = await getAdmissionSoldOutBySlug(sources, resolveActiveShow(shows ?? []));
       for (const card of Object.values(built.cards)) {
-        if (card && card.state !== 'pricePending' && verdict[card.slug] === true) {
+        if (
+          card &&
+          card.state !== 'pricePending' &&
+          card.state !== 'salesClosed' &&
+          verdict[card.slug] === true
+        ) {
           card.state = 'soldOut';
         }
       }
     }
-    return { ...built, stockKnown: stock !== null };
+    return { ...built, stockKnown: stock !== null, salesOpen };
   } catch (error) {
     const name = error instanceof Error ? error.name : 'UnknownError';
     console.error(`[lib/data/admission-availability] ticket cards load failed (${name})`);

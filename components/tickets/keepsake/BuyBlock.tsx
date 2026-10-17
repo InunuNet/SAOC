@@ -17,7 +17,7 @@ import type { KeepsakeCardVm } from './types';
 
 const MIN_QUANTITY = 1;
 const MAX_QUANTITY = 10;
-const SESSIONS_HREF = '#sessions';
+const SESSIONS_HREF = '/national-show/workshops#sessions';
 
 interface BuyBlockProps {
   vm: KeepsakeCardVm;
@@ -28,6 +28,8 @@ interface BuyBlockProps {
   session?: boolean;
   /** The chosen day (Day Pass only), appended to the checkout link. */
   day?: string | null;
+  // The CMS name of the regular SKU that follows an early-bird SKU.
+  regularName?: string | null;
 }
 
 function checkoutHref(slug: string, quantity: number, day: string | null | undefined): string {
@@ -36,8 +38,17 @@ function checkoutHref(slug: string, quantity: number, day: string | null | undef
   return `/tickets/${slug}?${query.toString()}`;
 }
 
-export function BuyBlock({ vm, name, product, session = false, day = null }: BuyBlockProps) {
+export function BuyBlock({
+  vm,
+  name,
+  product,
+  session = false,
+  day = null,
+  regularName = null,
+}: BuyBlockProps) {
   const [quantity, setQuantity] = useState(MIN_QUANTITY);
+
+  if (vm.state === 'salesClosed') return null;
 
   if (vm.state === 'pricePending' || vm.price === null) {
     return (
@@ -62,7 +73,7 @@ export function BuyBlock({ vm, name, product, session = false, day = null }: Buy
             {` ${TICKET_COPY.earlyBirdSoldOut}`}
           </p>
           {vm.regularPrice !== null ? (
-            <p className="nk-was">{`The ${product.name} is now ${formatRand(vm.regularPrice)}.`}</p>
+            <p className="nk-was">{`The ${regularName ?? product.name} is now ${formatRand(vm.regularPrice)}.`}</p>
           ) : null}
         </div>
       </div>

@@ -6,3 +6,5 @@ Pass 3: 31/40, P1 x2 (checkout hero height and stepper position; bare /tickets n
 Pass 4: 37/40, P0/P1/P2 all 0 after the fixes listed there.
 
 Screenshots: `.tmp/sandbox/lw-f18/after/` as `<width>-<route-last-segment>.png`.
+
+Pass 5 (after the lead's rulings: sub-ledes, sales-closed masking, symposium naming, keyframe motion, closing band, WOSA Buy link): Score: 37/40. P0 0, P1 0, P2 2: the "Day Pass from" line sits in its own row under the fan and reads detached from the facts column at 1280; the 390 fan deck keeps the 2x2 cell height reserved. The "design-cb audit: PASS" line is NOT written: the dev has not run F18B-AUDIT-CHECKLIST.md to a pass while F18-A29 (horizontal stub width) and F18-A37 (box-shadow against A10) contradict their own goldens; see the report to main.

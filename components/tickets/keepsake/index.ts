@@ -11,3 +11,5 @@ export type {
 } from './types';
 export { TicketsMasthead, type TicketsMastheadProps, type VisitLink } from './TicketsMasthead';
 export { TicketSection, type TicketSectionProps } from './TicketSection';
+export { SalesClosedStatus } from './SalesClosedStatus';
+export { ArrowIcon } from './parts';

@@ -46,7 +46,7 @@ export default async function ProgrammePage() {
             className="flex max-w-[60ch] flex-wrap gap-x-6 gap-y-2 border-t border-rule pt-6 font-sans text-[15px] leading-relaxed"
           >
             <Link href="/national-show/symposium" className="inline-link">
-              SAOC Symposium
+              National Orchid Show Symposium
             </Link>
             <Link href="/national-show/workshops" className="inline-link">
               Workshops

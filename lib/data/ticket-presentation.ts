@@ -123,7 +123,7 @@ export const TICKET_PRODUCTS: Record<TicketProductId, TicketProduct> = {
   symposium: {
     id: 'symposium',
     kind: 'programme',
-    name: 'SAOC Symposium',
+    name: 'National Orchid Show Symposium',
     when: 'Dates to follow',
     meta: null,
     theme: 'From Wild Origins to Cultivated Excellence',
@@ -170,11 +170,26 @@ export const TICKET_PRODUCTS: Record<TicketProductId, TicketProduct> = {
   },
 };
 
+/** The product whose early-bird pool each pass product shares (its CMS name reads "Shared with the ..."). */
+export const POOL_PARTNER_IDS: Partial<Record<TicketProductId, TicketProductId>> = {
+  weekend: 'day',
+  day: 'weekend',
+};
+
+/** The CMS name of the pool partner of a pass product, or null when it has none or no card. */
+export function partnerNameOf(
+  id: TicketProductId,
+  cards: Partial<Record<TicketProductId, { name: string | null }>>
+): string | null {
+  const partnerId = POOL_PARTNER_IDS[id];
+  return partnerId ? (cards[partnerId]?.name ?? null) : null;
+}
+
 /** The ticket type slug that stands for the Workshops product card (sessions carry their own). */
 export const WORKSHOPS_PRODUCT_SLUG = 'workshops';
 
 const PRODUCT_BY_SLUG: Record<string, TicketProductId> = Object.fromEntries(
-  TICKET_PRODUCT_ORDER.flatMap((id) => TICKET_PRODUCTS[id].slugs.map((slug) => [slug, id])),
+  TICKET_PRODUCT_ORDER.flatMap((id) => TICKET_PRODUCTS[id].slugs.map((slug) => [slug, id]))
 );
 
 export function productIdForSlug(slug: string): TicketProductId | null {
@@ -194,6 +209,9 @@ export const TICKET_COPY = {
   admitSession: 'One place',
   buy: 'Buy ticket',
   buyHint: 'Choose at least one ticket',
+  dayPassFrom: 'Day Pass from',
+  salesClosedLabel: 'Sales closed',
+  salesClosedLink: 'Be the first to know',
   chooseSession: 'Choose a session',
   fewLeft: 'Few left',
   soldOutStamp: 'Sold out',
@@ -258,4 +276,10 @@ export const TICKET_THEME_VARS: Record<string, string> = {
   '--ticket-field-workshops': '#33296F',
   '--primary-600': '#4A3D8C',
   '--olive-700': '#6A6829',
+};
+
+// The products whose card name links to the page that describes them.
+export const TICKET_DETAIL_HREFS: Partial<Record<TicketProductId, string>> = {
+  symposium: '/national-show/symposium',
+  wosa: '/national-show/wosa-conference',
 };

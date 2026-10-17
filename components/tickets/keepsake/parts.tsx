@@ -7,11 +7,7 @@ import Image from 'next/image';
 import type { CSSProperties } from 'react';
 
 import { formatRand } from '@/components/nos/cheapest-admission';
-import {
-  TICKET_COPY,
-  TICKET_EMBLEM,
-  type TicketProduct,
-} from '@/lib/data/ticket-presentation';
+import { TICKET_COPY, TICKET_EMBLEM, type TicketProduct } from '@/lib/data/ticket-presentation';
 
 import type { KeepsakeCardVm } from './types';
 

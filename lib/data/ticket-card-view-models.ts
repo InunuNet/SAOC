@@ -36,6 +36,8 @@ export interface TicketCardsInput {
   soldByType: Readonly<Record<string, number>>;
   /** Sold units by ticket type slug, then show day; null when no per-day source exists. */
   soldByDay: Readonly<Record<string, Readonly<Record<string, number>>>> | null;
+  // False masks every card (state salesClosed, no price, stock or days). Default: open.
+  salesOpen?: boolean;
 }
 
 export interface CardScarcity {
@@ -59,6 +61,7 @@ export interface TicketCard {
   state: TicketCardState;
   price: number | null;
   regularPrice: number | null;
+  regularName: string | null;
   scarcity: CardScarcity | null;
   days: CardDay[] | null;
 }
@@ -71,6 +74,8 @@ export interface EarlyBirdPool {
 export interface TicketCardsOutput {
   cards: Partial<Record<TicketProductId, TicketCard>>;
   pool: EarlyBirdPool | null;
+  // The Day Pass card's effective price, shown as "Day Pass from"; null when it has none.
+  dayPassFrom: number | null;
 }
 
 const SINGLE_SLUG_PRODUCTS: ReadonlyArray<readonly [TicketProductId, string]> = [
@@ -97,19 +102,17 @@ function isPriceUsable(price: number | null): boolean {
 // Only the Weekend Pass and Day Pass SKUs share the early-bird pool; another product that happens
 // to carry a capacity pool (Sunset Cocktails, a field trip) must not change its count.
 const POOL_SKUS: ReadonlySet<string> = new Set(
-  Object.values(PASS_SKUS).flatMap((sku) => [sku.earlyBird, sku.regular]),
+  Object.values(PASS_SKUS).flatMap((sku) => [sku.earlyBird, sku.regular])
 );
 
 function buildPool(input: TicketCardsInput): EarlyBirdPool | null {
   const members = input.types.filter((t) => t.capacityPool !== null && POOL_SKUS.has(t.slug));
-  const capacities = members
-    .map(effectiveCapacity)
-    .filter((c): c is number => c !== null);
+  const capacities = members.map(effectiveCapacity).filter((c): c is number => c !== null);
   if (capacities.length === 0) return null;
   const total = Math.min(...capacities);
   const sold = members.reduce(
     (sum, t) => sum + (input.soldByType[t.slug] ?? 0) * t.headcountPerUnit,
-    0,
+    0
   );
   return { remaining: Math.max(0, total - sold), total };
 }
@@ -124,7 +127,7 @@ function ownScarcity(type: TicketTypeInput, sold: number): CardScarcity | null {
 function buildDays(
   input: TicketCardsInput,
   type: TicketTypeInput,
-  priceUsable: boolean,
+  priceUsable: boolean
 ): CardDay[] {
   const ceilingType = input.types.find((t) => t.slug === DAY_VISITOR_SLUG) ?? type;
   const total = effectiveCapacity(ceilingType);
@@ -142,7 +145,7 @@ function buildDays(
     }
     const sold = [PASS_SKUS.day.earlyBird, PASS_SKUS.day.regular].reduce(
       (sum, slug) => sum + (bySku[slug]?.[day] ?? 0),
-      0,
+      0
     );
     const remaining = Math.max(0, total - sold);
     const state = resolveTicketCardState({
@@ -156,16 +159,13 @@ function buildDays(
 }
 
 function allDaysSoldOut(days: CardDay[]): boolean {
-  return (
-    days.length > 0 &&
-    days.every((d) => d.remaining !== null && d.remaining <= 0)
-  );
+  return days.length > 0 && days.every((d) => d.remaining !== null && d.remaining <= 0);
 }
 
 function buildSingleCard(
   productId: TicketProductId,
   type: TicketTypeInput,
-  input: TicketCardsInput,
+  input: TicketCardsInput
 ): TicketCard {
   const priceUsable = isPriceUsable(type.price);
   const scarcity = ownScarcity(type, input.soldByType[type.slug] ?? 0);
@@ -182,6 +182,7 @@ function buildSingleCard(
     state,
     price: priceUsable ? type.price : null,
     regularPrice: null,
+    regularName: null,
     scarcity,
     days: null,
   };
@@ -190,7 +191,7 @@ function buildSingleCard(
 function buildPassCard(
   productId: 'weekend' | 'day',
   input: TicketCardsInput,
-  pool: EarlyBirdPool | null,
+  pool: EarlyBirdPool | null
 ): TicketCard | null {
   const skus = PASS_SKUS[productId];
   const earlyBird = input.types.find((t) => t.slug === skus.earlyBird) ?? null;
@@ -249,6 +250,7 @@ function buildPassCard(
     state,
     price: priceUsable ? type.price : null,
     regularPrice: type.slug.includes(EARLY_BIRD_SLUG_MARK) ? type.regularPrice : null,
+    regularName: type.slug.includes(EARLY_BIRD_SLUG_MARK) ? (regular?.name ?? null) : null,
     scarcity,
     days,
   };
@@ -258,6 +260,18 @@ function buildPassCard(
  * One card per product slot. A product whose ticket type does not exist gets no card: nothing
  * is invented to fill the gap.
  */
+function maskForClosedSales(card: TicketCard): TicketCard {
+  return {
+    ...card,
+    state: 'salesClosed',
+    price: null,
+    regularPrice: null,
+    regularName: null,
+    scarcity: null,
+    days: null,
+  };
+}
+
 export function buildTicketCardViewModels(input: TicketCardsInput): TicketCardsOutput {
   const pool = buildPool(input);
   const cards: Partial<Record<TicketProductId, TicketCard>> = {};
@@ -271,5 +285,12 @@ export function buildTicketCardViewModels(input: TicketCardsInput): TicketCardsO
   const day = buildPassCard('day', input, pool);
   if (day) cards.day = day;
 
-  return { cards, pool };
+  if (input.salesOpen === false) {
+    for (const id of Object.keys(cards) as TicketProductId[]) {
+      const card = cards[id];
+      if (card) cards[id] = maskForClosedSales(card);
+    }
+    return { cards, pool: null, dayPassFrom: null };
+  }
+  return { cards, pool, dayPassFrom: cards.day?.price ?? null };
 }
