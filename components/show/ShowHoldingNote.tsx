@@ -14,7 +14,7 @@ import Link from 'next/link';
 
 import { ShowStatusLine } from './ShowStatusLine';
 
-const NAME_SEPARATOR = ' · ';
+const LIST_SEPARATOR = ' · ';
 
 const UNSOURCED_VISITOR_TEXT = [
   'concession rates for pensioners and children',
@@ -37,20 +37,25 @@ export interface ShowHoldingNoteProps {
 export function ShowHoldingNote({ hidden, pendingLabel }: ShowHoldingNoteProps) {
   if (hidden.length === 0) return null;
 
-  const names = hidden.map((heading) => heading.toLowerCase()).join(NAME_SEPARATOR);
-  const label = pendingLabel?.trim() ? `${pendingLabel.trim()}: ${names}` : names;
+  // The first heading as written, the rest lower case, so the list reads as one sentence.
+  const items = hidden.map((heading, index) => (index === 0 ? heading : heading.toLowerCase()));
 
   return (
-    <div>
-      <ShowStatusLine kind="confirmation" status="pending" pendingLabel={label} />
-      <p className="mt-3">
+    <ShowStatusLine
+      kind="confirmation"
+      status="pending"
+      pendingLabel={pendingLabel}
+      items={items}
+      separator={LIST_SEPARATOR}
+    >
+      <p>
         <Link
           href="/contact"
-          className="font-sans text-[15px] font-medium text-primary underline underline-offset-4"
+          className="font-sans text-[15px] font-medium text-primary underline decoration-[var(--green-1,#a7a841)] decoration-2 underline-offset-4"
         >
           Be the first to know
         </Link>
       </p>
-    </div>
+    </ShowStatusLine>
   );
 }

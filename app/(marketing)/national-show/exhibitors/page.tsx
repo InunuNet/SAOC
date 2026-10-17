@@ -126,14 +126,26 @@ export default async function ExhibitorInfoPage() {
       : null,
   ].filter((chip): chip is { href: string; label: string } => chip !== null);
 
-  const shown: (Marker | null)[] = publicMode
+  // Public build: every row that would have carried a marker, by the heading it carries.
+  const covered: { name: string | null | undefined; marker: Marker | null }[] = publicMode
     ? [
-        ...keyDates.map((row) => markerOf(row.status)),
-        ...journey.map((step) => markerOf(step.status)),
-        ...sections.map((name) => markerOf(status[name])),
-        markerOf(entryFormStatus),
+        ...keyDates.map((row) => ({ name: row.label, marker: markerOf(row.status) })),
+        ...journey.map((step) => ({ name: step.title, marker: markerOf(step.status) })),
+        ...sections.map((name) => ({
+          name: info?.[name]?.heading,
+          marker: markerOf(status[name]),
+        })),
+        { name: info?.entryFormHeading, marker: markerOf(entryFormStatus) },
       ]
     : [];
+  const namesFor = (marker: Marker) => [
+    ...new Set(
+      covered.filter((row) => row.marker === marker && row.name).map((row) => row.name as string)
+    ),
+  ];
+  const pendingItems = namesFor('pending').map((name, index) =>
+    index === 0 ? name : name.toLowerCase()
+  );
 
   return (
     <>
@@ -172,11 +184,11 @@ export default async function ExhibitorInfoPage() {
             </Button>
           </p>
 
-          {shown.includes('research') ? (
+          {namesFor('research').length > 0 ? (
             <ShowStatusLine status="research" researchLabel={researchLabel} />
           ) : null}
-          {shown.includes('pending') ? (
-            <ShowStatusLine status="pending" pendingLabel={pendingLabel} />
+          {pendingItems.length > 0 ? (
+            <ShowStatusLine status="pending" pendingLabel={pendingLabel} items={pendingItems} />
           ) : null}
         </div>
 
