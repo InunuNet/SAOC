@@ -80,8 +80,9 @@ function markerOf(status?: string | null): Marker | null {
 
 // A sentence ends at . ! or ? (plus any closing quote or bracket) followed by whitespace.
 const SENTENCE_BOUNDARY = /[.!?]["'\u201d\u2019)\]]*\s/g;
-// A full stop after one of these does not end a sentence.
-const ABBREVIATIONS = ['dr', 'mr', 'mrs', 'ms', 'st', 'prof', 'e.g', 'i.e', 'etc', 'vs', 'no'];
+// A full stop after one of these honorifics never ends a sentence (etc., vs., no., e.g. and
+// i.e. can, so they are not listed).
+const ABBREVIATIONS = ['dr', 'mr', 'mrs', 'ms', 'prof', 'st'];
 
 // A public build leads with the intro's first sentence only; the committee provenance that
 // follows is preview material. Fails closed: with no boundary found there is no lede at all,
