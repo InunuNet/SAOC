@@ -19,7 +19,7 @@
     "quantityMin": 1,
     "dayParam": "day",
     "quantityParam": "quantity",
-    "rule": "day=D preselects that day in the same .days fieldset (native radios, 58px cells); day-specific products only (the weekend pass has NO day picker). quantity=N fills the one 44px stepper (min 1, a real minus sign U+2212). The per-day '–/0/+' rows (DayQuantityPicker, data-day-row, legend 'Tickets per day') and the 0 default are removed: one quantity for the chosen day."
+    "rule": "day=D preselects that day in the same .days fieldset (native radios, 58px cells); day-specific products only (the weekend pass has NO day picker). quantity=N fills the one 44px stepper (min 1; the decrease button carries a U+2212 minus text node OR the same icon the hub stepper uses, with its accessible name intact; a hyphen-minus or en dash is never accepted). The per-day '–/0/+' rows (DayQuantityPicker, data-day-row, legend 'Tickets per day') and the 0 default are removed: one quantity for the chosen day."
   },
   "total": {
     "selector": "[data-catalogue-total]",

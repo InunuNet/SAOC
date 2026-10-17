@@ -4,7 +4,7 @@
 //   summary   -> exactly ONE [data-ticket-card][data-ticket-variant="summary"], after the hero and before the form, the same stub / name / price as the hub card, NO stepper, NO CTA, NO button; the stub sits on the right
 //                when the card is >= 470px wide and the card is stacked (stub above the body) below that
 //   day       -> a day-specific product has ONE .days fieldset (legend "Choose a day", native radios, cells >= 58px, visible label the short form "Fri 24", accessible name the long "Fri 24 Sept 2027", <time datetime>); ?day=<iso> preselects that day; the weekend pass has none
-//   quantity  -> ONE quantity stepper (buttons >= 44px, minus sign U+2212, input min 1); ?quantity=2 fills it; no per-day rows ([data-day-row]), no "Tickets per day", no 0 default; invalid input falls back (200)
+//   quantity  -> ONE quantity stepper (buttons >= 44px, minus U+2212 or the hub icon with an accessible name, input min 1); ?quantity=2 fills it; no per-day rows ([data-day-row]), no "Tickets per day", no 0 default; invalid input falls back (200)
 //   total     -> [data-catalogue-total] under the stepper holds the CTA, aria-live polite, "Total R..." in one price format (no "R150.00", no "estimate")
 //   CTA       -> reads "Continue to payment" with an arrow; ENABLED at quantity 0; a click there shows exactly "Choose at least one ticket" inline in [data-buy-hint] (tied by aria-describedby) and moves focus to it
 //   provisional -> "Provisional pricing — subject to change", when the price is provisional, appears exactly once on the page, under the price inside the summary card (never also in the form), 14px / 500 / --ink-700
@@ -64,7 +64,7 @@ function readPage({ co, qty, ink }) {
     dayRows: document.querySelectorAll('[data-day-row]').length,
     mainText: txt(main),
     days, legend,
-    minusTexts: minus.map(txt), stepBtnH: stepBtns.map((b) => { const r = rc(b); return Math.min(r.width, r.height); }),
+    minusBtns: minus.map((b) => ({ text: txt(b), label: b.getAttribute('aria-label') ?? '', svg: !!b.querySelector('svg') })), stepBtnH: stepBtns.map((b) => { const r = rc(b); return Math.min(r.width, r.height); }),
     qty: first ? { value: first.value, min: first.getAttribute('min'), tag: first.tagName } : null,
     buy: buy ? { disabled: buy.disabled, text: txt(buy), describedBy: buy.getAttribute('aria-describedby') ?? '' } : null,
     total: total ? { text: txt(total), live: total.closest('[aria-live]')?.getAttribute('aria-live') ?? total.getAttribute('aria-live'), hasBuy: !!total.querySelector('button[type="submit"]'), top: rc(total).top } : null,
@@ -119,9 +119,10 @@ await main('F18-A23 ticket checkout screen', async (r) => {
       // stepper
       if (!m.qty) r.fail(`${tag}: no quantity input (${QTY})`);
       else if (m.qty.min !== String(CO.form.quantityMin)) r.fail(`${tag}: quantity min is ${JSON.stringify(m.qty.min)}, want "${CO.form.quantityMin}"`);
-      if (!m.minusTexts.length) r.fail(`${tag}: no minus button found`);
-      for (const t of m.minusTexts) if (t.includes('–') || t.includes('-')) r.fail(`${tag}: the minus button reads "${t}", want a real minus sign U+2212`);
-      if (m.minusTexts.length && !m.minusTexts.some((t) => t.includes(CO.form.minus))) r.fail(`${tag}: no button carries the minus sign U+2212`);
+      // design-cb: the decrease button carries a U+2212 text node OR the hub stepper's icon (an svg) with its accessible name intact; a hyphen-minus or en dash as text is never accepted.
+      if (!m.minusBtns.length) r.fail(`${tag}: no minus button found`);
+      for (const b of m.minusBtns) if (b.text.includes('\u2013') || b.text.includes('-')) r.fail(`${tag}: the minus button reads "${b.text}", want U+2212 or the hub icon, never a hyphen or en dash`);
+      if (m.minusBtns.length && !m.minusBtns.some((b) => b.text.includes(CO.form.minus) || (b.svg && /fewer|decrease|minus|less/i.test(b.label)))) r.fail(`${tag}: no decrease button carries U+2212 or an icon with an accessible name (fewer/decrease/minus)`);
       for (const b of m.stepBtnH) if (b < CO.form.stepperButtonMinPx - 1) r.fail(`${tag}: a stepper button is ${Math.round(b)}px, want >= ${CO.form.stepperButtonMinPx}`);
       // CTA and total
       if (!m.buy) r.fail(`${tag}: no submit button`);
