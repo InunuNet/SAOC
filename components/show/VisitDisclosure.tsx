@@ -132,10 +132,14 @@ export interface VisitAttractionsProps {
   researchLabel?: string | null;
 }
 
-function AttractionBody({ attraction }: { attraction: VisitAttraction }) {
+// The link's visible text is the same on every attraction, so it is described by its own
+// attraction's heading (aria-describedby), never by a composed label.
+function AttractionBody({ attraction, id }: { attraction: VisitAttraction; id: string }) {
   return (
     <>
-      <h3 className="font-serif text-[18px] font-medium text-ink">{attraction.name}</h3>
+      <h3 id={id} className="font-serif text-[18px] font-medium text-ink">
+        {attraction.name}
+      </h3>
       {attraction.note ? (
         <p className="mt-2 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-muted">
           {attraction.note}
@@ -146,7 +150,8 @@ function AttractionBody({ attraction }: { attraction: VisitAttraction }) {
           href={attraction.url}
           target="_blank"
           rel="noreferrer noopener"
-          className="mt-3 inline-block font-sans text-[13px] underline underline-offset-2 hover:text-accent"
+          aria-describedby={id}
+          className="mt-1 inline-flex min-h-[44px] items-center font-sans text-[13px] underline underline-offset-2 hover:text-accent"
         >
           Visit website ↗
         </a>
@@ -171,6 +176,8 @@ export function VisitAttractions({
 
   const keyOf = (attraction: VisitAttraction, index: number) =>
     attraction._key ?? `${attraction.name}-${index}`;
+  const headingId = (attraction: VisitAttraction, index: number) =>
+    `visit-attraction-${attraction._key ?? index}`;
 
   if (status === 'confirmed') {
     return (
@@ -180,7 +187,7 @@ export function VisitAttractions({
           {shown.map((attraction, index) => (
             <li key={keyOf(attraction, index)}>
               <Card className="h-full">
-                <AttractionBody attraction={attraction} />
+                <AttractionBody attraction={attraction} id={headingId(attraction, index)} />
               </Card>
             </li>
           ))}
@@ -202,7 +209,7 @@ export function VisitAttractions({
         </div>
         {shown.map((attraction, index) => (
           <div key={keyOf(attraction, index)} className="grid gap-1">
-            <AttractionBody attraction={attraction} />
+            <AttractionBody attraction={attraction} id={headingId(attraction, index)} />
           </div>
         ))}
       </VisitDisclosure>
