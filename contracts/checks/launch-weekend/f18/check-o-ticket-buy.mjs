@@ -3,7 +3,7 @@
 // Skips with a note when no purchasable ticket renders (sales closed). It renders TicketPurchaseForm and its BEHAVIOUR is unchanged (payload, server validation, test-mode banner, admin gating).
 //   summary   -> exactly ONE [data-ticket-card][data-ticket-variant="summary"], after the hero and before the form, the same stub / name / price as the hub card, NO stepper, NO CTA, NO button; the stub sits on the right
 //                when the card is >= 470px wide and the card is stacked (stub above the body) below that
-//   day       -> a day-specific product has ONE .days fieldset (legend "Choose a day", native radios, cells >= 58px, labels "Thu 23 Sept 2027", <time datetime>); ?day=<iso> preselects that day; the weekend pass has none
+//   day       -> a day-specific product has ONE .days fieldset (legend "Choose a day", native radios, cells >= 58px, visible label the short form "Fri 24", accessible name the long "Fri 24 Sept 2027", <time datetime>); ?day=<iso> preselects that day; the weekend pass has none
 //   quantity  -> ONE quantity stepper (buttons >= 44px, minus sign U+2212, input min 1); ?quantity=2 fills it; no per-day rows ([data-day-row]), no "Tickets per day", no 0 default; invalid input falls back (200)
 //   total     -> [data-catalogue-total] under the stepper holds the CTA, aria-live polite, "Total R..." in one price format (no "R150.00", no "estimate")
 //   CTA       -> reads "Continue to payment" with an arrow; ENABLED at quantity 0; a click there shows exactly "Choose at least one ticket" inline in [data-buy-hint] (tied by aria-describedby) and moves focus to it
@@ -19,6 +19,7 @@ const K = T.tickets;
 const D = K.dayFormat;
 const DAY = new RegExp(D.regex);
 const ISO = new RegExp(D.isoRegex);
+const SHORT = new RegExp(D.shortRegex);
 const CO = JSON.parse(readFileSync('.agent/memory/project/specs/launch-weekend/goldens/f18b/v13-checkout.json', 'utf8'));
 const FORM = 'form[data-nos-ticket-form]';
 const QTY = K.buyHint.firstQuantityFieldSelector;
@@ -105,8 +106,12 @@ await main('F18-A23 ticket checkout screen', async (r) => {
         if (m.days.filter((d) => d.checked).length !== 1) r.fail(`${tag}: ${m.days.filter((d) => d.checked).length} days checked, want exactly 1`);
         for (const d of m.days) {
           if (d.h < CO.form.dayCellMinPx - 1) r.fail(`${tag}: day cell ${d.value} is ${Math.round(d.h)}px high, want >= ${CO.form.dayCellMinPx}`);
-          const lab = d.aria || d.label;
-          if (!DAY.test(lab.replace(/\s*\d+ of \d+.*$/, '').trim()) && !DAY.test(lab)) r.fail(`${tag}: day label "${lab.slice(0, 50)}" is not the "Thu 23 Sept 2027" form`);
+          // design-cb FINAL: the visible label is the hub short form ("Fri 24"); the long form ("Fri 24 Sept 2027") is the accessible name.
+          const vis = d.label.replace(/\s*\d+ of \d+.*$/, '').trim();
+          if (!SHORT.test(vis)) r.fail(`${tag}: day ${d.value} reads "${d.label.slice(0, 40)}", want the short form "Fri 24"`);
+          if (/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept?|Oct|Nov|Dec)\b|\d{4}/.test(d.label)) r.fail(`${tag}: day ${d.value} shows month or year in its visible label "${d.label.slice(0, 40)}" (long form belongs in aria-label)`);
+          const lab = d.aria;
+          if (!DAY.test(lab.replace(/\s*\d+ of \d+.*$/, '').trim()) && !DAY.test(lab)) r.fail(`${tag}: day ${d.value} accessible name "${lab.slice(0, 50)}" is not the "Thu 23 Sept 2027" form`);
           if (ISO.test(d.aria) || ISO.test(d.label)) r.fail(`${tag}: a raw ISO date is visible or in an aria-label: "${(d.aria || d.label).slice(0, 50)}"`);
           if (!d.time.length || d.time.some((t) => !ISO.test(t ?? ''))) r.fail(`${tag}: day ${d.value} carries no <time datetime="YYYY-MM-DD">`);
         }

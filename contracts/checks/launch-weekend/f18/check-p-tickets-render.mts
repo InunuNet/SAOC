@@ -1,6 +1,6 @@
 // F18-A24 (R62, R81, render level, no CMS, no server): the ticket-screen rules on the real components with fixtures. Run under two TZ values (the command sets TZ) so the weekday never depends on the machine.
 //   formatShowDay        -> exported from lib/show-day-format.ts; the six cases of tokens.tickets.dayFormat.cases ("Thu 23 Sept 2027"), SA English month names (Sept), weekday computed from the calendar date in UTC, input that is not YYYY-MM-DD returned unchanged
-//   TicketPurchaseForm (day) -> one .days fieldset (legend "Choose a day", native radios, a <time datetime=ISO> per cell, labels "Thu 23 Sept 2027", no raw ISO as text or aria-label) only for requiresDaySelection products; initialDay preselects that day, an initialDay outside showDays falls back to the first; no per-day rows, no "Tickets per day"
+//   TicketPurchaseForm (day) -> one .days fieldset (legend "Choose a day", native radios, a <time datetime=ISO> per cell, visible label the short form "Fri 24", the long form "Fri 24 Sept 2027" as aria-label, no raw ISO as text or aria-label) only for requiresDaySelection products; initialDay preselects that day, an initialDay outside showDays falls back to the first; no per-day rows, no "Tickets per day"
 //   TicketPurchaseForm (quantity) -> ONE stepper, input min 1, a real minus sign U+2212 on the decrease button, initialQuantity fills it (clamped), the per-day rows and the 0 default are gone
 //   (the summary variant of TicketCard is proved in A28)
 //   TicketPurchaseForm   -> Buy ENABLED at quantity 0 (vote 2) with aria-describedby resolving to an empty [data-buy-hint] region (filled by a click, A23 proves the click); the string "Choose at least one ticket" exists in the source; one Total in aria-live polite beside the Buy button; no "estimate"; "Provisional pricing" at most once
@@ -46,7 +46,11 @@ else {
   if ((fieldset.match(/type="radio"/g) ?? []).length !== days.length) fail(`TicketPurchaseForm: want ${days.length} native day radios`);
   if (typeof fmt === 'function') for (const iso of days) {
     const label = fmt(iso);
-    if (!txt(fieldset).includes(label)) fail(`TicketPurchaseForm: day "${label}" missing from the day fieldset`);
+    const shortLabel = label.split(' ').slice(0, 2).join(' ');
+    if (!new RegExp(D.shortRegex).test(shortLabel)) fail(`TicketPurchaseForm: formatShowDay("${iso}") = "${label}" has no short form`);
+    if (!txt(fieldset).includes(shortLabel)) fail(`TicketPurchaseForm: short day label "${shortLabel}" missing from the visible day fieldset`);
+    if (txt(fieldset).includes(label)) fail(`TicketPurchaseForm: the long label "${label}" is visible text; only the short form "${shortLabel}" is visible (the long form is the aria-label)`);
+    if (!fieldset.includes(`aria-label="${label}"`) && !new RegExp(`aria-label="[^"]*${label}`).test(fieldset)) fail(`TicketPurchaseForm: the long form "${label}" is not in an aria-label of the day fieldset`);
     if (!new RegExp(`<time[^>]*datetime="${iso}"`, 'i').test(fieldset)) fail(`TicketPurchaseForm: no <time datetime="${iso}"> in the day fieldset`);
   }
   if (new RegExp(D.isoRegex).test(txt(fieldset))) fail('TicketPurchaseForm: a raw ISO date is visible in the day fieldset');
