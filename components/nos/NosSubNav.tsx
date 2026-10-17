@@ -8,10 +8,11 @@
 // away with the page. Geometry and type live in nos-theme.css (`.nos-subnav`), cited there
 // to the NOS Design ruling.
 //
-// The effect does two things the ruling asks for at <=700px, where the row scrolls:
-// it brings the current item fully into view, and it raises `data-overflowing` while the
-// row is wider than its box, which is the only time the 8px edge fade shows. Without
-// JavaScript the row simply scrolls with no fade, which is safe.
+// Below 768px the row scrolls. The effect sets the row's scrollLeft so the current item is
+// fully in view with a 16px lead (directly, not with scrollIntoView, which can also scroll
+// the page vertically past the hero), and keeps two flags, data-fade-start and
+// data-fade-end, that say which edge hides items; the 24px edge fade shows only there.
+// Without JavaScript the row simply scrolls with no fade, which is safe.
 // =============================================================
 
 import Link from 'next/link';
@@ -26,34 +27,41 @@ export interface NosSubNavProps {
   exact: boolean;
 }
 
+const OVERFLOW_SLACK_PX = 1;
+
 export function NosSubNav({ label, items, currentHref, exact }: NosSubNavProps) {
-  const navRef = useRef<HTMLElement>(null);
   const rowRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
-    const nav = navRef.current;
     const row = rowRef.current;
-    if (!nav || !row) return;
+    if (!row) return;
 
-    const sync = () => {
-      const overflowing = row.scrollWidth > row.clientWidth + 1;
-      nav.toggleAttribute('data-overflowing', overflowing);
+    const syncFade = () => {
+      row.toggleAttribute('data-fade-start', row.scrollLeft > OVERFLOW_SLACK_PX);
+      row.toggleAttribute(
+        'data-fade-end',
+        row.scrollLeft + row.clientWidth < row.scrollWidth - OVERFLOW_SLACK_PX
+      );
     };
+
     const current = row.querySelector<HTMLElement>('[aria-current]');
-    if (current && row.scrollWidth > row.clientWidth + 1) {
-      const target = current.offsetLeft - (row.clientWidth - current.offsetWidth) / 2;
+    if (current && row.scrollWidth > row.clientWidth + OVERFLOW_SLACK_PX) {
+      // 16px lead, the same as the row's scroll-padding-inline in nos-structure.css.
+      const target = current.offsetLeft - 16;
       row.scrollLeft = Math.max(0, Math.min(target, row.scrollWidth - row.clientWidth));
     }
-    sync();
+    syncFade();
 
-    window.addEventListener('resize', sync);
+    row.addEventListener('scroll', syncFade, { passive: true });
+    window.addEventListener('resize', syncFade);
     return () => {
-      window.removeEventListener('resize', sync);
+      row.removeEventListener('scroll', syncFade);
+      window.removeEventListener('resize', syncFade);
     };
   }, []);
 
   return (
-    <nav ref={navRef} aria-label={label} className="nos-subnav">
+    <nav aria-label={label} className="nos-subnav">
       <div data-nos-wrap="">
         <ul ref={rowRef} className="nos-subnav-row">
           {items.map((item) => {
@@ -71,7 +79,6 @@ export function NosSubNav({ label, items, currentHref, exact }: NosSubNavProps) 
             );
           })}
         </ul>
-        <span aria-hidden="true" data-nos-subnav-fade="" className="nos-subnav-fade" />
       </div>
     </nav>
   );

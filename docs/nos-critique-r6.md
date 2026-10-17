@@ -136,3 +136,15 @@ called once in the page) every unconfirmed row is withheld and `ShowHoldingNote`
 naming exactly those rows, then the existing "Be the first to know" link. The hero lede and the
 concession and photography text, which have no Drive source, are withheld there too. No copy was
 added. Venue and parking, family and pensioner prices, and online-versus-door booking remain gaps.
+
+## f10 — group sub-nav below 768px (critique H1, audit 2.4.7)
+
+The R27 group sub-nav under every inner hero (`NosSubNav`; `ShowSectionNav` is the footer grid) now
+brings the current item fully into view on load with a 16px lead. The effect sets the row's
+`scrollLeft` directly to the item's `offsetLeft` minus 16, clamped, and only when the row overflows;
+there is no `scrollIntoView` (it can scroll the page past the hero) and nothing is smooth. A 24px mask
+fade shows only on an edge that hides items, driven by `data-fade-start` and `data-fade-end`, which
+follow scroll and resize. The scroller breakpoint is 767px rather than 700: the capture run measured the
+sa-exhibitors row overflowing at 701 and 720 (687px of links against 666 and 684 of room), recorded in
+`goldens/f10-breakpoint.json`. Everything from 768px up is untouched. Also, `ShowSectionNav` reads
+"National Orchid Show Symposium" in place of "SAOC Symposium" (Brad's naming ruling); no page renders it.

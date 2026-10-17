@@ -36,20 +36,68 @@ interface SectionLink {
 
 // All 17 listed routes, matching content/national-show-routes.json's labels exactly.
 const SECTION_LINKS: readonly SectionLink[] = [
-  { href: '/national-show', label: 'National Show', hint: 'The show overview and how to get involved' },
-  { href: '/national-show/about', label: 'About the Show', hint: "The theme, and who takes part" },
-  { href: '/national-show/what-to-expect', label: 'What to Expect', hint: 'Hours, admission and on-the-day detail' },
-  { href: '/national-show/plan-your-visit', label: 'Plan Your Visit', hint: 'Travel, parking and where to stay' },
+  {
+    href: '/national-show',
+    label: 'National Show',
+    hint: 'The show overview and how to get involved',
+  },
+  { href: '/national-show/about', label: 'About the Show', hint: 'The theme, and who takes part' },
+  {
+    href: '/national-show/what-to-expect',
+    label: 'What to Expect',
+    hint: 'Hours, admission and on-the-day detail',
+  },
+  {
+    href: '/national-show/plan-your-visit',
+    label: 'Plan Your Visit',
+    hint: 'Travel, parking and where to stay',
+  },
   { href: '/national-show/faq', label: 'FAQ', hint: 'What visitors ask us most' },
-  { href: '/national-show/programme', label: 'Programme', hint: 'The schedule across the four show days' },
-  { href: '/national-show/workshops', label: 'Workshops', hint: 'Sunset cocktails and guided field trips' },
-  { href: '/national-show/symposium', label: 'SAOC Symposium', hint: 'The SAOC Symposium and its theme' },
-  { href: '/national-show/wosa-conference', label: 'WOSA Conference', hint: 'Held alongside the show, with WOSA' },
-  { href: '/national-show/conferences', label: 'Conference Registration', hint: 'Register for the Symposium and WOSA Conference' },
-  { href: '/national-show/sa-exhibitors', label: 'South African Exhibitors', hint: 'The nurseries exhibiting at the show' },
-  { href: '/national-show/international-guests', label: 'International Guests', hint: 'Guests and exhibitors from abroad' },
-  { href: '/national-show/exhibitors', label: 'Exhibitor Entry Guide', hint: 'Entry process, fees, classes and judging' },
-  { href: '/national-show/vendors', label: 'Exhibitors and Vendors', hint: 'The trade floor and how to exhibit' },
+  {
+    href: '/national-show/programme',
+    label: 'Programme',
+    hint: 'The schedule across the four show days',
+  },
+  {
+    href: '/national-show/workshops',
+    label: 'Workshops',
+    hint: 'Sunset cocktails and guided field trips',
+  },
+  {
+    href: '/national-show/symposium',
+    label: 'National Orchid Show Symposium',
+    hint: 'The National Orchid Show Symposium and its theme',
+  },
+  {
+    href: '/national-show/wosa-conference',
+    label: 'WOSA Conference',
+    hint: 'Held alongside the show, with WOSA',
+  },
+  {
+    href: '/national-show/conferences',
+    label: 'Conference Registration',
+    hint: 'Register for the Symposium and WOSA Conference',
+  },
+  {
+    href: '/national-show/sa-exhibitors',
+    label: 'South African Exhibitors',
+    hint: 'The nurseries exhibiting at the show',
+  },
+  {
+    href: '/national-show/international-guests',
+    label: 'International Guests',
+    hint: 'Guests and exhibitors from abroad',
+  },
+  {
+    href: '/national-show/exhibitors',
+    label: 'Exhibitor Entry Guide',
+    hint: 'Entry process, fees, classes and judging',
+  },
+  {
+    href: '/national-show/vendors',
+    label: 'Exhibitors and Vendors',
+    hint: 'The trade floor and how to exhibit',
+  },
   { href: '/national-show/tickets', label: 'Tickets', hint: 'Buy admission tickets' },
   { href: '/national-show/sponsors', label: 'Show Sponsors', hint: "The Show's own sponsors" },
   { href: '/national-show/archive', label: 'Past Shows', hint: 'Previous editions' },
