@@ -1,7 +1,7 @@
 // F18-A24 (R62, R81, render level, no CMS, no server): the ticket-screen rules on the real components with fixtures. Run under two TZ values (the command sets TZ) so the weekday never depends on the machine.
 //   formatShowDay        -> exported from lib/show-day-format.ts; the six cases of tokens.tickets.dayFormat.cases ("Thu 23 Sept 2027"), SA English month names (Sept), weekday computed from the calendar date in UTC, input that is not YYYY-MM-DD returned unchanged
 //   TicketPurchaseForm (day) -> one .days fieldset (legend "Choose a day", native radios, a <time datetime=ISO> per cell, visible label the short form "Fri 24", the long form "Fri 24 Sept 2027" as aria-label, no raw ISO as text or aria-label) only for requiresDaySelection products; initialDay preselects that day, an initialDay outside showDays falls back to the first; no per-day rows, no "Tickets per day"
-//   TicketPurchaseForm (quantity) -> ONE stepper, input min 1, a real minus sign U+2212 on the decrease button, initialQuantity fills it (clamped), the per-day rows and the 0 default are gone
+//   TicketPurchaseForm (quantity) -> ONE stepper, input min 1, a U+2212 minus text node OR the hub stepper icon (svg) with an accessible name on the decrease button, never a hyphen, initialQuantity fills it (clamped), the per-day rows and the 0 default are gone
 //   (the summary variant of TicketCard is proved in A28)
 //   TicketPurchaseForm   -> Buy ENABLED at quantity 0 (vote 2) with aria-describedby resolving to an empty [data-buy-hint] region (filled by a click, A23 proves the click); the string "Choose at least one ticket" exists in the source; one Total in aria-live polite beside the Buy button; no "estimate"; "Provisional pricing" at most once
 //   TicketTypeCard (list) -> prices through formatRand: R150 and R250.50, never R150.00
@@ -72,7 +72,9 @@ else {
   if (!new RegExp(`min="${CO.form.quantityMin}"`).test(q0)) fail(`TicketPurchaseForm: the quantity input lacks min="${CO.form.quantityMin}"`);
   if (!/value="1"/.test(q0)) fail('TicketPurchaseForm: the quantity input does not default to 1');
 }
-if (!base.includes(CO.form.minus)) fail('TicketPurchaseForm: no real minus sign U+2212 on the decrease button');
+const decBtn = [...base.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)].map((m) => m[0]).filter((b) => !/type="submit"/.test(b) && /aria-label="[^"]*(fewer|decrease|minus|less)/i.test(b));
+if (!decBtn.length) fail('TicketPurchaseForm: no decrease button (aria-label fewer/decrease/minus)');
+else if (!decBtn.some((b) => b.includes(CO.form.minus) || /<svg\b/.test(b))) fail('TicketPurchaseForm: the decrease button has neither a U+2212 text node nor an svg icon');
 if (/>\s*(\u2013|-)\s*</.test(base)) fail('TicketPurchaseForm: the decrease button still shows an en dash or hyphen');
 const q2 = qtyInput(dayForm({ initialQuantity: 2 }));
 if (!/value="2"/.test(q2)) fail(`TicketPurchaseForm: initialQuantity=2 did not fill the stepper (${q2})`);
