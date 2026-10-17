@@ -25,7 +25,9 @@ const REQUIRED = [
   ['scripts/generate-nos-route-manifest.ts', `label: '${NEW}',`],
 ];
 for (const [file, needle] of REQUIRED) {
-  if (!readFileSync(file, 'utf8').includes(needle)) failures.push(`${file}: missing \`${needle}\``);
+  // Whitespace and trailing commas are formatting, not content: batch 2 (f10) let the formatter break the ShowSectionNav object over several lines.
+  const squash = (text) => text.replace(/\s+/g, '').replace(/,\}/g, '}');
+  if (!squash(readFileSync(file, 'utf8')).includes(squash(needle))) failures.push(`${file}: missing \`${needle}\``);
 }
 
 // nav-config: the vendors item keeps its descriptor and href (only the label moves).
