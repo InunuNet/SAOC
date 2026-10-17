@@ -289,7 +289,7 @@ export function VisitEmergency({
   pendingLabel,
   researchLabel,
 }: VisitEmergencyProps) {
-  const shown = contacts.filter((contact) => contact?.label);
+  const shown = contacts.filter((contact) => contact.label);
   if (shown.length === 0) return null;
 
   const chipStatus = status === 'research' ? 'research' : 'pending';
