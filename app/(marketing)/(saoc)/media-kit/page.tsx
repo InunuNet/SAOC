@@ -3,6 +3,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { PageHero } from '@/components/ui/PageHero';
+import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 
 export const metadata: Metadata = {
   title: 'Media Kit',
@@ -55,7 +57,18 @@ const LOGO_ASSETS: LogoAsset[] = [
   },
 ];
 
+// F19 (vote 1C): of these four figures only the founding year is in the Council's copy; the rest, the
+// society count, the 1990 standardisation and the yearbook name are marked on the beta preview and
+// left out of the public build.
+const REMIT =
+  'Our remit is orchids in cultivation: the show bench, the greenhouse, and the community. For indigenous species in the wild, our sibling organisation Wild Orchids of Southern Africa leads that work.';
+
+const SOURCED_FACTS = QUICK_FACTS.filter((fact) => fact.value === '1968');
+
 export default function MediaKitPage() {
+  const withhold = withholdPlaceholderProse();
+  const facts = withhold ? SOURCED_FACTS : QUICK_FACTS;
+
   return (
     <>
       <PageHero
@@ -65,22 +78,28 @@ export default function MediaKitPage() {
         lede="Resources and information for journalists, photographers and media partners."
       />
 
-      <div className="mx-auto max-w-[1280px] px-8 py-16 space-y-16">
+      <div className="saoc-container py-16 space-y-16">
         {/* Quick facts */}
         <section>
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-6">
             Quick facts
           </p>
-          <dl className="grid grid-cols-2 gap-8 border-y border-rule py-10 sm:grid-cols-4">
-            {QUICK_FACTS.map((stat) => (
-              <div key={stat.label}>
-                <dt className="font-serif text-[32px] font-medium text-ink">{stat.value}</dt>
-                <dd className="mt-1 font-mono text-[11px] tracking-[0.16em] text-muted">
-                  {stat.label}
-                </dd>
-              </div>
-            ))}
-          </dl>
+          <div
+            data-placeholder={withhold ? undefined : 'true'}
+            className="flex flex-col items-start gap-4"
+          >
+            <dl className="grid w-full grid-cols-2 gap-8 border-y border-rule py-10 sm:grid-cols-4">
+              {facts.map((stat) => (
+                <div key={stat.label}>
+                  <dt className="font-serif text-[32px] font-medium text-ink">{stat.value}</dt>
+                  <dd className="mt-1 font-mono text-[11px] tracking-[0.16em] text-muted">
+                    {stat.label}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            {withhold ? null : <PlaceholderMarker />}
+          </div>
         </section>
 
         {/* About SAOC */}
@@ -88,17 +107,21 @@ export default function MediaKitPage() {
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-6">
             About SAOC
           </p>
-          <p className="font-serif text-[20px] leading-relaxed text-ink">
+          <p className="font-serif text-[20px] leading-[1.55] text-ink">
             The South African Orchid Council (SAOC) is the national coordinating body for
             affiliated orchid societies across South Africa.
           </p>
-          <p className="mt-4 font-sans text-[16px] leading-relaxed text-ink/80">
-            Founded in 1968, SAOC exists to promote the culture, hybridisation and appreciation
-            of orchids in cultivation — through a federated network of 21 societies, a nationally
-            accredited judging system first standardised in 1990, and our annual publication{' '}
-            <em>Orchids South Africa</em>. Our remit is orchids in cultivation: the show bench,
-            the greenhouse, and the community. For indigenous species in the wild, our sibling
-            organisation Wild Orchids of Southern Africa leads that work.
+          <p className="mt-4 font-sans text-[16px] leading-[1.55] text-ink/80">
+            {withhold ? null : (
+              <span data-placeholder="true">
+                Founded in 1968, SAOC exists to promote the culture, hybridisation and
+                appreciation of orchids in cultivation — through a federated network of 21
+                societies, a nationally accredited judging system first standardised in 1990, and
+                our annual publication <em>Orchids South Africa</em>
+                <PlaceholderMarker />
+              </span>
+            )}
+            {withhold ? REMIT : `. ${REMIT}`}
           </p>
         </section>
 
@@ -120,7 +143,7 @@ export default function MediaKitPage() {
                   />
                 </div>
                 <h2 className="mt-4 font-serif text-[16px] font-medium text-ink">{asset.name}</h2>
-                <p className="mt-1 font-sans text-[13px] leading-relaxed text-ink/70 flex-1">
+                <p className="mt-1 font-sans text-[13px] leading-[1.55] text-ink/70 flex-1">
                   {asset.description}
                 </p>
                 <p className="mt-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted">
@@ -136,7 +159,7 @@ export default function MediaKitPage() {
               </div>
             ))}
           </div>
-          <p className="mt-6 font-sans text-[13px] leading-relaxed text-ink/70 max-w-[600px]">
+          <p className="mt-6 font-sans text-[16px] leading-[1.55] text-ink/70 max-w-[600px]">
             Vector masters (SVG/EPS) are not yet available — the PNG files above are print-usable
             at their native resolution. Contact us if you need a size or format not listed here.
           </p>
@@ -147,7 +170,7 @@ export default function MediaKitPage() {
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-6">
             Press enquiries
           </p>
-          <p className="font-sans text-[16px] leading-relaxed text-ink/80">
+          <p className="font-sans text-[16px] leading-[1.55] text-ink/80">
             For press enquiries, interview requests, or image permissions, email us at{' '}
             <a
               href="mailto:info@saoc.co.za"

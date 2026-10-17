@@ -17,7 +17,7 @@ export function JudgesDirectory({ judges, showPublicDirectory }: JudgesDirectory
   if (!showPublicDirectory || judges.length === 0) {
     return (
       <div className="border border-rule bg-parchment p-6 max-w-3xl">
-        <p className="font-sans text-[15px] leading-relaxed text-ink/70">
+        <p className="font-sans text-[16px] leading-[1.55] text-ink/70">
           The full accredited judges directory is available to SAOC members. Log in through
           your affiliated society, or get in touch with the council directly.
         </p>

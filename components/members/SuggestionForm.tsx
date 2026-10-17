@@ -71,7 +71,7 @@ export function SuggestionForm() {
     return (
       <div className="border border-rule bg-parchment p-8">
         <h3 className="font-serif text-[22px] font-semibold text-ink">Thank you</h3>
-        <p className="mt-3 font-sans text-[15px] leading-relaxed text-ink/80">
+        <p className="mt-3 font-sans text-[16px] leading-[1.55] text-ink/80">
           Your suggestion has reached the SAOC secretariat. We&apos;ll take it into account as
           the Members Portal is built.
         </p>
@@ -80,7 +80,7 @@ export function SuggestionForm() {
   }
 
   const inputClass =
-    'w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none focus:border-ink/40 transition-colors disabled:opacity-60';
+    'w-full rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[16px] text-ink placeholder:text-muted outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2 transition-colors disabled:opacity-60';
   const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 
   return (
@@ -160,7 +160,7 @@ export function SuggestionForm() {
 
       {/* Inline error */}
       {status === 'error' && errorMessage ? (
-        <p role="alert" className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800">
+        <p role="alert" className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[16px] leading-[1.55] text-primary-800">
           {errorMessage}
         </p>
       ) : null}
@@ -168,7 +168,7 @@ export function SuggestionForm() {
       <button
         type="submit"
         disabled={status === 'submitting'}
-        className="rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink hover:bg-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60 disabled:cursor-not-allowed"
+        className="inline-flex min-h-11 items-center rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink hover:bg-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {status === 'submitting' ? 'Sending…' : 'Send suggestion'}
       </button>

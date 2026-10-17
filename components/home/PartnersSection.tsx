@@ -59,8 +59,8 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
     'grid grid-cols-[1fr_auto] min-[900px]:grid-cols-[5fr_6fr_auto] items-baseline gap-x-10 gap-y-3 border-b border-rule py-7 px-3 min-h-[44px]';
 
   return (
-    <section data-home-section="partners" className="py-20 px-8 md:px-16 bg-parchment">
-      <div className="max-w-[1280px] mx-auto">
+    <section data-home-section="partners" className="py-20 bg-parchment">
+      <div className="saoc-container">
         <div className="mb-10">
           <span className="eyebrow">In collaboration with</span>
         </div>

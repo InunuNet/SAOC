@@ -16,7 +16,11 @@ interface PageHeroProps {
 
 export function PageHero({ image, eyebrow, heading, lede, minHeight = '480px' }: PageHeroProps) {
   return (
-    <section className="relative isolate flex items-end overflow-hidden" style={{ minHeight }}>
+    <section
+      data-page-hero
+      className="relative isolate flex items-end overflow-hidden"
+      style={{ minHeight }}
+    >
       <Image
         src={image}
         alt=""
@@ -38,7 +42,7 @@ export function PageHero({ image, eyebrow, heading, lede, minHeight = '480px' }:
           {heading}
         </h1>
         {lede ? (
-          <p className="mt-5 max-w-2xl font-sans text-[17px] leading-relaxed text-ivory/85">
+          <p className="mt-5 max-w-2xl font-sans text-[16px] leading-[1.55] text-ivory/85">
             {lede}
           </p>
         ) : null}

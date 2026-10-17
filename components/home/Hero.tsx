@@ -6,6 +6,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { ArrowRight, Pause, Play } from 'lucide-react';
 import type { SanityImageSource } from '@sanity/image-url';
 
+import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { heroImages as staticHeroImages } from '@/lib/data';
 import { showLabelWithEdition, showYearOf } from '@/lib/show-identity';
 import { urlFor } from '@/sanity/lib/image';
@@ -25,6 +26,9 @@ function slideLabel(index: number, total: number, subject: string): string {
   return `${index + 1} of ${total}${subject ? `: ${subject}` : ''}`;
 }
 
+const HERO_CTA_BASE =
+  'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[2px] border px-6 py-3 font-sans text-[14px] font-medium transition-colors duration-150 sm:w-auto focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
+
 interface HeroSlide {
   src: string;
   alt: string;
@@ -35,9 +39,11 @@ export interface HeroProps {
   images?: SanityImageSource[] | null;
   /** Show identity from the nationalShow singleton — the CTA label is not a literal. */
   show?: ShowIdentity | null;
+  /** False on the public build: the lede states a society count the Council has not supplied. */
+  showLede?: boolean;
 }
 
-export function Hero({ images, show }: HeroProps) {
+export function Hero({ images, show, showLede = false }: HeroProps) {
   const showYear = showYearOf(show?.showDate);
   const showCtaLabel = `${showLabelWithEdition(show?.edition)}${showYear ? `, ${showYear}` : ''}`;
   const slides: HeroSlide[] =
@@ -97,11 +103,11 @@ export function Hero({ images, show }: HeroProps) {
         </div>
       ))}
 
-      {/* Dark sage scrim */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-b from-primary/75 via-primary/75 to-primary/85"
-      />
+      {/* F19 scrim: three aria-hidden layers (README l.125). The diagonal sage 60% to 25% keeps the
+          carousel visible, the veil holds the copy at 4.5:1, the bone pull blends into the next section. */}
+      <div aria-hidden="true" data-hero-scrim="diagonal" className="absolute inset-0" />
+      <div aria-hidden="true" data-hero-scrim="veil" className="absolute inset-0" />
+      <div aria-hidden="true" data-hero-scrim="bone" className="absolute inset-0" />
 
       {/* Content */}
       <div className="relative z-10 w-full px-8 md:px-16 py-24 flex flex-col items-center text-center max-w-[1280px] mx-auto">
@@ -111,27 +117,40 @@ export function Hero({ images, show }: HeroProps) {
         </span>
 
         {/* Headline */}
-        <h1 id={HEADING_ID} className="h1 font-serif text-[clamp(54px,7vw,96px)] font-medium leading-[1.04] tracking-[-0.012em] text-ivory max-w-[18ch] mb-6">
+        <h1 id={HEADING_ID} className="h1 font-serif text-[clamp(54px,7vw,96px)] font-medium leading-[1.04] tracking-[-0.012em] text-ivory max-w-[18ch]">
           The national home of <em>orchid culture</em> in South Africa.
         </h1>
 
-        {/* Lede */}
-        <p className="font-sans text-[20px] leading-[1.5] text-ivory max-w-[52ch] mb-10">
-          Uniting twenty-one affiliated societies in the cultivation, exhibition, and appreciation of orchids across South Africa since 1968.
-        </p>
+        {/* Lede: the society count is not in the Council's copy, so the public build withholds it. */}
+        {showLede ? (
+          <div data-placeholder="true" className="mt-4 flex flex-col items-center gap-3 md:mt-5">
+            <p
+              data-hero-lede
+              className="font-sans text-[20px] leading-[1.5] text-ivory max-w-[52ch]"
+            >
+              Uniting twenty-one affiliated societies in the cultivation, exhibition, and appreciation of orchids across South Africa since 1968.
+            </p>
+            <PlaceholderMarker tone="dark" />
+          </div>
+        ) : null}
 
-        {/* CTAs */}
-        <div className="flex flex-wrap gap-4 justify-start mb-10">
+        {/* CTAs: ivory fill and ivory outline read on the veil; same size, radius and sentence case. */}
+        <div
+          data-hero-ctas
+          className={`flex w-full flex-col gap-4 sm:w-auto sm:flex-row mb-10 ${showLede ? 'mt-10' : 'mt-8'}`}
+        >
           <Link
             href="/societies"
-            className="inline-flex items-center gap-2 font-sans text-[14px] font-medium bg-primary text-ivory px-6 py-3 hover:bg-primary-800 transition-colors duration-150"
+            data-hero-cta="primary"
+            className={`${HERO_CTA_BASE} border-ivory bg-ivory text-primary hover:bg-bone hover:border-bone`}
           >
-            Find Your Society
+            Find your society
             <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" />
           </Link>
           <Link
             href="/national-show"
-            className="font-sans text-[14px] font-medium border border-ivory/50 text-ivory px-6 py-3 hover:bg-ivory/10 transition-colors duration-150"
+            data-hero-cta="secondary"
+            className={`${HERO_CTA_BASE} border-ivory text-ivory hover:bg-ivory/10`}
           >
             {showCtaLabel}
           </Link>
