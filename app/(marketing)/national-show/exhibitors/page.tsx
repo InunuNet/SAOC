@@ -63,6 +63,8 @@ const REFERENCE_SECTIONS = [
 ] as const;
 
 const CONTACT_LABEL = 'Contact the council';
+// NOS Design (Codi) ruling 2026-10-17: the status list names the steps section as "steps".
+const STEPS_LIST_LABEL = 'steps';
 const ENTRIES_NOT_OPEN =
   'Exhibitor entries are not yet open — this page covers what to expect when they do. Contact the council to be notified.';
 
@@ -133,7 +135,7 @@ export default async function ExhibitorInfoPage() {
     ? [
         // A group is named by its own heading, once per marker that one of its rows carried.
         ...keyDates.map((row) => ({ name: info?.keyDatesHeading, marker: markerOf(row.status) })),
-        ...journey.map((step) => ({ name: stepsHeading, marker: markerOf(step.status) })),
+        ...journey.map((step) => ({ name: STEPS_LIST_LABEL, marker: markerOf(step.status) })),
         ...sections.map((name) => ({
           name: info?.[name]?.heading,
           marker: markerOf(status[name]),
