@@ -180,15 +180,6 @@
   line-height: 1.5;
   text-transform: uppercase;
 }
-/* R11 disclosure on phones: the chip is tightened so "To be confirmed by the show committee"
-   stays on one line inside the 16px-padded surface (nos-v4 .disclosure). */
-@media (max-width: 700px) {
-  .nos-theme [data-status-disclosure] [data-confirmation-badge],
-  .nos-theme [data-status-disclosure] [data-exhibitor-marker] {
-    padding-inline: 10px;
-    letter-spacing: 0.06em;
-  }
-}
 .nos-theme .nos-on-dark [data-confirmation-badge],
 .nos-theme .nos-on-dark [data-exhibitor-marker] {
   border-color: var(--ivory);
