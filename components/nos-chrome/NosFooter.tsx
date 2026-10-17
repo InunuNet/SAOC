@@ -37,24 +37,24 @@ const HORIZONTAL_HEIGHT = 294;
 const VERTICAL_SRC = '/images/nos/nos-reversed-white-vertical-900.png';
 const VERTICAL_WIDTH = 900;
 const VERTICAL_HEIGHT = 791;
-// The rendered boxes: the horizontal is 448px wide, the vertical 342px (nos-chrome.css).
-const HORIZONTAL_SIZES = '448px';
-const VERTICAL_SIZES = '342px';
+// The rendered boxes: the horizontal is 448px wide, the vertical 342px (nos-chrome.css). A width
+// with no `sizes` gives a 1x/2x density srcset, so a high-density screen never fetches more than
+// twice the box.
+const HORIZONTAL_BOX = 448;
+const VERTICAL_BOX = 342;
 
 export function NosFooter() {
   const { props: horizontal } = getImageProps({
     src: HORIZONTAL_SRC,
     alt: LOCKUP_ALT,
-    width: HORIZONTAL_WIDTH,
-    height: HORIZONTAL_HEIGHT,
-    sizes: HORIZONTAL_SIZES,
+    width: HORIZONTAL_BOX,
+    height: Math.round((HORIZONTAL_BOX * HORIZONTAL_HEIGHT) / HORIZONTAL_WIDTH),
   });
   const { props: vertical } = getImageProps({
     src: VERTICAL_SRC,
     alt: LOCKUP_ALT,
-    width: VERTICAL_WIDTH,
-    height: VERTICAL_HEIGHT,
-    sizes: VERTICAL_SIZES,
+    width: VERTICAL_BOX,
+    height: Math.round((VERTICAL_BOX * VERTICAL_HEIGHT) / VERTICAL_WIDTH),
   });
 
   return (
@@ -67,11 +67,17 @@ export function NosFooter() {
                 <source
                   media="(max-width: 700px)"
                   srcSet={vertical.srcSet}
-                  sizes={VERTICAL_SIZES}
                   width={VERTICAL_WIDTH}
                   height={VERTICAL_HEIGHT}
                 />
-                <img {...horizontal} alt={LOCKUP_ALT} loading="lazy" decoding="async" />
+                <img
+                  {...horizontal}
+                  alt={LOCKUP_ALT}
+                  width={HORIZONTAL_WIDTH}
+                  height={HORIZONTAL_HEIGHT}
+                  loading="lazy"
+                  decoding="async"
+                />
               </picture>
             </Link>
             <div className="nf-org">
