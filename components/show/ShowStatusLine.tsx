@@ -15,10 +15,12 @@ import { StatusMarker } from './_shared/StatusMarker';
 
 const DEFAULT_SEPARATOR = ' · ';
 
-// At <=700px the chip is tightened (0.06em tracking, 10px inline padding) so the verbatim label
-// stays on one line inside the 16px-padded surface. Important: the NOS marker rule in
+// At <=700px (inclusive, spelled out as a media query) the chip is tightened (0.06em tracking,
+// 10px inline padding), and at <=419px the tracking drops to 0.02em, so the verbatim label stays
+// on one line inside the 16px-padded surface down to 360px. Important: the NOS marker rule in
 // nos-structure.css (.nos-theme [data-...]) otherwise outranks a plain utility.
-const CHIP_FIT_CLASSES = 'max-[700px]:[&>p]:!px-[10px] max-[700px]:[&>p]:!tracking-[0.06em]';
+const CHIP_FIT_CLASSES =
+  '[@media(max-width:700px)]:[&>p]:!px-[10px] [@media(min-width:420px)_and_(max-width:700px)]:[&>p]:!tracking-[0.06em] [@media(max-width:419px)]:[&>p]:!tracking-[0.02em]';
 
 export interface ShowStatusLineProps {
   /** Which marker family to draw: the exhibitor guide's (default) or the visitor pages'. */
@@ -71,7 +73,7 @@ export function ShowStatusLine({
     <div
       data-status-disclosure=""
       role="note"
-      className="grid gap-5 rounded-[16px] bg-[var(--gold)] px-[clamp(20px,3vw,32px)] pb-6 pt-5 shadow-sm max-[700px]:px-4"
+      className="grid gap-5 rounded-[16px] bg-[var(--gold)] px-[clamp(20px,3vw,32px)] pb-6 pt-5 shadow-sm [@media(max-width:700px)]:px-4"
     >
       <div className={CHIP_FIT_CLASSES}>{marker}</div>
       <p data-status-list="" className="text-[16px] leading-[1.55] text-[var(--ink-700)]">

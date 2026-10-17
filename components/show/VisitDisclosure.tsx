@@ -29,10 +29,11 @@ const TONE_CLASSES: Record<NonNullable<VisitDisclosureProps['tone']>, string> = 
   pale: 'on-pale bg-[var(--gold-100)]',
 };
 
-// `max-[700px]` compiles to width < 700px; the ruling is <=700px, so the media query is spelled out.
+// The ruling is <=700px inclusive, which Tailwind's bare 700px variant does not compile to (it
+// gives width < 700px), so the media query is spelled out. At <=419px the tracking drops to 0.02em.
 // Whole class names, so Tailwind's source scan finds them.
 const CHIP_FIT_CLASSES =
-  '[@media(max-width:700px)]:[&_[data-confirmation-badge]]:!px-[10px] [@media(max-width:700px)]:[&_[data-confirmation-badge]]:!tracking-[0.06em]';
+  '[@media(max-width:700px)]:[&_[data-confirmation-badge]]:!px-[10px] [@media(min-width:420px)_and_(max-width:700px)]:[&_[data-confirmation-badge]]:!tracking-[0.06em] [@media(max-width:419px)]:[&_[data-confirmation-badge]]:!tracking-[0.02em]';
 const NARROW_PADDING_CLASS = '[@media(max-width:700px)]:px-4';
 
 export function VisitDisclosure({ label, tone = 'gold', children }: VisitDisclosureProps) {
