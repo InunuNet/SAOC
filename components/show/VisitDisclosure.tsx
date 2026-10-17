@@ -269,7 +269,7 @@ export interface VisitEmergencyProps {
   title: string;
   // The disclosure's aria-label, defined by the page.
   label: string;
-  contacts: VisitEmergencyContact[];
+  contacts: Array<VisitEmergencyContact | null | undefined>;
   status?: string | null;
   pendingLabel?: string | null;
   researchLabel?: string | null;
@@ -289,7 +289,8 @@ export function VisitEmergency({
   pendingLabel,
   researchLabel,
 }: VisitEmergencyProps) {
-  const shown = contacts.filter((contact) => contact?.label);
+  // The filter drops null entries and unlabelled contacts, which the cast states.
+  const shown = contacts.filter((contact) => contact?.label) as VisitEmergencyContact[];
   if (shown.length === 0) return null;
 
   const chipStatus = status === 'research' ? 'research' : 'pending';
