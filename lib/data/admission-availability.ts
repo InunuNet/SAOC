@@ -15,6 +15,7 @@ import {
 import {
   effectiveCapacity,
   planPooledCapacity,
+  resolveEffectivePrice,
   type CapacityPoolConfig,
 } from '@/lib/checkout-reservation';
 import { REGULAR_PRICE_SIBLING_SLUG } from '@/lib/admission-siblings';
@@ -115,6 +116,7 @@ interface SanityCardTicketType {
   slug: string;
   price: number | null;
   regularPrice?: number | null;
+  earlyBirdCutoff?: string | null;
   capacity?: number | null;
   releasedQuantity?: number | null;
   capacityPool?: string | null;
@@ -160,12 +162,23 @@ function toTypeInput(
   const sibling = REGULAR_PRICE_SIBLING_SLUG[t.slug];
   const sanityStock = typeof t.capacity === 'number' || typeof t.releasedQuantity === 'number';
   const fallback = sanityStock ? undefined : PROVISIONAL_STOCK[t.slug];
+  // The early-bird SKUs carry no regular price of their own: the sibling SKU's live price is it.
+  const regularPrice = sibling ? (priceBySlug[sibling] ?? null) : null;
   return {
     slug: t.slug,
     name: t.name,
-    price: t.price ?? null,
-    // The early-bird SKUs carry no regular price of their own: the sibling SKU's live price is it.
-    regularPrice: sibling ? (priceBySlug[sibling] ?? null) : null,
+    // The price checkout would charge now: a passed early-bird cutoff falls back to the regular
+    // price (null when there is none), never the expired one.
+    price:
+      typeof t.price !== 'number'
+        ? null
+        : resolveEffectivePrice({
+            price: t.price,
+            regularPrice: regularPrice ?? t.regularPrice ?? null,
+            earlyBirdCutoff: t.earlyBirdCutoff ?? null,
+            now: new Date(),
+          }),
+    regularPrice,
     capacity: withStock ? (t.capacity ?? fallback?.capacity ?? null) : null,
     releasedQuantity: withStock ? (t.releasedQuantity ?? fallback?.releasedQuantity ?? null) : null,
     capacityPool: t.capacityPool ?? fallback?.capacityPool ?? null,

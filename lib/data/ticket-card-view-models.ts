@@ -128,9 +128,20 @@ function buildPool(input: TicketCardsInput): EarlyBirdPool | null {
   return { remaining: Math.max(0, total - sold), total, provisional };
 }
 
-function ownScarcity(type: TicketTypeInput, sold: number): CardScarcity | null {
-  const total = effectiveCapacity(type);
-  if (total === null) return null;
+function ownScarcity(type: TicketTypeInput, input: TicketCardsInput): CardScarcity | null {
+  if (effectiveCapacity(type) === null) return null;
+  // A SKU in a shared capacity pool (Sunset Cocktails single and couple) counts every pool
+  // member's sales, weighted by headcount, exactly as checkout does.
+  const members =
+    type.capacityPool && !POOL_SKUS.has(type.slug)
+      ? input.types.filter((t) => t.capacityPool === type.capacityPool)
+      : [type];
+  const capacities = members.map(effectiveCapacity).filter((c): c is number => c !== null);
+  const total = Math.min(...capacities);
+  const sold = members.reduce(
+    (sum, t) => sum + (input.soldByType[t.slug] ?? 0) * t.headcountPerUnit,
+    0
+  );
   return {
     remaining: Math.max(0, total - sold),
     total,
@@ -185,7 +196,7 @@ function buildSingleCard(
   input: TicketCardsInput
 ): TicketCard {
   const priceUsable = isPriceUsable(type.price);
-  const scarcity = ownScarcity(type, input.soldByType[type.slug] ?? 0);
+  const scarcity = ownScarcity(type, input);
   const state = resolveTicketCardState({
     priceUsable,
     remaining: scarcity ? scarcity.remaining : null,
@@ -255,7 +266,7 @@ function buildPassCard(
       earlyBirdRemaining: null,
     });
   } else {
-    scarcity = ownScarcity(type, input.soldByType[type.slug] ?? 0);
+    scarcity = ownScarcity(type, input);
     state = resolveTicketCardState({
       priceUsable,
       remaining: scarcity ? scarcity.remaining : null,
