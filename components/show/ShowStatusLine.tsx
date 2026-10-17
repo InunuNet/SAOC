@@ -16,14 +16,15 @@ import { StatusMarker, resolveStatusMarker } from './_shared/StatusMarker';
 const DEFAULT_SEPARATOR = ' · ';
 
 // Chip-fit ladder so the verbatim label stays on one line inside the 16px-padded surface:
-// 10px inline padding at <=700px; tracking 0.06em at 420-700px, 0.02em at 375-419px, 0 at
-// <=374px. Important: the NOS marker rule in nos-structure.css (.nos-theme [data-...])
+// 10px inline padding at <=700px; tracking 0.06em at 420-700px, 0.02em at 375-419px, 0 below
+// 375px. Range syntax, so each boundary is one strict comparison and no fractional width falls
+// between two steps. Important: the NOS marker rule in nos-structure.css (.nos-theme [data-...])
 // otherwise outranks a plain utility.
 const CHIP_FIT_CLASSES = [
   '[@media(max-width:700px)]:[&>p]:!px-[10px]',
-  '[@media(min-width:420px)_and_(max-width:700px)]:[&>p]:!tracking-[0.06em]',
-  '[@media(min-width:375px)_and_(max-width:419px)]:[&>p]:!tracking-[0.02em]',
-  '[@media(max-width:374px)]:[&>p]:!tracking-[0]',
+  '[@media(width>=420px)_and_(width<=700px)]:[&>p]:!tracking-[0.06em]',
+  '[@media(width>=375px)_and_(width<420px)]:[&>p]:!tracking-[0.02em]',
+  '[@media(width<375px)]:[&>p]:!tracking-[0]',
 ].join(' ');
 
 export interface ShowStatusLineProps {

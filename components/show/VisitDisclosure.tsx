@@ -7,7 +7,7 @@
 //
 // At <=700px (inclusive) the chip inside is tightened to 10px inline padding and the surface takes
 // 16px inline padding. Its tracking steps down the ladder: 0.06em at 420-700px, 0.02em at
-// 375-419px, 0 at <=374px. At <=359px a pending chip shows the short tag (StatusMarker,
+// 375-419px, 0 below 375px. Below 360px a pending chip shows the short tag (StatusMarker,
 // shortOnNarrow) while the group aria-label keeps the full label.
 // The chip rule is important: the NOS marker rule in nos-structure.css outranks a utility.
 // =============================================================
@@ -34,12 +34,12 @@ const TONE_CLASSES: Record<NonNullable<VisitDisclosureProps['tone']>, string> = 
 };
 
 // The ruling is <=700px inclusive, which Tailwind's bare 700px variant does not compile to (it
-// gives width < 700px), so the media query is spelled out. At <=419px the tracking drops to 0.02em.
+// gives width < 700px), so the media query is spelled out. Below 420px the tracking drops to 0.02em, below 375px to 0 (range syntax, no gaps).
 // Whole class names, so Tailwind's source scan finds them.
-// The :not([hidden]) on the 374 step raises its specificity so it beats the 419 step, which
-// Tailwind emits later in the sheet.
+// Each narrower step adds a :not([hidden]) to raise its specificity over the wider one, so the
+// order Tailwind emits them in does not matter.
 const CHIP_FIT_CLASSES =
-  '[@media(max-width:700px)]:[&_[data-confirmation-badge]]:!px-[10px] [@media(min-width:420px)_and_(max-width:700px)]:[&_[data-confirmation-badge]]:!tracking-[0.06em] [@media(max-width:419px)]:[&_[data-confirmation-badge]]:!tracking-[0.02em] [@media(max-width:374px)]:[&_[data-confirmation-badge]:not([hidden])]:!tracking-[0]';
+  '[@media(max-width:700px)]:[&_[data-confirmation-badge]]:!px-[10px] [@media(max-width:700px)]:[&_[data-confirmation-badge]]:!tracking-[0.06em] [@media(width<420px)]:[&_[data-confirmation-badge]:not([hidden])]:!tracking-[0.02em] [@media(width<375px)]:[&_[data-confirmation-badge]:not([hidden]):not([hidden])]:!tracking-[0]';
 const NARROW_PADDING_CLASS = '[@media(max-width:700px)]:px-4';
 
 // A research disclosure names itself, and closes with, the full research wording: its chip only

@@ -60,8 +60,9 @@ const TONE_CLASSES: Record<StatusMarkerTone, string> = {
   dark: 'border-ivory/30 bg-ivory/10 text-ivory/80',
 };
 
-const NARROW_FULL_CLASSES = '[@media(max-width:359px)]:sr-only';
-const NARROW_SHORT_CLASSES = 'hidden [@media(max-width:359px)]:inline';
+// Range syntax, so no fractional width falls between the two spans' steps.
+const NARROW_FULL_CLASSES = '[@media(width<360px)]:sr-only';
+const NARROW_SHORT_CLASSES = 'hidden [@media(width<360px)]:inline';
 
 export interface StatusMarkerProps {
   /** Which pre-unification component's vocabulary/labels/data-attribute to reproduce. */
