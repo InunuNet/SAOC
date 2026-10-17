@@ -1,6 +1,6 @@
 # F18 spec: long-form template, public holding state, ledes, FAQ, exhibitors (F18a) and the v13 keepsake ticket system (F18b)
 
-Base: main 63f3e74d (F18a; was 76ad8b98, which fails A10 on main's own vendor-component and Karla changes) with spec/lw-f18 merged in. Architect: Sonnet 5.5. Skills the dev MUST load and apply (name them in the critique log): `impeccable` (craft-floor, polish, critique), `frontend-design`, `web-design-guidelines`, `accessibility`. No new brand asset, colour, font, shadow, animation or emoji beyond what the approved v13 golden itself carries; no invented copy (section 7).
+Base: main bcf8684b (NOS batch 2 merged, so A10 does not flag batch 2 files as F18b scope; earlier 63f3e74d, F18a; was 76ad8b98, which fails A10 on main's own vendor-component and Karla changes) with spec/lw-f18 merged in. Architect: Sonnet 5.5. Skills the dev MUST load and apply (name them in the critique log): `impeccable` (craft-floor, polish, critique), `frontend-design`, `web-design-guidelines`, `accessibility`. No new brand asset, colour, font, shadow, animation or emoji beyond what the approved v13 golden itself carries; no invented copy (section 7).
 
 design-cb is the design lead and its rulings are final (Brad): implement v13 one-to-one; any deviation needs design-cb's yes first. The critique bar for F18b is P0/P1/P2 = 0, impeccable >= 39/40 and design-cb's audit PASS against `goldens/f18b/F18B-AUDIT-CHECKLIST.md`; iteration is uncapped. site-77 owns `components/chrome/UtilityBar.tsx` and the NOS header components (R74 #7): never edit them (A10).
 
@@ -261,7 +261,7 @@ Copy comes only from `longform-copy.json`, `v13-copy.json`, existing strings (`s
 
 ## 14. Checkout step, design-cb FINAL ruling (2026-10-17)
 
-Golden: goldens/f18b/v13-checkout.json. The redirect is withdrawn and the route stays. The repo serves the checkout at /tickets/<slug>; the lead wrote /national-show/tickets/<slug>. The checks accept either (_lib.mjs findCheckout: first path that answers 200 with form[data-nos-ticket-form]; the hub CTA must go to one of the two). Do not move the route.
+Golden: goldens/f18b/v13-checkout.json. The redirect is withdrawn and the route stays. The checkout is pinned to /tickets/<slug>, the route the repo serves (the lead's /national-show/ prefix was a slip). findCheckout requires a 200 with form[data-nos-ticket-form] there and the hub CTA must go to it. Do not move the route.
 
 Anatomy, top to bottom: NOS chrome, hero, ONE read-only TicketCard (prop variant="summary": same stub, photo, field colour, name, when-line and price as the hub card; no stepper, no Buy; horizontal with the stub on the right at >= 470px container width, stacked at 390), then TicketPurchaseForm.
 

@@ -324,7 +324,7 @@ await main('F18-A29 v13 tickets hub', async (r) => {
           const dayChecked = await card.locator('input[type="radio"]:checked').getAttribute('value').catch(() => null);
           await Promise.all([page.waitForURL(CHECKOUT_PATH_RE, { timeout: 8000 }).catch(() => null), cta.click()]);
           const u = new URL(page.url());
-          if (!CHECKOUT_PATH_RE.test(u.pathname)) r.fail(`${tag}: the Buy ticket CTA did not go to the checkout page /tickets/<slug> or /national-show/tickets/<slug> (went to ${u.pathname})`);
+          if (!CHECKOUT_PATH_RE.test(u.pathname)) r.fail(`${tag}: the Buy ticket CTA did not go to the checkout page /tickets/<slug> (went to ${u.pathname})`);
           else if (u.searchParams.get('quantity') !== '2' && dayChecked === null) r.fail(`${tag}: CTA url ${u.pathname}${u.search} does not carry quantity=2`);
           else if (dayChecked !== null && !(u.searchParams.get('day') ?? '').match(/^\d{4}-\d{2}-\d{2}$/)) r.fail(`${tag}: the Day Pass CTA url carries no day=<iso> (${u.search})`);
         } else r.note(`${tag}: no buyable card with a Buy ticket CTA in this environment: CTA navigation skipped`);

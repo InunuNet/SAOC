@@ -1,10 +1,9 @@
 {
-  "_note": "design-cb FINAL ruling on the F18b checkout step, 2026-10-17. The single-ticket checkout page keeps its route (the redirect is withdrawn): it lives at /tickets/<slug> in the repo today and the lead names it /national-show/tickets/<slug>; the checks resolve whichever path answers 200 with form[data-nos-ticket-form] (lib _lib.mjs findCheckout), and the hub CTA must go to one of the two. It renders TicketPurchaseForm. Checkout BEHAVIOUR does not change: same payload, server validation (excludedDays, caps), test-mode banner and admin gating.",
+  "_note": "design-cb FINAL ruling on the F18b checkout step, 2026-10-17. The single-ticket checkout page keeps its route (the redirect is withdrawn): it lives at /tickets/<slug>, pinned by the lead (the /national-show/ prefix in the ruling was a slip); findCheckout requires 200 with form[data-nos-ticket-form] there, and the hub CTA must go to it. It renders TicketPurchaseForm. Checkout BEHAVIOUR does not change: same payload, server validation (excludedDays, caps), test-mode banner and admin gating.",
   "routes": [
-    "/tickets/<slug>",
-    "/national-show/tickets/<slug>"
+    "/tickets/<slug>"
   ],
-  "pathRegex": "^/(national-show/)?tickets/[^/]+$",
+  "pathRegex": "^/tickets/[^/]+$",
   "summary": {
     "selector": "[data-ticket-card][data-ticket-variant=\"summary\"]",
     "count": 1,

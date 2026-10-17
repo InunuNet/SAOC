@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// F18-A23 (R62, R81, vote 2, F18b, design-cb FINAL checkout ruling): the checkout step /tickets/<slug> (or /national-show/tickets/<slug>), measured at 1280 and 390. Goldens: goldens/f18b/v13-checkout.json.
+// F18-A23 (R62, R81, vote 2, F18b, design-cb FINAL checkout ruling): the checkout step /tickets/<slug> (pinned), measured at 1280 and 390. Goldens: goldens/f18b/v13-checkout.json.
 // Skips with a note when no purchasable ticket renders (sales closed). It renders TicketPurchaseForm and its BEHAVIOUR is unchanged (payload, server validation, test-mode banner, admin gating).
 //   summary   -> exactly ONE [data-ticket-card][data-ticket-variant="summary"], after the hero and before the form, the same stub / name / price as the hub card, NO stepper, NO CTA, NO button; the stub sits on the right
 //                when the card is >= 470px wide and the card is stacked (stub above the body) below that
