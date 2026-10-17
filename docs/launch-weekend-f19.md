@@ -90,10 +90,23 @@ Where a whole section is withheld the public page shows `ContentGap`, a `[data-c
 `PlaceholderMarker` replaces the `StatusMarker` glyph chip here on purpose: the decorative glyph is an extra text leaf,
 and F19 adds no copy beyond existing marker strings.
 
-## 7. Out of scope: font split
+## 7. Deferred to F23: font split
 
-The SAOC/NOS font load split is not part of F19 (it moves to F23, after the header and tickets lanes land). The
-SAOC pages stay at their original paths and `app/layout.tsx` is untouched.
+The SAOC/NOS font load split is not part of F19; it moves to F23, after the header and tickets lanes land. The SAOC pages
+stay at their original paths and `app/layout.tsx` is untouched. Findings from the F19 trial, kept for F23:
+
+- NOS routes declare Lora because `components/chrome/SaocLockup.tsx` has its own `Lora()` loader and the shared
+  `app/(marketing)/layout.tsx` imports Header and Footer. Clearing it means editing SaocLockup to read a CSS variable and
+  moving the loader into an SAOC-only layout.
+- Shape that measured green apart from Lora: a route group `app/(marketing)/(saoc)/` whose layout holds the Crimson Pro,
+  Manrope and JetBrains Mono loaders, with `--font-*-loaded` set on `:root` through a hoisted
+  `<style href precedence>` built from each loader's `style.fontFamily` (a wrapper class cannot reach chrome built in the
+  parent layout). NOS then declared only Fraunces and Karla (plus Lora), with no stray first families, and the SAOC computed
+  font-family stacks matched the golden at 390 and 1280.
+- Side effect: `/tickets/*` and `not-found` keep SAOC chrome but lose the three faces unless `tickets/` moves into the group
+  (a pure rename).
+- Stale path pins: `scripts/checks/verify-show-page-m4.ts` (R7 lane list) and contracts such as `contract-b5-judging.yaml`,
+  `contract-b7-sponsors.yaml`, `c5-submit-event*.yaml` and `F4-home-page.yaml` hard-code `app/(marketing)/<route>`.
 
 ## 8. Known limits
 
