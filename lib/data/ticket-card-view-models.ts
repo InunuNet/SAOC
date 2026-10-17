@@ -302,6 +302,11 @@ export function buildTicketCardViewModels(input: TicketCardsInput): TicketCardsO
     const type = input.types.find((t) => t.slug === slug);
     if (type) cards[productId] = buildSingleCard(productId, type, input);
   }
+  // No workshop session exists to book (no ticket type, no schedule), so the Workshops card
+  // takes the no-price, no-button state until the sessions do (F18c).
+  if (cards.workshops) {
+    cards.workshops = { ...cards.workshops, state: 'pricePending', price: null, scarcity: null };
+  }
   const weekend = buildPassCard('weekend', input, pool);
   if (weekend) cards.weekend = weekend;
   const day = buildPassCard('day', input, pool);
