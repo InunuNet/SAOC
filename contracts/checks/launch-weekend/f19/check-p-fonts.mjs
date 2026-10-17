@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// F19-A26 (design-cb P1, lead-confirmed) - font load split. On every NOS route the @font-face families DECLARED (any load status) and the families
+// INFORMATIONAL, NOT IN THE F19 GATE (feature F23 owns it: needs ChromeFrame and UtilityBar) - font load split (design-cb P1). On every NOS route the @font-face families DECLARED (any load status) and the families
 // LOADED are only Fraunces and Karla. On every SAOC route the declared set equals the golden set (goldens/f19/fonts-baseline.json, captured from untouched
 // main) and the computed font-family (hash-stripped) of h1, h2, main p, .eyebrow, header a, footer a and button is identical to the golden at 390 and 1280:
 // SAOC type rendering does not move. F19_CAPTURE=1 rewrites the golden from the running build (used once, against main).

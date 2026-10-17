@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// F19-A27 (design-cb ruling, hero CTA on the veil): on all 4 carousel slides at 390 and 1280 the PRIMARY CTA inverts - an ivory/bone fill with primary-colour text -
+// F19-A26 (design-cb ruling, hero CTA on the veil): on all 4 carousel slides at 390 and 1280 the PRIMARY CTA inverts - an ivory/bone fill with primary-colour text -
 // and the SECONDARY is an ivory outline. Measured on rendered pixels (hero photographed with glyphs hidden):
 //   primary fill vs the pixels in a 6px ring just outside the button >= cta.fillVsVeilMin (3:1, non-text UI), fill is ivory/bone (cta.ivory, tolerance cta.ivoryTol),
-//   primary label vs its fill >= cta.labelMin (4.5:1); secondary border ivory (alpha >= .85, width >= 1px), secondary text ivory and >= cta.secondaryTextMin on the pixels inside it;
+//   primary label vs its fill >= cta.labelMin (4.5:1); secondary border ivory (alpha >= .85, width >= 1px) and >= cta.borderVsVeilMin (4.5:1) against the pixels in the 6px ring outside it, secondary text ivory and >= cta.secondaryTextMin on the pixels inside it;
 //   both the same height and border-radius; both sentence case (no label with two capitalised words).
 // Selectors: [data-hero-cta="primary|secondary"] (R5 hooks); falls back to the first two hero anchors so main can be measured.
 // Usage: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-t-cta.mjs   (F19_SIMULATE=1 = architect self-test)
@@ -56,14 +56,16 @@ for (const vp of VIEWPORTS) {
       const pr = spec.p, se = spec.s;
       const ringP = ring(pr.rect); const fill = pr.bg.a >= .99 ? pr.bg : over(pr.bg, med(ringP));
       const fillVsRing = pct(ringP.map((c) => ratio(fill, c)), .1);
+      const ringS = ring(se.rect); const bcol = se.border.a >= .99 ? se.border : over(se.border, med(ringS)); const borderVsRing = pct(ringS.map((c) => ratio(bcol, c)), .1);
       const secPix = inside(se.rect); const secText = pct(secPix.map((c) => ratio(over(se.colour, c), c)), .05);
-      return { fill, fillVsRing: Math.round(fillVsRing * 100) / 100, labelOnFill: Math.round(ratio(pr.colour, fill) * 100) / 100, secText: Math.round(secText * 100) / 100 };
+      return { borderVsRing: Math.round(borderVsRing * 100) / 100, fill, fillVsRing: Math.round(fillVsRing * 100) / 100, labelOnFill: Math.round(ratio(pr.colour, fill) * 100) / 100, secText: Math.round(secText * 100) / 100 };
     })()`);
     const ivory = (c) => T.ivory.some((v) => Math.abs(c.r - v[0]) <= T.ivoryTol && Math.abs(c.g - v[1]) <= T.ivoryTol && Math.abs(c.b - v[2]) <= T.ivoryTol);
     if (!ivory(m.fill)) problems.push(`${tag}: primary fill rgb(${m.fill.r},${m.fill.g},${m.fill.b}) is not ivory/bone`);
     if (m.fillVsRing < T.fillVsVeilMin) problems.push(`${tag}: primary fill vs veil ${m.fillVsRing}:1 < ${T.fillVsVeilMin}:1`);
     if (m.labelOnFill < T.labelMin) problems.push(`${tag}: primary label on fill ${m.labelOnFill}:1 < ${T.labelMin}:1`);
     if (!ivory(spec.s.border) || spec.s.border.a < 0.85 || spec.s.bw < 1) problems.push(`${tag}: secondary border is not an ivory outline (rgb ${spec.s.border.r},${spec.s.border.g},${spec.s.border.b} a${spec.s.border.a} w${spec.s.bw})`);
+    if (m.borderVsRing < T.borderVsVeilMin) problems.push(`${tag}: secondary border vs veil ${m.borderVsRing}:1 < ${T.borderVsVeilMin}:1`);
     if (!ivory(spec.s.colour)) problems.push(`${tag}: secondary text is not ivory`);
     if (m.secText < T.secondaryTextMin) problems.push(`${tag}: secondary text on its pixels ${m.secText}:1 < ${T.secondaryTextMin}:1`);
     if (spec.p.h !== spec.s.h || spec.p.radius !== spec.s.radius) problems.push(`${tag}: primary and secondary differ in height (${spec.p.h}/${spec.s.h}) or radius (${spec.p.radius}/${spec.s.radius})`);
