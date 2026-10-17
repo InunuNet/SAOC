@@ -65,7 +65,12 @@ function DayPicker({ groupName, days, chosen, onChoose, showProvisional }: DayPi
                 onChange={() => onChoose(d.day)}
               />
               <b>{formatShowDayShort(d.day)}</b>
-              {sub ? (
+              {sub && d.remaining !== null && sub === `${d.remaining} of ${d.total}` ? (
+                <span data-placeholder={counts === 'placeholder' ? 'true' : undefined}>
+                  <span className="nk-of">{sub}</span>
+                  <span className="nk-left">{`${d.remaining} left`}</span>
+                </span>
+              ) : sub ? (
                 <span data-placeholder={counts === 'placeholder' ? 'true' : undefined}>{sub}</span>
               ) : null}
               {d.state === 'low' ? <span className="nk-sub">{TICKET_COPY.fewLeft}</span> : null}

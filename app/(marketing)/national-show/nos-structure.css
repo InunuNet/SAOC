@@ -1007,9 +1007,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   color: var(--nk-ink);
   font-variant-numeric: tabular-nums;
 }
-.nos-theme .nk-count .nk-n {
-  margin-right: -6px;
-}
 .nos-theme .nk-count .nk-shared {
   flex-basis: 100%;
   font-weight: 400;
@@ -1654,7 +1651,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   display: none;
 }
 .nos-theme .nk-fan .nk-name {
-  max-width: 112px;
+  max-width: 88px;
   font-size: calc(22px * var(--nk-ts));
   line-height: 1.1;
   min-height: 3lh;
@@ -1879,6 +1876,23 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 .nos-theme .nk-pool.is-bare {
   grid-template-columns: minmax(0, 1fr);
+}
+.nos-theme .nk-fan .nk-wrap:nth-child(4) .nk-name {
+  max-width: 112px;
+}
+.nos-theme .nk-day span {
+  white-space: nowrap;
+}
+.nos-theme .nk-day .nk-left {
+  display: none;
+}
+@media (max-width: 419px) {
+  .nos-theme .nk-day .nk-of {
+    display: none;
+  }
+  .nos-theme .nk-day .nk-left {
+    display: inline;
+  }
 }
 /* F18-KEEPSAKE-END */
 /* Hub "What it is" row and its figures (v4 about and figures): prose and figures share a

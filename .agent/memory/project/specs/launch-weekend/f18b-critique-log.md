@@ -23,3 +23,8 @@ Pass 8 (after spec 49ec4690: provisional stock counts withheld on public and mar
 P0: 0
 P1: 0
 P2: 0
+
+Pass 9 (after Codi's audit: the count line reads "198 of 200 places left" again, fan names back to the 88px column for cards 1 to 3 with 112px only on the last, day cells read "N left" at 419px and below and never wrap): re-viewed 1280-tickets. Score: 39/40.
+P0: 0
+P1: 0
+P2: 0
