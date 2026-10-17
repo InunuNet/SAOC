@@ -41,3 +41,7 @@ whatever the status says. The on-site contact follows `status.emergencyContacts`
 one pale disclosure with one chip, the contact label as an h3 and the note as the foot (the inline
 value tag is dropped); confirmed, it is plain. No on-site contact means no disclosure; no contacts
 renders nothing. This deviates from nos-v4 golden l.605-616 per Codi's FINAL ruling.
+
+## F1 addendum - zero tracking at 374px and below
+
+Codi FINAL: at 374px and narrower the chip has letter-spacing 0 (the 0.02em step could not fit it at 360px). 375-419px keeps 0.02em and 420-700px keeps 0.06em. Measured: normal at 360 and 374, 0.24px at 375 and 419, 0.72px at 420 and 700.
