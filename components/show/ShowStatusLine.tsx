@@ -76,6 +76,7 @@ export function ShowStatusLine({
     <div
       data-status-disclosure=""
       role="note"
+      aria-label={(status === 'research' ? researchLabel : pendingLabel) || undefined}
       className="grid gap-5 rounded-[16px] bg-[var(--gold)] px-[clamp(20px,3vw,32px)] pb-6 pt-5 shadow-sm [@media(max-width:700px)]:px-4"
     >
       <div className={CHIP_FIT_CLASSES}>{marker}</div>

@@ -5,8 +5,10 @@
 // items it covers, so the items carry no card, border or shadow of their own. The caller
 // supplies every string (the aria-label and all copy); nothing is typed here.
 //
-// At <=700px (inclusive) the chip inside is tightened (0.06em tracking, 10px inline padding) and the
-// surface takes 16px inline padding, so the verbatim chip label stays on one line at 390.
+// At <=700px (inclusive) the chip inside is tightened to 10px inline padding and the surface takes
+// 16px inline padding. Its tracking steps down the ladder: 0.06em at 420-700px, 0.02em at
+// 375-419px, 0 at <=374px. At <=359px a pending chip shows the short tag (StatusMarker,
+// shortOnNarrow) while the group aria-label keeps the full label.
 // The chip rule is important: the NOS marker rule in nos-structure.css outranks a utility.
 // =============================================================
 
