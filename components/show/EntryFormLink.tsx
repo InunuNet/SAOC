@@ -65,7 +65,7 @@ export function EntryFormLink({
       />
 
       {target === null ? (
-        <p className="mt-3 max-w-3xl font-sans text-[16px] leading-relaxed text-ink/80">
+        <p className="mt-3 max-w-3xl font-sans text-[16px] leading-[1.55] text-ink/80">
           {entryFormPendingNote}
         </p>
       ) : (

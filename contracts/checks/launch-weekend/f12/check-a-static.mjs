@@ -105,10 +105,9 @@ for (const f of [`${NS}/exhibitors/page.tsx`]) {
 }
 need(gitLines('diff', '--name-only', base, '--', 'components/show/ShowSectionNav.tsx').length === 0, 'components/show/ShowSectionNav.tsx was edited (legacy, must stay byte-identical)');
 
-// ---- SAOC utility bar on NOS pages (Brad, 2026-10-16) ----
+// ---- no SAOC utility bar on NOS pages (v4 decision #2, nos-critique-r6 f9; was Brad 2026-10-16) ----
 const bar = read('components/chrome/UtilityBar.tsx');
-need(/variant/.test(bar) && />\s*saoc\.co\.za\s*</.test(bar) || /['"]saoc\.co\.za['"]/.test(bar), 'UtilityBar.tsx has no variant prop / "saoc.co.za" pill label');
-need(/href=["']\/["']/.test(bar), 'UtilityBar.tsx has no href="/" pill link');
+need(/variant/.test(bar) && /if \(isNos\) return null;/.test(bar), 'UtilityBar.tsx: the nos variant must return null (no utility bar on NOS pages)');
 const layout = read('app/(marketing)/layout.tsx');
 const nosTop = layout.slice(layout.indexOf('nos={{'));
 need(/<UtilityBar[^>]*variant=\{?["']nos["']\}?/.test(nosTop), 'app/(marketing)/layout.tsx does not mount <UtilityBar variant="nos"> in the NOS chrome');

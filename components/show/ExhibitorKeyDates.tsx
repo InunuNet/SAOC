@@ -51,7 +51,7 @@ export function ExhibitorKeyDates({
       {heading ? <h2 className="font-serif text-ink">{heading}</h2> : null}
 
       {note ? (
-        <p className="mt-3 max-w-3xl font-sans text-[16px] leading-relaxed text-ink/80">{note}</p>
+        <p className="mt-3 max-w-3xl font-sans text-[16px] leading-[1.55] text-ink/80">{note}</p>
       ) : null}
 
       <div className="mt-6 sm:overflow-x-auto">
@@ -93,7 +93,7 @@ export function ExhibitorKeyDates({
                 >
                   {row.label}
                 </th>
-                <td className="py-4 pr-4 align-top max-sm:block max-sm:py-1 font-sans text-[17px] leading-relaxed text-ink/80">
+                <td className="py-4 pr-4 align-top max-sm:block max-sm:py-1 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/80">
                   {/* R77 #3: a pending row's chip already says the date is unset, so a note that
                       only restates it is dropped; a note that carries information stays. */}
                   {restatesPending(row.dateNote, row.status) ? null : row.dateNote}
@@ -104,7 +104,7 @@ export function ExhibitorKeyDates({
                     questionLabel={questionLabel}
                   />
                 </td>
-                <td className="py-4 align-top max-sm:block max-sm:py-1 max-sm:pb-4 font-sans text-[17px] leading-relaxed text-ink/70">
+                <td className="py-4 align-top max-sm:block max-sm:py-1 max-sm:pb-4 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70">
                   {row.detail}
                 </td>
               </tr>

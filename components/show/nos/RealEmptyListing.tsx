@@ -41,7 +41,7 @@ export function RealEmptyListing({
 }: RealEmptyListingProps) {
   return (
     <div data-nos-empty-state="" className="nos-surface">
-      <p className="font-sans text-[17px] leading-relaxed text-ink/80">{absenceStatement}</p>
+      <p className="font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/80">{absenceStatement}</p>
       {absenceMarker ? <div className="mt-2">{absenceMarker}</div> : null}
 
       {showSchemaPreview ? (

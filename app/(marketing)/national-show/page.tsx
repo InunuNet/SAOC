@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -60,14 +60,17 @@ const PAGE_DESCRIPTION = WITHHOLD_UNSOURCED
 const HERO_LEDE_LEAD = 'South Africa’s triennial orchid competition';
 const HERO_LEDE_CLAUSE =
   ', bringing together growers, judges and enthusiasts from all nine provinces';
-const HERO_LEDE = WITHHOLD_UNSOURCED ? (
-  `${HERO_LEDE_LEAD}.`
-) : (
-  <>
-    {HERO_LEDE_LEAD}
-    <span data-placeholder="true">{HERO_LEDE_CLAUSE}</span>.
-  </>
-);
+const heroLede = (chip: ReactNode) =>
+  WITHHOLD_UNSOURCED ? (
+    `${HERO_LEDE_LEAD}.`
+  ) : (
+    <>
+      {HERO_LEDE_LEAD}
+      <span data-placeholder="true">
+        {HERO_LEDE_CLAUSE}.{chip}
+      </span>
+    </>
+  );
 
 // Sourced: Sanity holds exactly ten showClass documents.
 const JUDGING_LEDE = 'Every exhibit is entered in one of ten botanical classes.';
@@ -295,6 +298,18 @@ export default async function NationalShowPage() {
   // One source for the four facts: the long-form template and the holding state read the same module.
   const heroMeta = buildShowFacts(sanityShow);
 
+  // Every withheld-fact block carries its own visible chip (beta preview only; public renders none).
+  const pendingChip = (tone: 'light' | 'dark') => (
+    <span className="block">
+      <ConfirmationBadge
+        status="pending"
+        pendingLabel={visitorInfo?.pendingLabel}
+        tone={tone}
+        as="span"
+      />
+    </span>
+  );
+
   // The price anchor shows only while sales are open and the cheapest admission has a price.
   const anchor =
     salesState?.salesOpen === true
@@ -360,7 +375,7 @@ export default async function NationalShowPage() {
         // No eyebrow: ruling 2026-10-15 Q4.
         title={HUB_HEADING}
         titleSize="display"
-        lede={HERO_LEDE}
+        lede={heroLede(pendingChip('dark'))}
         actions={
           <>
             {/* Order at every width: CTAs, price, countdown, facts (C-2). R68: the CTA cluster
@@ -444,7 +459,7 @@ export default async function NationalShowPage() {
       <NosSection wrapClassName="nos-about">
         <div>
           <SectionHeading title="Three years in the making, four days on the bench" />
-          <p className="mt-6 font-sans text-[16px] leading-relaxed text-ink/80">
+          <p className="mt-6 font-sans text-[16px] leading-[1.55] text-ink/80">
             The National Orchid Show is the country&rsquo;s premier competitive orchid event. Held
             every three years, it brings together growers, hybridisers, judges and collectors for
             four days of competition, education, and community.
@@ -452,7 +467,7 @@ export default async function NationalShowPage() {
           {/* "against the 100-point scale" and the Grand Champion sentence are unsourced: a public
               build drops just those and keeps the rest of the paragraph; beta keeps all of it with
               a pending marker. */}
-          <p className="mt-4 font-sans text-[16px] leading-relaxed text-ink/80">
+          <p className="mt-4 font-sans text-[16px] leading-[1.55] text-ink/80">
             Every plant is assessed by{' '}
             <Link href="/judging" className="text-[var(--accent)] underline underline-offset-2">
               accredited SAOC judges
@@ -463,12 +478,10 @@ export default async function NationalShowPage() {
               <span data-placeholder="true">
                 against the 100-point scale across ten botanical classes. The Grand Champion is the
                 highest-scoring exhibit across all classes.
+                {pendingChip('light')}
               </span>
             )}
           </p>
-          {WITHHOLD_UNSOURCED ? null : (
-            <ConfirmationBadge status="pending" pendingLabel={visitorInfo?.pendingLabel} />
-          )}
         </div>
 
         {/* Figures row (v4 `.figures`): the sourced figures, plus the unsourced edition count on a
@@ -484,6 +497,7 @@ export default async function NationalShowPage() {
             <div key={label} data-placeholder={unsourced ? 'true' : undefined}>
               <dt>
                 <span>{label}</span>
+                {unsourced ? pendingChip('light') : null}
               </dt>{' '}
               <dd className="nos-figure font-serif">{value}</dd>
             </div>
@@ -538,14 +552,12 @@ export default async function NationalShowPage() {
                 <span data-placeholder="true">
                   Judges score on a 100-point scale covering cultural quality, presentation, and
                   species accuracy.
+                  {pendingChip('light')}
                 </span>
               </>
             )
           }
         />
-        {WITHHOLD_UNSOURCED ? null : (
-          <ConfirmationBadge status="pending" pendingLabel={visitorInfo?.pendingLabel} />
-        )}
 
         <div className={`mt-10 grid grid-cols-2 gap-4 ${judgingColumnsClass}`}>
           {classes.map((cls, index) => {

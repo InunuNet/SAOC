@@ -14,7 +14,7 @@ const BASELINE = 'contracts/checks/launch-weekend/f11/nos-menu-baseline.json';
 const WIDTHS = [1280, 1920];
 const MAX_DESCRIPTION_LINES = 3;
 const EXPECTED_COLUMNS = 5;
-const LEAD_TITLE = '19th SAOC National Orchid Show';
+const LEAD_TITLE = '19th National Orchid Show';
 const RAIL_LINKS = ['Day Visitor', 'Weekend Pass'];
 
 const argAfter = (flag) => {

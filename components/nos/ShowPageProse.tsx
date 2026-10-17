@@ -58,7 +58,7 @@ export function ShowPageProse({ section }: ShowPageProseProps) {
           >
             {notice.label}
           </span>
-          <span className="font-sans text-[15px] not-italic leading-relaxed text-ink/80">
+          <span className="font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] not-italic text-ink/80">
             {notice.text}
           </span>
         </p>

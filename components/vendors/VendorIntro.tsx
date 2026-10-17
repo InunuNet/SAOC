@@ -42,7 +42,7 @@ export function VendorIntro() {
         className="font-serif text-[28px] font-medium leading-snug text-ink"
         dangerouslySetInnerHTML={{ __html: HEADING }}
       />
-      <div className="mt-5 space-y-4 font-sans text-[16px] leading-relaxed text-ink/80">
+      <div className="mt-5 space-y-4 font-sans text-[16px] leading-[1.55] text-ink/80">
         {PARAGRAPHS.map((paragraph, index) => (
           <p key={index} dangerouslySetInnerHTML={{ __html: paragraph }} />
         ))}

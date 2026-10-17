@@ -124,7 +124,7 @@ export default async function PlanYourVisitPage() {
                       {attraction.name}
                     </h3>
                     {attraction.note ? (
-                      <p className="mt-2 font-sans text-[17px] leading-relaxed text-muted">
+                      <p className="mt-2 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-muted">
                         {attraction.note}
                       </p>
                     ) : null}
@@ -163,7 +163,7 @@ export default async function PlanYourVisitPage() {
                     {contact.number}
                   </dd>
                   {contact.note ? (
-                    <p className="mt-2 font-sans text-[17px] leading-snug text-muted">
+                    <p className="mt-2 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-muted">
                       {contact.note}
                     </p>
                   ) : null}

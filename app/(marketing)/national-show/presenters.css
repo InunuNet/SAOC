@@ -38,14 +38,14 @@
   --pc-gutter: var(--nos-axis-pad);
   --pc-wide: 1320px;
   --pc-bio-lines: 4;
-  --pc-bio-lh: 1.68;
+  --pc-bio-lh: 1.55;
 }
 .nos-presenters {
   display: block;
   padding-block: 56px 88px;
   font-family: var(--pc-sans);
   font-size: 1rem;
-  line-height: 1.65;
+  line-height: 1.55;
   color: var(--pc-ink-700);
 }
 /* R44 A5 (nos-critique-r3): the symposium jump link sits outside the section, so .pc-jump carries the tokens plus the sans and ink it needs */
@@ -72,8 +72,8 @@
 .nos-presenters .pc-name { margin: 0; font-family: var(--pc-serif); font-weight: 400; font-size: 1.375rem; line-height: 1.25; letter-spacing: -0.01em; color: var(--pc-royal); text-wrap: balance; font-variation-settings: "opsz" 24; }
 .nos-presenters .pc-role { margin: 0; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pc-violet); line-height: 1.45; text-wrap: balance; }
 .nos-presenters .pc-bio { padding-top: 24px; border-top: var(--pc-hairline) solid var(--pc-line); }
-/* R39 (nos-critique-r3): 17px body role on the bio (nos-theme.css --fs-body, R14); clamp is progressive, set once the grid mounts */
-.nos-presenters .pc-clip { font-size: var(--fs-body, 1.0625rem); }
+/* R39 (nos-critique-r3): 16px body role on the bio (nos-theme.css --fs-body, R14); clamp is progressive, set once the grid mounts */
+.nos-presenters .pc-clip { font-size: var(--fs-body, 1rem); }
 .nos-presenters .pc-grid[data-clamp] .pc-clip:not(.is-open) { max-height: calc(var(--pc-bio-lines) * var(--pc-bio-lh) * 1em); overflow: hidden; }
 .nos-presenters .pc-grid[data-clamp] .pc-clip.is-clipped:not(.is-open) { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 1.7em), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 1.7em), transparent); }
 .nos-presenters .pc-foot { min-height: 44px; margin-top: -12px; display: flex; align-items: center; }
@@ -101,6 +101,6 @@
 @media (prefers-reduced-motion: no-preference) { .nos-presenters .pc-more { transition: color var(--pc-t-med) var(--pc-ease); } }
 
 /* R44 A5 (nos-critique-r3): symposium "Presenters (N)" jump link, same family as .pc-more */
-.pc-jump .pc-jump-link { display: inline-flex; align-items: center; min-height: 44px; font-size: var(--fs-body, 1.0625rem); font-weight: 700; color: var(--pc-violet); text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 6px; }
+.pc-jump .pc-jump-link { display: inline-flex; align-items: center; min-height: 44px; font-size: var(--fs-body, 1rem); font-weight: 700; color: var(--pc-violet); text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 6px; }
 .pc-jump .pc-jump-link:hover { color: var(--pc-royal); }
 @media (prefers-reduced-motion: no-preference) { .pc-jump .pc-jump-link { transition: color var(--pc-t-med) var(--pc-ease); } }

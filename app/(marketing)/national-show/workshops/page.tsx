@@ -60,7 +60,7 @@ export default async function WorkshopsFieldTripsTicketsPage() {
         heading="Workshops & Field Trips"
         lede="Book Sunset Cocktails and guided Field Trip outings at the National Show."
         note={
-          <Card role="note" className="font-sans text-[13px] leading-relaxed text-muted">
+          <Card role="note" className="font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-muted">
             {SESSIONS_NOTE}
           </Card>
         }
