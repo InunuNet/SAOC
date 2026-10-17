@@ -13,6 +13,7 @@
 import type { ReactNode } from 'react';
 
 import { Card } from '../nos/Card';
+import { NosSection } from '../nos/NosSection';
 import { SectionHeading } from '../nos/SectionHeading';
 import { ConfirmationBadge } from './ConfirmationBadge';
 
@@ -259,7 +260,8 @@ export interface VisitEmergencyProps {
 const PHONE_SHAPED = /^\+?\d[\d\s]*$/;
 
 // The national numbers are facts, not the show committee's to confirm: always plain tel targets,
-// whatever the status says. Only the on-site contact follows the status.
+// whatever the status says. Only the on-site contact follows the status. The section is a
+// full-bleed band of --gold (nos-v4 plan-your-visit.html l.277-279); the band marks the section, not a status.
 export function VisitEmergency({
   title,
   label,
@@ -277,8 +279,8 @@ export function VisitEmergency({
     contact._key ?? `${contact.label}-${index}`;
 
   return (
-    <section className="space-y-6">
-      <SectionHeading as="h2" title={title} />
+    <NosSection className="bg-[var(--gold)]" wrapClassName="space-y-6">
+      <SectionHeading as="h2" title={title} className="mb-8" />
       {dialContacts.length > 0 ? (
         <dl className="grid grid-cols-1 gap-x-10 gap-y-7 sm:grid-cols-3">
           {dialContacts.map((contact, index) => (
@@ -347,6 +349,6 @@ export function VisitEmergency({
           ))}
         </VisitDisclosure>
       ) : null}
-    </section>
+    </NosSection>
   );
 }

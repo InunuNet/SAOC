@@ -113,16 +113,16 @@ export default async function PlanYourVisitPage() {
           pendingLabel={pendingLabel}
           researchLabel={researchLabel}
         />
-
-        <VisitEmergency
-          title="In an emergency"
-          label={EMERGENCY_LABEL}
-          contacts={emergencyContacts}
-          status={status.emergencyContacts}
-          pendingLabel={pendingLabel}
-          researchLabel={researchLabel}
-        />
       </NosSection>
+
+      <VisitEmergency
+        title="In an emergency"
+        label={EMERGENCY_LABEL}
+        contacts={emergencyContacts}
+        status={status.emergencyContacts}
+        pendingLabel={pendingLabel}
+        researchLabel={researchLabel}
+      />
 
       <CtaBand
         eyebrow="Stay informed"
