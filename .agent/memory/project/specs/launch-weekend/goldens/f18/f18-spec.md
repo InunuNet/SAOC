@@ -258,3 +258,19 @@ Copy comes only from `longform-copy.json`, `v13-copy.json`, existing strings (`s
   - Beta: the same counts render inside `[data-placeholder]` with the "Not yet confirmed" marker (`notYetConfirmed`).
   - The old "Early-bird tickets left" heading and "One pool of 500 early-bird tickets..." sentence apply only when the pool total comes from Sanity.
   - Asserted by A27 (flags), A28 (both modes, card, day cells, pool banner, session card) and A29 (live public: for every type without Sanity capacity, no count line, no "of N" in the day cells, no placeholder marker, and the provisional pool banner text; the Sanity capacity set comes from the read-only `loadCmsNames`).
+
+## 14. Checkout step, design-cb FINAL ruling (2026-10-17)
+
+Golden: goldens/f18b/v13-checkout.json. The redirect is withdrawn and the route stays. The repo serves the checkout at /tickets/<slug>; the lead wrote /national-show/tickets/<slug>. The checks accept either (_lib.mjs findCheckout: first path that answers 200 with form[data-nos-ticket-form]; the hub CTA must go to one of the two). Do not move the route.
+
+Anatomy, top to bottom: NOS chrome, hero, ONE read-only TicketCard (prop variant="summary": same stub, photo, field colour, name, when-line and price as the hub card; no stepper, no Buy; horizontal with the stub on the right at >= 470px container width, stacked at 390), then TicketPurchaseForm.
+
+Form: day-specific products show ONE .days fieldset (legend "Choose a day", native radios, 58px cells, formatted labels with <time datetime>); day=D preselects, an unknown day falls back to the first. The weekend pass has no picker. ONE 44px stepper (real minus U+2212, input min 1); quantity=N fills it. DayQuantityPicker, [data-day-row], the "Tickets per day" legend, the "Ticket types" eyebrow and box, and the 0 default are removed. Assumption the dev may not break: the stepper holds a typeable input so quantity 0 is reachable by typing, which is what the CTA rule needs.
+
+Total: [data-catalogue-total], aria-live polite, under the stepper, beside the CTA, "Total R150" format. CTA "Continue to payment" with an arrow, enabled at 0; a click at 0 fills [data-buy-hint] with "Choose at least one ticket" (tabindex=-1, aria-describedby tie) and moves focus to it, no submit.
+
+Provisional: "Provisional pricing - subject to change" (the existing em dash string) stays on public at checkout, 14px / 500 / --ink-700, under the price in the summary card, exactly once per page, never also in the form.
+
+Unchanged and asserted: the POST payload (body showId + lineItems; line items ticketType, attendeeName, attendeeEmail, optional chosenDay; Idempotency-Key header), server validation (excludedDays, caps), the test-mode banner and admin gating (showTestModeBanner default false on TicketPurchaseForm, viewerIsVerifiedAdmin on the checkout page). A23 intercepts the POST and answers 400 so nothing is reserved.
+
+New props the dev adds: TicketPurchaseForm initialDay and initialQuantity; TicketCard variant "summary". Checks that moved: A22 and A29 use findCheckout; A23 rewritten; A24 form section rewritten; A28 gains the summary variant; f16/check-e-testmode.mts amended (see supersession.json).

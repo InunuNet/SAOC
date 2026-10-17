@@ -110,6 +110,11 @@
    "file": "contracts/checks/launch-weekend/f18/check-o-ticket-buy.mjs (total label)",
    "reason": "A23's 'Total R...' (R62) governs the /tickets/<slug> checkout. The conferences page follows design-cb rotation ruling 3 instead: where a total renders it reads 'Estimated total' exactly once, with no '(ESTIMATE)' suffix and no R0.00. The two surfaces are asserted separately (A23 and A37).",
    "replacedBy": "F18-A37"
+  },
+  {
+   "file": "contracts/checks/launch-weekend/f18/check-o-ticket-buy.mjs and check-p-tickets-render.mts (DayQuantityPicker, per-day rows, Tickets per day legend)",
+   "reason": "design-cb checkout FINAL ruling 2026-10-17: the checkout step keeps its route and is rebuilt as a read-only summary TicketCard under the hero, one .days fieldset (legend Choose a day, day=D preselect), one stepper (quantity=N), Total under the stepper beside the CTA, CTA Continue to payment enabled at 0 with focus on the hint, provisional label once in the summary card. The old per-day-row and Tickets per day assertions are replaced. f16/check-f-cards.mjs (measures /tickets/day-visitor) was already retired; f16/check-e-testmode.mts drops CategoryTicketsPage.tsx (component removed) and relaxes the hub banner rule to if-rendered-then-gated, keeping showTestModeBanner and viewerIsVerifiedAdmin on the checkout page and TicketPurchaseForm.",
+   "replacedBy": "F18-A23, F18-A24, F18-A28 (summary variant), goldens/f18b/v13-checkout.json"
   }
  ],
  "notRerunInF18": [

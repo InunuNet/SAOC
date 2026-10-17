@@ -1,0 +1,84 @@
+{
+  "_note": "design-cb FINAL ruling on the F18b checkout step, 2026-10-17. The single-ticket checkout page keeps its route (the redirect is withdrawn): it lives at /tickets/<slug> in the repo today and the lead names it /national-show/tickets/<slug>; the checks resolve whichever path answers 200 with form[data-nos-ticket-form] (lib _lib.mjs findCheckout), and the hub CTA must go to one of the two. It renders TicketPurchaseForm. Checkout BEHAVIOUR does not change: same payload, server validation (excludedDays, caps), test-mode banner and admin gating.",
+  "routes": [
+    "/tickets/<slug>",
+    "/national-show/tickets/<slug>"
+  ],
+  "pathRegex": "^/(national-show/)?tickets/[^/]+$",
+  "summary": {
+    "selector": "[data-ticket-card][data-ticket-variant=\"summary\"]",
+    "count": 1,
+    "rule": "Under the existing hero: the chosen ticket as a TicketCard in a read-only summary variant (prop variant=\"summary\"): the same stub, photo, field colour, name, when-line and price as the hub card, with NO stepper and NO Buy/CTA. Exactly one card on the page, horizontal (stub on the right) when its container is >= 470px, stacked at 390.",
+    "horizontalFromContainerPx": 470
+  },
+  "form": {
+    "dayFieldset": ".days",
+    "dayLegend": "Choose a day",
+    "dayCellMinPx": 58,
+    "stepperButtonMinPx": 44,
+    "minus": "−",
+    "quantityMin": 1,
+    "dayParam": "day",
+    "quantityParam": "quantity",
+    "rule": "day=D preselects that day in the same .days fieldset (native radios, 58px cells); day-specific products only (the weekend pass has NO day picker). quantity=N fills the one 44px stepper (min 1, a real minus sign U+2212). The per-day '–/0/+' rows (DayQuantityPicker, data-day-row, legend 'Tickets per day') and the 0 default are removed: one quantity for the chosen day."
+  },
+  "total": {
+    "selector": "[data-catalogue-total]",
+    "live": "polite",
+    "format": "^Total R\\d+(\\.\\d{2})?$",
+    "noZeroCents": true,
+    "rule": "Under the stepper, beside the CTA, one price format (R150, never R150.00)."
+  },
+  "cta": {
+    "text": "Continue to payment",
+    "arrow": true,
+    "enabledAtZero": true,
+    "hint": "Choose at least one ticket",
+    "hintSelector": "[data-buy-hint]",
+    "focusTarget": "hint",
+    "rule": "At quantity 0 the button stays enabled; a click shows the hint inline and moves focus to it (the hint region carries tabindex=-1)."
+  },
+  "provisional": {
+    "text": "Provisional pricing — subject to change",
+    "times": 1,
+    "fontPx": 14,
+    "fontWeight": 500,
+    "colourVar": "--ink-700",
+    "rule": "Stays on public at checkout, restyled to the shared 14px/500 label in ink-700, under the price in the summary card, exactly once on the page (never in both the summary and the form) whenever the price is provisional."
+  },
+  "removed": [
+    "Ticket types",
+    "Tickets per day"
+  ],
+  "payload": {
+    "endpoint": "/api/tickets/checkout",
+    "method": "POST",
+    "headers": [
+      "Content-Type",
+      "Idempotency-Key"
+    ],
+    "bodyKeys": [
+      "showId",
+      "lineItems"
+    ],
+    "lineItemKeys": [
+      "ticketType",
+      "attendeeName",
+      "attendeeEmail",
+      "chosenDay"
+    ],
+    "lineItemRequired": [
+      "ticketType",
+      "attendeeName",
+      "attendeeEmail"
+    ],
+    "note": "Measured from components/tickets/useTicketCart.ts and app/api/tickets/checkout/route.ts at main: body { showId, lineItems[] }, one line item per ticket, chosenDay optional (YYYY-MM-DD). The redesign must not change this shape; the check intercepts the POST, fulfils it with a 400 so nothing is reserved, and compares."
+  },
+  "testMode": {
+    "mustStay": [
+      "showTestModeBanner prop on TicketPurchaseForm (default false)",
+      "viewerIsVerifiedAdmin() on the checkout page and the hub",
+      "admin-only render of OzowSandboxTestModeBanner"
+    ]
+  }
+}

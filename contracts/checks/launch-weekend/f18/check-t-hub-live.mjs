@@ -21,7 +21,7 @@
 //                 and no spacer in the head
 // Usage: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-t-hub-live.mjs
 import { readFileSync } from 'node:fs';
-import { main, openPage, withBrowser, T as _T, fetchHtml, readGolden, norm } from './_lib.mjs';
+import { main, openPage, withBrowser, T as _T, fetchHtml, readGolden, norm, CHECKOUT_PATH_RE } from './_lib.mjs';
 import { expectedLedes, loadCmsNames, PRODUCT_OF, fileOf, rgbOfHex } from './_oracle.mjs';
 
 const D = '.agent/memory/project/specs/launch-weekend/goldens/f18b';
@@ -322,9 +322,9 @@ await main('F18-A29 v13 tickets hub', async (r) => {
           const more = card.locator('button[aria-label="One more"]');
           if (await more.count()) await more.click();
           const dayChecked = await card.locator('input[type="radio"]:checked').getAttribute('value').catch(() => null);
-          await Promise.all([page.waitForURL(/\/tickets\//, { timeout: 8000 }).catch(() => null), cta.click()]);
+          await Promise.all([page.waitForURL(CHECKOUT_PATH_RE, { timeout: 8000 }).catch(() => null), cta.click()]);
           const u = new URL(page.url());
-          if (!u.pathname.startsWith('/tickets/')) r.fail(`${tag}: the Buy ticket CTA did not go to /tickets/<slug> (went to ${u.pathname})`);
+          if (!CHECKOUT_PATH_RE.test(u.pathname)) r.fail(`${tag}: the Buy ticket CTA did not go to the checkout page /tickets/<slug> or /national-show/tickets/<slug> (went to ${u.pathname})`);
           else if (u.searchParams.get('quantity') !== '2' && dayChecked === null) r.fail(`${tag}: CTA url ${u.pathname}${u.search} does not carry quantity=2`);
           else if (dayChecked !== null && !(u.searchParams.get('day') ?? '').match(/^\d{4}-\d{2}-\d{2}$/)) r.fail(`${tag}: the Day Pass CTA url carries no day=<iso> (${u.search})`);
         } else r.note(`${tag}: no buyable card with a Buy ticket CTA in this environment: CTA navigation skipped`);
