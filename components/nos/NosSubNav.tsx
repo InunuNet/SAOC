@@ -46,6 +46,15 @@ export function NosSubNav({ label, items, currentHref, exact }: NosSubNavProps) 
 
     const isOverflowing = () => row.scrollWidth > row.clientWidth + OVERFLOW_SLACK_PX;
 
+    const isCurrentVisible = () => {
+      const current = row.querySelector<HTMLElement>('[aria-current]');
+      if (!current) return true;
+      const style = getComputedStyle(row);
+      const start = row.scrollLeft + parseFloat(style.paddingLeft);
+      const end = row.scrollLeft + row.clientWidth - parseFloat(style.paddingRight);
+      return current.offsetLeft >= start && current.offsetLeft + current.offsetWidth <= end;
+    };
+
     const alignCurrent = () => {
       const current = row.querySelector<HTMLElement>('[aria-current]');
       if (!current || !isOverflowing()) return;
@@ -59,11 +68,11 @@ export function NosSubNav({ label, items, currentHref, exact }: NosSubNavProps) 
     alignCurrent();
     syncFade();
 
-    // Crossing the breakpoint downwards makes the row overflow for the first time, so the
-    // current item is aligned again then (no smooth scrolling); later resizes only update fades.
+    // On a resize the current item is aligned again when the row starts to overflow, or when it
+    // has been pushed outside the row's visible box (no smooth scrolling).
     const onResize = () => {
       const nowOverflowing = isOverflowing();
-      if (nowOverflowing && !wasOverflowing) alignCurrent();
+      if (nowOverflowing && (!wasOverflowing || !isCurrentVisible())) alignCurrent();
       wasOverflowing = nowOverflowing;
       syncFade();
     };

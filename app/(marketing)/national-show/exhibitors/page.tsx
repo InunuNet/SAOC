@@ -78,13 +78,21 @@ function markerOf(status?: string | null): Marker | null {
   return status === 'research' || status === 'question' ? status : 'pending';
 }
 
-const SENTENCE_BOUNDARY = /[.!?]\s/;
+// A sentence ends at . ! or ? (plus any closing quote or bracket) followed by whitespace.
+const SENTENCE_BOUNDARY = /[.!?]["'\u201d\u2019)\]]*\s/g;
+// A full stop after one of these does not end a sentence.
+const ABBREVIATIONS = ['dr', 'mr', 'mrs', 'ms', 'st', 'prof', 'e.g', 'i.e', 'etc', 'vs', 'no'];
 
 // A public build leads with the intro's first sentence only; the committee provenance that
-// follows is preview material. No boundary found: the whole string, never a guess.
-function firstSentence(text: string): string {
-  const boundary = SENTENCE_BOUNDARY.exec(text);
-  return boundary ? text.slice(0, boundary.index + 1) : text;
+// follows is preview material. Fails closed: with no boundary found there is no lede at all,
+// never the whole intro.
+function firstSentence(text: string): string | undefined {
+  for (const boundary of text.matchAll(SENTENCE_BOUNDARY)) {
+    const word = /([A-Za-z.]+)$/.exec(text.slice(0, boundary.index))?.[1]?.toLowerCase();
+    if (boundary[0].startsWith('.') && word && ABBREVIATIONS.includes(word)) continue;
+    return text.slice(0, boundary.index + boundary[0].trimEnd().length);
+  }
+  return undefined;
 }
 
 export default async function ExhibitorInfoPage() {
@@ -179,7 +187,7 @@ export default async function ExhibitorInfoPage() {
       <NosHero
         route="/national-show/exhibitors"
         title={info?.title ?? 'Exhibitor Information'}
-        lede={info?.intro ? (publicMode ? firstSentence(info.intro) : info.intro) : undefined}
+        lede={publicMode ? firstSentence(info?.intro ?? '') : (info?.intro ?? undefined)}
         priority
       />
 
