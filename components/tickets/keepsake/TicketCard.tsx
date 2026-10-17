@@ -95,34 +95,38 @@ export function TicketCard({
       data-ticket-state={vm.state}
       data-ticket-slug={vm.slug}
       aria-label={name}
-      className="nk-ticket"
+      className="nk-card"
     >
-      <TicketStub
-        product={product}
-        numeral={numeral}
-        caption={caption}
-        admit={TICKET_COPY.admit}
-        soldOut={vm.state === 'soldOut'}
-      />
-      <span className="nk-perf" aria-hidden="true" />
-      <div data-ticket-body="" className="nk-main">
-        <p className="nk-when">{product.when}</p>
-        <h3 data-ticket-name="" className="nk-name">
-          {detailHref ? <Link href={detailHref}>{name}</Link> : name}
-        </h3>
-        {product.theme ? <p className="nk-theme">{product.theme}</p> : null}
-        {product.meta ? <p className="nk-meta">{product.meta}</p> : null}
-        <TicketCount vm={vm} partner={partnerName ?? product.partner} />
-        {vm.days ? (
-          <DayPicker groupName={groupName} days={vm.days} chosen={day} onChoose={setDay} />
-        ) : null}
-        <BuyBlock
-          vm={vm}
-          name={name}
+      {/* The drop-shadow filter lives on the article; the notch mask lives on the ticket inside it,
+          because a filter on a masked element is itself cut by the mask. */}
+      <div className="nk-ticket">
+        <TicketStub
           product={product}
-          day={day}
-          regularName={regularName ?? vm.regularName ?? null}
+          numeral={numeral}
+          caption={caption}
+          admit={TICKET_COPY.admit}
+          soldOut={vm.state === 'soldOut'}
         />
+        <span className="nk-perf" aria-hidden="true" />
+        <div data-ticket-body="" className="nk-main">
+          <p className="nk-when">{product.when}</p>
+          <h3 data-ticket-name="" className="nk-name">
+            {detailHref ? <Link href={detailHref}>{name}</Link> : name}
+          </h3>
+          {product.theme ? <p className="nk-theme">{product.theme}</p> : null}
+          {product.meta ? <p className="nk-meta">{product.meta}</p> : null}
+          <TicketCount vm={vm} partner={partnerName ?? product.partner} />
+          {vm.days ? (
+            <DayPicker groupName={groupName} days={vm.days} chosen={day} onChoose={setDay} />
+          ) : null}
+          <BuyBlock
+            vm={vm}
+            name={name}
+            product={product}
+            day={day}
+            regularName={regularName ?? vm.regularName ?? null}
+          />
+        </div>
       </div>
     </article>
   );

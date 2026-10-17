@@ -802,6 +802,9 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nk-wrap {
   container-type: inline-size;
   height: 100%;
+}
+.nos-theme .nk-card {
+  height: 100%;
   filter: drop-shadow(0 2px 3px color-mix(in srgb, var(--primary) 8%, transparent))
     drop-shadow(0 14px 22px color-mix(in srgb, var(--primary) 13%, transparent));
 }
@@ -1790,12 +1793,15 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .nos-theme .nk-grid .nk-wrap {
-    transition:
-      transform var(--dur-slow) var(--ease-nos),
-      filter var(--dur-slow) var(--ease-nos);
+    transition: transform var(--dur-slow) var(--ease-nos);
+  }
+  .nos-theme .nk-grid .nk-card {
+    transition: filter var(--dur-slow) var(--ease-nos);
   }
   .nos-theme .nk-grid .nk-wrap:hover {
     transform: translateY(-5px);
+  }
+  .nos-theme .nk-grid .nk-wrap:hover .nk-card {
     filter: drop-shadow(0 4px 6px color-mix(in srgb, var(--primary) 10%, transparent))
       drop-shadow(0 24px 34px color-mix(in srgb, var(--primary) 18%, transparent));
   }

@@ -8,3 +8,8 @@ Pass 4: 37/40, P0/P1/P2 all 0 after the fixes listed there.
 Screenshots: `.tmp/sandbox/lw-f18/after/` as `<width>-<route-last-segment>.png`.
 
 Pass 5 (after the lead's rulings: sub-ledes, sales-closed masking, symposium naming, keyframe motion, closing band, WOSA Buy link): Score: 37/40. P0 0, P1 0, P2 2: the "Day Pass from" line sits in its own row under the fan and reads detached from the facts column at 1280; the 390 fan deck keeps the 2x2 cell height reserved. The "design-cb audit: PASS" line is NOT written: the dev has not run F18B-AUDIT-CHECKLIST.md to a pass while F18-A29 (horizontal stub width) and F18-A37 (box-shadow against A10) contradict their own goldens; see the report to main.
+
+Pass 6 (after spec f8b6fb14: card shadow now a filter on the article with the notch mask on the inner ticket, SalesStatusLine, merged F18a): viewed 390-tickets, 1280-tickets, 1280-conferences against v13-tickets.html. The hub row of #exhibit / #trade now matches the v13 card radius and shadow; the Day Pass line sits under the fan in its own row; the conference cards carry the shadow on the article. No P0, P1 or P2 remains that a rule or the mock names. Score: 39/40.
+P0: 0
+P1: 0
+P2: 0
