@@ -491,6 +491,7 @@
 .nos-theme .nos-hero-lede {
   margin: 0;
   max-width: min(34ch, var(--hero-col));
+  text-wrap: pretty;
 }
 .nos-theme .nos-hero-actions {
   display: flex;
