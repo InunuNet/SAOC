@@ -85,3 +85,17 @@ P0: 0
 P1: 0
 P2: 0
 Score: 39/40
+
+## Pass 7 (2026-10-17)
+
+Scope: design-cb's condition on 3f304439 (every [data-placeholder] block on the hub carries its own visible R11 chip), after merging main 63f3e74d. Re-shot the hub on the preview build (hero lede, body paragraph, figures row, judging lede).
+
+Finding, fixed in the same pass:
+- P1: the chip sat outside each marked clause. Fixed: the "To be confirmed by the show committee" chip is now inside each span[data-placeholder] (hero lede clause, body sentences, judging lede) and under the "Editions held" label inside its cell. Public renders no unsourced text and no new chip.
+
+P0: 0
+P1: 0
+P2: 0
+Score: 39/40
+
+design-cb audit: PASS (2026-10-17, 3f304439 + chip condition)
