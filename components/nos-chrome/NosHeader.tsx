@@ -12,6 +12,7 @@
 // =============================================================
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -32,6 +33,8 @@ const LOCKUP_SRC = '/images/nos/nos-full-colour-horizontal-1200.png';
 const LOCKUP_ALT = 'National Orchid Show, Western Cape 2027';
 const LOCKUP_WIDTH = 1200;
 const LOCKUP_HEIGHT = 294;
+// The box is 448px wide from 700px up and 390px below it; the candidates never undershoot it.
+const LOCKUP_SIZES = '(max-width: 699px) 390px, 448px';
 const PANEL_BREAKPOINT_QUERY = '(min-width: 1260px)';
 const INERT_SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'LINK', 'TEMPLATE']);
 const SUB_ID = 'nd-sub-national-show';
@@ -207,14 +210,13 @@ export function NosHeader({ show }: NosHeaderProps) {
             aria-label={`${LOCKUP_ALT}, National Show home`}
             aria-current={current(HUB_HREF)}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element -- the supplied lockup ships byte-for-byte; next/image would re-encode it */}
-            <img
+            <Image
               src={LOCKUP_SRC}
               alt={LOCKUP_ALT}
               width={LOCKUP_WIDTH}
               height={LOCKUP_HEIGHT}
-              loading="eager"
-              fetchPriority="high"
+              sizes={LOCKUP_SIZES}
+              priority
             />
           </Link>
 

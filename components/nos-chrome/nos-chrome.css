@@ -121,7 +121,6 @@
 .nf-brand { display: grid; gap: 20px; align-content: start; justify-items: start; }
 .nf-lockup { display: block; line-height: 0; border-radius: 4px; }
 .nf-lockup img { display: block; }
-.nf-lockup .nf-v { display: none; }
 .nf-lockup img { width: var(--nc-logo-w); max-width: none; height: auto; margin: calc(var(--nc-logo-w) * -0.045) calc(var(--nc-logo-w) * -0.0508) calc(var(--nc-logo-w) * -0.0442) calc(var(--nc-logo-w) * -0.045); }
 .nf-text { margin: 0; max-width: 44ch; font-size: 15px; line-height: 1.6; color: var(--nc-lilac); }
 .nf-reg { font-size: 12px; letter-spacing: 0.08em; color: rgba(210, 203, 232, 0.78); font-variant-numeric: tabular-nums; }
@@ -152,8 +151,7 @@
   .nf-brand { grid-column: 1 / -1; justify-items: center; text-align: center; }
   .nf-brand .nf-text { max-width: 36ch; }
   /* The supplied reversed vertical lockup at 342px: cap 7.0px. */
-  .nf-lockup .nf-h { display: none; }
-  .nf-lockup .nf-v { display: block; width: min(342px, 100%); margin: 0; }
+  .nf-lockup img { width: min(342px, 100%); margin: 0; }
   .nf-col-touch { grid-column: 1 / -1; }
   .nf-base { flex-direction: column; align-items: flex-start; }
 }
