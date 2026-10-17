@@ -71,3 +71,17 @@ P0: 0
 P1: 0
 P2: 0
 Score: 39/40
+
+## Pass 6 (2026-10-17)
+
+Scope: design-cb audit of fad00c88 (hub preview markers, hub figures row) and the holding-state mini-list removal. Re-shot the hub at 1280 on the public build and on a SHOW_PLACEHOLDER_PREVIEW build (wall credentials set at build time).
+
+Findings, then fixed in the same pass:
+- P1: on the preview build the withheld hub facts carried no [data-placeholder] marker. Fixed: each withheld clause is wrapped in span[data-placeholder] (hero lede clause, 100-point and Grand Champion sentences, judging lede criteria sentence); the unsourced "Editions held 18" figure shows on preview only, marked.
+- P2: the hub figures row floated top-right at reduced size. Fixed to the v4 figures rules: Fraunces 300, clamp(2.6rem, 2rem + 2vw, 61px), opsz 72, hairline top rule, two per row at 50%, prose column aligned to the end.
+- P2: the holding state carried a related-page mini list under the full Explore index. Removed; programme holds on its existing purpose sentence.
+
+P0: 0
+P1: 0
+P2: 0
+Score: 39/40
