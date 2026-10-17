@@ -77,12 +77,20 @@ export function ShowStatusLine({
   );
   if (!items || items.length === 0) return marker;
   const researchWording = status === 'research' ? researchLabel?.trim() : undefined;
+  // The full label the chip itself shows, so a blank label still names the note.
+  const chipLabel = resolveStatusMarker({
+    kind,
+    status,
+    pendingLabel,
+    researchLabel,
+    shortResearch: true,
+  })?.label.trim();
 
   return (
     <div
       data-status-disclosure=""
       role="note"
-      aria-label={resolveStatusMarker({ kind, status, pendingLabel, researchLabel })?.label}
+      aria-label={researchWording || chipLabel}
       className="grid gap-5 rounded-[16px] bg-[var(--gold)] px-[clamp(20px,3vw,32px)] pb-6 pt-5 shadow-sm [@media(max-width:700px)]:px-4"
     >
       <div className={CHIP_FIT_CLASSES}>{marker}</div>
