@@ -18,6 +18,7 @@ import { Card } from '../nos/Card';
 import { NosSection } from '../nos/NosSection';
 import { SectionHeading } from '../nos/SectionHeading';
 import { ConfirmationBadge } from './ConfirmationBadge';
+import { ShowStatusFoot } from './ShowStatusLine';
 
 export interface VisitDisclosureProps {
   /** The group's accessible name; names what the one chip inside covers. */
@@ -40,6 +41,12 @@ const TONE_CLASSES: Record<NonNullable<VisitDisclosureProps['tone']>, string> = 
 const CHIP_FIT_CLASSES =
   '[@media(max-width:700px)]:[&_[data-confirmation-badge]]:!px-[10px] [@media(min-width:420px)_and_(max-width:700px)]:[&_[data-confirmation-badge]]:!tracking-[0.06em] [@media(max-width:419px)]:[&_[data-confirmation-badge]]:!tracking-[0.02em] [@media(max-width:374px)]:[&_[data-confirmation-badge]:not([hidden])]:!tracking-[0]';
 const NARROW_PADDING_CLASS = '[@media(max-width:700px)]:px-4';
+
+// A research disclosure names itself, and closes with, the full research wording: its chip only
+// carries the short tag. With no researchLabel the group keeps its label and draws no foot.
+function researchWordingOf(chip: string, researchLabel?: string | null): string | undefined {
+  return chip === 'research' ? researchLabel?.trim() || undefined : undefined;
+}
 
 export function VisitDisclosure({ label, tone = 'gold', children }: VisitDisclosureProps) {
   return (
@@ -110,6 +117,7 @@ export function VisitGettingThere({ items, pendingLabel, researchLabel }: VisitG
   const chipStatus = unconfirmed.some((item) => item.status !== 'research')
     ? 'pending'
     : 'research';
+  const researchWording = researchWordingOf(chipStatus, researchLabel);
 
   return (
     <>
@@ -117,10 +125,11 @@ export function VisitGettingThere({ items, pendingLabel, researchLabel }: VisitG
         <GettingThereItem key={item.heading} item={item} />
       ))}
       {unconfirmed.length > 0 ? (
-        <VisitDisclosure label={GETTING_THERE_LABEL}>
+        <VisitDisclosure label={researchWording ?? GETTING_THERE_LABEL}>
           <div>
             <ConfirmationBadge
               shortOnNarrow
+              shortResearch
               status={chipStatus}
               pendingLabel={pendingLabel}
               researchLabel={researchLabel}
@@ -129,6 +138,7 @@ export function VisitGettingThere({ items, pendingLabel, researchLabel }: VisitG
           {unconfirmed.map((item) => (
             <GettingThereItem key={item.heading} item={item} />
           ))}
+          {researchWording ? <ShowStatusFoot>{researchWording}</ShowStatusFoot> : null}
         </VisitDisclosure>
       ) : null}
     </>
@@ -220,14 +230,18 @@ export function VisitAttractions({
     );
   }
 
+  const chipStatus = status === 'research' ? 'research' : 'pending';
+  const researchWording = researchWordingOf(chipStatus, researchLabel);
+
   return (
     <section className="space-y-6">
       <SectionHeading as="h2" title={title} />
-      <VisitDisclosure label={GETTING_THERE_LABEL}>
+      <VisitDisclosure label={researchWording ?? GETTING_THERE_LABEL}>
         <div>
           <ConfirmationBadge
             shortOnNarrow
-            status={status === 'research' ? 'research' : 'pending'}
+            shortResearch
+            status={chipStatus}
             pendingLabel={pendingLabel}
             researchLabel={researchLabel}
           />
@@ -237,6 +251,7 @@ export function VisitAttractions({
             <AttractionBody attraction={attraction} id={headingId(attraction, index)} />
           </div>
         ))}
+        {researchWording ? <ShowStatusFoot>{researchWording}</ShowStatusFoot> : null}
       </VisitDisclosure>
     </section>
   );
@@ -277,6 +292,8 @@ export function VisitEmergency({
   const shown = contacts.filter((contact) => contact.label);
   if (shown.length === 0) return null;
 
+  const chipStatus = status === 'research' ? 'research' : 'pending';
+  const researchWording = researchWordingOf(chipStatus, researchLabel);
   const dialContacts = shown.filter((contact) => PHONE_SHAPED.test(contact.number ?? ''));
   const onSiteContacts = shown.filter((contact) => !PHONE_SHAPED.test(contact.number ?? ''));
   const keyOf = (contact: VisitEmergencyContact, index: number) =>
@@ -340,11 +357,12 @@ export function VisitEmergency({
         </div>
       ) : null}
       {onSiteContacts.length > 0 && status !== 'confirmed' ? (
-        <VisitDisclosure label={label} tone="pale">
+        <VisitDisclosure label={researchWording ?? label} tone="pale">
           <div>
             <ConfirmationBadge
               shortOnNarrow
-              status={status === 'research' ? 'research' : 'pending'}
+              shortResearch
+              status={chipStatus}
               pendingLabel={pendingLabel}
               researchLabel={researchLabel}
             />
@@ -361,6 +379,7 @@ export function VisitEmergency({
               ) : null}
             </div>
           ))}
+          {researchWording ? <ShowStatusFoot>{researchWording}</ShowStatusFoot> : null}
         </VisitDisclosure>
       ) : null}
     </NosSection>

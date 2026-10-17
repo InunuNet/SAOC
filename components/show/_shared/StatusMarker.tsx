@@ -76,6 +76,11 @@ export interface StatusMarkerProps {
    * instead of the full label at <=359px, so only one string is in the accessibility tree.
    */
   shortOnNarrow?: boolean;
+  /**
+   * Opt-in, for a marker inside a disclosure that draws the full research wording in its foot. A
+   * research marker then shows FALLBACK_RESEARCH_LABEL as its only label at every width.
+   */
+  shortResearch?: boolean;
 }
 
 export function StatusMarker({
@@ -87,6 +92,7 @@ export function StatusMarker({
   tone = 'light',
   as: Root = 'p',
   shortOnNarrow = false,
+  shortResearch = false,
 }: StatusMarkerProps) {
   // The ONLY early return, shared by both kinds — never split into a second branch.
   if (status === 'confirmed') return null;
@@ -115,6 +121,8 @@ export function StatusMarker({
   // carries the RESOLVED marker, never the raw upstream value.
   const dataProps: Record<string, string> =
     kind === 'exhibitor' ? { 'data-exhibitor-marker': marker } : { 'data-confirmation-badge': marker };
+
+  if (shortResearch && marker === 'research') label = FALLBACK_RESEARCH_LABEL;
 
   const showShort = shortOnNarrow && marker === 'pending' && label !== FALLBACK_PENDING_LABEL;
 

@@ -31,6 +31,8 @@ export interface ConfirmationBadgeProps {
   as?: 'p' | 'span';
   /** Show the short pending tag instead of the full label at <=359px (see StatusMarker). */
   shortOnNarrow?: boolean;
+  /** Show the short research tag, the full wording being drawn in the disclosure's foot. */
+  shortResearch?: boolean;
 }
 
 export function ConfirmationBadge({
@@ -40,6 +42,7 @@ export function ConfirmationBadge({
   tone = 'light',
   as = 'p',
   shortOnNarrow,
+  shortResearch,
 }: ConfirmationBadgeProps) {
   return (
     <StatusMarker
@@ -50,6 +53,7 @@ export function ConfirmationBadge({
       tone={tone}
       as={as}
       shortOnNarrow={shortOnNarrow}
+      shortResearch={shortResearch}
     />
   );
 }

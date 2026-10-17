@@ -14,3 +14,7 @@ artwork, boxes, aspect ratios and alt text do not.
 - The sources are still the supplied `/images/nos/*.png`; the existing custom loader
   (`lib/image-loader.ts`) maps them to the pre-built WebP candidates in `public/images/_opt/`.
   No new asset, no loader change.
+
+## F2 - research chip
+
+A research chip inside a disclosure shows the existing short tag (`StatusMarker`'s `FALLBACK_RESEARCH_LABEL`) at every width, via the opt-in `shortResearch` prop (forwarded by `ConfirmationBadge`). The full research wording (Sanity `researchLabel`) becomes the group aria-label and is drawn as a `ShowStatusFoot` inside the group; with no `researchLabel` the group keeps its label and has no foot. Pending, mixed (pending beats research) and bare markers are unchanged.
