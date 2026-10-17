@@ -53,11 +53,11 @@
     {
       "pageKey": "06-saoc-symposium",
       "file": "content/show-pages/06-saoc-symposium.json",
-      "summary": "Programme and registration hub for the SAOC Symposium.",
+      "summary": "Programme and registration hub for the National Orchid Show Symposium.",
       "v3Purpose": "Programme and registration hub for the SAOC Symposium.",
       "verdict": "drop",
       "renderedAsHeroLedeToday": false,
-      "reason": "Verbatim V3 4.6 Purpose. Already replaced by the theme line at render time (R70, show-page-presentation.ts), so the route never shows it."
+      "reason": "V3 4.6 Purpose (v3Purpose keeps the source wording; summary carries the string now in lib/data/builder-brief-summaries.ts after the F18 naming sweep, A36 wins over the old A4 string). Already replaced by the theme line at render time (R70, show-page-presentation.ts), so the route never shows it."
     },
     {
       "pageKey": "07-wosa-conference",

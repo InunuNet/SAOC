@@ -122,6 +122,9 @@ assertions:
   - id: F18-A37
     description: Conferences page (design-cb rotation rulings 1-3) - hero lede exactly "Register for the National Orchid Show Symposium or the WOSA Conference." with no Joint track and no "SAOC Symposium" in main or the meta description, no R11 card holding only a chip, ticket cards carry the v13 shadow and no 1px border, whole-rand prices with no decimals, Buy enabled at quantity 0 with the hint "Choose at least one ticket", the total reads "Estimated total" once with no "(ESTIMATE)" and no R0.00, the full Explore index with no mini list
     command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-aa-conferences-live.mjs
+  - id: F18-A38
+    description: Workshops sessions note (lead ruling) - until #sessions exists /national-show/workshops renders the existing SESSIONS_NOTE string exactly once in a role=note after the hero and before the first ticket card and offers no per-session Buy CTA; once #sessions ships (F18c) the note is gone
+    command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-ab-workshops-note.mjs
   - id: F18-A13
     description: Check hygiene - supersession.json names the rebased, amended and retired checks (F16 hub checks, F7 check-d-ticket-form vote 2, F3 imagery stub exclusion), check-labels-static is structural and exits 0, check-f3-imagery excludes the image break and [data-ticket-stub], retired F16 files carry RETIRED headers
     command: node --import tsx/esm contracts/checks/launch-weekend/f18/check-l-supersession.mjs
