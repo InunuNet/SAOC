@@ -19,7 +19,7 @@ import {
 import { BuyBlock } from './BuyBlock';
 import { daySubline, firstSelectableDay, isDayClosed } from './days';
 import { TicketCount, TicketStub } from './parts';
-import type { KeepsakeCardVm, KeepsakeDay } from './types';
+import type { CountDisplay, KeepsakeCardVm, KeepsakeDay } from './types';
 
 export interface TicketCardProps {
   productId: TicketProductId;
@@ -30,6 +30,9 @@ export interface TicketCardProps {
   partnerName?: string | null;
   // The name of the regular SKU an early-bird SKU gives way to.
   regularName?: string | null;
+  // How the scarcity line and the day-cell counts are shown (default: the real figures).
+  counts?: CountDisplay;
+  dayCounts?: CountDisplay;
 }
 
 interface DayPickerProps {
@@ -37,16 +40,17 @@ interface DayPickerProps {
   days: KeepsakeDay[];
   chosen: string | null;
   onChoose: (day: string) => void;
+  counts: CountDisplay;
 }
 
-function DayPicker({ groupName, days, chosen, onChoose }: DayPickerProps) {
+function DayPicker({ groupName, days, chosen, onChoose, counts }: DayPickerProps) {
   return (
     <fieldset className="nk-days">
       <legend>{TICKET_COPY.chooseDay}</legend>
       <div className="nk-days-row">
         {days.map((d) => {
           const closed = isDayClosed(d);
-          const sub = daySubline(d);
+          const sub = daySubline(d, counts);
           const classes = ['nk-day', closed ? 'is-out' : '', d.state === 'low' ? 'is-low' : '']
             .filter(Boolean)
             .join(' ');
@@ -61,12 +65,17 @@ function DayPicker({ groupName, days, chosen, onChoose }: DayPickerProps) {
                 onChange={() => onChoose(d.day)}
               />
               <b>{formatShowDayShort(d.day)}</b>
-              {sub ? <span>{sub}</span> : null}
+              {sub ? (
+                <span data-placeholder={counts === 'placeholder' ? 'true' : undefined}>{sub}</span>
+              ) : null}
               {d.state === 'low' ? <span className="nk-sub">{TICKET_COPY.fewLeft}</span> : null}
             </label>
           );
         })}
       </div>
+      {counts === 'placeholder' ? (
+        <p className="nk-unconfirmed">{TICKET_COPY.unconfirmed}</p>
+      ) : null}
     </fieldset>
   );
 }
@@ -77,6 +86,8 @@ export function TicketCard({
   name: nameProp,
   partnerName,
   regularName,
+  counts = 'real',
+  dayCounts = 'real',
 }: TicketCardProps) {
   const product = TICKET_PRODUCTS[productId];
   const name = nameProp ?? vm.name ?? product.name;
@@ -115,9 +126,15 @@ export function TicketCard({
           </h3>
           {product.theme ? <p className="nk-theme">{product.theme}</p> : null}
           {product.meta ? <p className="nk-meta">{product.meta}</p> : null}
-          <TicketCount vm={vm} partner={partnerName ?? product.partner} />
+          <TicketCount vm={vm} partner={partnerName ?? product.partner} counts={counts} />
           {vm.days ? (
-            <DayPicker groupName={groupName} days={vm.days} chosen={day} onChoose={setDay} />
+            <DayPicker
+              groupName={groupName}
+              days={vm.days}
+              chosen={day}
+              onChoose={setDay}
+              counts={dayCounts}
+            />
           ) : null}
           <BuyBlock
             vm={vm}

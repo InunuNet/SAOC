@@ -17,6 +17,8 @@ import {
   type VisitLink,
 } from '@/components/tickets/keepsake';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+import { countDisplay } from '@/lib/data/ticket-count-display';
 import { buildSectionLedes } from '@/lib/data/ticket-section-ledes';
 import { buildShowFacts, type ShowFactsSource } from '@/lib/data/show-facts';
 import {
@@ -94,7 +96,8 @@ export default async function NationalShowTicketsPage() {
     loadTicketCardViewModels(),
     viewerIsVerifiedAdmin(),
   ]);
-  const { cards, pool, dayPassFrom, salesOpen } = loaded;
+  const { cards, pool, dayPassFrom, salesOpen, provisionalTotals } = loaded;
+  const withhold = withholdPlaceholderProse();
   const ledes = buildSectionLedes({
     showDate: show?.showDate ?? null,
     showEndDate: show?.showEndDate ?? null,
@@ -122,6 +125,8 @@ export default async function NationalShowTicketsPage() {
             vm={vm}
             name={vm.name}
             partnerName={partnerNameOf(id, cards)}
+            counts={countDisplay(provisionalTotals.bySlug[vm.slug] === true, withhold)}
+            dayCounts={countDisplay(provisionalTotals.day, withhold)}
           />
         </div>
       ) : null;
@@ -156,7 +161,7 @@ export default async function NationalShowTicketsPage() {
           title={TICKET_COPY.sections.passes}
           lede={ledes.passes}
           columns={2}
-          lead={<PoolBanner pool={pool} />}
+          lead={<PoolBanner pool={pool} counts={countDisplay(provisionalTotals.pool, withhold)} />}
         >
           {renderCards(PASS_PRODUCTS)}
         </TicketSection>

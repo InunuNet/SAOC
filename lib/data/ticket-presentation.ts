@@ -228,6 +228,8 @@ export const TICKET_COPY = {
   fewer: 'One fewer',
   more: 'One more',
   poolTitle: 'Early-bird tickets left',
+  poolTitleNoCount: 'Early-bird tickets',
+  unconfirmed: 'Not yet confirmed',
   poolOutTitle: 'Early bird sold out',
   sessionNotOpen: 'Booking for this session is not open yet.',
   timeTba: 'Time to be announced',
@@ -248,6 +250,12 @@ export const TICKET_COPY = {
 export function poolText(total: number): string {
   return `One pool of ${total} early-bird tickets is shared by the Weekend Pass and the Day Pass. The early bird ends when the pool sells out.`;
 }
+
+export const POOL_TEXT_NO_COUNT =
+  'One pool of early-bird tickets is shared by the Weekend Pass and the Day Pass. The early bird ends when the pool sells out.';
+
+export const POOL_OUT_TEXT_NO_COUNT =
+  'All early-bird tickets, shared by the Weekend Pass and the Day Pass, have sold. Both passes are now at their normal price.';
 
 export function poolOutText(total: number): string {
   return `All ${total} early-bird tickets, shared by the Weekend Pass and the Day Pass, have sold. Both passes are now at their normal price.`;

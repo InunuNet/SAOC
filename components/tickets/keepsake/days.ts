@@ -2,7 +2,7 @@
 
 import { TICKET_COPY } from '@/lib/data/ticket-presentation';
 
-import type { KeepsakeDay } from './types';
+import type { CountDisplay, KeepsakeDay } from './types';
 
 /** A day that cannot be chosen: sold out, no price yet, or the early bird has ended. */
 export function isDayClosed(day: KeepsakeDay): boolean {
@@ -12,10 +12,11 @@ export function isDayClosed(day: KeepsakeDay): boolean {
 }
 
 /** The cell's second line: the state's words, or the real count, or nothing (R7). */
-export function daySubline(day: KeepsakeDay): string | null {
+export function daySubline(day: KeepsakeDay, counts: CountDisplay = 'real'): string | null {
   if (day.state === 'soldOut') return TICKET_COPY.soldOutStamp;
   if (day.state === 'pricePending') return TICKET_COPY.pricePending;
   if (day.state === 'earlyBirdSoldOut') return TICKET_COPY.earlyBirdEnded;
+  if (counts === 'withhold') return null;
   if (day.remaining !== null && day.total !== null) return `${day.remaining} of ${day.total}`;
   return null;
 }

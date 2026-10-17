@@ -6,6 +6,8 @@ import { NosSection } from '@/components/nos/NosSection';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { SalesStatusLine, TicketCard, TicketSection } from '@/components/tickets/keepsake';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+import { countDisplay } from '@/lib/data/ticket-count-display';
 import { TICKET_COPY, partnerNameOf, type TicketProductId } from '@/lib/data/ticket-presentation';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
@@ -34,7 +36,8 @@ const SESSIONS_NOTE =
 const WORKSHOP_PAGE_PRODUCTS: readonly TicketProductId[] = ['sunset', 'workshops'];
 
 export default async function WorkshopsFieldTripsTicketsPage() {
-  const { cards, salesOpen } = await loadTicketCardViewModels();
+  const { cards, salesOpen, provisionalTotals } = await loadTicketCardViewModels();
+  const withhold = withholdPlaceholderProse();
 
   return (
     <>
@@ -63,6 +66,8 @@ export default async function WorkshopsFieldTripsTicketsPage() {
                 vm={vm}
                 name={vm.name}
                 partnerName={partnerNameOf(id, cards)}
+                counts={countDisplay(provisionalTotals.bySlug[vm.slug] === true, withhold)}
+                dayCounts={countDisplay(provisionalTotals.day, withhold)}
               />
             </div>
           ) : null;

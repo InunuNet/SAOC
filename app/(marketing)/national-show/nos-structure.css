@@ -1869,6 +1869,17 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   filter: drop-shadow(0 2px 3px color-mix(in srgb, var(--primary) 8%, transparent))
     drop-shadow(0 14px 22px color-mix(in srgb, var(--primary) 13%, transparent));
 }
+.nos-theme .nk-unconfirmed {
+  display: block;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--nk-warn);
+}
+.nos-theme .nk-pool.is-bare {
+  grid-template-columns: minmax(0, 1fr);
+}
 /* F18-KEEPSAKE-END */
 /* Hub "What it is" row and its figures (v4 about and figures): prose and figures share a
    baseline, each figure sits under a hairline, two per row. */

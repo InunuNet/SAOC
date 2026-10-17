@@ -9,7 +9,7 @@ import type { CSSProperties } from 'react';
 import { formatRand } from '@/components/nos/cheapest-admission';
 import { TICKET_COPY, TICKET_EMBLEM, type TicketProduct } from '@/lib/data/ticket-presentation';
 
-import type { KeepsakeCardVm } from './types';
+import type { CountDisplay, KeepsakeCardVm } from './types';
 
 const EMBLEM_WIDTH_PX = 45;
 const EMBLEM_HEIGHT_PX = 30;
@@ -116,21 +116,37 @@ export function TicketPrice({ price, each, muted }: TicketPriceProps) {
 interface TicketCountProps {
   vm: KeepsakeCardVm;
   partner: string | null;
+  counts?: CountDisplay;
 }
 
 /** The scarcity line: masked by every state above `low`, absent when there is no real count. */
-export function TicketCount({ vm, partner }: TicketCountProps) {
+export function TicketCount({ vm, partner, counts = 'real' }: TicketCountProps) {
   const { scarcity, state } = vm;
   if (!scarcity || (state !== 'available' && state !== 'low')) return null;
   const isEarlyBird = vm.slug.endsWith('early-bird');
+  const shared = isEarlyBird && partner ? `${TICKET_COPY.sharedWith} ${partner}` : null;
+  const tag = state === 'low' ? TICKET_COPY.fewLeft : null;
+  if (counts === 'withhold') {
+    if (!tag && !shared) return null;
+    return (
+      <p data-ticket-count="" className="nk-count" aria-live="polite">
+        {tag ? <span className="nk-tag">{tag}</span> : null}
+        {shared ? <span className="nk-shared">{shared}</span> : null}
+      </p>
+    );
+  }
+  const figure = `${scarcity.remaining} of ${scarcity.total}`;
   return (
     <p data-ticket-count="" className="nk-count" aria-live="polite">
-      <span className="nk-n">{`${scarcity.remaining} of ${scarcity.total}`}</span>
-      {` ${scarcity.label}`}
-      {state === 'low' ? <span className="nk-tag">{TICKET_COPY.fewLeft}</span> : null}
-      {isEarlyBird && partner ? (
-        <span className="nk-shared">{`${TICKET_COPY.sharedWith} ${partner}`}</span>
-      ) : null}
+      <span data-placeholder={counts === 'placeholder' ? 'true' : undefined}>
+        <span className="nk-n">{figure}</span>
+        {` ${scarcity.label}`}
+        {counts === 'placeholder' ? (
+          <span className="nk-unconfirmed">{TICKET_COPY.unconfirmed}</span>
+        ) : null}
+      </span>
+      {tag ? <span className="nk-tag">{tag}</span> : null}
+      {shared ? <span className="nk-shared">{shared}</span> : null}
     </p>
   );
 }

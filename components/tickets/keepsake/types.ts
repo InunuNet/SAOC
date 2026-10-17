@@ -33,6 +33,10 @@ export interface KeepsakeCardVm {
   days: KeepsakeDay[] | null;
 }
 
+// How a stock count is shown: the real figure; withheld (a placeholder total on a public build);
+// or shown inside [data-placeholder] with the unconfirmed marker (a placeholder total on beta).
+export type CountDisplay = 'real' | 'withhold' | 'placeholder';
+
 export interface KeepsakePool {
   remaining: number;
   total: number;
