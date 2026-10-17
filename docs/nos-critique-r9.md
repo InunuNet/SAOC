@@ -22,3 +22,7 @@ A research chip inside a disclosure shows the existing short tag (`StatusMarker`
 ## F3 - no fractional-width gap in the chip steps
 
 The narrow chip steps use media range syntax, so a viewport of 419.5, 374.5 or 359.5px no longer falls between two integer steps: tracking 0 below 375px, 0.02em below 420px, 0.06em up to and including 700px, and the short tag below 360px (`StatusMarker`, on both spans). Values are unchanged. Each narrower tracking step adds a `:not([hidden])` to win by specificity. Measured: normal at 359, 360 and 374; 0.24px at 375 and 419; 0.72px at 420 and 700; 1.68px at 701; one line throughout.
+
+## F4 - one emergency label filter
+
+The plan-your-visit page no longer filters the emergency contacts by label; it passes `info?.emergencyContacts ?? []` to `VisitEmergency`, which keeps the one filter (it needs it for its null return). Behaviour is unchanged. The exhibitor-kind short tag below 360px stays as ruled in r8 F1 (opt-in through `ShowStatusLine`; `ExhibitorStatusBadge` callers are unchanged).

@@ -56,7 +56,6 @@ export default async function PlanYourVisitPage() {
   const researchLabel = info?.researchLabel;
   const status = info?.confirmations ?? {};
   const attractions = (info?.attractions ?? []).filter((a) => a?.name);
-  const emergencyContacts = (info?.emergencyContacts ?? []).filter((c) => c?.label);
 
   // The Getting-there items, in page order; an item with no body or list is not drawn.
   const gettingThereItems = [
@@ -118,7 +117,7 @@ export default async function PlanYourVisitPage() {
       <VisitEmergency
         title="In an emergency"
         label={EMERGENCY_LABEL}
-        contacts={emergencyContacts}
+        contacts={info?.emergencyContacts ?? []}
         status={status.emergencyContacts}
         pendingLabel={pendingLabel}
         researchLabel={researchLabel}
