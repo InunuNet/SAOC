@@ -84,9 +84,10 @@ function buildNavCards(show: ShowIdentity | null | undefined, withhold: boolean)
 
   return NAV_CARDS.map((card) => {
     if (card.href === SHOW_CARD_HREF) return { ...card, title, meta: meta || TBC };
-    // The About card's registration number is not a headline claim, so only its title is withheld.
+    // The About card's registration number is not a headline claim, so only its title is withheld;
+    // the card's own badge string stands in as its heading.
     if (card.unsourced && withhold) {
-      return { ...card, title: '', meta: card.badge === 'About' ? card.meta : '' };
+      return { ...card, title: card.badge, meta: card.badge === 'About' ? card.meta : '' };
     }
     return card;
   });

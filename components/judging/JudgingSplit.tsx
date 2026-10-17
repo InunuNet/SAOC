@@ -17,12 +17,9 @@ export function JudgingSplit({ heading, tone, marked = false, children }: Judgin
   return (
     <section className={`${tone === 'bone' ? 'bg-bone' : 'bg-parchment'} py-24`}>
       <div className="saoc-container">
-        <div data-judging-split>
+        <div data-judging-split data-placeholder={marked ? 'true' : undefined}>
           <h2 className="eyebrow justify-self-start">{heading}</h2>
-          <div
-            data-placeholder={marked ? 'true' : undefined}
-            className="flex max-w-[60ch] flex-col items-start gap-4"
-          >
+          <div className="flex max-w-[60ch] flex-col items-start gap-4">
             <div className="space-y-4 font-sans text-[16px] leading-[1.55] text-ink/80">
               {children}
             </div>

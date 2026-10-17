@@ -83,23 +83,21 @@ export default async function SponsorsPage() {
 
         {/* Reach — reused stat treatment from the home page. Public: no stat list, the figures are unsourced. */}
         {withhold ? null : (
-          <section>
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-6">
+          <section data-placeholder="true" className="flex flex-col items-start gap-4">
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted">
               Our reach
             </p>
-            <div data-placeholder="true" className="flex flex-col items-start gap-4">
-              <dl className="grid w-full grid-cols-2 gap-8 border-y border-rule py-10 sm:grid-cols-4">
-                {REACH_STATS.map((stat) => (
-                  <div key={stat.label}>
-                    <dt className="font-serif text-[32px] font-medium text-ink">{stat.value}</dt>
-                    <dd className="mt-1 font-mono text-[11px] tracking-[0.16em] text-muted">
-                      {stat.label}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-              <PlaceholderMarker />
-            </div>
+            <dl className="grid w-full grid-cols-2 gap-8 border-y border-rule py-10 sm:grid-cols-4">
+              {REACH_STATS.map((stat) => (
+                <div key={stat.label}>
+                  <dt className="font-serif text-[32px] font-medium text-ink">{stat.value}</dt>
+                  <dd className="mt-1 font-mono text-[11px] tracking-[0.16em] text-muted">
+                    {stat.label}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <PlaceholderMarker />
           </section>
         )}
 
