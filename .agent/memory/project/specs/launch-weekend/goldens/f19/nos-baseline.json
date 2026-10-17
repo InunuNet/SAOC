@@ -1,5 +1,5 @@
 {
- "head": "3f45db11",
+ "head": "bcf8684b",
  "routes": {
   "390/national-show": {
    "sig": [
@@ -38,18 +38,15 @@
     "h2|12px|18px",
     "h2|32px|36.8px",
     "h3|12px|18px",
-    "h3|24px|30px",
-    "h3|28px|35px",
     "p|12px|18px",
     "p|16px|24.8px",
-    "p|18px|27px",
     "p|20px|30px",
     "p|28px|43.4px"
    ],
    "left": [
     "16",
-    "36",
-    "60"
+    "32",
+    "36"
    ]
   },
   "390/national-show/plan-your-visit": {
@@ -161,11 +158,14 @@
     "h3|24px|30px",
     "p|12px|18.6px",
     "p|12px|18px",
+    "p|14px|20.3px",
+    "p|15px|23.25px",
     "p|16px|24.8px",
     "p|18px|27px"
    ],
    "left": [
     "16",
+    "32",
     "36",
     "88"
    ]
@@ -311,20 +311,15 @@
     "h2|12px|18px",
     "h2|48px|55.2px",
     "h3|12px|18px",
-    "h3|24px|30px",
-    "h3|44px|55px",
     "p|12px|18px",
     "p|16px|24.8px",
     "p|20px|30px",
-    "p|20px|32px",
     "p|28px|43.4px"
    ],
    "left": [
     "32",
     "64",
-    "88",
-    "515",
-    "672"
+    "515"
    ]
   },
   "1280/national-show/plan-your-visit": {
@@ -444,6 +439,8 @@
     "h3|24px|30px",
     "p|12px|18.6px",
     "p|12px|18px",
+    "p|14px|20.3px",
+    "p|15px|23.25px",
     "p|16px|24.8px",
     "p|20px|32px"
    ],
