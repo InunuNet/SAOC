@@ -47,3 +47,7 @@ renders nothing. This deviates from nos-v4 golden l.605-616 per Codi's FINAL rul
 Codi FINAL: at 374px and narrower the chip has letter-spacing 0 (the 0.02em step could not fit it at 360px). 375-419px keeps 0.02em and 420-700px keeps 0.06em. Measured: normal at 360 and 374, 0.24px at 375 and 419, 0.72px at 420 and 700.
 
 The section is a full-bleed band of --gold (nos-v4 plan-your-visit.html l.277-279): VisitEmergency renders a NosSection, and the page places it after the main NosSection and before the CtaBand. The h2 sits 32px above the numbers, and the band stays whatever the status.
+
+## F1 addendum - the short tag at 359px and below
+
+Codi FINAL: at 359px and narrower a pending chip shows the existing short tag instead of the full label; the group aria-label keeps the full text. `StatusMarker` (opt-in `shortOnNarrow`, forwarded by `ConfirmationBadge`, passed by `ShowStatusLine` and every disclosure badge) renders both spans and switches them with display at the 359/360 boundary, so only one is in the accessibility tree. The short tag is `StatusMarker`'s own `FALLBACK_PENDING_LABEL`. Research chips keep their full text (no ruled short form; flagged to the lead).

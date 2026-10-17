@@ -118,6 +118,7 @@ export function VisitGettingThere({ items, pendingLabel, researchLabel }: VisitG
         <VisitDisclosure label={GETTING_THERE_LABEL}>
           <div>
             <ConfirmationBadge
+              shortOnNarrow
               status={chipStatus}
               pendingLabel={pendingLabel}
               researchLabel={researchLabel}
@@ -223,6 +224,7 @@ export function VisitAttractions({
       <VisitDisclosure label={GETTING_THERE_LABEL}>
         <div>
           <ConfirmationBadge
+            shortOnNarrow
             status={status === 'research' ? 'research' : 'pending'}
             pendingLabel={pendingLabel}
             researchLabel={researchLabel}
@@ -330,6 +332,7 @@ export function VisitEmergency({
         <VisitDisclosure label={label} tone="pale">
           <div>
             <ConfirmationBadge
+              shortOnNarrow
               status={status === 'research' ? 'research' : 'pending'}
               pendingLabel={pendingLabel}
               researchLabel={researchLabel}

@@ -67,6 +67,7 @@ export function ShowStatusLine({
       status={status}
       pendingLabel={pendingLabel}
       researchLabel={researchLabel}
+      shortOnNarrow
     />
   );
   if (!items || items.length === 0) return marker;

@@ -71,6 +71,11 @@ export interface StatusMarkerProps {
   tone?: StatusMarkerTone;
   /** Confirmation-only (`ExhibitorStatusBadge` always renders `p`, as before). */
   as?: StatusMarkerRoot;
+  /**
+   * Opt-in. A pending marker also carries the short tag (FALLBACK_PENDING_LABEL); CSS shows it
+   * instead of the full label at <=359px, so only one string is in the accessibility tree.
+   */
+  shortOnNarrow?: boolean;
 }
 
 export function StatusMarker({
@@ -81,6 +86,7 @@ export function StatusMarker({
   questionLabel,
   tone = 'light',
   as: Root = 'p',
+  shortOnNarrow = false,
 }: StatusMarkerProps) {
   // The ONLY early return, shared by both kinds — never split into a second branch.
   if (status === 'confirmed') return null;
@@ -110,6 +116,8 @@ export function StatusMarker({
   const dataProps: Record<string, string> =
     kind === 'exhibitor' ? { 'data-exhibitor-marker': marker } : { 'data-confirmation-badge': marker };
 
+  const showShort = shortOnNarrow && marker === 'pending' && label !== FALLBACK_PENDING_LABEL;
+
   return (
     <Root
       {...dataProps}
@@ -120,7 +128,10 @@ export function StatusMarker({
       ].join(' ')}
     >
       <span aria-hidden="true">※</span>
-      <span>{label}</span>
+      <span className={showShort ? '[@media(max-width:359px)]:hidden' : undefined}>{label}</span>
+      {showShort ? (
+        <span className="hidden [@media(max-width:359px)]:inline">{FALLBACK_PENDING_LABEL}</span>
+      ) : null}
     </Root>
   );
 }
