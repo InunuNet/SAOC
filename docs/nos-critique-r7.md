@@ -21,6 +21,13 @@ individual item. The three separate `VisitorInfoBlock` cards are gone from this 
 `what-to-expect` still uses that component. The golden's closing sentence is not drawn: in the seed
 it is already the second sentence of the section lede, and Sanity holds no separate field for it.
 
+**While you are here.** `VisitAttractions` (same file) applies the same status rule (Codi FINAL).
+Confirmed: a plain section, the h2 and the existing item cards, with no surface and no chip. Any
+other status (pending, research or unset): the h2, then ONE gold `role="group"` (the golden's
+"Details to be confirmed by the show committee") with one chip, pending or unset beating research,
+holding the items with no card around them. No attractions renders nothing. The heading outline is
+now h2 for Getting there, While you are here and In an emergency, with the attraction items at h3.
+
 **Venue aside.** DOM order is the Getting-there group, then the venue aside, then the emergency
 section.
 

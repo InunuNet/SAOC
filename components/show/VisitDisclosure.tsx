@@ -12,6 +12,8 @@
 
 import type { ReactNode } from 'react';
 
+import { Card } from '../nos/Card';
+import { SectionHeading } from '../nos/SectionHeading';
 import { ConfirmationBadge } from './ConfirmationBadge';
 
 export interface VisitDisclosureProps {
@@ -111,5 +113,99 @@ export function VisitGettingThere({ items, pendingLabel, researchLabel }: VisitG
         </VisitDisclosure>
       ) : null}
     </>
+  );
+}
+
+export interface VisitAttraction {
+  _key?: string;
+  name?: string | null;
+  note?: string | null;
+  url?: string | null;
+}
+
+export interface VisitAttractionsProps {
+  // The section's h2, passed in by the page.
+  title: string;
+  attractions: VisitAttraction[];
+  status?: string | null;
+  pendingLabel?: string | null;
+  researchLabel?: string | null;
+}
+
+function AttractionBody({ attraction }: { attraction: VisitAttraction }) {
+  return (
+    <>
+      <h3 className="font-serif text-[18px] font-medium text-ink">{attraction.name}</h3>
+      {attraction.note ? (
+        <p className="mt-2 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-muted">
+          {attraction.note}
+        </p>
+      ) : null}
+      {attraction.url ? (
+        <a
+          href={attraction.url}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="mt-3 inline-block font-sans text-[13px] underline underline-offset-2 hover:text-accent"
+        >
+          Visit website ↗
+        </a>
+      ) : null}
+    </>
+  );
+}
+
+// "While you are here", under the same status rule as Getting there. Confirmed: a plain section,
+// the h2 and the existing item cards, no surface and no chip. Anything else (pending, research or
+// unset): the h2, then ONE gold group with one chip (pending or unset beats research) holding the
+// items with no card around them. No attractions renders nothing.
+export function VisitAttractions({
+  title,
+  attractions,
+  status,
+  pendingLabel,
+  researchLabel,
+}: VisitAttractionsProps) {
+  const shown = attractions.filter((attraction) => attraction.name);
+  if (shown.length === 0) return null;
+
+  const keyOf = (attraction: VisitAttraction, index: number) =>
+    attraction._key ?? `${attraction.name}-${index}`;
+
+  if (status === 'confirmed') {
+    return (
+      <section className="space-y-6">
+        <SectionHeading as="h2" title={title} />
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {shown.map((attraction, index) => (
+            <li key={keyOf(attraction, index)}>
+              <Card className="h-full">
+                <AttractionBody attraction={attraction} />
+              </Card>
+            </li>
+          ))}
+        </ul>
+      </section>
+    );
+  }
+
+  return (
+    <section className="space-y-6">
+      <SectionHeading as="h2" title={title} />
+      <VisitDisclosure label={GETTING_THERE_LABEL}>
+        <div>
+          <ConfirmationBadge
+            status={status === 'research' ? 'research' : 'pending'}
+            pendingLabel={pendingLabel}
+            researchLabel={researchLabel}
+          />
+        </div>
+        {shown.map((attraction, index) => (
+          <div key={keyOf(attraction, index)} className="grid gap-1">
+            <AttractionBody attraction={attraction} />
+          </div>
+        ))}
+      </VisitDisclosure>
+    </section>
   );
 }

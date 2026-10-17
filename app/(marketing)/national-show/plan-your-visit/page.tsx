@@ -3,12 +3,15 @@ import Link from 'next/link';
 
 import { AccommodationList, ConfirmationBadge, TravelRoutes, VenueCard } from '@/components/show';
 import { Button } from '@/components/nos/Button';
-import { Card } from '@/components/nos/Card';
 import { CtaBand } from '@/components/nos/CtaBand';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { SectionHeading } from '@/components/nos/SectionHeading';
-import { VisitDisclosure, VisitGettingThere } from '@/components/show/VisitDisclosure';
+import {
+  VisitAttractions,
+  VisitDisclosure,
+  VisitGettingThere,
+} from '@/components/show/VisitDisclosure';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowVenueQuery, showVisitorInfoQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
@@ -106,42 +109,13 @@ export default async function PlanYourVisitPage() {
           </aside>
         </div>
 
-        {attractions.length > 0 ? (
-          <section className="nos-surface">
-            <SectionHeading as="h3" title="While you are here" />
-            <ConfirmationBadge
-              status={status.attractions}
-              pendingLabel={pendingLabel}
-              researchLabel={researchLabel}
-            />
-            <ul className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {attractions.map((attraction, index) => (
-                <li key={attraction._key ?? `${attraction.name}-${index}`}>
-                  <Card className="h-full">
-                    <h3 className="font-serif text-[18px] font-medium text-ink">
-                      {attraction.name}
-                    </h3>
-                    {attraction.note ? (
-                      <p className="mt-2 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-muted">
-                        {attraction.note}
-                      </p>
-                    ) : null}
-                    {attraction.url ? (
-                      <a
-                        href={attraction.url}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="mt-3 inline-block font-sans text-[13px] underline underline-offset-2 hover:text-accent"
-                      >
-                        Visit website ↗
-                      </a>
-                    ) : null}
-                  </Card>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
+        <VisitAttractions
+          title="While you are here"
+          attractions={attractions}
+          status={status.attractions}
+          pendingLabel={pendingLabel}
+          researchLabel={researchLabel}
+        />
 
         {emergencyContacts.length > 0 ? (
           <section>
