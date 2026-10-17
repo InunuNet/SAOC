@@ -52,6 +52,7 @@ function measure({ a, K }) {
       cta: cta ? { h: rc(cta).height, text: (cta.textContent ?? '').replace(/\s+/g, ' ').trim() } : null,
       steppers: [...c.querySelectorAll(`${a.stepper} button`)].map((b) => rc(b)),
       days: [...c.querySelectorAll(a.dayCell)].map((x) => rc(x).height),
+      countLines: c.querySelectorAll('[data-ticket-count]').length, dayText: [...c.querySelectorAll(a.dayCell)].map((x) => (x.textContent ?? '').replace(/\s+/g, ' ').trim()).join(' | '), marked: c.querySelectorAll('[data-placeholder]').length,
       stubImgs: stub ? [...stub.querySelectorAll('img')].map((i) => ({ src: i.currentSrc || i.getAttribute('src') || '', alt: i.getAttribute('alt') })).filter((i) => !/disa|emblem/i.test(i.src)) : [],
     };
   });
@@ -91,7 +92,7 @@ function measure({ a, K }) {
     fan: fan ? { grid: getComputedStyle(fan).display, cols: getComputedStyle(fan).gridTemplateColumns.split(' ').length, links: links.map((l) => ({ href: l.getAttribute('href'), rect: rc(l), label: l.getAttribute('aria-label'), text: (l.textContent ?? '').replace(/\s+/g, ' ').trim(), img: [...l.querySelectorAll('img')].map((i) => i.currentSrc || i.getAttribute('src') || '').filter((x) => !/disa|emblem/i.test(x))[0] ?? null })) } : null,
     cards, sections,
     ids,
-    pool: pool ? { h: rc(pool).height, num: parseFloat(getComputedStyle(q('[aria-hidden="true"]', pool) ?? pool).fontSize) } : null,
+    pool: pool ? { h: rc(pool).height, num: parseFloat(getComputedStyle(q('[aria-hidden="true"]', pool) ?? pool).fontSize), text: (pool.textContent ?? '').replace(/\s+/g, ' ').trim(), digits: /\d/.test(pool.textContent ?? ''), marked: pool.querySelectorAll('[data-placeholder]').length } : null,
     bracket: bracket ? { shown: getComputedStyle(bracket).display !== 'none' && rc(bracket).height > 0 } : null,
     visit: visit ? [...visit.querySelectorAll('a')].map((x) => x.getAttribute('href')) : null,
     groups: K.keptGroups.map((g) => !!document.getElementById(g)), exhibit, ledes, progCards,
@@ -280,6 +281,26 @@ await main('F18-A29 v13 tickets hub', async (r) => {
       }
       for (const b of [...K.cta.bannedOnPaid, 'Join the waitlist', 'Proposed']) if (m.text.includes(b)) r.fail(`${tag}: banned wording "${b}" on the page`);
       for (const s of K.sampleNumbersBanned) if (m.text.includes(s)) r.fail(`${tag}: the sample string "${s}" is rendered`);
+      // design-cb FINAL P2-3: public hides every count whose total is not from Sanity (capacity / releasedQuantity), and shows no provisional marker either
+      if (cms?.sourced) {
+        const faceOf = (n) => (n ?? '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+        for (const c of m.cards) {
+          if (c.session || !c.slug || cms.sourced.has(c.slug)) continue;
+          if (c.countLines) r.fail(`${tag} ${c.id}: a stock count renders though ${c.slug} has no Sanity capacity (a provisional total is hidden in public)`);
+          if (/\bof \d+/.test(c.dayText)) r.fail(`${tag} ${c.id}: day cells show "of N" though ${c.slug} has no Sanity capacity (public day cells show the day only)`);
+          if (c.marked) r.fail(`${tag} ${c.id}: a [data-placeholder] count marker renders in the public build`);
+        }
+        const members = ['weekend-pass-early-bird', 'early-bird'];
+        if (m.pool && members.some((s) => !cms.sourced.has(s))) {
+          const w = faceOf(m.cards.find((c) => c.id === 'ticket-weekend')?.nameText);
+          const dd = faceOf(m.cards.find((c) => c.id === 'ticket-day')?.nameText);
+          const want = C.strings.poolTextProvisional.replace('{weekend}', w).replace('{day}', dd);
+          if (m.pool.digits) r.fail(`${tag}: the pool banner shows a numeral though its total is provisional ("${m.pool.text.slice(0, 60)}")`);
+          if (!m.pool.text.includes(C.strings.poolTitleProvisional) || m.pool.text.includes(C.strings.poolTitle)) r.fail(`${tag}: the provisional pool banner heading is not "${C.strings.poolTitleProvisional}"`);
+          if (!m.pool.text.includes(want)) r.fail(`${tag}: the provisional pool banner sentence is not "${want}"`);
+          if (m.pool.marked) r.fail(`${tag}: the public pool banner carries a [data-placeholder] marker`);
+        }
+      }
       if (m.pool) {
         if (w >= K.pool.bracketFromPx && !(m.bracket?.shown)) r.fail(`${tag}: the pool bracket is not shown from ${K.pool.bracketFromPx}px up`);
         if (w < K.pool.bracketFromPx && m.bracket?.shown) r.fail(`${tag}: the pool bracket shows below ${K.pool.bracketFromPx}px`);
