@@ -67,10 +67,12 @@ YearbookStrip 18px/1.65, hero lede 20px/1.5; about and others 16px/1.63 (`leadin
 - **R12 Contact (A24).** name/email `autoComplete`; field boundary 3:1; button 44px; a `role="status"` region present before submit that carries the success message; error element with an id listed in the textarea's `aria-describedby` plus `aria-invalid`. Address: a sourced address only, otherwise a holding state (`data-content-gap`). Only info@saoc.co.za is sourced. VenueCard is not edited. There is no tel field, so tel autocomplete is N/A (adding one would be new copy).
 - **R13 Taps (A25).** SAOC footer links, newsletter input and button at least 44x44 at 390 on /, /about, /contact, /events. Footer.tsx and footer-data.ts are allowed (see allowlist); the rest of `components/chrome/**` stays forbidden.
 
+- **R9b Furniture.** Withholding a fact also removes its labels, headings and role names. A11p allows that: a public removal passes when the leaf sits inside `[data-placeholder]` on beta. So the dev must wrap the furniture of every withheld block in the same `[data-placeholder]` element as the fact, or the removal fails.
+
 ## 3. Hooks the dev adds (checks depend on them)
 
 `data-hero-scrim="diagonal|veil|bone"`, `data-hero-lede`, `data-hero-ctas`, `data-hero-cta="primary|secondary"`, `data-home-section="events"`, `data-yearbook-copy`,
-`data-page-hero` (PageHero root), `data-judging-split`, class `saoc-container`, `data-content-gap`, `data-placeholder`. Existing hooks (`data-home-section`, `data-yearbook-*`) stay.
+`data-page-hero` (PageHero root), `data-judging-split`, class `saoc-container`, `data-content-gap`, `data-placeholder`, `data-placeholder-marker` (on each marker string element; f14 copy extraction skips it). Existing hooks (`data-home-section`, `data-yearbook-*`) stay.
 
 ## 4. File allowlist (A10 enforces; anything else changed fails)
 

@@ -1,4 +1,5 @@
 // Section extraction that works on the untouched tree and on the F14 build (text locators, no F14 hooks).
+// F19: leaves inside [data-placeholder-marker] (the "Not confirmed by SAOC" markers the beta preview shows, A22) are not copy and are skipped.
 // Shared by capture-golden.mjs, check-g-others.mjs and check-i-copy.mjs. The four F14 sections are located by their
 // own copy: nav (h2 "Four ways into SAOC"), band (h2 with "National Orchid Show"), yearbook (h2 with "yearbook"),
 // partners (eyebrow "In collaboration with"). Everything else in <main> is "others".
@@ -17,7 +18,7 @@ export const EXTRACT_SRC = `(() => {
   const yearbook = secs.find((s) => h2(s).includes(${JSON.stringify(YEARBOOK_H2)}));
   const partners = secs.find((s) => s.textContent.includes(${JSON.stringify(PARTNERS_EYEBROW)}) && !h2(s));
   const mine = new Set([nav, band, yearbook, partners]);
-  const leaves = (el) => { const out = []; const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); while (w.nextNode()) { const t = w.currentNode.textContent.trim(); if (t) out.push(t); } return out; };
+  const leaves = (el) => { const out = []; const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); while (w.nextNode()) { const t = w.currentNode.textContent.trim(); if (t && !w.currentNode.parentElement.closest('[data-placeholder-marker]')) out.push(t); } return out; };
   const norm = (html) => html.replace(/_R_[a-zA-Z0-9_]+_/g, '_R_').replace(/:r[0-9a-z]+:/g, ':r:').replace(/data-nextjs[^=]*="[^"]*"/g, '');
   const others = {};
   secs.forEach((s, i) => { if (mine.has(s)) return; others[i + ':' + (h2(s) || 'untitled').slice(0, 40)] = norm(s.outerHTML); });

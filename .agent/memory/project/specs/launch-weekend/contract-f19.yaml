@@ -84,7 +84,7 @@ assertions:
       description: SAOC footer tap targets at 390 - every link, button and input in the SAOC footer on home, about, contact and events is at least 44x44
       command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f19/check-s-taps.mjs
     - id: F19-A11p
-      description: Copy guard on the PUBLIC build - same comparison as A11 (typographic quotes folded to straight on both sides, a built-in probe proves a new word still fails) with the vote-1C withholding allowed - a removed leaf may match provenance.unsourced, every other removal and every addition beyond the markers and the ABSENT sentence fails
+      description: Copy guard on the PUBLIC build - same comparison as A11 (typographic quotes folded to straight on both sides, a built-in probe proves a new word still fails) with the vote-1C withholding allowed - a removed leaf may match provenance.unsourced, a removed leaf is also allowed when the same leaf sits inside a [data-placeholder] element on the beta build (furniture rule - labels, headings and role names around a withheld fact, leading punctuation folded); a removal not marked on beta and every addition beyond the markers and the ABSENT sentence still fail (probes built in)
       command: F19_COPY_PUBLIC=1 PUBLIC_URL=http://localhost:3620 node contracts/checks/launch-weekend/f19/check-m-copy.mjs
     - id: F19-A26
       description: Hero CTA on the veil (design-cb ruling) - on all 4 slides at 390 and 1280 the primary is an ivory/bone fill with primary-colour label (fill vs the veil at least 3:1, label vs fill at least 4.5:1), the secondary an ivory outline (alpha at least .85, 1px or more, border vs the veil at least 4.5:1, text at least 4.5:1), same height and radius, both sentence case
