@@ -8,6 +8,8 @@
 // values; they reach the page as CSS variables on the `.nos-theme` scope (TICKET_THEME_VARS).
 // =============================================================
 
+import { WORKSHOP_SESSION_CAPACITY } from '@/lib/provisional-figures';
+
 export type TicketProductId =
   | 'vip'
   | 'sunset'
@@ -157,9 +159,9 @@ export const TICKET_PRODUCTS: Record<TicketProductId, TicketProduct> = {
     kind: 'workshop',
     name: 'Workshops',
     when: 'Schedule to follow',
-    meta: '10 places in each session',
+    meta: `${WORKSHOP_SESSION_CAPACITY} places in each session`,
     theme: null,
-    numeral: '10',
+    numeral: String(WORKSHOP_SESSION_CAPACITY),
     caption: 'places a session',
     photo: '/images/orchid-violet.jpg',
     focus: '40% 50%',

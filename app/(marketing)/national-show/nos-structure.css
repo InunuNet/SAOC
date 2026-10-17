@@ -777,16 +777,22 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   border: 1.5px solid transparent;
   border-radius: var(--radius-ticket);
   cursor: pointer;
-  transition:
-    background-color var(--dur-med) var(--ease-nos),
-    color var(--dur-med) var(--ease-nos),
-    border-color var(--dur-med) var(--ease-nos),
-    transform var(--dur-fast) var(--ease-nos);
 }
 .nos-theme .nk-btn .nk-icon {
   width: 16px;
   height: 16px;
-  transition: transform var(--dur-slow) var(--ease-nos);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nos-theme .nk-btn {
+    transition:
+      background-color var(--dur-med) var(--ease-nos),
+      color var(--dur-med) var(--ease-nos),
+      border-color var(--dur-med) var(--ease-nos),
+      transform var(--dur-fast) var(--ease-nos);
+  }
+  .nos-theme .nk-btn .nk-icon {
+    transition: transform var(--dur-slow) var(--ease-nos);
+  }
 }
 .nos-theme .nk-btn:hover .nk-icon {
   transform: translateX(3px);
