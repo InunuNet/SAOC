@@ -26,3 +26,7 @@ The narrow chip steps use media range syntax, so a viewport of 419.5, 374.5 or 3
 ## F4 - one emergency label filter
 
 The plan-your-visit page no longer filters the emergency contacts by label; it passes `info?.emergencyContacts ?? []` to `VisitEmergency`, which keeps the one filter (it needs it for its null return). Behaviour is unchanged. The exhibitor-kind short tag below 360px stays as ruled in r8 F1 (opt-in through `ShowStatusLine`; `ExhibitorStatusBadge` callers are unchanged).
+
+## F1 amendment - density srcsets, capped at 2x
+
+Codi FINAL: no lockup fetches more than twice its box. The header is one `<picture>` (a `(max-width: 699px)` source for the 390px box, and the 448px `<img>`), and the footer keeps its one picture; every srcset is a 1x/2x pair built by `getImageProps` from the CSS box width with no `sizes`, so DPR 3 falls back to the 2x file. The `<img>` keeps its 1200x294 attributes, eager and high priority in the header and lazy and async in the footer.
