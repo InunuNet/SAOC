@@ -4,7 +4,7 @@
 //              false and is gone: no "Joint", no "SAOC Symposium" anywhere in main or the meta description)
 //  R11 card -> no .nos-surface in main holds only a chip: after the "To be confirmed" chip text is removed at least 4 words of an existing sentence remain, else the card must not exist
 //              (no R11 card without a sentence, no ~120px of empty surface)
-//  cards    -> every ticket card (article[id^="ticket-"]) carries the v13 shadow (box-shadow not none) and no 1px border (R17); every price is whole rand ("R2000": no ".00", no decimals)
+//  cards    -> every ticket card (article[id^="ticket-"]) carries the v13 filter drop-shadow (on the card or inside it; box-shadow is forbidden by A10) and no 1px border (R17); every price is whole rand ("R2000": no ".00", no decimals)
 //  Buy      -> where a quantity form renders, Buy is ENABLED at quantity 0 and a click shows exactly "Choose at least one ticket" inline (vote 2B)
 //  total    -> where a total renders it reads "Estimated total" exactly once, with no "(ESTIMATE)" suffix and no "R0.00"
 //  index    -> the full Explore index renders and no mini "Explore the show" list does (rotation ruling 4)
@@ -32,7 +32,7 @@ function measure() {
     heroText,
     mainText: t(main),
     surfaces: qa('main .nos-surface').map((e) => ({ text: t(e), h: e.getBoundingClientRect().height })),
-    cards: qa('main article[id^="ticket-"]').map((c) => { const s = getComputedStyle(c); return { id: c.id, shadow: s.boxShadow, border: parseFloat(s.borderTopWidth), text: t(c) }; }),
+    cards: qa('main article[id^="ticket-"]').map((c) => { const s = getComputedStyle(c); return { id: c.id, shadow: [c, ...c.querySelectorAll('[data-ticket-stub], div, section')].some((e) => /drop-shadow/.test(getComputedStyle(e).filter)) ? 'drop-shadow' : 'none', border: parseFloat(s.borderTopWidth), text: t(c) }; }),
     buy: buy ? { disabled: buy.disabled || buy.getAttribute('aria-disabled') === 'true' } : null,
     totals: qa('main [data-catalogue-total]').map(t),
     mini: qa('main [data-nos-holding-cards]').length + qa('main h2, main h3, main p, main span').filter((e) => t(e).toLowerCase() === 'explore the show' && !e.closest('nav[aria-label="Explore the show pages"]')).length,
@@ -65,7 +65,7 @@ await main('F18-A37 conferences page', async (r) => {
       if (m.mini) r.fail(`${tag}: ${m.mini} mini "Explore the show" list/cards render beside the full index`);
       if (!m.cards.length) { if (name === '1280') r.note(`${tag}: no ticket cards (sales closed or no conference types): card, Buy and total rules not measured`); await ctx.close(); continue; }
       for (const c of m.cards) {
-        if (!c.shadow || c.shadow === 'none') r.fail(`${tag} ${c.id}: no card shadow (the v13 shadow is required, R17)`);
+        if (c.shadow !== 'drop-shadow') r.fail(`${tag} ${c.id}: no filter drop-shadow on the card (the v13 shadow is a filter drop-shadow, never box-shadow, which A10 forbids; R17)`);
         if (c.border >= 1) r.fail(`${tag} ${c.id}: a ${c.border}px border (R17: the v13 shadow, not a 1px olive border)`);
         for (const price of c.text.match(/R\s?\d[\d\s,]*(?:\.\d+)?/g) ?? []) if (/\.\d/.test(price)) r.fail(`${tag} ${c.id}: price "${price.trim()}" has decimals (whole rand, e.g. R2000)`);
       }

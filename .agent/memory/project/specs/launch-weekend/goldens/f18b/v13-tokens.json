@@ -33,7 +33,8 @@
     "stepperButtonPx": 44,
     "dayCellMinPx": 58,
     "radiusPx": 10,
-    "tolerancePx": 1.5
+    "tolerancePx": 1.5,
+    "_horizontalStubMinPx": "This is the horizontal stub's MIN HEIGHT (min-height: 300px), not its width; the width is --stub (stubHeightPx 168, sessionStubHeightPx 150). Fixed 2026-10-17 after the check measured width against it."
   },
   "fan": {
     "count": 4,
