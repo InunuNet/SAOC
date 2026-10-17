@@ -23,11 +23,11 @@ export async function loadCmsNames() {
   const ds = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production';
   if (!pid) return null;
   try {
-    const q = encodeURIComponent('{"types":*[_type=="ticketType"]{name,"slug":slug.current},"show":*[_type=="nationalShow"][0]{showDate,showEndDate}}');
+    const q = encodeURIComponent('{"types":*[_type=="ticketType"]{name,capacity,releasedQuantity,"slug":slug.current},"show":*[_type=="nationalShow"][0]{showDate,showEndDate}}');
     const res = await fetch(`https://${pid}.apicdn.sanity.io/v2024-10-01/data/query/${ds}?query=${q}`);
     if (!res.ok) return null;
     const j = await res.json();
-    return { names: Object.fromEntries((j.result?.types ?? []).map((t) => [t.slug, t.name])), show: j.result?.show ?? null };
+    return { names: Object.fromEntries((j.result?.types ?? []).map((t) => [t.slug, t.name])), sourced: new Set((j.result?.types ?? []).filter((t) => Number.isFinite(t.capacity) || Number.isFinite(t.releasedQuantity)).map((t) => t.slug)), show: j.result?.show ?? null };
   } catch { return null; }
 }
 

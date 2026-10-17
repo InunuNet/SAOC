@@ -153,7 +153,7 @@
   "links": {
     "dayPassFrom": {
       "selector": "[data-day-pass-from]",
-      "note": "R30 (1): under the hub hero CTAs; amount = the effective price of the Day Pass card (builder output dayPassFrom, resolveEffectivePrice, never an expired early bird); not rendered when null (R7)."
+      "note": "R30 (1) (line text is '<Day card CMS name, faceName> from R<amount>', design-cb P2-1): under the hub hero CTAs; amount = the effective price of the Day Pass card (builder output dayPassFrom, resolveEffectivePrice, never an expired early bird); not rendered when null (R7)."
     },
     "closeBand": {
       "selector": "[data-nos-ticket-close]",

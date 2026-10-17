@@ -6,6 +6,7 @@
 //   early bird  -> struck "Early-bird price" line on the sold-out state, "Early-bird R360, then R380" under the price on the live early-bird SKU, "Shared with the <partner>" only on early-bird SKUs
 //   Day Pass    -> fieldset legend "Choose a day", one native radio per days[] entry ("Fri 24" + "58 of 1000"), disabled radios for soldOut/pricePending/earlyBirdSoldOut, no count when remaining is null, first selectable checked
 //   CTA         -> "Buy ticket" on every paid product including the National Orchid Show Symposium, WOSA Conference and session cards; never "Register" or "Add to booking"; the Workshops product card says "Choose a session" and links #sessions
+//   provisional -> a count whose total is provisional (scarcity/days/pool .provisional) is hidden in public (no count line, day cells show the day only, pool banner has no numeral and reads "Early-bird tickets" + the shared-pool sentence with the CMS names) and shown in beta inside [data-placeholder] with "Not yet confirmed"; state words still show
 //   PoolBanner  -> role group, numeral + "of <total>", "Early-bird tickets left"; out state "Early bird sold out"; null pool renders nothing; data-pool-bracket present when a pool renders
 //   TicketFan   -> [data-nos-ticket-fan] with 4 [data-fan-link] anchors #ticket-vip, #ticket-sunset, #ticket-weekend, #ticket-day labelled "<name>, R<price>" / ", price to follow" / ", sold out"
 //   sessions    -> every WorkshopSessionViewModel null case of HANDOFF 3.7
@@ -141,6 +142,8 @@ h = sess({ ticketCard: null });
 if (!has(h, S.sessionNotOpen) || buttons(h).length) fail('session: null ticketCard must say "Booking for this session is not open yet." with no button');
 h = sess({ ticketCard: vm({ slug: 'workshop-w1', state: 'soldOut', price: 100, scarcity: { remaining: 0, total: 10, label: 'places left' } }) });
 if (buttons(h).length || !has(h, S.soldOutLine)) fail('session soldOut: a button renders or the sold-out line is missing');
+h = sess({ ticketCard: vm({ slug: 'workshop-w1', price: 100, scarcity: { remaining: 6, total: 10, label: 'places left', provisional: true } }) });
+if (/\b6 of 10\b/.test(txt(h)) || /data-ticket-count/.test(h)) fail('session with a provisional total, public: the count renders');
 h = sess({ presenterId: 'p1', presenterName: 'Fixture Presenter' });
 if (!has(h, 'With Fixture Presenter')) fail('session: "With <presenter name>" missing');
 
@@ -153,6 +156,35 @@ if (!/data-pool-bracket/.test(h)) fail('PoolBanner: no [data-pool-bracket] (show
 h = R('PoolBanner', { pool: { remaining: 0, total: 500 } });
 if (!has(h, S.poolOutTitle) || !has(h, 'Both passes are now at their normal price.')) fail('PoolBanner out: "Early bird sold out" copy missing');
 if (R('PoolBanner', { pool: null }).replace(/<!--.*?-->/g, '').trim() !== '') fail('PoolBanner: a null pool must render nothing (R7)');
+
+// provisional counts (design-cb FINAL P2-3): public hides them, beta shows them marked, state words always show
+{
+  const prov = vm({ scarcity: { remaining: 146, total: 200, label: 'places left', provisional: true } });
+  h = card('vip', prov);
+  if (/data-ticket-count/.test(h) || /146 of 200/.test(txt(h))) fail('provisional scarcity, public: the count line renders');
+  if (!/data-max="10"/.test(h)) fail('provisional scarcity, public: stepper max must stay 10 (no provisional remaining leaks into it)');
+  h = card('vip', prov, { showProvisional: true });
+  if (!has(h, '146 of 200 places left') || !/data-placeholder/.test(h) || !has(h, S.notYetConfirmed)) fail('provisional scarcity, beta: the count must render inside [data-placeholder] with the "Not yet confirmed" marker');
+  h = card('vip', vm({ state: 'low', scarcity: { remaining: 3, total: 200, label: 'places left', provisional: true } }));
+  if (!has(h, S.fewLeft)) fail('provisional low, public: the state word "Few left" must still show');
+  if (/\b3 of 200\b/.test(txt(h))) fail('provisional low, public: the count renders beside the state word');
+  const pdv = vm({ slug: 'day-visitor', price: 150, scarcity: null, days: [{ day: '2027-09-24', state: 'low', remaining: 58, total: 1000 }, { day: '2027-09-25', state: 'soldOut', remaining: 0, total: 1000 }, { day: '2027-09-26', state: 'available', remaining: 905, total: 1000 }] });
+  const provDays = (pdv.days as Obj[]).map((d) => ({ ...d, provisional: true }));
+  h = card('day', { ...pdv, days: provDays });
+  if (/\d+ of \d+/.test(txt(h))) fail('provisional day cells, public: an "N of M" sub-line renders (public day cells show the day only)');
+  for (const t of ['Fri 24', 'Sat 25', 'Sun 26', S.soldOutStamp, S.fewLeft]) if (!has(h, t)) fail(`provisional day cells, public: "${t}" missing (the day and its state word stay)`);
+  h = card('day', { ...pdv, days: provDays }, { showProvisional: true });
+  if (!has(h, '58 of 1000') || !/data-placeholder/.test(h) || !has(h, S.notYetConfirmed)) fail('provisional day cells, beta: counts must render inside [data-placeholder] with "Not yet confirmed"');
+  const poolNames = { weekend: 'Weekend Pass', day: 'Early-Bird Exhibition Ticket' };
+  h = R('PoolBanner', { pool: { remaining: 312, total: 500, provisional: true }, names: poolNames });
+  const wantText = S.poolTextProvisional.replace('{weekend}', poolNames.weekend).replace('{day}', poolNames.day);
+  if (!has(h, S.poolTitleProvisional) || has(h, S.poolTitle)) fail('PoolBanner provisional, public: the heading must be "Early-bird tickets" (not "Early-bird tickets left")');
+  if (!has(h, wantText)) fail(`PoolBanner provisional, public: the sentence is not "${wantText}"`);
+  if (/\d/.test(txt(h))) fail('PoolBanner provisional, public: a numeral renders');
+  if (!/data-pool-banner/.test(h)) fail('PoolBanner provisional, public: lost its [data-pool-banner] hook');
+  h = R('PoolBanner', { pool: { remaining: 312, total: 500, provisional: true }, names: poolNames, showProvisional: true });
+  if (!has(h, '312') || !has(h, 'of 500') || !/data-placeholder/.test(h) || !has(h, S.notYetConfirmed)) fail('PoolBanner provisional, beta: the numeral must render inside [data-placeholder] with "Not yet confirmed"');
+}
 
 // hero fan
 const fanCards = { vip: vm({ price: 300 }), sunset: vm({ slug: 'sunset-cocktails-single', price: 800, state: 'soldOut' }), weekend: vm({ slug: 'weekend-pass-early-bird', price: 360, regularPrice: 380 }), day: vm({ slug: 'early-bird', price: 120, state: 'pricePending' }) };
