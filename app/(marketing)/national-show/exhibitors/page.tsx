@@ -78,7 +78,7 @@ function markerOf(status?: string | null): Marker | null {
   return status === 'research' || status === 'question' ? status : 'pending';
 }
 
-const SENTENCE_BOUNDARY = /\.\s+(?=[A-Z])/;
+const SENTENCE_BOUNDARY = /[.!?]\s/;
 
 // A public build leads with the intro's first sentence only; the committee provenance that
 // follows is preview material. No boundary found: the whole string, never a guess.
