@@ -4,7 +4,7 @@ Mission `launch-weekend`, feature F19. Spec: `.agent/memory/project/specs/launch
 Contract: `.agent/memory/project/specs/launch-weekend/contract-f19.yaml`. Design rulings are design-cb's and are final.
 
 F19 does two things to the SAOC (council) site and nothing to the National Show (NOS): it applies the design-cb pass
-(hero scrim, one left axis, judging split, 16/1.55 type, casing, tap targets, font split), and it makes the public
+(hero scrim, one left axis, judging split, 16/1.55 type, casing, tap targets), and it makes the public
 build stop publishing facts the Council has not supplied.
 
 ## 1. Hero scrim and veil
@@ -90,22 +90,15 @@ Where a whole section is withheld the public page shows `ContentGap`, a `[data-c
 `PlaceholderMarker` replaces the `StatusMarker` glyph chip here on purpose: the decorative glyph is an extra text leaf,
 and F19 adds no copy beyond existing marker strings.
 
-## 7. Font split (A26)
+## 7. Out of scope: font split
 
-The SAOC faces (Crimson Pro, Manrope, JetBrains Mono) used to load from `app/layout.tsx` for every route, so every NOS
-page declared and fetched them as well as its own Fraunces and Karla. The SAOC pages now live in the route group
-`app/(marketing)/(saoc)/` (no URL change; `tickets/` is not moved), whose `layout.tsx` holds the loaders. The SAOC header,
-utility bar and footer are built above the group, in `app/(marketing)/layout.tsx`, so a wrapper class would not reach
-them; the `--font-*-loaded` variables are set on `:root` from the same font objects instead.
-
-Open: `components/chrome/SaocLockup.tsx` still declares Lora, and the shared marketing layout imports it, so NOS routes
-still declare Lora. Clearing it needs an edit to that chrome file, which A10 forbids; see the lead message for the
-exact diff. Routes outside the group that still show SAOC chrome (`/tickets/*`, `not-found`) fall back to the generic
-stacks until `tickets/` is moved in.
+The SAOC/NOS font load split is not part of F19 (it moves to F23, after the header and tickets lanes land). The
+SAOC pages stay at their original paths and `app/layout.tsx` is untouched.
 
 ## 8. Known limits
 
 - A11 and A11p fold curly quotes to straight on both sides before comparing copy.
 - A12 compares NOS pages against a baseline captured from the main working tree; where those pages differ from this
   branch's committed source the check reports drift that F19 did not cause (no F19 edit touches a NOS file).
-- Older contracts and `scripts/checks/verify-show-page-m4.ts` hard-code the pre-move `app/(marketing)/<route>` paths.
+- The hero CTA inversion is A26: ivory fill with a primary-colour label, ivory outline secondary, same height and radius.
+- Furniture rule (A11p): the labels, headings and role names around a withheld fact sit inside the same `[data-placeholder]` element as the fact on beta, so their public removal is marked.
