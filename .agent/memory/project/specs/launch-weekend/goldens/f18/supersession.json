@@ -115,6 +115,21 @@
    "file": "contracts/checks/launch-weekend/f18/check-o-ticket-buy.mjs and check-p-tickets-render.mts (DayQuantityPicker, per-day rows, Tickets per day legend)",
    "reason": "design-cb checkout FINAL ruling 2026-10-17: the checkout step keeps its route and is rebuilt as a read-only summary TicketCard under the hero, one .days fieldset (legend Choose a day, day=D preselect), one stepper (quantity=N), Total under the stepper beside the CTA, CTA Continue to payment enabled at 0 with focus on the hint, provisional label once in the summary card. The old per-day-row and Tickets per day assertions are replaced. f16/check-f-cards.mjs (measures /tickets/day-visitor) was already retired; f16/check-e-testmode.mts drops CategoryTicketsPage.tsx (component removed) and relaxes the hub banner rule to if-rendered-then-gated, keeping showTestModeBanner and viewerIsVerifiedAdmin on the checkout page and TicketPurchaseForm.",
    "replacedBy": "F18-A23, F18-A24, F18-A28 (summary variant), goldens/f18b/v13-checkout.json"
+  },
+  {
+   "file": "contracts/checks/ticketing-f5-day-attendees/check-day-picker-ui-gated.mjs",
+   "reason": "Imports components/tickets/CartDayPicker.tsx, deleted by F18b on design-cb's checkout FINAL ruling (one .days fieldset in TicketPurchaseForm replaces the per-day pickers). The same rule (day options driven only by the showDays prop, nothing for a requiresDaySelection:false type) is asserted on the real form by F18-A24.",
+   "replacedBy": "F18-A24 (TicketPurchaseForm day fieldset, goldens/f18b/v13-checkout.json)"
+  },
+  {
+   "file": "contracts/checks/ticketing-flow-redesign-f3/check-interleaved-day-edit.mjs",
+   "reason": "Does NOT import a deleted picker: it imports lib/cart.ts, which still exists. It is red on main 8e1d31d7 itself (also red in the main working tree) with 'Cannot find module @/lib/tickets-constants': lib/cart.ts uses the @/ alias, which this bare node --import tsx/esm run does not resolve. A stale harness problem that predates F18b, not an F18b regression. It pins the per-day interleaved-quantity map (updateAttendeesByDay), which the single-quantity checkout no longer drives from the UI, so it is retired from the F18 regression list rather than repaired.",
+   "replacedBy": "none (stale on main; the unchanged payload shape is asserted by F18-A23)"
+  },
+  {
+   "file": "contracts/checks/nos-audit-fixes/f2-check-tickets-classname-only.mjs, contracts/checks/nos-audit-fixes/check-tap-targets.mjs, contracts/checks/vendor-form-label-readability-f1/check-uppercase-only-diff.sh, contracts/checks/form-error-contrast-remaining-components-f1/run_all.sh",
+   "reason": "Each names components/tickets/DayQuantityPicker.tsx and/or CartDayPicker.tsx by path. Found by grep on main 8e1d31d7; not run against the F18b branch. They will fail once those files are gone (F18b deletes both), and none is in the F18 gate. Recorded so the failure is read as a deleted-component reference, not a defect.",
+   "replacedBy": "F18-A23 and F18-A24 (44px stepper buttons, form field roles on the one TicketPurchaseForm)"
   }
  ],
  "notRerunInF18": [

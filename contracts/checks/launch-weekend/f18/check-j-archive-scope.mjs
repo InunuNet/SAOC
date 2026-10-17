@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// F18-A10: scope and no-invention hygiene on the diff against F18_BASE_REF, plus the static archive and sponsors rules.
+// F18-A10: scope and no-invention hygiene on the diff against scopeBase() (merge-base(HEAD, main), never older than F18_BASE_REF; F19 and other main files merged in are not F18 scope), plus the static archive and sponsors rules.
 //  - allowlist: the route pages named in goldens/f18/tokens.json, the keepsake ticket hub (app/(marketing)/national-show/tickets/), components/show/, components/nos/, components/tickets/ (incl. keepsake/), components/home/ShowBand.tsx (link repoint), lib/data/ (show-pages, show-page-presentation, ticket-card-view-models, admission-availability),
 //    app/(marketing)/national-show/nos-structure.css (pure addition under an F18 comment, or the marked nos-ticket-row block), content copy swaps listed nowhere (NO copy file changes: a changed
 //    content/ or sanity/ file fails), contracts/checks, specs, docs, e2e/. The header axis, nav-config, footer-data, the vendor legal components, SEO JSON-LD, the F16 rows' price maths stay untouched.
@@ -10,9 +10,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { extname } from 'node:path';
 import { STRUCTURE_CSS, guardedLines, isExemptPath, judgeMotion, keepsakeBlock, probeMotionRules } from './motion-rules.mjs';
-import { T, baseRef, git, gitLines, readGolden, readText } from './_lib.mjs';
+import { T, scopeBase, git, gitLines, readGolden, readText } from './_lib.mjs';
 
-const BASE = baseRef();
+const BASE = scopeBase();
 const problems = [];
 const ROUTE_PAGES = ['', 'about', 'what-to-expect', 'vendors', 'sa-exhibitors', 'programme', 'international-guests', 'wosa-conference', 'faq', 'archive', 'conferences', 'workshops', 'exhibitors', 'sponsors', 'symposium'].map((s) => `app/(marketing)/national-show/${s ? `${s}/` : ''}page.tsx`);
 const ALLOWED = [...ROUTE_PAGES, 'app/(marketing)/tickets/', 'app/(marketing)/layout.tsx', 'app/(marketing)/national-show/layout.tsx', 'app/(marketing)/national-show/not-found.tsx', 'app/(marketing)/national-show/[', 'app/(marketing)/national-show/tickets/', 'components/home/ShowBand.tsx', 'components/nos-chrome/ChromeFrame.tsx', 'app/(marketing)/national-show/nos-structure.css', 'app/(marketing)/national-show/nos-theme.css'];

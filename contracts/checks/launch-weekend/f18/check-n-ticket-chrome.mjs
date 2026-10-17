@@ -24,6 +24,7 @@ function measure(c) {
     h1: document.querySelectorAll('main h1').length,
     heroMedia: h ? h.querySelectorAll('img, svg, canvas, picture, video, [data-nos-hero-media]').length : 0,
     imgs,
+    summaryStubImgs: [...document.querySelectorAll('[data-ticket-variant="summary"] [data-ticket-stub] img, [data-ticket-variant="summary"] [data-ticket-stub] source')].map((e) => (e.getAttribute('src') ?? e.getAttribute('srcset') ?? '') + ' ' + (e.currentSrc || '')),
     overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
   };
 }
@@ -53,8 +54,10 @@ await main('F18-A22 NOS chrome on /tickets/*', async (r) => {
         if (!m.heroOk) r.fail(`${tag}: no typographic NOS inner hero (${C.heroInner}); heroes: ${JSON.stringify(m.heroes)}`);
         if (m.heroMedia) r.fail(`${tag}: the hero carries ${m.heroMedia} media element(s); the type variant has none`);
         if (m.h1 !== 1) r.fail(`${tag}: ${m.h1} h1 elements, want 1`);
-        const photos = m.imgs.filter((s) => STOCK.test(s));
-        if (photos.length) r.fail(`${tag}: stock photo on a ticket route (hero or card): ${[...new Set(photos)].slice(0, 2).join(', ')}`);
+        // The checkout summary card (design-cb checkout FINAL ruling, goldens/f18b/v13-checkout.json) carries the hub card's stub photo: exempt only inside [data-ticket-variant=summary] [data-ticket-stub].
+        const exempt = new Set(m.summaryStubImgs);
+        const photos = m.imgs.filter((s) => STOCK.test(s) && !exempt.has(s));
+        if (photos.length) r.fail(`${tag}: stock photo on a ticket route (hero, or a card outside the summary stub): ${[...new Set(photos)].slice(0, 2).join(', ')}`);
         if (m.overflow > 1) r.fail(`${tag}: horizontal overflow ${m.overflow}px`);
         await ctx.close();
       }
