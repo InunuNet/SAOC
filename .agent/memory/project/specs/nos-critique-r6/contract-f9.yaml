@@ -1,0 +1,52 @@
+schema: athanor.contract/v1
+slug: nos-critique-r6
+goal: >-
+  Close the NOS chrome items in .tmp/sandbox/critique-r6 (base 47cf7f1b): on /national-show/* the SAOC utility bar and Search are left off at every width (the NOS
+  UtilityBar variant renders nothing, header top at y=0, 146px two rows not sticky at 390, 97px sticky from 700), every NOS header and footer target is at least 44px,
+  and nav-config reads "19th National Orchid Show", "National Orchid Show Symposium" replaces "SAOC Symposium", the new Symposium descriptor and the #ticket-day / #ticket-weekend rail links, while SAOC pages stay pixel-identical.
+  Source: Brad chrome decision #2 and #6 (2026-10-15), via NOS Design 2026-10-17 (the withdrawn one-row R74 #7 header is not built); lead saoc-2b 2026-10-17.
+  Exit criterion (Brad via the lead; design-cb's rulings are final): this feature loops build, critique, fix until impeccable scores >= 39/40 with
+  P0/P1/P2 = 0 AND design-cb PASSes. The lead runs that loop and relays the PASS; the gate below stays mechanical.
+created_at: '2026-10-17'
+autonomy: high
+exclusions:
+  - item: 'ChromeFrame.tsx, globals.css, Header, Footer (SAOC), NosSkipLink, ShowContentState, F18/F19 surfaces (tickets, catalogues, show-facts), app/api'
+    reason: Not ours; the f9 footprint is NosHeader.tsx, nos-chrome.css, NosFooter.tsx, UtilityBar.tsx (NOS variant) and nav-config.ts; enforced by A2.
+  - item: 'The one-row mobile header (R74 #7) and any header geometry change'
+    reason: Withdrawn by NOS Design; contradicts Brad chrome decision #6. The 97px / 146px header is unchanged and compared with BASE.
+features:
+  - id: F9
+    name: NOS chrome - utility bar and Search off, 44px targets, nav-config naming and rail links
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r6/goldens/spec-f2-f5.md
+  - .agent/memory/project/specs/nos-critique-r6/goldens/f9-baseline.json
+  - .agent/memory/project/specs/nos-critique-r6/goldens/supersession.json
+  - .agent/memory/project/specs/nos-critique-r6/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: QA check scripts and goldens (BASE baseline capture) are unmodified since @architect wrote them; BASE is 47cf7f1b
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r6/goldens/checks.sha256
+    - id: A2
+      description: Footprint guard through f9 - NosHeader.tsx, nos-chrome.css, NosFooter.tsx, UtilityBar.tsx and nav-config.ts are cleared for f9; never ChromeFrame, globals.css, SAOC Header or Footer, tickets or catalogues
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-footprint.mjs --through=9
+    - id: A3
+      description: Static - NOS UtilityBar returns null with the SAOC path untouched, nav-config changes exactly four lines to the new strings and rail hrefs, the 97px and 146px header rules and 44px minimums kept, no search, docs quote decisions 2 and 6
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-static-f9.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings on the files this feature edits
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r6 type-check && pnpm --dir .tmp/sandbox/critique-r6 exec eslint --max-warnings 0 components/nos-chrome/NosHeader.tsx components/nos-chrome/NosFooter.tsx components/chrome/UtilityBar.tsx components/chrome/nav-config.ts'
+    - id: A5
+      description: Production build passes (input for A6)
+      command: pnpm --dir .tmp/sandbox/critique-r6 build
+    - id: A6
+      description: Load rule - Playwright runs one suite at a time with a single worker, and the next start server is stopped by PID in the check's finally block. Rendered at 390, 768 and 1280 on NOS routes - no utility bar element or SAOC utility link, no Search, header top y=0, 146px relative at 390 and 97px sticky from 700, header geometry equal to BASE and pixels within the sub-pixel tolerance of the BASE header captures (goldens/f9-header-W.png, compare-png.py), Menu and Tickets reachable, Escape returns focus, every header, footer, drawer and mega-menu target at least 44px, new nav-config strings and rail hrefs on the 1280 mega-menu and the 390 drawer; SAOC /, /about and /contact at 390 and 1280 equal to BASE
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-rendered-f9.mjs
+    - id: A7
+      description: Screen one (Codi verdict 2026-10-17; depends on f5's 220px inner photos, so it is green only in the stacked tree through f5) - at 390x844 on plan-your-visit, symposium and vendors/apply the sub-nav and the first content line after the hero are visible above y=844. Load rule - one suite at a time, single worker, server stopped by PID
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-rendered-f9-screen-one.mjs
+    - id: A8
+      description: Supersession - every old check, golden and e2e spec that pinned the NOS utility bar, the old nav-config strings or the old rail hrefs is listed in goldens/supersession.json (path, lines, reason, "v4 decision #2", "Brad naming ruling" or "R68"; now 11 files incl. the two stale hub-h1 pins), each is amended, and no change falls outside its listed lines
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-static-f9-supersession.mjs

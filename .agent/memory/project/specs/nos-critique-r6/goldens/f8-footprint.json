@@ -1,0 +1,6 @@
+[
+  "app/(marketing)/national-show/what-to-expect/page.tsx",
+  "components/show/VisitorInfoBlock.tsx",
+  "components/show/ShowHoldingNote.tsx",
+  "components/show/ShowStatusLine.tsx"
+]

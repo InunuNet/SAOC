@@ -1,0 +1,28 @@
+{
+  "comment": "Exact JSON body VendorApplyForm POSTs to /api/vendors/apply, recorded from BASE 76ad8b98 (handleSubmit in components/vendors/VendorApplyForm.tsx). $CAT1/$CAT2 are the values of the first two category checkboxes, clicked in that order. Key order is part of the contract. Case B leaves tradingName blank, which JSON.stringify drops (omitBlank).",
+  "inputs": {
+    "businessName": "Orchid Supplies (Pty) Ltd",
+    "tradingName": "Bloom Corner",
+    "contactPersonName": "Jane Doe",
+    "contactEmail": "  jane@example.co.za  ",
+    "contactCellPhone": " 082 555 0100 ",
+    "stands": "3"
+  },
+  "caseA": {
+    "businessName": "Orchid Supplies (Pty) Ltd",
+    "tradingName": "Bloom Corner",
+    "contactPersonName": "Jane Doe",
+    "contactEmail": "jane@example.co.za",
+    "contactCellPhone": "082 555 0100",
+    "vendorCategory": ["$CAT1", "$CAT2"],
+    "indicativeBoothCount": 3
+  },
+  "caseB": {
+    "businessName": "Orchid Supplies (Pty) Ltd",
+    "contactPersonName": "Jane Doe",
+    "contactEmail": "jane@example.co.za",
+    "contactCellPhone": "082 555 0100",
+    "vendorCategory": ["$CAT1"],
+    "indicativeBoothCount": 3
+  }
+}

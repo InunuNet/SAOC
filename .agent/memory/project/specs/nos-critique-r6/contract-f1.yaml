@@ -1,0 +1,54 @@
+schema: athanor.contract/v1
+slug: nos-critique-r6
+goal: >-
+  Close R65 (Brad: "Body text should be standard across both sites") for the NOS pages in .tmp/sandbox/critique-r6:
+  body text is 16px / 1.55, the value from design/design_handoff_saoc/design_system_README.md l.100
+  ("Sans body — Manrope — running copy, buttons, nav. 16px base, 1.55 line-height"). Two nos-theme.css lines,
+  presenters.css, and every NOS 17px body usage routed to the body role (one source); NOS prose still at 12-15px
+  raised to 16, labels/meta/links/controls kept. Karla stays; 60ch measure, serif titles and R52 chips unchanged.
+  Exit criterion (Brad via the lead; design-cb's rulings are final): this feature loops build, critique, fix until impeccable scores >= 39/40 with
+  P0/P1/P2 = 0 AND design-cb PASSes. The lead runs that loop and relays the PASS; the gate below stays mechanical.
+created_at: '2026-10-16'
+autonomy: high
+exclusions:
+  - item: 'Routes excluded from A6: national-show/tickets, /tickets/*, workshops, conferences (F18-owned) and vendors/register, vendors/payment (the page itself) and vendors/photos (token-gated). vendors/apply and vendors/payment/status ARE measured (lead-cleared: prose size and line-height to 16/1.55 only). archive/[year] is skipped with a VACUOUS line while no editions are published'
+    reason: F18 owns the first four; the three vendor routes are token-gated. Everything else under national-show is enumerated at runtime so a new route cannot escape.
+  - item: 'app/globals.css and all SAOC components (F19 sets SAOC to 16/1.55 at globals.css:230), national-show/tickets and tickets/page.tsx and the ticket catalogue (F18b), vendors register/payment/photos subroutes and the vendor form components except VendorApplyForm.tsx and vendors/payment/status/page.tsx (prose size only)'
+    reason: F18/F19 own them; enforced by A2 against the explicit goldens/f1-footprint.json list.
+  - item: 'SAOC components (home, contact, judging, ui/PageHero), Header, Footer, NosSkipLink, ShowContentState, nos-theme heading margins'
+    reason: Off limits per the lead; enforced by A2 and A3 (T1).
+  - item: '17px serif names and titles (JudgingGroupCard h3, ExhibitorKeyDates th), the 60ch measure, the Karla face'
+    reason: Lead-ruled unchanged; the serif titles are the T4 allowlist.
+  - item: 'components/tickets text on /national-show/workshops'
+    reason: Ticketing is off limits; only the page note is measured there.
+features:
+  - id: F1
+    name: R65 body text 16px / 1.55 across the NOS pages
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r6/goldens/spec.md
+  - .agent/memory/project/specs/nos-critique-r6/goldens/small-text-allowlist.json
+  - .agent/memory/project/specs/nos-critique-r6/goldens/apply-reference.py
+  - .agent/memory/project/specs/nos-critique-r6/goldens/f1-footprint.json
+  - .agent/memory/project/specs/nos-critique-r6/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: QA check scripts and the small-text allowlist are unmodified since @architect wrote them (BASE is 47cf7f1b, F18a landed)
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r6/goldens/checks.sha256
+    - id: A2
+      description: Footprint guard - exactly the 33 files in goldens/f1-footprint.json (the R65 sweep, incl. the hub page.tsx type lines shared with f5, VenueCard, nos-structure.css) plus the stacked features' own lists and docs/nos-critique-r6.md differ from BASE; never globals.css, SAOC components, tickets, ShowContentState, chrome
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-footprint.mjs --through=8
+    - id: A3
+      description: Static T1-T8 — nos-theme.css has the two cleared lines made and the old values gone (f3/f5 also edit it), presenters.css 1.55 only, no 1.65 or 1.0625rem in scope, 17px only on the serif allowlist, every sub-body sans line a labelled label/meta/link/control, body lines at leading-[1.55], 17px files routed through text-[length:var(--fs-body,1rem)], no copy change, docs cite R65
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-static.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings on the NOS component and route trees
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r6 type-check && pnpm --dir .tmp/sandbox/critique-r6 exec eslint --max-warnings 0 components/show components/nos components/vendors/VendorIntro.tsx components/vendors/VendorGrid.tsx components/vendors/VendorEmptyState.tsx "app/(marketing)/national-show"'
+    - id: A5
+      description: Production build passes (input for A6)
+      command: pnpm --dir .tmp/sandbox/critique-r6 build
+    - id: A6
+      description: Load rule - one suite at a time, a single worker, server stopped by PID. Computed on next start 3010-3019 at 375 and 1280 across EVERY NOS route enumerated at runtime from app/(marketing)/national-show (excluded only the F18-owned tickets, /tickets/*, workshops and conferences, the f2 catch-all, and the vendor form routes apply/register/payment/photos), at least 14 routes — --fs-body 1rem, .nos-theme 16px / 24.8px, no prose below 16px, no Karla at 17px, 16px prose at 24.8px line-height, workshops note, FAQ chips 14px, presenter bios 16px, no overflow
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-rendered.mjs

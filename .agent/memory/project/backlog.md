@@ -1852,6 +1852,7 @@ repo. This is a scope-boundary violation, not just a note: add a rule that agent
 - **Session start:** run `python3 .tmp/sandbox/beta-cut/scripts/lee-ann-drive-watch.py --state-path content/drive-watch/state.json` (baseline: 81 files over folder 1O2Lb…). Report any changes unprompted.
 - **Speakers:** done. 4 conferencePresenter docs are published with photos, spelling is corrected to SA/UK, and the residue scan is clear (branch feat/nos-symposium-presenters @67fba063).
   - The presenter cards wait for Codi's F7 design handoff, after Brad approves the direction. No placeholders until then; `symposium/page.tsx` keeps `void presenters`.
+  - Presenter `order` is null on all 4. Brad (2026-10-14): Lee-Ann will give the order when it is finalised. Do not set it until then.
 - **Vendor e2e on beta:** done 2026-10-13, in Canary, with Brad watching.
   - Test vendor: "TEST NOS form check (Claude, 2026-10-13)", brad+nos-form@inunu.net, submission 8TvyaRDdN8BFPcAkktOE.
   - Flow ran: /apply → approve → code email → /register → photos → review → approve → payment email → /payment. Stopped at Pay Now.
@@ -1859,11 +1860,80 @@ repo. This is a scope-boundary violation, not just a note: add a rule that agent
     - P0: the photo upload returns 500. Suspected cause: no storageBucket in lib/firebase-admin.ts.
     - P1: no admin detail view; admin tables clipped; raw validation keys on /apply; business name not carried into /register; terms checkbox shown before the terms text; "Get payment link" sends a duplicate email; raw "no-preference" in the approval email; stand size asked twice.
   - SAOC owns all the fixes and starts on Brad's go. Do NOT delete the beta test records; Brad decides.
+  - 2026-10-14 retest of P0 on 77e50788: PASSED. Photo uploads 202 ×3 on a fresh vendor "TEST NOS photo retest (Claude, 2026-10-14)" (registration W8PuLWZ93u3YDKx7AqW5); approved, payment email, /payment with stand size carried over. Stopped at Pay Now. The old vendor's code no longer works (single-use), so it stays at 0/3 photos. New findings sent to the lead: no way back to the photo step after leaving; no completion message after 3/3; a JS-triggered submit fell through to a native GET with the fields in the URL.
+- **Lee-Ann questions doc** (Google Doc 1C2_2EKYvJwzB5ejtwf0wpm5bk7z916-c8UQQrkQmSjc, shared with other sessions). Brad (2026-10-14): add ours to the correct section, never remove others' questions, no duplicates, no obvious questions. Added 2026-10-14 then trimmed on the lead's relay of Brad rules (never ask about missing content; vendor flow decided: invite primary, /apply secondary; all contact → info@saoc.co.za). Only §13 "two vendor forms" remains. The old 11-question list (specs/site-content-alignment/goldens/f1-questions-for-leeann.md) is superseded: the rest are obvious, already answered in the spec (§14), or Brad's calls, not Lee-Ann's (Q8, Q9).
+- **2026-10-14, delegated by the lead (saoc-2b) at Brad's request:**
+  - Task 1, sandbox Pay Now on vendor W8PuLWZ93u3YDKx7AqW5: BLOCKED. Ozow returned request-error because the stand-payment BankReference is the 42-char VSO reference against Ozow's 20-char cap (deriveOzowBankReference only strips the ticket prefix). The lead's fix a42694dc corrected BankReference (now 20 chars), but Ozow still returns request-error. Remaining suspects, reported to the lead: return URLs of 239–246 chars carrying the payment token (Ozow cap believed to be 150, unconfirmed), and '::' in TransactionReference. Rerun up to the Ozow sandbox screen, then hand over to Brad for the final click (my safety rules: no completing payments on a non-local host).
+  - Task 2: DONE. fix/vendor-register-p2 @8f3ae6e4 is pushed but not deployed: /register completion state plus no native GET fallthrough, with checks in contracts/checks/vendor-register-p2-f1/. Other forms with the same latent native-GET risk were reported to the lead.
 - **Open with Brad:** Lee-Ann's docs never specify the /apply pre-application step. The only basis for it is the 13.2 phrase "pre-approved vendor". Brad hasn't said whether to keep /apply → approve → /register, or to ask Lee-Ann how vendors become pre-approved (that question would go in the SAOC questions doc).
 - **Harness:** updated to 3.8.26 on 2026-10-13.
   - 10 stale HARNESS files were delivered via force-path. Backup: `.tmp/sandbox/upd/update-backup-20261013T162108Z`.
   - Both directives acked applied. The report is posted on Athanor's board, and Athanor acknowledged it.
-  - **Uncommitted, awaiting Brad:** the update files plus `.codex/agents/`. Commit them separately from the unrelated dirty work on feat/nos-hero-lockup.
+  - Committed in 700ac32f (2026-10-13, not pushed).
   - Still FAILING boot guards: `specs/gate-timeout-fix/contract-f1.yaml` and `specs/mission-slug-collision-fix/contract-f1.yaml` don't parse.
 - **(2026-10-13, harness)** The scratch wipe struck again. `brain.py wrap-up` deleted the updater's own backups from the first two update runs and the reconcile run (`.agent/memory/scratch/update-backup-20261013T161931Z`, `-162002Z`, `reconcile-backup-20261013T162034Z`). They held the pre-3.8.26 HARNESS files, some carrying uncommitted pre-update edits. The committed versions are in git HEAD. Upstream ask: the updater should not write backups into scratch, or wrap-up should exempt `update-backup-*`.
 - **Browser:** Canary is the connected browser ("Browser 1"), and Brad is signed in to beta and admin there.
+
+- 2026-10-15 beta c11b51bd test run (NOS Site → saoc-2b):
+  - Ozow sandbox pay for W8PuLWZ93u3YDKx7AqW5 returned Complete, but SETTLEMENT FAILED: the order stayed pending, with no paid email. The cause needs App Hosting logs, which wait on Brad's gcloud reauth or IAM.
+  - Smoke tests S1, S2 and S3: PASS.
+  - New P2: the /national-show/vendors/photos counter doesn't update live (page.tsx:92 has no onUploaded).
+  - Test records to clean up: application SWYzTPXNtI96ueeoFujO; registration ci9swD1ozZMPs8jwPX0m.
+
+- 2026-10-15 presenter cards (NOS Design handoff, Brad: "Follow Lee-Anns structure"):
+  - Built in worktree .tmp/sandbox/presenters, branch feat/nos-presenter-cards (base release/nos-beta-cut-20261008 @ 047d610e). UNCOMMITTED; it waits for Brad's approval.
+  - Contract: specs/nos-presenter-cards (13 assertions, all green). Codex round 1 FAIL (clamp: empty bio, text-zoom); round 2 PASS.
+  - Placement: inside /symposium and /wosa-conference (spec §4.6/§4.7). No route, no nav.
+  - Roles: Sanity only (Wijaya). Order: Codi's sample sequence while Sanity order is null, with an on-page note.
+  - To do at approval: commit (including the untracked contracts/checks/nos-presenter-cards); retire the f6 check-symposium/wosa-page-render-unchanged checks; confirm the R14 fonts with Brad before beta.
+  - Dev server: localhost:3012.
+
+### PAUSED 2026-10-15 — operator moving locations
+- nos-audit-fixes: @architect (Arch_Opu5_M1-F1_NosAuditFixes) told to stop mid-contract. Worktree .tmp/sandbox/nos-fixes (fix/nos-audit-p1 @ 047d610e). On resume, check what is in .agent/memory/project/specs/nos-audit-fixes/, finish it, then run @dev → Codex QA → Canary checks.
+- New from Brad (via the lead): point NOS "Book tickets" at the existing /tickets/[slug] flow (confirmation and cancelled pages). No new NOS routes. Leave the /national-show/tickets/buy relocation alone. The vendors heading, menu and section nav belong to the lead (F7).
+- Preview port for Brad is 3002 (`pnpm dev`, dev.saoc.co.za). Check lsof before using it. Agent test servers use 3010 and up. Never pkill. Presenter cards are on :3012; they need moving to 3002 for Brad's approval.
+- DECISION NEEDED (found by the architect, verified 2026-10-15): the /vendors "placeholder" audit item is a false positive. The 4 paragraphs are Lee-Ann's copy (Drive 1UKUdzZ9NAJHsqWHSV0mN9tnTrp6NE8I4, pinned by contracts/golden/vendor-f3-showcase-page). The sa-exhibitors "AI placeholder" notice on beta is also false. content/drive-source/ is gitignored (.gitignore:144), so classifySection (lib/data/show-pages.ts:336) fails closed to 'placeholder'. Do NOT add a disclosure to /vendors. The real fix is in the content/deploy pipeline (ship content.md, or relink provenance to content/drive-recovered), which is outside NOS Site's lane: the lead and Codi decide.
+- Update 2026-10-15: the lead (saoc-2b) owns the drive-source false-placeholder fix. content/drive-source/ is ignored on purpose (Lee-Ann's spec doc had plaintext mailbox passwords, which reached the public repo in 1d6512cb). The lead will write a spec after the pause. Not NOS Site's work.
+- Wrap-up 2026-10-15: architect stopped. It left 5 check scripts in .tmp/sandbox/nos-fixes/contracts/checks/nos-audit-fixes/ (_lib, disclosures, key-dates-stack, sponsor-enquiry, tap-targets), all unverified. There is NO contract or golden yet (specs/nos-audit-fixes/goldens/ is empty). On resume, re-dispatch the architect to finish the contract and goldens and review those checks; /vendors item dropped. Presenter-cards dev server stopped; the worktree (12 uncommitted entries) is intact.
+- 2026-10-15 nos-audit-fixes F1 and F2 DONE locally (uncommitted, .tmp/sandbox/nos-fixes, fix/nos-audit-p1). Gates: F1 11/11, F2 15/15. Codex: round 1 FAIL (P2, empty-products dead card, fixed with D4 fallback), round 2 PASS. Canary checks pass at desktop and 390. Awaiting Brad's approval, then commit. The lead holds the TKT-06/07 amendment and must not push before then. Decisions made while Brad was AFK: Joint track gets a "To be confirmed" badge, text kept (the architect recommended removal); D4 fallback = base "Get visitor tickets" → /tickets when there are no products. Out of scope: the /archive "← National Show" back link is 19px tall; RealEmptyListing dashed border (R18/5); sa-exhibitors and international-guests absence copy unsourced.
+- 2026-10-15 NOS own-brand chrome: freeze LIFTED by the lead (Brad approved; Codi's handoff at SAOC NOS Design .tmp/sandbox/nos-own-brand-v4/HANDOFF.md, artifact 2xfPi1KL6fwiBu3vLFNUHE v6). Lead's conditions:
+  (1) /national-show/* only; SAOC routes' Header/MobileMenu/Footer markup byte-identical, asserted in the contract.
+  (2) Keep the full-name SAOC lockup (d88cd322/c70a1532, SaocLockup.tsx) intact.
+  (3) Keep the F7 "Exhibitors and Vendors" label.
+  (4) Visuals from HANDOFF and v6 only, with a mono-tone footer vertical logo.
+  Show dates are open (23–26 vs 16–19 Sep 2027): read them from one source.
+  Own branch off main AFTER the current NOS ship. Send the lead the branch for a chrome diff review before push. Waiting on Codi publishing the files to the artifact (no cross-project read). ShowBand P3 folds into this.
+- 2026-10-15 nos-provenance-fix spec written (.agent/memory/project/specs/nos-provenance-fix/spec.md). Waiting on BRAD's approval:
+  (1) Option A: copy 3 content.md files verbatim into content/drive-recovered/ and repoint sourcePath.
+  (2) One production Sanity write: 3 docs, sourcePath only.
+  (3) A project-script secret scanner, not gitleaks.
+  (4) Include H1, the outputFileTracingExcludes fix.
+  (5) Normal deploy.
+  SECURITY (verified): the Next trace bundles documents/*.docx, and drive-source when present, into the function bundle, so a local firebase deploy would ship them. The lead has been warned.
+- 2026-10-15 late: own-brand chrome v4 and ShowBand P3 were REASSIGNED to the SAOC lead session (Brad, via the lead). NOS Site does not build them. My draft worktree .tmp/sandbox/nos-chrome (feat/nos-own-brand-chrome, untracked checks only) can be dropped. H1 trace fix landed on main as c0e48c39 (from NOS Site d4daa35a, via a patch in SAOC comms.md) and is rolling out to beta.
+- When rebasing fix/nos-audit-p1 onto the lead's chrome v4 F1: drop the hero "Book tickets →" href hunk (F1 removes the hero CTA; the header Tickets CTA links /national-show/tickets). Retire F2-A2. Amend TKT-06's first hop: it currently checks <main> only, so let it accept the NOS header CTA (selector from the lead).
+  Update: chrome F1 amends TKT-06/07 itself (first hop = a.nh-cta in components/nos-chrome/NosHeader.tsx:291 → /national-show/tickets). On rebase, take F1's TKT version and drop mine; keep only the second hop (/national-show/tickets → /tickets/<slug>) if F1 lacks it.
+- 2026-10-16: Shipped 038fd169 to main (presenter cards + audit fixes + ticket repoint). P1 Option A approved by the lead (Brad delegated authority to the lead 2026-10-16); F3 contract in progress, worktree .tmp/sandbox/provenance on fix/nos-provenance-a. Critique rule: A–J bar (SAOC comms.md:1616) at 375/768/1280 (+360/390 overflow), screenshots in .tmp/sandbox/<feature>-critique/round-N/. Do NOT fix hero type/contrast, heading/label sizes or body contrast: the lead's chrome F2 supersedes them (wt-nos-chrome). F2 owns NosHero, nos/Button, NosBreadcrumb, nos-theme.css, layout.tsx, CategoryTicketsPage, ShowContentState, 17 show/nos components, and about/workshops/conferences heroes. Tell the lead before touching any of those.
+- 2026-10-16: Lead APPROVED deleting the 13 legacy `showPage.<key>` Sanity docs, AFTER F3's production apply passes QA and lands. Steps: (1) deep-diff each dot doc against its hyphen doc; any extra content → STOP and send the diff to the lead; (2) zero references (`references()` query + code grep for the dot ids); (3) full backup to .tmp/sandbox/nos-site-sanity-backup/showPage-dot-ids-<ts>.json, count 13; (4) one transaction, ifRevisionId on each doc; (5) verify token and anonymous reads both give 13 showPage docs, loadShowPage doesn't throw with a token, and the 13 NOS pages render on beta. Report the backup path, diff verdict and verification to the lead.
+- 2026-10-16 DONE: P1 F3 shipped as main 1e1f5732 (sa-exhibitors false notice gone on beta). The 13 legacy showPage.<key> Sanity docs were deleted after diff, ref check and a backup at .tmp/sandbox/nos-site-sanity-backup/showPage-dot-ids-2026-10-15T22-53-23-876Z.json. Next: critique round 1 results, then fix the NOS-SITE defects. Then make update-template twice (Athanor directive) at the break.
+- Known: scripts/seed-show-pages.ts isDirectlyExecuted is false when the project path contains a space (percent-encoded URL vs raw argv), so a normal seed run silently no-ops here. Not fixed; F3 added a separate decoded guard for --relink-sources only.
+- 2026-10-16: nos-critique-r2 committed as c94df5fa on fix/nos-critique-r2 (worktree .tmp/sandbox/critique-r2, base ff1a7e18). Gate 8/8 green; the 2 Codex P2s were accepted by the lead and recorded in the commit body. HOLD the push: wait for the lead's message that chrome F2 (ebdfc1e6) is on main, then rebase, re-run the 8 checks and push. FAQ venue wording went to FOR BRAD in SAOC comms.md.
+
+## NOS critique queue (lead saoc-2b, 2026-10-16)
+- r3 DONE: on main 07e09ef3, verified on beta.
+- r4 DONE: on main ee366553 (FAQ jump chips).
+- r5 DONE: on main 6af92875, verified on beta; NOS Design R52 Canary PASS.
+- 2026-10-17 lead: R50, A1 and conf/workshops 60ch are taken over by the lead's F18a/F18b (long-form template, lib/data/show-facts.ts, F16 rows). Once both land, re-measure R50 and report only what's still open.
+- r6 f1 R65 body text 16/1.55: contract in specs/nos-critique-r6. Dev waits for F18a on main; then re-pin BASE and re-grep nos-structure.css and the long-form prose styles. Worktree .tmp/sandbox/critique-r6 (branch fix/nos-critique-r6) is at 76ad8b98 and needs a rebase.
+- 2026-10-17 lane from lead (r6): f2 R63 NOS not-found, f3 R82 vendors/apply + shared form-label role, f4 SEO JSON-LD (f4b for any hub part); f5 R80 hub hero <768 and f1 R65 wait for F18a. Plus a recurring post-deploy beta SEO check: sitemap, canonical, OG image per NOS route, Event JSON-LD on tickets and symposium.
+- Votes recorded by the lead: V1 C (mock figures flagged on beta, hidden in public), V2 B (Buy stays enabled, inline message plus focus), V3 b A "Buy ticket", c A legal text verbatim, d A unsourced ledes dropped in public.
+- (superseded) Waiting on F3: 60ch on conferences/workshops (85ch).
+- A1 visit-facts strip: after F3 merges (hub hero facts list is F3's).
+- R50 /what-to-expect (lead 2026-10-16), joins A1 after F3 lands, r3 first:
+  - P1: visit facts straight under the hero, in order dates, hours, admission, food, photography, cloakroom, accessibility; existing prose follows; same route; move existing copy only.
+  - P1: one R11 status line per section; drop the stacked "To be confirmed" cards until hours exist.
+  - P2: Opening hours, Admission, Food become sibling h2s, not h3s under "Show dates".
+  - P2: weekdays use the existing FAQ string "Thursday 23 to Sunday 26 September 2027" (dates set by Brad 2026-10-06).
+- After F2-r36 deploys: re-measure ShowContentState p→p and h2→body gaps, report only what remains.
+- r6 batch 1 (f1-f5, f9) MERGED to main at 63f3e74d (2026-10-17). Codex: P1 JSON-LD escape fixed; P3 UtilityBar dead code queued on batch 2. Codi live PASS on :3013 public. Batch 2 (f6, f8, f10, f7) is on fix/nos-critique-r6. It rebases after F18a lands. Rulings: R11 disclosure, chip 0.06em at <=700, f10 40px fade.
+- r6 batch 2 (f6, f8, f10, f7 + UtilityBar P3) pushed: fix/nos-critique-r6 @ 394a4ea2 on main 3f45db11. Gates green (checks re-based, BASE2). Codi PASS. Codex out of quota; re-run scheduled 05:42, then the lead merges (racing F19). connection() accepted by the lead.

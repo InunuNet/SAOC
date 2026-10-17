@@ -1,0 +1,194 @@
+{
+ "comment": "nos-critique-r6 f9 supersession (owned by our specs dir, not F18's). Lines are line numbers in the file at BASE 47cf7f1b. Minimal diffs only: the utility-bar, string and href expectations, nothing loosened beyond that. launch-weekend f16 check-f-cards.mjs and check-e-testmode.mts carry NO utility-bar, nav-string or nav-href pins ('/tickets/day-visitor' there is a page route to visit, which f9 does not change), so they are not listed.",
+ "entries": [
+  {
+   "path": "contracts/checks/launch-weekend/f12/check-i-utility-bar.mjs",
+   "lines": [
+    [
+     2,
+     5
+    ],
+    [
+     71,
+     117
+    ]
+   ],
+   "reason": "F12-A14 requires the SAOC utility bar above the NOS header on every /national-show route (one bar, three links, 1 row, before #nh). Re-pin to the opposite: no utility bar element, no SAOC utility link, #nh top at y=0. The SAOC-page reference (lines 60-69) and the skip-link/sticky tests (118-132) stay as they are.",
+   "cite": "v4 decision #2"
+  },
+  {
+   "path": "contracts/checks/launch-weekend/f12/check-h-utility-render.mts",
+   "lines": [
+    [
+     32,
+     76
+    ]
+   ],
+   "reason": "F12-A13 pins the NOS variant render (saoc.co.za pill, email, Join a society, shared classes). The nos variant now renders null; re-pin lines 32-76 to assert an empty render. Lines 30-31 (SAOC output byte-identical to BASE) stay.",
+   "cite": "v4 decision #2"
+  },
+  {
+   "path": "contracts/checks/launch-weekend/f12/check-a-static.mjs",
+   "lines": [
+    [
+     108,
+     111
+    ]
+   ],
+   "reason": "Pins the nos variant's saoc.co.za pill and href=\"/\" inside UtilityBar.tsx. The pill is removed with the NOS render; lines 112-116 (layout mounts variant=nos before NosHeader, nos-chrome never imports it) stay true.",
+   "cite": "v4 decision #2"
+  },
+  {
+   "path": "contracts/checks/launch-weekend/f11/check-f11.mjs",
+   "lines": [
+    [
+     17,
+     17
+    ]
+   ],
+   "reason": "LEAD_TITLE pins the mega-menu lead link text \"19th SAOC National Orchid Show\"; becomes \"19th National Orchid Show\". Line 120 only interpolates the constant.",
+   "cite": "Brad naming ruling"
+  },
+  {
+   "path": "contracts/checks/launch-weekend/f11/nos-menu-baseline.json",
+   "lines": [
+    [
+     8,
+     8
+    ],
+    [
+     11,
+     11
+    ],
+    [
+     36,
+     36
+    ],
+    [
+     41,
+     41
+    ],
+    [
+     83,
+     83
+    ],
+    [
+     86,
+     86
+    ],
+    [
+     111,
+     111
+    ],
+    [
+     116,
+     116
+    ]
+   ],
+   "reason": "Golden NOS menu text at 1280 and 390: lead title (lines 8, 11, 83, 86) and the Symposium descriptor (lines 36, 41, 111, 116, where 36 and 111 are the whole column text) take the two new strings. Positions and widths are unchanged.",
+   "cite": "Brad naming ruling"
+  },
+  {
+   "path": ".agent/memory/project/specs/launch-weekend/goldens/f17/nav-labels.json",
+   "lines": [
+    [
+     43,
+     43
+    ],
+    [
+     134,
+     134
+    ],
+    [
+     199,
+     199
+    ],
+    [
+     204,
+     204
+    ]
+   ],
+   "reason": "Expected nav-config state after F17: leadLabel (43), Symposium descriptor (134), Day Visitor href (199) and Weekend Pass href (204) take the new strings and hrefs. labelBefore \"SAOC Symposium\" (132) is history and stays.",
+   "cite": "Brad naming ruling"
+  },
+  {
+   "path": "contracts/checks/launch-weekend/f17/check-c-nav-labels.mjs",
+   "lines": [
+    [
+     19,
+     19
+    ]
+   ],
+   "reason": "Error text on line 19 quotes the old lead; the comparison itself reads the golden above. Message only.",
+   "cite": "Brad naming ruling"
+  },
+  {
+   "path": "e2e/mega-menu-layout4-visual-fidelity.spec.ts",
+   "lines": [
+    [
+     318,
+     318
+    ]
+   ],
+   "reason": "getByRole link name \"19th SAOC National Orchid Show\" becomes \"19th National Orchid Show\".",
+   "cite": "Brad naming ruling"
+  },
+  {
+   "path": "e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts",
+   "lines": [
+    [
+     66,
+     66
+    ],
+    [
+     79,
+     79
+    ],
+    [
+     96,
+     96
+    ],
+    [
+     148,
+     148
+    ],
+    [
+     151,
+     151
+    ]
+   ],
+   "reason": "Lead link name (79, 96) and the rail hrefs (66 locator, 148 Day Visitor, 151 Weekend Pass) take the new strings and hrefs.",
+   "cite": "Brad naming ruling"
+  },
+  {
+   "path": "contracts/checks/nos-own-brand-chrome/check-l-hub-h1.mjs",
+   "lines": [
+    [
+     10,
+     10
+    ],
+    [
+     14,
+     20
+    ]
+   ],
+   "reason": "Pins the hub h1 to nav-config lead.leadLabel. R68 (Brad) made the hub h1 the plain show name \"National Orchid Show\" (HUB_HEADING in the hub page.tsx, verified); the mega lead is deliberately separate. Re-pin the expected text on line 10 (the label constant) and the comparison on lines 14-20 to \"National Orchid Show\"; the lockup test after line 20 stays.",
+   "cite": "R68"
+  },
+  {
+   "path": "contracts/checks/nos-own-brand-chrome/f3/check-f3-audit.mjs",
+   "lines": [
+    [
+     4,
+     4
+    ],
+    [
+     20,
+     20
+    ]
+   ],
+   "reason": "HUB_H1 (line 20) and the header comment (line 4) pin \"19th SAOC National Orchid Show\" as the hub h1. R68 made it \"National Orchid Show\" (verified in the hub page.tsx). Line 82 only interpolates the constant.",
+   "cite": "R68"
+  }
+ ]
+}

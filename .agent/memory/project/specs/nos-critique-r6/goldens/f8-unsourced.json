@@ -1,0 +1,9 @@
+{
+  "comment": "Strings with no source in docs/leeann-source/ (see f8-spec.md for the trace). Withheld in public mode behind withholdPlaceholderProse(); visible in the beta preview.",
+  "withheldInPublic": [
+    "concession rates for pensioners and children",
+    "a reduced rate for members of affiliated SAOC societies",
+    "Personal photography is normally welcome",
+    "tripods, flash near the benches"
+  ]
+}

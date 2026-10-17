@@ -1,0 +1,44 @@
+schema: athanor.contract/v1
+slug: nos-critique-r6
+goal: >-
+  Close R82 on /national-show/vendors/apply: keep the intro line, drop every (required) suffix (required inputs keep required + aria-required) and label the one optional field exactly "Trading name (if different, optional)", labels at
+  Karla 14px/500 full ink through ONE class .nos-form-label in nos-theme.css (reused by F18b), autocomplete tokens and stands
+  inputmode in place, POST payload unchanged. Source: lead saoc-2b 2026-10-17 (R80/R63/R82/SEO lane), relaying Brad; backlog.md:1928.
+  Exit criterion (Brad via the lead; design-cb's rulings are final): this feature loops build, critique, fix until impeccable scores >= 39/40 with
+  P0/P1/P2 = 0 AND design-cb PASSes. The lead runs that loop and relays the PASS; the gate below stays mechanical.
+created_at: '2026-10-17'
+autonomy: high
+exclusions:
+  - item: 'F18/F19 surfaces: national-show/tickets, /tickets/*, checkout and return pages, the workshops and conferences catalogues, lib/data/show-facts.ts'
+    reason: Owned by the lead's F18/F19; enforced by A2.
+  - item: 'globals.css, Header, Footer, NosSkipLink, ShowContentState, SAOC non-NOS pages, app/api'
+    reason: Off limits per the lead; enforced by A2.
+features:
+  - id: F3
+    name: R82 vendors/apply form labels, autocomplete and the shared form-label class
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r6/goldens/spec-f2-f5.md
+  - .agent/memory/project/specs/nos-critique-r6/goldens/vendor-apply-payload.json
+  - .agent/memory/project/specs/nos-critique-r6/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: QA check scripts and goldens (bloom marginals, payload, allowlist) are unmodified since @architect wrote them; BASE is 47cf7f1b
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r6/goldens/checks.sha256
+    - id: A2
+      description: Footprint guard through f3 - only the files this and the earlier stacked features are cleared to touch, never F18/F19 surfaces, tickets, globals.css, chrome, ShowContentState
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-footprint.mjs --through=3
+    - id: A3
+      description: Static - one .nos-form-label rule (Karla 14px/500 var(--ink) ls 0), heading margins untouched, no (required) in the field components, required + aria-required kept, exact tradingName label, the two launch-weekend F7 checks amended in-branch (supersession recorded), the register-form class kept, REQUIRED_SENTENCE and autocomplete tokens in place, POST body unchanged, docs cite R82
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-static-f3.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings on the files this feature edits
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r6 type-check && pnpm --dir .tmp/sandbox/critique-r6 exec eslint --max-warnings 0 components/vendors/VendorApplyForm.tsx components/vendors/VendorFormField.tsx components/vendors/VendorCheckboxGroupField.tsx'
+    - id: A5
+      description: Production build passes (input for A6)
+      command: pnpm --dir .tmp/sandbox/critique-r6 build
+    - id: A6
+      description: Load rule - Playwright runs one suite at a time with a single worker, and the next start server is stopped by PID in the check's finally block. Rendered at 390 and 1280 - no (required), no ") (", the exact tradingName label, required inputs with required + aria-required, every label/legend nos-form-label at Karla 14px/500 in full ink, autocomplete and stands inputmode, the POST body equals goldens/vendor-apply-payload.json for two cases, no overflow
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-rendered-f3.mjs

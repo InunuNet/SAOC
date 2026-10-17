@@ -1,0 +1,43 @@
+schema: athanor.contract/v1
+slug: nos-critique-r6
+goal: >-
+  Close R63 in .tmp/sandbox/critique-r6 (base 47cf7f1b): an unknown /national-show/x route returns 404 inside the NOS chrome
+  (catch-all page calling notFound() plus a national-show/not-found.tsx), with the SAOC root not-found copy reused verbatim and
+  recovery links National Show, Tickets and Plan your visit using nav-config labels. Source: lead saoc-2b 2026-10-17 (R80/R63/R82/SEO lane), relaying Brad; backlog.md:1928.
+  Exit criterion (Brad via the lead; design-cb's rulings are final): this feature loops build, critique, fix until impeccable scores >= 39/40 with
+  P0/P1/P2 = 0 AND design-cb PASSes. The lead runs that loop and relays the PASS; the gate below stays mechanical.
+created_at: '2026-10-17'
+autonomy: high
+exclusions:
+  - item: 'F18/F19 surfaces: national-show/tickets, /tickets/*, checkout and return pages, the workshops and conferences catalogues, lib/data/show-facts.ts'
+    reason: Owned by the lead's F18/F19; enforced by A2.
+  - item: 'globals.css, Header, Footer, NosSkipLink, ShowContentState, SAOC non-NOS pages, app/api'
+    reason: Off limits per the lead; enforced by A2.
+features:
+  - id: F2
+    name: R63 NOS-scoped not-found for /national-show/*
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r6/goldens/spec-f2-f5.md
+  - .agent/memory/project/specs/nos-critique-r6/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: QA check scripts and goldens (bloom marginals, payload, allowlist) are unmodified since @architect wrote them; BASE is 47cf7f1b
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r6/goldens/checks.sha256
+    - id: A2
+      description: Footprint guard through f2 - only the files this and the earlier stacked features are cleared to touch, never F18/F19 surfaces, tickets, globals.css, chrome, ShowContentState
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-footprint.mjs --through=2
+    - id: A3
+      description: Static - catch-all calls notFound(), not-found.tsx carries the SAOC root eyebrow, h1 and sentence one verbatim, no SAOC society links, three nav-config links in the order Tickets (primary), National Show, Plan your visit, one h1, no hex colours, root not-found unchanged, docs cite R63
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-static-f2.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings on the files this feature edits
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r6 type-check && pnpm --dir .tmp/sandbox/critique-r6 exec eslint --max-warnings 0 "app/(marketing)/national-show/not-found.tsx" "app/(marketing)/national-show/[...slug]/page.tsx"'
+    - id: A5
+      description: Production build passes (input for A6)
+      command: pnpm --dir .tmp/sandbox/critique-r6 build
+    - id: A6
+      description: Load rule - Playwright runs one suite at a time with a single worker, and the next start server is stopped by PID in the check's finally block. Rendered at 390 and 1280 - unknown /national-show routes return HTTP 404 and noindex with footer#nf and .nos-theme, exactly one h1, three ordered recovery links (stacked full width at 48px with a 12px gap below 480), no overflow; a valid archive year stays 200 and an invalid one is the NOS 404; /zz-no-such-page stays the SAOC 404; /national-show/faq still 200
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-rendered-f2.mjs

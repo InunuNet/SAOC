@@ -1,0 +1,102 @@
+{
+  "maxWidthPx": 767,
+  "rule": "Codi: 767 only if a row genuinely overflows at 701-767, else the R27 700px stays",
+  "measured": [
+    {
+      "route": "/national-show/about",
+      "width": 701,
+      "n": 4,
+      "natural": 407,
+      "avail": 666,
+      "overflows": false
+    },
+    {
+      "route": "/national-show/about",
+      "width": 720,
+      "n": 4,
+      "natural": 407,
+      "avail": 684,
+      "overflows": false
+    },
+    {
+      "route": "/national-show/about",
+      "width": 767,
+      "n": 4,
+      "natural": 407,
+      "avail": 729,
+      "overflows": false
+    },
+    {
+      "route": "/national-show/programme",
+      "width": 701,
+      "n": 5,
+      "natural": 621,
+      "avail": 666,
+      "overflows": false
+    },
+    {
+      "route": "/national-show/programme",
+      "width": 720,
+      "n": 5,
+      "natural": 621,
+      "avail": 684,
+      "overflows": false
+    },
+    {
+      "route": "/national-show/programme",
+      "width": 767,
+      "n": 5,
+      "natural": 621,
+      "avail": 729,
+      "overflows": false
+    },
+    {
+      "route": "/national-show/sa-exhibitors",
+      "width": 701,
+      "n": 4,
+      "natural": 687,
+      "avail": 666,
+      "overflows": true
+    },
+    {
+      "route": "/national-show/sa-exhibitors",
+      "width": 720,
+      "n": 4,
+      "natural": 687,
+      "avail": 684,
+      "overflows": true
+    },
+    {
+      "route": "/national-show/sa-exhibitors",
+      "width": 767,
+      "n": 4,
+      "natural": 687,
+      "avail": 729,
+      "overflows": false
+    },
+    {
+      "route": "/national-show/sponsors",
+      "width": 701,
+      "n": 3,
+      "natural": 279,
+      "avail": 666,
+      "overflows": false
+    },
+    {
+      "route": "/national-show/sponsors",
+      "width": 720,
+      "n": 3,
+      "natural": 279,
+      "avail": 684,
+      "overflows": false
+    },
+    {
+      "route": "/national-show/sponsors",
+      "width": 767,
+      "n": 3,
+      "natural": 279,
+      "avail": 729,
+      "overflows": false
+    }
+  ]
+}

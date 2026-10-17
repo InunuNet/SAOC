@@ -1,0 +1,15 @@
+612681f02f7a1526a65b5bca34e7ee8c7e9f830c41304b3ed9d4a2157c25d6a6  .agent/memory/project/specs/nos-critique-r6/checks/f6-f8-lib.mjs
+1083d293591f4de636bfbb30910b67642f6d9c60a1c50e79d7c2f025175b9d5a  .agent/memory/project/specs/nos-critique-r6/checks/f6-footprint.mjs
+737de21e5235d081c4df7a2b4969248c25d1d08191180dd91f18a72ccf625867  .agent/memory/project/specs/nos-critique-r6/checks/f6-static.mjs
+f711487f42d8d41ab314bbf490f796cc4a2f8d55f69d099bfaa2e0f219c01b53  .agent/memory/project/specs/nos-critique-r6/checks/f6-rendered.mjs
+478a53ae84c7557e4ea8c361a931cfe60b79e3e4b8526622dae0a0633cf901ac  .agent/memory/project/specs/nos-critique-r6/checks/f8-footprint.mjs
+c23382cd857efc319ce490d2082548cedab43ca4c9f55a774c3ede520441981a  .agent/memory/project/specs/nos-critique-r6/checks/f8-static.mjs
+fa8b84e9c9b1dc4808940c8161e1645c76f19539a1a04cc53fadb459ec8430cd  .agent/memory/project/specs/nos-critique-r6/checks/f8-rendered.mjs
+568c1932bfaa09250dc70f65cd809f55eb4cd93fbbd46103bc436a3b45607b6a  .agent/memory/project/specs/nos-critique-r6/goldens/f6-chip-class.txt
+312c4ccd8f66f2d48a027e0d1dddb4cdccc00342e895b3a34c648df0312fe7b8  .agent/memory/project/specs/nos-critique-r6/goldens/f6-preview-counts.json
+2b6877fdbb0ddffb63f8356d88e1c4ae4e98d331af191f0ea3dc6d1b72f2c133  .agent/memory/project/specs/nos-critique-r6/goldens/f6-footprint.json
+d063b290a95c1e493ba9f75e42bf9cceab9d529017e69376bcf86613cf402608  .agent/memory/project/specs/nos-critique-r6/goldens/f8-footprint.json
+92b6ddc01590a7943a7c6955c343f157553910b436e284edac4d482e33486fdd  .agent/memory/project/specs/nos-critique-r6/goldens/f8-narrative.txt
+6e708e47fefed1a68cd996a64414d6ef64fa6c99bddf52318f922f29ed9f8b57  .agent/memory/project/specs/nos-critique-r6/goldens/f8-weekday-range.txt
+017fd46e43b94f77ac3e71fc583632b90bba942cdf294a55199cd1972e39fa15  .agent/memory/project/specs/nos-critique-r6/goldens/f8-unsourced.json
+f3a1def87eb3738f55d8b1b716df4a53f90a522139d164edfdef427365dc35cf  .agent/memory/project/specs/nos-critique-r6/goldens/batch2-carry-footprint.json

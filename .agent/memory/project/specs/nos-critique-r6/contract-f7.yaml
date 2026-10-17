@@ -1,0 +1,44 @@
+schema: athanor.contract/v1
+slug: nos-critique-r6
+goal: >-
+  Close R33 on /national-show/plan-your-visit: the emergency numbers become tel: links with 44px targets and large numerals, and the venue's
+  "Open in a map ↗" becomes a 44px ghost nos Button on the existing mapsUrl (plan-your-visit only; /contact unchanged). No new copy. NOS Design
+  R34/R33 sign-off 2026-10-17; lead saoc-2b 2026-10-17 (R80/R63/R82/SEO lane); backlog.md:1928. Dev waits for F18a (now on main).
+  Exit criterion (Brad via the lead; design-cb's rulings are final): this feature loops build, critique, fix until impeccable scores >= 39/40 with
+  P0/P1/P2 = 0 AND design-cb PASSes. The lead runs that loop and relays the PASS; the gate below stays mechanical.
+created_at: '2026-10-17'
+autonomy: high
+exclusions:
+  - item: 'F18/F19 surfaces: national-show/tickets, /tickets/*, checkout and return pages, the workshops and conferences catalogues, lib/data/show-facts.ts'
+    reason: Owned by the lead's F18/F19; enforced by A2.
+  - item: 'globals.css, Header, Footer, NosSkipLink, ShowContentState, SAOC non-NOS pages, app/api'
+    reason: Off limits per the lead; enforced by A2.
+features:
+  - id: F7
+    name: R33 plan-your-visit tel links and the venue map button
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r6/goldens/spec-f2-f5.md
+  - .agent/memory/project/specs/nos-critique-r6/goldens/f7-v4-plan-your-visit.html
+  - .agent/memory/project/specs/nos-critique-r6/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: QA check scripts and goldens (bloom marginals, payload, allowlist) are unmodified since @architect wrote them; BASE is 47cf7f1b
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r6/goldens/checks.sha256
+    - id: A2
+      description: Footprint guard against main 3f45db11 - only f7 and the batch-2 stack (f6, f8, f10) are cleared to touch their own files, never F18/F19 surfaces, tickets, globals.css, chrome, ShowContentState
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-footprint.mjs --base=3f45db11 --only=6,7,8,10
+    - id: A3
+      description: Static - tel links built from contact.number with a 44px target and the large serif numeral, VenueCard mapAction prop with a ghost nos Button branch and the default link branch intact, label verbatim, no copy change, Button variants unchanged, docs cite R33 and the sign-off
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-static-f7.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings on the files this feature edits
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r6 type-check && pnpm --dir .tmp/sandbox/critique-r6 exec eslint --max-warnings 0 "app/(marketing)/national-show/plan-your-visit/page.tsx" components/show/VenueCard.tsx'
+    - id: A5
+      description: Production build passes (input for A6)
+      command: pnpm --dir .tmp/sandbox/critique-r6 build
+    - id: A6
+      description: Load rule - one suite at a time, a single worker, the next start server stopped by PID. Rendered at 390 and 1280 - every digits-only emergency number is a tel link with a target of at least 44x44 and a large numeral, Open in a map is a ghost nos Button at least 44px high on the venue mapsUrl opening in a new tab, no overflow, /contact keeps the plain link
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/check-rendered-f7.mjs

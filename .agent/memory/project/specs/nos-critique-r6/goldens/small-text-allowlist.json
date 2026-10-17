@@ -1,0 +1,172 @@
+{
+ "comment": "R65 sweep: every sans text-[12px..15px] line in NOS scope (.tsx) must match an entry here, unless the line carries `uppercase` or `font-mono` (tracked-caps labels). Entries are labels, meta, links and controls, which keep their 12-15px size; everything else is prose and is raised to the 16px body role. Matching is by file + a substring of the same source line, so it survives line-number drift.",
+ "entries": [
+  {
+   "file": "app/(marketing)/national-show/archive/page.tsx",
+   "contains": "text-[14px] text-muted",
+   "kind": "meta",
+   "reason": "one-line venue value under a card title"
+  },
+  {
+   "file": "app/(marketing)/national-show/exhibitors/page.tsx",
+   "contains": "text-[15px] font-medium text-primary underline",
+   "kind": "link",
+   "reason": "inline link labels (Show classes, Judging standards, WOSA)"
+  },
+  {
+   "file": "app/(marketing)/national-show/plan-your-visit/page.tsx",
+   "contains": "text-[13px] underline underline-offset-2",
+   "kind": "link",
+   "reason": "Visit website link"
+  },
+  {
+   "file": "app/(marketing)/national-show/programme/page.tsx",
+   "contains": "flex max-w-[60ch] flex-wrap gap-x-6",
+   "kind": "link",
+   "reason": "row of two links (Symposium, Workshops), no sentence"
+  },
+  {
+   "file": "components/show/AccommodationList.tsx",
+   "contains": "text-[13px] text-ink underline",
+   "kind": "link",
+   "reason": "Visit website link"
+  },
+  {
+   "file": "components/show/EntryFormLink.tsx",
+   "contains": "text-[14px] font-medium text-ink transition-colors",
+   "kind": "control",
+   "reason": "entry-form link/button style"
+  },
+  {
+   "file": "components/show/ExhibitorKeyDates.tsx",
+   "contains": "text-[12px] tracking-[0.16em] text-muted",
+   "kind": "label",
+   "reason": "table caption and column headers"
+  },
+  {
+   "file": "components/show/ExhibitorSteps.tsx",
+   "contains": "font-sans text-[12px] text-muted",
+   "kind": "label",
+   "reason": "step number chip"
+  },
+  {
+   "file": "components/show/ExhibitorSteps.tsx",
+   "contains": "text-[12px] tracking-[0.16em] text-muted",
+   "kind": "meta",
+   "reason": "when-line meta under the step title"
+  },
+  {
+   "file": "components/show/ShowFaqList.tsx",
+   "contains": "border-primary",
+   "kind": "control",
+   "reason": "R52 jump chips, 14px labels, ratified"
+  },
+  {
+   "file": "components/show/ShowFaqList.tsx",
+   "contains": "text-[13px] text-muted",
+   "kind": "label",
+   "reason": "disclosure +/- glyphs"
+  },
+  {
+   "file": "components/show/ShowSectionNav.tsx",
+   "contains": "text-[13px] leading-snug text-ink/70",
+   "kind": "meta",
+   "reason": "13px hint under each section-nav link (nav surface, 13 = meta)"
+  },
+  {
+   "file": "components/show/VenueCard.tsx",
+   "contains": "text-[12px] tracking-[0.16em] text-ink underline",
+   "kind": "link",
+   "reason": "directions link"
+  },
+  {
+   "file": "components/show/nos/NosHubGroup.tsx",
+   "contains": "text-[15px] font-medium text-ink",
+   "kind": "link",
+   "reason": "hub group link tile"
+  },
+  {
+   "file": "components/show/nos/NurseryCard.tsx",
+   "contains": "text-[13px] font-medium text-[var(--accent)] underline",
+   "kind": "link",
+   "reason": "Visit website link"
+  },
+  {
+   "file": "components/show/nos/RealEmptyListing.tsx",
+   "contains": "<dt className=\"font-sans text-[13px]",
+   "kind": "label",
+   "reason": "definition term label"
+  },
+  {
+   "file": "components/show/nos/ShowSponsorCard.tsx",
+   "contains": "text-[13px] font-medium text-[var(--accent)] underline",
+   "kind": "link",
+   "reason": "Visit website link"
+  },
+  {
+   "file": "components/vendors/VendorEmptyState.tsx",
+   "contains": "bg-ink px-6 py-3",
+   "kind": "control",
+   "reason": "Register as a vendor link-button"
+  },
+  {
+   "file": "components/vendors/VendorGrid.tsx",
+   "contains": "text-[13px] text-ink underline",
+   "kind": "link",
+   "reason": "website / social links"
+  },
+  {
+   "file": "components/nos/JudgingGroupCard.tsx",
+   "contains": "font-serif text-[15px]",
+   "kind": "label",
+   "reason": "serif italic group code; serif titles and codes are not body"
+  },
+  {
+   "file": "app/(marketing)/national-show/page.tsx",
+   "contains": "font-sans text-[12px] font-medium tracking-[0.16em] text-muted",
+   "kind": "label",
+   "reason": "hub stats caption under the figure"
+  },
+  {
+   "file": "components/show/ShowJumpChips.tsx",
+   "contains": "border-primary",
+   "kind": "control",
+   "reason": "f6 moves the 14px jump-chip line here; chips are controls (lead 2026-10-17, relaying the second architect)"
+  }
+ ],
+ "serif17": [
+  {
+   "file": "components/nos/JudgingGroupCard.tsx",
+   "contains": "font-serif text-[17px] font-medium leading-snug text-ink",
+   "reason": "17px serif name (lead-ruled, not body)"
+  },
+  {
+   "file": "components/show/ExhibitorKeyDates.tsx",
+   "contains": "font-serif text-[17px] font-medium text-ink",
+   "reason": "17px serif row header th (lead-ruled, not body)"
+  }
+ ],
+ "routed": {
+  "comment": "Files whose 17px body lines (and raised 12-15px prose) must now pick up the body role via text-[length:var(--fs-body,1rem)]; value = minimum occurrences. Counts come from the base inventory.",
+  "components/show/ShowFaqList.tsx": 1,
+  "components/show/VenueCard.tsx": 2,
+  "components/show/ExhibitorKeyDates.tsx": 2,
+  "components/show/ExhibitorQuestions.tsx": 1,
+  "components/show/nos/RealEmptyListing.tsx": 1,
+  "components/nos/ExhibitorStageCard.tsx": 1,
+  "app/(marketing)/national-show/plan-your-visit/page.tsx": 2,
+  "app/(marketing)/national-show/what-to-expect/page.tsx": 1,
+  "app/(marketing)/national-show/sponsors/page.tsx": 1,
+  "app/(marketing)/national-show/vendors/page.tsx": 1,
+  "app/(marketing)/national-show/workshops/page.tsx": 1,
+  "app/(marketing)/national-show/wosa-conference/page.tsx": 1,
+  "components/nos/NosEventCard.tsx": 1,
+  "components/nos/ShowPageProse.tsx": 1,
+  "components/show/AccommodationList.tsx": 1,
+  "components/show/TravelRoutes.tsx": 2,
+  "components/show/nos/NurseryCard.tsx": 2,
+  "components/show/nos/ShowSponsorCard.tsx": 1,
+  "components/vendors/VendorGrid.tsx": 4,
+  "components/vendors/VendorEmptyState.tsx": 1
+ }
+}

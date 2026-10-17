@@ -1,0 +1,50 @@
+# Sources (no-invention): docs/rules/no-invention.md; design/design_handoff_saoc/ + branding/ (tokens); NOS Design "Codi" ruling, critique H1 and audit 2.4.7
+# (approved into r6 by the lead 2026-10-17). No copy change: labels come from components/chrome/nav-config.ts via nos-subnav-groups.ts.
+schema: athanor.contract/v1
+slug: nos-critique-r6
+goal: >-
+  Close critique H1 / audit 2.4.7 for the R27 group sub-nav (components/nos/NosSubNav.tsx; ShowSectionNav in the brief is the footer grid) at
+  <768 in .tmp/sandbox/critique-r6: on load the aria-current item is brought fully into view with a 16px lead (the row's scrollLeft set directly to offsetLeft - 16, clamped; no scrollIntoView;
+  scroll-padding-inline 16px, padding-inline 16px), the first item is never clipped, a 40px mask fade shows only on an edge that hides items and
+  follows scroll and resize, items stay >=44px, no scrollbar, no page overflow, reduced motion respected; >=768 is pixel-identical to the stack
+  before f10. SAOC untouched. The breakpoint is 767 only if a row genuinely overflows at 701-767, else the R27 700 stays (measured and recorded in goldens/f10-breakpoint.json).
+  components/show/ShowSectionNav.tsx: 'SAOC Symposium' becomes 'National Orchid Show Symposium' (Brad).
+  Exit criterion (Brad via the lead; design-cb's rulings are final): this feature loops build, critique, fix until impeccable scores >= 39/40 with
+  P0/P1/P2 = 0 AND design-cb PASSes. The lead runs that loop and relays the PASS; the gate below stays mechanical.
+created_at: '2026-10-17'
+autonomy: high
+exclusions:
+  - item: 'every other component, SAOC pages and components, Header, Footer, NosSkipLink, ShowContentState, nav-config'
+    reason: 'Off limits per the lead; only NosSubNav.tsx, nos-structure.css and the ShowSectionNav label rename are cleared. Enforced by A2 (goldens/f10-footprint.json).'
+  - item: 'any rule at 768px and up'
+    reason: 'Lead condition: pixel-identical to the stack before f10; enforced by A3 (non-media rules equal BASE) and A6 (screenshot diff on 2 routes at 1280).'
+features:
+  - id: F10
+    name: Group sub-nav at <768 - current item in view, 16px lead, 40px edge fade
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r6/goldens/f10-spec.md
+  - .agent/memory/project/specs/nos-critique-r6/goldens/f10-footprint.json
+  - .agent/memory/project/specs/nos-critique-r6/goldens/checks-f10.sha256
+  - .agent/memory/project/specs/nos-critique-r6/goldens/f10-breakpoint.json
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f10 check scripts and its footprint list are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r6/goldens/checks-f10.sha256
+    - id: A2
+      description: Footprint - f10 may change only NosSubNav.tsx, nos-structure.css and ShowSectionNav.tsx; nothing else beyond class values, no SAOC or off-limits path
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/f10-footprint.mjs
+    - id: A3
+      description: Static S1-S4 - direct clamped scrollLeft (offsetLeft - 16) gated on overflow, no scrollIntoView, no smooth scrolling, scroll and resize listeners with cleanup, edge flags, every changed .nos-subnav rule inside the measured max-width breakpoint (goldens/f10-breakpoint.json) with the outside rules equal to BASE, ShowSectionNav Symposium rename, 16px lead, 24px mask on the flags, 44px links, hidden scrollbar
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/f10-static.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings on the NOS component and route trees
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r6 type-check && pnpm --dir .tmp/sandbox/critique-r6 exec eslint --max-warnings 0 components/nos "app/(marketing)/national-show"'
+    - id: A5
+      description: Production build passes (input for A6)
+      command: pnpm --dir .tmp/sandbox/critique-r6 build
+    - id: A6
+      description: Rendered on next start 3010-3019 - at 390 on programme, symposium, conferences the current item is fully in view with a 16px lead, fade flags and 24px mask follow geometry on load, scroll and resize, items 44px, no scrollbar or page overflow, reduced motion honoured; at 720 the recorded breakpoint decision holds on four groups; at 1280 two routes are pixel-identical to goldens/f10-pre-*.png
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/f10-rendered.mjs

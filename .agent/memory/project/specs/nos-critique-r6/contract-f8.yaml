@@ -1,0 +1,52 @@
+# Sources (no-invention): docs/rules/no-invention.md; docs/leeann-source/what-to-expect_2026-09-09.md (Drive "3.1 Info - What to Expect.docx");
+# docs/leeann-source/website-development-specification-v3_2026-09-06.md 4.3; design/design_handoff_saoc/ + branding/; lead ruling 2026-10-16/17.
+schema: athanor.contract/v1
+slug: nos-critique-r6
+goal: >-
+  Close R50 on /national-show/what-to-expect (lead ruling 2026-10-16, re-confirmed 2026-10-17) in .tmp/sandbox/critique-r6: the visit logistics
+  render straight under the hero and ahead of the Drive narrative, with, in beta/preview, ONE R11 status line per unconfirmed block and never a chip plus card plus badge, and, in public (existing withholdPlaceholderProse), every unconfirmed row hidden behind ONE R11 line naming exactly those rows plus the existing Be the first to know link, the unsourced concession, photography and hero-lede text withheld; the Drive opening sentence rendered once; Opening hours, Admission
+  and Food become sibling h2s of Show dates; the dates read with weekdays as the FAQ string does. Move only, no copy change, the shared long-form
+  template untouched.
+  Exit criterion (Brad via the lead; design-cb's rulings are final): this feature loops build, critique, fix until impeccable scores >= 39/40 with
+  P0/P1/P2 = 0 AND design-cb PASSes. The lead runs that loop and relays the PASS; the gate below stays mechanical.
+created_at: '2026-10-17'
+autonomy: high
+exclusions:
+  - item: 'components/nos/LongFormPage.tsx, ShowFacts.tsx, components/show/nos/HoldingState.tsx, lib/data/show-facts.ts'
+    reason: F18a/F18, shared and off limits. Reordering happens in the page, so no additive prop is needed; enforced by A2 and A3 (structure-locked).
+  - item: 'globals.css, NOS hub page.tsx, tickets, checkout, catalogues, SAOC pages, Header, Footer, NosSkipLink, ShowContentState, nos-theme heading margins, lib/show-identity.ts'
+    reason: Off limits per the lead; enforced by A2.
+  - item: 'venue and parking, family and pensioner ticket prices, online vs door booking (spec v3 4.3)'
+    reason: No Drive copy and no Sanity block exist; reported as gaps, never filled (no-invention).
+features:
+  - id: F8
+    name: R50 what-to-expect logistics first, one status line, sibling h2s, weekday dates
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r6/goldens/f8-spec.md
+  - .agent/memory/project/specs/nos-critique-r6/goldens/f8-narrative.txt
+  - .agent/memory/project/specs/nos-critique-r6/goldens/f8-weekday-range.txt
+  - .agent/memory/project/specs/nos-critique-r6/goldens/f8-unsourced.json
+  - .agent/memory/project/specs/nos-critique-r6/goldens/f8-footprint.json
+  - .agent/memory/project/specs/nos-critique-r6/goldens/checks-f6f8.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f6/f8 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r6/goldens/checks-f6f8.sha256
+    - id: A2
+      description: Footprint guard for the stacked tree - f8 may change only what-to-expect/page.tsx and VisitorInfoBlock; LongFormPage, ShowFacts, HoldingState and show-facts stay structurally identical to BASE
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/f8-footprint.mjs
+    - id: A3
+      description: Static S1-S6 - logistics before LongFormPage, shared template untouched, no as="h3", additive h2/h3 prop defaulting to h3, weekday range derived and never retyped, seven Drive paragraphs verbatim, reuse of withholdPlaceholderProse, no typed unsourced text, ShowHoldingNote reusing ShowStatusLine, no copy added or lost, docs cite R50
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/f8-static.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings on the NOS component and route trees
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r6 type-check && pnpm --dir .tmp/sandbox/critique-r6 exec eslint --max-warnings 0 components/show components/nos "app/(marketing)/national-show"'
+    - id: A5
+      description: Production build passes (input for A6)
+      command: pnpm --dir .tmp/sandbox/critique-r6 build
+    - id: A6
+      description: Rendered at 390 and 1280 on next start 3010-3019 in BOTH public and preview modes (preview = per-block line; public = unconfirmed rows hidden behind one line naming exactly them plus the Be the first to know link, unsourced text and hero lede withheld) - logistics under the hero and before the promo prose, all h2 with one type, weekday line equals the golden, no repeated Dates fact, status lines per mode, Drive opening sentence once, seven paragraphs verbatim, about/vendors/sa-exhibitors and plan-your-visit unchanged, no overflow
+      command: node .agent/memory/project/specs/nos-critique-r6/checks/f8-rendered.mjs
