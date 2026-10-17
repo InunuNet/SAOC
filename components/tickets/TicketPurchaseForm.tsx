@@ -12,7 +12,7 @@ import { ArrowIcon } from '@/components/tickets/keepsake/parts';
 import { CHECKOUT_DAY_EVENT } from '@/components/tickets/keepsake/checkout-day';
 import { CART_MAX_LINE_ITEMS } from '@/lib/cart';
 import { TICKET_COPY } from '@/lib/data/ticket-presentation';
-import { formatShowDay } from '@/lib/show-day-format';
+import { formatShowDay, formatShowDayShort } from '@/lib/show-day-format';
 
 // The CTA stays enabled at quantity 0; a click there fills the hint and moves focus to it.
 const BUY_HINT_ID = 'ticket-buy-hint';
@@ -110,10 +110,11 @@ export function TicketPurchaseForm({
                   value={day}
                   checked={cart.day === day}
                   disabled={submitting}
+                  aria-label={formatShowDay(day)}
                   onChange={() => chooseDay(day)}
                 />
                 <b>
-                  <time dateTime={day}>{formatShowDay(day)}</time>
+                  <time dateTime={day}>{formatShowDayShort(day)}</time>
                 </b>
               </label>
             ))}
@@ -121,42 +122,46 @@ export function TicketPurchaseForm({
         </fieldset>
       ) : null}
 
-      <div
-        className="nk-qty"
-        role="group"
-        aria-label={`${ticketType.name} ${TICKET_COPY.stepperLabelSuffix}`}
-      >
-        <button
-          type="button"
-          aria-label={TICKET_COPY.fewer}
-          disabled={submitting || cart.quantity <= MIN_QUANTITY}
-          onClick={() => cart.setQuantity(cart.quantity - 1)}
-        >
-          −
-        </button>
-        <input
-          id="ticket-quantity"
-          type="number"
-          inputMode="numeric"
-          min={MIN_QUANTITY}
-          max={CART_MAX_LINE_ITEMS}
-          step={1}
-          value={cart.quantity}
-          disabled={submitting}
+      <div className="nk-field">
+        <label htmlFor="ticket-quantity" className="nk-field-label">
+          {TICKET_COPY.numberOfTickets}
+        </label>
+        <div
+          className="nk-qty"
+          role="group"
           aria-label={`${ticketType.name} ${TICKET_COPY.stepperLabelSuffix}`}
-          onChange={(e) => {
-            const parsed = Number.parseInt(e.target.value, 10);
-            cart.setQuantity(Number.isNaN(parsed) ? 0 : parsed);
-          }}
-        />
-        <button
-          type="button"
-          aria-label={TICKET_COPY.more}
-          disabled={submitting || cart.quantity >= CART_MAX_LINE_ITEMS}
-          onClick={() => cart.setQuantity(cart.quantity + 1)}
         >
-          +
-        </button>
+          <button
+            type="button"
+            aria-label={TICKET_COPY.fewer}
+            disabled={submitting || cart.quantity <= MIN_QUANTITY}
+            onClick={() => cart.setQuantity(cart.quantity - 1)}
+          >
+            −
+          </button>
+          <input
+            id="ticket-quantity"
+            type="number"
+            inputMode="numeric"
+            min={MIN_QUANTITY}
+            max={CART_MAX_LINE_ITEMS}
+            step={1}
+            value={cart.quantity}
+            disabled={submitting}
+            onChange={(e) => {
+              const parsed = Number.parseInt(e.target.value, 10);
+              cart.setQuantity(Number.isNaN(parsed) ? 0 : parsed);
+            }}
+          />
+          <button
+            type="button"
+            aria-label={TICKET_COPY.more}
+            disabled={submitting || cart.quantity >= CART_MAX_LINE_ITEMS}
+            onClick={() => cart.setQuantity(cart.quantity + 1)}
+          >
+            +
+          </button>
+        </div>
       </div>
 
       <CartAttendeeFields

@@ -20,7 +20,7 @@ import { BuyBlock } from './BuyBlock';
 import { CHECKOUT_DAY_EVENT } from './checkout-day';
 import { countDisplay, daySubline, firstSelectableDay, isDayClosed } from './days';
 import { TicketCount, TicketPrice, TicketStub } from './parts';
-import type { CountDisplay, KeepsakeCardVm, KeepsakeDay } from './types';
+import type { KeepsakeCardVm, KeepsakeDay } from './types';
 
 export interface TicketCardProps {
   productId: TicketProductId;

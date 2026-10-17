@@ -18,7 +18,11 @@ const DEFAULT_SEPARATOR = ' · ';
 // At <=700px the chip is tightened (0.06em tracking, 10px inline padding) so the verbatim label
 // stays on one line inside the 16px-padded surface. Important: the NOS marker rule in
 // nos-structure.css (.nos-theme [data-...]) otherwise outranks a plain utility.
-const CHIP_FIT_CLASSES = 'max-[700px]:[&>p]:!px-[10px] max-[700px]:[&>p]:!tracking-[0.06em]';
+const CHIP_FIT_CLASSES = [
+  '[@media(max-width:700px)]:[&>p]:!px-[10px]',
+  '[@media(min-width:420px)_and_(max-width:700px)]:[&>p]:!tracking-[0.06em]',
+  '[@media(max-width:419px)]:[&>p]:!tracking-[0.02em]',
+].join(' ');
 
 export interface ShowStatusLineProps {
   /** Which marker family to draw: the exhibitor guide's (default) or the visitor pages'. */

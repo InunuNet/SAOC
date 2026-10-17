@@ -17,7 +17,6 @@ import type { KeepsakeCardVm } from './types';
 
 const MIN_QUANTITY = 1;
 const MAX_QUANTITY = 10;
-const SESSIONS_HREF = '/national-show/workshops#sessions';
 
 interface BuyBlockProps {
   vm: KeepsakeCardVm;
@@ -91,16 +90,13 @@ export function BuyBlock({
     );
   }
 
+  // No workshop session is bookable yet: the product card states its price and offers nothing.
   if (product.kind === 'workshop' && !session) {
     return (
       <div className="nk-buy">
         <div>
           <TicketPrice price={vm.price} each={each} muted={false} />
         </div>
-        <a data-ticket-cta="" className="nk-btn nk-cta" href={SESSIONS_HREF}>
-          {TICKET_COPY.chooseSession}
-          <ArrowIcon />
-        </a>
       </div>
     );
   }

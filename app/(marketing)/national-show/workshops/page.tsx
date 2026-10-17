@@ -53,12 +53,14 @@ export default async function WorkshopsFieldTripsTicketsPage() {
         priority
       />
       <NosSection>
-        <ShowStatusLine
-          status="pending"
-          pendingLabel={SESSIONS_NOTE_CHIP}
-          items={[SESSIONS_NOTE_BODY.trim().replace(/\.$/, '')]}
-          foot={SESSIONS_NOTE_FOOT.trim()}
-        />
+        <div className="nk-sessions-note">
+          <ShowStatusLine
+            status="pending"
+            pendingLabel={SESSIONS_NOTE_CHIP}
+            items={[SESSIONS_NOTE_BODY.trim().replace(/\.$/, '')]}
+            foot={SESSIONS_NOTE_FOOT.trim()}
+          />
+        </div>
       </NosSection>
       {!salesOpen ? <SalesStatusLine /> : null}
       <TicketSection id="programme" title={TICKET_COPY.sections.programme} columns={2}>

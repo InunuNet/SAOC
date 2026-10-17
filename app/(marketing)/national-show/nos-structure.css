@@ -1827,7 +1827,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   min-height: 0;
 }
 .nos-theme .nos-hero-type.nk-hero-compact .nos-hero-copy {
-  padding-block: 28px 24px;
+  padding-block: 20px 16px;
 }
 .nos-theme .nk-hero-compact .nos-hero-lede {
   max-width: 64ch;
@@ -1908,7 +1908,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   margin-bottom: 12px;
 }
 .nos-theme .nk-checkout-summary .nk-main {
-  padding-block: 20px;
+  padding-block: 16px;
 }
 .nos-theme .nk-summary-price {
   margin-top: auto;
@@ -2000,6 +2000,26 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
   .nos-theme .nk-card[data-ticket-variant='summary'] .nk-stub {
     min-height: 0;
+  }
+}
+.nos-theme .nk-field {
+  justify-self: start;
+  display: grid;
+  gap: 8px;
+}
+.nos-theme .nk-field-label {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--nk-ink);
+}
+@media (max-width: 700px) {
+  .nos-theme .nk-checkout-total {
+    display: grid;
+    gap: 12px;
+  }
+  .nos-theme .nk-checkout-total .nk-cta {
+    width: 100%;
   }
 }
 /* F18-KEEPSAKE-END */

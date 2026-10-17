@@ -226,6 +226,7 @@ export const TICKET_COPY = {
   earlyBirdPriceStruck: 'Early-bird price',
   sharedWith: 'Shared with the',
   chooseDay: 'Choose a day',
+  numberOfTickets: 'Number of tickets',
   stepperLabelSuffix: 'quantity',
   fewer: 'One fewer',
   more: 'One more',

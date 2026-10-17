@@ -44,21 +44,22 @@ export function CartAttendeeFields({
             aria-label={`${type.name} attendees`}
             className="space-y-3"
           >
-            <p className="font-mono text-[12px] tracking-[0.16em] text-muted">
+            <h2 className="font-sans text-[14px] font-bold text-[var(--nk-ink)]">
               {type.name} attendees
-            </p>
+            </h2>
             {rows.map((row, index) => {
               const key = attendeeRowKey(type.slug, index);
               const rowErrors = errors[key] ?? {};
               return (
-                <div key={key} className="space-y-3 border border-rule/60 p-4">
-                  <p className="font-sans text-[14px] font-medium text-ink/70">
+                <div key={key} className="space-y-3 rounded-[12px] border border-rule/60 p-4">
+                  <p className="font-sans text-[14px] font-medium text-[var(--ink-700)]">
                     Attendee {index + 1} — {type.name}
                   </p>
                   <TicketFormField
                     id={`attendee-${key}-name`}
                     label="Attendee name"
                     type="text"
+                    autoComplete="name"
                     value={row.attendeeName}
                     onChange={(value) => onAttendeeChange(type.slug, index, 'attendeeName', value)}
                     disabled={disabled}
@@ -68,6 +69,7 @@ export function CartAttendeeFields({
                     id={`attendee-${key}-email`}
                     label="Email address"
                     type="email"
+                    autoComplete="email"
                     value={row.attendeeEmail}
                     onChange={(value) => onAttendeeChange(type.slug, index, 'attendeeEmail', value)}
                     disabled={disabled}

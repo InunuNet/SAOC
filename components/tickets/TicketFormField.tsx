@@ -9,6 +9,7 @@ interface TicketFormFieldProps {
   onChange: (value: string) => void;
   disabled: boolean;
   error?: string;
+  autoComplete?: 'name' | 'email';
 }
 
 export function TicketFormField({
@@ -19,15 +20,17 @@ export function TicketFormField({
   onChange,
   disabled,
   error,
+  autoComplete,
 }: TicketFormFieldProps) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="font-mono text-[12px] tracking-[0.16em] text-muted">
+      <label htmlFor={id} className="font-sans text-[14px] font-medium text-[var(--ink-700)]">
         {label}
       </label>
       <input
         id={id}
         type={type}
+        autoComplete={autoComplete}
         required
         value={value}
         onChange={(e) => onChange(e.target.value)}
