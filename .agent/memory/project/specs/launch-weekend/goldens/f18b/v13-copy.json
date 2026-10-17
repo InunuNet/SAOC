@@ -123,7 +123,7 @@
       "sessions": "Workshop sessions"
     },
     "beforeYouVisit": "Before you visit",
-    "dayPassFrom": "Day Pass from",
+    "dayPassFrom": "from",
     "buyHint": "Choose at least one ticket",
     "salesClosed": {
       "label": "Sales closed",
@@ -135,7 +135,8 @@
     "conferencesLedeNote": "design-cb rotation ruling 1: the old lede 'Register for the SAOC Symposium, the WOSA Conference, or the combined SAOC/WOSA Joint track at the National Show.' stated a track that does not exist; the new lede is that sentence minus the Joint clause, with Brad's Symposium name. It supersedes F18's verbatim hold of the old lede.",
     "conferencesMeta": "Register for the National Orchid Show Symposium or the WOSA Conference at the South African National Orchid Show.",
     "workshopsNote": "Individual session times are still being finalised — the products below are the sellable Sunset Cocktails and Field Trip options. Per-session bookings are not yet available for purchase.",
-    "workshopsNoteRule": "F18b leaves /national-show/workshops as it is today (spec 1); F18c replaces it. Until #sessions exists the page must keep the disclosure so no one reads per-session bookings as on sale. Existing string from main 3f45db11 (SESSIONS_NOTE), a Card role=note under the hero and before the first ticket card, exactly once. When F18c ships #sessions the note is absent."
+    "workshopsNoteRule": "F18b leaves /national-show/workshops as it is today (spec 1); F18c replaces it. Until #sessions exists the page must keep the disclosure so no one reads per-session bookings as on sale. Existing string from main 3f45db11 (SESSIONS_NOTE), a Card role=note under the hero and before the first ticket card, exactly once. When F18c ships #sessions the note is absent.",
+    "dayPassFromNote": "design-cb P2-1: the masthead line is '<name> from R<amount>' where <name> is the CMS ticketType name the Day card shows (trailing parenthetical dropped, the same faceName rule as the fan face), so it reads 'Early-Bird Exhibition Ticket from R120' while the early bird lasts. The old literal 'Day Pass from' is retired; 'from' is the only fixed word."
   },
   "dataGaps": {
     "R7": "Sections with numbers that have no real source (the 500 pool total, the 300 weekend ceiling, the 1000 per-day ceiling, workshop 10 places, symposium/WOSA 80) are shown ONLY if the number is a real stored value (ticketType.capacity/releasedQuantity or Firestore sold counts). The pool total in poolText is a CMS/Firestore-derived value; where it is not available the banner and the pool wording are not rendered at all."
