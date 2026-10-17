@@ -1,6 +1,6 @@
 import VendorStandPaymentStatusPage, {
   metadata,
-} from '../../national-show/vendors/payment/status/page';
+} from '../national-show/vendors/payment/status/page';
 
 /**
  * Short top-level alias for the vendor stand payment status page. Ozow may cap CancelUrl at 50

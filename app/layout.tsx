@@ -1,5 +1,28 @@
 import type { Metadata } from 'next';
+import { Crimson_Pro, Manrope, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+
+const crimsonPro = Crimson_Pro({
+  subsets: ['latin'],
+  variable: '--font-serif-loaded',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+});
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  variable: '--font-sans-loaded',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
+});
+
+const jetBrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono-loaded',
+  display: 'swap',
+  weight: ['400', '500'],
+});
 
 const BASE_URL = 'https://saoc.co.za';
 const DEFAULT_DESCRIPTION =
@@ -49,7 +72,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${crimsonPro.variable} ${manrope.variable} ${jetBrainsMono.variable}`}>
       <head>
         <script
           type="application/ld+json"
