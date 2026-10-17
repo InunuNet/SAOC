@@ -19,10 +19,10 @@ export const git = (...a) => execFileSync('git', a, { encoding: 'utf8', maxBuffe
 export const gitLines = (...a) => git(...a).split('\n').filter(Boolean);
 export const readText = (file) => (existsSync(file) ? readFileSync(file, 'utf8') : null);
 
-// The diff base: F18_BASE_REF pins the commit the dev branched from (main 76ad8b98 plus this spec branch merged in).
+// The diff base: F18_BASE_REF pins the commit the dev branched from (main 63f3e74d plus this spec branch merged in).
 export function baseRef() {
   if (process.env.F18_BASE_REF) return process.env.F18_BASE_REF;
-  console.error('INFRA: set F18_BASE_REF to the commit the F18 dev branched from (the spec records main 76ad8b98)');
+  console.error('INFRA: set F18_BASE_REF to the commit the F18 dev branched from (the spec records main 63f3e74d)');
   process.exit(2);
 }
 
