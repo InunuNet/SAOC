@@ -2,7 +2,7 @@
 // F18-A31 (F18b, R30, R54, R59, live, public build): the links and the two R30 hub items that read the same ticket data.
 //   R30 (1)   hub hero: [data-day-pass-from] sits AFTER the hero CTA row, reads "Day Pass from R<amount>" (zero-cent form), and its amount equals the price on the #ticket-day card (the effective price:
 //             the early-bird SKU while the pool lasts, never an expired early bird); it is ABSENT when the Day Pass card has no price (pricePending) or does not exist (R7).
-//   R30 (2)   hub closing band: [data-nos-ticket-close] is the last band before the footer (the #exhibit / #trade option groups may precede it), holds a Tickets link to #passes whose label is the nav-config
+//   R30 (2)   RETIRED (design-cb final ruling): the hub has NO closing band, [data-nos-ticket-close] must be absent and nothing but the Explore index follows the last ticket section. Former text: [data-nos-ticket-close] is the last band before the footer (the #exhibit / #trade option groups may precede it), holds a Tickets link to #passes whose label is the nav-config
 //             "Tickets" label, and adds no new sentence beyond existing labels.
 //   R54       /national-show/conferences: each of the symposium and WOSA ticket cards carries a link to /national-show/symposium and /national-show/wosa-conference; the "SAOC/WOSA Joint" clause is gone, or the
 //             original lede sentence stays verbatim (it is on Lee-Ann's list).
@@ -32,14 +32,14 @@ await main('F18-A31 R30, R54, R59 links and hub items', async (r) => {
         const dayCard = document.querySelector('#ticket-day');
         const dayPrice = dayCard?.querySelector('[data-ticket-price]');
         const close = document.querySelector(a.close);
-        const footer = document.querySelector('footer#nf');
-        const link = close ? [...close.querySelectorAll('a')].find((x) => (x.getAttribute('href') ?? '').includes('#passes')) : null;
+        // design-cb final ruling: v13 has no closing band on /national-show/tickets (masthead, thursday, passes, programme, sessions), and a band here would link the page to itself
+        const lastContent = ['exhibit', 'trade', 'sessions', 'programme'].map((id) => document.getElementById(id)).filter(Boolean).pop();
         const bands = [...document.querySelectorAll('main section, main > div > section')];
-        const after = close ? bands.filter((s) => !close.contains(s) && s !== close && (close.compareDocumentPosition(s) & Node.DOCUMENT_POSITION_FOLLOWING) && !s.contains(close)).map((s) => s.id || s.className.toString().slice(0, 40)) : [];
+        const bandAfter = lastContent ? bands.filter((s) => !s.contains(lastContent) && s !== lastContent && (lastContent.compareDocumentPosition(s) & Node.DOCUMENT_POSITION_FOLLOWING)).map((s) => s.id || s.className.toString().slice(0, 40)) : [];
         return {
           from: from ? { text: txt(from), afterCta: lastCta ? !!(lastCta.compareDocumentPosition(from) & Node.DOCUMENT_POSITION_FOLLOWING) : null, inHero: !!hero?.contains(from) || !!from.closest('[data-nos-masthead]') } : null,
           dayState: dayCard?.getAttribute('data-ticket-state') ?? null, dayPrice: dayPrice ? txt(dayPrice) : null,
-          close: close ? { text: txt(close), linkLabel: link ? txt(link) : null, beforeFooter: footer ? !!(close.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING) : null, after } : null,
+          close: !!close, bandAfter,
         };
       }, { from: L.dayPassFrom.selector, close: L.closeBand.selector });
       const tag = `hub @${w}`;
@@ -55,13 +55,8 @@ await main('F18-A31 R30, R54, R59 links and hub items', async (r) => {
           if (!m.from.inHero) r.fail(`${tag}: the line is not inside the hub hero`);
         }
       }
-      if (!m.close) r.fail(`${tag}: no ${L.closeBand.selector} closing band`);
-      else {
-        if (!m.close.linkLabel) r.fail(`${tag}: the closing band has no link to #passes`);
-        else if (norm(m.close.linkLabel) !== norm(L.closeBand.label)) r.fail(`${tag}: closing band link reads "${m.close.linkLabel}", want the nav-config label "${L.closeBand.label}"`);
-        if (m.close.beforeFooter === false) r.fail(`${tag}: the closing band is after the footer`);
-        if (m.close.after.length) r.fail(`${tag}: sections after the closing band: ${m.close.after.join(', ')}`);
-      }
+      if (m.close) r.fail(`${tag}: a ${L.closeBand.selector} closing band renders; v13 has none on /national-show/tickets and it would link the page to itself (design-cb final ruling)`);
+      if (m.bandAfter.length) r.fail(`${tag}: band(s) after the last ticket section: ${m.bandAfter.join(', ')} (the Explore index nav is the only block after it)`);
       await ctx.close();
     }
   });

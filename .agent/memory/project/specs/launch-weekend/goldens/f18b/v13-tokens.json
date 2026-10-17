@@ -159,7 +159,7 @@
       "selector": "[data-nos-ticket-close]",
       "label": "Tickets",
       "href": "#passes",
-      "note": "R30 (2): the hub closing band is a ticket close built from the existing CtaBand and the nav-config label; no new sentence."
+      "note": "RETIRED by design-cb's final ruling (P1-2): v13 has NO closing band on /national-show/tickets (masthead, thursday, passes, programme, sessions) and a band there would link the page to itself. A31 asserts the selector is ABSENT. The selector is kept only so the check can find a regression. Former note: R30 (2) closing band from the existing CtaBand."
     },
     "conferenceLinks": {
       "symposium": "/national-show/symposium",

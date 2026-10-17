@@ -102,7 +102,7 @@ assertions:
     description: Retired URL - the bare /tickets listing answers a permanent redirect to /national-show/tickets which ends on a 200 with the NOS header, /tickets/cancelled still answers, and no source file links the bare /tickets
     command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-u-redirects.mjs
   - id: F18-A31
-    description: 'R30, R54, R59 live - hub "Day Pass from R<amount>" under the hero CTAs equal to the Day Pass card price and absent without a price (R7), the closing band [data-nos-ticket-close] with the nav-config Tickets link to #passes as the last band, conferences symposium and WOSA cards link to /national-show/symposium and /national-show/wosa-conference with the Joint clause gone or verbatim, /national-show/wosa-conference carries "Buy ticket" to #ticket-wosa'
+    description: 'R30, R54, R59 live - hub "Day Pass from R<amount>" under the hero CTAs equal to the Day Pass card price and absent without a price (R7), no closing band on the hub ([data-nos-ticket-close] absent, nothing but the Explore index after the last ticket section), conferences symposium and WOSA cards link to /national-show/symposium and /national-show/wosa-conference with the Joint clause gone or verbatim, /national-show/wosa-conference carries "Buy ticket" to #ticket-wosa'
     command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-v-links-from.mjs
   - id: F18-A32
     description: 'R84 motion exception - only @keyframes fan-out / fan-up, and every animation, hover lift (5px, 360ms) and press (0.98) inside prefers-reduced-motion: no-preference; at runtime reduced motion runs no fan animation and shows the final fanned state, no-preference runs fan-out (>=701) or fan-up (<=700) at 1.1s and nothing else'
@@ -122,6 +122,9 @@ assertions:
   - id: F18-A37
     description: Conferences page (design-cb rotation rulings 1-3) - hero lede exactly "Register for the National Orchid Show Symposium or the WOSA Conference." with no Joint track and no "SAOC Symposium" in main or the meta description, no R11 card holding only a chip, ticket cards carry the v13 shadow and no 1px border, whole-rand prices with no decimals, Buy enabled at quantity 0 with the hint "Choose at least one ticket", the total reads "Estimated total" once with no "(ESTIMATE)" and no R0.00, the full Explore index with no mini list
     command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-aa-conferences-live.mjs
+  - id: F18-A38
+    description: Workshops sessions note (lead ruling) - until #sessions exists /national-show/workshops renders the existing SESSIONS_NOTE string exactly once in a role=note after the hero and before the first ticket card and offers no per-session Buy CTA; once #sessions ships (F18c) the note is gone
+    command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3672 node --import tsx/esm contracts/checks/launch-weekend/f18/check-ab-workshops-note.mjs
   - id: F18-A13
     description: Check hygiene - supersession.json names the rebased, amended and retired checks (F16 hub checks, F7 check-d-ticket-form vote 2, F3 imagery stub exclusion), check-labels-static is structural and exits 0, check-f3-imagery excludes the image break and [data-ticket-stub], retired F16 files carry RETIRED headers
     command: node --import tsx/esm contracts/checks/launch-weekend/f18/check-l-supersession.mjs

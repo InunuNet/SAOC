@@ -14,7 +14,7 @@
 //   names      -> a card's visible name equals the CMS ticketType name of the SKU it renders (data-ticket-slug), and so do the fan label and the /tickets/<slug> checkout page (CMS wins over HANDOFF names; one name end to end)
 //   photos     -> the fan mini and the section card of the same product share one photo (and field colour fallback for symposium and WOSA: the stub background is the palette colour)
 //   soldOut    -> stamp and "This ticket has sold out." only: no CTA, no stepper, no waitlist wording or link anywhere
-//   exhibit    -> #exhibit and #trade are a compact 2-card row after #programme (and #sessions when F18c ships) and before the closing band and the footer: name, ONE line, an arrow link >=44px, the v13 card radius and
+//   exhibit    -> #exhibit and #trade are a compact 2-card row after #programme (and #sessions when F18c ships) and before the footer (there is no closing band on the hub, A31): name, ONE line, an arrow link >=44px, the v13 card radius and
 //                 a drop-shadow, and NO stub or ticket card inside; side by side from 701 up
 //   programme  -> #programme holds exactly the Symposium, WOSA and Workshops ticket cards (those the CMS has), in that order (F18b); #sessions is F18c and is not required here
 //   ledes      -> a section sub-lede ([data-section-lede]) is Karla 16px/1.55, ink-700, <=60ch, 8px under the h2, and its text equals the live Sanity show dates / CMS names; an omitted lede leaves no empty node
@@ -62,7 +62,6 @@ function measure({ a, K }) {
   const txtOf = (e) => (e?.textContent ?? '').replace(/\s+/g, ' ').trim();
   const progCards = [...document.querySelectorAll('#programme [data-ticket-card]')].map((c) => c.id);
   const footerTop = document.querySelector('footer#nf') ? rc(document.querySelector('footer#nf')).top : null;
-  const closeEl = document.querySelector('[data-nos-ticket-close]');
   const lastSection = ['sessions', 'programme'].map((id) => document.getElementById(id)).find(Boolean);
   const exhibit = ['exhibit', 'trade'].map((id) => {
     const el = document.getElementById(id);
@@ -71,7 +70,7 @@ function measure({ a, K }) {
     const rad = kids.map((k) => parseFloat(getComputedStyle(k).borderTopLeftRadius)).find((v) => v > 0) ?? 0;
     const fil = kids.map((k) => getComputedStyle(k).filter).find((v) => /drop-shadow/.test(v)) ?? '';
     const link = [...el.querySelectorAll('a')][0];
-    return { id, rect: rc(el), name: txtOf(el.querySelector('h2, h3, h4')), paras: el.querySelectorAll('p').length, link: link ? { h: rc(link).height, hasArrow: !!link.querySelector('svg') || /→|›|»/.test(txtOf(link)) } : null, radius: rad, dropShadow: !!fil, stubs: el.querySelectorAll('[data-ticket-stub], [data-ticket-card]').length, afterTarget: lastSection ? rc(el).top >= rc(lastSection).bottom - 1 : null, beforeClose: closeEl ? rc(el).bottom <= rc(closeEl).top + 1 : null, beforeFooter: footerTop === null ? null : rc(el).bottom <= footerTop + 1 };
+    return { id, rect: rc(el), name: txtOf(el.querySelector('h2, h3, h4')), paras: el.querySelectorAll('p').length, link: link ? { h: rc(link).height, hasArrow: !!link.querySelector('svg') || /→|›|»/.test(txtOf(link)) } : null, radius: rad, dropShadow: !!fil, stubs: el.querySelectorAll('[data-ticket-stub], [data-ticket-card]').length, afterTarget: lastSection ? rc(el).top >= rc(lastSection).bottom - 1 : null, beforeFooter: footerTop === null ? null : rc(el).bottom <= footerTop + 1 };
   });
   const ledes = ['thursday', 'passes', 'programme'].map((id) => {
     const sec = document.getElementById(id);
@@ -89,7 +88,7 @@ function measure({ a, K }) {
   return {
     vw: document.documentElement.clientWidth, overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     h1: (q('main h1')?.textContent ?? '').replace(/\s+/g, ' ').trim(),
-    fan: fan ? { grid: getComputedStyle(fan).display, cols: getComputedStyle(fan).gridTemplateColumns.split(' ').length, links: links.map((l) => ({ href: l.getAttribute('href'), rect: rc(l), label: l.getAttribute('aria-label'), img: [...l.querySelectorAll('img')].map((i) => i.currentSrc || i.getAttribute('src') || '').filter((x) => !/disa|emblem/i.test(x))[0] ?? null })) } : null,
+    fan: fan ? { grid: getComputedStyle(fan).display, cols: getComputedStyle(fan).gridTemplateColumns.split(' ').length, links: links.map((l) => ({ href: l.getAttribute('href'), rect: rc(l), label: l.getAttribute('aria-label'), text: (l.textContent ?? '').replace(/\s+/g, ' ').trim(), img: [...l.querySelectorAll('img')].map((i) => i.currentSrc || i.getAttribute('src') || '').filter((x) => !/disa|emblem/i.test(x))[0] ?? null })) } : null,
     cards, sections,
     ids,
     pool: pool ? { h: rc(pool).height, num: parseFloat(getComputedStyle(q('[aria-hidden="true"]', pool) ?? pool).fontSize) } : null,
@@ -219,6 +218,13 @@ await main('F18-A29 v13 tickets hub', async (r) => {
         const id = (l.href ?? '').slice(1);
         const c = bySlug.get(id);
         if (c && l.label && !l.label.startsWith(`${c.nameText}, `)) r.fail(`${tag}: fan label "${l.label}" does not start with the card's name "${c.nameText}" (one name end to end)`);
+        // design-cb P1-1: the fan FACE drops a trailing parenthetical of the CMS name ("Sunset Cocktails (Single)" shows "Sunset Cocktails"); the full name stays in the aria-label (checked above) and on the card
+        const paren = /\s*\([^)]*\)\s*$/;
+        if (c && c.nameText && l.text !== undefined) {
+          const face = c.nameText.replace(paren, '').trim();
+          if (!l.text.includes(face)) r.fail(`${tag}: fan face "${l.text.slice(0, 50)}" does not show the card name "${face}"${paren.test(c.nameText) ? ' (the trailing parenthetical of the CMS name may be dropped)' : ''}`);
+          if (paren.test(c.nameText) && l.text.includes(c.nameText.match(paren)[0].trim())) r.fail(`${tag}: fan face "${l.text.slice(0, 50)}" still shows the parenthetical of "${c.nameText}" (design-cb: the face drops it, aria-label and card keep it)`);
+        }
         const cardImg = c ? m.cards.find((x) => x.id === id)?.stubImgs?.[0]?.src : null;
         if (c && P.stubPhotos[PRODUCT_OF(id)] && l.img && cardImg && fileOf(l.img) !== fileOf(cardImg)) r.fail(`${tag}: the fan mini of ${PRODUCT_OF(id)} shows ${fileOf(l.img)} but its section card shows ${fileOf(cardImg)} (one photo per product)`);
       }
@@ -237,7 +243,6 @@ await main('F18-A29 v13 tickets hub', async (r) => {
         if (!e.dropShadow) r.fail(`${t}: no filter drop-shadow (the v13 card shadow)`);
         if (e.stubs) r.fail(`${t}: a stub or ticket card sits inside the option card (no stubs)`);
         if (e.afterTarget === false) r.fail(`${t}: it is above #programme / #sessions, want it after them`);
-        if (e.beforeClose === false) r.fail(`${t}: it is after the closing band`);
         if (e.beforeFooter === false) r.fail(`${t}: it is after the footer`);
       }
       const ex = m.exhibit.filter(Boolean);
