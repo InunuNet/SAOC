@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
-import { ShowStatusLine } from '@/components/show/ShowStatusLine';
+import { ShowStatusFoot, ShowStatusLine } from '@/components/show/ShowStatusLine';
 import { SalesStatusLine, TicketCard, TicketSection } from '@/components/tickets/keepsake';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 // Deliberately no Event markup: ticketType carries no session date, and inventing one to
 // unlock a rich result is exactly what M6/B8d forbids.
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Workshops & Field Trips — National Show',
+  title: 'Workshops & Field Trips',
   image: nosOgImage('Workshops & Field Trips — National Show'),
   description:
     'Book Sunset Cocktails and guided Field Trip outings at the South African National ' +
@@ -38,11 +38,24 @@ const [SESSIONS_NOTE_BODY, SESSIONS_NOTE_FOOT] = SESSIONS_NOTE.match(/[^.]+\./g)
 ];
 const SESSIONS_NOTE_CHIP = 'To be confirmed by the show committee';
 
+// Public build (F24, V2): the first sentence is withheld, so the disclosure is composed here as
+// chip + foot on the same gold surface ShowStatusLine draws. ShowStatusLine itself is not
+// used for this: with no `items` it returns the bare chip and would drop the foot.
+const PUBLIC_NOTE_SURFACE_CLASSES =
+  'grid gap-5 rounded-[16px] bg-[var(--gold)] px-[clamp(20px,3vw,32px)] pb-6 pt-5 shadow-sm max-[700px]:px-4';
+const PUBLIC_NOTE_CHIP_FIT_CLASSES = [
+  '[@media(max-width:700px)]:[&>p]:!px-[10px]',
+  '[@media(min-width:420px)_and_(max-width:700px)]:[&>p]:!tracking-[0.06em]',
+  '[@media(min-width:375px)_and_(max-width:419px)]:[&>p]:!tracking-[0.02em]',
+  '[@media(max-width:374px)]:[&>p]:!tracking-[0]',
+].join(' ');
+
 const WORKSHOP_PAGE_PRODUCTS: readonly TicketProductId[] = ['sunset', 'workshops'];
 
 export default async function WorkshopsFieldTripsTicketsPage() {
   const { cards, salesOpen } = await loadTicketCardViewModels();
-  const showProvisional = !withholdPlaceholderProse();
+  const withhold = withholdPlaceholderProse();
+  const showProvisional = !withhold;
 
   return (
     <>
@@ -54,12 +67,21 @@ export default async function WorkshopsFieldTripsTicketsPage() {
       />
       <NosSection>
         <div className="nk-sessions-note">
-          <ShowStatusLine
-            status="pending"
-            pendingLabel={SESSIONS_NOTE_CHIP}
-            items={[SESSIONS_NOTE_BODY.trim().replace(/\.$/, '')]}
-            foot={SESSIONS_NOTE_FOOT.trim()}
-          />
+          {withhold ? (
+            <div data-status-disclosure="" role="note" className={PUBLIC_NOTE_SURFACE_CLASSES}>
+              <div className={PUBLIC_NOTE_CHIP_FIT_CLASSES}>
+                <ShowStatusLine status="pending" pendingLabel={SESSIONS_NOTE_CHIP} />
+              </div>
+              <ShowStatusFoot>{SESSIONS_NOTE_FOOT.trim()}</ShowStatusFoot>
+            </div>
+          ) : (
+            <ShowStatusLine
+              status="pending"
+              pendingLabel={SESSIONS_NOTE_CHIP}
+              items={[SESSIONS_NOTE_BODY.trim().replace(/\.$/, '')]}
+              foot={SESSIONS_NOTE_FOOT.trim()}
+            />
+          )}
         </div>
       </NosSection>
       {!salesOpen ? <SalesStatusLine /> : null}

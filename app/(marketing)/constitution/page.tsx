@@ -1,10 +1,17 @@
 import type { Metadata } from 'next';
 
 import { PageHero } from '@/components/ui/PageHero';
+import { fitDescription } from '@/lib/seo';
+
+const LEDE =
+  'The founding document governing the South African Orchid Council.';
 
 export const metadata: Metadata = {
   title: 'Constitution',
-  description: 'The Constitution of the South African Orchid Council.',
+  description: fitDescription(
+    'The Constitution of the South African Orchid Council.',
+    LEDE,
+  ),
 };
 
 export default function ConstitutionPage() {
@@ -14,7 +21,7 @@ export default function ConstitutionPage() {
         image="/images/orchid-violet.jpg"
         eyebrow="Governance"
         heading="Constitution"
-        lede="The founding document governing the South African Orchid Council."
+        lede={LEDE}
       />
 
       <div className="mx-auto max-w-[720px] px-8 py-20 space-y-10">

@@ -38,7 +38,7 @@ import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Tickets — National Show',
+  title: 'Tickets',
   image: nosOgImage('Tickets — National Show'),
   description:
     "Choose the option that matches why you're coming to the 2027 National Orchid Show — " +

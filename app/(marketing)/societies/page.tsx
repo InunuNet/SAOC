@@ -2,11 +2,13 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 
 import { PageHero } from '@/components/ui/PageHero';
+import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { SocietiesClient } from './SocietiesClient';
 import { SocietiesFallback } from './SocietiesFallback';
 import type { SanitySociety } from '@/components/societies';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { provinceListQuery, societyListQuery } from '@/sanity/queries';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { societies as staticSocieties } from '@/lib/data/societies';
 import { provinces as staticProvinces } from '@/lib/data/provinces';
 import type { Province } from '@/types';
@@ -17,6 +19,11 @@ import type { Province } from '@/types';
 export const revalidate = 60;
 
 export const metadata: Metadata = { title: 'Affiliated Societies' };
+
+// The society count is not in Lee-Ann's Drive. It is withheld on the public build and shown
+// marked on the beta preview (F24, vote 1C), as the other unsourced figures are.
+const UNSOURCED_LEDE =
+  '21 societies across South Africa — growing, showing, and judging together since 1968.';
 
 function slugify(name: string): string {
   return name
@@ -33,6 +40,7 @@ interface SanityProvince {
 }
 
 export default async function SocietiesPage() {
+  const withhold = withholdPlaceholderProse();
   const [sanityList, sanityProvinces] = await Promise.all([
     sanityFetch<SanitySociety[]>({
       query: societyListQuery,
@@ -91,9 +99,14 @@ export default async function SocietiesPage() {
         image="/images/orchid-purple.jpg"
         eyebrow="Affiliated societies"
         heading="Find an orchid society near you"
-        lede="21 societies across South Africa — growing, showing, and judging together since 1968."
       />
       <div className="saoc-container py-16">
+        {withhold ? null : (
+          <div data-placeholder="true" className="mb-10 flex flex-col items-start gap-2">
+            <p className="font-sans text-[16px] leading-[1.55] text-ink/80">{UNSOURCED_LEDE}</p>
+            <PlaceholderMarker />
+          </div>
+        )}
         <Suspense fallback={<SocietiesFallback count={societies.length} />}>
           <SocietiesClient societies={societies} provinces={provinceChips} />
         </Suspense>

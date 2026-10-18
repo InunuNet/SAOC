@@ -22,14 +22,24 @@ import { NosShowIndex } from '@/components/nos/NosShowIndex';
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
 
-export const metadata: Metadata = buildPageMetadata({
-  title: 'Plan Your Visit — National Orchid Show',
-  image: nosOgImage('Plan Your Visit — National Orchid Show'),
-  description:
-    'Getting to the South African National Orchid Show: travel from the airports, parking, ' +
-    'public transport, where to stay and what else to see while you are in town.',
-  path: '/national-show/plan-your-visit',
-});
+// The description is a single 161-char sentence, one over the limit, so the page's own intro
+// (the same Sanity field the hero renders) stands in as the lede it is cut back to.
+export async function generateMetadata(): Promise<Metadata> {
+  const info = await sanityFetch<ShowVisitorInfo>({
+    query: showVisitorInfoQuery,
+    tags: ['showVisitorInfo', 'sanity'],
+  });
+
+  return buildPageMetadata({
+    title: 'Plan Your Visit',
+    image: nosOgImage('Plan Your Visit — National Orchid Show'),
+    description:
+      'Getting to the South African National Orchid Show: travel from the airports, parking, ' +
+      'public transport, where to stay and what else to see while you are in town.',
+    lede: info?.planIntro ?? undefined,
+    path: '/national-show/plan-your-visit',
+  });
+}
 
 // Codi P3 H8: the pending items on this page are grouped under ONE chip per disclosure, to the
 // nos-v4/plan-your-visit.html golden (l.575-616). The two aria-labels are the golden's.

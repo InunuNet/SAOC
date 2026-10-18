@@ -29,9 +29,9 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 60;
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'National Orchid Show Symposium',
+  title: 'Symposium',
   image: nosOgImage('National Orchid Show Symposium'),
-  description: 'What the National Orchid Show Symposium is, and who it is for.',
+  description: 'This page is the programme and registration hub for the SAOC Symposium.',
   path: '/national-show/symposium',
 });
 

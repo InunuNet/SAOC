@@ -30,7 +30,7 @@ function categoryRank(faq: ShowFaq): number {
 export const revalidate = 60;
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Visitor Questions — National Orchid Show',
+  title: 'Frequently asked questions',
   image: nosOgImage('Visitor Questions — National Orchid Show'),
   description:
     'Answers to the questions visitors ask most about the South African National Orchid Show — ' +

@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 // Deliberately no Event markup: ticketType carries no session date, and inventing one to
 // unlock a rich result is exactly what M6/B8d forbids.
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Conferences — National Show',
+  title: 'Conferences',
   image: nosOgImage('Conferences — National Show'),
   description:
     // prettier-ignore

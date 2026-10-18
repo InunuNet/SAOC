@@ -103,16 +103,14 @@ export async function generateMetadata({
   // is not in the record actually took place.
   if (!show) {
     return buildPageMetadata({
-      title: `National Show ${year}`,
+      title: year,
       image: nosOgImage(`National Show ${year}`),
       description: 'The South African National Orchid Show archive.',
       path,
     });
   }
 
-  const title = show.host
-    ? `${year} National Orchid Show — ${show.host}`
-    : `${year} National Orchid Show`;
+  const title = show.host ? `${year} — ${show.host}` : year;
   return buildPageMetadata({
     title,
     image: nosOgImage(title),

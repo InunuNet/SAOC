@@ -37,7 +37,7 @@ const BASE_URL = 'https://saoc.co.za';
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: 'South African Orchid Council',
+  title: { absolute: 'South African Orchid Council' },
   description:
     'The South African Orchid Council — coordinating orchid societies across South Africa since 1968.',
   openGraph: {

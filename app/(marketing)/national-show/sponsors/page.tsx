@@ -41,12 +41,22 @@ export const revalidate = 60;
 
 const NO_SPONSORS_YET = 'No Show sponsors have been confirmed for 2027 yet.';
 
-export const metadata: Metadata = buildPageMetadata({
-  title: 'Show Sponsors — National Orchid Show',
-  image: nosOgImage('Show Sponsors — National Orchid Show'),
-  description: "The National Show's own sponsors.",
-  path: '/national-show/sponsors',
-});
+// The description is under 70 chars. While there are no sponsors the page's only sentence is
+// NO_SPONSORS_YET, so that is the lede it is cut back to; once sponsors are listed it is not.
+export async function generateMetadata(): Promise<Metadata> {
+  const sponsors = await sanityFetch<ShowSponsorCardData[]>({
+    query: showSponsorsQuery,
+    tags: ['showSponsor', 'sanity'],
+  });
+
+  return buildPageMetadata({
+    title: 'Show Sponsors',
+    image: nosOgImage('Show Sponsors — National Orchid Show'),
+    description: "The National Show's own sponsors.",
+    lede: (sponsors ?? []).length === 0 ? NO_SPONSORS_YET : undefined,
+    path: '/national-show/sponsors',
+  });
+}
 
 export default async function ShowSponsorsPage() {
   const [result, sponsors] = await Promise.all([

@@ -2,10 +2,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { PageHero } from '@/components/ui/PageHero';
+import { fitDescription } from '@/lib/seo';
+
+const LEDE =
+  'How the South African Orchid Council handles your information.';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
-  description: 'Privacy policy for the South African Orchid Council website.',
+  description: fitDescription(
+    'Privacy policy for the South African Orchid Council website.',
+    LEDE,
+  ),
 };
 
 export default function PrivacyPage() {
@@ -15,7 +22,7 @@ export default function PrivacyPage() {
         image="/images/orchid-violet.jpg"
         eyebrow="Legal"
         heading="Privacy Policy"
-        lede="How the South African Orchid Council handles your information."
+        lede={LEDE}
       />
 
       <div className="mx-auto max-w-[720px] px-8 py-20 space-y-10">

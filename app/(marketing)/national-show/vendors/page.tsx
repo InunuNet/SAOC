@@ -24,7 +24,7 @@ export const revalidate = 60;
 // vendor route: the flow is invitation-gated, which Google excludes from the event
 // experience (M6/B8c).
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Exhibitors and Vendors — National Show',
+  title: 'Exhibitors and Vendors',
   image: nosOgImage('Exhibitors and Vendors — National Show'),
   description:
     'Meet the specialist nurseries showcasing their finest orchids at the South African ' +

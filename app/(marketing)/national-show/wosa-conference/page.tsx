@@ -35,7 +35,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 60;
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'WOSA Conference — National Orchid Show',
+  title: 'WOSA Conference',
   image: nosOgImage('WOSA Conference — National Orchid Show'),
   description: 'The WOSA Conference, held alongside the National Show, and what it is for.',
   path: '/national-show/wosa-conference',

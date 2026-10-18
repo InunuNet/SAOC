@@ -26,10 +26,13 @@ export const revalidate = 60;
 
 // Self-canonical, and deliberately carries no Event markup: a past edition is not bookable,
 // and a second Event under the live show's own name would compete with it. See M6/B8e.
+const LEDE = 'The South African National Orchid Show is the council’s triennial event.';
+
 export const metadata: Metadata = buildPageMetadata({
-  title: 'National Show Archive',
+  title: 'Archive',
   image: nosOgImage('National Show Archive'),
   description: 'Past editions of the South African National Orchid Show.',
+  lede: LEDE,
   path: '/national-show/archive',
 });
 
@@ -78,7 +81,7 @@ export default async function ShowArchivePage() {
       <NosHero
         route="/national-show/archive"
         title="National Show archive"
-        lede="The South African National Orchid Show is the council’s triennial event."
+        lede={LEDE}
         priority
         actions={
           <Link

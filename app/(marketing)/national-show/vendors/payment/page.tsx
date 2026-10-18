@@ -26,7 +26,7 @@ import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 // markup here either — the stand fee is a gated B2B transaction, not a public ticket sale
 // (M6/B8c).
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Vendor Stand Payment — National Show',
+  title: 'Vendor Stand Payment',
   image: nosOgImage('Vendor Stand Payment — National Show'),
   description: 'Select your stand size and complete payment for the 2027 National Orchid Show.',
   path: '/national-show/vendors/payment',

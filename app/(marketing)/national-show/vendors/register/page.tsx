@@ -39,7 +39,7 @@ import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 // Event or Offer markup — Google excludes invitation-gated events from the event experience
 // (M6/B8c).
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Vendor Registration — National Show',
+  title: 'Vendor Registration',
   image: nosOgImage('Vendor Registration — National Show'),
   description: 'Register your business as a vendor at the 2027 National Orchid Show.',
   path: '/national-show/vendors/register',

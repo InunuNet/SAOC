@@ -257,7 +257,7 @@ export const NAV: readonly NavItem[] = [
             id: 'vendors',
             label: 'Exhibitors and Vendors',
             href: '/national-show/vendors',
-            descriptor: 'Trade vendor showcase, application and gated registration.',
+            descriptor: 'Trade vendor showcase, application and registration.',
           },
         ],
       },

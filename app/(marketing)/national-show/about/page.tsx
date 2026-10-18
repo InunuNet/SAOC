@@ -16,7 +16,7 @@ import { NosShowIndex } from '@/components/nos/NosShowIndex';
 export const revalidate = 60;
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'About the National Show',
+  title: 'About the Show',
   description:
     "The 2027 South African National Orchid Show is the South African Orchid Council's " +
     'premier triennial event.',

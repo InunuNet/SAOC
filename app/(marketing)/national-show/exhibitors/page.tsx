@@ -38,11 +38,9 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 
   return buildPageMetadata({
-    title: `${info?.title ?? 'Exhibitor Information'} — National Orchid Show`,
+    title: info?.title ?? 'Exhibitor Information',
     image: nosOgImage(`${info?.title ?? 'Exhibitor Information'} — National Orchid Show`),
-    description:
-      'Entering plants in the South African National Orchid Show: how entry works, what is ' +
-      'still to be confirmed by the show committee, and the questions we are asking them.',
+    description: ENTRIES_NOT_OPEN,
     path: '/national-show/exhibitors',
   });
 }

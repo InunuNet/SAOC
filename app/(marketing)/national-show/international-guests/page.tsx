@@ -35,7 +35,7 @@ const ABSENCE_STATEMENT =
   'guests will appear here, one card per exhibitor, as they register ahead of the show.';
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'International Guests — National Orchid Show',
+  title: 'International Guests',
   image: nosOgImage('International Guests — National Orchid Show'),
   description: 'International guests and exhibitors attending the National Orchid Show.',
   path: '/national-show/international-guests',

@@ -1,12 +1,19 @@
 import type { Metadata } from 'next';
 
 import { PageHero } from '@/components/ui/PageHero';
+import { fitDescription } from '@/lib/seo';
 import { CTASection } from '@/components/ui/CTASection';
 import { SuggestionForm } from '@/components/members/SuggestionForm';
 
+const LEDE =
+  'A restricted area for paid-up SAOC members, separate from the public-facing pages on this site.';
+
 export const metadata: Metadata = {
   title: 'Members Portal',
-  description: 'A restricted area for paid-up SAOC members, coming to this site.',
+  description: fitDescription(
+    'A restricted area for paid-up SAOC members, coming to this site.',
+    LEDE,
+  ),
 };
 
 export default function MembersPage() {
@@ -16,7 +23,7 @@ export default function MembersPage() {
         image="/images/orchid-yellow.jpg"
         eyebrow="For paid-up members"
         heading="Members Portal"
-        lede="A restricted area for paid-up SAOC members, separate from the public-facing pages on this site."
+        lede={LEDE}
       />
 
       <div className="saoc-container py-20">

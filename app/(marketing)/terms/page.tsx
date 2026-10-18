@@ -2,10 +2,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { PageHero } from '@/components/ui/PageHero';
+import { fitDescription } from '@/lib/seo';
+
+const LEDE =
+  'Conditions governing use of the South African Orchid Council website and the purchase of tickets through it.';
 
 export const metadata: Metadata = {
   title: 'Terms of Use',
-  description: 'Terms of use for the South African Orchid Council website.',
+  description: fitDescription(
+    'Terms of use for the South African Orchid Council website.',
+    LEDE,
+  ),
 };
 
 export default function TermsPage() {
@@ -15,7 +22,7 @@ export default function TermsPage() {
         image="/images/orchid-violet.jpg"
         eyebrow="Legal"
         heading="Terms of Use"
-        lede="Conditions governing use of the South African Orchid Council website and the purchase of tickets through it."
+        lede={LEDE}
       />
 
       <div className="mx-auto max-w-[720px] px-8 py-20 space-y-10">

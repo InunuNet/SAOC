@@ -9,7 +9,7 @@ import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 // Indexable (this is the public front door of the vendor flow) but carries no Event or Offer
 // markup — the flow it leads into is invitation-gated, which Google excludes (M6/B8c).
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Vendor Application — National Show',
+  title: 'Vendor Application',
   image: nosOgImage('Vendor Application — National Show'),
   description:
     'Apply to exhibit as a vendor at the 2027 National Orchid Show. Once the committee ' +

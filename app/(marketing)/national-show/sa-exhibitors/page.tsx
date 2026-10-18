@@ -7,7 +7,7 @@ import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { southAfricanNurseriesQuery } from '@/sanity/queries';
 import { loadShowFacts } from '@/lib/data/show-facts';
-import { loadShowPageOrFallback } from '@/lib/data/show-pages';
+import { loadShowPage, loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
@@ -32,12 +32,18 @@ const ABSENCE_STATEMENT =
   'No South African nurseries have been confirmed for the 2027 exhibitor pavilion yet. ' +
   'Confirmed exhibitors will appear here, one card per nursery, as they register ahead of the show.';
 
-export const metadata: Metadata = buildPageMetadata({
-  title: 'South African Exhibitors — National Orchid Show',
-  image: nosOgImage('South African Exhibitors — National Orchid Show'),
-  description: 'The South African nurseries exhibiting at the National Orchid Show.',
-  path: '/national-show/sa-exhibitors',
-});
+// The description is under 70 chars, so the page's own summary (the hero lede) stands in.
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await loadShowPage('04-south-african-exhibitors');
+
+  return buildPageMetadata({
+    title: 'South African Exhibitors',
+    image: nosOgImage('South African Exhibitors — National Orchid Show'),
+    description: 'The South African nurseries exhibiting at the National Orchid Show.',
+    lede: page?.summary ?? undefined,
+    path: '/national-show/sa-exhibitors',
+  });
+}
 
 export default async function SouthAfricanExhibitorsPage() {
   const [result, nurseries, facts] = await Promise.all([

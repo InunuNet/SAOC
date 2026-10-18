@@ -17,7 +17,7 @@ import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
  * writes nothing and never redirects: the outcome comes solely from the stored order's status.
  */
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Vendor Stand Payment Status — National Show',
+  title: 'Vendor Stand Payment Status',
   image: nosOgImage('Vendor Stand Payment Status — National Show'),
   description: 'Payment status for your 2027 National Orchid Show vendor stand.',
   path: '/national-show/vendors/payment/status',

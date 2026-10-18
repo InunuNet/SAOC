@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+
 import { NAV } from '@/components/chrome/nav-config';
 import { NosBreadcrumbJsonLd } from '@/components/nos/NosBreadcrumbJsonLd';
 import { NosThemeScope } from '@/components/nos/NosThemeScope';
@@ -18,6 +20,16 @@ import { NosThemeScope } from '@/components/nos/NosThemeScope';
 // renders inside that layout's <main>, so it carries no header, footer, masthead
 // or lockup of its own.
 const NATIONAL_SHOW_ROOT = '/national-show';
+
+// F24: every inner page names itself and this template adds the show. The hub
+// (/national-show) is the segment's own page, so the template does not reach it and it keeps
+// its own full title.
+export const metadata: Metadata = {
+  title: {
+    template: '%s — National Orchid Show | SAOC',
+    default: 'National Orchid Show | South African Orchid Council',
+  },
+};
 
 /** First label nav-config carries for each /national-show href, depth first. */
 function collectLabels(node: unknown, into: Record<string, string>): void {
