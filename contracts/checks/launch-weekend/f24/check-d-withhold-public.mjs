@@ -15,7 +15,7 @@ for (const site of G.sites) {
   const m = await readMeta(page, site.route, PUBLIC_BASE);
   if (m.status !== 200) { problems.push(`${site.route}: HTTP ${m.status}`); continue; }
   // The sr-only filter-results live region (role=status) is a computed count of the rendered list: excluded from every text check below.
-  const text = await page.evaluate(() => { const c = document.querySelector('main').cloneNode(true); c.querySelectorAll('[role="status"], [aria-live]').forEach((e) => e.remove()); return c.textContent; });
+  const text = await page.evaluate(() => { const c = document.querySelector('main').cloneNode(true); c.querySelectorAll('[role="status"], [aria-live]').forEach((e) => e.remove()); const out = []; const w = document.createTreeWalker(c, NodeFilter.SHOW_TEXT); while (w.nextNode()) out.push(w.currentNode.textContent); return out.join('\n'); });
   const html = await page.content();
   const hit = re.exec(text);
   if (hit) problems.push(`${site.route}: "${hit[0]}" is visible in main (${site.id})`);
