@@ -88,6 +88,10 @@ renders. No copy is new.
   spells out the NOS suffix: "VIP Ticket — National Orchid Show | SAOC".
 - Title casing (Codi R64). Three NOS titles now follow their h1: "What to expect", "Plan your
   visit" and "Sponsors", with their og images to match.
+- Symposium. The page's description was meta-talk ("This page is the programme and registration
+  hub…"), and its only rendered lede is one 185-character sentence. The description is now that
+  sentence cut at a word boundary to 147 characters and ended with "…", the single-route ellipsis
+  exception the F24 rules (`_rules.mjs` `ellipsisCut`) allow for `/national-show/symposium`.
 
 ## F6 - one section gap after a status disclosure
 

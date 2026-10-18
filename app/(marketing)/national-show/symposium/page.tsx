@@ -31,7 +31,7 @@ export const revalidate = 60;
 export const metadata: Metadata = buildPageMetadata({
   title: 'Symposium',
   image: nosOgImage('National Orchid Show Symposium'),
-  description: 'This page is the programme and registration hub for the SAOC Symposium.',
+  description: 'Uniting conservation, science, and horticulture to explore how orchids in their natural environments inform responsible growing, breeding, and the…',
   path: '/national-show/symposium',
 });
 
