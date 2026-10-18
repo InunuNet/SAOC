@@ -9,6 +9,8 @@ const BASE_REF = process.env.BASE_REF || 'origin/main';
 const ALLOW = [
   /^app\/layout\.tsx$/,
   /^app\/\(marketing\)\/(.+\/)?(page|layout)\.tsx$/,
+  /^components\/chrome\/nav-config\.ts$/,
+  /^components\/show\/ShowStatusLine\.tsx$/,
   /^lib\/seo\.ts$/,
   /^lib\/seo\/.+\.ts$/,
   /^\.agent\/memory\//,

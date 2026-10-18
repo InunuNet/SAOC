@@ -1,0 +1,19 @@
+{
+  "_note": "Team vote (saoc-82 + site-7d, 2/3+): two deletion-only edits, no new copy.",
+  "V1": {
+    "file": "components/chrome/nav-config.ts",
+    "id": "vendors",
+    "old": "Trade vendor showcase, application and gated registration.",
+    "new": "Trade vendor showcase, application and registration.",
+    "rule": "no public nav descriptor contains the word 'gated'"
+  },
+  "V2": {
+    "file": "app/(marketing)/national-show/workshops/page.tsx",
+    "withheldPublic": "Individual session times are still being finalised — the products below are the sellable Sunset Cocktails and Field Trip options.",
+    "keptBoth": "Per-session bookings are not yet available for purchase.",
+    "chip": "To be confirmed by the show committee",
+    "public": "inside .nk-sessions-note: the gold [data-status-disclosure] with the chip and the foot in [data-status-foot]; no [data-status-list]; no 'sellable' or 'Individual session times' anywhere on the page",
+    "preview": "both sentences render exactly as on main: the first in [data-status-list] (ending with a full stop), the foot in [data-status-foot]",
+    "finding": "ShowStatusLine (components/show/ShowStatusLine.tsx) returns the bare marker when items is empty, so items=[] would silently DROP the foot. The dev must make a foot-only disclosure render (extend ShowStatusLine so foot alone keeps the disclosure, with no empty list paragraph, and callers that pass items unchanged), or render the chip plus ShowStatusFoot in the page. Either way A11 is the proof."
+  }
+}

@@ -9,6 +9,7 @@ features:
     status: pending
 # GATE: cwd = the implementation worktree (branch from main with spec/lw-f24 merged in so goldens/f24 and contracts/checks/launch-weekend/f24 exist). Copy .env.local in, delete it at the end.
 # TWO BUILDS (mode is fixed at build time, /societies is ISR): PUBLIC_URL = `SITE_PUBLIC_LAUNCH=true pnpm build && SITE_PUBLIC_LAUNCH=true pnpm exec next start -p $PUBLIC_PORT` (use 3624; a separate worktree of the same commit, or build, test and stop before building the other). BASE_URL = the BETA PREVIEW: `SHOW_PLACEHOLDER_PREVIEW=true pnpm build && SHOW_PLACEHOLDER_PREVIEW=true pnpm exec next start -p 3619` (wall up: BETA_BASIC_AUTH_* in .env.local; the checks send them). A2, A3, A4 read PUBLIC_URL; A5 reads BASE_URL; A1, A6 and the greps need no server. Stop servers by exact PID (lsof -ti tcp:<port> -sTCP:LISTEN); do not rebuild while one runs.
+# V1/V2 (team vote, deletion-only): A10 static; A11 reads PUBLIC_URL, A12 reads BASE_URL. Trap: ShowStatusLine returns only the bare marker when items is empty, so a naive items=[] drops the foot; see goldens/f24/copy-deletions.json.
 # Run RED against untouched main 81490e7a (:3013 public): A2 (24 findings), A3 (11), A4 (3), A5 (societies lede unmarked; the media-kit finding is expected on a public server, on a real preview media-kit is green by design), the greps A7-A9. A1 and A6 are green on main by design (A1 proves the rules can fail; A6 is a scope guard).
 # Skills @dev must load: web-design-guidelines. No UI is restyled; the preview marker reuses PlaceholderMarker as other unsourced figures do.
 # If a legal page (/privacy, /terms, /constitution) has no paragraph that yields a 70+ char or sentence-cut lede, STOP and report; do not invent copy (docs/rules/no-invention.md).
@@ -17,6 +18,7 @@ goldens:
   - .agent/memory/project/specs/launch-weekend/goldens/f24/titles.json
   - .agent/memory/project/specs/launch-weekend/goldens/f24/withhold.json
   - .agent/memory/project/specs/launch-weekend/goldens/f24/description-cases.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f24/copy-deletions.json
 assertions:
   phase: 4
   checks:
@@ -47,3 +49,15 @@ assertions:
     - id: F24-A9
       description: Static - the societies page gates its hero lede through withholdPlaceholderProse()
       command: grep -q "withholdPlaceholderProse" "app/(marketing)/societies/page.tsx"
+    - id: F24-A10
+      description: V1 static - the vendors nav descriptor is exactly "Trade vendor showcase, application and registration.", the old string is gone, and no descriptor in nav-config.ts contains "gated"
+      command: node contracts/checks/launch-weekend/f24/check-g-nav-descriptor.mjs
+    - id: F24-A11
+      description: V2 public - /national-show/workshops has no "sellable" or "Individual session times" in text or HTML, keeps the chip and the foot "Per-session bookings are not yet available for purchase." in [data-status-foot] inside one gold disclosure, with no stray list paragraph
+      command: PUBLIC_URL=http://localhost:3624 node contracts/checks/launch-weekend/f24/check-h-workshops-note.mjs public
+    - id: F24-A12
+      description: V2 preview - /national-show/workshops on the preview build still renders both sentences (first in the disclosure list, foot in the foot line) with the chip
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f24/check-h-workshops-note.mjs preview
+    - id: F24-A13
+      description: Static - the nav-config vendors descriptor carries the voted string
+      command: grep -Fq "Trade vendor showcase, application and registration." components/chrome/nav-config.ts
