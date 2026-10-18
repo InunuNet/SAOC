@@ -82,12 +82,15 @@ and nothing else changes in those files.
 
 - `components/chrome/MegaMenu.tsx`: the five panel lines (111, 118, 153, 268, 269).
 - `components/chrome/MobileMenu.tsx`: the ten off-canvas drawer lines (126, 145, 180, 181, 200, 226, 252, 293, 306, 318).
-- `components/contact/ContactForm.tsx:195`, `components/members/SuggestionForm.tsx:171` and
-  `components/tickets/DownloadTicketButton.tsx:110`.
+- `components/contact/ContactForm.tsx:195` and `components/members/SuggestionForm.tsx:171`.
 - MegaMenu.tsx:118 and MobileMenu.tsx:226 render only for a nav column with a `headingHref`, and every column has none today.
   They take the substitution but have no rendered stop.
-- DownloadTicketButton is checked statically only: it renders only for a confirmed order on /tickets/confirmation, which the
-  rendered check cannot reach.
+- The 3:1 claim covers the SAOC lines above, not `components/tickets/DownloadTicketButton.tsx:110`. That button renders on
+  /tickets/confirmation, which sits inside `.nos-theme` (`app/(marketing)/tickets/layout.tsx`). There the
+  `nos-theme.css:257` reset sets `box-shadow: none`, so its ring is suppressed, and the NOS outline is its focus indicator,
+  as on the vendor forms below (Codi's lane). Its class was still swapped to `ring-primary` for token consistency, with no
+  visible effect. It is checked statically only: it renders only for a confirmed order, which the rendered check cannot
+  reach.
 
 Exclusions (byte-unchanged, keeping `ring-ink/40`):
 
