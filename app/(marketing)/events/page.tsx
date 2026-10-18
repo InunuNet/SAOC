@@ -4,6 +4,7 @@ import { PageHero } from '@/components/ui/PageHero';
 import { EventCard, MonthGroup, eventHref } from '@/components/events';
 import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
 import { ConfirmationBadge } from '@/components/show';
+import { buildPageMetadata } from '@/lib/seo';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { upcomingEventsQuery } from '@/sanity/queries';
 import type { SanityEvent } from '@/types';
@@ -13,7 +14,15 @@ import type { SanityEvent } from '@/types';
 // propagates within F6's 120s round-trip window. See contracts/cms-loop-f1-cdn-purge.yaml.
 export const revalidate = 60;
 
-export const metadata: Metadata = { title: 'Events' };
+const LEDE =
+  "Shows, workshops, and council meetings across South Africa's affiliated orchid societies.";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Events',
+  description: LEDE,
+  lede: LEDE,
+  path: '/events',
+});
 
 const BASE_URL = 'https://saoc.co.za';
 
@@ -61,7 +70,7 @@ export default async function EventsPage() {
         image="/images/orchid-purple.jpg"
         eyebrow="SAOC calendar"
         heading="Events"
-        lede="Shows, workshops, and council meetings across South Africa's affiliated orchid societies."
+        lede={LEDE}
       />
 
       <div className="saoc-container py-16 space-y-16">

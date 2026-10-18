@@ -13,6 +13,7 @@ import { AwardsGrid, JudgesDirectory } from '@/components/judging';
 import { JudgingSplit } from '@/components/judging/JudgingSplit';
 import type { SanityAward, SanityJudge } from '@/components/judging';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+import { buildPageMetadata } from '@/lib/seo';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { awardsQuery, judgingPageQuery } from '@/sanity/queries';
 
@@ -21,7 +22,14 @@ import { awardsQuery, judgingPageQuery } from '@/sanity/queries';
 // propagates within F6's 120s round-trip window. See contracts/cms-loop-f1-cdn-purge.yaml.
 export const revalidate = 60;
 
-export const metadata: Metadata = { title: 'Judging' };
+const LEDE = 'Accreditation, awards, and how plants are scored across South Africa.';
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Judging',
+  description: LEDE,
+  lede: LEDE,
+  path: '/judging',
+});
 
 interface StatItem {
   label: string;
@@ -163,7 +171,7 @@ export default async function JudgingPage() {
         image="/images/orchid-purple.jpg"
         eyebrow="SAOC judging system"
         heading={data?.title ?? 'Judging at SAOC'}
-        lede="Accreditation, awards, and how plants are scored across South Africa."
+        lede={LEDE}
       />
 
       {allWithheld ? (

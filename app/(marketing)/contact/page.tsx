@@ -13,6 +13,7 @@ import {
   showVisitorInfoQuery,
 } from '@/sanity/queries';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+import { buildPageMetadata } from '@/lib/seo';
 import type { ShowVenue, ShowVisitorInfo } from '@/types';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
@@ -20,7 +21,15 @@ import type { ShowVenue, ShowVisitorInfo } from '@/types';
 // propagates within F6's 120s round-trip window. See contracts/cms-loop-f1-cdn-purge.yaml.
 export const revalidate = 60;
 
-export const metadata: Metadata = { title: 'Contact' };
+const LEDE =
+  'Questions about societies, shows, judging, or membership? Reach the right person, or send us a message.';
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Contact',
+  description: LEDE,
+  lede: LEDE,
+  path: '/contact',
+});
 
 interface DirectContact {
   name: string | null;
@@ -71,7 +80,7 @@ export default async function ContactPage() {
         image="/images/orchid-pink.jpg"
         eyebrow="Get in touch"
         heading={data?.title ?? 'Contact SAOC'}
-        lede="Questions about societies, shows, judging, or membership? Reach the right person, or send us a message."
+        lede={LEDE}
       />
       <div className="saoc-container py-16">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">

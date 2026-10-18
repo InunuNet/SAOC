@@ -62,3 +62,29 @@ Sweep-221 and sweep-26f found that both 404s carried the wrong head, and that th
   The section is byte-identical and `<main>` has no styles, so nothing moves.
 - `/tickets/<missing>` still answers HTTP 200, because `loading.tsx` streams the shell before the
   lookup fails. It is now noindex with no canonical; a real 404 status is left to the lead.
+
+## F4 - unique meta descriptions
+
+Sweep-26f found the site default description ("The South African Orchid Council (SAOC) —
+coordinating orchid societies across South Africa since 1968.") on nine routes. Each route below
+now takes its description through `buildPageMetadata` (`lib/seo.ts`), from text the page already
+renders. No copy is new.
+
+| route | description source |
+|---|---|
+| /about | the first sentence of the About copy; the hero has no lede |
+| /judging | the hero lede |
+| /events | the hero lede |
+| /contact | the hero lede |
+| /sponsors | the hero lede |
+| /tickets/[slug] | the ticket type's Sanity description, which the hero renders as its lede |
+| /societies | left at the default: its only lede is withheld on the public build (no source) |
+
+- The four hero ledes move into a `LEDE` constant that both the hero and the metadata read, so
+  the rendered text is unchanged.
+- `buildPageMetadata` also sets each page's own canonical (the same URL as before) and its
+  openGraph and twitter tags, as on every NOS page since F18.
+- Ticket titles. `/tickets/*` sits outside `national-show/layout.tsx`, so a ticket's title now
+  spells out the NOS suffix: "VIP Ticket — National Orchid Show | SAOC".
+- Title casing (Codi R64). Three NOS titles now follow their h1: "What to expect", "Plan your
+  visit" and "Sponsors", with their og images to match.

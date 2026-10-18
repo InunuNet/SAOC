@@ -8,6 +8,7 @@ import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { SponsorGrid } from '@/components/sponsors';
 import type { SanitySponsor } from '@/components/sponsors';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+import { buildPageMetadata } from '@/lib/seo';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { partnersQuery } from '@/sanity/queries';
 
@@ -16,7 +17,15 @@ import { partnersQuery } from '@/sanity/queries';
 // propagates within F6's 120s round-trip window. See contracts/cms-loop-f1-cdn-purge.yaml.
 export const revalidate = 60;
 
-export const metadata: Metadata = { title: 'Sponsors' };
+const LEDE =
+  'Organisations and businesses that support orchid growing, showing, and judging across South Africa.';
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Sponsors',
+  description: LEDE,
+  lede: LEDE,
+  path: '/sponsors',
+});
 
 const REACH_STATS = [
   { value: '21', label: 'Affiliated Societies' },
@@ -56,7 +65,7 @@ export default async function SponsorsPage() {
         image="/images/orchid-yellow.jpg"
         eyebrow="Our sponsors"
         heading="Sponsors"
-        lede="Organisations and businesses that support orchid growing, showing, and judging across South Africa."
+        lede={LEDE}
       />
 
       <div className="saoc-container py-16 space-y-16">

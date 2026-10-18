@@ -50,8 +50,8 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 
   return buildPageMetadata({
-    title: 'Show Sponsors',
-    image: nosOgImage('Show Sponsors — National Orchid Show'),
+    title: 'Sponsors',
+    image: nosOgImage('Sponsors — National Orchid Show'),
     description: "The National Show's own sponsors.",
     lede: (sponsors ?? []).length === 0 ? NO_SPONSORS_YET : undefined,
     path: '/national-show/sponsors',

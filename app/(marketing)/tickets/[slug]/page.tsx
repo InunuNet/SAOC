@@ -19,11 +19,14 @@ import { resolveEffectivePrice } from '@/lib/checkout-reservation';
 import { productIdForSlug } from '@/lib/data/ticket-presentation';
 import { buildShowWindow, computeShowDays } from '@/lib/show-window-lookup';
 import { resolveActiveShow } from '@/lib/show-resolution';
+import { buildPageMetadata } from '@/lib/seo';
 
 // F2 (ticketing-flow-redesign, M2) — the dedicated single-type buy screen. Same
 // force-dynamic reasoning as app/(marketing)/tickets/page.tsx: getSoldCountsByTicketType()
 // (Firebase Admin SDK, runtime-only credentials) means this route can never be prerendered.
 export const dynamic = 'force-dynamic';
+
+const NOS_TITLE_SUFFIX = ' — National Orchid Show | SAOC';
 
 const FALLBACK_SOLD_OUT = 'Sold out';
 const FALLBACK_SALES_CLOSED = 'Ticket sales are not yet open — check back soon.';
@@ -83,7 +86,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     tags: ['ticketType', 'sanity'],
   });
   if (!ticketType) notFound();
-  return { title: ticketType.name };
+  // A ticket is a NOS page (R62 #1), but /tickets/* sits outside national-show/layout.tsx's
+  // title template, so the NOS suffix is spelled out here.
+  return {
+    ...buildPageMetadata({
+      title: ticketType.name,
+      description: ticketType.description,
+      lede: ticketType.description,
+      path: `/tickets/${slug}`,
+    }),
+    title: { absolute: `${ticketType.name}${NOS_TITLE_SUFFIX}` },
+  };
 }
 
 export default async function TicketBuyPage({ params, searchParams }: Props) {

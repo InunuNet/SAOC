@@ -23,8 +23,8 @@ import { NosShowIndex } from '@/components/nos/NosShowIndex';
 export const revalidate = 60;
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'What to Expect',
-  image: nosOgImage('What to Expect — National Orchid Show'),
+  title: 'What to expect',
+  image: nosOgImage('What to expect — National Orchid Show'),
   description:
     'Opening hours, admission, food, photography, cloakroom and accessibility at the South ' +
     'African National Orchid Show.',

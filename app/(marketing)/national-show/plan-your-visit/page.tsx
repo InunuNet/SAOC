@@ -32,8 +32,8 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 
   return buildPageMetadata({
-    title: 'Plan Your Visit',
-    image: nosOgImage('Plan Your Visit — National Orchid Show'),
+    title: 'Plan your visit',
+    image: nosOgImage('Plan your visit — National Orchid Show'),
     description:
       'Getting to the South African National Orchid Show: travel from the airports, parking, ' +
       'public transport, where to stay and what else to see while you are in town.',
