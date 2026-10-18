@@ -72,3 +72,29 @@ Both edits follow the lead's ruling (FINAL, 2026-10-18), and each is one line.
   - `text-accent` measured 2.24:1 worst-case on the photographic ground and becomes `text-ivory`, which measures 6.60:1;
   - handoff basis: `.eyebrow--light` is --ivory (`src/styles.css` `.eyebrow--light { color: var(--ivory) }`,
     `colors_and_type.css:20`), the same token as this section's h1.
+
+## F2b - the remaining SAOC focus rings reach 3:1 (WCAG 1.4.11)
+
+The lead's ruling (FINAL, 2026-10-18) finishes what F2 started. The remaining SAOC uses of `focus-visible:ring-ink/40`
+measured 2.44-2.49:1. They now use `focus-visible:ring-primary`: the handoff's focus token at full strength (--primary
+#384138, `design/design_handoff_saoc/README.md:192` "Focus = `--primary` border"). It is one substitution per line on 18 lines,
+and nothing else changes in those files.
+
+- `components/chrome/MegaMenu.tsx`: the five panel lines (111, 118, 153, 268, 269).
+- `components/chrome/MobileMenu.tsx`: the ten off-canvas drawer lines (126, 145, 180, 181, 200, 226, 252, 293, 306, 318).
+- `components/contact/ContactForm.tsx:195`, `components/members/SuggestionForm.tsx:171` and
+  `components/tickets/DownloadTicketButton.tsx:110`.
+- MegaMenu.tsx:118 and MobileMenu.tsx:226 render only for a nav column with a `headingHref`, and every column has none today.
+  They take the substitution but have no rendered stop.
+- DownloadTicketButton is checked statically only: it renders only for a confirmed order on /tickets/confirmation, which the
+  rendered check cannot reach.
+
+Exclusions (byte-unchanged, keeping `ring-ink/40`):
+
+- **`components/chrome/SaocLockup.tsx`.** This is the footer lockup on `bg-primary-800`. A --primary ring there would measure
+  only 1.42:1. Its focus indicator is the white ring-offset band, which measures 15.09:1 against the footer. f2b-rendered R5
+  guards that band at 1280 and 390.
+- **The ten `.nos-theme` vendor components** (`components/vendors/*`). These render only under `.nos-theme`. There, the
+  unlayered reset `.nos-theme :focus-visible:not(.group)` (`app/(marketing)/national-show/nos-theme.css:257`) removes the
+  box-shadow and paints its own outline, so the ring class is dead. NOS focus is Codi's lane.
+- **`nos-theme.css` itself.** Its one match is a comment inside that reset block, not a class use.

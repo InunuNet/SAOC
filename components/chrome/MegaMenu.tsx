@@ -108,14 +108,14 @@ export function MegaMenu({ item, show }: MegaMenuProps) {
   // pattern implies. The anchor wraps only the name; the descriptor is a
   // plain, non-interactive sibling directly under it.
   const leafLinkClassName =
-    'block rounded-sm py-2 font-sans text-[14px] font-semibold leading-[1.3] text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment';
+    'block rounded-sm py-2 font-sans text-[14px] font-semibold leading-[1.3] text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment';
   const leafDescriptorClassName = 'mt-[2px] block pb-2 font-sans text-[12px] text-muted';
   // .dd-head typography (groupHeadings + leadEyebrow, F7 round 2 golden) — mono
   // 10px uppercase caps in --accent, reset to zero UA margin then mb-3 (--s3).
   const groupHeadingClassName =
     'm-0 mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-accent';
   const groupHeadingLinkClassName =
-    'rounded-sm font-mono text-[10px] uppercase tracking-[0.18em] text-accent transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment';
+    'rounded-sm font-mono text-[10px] uppercase tracking-[0.18em] text-accent transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment';
 
   return (
     <div ref={containerRef} onBlur={onBlur} className="text-[14px]">
@@ -150,7 +150,7 @@ export function MegaMenu({ item, show }: MegaMenuProps) {
                   <Link
                     href={item.lead.leadHref}
                     onClick={close}
-                    className="mb-[6px] inline-flex min-h-11 w-fit items-center rounded-sm font-serif text-[1.35rem] leading-[1.15] text-ink underline transition-colors duration-150 hover:text-primary underline-offset-[5px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                    className="mb-[6px] inline-flex min-h-11 w-fit items-center rounded-sm font-serif text-[1.35rem] leading-[1.15] text-ink underline transition-colors duration-150 hover:text-primary underline-offset-[5px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
                   >
                     {item.lead.leadLabel}
                   </Link>
@@ -265,8 +265,8 @@ export function MegaMenu({ item, show }: MegaMenuProps) {
                         onClick={close}
                         className={
                           destination.variant === 'primary'
-                            ? 'inline-flex w-full items-center justify-center rounded-full bg-nos-royal-purple px-4 py-3 font-sans text-[12px] font-medium uppercase tracking-[0.08em] text-nos-pale-gold hover:bg-nos-purple-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment'
-                            : 'inline-flex w-full items-center justify-center rounded-full border-[1.5px] border-nos-royal-purple bg-transparent px-4 py-3 font-sans text-[12px] font-medium uppercase tracking-[0.08em] text-nos-royal-purple hover:bg-nos-royal-purple hover:text-nos-pale-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment'
+                            ? 'inline-flex w-full items-center justify-center rounded-full bg-nos-royal-purple px-4 py-3 font-sans text-[12px] font-medium uppercase tracking-[0.08em] text-nos-pale-gold hover:bg-nos-purple-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment'
+                            : 'inline-flex w-full items-center justify-center rounded-full border-[1.5px] border-nos-royal-purple bg-transparent px-4 py-3 font-sans text-[12px] font-medium uppercase tracking-[0.08em] text-nos-royal-purple hover:bg-nos-royal-purple hover:text-nos-pale-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment'
                         }
                       >
                         {destination.label}

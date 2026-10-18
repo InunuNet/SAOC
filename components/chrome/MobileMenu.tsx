@@ -123,7 +123,7 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
           <button
             type="button"
             aria-label="Close menu"
-            className="rounded-sm p-2 text-ink hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            className="rounded-sm p-2 text-ink hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
             onClick={onClose}
           >
             <X size={22} strokeWidth={1.5} />
@@ -142,7 +142,7 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
                       type="button"
                       aria-expanded={isExpanded}
                       onClick={() => setExpandedId(isExpanded ? null : n.id)}
-                      className="flex w-full items-center justify-between px-3 py-3 font-sans text-[15px] text-ink hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                      className="flex w-full items-center justify-between px-3 py-3 font-sans text-[15px] text-ink hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
                     >
                       {n.label}
                       <ChevronDown
@@ -177,8 +177,8 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
                                   onClick={onClose}
                                   className={
                                     destination.variant === 'primary'
-                                      ? 'inline-flex w-fit items-center justify-center rounded-sm bg-primary px-4 py-2 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment'
-                                      : 'inline-flex w-fit items-center justify-center rounded-sm border border-primary px-4 py-2 font-sans text-[14px] font-medium text-primary transition-colors duration-150 hover:bg-primary hover:text-ivory focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment'
+                                      ? 'inline-flex w-fit items-center justify-center rounded-sm bg-primary px-4 py-2 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment'
+                                      : 'inline-flex w-fit items-center justify-center rounded-sm border border-primary px-4 py-2 font-sans text-[14px] font-medium text-primary transition-colors duration-150 hover:bg-primary hover:text-ivory focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment'
                                   }
                                 >
                                   {destination.label}
@@ -197,7 +197,7 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
                             <Link
                               href={n.lead.leadHref}
                               onClick={onClose}
-                              className="mt-2 block w-fit rounded-sm font-serif text-[16px] font-medium text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                              className="mt-2 block w-fit rounded-sm font-serif text-[16px] font-medium text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
                             >
                               {n.lead.leadLabel}
                             </Link>
@@ -223,7 +223,7 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
                               <Link
                                 href={column.headingHref}
                                 onClick={onClose}
-                                className="block px-3 py-2 font-serif text-[14px] font-medium text-ink hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                                className="block px-3 py-2 font-serif text-[14px] font-medium text-ink hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
                               >
                                 {column.heading}
                               </Link>
@@ -249,7 +249,7 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
                                     <Link
                                       href={link.href}
                                       onClick={onClose}
-                                      className="block font-sans text-[14px] font-bold text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                                      className="block font-sans text-[14px] font-bold text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
                                     >
                                       {link.label}
                                     </Link>
@@ -290,7 +290,7 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
                     href={n.href}
                     onClick={onClose}
                     className={[
-                      'flex items-center px-3 py-3 font-sans text-[15px] rounded-sm transition-colors duration-150 hover:text-primary hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment',
+                      'flex items-center px-3 py-3 font-sans text-[15px] rounded-sm transition-colors duration-150 hover:text-primary hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment',
                       n.quiet ? 'text-muted' : 'text-ink',
                     ].join(' ')}
                   >
@@ -303,7 +303,7 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
               <Link
                 href={CONTACT_LINK.href}
                 onClick={onClose}
-                className="flex items-center px-3 py-3 font-sans text-[15px] text-ink hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                className="flex items-center px-3 py-3 font-sans text-[15px] text-ink hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
               >
                 {CONTACT_LINK.label}
               </Link>
@@ -315,7 +315,7 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
         <div className="mt-8 pt-6 border-t border-rule flex flex-col gap-1">
           <a
             href="mailto:info@saoc.co.za"
-            className="font-mono text-[12px] text-muted hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            className="font-mono text-[12px] text-muted hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
           >
             info@saoc.co.za
           </a>
