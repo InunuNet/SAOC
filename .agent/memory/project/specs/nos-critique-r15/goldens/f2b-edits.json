@@ -1,0 +1,38 @@
+{
+ "_note": "nos-critique-r15 F2b golden (QA input). Lead ruling FINAL 2026-10-18: the remaining focus rings move from ink at 40% (2.44-2.49:1, WCAG 1.4.11 fail) to the handoff --primary at full strength on the IN lines below (line numbers are BASE 7bb4064b). On each listed line exactly that one substitution happens; nothing else in any IN file changes. The OUT files stay byte-identical and keep ring-ink/40 (reasons in f2b-spec.md section 3).",
+ "base": "7bb4064b",
+ "from": "focus-visible:ring-ink/40",
+ "to": "focus-visible:ring-primary",
+ "in": [
+  { "file": "components/chrome/MegaMenu.tsx", "lines": [111, 118, 153, 268, 269], "rendered": "mega", "dormant": [118] },
+  { "file": "components/chrome/MobileMenu.tsx", "lines": [126, 145, 180, 181, 200, 226, 252, 293, 306, 318], "rendered": "drawer", "dormant": [226] },
+  { "file": "components/contact/ContactForm.tsx", "lines": [195], "rendered": "contact" },
+  { "file": "components/members/SuggestionForm.tsx", "lines": [171], "rendered": "members" },
+  { "file": "components/tickets/DownloadTicketButton.tsx", "lines": [110], "rendered": null, "unreachable": "/tickets/confirmation renders the button only for a confirmed Firestore order (getConfirmedOrderForDisplay); static assertion only" }
+ ],
+ "out": [
+  { "file": "components/chrome/SaocLockup.tsx", "count": 1, "reason": "footer lockup on bg-primary-800; --primary ring is 1.42:1 against it; its indicator is the white ring-offset band (15.09:1 against the footer)" },
+  { "file": "app/(marketing)/national-show/nos-theme.css", "count": 1, "reason": "a comment inside the NOS focus-reset block, not a class use" },
+  { "file": "components/vendors/VendorApplyForm.tsx", "count": 2, "reason": "nos-theme" },
+  { "file": "components/vendors/VendorRegistrationCodeEntryForm.tsx", "count": 2, "reason": "nos-theme" },
+  { "file": "components/vendors/VendorRegisterForm.tsx", "count": 1, "reason": "nos-theme" },
+  { "file": "components/vendors/VendorFormField.tsx", "count": 1, "reason": "nos-theme" },
+  { "file": "components/vendors/VendorCheckboxField.tsx", "count": 1, "reason": "nos-theme" },
+  { "file": "components/vendors/VendorRadioGroupField.tsx", "count": 1, "reason": "nos-theme" },
+  { "file": "components/vendors/VendorBooleanRadioField.tsx", "count": 1, "reason": "nos-theme" },
+  { "file": "components/vendors/VendorCheckboxGroupField.tsx", "count": 1, "reason": "nos-theme" },
+  { "file": "components/vendors/VendorGasEquipmentTable.tsx", "count": 2, "reason": "nos-theme" },
+  { "file": "components/vendors/VendorElectricalEquipmentTable.tsx", "count": 2, "reason": "nos-theme" }
+ ],
+ "dormantReason": "MegaMenu.tsx:118 (groupHeadingLinkClassName) and MobileMenu.tsx:226 render only for a nav column with a headingHref; every column in components/chrome/nav-config.ts has headingHref: null at BASE, so no page renders them. They take the substitution (static S1) but have no rendered stop (R4 skips them).",
+ "outReasonNosTheme": "renders only under .nos-theme (/national-show/vendors/*), where the unlayered reset `.nos-theme :focus-visible:not(.group)` (app/(marketing)/national-show/nos-theme.css:257) sets box-shadow: none and paints outline 2px var(--ring-focus); the ring class is dead there and NOS focus is Codi's lane",
+ "inventoryRoots": ["app", "components", "lib"],
+ "token": { "name": "--primary", "value": "#384138", "handoff": "design/design_handoff_saoc/colors_and_type.css:11", "theme": "app/globals.css @theme --color-primary: var(--primary)", "handoffFocusRule": "design/design_handoff_saoc/README.md:192 'Focus = `--primary` border'" },
+ "minRatio": 3,
+ "scopes": {
+  "mega": { "route": "/", "widths": [1280], "open": "header button[aria-haspopup]", "root": "header [role=\"menu\"]", "minStops": 20 },
+  "drawer": { "route": "/", "widths": [390], "open": "header button[aria-label=\"Open menu\"]", "expand": "[role=\"dialog\"] button[aria-expanded=\"false\"]", "root": "[role=\"dialog\"]", "minStops": 29 },
+  "contact": { "route": "/contact", "widths": [1280, 390], "root": "main form", "minStops": 1 },
+  "members": { "route": "/members", "widths": [1280, 390], "root": "main form", "minStops": 1 }
+ }
+}
