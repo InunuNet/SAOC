@@ -12,7 +12,7 @@ exclusions:
   - item: 'Rendered check of components/tickets/DownloadTicketButton.tsx:110'
     reason: 'Checked STATICALLY ONLY (A2 S1/S3). /tickets/confirmation renders the button only for a confirmed Firestore order, so no rendered check can reach it.'
   - item: 'every file outside goldens/f2b-footprint.json, docs/nos-critique-r15.md and this spec dir'
-    reason: 'Enforced by A2 (S6) against BASE 7bb4064b.'
+    reason: 'Enforced by A2 (S6) against BASE 4a662f8c (the r15 tip).'
 features:
   - id: F2b
     name: Remaining focus rings use the handoff --primary token (>= 3:1)
@@ -30,11 +30,11 @@ assertions:
       description: f2b check scripts and goldens are unmodified since @architect wrote them
       command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r15/goldens/checks-f2b.sha256
     - id: A2
-      description: Static - the 18 IN lines are BASE plus exactly ring-ink/40 to ring-primary, OUT files byte-identical, ring-ink/40 inventory exact, token unchanged, docs F2b section, footprint vs 7bb4064b
+      description: Static - the 18 IN lines are BASE plus exactly ring-ink/40 to ring-primary, OUT files byte-identical, ring-ink/40 inventory exact, token unchanged, docs F2b section, footprint vs 4a662f8c (the r15 tip)
       command: node --no-warnings .agent/memory/project/specs/nos-critique-r15/checks/f2b-static.mjs
     - id: A3
       description: Rendered (public) - MegaMenu open at 1280, MobileMenu drawer expanded at 390, /contact and /members forms at 1280/390, every ring >= 3:1 against background and offset, computed and painted, every non-dormant IN line covered; the footer SaocLockup (byte-unchanged) keeps a >= 2px white offset band >= 3:1 against the footer at 1280/390, computed and painted. DownloadTicketButton is not rendered (static only, A2)
       command: node --no-warnings .agent/memory/project/specs/nos-critique-r15/checks/f2b-rendered.mjs
     - id: A4
-      description: Non-regression (public) - 15 SAOC/NOS routes keep the 7bb4064b geometry and screenshot at rest at 1280/390, nothing masked, no overflow
+      description: Non-regression (public) - 15 SAOC/NOS routes keep the BASE geometry and screenshot (baseline captured on 7bb4064b) at rest at 1280/390, nothing masked, no overflow
       command: node --no-warnings .agent/memory/project/specs/nos-critique-r15/checks/f2b-nonreg.mjs

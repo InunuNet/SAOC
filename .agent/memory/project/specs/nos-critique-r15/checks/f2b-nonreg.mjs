@@ -1,5 +1,5 @@
 // nos-critique-r15 F2b non-regression (PUBLIC production build, next start 3010-3019 minus 3013). QA input, hash-locked. Widths 1280 and 390.
-// F2b changes only focus-visible ring colours, which do not paint at rest, so every capture equals BASE 7bb4064b with nothing masked. The
+// F2b changes only focus-visible ring colours, which do not paint at rest, so every capture equals the BASE capture (taken on 7bb4064b) with nothing masked. The
 // routes are r15's set (nonreg.mjs), which includes the F2b form routes /contact and /members; the header (MegaMenu and MobileMenu closed)
 // and footer are on every capture.
 //   N1  geometry: main's top-level blocks [tag, top, height] and the document height equal the BASE capture (+-1px).

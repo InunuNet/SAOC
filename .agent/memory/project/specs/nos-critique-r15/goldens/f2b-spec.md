@@ -1,7 +1,7 @@
 # nos-critique-r15 F2b - the remaining focus rings use the handoff --primary (>= 3:1)
 
 Lead ruling FINAL 2026-10-18 (team-lead, after the architect's STOP report). Branch `fix/nos-critique-r15-f2b`, stacked on the r15 tip.
-**BASE = 7bb4064b** (not r15's ab7c549c). Golden: `f2b-edits.json`. Checks: `checks/f2b-static.mjs`, `f2b-rendered.mjs`, `f2b-nonreg.mjs`
+**BASE = 4a662f8c**, the r15 tip after the restack onto main 0fdffebb (was 7bb4064b; the r15 source is unchanged, main adds only `next.config.ts`). Golden: `f2b-edits.json`. Checks: `checks/f2b-static.mjs`, `f2b-rendered.mjs`, `f2b-nonreg.mjs`
 (helpers `_f2b.mjs`, plus r15's `_server.mjs` and `_color.mjs`, reused unchanged). Pins: `checks-f2b.sha256`.
 
 ## 1. The change
@@ -75,7 +75,7 @@ The static inventory (S3) fails on any ring-ink/40 outside this list, and on any
   - S3: the ring-ink/40 inventory under app/, components/ and lib/ is exactly the OUT counts.
   - S4: the token is unchanged.
   - S5: docs keep every BASE line and gain a `## F2b` section naming ring-primary, the README.md:192 basis and the SaocLockup exclusion.
-  - S6: footprint (`f2b-footprint.json` + docs + spec dir) vs 7bb4064b; HEAD descends from it.
+  - S6: footprint (`f2b-footprint.json` + docs + spec dir) vs 4a662f8c; HEAD descends from it.
 - **f2b-rendered.mjs**
   - R1: :focus-visible with a >= 2px ring outside an offset.
   - R2: computed >= 3:1 against the background and the offset.
@@ -99,7 +99,7 @@ Proven by the architect:
 
 ## 6. Stacking note
 
-- r15's own checks (contract-f1..f3) are evaluated at their tip, 7bb4064b.
+- r15's own checks (contract-f1..f3) are evaluated at their tip, 4a662f8c.
 - At the F2b tip, r15's `footprint.mjs` (BASE ab7c549c) and `f2-static.mjs` (MegaMenu.tsx = BASE + 1 line) would report the F2b edits.
   F2b supersedes them for MegaMenu.tsx, MobileMenu.tsx, ContactForm.tsx, SuggestionForm.tsx and DownloadTicketButton.tsx.
 - Gate F2b with contract-f2b.yaml.

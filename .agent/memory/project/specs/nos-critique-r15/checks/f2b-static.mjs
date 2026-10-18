@@ -1,4 +1,4 @@
-// nos-critique-r15 F2b static (QA input, hash-locked). BASE 7bb4064b, IN/OUT lists in goldens/f2b-edits.json.
+// nos-critique-r15 F2b static (QA input, hash-locked). BASE 4a662f8c, IN/OUT lists in goldens/f2b-edits.json.
 //   S1  every IN file equals its BASE text with exactly `from` -> `to` on each listed line (each listed BASE line carries `from` once);
 //       nothing else in the file changes: no new token, opacity, offset or class.
 //   S2  every OUT file is byte-identical to BASE and keeps its ring-ink/40 count.

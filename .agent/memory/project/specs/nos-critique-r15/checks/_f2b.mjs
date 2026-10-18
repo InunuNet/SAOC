@@ -1,5 +1,5 @@
 // Shared helpers for the nos-critique-r15 F2b checks (QA input written by @architect; @dev must not edit them, goldens/checks-f2b.sha256
-// locks them). F2b stacks on the r15 tip, so its BASE is 7bb4064b (fix/nos-critique-r15), not r15's ab7c549c; _lib.mjs (pinned by r15
+// locks them). F2b stacks on the r15 tip, so its BASE is 4a662f8c (the r15 tip after the restack onto main 0fdffebb; was 7bb4064b), not r15's main BASE; _lib.mjs (pinned by r15
 // F1-F3) is left untouched and only _server.mjs / _color.mjs are reused. The checks inspect the checkout named by NOS_CR15F2B_ROOT; by
 // default the .tmp/sandbox/critique-r15-f2b worktree when it exists under the checkout holding this spec, otherwise that checkout itself.
 // Importing this module points NOS_CR15_ROOT / NOS_CR15_GIT at the same checkout, so a later dynamic import of _server.mjs builds and serves
@@ -11,7 +11,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const BASE = '7bb4064b';
+export const BASE = '4a662f8c';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const projectRoot = path.resolve(here, '../../../../../..');

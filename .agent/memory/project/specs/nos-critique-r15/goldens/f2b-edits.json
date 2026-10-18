@@ -1,6 +1,6 @@
 {
  "_note": "nos-critique-r15 F2b golden (QA input). Lead ruling FINAL 2026-10-18: the remaining focus rings move from ink at 40% (2.44-2.49:1, WCAG 1.4.11 fail) to the handoff --primary at full strength on the IN lines below (line numbers are BASE 7bb4064b). On each listed line exactly that one substitution happens; nothing else in any IN file changes. The OUT files stay byte-identical and keep ring-ink/40 (reasons in f2b-spec.md section 3).",
- "base": "7bb4064b",
+ "base": "4a662f8c",
  "from": "focus-visible:ring-ink/40",
  "to": "focus-visible:ring-primary",
  "in": [
