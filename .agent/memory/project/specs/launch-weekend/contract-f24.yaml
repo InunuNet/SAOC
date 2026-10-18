@@ -32,7 +32,7 @@ assertions:
       description: Description sweep on the public build - every public route's meta description and og:description is at most 160 chars, ends on a sentence boundary (no mid-word cut, no ellipsis), and is 70-160 chars or a sentence-cut (<=155) of the page lede
       command: PUBLIC_URL=http://localhost:3624 node contracts/checks/launch-weekend/f24/check-c-descriptions.mjs
     - id: F24-A4
-      description: Public withhold - /societies and /media-kit hold no "21" or "twenty-one" in rendered text, meta description, og:description or the HTML payload; /societies keeps its h1 and renders no hero lede paragraph; /media-kit keeps the sourced 1968 fact
+      description: Public withhold - /societies and /media-kit hold no static "21" claim ("21" or "twenty-one" in rendered text, meta description, og:description, or "21 societies across" / "network of 21" in the HTML payload); the sr-only role=status filter-results live region on /societies (a computed count of the rendered list, an accessibility announcement) is excluded and stays; /societies keeps its h1 and renders no hero lede paragraph; /media-kit keeps the sourced 1968 fact
       command: PUBLIC_URL=http://localhost:3624 node contracts/checks/launch-weekend/f24/check-d-withhold-public.mjs
     - id: F24-A5
       description: Preview marked - on the beta preview build /societies and /media-kit show the "21" inside a [data-placeholder] element that carries a marker string (Not confirmed by SAOC / To be confirmed / Not yet confirmed / Awaiting confirmation) on itself or its parent
@@ -61,3 +61,6 @@ assertions:
     - id: F24-A13
       description: Static - the nav-config vendors descriptor carries the voted string
       command: grep -Fq "Trade vendor showcase, application and registration." components/chrome/nav-config.ts
+    - id: F24-A14
+      description: V1 live on public - the rendered nav on home, the tickets page and /about carries the voted vendors descriptor and no nav text says "gated"
+      command: PUBLIC_URL=http://localhost:3624 node contracts/checks/launch-weekend/f24/check-i-nav-live.mjs

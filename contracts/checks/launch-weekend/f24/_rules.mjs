@@ -70,3 +70,13 @@ export function descProblems(desc, lede) {
   if (ledes.some((l) => l.startsWith(d) && d.length < l.length && l[d.length] !== ' ')) out.push(['D3', 'description cuts the lede mid-word']);
   return out;
 }
+
+// F24 A4: the static unsourced "21" claim. The filter-results live region on /societies (<p role="status" aria-live> in
+// SocietiesClient, "{filtered.length} societies") is a computed announcement of the rendered list, not the claim, and stays.
+const LIVE_REGION = /<[a-z0-9]+\b[^>]*\b(?:role="status"|aria-live="[^"]*")[^>]*>[\s\S]*?<\/[a-z0-9]+>/gi;
+export const stripLiveRegions = (html) => html.replace(LIVE_REGION, ' ');
+export const STATIC_CLAIM = /\b21 societies across\b|\bnetwork of 21\b|\btwenty-one\b/i;
+export function staticClaimHits(html) {
+  const m = STATIC_CLAIM.exec(stripLiveRegions(html));
+  return m ? [['W1', `static unsourced claim "${m[0]}" is in the markup`]] : [];
+}

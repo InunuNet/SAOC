@@ -203,6 +203,30 @@
    "text": "One very long unbroken sentence with no stop that runs on and on past the limit",
    "max": 40,
    "expect": null
+  },
+  {
+   "id": "w-live-region-only",
+   "kind": "withhold",
+   "html": "<main><h1>Find an orchid society near you</h1><p role=\"status\" aria-live=\"polite\" class=\"sr-only\">21 societies</p></main>",
+   "expect": "ok"
+  },
+  {
+   "id": "w-static-lede",
+   "kind": "withhold",
+   "html": "<main><p class=\"lede\">21 societies across South Africa — growing, showing, and judging together since 1968.</p><p role=\"status\" aria-live=\"polite\">21 societies</p></main>",
+   "expect": "fail",
+   "rules": [
+    "W1"
+   ]
+  },
+  {
+   "id": "w-static-network",
+   "kind": "withhold",
+   "html": "<main><p>through a federated network of 21 societies</p></main>",
+   "expect": "fail",
+   "rules": [
+    "W1"
+   ]
   }
  ]
 }
