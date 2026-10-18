@@ -9,6 +9,8 @@ autonomy: high
 exclusions:
   - item: 'components/chrome/SaocLockup.tsx and every components/vendors/* ring-ink/40 site'
     reason: 'OUT by lead ruling: the lockup indicator is the white offset band (15.09:1 on the footer; --primary would be 1.42:1); vendor rings are dead under the nos-theme.css:257 reset (Codi lane). A2 keeps them byte-identical.'
+  - item: 'Rendered check of components/tickets/DownloadTicketButton.tsx:110'
+    reason: 'Checked STATICALLY ONLY (A2 S1/S3). /tickets/confirmation renders the button only for a confirmed Firestore order, so no rendered check can reach it.'
   - item: 'every file outside goldens/f2b-footprint.json, docs/nos-critique-r15.md and this spec dir'
     reason: 'Enforced by A2 (S6) against BASE 7bb4064b.'
 features:
@@ -31,7 +33,7 @@ assertions:
       description: Static - the 18 IN lines are BASE plus exactly ring-ink/40 to ring-primary, OUT files byte-identical, ring-ink/40 inventory exact, token unchanged, docs F2b section, footprint vs 7bb4064b
       command: node --no-warnings .agent/memory/project/specs/nos-critique-r15/checks/f2b-static.mjs
     - id: A3
-      description: Rendered (public) - MegaMenu open at 1280, MobileMenu drawer expanded at 390, /contact and /members forms at 1280/390, every ring >= 3:1 against background and offset, computed and painted, every non-dormant IN line covered
+      description: Rendered (public) - MegaMenu open at 1280, MobileMenu drawer expanded at 390, /contact and /members forms at 1280/390, every ring >= 3:1 against background and offset, computed and painted, every non-dormant IN line covered; the footer SaocLockup (byte-unchanged) keeps a >= 2px white offset band >= 3:1 against the footer at 1280/390, computed and painted. DownloadTicketButton is not rendered (static only, A2)
       command: node --no-warnings .agent/memory/project/specs/nos-critique-r15/checks/f2b-rendered.mjs
     - id: A4
       description: Non-regression (public) - 15 SAOC/NOS routes keep the 7bb4064b geometry and screenshot at rest at 1280/390, nothing masked, no overflow

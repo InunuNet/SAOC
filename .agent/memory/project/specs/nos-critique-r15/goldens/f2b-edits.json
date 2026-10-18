@@ -29,6 +29,7 @@
  "inventoryRoots": ["app", "components", "lib"],
  "token": { "name": "--primary", "value": "#384138", "handoff": "design/design_handoff_saoc/colors_and_type.css:11", "theme": "app/globals.css @theme --color-primary: var(--primary)", "handoffFocusRule": "design/design_handoff_saoc/README.md:192 'Focus = `--primary` border'" },
  "minRatio": 3,
+ "lockupGuard": { "_note": "Lead ruling FINAL 2026-10-18: SaocLockup stays byte-unchanged; its focus indicator is the white ring-offset band, which must stay >= minRatio against the footer (#22281f at BASE) at 1280/390.", "file": "components/chrome/SaocLockup.tsx", "line": 50, "route": "/", "widths": [1280, 390], "root": "footer", "footerBg": "#22281f", "minOffsetPx": 2 },
  "scopes": {
   "mega": { "route": "/", "widths": [1280], "open": "header button[aria-haspopup]", "root": "header [role=\"menu\"]", "minStops": 20 },
   "drawer": { "route": "/", "widths": [390], "open": "header button[aria-label=\"Open menu\"]", "expand": "[role=\"dialog\"] button[aria-expanded=\"false\"]", "root": "[role=\"dialog\"]", "minStops": 29 },

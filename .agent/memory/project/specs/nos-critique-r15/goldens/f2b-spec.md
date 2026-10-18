@@ -15,7 +15,7 @@ class, token, opacity or offset changes in any file.
 | components/chrome/MobileMenu.tsx | 126, 145, 180, 181, 200, 226, 252, 293, 306, 318 | drawer open, every accordion expanded, 390 (226 dormant) |
 | components/contact/ContactForm.tsx | 195 | /contact, 1280 and 390 |
 | components/members/SuggestionForm.tsx | 171 | /members, 1280 and 390 |
-| components/tickets/DownloadTicketButton.tsx | 110 | none: static only |
+| components/tickets/DownloadTicketButton.tsx | 110 | none: **checked statically only** (S1/S3) |
 
 - **DownloadTicketButton** is unreachable in a check. /tickets/confirmation renders it only for a confirmed Firestore order
   (`getConfirmedOrderForDisplay`). Its offset is ivory on the inherited parchment page, so the expected ratio is 9.53:1, but that is not measured.
@@ -81,6 +81,10 @@ The static inventory (S3) fails on any ring-ink/40 outside this list, and on any
   - R2: computed >= 3:1 against the background and the offset.
   - R3: painted >= 3:1 against the background pixel and the offset pixel.
   - R4: minStops per scope, and every non-dormant rendered IN line is matched by a measured element.
+  - R5, the lockup guard (lead addition, FINAL 2026-10-18): the footer SaocLockup link stays byte-unchanged. At 1280 and 390, its
+    ring-offset band must be at least 2px wide and reach at least 3:1 against the footer background (#22281f at BASE), computed and
+    painted. A later change that drops the offset or recolours it fails the gate. Mutation-proven: removing
+    `focus-visible:ring-offset-2` from SaocLockup.tsx fails R5 at both widths, and also S2/S6.
   - Menus are opened with element.click(), so the pointer never hovers a row (hover:bg-bone).
   - The clip is viewport-relative. Verified: a viewport screenshot's clip is trimmed to the viewport, not the document.
 - **f2b-nonreg.mjs**
@@ -88,8 +92,9 @@ The static inventory (S3) fails on any ring-ink/40 outside this list, and on any
   - N1 geometry, N2 block-mean screenshot, N3 no overflow.
 
 Proven by the architect:
-- At BASE: static FAIL (S1, S3, S5). Rendered FAIL with 106 R2 and 106 R3 failures (53 stops × background and offset).
-- On a prototype of exactly this edit: static, rendered (53 stops, 15 lines covered) and nonreg (30 captures) all PASS.
+- At BASE: static FAIL (S1, S3, S5). Rendered FAIL with 106 R2 and 106 R3 failures (53 stops × background and offset); R5 passes
+  (the guard holds today).
+- On a prototype of exactly this edit: static, rendered (53 stops plus the 2 lockup-guard stops, 15 lines covered) and nonreg (30 captures) all PASS.
 - The prototype was then reverted.
 
 ## 6. Stacking note
