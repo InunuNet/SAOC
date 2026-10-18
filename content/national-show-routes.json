@@ -149,7 +149,7 @@
       "status": "created",
       "owner": "nos-design",
       "archetype": "prose",
-      "purpose": "The SAOC Symposium — what it is, its theme, and who it is for.",
+      "purpose": "The National Orchid Show Symposium — what it is, its theme, and who it is for.",
       "pageKey": "06-saoc-symposium",
       "specNumber": 6
     },
@@ -293,7 +293,7 @@
       "status": "untouched",
       "owner": "saoc-eb",
       "archetype": "archive",
-      "purpose": "Previous editions and their champions.",
+      "purpose": "Previous editions.",
       "pageKey": null,
       "specNumber": null
     },
