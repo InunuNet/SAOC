@@ -45,7 +45,8 @@ copy change, and no edit to an existing line.
 ## Acceptance (checks/, pinned in checks-f1.sha256)
 
 - A2 `f1-footprint.mjs`: the branch differs from BASE only in `goldens/f1-footprint.json`
-  (nos-structure.css), `docs/nos-critique-r14.md` and this spec dir. HEAD descends from BASE.
+  (nos-structure.css), `goldens/f2-footprint.json` (societies/page.tsx, r14 F2 on the same branch),
+  `docs/nos-critique-r14.md` and this spec dir. HEAD descends from BASE.
 - A3 `f1-static.mjs`: every BASE line of nos-structure.css is kept in order. Added non-comment
   lines add no custom property and no length other than 0, and at least one is added. The docs
   name F1 and Codi.

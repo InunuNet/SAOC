@@ -1,0 +1,9 @@
+{
+ "route": "/societies",
+ "text": "The SAOC also provides a national forum through which affiliated societies can collaborate and share expertise.",
+ "chars": 111,
+ "source": "content/drive-source/SAOC /2. About/About page - South African Orchid Council/v1.0/content.md",
+ "line": 9,
+ "ruling": "lead ruling FINAL 2026-10-18 (nos-critique-r14 F2): /societies gets its own meta description, this string verbatim, no cut, no paraphrase; title stays 'Affiliated Societies'; UNSOURCED_LEDE stays withheld on public.",
+ "siteDefaultScope": "The site default (app/layout.tsx DEFAULT_DESCRIPTION) must leave the /societies head meta (description, og:description, twitter:description). The root layout's Organization JSON-LD description is site-wide and is not a page description; it stays."
+}

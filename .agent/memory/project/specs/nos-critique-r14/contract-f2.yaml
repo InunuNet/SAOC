@@ -1,0 +1,36 @@
+# Sources: lead ruling FINAL 2026-10-18 (r14 F2, /societies meta description from Lee-Ann's Drive About page l.9), architect measurement on 9d16cf96 (goldens/f2-spec.md).
+schema: athanor.contract/v1
+slug: nos-critique-r14
+goal: >-
+  Give /societies its own meta description, "The SAOC also provides a national forum through which affiliated societies can collaborate and share expertise."
+  verbatim from Lee-Ann's Drive (About page v1.0 l.9), through buildPageMetadata, with the title, UNSOURCED_LEDE withhold and F24 description rules unchanged.
+created_at: '2026-10-18'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json + goldens/f2-footprint.json, docs/nos-critique-r14.md and this spec dir'
+    reason: 'Enforced by A2 (shared r14 branch guard). r12 F4 checks that pin /societies at the default are amended by ruling, not edited (goldens/supersession.json).'
+features:
+  - id: F2
+    name: /societies carries its own Drive-sourced meta description
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r14/goldens/f2-spec.md
+  - .agent/memory/project/specs/nos-critique-r14/goldens/f2-description.json
+  - .agent/memory/project/specs/nos-critique-r14/goldens/f2-footprint.json
+  - .agent/memory/project/specs/nos-critique-r14/goldens/supersession.json
+  - .agent/memory/project/specs/nos-critique-r14/goldens/checks-f2.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f2 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r14/goldens/checks-f2.sha256
+    - id: A2
+      description: Footprint - the r14 branch differs from main 9d16cf96 only in nos-structure.css (F1), societies/page.tsx (F2), docs/nos-critique-r14.md and the spec dir, HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r14/checks/f1-footprint.mjs
+    - id: A3
+      description: Static - societies/page.tsx keeps every BASE line but the bare metadata, takes the Drive string verbatim through buildPageMetadata with a cite comment, adds no other copy, the string is on Drive line 9, docs record F2
+      command: node .agent/memory/project/specs/nos-critique-r14/checks/f2-static.mjs
+    - id: A4
+      description: Rendered (public) - /societies description, og:description and twitter:description equal the string and not the default, title and h1 unchanged, F24 D1-D4 on every route with no repeat, UNSOURCED_LEDE withheld
+      command: node .agent/memory/project/specs/nos-critique-r14/checks/f2-rendered.mjs

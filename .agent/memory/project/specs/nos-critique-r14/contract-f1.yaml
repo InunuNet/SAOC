@@ -7,7 +7,7 @@ goal: >-
 created_at: '2026-10-18'
 autonomy: high
 exclusions:
-  - item: 'every file outside goldens/f1-footprint.json, docs/nos-critique-r14.md and this spec dir'
+  - item: 'every file outside goldens/f1-footprint.json, goldens/f2-footprint.json (r14 F2, same branch), docs/nos-critique-r14.md and this spec dir'
     reason: 'Enforced by A2. Additive CSS only; the shared .nos-section/.nk-section rhythm rules and the r12 F6 rules stay byte-identical (A3).'
 features:
   - id: F1
@@ -25,7 +25,7 @@ assertions:
       description: f1 check scripts and goldens are unmodified since @architect wrote them
       command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r14/goldens/checks-f1.sha256
     - id: A2
-      description: Footprint - the r14 branch differs from main 9d16cf96 only in nos-structure.css, docs/nos-critique-r14.md and the spec dir, HEAD descends from it
+      description: Footprint - the r14 branch differs from main 9d16cf96 only in nos-structure.css, societies/page.tsx (F2), docs/nos-critique-r14.md and the spec dir, HEAD descends from it
       command: node .agent/memory/project/specs/nos-critique-r14/checks/f1-footprint.mjs
     - id: A3
       description: Static - nos-structure.css only gains lines, adding no new token or length other than 0, docs record F1 and Codi

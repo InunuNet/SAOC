@@ -22,6 +22,7 @@ export const gitRoot = process.env.NOS_CR14_GIT ? path.resolve(process.env.NOS_C
 
 export const DOC = 'docs/nos-critique-r14.md';
 export const CSS = 'app/(marketing)/national-show/nos-structure.css';
+export const SOCIETIES = 'app/(marketing)/societies/page.tsx';
 
 export function readRepoFile(rel) {
   const abs = path.join(repoRoot, rel);
@@ -41,15 +42,17 @@ export function git(...args) {
 }
 
 export const golden = (name) => readFileSync(path.join(specDir, 'goldens', name), 'utf8');
+const FOOTPRINTS = ['f1-footprint.json', 'f2-footprint.json'];
 
-/** Footprint guard against BASE for the whole r14 branch: only goldens/f1-footprint.json, the docs file and this spec directory may differ. */
+/** Footprint guard against BASE for the whole r14 branch: only the union of goldens/f1-footprint.json and goldens/f2-footprint.json,
+ *  the docs file and this spec directory may differ. */
 export function footprintFailures() {
   const failures = [];
   const lines = (s) => s.split('\n').map((l) => l.trim()).filter(Boolean);
-  const allowed = new Set([DOC, ...JSON.parse(golden('f1-footprint.json'))]);
+  const allowed = new Set([DOC, ...FOOTPRINTS.flatMap((f) => JSON.parse(golden(f)))]);
   const specPrefix = '.agent/memory/project/specs/nos-critique-r14/';
   const changed = new Set([...lines(git('diff', '--name-only', BASE)), ...lines(git('ls-files', '--others', '--exclude-standard'))]);
-  for (const p of changed) if (!allowed.has(p) && !p.startsWith(specPrefix)) failures.push(`path not on the r14 allowlist (goldens/f1-footprint.json, the spec dir): ${p}`);
+  for (const p of changed) if (!allowed.has(p) && !p.startsWith(specPrefix)) failures.push(`path not on the r14 allowlist (${FOOTPRINTS.map((f) => `goldens/${f}`).join(', ')}, the docs file, the spec dir): ${p}`);
   try {
     git('merge-base', '--is-ancestor', BASE, git('rev-parse', 'HEAD').trim());
   } catch {

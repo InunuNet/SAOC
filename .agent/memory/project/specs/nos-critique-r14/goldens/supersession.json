@@ -1,0 +1,46 @@
+{
+ "note": "nos-critique-r14 F2 (lead ruling FINAL 2026-10-18: /societies gets its own meta description, the Drive sentence \"The SAOC also provides a national forum through which affiliated societies can collaborate and share expertise.\" from content/drive-source/SAOC /2. About/About page - South African Orchid Council/v1.0/content.md l.9): earlier checks and goldens that pin /societies at the site default.",
+ "edited": [],
+ "amendedByRuling": [
+  {
+   "file": ".agent/memory/project/specs/nos-critique-r12/checks/f4-static.mjs",
+   "rule": "S2: /societies (left at default, no source) is byte-identical to 26fde668 (line 61, via _f4.mjs LEFT_AT_DEFAULT)",
+   "ruling": "r14 F2 lead ruling above. r12 f4-spec.md:16 said Drive had no societies copy locally; the About page's line 9 sentence is about affiliated societies and the lead ruled it the /societies description.",
+   "how": "not edited and not re-pinned. The r12 spec dir is closed (r12 merged at 5f8d2311) and was never committed: it exists only untracked in the main checkout, so no r14 commit can re-pin checks-f4.sha256. Run against an r14 tree, f4-static fails S2 by ruling. r14 f2-static S1-S4 replaces it: page.tsx equals 9d16cf96 except the metadata statement, its import and the citing comment."
+  },
+  {
+   "file": ".agent/memory/project/specs/nos-critique-r12/checks/f4-rendered.mjs",
+   "rule": "line 120: /societies is left at default (no source) and must carry DEFAULT_DESCRIPTION (_f4.mjs LEFT_AT_DEFAULT)",
+   "ruling": "same r14 F2 ruling.",
+   "how": "not edited, same reason. Run against an r14 tree, that one line fails by ruling; its other assertions (D1-D4, uniqueness, the five SAOC targets, tickets, casing) are unaffected. r14 f2-rendered R1-R3 asserts the new description, that the default is gone from the /societies head and that no route repeats it."
+  },
+  {
+   "file": ".agent/memory/project/specs/nos-critique-r12/goldens/f4-spec.md",
+   "rule": "line 16 table row '/societies left at default (no source)', line 53 '/societies byte-identical', line 61 '/societies keeps the default'",
+   "ruling": "same r14 F2 ruling.",
+   "how": "not edited (closed, uncommitted r12 golden). The r14 record is goldens/f2-spec.md."
+  }
+ ],
+ "notSuperseded": [
+  {
+   "rule": "F24-A3 check-c-descriptions (contracts/checks/launch-weekend/f24, tracked): 70-160 or a sentence-cut lede on every public route",
+   "how": "kept and green: 111 chars, ends on a full stop. PASS on the F1+F2 prototype build (31 routes). check-a, check-b and check-d also PASS there."
+  },
+  {
+   "rule": "F24-A4 check-d / withhold.json societies-lede: UNSOURCED_LEDE withheld on public, h1 'Find an orchid society near you' kept",
+   "how": "kept: UNSOURCED_LEDE and its withhold branch are byte-identical (r14 f2-static S1), and r14 f2-rendered R4 re-asserts it."
+  },
+  {
+   "rule": "F24 titles.json /societies 'Affiliated Societies | South African Orchid Council' and the r13 _r13.mjs /societies sentence-h1 exception",
+   "how": "kept: the title is unchanged (f2-static S2, f2-rendered R1)."
+  },
+  {
+   "rule": "launch-weekend f24-spec.md line 15 NOTE that /societies shared the layout default",
+   "how": "a note, not a rule. It was historical at 81490e7a and nothing asserts it."
+  },
+  {
+   "rule": "root layout Organization JSON-LD description = DEFAULT_DESCRIPTION",
+   "how": "site-wide organisation data, not a page description. It stays on every route, /societies included."
+  }
+ ]
+}
