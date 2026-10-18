@@ -13,9 +13,13 @@ import type { SanitySociety } from './SocietyCard';
 
 export interface SocietyAboutProps {
   society: SanitySociety;
+  /** Public build (withholdPlaceholderProse): the generic fallback and its marker are not
+   *  rendered, and the section is dropped when nothing sourced remains. */
+  withhold?: boolean;
 }
 
-export function SocietyAbout({ society }: SocietyAboutProps) {
+export function SocietyAbout({ society, withhold = false }: SocietyAboutProps) {
+  if (withhold && !society.description && !society.website) return null;
   const region = society.region ?? society.province ?? 'South Africa';
 
   return (
@@ -36,7 +40,7 @@ export function SocietyAbout({ society }: SocietyAboutProps) {
           Visit society website →
         </a>
       ) : null}
-      {!society.description && (
+      {!society.description && !withhold && (
         <div data-placeholder="true" className="mt-5 max-w-3xl">
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
             {society.name} is one of SAOC&apos;s 21 affiliated societies, serving growers in{' '}

@@ -100,7 +100,7 @@ export function Header({ show }: HeaderProps = {}) {
               true aspect via h-auto. */}
           <Link
             href="/"
-            className="min-w-0 shrink rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            className="min-w-0 shrink rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
             aria-label="South African Orchid Council — Making a difference since 1968"
           >
             <Image
@@ -139,7 +139,7 @@ export function Header({ show }: HeaderProps = {}) {
                   key={n.id}
                   href={n.href}
                   className={[
-                    'relative inline-flex min-h-6 items-center rounded-sm font-sans text-[14px] transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment',
+                    'relative inline-flex min-h-6 items-center rounded-sm font-sans text-[14px] transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment',
                     n.quiet ? 'text-muted' : 'text-ink',
                     active ? 'text-primary' : '',
                   ].join(' ')}
@@ -157,7 +157,7 @@ export function Header({ show }: HeaderProps = {}) {
             <Link
               href={CONTACT_LINK.href}
               className={[
-                'relative inline-flex min-h-6 items-center rounded-sm font-sans text-[14px] transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment',
+                'relative inline-flex min-h-6 items-center rounded-sm font-sans text-[14px] transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment',
                 isActive(CONTACT_LINK.href) ? 'text-primary' : 'text-ink',
               ].join(' ')}
             >
@@ -176,7 +176,7 @@ export function Header({ show }: HeaderProps = {}) {
             <button
               type="button"
               aria-label="Open search"
-              className="rounded-sm p-2 text-ink hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+              className="rounded-sm p-2 text-ink hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
               onClick={() => setSearchOpen(true)}
             >
               <Search size={18} strokeWidth={1.5} />
@@ -188,7 +188,7 @@ export function Header({ show }: HeaderProps = {}) {
               aria-label="Open menu"
               aria-expanded={mobileOpen}
               aria-controls={MOBILE_MENU_ID}
-              className="rounded-sm p-2 text-ink min-[1240px]:hidden hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+              className="rounded-sm p-2 text-ink min-[1240px]:hidden hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
               onClick={() => setMobileOpen(true)}
             >
               <Menu size={22} strokeWidth={1.5} />

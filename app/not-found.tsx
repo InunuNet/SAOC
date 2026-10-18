@@ -27,7 +27,7 @@ export function NotFoundSection() {
       />
 
       <div className="relative z-10 mx-auto w-full max-w-[1280px] px-8 py-24 text-center">
-        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-accent mb-4">
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ivory mb-4">
           404 — Page not found
         </p>
         <h1 className="font-serif text-[clamp(42px,6vw,80px)] font-medium leading-[1.04] tracking-[-0.012em] text-ivory max-w-[20ch] mx-auto mb-6">

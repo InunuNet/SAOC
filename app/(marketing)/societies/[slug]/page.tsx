@@ -19,6 +19,8 @@ import {
 } from '@/components/societies';
 import type { SanitySociety } from '@/components/societies';
 import { societies as staticSocieties } from '@/lib/data/societies';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+import { withholdSocietyEstimates } from '@/lib/data/society-withhold';
 import type { SanityEvent } from '@/types';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
@@ -124,6 +126,8 @@ export default async function SocietyPage({
 
   const events = await getSocietyEvents(society);
   const detailsUnconfirmed = !society.meets && !society.venue;
+  const withhold = withholdPlaceholderProse();
+  const shown = withholdSocietyEstimates(society, withhold);
 
   return (
     <>
@@ -134,9 +138,9 @@ export default async function SocietyPage({
         lede={society.region ?? undefined}
       />
       <div className="mx-auto max-w-[1280px] space-y-16 px-8 py-16 md:px-16">
-        <SocietyFacts society={society} />
+        <SocietyFacts society={shown} />
 
-        <SocietyAbout society={society} />
+        <SocietyAbout society={shown} withhold={withhold} />
 
         <SocietyEvents societyName={society.name} events={events} />
 

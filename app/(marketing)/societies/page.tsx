@@ -9,6 +9,7 @@ import type { SanitySociety } from '@/components/societies';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { provinceListQuery, societyListQuery } from '@/sanity/queries';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+import { withholdSocietyEstimates } from '@/lib/data/society-withhold';
 import { societies as staticSocieties } from '@/lib/data/societies';
 import { provinces as staticProvinces } from '@/lib/data/provinces';
 import { buildPageMetadata } from '@/lib/seo';
@@ -99,6 +100,7 @@ export default async function SocietiesPage() {
           meetPlaceholder: true,
           venuePlaceholder: true,
         }));
+  const listed = societies.map((s) => withholdSocietyEstimates(s, withhold));
 
   return (
     <>
@@ -115,7 +117,7 @@ export default async function SocietiesPage() {
           </div>
         )}
         <Suspense fallback={<SocietiesFallback count={societies.length} />}>
-          <SocietiesClient societies={societies} provinces={provinceChips} />
+          <SocietiesClient societies={listed} provinces={provinceChips} />
         </Suspense>
       </div>
     </>

@@ -18,7 +18,7 @@ export function ProvisionalFigure({ children }: { children: ReactNode }) {
     >
       {children}
       {' '}
-      <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted align-super">
+      <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-primary align-super">
         provisional
       </span>
     </mark>

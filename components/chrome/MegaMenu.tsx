@@ -126,7 +126,7 @@ export function MegaMenu({ item, show }: MegaMenuProps) {
         aria-expanded={open}
         aria-current={pathname === item.href || pathname?.startsWith(`${item.href}/`) ? 'page' : undefined}
         onClick={() => setOpen((v) => !v)}
-        className="relative inline-flex min-h-6 items-center rounded-sm font-sans text-[14px] text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+        className="relative inline-flex min-h-6 items-center rounded-sm font-sans text-[14px] text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
       >
         {item.label}
       </button>
