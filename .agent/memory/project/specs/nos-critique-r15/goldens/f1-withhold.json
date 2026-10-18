@@ -6,8 +6,10 @@
   { "id": "caption", "text": "are our own estimates, pending confirmation from each society", "source": "app/(marketing)/societies/SocietiesClient.tsx:112-113", "routes": ["/societies"] },
   { "id": "facts-pill", "text": "estimated", "source": "components/societies/SocietyFacts.tsx:59", "routes": ["slug"] },
   { "id": "about-marker", "text": "General description — society-specific detail pending confirmation", "source": "components/societies/SocietyAbout.tsx:49", "routes": ["slug"] },
+  { "id": "cta-body", "text": "SAOC coordinates 21 affiliated societies across South Africa", "source": "app/(marketing)/societies/[slug]/page.tsx:158 (CTASection body; amendment, lead ruling FINAL 2026-10-18)", "routes": ["slug"] },
   { "id": "about-prose", "text": "affiliated societies, serving growers in", "source": "components/societies/SocietyAbout.tsx:41-47 (the generic SAOC-voiced fallback, incl. the unsourced '21')", "routes": ["slug"] }
  ],
+ "cta": { "heading": "Find another society, or reach the council", "eyebrow": "Keep exploring", "links": ["Find a society", "Contact SAOC"] },
  "estimatePatterns": ["Founded \\d{4}", "~?\\d+ members"],
  "payloadPatterns": ["foundedPlaceholder\\\\?\"\\s*:\\s*true", "memberCountPlaceholder\\\\?\"\\s*:\\s*true", "\\\\?\"founded\\\\?\"\\s*:\\s*\\d", "\\\\?\"memberCount\\\\?\"\\s*:\\s*\\d"],
  "unitCases": [

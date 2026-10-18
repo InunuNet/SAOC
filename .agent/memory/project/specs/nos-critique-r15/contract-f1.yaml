@@ -4,7 +4,8 @@ schema: athanor.contract/v1
 slug: nos-critique-r15
 goal: >-
   On the PUBLIC build, withhold the unsourced per-society estimates (the card and facts figures with their "estimated" tags, the /societies caption,
-  and the generic fallback prose with its "General description" marker) in the server data via withholdPlaceholderProse(), with the beta preview byte-unchanged.
+  the generic fallback prose with its "General description" marker, and the society-page CTA's unsourced "21 affiliated societies" body) via withholdPlaceholderProse(),
+  with the beta preview byte-unchanged.
 created_at: '2026-10-18'
 autonomy: high
 exclusions:
@@ -31,13 +32,13 @@ assertions:
       description: Footprint - the r15 branch differs from origin/main ab7c549c only in the union of the r15 footprints, docs/nos-critique-r15.md and the spec dir, HEAD descends from it
       command: node .agent/memory/project/specs/nos-critique-r15/checks/footprint.mjs
     - id: A3
-      description: Static - pure lib/data/society-withhold.ts, both societies pages pass server-withheld data to their renderers, SocietyAbout takes withhold, client components untouched, no new copy, docs record F1
+      description: Static - pure lib/data/society-withhold.ts, both societies pages pass server-withheld data to their renderers, SocietyAbout takes withhold, the slug CTA body is withheld (no marked), client components and CTASection untouched, no new copy, docs record F1
       command: node .agent/memory/project/specs/nos-critique-r15/checks/f1-static.mjs
     - id: A4
       description: Unit - withholdSocietyEstimates returns the same object when not withholding and nulls only flagged estimates (U1-U7)
       command: node --no-warnings .agent/memory/project/specs/nos-critique-r15/checks/f1-unit.mjs
     - id: A5
-      description: Rendered at 1280/390 - public /societies and 3 society pages show no estimate, caption, marker or generic prose and ship none in the payload, cards and grid intact, no orphan section or overflow; preview byte-unchanged
+      description: Rendered at 1280/390 - public /societies and 3 society pages show no estimate, caption, marker, generic prose or CTA count and ship none in the payload, cards and grid intact, CTA keeps heading and buttons, no orphan section or overflow; preview byte-unchanged
       command: node .agent/memory/project/specs/nos-critique-r15/checks/f1-rendered.mjs
     - id: A6
       description: Non-regression (public) - 13 SAOC and 2 NOS routes keep geometry and screenshot at 1280/390 with only the F3 targets masked, no overflow

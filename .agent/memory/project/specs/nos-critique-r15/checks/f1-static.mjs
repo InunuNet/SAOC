@@ -10,8 +10,13 @@
 //       it gains an optional `withhold` prop; no BASE string literal is dropped and none is added.
 //   S4  SocietyCard.tsx, SocietyFacts.tsx, SocietiesClient.tsx, SocietiesFallback.tsx and lib/data/show-pages.ts are byte-identical to
 //       BASE: the decision is made on the server, in the data, before anything reaches the client component.
-//   S5  no added non-import line anywhere in the F1 footprint carries a string literal of 12+ chars (no new copy).
+//   S5  no added non-import line anywhere in the F1 footprint carries a string literal of 12+ chars that is not already in the BASE file it
+//       sits in (no new copy; the CTA sentence moves into a conditional unchanged).
 //   S6  docs/nos-critique-r15.md records F1.
+//   S7  (lead ruling FINAL 2026-10-18, amendment) the slug page's CTASection body, the unsourced "SAOC coordinates 21 affiliated societies
+//       across South Africa" sentence, is withheld on public the way /about's CTA already is: `body={withhold ? undefined : '<BASE sentence>'}`
+//       on the same withhold const, no `marked` prop added (beta byte-unchanged); eyebrow, heading and both buttons stay;
+//       components/ui/CTASection.tsx is byte-identical (its body is already optional and renders nothing when omitted).
 import { DOC, additions, finish, readBaseFile, readRepoFile } from './_lib.mjs';
 
 const NAME = 'f1-static.mjs';
@@ -20,7 +25,8 @@ const HELPER = 'lib/data/society-withhold.ts';
 const LIST = 'app/(marketing)/societies/page.tsx';
 const SLUG = 'app/(marketing)/societies/[slug]/page.tsx';
 const ABOUT = 'components/societies/SocietyAbout.tsx';
-const FROZEN = ['components/societies/SocietyCard.tsx', 'components/societies/SocietyFacts.tsx', 'app/(marketing)/societies/SocietiesClient.tsx', 'app/(marketing)/societies/SocietiesFallback.tsx', 'lib/data/show-pages.ts'];
+const CTA_BODY = 'SAOC coordinates 21 affiliated societies across South Africa. Browse the full list, or get in touch with the national committee directly.';
+const FROZEN = ['components/ui/CTASection.tsx', 'components/societies/SocietyCard.tsx', 'components/societies/SocietyFacts.tsx', 'app/(marketing)/societies/SocietiesClient.tsx', 'app/(marketing)/societies/SocietiesFallback.tsx', 'lib/data/show-pages.ts'];
 const MIN_LITERAL = 12;
 const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/.*$/gm, '$1');
 const literals = (code) => [...stripComments(code).matchAll(/'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)"|`([^`]*)`/g)].map((m) => m[1] ?? m[2] ?? m[3]);
@@ -42,7 +48,7 @@ else {
 // S2
 const RENDER = {
   [LIST]: { dropped: ['          <SocietiesClient societies={societies} provinces={provinceChips} />'], uses: (v) => [new RegExp(`<SocietiesClient societies=\\{${v}\\} provinces=\\{provinceChips\\} />`)] },
-  [SLUG]: { dropped: ['        <SocietyFacts society={society} />', '        <SocietyAbout society={society} />'], uses: (v) => [new RegExp(`<SocietyFacts society=\\{${v}\\} />`), new RegExp(`<SocietyAbout society=\\{${v}\\} withhold=\\{[\\w.()]+\\} />`)] },
+  [SLUG]: { dropped: ['        <SocietyFacts society={society} />', '        <SocietyAbout society={society} />', `        body="${CTA_BODY}"`], uses: (v) => [new RegExp(`<SocietyFacts society=\\{${v}\\} />`), new RegExp(`<SocietyAbout society=\\{${v}\\} withhold=\\{[\\w.()]+\\} />`)] },
 };
 for (const file of [LIST, SLUG]) {
   const head = readRepoFile(file);
@@ -79,10 +85,25 @@ for (const file of [LIST, SLUG]) {
 for (const f of FROZEN) if (readRepoFile(f) !== readBaseFile(f)) failures.push(`${f} must be byte-identical to BASE (S4: decide on the server, in the data)`);
 
 // S5
-for (const l of literals(allAdded.filter((x) => !/^\s*import\s/.test(x)).join('\n'))) if (l.length >= MIN_LITERAL) failures.push(`added string literal "${l.slice(0, 60)}" is new copy (S5)`);
+const baseLiterals = new Set([LIST, SLUG, ABOUT].flatMap((f) => literals(readBaseFile(f) ?? '')));
+for (const l of literals(allAdded.filter((x) => !/^\s*import\s/.test(x)).join('\n'))) if (l.length >= MIN_LITERAL && !baseLiterals.has(l)) failures.push(`added string literal "${l.slice(0, 60)}" is new copy (S5)`);
+
+// S7
+{
+  const head = readRepoFile(SLUG) ?? '';
+  const cta = /<CTASection\b([\s\S]*?)\/>/.exec(head);
+  if (!cta) failures.push(`${SLUG}: no CTASection (S7)`);
+  else {
+    const props = cta[1];
+    const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (!new RegExp(`\\bbody=\\{\\s*withhold\\s*\\?\\s*undefined\\s*:\\s*'${esc(CTA_BODY)}'\\s*\\}`).test(props)) failures.push(`${SLUG}: CTASection body is not \`{withhold ? undefined : '<the BASE sentence>'}\` (S7)`);
+    if (/\bmarked=/.test(props)) failures.push(`${SLUG}: CTASection gains a marked prop; the beta preview must stay byte-unchanged (S7)`);
+    for (const p of ['eyebrow="Keep exploring"', 'heading="Find another society, or reach the council"', "primaryCta={{ href: '/societies', label: 'Find a society' }}", "secondaryCta={{ href: '/contact', label: 'Contact SAOC' }}"]) if (!props.includes(p)) failures.push(`${SLUG}: CTASection lost ${p} (S7)`);
+  }
+}
 
 // S6
 const doc = readRepoFile(DOC);
 if (doc === null || !/\bF1\b/.test(doc)) failures.push(`${DOC} must record F1 (S6)`);
 
-finish(NAME, failures, 'the estimates are withheld in the server data through withholdPlaceholderProse(); client components untouched; no new copy; docs record F1.');
+finish(NAME, failures, 'the estimates and the CTA count are withheld on the server through withholdPlaceholderProse(); client components and CTASection untouched; no new copy; docs record F1.');

@@ -93,10 +93,34 @@ Justification, recorded for the lead:
 
 Rejected alternative: keep the prose and drop only the marker. It is simpler, but it breaks 1C and (b).
 
+### 4. Amendment (lead ruling FINAL 2026-10-18): the society-page CTA body is withheld on public
+
+The closing `CTASection` on every society page (`app/(marketing)/societies/[slug]/page.tsx:155-162`) has this body:
+"SAOC coordinates 21 affiliated societies across South Africa. Browse the full list, or get in touch with the national committee
+directly." It carries the same unsourced count, so it falls under the same 1C rule. The file is the slug page, which is already in
+`goldens/f1-footprint.json`, so the footprint does not grow.
+
+- **What changes:** only the body prop, to `body={withhold ? undefined : '<the BASE sentence, unchanged>'}`. It uses the `withhold` const
+  from section 2. This is the idiom /about's CTA already uses (`app/(marketing)/about/page.tsx:247-258`).
+- **No `marked` prop:**
+  - /about adds `marked={!withhold}`, but the lead ruled "beta stays unchanged". Marking the sentence on the preview would change the
+    beta markup, and V1's sha would catch it.
+  - Whether to mark it on the preview, as /about does, is a separate call for the lead; it is not taken here.
+- **What the CTA shows once the body is withheld:** `CTASection` already treats `body` as optional ("Omitted when the only sentence
+  available states a fact the Council has not supplied", components/ui/CTASection.tsx). The band keeps:
+  - its eyebrow "Keep exploring";
+  - its heading "Find another society, or reach the council";
+  - its two buttons, "Find a society" → /societies and "Contact SAOC" → /contact.
+
+  These are existing strings. They make no claim about the count or any society, so they need no source beyond the site's own routes.
+  The band is neither empty nor orphaned: a heading plus two actions is the same public shape /about's CTA has had since F24. No copy is
+  added, and CTASection.tsx stays byte-identical.
+- **Rejected:**
+  - Dropping the whole CTA would remove two working navigation actions for no sourcing reason.
+  - Rewording the body would be new copy.
+
 ### Out of scope (reported, not changed)
 
-- The society page CTA body (`[slug]/page.tsx`, CTASection) reads "SAOC coordinates 21 affiliated societies across South Africa".
-  This is the same unsourced count, outside this ruling's three items, and F24's STATIC_CLAIM regex does not match it. Lead decision.
 - `generateMetadata` descriptions ("<name> — affiliated SAOC society in <region>.") carry no estimate and are untouched.
 
 ## Acceptance (contract-f1.yaml; pins in checks-f1.sha256)
@@ -108,14 +132,16 @@ Rejected alternative: keep the prose and drop only the marker. It is simpler, bu
   - S2: both pages keep BASE except the renderer hand-off lines, bind the helper's result and pass it, and the slug page calls the switch;
   - S3: SocietyAbout gains `withhold?: boolean` with the literal set unchanged;
   - S4: the client components and show-pages.ts are byte-identical;
-  - S5: no new copy;
-  - S6: the docs record F1.
+  - S5: no new copy (a literal may move only within its own BASE file);
+  - S6: the docs record F1;
+  - S7: the CTA body is `{withhold ? undefined : '<BASE sentence>'}` with no `marked` prop, the eyebrow, heading and both buttons
+    are kept, and CTASection.tsx is byte-identical (amendment).
 - A4: `f1-unit.mjs`, cases U1-U7 run against the real module through Node type stripping.
 - A5: `f1-rendered.mjs`, public and preview builds, at 1280 and 390:
   - P1: no golden string or estimate in main's text on /societies and three society pages, and no placeholder flag or figure in the
     served HTML/RSC payload;
   - P2: same 21 cards, each with its preview text minus only the estimate parts; 3 columns at 1280, 1 at 390;
-  - P3: no section is orphaned;
+  - P3: no section is orphaned, and the closing CTA keeps its eyebrow, heading and both buttons with no body text (amendment);
   - P4: no overflow;
   - V1: the preview still shows every string, and main.innerHTML is sha-identical to the BASE preview capture (`goldens/f1-baseline.json`).
 
@@ -124,6 +150,11 @@ Rejected alternative: keep the prose and drop only the marker. It is simpler, bu
 - At BASE, f1-static fails S1/S2/S3/S6 and f1-rendered fails P1 and P2 on every public row. The preview rows (V1) pass, since the
   baseline was captured there.
 - On the prototype of this decision, all F1 assertions PASS (see the contract for the run). The prototype was reverted.
+- Amendment (CTA), proved in a scratch worktree at 07dfba5e with fresh public and preview builds, without touching the dev's tree:
+  - with the body behind `withhold`, f1-static and f1-rendered PASS, and the preview main.innerHTML is still sha-identical to the
+    BASE capture;
+  - with the BASE `body="…"` line restored, f1-rendered fails exactly the CTA rows, at P1 cta-body and P3 "still renders body text",
+    on the 3 society pages at both widths.
 
 ## NO INVENTION sources
 

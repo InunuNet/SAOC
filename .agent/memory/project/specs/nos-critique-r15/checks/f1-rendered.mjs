@@ -7,7 +7,8 @@
 //         placeholder-true flag and no non-null founded/memberCount value.
 //     P2  /societies still lists the preview's societies: same count, and each card's text equals its preview text with only the
 //         estimate parts ("· Founded YYYY", "· N members", "(estimated)") removed; 3 columns at 1280, 1 at 390.
-//     P3  society pages: no section is left holding only its eyebrow (withholding the fallback must not orphan "About this society").
+//     P3  society pages: no section is left holding only its eyebrow (withholding the fallback must not orphan "About this society"), and
+//         the closing CTA keeps its eyebrow, heading and both buttons once its body is withheld (golden `cta`).
 //     P4  no horizontal overflow on any measured page.
 //   PREVIEW
 //     V1  every golden string still shows on its routes, and main's markup equals the BASE preview capture (goldens/f1-baseline.json,
@@ -45,7 +46,9 @@ async function measure(mode) {
           const main = document.querySelector('main');
           const cards = [...main.querySelectorAll('a[href^="/societies/"]')].filter((a) => a.closest('.grid')).map((a) => { const r = a.getBoundingClientRect(); return { text: a.innerText, left: Math.round(r.left), top: Math.round(r.top + scrollY), h: Math.round(r.height) }; });
           const orphans = [...main.querySelectorAll('section')].filter((s) => { const e = s.querySelector(':scope > .eyebrow'); return e && s.innerText.replace(/\s+/g, ' ').trim() === e.innerText.replace(/\s+/g, ' ').trim(); }).map((s) => s.innerText.trim());
-          return { html: main.innerHTML, text: main.innerText, cards, orphans, overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+          const band = [...document.querySelectorAll('section')].find((s) => s.querySelector(':scope h2') && s.querySelector('a[href="/contact"]') && s.querySelector('a[href="/societies"]'));
+          const cta = band ? { eyebrow: band.querySelector('.eyebrow')?.innerText.trim() ?? '', heading: band.querySelector('h2').innerText.trim(), links: [...band.querySelectorAll('a')].map((a) => a.innerText.trim()), paras: [...band.querySelectorAll('p')].map((p) => p.innerText.trim()) } : null;
+          return { html: main.innerHTML, text: main.innerText, cards, orphans, cta, overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth };
         });
         if (mode === 'public' && width === WIDTHS[0]) {
           const raw = await (await fetch(`${srv.origin}${route}`, { headers: srv.headers })).text();
@@ -95,7 +98,15 @@ for (const [key, m] of Object.entries(got.public)) {
     const cols = m.cards.filter((c) => c.top === m.cards[0]?.top).length;
     const wantCols = width >= 1024 ? 3 : 1;
     if (m.cards.length && cols !== wantCols) failures.push(`public ${key}: ${cols} card column(s) in the first row, want ${wantCols} (P2 layout)`);
-  } else if (m.orphans.length) failures.push(`public ${key}: section(s) left holding only their eyebrow: ${JSON.stringify(m.orphans)} (P3)`);
+  } else {
+    if (m.orphans.length) failures.push(`public ${key}: section(s) left holding only their eyebrow: ${JSON.stringify(m.orphans)} (P3)`);
+    if (!m.cta) failures.push(`public ${key}: the closing CTA band is gone (P3)`);
+    else {
+      if (lower(m.cta.eyebrow) !== lower(G.cta.eyebrow) || m.cta.heading !== G.cta.heading) failures.push(`public ${key}: CTA reads "${m.cta.eyebrow}" / "${m.cta.heading}", want "${G.cta.eyebrow}" / "${G.cta.heading}" (P3)`);
+      for (const l of G.cta.links) if (!m.cta.links.includes(l)) failures.push(`public ${key}: CTA lost its "${l}" button (P3)`);
+      if (m.cta.paras.length) failures.push(`public ${key}: CTA still renders body text ${JSON.stringify(m.cta.paras)} (P3)`);
+    }
+  }
 }
 for (const [key, m] of Object.entries(got.preview)) {
   const route = key.split(' @')[0];
@@ -108,4 +119,4 @@ for (const [key, m] of Object.entries(got.preview)) {
 }
 for (const mode of ['public', 'preview']) for (const key of Object.keys(baseline)) if (!got[mode][key]) failures.push(`${mode} ${key}: not measured`);
 
-finish(NAME, failures, `public /societies and ${G.routes.length - 1} society pages carry no estimate, caption, marker or generic prose (HTML and payload clean, cards and grid intact, no orphan section, no overflow); the beta preview is byte-unchanged at ${WIDTHS.join('/')}.`);
+finish(NAME, failures, `public /societies and ${G.routes.length - 1} society pages carry no estimate, caption, marker, generic prose or CTA count (HTML and payload clean, cards and grid intact, CTA heading and buttons kept, no orphan section, no overflow); the beta preview is byte-unchanged at ${WIDTHS.join('/')}.`);
