@@ -1,0 +1,13 @@
+{
+ "_note": "nos-critique-r15 F2 golden (QA input): the header focus ring moves from ink at 40% (2.49:1 on parchment, WCAG 1.4.11 fail) to the handoff's --primary at full strength. Every listed BASE line containing `from` gets exactly that one substitution; nothing else in either file changes.",
+ "from": "focus-visible:ring-ink/40",
+ "to": "focus-visible:ring-primary",
+ "edits": [
+  { "file": "components/chrome/Header.tsx", "lines": "every line containing `from` (5 at BASE: logo link, nav link, Contact link, search button, menu button)", "count": 5 },
+  { "file": "components/chrome/MegaMenu.tsx", "lines": "the header-bar trigger <button> className only (the line containing 'relative inline-flex min-h-6 items-center rounded-sm font-sans text-[14px] text-ink')", "match": "relative inline-flex min-h-6 items-center rounded-sm font-sans text-[14px] text-ink", "count": 1 }
+ ],
+ "token": { "name": "--primary", "value": "#384138", "handoff": "design/design_handoff_saoc/colors_and_type.css:11", "theme": "app/globals.css @theme --color-primary: var(--primary)", "handoffFocusRule": "design/design_handoff_saoc/README.md:192 'Focus = `--primary` border'; src/styles.css .field input:focus { border-color: var(--primary) }" },
+ "minRatio": 3,
+ "route": "/about",
+ "minStops": { "1280": 5, "390": 3 }
+}

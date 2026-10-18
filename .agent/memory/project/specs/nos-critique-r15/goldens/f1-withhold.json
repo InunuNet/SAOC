@@ -1,0 +1,22 @@
+{
+ "_note": "nos-critique-r15 F1 golden (QA input). Strings that must not reach the PUBLIC build on /societies and /societies/<slug>, and must still show on the PREVIEW build. Each is existing copy at BASE ab7c549c (file:line); r15 adds none.",
+ "routes": ["/societies", "/societies/cape-orchid-society", "/societies/border-orchid-society", "/societies/east-rand-orchid-society"],
+ "strings": [
+  { "id": "card-tag", "text": "(estimated)", "source": "components/societies/SocietyCard.tsx:74", "routes": ["/societies"] },
+  { "id": "caption", "text": "are our own estimates, pending confirmation from each society", "source": "app/(marketing)/societies/SocietiesClient.tsx:112-113", "routes": ["/societies"] },
+  { "id": "facts-pill", "text": "estimated", "source": "components/societies/SocietyFacts.tsx:59", "routes": ["slug"] },
+  { "id": "about-marker", "text": "General description — society-specific detail pending confirmation", "source": "components/societies/SocietyAbout.tsx:49", "routes": ["slug"] },
+  { "id": "about-prose", "text": "affiliated societies, serving growers in", "source": "components/societies/SocietyAbout.tsx:41-47 (the generic SAOC-voiced fallback, incl. the unsourced '21')", "routes": ["slug"] }
+ ],
+ "estimatePatterns": ["Founded \\d{4}", "~?\\d+ members"],
+ "payloadPatterns": ["foundedPlaceholder\\\\?\"\\s*:\\s*true", "memberCountPlaceholder\\\\?\"\\s*:\\s*true", "\\\\?\"founded\\\\?\"\\s*:\\s*\\d", "\\\\?\"memberCount\\\\?\"\\s*:\\s*\\d"],
+ "unitCases": [
+  { "id": "U1 beta: withhold false returns the same object", "withhold": false, "in": { "founded": 1947, "memberCount": 220, "foundedPlaceholder": true, "memberCountPlaceholder": true }, "same": true },
+  { "id": "U2 both estimates withheld", "withhold": true, "in": { "region": "Western Cape", "founded": 1947, "memberCount": 220, "foundedPlaceholder": true, "memberCountPlaceholder": true }, "out": { "region": "Western Cape", "founded": null, "memberCount": null, "foundedPlaceholder": false, "memberCountPlaceholder": false } },
+  { "id": "U3 sourced values kept", "withhold": true, "in": { "founded": 1947, "memberCount": 220, "foundedPlaceholder": false, "memberCountPlaceholder": false }, "out": { "founded": 1947, "memberCount": 220, "foundedPlaceholder": false, "memberCountPlaceholder": false } },
+  { "id": "U4 mixed: sourced founded kept, estimated count withheld", "withhold": true, "in": { "founded": 1947, "memberCount": 220, "foundedPlaceholder": false, "memberCountPlaceholder": true }, "out": { "founded": 1947, "memberCount": null, "foundedPlaceholder": false, "memberCountPlaceholder": false } },
+  { "id": "U5 mixed: estimated founded withheld, sourced count kept", "withhold": true, "in": { "founded": 1947, "memberCount": 220, "foundedPlaceholder": true, "memberCountPlaceholder": null }, "out": { "founded": null, "memberCount": 220, "foundedPlaceholder": false, "memberCountPlaceholder": null } },
+  { "id": "U6 flags absent (Sanity doc without them) treated as sourced", "withhold": true, "in": { "founded": 1960, "memberCount": 40 }, "out": { "founded": 1960, "memberCount": 40 } },
+  { "id": "U7 other fields untouched", "withhold": true, "in": { "name": "X", "meets": null, "venue": null, "meetPlaceholder": true, "venuePlaceholder": true, "founded": 1990, "memberCount": null, "foundedPlaceholder": true, "memberCountPlaceholder": true }, "out": { "name": "X", "meets": null, "venue": null, "meetPlaceholder": true, "venuePlaceholder": true, "founded": null, "memberCount": null, "foundedPlaceholder": false, "memberCountPlaceholder": false } }
+ ]
+}

@@ -1,0 +1,21 @@
+{
+ "_note": "nos-critique-r15 F3 golden (QA input): two text colours move to handoff tokens that reach 4.5:1. Each file equals BASE with exactly the one listed line replaced.",
+ "edits": [
+  {
+   "id": "F3a",
+   "file": "components/ui/ProvisionalFigure.tsx",
+   "from": "      <span className=\"font-mono text-[10px] uppercase tracking-[0.1em] text-muted align-super\">",
+   "to": "      <span className=\"font-mono text-[10px] uppercase tracking-[0.1em] text-primary align-super\">",
+   "token": "--primary #384138 (colors_and_type.css:11); the handoff's mono eyebrow on a tint is --primary (src/styles.css .eyebrow: background var(--bone); color var(--primary))"
+  },
+  {
+   "id": "F3b",
+   "file": "app/not-found.tsx",
+   "from": "        <p className=\"font-mono text-[11px] uppercase tracking-[0.22em] text-accent mb-4\">",
+   "to": "        <p className=\"font-mono text-[11px] uppercase tracking-[0.22em] text-ivory mb-4\">",
+   "token": "--ivory #f4f3ec (colors_and_type.css:20); the handoff's eyebrow on a photo is --ivory (src/styles.css .eyebrow--light: color var(--ivory)), the same token as this section's h1"
+  }
+ ],
+ "refunds": { "route": "/refunds", "sup": "mark[data-provisional-figure] > span.align-super", "supCount": 8, "minRatio": 4.5 },
+ "notFound": { "routes": ["/this-page-does-not-exist", "/societies/zz-r15-missing"], "text": "404 — Page not found", "minRatio": 4.5, "pad": 2 }
+}

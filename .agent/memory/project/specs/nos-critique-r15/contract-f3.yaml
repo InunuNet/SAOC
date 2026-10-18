@@ -1,0 +1,39 @@
+# Sources: lead ruling FINAL 2026-10-18 (r15 F3, /refunds provisional sup 4.44:1 and 404 eyebrow on the photo), architect measurement on ab7c549c (goldens/f3-spec.md).
+schema: athanor.contract/v1
+slug: nos-critique-r15
+goal: >-
+  Bring the /refunds "provisional" sup (text-muted to the handoff --primary, 8.07:1) and the 404 eyebrow (text-accent to the handoff --ivory, worst pixel 6.6:1)
+  to at least 4.5:1 with handoff tokens only, one line each.
+created_at: '2026-10-18'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json + f2-footprint.json + f3-footprint.json, docs/nos-critique-r15.md and this spec dir'
+    reason: 'Enforced by A2. The mark background (bg-primary/10) and the 404 photo, scrim and gradient are unchanged.'
+features:
+  - id: F3
+    name: Provisional sup and 404 eyebrow reach 4.5:1 with handoff tokens
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r15/goldens/f3-spec.md
+  - .agent/memory/project/specs/nos-critique-r15/goldens/f3-edits.json
+  - .agent/memory/project/specs/nos-critique-r15/goldens/f3-footprint.json
+  - .agent/memory/project/specs/nos-critique-r15/goldens/nonreg-baseline.json
+  - .agent/memory/project/specs/nos-critique-r15/goldens/checks-f3.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f3 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r15/goldens/checks-f3.sha256
+    - id: A2
+      description: Footprint - the r15 branch differs from origin/main ab7c549c only in the union of the r15 footprints, docs/nos-critique-r15.md and the spec dir, HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r15/checks/footprint.mjs
+    - id: A3
+      description: Static - ProvisionalFigure.tsx and app/not-found.tsx equal BASE plus exactly their one golden line, both tokens are handoff tokens, docs record F3
+      command: node .agent/memory/project/specs/nos-critique-r15/checks/f3-static.mjs
+    - id: A4
+      description: Rendered (public) at 1280/390 - axe color-contrast 0 on /refunds with 8 sups present, and the 404 eyebrow >= 4.5:1 against every painted background pixel on both not-found pages
+      command: node .agent/memory/project/specs/nos-critique-r15/checks/f3-rendered.mjs
+    - id: A5
+      description: Non-regression (public) - 13 SAOC and 2 NOS routes keep geometry and screenshot at 1280/390 with only the F3 targets masked, no overflow
+      command: node .agent/memory/project/specs/nos-critique-r15/checks/nonreg.mjs

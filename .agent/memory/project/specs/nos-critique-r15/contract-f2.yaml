@@ -1,0 +1,39 @@
+# Sources: lead ruling FINAL 2026-10-18 (r15 F2, header focus ring 2.49:1 fails WCAG 1.4.11), architect measurement on ab7c549c (goldens/f2-spec.md).
+schema: athanor.contract/v1
+slug: nos-critique-r15
+goal: >-
+  Make every SAOC header focus ring reach at least 3:1 against the header (parchment) by moving focus-visible:ring-ink/40 to the handoff token --primary (9.53:1)
+  on the five Header.tsx lines and the MegaMenu header-bar trigger, with no new colour or opacity.
+created_at: '2026-10-18'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json + f2-footprint.json + f3-footprint.json, docs/nos-critique-r15.md and this spec dir'
+    reason: 'Enforced by A2. The MegaMenu panel links, MobileMenu, SaocLockup and form rings carry the same ring-ink/40 and are reported in f2-spec.md, not changed.'
+features:
+  - id: F2
+    name: Header focus ring uses the handoff --primary token (>= 3:1)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r15/goldens/f2-spec.md
+  - .agent/memory/project/specs/nos-critique-r15/goldens/f2-edits.json
+  - .agent/memory/project/specs/nos-critique-r15/goldens/f2-footprint.json
+  - .agent/memory/project/specs/nos-critique-r15/goldens/nonreg-baseline.json
+  - .agent/memory/project/specs/nos-critique-r15/goldens/checks-f2.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f2 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r15/goldens/checks-f2.sha256
+    - id: A2
+      description: Footprint - the r15 branch differs from origin/main ab7c549c only in the union of the r15 footprints, docs/nos-critique-r15.md and the spec dir, HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r15/checks/footprint.mjs
+    - id: A3
+      description: Static - Header.tsx and MegaMenu.tsx equal BASE plus exactly ring-ink/40 to ring-primary on 5 + 1 lines, the token is the handoff --primary, docs record F2
+      command: node .agent/memory/project/specs/nos-critique-r15/checks/f2-static.mjs
+    - id: A4
+      description: Rendered (public) - Tab through the header at 1280/390, rest and scrolled, every stop shows a ring >= 3:1 against the header and its offset, computed and painted, including a MegaMenu trigger
+      command: node .agent/memory/project/specs/nos-critique-r15/checks/f2-rendered.mjs
+    - id: A5
+      description: Non-regression (public) - 13 SAOC and 2 NOS routes keep geometry and screenshot at 1280/390 with only the F3 targets masked, no overflow
+      command: node .agent/memory/project/specs/nos-critique-r15/checks/nonreg.mjs
