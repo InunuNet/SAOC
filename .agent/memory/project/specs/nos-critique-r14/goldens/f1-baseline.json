@@ -1,0 +1,2141 @@
+{
+ "recorded": "from the 9d16cf96 build (next start, public mode); hub gaps are the BASE (doubled) values, for the record",
+ "got": {
+  "/national-show/tickets @375": {
+   "unit": 72,
+   "pairs": [
+    {
+     "from": "thursday",
+     "to": "passes",
+     "gap": 144
+    },
+    {
+     "from": "passes",
+     "to": "programme",
+     "gap": 144
+    },
+    {
+     "from": "programme",
+     "to": "nos-section",
+     "gap": 144
+    }
+   ],
+   "wraps": [
+    [
+     "thursday",
+     1156.7
+    ],
+    [
+     "passes",
+     1641.6
+    ],
+    [
+     "programme",
+     1617.6
+    ],
+    [
+     "nos-section",
+     499.8
+    ]
+   ],
+   "overflow": 0
+  },
+  "/national-show/what-to-expect @375": {
+   "gap": 40,
+   "overflow": 0
+  },
+  "/national-show/workshops @375": {
+   "gap": 40,
+   "overflow": 0
+  },
+  "/national-show/about @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     144.2,
+     212.8
+    ],
+    [
+     "nav",
+     357,
+     45
+    ],
+    [
+     "section",
+     402,
+     2412.9
+    ],
+    [
+     "nav",
+     2814.9,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 5537,
+   "overflow": 0
+  },
+  "/national-show/plan-your-visit @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     144.2,
+     525.6
+    ],
+    [
+     "nav",
+     669.8,
+     45
+    ],
+    [
+     "section",
+     714.8,
+     1323.3
+    ],
+    [
+     "section",
+     2038.1,
+     763.1
+    ],
+    [
+     "section",
+     2801.2,
+     464.7
+    ],
+    [
+     "nav",
+     3265.9,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 5988,
+   "overflow": 0
+  },
+  "/national-show/faq @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     144.2,
+     171.2
+    ],
+    [
+     "nav",
+     315.4,
+     45
+    ],
+    [
+     "section",
+     360.4,
+     2299.8
+    ],
+    [
+     "nav",
+     2660.3,
+     1348
+    ]
+   ],
+   "hero": 2,
+   "docHeight": 5383,
+   "overflow": 0
+  },
+  "/national-show/programme @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     144.2,
+     341.6
+    ],
+    [
+     "nav",
+     485.8,
+     45
+    ],
+    [
+     "section",
+     530.8,
+     465.3
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "nav",
+     1281.5,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 4004,
+   "overflow": 0
+  },
+  "/national-show/symposium @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "section",
+     1010.2,
+     1863.4
+    ],
+    [
+     "nav",
+     2873.6,
+     1348
+    ]
+   ],
+   "hero": -1,
+   "docHeight": 5596,
+   "overflow": 0
+  },
+  "/national-show/wosa-conference @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "nav",
+     1232.5,
+     1348
+    ]
+   ],
+   "hero": -1,
+   "docHeight": 3955,
+   "overflow": 0
+  },
+  "/national-show/conferences @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     144.2,
+     205.6
+    ],
+    [
+     "nav",
+     349.8,
+     45
+    ],
+    [
+     "section",
+     394.8,
+     1289.9
+    ],
+    [
+     "nav",
+     1684.7,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 4407,
+   "overflow": 0
+  },
+  "/national-show/sa-exhibitors @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     144.2,
+     247.2
+    ],
+    [
+     "nav",
+     391.4,
+     45
+    ],
+    [
+     "section",
+     436.4,
+     1276.1
+    ],
+    [
+     "nav",
+     1712.5,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 4435,
+   "overflow": 0
+  },
+  "/national-show/international-guests @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     144.2,
+     212.8
+    ],
+    [
+     "nav",
+     357,
+     45
+    ],
+    [
+     "section",
+     402,
+     555.3
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "nav",
+     1242.7,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 3965,
+   "overflow": 0
+  },
+  "/national-show/exhibitors @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     144.2,
+     328.2
+    ],
+    [
+     "nav",
+     472.4,
+     45
+    ],
+    [
+     "section",
+     517.4,
+     12197
+    ],
+    [
+     "nav",
+     12714.4,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 15437,
+   "overflow": 0
+  },
+  "/national-show/vendors @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     144.2,
+     243.2
+    ],
+    [
+     "nav",
+     387.4,
+     45
+    ],
+    [
+     "section",
+     432.4,
+     1624.4
+    ],
+    [
+     "section",
+     2056.8,
+     307.6
+    ],
+    [
+     "section",
+     2364.4,
+     328.4
+    ],
+    [
+     "nav",
+     2692.8,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 5415,
+   "overflow": 0
+  },
+  "/national-show/sponsors @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "nav",
+     747.2,
+     1348
+    ]
+   ],
+   "hero": -1,
+   "docHeight": 3470,
+   "overflow": 0
+  },
+  "/national-show/archive @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     144.2,
+     313.2
+    ],
+    [
+     "nav",
+     457.4,
+     45
+    ],
+    [
+     "section",
+     502.4,
+     294.4
+    ],
+    [
+     "nav",
+     796.8,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 3519,
+   "overflow": 0
+  },
+  "/national-show/vendors/apply @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     144.2,
+     355.2
+    ],
+    [
+     "nav",
+     499.4,
+     45
+    ],
+    [
+     "section",
+     544.4,
+     1644.8
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 3564,
+   "overflow": 0
+  },
+  "/tickets/vip @375": {
+   "blocks": [
+    [
+     "section",
+     144.2,
+     153.6
+    ],
+    [
+     "div",
+     297.8,
+     899
+    ]
+   ],
+   "hero": 0,
+   "docHeight": 2571,
+   "overflow": 0
+  },
+  "/tickets/day-visitor @375": {
+   "blocks": [
+    [
+     "section",
+     144.2,
+     153.6
+    ],
+    [
+     "div",
+     297.8,
+     1000.7
+    ]
+   ],
+   "hero": 0,
+   "docHeight": 2673,
+   "overflow": 0
+  },
+  "/national-show/tickets @390": {
+   "unit": 72,
+   "pairs": [
+    {
+     "from": "thursday",
+     "to": "passes",
+     "gap": 144
+    },
+    {
+     "from": "passes",
+     "to": "programme",
+     "gap": 144
+    },
+    {
+     "from": "programme",
+     "to": "nos-section",
+     "gap": 144
+    }
+   ],
+   "wraps": [
+    [
+     "thursday",
+     1131.9
+    ],
+    [
+     "passes",
+     1602.4
+    ],
+    [
+     "programme",
+     1594.7
+    ],
+    [
+     "nos-section",
+     472.1
+    ]
+   ],
+   "overflow": 0
+  },
+  "/national-show/what-to-expect @390": {
+   "gap": 40,
+   "overflow": 0
+  },
+  "/national-show/workshops @390": {
+   "gap": 40,
+   "overflow": 0
+  },
+  "/national-show/about @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     145.9,
+     212.8
+    ],
+    [
+     "nav",
+     358.7,
+     45
+    ],
+    [
+     "section",
+     403.7,
+     2277.4
+    ],
+    [
+     "nav",
+     2681.1,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 5383,
+   "overflow": 0
+  },
+  "/national-show/plan-your-visit @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     145.9,
+     498.6
+    ],
+    [
+     "nav",
+     644.5,
+     45
+    ],
+    [
+     "section",
+     689.5,
+     1270.6
+    ],
+    [
+     "section",
+     1960.1,
+     741.4
+    ],
+    [
+     "section",
+     2701.5,
+     464.7
+    ],
+    [
+     "nav",
+     3166.2,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 5868,
+   "overflow": 0
+  },
+  "/national-show/faq @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     145.9,
+     171.2
+    ],
+    [
+     "nav",
+     317.1,
+     45
+    ],
+    [
+     "section",
+     362.1,
+     2247.6
+    ],
+    [
+     "nav",
+     2609.7,
+     1348
+    ]
+   ],
+   "hero": 2,
+   "docHeight": 5312,
+   "overflow": 0
+  },
+  "/national-show/programme @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     145.9,
+     341.6
+    ],
+    [
+     "nav",
+     487.5,
+     45
+    ],
+    [
+     "section",
+     532.5,
+     440.6
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "nav",
+     1258.5,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 3961,
+   "overflow": 0
+  },
+  "/national-show/symposium @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "section",
+     1011.9,
+     1863.4
+    ],
+    [
+     "nav",
+     2875.2,
+     1348
+    ]
+   ],
+   "hero": -1,
+   "docHeight": 5577,
+   "overflow": 0
+  },
+  "/national-show/wosa-conference @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "nav",
+     1167.9,
+     1348
+    ]
+   ],
+   "hero": -1,
+   "docHeight": 3870,
+   "overflow": 0
+  },
+  "/national-show/conferences @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     145.9,
+     205.6
+    ],
+    [
+     "nav",
+     351.5,
+     45
+    ],
+    [
+     "section",
+     396.5,
+     1266.9
+    ],
+    [
+     "nav",
+     1663.4,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 4366,
+   "overflow": 0
+  },
+  "/national-show/sa-exhibitors @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     145.9,
+     247.2
+    ],
+    [
+     "nav",
+     393.1,
+     45
+    ],
+    [
+     "section",
+     438.1,
+     1251.4
+    ],
+    [
+     "nav",
+     1689.5,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 4392,
+   "overflow": 0
+  },
+  "/national-show/international-guests @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     145.9,
+     212.8
+    ],
+    [
+     "nav",
+     358.7,
+     45
+    ],
+    [
+     "section",
+     403.7,
+     530.6
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "nav",
+     1219.7,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 3922,
+   "overflow": 0
+  },
+  "/national-show/exhibitors @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     145.9,
+     328.2
+    ],
+    [
+     "nav",
+     474.1,
+     45
+    ],
+    [
+     "section",
+     519.1,
+     11874.2
+    ],
+    [
+     "nav",
+     12393.3,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 15096,
+   "overflow": 0
+  },
+  "/national-show/vendors @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     145.9,
+     243.2
+    ],
+    [
+     "nav",
+     389.1,
+     45
+    ],
+    [
+     "section",
+     434.1,
+     1550.1
+    ],
+    [
+     "section",
+     1984.2,
+     307.6
+    ],
+    [
+     "section",
+     2291.8,
+     328.4
+    ],
+    [
+     "nav",
+     2620.2,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 5322,
+   "overflow": 0
+  },
+  "/national-show/sponsors @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "nav",
+     748.9,
+     1348
+    ]
+   ],
+   "hero": -1,
+   "docHeight": 3451,
+   "overflow": 0
+  },
+  "/national-show/archive @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     145.9,
+     313.2
+    ],
+    [
+     "nav",
+     459.1,
+     45
+    ],
+    [
+     "section",
+     504.1,
+     257.6
+    ],
+    [
+     "nav",
+     761.7,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 3464,
+   "overflow": 0
+  },
+  "/national-show/vendors/apply @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     145.9,
+     286.6
+    ],
+    [
+     "nav",
+     432.5,
+     45
+    ],
+    [
+     "section",
+     477.5,
+     1644.8
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 3477,
+   "overflow": 0
+  },
+  "/tickets/vip @390": {
+   "blocks": [
+    [
+     "section",
+     145.9,
+     153.6
+    ],
+    [
+     "div",
+     299.5,
+     899
+    ]
+   ],
+   "hero": 0,
+   "docHeight": 2553,
+   "overflow": 0
+  },
+  "/tickets/day-visitor @390": {
+   "blocks": [
+    [
+     "section",
+     145.9,
+     153.6
+    ],
+    [
+     "div",
+     299.5,
+     1000.7
+    ]
+   ],
+   "hero": 0,
+   "docHeight": 2654,
+   "overflow": 0
+  },
+  "/national-show/tickets @768": {
+   "unit": 72,
+   "pairs": [
+    {
+     "from": "thursday",
+     "to": "passes",
+     "gap": 144
+    },
+    {
+     "from": "passes",
+     "to": "programme",
+     "gap": 144
+    },
+    {
+     "from": "programme",
+     "to": "nos-section",
+     "gap": 144
+    }
+   ],
+   "wraps": [
+    [
+     "thursday",
+     777.5
+    ],
+    [
+     "passes",
+     1147.1
+    ],
+    [
+     "programme",
+     1106.4
+    ],
+    [
+     "nos-section",
+     265.5
+    ]
+   ],
+   "overflow": 0
+  },
+  "/national-show/what-to-expect @768": {
+   "gap": 40,
+   "overflow": 0
+  },
+  "/national-show/workshops @768": {
+   "gap": 40,
+   "overflow": 0
+  },
+  "/national-show/about @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     256.9
+    ],
+    [
+     "nav",
+     353.9,
+     45
+    ],
+    [
+     "section",
+     398.9,
+     1531.5
+    ],
+    [
+     "nav",
+     1930.3,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 4140,
+   "overflow": 0
+  },
+  "/national-show/plan-your-visit @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     894.3
+    ],
+    [
+     "nav",
+     991.3,
+     45
+    ],
+    [
+     "section",
+     1036.3,
+     1080.9
+    ],
+    [
+     "section",
+     2117.2,
+     546.9
+    ],
+    [
+     "section",
+     2664,
+     389.9
+    ],
+    [
+     "nav",
+     3054,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 5264,
+   "overflow": 0
+  },
+  "/national-show/faq @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     200.6
+    ],
+    [
+     "nav",
+     297.6,
+     45
+    ],
+    [
+     "section",
+     342.6,
+     1843.5
+    ],
+    [
+     "nav",
+     2186.1,
+     1348
+    ]
+   ],
+   "hero": 2,
+   "docHeight": 4396,
+   "overflow": 0
+  },
+  "/national-show/programme @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     712.3
+    ],
+    [
+     "nav",
+     809.3,
+     45
+    ],
+    [
+     "section",
+     854.3,
+     336.6
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "nav",
+     1485,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 3695,
+   "overflow": 0
+  },
+  "/national-show/symposium @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "section",
+     1314.6,
+     1093.9
+    ],
+    [
+     "nav",
+     2408.5,
+     1348
+    ]
+   ],
+   "hero": -1,
+   "docHeight": 4618,
+   "overflow": 0
+  },
+  "/national-show/wosa-conference @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "nav",
+     1043.6,
+     1348
+    ]
+   ],
+   "hero": -1,
+   "docHeight": 3254,
+   "overflow": 0
+  },
+  "/national-show/conferences @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     230.3
+    ],
+    [
+     "nav",
+     327.3,
+     45
+    ],
+    [
+     "section",
+     372.3,
+     889.6
+    ],
+    [
+     "nav",
+     1261.8,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 3472,
+   "overflow": 0
+  },
+  "/national-show/sa-exhibitors @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     286.6
+    ],
+    [
+     "nav",
+     383.6,
+     45
+    ],
+    [
+     "section",
+     428.6,
+     914.6
+    ],
+    [
+     "nav",
+     1343.2,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 3553,
+   "overflow": 0
+  },
+  "/national-show/international-guests @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     256.9
+    ],
+    [
+     "nav",
+     353.9,
+     45
+    ],
+    [
+     "section",
+     398.9,
+     396.6
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "nav",
+     1089.7,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 3300,
+   "overflow": 0
+  },
+  "/national-show/exhibitors @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     382.6
+    ],
+    [
+     "nav",
+     479.6,
+     45
+    ],
+    [
+     "section",
+     524.6,
+     8922.7
+    ],
+    [
+     "nav",
+     9447.3,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 11657,
+   "overflow": 0
+  },
+  "/national-show/vendors @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     272.6
+    ],
+    [
+     "nav",
+     369.6,
+     45
+    ],
+    [
+     "section",
+     414.6,
+     1064.2
+    ],
+    [
+     "section",
+     1478.8,
+     313.7
+    ],
+    [
+     "section",
+     1792.4,
+     309.3
+    ],
+    [
+     "nav",
+     2101.7,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 4312,
+   "overflow": 0
+  },
+  "/national-show/sponsors @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "nav",
+     698.7,
+     1348
+    ]
+   ],
+   "hero": -1,
+   "docHeight": 2909,
+   "overflow": 0
+  },
+  "/national-show/archive @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     352.6
+    ],
+    [
+     "nav",
+     449.6,
+     45
+    ],
+    [
+     "section",
+     494.6,
+     281.3
+    ],
+    [
+     "nav",
+     775.9,
+     1348
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 2986,
+   "overflow": 0
+  },
+  "/national-show/vendors/apply @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     326.3
+    ],
+    [
+     "nav",
+     423.3,
+     45
+    ],
+    [
+     "section",
+     468.3,
+     1283.3
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 2613,
+   "overflow": 0
+  },
+  "/tickets/vip @768": {
+   "blocks": [
+    [
+     "section",
+     96.9,
+     146.3
+    ],
+    [
+     "div",
+     243.3,
+     747.1
+    ]
+   ],
+   "hero": 0,
+   "docHeight": 1852,
+   "overflow": 0
+  },
+  "/tickets/day-visitor @768": {
+   "blocks": [
+    [
+     "section",
+     96.9,
+     146.3
+    ],
+    [
+     "div",
+     243.3,
+     848.8
+    ]
+   ],
+   "hero": 0,
+   "docHeight": 1954,
+   "overflow": 0
+  },
+  "/national-show/tickets @1280": {
+   "unit": 115.2,
+   "pairs": [
+    {
+     "from": "thursday",
+     "to": "passes",
+     "gap": 230.4
+    },
+    {
+     "from": "passes",
+     "to": "programme",
+     "gap": 230.4
+    },
+    {
+     "from": "programme",
+     "to": "nos-section",
+     "gap": 230.4
+    }
+   ],
+   "wraps": [
+    [
+     "thursday",
+     433.1
+    ],
+    [
+     "passes",
+     735.8
+    ],
+    [
+     "programme",
+     651.8
+    ],
+    [
+     "nos-section",
+     210.3
+    ]
+   ],
+   "overflow": 0
+  },
+  "/national-show/what-to-expect @1280": {
+   "gap": 40,
+   "overflow": 0
+  },
+  "/national-show/workshops @1280": {
+   "gap": 40,
+   "overflow": 0
+  },
+  "/national-show/about @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     380
+    ],
+    [
+     "nav",
+     476.9,
+     45
+    ],
+    [
+     "section",
+     521.9,
+     1375.1
+    ],
+    [
+     "nav",
+     1897,
+     669
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 3164,
+   "overflow": 0
+  },
+  "/national-show/plan-your-visit @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     409.6
+    ],
+    [
+     "nav",
+     506.5,
+     45
+    ],
+    [
+     "section",
+     551.5,
+     731
+    ],
+    [
+     "section",
+     1282.6,
+     596.3
+    ],
+    [
+     "section",
+     1878.9,
+     485.8
+    ],
+    [
+     "nav",
+     2364.7,
+     669
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 3631,
+   "overflow": 0
+  },
+  "/national-show/faq @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     380
+    ],
+    [
+     "nav",
+     476.9,
+     45
+    ],
+    [
+     "section",
+     521.9,
+     1929.9
+    ],
+    [
+     "nav",
+     2451.9,
+     669
+    ]
+   ],
+   "hero": 2,
+   "docHeight": 3719,
+   "overflow": 0
+  },
+  "/national-show/programme @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     409.6
+    ],
+    [
+     "nav",
+     506.5,
+     45
+    ],
+    [
+     "section",
+     551.5,
+     479.5
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "nav",
+     1421.2,
+     669
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 2688,
+   "overflow": 0
+  },
+  "/national-show/symposium @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "section",
+     897.3,
+     1309.4
+    ],
+    [
+     "nav",
+     2206.7,
+     669
+    ]
+   ],
+   "hero": -1,
+   "docHeight": 3473,
+   "overflow": 0
+  },
+  "/national-show/wosa-conference @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "nav",
+     1391.6,
+     669
+    ]
+   ],
+   "hero": -1,
+   "docHeight": 2658,
+   "overflow": 0
+  },
+  "/national-show/conferences @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     380
+    ],
+    [
+     "nav",
+     476.9,
+     45
+    ],
+    [
+     "section",
+     521.9,
+     662.5
+    ],
+    [
+     "nav",
+     1184.4,
+     669
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 2451,
+   "overflow": 0
+  },
+  "/national-show/sa-exhibitors @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     380
+    ],
+    [
+     "nav",
+     476.9,
+     45
+    ],
+    [
+     "section",
+     521.9,
+     864.3
+    ],
+    [
+     "nav",
+     1386.3,
+     669
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 2653,
+   "overflow": 0
+  },
+  "/national-show/international-guests @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     380
+    ],
+    [
+     "nav",
+     476.9,
+     45
+    ],
+    [
+     "section",
+     521.9,
+     479.5
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "nav",
+     1391.6,
+     669
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 2658,
+   "overflow": 0
+  },
+  "/national-show/exhibitors @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     380
+    ],
+    [
+     "nav",
+     476.9,
+     45
+    ],
+    [
+     "section",
+     521.9,
+     9041.4
+    ],
+    [
+     "nav",
+     9563.4,
+     669
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 10830,
+   "overflow": 0
+  },
+  "/national-show/vendors @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     380
+    ],
+    [
+     "nav",
+     476.9,
+     45
+    ],
+    [
+     "section",
+     521.9,
+     1015.1
+    ],
+    [
+     "section",
+     1537,
+     418
+    ],
+    [
+     "section",
+     1955,
+     414.8
+    ],
+    [
+     "nav",
+     2369.8,
+     669
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 3636,
+   "overflow": 0
+  },
+  "/national-show/sponsors @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "div",
+     0,
+     0
+    ],
+    [
+     "nav",
+     1030.3,
+     669
+    ]
+   ],
+   "hero": -1,
+   "docHeight": 2297,
+   "overflow": 0
+  },
+  "/national-show/archive @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     380
+    ],
+    [
+     "nav",
+     476.9,
+     45
+    ],
+    [
+     "section",
+     521.9,
+     349.6
+    ],
+    [
+     "nav",
+     871.5,
+     669
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 2138,
+   "overflow": 0
+  },
+  "/national-show/vendors/apply @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     380
+    ],
+    [
+     "nav",
+     476.9,
+     45
+    ],
+    [
+     "section",
+     521.9,
+     1369.6
+    ]
+   ],
+   "hero": 1,
+   "docHeight": 2489,
+   "overflow": 0
+  },
+  "/tickets/vip @1280": {
+   "blocks": [
+    [
+     "section",
+     96.9,
+     146.3
+    ],
+    [
+     "div",
+     243.3,
+     747.1
+    ]
+   ],
+   "hero": 0,
+   "docHeight": 1588,
+   "overflow": 0
+  },
+  "/tickets/day-visitor @1280": {
+   "blocks": [
+    [
+     "section",
+     96.9,
+     146.3
+    ],
+    [
+     "div",
+     243.3,
+     848.8
+    ]
+   ],
+   "hero": 0,
+   "docHeight": 1690,
+   "overflow": 0
+  }
+ }
+}
