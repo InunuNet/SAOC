@@ -88,6 +88,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!ticketType) notFound();
   // A ticket is a NOS page (R62 #1), but /tickets/* sits outside national-show/layout.tsx's
   // title template, so the NOS suffix is spelled out here.
+  // Sanity does not require a description: without one the page keeps the site default
+  // (fitDescription cannot take a missing string).
+  if (!ticketType.description?.trim()) {
+    return { title: { absolute: `${ticketType.name}${NOS_TITLE_SUFFIX}` } };
+  }
   return {
     ...buildPageMetadata({
       title: ticketType.name,
