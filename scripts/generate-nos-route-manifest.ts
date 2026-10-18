@@ -282,7 +282,7 @@ const ROUTE_TABLE: RouteRow[] = [
     status: 'untouched',
     owner: 'saoc-eb',
     archetype: 'transactional',
-    purpose: 'Trade vendor showcase, application and gated registration.',
+    purpose: 'Trade vendor showcase, application and registration.',
     pageKey: null,
     specNumber: null,
     diskPath: 'vendors',
