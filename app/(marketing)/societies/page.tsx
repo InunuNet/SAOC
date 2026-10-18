@@ -11,6 +11,7 @@ import { provinceListQuery, societyListQuery } from '@/sanity/queries';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { societies as staticSocieties } from '@/lib/data/societies';
 import { provinces as staticProvinces } from '@/lib/data/provinces';
+import { buildPageMetadata } from '@/lib/seo';
 import type { Province } from '@/types';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
@@ -18,7 +19,13 @@ import type { Province } from '@/types';
 // propagates within F6's 120s round-trip window. See contracts/cms-loop-f1-cdn-purge.yaml.
 export const revalidate = 60;
 
-export const metadata: Metadata = { title: 'Affiliated Societies' };
+// Description: Lee-Ann's Drive, content/drive-source/SAOC /2. About/About page - South African Orchid Council/v1.0/content.md l.9.
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Affiliated Societies',
+  description:
+    'The SAOC also provides a national forum through which affiliated societies can collaborate and share expertise.',
+  path: '/societies',
+});
 
 // The society count is not in Lee-Ann's Drive. It is withheld on the public build and shown
 // marked on the beta preview (F24, vote 1C), as the other unsourced figures are.

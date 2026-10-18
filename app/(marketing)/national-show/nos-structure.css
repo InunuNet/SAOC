@@ -562,6 +562,12 @@
   + :is(.nos-section, .nk-section) {
   padding-top: 0;
 }
+/* r14 F1 (Codi): on the tickets hub (the only route whose .nos-theme holds the .nk-masthead), a
+   full section after an .nk-section keeps one rhythm unit between them, the leader's
+   padding-bottom, not both. */
+.nos-theme:has(> .nk-masthead) .nk-section + :is(.nos-section, .nk-section) {
+  padding-top: 0;
+}
 /* F17: on ticket-flow routes the index marks the current item in ink with an underline (no violet). */
 .nos-theme .nos-index-group a[data-current-ink][aria-current='page'] {
   color: var(--ink);
