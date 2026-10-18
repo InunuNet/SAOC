@@ -140,10 +140,6 @@ export default async function WhatToExpectPage() {
       />
 
       <NosSection wrapClassName="space-y-10 [&_p]:max-w-[60ch]">
-        {heldBack.length > 0 ? (
-          <ShowHoldingNote hidden={heldBack} pendingLabel={pendingLabel} />
-        ) : null}
-
         {dateRange ? (
           <section className="nos-surface">
             <SectionHeading as="h2" title="Show dates" />
@@ -154,6 +150,10 @@ export default async function WhatToExpectPage() {
               researchLabel={researchLabel}
             />
           </section>
+        ) : null}
+
+        {heldBack.length > 0 ? (
+          <ShowHoldingNote hidden={heldBack} pendingLabel={pendingLabel} />
         ) : null}
 
         {openingHours.length > 0 && visible(HEADING_HOURS) ? (

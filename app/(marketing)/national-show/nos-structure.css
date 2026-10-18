@@ -768,7 +768,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   padding: 14px 26px;
   line-height: 1;
   font-family: var(--sans);
-  font-size: var(--fs-sm, 0.875rem);
+  font-size: var(--fs-sm);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1344,14 +1344,14 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nk-pool strong {
   font-family: var(--serif);
   font-weight: 400;
-  font-size: var(--fs-lg, 1.5625rem);
+  font-size: var(--fs-lg);
   line-height: 1.2;
   color: var(--ivory);
   font-variation-settings: 'opsz' 32;
 }
 .nos-theme .nk-pool p {
   margin: 0;
-  font-size: var(--fs-base, 1rem);
+  font-size: var(--fs-base);
   line-height: 1.5;
   max-width: 60ch;
 }
@@ -1532,7 +1532,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nk-facts dd {
   margin: 0;
   font-family: var(--sans);
-  font-size: var(--fs-base, 1rem);
+  font-size: var(--fs-base);
   font-weight: 500;
   line-height: 1.45;
   color: var(--ivory);
@@ -1569,7 +1569,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   gap: 8px;
   min-height: 44px;
   font-family: var(--sans);
-  font-size: var(--fs-base, 1rem);
+  font-size: var(--fs-base);
   font-weight: 600;
   color: var(--ivory);
   text-decoration: underline;

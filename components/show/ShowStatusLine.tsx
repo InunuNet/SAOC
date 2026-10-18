@@ -11,19 +11,20 @@
 
 import type { ReactNode } from 'react';
 
-import { StatusMarker } from './_shared/StatusMarker';
+import { StatusMarker, resolveStatusMarker } from './_shared/StatusMarker';
 
 const DEFAULT_SEPARATOR = ' · ';
 
 // Chip-fit ladder so the verbatim label stays on one line inside the 16px-padded surface:
-// 10px inline padding at <=700px; tracking 0.06em at 420-700px, 0.02em at 375-419px, 0 at
-// <=374px. Important: the NOS marker rule in nos-structure.css (.nos-theme [data-...])
+// 10px inline padding at <=700px; tracking 0.06em at 420-700px, 0.02em at 375-419px, 0 below
+// 375px. Range syntax, so each boundary is one strict comparison and no fractional width falls
+// between two steps. Important: the NOS marker rule in nos-structure.css (.nos-theme [data-...])
 // otherwise outranks a plain utility.
 const CHIP_FIT_CLASSES = [
   '[@media(max-width:700px)]:[&>p]:!px-[10px]',
-  '[@media(min-width:420px)_and_(max-width:700px)]:[&>p]:!tracking-[0.06em]',
-  '[@media(min-width:375px)_and_(max-width:419px)]:[&>p]:!tracking-[0.02em]',
-  '[@media(max-width:374px)]:[&>p]:!tracking-[0]',
+  '[@media(width>=420px)_and_(width<=700px)]:[&>p]:!tracking-[0.06em]',
+  '[@media(width>=375px)_and_(width<420px)]:[&>p]:!tracking-[0.02em]',
+  '[@media(width<375px)]:[&>p]:!tracking-[0]',
 ].join(' ');
 
 export interface ShowStatusLineProps {
@@ -63,6 +64,7 @@ export function ShowStatusLine({
   separator = DEFAULT_SEPARATOR,
   children,
 }: ShowStatusLineProps) {
+  const inDisclosure = Boolean(items && items.length > 0);
   const marker = (
     <StatusMarker
       kind={kind}
@@ -70,15 +72,26 @@ export function ShowStatusLine({
       pendingLabel={pendingLabel}
       researchLabel={researchLabel}
       shortOnNarrow
+      shortResearch={inDisclosure}
     />
   );
   if (!items || items.length === 0) return marker;
+  const researchWording = status === 'research' ? researchLabel?.trim() : undefined;
+  // The full label the chip itself shows, so a blank label still names the note.
+  const chipLabel = resolveStatusMarker({
+    kind,
+    status,
+    pendingLabel,
+    researchLabel,
+    shortResearch: true,
+  })?.label.trim();
 
   return (
     <div
       data-status-disclosure=""
       role="note"
-      className="grid gap-5 rounded-[16px] bg-[var(--gold)] px-[clamp(20px,3vw,32px)] pb-6 pt-5 shadow-sm max-[700px]:px-4"
+      aria-label={researchWording || chipLabel}
+      className="grid gap-5 rounded-[16px] bg-[var(--gold)] px-[clamp(20px,3vw,32px)] pb-6 pt-5 shadow-sm [@media(max-width:700px)]:px-4"
     >
       <div className={CHIP_FIT_CLASSES}>{marker}</div>
       <p data-status-list="" className="text-[16px] leading-[1.55] text-[var(--ink-700)]">
@@ -90,6 +103,7 @@ export function ShowStatusLine({
         </p>
       ) : null}
       {foot ? <ShowStatusFoot>{foot}</ShowStatusFoot> : null}
+      {researchWording ? <ShowStatusFoot>{researchWording}</ShowStatusFoot> : null}
       {children}
     </div>
   );

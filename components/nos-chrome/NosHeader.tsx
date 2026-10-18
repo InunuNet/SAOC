@@ -12,6 +12,7 @@
 // =============================================================
 
 import { useEffect, useRef, useState } from 'react';
+import { getImageProps } from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -32,9 +33,23 @@ const LOCKUP_SRC = '/images/nos/nos-full-colour-horizontal-1200.png';
 const LOCKUP_ALT = 'National Orchid Show, Western Cape 2027';
 const LOCKUP_WIDTH = 1200;
 const LOCKUP_HEIGHT = 294;
+// The box is 448px wide from 700px up and 390px below it. A width with no `sizes` gives a 1x/2x
+// density srcset, so a high-density screen never fetches more than twice the box.
+const LOCKUP_BOX_WIDE = 448;
+const LOCKUP_BOX_NARROW = 390;
 const PANEL_BREAKPOINT_QUERY = '(min-width: 1260px)';
 const INERT_SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'LINK', 'TEMPLATE']);
 const SUB_ID = 'nd-sub-national-show';
+
+const lockupProps = (width: number) =>
+  getImageProps({
+    src: LOCKUP_SRC,
+    alt: LOCKUP_ALT,
+    width,
+    height: Math.round((width * LOCKUP_HEIGHT) / LOCKUP_WIDTH),
+  }).props;
+const wideLockup = lockupProps(LOCKUP_BOX_WIDE);
+const narrowLockup = lockupProps(LOCKUP_BOX_NARROW);
 
 const megaItem = NAV.find((n): n is MegaItem => n.type === 'mega');
 
@@ -207,15 +222,17 @@ export function NosHeader({ show }: NosHeaderProps) {
             aria-label={`${LOCKUP_ALT}, National Show home`}
             aria-current={current(HUB_HREF)}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element -- the supplied lockup ships byte-for-byte; next/image would re-encode it */}
-            <img
-              src={LOCKUP_SRC}
-              alt={LOCKUP_ALT}
-              width={LOCKUP_WIDTH}
-              height={LOCKUP_HEIGHT}
-              loading="eager"
-              fetchPriority="high"
-            />
+            <picture>
+              <source media="(max-width: 699px)" srcSet={narrowLockup.srcSet} />
+              <img
+                {...wideLockup}
+                alt={LOCKUP_ALT}
+                width={LOCKUP_WIDTH}
+                height={LOCKUP_HEIGHT}
+                loading="eager"
+                fetchPriority="high"
+              />
+            </picture>
           </Link>
 
           <nav className="nh-nav" aria-label="Primary">

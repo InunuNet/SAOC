@@ -60,8 +60,9 @@ const TONE_CLASSES: Record<StatusMarkerTone, string> = {
   dark: 'border-ivory/30 bg-ivory/10 text-ivory/80',
 };
 
-const NARROW_FULL_CLASSES = '[@media(max-width:359px)]:sr-only';
-const NARROW_SHORT_CLASSES = 'hidden [@media(max-width:359px)]:inline';
+// Range syntax, so no fractional width falls between the two spans' steps.
+const NARROW_FULL_CLASSES = '[@media(width<360px)]:sr-only';
+const NARROW_SHORT_CLASSES = 'hidden [@media(width<360px)]:inline';
 
 export interface StatusMarkerProps {
   /** Which pre-unification component's vocabulary/labels/data-attribute to reproduce. */
@@ -76,9 +77,63 @@ export interface StatusMarkerProps {
   as?: StatusMarkerRoot;
   /**
    * Below 360px the visible text shortens to the pending fallback while the full label stays
-   * in the accessibility tree (sr-only, not display:none).
+   * in the accessibility tree (sr-only, not display:none). Pending markers only, and not
+   * when the label already is the short tag; any other marker keeps its label at every width.
    */
   shortOnNarrow?: boolean;
+  /**
+   * Opt-in, for a marker inside a disclosure that draws the full research wording in its foot. A
+   * research marker then shows FALLBACK_RESEARCH_LABEL as its only label at every width.
+   */
+  shortResearch?: boolean;
+}
+
+export interface ResolvedStatusMarker {
+  marker: 'pending' | 'research' | 'question';
+  /** The full label the marker displays (the short tag aside). */
+  label: string;
+}
+
+/**
+ * The marker and full label StatusMarker displays for these props, or null when confirmed —
+ * so a wrapper can name its region with exactly the string the chip shows at full width.
+ */
+export function resolveStatusMarker({
+  kind,
+  status,
+  pendingLabel,
+  researchLabel,
+  questionLabel,
+  shortResearch = false,
+}: Pick<
+  StatusMarkerProps,
+  'kind' | 'status' | 'pendingLabel' | 'researchLabel' | 'questionLabel' | 'shortResearch'
+>): ResolvedStatusMarker | null {
+  // The ONLY early return, shared by both kinds — never split into a second branch.
+  if (status === 'confirmed') return null;
+
+  if (shortResearch && status === 'research') {
+    return { marker: 'research', label: FALLBACK_RESEARCH_LABEL };
+  }
+
+  if (kind === 'exhibitor') {
+    // Deliberately not a lookup keyed on `status`: an unrecognised key must resolve to
+    // the pending marker, not to undefined.
+    const marker = status === 'research' || status === 'question' ? status : 'pending';
+
+    let label = pendingLabel;
+    if (marker === 'research' && researchLabel) label = researchLabel;
+    if (marker === 'question' && questionLabel) label = questionLabel;
+    if (!label || label.trim() === '') label = FALLBACK_LABEL;
+    return { marker, label };
+  }
+
+  const isResearch = status === 'research';
+  const supplied = isResearch ? researchLabel : pendingLabel;
+  return {
+    marker: isResearch ? 'research' : 'pending',
+    label: supplied?.trim() || (isResearch ? FALLBACK_RESEARCH_LABEL : FALLBACK_PENDING_LABEL),
+  };
 }
 
 export function StatusMarker({
@@ -90,29 +145,18 @@ export function StatusMarker({
   tone = 'light',
   as: Root = 'p',
   shortOnNarrow = false,
+  shortResearch = false,
 }: StatusMarkerProps) {
-  // The ONLY early return, shared by both kinds — never split into a second branch.
-  if (status === 'confirmed') return null;
-
-  let marker: 'pending' | 'research' | 'question';
-  let label: string | null | undefined;
-
-  if (kind === 'exhibitor') {
-    // Deliberately not a lookup keyed on `status`: an unrecognised key must resolve to
-    // the pending marker, not to undefined.
-    marker = status === 'research' || status === 'question' ? status : 'pending';
-
-    label = pendingLabel;
-    if (marker === 'research' && researchLabel) label = researchLabel;
-    if (marker === 'question' && questionLabel) label = questionLabel;
-    if (!label || label.trim() === '') label = FALLBACK_LABEL;
-  } else {
-    const isResearch = status === 'research';
-    marker = isResearch ? 'research' : 'pending';
-
-    const supplied = isResearch ? researchLabel : pendingLabel;
-    label = supplied?.trim() || (isResearch ? FALLBACK_RESEARCH_LABEL : FALLBACK_PENDING_LABEL);
-  }
+  const resolved = resolveStatusMarker({
+    kind,
+    status,
+    pendingLabel,
+    researchLabel,
+    questionLabel,
+    shortResearch,
+  });
+  if (resolved === null) return null;
+  const { marker, label } = resolved;
 
   // `data-*` attribute name is part of each kind's pre-existing, unchanged contract —
   // carries the RESOLVED marker, never the raw upstream value.
@@ -129,7 +173,7 @@ export function StatusMarker({
       ].join(' ')}
     >
       <span aria-hidden="true">※</span>
-      {shortOnNarrow ? (
+      {shortOnNarrow && marker === 'pending' && label.trim() !== FALLBACK_PENDING_LABEL ? (
         <>
           <span className={NARROW_FULL_CLASSES}>{label}</span>
           <span aria-hidden="true" className={NARROW_SHORT_CLASSES}>

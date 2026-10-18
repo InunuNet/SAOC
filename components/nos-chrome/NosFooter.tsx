@@ -4,11 +4,13 @@
 // NOS — components/nos-chrome/NosFooter.tsx
 // The NOS own-brand footer for /national-show/*: the SAOC footer's content
 // (components/chrome/footer-data.ts, shared verbatim) on the NOS royal ground,
-// with the supplied reversed lockups in the brand slot. Two plain <img> and CSS
-// pick the horizontal file above 700px and the vertical (mono) file at or below
-// it; both load eagerly and the inactive one is display:none.
+// with the supplied reversed lockups in the brand slot. ONE <picture> picks the horizontal
+// file above 700px and the vertical (mono) file at or below it, so only the active lockup is
+// fetched, lazily (the footer is below the fold). The sources are the supplied PNGs; the custom
+// image loader maps them to its pre-built WebP candidates.
 // =============================================================
 
+import { getImageProps } from 'next/image';
 import Link from 'next/link';
 
 import {
@@ -35,32 +37,48 @@ const HORIZONTAL_HEIGHT = 294;
 const VERTICAL_SRC = '/images/nos/nos-reversed-white-vertical-900.png';
 const VERTICAL_WIDTH = 900;
 const VERTICAL_HEIGHT = 791;
+// The rendered boxes: the horizontal is 448px wide, the vertical 342px (nos-chrome.css). A width
+// with no `sizes` gives a 1x/2x density srcset, so a high-density screen never fetches more than
+// twice the box.
+const HORIZONTAL_BOX = 448;
+const VERTICAL_BOX = 342;
 
 export function NosFooter() {
+  const { props: horizontal } = getImageProps({
+    src: HORIZONTAL_SRC,
+    alt: LOCKUP_ALT,
+    width: HORIZONTAL_BOX,
+    height: Math.round((HORIZONTAL_BOX * HORIZONTAL_HEIGHT) / HORIZONTAL_WIDTH),
+  });
+  const { props: vertical } = getImageProps({
+    src: VERTICAL_SRC,
+    alt: LOCKUP_ALT,
+    width: VERTICAL_BOX,
+    height: Math.round((VERTICAL_BOX * VERTICAL_HEIGHT) / VERTICAL_WIDTH),
+  });
+
   return (
     <footer id="nf" className={`nf ${nosChromeFontClass}`}>
       <div className="nf-wrap">
         <div className="nf-grid">
           <div className="nf-brand">
             <Link className="nf-lockup" href={HUB_HREF}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- the supplied lockups ship byte-for-byte; next/image would re-encode them */}
-              <img
-                className="nf-h"
-                src={HORIZONTAL_SRC}
-                alt={LOCKUP_ALT}
-                width={HORIZONTAL_WIDTH}
-                height={HORIZONTAL_HEIGHT}
-                loading="eager"
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element -- see above */}
-              <img
-                className="nf-v"
-                src={VERTICAL_SRC}
-                alt={LOCKUP_ALT}
-                width={VERTICAL_WIDTH}
-                height={VERTICAL_HEIGHT}
-                loading="eager"
-              />
+              <picture>
+                <source
+                  media="(max-width: 700px)"
+                  srcSet={vertical.srcSet}
+                  width={VERTICAL_WIDTH}
+                  height={VERTICAL_HEIGHT}
+                />
+                <img
+                  {...horizontal}
+                  alt={LOCKUP_ALT}
+                  width={HORIZONTAL_WIDTH}
+                  height={HORIZONTAL_HEIGHT}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </picture>
             </Link>
             <div className="nf-org">
               <div className="nf-head">{FOOTER_ORG_NAME}</div>
