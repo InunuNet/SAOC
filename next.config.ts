@@ -70,6 +70,10 @@ const nextConfig: NextConfig = {
   },
   outputFileTracingIncludes: {
     '/national-show/*': ['content/drive-recovered/**/content.md'],
+    // firebase-admin/auth reaches semver through jsonwebtoken; the trace kept semver/index.js
+    // but dropped most of semver/functions/*, so those routes crashed with
+    // "Cannot find module './functions/valid'" on App Hosting.
+    '/**': ['node_modules/.pnpm/semver@*/node_modules/semver/**/*.js'],
   },
   // Local dev is reached at https://dev.saoc.co.za (see scripts/install-dev-domain.sh and
   // the `dev:secure` script). Without this, Next refuses that origin's dev requests because
