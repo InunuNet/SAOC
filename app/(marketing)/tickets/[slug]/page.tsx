@@ -169,6 +169,7 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
             <TicketCard
               productId={productId}
               variant="summary"
+              headingLevel="h2"
               day={summaryDay}
               provisionalPrice={cardData.provisional}
               name={ticketType.name}

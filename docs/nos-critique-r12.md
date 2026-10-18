@@ -25,3 +25,15 @@ main 26fde668. No copy is new: every string below already exists on main.
 
 Items (c) and (d) are QA inputs committed by @architect; the code change is (a) and (b), one line
 each in the generator and the manifest.
+
+## F2 - single-ticket heading level
+
+Sweep-221 found an axe heading-order violation on `/tickets/vip?quantity=1`: the summary card's
+ticket name was an h3 directly under the hero h1.
+
+- `TicketCard` takes `headingLevel?: 'h2' | 'h3'`, defaulting to 'h3' (the `VisitorInfoBlock`
+  idiom). The name keeps `data-ticket-name=""` and `className="nk-name"`.
+- `tickets/[slug]/page.tsx` passes `headingLevel="h2"` to its summary card. Every other caller
+  keeps h3: on the tickets, conferences and workshops pages the cards sit under a section h2.
+- `.nos-theme .nk-name` sets every typographic property and outranks `.nos-theme h2`, so the name
+  looks the same as an h2 as it did as an h3.

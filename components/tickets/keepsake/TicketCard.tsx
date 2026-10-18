@@ -40,6 +40,8 @@ export interface TicketCardProps {
   // whether the price is provisional (its note sits under the price).
   day?: string | null;
   provisionalPrice?: boolean;
+  /** Name heading level; card lists under a section h2 keep the default h3, the single-ticket page opts into h2. */
+  headingLevel?: 'h2' | 'h3';
 }
 
 interface DayPickerProps {
@@ -103,7 +105,9 @@ export function TicketCard({
   variant = 'default',
   day: summaryDay = null,
   provisionalPrice = false,
+  headingLevel = 'h3',
 }: TicketCardProps) {
+  const NameHeading = headingLevel;
   const product = TICKET_PRODUCTS[productId];
   const name = nameProp ?? vm.name ?? product.name;
   const detailHref = TICKET_DETAIL_HREFS[productId];
@@ -149,9 +153,9 @@ export function TicketCard({
         <span className="nk-perf" aria-hidden="true" />
         <div data-ticket-body="" className="nk-main">
           <p className="nk-when">{product.when}</p>
-          <h3 data-ticket-name="" className="nk-name">
+          <NameHeading data-ticket-name="" className="nk-name">
             {detailHref && !summary ? <Link href={detailHref}>{name}</Link> : name}
-          </h3>
+          </NameHeading>
           {product.theme && !summary ? <p className="nk-theme">{product.theme}</p> : null}
           {product.meta && !summary ? <p className="nk-meta">{product.meta}</p> : null}
           {summary ? (
