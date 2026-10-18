@@ -1,6 +1,6 @@
 # nos-critique-r15 F3 — two small-text colours reach 4.5:1 with handoff tokens
 
-BASE: `origin/main` `ab7c549c`. Shared branch and worktree with F1/F2.
+BASE: `origin/main` `0fdffebb` since the restack (was `ab7c549c` when the spec was written; the two differ only in `next.config.ts`). Shared branch and worktree with F1/F2.
 
 ## (a) /refunds "PROVISIONAL" sup
 

@@ -26,7 +26,7 @@ assertions:
       description: f3 check scripts and goldens are unmodified since @architect wrote them
       command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r15/goldens/checks-f3.sha256
     - id: A2
-      description: Footprint - the r15 branch differs from origin/main ab7c549c only in the union of the r15 footprints, docs/nos-critique-r15.md and the spec dir, HEAD descends from it
+      description: Footprint - the r15 branch differs from origin/main 0fdffebb only in the union of the r15 footprints, docs/nos-critique-r15.md and the spec dir, HEAD descends from it
       command: node .agent/memory/project/specs/nos-critique-r15/checks/footprint.mjs
     - id: A3
       description: Static - ProvisionalFigure.tsx and app/not-found.tsx equal BASE plus exactly their one golden line, both tokens are handoff tokens, docs record F3

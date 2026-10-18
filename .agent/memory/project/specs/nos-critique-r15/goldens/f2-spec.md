@@ -1,6 +1,6 @@
 # nos-critique-r15 F2 — header focus ring reaches 3:1 (WCAG 1.4.11) with a handoff token
 
-BASE: `origin/main` `ab7c549c`. Shared branch and worktree with F1/F3.
+BASE: `origin/main` `0fdffebb` since the restack (was `ab7c549c` when the spec was written; the two differ only in `next.config.ts`). Shared branch and worktree with F1/F3.
 
 ## Finding (measured at BASE, public build)
 

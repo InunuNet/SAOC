@@ -1,6 +1,6 @@
 # nos-critique-r15 F1 — withhold the unsourced per-society estimates on the public build
 
-BASE: `origin/main` `ab7c549c` (r14 merged), recorded when the spec was written. Branch `fix/nos-critique-r15`, worktree `.tmp/sandbox/critique-r15`.
+BASE: `origin/main` `0fdffebb` since the restack (was `ab7c549c`, r14 merged, when the spec was written; the two differ only in `next.config.ts`). Branch `fix/nos-critique-r15`, worktree `.tmp/sandbox/critique-r15`.
 If the P0 standalone-semver fix lands on main first, the dev rebases onto it before handoff. The guard only needs BASE to stay an ancestor.
 
 ## Ruling (lead, FINAL, 2026-10-18; vote carried 2/3, consistent with F24 vote 1C)

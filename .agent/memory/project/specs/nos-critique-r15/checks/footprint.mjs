@@ -1,4 +1,4 @@
-// nos-critique-r15 footprint guard (F1, F2 and F3 share the branch): the r15 branch may differ from BASE (origin/main ab7c549c) only in the
+// nos-critique-r15 footprint guard (F1, F2 and F3 share the branch): the r15 branch may differ from BASE (origin/main 0fdffebb) only in the
 // union of goldens/f1-footprint.json, f2-footprint.json and f3-footprint.json, docs/nos-critique-r15.md and this spec directory; HEAD
 // descends from BASE (a rebase onto a newer main keeps BASE as an ancestor).
 import { finish, footprintFailures } from './_lib.mjs';

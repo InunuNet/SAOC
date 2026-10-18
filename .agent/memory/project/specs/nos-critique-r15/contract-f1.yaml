@@ -29,7 +29,7 @@ assertions:
       description: f1 check scripts and goldens are unmodified since @architect wrote them
       command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r15/goldens/checks-f1.sha256
     - id: A2
-      description: Footprint - the r15 branch differs from origin/main ab7c549c only in the union of the r15 footprints, docs/nos-critique-r15.md and the spec dir, HEAD descends from it
+      description: Footprint - the r15 branch differs from origin/main 0fdffebb only in the union of the r15 footprints, docs/nos-critique-r15.md and the spec dir, HEAD descends from it
       command: node .agent/memory/project/specs/nos-critique-r15/checks/footprint.mjs
     - id: A3
       description: Static - pure lib/data/society-withhold.ts, both societies pages pass server-withheld data to their renderers, SocietyAbout takes withhold, the slug CTA body is withheld (no marked), client components and CTASection untouched, no new copy, docs record F1

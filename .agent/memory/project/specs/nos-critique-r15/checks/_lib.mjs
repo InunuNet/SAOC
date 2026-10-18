@@ -1,7 +1,8 @@
 // Shared helpers for the nos-critique-r15 checks (QA inputs written by @architect; @dev must not edit them, goldens/checks-fN.sha256 lock them).
 // The checks are committed on fix/nos-critique-r15 with the spec. They inspect the checkout named by NOS_CR15_ROOT; by default the
 // .tmp/sandbox/critique-r15 worktree when it exists under the checkout holding this spec, otherwise that checkout itself.
-// BASE is origin/main ab7c549c (r14 merged) at the time the spec was written.
+// BASE is origin/main 0fdffebb: the r15 branch was rebased onto it from ab7c549c (r14 merged, the BASE when the spec was written);
+// the two differ only in next.config.ts, which no check reads from BASE.
 //   NOS_CR15_ROOT   checkout to inspect (relative to the cwd)
 //   NOS_CR15_GIT    checkout whose git history supplies the BASE file contents (default: NOS_CR15_ROOT)
 import { execFileSync } from 'node:child_process';
@@ -9,7 +10,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const BASE = 'ab7c549c';
+export const BASE = '0fdffebb';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const projectRoot = path.resolve(here, '../../../../../..');
