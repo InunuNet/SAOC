@@ -61,3 +61,6 @@ assertions:
     - id: F24-A13
       description: Static - the nav-config vendors descriptor carries the voted string
       command: grep -Fq "Trade vendor showcase, application and registration." components/chrome/nav-config.ts
+    - id: F24-A14
+      description: V1 live on public - the rendered nav on home, the tickets page and /about carries the voted vendors descriptor and no nav text says "gated"
+      command: PUBLIC_URL=http://localhost:3624 node contracts/checks/launch-weekend/f24/check-i-nav-live.mjs
