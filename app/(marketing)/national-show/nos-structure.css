@@ -544,6 +544,24 @@
   display: block;
   width: 100%;
 }
+/* r12 F6: a section whose LAST content is a status disclosure (directly, or as the last child of
+   its last block) reads as continuing into the section after it, so the two stacked rhythm units
+   collapse to the 40px space-y-10 step. A mid-section disclosure (exhibitors) never matches. */
+.nos-theme
+  .nos-section:has(
+    > [data-nos-wrap] > [data-status-disclosure]:last-child,
+    > [data-nos-wrap] > :last-child > [data-status-disclosure]:last-child
+  ):has(+ :is(.nos-section, .nk-section)) {
+  padding-bottom: 40px;
+}
+.nos-theme
+  .nos-section:has(
+    > [data-nos-wrap] > [data-status-disclosure]:last-child,
+    > [data-nos-wrap] > :last-child > [data-status-disclosure]:last-child
+  )
+  + :is(.nos-section, .nk-section) {
+  padding-top: 0;
+}
 /* F17: on ticket-flow routes the index marks the current item in ink with an underline (no violet). */
 .nos-theme .nos-index-group a[data-current-ink][aria-current='page'] {
   color: var(--ink);

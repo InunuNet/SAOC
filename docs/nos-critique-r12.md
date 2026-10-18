@@ -88,3 +88,18 @@ renders. No copy is new.
   spells out the NOS suffix: "VIP Ticket — National Orchid Show | SAOC".
 - Title casing (Codi R64). Three NOS titles now follow their h1: "What to expect", "Plan your
   visit" and "Sponsors", with their og images to match.
+
+## F6 - one section gap after a status disclosure
+
+On `/national-show/what-to-expect` (public mode) and `/national-show/workshops`, a section ends in
+a status disclosure and another full section follows on the same ground. Each carried the shared
+rhythm, `padding-block: clamp(72px, 9vw, 120px)`, so the gap from the disclosure to the next
+content was two stacked units: 230px at 1280 and 144px at 390.
+
+- Two additive rules in `nos-structure.css` apply only when the disclosure is the section's last
+  content, either a direct child of `[data-nos-wrap]` or the last child of its last block. The
+  section's bottom padding becomes 40px (the `space-y-10` step the page already uses), and the
+  following `.nos-section` or `.nk-section` drops its top padding. The gap is now 40px at both widths.
+- The shared `.nos-section`, `.nk-section` and `.nos-section-joined` rules are unchanged. A
+  disclosure in the middle of a section (exhibitors) does not match, and the stacked ticket
+  sections on `/national-show/tickets` are left as they are.
