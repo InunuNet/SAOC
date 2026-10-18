@@ -1,3 +1,6 @@
+// RETIRED (nos-critique-r12, 2026-10-18): menu-system-layout4 F8 removed featureRail.blurb on purpose (goldens/f8-tickets-rail.json blurbRemoved; 69f58bb1, db2d268f),
+// and e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts asserts the blurb is gone, so this check can only fail. Not run in any gate.
+// See .agent/memory/project/specs/nos-critique-r12/goldens/supersession.json.
 // menu-system-layout4 M2/F7 -- provenance check for NavMegaFeatureRail.blurb.
 //
 // WHAT THIS PROVES: that the literal string assigned to featureRail.blurb in

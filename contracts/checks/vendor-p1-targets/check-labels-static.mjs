@@ -15,7 +15,7 @@ const failures = [];
 
 // [file, substring that must be present]
 const REQUIRED = [
-  ['app/(marketing)/national-show/vendors/page.tsx', `title: '${NEW} — National Show',`],
+  ['app/(marketing)/national-show/vendors/page.tsx', `title: '${NEW}',`], // F24 911fd349: the NOS layout template adds the suffix (nos-critique-r12 supersession)
   ['app/(marketing)/national-show/vendors/page.tsx', `title="${NEW}"`],
   ['components/show/ShowSectionNav.tsx', `{ href: '/national-show/vendors', label: '${NEW}', hint: 'The trade floor and how to exhibit' }`],
   ['components/chrome/nav-config.ts', `label: '${NEW}',`],
