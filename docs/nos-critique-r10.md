@@ -16,3 +16,10 @@ definition anywhere: `var(--fs-sm, 0.875rem)` on `.nk-btn`, `var(--fs-lg, 1.5625
 - The `.nk-stub` `var(--nk-field, var(--primary))` fallback stays. `--nk-field` is not a theme
   token: `components/tickets/keepsake/parts.tsx` sets it inline per product, and the fallback
   guards that setter.
+
+## F2 - what-to-expect: show dates first
+
+R50 P1: on `/national-show/what-to-expect` the "Show dates" section now comes first in the
+section, directly under the hero and sub-nav, and the R11 disclosure (`ShowHoldingNote`) follows
+it. The block is moved unchanged; no copy, heading, class or condition changes. The disclosure
+still lists the held-back facts in the ruled order, and there is still one disclosure and one chip.
