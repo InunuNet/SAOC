@@ -1,0 +1,208 @@
+{
+ "_note": "Offline self-test cases for check-a-rules-selftest.mjs. Every rule id T1-T6 and D1-D4 appears in at least one expect:fail case. The c-* cases pin the reference sentence cutter (design-cb P2-3: last sentence boundary within the limit, never mid-word).",
+ "cases": [
+  {
+   "id": "t-home-ok",
+   "kind": "title",
+   "route": "/",
+   "title": "South African Orchid Council",
+   "expect": "ok"
+  },
+  {
+   "id": "t-home-dup",
+   "kind": "title",
+   "route": "/",
+   "title": "South African Orchid Council | South African Orchid Council",
+   "expect": "fail",
+   "rules": [
+    "T1",
+    "T2"
+   ]
+  },
+  {
+   "id": "t-about-ok",
+   "kind": "title",
+   "route": "/about",
+   "title": "About SAOC | South African Orchid Council",
+   "expect": "ok"
+  },
+  {
+   "id": "t-about-saoc-twice",
+   "kind": "title",
+   "route": "/about",
+   "title": "About | SAOC | South African Orchid Council",
+   "expect": "fail",
+   "rules": [
+    "T1"
+   ]
+  },
+  {
+   "id": "t-contact-nos-suffix",
+   "kind": "title",
+   "route": "/contact",
+   "title": "Contact — National Orchid Show | SAOC",
+   "expect": "fail",
+   "rules": [
+    "T6"
+   ]
+  },
+  {
+   "id": "t-hub-ok",
+   "kind": "title",
+   "route": "/national-show",
+   "title": "National Orchid Show | South African Orchid Council",
+   "expect": "ok"
+  },
+  {
+   "id": "t-hub-short",
+   "kind": "title",
+   "route": "/national-show",
+   "title": "National Orchid Show | SAOC",
+   "expect": "fail",
+   "rules": [
+    "T4"
+   ]
+  },
+  {
+   "id": "t-tickets-ok",
+   "kind": "title",
+   "route": "/national-show/tickets",
+   "title": "Tickets — National Orchid Show | SAOC",
+   "expect": "ok"
+  },
+  {
+   "id": "t-tickets-old",
+   "kind": "title",
+   "route": "/national-show/tickets",
+   "title": "Tickets — National Show | South African Orchid Council",
+   "expect": "fail",
+   "rules": [
+    "T3"
+   ]
+  },
+  {
+   "id": "t-tickets-doubled",
+   "kind": "title",
+   "route": "/national-show/tickets",
+   "title": "Tickets — National Show — National Orchid Show | SAOC",
+   "expect": "fail",
+   "rules": [
+    "T3"
+   ]
+  },
+  {
+   "id": "t-faq-ok",
+   "kind": "title",
+   "route": "/national-show/faq",
+   "h1": "Frequently asked questions",
+   "title": "Frequently asked questions — National Orchid Show | SAOC",
+   "expect": "ok"
+  },
+  {
+   "id": "t-faq-not-h1",
+   "kind": "title",
+   "route": "/national-show/faq",
+   "h1": "Frequently asked questions",
+   "title": "Visitor Questions — National Orchid Show | SAOC",
+   "expect": "fail",
+   "rules": [
+    "T5"
+   ]
+  },
+  {
+   "id": "d-ok-77",
+   "kind": "desc",
+   "desc": "The South African National Orchid Show — the flagship triennial competition.",
+   "lede": "",
+   "expect": "ok"
+  },
+  {
+   "id": "d-over-160",
+   "kind": "desc",
+   "desc": "Choose the option that matches why you are coming to the 2027 National Orchid Show and we will take you straight to the right form, with every price and date shown up front before you commit.",
+   "lede": "",
+   "expect": "fail",
+   "rules": [
+    "D1"
+   ]
+  },
+  {
+   "id": "d-short-no-lede",
+   "kind": "desc",
+   "desc": "Tickets for the show.",
+   "lede": "",
+   "expect": "fail",
+   "rules": [
+    "D2"
+   ]
+  },
+  {
+   "id": "d-short-is-lede-cut",
+   "kind": "desc",
+   "desc": "The flagship competition of South African orchid growing.",
+   "lede": "The flagship competition of South African orchid growing. Three days of judged benching, plant sales and talks at The Hangar, Stellenbosch Flying Club. Tickets open soon for everyone.",
+   "expect": "ok"
+  },
+  {
+   "id": "d-short-not-lede",
+   "kind": "desc",
+   "desc": "Tickets for the show, on sale soon.",
+   "lede": "The flagship competition of South African orchid growing. Three days of judged benching, plant sales and talks at The Hangar, Stellenbosch Flying Club. Tickets open soon for everyone.",
+   "expect": "fail",
+   "rules": [
+    "D2"
+   ]
+  },
+  {
+   "id": "d-midword",
+   "kind": "desc",
+   "desc": "The flagship competition of South African orchid growing. Three days of judged benching, plant sales and talks at The Hangar, Stellenbosch Flying Cl",
+   "lede": "The flagship competition of South African orchid growing. Three days of judged benching, plant sales and talks at The Hangar, Stellenbosch Flying Club. Tickets open soon for everyone.",
+   "expect": "fail",
+   "rules": [
+    "D3"
+   ]
+  },
+  {
+   "id": "d-ellipsis",
+   "kind": "desc",
+   "desc": "The flagship competition of South African orchid growing. Three days of judged benching, plant sales and talks at The Hangar…",
+   "lede": "The flagship competition of South African orchid growing. Three days of judged benching, plant sales and talks at The Hangar, Stellenbosch Flying Club. Tickets open soon for everyone.",
+   "expect": "fail",
+   "rules": [
+    "D3"
+   ]
+  },
+  {
+   "id": "d-missing",
+   "kind": "desc",
+   "desc": "",
+   "lede": "The flagship competition of South African orchid growing. Three days of judged benching, plant sales and talks at The Hangar, Stellenbosch Flying Club. Tickets open soon for everyone.",
+   "expect": "fail",
+   "rules": [
+    "D4"
+   ]
+  },
+  {
+   "id": "c-fits",
+   "kind": "cut",
+   "text": "The flagship competition of South African orchid growing. Three days of judged benching, plant sales and talks at The Hangar, Stellenbosch Flying Club. Tickets open soon for everyone.",
+   "max": 160,
+   "expect": "The flagship competition of South African orchid growing. Three days of judged benching, plant sales and talks at The Hangar, Stellenbosch Flying Club."
+  },
+  {
+   "id": "c-first-only",
+   "kind": "cut",
+   "text": "The flagship competition of South African orchid growing. Three days of judged benching, plant sales and talks at The Hangar, Stellenbosch Flying Club. Tickets open soon for everyone.",
+   "max": 100,
+   "expect": "The flagship competition of South African orchid growing."
+  },
+  {
+   "id": "c-no-boundary",
+   "kind": "cut",
+   "text": "One very long unbroken sentence with no stop that runs on and on past the limit",
+   "max": 40,
+   "expect": null
+  }
+ ]
+}

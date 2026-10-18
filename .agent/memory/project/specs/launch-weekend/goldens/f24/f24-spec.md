@@ -1,0 +1,16 @@
+# F24 spec - SEO metadata and the unsourced "21" (design-cb rulings, FINAL)
+
+Rulings are encoded exactly; the lead reverses one by editing this file and the goldens, not the contract.
+
+1. Home title: `title: { absolute: 'South African Orchid Council' }` in `app/(marketing)/page.tsx` (main renders "South African Orchid Council | South African Orchid Council" through the root `%s | South African Orchid Council` template).
+2. NOS inner pages: `app/(marketing)/national-show/layout.tsx` exports `metadata.title.template = '%s — National Orchid Show | SAOC'`. Each inner page's own title is then just its name (so "Tickets — National Show" becomes "Tickets"; a head that repeats "National Show" or "National Orchid Show" fails). The hub `/national-show` keeps "National Orchid Show | South African Orchid Council" (a layout template does not apply to the same segment's page.tsx, so the hub's title stays as is; if the layout template ever reaches it, use `title.absolute`). Dynamic `/national-show/archive/[year]` is out of the sweep (needs Sanity data) but takes the same template.
+3. FAQ: the head equals the h1, "Frequently asked questions" (today "Visitor Questions").
+4. Descriptions, every public route: 70-160 chars; under 70 falls back to the page lede cut at a sentence boundary <=155 chars; over 160 is cut at the last sentence boundary <=160. Never mid-word, no ellipsis; a description always ends `. ! ?`. Suggested home for the logic: `buildPageMetadata()` in `lib/seo.ts` gains an optional `lede` and applies `fitDescription()`; SAOC pages that set `metadata` directly call the same helper. `goldens/f24/description-cases.json` pins the cutter (`c-*` cases). The "page lede" the sweep reads is the first three paragraphs of 20+ chars in `[data-page-hero]`, `.nos-hero` or `main`; a description passes if it is a sentence-cut of any one.
+5. "21 societies" (vote 1C): `app/(marketing)/societies/page.tsx:94` hero lede is withheld on public through `withholdPlaceholderProse()` (omit `lede`), and on the preview shown inside a `[data-placeholder]` element with `<PlaceholderMarker />` ("Not confirmed by SAOC"). `app/(marketing)/media-kit/page.tsx` ALREADY withholds on main 81490e7a (SOURCED_FACTS at :66-70, the "federated network of 21" prose at :115-124); A4/A5 keep it a regression guard. Mode is fixed at build time (ISR): public and preview are two builds.
+
+Expected state table: `withhold.json`. Expected titles: `titles.json`.
+
+## Findings on main 81490e7a (public, :3013), the red set
+- Titles: `/` duplicated; 15 NOS inner titles lack the SAOC template (3 still say "National Show", `/national-show/about` says "About the National Show", `/national-show/symposium` "National Orchid Show Symposium", `/national-show/archive` "National Show Archive"); FAQ says "Visitor Questions".
+- Descriptions: 4 over 160 (`plan-your-visit` 161, `exhibitors` 166, `vendors/apply` 195), 7 under 70 without a lede cut (`/members`, `/constitution`, `/privacy`, `/terms`, `symposium`, `sa-exhibitors`, `sponsors`, `archive`). NOTE only: `/about /societies /judging /events /contact /sponsors` share the layout default description (96 chars, passes; not a ruling).
+- `/societies` shows the "21" lede on public and unmarked on preview.

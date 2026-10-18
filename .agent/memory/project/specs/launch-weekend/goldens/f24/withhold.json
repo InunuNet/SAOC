@@ -1,0 +1,20 @@
+{
+  "_note": "Vote 1C. The static, unsourced '21' (Lee-Ann's Drive does not give a society count) is withheld on public and shown MARKED on the beta preview, through withholdPlaceholderProse() (lib/data/show-pages.ts) - the same switch about, judging, sponsors and media-kit already use.",
+  "markerStrings": ["Not confirmed by SAOC", "To be confirmed", "Not yet confirmed", "Awaiting confirmation"],
+  "unsourcedRe": "\\b21\\b|twenty-one",
+  "sites": [
+    {
+      "id": "societies-lede",
+      "route": "/societies",
+      "source": "app/(marketing)/societies/page.tsx:94",
+      "text": "21 societies across South Africa — growing, showing, and judging together since 1968.",
+      "state": { "main": "red on main 81490e7a (the lede renders on public)", "public": "absent: no PageHero lede, no '21' anywhere in the page, the meta description or the HTML payload; h1 'Find an orchid society near you' stays", "preview": "present inside a [data-placeholder] element whose element or parent carries a marker string (PlaceholderMarker renders 'Not confirmed by SAOC')" }
+    },
+    {
+      "id": "media-kit-facts",
+      "route": "/media-kit",
+      "source": "app/(marketing)/media-kit/page.tsx:15 (QUICK_FACTS) and :118 (federated network of 21)",
+      "state": { "main": "already green on 81490e7a (SOURCED_FACTS filter, withhold branch at :115); this site is a regression guard", "public": "absent: no '21' in the page or HTML payload; the 1968 founding-year fact stays", "preview": "'21' present inside [data-placeholder] with a marker string" }
+    }
+  ]
+}

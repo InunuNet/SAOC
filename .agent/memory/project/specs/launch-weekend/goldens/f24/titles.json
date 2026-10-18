@@ -1,0 +1,14 @@
+{
+  "_note": "design-cb rulings, FINAL (P1, P2-1, P2-2). Expected <title> per route on the public build. NOS inner head = the page's own name, never repeating 'National Show'. Heads for routes not listed here are the dev's, constrained by the rules in check-b-titles.mjs.",
+  "expected": {
+    "/": "South African Orchid Council",
+    "/about": "About SAOC | South African Orchid Council",
+    "/societies": "Affiliated Societies | South African Orchid Council",
+    "/contact": "Contact | South African Orchid Council",
+    "/national-show": "National Orchid Show | South African Orchid Council",
+    "/national-show/faq": "Frequently asked questions — National Orchid Show | SAOC",
+    "/national-show/tickets": "Tickets — National Orchid Show | SAOC",
+    "/national-show/workshops": "Workshops & Field Trips — National Orchid Show | SAOC"
+  },
+  "faqH1": "Frequently asked questions"
+}

@@ -1,0 +1,49 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: Every public page ships a correct title and meta description under the design-cb rulings (home title no longer doubled, National Show inner pages on the "%s - National Orchid Show | SAOC" template, FAQ titled by its h1, every description 70-160 chars or a sentence-cut lede), and the static unsourced "21 societies" is withheld on the public build and shown marked on the beta preview.
+created_at: '2026-10-18'
+autonomy: high
+features:
+  - id: F24
+    name: SEO metadata (home title, NOS title template, FAQ title, description fitting) and the unsourced 21 withheld on public
+    status: pending
+# GATE: cwd = the implementation worktree (branch from main with spec/lw-f24 merged in so goldens/f24 and contracts/checks/launch-weekend/f24 exist). Copy .env.local in, delete it at the end.
+# TWO BUILDS (mode is fixed at build time, /societies is ISR): PUBLIC_URL = `SITE_PUBLIC_LAUNCH=true pnpm build && SITE_PUBLIC_LAUNCH=true pnpm exec next start -p $PUBLIC_PORT` (use 3624; a separate worktree of the same commit, or build, test and stop before building the other). BASE_URL = the BETA PREVIEW: `SHOW_PLACEHOLDER_PREVIEW=true pnpm build && SHOW_PLACEHOLDER_PREVIEW=true pnpm exec next start -p 3619` (wall up: BETA_BASIC_AUTH_* in .env.local; the checks send them). A2, A3, A4 read PUBLIC_URL; A5 reads BASE_URL; A1, A6 and the greps need no server. Stop servers by exact PID (lsof -ti tcp:<port> -sTCP:LISTEN); do not rebuild while one runs.
+# Run RED against untouched main 81490e7a (:3013 public): A2 (24 findings), A3 (11), A4 (3), A5 (societies lede unmarked; the media-kit finding is expected on a public server, on a real preview media-kit is green by design), the greps A7-A9. A1 and A6 are green on main by design (A1 proves the rules can fail; A6 is a scope guard).
+# Skills @dev must load: web-design-guidelines. No UI is restyled; the preview marker reuses PlaceholderMarker as other unsourced figures do.
+# If a legal page (/privacy, /terms, /constitution) has no paragraph that yields a 70+ char or sentence-cut lede, STOP and report; do not invent copy (docs/rules/no-invention.md).
+goldens:
+  - .agent/memory/project/specs/launch-weekend/goldens/f24/f24-spec.md
+  - .agent/memory/project/specs/launch-weekend/goldens/f24/titles.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f24/withhold.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f24/description-cases.json
+assertions:
+  phase: 4
+  checks:
+    - id: F24-A1
+      description: Rule self-test (offline) - the title rules T1-T6 and description rules D1-D4 accept every good case and reject every bad case for the stated rule, the reference sentence cutter matches its pinned cases, and every rule has a negative case
+      command: node contracts/checks/launch-weekend/f24/check-a-rules-selftest.mjs
+    - id: F24-A2
+      description: Title sweep on the public build - every public route (6 sitemap SAOC routes, the other SAOC pages when present, every indexable non-dynamic National Show route) has no repeated segment or double suffix, home is exactly "South African Orchid Council", the hub keeps "National Orchid Show | South African Orchid Council", every NOS inner page is "<name> - National Orchid Show | SAOC" with a head that does not repeat the show name, FAQ head equals its h1 "Frequently asked questions", non-NOS pages end " | South African Orchid Council", and the 8 golden titles match
+      command: PUBLIC_URL=http://localhost:3624 node contracts/checks/launch-weekend/f24/check-b-titles.mjs
+    - id: F24-A3
+      description: Description sweep on the public build - every public route's meta description and og:description is at most 160 chars, ends on a sentence boundary (no mid-word cut, no ellipsis), and is 70-160 chars or a sentence-cut (<=155) of the page lede
+      command: PUBLIC_URL=http://localhost:3624 node contracts/checks/launch-weekend/f24/check-c-descriptions.mjs
+    - id: F24-A4
+      description: Public withhold - /societies and /media-kit hold no "21" or "twenty-one" in rendered text, meta description, og:description or the HTML payload; /societies keeps its h1 and renders no hero lede paragraph; /media-kit keeps the sourced 1968 fact
+      command: PUBLIC_URL=http://localhost:3624 node contracts/checks/launch-weekend/f24/check-d-withhold-public.mjs
+    - id: F24-A5
+      description: Preview marked - on the beta preview build /societies and /media-kit show the "21" inside a [data-placeholder] element that carries a marker string (Not confirmed by SAOC / To be confirmed / Not yet confirmed / Awaiting confirmation) on itself or its parent
+      command: BASE_URL=http://localhost:3619 node contracts/checks/launch-weekend/f24/check-e-withhold-preview.mjs
+    - id: F24-A6
+      description: Scope - only the allowlisted files change versus BASE_REF (default origin/main), the diff adds no hex colour and no client component
+      command: node contracts/checks/launch-weekend/f24/check-f-scope.mjs
+    - id: F24-A7
+      description: Static - the home page sets an absolute title so the root template cannot double it
+      command: grep -Eq "absolute:[[:space:]]*['\"]South African Orchid Council['\"]" "app/(marketing)/page.tsx"
+    - id: F24-A8
+      description: Static - the National Show layout declares the NOS inner title template
+      command: grep -Fq "%s — National Orchid Show | SAOC" "app/(marketing)/national-show/layout.tsx"
+    - id: F24-A9
+      description: Static - the societies page gates its hero lede through withholdPlaceholderProse()
+      command: grep -q "withholdPlaceholderProse" "app/(marketing)/societies/page.tsx"
