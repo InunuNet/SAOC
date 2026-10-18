@@ -159,7 +159,11 @@ export default async function SocietyPage({
       <CTASection
         eyebrow="Keep exploring"
         heading="Find another society, or reach the council"
-        body="SAOC coordinates 21 affiliated societies across South Africa. Browse the full list, or get in touch with the national committee directly."
+        body={
+          withhold
+            ? undefined
+            : 'SAOC coordinates 21 affiliated societies across South Africa. Browse the full list, or get in touch with the national committee directly.'
+        }
         primaryCta={{ href: '/societies', label: 'Find a society' }}
         secondaryCta={{ href: '/contact', label: 'Contact SAOC' }}
       />
