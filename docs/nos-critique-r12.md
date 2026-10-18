@@ -93,6 +93,18 @@ renders. No copy is new.
   sentence cut at a word boundary to 147 characters and ended with "…", the single-route ellipsis
   exception the F24 rules (`_rules.mjs` `ellipsisCut`) allow for `/national-show/symposium`.
 
+## F5 - lockup request guard
+
+F5 is a regression guard only; it changes no app code. Codi reported the 1080 desktop lockups
+requested alongside the 828 and 750 mobile ones at a 405px viewport. On fresh loads in Chromium
+(390 at DPR 1, 2 and 3, 405 at DPR 2, 700, 701 and 1280) every page requests exactly one header and
+one footer lockup, from the `<picture>` source for that width, with no lockup preload. The
+{1080, 828, 750} set appears only when the page loads at 1280 (DPR 2) and the viewport is then
+resized to 405: the `<picture>` re-selects its source on the media change and fetches the new
+candidate, as the spec requires. Measurements: `.agent/memory/scratch/measure-26f/`. The guard
+fails any fresh load that requests more than one header or one footer lockup, or a file outside
+r9's 2x cap.
+
 ## F6 - one section gap after a status disclosure
 
 On `/national-show/what-to-expect` (public mode) and `/national-show/workshops`, a section ends in
