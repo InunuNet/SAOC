@@ -59,7 +59,7 @@ const FOOT_OPTIONS = [
   {
     id: 'trade',
     heading: "I'm a nursery or trader",
-    body: 'Trade vendor showcase, application and gated registration.',
+    body: 'Trade vendor showcase, application and registration.',
     cta: 'Vendor registration',
     href: '/national-show/vendors/apply',
   },
