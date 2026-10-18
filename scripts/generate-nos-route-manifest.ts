@@ -169,7 +169,7 @@ const ROUTE_TABLE: RouteRow[] = [
   },
   {
     slug: '/national-show/symposium',
-    label: 'SAOC Symposium',
+    label: 'National Orchid Show Symposium',
     group: 'programme',
     parent: '/national-show',
     order: 3,
