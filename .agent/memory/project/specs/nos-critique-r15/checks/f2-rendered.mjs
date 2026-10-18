@@ -46,7 +46,7 @@ try {
         if (rBg < G.minRatio) failures.push(`${key}: ring rgb(${ringRgb}) vs header bg rgb(${bg}) = ${round2(rBg)}:1, want >= ${G.minRatio} (R2)`);
         if (rOff < G.minRatio) failures.push(`${key}: ring rgb(${ringRgb}) vs its offset rgb(${offRgb}) = ${round2(rOff)}:1, want >= ${G.minRatio} (R2)`);
         // R3: painted pixels, left edge, vertical middle. The ring's outer 2px band starts at floor(x) - spread: sample its inner column
-        // (floor(x) - spread + 1) and the header 5px further out, from one 16x3 capture in document coordinates (Playwright's clip).
+        // (floor(x) - spread + 1) and the header 5px further out, from one 16x3 capture in viewport coordinates (a viewport screenshot's clip is viewport-relative).
         const y = Math.round(s.box.y + s.box.h / 2);
         const xRing = Math.floor(s.box.x) - ring.spread + 1;
         const x0 = xRing - 8;
@@ -73,7 +73,7 @@ try {
           return {
             id: `${e.tagName.toLowerCase()} "${(e.getAttribute('aria-label') || e.textContent || '').trim().slice(0, 30)}"`,
             fv: e.matches(':focus-visible'), mega: e.matches('button[aria-haspopup]'), shadow: s.boxShadow,
-            box: { x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height }, headerBg: getComputedStyle(header).backgroundColor,
+            box: { x: r.left, y: r.top, w: r.width, h: r.height }, headerBg: getComputedStyle(header).backgroundColor,
           };
         });
         if (!info) { if (entered) break; continue; }
