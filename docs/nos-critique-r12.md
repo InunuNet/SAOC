@@ -105,6 +105,12 @@ candidate, as the spec requires. Measurements: `.agent/memory/scratch/measure-26
 fails any fresh load that requests more than one header or one footer lockup, or a file outside
 r9's 2x cap.
 
+Post-launch follow-up (not gated): both lockup `<img>` elements carry the 1080 candidate as their
+`src` fallback, so an engine whose preload scanner fetched `src` before the `<picture>` selection
+would show the same set. Nobody has seen that on a real load, and WebKit was not available here,
+so it is a check on a real iPhone after launch. A possible mitigation is pointing `src` at the 1x
+candidate.
+
 ## F6 - one section gap after a status disclosure
 
 On `/national-show/what-to-expect` (public mode) and `/national-show/workshops`, a section ends in
