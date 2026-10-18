@@ -13,7 +13,7 @@ for (const c of cases) {
     if (got !== c.expect) problems.push(`${c.id}: sentenceCut gave ${JSON.stringify(got)}, want ${JSON.stringify(c.expect)}`);
     continue;
   }
-  const found = c.kind === 'title' ? titleProblems(c.route, c.title, c.h1) : c.kind === 'withhold' ? staticClaimHits(c.html) : descProblems(c.desc, c.lede);
+  const found = c.kind === 'title' ? titleProblems(c.route, c.title, c.h1) : c.kind === 'withhold' ? staticClaimHits(c.html) : descProblems(c.desc, c.lede, c.route);
   const ids = new Set(found.map(([id]) => id));
   if (c.expect === 'ok' && found.length) problems.push(`${c.id}: wanted ok, got ${[...ids].join(',')}`);
   if (c.expect === 'fail') {

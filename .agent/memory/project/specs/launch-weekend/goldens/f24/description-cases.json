@@ -227,6 +227,45 @@
    "rules": [
     "W1"
    ]
+  },
+  {
+   "id": "d-ellipsis-exception-ok",
+   "kind": "desc",
+   "route": "/national-show/symposium",
+   "desc": "Uniting conservation, science, and horticulture to explore how orchids in their natural environments inform responsible growing, breeding, and the…",
+   "lede": [
+    "From Wild Origins to Cultivated Excellence: The Future of Orchids",
+    "Uniting conservation, science, and horticulture to explore how orchids in their natural environments inform responsible growing, breeding, and the sustainability of the orchid industry."
+   ],
+   "expect": "ok"
+  },
+  {
+   "id": "d-ellipsis-other-route",
+   "kind": "desc",
+   "route": "/national-show/about",
+   "desc": "Uniting conservation, science, and horticulture to explore how orchids in their natural environments inform responsible growing, breeding, and the…",
+   "lede": [
+    "From Wild Origins to Cultivated Excellence: The Future of Orchids",
+    "Uniting conservation, science, and horticulture to explore how orchids in their natural environments inform responsible growing, breeding, and the sustainability of the orchid industry."
+   ],
+   "expect": "fail",
+   "rules": [
+    "D3"
+   ]
+  },
+  {
+   "id": "d-ellipsis-exception-wrong-cut",
+   "kind": "desc",
+   "route": "/national-show/symposium",
+   "desc": "Uniting conservation, science, and horticulture to explore how orchids in their natural…",
+   "lede": [
+    "From Wild Origins to Cultivated Excellence: The Future of Orchids",
+    "Uniting conservation, science, and horticulture to explore how orchids in their natural environments inform responsible growing, breeding, and the sustainability of the orchid industry."
+   ],
+   "expect": "fail",
+   "rules": [
+    "D3"
+   ]
   }
  ]
 }

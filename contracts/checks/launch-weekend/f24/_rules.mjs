@@ -12,6 +12,18 @@ export const LEDE_MAX = 155;
 
 const SENTENCE_END = /[.!?]["'’”)]?$/;
 const norm = (t) => t.replace(/\s+/g, ' ').trim();
+// nos-critique-r12 F4 exception (lead ruling 2026-10-18, Codi R7: no meta-talk): the ONLY route whose description may end on an ellipsis.
+// Its page renders no lede that fits D1-D4, so its description must be ellipsisCut() of one of its own rendered ledes, words never added.
+// Replaced when Lee-Ann supplies a shorter lede; then this list goes back to empty. Every other route with an ellipsis still fails D3.
+export const ELLIPSIS_EXCEPTIONS = ['/national-show/symposium'];
+/** The longest prefix of `text` that ends on a word boundary within LEDE_MAX - 1 chars, plus '…' (so <= LEDE_MAX); null when it already fits. */
+export function ellipsisCut(text, max = LEDE_MAX - 1) {
+  const s = norm(text || '');
+  if (s.length <= max) return null;
+  let k = max;
+  while (k > 0 && s[k] !== ' ') k--;
+  return k > 0 ? `${s.slice(0, k).replace(/\s+$/, '')}…` : null;
+}
 const segments = (t) => t.split(/\s+\|\s+|\s+—\s+/).map((s) => s.trim().toLowerCase()).filter(Boolean);
 
 export const isNosInner = (route) => route.startsWith('/national-show/');
@@ -59,12 +71,13 @@ export function isLedeCut(desc, lede) {
   return d.length === l.length || l[d.length] === ' ';
 }
 
-export function descProblems(desc, lede) {
+export function descProblems(desc, lede, route) {
   const d = norm(desc || '');
   if (!d) return [['D4', 'description is missing']];
   const out = [];
   if (d.length > DESC_MAX) out.push(['D1', `description is ${d.length} chars, max ${DESC_MAX}`]);
-  if (/(…|\.\.\.)$/.test(d) || !SENTENCE_END.test(d)) out.push(['D3', `description does not end on a sentence boundary: "...${d.slice(-30)}"`]);
+  const excepted = ELLIPSIS_EXCEPTIONS.includes(route) && (Array.isArray(lede) ? lede : [lede || '']).some((l) => ellipsisCut(l) === d);
+  if (!excepted && (/(…|\.\.\.)$/.test(d) || !SENTENCE_END.test(d))) out.push(['D3', `description does not end on a sentence boundary: "...${d.slice(-30)}"`]);
   if (d.length < DESC_MIN && !isLedeCut(d, lede)) out.push(['D2', `description is ${d.length} chars (<${DESC_MIN}) and is not a sentence-cut of the page lede`]);
   const ledes = (Array.isArray(lede) ? lede : [lede || '']).map(norm);
   if (ledes.some((l) => l.startsWith(d) && d.length < l.length && l[d.length] !== ' ')) out.push(['D3', 'description cuts the lede mid-word']);
