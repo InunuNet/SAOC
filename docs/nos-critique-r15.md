@@ -36,8 +36,12 @@ byte-unchanged.
 
   The prose goes with its marker because keeping it unmarked would present unconfirmed copy as confirmed. It also repeats
   the unsourced society count that F24 1C already withholds on /societies.
-- **Out of scope:** the society page CTA body repeats the same count ("SAOC coordinates 21 affiliated societies"). That is
-  left to the lead.
+- **Amendment (lead ruling, FINAL 2026-10-18): the society page CTA body.** That body repeats the same unsourced count
+  ("SAOC coordinates 21 affiliated societies across South Africa. …").
+  - It is now `body={withhold ? undefined : '<the BASE sentence>'}` on the same `withhold` const, the idiom /about's CTA uses.
+  - There is no `marked` prop, so the beta preview stays unchanged.
+  - The band keeps its eyebrow, heading and both buttons. `CTASection` already omits an absent body, and CTASection.tsx is
+    unchanged.
 
 ## F2 - the header focus ring reaches 3:1 (WCAG 1.4.11)
 
