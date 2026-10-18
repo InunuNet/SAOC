@@ -11,7 +11,12 @@ const LINK_CLASS = 'w-full max-[479px]:min-h-[48px]! min-[480px]:w-auto';
 // `.nos-theme`. Copy is the SAOC root not-found copy (app/not-found.tsx) minus its second
 // sentence, which points at SAOC society links this page does not carry. Link labels are the
 // nav-config labels, in the hero's R67 order: Tickets (primary), National Show, Plan your visit.
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const metadata: Metadata = {
+  title: 'Page not found',
+  description: 'The page you’re looking for doesn’t exist or may have moved.',
+  alternates: { canonical: null },
+  robots: { index: false, follow: false },
+};
 
 export default function NationalShowNotFound() {
   return (

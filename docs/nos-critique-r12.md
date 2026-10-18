@@ -37,3 +37,28 @@ ticket name was an h3 directly under the hero h1.
   keeps h3: on the tickets, conferences and workshops pages the cards sit under a section h2.
 - `.nos-theme .nk-name` sets every typographic property and outranks `.nos-theme h2`, so the name
   looks the same as an h2 as it did as an h3.
+
+## F3 - the two not-founds and missing entities
+
+Sweep-221 and sweep-26f found that both 404s carried the wrong head, and that the SAOC 404 had no
+`<main>`.
+
+- Titles. The NOS 404 took the NOS layout default, which already ends in the site name, so the
+  root template doubled it. The SAOC 404 had the home page's title. Both not-founds now set
+  `title: 'Page not found'` (their eyebrow without the numeral), so the NOS 404 reads "Page not
+  found — National Orchid Show | SAOC" and the SAOC 404 "Page not found | South African Orchid
+  Council". Each description is that page's own lede.
+- Canonical. Every page inherits the root's `alternates: { canonical: './' }`, so a 404 pointed
+  its canonical at the missing URL. Both not-founds set `alternates: { canonical: null }`. Both
+  are noindex: the NOS 404 keeps R63's robots, and the SAOC 404 gains the same pair.
+- Hydrated head. A page that calls notFound() only from the page body ships the served head
+  right, but the hydrated head flips back to the route's own metadata. So `generateMetadata`
+  calls notFound() too on the NOS catch-all, `tickets/[slug]` (which loses its 'Tickets'
+  fallback), `societies/[slug]`, `events/[slug]` and `national-show/archive/[year]`.
+- Landmark. An unmatched URL renders `app/not-found.tsx` under the root layout alone, so its
+  section is now the named export `NotFoundSection`, wrapped in `<main>` by the default export.
+  A notFound() from a marketing page renders the new `app/(marketing)/not-found.tsx` instead,
+  inside the chrome's own `<main>`, so it renders the section bare and re-exports the metadata.
+  The section is byte-identical and `<main>` has no styles, so nothing moves.
+- `/tickets/<missing>` still answers HTTP 200, because `loading.tsx` streams the shell before the
+  lookup fails. It is now noindex with no canonical; a real 404 status is left to the lead.

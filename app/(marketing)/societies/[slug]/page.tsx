@@ -97,7 +97,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const society = await getSociety(slug);
-  if (!society) return { title: 'Society not found' };
+  if (!society) notFound();
   const description = society.description
     ?? (society.region
       ? `${society.name} — affiliated SAOC society in ${society.region}.`

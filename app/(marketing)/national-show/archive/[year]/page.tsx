@@ -98,17 +98,9 @@ export async function generateMetadata({
   // SELF-canonical, never pointed at /national-show. Cross-canonicalising would deindex
   // genuinely unique historical content; the year-leading title is what separates a past
   // edition from the live show in results, now that the schema linkage is deliberately gone.
-  // Unrecorded year: the page itself calls notFound(), so this branch never reaches a
-  // crawler. The description stays deliberately neutral rather than asserting a show that
-  // is not in the record actually took place.
-  if (!show) {
-    return buildPageMetadata({
-      title: year,
-      image: nosOgImage(`National Show ${year}`),
-      description: 'The South African National Orchid Show archive.',
-      path,
-    });
-  }
+  // Unrecorded year: notFound() here as well as in the page, so the hydrated head carries the
+  // not-found's metadata rather than reverting to a year title and canonical.
+  if (!show) notFound();
 
   const title = show.host ? `${year} — ${show.host}` : year;
   return buildPageMetadata({

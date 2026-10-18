@@ -1,7 +1,16 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 
-export default function NotFound() {
+export const metadata: Metadata = {
+  title: 'Page not found',
+  description:
+    'The page you’re looking for doesn’t exist or may have moved. Start from the home page or find a society near you.',
+  alternates: { canonical: null },
+  robots: { index: false, follow: false },
+};
+
+export function NotFoundSection() {
   return (
     <section className="relative flex min-h-[640px] items-center overflow-hidden bg-primary">
       <Image
@@ -44,5 +53,15 @@ export default function NotFound() {
         </div>
       </div>
     </section>
+  );
+}
+
+// An unmatched URL renders here under the root layout alone, which has no <main>. A notFound()
+// from a marketing page renders app/(marketing)/not-found.tsx instead, inside the chrome's <main>.
+export default function NotFound() {
+  return (
+    <main>
+      <NotFoundSection />
+    </main>
   );
 }

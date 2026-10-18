@@ -82,7 +82,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     params: { slug },
     tags: ['ticketType', 'sanity'],
   });
-  return { title: ticketType?.name ?? 'Tickets' };
+  if (!ticketType) notFound();
+  return { title: ticketType.name };
 }
 
 export default async function TicketBuyPage({ params, searchParams }: Props) {

@@ -35,8 +35,9 @@ export async function generateMetadata({
     params: { slug },
     tags: ['societyEvent', 'sanity'],
   });
-  const title = event?.title ?? 'Event';
-  const description = event?.description ?? undefined;
+  if (!event) notFound();
+  const title = event.title;
+  const description = event.description ?? undefined;
   const ogTitle = encodeURIComponent(title);
   return {
     title,
