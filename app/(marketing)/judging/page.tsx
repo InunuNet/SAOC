@@ -25,7 +25,7 @@ export const revalidate = 60;
 const LEDE = 'Accreditation, awards, and how plants are scored across South Africa.';
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Judging',
+  title: 'Judging at SAOC',
   description: LEDE,
   lede: LEDE,
   path: '/judging',

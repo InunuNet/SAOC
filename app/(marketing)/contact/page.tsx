@@ -25,7 +25,7 @@ const LEDE =
   'Questions about societies, shows, judging, or membership? Reach the right person, or send us a message.';
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Contact',
+  title: 'Contact SAOC',
   description: LEDE,
   lede: LEDE,
   path: '/contact',

@@ -19,7 +19,7 @@ export const revalidate = 60;
 
 // The description is the first sentence of the About copy below; PageHero has no lede here.
 export const metadata: Metadata = buildPageMetadata({
-  title: 'About SAOC',
+  title: 'About the South African Orchid Council',
   description:
     'The South African Orchid Council (SAOC) is the national coordinating body for orchid societies and orchid enthusiasts in South Africa.',
   path: '/about',
