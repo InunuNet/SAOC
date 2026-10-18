@@ -20,7 +20,7 @@ const html = await page.content();
 const n = await page.evaluate(() => {
   const note = document.querySelector('.nk-sessions-note');
   const q = (s) => (note ? [...note.querySelectorAll(s)].map((e) => e.textContent.replace(/\s+/g, ' ').trim()) : []);
-  return { text: document.body.innerText, noteText: note ? note.innerText.replace(/\s+/g, ' ').trim() : null, disclosure: note ? note.querySelectorAll('[data-status-disclosure]').length : 0, list: q('[data-status-list]'), foot: q('[data-status-foot]') };
+  return { text: document.body.innerText, noteText: note ? note.textContent.replace(/\s+/g, ' ').trim() : null, disclosure: note ? note.querySelectorAll('[data-status-disclosure]').length : 0, list: q('[data-status-list]'), foot: q('[data-status-foot]') };
 });
 const first = V.withheldPublic;
 if (n.noteText === null) problems.push('.nk-sessions-note is missing');
