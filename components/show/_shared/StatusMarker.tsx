@@ -76,8 +76,8 @@ export interface StatusMarkerProps {
   as?: StatusMarkerRoot;
   /**
    * Below 360px the visible text shortens to the pending fallback while the full label stays
-   * in the accessibility tree (sr-only, not display:none). Pending markers only; any other
-   * marker keeps its full label at every width.
+   * in the accessibility tree (sr-only, not display:none). Pending markers only, and not
+   * when the label already is the short tag; any other marker keeps its label at every width.
    */
   shortOnNarrow?: boolean;
 }
@@ -154,7 +154,7 @@ export function StatusMarker({
       ].join(' ')}
     >
       <span aria-hidden="true">※</span>
-      {shortOnNarrow && marker === 'pending' ? (
+      {shortOnNarrow && marker === 'pending' && label.trim() !== FALLBACK_PENDING_LABEL ? (
         <>
           <span className={NARROW_FULL_CLASSES}>{label}</span>
           <span aria-hidden="true" className={NARROW_SHORT_CLASSES}>
