@@ -24,11 +24,12 @@ Codi's rulings, FINAL, relayed by the lead (saoc-82) on 2026-10-19. BASE `origin
   - /national-show/vendors/photos becomes "Vendor product photos".
 
   The `components/chrome/nav-config.ts` entry is one string, so the SAOC MegaMenu, mobile menu, NosShowIndex and breadcrumb
-  JSON-LD follow it. This supersedes the r13 "Vendor Stand Payment" title pin.
-- **DECISION NEEDED: the Exhibitor h1 comes from the CMS.** /national-show/exhibitors renders Sanity `showExhibitorInfo.title`,
-  which is "Exhibitor Information". Only the code fallbacks changed, and the CMS value is deliberately not overridden in code.
-  - Recommendation: edit the title in Studio.
-  - Until then, the f1-rendered R3 row for that route stays red.
+  JSON-LD follow it. The lead ruled that this single label change is intended. It supersedes the r13 "Vendor Stand Payment"
+  title pin.
+- **The Exhibitor h1 comes from the CMS (lead ruling, 2026-10-19).** /national-show/exhibitors renders Sanity
+  `showExhibitorInfo.title`.
+  - The lead had the title edited in Studio to "Exhibitor information" (`_rev b293KmNbo0z5K9RnfmAhlk`).
+  - Only the code fallbacks changed here. The CMS value is not overridden in code.
 - **"← Show overview" removed** from /national-show/exhibitors, following the R38 #4 precedent.
 - **Programme cards on /national-show/programme.** The page renders the tickets hub's own Programme section: `TicketSection
   id="programme"` with `TicketCard`s for the Symposium, WOSA and Workshops. It uses the same keepsake components and the same
@@ -64,10 +65,9 @@ Codi's rulings, FINAL, relayed by the lead (saoc-82) on 2026-10-19. BASE `origin
     `branding/SA Orchid Council/emblem/Eulophia-speciosa-emblem.png`, which is not committed to git. It was copied byte for byte
     from the lead's staged copy (sha256 `c64e8041…ce3f`, 1,153,179 bytes, verified with `goldens/emblem-8b.sha256`). Nothing
     under `branding/` is added, deleted or committed.
-  - **DECISION NEEDED: tile descriptions.** The ruling names the tiles but gives no descriptions. Following the spec's
-    recommendation, no copy is new:
-    - (a) reuses "Emblem and wordmark, for light backgrounds.";
-    - (b) reuses "The SAOC mark on its own, transparent background.";
+  - **Tile descriptions (lead ruling, 2026-10-19).** The tiles reuse the existing BASE sentences, so no copy is new:
+    - (a) "Emblem and wordmark, for light backgrounds.";
+    - (b) "The SAOC mark on its own, transparent background.";
     - (c) has no description.
 
     The format line (PNG · W×H · transparent) is read from each file, and all three are RGBA PNGs.
@@ -77,7 +77,7 @@ Codi's rulings, FINAL, relayed by the lead (saoc-82) on 2026-10-19. BASE `origin
   - On /, the aria-hidden arrow stays inside the link.
   - The hover background moved onto the link, on both routes.
   - A home row without a slug renders unlinked, as before.
-  - **DECISION NEEDED:**
-    - The National Show row now goes to `/events/19th-south-african-national-orchid-show`, as the ruling says, rather than
-      `eventHref`'s /national-show. The /events JSON-LD still uses `eventHref`, unchanged.
-    - On /events, the host society link became plain text so that each row is one link.
+  - **Lead-confirmed as written (2026-10-19):**
+    - The National Show row goes to `/events/19th-south-african-national-orchid-show`, rather than `eventHref`'s
+      /national-show. The /events JSON-LD still uses `eventHref`, unchanged.
+    - On /events, the host society name is plain text inside the row link, so each row is one link.
