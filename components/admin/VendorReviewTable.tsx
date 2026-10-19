@@ -85,11 +85,7 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
   // Photo-resume links (vendor-flow-fixes F2), keyed by vendorSubmissionId, same fallback role.
   const [photoUrlById, setPhotoUrlById] = useState<Record<string, string>>({});
   // F30 -- per-row result of the last Publish to listing click ('Published' / 'Already listed').
-  const [listingStateById, setListingStateById] = useState<Record<string, string>>(() =>
-    Object.fromEntries(
-      submissions.filter((row) => row.listingDocumentId).map((row) => [row.id, 'Published']),
-    ),
-  );
+  const [listingStateById, setListingStateById] = useState<Record<string, string>>({});
 
   // Hotfix (contracts/golden/vendor-stand-payment-link-visibility, 2026-09-01) -- reuses the
   // same pendingId/error state as handleAction above (no second loading/error mechanism). The
@@ -283,6 +279,7 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
               const uploadedProductPhotoCount = countUploadedProductPhotos(row);
               const uploadsComplete = uploadedProductPhotoCount >= REQUIRED_PRODUCT_PHOTO_COUNT;
               const showPhotoLink = !uploadsComplete && row.status !== 'rejected';
+              const listingState = listingStateById[row.id] ?? (row.listingDocumentId ? 'Published' : null);
               const showPublishListing = isVendorListingEligible({
                 status: row.status,
                 paymentReceived: row.paymentReceived,
@@ -374,8 +371,8 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
                         />
                       )}
                       {showPublishListing &&
-                        (listingStateById[row.id] ? (
-                          <span className="text-muted">{listingStateById[row.id]}</span>
+                        (listingState ? (
+                          <span className="text-muted">{listingState}</span>
                         ) : (
                           <button
                             type="button"
