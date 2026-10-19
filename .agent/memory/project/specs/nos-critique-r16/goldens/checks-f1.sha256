@@ -1,0 +1,17 @@
+1018f1c3562fb194d659c2ea99695d1880c74f69478c56f8e91007b942d35fc9  .agent/memory/project/specs/nos-critique-r16/checks/_lib.mjs
+d1842fa935b16f31d586e7c29f0f8598616db2a7130d3995c6eb786bac9496e9  .agent/memory/project/specs/nos-critique-r16/checks/_server.mjs
+2386c74132697463c1933727634a8f075110b675633194650c3ed010e970da9a  .agent/memory/project/specs/nos-critique-r16/checks/_color.mjs
+8606b960d6eca931a638d21247d5c8ac3d2eedaf6551e82b40629385fd9607a1  .agent/memory/project/specs/nos-critique-r16/checks/_probe.mjs
+ddd95f55076e7571021003690812a361b79c147e8e57c5972c6f08bb4787ea37  .agent/memory/project/specs/nos-critique-r16/checks/_edits.mjs
+2b1649fe4732d3c206f584f13e91d3b4fb06e12364f46faa783d9456e1059fe5  .agent/memory/project/specs/nos-critique-r16/checks/footprint.mjs
+6d0a22dee65e590a62f3b19b6ba4e5745981f52e22cc7f9176242753fd1f87f1  .agent/memory/project/specs/nos-critique-r16/checks/nonreg.mjs
+37a3d4b5c167e66cae760f14d97adfc135649ab240c8eb71b9a2cf142812527d  .agent/memory/project/specs/nos-critique-r16/goldens/nonreg-baseline.json
+76737611b8259004d9bd2cf613325819b24f5efeb8a7963379181fb9f5499dea  .agent/memory/project/specs/nos-critique-r16/goldens/f1-footprint.json
+400291f38117f273f6bb85126817c7ace71876176e662d9155945cdc415988ea  .agent/memory/project/specs/nos-critique-r16/goldens/f2-footprint.json
+d4ebd335ae7a2ce3b738a7f13d27446d2022871b4d9c06c32f56a82a4cea1fb3  .agent/memory/project/specs/nos-critique-r16/goldens/f3-footprint.json
+c3fa448557a6cdf0234f2ebc68422fa9396533c6ca2e8fc79af5ae4375a22a3e  .agent/memory/project/specs/nos-critique-r16/goldens/f3-media.json
+a3503eabfc05e399b4234ddf898f587f6a55f7c437fca6e21047eb40cffd297c  .agent/memory/project/specs/nos-critique-r16/checks/f1-static.mjs
+7c5d4602dfa7485d340817ef98a856ffd36075c110bdfaf125ad440e54744862  .agent/memory/project/specs/nos-critique-r16/checks/f1-rendered.mjs
+60b103c071c7070381a253e3db68b8c0407702aafc9a88b833a0320373e73ebe  .agent/memory/project/specs/nos-critique-r16/goldens/f1-edits.json
+050c3da2337ec8d3bb3f085ef3b63343654fbdfade126b2bb0b9c3bfaca8d391  .agent/memory/project/specs/nos-critique-r16/goldens/f1-spec.md
+9c867d122bae58d5d465b25afe8540a43c41a4fb5ad5bbbc12ada85f144cc0de  .agent/memory/project/specs/nos-critique-r16/contract-f1.yaml

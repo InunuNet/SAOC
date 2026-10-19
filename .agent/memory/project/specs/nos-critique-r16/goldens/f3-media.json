@@ -1,0 +1,59 @@
+{
+ "_note": "nos-critique-r16 F3 item 8 golden (QA input). The Brand assets section shows exactly these three tiles, in order. Every file is served byte-identical to its golden sha256, never recoloured or derived. emblemFull (8b) was BLOCKED (the ruling's branding/ file was not in git) and is unblocked by the lead's ruling of 2026-10-19: see its provenance.",
+ "section": "Brand assets",
+ "tiles": [
+  {
+   "key": "lockup",
+   "name": "Full lockup — emblem and name",
+   "path": "/images/saoc-lockup-horizontal-full-name.png",
+   "file": "public/images/saoc-lockup-horizontal-full-name.png",
+   "sha256": "75a14c5b55d215cd8abb5e2d416085dfac4ba21f2aa54c912479c6e7ce39e914",
+   "dims": "3757x493",
+   "previewBg": null
+  },
+  {
+   "key": "emblemFull",
+   "name": "Emblem — full colour",
+   "path": "/images/Eulophia-speciosa-emblem.png",
+   "file": "public/images/Eulophia-speciosa-emblem.png",
+   "dest": "public/images/Eulophia-speciosa-emblem.png",
+   "sha256": "c64e8041ee1045fbc3ef247f46b59b6fa70f60321daa0fdfc20af5632170ce3f",
+   "bytes": 1153179,
+   "dims": "1254x1254",
+   "previewBg": null,
+   "newFile": true,
+   "source": null,
+   "stagedCopy": ".tmp/sandbox/r16-assets/Eulophia-speciosa-emblem.png",
+   "provenance": "Lead ruling 2026-10-19 (team-lead to architect, 'r16 F3 tile 8(b) UNBLOCKED'): the source is Brad's consolidated emblem SAOC/branding/SA Orchid Council/emblem/Eulophia-speciosa-emblem.png, not committed to git. The lead staged a byte-identical copy at .tmp/sandbox/r16-assets/Eulophia-speciosa-emblem.png (1,153,179 bytes, this sha256). The dev copies it, byte for byte, to public/images/Eulophia-speciosa-emblem.png. Nothing under branding/ is added, deleted or committed (Brad's workstream; the r1-r4 deletions stay his), and branding/ is not in any footprint.",
+   "superseded": {
+    "blockedAt": "architect enumeration on BASE cea06daf: only Eulophia-speciosa r1-r4.png were present",
+    "candidates": {
+     "branding/SA Orchid Council/emblem/Eulophia-speciosa r1.png": "0c24ae5d22440439934fecd894ecf779dcb22a86124fee115e92dd46ec5322f2 1536x1024",
+     "branding/SA Orchid Council/emblem/Eulophia-speciosa r2.png": "9799882f88665a68f4785299d2e27561455831c2a47ee1d365018b2ff4ec2b11 1254x1254",
+     "branding/SA Orchid Council/emblem/Eulophia-speciosa r3.png": "832241dfff38a9c814d8d1a457af8f255ca937bc0a418e900ff1b2e648c0fb28 1254x1254",
+     "branding/SA Orchid Council/emblem/Eulophia-speciosa r4.png": "93504cd03f1cc53d3896b2a4f0738bddc0a9fe10975247084c2e14e0a8499c47 1254x1254 (byte-identical to the current kit emblem public/downloads/media-kit/saoc-emblem.png)"
+    }
+   }
+  },
+  {
+   "key": "emblemDark",
+   "name": "Emblem — for dark backgrounds",
+   "path": "/images/saoc-emblem-footer-lapis-2x.png",
+   "file": "public/images/saoc-emblem-footer-lapis-2x.png",
+   "sha256": "27aa24de420150ef6a573dd48f954f238393a69baf80a7cb0de326b315623f6a",
+   "dims": "640x618",
+   "previewBg": "rgb(34, 40, 31)",
+   "previewToken": "--primary-800 #22281f"
+  }
+ ],
+ "retired": [
+  "saoc-logo-ink-paper",
+  "saoc-logo-sage-paper",
+  "saoc-logo-flat-paper",
+  "saoc-logo-ink-brass",
+  "saoc-logo-sage-brass",
+  "saoc-logo-flat-brass"
+ ],
+ "page": "app/(marketing)/media-kit/page.tsx",
+ "route": "/media-kit"
+}

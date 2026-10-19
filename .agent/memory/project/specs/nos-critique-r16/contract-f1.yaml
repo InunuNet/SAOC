@@ -1,0 +1,42 @@
+# Sources: Codi rulings FINAL relayed by the lead (saoc-82) 2026-10-19 (r16 items 1-5), architect measurement on cea06daf (goldens/f1-spec.md).
+schema: athanor.contract/v1
+slug: nos-critique-r16
+goal: >-
+  Make the NOS pages consistent: the vendor submit buttons reuse the NOS primary Button (#211A57), "Back to tickets" reaches a 24px target
+  by padding only, the vendor and exhibitor headings, titles and subnav go sentence case, the exhibitors back link goes, and
+  /national-show/programme shows the hub's Programme ticket cards, with no new copy or tokens.
+created_at: '2026-10-19'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json + f2-footprint.json + f3-footprint.json, docs/nos-critique-r16.md and this spec dir'
+    reason: 'Enforced by A2. content/national-show-routes.json, ShowSectionNav, VendorIntro and the vendors/page.tsx button labels stay unchanged (f1-spec.md section 3).'
+  - item: 'Sanity showExhibitorInfo.title'
+    reason: 'CMS content, not code. DECISION NEEDED in f1-spec.md section 3; R3 FAILS on /national-show/exhibitors until it reads "Exhibitor information".'
+features:
+  - id: F1
+    name: NOS consistency - vendor buttons, back-link target, sentence case, exhibitors back link, programme cards
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r16/goldens/f1-spec.md
+  - .agent/memory/project/specs/nos-critique-r16/goldens/f1-edits.json
+  - .agent/memory/project/specs/nos-critique-r16/goldens/f1-footprint.json
+  - .agent/memory/project/specs/nos-critique-r16/goldens/nonreg-baseline.json
+  - .agent/memory/project/specs/nos-critique-r16/goldens/checks-f1.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f1 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r16/goldens/checks-f1.sha256
+    - id: A2
+      description: Footprint - the r16 branch differs from origin/main cea06daf only in the union of the r16 footprints, docs/nos-critique-r16.md and the spec dir, and HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r16/checks/footprint.mjs
+    - id: A3
+      description: Static - exact sentence-case and back-link line edits, exhibitors back link dropped, vendor forms use the NOS Button, programme imports the keepsake TicketSection, no new copy, docs F1
+      command: node .agent/memory/project/specs/nos-critique-r16/checks/f1-static.mjs
+    - id: A4
+      description: Rendered (public + preview, 1280/390) - vendor buttons equal Buy ticket (#211A57, text >= 4.5, focus >= 3), back link >= 24px tall same width, sentence-case h1/title/og/subnav, no exhibitors back link, programme cards equal the hub
+      command: node .agent/memory/project/specs/nos-critique-r16/checks/f1-rendered.mjs
+    - id: A5
+      description: Non-regression (public + preview, 1280/390) - 18 SAOC and NOS routes keep geometry and screenshot with only the r16 targets masked, no overflow
+      command: node .agent/memory/project/specs/nos-critique-r16/checks/nonreg.mjs

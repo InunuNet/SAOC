@@ -1,0 +1,33 @@
+{
+ "_note": "nos-critique-r16 F3 item 9 golden (QA input). Every 'What's on' row on / and every event row on /events is exactly one link, href /events/<slug> (the ruling's target, not eventHref's /national-show redirect), accessible name = the event title, nothing interactive inside it. Each href must answer 200 on the same build and its page h1 must equal the row title. verified: the architect's enumeration on the BASE public build.",
+ "rows": [
+  {
+   "route": "/",
+   "scope": "[data-home-section=\"events\"]",
+   "arrow": "→",
+   "hover": true
+  },
+  {
+   "route": "/events",
+   "scope": "main",
+   "arrow": null,
+   "hover": true
+  }
+ ],
+ "hrefPattern": "^/events/[a-z0-9-]+$",
+ "verified": {
+  "build": "public, BASE cea06daf",
+  "rows": [
+   {
+    "title": "19th South African National Orchid Show",
+    "slug": "19th-south-african-national-orchid-show",
+    "status": 200,
+    "onRoutes": [
+     "/",
+     "/events"
+    ]
+   }
+  ],
+  "eventHrefBefore": "/national-show (components/events/event-link.ts eventHref, /events rows); / rows had no link"
+ }
+}

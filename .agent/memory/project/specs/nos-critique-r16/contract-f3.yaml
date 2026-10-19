@@ -1,0 +1,46 @@
+# Sources: Codi rulings FINAL relayed by the lead (saoc-82) 2026-10-19 (r16 items 8-9), architect measurement and slug verification on cea06daf (goldens/f3-spec.md).
+schema: athanor.contract/v1
+slug: nos-critique-r16
+goal: >-
+  Show exactly three byte-identical brand tiles on /media-kit (full lockup, full-colour emblem, dark-ground emblem on --primary-800) with the
+  paper and brass set retired, and make every "What's on" row on / and /events a single link to /events/<slug> named by the event title.
+created_at: '2026-10-19'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json + f2-footprint.json + f3-footprint.json (+ the 8b emblem dest), docs/nos-critique-r16.md and this spec dir'
+    reason: 'Enforced by A2.'
+  - item: 'branding/ (any path)'
+    reason: 'Brad''s workstream (lead ruling 2026-10-19). Tile (b) is the lead-staged .tmp/sandbox/r16-assets/Eulophia-speciosa-emblem.png copied byte-identical to public/images/Eulophia-speciosa-emblem.png, sha256 c64e8041ee1045fbc3ef247f46b59b6fa70f60321daa0fdfc20af5632170ce3f; A3 FAILS on any branding/ change.'
+features:
+  - id: F3
+    name: SAOC content wiring - three media-kit brand tiles, event rows as single titled links
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r16/goldens/f3-spec.md
+  - .agent/memory/project/specs/nos-critique-r16/goldens/f3-media.json
+  - .agent/memory/project/specs/nos-critique-r16/goldens/f3-events.json
+  - .agent/memory/project/specs/nos-critique-r16/goldens/f3-footprint.json
+  - .agent/memory/project/specs/nos-critique-r16/goldens/nonreg-baseline.json
+  - .agent/memory/project/specs/nos-critique-r16/goldens/emblem-8b.sha256
+  - .agent/memory/project/specs/nos-critique-r16/goldens/checks-f3.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f3 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r16/goldens/checks-f3.sha256
+    - id: A2
+      description: Footprint - the r16 branch differs from origin/main cea06daf only in the union of the r16 footprints (+ the 8b emblem dest), docs/nos-critique-r16.md and the spec dir, and HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r16/checks/footprint.mjs
+    - id: A3
+      description: Static - media kit names exactly the three golden tiles in order with their paths, retired set gone, files byte-identical to the golden sha256, no new copy, docs F3
+      command: node .agent/memory/project/specs/nos-critique-r16/checks/f3-static.mjs
+    - id: A6
+      description: Tile 8(b) - public/images/Eulophia-speciosa-emblem.png is byte-identical to the lead-staged emblem (sha256 pinned by the lead ruling 2026-10-19)
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r16/goldens/emblem-8b.sha256
+    - id: A4
+      description: Rendered (public + preview, 1280/390) - three tiles with served bytes equal to the golden sha256 and tile (c) on rgb(34,40,31); each event row on / and /events is one link to a 200 /events/<slug> named exactly by the title, nothing nested, arrow and hover kept
+      command: node .agent/memory/project/specs/nos-critique-r16/checks/f3-rendered.mjs
+    - id: A5
+      description: Non-regression (public + preview, 1280/390) - 18 SAOC and NOS routes keep geometry and screenshot with only the r16 targets masked, no overflow
+      command: node .agent/memory/project/specs/nos-critique-r16/checks/nonreg.mjs

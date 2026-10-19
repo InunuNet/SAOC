@@ -1,0 +1,64 @@
+{
+ "_note": "nos-critique-r16 F2 golden (QA input). Codi rulings FINAL relayed by the lead (saoc-82), 2026-10-19. BASE cea06daf.",
+ "base": "cea06daf",
+ "notFound": {
+  "routes": [
+   "/this-page-does-not-exist",
+   "/events/no-such-event"
+  ],
+  "rootRoute": "/this-page-does-not-exist",
+  "compareChromeRoute": "/terms",
+  "file": "app/not-found.tsx",
+  "labels": {
+   "before": [
+    "Go Home",
+    "Find a Society"
+   ],
+   "after": [
+    "Go home",
+    "Find a society"
+   ]
+  },
+  "eyebrow": {
+   "text": "404 — Page not found",
+   "color": "rgb(244, 243, 236)"
+  },
+  "chrome": {
+   "skipHref": "#main-content",
+   "mainId": "main-content",
+   "utilityBar": "Utility bar",
+   "primaryNav": "Primary"
+  },
+  "before": {
+   "root": {
+    "header": 0,
+    "footer": 0,
+    "docHeight": 900,
+    "heroBottom": 640,
+    "band": 260
+   }
+  }
+ },
+ "sponsors": {
+  "route": "/sponsors",
+  "label": "Talk to us about sponsorship",
+  "href": "/contact",
+  "file": "app/(marketing)/sponsors/page.tsx",
+  "line": 148,
+  "from": "            className=\"mt-6 inline-flex min-h-11 items-center bg-ink px-6 py-3 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-ink/85\"",
+  "to": "            className=\"mt-6 inline-flex min-h-11 items-center rounded-[length:var(--radius-1)] bg-primary px-6 py-3 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary-800\"",
+  "background": "rgb(56, 65, 56)",
+  "radius": "2px",
+  "before": {
+   "background": "rgb(23, 25, 23)",
+   "radius": "0px"
+  },
+  "minTextRatio": 4.5,
+  "minFocusRatio": 3,
+  "token": {
+   "primary": "design/design_handoff_saoc/colors_and_type.css --primary #384138",
+   "radius": "colors_and_type.css --radius-1: 2px /* buttons, inputs */",
+   "button": "design/design_handoff_saoc/src/styles.css .btn (border-radius 2px) + .btn--primary (background var(--primary), hover var(--primary-800))"
+  }
+ }
+}

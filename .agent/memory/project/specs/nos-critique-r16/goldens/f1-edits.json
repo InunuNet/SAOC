@@ -1,0 +1,273 @@
+{
+ "_note": "nos-critique-r16 F1 golden (QA input). Codi rulings FINAL relayed by the lead (saoc-82), 2026-10-19. Line numbers are BASE cea06daf. lineEdits: every listed BASE line becomes exactly `to`; dropLines are removed; nothing else in those files changes. The vendor submit buttons and the programme cards are structural edits checked by f1-static S2/S5 and f1-rendered.",
+ "base": "cea06daf",
+ "buttons": {
+  "reference": {
+   "route": "/national-show/wosa-conference",
+   "label": "Buy ticket",
+   "component": "components/nos/Button.tsx (variant primary, the default)"
+  },
+  "targets": [
+   {
+    "route": "/national-show/vendors/apply",
+    "label": "Submit application",
+    "file": "components/vendors/VendorApplyForm.tsx"
+   },
+   {
+    "route": "/national-show/vendors/register",
+    "label": "Continue",
+    "file": "components/vendors/VendorRegistrationCodeEntryForm.tsx"
+   }
+  ],
+  "import": "import { Button } from '@/components/nos/Button';",
+  "before": {
+   "background": "rgb(126, 63, 151)",
+   "classFragment": "bg-accent px-5 py-2.5"
+  },
+  "background": "rgb(33, 26, 87)",
+  "hex": "#211a57",
+  "minTextRatio": 4.5,
+  "minFocusRatio": 3
+ },
+ "backLink": {
+  "route": "/tickets/confirmation",
+  "label": "Back to tickets",
+  "minHeight": 24,
+  "before": {
+   "w": 95.45,
+   "h": 21.69
+  },
+  "lineEdits": [
+   {
+    "file": "app/(marketing)/tickets/confirmation/page.tsx",
+    "line": 120,
+    "from": "            className=\"mt-8 inline-block font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent\"",
+    "to": "            className=\"mt-8 inline-block py-0.5 font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent\""
+   },
+   {
+    "file": "components/tickets/ConfirmationPoller.tsx",
+    "line": 142,
+    "from": "          className=\"mt-8 inline-block font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent\"",
+    "to": "          className=\"mt-8 inline-block py-0.5 font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent\""
+   }
+  ]
+ },
+ "sentenceCase": {
+  "pairs": [
+   {
+    "route": "/national-show/exhibitors",
+    "before": "Exhibitor Information",
+    "after": "Exhibitor information",
+    "titleHead": "Exhibitor information",
+    "cms": "showExhibitorInfo.title (Sanity) = 'Exhibitor Information' at BASE; the code fallbacks change here, the rendered h1 follows only once the CMS title does (see f1-spec.md section 3)"
+   },
+   {
+    "route": "/national-show/vendors",
+    "before": "Exhibitors and Vendors",
+    "after": "Exhibitors and vendors",
+    "titleHead": "Exhibitors and vendors",
+    "subnav": {
+     "nav": "Exhibit & trade pages",
+     "href": "/national-show/vendors"
+    }
+   },
+   {
+    "route": "/national-show/vendors/apply",
+    "before": "Vendor Application",
+    "after": "Vendor application",
+    "titleHead": "Vendor application"
+   },
+   {
+    "route": "/national-show/vendors/register",
+    "before": "Vendor Registration",
+    "after": "Vendor registration",
+    "titleHead": "Vendor registration"
+   },
+   {
+    "route": "/national-show/vendors/payment",
+    "before": "Vendor Stand Payment",
+    "after": "Vendor stand payment",
+    "titleHead": "Vendor stand payment"
+   },
+   {
+    "route": "/national-show/vendors/payment/status",
+    "before": "Vendor Stand Payment",
+    "after": "Vendor stand payment",
+    "titleHead": "Vendor stand payment"
+   },
+   {
+    "route": "/national-show/vendors/photos",
+    "before": "Vendor Product Photos",
+    "after": "Vendor product photos",
+    "titleHead": "Vendor product photos"
+   }
+  ],
+  "h2": {
+   "route": "/national-show/vendors",
+   "before": "Showcasing the Finest in South African Orchid Growing",
+   "after": "Showcasing the finest in South African orchid growing"
+  },
+  "titleTemplate": "{head} — National Orchid Show | SAOC",
+  "lineEdits": [
+   {
+    "file": "app/(marketing)/national-show/exhibitors/page.tsx",
+    "line": 41,
+    "from": "    title: info?.title ?? 'Exhibitor Information',",
+    "to": "    title: info?.title ?? 'Exhibitor information',"
+   },
+   {
+    "file": "app/(marketing)/national-show/exhibitors/page.tsx",
+    "line": 42,
+    "from": "    image: nosOgImage(`${info?.title ?? 'Exhibitor Information'} — National Orchid Show`),",
+    "to": "    image: nosOgImage(`${info?.title ?? 'Exhibitor information'} — National Orchid Show`),"
+   },
+   {
+    "file": "app/(marketing)/national-show/exhibitors/page.tsx",
+    "line": 188,
+    "from": "        title={info?.title ?? 'Exhibitor Information'}",
+    "to": "        title={info?.title ?? 'Exhibitor information'}"
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/page.tsx",
+    "line": 27,
+    "from": "  title: 'Exhibitors and Vendors',",
+    "to": "  title: 'Exhibitors and vendors',"
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/page.tsx",
+    "line": 28,
+    "from": "  image: nosOgImage('Exhibitors and Vendors — National Show'),",
+    "to": "  image: nosOgImage('Exhibitors and vendors — National Show'),"
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/page.tsx",
+    "line": 91,
+    "from": "        title=\"Exhibitors and Vendors\"",
+    "to": "        title=\"Exhibitors and vendors\""
+   },
+   {
+    "file": "components/chrome/nav-config.ts",
+    "line": 258,
+    "from": "            label: 'Exhibitors and Vendors',",
+    "to": "            label: 'Exhibitors and vendors',"
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/apply/page.tsx",
+    "line": 12,
+    "from": "  title: 'Vendor Application',",
+    "to": "  title: 'Vendor application',"
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/apply/page.tsx",
+    "line": 13,
+    "from": "  image: nosOgImage('Vendor Application — National Show'),",
+    "to": "  image: nosOgImage('Vendor application — National Show'),"
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/apply/page.tsx",
+    "line": 29,
+    "from": "        title=\"Vendor Application\"",
+    "to": "        title=\"Vendor application\""
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/register/page.tsx",
+    "line": 42,
+    "from": "  title: 'Vendor Registration',",
+    "to": "  title: 'Vendor registration',"
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/register/page.tsx",
+    "line": 43,
+    "from": "  image: nosOgImage('Vendor Registration — National Show'),",
+    "to": "  image: nosOgImage('Vendor registration — National Show'),"
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/register/page.tsx",
+    "line": 75,
+    "from": "        title=\"Vendor Registration\"",
+    "to": "        title=\"Vendor registration\""
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/payment/page.tsx",
+    "line": 29,
+    "from": "  title: 'Vendor Stand Payment',",
+    "to": "  title: 'Vendor stand payment',"
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/payment/page.tsx",
+    "line": 30,
+    "from": "  image: nosOgImage('Vendor Stand Payment — National Show'),",
+    "to": "  image: nosOgImage('Vendor stand payment — National Show'),"
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/payment/page.tsx",
+    "line": 66,
+    "from": "        title=\"Vendor Stand Payment\"",
+    "to": "        title=\"Vendor stand payment\""
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/payment/status/page.tsx",
+    "line": 20,
+    "from": "  title: 'Vendor Stand Payment',",
+    "to": "  title: 'Vendor stand payment',"
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/payment/status/page.tsx",
+    "line": 21,
+    "from": "  image: nosOgImage('Vendor Stand Payment — National Show'),",
+    "to": "  image: nosOgImage('Vendor stand payment — National Show'),"
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/payment/status/page.tsx",
+    "line": 65,
+    "from": "        title=\"Vendor Stand Payment\"",
+    "to": "        title=\"Vendor stand payment\""
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/photos/page.tsx",
+    "line": 22,
+    "from": "  title: 'Vendor Product Photos',",
+    "to": "  title: 'Vendor product photos',"
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/photos/page.tsx",
+    "line": 23,
+    "from": "  image: nosOgImage('Vendor Product Photos — National Show'),",
+    "to": "  image: nosOgImage('Vendor product photos — National Show'),"
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/photos/page.tsx",
+    "line": 64,
+    "from": "        title=\"Vendor Product Photos\"",
+    "to": "        title=\"Vendor product photos\""
+   },
+   {
+    "file": "app/(marketing)/national-show/vendors/page.tsx",
+    "line": 48,
+    "from": "const INTRO_HEADING = 'Showcasing the Finest in South African Orchid Growing';",
+    "to": "const INTRO_HEADING = 'Showcasing the finest in South African orchid growing';"
+   }
+  ]
+ },
+ "exhibitorsBackLink": {
+  "route": "/national-show/exhibitors",
+  "text": "← Show overview",
+  "file": "app/(marketing)/national-show/exhibitors/page.tsx",
+  "dropLines": [
+   194,
+   203
+  ]
+ },
+ "programme": {
+  "route": "/national-show/programme",
+  "hubRoute": "/national-show/tickets",
+  "sectionId": "programme",
+  "products": [
+   "symposium",
+   "wosa",
+   "workshops"
+  ],
+  "unchanged": "/national-show/wosa-conference"
+ },
+ "minRatio": 3
+}

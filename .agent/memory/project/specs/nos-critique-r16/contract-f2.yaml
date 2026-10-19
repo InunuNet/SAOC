@@ -1,0 +1,39 @@
+# Sources: Codi rulings FINAL relayed by the lead (saoc-82) 2026-10-19 (r16 items 6-7), architect measurement on cea06daf (goldens/f2-spec.md).
+schema: athanor.contract/v1
+slug: nos-critique-r16
+goal: >-
+  Give the root 404 the full SAOC chrome with no empty band and sentence-case "Go home" / "Find a society" links (r15 ivory eyebrow kept),
+  and move the /sponsors CTA from ink to the handoff --primary #384138 with the 2px button radius.
+created_at: '2026-10-19'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json + f2-footprint.json + f3-footprint.json, docs/nos-critique-r16.md and this spec dir'
+    reason: 'Enforced by A2.'
+features:
+  - id: F2
+    name: SAOC chrome on the root 404 and the handoff primary sponsors CTA
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r16/goldens/f2-spec.md
+  - .agent/memory/project/specs/nos-critique-r16/goldens/f2-edits.json
+  - .agent/memory/project/specs/nos-critique-r16/goldens/f2-footprint.json
+  - .agent/memory/project/specs/nos-critique-r16/goldens/nonreg-baseline.json
+  - .agent/memory/project/specs/nos-critique-r16/goldens/checks-f2.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f2 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r16/goldens/checks-f2.sha256
+    - id: A2
+      description: Footprint - the r16 branch differs from origin/main cea06daf only in the union of the r16 footprints, docs/nos-critique-r16.md and the spec dir, and HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r16/checks/footprint.mjs
+    - id: A3
+      description: Static - sponsors CTA is BASE plus the golden class line, root 404 has sentence-case labels, keeps the eyebrow and imports the SAOC chrome, no new copy, docs F2
+      command: node .agent/memory/project/specs/nos-critique-r16/checks/f2-static.mjs
+    - id: A4
+      description: Rendered (public + preview, 1280/390) - root 404 has the chrome landmarks, skip link first, chrome text equal to /terms, no band; labels on both 404s; sponsors CTA rgb(56,65,56) radius 2px, text >= 4.5, focus >= 3
+      command: node .agent/memory/project/specs/nos-critique-r16/checks/f2-rendered.mjs
+    - id: A5
+      description: Non-regression (public + preview, 1280/390) - 18 SAOC and NOS routes keep geometry and screenshot with only the r16 targets masked, no overflow
+      command: node .agent/memory/project/specs/nos-critique-r16/checks/nonreg.mjs
