@@ -50,7 +50,7 @@ assertions:
       description: Self-critique loop evidence - 10 fresh after/ screenshots newer than the last source edit and a critique log (f16-critique-log.md) with at least 2 passes whose final pass reads P0 0, P1 0, P2 0 and Score at least 36/40
       command: node contracts/checks/launch-weekend/f16/check-i-critique-artefacts.mjs
     - id: F16-A10
-      description: F3 guards still hold on the F16 build with the ticket-card exemption removed - imagery A12 (its 1080px h1-left test retired by F17), tickets (banner re-pinned to admin-only) and section rhythm. check-f3-container is retired (launch-weekend F17, goldens/f17/supersession.json: F12-A15 is the axis authority). Runs green on origin/main 41a7a08f
+      description: "F3 guards still hold on the F16 build with the ticket-card exemption removed - imagery A12 (its 1080px h1-left test retired by F17), tickets (banner re-pinned to admin-only) and section rhythm. check-f3-container is retired (launch-weekend F17, goldens/f17/supersession.json: F12-A15 is the axis authority). Runs green on origin/main 41a7a08f"
       command: NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3620 node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-imagery.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3620 node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-tickets.mjs && NOS_REUSE_SERVER=1 NOS_BASE=http://localhost:3620 node --import tsx/esm contracts/checks/nos-own-brand-chrome/f3/check-f3-rhythm.mjs
     - id: F16-A11
       description: F3 static guards (banner driven by the status API, banner inside the purchase form behind the sales gate)
