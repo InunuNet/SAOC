@@ -1,0 +1,71 @@
+{
+  "form": {
+    "file": "components/tickets/TicketPurchaseForm.tsx",
+    "lineEdits": [
+      {
+        "line": 185,
+        "from": "      <div",
+        "to": "      <div data-catalogue-total=\"\" className=\"nk-checkout-total\">"
+      },
+      {
+        "line": 191,
+        "from": "        <p>",
+        "to": "        <p aria-live=\"polite\" aria-atomic=\"true\">"
+      }
+    ],
+    "drops": [
+      [
+        186,
+        190
+      ]
+    ],
+    "why": "P2 WCAG 4.1.3 (Codi FINAL, 2026-10-19): the live region is the Total line alone; the submit button leaves it. The div keeps data-catalogue-total and its class; prettier (printWidth 100) puts its two remaining attributes on one line."
+  },
+  "card": {
+    "file": "components/tickets/keepsake/TicketCard.tsx",
+    "lineEdits": [
+      {
+        "line": 43,
+        "from": "  /** Name heading level; card lists under a section h2 keep the default h3, the single-ticket page opts into h2. */",
+        "to": "  /** Name element; card lists under a section h2 keep the default h3, the checkout summary opts into p (its name repeats the page h1, r18). */"
+      },
+      {
+        "line": 44,
+        "from": "  headingLevel?: 'h2' | 'h3';",
+        "to": "  headingLevel?: 'h3' | 'p';"
+      }
+    ],
+    "drops": [],
+    "why": "P3 option (a): the summary card title is a non-heading <p> with the same class (nk-name), so identical styling; 'h2' had no other user and is removed rather than left dead."
+  },
+  "page": {
+    "file": "app/(marketing)/tickets/[slug]/page.tsx",
+    "lineEdits": [
+      {
+        "line": 191,
+        "from": "              headingLevel=\"h2\"",
+        "to": "              headingLevel=\"p\""
+      }
+    ],
+    "insertOnly": true,
+    "why": "P3 (a) at the call site; the breadcrumb and its JSON-LD are insertions only: every other BASE line survives, in order."
+  },
+  "hero": {
+    "file": "components/nos/NosHero.tsx",
+    "insertOnly": true,
+    "why": "An optional crumbs slot rendered as the first child of .nos-hero-copy, before the h1. Insertions only: no BASE line changes, so every other hero renders as at BASE."
+  },
+  "css": {
+    "file": "app/(marketing)/national-show/nos-structure.css",
+    "lineEdits": [
+      {
+        "line": 1504,
+        "from": "  align-items: center;",
+        "to": "  align-items: center;\n  flex-wrap: wrap;"
+      }
+    ],
+    "drops": [],
+    "why": "Architect decision (f1-spec.md section 4): the checkout trail is five items; at 390px a non-wrapping flex row squeezes 'National Show' onto two lines and shrinks the separators (measured on BASE with the trail injected). flex-wrap lets the current item take the next line whole. The hub's two-item trail fits on one line at every width, so it renders as at BASE (nonreg.mjs holds /national-show/tickets). No token, colour or size is added."
+  },
+  "allowCopy": []
+}
