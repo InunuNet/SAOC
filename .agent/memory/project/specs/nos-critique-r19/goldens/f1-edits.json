@@ -1,0 +1,53 @@
+{
+  "cancelled": {
+    "file": "app/(marketing)/tickets/cancelled/page.tsx",
+    "lineEdits": [
+      {
+        "line": 15,
+        "from": "export const metadata: Metadata = { title: 'Payment Cancelled' };",
+        "to": "export const metadata: Metadata = { title: 'Payment cancelled' };"
+      },
+      {
+        "line": 50,
+        "from": "        <div className=\"mx-auto max-w-[600px] text-center\">",
+        "to": "        <div className=\"nk-state\">"
+      }
+    ],
+    "drops": [],
+    "why": "P3: sentence case (R64), the same string as the h1 fallback. P2: the centred 600px column goes; the nk-state context lets .nk-cta take its natural width on the content edge, which is the hero's axis. The Link line is unchanged."
+  },
+  "css": {
+    "file": "app/(marketing)/national-show/nos-structure.css",
+    "lineEdits": [
+      {
+        "line": 2016,
+        "from": "}",
+        "to": "}\n/* r19: on the ticket state pages (/tickets/cancelled, the /tickets/confirmation not-found state) \"Back to tickets\"\n   keeps its natural width on the content edge, under the hero lede (Codi FINAL 2026-10-19). */\n.nos-theme .nk-state .nk-cta {\n  width: auto;\n  grid-column: auto;\n}"
+      }
+    ],
+    "drops": [],
+    "why": "The scoped override pattern of .nk-checkout-total .nk-cta (the rule directly above), in its own block so the r18 .nk-crumbs edit (line 1504) restacks trivially."
+  },
+  "confirmation": {
+    "file": "app/(marketing)/tickets/confirmation/page.tsx",
+    "keepBlock": [
+      17,
+      19
+    ],
+    "keepSuccess": [
+      48,
+      127
+    ],
+    "why": "Not-found becomes a server-rendered state (f1-spec.md section 2). normalizeBookingRefParam (lines 17-19, imported by contracts/checks/ticketing-ux-defects-browser-found) and the whole success render (lines 48-127) stay byte-identical."
+  },
+  "notFound": {
+    "h1": "Booking not found",
+    "button": "Back to tickets",
+    "title": "Booking not found | South African Orchid Council",
+    "bogusRef": "r19-no-such-booking",
+    "cmsMessage": "We couldn't find a booking for that reference. If you've just paid, check the confirmation link or contact info@saoc.co.za.",
+    "ledeNote": "The lede is ticketsPage.confirmationNotFoundMessage from Sanity, else the poller's fallback. BASE fetched it in the browser, where the Sanity request fails on the local builds, so BASE showed the fallback (f1-baseline.json); the server fetch reads the CMS sentence (cmsMessage, recorded 2026-10-19). Either is existing copy."
+  },
+  "cancelledTitle": "Payment cancelled | South African Orchid Council",
+  "allowCopy": []
+}
