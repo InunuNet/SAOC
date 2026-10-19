@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { useId } from 'react';
 
 import type { SocietyEvent } from '@/types';
 
@@ -17,11 +18,17 @@ export function EventRow({ event }: EventRowProps) {
   const day = d.getUTCDate().toString();
   const month = d.toLocaleDateString('en-ZA', { month: 'short', timeZone: 'UTC' }).toUpperCase();
   const year = d.getUTCFullYear().toString();
+  const id = useId();
+  const titleId = `${id}-title`;
+  const dateId = `${id}-date`;
+  const venueId = `${id}-venue`;
+  const linked = Boolean(event.slug);
 
   const content = (
     <>
       {/* Date block */}
       <div
+        id={dateId}
         className="flex flex-col items-center justify-center w-[110px] shrink-0 py-5 border-l-[3px]"
         style={{ borderLeftColor: 'var(--accent)' }}
       >
@@ -39,32 +46,42 @@ export function EventRow({ event }: EventRowProps) {
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted mb-2">
           {event.kind}
         </p>
-        <p className="font-serif text-[20px] font-medium text-primary leading-snug">
+        <p id={titleId} className="font-serif text-[20px] font-medium text-primary leading-snug">
           {event.title}
         </p>
-        <p className="font-sans text-[14px] text-ink/70 mt-1">{event.venue}</p>
+        <p id={venueId} className="font-sans text-[14px] text-ink/70 mt-1">
+          {event.venue}
+        </p>
       </div>
 
-      {/* Right: host (hidden when empty) + arrow */}
+      {/* Right: host (hidden when empty) + arrow (only on a linked row) */}
       <div className="flex items-center gap-4 pr-5 shrink-0">
         {event.host && (
           <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted hidden sm:block">
             {event.host}
           </span>
         )}
-        <span className="font-serif text-[18px] text-primary" aria-hidden="true">
-          →
-        </span>
+        {linked && (
+          <span className="font-serif text-[18px] text-primary" aria-hidden="true">
+            →
+          </span>
+        )}
       </div>
     </>
   );
 
-  // r16 F3 (Codi): the whole row is one link to the event page, named by the event title alone
-  // (the date, kind, venue and host are context, not part of the link's name).
+  // r16 F3 (Codi): the whole row is one link to the event page, named by the event title alone and
+  // described by the visible date and venue. A row without a slug renders unlinked and without
+  // the arrow, so nothing points at a page that does not exist.
   return (
     <article className="border-b border-rule">
-      {event.slug ? (
-        <Link href={`/events/${event.slug}`} aria-label={event.title} className={ROW_CLASSES}>
+      {linked ? (
+        <Link
+          href={`/events/${event.slug}`}
+          aria-labelledby={titleId}
+          aria-describedby={event.venue ? `${dateId} ${venueId}` : dateId}
+          className={ROW_CLASSES}
+        >
           {content}
         </Link>
       ) : (
