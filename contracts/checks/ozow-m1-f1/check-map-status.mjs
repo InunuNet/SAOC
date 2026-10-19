@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// A5 — mapStatus HANDLES OZOW'S 3-VALUE ENUM CORRECTLY, WITH NO PENDING CASE. Ozow's redirect/
+// A5 — mapStatus HANDLES OZOW'S STATUS ENUM STRICTLY (F31 re-pin: six values, Pending included). Ozow's redirect/
 // notify Status field is documented as exactly three values: Complete, Cancelled, Error (README
 // §1 / spec §0) — unlike PayFast, which has its own vocabulary but is likewise a small closed set.
-// There is no Ozow raw status that means "pending"; the adapter must never manufacture one, and
-// must not fall through to 'paid' on anything unrecognised.
+// F31 re-pin: Pending / PendingInvestigation now legitimately map to 'pending' (case 4); the adapter
+// still must not fall through to 'paid' on anything unrecognised.
 //
 // WHAT MAKES THIS FAIL: the module not existing; 'complete'/'Complete '/' Complete'/'COMPLETE'
 // (case or whitespace variants) mapping to 'paid' (must be exact, matching Ozow's own casing);
@@ -34,9 +34,18 @@ for (const input of s.nonPaidInputs) {
 }
 r.ok('case 3: null must not map to paid', provider.mapStatus(null) !== 'paid');
 
-// Case 4 — no raw input ever maps to 'pending' — Ozow's enum has no such state, and inventing one
-// would misrepresent the gateway's actual vocabulary to the rest of the app.
-const allInputsTried = [s.paidInput, ...Object.keys(s.expected), ...s.nonPaidInputs, null, 'Pending', 'PENDING', 'pending'];
+// Case 4 — F31 (launch-weekend) RE-PIN. Ozow's Status enum DOES include Pending and
+// PendingInvestigation (six values, not three), and they map to 'pending'. The security-relevant
+// half is unchanged: no OTHER input -- in particular no case/whitespace variant -- may map to
+// 'pending', so the strictness is preserved, only the two documented spellings are admitted.
+const PENDING_RAW_STATUSES = ['Pending', 'PendingInvestigation'];
+for (const raw of PENDING_RAW_STATUSES) {
+  r.eq(`case 4: '${raw}' maps to 'pending'`, provider.mapStatus(raw), 'pending');
+}
+const allInputsTried = [
+  s.paidInput, ...Object.keys(s.expected), ...s.nonPaidInputs, null,
+  'PENDING', 'pending', 'PENDINGINVESTIGATION', 'pendinginvestigation', ' Pending', 'Pending ', 'PendingInvestigation ',
+].filter((input) => !PENDING_RAW_STATUSES.includes(input));
 for (const input of allInputsTried) {
   r.ok(`case 4: ${JSON.stringify(input)} never maps to 'pending'`, provider.mapStatus(input) !== 'pending', `got ${provider.mapStatus(input)}`);
 }

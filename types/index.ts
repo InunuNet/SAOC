@@ -231,6 +231,10 @@ export interface Order {
    *  the sandbox test-mode flag was on. See contracts/golden/ozow-sandbox-toggle-f1/README.md
    *  §3b. */
   expectedGatewayAmount?: number | null;
+  /** F31 -- written only by markOrderPaymentPendingByPaymentId when the gateway reports Pending /
+   *  PendingInvestigation. Informational: the order stays 'reserved' and only a hash-verified,
+   *  confirmed Complete ever makes it paid. */
+  gatewayPending?: { rawStatus: string; at: Timestamp } | null;
 }
 
 // ---------------------------------------------------------------------------

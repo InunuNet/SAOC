@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
 
 import type { PaymentProvider } from '@/lib/payments';
-import { findReservedOrderByPaymentId, markOrderAndPositionPaidByPaymentId } from '@/lib/orders';
+import {
+  findReservedOrderByPaymentId,
+  markOrderAndPositionPaidByPaymentId,
+  markOrderPaymentPendingByPaymentId,
+} from '@/lib/orders';
 import { deliverConfirmationEmailAfterCommit, sendConfirmationEmail } from '@/lib/confirmation-email';
 
 /**
@@ -29,11 +33,12 @@ import { deliverConfirmationEmailAfterCommit, sendConfirmationEmail } from '@/li
  * the amount comparison against our own stored figure, the atomic order+position write, and the
  * post-commit confirmation email.
  *
- * The ordering of the eleven steps is unchanged from the pre-F2 route and is load-bearing:
- * verification, then source-IP logging, then reference, then lookup, then the settled short
- * circuit, then the amount match, then the server confirmation, then the status check, then the
- * write, then the email. Nothing here may be reordered for tidiness — re-verified unmodified by
- * contracts/checks/payment-seam-f2/check-sequence-and-ownership.sh via ITN_PATH_OVERRIDE.
+ * The ordering of the steps is load-bearing: verification, then source-IP logging, then
+ * reference, then lookup, then the settled short circuit, then the amount match, then (F31, moved
+ * ahead of the confirmation) the status mapping and its pending / non-paid branches, then the
+ * server confirmation, then the write, then the email. Nothing here may be reordered for
+ * tidiness — re-verified by contracts/checks/payment-seam-f2/check-sequence-and-ownership.sh via
+ * ITN_PATH_OVERRIDE.
  *
  * Amount-match tolerance below ZAR 0.01 (fixed cents rounding, not a config).
  */
@@ -187,7 +192,56 @@ export async function POST(
     return acknowledge();
   }
 
-  // 8. Server confirmation — the provider posts the received data back to the gateway's own
+  // 8. Status mapping -- translated ONCE, offline, BEFORE any network round trip (F31). Moving
+  // this ahead of the server confirmation is a deliberate amendment of the original step order:
+  // 'paid' still requires BOTH this mapping and the confirmation below, but the other statuses
+  // no longer spend a confirm call only to be rejected with a misleading "confirmation failed".
+  const status = paymentProvider.mapStatus(notification.rawStatus);
+
+  // 8a. Pending (the gateway is still processing, e.g. a manual investigation): hold the seat so
+  // it cannot be released at the original TTL and resold while the payment may still complete.
+  // No confirm round trip -- this can only hold a seat longer, never mark anything paid, and it
+  // is already gated by the verified signature, the gateway match and the amount match above.
+  if (status === 'pending') {
+    const held = await markOrderPaymentPendingByPaymentId({
+      m_payment_id: reference,
+      rawStatus: notification.rawStatus ?? '',
+      now: Timestamp.now(),
+      orderId: lookup.orderId,
+      expectedGateway: paymentProvider.id,
+    });
+    if (held.committed) {
+      console.warn('[tickets/itn] Payment pending at the gateway -- seat held, not marked paid', {
+        provider: paymentProvider.id,
+        reference,
+        rawStatus: notification.rawStatus,
+        orderId: held.orderId,
+      });
+    } else {
+      console.error('[tickets/itn] Pending hold did not commit -- order left untouched', {
+        provider: paymentProvider.id,
+        reference,
+        rawStatus: notification.rawStatus,
+        reason: held.reason,
+      });
+    }
+    return acknowledge();
+  }
+
+  // 8b. Only 'paid' may continue. cancelled / failed / abandoned / unknown write NOTHING: an
+  // immediate terminal write would make a late Complete un-settleable, and the seat already
+  // releases lazily at the original TTL. Money may still have moved, so this stays loud.
+  if (status !== 'paid') {
+    console.error('[tickets/itn] Payment status is not paid -- leaving order reserved', {
+      provider: paymentProvider.id,
+      reference,
+      status,
+      rawStatus: notification.rawStatus,
+    });
+    return acknowledge();
+  }
+
+  // 9. Server confirmation -- the provider posts the received data back to the gateway's own
   // validation endpoint out of band and requires its documented affirmative response. This is
   // a separate interface member rather than part of step 1 precisely so that it stays HERE,
   // after the amount check and after the settled short-circuit, exactly where the pre-F2 route
@@ -195,23 +249,10 @@ export async function POST(
   // route has never confirmed.
   const confirmation = await paymentProvider.confirmNotification(notification);
   if (!confirmation.confirmed) {
-    console.error('[tickets/itn] Server confirmation failed — rejecting notification', {
+    console.error('[tickets/itn] Server confirmation failed -- rejecting notification', {
       provider: paymentProvider.id,
       reference,
       reason: confirmation.reason,
-    });
-    return acknowledge();
-  }
-
-  // 9. All prior checks passed. Only flip to 'paid' if the gateway also reports a settled,
-  // successful payment. mapStatus is strict: exactly one gateway status maps to 'paid'.
-  const status = paymentProvider.mapStatus(notification.rawStatus);
-  if (status !== 'paid') {
-    console.error('[tickets/itn] Payment status is not paid — leaving order reserved', {
-      provider: paymentProvider.id,
-      reference,
-      status,
-      rawStatus: notification.rawStatus,
     });
     return acknowledge();
   }

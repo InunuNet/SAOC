@@ -11,7 +11,13 @@
  */
 
 /** Provider-neutral settled state. Deliberately NOT the gateway's own vocabulary. */
-export type PaymentStatus = 'paid' | 'pending' | 'failed' | 'cancelled' | 'unknown';
+export type PaymentStatus =
+  | 'paid'
+  | 'pending'
+  | 'failed'
+  | 'cancelled'
+  | 'abandoned'
+  | 'unknown';
 
 export interface InitiateInput {
   /** Our own order reference, echoed back to us on the gateway's notification. */

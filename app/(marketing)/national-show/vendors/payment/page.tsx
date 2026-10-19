@@ -7,6 +7,11 @@ import { NosHero } from '@/components/nos/NosHero';
 import { VendorStandPaymentForm } from '@/components/vendors/VendorStandPaymentForm';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import { VENDOR_STAND_ORDERS_COLLECTION } from '@/lib/vendor-stand-orders';
+import {
+  PENDING_NOTICE_BODY,
+  PENDING_NOTICE_HEADING,
+  isPendingPaymentHoldActive,
+} from '@/lib/payments/pending-hold';
 import { verifyVendorStandPaymentToken } from '@/lib/vendor-stand-payment-token';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
@@ -45,6 +50,8 @@ interface VendorStandPaymentPageProps {
 interface UsabilityResult {
   usable: boolean;
   businessName: string;
+  /** F31 -- the gateway reported Pending for the current attempt; payment may still complete. */
+  awaitingConfirmation: boolean;
 }
 
 export default async function VendorStandPaymentPage({
@@ -53,7 +60,7 @@ export default async function VendorStandPaymentPage({
   const resolvedSearchParams = await searchParams;
   const token = typeof resolvedSearchParams.token === 'string' ? resolvedSearchParams.token : '';
 
-  const { usable, businessName } = await resolveUsability(token);
+  const { usable, businessName, awaitingConfirmation } = await resolveUsability(token);
 
   return (
     <>
@@ -69,7 +76,12 @@ export default async function VendorStandPaymentPage({
       />
 
       <div className="mx-auto max-w-2xl px-6 py-16 sm:px-8 sm:py-20">
-        {usable ? (
+        {usable && awaitingConfirmation ? (
+          <div role="status" aria-live="polite">
+            <h2 className="font-sans text-[15px] font-semibold text-ink">{PENDING_NOTICE_HEADING}</h2>
+            <p className="mt-2 font-sans text-[15px] text-ink">{PENDING_NOTICE_BODY}</p>
+          </div>
+        ) : usable ? (
           <VendorStandPaymentForm token={token} businessName={businessName} />
         ) : (
           <p className="font-sans text-[15px] text-ink">
@@ -93,7 +105,7 @@ export default async function VendorStandPaymentPage({
  * the register page's own gate check.
  */
 async function resolveUsability(token: string): Promise<UsabilityResult> {
-  const fallback: UsabilityResult = { usable: false, businessName: '' };
+  const fallback: UsabilityResult = { usable: false, businessName: '', awaitingConfirmation: false };
   if (!token) return fallback;
 
   const secret = process.env.VENDOR_STAND_PAYMENT_TOKEN_SECRET;
@@ -121,7 +133,13 @@ async function resolveUsability(token: string): Promise<UsabilityResult> {
     .collection(VENDOR_STAND_ORDERS_COLLECTION)
     .doc(verification.vendorSubmissionId)
     .get();
-  if (standOrderSnapshot.exists && standOrderSnapshot.data()?.status === 'paid') return fallback;
+  const standOrder = standOrderSnapshot.data();
+  if (standOrderSnapshot.exists && standOrder?.status === 'paid') return fallback;
 
-  return { usable: true, businessName: (data?.businessName as string | undefined) ?? '' };
+  return {
+    usable: true,
+    businessName: (data?.businessName as string | undefined) ?? '',
+    awaitingConfirmation:
+      standOrder?.status === 'pending' && isPendingPaymentHoldActive(standOrder.gatewayPending),
+  };
 }

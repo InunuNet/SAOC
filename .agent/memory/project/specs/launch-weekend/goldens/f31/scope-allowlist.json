@@ -1,0 +1,22 @@
+{
+  "baseRefEnv": "BASE_REF",
+  "baseRefDefault": "origin/main",
+  "allowed": [
+    "^lib/payments/types\\.ts$",
+    "^lib/payments/ozow\\.ts$",
+    "^lib/payments/pending-hold\\.ts$",
+    "^lib/orders\\.ts$",
+    "^lib/tickets-notification\\.ts$",
+    "^lib/vendor-stand-payment-notification\\.ts$",
+    "^types/index\\.ts$",
+    "^app/api/vendors/stand-payment/initiate/route\\.ts$",
+    "^app/\\(marketing\\)/national-show/vendors/payment/page\\.tsx$",
+    "^components/vendors/VendorStandPaymentForm\\.tsx$",
+    "^contracts/checks/",
+    "^contracts/golden/",
+    "^docs/",
+    "^README\\.md$",
+    "^\\.agent/memory/"
+  ],
+  "note": "Deliberately NOT allowed: lib/payments/payfast.ts (PayFast mapping is unchanged), lib/email.ts and every email template or sender (no new emails), sanity/ and components/tickets/ and app/(marketing)/tickets/ (buyer ticket pages are unchanged; no new copy), lib/data/tickets.ts (stillHoldsSeat is unchanged), anything under app/api/admin/. contracts/checks/ is allowed because existing PayFast/Ozow pin checks (payment-seam-f2, ozow-m1-f4) assert the old handler step order and must be re-pinned for the moved mapStatus call. Needing a file outside this list is a stop-and-ask, not a judgement call."
+}

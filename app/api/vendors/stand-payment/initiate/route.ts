@@ -13,6 +13,7 @@ import {
 import { deriveVendorStandEarlyBirdCutoffIso, resolveVendorStandPrice } from '@/lib/vendor-stand-pricing';
 import { verifyVendorStandPaymentToken } from '@/lib/vendor-stand-payment-token';
 import { resolveProvider } from '@/lib/payments';
+import { PENDING_NOTICE_BODY, isPendingPaymentHoldActive } from '@/lib/payments/pending-hold';
 import { PAYFAST_FIELD_MAX_LENGTH, clampToMaxLength } from '@/lib/payments/gateway-field-limits';
 import { buildVendorStandReturnUrl } from '@/lib/vendor-stand-return';
 import { resolveActiveGateway } from '@/lib/payments/active-gateway';
@@ -120,6 +121,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (existingOrderSnapshot.exists && existingOrderSnapshot.data()?.status === 'paid') {
     return NextResponse.json({ error: ALREADY_PAID_MESSAGE }, { status: 409 });
   }
+  // F31 -- the gateway reported Pending / PendingInvestigation for the current attempt, so that
+  // payment may still complete. A fresh attempt would mint a new attemptId and the first
+  // attempt's late Complete would then be rejected as superseded (money moved, order never
+  // settled). Refuse for the hold window; the notice reuses the existing poller wording.
+  if (
+    existingOrderSnapshot.exists &&
+    existingOrderSnapshot.data()?.status === 'pending' &&
+    isPendingPaymentHoldActive(existingOrderSnapshot.data()?.gatewayPending, now)
+  ) {
+    return NextResponse.json({ error: PENDING_NOTICE_BODY }, { status: 409 });
+  }
 
   if (!isValidBoothSizeInput(body.boothSize)) {
     return NextResponse.json({ error: 'boothSize must be 1, 2, or 3.' }, { status: 400 });
@@ -215,7 +227,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const transactionResult = await db.runTransaction(async (transaction) => {
     const orderSnapshot = await transaction.get(standOrderRef);
     if (orderSnapshot.exists && orderSnapshot.data()?.status === 'paid') {
-      return { ok: false as const };
+      return { ok: false as const, message: ALREADY_PAID_MESSAGE };
+    }
+    if (
+      orderSnapshot.exists &&
+      orderSnapshot.data()?.status === 'pending' &&
+      isPendingPaymentHoldActive(orderSnapshot.data()?.gatewayPending, now)
+    ) {
+      return { ok: false as const, message: PENDING_NOTICE_BODY };
     }
 
     transaction.set(standOrderRef, {
@@ -240,7 +259,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   });
 
   if (!transactionResult.ok) {
-    return NextResponse.json({ error: ALREADY_PAID_MESSAGE }, { status: 409 });
+    return NextResponse.json({ error: transactionResult.message }, { status: 409 });
   }
 
   const siteUrl = resolveSiteUrl();

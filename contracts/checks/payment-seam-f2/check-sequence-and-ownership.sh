@@ -26,6 +26,11 @@
 # 'not-configured'; the recovery-secret guard moving after the reservation write; the checkout
 # route dropping its ticketTypeMatchesActiveShow export, which four other contracts import.
 #
+# F31 (launch-weekend) RE-PIN: mapStatus now runs BEFORE confirmNotification (steps 8 and 9 swapped
+# deliberately; 'paid' still requires both). Pending / non-paid statuses branch off before the
+# confirm round trip. Step 7 also gained a call-site fallback because the shared handler's
+# comparison lives in notificationAmountMatches() -- the old literal was already absent at 5c093d6e.
+#
 # Run as: bash contracts/checks/payment-seam-f2/check-sequence-and-ownership.sh
 set -uo pipefail
 
@@ -99,8 +104,8 @@ declare -a STEPS=(
   "findReservedOrderByPaymentId|5 order lookup"
   "already-settled|6 settled short-circuit"
   ">= AMOUNT_MATCH_TOLERANCE|7 amount match"
-  "confirmNotification|8 server confirmation"
-  "mapStatus|9 status check"
+  "mapStatus|8 status check"
+  "confirmNotification|9 server confirmation"
   "markOrderAndPositionPaidByPaymentId|10 atomic write"
   "deliverConfirmationEmailAfterCommit|11 post-commit email"
 )
@@ -117,6 +122,9 @@ for entry in "${STEPS[@]}"; do
   # The amount-match step is located by its tolerance constant's USE, not its declaration.
   if [ "$pattern" = ">= AMOUNT_MATCH_TOLERANCE" ]; then
     first_code "$ITN" ">= AMOUNT_MATCH_TOLERANCE" "$POST_LINE"; line="$FIRST_CODE"
+    # The shared handler compares through notificationAmountMatches() (`< AMOUNT_MATCH_TOLERANCE_CENTS`
+    # lives in that helper, above POST) -- its CALL inside POST is the step's position.
+    [ -z "$line" ] && { first_code "$ITN" "notificationAmountMatches(lookup" "$POST_LINE"; line="$FIRST_CODE"; }
   else
     first_code "$ITN" "$pattern" "$POST_LINE"; line="$FIRST_CODE"
   fi

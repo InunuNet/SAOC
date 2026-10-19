@@ -351,6 +351,47 @@ export async function POST(
         });
         transaction.update(submissionRef, { paymentReceived: true });
       });
+    } else if (status === 'pending') {
+      // F31 -- the gateway is still processing (Pending / PendingInvestigation). Record a marker
+      // so initiate and the payment page can refuse a second payment while the first may still
+      // complete; the order stays 'pending', nothing is marked paid and no email is sent. No
+      // confirm call: this write can only block a re-initiate, never settle anything. Same
+      // amount guard as the paid path, and every guard is re-verified at write time.
+      if (!vendorStandOrderAmountMatches(preOrder ?? {}, notification.grossAmountCents)) {
+        console.error('[vendors/stand-payment] Pending gross amount does not match stand order -- ignoring', {
+          provider: paymentProvider.id,
+          vendorSubmissionId,
+          grossAmountCents: notification.grossAmountCents,
+        });
+        return;
+      }
+      await db.runTransaction(async (transaction) => {
+        const orderDoc = await transaction.get(standOrderRef);
+        const order = orderDoc.data() as StandOrder | undefined;
+        if (
+          !orderDoc.exists ||
+          order?.gateway !== paymentProvider.id ||
+          order?.status !== 'pending'
+        ) {
+          return;
+        }
+        if (order?.attemptId) {
+          const notificationAttemptId = parseAttemptIdFromStandOrderRef(notification.reference);
+          if (notificationAttemptId !== order.attemptId) {
+            return;
+          }
+        }
+        if (!vendorStandOrderAmountMatches(order ?? {}, notification.grossAmountCents)) {
+          return;
+        }
+        transaction.update(standOrderRef, {
+          gatewayPending: {
+            rawStatus: notification.rawStatus,
+            attemptId: order?.attemptId ?? null,
+            at: Timestamp.now(),
+          },
+        });
+      });
     } else if (status === 'failed' || status === 'cancelled') {
       // F6 -- no confirm call on this path (unchanged scope, see the golden README's "F1" /
       // "Interaction..." note: the confirm gate only ever applied to the 'paid' write). Still

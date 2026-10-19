@@ -1,0 +1,45 @@
+{
+  "note": "Normative F31 state table. Checks read this file; do not change a row without changing f31-spec.md. rawStatus strings are Ozow's own documented Status enum, matched strictly (case-sensitive, untrimmed).",
+  "holdMinutes": 4320,
+  "holdModule": "lib/payments/pending-hold.ts",
+  "holdConstant": "PENDING_PAYMENT_HOLD_MINUTES",
+  "rows": [
+    {
+      "ozowStatus": "Complete",
+      "mapsTo": "paid",
+      "tickets": { "orderStatus": "paid", "positionStatus": "paid", "seat": "kept (paid)", "extendsExpiry": false, "email": "existing ticket confirmation email, once" },
+      "vendor": { "orderStatus": "paid", "seat": "stand booked", "email": "existing vendor receipt + admin notice, once" }
+    },
+    {
+      "ozowStatus": "Pending",
+      "mapsTo": "pending",
+      "tickets": { "orderStatus": "reserved", "positionStatus": "reserved", "seat": "held: expiresAt extended to max(current, now + holdMinutes) on order and every position", "extendsExpiry": true, "marker": "order.gatewayPending = { rawStatus, at }", "email": "none" },
+      "vendor": { "orderStatus": "pending", "seat": "order stays pending; re-initiate refused for holdMinutes after gatewayPending.at", "marker": "order.gatewayPending = { rawStatus, at, attemptId }", "email": "none" }
+    },
+    {
+      "ozowStatus": "PendingInvestigation",
+      "mapsTo": "pending",
+      "tickets": { "orderStatus": "reserved", "positionStatus": "reserved", "seat": "held: expiresAt extended to max(current, now + holdMinutes) on order and every position", "extendsExpiry": true, "marker": "order.gatewayPending = { rawStatus, at }", "email": "none" },
+      "vendor": { "orderStatus": "pending", "seat": "order stays pending; re-initiate refused for holdMinutes after gatewayPending.at", "marker": "order.gatewayPending = { rawStatus, at, attemptId }", "email": "none" }
+    },
+    {
+      "ozowStatus": "Cancelled",
+      "mapsTo": "cancelled",
+      "tickets": { "orderStatus": "reserved", "positionStatus": "reserved", "seat": "no write; released lazily at the original expiresAt (30 min TTL)", "extendsExpiry": false, "email": "none" },
+      "vendor": { "orderStatus": "cancelled", "seat": "terminal, vendor may re-initiate", "email": "none" }
+    },
+    {
+      "ozowStatus": "Error",
+      "mapsTo": "failed",
+      "tickets": { "orderStatus": "reserved", "positionStatus": "reserved", "seat": "no write; released lazily at the original expiresAt (30 min TTL)", "extendsExpiry": false, "email": "none" },
+      "vendor": { "orderStatus": "failed", "seat": "terminal, vendor may re-initiate", "email": "none" }
+    },
+    {
+      "ozowStatus": "Abandoned",
+      "mapsTo": "abandoned",
+      "tickets": { "orderStatus": "reserved", "positionStatus": "reserved", "seat": "no write; released lazily at the original expiresAt (30 min TTL)", "extendsExpiry": false, "email": "none" },
+      "vendor": { "orderStatus": "pending", "seat": "NOT terminal: no write, order stays pending (re-initiate allowed, no hold)", "email": "none" }
+    }
+  ],
+  "unmapped": { "examples": ["complete", "COMPLETE", " Complete", "Complete ", "pending", "PENDINGINVESTIGATION", "Declined", "", null], "mapsTo": "unknown" }
+}

@@ -1,6 +1,7 @@
-import { getFirestore, type Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
+import { PENDING_PAYMENT_HOLD_MINUTES } from '@/lib/payments/pending-hold';
 import { generateBookingRefQrDataUri } from '@/lib/qr';
 import type { Order, OrderStatus, Ticket, TicketStatus, TicketType } from '@/types/index';
 
@@ -422,6 +423,124 @@ export async function markOrderAndPositionPaidByPaymentId(
       recoveryToken: (order?.recoveryToken as string | null | undefined) ?? null,
       positions,
     };
+  });
+}
+
+/** The only gateway-reported states the pending writer records (Ozow's Pending and
+ *  PendingInvestigation). Anything else is refused so this writer can never be a back door. */
+const PENDING_RAW_STATUSES: ReadonlySet<string> = new Set(['Pending', 'PendingInvestigation']);
+
+const MS_PER_MINUTE = 60_000;
+
+export interface MarkOrderPaymentPendingInput {
+  m_payment_id: string;
+  /** The gateway's own status string; only Pending / PendingInvestigation are accepted. */
+  rawStatus: string;
+  now: Timestamp;
+  orderId?: string;
+  /** Same cross-gateway guard as MarkOrderAndPositionPaidInput.expectedGateway. */
+  expectedGateway: string;
+}
+
+export type MarkOrderPendingOutcome =
+  | { committed: true; orderId: string; expiresAt: Timestamp }
+  | {
+      committed: false;
+      reason: Extract<MarkOrderPaidOutcome, { committed: false }>['reason'] | 'unsupported-status';
+      storedGateway?: string | null;
+      expectedGateway?: string;
+    };
+
+function laterOf(current: unknown, candidate: Timestamp): Timestamp {
+  const currentMillis =
+    typeof current === 'object' && current !== null && typeof (current as Timestamp).toMillis === 'function'
+      ? (current as Timestamp).toMillis()
+      : Number.NEGATIVE_INFINITY;
+  return currentMillis > candidate.toMillis() ? (current as Timestamp) : candidate;
+}
+
+/**
+ * F31 -- a hash-verified, amount-matched gateway "Pending" report keeps the seat: the order and
+ * EVERY position stay 'reserved', `expiresAt` is lifted to max(current, now + hold window) so the
+ * lazy TTL release cannot hand the seat to someone else while the payment may still complete, and
+ * `gatewayPending` records what was reported. It never marks anything paid, never shortens an
+ * expiry, and re-verifies identity, gateway and 'reserved' status inside one transaction (same
+ * guards, same reasons as markOrderAndPositionPaidByPaymentId). An order already past its TTL is
+ * re-held -- the same accepted trade-off as a payment landing after TTL still winning its seat;
+ * the reconciliation cron surfaces any reserved-and-expired order.
+ */
+export async function markOrderPaymentPendingByPaymentId(
+  input: MarkOrderPaymentPendingInput,
+  deps: { db?: OrdersFirestoreRwLike } = {}
+): Promise<MarkOrderPendingOutcome> {
+  if (!PENDING_RAW_STATUSES.has(input.rawStatus)) {
+    return { committed: false, reason: 'unsupported-status' };
+  }
+  const db: OrdersFirestoreRwLike = deps.db ?? (getFirestore(initAdmin()) as unknown as OrdersFirestoreRwLike);
+  const orders = db.collection(ORDERS_COLLECTION);
+  const tickets = db.collection(TICKETS_COLLECTION);
+
+  let orderRefId: string;
+  if (input.orderId) {
+    orderRefId = input.orderId;
+  } else {
+    const orderSnapshot = await orders.where('m_payment_id', '==', input.m_payment_id).limit(1).get();
+    if (orderSnapshot.empty) {
+      return { committed: false, reason: 'order-not-found' };
+    }
+    orderRefId = orderSnapshot.docs[0].id;
+  }
+  const orderRef = orders.doc(orderRefId);
+  const positionSnapshot = await tickets.where('orderId', '==', orderRef.id).get();
+  const holdUntil = Timestamp.fromMillis(
+    input.now.toMillis() + PENDING_PAYMENT_HOLD_MINUTES * MS_PER_MINUTE
+  );
+
+  return db.runTransaction(async (transaction): Promise<MarkOrderPendingOutcome> => {
+    const orderDoc = await transaction.get(orderRef);
+    if (!orderDoc.exists) {
+      return { committed: false, reason: 'order-vanished' };
+    }
+    const order = orderDoc.data() as Partial<Order> | undefined;
+    if (order?.m_payment_id !== input.m_payment_id) {
+      return { committed: false, reason: 'order-payment-id-mismatch' };
+    }
+    if (order?.gateway !== input.expectedGateway) {
+      return {
+        committed: false,
+        reason: 'order-gateway-mismatch',
+        storedGateway: (order?.gateway as string | null | undefined) ?? null,
+        expectedGateway: input.expectedGateway,
+      };
+    }
+    if (order?.status !== 'reserved') {
+      return { committed: false, reason: 'order-not-reserved' };
+    }
+    if (positionSnapshot.empty) {
+      return { committed: false, reason: 'position-not-found' };
+    }
+
+    // Sequential reads on the same transaction, as in markOrderAndPositionPaidByPaymentId.
+    const positionRefs = positionSnapshot.docs.map((doc) => tickets.doc(doc.id));
+    const positionDocs: OrdersDocSnapshotLike[] = [];
+    for (const positionRef of positionRefs) {
+      positionDocs.push(await transaction.get(positionRef));
+    }
+    if (positionDocs.some((doc) => !doc.exists)) {
+      return { committed: false, reason: 'position-not-found' };
+    }
+
+    const expiresAt = laterOf(order?.expiresAt, holdUntil);
+    transaction.update(orderRef, {
+      expiresAt,
+      gatewayPending: { rawStatus: input.rawStatus, at: input.now },
+    });
+    positionRefs.forEach((positionRef, index) => {
+      const positionExpiry = laterOf(positionDocs[index].data()?.expiresAt, expiresAt);
+      transaction.update(positionRef, { expiresAt: positionExpiry });
+    });
+
+    return { committed: true, orderId: orderRef.id, expiresAt };
   });
 }
 

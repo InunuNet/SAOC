@@ -1,0 +1,49 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: Every one of Ozow's six sandbox statuses has a defined, tested end-to-end outcome for ticket orders and vendor stand payments - Pending and PendingInvestigation hold the seat or stand and never mark paid, Cancelled, Error and Abandoned never mark paid and never strand a payment that may still complete, only Complete settles, and no new emails or user-facing copy are introduced.
+created_at: '2026-10-19'
+autonomy: high
+features:
+  - id: F31
+    name: Ozow six-status handling - mapStatus, pending seat hold, vendor pending marker and re-initiate guard (tests the 3 unmapped statuses offline; live picker run is a separate manual protocol)
+    status: pending
+# GATE: cwd = the implementation tree (repo root). Offline checks need no network, credentials or Firestore (in-memory double).
+# BASE_REF (default origin/main) is used only by the scope check. Do not run `pnpm build` while a dev server of the same tree is running.
+# Tier: apex recommended (payment path). Decisions for Brad: PENDING_PAYMENT_HOLD_MINUTES (recommend 72h) and vendor re-initiate lockout while Pending (recommend block). Both are in goldens/f31/f31-spec.md.
+# Re-pin required alongside the change: contracts/checks/payment-seam-f2/* (mapStatus now precedes confirmNotification) and possibly check-itn-behaviour-unchanged.sh for the PayFast PENDING case.
+# Live protocol (not a gate assertion - it needs beta, Ozow's sandbox and the gws inbox): goldens/f31/live-sandbox-protocol.md. The orchestrator runs it after deploy and records the table.
+goldens:
+  - .agent/memory/project/specs/launch-weekend/goldens/f31/f31-spec.md
+  - .agent/memory/project/specs/launch-weekend/goldens/f31/state-table.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f31/live-sandbox-protocol.md
+  - .agent/memory/project/specs/launch-weekend/goldens/f31/scope-allowlist.json
+assertions:
+  phase: 4
+  checks:
+    - id: F31-A1
+      description: mapStatus on the real Ozow adapter matches the state table for all six statuses (Complete->paid, Pending and PendingInvestigation->pending, Cancelled->cancelled, Error->failed, Abandoned->abandoned), every unrecognised or case/whitespace variant is unknown, only the exact string Complete can be paid, and PayFast mapping is unchanged
+      command: pnpm exec tsx contracts/checks/launch-weekend/f31/check-a-mapping.mts
+    - id: F31-A2
+      description: Ticket transitions on the real lib/orders.ts against an in-memory Firestore - Pending and PendingInvestigation keep order and positions reserved, extend expiresAt on the order and every position to at least now plus the hold window, write the gatewayPending marker, never shorten an expiry, are idempotent, re-hold an already-expired order, refuse on gateway mismatch, payment-id mismatch or non-reserved order leaving documents byte-identical, a later Complete settles order and positions to paid, a duplicate Complete and a late Pending after paid are no-ops, no undefined own-properties are written
+      command: pnpm exec tsx contracts/checks/launch-weekend/f31/check-b-ticket-transitions.mts
+    - id: F31-A3
+      description: Vendor transitions through the real handler and real Ozow adapter against an in-memory Firestore - Pending and PendingInvestigation leave the order pending, record gatewayPending with the attemptId, make no confirm call, set no paidAt and no paymentReceived, are idempotent, and a later Complete settles once with no re-stamp; Cancelled and Error become terminal; Abandoned and unknown statuses write nothing; stale attempt, wrong amount and forged hash leave Pending untouched; Complete that Ozow's status API disagrees with is never paid; Cancelled after paid is ignored
+      command: pnpm exec tsx contracts/checks/launch-weekend/f31/check-c-vendor-transitions.mts
+    - id: F31-A4
+      description: The pending-hold helper - the constant equals the golden, a recent marker is active, an old, missing or malformed marker is inactive so a bad document can never lock a vendor out
+      command: pnpm exec tsx contracts/checks/launch-weekend/f31/check-d-hold-window.mts
+    - id: F31-A5
+      description: Static wiring - mapStatus and the pending write precede confirmNotification in the ticket handler, confirmNotification is called once in each handler and stays fail-closed on Status Complete with a single confirmed-true return, the paid write stays after confirm, every email has exactly one send site, initiate and the vendor payment page use the hold helper, and vendor pending wording reuses the existing Confirming your payment strings
+      command: node contracts/checks/launch-weekend/f31/check-e-static.mjs
+    - id: F31-A6
+      description: Every changed file is on the F31 allowlist - no PayFast adapter, email template or sender, Sanity, ticket page or component, capacity counter or admin route is edited
+      command: node contracts/checks/launch-weekend/f31/check-f-scope.mjs
+    - id: F31-A7
+      description: Lint passes
+      command: pnpm lint
+    - id: F31-A8
+      description: Type check passes
+      command: pnpm type-check
+    - id: F31-A9
+      description: Production build passes
+      command: pnpm build

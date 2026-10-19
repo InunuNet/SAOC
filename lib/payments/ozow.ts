@@ -42,8 +42,11 @@ import type {
  * to that change. See contracts/golden/ozow-m1-f1/README.md for F1's original decision record.
  */
 
-/** Ozow's 3-value documented Status enum. Only these three exist; there is no Pending. */
+/** Ozow's six documented Status values (F31 maps all six; anything else is 'unknown'). */
 const STATUS_COMPLETE = 'Complete';
+const STATUS_PENDING = 'Pending';
+const STATUS_PENDING_INVESTIGATION = 'PendingInvestigation';
+const STATUS_ABANDONED = 'Abandoned';
 
 /**
  * Reads a field off a GetTransactionByReference row. Ozow's docs show PascalCase keys but the
@@ -512,15 +515,21 @@ export function createOzowProvider(deps?: OzowProviderDeps): PaymentProvider {
     },
 
     mapStatus(rawStatus: string | null): PaymentStatus {
-      // Strict, case-sensitive, untrimmed — Ozow's documented 3-value enum has no Pending case,
-      // and a case/whitespace "improvement" here would widen the one way an order becomes paid.
+      // Strict, case-sensitive, untrimmed — a case/whitespace "improvement" here would widen the
+      // one way an order becomes paid. Abandoned is deliberately NOT folded into 'cancelled':
+      // Ozow does not document it as terminal, so callers must be able to tell it apart.
       switch (rawStatus) {
         case STATUS_COMPLETE:
           return 'paid';
+        case STATUS_PENDING:
+        case STATUS_PENDING_INVESTIGATION:
+          return 'pending';
         case STATUS_CANCELLED:
           return 'cancelled';
         case STATUS_ERROR:
           return 'failed';
+        case STATUS_ABANDONED:
+          return 'abandoned';
         default:
           return 'unknown';
       }
