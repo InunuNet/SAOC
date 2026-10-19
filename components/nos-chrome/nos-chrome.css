@@ -118,15 +118,18 @@
 .nf ::selection { background: var(--nc-gold); color: var(--nc-royal); }
 .nf-wrap { max-width: calc(var(--nc-wide) + 2 * var(--nc-gutter)); margin-inline: auto; padding-inline: var(--nc-gutter); }
 .nf-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 48px 40px; }
-.nf-brand { display: grid; gap: 20px; align-content: start; justify-items: start; }
-.nf-lockup { display: block; line-height: 0; border-radius: 4px; }
-.nf-lockup img { display: block; }
-.nf-lockup img { width: var(--nc-logo-w); max-width: none; height: auto; margin: calc(var(--nc-logo-w) * -0.045) calc(var(--nc-logo-w) * -0.0508) calc(var(--nc-logo-w) * -0.0442) calc(var(--nc-logo-w) * -0.045); }
+/* r17 F2 (Codi): the gold vertical lockup, centred on the royal band at 360px (280px at <=700),
+   never wider than the wrap's content box, with REG/NPO the only text under it. */
+.nf-brand { grid-column: 1 / -1; display: grid; gap: 0; align-content: start; justify-items: center; text-align: center; }
+.nf-lockup { display: block; width: min(360px, 100%); line-height: 0; border-radius: 4px; }
+/* Clear space (logo PDF p.08): the lockup's visible bottom (file y 2620 of 2876) sits
+   0.25 x the emblem width (2350 of 3272px) above REG/NPO. A bottom margin in % resolves against
+   the lockup's own width, so: 25% x 2350/3272 minus the file's transparent foot (256/3272). */
+.nf-lockup img { display: block; width: 100%; max-width: none; height: auto; margin: 0 0 calc(25% * 2350 / 3272 - 100% * 256 / 3272); }
 .nf-text { margin: 0; max-width: 44ch; font-size: 15px; line-height: 1.6; color: var(--nc-lilac); }
-.nf-reg { font-size: 12px; letter-spacing: 0.08em; color: rgba(210, 203, 232, 0.78); font-variant-numeric: tabular-nums; }
-.nf-org { display: grid; gap: 8px; justify-items: inherit; }
-.nf-org .nf-reg { margin-top: 6px; }
 .nf-head { margin: 0 0 6px; font: 700 12px/1.3 var(--nc-sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--nc-green-1); }
+/* REG/NPO in the label role (.nf-head), in gold. */
+.nf-brand .nf-reg { color: var(--nc-gold); font-variant-numeric: tabular-nums; }
 .nf-list { list-style: none; margin: 0; padding: 0; display: grid; }
 .nf-list a, .nf-list span { display: flex; align-items: center; min-height: 44px; font-size: 15px; line-height: 1.35; color: var(--nc-lilac); text-decoration: none; }
 .nf-list span { min-height: 0; padding-block: 11px; }
@@ -144,14 +147,10 @@
 .nf-legal { display: flex; flex-wrap: wrap; gap: 0 24px; }
 .nf-legal a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; color: var(--nc-lilac); text-decoration: none; }
 @media (min-width: 701px) { .nf-form { flex-direction: column; } .nf-form input, .nf-form button { width: 100%; } }
-@media (min-width: 701px) { .nf-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .nf-brand { grid-column: 1 / -1; } }
-@media (min-width: 1180px) { .nf-grid { grid-template-columns: var(--nc-logo-w) repeat(3, minmax(0, 1fr)); } .nf-brand { grid-column: auto; } }
+@media (min-width: 701px) { .nf-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 700px) {
   .nf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px 20px; }
-  .nf-brand { grid-column: 1 / -1; justify-items: center; text-align: center; }
-  .nf-brand .nf-text { max-width: 36ch; }
-  /* The supplied reversed vertical lockup at 342px: cap 7.0px. */
-  .nf-lockup img { width: min(342px, 100%); margin: 0; }
+  .nf-lockup { width: min(280px, 100%); }
   .nf-col-touch { grid-column: 1 / -1; }
   .nf-base { flex-direction: column; align-items: flex-start; }
 }

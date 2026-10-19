@@ -21,9 +21,6 @@ export const FOOTER_HEADINGS = {
   touch: 'Stay in touch',
 };
 
-export const FOOTER_BRAND_TEXT =
-  'A national coordinating body for affiliated orchid societies across South Africa — promoting culture, hybridisation and appreciation of orchids in cultivation since 1968.';
-
 export const FOOTER_REG = 'REG# 1978/004040/08   NPO 043-901';
 
 export const FOOTER_BULLETIN = {

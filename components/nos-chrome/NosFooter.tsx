@@ -3,24 +3,22 @@
 // =============================================================
 // NOS — components/nos-chrome/NosFooter.tsx
 // The NOS own-brand footer for /national-show/*: the SAOC footer's content
-// (components/chrome/footer-data.ts, shared verbatim) on the NOS royal ground,
-// with the supplied reversed lockups in the brand slot. ONE <picture> picks the horizontal
-// file above 700px and the vertical (mono) file at or below it, so only the active lockup is
-// fetched, lazily (the footer is below the fold). The sources are the supplied PNGs; the custom
-// image loader maps them to its pre-built WebP candidates.
+// (components/chrome/footer-data.ts, shared verbatim) on the NOS royal ground.
+// r17 F2 (Codi): the brand slot is the supplied gold vertical lockup, centred, at every width,
+// with only REG/NPO beneath it. ONE <picture> holds a 1x/2x density set of that one file, fetched
+// lazily (the footer is below the fold); the custom image loader maps it to its pre-built WebP
+// candidates.
 // =============================================================
 
 import { getImageProps } from 'next/image';
 import Link from 'next/link';
 
 import {
-  FOOTER_BRAND_TEXT,
   FOOTER_BULLETIN,
   FOOTER_COPYRIGHT_TAIL,
   FOOTER_HEADINGS,
   FOOTER_LEGAL_LINKS,
   FOOTER_NAV,
-  FOOTER_ORG_NAME,
   FOOTER_REG,
   FOOTER_WOSA,
 } from '@/components/chrome/footer-data';
@@ -31,30 +29,19 @@ import './nos-chrome.css';
 
 const HUB_HREF = '/national-show';
 const LOCKUP_ALT = 'National Orchid Show, Western Cape 2027';
-const HORIZONTAL_SRC = '/images/nos/nos-reversed-horizontal-1200.png';
-const HORIZONTAL_WIDTH = 1200;
-const HORIZONTAL_HEIGHT = 294;
-const VERTICAL_SRC = '/images/nos/nos-reversed-white-vertical-900.png';
-const VERTICAL_WIDTH = 900;
-const VERTICAL_HEIGHT = 791;
-// The rendered boxes: the horizontal is 448px wide, the vertical 342px (nos-chrome.css). A width
-// with no `sizes` gives a 1x/2x density srcset, so a high-density screen never fetches more than
-// twice the box.
-const HORIZONTAL_BOX = 448;
-const VERTICAL_BOX = 342;
+const LOCKUP_SRC = '/images/NOS-2027-logo-reversed-gold-vertical.png';
+const LOCKUP_WIDTH = 3272;
+const LOCKUP_HEIGHT = 2876;
+// The largest rendered box is 360px wide (nos-chrome.css). A width with no `sizes` gives a 1x/2x
+// density srcset, so a high-density screen never fetches more than twice the box.
+const LOCKUP_BOX = 360;
 
 export function NosFooter() {
-  const { props: horizontal } = getImageProps({
-    src: HORIZONTAL_SRC,
+  const { props: lockup } = getImageProps({
+    src: LOCKUP_SRC,
     alt: LOCKUP_ALT,
-    width: HORIZONTAL_BOX,
-    height: Math.round((HORIZONTAL_BOX * HORIZONTAL_HEIGHT) / HORIZONTAL_WIDTH),
-  });
-  const { props: vertical } = getImageProps({
-    src: VERTICAL_SRC,
-    alt: LOCKUP_ALT,
-    width: VERTICAL_BOX,
-    height: Math.round((VERTICAL_BOX * VERTICAL_HEIGHT) / VERTICAL_WIDTH),
+    width: LOCKUP_BOX,
+    height: Math.round((LOCKUP_BOX * LOCKUP_HEIGHT) / LOCKUP_WIDTH),
   });
 
   return (
@@ -64,27 +51,17 @@ export function NosFooter() {
           <div className="nf-brand">
             <Link className="nf-lockup" href={HUB_HREF}>
               <picture>
-                <source
-                  media="(max-width: 700px)"
-                  srcSet={vertical.srcSet}
-                  width={VERTICAL_WIDTH}
-                  height={VERTICAL_HEIGHT}
-                />
                 <img
-                  {...horizontal}
+                  {...lockup}
                   alt={LOCKUP_ALT}
-                  width={HORIZONTAL_WIDTH}
-                  height={HORIZONTAL_HEIGHT}
+                  width={LOCKUP_WIDTH}
+                  height={LOCKUP_HEIGHT}
                   loading="lazy"
                   decoding="async"
                 />
               </picture>
             </Link>
-            <div className="nf-org">
-              <div className="nf-head">{FOOTER_ORG_NAME}</div>
-              <p className="nf-text">{FOOTER_BRAND_TEXT}</p>
-              <span className="nf-reg">{FOOTER_REG}</span>
-            </div>
+            <span className="nf-head nf-reg">{FOOTER_REG}</span>
           </div>
 
           <div className="nf-col">
