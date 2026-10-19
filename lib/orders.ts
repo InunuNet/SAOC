@@ -426,9 +426,15 @@ export async function markOrderAndPositionPaidByPaymentId(
   });
 }
 
-/** The only gateway-reported states the pending writer records (Ozow's Pending and
- *  PendingInvestigation). Anything else is refused so this writer can never be a back door. */
-const PENDING_RAW_STATUSES: ReadonlySet<string> = new Set(['Pending', 'PendingInvestigation']);
+/** The only gateway-reported states the pending writer records: Ozow's Pending and
+ *  PendingInvestigation, and PayFast's PENDING (its mapStatus already maps it to 'pending', so a
+ *  verified PayFast ITN reaches this writer too). Anything else is refused so this writer can
+ *  never be a back door. */
+const PENDING_RAW_STATUSES: ReadonlySet<string> = new Set([
+  'Pending',
+  'PendingInvestigation',
+  'PENDING',
+]);
 
 const MS_PER_MINUTE = 60_000;
 
