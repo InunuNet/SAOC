@@ -44,8 +44,8 @@ const bySlug = Object.fromEntries(
 // Trip's 60-seat vehicle ceiling — not a catalogue count that drifts with product
 // additions/retirements, so pinning them here is not the staleness this repair targets).
 const REQUIRED = {
-  'sunset-cocktails-single': { capacityPool: 'sunset-cocktails', headcountPerUnit: 1, capacity: 200 },
-  'sunset-cocktails-couple': { capacityPool: 'sunset-cocktails', headcountPerUnit: 2, capacity: 200 },
+  'sunset-cocktails-single': { capacityPool: 'sunset-cocktails', headcountPerUnit: 1, capacity: 100 },
+  'sunset-cocktails-couple': { capacityPool: 'sunset-cocktails', headcountPerUnit: 2, capacity: 100 },
   'field-trip': { capacityPool: 'field-trip', headcountPerUnit: 1, capacity: 60 },
 };
 

@@ -21,8 +21,8 @@ const cocktailsCouple = WORKSHOP_FIELD_TRIP_PRODUCTS.find((p) => p.slug === 'sun
 if (!cocktailsSingle || !cocktailsCouple) {
   failures.push('sunset-cocktails-single/couple missing from WORKSHOP_FIELD_TRIP_PRODUCTS');
 } else {
-  if (cocktailsSingle.capacity !== 200) failures.push(`sunset-cocktails-single.capacity is ${JSON.stringify(cocktailsSingle.capacity)}, expected 200`);
-  if (cocktailsCouple.capacity !== 200) failures.push(`sunset-cocktails-couple.capacity is ${JSON.stringify(cocktailsCouple.capacity)}, expected 200`);
+  if (cocktailsSingle.capacity !== 100) failures.push(`sunset-cocktails-single.capacity is ${JSON.stringify(cocktailsSingle.capacity)}, expected 100`);
+  if (cocktailsCouple.capacity !== 100) failures.push(`sunset-cocktails-couple.capacity is ${JSON.stringify(cocktailsCouple.capacity)}, expected 100`);
   if (cocktailsSingle.capacityPool !== cocktailsCouple.capacityPool) {
     failures.push('sunset-cocktails-single/couple do not share the same capacityPool');
   }
@@ -41,5 +41,5 @@ if (WORKSHOP_SESSION_CAPACITY !== 10) {
 finish(
   'check-per-product-caps-unaffected.mjs',
   failures,
-  'VIP 200, Cocktails 200 (shared pool), Symposium 80, WOSA 80, workshop session 10 — all correct post-F1/F2/F3.',
+  'VIP 200, Cocktails 100 (shared pool), Symposium 80, WOSA 80, workshop session 10 — all correct post-F1/F2/F3.',
 );

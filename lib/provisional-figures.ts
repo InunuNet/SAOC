@@ -380,7 +380,8 @@ const FIELD_TRIP_FLAT_PRICE = 200;
 // interim conservative resize (100/50/30/30) now that planPooledCapacity() correctly pools
 // capacity across the products sharing each physical venue/vehicle constraint — see
 // goldens/f5-checkout.golden.md "Determination 2".
-const SUNSET_COCKTAILS_POOL_CAPACITY = 200;
+// Brad 2026-10-19: Sunset Cocktails pool capacity is 100 (live Sanity already 100).
+const SUNSET_COCKTAILS_POOL_CAPACITY = 100;
 const FIELD_TRIP_POOL_CAPACITY = 60;
 
 export const WORKSHOP_FIELD_TRIP_PRODUCTS: ProvisionalAdmissionProduct[] = [

@@ -53,7 +53,7 @@ const ACTION_LABELS: Record<VendorReviewAction, string> = {
   reject: 'Reject',
 };
 
-const LISTING_CONSENT_CONFIRM = 'marketingPermission is missing. Publish anyway? (explicit admin act)';
+const LISTING_CONSENT_CONFIRM = "This vendor hasn't given permission to be listed. Publish anyway?";
 
 interface VendorReviewTableProps {
   submissions: VendorSubmission[];
@@ -85,7 +85,11 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
   // Photo-resume links (vendor-flow-fixes F2), keyed by vendorSubmissionId, same fallback role.
   const [photoUrlById, setPhotoUrlById] = useState<Record<string, string>>({});
   // F30 -- per-row result of the last Publish to listing click ('Published' / 'Already listed').
-  const [listingStateById, setListingStateById] = useState<Record<string, string>>({});
+  const [listingStateById, setListingStateById] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      submissions.filter((row) => row.listingDocumentId).map((row) => [row.id, 'Published']),
+    ),
+  );
 
   // Hotfix (contracts/golden/vendor-stand-payment-link-visibility, 2026-09-01) -- reuses the
   // same pendingId/error state as handleAction above (no second loading/error mechanism). The
@@ -369,16 +373,19 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
                           onRequestLink={() => handleResendPaymentLink(row.id)}
                         />
                       )}
-                      {showPublishListing && (
-                        <button
-                          type="button"
-                          disabled={pendingId === row.id}
-                          onClick={() => handlePublishListing(row.id)}
-                          className="rounded-sm border border-rule bg-ivory px-3 py-1.5 font-sans text-[13px] font-medium text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {pendingId === row.id ? 'Saving…' : listingStateById[row.id] ?? 'Publish to listing'}
-                        </button>
-                      )}
+                      {showPublishListing &&
+                        (listingStateById[row.id] ? (
+                          <span className="text-muted">{listingStateById[row.id]}</span>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={pendingId === row.id}
+                            onClick={() => handlePublishListing(row.id)}
+                            className="rounded-sm border border-rule bg-ivory px-3 py-1.5 font-sans text-[13px] font-medium text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {pendingId === row.id ? 'Saving…' : 'Publish to listing'}
+                          </button>
+                        ))}
                       {showPhotoLink && (
                         <VendorPhotoLinkControl
                           isPending={pendingId === row.id}
