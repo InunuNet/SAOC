@@ -49,8 +49,8 @@ FINAL rulings set the file, size, placement and REG/NPO style.
   - `FOOTER_BRAND_TEXT`, which nothing renders any more, is deleted from `components/chrome/footer-data.ts`. No references
     to it remain.
   - The now-unused `.nf-org` wrapper and its CSS are removed.
-- **REG/NPO.** "REG# 1978/004040/08   NPO 043-901" is byte-exact, with three U+00A0, and is still the first text after the
-  lockup.
+- **REG/NPO.** `FOOTER_REG` is unchanged byte for byte and is still the first text after the lockup. It reads "REG#
+  1978/004040/08", then three U+00A0 no-break spaces, then "NPO 043-901".
   - It is restyled in the footer's existing label role, `.nf-head` (Karla 700, 12px, 0.14em, uppercase), in
     `--nc-gold` #F3F2D6. That is 13.69:1 on the royal ground.
   - No new token or colour is added.
