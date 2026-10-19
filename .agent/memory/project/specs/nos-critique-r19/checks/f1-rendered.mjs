@@ -11,7 +11,7 @@
 //       no "Back to tickets" text link remains; 4s after load the state has not changed (no poller "Confirming" state).
 //   R4  cancelled: the h1, the lede and their boxes equal BASE (+-1px); the booking ref line, when shown, starts on the same edge.
 //   R5  no horizontal overflow.
-// `--capture` prints goldens/f1-baseline.json (captured by @architect on BASE 93940e04, both modes).
+// `--capture` prints goldens/f1-baseline.json (captured by @architect on BASE a4807791, both modes).
 import { BASE, finish, goldenJson } from './_lib.mjs';
 import { MODES, require, serve } from './_server.mjs';
 

@@ -1,7 +1,8 @@
 // Shared helpers for the nos-critique-r19 checks (QA inputs written by @architect; @dev must not edit them, goldens/checks-fN.sha256 lock them).
 // The checks are committed on fix/nos-critique-r19 with the spec. They inspect the checkout named by NOS_CR19_ROOT; by default the
 // .tmp/sandbox/critique-r19 worktree when it exists under the checkout holding this spec, otherwise that checkout itself.
-// BASE is origin/main 93940e04 (r17 merged), the beta build Codi reviewed at 1280px for the r19 rulings.
+// BASE is origin/main a4807791 (r18 merged; r19 restacked onto it). Codi reviewed beta 93940e04 at 1280px for the r19 rulings; r18 does
+// not touch the r19 pages, only the nos-structure.css offset (+11 lines above the r19 anchor).
 //   NOS_CR19_ROOT   checkout to inspect (relative to the cwd)
 //   NOS_CR19_GIT    checkout whose git history supplies the BASE file contents (default: NOS_CR19_ROOT)
 import { execFileSync } from 'node:child_process';
@@ -9,7 +10,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const BASE = '93940e04';
+export const BASE = 'a4807791';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const projectRoot = path.resolve(here, '../../../../../..');

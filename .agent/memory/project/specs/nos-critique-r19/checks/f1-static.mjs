@@ -7,7 +7,10 @@
 //       byte-identical, exports generateMetadata, decides not-found on the server through lib/ticket-status.ts, and renders the not-found
 //       state as hero h1 "Booking not found" + the confirmationNotFoundMessage lede + the NOS button in an nk-state context.
 //   S4  components/tickets/ConfirmationPoller.tsx no longer renders a not-found state: a 404 from /api/tickets/status calls router.refresh()
-//       so the server renders it.
+//       so the server renders it, AT MOST ONCE per mount (Codi FINAL pre-merge, the refresh-loop guard, goldens/f1-edits.json `poller`):
+//       a refreshedOn404 flag declared beside `attempts` in the polling effect; the first 404 sets it, refreshes and keeps polling; a 404
+//       with the flag set falls through to the existing timed-out state. router.refresh() is called exactly three times in the code (comments aside) (the
+//       empty ref, the guarded 404, a confirmed status) and the 404 one only behind the flag.
 //   S5  app/api/tickets/status/route.ts looks the status up through lib/ticket-status.ts and keeps its responses (404 "Not found.",
 //       { status } only, 500).
 //   S6  lib/ticket-status.ts exports getTicketStatus(ref), the one tickets-by-bookingRef lookup.
@@ -50,7 +53,12 @@ const poller = readRepoFile(POLLER);
 if (poller === null) failures.push(`${POLLER}: missing (S4)`);
 else {
   for (const [re, msg] of [[/not-found/, "still has a 'not-found' state"], [/Booking not found/, 'still renders "Booking not found"'], [/confirmationNotFoundMessage/, 'still reads confirmationNotFoundMessage']]) if (re.test(poller)) failures.push(`${POLLER}: ${msg} (S4)`);
-  need(POLLER, poller, { re: /res\.status === 404\)\s*\{\s*router\.refresh\(\);\s*return;/, msg: 'a 404 does not call router.refresh()' }, 'S4');
+  const P = G.poller;
+  need(POLLER, poller, { re: new RegExp(P.guardDeclRe), msg: 'no `let refreshedOn404 = false;` beside `let attempts = 0;` in the polling effect' }, 'S4');
+  need(POLLER, poller, { re: new RegExp(P.guarded404Re), msg: 'the 404 branch is not the golden one-shot guard (flag set -> timed-out; else set flag, refresh once, keep polling)' }, 'S4');
+  const code = poller.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  const refreshes = (code.match(/router\.refresh\(\)/g) ?? []).length;
+  if (refreshes !== P.refreshCalls) failures.push(`${POLLER}: router.refresh() is called ${refreshes} times, want ${P.refreshCalls} (empty ref, guarded 404, confirmed) (S4)`);
 }
 
 // S5

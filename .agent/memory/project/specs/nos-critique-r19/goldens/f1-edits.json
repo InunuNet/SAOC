@@ -20,7 +20,7 @@
     "file": "app/(marketing)/national-show/nos-structure.css",
     "lineEdits": [
       {
-        "line": 2016,
+        "line": 2027,
         "from": "}",
         "to": "}\n/* r19: on the ticket state pages (/tickets/cancelled, the /tickets/confirmation not-found state) \"Back to tickets\"\n   keeps its natural width on the content edge, under the hero lede (Codi FINAL 2026-10-19). */\n.nos-theme .nk-state .nk-cta {\n  width: auto;\n  grid-column: auto;\n}"
       }
@@ -49,5 +49,13 @@
     "ledeNote": "The lede is ticketsPage.confirmationNotFoundMessage from Sanity, else the poller's fallback. BASE fetched it in the browser, where the Sanity request fails on the local builds, so BASE showed the fallback (f1-baseline.json); the server fetch reads the CMS sentence (cmsMessage, recorded 2026-10-19). Either is existing copy."
   },
   "cancelledTitle": "Payment cancelled | South African Orchid Council",
-  "allowCopy": []
+  "allowCopy": [],
+  "poller": {
+    "file": "components/tickets/ConfirmationPoller.tsx",
+    "block": "    let attempts = 0;\n    let cancelled = false;\n    let refreshedOn404 = false;\n...\n        if (res.status === 404) {\n          if (refreshedOn404) {\n            setState('timed-out');\n            return;\n          }\n          refreshedOn404 = true;\n          router.refresh();\n          if (!cancelled) setTimeout(poll, POLL_INTERVAL_MS);\n          return;\n        }",
+    "guardDeclRe": "let attempts = 0;\\s*let cancelled = false;\\s*(?://[^\\n]*\\n\\s*)*let refreshedOn404 = false;",
+    "guarded404Re": "if \\(res\\.status === 404\\) \\{\\s*if \\(refreshedOn404\\) \\{\\s*setState\\('timed-out'\\);\\s*return;\\s*\\}\\s*refreshedOn404 = true;\\s*router\\.refresh\\(\\);\\s*if \\(!cancelled\\) setTimeout\\(poll, POLL_INTERVAL_MS\\);\\s*return;\\s*\\}",
+    "refreshCalls": 3,
+    "why": "Codi FINAL pre-merge: refresh-loop guard. If the server-side isBookingNotFound lookup throws it returns false and the page renders the poller again; without a guard every 404 would refresh again. The flag lives in the polling effect beside attempts (the effect's existing per-mount state; router.refresh() keeps the poller instance, so the flag survives the refresh). The first 404 refreshes once and keeps polling (if the server now renders not-found the poller unmounts and cleanup stops it); a second 404 ends in the existing timed-out state. No new copy."
+  }
 }

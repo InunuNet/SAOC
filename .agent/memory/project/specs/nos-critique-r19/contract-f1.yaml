@@ -1,4 +1,4 @@
-# Sources: Codi's FINAL review of the ticket state pages (beta 93940e04, 1280px), relayed by the lead (saoc-82) 2026-10-19; architect measurements on BASE 93940e04 (goldens/f1-spec.md).
+# Sources: Codi's FINAL review of the ticket state pages (beta 93940e04, 1280px), relayed by the lead (saoc-82) 2026-10-19; architect measurements on BASE 93940e04, re-pinned to a4807791 (r18 merged) (goldens/f1-spec.md).
 schema: athanor.contract/v1
 slug: nos-critique-r19
 goal: >-
@@ -28,10 +28,10 @@ assertions:
       description: f1 check scripts and goldens are unmodified since @architect wrote them
       command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r19/goldens/checks-f1.sha256
     - id: A2
-      description: Footprint - the r19 branch differs from origin/main 93940e04 only in goldens/f1-footprint.json, docs/nos-critique-r19.md and the spec dir, and HEAD descends from it
+      description: Footprint - the r19 branch differs from origin/main a4807791 only in goldens/f1-footprint.json, docs/nos-critique-r19.md and the spec dir, and HEAD descends from it
       command: node .agent/memory/project/specs/nos-critique-r19/checks/footprint.mjs
     - id: A3
-      description: Static - cancelled title and column (exact), the .nk-state .nk-cta override block (exact), confirmation not-found decided on the server via lib/ticket-status.ts with generateMetadata, success render and normalizeBookingRefParam byte-identical, poller refreshes on 404, status route keeps its responses, no new copy, docs F1
+      description: Static - cancelled title and column (exact), the .nk-state .nk-cta override block (exact), confirmation not-found decided on the server via lib/ticket-status.ts with generateMetadata, success render and normalizeBookingRefParam byte-identical, poller refreshes on a 404 at most once per mount then falls to timed-out (refresh-loop guard), status route keeps its responses, no new copy, docs F1
       command: node .agent/memory/project/specs/nos-critique-r19/checks/f1-static.mjs
     - id: A4
       description: Rendered (public + preview, 1280/390, cancelled with and without ref, confirmation with a bogus ref and with none) - Back to tickets is one nk-btn nk-cta at natural width, 50px, on the h1/lede edge; titles right in server HTML and document.title; not-found is one h1 with BASE's sentence as lede, no leftover h2 or 14px link

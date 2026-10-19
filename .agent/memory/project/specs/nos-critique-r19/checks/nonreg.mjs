@@ -8,7 +8,7 @@
 //       two states on preview, r16) reduced to 32px block means equals the BASE capture over every full block row: at most
 //       `tolerance.blocks` blocks may differ by more than `tolerance.level` (0-255) in any channel (live content such as the countdown).
 //   N3  no horizontal overflow.
-// `--capture` prints goldens/nonreg-baseline.json (captured by @architect on BASE 93940e04, both modes).
+// `--capture` prints goldens/nonreg-baseline.json (captured by @architect on BASE a4807791, both modes).
 import { deflateSync, inflateSync } from 'node:zlib';
 
 import { BASE, finish, golden } from './_lib.mjs';
