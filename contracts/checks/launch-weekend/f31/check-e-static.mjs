@@ -16,7 +16,7 @@ const ozow = stripComments(read('lib/payments/ozow.ts'));
 must("ozow.ts names the Abandoned status", ozow.includes("'Abandoned'"));
 must("ozow.ts names the PendingInvestigation status", ozow.includes("'PendingInvestigation'"));
 must("ozow.ts names the Pending status", /'Pending'/.test(ozow));
-must('confirmNotification still fail-closed on Status !== Complete', ozow.includes('matched.Status !== STATUS_COMPLETE'));
+must('confirmNotification still fail-closed on Status !== Complete', ozow.includes("statusField(matched, 'Status') !== STATUS_COMPLETE"));
 must('confirmed:true is still returned exactly once in ozow.ts', count(ozow, 'confirmed: true') === 1);
 
 const itn = stripComments(read('lib/tickets-notification.ts'));
