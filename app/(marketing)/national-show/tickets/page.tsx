@@ -53,9 +53,9 @@ const FOOT_OPTIONS = [
   {
     id: 'exhibit',
     heading: "I'm exhibiting orchids",
-    body: 'See what is involved in exhibiting at the National Show. Entry sales are not yet open — they open closer to the show.',
+    body: 'See what is involved in exhibiting at the National Show.',
     cta: 'Exhibitor entry',
-    href: '/national-show/exhibitors',
+    href: '/national-show/vendors/apply',
   },
   {
     id: 'trade',
