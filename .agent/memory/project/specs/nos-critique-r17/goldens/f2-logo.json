@@ -1,0 +1,87 @@
+{
+ "_note": "nos-critique-r17 F2 golden (QA input). Brad's beta review relayed by the lead (saoc-82), 2026-10-19: \"Vertical monotone logo, no paragraph just reg and NPO, paragraph is from SAOC remove it.\" BASE 5c093d6e. `chosen` is the ONE field the lead fills once Codi picks the file (copy the whole candidate object in); until then f2-static S3 and f2-rendered R1 FAIL as PENDING by design. The dev copies the chosen source byte-identical to `dest`; nothing under branding/ is added, deleted or committed.",
+ "base": "5c093d6e",
+ "chosen": null,
+ "candidates": {
+  "white": {
+   "source": "branding/National Show 2027/Logo/NOS-2027-logo-reversed-white-vertical.png",
+   "sha256": "265102a6a344e966caf321544e42b095a3d2856da169f34439b8ac09bee91e1a",
+   "dest": "public/images/NOS-2027-logo-reversed-white-vertical.png",
+   "path": "/images/NOS-2027-logo-reversed-white-vertical.png",
+   "dims": [
+    3272,
+    2876
+   ],
+   "inks": "emblem lilac-white (median rgb(238,237,246) 13.39:1 on royal, darkest shading rgb(150,142,196) 5.16:1); wordmark white rgb(255,255,255) 15.55:1; location line OLIVE rgb(190,191,106) 8.04:1 - two inks, not strictly monotone"
+  },
+  "gold": {
+   "source": "branding/National Show 2027/Logo/NOS-2027-logo-reversed-gold-vertical.png",
+   "sha256": "fdf12524658cc9ce5f7c5360a360b531d7d0e94b801bb667fdc3f9bc58959ede",
+   "dest": "public/images/NOS-2027-logo-reversed-gold-vertical.png",
+   "path": "/images/NOS-2027-logo-reversed-gold-vertical.png",
+   "dims": [
+    3272,
+    2876
+   ],
+   "inks": "single gold family: emblem median rgb(227,224,192) 11.62:1 on royal (darkest shading rgb(139,130,74) 3.99:1); wordmark pale gold rgb(243,242,214) 13.69:1; location line rgb(214,214,156) 10.34:1"
+  }
+ },
+ "geometry": {
+  "_note": "measured on both candidate files (identical geometry), file pixels",
+  "contentBox": [
+   229,
+   225,
+   3022,
+   2620
+  ],
+  "emblemBox": [
+   461,
+   232,
+   2811,
+   2008
+  ],
+  "wordmarkBand": [
+   2224,
+   2336
+  ],
+  "locationBand": [
+   2552,
+   2608
+  ]
+ },
+ "guidance": {
+  "source": "branding/National Show 2027/National Orchid Show 2027 Logo.pdf p.08 'Clear space and minimum size'",
+  "minEmblemPx": 24,
+  "clearSpaceOfEmblemWidth": 0.25,
+  "renderWidth": null,
+  "renderWidthGap": "Neither the logo PDF nor design/design_handoff_saoc gives a footer render size for the vertical lockup. The existing footer renders its vertical file at min(342px, 100%) at <=700px (components/nos-chrome/nos-chrome.css:154, NosFooter.tsx VERTICAL_BOX). DECISION NEEDED: the lead/Codi set renderWidth; the checks enforce only the PDF minimum and clear space until then."
+ },
+ "alt": "National Orchid Show, Western Cape 2027",
+ "altSource": "components/nos-chrome/NosFooter.tsx LOCKUP_ALT (the existing lockup's alt)",
+ "file": "components/nos-chrome/NosFooter.tsx",
+ "removed": {
+  "eyebrow": "South African Orchid Council",
+  "eyebrowConst": "FOOTER_ORG_NAME",
+  "paragraph": "A national coordinating body for affiliated orchid societies across South Africa — promoting culture, hybridisation and appreciation of orchids in cultivation since 1968.",
+  "paragraphConst": "FOOTER_BRAND_TEXT",
+  "oldImages": [
+   "/images/nos/nos-reversed-horizontal-1200.png",
+   "/images/nos/nos-reversed-white-vertical-900.png"
+  ]
+ },
+ "reg": {
+  "text": "REG# 1978/004040/08   NPO 043-901",
+  "const": "FOOTER_REG",
+  "file": "components/chrome/footer-data.ts",
+  "_note": "three U+00A0 no-break spaces between the REG number and NPO, exactly as BASE footer-data.ts"
+ },
+ "footerGround": "rgb(33, 26, 87)",
+ "routes": [
+  "/national-show",
+  "/national-show/tickets",
+  "/national-show/exhibitors"
+ ],
+ "saocRoute": "/about",
+ "minTypeRatio": 4.5,
+ "minGraphicRatio": 3
+}

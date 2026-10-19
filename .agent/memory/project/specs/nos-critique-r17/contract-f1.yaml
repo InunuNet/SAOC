@@ -1,0 +1,39 @@
+# Sources: Brad's beta review relayed by the lead (saoc-82) 2026-10-19 ("Exhibitor and Trader do the same vendor application flow."), architect measurement and link enumeration on 5c093d6e (goldens/f1-spec.md).
+schema: athanor.contract/v1
+slug: nos-critique-r17
+goal: >-
+  Point the "I'm exhibiting orchids" card's "Exhibitor entry" CTA on /national-show/tickets at the same vendor-application href as the trader
+  card and drop only the sentence "Entry sales are not yet open — they open closer to the show.", with no replacement copy.
+created_at: '2026-10-19'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json + f2-footprint.json (+ the F2 logo dest), docs/nos-critique-r17.md and this spec dir'
+    reason: 'Enforced by A2. The other links to /national-show/exhibitors (ShowBand, show overview, nav, show index, subnav, search overlay, sitemap, JSON-LD) are information links to the entry guide, enumerated in f1-spec.md section 2, and stay.'
+features:
+  - id: F1
+    name: Exhibitor card CTA goes to the vendor application flow
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r17/goldens/f1-spec.md
+  - .agent/memory/project/specs/nos-critique-r17/goldens/f1-edits.json
+  - .agent/memory/project/specs/nos-critique-r17/goldens/f1-footprint.json
+  - .agent/memory/project/specs/nos-critique-r17/goldens/nonreg-baseline.json
+  - .agent/memory/project/specs/nos-critique-r17/goldens/checks-f1.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f1 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r17/goldens/checks-f1.sha256
+    - id: A2
+      description: Footprint - the r17 branch differs from origin/main 5c093d6e only in the union of the r17 footprints (+ the F2 logo dest), docs/nos-critique-r17.md and the spec dir, and HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r17/checks/footprint.mjs
+    - id: A3
+      description: Static - tickets hub is BASE plus exactly the two golden lines (sentence removed, exhibitor href = vendor application), no new copy, docs F1
+      command: node .agent/memory/project/specs/nos-critique-r17/checks/f1-static.mjs
+    - id: A4
+      description: Rendered (public + preview, 1280/390) - exhibitor CTA "Exhibitor entry" has the trader CTA's href and lands on the same 200 page, body exact, the removed sentence appears nowhere
+      command: node .agent/memory/project/specs/nos-critique-r17/checks/f1-rendered.mjs
+    - id: A5
+      description: Non-regression (public + preview, 1280/390) - 17 SAOC and NOS routes keep geometry and screenshot above the footer, no overflow
+      command: node .agent/memory/project/specs/nos-critique-r17/checks/nonreg.mjs

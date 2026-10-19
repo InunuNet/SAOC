@@ -1,0 +1,34 @@
+{
+ "_note": "nos-critique-r17 F1 golden (QA input). Brad's beta review relayed by the lead (saoc-82), 2026-10-19: \"Exhibitor and Trader do the same vendor application flow.\" BASE 5c093d6e. Exactly two BASE lines of the tickets hub change; nothing else in the file.",
+ "base": "5c093d6e",
+ "route": "/national-show/tickets",
+ "section": "Exhibiting or trading?",
+ "file": "app/(marketing)/national-show/tickets/page.tsx",
+ "lineEdits": [
+  {
+   "line": 56,
+   "from": "    body: 'See what is involved in exhibiting at the National Show. Entry sales are not yet open — they open closer to the show.',",
+   "to": "    body: 'See what is involved in exhibiting at the National Show.',"
+  },
+  {
+   "line": 58,
+   "from": "    href: '/national-show/exhibitors',",
+   "to": "    href: '/national-show/vendors/apply',"
+  }
+ ],
+ "exhibit": {
+  "cardId": "exhibit",
+  "heading": "I'm exhibiting orchids",
+  "cta": "Exhibitor entry",
+  "body": "See what is involved in exhibiting at the National Show.",
+  "removed": "Entry sales are not yet open — they open closer to the show.",
+  "hrefBefore": "/national-show/exhibitors"
+ },
+ "trade": {
+  "cardId": "trade",
+  "heading": "I'm a nursery or trader",
+  "cta": "Vendor registration",
+  "href": "/national-show/vendors/apply"
+ },
+ "otherSites": "see f1-spec.md section 2: every other link to /national-show/exhibitors (public + preview) is an information link to the grower entry guide, not the dead-end entry CTA; none is in this golden and none changes."
+}
