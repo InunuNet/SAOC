@@ -27,7 +27,17 @@ The checkout step is `/tickets/<slug>` (`app/(marketing)/tickets/[slug]/page.tsx
   - The checkout page passes the hub's own markup pattern from `TicketsMasthead`: `nav.nk-crumbs[aria-label=Breadcrumb]`
     with National Show → Tickets → the product name, `span.nk-sep` separators, and `aria-current="page"` on the product.
     "Tickets" is a link here, where it is the current item on the hub.
-  - The pattern is reused, not extracted into a component, so `TicketsMasthead` and the hub stay unchanged.
+  - The pattern is reused, not extracted into a component.
+  - **Amendment (Codi FINAL, 2026-10-19): a dash never ends a line.** Each separator is bound to the item after it in a
+    `span.nk-crumb` unit: `span.nk-crumb > (span.nk-sep, item)`.
+    - The unit is `display: inline-flex; align-items: center; gap: 10px`, the nav's own gap and alignment, and the separator
+      gets `flex-shrink: 0`.
+    - A wrapped trail therefore breaks only between whole "— Item" pairs. At 390px it reads "National Show — Tickets", then
+      "— <product>" on the second line. At 1280px it is one line.
+    - The separator stays a real element with its existing `.nk-crumbs .nk-sep` rule, outside the link, so a link's
+      underline never runs under the dash.
+    - The hub's `TicketsMasthead` takes the same unit for its separator and "Tickets", and renders as before.
+  - **The current crumb is not a link** (Codi): the product name is `span[aria-current=page]`, as "Tickets" is on the hub.
   - The `nk-crumbs` colours apply unchanged on the hero's dark ground.
 - **BreadcrumbList.** The `/tickets` layout mounts no breadcrumb JSON-LD, so the checkout page emits one server-side with the
   existing `JsonLd` and `breadcrumbJsonLd`. It has the hub's two items (National Show `https://saoc.co.za/national-show`,

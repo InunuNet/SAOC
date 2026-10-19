@@ -57,8 +57,10 @@ export function TicketsMasthead({
         <div className="nk-masthead-copy">
           <nav className="nk-crumbs" aria-label="Breadcrumb">
             <Link href="/national-show">National Show</Link>
-            <span className="nk-sep" aria-hidden="true" />
-            <span aria-current="page">Tickets</span>
+            <span className="nk-crumb">
+              <span className="nk-sep" aria-hidden="true" />
+              <span aria-current="page">Tickets</span>
+            </span>
           </nav>
           <h1 id={HEADING_ID}>Tickets</h1>
           <Suspense fallback={null}>

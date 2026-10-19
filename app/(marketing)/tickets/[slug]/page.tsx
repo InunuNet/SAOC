@@ -179,10 +179,14 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
   const breadcrumbs = (
     <nav className="nk-crumbs" aria-label="Breadcrumb">
       <Link href="/national-show">National Show</Link>
-      <span className="nk-sep" aria-hidden="true" />
-      <Link href="/national-show/tickets">Tickets</Link>
-      <span className="nk-sep" aria-hidden="true" />
-      <span aria-current="page">{ticketType.name}</span>
+      <span className="nk-crumb">
+        <span className="nk-sep" aria-hidden="true" />
+        <Link href="/national-show/tickets">Tickets</Link>
+      </span>
+      <span className="nk-crumb">
+        <span className="nk-sep" aria-hidden="true" />
+        <span aria-current="page">{ticketType.name}</span>
+      </span>
     </nav>
   );
 

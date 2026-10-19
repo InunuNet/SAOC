@@ -1524,6 +1524,16 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   height: 1.5px;
   background: var(--olive);
 }
+/* r18 amendment (Codi FINAL 2026-10-19): each separator travels with the item after it, so a wrapped trail never
+   ends a line with a dash. */
+.nos-theme .nk-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.nos-theme .nk-crumb .nk-sep {
+  flex-shrink: 0;
+}
 .nos-theme .nk-masthead h1 {
   margin: 0;
   font-family: var(--serif);
