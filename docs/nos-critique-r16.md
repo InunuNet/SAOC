@@ -70,13 +70,18 @@ Codi's rulings, FINAL, relayed by the lead (saoc-82) on 2026-10-19. BASE `origin
     - (b) "The SAOC mark on its own, transparent background.";
     - (c) has no description.
 
-    The format line (PNG · W×H · transparent) is read from each file, and all three are RGBA PNGs.
+    Each tile's format line (PNG · W×H · transparent) is a fixed string in `LOGO_ASSETS`, not read at runtime. The values
+    match the files, which are all RGBA PNGs.
 - **"What's on" rows are one link each.** On / (`components/ui/EventRow.tsx`, fed by `EventsStrip`) and on /events
-  (`components/events/EventCard.tsx`), each row is now a single link to `/events/<slug>`. Its accessible name is exactly the
-  event title (`aria-label`), and nothing interactive sits inside or beside it.
+  (`components/events/EventCard.tsx`), each row is now a single link to `/events/<slug>`, and nothing interactive sits
+  inside or beside it.
+  - The link is named by the title through `aria-labelledby`, so its accessible name is exactly the event title. It is
+    described by the visible date and venue through `aria-describedby`. The ids come from `useId`, so they are unique per
+    row.
   - On /, the aria-hidden arrow stays inside the link.
-  - The hover background moved onto the link, on both routes.
-  - A home row without a slug renders unlinked, as before.
+  - The hover background moved onto the link on both routes. On /events the title underlines on hover and focus
+    (`group-hover`, `group-focus-visible`).
+  - A row without a slug, on / or /events, renders with no link and no arrow, so nothing links to a missing page.
   - **Lead-confirmed as written (2026-10-19):**
     - The National Show row goes to `/events/19th-south-african-national-orchid-show`, rather than `eventHref`'s
       /national-show. The /events JSON-LD still uses `eventHref`, unchanged.
