@@ -32,7 +32,8 @@ The checkout step is `/tickets/<slug>` (`app/(marketing)/tickets/[slug]/page.tsx
 - **BreadcrumbList.** The `/tickets` layout mounts no breadcrumb JSON-LD, so the checkout page emits one server-side with the
   existing `JsonLd` and `breadcrumbJsonLd`. It has the hub's two items (National Show `https://saoc.co.za/national-show`,
   Tickets `https://saoc.co.za/national-show/tickets`), then the product at `https://saoc.co.za/tickets/<slug>`, the page's
-  canonical URL.
+  canonical URL. The slug is percent-encoded with `encodeURIComponent`, so reserved or non-ASCII characters still give a
+  valid URL.
 - **Wrapping at 390px (architect decision).** `.nos-theme .nk-crumbs` in `app/(marketing)/national-show/nos-structure.css`
   gains `flex-wrap: wrap`.
   - Without it, the five-item trail squeezes "National Show" onto two lines and shrinks the separators at 390px.

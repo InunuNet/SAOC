@@ -191,7 +191,7 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
       <JsonLd
         data={breadcrumbJsonLd([
           ...HUB_TRAIL.map(({ name, href }) => ({ name, url: `${SITE_ORIGIN}${href}` })),
-          { name: ticketType.name, url: `${SITE_ORIGIN}/tickets/${slug}` },
+          { name: ticketType.name, url: `${SITE_ORIGIN}/tickets/${encodeURIComponent(slug)}` },
         ])}
       />
       <NosHero
