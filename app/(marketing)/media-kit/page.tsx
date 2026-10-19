@@ -135,6 +135,8 @@ export default function MediaKitPage() {
                     src={asset.preview}
                     alt={`${asset.name} preview`}
                     fill
+                    // r16 F3: a brand asset is never derived, so the preview is the file itself.
+                    unoptimized
                     className="object-contain p-4"
                     sizes="(min-width: 1024px) 33vw, 50vw"
                   />
