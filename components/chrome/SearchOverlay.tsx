@@ -34,7 +34,7 @@ const SUGGESTIONS: ReadonlyArray<{ label: string; href: string }> = [
   { label: 'Plan your visit to the show', href: '/national-show/plan-your-visit' },
   { label: 'What to expect at the show', href: '/national-show/what-to-expect' },
   { label: 'Visitor questions', href: '/national-show/faq' },
-  { label: 'Exhibit at the National Show', href: '/national-show/exhibitors' },
+  { label: 'Exhibit at the National Show', href: '/national-show/vendors/apply' },
   { label: 'Events calendar', href: '/events' },
   { label: 'Contact the council', href: '/contact' },
 ];
