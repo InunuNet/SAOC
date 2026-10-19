@@ -1,0 +1,7 @@
+{
+  "note": "The only new user-facing strings F30 may add. All are admin-only UI/API strings. NO new public-page copy: the public page, its intro, empty state and lede are untouched.",
+  "adminButton": "Publish to listing",
+  "adminErrorsAndStates": ["Published", "Already listed", "Not eligible for the listing", "Publish failed", "No consent signal"],
+  "consentConfirm": "marketingPermission is missing. Publish anyway? (explicit admin act)",
+  "note2": "Wording of admin states is a dev call within these meanings; public copy is Lee-Ann's. Studio field title for the new field: Bio."
+}

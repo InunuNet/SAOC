@@ -1,0 +1,16 @@
+{
+  "basis": "approved",
+  "note": "Brad 2026-10-19: list approved vendors for now, ask Lee-Ann. The single predicate isVendorListingEligible takes status, paymentReceived and standOrderStatus so that switching to paid later changes only its body.",
+  "cases": [
+    { "status": "approved", "paymentReceived": false, "standOrderStatus": null, "expected": true },
+    { "status": "approved", "expected": true },
+    { "status": "approved", "paymentReceived": true, "standOrderStatus": "paid", "expected": true },
+    { "status": "submitted", "paymentReceived": true, "standOrderStatus": "paid", "expected": false },
+    { "status": "under-review", "expected": false },
+    { "status": "rejected", "paymentReceived": true, "standOrderStatus": "paid", "expected": false },
+    { "status": "Approved", "expected": false },
+    { "status": " approved", "expected": false },
+    { "status": "", "expected": false },
+    { "status": "unknown-status", "expected": false }
+  ]
+}

@@ -1,0 +1,81 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: One public Exhibitors and Vendors listing at the existing /national-show/vendors route, fed by Sanity vendorNursery documents that an admin publishes from approved Firestore vendor submissions (allowlisted public fields only), and that Brad and Lee-Ann then own and edit in Studio without a re-publish ever overwriting their edits.
+created_at: '2026-10-19'
+autonomy: high
+features:
+  - id: F30
+    name: Public vendor listing - approved-vendor gate (single named predicate), allowlisted Firestore-to-Sanity publish action, create-once republish rule, bio field on the existing vendorNursery type and VendorGrid (no new page, no new type, no public copy)
+    status: pending
+# GATE: cwd = the implementation tree (repo root). Every behavioural check is offline (fixtures + an in-memory Sanity double that throws on any method but getDocument/createIfNotExists). BASE_REF (default origin/main) is used by the scope and unchanged-page checks. Do not run pnpm build while a dev server of the same tree is running.
+# Tier: standard. One @dev dispatch. Spec: goldens/f30/f30-spec.md. No design decision is open for @dev; the visual card is the existing VendorGrid.
+# Not a gate assertion (needs deployed beta, Sanity write token, Brad's approval): after deploy the orchestrator may publish ONE fixture-named approved vendor from /admin/vendors and confirm it renders on /national-show/vendors, then delete it in Studio. Not in this contract because it mutates live Sanity.
+goldens:
+  - .agent/memory/project/specs/launch-weekend/goldens/f30/f30-spec.md
+  - .agent/memory/project/specs/launch-weekend/goldens/f30/projection-allowlist.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f30/eligibility-table.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f30/republish-rule.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f30/pii-fixture.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f30/strings-allowed.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f30/scope-allowlist.json
+open_questions:
+  - id: Q1
+    to: Lee-Ann
+    question: Is "approved by the committee" the right bar for a vendor to appear on the public listing, or should a vendor only appear once the stand is paid? (Built as approved; the gate is one predicate and switches to paid in one place.)
+  - id: Q2
+    to: Lee-Ann
+    question: Consent wording. The registration form's only signal is the optional "Marketing permission" radio - full event marketing use, or "I do not grant permission for use beyond the vendor listing". Does either answer count as agreement to be listed publicly, and what should happen for vendors who left it blank (built as - not published unless an admin explicitly confirms)?
+  - id: Q3
+    to: Lee-Ann
+    question: Which fields should be public? Built v1 as name, country, website and the vendor's bio only. Confirm, and say whether to add the logo, product photos, product categories (the 14 on the application form) and social links.
+  - id: Q4
+    to: Lee-Ann
+    question: Social media. The form stores handles, not links. Should the site turn a handle into a link, or should the committee type the link in Studio?
+  - id: Q5
+    to: Lee-Ann
+    question: Should the stand number appear on the public listing? It is assigned later by the office and can change.
+  - id: Q6
+    to: Lee-Ann
+    question: Which name is shown - the trading name, or the registered business name? (Built as trading name when given, else business name.)
+  - id: Q7
+    to: Brad
+    question: Logo and photos live in private Firebase Storage. Copying them to Sanity is a separate build (Storage read plus asset upload). Wanted for launch, or do editors add logos in Studio?
+  - id: Q8
+    to: Brad
+    question: A published vendor with a country also appears on /national-show/sa-exhibitors or /international-guests (they read the same Sanity type). Keep, or hide those pages from navigation while there is one listing? Not changed here.
+  - id: Q9
+    to: Brad
+    question: Wording shown on the public page about who is listed (for example "approved exhibitors") is Lee-Ann's to supply; the existing lede and empty state are untouched.
+assertions:
+  phase: 4
+  checks:
+    - id: F30-A1
+      description: The single eligibility predicate isVendorListingEligible returns true only for status exactly approved (any case, whitespace or unknown variant is false, and rejected or submitted vendors are false even when paid), and the basis constant is approved
+      command: pnpm exec tsx contracts/checks/launch-weekend/f30/check-a-eligibility.mts
+    - id: F30-A2
+      description: projectVendorListing is a strict allowlist of name, country, website and bio - a fixture full of contact, address, VAT, vehicle, insurance, permit, payment, signature and office fields leaks none of it, blank fields are omitted, trading name falls back to business name, non-http websites are dropped, and no undefined own property is produced
+      command: pnpm exec tsx contracts/checks/launch-weekend/f30/check-b-projection.mts
+    - id: F30-A3
+      description: publishVendorListing against an in-memory Sanity double that throws on any method but getDocument and createIfNotExists - ineligible vendors make zero Sanity calls, approved ones are created once under vendorNursery-<id> (no dot in the id) with allowlisted keys only, a missing consent signal is refused unless acknowledged, an existing or Studio-drafted document is never touched on re-publish, and a second publish is a no-op
+      command: pnpm exec tsx contracts/checks/launch-weekend/f30/check-c-publish.mts
+    - id: F30-A4
+      description: Static wiring - admin route gated by getAdminSession and review-vendor-applications before any Firestore read, no Sanity mutation other than createIfNotExists, token only from server env, pure lib module, eligibility basis stated only in the predicate, audit written with update and coalesced to null, bio on schema, query, grid and types, Publish to listing action in the admin table, public vendors page.tsx unchanged, the outreach spreadsheet never referenced
+      command: node contracts/checks/launch-weekend/f30/check-d-static.mjs
+    - id: F30-A5
+      description: VendorGrid renders the bio paragraph in the neighbouring paragraph markup and prints nothing for a nursery without one
+      command: pnpm exec tsx contracts/checks/launch-weekend/f30/check-e-render.mts
+    - id: F30-A6
+      description: The F30 checks themselves are offline - no Sanity or Firebase client constructor, admin init, token read or network call, so no check can mutate live Sanity or Firestore
+      command: node contracts/checks/launch-weekend/f30/check-g-no-live-client.mjs
+    - id: F30-A7
+      description: Every changed file is on the F30 allowlist - no public page, NurseryCard, sa-exhibitors or international-guests page, email, review route, form or sanity/lib file is edited
+      command: node contracts/checks/launch-weekend/f30/check-f-scope.mjs
+    - id: F30-A8
+      description: Lint passes
+      command: pnpm lint
+    - id: F30-A9
+      description: Type check passes
+      command: pnpm type-check
+    - id: F30-A10
+      description: Production build passes
+      command: pnpm build

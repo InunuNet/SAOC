@@ -1,0 +1,8 @@
+{
+  "rule": "Sanity is the source of truth after first publication. Publish creates the document ONLY if neither the published document nor its Studio draft exists (createIfNotExists, deterministic id). If either exists the call is a no-op returning outcome already-listed: no field is refreshed, merged or patched. Refreshing from Firestore is a deliberate non-feature in v1; a per-field 'refresh from submission' action is future work and needs its own contract.",
+  "documentId": "vendorNursery-<submissionId>",
+  "idRules": "Hyphen, never a dot: a dot in a Sanity _id makes the document non-public (invisible to the anonymous read the site uses). Must not start with drafts. or versions.",
+  "forbiddenMutations": ["createOrReplace", "createOrUpdate", "patch", "delete", "mutate", "transaction"],
+  "knownEdge": "If an editor deletes the listing in Studio and an admin then clicks Publish again, the document is recreated from the submission. That is an explicit admin act, not a silent overwrite, and is the supported way to re-list a vendor.",
+  "audit": "Firestore only (never in the public Sanity document, which anonymous readers can query): vendorSubmissions/{id}.listingPublishedAt (Date), listingPublishedBy (admin email), listingDocumentId. Written with null coalescing, only on outcome created."
+}

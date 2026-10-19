@@ -1,0 +1,27 @@
+{
+  "publicFields": ["name", "country", "website", "bio"],
+  "sanityDocumentKeys": ["_id", "_type", "name", "country", "website", "bio"],
+  "mapping": {
+    "name": "tradingName when non-blank, else businessName",
+    "country": "countryOfBusinessRegistration, trimmed, omitted when blank",
+    "website": "website, kept only when it parses as an http or https URL, else omitted",
+    "bio": "bio, trimmed, omitted when blank"
+  },
+  "deferredFromV1": {
+    "logo": "lives in private Firebase Storage (vendor-marketing/{id}/logo.*); copying needs a Storage read plus a Sanity asset upload. Editors add the logo in Studio.",
+    "productPhotos": "same as logo; and 'listing-only' permission arguably excludes them",
+    "socialMedia": "the form stores handles, not URLs; deriving a URL from a handle is a guess. Open question to Lee-Ann.",
+    "categories": "the 14 category labels live in a client component (VendorApplyForm.tsx); needs a shared label map. Open question.",
+    "standNumber": "boothNumber is office-use and may change; open question to Lee-Ann."
+  },
+  "neverPublic": [
+    "contactPersonName", "contactCellPhone", "contactEmail", "contactPosition", "alternativeContactNumber",
+    "accountsContactName", "accountsContactEmail", "emergencyContactName", "emergencyContactRelationship",
+    "emergencyContactCellPhone", "physicalAddress", "postalAddress", "cipcNumber", "vatNumber",
+    "vehicleRegistrations", "carRegistrationNumber", "suvBakkieRegistrationNumber", "panelVanRegistrationNumber",
+    "deliveryVanRegistrationNumber", "truckRegistrationNumber", "trailerRegistrationNumber",
+    "otherVehicleRegistrationNumber", "publicLiabilityInsurancePolicyNumber", "productLiabilityInsurancePolicyNumber",
+    "phytosanitaryPermitNumber", "citesPermitNumber", "foodHandlingCertificateNumber", "paymentReference",
+    "proofOfPaymentPath", "signatureFullName", "reviewedBy", "paymentConfirmedBy", "boothNumber", "id"
+  ]
+}

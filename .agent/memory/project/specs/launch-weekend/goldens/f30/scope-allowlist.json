@@ -1,0 +1,20 @@
+{
+  "baseRefEnv": "BASE_REF",
+  "baseRefDefault": "origin/main",
+  "allowed": [
+    "^lib/vendor-listing\\.ts$",
+    "^lib/vendor-listing-sanity\\.ts$",
+    "^app/api/admin/vendors/\\[id\\]/publish-listing/route\\.ts$",
+    "^components/admin/VendorReviewTable\\.tsx$",
+    "^sanity/schemas/documents/vendorNursery\\.ts$",
+    "^sanity/queries\\.ts$",
+    "^components/vendors/VendorGrid\\.tsx$",
+    "^types/index\\.ts$",
+    "^contracts/checks/",
+    "^contracts/golden/",
+    "^docs/",
+    "^README\\.md$",
+    "^\\.agent/memory/"
+  ],
+  "note": "Deliberately NOT allowed: the public page app/(marketing)/national-show/vendors/page.tsx (reused unchanged: existing route, intro, empty state, holding logic), NurseryCard and the sa-exhibitors / international-guests pages (parallel listings; separate decision), any email template, lib/vendor-review.ts and the review route (approval flow untouched), lib/vendor-submissions.ts (no form change), anything under sanity/lib, app/studio, firestore rules. Needing a file outside this list is a stop-and-ask."
+}
