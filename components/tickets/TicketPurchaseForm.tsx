@@ -182,13 +182,8 @@ export function TicketPurchaseForm({
         </p>
       ) : null}
 
-      <div
-        data-catalogue-total=""
-        aria-live="polite"
-        aria-atomic="true"
-        className="nk-checkout-total"
-      >
-        <p>
+      <div data-catalogue-total="" className="nk-checkout-total">
+        <p aria-live="polite" aria-atomic="true">
           Total <strong>{formatRand(cart.estimatedTotal)}</strong>
         </p>
         <button

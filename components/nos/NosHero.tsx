@@ -51,6 +51,8 @@ export interface NosHeroProps {
    * the CTAs. Inner: a single optional link row below the standfirst.
    */
   actions?: ReactNode;
+  /** An optional breadcrumb trail, rendered before the h1 (the checkout step's hub trail, r18). */
+  crumbs?: ReactNode;
   /** Loads the image eagerly at high priority — reserve for the above-the-fold hero. */
   priority?: boolean;
   className?: string;
@@ -63,6 +65,7 @@ export function NosHero({
   lede,
   ledeKind,
   actions,
+  crumbs,
   priority = false,
   className = '',
 }: NosHeroProps) {
@@ -106,6 +109,7 @@ export function NosHero({
         ) : null}
         {isHub && photo ? <div aria-hidden="true" className="nos-hero-scrim" /> : null}
         <div className="nos-hero-copy">
+          {crumbs}
           <h1 className="nos-hero-title">{title}</h1>
           {isHub ? (
             <div className="nos-hero-body">

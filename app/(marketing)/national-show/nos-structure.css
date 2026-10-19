@@ -1502,6 +1502,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
   font-family: var(--sans);
   font-size: 15px;
   font-weight: 600;

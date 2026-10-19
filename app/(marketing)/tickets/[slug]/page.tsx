@@ -1,8 +1,10 @@
 import { viewerIsVerifiedAdmin } from '@/lib/admin-viewer';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { NosHero } from '@/components/nos/NosHero';
+import { JsonLd, breadcrumbJsonLd } from '@/components/seo/JsonLd';
 import { SalesClosedNotice, TicketPurchaseForm } from '@/components/tickets';
 import type { TicketTypeCardData } from '@/components/tickets';
 import { TicketCard } from '@/components/tickets/keepsake';
@@ -27,6 +29,14 @@ import { buildPageMetadata } from '@/lib/seo';
 export const dynamic = 'force-dynamic';
 
 const NOS_TITLE_SUFFIX = ' — National Orchid Show | SAOC';
+
+// r18 (Codi): the checkout step carries the tickets hub's breadcrumb (TicketsMasthead) one level
+// deeper, and mirrors the hub's BreadcrumbList (NosBreadcrumbJsonLd) with the product appended.
+const SITE_ORIGIN = 'https://saoc.co.za';
+const HUB_TRAIL = [
+  { name: 'National Show', href: '/national-show' },
+  { name: 'Tickets', href: '/national-show/tickets' },
+];
 
 const FALLBACK_SOLD_OUT = 'Sold out';
 const FALLBACK_SALES_CLOSED = 'Ticket sales are not yet open — check back soon.';
@@ -166,12 +176,29 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
   const summaryDay = cardData.requiresDaySelection ? (day ?? showDays[0] ?? null) : null;
   const purchasable = salesOpen && !cardData.soldOut;
 
+  const breadcrumbs = (
+    <nav className="nk-crumbs" aria-label="Breadcrumb">
+      <Link href="/national-show">National Show</Link>
+      <span className="nk-sep" aria-hidden="true" />
+      <Link href="/national-show/tickets">Tickets</Link>
+      <span className="nk-sep" aria-hidden="true" />
+      <span aria-current="page">{ticketType.name}</span>
+    </nav>
+  );
+
   return (
     <>
+      <JsonLd
+        data={breadcrumbJsonLd([
+          ...HUB_TRAIL.map(({ name, href }) => ({ name, url: `${SITE_ORIGIN}${href}` })),
+          { name: ticketType.name, url: `${SITE_ORIGIN}/tickets/${slug}` },
+        ])}
+      />
       <NosHero
         route={`/tickets/${ticketType.slug}`}
         title={ticketType.name}
         lede={ticketType.description}
+        crumbs={breadcrumbs}
         className="nk-hero-compact"
       />
 
@@ -188,7 +215,7 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
             <TicketCard
               productId={productId}
               variant="summary"
-              headingLevel="h2"
+              headingLevel="p"
               day={summaryDay}
               provisionalPrice={cardData.provisional}
               name={ticketType.name}

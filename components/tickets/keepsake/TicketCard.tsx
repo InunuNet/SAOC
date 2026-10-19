@@ -40,8 +40,8 @@ export interface TicketCardProps {
   // whether the price is provisional (its note sits under the price).
   day?: string | null;
   provisionalPrice?: boolean;
-  /** Name heading level; card lists under a section h2 keep the default h3, the single-ticket page opts into h2. */
-  headingLevel?: 'h2' | 'h3';
+  /** Name element; card lists under a section h2 keep the default h3, the checkout summary opts into p (its name repeats the page h1, r18). */
+  headingLevel?: 'h3' | 'p';
 }
 
 interface DayPickerProps {
