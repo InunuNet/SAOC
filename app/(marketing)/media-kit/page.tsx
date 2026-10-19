@@ -20,40 +20,37 @@ const QUICK_FACTS = [
 
 interface LogoAsset {
   name: string;
-  description: string;
+  description?: string;
   href: string;
   preview: string;
   format: string;
+  /** Preview ground when the asset is made for a dark background (default: bone). */
+  previewClassName?: string;
 }
 
+// r16 F3 (Codi): exactly the three brand tiles, each file served byte-identical (no recolour, no
+// derivation). The paper/brass lockup set and the old kit emblem are retired from the kit.
 const LOGO_ASSETS: LogoAsset[] = [
   {
-    name: 'Emblem — Eulophia speciosa',
+    name: 'Full lockup — emblem and name',
+    description: 'Emblem and wordmark, for light backgrounds.',
+    href: '/images/saoc-lockup-horizontal-full-name.png',
+    preview: '/images/saoc-lockup-horizontal-full-name.png',
+    format: 'PNG · 3757×493 · transparent',
+  },
+  {
+    name: 'Emblem — full colour',
     description: 'The SAOC mark on its own, transparent background.',
-    href: '/downloads/media-kit/saoc-emblem.png',
-    preview: '/downloads/media-kit/saoc-emblem.png',
+    href: '/images/Eulophia-speciosa-emblem.png',
+    preview: '/images/Eulophia-speciosa-emblem.png',
     format: 'PNG · 1254×1254 · transparent',
   },
   {
-    name: 'Full lockup — ink',
-    description: 'Emblem and wordmark, for light backgrounds.',
-    href: '/images/saoc-logo-ink-paper.png',
-    preview: '/images/saoc-logo-ink-paper.png',
-    format: 'PNG · 767×700 · transparent',
-  },
-  {
-    name: 'Full lockup — sage',
-    description: 'Emblem and wordmark in the primary brand colour.',
-    href: '/images/saoc-logo-sage-paper.png',
-    preview: '/images/saoc-logo-sage-paper.png',
-    format: 'PNG · 767×700 · transparent',
-  },
-  {
-    name: 'Full lockup — flat',
-    description: 'Single-colour emblem and wordmark, for one-colour print.',
-    href: '/images/saoc-logo-flat-paper.png',
-    preview: '/images/saoc-logo-flat-paper.png',
-    format: 'PNG · 767×700 · transparent',
+    name: 'Emblem — for dark backgrounds',
+    href: '/images/saoc-emblem-footer-lapis-2x.png',
+    preview: '/images/saoc-emblem-footer-lapis-2x.png',
+    format: 'PNG · 640×618 · transparent',
+    previewClassName: 'bg-primary-800',
   },
 ];
 
@@ -130,22 +127,26 @@ export default function MediaKitPage() {
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-6">
             Brand assets
           </p>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {LOGO_ASSETS.map((asset) => (
               <div key={asset.href} className="border border-rule bg-parchment p-6 flex flex-col">
-                <div className="relative aspect-square bg-bone">
+                <div className={`relative aspect-square ${asset.previewClassName ?? 'bg-bone'}`}>
                   <Image
                     src={asset.preview}
                     alt={`${asset.name} preview`}
                     fill
                     className="object-contain p-4"
-                    sizes="(min-width: 1024px) 25vw, 50vw"
+                    sizes="(min-width: 1024px) 33vw, 50vw"
                   />
                 </div>
                 <h2 className="mt-4 font-serif text-[16px] font-medium text-ink">{asset.name}</h2>
-                <p className="mt-1 font-sans text-[13px] leading-[1.55] text-ink/70 flex-1">
-                  {asset.description}
-                </p>
+                {asset.description ? (
+                  <p className="mt-1 font-sans text-[13px] leading-[1.55] text-ink/70 flex-1">
+                    {asset.description}
+                  </p>
+                ) : (
+                  <div className="flex-1" />
+                )}
                 <p className="mt-2 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted">
                   {asset.format}
                 </p>

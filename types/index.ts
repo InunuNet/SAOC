@@ -31,6 +31,8 @@ export type SocietyEvent = {
   kind: string;
   province: string;
   description?: string;
+  /** Sanity slug; when present the row links to /events/<slug>. */
+  slug?: string;
 };
 
 export type NationalShow = {

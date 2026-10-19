@@ -34,6 +34,7 @@ export function EventsStrip({ events }: EventsStripProps) {
     venue: e.venue ?? '',
     kind: e.kind,
     province: e.location ?? '',
+    slug: e.slug ?? undefined,
   }));
   const preview = sanityMapped.slice(0, PREVIEW_COUNT);
 

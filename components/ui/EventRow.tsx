@@ -1,8 +1,16 @@
+import Link from 'next/link';
+
 import type { SocietyEvent } from '@/types';
 
 interface EventRowProps {
   event: SocietyEvent;
 }
+
+const ROW_CLASSES = [
+  'flex items-stretch gap-0',
+  'transition-[padding,background] duration-150',
+  'hover:bg-bone/60 hover:pl-1',
+].join(' ');
 
 export function EventRow({ event }: EventRowProps) {
   const d = new Date(event.date);
@@ -10,14 +18,8 @@ export function EventRow({ event }: EventRowProps) {
   const month = d.toLocaleDateString('en-ZA', { month: 'short', timeZone: 'UTC' }).toUpperCase();
   const year = d.getUTCFullYear().toString();
 
-  return (
-    <article
-      className={[
-        'flex items-stretch gap-0 border-b border-rule',
-        'transition-[padding,background] duration-150',
-        'hover:bg-bone/60 hover:pl-1',
-      ].join(' ')}
-    >
+  const content = (
+    <>
       {/* Date block */}
       <div
         className="flex flex-col items-center justify-center w-[110px] shrink-0 py-5 border-l-[3px]"
@@ -54,6 +56,20 @@ export function EventRow({ event }: EventRowProps) {
           →
         </span>
       </div>
+    </>
+  );
+
+  // r16 F3 (Codi): the whole row is one link to the event page, named by the event title alone
+  // (the date, kind, venue and host are context, not part of the link's name).
+  return (
+    <article className="border-b border-rule">
+      {event.slug ? (
+        <Link href={`/events/${event.slug}`} aria-label={event.title} className={ROW_CLASSES}>
+          {content}
+        </Link>
+      ) : (
+        <div className={ROW_CLASSES}>{content}</div>
+      )}
     </article>
   );
 }
