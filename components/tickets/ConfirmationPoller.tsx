@@ -22,7 +22,9 @@ import { ticketsPageQuery } from '@/sanity/queries';
 // On detecting paid/checked-in, this calls router.refresh() instead of rendering the confirmed
 // state itself — that re-runs the Server Component for the current URL, which now finds the
 // paid ticket and renders the QR/details/download branch server-side. A 404 (nos-critique-r19)
-// refreshes the same way: page.tsx decides "booking not found" server-side and renders it.
+// refreshes the same way, once per mount: page.tsx decides "booking not found" server-side and
+// renders it. A second 404 (the server lookup failed and rendered this poller again) ends in
+// the timed-out state instead of refreshing in a loop.
 const POLL_INTERVAL_MS = 3_000;
 const MAX_POLL_ATTEMPTS = 20; // ~1 minute of polling before we stop and say so.
 const CONFIRMED_STATUSES = new Set(['paid', 'checked-in']);
@@ -53,6 +55,7 @@ export function ConfirmationPoller({ bookingRef }: ConfirmationPollerProps) {
   useEffect(() => {
     let attempts = 0;
     let cancelled = false;
+    let refreshedOn404 = false;
 
     async function poll() {
       if (bookingRef.trim().length === 0) {
@@ -64,7 +67,13 @@ export function ConfirmationPoller({ bookingRef }: ConfirmationPollerProps) {
         const res = await fetch(`/api/tickets/status?ref=${encodeURIComponent(bookingRef)}`);
         if (cancelled) return;
         if (res.status === 404) {
+          if (refreshedOn404) {
+            setState('timed-out');
+            return;
+          }
+          refreshedOn404 = true;
           router.refresh();
+          if (!cancelled) setTimeout(poll, POLL_INTERVAL_MS);
           return;
         }
         const data = (await res.json()) as { status?: string };

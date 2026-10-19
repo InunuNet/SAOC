@@ -37,6 +37,12 @@ link "Back to tickets" to `/national-show/tickets`.
   - `ConfirmationPoller` loses its not-found state, branch and copy field. A 404 now calls `router.refresh()`, so the server
     renders the not-found state (a ticket deleted mid-poll is the only way to reach it now). Its checking, reserved and
     timed-out states and their link are unchanged.
+  - **Refresh-loop guard** (Codi FINAL, pre-merge). If the server-side lookup throws, the page renders the poller again, and
+    an unguarded 404 would then refresh forever. A `refreshedOn404` flag sits beside `attempts` in the polling effect
+    (`router.refresh()` keeps the poller mounted, so the flag survives the refresh). The first 404 sets it, refreshes once
+    and keeps polling; if the server now renders not-found, the poller unmounts and its cleanup stops the loop. A 404 with
+    the flag already set ends in the existing timed-out state. `router.refresh()` is called in exactly three places: the
+    empty ref, the guarded 404 and a confirmed status. No new copy.
   - `getConfirmedOrderForDisplay` and `getTicketStatus` are wrapped in React `cache()`, so `generateMetadata` and the page
     share one lookup per request.
   - `normalizeBookingRefParam` and the whole success render are byte-identical to BASE, including the success state's own
