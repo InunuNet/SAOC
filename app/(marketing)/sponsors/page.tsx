@@ -145,7 +145,7 @@ export default async function SponsorsPage() {
           )}
           <Link
             href="/contact"
-            className="mt-6 inline-flex min-h-11 items-center bg-ink px-6 py-3 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-ink/85"
+            className="mt-6 inline-flex min-h-11 items-center rounded-[length:var(--radius-1)] bg-primary px-6 py-3 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary-800"
           >
             Talk to us about sponsorship
           </Link>

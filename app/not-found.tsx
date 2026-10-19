@@ -2,6 +2,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 
+import { SkipLink, UtilityBar, Header, Footer } from '@/components/chrome';
+import { sanityFetch } from '@/sanity/lib/fetch';
+import { nationalShowQuery } from '@/sanity/queries';
+import type { ShowIdentity } from '@/types';
+
 export const metadata: Metadata = {
   title: 'Page not found',
   description:
@@ -42,13 +47,13 @@ export function NotFoundSection() {
             href="/"
             className="font-sans text-[14px] font-medium bg-accent px-6 py-3 text-ink transition-colors duration-150 hover:bg-accent-soft"
           >
-            Go Home
+            Go home
           </Link>
           <Link
             href="/societies"
             className="font-sans text-[14px] font-medium border border-ivory/40 px-6 py-3 text-ivory transition-colors duration-150 hover:bg-ivory/10"
           >
-            Find a Society
+            Find a society
           </Link>
         </div>
       </div>
@@ -56,12 +61,25 @@ export function NotFoundSection() {
   );
 }
 
-// An unmatched URL renders here under the root layout alone, which has no <main>. A notFound()
-// from a marketing page renders app/(marketing)/not-found.tsx instead, inside the chrome's <main>.
-export default function NotFound() {
+// An unmatched URL renders here under the root layout alone, which has no chrome. r16 F2 (Codi):
+// it composes the SAOC chrome the way app/(marketing)/layout.tsx does, so a mistyped URL keeps the
+// site's header, footer and skip link. A notFound() from a marketing page renders
+// app/(marketing)/not-found.tsx instead, inside the layout's own chrome.
+export default async function NotFound() {
+  const show = await sanityFetch<ShowIdentity>({
+    query: nationalShowQuery,
+    tags: ['nationalShow', 'sanity'],
+  });
+
   return (
-    <main>
-      <NotFoundSection />
-    </main>
+    <>
+      <SkipLink />
+      <UtilityBar show={show} />
+      <Header show={show} />
+      <main id="main-content" tabIndex={-1}>
+        <NotFoundSection />
+      </main>
+      <Footer />
+    </>
   );
 }
