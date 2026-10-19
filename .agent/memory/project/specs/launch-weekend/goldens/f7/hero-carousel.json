@@ -1,0 +1,11 @@
+{
+  "source": "design/design_handoff_saoc/README.md:135,199 (4-image crossfade, 1400ms fade, 5.5s auto-advance, clickable dots); src/styles.css:557-565 .hero__scrim rgba(22,26,22) .58/.42/.78; src/styles.css:646-649 .pagehero__scrim .55 -> .80; src/styles.css:1625-1628 .show-hero__scrim .72 -> .84",
+  "scrimMinPercent": 55,
+  "ivoryLuminance": 0.8972,
+  "ledeMinContrast": 4.5,
+  "advanceWithinMs": 7500,
+  "pauseHoldMs": 7500,
+  "reducedMotionObserveMs": 8000,
+  "fadeSettleMs": 1800,
+  "note": "ivoryLuminance is relative luminance of --ivory #f4f3ec. The lede contrast is measured per slide: lede text hidden, the box under it screenshotted, the 95th-percentile pixel luminance compared against ivory."
+}

@@ -1,0 +1,20 @@
+{
+  "note": "Every value below traces to no Drive doc, no committee document and no Brad statement. Origin: design_handoff_saoc/src/data.js mock, copied into lib/data/shows.ts (commit 6451883f) and seeded to Sanity. Sanity ids are exact; revs observed 2026-10-16 (all MJgVwuYmlK3yFyklsghf2i).",
+  "sanityUnpublish": [
+    { "id": "show-14-2012", "year": 2012, "location": "Bloemfontein Showgrounds", "entries": 890 },
+    { "id": "show-15-2015", "year": 2015, "location": "NMBay Boardwalk", "entries": 1020 },
+    { "id": "show-16-2018", "year": 2018, "location": "Cape Town City Hall", "entries": 1150 },
+    { "id": "show-17-2021", "year": 2021, "location": "Walter Sisulu NBG", "entries": 980 },
+    { "id": "show-18-2024", "year": 2024, "location": "Durban ICC", "entries": 1240 }
+  ],
+  "keep": [
+    { "id": "show-19-2027", "why": "upcoming, venue The Hangar sourced (Brad), status upcoming so never in the archive" },
+    { "id": "show-fictional-test", "why": "status cancelled, owned by the ticketing test fixtures, not a past show" }
+  ],
+  "forbiddenLiterals": [
+    "Durban ICC", "Walter Sisulu", "Cape Town City Hall", "NMBay Boardwalk", "Bloemfontein Showgrounds",
+    "Reduced format", "pandemic protocols", "Since 1974", "8,600", "8600"
+  ],
+  "archiveYearsMustNotRender": [2012, 2015, 2018, 2021, 2024],
+  "hostAndStatLiteralsAlsoForbiddenInShowsTs": ["visitors: ", "trophies: ", "entries: "]
+}

@@ -9,8 +9,8 @@ goal: 'Admin ''Invite a vendor'' action (Brad-approved 2026-10-08): committee in
   off origin/main.'
 created_at: '2026-10-08T00:19:03.151658+00:00'
 started_at: '2026-10-08T00:34:01.112025+00:00'
-last_active_at: '2026-10-08T00:34:01.112025+00:00'
-status: in_progress
+last_active_at: '2026-10-16T22:52:08.677301+00:00'
+status: paused
 cost_estimate:
   features: 0
   milestones: 0

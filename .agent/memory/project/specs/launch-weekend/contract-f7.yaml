@@ -1,0 +1,72 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: Before the production launch (Sun 18 Oct 2026) the SAOC routes, the home hero carousel, the ticket form and the vendor apply form meet WCAG 2.2 AA on the points the beta E2E run (J4, J8) and the audit measured - axe finds no serious contrast, region, heading-order, target-size or aria-allowed-attr violation using existing tokens only, the hero carousel has a pause control and stops under reduced motion, and the vendor apply form validates client-side with linked inline errors and a focused summary.
+created_at: '2026-10-16'
+autonomy: high
+features:
+  - id: F7a
+    name: SAOC contrast tokens, landmarks and heading order, hero carousel (R42), ticket form, mobile menu, sticky-header scroll padding, target sizes, alt text
+    status: pending
+  - id: F7b
+    name: Vendor apply form (R32/J4) - client validation, inline linked errors, focused summary, labels, autocomplete, border contrast, fieldset aria fix
+    status: pending
+# F7c (R45-R48) is a third dev pass over files F7a also edits (Footer.tsx, societies, judging): run it after F7a merges or sequentially in the same worktree.
+# GATE: run with cwd set to the implementation worktree (based on origin/main with F1 merged; set BASE_REF to the F1-merged commit),
+# and BASE_URL pointing at a prod build of that worktree on its own port (default 3019; never 3000/3002; stop by exact PID).
+# F7a and F7b are disjoint and may be implemented in parallel; F7_SCOPE=a|b narrows the scope check per dev, the gate runs the union.
+# F7-A1 scans components/vendors too, so it only goes green once F7b has fixed the vendor buttons.
+# Runtime checks use no live endpoint writes: the vendor check fulfils every POST itself; the ticket check only reads.
+  - id: F7c
+    name: R45 societies (live result count, search label and border, Founded label, province chip names), R46 judging (h2s, ranked order, Other awards, ladder table, 15px prose), R47 footer newsletter label and autocomplete, R48 members form autocomplete
+    status: pending
+goldens:
+  - .agent/memory/project/specs/launch-weekend/goldens/f7/f7-spec.md
+  - .agent/memory/project/specs/launch-weekend/goldens/f7/parked.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f7/hero-carousel.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f7/vendor-apply-copy.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f7/scope-allowlist.json
+assertions:
+  phase: 4
+  checks:
+    - id: F7-A1
+      description: Static - no bg-accent with text-ivory/text-primary (must be text-ink or text-primary-800), no text-ivory below /55 and no text-ink below /65 in SAOC-owned components and routes
+      command: node contracts/checks/launch-weekend/f7/check-a-static-contrast.mjs
+    - id: F7-A2
+      description: Runtime axe (BASE_URL, 1440 and 390) on 13 routes plus a society page - zero serious/critical, region, heading-order, target-size or aria-allowed-attr nodes except those parked in parked.json
+      command: node contracts/checks/launch-weekend/f7/check-b-runtime-axe.mjs
+    - id: F7-A3
+      description: Hero carousel (R42) - pause/play control that holds and resumes, no rotation under prefers-reduced-motion, opacity-only slides, carousel/slide roledescription, slide labels naming their subject, full-opacity lede with measured contrast over every slide, scrim stops at least 55 percent, no arrow glyph
+      command: node contracts/checks/launch-weekend/f7/check-c-hero.mjs
+    - id: F7-A4
+      description: Ticket form - Buy disabled at quantity 0 (and enabled at 1 where sales are open), total in a polite live region, specific page title, TEST MODE banner still fail-closed and only shown when the flag is true
+      command: node contracts/checks/launch-weekend/f7/check-d-ticket-form.mjs
+    - id: F7-A5
+      description: Chrome - mobile menu toggle exposes aria-expanded and aria-controls, opened menu repeats no link, scroll-padding-top covers the sticky header and no focused element sits under it
+      command: node contracts/checks/launch-weekend/f7/check-e-chrome.mjs
+    - id: F7-A6
+      description: Target size - society back link, media-kit Download, Open in a map, exhibitors back link and footer links are at least 24x24 at 390 and 1440
+      command: node contracts/checks/launch-weekend/f7/check-f-targets.mjs
+    - id: F7-A7
+      description: Alt text - every img on eight SAOC routes has an alt attribute, none is a file name, PhotoBand does not default alt to empty
+      command: node contracts/checks/launch-weekend/f7/check-g-alt.mjs
+    - id: F7-A8
+      description: Vendor apply form source - client validation before the fetch, summary alert focused and linked, aria-describedby/aria-invalid wiring, autocomplete tokens, numeric stands field, verbatim R32 sentence, border and button contrast tokens, no aria-required on the fieldset, server validation files unchanged
+      command: node contracts/checks/launch-weekend/f7/check-h-vendor-static.mjs
+    - id: F7-A9
+      description: Vendor apply form in a browser with every POST intercepted - empty and invalid submits send no POST, summary focused with links to all six required fields, inline errors linked, values kept, labels carry (required)/(optional), border contrast 3:1, button 48px, valid submit posts once with the unchanged payload, axe clean in the error state
+      command: node contracts/checks/launch-weekend/f7/check-i-vendor-runtime.mjs
+    - id: F7-A10
+      description: Every changed file is on the F7 allowlist and none is owned by in-flight work, no colour or type literal added, :root and @theme blocks in globals.css byte-identical to the base
+      command: node contracts/checks/launch-weekend/f7/check-j-scope.mjs
+    - id: F7-A14
+      description: R45-R48 - societies live result count, visible search label reusing the placeholder, search border 3:1, no "est. YYYY", full chip names at 1280 and abbreviations at 390; judging real h2s, FCC/AM/HCC order, Other awards, captioned ladder, prose at least 15px; footer newsletter visible label and autocomplete email; members name/email autocomplete
+      command: node contracts/checks/launch-weekend/f7/check-k-pages-forms.mjs
+    - id: F7-A11
+      description: Lint passes
+      command: pnpm lint
+    - id: F7-A12
+      description: Type check passes
+      command: pnpm type-check
+    - id: F7-A13
+      description: Production build passes
+      command: pnpm build

@@ -1,0 +1,46 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: Before the production launch (Sun 18 Oct 2026) no invented past-edition fact appears on any surface - the static seed lib/data/shows.ts is deleted, the five seeded Sanity show docs are unpublished, and the archive index, detail pages, /national-show and sitemap show only an honest "Show history awaiting committee records" state, typographic and photo-free.
+created_at: '2026-10-16'
+autonomy: high
+features:
+  - id: F6
+    name: Archive honesty (static seed removal, honest empty state, typographic treatment, Sanity unpublish script)
+    status: pending
+# GATE: run with cwd set to the implementation worktree (based on origin/main, not the dirty main checkout - A5 diffs
+# against origin/main), and BASE_URL pointing at a prod build of that worktree on its own port (default 3017; never 3000/3002).
+# A3 reads the live production dataset and passes only after the lead runs the unpublish script with --apply.
+goldens:
+  - .agent/memory/project/specs/launch-weekend/goldens/f6/f6-spec.md
+  - .agent/memory/project/specs/launch-weekend/goldens/f6/invented-shows.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f6/scope-allowlist.json
+assertions:
+  phase: 4
+  checks:
+    - id: F6-A1
+      description: Static - no invented venue, visitor, trophy or "Since 1974" literal in app/lib/components/sanity/types; lib/data/shows.ts deleted and unimported; archive pages use no stock photo; honest state and ConfirmationBadge present; mergeShows has no static base
+      command: node contracts/checks/launch-weekend/f6/check-a-static-no-invented.mjs
+    - id: F6-A2
+      description: Runtime (BASE_URL) - archive index shows the honest state with the pending marker and no invented fact or stock photo; archive years 2012/2015/2018/2021/2024/2027 return 404; /national-show has no past editions; sitemap and llms files list no archive year or venue
+      command: node contracts/checks/launch-weekend/f6/check-b-runtime-archive.mjs
+    - id: F6-A3
+      description: Anonymous read of the production dataset - no published past show doc and none of the five invented ids; show-19-2027 kept
+      command: node contracts/checks/launch-weekend/f6/check-c-sanity-no-past-shows.mjs
+    - id: F6-A4
+      description: Unpublish script dry run prints the contract output shape, targets only the five exact ids, keeps show-19-2027, writes nothing, leaks no token, refuses with no mode flag, locks with ifRevisionID
+      command: node contracts/checks/launch-weekend/f6/check-d-unpublish-dry-run.mjs
+    - id: F6-A5
+      description: Every changed file is on the F6 scope allowlist (diff against the branch merge-base with origin/main)
+      command: node contracts/checks/launch-weekend/f6/check-e-scope.mjs
+    - id: F6-A6
+      description: Detail page degrades without placeholder stat cards or invented sentences, keeps notFound and the pending marker; seed script cannot recreate the docs; llms-full.txt clean
+      command: node contracts/checks/launch-weekend/f6/check-f-detail-and-mutation-safety.mjs
+    - id: F6-A7
+      description: Lint passes
+      command: pnpm lint
+    - id: F6-A8
+      description: Type check passes
+      command: pnpm type-check
+    - id: F6-A9
+      description: Production build passes
+      command: pnpm build

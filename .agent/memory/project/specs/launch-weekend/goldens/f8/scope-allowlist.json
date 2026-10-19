@@ -1,0 +1,18 @@
+{
+  "baseRefEnv": "BASE_REF",
+  "baseRefDefault": "origin/main",
+  "allowed": [
+    "^components/show/nos/ShowContentState\\.tsx$",
+    "^proxy\\.ts$",
+    "^lib/beta-public-launch\\.ts$",
+    "^lib/data/show-pages\\.ts$",
+    "^components/nos/ShowPageProse\\.tsx$",
+    "^app/\\(marketing\\)/national-show/programme/page\\.tsx$",
+    "^scripts/checks/verify-nos-content-state\\.ts$",
+    "^contracts/checks/launch-weekend/f8/",
+    "^docs/",
+    "^README\\.md$",
+    "^\\.agent/memory/"
+  ],
+  "note": "Base is `git merge-base HEAD origin/main` unless BASE_REF is set. Deliberately NOT allowed: the other five route pages and any NOS hub/ticket page (F3 NosOwnBrandChrome), content/show-pages/*.json and sanity/ (the AI prose is withheld at render, never deleted: reversible), apphosting.yaml (production config; setting SHOW_PLACEHOLDER_PREVIEW there is the lead's call, outside this feature), scripts/refresh-llms.ts and public/llms*.txt (already clean). scripts/checks/verify-nos-content-state.ts may be edited only where NF13 pins the old placeholder-notice rendering of the absent-page fallback (NF13 already fails on origin/main). Needing a file outside this list is a stop-and-ask, not a judgement call. ShowContentState.tsx is allowed for ONE change: rendering afterProse in the fallback-unpublished branch (r3 has merged). proxy.ts and lib/beta-public-launch.ts are allowed only to share one isBetaWallConfigured(user, password) predicate (proxy.ts decision behaviour unchanged)."
+}

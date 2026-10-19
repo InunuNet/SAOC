@@ -1,0 +1,114 @@
+{
+  "capturedFrom": "http://localhost:3028",
+  "routes17": [
+    "/national-show",
+    "/national-show/about",
+    "/national-show/what-to-expect",
+    "/national-show/plan-your-visit",
+    "/national-show/faq",
+    "/national-show/programme",
+    "/national-show/workshops",
+    "/national-show/symposium",
+    "/national-show/wosa-conference",
+    "/national-show/conferences",
+    "/national-show/sa-exhibitors",
+    "/national-show/international-guests",
+    "/national-show/exhibitors",
+    "/national-show/vendors",
+    "/national-show/tickets",
+    "/national-show/sponsors",
+    "/national-show/archive"
+  ],
+  "sections": {
+    "/national-show/programme": [
+      {
+        "sectionKey": "intro",
+        "class": "placeholder",
+        "heading": "Programme",
+        "firstWords": "This page will bring together the master timetable for every"
+      },
+      {
+        "sectionKey": "how-the-programme-will-work",
+        "class": "placeholder",
+        "heading": "How the Programme Will Work",
+        "firstWords": "The programme is intended to be viewable as both a list and "
+      }
+    ],
+    "/national-show/symposium": [
+      {
+        "sectionKey": "theme",
+        "class": "preserved",
+        "heading": "Symposium Theme",
+        "firstWords": "\"From Wild Origins to Cultivated Excellence: The Future of O"
+      },
+      {
+        "sectionKey": "about-the-symposium",
+        "class": "placeholder",
+        "heading": "About the Symposium",
+        "firstWords": "This page is the programme and registration hub for the SAOC"
+      },
+      {
+        "sectionKey": "attending",
+        "class": "placeholder",
+        "heading": "Attending",
+        "firstWords": "Registration for the Symposium will run through the Show's c"
+      }
+    ],
+    "/national-show/wosa-conference": [
+      {
+        "sectionKey": "about-the-conference",
+        "class": "placeholder",
+        "heading": "About the Conference",
+        "firstWords": "This page covers the WOSA Conference held alongside the 2027"
+      },
+      {
+        "sectionKey": "attending",
+        "class": "placeholder",
+        "heading": "Attending",
+        "firstWords": "Registration details for the WOSA Conference will be publish"
+      },
+      {
+        "sectionKey": "about-wosa",
+        "class": "placeholder",
+        "heading": "About WOSA",
+        "firstWords": "Wild Orchids of Southern Africa (WOSA) is the Council's part"
+      }
+    ],
+    "/national-show/international-guests": [
+      {
+        "sectionKey": "intro",
+        "class": "placeholder",
+        "heading": "International Guests and Exhibitors",
+        "firstWords": "This page will introduce the international speakers, judges,"
+      },
+      {
+        "sectionKey": "who-will-appear",
+        "class": "placeholder",
+        "heading": "Who Will Appear",
+        "firstWords": "The guest list is still being confirmed with the Council, so"
+      }
+    ],
+    "/national-show/sponsors": [
+      {
+        "sectionKey": "intro",
+        "class": "placeholder",
+        "heading": "Sponsors",
+        "firstWords": "This page will recognise the headline and supporting sponsor"
+      }
+    ],
+    "/national-show/sa-exhibitors": [
+      {
+        "sectionKey": "overview",
+        "class": "preserved",
+        "heading": "South African Exhibitors",
+        "firstWords": "The 2027 South African National Orchid Show will proudly sho"
+      },
+      {
+        "sectionKey": "directory-coming",
+        "class": "placeholder",
+        "heading": "Exhibitor Directory",
+        "firstWords": "The directory of confirmed South African exhibitors is being"
+      }
+    ]
+  }
+}

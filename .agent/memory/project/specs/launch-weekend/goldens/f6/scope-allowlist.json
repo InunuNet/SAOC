@@ -1,0 +1,32 @@
+{
+  "baseRefEnv": "BASE_REF",
+  "baseRefDefault": "origin/main",
+  "allowed": [
+    "^app/\\(marketing\\)/national-show/archive/page\\.tsx$",
+    "^app/\\(marketing\\)/national-show/archive/\\[year\\]/page\\.tsx$",
+    "^app/\\(marketing\\)/national-show/page\\.tsx$",
+    "^app/sitemap\\.ts$",
+    "^lib/data/shows\\.ts$",
+    "^lib/data/mergeShows\\.ts$",
+    "^lib/data/index\\.ts$",
+    "^components/nos/PastEditionCard\\.tsx$",
+    "^scripts/unpublish-invented-shows\\.ts$",
+    "^scripts/seed-sanity\\.ts$",
+    "^public/llms-full\\.txt$",
+    "^docs/",
+    "^README\\.md$",
+    "^contracts/checks/launch-weekend/f6/",
+    "^contracts/checks/cms-wiring-cleanup/",
+    "^contracts/checks/ticketing-f1-show-collision/",
+    "^contracts/checks/nos-audit-fixes/check-disclosures\\.mjs$",
+    "^contracts/contract-cms-wiring-cleanup\\.yaml$",
+    "^contracts/contract-ticketing-f1-show-collision\\.yaml$",
+    "^contracts/golden/ticketing-f1-show-collision/",
+    "^components/chrome/nav-config\\.ts$",
+    "^components/show/ShowSectionNav\\.tsx$",
+    "^components/nos/CycleStep\\.tsx$",
+    "^public/llms\\.txt$",
+    "^\\.agent/memory/"
+  ],
+  "note": "Base is `git merge-base HEAD origin/main` unless BASE_REF is set (pinned, so merged siblings do not read as this branch's changes). app/(marketing)/national-show/page.tsx is also touched by other launch-weekend features; rebase on origin/main before merging. The three contracts/checks entries are old checks that assert the static fallback exists; they are expected to be retired or rewritten here. components/chrome/nav-config.ts is shared with the chrome features: one-line descriptor change only, rebase before merging. national-show/page.tsx is being edited by NOS chrome F3: F6 deletions there are contiguous blocks only."
+}

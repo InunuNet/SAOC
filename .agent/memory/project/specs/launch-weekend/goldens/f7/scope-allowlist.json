@@ -1,0 +1,62 @@
+{
+  "baseRefEnv": "BASE_REF",
+  "baseRefDefault": "origin/main",
+  "shared": [
+    "^contracts/checks/launch-weekend/f7/",
+    "^\\.agent/memory/",
+    "^docs/launch-weekend-a11y-f7\\.md$",
+    "^docs/launch-weekend-a11y\\.md$"
+  ],
+  "a": [
+    "^components/chrome/",
+    "^components/home/",
+    "^components/ui/",
+    "^components/tickets/",
+    "^components/societies/",
+    "^components/judging/",
+    "^components/events/",
+    "^components/contact/ContactForm\\.tsx$",
+    "^components/members/SuggestionForm\\.tsx$",
+    "^components/show/ShowSectionNav\\.tsx$",
+    "^components/show/VenueCard\\.tsx$",
+    "^app/globals\\.css$",
+    "^app/not-found\\.tsx$",
+    "^app/\\(marketing\\)/(about|judging|events|sponsors|contact|media-kit|members|societies)/",
+    "^app/\\(marketing\\)/tickets/",
+    "^app/\\(marketing\\)/national-show/exhibitors/page\\.tsx$"
+  ],
+  "b": [
+    "^components/vendors/VendorApplyForm\\.tsx$",
+    "^components/vendors/VendorFormField\\.tsx$",
+    "^components/vendors/VendorCheckboxGroupField\\.tsx$",
+    "^components/vendors/VendorRegisterForm\\.tsx$",
+    "^components/vendors/VendorRegistrationCodeEntryForm\\.tsx$",
+    "^lib/vendor-apply-form-validation\\.ts$",
+    "^lib/vendor-register-response\\.ts$"
+  ],
+  "neverTouch": [
+    "^app/\\(marketing\\)/national-show/page\\.tsx$",
+    "^app/\\(marketing\\)/national-show/tickets/",
+    "^app/\\(marketing\\)/national-show/archive/",
+    "^lib/data/shows",
+    "^lib/data/mergeShows",
+    "^app/\\(marketing\\)/national-show/nos-theme\\.css$",
+    "^components/nos-chrome/NosSkipLink",
+    "^components/nos/ShowContentState",
+    "presenters\\.css$",
+    "^lib/vendor-applications\\.ts$",
+    "^lib/vendor-submissions\\.ts$",
+    "^app/api/vendors/apply/"
+  ],
+  "colourLiteral": "#[0-9a-fA-F]{3,8}\\b|\\brgba?\\(|\\bhsla?\\(|\\boklch\\(|font-family\\s*:|@font-face|next/font",
+  "note": "Gate from a worktree based on origin/main (or the commit where F1 is merged: F1 also edits Hero.tsx, Footer.tsx, Header.tsx and globals.css; set BASE_REF to that commit so F1's diff is not attributed to F7). The untracked app/(marketing)/national-show/tickets/buy/* pages are F3's: the title, aria-live and bg-accent fixes made to the shared components/tickets/* reach them automatically, but their own page-level metadata is F3's. The vendor-flow-fixes mission also edits components/vendors; rebase before merge. The colour literal check ignores href/id lines to avoid matching #vendor-register-* anchors. F7c reuses a subset of F7a's files (Footer.tsx, societies, judging, SuggestionForm): run F7c after F7a has merged the Footer contrast edits, or in the same worktree sequentially.",
+  "c": [
+    "^components/societies/",
+    "^components/judging/",
+    "^components/chrome/Footer\\.tsx$",
+    "^components/members/SuggestionForm\\.tsx$",
+    "^app/\\(marketing\\)/societies/",
+    "^app/\\(marketing\\)/judging/",
+    "^app/\\(marketing\\)/members/"
+  ]
+}

@@ -1967,3 +1967,700 @@ unparseable contracts" above.)
 - [ ] (2026-10-08) execution/drive_docx_sync.py skips folder "13. Registration/Booking/Tickets" because of the "/" in its name, so vendor-form copy never syncs. Sanitise or map slash-bearing Drive folder names while keeping the containment check.
 - [ ] (2026-10-08, Brad-approved idea, NOT yet a mission) Admin "Invite a vendor" action: committee invites a known nursery from /admin/vendors → system issues the existing single-use registration token and emails the full-form link directly, skipping the public /national-show/vendors/apply step. Source: Lee-Ann's 13.2 vendor form opens "We are pleased to welcome you as a pre-approved vendor" (invite-first), and her "Copy of Vendor Listing.xlsx" (Drive "4. South African Exhibitors", 2026-10-07) tracks Confirmed → Website Application → Payment received → Stands Required. Keep the public apply route as secondary. Constraint (Brad): Lee-Ann wants the vendor form to BE the contract between SAOC and the vendor, so the invited path must still land on the full form with its terms, declarations and signature block, never a shortcut that bypasses them. Coordinate with NOS Site's in-flight vendor-form update (handback to SAOC).
 - [ ] (2026-10-08, Brad: no action, context only) Scott's comment (Drive "National Show - Website Comments and corrections.xlsx", 2026-10-07): header/footer text "should read South African Orchid Council SAOC". Brad is deliberately selling the council on "SA Orchid Council" as the modernised name, so keep "SA Orchid Council" in the lockup. Do not change the name on Scott's comment alone. Scott's other comment ("Different logo used in the header to the footer, maybe stick to the one in the header") is still open for Brad.
+
+
+<!-- Merged 2026-10-19 by saoc-82: lines present only in the stale main working tree (feat/conference-workshop-tickets), appended verbatim in original order so nothing is lost. -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+- [ ] [P3] (2026-10-13, Brad) Members Portal: "in progress" holding page only. Do it only after the NOS Site is finished; low priority. Brad: "Members portal needs a in progress holding page we will only do this when the NOS Site is finished its low priority." Copy must be sourced (no-invention).
+- [ ] (2026-10-13, Brad standing instruction) Do not ask Lee-Ann about missing content (empty Drive folders, sections not yet written); she is busy with it. Ask only about content she has already supplied. Questions doc: https://docs.google.com/document/d/1C2_2EKYvJwzB5ejtwf0wpm5bk7z916-c8UQQrkQmSjc/edit
+- [ ] (2026-10-13, Brad) VENDOR FLOW AS IT ACTUALLY RUNS: Lee-Ann has already invited the vendors personally. The vendor form is sent to them when ready and forms the contract between SAOC and the vendor. Once SAOC approves the submitted form, SAOC forwards a link and payment instructions. Brad verbatim: "Lee-Add has already invited the vendors personally the form will be sent to them when ready to form the Contract between SAOC and the vendor, once the Vendor form is approved by us we will forward them a link and payment instructions." Implication: the admin invite (feat/vendor-invite) is the primary path, and the public /national-show/vendors/apply route is secondary at most.
+- [ ] [P1] (2026-10-13, Brad via NOS Site, beta 03348a72) Admin vendor review gaps, SAOC lane: (1) no full-registration detail view. /admin/vendors only lists a summary table and there is no app/admin/vendors/[id] route, so the admin cannot see booth, storage, waste, marketing, payment or declaration data. Brad: "No way for me to review the full application and check the actual data". (2) Both admin vendor tables overflow at desktop width: Status is clipped on /admin/vendors, Approve/Reissue actions are cut off on /admin/vendors/applications. (3) The public /national-show/vendors/apply validation shows raw keys ("businessName is required and must be a non-empty string") instead of field labels. Test application "TEST NOS form check (Claude, 2026-10-13)" (brad+nos-form@inunu.net) is PENDING; NOS Site will approve it on Brads go.
+- [ ] [P0] (2026-10-13, NOS Site end-to-end vendor run on beta, Brad watching; submission 8TvyaRDdN8BFPcAkktOE) BLOCKER: POST /api/vendors/{id}/marketing-asset returns 500 for all 3 product photos (incl. a 134 KB JPEG), so no vendor can complete registration. NOS hypothesis, unconfirmed against server logs: lib/firebase-admin.ts initializeApp sets no storageBucket, so getStorage().bucket() throws.
+- [ ] [P1] (2026-10-13, same run) Vendor flow defects: (a) /register full form does not prefill "Vendor / business name" from the gate. (b) The "I confirm I have read and agree to the Vendor Terms & Conditions" checkbox sits in Payment & terms, before the Declaration & Terms text it refers to. (c) Admin "Get payment link" sends a second payment email (Approve already sent one), though its label only says copy to clipboard. (d) Registration-approved email shows raw "Booth type: no-preference" instead of the label. (e) Stand size asked in /register (boothSize) and again on /payment, where it can be changed; /payment DOES preselect the /register choice (verified 2026-10-14). Beta holds test records (1 application, 1 approved registration, 3 emails to brad+nos-form): keep/delete is Brad's call.
+- [x] [P0, DONE: NOS end-to-end retest PASSED 2026-10-14 on beta 77e50788, 3x 202 uploads, ref W8PuLWZ93u3YDKx7AqW5] (2026-10-14) Vendor uploads: Storage enabled + bucket created via API (europe-west4); SA write/delete verified. the code fix is on fix/admin-storage-bucket @ 77e50788 (initAdmin passes storageBucket; both upload routes give a clear error if it is unset). Codex PASS; not pushed. Root cause 2: the bucket saoc-webapp.firebasestorage.app does not exist (Storage never enabled; appspot.com also absent). Brad enables it at https://console.firebase.google.com/project/saoc-webapp/storage (location is permanent), then test a real upload end to end and roll out to beta.
+- [ ] [P1] (2026-10-14, NOS retest) A vendor who leaves before uploading photos is locked out: the registration code is single-use and consumed at submit, so /register rejects it (vendor 8TvyaRDdN8BFPcAkktOE is stuck at 0/3 photos). Needs a path back to the upload step, e.g. a link in the received email, or Reissue working for submitted registrations. Design decision: Brad.
+- [ ] [P2] (2026-10-14) After all 3 photos show "Uploaded.", /register still says the registration "is not complete until you have also uploaded all 3 required product photos". No completion state.
+- [ ] [P2] (2026-10-14, seen only with a JS-triggered click) The /register form can fall through to a native GET before hydration: nothing is saved and every field (email and phone included) goes into the URL. Fix: method="post", or disable submit until hydrated.
+- [ ] [cleanup, Brad] Beta test vendors: 8TvyaRDdN8BFPcAkktOE, W8PuLWZ93u3YDKx7AqW5 (applications + registrations + emails to brad+nos-form).
+- [ ] [P0→live] (2026-10-14) Ozow stand payment rejected (BankReference sent as 42-char VSO ref vs Ozow String(20)). Fixed on fix/ozow-vso-bankref a42694dc (Codex PASS, mutation-proven), live on beta. Awaiting Brad's sandbox click + NOS settlement verification.
+- [ ] [P2] (2026-10-14, NOS) Same pre-hydration native-GET risk (no method, no hydration guard) in: VendorApplyForm.tsx:146 (PII), VendorRegistrationCodeEntryForm.tsx:72 (access code), ContactForm:74, TicketPurchaseForm:46, SuggestionForm:87, SubmitEventForm:154, LoginFormFields:39 (admin login), DoorScannerClient:210. Apply + gate forms first. /register is fixed on fix/vendor-register-p2 8f3ae6e4.
+- [ ] [merge] Vendor fix branches to integrate, all off 77e50788: fix/admin-storage-bucket 77e50788 (live), fix/ozow-vso-bankref a42694dc (live), fix/vendor-register-p2 8f3ae6e4 (NOS, pushed), fix/vendor-photo-resume (P1, in build). Beta currently = a42694dc only.
+- [ ] [P0→beta] (2026-10-14) Vendor flow fixes integrated: integ/vendor-flow-fixes c11b51bd (pushed, LIVE on beta). Contains: storageBucket fix 77e50788; Ozow BankReference a42694dc; F4 short /vsp return URLs + Ozow field-cap guard + clamp (6e8ce0a9..a560d5be); F5 stand payments honour Ozow Sandbox Test Mode (9b2ecfe0); F2 photo-resume link + admin Get photo upload link (e8bd5bd4); NOS P2s (8f3ae6e4). Codex PASS on each and on the merge; pnpm build green. Pending: Brad's sandbox Pay Now click + NOS settlement verification; then @docs, gate, @maintainer, and merge to main (Brad sign-off). Pre-existing verify-show-page-m4 FAILs (R2,R6,R7,RS3,CL4,V1-V4) exist at base too: separate item.
+
+- [ ] **P2 (2026-10-15, NOS smoke on beta c11b51bd)** /national-show/vendors/photos keeps showing "0 of 3 product photos uploaded" and "not complete" after all 3 uploads succeed, until reload. Cause: photos/page.tsx:92 renders the server-side uploadedCount; the VendorMarketingUploadField instances (line 95) pass no onUploaded. Mirror the VendorRegisterSuccess client wrapper. Fix dispatched under vendor-flow-fixes F2.
+- [x] **P1 RESOLVED (see above)** Ozow sandbox Pay Now on W8PuLWZ93u3YDKx7AqW5: Ozow says Complete (IsTest, R0.01, txn 7c542873…), but the order stays pending with no email. The cause (no notify / signature reject / confirm lookup fail on IsTest) needs the App Hosting logs: gcloud needs Brad to re-auth, and the SA gets 403 on logs.
+- [ ] Beta test-record cleanup (Brad decides): add application SWYzTPXNtI96ueeoFujO and registration ci9swD1ozZMPs8jwPX0m (NOS P2 completion run, 2026-10-15).
+- [ ] P3 (NOS 2026-10-15): /register HTML keeps a hidden, unhydrated copy of the full form in Next's streaming container (div#S:0[hidden]). The visible form is fine. Check whether it matters.
+- [ ] Beta cleanup (Brad decides): add application EM89hydzSXnFwwV8fJor and registration wdTRgjp5UDfOSvSDrqYv (NOS photos live-count retest, 2026-10-15).
+- [ ] CLAUDE.md vendorStandOrders row is stale (floor-protected, needs Route 1/Brad). Replace the final sentence with: "Carries `expectedGatewayAmount` (`number | null`, vendor-flow-fixes F5): `0.01` only under Ozow Sandbox Test Mode, otherwise `null`; the settlement amount guard compares against `expectedGatewayAmount ?? amount`. Stand return URLs are `/vsp?a=<attemptId>`. See [docs/vendor-stand-payment-settlement.md](docs/vendor-stand-payment-settlement.md) and [docs/vendor-flow-fixes.md](docs/vendor-flow-fixes.md)."
+- [ ] verify-show-page-m4 base FAIL set is 10, not 9 (R2, R6, R7, RS3, CL4, V1–V5); V5 already fails at c11b51bd.
+- [x] Ozow sandbox settlement (2026-10-15): two causes. (1) The lookup omitted IsTest=true because of a strict 'true' compare (3ef1e100). (2) The status API returns camelCase but the code read PascalCase; conflicting casings now fail closed (4a57bb21, Codex PASS). VERIFIED on beta 15:10Z: order paid, /vsp confirmed, admin Paid, vendor and admin emails received.
+- [ ] 3 Ozow checks already failing at c13a1ce9: ozow-m1-f2/check-providerid-fail-closed; ozow-m1-f3/check-live-purchase (needs a run-artifact arg); ozow-sandbox-toggle-f1/check-checkout-route-wiring (isOzowSandboxTestModeEnabled() called after reserveTicket() in the ticket checkout route).
+- [ ] 2026-10-15 Lee-Ann (via Brad): use the SAOC branding logo with the full name 'South African Orchid Council' (lockup wordmark W2) site-wide. Dispatched as contract saoc-full-name-lockup F1.
+- [ ] P3 (2026-10-15): /  at 768px has 1px horizontal overflow from components/home/ShowBand.tsx (font-mono uppercase span, right edge 769.03). It already exists at base f5622860.
+- [ ] P1 vendor UX (NOS audit 2026-10-15; approved, F7 in progress): /national-show/vendors/apply checkboxes are 16x16 (15 targets, need 44px); the /vendors/register "Continue" button is 96x42; /vendors/payment with an invalid link is a dead end (one sentence, no contact action).
+- [x] DECIDED 2026-10-15: use the existing /tickets flow (NOS lane). Was: NOS "Book tickets" P0. Point it at the existing /tickets/* flow, or ship the uncommitted /national-show/tickets/buy/* relocation (main tree, feat/conference-workshop-tickets, docs/national-show-ticket-router.md; built unrequested 2026-09-14).
+- [x] DECIDED 2026-10-15: 'Exhibitors and Vendors' (F7). Was: the /national-show/vendors h1 "Exhibiting Nurseries" doesn't match the menu label "Trade Vendors".
+- [ ] P1 (NOS Site 2026-10-15, verified): council-supplied sections whose sourcePath points into content/drive-source/ render the false "AI-generated placeholder" notice on beta (e.g. /national-show/sa-exhibitors). content/drive-source/ is gitignored wholesale (.gitignore:144) because Lee-Ann's spec doc carried plaintext mailbox passwords (commit 1d6512cb), so classifySection (lib/data/show-pages.ts:336) fails closed. Fix options: relink provenance to content/drive-recovered, or ship secret-scanned content.md files. Needs a spec; it touches the secrets boundary. Owner saoc-2b, after the pause. The /vendors paragraphs are Lee-Ann's copy (Drive 1UKUdzZ9NAJHsqWHSV0mN9tnTrp6NE8I4), so they get no disclosure.
+
+- [ ] (2026-10-15) Amend contracts/contract-ticket-reachability.yaml TKT-06/07 when NOS Site's fix/nos-audit-p1 lands: hero "Book tickets →" now targets /national-show/tickets (one link per admission product → /tickets/<slug>), reported by NOS Site as Brad's choice. Confirm with Brad on his return; don't amend before the branch lands.
+
+## [SAOC] 2026-10-16 backlog — /national-show/tickets navigates TOP window when iframed (NOS Design Canary note). Find trigger (frame-bust script / top-level redirect); keep only if deliberate payment security. Post-meeting.
+
+## Queued after NOS F3 (2026-10-16, from saoc-nos-design-cb; full rulings in the NOS rulings file)
+- [ ] R31 /national-show/tickets: ticket choice on first screen. Typographic hero + 4-card audience index; visitor tickets as rows; per-row prices only when salesOpen; per-group R11 status chip; day-choice note on day rows. Data flags for Brad/Lee-Ann: "Early-Bird Weekend Pass" vs "Weekend Pass (Early Bird)" duplicate; "Conferences tickets" label.
+- [ ] R32 /national-show/vendors/apply: field border ≥3:1, "(required)"/"(optional)" labels, autocomplete attrs, inline errors + focused error summary (also fixes e2e J4 no-client-validation), typographic hero, single primary button ≥48px.
+- [ ] Launch F5 in progress (Arch_Son5_M1-F5_LaunchWeekend): /_next/image 404 + 10MB pages, security headers, sitewide canonical, /societies CLS. Source: .tmp/sandbox/excellence-audit/tech/REPORT.md
+- [ ] Not yet scheduled from audit: contrast tokens (footer ivory/45, bg-accent buttons; handoff question), Joomla legacy redirect map (needs old URL list), sitemap gaps, noindex on ticket confirmation/cancelled/members, JSON-LD fixes.
+- [ ] R33 /national-show/plan-your-visit (saoc-nos-design-cb): collapse 3 TBC chips into one R11 panel; venue card first full-width + map button ≥44px; 10111/10177/112 as tel: links; R11 chip style; R29 typographic hero. Queue after F3.
+- [ ] R34 /national-show/exhibitors (saoc-nos-design-cb): page 9,569px, CTA at y8683. One R11 status line over Key-dates table (em-dash cells); in-page jump nav (sticky rail ≥1024, collapsible at 390); "Contact the council" button in top banner; 7-step process as numbered ol stepper; recheck standfirst contrast at 390. Queue after F3.
+- [ ] UPSTREAM (Athanor): quota oracle mirror stale since 2026-10-08 and no session-surviving auto-resume after quota reset (pulse_quota_resume.sh default-OFF, unwired). Filed on /Users/vetus/ai/Athanor/comms.md 2026-10-16. Workaround: session-only CronCreate heartbeat 1df7f6b8 + one-shot 0a2088b4 at 05:41.
+- [ ] Launch F7 a11y/UX (from saoc-nos-site-77 critique r2, beta b2e0e90d; report NOS Site .tmp/sandbox/nos-excellence-critique/round-2/REPORT.md): /tickets/weekend-pass Buy enabled at qty 0, total lacks aria-live, generic title, TEST MODE banner visible; mobile menu toggle lacks aria-expanded, Tickets+Sponsors listed twice (recheck after ff1a7e18); sticky header 74/62px vs scroll-padding-top:auto (WCAG 2.4.11); back-links 19px tall + three 22px links (2.5.8); hero photos repeat in pairs, all hero alts empty; ShowContentState h2-as-label 0px gap (sa-exhibitors, international-guests, programme).
+- [ ] CONTENT for Brad/Lee-Ann: what-to-expect shows dates 23–26 Sept above "dates and daily opening hours still with committee" (contradiction); "Early-Bird Weekend Pass" vs "Weekend Pass (Early Bird)" duplicate SKU?; show hours; FAQ parking answer.
+- [ ] After NOS chrome F2 ships: F2 architect tightens §7 item 13 per R35 — .pc-title/.pc-name judged at card-title role (Fraunces 400 22/1.25 opsz24); remove .pc-role tracking exemption (case-driven: label .14em or 0). CSS fix lands via saoc-nos-site-77 nos-critique-r2.
+- [ ] CONTENT for Brad/Lee-Ann: Sanity showFaq — venue FAQ status `pending`, answer "At the hangar at Stellenbosch Flying Club…" has no Drive source; a second FAQ also gives the venue ("…on the R4…"). Needs committee wording, then status flip. Duplicate venue FAQs need review.
+- [ ] Queued for after NOS F2: push saoc-nos-site-77 fix/nos-critique-r2 33ee45cc (60ch cap 6 routes + R35 presenter type), rebased on F2.
+- [ ] NOS perf follow-up (Codex r2 P2 on NOS F2, accepted): app/(marketing)/layout.tsx:23 — SAOC root-layout fonts (Crimson Pro, Manrope, JetBrains Mono, Lora) preload on /national-show/* while Fraunces/Karla are preload:false. Scope SAOC font loading to SAOC route group or preload NOS faces on NOS routes.
+- [ ] R39 symposium presenters (saoc-nos-site-77 r3, after r2): clamp bios to 4 lines + inline disclosure (aria-expanded), bio 17px body role.
+- [ ] CONTENT for Brad/Lee-Ann: symposium presenters — only Elbert has a role line; no talk titles/sessions on any card.
+- [ ] CONTENT for Brad/Lee-Ann (P0, F6): real National Show history — editions, years, host, venue, entries/visitors/trophies, champions, judges, real photos. lib/data/shows.ts seed is invented; F6 removes it.
+- [ ] R37/R38 archive layout (typographic hero, hairline figure row, single 65ch about, dedupe XVIII/back links) — apply once real records exist; F6 lands the honest empty state first.
+- [ ] R41 /national-show/faq (needs contract: showFaq per-answer status): move TBC badges from question to the pending sentence in the answer (13/14 mis-badged); "When is the show?" first; FAQPage JSON-LD for badge-free answers only; SVG chevron for disclosure, drop ※/± glyphs.
+- [ ] Launch F7 add R42 SAOC home: hero carousel needs visible pause control + stop under prefers-reduced-motion (WCAG 2.2.2; carousel itself is in handoff README:22, keep it; README:145 = fade only); hero sub-copy 100% white + scrim ≥0.55 on every slide (check handoff for existing scrim first); slide labels by subject + aria-roledescription carousel/slide; → glyphs to SVG. Eyebrows stay (handoff README:52,64,101).
+
+- [ ] R47 /events (saoc-nos-design-cb, 2026-10-16, 15/28): P1 make the National Show event row a link to /national-show (≥44px, focus ring); P1 Event JSON-LD + <time datetime> — UNBLOCKED — dates 23–26 Sep 2027 set by Brad 2026-10-06 (memory project_show_dates_placeholder); lean-deferred only; P2 compact events hero; P2 home "Upcoming society shows" label mismatch (use existing "What's on"); society shows = content gap for Lee-Ann. Newsletter input label/autocomplete routed to F7.
+- [ ] R48 /members (saoc-nos-design-cb, 2026-10-16, 21/28): IA — "Members" holds a primary-nav slot for an unbuilt portal; move to footer Explore until portal ships (BRAD decision — nav is in the approved handoff); P2 duplicate "Contact SAOC" within ~400px (band → "Find your society"); P2 compact hero. Suggestion-form autocomplete routed to F7.
+- [ ] R49 /about (saoc-nos-design-cb, 2026-10-16, 16/24): P1 six "To be confirmed" committee h3s → one R11 status line under "The national committee" (WCAG 2.4.6); P1 history prose ~95ch → 68ch, 17px body role, left-aligned; P2 duplicate "1968 Founded" vs "28 July 1968" → keep full date; P2 "EST. 1968 · BLOEMFONTEIN" → "Founded 1968" (mono kept).
+- [x] R45–R48 folded into F7 as F7c (A14), 2026-10-16.
+- [ ] Unpublish script hardening (Codex F6 P2): createIfNotExists leaves a pre-existing draft unstripped. Live drafts verified clean 2026-10-16.
+- [ ] Footer newsletter Subscribe is a DEAD button (form only preventDefault, nothing stored) + input border ~1.5:1 (WCAG 1.4.11). Decision for Brad: hide until wired, or wire (needs a list/backend). Also: footer lockup label-in-name (audit P1-7); /national-show/faq has no h1 (NOS Site lane).
+- [ ] /national-show/conferences: full-width ~460px ticket image above first ticket name at 1280 (nos-site-77 post-refresh review) — check against F3 tickets work when it lands.
+- [ ] ShowContentState placeholder blocks: 0 paragraph gap + 0 h2→body gap (nos-site-77). Re-measure after F2-r36 deploys (0.5em heading margin).
+- [ ] Hub copy gaps (F6 r4 arch, for Brad/Lee-Ann): "competitive" not in Drive wording; hub 2nd paragraph 100-point scale, ten botanical classes, Grand Champion definition — no Drive source (judging-content work). Archive heroes → typographic hero when R29 lands.
+
+## R53 (saoc-nos-design-cb, 2026-10-16) — /national-show/workshops
+- [P0 launch-gate] Ozow TEST MODE banner + R0.01 override are driven by the Firestore admin toggle `adminSettings/ozowSandboxTestMode` (lib/ozow-sandbox-test-mode.ts, fail-closed), NOT hard-coded and NOT env-driven. Beta host is the saoc-prod backend, so the toggle MUST be off before go-live. Proposed hardening: ignore the flag unless Ozow is in sandbox mode (env), plus a gate assertion like F8's. Needs a contract.
+- [P1] Workshops: same stock photo on all 4 products with product-named alt (misrepresents); ~720px cards; no running total; Buy at y≈3755. Peer proposes compact rows + sticky total bar — check against design/design_handoff_saoc/ before any build (no-invention).
+- [P2] Product names are <p>; should be h3 under a section h2.
+- [Brad/Lee-Ann] "Field Trip (per outing)" vs "Field Trip (Single Outing)" looks like a duplicate SKU (cf. R31 #5).
+
+## F8 beta re-measure (saoc-nos-site-77, 2026-10-16) — F8 PASS; follow-ups
+- [F8b, accuracy] Gap sentence "has not yet supplied the content for this page" is false on sa-exhibitors (3 sourced Lee-Ann paragraphs shown). Fix: section-scoped wording when sourced prose present, or no block when only one section withheld. Needs contract.
+- [F3] international-guests + sa-exhibitors: R11 gap block stacked over RealEmptyListing dashed box (+ "EACH ENTRY WILL SHOW" scaffold) — double absence statement; covered by F3's G2 card replacement, verify it resolves.
+- [minor a11y] programme gap-block links (Symposium 123x24, Workshops 77x24) meet 2.5.8 at exactly 24px but below NOS 44px norm; duplicate the "More on the National Show" cards below — consider dropping.
+
+## R54 (saoc-nos-design-cb, 2026-10-16) — /national-show/conferences
+- [P1, stale copy — resolved cause] Lede promises "combined SAOC/WOSA Joint track" (conferences/page.tsx:17,32; tickets/page.tsx:50) but the Joint bundle was deliberately RETIRED (lib/provisional-figures.ts RETIRED_CONFERENCE_SLUGS, per Lee-Ann msgs 3-4). Fix = delete the Joint clause on both pages (removal only, no new copy). Needs contract.
+- [P1] Each R2000 row needs a link to its existing page (/symposium, /wosa-conference). Link-only, no new copy.
+- [P2] Unscoped "To be confirmed" chip above products (R41 pattern) — scope to what it qualifies.
+- [P2] "Buy Ticket" label on a registration page; "Register" suggested — label shared with workshops; Brad's call (copy).
+- R53 #2-#4 (stock photo, no running total, <p> names) apply here too (same component).
+
+## R55 (saoc-nos-design-cb, 2026-10-16) — SAOC /contact (measured on 3002 = pre-F7 worktree)
+- Send button contrast: ALREADY FIXED on main by F7 (text-ink on bg-accent, components/contact/ContactForm.tsx:174). Height ~41.7px < 44 still open.
+- [P1 systemic] field border `--rule` #d9d7c9 (inputClass :70) fails 1.4.11 — same as R32/R45; fix once at token/field-class level. Needs contract.
+- [P1] "Minimum 10 characters." not linked via aria-describedby; no role=status success region with focus. Error <p role="alert"> exists (:166).
+- [P1] name/email inputs (:83,:101) lack autocomplete="name"/"email" (1.3.5).
+- [Lee-Ann] hero "Reach the right person" vs a single address — source role-specific contacts or flag over-promise.
+
+## R56 (saoc-nos-design-cb, 2026-10-16) — /national-show/vendors on beta (14/24)
+- [P1, content owner] Hero "Meet the specialist nurseries showcasing…" contradicts the empty state ("No nurseries have been confirmed"). Delete or source — Lee-Ann.
+- [P1] One action, three labels → /vendors/apply: "Register as a vendor" (vendors), "Vendor registration" (/tickets), "Vendor Application" (form h1). Peer: unify on "Vendor Application" (cites an earlier ruling — verify which before building).
+- [P1] Primary CTA into the empty-state band (y≈1426) + "Get in Touch" secondary; drop the repeat band (y≈1814).
+- [P2] 13px prose / ~45% column. Peer proposes 17px @68ch — CONFLICTS with r5's 60ch cap just shipped (6af92875); reconcile with the handoff type scale before any change. State-before-promo (R50 pattern).
+- R56 follow-up: 17px body sourced (R14 addendum, v4 mock CSS "Karla 17/1.65/400"). 68ch WITHDRAWN (impeccable default, not a ruling) — NOS measure stays ≤60ch; R49's 68ch for SAOC /about also withdrawn. "Vendor Application" label: no prior ruling existed; basis = consistency with destination h1 — still Brad's wording call.
+
+## R57 (saoc-nos-design-cb, 2026-10-16) — /national-show/about on beta (12/20)
+- [P1] Theme line "From Wild Origins to Cultivated Excellence: The Future of Orchids" buried in para 2 — lift (duplicate, paragraph unchanged) as lede-role pull-quote under hero (Fraunces 300/28, R14 addendum).
+- [Lee-Ann] ~1,800px prose, no h2s — subheads are new copy; ask for 3-4 (theme / what you'll see / WOSA / vendors). Add nothing meanwhile.
+- [P2] body 16px → 17px (R14 addendum body role).
+- [P2] ends on section nav, no closing action — reuse hub CTA pair "Plan your visit" + "Tickets" (existing labels).
+
+## R58 (saoc-nos-design-cb, 2026-10-16) — SAOC /sponsors on beta (16/24)
+- [Lee-Ann] h1 "The partners behind SAOC" with zero partners listed — delete or source; no empty/placeholder logo wall.
+- [P1 provenance] "Our reach" reuses "56 accredited judges" (mock) — follows Brad decision #3 (placeholder figures). "184-page annual yearbook" TRACED: no Drive source; appears in sponsors/page.tsx:27 + components/home/YearbookStrip.tsx:6,24 (design-mock figure) → same placeholder-figures decision.
+- [P2] "Talk to us about sponsors" → /contact?subject=Sponsorship (check ContactForm reads subject).
+
+## R59 (saoc-nos-design-cb, 2026-10-16) — F8 PASS on beta (R51 P0 + #2)
+- [P1 → merge with F8b] Peer wants the gap sentence "The South African Orchid Council has not yet supplied the content for this page." DELETED (reads as an editor note on SAOC's own site). CONSTRAINT: CLAUDE.md/no-invention requires unsourced pages to be VISIBLY flagged as awaiting official committee copy — the flag cannot simply go. Wording is the open question (Brad): e.g. reuse R11 chip "To be confirmed by the show committee" alone vs a sentence. Fold into F8b with the sa-exhibitors "for this page" inaccuracy.
+- [P1] /wosa-conference has no route to registration — add the existing "Conference Registration" link → /national-show/conferences (existing label).
+- [P2] 16-card section grid outweighs near-empty pages ~3x — re-check after F3.
+- F8b wording acceptance criteria (design-cb): visitor-facing, names what is pending (not who failed to deliver); one line inside the R11 surface, no chip repeat; page-true (no "for this page" when partially sourced). Wording = Brad/committee.
+
+## R60 (saoc-nos-design-cb, 2026-10-16) — SEO metadata sweep, 26 routes on beta
+- [GO-LIVE CHECKLIST] noindex/nofollow on beta: TRACED — X-Robots-Tag set by proxy.ts:74 + robots.ts disallow-all, both keyed to the beta wall in lib/beta-public-launch.ts (SITE_PUBLIC_LAUNCH). Flipping public launch drops it; verify header absent on / and /national-show after deploy. Sits beside the Ozow sandbox toggle (R53).
+- [P1] 6 SAOC pages (/about /societies /judging /events /contact /sponsors) share the default meta description → use each page's existing sourced hero standfirst.
+- [P2] description length 70-155: too long vendors/apply 193, exhibitors 166, plan-your-visit 161; too short ns/sponsors 33, symposium 46, archive 56, members 64, sa-exhibitors 67 — same standfirst rule, sentence-boundary cut.
+- [P2] NOS titles 63-78ch truncate → "<Page> — National Orchid Show 2027"; hub keeps "National Orchid Show 2027 | South African Orchid Council".
+- Still open: Event (R47) + FAQPage (R41) JSON-LD.
+
+## R61 (saoc-nos-design-cb, 2026-10-16) — perf, beta /national-show
+- [Brad: money] Cold start TTFB 5,357ms / LCP 7,980ms (warm 240-325ms). apphosting.yaml:5 minInstances: 0 (cpu 1, 1024MiB, max 2). minInstances:1 = always-on instance cost; Brad decides. Production config → /spec route, not draft lane.
+- [P1] Preloads wrong: header logo (high), reversed horizontal, footer vertical (0px), empty image: preload; hero LCP webp unprioritised. Fix: next/image priority on hero; only visible header logo eager; lazy footer/reversed; drop empty preload.
+- [P2] 5 font files preloaded → only the 2 above-fold faces, rest swap.
+
+## R62 (saoc-nos-design-cb, 2026-10-16) — /tickets/day-visitor on beta (17/32)
+- [P1, Brad brief 2026-10-15] /tickets/* (and NOS checkout/return pages) render SAOC chrome — brand switch at payment. NOT in F3 scope (F3 = /national-show/* only, contract-f3.yaml goal). Needs its own feature: NOS chrome on every NOS product route.
+- [P1] dates as "2027-09-23" in rows + aria-labels → "Thu 23 Sep" (weekdays from confirmed FAQ string), ISO kept in <time datetime>.
+- [P2] "Estimated total: R0.00 (estimate)" double estimate → one + existing "Provisional pricing".
+- [P2] photo hero + card stock photo push steppers to y≈900 → compact hero, no card photo (R53 #2).
+- NOTE: F3 contract already removes the PUBLIC test-mode banner from shared ticket UI (contract-f3.yaml goal) — partially addresses R53 P0 display; the R0.01 override toggle itself still needs the go-live switch-off.
+
+## R63 (saoc-nos-design-cb, 2026-10-16) [P2] — /national-show/* 404 renders SAOC chrome, recovery links only / and /societies. Add NOS-scoped not-found with NOS chrome + links National Show / Tickets / Plan Your Visit (existing labels). Group with R62 #1 (NOS chrome on /tickets/*) as one follow-on feature.
+
+## Brad go-live decisions — RELAYED by saoc-nos-design-cb 2026-10-16 (peer relay; awaiting Brad's confirmation in saoc-2b chat before any dispatch)
+1. Ozow test mode: Brad flips it himself at launch. 2. noindex dropped at launch (public-launch flag). 3. minInstances: 1 (apphosting.yaml — prod config + spend). 4. Remove society member counts (R45) only; "56 judges"/"1990"/"184-page" undecided — leave. 5. Hide Members from primary nav (page stays). 6. F8b gap sentence unchanged — Brad to speak to Lee-Ann. 7. Copy rule: South African English, common words. 8. Beta SHOWS labelled AI placeholders for Lee-Ann's review; production never (→ SHOW_PLACEHOLDER_PREVIEW on beta env). 9. Remove duplicate early-bird products (one per product) and duplicate Field Trip (Sanity catalogue). 10. design-cb read-only access to .claude/skills + design/design_handoff_saoc.
+
+## Withdrawn by saoc-nos-design-cb after reading SAOC handoff README (2026-10-16)
+- WITHDRAWN: 17px body on SAOC pages (R43 #2, R49 #2) — SAOC base is 16px (design_system_README l.100); 17px is NOS-only. Still open: SAOC 13px card prose below the 16px floor.
+- WITHDRAWN: R42 #5 SVG arrows on SAOC — brief specifies Unicode → (l.160). NOS arrow items R36 #5, R41 #4 now optional.
+- WITHDRAWN: R49 #4 "Founded" vs "EST." — EST. 1968 is brief vocabulary (l.69). R45 #2 moot (counts removed).
+- STANDS: field border --rule fails WCAG 1.4.11 3:1 on form fields (token is the brief's hairline; fields need a distinct boundary).
+- CONFIRMED by Brad in saoc-2b chat 2026-10-16: #3 minInstances:1, #8 beta placeholder preview, #9 remove duplicate early-bird/field-trip → dispatched as launch-weekend F9 (apphosting.yaml) and F10 (Sanity catalogue, retire via active:false).
+
+## R64 (saoc-nos-design-cb, 2026-10-16) — SAOC handoff-cited
+- R42 #2 hero scrim restated: keep brief scrim (README l.125, sage gradient 60%→25% + bone bottom pull); anchor 60% end behind centred hero text or use bottom pull under sub-copy; measure 4.5:1 per slide. Replaces "flat ≥0.55".
+- [P2] Button casing → sentence case per README l.51 ("Find your society →", "Buy ticket"). Casing only.
+
+## R65 (Brad via saoc-nos-design-cb, 2026-10-16): "Body text should be standard across both sites."
+- design-cb ruling: 16px / 1.6 on SAOC + NOS; typefaces stay per site (Manrope SAOC, Karla NOS); all prior 17px asks → 16px; 12-14px prose → 16; labels/meta stay 12-13. Supersedes R14 addendum 17/1.65.
+- ORCHESTRATOR NOTE: SAOC brief is 16px / 1.55 (design_system_README l.100). 1.6 is a new value in neither source; recommend standardise on the brief's 16/1.55 (no invention). Pending design-cb reply / Brad.
+- Implementation: one token change per site if possible; touches NOS (F3 in flight) — land after F3.
+- R65 SETTLED: 16px / 1.55 both sites (README l.100 verbatim), lands after F3. design-cb informing NOS Site.
+- R65 split agreed w/ NOS Site: they take critique-r6 (nos-theme.css :165/:307 cleared, NOS 17px→token, 12-14px prose→16, titles untouched) AFTER F3 lands; SAOC side = globals.css:230 (1.65→1.55), home/MissionBlock, YearbookStrip, ui/PageHero, NOS hub page.tsx:510, tickets/page.tsx:188/199.
+- [hygiene] launch-weekend check files (e.g. f8/check-d-gap-logic.mts) exist untracked in the main tree, not on origin/main — F8 shipped without its contract check committed. Commit the launch-weekend checks/contracts in one chore commit.
+- F10 follow-ups (Codex r2, non-blocking): catalogue check (a) exempts allowlisted QA-fixture/test-show slugs without checking `demo`; (b) a duplicate Field Trip under a different live workshop slug would pass. Strengthen check-catalogue.mts.
+- r6 (NOS Site) also owns: presenters --pc-bio-lh 1.68→1.55, all NOS 16px leading-relaxed→1.55, shared VenueCard incl. /contact card (17→16/1.55). Removed from SAOC side.
+
+## R68-R70 (NOS Design, Brad-flagged "squashed/zero design effort", 2026-10-16) → launch-weekend F12
+- R68 hub hero re-layout (h1 "National Orchid Show"), R69 grouped "Explore the show" index replaces 16-card wall, R70 symposium (h1 "National Orchid Show Symposium", theme line from Drive) + shared show-page template on a 1280 grid. Architect dispatched (contract on top of F3 bf2faf26). Dev after F3 lands. Theme line verified in Drive (2.1 About + Spec V3).
+- R67 already satisfied in F3 (A27 PASS, bf2faf26).
+- F12 add (Brad direct, 2026-10-16, screenshot): keep SAOC top utility bar (email + "Join a society") on NOS pages; replace "19th National Show · Sept 2027" pill with link back to SAOC home, label "saoc.co.za", href "/". SAOC pages unchanged.
+
+## F14 (Brad direct, 2026-10-16, screenshots): SAOC home craft pass — "zero design effort"
+- NavCards ("Four ways into SAOC"): no hover/animation, flat blocks. ShowBand (flagship show): unbalanced photo inset, dead space, half-empty countdown, 3 buttons no hierarchy, "Book Tickets" casing.
+- Architect dispatched with impeccable/frontend-design/web-design-guidelines/accessibility; bounded by handoff motion rules (README l.140-145: 150ms ease, buttons darken + lift 1px, brass underline links) + tokens. Placeholder figures untouched.
+- Codex F3 verdict: FAIL — P1 hub price teaser can show expired early-bird price checkout rejects (cheapest-admission.ts:29); A6 scope violation (verify-nos-content-state.ts outside allowlist) → architect ruling; all other 13 FAILs AGREED stale/pre-existing → F3 architect re-pinning.
+- [Brad decision, placeholder class] Home YearbookStrip shows "Editor: Lindiwe Khumalo", "ISSN 1816-0336", "184 pages", "2025 yearbook" — TRACED: only in design mock data (design_handoff_saoc/src/data.js), not in Drive. An invented editor name + ISSN presented as fact. Recommend remove/withhold until Lee-Ann supplies real yearbook details.
+- PartnersSection (home "In collaboration with"): added to F14 design pass. Provenance gap: SANBI + Kirstenbosch NBG trace only to design mock (Drive mention is a template with wrong venue/dates); only WOSA confirmed. No partner logos exist. Ask Lee-Ann for real partner list + logos.
+- F3 re-pin 4133064f: A12 ticket-card stock photos exempted for F3 (pre-existing); removal belongs to next tickets feature (R31-A2 + R53 #2) which flips ticketCardPhotos.exempt back to false. F1-R8 = real main defect (NOS mobile menu scroll not restored, 60→0, NosHeader.tsx) → F15 fix on main.
+- F13 Codex (full diff): FAIL on check-strength only — NOS CTA assertion in check-f13.mjs:96-101 not visibility-checked at mobile. Ruled non-blocking (F13 does not touch NOS chrome; ticket-reachability/check-national-show-header-cta covers it). Tighten later.
+- R72 (saoc-nos-design-cb, measured on 3002 = F2-r36; re-measure on main before contracting). SAOC non-NOS wide sweep:
+  1. [P1] No shared left axis: header logo at x413 on a 2056 screen, but SAOC body sections start at 381–405. Fix: body sections use the header's shared container class, the same mechanism as R71 for NOS. Centred heroes and CTA bands are exempt.
+  2. [P2] /judging: prose ends at x1149 on a 2056 screen, so the right 45% is empty. Proposed 4fr/7fr eyebrow+h2 | prose (≤60ch) at ≥1024, the R70 #5 pattern. Not in the SAOC handoff, so it rests on the craft-floor rule; design call under Brad's design autonomy.
+  3. [P2] Prose under 16px (judging 6, home 4, members/sponsors/contact 2 each). Folded into the SAOC side of R65 (16/1.55).
+  Queue: after F14 lands, because F14 also edits globals.css and the home sections. One feature, one dev.
+- F14 on main 28614dfe (home NavCards/ShowBand/YearbookStrip/PartnersSection). Critique pass 2 scored 37/40, with P0/P1/P2 all at 0. Accepted P3s: the partners row wash and rules hang 12px past the axis, and the yearbook keeps a ~240px gap with the 4/5 photo.
+- NOS F3 gate (7480ac48): sales-closed path NOT proven. NOS_SALES_CLOSED=1 can't pass because the page reads the live Sanity salesState, which is open. Follow-up: a closed-state fixture or test dataset, never a live CMS toggle. A21 CLS was flaky on /national-show/about (0.124) in that run, though it passed in the default run.
+- SEO (saoc-nos-design-cb read of main ef040964). Canonical and hub Event JSON-LD both PASS. Gaps, queued as one SEO feature after F12:
+  1. R41 FAQPage JSON-LD on /national-show/faq.
+  2. BreadcrumbList on every /national-show/* page (Home › National Show › Page).
+  3. Event offers (ZAR, from resolveEffectivePrice; availability; validFrom) only while sales are open.
+- Audit server: main ef040964 on :3011 from .tmp/sandbox/wt-audit-main (PID 7276, has a copied .env.local). Stop it by PID, then remove the worktree and safe_delete the .env.local once the R31/R71 audit is done.
+- F16 contract on spec/lw-f16 at 1e5a5c20 (tickets: audience index, typographic rows, admin-only test strip). The dev is dispatched after F12 lands. Open items:
+  - [Brad] Live Sanity VIP is R300, below Weekend Pass R380; memory says R625/R500 was settled on 2026-09-08. Also, F16 sees weekend-pass-early-bird R360 still active, but F10 retired "early-bird-weekend-pass". Verify that the slugs and prices match intent.
+  - The hub advertises sold-out early-bird pools because it doesn't read Firestore counts.
+  - VendorStandPaymentForm still shows the public test-mode strip to vendors.
+  - /conferences still shows the "Conferences tickets" label and Joint mentions (conferences/page.tsx:17,32).
+- R73 (saoc-nos-design-cb) naming sweep: "SAOC National Show" → "National Orchid Show". Brad's ruling covers the hub h1 and the symposium; extending it to builder-written UI and transactional copy is a consistency call.
+  - Change (swap the event name only):
+    - pages: national-show/tickets/buy/page.tsx:41, (marketing)/tickets/page.tsx:41, national-show/vendors/page.tsx:57, vendors/payment/page.tsx:28,:63, vendors/register/page.tsx:41,:73, national-show/page.tsx:531;
+    - emails: lib/confirmation-email.ts:115, lib/vendor-payment-confirmation.ts:54, lib/vendor-stand-payment-notice.ts:42;
+    - the Ozow itemName at api/vendors/stand-payment/initiate/route.ts:233.
+    - tickets/page.tsx:23,:113 is already in F16.
+  - Leave: Lee-Ann's legal text (VendorTerms/Declaration/PaymentFieldset:75; vendors/apply:12,:28 if they match docs/leeann-source/2027-vendor-registration-form). Verify this when contracting, and list the legal naming for Brad and Lee-Ann.
+  - Flag only: nav-config.ts:136 "19th SAOC National Orchid Show" (Brad's own reference #35) stays.
+  - Queue: one small feature after F16, because it touches the F12 hub page and is outside F16's contract.
+- F12 audit (saoc-nos-design-cb on 2effaec3): R68–R71 PASS. On all 17 routes every h1 and free-standing h2 sits on the logo edge at 2041/1280/390, with no horizontal scroll.
+  - The "broken hero photos" was a FALSE ALARM. My audit server ran raw `next build`, which skips scripts/generate-image-variants.mjs; `pnpm run build` runs it. Beta serves /images/_opt/orchid-dark.jpg-2048.webp and orchid-violet.jpg-2048.webp with 200 image/webp, verified with curl through the beta auth. Future audit servers must use `pnpm run build`.
+  - P2s, folded into the R73 naming feature (F17) after F16:
+    (1) the symposium sub-nav label "SAOC Symposium" becomes "Symposium" (source: nav-config);
+    (2) the sponsors "Become a sponsor" panel is inset 32px inside the axis (double inset); put it on the axis;
+    (3) symposium: in public mode (placeholders off), the beta-only TBC note's rule and empty grid row must not render.
+- STANDING REVIEW SERVER for saoc-nos-design-cb: worktree .tmp/sandbox/wt-review (detached on main, has a copied .env.local), served on :3012 with `next start` after `pnpm run build`, flags SITE_PUBLIC_LAUNCH=true SHOW_PLACEHOLDER_PREVIEW=true. Rebuild after every push to main: stop the PID, then `git -C .tmp/sandbox/wt-review checkout --detach origin/main`, pnpm install, pnpm run build, start. Currently at 2effaec3.
+- R74 (saoc-nos-design-cb, :3012 sweep on 2effaec3). Hub below the hero, footer and the 390 flows PASS, except:
+  1. [Brad to confirm] The peer quotes Brad: "hide the members link for now until the portal is ready". That is NOT traced. My only recorded Brad instruction (2026-10-13) is an "in progress" holding page after the NOS Site is done. Header and mobile nav still show "Members", and the footer shows "Members Portal". No action until Brad confirms.
+  2–6, folded into F17 after F16 (with the R73 naming and the F12-audit P2s):
+    - (2) Don't render ShowSectionNav on the hub only; it duplicates the Planning rows and the Explore index.
+    - (3) nav-config labels to sentence case (same words), covering the mega and mobile menus.
+    - (4) 240px dead gap between two adjacent bone sections on the hub ("Planning a visit" pb120 + "Ten judging groups" pt120).
+    - (5) Footer WOSA link: the arrow is orphaned on line 2; glue it with a nbsp.
+    - (6) The mobile-menu "Show Sponsors" description is internal builder copy; replace it with "The sponsors behind the National Show." (nav-config builder copy).
+  7. PARKED: one-row 390 mobile header (≤72px).
+  - F16 already covers the /tickets/early-bird 7px h-scroll from the w-screen test strip. R62 (SAOC chrome on /tickets/*) is still open.
+  - R74 #1 update: saoc-nos-design-cb gives the source as Brad typing directly in its session on 2026-10-16, verbatim "Let's hide the members link for now until the portal is ready." It came in the same message as "Remove the duplicate early bird products" and "We will keep one server instance always running". It is NOT in this repo's backlog (grep finds only my entry). Plausible, and consistent with the holding-page plan (hide the nav link now, /members holding page later). It goes into F17 once Brad confirms in my chat.
+- F16 on main 41a7a08f (tickets: audience index, typographic dual-price rows, admin-only test strip, no card photos). Critique 33→37/40. contract-f16 A1–A9 and A11–A14 PASS; the F12 axis check passes on tickets; e2e 149/3.
+  - A10 waiver: check-f3-container and the check-f3-imagery "h1 left 100" lines are STALE against F12. I proved this by running check-f3-container on main 2effaec3 (:3012) before F16: ~383 failures, because the content width is 1320/1216, not 1080. They are superseded by F12-A15 (the axis authority). F17's architect must formally retire them in supersession.json.
+  - [P1 follow-on, before the early-bird pool sells out] Codex: admission rows always link to the early-bird SKU (lib/admission-rows.ts:96). Once the pool sells out, /tickets/early-bird shows Sold out and offers no route to the regular ticket. Fix: the sold-out early-bird page links to its regular sibling, or the hub reads Firestore sold counts. Not launch-blocking, since sales start at launch.
+- F16 audit (saoc-nos-design-cb, :3012 at 41a7a08f): R31 #1a/#1b, rows, test strip, copy and axis all PASS. Fixes are added to F17 as scope E:
+  - E1 [P1] Each dual-row price gets a visible CMS-name caption and its own Buy action to its own SKU. This also closes the F16 Codex P1 (no regular-ticket route after the early-bird sell-out).
+  - E2 [P2] All row actions use the outline style.
+  - E3 [P2] The "Provisional pricing" note moves above the rows.
+- R75–R76 (saoc-nos-design-cb, inner-page sweep on :3012). Queued as F18 after F17; design calls accepted under Brad's design autonomy, no new copy.
+  - R75 [P1] /national-show/about is a wall of text.
+    - Paragraph 1 becomes the lede.
+    - 4fr/7fr grid: a sticky column-1 pull-quote of the theme line (verbatim from para 2) plus the hub facts list from Sanity.
+    - Paragraphs 2–6 at 60ch, 16/1.55, full ink (drop the 80% alpha).
+    - One 21:9 orchid-violet image break between paras 3 and 4.
+    - Closing Tickets + Plan your visit pair, then ShowSectionNav. Find out why it's missing on /about.
+  - R76 [P1] Show pages with no supplied body (programme today; audit the others) need a designed holding state built from existing parts only:
+    - hub facts from Sanity;
+    - related-page cards using nav-config titles and descriptions;
+    - the existing "Be the first to know" block;
+    - no orphan rules; the TBC note on beta only.
+  - R76b [P2, Lee-Ann report] Hero ledes from content/show-pages/*.json "summary" are spec V3 "Purpose" builder briefs (12-workshops, 05, 11-programme, maybe 01). Render no lede where it reads as a brief, and keep it as meta only where it reads publicly. List them for Lee-Ann.
+  - Plan-your-visit PASS.
+- RESOLVED (Brad, 2026-10-16): the live Sanity ticket prices are Brad's latest and correct (VIP R300, Weekend R380/R360 EB, Day R150/R120 EB). Never re-raise pricing. The older R625/R500 notes are superseded.
+- R74 #1 CONFIRMED by Brad in my chat (2026-10-16): "Hide the members link". Added to F17 as scope F: remove it from nav-config and from the header, mobile menu and footers. The /members route stays for the later holding page.
+- R77 (saoc-nos-design-cb, :3012 at 41a7a08f):
+  - #1 [P1 regression, curl-verified]: "Explore the show" renders only on the hub (4 hits). /about, /symposium and /faq have 0. Fix it in F17 scope G1: inner routes yes, hub no, plus an assertion.
+  - #2 [P1]: the exhibitors key-dates caption wraps one word per line. Fix it in F17 scope G2.
+  - Queued for F18:
+    - #3 exhibitors TBC rows say everything twice (keep the chip, drop the duplicate sentence where a chip exists);
+    - #4 the workshops and conferences catalogues move onto the F16 row component (price as R200, steppers per row, sticky running total, the admission-transfer note moves to /tickets);
+    - #5 the international-guests schema preview is covered by the R76 holding state;
+    - #6 sponsors card-in-card becomes one panel on the axis.
+- F17 contract at 01ee165d (scopes A–F; G being added). For Brad and Lee-Ann:
+  - Her own vendor form mixes "SAOC National Orchid Show" and "SAOC National Show" in the legal text, which is left unchanged.
+  - Live Sanity ticketsPage still holds the old event name; Brad can edit it in Studio, and F17 doesn't mutate the CMS.
+  - The hub's "premier competitive" sentence is builder copy.
+  - The "The sponsors behind the National Show." descriptor is my wording, made under design autonomy.
+- R78 (saoc-nos-design-cb, final eye pass; all 17 NOS routes are now swept). For F18:
+  1. [P1] Build R75 as a shared long-form prose template, applied to /about, /what-to-expect, /vendors and /sa-exhibitors:
+     - paragraph 1 as the lede;
+     - a 4fr/7fr grid with a sticky column 1 (facts list, plus an optional verbatim pull-quote);
+     - one image break using an existing asset;
+     - the closing CTA pair, then the explore index (NosShowIndex, which F17 restores on inner routes).
+     Lee-Ann's headings stay verbatim (R7 casing).
+  2. [P2] /faq:
+     - the TBC chip moves after the question (inline, small);
+     - the + becomes a 20px icon, centred, with the whole row as the ≥44px button;
+     - in public mode, unanswered questions are not rendered (part of the R76 audit).
+  3. [P3] /archive: the beta TBC card spans the column; R76 covers public mode.
+- F17 SHIPPED 2026-10-16: main 76ad8b98 (pushed). A1–A20 green, e2e 148/3 skipped, Codex PASS, critique 33→37/40. :3012 rebuilt (PID 35327). F17 worktrees/branches removed. Follow-up: check-labels-static diffs vs stale base d2071be5 → retire/rebase in F18 item 9. F18 architect dispatched (spec/lw-f18, wt-lw-f18-spec).
+- F17 audit (design-cb, 76ad8b98): PASS. P2: the hub still renders NosShowIndex (R74 #2), so it was added to F18 (hub-absent assertion).
+- R79 (design-cb, SAOC home on :3012). Queued as F19 (SAOC) with R72 axis/judging + R65 type, after F18:
+  - P1 #1: the hero scrim is a uniform 75–85% sage, which hides the carousel. Per design_system_README l.125 / R64 it should be a diagonal top-left 60%→25% plus a bone pull at the bottom, with h1 and CTAs ≥4.5:1 on all 4 slides.
+  - P2 #2: CTA "Find Your Society" → "Find your society" (README l.51).
+  - P2 #3: "Upcoming society shows" lists only the national show. Use the existing "What's on" eyebrow as the h2, or hide the section when there are no society shows. No invented label.
+  - P2 #4: yearbook band, meta and actions sit directly under the copy (gap 32) instead of justify-between; the image carries the height.
+  - #5: FOR BRAD, still live on home: "56 accredited judges", "1990", "184 pages" (unsourced).
+- F18 contract c6294195 (spec/lw-f18, 19 assertions). Split: F18a (items 1-5, 7, 8, hygiene, hub index removal) then F18b (catalogue rows A8/A9/A14), both with the same dev. Lead rulings: break photos only in [data-nos-image-break] on the 4 long-form routes; vendors pending chip and sponsors marker beta-only; exhibitors regex predicate; red A12 checks are reported, not edited. check-labels-static was rebased to a structural check (fixed).
+  - FOR LEE-ANN: 9 hero summaries dropped as builder briefs (pages 01, 02, 05, 06, 07, 11, 12, 13, 15; 07 has no Drive source); /vendors and /sa-exhibitors share the same copy; the /sa-exhibitors heading duplicates its h1; mixed naming in legal text; WOSA "held alongside" is unsourced.
+  - Gap: e2e/journeys/ is untracked in the main checkout.
+- R80 (design-cb, 390 check on :3012 at 76ad8b98):
+  - #1 [P1, NOS]: at <768 the hub hero stacks copy first and the orchid image last (image at y1041, 281px tall), so the first screen is all type. Fix: image first (order -1, ~300px, object-position on the bloom), then h1/lede/CTAs (Tickets ~y680), then countdown and facts. Also check nos-hero-photo inner heroes at 390. Plan: architect amends this into F18b scope once F18a ships, because the hub page is mid-edit in F18a.
+  - #2 [P2, SAOC]: home hero at 390 has ~4px between h1 and lede (needs the 16-20 heading-to-lede gap), and the CTAs stack at unequal widths (both full-width or centred at equal width). Goes to F19 with R79.
+- R81 (design-cb, /tickets/day-visitor on :3012, desktop): goes to F18b with R62 (NOS chrome on /tickets/*, still open).
+  - P1:
+    1. Per-day rows show ISO dates; show "Thu 23 Sept 2027" (SA English) and keep ISO for data only.
+    2. The disabled Buy button gives no reason; add a hint tied by aria-describedby, or validate on click. The suggested hint text "Choose at least one ticket" is UI microcopy with no source; flag it to Brad if it's used.
+    3. The hero scrim renders flat grey; use the NOS inner-hero treatment after R62.
+  - P2:
+    4. The estimated total sits above the selectors and repeats "estimate"; move it next to Buy, add aria-live.
+    5. The price shows "R150.00" vs "R150"; drop zero cents.
+    6. The "Tickets per day" label should use the 14px sentence-case form-label role.
+- TEAM VOTES (Brad 2026-10-17: full autonomy, 3-way vote between saoc-2b, design-cb and nos-site-77; majority ships):
+  - VOTE 1 CARRIED, C (2-0 so far): unsourced home figures (56 judges, 1990, 184 pages, yearbook editor/ISSN) show on beta with the "awaiting committee confirmation" marker and are hidden in the public build. Goes to F19.
+  - VOTE 2 CARRIED, B (2-0; saoc-2b switched from A for the accessibility reason): Buy stays enabled. On click with qty 0, show "Choose at least one ticket" inline (aria-describedby) and move focus to the first quantity field. v13 HANDOFF overrides this if it specifies otherwise. Goes to F18b.
+- design-cb unowned sweep, assigned:
+  - Members links: already clean on main (git grep).
+  - Real stock feed for the v13 pool and per-day counts, the stub-photo mapping for all products, and 404s/redirects for retired ticket/catalogue URLs: F18b.
+  - Beta SEO check (sitemap, canonical, OG per route, Event JSON-LD): nos-site-77 SEO lane.
+  - "Register" vs "Buy ticket", vendor T&Cs naming and R76b ledes: VOTE 3.
+  - VOTE 3 CARRIED 3-0, all A: (b) "Buy ticket" on every paid product, including the symposium and workshops; (c) Lee-Ann's vendor T&Cs legal text stays verbatim, with the naming mix listed for her; (d) builder-brief ledes dropped in public (F18a) and listed for Lee-Ann.
+  - VOTE 1 final 3-0 C. VOTE 2 final 2-1 B. On v13 cards the stepper starts at qty 1 (HANDOFF §3.3) and a card not on sale shows no CTA; B applies only to a checkout screen that can reach qty 0.
+- R1–R82 status table: .agent/memory/project/specs/launch-weekend/r1-r82-status.md (45 DONE, 17 IN FLIGHT, 7 NOT STARTED, 5 PARTIAL, 3 SUPERSEDED, 1 WITHDRAWN, 4 UNTRACED: R24, R28, R30, R50).
+  - NOT STARTED, assigned:
+    - R47 events, R49 about, R55 contact, R58 sponsors, R61 → F19;
+    - R54 conferences, R59 wosa registration link → F18b;
+    - R33 plan-your-visit tel/map, R34 exhibitors jump nav → nos-site-77.
+  - R53 Ozow test toggle hardening plus a gate assertion is P0 launch-gate. Plan: a separate small payment-safety feature (F21) after F18b, saoc-2b lane. It touches payment libs, so it gets the full chain and is not votable.
+- F18a SHIPPED 2026-10-17: main 47cf7f1b (pushed). All F18a assertions green, Codex PASS, critique 33→37. The plan-your-visit 0px gap was a load artefact: identical DOM on main. :3012 rebuilt on 47cf7f1b.
+- Autonomy set to `autonomous` (workspace default) on Brad's instruction, 2026-10-17. Quota: use all of it, Sonnet for build, never Opus for docs/maintenance.
+- design-cb R1–R82 review:
+  - R24 and R28 verified DONE (git grep).
+  - R30 open parts (hub "Day Pass from R{min}" line, ticket-close band) → F18b.
+  - R50 re-measure/build → site-77. R61 → site-77. R58 neutral h1 + empty state → F19.
+  - R31 SUPERSEDED by R83 (v13 tickets). R14 addendum 17/1.65 SUPERSEDED by R65 16/1.55.
+- F18a audit (design-cb, 47cf7f1b): PASS with 4 P1s, sent to the F18 dev as the direct follow-up fix/lw-f18a-audit:
+  1. Photo reuse across 4 route pairs.
+  2. /archive has no archive content.
+  3. /sa-exhibitors h2 repeats the h1.
+  4. The /vendors hero lede contradicts the holding state.
+  - P2s held: 13px workshops fine print, FAQ card height, /about has no lede.
+  - Other lanes: R65 NOS 17/1.65 still on 5 routes, and /exhibitors banners (site-77).
+- Public-mode review server: :3013 from .tmp/sandbox/wt-public (SITE_PUBLIC_LAUNCH only, has a copied .env.local). Stop it by PID and remove the worktree after launch.
+
+### 2026-10-17 — Athanor third-party review of :3013 (47cf7f1b) triage
+- Report: /Users/vetus/ai/Athanor/.tmp/sandbox/saoc-review/REPORT-F18a.md (Claude + automated a11y; Gemini/Grok need Brad sign-in).
+- CLOSED: P1 #1-2 prices (R250 Sunset, R120 Early-Bird) — rendered from live Sanity = Brad's latest; content.md/provisional-figures superseded.
+- ROUTED: NOS hub unsourced facts + wosa-conference holding + heading skips → F18 (fix/lw-f18a-audit amendment). SAOC unsourced facts (/, /judging, /events), R47 events count (1 of 18), R55 contact, SAOC tap targets → F19. NOS chrome tap targets → site-77 f9; what-to-expect concessions/photo norms + duplicate intro → site-77 f8. Workshops sessions + programme schedule → F18c.
+- LEE-ANN QUESTIONS (to add to her doc, Part C): (a) Symposium — Elbert's bio contains "you know the species name!" verbatim from his CV: keep or edit? (b) Cape Orchid Society "founded 1947" vs "50th anniversary 2010" in the Crous bio — which is right?
+- POST-LAUNCH (saoc-2b lane): R61 — every NOS route preloads Crimson Pro, JetBrains Mono, Lora, Manrope from the shared root/marketing layout; NOS uses only Fraunces + Karla. Per-route-group font split changes SAOC head; deferred. Numbers pending from site-77.
+- design-cb nos-v4 pack copied to goldens/nos-v4/ (chrome v4, Brad-approved 2026-10-15). R74 #7 one-row header WITHDRAWN (conflicts decision #6). site-77 f9 = decision #2 (utility bar + Search off NOS). Search-reachable condition withdrawn.
+- design-cb F18b rulings (2026-10-17): sales-closed = v13 cards render masked (no price/stepper/CTA) + one R11 "Sales closed" line + "Be the first to know"; pool banner hidden. Symposium = "National Orchid Show Symposium" end to end; Sanity ticketType rename dispatched (Dev_Son5_M1-F22_LaunchWeekend, content edit, backup first).
+- LEE-ANN QUESTIONS (add to doc): ticket names — v13 design vs CMS: VIP Opening vs VIP Ticket; Sunset Cocktails vs Sunset Cocktails (Single); Day Pass vs Early-Bird Exhibition / Day Visitor. CMS names render until she answers.
+- F23 (queued, saoc-2b): font split per F19 spec §8 — (saoc) route group layout holds Crimson Pro/Manrope/JetBrains Mono (+Lora); root drops them; NOS variant uses Karla. Needs ChromeFrame + UtilityBar, so runs AFTER F18b and site-77 f9 merge. design-cb P1 (v4 acceptance: NOS loads only Fraunces + Karla).
+- Security re-check 2026-10-17: the Spec V3 mailbox passwords are only in gitignored content/drive-source/ and in public-repo history (1d6512cb, redacted 0ec14930). HEAD and tracked files are clean. These are not the live mailbox passwords; the residual action is still Lee-Ann rotating the reused values (Brad to remind). A history rewrite on a public repo is Brad's call only.
+- 17 of 18 societyEvent docs in Sanity are unpublished drafts, which is why /events shows 1. Editorial: publish only after content is confirmed.
+- Merge order note (2026-10-17): F18a → F18b (rebase) → site-77 r6 / F19. Whichever of site-77 f9 and F19 lands second re-captures f9-baseline.json (SAOC head/markup) and F19 nos-baseline.json/fonts-baseline.json as needed.
+- F23 font numbers (site-77, r6 build, 8 NOS routes): 5 font preloads per route (Crimson Pro x2, JetBrains Mono, Lora, Manrope). Unused bytes 152.8/121.5 KB (390/1280) on most routes, 305.6/242.9 KB on symposium. Total font traffic 293.6 KB / 8 requests typical, 375.3 KB hub/about, 528.1 KB / 13 requests symposium. Manrope is still visible on NOS at 390 after the utility-bar removal, so F23 must find where. Acceptance: NOS loads only Fraunces + Karla (design-cb v4).
+- F23 findings (F19 dev, 2026-10-17): Lora rides every marketing route via components/chrome/SaocLockup.tsx (Lora() loader, imported by Header/Footer in the shared (marketing)/layout.tsx). The split needs SaocLockup to read --font-lockup-loaded set in a (saoc) layout :root <style>. Side effect: /tickets/* and not-found keep SAOC chrome outside (saoc), so they lose the faces unless tickets/ moves too. The route move breaks path-pinned checks (scripts/checks/verify-show-page-m4.ts, contracts/contract-b5-judging.yaml and others).
+- DECISION NEEDED (Brad, production config): the vote-1C pattern ("shown on beta with marker") cannot work on the deployed beta today. withholdPlaceholderProse() (lib/data/show-pages.ts:488) needs SHOW_PLACEHOLDER_PREVIEW=true plus both BETA_BASIC_AUTH_* set when the page is built (pages are prerendered). apphosting.yaml has no SHOW_PLACEHOLDER_PREVIEW, and the wall credentials are RUNTIME-only. So deployed beta withholds exactly like public, which fails closed (safe). Enabling the marked preview on beta needs apphosting.yaml to add SHOW_PLACEHOLDER_PREVIEW and BUILD availability for the two wall secrets. That's production config and secrets, so it's Brad's go. Local review builds (:3012) work when the creds are set at build time.
+
+- [2026-10-17] F23+ candidate (design-cb): /judging lists the six awards twice (code list + cards); proposal keep cards, drop list — content removal, needs 3-way vote. Also: footer emblem lazy-load hides it in full-page captures (capture-shots scroll/eager).
+
+- [2026-10-17] F24 SEO metadata (design-cb rulings, FINAL; dispatch after 05:30 lean window + after F19/batch2/F18b merge to avoid conflicts): P1 home title duplicated -> title {absolute:"South African Orchid Council"}; P2-1 NOS inner template "%s — National Orchid Show | SAOC" (hub keeps "National Orchid Show | South African Orchid Council"); P2-2 FAQ title = h1 "Frequently asked questions"; P2-3 descriptions <70 fall back to lede cut at sentence <=155, >160 cut at last sentence <=160, never mid-word. Codi reruns sweep script after.
+
+- [2026-10-17] PROD BLOCKER (data, Brad-only — deletion not votable): live Firestore holds test ticket orders (pool 3 sold, VIP 2 sold) that count toward public sold totals. Before go-live either Brad approves purging them, or a feature excludes test-flagged orders from sold counts (no deletion). Flagged by design-cb 2026-10-17.
+
+- [2026-10-17] 3-way vote item (design-cb): tickets audience card "Trade vendor showcase, application and gated registration." (nav-config.ts:260 descriptor) — "gated" is internal wording, not visitor language. Predates F18b; needs a vote (copy change).
+
+- [2026-10-17] VOTE r7 venue naming DONE (b) 3/3 (saoc-2b, site-77, design-cb): Sanity showVisitorInfo.publicTransport -> "Public transport options to The Hangar, Stellenbosch Flying Club have not been confirmed." (rev b293KmNbo0z5K9RnfbYJ6n; backup .tmp/sandbox/venue-vote/backup-20261017.json). Postal addressLines "Stellenbosch Airfield, R44" left unchanged per design-cb.
+
+- [2026-10-17] Sanity webhook did NOT refresh beta after a showVisitorInfo publish (manual POST /api/revalidate on beta fixed it). Check the Sanity webhook config/secret for beta.saoc.co.za before prod. Also vote item (design-cb): workshops SESSIONS_NOTE first sentence ("the products below are the sellable…") contradicts the page; proposal withhold it on public, keep "Per-session bookings are not yet available for purchase."
+
+- [2026-10-17] F24 scope add (design-cb P1, vote 1C): static unsourced "21 societies" on public — app/(marketing)/societies/page.tsx:93 hero lede and media-kit/page.tsx:97; withhold on public via withholdPlaceholderProse(), show marked on preview.
+
+- 2026-10-17 06:55 — r7 (fix/nos-critique-r7 @ 8e1d31d7) merged to main (ff from 1f8ad3de). Merged before Codex round 5 (usage limit until 10:42) because --gold is a live P1 fix; Codi PASS + Opus interim QA PASS. Codex round 5 runs post-merge on main; findings → r8 with queued P3s. F18b told to merge 8e1d31d7 and not define --gold.
+- [2026-10-17] POST-SUNDAY cleanup: boot guards fail on 2 dead SAOC specs (git b7af130c, June): specs/gate-timeout-fix/contract-f1.yaml ("mapping values are not allowed here") and specs/mission-slug-collision-fix/contract-f1.yaml ("expected a single document"). Not a harness defect (athanor-59 verified). Repair the YAML or archive both specs out of specs/.
+- [2026-10-17] r8 queue (site-77): design-cb r7 live check on :3013 @8e1d31d7 PASS on gold disclosures. P2: chip wraps at 375px; ruling ≤419 letter-spacing 0.02em. P3: chip not tightened at exactly 700 on exhibitors/what-to-expect (699 breakpoint). F18b .nk-disclosure told to follow same rule.
+- [2026-10-17 07:20] r8 fix/nos-critique-r8 @6bffbe7c (on main 8e1d31d7; F1 chip tracking ladder, F2 getting-there lede, F3 --green-1/2, F4 attraction ids/h3, F5 emergency gold band + tel links). Gates f1-f5 green, Codi PASS, Opus interim PASS. HOLD for Codex (after 10:45) — no live P1.
+- [2026-10-17] r9 P1 (site-77): NOS lockup PNGs ~537KB eager per page (header 1200px @306 shown; both footer variants downloaded). Codi ruling: next/image header w/ sizes; single lazy <picture> footer; check <=80KB lockup bytes + 1 footer req at 1280/390. Post-F18b: Codi re-measures /national-show/tickets LCP.
+- [2026-10-17] r9 fix/nos-critique-r9 @4c9187bd (stacked on r8): F1 lockup delivery 537KB->~33-38KB DPR1 (DPR2/3 390=85KB report-only, Codi accepted); F2 research chips "Not yet confirmed"; F3 fractional media gaps; F4 emergency filter null-safe. Gates green, Codi PASS, Opus PASS. HOLD for Codex with r8. Merge order r8->r9.
+- [2026-10-17 12:10] Codex: r7 round5 PASS (closed); r9 4c9187bd PASS; r8 6bffbe7c FAIL P2 (ShowStatusLine.tsx:79 note aria-label missing when exhibitor pendingLabel blank; not live). site-7d fixing r8 (opus retry1) + rebasing r9; hold both. Conflict risk: F18b also edits ShowStatusLine.tsx chip ladder/shortOnNarrow.
+- [2026-10-17] F18b 81490e7a Codex P2s (latent, not live — verified Sanity read-only): (a) sunset-cocktails pooled count sums only active SKUs; couple SKU inactive — if it ever had sales, hub over-counts. (b) after early-bird cutoff hub sells early-bird slug at regular price; checkout 409s if no regularPrice — live early-bird SKUs (early-bird, weekend-pass-early-bird) have earlyBirdCutoff null so never triggers. Fix both post-launch or before setting any cutoff. PROD CHECK: Sanity active ticketTypes include fictional-test-show-general-admission + qa-fixture-ticket — confirm not rendered on prod show.
+- [2026-10-18] F18b MERGED: main ff 8e1d31d7 -> 81490e7a (Codi PASS on :3014, A1-A38 green ex A15, e2e 148/0, Codex no P0/P1; P2s latent, logged above). :3013 rebuilt on 81490e7a. F24 architect dispatched (spec/lw-f24). Votes V1 "gated registration" (nav-config.ts:260) + V2 workshops SESSIONS_NOTE sentence 1 sent to design-ad + site-7d (saoc-82: V1 b, V2 a). r8/r9 awaiting re-stack on 81490e7a.
+- [2026-10-18] VOTE V1 (b) + V2 (a) CARRIED 2/3 (saoc-82, site-7d; design-ad pending): V1 nav-config.ts:260 "gated registration" -> "application and registration."; V2 workshops SESSIONS_NOTE sentence 1 withheld on public, foot kept. Folded into F24 contract.
+- [2026-10-18] r8 restack ac3a4261 Codex rd2 FAIL P2 (latent in main F18b): StatusMarker shortOnNarrow shows "To be confirmed" on plan-your-visit research badges <360px; site-7d fixing in r8 (pending-only narrow pair, pending markup byte-identical).
+- [2026-10-18] r8 (812dbaa2) + r9 (d05c85a5) restacks MERGED: main ff 81490e7a -> d05c85a5. Gates green, Codex PASS both. Backlog: nos-structure.css var() fallbacks for undefined tokens (--fs-sm l.771, --nk-field l.882, --fs-lg l.1347, --fs-base l.1354/1535/1572) pre-existing from F18b. Stale refs fix/nos-critique-r8/r9 on origin can be ignored.
+- [2026-10-18] site-7d re-measure on d05c85a5: R50 status line, weekday string, sibling h2 (public), A1 facts strip, 60ch all DONE. OPEN: R50 P1 what-to-expect dates card must precede R11 disclosure -> site-7d r10 F2 (after token fallbacks r10 F1). Codi obs: ~230px gap at 1280 between dates card and host/venue aside.
+- [2026-10-18] CORRECTION: --nk-field (nos-structure.css:882) is NOT a defect (set inline per .nk-stub in keepsake/parts.tsx:64). Real gaps --fs-sm/--fs-base/--fs-lg -> r10 F1 defines from nos-v4 plan-your-visit.html :root (identical to fallbacks, no visual change).
+- [2026-10-18] r10 (81552296) MERGED: main ff d05c85a5 -> 81552296 (F1 --fs-sm/base/lg defined, no visual change; F2 what-to-expect dates card first). Open w/ Codi: question-marker short tag; .nk-chip 12.8px vs nos-v4 12px (site-7d recommends keep).
+- [2026-10-18] F24 Codex P2s accepted (degraded states, no copy to cut): sponsors desc stays 33ch once sponsors exist (no lede passed); plan-your-visit desc stays 161ch if Sanity planIntro absent; sa-exhibitors stays 67ch if show summary absent. Revisit when Lee-Ann supplies copy. e2e note: local e2e needs empty BETA_BASIC_AUTH_* or the wall blocks every page.
+- [2026-10-18] F24 MERGED: main ff 81552296 -> b7ce1bcc (A1-A14 green, e2e 148/0, Codex P1 rejected (computed live-region count), 3 P2 accepted). Follow-up: content/national-show-routes.json:248 purpose still says "gated registration" (nav descriptor is documented as trimmed prefix of purpose) — align with V1 deletion in a later small change. Codi has not visually reviewed F24 (societies lede withheld; preview marker below hero; workshops foot-only disclosure verified by screenshot).
+- [2026-10-18] F24 follow-up: workshops/page.tsx duplicates the chip-fit class ladder as a local const because ShowStatusLine.tsx does not export CHIP_FIT_CLASSES. Export it + import in workshops (drift risk if Codi changes the ladder). Small, post-launch or next site-7d round.
+- [2026-10-18] F24 hygiene 26fde668 merged (stale gated pins repointed). PRE-EXISTING (not F24, verified on 81552296): vendor-p1-targets/check-labels-static obsolete (expects old "Exhibitors and Vendors" rename; main has "Trade Vendors") — retire/supersede; check-descriptor-provenance archive ("Previous editions." vs purpose "...and their champions.") + symposium ("National Orchid Show Symposium" vs "SAOC Symposium" — check Drive copy); check-featurerail-blurb-provenance (featureRail.blurb missing vs menu-system-layout4 f7 golden). Routed to site-7d r12.
+- [2026-10-18] CORRECTION (d): main label is still "Exhibitors and Vendors" (not "Trade Vendors"); check-labels-static fails only on its title pin (F24 911fd349) — re-pinned in r12. r12 decisions: archive manifest synced to "Previous editions."; symposium manifest -> "National Orchid Show Symposium" (F18 ruling); featureRail blurb check RETIRED (blurb removed deliberately in F8, e2e asserts absence).
+- [2026-10-18] Sweep (site-7d) on 221fd6f4: both sites clean on overflow/console/status/h1/title+canonical uniqueness/64 links; SAOC 0 axe. r12 adds: F2 /tickets/vip h3-under-h1; F3 NOS (+SAOC if same) 404 meta doubled suffix/canonical/noindex; F4 sourced meta descriptions for /about /societies /judging /events /contact /sponsors + /tickets/*. Target size bar = WCAG 2.2 AA (2.5.8), no AAA ruling.
+- [2026-10-18] Re-sweep 26fde668: 0 WCAG 2.5.8 AA target failures both sites; CLS <0.01 everywhere except /national-show/tickets@375 0.059 (nk-fan, nk-facts) P3 noted; SAOC 404 missing <main> + title same as home -> r12 F3.
+- [2026-10-18] V1/V2 now 3/3 (design-ad concurs). Conferences public tracker CLEAN on 81490e7a (closed). Tickets LCP pending warm re-measure.
+- [2026-10-18] Codi rulings: question marker gets NO short tag (pending-only, already on main since r8); .nk-chip stays 12.8px (--fs-xs floor). No code change. Gaps (what-to-expect ~230px, ShowContentState) pending Codi live check.
+- [2026-10-18] Codi live check b7ce1bcc PASS (emergency band, R11 chips all widths, lockups <=80KB, tickets LCP 1.24s warm, F24 templates, V1/V2, societies count). Findings -> site-7d r12: F5 P1 phones download both lockups (~62KB/view; confirm true 390); F4 add /societies /about /tickets/* descriptions + title casing per h1 (R64) + symposium desc -> lede (update F24 goldens); F6 doubled section gap after disclosure (<=96@1280, <=64@390).
+- [2026-10-18] POST-LAUNCH P3: /tickets/<missing slug> soft 404 (HTTP 200; tickets/[slug]/loading.tsx streams before notFound()). Neutralised for SEO by r12 F3 noindex/no canonical. True 404 needs slug check before streaming boundary.
+- [2026-10-18] r12 F5 lockup double-download NOT reproduced on fresh load (real viewports/DPRs: 1 header + 1 footer); Codi repro = load-1280-then-resize (normal picture reselection) -> F5 becomes regression-guard check only. F6 gap confirmed 230@1280/144@390, fixing. LongFormPage p->p 1.5em vs Codi 1em: awaiting Codi ruling (site-wide scope?).
+- [2026-10-18] PROD BLOCKER (Brad at cutover): Sanity ticketTypes qa-fixture-ticket (R0, "Do Not Purchase") and fictional-test-show-general-admission (R10) are ACTIVE with public 200 pages -> set inactive (not delete) before prod; check e2e/QA dependence on qa-fixture first. (field-trip R200 is the REAL product.) r13 queued: titles follow h1 WORDING (NOS about/symposium/international-guests/archive/vendors payment+status; SAOC /about /judging /contact /societies). Symposium desc: word-boundary cut + ellipsis, documented single-route exception to F24 D3/A3.
+- [2026-10-18] r12 (5f8d2311) MERGED: main ff 26fde668 -> 5f8d2311 (F1 provenance, F2 ticket h2, F3 404 meta/main/notFound in generateMetadata, F4 descriptions + R64 casing + symposium cut, F5 lockup guard, F6 40px gap). /societies description stays default (no source). Next: r13 title wording.
+- [2026-10-18] r13 (9d16cf96) MERGED: main ff 5f8d2311 -> 9d16cf96 (titles follow h1 wording: international-guests, vendor stand payment, /about, /judging, /contact; exceptions / and /societies sentence h1s; NOS about/symposium/archive pending Codi re F24 T3).
+
+- 2026-10-18 r14 merged ab7c549c (ff from 9d16cf96): F1 tickets-hub single section unit (Codi ruling 3); F2 /societies description = Lee-Ann About l.9 verbatim (saoc-82 ruling (a), no source on page). Codex PASS (site-7d). Next: Codi visual pass r13+r14.
+- 2026-10-18 r15 SAOC org visual pass (site-7d): 17 routes, 0 code P0. PROD GO-LIST += (a) /privacy /terms /refunds are AI-drafted, need legal review or Brad accept; (b) /refunds provisional figures need Brad/Lee-Ann confirm. Vote: withhold society estimates on public carried 2/3 (saoc-82, site-7d) -> r15 F1. r15 F2 focus ring, F3 contrast started; F4 404 chrome, F5 sponsors CTA, media-kit files, event-row affordance held for Codi. POST-LAUNCH: /about committee absent-section wording (lib/data/show-pages.ts:577).
+- 2026-10-18 P0 beta /national-show/tickets 500: standalone bundle missing semver/functions/valid.js (firebase-admin/auth chain), rev saoc-prod-build-2026-10-18-008. Fix in progress (Dev_Son5_M1-F18_LaunchWeekend-3, fix/p0-standalone-semver). Open Q to Brad: backend is named saoc-prod; confirm beta != prod.
+- 2026-10-18 P0 fix ready: fix/p0-standalone-semver 0fdffebb (outputFileTracingIncludes semver/**; serverExternalPackages did NOT work). Repro 500->200 on local standalone; Codex PASS. Merge HELD pending Brad confirm beta.saoc.co.za != prod (backend named saoc-prod). POST-LAUNCH: tickets/page.tsx:30 imports viewerIsVerifiedAdmin (firebase-admin) on public hub for an admin-only banner -> lazy import behind cookie check.
+- 2026-10-18 r15 READY+HELD: b82b90ab (F1 withhold society estimates/21-count on public, F2 header ring-primary, F3 contrast; R3 check fixed). F2b READY+HELD: e330bd72 on r15 (18 focus rings -> primary; SaocLockup excluded w/ R5 guard; .nos-theme vendor/confirmation rings suppressed by NOS reset). Codex PASS both. Merge order on Brad beta!=prod: 0fdffebb -> r15 restack -> F2b restack. Codi held: 404 chrome, sponsors CTA, media-kit files, event-row affordance. Codi session stuck waiting all session; NOS visual pass not started.
+- 2026-10-18 athanor-52 friction reply: rollouts curl + app/** globs fixed in harness 3.8.38/3.8.40 (post-launch update). Boot-guard YAML failures are OUR spec files (gate-timeout-fix, mission-slug-collision-fix contract-f1) - fix post-launch. Subagent "Unknown skill" workaround: brief subagents to Read .claude/skills/<name>/SKILL.md directly.
+- 2026-10-18 P0 fix 0fdffebb merged to main (Brad re-sent beta 500 screenshot = go; beta is dev site per memory). Awaiting App Hosting rollout + beta curl confirm.
+- 2026-10-18 P0 CONFIRMED on beta: /national-show/tickets 200 after rollout of 0fdffebb (~7 min); /, /societies, /contact, /admin/login 200.
+- 2026-10-19 r15 (4a662f8c) + F2b (cea06daf) merged to main by ff to cea06daf. App diff == Codex-passed trees + 0fdffebb. Stale r15 branches pruned. Next: beta rollout confirm; Codi held items still blocked on Codi session.
+- 2026-10-19 r15+F2b CONFIRMED on beta (~7 min): ring-primary live; tickets, /, /societies, /refunds, /contact, /national-show 200. Note: /societies on beta has 0 "estimate" hits, so beta behaves as public mode for this (contradicts "beta unchanged" assumption) - verify SITE_PUBLIC_LAUNCH on App Hosting if it matters.
+- 2026-10-19 Codi unstuck: NOS visual pass started on :3013 (ab7c549c). Rulings: T3 (a) short titles kept; LongFormPage p->p stays 1.5em. Four held items (404 chrome, sponsors CTA, media-kit files, event rows) resent; Codi never received them. Results -> r16.
+- 2026-10-19 Codi NOS full pass (34 routes x2): 0 P0, 0 ship-blocking. r16 dispatched to site-7d: F1 NOS (violet vendor submits->royal, confirmation back-link 24px, sentence-case vendor h1s, drop exhibitors back link, programme gets hub ticket cards); F2 SAOC (404 full chrome+band+sentence case, sponsors CTA->primary); F3 (media-kit -> Eulophia emblem/lockup files, retire line-art; What's on rows link to /events/<slug> w/ STOP if any 404).
+- 2026-10-19 Sanity edit (r16 F1, Codi sentence case): showExhibitorInfo.title "Exhibitor Information" -> "Exhibitor information"; rev uEiB3idUVUWG4MN1Q0V3PI -> b293KmNbo0z5K9RnfmAhlk; backup .tmp/sandbox/sanity-backup-r16/showExhibitorInfo.json. No draft existed.
+- 2026-10-19 r16 merged 5c093d6e (ff from cea06daf): F1 NOS consistency, F2 404 chrome + sponsors CTA, F3 media-kit emblem files + event-row links. Codex R3 PASS. r15 branches pruned. BACKLOG (post-launch): app/sitemap.ts:95 + event-link.ts:8 build /events/${slug} unguarded.
+- 2026-10-19 r16 CONFIRMED on beta (~8 min): media-kit emblem live; 9 key routes 200, unknown route 404, exhibitors h1 "Exhibitor information". All visual-pass fixes (both sites) now live on beta. Remaining = Brad prod go-list only.
+- 2026-10-19 BRAD: "push the site to beta.saoc.co.za for my review, old site stays at saoc.co.za". Beta already serves main 5c093d6e (r16 confirmed live), behind the password wall. NOT flipping SITE_PUBLIC_LAUNCH (it would lift the wall + noindex). No DNS change. Prod cutover + payments/test-orders/legal decisions deferred until after Brad review.
+- 2026-10-19 BRAD: ticketing stays in TEST mode for his beta review. Verified apphosting.yaml carries only PAYFAST_SANDBOX_* and OZOW_SANDBOX_* credentials (no live keys) -> no real charges possible.
+- 2026-10-19 Brad review CLOSED ("fix the items, check vendor doc; review after"). Dispatched: site-7d r17 (F1 exhibitor card -> vendor flow, F2 NOS footer vertical monotone + remove SAOC para/eyebrow, F3 NOS hero diagnosis table first); Codi rulings (footer logo variant, sub-page heroes, hub crop, exhibitor CTA label) + PDF/email system design; Dev F18: Sanity price audit + cocktails R800 (capacity 200 kept, Q to Brad); Arch F31: Ozow 6-status contract; Analyst F30: Lee-Ann vendor doc diff + vendor listing plan. Review notes: .agent/memory/scratch/brad-beta-review-2026-10-19.md
+- 2026-10-19 Sunset Cocktails (Single) Sanity price 250 -> 800 (rev jsBdKVrXo1p7SIHX1tbosL -> rqa7QJaZ4YFDhltyPMvwSS; backup .tmp/sandbox/sanity-backup-r17/). Beta renders R800 (webhook ~2-3 min). Audit: all other active ticketTypes match lib/provisional-figures.ts on price/regularPrice/capacity/releasedQuantity/earlyBirdCutoff; only extras = 2 test fixtures. Capacity 200 kept; Brad Q 100 vs 200 open.
+- 2026-10-19 Analyst F30: Lee-Ann vendor form 7 Oct edit = no field changes vs 26 Aug snapshot (only a stray "P" typo + curly apostrophe). Pre-existing deviation: marketing-permission wording not verbatim -> r17 F4 (labels only). Vendor Listing.xlsx = internal outreach tracker (~35 vendors, contacts = personal data), NOT a listing shape, never seed public page. Listing plan: publish approved+PAID only via admin "Publish to listing" -> Sanity vendorNursery (reuses /vendors, sa-exhibitors, international-guests), allowlist projection, absent consent = don't publish. Brad Qs: paid vs approved; Sanity publish vs Firestore; page title; exhibitor/trader split. Lee-Ann Qs (7) pending her questions doc.
+- 2026-10-19 CORRECTION: vendor marketing-permission wording is ALREADY verbatim on main (63237d28; VendorMarketingFieldset.tsx:26-34 = snapshot l.183-184). Analyst read the stale local working tree (branch feat/conference-workshop-tickets), not origin/main. r17 F4 closed. LESSON: brief read-only agents to read origin/main (git show origin/main:<path>), not the working tree.
+- 2026-10-19 F31 Ozow 6-status contract done (contract-f31.yaml, 9 assertions). Today: non-Complete ITNs write nothing; Pending tickets lose seat at 30 min; vendor Pending -> re-initiate mints new attemptId -> later Complete rejected as stale (double-pay risk). Decided (saoc-82, revertible constant): Pending/PendingInvestigation hold 72h; vendor re-initiate blocked while pending. Dev_Son5_M1-F31 implementing on fix/f31-ozow-statuses. Live sandbox protocol runs after deploy.
+- 2026-10-19 CLEANUP: 45 stale worktrees removed (archive of unsaved diffs in .tmp/sandbox/archive-2026-10-19/; unpushed detached commit pinned as branch backup/wt-nos-f3-chk; feat/vendor-invite + feat/footer-single-wosa branches kept). :3013 server stopped. Remaining: wt-f31 (active). Main working tree still on stale feat/conference-workshop-tickets (392 behind) - switch held for Brad (autonomy.json local edits + his branding consolidation). Brad rule: sprint-start sync, one starting point.
+- 2026-10-19 Codi r17 rulings: footer = WHITE monotone vertical (200px >=701 / 160px <=700, centred, REG/NPO 24px below); about/faq heroes stay typographic (approved 5-photo map; photos there = request for new rights-cleared photography); hub bloom at 390 intended; exhibitor CTA -> "Apply to exhibit". Brand split for PDF/emails confirmed (NOS show mail, SAOC contact, light admin variant). Routed to site-7d; r17 F3 closed.
+
+- 2026-10-19 r17 F2 footer CORRECTED by Codi (supersedes white 200/160): NOS-2027-logo-reversed-gold-vertical.png (one-ink = "monotone", 13.7:1 on #211A57), 360px >=701 / 280px <=700, gap to REG/NPO = calc(0.25 * emblem width) (~63/~49px) per brand PDF p.08 clear space. Relayed verbatim to site-7d before F2 build.
+- 2026-10-19 r17 F2 addendum (Codi): REG/NPO restyle KEPT — "unchanged" = text+position only. Karla 700 12px .14em uppercase #F3F2D6 on royal (13.69:1), label role, triple-space separator kept. Relayed to site-7d.
+- 2026-10-19 F31 Ozow 6 statuses MERGED: main 5c093d6e -> 39b15ec0 (FF, secrets scan 0, Codex PASS on 7b05e3db, post-PASS diff = 2 check files only). A1-A9 green incl. lint 0 errors (f12 shebang fixed). Pending/PendingInvestigation + PayFast PENDING hold 72h; vendor re-initiate 409 during hold. NEXT: confirm beta rollout, then live 6-status Ozow sandbox protocol. Worktree .tmp/sandbox/wt-f31 to remove after.
+- 2026-10-19 r17 F1 Codex P1 ACCEPTED as product gap (option a): exhibitor CTA -> /national-show/vendors/apply per Brad, but the form requires business name, product category and >=1 stand, so a non-trading orchid exhibitor cannot complete it. LEE-ANN QUESTION QUEUED: which vendor-form fields are optional for non-trading exhibitors? Any field change = its own contract later.
+- 2026-10-19 F31 LIVE on beta: build-2026-10-19-002 = 39b15ec0, rollout SUCCEEDED 13:00Z; smoke 6x200 + 404. QA_Son5_M1-F31 dispatched for the live 6-status Ozow sandbox protocol (restores gateway/toggle, lists test doc ids). r17 told to rebase onto 39b15ec0 (no file overlap).
+- 2026-10-19 LESSON (site-7d): spec-check builds ran bare `next build`, which skips scripts/generate-image-variants.mjs; public/images/_opt is gitignored, so on fresh worktrees all loader hero/card images 404d in BOTH baseline and gate. r15/r16 visual nonreg was therefore blind to photo regions. Fix: checks run the generator before the build; baseline re-captured at 39b15ec0. Verified beta _opt images return 200 (beta builds run pnpm build), so nothing shipped is affected.
+- 2026-10-19 r17 MERGED: main 39b15ec0 -> 430940a6 (FF; r17 diff identical to Codex-PASS 4c69202c; secrets 0). Codi approved full-row footer layout. F1 "Apply to exhibit" -> /national-show/vendors/apply + SearchOverlay; F2 gold vertical lockup 360/280, 0.25-emblem gap, REG/NPO label role. TODO after live: delete fix/nos-critique-r17 (4c69202c) and -restack branches.
+- 2026-10-19 Codi delivered ticket PDF + 12-email system for Brad review (files in SAOC NOS Design project: .agent/memory/project/design/ticket-email-system/; SPEC.md, ticket-pdf-mock.pdf, email families A-D). Adds vendor-stand-forfeiture-notice to family B. 10 placeholders (SPEC §5) -> Lee-Ann doc after Brad OKs writes; 8 copy flags (SPEC §6). Route to site-7d ONLY after Brad approves.
+- 2026-10-19 F31 LIVE QA (signed server-side Ozow notify to beta @39b15ec0): Cancelled/Error/Abandoned logged only, no write PASS; Pending/PendingInvestigation hold +72h with gatewayPending PASS; forged Complete fail-closed (server confirm rejected) PASS. GAPS: real sandbox Complete->paid live round trip, vendor side live, buyer pages, capacity at expiry, inbox. Settings unchanged (ozow, sandbox on). PROD GO-LIST: 6 test orders SAOC-2027-{RCPFZXBRMC5H,CDHTRXE6X6KE,CWY59YY1ZBXJ,AYVNX075WTC4,7ZR3M6TQYZ2C,D1GGZB4AYWTG}; 2 Pending hold seats until 2026-10-22.
+- 2026-10-19 r17 LIVE on beta (430940a6): 5 pages 200, 404 ok, tickets page has "Apply to exhibit" x2 + reversed-gold-vertical lockup. Remote branches fix/nos-critique-r17 + -restack deleted (4c69202c superseded, restack merged).

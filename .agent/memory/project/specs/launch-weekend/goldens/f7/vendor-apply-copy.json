@@ -1,0 +1,8 @@
+{
+  "source": "R32 (NOS Design ruling, accepted via the design loop; backlog.md R32 line). Quoted verbatim; no other new user-facing copy is introduced.",
+  "requiredSentence": "All fields are required unless marked optional.",
+  "labelSuffixes": { "required": "(required)", "optional": "(optional)" },
+  "inlineErrorCopy": "Reuse humaniseFieldError() in lib/vendor-register-response.ts (existing strings such as 'Business name is required.'). Where a key has no label there, add the form's own existing label text; never write new sentences.",
+  "optionalFields": ["tradingName"],
+  "requiredFields": ["businessName", "contactPersonName", "contactEmail", "contactCellPhone", "vendorCategory", "indicativeBoothCount"]
+}

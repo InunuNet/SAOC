@@ -1,0 +1,20 @@
+{
+  "baseRefEnv": "BASE_REF",
+  "baseRefDefault": "origin/main",
+  "allowed": [
+    "^components/chrome/Header\\.tsx$",
+    "^components/chrome/MobileMenu\\.tsx$",
+    "^components/chrome/MegaMenu\\.tsx$",
+    "^components/chrome/nav-config\\.ts$",
+    "^contracts/checks/launch-weekend/",
+    "^\\.agent/memory/project/specs/launch-weekend/",
+    "^docs/launch-weekend-header-cta\\.md$"
+  ],
+  "forbiddenNote": "components/chrome/Footer.tsx and footer-data.ts (nos-own-brand-chrome collision), UtilityBar.tsx (pill stays: its href /national-show differs from the CTA's /national-show/tickets), app/globals.css and all NOS files are never touched by F2.",
+  "colourOrTypeLiteral": "#[0-9a-fA-F]{3,8}\\b|\\brgba?\\(|\\bhsla?\\(|\\boklch\\(|font-family\\s*:|@font-face|next/font",
+  "literalCheckedPaths": "^components/chrome/.*\\.(tsx|ts)$",
+  "noLiteralIn": ["components/chrome/Header.tsx", "components/chrome/MobileMenu.tsx"],
+  "noLiteralPatterns": ["/national-show/tickets", ">\\s*Tickets\\s*<", "['\"]Tickets['\"]", "href=\"/contact\"", ">\\s*Contact\\s*<"],
+  "navConfigMustExport": ["export const TICKETS_CTA", "export const CONTACT_LINK"],
+  "navConfigMustNotContain": ["id:\\s*'contact'"]
+}

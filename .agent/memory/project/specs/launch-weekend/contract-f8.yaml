@@ -1,0 +1,42 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: No AI-generated placeholder prose is rendered to the public on any /national-show route - every showPage section whose notice is the placeholder class is withheld at render and replaced by one R11 content-gap block built only from existing strings (the pending chip and the Council "has not yet supplied" sentence), with a single opt-in preview switch that can never apply once the site is public.
+created_at: '2026-10-16'
+autonomy: high
+features:
+  - id: F8
+    name: R51 withhold AI placeholder prose (data and render layer only), R11 gap state, /programme duplicate heading and links
+    status: pending
+# GATE: cwd = the implementation worktree (based on origin/main; BASE_REF = its branch point); the goldens and f8 checks must be present in that tree (merge or copy them in).
+# BASE_URL = a server of that worktree on its own port (default 3028; never 3000/3002; stop by exact PID) started with BETA_BASIC_AUTH_USER/PASSWORD empty and SITE_PUBLIC_LAUNCH + SHOW_PLACEHOLDER_PREVIEW unset.
+# F8_ROOT (default cwd) names the tree the static/scope checks read. Do not run `pnpm build` while that server runs.
+# Hot files: ShowContentState.tsx (saoc-nos-site-77 r3) and the other route pages (NosOwnBrandChrome F3) are NOT edited here; scope check enforces it.
+# Decision for the lead: default is (a) withhold everywhere. To keep labelled placeholders on beta for Lee-Ann, set SHOW_PLACEHOLDER_PREVIEW=true in apphosting.yaml (production config, outside F8); it is ignored once SITE_PUBLIC_LAUNCH=true.
+goldens:
+  - .agent/memory/project/specs/launch-weekend/goldens/f8/f8-spec.md
+  - .agent/memory/project/specs/launch-weekend/goldens/f8/placeholder-sections.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f8/scope-allowlist.json
+assertions:
+  phase: 4
+  checks:
+    - id: F8-A1
+      description: Static - withholdPlaceholderProse and applyContentGaps exist and are called from hydratePage and buildAbsentShowPage, gap text reuses ABSENT_SHOW_PAGE_FIXED_SENTENCE and the existing pending label, only SHOW_PLACEHOLDER_PREVIEW and SITE_PUBLIC_LAUNCH are read from env, ShowPageProse emits data-nos-content-gap, programme links Symposium and Workshops in data-nos-programme-links, refresh-llms never queries showPage, showPage seo fields stay unconsumed, no new multi-word copy added
+      command: node contracts/checks/launch-weekend/f8/check-a-static.mjs
+    - id: F8-A2
+      description: Runtime on all 17 /national-show routes - no AI-generated, Placeholder copy or placeholder-ai text in the page or main, withheld section prose and h2s gone, preserved council sections intact, exactly one data-nos-content-gap with the pending chip and gap sentence on each route that had placeholders, no empty h2 or echoed h1, /programme has one h1 Programme and the two links, meta and OG clean, llms.txt, llms-full.txt and sitemap.xml clean
+      command: node contracts/checks/launch-weekend/f8/check-b-runtime.mjs
+    - id: F8-A3
+      description: Switch and collapse logic on the real module - exact-match fail-closed preview that never applies when SITE_PUBLIC_LAUNCH is true, warning-toned sections collapse to one muted gap section at the first position, other sections untouched, withhold false and no-warning inputs are identity
+      command: pnpm exec tsx contracts/checks/launch-weekend/f8/check-d-gap-logic.mts
+    - id: F8-A4
+      description: Every changed file is on the F8 allowlist - no edit to ShowContentState, the other route pages, content/show-pages, sanity or apphosting.yaml
+      command: node contracts/checks/launch-weekend/f8/check-c-scope.mjs
+    - id: F8-A5
+      description: Lint passes
+      command: pnpm lint
+    - id: F8-A6
+      description: Type check passes
+      command: pnpm type-check
+    - id: F8-A7
+      description: Production build passes
+      command: pnpm build

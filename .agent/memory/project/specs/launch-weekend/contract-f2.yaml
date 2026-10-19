@@ -1,0 +1,46 @@
+schema: athanor.contract/v1
+slug: launch-weekend
+goal: Implement NOS Design ruling R26 on the SAOC chrome - the header primary CTA becomes Tickets in Contact's slot and style, Contact moves into the main nav, National Show gets aria-current on show routes - and change nothing else.
+created_at: '2026-10-16'
+autonomy: high
+features:
+  - id: F2
+    name: R26 Tickets header CTA on the SAOC chrome
+    status: pending
+goldens:
+  - .agent/memory/project/specs/launch-weekend/goldens/f2/f2-r26-spec.md
+  - .agent/memory/project/specs/launch-weekend/goldens/f2/header-baseline.json
+  - .agent/memory/project/specs/launch-weekend/goldens/f2/scope-allowlist.json
+assertions:
+  phase: 4
+  checks:
+    # Runtime checks need a server for the implementation tree at BASE_URL (prod build, SITE_PUBLIC_LAUNCH=true).
+    # A5 runs in the implementation worktree against BASE_REF (default origin/main).
+    # A2 and A4 are guards that pass on the untouched tree by design, they fail if the change leaks.
+    - id: A1
+      description: Desktop 1280 and hamburger-mode 1000 on 4 pages - one Tickets CTA (label and href equal the mega Tickets leaf) in Contact's old slot with Contact's exact button style, exactly one filled link in the header, no Contact in the action zone, Contact is the last item of the primary nav at 1280, nav does not wrap, keyboard reaches Contact then the CTA and Enter lands on the tickets page, utility pill kept with a different href than the CTA.
+      command: node contracts/checks/launch-weekend/f2/check-a-desktop.mjs
+      timeout_seconds: 300
+    - id: A2
+      description: Mobile 390 on 4 pages - no Contact link in the header outside the menu, the open menu offers Contact and the Tickets destination by click and both navigate, no horizontal overflow with the menu open. Guard, passes today.
+      command: node contracts/checks/launch-weekend/f2/check-b-mobile.mjs
+      timeout_seconds: 300
+    - id: A3
+      description: The SAOC header National Show trigger has aria-current page on /national-show routes and not on /, /societies, /about, /contact, /events, and no other primary nav item gains aria-current. Routes where the NOS chrome renders are reported as SKIP.
+      command: node contracts/checks/launch-weekend/f2/check-c-aria-current.mjs
+      timeout_seconds: 300
+    - id: A4
+      description: Identity guard on /, /societies, /about, /contact at 390 and 1280 - header height unchanged and every text element outside the header and mobile menu (utility bar, body, footer) keeps tag, box within 3px and type and colour of the origin/main golden. Passes today by design.
+      command: node contracts/checks/launch-weekend/f2/check-d-identity.mjs
+      timeout_seconds: 300
+    - id: A5
+      description: Scope, provenance and tokens against BASE_REF - changed files limited to Header, MobileMenu, MegaMenu, nav-config and F2 artefacts (Footer, footer-data, UtilityBar, globals untouched), no colour or font literal added in components/chrome, Header and MobileMenu hold no literal Tickets or Contact label or href, nav-config exports TICKETS_CTA and CONTACT_LINK and NAV has no contact entry.
+      command: node contracts/checks/launch-weekend/f2/check-e-scope.mjs
+    - id: A6
+      description: F1 regression - skip link still the first Tab stop on every route type with the header change in place.
+      command: node contracts/checks/launch-weekend/f1/check-a-skip-link.mjs
+      timeout_seconds: 300
+    - id: A7
+      description: F1 regression - every SAOC target is at least 44px or WCAG 2.5.8 exempt, now including the new Contact nav link and Tickets CTA.
+      command: node contracts/checks/launch-weekend/f1/check-b-targets.mjs
+      timeout_seconds: 300

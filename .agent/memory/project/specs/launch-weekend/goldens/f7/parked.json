@@ -1,0 +1,4 @@
+{
+  "note": "Axe nodes deliberately parked as DESIGN QUESTIONS for Brad. Starts empty: every node measured on beta today (2026-10-16) has an existing-token fix. A dev may add an entry ONLY after the architect or lead approves it by message, naming the node and the best existing-token ratio achieved; an entry without that record is a gate bypass.",
+  "parked": []
+}
