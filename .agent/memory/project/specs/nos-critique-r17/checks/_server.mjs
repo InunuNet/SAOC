@@ -54,6 +54,10 @@ export function ensureBuild(mode) {
   }
   if (process.env.NOS_CR17_NO_BUILD === '1') return [`no fresh ${mode} build (NOS_CR17_NO_BUILD=1): ${[...freshness(NEXT), `stamp ${stampOf(NEXT)}`].join('; ')}`];
   park();
+  // The package build script runs the WebP variant generator before `next build` (public/images/_opt is gitignored). Without it every
+  // loader-mapped image 404s and a capture depends on whether some earlier `pnpm build` happened to leave _opt behind (r17 restack, A5).
+  const v = spawnSync(process.execPath, ['scripts/generate-image-variants.mjs'], { cwd: repoRoot, env: modeEnv(mode), encoding: 'utf8', maxBuffer: 67108864 });
+  if (v.status !== 0) return [`image variants (${mode}) failed: ${`${v.stdout}${v.stderr}`.slice(-3000)}`];
   for (let attempt = 1; attempt <= 3; attempt++) {
     const r = spawnSync(path.join(repoRoot, 'node_modules', '.bin', 'next'), ['build'], { cwd: repoRoot, env: modeEnv(mode), encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
     if (r.status === 0) {
