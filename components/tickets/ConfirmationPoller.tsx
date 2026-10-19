@@ -139,7 +139,7 @@ export function ConfirmationPoller({ bookingRef }: ConfirmationPollerProps) {
 
         <Link
           href="/national-show/tickets"
-          className="mt-8 inline-block font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent"
+          className="mt-8 inline-block py-0.5 font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent"
         >
           Back to tickets
         </Link>

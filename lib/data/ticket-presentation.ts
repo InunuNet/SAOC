@@ -57,6 +57,9 @@ export const TICKET_PRODUCT_ORDER: readonly TicketProductId[] = [
 /** The four products of the hero fan, left to right on one arc. */
 export const TICKET_FAN_ORDER: readonly TicketProductId[] = ['vip', 'sunset', 'weekend', 'day'];
 
+/** The Programme section's cards: on the tickets hub, and reused on /national-show/programme. */
+export const PROGRAMME_PRODUCTS: readonly TicketProductId[] = ['symposium', 'wosa', 'workshops'];
+
 export const TICKET_PRODUCTS: Record<TicketProductId, TicketProduct> = {
   vip: {
     id: 'vip',

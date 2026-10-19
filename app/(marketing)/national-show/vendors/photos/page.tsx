@@ -19,8 +19,8 @@ import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
  */
 // noIndex: token-gated, not public content, and excluded from the sitemap.
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Vendor Product Photos',
-  image: nosOgImage('Vendor Product Photos — National Show'),
+  title: 'Vendor product photos',
+  image: nosOgImage('Vendor product photos — National Show'),
   description: 'Upload the product photos for your 2027 National Orchid Show vendor registration.',
   path: '/national-show/vendors/photos',
   noIndex: true,
@@ -61,7 +61,7 @@ export default async function VendorPhotosPage({ searchParams }: VendorPhotosPag
     <>
       <NosHero
         route="/national-show/vendors/photos"
-        title="Vendor Product Photos"
+        title="Vendor product photos"
         lede="Upload the product photos for your 2027 National Orchid Show vendor registration."
         priority
       />

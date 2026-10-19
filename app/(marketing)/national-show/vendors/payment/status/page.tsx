@@ -17,8 +17,8 @@ import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
  * writes nothing and never redirects: the outcome comes solely from the stored order's status.
  */
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Vendor Stand Payment',
-  image: nosOgImage('Vendor Stand Payment — National Show'),
+  title: 'Vendor stand payment',
+  image: nosOgImage('Vendor stand payment — National Show'),
   description: 'Payment status for your 2027 National Orchid Show vendor stand.',
   path: '/national-show/vendors/payment/status',
   noIndex: true,
@@ -62,7 +62,7 @@ export default async function VendorStandPaymentStatusPage({
     <>
       <NosHero
         route="/national-show/vendors/payment/status"
-        title="Vendor Stand Payment"
+        title="Vendor stand payment"
         lede="Payment status for your 2027 National Orchid Show vendor stand."
         priority
       />

@@ -38,8 +38,8 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 
   return buildPageMetadata({
-    title: info?.title ?? 'Exhibitor Information',
-    image: nosOgImage(`${info?.title ?? 'Exhibitor Information'} — National Orchid Show`),
+    title: info?.title ?? 'Exhibitor information',
+    image: nosOgImage(`${info?.title ?? 'Exhibitor information'} — National Orchid Show`),
     description: ENTRIES_NOT_OPEN,
     path: '/national-show/exhibitors',
   });
@@ -185,22 +185,12 @@ export default async function ExhibitorInfoPage() {
     <>
       <NosHero
         route="/national-show/exhibitors"
-        title={info?.title ?? 'Exhibitor Information'}
+        title={info?.title ?? 'Exhibitor information'}
         lede={publicMode ? firstSentence(info?.intro ?? '') : (info?.intro ?? undefined)}
         priority
       />
 
       <NosSection wrapClassName="space-y-12 [&_p]:max-w-[60ch]">
-        <p>
-          <Link
-            href="/national-show"
-            data-nos-backlink=""
-            className="inline-flex items-center gap-2 font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-muted transition-colors duration-150 hover:text-primary"
-          >
-            ← Show overview
-          </Link>
-        </p>
-
         {publicMode && pendingItems.length > 0 ? (
           <ShowStatusLine
             status="pending"

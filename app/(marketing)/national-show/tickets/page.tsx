@@ -22,6 +22,7 @@ import { buildSectionLedes } from '@/lib/data/ticket-section-ledes';
 import { buildShowFacts, type ShowFactsSource } from '@/lib/data/show-facts';
 import {
   BEFORE_YOU_VISIT_HREFS,
+  PROGRAMME_PRODUCTS,
   TICKET_COPY,
   TICKET_PRODUCTS,
   type TicketProductId,
@@ -67,7 +68,6 @@ const FOOT_OPTIONS = [
 
 const THURSDAY_PRODUCTS: readonly TicketProductId[] = ['vip', 'sunset'];
 const PASS_PRODUCTS: readonly TicketProductId[] = ['weekend', 'day'];
-const PROGRAMME_PRODUCTS: readonly TicketProductId[] = ['symposium', 'wosa', 'workshops'];
 
 // The mega's own leaves, so the "Before you visit" labels can never differ from the header's.
 function resolveVisitLinks(): VisitLink[] {

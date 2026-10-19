@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { Button } from '@/components/nos/Button';
 import { VendorFormField } from './VendorFormField';
 
 /**
@@ -115,13 +116,9 @@ export function VendorRegistrationCodeEntryForm({
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={disabled}
-        className="min-h-11 rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink hover:bg-accent-soft transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2"
-      >
+      <Button type="submit" disabled={disabled}>
         {status === 'submitting' ? 'Checking…' : 'Continue'}
-      </button>
+      </Button>
     </form>
   );
 }

@@ -24,8 +24,8 @@ export const revalidate = 60;
 // vendor route: the flow is invitation-gated, which Google excludes from the event
 // experience (M6/B8c).
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Exhibitors and Vendors',
-  image: nosOgImage('Exhibitors and Vendors — National Show'),
+  title: 'Exhibitors and vendors',
+  image: nosOgImage('Exhibitors and vendors — National Show'),
   description:
     'Meet the specialist nurseries showcasing their finest orchids at the South African ' +
     'National Orchid Show.',
@@ -45,7 +45,7 @@ export const metadata: Metadata = buildPageMetadata({
 const VENDORS_LEDE =
   'Meet the specialist nurseries showcasing their finest orchids at the South African National Orchid Show.';
 
-const INTRO_HEADING = 'Showcasing the Finest in South African Orchid Growing';
+const INTRO_HEADING = 'Showcasing the finest in South African orchid growing';
 
 const INTRO_PARAGRAPHS = [
   "The 2027 South African National Orchid Show will proudly showcase the country's leading " +
@@ -88,7 +88,7 @@ export default async function VendorsPage() {
     <>
       <NosHero
         route="/national-show/vendors"
-        title="Exhibitors and Vendors"
+        title="Exhibitors and vendors"
         lede={holding ? undefined : VENDORS_LEDE}
         priority
         actions={

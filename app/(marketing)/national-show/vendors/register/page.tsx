@@ -39,8 +39,8 @@ import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 // Event or Offer markup — Google excludes invitation-gated events from the event experience
 // (M6/B8c).
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Vendor Registration',
-  image: nosOgImage('Vendor Registration — National Show'),
+  title: 'Vendor registration',
+  image: nosOgImage('Vendor registration — National Show'),
   description: 'Register your business as a vendor at the 2027 National Orchid Show.',
   path: '/national-show/vendors/register',
   noIndex: true,
@@ -72,7 +72,7 @@ export default async function VendorRegisterPage({ searchParams }: VendorRegiste
           below is entirely SAOC-owned and untouched. */}
       <NosHero
         route="/national-show/vendors/register"
-        title="Vendor Registration"
+        title="Vendor registration"
         lede="Register your business as a vendor at the 2027 National Orchid Show."
         priority
       />
