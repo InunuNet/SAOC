@@ -62,10 +62,33 @@
         "line": 1504,
         "from": "  align-items: center;",
         "to": "  align-items: center;\n  flex-wrap: wrap;"
+      },
+      {
+        "line": 1525,
+        "from": "}",
+        "to": "}\n/* r18 amendment (Codi FINAL 2026-10-19): each separator travels with the item after it, so a wrapped trail never\n   ends a line with a dash. */\n.nos-theme .nk-crumb {\n  display: inline-flex;\n  align-items: center;\n  gap: 10px;\n}\n.nos-theme .nk-crumb .nk-sep {\n  flex-shrink: 0;\n}"
       }
     ],
     "drops": [],
-    "why": "Architect decision (f1-spec.md section 4): the checkout trail is five items; at 390px a non-wrapping flex row squeezes 'National Show' onto two lines and shrinks the separators (measured on BASE with the trail injected). flex-wrap lets the current item take the next line whole. The hub's two-item trail fits on one line at every width, so it renders as at BASE (nonreg.mjs holds /national-show/tickets). No token, colour or size is added."
+    "why": "Architect decision (f1-spec.md section 4): the checkout trail is five items; at 390px a non-wrapping flex row squeezes 'National Show' onto two lines and shrinks the separators (measured on BASE with the trail injected). flex-wrap lets the current item take the next line whole. The hub's two-item trail fits on one line at every width, so it renders as at BASE (nonreg.mjs holds /national-show/tickets). No token, colour or size is added. Amendment (Codi FINAL, 2026-10-19): a .nk-crumb unit binds each separator to the item after it (inline-flex, the nav's own 10px gap and centre alignment, so the hub renders as before); the separator may not shrink inside it."
   },
-  "allowCopy": []
+  "allowCopy": [],
+  "masthead": {
+    "file": "components/tickets/keepsake/TicketsMasthead.tsx",
+    "lineEdits": [
+      {
+        "line": 60,
+        "from": "            <span className=\"nk-sep\" aria-hidden=\"true\" />",
+        "to": "            <span className=\"nk-crumb\">\n              <span className=\"nk-sep\" aria-hidden=\"true\" />"
+      },
+      {
+        "line": 61,
+        "from": "            <span aria-current=\"page\">Tickets</span>",
+        "to": "              <span aria-current=\"page\">Tickets</span>\n            </span>"
+      }
+    ],
+    "drops": [],
+    "why": "Amendment: the hub's separator and current item become one nk-crumb unit, the same markup the checkout uses. Pixel-identical (nonreg holds /national-show/tickets)."
+  },
+  "crumbMarkup": "nav.nk-crumbs[aria-label=Breadcrumb] > a[href=/national-show] 'National Show', span.nk-crumb > (span.nk-sep[aria-hidden=true], a[href=/national-show/tickets] 'Tickets'), span.nk-crumb > (span.nk-sep[aria-hidden=true], span[aria-current=page] {ticketType.name})"
 }

@@ -3,9 +3,10 @@
 //       the [data-catalogue-total] div and go on the Total <p> alone, so the submit button is outside the live region (WCAG 4.1.3).
 //   S2  components/tickets/keepsake/TicketCard.tsx equals BASE with exactly lines 43-44 changed: headingLevel becomes 'h3' | 'p' (P3 option a).
 //   S2b app/(marketing)/national-show/nos-structure.css equals BASE plus `flex-wrap: wrap;` in the .nos-theme .nk-crumbs rule (f1-spec.md 4).
+//   S2c components/tickets/keepsake/TicketsMasthead.tsx equals BASE with the hub's separator + current item wrapped in one span.nk-crumb (amendment).
 //   S3  app/(marketing)/tickets/[slug]/page.tsx: BASE with line 191 headingLevel="h2" -> "p", plus insertions only (every other BASE line
 //       survives, in order). The insertions carry the hub breadcrumb pattern (nav.nk-crumbs aria-label="Breadcrumb", /national-show,
-//       /national-show/tickets, aria-current="page", the nk-sep separators) and a breadcrumbJsonLd BreadcrumbList.
+//       /national-show/tickets, aria-current="page", each nk-sep opening a span.nk-crumb unit) and a breadcrumbJsonLd BreadcrumbList.
 //   S4  components/nos/NosHero.tsx: BASE plus insertions only; a `crumbs` prop rendered before the h1.
 //   S5  NO INVENTION: no new prose literal in the F1 files that is not already in BASE.
 //   S6  docs/nos-critique-r18.md has a "## F1" section.
@@ -21,6 +22,7 @@ const failures = [];
 failures.push(...exactEdits(G.form.file, G.form.lineEdits, G.form.drops, 'S1'));
 failures.push(...exactEdits(G.card.file, G.card.lineEdits, G.card.drops, 'S2'));
 failures.push(...exactEdits(G.css.file, G.css.lineEdits, G.css.drops, 'S2b'));
+failures.push(...exactEdits(G.masthead.file, G.masthead.lineEdits, G.masthead.drops, 'S2c'));
 
 function insertOnly(file, lineEdits, tag) {
   const base = readBaseFile(file);
@@ -49,6 +51,9 @@ for (const [what, re] of [
   ['aria-current="page"', /aria-current="page"/],
   ['a breadcrumbJsonLd BreadcrumbList', /breadcrumbJsonLd\(/],
 ]) if (!re.test(page.head)) failures.push(`${G.page.file}: no ${what} (S3)`);
+const seps = (page.head.match(/className="nk-sep"/g) ?? []).length;
+const bound = (page.head.match(/<span className="nk-crumb">\s*<span className="nk-sep" aria-hidden="true" \/>/g) ?? []).length;
+if (seps !== 2 || bound !== 2) failures.push(`${G.page.file}: ${seps} separators, ${bound} opening a span.nk-crumb unit; want both separators each opening one (S3, amendment)`);
 if (/headingLevel="h2"/.test(page.head)) failures.push(`${G.page.file}: the summary card still asks for an h2 (S3)`);
 
 // S4

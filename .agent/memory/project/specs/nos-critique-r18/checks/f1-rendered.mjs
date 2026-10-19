@@ -6,11 +6,15 @@
 //       pressing the quantity stepper's "more" button changes that <p>'s text, and the region still reads only "Total R…".
 //   R2  one h1, and no other heading (h1-h6, role=heading) carries the h1 text; the summary card's name is a <p> with no role whose computed
 //       type and box equal BASE's h2 (P3 option a: identical styling).
-//   R3  breadcrumb: exactly one nav[aria-label=Breadcrumb], inside the hero copy, directly before the h1. Its items are the hub's, in the hub's
-//       markup: hub item 1 (National Show link), hub separator, "Tickets" as a link to /national-show/tickets (the hub's current item's text,
-//       now a link like item 1), hub separator, then the current item: the hub current item's tag and attributes (aria-current=page) with
-//       the h1 text. Computed styles of the nav, links, separators and current item equal the hub's at the same width; every item sits
-//       inside the viewport on one line (no item taller than its hub counterpart), separators at the hub's width.
+//   R3  breadcrumb (amended 2026-10-19, Codi FINAL): exactly one nav[aria-label=Breadcrumb], inside the hero copy, directly before the h1.
+//       Its children mirror the hub's: hub child 1 (the National Show link), then one span.nk-crumb unit per further item, each holding the
+//       hub's separator (span.nk-sep[aria-hidden]) and then the item: "Tickets" as a link to /national-show/tickets (styled as the hub's
+//       link), then the current item with the hub current item's tag and attributes (aria-current=page, not a link, no link inside) and
+//       the h1 text. Computed styles of the nav, units, links, separators and current item equal the hub's at the same width; every leaf
+//       sits inside the viewport, no item taller than its hub counterpart, separators at the hub's size.
+//   R6  line breaks (both pages, the hub included): every separator is on the first line of the item that follows it (its vertical centre
+//       inside that item's first text line box, and left of it), so no line ends with a dash; the trail's text sits on at most 2 lines at
+//       390 and on 1 line at 1280.
 //   R4  JSON-LD: exactly one BreadcrumbList; its first items equal the hub's BreadcrumbList and the last is
 //       { position n+1, name: the h1 text, item: https://saoc.co.za/tickets/<slug> }.
 //   R5  no regression: the checkout body (summary card + form) matches its BASE capture (32px block means, f1-baseline.json, tolerance as
@@ -44,20 +48,67 @@ async function crumbs(page, props) {
     const nav = navs[0];
     if (!nav) return { count: 0 };
     const cs = (el, list) => Object.fromEntries(list.map((p) => [p, getComputedStyle(el).getPropertyValue(p)]));
-    const items = [...nav.children].map((c) => {
+    const describe = (c) => {
       const r = c.getBoundingClientRect();
-      const fixedSize = c.classList.contains('nk-sep');
       const style = cs(c, ITEM_PROPS);
-      if (!fixedSize) { delete style.width; delete style.height; }
+      if (!c.classList.contains('nk-sep')) { delete style.width; delete style.height; }
+      const kids = [...c.children];
       return {
         tag: c.tagName.toLowerCase(), cls: c.getAttribute('class'), hidden: c.getAttribute('aria-hidden'), current: c.getAttribute('aria-current'),
         href: c.getAttribute('href'), text: c.textContent.replace(/\s+/g, ' ').trim(), style, left: r.left, right: r.right, h: Math.round(r.height),
+        links: c.querySelectorAll('a').length, children: kids.map(describe),
       };
+    };
+    // R6: each separator against the first text line of the element after it; all text line tops in the trail.
+    const firstLine = (el) => {
+      const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.textContent.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT) });
+      const n = w.nextNode();
+      if (!n) return null;
+      const i = n.textContent.search(/\S/);
+      const rg = document.createRange(); rg.setStart(n, i); rg.setEnd(n, i + 1);
+      const q = rg.getClientRects()[0];
+      return q ? { top: q.top, bottom: q.bottom, left: q.left } : null;
+    };
+    const seps = [...nav.querySelectorAll('.nk-sep')].map((s) => {
+      const q = s.getBoundingClientRect();
+      const next = s.nextElementSibling;
+      const line = next ? firstLine(next) : null;
+      return { mid: (q.top + q.bottom) / 2, right: q.right, line, text: next ? next.textContent.trim() : null };
     });
+    const tops = [];
+    const tw = document.createTreeWalker(nav, NodeFilter.SHOW_TEXT);
+    for (let n = tw.nextNode(); n; n = tw.nextNode()) {
+      if (!n.textContent.trim()) continue;
+      const rg = document.createRange(); rg.selectNodeContents(n);
+      for (const q of rg.getClientRects()) if (!tops.some((t) => Math.abs(t - q.top) <= 2)) tops.push(q.top);
+    }
     const h1 = document.querySelector('h1');
     const copy = nav.closest('.nos-hero-copy');
-    return { count: navs.length, cls: nav.getAttribute('class'), style: cs(nav, NAV_PROPS), items, h: Math.round(nav.getBoundingClientRect().height), inHero: !!(copy && copy.closest('section[data-nos-hero]')), beforeH1: nav.nextElementSibling === h1, rowGap: copy ? parseFloat(getComputedStyle(copy).rowGap) || 0 : 0 };
+    return { count: navs.length, cls: nav.getAttribute('class'), style: cs(nav, NAV_PROPS), items: [...nav.children].map(describe), seps, lines: tops.length, h: Math.round(nav.getBoundingClientRect().height), inHero: !!(copy && copy.closest('section[data-nos-hero]')), beforeH1: nav.nextElementSibling === h1, rowGap: copy ? parseFloat(getComputedStyle(copy).rowGap) || 0 : 0 };
   }, props);
+}
+
+function lineFailures(at, c, width) {
+  const out = [];
+  if (c.seps.length === 0) out.push(`${at}: no .nk-sep separators in the breadcrumb (R6)`);
+  for (const s of c.seps) {
+    if (!s.line) { out.push(`${at}: a separator has no item after it (R6)`); continue; }
+    if (s.mid < s.line.top || s.mid > s.line.bottom || s.right > s.line.left + 0.5) out.push(`${at}: the separator before ${JSON.stringify(s.text)} is not on that item's first line (R6)`);
+  }
+  const max = width <= 390 ? 2 : 1;
+  if (c.lines > max) out.push(`${at}: the trail's text sits on ${c.lines} lines, at most ${max} at ${width}px (R6)`);
+  return out;
+}
+
+const SAME = ['tag', 'cls', 'hidden', 'current', 'href'];
+function sameNode(at, label, g, w, opts = {}) {
+  const out = [];
+  for (const k of SAME) if (g[k] !== w[k]) out.push(`${at}: breadcrumb ${label} ${k} ${JSON.stringify(g[k])}, want ${JSON.stringify(w[k])} (R3)`);
+  if (opts.text !== undefined && g.text !== opts.text) out.push(`${at}: breadcrumb ${label} reads ${JSON.stringify(g.text)}, want ${JSON.stringify(opts.text)} (R3)`);
+  for (const [p, v] of Object.entries(w.style)) if (g.style[p] !== v) out.push(`${at}: breadcrumb ${label} ${p} ${g.style[p]}, hub ${v} (R3)`);
+  if (!opts.unit && g.h > w.h + 1) out.push(`${at}: breadcrumb ${label} is ${g.h}px tall, the hub's ${w.h}px: it wraps or is squeezed (R3)`);
+  if (g.children.length === 0 && (g.left < -0.5 || g.right > opts.width + 0.5)) out.push(`${at}: breadcrumb ${label} spans ${Math.round(g.left)}-${Math.round(g.right)}px, outside the viewport (R3)`);
+  return out;
 }
 
 const breadcrumbLists = (page) => page.$$eval('script[type="application/ld+json"]', (ss) => ss.flatMap((s) => {
@@ -97,7 +148,9 @@ for (const mode of MODES) {
         if (!hr || hr.status() !== 200) { failures.push(`${mode} ${HUB} @${width}: HTTP ${hr ? hr.status() : 0}`); await ctx.close(); continue; }
         hub = await crumbs(page, { NAV_PROPS, ITEM_PROPS });
         hubLd = await breadcrumbLists(page);
-        if (hub.count !== 1 || hub.items.length !== 3) { failures.push(`${mode} ${HUB} @${width}: the hub breadcrumb is not the BASE one nav of three items (INFRA)`); await ctx.close(); continue; }
+        if (hub.count !== 1 || hub.items.length !== 2 || hub.items[1].cls !== 'nk-crumb' || hub.items[1].children.length !== 2) { failures.push(`${mode} ${HUB} @${width}: the hub breadcrumb is not a link then one nk-crumb unit of separator + current item (R3, hub)`); await ctx.close(); continue; }
+        if (hub.items[1].children[1].current !== 'page' || hub.items[1].children[1].links !== 0) failures.push(`${mode} ${HUB} @${width}: the hub's current item must carry aria-current=page and be no link (R3, hub)`);
+        failures.push(...lineFailures(`${mode} ${HUB} @${width}`, hub, width));
       }
       for (const slug of SLUGS) {
         checks += 1;
@@ -180,25 +233,24 @@ for (const mode of MODES) {
         else {
           if (!c.inHero || !c.beforeH1) failures.push(`${at}: the breadcrumb is not in the hero copy directly before the h1 (R3)`);
           if (c.cls !== hub.cls) failures.push(`${at}: nav class ${JSON.stringify(c.cls)}, hub ${JSON.stringify(hub.cls)} (R3)`);
-          const [h0, hs, hc] = hub.items;
-          const want = [
-            { ...h0 },
-            { ...hs },
-            { tag: h0.tag, cls: h0.cls, hidden: h0.hidden, current: null, href: HUB, text: hc.text, style: h0.style, h: h0.h },
-            { ...hs },
-            { tag: hc.tag, cls: hc.cls, hidden: hc.hidden, current: 'page', href: hc.href, text: m.title, style: hc.style, h: hc.h },
-          ];
-          if (c.items.length !== want.length) failures.push(`${at}: breadcrumb has ${c.items.length} items, want 5: ${c.items.map((i) => i.text || i.cls).join(' / ')} (R3)`);
-          else {
-            want.forEach((w, i) => {
-              const g = c.items[i];
-              for (const k of ['tag', 'cls', 'hidden', 'current', 'href', 'text']) if (g[k] !== w[k]) failures.push(`${at}: breadcrumb item ${i + 1} ${k} ${JSON.stringify(g[k])}, want ${JSON.stringify(w[k])} (R3)`);
-              for (const [p, v] of Object.entries(w.style)) if (g.style[p] !== v) failures.push(`${at}: breadcrumb item ${i + 1} ${p} ${g.style[p]}, hub ${v} (R3)`);
-              if (g.h > w.h + 1) failures.push(`${at}: breadcrumb item ${i + 1} is ${g.h}px tall, the hub's ${w.h}px: it wraps or is squeezed (R3)`);
-              if (g.left < -0.5 || g.right > width + 0.5) failures.push(`${at}: breadcrumb item ${i + 1} spans ${Math.round(g.left)}-${Math.round(g.right)}px, outside the ${width}px viewport (R3)`);
-            });
-          }
           for (const [p, v] of Object.entries(hub.style)) if (c.style[p] !== v) failures.push(`${at}: breadcrumb nav ${p} ${c.style[p]}, hub ${v} (R3)`);
+          const [h0, hu] = hub.items;
+          const [hs, hc] = hu.children;
+          const shape = c.items.map((i) => `${i.tag}.${i.cls ?? ''}[${i.children.length}]`).join(' ');
+          if (c.items.length !== 3 || c.items[1].children.length !== 2 || c.items[2].children.length !== 2) failures.push(`${at}: breadcrumb children ${shape}, want the hub's link then two nk-crumb units of separator + item (R3)`);
+          else {
+            const o = { width };
+            failures.push(...sameNode(at, 'item 1', c.items[0], h0, { ...o, text: h0.text }));
+            for (const [i, label] of [[1, 'unit 2'], [2, 'unit 3']]) {
+              failures.push(...sameNode(at, label, c.items[i], hu, { ...o, unit: true })); // a unit's height follows its item (a link carries 10px padding)
+              failures.push(...sameNode(at, `${label} separator`, c.items[i].children[0], hs, o));
+            }
+            failures.push(...sameNode(at, 'item 2', c.items[1].children[1], { ...h0, href: HUB }, { ...o, text: hc.text }));
+            const cur = c.items[2].children[1];
+            failures.push(...sameNode(at, 'current item', cur, hc, { ...o, text: m.title }));
+            if (cur.current !== 'page' || cur.tag === 'a' || cur.href !== null || cur.links !== 0) failures.push(`${at}: the current item must carry aria-current=page and be no link (R3)`);
+          }
+          failures.push(...lineFailures(at, c, width));
         }
 
         // R4

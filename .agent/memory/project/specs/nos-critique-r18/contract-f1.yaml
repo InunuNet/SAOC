@@ -9,7 +9,7 @@ created_at: '2026-10-19'
 autonomy: high
 exclusions:
   - item: 'every file outside goldens/f1-footprint.json, docs/nos-critique-r18.md and this spec dir'
-    reason: 'Enforced by A2. TicketsMasthead (the hub breadcrumb) stays byte-identical; the pattern is reused, not extracted (f1-spec.md section 3).'
+    reason: 'Enforced by A2. TicketsMasthead changes only to wrap its separator + current item in an nk-crumb unit (amendment, f1-spec.md section 7); the pattern is reused, not extracted (section 3).'
 features:
   - id: F1
     name: Checkout step - Total-only live region, single heading for the product name, hub breadcrumb above the h1
@@ -31,10 +31,10 @@ assertions:
       description: Footprint - the r18 branch differs from origin/main 93940e04 only in goldens/f1-footprint.json, docs/nos-critique-r18.md and the spec dir, and HEAD descends from it
       command: node .agent/memory/project/specs/nos-critique-r18/checks/footprint.mjs
     - id: A3
-      description: Static - TicketPurchaseForm moves aria-live/aria-atomic onto the Total p (exact), TicketCard headingLevel 'h3' | 'p' (exact), nk-crumbs flex-wrap (exact), checkout page and NosHero are BASE plus insertions carrying the hub breadcrumb and a BreadcrumbList, no new copy, docs F1
+      description: Static - TicketPurchaseForm moves aria-live/aria-atomic onto the Total p (exact), TicketCard headingLevel 'h3' | 'p' (exact), nk-crumbs flex-wrap and the nk-crumb unit rule (exact), TicketsMasthead current item in an nk-crumb unit (exact, amendment), checkout page and NosHero are BASE plus insertions carrying the hub breadcrumb and a BreadcrumbList, no new copy, docs F1
       command: node .agent/memory/project/specs/nos-critique-r18/checks/f1-static.mjs
     - id: A4
-      description: Rendered (public + preview, 1280/390, /tickets/early-bird and /tickets/saoc-symposium) - the live region holds only the Total p and no control, one heading carries the title, the summary name is a p styled as BASE h2, the breadcrumb matches the hub's markup and computed styles with aria-current=page on the product, the BreadcrumbList extends the hub's, the checkout body is unchanged
+      description: Rendered (public + preview, 1280/390, /tickets/early-bird and /tickets/saoc-symposium) - the live region holds only the Total p and no control, one heading carries the title, the summary name is a p styled as BASE h2, the breadcrumb matches the hub's markup and computed styles with aria-current=page on the product (no link), every separator sits on its following item's first line and the trail wraps at most once at 390 (hub included), the BreadcrumbList extends the hub's, the checkout body is unchanged
       command: node .agent/memory/project/specs/nos-critique-r18/checks/f1-rendered.mjs
     - id: A5
       description: Non-regression (public + preview, 1280/390) - 18 SAOC and NOS routes, the tickets hub included, keep geometry and full-page screenshot, no overflow

@@ -86,3 +86,38 @@ Codi may rule otherwise, for example hiding the middle item on small screens; it
 
 The rendered checks read live CMS state: a product must be on sale and not sold out. If sales close, R1-R5 report INFRA, not a
 regression; choose another purchasable slug and re-capture `f1-baseline.json` on BASE.
+
+## 7. Amendment (Codi FINAL, relayed by the lead 2026-10-19; folded in before merge)
+
+Codi agreed with the NosHero `crumbs` slot and with `flex-wrap`, and added two requirements.
+
+**1. A dash never ends a line.** Each separator is bound to the item after it as one unit, so a wrapped trail breaks only between
+whole "— Item" pairs.
+
+**Decision:** use a real element unit, not `::before`. Wrap the separator and the item in `span.nk-crumb`
+(`display: inline-flex; align-items: center; gap: 10px`), and give the separator `flex-shrink: 0`.
+- The separator keeps its element and its rule (`.nk-crumbs .nk-sep`, 24 × 1.5px olive), so the glyph is the same node.
+- The unit reuses the nav's 10px gap and centre alignment, so the hub renders pixel-identically.
+- R6 can measure the separator's own rect. A pseudo-element has no rect to read.
+- A link's underline does not run under the dash, because the dash sits outside the `<a>`.
+- Markup is `f1-edits.json` `crumbMarkup`:
+  `a` "National Show", then `span.nk-crumb > (span.nk-sep, a "Tickets")`, then `span.nk-crumb > (span.nk-sep, span[aria-current=page] name)`.
+- The hub's `TicketsMasthead` takes the same unit for its current item (`f1-edits.json` `masthead`) and joins the footprint.
+- The CSS goes in its own block after `.nk-crumbs .nk-sep` (`f1-edits.json` `css`, second edit).
+
+Measured result: at 390 the trail sits on two lines, "National Show — Tickets" and "— <product>". At 1280 it is one line.
+
+The ruling has a consequence worth stating: when the trail wraps, the dash starts the second line. That is the "— Item" unit, by
+design. It never ends the first line.
+
+**2. The current crumb is not a link.** The last crumb carries aria-current=page and is not a link, as on the hub. The pushed build
+already does this; R3 now asserts it on both pages.
+
+**Checks**
+- **S2c:** exact masthead edits.
+- **S3:** both separators open an `nk-crumb` unit.
+- **R3 (rewritten):** the child structure and computed styles match the hub, unit by unit.
+- **R6 (new, the hub included):**
+  - every separator's vertical centre lies inside the first text line of the item after it, and the separator sits left of that item;
+  - the trail's text sits on at most 2 distinct lines at 390 and on 1 line at 1280;
+  - it runs on /tickets/early-bird and /tickets/saoc-symposium. "National Orchid Show Symposium" is the longest product name on sale.
