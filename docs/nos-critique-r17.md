@@ -23,6 +23,14 @@ Ruling, verbatim: "Exhibitor and Trader do the same vendor application flow."
   `f1-spec.md` section 2.
 - **Note for the lead:** the kept body still reads "See what is involved in exhibiting", while the CTA now opens the vendor
   application. The ruling allows no new copy, so the wording stays as it is.
+- **Known gap (accepted).** Per Brad ("Exhibitor and Trader do the same vendor application flow."), the exhibitor CTA
+  opens the shared vendor application.
+  - That form requires a business name, a product category and at least one stand, so a non-trading orchid exhibitor
+    cannot complete it as it stands.
+  - The field requirements come from Lee-Ann's registration form and are unchanged here.
+  - The lead ruled on 2026-10-19 that this is an accepted product gap, not a code defect.
+  - It is queued as a question for Lee-Ann: which fields become optional for non-trading exhibitors. Any field change
+    will come later under its own contract.
 
 ## F2 - NOS footer brand block: the gold vertical lockup, then REG and NPO only
 
