@@ -2,8 +2,9 @@
 schema: athanor.contract/v1
 slug: nos-critique-r17
 goal: >-
-  In the NOS footer brand block, replace the horizontal full-colour lockup with the chosen vertical monotone NOS logo (byte-identical copy in
-  public/images/), delete the SAOC eyebrow and paragraph, and keep "REG# 1978/004040/08   NPO 043-901" exactly.
+  In the NOS footer brand block, replace the horizontal full-colour lockup with the gold vertical one-ink NOS logo (byte-identical copy in
+  public/images/) in one centred <picture> at 360px (>=701) / 280px (<=700), delete the SAOC eyebrow, paragraph and FOOTER_BRAND_TEXT, and
+  keep "REG# 1978/004040/08   NPO 043-901" exactly, a PDF clear space below the lockup, in the label-role restyle.
 created_at: '2026-10-19'
 autonomy: high
 exclusions:
@@ -11,8 +12,8 @@ exclusions:
     reason: 'Source of the logo copy only; never added, deleted or committed on this branch (A3 fails on any committed branding/ change).'
   - item: 'components/chrome/footer-data.ts beyond the dead export, and the SAOC footer'
     reason: 'footer-data.ts loses only the FOOTER_BRAND_TEXT export (lead amendment 2026-10-19; A3 S2/S6, 0 references); FOOTER_REG stays byte-exact and the SAOC footer keeps its REG line (A4 R5).'
-  - item: 'the logo file choice and render width'
-    reason: 'PENDING: goldens/f2-logo.json chosen (white or gold vertical) is filled by the lead once Codi rules; guidance.renderWidth is a named gap (no handoff size). A3/A4 FAIL as PENDING until chosen is filled.'
+  - item: 'the white lockup and any restyle beyond the REG/NPO label role'
+    reason: 'Codi FINAL 2026-10-19 (correction): gold, 360px at >=701 / 280px at <=700, gap = PDF p.08 clear space; the .nf-base row is unchanged (A4 R5).'
 features:
   - id: F2
     name: NOS footer brand block - vertical monotone logo, REG and NPO only
@@ -27,7 +28,7 @@ assertions:
   phase: 4
   checks:
     - id: A1
-      description: f2 check scripts and goldens are unmodified since @architect wrote them (re-pinned by the lead after filling chosen)
+      description: f2 check scripts and goldens are unmodified since @architect wrote them
       command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r17/goldens/checks-f2.sha256
     - id: A2
       description: Footprint - the r17 branch differs from origin/main 5c093d6e only in the union of the r17 footprints (+ the F2 logo dest), docs/nos-critique-r17.md and the spec dir, and HEAD descends from it
@@ -36,7 +37,7 @@ assertions:
       description: Static - NosFooter drops FOOTER_ORG_NAME and FOOTER_BRAND_TEXT, keeps FOOTER_REG and LOCKUP_ALT, references only the chosen logo whose public copy matches the golden sha256, footer-data.ts is BASE minus the dead FOOTER_BRAND_TEXT export with 0 references left, no branding/ commit, docs F2
       command: node .agent/memory/project/specs/nos-critique-r17/checks/f2-static.mjs
     - id: A4
-      description: Rendered (public + preview, 1280/390) - one chosen vertical logo with the LOCKUP_ALT alt and served sha, no SAOC eyebrow or paragraph, REG/NPO exact, emblem >= 24px with PDF clear space on the royal ground, SAOC footer keeps REG and no NOS logo
+      description: Rendered (public + preview, 1280/390) - one <picture> of the gold logo (1x/2x, no swap, LOCKUP_ALT, served sha) centred at 360/280px on royal, emblem >= 24px, REG/NPO exact a calc(0.25 * emblem width) gap below in Karla 700 12px .14em uppercase rgb(243,242,214) >= 4.5:1, no eyebrow or paragraph, base row and SAOC footer unchanged
       command: node .agent/memory/project/specs/nos-critique-r17/checks/f2-rendered.mjs
     - id: A5
       description: Non-regression (public + preview, 1280/390) - 17 SAOC and NOS routes keep geometry and screenshot above the footer, no overflow

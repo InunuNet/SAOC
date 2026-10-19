@@ -8,9 +8,9 @@ d2fc418812358bdb6d4abc43f623e9a076ce5d2d083e83c6c8d46798601684bf  .agent/memory/
 ca660c00f5d56f77d30c761e4c5308f50e1250191eb6f7512a6e973c6fe8e8af  .agent/memory/project/specs/nos-critique-r17/goldens/nonreg-baseline.json
 f2b1706479f160c6134edcf72783695647b49d2d34fc9a8cb8ab3efc870169b3  .agent/memory/project/specs/nos-critique-r17/goldens/f1-footprint.json
 75bbe568a5e14f63d317526384a44204fcc908e50f3290d3949991c5ab0ad5c6  .agent/memory/project/specs/nos-critique-r17/goldens/f2-footprint.json
-e26ef7f0d18535ba64ce15b1437bd8b0079335094a4fe77e09aa1f15049ce175  .agent/memory/project/specs/nos-critique-r17/goldens/f2-logo.json
-3b2aa0837680dac4eb621a0629f4a656ad05ad2f94e9798bce6b6c832daa5625  .agent/memory/project/specs/nos-critique-r17/checks/f1-static.mjs
-9ed0596bf89087cae2a792049bcb2e0fffa5e834071a407bc99dc8600c126d42  .agent/memory/project/specs/nos-critique-r17/checks/f1-rendered.mjs
-a1255af850e8e29bf79f2daac184495e561609a4561d3ca55d75ad876bd08039  .agent/memory/project/specs/nos-critique-r17/goldens/f1-edits.json
-567a2f07cea89f7d85dc5223f5323ba3ff50d08fad7140f95b345a523c07ec8c  .agent/memory/project/specs/nos-critique-r17/goldens/f1-spec.md
-242853f5b7c894eb030014e6f13d40b919fe93ea20f70d8c1118e4c1b32f8539  .agent/memory/project/specs/nos-critique-r17/contract-f1.yaml
+5db7be87fd4b7a09fafa78d85071ac48f61ca7ec208bda2bca8ddee0720e8a97  .agent/memory/project/specs/nos-critique-r17/goldens/f2-logo.json
+106689ddfd43a5e768200f1125f9feda468f53b6b0d591ea6043c19a2430847d  .agent/memory/project/specs/nos-critique-r17/checks/f1-static.mjs
+1d267433c799f4658f15ae6263f03ddfd1e1d0846249e1148c7e4b13116d0f7f  .agent/memory/project/specs/nos-critique-r17/checks/f1-rendered.mjs
+2d2e139049e6c44d733e459c088edf1302c6766965ae3015daea78b2b302f70f  .agent/memory/project/specs/nos-critique-r17/goldens/f1-edits.json
+8e71b9c92785b5a94fce8dd2fe0deac00034ecb007ac359cbb216fb828cb5051  .agent/memory/project/specs/nos-critique-r17/goldens/f1-spec.md
+3db96d9ccb8f2ec9b51e6d457534119e21acddd635b6cde7d632d14196c264e4  .agent/memory/project/specs/nos-critique-r17/contract-f1.yaml

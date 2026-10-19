@@ -1,6 +1,6 @@
 // nos-critique-r17 F1 rendered (fresh PUBLIC and PREVIEW production builds, next start 3010-3019 minus 3013). QA input, hash-locked.
 // Golden: goldens/f1-edits.json. Both modes, 1280 and 390, on /national-show/tickets ("Exhibiting or trading?").
-//   R1  the exhibitor card (#exhibit) keeps its heading and its one CTA, named exactly "Exhibitor entry"; that CTA's href equals the
+//   R1  the exhibitor card (#exhibit) keeps its heading and its one CTA, named exactly "Apply to exhibit" (Codi FINAL); that CTA's href equals the
 //       trader card's (#trade) CTA href, which is the golden vendor-application href.
 //   R2  the exhibitor card body reads exactly the golden body (the removed sentence appears nowhere on the page), and is not empty.
 //   R3  following the exhibitor CTA lands, HTTP 200, on the same URL as following the trader CTA.
@@ -83,4 +83,4 @@ for (const mode of MODES) {
     await srv.stop();
   }
 }
-finish(NAME, failures, `F1 rendered: ${checks} checks across ${MODES.join('/')} at ${WIDTHS.join('/')}: the exhibitor card's "Exhibitor entry" and the search quick link go to the vendor application, sentence gone.`);
+finish(NAME, failures, `F1 rendered: ${checks} checks across ${MODES.join('/')} at ${WIDTHS.join('/')}: the exhibitor card's "Apply to exhibit" and the search quick link go to the vendor application, sentence gone.`);

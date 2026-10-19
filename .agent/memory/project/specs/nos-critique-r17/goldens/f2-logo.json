@@ -1,7 +1,19 @@
 {
- "_note": "nos-critique-r17 F2 golden (QA input). Brad's beta review relayed by the lead (saoc-82), 2026-10-19: \"Vertical monotone logo, no paragraph just reg and NPO, paragraph is from SAOC remove it.\" BASE 5c093d6e. `chosen` is the ONE field the lead fills once Codi picks the file (copy the whole candidate object in); until then f2-static S3 and f2-rendered R1 FAIL as PENDING by design. The dev copies the chosen source byte-identical to `dest`; nothing under branding/ is added, deleted or committed.",
+ "_note": "nos-critique-r17 F2 golden (QA input). Brad's beta review relayed by the lead (saoc-82), 2026-10-19: \"Vertical monotone logo, no paragraph just reg and NPO, paragraph is from SAOC remove it.\" Codi's rulings FINAL (relayed by the lead, 2026-10-19, after her correction): GOLD lockup, 360px at >=701 / 280px at <=700 capped at the wrap's content width, centred, one <picture> (1x/2x, no <=700 swap), REG/NPO gap = the PDF p.08 clear space, REG/NPO text and position as BASE in the label role restyle. BASE 5c093d6e. The dev copies the chosen source byte-identical to `dest`; nothing under branding/ is added, deleted or committed.",
  "base": "5c093d6e",
- "chosen": null,
+ "chosen": {
+  "source": "branding/National Show 2027/Logo/NOS-2027-logo-reversed-gold-vertical.png",
+  "sha256": "fdf12524658cc9ce5f7c5360a360b531d7d0e94b801bb667fdc3f9bc58959ede",
+  "dest": "public/images/NOS-2027-logo-reversed-gold-vertical.png",
+  "path": "/images/NOS-2027-logo-reversed-gold-vertical.png",
+  "dims": [
+   3272,
+   2876
+  ],
+  "inks": "single gold family: emblem median rgb(227,224,192) 11.62:1 on royal (darkest shading rgb(139,130,74) 3.99:1); wordmark pale gold rgb(243,242,214) 13.69:1; location line rgb(214,214,156) 10.34:1",
+  "ruling": "Codi FINAL 2026-10-19 (correction): gold, the only true one-ink lockup, 13.7:1 on #211A57; the white lockup is withdrawn.",
+  "publicCopyAtBase": "none: no file under public/ at BASE hashes to this sha (public/images/nos/nos-reversed-white-vertical-900.png is a 900px white derivative, not either source)"
+ },
  "candidates": {
   "white": {
    "source": "branding/National Show 2027/Logo/NOS-2027-logo-reversed-white-vertical.png",
@@ -53,8 +65,26 @@
   "source": "branding/National Show 2027/National Orchid Show 2027 Logo.pdf p.08 'Clear space and minimum size'",
   "minEmblemPx": 24,
   "clearSpaceOfEmblemWidth": 0.25,
-  "renderWidth": null,
-  "renderWidthGap": "Neither the logo PDF nor design/design_handoff_saoc gives a footer render size for the vertical lockup. The existing footer renders its vertical file at min(342px, 100%) at <=700px (components/nos-chrome/nos-chrome.css:154, NosFooter.tsx VERTICAL_BOX). DECISION NEEDED: the lead/Codi set renderWidth; the checks enforce only the PDF minimum and clear space until then."
+  "renderWidth": {
+   "gte701": 360,
+   "lte700": 280,
+   "breakpoint": 700,
+   "cap": "never wider than the footer wrap's content box (100% minus the gutters)",
+   "ruling": "Codi FINAL 2026-10-19 (correction)"
+  },
+  "gap": {
+   "rule": "calc(0.25 * rendered emblem width)",
+   "from": "the lockup's visible bottom edge (the location line, geometry.contentBox[3])",
+   "to": "the REG/NPO line's top",
+   "emblemWidthOfImageWidth": 0.7182,
+   "atWidths": {
+    "360": 64.6,
+    "280": 50.3
+   },
+   "tolerancePx": 1,
+   "maxExtra": "the image's own transparent bottom padding (file px 2876-2620, scaled) + 1px, so a gap measured from the image box bottom also passes",
+   "source": "branding/National Show 2027/National Orchid Show 2027 Logo.pdf p.08 'Clear space and minimum size'; Codi FINAL 2026-10-19 (correction) (c)"
+  }
  },
  "alt": "National Orchid Show, Western Cape 2027",
  "altSource": "components/nos-chrome/NosFooter.tsx LOCKUP_ALT (the existing lockup's alt)",
@@ -73,7 +103,23 @@
   "text": "REG# 1978/004040/08   NPO 043-901",
   "const": "FOOTER_REG",
   "file": "components/chrome/footer-data.ts",
-  "_note": "three U+00A0 no-break spaces between the REG number and NPO, exactly as BASE footer-data.ts"
+  "_note": "three U+00A0 no-break spaces between the REG number and NPO, exactly as BASE footer-data.ts",
+  "restyle": {
+   "ruling": "Codi FINAL 2026-10-19: text and position unchanged; style in the label role",
+   "fontFamily": "Karla",
+   "fontWeight": "700",
+   "fontSize": "12px",
+   "letterSpacing": "1.68px",
+   "textTransform": "uppercase",
+   "color": "rgb(243, 242, 214)",
+   "minRatio": 4.5,
+   "sources": {
+    "labelRole": "components/nos-chrome/nos-chrome.css:129 .nf-head (700 12px/1.3 var(--nc-sans), letter-spacing 0.14em, uppercase) - the NOS footer's existing label role; only its colour differs",
+    "color": "--nc-gold #F3F2D6 (components/nos-chrome/nos-chrome.css:9); also --nos-pale-gold #f3f2d6 (app/globals.css:31), --gold #f3f2d6 (nos-theme.css:321, nos-v4 index.html:16); brand PDF p.05 'Pale gold #F3F2D6'",
+    "font": "Karla via components/nos-chrome/fonts.ts (next/font, --font-nos-karla) and --nc-sans (nos-chrome.css:164)"
+   },
+   "gaps": "none: the label role, the colour token and the font all exist"
+  }
  },
  "footerGround": "rgb(33, 26, 87)",
  "routes": [
@@ -83,7 +129,6 @@
  ],
  "saocRoute": "/about",
  "minTypeRatio": 4.5,
- "minGraphicRatio": 3,
  "deadExport": {
   "file": "components/chrome/footer-data.ts",
   "const": "FOOTER_BRAND_TEXT",
@@ -102,5 +147,35 @@
    "types",
    "scripts"
   ]
+ },
+ "layout": {
+  "centred": "the image's centre equals the centre of the footer wrap's content box (+-1px) at every width",
+  "picture": "exactly one <picture> in the brand slot; no <source> with a media attribute (the <=700 swap is dropped); the image candidates are a density set capped at 2x, all the chosen file or its _opt variants"
+ },
+ "legal": {
+  "links": [
+   [
+    "/privacy",
+    "Privacy"
+   ],
+   [
+    "/terms",
+    "Terms"
+   ],
+   [
+    "/refunds",
+    "Refunds"
+   ],
+   [
+    "/constitution",
+    "Constitution"
+   ],
+   [
+    "/media-kit",
+    "Media kit"
+   ]
+  ],
+  "copyrightTail": " South African Orchid Council. All rights reserved.",
+  "note": "the .nf-base row (copyright + legal links) is unchanged from BASE"
  }
 }

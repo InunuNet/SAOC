@@ -21,49 +21,41 @@ The footer ground is royal `#211A57`, rgb(33, 26, 87).
 
 ## Target
 
-- **Logo.** One `<img>` (no `<source>` switch) showing the chosen vertical file at every width.
+- **Logo.** One centred `<picture>` (1x/2x cap, no ≤700 swap) showing the gold vertical file at every width: 360px at ≥701px, 280px at ≤700px (see Codi's rulings below).
   - Alt stays LOCKUP_ALT.
   - The file is copied byte-identical from `branding/National Show 2027/Logo/` to `chosen.dest` in `public/images/`. The existing loader (`lib/image-loader.ts`, `scripts/generate-image-variants.mjs`) generates its WebP variants at build time, with no extra step.
   - Nothing under `branding/` is added, deleted or committed.
 - **Removed.** The eyebrow and the paragraph go. FOOTER_ORG_NAME and FOOTER_BRAND_TEXT are no longer imported into NosFooter. `components/chrome/footer-data.ts` was first specified as byte-unchanged (superseded by the amendment below). Note: the SAOC footer does not render the paragraph at BASE either (it shows only SaocLockup and the REG line), so FOOTER_BRAND_TEXT becomes an export nothing renders. **Amendment (lead ruling, 2026-10-19):** delete it. `footer-data.ts` BASE lines 24–26 (the two-line const and the blank line after it) are removed, and nothing
 else in the file changes. FOOTER_REG stays byte-exact. `footer-data.ts` joins `f2-footprint.json`. f2-static S6 requires 0 references to
 `FOOTER_BRAND_TEXT` in app, components, lib, sanity, content, types and scripts.
-- **Kept.** "REG# 1978/004040/08   NPO 043-901", exactly: the separator is three U+00A0 no-break spaces, as in BASE.
+- **Kept.** "REG# 1978/004040/08   NPO 043-901", exactly: the separator is three U+00A0 no-break spaces, as in BASE. It stays in the same position (the first text after the lockup), restyled in the label role per Codi.
 - The old `/images/nos/*` files stay on disk. The horizontal one is still used by the OG route (`app/(marketing)/national-show/og/route.tsx:29`).
 
-## The file choice: PENDING (Codi). `chosen` is one golden field.
+## Codi's rulings (FINAL, relayed by the lead, 2026-10-19, after her correction)
 
-| | reversed-white-vertical | reversed-gold-vertical |
-|---|---|---|
-| sha256 | 265102a6…1e1a | fdf12524…9ede |
-| pixels | 3272×2876, alpha | 3272×2876, alpha (identical geometry) |
-| emblem | lilac-white, median 13.39:1 on royal; darkest shading 5.16:1 | gold, median 11.62:1; darkest shading 3.99:1 |
-| wordmark | white, 15.55:1 | pale gold #F3F2D6, 13.69:1 |
-| location line | **olive rgb(190,191,106), 8.04:1** | gold rgb(214,214,156), 10.34:1 |
-| monotone? | **no**: two inks (white plus an olive location line, per the PDF's "ON DARK: location line Green 1") | **yes**: one gold family |
+These supersede the open questions in the first version of this spec. The white lockup and the 200/160px sizing were withdrawn by Codi's correction.
 
-Both pass on the royal footer: type is at least 4.5:1 and the emblem graphic at least 3:1. Brad asked for "monotone", and only the gold file is a single ink.
-Recommendation for Codi: gold. To fill `chosen`, copy the whole candidate object (`source`, `sha256`, `dest`, `path`, `dims`) and re-pin. Until then f2-static S3 and
-f2-rendered R1 FAIL as PENDING.
+| ruling | spec |
+|---|---|
+| **Logo: GOLD** `NOS-2027-logo-reversed-gold-vertical.png`, sha256 `fdf12524…9ede` | `chosen` in `f2-logo.json`. Codi: "the only true one-ink lockup, 13.7:1 on #211A57". No file in `public/` at BASE hashes to it (the existing `public/images/nos/nos-reversed-white-vertical-900.png` is a 900px white derivative), so the dev copies it byte-identical to `public/images/NOS-2027-logo-reversed-gold-vertical.png` |
+| **Width** 360px at ≥701px, 280px at ≤700px, never wider than the footer wrap's content box (100% minus the gutters) | `guidance.renderWidth`; R4 ±1px |
+| **Markup**: one `<picture>`, the 1x/2x cap kept, the ≤700 swap dropped (same file) | R1: one `<picture>`, no `<source media>`, every candidate is the gold file or its `_opt` variant with a 1x/2x descriptor, and alt is LOCKUP_ALT |
+| **Centred** on the royal band | R4: the image centre equals the `.nf-wrap` content-box centre, ±1px |
+| **Gap** from the lockup's bottom edge to REG/NPO = the PDF clear space, `calc(0.25 × rendered emblem width)` | R4. The emblem is 2350 of the file's 3272px width (71.8%), so the gap is about 64.6px at 360 and 50.3px at 280. It is measured from the lockup's visible bottom (the location line, file y 2620) to the REG line's top. The check accepts the rule −1px, up to the rule plus the image's own transparent bottom padding (+1px), so a margin taken from the image box bottom also passes. Source: logo PDF p.08 "Clear space and minimum size" |
+| **REG/NPO**: text and position as BASE, restyled in the label role | R3. The text is exact (three U+00A0) and is the first text after the lockup. Computed style: Karla, 700, 12px, letter-spacing 1.68px (.14em), uppercase, rgb(243, 242, 214), at least 4.5:1 on its ground (13.69:1 on royal) |
+| **Legal row** (copyright and legal links) unchanged | R5 compares it with the BASE footer-data list |
+| Remove the SAOC eyebrow, the paragraph and `FOOTER_BRAND_TEXT` | S1, S2, S6, R2 |
 
-## Size: GAP (DECISION NEEDED)
+### Label role, colour and font: all existing, no gap
 
-The logo PDF (p.08) gives only a minimum: emblem height at least 24px on screen, and clear space on all sides of a quarter of the emblem width, measured from the
-petal tips and the ends of the location line. Neither the PDF nor `design/design_handoff_saoc/` gives a footer render size for the vertical
-lockup, so I am not inventing one: `guidance.renderWidth` is null.
+- **Label role.** `components/nos-chrome/nos-chrome.css:129` `.nf-head` is `700 12px/1.3 var(--nc-sans)`, letter-spacing 0.14em, uppercase. This is the NOS footer's existing label role; only its colour (green-1) differs from Codi's.
+- **Colour.** `--nc-gold: #F3F2D6` (`nos-chrome.css:9`). The same value also appears as `--nos-pale-gold` (`app/globals.css:31`) and `--gold` (`nos-theme.css:321`, nos-v4 `index.html:16`). Brand PDF p.05: "Pale gold #F3F2D6".
+- **Font.** Karla comes from `components/nos-chrome/fonts.ts` (next/font, `--font-nos-karla`) through `--nc-sans` (`nos-chrome.css:164`).
 
-The only existing value is the current footer's vertical box, `min(342px, 100%)` at or below 700px (`nos-chrome.css:154`, `VERTICAL_BOX`).
-Once the lead or Codi sets `renderWidth`, f2-rendered R4 enforces it to ±1px. Until then the checks enforce the PDF minimum and clear space only.
+### Legibility on the royal ground
 
-## Legibility on the royal ground
-
-Contrast is fine for both files (see the table). The risk is the size of the type at the footer scale. The file's location line ("WESTERN CAPE · 2027")
-is 56–66 file px tall in a 2876px-high image. At a 342px render width (300px tall), that gives location-line glyphs about 6–7px tall, and the wordmark
-band (112 px) gives about 12px. Expect the location line to be hard to read at that width. The PDF's answer is "set the mark larger rather than simplifying it".
-Flagged for the size decision; it is not a blocker for either file.
-
-Clear space at 342px is about 61px from the content box. The rendered REG line therefore has to sit at least about 35px below the image bottom
-(BASE `.nf-brand` gap is 20px). R4 checks this.
+Gold on #211A57: wordmark 13.69:1, location line 10.34:1, emblem darkest shading 3.99:1 (graphic at least 3:1). At 280px the location line renders about 5–6px tall and
+the wordmark about 10px. Codi ruled the size, so this is recorded and not flagged again.
 
 ## Checks
 
@@ -71,15 +63,15 @@ The `f2-static.mjs` checks:
 
 - S1: no FOOTER_ORG_NAME or FOOTER_BRAND_TEXT in NosFooter, FOOTER_REG still rendered, alt kept, old files not referenced.
 - S2: footer-data.ts is BASE minus the dead export.
-- S3: `chosen` is filled, referenced and sha-equal, and no `branding/` commit.
+- S3: the gold file is referenced and sha-equal, and no `branding/` commit.
 - S4: no invention.
 - S5: the docs have a "## F2" section.
 - S6: 0 references to FOOTER_BRAND_TEXT.
 
 The `f2-rendered.mjs` checks run on public and preview builds at 1280 and 390, on /national-show, /national-show/tickets and /national-show/exhibitors:
 
-- R1: one image, the chosen file, alt, aspect, and served sha.
+- R1: one `<picture>` of the gold file (1x/2x, no swap), alt, aspect, served sha.
 - R2: no eyebrow and no paragraph.
-- R3: the REG/NPO line is exact.
-- R4: emblem at least 24px, clear space, royal ground, `renderWidth` once set.
-- R5: the SAOC footer on /about still shows the REG/NPO line and not the NOS logo.
+- R3: the REG/NPO text is exact, first after the lockup, in the label-role restyle, at least 4.5:1.
+- R4: width 360/280 (capped), centred, royal ground, emblem at least 24px, gap = calc(0.25 × emblem width), clear space free.
+- R5: the legal row is unchanged; the SAOC footer on /about keeps REG and shows no NOS logo.

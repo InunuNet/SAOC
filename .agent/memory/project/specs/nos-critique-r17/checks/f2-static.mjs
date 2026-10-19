@@ -4,8 +4,8 @@
 //   S2  components/chrome/footer-data.ts equals BASE minus exactly the dead FOOTER_BRAND_TEXT export (lead ruling 2026-10-19, amendment;
 //       golden deadExport.dropLines); FOOTER_REG stays exactly "REG# 1978/004040/08   NPO 043-901" with its three no-break spaces.
 //   S6  FOOTER_BRAND_TEXT has 0 references left in the golden search roots (tracked and untracked files).
-//   S3  the chosen vertical logo (goldens/f2-logo.json `chosen`, filled by the lead once Codi rules) is referenced by NosFooter.tsx and
-//       its public/images copy hashes to the golden sha256; PENDING (FAIL) until `chosen` is filled. No committed change under branding/.
+//   S3  the chosen vertical logo (goldens/f2-logo.json `chosen`: GOLD, Codi FINAL 2026-10-19) is referenced by NosFooter.tsx and its
+//       public/images copy hashes to the golden sha256. No committed change under branding/.
 //   S4  NO INVENTION: no new prose literal in the F2 files.  S5  docs/nos-critique-r17.md has a "## F2" section.
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
@@ -30,7 +30,7 @@ failures.push(...exactEdits(G.deadExport.file, [], [G.deadExport.dropLines], 'S2
 if (!(readRepoFile(G.reg.file) ?? '').includes(`export const ${G.reg.const} = '${G.reg.text}';`)) failures.push(`${G.reg.file}: ${G.reg.const} is not '${G.reg.text}' (S2)`);
 
 // S3
-if (!G.chosen) failures.push(`goldens/f2-logo.json: chosen is null, PENDING Codi's pick between ${Object.values(G.candidates).map((c) => path.basename(c.source)).join(' and ')} (S3)`);
+if (!G.chosen) failures.push(`goldens/f2-logo.json: chosen is null, no logo chosen among ${Object.values(G.candidates).map((c) => path.basename(c.source)).join(' and ')} (S3)`);
 else {
   if (!src.includes(`'${G.chosen.path}'`)) failures.push(`${G.file}: does not reference '${G.chosen.path}' (S3)`);
   const abs = path.join(repoRoot, G.chosen.dest);

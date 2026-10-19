@@ -15,7 +15,7 @@ Sources: `docs/rules/no-invention.md` (no new copy); `design/design_handoff_saoc
 | card | line | BASE | target |
 |---|---|---|---|
 | `#exhibit` "I'm exhibiting orchids" | 56 body | "See what is involved in exhibiting at the National Show. Entry sales are not yet open — they open closer to the show." | "See what is involved in exhibiting at the National Show." |
-| `#exhibit` | 57 cta | "Exhibitor entry" | unchanged |
+| `#exhibit` | 57 cta | "Exhibitor entry" | **"Apply to exhibit"**: Codi, FINAL, relayed by the lead on 2026-10-19 (sentence case). The trader card's label is "Vendor registration", not "Apply to exhibit", so Codi's string is used exactly |
 | `#exhibit` | 58 href | `/national-show/exhibitors` | `/national-show/vendors/apply`, the same as `#trade` |
 | `#trade` "I'm a nursery or trader" | 65 href | `/national-show/vendors/apply` | unchanged |
 
@@ -50,14 +50,14 @@ information/info/entry guide"), or it is the page itself. **None is in the golde
 
 The `f1-static.mjs` checks:
 
-- S1: exactly the two line edits.
+- S1: exactly the three line edits (body, label, href).
 - S1b: exactly SearchOverlay.tsx line 37.
-- S2: no invention.
+- S2: no invention, except Codi's ruled label (`allowCopy`).
 - S3: the docs have a "## F1" section.
 
 The `f1-rendered.mjs` checks run on public and preview builds at 1280 and 390:
 
-- R1: the CTA is named "Exhibitor entry" and its href equals the trader CTA's.
+- R1: the CTA is named "Apply to exhibit" and its href equals the trader CTA's.
 - R2: the body is exact and the removed sentence appears nowhere on the page.
 - R3: both CTAs land on the same URL with a 200.
 - R4: on /about, "Open search" opens the "Search SAOC" dialog, and it has exactly one "Exhibit at the National Show" link, to /national-show/vendors/apply.

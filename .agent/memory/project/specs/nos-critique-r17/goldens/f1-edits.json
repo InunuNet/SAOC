@@ -1,5 +1,5 @@
 {
- "_note": "nos-critique-r17 F1 golden (QA input). Brad's beta review relayed by the lead (saoc-82), 2026-10-19: \"Exhibitor and Trader do the same vendor application flow.\" BASE 5c093d6e. Exactly two BASE lines of the tickets hub change, and (lead ruling 2026-10-19, amendment) one line of the SAOC search overlay; nothing else in either file.",
+ "_note": "nos-critique-r17 F1 golden (QA input). Brad's beta review relayed by the lead (saoc-82), 2026-10-19: \"Exhibitor and Trader do the same vendor application flow.\" BASE 5c093d6e. Exactly three BASE lines of the tickets hub change (body, CTA label per Codi's FINAL relabel, href), and (lead ruling 2026-10-19, amendment) one line of the SAOC search overlay; nothing else in either file.",
  "base": "5c093d6e",
  "route": "/national-show/tickets",
  "section": "Exhibiting or trading?",
@@ -11,6 +11,11 @@
    "to": "    body: 'See what is involved in exhibiting at the National Show.',"
   },
   {
+   "line": 57,
+   "from": "    cta: 'Exhibitor entry',",
+   "to": "    cta: 'Apply to exhibit',"
+  },
+  {
    "line": 58,
    "from": "    href: '/national-show/exhibitors',",
    "to": "    href: '/national-show/vendors/apply',"
@@ -19,10 +24,12 @@
  "exhibit": {
   "cardId": "exhibit",
   "heading": "I'm exhibiting orchids",
-  "cta": "Exhibitor entry",
+  "cta": "Apply to exhibit",
   "body": "See what is involved in exhibiting at the National Show.",
   "removed": "Entry sales are not yet open — they open closer to the show.",
-  "hrefBefore": "/national-show/exhibitors"
+  "hrefBefore": "/national-show/exhibitors",
+  "ctaBefore": "Exhibitor entry",
+  "ctaRuling": "Codi, FINAL, relayed by the lead 2026-10-19: relabel the exhibitor CTA 'Exhibitor entry' -> 'Apply to exhibit' (sentence case). The trader card's label is 'Vendor registration', not 'Apply to exhibit', so Codi's string is used exactly."
  },
  "trade": {
   "cardId": "trade",
@@ -47,5 +54,8 @@
    }
   ],
   "ruling": "Lead ruling 2026-10-19 (r17 amendment 1): the quick link's href becomes the vendor application; the label stays (Brad: exhibitors use the vendor flow)."
- }
+ },
+ "allowCopy": [
+  "Apply to exhibit"
+ ]
 }
