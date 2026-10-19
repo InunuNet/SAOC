@@ -1,5 +1,5 @@
 {
- "_note": "nos-critique-r17 F1 golden (QA input). Brad's beta review relayed by the lead (saoc-82), 2026-10-19: \"Exhibitor and Trader do the same vendor application flow.\" BASE 5c093d6e. Exactly two BASE lines of the tickets hub change; nothing else in the file.",
+ "_note": "nos-critique-r17 F1 golden (QA input). Brad's beta review relayed by the lead (saoc-82), 2026-10-19: \"Exhibitor and Trader do the same vendor application flow.\" BASE 5c093d6e. Exactly two BASE lines of the tickets hub change, and (lead ruling 2026-10-19, amendment) one line of the SAOC search overlay; nothing else in either file.",
  "base": "5c093d6e",
  "route": "/national-show/tickets",
  "section": "Exhibiting or trading?",
@@ -30,5 +30,22 @@
   "cta": "Vendor registration",
   "href": "/national-show/vendors/apply"
  },
- "otherSites": "see f1-spec.md section 2: every other link to /national-show/exhibitors (public + preview) is an information link to the grower entry guide, not the dead-end entry CTA; none is in this golden and none changes."
+ "otherSites": "see f1-spec.md section 2: every other link to /national-show/exhibitors (public + preview) is an information link to the grower entry guide, not the dead-end entry CTA; none is in this golden and none changes, except the search overlay quick link, added by the lead's amendment (golden `search`).",
+ "search": {
+  "file": "components/chrome/SearchOverlay.tsx",
+  "route": "/about",
+  "trigger": "Open search",
+  "dialog": "Search SAOC",
+  "label": "Exhibit at the National Show",
+  "hrefBefore": "/national-show/exhibitors",
+  "href": "/national-show/vendors/apply",
+  "lineEdits": [
+   {
+    "line": 37,
+    "from": "  { label: 'Exhibit at the National Show', href: '/national-show/exhibitors' },",
+    "to": "  { label: 'Exhibit at the National Show', href: '/national-show/vendors/apply' },"
+   }
+  ],
+  "ruling": "Lead ruling 2026-10-19 (r17 amendment 1): the quick link's href becomes the vendor application; the label stays (Brad: exhibitors use the vendor flow)."
+ }
 }

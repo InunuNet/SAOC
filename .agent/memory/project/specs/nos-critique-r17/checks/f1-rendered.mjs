@@ -4,6 +4,8 @@
 //       trader card's (#trade) CTA href, which is the golden vendor-application href.
 //   R2  the exhibitor card body reads exactly the golden body (the removed sentence appears nowhere on the page), and is not empty.
 //   R3  following the exhibitor CTA lands, HTTP 200, on the same URL as following the trader CTA.
+//   R4  the SAOC search overlay (opened from the header's "Open search" button on /about) lists exactly one quick link named
+//       "Exhibit at the National Show", and its href is the golden vendor-application href (lead ruling 2026-10-19, amendment).
 import { finish, goldenJson } from './_lib.mjs';
 import { MODES, require, serve } from './_server.mjs';
 
@@ -55,6 +57,23 @@ for (const mode of MODES) {
         const b = await land(G.trade.href);
         if (a.status !== 200 || a.url !== b.url) failures.push(`${at}: exhibitor CTA lands on ${a.url} (HTTP ${a.status}), trader CTA on ${b.url} (HTTP ${b.status}) (R3)`);
       }
+      // R4
+      checks += 1;
+      const SG = G.search;
+      const sat = `${mode} ${SG.route} @${width}`;
+      await page.goto(`${srv.origin}${SG.route}`, { waitUntil: 'networkidle' });
+      const trigger = page.getByRole('button', { name: SG.trigger, exact: true });
+      if (!(await trigger.count())) failures.push(`${sat}: no "${SG.trigger}" button (R4)`);
+      else {
+        await trigger.first().click();
+        const dialog = page.getByRole('dialog', { name: SG.dialog, exact: true });
+        await dialog.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null);
+        if (!(await dialog.count())) failures.push(`${sat}: the "${SG.dialog}" dialog did not open (R4)`);
+        else {
+          const hrefs = await dialog.getByRole('link', { name: SG.label, exact: true }).evaluateAll((as) => as.map((a) => a.getAttribute('href')));
+          if (hrefs.length !== 1 || hrefs[0] !== SG.href) failures.push(`${sat}: "${SG.label}" quick link(s) ${JSON.stringify(hrefs)}, want exactly one to ${SG.href} (R4)`);
+        }
+      }
       await ctx.close();
     }
   } catch (e) {
@@ -64,4 +83,4 @@ for (const mode of MODES) {
     await srv.stop();
   }
 }
-finish(NAME, failures, `F1 rendered: ${checks} checks across ${MODES.join('/')} at ${WIDTHS.join('/')}: the exhibitor card's "Exhibitor entry" goes to the trader card's vendor application, sentence gone.`);
+finish(NAME, failures, `F1 rendered: ${checks} checks across ${MODES.join('/')} at ${WIDTHS.join('/')}: the exhibitor card's "Exhibitor entry" and the search quick link go to the vendor application, sentence gone.`);

@@ -5,7 +5,7 @@ Ruling: Brad's beta review, relayed by the lead (saoc-82) on 2026-10-19, verbati
 
 > "Vertical monotone logo, no paragraph just reg and NPO, paragraph is from SAOC remove it."
 
-Golden: `f2-logo.json`. Footprint: `f2-footprint.json` (`components/nos-chrome/NosFooter.tsx`, `components/nos-chrome/nos-chrome.css`), plus `chosen.dest`.
+Golden: `f2-logo.json`. Footprint: `f2-footprint.json` (`components/nos-chrome/NosFooter.tsx`, `components/nos-chrome/nos-chrome.css`, `components/chrome/footer-data.ts`), plus `chosen.dest`.
 Sources: `docs/rules/no-invention.md`; `design/design_handoff_saoc/`; `branding/National Show 2027/` (Logo/, and "National Orchid Show 2027 Logo.pdf").
 
 ## BASE (measured)
@@ -25,7 +25,9 @@ The footer ground is royal `#211A57`, rgb(33, 26, 87).
   - Alt stays LOCKUP_ALT.
   - The file is copied byte-identical from `branding/National Show 2027/Logo/` to `chosen.dest` in `public/images/`. The existing loader (`lib/image-loader.ts`, `scripts/generate-image-variants.mjs`) generates its WebP variants at build time, with no extra step.
   - Nothing under `branding/` is added, deleted or committed.
-- **Removed.** The eyebrow and the paragraph go. FOOTER_ORG_NAME and FOOTER_BRAND_TEXT are no longer imported into NosFooter. `components/chrome/footer-data.ts` stays byte-unchanged. Note: the SAOC footer does not render the paragraph at BASE either (it shows only SaocLockup and the REG line), so FOOTER_BRAND_TEXT becomes an export nothing renders. It is kept as SAOC's data rather than widening the footprint; the lead may rule otherwise.
+- **Removed.** The eyebrow and the paragraph go. FOOTER_ORG_NAME and FOOTER_BRAND_TEXT are no longer imported into NosFooter. `components/chrome/footer-data.ts` was first specified as byte-unchanged (superseded by the amendment below). Note: the SAOC footer does not render the paragraph at BASE either (it shows only SaocLockup and the REG line), so FOOTER_BRAND_TEXT becomes an export nothing renders. **Amendment (lead ruling, 2026-10-19):** delete it. `footer-data.ts` BASE lines 24–26 (the two-line const and the blank line after it) are removed, and nothing
+else in the file changes. FOOTER_REG stays byte-exact. `footer-data.ts` joins `f2-footprint.json`. f2-static S6 requires 0 references to
+`FOOTER_BRAND_TEXT` in app, components, lib, sanity, content, types and scripts.
 - **Kept.** "REG# 1978/004040/08   NPO 043-901", exactly: the separator is three U+00A0 no-break spaces, as in BASE.
 - The old `/images/nos/*` files stay on disk. The horizontal one is still used by the OG route (`app/(marketing)/national-show/og/route.tsx:29`).
 
@@ -68,10 +70,11 @@ Clear space at 342px is about 61px from the content box. The rendered REG line t
 The `f2-static.mjs` checks:
 
 - S1: no FOOTER_ORG_NAME or FOOTER_BRAND_TEXT in NosFooter, FOOTER_REG still rendered, alt kept, old files not referenced.
-- S2: footer-data.ts unchanged.
+- S2: footer-data.ts is BASE minus the dead export.
 - S3: `chosen` is filled, referenced and sha-equal, and no `branding/` commit.
 - S4: no invention.
 - S5: the docs have a "## F2" section.
+- S6: 0 references to FOOTER_BRAND_TEXT.
 
 The `f2-rendered.mjs` checks run on public and preview builds at 1280 and 390, on /national-show, /national-show/tickets and /national-show/exhibitors:
 

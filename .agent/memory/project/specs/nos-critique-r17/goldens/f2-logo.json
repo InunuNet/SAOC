@@ -83,5 +83,24 @@
  ],
  "saocRoute": "/about",
  "minTypeRatio": 4.5,
- "minGraphicRatio": 3
+ "minGraphicRatio": 3,
+ "deadExport": {
+  "file": "components/chrome/footer-data.ts",
+  "const": "FOOTER_BRAND_TEXT",
+  "dropLines": [
+   24,
+   26
+  ],
+  "ruling": "Lead ruling 2026-10-19 (r17 amendment 2): delete the export nothing renders once the NOS footer drops it. BASE lines 24-26 (the two-line const and the blank line after it) are removed; nothing else in the file changes, FOOTER_REG stays byte-exact.",
+  "references": 0,
+  "searchRoots": [
+   "app",
+   "components",
+   "lib",
+   "sanity",
+   "content",
+   "types",
+   "scripts"
+  ]
+ }
 }

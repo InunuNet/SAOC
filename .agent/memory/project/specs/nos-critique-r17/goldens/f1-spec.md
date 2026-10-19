@@ -19,6 +19,10 @@ Sources: `docs/rules/no-invention.md` (no new copy); `design/design_handoff_saoc
 | `#exhibit` | 58 href | `/national-show/exhibitors` | `/national-show/vendors/apply`, the same as `#trade` |
 | `#trade` "I'm a nursery or trader" | 65 href | `/national-show/vendors/apply` | unchanged |
 
+**Amendment (lead ruling, 2026-10-19).** The SAOC search overlay quick link also moves: `components/chrome/SearchOverlay.tsx:37`
+`{ label: 'Exhibit at the National Show', href: '/national-show/exhibitors' }` becomes `href: '/national-show/vendors/apply'`. The label is unchanged,
+following Brad's direction that exhibitors use the vendor flow. The golden is `f1-edits.json` `search`, and the file joins `f1-footprint.json`.
+
 The sentence is removed and nothing replaces it. The remaining body is one complete sentence, so it is neither empty nor broken: **no STOP**.
 Note for the lead: the kept sentence still reads "See what is involved in exhibiting", while the CTA now opens the vendor application.
 The ruling allows no new copy, so the wording stays as it is.
@@ -35,18 +39,19 @@ information/info/entry guide"), or it is the page itself. **None is in the golde
 | NOS header mega menu + mobile drawer | Exhibitor entry guide (descriptor "Entry process, fees, classes, judging and eligibility…") | `components/chrome/nav-config.ts:251-254` | 36 NOS pages |
 | NosShowIndex "Explore the show pages" | Exhibitor entry guide | `components/nos/NosShowIndex.tsx:36` | 32 NOS pages |
 | NosSubNav "Exhibit & trade pages" | Exhibitor entry guide | nav-config (same leaf) | 10 exhibit/trade pages |
-| SAOC search overlay quick link | Exhibit at the National Show | `components/chrome/SearchOverlay.tsx:37` | rendered only when the overlay is opened |
+| SAOC search overlay quick link | Exhibit at the National Show | `components/chrome/SearchOverlay.tsx:37` | rendered only when the overlay is opened. **Changes**, per the amendment above |
 | sitemap.xml | — | `app/sitemap.ts` (from the route list) | /sitemap.xml |
 | JSON-LD | its own breadcrumb only | `/national-show/exhibitors` itself | that page |
 | not rendered | — | `components/show/ShowSectionNav.tsx:92` (dead), `content/national-show-routes.json:221` | — |
 
-"Exhibit at the National Show" (search) is the only label that reads as an action. Flagging it for the lead; it is not in the golden.
+"Exhibit at the National Show" (search) was the only label that reads as an action. I flagged it, and the lead ruled that it moves to the vendor application (see section 1).
 
 ## Checks
 
 The `f1-static.mjs` checks:
 
 - S1: exactly the two line edits.
+- S1b: exactly SearchOverlay.tsx line 37.
 - S2: no invention.
 - S3: the docs have a "## F1" section.
 
@@ -55,3 +60,4 @@ The `f1-rendered.mjs` checks run on public and preview builds at 1280 and 390:
 - R1: the CTA is named "Exhibitor entry" and its href equals the trader CTA's.
 - R2: the body is exact and the removed sentence appears nowhere on the page.
 - R3: both CTAs land on the same URL with a 200.
+- R4: on /about, "Open search" opens the "Search SAOC" dialog, and it has exactly one "Exhibit at the National Show" link, to /national-show/vendors/apply.
