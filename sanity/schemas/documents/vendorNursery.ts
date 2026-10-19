@@ -8,6 +8,7 @@ export const vendorNursery = defineType({
     defineField({ name: 'name', title: 'Name', type: 'string', validation: (Rule) => Rule.required() }),
     defineField({ name: 'logo', title: 'Logo', type: 'image' }),
     defineField({ name: 'country', title: 'Country', type: 'string' }),
+    defineField({ name: 'bio', title: 'Bio', type: 'text' }),
     defineField({ name: 'owner', title: 'Owner', type: 'string' }),
     defineField({ name: 'history', title: 'History', type: 'text' }),
     defineField({ name: 'specialisation', title: 'Specialisation', type: 'text' }),

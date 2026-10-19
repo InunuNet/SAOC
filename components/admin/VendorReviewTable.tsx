@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import type { VendorSubmission, VendorSubmissionStatus, VendorStandOrderStatus } from '@/types/index';
 import type { VendorReviewAction } from '@/lib/vendor-review';
+import { isVendorListingEligible } from '@/lib/vendor-listing';
 import { VendorPaymentLinkControl } from './VendorPaymentLinkControl';
 import { VendorPhotoLinkControl } from './VendorPhotoLinkControl';
 
@@ -52,6 +53,8 @@ const ACTION_LABELS: Record<VendorReviewAction, string> = {
   reject: 'Reject',
 };
 
+const LISTING_CONSENT_CONFIRM = 'marketingPermission is missing. Publish anyway? (explicit admin act)';
+
 interface VendorReviewTableProps {
   submissions: VendorSubmission[];
   /** F32 — keyed by vendorSubmissionId; a submission absent from this map is "not started". */
@@ -81,6 +84,8 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
   const [paymentUrlById, setPaymentUrlById] = useState<Record<string, string>>({});
   // Photo-resume links (vendor-flow-fixes F2), keyed by vendorSubmissionId, same fallback role.
   const [photoUrlById, setPhotoUrlById] = useState<Record<string, string>>({});
+  // F30 -- per-row result of the last Publish to listing click ('Published' / 'Already listed').
+  const [listingStateById, setListingStateById] = useState<Record<string, string>>({});
 
   // Hotfix (contracts/golden/vendor-stand-payment-link-visibility, 2026-09-01) -- reuses the
   // same pendingId/error state as handleAction above (no second loading/error mechanism). The
@@ -144,6 +149,48 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
       }
     } catch {
       setError('Failed to reach the server. Please try again.');
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  // F30 -- publishes the allowlisted projection to the public listing. A 'consent-missing'
+  // refusal asks for explicit confirmation and retries once with acknowledgeNoConsent.
+  async function handlePublishListing(id: string, acknowledgeNoConsent = false) {
+    setPendingId(id);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/admin/vendors/${id}/publish-listing`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acknowledgeNoConsent }),
+      });
+      const body = (await res.json()) as {
+        success?: boolean;
+        outcome?: 'created' | 'already-listed';
+        reason?: string;
+        error?: string;
+      };
+
+      if (res.status === 409 && body.reason === 'consent-missing' && !acknowledgeNoConsent) {
+        if (window.confirm(LISTING_CONSENT_CONFIRM)) {
+          await handlePublishListing(id, true);
+        }
+        return;
+      }
+
+      if (!res.ok || !body.success) {
+        setError(body.error ?? 'Publish failed');
+        return;
+      }
+
+      setListingStateById((current) => ({
+        ...current,
+        [id]: body.outcome === 'already-listed' ? 'Already listed' : 'Published',
+      }));
+    } catch {
+      setError('Publish failed');
     } finally {
       setPendingId(null);
     }
@@ -232,6 +279,11 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
               const uploadedProductPhotoCount = countUploadedProductPhotos(row);
               const uploadsComplete = uploadedProductPhotoCount >= REQUIRED_PRODUCT_PHOTO_COUNT;
               const showPhotoLink = !uploadsComplete && row.status !== 'rejected';
+              const showPublishListing = isVendorListingEligible({
+                status: row.status,
+                paymentReceived: row.paymentReceived,
+                standOrderStatus: standPaymentStatusById[row.id] ?? null,
+              });
 
               return (
                 <tr key={row.id} className="hover:bg-parchment/60">
@@ -295,7 +347,8 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
                     <div className="flex flex-wrap items-start gap-2">
                       {actions.length === 0 &&
                         !(row.status === 'approved' && standPaymentStatus !== 'paid') &&
-                        !showPhotoLink && (
+                        !showPhotoLink &&
+                        !showPublishListing && (
                         <span className="text-muted">—</span>
                       )}
                       {actions.map((action) => (
@@ -315,6 +368,16 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
                           paymentUrl={paymentUrlById[row.id] ?? null}
                           onRequestLink={() => handleResendPaymentLink(row.id)}
                         />
+                      )}
+                      {showPublishListing && (
+                        <button
+                          type="button"
+                          disabled={pendingId === row.id}
+                          onClick={() => handlePublishListing(row.id)}
+                          className="rounded-sm border border-rule bg-ivory px-3 py-1.5 font-sans text-[13px] font-medium text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {pendingId === row.id ? 'Saving…' : listingStateById[row.id] ?? 'Publish to listing'}
+                        </button>
                       )}
                       {showPhotoLink && (
                         <VendorPhotoLinkControl

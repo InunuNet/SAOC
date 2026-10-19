@@ -534,6 +534,7 @@ export const vendorNurseriesQuery = defineQuery(`
     name,
     logo,
     country,
+    bio,
     owner,
     history,
     specialisation,

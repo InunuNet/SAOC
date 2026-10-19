@@ -13,6 +13,7 @@ export interface SanityVendorNursery {
   name: string;
   logo: SanityImageSource | null;
   country: string | null;
+  bio: string | null;
   owner: string | null;
   history: string | null;
   specialisation: string | null;
@@ -51,6 +52,11 @@ export function VendorGrid({ nurseries }: VendorGridProps) {
           {nursery.country ? (
             <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
               {nursery.country}
+            </p>
+          ) : null}
+          {nursery.bio ? (
+            <p className="mt-2 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70">
+              {nursery.bio}
             </p>
           ) : null}
           {nursery.owner ? (

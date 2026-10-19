@@ -815,6 +815,12 @@ export interface VendorSubmission {
   paymentReceived?: boolean;
   paymentConfirmedBy?: string | null;
   paymentConfirmedAt?: Date | null;
+
+  // F30 (launch-weekend) -- audit of the public-listing publish; written only on outcome
+  // 'created' by the capability-gated publish-listing route via ref.update().
+  listingPublishedAt?: Date | null;
+  listingPublishedBy?: string | null;
+  listingDocumentId?: string | null;
 }
 
 // ---------------------------------------------------------------------------
