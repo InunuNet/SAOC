@@ -1,4 +1,6 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+import { cache } from 'react';
 
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
@@ -6,7 +8,8 @@ import { ConfirmationPoller } from '@/components/tickets/ConfirmationPoller';
 import { DownloadTicketButton } from '@/components/tickets/DownloadTicketButton';
 import { client } from '@/sanity/lib/client';
 import { ticketsPageQuery } from '@/sanity/queries';
-import { getConfirmedOrderForDisplay } from '@/lib/orders';
+import { getConfirmedOrderForDisplay as getConfirmedOrderUncached } from '@/lib/orders';
+import { getTicketStatus } from '@/lib/ticket-status';
 
 // F1 (confirmation-page-qr-and-download) — this page reads live Firestore via the Admin SDK
 // (getConfirmedOrderForDisplay, ticketing-multi-line-item-cart-ui F3) on every request, so it
@@ -23,6 +26,67 @@ interface TicketsPageCopy {
   confirmationSuccessMessage?: string | null;
   ticketIncludesNote?: string | null;
   downloadTicketButtonLabel?: string | null;
+  confirmationNotFoundMessage?: string | null;
+}
+
+const BOOKING_NOT_FOUND_TITLE = 'Booking not found';
+
+// nos-critique-r19 F1 — generateMetadata and the page share one lookup per request.
+const getConfirmedOrderForDisplay = cache(getConfirmedOrderUncached);
+const getCachedTicketStatus = cache(getTicketStatus);
+
+// Not found = no confirmed order AND (an empty ref, or no ticket status for the ref): the same
+// lookup /api/tickets/status uses. A failed lookup is not "not found"; the caller keeps the poller.
+const isBookingNotFound = cache(async (bookingRef: string): Promise<boolean> => {
+  if (bookingRef.length === 0) return true;
+  try {
+    return (await getCachedTicketStatus(bookingRef)) === null;
+  } catch (error) {
+    console.error('[tickets/confirmation] Failed to look up ticket status:', error);
+    return false;
+  }
+});
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ ref?: string | string[] }>;
+}): Promise<Metadata> {
+  const { ref } = await searchParams;
+  const bookingRef = normalizeBookingRefParam(ref);
+  try {
+    const confirmedOrder =
+      bookingRef.length > 0 ? await getConfirmedOrderForDisplay(bookingRef) : null;
+    if (confirmedOrder) return {};
+  } catch {
+    // The page surfaces the order lookup's error itself; the title keeps the site default.
+    return {};
+  }
+  return (await isBookingNotFound(bookingRef)) ? { title: BOOKING_NOT_FOUND_TITLE } : {};
+}
+
+async function BookingNotFound() {
+  const copy = await client?.fetch<TicketsPageCopy>(ticketsPageQuery).catch(() => null);
+  const confirmationNotFoundMessage =
+    copy?.confirmationNotFoundMessage ?? "We couldn't find a booking for that reference.";
+
+  return (
+    <>
+      <NosHero
+        route="/tickets/confirmation"
+        title={BOOKING_NOT_FOUND_TITLE}
+        lede={confirmationNotFoundMessage}
+        priority
+      />
+      <NosSection>
+        <div className="nk-state">
+          <Link href="/national-show/tickets" className="nk-btn nk-cta">
+            Back to tickets
+          </Link>
+        </div>
+      </NosSection>
+    </>
+  );
 }
 
 export default async function TicketConfirmationPage({
@@ -37,6 +101,7 @@ export default async function TicketConfirmationPage({
     bookingRef.length > 0 ? await getConfirmedOrderForDisplay(bookingRef) : null;
 
   if (!confirmedOrder) {
+    if (await isBookingNotFound(bookingRef)) return <BookingNotFound />;
     return (
       <>
         <NosHero route="/tickets/confirmation" title="Tickets" priority />
