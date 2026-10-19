@@ -1,6 +1,6 @@
 {
- "_note": "nos-critique-r17 F2 golden (QA input). Brad's beta review relayed by the lead (saoc-82), 2026-10-19: \"Vertical monotone logo, no paragraph just reg and NPO, paragraph is from SAOC remove it.\" Codi's rulings FINAL (relayed by the lead, 2026-10-19, after her correction): GOLD lockup, 360px at >=701 / 280px at <=700 capped at the wrap's content width, centred, one <picture> (1x/2x, no <=700 swap), REG/NPO gap = the PDF p.08 clear space, REG/NPO text and position as BASE in the label role restyle. BASE 5c093d6e. The dev copies the chosen source byte-identical to `dest`; nothing under branding/ is added, deleted or committed.",
- "base": "5c093d6e",
+ "_note": "nos-critique-r17 F2 golden (QA input). Brad's beta review relayed by the lead (saoc-82), 2026-10-19: \"Vertical monotone logo, no paragraph just reg and NPO, paragraph is from SAOC remove it.\" Codi's rulings FINAL (relayed by the lead, 2026-10-19, after her correction): GOLD lockup, 360px at >=701 / 280px at <=700 capped at the wrap's content width, centred, one <picture> (1x/2x, no <=700 swap), REG/NPO gap = the PDF p.08 clear space, REG/NPO text and position as BASE in the label role restyle. BASE 39b15ec0 (restack; was 5c093d6e). The dev copies the chosen source byte-identical to `dest`; nothing under branding/ is added, deleted or committed.",
+ "base": "39b15ec0",
  "chosen": {
   "source": "branding/National Show 2027/Logo/NOS-2027-logo-reversed-gold-vertical.png",
   "sha256": "fdf12524658cc9ce5f7c5360a360b531d7d0e94b801bb667fdc3f9bc58959ede",

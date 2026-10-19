@@ -1,6 +1,6 @@
 # nos-critique-r17 F2 — NOS footer brand block: vertical monotone logo, REG and NPO only
 
-BASE: `origin/main` `5c093d6e`. Branch `fix/nos-critique-r17`.
+BASE: `origin/main` `39b15ec0` since the restack (was `5c093d6e` when the spec was written; main's 5c093d6e..39b15ec0 touches none of the F2 files). Branch `fix/nos-critique-r17-restack`.
 Ruling: Brad's beta review, relayed by the lead (saoc-82) on 2026-10-19, verbatim:
 
 > "Vertical monotone logo, no paragraph just reg and NPO, paragraph is from SAOC remove it."

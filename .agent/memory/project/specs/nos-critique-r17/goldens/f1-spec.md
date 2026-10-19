@@ -1,6 +1,6 @@
 # nos-critique-r17 F1 — the exhibitor card goes to the vendor application flow
 
-BASE: `origin/main` `5c093d6e` (r16 merged). Branch `fix/nos-critique-r17`, worktree `.tmp/sandbox/critique-r17`.
+BASE: `origin/main` `39b15ec0` since the restack (was `5c093d6e`, r16 merged, when the spec was written; main's 5c093d6e..39b15ec0 touches none of the F1 files). Branch `fix/nos-critique-r17-restack`, worktree `.tmp/sandbox/critique-r17`.
 Ruling: Brad's beta review, relayed by the lead (saoc-82) on 2026-10-19, verbatim:
 
 > "Exhibitor and Trader do the same vendor application flow."

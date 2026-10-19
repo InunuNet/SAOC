@@ -1,6 +1,6 @@
 {
- "_note": "nos-critique-r17 F1 golden (QA input). Brad's beta review relayed by the lead (saoc-82), 2026-10-19: \"Exhibitor and Trader do the same vendor application flow.\" BASE 5c093d6e. Exactly three BASE lines of the tickets hub change (body, CTA label per Codi's FINAL relabel, href), and (lead ruling 2026-10-19, amendment) one line of the SAOC search overlay; nothing else in either file.",
- "base": "5c093d6e",
+ "_note": "nos-critique-r17 F1 golden (QA input). Brad's beta review relayed by the lead (saoc-82), 2026-10-19: \"Exhibitor and Trader do the same vendor application flow.\" BASE 39b15ec0 (restack; was 5c093d6e). Exactly three BASE lines of the tickets hub change (body, CTA label per Codi's FINAL relabel, href), and (lead ruling 2026-10-19, amendment) one line of the SAOC search overlay; nothing else in either file.",
+ "base": "39b15ec0",
  "route": "/national-show/tickets",
  "section": "Exhibiting or trading?",
  "file": "app/(marketing)/national-show/tickets/page.tsx",

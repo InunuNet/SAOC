@@ -27,7 +27,7 @@ assertions:
       description: f1 check scripts and goldens are unmodified since @architect wrote them
       command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r17/goldens/checks-f1.sha256
     - id: A2
-      description: Footprint - the r17 branch differs from origin/main 5c093d6e only in the union of the r17 footprints (+ the F2 logo dest), docs/nos-critique-r17.md and the spec dir, and HEAD descends from it
+      description: Footprint - the r17 branch differs from origin/main 39b15ec0 only in the union of the r17 footprints (+ the F2 logo dest), docs/nos-critique-r17.md and the spec dir, and HEAD descends from it
       command: node .agent/memory/project/specs/nos-critique-r17/checks/footprint.mjs
     - id: A3
       description: Static - tickets hub is BASE plus exactly the three golden lines (sentence removed, "Apply to exhibit", exhibitor href = vendor application), SearchOverlay.tsx BASE plus line 37 (quick link href = vendor application), no new copy, docs F1

@@ -1,7 +1,8 @@
 // Shared helpers for the nos-critique-r17 checks (QA inputs written by @architect; @dev must not edit them, goldens/checks-fN.sha256 lock them).
 // The checks are committed on fix/nos-critique-r17 with the spec. They inspect the checkout named by NOS_CR17_ROOT; by default the
 // .tmp/sandbox/critique-r17 worktree when it exists under the checkout holding this spec, otherwise that checkout itself.
-// BASE is origin/main 5c093d6e (r16 merged) at the time the spec was written.
+// BASE is origin/main 39b15ec0 (F31 Ozow statuses) since the restack (was 5c093d6e, r16 merged, when the spec was written; the two
+// differ only in payments/orders/notification code, the vendor payment page and launch-weekend specs, none of which r17 reads at BASE).
 //   NOS_CR17_ROOT   checkout to inspect (relative to the cwd)
 //   NOS_CR17_GIT    checkout whose git history supplies the BASE file contents (default: NOS_CR17_ROOT)
 import { execFileSync } from 'node:child_process';
@@ -9,7 +10,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const BASE = '5c093d6e';
+export const BASE = '39b15ec0';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const projectRoot = path.resolve(here, '../../../../../..');
