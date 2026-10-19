@@ -1,0 +1,41 @@
+# Sources: Codi's FINAL P2 (craft floor, spacing rhythm) on /national-show/what-to-expect, relayed by the lead 2026-10-20; architect analysis on BASE a4807791 (goldens/f2-spec.md).
+schema: athanor.contract/v1
+slug: nos-critique-r20
+goal: >-
+  Collapse the doubled section padding between two adjacent same-tone NOS sections with ONE rule block in nos-structure.css, so a
+  single rhythm unit remains (what-to-expect at 1280 loses one 120px padding), while different-tone neighbours and pairs already
+  collapsed (workshops at 390) are unchanged, with no new tokens.
+created_at: '2026-10-20'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json, f2-footprint.json, f3-footprint.json, docs/nos-critique-r20.md and this spec dir'
+    reason: 'Enforced by A2. No page markup changes; the hub nos-section-joined, r12 disclosure and r14 tickets-hub collapses are kept.'
+features:
+  - id: F2
+    name: Same-tone NOS section pairs share one rhythm unit (one nos-structure.css rule block)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r20/goldens/f2-spec.md
+  - .agent/memory/project/specs/nos-critique-r20/goldens/f2-edits.json
+  - .agent/memory/project/specs/nos-critique-r20/goldens/f2-footprint.json
+  - .agent/memory/project/specs/nos-critique-r20/goldens/f2-baseline.json
+  - .agent/memory/project/specs/nos-critique-r20/goldens/nonreg-baseline.json
+  - .agent/memory/project/specs/nos-critique-r20/goldens/checks-f2.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f2 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r20/goldens/checks-f2.sha256
+    - id: A2
+      description: Footprint - the r20 branch differs from origin/main a4807791 only in the three r20 footprints, docs/nos-critique-r20.md and the spec dir, and HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r20/checks/footprint.mjs
+    - id: A3
+      description: Static - nos-structure.css equals BASE plus exactly the same-tone rule block after line 570, docs F2
+      command: node .agent/memory/project/specs/nos-critique-r20/checks/f2-static.mjs
+    - id: A4
+      description: Rendered (public + preview, 1280/390, 15 NOS routes) - same-tone followers lose their padding-top and the gap drops by exactly that, pairs already collapsed keep their gap, different-tone pairs unchanged, what-to-expect loses one 120px padding after Accessibility
+      command: node .agent/memory/project/specs/nos-critique-r20/checks/f2-rendered.mjs
+    - id: A5
+      description: Non-regression (public + preview, 1280/390) - 19 SAOC and NOS routes (hub, about, workshops, what-to-expect, tickets hub) keep geometry and screenshot above the last footer once the F2 bands are put back, no overflow
+      command: node .agent/memory/project/specs/nos-critique-r20/checks/nonreg.mjs
