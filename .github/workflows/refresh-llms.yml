@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
@@ -31,9 +32,38 @@ jobs:
           NEXT_PUBLIC_SANITY_DATASET: production
           SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
 
-      - name: Commit if changed
+      - name: Open or update refresh PR if changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REFRESH_BRANCH: chore/refresh-llms
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          cp public/llms-full.txt "$RUNNER_TEMP/llms-full.txt"
+          git fetch origin main
+          # Build on the existing refresh branch when there is one, so a plain push suffices.
+          if git fetch origin "$REFRESH_BRANCH"; then
+            git checkout -f -B "$REFRESH_BRANCH" FETCH_HEAD
+          else
+            git checkout -f -B "$REFRESH_BRANCH" origin/main
+          fi
+          cp "$RUNNER_TEMP/llms-full.txt" public/llms-full.txt
+          # Nothing to propose when the regenerated file already matches main.
+          if git diff --quiet origin/main -- public/llms-full.txt; then
+            echo "llms-full.txt unchanged"
+            # A stale open PR would otherwise merge an obsolete change.
+            gh pr close "$REFRESH_BRANCH" --delete-branch 2>/dev/null || true
+            exit 0
+          fi
           git add public/llms-full.txt
-          git diff --cached --quiet || git commit -m "chore: refresh llms-full.txt [skip ci]" && git push
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: refresh llms-full.txt"
+            git push origin "$REFRESH_BRANCH"
+          fi
+          if [ -z "$(gh pr list --head "$REFRESH_BRANCH" --state open --json number --jq '.[0].number')" ]; then
+            gh pr create --base main --head "$REFRESH_BRANCH" \
+              --title "chore: refresh llms-full.txt" \
+              --body "Automated nightly regeneration of public/llms-full.txt."
+          fi
+          gh pr merge "$REFRESH_BRANCH" --auto --squash \
+            || echo "auto-merge unavailable; leaving PR open"
