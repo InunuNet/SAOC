@@ -38,6 +38,14 @@ interface VendorApplicationReviewTableProps {
 
 export function VendorApplicationReviewTable({ applications }: VendorApplicationReviewTableProps) {
   const [rows, setRows] = useState(applications);
+  const [syncedApplications, setSyncedApplications] = useState(applications);
+  // Re-sync when the server hands down a new list (e.g. router.refresh() after an invite).
+  // Adjusting state during render is React's documented pattern for this; optimistic row
+  // patches between refreshes are untouched.
+  if (applications !== syncedApplications) {
+    setSyncedApplications(applications);
+    setRows(applications);
+  }
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
