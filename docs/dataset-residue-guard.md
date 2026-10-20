@@ -127,7 +127,7 @@ For complete details on every pattern and its source, see `contracts/golden/data
 
 ### GitHub Actions (daily and per-push coverage)
 
-The scanner runs as its own dedicated job in `.github/workflows/ci.yml`, separate from the main `ci:` build job:
+The scanner runs as its own dedicated job in `.github/workflows/ci.yml`, separate from the main `build:` job:
 
 ```yaml
 dataset-residue-guard:
@@ -182,7 +182,7 @@ If the test script is missing or the fixture path is stale, see `contracts/golde
 
 **Outstanding human action:** Brad must enable branch protection at https://github.com/InunuNet/SAOC/settings/branches:
 - Add a rule for `main`
-- Require status checks: `ci` and `dataset-residue-guard`
+- Require status checks: `build` and `dataset-residue-guard`
 - Enforce admins
 
 Until then, do not describe this guard to anyone as "impossible to miss" — describe it as "detects on a daily schedule and on every push/PR, does not yet block merges."

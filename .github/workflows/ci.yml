@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
   schedule:
     # Daily detection backstop for dataset-residue-guard: main has no branch
     # protection, so a red push/PR job blocks nothing, and residue written outside a
@@ -15,7 +16,7 @@ on:
     - cron: '0 3 * * *'
 
 jobs:
-  ci:
+  build:
     runs-on: ubuntu-latest
 
     env:
