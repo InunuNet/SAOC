@@ -11,7 +11,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      actions: write
 
     steps:
       - uses: actions/checkout@v4
@@ -60,9 +59,6 @@ jobs:
           if ! git diff --cached --quiet; then
             git commit -m "chore: refresh llms-full.txt"
             git push origin "$REFRESH_BRANCH"
-            # Pushes/PRs made with GITHUB_TOKEN trigger no workflows; dispatch CI so
-            # the required "build" check reports on the new head commit.
-            gh workflow run ci.yml --ref "$REFRESH_BRANCH"
           fi
           if [ -z "$(gh pr list --head "$REFRESH_BRANCH" --state open --json number --jq '.[0].number')" ]; then
             gh pr create --base main --head "$REFRESH_BRANCH" \
