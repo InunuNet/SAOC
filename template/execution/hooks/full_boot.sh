@@ -547,7 +547,7 @@ fi
 _BOOT_DIAG=""
 [ -f execution/checks/verify_model_env_boot.py ] && _BOOT_DIAG="$_BOOT_DIAG$(python3 execution/checks/verify_model_env_boot.py boot_report 2>&1)
 "
-[ -f execution/checks/verify_all_contracts_parse.py ] && _BOOT_DIAG="$_BOOT_DIAG$(python3 execution/checks/verify_all_contracts_parse.py 2>&1)
+[ -f execution/checks/verify_all_contracts_parse.py ] && _BOOT_DIAG="$_BOOT_DIAG$(python3 execution/checks/verify_all_contracts_parse.py --boot 2>&1)
 "
 _DIAG_PASS=$(printf '%s\n' "$_BOOT_DIAG" | grep -c '^PASS:')
 _DIAG_FAIL=$(printf '%s\n' "$_BOOT_DIAG" | grep -c '^FAIL:')
@@ -655,10 +655,12 @@ if [ -n "$ACTIVE_MISSION_SLUG" ]; then
       elif [ "$_BOOT_AUTONOMY_DECIDED" = "yes" ]; then
         echo "→ Autonomy DECIDED at 'interactive' — run 'python3 execution/mission.py resume' and ask before each step."
       elif [ "$_BOOT_LEVEL" = "unknown" ]; then
+        _BOOT_UNDECIDED="yes"
         echo "⏸️  AUTONOMY UNDECIDED and the stored level is unreadable — the mission does not start (REQUIREMENTS 6)."
         echo "   Choose one before any work:"
         echo "   python3 execution/set_autonomy.py --level <interactive|autonomous|loop> --mission"
       else
+        _BOOT_UNDECIDED="yes"
         echo "⏸️  AUTONOMY UNDECIDED — the mission does not start (REQUIREMENTS 6)."
         echo "   RECOMMEND continuing at '$_BOOT_LEVEL'. Confirm before any work:"
         echo "   python3 execution/set_autonomy.py --level $_BOOT_LEVEL --mission"
@@ -680,7 +682,7 @@ fi
 echo ""
 
 # Inject AUTONOMOUS MODE directive when level=loop
-if [ "$_BOOT_LEVEL" = "loop" ]; then
+if [ "$_BOOT_LEVEL" = "loop" ] && [ "${_BOOT_UNDECIDED:-no}" != "yes" ]; then
   echo "--- AUTONOMOUS MODE ---"
   echo "AUTONOMOUS MODE ACTIVE — complete active mission, then pick next backlog item"
   echo "and start immediately. Do not stop or wait for user input between missions."
@@ -688,7 +690,7 @@ if [ "$_BOOT_LEVEL" = "loop" ]; then
   echo "---"
   echo ""
 fi
-unset _BOOT_LEVEL _BOOT_AUTONOMY_DECIDED _BOOT_AUTONOMY
+unset _BOOT_LEVEL _BOOT_AUTONOMY_DECIDED _BOOT_AUTONOMY _BOOT_UNDECIDED
 
 
 COMMS_FILE=".agent/memory/project/comms.md"

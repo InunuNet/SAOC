@@ -37,6 +37,8 @@ handoffs:
     min_size_bytes: 128
     max_age_seconds: 86400
     author_marker: "## Adversarial"
+    require_verdict: true
+    bind_active_mission: true
 
   - from: docs
     to: gate

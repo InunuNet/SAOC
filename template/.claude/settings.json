@@ -40,6 +40,11 @@
           {
             "type": "command",
             "command": "[ -f execution/hooks/full_boot.sh ] || exit 0; bash execution/hooks/full_boot.sh"
+          },
+          {
+            "type": "command",
+            "command": "[ -f execution/session_title.py ] || exit 0; python3 execution/session_title.py",
+            "timeout": 5
           }
         ]
       }

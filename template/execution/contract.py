@@ -682,6 +682,86 @@ def validate_cmd(args):
           f"schema={contract['schema']}")
 
 
+# Seconds a check's leftover process group gets after SIGTERM before SIGKILL.
+REAP_GRACE_SECONDS = 2
+
+
+# The group's leader: a do-nothing process that ignores SIGTERM, so it holds
+# the group id until the final SIGKILL and the id can never be reused mid-reap.
+_SENTINEL_SRC = ("import signal, time\n"
+                 "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
+                 "signal.signal(signal.SIGHUP, signal.SIG_IGN)\n"
+                 "time.sleep(86400)\n")
+
+
+def _group_has_others(pgid, sentinel_pid):
+    """True when some process other than the sentinel is still in the group."""
+    try:
+        out = subprocess.run(["pgrep", "-g", str(pgid)], capture_output=True,
+                             text=True, timeout=5).stdout.split()
+    except (OSError, subprocess.TimeoutExpired):
+        return True
+    return any(p != str(sentinel_pid) for p in out)
+
+
+def _reap_group(sentinel):
+    """Terminate every process left in a check's group, then the sentinel that
+    leads it. Survivors get SIGTERM and REAP_GRACE_SECONDS before SIGKILL; an
+    empty group costs no wait. Never raises."""
+    import signal
+    import time
+    pgid = sentinel.pid
+    try:
+        if _group_has_others(pgid, pgid):
+            os.killpg(pgid, signal.SIGTERM)
+            deadline = time.monotonic() + REAP_GRACE_SECONDS
+            while time.monotonic() < deadline and _group_has_others(pgid, pgid):
+                time.sleep(0.1)
+        os.killpg(pgid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        pass
+    try:
+        sentinel.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        pass
+
+
+def _run_check_reaped(argv, env, cwd, timeout):
+    """subprocess.run for one check, except that nothing the check starts
+    outlives it -- pass, fail or timeout. A server a check starts and forgets
+    (a `next start` whose `next-server` child survives the parent's SIGTERM)
+    otherwise leaks one process and one port per gate run (saoc-nos-site-77,
+    2026-10-17).
+
+    A sentinel process leads a fresh process group and the check joins it as
+    an ordinary member. The check is therefore never a group leader (its own
+    setsid() still works), its exit status reaches the caller unchanged, and
+    the group id stays reserved until the reap is finished. A child that
+    calls setsid() leaves the group and is not reaped. On timeout the gate
+    does not wait for such a child to close the output pipes.
+    """
+    sentinel = subprocess.Popen([sys.executable, "-c", _SENTINEL_SRC],
+                                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL,
+                                preexec_fn=lambda: os.setpgid(0, 0))
+    pgid = sentinel.pid
+    try:
+        proc = subprocess.Popen(argv, env=env, cwd=cwd, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, text=True,
+                                preexec_fn=lambda: os.setpgid(0, pgid))
+        try:
+            out, err = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+            for pipe in (proc.stdout, proc.stderr):
+                pipe.close()
+            raise
+    finally:
+        _reap_group(sentinel)
+    return subprocess.CompletedProcess(argv, proc.returncode, out, err)
+
+
 def check_cmd(args):
     contract = load_contract(args.contract)
     assertion_id = args.assertion
@@ -761,12 +841,11 @@ def check_cmd(args):
             # Only affects bare-name resolution; already-hardcoded interpreter paths in
             # an assertion's own cmd string are untouched. No .venv -> no env= override.
             run_env = None
-            venv_python = Path.cwd() / ".venv" / "bin" / "python3"
+            venv_python = Path(_RUN_CWD or Path.cwd()) / ".venv" / "bin" / "python3"
             if venv_python.exists():
                 run_env = os.environ.copy()
                 run_env["PATH"] = str(venv_python.parent) + os.pathsep + run_env.get("PATH", "")
-            result = subprocess.run(tf_name, shell=False, env=run_env,
-                                    capture_output=True, text=True, timeout=timeout)
+            result = _run_check_reaped(tf_name, run_env, _RUN_CWD, timeout)
             evidence = (result.stdout + result.stderr).strip()[:EVIDENCE_DISPLAY_MAX]
             # Reserved skip exit code (autotools convention): checked BEFORE
             # comparison against expect_exit -- exit 77 always means skip,
@@ -795,7 +874,7 @@ def check_cmd(args):
         timeout = verify.get("timeout_seconds", 200)
         try:
             result = subprocess.run([script, target], capture_output=True,
-                                     text=True, timeout=timeout)
+                                     text=True, timeout=timeout, cwd=_RUN_CWD)
             rc = result.returncode
             if rc == 0:
                 verdict = "pass"
@@ -816,7 +895,7 @@ def check_cmd(args):
 
     elif kind == "file_exists":
         path = verify.get("path", "")
-        exists = Path(path).exists()
+        exists = _run_path(path).exists()
         verdict = "pass" if exists else "fail"
         evidence = f"Path {'exists' if exists else 'does not exist'}: {path}"
 
@@ -834,7 +913,7 @@ def check_cmd(args):
         for posix, python_equiv in posix_to_python.items():
             py_pattern = py_pattern.replace(f"[{posix}]", python_equiv)
         try:
-            content = Path(path).read_text()
+            content = _run_path(path).read_text()
             found = bool(re.search(py_pattern, content))
             verdict = "pass" if found else "fail"
             evidence = f"Pattern {'found' if found else 'not found'}: {pattern!r} in {path}"
@@ -847,7 +926,7 @@ def check_cmd(args):
         jsonpath = verify.get("jsonpath", "")
         expected = verify.get("equals")
         try:
-            data = json.loads(Path(path).read_text())
+            data = json.loads(_run_path(path).read_text())
             # Simple dot-notation traversal
             keys = jsonpath.lstrip("$.").split(".")
             val = data
@@ -1306,7 +1385,37 @@ def _uncovered_deletions(contract: dict, contract_path: str) -> list[str]:
             and Path(d).name not in blob]
 
 
+GIT_ROOT_TIMEOUT_SECONDS = 30
+_RUN_CWD = None  # set by gate_cmd; assertion subprocesses run here (None = caller's cwd)
+
+
+def _resolve_run_cwd(contract_path, override=None):
+    """Directory gate assertions run in: --cwd, else the contract's git root, else the caller's."""
+    if override:
+        return str(Path(override).resolve())
+    parent = Path(contract_path).resolve().parent
+    proc = subprocess.run(["git", "-C", str(parent), "rev-parse", "--show-toplevel"],
+                          capture_output=True, text=True, timeout=GIT_ROOT_TIMEOUT_SECONDS)
+    top = proc.stdout.strip()
+    return top if proc.returncode == 0 and top else None
+
+
+def _run_path(path):
+    """Resolve a relative assertion path against the gate's run cwd, when one is set."""
+    p = Path(path)
+    return p if p.is_absolute() or not _RUN_CWD else Path(_RUN_CWD) / p
+
+
 def gate_cmd(args):
+    try:
+        _gate_cmd_body(args)
+    finally:
+        global _RUN_CWD
+        _RUN_CWD = None
+
+
+def _gate_cmd_body(args):
+    global _RUN_CWD
     # One report channel or the other, never both: a caller that asked for the
     # unforgeable descriptor channel must not silently also get the path one.
     if getattr(args, "report_fd", None) is not None and getattr(args, "report_json", None):
@@ -1315,6 +1424,7 @@ def gate_cmd(args):
         sys.exit(2)
 
     contract = load_contract(args.contract)
+    _RUN_CWD = _resolve_run_cwd(args.contract, getattr(args, "cwd", None))
 
     # Gate runs live by default; --cached opts into trusting prior results
     # (GH #1404: a bare gate must not print a stale cached verdict without
@@ -1530,6 +1640,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Do not fail the gate when a non-required assertion is verdict=skip (default: off)")
     g.add_argument("--timeout-seconds", type=int, default=DEFAULT_TIMEOUT_SECONDS,
                    help=f"Shell assertion timeout in seconds (default: {DEFAULT_TIMEOUT_SECONDS})")
+    g.add_argument("--cwd", default=None, metavar="DIR",
+                   help="Directory assertions run in (default: the contract's git root, "
+                        "else the caller's cwd)")
     g.add_argument("--report-json", default=None, metavar="PATH",
                    help="Also write the structured athanor.gate-report/v1 verdict to PATH "
                         "(opt-in; stdout/stderr are unchanged). No file is written if the "

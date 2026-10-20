@@ -54,6 +54,19 @@ def _timestamp() -> str:
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
+def _policy_unchanged(policy_path: Path, policy: dict) -> bool:
+    """True when the file on disk already holds `policy`, ignoring the
+    generated_at stamp, so an unchanged sync rewrites nothing."""
+    try:
+        existing = json.loads(policy_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    if not isinstance(existing, dict):
+        return False
+    existing.pop("generated_at", None)
+    return existing == policy
+
+
 def sync_json_policy(root: Path, provider: str, provider_dir: str,
                      stored_level: str, level: str) -> Path:
     """Write <provider_dir>/policies/autonomy.json for the effective level.
@@ -65,7 +78,7 @@ def sync_json_policy(root: Path, provider: str, provider_dir: str,
     """
     policy_path = root / provider_dir / "policies/autonomy.json"
     policy_path.parent.mkdir(parents=True, exist_ok=True)
-    policy_path.write_text(json.dumps({
+    policy = {
         "schema": POLICY_SCHEMA,
         "provider": provider,
         "level": level,
@@ -74,8 +87,11 @@ def sync_json_policy(root: Path, provider: str, provider_dir: str,
         "floor_denied_paths": FLOOR_DENIED_PATHS,
         "floor_denied_commands": FLOOR_DENIED_COMMANDS,
         "generated_by": "execution/sync_autonomy.py",
-        "generated_at": _timestamp(),
-    }, indent=2) + "\n", encoding="utf-8")
+    }
+    if _policy_unchanged(policy_path, policy):
+        return policy_path
+    policy["generated_at"] = _timestamp()
+    policy_path.write_text(json.dumps(policy, indent=2) + "\n", encoding="utf-8")
     return policy_path
 
 

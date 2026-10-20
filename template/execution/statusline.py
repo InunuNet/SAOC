@@ -438,6 +438,41 @@ def refresh_usage_cache() -> None:
         return
 
 
+def mirror_quota(root: Path, block) -> None:
+    """Write the project quota mirror (read by quota.py) from the global cache.
+
+    quota.py never reads the home dir, so this is the only path by which a live
+    figure reaches it. captured_at is the cache file's mtime, never now(): the
+    mirror must say when the reading was taken. Best-effort, nothing escapes.
+    """
+    try:
+        if not isinstance(block, dict) or not isinstance(block.get("utilization"), (int, float)):
+            return
+        resets = block.get("resets_at")
+        seconds = None
+        if isinstance(resets, str):
+            when = datetime.fromisoformat(resets.replace("Z", "+00:00"))
+            seconds = int((when - datetime.now(timezone.utc)).total_seconds())
+            if seconds <= 0:
+                # Rolled over: the old figure describes a window that no longer exists.
+                (root / ".agent" / "memory" / "scratch" / ".quota_status.json").unlink(
+                    missing_ok=True)
+                return
+        else:
+            resets = None
+        captured = datetime.fromtimestamp(
+            (GLOBAL_STATE / USAGE_CACHE_NAME).stat().st_mtime, timezone.utc).isoformat()
+        target = root / ".agent" / "memory" / "scratch" / ".quota_status.json"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        tmp = target.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps({
+            "used_pct": block["utilization"], "resets_at": resets,
+            "seconds_to_reset": seconds, "captured_at": captured}))
+        tmp.replace(target)
+    except Exception:
+        return
+
+
 def quota(root: Path) -> str:
     """Quota from shared state, with the project mirror as a guarded fallback.
 
@@ -455,6 +490,7 @@ def quota(root: Path) -> str:
     cache = global_json(USAGE_CACHE_NAME)
     if isinstance(cache, dict):
         age = global_age(USAGE_CACHE_NAME)
+        mirror_quota(root, cache.get("five_hour"))
         live = join(quota_window(cache.get("five_hour"), "5H"),
                     quota_window(cache.get("seven_day"), "WK"))
         if live:

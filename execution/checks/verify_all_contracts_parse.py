@@ -15,7 +15,9 @@ Run it after any contract edit, and as a standing Phase-4 assertion in
 this mission's own contract so it can't silently regress again.
 """
 import os
+import re
 import sys
+import time
 from pathlib import Path
 
 try:
@@ -50,7 +52,56 @@ def _is_fixture(path: Path) -> bool:
     return any("fixture" in part for part in parts[idx + 1:])
 
 
+BOOT_MODE = "--boot" in sys.argv[1:]
+LIVE_WINDOW_SECONDS = 7 * 86400
+CLOSED_MISSION_STATUSES = ("done", "abandoned")
+
+
+def _open_missions() -> list:
+    """Frontmatter dicts of missions whose status is not done/abandoned.
+
+    Lives next to SPECS_ROOT (SPECS_ROOT/../missions) so a sandbox root works.
+    A mission whose frontmatter cannot be parsed references nothing.
+    """
+    found = []
+    for mfile in sorted((SPECS_ROOT.parent / "missions").glob("*.md")):
+        try:
+            text = mfile.read_text()
+            parts = re.split(r"(?m)^---[ \t]*$", text, maxsplit=2)
+            if len(parts) < 3 or parts[0].strip():
+                continue
+            meta = yaml.safe_load(parts[1])
+        except Exception:
+            continue
+        if isinstance(meta, dict) and str(meta.get("status")) not in CLOSED_MISSION_STATUSES:
+            found.append(meta)
+    return found
+
+
+def _is_live(path: Path, missions: list) -> bool:
+    """A contract is live if an open mission points at it or it was edited this week."""
+    try:
+        if time.time() - path.stat().st_mtime <= LIVE_WINDOW_SECONDS:
+            return True
+    except OSError:
+        return True
+    rel = path.relative_to(SPECS_ROOT).as_posix()
+    for meta in missions:
+        if meta.get("slug") == rel.split("/", 1)[0]:
+            return True
+        for feat in meta.get("features") or []:
+            if not isinstance(feat, dict):
+                continue
+            for key in ("spec", "contract"):
+                ref = feat.get(key)
+                if isinstance(ref, str) and ref.endswith("specs/" + rel):
+                    return True
+    return False
+
+
 failures = []
+archived_failures = []
+open_missions = _open_missions() if BOOT_MODE else []
 checked = 0
 
 # Per-file parse loop: catches yaml.YAMLError (an actual malformed-contract
@@ -77,10 +128,12 @@ for path in sorted(SPECS_ROOT.glob("**/contract*.yaml")):
     checked += 1
     try:
         yaml.safe_load(path.read_text())
-    except yaml.YAMLError as e:
-        failures.append((path, str(e)))
     except Exception as e:
-        failures.append((path, f"{type(e).__name__}: {e}"))
+        err = str(e) if isinstance(e, yaml.YAMLError) else f"{type(e).__name__}: {e}"
+        if BOOT_MODE and not _is_live(path, open_missions):
+            archived_failures.append(path)
+        else:
+            failures.append((path, err))
 
 if checked == 0:
     print(f"FAIL: no contract*.yaml files found under {SPECS_ROOT}", file=sys.stderr)
@@ -95,6 +148,10 @@ if failures:
         print(f"FAIL: {rel} does not parse:\n{err}\n", file=sys.stderr)
     print(f"\n{len(failures)}/{checked} contract file(s) failed to parse.", file=sys.stderr)
     sys.exit(1)
+
+if archived_failures:
+    print(f"NOTE: {len(archived_failures)} archived contract(s) do not parse "
+          "(no open mission, untouched for 7+ days); run without --boot to list them")
 
 print(f"PASS: all {checked} contract*.yaml files under {SPECS_ROOT.relative_to(REPO_ROOT)} parse cleanly")
 sys.exit(0)

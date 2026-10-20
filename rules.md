@@ -196,3 +196,65 @@ any command whose *arguments* contain `contract.py` … `gate` or a recursive-fo
 (two hooks match the whole command line, not the executed command — rephrase).
 
 Full detail: `.claude/rules/sandbox.md`.
+
+
+<!-- Merged 2026-10-19 by saoc-82: lines present only in the stale main working tree (feat/conference-workshop-tickets), appended verbatim in original order so nothing is lost. -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+- (2026-10-13, Brad) Spelling: always use SA/UK English. Correct obvious typos in source copy (e.g. "Enviromental" -> "Environmental", "Botantical" -> "Botanical"). Never ask Lee-Ann about spelling; it is trivial. Wording and meaning stay verbatim, only spelling and typos change. Brad: "Use the correct spelling this is trivial to ask Lee-Ann always use English SA/UK speclling".
+
+- (2026-10-13, Brad) Never ask Lee-Ann about missing content (empty folders, sections not yet written); ask only about content already supplied. Questions go in the Google Doc https://docs.google.com/document/d/1C2_2EKYvJwzB5ejtwf0wpm5bk7z916-c8UQQrkQmSjc/edit
+- (2026-10-13, Brad) Test email addressing: every email an agent or test sends to Brad uses Google plus-addressing so Gmail filters can move it out of his primary inbox. Shape: brad+<site>-<flow>@inunu.net, where <site> is saoc or nos and <flow> is ticket, form, approve or check-in (e.g. brad+saoc-form@inunu.net, brad+nos-ticket@inunu.net, brad+nos-approve@inunu.net, brad+nos-check-in@inunu.net). Never send test mail to bare brad@inunu.net. Brad: "use google + addressing when sending emails to me brad+saoc/nos(ticket/form/approve/check-in)@inunu.net we can setup filters in gmail and move them out my primary inbox for testing."
+- (2026-10-13, Brad) Contact routing: all site contact (section 18 Contact, every audience) goes to info@saoc.co.za / brad+saoc@inunu.net for now, unless the council asks otherwise. Not a question for Lee-Ann. Brad: "18. Contact everything to info@saoc.co.za/brad+saoc@inunu.net for now unless they request."

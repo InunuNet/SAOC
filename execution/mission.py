@@ -33,6 +33,8 @@ from typing import NamedTuple
 
 MISSIONS_DIR = Path(".agent/memory/project/missions")
 ACTIVE_JSON = MISSIONS_DIR / "active.json"
+PROFILE_JSON = Path(".agent/profile.json")
+WORKSPACE_DEFAULT_DECIDER = "workspace default (profile.json)"
 SCHEMA = "athanor.mission/v1"
 FEATURE_RE = re.compile(r"^F[0-9]+$")
 MILESTONE_RE = re.compile(r"^M[0-9]+$")
@@ -175,6 +177,47 @@ def read_active() -> dict | None:
         return None
 
 
+def _same_mission(prior_path, new_path) -> bool:
+    """True when both paths name the same mission file, however they were spelled."""
+    if prior_path == str(new_path):
+        return True
+    try:
+        return Path(prior_path).resolve() == Path(new_path).resolve()
+    except (OSError, RuntimeError, TypeError, ValueError):
+        return False
+
+
+def _inherit_workspace_autonomy(data: dict) -> None:
+    """Give an undecided mission the workspace default from profile.json.
+
+    A decided record (decided_at set) is never touched. An unset, unreadable or
+    unrecognised default adds nothing: the mission stays undecided rather than
+    getting a substituted level. The record mirrors set_autonomy.build_record.
+    """
+    existing = data.get("autonomy")
+    if isinstance(existing, dict) and existing.get("decided_at"):
+        return
+    try:
+        raw = json.loads(PROFILE_JSON.read_text(encoding="utf-8")).get("autonomy")
+    except Exception:  # any unreadable/unparseable profile leaves the mission undecided
+        return
+    level = raw.get("level") if isinstance(raw, dict) else raw
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import autonomy as autonomy_dialect
+    normalized = autonomy_dialect.normalize(level)
+    if normalized is None:
+        return
+    stamp = now_iso()
+    data["autonomy"] = {
+        "level": level,
+        "normalized": normalized,
+        "permission_tier": autonomy_dialect.permission_tier(level),
+        "updated_at": stamp,
+        "decided_at": stamp,
+        "decided_by": WORKSPACE_DEFAULT_DECIDER,
+    }
+
+
 def write_active(mission_path: str, checkpoint: dict | None = None):
     """Write active.json, preserving state this function does not author.
 
@@ -199,7 +242,7 @@ def write_active(mission_path: str, checkpoint: dict | None = None):
     activated_at = now_iso()
 
     prior = read_active()
-    if isinstance(prior, dict) and prior.get("mission") == str(mission_path):
+    if isinstance(prior, dict) and _same_mission(prior.get("mission"), mission_path):
         carried = {k: v for k, v in prior.items() if k not in authored}
         if isinstance(prior.get("activated_at"), str) and prior["activated_at"]:
             activated_at = prior["activated_at"]
@@ -210,6 +253,7 @@ def write_active(mission_path: str, checkpoint: dict | None = None):
         "activated_at": activated_at,
         **carried,
     }
+    _inherit_workspace_autonomy(data)
     tmp = str(ACTIVE_JSON) + ".tmp"
     Path(tmp).write_text(json.dumps(data, indent=2))
     os.replace(tmp, str(ACTIVE_JSON))
@@ -425,6 +469,12 @@ def cmd_new(args):
     emit_compaction_hint("mission_new", slug)
 
 
+def _valid_phase_list(phases) -> bool:
+    return (isinstance(phases, list) and bool(phases) and all(
+        (isinstance(x, int) and not isinstance(x, bool)) or (isinstance(x, str) and x.isdigit())
+        for x in phases))
+
+
 def cmd_validate(args):
     fm, _ = parse_mission_file(args.mission)
     errors = []
@@ -479,6 +529,13 @@ def cmd_validate(args):
         if mid in milestone_ids:
             errors.append(f"Duplicate milestone ID: {mid}")
         milestone_ids.add(mid)
+
+        mphases = m.get("phases")
+        if mphases is not None and not _valid_phase_list(mphases):
+            errors.append(
+                f"Milestone {mid} phases must be a non-empty list of integers or digit strings: "
+                f"{mphases!r}"
+            )
 
         for fid in m.get("features", []):
             if fid in milestone_feature_refs:
@@ -1204,15 +1261,25 @@ def cmd_gate(args):
             continue
 
         gate_script_path = str(Path(__file__).parent / "contract.py")
-        result = subprocess.run(
-            [sys.executable, gate_script_path, "gate", contract_path, "--phase", "all", "--run-checks"],
-            capture_output=True, text=True
-        )
-        print(f"  {'PASS' if result.returncode == 0 else 'FAIL'} {fid} (contract gate exit={result.returncode}):")
-        for line in (result.stdout + result.stderr).strip().splitlines():
-            print(f"    {line}")
-        if result.returncode != 0:
+        if "phases" in milestone and not _valid_phase_list(milestone["phases"]):
+            print(f"  FAIL {fid}: milestone {mid} phases must be a non-empty list of "
+                  f"integers or digit strings: {milestone['phases']!r}")
             any_fail = True
+            ran += 1
+            continue
+        phase_args = [str(p) for p in milestone.get("phases", ["all"])]
+        for phase in phase_args:
+            cmd = [sys.executable, gate_script_path, "gate", contract_path,
+                   "--phase", phase, "--run-checks"]
+            if args.allow_skips:
+                cmd.append("--allow-skips")
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            label = f"{fid}" if phase == "all" else f"{fid} phase {phase}"
+            print(f"  {'PASS' if result.returncode == 0 else 'FAIL'} {label} (contract gate exit={result.returncode}):")
+            for line in (result.stdout + result.stderr).strip().splitlines():
+                print(f"    {line}")
+            if result.returncode != 0:
+                any_fail = True
         ran += 1
 
     # Update milestone status

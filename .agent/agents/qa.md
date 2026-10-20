@@ -40,7 +40,7 @@ You are the quality assurance agent. You review code, run tests, and validate ch
 ## Output Format
 📋 REVIEWED: [what was checked]
 🔍 FINDINGS: [issues found, sorted by severity]
-✅ PASS/FAIL: [overall verdict]
+✅ VERDICT: write the artefact `.agent/memory/scratch/qa-report-<mission-slug>.md` with a `## Adversarial` section and a `## Verdict` section whose first line is `PASS | FAIL | BLOCKED - <reason>` (exactly one word; the gate accepts only PASS)
 ⚡ DETAILS: [specific failures with file:line references]
 ➡️ FIX: [what dev needs to address]
 

@@ -147,12 +147,92 @@ def find_artefact(pattern: str):
     return max(matches, key=lambda p: os.path.getmtime(p))
 
 
+VERDICT_TOKENS = ("PASS", "FAIL", "BLOCKED")
+DATE_PREFIX_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-")
+REPORT_SLUG_RE = re.compile(r"^.*?-report-(.+)\.md$")
+
+
+def active_mission_slug() -> str | None:
+    """Slug of the active mission from missions/active.json, or None."""
+    try:
+        data = json.loads((_project_mem_dir() / "missions" / "active.json").read_text())
+        name = os.path.basename(str(data["mission"]))
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    if name.endswith(".md"):
+        name = name[:-3]
+    name = DATE_PREFIX_RE.sub("", name)
+    return name or None
+
+
+def _report_matches_slug(path: str, slug: str) -> bool:
+    m = REPORT_SLUG_RE.match(os.path.basename(path))
+    if m and m.group(1) == slug:
+        return True
+    try:
+        for line in Path(path).read_text(encoding="utf-8", errors="replace").splitlines():
+            if line.startswith("# "):
+                words = line[2:].split()
+                return bool(words) and words[-1] == slug
+    except OSError:
+        pass
+    return False
+
+
+def _verdict_sections(content: str) -> list:
+    """Non-empty lines of each '## Verdict' section, ignoring fenced code blocks."""
+    sections = []
+    in_verdict = False
+    in_fence = False
+    for line in content.splitlines():
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if line.startswith("## "):
+            in_verdict = line[3:].strip() == "Verdict"
+            if in_verdict:
+                sections.append([])
+        elif in_verdict and line.strip():
+            sections[-1].append(line.strip())
+    return sections
+
+
+def check_verdict(content: str) -> str | None:
+    """Return a block reason, or None when every ## Verdict section is exactly PASS."""
+    sections = _verdict_sections(content)
+    if not sections:
+        return "no '## Verdict' section"
+    if not all(sections):
+        return "'## Verdict' section is empty"
+    word_re = re.compile(r"\b(?:%s)\b" % "|".join(VERDICT_TOKENS))
+    start_re = re.compile(r"^[^A-Za-z0-9]*(FAIL|BLOCKED)\b")
+    tokens = set()
+    for lines in sections:
+        first = word_re.findall(lines[0])
+        if not first:
+            return "'## Verdict' section has no PASS, FAIL or BLOCKED token"
+        tokens.update(first)
+        for later in lines[1:]:
+            m = start_re.match(later)
+            if m:
+                tokens.add(m.group(1))
+    if tokens == {"PASS"}:
+        return None
+    if not tokens:
+        return "'## Verdict' has no PASS, FAIL or BLOCKED token"
+    if "PASS" in tokens and len(tokens) > 1:
+        return f"ambiguous verdict {sorted(tokens)}: first line must hold exactly one word"
+    return f"verdict is {'/'.join(sorted(tokens))}, not PASS"
+
+
 def check_artefact(handoff: dict) -> dict:
     """
     Validate one handoff's artefact. Returns dict with keys:
       ok: bool
       reason: str
-      category: "missing" | "size" | "stale" | "section"
+      category: "missing" | "slug" | "size" | "stale" | "section" | "verdict"
       missing_sections: list[str]
       file_count: int
     """
@@ -175,8 +255,26 @@ def check_artefact(handoff: dict) -> dict:
             "file_count": 0,
         }
 
+    candidates = all_matches
+    if handoff.get("bind_active_mission"):
+        slug = active_mission_slug()
+        if slug:
+            candidates = [p for p in all_matches if _report_matches_slug(p, slug)]
+            if not candidates:
+                found = sorted(os.path.basename(p) for p in all_matches)
+                return {
+                    "ok": False,
+                    "reason": (
+                        f"no artefact for active mission '{slug}': "
+                        f"found only {found} matching {raw_pattern}"
+                    ),
+                    "category": "slug",
+                    "missing_sections": [],
+                    "file_count": file_count,
+                }
+
     # Use newest
-    artefact = max(all_matches, key=lambda p: os.path.getmtime(p))
+    artefact = max(candidates, key=lambda p: os.path.getmtime(p))
 
     # Size check
     size = os.path.getsize(artefact)
@@ -209,7 +307,7 @@ def check_artefact(handoff: dict) -> dict:
             }
 
     # Required sections check
-    if min_sections:
+    if min_sections or handoff.get("require_verdict"):
         try:
             content = Path(artefact).read_text(encoding="utf-8", errors="replace")
         except Exception as e:
@@ -235,6 +333,17 @@ def check_artefact(handoff: dict) -> dict:
                 ),
                 "category": "section",
                 "missing_sections": missing,
+                "file_count": file_count,
+            }
+
+    if handoff.get("require_verdict"):
+        problem = "report is a symlink" if os.path.islink(artefact) else check_verdict(content)
+        if problem:
+            return {
+                "ok": False,
+                "reason": f"verdict not PASS in {artefact}: {problem}",
+                "category": "verdict",
+                "missing_sections": [],
                 "file_count": file_count,
             }
 

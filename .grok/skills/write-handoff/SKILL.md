@@ -56,8 +56,9 @@ These files are written straight to `.agent/memory/project/handoff/`, which is a
 - Boundary: <edge cases>
 - Negative: <failure modes>
 ## Verdict
-PASS | BLOCKED — <reason>
+PASS | FAIL | BLOCKED - <reason>
 ```
+The first line under `## Verdict` must hold exactly one of those words (delete the others); the qa->docs gate accepts only PASS. The report slug (`qa-report-<slug>.md`) must equal the active mission slug.
 
 ### docs/<feature>.md (docs)
 Free-form. Min 64 bytes. Update README too if user-facing.
