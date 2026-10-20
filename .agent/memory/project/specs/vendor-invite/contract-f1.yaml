@@ -189,21 +189,23 @@ assertions:
 
     - id: A2
       description: >-
-        ROUTE-WIRING DISCRIMINATOR on app/api/admin/vendors/applications/invite/route.ts.
-        Source-level proof (a live Firestore project is outside this contract's
-        offline/credential-free constraint, same stated reason every sibling check in this
-        repo's vendor routes uses source analysis here). Proves: the admin-auth gate calls
-        hasCapability with the literal string 'review-vendor-applications' (no new
-        capability); the VENDOR_REGISTRATION_TOKEN_SECRET precondition check happens BEFORE
-        any `.add(` call; status:'approved' and origin:'invited' and every
-        registrationCode* field appear inside the SAME `.add(` call object literal (never a
-        separate update); sendVendorApprovalConfirmationEmail is imported from
-        '@/lib/vendor-approval-confirmation' and called wrapped in
-        deliverConfirmationEmailAfterCommit, positioned AFTER the `.add(` call. Self-tested
-        against a frozen KNOWN-UNWIRED fixture (must reject) before trusting it against the
-        real file. Defeating mutation: splitting the create into a pending-then-update pair;
-        checking the secret after minting; calling the email send unwrapped or before the
-        write; introducing a second capability string.
+        ROUTE-WIRING DISCRIMINATOR. Since fix commits 3f1d3d8f and 3609ac46 the application is
+        created INSIDE the transaction claimVendorInviteEmailLock (lib/vendor-invite-email-lock.ts),
+        not by a direct .add(. Source-level proof (a live Firestore project is outside this
+        contract's offline/credential-free constraint; the lock's concurrency behaviour is proven
+        by its own behavioural checks). Route side: hasCapability is called only with
+        'review-vendor-applications'; claimVendorInviteEmailLock is imported and called; the
+        route has no direct .add/.create/.set/.update on the applications collection and opens
+        no transaction of its own; the VENDOR_REGISTRATION_TOKEN_SECRET check precedes the claim;
+        newApplicationData spreads buildVendorApplicationInvite's output (status 'approved',
+        origin 'invited') and carries registrationCodeId in the one object handed to the claim;
+        a not-ok claim is rejected with 409 before any email; sendVendorApprovalConfirmationEmail
+        is imported from '@/lib/vendor-approval-confirmation' and called only wrapped in
+        deliverConfirmationEmailAfterCommit, after the claim. Lib side: the application is created
+        by transaction.create(options.newApplicationRef, ...) inside db.runTransaction, with no
+        write before it, and the eligibility scan is a transactional read. Self-tested against
+        frozen KNOWN-UNWIRED route and lib fixtures (both must reject). Defeating mutations
+        (verified): a direct write bypassing the claim; creating outside runTransaction.
       command: node contracts/checks/vendor-invite/check-invite-route-wiring.mjs
 
     - id: A3
@@ -314,3 +316,26 @@ assertions:
         the three files, however small, fails this assertion. Defeating mutation: any change
         at all to any of the three files, including a comment-only edit or a reformat.
       command: git -C /Users/vetus/ai/SAOC/.tmp/sandbox/wt-vendor-invite diff --quiet origin/main -- lib/vendor-approval-confirmation.ts emails/VendorApprovalConfirmation.tsx 'app/api/admin/vendors/[id]/review/route.ts'
+
+    - id: A12
+      description: >-
+        Verification triad layer 2 (docs/verification-triad-gate.md): a BrowserAgent drove the
+        /admin/vendors/applications "Invite a vendor" flow on the DEPLOYED beta site
+        (https://beta.saoc.co.za). The target manifest does not exist until this branch is
+        deployed to beta after Brad's sign-off; until then the wrapper exits 2 (manifest not
+        found) and the gate reports GATE ERROR (inconclusive), never a pass. required: true, so a
+        skip can never satisfy it either. This assertion is intentionally NOT green pre-deploy.
+      type: browser_deployed_check
+      target: .agent/memory/scratch/vendor-invite-browser-manifest.json
+      required: true
+
+    - id: A13
+      description: >-
+        Verification triad layer 3: gws (read-only) confirmed the vendor-approval email produced
+        by an invite arrived in a real inbox with the correct registration link and code. The
+        manifest is written only after a post-deploy invite is sent; until then the wrapper exits
+        2 and the gate reports GATE ERROR, never a pass. This assertion is intentionally NOT green
+        pre-deploy.
+      type: gws_inbox_check
+      target: .agent/memory/scratch/vendor-invite-gws-manifest.json
+      required: true
