@@ -19,8 +19,7 @@ import EmailShell, {
  * bookingRef as visible text, so a client that fails to render the inline image at all still
  * leaves the buyer/door-volunteer able to use the reference directly.
  *
- * Chrome: EmailShell family A (mission email-shell). The QR carries alt="" because the shell's
- * alt-text rule allows only the logo names; the booking reference beside it is the text fallback.
+ * Chrome: EmailShell family A (mission email-shell).
  */
 
 export interface OrderConfirmationPosition {
@@ -59,7 +58,7 @@ export default function OrderConfirmation({
           <ShellDetailRow label="Booking reference:">{position.bookingRef}</ShellDetailRow>
           <Img
             src={`cid:${position.qrContentId}`}
-            alt=""
+            alt={`QR code for booking reference ${position.bookingRef}`}
             width={QR_SIZE}
             height={QR_SIZE}
             style={{ display: 'block', marginTop: '16px' }}

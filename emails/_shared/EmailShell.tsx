@@ -114,7 +114,8 @@ function shellCss(t: ShellTheme): string {
   @media only screen and (max-width: ${STACK_BREAKPOINT}px) {
     .shell-container { width: 100% !important; }
     .shell-gutter { padding-left: 20px !important; padding-right: 20px !important; }
-    .shell-label, .shell-value { display: block !important; width: 100% !important; }
+    .shell-label { display: block !important; width: 100% !important; padding: 12px 0 4px 0 !important; }
+    .shell-value { display: block !important; width: 100% !important; padding: 0 !important; }
   }
   [data-ogsc] .shell-header { background-color: ${t.header} !important; }
   [data-ogsc] .shell-footer, [data-ogsc] .shell-accent { background-color: ${t.footer} !important; }
@@ -141,7 +142,7 @@ function Header({ family, theme: t }: { family: EmailShellFamily; theme: ShellTh
   return (
     <tr>
       <td
-        className="shell-header"
+        className="shell-header shell-gutter"
         {...bgAttr(t.header)}
         align="left"
         style={{ backgroundColor: t.header, padding: `28px ${GUTTER}px` }}
@@ -288,7 +289,7 @@ export default function EmailShell({ family, preview, children }: EmailShellProp
                     width: `${CONTAINER_WIDTH}px`,
                     maxWidth: `${CONTAINER_WIDTH}px`,
                     borderCollapse: 'separate',
-                    borderRadius: t.radius,
+                    borderRadius: branded ? t.radius : `0 0 ${t.radius} ${t.radius}`,
                     overflow: 'hidden',
                   }}
                 >
