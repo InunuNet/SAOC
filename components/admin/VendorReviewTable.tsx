@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { VendorSubmission, VendorSubmissionStatus, VendorStandOrderStatus } from '@/types/index';
 import type { VendorReviewAction } from '@/lib/vendor-review';
@@ -28,9 +28,9 @@ const STAND_PAYMENT_STYLES: Record<VendorStandOrderStatus | 'not-started', strin
 };
 
 const HEADER_CELL_CLASS =
-  'whitespace-nowrap border-b border-rule bg-bone px-4 py-3 text-left font-mono text-[11px] tracking-[0.16em] text-muted';
+  'border-b border-rule bg-bone px-4 py-3 text-left font-mono text-[11px] tracking-[0.16em] text-muted';
 const BODY_CELL_CLASS =
-  'whitespace-nowrap border-b border-rule-soft px-4 py-3 font-sans text-[14px] text-ink';
+  'border-b border-rule-soft px-4 py-3 font-sans text-[14px] text-ink';
 
 const STATUS_STYLES: Record<string, string> = {
   submitted: 'bg-bone text-muted border border-rule',
@@ -79,6 +79,7 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
   const [rows, setRows] = useState(submissions);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
   // Hotfix (contracts/golden/vendor-stand-payment-link-visibility) -- fetched links, keyed by
   // vendorSubmissionId, so the manual-copy fallback stays visible after a successful fetch.
   const [paymentUrlById, setPaymentUrlById] = useState<Record<string, string>>({});
@@ -86,6 +87,12 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
   const [photoUrlById, setPhotoUrlById] = useState<Record<string, string>>({});
   // F30 -- per-row result of the last Publish to listing click ('Published' / 'Already listed').
   const [listingStateById, setListingStateById] = useState<Record<string, string>>({});
+
+  // A failed action sets `error`; scroll its banner into view so a failure is never silent
+  // when the row that was clicked sits far below it.
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [error]);
 
   // Hotfix (contracts/golden/vendor-stand-payment-link-visibility, 2026-09-01) -- reuses the
   // same pendingId/error state as handleAction above (no second loading/error mechanism). The
@@ -207,7 +214,13 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
         body: JSON.stringify({ action }),
       });
 
-      const body = (await res.json()) as { success?: boolean; status?: string; error?: string };
+      // A non-JSON body (e.g. a plain-text 401 from the beta wall) must fall through to the
+      // !res.ok branch below rather than throw into the "reach the server" catch.
+      const body = (await res.json().catch(() => ({}))) as {
+        success?: boolean;
+        status?: string;
+        error?: string;
+      };
 
       if (!res.ok || !body.success || !body.status) {
         setError(body.error ?? 'Failed to update vendor submission.');
@@ -236,7 +249,11 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
   return (
     <div>
       {error && (
-        <p className="mb-4 border border-rule bg-ivory px-4 py-3 font-sans text-[14px] text-ink" role="alert">
+        <p
+          ref={errorRef}
+          className="mb-4 border border-rule bg-ivory px-4 py-3 font-sans text-[14px] text-ink"
+          role="alert"
+        >
           {error}
         </p>
       )}
@@ -291,13 +308,13 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
                   <th scope="row" className={`${BODY_CELL_CLASS} font-medium`}>
                     {row.businessName}
                   </th>
-                  <td className={BODY_CELL_CLASS}>
+                  <td className={`${BODY_CELL_CLASS} break-words`}>
                     {row.contactPersonName}
                     <br />
                     <span className="text-muted">{row.contactEmail}</span>
                   </td>
                   <td className={BODY_CELL_CLASS}>{row.vendorCategory.join(', ')}</td>
-                  <td className={`${BODY_CELL_CLASS} whitespace-normal align-top`}>
+                  <td className={`${BODY_CELL_CLASS} max-w-[260px] align-top`}>
                     <dl className="space-y-1">
                       <div>
                         <dt className="inline text-muted">Phytosanitary/import permit: </dt>
@@ -318,21 +335,21 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
                   </td>
                   <td className={BODY_CELL_CLASS}>
                     <span
-                      className={`inline-flex items-center rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${style}`}
+                      className={`inline-flex items-center whitespace-nowrap rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${style}`}
                     >
                       {row.status}
                     </span>
                   </td>
                   <td className={BODY_CELL_CLASS}>
                     <span
-                      className={`inline-flex items-center rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${STAND_PAYMENT_STYLES[standPaymentStatus]}`}
+                      className={`inline-flex items-center whitespace-nowrap rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${STAND_PAYMENT_STYLES[standPaymentStatus]}`}
                     >
                       {STAND_PAYMENT_LABELS[standPaymentStatus]}
                     </span>
                   </td>
                   <td className={BODY_CELL_CLASS}>
                     <span
-                      className={`inline-flex items-center rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${
+                      className={`inline-flex items-center whitespace-nowrap rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${
                         uploadsComplete
                           ? 'bg-primary text-ivory'
                           : 'bg-ivory text-muted border border-rule'
