@@ -2739,3 +2739,21 @@ Cron c8d8059d (health checks) is session-only — re-create next session.
 - [ ] 2026-10-21 Hygiene: wt-f31 removed (merged). Memory PR #12 merged as 2e6765ec. NOS Site PR #13 (memory/specs) conflicts with #12, and its E2E failed on a next/font/google fetch, so it needs a rebase and re-run.
   - Brad decides: branding/ working-tree changes (r1–r4 emblem PNGs deleted, Eulophia-speciosa-emblem.png and National Show 2027/Word Templates/ (23MB) added) are his, uncommitted and untouched by me.
   - Also Brad: NOS Site's feat/nos-hero-lockup (15 unapplied commits) and its stash "main-tree-move 20261019" (archive folder gone, so the stash may be the only copy).
+- [ ] 2026-10-22 Codi ROUTE 31 /about @390 (beta 1c9fa99f, Layout PASS); queued after /members.
+  - P2: national committee shows 6 identical "To be confirmed" h3 cards. Replace with ONE list of the 6 roles plus one R11 note, "Names to be confirmed". When a name lands: name = h3, role = label, no pill.
+  - P3: drop the duplicate "1968 / Founded" stat (keep "28 July 1968", leaving 3 stats).
+  - P3: raise stat labels from 10px to the handoff label size (min 11px).
+  - OWNER: committee names (Lee-Ann).
+- [ ] 2026-10-22 Codi RULING soc-detail (/societies/[slug], source = Lee-Ann "All Society data and history" v1.0); queued after route 31. Order under the hero:
+  1. Meet them: day/time/venue; SA times without seconds; email as mailto, phone as tel.
+  2. Committee dl: Chair/Secretary/Treasurer; merge rows when one person holds both roles.
+  3. Online: links only for real URLs, never guessed.
+  4. About: verbatim history replaces the generic copy and pill; annual show as a fact row.
+  - Never print "Not supplied"; omit empty rows and groups.
+  - SocietyDetailsCallout only when meeting AND contact are both missing.
+  - Directory cards: add a meeting-day line.
+  - DATA: Cape founded 1957 (not 1947); drop the estimate where the source gives the year.
+  - BLOCKERS before build:
+    - The Sanity `society` schema lacks contact, committee and social fields (schema change, needs a contract).
+    - POPIA consent for the personal emails and phones, asked in Lee-Ann doc 21 Oct (e).
+  - Owner flags: "Pietermaritzberg" typo; 12 of 21 societies supplied.
