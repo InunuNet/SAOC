@@ -62,7 +62,10 @@ Not chosen:
     BASE keeps its gap, which covers the workshops page.
   - P2, different tone: unchanged.
   - P3: the same pairs as BASE, and no overflow.
-  - P4: what-to-expect at 1280 loses exactly one 120px padding after "Accessibility".
+  - P4: what-to-expect at 1280 loses exactly one 120px padding after "Accessibility". It is checked on the PREVIEW build only (lead,
+    2026-10-22). The public build correctly withholds the Accessibility block while its Sanity status is unconfirmed
+    (`app/(marketing)/national-show/what-to-expect/page.tsx`, `withholdPlaceholderProse()`), so the pair does not exist there. The rule under
+    test is mode-independent CSS, and the public build is still covered by P1-P3 on every route and by nonreg.
 - **A5, nonreg:** puts each removed band back (its BASE height, in the follower's ground) and holds every other pixel and box above the
   footer to BASE. That covers the hub, about, workshops and what-to-expect.
 - **Capture note (re-pin to `7fb251a1`, 2026-10-22):** baselines were captured on Google Chrome 155 headless (the installed Chrome, via

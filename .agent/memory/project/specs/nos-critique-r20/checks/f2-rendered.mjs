@@ -8,7 +8,9 @@
 //   P2  different-tone pairs keep the follower's BASE padding-top and the BASE gap (+-1px).
 //   P3  every route has the BASE pairs, in order, with the BASE tones; no horizontal overflow.
 //   P4  the ruling's case: /national-show/what-to-expect at 1280, the pair led by the "Accessibility" block, loses exactly one section
-//       padding (the follower's BASE padding-top, 120px at 1280).
+//       padding (the follower's BASE padding-top, 120px at 1280). PREVIEW build only: the public build withholds the block while its
+//       Sanity status is unconfirmed (what-to-expect/page.tsx), the rule under test is mode-independent CSS, and P1-P3 and nonreg still
+//       cover the public build.
 // `--capture` prints goldens/f2-baseline.json (captured by @architect on BASE 7fb251a1, both modes).
 import { BASE, finish, goldenJson } from './_lib.mjs';
 import { MODES, require, serve } from './_server.mjs';
@@ -21,6 +23,8 @@ const WIDTHS = [1280, 390];
 const failures = [];
 const got = {};
 const near = (a, b) => Math.abs(a - b) <= 1;
+// P4 and its capture guard run on the preview build only (see P4 above).
+const TARGET_MODE = 'preview';
 
 const pairsOf = (page) => page.evaluate(() => {
   const tone = (el) => (/\bbg-/.test(el.className) ? 'bg' : (['gold', 'royal', 'black'].find((t) => el.classList.contains(`nos-section-${t}`)) ?? 'default'));
@@ -67,8 +71,8 @@ for (const mode of MODES) {
 
 if (CAPTURE) {
   if (failures.length) finish(NAME, failures);
-  const t = got[`public ${G.target.route} @${G.target.width}`];
-  if (!t || !t.pairs.some((p) => p.leaderHeadings.includes(G.target.leaderHeading))) finish(NAME, [`capture: no ${G.target.route} @${G.target.width} pair led by "${G.target.leaderHeading}"`]);
+  const t = got[`${TARGET_MODE} ${G.target.route} @${G.target.width}`];
+  if (!t || !t.pairs.some((p) => p.leaderHeadings.includes(G.target.leaderHeading))) finish(NAME, [`capture: no ${TARGET_MODE} ${G.target.route} @${G.target.width} pair led by "${G.target.leaderHeading}"`]);
   process.stdout.write(`${JSON.stringify({ recorded: `${MODES.join(' and ')} builds of BASE ${BASE}: adjacent section.nos-section pairs (tones, grounds, paddings, wrap-to-wrap gap)`, got })}\n`);
   process.exit(0);
 }
@@ -95,7 +99,7 @@ for (const [key, m] of Object.entries(got)) {
     }
   });
 }
-for (const mode of MODES) {
+for (const mode of [TARGET_MODE]) {
   const key = `${mode} ${G.target.route} @${G.target.width}`;
   const m = got[key]; const b = baseline[key];
   const k = b ? b.pairs.findIndex((p) => p.leaderHeadings.includes(G.target.leaderHeading)) : -1;
