@@ -41,9 +41,11 @@ Subscribe 5 per hour per IP, unsubscribe 10 per hour per IP, using the shared sl
 `decideRateLimit`. The counter is in memory per server instance (the same known limitation as the
 vendor routes). The numbers are placeholders, not committee-approved values.
 
-- Key: the LAST `x-forwarded-for` hop, not the first. The first is client-supplied and spoofable;
-  the last is appended by Google's front end in front of App Hosting. If more trusted proxies are
-  ever added, clients share a key (over-limiting), never a bypass.
+- Key: `clientIpFromForwardedFor` (`lib/client-ip.ts`). Google's front end appends the client IP, so
+  the header is `<client-supplied...>, <client-ip>, <lb-ip>`: one entry is used as-is, two or more
+  yield the second-to-last. Never the first (spoofable) nor the last (the shared load-balancer
+  address, which would let one attacker exhaust the quota for everyone). A missing header falls
+  back to one shared `unknown` key. To verify on beta, compare against Cloud Run's logged remoteIp.
 - Once per request: each route wraps the store per request, so a Firestore transaction retry cannot
   count one request twice.
 - `lib/newsletter-rate-limit.ts` holds the shared check (`consumeRateLimit`) and imports
@@ -53,8 +55,9 @@ vendor routes). The numbers are placeholders, not committee-approved values.
 ## Timing and races
 
 - A new address does a transaction write; an existing one does not. Successful subscribe responses
-  are padded to a 750 ms floor so the difference is not observable by timing. This is approximate,
-  not constant-time.
+  are padded to a 1000 ms floor (`MIN_SUCCESS_RESPONSE_MS`) so the difference is not observable by
+  timing. Residual risk: a write slower than the floor can still leak new versus existing, and
+  newsletter membership is low sensitivity, so this is accepted.
 - Unsubscribe does the token lookup and the status update in one Firestore transaction, so a racing
   re-subscribe cannot leave a 200 "unsubscribed" response while the address stays subscribed.
 

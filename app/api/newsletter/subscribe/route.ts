@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
+import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { initAdmin } from '@/lib/firebase-admin';
 import { generateUnsubscribeToken } from '@/lib/newsletter';
 import {
@@ -11,7 +12,6 @@ import {
 } from '@/lib/newsletter-handler';
 import {
   createAttemptStore,
-  rateLimitKeyFromHeaders,
   scopeAttemptsToRequest,
 } from '@/lib/newsletter-rate-store';
 import { subscriberRef, toSubscriberDoc } from '@/lib/newsletter-store';
@@ -20,7 +20,7 @@ const HTTP_SERVER_ERROR = 500;
 const HTTP_OK = 200;
 // A new address costs a transaction write and an existing one does not; padding successful
 // responses to a floor hides that difference from a timing observer. Approximate by design.
-const MIN_SUCCESS_RESPONSE_MS = 750;
+const MIN_SUCCESS_RESPONSE_MS = 1000;
 
 const attempts = createAttemptStore(NEWSLETTER_RATE_LIMIT_WINDOW_MS);
 
@@ -41,6 +41,11 @@ async function padToFloor(startedAt: number): Promise<void> {
   if (remaining > 0) await new Promise((resolve) => setTimeout(resolve, remaining));
 }
 
+function rateLimitKeyFor(request: NextRequest): string {
+  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
+  return `newsletter-subscribe:${ip ?? 'unknown'}`;
+}
+
 export async function POST(request: NextRequest) {
   let body: unknown;
   try {
@@ -48,7 +53,7 @@ export async function POST(request: NextRequest) {
   } catch {
     body = null;
   }
-  const rateLimitKey = rateLimitKeyFromHeaders(request.headers, 'newsletter-subscribe');
+  const rateLimitKey = rateLimitKeyFor(request);
 
   const startedAt = Date.now();
   const requestAttempts = scopeAttemptsToRequest(attempts);

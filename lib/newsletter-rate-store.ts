@@ -55,16 +55,3 @@ export function scopeAttemptsToRequest(store: AttemptStore): AttemptStore {
     },
   };
 }
-
-/**
- * Rate-limit key from the TRUSTED hop of x-forwarded-for: the LAST entry. Every proxy appends
- * the address it received the connection from, so the first entry is whatever the client chose
- * to send and can be spoofed to dodge the limit. The last entry is appended by Google's
- * front end in front of App Hosting and cannot be forged by the client. If extra trusted
- * proxies ever sit behind it, clients would share one key (over-limiting), never bypass it.
- */
-export function rateLimitKeyFromHeaders(headers: Headers, scope: string): string {
-  const hops = headers.get('x-forwarded-for')?.split(',') ?? [];
-  const hop = hops[hops.length - 1]?.trim();
-  return `${scope}:${hop || 'unknown'}`;
-}

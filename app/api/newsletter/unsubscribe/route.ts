@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
+import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { initAdmin } from '@/lib/firebase-admin';
 import {
   handleNewsletterUnsubscribe,
@@ -9,7 +10,6 @@ import {
 } from '@/lib/newsletter-handler';
 import {
   createAttemptStore,
-  rateLimitKeyFromHeaders,
   scopeAttemptsToRequest,
 } from '@/lib/newsletter-rate-store';
 import { findSubscriberByToken, markSubscriberUnsubscribed } from '@/lib/newsletter-store';
@@ -20,6 +20,11 @@ const attempts = createAttemptStore(NEWSLETTER_RATE_LIMIT_WINDOW_MS);
 
 function logError(message: string, context: Record<string, string>): void {
   console.error(`[newsletter/unsubscribe] ${message}`, context);
+}
+
+function rateLimitKeyFor(request: NextRequest): string {
+  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
+  return `newsletter-unsubscribe:${ip ?? 'unknown'}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -33,7 +38,7 @@ export async function POST(request: NextRequest) {
   try {
     initAdmin();
     const requestAttempts = scopeAttemptsToRequest(attempts);
-    const rateLimitKey = rateLimitKeyFromHeaders(request.headers, 'newsletter-unsubscribe');
+    const rateLimitKey = rateLimitKeyFor(request);
     // Lookup and update share one transaction, so a re-subscribe racing this request either
     // lands before the lookup (we unsubscribe it) or after the commit (it stays subscribed),
     // and the 200 always matches the stored state at that moment.
