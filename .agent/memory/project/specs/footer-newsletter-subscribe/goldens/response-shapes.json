@@ -1,0 +1,16 @@
+{
+  "subscribe": {
+    "ok": { "status": 200, "body": { "success": true } },
+    "honeypot": { "status": 200, "body": { "success": true } },
+    "invalidEmail": { "status": 400, "body": { "error": "Enter a valid email address.", "field": "email" } },
+    "invalidSource": { "status": 400, "body": { "error": "Something went wrong. Please try again." } },
+    "rateLimited": { "status": 429, "body": { "error": "Too many attempts. Please try again later." }, "retryAfterSeconds": "number" },
+    "serverError": { "status": 500, "body": { "error": "Something went wrong. Please try again." } }
+  },
+  "unsubscribe": {
+    "ok": { "status": 200, "body": { "success": true } },
+    "invalidOrUnknownToken": { "status": 400, "body": { "error": "This unsubscribe link is not valid." } },
+    "rateLimited": { "status": 429, "body": { "error": "Too many attempts. Please try again later." } },
+    "serverError": { "status": 500, "body": { "error": "Something went wrong. Please try again." } }
+  }
+}

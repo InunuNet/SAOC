@@ -1,0 +1,20 @@
+{
+  "schema": "athanor.mission-touched-files/v1",
+  "slug": "footer-newsletter-subscribe",
+  "pending_baselines": {
+    "F1": [
+      ".agent/memory/project/backlog.md",
+      ".agent/memory/project/missions/2026-10-08-vendor-invite.md",
+      ".agent/memory/project/missions/2026-10-21-footer-newsletter-subscribe.md",
+      ".agent/memory/project/missions/active.json",
+      "branding/National Show 2027/Word Templates/",
+      "branding/SA Orchid Council/emblem/Eulophia-speciosa r1.png",
+      "branding/SA Orchid Council/emblem/Eulophia-speciosa r2.png",
+      "branding/SA Orchid Council/emblem/Eulophia-speciosa r3.png",
+      "branding/SA Orchid Council/emblem/Eulophia-speciosa r4.png",
+      "branding/SA Orchid Council/emblem/Eulophia-speciosa-emblem.png",
+      "comms.md"
+    ]
+  },
+  "paths": []
+}

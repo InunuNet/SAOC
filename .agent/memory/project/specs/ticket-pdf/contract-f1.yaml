@@ -1,0 +1,111 @@
+schema: athanor.contract/v1
+slug: ticket-pdf
+goal: Order confirmations carry a branded A4 PDF ticket (one page per position, to Codi's artifact 1Zc87ALWvhA7eRdVkdq12W v1792425877-d0a8 read 2026-10-22) that is also what the confirmation page downloads, with access no weaker than today and an email that still sends if PDF generation fails.
+created_at: '2026-10-22'
+autonomy: high
+
+features:
+  - id: F1
+    name: NOS A4 ticket PDF (pdf-lib), GET /api/tickets/pdf, email attachment, confirmation-page download switched from PNG to PDF
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/ticket-pdf/goldens/codi-ruling.md
+  - .agent/memory/project/specs/ticket-pdf/goldens/decisions.md
+  - .agent/memory/project/specs/ticket-pdf/goldens/layout-spec.md
+  - .agent/memory/project/specs/ticket-pdf/goldens/fixture-order.json
+  - .agent/memory/project/specs/ticket-pdf/goldens/copy-baseline/allowed-strings.txt
+  - .agent/memory/project/specs/ticket-pdf/goldens/codex-qa-prompt.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: pdf-lib and @pdf-lib/fontkit pinned exactly (no caret) in dependencies and present in pnpm-lock; no headless-browser or alternative PDF runtime dependency
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts deps
+    - id: A2
+      description: fonts (Fraunces, Karla; .ttf/.woff, from @fontsource or the repo TTFs) and the reversed-gold horizontal logo export (>=1500px) are vendored in lib/ticket-pdf-assets and traced via next.config.ts
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts assets
+    - id: A3
+      description: PDF renders from the fixture order and rasters (fixture.pdf, page-1.png, page-2.png written to .tmp/sandbox/ticket-pdf for Codi)
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts render
+    - id: A4
+      description: every page is A4 portrait (595.28 x 841.89 pt)
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts a4
+    - id: A5
+      description: page count equals the number of positions (1, 2 and 3 positions)
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts pages
+    - id: A6
+      description: text is real and extractable (attendee name, own booking ref per page and never another page's ref, order reference)
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts text
+    - id: A7
+      description: all fonts embedded (pdffonts emb=yes), Fraunces and Karla both present, no standard-14 fallback
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts fonts
+    - id: A8
+      description: the QR on every page decodes (jsqr) from the PDF rasterised at 150 dpi to exactly that page's booking ref; successor to the superseded PNG-download A6
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts qr
+    - id: A9
+      description: colours at fixed sample points (royal header only, page ground, stub, white QR tile; no footer band)
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts colours
+    - id: A10
+      description: no new copy; every extracted word is in goldens/copy-baseline/allowed-strings.txt or the fixture data
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts copy
+    - id: A11
+      description: 3-page PDF stays under 2 MB (logos downsized, fonts subset)
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts size
+    - id: A12
+      description: access rule - no/blank/unknown ref, a bookingRef used as ref, and a position from another order all return the identical 404 result; valid ref yields only its own order's positions
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts access
+    - id: A13
+      description: route.ts wiring - uses authoriseTicketPdfRequest, application/pdf, attachment, no-store, reads position, exports only GET (plus dynamic/runtime)
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts route
+    - id: A14
+      description: the PDF module carries no buyer or amount data
+      command: '! grep -qiE "buyer|amount" lib/ticket-pdf.ts'
+    - id: A15
+      description: email attaches exactly one application/pdf (valid filename, %PDF content) beside unchanged inline QR PNGs, and still sends once, without the PDF and with a logged error, when generation throws or rejects; empty positions still rejects
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts email
+    - id: A16
+      description: EmailAttachment.contentId is optional so a non-inline attachment needs no CID
+      command: 'grep -q "contentId?: string" lib/email.ts'
+    - id: A17
+      description: the pinned ITN route and OrderConfirmation.tsx are not edited by this feature
+      command: git diff --quiet HEAD -- app/api/tickets/itn/route.ts emails/OrderConfirmation.tsx
+    - id: A18
+      description: DownloadTicketButton no longer builds a canvas PNG and links to the PDF endpoint
+      command: '! grep -qE "canvas|toBlob|createObjectURL|\.png" components/tickets/DownloadTicketButton.tsx && grep -q "/api/tickets/pdf" components/tickets/DownloadTicketButton.tsx'
+    - id: A19
+      description: confirmation page keeps the existing download label wording and passes the order reference
+      command: grep -q "downloadTicketButtonLabel" "app/(marketing)/tickets/confirmation/page.tsx" && grep -q "'Download ticket'" "app/(marketing)/tickets/confirmation/page.tsx" && grep -q "confirmedOrder.reference" "app/(marketing)/tickets/confirmation/page.tsx"
+    - id: A20
+      description: type-check passes
+      command: pnpm type-check
+    - id: A21
+      description: lint passes
+      command: pnpm lint
+    - id: A22
+      description: production build passes
+      command: pnpm build
+      timeout_seconds: 900
+    - id: A23
+      description: after the build, the pdf and itn route file traces both include the vendored fonts and logos (App Hosting would otherwise crash at runtime)
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts trace
+    - id: A24
+      description: Codi approval of the rendered PDF is recorded in .tmp/sandbox/ticket-pdf/codi-approval.txt and is not older than the latest fixture.pdf render (approval precedes ship)
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts review-order
+    - id: A25
+      description: Codex adversarial review of the whole diff
+      type: codex_qa
+      target: .agent/memory/project/specs/ticket-pdf/goldens/codex-qa-prompt.md
+      timeout_seconds: 1300
+      required: true
+    - id: A26
+      description: Brad receives the order confirmation with the PDF attached, sent from a sandbox fixture order to brad@inunu.net only (no real orders, sandbox payments)
+      type: gws_inbox_check
+      target: .agent/memory/scratch/ticket-pdf-gws-manifest.json
+      required: false
+    - id: A27
+      description: Deployed beta confirmation page download returns an application/pdf for a fixture order (browser tool, no prompts to Brad)
+      type: browser_deployed_check
+      target: .agent/memory/scratch/ticket-pdf-browser-manifest.json
+      required: false

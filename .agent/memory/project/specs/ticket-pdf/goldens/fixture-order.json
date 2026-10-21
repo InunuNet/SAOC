@@ -1,0 +1,55 @@
+{
+  "orderReference": "SAOC-2027-FIXTUREORD1",
+  "positions": [
+    {
+      "bookingRef": "SAOC-2027-RF82DCQDZ61R",
+      "attendeeName": "Thandiwe Mokoena",
+      "ticketType": "VIP Opening",
+      "schedule": {
+        "eyebrow": "Thursday evening",
+        "numeral": "23",
+        "dateText": "Thursday 23 September 2027",
+        "timeText": "16h00 to 19h00"
+      },
+      "timesHeading": "Opening times",
+      "times": [
+        { "label": "Thu 23", "value": "16h00 to 19h00" },
+        { "label": "Fri 24", "value": null },
+        { "label": "Sat 25", "value": null },
+        { "label": "Sun 26", "value": null }
+      ]
+    },
+    {
+      "bookingRef": "SAOC-2027-K4T9WQ2MZ8LA",
+      "attendeeName": "Thandiwe Mokoena",
+      "ticketType": "WOSA Conference",
+      "schedule": {
+        "eyebrow": "Programme",
+        "numeral": null,
+        "dateText": null,
+        "timeText": null
+      },
+      "timesHeading": "Session times",
+      "times": [
+        { "label": "Day", "value": null },
+        { "label": "Time", "value": null }
+      ]
+    }
+  ],
+  "visit": {
+    "venueName": "The Hangar, Stellenbosch Flying Club",
+    "venueAddress": "Stellenbosch Airfield, R44, Stellenbosch, 7600, Western Cape",
+    "venueParking": null,
+    "showDates": "Thursday 23 to Sunday 26 September 2027",
+    "showUrl": "saoc.co.za/national-show",
+    "emergency": [
+      { "number": "10111", "label": "Police (national)" },
+      { "number": "10177", "label": "Ambulance and fire (national)" },
+      { "number": "112", "label": "All emergencies, from a mobile phone" }
+    ],
+    "onSiteContact": null,
+    "organiser": "South African Orchid Council",
+    "showOffice": null,
+    "questionsEmail": "info@saoc.co.za"
+  }
+}

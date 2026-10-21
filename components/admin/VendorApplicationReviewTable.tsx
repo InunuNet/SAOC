@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { VendorApplication, VendorApplicationStatus } from '@/types/index';
 import type { VendorApplicationReviewAction } from '@/lib/vendor-application-review';
@@ -40,6 +40,12 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
   const [rows, setRows] = useState(applications);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+
+  // A failed action sets `error`; scroll its banner into view so a failure is never silent.
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [error]);
 
   async function handleAction(id: string, action: VendorApplicationReviewAction) {
     setPendingId(id);
@@ -52,7 +58,15 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
         body: JSON.stringify({ action }),
       });
 
-      const body = (await res.json()) as { success?: boolean; status?: string; error?: string };
+      // A non-JSON body (e.g. a plain-text 401 from the beta wall) must fall through to the
+      // !res.ok branch below rather than throw into the "reach the server" catch.
+      const parsed: unknown = await res.json().catch(() => null);
+      // A JSON `null` (or any non-object) counts as no body.
+      const body = (typeof parsed === 'object' && parsed !== null ? parsed : {}) as {
+        success?: boolean;
+        status?: string;
+        error?: string;
+      };
 
       if (!res.ok || !body.success || !body.status) {
         setError(body.error ?? 'Failed to update vendor application.');
@@ -115,7 +129,11 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
   return (
     <div>
       {error && (
-        <p className="mb-4 border border-rule bg-ivory px-4 py-3 font-sans text-[14px] text-ink" role="alert">
+        <p
+          ref={errorRef}
+          className="mb-4 border border-rule bg-ivory px-4 py-3 font-sans text-[14px] text-ink"
+          role="alert"
+        >
           {error}
         </p>
       )}
