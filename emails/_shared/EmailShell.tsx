@@ -21,13 +21,13 @@ export const GOLD = '#f3f2d6';
 const GOLD_100 = '#fbfaf0';
 const INK_700 = '#3a3654';
 const NOS_RULE = '#e3e1c9';
+const INK_MUTED = '#55507e';
 
 interface ShellTheme {
   outer: string;
   card: string;
   /** Header band fill (A/B royal, D parchment). C has no header band, only a top rule. */
   header: string;
-  footer: string;
   accent: string;
   onAccent: string;
   ink: string;
@@ -36,15 +36,14 @@ interface ShellTheme {
   buttonRadius: string;
   headingFont: string;
   bodyFont: string;
-  footerRegColor: string;
-  footerLineColor: string;
+  // Muted body copy for secondary text such as the footer (--nos-ink-muted, derived).
+  muted: string;
 }
 
 const NOS_THEME: ShellTheme = {
   outer: GOLD,
   card: GOLD_100,
   header: ROYAL,
-  footer: ROYAL,
   accent: ROYAL,
   onAccent: GOLD,
   ink: INK_700,
@@ -53,8 +52,7 @@ const NOS_THEME: ShellTheme = {
   buttonRadius: '10px',
   headingFont: 'Fraunces, Georgia, serif',
   bodyFont: 'Karla, Arial, Helvetica, sans-serif',
-  footerRegColor: GOLD,
-  footerLineColor: GOLD,
+  muted: INK_MUTED,
 };
 
 const ThemeContext = createContext<ShellTheme>(NOS_THEME);
@@ -69,9 +67,11 @@ const NARROW_GUTTER = 20;
 const NOS_HEADER_LOGO_INSET = 13;
 const HEADER_LOGO_WIDTH = 280;
 const HEADER_LOGO_HEIGHT = 69;
-const NOS_FOOTER_LOCKUP_WIDTH = 120;
-const NOS_FOOTER_LOCKUP_HEIGHT = 105;
+const FOOTER_MARK_HEIGHT = 48;
+const FOOTER_MARK_GAP = 12;
 const NOS_LOGO_ALT = 'National Orchid Show 2027';
+// The two registration numbers come from FOOTER_REG; only the separator changes.
+const FOOTER_REG_LINE = FOOTER_REG.replace(/\s{2,}/, ' · ');
 const FOOTER_LINE = 'South African Orchid Council — saoc.co.za';
 /** SITE_URL is only available at App Hosting runtime; same fallback as lib/confirmation-email.ts. */
 const DEFAULT_SITE_URL = 'https://saoc.co.za';
@@ -92,7 +92,7 @@ function shellCss(t: ShellTheme): string {
     .shell-value { display: block !important; width: 100% !important; padding: 0 !important; }
   }
   [data-ogsc] .shell-header { background-color: ${t.header} !important; }
-  [data-ogsc] .shell-footer, [data-ogsc] .shell-accent { background-color: ${t.footer} !important; }
+  [data-ogsc] .shell-accent { background-color: ${t.accent} !important; }
   [data-ogsc] .shell-card { background-color: ${t.card} !important; }
   [data-ogsc] .shell-outer { background-color: ${t.outer} !important; }
   [data-ogsc] .shell-ink { color: ${t.ink} !important; }
@@ -124,7 +124,7 @@ function Header({ theme: t }: { theme: ShellTheme }) {
         }}
       >
         <Img
-          src={logoUrl('nos-reversed-gold-horizontal-560.png')}
+          src={logoUrl('nos-full-colour-reversed-horizontal-560.png')}
           alt={NOS_LOGO_ALT}
           width={HEADER_LOGO_WIDTH}
           height={HEADER_LOGO_HEIGHT}
@@ -135,50 +135,52 @@ function Header({ theme: t }: { theme: ShellTheme }) {
   );
 }
 
+const footerLineStyle = (t: ShellTheme): CSSProperties => ({
+  margin: 0,
+  fontFamily: t.bodyFont,
+  fontSize: '12px',
+  lineHeight: '18px',
+  color: t.muted,
+});
+
+// Condensed footer on the card: one rule, a 48px monotone mark at the left, two 12px lines.
 function BrandedFooter({ theme: t }: { theme: ShellTheme }) {
   return (
     <tr>
       <td
-        className="shell-footer"
-        {...bgAttr(t.footer)}
-        align="center"
-        style={{ backgroundColor: t.footer, padding: `28px ${GUTTER}px`, textAlign: 'center' }}
+        className="shell-card shell-gutter"
+        {...bgAttr(t.card)}
+        style={{ backgroundColor: t.card, padding: `0 ${GUTTER}px 32px` }}
       >
-        <Img
-          src={logoUrl('nos-reversed-gold-vertical-240.png')}
-          alt={NOS_LOGO_ALT}
-          width={NOS_FOOTER_LOCKUP_WIDTH}
-          height={NOS_FOOTER_LOCKUP_HEIGHT}
-          style={{
-            display: 'block',
-            border: 0,
-            margin: '0 auto',
-            width: `${NOS_FOOTER_LOCKUP_WIDTH}px`,
-            height: 'auto',
-          }}
-        />
-        <p
-          style={{
-            margin: '24px 0 0',
-            fontFamily: t.bodyFont,
-            fontSize: '11px',
-            lineHeight: '16px',
-            color: t.footerRegColor,
-          }}
+        <table
+          role="presentation"
+          width="100%"
+          cellPadding={0}
+          cellSpacing={0}
+          border={0}
+          style={{ width: '100%', borderTop: `1px solid ${t.rule}` }}
         >
-          {FOOTER_REG}
-        </p>
-        <p
-          style={{
-            margin: '8px 0 0',
-            fontFamily: t.bodyFont,
-            fontSize: '13px',
-            lineHeight: '18px',
-            color: t.footerLineColor,
-          }}
-        >
-          {FOOTER_LINE}
-        </p>
+          <tbody>
+            <tr>
+              <td
+                valign="middle"
+                width={FOOTER_MARK_HEIGHT + FOOTER_MARK_GAP}
+                style={{ padding: '16px 0 0', width: `${FOOTER_MARK_HEIGHT + FOOTER_MARK_GAP}px` }}
+              >
+                <Img
+                  src={logoUrl('nos-ink-purple-vertical-96.png')}
+                  alt={NOS_LOGO_ALT}
+                  height={FOOTER_MARK_HEIGHT}
+                  style={{ display: 'block', border: 0, height: `${FOOTER_MARK_HEIGHT}px`, width: 'auto' }}
+                />
+              </td>
+              <td valign="middle" style={{ padding: '16px 0 0' }}>
+                <p className="shell-ink" style={footerLineStyle(t)}>{FOOTER_LINE}</p>
+                <p className="shell-ink" style={footerLineStyle(t)}>{FOOTER_REG_LINE}</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </td>
     </tr>
   );
