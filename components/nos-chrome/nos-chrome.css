@@ -128,9 +128,9 @@
 /* r20 F4: a row sits at the top of its li, so the li's own strut never adds to the 44px row pitch. */
 .nf-list li > * { vertical-align: top; }
 .nf a:hover { color: var(--nc-ground); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-underline-offset: 4px; }
-.nf-col .nf-text { margin-bottom: 14px; }
+.nf-col .nf-text { margin-bottom: 12px; }
 /* r20 F4 (Codi FINAL): the column headings sit 16px above their first element, as in the SAOC footer; this also reaches the sign-up label. */
-.nf-col > .nf-head { margin-bottom: 16px; }
+.nf-col > div.nf-head { margin-bottom: 16px; }
 /* r20 (Codi FINAL 2026-10-19): the sign-up's visible label, in the label role (.nf-head); a <label> is inline, so it is set as a block. */
 .nf-col-touch label.nf-head { display: block; }
 .nf-form { display: flex; gap: 8px; max-width: 360px; }
@@ -139,7 +139,8 @@
 .nf-form input:focus-visible { outline: 2px solid var(--nc-ground); outline-offset: 2px; }
 .nf-form button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--nc-gold); color: var(--nc-royal); font: 700 13px/1 var(--nc-sans); letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }
 .nf-form button:hover { background: var(--nc-gold-300); }
-.nf-wild { margin-top: 28px; }
+.nf-wild { margin-top: 20px; }
+.nf-wild .nf-head { margin-bottom: 8px; }
 .nf-wild a { color: var(--nc-ground); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
 .nf-base { border-top: 1px solid rgba(210, 203, 232, 0.2); font-size: 13px; letter-spacing: 0; }
 .nf-legal a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; color: var(--nc-lilac); text-decoration: none; }
