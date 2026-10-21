@@ -4,8 +4,8 @@
 // NOS — components/nos-chrome/NosFooter.tsx
 // The NOS own-brand footer for /national-show/*: the SAOC footer's content
 // (components/chrome/footer-data.ts, shared verbatim) on the NOS royal ground.
-// r17 F2 (Codi): the brand slot is the supplied gold vertical lockup, centred, at every width,
-// with only REG/NPO beneath it. ONE <picture> holds a 1x/2x density set of that one file, fetched
+// r17 F2 (Codi): the brand slot is the supplied gold vertical lockup with only REG/NPO beneath it.
+// r20 F3 (Codi): the footer follows the SAOC footer's layout (FOOTER_LAYOUT, shared with Footer.tsx). ONE <picture> holds a 1x/2x density set of that one file, fetched
 // lazily (the footer is below the fold); the custom image loader maps it to its pre-built WebP
 // candidates.
 // =============================================================
@@ -17,9 +17,11 @@ import {
   FOOTER_BULLETIN,
   FOOTER_COPYRIGHT_TAIL,
   FOOTER_HEADINGS,
+  FOOTER_LAYOUT,
   FOOTER_LEGAL_LINKS,
   FOOTER_NAV,
   FOOTER_REG,
+  FOOTER_RHYTHM,
   FOOTER_WOSA,
 } from '@/components/chrome/footer-data';
 import { partners } from '@/lib/data';
@@ -32,9 +34,9 @@ const LOCKUP_ALT = 'National Orchid Show, Western Cape 2027';
 const LOCKUP_SRC = '/images/NOS-2027-logo-reversed-gold-vertical.png';
 const LOCKUP_WIDTH = 3272;
 const LOCKUP_HEIGHT = 2876;
-// The largest rendered box is 360px wide (nos-chrome.css). A width with no `sizes` gives a 1x/2x
+// The lockup's rendered box is 248px wide (nos-chrome.css). A width with no `sizes` gives a 1x/2x
 // density srcset, so a high-density screen never fetches more than twice the box.
-const LOCKUP_BOX = 360;
+const LOCKUP_BOX = 248;
 
 export function NosFooter() {
   const { props: lockup } = getImageProps({
@@ -46,9 +48,9 @@ export function NosFooter() {
 
   return (
     <footer id="nf" className={`nf ${nosChromeFontClass}`}>
-      <div className="nf-wrap">
-        <div className="nf-grid">
-          <div className="nf-brand">
+      <div className={FOOTER_LAYOUT.grid}>
+        <div className={`nf-brand ${FOOTER_LAYOUT.brandColumn}`}>
+          <div className={FOOTER_LAYOUT.brandMark}>
             <Link className="nf-lockup" href={HUB_HREF}>
               <picture>
                 <img
@@ -61,58 +63,68 @@ export function NosFooter() {
                 />
               </picture>
             </Link>
-            <span className="nf-head nf-reg">{FOOTER_REG}</span>
           </div>
-
-          <div className="nf-col">
-            <div className="nf-head">{FOOTER_HEADINGS.explore}</div>
-            <ul className="nf-list">
-              {FOOTER_NAV.map((n) => (
-                <li key={n.id}>
-                  <Link href={n.href}>{n.label}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="nf-col">
-            <div className="nf-head">{FOOTER_HEADINGS.partners}</div>
-            <ul className="nf-list">
-              {partners.map((p) => (
-                <li key={p.name}>
-                  <span>{p.name}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="nf-col nf-col-touch">
-            <div className="nf-head">{FOOTER_HEADINGS.touch}</div>
-            <p className="nf-text">{FOOTER_BULLETIN.blurb}</p>
-            <form id="nf-form" className="nf-form" onSubmit={(e) => e.preventDefault()}>
-              <input
-                type="email"
-                aria-label={FOOTER_BULLETIN.emailLabel}
-                placeholder={FOOTER_BULLETIN.placeholder}
-                required
-              />
-              <button type="submit">{FOOTER_BULLETIN.submitLabel}</button>
-            </form>
-            <div className="nf-wild">
-              <div className="nf-head">{FOOTER_WOSA.heading}</div>
-              <a href={FOOTER_WOSA.href} target="_blank" rel="noopener noreferrer">
-                {FOOTER_WOSA.linkLabel}
-              </a>
-            </div>
-          </div>
+          <span className="nf-head nf-reg">{FOOTER_REG}</span>
         </div>
 
-        <div className="nf-base">
+        <div className="nf-col">
+          <div className="nf-head">{FOOTER_HEADINGS.explore}</div>
+          <ul className={`nf-list ${FOOTER_RHYTHM.list}`}>
+            {FOOTER_NAV.map((n) => (
+              <li key={n.id}>
+                <Link className={FOOTER_RHYTHM.row} href={n.href}>
+                  {n.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="nf-col">
+          <div className="nf-head">{FOOTER_HEADINGS.partners}</div>
+          <ul className={`nf-list ${FOOTER_RHYTHM.list}`}>
+            {partners.map((p) => (
+              <li key={p.name}>
+                <span className={FOOTER_RHYTHM.row}>{p.name}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="nf-col nf-col-touch">
+          <div className="nf-head">{FOOTER_HEADINGS.touch}</div>
+          <p className="nf-text">{FOOTER_BULLETIN.blurb}</p>
+          <label className="nf-head" htmlFor="nf-email">{FOOTER_BULLETIN.emailLabel}</label>
+          <form id="nf-form" className="nf-form" onSubmit={(e) => e.preventDefault()}>
+            <input
+              id="nf-email"
+              type="email"
+              name="email"
+              autoComplete="email"
+              placeholder={FOOTER_BULLETIN.placeholder}
+              required
+            />
+            <button type="submit">{FOOTER_BULLETIN.submitLabel}</button>
+          </form>
+          <div className="nf-wild">
+            <div className="nf-head">{FOOTER_WOSA.heading}</div>
+            <a className={FOOTER_RHYTHM.row} href={FOOTER_WOSA.href}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {FOOTER_WOSA.linkLabel}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div className="nf-base">
+        <div className={FOOTER_LAYOUT.bar}>
           <span>
             &copy; {new Date().getFullYear()}
             {FOOTER_COPYRIGHT_TAIL}
           </span>
-          <div className="nf-legal">
+          <div className={`nf-legal ${FOOTER_LAYOUT.legal}`}>
             {FOOTER_LEGAL_LINKS.map((l) => (
               <Link key={l.href} href={l.href}>
                 {l.label}

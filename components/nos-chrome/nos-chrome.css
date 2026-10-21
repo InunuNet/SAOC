@@ -113,47 +113,37 @@
 @keyframes nd-in { from { opacity: 0; transform: translateY(-8px); } }
 
 /* Footer: SAOC's footer content and structure on royal, the supplied reversed NOS lockup in the brand slot. */
-.nf { background: var(--nc-royal); color: var(--nc-lilac); font-family: var(--nc-sans); padding-block: clamp(56px, 7vw, 88px) calc(76px + env(safe-area-inset-bottom, 0px)); }
+.nf { background: var(--nc-royal); color: var(--nc-lilac); font-family: var(--nc-sans); padding-bottom: env(safe-area-inset-bottom, 0px); }
 .nf :focus-visible { outline: 2px solid var(--nc-ground); outline-offset: 3px; border-radius: 4px; }
 .nf ::selection { background: var(--nc-gold); color: var(--nc-royal); }
-.nf-wrap { max-width: calc(var(--nc-wide) + 2 * var(--nc-gutter)); margin-inline: auto; padding-inline: var(--nc-gutter); }
-.nf-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 48px 40px; }
-/* r17 F2 (Codi): the gold vertical lockup, centred on the royal band at 360px (280px at <=700),
-   never wider than the wrap's content box, with REG/NPO the only text under it. */
-.nf-brand { grid-column: 1 / -1; display: grid; gap: 0; align-content: start; justify-items: center; text-align: center; }
-.nf-lockup { display: block; width: min(360px, 100%); line-height: 0; border-radius: 4px; }
-/* Clear space (logo PDF p.08): the lockup's visible bottom (file y 2620 of 2876) sits
-   0.25 x the emblem width (2350 of 3272px) above REG/NPO. A bottom margin in % resolves against
-   the lockup's own width, so: 25% x 2350/3272 minus the file's transparent foot (256/3272). */
-.nf-lockup img { display: block; width: 100%; max-width: none; height: auto; margin: 0 0 calc(25% * 2350 / 3272 - 100% * 256 / 3272); }
+/* r20 F3 (Codi FINAL): the lockup in the SAOC footer's brand column (FOOTER_LAYOUT), 248px, never wider than the column. */
+.nf-lockup { display: block; width: 248px; max-width: 100%; line-height: 0; border-radius: 4px; }
+.nf-lockup img { display: block; width: 100%; max-width: none; height: auto; }
 .nf-text { margin: 0; max-width: 44ch; font-size: 15px; line-height: 1.6; color: var(--nc-lilac); }
 .nf-head { margin: 0 0 6px; font: 700 12px/1.3 var(--nc-sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--nc-green-1); }
 /* REG/NPO in the label role (.nf-head), in gold. */
 .nf-brand .nf-reg { color: var(--nc-gold); font-variant-numeric: tabular-nums; }
-.nf-list { list-style: none; margin: 0; padding: 0; display: grid; }
-.nf-list a, .nf-list span { display: flex; align-items: center; min-height: 44px; font-size: 15px; line-height: 1.35; color: var(--nc-lilac); text-decoration: none; }
-.nf-list span { min-height: 0; padding-block: 11px; }
+.nf-list { list-style: none; margin: 0; padding: 0; }
+.nf-list a, .nf-list span { line-height: 1.35; color: var(--nc-lilac); text-decoration: none; }
+/* r20 F4: a row sits at the top of its li, so the li's own strut never adds to the 44px row pitch. */
+.nf-list li > * { vertical-align: top; }
 .nf a:hover { color: var(--nc-ground); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-underline-offset: 4px; }
 .nf-col .nf-text { margin-bottom: 14px; }
+/* r20 F4 (Codi FINAL): the column headings sit 16px above their first element, as in the SAOC footer; this also reaches the sign-up label. */
+.nf-col > .nf-head { margin-bottom: 16px; }
+/* r20 (Codi FINAL 2026-10-19): the sign-up's visible label, in the label role (.nf-head); a <label> is inline, so it is set as a block. */
+.nf-col-touch label.nf-head { display: block; }
 .nf-form { display: flex; gap: 8px; max-width: 360px; }
-.nf-form input { flex: 1; min-width: 0; min-height: 44px; padding: 0 14px; border: 1px solid rgba(210, 203, 232, 0.36); border-radius: 10px; background: rgba(11, 10, 20, 0.22); color: var(--nc-ground); font: 15px var(--nc-sans); }
+.nf-form input { flex: 1; min-width: 0; min-height: 44px; padding: 0 14px; border: 1px solid rgba(210, 203, 232, 0.55); border-radius: 10px; background: rgba(11, 10, 20, 0.22); color: var(--nc-ground); font: 15px var(--nc-sans); }
 .nf-form input::placeholder { color: rgba(210, 203, 232, 0.72); }
 .nf-form input:focus-visible { outline: 2px solid var(--nc-ground); outline-offset: 2px; }
 .nf-form button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--nc-gold); color: var(--nc-royal); font: 700 13px/1 var(--nc-sans); letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }
 .nf-form button:hover { background: var(--nc-gold-300); }
 .nf-wild { margin-top: 28px; }
-.nf-wild a { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; color: var(--nc-ground); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
-.nf-base { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 32px; margin-top: clamp(48px, 6vw, 72px); padding-top: 16px; border-top: 1px solid rgba(210, 203, 232, 0.2); font-size: 13px; letter-spacing: 0.02em; }
-.nf-legal { display: flex; flex-wrap: wrap; gap: 0 24px; }
+.nf-wild a { color: var(--nc-ground); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+.nf-base { border-top: 1px solid rgba(210, 203, 232, 0.2); font-size: 13px; letter-spacing: 0; }
 .nf-legal a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; color: var(--nc-lilac); text-decoration: none; }
 @media (min-width: 701px) { .nf-form { flex-direction: column; } .nf-form input, .nf-form button { width: 100%; } }
-@media (min-width: 701px) { .nf-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 700px) {
-  .nf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px 20px; }
-  .nf-lockup { width: min(280px, 100%); }
-  .nf-col-touch { grid-column: 1 / -1; }
-  .nf-base { flex-direction: column; align-items: flex-start; }
-}
 
 /* Additions to the approved sheet (no approved declaration is changed or dropped).
    next/font exposes its families through variables set on the elements that carry the font classes
