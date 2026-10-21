@@ -13,4 +13,16 @@ export const NEWSLETTER_COPY = {
   unsubscribeConfirm: 'Confirm unsubscribe',
   unsubscribeDone: 'You have been unsubscribed.', // PENDING-COMMITTEE-COPY
   unsubscribeInvalid: 'This unsubscribe link is not valid.',
+  // No golden string exists for the keys below (functional admin and form chrome); see
+  // docs/newsletter-subscribe.md "Copy gaps".
+  honeypotLabel: 'Leave this field empty',
+  adminHeading: 'Newsletter subscribers',
+  adminDownloadCsv: 'Download CSV',
+  adminColumnEmail: 'Email',
+  adminColumnSource: 'Source',
+  adminColumnStatus: 'Status',
+  adminColumnSubscribed: 'Subscribed',
+  adminCountSubscribed: 'subscribed',
+  adminCountUnsubscribed: 'unsubscribed',
+  adminNavLabel: 'Subscribers',
 } as const;

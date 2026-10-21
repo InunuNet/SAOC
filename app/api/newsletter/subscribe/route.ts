@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 
+import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
 import { initAdmin } from '@/lib/firebase-admin';
 import { generateUnsubscribeToken } from '@/lib/newsletter';
 import {
@@ -8,11 +9,18 @@ import {
   NEWSLETTER_RATE_LIMIT_WINDOW_MS,
   type NewsletterHandlerResult,
 } from '@/lib/newsletter-handler';
-import { createAttemptStore, rateLimitKeyFromHeaders } from '@/lib/newsletter-rate-store';
+import {
+  createAttemptStore,
+  rateLimitKeyFromHeaders,
+  scopeAttemptsToRequest,
+} from '@/lib/newsletter-rate-store';
 import { subscriberRef, toSubscriberDoc } from '@/lib/newsletter-store';
 
-const GENERIC_ERROR = 'Something went wrong. Please try again.';
 const HTTP_SERVER_ERROR = 500;
+const HTTP_OK = 200;
+// A new address costs a transaction write and an existing one does not; padding successful
+// responses to a floor hides that difference from a timing observer. Approximate by design.
+const MIN_SUCCESS_RESPONSE_MS = 750;
 
 const attempts = createAttemptStore(NEWSLETTER_RATE_LIMIT_WINDOW_MS);
 
@@ -28,6 +36,11 @@ function toResponse(result: NewsletterHandlerResult): NextResponse {
   return NextResponse.json(result.body, { status: result.status, headers });
 }
 
+async function padToFloor(startedAt: number): Promise<void> {
+  const remaining = MIN_SUCCESS_RESPONSE_MS - (Date.now() - startedAt);
+  if (remaining > 0) await new Promise((resolve) => setTimeout(resolve, remaining));
+}
+
 export async function POST(request: NextRequest) {
   let body: unknown;
   try {
@@ -37,6 +50,8 @@ export async function POST(request: NextRequest) {
   }
   const rateLimitKey = rateLimitKeyFromHeaders(request.headers, 'newsletter-subscribe');
 
+  const startedAt = Date.now();
+  const requestAttempts = scopeAttemptsToRequest(attempts);
   try {
     initAdmin();
     // The read-decide-write runs inside one transaction so two concurrent submits of the same
@@ -46,8 +61,8 @@ export async function POST(request: NextRequest) {
         { body, rateLimitKey },
         {
           now: new Date(),
-          getPriorAttempts: attempts.getPriorAttempts,
-          recordAttempt: attempts.recordAttempt,
+          getPriorAttempts: requestAttempts.getPriorAttempts,
+          recordAttempt: requestAttempts.recordAttempt,
           getSubscriber: async (id) => {
             const snapshot = await tx.get(subscriberRef(id));
             return snapshot.exists ? toSubscriberDoc(snapshot.data() ?? {}) : null;
@@ -60,12 +75,13 @@ export async function POST(request: NextRequest) {
         },
       ),
     );
+    if (result.status === HTTP_OK) await padToFloor(startedAt);
     return toResponse(result);
   } catch (error) {
     logError('transaction failed', {
       operation: 'subscribe',
       exceptionType: error instanceof Error ? error.name : typeof error,
     });
-    return NextResponse.json({ error: GENERIC_ERROR }, { status: HTTP_SERVER_ERROR });
+    return NextResponse.json({ error: NEWSLETTER_COPY.genericError }, { status: HTTP_SERVER_ERROR });
   }
 }

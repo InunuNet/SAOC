@@ -1,4 +1,4 @@
-import { getFirestore, Timestamp, type DocumentData } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, type DocumentData, type Transaction } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
 import type { NewsletterSubscriberDoc } from '@/lib/newsletter';
@@ -48,17 +48,29 @@ export function subscriberRef(id: string) {
   return collection().doc(id);
 }
 
+/** Pass the surrounding transaction so the lookup and the later update are one atomic unit. */
 export async function findSubscriberByToken(
   token: string,
+  tx?: Transaction,
 ): Promise<{ id: string; status: 'subscribed' | 'unsubscribed' } | null> {
-  const snapshot = await collection().where('unsubscribeToken', '==', token).limit(1).get();
+  const query = collection().where('unsubscribeToken', '==', token).limit(1);
+  const snapshot = tx ? await tx.get(query) : await query.get();
   const doc = snapshot.docs[0];
   if (!doc) return null;
   return { id: doc.id, status: doc.data()['status'] === 'unsubscribed' ? 'unsubscribed' : 'subscribed' };
 }
 
-export async function markSubscriberUnsubscribed(id: string, now: Date): Promise<void> {
-  await collection().doc(id).update({ status: 'unsubscribed', unsubscribedAt: now });
+export async function markSubscriberUnsubscribed(
+  id: string,
+  now: Date,
+  tx?: Transaction,
+): Promise<void> {
+  const update = { status: 'unsubscribed', unsubscribedAt: now };
+  if (tx) {
+    tx.update(collection().doc(id), update);
+    return;
+  }
+  await collection().doc(id).update(update);
 }
 
 export async function listAllSubscribers(): Promise<NewsletterSubscriber[]> {

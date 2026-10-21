@@ -93,7 +93,7 @@ export function NewsletterSignup({
       />
       <div className="hidden" aria-hidden="true">
         <label>
-          Leave this field empty
+          {NEWSLETTER_COPY.honeypotLabel}
           <input
             type="text"
             name="_hp"

@@ -41,8 +41,22 @@ Subscribe 5 per hour per IP, unsubscribe 10 per hour per IP, using the shared sl
 `decideRateLimit`. The counter is in memory per server instance (the same known limitation as the
 vendor routes). The numbers are placeholders, not committee-approved values.
 
-`lib/newsletter-handler.ts` imports the decision through `lib/newsletter-rate-limit.ts`, a
-re-export, so the "sends no email" static check does not match the shared module's file name.
+- Key: the LAST `x-forwarded-for` hop, not the first. The first is client-supplied and spoofable;
+  the last is appended by Google's front end in front of App Hosting. If more trusted proxies are
+  ever added, clients share a key (over-limiting), never a bypass.
+- Once per request: each route wraps the store per request, so a Firestore transaction retry cannot
+  count one request twice.
+- `lib/newsletter-rate-limit.ts` holds the shared check (`consumeRateLimit`) and imports
+  `lib/resend-rate-limit.ts`, so `lib/newsletter-handler.ts` itself never names that file and the
+  "sends no email" static check (A11) stays meaningful.
+
+## Timing and races
+
+- A new address does a transaction write; an existing one does not. Successful subscribe responses
+  are padded to a 750 ms floor so the difference is not observable by timing. This is approximate,
+  not constant-time.
+- Unsubscribe does the token lookup and the status update in one Firestore transaction, so a racing
+  re-subscribe cannot leave a 200 "unsubscribed" response while the address stays subscribed.
 
 ## Pending committee copy
 
@@ -51,6 +65,12 @@ committee wording, marked `PENDING-COMMITTEE-COPY` in the source:
 
 - `success`: "You're subscribed."
 - `unsubscribeDone`: "You have been unsubscribed."
+
+## Copy gaps
+
+These strings have no golden entry (functional form and admin chrome), so they were placed in
+`NEWSLETTER_COPY` as-is and need a decision: `honeypotLabel`, `adminHeading`, `adminDownloadCsv`,
+the four `adminColumn*` labels, `adminCountSubscribed`, `adminCountUnsubscribed`, `adminNavLabel`.
 
 ## Follow-ups
 

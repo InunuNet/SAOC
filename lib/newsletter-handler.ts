@@ -9,7 +9,11 @@ import {
   normaliseNewsletterEmail,
   type NewsletterSubscriberDoc,
 } from './newsletter';
-import { decideRateLimit, type RateLimitAttempt } from './newsletter-rate-limit';
+import { NEWSLETTER_COPY } from '../components/chrome/newsletter-copy';
+import {
+  consumeRateLimit,
+  type RateLimitDeps as AttemptDeps,
+} from './newsletter-rate-limit';
 
 /**
  * Pure, injectable orchestrators for the newsletter routes (mission footer-newsletter-subscribe,
@@ -22,7 +26,6 @@ export const NEWSLETTER_RATE_LIMIT_MAX_ATTEMPTS = 5;
 export const NEWSLETTER_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 export const NEWSLETTER_UNSUBSCRIBE_RATE_LIMIT_MAX_ATTEMPTS = 10;
 
-const MS_PER_SECOND = 1000;
 const HTTP_OK = 200;
 const HTTP_BAD_REQUEST = 400;
 const HTTP_UNAUTHORIZED = 401;
@@ -30,10 +33,6 @@ const HTTP_FORBIDDEN = 403;
 const HTTP_TOO_MANY_REQUESTS = 429;
 const HTTP_SERVER_ERROR = 500;
 
-const ERROR_INVALID_EMAIL = 'Enter a valid email address.';
-const ERROR_GENERIC = 'Something went wrong. Please try again.';
-const ERROR_RATE_LIMITED = 'Too many attempts. Please try again later.';
-const ERROR_INVALID_TOKEN = 'This unsubscribe link is not valid.';
 
 export interface NewsletterHandlerResult {
   status: number;
@@ -41,10 +40,7 @@ export interface NewsletterHandlerResult {
   retryAfterSeconds?: number;
 }
 
-interface RateLimitDeps {
-  now: Date;
-  getPriorAttempts(key: string): RateLimitAttempt[];
-  recordAttempt(key: string, at: Date): void;
+interface RateLimitDeps extends AttemptDeps {
   logError(message: string, context: Record<string, string>): void;
 }
 
@@ -68,26 +64,17 @@ function asRecord(value: unknown): Record<string, unknown> {
   return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
 }
 
-/** Counts the attempt, then decides against the history read BEFORE it (the Nth attempt is allowed). */
 function checkRateLimit(
   deps: RateLimitDeps,
   key: string,
   maxAttempts: number,
 ): NewsletterHandlerResult | null {
-  const priorAttempts = deps.getPriorAttempts(key);
-  deps.recordAttempt(key, deps.now);
-  const decision = decideRateLimit({
-    key,
-    now: deps.now,
-    priorAttempts,
-    maxAttempts,
-    windowMs: NEWSLETTER_RATE_LIMIT_WINDOW_MS,
-  });
-  if (decision.allowed) return null;
+  const outcome = consumeRateLimit(deps, key, maxAttempts, NEWSLETTER_RATE_LIMIT_WINDOW_MS);
+  if (outcome.allowed) return null;
   return {
     status: HTTP_TOO_MANY_REQUESTS,
-    body: { error: ERROR_RATE_LIMITED },
-    retryAfterSeconds: Math.ceil((decision.retryAfterMs ?? 0) / MS_PER_SECOND),
+    body: { error: NEWSLETTER_COPY.rateLimited },
+    retryAfterSeconds: outcome.retryAfterSeconds,
   };
 }
 
@@ -106,11 +93,11 @@ export async function handleNewsletterSubscribe(
 
   const email = normaliseNewsletterEmail(body['email']);
   if (email === null) {
-    return { status: HTTP_BAD_REQUEST, body: { error: ERROR_INVALID_EMAIL, field: 'email' } };
+    return { status: HTTP_BAD_REQUEST, body: { error: NEWSLETTER_COPY.invalidEmail, field: 'email' } };
   }
   const source = body['source'];
   if (!isNewsletterSource(source)) {
-    return { status: HTTP_BAD_REQUEST, body: { error: ERROR_GENERIC } };
+    return { status: HTTP_BAD_REQUEST, body: { error: NEWSLETTER_COPY.genericError } };
   }
 
   const id = newsletterDocId(email);
@@ -129,7 +116,7 @@ export async function handleNewsletterSubscribe(
       email: maskEmail(email),
       exceptionType: error instanceof Error ? error.name : typeof error,
     });
-    return { status: HTTP_SERVER_ERROR, body: { error: ERROR_GENERIC } };
+    return { status: HTTP_SERVER_ERROR, body: { error: NEWSLETTER_COPY.genericError } };
   }
   return { status: HTTP_OK, body: { success: true } };
 }
@@ -147,7 +134,7 @@ export async function handleNewsletterUnsubscribe(
 
   const invalid: NewsletterHandlerResult = {
     status: HTTP_BAD_REQUEST,
-    body: { error: ERROR_INVALID_TOKEN },
+    body: { error: NEWSLETTER_COPY.unsubscribeInvalid },
   };
   const token = asRecord(input.body)['token'];
   if (!isWellFormedUnsubscribeToken(token)) return invalid;
@@ -161,7 +148,7 @@ export async function handleNewsletterUnsubscribe(
       operation: 'unsubscribe',
       exceptionType: error instanceof Error ? error.name : typeof error,
     });
-    return { status: HTTP_SERVER_ERROR, body: { error: ERROR_GENERIC } };
+    return { status: HTTP_SERVER_ERROR, body: { error: NEWSLETTER_COPY.genericError } };
   }
   return { status: HTTP_OK, body: { success: true } };
 }

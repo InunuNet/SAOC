@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getFirestore } from 'firebase-admin/firestore';
 
+import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
+import { initAdmin } from '@/lib/firebase-admin';
 import {
   handleNewsletterUnsubscribe,
   NEWSLETTER_RATE_LIMIT_WINDOW_MS,
 } from '@/lib/newsletter-handler';
-import { createAttemptStore, rateLimitKeyFromHeaders } from '@/lib/newsletter-rate-store';
+import {
+  createAttemptStore,
+  rateLimitKeyFromHeaders,
+  scopeAttemptsToRequest,
+} from '@/lib/newsletter-rate-store';
 import { findSubscriberByToken, markSubscriberUnsubscribed } from '@/lib/newsletter-store';
 
-const GENERIC_ERROR = 'Something went wrong. Please try again.';
 const HTTP_SERVER_ERROR = 500;
 
 const attempts = createAttemptStore(NEWSLETTER_RATE_LIMIT_WINDOW_MS);
@@ -25,16 +31,24 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await handleNewsletterUnsubscribe(
-      { body, rateLimitKey: rateLimitKeyFromHeaders(request.headers, 'newsletter-unsubscribe') },
-      {
-        now: new Date(),
-        getPriorAttempts: attempts.getPriorAttempts,
-        recordAttempt: attempts.recordAttempt,
-        findByToken: findSubscriberByToken,
-        markUnsubscribed: markSubscriberUnsubscribed,
-        logError,
-      },
+    initAdmin();
+    const requestAttempts = scopeAttemptsToRequest(attempts);
+    const rateLimitKey = rateLimitKeyFromHeaders(request.headers, 'newsletter-unsubscribe');
+    // Lookup and update share one transaction, so a re-subscribe racing this request either
+    // lands before the lookup (we unsubscribe it) or after the commit (it stays subscribed),
+    // and the 200 always matches the stored state at that moment.
+    const result = await getFirestore().runTransaction((tx) =>
+      handleNewsletterUnsubscribe(
+        { body, rateLimitKey },
+        {
+          now: new Date(),
+          getPriorAttempts: requestAttempts.getPriorAttempts,
+          recordAttempt: requestAttempts.recordAttempt,
+          findByToken: (token) => findSubscriberByToken(token, tx),
+          markUnsubscribed: (id, now) => markSubscriberUnsubscribed(id, now, tx),
+          logError,
+        },
+      ),
     );
     const headers: Record<string, string> = {};
     if (result.retryAfterSeconds !== undefined) {
@@ -46,6 +60,6 @@ export async function POST(request: NextRequest) {
       operation: 'unsubscribe',
       exceptionType: error instanceof Error ? error.name : typeof error,
     });
-    return NextResponse.json({ error: GENERIC_ERROR }, { status: HTTP_SERVER_ERROR });
+    return NextResponse.json({ error: NEWSLETTER_COPY.genericError }, { status: HTTP_SERVER_ERROR });
   }
 }

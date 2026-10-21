@@ -23,6 +23,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { getAuth, signOut } from 'firebase/auth';
 
+import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
 import { getFirebaseApp } from '@/lib/firebase';
 
 export type AdminNavVariant = 'bar' | 'minimal';
@@ -61,7 +62,7 @@ function buildLinks(canReviewVendors: boolean, canManagePaymentSettings: boolean
     links.push({ id: 'vendors', label: 'Vendors', href: '/admin/vendors' });
   }
   // Subscribers mirrors app/admin/newsletter/layout.tsx: an ok admin session, no capability.
-  links.push({ id: 'newsletter', label: 'Subscribers', href: '/admin/newsletter' });
+  links.push({ id: 'newsletter', label: NEWSLETTER_COPY.adminNavLabel, href: '/admin/newsletter' });
   if (canManagePaymentSettings) {
     links.push({ id: 'settings', label: 'Settings', href: '/admin/settings' });
   }

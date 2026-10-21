@@ -32,7 +32,39 @@ export function createAttemptStore(windowMs: number): AttemptStore {
   };
 }
 
+/**
+ * Wraps a store for ONE request. Firestore re-runs transaction callbacks on contention, and the
+ * handler calls getPriorAttempts/recordAttempt each time it runs; this snapshots the history on
+ * first read and records at most once, so a retried callback cannot count the request twice.
+ */
+export function scopeAttemptsToRequest(store: AttemptStore): AttemptStore {
+  const snapshots = new Map<string, RateLimitAttempt[]>();
+  const recorded = new Set<string>();
+  return {
+    getPriorAttempts: (key) => {
+      const cached = snapshots.get(key);
+      if (cached) return cached;
+      const fresh = store.getPriorAttempts(key);
+      snapshots.set(key, fresh);
+      return fresh;
+    },
+    recordAttempt: (key, at) => {
+      if (recorded.has(key)) return;
+      recorded.add(key);
+      store.recordAttempt(key, at);
+    },
+  };
+}
+
+/**
+ * Rate-limit key from the TRUSTED hop of x-forwarded-for: the LAST entry. Every proxy appends
+ * the address it received the connection from, so the first entry is whatever the client chose
+ * to send and can be spoofed to dodge the limit. The last entry is appended by Google's
+ * front end in front of App Hosting and cannot be forged by the client. If extra trusted
+ * proxies ever sit behind it, clients would share one key (over-limiting), never bypass it.
+ */
 export function rateLimitKeyFromHeaders(headers: Headers, scope: string): string {
-  const hop = headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+  const hops = headers.get('x-forwarded-for')?.split(',') ?? [];
+  const hop = hops[hops.length - 1]?.trim();
   return `${scope}:${hop || 'unknown'}`;
 }
