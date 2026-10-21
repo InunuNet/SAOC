@@ -64,7 +64,9 @@ const NARROW_GUTTER = 20;
 /** Transparent left inset baked into the 560px NOS header PNG, as displayed at 280px (measured:
  *  26px of 560). The header cell's left padding is cut by exactly this so the artwork, not the
  *  PNG edge, lines up with the text edge. The asset itself is never cropped. */
-const NOS_HEADER_LOGO_INSET = 13;
+// Header cell left padding after the inset cut: 40 - 13 on desktop, 20 - 13 at <=620.
+const HEADER_PAD_LEFT = '27px';
+const HEADER_PAD_LEFT_NARROW = '7px';
 const HEADER_LOGO_WIDTH = 280;
 const HEADER_LOGO_HEIGHT = 69;
 const FOOTER_MARK_HEIGHT = 48;
@@ -89,7 +91,7 @@ function shellCss(t: ShellTheme): string {
   @media only screen and (max-width: ${STACK_BREAKPOINT}px) {
     .shell-container { width: 100% !important; }
     .shell-gutter { padding-left: 20px !important; padding-right: 20px !important; }
-    .shell-header-nos { padding-left: ${NARROW_GUTTER - NOS_HEADER_LOGO_INSET}px !important; padding-right: ${NARROW_GUTTER}px !important; }
+    .shell-header-nos { padding-left: ${HEADER_PAD_LEFT_NARROW} !important; padding-right: ${NARROW_GUTTER}px !important; }
     .shell-label { display: block !important; width: 100% !important; padding: 12px 0 4px 0 !important; }
     .shell-value { display: block !important; width: 100% !important; padding: 0 !important; }
   }
@@ -122,7 +124,7 @@ function Header({ theme: t }: { theme: ShellTheme }) {
         align="left"
         style={{
           backgroundColor: t.header,
-          padding: `28px ${GUTTER}px 28px ${GUTTER - NOS_HEADER_LOGO_INSET}px`,
+          padding: `28px ${GUTTER}px 28px ${HEADER_PAD_LEFT}`,
         }}
       >
         <Img
@@ -170,7 +172,7 @@ function BrandedFooter({ theme: t }: { theme: ShellTheme }) {
                 style={{ padding: '16px 0 0', width: `${FOOTER_MARK_HEIGHT + FOOTER_MARK_GAP}px` }}
               >
                 <Img
-                  src={logoUrl('nos-ink-purple-vertical-96.png')}
+                  src={logoUrl('nos-ink-purple-vertical-96h.png')}
                   alt=""
                   width={FOOTER_MARK_WIDTH}
                   height={FOOTER_MARK_HEIGHT}
@@ -549,4 +551,21 @@ export function ShellLink({ href, children }: { href: string; children: ReactNod
 export function ShellFootnote({ children }: { children: ReactNode }) {
   const t = useContext(ThemeContext);
   return <p style={{ ...footerLineStyle(t), margin: '8px 0 0' }}>{children}</p>;
+}
+
+// Small outlined status pill for an unknown value, e.g. "To be confirmed".
+export function ShellPill({ children }: { children: ReactNode }) {
+  const t = useContext(ThemeContext);
+  return (
+    <span
+      style={{
+        border: `1px solid ${t.muted}`,
+        borderRadius: '999px',
+        padding: '1px 8px',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {children}
+    </span>
+  );
 }

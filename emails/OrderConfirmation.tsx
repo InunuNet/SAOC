@@ -5,6 +5,7 @@ import EmailShell, {
   ShellFootnote,
   ShellHeading,
   ShellLink,
+  ShellPill,
   ShellRule,
   ShellText,
 } from './_shared/EmailShell';
@@ -68,7 +69,7 @@ export default function OrderConfirmation({
       ))}
       <ShellRule />
       <ShellText size="small">
-        Present this ticket — or just the booking reference — at the door for check-in.
+        Present this ticket at the door for check in.
       </ShellText>
       {recoveryUrl !== null && (
         <ShellText size="small">
@@ -78,7 +79,8 @@ export default function OrderConfirmation({
       )}
       <ShellFootnote>
         In an emergency: 10111 Police (national) · 10177 Ambulance and fire (national) · 112 All
-        emergencies, from a mobile phone
+        emergencies, from a mobile phone · On-site first aid and show duty contact{' '}
+        <ShellPill>To be confirmed</ShellPill>
       </ShellFootnote>
     </EmailShell>
   );

@@ -22,8 +22,8 @@ interface FamilyPick {
 
 // Subjects are the templates' real production subjects.
 const FAMILY_PICKS: Record<string, FamilyPick> = {
-  A: { fixtureName: 'VendorPaymentConfirmation', subject: 'Your National Orchid Show stand payment is confirmed' },
-  B: { fixtureName: 'VendorApplicationConfirmation', subject: 'We received your vendor application — SAOC' },
+  A: { fixtureName: 'OrderConfirmation', subject: 'Your National Orchid Show order is confirmed' },
+  B: { fixtureName: 'VendorApprovalConfirmationWithCode', subject: 'Your SAOC vendor application has been approved' },
   C: { fixtureName: 'VendorApplicationAdminNotice', subject: 'New vendor application submitted — SAOC' },
 };
 
