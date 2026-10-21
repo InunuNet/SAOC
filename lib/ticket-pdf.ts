@@ -92,32 +92,40 @@ const OLIVE = hex('#a7a841');
 const RULE = hex('#e3e1c9');
 const WHITE = hex('#ffffff');
 const BLACK = hex('#000000');
-const BAND_TEXT = GOLD_200;
+const BAND_TEXT = GOLD_200; // text on the royal header band
 
 // ---- copy that already exists elsewhere on the site (allowed-strings.txt) ----
 const DEFAULT_PENDING_LABEL = 'To be confirmed';
 const DEFAULT_TIMES_HEADING = 'Opening times';
-const INSTRUCTION = 'Present this ticket — or just the booking reference — at the door for check-in.';
+const INSTRUCTION = 'Present this ticket at the door for check in.';
 const FOOTER_REG = 'REG# 1978/004040/08 NPO 043-901';
 const FOOTER_LINE = 'South African Orchid Council — saoc.co.za';
 
-// ---- layout measures, mm from the top-left (layout-spec.md) ----
-const MARGIN_X = 14;
+// ---- layout measures, mm from the top-left (layout-spec.md, Codi's artifact) ----
+const MARGIN_X = 13.9;
 const RIGHT_X = 196;
 const CONTENT_WIDTH = RIGHT_X - MARGIN_X;
-const CARD_TOP = 38;
-const CARD_BOTTOM = 140;
+const HEADER_HEIGHT = 29.8;
+const HEADER_LOGO_WIDTH = 70.3;
+const CARD_TOP = 40;
+const CARD_BOTTOM = 143.9;
 const CARD_RADIUS = 3.7;
 const PERFORATION_X = 108.3;
-const STUB_PADDING = 9;
-const QR_MODULE_AREA_MM = 50;
-const QR_QUIET_MODULES = 4;
-const QR_PAD_MM = 3.2;
-const QR_TILE_TOP = 41;
+const STUB_TEXT_X = 22.9;
+const QR_MODULE_AREA_MM = 55;
+const QR_TOP = 58.4;
+const VISIT_HEADING_Y = 155.5;
 const BAND_TRACKING = 0.14;
 const REF_TRACKING = 0.08;
 const PILL_HEIGHT = 4.2;
 const PILL_PAD_X = 2.4;
+const FOOTNOTE_SIZE = 9;
+const FOOTNOTE_Y = 224;
+const INSTRUCTION_Y = 242;
+const FOOTER_RULE_Y = 250;
+const FOOTER_TEXT_Y = 257;
+const FOOTER_SMALL_SIZE = 7.5;
+const FOOTER_MARK_HEIGHT = 12.7;
 const FONT_DIR = 'lib/ticket-pdf-assets';
 
 interface Fonts {
@@ -262,7 +270,8 @@ function drawWrapped(
   ctx: Ctx,
   text: string,
   at: { x: number; y: number; maxWidth: number; maxLines: number; lineHeight: number },
-  size: number
+  size: number,
+  color: Color = INK
 ): number {
   const lines = wrap(text, ctx.fonts.body, size, at.maxWidth).slice(0, at.maxLines);
   lines.forEach((line, i) =>
@@ -271,7 +280,7 @@ function drawWrapped(
       y: at.y + i * at.lineHeight,
       font: ctx.fonts.body,
       size,
-      color: INK,
+      color,
     })
   );
   return at.y + Math.max(lines.length - 1, 0) * at.lineHeight;
@@ -311,68 +320,33 @@ function caps(ctx: Ctx, text: string, x: number, y: number, color: Color, size =
   });
 }
 
-// ---- bands ----
+// ---- header ----
 
 function drawHeader(ctx: Ctx, index: number, total: number): void {
-  fillRect(ctx, 0, 0, A4_WIDTH_MM, 30, ROYAL);
+  fillRect(ctx, 0, 0, A4_WIDTH_MM, HEADER_HEIGHT, ROYAL);
   const { width, height } = ctx.logos.horizontal;
-  const logoWidthMm = 70;
-  const logoHeightMm = (logoWidthMm * height) / width;
+  const logoHeightMm = (HEADER_LOGO_WIDTH * height) / width;
   ctx.page.drawImage(ctx.logos.horizontal, {
     x: mm(17.5),
-    y: PAGE_HEIGHT - mm((30 + logoHeightMm) / 2),
-    width: mm(logoWidthMm),
+    y: PAGE_HEIGHT - mm((HEADER_HEIGHT + logoHeightMm) / 2),
+    width: mm(HEADER_LOGO_WIDTH),
     height: mm(logoHeightMm),
   });
   drawText(ctx, 'ADMIT ONE', {
     x: RIGHT_X,
-    y: 13,
+    y: 11.5,
     font: ctx.fonts.bold,
-    size: 8,
+    size: 7.5,
     color: BAND_TEXT,
     tracking: BAND_TRACKING,
     align: 'right',
   });
   drawText(ctx, `Ticket ${index + 1} of ${total}`, {
     x: RIGHT_X,
-    y: 19,
+    y: 17.3,
     font: ctx.fonts.body,
-    size: 9,
+    size: 8.5,
     color: BAND_TEXT,
-    align: 'right',
-  });
-}
-
-function drawFooter(ctx: Ctx, orderReference: string | null, index: number, total: number): void {
-  const top = 262;
-  fillRect(ctx, 0, top, A4_WIDTH_MM, A4_HEIGHT_MM - top, ROYAL);
-  const { width, height } = ctx.logos.vertical;
-  const logoWidthMm = 30;
-  const logoHeightMm = (logoWidthMm * height) / width;
-  ctx.page.drawImage(ctx.logos.vertical, {
-    x: mm(MARGIN_X),
-    y: PAGE_HEIGHT - mm(top + (A4_HEIGHT_MM - top + logoHeightMm) / 2),
-    width: mm(logoWidthMm),
-    height: mm(logoHeightMm),
-  });
-  const textX = MARGIN_X + logoWidthMm + 8;
-  drawText(ctx, FOOTER_REG, {
-    x: textX,
-    y: 277,
-    font: ctx.fonts.bold,
-    size: 7.5,
-    color: BAND_TEXT,
-    tracking: BAND_TRACKING,
-  });
-  drawText(ctx, FOOTER_LINE, { x: textX, y: 283.5, font: ctx.fonts.body, size: 9, color: BAND_TEXT });
-  const page = `PAGE ${index + 1} OF ${total}`;
-  drawText(ctx, orderReference ? `ORDER ${orderReference} · ${page}` : page, {
-    x: RIGHT_X,
-    y: 277,
-    font: ctx.fonts.bold,
-    size: 7,
-    color: BAND_TEXT,
-    tracking: BAND_TRACKING,
     align: 'right',
   });
 }
@@ -384,66 +358,66 @@ function drawSchedule(ctx: Ctx, schedule: TicketPdfSchedule | null | undefined, 
   if (schedule?.numeral && schedule.dateText) {
     const numeralWidth = drawText(ctx, schedule.numeral, {
       x,
-      y: 80,
+      y: 88,
       font: fonts.display,
       size: 44,
       color: ROYAL,
     });
     const textX = x + numeralWidth + 4;
-    const room = PERFORATION_X - STUB_PADDING * 0.5 - textX;
+    const room = PERFORATION_X - 6 - textX;
     drawText(ctx, schedule.dateText, {
       x: textX,
-      y: 72.5,
+      y: 86.9,
       font: fonts.bold,
-      size: 11,
+      size: 10.5,
       color: ROYAL,
       maxWidth: room,
     });
     if (schedule.timeText) {
       drawText(ctx, schedule.timeText, {
         x: textX,
-        y: 79,
+        y: 92,
         font: fonts.body,
         size: 10,
         color: INK,
         maxWidth: room,
       });
     } else {
-      drawPill(ctx, textX, 74.5);
+      drawPill(ctx, textX, 88.6);
     }
     return;
   }
-  drawPill(ctx, x, 70);
+  drawPill(ctx, x, 79);
 }
 
 function drawStub(ctx: Ctx, position: TicketPdfPosition): void {
   const { fonts } = ctx;
-  const x = MARGIN_X + STUB_PADDING;
-  const room = PERFORATION_X - x - STUB_PADDING * 0.7;
-  if (position.schedule?.eyebrow) caps(ctx, position.schedule.eyebrow, x, 47.5, MUTED, 8);
+  const x = STUB_TEXT_X;
+  const room = 100 - x;
+  if (position.schedule?.eyebrow) caps(ctx, position.schedule.eyebrow, x, 50.4, MUTED, 7.5);
   drawText(ctx, position.ticketType, {
     x,
-    y: 59,
+    y: 63.5,
     font: fonts.display,
-    size: 30,
+    size: 29,
     color: ROYAL,
     maxWidth: room,
   });
-  fillRect(ctx, x, 63.5, room, 0.5, OLIVE);
+  fillRect(ctx, x, 71.6, room, 0.5, OLIVE);
   drawSchedule(ctx, position.schedule, x);
-  caps(ctx, 'Attendee', x, 98, MUTED);
+  caps(ctx, 'Attendee', x, 110.4, MUTED);
   drawText(ctx, position.attendeeName, {
     x,
-    y: 108,
-    font: fonts.display,
-    size: 21,
+    y: 115.5,
+    font: fonts.bold,
+    size: 12,
     color: ROYAL,
     maxWidth: room,
   });
-  caps(ctx, 'Booking reference', x, 122, MUTED);
+  caps(ctx, 'Booking reference', x, 123.6, MUTED);
   drawText(ctx, position.bookingRef, {
     x,
-    y: 130,
+    y: 128.9,
     font: fonts.bold,
     size: 11,
     color: ROYAL,
@@ -452,16 +426,12 @@ function drawStub(ctx: Ctx, position: TicketPdfPosition): void {
   });
 }
 
-/** QR as one vector path: 50 mm module area, 4-module quiet zone, 3.2 mm tile padding. */
+/** QR as one vector path: ~55 mm of black modules on the white tile (the tile is the quiet zone). */
 function drawQrTile(ctx: Ctx, bookingRef: string): void {
   const modules = createQr(bookingRef).modules;
   const moduleMm = QR_MODULE_AREA_MM / modules.size;
-  const quietMm = QR_QUIET_MODULES * moduleMm + QR_PAD_MM;
-  const tileMm = QR_MODULE_AREA_MM + quietMm * 2;
   const centreX = (PERFORATION_X + RIGHT_X) / 2;
   const originX = centreX - QR_MODULE_AREA_MM / 2;
-  const originY = QR_TILE_TOP + quietMm;
-  fillRect(ctx, centreX - tileMm / 2, QR_TILE_TOP, tileMm, tileMm, WHITE);
 
   const runs: string[] = [];
   for (let row = 0; row < modules.size; row++) {
@@ -469,7 +439,7 @@ function drawQrTile(ctx: Ctx, bookingRef: string): void {
       if (!modules.get(row, col)) continue;
       let end = col;
       while (end + 1 < modules.size && modules.get(row, end + 1)) end++;
-      const [rx, ry] = [mm(originX + col * moduleMm), mm(originY + row * moduleMm)];
+      const [rx, ry] = [mm(originX + col * moduleMm), mm(QR_TOP + row * moduleMm)];
       const rw = mm((end - col + 1) * moduleMm);
       runs.push(`M ${rx} ${ry} h ${rw} v ${mm(moduleMm)} h ${-rw} Z`);
       col = end;
@@ -477,21 +447,20 @@ function drawQrTile(ctx: Ctx, bookingRef: string): void {
   }
   ctx.page.drawSvgPath(runs.join(' '), { x: 0, y: PAGE_HEIGHT, color: BLACK });
 
-  const labelY = QR_TILE_TOP + tileMm + 7;
   drawText(ctx, 'SCAN AT THE DOOR', {
     x: centreX,
-    y: labelY,
+    y: 125.9,
     font: ctx.fonts.bold,
-    size: 8,
+    size: 7,
     color: ROYAL,
     tracking: BAND_TRACKING,
     align: 'center',
   });
   drawText(ctx, bookingRef, {
     x: centreX,
-    y: labelY + 7,
-    font: ctx.fonts.display,
-    size: 12,
+    y: 131.7,
+    font: ctx.fonts.bold,
+    size: 10.5,
     color: ROYAL,
     tracking: REF_TRACKING,
     align: 'center',
@@ -515,26 +484,9 @@ function drawCard(ctx: Ctx, position: TicketPdfPosition): void {
     WHITE,
     RULE
   );
-  dashedLine(ctx, [PERFORATION_X, CARD_TOP + 1], [PERFORATION_X, CARD_BOTTOM - 1], ROYAL, [1.2, 1]);
+  dashedLine(ctx, [PERFORATION_X, CARD_TOP + 1], [PERFORATION_X, CARD_BOTTOM - 1], ROYAL, [1, 1]);
   drawStub(ctx, position);
   drawQrTile(ctx, position.bookingRef);
-}
-
-function drawFoldRule(ctx: Ctx): void {
-  const y = 146;
-  dashedLine(ctx, [MARGIN_X, y], [RIGHT_X, y], MUTED, [2, 1.5]);
-  const label = 'FOLD HERE';
-  const width = textWidthPt(label, ctx.fonts.bold, 7, BAND_TRACKING) / PT_PER_MM;
-  fillRect(ctx, 105 - width / 2 - 3, y - 2.2, width + 6, 4.4, GOLD_100);
-  drawText(ctx, label, {
-    x: 105,
-    y: y + 0.9,
-    font: ctx.fonts.bold,
-    size: 7,
-    color: MUTED,
-    tracking: BAND_TRACKING,
-    align: 'center',
-  });
 }
 
 // ---- visit information ----
@@ -548,31 +500,35 @@ function rowOrPill(ctx: Ctx, value: string | null, x: number, y: number, maxWidt
     drawPill(ctx, x, y - 3.2);
     return y + PILL_HEIGHT;
   }
-  return drawWrapped(ctx, value, { x, y, maxWidth, maxLines: 3, lineHeight: 4.2 }, 9.5) + 4.6;
+  return drawWrapped(ctx, value, { x, y, maxWidth, maxLines: 3, lineHeight: 4.6 }, 9) + 5;
 }
 
 function drawVenueColumn(ctx: Ctx, visit: TicketPdfVisit): void {
   const x = MARGIN_X;
-  heading(ctx, 'The venue', x, 158);
-  let y = rowOrPill(ctx, visit.venueName, x, 164, 62);
-  y = rowOrPill(ctx, visit.venueAddress, x, y, 62);
+  heading(ctx, 'The venue', x, VISIT_HEADING_Y);
+  if (visit.venueName) {
+    drawText(ctx, visit.venueName, { x, y: 163, font: ctx.fonts.bold, size: 9, color: ROYAL, maxWidth: 62 });
+  } else {
+    drawPill(ctx, x, 159.8);
+  }
+  const y = rowOrPill(ctx, visit.venueAddress, x, 168, 62);
   caps(ctx, 'Parking and entrance', x, y + 1, MUTED, 6.5);
   rowOrPill(ctx, visit.venueParking, x, y + 5.5, 62);
 }
 
 function drawTimesColumn(ctx: Ctx, position: TicketPdfPosition, visit: TicketPdfVisit): void {
-  const x = 82;
-  heading(ctx, position.timesHeading ?? DEFAULT_TIMES_HEADING, x, 158);
+  const x = 82.2;
+  heading(ctx, position.timesHeading ?? DEFAULT_TIMES_HEADING, x, VISIT_HEADING_Y);
   const times = position.times ?? visit.openingTimes ?? [];
   if (times.length === 0) {
     rowOrPill(ctx, null, x, 164, 56);
     return;
   }
   times.slice(0, 5).forEach((time, i) => {
-    const y = 164 + i * 5.6;
+    const y = 164 + i * 7;
     drawText(ctx, time.label, { x, y, font: ctx.fonts.bold, size: 9, color: ROYAL });
     if (time.value) {
-      drawText(ctx, time.value, { x: x + 16, y, font: ctx.fonts.body, size: 9.5, color: INK, maxWidth: 40 });
+      drawText(ctx, time.value, { x: x + 16, y, font: ctx.fonts.body, size: 9, color: INK, maxWidth: 40 });
     } else {
       drawPill(ctx, x + 16, y - 3.2);
     }
@@ -580,55 +536,107 @@ function drawTimesColumn(ctx: Ctx, position: TicketPdfPosition, visit: TicketPdf
 }
 
 function drawDatesColumn(ctx: Ctx, visit: TicketPdfVisit): void {
-  const x = 142.7;
-  heading(ctx, 'Show dates', x, 158);
-  const y = rowOrPill(ctx, visit.showDates, x, 164, RIGHT_X - x);
+  const x = 142.5;
+  heading(ctx, 'Show dates', x, VISIT_HEADING_Y);
+  const y = rowOrPill(ctx, visit.showDates, x, 163, RIGHT_X - x);
   if (visit.showUrl) {
-    drawText(ctx, visit.showUrl, { x, y, font: ctx.fonts.body, size: 9.5, color: INK, maxWidth: RIGHT_X - x });
+    drawText(ctx, visit.showUrl, { x, y, font: ctx.fonts.body, size: 9, color: INK, maxWidth: RIGHT_X - x });
   }
 }
 
-function drawEmergency(ctx: Ctx, visit: TicketPdfVisit): void {
-  fillRounded(ctx, [MARGIN_X, 198, CONTENT_WIDTH, 30], Array(4).fill(CARD_RADIUS), GOLD_200);
-  heading(ctx, 'In an emergency', 18, 206);
-  const columns = [18, 58, 98];
-  if (visit.emergency.length === 0) drawPill(ctx, columns[0], 211);
-  visit.emergency.slice(0, 3).forEach((contact, i) => {
-    drawText(ctx, contact.number, {
-      x: columns[i],
-      y: 217,
-      font: ctx.fonts.display,
-      size: 22,
-      color: ROYAL,
-    });
-    drawWrapped(ctx, contact.label, { x: columns[i], y: 221.6, maxWidth: 36, maxLines: 2, lineHeight: 3.4 }, 8.5);
+// ---- footnote and footer ----
+
+/** One 12px footnote: the emergency numbers on one line, the on-site contact (or its pill) after. */
+function drawEmergencyFootnote(ctx: Ctx, visit: TicketPdfVisit): void {
+  const { fonts } = ctx;
+  const prefix = 'In an emergency:';
+  const prefixWidth = drawText(ctx, prefix, {
+    x: MARGIN_X,
+    y: FOOTNOTE_Y,
+    font: fonts.bold,
+    size: FOOTNOTE_SIZE,
+    color: MUTED,
   });
-  caps(ctx, 'On-site first aid and show duty contact', 138, 209.5, MUTED, 5.5);
-  if (visit.onSiteContact) {
-    drawWrapped(ctx, visit.onSiteContact, { x: 138, y: 215, maxWidth: 54, maxLines: 3, lineHeight: 4 }, 9.5);
+  const numbers = visit.emergency.map((contact) => `${contact.number} ${contact.label}`).join(' · ');
+  if (numbers) {
+    drawWrapped(
+      ctx,
+      numbers,
+      { x: MARGIN_X + prefixWidth + 1.5, y: FOOTNOTE_Y, maxWidth: CONTENT_WIDTH - prefixWidth - 1.5, maxLines: 1, lineHeight: 4.4 },
+      FOOTNOTE_SIZE,
+      MUTED
+    );
   } else {
-    drawPill(ctx, 138, 212);
+    drawPill(ctx, MARGIN_X + prefixWidth + 2, FOOTNOTE_Y - 3.2);
+  }
+  const onSite = 'On-site first aid and show duty contact';
+  const onSiteWidth = drawText(ctx, onSite, {
+    x: MARGIN_X,
+    y: FOOTNOTE_Y + 4.8,
+    font: fonts.bold,
+    size: FOOTNOTE_SIZE,
+    color: MUTED,
+  });
+  if (visit.onSiteContact) {
+    drawText(ctx, visit.onSiteContact, {
+      x: MARGIN_X + onSiteWidth + 2,
+      y: FOOTNOTE_Y + 4.8,
+      font: fonts.body,
+      size: FOOTNOTE_SIZE,
+      color: MUTED,
+    });
+  } else {
+    drawPill(ctx, MARGIN_X + onSiteWidth + 2, FOOTNOTE_Y + 1.6);
   }
 }
 
-function drawOrganiser(ctx: Ctx, visit: TicketPdfVisit): void {
-  heading(ctx, 'Organiser', MARGIN_X, 237);
-  if (visit.organiser) {
-    drawText(ctx, visit.organiser, { x: MARGIN_X, y: 242.5, font: ctx.fonts.body, size: 9.5, color: INK });
-  }
-  caps(ctx, 'Show office', MARGIN_X, 247.5, MUTED, 6.5);
+function drawFooter(
+  ctx: Ctx,
+  input: TicketPdfInput,
+  index: number
+): void {
+  const { fonts, logos, pendingLabel } = ctx;
+  const { visit } = input;
+  const page = `PAGE ${index + 1} OF ${input.positions.length}`;
+  drawText(ctx, INSTRUCTION, { x: MARGIN_X, y: INSTRUCTION_Y, font: fonts.body, size: 9, color: INK, maxWidth: CONTENT_WIDTH });
+  fillRect(ctx, MARGIN_X, FOOTER_RULE_Y, CONTENT_WIDTH, 0.25, MUTED);
+
+  const { width, height } = logos.vertical;
+  const markWidth = (FOOTER_MARK_HEIGHT * width) / height;
+  ctx.page.drawImage(logos.vertical, {
+    x: mm(MARGIN_X),
+    y: PAGE_HEIGHT - mm(FOOTER_TEXT_Y - 3 + FOOTER_MARK_HEIGHT),
+    width: mm(markWidth),
+    height: mm(FOOTER_MARK_HEIGHT),
+  });
+  const x = MARGIN_X + markWidth + 4;
+  const line = (text: string, y: number) =>
+    drawText(ctx, text, { x, y, font: fonts.body, size: FOOTNOTE_SIZE, color: MUTED, maxWidth: RIGHT_X - x });
+  line(FOOTER_LINE, FOOTER_TEXT_Y);
+  line(FOOTER_REG, FOOTER_TEXT_Y + 4.8);
+  const org = `Organiser ${visit.organiser ?? pendingLabel} · Show office`;
+  const orgWidth = drawText(ctx, org, { x, y: FOOTER_TEXT_Y + 9.6, font: fonts.body, size: FOOTER_SMALL_SIZE, color: MUTED });
   if (visit.showOffice) {
-    drawText(ctx, visit.showOffice, { x: MARGIN_X + 22, y: 247.5, font: ctx.fonts.body, size: 9.5, color: INK });
+    drawText(ctx, visit.showOffice, { x: x + orgWidth + 1.5, y: FOOTER_TEXT_Y + 9.6, font: fonts.body, size: FOOTER_SMALL_SIZE, color: MUTED });
   } else {
-    drawPill(ctx, MARGIN_X + 22, 244.3);
+    drawPill(ctx, x + orgWidth + 2, FOOTER_TEXT_Y + 6.6);
   }
-  heading(ctx, 'Questions', 108, 237);
-  if (visit.questionsEmail) {
-    drawText(ctx, visit.questionsEmail, { x: 108, y: 242.5, font: ctx.fonts.body, size: 9.5, color: INK });
-  } else {
-    drawPill(ctx, 108, 239.3);
-  }
-  drawText(ctx, 'Quote your booking reference.', { x: 108, y: 247.5, font: ctx.fonts.body, size: 9.5, color: INK });
+  drawText(ctx, `Questions ${visit.questionsEmail ?? pendingLabel} · Quote your booking reference.`, {
+    x,
+    y: FOOTER_TEXT_Y + 14.2,
+    font: fonts.body,
+    size: FOOTER_SMALL_SIZE,
+    color: MUTED,
+  });
+  drawText(ctx, input.orderReference ? `ORDER ${input.orderReference} · ${page}` : page, {
+    x: RIGHT_X,
+    y: FOOTER_TEXT_Y,
+    font: fonts.bold,
+    size: 6.5,
+    color: MUTED,
+    tracking: BAND_TRACKING,
+    align: 'right',
+  });
 }
 
 function drawPage(
@@ -640,14 +648,11 @@ function drawPage(
   fillRect(ctx, 0, 0, A4_WIDTH_MM, A4_HEIGHT_MM, GOLD_100);
   drawHeader(ctx, index, input.positions.length);
   drawCard(ctx, position);
-  drawFoldRule(ctx);
   drawVenueColumn(ctx, input.visit);
   drawTimesColumn(ctx, position, input.visit);
   drawDatesColumn(ctx, input.visit);
-  drawEmergency(ctx, input.visit);
-  drawOrganiser(ctx, input.visit);
-  drawText(ctx, INSTRUCTION, { x: MARGIN_X, y: 257, font: ctx.fonts.body, size: 9, color: INK, maxWidth: CONTENT_WIDTH });
-  drawFooter(ctx, input.orderReference ?? null, index, input.positions.length);
+  drawEmergencyFootnote(ctx, input.visit);
+  drawFooter(ctx, input, index);
 }
 
 async function loadAssets(pdf: PDFDocument): Promise<{ fonts: Fonts; logos: Logos }> {
@@ -655,8 +660,8 @@ async function loadAssets(pdf: PDFDocument): Promise<{ fonts: Fonts; logos: Logo
     readAsset('Fraunces-Light.ttf'),
     readAsset('Karla-Bold.ttf'),
     readAsset('fonts/Karla-Regular.woff'),
-    readAsset('nos-reversed-gold-horizontal-1600.png'),
-    readAsset('nos-reversed-gold-vertical-700.png'),
+    readAsset('nos-full-colour-reversed-horizontal-1600.png'),
+    readAsset('nos-ink-purple-vertical-500.png'),
   ]);
   return {
     fonts: {
