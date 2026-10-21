@@ -2730,3 +2730,12 @@ Cron c8d8059d (health checks) is session-only — re-create next session.
 - App Hosting rollout-2026-10-20-004 SUCCEEDED; 0 ERROR logs in 12h; beta smoke 6/6 (5×200, 1×404).
 - Firestore: 29 sandbox orders stranded `reserved` past expiry, unchanged and none new since 10-19.
 - **reconcile-orders never runs:** the Cloud Scheduler API is NOT enabled on saoc-webapp (PERMISSION_DENIED listing jobs), so no job exists. That explains why there are no alerts. Enabling it is a GCP project config change, so it needs Brad's OK.
+- [ ] 2026-10-21 NEW LEE-ANN SOURCE: "SAOC /3. Societies/All Society data and history.docx" (Drive 1cSEjn8Dg-WXOKq-ZWEYKiDpy5dc3yULW, 2026-10-21 17:16Z). It covers 12 societies with contacts, meetings, committee, socials and history, and is synced to content/drive-source v1.0. NOS Site gap report: .tmp/sandbox/society-gap/gap-report.md in the NOS Site tree.
+  - Sanity `society` has no fields for email, phone, committee or socials, so adding them is a schema/design decision.
+  - 5 societies have no page.
+  - 15 site societies are not in her doc.
+  - Founding years conflict with our placeholders; hers win.
+  - Questions were appended to the Lee-Ann doc as "Questions — 21 October 2026" (gws working again). That covers the queued 10-20 items (Form access, /events lede) and the society items. Build is queued after the r-queue, pending her answers.
+- [ ] 2026-10-21 Hygiene: wt-f31 removed (merged). Memory PR #12 merged as 2e6765ec. NOS Site PR #13 (memory/specs) conflicts with #12, and its E2E failed on a next/font/google fetch, so it needs a rebase and re-run.
+  - Brad decides: branding/ working-tree changes (r1–r4 emblem PNGs deleted, Eulophia-speciosa-emblem.png and National Show 2027/Word Templates/ (23MB) added) are his, uncommitted and untouched by me.
+  - Also Brad: NOS Site's feat/nos-hero-lockup (15 unapplied commits) and its stash "main-tree-move 20261019" (archive folder gone, so the stash may be the only copy).
