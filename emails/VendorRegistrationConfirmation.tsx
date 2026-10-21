@@ -17,7 +17,7 @@ export default function VendorRegistrationConfirmation({
 }: VendorRegistrationConfirmationProps) {
   return (
     <EmailShell family="B" preview="We received your vendor registration — SAOC">
-      <ShellHeading>Vendor Registration Received</ShellHeading>
+      <ShellHeading>Vendor registration received</ShellHeading>
       <ShellText>Dear {contactPersonName},</ShellText>
       <ShellText>
         Thank you for registering <strong>{businessName}</strong> as a vendor for the National Orchid Show. We have received your submission.

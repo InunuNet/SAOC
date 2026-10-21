@@ -541,3 +541,9 @@ export function ShellLink({ href, children }: { href: string; children: ReactNod
     </a>
   );
 }
+
+// One-line 12px secondary note above the footer, e.g. the order email's emergency numbers.
+export function ShellFootnote({ children }: { children: ReactNode }) {
+  const t = useContext(ThemeContext);
+  return <p style={{ ...footerLineStyle(t), margin: '8px 0 0' }}>{children}</p>;
+}

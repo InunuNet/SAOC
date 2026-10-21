@@ -29,9 +29,9 @@ export default function VendorPaymentConfirmation({
 }: VendorPaymentConfirmationProps) {
   return (
     <EmailShell family="A" preview="Your National Orchid Show stand payment is confirmed">
-      <ShellHeading>Stand Payment Confirmed</ShellHeading>
+      <ShellHeading>Stand payment confirmed</ShellHeading>
       <ShellText>
-        Thank you -- <strong>{businessName}</strong>&rsquo;s stand payment for the National Orchid Show has been received.
+        Thank you — <strong>{businessName}</strong>&rsquo;s stand payment for the National Orchid Show has been received.
       </ShellText>
       <ShellDetailRow label="Booth size:">{boothSize}</ShellDetailRow>
       <ShellDetailRow label="Amount paid:">R{amount.toFixed(2)}</ShellDetailRow>

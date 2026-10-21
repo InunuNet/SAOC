@@ -191,22 +191,22 @@ export default function VendorApprovalConfirmation({
       }
     >
       <ShellHeading>
-        {registrationLink ? 'Vendor Application Approved' : 'Vendor Registration Approved'}
+        {registrationLink ? 'Vendor application approved' : 'Vendor registration approved'}
       </ShellHeading>
       <ShellText>Dear {contactPersonName},</ShellText>
       {registrationLink ? (
         <>
           <ShellText>
-            Good news -- your vendor application for <strong>{businessName}</strong> at the
+            Good news — your vendor application for <strong>{businessName}</strong> at the
             National Orchid Show has been approved.
           </ShellText>
           <ShellSubheading>Your registration code</ShellSubheading>
           <ShellCodeBlock>
-            {businessName}-{formatRegistrationCodeForReadAloud(registrationCode)}
+            {formatRegistrationCodeForReadAloud(registrationCode)}
           </ShellCodeBlock>
           <ShellText>
             Go to the full registration form and enter your business name and this 4-digit
-            code to continue. Keep this code -- you (or the show office) may need to read it
+            code to continue. Keep this code — you (or the show office) may need to read it
             aloud.
           </ShellText>
           <ShellText>
@@ -216,7 +216,7 @@ export default function VendorApprovalConfirmation({
       ) : (
         <>
           <ShellText>
-            Good news -- your vendor registration for <strong>{businessName}</strong> at the
+            Good news — your vendor registration for <strong>{businessName}</strong> at the
             National Orchid Show has been approved.
           </ShellText>
           <ShellText>

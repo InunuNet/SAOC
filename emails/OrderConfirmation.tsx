@@ -2,6 +2,7 @@ import { Img } from '@react-email/components';
 
 import EmailShell, {
   ShellDetailRow,
+  ShellFootnote,
   ShellHeading,
   ShellLink,
   ShellRule,
@@ -44,7 +45,7 @@ export default function OrderConfirmation({
 }: OrderConfirmationProps) {
   return (
     <EmailShell family="A" preview="Your National Orchid Show order is confirmed">
-      <ShellHeading>Order Confirmation</ShellHeading>
+      <ShellHeading>Order confirmation</ShellHeading>
       <ShellText>Dear {buyerName},</ShellText>
       <ShellText>
         Thank you for your order. Your ticket{positions.length > 1 ? 's are' : ' is'} confirmed —
@@ -67,14 +68,18 @@ export default function OrderConfirmation({
       ))}
       <ShellRule />
       <ShellText size="small">
-        Present this email — or just the booking reference — at the door for check-in.
+        Present this ticket — or just the booking reference — at the door for check-in.
       </ShellText>
       {recoveryUrl !== null && (
         <ShellText size="small">
           Lost this email?{' '}
-          <ShellLink href={recoveryUrl}>Click here to recover your tickets</ShellLink>
+          <ShellLink href={recoveryUrl}>Recover your tickets</ShellLink>
         </ShellText>
       )}
+      <ShellFootnote>
+        In an emergency: 10111 Police (national) · 10177 Ambulance and fire (national) · 112 All
+        emergencies, from a mobile phone
+      </ShellFootnote>
     </EmailShell>
   );
 }

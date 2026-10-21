@@ -16,7 +16,7 @@ export default function VendorApplicationConfirmation({
 }: VendorApplicationConfirmationProps) {
   return (
     <EmailShell family="B" preview="We received your vendor application — SAOC">
-      <ShellHeading>Vendor Application Received</ShellHeading>
+      <ShellHeading>Vendor application received</ShellHeading>
       <ShellText>Dear {contactPersonName},</ShellText>
       <ShellText>
         Thank you for applying to be a vendor at the National Orchid Show as{' '}
