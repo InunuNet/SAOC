@@ -83,9 +83,6 @@ V_WORDMARK_TRACK, V_TAGLINE_TRACK = 0.005, 0.22
 V_TAGLINE_WIDTH_RATIO = 0.96  # tagline width / wordmark width, measured on presentation p.12
 WORDMARK_LINE, TAGLINE_LINE = 1.02, 1.3  # line-height multiples
 TAGLINE_GAP_RATIO = 0.196  # tagline gap below the wordmark / wordmark size (export harness 9:46)
-# The inventory's vertical aspect rule (height/width >= 0.9) exceeds what the spec's geometry gives
-# for the full-name wordmark, so the vertical lockup carries a transparent margin top and bottom.
-V_MARGIN_RATIO = 0.06  # per side, as a fraction of the lockup width
 
 # Usage illustrations: the Don'ts, magnitudes measured from the presentation (p.11-12, 144dpi).
 DONT_H_EMBLEM_SCALE = 0.713  # emblem 82px vs 115px
@@ -259,22 +256,29 @@ def compose_horizontal(emblem: Image.Image, word: Image.Image, tag: Image.Image,
 
 
 def compose_vertical(emblem: Image.Image, word: Image.Image, tag: Image.Image, sizes: TypeSizes,
-                     emblem_scale: float = 1.0, margin: bool = True) -> Image.Image:
+                     emblem_scale: float = 1.0) -> Image.Image:
     """Emblem above the centred wordmark and tagline; emblem width equals the wordmark's width."""
     width = word.width
     emb_w = round(width * emblem_scale)
     emb_h = round(emb_w * emblem.height / emblem.width)
     full_h = round(width * emblem.height / emblem.width)
     gap, tag_gap = round(sizes.v_gap), round(sizes.v_tag_gap)
-    margin_px = round(V_MARGIN_RATIO * width) if margin else 0
-    height = margin_px + full_h + gap + word.height + tag_gap + tag.height + margin_px
+    height = full_h + gap + word.height + tag_gap + tag.height
     canvas = Image.new("RGBA", (width, height))
-    y = margin_px + (full_h - emb_h)
+    y = full_h - emb_h
     canvas.alpha_composite(scale_rgba(emblem, emb_w, emb_h), ((width - emb_w) // 2, y))
-    y = margin_px + full_h + gap
+    y = full_h + gap
     canvas.alpha_composite(word, (0, y))
     canvas.alpha_composite(tag, ((width - tag.width) // 2, y + word.height + tag_gap))
     return canvas
+
+
+def trim_to_content(image: Image.Image) -> Image.Image:
+    """Crop to the opaque bounding box: no clear space is baked into a lockup file."""
+    bbox = image.getchannel("A").getbbox()
+    if bbox is None:
+        raise ValueError("lockup rendered fully transparent")
+    return image.crop(bbox)
 
 
 def make_lockups(emblems: Emblems, layers: dict[str, Image.Image], sizes: TypeSizes,
@@ -291,7 +295,7 @@ def make_lockups(emblems: Emblems, layers: dict[str, Image.Image], sizes: TypeSi
                     image = compose_vertical(emblem, layers[f"{key}-word"], layers[f"{key}-tag"], sizes)
                 name = f"saoc-lockup-south-african-orchid-council-{orient}-{rendition}-on-{ground}.png"
                 paths.append(out / "saoc/lockup" / name)
-                save_png(image, paths[-1])
+                save_png(trim_to_content(image), paths[-1])
     return paths
 
 
@@ -313,8 +317,8 @@ def make_usage(emblems: Emblems, layers: dict[str, Image.Image], sizes: TypeSize
     h_do = compose_horizontal(h_emblem, h_word, h_tag, sizes)
     h_dont = compose_horizontal(h_emblem, layers["h-dont-word"], h_tag, sizes,
                                 DONT_H_EMBLEM_SCALE, DONT_H_GAP_FACTOR)
-    v_do = compose_vertical(v_emblem, v_word, v_tag, sizes, margin=False)
-    v_dont = compose_vertical(v_emblem, v_word, v_tag, sizes, DONT_V_EMBLEM_SCALE, margin=False)
+    v_do = compose_vertical(v_emblem, v_word, v_tag, sizes)
+    v_dont = compose_vertical(v_emblem, v_word, v_tag, sizes, DONT_V_EMBLEM_SCALE)
     pairs = {"horizontal": (h_do, h_dont), "vertical": (v_do, v_dont)}
     paths = []
     for orient, images in pairs.items():
