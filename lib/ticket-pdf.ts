@@ -114,7 +114,9 @@ const PERFORATION_X = 108.3;
 const STUB_TEXT_X = 22.9;
 const QR_MODULE_AREA_MM = 55;
 const QR_TOP = 58.4;
-const VISIT_HEADING_Y = 155.5;
+const INSTRUCTION_GAP = 8;
+const VISIT_OFFSET = 14;
+const VISIT_HEADING_Y = 155.5 + VISIT_OFFSET;
 const BAND_TRACKING = 0.14;
 const REF_TRACKING = 0.08;
 const PILL_HEIGHT = 4.2;
@@ -122,14 +124,12 @@ const PILL_PAD_X = 2.4;
 const FOOTNOTE_SIZE = 9;
 const FOOTNOTE_Y = 256;
 const FOOTNOTE_LINE_PITCH = 4.6;
-const INSTRUCTION_Y = 248;
 const FOOTER_RULE_Y = 265.5;
 const FOOTER_MARK_TOP = 268.5;
 const FOOTER_TEXT_Y = 272.5;
 const FOOTER_LINE_PITCH = 4.6;
 const HEADER_LOGO_LEFT_PAD = 192 / 4108; // transparent left margin of the logo file, as a fraction of its width
-const FOOTER_SMALL_SIZE = 7.5;
-const FOOTER_MARK_HEIGHT = 12.7;
+const FOOTER_MARK_HEIGHT = 16;
 const FONT_DIR = 'lib/ticket-pdf-assets';
 
 interface Fonts {
@@ -432,16 +432,6 @@ function drawStub(ctx: Ctx, position: TicketPdfPosition): void {
     color: ROYAL,
     maxWidth: room,
   });
-  caps(ctx, 'Booking reference', x, 123.6, MUTED);
-  drawText(ctx, position.bookingRef, {
-    x,
-    y: 128.9,
-    font: fonts.bold,
-    size: 11,
-    color: ROYAL,
-    tracking: REF_TRACKING,
-    maxWidth: room,
-  });
 }
 
 /** QR as one vector path: ~55 mm of black modules on the white tile (the tile is the quiet zone). */
@@ -525,11 +515,11 @@ function drawVenueColumn(ctx: Ctx, visit: TicketPdfVisit): void {
   const x = MARGIN_X;
   heading(ctx, 'The venue', x, VISIT_HEADING_Y);
   if (visit.venueName) {
-    drawText(ctx, visit.venueName, { x, y: 163, font: ctx.fonts.bold, size: 9, color: ROYAL, maxWidth: 62 });
+    drawText(ctx, visit.venueName, { x, y: 163 + VISIT_OFFSET, font: ctx.fonts.bold, size: 9, color: ROYAL, maxWidth: 62 });
   } else {
-    drawPill(ctx, x, 159.8);
+    drawPill(ctx, x, 159.8 + VISIT_OFFSET);
   }
-  const y = rowOrPill(ctx, visit.venueAddress, x, 168, 62);
+  const y = rowOrPill(ctx, visit.venueAddress, x, 168 + VISIT_OFFSET, 62);
   caps(ctx, 'Parking and entrance', x, y + 1, MUTED, 6.5);
   rowOrPill(ctx, visit.venueParking, x, y + 5.5, 62);
 }
@@ -539,11 +529,11 @@ function drawTimesColumn(ctx: Ctx, position: TicketPdfPosition, visit: TicketPdf
   heading(ctx, position.timesHeading ?? DEFAULT_TIMES_HEADING, x, VISIT_HEADING_Y);
   const times = position.times ?? visit.openingTimes ?? [];
   if (times.length === 0) {
-    rowOrPill(ctx, null, x, 164, 56);
+    rowOrPill(ctx, null, x, 164 + VISIT_OFFSET, 56);
     return;
   }
   times.slice(0, 5).forEach((time, i) => {
-    const y = 164 + i * 7;
+    const y = 164 + VISIT_OFFSET + i * 7;
     drawText(ctx, time.label, { x, y, font: ctx.fonts.bold, size: 9, color: ROYAL });
     if (time.value) {
       drawText(ctx, time.value, { x: x + 16, y, font: ctx.fonts.body, size: 9, color: INK, maxWidth: 40 });
@@ -556,7 +546,7 @@ function drawTimesColumn(ctx: Ctx, position: TicketPdfPosition, visit: TicketPdf
 function drawDatesColumn(ctx: Ctx, visit: TicketPdfVisit): void {
   const x = 142.5;
   heading(ctx, 'Show dates', x, VISIT_HEADING_Y);
-  const y = rowOrPill(ctx, visit.showDates, x, 163, RIGHT_X - x);
+  const y = rowOrPill(ctx, visit.showDates, x, 163 + VISIT_OFFSET, RIGHT_X - x);
   if (visit.showUrl) {
     drawText(ctx, visit.showUrl, { x, y, font: ctx.fonts.body, size: 9, color: INK, maxWidth: RIGHT_X - x });
   }
@@ -616,7 +606,7 @@ function drawFooter(
   const { fonts, logos, pendingLabel } = ctx;
   const { visit } = input;
   const page = `PAGE ${index + 1} OF ${input.positions.length}`;
-  drawText(ctx, INSTRUCTION, { x: MARGIN_X, y: INSTRUCTION_Y, font: fonts.body, size: 9, color: INK, maxWidth: CONTENT_WIDTH });
+  drawText(ctx, INSTRUCTION, { x: MARGIN_X, y: CARD_BOTTOM + INSTRUCTION_GAP, font: fonts.body, size: 9, color: INK, maxWidth: CONTENT_WIDTH });
   fillRect(ctx, MARGIN_X, FOOTER_RULE_Y, CONTENT_WIDTH, 0.1, RULE);
 
   const { width, height } = logos.vertical;
@@ -629,18 +619,21 @@ function drawFooter(
   });
   const x = MARGIN_X + markWidth + 4;
   const y3 = FOOTER_TEXT_Y + FOOTER_LINE_PITCH * 2;
-  const text = (value: string, at: number, y: number, size: number): number =>
-    drawText(ctx, value, { x: at, y, font: fonts.body, size, color: MUTED });
-  text(FOOTER_LINE, x, FOOTER_TEXT_Y, FOOTNOTE_SIZE);
-  text(FOOTER_REG, x, FOOTER_TEXT_Y + FOOTER_LINE_PITCH, FOOTNOTE_SIZE);
-  const lead = text(`Organiser: ${visit.organiser ?? pendingLabel} · Show office`, x, y3, FOOTER_SMALL_SIZE);
-  const cursor = x + lead + 1.5;
+  const text = (value: string, at: number, y: number): number =>
+    drawText(ctx, value, { x: at, y, font: fonts.body, size: FOOTNOTE_SIZE, color: MUTED });
+  text(FOOTER_LINE, x, FOOTER_TEXT_Y);
+  text(FOOTER_REG, x, FOOTER_TEXT_Y + FOOTER_LINE_PITCH);
+  const lead = text('Show office', x, y3);
   if (visit.showOffice) {
-    text(visit.showOffice, cursor, y3, FOOTER_SMALL_SIZE);
+    text(visit.showOffice, x + lead + 1.5, y3);
   } else {
-    drawPill(ctx, cursor, y3 - 3.2);
+    drawPill(ctx, x + lead + 2, y3 - 3.2);
   }
-  text(`Questions: ${visit.questionsEmail ?? pendingLabel} · Quote your booking reference.`, x, y3 + FOOTER_LINE_PITCH - 0.4, FOOTER_SMALL_SIZE);
+  text(
+    `Questions: ${visit.questionsEmail ?? pendingLabel} · Quote your booking reference.`,
+    x,
+    y3 + FOOTER_LINE_PITCH
+  );
   drawText(ctx, input.orderReference ? `ORDER ${input.orderReference} · ${page}` : page, {
     x: RIGHT_X,
     y: FOOTER_TEXT_Y,
