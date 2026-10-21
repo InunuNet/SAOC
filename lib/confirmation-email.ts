@@ -3,7 +3,11 @@ import type { ReactElement } from 'react';
 import { generateBookingRefQrPngBuffer } from '@/lib/qr';
 import { buildRecoveryUrl } from '@/lib/recovery-url';
 import { sendEmail, TICKETS_FROM_ADDRESS, type EmailAttachment } from '@/lib/email';
-import OrderConfirmation, { type OrderConfirmationPosition } from '@/emails/OrderConfirmation';
+import OrderConfirmation, {
+  type OrderConfirmationPosition,
+  type OrderConfirmationVisit,
+} from '@/emails/OrderConfirmation';
+import { loadOrderVisit } from '@/lib/order-visit-info';
 import type { TicketType } from '@/types/index';
 
 /**
@@ -59,6 +63,7 @@ export interface SendConfirmationEmailDeps {
   mailer?: ConfirmationEmailMailer;
   generateQrPngBuffer?: (bookingRef: string) => Promise<Buffer>;
   siteUrl?: string;
+  loadVisit?: () => Promise<OrderConfirmationVisit>;
 }
 
 /**
@@ -88,6 +93,7 @@ export async function sendConfirmationEmail(
   const mailer = deps.mailer ?? { send: sendEmail };
   const generateQrPngBuffer = deps.generateQrPngBuffer ?? generateBookingRefQrPngBuffer;
   const siteUrl = deps.siteUrl ?? resolveSiteUrl();
+  const loadVisit = deps.loadVisit ?? loadOrderVisit;
 
   const positions: OrderConfirmationPosition[] = [];
   const attachments: EmailAttachment[] = [];
@@ -109,11 +115,12 @@ export async function sendConfirmationEmail(
   }
 
   const recoveryUrl = buildRecoveryUrl(input.recoveryToken, siteUrl);
+  const visit = await loadVisit();
 
   await mailer.send({
     to: input.buyerEmail,
     subject: 'Your National Orchid Show order is confirmed',
-    react: OrderConfirmation({ buyerName: input.buyerName, positions, recoveryUrl }),
+    react: OrderConfirmation({ buyerName: input.buyerName, positions, recoveryUrl, visit }),
     from: TICKETS_FROM_ADDRESS,
     attachments,
   });

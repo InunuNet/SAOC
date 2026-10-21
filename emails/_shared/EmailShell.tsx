@@ -35,6 +35,7 @@ interface ShellTheme {
   radius: string;
   buttonRadius: string;
   headingFont: string;
+  headingWeight: number;
   bodyFont: string;
   // Muted body copy for secondary text such as the footer (--nos-ink-muted, derived).
   muted: string;
@@ -51,9 +52,13 @@ const NOS_THEME: ShellTheme = {
   radius: '16px',
   buttonRadius: '10px',
   headingFont: 'Fraunces, Georgia, serif',
+  headingWeight: 400,
   bodyFont: 'Karla, Arial, Helvetica, sans-serif',
   muted: INK_MUTED,
 };
+
+// Admin notices (family C) keep the heavier heading weight; A and B match the PDF and the site.
+const ADMIN_THEME: ShellTheme = { ...NOS_THEME, headingWeight: 600 };
 
 const ThemeContext = createContext<ShellTheme>(NOS_THEME);
 
@@ -217,7 +222,7 @@ function PlainFooter({ theme: t }: { theme: ShellTheme }) {
 }
 
 export default function EmailShell({ family, preview, children }: EmailShellProps) {
-  const t = NOS_THEME;
+  const t = family === 'C' ? ADMIN_THEME : NOS_THEME;
   const branded = family !== 'C';
 
   return (
@@ -326,7 +331,7 @@ export function ShellHeading({ children }: { children: ReactNode }) {
         fontFamily: t.headingFont,
         fontSize: '28px',
         lineHeight: '34px',
-        fontWeight: 600,
+        fontWeight: t.headingWeight,
         color: t.accent,
       }}
     >
@@ -344,7 +349,7 @@ export function ShellSubheading({ children }: { children: ReactNode }) {
         fontFamily: t.headingFont,
         fontSize: '20px',
         lineHeight: '26px',
-        fontWeight: 600,
+        fontWeight: t.headingWeight,
         color: t.accent,
       }}
     >
@@ -567,5 +572,61 @@ export function ShellPill({ children }: { children: ReactNode }) {
     >
       {children}
     </span>
+  );
+}
+
+// A bordered card on the card ground, used to group one ticket's rows.
+export function ShellCard({ children }: { children: ReactNode }) {
+  const t = useContext(ThemeContext);
+  return (
+    <table
+      role="presentation"
+      width="100%"
+      cellPadding={0}
+      cellSpacing={0}
+      border={0}
+      style={{ width: '100%', margin: '0 0 16px' }}
+    >
+      <tbody>
+        <tr>
+          <td
+            {...bgAttr(t.card)}
+            style={{
+              backgroundColor: t.card,
+              border: `1px solid ${t.rule}`,
+              borderRadius: '12px',
+              padding: '8px 20px 20px',
+            }}
+          >
+            {children}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  );
+}
+
+const QR_TILE_PADDING = 12;
+
+// White tile behind a QR code: keeps it scannable when a client darkens the card.
+export function ShellQrTile({ children }: { children: ReactNode }) {
+  return (
+    <table role="presentation" cellPadding={0} cellSpacing={0} border={0} style={{ margin: '16px 0 0' }}>
+      <tbody>
+        <tr>
+          <td
+            {...bgAttr('#ffffff')}
+            style={{
+              backgroundColor: '#ffffff',
+              padding: `${QR_TILE_PADDING}px`,
+              borderRadius: '8px',
+              lineHeight: 0,
+            }}
+          >
+            {children}
+          </td>
+        </tr>
+      </tbody>
+    </table>
   );
 }
