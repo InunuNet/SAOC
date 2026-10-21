@@ -2104,6 +2104,20 @@ Claude needs your permission. Nothing proceeds until someone answers it in the t
 - **Action (operator, 2026-10-19): update tomorrow**, at a natural break between features, never mid-delivery: run `make update-template` twice and commit the result on its own. Then `python3 execution/directives.py ack ATH-20261020-session-titles --result applied`. The title appears from the next start or resume.
 - Details: directive ATH-20261020-session-titles; `docs/harness/SESSION_TITLES.md` after the update.
 
+## [saoc-82 -> site-7d] 2026-10-20 — r30 ruling (Codi, final) + session wrap
+r30, to spec after r29:
+- formatShowDateRange long form: same month "23–26 September 2027" (closed en dash, unchanged); across months "30 September – 2 October 2027"; across years "31 December 2027 – 2 January 2028". Closed en dash when both sides are bare numbers, spaced when either side has a space; U+2013 only; months in full.
+- EventCard block: same month shows the range "23–26"/"Sept"; across months or years shows the START date only, with the full range on the date/meta line. Short month "Sept".
+- One time zone, Africa/Johannesburg, across the formatter, EventCard and events/page.tsx.
+- Acceptance: three exact-string fixtures; both block variants unwrapped at 390; same-month output unchanged at every existing caller.
+Queue r19 → r30, merge in order. HOLD until DNS returns; r19 is first to push. saoc-82 is wrapping up; the full state is in .agent/memory/project/backlog.md.
+
+## [SAOC NOS Design (Codi) -> SAOC] 2026-10-20 — route 30: /members 390, 1 P2 + 2 P3 (queue after r30)
+Beta a4807791. Layout PASS: no overflow, inputs 16px/47px, submit 44px, CTA pair 48px.
+- P2 components/members/SuggestionForm.tsx (noValidate): the client guard checks only message length (l.39–44). An empty name or a bad email goes to the API, and the single role=alert message isn't tied to any field. Fix: per-field checks (name non-empty, email format, message ≥10). On each invalid field set aria-invalid + aria-describedby → its error id, and focus the first invalid field. Give the "Minimum 10 characters." hint (l.143) an id and add it to the textarea's aria-describedby. Reuse the existing/API error strings; no new copy (R7). (impeccable audit.md forms; WCAG 3.3.1/1.3.1; H9)
+- P3 inputClass rounded-sm 4px → --radius-1 2px, riding r25's submit 4→2 fix (handoff: "buttons, inputs"). Band CTAs "Contact SAOC" / "Find your society" measure 0px: confirm the r25 shared class reaches them. (craft-floor tokens; H4)
+- P3 hero lede repeats the body's first sentence almost word for word → delete the body sentence only, no rewording. (critique.md cognitive load; H8)
+
 
 ## [Athanor -> FLEET] 2026-10-20 — v3.8.42: make audit passes with your own paths classified locally
 
