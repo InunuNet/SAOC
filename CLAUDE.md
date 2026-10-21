@@ -21,7 +21,7 @@ The **South African Orchid Council (SAOC)** is a non-profit national body coordi
 | Database | Firestore | Contact submissions, ticket sales/check-in, event submissions |
 | Auth | Firebase Auth | Email/password, Google, Microsoft, and Apple sign-in for `/admin`; session cookies via `firebase-admin/auth` |
 | Forms | API route → Firestore + Resend | Contact and event submissions written to Firestore; confirmation email sent via Resend |
-| Payments | PayFast (sandbox) | Ticket checkout + ITN webhook verification (`lib/payfast.ts`) |
+| Payments | Ozow — active gateway, chosen by Lee-Ann, set in /admin/settings. All testing uses Ozow's sandbox test mode, a separate admin toggle. PayFast integration retained, never used for testing | Ticket checkout + payment-notification webhooks (`lib/ozow.ts`, `lib/payments/`); see `docs/payment-gateway-selection.md` |
 | Package manager | pnpm | Faster, stricter hoisting |
 
 ---
@@ -52,7 +52,7 @@ app/
 │   ├── contact/           # Contact form POST handler → Firestore + Resend
 │   ├── events/             # Event submission + per-event .ics export
 │   ├── events.ics/         # Combined events feed
-│   ├── tickets/            # PayFast checkout + ITN webhook → Firestore `tickets`
+│   ├── tickets/            # Ozow checkout (active gateway) + payment-notification webhooks → Firestore `tickets`
 │   ├── vendors/            # Vendor application (short form, M1) → `vendorApplications`; full registration (gated by token, M1) → `vendorSubmissions`; proof-of-payment upload
 │   ├── admin/               # Session (Firebase Auth), check-in, CSV export; vendor review and payment routes
 │   │   ├── vendors/        # Vendor review workflow (F6) and payment/booth allocation (F7)
@@ -69,7 +69,8 @@ sanity/
 lib/
 ├── firebase.ts             # Client Firebase initialisation (singleton)
 ├── firebase-admin.ts       # Server Firebase Admin initialisation (singleton)
-├── payfast.ts               # PayFast signature + sandbox constants
+├── ozow.ts                  # Ozow signature/hash + sandbox handling (active gateway)
+├── payfast.ts               # PayFast signature + sandbox constants (retained, not the active gateway)
 ├── email.ts                 # Resend email sending
 └── data/                    # Server-side data-fetch helpers
 

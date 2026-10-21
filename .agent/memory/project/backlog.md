@@ -2766,3 +2766,8 @@ Cron c8d8059d (health checks) is session-only — re-create next session.
   - P3: use the compact hero (no image) on /refunds, /terms and /privacy; the 480px photo hero pushes the policy below the fold.
   - P3: reuse the r23 "On this page" disclosure (page is 5079px, 9 sections).
   - GO-LIVE BLOCKER (Brad/Council): refunds, terms and privacy say "drafted with AI assistance" with no lawyer review, yet checkout sells under them. Legal sign-off is needed before real ticket sales (sandbox only today). Asked in Lee-Ann doc as 21 Oct item (j).
+- [ ] 2026-10-22 BRAD (relayed by Codi, verbatim): "Don't test with Payfast use OZOW Lee-Anns choice."
+  - Firestore read shows checkout is ALREADY on Ozow: adminSettings/activePaymentGateway=ozow (since 2026-09-02) and ozowSandboxTestMode enabled (since 2026-08-24). No code or spec change is needed.
+  - Rule from now: all test payments (E2E, contract checks, manual) go through Ozow test mode, never PayFast sandbox. Team notified.
+  - CLAUDE.md's "PayFast (sandbox)" stack row is stale (floor-protected; Brad/Route 1 to fix).
+  - Codi wants to review checkout payment step, redirect copy and confirm/failed states at 1280/390 on the next render.
