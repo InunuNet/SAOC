@@ -104,3 +104,34 @@ approved the per-family renders (.tmp/sandbox/email-shell/codi-approval.txt).
 
 ## Scope split (lead ruling)
 F1 (contract-f1.yaml) = families A/B/C, shippable now; ContactConfirmation untouched (A12). F2 (contract-f2.yaml) = family D, follows once media-kit-complete lockups are on main. F2 checks run with EMAIL_SHELL_SCOPE=D.
+
+## Brad review 2026-10-22 (supersedes conflicting parts above; verbatim source brad-review-2026-10-22.md)
+Applies to F1 (A/B; C and D only get the em-dash fix).
+- Copy: sentence-case A/B headings; real em dash replaces "--" (all families); "Click here to recover your tickets" becomes "Recover your tickets"; the approval code shows alone ("4 2 1 7", no business-name prefix); email line becomes "Present this ticket — or just the booking reference — at the door for check-in." (my reading of "Present this ticket everywhere"; the PDF line is a separate contract). C and ContactConfirmation keep Title Case headings. `copy-baseline/` is the amended golden, `copy-baseline-origin/` the untouched origin/main text; the differences are exactly these decisions.
+- Header (A/B): NOS-2027-logo-full-colour-reversed-horizontal.png on the royal band, exported to public/images/email/nos-full-colour-reversed-horizontal-560.png (560 wide, shown 280), no crop or recolour. Re-measured inset: alpha bbox starts at x=192 of 4108, so 13px at 280, header cell left padding stays 27px desktop / 7px at <=620.
+- Footer (A/B): NO big vertical lockup (nos-reversed-gold-* are gone). Condensed, on the page ground, not on a royal band: one 1px rule, 12px Karla in ink-muted, line 1 "South African Orchid Council — saoc.co.za", line 2 "REG# 1978/004040/08 · NPO 043-901". Optional left mark: NOS-2027-logo-ink-purple-vertical.png exported 96px tall (public/images/email/nos-ink-purple-vertical-96h.png), shown 48px tall; only alongside footer text.
+- Emergency footnote (OrderConfirmation only): one 12px line above the footer: "In an emergency: 10111 Police (national) · 10177 Ambulance and fire (national) · 112 All emergencies, from a mobile phone", plus the on-site first-aid contact as a "To be confirmed" item in that line. The first-aid label wording is not given verbatim; the copy check tolerates any <=80 chars before "To be confirmed" until the lead supplies it. No card, no big numerals.
+- Organiser and Questions become small text in the footer area. GAP: the brief gives no wording for them and they do not exist in the current templates, so no assertion covers them and the copy check will fail if @dev adds words. The lead must supply the exact strings first.
+- Review: renders of the order email (A) and vendor approved (B) go to Codi before merge (A16/A17).
+- Fixture VendorApprovalConfirmationWithCode renders the registration-link branch, because the code lives only there.
+
+### Lead rulings (final, supersede the lines above)
+- Organiser and Questions: only where a template already has that content. The email templates have neither, so emails add nothing; the PDF carries them.
+- First-aid item, verbatim from the ticket-pdf baseline: "On-site first aid and show duty contact" followed by the "To be confirmed" pill, in the emergency line. The separator before the label and between label and pill is not fixed (the copy check tolerates spaces, "·" and ":").
+- Email line is Brad's verbatim PDF line: "Present this ticket at the door for check in." It replaces the longer em-dash sentence.
+
+## Codi final fixes for A/B (final)
+1. Headings (Fraunces) render at weight 400.
+2. OrderConfirmation: each ticket is a gold-100 (#fbfaf0) card; the QR image sits on a white #fff tile, 12px padding, 8px radius. The QR alt stays as ruled.
+3. OrderConfirmation: the visit details are restored: venue name, address, show dates, and opening times shown as "To be confirmed". Labels MUST be strings that already exist in the ticket-pdf allowed strings or golden A; none are invented here.
+   Pending: once @dev reports which labels it used, the architect adds them to goldens/copy-baseline/OrderConfirmation.txt (until then the copy check will flag the extra visible text on that template).
+
+### Codi visit-data fix (final)
+Known data never renders as a placeholder and must match the PDF (same Sanity docs). Confirmed values, from ticket-pdf/goldens/fixture-order.json: venue "The Hangar, Stellenbosch Flying Club" / "Stellenbosch Airfield, R44, Stellenbosch, 7600, Western Cape"; show dates "Thursday 23 to Sunday 26 September 2027"; opening times Thu 23 "16h00 to 19h00", Fri-Sun "To be confirmed". The OrderConfirmation fixture carries these; assertion "visit" forbids "The venue To be confirmed" / "Show dates To be confirmed". Family C headings also go to weight 400 (no check pins heading weight).
+
+### Codi pendingLabel ruling (final, verbatim-relay summary)
+Codi ruled that the email must match the PDF; both read the same Sanity source and the same `pendingLabel`. Codi approved the live long label ("To be confirmed by the show committee") at 375 and 680 wide, on condition that it is never shortened (R7), and approved the PDF wrap for it.
+- The pill text is the Sanity `pendingLabel`, with "To be confirmed" as the fallback when Sanity has none.
+- It must not be shortened.
+- It must wrap and never clip.
+- Visit values themselves still render only when confirmed; only the placeholder text comes from Sanity.
