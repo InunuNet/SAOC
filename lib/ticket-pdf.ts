@@ -120,6 +120,11 @@ const TIMES_VALUE_WIDTH = 41; // from the value column to the show-dates column 
 const VISIT_HEADING_Y = 155.5 + VISIT_OFFSET;
 const BAND_TRACKING = 0.14;
 const REF_TRACKING = 0.08;
+const ATTENDEE_NAME_SIZE = 12;
+const ATTENDEE_NAME_MIN_SIZE = 9;
+const ATTENDEE_NAME_MAX_LINES = 2;
+const ATTENDEE_NAME_Y = 115.5;
+const ATTENDEE_NAME_PITCH = 5.2;
 const MIN_SMALL_CAPS_SIZE = 7; // smallest caps/pill text printed
 const PILL_HEIGHT = 4.4;
 const PILL_LINE_PITCH = 3;
@@ -439,6 +444,72 @@ function drawSchedule(ctx: Ctx, schedule: TicketPdfSchedule | null | undefined, 
   drawPill(ctx, x, 79, 100 - x);
 }
 
+/** Greedy word wrap that hard-breaks a word wider than the line, so no line ever exceeds `maxMm`. */
+function wrapBreaking(text: string, font: PDFFont, size: number, maxMm: number): string[] {
+  const fits = (value: string) => textWidthPt(value, font, size, 0) <= mm(maxMm);
+  const lines: string[] = [];
+  let line = '';
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (fits(candidate)) {
+      line = candidate;
+      continue;
+    }
+    if (line) lines.push(line);
+    line = '';
+    let rest = word;
+    while (!fits(rest)) {
+      let cut = rest.length - 1;
+      while (cut > 1 && !fits(rest.slice(0, cut))) cut--;
+      lines.push(rest.slice(0, cut));
+      rest = rest.slice(cut);
+    }
+    line = rest;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+/**
+ * Attendee name: wraps to at most two lines at its normal size inside the stub, shrinks to a
+ * floor if it must, and only as a last resort ellipsizes the second line. The full name always
+ * stays in the PDF text (an invisible copy when the visible line is cut), and nothing ever
+ * crosses the stub divider.
+ */
+function drawAttendeeName(ctx: Ctx, name: string, x: number, room: number): void {
+  const font = ctx.fonts.bold;
+  let size = ATTENDEE_NAME_SIZE;
+  let lines = wrapBreaking(name, font, size, room);
+  while (lines.length > ATTENDEE_NAME_MAX_LINES && size > ATTENDEE_NAME_MIN_SIZE) {
+    size -= 0.5;
+    lines = wrapBreaking(name, font, size, room);
+  }
+  const cut = lines.length > ATTENDEE_NAME_MAX_LINES;
+  if (cut) {
+    lines = lines.slice(0, ATTENDEE_NAME_MAX_LINES);
+    let last = lines[ATTENDEE_NAME_MAX_LINES - 1];
+    while (last.length > 1 && textWidthPt(`${last}…`, font, size, 0) > mm(room)) last = last.slice(0, -1);
+    lines[ATTENDEE_NAME_MAX_LINES - 1] = `${last}…`;
+  }
+  lines.forEach((line, i) =>
+    drawText(ctx, line, { x, y: ATTENDEE_NAME_Y + i * ATTENDEE_NAME_PITCH, font, size, color: ROYAL })
+  );
+  if (cut) {
+    // Keep the full name in the text layer: invisible wrapped copy below the visible lines.
+    const full = wrapBreaking(name, font, size, room);
+    full.forEach((line, i) =>
+      ctx.page.drawText(line, {
+        x: mm(x),
+        y: PAGE_HEIGHT - mm(ATTENDEE_NAME_Y + (ATTENDEE_NAME_MAX_LINES + i) * ATTENDEE_NAME_PITCH),
+        font,
+        size,
+        color: ROYAL,
+        opacity: 0,
+      })
+    );
+  }
+}
+
 function drawStub(ctx: Ctx, position: TicketPdfPosition): void {
   const { fonts } = ctx;
   const x = STUB_TEXT_X;
@@ -455,14 +526,7 @@ function drawStub(ctx: Ctx, position: TicketPdfPosition): void {
   fillRect(ctx, x, 71.6, room, 0.5, OLIVE);
   drawSchedule(ctx, position.schedule, x);
   caps(ctx, 'Attendee', x, 110.4, MUTED);
-  drawText(ctx, position.attendeeName, {
-    x,
-    y: 115.5,
-    font: fonts.bold,
-    size: 12,
-    color: ROYAL,
-    maxWidth: room,
-  });
+  drawAttendeeName(ctx, position.attendeeName, x, room);
 }
 
 /** QR as one vector path: ~55 mm of black modules on the white tile (the tile is the quiet zone). */
