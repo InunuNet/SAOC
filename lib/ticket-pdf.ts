@@ -119,7 +119,8 @@ const VISIT_OFFSET = 14;
 const VISIT_HEADING_Y = 155.5 + VISIT_OFFSET;
 const BAND_TRACKING = 0.14;
 const REF_TRACKING = 0.08;
-const PILL_HEIGHT = 4.2;
+const MIN_SMALL_CAPS_SIZE = 7; // smallest caps/pill text printed
+const PILL_HEIGHT = 4.4;
 const PILL_PAD_X = 2.4;
 const FOOTNOTE_SIZE = 9;
 const FOOTNOTE_Y = 256;
@@ -293,7 +294,7 @@ function drawWrapped(
 /** Outlined "To be confirmed" pill (the single unknown-value marker). `top` is the pill's top edge. */
 function drawPill(ctx: Ctx, x: number, top: number): number {
   const label = ctx.pendingLabel.toUpperCase();
-  const size = 6.5;
+  const size = MIN_SMALL_CAPS_SIZE;
   const textMm = textWidthPt(label, ctx.fonts.bold, size, BAND_TRACKING) / PT_PER_MM;
   const width = textMm + PILL_PAD_X * 2;
   ctx.page.drawSvgPath(roundedPath(x, top, width, PILL_HEIGHT, Array(4).fill(PILL_HEIGHT / 2)), {
@@ -520,7 +521,7 @@ function drawVenueColumn(ctx: Ctx, visit: TicketPdfVisit): void {
     drawPill(ctx, x, 159.8 + VISIT_OFFSET);
   }
   const y = rowOrPill(ctx, visit.venueAddress, x, 168 + VISIT_OFFSET, 62);
-  caps(ctx, 'Parking and entrance', x, y + 1, MUTED, 6.5);
+  caps(ctx, 'Parking and entrance', x, y + 1, MUTED, MIN_SMALL_CAPS_SIZE);
   rowOrPill(ctx, visit.venueParking, x, y + 5.5, 62);
 }
 
@@ -699,6 +700,7 @@ export async function buildTicketPdf(input: TicketPdfInput): Promise<Uint8Array>
   });
   pdf.setTitle(`Ticket ${input.positions[0].bookingRef}`);
   pdf.setLanguage('en-ZA');
+  pdf.catalog.getOrCreateViewerPreferences().setDisplayDocTitle(true);
   pdf.setProducer('pdf-lib');
   pdf.setCreator('pdf-lib');
   pdf.setAuthor('');
