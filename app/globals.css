@@ -313,6 +313,8 @@ body {
 }
 #qr-reader video {
   width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
   border-radius: var(--radius-1);
 }
 

@@ -1,5 +1,7 @@
 'use client';
 
+import { BUTTON_SECONDARY } from './tokens';
+
 interface VendorPaymentLinkControlProps {
   isPending: boolean;
   paymentUrl: string | null;
@@ -21,13 +23,13 @@ export function VendorPaymentLinkControl({
   onRequestLink,
 }: VendorPaymentLinkControlProps) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex w-full flex-col gap-1 sm:w-60">
       <button
         type="button"
         disabled={isPending}
         onClick={onRequestLink}
         aria-label="Get vendor stand payment link and copy it to the clipboard"
-        className="rounded-sm border border-rule bg-ivory px-3 py-1.5 font-sans text-[13px] font-medium text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-50"
+        className={BUTTON_SECONDARY}
       >
         {isPending ? 'Generating…' : paymentUrl ? 'Copy payment link' : 'Get payment link'}
       </button>
@@ -38,7 +40,7 @@ export function VendorPaymentLinkControl({
           value={paymentUrl}
           aria-label="Vendor stand payment link"
           onFocus={(event) => event.currentTarget.select()}
-          className="w-56 rounded-sm border border-rule bg-bone px-2 py-1 font-mono text-[11px] text-ink"
+          className="w-full rounded-[2px] border border-rule bg-bone px-2 py-1 font-mono text-[11px] text-ink"
         />
       )}
     </div>

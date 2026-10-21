@@ -1,4 +1,5 @@
 import type { TicketType } from '@/types/index';
+import { DOOR_INVALID_BANNER_CLASS } from './tokens';
 
 export type CheckInResult =
   | {
@@ -11,67 +12,69 @@ export type CheckInResult =
     }
   | { success: false; error: string };
 
-interface DoorResultBannerProps {
-  result: CheckInResult;
-  onDismiss: () => void;
+// lib/checkin.ts's refusal copy for a repeat scan (server-only module, so mirrored here).
+// A second scan of a used ticket is "already used", not "invalid": the door staff reads them
+// differently.
+export const ALREADY_CHECKED_IN_ERROR = 'Already checked in';
+
+type BannerKind = 'valid' | 'already-used' | 'invalid';
+
+const BANNER_BASE = 'flex min-h-[72px] items-center gap-4 rounded-[2px] border-2 px-4 py-3';
+
+// Every state carries an icon and text as well as colour, so none relies on colour alone.
+const BANNER_STYLES: Record<BannerKind, string> = {
+  valid: 'border-primary bg-primary-100 text-primary-800',
+  'already-used': 'border-accent bg-accent-soft text-ink',
+  invalid: DOOR_INVALID_BANNER_CLASS,
+};
+
+const BANNER_ICONS: Record<BannerKind, string> = {
+  valid: '✓',
+  'already-used': '⚠',
+  invalid: '✕',
+};
+
+function bannerKind(result: CheckInResult): BannerKind {
+  if (result.success) return 'valid';
+  return result.error === ALREADY_CHECKED_IN_ERROR ? 'already-used' : 'invalid';
 }
 
-/**
- * Renders as a fixed, full-viewport overlay (not in-flow content) so it is visible
- * without scrolling regardless of how tall the scanner box + manual-entry form render
- * above it. Must be readable at arm's length in under a second — success is a solid
- * dark-sage fill (unmistakably "go"), failure is a heavy-bordered light panel with the
- * same primary-800 error-text treatment app/admin/login uses (never text-accent on a
- * light background — that combination measures 2.94:1 and fails WCAG AA, see login's fix).
- *
- * Failure has no auto-dismiss timer (see golden spec), so it carries an explicit
- * `onDismiss` control — without one the operator is locked out of manual entry/retry
- * until the next scan happens to overwrite it.
- */
-export function DoorResultBanner({ result, onDismiss }: DoorResultBannerProps) {
-  if (result.success) {
-    return (
-      <div
-        role="status"
-        className="fixed inset-0 z-50 flex min-h-dvh min-w-dvw flex-col items-center justify-center border-2 border-primary bg-primary px-6 py-10 text-center text-ivory"
-      >
-        <p className="text-[80px] leading-none" aria-hidden="true">
-          ✓
-        </p>
-        <p className="mt-4 font-sans text-[26px] font-bold leading-tight sm:text-[30px]">
-          Checked in
-        </p>
-        <p className="mt-3 font-sans text-[22px] font-semibold">{result.ticket.attendeeName}</p>
-        <p className="mt-1 font-mono text-[13px] tracking-[0.08em] text-ivory/85">
-          {result.ticket.ticketType} — {result.ticket.bookingRef}
-        </p>
-      </div>
-    );
-  }
+interface DoorResultBannerProps {
+  result: CheckInResult;
+}
+
+// In-flow result under the camera, at least 72px tall so it is readable at arm's length.
+// Valid: sage tint, ✓, the attendee's name. Already used: brass, a warning icon. Invalid: ink
+// border, ✕, the refusal reason. The check-in API returns no first-check-in time, so the
+// already-used state names the refusal only.
+export function DoorResultBanner({ result }: DoorResultBannerProps) {
+  const kind = bannerKind(result);
 
   return (
     <div
-      role="alert"
-      onClick={onDismiss}
-      className="fixed inset-0 z-50 flex min-h-dvh min-w-dvw flex-col items-center justify-center border-2 border-primary-800 bg-bone px-6 py-10 text-center text-primary-800"
+      role={kind === 'valid' ? 'status' : 'alert'}
+      className={`${BANNER_BASE} ${BANNER_STYLES[kind]}`}
     >
-      <p className="text-[64px] leading-none" aria-hidden="true">
-        ✕
-      </p>
-      <p className="mt-4 font-sans text-[22px] font-bold leading-tight sm:text-[26px]">
-        Not checked in
-      </p>
-      <p className="mt-2 font-sans text-[16px] font-medium">{result.error}</p>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDismiss();
-        }}
-        className="mt-6 min-h-[44px] w-full max-w-[280px] rounded-sm border-2 border-primary-800 bg-bone px-6 py-3 font-sans text-[16px] font-bold text-primary-800 transition-colors hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-800/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bone"
-      >
-        Dismiss
-      </button>
+      <span className="text-[32px] leading-none" aria-hidden="true">
+        {BANNER_ICONS[kind]}
+      </span>
+      {result.success ? (
+        <div className="min-w-0">
+          <p className="break-words font-sans text-[18px] font-bold leading-tight">
+            {result.ticket.attendeeName}
+          </p>
+          <p className="mt-0.5 break-words font-mono text-[13px] tracking-[0.04em]">
+            Checked in · {result.ticket.ticketType} · {result.ticket.bookingRef}
+          </p>
+        </div>
+      ) : (
+        <div className="min-w-0">
+          <p className="font-sans text-[18px] font-bold leading-tight">
+            {kind === 'already-used' ? 'Already used' : 'Not checked in'}
+          </p>
+          <p className="mt-0.5 break-words font-sans text-[14px] font-medium">{result.error}</p>
+        </div>
+      )}
     </div>
   );
 }

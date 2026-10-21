@@ -149,8 +149,7 @@ export default function AdminLoginPage() {
   return (
     <div className="flex min-h-[70vh] items-center justify-center bg-parchment px-4 py-16">
       <div className="w-full max-w-[400px] border border-rule bg-ivory p-8">
-        <span className="eyebrow">Admin</span>
-        <h1 className="mt-4 font-serif text-[28px] font-semibold leading-tight text-ink">
+        <h1 className="font-serif text-[28px] font-semibold leading-tight text-ink">
           Sign in
         </h1>
 

@@ -1,25 +1,24 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import type { VendorApplication, VendorApplicationStatus } from '@/types/index';
 import type { VendorApplicationReviewAction } from '@/lib/vendor-application-review';
+import { formatAdminDate, formatAdminDateTime } from '@/lib/admin-format';
+import { DetailDrawer, DetailSection } from './DetailDrawer';
+import { StatusPill } from './StatusPill';
+import { AdminTable } from './table/AdminTable';
+import { APPLICATION_COLUMNS } from './table/columns';
+import { TableToolbar, type FilterOption } from './table/TableToolbar';
+import { BUTTON_PRIMARY, BUTTON_SECONDARY, FOCUS_RING } from './tokens';
+import { useDrawerParam } from './useDrawerParam';
 
 // Mirrors components/admin/VendorReviewTable.tsx's structure exactly (mission
-// vendor-gated-registration-flow F5) -- same status-pill styling vocabulary, same
-// fetch-then-optimistic-patch action handler shape, adapted to VendorApplication's smaller
-// field set and pending/approved/declined machine.
-
-const HEADER_CELL_CLASS =
-  'whitespace-nowrap border-b border-rule bg-bone px-4 py-3 text-left font-mono text-[11px] tracking-[0.16em] text-muted';
-const BODY_CELL_CLASS =
-  'whitespace-nowrap border-b border-rule-soft px-4 py-3 font-sans text-[14px] text-ink';
-
-const STATUS_STYLES: Record<string, string> = {
-  pending: 'bg-bone text-muted border border-rule',
-  approved: 'bg-primary text-ivory',
-  declined: 'bg-ivory text-muted border border-rule line-through',
-};
+// vendor-gated-registration-flow F5) -- same fetch-then-optimistic-patch action handler shape,
+// adapted to VendorApplication's smaller field set and pending/approved/declined machine.
+// Mission admin-redesign F1: rows are server-ordered newest first and never re-sorted here;
+// the record's actions moved from the row into the detail drawer's sticky footer.
 
 // A pending application offers both actions; approved/declined are terminal in
 // lib/vendor-application-review.ts's closed transition machine and offer none.
@@ -32,8 +31,26 @@ const ACTION_LABELS: Record<VendorApplicationReviewAction, string> = {
   decline: 'Decline',
 };
 
+type StatusFilter = 'all' | VendorApplicationStatus;
+
+const STATUS_OPTIONS: readonly FilterOption[] = [
+  { value: 'all', label: 'All' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'declined', label: 'Declined' },
+];
+
+const EMPTY_TEXT = 'No vendor applications have been submitted yet.';
+const NOT_PROVIDED = '—';
+
 interface VendorApplicationReviewTableProps {
   applications: VendorApplication[];
+}
+
+function matchesSearch(row: VendorApplication, needle: string): boolean {
+  return [row.businessName, row.contactPersonName, row.contactEmail, row.vendorCategory.join(' ')].some(
+    (value) => value.toLowerCase().includes(needle),
+  );
 }
 
 export function VendorApplicationReviewTable({ applications }: VendorApplicationReviewTableProps) {
@@ -41,6 +58,14 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const errorRef = useRef<HTMLParagraphElement>(null);
+  const router = useRouter();
+  const { viewId, open, close } = useDrawerParam();
+
+  // Newest first comes from the server. Land on what needs a decision; with nothing pending,
+  // show everything rather than an empty list.
+  const defaultStatus: StatusFilter = rows.some((row) => row.status === 'pending') ? 'pending' : 'all';
+  const [status, setStatus] = useState<StatusFilter>(defaultStatus);
+  const [search, setSearch] = useState('');
 
   // A failed action sets `error`; scroll its banner into view so a failure is never silent.
   useEffect(() => {
@@ -77,6 +102,8 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
       setRows((current) =>
         current.map((row) => (row.id === id ? { ...row, status: nextStatus } : row)),
       );
+      // The sidebar's pending badge is server-rendered in the shell layout.
+      router.refresh();
     } catch {
       setError('Failed to reach the server. Please try again.');
     } finally {
@@ -118,123 +145,186 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
     }
   }
 
-  if (rows.length === 0) {
-    return (
-      <div className="border border-rule bg-ivory px-6 py-16 text-center">
-        <p className="font-sans text-[15px] text-muted">No vendor applications have been submitted yet.</p>
-      </div>
-    );
+  const needle = search.trim().toLowerCase();
+  const visible = rows.filter(
+    (row) => (status === 'all' || row.status === status) && (!needle || matchesSearch(row, needle)),
+  );
+  const selected = viewId ? (rows.find((row) => row.id === viewId) ?? null) : null;
+
+  const errorBanner = error ? (
+    <p
+      ref={errorRef}
+      className="mb-4 border border-rule bg-ivory px-4 py-3 font-sans text-[14px] text-ink"
+      role="alert"
+    >
+      {error}
+    </p>
+  ) : null;
+
+  function renderCell(columnId: string, row: VendorApplication): React.ReactNode {
+    switch (columnId) {
+      case 'business':
+        return (
+          <>
+            <span className="block truncate font-medium">{row.businessName}</span>
+            <span className="block truncate text-[13px] text-muted">
+              {row.contactPersonName} · {row.contactEmail}
+            </span>
+          </>
+        );
+      case 'category':
+        return row.vendorCategory.join(', ');
+      case 'stands':
+        return row.indicativeBoothCount;
+      case 'submitted':
+        return formatAdminDate(row.submittedAt);
+      case 'status':
+        return <StatusPill status={row.status} />;
+      case 'view':
+        return (
+          <button
+            type="button"
+            onClick={() => open(row.id)}
+            aria-label={`View ${row.businessName}`}
+            className={`min-h-[44px] px-2 font-sans text-[14px] font-semibold text-primary underline decoration-accent underline-offset-4 hover:text-primary-800 ${FOCUS_RING}`}
+          >
+            View
+          </button>
+        );
+      default:
+        return null;
+    }
   }
+
+  function cellTitle(columnId: string, row: VendorApplication): string | undefined {
+    switch (columnId) {
+      case 'business':
+        return `${row.businessName} — ${row.contactPersonName}, ${row.contactEmail}`;
+      case 'category':
+        return row.vendorCategory.join(', ');
+      case 'submitted':
+        return formatAdminDateTime(row.submittedAt);
+      default:
+        return undefined;
+    }
+  }
+
+  const actions = selected ? (AVAILABLE_ACTIONS[selected.status] ?? []) : [];
 
   return (
     <div>
-      {error && (
-        <p
-          ref={errorRef}
-          className="mb-4 border border-rule bg-ivory px-4 py-3 font-sans text-[14px] text-ink"
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
-      <div className="overflow-x-auto border border-rule bg-ivory">
-        <table className="w-full min-w-[840px] border-collapse">
-          <caption className="sr-only">Vendor application review status</caption>
-          <thead>
-            <tr>
-              <th scope="col" className={HEADER_CELL_CLASS}>
-                Business Name
-              </th>
-              <th scope="col" className={HEADER_CELL_CLASS}>
-                Contact
-              </th>
-              <th scope="col" className={HEADER_CELL_CLASS}>
-                Category
-              </th>
-              <th scope="col" className={HEADER_CELL_CLASS}>
-                Indicative Stands
-              </th>
-              <th scope="col" className={HEADER_CELL_CLASS}>
-                Status
-              </th>
-              <th scope="col" className={HEADER_CELL_CLASS}>
-                Code
-              </th>
-              <th scope="col" className={HEADER_CELL_CLASS}>
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const actions = AVAILABLE_ACTIONS[row.status] ?? [];
-              const style = STATUS_STYLES[row.status] ?? 'bg-bone text-muted border border-rule';
+      <TableToolbar
+        searchLabel="Search applications"
+        search={search}
+        onSearchChange={setSearch}
+        filterLabel="Application status"
+        filterOptions={STATUS_OPTIONS}
+        filterValue={status}
+        onFilterChange={(value) => setStatus(value as StatusFilter)}
+        countText={`${visible.length} ${visible.length === 1 ? 'application' : 'applications'}`}
+      />
+      {selected ? null : errorBanner}
+      <AdminTable
+        caption="Vendor application review status"
+        columns={APPLICATION_COLUMNS}
+        rows={visible}
+        getRowId={(row) => row.id}
+        renderCell={renderCell}
+        cellTitle={cellTitle}
+        onOpen={(row) => open(row.id)}
+        emptyText={EMPTY_TEXT}
+        card={(row) => ({
+          title: row.businessName,
+          status: <StatusPill status={row.status} />,
+          fields: [
+            { label: 'Contact', value: row.contactPersonName },
+            { label: 'Stand', value: String(row.indicativeBoothCount) },
+            { label: 'Submitted', value: formatAdminDate(row.submittedAt) },
+          ],
+        })}
+      />
 
-              return (
-                <tr key={row.id} className="hover:bg-parchment/60">
-                  <th scope="row" className={`${BODY_CELL_CLASS} font-medium`}>
-                    {row.businessName}
-                  </th>
-                  <td className={BODY_CELL_CLASS}>
-                    {row.contactPersonName}
-                    <br />
-                    <span className="text-muted">{row.contactEmail}</span>
-                  </td>
-                  <td className={BODY_CELL_CLASS}>{row.vendorCategory.join(', ')}</td>
-                  <td className={BODY_CELL_CLASS}>{row.indicativeBoothCount}</td>
-                  <td className={BODY_CELL_CLASS}>
-                    <span
-                      className={`inline-flex items-center rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${style}`}
-                    >
-                      {row.status}
-                    </span>
-                  </td>
-                  <td className={BODY_CELL_CLASS}>
-                    {row.status === 'approved' ? (
-                      <span className="flex items-center gap-2 font-mono text-[13px] tracking-[0.08em]">
-                        {row.registrationCodeId ?? '—'}
-                        {row.registrationCodeLockedAt ? (
-                          <span className="inline-flex items-center rounded-pill border border-primary-800 bg-bone px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-primary-800">
+      <DetailDrawer
+        open={selected !== null}
+        title={selected?.businessName ?? ''}
+        subtitle={selected ? selected.contactEmail : undefined}
+        onClose={close}
+        footer={
+          selected ? (
+            <div>
+              {errorBanner}
+              <div className="flex flex-wrap gap-3">
+                {actions.map((action) => (
+                  <button
+                    key={action}
+                    type="button"
+                    disabled={pendingId === selected.id}
+                    onClick={() => handleAction(selected.id, action)}
+                    className={action === 'approve' ? BUTTON_PRIMARY : BUTTON_SECONDARY}
+                  >
+                    {pendingId === selected.id ? 'Saving…' : ACTION_LABELS[action]}
+                  </button>
+                ))}
+                {selected.status === 'approved' ? (
+                  <button
+                    type="button"
+                    disabled={pendingId === selected.id}
+                    onClick={() => handleReissueCode(selected.id)}
+                    className={BUTTON_SECONDARY}
+                  >
+                    {pendingId === selected.id ? 'Saving…' : 'Reissue code'}
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          ) : null
+        }
+      >
+        {selected ? (
+          <>
+            <DetailSection
+              title="Business"
+              items={[
+                { label: 'Business name', value: selected.businessName },
+                { label: 'Trading name', value: selected.tradingName || NOT_PROVIDED },
+                { label: 'Category', value: selected.vendorCategory.join(', ') },
+                { label: 'Status', value: <StatusPill status={selected.status} /> },
+                { label: 'Submitted', value: formatAdminDateTime(selected.submittedAt) },
+              ]}
+            />
+            <DetailSection
+              title="Contact"
+              items={[
+                { label: 'Contact person', value: selected.contactPersonName },
+                { label: 'Email', value: selected.contactEmail },
+                { label: 'Cell phone', value: selected.contactCellPhone },
+              ]}
+            />
+            <DetailSection
+              title="Stand"
+              items={[
+                { label: 'Indicative stands', value: selected.indicativeBoothCount },
+                {
+                  label: 'Registration code',
+                  value:
+                    selected.status === 'approved' ? (
+                      <span className="font-mono text-[13px] tracking-[0.08em]">
+                        {selected.registrationCodeId ?? NOT_PROVIDED}
+                        {selected.registrationCodeLockedAt ? (
+                          <span className="ml-2 inline-flex items-center rounded-full border border-primary-800 bg-bone px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-primary-800">
                             Locked
                           </span>
                         ) : null}
                       </span>
                     ) : (
-                      <span className="text-muted">—</span>
-                    )}
-                  </td>
-                  <td className={BODY_CELL_CLASS}>
-                    <div className="flex gap-2">
-                      {actions.length === 0 && row.status !== 'approved' && <span className="text-muted">—</span>}
-                      {actions.map((action) => (
-                        <button
-                          key={action}
-                          type="button"
-                          disabled={pendingId === row.id}
-                          onClick={() => handleAction(row.id, action)}
-                          className="rounded-sm border border-rule bg-ivory px-3 py-1.5 font-sans text-[13px] font-medium text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {pendingId === row.id ? 'Saving…' : ACTION_LABELS[action]}
-                        </button>
-                      ))}
-                      {row.status === 'approved' ? (
-                        <button
-                          type="button"
-                          disabled={pendingId === row.id}
-                          onClick={() => handleReissueCode(row.id)}
-                          className="rounded-sm border border-rule bg-ivory px-3 py-1.5 font-sans text-[13px] font-medium text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {pendingId === row.id ? 'Saving…' : 'Reissue code'}
-                        </button>
-                      ) : null}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                      NOT_PROVIDED
+                    ),
+                },
+              ]}
+            />
+          </>
+        ) : null}
+      </DetailDrawer>
     </div>
   );
 }

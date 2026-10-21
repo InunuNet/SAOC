@@ -4,11 +4,21 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Html5Qrcode, type CameraCapabilities } from 'html5-qrcode';
 
 import { DoorResultBanner, type CheckInResult } from '@/components/admin/DoorResultBanner';
+import { PageHeader, PageShell } from '@/components/admin/PageHeader';
+import { BUTTON_PRIMARY, BUTTON_SECONDARY, FOCUS_RING } from '@/components/admin/tokens';
 
 type TorchFeature = ReturnType<CameraCapabilities['torchFeature']>;
 
 const SCANNER_ELEMENT_ID = 'qr-reader';
-const SCAN_CONFIG = { fps: 10, qrbox: { width: 250, height: 250 } };
+const QR_BOX_RATIO = 0.7;
+const SCAN_CONFIG = {
+  fps: 10,
+  aspectRatio: 1,
+  qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+    const side = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * QR_BOX_RATIO);
+    return { width: side, height: side };
+  },
+};
 const SUCCESS_AUTO_DISMISS_MS = 3000;
 
 // Camera lifecycle, surfaced to the volunteer instead of a blank box on failure.
@@ -32,21 +42,26 @@ const CAMERA_STATUS_MESSAGE: Record<Exclude<CameraStatus, 'starting' | 'running'
   error: 'The camera could not be started. Use manual entry below.',
 };
 
-// Deliberately NOT wrapped in site chrome — a nav bar is an obstacle at a show entrance.
-// Same fonts/tokens as the rest of the site, but tuned for one-handed, at-speed use in
-// bright daylight: large touch targets, high contrast, minimal chrome. Extracted
-// unchanged from app/admin/door/page.tsx (F1 admin-nav-menu) so app/admin/door/page.tsx
-// could become an async Server Component capable of computing canReviewVendors for
-// AdminNav's minimal variant.
-export function DoorScannerClient() {
+// Inside the admin shell, tuned for one-handed, at-speed use in bright daylight: a square
+// camera, a result banner under it, a 48px manual field and a 56px "Scan next". Decoding
+// pauses while a result is showing so a QR still in frame cannot overwrite a valid check-in
+// with an "already used" a moment later; "Scan next" (or the success auto-dismiss) resumes it.
+interface DoorScannerClientProps {
+  /** Tickets already checked in when the page loaded; null hides the counter. */
+  initialCheckedInCount: number | null;
+}
+
+export function DoorScannerClient({ initialCheckedInCount }: DoorScannerClientProps) {
   const [result, setResult] = useState<CheckInResult | null>(null);
   const [manualRef, setManualRef] = useState('');
   const [cameraStatus, setCameraStatus] = useState<CameraStatus>('starting');
   const [torchFeature, setTorchFeature] = useState<TorchFeature | null>(null);
   const [torchOn, setTorchOn] = useState(false);
+  const [checkedInCount, setCheckedInCount] = useState(initialCheckedInCount);
   const scanningRef = useRef<boolean>(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const manualInputRef = useRef<HTMLInputElement | null>(null);
 
   function clearDismissTimer() {
     if (dismissTimerRef.current !== null) {
@@ -55,19 +70,78 @@ export function DoorScannerClient() {
     }
   }
 
+  function pauseScanning() {
+    try {
+      scannerRef.current?.pause(false);
+    } catch {
+      // Not scanning (camera unavailable): nothing to pause.
+    }
+  }
+
+  function resumeScanning() {
+    try {
+      scannerRef.current?.resume();
+    } catch {
+      // Not paused or not scanning: nothing to resume.
+    }
+  }
+
+  function scanNext() {
+    clearDismissTimer();
+    setResult(null);
+    resumeScanning();
+    manualInputRef.current?.focus();
+  }
+
   function applyResult(data: CheckInResult) {
     clearDismissTimer();
     setResult(data);
+    pauseScanning();
     if (data.success) {
+      setCheckedInCount((count) => (count === null ? count : count + 1));
       dismissTimerRef.current = setTimeout(() => {
         dismissTimerRef.current = null;
         setResult(null);
+        resumeScanning();
       }, SUCCESS_AUTO_DISMISS_MS);
     }
   }
 
   useEffect(() => {
     return () => clearDismissTimer();
+  }, []);
+
+  // Keep the screen awake while the scanner is open (Screen Wake Lock, where supported). The
+  // lock is released by the browser when the tab is hidden, so it is re-requested on return.
+  useEffect(() => {
+    if (!('wakeLock' in navigator)) return;
+    let sentinel: WakeLockSentinel | null = null;
+    let cancelled = false;
+
+    async function acquire() {
+      try {
+        const lock = await navigator.wakeLock.request('screen');
+        if (cancelled) {
+          await lock.release();
+          return;
+        }
+        sentinel = lock;
+      } catch {
+        // Denied (e.g. low battery) or unsupported at runtime: the scanner works without it.
+      }
+    }
+
+    function onVisibilityChange() {
+      if (document.visibilityState === 'visible') void acquire();
+    }
+
+    void acquire();
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      void sentinel?.release().catch(() => undefined);
+    };
   }, []);
 
   async function handleCheckIn(bookingRef: string): Promise<void> {
@@ -164,85 +238,76 @@ export function DoorScannerClient() {
   const cameraFailed = cameraStatus !== 'starting' && cameraStatus !== 'running';
 
   return (
-    <div className="flex h-dvh min-h-dvh flex-col overflow-hidden bg-parchment px-4 py-6">
-      <div className="mx-auto flex min-h-0 w-full max-w-[480px] flex-1 flex-col">
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <span className="eyebrow">SAOC</span>
-          <h1 className="mt-3 font-serif text-[26px] font-semibold leading-tight text-ink">
-            Door Check-in
-          </h1>
+    <PageShell>
+      <div className="mx-auto w-full max-w-[480px]">
+        <PageHeader
+          title="Door scanner"
+          subtitle={checkedInCount === null ? undefined : `Checked in: ${checkedInCount}`}
+        />
 
-          <div className="mt-5 border border-rule bg-ivory p-4">
-            <div id={SCANNER_ELEMENT_ID} />
-
-            {cameraStatus === 'starting' && (
-              <p className="mt-3 font-sans text-[15px] text-muted">Starting camera…</p>
-            )}
-
-            {cameraFailed && (
-              <div className="mt-3 space-y-3">
-                <p className="font-sans text-[15px] text-ink">
-                  {CAMERA_STATUS_MESSAGE[cameraStatus]}
-                </p>
-                <button
-                  type="button"
-                  onClick={retryCamera}
-                  className="w-full rounded-sm border border-rule bg-ivory px-4 py-3 font-sans text-[15px] font-semibold text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                >
-                  Try camera again
-                </button>
-              </div>
-            )}
-
-            {cameraStatus === 'running' && torchFeature && (
-              <button
-                type="button"
-                onClick={() => void toggleTorch()}
-                aria-pressed={torchOn}
-                className="mt-3 w-full rounded-sm border border-rule bg-ivory px-4 py-3 font-sans text-[15px] font-semibold text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              >
-                {torchOn ? 'Turn off torch' : 'Turn on torch'}
-              </button>
-            )}
-          </div>
+        <div className="aspect-square w-full overflow-hidden rounded-[2px] border border-rule bg-ivory">
+          <div id={SCANNER_ELEMENT_ID} className="h-full w-full" />
         </div>
 
-        <form onSubmit={handleManualSubmit} className="mt-5 flex-none space-y-2">
-          <label
-            htmlFor="manual-ref"
-            className="font-mono text-[11px] tracking-[0.16em] text-muted"
+        {cameraStatus === 'starting' && (
+          <p className="mt-3 font-sans text-[15px] text-muted">Starting camera…</p>
+        )}
+
+        {cameraFailed && (
+          <div className="mt-3 space-y-3">
+            <p className="font-sans text-[15px] text-ink">{CAMERA_STATUS_MESSAGE[cameraStatus]}</p>
+            <button type="button" onClick={retryCamera} className={`${BUTTON_SECONDARY} w-full`}>
+              Try camera again
+            </button>
+          </div>
+        )}
+
+        {cameraStatus === 'running' && torchFeature && (
+          <button
+            type="button"
+            onClick={() => void toggleTorch()}
+            aria-pressed={torchOn}
+            className={`${BUTTON_SECONDARY} mt-3 w-full`}
           >
+            {torchOn ? 'Turn off torch' : 'Turn on torch'}
+          </button>
+        )}
+
+        <div className="mt-4 min-h-[72px]" aria-live="polite">
+          {result && <DoorResultBanner result={result} />}
+        </div>
+
+        <form onSubmit={handleManualSubmit} className="mt-4 space-y-2">
+          <label htmlFor="manual-ref" className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted">
             Manual entry
           </label>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex gap-3">
             <input
               id="manual-ref"
+              ref={manualInputRef}
               type="text"
               value={manualRef}
               onChange={(e) => setManualRef(e.target.value)}
               placeholder="Booking reference"
               autoComplete="off"
-              className="min-w-0 flex-1 rounded-sm border border-rule bg-ivory px-4 py-4 font-sans text-[18px] text-ink outline-none placeholder:text-muted focus-visible:ring-2 focus-visible:ring-primary/40"
+              autoCapitalize="characters"
+              spellCheck={false}
+              className={`h-12 min-w-0 flex-1 rounded-[2px] border border-rule bg-ivory px-4 font-mono text-[16px] text-ink placeholder:font-sans placeholder:text-muted ${FOCUS_RING}`}
             />
-            <button
-              type="submit"
-              className="rounded-sm bg-primary px-6 py-4 font-sans text-[18px] font-bold text-ivory transition-colors active:bg-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-            >
+            <button type="submit" className={`${BUTTON_PRIMARY} h-12`}>
               Check In
             </button>
           </div>
         </form>
 
-        {result && (
-          <DoorResultBanner
-            result={result}
-            onDismiss={() => {
-              clearDismissTimer();
-              setResult(null);
-            }}
-          />
-        )}
+        <button
+          type="button"
+          onClick={scanNext}
+          className={`${BUTTON_PRIMARY} mt-4 h-14 w-full text-[16px]`}
+        >
+          Scan next
+        </button>
       </div>
-    </div>
+    </PageShell>
   );
 }
