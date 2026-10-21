@@ -89,6 +89,11 @@ const ThemeContext = createContext<ShellTheme>(NOS_THEME);
 const CONTAINER_WIDTH = 600;
 const STACK_BREAKPOINT = 620;
 const GUTTER = 40;
+const NARROW_GUTTER = 20;
+/** Transparent left inset baked into the 560px NOS header PNG, as displayed at 280px (measured:
+ *  26px of 560). The header cell's left padding is cut by exactly this so the artwork, not the
+ *  PNG edge, lines up with the text edge. The asset itself is never cropped. */
+const NOS_HEADER_LOGO_INSET = 13;
 const HEADER_LOGO_WIDTH = 280;
 const HEADER_LOGO_HEIGHT = 69;
 const NOS_FOOTER_LOCKUP_WIDTH = 120;
@@ -114,6 +119,7 @@ function shellCss(t: ShellTheme): string {
   @media only screen and (max-width: ${STACK_BREAKPOINT}px) {
     .shell-container { width: 100% !important; }
     .shell-gutter { padding-left: 20px !important; padding-right: 20px !important; }
+    .shell-header-nos { padding-left: ${NARROW_GUTTER - NOS_HEADER_LOGO_INSET}px !important; padding-right: ${NARROW_GUTTER}px !important; }
     .shell-label { display: block !important; width: 100% !important; padding: 12px 0 4px 0 !important; }
     .shell-value { display: block !important; width: 100% !important; padding: 0 !important; }
   }
@@ -142,10 +148,15 @@ function Header({ family, theme: t }: { family: EmailShellFamily; theme: ShellTh
   return (
     <tr>
       <td
-        className="shell-header shell-gutter"
+        className={isSaoc ? 'shell-header shell-gutter' : 'shell-header shell-header-nos'}
         {...bgAttr(t.header)}
         align="left"
-        style={{ backgroundColor: t.header, padding: `28px ${GUTTER}px` }}
+        style={{
+          backgroundColor: t.header,
+          padding: isSaoc
+            ? `28px ${GUTTER}px`
+            : `28px ${GUTTER}px 28px ${GUTTER - NOS_HEADER_LOGO_INSET}px`,
+        }}
       >
         <Img
           src={logoUrl(
