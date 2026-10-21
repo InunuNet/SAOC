@@ -1,0 +1,11 @@
+e18608b028f7302d2e0a08a6f698ec3374eeb20111fa1b0e832ed303f753279f  .tmp/sandbox/provenance/contracts/checks/nos-provenance-fix/recovered-entries.mjs
+50b1e01e8b82bdb9d3de004c4c39291050bb80be119193cfbf2c19a6c115b09f  .tmp/sandbox/provenance/contracts/checks/nos-provenance-fix/check-extracts.mjs
+9a283688bc2382599d028cb19161b0bc43c218bf566915c6bd11742b9499b511  .tmp/sandbox/provenance/contracts/checks/nos-provenance-fix/check-public-safe.mjs
+8a9e19dd9af18b86927fe6e12d87ca4e89fd60b4c79eba8a182f4ba5610a2cbc  .tmp/sandbox/provenance/contracts/checks/nos-provenance-fix/check-notice-matrix.ts
+ea83accc457afe31b04eee73cf6e9a8480c9d49a9852e5660fe61a4bd6c0f0b9  .tmp/sandbox/provenance/contracts/checks/nos-provenance-fix/check-relink-plan.ts
+e58e03804782933cbc6ea4f7a9c371a90572f46f46e18023858cecd8be8f9726  .tmp/sandbox/provenance/contracts/checks/nos-provenance-fix/check-relink-live.mjs
+4df7e373fdfe713049787031100aed257ee691bd9397d7724b9df33c0c917d04  .tmp/sandbox/provenance/contracts/checks/nos-provenance-fix/check-m1.mjs
+1bef14427a566c12d0c7b38eb9a891159472310baf721c9e03a12f156f583026  .tmp/sandbox/provenance/contracts/checks/nos-provenance-fix/check-scope.mjs
+f6de32bed79f3cd7ab80433b266af5ea5a53e98228b8a8ce1f7dbd179e0f30ca  .agent/memory/project/specs/nos-provenance-fix/goldens/f3-extracts/02-about-the-national-show.content.md
+992f88814ee2b07542152f5ababf404f21717c622181e4a33c8798777d3c71fc  .agent/memory/project/specs/nos-provenance-fix/goldens/f3-extracts/03-what-to-expect.content.md
+90699667d896672a734229bfa56f7423425cf4a313ad0f481fd6e6695d7726b7  .agent/memory/project/specs/nos-provenance-fix/goldens/f3-extracts/04-south-african-exhibitors.content.md

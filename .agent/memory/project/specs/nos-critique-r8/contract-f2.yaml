@@ -1,0 +1,44 @@
+# Sources: Codi FINAL rulings relayed by the lead (2026-10-17), nos-v4 goldens. No new copy.
+schema: athanor.contract/v1
+slug: nos-critique-r8
+goal: >-
+  Show gettingThereIntro under the Getting there h2 only while every Getting-there item is unconfirmed, via an exported gettingThereLede(intro, items), in .tmp/sandbox/critique-r8; withheld when any item is confirmed.
+  Exit criterion (Brad via the lead; design-cb's rulings are final): this feature loops build, critique, fix until impeccable scores >= 39/40 with
+  P0/P1/P2 = 0 AND design-cb PASSes. The lead runs that loop and relays the PASS; the gate below stays mechanical.
+created_at: '2026-10-17'
+autonomy: high
+exclusions:
+  - item: 'every file but VisitDisclosure.tsx and the plan-your-visit page'
+    reason: 'Enforced by A2 (stacked footprint, goldens/f1..f2-footprint.json).'
+features:
+  - id: F2
+    name: Getting-there lede follows the status rule
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r8/goldens/f2-spec.md
+  - .agent/memory/project/specs/nos-critique-r8/goldens/f2-footprint.json
+  - .agent/memory/project/specs/nos-critique-r8/goldens/checks-f2.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f2 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r8/goldens/checks-f2.sha256
+    - id: A2
+      description: Footprint (stacked branch) - f1..f2 paths and docs/nos-critique-r8.md only; nothing off limits
+      command: node .agent/memory/project/specs/nos-critique-r8/checks/f2-footprint.mjs
+    - id: A3
+      description: Static S1-S4 - gettingThereLede exported and used for the SectionHeading lede, the raw intro no longer passed, no new copy
+      command: node .agent/memory/project/specs/nos-critique-r8/checks/f2-static.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r8 type-check && pnpm --dir .tmp/sandbox/critique-r8 exec eslint --max-warnings 0 components/nos components/show "app/(marketing)/national-show"'
+    - id: A5
+      description: Production build passes (input for the rendered and fixture checks)
+      command: pnpm --dir .tmp/sandbox/critique-r8 build
+    - id: A6
+      description: Fixture - gettingThereLede over none-confirmed, pending+research, unset, mixed, all-confirmed, no items, no intro and blank intro (props only, run under tsx)
+      command: node .agent/memory/project/specs/nos-critique-r8/checks/f2-fixture.mjs
+    - id: A7
+      description: Rendered on next start 3010-3019 - with nothing confirmed the live lede still renders under the h2 in both modes at 390 and 1280
+      command: node .agent/memory/project/specs/nos-critique-r8/checks/f2-rendered.mjs

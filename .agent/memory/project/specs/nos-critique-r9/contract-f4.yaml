@@ -1,0 +1,41 @@
+# Sources: Codi FINAL rulings relayed by the lead (2026-10-17), interim QA P3s on r8, nos-v4 goldens. No new copy.
+schema: athanor.contract/v1
+slug: nos-critique-r9
+goal: >-
+  Remove the duplicate emergency-contacts label filter from plan-your-visit/page.tsx (VisitEmergency owns it) and pin the exhibitor-kind short tag as the ruled opt-in behaviour in .tmp/sandbox/critique-r9, with no visible change.
+  Exit criterion (Brad via the lead; design-cb's rulings are final): this feature loops build, critique, fix until impeccable scores >= 39/40 with
+  P0/P1/P2 = 0 AND design-cb PASSes. The lead runs that loop and relays the PASS; the gate below stays mechanical.
+created_at: '2026-10-17'
+autonomy: high
+exclusions:
+  - item: 'every file outside the stacked allowlist'
+    reason: 'Enforced by A2 (stacked footprint, goldens/f1..f4-footprint.json).'
+features:
+  - id: F4
+    name: One emergency label filter and the exhibitor short tag confirmed
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r9/goldens/f4-spec.md
+  - .agent/memory/project/specs/nos-critique-r9/goldens/f4-footprint.json
+  - .agent/memory/project/specs/nos-critique-r9/goldens/checks-f4.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f4 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r9/goldens/checks-f4.sha256
+    - id: A2
+      description: Footprint (stacked branch) - f1..f4 paths and docs/nos-critique-r9.md only; nothing off limits
+      command: node .agent/memory/project/specs/nos-critique-r9/checks/f4-footprint.mjs
+    - id: A3
+      description: Static S1-S4 - page no longer filters the contacts, VisitEmergency keeps its filter and null return, ShowStatusLine opts in to the short tag and ExhibitorStatusBadge does not, docs exist
+      command: node .agent/memory/project/specs/nos-critique-r9/checks/f4-static.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r9 type-check && pnpm --dir .tmp/sandbox/critique-r9 exec eslint --max-warnings 0 components/nos-chrome components/nos components/show "app/(marketing)/national-show"'
+    - id: A5
+      description: Production build passes (input for the rendered and fixture checks)
+      command: pnpm --dir .tmp/sandbox/critique-r9 build
+    - id: A6
+      description: Fixture - unlabelled contacts and their numbers are never drawn, all-unlabelled or empty draws nothing, exhibitor-kind short tag is opt-in only (props only, run under tsx)
+      command: node .agent/memory/project/specs/nos-critique-r9/checks/f4-fixture.mjs

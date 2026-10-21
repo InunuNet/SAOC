@@ -1,0 +1,86 @@
+schema: athanor.contract/v1
+slug: nos-provenance-fix
+goal: >-
+  F3, Option A (approved 2026-10-16 by the SAOC lead under Brad's delegation).
+  Stop the false "AI-generated placeholder" notice on the three council-supplied
+  NOS sections (02 About, 03 What to Expect, 04 South African Exhibitors) by
+  copying a byte-verbatim, body-only extract of each gitignored drive-source
+  content.md into the tracked content/drive-recovered/ tree, repointing their
+  sourcePath in the seeds and, via a new dry-run-first --relink-sources mode of
+  scripts/seed-show-pages.ts, in the three production Sanity documents (that
+  field only). Nothing is authored (docs/rules/no-invention.md). Worktree
+  .tmp/sandbox/provenance, branch fix/nos-provenance-a, base 038fd169.
+  Goldens: goldens/f3-recovery.md, goldens/f3-notice-matrix.md,
+  goldens/f3-extracts/*.content.md.
+created_at: '2026-10-16'
+autonomy: high
+exclusions:
+  - item: Any copy edit, the gate (lib/data/show-pages.ts), the hand-built /national-show/about and /what-to-expect routes
+    reason: Copy-and-repoint only. Pinned by A9.
+  - item: The 13 legacy showPage.<pageKey> dot-id Sanity documents
+    reason: Invisible to anonymous readers (public grant matches one path segment), never read or written by F3. Flagged in spec.md section 10 for a separate cleanup decision. A13 proves F3 leaves them byte-identical.
+  - item: verify-show-page-m1 S1, P1, P3
+    reason: Pre-existing staleness from national-show-ia-alignment M4 (council-draft, retired pages), failing on base 038fd169 before F3. Tolerated by A8, nothing else is.
+  - item: Deploy to beta, F1/F2 (trace excludes)
+    reason: SAOC rule is local until approved, then beta. F2's '/national-show/*' include already ships content/drive-recovered/**/content.md.
+features:
+  - id: F3
+    name: Option A — verbatim recovered extracts for 02/03/04, seed + Sanity sourcePath relink, notice-matrix guard
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-provenance-fix/goldens/f3-recovery.md
+  - .agent/memory/project/specs/nos-provenance-fix/goldens/f3-notice-matrix.md
+  - .agent/memory/project/specs/nos-provenance-fix/goldens/f3-extracts/02-about-the-national-show.content.md
+  - .agent/memory/project/specs/nos-provenance-fix/goldens/f3-extracts/03-what-to-expect.content.md
+  - .agent/memory/project/specs/nos-provenance-fix/goldens/f3-extracts/04-south-african-exhibitors.content.md
+  - .agent/memory/project/specs/nos-provenance-fix/goldens/f3-checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: QA checks and golden extracts are unmodified since @architect wrote them (@dev never edits QA inputs)
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-provenance-fix/goldens/f3-checks.sha256
+    - id: A2
+      description: Condition 1 / decision (a) — three dirs of exactly content.md + recovery.json; content.md byte-identical to the golden extract; recovery.json pinned; seed body maps 1:1 onto the extract; paragraphs byte-exact in the gitignored source with matching manifest md5
+      command: node .tmp/sandbox/provenance/contracts/checks/nos-provenance-fix/check-extracts.mjs .tmp/sandbox/provenance .
+    - id: A3
+      description: Condition 1 — no credential word, e-mail, phone, URL or long digit run in the six new files; every paragraph already rendered verbatim on the public site
+      command: node .tmp/sandbox/provenance/contracts/checks/nos-provenance-fix/check-public-safe.mjs .tmp/sandbox/provenance
+    - id: A4
+      description: The worktree is a clean clone — no content/drive-source/ — so every pass reflects beta
+      command: test ! -e .tmp/sandbox/provenance/content/drive-source
+    - id: A5
+      description: Condition 3 / decision (d), seed corpus — every section's notice matches goldens/f3-notice-matrix.md through the real resolveNotice(); 6 gated routes covered; 6 negatives keep their notice
+      command: pnpm --dir .tmp/sandbox/provenance exec tsx contracts/checks/nos-provenance-fix/check-notice-matrix.ts
+    - id: A6
+      description: TypeScript compiles
+      command: pnpm --dir .tmp/sandbox/provenance type-check
+    - id: A7
+      description: ESLint clean with zero warnings on the changed scripts and the checks
+      command: pnpm --dir .tmp/sandbox/provenance exec eslint --max-warnings 0 scripts/seed-show-pages.ts scripts/checks/verify-show-page-m1.ts contracts/checks/nos-provenance-fix
+    - id: A8
+      description: Decision (b) — verify-show-page-m1 on a clean clone fails only the pre-existing S1/P1/P3; the 3 new RECOVERY_ENTRIES, the new method, the D1 count and the repointed G fixtures are present
+      command: node .tmp/sandbox/provenance/contracts/checks/nos-provenance-fix/check-m1.mjs .tmp/sandbox/provenance
+    - id: A9
+      description: Scope — allowlisted paths only; seeds differ only in the one sourcePath; seed-show-pages.ts additions-only; verify-show-page-m1.ts removes exactly the 5 pinned lines; the gate untouched
+      command: node .tmp/sandbox/provenance/contracts/checks/nos-provenance-fix/check-scope.mjs .tmp/sandbox/provenance 038fd169
+    - id: A10
+      description: Decision (c), pure — SOURCE_RELINKS pinned; planSourceRelink relinks, recognises already-linked, refuses 10 unsafe shapes; payload is exactly one sourcePath field; Rule 1 skip-council intact; seed bodies link to the recovered files
+      command: pnpm --dir .tmp/sandbox/provenance exec tsx contracts/checks/nos-provenance-fix/check-relink-plan.ts
+    - id: A11
+      description: Decision (c), dry run first — 3 RELINK lines, no REFUSE, ends with the dry-run marker
+      command: |-
+        test "$(grep -c '^RELINK showPage-0[234]-' .tmp/sandbox/provenance-relink/dry-run.log)" = 3 && ! grep -q '^REFUSE ' .tmp/sandbox/provenance-relink/dry-run.log && grep -q '^DRY RUN — no write issued$' .tmp/sandbox/provenance-relink/dry-run.log
+    - id: A12
+      description: Decision (c), write — 3 APPLIED lines, no REFUSE
+      command: |-
+        test "$(grep -c '^APPLIED showPage-0[234]-' .tmp/sandbox/provenance-relink/apply.log)" = 3 && ! grep -q '^REFUSE ' .tmp/sandbox/provenance-relink/apply.log
+    - id: A13
+      description: Condition 2 — every showPage document (hyphen and dot-id) deep-equals the pre-write snapshot except _rev/_updatedAt and the 3 pinned sourcePath values, which now hold their to-paths
+      command: node .tmp/sandbox/provenance/contracts/checks/nos-provenance-fix/check-relink-live.mjs verify .tmp/sandbox/provenance .tmp/sandbox/provenance-relink/before.json
+    - id: A14
+      description: Condition 3, live — the published dataset read anonymously (the site's view) matches the notice matrix; no duplicate pageKey visible
+      command: pnpm --dir .tmp/sandbox/provenance exec tsx contracts/checks/nos-provenance-fix/check-notice-matrix.ts --live
+    - id: A15
+      description: Condition 2 — the before and after sourcePath of all three documents, as printed by A13's verify, are recorded in spec.md section 10
+      command: grep -qF "2.1 About - 2027 National Show/v1.0/content.md -> content/drive-recovered/02-about-the-national-show/about/content.md" .agent/memory/project/specs/nos-provenance-fix/spec.md && grep -qF "3.1 Info - What to Expect/v1.0/content.md -> content/drive-recovered/03-what-to-expect/what-to-expect/content.md" .agent/memory/project/specs/nos-provenance-fix/spec.md && grep -qF "1.1 Exhibitors - South African Exhibitors/v1.0/content.md -> content/drive-recovered/04-south-african-exhibitors/sa-exhibitors/content.md" .agent/memory/project/specs/nos-provenance-fix/spec.md

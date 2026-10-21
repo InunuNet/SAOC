@@ -1,0 +1,36 @@
+# Sources: lead task 2026-10-18 (F6 [P2] doubled section gap after a disclosure: 230px at 1280 on what-to-expect, same above "Programme" on workshops at 390;
+# target one section gap <=96px at 1280 and <=64px at 390, no other site-wide change), architect measurement and sweep on 26fde668 (goldens/f6-spec.md).
+schema: athanor.contract/v1
+slug: nos-critique-r12
+goal: >-
+  In .tmp/sandbox/critique-r12, make the gap after the section-ending status disclosure on /national-show/what-to-expect and /national-show/workshops one
+  40px section gap (+-2, at 375/390/768/1280; lead ruling 2026-10-18) instead of two stacked rhythm units, with the shared section rhythm and every other route's geometry unchanged.
+created_at: '2026-10-18'
+autonomy: high
+exclusions:
+  - item: 'every file outside the union of the r12 goldens/fN-footprint.json and docs/nos-critique-r12.md'
+    reason: 'Enforced by A2. The shared .nos-section/.nk-section/.nos-section-joined rules stay byte-identical; the stacked nk-sections on /national-show/tickets are reported, not changed.'
+features:
+  - id: F6
+    name: One section gap after a section-ending status disclosure (what-to-expect, workshops)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r12/goldens/f6-spec.md
+  - .agent/memory/project/specs/nos-critique-r12/goldens/f6-footprint.json
+  - .agent/memory/project/specs/nos-critique-r12/goldens/f6-baseline.json
+  - .agent/memory/project/specs/nos-critique-r12/goldens/checks-f6.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f6 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r12/goldens/checks-f6.sha256
+    - id: A2
+      description: Footprint - the r12 branch differs from main 26fde668 only inside the r12 allowlist and the docs file, HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r12/checks/f6-footprint.mjs
+    - id: A3
+      description: Static S1-S2 - nos-structure.css only gains lines and keeps the shared section rhythm rules byte-identical, docs record F6
+      command: node .agent/memory/project/specs/nos-critique-r12/checks/f6-static.mjs
+    - id: A4
+      description: Rendered (public) at 375, 390, 768 and 1280 - one 40px (+-2) section gap after the disclosure on what-to-expect and workshops, their disclosure, follower, hero and main text unchanged, hub, ticket hub, plan-your-visit and exhibitors geometry equal 26fde668
+      command: node .agent/memory/project/specs/nos-critique-r12/checks/f6-rendered.mjs

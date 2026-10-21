@@ -1,0 +1,135 @@
+{
+ "recorded": "from the d05c85a5 build (next start, public mode, DPR 1)",
+ "measured": {
+  "/national-show/tickets @375": {
+   ".nos-theme .nk-btn": [
+    "font-size: 14px",
+    "font-size: 14px",
+    "font-size: 14px",
+    "font-size: 14px",
+    "font-size: 14px",
+    "font-size: 14px"
+   ],
+   ".nos-theme .nk-pool strong": [
+    "font-size: 25px"
+   ],
+   ".nos-theme .nk-pool p": [
+    "font-size: 16px"
+   ],
+   ".nos-theme .nk-facts dd": [
+    "font-size: 16px",
+    "font-size: 16px",
+    "font-size: 16px"
+   ],
+   ".nos-theme .nk-visit a": [
+    "font-size: 16px",
+    "font-size: 16px",
+    "font-size: 16px",
+    "font-size: 16px"
+   ],
+   ".nos-theme .nk-stub": [
+    "background-color: rgb(11, 10, 20); background-image: none",
+    "background-color: rgb(126, 63, 151); background-image: none",
+    "background-color: rgb(33, 26, 87); background-image: none",
+    "background-color: rgb(127, 125, 51); background-image: none",
+    "background-color: rgb(11, 10, 20); background-image: none",
+    "background-color: rgb(126, 63, 151); background-image: none",
+    "background-color: rgb(33, 26, 87); background-image: none",
+    "background-color: rgb(127, 125, 51); background-image: none",
+    "background-color: rgb(74, 61, 140); background-image: none",
+    "background-color: rgb(106, 104, 41); background-image: none",
+    "background-color: rgb(51, 41, 111); background-image: none"
+   ]
+  },
+  "/national-show/workshops @375": {
+   ".nos-theme .nk-btn": [
+    "font-size: 14px"
+   ],
+   ".nos-theme .nk-pool strong": [],
+   ".nos-theme .nk-pool p": [],
+   ".nos-theme .nk-facts dd": [],
+   ".nos-theme .nk-visit a": [],
+   ".nos-theme .nk-stub": [
+    "background-color: rgb(126, 63, 151); background-image: none",
+    "background-color: rgb(51, 41, 111); background-image: none"
+   ]
+  },
+  "/tickets/vip?quantity=1 @375": {
+   ".nos-theme .nk-btn": [
+    "font-size: 14px"
+   ],
+   ".nos-theme .nk-pool strong": [],
+   ".nos-theme .nk-pool p": [],
+   ".nos-theme .nk-facts dd": [],
+   ".nos-theme .nk-visit a": [],
+   ".nos-theme .nk-stub": [
+    "background-color: rgb(11, 10, 20); background-image: none"
+   ]
+  },
+  "/national-show/tickets @1280": {
+   ".nos-theme .nk-btn": [
+    "font-size: 14px",
+    "font-size: 14px",
+    "font-size: 14px",
+    "font-size: 14px",
+    "font-size: 14px",
+    "font-size: 14px"
+   ],
+   ".nos-theme .nk-pool strong": [
+    "font-size: 25px"
+   ],
+   ".nos-theme .nk-pool p": [
+    "font-size: 16px"
+   ],
+   ".nos-theme .nk-facts dd": [
+    "font-size: 16px",
+    "font-size: 16px",
+    "font-size: 16px"
+   ],
+   ".nos-theme .nk-visit a": [
+    "font-size: 16px",
+    "font-size: 16px",
+    "font-size: 16px",
+    "font-size: 16px"
+   ],
+   ".nos-theme .nk-stub": [
+    "background-color: rgb(11, 10, 20); background-image: none",
+    "background-color: rgb(126, 63, 151); background-image: none",
+    "background-color: rgb(33, 26, 87); background-image: none",
+    "background-color: rgb(127, 125, 51); background-image: none",
+    "background-color: rgb(11, 10, 20); background-image: none",
+    "background-color: rgb(126, 63, 151); background-image: none",
+    "background-color: rgb(33, 26, 87); background-image: none",
+    "background-color: rgb(127, 125, 51); background-image: none",
+    "background-color: rgb(74, 61, 140); background-image: none",
+    "background-color: rgb(106, 104, 41); background-image: none",
+    "background-color: rgb(51, 41, 111); background-image: none"
+   ]
+  },
+  "/national-show/workshops @1280": {
+   ".nos-theme .nk-btn": [
+    "font-size: 14px"
+   ],
+   ".nos-theme .nk-pool strong": [],
+   ".nos-theme .nk-pool p": [],
+   ".nos-theme .nk-facts dd": [],
+   ".nos-theme .nk-visit a": [],
+   ".nos-theme .nk-stub": [
+    "background-color: rgb(126, 63, 151); background-image: none",
+    "background-color: rgb(51, 41, 111); background-image: none"
+   ]
+  },
+  "/tickets/vip?quantity=1 @1280": {
+   ".nos-theme .nk-btn": [
+    "font-size: 14px"
+   ],
+   ".nos-theme .nk-pool strong": [],
+   ".nos-theme .nk-pool p": [],
+   ".nos-theme .nk-facts dd": [],
+   ".nos-theme .nk-visit a": [],
+   ".nos-theme .nk-stub": [
+    "background-color: rgb(11, 10, 20); background-image: none"
+   ]
+  }
+ }
+}

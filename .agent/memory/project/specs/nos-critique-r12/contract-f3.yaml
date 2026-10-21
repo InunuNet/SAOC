@@ -1,0 +1,36 @@
+# Sources: lead tasks 2026-10-18 (sweep-221/sweep-26f P2s: NOS 404, SAOC 404 extension, /tickets/<missing> ruled NOS), F24 title templates, both not-founds' eyebrow and lede, R63 (nos-critique-r6). No new copy.
+schema: athanor.contract/v1
+slug: nos-critique-r12
+goal: >-
+  In .tmp/sandbox/critique-r12, give the NOS 404, the SAOC 404 and the missing-ticket branch one-suffix "Page not found" titles, their own ledes,
+  no canonical and noindex in both the served and the hydrated head, make /societies, /events and archive/[year] call notFound() in generateMetadata for a missing entity, and give the SAOC 404 a <main> landmark with zero visual change, so axe is clean on both 404s.
+created_at: '2026-10-18'
+autonomy: high
+exclusions:
+  - item: 'every file outside the union of goldens/f1- to f4-footprint.json and docs/nos-critique-r12.md'
+    reason: 'Enforced by A2. The NOS and root layouts stay unchanged; the /tickets/<missing> soft 404 (HTTP 200) is the lead''s P3, outside r12.'
+features:
+  - id: F3
+    name: NOS and SAOC not-found metadata and landmark, missing-ticket and missing-entity metadata
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r12/goldens/f3-spec.md
+  - .agent/memory/project/specs/nos-critique-r12/goldens/f3-footprint.json
+  - .agent/memory/project/specs/nos-critique-r12/goldens/f3-baseline.json
+  - .agent/memory/project/specs/nos-critique-r12/goldens/supersession.json
+  - .agent/memory/project/specs/nos-critique-r12/goldens/checks-f3.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f3 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r12/goldens/checks-f3.sha256
+    - id: A2
+      description: Footprint - the r12 branch differs from main 26fde668 only inside the f1-f4 allowlist and the docs file, HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r12/checks/f3-footprint.mjs
+    - id: A3
+      description: Static S1-S7 - NOS not-found metadata, catch-all generateMetadata notFound(), SAOC section byte-identical inside <main> with metadata, marketing not-found without <main>, missing-ticket notFound() in generateMetadata, docs record F3, societies/events/archive generateMetadata notFound() for a missing entity and nothing else
+      command: node .agent/memory/project/specs/nos-critique-r12/checks/f3-static.mjs
+    - id: A4
+      description: Rendered - NOS 404, SAOC 404 (flat and nested), /tickets/zz-r12-missing, /societies/zz-r12-missing, /events/zz-r12-missing and /national-show/archive/1800 carry one title, no canonical, their lede and noindex in served HTML and hydrated DOM, one <main>, axe clean at 375/1280, SAOC section box unchanged; home, hub, archive and /tickets/vip heads unchanged
+      command: node .agent/memory/project/specs/nos-critique-r12/checks/f3-rendered.mjs

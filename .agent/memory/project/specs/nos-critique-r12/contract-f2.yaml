@@ -1,0 +1,35 @@
+# Sources: lead task 2026-10-18 (sweep-221 NOS P2, axe heading-order on /tickets/vip), components/show/VisitorInfoBlock.tsx:24 headingLevel idiom, launch-weekend F18-A28. No new copy.
+schema: athanor.contract/v1
+slug: nos-critique-r12
+goal: >-
+  In .tmp/sandbox/critique-r12, give the single-ticket page a correct outline (h1 then an h2 ticket name) with a TicketCard headingLevel prop that defaults to h3,
+  so axe heading-order is clean on /tickets/vip and /national-show/tickets with no computed-style change to .nk-name.
+created_at: '2026-10-18'
+autonomy: high
+exclusions:
+  - item: 'every file outside the union of goldens/f1- to f4-footprint.json and docs/nos-critique-r12.md'
+    reason: 'Enforced by A2. SessionTicketCard and the multi-card pages keep h3 unchanged.'
+features:
+  - id: F2
+    name: TicketCard headingLevel (default h3), h2 on the single-ticket route
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r12/goldens/f2-spec.md
+  - .agent/memory/project/specs/nos-critique-r12/goldens/f2-footprint.json
+  - .agent/memory/project/specs/nos-critique-r12/goldens/f2-nkname-baseline.json
+  - .agent/memory/project/specs/nos-critique-r12/goldens/checks-f2.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f2 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r12/goldens/checks-f2.sha256
+    - id: A2
+      description: Footprint - the r12 branch differs from main 26fde668 only inside the f1-f4 allowlist and the docs file, HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r12/checks/f2-footprint.mjs
+    - id: A3
+      description: Static S1-S4 - TicketCard headingLevel defaulting to h3, one added headingLevel="h2" line on the single-ticket page, F18-A28 card render still green, docs record F2
+      command: node .agent/memory/project/specs/nos-critique-r12/checks/f2-static.mjs
+    - id: A4
+      description: Rendered - axe heading-order clean on /tickets/vip?quantity=1 and /national-show/tickets at 360/375/768/1280, vip name is h2, every .nk-name keeps its 26fde668 text, computed style and box
+      command: node .agent/memory/project/specs/nos-critique-r12/checks/f2-rendered.mjs

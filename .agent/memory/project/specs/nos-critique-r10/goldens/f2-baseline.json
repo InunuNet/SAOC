@@ -1,0 +1,23 @@
+{
+ "recorded": "from the d05c85a5 build (next start, public mode, DPR 1); datesIdx/discIdx are the BASE order, for the record only",
+ "measured": {
+  "375": {
+   "datesText": "Show datesThursday 23 to Sunday 26 September 2027",
+   "discText": "※To be confirmed by the show committeeTo be confirmedOpening hours · admission · food and refreshments · photography · cloakroom and plant holding · accessibility.Be the first to know",
+   "datesIdx": 1,
+   "discIdx": 0
+  },
+  "768": {
+   "datesText": "Show datesThursday 23 to Sunday 26 September 2027",
+   "discText": "※To be confirmed by the show committeeTo be confirmedOpening hours · admission · food and refreshments · photography · cloakroom and plant holding · accessibility.Be the first to know",
+   "datesIdx": 1,
+   "discIdx": 0
+  },
+  "1280": {
+   "datesText": "Show datesThursday 23 to Sunday 26 September 2027",
+   "discText": "※To be confirmed by the show committeeTo be confirmedOpening hours · admission · food and refreshments · photography · cloakroom and plant holding · accessibility.Be the first to know",
+   "datesIdx": 1,
+   "discIdx": 0
+  }
+ }
+}

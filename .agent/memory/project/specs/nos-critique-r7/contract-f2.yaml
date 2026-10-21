@@ -1,0 +1,42 @@
+# Sources: Codi P3 (2026-10-17). One CSS property; no copy.
+schema: athanor.contract/v1
+slug: nos-critique-r7
+goal: >-
+  Add text-wrap: pretty to the NosHero lede (.nos-theme .nos-hero-lede in nos-theme.css) in .tmp/sandbox/critique-r7 so the exhibitors public lede at 390
+  has no single-word last line; one added line, nothing else.
+  Exit criterion (Brad via the lead; design-cb's rulings are final): this feature loops build, critique, fix until impeccable scores >= 39/40 with
+  P0/P1/P2 = 0 AND design-cb PASSes. The lead runs that loop and relays the PASS; the gate below stays mechanical.
+created_at: '2026-10-17'
+autonomy: high
+exclusions:
+  - item: 'every file but nos-theme.css'
+    reason: 'One-property change. Enforced by A2 (goldens/f2-footprint.json).'
+features:
+  - id: F2
+    name: text-wrap pretty on the NosHero lede
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r7/goldens/f2-spec.md
+  - .agent/memory/project/specs/nos-critique-r7/goldens/f2-footprint.json
+  - .agent/memory/project/specs/nos-critique-r7/goldens/checks-f2.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f2 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r7/goldens/checks-f2.sha256
+    - id: A2
+      description: Footprint - f2 may change only nos-theme.css (on top of f1's paths)
+      command: node .agent/memory/project/specs/nos-critique-r7/checks/f2-footprint.mjs
+    - id: A3
+      description: Static S1-S3 - nos-theme.css gains exactly the line text-wrap pretty inside the .nos-hero-lede rule, NosHero.tsx unchanged
+      command: node .agent/memory/project/specs/nos-critique-r7/checks/f2-static.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r7 type-check && pnpm --dir .tmp/sandbox/critique-r7 exec eslint --max-warnings 0 components/nos "app/(marketing)/national-show"'
+    - id: A5
+      description: Production build passes (input for A6)
+      command: pnpm --dir .tmp/sandbox/critique-r7 build
+    - id: A6
+      description: Rendered on next start 3010-3019 - every hero lede that renders (exhibitors mandatory) computes text-wrap pretty in both modes at 390 and 1280, and no lede ends on a single-word last line at 390
+      command: node .agent/memory/project/specs/nos-critique-r7/checks/f2-rendered.mjs

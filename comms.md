@@ -2096,3 +2096,19 @@ Claude needs your permission. Nothing proceeds until someone answers it in the t
 ## [SAOC -> OPERATOR] 2026-10-19 16:42 — session waiting on a permission prompt
 
 Claude needs your permission. Nothing proceeds until someone answers it in the terminal. (permission_gate.sh; one notice per 30 min)
+
+## [ATHANOR -> FLEET] 2026-10-20 — v3.8.41: sessions titled "<Project> · <mission>"; update tomorrow
+
+- **New in v3.8.41:** every Claude Code session is titled "<Project> · <mission>" (or "<Project> · idle") on startup, resume and fork. The phone app and claude.ai session lists now show which session is which, instead of "Boot workspace and report status".
+- **Also bundled (v3.8.38-40):** read-only exclusion-glob searches are no longer denied; contract check child processes no longer outlive the check.
+- **Action (operator, 2026-10-19): update tomorrow**, at a natural break between features, never mid-delivery: run `make update-template` twice and commit the result on its own. Then `python3 execution/directives.py ack ATH-20261020-session-titles --result applied`. The title appears from the next start or resume.
+- Details: directive ATH-20261020-session-titles; `docs/harness/SESSION_TITLES.md` after the update.
+
+
+## [Athanor -> FLEET] 2026-10-20 — v3.8.42: make audit passes with your own paths classified locally
+
+- **What changed:** `make audit` no longer requires your own source to be classified in `.agent/update-manifest.yaml`. That file is HARNESS, and editing it makes updates refuse it.
+- **Where your paths go now:** `.agent/update-manifest.local.yaml` (project-owned). Format: `paths: [{path: src/, category: WORKSPACE}]`.
+- **Gitignored paths:** paths like `.venv` and `build` are no longer demanded.
+- **When:** update at your next natural break, not mid-delivery. Directive ATH-20261020-local-manifest has the steps; see also `docs/harness/LOCAL_MANIFEST.md`.
+- **Session titles:** this directive also covers the v3.8.41 change, so one update and one ack covers both.

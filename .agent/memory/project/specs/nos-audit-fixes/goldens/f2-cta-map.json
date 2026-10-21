@@ -1,0 +1,82 @@
+{
+  "slug": "nos-audit-fixes",
+  "feature": "F2",
+  "base": "047d610e",
+  "source": "Brad 2026-10-15 via lead saoc-2b: NOS 'Book tickets' -> existing /tickets/[slug] -> /tickets/confirmation | /tickets/cancelled; no new NOS routes; leave /national-show/tickets/buy alone",
+  "flow": [
+    "/national-show",
+    "/national-show/tickets",
+    "/tickets/<slug>",
+    "/tickets/confirmation | /tickets/cancelled"
+  ],
+  "ctas": [
+    {
+      "id": "C1",
+      "file": "app/(marketing)/national-show/page.tsx",
+      "label": "Book tickets →",
+      "before": "/tickets",
+      "after": "/national-show/tickets",
+      "check": "f2-check-hero-cta.mjs"
+    },
+    {
+      "id": "C2",
+      "file": "app/(marketing)/national-show/tickets/page.tsx",
+      "label": "{p.name} (Sanity)",
+      "before": "/tickets",
+      "after": "`/tickets/${p.slug}` per filterPubliclyListableTicketTypes(admission)",
+      "check": "f2-check-nos-tickets-page.mjs",
+      "after_when_empty": "base button verbatim: <Button as={Link} href=\"/tickets\" variant=\"primary\" className=\"w-fit\">Get visitor tickets</Button> (D4)"
+    },
+    {
+      "id": "C3",
+      "file": "app/(marketing)/national-show/what-to-expect/page.tsx",
+      "label": "info?.admissionLinkLabel ?? 'See ticket prices and book'",
+      "before": "/tickets",
+      "after": "/national-show/tickets",
+      "check": "contract A4"
+    },
+    {
+      "id": "C4",
+      "file": "app/(marketing)/national-show/page.tsx",
+      "label": "Tickets",
+      "before": "/national-show/tickets",
+      "after": "unchanged"
+    },
+    {
+      "id": "C5",
+      "file": "components/show/ShowSectionNav.tsx",
+      "label": "Tickets",
+      "before": "/national-show/tickets",
+      "after": "unchanged"
+    },
+    {
+      "id": "C6",
+      "file": "components/chrome/nav-config.ts",
+      "label": "Tickets / Day Visitor / Weekend Pass",
+      "before": "/national-show/tickets, /tickets/day-visitor, /tickets/weekend-pass",
+      "after": "unchanged (FROZEN)"
+    },
+    {
+      "id": "C7",
+      "file": "app/(marketing)/national-show/tickets/page.tsx",
+      "label": "SECONDARY_OPTIONS",
+      "before": "/national-show/{exhibitors,vendors/apply,conferences,workshops}",
+      "after": "unchanged (/tickets/[slug] 404s non-admission)"
+    },
+    {
+      "id": "C8",
+      "file": "app/(marketing)/national-show/page.tsx",
+      "label": "JSON-LD Offer url",
+      "before": "https://saoc.co.za/tickets/<slug>",
+      "after": "unchanged"
+    }
+  ],
+  "bare_listing_forbidden_in": [
+    "app/(marketing)/national-show",
+    "components/show",
+    "components/nos"
+  ],
+  "bare_listing_allowed": [
+    "app/(marketing)/national-show/tickets/page.tsx: D4 empty-list fallback only"
+  ]
+}

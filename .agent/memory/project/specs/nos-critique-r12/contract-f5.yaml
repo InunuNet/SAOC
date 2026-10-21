@@ -1,0 +1,35 @@
+# Sources: Codi's lockup report via the lead 2026-10-18; dev measurements .agent/memory/scratch/measure-26f/ (fresh loads clean; the set is a 1280->405 resize);
+# lead ruling 2026-10-18: regression guard only, Chromium, no app code; nos-critique-r9 f1-rendered (one header + one footer lockup, 2x cap).
+schema: athanor.contract/v1
+slug: nos-critique-r12
+goal: >-
+  Guard that every fresh load of a NOS page in Chromium, at 390 (phone, DPR 1/2/3), 405 (phone, DPR 2), 1280 and the 699/700/701 edges, requests exactly
+  one header and one footer lockup, the art-directed file it displays, within r9's 2x cap; passes at 26fde668 and at the r12 tip with no app change.
+created_at: '2026-10-18'
+autonomy: high
+exclusions:
+  - item: 'any app code for F5 (goldens/f5-footprint.json is empty)'
+    reason: 'No defect on a real load; Codi''s set is <picture> re-selection after a resize. The WebKit src-fallback hypothesis is logged in f5-spec.md, not gated.'
+features:
+  - id: F5
+    name: Lockup request regression guard (one header, one footer, per fresh load)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r12/goldens/f5-spec.md
+  - .agent/memory/project/specs/nos-critique-r12/goldens/f5-footprint.json
+  - .agent/memory/project/specs/nos-critique-r12/goldens/checks-f5.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f5 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r12/goldens/checks-f5.sha256
+    - id: A2
+      description: Footprint - the r12 branch differs from main 26fde668 only inside the r12 allowlist (F5 adds nothing) and the docs file, HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r12/checks/f5-footprint.mjs
+    - id: A3
+      description: Rendered (public, Chromium) - one header and one footer lockup request per fresh load at 390 DPR 1/2/3, 405 DPR 2, 1280 and 699/700/701, art-directed, displayed, within the 2x cap
+      command: node .agent/memory/project/specs/nos-critique-r12/checks/f5-rendered.mjs
+    - id: A4
+      description: docs/nos-critique-r12.md records F5 as a guard and the resize cause
+      command: grep -q "F5" .tmp/sandbox/critique-r12/docs/nos-critique-r12.md

@@ -1,0 +1,47 @@
+schema: athanor.contract/v1
+slug: nos-critique-r3
+goal: >-
+  Close NOS ruling R39 on the symposium presenter cards in .tmp/sandbox/critique-r3 (base 242f51fb):
+  clamp each bio to 4 lines, replace the full-bio modal with an inline button aria-expanded/aria-controls
+  disclosure (existing accessible names kept, no new copy), and set bio text to the 17px body role.
+created_at: '2026-10-16'
+autonomy: high
+exclusions:
+  - item: 'Content gaps — one role line, no talk titles or sessions'
+    reason: Routed to Brad by the lead. No fields and no copy are added (no-invention).
+  - item: 'Hub page, /national-show/tickets, vendors CTA, ShowContentState, nos-theme heading margins, NosSkipLink, nos-theme.css'
+    reason: Off limits per the lead; enforced by A2.
+features:
+  - id: F1
+    name: R39 presenter bio 4-line clamp, inline aria-expanded disclosure, 17px bio
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r3/goldens/spec.md
+  - .agent/memory/project/specs/nos-critique-r3/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: QA check scripts (incl. the two architect-updated nos-presenter-cards checks) are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r3/goldens/checks.sha256
+    - id: A2
+      description: Footprint guard — only PresenterGrid.tsx, PresenterSection.tsx, presenters.css, the checks and docs/nos-critique-r3.md differ from 242f51fb
+      command: node .tmp/sandbox/critique-r3/contracts/checks/nos-critique-r3/check-footprint.mjs --through=4
+    - id: A3
+      description: Static source — button aria-expanded/aria-controls, name kept, hidden unless overflow, modal and equal-height script fully removed, focus never moved, no new copy, docs present
+      command: node .tmp/sandbox/critique-r3/contracts/checks/nos-critique-r3/check-static.mjs
+    - id: A4
+      description: presenters.css pins — 4-line max-height scoped to data-clamp, 17px body role on .pc-clip, 68ch kept, dialog CSS and tokens deleted, motion only under no-preference, R35/R36 pins intact
+      command: node .tmp/sandbox/critique-r3/contracts/checks/nos-presenter-cards/check-styles.mjs
+    - id: A5
+      description: Every existing presenter-card check and the critique-r1 presenter focus-ring check still pass
+      command: sh -c 'for f in .tmp/sandbox/critique-r3/contracts/checks/nos-presenter-cards/check-*.mjs .tmp/sandbox/critique-r3/contracts/checks/nos-critique-r3/check-focus.mjs; do node "$f" || exit 1; done'
+    - id: A6
+      description: TypeScript compiles and ESLint is clean with zero warnings on the touched components and checks
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r3 type-check && pnpm --dir .tmp/sandbox/critique-r3 exec eslint --max-warnings 0 components/nos/PresenterGrid.tsx components/nos/PresenterSection.tsx contracts/checks/nos-critique-r3'
+    - id: A7
+      description: Production build passes (input for A8)
+      command: pnpm --dir .tmp/sandbox/critique-r3 build
+    - id: A8
+      description: Rendered on next start 3010-3019 at 375 and 1280 — bios <=4 lines, card <=600px, aria-expanded false->true->false by click/Enter/Space, focus stays, full text visible when open, no dialog, bio 17px, target >=44, no overflow, no-JS shows full bios, reduced motion
+      command: node .tmp/sandbox/critique-r3/contracts/checks/nos-critique-r3/check-rendered.mjs

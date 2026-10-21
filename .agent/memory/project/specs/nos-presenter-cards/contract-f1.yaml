@@ -1,0 +1,93 @@
+schema: athanor.contract/v1
+slug: nos-presenter-cards
+goal: >-
+  Render the Sanity conferencePresenter cards (Codi's approved design) as one reusable
+  section inside the existing /national-show/symposium and /national-show/wosa-conference
+  pages, following Lee-Ann's structure per Brad's 2026-10-15 ruling: verbatim bios, roles
+  only where Sanity has one, code-side sample order with a note while Sanity order is null,
+  4:5 photo crops, equal-height clamped cards with a full-bio dialog.
+created_at: '2026-10-15'
+autonomy: high
+notes: >-
+  Code target is the SAOC worktree .tmp/sandbox/presenters, branch feat/nos-presenter-cards,
+  based on origin/release/nos-beta-cut-20261008 @ 047d610e (the beta base; acked by the SAOC
+  lead). NOT origin/feat/nos-symposium-presenters (d7fbf8f1): it carries 16 unmerged
+  vendor/WOSA commits; its presenter seed commits are content-only and already published in
+  Sanity. All assertion commands run from the NOS project root. Goldens:
+  presenter-cards.golden.md (structure, rules, crop table, behaviour) and
+  presenters.golden.css (verbatim stylesheet). QA inputs are
+  .tmp/sandbox/presenters/contracts/checks/nos-presenter-cards/*.mjs, written by @architect;
+  @dev must not edit them. Each check was run against an export of 047d610e and FAILS there;
+  A10-A13 pass on 047d610e. Superseded by design (golden §9): conference-workshop-tickets-f6
+  check-symposium-page-render-unchanged.mjs and check-wosa-page-render-unchanged.mjs.
+features:
+  - id: F1
+    name: >-
+      Presenter section components (PresenterSection server + PresenterGrid client), pure
+      order/bio/photo modules, loader + view model (null order kept, photo asset ref, 4:5
+      crop), scoped presenters.css
+    status: pending
+  - id: F2
+    name: >-
+      Page wiring on symposium + wosa-conference under the existing heroes, layout imports
+      presenters.css, Fraunces variable + opsz axis, Karla 700
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-presenter-cards/goldens/presenter-cards.golden.md
+  - .agent/memory/project/specs/nos-presenter-cards/goldens/presenters.golden.css
+files:
+  create:
+    - .tmp/sandbox/presenters/components/nos/PresenterSection.tsx
+    - .tmp/sandbox/presenters/components/nos/PresenterGrid.tsx
+    - .tmp/sandbox/presenters/lib/view-models/presenter-order.ts
+    - .tmp/sandbox/presenters/lib/view-models/presenter-bio.ts
+    - .tmp/sandbox/presenters/lib/view-models/presenter-photo.ts
+    - .tmp/sandbox/presenters/app/(marketing)/national-show/presenters.css
+  modify:
+    - .tmp/sandbox/presenters/lib/view-models/load-presenters.ts
+    - .tmp/sandbox/presenters/lib/view-models/ticket-card.ts
+    - .tmp/sandbox/presenters/app/(marketing)/national-show/layout.tsx
+    - .tmp/sandbox/presenters/app/(marketing)/national-show/symposium/page.tsx
+    - .tmp/sandbox/presenters/app/(marketing)/national-show/wosa-conference/page.tsx
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Order rule — non-null Sanity order wins, nulls follow Wijaya/Crous/Tibbs/Fuchs then by name, no mutation, note flag (golden §4)
+      command: node .tmp/sandbox/presenters/contracts/checks/nos-presenter-cards/check-presenter-order.mjs
+    - id: A2
+      description: Bios parsed verbatim, "• " lines grouped into lists (golden §5)
+      command: node .tmp/sandbox/presenters/contracts/checks/nos-presenter-cards/check-presenter-bio.mjs
+    - id: A3
+      description: Exact 4:5 rect crops keyed by asset ref, Tibbs capped at 261px, unknown assets centre-cropped (golden §6)
+      command: node .tmp/sandbox/presenters/contracts/checks/nos-presenter-cards/check-presenter-photo.mjs
+    - id: A4
+      description: Loader keeps null order, projects photo asset ref, builds photo via presenterPhoto; view model order number|null, photo replaces photoUrl (golden §3)
+      command: node .tmp/sandbox/presenters/contracts/checks/nos-presenter-cards/check-loader.mjs
+    - id: A5
+      description: PresenterSection/PresenterGrid structure, copy, empty state, order note, clamp + dialog wiring; no excluded reference parts or drafted roles anywhere in app/components/lib (golden §2, §8)
+      command: node .tmp/sandbox/presenters/contracts/checks/nos-presenter-cards/check-section-source.mjs
+    - id: A6
+      description: Both pages render PresenterSection between ShowContentState and ShowSectionNav with the golden eyebrows; no void presenters; no new route; layout imports presenters.css, Fraunces opsz, Karla 700 (golden §1, §7)
+      command: node .tmp/sandbox/presenters/contracts/checks/nos-presenter-cards/check-pages.mjs
+    - id: A7
+      description: presenters.css carries Codi's pinned values, scoped under .nos-presenters, motion only under prefers-reduced-motion no-preference (golden §7, presenters.golden.css)
+      command: node .tmp/sandbox/presenters/contracts/checks/nos-presenter-cards/check-styles.mjs
+    - id: A8
+      description: TypeScript type-check passes
+      command: pnpm --dir .tmp/sandbox/presenters type-check
+    - id: A9
+      description: ESLint clean (zero warnings) on every created/modified source file
+      command: 'pnpm --dir .tmp/sandbox/presenters exec eslint --max-warnings 0 components/nos/PresenterSection.tsx components/nos/PresenterGrid.tsx lib/view-models/presenter-order.ts lib/view-models/presenter-bio.ts lib/view-models/presenter-photo.ts lib/view-models/load-presenters.ts lib/view-models/ticket-card.ts "app/(marketing)/national-show/layout.tsx" "app/(marketing)/national-show/symposium/page.tsx" "app/(marketing)/national-show/wosa-conference/page.tsx"'
+    - id: A10
+      description: components/chrome/** (incl. nav-config.ts) untouched relative to 9e619821 (origin/main, the rebase base; was 047d610e before the 2026-10-15 rebase)
+      command: git -C .tmp/sandbox/presenters diff --quiet 9e619821 -- components/chrome
+    - id: A11
+      description: Sanity schemas untouched relative to 9e619821, the rebase base (no schema change)
+      command: git -C .tmp/sandbox/presenters diff --quiet 9e619821 -- sanity/schemas
+    - id: A12
+      description: Worktree is based on 9e619821 (origin/main, which contains the beta base 047d610e)
+      command: git -C .tmp/sandbox/presenters merge-base --is-ancestor 9e619821 HEAD
+    - id: A13
+      description: Regression — the conference-workshop-tickets-f6 loader check (event filter, order(order asc), never-throw array) stays green
+      command: node .tmp/sandbox/presenters/contracts/checks/conference-workshop-tickets-f6/check-load-presenters-empty-state.mjs
