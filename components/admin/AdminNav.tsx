@@ -60,6 +60,8 @@ function buildLinks(canReviewVendors: boolean, canManagePaymentSettings: boolean
   if (canReviewVendors) {
     links.push({ id: 'vendors', label: 'Vendors', href: '/admin/vendors' });
   }
+  // Subscribers mirrors app/admin/newsletter/layout.tsx: an ok admin session, no capability.
+  links.push({ id: 'newsletter', label: 'Subscribers', href: '/admin/newsletter' });
   if (canManagePaymentSettings) {
     links.push({ id: 'settings', label: 'Settings', href: '/admin/settings' });
   }
