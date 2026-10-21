@@ -68,6 +68,8 @@ const NOS_HEADER_LOGO_INSET = 13;
 const HEADER_LOGO_WIDTH = 280;
 const HEADER_LOGO_HEIGHT = 69;
 const FOOTER_MARK_HEIGHT = 48;
+// 48px tall at the vertical mark's 109:96 aspect; an explicit width keeps Outlook from guessing.
+const FOOTER_MARK_WIDTH = 55;
 const FOOTER_MARK_GAP = 12;
 const NOS_LOGO_ALT = 'National Orchid Show 2027';
 // The two registration numbers come from FOOTER_REG; only the separator changes.
@@ -169,9 +171,10 @@ function BrandedFooter({ theme: t }: { theme: ShellTheme }) {
               >
                 <Img
                   src={logoUrl('nos-ink-purple-vertical-96.png')}
-                  alt={NOS_LOGO_ALT}
+                  alt=""
+                  width={FOOTER_MARK_WIDTH}
                   height={FOOTER_MARK_HEIGHT}
-                  style={{ display: 'block', border: 0, height: `${FOOTER_MARK_HEIGHT}px`, width: 'auto' }}
+                  style={{ display: 'block', border: 0, height: `${FOOTER_MARK_HEIGHT}px`, width: `${FOOTER_MARK_WIDTH}px` }}
                 />
               </td>
               <td valign="middle" style={{ padding: '16px 0 0' }}>
