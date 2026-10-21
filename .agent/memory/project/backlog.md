@@ -2757,3 +2757,12 @@ Cron c8d8059d (health checks) is session-only — re-create next session.
     - The Sanity `society` schema lacks contact, committee and social fields (schema change, needs a contract).
     - POPIA consent for the personal emails and phones, asked in Lee-Ann doc 21 Oct (e).
   - Owner flags: "Pietermaritzberg" typo; 12 of 21 societies supplied.
+- [ ] 2026-10-22 Codi ROUTE 33 /contact @390 (beta 2980ec06, PASS); queued after soc-detail.
+  - P3: info@saoc.co.za standalone link is 24px tall → min-h-11.
+  - P3: ContactForm validates only the message (l.33). Add per-field name/email checks matching the /members ruling; SuggestionForm reuses ContactForm's wiring.
+  - P3: input radius 4px → --radius-1 2px, riding r25.
+  - OWNER: info@saoc.co.za is "Not confirmed by SAOC" but used site-wide. Asked in Lee-Ann doc as 21 Oct item (i).
+- [ ] 2026-10-22 Codi ROUTE 34 /refunds @390 (beta 1373a12d, Layout PASS); queued after route 33.
+  - P3: use the compact hero (no image) on /refunds, /terms and /privacy; the 480px photo hero pushes the policy below the fold.
+  - P3: reuse the r23 "On this page" disclosure (page is 5079px, 9 sections).
+  - GO-LIVE BLOCKER (Brad/Council): refunds, terms and privacy say "drafted with AI assistance" with no lawyer review, yet checkout sells under them. Legal sign-off is needed before real ticket sales (sandbox only today). Asked in Lee-Ann doc as 21 Oct item (j).
