@@ -1,0 +1,119 @@
+schema: athanor.contract/v1
+slug: footer-newsletter-subscribe
+goal: Both footer newsletter forms store a single-opt-in subscriber that can unsubscribe by token and be exported by an allowlisted admin.
+created_at: '2026-10-22'
+autonomy: high
+
+enforcement_edits:
+  - path: CLAUDE.md
+    reason: Add the newsletterSubscribers row to the Firestore Collections table (project doc, mission footer-newsletter-subscribe)
+
+# ORDERING (binding): build lib, API routes, unsubscribe page, admin first. The footer-wiring step (A19, A20, A24 and the two footer
+# files) is implemented ONLY after NOS Site's r20 (fix/nos-critique-r20: F1 sign-up a11y, F3 grid) has merged, rebased on top of it.
+# Do not edit components/chrome/Footer.tsx or components/nos-chrome/NosFooter.tsx before then.
+# PENDING COMMITTEE COPY: the success line "You're subscribed." and the unsubscribe-done line are placeholders (goldens/copy.md).
+# FOLLOW-UP (owner): welcome/confirmation email is out of scope; needs SAOC-voice copy and a sender identity.
+
+features:
+  - id: F1
+    name: Footer Subscribe stores single-opt-in subscriber with working unsubscribe and admin export
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/footer-newsletter-subscribe/goldens/README.md
+  - .agent/memory/project/specs/footer-newsletter-subscribe/goldens/copy.md
+  - .agent/memory/project/specs/footer-newsletter-subscribe/goldens/response-shapes.json
+  - .agent/memory/project/specs/footer-newsletter-subscribe/goldens/csv-header.txt
+  - .agent/memory/project/specs/footer-newsletter-subscribe/goldens/codex-qa-prompt.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Pure lib normalises and caps email (254), hashes doc id, 256-bit unique tokens, masks email, applySubscribe is idempotent and re-subscribe flips with no undefined fields, CSV is formula-safe
+      command: npx tsx .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-newsletter-lib.mjs
+    - id: A2
+      description: Subscribe handler is idempotent, enumeration-safe (identical response new/existing/resubscribe), validates, honeypot, rate limit shields the write, 500 logs no raw email
+      command: npx tsx .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-subscribe-handler.mjs
+    - id: A3
+      description: Unsubscribe handler gives identical generic 400 for malformed/unknown token, idempotent on repeat, rate limited
+      command: npx tsx .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-unsubscribe-handler.mjs
+    - id: A4
+      description: Admin export refuses every non-ok session reason (401/403, fail closed, list never called) and exports subscribed rows only
+      command: npx tsx .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-export-gate.mjs
+    - id: A5
+      description: Both API routes and the admin export route exist and delegate to lib/newsletter-handler.ts; export route uses getAdminSession
+      command: bash .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-wiring.sh route-uses-handler
+    - id: A6
+      description: Unsubscribe page route exists
+      command: test -f "app/(marketing)/newsletter/unsubscribe/page.tsx"
+    - id: A7
+      description: Unsubscribe page does GET no Firestore work (no admin SDK, handler or initAdmin import)
+      command: bash .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-wiring.sh unsubscribe-get-no-write
+    - id: A8
+      description: Unsubscribe page sets noindex and no-referrer so the token is not indexed or leaked
+      command: grep -Eq "noindex" "app/(marketing)/newsletter/unsubscribe/page.tsx" && grep -q "no-referrer" "app/(marketing)/newsletter/unsubscribe/page.tsx"
+    - id: A9
+      description: Admin subscriber list page and layout gate exist, layout redirects when session not ok
+      command: test -f app/admin/newsletter/page.tsx && grep -q "getAdminSession" app/admin/newsletter/layout.tsx && grep -q "redirect" app/admin/newsletter/layout.tsx
+    - id: A10
+      description: No client-side Firestore rules open the collection (Admin SDK only)
+      command: bash .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-wiring.sh no-client-rules
+    - id: A11
+      description: Single opt-in means no email is sent anywhere in this feature
+      command: bash .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-wiring.sh no-email-sent
+    - id: A12
+      description: Shared signup component is a client component with aria-invalid, aria-describedby, aria-live status region, honeypot and posts to the subscribe route
+      command: bash .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-wiring.sh signup-component
+    - id: A13
+      description: Client component and unsubscribe page never import firebase-admin
+      command: bash .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-wiring.sh no-client-admin-sdk
+    - id: A14
+      description: New strings live in newsletter-copy.ts, pending-committee-copy entries are marked and registered in the doc
+      command: bash .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-wiring.sh copy-register
+    - id: A15
+      description: Mission doc exists and records follow-ups
+      command: test -f docs/newsletter-subscribe.md && grep -q "welcome" docs/newsletter-subscribe.md
+    - id: A16
+      description: CLAUDE.md Collections table documents newsletterSubscribers
+      command: grep -q "newsletterSubscribers" CLAUDE.md
+    - id: A17
+      description: Type-check passes
+      command: pnpm type-check
+    - id: A18
+      description: Lint passes
+      command: pnpm lint
+    - id: A19
+      description: Both footers use the shared component with their own source value
+      command: bash .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-wiring.sh footers-wired
+    - id: A20
+      description: No dead preventDefault submit handler remains in either footer
+      command: bash .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-wiring.sh no-preventdefault-submit
+    - id: A24
+      description: Footer wiring is rebased on top of r20 (no unmerged origin/fix/nos-critique-r20)
+      command: bash .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-wiring.sh r20-merged
+    - id: A25
+      description: Client IP helper takes the second-to-last X-Forwarded-For entry (sole entry when 1), never first or last, null when empty
+      command: npx tsx .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-client-ip.mjs
+    - id: A26
+      description: Both newsletter routes derive the rate-limit key through lib/client-ip.ts and never read the first XFF hop directly
+      command: bash .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-wiring.sh uses-client-ip
+    - id: A27
+      description: Subscribe response-time floor is at least 1000 ms and the residual timing risk is documented
+      command: bash .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-wiring.sh timing-floor
+    - id: A21
+      description: Codex adversarial review of the whole diff
+      type: codex_qa
+      target: .agent/memory/project/specs/footer-newsletter-subscribe/goldens/codex-qa-prompt.md
+      timeout_seconds: 1300
+      required: true
+    - id: A22
+      description: BrowserAgent on beta confirms both footers submit, show inline status and per-field error, and unsubscribe confirms by POST
+      type: browser_deployed_check
+      target: .agent/memory/scratch/footer-newsletter-browser-manifest.json
+      required: true
+    - id: A23
+      description: gws inbox check is not applicable (no email is sent); declared non-required only to satisfy the triad coverage linter, expected to skip
+      type: gws_inbox_check
+      target: .agent/memory/scratch/footer-newsletter-gws-manifest.json
+      required: false
