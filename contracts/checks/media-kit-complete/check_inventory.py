@@ -21,6 +21,7 @@ for f in INV["files"]:
         w, h = im.size
         rgba = im.convert("RGBA")
         corner = rgba.getpixel((0, 0))
+        bbox = rgba.getchannel("A").point(lambda v: 255 if v > 0 else 0).getbbox()
     if f["width"] is not None and (w, h) != (f["width"], f["height"]):
         fail(f"{p} is {w}x{h}, expected {f['width']}x{f['height']}")
     if f["kind"] == "mark" and corner[3] != 0:
@@ -30,6 +31,7 @@ for f in INV["files"]:
         if corner != want: fail(f"{p} corner {corner} != ground {want}")
     if f["kind"] == "lockup":
         if corner[3] != 0: fail(f"{p} corner not transparent")
+        if RULES.get("trimmed_no_baked_clear_space") and bbox != (0, 0, w, h): fail(f"{p} has baked margins: opaque bbox {bbox} != {(0, 0, w, h)}")
         lock_dims.setdefault((f["wordmark"], f["orientation"]), set()).add((w, h))
         if f["orientation"] == "horizontal":
             if h < RULES["horizontal_min_height"] or not RULES["horizontal_aspect"][0] <= w / h <= RULES["horizontal_aspect"][1]:

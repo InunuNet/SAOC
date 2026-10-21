@@ -73,7 +73,10 @@ if (cmd === 'render') {
   process.exit(0);
 }
 
-const scoped = FIXTURES;
+// F1 ships A/B/C (ContactConfirmation held); F2 runs with EMAIL_SHELL_SCOPE=D.
+const SCOPE = process.env.EMAIL_SHELL_SCOPE ?? 'ABC';
+const scoped = FIXTURES.filter((f) => SCOPE.includes(f.family));
+const famList = SCOPE.split('');
 
 if (cmd === 'families') {
   for (const f of scoped) {
@@ -133,35 +136,37 @@ if (cmd === 'families') {
     if ((html.match(/<style\b/gi) ?? []).length > 1 && !/data-email-shell/.test(html)) fail(`${f.name}: more than one <style>`);
   }
 } else if (cmd === 'assets') {
-  const want: Array<[string, number]> = [
-    ['public/images/email/nos-reversed-gold-horizontal-560.png', 560],
-    ['public/images/email/nos-reversed-gold-vertical-240.png', 240],
-    ['public/images/email/saoc-horizontal-colour-on-light-560.png', 560],
-    ['public/images/email/saoc-horizontal-colour-on-dark-440.png', 440],
-  ];
+  const nos = SCOPE.includes('A') || SCOPE.includes('B') || SCOPE.includes('C');
+  const saoc = SCOPE.includes('D');
+  const want: Array<[string, number]> = [];
+  if (nos) want.push(['public/images/email/nos-reversed-gold-horizontal-560.png', 560], ['public/images/email/nos-reversed-gold-vertical-240.png', 240]);
+  if (saoc) want.push(['public/images/email/saoc-horizontal-colour-on-light-560.png', 560], ['public/images/email/saoc-horizontal-colour-on-dark-440.png', 440]);
   for (const [p, w] of want) {
     if (!existsSync(p)) fail(`missing ${p}`);
     else if (pngWidth(p) !== w) fail(`${p}: width ${pngWidth(p)}, expected ${w}`);
   }
-  // D exports are pure resizes of the media-kit-complete lockups: same aspect ratio as the source
-  const KIT = 'public/downloads/media-kit/saoc/lockup/saoc-lockup-south-african-orchid-council-horizontal-colour-on-';
-  for (const [exp, src] of [
-    ['public/images/email/saoc-horizontal-colour-on-light-560.png', `${KIT}light.png`],
-    ['public/images/email/saoc-horizontal-colour-on-dark-440.png', `${KIT}dark.png`],
-  ]) {
-    if (!existsSync(src)) { fail(`BLOCKED: media-kit-complete source missing ${src}`); continue; }
-    if (!existsSync(exp)) continue;
-    const ratio = (f: string) => readFileSync(f).readUInt32BE(16) / readFileSync(f).readUInt32BE(20);
-    if (Math.abs(ratio(exp) - ratio(src)) / ratio(src) > 0.01) fail(`${exp}: aspect differs from ${src} (not a pure resize)`);
-  }
-  // displayed sizes, referenced from the shell by absolute /images/email/ path
   const shell = existsSync('emails/_shared/EmailShell.tsx') ? readFileSync('emails/_shared/EmailShell.tsx', 'utf8') : '';
-  if (!/nos-reversed-gold-horizontal-560\.png/.test(shell) || !/280/.test(shell)) fail('EmailShell: NOS header logo (560 asset displayed at 280) not wired');
-  if (!/nos-reversed-gold-vertical-240\.png/.test(shell) || !/120/.test(shell)) fail('EmailShell: NOS footer lockup (240 asset displayed at 120) not wired');
-  if (!/saoc-horizontal-colour-on-light-560\.png/.test(shell)) fail('EmailShell: SAOC header lockup (560 asset displayed at 280) not wired');
-  if (!/saoc-horizontal-colour-on-dark-440\.png/.test(shell) || !/220/.test(shell)) fail('EmailShell: SAOC footer lockup (440 asset displayed at 220) not wired');
+  if (nos) {
+    if (!/nos-reversed-gold-horizontal-560\.png/.test(shell) || !/280/.test(shell)) fail('EmailShell: NOS header logo (560 asset displayed at 280) not wired');
+    if (!/nos-reversed-gold-vertical-240\.png/.test(shell) || !/120/.test(shell)) fail('EmailShell: NOS footer lockup (240 asset displayed at 120) not wired');
+  }
+  if (saoc) {
+    // D exports are pure resizes of the media-kit-complete lockups: same aspect ratio as the source
+    const KIT = 'public/downloads/media-kit/saoc/lockup/saoc-lockup-south-african-orchid-council-horizontal-colour-on-';
+    for (const [exp, src] of [
+      ['public/images/email/saoc-horizontal-colour-on-light-560.png', `${KIT}light.png`],
+      ['public/images/email/saoc-horizontal-colour-on-dark-440.png', `${KIT}dark.png`],
+    ]) {
+      if (!existsSync(src)) { fail(`BLOCKED: media-kit-complete source missing ${src}`); continue; }
+      if (!existsSync(exp)) continue;
+      const ratio = (f: string) => readFileSync(f).readUInt32BE(16) / readFileSync(f).readUInt32BE(20);
+      if (Math.abs(ratio(exp) - ratio(src)) / ratio(src) > 0.01) fail(`${exp}: aspect differs from ${src} (not a pure resize)`);
+    }
+    if (!/saoc-horizontal-colour-on-light-560\.png/.test(shell)) fail('EmailShell: SAOC header lockup (560 asset displayed at 280) not wired');
+    if (!/saoc-horizontal-colour-on-dark-440\.png/.test(shell) || !/220/.test(shell)) fail('EmailShell: SAOC footer lockup (440 asset displayed at 220) not wired');
+  }
 } else if (cmd === 'screens') {
-  for (const fam of ['A', 'B', 'C', 'D']) {
+  for (const fam of famList) {
     const p = path.join(SANDBOX, 'screens', `family-${fam}.png`);
     if (!existsSync(p) || statSync(p).size < 5000) fail(`missing or empty screenshot ${p}`);
   }
@@ -171,7 +176,7 @@ if (cmd === 'families') {
   if (!existsSync(ap)) fail(`missing ${ap} (Codi review of per-family renders, before first send)`);
   else {
     const apMs = statSync(ap).mtimeMs;
-    for (const fam of ['A', 'B', 'C', 'D']) {
+    for (const fam of famList) {
       const mp = `.agent/memory/scratch/email-shell-gws-manifest-${fam}.json`;
       if (existsSync(mp) && statSync(mp).mtimeMs < apMs) fail(`${mp} is older than Codi's approval: sent before review`);
     }

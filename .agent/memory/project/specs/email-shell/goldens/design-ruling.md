@@ -9,7 +9,7 @@ Design source under docs/rules/no-invention.md route 3. Do not question or exten
 | A Show transactional | NOS | OrderConfirmation (reference pattern), VendorPaymentConfirmation |
 | B Show message | NOS | VendorApplicationConfirmation, VendorApprovalConfirmation, VendorRegistrationConfirmation, VendorStandPaymentReady, SupporterRegistrationConfirmation, stand forfeiture notice (VENDOR_STAND_FORFEITURE_NOTICE, lib/vendor-stand-forfeiture-notice.ts, rendered inside B emails, text unchanged) |
 | C Admin notice | NOS-light | VendorApplicationAdminNotice, VendorSubmissionAdminNotice, VendorPaymentAdminNotice, ReconciliationAlert |
-| D Council | SAOC | ContactConfirmation (spec below, ruled by Codi after first contract; BLOCKED on media-kit-complete lockup exports) |
+| D Council | SAOC | ContactConfirmation (spec below). HELD for this ship: ContactConfirmation stays byte-identical to origin/main until the media-kit lockups merge, so production contact mail cannot render broken logos. D wiring is contract-f2.yaml |
 
 Supporter is provisional and may move to D: the family must be ONE literal in ONE place (a single
 `family="B"` on SupporterRegistrationConfirmation), so moving it is a one-line change.
@@ -50,6 +50,9 @@ keep a string, STOP and report to the orchestrator; never edit the baseline.
 Logo names only ("National Orchid Show 2027" for NOS logos, "South African Orchid Council" for SAOC),
 plus ONE functional exception (Codi, final): the OrderConfirmation QR image keeps its origin/main alt,
 "QR code for booking reference <bookingRef>", verbatim. No other text-bearing alt.
+
+## Codi logo-inset ruling (final)
+The header cell's left padding is reduced by the PNG's transparent inset (13px at 280px display), giving 27px (desktop) and 7px (<=620). Plain padding, no crop.
 
 ## Codi fix rulings (final)
 1. Header lockup is left-aligned to the text edge: 40px from the left, 20px at <=620.
@@ -98,3 +101,6 @@ approved the per-family renders (.tmp/sandbox/email-shell/codi-approval.txt).
    family HTML at 600px and 375px into .tmp/sandbox/email-shell/screens/family-<A|B|C|D>.png.
 2. Codi reviews, orchestrator writes codi-approval.txt (one line: who, when, verdict).
 3. Test-send, gws check, manifests.
+
+## Scope split (lead ruling)
+F1 (contract-f1.yaml) = families A/B/C, shippable now; ContactConfirmation untouched (A12). F2 (contract-f2.yaml) = family D, follows once media-kit-complete lockups are on main. F2 checks run with EMAIL_SHELL_SCOPE=D.

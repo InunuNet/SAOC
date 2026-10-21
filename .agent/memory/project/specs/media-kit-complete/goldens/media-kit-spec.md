@@ -24,7 +24,7 @@ Entry point `python3 scripts/generate-saoc-media-kit.py [--out DIR]` (default `p
 |---|---|---|
 | marks, transparent | 9 | 1254x1254; `colour` byte copy of the source; greyscale, greyscale-reversed, 6 duotone recolours, alpha preserved |
 | chips | 16 | 512x512 ground-filled: light chip parchment #F4F3EC (colour, greyscale, 6 duotone); dark chip sage #384138 (colour, greyscale-reversed, 6 duotone); mark trimmed, width 512/1.5 |
-| lockups | 32 | {horizontal, vertical} x {colour, greyscale, 6 duotone} x {on-light dark type, on-dark light type}; transparent; dimensions identical per orientation; clear space not baked in; on-dark greyscale uses the reversed grey |
+| lockups | 32 | {horizontal, vertical} x {colour, greyscale, 6 duotone} x {on-light dark type, on-dark light type}; transparent; dimensions identical per orientation; clear space NOT baked in: the PNG is trimmed so opaque content touches all four edges (A1 asserts this); vertical height/width is spec-derived, about 0.80 with the full-name wordmark, bound [0.70, 1.0]; on-dark greyscale uses the reversed grey |
 | National Show | 18 | 16 PNG + emblem svg + png |
 | zips | 6 | `saoc-everything` (all 57 SAOC files, NOT National Show), `saoc-full-colour` (4), `saoc-greyscale` (4), `saoc-duotone` (24, all six inks), `saoc-mark-only` (25: 9 marks + 16 chips), `nos-all-logos` (16) |
 | usage illustrations | 4 | `public/images/media-kit/usage-{do,dont}-{horizontal,vertical}.png`, not downloads; reproduce the presentation's p.11-12 pairs (horizontal duotone Indigo; vertical duotone Viridian); each Don't breaks the stated rule (letter-spaced wordmark / shrunk emblem floated above the name), magnitudes measured from the PDF, not invented |

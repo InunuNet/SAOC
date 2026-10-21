@@ -1,0 +1,35 @@
+# Static strings the ticket PDF may contain besides dynamic data (fixture-order.json values).
+# Matching is word-level, case-insensitive, punctuation-trimmed. A line starting `re:` is a regex over the
+# whole line of tokens' source text (its words are all allowed). Each entry cites its provenance.
+# EXISTING wording, verbatim:
+Present this ticket — or just the booking reference — at the door for check-in.
+# ^ origin/main OrderConfirmation.tsx l.78 "Present this email ..." with the one word changed (Codi artifact decision 6: Brad approval OPEN, does not block).
+REG# 1978/004040/08 NPO 043-901
+# ^ components/chrome/footer-data.ts FOOTER_REG
+South African Orchid Council — saoc.co.za
+# ^ footer line, emails/_shared/EmailShell.tsx FOOTER_LINE (feat/email-shell) = origin/main OrderConfirmation footer
+Parking and entrance
+# ^ Codi artifact label for the venue's parking data (PYV "Parking" topic); pill when unknown
+On-site first aid and show duty contact
+# ^ Codi artifact; PYV emergency "on-site contact" cell
+Show office
+Show dates
+The venue
+In an emergency
+Organiser
+Questions
+Attendee
+Booking reference
+# Labels Codi names as a set (artifact decision 7, Brad approval OPEN, does not block):
+Scan at the door
+Your visit
+Opening times
+Session times
+Quote your booking reference.
+Admit one
+re:Ticket \d+ of \d+
+# Pill for any unknown value (artifact; Sanity pendingLabel is the existing source):
+To be confirmed
+# Footer order/page segment (artifact):
+re:Order \S+ · Page \d+ of \d+
+re:Page \d+ of \d+
