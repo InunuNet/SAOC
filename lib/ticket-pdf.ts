@@ -294,10 +294,10 @@ function drawWrapped(
   return at.y + Math.max(lines.length - 1, 0) * at.lineHeight;
 }
 
-/** Wraps a tracked caps label into lines no wider than `maxMm`; a word is never split or cut. */
+/** Wraps a pill label (drawn as written, untracked) into lines no wider than `maxMm`; a word is never split or cut. */
 function wrapPillLabel(ctx: Ctx, label: string, maxMm: number): string[] {
   const widthMm = (text: string) =>
-    textWidthPt(text, ctx.fonts.bold, MIN_SMALL_CAPS_SIZE, BAND_TRACKING) / PT_PER_MM;
+    textWidthPt(text, ctx.fonts.bold, MIN_SMALL_CAPS_SIZE, 0) / PT_PER_MM;
   const lines: string[] = [];
   let line = '';
   for (const word of label.split(/\s+/).filter(Boolean)) {
@@ -319,11 +319,11 @@ function wrapPillLabel(ctx: Ctx, label: string, maxMm: number): string[] {
  * the wording is never shortened. Returns the pill's height in mm.
  */
 function drawPill(ctx: Ctx, x: number, top: number, maxWidth: number): number {
-  const label = ctx.pendingLabel.toUpperCase();
+  const label = ctx.pendingLabel;
   const lines = wrapPillLabel(ctx, label, maxWidth - PILL_PAD_X * 2);
   const height = PILL_HEIGHT + (lines.length - 1) * PILL_LINE_PITCH;
   const textWidth = Math.max(
-    ...lines.map((line) => textWidthPt(line, ctx.fonts.bold, MIN_SMALL_CAPS_SIZE, BAND_TRACKING) / PT_PER_MM)
+    ...lines.map((line) => textWidthPt(line, ctx.fonts.bold, MIN_SMALL_CAPS_SIZE, 0) / PT_PER_MM)
   );
   const radius = Math.min(height / 2, PILL_HEIGHT / 2 + (lines.length - 1) * 0.8);
   ctx.page.drawSvgPath(roundedPath(x, top, textWidth + PILL_PAD_X * 2, height, Array(4).fill(radius)), {
@@ -339,7 +339,6 @@ function drawPill(ctx: Ctx, x: number, top: number, maxWidth: number): number {
       font: ctx.fonts.bold,
       size: MIN_SMALL_CAPS_SIZE,
       color: ROYAL,
-      tracking: BAND_TRACKING,
     })
   );
   return height;
