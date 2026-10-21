@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { getConfirmedOrderForDisplay } from '@/lib/orders';
 import { buildTicketPdf } from '@/lib/ticket-pdf';
 import { authoriseTicketPdfRequest, refPrefix } from '@/lib/ticket-pdf-access';
-import { loadTicketPdfVisit } from '@/lib/ticket-pdf-data';
+import { loadTicketPdfVisit, toPdfPositions } from '@/lib/ticket-pdf-data';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -39,11 +39,11 @@ export async function GET(request: Request): Promise<NextResponse> {
     const visit = await loadTicketPdfVisit();
     const bytes = await buildTicketPdf({
       orderReference: access.orderReference,
-      positions: access.positions.map(({ bookingRef, attendeeName, ticketType }) => ({
-        bookingRef,
-        attendeeName,
-        ticketType,
-      })),
+      positions: toPdfPositions(
+        access.positions,
+        new Map(access.positions.map((p) => [p.bookingRef, p.chosenDay ?? null])),
+        visit
+      ),
       visit,
     });
     const stem = access.single ? access.positions[0].bookingRef : access.orderReference;

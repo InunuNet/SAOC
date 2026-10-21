@@ -1,8 +1,15 @@
 import { resolveReplyTo } from '@/lib/email';
+import { getConfirmedOrderForDisplay } from '@/lib/orders';
+import { formatShowDay, formatShowDayShort, showDayStub } from '@/lib/show-day-format';
 import { formatShowDateRange, formatVenueAddress } from '@/lib/show-identity';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowVenueQuery, showVisitorInfoQuery } from '@/sanity/queries';
-import type { TicketPdfTime, TicketPdfVisit } from '@/lib/ticket-pdf';
+import type {
+  TicketPdfPosition,
+  TicketPdfSchedule,
+  TicketPdfTime,
+  TicketPdfVisit,
+} from '@/lib/ticket-pdf';
 import type { ConfirmationBlock, ShowVenue, ShowVisitorInfo } from '@/types';
 
 /**
@@ -90,4 +97,63 @@ export async function loadTicketPdfVisit(): Promise<TicketPdfVisit> {
     });
     return { ...EMPTY_VISIT, questionsEmail: resolveReplyTo() };
   }
+}
+
+/**
+ * Per-ticket schedule from what the order actually holds: a day-selection ticket's `chosenDay`
+ * gives the numeral, weekday and date, and the time comes from the matching Sanity opening-hours
+ * row. Any other ticket carries the show's date range. Unknown parts stay null (pill).
+ */
+export function buildPositionSchedule(
+  chosenDay: string | null | undefined,
+  visit: TicketPdfVisit
+): TicketPdfSchedule | null {
+  const stub = chosenDay ? showDayStub(chosenDay) : null;
+  if (chosenDay && stub) {
+    const label = formatShowDayShort(chosenDay);
+    const time = visit.openingTimes?.find((entry) => entry.label === label)?.value ?? null;
+    return {
+      eyebrow: stub.caption,
+      numeral: stub.numeral,
+      dateText: formatShowDay(chosenDay),
+      timeText: time,
+    };
+  }
+  return visit.showDates
+    ? { eyebrow: null, numeral: null, dateText: visit.showDates, timeText: null }
+    : null;
+}
+
+type PdfPositionSource = Pick<TicketPdfPosition, 'bookingRef' | 'attendeeName' | 'ticketType'>;
+
+export function toPdfPositions(
+  positions: PdfPositionSource[],
+  chosenDays: ReadonlyMap<string, string | null>,
+  visit: TicketPdfVisit
+): TicketPdfPosition[] {
+  return positions.map(({ bookingRef, attendeeName, ticketType }) => ({
+    bookingRef,
+    attendeeName,
+    ticketType,
+    schedule: buildPositionSchedule(chosenDays.get(bookingRef), visit),
+  }));
+}
+
+/** Email path: the ITN outcome carries no chosenDay, so read it back from the paid order. */
+export async function loadChosenDays(
+  orderReference: string | null
+): Promise<Map<string, string | null>> {
+  const days = new Map<string, string | null>();
+  if (!orderReference) return days;
+  try {
+    const order = await getConfirmedOrderForDisplay(orderReference);
+    for (const position of order?.positions ?? []) {
+      days.set(position.bookingRef, position.chosenDay ?? null);
+    }
+  } catch (error) {
+    console.error('[ticket-pdf] chosen-day lookup failed — rendering without day', {
+      errorType: error instanceof Error ? error.name : typeof error,
+    });
+  }
+  return days;
 }

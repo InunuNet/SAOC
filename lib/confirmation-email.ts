@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 import { generateBookingRefQrPngBuffer } from '@/lib/qr';
 import { buildRecoveryUrl } from '@/lib/recovery-url';
 import { buildTicketPdf as renderTicketPdf, type TicketPdfPosition } from '@/lib/ticket-pdf';
-import { loadTicketPdfVisit } from '@/lib/ticket-pdf-data';
+import { loadChosenDays, loadTicketPdfVisit, toPdfPositions } from '@/lib/ticket-pdf-data';
 import { sendEmail, TICKETS_FROM_ADDRESS, type EmailAttachment } from '@/lib/email';
 import OrderConfirmation, { type OrderConfirmationPosition } from '@/emails/OrderConfirmation';
 import type { TicketType } from '@/types/index';
@@ -73,7 +73,15 @@ export interface SendConfirmationEmailDeps {
 }
 
 async function defaultBuildTicketPdf(input: TicketPdfEmailInput): Promise<Uint8Array> {
-  return renderTicketPdf({ ...input, visit: await loadTicketPdfVisit() });
+  const [visit, chosenDays] = await Promise.all([
+    loadTicketPdfVisit(),
+    loadChosenDays(input.orderReference),
+  ]);
+  return renderTicketPdf({
+    orderReference: input.orderReference,
+    positions: toPdfPositions(input.positions, chosenDays, visit),
+    visit,
+  });
 }
 
 /** Never throws: any failure (sync or async) is logged and yields null so the email still sends. */

@@ -98,7 +98,7 @@ const BAND_TEXT = GOLD_200; // text on the royal header band
 const DEFAULT_PENDING_LABEL = 'To be confirmed';
 const DEFAULT_TIMES_HEADING = 'Opening times';
 const INSTRUCTION = 'Present this ticket at the door for check in.';
-const FOOTER_REG = 'REG# 1978/004040/08 NPO 043-901';
+const FOOTER_REG = 'REG# 1978/004040/08 · NPO 043-901';
 const FOOTER_LINE = 'South African Orchid Council — saoc.co.za';
 
 // ---- layout measures, mm from the top-left (layout-spec.md, Codi's artifact) ----
@@ -120,10 +120,14 @@ const REF_TRACKING = 0.08;
 const PILL_HEIGHT = 4.2;
 const PILL_PAD_X = 2.4;
 const FOOTNOTE_SIZE = 9;
-const FOOTNOTE_Y = 224;
-const INSTRUCTION_Y = 242;
-const FOOTER_RULE_Y = 250;
-const FOOTER_TEXT_Y = 257;
+const FOOTNOTE_Y = 256;
+const FOOTNOTE_LINE_PITCH = 4.6;
+const INSTRUCTION_Y = 248;
+const FOOTER_RULE_Y = 265.5;
+const FOOTER_MARK_TOP = 268.5;
+const FOOTER_TEXT_Y = 272.5;
+const FOOTER_LINE_PITCH = 4.6;
+const HEADER_LOGO_LEFT_PAD = 192 / 4108; // transparent left margin of the logo file, as a fraction of its width
 const FOOTER_SMALL_SIZE = 7.5;
 const FOOTER_MARK_HEIGHT = 12.7;
 const FONT_DIR = 'lib/ticket-pdf-assets';
@@ -327,7 +331,7 @@ function drawHeader(ctx: Ctx, index: number, total: number): void {
   const { width, height } = ctx.logos.horizontal;
   const logoHeightMm = (HEADER_LOGO_WIDTH * height) / width;
   ctx.page.drawImage(ctx.logos.horizontal, {
-    x: mm(17.5),
+    x: mm(MARGIN_X - HEADER_LOGO_LEFT_PAD * HEADER_LOGO_WIDTH),
     y: PAGE_HEIGHT - mm((HEADER_HEIGHT + logoHeightMm) / 2),
     width: mm(HEADER_LOGO_WIDTH),
     height: mm(logoHeightMm),
@@ -384,6 +388,20 @@ function drawSchedule(ctx: Ctx, schedule: TicketPdfSchedule | null | undefined, 
       });
     } else {
       drawPill(ctx, textX, 88.6);
+    }
+    return;
+  }
+  if (schedule?.dateText) {
+    drawText(ctx, schedule.dateText, {
+      x,
+      y: 86.9,
+      font: fonts.bold,
+      size: 10.5,
+      color: ROYAL,
+      maxWidth: PERFORATION_X - 6 - x,
+    });
+    if (schedule.timeText) {
+      drawText(ctx, schedule.timeText, { x, y: 92, font: fonts.body, size: 10, color: INK });
     }
     return;
   }
@@ -572,7 +590,7 @@ function drawEmergencyFootnote(ctx: Ctx, visit: TicketPdfVisit): void {
   const onSite = 'On-site first aid and show duty contact';
   const onSiteWidth = drawText(ctx, onSite, {
     x: MARGIN_X,
-    y: FOOTNOTE_Y + 4.8,
+    y: FOOTNOTE_Y + FOOTNOTE_LINE_PITCH,
     font: fonts.bold,
     size: FOOTNOTE_SIZE,
     color: MUTED,
@@ -580,13 +598,13 @@ function drawEmergencyFootnote(ctx: Ctx, visit: TicketPdfVisit): void {
   if (visit.onSiteContact) {
     drawText(ctx, visit.onSiteContact, {
       x: MARGIN_X + onSiteWidth + 2,
-      y: FOOTNOTE_Y + 4.8,
+      y: FOOTNOTE_Y + FOOTNOTE_LINE_PITCH,
       font: fonts.body,
       size: FOOTNOTE_SIZE,
       color: MUTED,
     });
   } else {
-    drawPill(ctx, MARGIN_X + onSiteWidth + 2, FOOTNOTE_Y + 1.6);
+    drawPill(ctx, MARGIN_X + onSiteWidth + 2, FOOTNOTE_Y + FOOTNOTE_LINE_PITCH - 3.2);
   }
 }
 
@@ -599,35 +617,30 @@ function drawFooter(
   const { visit } = input;
   const page = `PAGE ${index + 1} OF ${input.positions.length}`;
   drawText(ctx, INSTRUCTION, { x: MARGIN_X, y: INSTRUCTION_Y, font: fonts.body, size: 9, color: INK, maxWidth: CONTENT_WIDTH });
-  fillRect(ctx, MARGIN_X, FOOTER_RULE_Y, CONTENT_WIDTH, 0.25, MUTED);
+  fillRect(ctx, MARGIN_X, FOOTER_RULE_Y, CONTENT_WIDTH, 0.1, RULE);
 
   const { width, height } = logos.vertical;
   const markWidth = (FOOTER_MARK_HEIGHT * width) / height;
   ctx.page.drawImage(logos.vertical, {
     x: mm(MARGIN_X),
-    y: PAGE_HEIGHT - mm(FOOTER_TEXT_Y - 3 + FOOTER_MARK_HEIGHT),
+    y: PAGE_HEIGHT - mm(FOOTER_MARK_TOP + FOOTER_MARK_HEIGHT),
     width: mm(markWidth),
     height: mm(FOOTER_MARK_HEIGHT),
   });
   const x = MARGIN_X + markWidth + 4;
-  const line = (text: string, y: number) =>
-    drawText(ctx, text, { x, y, font: fonts.body, size: FOOTNOTE_SIZE, color: MUTED, maxWidth: RIGHT_X - x });
-  line(FOOTER_LINE, FOOTER_TEXT_Y);
-  line(FOOTER_REG, FOOTER_TEXT_Y + 4.8);
-  const org = `Organiser ${visit.organiser ?? pendingLabel} · Show office`;
-  const orgWidth = drawText(ctx, org, { x, y: FOOTER_TEXT_Y + 9.6, font: fonts.body, size: FOOTER_SMALL_SIZE, color: MUTED });
+  const y3 = FOOTER_TEXT_Y + FOOTER_LINE_PITCH * 2;
+  const text = (value: string, at: number, y: number, size: number): number =>
+    drawText(ctx, value, { x: at, y, font: fonts.body, size, color: MUTED });
+  text(FOOTER_LINE, x, FOOTER_TEXT_Y, FOOTNOTE_SIZE);
+  text(FOOTER_REG, x, FOOTER_TEXT_Y + FOOTER_LINE_PITCH, FOOTNOTE_SIZE);
+  const lead = text(`Organiser: ${visit.organiser ?? pendingLabel} · Show office`, x, y3, FOOTER_SMALL_SIZE);
+  const cursor = x + lead + 1.5;
   if (visit.showOffice) {
-    drawText(ctx, visit.showOffice, { x: x + orgWidth + 1.5, y: FOOTER_TEXT_Y + 9.6, font: fonts.body, size: FOOTER_SMALL_SIZE, color: MUTED });
+    text(visit.showOffice, cursor, y3, FOOTER_SMALL_SIZE);
   } else {
-    drawPill(ctx, x + orgWidth + 2, FOOTER_TEXT_Y + 6.6);
+    drawPill(ctx, cursor, y3 - 3.2);
   }
-  drawText(ctx, `Questions ${visit.questionsEmail ?? pendingLabel} · Quote your booking reference.`, {
-    x,
-    y: FOOTER_TEXT_Y + 14.2,
-    font: fonts.body,
-    size: FOOTER_SMALL_SIZE,
-    color: MUTED,
-  });
+  text(`Questions: ${visit.questionsEmail ?? pendingLabel} · Quote your booking reference.`, x, y3 + FOOTER_LINE_PITCH - 0.4, FOOTER_SMALL_SIZE);
   drawText(ctx, input.orderReference ? `ORDER ${input.orderReference} · ${page}` : page, {
     x: RIGHT_X,
     y: FOOTER_TEXT_Y,
