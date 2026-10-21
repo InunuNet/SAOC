@@ -8,7 +8,7 @@
 //   P2  different-tone pairs keep the follower's BASE padding-top and the BASE gap (+-1px).
 //   P3  every route has the BASE pairs, in order, with the BASE tones; no horizontal overflow.
 //   P4  the ruling's case: /national-show/what-to-expect at 1280, the pair led by the "Accessibility" block, loses exactly one section
-//       padding (the follower's BASE padding-top, 120px at 1280). PREVIEW build only: the public build withholds the block while its
+//       padding (the follower's BASE padding-top, 115.2px at 1280: clamp(72px, 9vw, 120px); the gap goes 230 -> 115px). PREVIEW build only: the public build withholds the block while its
 //       Sanity status is unconfirmed (what-to-expect/page.tsx), the rule under test is mode-independent CSS, and P1-P3 and nonreg still
 //       cover the public build.
 // `--capture` prints goldens/f2-baseline.json (captured by @architect on BASE 7fb251a1, both modes).

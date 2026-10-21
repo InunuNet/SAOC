@@ -9,9 +9,9 @@ r19 spec ("PayFast's cancel_url" -> "the gateway's cancel_url", approved by the 
 
 ## The defect
 
-/national-show/what-to-expect at 1280 has a 262px gap between the Accessibility card and the next section. Two adjacent default-tone
+/national-show/what-to-expect at 1280 has a 230px gap (measured on BASE 7fb251a1) between the Accessibility card and the next section. Two adjacent default-tone
 `NosSection`s each carry the section rhythm `clamp(72px, 9vw, 120px)` (nos-structure.css:31-34): the first as its padding-bottom, the
-second as its padding-top. So the gap is 120 + 120, plus the cards' own spacing. The workshops page at 390 is already fixed, at 64px, and
+second as its padding-top. At 1280 that rhythm is 9vw = 115.2px, so the gap is 115.2 + 115.2 (230px). The workshops page at 390 is already fixed, at 64px, and
 must neither regress nor collapse twice.
 
 ## How tone is expressed (verified in code)
@@ -45,7 +45,7 @@ sibling `.nos-section`s on the same ground:
 - black + black.
 
 Different-ground neighbours keep both paddings. No token, no colour, no other rule is touched. One rhythm unit remains: the leader's
-padding-bottom, which is 120px at 1280 and 72px at 390.
+padding-bottom, which is 115.2px at 1280 (`clamp(72px, 9vw, 120px)`) and 72px at 390.
 
 Not chosen:
 - a bare `.nos-section + .nos-section`, because it would also collapse different-ground neighbours, where both paddings sit on different
@@ -62,7 +62,7 @@ Not chosen:
     BASE keeps its gap, which covers the workshops page.
   - P2, different tone: unchanged.
   - P3: the same pairs as BASE, and no overflow.
-  - P4: what-to-expect at 1280 loses exactly one 120px padding after "Accessibility". It is checked on the PREVIEW build only (lead,
+  - P4: what-to-expect at 1280 loses exactly one 115.2px padding (`clamp(72px, 9vw, 120px)` at 1280) after "Accessibility", 230px -> 115px. It is checked on the PREVIEW build only (lead,
     2026-10-22). The public build correctly withholds the Accessibility block while its Sanity status is unconfirmed
     (`app/(marketing)/national-show/what-to-expect/page.tsx`, `withholdPlaceholderProse()`), so the pair does not exist there. The rule under
     test is mode-independent CSS, and the public build is still covered by P1-P3 on every route and by nonreg.

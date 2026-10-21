@@ -3,7 +3,7 @@ schema: athanor.contract/v1
 slug: nos-critique-r20
 goal: >-
   Collapse the doubled section padding between two adjacent same-tone NOS sections with ONE rule block in nos-structure.css, so a
-  single rhythm unit remains (what-to-expect at 1280 loses one 120px padding), while different-tone neighbours and pairs already
+  single rhythm unit remains (what-to-expect at 1280 loses one 115.2px padding, 230 -> 115px), while different-tone neighbours and pairs already
   collapsed (workshops at 390) are unchanged, with no new tokens.
 created_at: '2026-10-20'
 autonomy: high
@@ -34,7 +34,7 @@ assertions:
       description: Static - nos-structure.css equals BASE plus exactly the same-tone rule block after line 570, docs F2
       command: node .agent/memory/project/specs/nos-critique-r20/checks/f2-static.mjs
     - id: A4
-      description: Rendered (public + preview, 1280/390, 15 NOS routes) - same-tone followers lose their padding-top and the gap drops by exactly that, pairs already collapsed keep their gap, different-tone pairs unchanged, what-to-expect loses one 120px padding after Accessibility (P4 on the preview build only - the public build correctly withholds the unconfirmed Sanity Accessibility block per what-to-expect/page.tsx, the CSS under test is mode-independent, and public stays covered by P1-P3 and nonreg)
+      description: Rendered (public + preview, 1280/390, 15 NOS routes) - same-tone followers lose their padding-top and the gap drops by exactly that, pairs already collapsed keep their gap, different-tone pairs unchanged, what-to-expect loses one 115.2px padding after Accessibility (230 -> 115px at 1280) (P4 on the preview build only - the public build correctly withholds the unconfirmed Sanity Accessibility block per what-to-expect/page.tsx, the CSS under test is mode-independent, and public stays covered by P1-P3 and nonreg)
       command: node .agent/memory/project/specs/nos-critique-r20/checks/f2-rendered.mjs
     - id: A5
       description: Non-regression (public + preview, 1280/390) - 19 SAOC and NOS routes (hub, about, workshops, what-to-expect, tickets hub) keep geometry and screenshot above the last footer once the F2 bands are put back, no overflow
