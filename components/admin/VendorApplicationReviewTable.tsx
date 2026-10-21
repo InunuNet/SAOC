@@ -60,7 +60,9 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
 
       // A non-JSON body (e.g. a plain-text 401 from the beta wall) must fall through to the
       // !res.ok branch below rather than throw into the "reach the server" catch.
-      const body = (await res.json().catch(() => ({}))) as {
+      const parsed: unknown = await res.json().catch(() => null);
+      // A JSON `null` (or any non-object) counts as no body.
+      const body = (typeof parsed === 'object' && parsed !== null ? parsed : {}) as {
         success?: boolean;
         status?: string;
         error?: string;
