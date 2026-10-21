@@ -28,7 +28,7 @@ assertions:
       description: f1 check scripts and goldens are unmodified since @architect wrote them
       command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r19/goldens/checks-f1.sha256
     - id: A2
-      description: Footprint - the r19 branch differs from origin/main cbda2c43 only in goldens/f1-footprint.json, docs/nos-critique-r19.md and the spec dir, and HEAD descends from it
+      description: Footprint - the r19 branch differs from origin/main 1c9fa99f only in goldens/f1-footprint.json, docs/nos-critique-r19.md and the spec dir, and HEAD descends from it
       command: node .agent/memory/project/specs/nos-critique-r19/checks/footprint.mjs
     - id: A3
       description: Static - cancelled title and column (exact), the .nk-state .nk-cta override block (exact), confirmation not-found decided on the server via lib/ticket-status.ts with generateMetadata, success render and normalizeBookingRefParam byte-identical, poller refreshes on a 404 at most once per mount then falls to timed-out (refresh-loop guard), status route keeps its responses, no new copy, docs F1

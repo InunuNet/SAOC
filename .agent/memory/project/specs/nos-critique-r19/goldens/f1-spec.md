@@ -1,6 +1,6 @@
 # nos-critique-r19 F1 — the ticket state pages: "Back to tickets" on the hero edge, not-found in the hero, titles
 
-BASE: `origin/main` `cbda2c43` (harness 3.8.41 only over `a4807791`, no app path changed; re-pinned from `a4807791`, earlier from `93940e04`, on restacks of `fix/nos-critique-r19-restack`), worktree
+BASE: `origin/main` `1c9fa99f` (harness 3.8.41, CI workflows and public/llms-full.txt over `a4807791`, no rendered page changed; re-pinned from `cbda2c43`, `a4807791`, earlier from `93940e04`, on restacks of `fix/nos-critique-r19-restack`), worktree
 `.tmp/sandbox/critique-r19`. The measurements below were taken on `93940e04`; r18 changes none of these pages, and the baselines are
 re-captured on `a4807791`.
 Rulings: Codi, FINAL, beta 93940e04 at 1280px, relayed by the lead (saoc-82) on 2026-10-19. No copy changes.
