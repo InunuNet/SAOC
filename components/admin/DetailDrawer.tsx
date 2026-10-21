@@ -83,7 +83,7 @@ export function DetailDrawer({ open, title, subtitle, onClose, footer, children 
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">{children}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">{children}</div>
 
       {footer ? (
         <div className="sticky bottom-0 border-t border-rule bg-parchment px-4 py-3 sm:px-6">

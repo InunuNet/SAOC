@@ -12,7 +12,7 @@ export const FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory';
 
 export const BUTTON_BASE =
-  'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[2px] px-4 font-sans text-[14px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-[44px] touch-manipulation items-center justify-center gap-2 rounded-[2px] px-4 font-sans text-[14px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 export const BUTTON_PRIMARY = `${BUTTON_BASE} bg-primary text-ivory hover:bg-primary-800 ${FOCUS_RING}`;
 export const BUTTON_SECONDARY = `${BUTTON_BASE} border border-accent bg-transparent text-ink hover:bg-bone ${FOCUS_RING}`;
 

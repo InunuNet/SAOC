@@ -273,7 +273,7 @@ export function DoorScannerClient({ initialCheckedInCount }: DoorScannerClientPr
           </button>
         )}
 
-        <div className="mt-4 min-h-[72px]" aria-live="polite">
+        <div className="mt-4 min-h-[72px]">
           {result && <DoorResultBanner result={result} />}
         </div>
 

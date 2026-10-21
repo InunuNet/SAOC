@@ -32,16 +32,5 @@ export default async function AdminSettingsLayout({ children }: { children: Reac
   if (!canManagePaymentSettings) {
     redirect('/admin');
   }
-  // Retained verbatim from the pre-redesign gate so the auth-gate diff check (A16) sees no lost
-  // line. The nav no longer takes it from here: app/admin/(shell)/layout.tsx resolves nav
-  // visibility itself.
-  const canReviewVendors = hasCapability(
-    session.decodedToken,
-    NATIONAL_SHOW_ID,
-    'review-vendor-applications',
-    { now, lookupShowWindow },
-  );
-  void canReviewVendors;
-
   return children;
 }

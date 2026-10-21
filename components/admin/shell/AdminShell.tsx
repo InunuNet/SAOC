@@ -49,6 +49,12 @@ export function AdminShell({
 
   return (
     <div className="min-h-dvh bg-bone">
+      <a
+        href="#admin-main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[60] focus:bg-parchment focus:px-4 focus:py-3 focus:font-sans focus:text-[14px] focus:font-semibold focus:text-ink"
+      >
+        Skip to content
+      </a>
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] border-r border-rule bg-parchment lg:block">
         {sidebar()}
       </aside>

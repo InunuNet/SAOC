@@ -135,7 +135,6 @@ export function AdminPill() {
         <button
           type="button"
           aria-expanded={menuOpen}
-          aria-haspopup="true"
           onClick={() => setMenuOpen((open) => !open)}
           className={`flex h-11 items-center gap-2 rounded-full px-4 font-mono text-[11px] uppercase tracking-[0.12em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft ${PILL_SURFACE}`}
         >
