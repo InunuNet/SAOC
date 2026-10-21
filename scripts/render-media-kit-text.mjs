@@ -9,17 +9,36 @@
  * also writes <outDir>/<id>.png, a transparent canvas holding the single run, left aligned, with
  * the trailing letter-space trimmed so the visible width is the measured width.
  *
- * The two typefaces (Crimson Pro for the wordmark, JetBrains Mono for the tagline) are the ones the
- * presentation's Wordmark specification names; they load from Google Fonts exactly as
- * scripts/export-saoc-lockup.mjs's harness does. A failed font load aborts: nothing is substituted.
+ * The two typefaces (Crimson Pro 600 for the wordmark, JetBrains Mono 400 for the tagline) are the
+ * ones the presentation's Wordmark specification names. They load from the exact-pinned @fontsource
+ * devDependencies on disk, so the output never depends on the network. A failed font load aborts:
+ * nothing is substituted.
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { chromium } from 'playwright';
 
-const FONT_CSS_URL =
-  'https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@600&family=JetBrains+Mono:wght@400&display=swap';
+const FONTSOURCE_DIR = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../node_modules/@fontsource',
+);
+const FONT_FILES = [
+  { family: 'Crimson Pro', weight: 600, file: 'crimson-pro/files/crimson-pro-latin-600-normal.woff2' },
+  {
+    family: 'JetBrains Mono',
+    weight: 400,
+    file: 'jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2',
+  },
+];
+
+function fontFaceCss() {
+  return FONT_FILES.map(({ family, weight, file }) => {
+    const data = readFileSync(path.join(FONTSOURCE_DIR, file)).toString('base64');
+    return `@font-face{font-family:'${family}';font-weight:${weight};src:url(data:font/woff2;base64,${data}) format('woff2');}`;
+  }).join('\n');
+}
 
 const job = JSON.parse(readFileSync(process.argv[2], 'utf8'));
 
@@ -29,7 +48,7 @@ const browser = await chromium.launch().catch(() => chromium.launch({ channel: '
 try {
   const page = await browser.newPage();
   await page.setContent(
-    `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${FONT_CSS_URL}"></head><body></body></html>`,
+    `<!doctype html><html><head><meta charset="utf-8"><style>${fontFaceCss()}</style></head><body></body></html>`,
     { waitUntil: 'networkidle' },
   );
   const results = await page.evaluate(async (runs) => {
