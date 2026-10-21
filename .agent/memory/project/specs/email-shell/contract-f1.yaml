@@ -1,0 +1,118 @@
+schema: athanor.contract/v1
+slug: email-shell
+goal: Every in-scope vendor, supporter and admin email renders through one branded EmailShell (families A, B, C, D per Codi's ruling) with visible copy unchanged from origin/main; family D is blocked on the media-kit-complete lockup exports.
+created_at: '2026-10-22'
+autonomy: high
+
+features:
+  - id: F1
+    name: Shared EmailShell and the twelve templates restyled (A, B, C, D); D depends on media-kit-complete lockup exports
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/email-shell/goldens/design-ruling.md
+  - .agent/memory/project/specs/email-shell/goldens/codex-qa-prompt.md
+  - .agent/memory/project/specs/email-shell/goldens/copy-baseline/OrderConfirmation.txt
+  - .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorPaymentConfirmation.txt
+  - .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorApplicationConfirmation.txt
+  - .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorApprovalConfirmation.txt
+  - .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorRegistrationConfirmation.txt
+  - .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorStandPaymentReady.txt
+  - .agent/memory/project/specs/email-shell/goldens/copy-baseline/SupporterRegistrationConfirmation.txt
+  - .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorApplicationAdminNotice.txt
+  - .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorSubmissionAdminNotice.txt
+  - .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorPaymentAdminNotice.txt
+  - .agent/memory/project/specs/email-shell/goldens/copy-baseline/ReconciliationAlert.txt
+  - .agent/memory/project/specs/email-shell/goldens/copy-baseline/ContactConfirmation.txt
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: EmailShell component exists
+      command: test -f emails/_shared/EmailShell.tsx
+    - id: A2
+      description: Every template renders through EmailShell with its ruled family (A/B/C/D) and imports it
+      command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts families
+    - id: A3
+      description: Visible copy of all 12 templates is identical to the origin/main baseline (text extraction, preheader excluded, only REG/NPO footer line allowed to be added)
+      command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts copy
+    - id: A4
+      description: No img alt beyond the logo names and the verbatim OrderConfirmation QR alt; every img has an alt (OrderConfirmation QR alt kept verbatim from origin/main per Codi)
+      command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts alt
+    - id: A5
+      description: Logo assets exist at 560/240 (NOS) and 560/440 (SAOC D) wide, D exports are pure resizes of the media-kit-complete lockups (BLOCKED until those exist), and the shell wires display widths 280/120 (NOS) and 280/220 (SAOC)
+      command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts assets
+    - id: A6
+      description: Every band has bgcolor and matching inline background-color; A/B have royal header and footer, C has the royal top rule and no img; D has parchment header/card, sage footer, bone outer and no NOS royal; color-scheme declared
+      command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts bands
+    - id: A7
+      description: Rendered HTML carries the max-width 620px stack media query (applies at 375px)
+      command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts media
+    - id: A8
+      description: Supporter family is a single literal in a single place (one-line move to D)
+      command: grep -c 'family="B"' emails/SupporterRegistrationConfirmation.tsx | grep -qx 1
+    - id: A9
+      description: Fonts declared with web-safe fallbacks Georgia and Arial (D adds Crimson Pro / Manrope)
+      command: grep -q "Georgia" emails/_shared/EmailShell.tsx
+    - id: A10
+      description: Karla body fallback present
+      command: grep -q "Karla" emails/_shared/EmailShell.tsx
+    - id: A11
+      description: Family D fonts Crimson Pro and Manrope declared
+      command: grep -q "Crimson Pro" emails/_shared/EmailShell.tsx
+    - id: A12
+      description: Manrope declared for family D body
+      command: grep -q "Manrope" emails/_shared/EmailShell.tsx
+    - id: A13
+      description: Stand forfeiture notice constant unchanged versus origin/main
+      command: git diff --quiet origin/main -- lib/vendor-stand-forfeiture-notice.ts
+    - id: A14
+      description: Test-send script exists, is hard-locked to brad@inunu.net and uses the existing sendEmail path
+      command: grep -q "brad@inunu.net" scripts/email-shell-test-send.ts
+    - id: A15
+      description: Test-send script uses lib/email sendEmail (no new email code)
+      command: grep -q "sendEmail" scripts/email-shell-test-send.ts
+    - id: A16
+      description: Per-family (A, B, C, D) screenshot set exists under .tmp/sandbox/email-shell/screens
+      command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts screens
+    - id: A17
+      description: Codi approval of the renders is recorded and predates every test-send manifest
+      command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts review-order
+    - id: A18
+      description: type-check passes
+      command: pnpm type-check
+    - id: A19
+      description: lint passes
+      command: pnpm lint
+    - id: A20
+      description: Codex adversarial review of the whole diff
+      type: codex_qa
+      target: .agent/memory/project/specs/email-shell/goldens/codex-qa-prompt.md
+      timeout_seconds: 1300
+      required: true
+    - id: A21
+      description: Brad receives the family A email (VendorPaymentConfirmation), sent via the sandbox test-send script
+      type: gws_inbox_check
+      target: .agent/memory/scratch/email-shell-gws-manifest-A.json
+      required: true
+    - id: A22
+      description: Brad receives the family B email (VendorApplicationConfirmation), sent via the sandbox test-send script
+      type: gws_inbox_check
+      target: .agent/memory/scratch/email-shell-gws-manifest-B.json
+      required: true
+    - id: A23
+      description: Brad receives the family C email (VendorApplicationAdminNotice), sent via the sandbox test-send script
+      type: gws_inbox_check
+      target: .agent/memory/scratch/email-shell-gws-manifest-C.json
+      required: true
+    - id: A25
+      description: Brad receives the family D email (ContactConfirmation), sent via the sandbox test-send script, after the media-kit lockup exports land
+      type: gws_inbox_check
+      target: .agent/memory/scratch/email-shell-gws-manifest-D.json
+      required: true
+    - id: A24
+      description: Browser check is inapplicable (emails are not pages; Codi's per-family screenshot review A16/A17 stands in), declared only for triad coverage
+      type: browser_deployed_check
+      target: .agent/memory/scratch/email-shell-browser-manifest.json
+      required: false

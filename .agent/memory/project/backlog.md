@@ -2771,3 +2771,27 @@ Cron c8d8059d (health checks) is session-only — re-create next session.
   - Rule from now: all test payments (E2E, contract checks, manual) go through Ozow test mode, never PayFast sandbox. Team notified.
   - CLAUDE.md's "PayFast (sandbox)" stack row is stale (floor-protected; Brad/Route 1 to fix).
   - Codi wants to review checkout payment step, redirect copy and confirm/failed states at 1280/390 on the next render.
+- [ ] 2026-10-22 Codi ROUTE 35 /constitution @390 (beta 1fb50377, Layout PASS); queued after r30.
+  - P3: cut the body's repeated clause "and will be published on this page once supplied" (keep the notice; no new words).
+  - P3: hide "Last updated: June 2026" until constitution text exists.
+  - OWNER: constitution text from Council via Lee-Ann.
+- [ ] 2026-10-22 rHB hero banding, P1 Brad (Codi ruling plus amendment, YES). The hero is fed from Sanity heroImages via the custom loader at q=75.
+  - Code (NOS Site): hero q=88 from the Sanity CDN; eased veil and bone-pull stops; dots, labels and timing data-driven; static fallback gets a comment plus variants q88.
+  - Sanity (ME, after rHB is live on beta): back up, then remove asset a620a97f (orchid-yellow 3100x2325, 137KB, ~0.15bpp; the handoff original is byte-identical) and any other sub-1bpp hero asset from heroImages, using ifRevisionID.
+  - OWNER: a high-quality yellow orchid original (Council via Lee-Ann).
+- 2026-10-22 dev.saoc.co.za: the hosts file points it at 127.0.0.1; the launchd za.co.saoc.devproxy forwards :80 to :3002. The :3002 Next dev server is NOT launchd-managed. Brad's "refused" happened because nothing was on :3002 and the main tree was missing sharp (fixed with pnpm install). The server is restarted from the saoc-82 session and dies with it. Option for Brad: a launchd entry for the dev server.
+- [ ] 2026-10-22 ~00:30 Brad: "dev is not working, fuck it im going to bed" (UNATTENDED set). Diagnosis: http://dev.saoc.co.za returns 401 (basic auth) on both v4 and v6, so the server and proxy are fine. Nothing listens on :443, and Brad's Chrome shows ERR_CONNECTION_REFUSED with the bare host typed, so Chrome is upgrading to HTTPS. No HSTS on saoc.co.za, www or new (beta.saoc.co.za has HSTS without includeSubDomains), so the cause is Chrome's typed-URL HTTPS behaviour.
+  - Fix options for Brad: (a) type http://dev.saoc.co.za in full, or bookmark it; (b) allow insecure for dev.saoc.co.za in Chrome site settings, or turn off "Always use secure connections"; (c) serve local HTTPS on :443 with a locally trusted cert (mkcert installs a CA in the system trust store; that's a security setting, so Brad only).
+  - Also: the :3002 dev server is a child of the saoc-82 session; a launchd entry would make it persistent.
+- [ ] 2026-10-22 Brad P1 footer column rhythm. Cause: Explore uses 44px Links with no gap; Partners use spans with gap-2 (~29px). Codi ruling, folded into r20 as F4 for both footers:
+  - one shared 44px row class
+  - headings: one eyebrow class with a 16px bottom margin
+  - first rows aligned across columns
+  - Partners stay plain text
+  - OWNER: SANBI and Kirstenbosch partner URLs (only WOSA's is sourced)
+- [ ] 2026-10-22 mission footer-newsletter-subscribe (Brad approved single opt-in): Firestore newsletterSubscribers, unsubscribe token, admin CSV export, footer wiring after r20 merges. No welcome email (no copy; owner item). Architect writing the contract.
+- [ ] 2026-10-22 Brad P1 "vendor application form has no hero image". Cause: Codi R29 (components/nos/hero-photos.ts) puts 5 rights-cleared photos on 5 routes; every other NOS route gets the typographic hero. The Ormerod set in branding/ is not rights-cleared (D5). Codi asked to revisit R29 (reuse, Disa emblem, other). Asked Brad whether the Ormerod set can be cleared.
+- [ ] 2026-10-22 media-kit-complete contract written (127 files). Codi rulings pending: wordmark (SA vs full name), duotone ground tints, reversed grey, NOS JPG dups (~46MB), layout.
+- [ ] 2026-10-22 rNH (Codi ruling nos-type-hero, Brad P1): every NOS route without a photo gets the Disa graminifolia SVG emblem (right half ≥1024, 55% at 640–1023, 120px centred <640; unaltered, decorative; served <600KB). plan-your-visit loses the yellow photo and becomes an emblem hero. Queued for NOS Site after rHB. Owner Q to Brad: is the Ormerod photo set rights-cleared? If yes, Codi re-rules photos per route.
+- 2026-10-22 media-kit Codi ruling: one wordmark only ("South African Orchid Council"); sampled tints confirmed; NOS PNG only; layout mirrors the presentation, ink picker, no tabs. Architect amending the contract.
+- [ ] 2026-10-22 Brad P1 "Vendor email has no branding": sent to Codi. Only emails/OrderConfirmation.tsx is branded; 11 templates are plain (5 vendor-facing, Contact, Supporter, 4 admin notices). Asked Codi to rule a shared shell, brand per email and admin treatment. Build with NOS Site after rNH unless Codi re-ranks. Verify via gws inbox.
