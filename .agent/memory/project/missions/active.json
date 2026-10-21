@@ -1,9 +1,17 @@
 {
-  "mission": ".agent/memory/project/missions/2026-10-08-vendor-invite.md",
+  "mission": ".agent/memory/project/missions/2026-10-21-footer-newsletter-subscribe.md",
   "checkpoint": {
     "milestone": "M1",
     "feature": "F1",
-    "ts": "2026-10-08T00:34:01.112025+00:00"
+    "ts": "2026-10-21T22:57:26.863019+00:00"
   },
-  "activated_at": "2026-10-08T00:19:03.152245+00:00"
+  "activated_at": "2026-10-21T22:57:26.308053+00:00",
+  "autonomy": {
+    "level": "high",
+    "normalized": "autonomous",
+    "permission_tier": "high",
+    "updated_at": "2026-10-21T22:57:26.308414+00:00",
+    "decided_at": "2026-10-21T22:57:26.308414+00:00",
+    "decided_by": "workspace default (profile.json)"
+  }
 }

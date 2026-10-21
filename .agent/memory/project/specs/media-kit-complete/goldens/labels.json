@@ -1,0 +1,99 @@
+{
+ "note": "Allowed wording. Rendition/ink/lockup/wordmark/usage come from SA Orchid Council Logo Presentation.pdf; NOS fragments come from the approved NOS filenames; bundle and quick-start wording from Codi's 2026-10-22 ruling.",
+ "rendition_label": [
+  "Full colour",
+  "Greyscale",
+  "Duotone"
+ ],
+ "ink_label": [
+  "01 Indigo",
+  "02 Prussian",
+  "03 Viridian",
+  "04 Violet",
+  "05 Teal",
+  "06 Plum"
+ ],
+ "lockup_label": [
+  "Horizontal — dark type on light",
+  "Horizontal — light type on dark",
+  "Vertical — dark type on light",
+  "Vertical — light type on dark"
+ ],
+ "wordmark_label": [
+  "South African Orchid Council"
+ ],
+ "mark_label": [
+  "Mark only",
+  "Mark only — light chip",
+  "Mark only — dark chip"
+ ],
+ "variant_label": [
+  "Full colour",
+  "Full colour reversed",
+  "Grayscale",
+  "Ink olive",
+  "Ink purple",
+  "Ink violet",
+  "Reversed gold",
+  "Reversed white",
+  "Disa graminifolia emblem"
+ ],
+ "orientation_label": [
+  "Horizontal",
+  "Vertical"
+ ],
+ "bundle_label": [
+  "Download everything (zip)",
+  "Download this section (zip)"
+ ],
+ "sections": [
+  "full-colour",
+  "greyscale",
+  "duotone",
+  "mark-only",
+  "national-show",
+  "bundles"
+ ],
+ "page_sections_in_order": [
+  {
+   "id": "quick-start",
+   "heading": "Quick start"
+  },
+  {
+   "id": "full-colour",
+   "heading": "Full colour"
+  },
+  {
+   "id": "greyscale",
+   "heading": "Greyscale"
+  },
+  {
+   "id": "duotone",
+   "heading": "Duotone"
+  },
+  {
+   "id": "mark-only",
+   "heading": "Mark only"
+  },
+  {
+   "id": "usage",
+   "heading": "Clear space and minimum size"
+  },
+  {
+   "id": "national-show",
+   "heading": "National Show 2027"
+  }
+ ],
+ "usage_copy_verbatim": [
+  "Clear space on all four sides equals one quarter of the emblem width. Nothing sets inside it.",
+  "Minimum emblem height is 24px on screen, 8mm in print. Below that the throat detail closes up and the mark should be set larger rather than simplified.",
+  "Set the lockup as a single object at the specified proportions, on parchment, bone or sage.",
+  "Do not re-space the gap, letter-space the wordmark, or shrink the emblem against the type.",
+  "Keep the vertical lockup's emblem flush to the wordmark width.",
+  "Do not float a small emblem above the name. It breaks the lockup."
+ ],
+ "usage_markers": [
+  "DO",
+  "DON'T"
+ ]
+}
