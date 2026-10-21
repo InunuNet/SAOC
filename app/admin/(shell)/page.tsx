@@ -40,7 +40,8 @@ export default async function AdminDashboardPage() {
     { now, lookupShowWindow },
   );
 
-  const data = await fetchDashboardData();
+  // "Orders" counts paid orders only (Codi ruling): reserved and cancelled are not orders sold.
+  const data = await fetchDashboardData('paid');
 
   return (
     <PageShell>

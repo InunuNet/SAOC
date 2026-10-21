@@ -14,7 +14,11 @@ const FOCUSABLE_SELECTOR = [
 // While `active`, moves focus into `containerRef`, keeps Tab / Shift+Tab inside it, and returns
 // focus to whatever held it before. Shared by the mobile menu drawer and the detail drawer,
 // which each own their own close-on-Escape handling.
-export function useFocusTrap(active: boolean, containerRef: RefObject<HTMLElement | null>): void {
+export function useFocusTrap(
+  active: boolean,
+  containerRef: RefObject<HTMLElement | null>,
+  returnFocusRef?: RefObject<HTMLElement | null>,
+): void {
   useEffect(() => {
     if (!active) return;
     const container = containerRef.current;
@@ -48,7 +52,7 @@ export function useFocusTrap(active: boolean, containerRef: RefObject<HTMLElemen
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      previouslyFocused?.focus?.();
+      (returnFocusRef?.current ?? previouslyFocused)?.focus?.();
     };
-  }, [active, containerRef]);
+  }, [active, containerRef, returnFocusRef]);
 }

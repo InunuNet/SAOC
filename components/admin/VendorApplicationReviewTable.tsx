@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import type { VendorApplication, VendorApplicationStatus } from '@/types/index';
 import type { VendorApplicationReviewAction } from '@/lib/vendor-application-review';
 import { formatAdminDate, formatAdminDateTime } from '@/lib/admin-format';
+import { vendorCategoryLabels } from '@/lib/vendor-category-labels';
 import { DetailDrawer, DetailSection } from './DetailDrawer';
 import { StatusPill } from './StatusPill';
 import { AdminTable } from './table/AdminTable';
@@ -173,7 +174,7 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
           </>
         );
       case 'category':
-        return row.vendorCategory.join(', ');
+        return vendorCategoryLabels(row.vendorCategory);
       case 'stands':
         return row.indicativeBoothCount;
       case 'submitted':
@@ -184,6 +185,7 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
         return (
           <button
             type="button"
+            data-row-view={row.id}
             onClick={() => open(row.id)}
             aria-label={`View ${row.businessName}`}
             className={`min-h-[44px] px-2 font-sans text-[14px] font-semibold text-primary underline decoration-accent underline-offset-4 hover:text-primary-800 ${FOCUS_RING}`}
@@ -201,7 +203,7 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
       case 'business':
         return `${row.businessName} — ${row.contactPersonName}, ${row.contactEmail}`;
       case 'category':
-        return row.vendorCategory.join(', ');
+        return vendorCategoryLabels(row.vendorCategory);
       case 'submitted':
         return formatAdminDateTime(row.submittedAt);
       default:
@@ -233,6 +235,7 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
         cellTitle={cellTitle}
         onOpen={(row) => open(row.id)}
         sortedDescColumnId="submitted"
+        selectedId={selected?.id ?? null}
         emptyText={EMPTY_TEXT}
         card={(row) => ({
           title: row.businessName,
@@ -250,6 +253,7 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
         title={selected?.businessName ?? ''}
         subtitle={selected ? selected.contactEmail : undefined}
         onClose={close}
+        rowId={selected?.id}
         footer={
           selected ? (
             <div>
@@ -288,7 +292,7 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
               items={[
                 { label: 'Business name', value: selected.businessName },
                 { label: 'Trading name', value: selected.tradingName || NOT_PROVIDED },
-                { label: 'Category', value: selected.vendorCategory.join(', ') },
+                { label: 'Category', value: vendorCategoryLabels(selected.vendorCategory) },
                 { label: 'Status', value: <StatusPill status={selected.status} /> },
                 { label: 'Submitted', value: formatAdminDateTime(selected.submittedAt) },
               ]}

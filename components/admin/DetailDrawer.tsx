@@ -13,6 +13,8 @@ interface DetailDrawerProps {
   title: string;
   subtitle?: string;
   onClose: () => void;
+  /** Id of the open row: on close, focus returns to that row's View control. */
+  rowId?: string;
   /** Sticky footer: the record's actions. */
   footer?: React.ReactNode;
   children: React.ReactNode;
@@ -23,9 +25,23 @@ interface DetailDrawerProps {
  * visible and readable beside it; below 1024 it is a full-page view with a back link. Focus is
  * trapped and Esc closes in both modes; body scroll is locked only in the full-page mode.
  */
-export function DetailDrawer({ open, title, subtitle, onClose, footer, children }: DetailDrawerProps) {
+export function DetailDrawer({ open, title, subtitle, onClose, rowId, footer, children }: DetailDrawerProps) {
   const panelRef = useRef<HTMLElement>(null);
-  useFocusTrap(open, panelRef);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  useFocusTrap(open, panelRef, returnFocusRef);
+
+  // Track the open row's control so swapping rows moves the return target with it. The drawer
+  // also marks <body> so the shell can narrow the list from 1440 up (see globals.css).
+  useEffect(() => {
+    if (!open) return;
+    returnFocusRef.current = rowId
+      ? document.querySelector<HTMLElement>(`[data-row-view="${CSS.escape(rowId)}"]`)
+      : null;
+    document.body.dataset.detailOpen = 'true';
+    return () => {
+      delete document.body.dataset.detailOpen;
+    };
+  }, [open, rowId]);
 
   useEffect(() => {
     if (!open) return;

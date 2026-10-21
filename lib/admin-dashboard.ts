@@ -8,7 +8,7 @@ import { initAdmin } from '@/lib/firebase-admin';
 import { ORDERS_COLLECTION } from '@/lib/orders';
 import { serializeVendorApplication } from '@/lib/firestore-serialization';
 import { VENDOR_APPLICATIONS_COLLECTION } from '@/lib/vendor-applications';
-import type { VendorApplication } from '@/types/index';
+import type { OrderStatus, VendorApplication } from '@/types/index';
 
 const TICKETS_COLLECTION = 'tickets';
 const NEWSLETTER_SUBSCRIBERS_COLLECTION = 'newsletterSubscribers';
@@ -74,7 +74,7 @@ async function fetchNeedsAttention(): Promise<PendingApplicationSummary[]> {
   }
 }
 
-export async function fetchDashboardData(): Promise<DashboardData> {
+export async function fetchDashboardData(ordersStatus: OrderStatus): Promise<DashboardData> {
   const db = getFirestore(initAdmin());
   const [ticketsSold, orders, pendingApplications, vendorsApproved, newsletterSubscribers, needsAttention] =
     await Promise.all([
@@ -82,7 +82,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
         'tickets-sold',
         db.collection(TICKETS_COLLECTION).where('status', 'in', ['paid', 'checked-in']),
       ),
-      countOf('orders-paid', db.collection(ORDERS_COLLECTION).where('status', '==', 'paid')),
+      countOf('orders', db.collection(ORDERS_COLLECTION).where('status', '==', ordersStatus)),
       fetchPendingApplicationCount(),
       countOf(
         'vendors-approved',

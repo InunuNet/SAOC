@@ -33,6 +33,8 @@ interface AdminTableProps<T> {
   onOpen?: (row: T) => void;
   /** Column the server orders by, newest first; marked with aria-sort on its header. */
   sortedDescColumnId?: string;
+  /** The record open in the detail drawer; its row stays highlighted. */
+  selectedId?: string | null;
   emptyText: string;
 }
 
@@ -55,6 +57,7 @@ export function AdminTable<T>({
   card,
   onOpen,
   sortedDescColumnId,
+  selectedId,
   emptyText,
 }: AdminTableProps<T>) {
   if (rows.length === 0) {
@@ -75,6 +78,7 @@ export function AdminTable<T>({
               <col
                 key={column.id}
                 style={{ width: column.width }}
+                data-priority={column.priority}
                 className={PRIORITY_COL[column.priority]}
               />
             ))}
@@ -85,6 +89,7 @@ export function AdminTable<T>({
                 <th
                   key={column.id}
                   scope="col"
+                  data-priority={column.priority}
                   aria-sort={column.id === sortedDescColumnId ? 'descending' : undefined}
                   className={`sticky top-14 z-10 h-10 truncate border-b border-rule bg-bone px-3 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted lg:top-0 ${alignClass(column)} ${PRIORITY_CELL[column.priority]}`}
                 >
@@ -95,14 +100,34 @@ export function AdminTable<T>({
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={getRowId(row)} className="h-12 hover:bg-bone/50">
+              <tr
+                key={getRowId(row)}
+                aria-selected={selectedId === undefined ? undefined : selectedId === getRowId(row)}
+                onClick={
+                  onOpen
+                    ? (event) => {
+                        // The View button opens the row itself; only a click elsewhere on the row does it here.
+                        if ((event.target as HTMLElement).closest('button')) return; // EventTarget → HTMLElement: closest() lives there
+                        onOpen(row);
+                      }
+                    : undefined
+                }
+                className={`h-12 ${onOpen ? 'cursor-pointer' : ''} ${
+                  selectedId === getRowId(row) ? 'bg-bone' : 'hover:bg-bone/50'
+                }`}
+              >
                 {columns.map((column) => (
                   <td
                     key={column.id}
                     title={cellTitle?.(column.id, row)}
-                    className={`truncate border-b border-rule-soft px-3 py-1 font-sans text-[14px] text-ink ${alignClass(column)} ${PRIORITY_CELL[column.priority]}`}
+                    data-priority={column.priority}
+                    className={`${column.wrap ? 'overflow-hidden' : 'truncate'} border-b border-rule-soft px-3 py-1 font-sans text-[14px] text-ink ${alignClass(column)} ${PRIORITY_CELL[column.priority]}`}
                   >
-                    {renderCell(column.id, row)}
+                    {column.wrap ? (
+                      <span className="line-clamp-2 break-words">{renderCell(column.id, row)}</span>
+                    ) : (
+                      renderCell(column.id, row)
+                    )}
                   </td>
                 ))}
               </tr>
@@ -142,6 +167,7 @@ export function AdminTable<T>({
               {onOpen ? (
                 <button
                   type="button"
+                  data-row-view={getRowId(row)}
                   onClick={() => onOpen(row)}
                   className={`${cardClass} ${TOUCH_TARGET} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40`}
                 >

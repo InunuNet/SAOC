@@ -295,7 +295,7 @@ export function DoorScannerClient({ initialCheckedInCount }: DoorScannerClientPr
               className={`h-12 min-w-0 flex-1 rounded-[2px] border border-rule bg-ivory px-4 font-mono text-[16px] text-ink placeholder:font-sans placeholder:text-muted ${FOCUS_RING}`}
             />
             <button type="submit" className={`${BUTTON_PRIMARY} h-12`}>
-              Check In
+              Check in
             </button>
           </div>
         </form>

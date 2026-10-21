@@ -58,7 +58,7 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
       case 'email':
         return row.attendeeEmail;
       case 'ticketType':
-        return <StatusPill status={row.ticketType} tone="neutral" />;
+        return row.ticketType;
       case 'purchased':
         return formatAdminDate(row.purchasedAt);
       case 'status':

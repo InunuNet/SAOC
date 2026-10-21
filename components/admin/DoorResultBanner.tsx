@@ -1,5 +1,4 @@
 import type { TicketType } from '@/types/index';
-import { DOOR_INVALID_BANNER_CLASS, DOOR_VALID_BANNER_CLASS } from './tokens';
 
 export type CheckInResult =
   | {
@@ -23,9 +22,9 @@ const BANNER_BASE = 'flex min-h-[72px] items-center gap-4 rounded-[2px] border-2
 
 // Every state carries an icon and text as well as colour, so none relies on colour alone.
 const BANNER_STYLES: Record<BannerKind, string> = {
-  valid: DOOR_VALID_BANNER_CLASS,
+  valid: 'border-primary bg-primary text-white',
   'already-used': 'border-accent bg-accent text-primary-800',
-  invalid: DOOR_INVALID_BANNER_CLASS,
+  invalid: 'border-error bg-error text-white',
 };
 
 const BANNER_ICONS: Record<BannerKind, string> = {

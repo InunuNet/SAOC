@@ -70,10 +70,10 @@ function buildStatCards(data: DashboardData, options: StatCardOptions): StatCard
   return cards;
 }
 
-// 4 across from 1280, 2 from 640, 1 below. Each card is one link to its list.
+// 2 across from 640, 1 below. Each card is one link to its list.
 export function StatCards({ data, options }: { data: DashboardData; options: StatCardOptions }) {
   return (
-    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 min-[1280px]:grid-cols-4">
+    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {buildStatCards(data, options).map((card) => {
         const Icon = card.icon;
         return (

@@ -60,7 +60,7 @@ export function AdminShell({
       </aside>
 
       <header
-        className={`sticky top-0 z-30 flex items-center gap-1 border-b border-rule bg-parchment px-1 lg:hidden ${
+        className={`sticky top-0 z-30 flex items-center gap-2 border-b border-rule bg-parchment px-4 lg:hidden ${
           isDoor ? 'h-12 sm:h-14' : 'h-14'
         }`}
       >
@@ -69,7 +69,7 @@ export function AdminShell({
           onClick={() => setMenuOpen(true)}
           aria-label="Open menu"
           aria-expanded={menuOpen}
-          className={`flex h-11 w-11 items-center justify-center text-ink ${FOCUS_RING}`}
+          className={`-ml-[11px] flex h-11 w-11 items-center justify-center text-ink ${FOCUS_RING}`}
         >
           <Menu size={22} strokeWidth={1.75} aria-hidden="true" />
         </button>

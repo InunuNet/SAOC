@@ -11,13 +11,15 @@ export interface ColumnDef {
   width: string;
   priority: ColumnPriority;
   align: ColumnAlign;
+  /** Wrap to two lines instead of truncating to one. */
+  wrap?: boolean;
 }
 
 export const TICKET_COLUMNS: readonly ColumnDef[] = [
   { id: 'bookingRef', label: 'Booking ref', width: '17%', priority: 1, align: 'left' },
   { id: 'name', label: 'Name', width: '19%', priority: 1, align: 'left' },
   { id: 'email', label: 'Email', width: '22%', priority: 3, align: 'left' },
-  { id: 'ticketType', label: 'Ticket type', width: '15%', priority: 2, align: 'left' },
+  { id: 'ticketType', label: 'Ticket type', width: '15%', priority: 2, align: 'left', wrap: true },
   { id: 'purchased', label: 'Purchased', width: '13%', priority: 2, align: 'right' },
   { id: 'status', label: 'Status', width: '14%', priority: 1, align: 'left' },
 ];

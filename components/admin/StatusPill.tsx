@@ -1,19 +1,19 @@
 // Reuses only existing tokens — no new colours. Filled sage reads as "settled/present",
-// the tinted sage reads as "in progress", bone is neutral/pending, and declined/cancelled is
-// deliberately muted+struck rather than a red we don't have a token for. The status word is
+// the tinted sage reads as "in progress", bone is neutral/pending, and declined/cancelled/rejected is
+// the muted outline pill rather than a red we don't have a token for. The status word is
 // always printed, so the meaning never rests on colour alone.
 const STATUS_STYLES: Record<string, string> = {
   neutral: 'bg-bone text-ink border border-rule',
   paid: 'bg-primary-100 text-primary-800',
   'checked-in': 'bg-primary text-ivory',
   reserved: 'bg-bone text-muted border border-rule',
-  cancelled: 'bg-ivory text-muted border border-rule line-through',
+  cancelled: 'bg-ivory text-muted border border-rule',
   pending: 'bg-bone text-muted border border-rule',
   approved: 'bg-primary text-ivory',
-  declined: 'bg-ivory text-muted border border-rule line-through',
+  declined: 'bg-ivory text-muted border border-rule',
   submitted: 'bg-bone text-muted border border-rule',
   'under-review': 'bg-primary-100 text-primary-800',
-  rejected: 'bg-ivory text-muted border border-rule line-through',
+  rejected: 'bg-ivory text-muted border border-rule',
 };
 
 const FALLBACK_STYLE = 'bg-bone text-muted border border-rule';
