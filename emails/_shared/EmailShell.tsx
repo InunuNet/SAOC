@@ -140,7 +140,13 @@ function Header({ theme: t }: { theme: ShellTheme }) {
           alt={NOS_LOGO_ALT}
           width={HEADER_LOGO_WIDTH}
           height={HEADER_LOGO_HEIGHT}
-          style={{ display: 'block', border: 0, width: `${HEADER_LOGO_WIDTH}px`, height: 'auto' }}
+          style={{
+            display: 'block',
+            border: 0,
+            width: `${HEADER_LOGO_WIDTH}px`,
+            maxWidth: '100%',
+            height: 'auto',
+          }}
         />
       </td>
     </tr>
@@ -610,11 +616,20 @@ export function ShellCard({ children }: { children: ReactNode }) {
 }
 
 const QR_TILE_PADDING = 12;
+// 200px QR plus the tile padding on both sides; the tile shrinks below this on narrow cards.
+const QR_TILE_MAX_WIDTH = 200 + 2 * QR_TILE_PADDING;
 
 // White tile behind a QR code: keeps it scannable when a client darkens the card.
 export function ShellQrTile({ children }: { children: ReactNode }) {
   return (
-    <table role="presentation" cellPadding={0} cellSpacing={0} border={0} style={{ margin: '16px 0 0' }}>
+    <table
+      role="presentation"
+      width="100%"
+      cellPadding={0}
+      cellSpacing={0}
+      border={0}
+      style={{ width: '100%', maxWidth: `${QR_TILE_MAX_WIDTH}px`, tableLayout: 'fixed', margin: '16px 0 0' }}
+    >
       <tbody>
         <tr>
           <td

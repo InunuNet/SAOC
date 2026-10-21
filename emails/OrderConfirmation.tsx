@@ -117,7 +117,7 @@ export default function OrderConfirmation({
               alt={`QR code for booking reference ${position.bookingRef}`}
               width={QR_SIZE}
               height={QR_SIZE}
-              style={{ display: 'block' }}
+              style={{ display: 'block', maxWidth: '100%', height: 'auto' }}
             />
           </ShellQrTile>
         </ShellCard>
