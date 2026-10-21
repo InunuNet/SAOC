@@ -163,10 +163,9 @@ export default async function TicketConfirmationPage({
 
                 <div className="mt-6">
                   <DownloadTicketButton
+                    orderReference={confirmedOrder.reference}
                     bookingRef={position.bookingRef}
                     attendeeName={position.attendeeName}
-                    ticketType={position.ticketType}
-                    qrDataUri={position.qrDataUri}
                     label={downloadTicketButtonLabel}
                   />
                 </div>

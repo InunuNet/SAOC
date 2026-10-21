@@ -321,6 +321,7 @@ export async function POST(
         buyerEmail: outcome.buyerEmail,
         buyerName: outcome.buyerName,
         recoveryToken: outcome.recoveryToken,
+        orderReference: reference,
         positions: outcome.positions,
       }),
     (error) => {
