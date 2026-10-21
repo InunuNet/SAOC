@@ -1,0 +1,39 @@
+schema: athanor.contract/v1
+slug: claude-md-ozow
+goal: CLAUDE.md names Ozow as the active payment gateway in exactly three places, with nothing else in the file changed.
+created_at: '2026-10-22'
+autonomy: high
+
+enforcement_edits:
+  - path: CLAUDE.md
+    reason: Brad 2026-10-22 instruction, Ozow is the active gateway and the test path
+
+features:
+  - id: F1
+    name: CLAUDE.md payment references updated from PayFast to Ozow (three edits)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/claude-md-ozow/goldens/claude-md-expected-snippets.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Payments row names Ozow, references lib/ozow.ts, lib/payments/ and the gateway doc, keeps PayFast as retained, and no longer says "PayFast (sandbox)"
+      command: python3 .agent/memory/project/specs/claude-md-ozow/verify_claude_md_ozow.py payments
+    - id: A2
+      description: tickets/ tree line mentions Ozow
+      command: python3 .agent/memory/project/specs/claude-md-ozow/verify_claude_md_ozow.py tickets
+    - id: A3
+      description: lib tree has an ozow.ts line and payfast.ts is annotated retained
+      command: python3 .agent/memory/project/specs/claude-md-ozow/verify_claude_md_ozow.py lib
+    - id: A4
+      description: vendorStandOrders row is byte-identical to HEAD
+      command: python3 .agent/memory/project/specs/claude-md-ozow/verify_claude_md_ozow.py vso
+    - id: A5
+      description: diff against HEAD touches only old lines 24, 55, 72 (plus one insertion in the lib tree), at most 10 changed lines
+      command: python3 .agent/memory/project/specs/claude-md-ozow/verify_claude_md_ozow.py diff
+    - id: A6
+      description: CLAUDE.md stays at least 17000 bytes
+      command: test "$(wc -c < CLAUDE.md)" -ge 17000
