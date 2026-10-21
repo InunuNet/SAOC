@@ -6,8 +6,9 @@ export const ADMIN_PILL_DOT_CLASS = 'bg-accent-soft';
 export const STAT_TILE_PENDING_CLASS = 'bg-accent text-primary-800';
 export const STAT_TILE_CLASS = 'bg-bone text-primary';
 
+// Codi ruling: solid 2px primary-800 outline, 2px offset, keyboard focus only.
 export const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-800';
 
 export const BUTTON_BASE =
   'inline-flex min-h-[44px] touch-manipulation items-center justify-center gap-2 rounded-[2px] px-4 font-sans text-[14px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50';

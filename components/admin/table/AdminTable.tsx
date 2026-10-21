@@ -1,3 +1,4 @@
+import { FOCUS_RING } from '../tokens';
 import type { ColumnDef } from './columns';
 
 // The 44px minimum is the touch-target floor.
@@ -169,7 +170,7 @@ export function AdminTable<T>({
                   type="button"
                   data-row-view={getRowId(row)}
                   onClick={() => onOpen(row)}
-                  className={`${cardClass} ${TOUCH_TARGET} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40`}
+                  className={`${cardClass} ${TOUCH_TARGET} ${FOCUS_RING}`}
                 >
                   {body}
                 </button>

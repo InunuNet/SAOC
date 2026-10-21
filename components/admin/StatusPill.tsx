@@ -1,18 +1,18 @@
-// Reuses only existing tokens — no new colours. Filled sage reads as "settled/present",
-// the tinted sage reads as "in progress", bone is neutral/pending, and declined/cancelled/rejected is
-// the muted outline pill rather than a red we don't have a token for. The status word is
-// always printed, so the meaning never rests on colour alone.
+// Reuses only existing tokens, per Codi's ruling: approved and paid are solid dark, pending is the
+// pale brass fill, and submitted, under-review, reserved and declined/cancelled/rejected are
+// muted outline pills (no strikethrough). The status word is always printed, so the meaning
+// never rests on colour alone.
 const STATUS_STYLES: Record<string, string> = {
   neutral: 'bg-bone text-ink border border-rule',
-  paid: 'bg-primary-100 text-primary-800',
-  'checked-in': 'bg-primary text-ivory',
+  paid: 'bg-primary text-ivory',
+  'checked-in': 'bg-primary-800 text-ivory',
   reserved: 'bg-bone text-muted border border-rule',
   cancelled: 'bg-ivory text-muted border border-rule',
-  pending: 'bg-bone text-muted border border-rule',
+  pending: 'bg-accent-soft text-primary-800',
   approved: 'bg-primary text-ivory',
   declined: 'bg-ivory text-muted border border-rule',
-  submitted: 'bg-bone text-muted border border-rule',
-  'under-review': 'bg-primary-100 text-primary-800',
+  submitted: 'bg-ivory text-muted border border-rule',
+  'under-review': 'bg-ivory text-muted border border-rule',
   rejected: 'bg-ivory text-muted border border-rule',
 };
 
