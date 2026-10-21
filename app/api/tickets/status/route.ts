@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore } from 'firebase-admin/firestore';
 
-import { initAdmin } from '@/lib/firebase-admin';
+import { getTicketStatus } from '@/lib/ticket-status';
 
 // F3 (ticketing-pages) — read-only status endpoint so /tickets/confirmation can poll
 // without claiming success or failure prematurely (the PayFast ITN race). Returns the
@@ -19,15 +18,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    initAdmin();
-    const db = getFirestore();
-    const snapshot = await db.collection('tickets').where('bookingRef', '==', ref).limit(1).get();
-
-    if (snapshot.empty) {
-      return NextResponse.json({ error: 'Not found.' }, { status: 404 });
-    }
-
-    const status = snapshot.docs[0]?.data()['status'] as string | undefined;
+    const status = await getTicketStatus(ref);
     if (!status) {
       return NextResponse.json({ error: 'Not found.' }, { status: 404 });
     }

@@ -1,0 +1,41 @@
+# Sources: Codi's FINAL review of the ticket state pages (beta 93940e04, 1280px), relayed by the lead (saoc-82) 2026-10-19; architect measurements on BASE 93940e04, re-pinned to a4807791 (r18 merged) (goldens/f1-spec.md).
+schema: athanor.contract/v1
+slug: nos-critique-r19
+goal: >-
+  On /tickets/cancelled and the /tickets/confirmation booking-not-found state, set "Back to tickets" as the natural-width 50px NOS button
+  on the hero content edge under the lede, render not-found server-side with "Booking not found" as the hero h1 and the existing sentence
+  as its lede, and give both pages correct sentence-case titles, with no new copy, tokens or colours.
+created_at: '2026-10-19'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json, docs/nos-critique-r19.md and this spec dir'
+    reason: 'Enforced by A2. The confirmation success render (and its own 14px link) and the poller pending/timed-out states are outside the rulings; S3 holds the success source byte-identical.'
+features:
+  - id: F1
+    name: Ticket state pages - Back to tickets on the hero edge, server-rendered not-found hero, sentence-case titles
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r19/goldens/f1-spec.md
+  - .agent/memory/project/specs/nos-critique-r19/goldens/f1-edits.json
+  - .agent/memory/project/specs/nos-critique-r19/goldens/f1-footprint.json
+  - .agent/memory/project/specs/nos-critique-r19/goldens/f1-baseline.json
+  - .agent/memory/project/specs/nos-critique-r19/goldens/nonreg-baseline.json
+  - .agent/memory/project/specs/nos-critique-r19/goldens/checks-f1.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f1 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r19/goldens/checks-f1.sha256
+    - id: A2
+      description: Footprint - the r19 branch differs from origin/main 1c9fa99f only in goldens/f1-footprint.json, docs/nos-critique-r19.md and the spec dir, and HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r19/checks/footprint.mjs
+    - id: A3
+      description: Static - cancelled title and column (exact), the .nk-state .nk-cta override block (exact), confirmation not-found decided on the server via lib/ticket-status.ts with generateMetadata, success render and normalizeBookingRefParam byte-identical, poller refreshes on a 404 at most once per mount then falls to timed-out (refresh-loop guard), status route keeps its responses, no new copy, docs F1
+      command: node .agent/memory/project/specs/nos-critique-r19/checks/f1-static.mjs
+    - id: A4
+      description: Rendered (public + preview, 1280/390, cancelled with and without ref, confirmation with a bogus ref and with none) - Back to tickets is one nk-btn nk-cta at natural width, 50px, on the h1/lede edge; titles right in server HTML and document.title; not-found is one h1 with BASE's sentence as lede, no leftover h2 or 14px link
+      command: node .agent/memory/project/specs/nos-critique-r19/checks/f1-rendered.mjs
+    - id: A5
+      description: Non-regression (public + preview, 1280/390) - 18 SAOC and NOS routes, the tickets hub included, keep geometry and full-page screenshot, no overflow
+      command: node .agent/memory/project/specs/nos-critique-r19/checks/nonreg.mjs
