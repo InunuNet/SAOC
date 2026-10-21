@@ -88,6 +88,13 @@ const load = async (page, origin, route, at) => {
   await page.evaluate(async () => {
     document.querySelectorAll('footer img[loading="lazy"]').forEach((i) => i.setAttribute('loading', 'eager'));
     await document.fonts.ready;
+    // The sticky site header (and any fixed chrome) would sit over the footer's top band when the full-footer capture scrolls it into
+    // view, so L7's column-1 crop depended on scroll timing. Hide it in place (visibility keeps the layout and every measured box).
+    document.querySelectorAll('body *').forEach((el) => {
+      if (el.closest('footer')) return;
+      const pos = getComputedStyle(el).position;
+      if (pos === 'fixed' || pos === 'sticky') el.style.visibility = 'hidden';
+    });
     await Promise.all([...document.querySelectorAll('footer img')].map((i) => (i.complete ? null : i.decode().catch(() => null))));
   });
   return true;

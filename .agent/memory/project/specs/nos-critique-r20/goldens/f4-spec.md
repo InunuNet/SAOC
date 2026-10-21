@@ -63,9 +63,10 @@ Footer.tsx lines 22, 52, 57, 71, 74 and 118 (all distinct from F3's 19, 29, 38, 
   - the `.nf-list span` padding rule goes;
   - `.nf-wild a` keeps only its colour and underline.
   NOS colour, line-height and underline stay. The NOS rows go from 15px to the ruling's 14px.
-- `.nf-col > .nf-head { margin-bottom: 16px; }`. This rule also reaches F1's `<label className="nf-head">`, which is a direct child of
-  `.nf-col-touch`. That keeps F1 R3 true (the label's margin-bottom equals the heading's), and the label sits 16px above the input, not 6px.
-  The WOSA heading (`.nf-wild .nf-head`) and REG/NPO (`.nf-brand .nf-reg`) keep 6px. They are not column headings.
+- `.nf-col > div.nf-head { margin-bottom: 16px; }`, on the column headings only. F1's sign-up label (`label.nf-head`) keeps `.nf-head`'s
+  6px, SAOC's label `mb-1.5` (Codi FINAL 2026-10-22, height ruling: the NOS column gaps take SAOC Footer.tsx's exact values; see
+  `f3-spec.md`). F1 R3 compares the label's type with the heading's, not its margin, and checks the 6px label-to-input gap. The WOSA
+  heading and REG/NPO are not column headings.
 
 ## The submit behaviour is out of scope
 
@@ -86,7 +87,7 @@ and fails on any `action`, `formAction` or `FormData`.
   shots.
 - F3 L2's 476px at 1280 still holds. Columns 1 and 4 (271px) set the row height at 1280. Explore is about 252px, and Partners becomes
   about 164px.
-- F1 R3 holds through `.nf-col > .nf-head` (see above).
+- F1 R3 compares type only; the label's 6px is SAOC's (see above). `.nf-list li > * { vertical-align: top; }` is accepted (Codi).
 
 ## Acceptance (f4-rendered.mjs; both modes; the r20 SAOC routes and NOS routes; 1280, 1920 and 390)
 

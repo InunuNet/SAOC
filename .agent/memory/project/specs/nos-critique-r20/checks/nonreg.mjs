@@ -2,7 +2,7 @@
 // Widths 1280 and 390. r20 changes the NOS footer on every NOS page (f1-rendered.mjs and f3-rendered.mjs own it; f3 also holds the SAOC
 // footer to BASE), so each capture is compared only down to the top of the page's last <footer>. r20 F2 removes the padding-top of the
 // follower in a same-tone section.nos-section pair (f2-rendered.mjs owns which): this check puts each removed band back (its BASE
-// height, the follower's own ground) before comparing, so everything else on the page must still match BASE exactly.
+// height, the follower's own ground: its nearest non-transparent background) before comparing, so everything else on the page must still match BASE exactly.
 //   N0  every adjacent section.nos-section follower keeps its BASE padding-top, or (F2) drops it to 0; nothing else.
 //   N1  geometry: main's top-level blocks [tag, top, height] and the last footer's top equal the BASE capture (+-1px) once the removed
 //       bands are put back.
@@ -64,8 +64,12 @@ try {
         const blocks = main ? [...main.children].map((c) => { const r = c.getBoundingClientRect(); return [c.tagName.toLowerCase(), Math.round(r.top + scrollY), Math.round(r.height)]; }) : [];
         const feet = document.querySelectorAll('footer');
         const foot = feet[feet.length - 1];
+        // The ground a section is painted on: its own background colour, else the nearest ancestor's that is not transparent (a default-tone
+        // section is rgba(0, 0, 0, 0) itself, and filling a put-back band with that draws nothing).
+        const clear = (c) => c === 'transparent' || /^rgba\(.*,\s*0\)$/.test(c);
+        const ground = (el) => { for (let e = el; e; e = e.parentElement) { const c = getComputedStyle(e).backgroundColor; if (!clear(c)) return c; } return 'rgb(255, 255, 255)'; };
         // Followers of adjacent section.nos-section pairs, in document order: [top, padding-top, ground].
-        const followers = [...document.querySelectorAll('section.nos-section')].filter((x) => x.previousElementSibling && x.previousElementSibling.matches('section.nos-section')).map((x) => { const cs = getComputedStyle(x); return [Math.round(x.getBoundingClientRect().top + scrollY), Math.round(parseFloat(cs.paddingTop)), cs.backgroundColor]; });
+        const followers = [...document.querySelectorAll('section.nos-section')].filter((x) => x.previousElementSibling && x.previousElementSibling.matches('section.nos-section')).map((x) => { const cs = getComputedStyle(x); return [Math.round(x.getBoundingClientRect().top + scrollY), Math.round(parseFloat(cs.paddingTop)), ground(x)]; });
         return { blocks, followers, footTop: foot ? Math.round(foot.getBoundingClientRect().top + scrollY) : document.documentElement.scrollHeight, overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth };
       });
       const mask = [page.locator(YEARBOOK_IMG)];

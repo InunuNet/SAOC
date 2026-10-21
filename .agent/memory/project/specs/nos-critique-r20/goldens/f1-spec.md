@@ -48,7 +48,7 @@ Sources: `docs/rules/no-invention.md`.
   - margin `0 0 6px`.
   - It is the class "Stay in touch" uses.
 - A `<label>` is inline by default, so its bottom margin would not apply. One new rule block, placed after BASE line 137 (`.nf-col .nf-text`) and carrying an r20 comment: `.nf-col-touch label.nf-head { display: block; }`. It sits apart from the r20 border edit, and no existing rule is edited for it.
-- The touch column grows by the label's line box (15.6px) plus its 6px margin. The blurb's 14px bottom margin stays above it, so the column reads heading, blurb, label, field.
+- The touch column grows by the label's line box (15.6px) plus its 6px margin. The blurb's 14px bottom margin stays above it, so the column reads heading, blurb, label, field. (Codi FINAL 2026-10-22, height ruling: the NOS column gaps take SAOC Footer.tsx's exact values, so the blurb margin becomes 12px; the label keeps 6px, SAOC's mb-1.5, and R3 now checks that gap and compares type only.)
 - Not chosen: a visually-hidden label (it does not meet the "visible" ruling) and a placeholder-as-label (placeholders vanish on input; WCAG 3.3.2).
 
 ## 4. Footprint

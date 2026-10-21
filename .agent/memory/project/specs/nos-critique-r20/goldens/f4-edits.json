@@ -68,13 +68,13 @@
       ".nf-list { list-style: none; margin: 0; padding: 0; }",
       ".nf-list a, .nf-list span { line-height: 1.35; color: var(--nc-lilac); text-decoration: none; }",
       ".nf-wild a { color: var(--nc-ground); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }",
-      ".nf-col > .nf-head { margin-bottom: 16px; }"
+      ".nf-col > div.nf-head { margin-bottom: 16px; }"
     ],
     "retired": [
-      ".nf-list span {",
+      "padding-block: 11px",
       "min-height: 44px; font-size: 15px"
     ],
-    "why": "nos-chrome.css is unlayered, so its rules beat Tailwind's layered utilities: the row geometry and size come off .nf-list a/span and .nf-wild a (display, align-items, min-height, font-size 15px, the span's padding-block 11px) and off .nf-list (display: grid) so FOOTER_RHYTHM applies; NOS colour, line-height and underline stay. The column headings get the 16px bottom margin; .nf-col > .nf-head also reaches F1's sign-up <label class=nf-head> (a direct child of .nf-col-touch), which keeps F1 R3 (label margin = heading margin) true."
+    "why": "nos-chrome.css is unlayered, so its rules beat Tailwind's layered utilities: the row geometry and size come off .nf-list a/span and .nf-wild a (display, align-items, min-height, font-size 15px, the span's padding-block 11px) and off .nf-list (display: grid) so FOOTER_RHYTHM applies; NOS colour, line-height and underline stay. The column headings (div.nf-head) get the 16px bottom margin. F1's sign-up label (label.nf-head) keeps .nf-head's 6px, SAOC's label mb-1.5 (Codi FINAL 2026-10-22, the height ruling); F1 R3 compares the label's type with the heading's, not its margin."
   },
   "handoff": {
     "file": "design/design_handoff_saoc/ui_kits/website/components.jsx",

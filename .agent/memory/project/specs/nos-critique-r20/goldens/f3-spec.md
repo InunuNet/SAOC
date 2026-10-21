@@ -70,7 +70,8 @@ nos-chrome.css:
   - the `.nf-base` column rule.
 - New rules: `.nf-lockup { display: block; width: 248px; max-width: 100%; line-height: 0; border-radius: 4px; }`, and
   `.nf-lockup img { display: block; width: 100%; max-width: none; height: auto; }`.
-- `.nf-base` keeps only its rule line (border-top lilac .2, the existing NOS value), its 13px size and its .02em tracking. `.nf-legal`
+- `.nf-base` keeps only its rule line (border-top lilac .2, the existing NOS value), its 13px size, and letter-spacing 0, matching SAOC (Codi FINAL 2026-10-22: the .02em tracking put the legal group at x 909
+  against SAOC's 916; L3 stays +-2). `.nf-legal`
   drops its own flex and gap, because the bar's `legal` classes carry them.
 - REG/NPO keeps `.nf-head` plus `.nf-brand .nf-reg` (gold, tabular numerals). Its centring goes, because the parent no longer centres, so
   it sits on the column's left edge, 32px under the lockup (mb-4 + gap-4, SAOC's).
@@ -96,6 +97,16 @@ nos-critique-r17 F2 (the full-row centred lockup, 360/280px, the 0.25 x emblem c
 in CI: the contract-suite step is an inventory ratchet that executes no assertion, and the e2e suite has no footer test. r17's checks are
 branch-scoped (their footprint guard pins r17's own BASE), so they are not re-run on main. This section is the record of the
 supersession, and r17's hash-pinned files stay untouched.
+
+## Height ruling (Codi FINAL 2026-10-22)
+
+The NOS footer must fit 476 +-40 at 1280; L2 is unchanged. The dev tightens the NOS column gaps to SAOC Footer.tsx's exact values:
+- heading to first element 16px (`mb-1` + `gap-3`; F4 R3);
+- blurb to the sign-up label 12px (`gap-3`);
+- label to input 6px (SAOC's label `mb-1.5`; the NOS label keeps `.nf-head`'s 6px, so F4's 16px heading rule is `.nf-col > div.nf-head { margin-bottom: 16px; }`);
+- form to the WOSA block 20px (`gap-3` + `mt-2`);
+- WOSA heading to link 8px (`mb-2`).
+`.nf-list li > * { vertical-align: top; }` (it drops the 44.9px line-box strut so each row is 44px) is accepted; no r20 check rejects it.
 
 ## Risk to watch at capture
 

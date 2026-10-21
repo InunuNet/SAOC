@@ -9,6 +9,6 @@ df47d58715e872fe9ebe4eb9e3761bf71b20e97d9be86f5260f8aa3486886b0e  .agent/memory/
 1ecc210e196c552aeb0840138b67e3008556813496e86d8c1c1dadb890a5dd7f  .agent/memory/project/specs/nos-critique-r20/checks/f4-static.mjs
 b1fcdbb02184cd9ca56095ec7f4f72e2e5412bd473e783c5f96c49a8af06b41a  .agent/memory/project/specs/nos-critique-r20/checks/f4-rendered.mjs
 2c01dbbc02d0e65bb9d8beb2eeaa4abdfa43bbb3088c3935a95aff70053ff220  .agent/memory/project/specs/nos-critique-r20/goldens/f4-footprint.json
-cbabfbbfad7b670c81b661a97c54bf327765707918b131e4cc4986f00cbde582  .agent/memory/project/specs/nos-critique-r20/goldens/f4-edits.json
-c7cbd090634011a45d61e6fa4e0677f023dfd61f2f3c234a13cdeeb11af2c915  .agent/memory/project/specs/nos-critique-r20/goldens/f4-spec.md
+53de86fbf15b9f4002b1c8020c4340075f57635c69d3caaa28e5b8fbd67f8d2d  .agent/memory/project/specs/nos-critique-r20/goldens/f4-edits.json
+720706dee51e661659af1956a0464d6f2fe4ee362191c90a2b593a39fb98b2a4  .agent/memory/project/specs/nos-critique-r20/goldens/f4-spec.md
 a8ef8d872c62756ecf4be8adaa2405fc7e6065f31b4a23837e4201f3dd0c4130  .agent/memory/project/specs/nos-critique-r20/contract-f4.yaml

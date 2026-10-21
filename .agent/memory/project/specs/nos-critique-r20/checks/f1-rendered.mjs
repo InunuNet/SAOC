@@ -7,7 +7,8 @@
 //   R2  WCAG 1.3.5 / 4.1.2: the input has type=email, name=email, autocomplete=email, required, no aria-label; exactly one <label> labels it,
 //       reading the golden "Email address", and the textbox's accessible name (role lookup, exact) is that text.
 //   R3  the label is visible, above the input, on the input's left edge, and its computed type equals the footer's label role (the
-//       "Stay in touch" .nf-head): family, size, weight, line-height, letter-spacing, transform, colour, bottom margin.
+//       "Stay in touch" .nf-head): family, size, weight, line-height, letter-spacing, transform, colour; and it sits 6px (+-1) above the
+//       input, SAOC's label mb-1.5 (Codi FINAL 2026-10-22: the NOS column gaps take SAOC Footer.tsx's exact values).
 //   R4  at 390 the input and the button share one row (same top +-1px, button right of the input); at 1280 the form keeps its stacked
 //       layout (the button under the input, same left edge and width +-1px). The footer's grid and boxes are F3's (f3-rendered.mjs).
 import { finish, goldenJson } from './_lib.mjs';
@@ -17,7 +18,8 @@ const { chromium } = require('playwright');
 const NAME = 'f1-rendered.mjs';
 const G = goldenJson('f1-edits.json');
 const WIDTHS = [1280, 390];
-const LABEL_PROPS = ['font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'text-transform', 'color', 'margin-bottom'];
+const LABEL_PROPS = ['font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'text-transform', 'color'];
+const LABEL_GAP = 6;
 const failures = [];
 let checks = 0;
 const near = (a, b) => Math.abs(a - b) <= 1;
@@ -98,6 +100,7 @@ for (const mode of MODES) {
         if (!m.label || !m.label.visible || m.label.w < 1 || m.label.h < 1) failures.push(`${at}: the label is not visible (R3)`);
         else {
           if (m.label.y + m.label.h > i.y + 0.5) failures.push(`${at}: the label (bottom ${Math.round(m.label.y + m.label.h)}) is not above the input (top ${Math.round(i.y)}) (R3)`);
+          if (!near(i.y - (m.label.y + m.label.h), LABEL_GAP)) failures.push(`${at}: the label sits ${(i.y - (m.label.y + m.label.h)).toFixed(1)}px above the input, want ${LABEL_GAP} (R3)`);
           if (!near(m.label.x, i.x)) failures.push(`${at}: label left ${Math.round(m.label.x)}px, input left ${Math.round(i.x)}px (R3)`);
           if (!m.roleStyle) failures.push(`${at}: no "Stay in touch" .nf-head to compare with (R3)`);
           else for (const p of LABEL_PROPS) if (m.label.style[p] !== m.roleStyle[p]) failures.push(`${at}: label ${p} ${m.label.style[p]}, the label role (.nf-head) ${m.roleStyle[p]} (R3)`);

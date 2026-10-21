@@ -32,5 +32,5 @@ assertions:
       description: Static - one nf-head label for nf-email between the blurb and the form, the input with id/type/name/autoComplete/placeholder/required and no aria-label, the input rule with alpha 0.55 and no 0.36 left, the label display:block rule block, no new copy, docs F1
       command: node .agent/memory/project/specs/nos-critique-r20/checks/f1-static.mjs
     - id: A4
-      description: Rendered (public + preview, 1280/390, three NOS routes) - border rgba(210, 203, 232, 0.55) 1px solid at >= 3:1 on the footer, name/autocomplete email, one visible nf-head label naming the input, side by side at 390, stacked at 1280
+      description: Rendered (public + preview, 1280/390, three NOS routes) - border rgba(210, 203, 232, 0.55) 1px solid at >= 3:1 on the footer, name/autocomplete email, one visible nf-head label naming the input, 6px above it, side by side at 390, stacked at 1280
       command: node .agent/memory/project/specs/nos-critique-r20/checks/f1-rendered.mjs
