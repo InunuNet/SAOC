@@ -46,7 +46,7 @@ export function TableToolbar({
         <div
           role="group"
           aria-label={filterLabel}
-          className="inline-flex max-w-full flex-wrap overflow-hidden rounded-[2px] border border-rule"
+          className="inline-flex max-w-full flex-wrap rounded-[2px] border border-rule"
         >
           {filterOptions.map((option) => {
             const pressed = option.value === filterValue;
@@ -58,7 +58,7 @@ export function TableToolbar({
                 onClick={() => onFilterChange(option.value)}
                 className={`min-h-[44px] px-2.5 font-sans text-[13px] font-medium sm:px-3 ${
                   pressed ? 'bg-primary text-ivory' : 'bg-ivory text-ink hover:bg-bone'
-                } ${FOCUS_RING}`}
+                } focus-visible:relative focus-visible:z-10 ${FOCUS_RING}`}
               >
                 {option.label}
               </button>
