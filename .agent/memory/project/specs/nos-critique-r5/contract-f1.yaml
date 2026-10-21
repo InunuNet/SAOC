@@ -1,0 +1,41 @@
+schema: athanor.contract/v1
+slug: nos-critique-r5
+goal: >-
+  Cap prose at 60ch on /national-show/vendors and /national-show/exhibitors in .tmp/sandbox/critique-r5
+  (base ee366553) with one page-local class on each page's content container, no copy change, grid cards
+  and tracks uncapped, ledes <=58ch, vendors CTA untouched.
+created_at: '2026-10-16'
+autonomy: high
+exclusions:
+  - item: 'Vendors CTA (CtaBand), vendors apply/register/payment/photos subroutes'
+    reason: The CTA is F3's; the subroutes are forms. Enforced by A2 and A3.
+  - item: 'ShowContentState, hub, /national-show/tickets, nos-theme, shared components'
+    reason: Off limits per the lead; enforced by A2.
+features:
+  - id: F1
+    name: 60ch prose measure on vendors and exhibitors
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r5/goldens/spec.md
+  - .agent/memory/project/specs/nos-critique-r5/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: QA check scripts are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r5/goldens/checks.sha256
+    - id: A2
+      description: Footprint guard (F1) — only the vendors and exhibitors page.tsx, docs/nos-critique-r5.md and the r5 checks differ from ee366553
+      command: node .tmp/sandbox/critique-r5/contracts/checks/nos-critique-r5/check-footprint.mjs --through=2
+    - id: A3
+      description: Static — [&_p]:max-w-[60ch] once on each 1280px container, no li/ul/ol/td/dd/dt or content-state cap, nothing wider than 60ch, class-only diff, copy unchanged, vendors CtaBand byte-identical
+      command: node .tmp/sandbox/critique-r5/contracts/checks/nos-critique-r5/check-static-f1.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings on the two pages and the checks
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r5 type-check && pnpm --dir .tmp/sandbox/critique-r5 exec eslint --max-warnings 0 "app/(marketing)/national-show/vendors/page.tsx" "app/(marketing)/national-show/exhibitors/page.tsx" contracts/checks/nos-critique-r5'
+    - id: A5
+      description: Production build passes (input for A6)
+      command: pnpm --dir .tmp/sandbox/critique-r5 build
+    - id: A6
+      description: Rendered on next start 3010-3019 at 375, 768, 1280 (+360 overflow) — prose <=60ch, ledes <=58ch, no overflow, list items and an injected 3-up grid fill their tracks, vendors CTA intact
+      command: node .tmp/sandbox/critique-r5/contracts/checks/nos-critique-r5/check-rendered-f1.mjs

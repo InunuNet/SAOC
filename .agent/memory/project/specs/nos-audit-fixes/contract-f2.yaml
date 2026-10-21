@@ -1,0 +1,111 @@
+schema: athanor.contract/v1
+slug: nos-audit-fixes
+goal: >-
+  Point every NOS "Book tickets" path at the existing SAOC flow, /tickets/[slug] then
+  /tickets/confirmation or /tickets/cancelled, with no new NOS routes, per Brad 2026-10-15.
+  Contract for feature F2 only. F1's assertions live in contract-f1.yaml, so run both through
+  `python3 execution/contract.py gate`. Every command runs from the project root against the
+  worktree .tmp/sandbox/nos-fixes (branch fix/nos-audit-p1, base 047d610e; rebased 2026-10-15 onto origin/main 9e619821, so the base-relative guards A6-A9 and A15 compare against 9e619821).
+created_at: '2026-10-15'
+autonomy: high
+notes:
+  source: >-
+    Brad 2026-10-15, relayed by lead saoc-2b: "Point NOS 'Book tickets' at the EXISTING SAOC
+    flow, /tickets/[slug] -> /tickets/confirmation and /tickets/cancelled, with no new NOS
+    routes. Do it in your NOS lane. Leave the uncommitted /national-show/tickets/buy
+    relocation alone."
+  decisions_needed:
+    - id: D1
+      question: >-
+        Hero "Book tickets ->": send it to /national-show/tickets (the NOS ticket page, whose buy
+        links are /tickets/<slug>), or straight to one product slug?
+      recommendation: >-
+        /national-show/tickets. Sanity has five admission products. One hero button cannot stand
+        for one of them, and early-bird expires. This contract and A2 encode the recommendation.
+      alternative: >-
+        /tickets/day-visitor, the slug the frozen nav rail already features. If Brad picks this,
+        change only NOS_TICKETS_PATH's comparison in f2-check-hero-cta.mjs (an architect edit,
+        never @dev's).
+    - id: D2
+      question: >-
+        /national-show/tickets admission card: one link per public admission product (product
+        name from Sanity), or one button to the dominant product only?
+      recommendation: >-
+        One link per product. A dominant-only button hides four of the five products, and it
+        dead-ends once early-bird closes. The per-product list adds no copy (labels are Sanity
+        names) and reuses the existing Button variants. It does add a list layout that the handoff
+        does not draw, so Brad judges it by eye on :3002.
+exclusions:
+  - item: contracts/contract-ticket-reachability.yaml TKT-06/TKT-07
+    reason: >-
+      These are legacy runtime assertions (curl on :3333) that /national-show contains
+      href="/tickets". After C1 they go red by design, because Brad's directive moves NOS off
+      the bare listing. Reachability itself still holds: /national-show links to
+      /national-show/tickets, which links to /tickets/<slug>. Amending that contract is for the
+      orchestrator. F2 does not edit it, and @dev must not edit it.
+  - item: Conferences / Workshops / Symposium / WOSA buy actions
+    reason: >-
+      /tickets/[slug] returns 404 for non-admission products (tickets/[slug]/page.tsx:86-91).
+      Those products already buy through TicketPurchaseForm and the shared checkout, which
+      returns to /tickets/confirmation and /tickets/cancelled. A3 guards them unchanged.
+features:
+  - id: F2
+    name: NOS ticket repoint — hero, /national-show/tickets and what-to-expect go to the existing /tickets/[slug] flow
+    status: pending
+    files:
+      - app/(marketing)/national-show/page.tsx
+      - app/(marketing)/national-show/tickets/page.tsx
+      - app/(marketing)/national-show/what-to-expect/page.tsx
+goldens:
+  - .agent/memory/project/specs/nos-audit-fixes/goldens/f2-ticket-repoint.md
+  - .agent/memory/project/specs/nos-audit-fixes/goldens/f2-cta-map.json
+assertions:
+  phase: 4
+  checks:
+    # ---- red on base 047d610e, green after the fix ----
+    - id: F2-A1
+      description: No NOS surface (national-show routes, components/show, components/nos) links the bare /tickets listing, except the D4 empty-list fallback on /national-show/tickets
+      command: node .tmp/sandbox/nos-fixes/contracts/checks/nos-audit-fixes/f2-check-no-bare-tickets-listing.mjs
+    - id: F2-A2
+      description: Hero "Book tickets →" label is verbatim and its Button href is /national-show/tickets (D1)
+      command: node .tmp/sandbox/nos-fixes/contracts/checks/nos-audit-fixes/f2-check-hero-cta.mjs
+    - id: F2-A3
+      description: /national-show/tickets maps every public admission product to href /tickets/${p.slug} labelled {p.name}, with no hard-coded slugs, secondary cards unchanged, revalidate 60 kept (D2), and base's Get visitor tickets button rendered only for an empty product list (D4)
+      command: node .tmp/sandbox/nos-fixes/contracts/checks/nos-audit-fixes/f2-check-nos-tickets-page.mjs
+    - id: F2-A4
+      description: what-to-expect Admission button goes to /national-show/tickets (D3)
+      command: grep -q 'href="/national-show/tickets"' ".tmp/sandbox/nos-fixes/app/(marketing)/national-show/what-to-expect/page.tsx"
+    # ---- guards: green on base by design, red if the fix overreaches ----
+    - id: F2-A5
+      description: what-to-expect Admission label expression is unchanged byte-for-byte
+      command: grep -qF "{info?.admissionLinkLabel ?? 'See ticket prices and book'} →" ".tmp/sandbox/nos-fixes/app/(marketing)/national-show/what-to-expect/page.tsx"
+    - id: F2-A6
+      description: No new route files under app/(marketing)/national-show and no tickets/buy (Brad - no new NOS routes; leave the buy relocation alone)
+      command: node .tmp/sandbox/nos-fixes/contracts/checks/nos-audit-fixes/f2-check-no-new-nos-routes.mjs
+    - id: F2-A7
+      description: components/chrome (incl. FROZEN nav-config.ts) is unchanged by this branch (vs 9e619821), tracked
+      command: git -C .tmp/sandbox/nos-fixes diff --quiet 9e619821 -- components/chrome
+    - id: F2-A8
+      description: The existing ticket flow is unchanged by this branch (vs 9e619821) (the /tickets routes, components/tickets, api/tickets, demo-ticket-type), except F1's three tap-target files, which A15 guards
+      command: git -C .tmp/sandbox/nos-fixes diff --quiet 9e619821 -- "app/(marketing)/tickets" components/tickets app/api/tickets lib/demo-ticket-type.ts ':(exclude)components/tickets/TicketTypeCard.tsx' ':(exclude)components/tickets/DayQuantityPicker.tsx' ':(exclude)components/tickets/TicketPurchaseForm.tsx'
+    - id: F2-A9
+      description: No untracked files were added to chrome or to the existing ticket flow
+      command: test -z "$(git -C .tmp/sandbox/nos-fixes ls-files --others --exclude-standard -- components/chrome 'app/(marketing)/tickets' components/tickets app/api/tickets)"
+    - id: F2-A10
+      description: JSON-LD Offer base URL is still the per-product /tickets (JsonLd.tsx:149 rule)
+      command: grep -qF "const TICKET_PRODUCT_BASE_URL = 'https://saoc.co.za/tickets';" ".tmp/sandbox/nos-fixes/app/(marketing)/national-show/page.tsx"
+    - id: F2-A11
+      description: ShowSectionNav Tickets entry unchanged (C5)
+      command: 'grep -qF "{ href: ''/national-show/tickets'', label: ''Tickets'', hint: ''Buy admission tickets'' }" .tmp/sandbox/nos-fixes/components/show/ShowSectionNav.tsx'
+    - id: F2-A12
+      description: /national-show "The Show" group Tickets link unchanged (C4)
+      command: 'grep -qF "{ href: ''/national-show/tickets'', label: ''Tickets'' }" ".tmp/sandbox/nos-fixes/app/(marketing)/national-show/page.tsx"'
+    - id: F2-A13
+      description: Type-check passes in the worktree
+      command: pnpm -C .tmp/sandbox/nos-fixes exec tsc --noEmit
+    - id: F2-A14
+      description: eslint --max-warnings 0 on the three changed files
+      command: pnpm -C .tmp/sandbox/nos-fixes exec eslint --max-warnings 0 "app/(marketing)/national-show/page.tsx" "app/(marketing)/national-show/tickets/page.tsx" "app/(marketing)/national-show/what-to-expect/page.tsx"
+    - id: F2-A15
+      description: "F1's tap-target edits to TicketTypeCard, DayQuantityPicker and TicketPurchaseForm change className attribute lines only (no added/removed lines, no handler or href edits)"
+      command: node .tmp/sandbox/nos-fixes/contracts/checks/nos-audit-fixes/f2-check-tickets-classname-only.mjs

@@ -1,0 +1,36 @@
+# Sources: Codi R64 (title follows the h1) and the lead's ruling 2026-10-18 (wording; long-sentence h1s keep their short title and go to Codi);
+# architect audit of the 5f8d2311 public build (goldens/f1-spec.md); F24 sweep and title rules; r12 F4's R64 casing assertion.
+schema: athanor.contract/v1
+slug: nos-critique-r13
+goal: >-
+  In .tmp/sandbox/critique-r13, make every public page title its rendered h1 plus the existing template suffix (international-guests,
+  vendors/payment/status, /about, /judging, /contact), with explicit cited exceptions for sentence h1s and F24 T3 conflicts, and supersede F24-A2's titles.json.
+created_at: '2026-10-18'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json and docs/nos-critique-r13.md'
+    reason: 'Enforced by A2. Nav labels, h1s and the F24 rules are unchanged; /, /societies (sentence h1) and NOS about/symposium/archive (F24 T3) keep their titles.'
+features:
+  - id: F1
+    name: Titles follow their h1 wording (Codi R64)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r13/goldens/f1-spec.md
+  - .agent/memory/project/specs/nos-critique-r13/goldens/f1-footprint.json
+  - .agent/memory/project/specs/nos-critique-r13/goldens/supersession.json
+  - .agent/memory/project/specs/nos-critique-r13/goldens/checks-f1.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f1 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r13/goldens/checks-f1.sha256
+    - id: A2
+      description: Footprint - the r13 branch differs from BASE 5f8d2311 only inside the f1 allowlist and the docs file, HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r13/checks/f1-footprint.mjs
+    - id: A3
+      description: Static S1-S3 - five pages change only their title (and og image) line to the h1 wording, titles.json supersedes /about and /contact only, docs record F1 and R64
+      command: node .agent/memory/project/specs/nos-critique-r13/checks/f1-static.mjs
+    - id: A4
+      description: Rendered (public) - every swept title is its h1 plus the template suffix bar the cited exceptions (kept exactly), F24 T1-T6 hold, titles equal titles.json, audited h1s unchanged
+      command: node .agent/memory/project/specs/nos-critique-r13/checks/f1-rendered.mjs

@@ -1,0 +1,57 @@
+{
+ "note": "nos-critique-r12 re-records pre-existing checks (F1: two; F3: two amended by ruling) against main 26fde668, following goldens/f17/supersession.json and goldens/f18/supersession.json (launch-weekend). Retired checks are NOT run in any gate; re-pinned ones keep running with the new value. The edits to contracts/checks/** are made by @architect in the r12 branch, never by @dev.",
+ "retired": [
+  {
+   "file": "contracts/checks/menu-system-layout4-f7/check-featurerail-blurb-provenance.mjs",
+   "reason": "It requires featureRail.blurb to equal goldens/f7-featurerail-blurb.json. menu-system-layout4 F8 removed the blurb deliberately: goldens/f8-tickets-rail.json:45 blurbRemoved ('item.featureRail.blurb ... is REMOVED -- the three destination rows below replace it ... f7-featurerail-blurb.json's provenance golden becomes historical'), shipped in 69f58bb1 (2026-09-14) and db2d268f (2026-09-22); components/chrome/nav-config.ts:26-30 and :96-100 record it, and e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts:154 asserts the blurb text is GONE. Restoring the blurb would break that live e2e assertion, so the check can only fail.",
+   "replacedBy": "goldens/f8-tickets-rail.json (rail destinations) and e2e/mega-menu-f8-logo-and-tickets-rail.spec.ts (blurb absent, three destination rows).",
+   "how": "a RETIRED header comment opens the file (first line starts '// RETIRED (nos-critique-r12'), citing f8-tickets-rail.json blurbRemoved and this file; the check body is unchanged. menu-system-layout4 contract-f7.yaml A6 (:145) still lists it, but that mission is closed and its gate is not run."
+  }
+ ],
+ "repinned": [
+  {
+   "file": "contracts/checks/vendor-p1-targets/check-labels-static.mjs",
+   "reason": "F24 (911fd349, 2026-10-18, 'National Show inner pages use the \"%s — National Orchid Show | SAOC\" layout template') moved the vendors page metadata title from 'Exhibitors and Vendors — National Show' to 'Exhibitors and Vendors' (app/(marketing)/national-show/vendors/page.tsx:27); the layout template supplies the suffix. The label itself is NOT superseded: 'Exhibitors and Vendors' is still the label in nav-config.ts:258, ShowSectionNav.tsx:98, content/national-show-routes.json:238, scripts/generate-nos-route-manifest.ts:275 and the page h1 (vendors/page.tsx:91); no 'Trade Vendors' survives on main. Only the one title pin is stale.",
+   "from": "['app/(marketing)/national-show/vendors/page.tsx', `title: '${NEW} — National Show',`],",
+   "to": "['app/(marketing)/national-show/vendors/page.tsx', `title: '${NEW}',`], // F24 911fd349: the NOS layout template adds the suffix (nos-critique-r12 supersession)",
+   "keeps": "every other pin, OLD_PATTERN /Exhibiting Nurseries|Trade Vendors/ (launch-weekend F18 check-l-supersession.mjs:20 requires it) and the lowercase sweep.",
+   "alsoGreens": "contracts/checks/launch-weekend/f18/check-l-supersession.mjs, which spawns check-labels-static and requires it green (:30)."
+  }
+ ],
+ "resolvedByCode": [
+  {
+   "file": "contracts/checks/menu-system-layout4-f1/check-descriptor-provenance.mjs",
+   "rows": [
+    "/national-show/archive",
+    "/national-show/symposium"
+   ],
+   "how": "not re-recorded: the check is right. r12 F1 aligns the two stale manifest purposes (content/national-show-routes.json:152 and :296, scripts/generate-nos-route-manifest.ts:182 and :336) to their nav descriptors, so it runs fully green. It leaves launch-weekend goldens/f18/supersession.json notGatedStillRed."
+  }
+ ],
+ "amendedByRuling": [
+  {
+   "file": ".agent/memory/project/specs/nos-critique-r6/checks/check-static-f2.mjs",
+   "rule": "S3 'app/not-found.tsx (SAOC root) must be unchanged'",
+   "ruling": "lead 2026-10-18 (r12 F3 extension): the SAOC root 404 gets a <main> landmark, a distinct title, its own lede and no canonical.",
+   "how": "not edited: the r6 gate is closed and not run. The intent of S3 (the SAOC copy and look stay) is carried by r12 f3-static S3 (the <section> stays byte-identical as NotFoundSection) and f3-rendered (section box and document size equal 26fde668). r6 S2 still holds: the NOS not-found carries sentence one only."
+  },
+  {
+   "file": "contracts/checks/launch-weekend/f18/check-j-archive-scope.mjs",
+   "rule": "FORBIDDEN 'app/not-found.tsx' (:22)",
+   "ruling": "same lead ruling, 2026-10-18.",
+   "how": "not edited: it scopes launch-weekend F18's own diff and that gate is closed. r12's footprint guard (f1-f4) allows app/not-found.tsx and app/(marketing)/not-found.tsx explicitly."
+  },
+  {
+   "file": "contracts/checks/launch-weekend/f24/_rules.mjs (F24-A3 check-c-descriptions.mjs, F24-A1 check-a-rules-selftest.mjs + goldens/f24/description-cases.json)",
+   "rule": "D3 'never an ellipsis' (descProblems)",
+   "ruling": "lead 2026-10-18 (r12 F4), Codi R7 (no meta-talk): /national-show/symposium's description is its own rendered sentence 'Uniting conservation…' cut at a word boundary to <=155 chars ending in '…'; no words added. Replaced when Lee-Ann supplies a shorter lede.",
+   "how": "edited as QA input: ELLIPSIS_EXCEPTIONS = ['/national-show/symposium'] and ellipsisCut() in _rules.mjs; descProblems(desc, lede, route) waives D3 only for that route and only when the description equals ellipsisCut() of one of its rendered ledes. check-c and the self-test pass the route; three new cases prove it: the exact cut passes on symposium, the same text fails D3 on /national-show/about, a different cut fails D3 on symposium. Every other route with an ellipsis still fails."
+  }
+ ],
+ "unaffected": [
+  {
+   "file": "contracts/contract-wcag-accent-contrast.yaml",
+   "why": "its greps of app/not-found.tsx keep reading the same <section> (it stays in that file, byte-identical); they are already red at 26fde668 (app/not-found.tsx:21 still uses text-accent), and r12 does not change that."
+  }
+ ]
+}

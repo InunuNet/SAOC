@@ -1,0 +1,41 @@
+# Sources: lead task 2026-10-18 (R50 P1 as ruled, lead-approved), main d05c85a5. Block reorder only; no new copy.
+schema: athanor.contract/v1
+slug: nos-critique-r10
+goal: >-
+  On /national-show/what-to-expect in .tmp/sandbox/critique-r10, move the Show dates card above the R11 disclosure (dates, hours, admission, food, photography, cloakroom,
+  accessibility), byte for byte, with no copy, class or disclosure change.
+created_at: '2026-10-18'
+autonomy: high
+exclusions:
+  - item: 'every file but what-to-expect/page.tsx (plus F1 paths and docs/nos-critique-r10.md on the shared branch)'
+    reason: 'Enforced by A2 (goldens/f1..f2-footprint.json). exhibitors/page.tsx has the same disclosure-before-dates order and is reported, not changed.'
+features:
+  - id: F2
+    name: Show dates before the R11 disclosure on what-to-expect
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r10/goldens/f2-spec.md
+  - .agent/memory/project/specs/nos-critique-r10/goldens/f2-footprint.json
+  - .agent/memory/project/specs/nos-critique-r10/goldens/f2-baseline.json
+  - .agent/memory/project/specs/nos-critique-r10/goldens/checks-f2.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f2 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r10/goldens/checks-f2.sha256
+    - id: A2
+      description: Footprint (one branch) - f1..f2 paths and docs/nos-critique-r10.md only, HEAD descends from d05c85a5
+      command: node .agent/memory/project/specs/nos-critique-r10/checks/f2-footprint.mjs
+    - id: A3
+      description: Static S1-S2 - page.tsx equals BASE with only the Show dates block moved directly above the holding note (metadata export and imports masked for F24), docs exist
+      command: node .agent/memory/project/specs/nos-critique-r10/checks/f2-static.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r10 type-check && pnpm --dir .tmp/sandbox/critique-r10 exec eslint --max-warnings 0 "app/(marketing)/national-show/what-to-expect"'
+    - id: A5
+      description: Production build passes (input for the rendered check)
+      command: pnpm --dir .tmp/sandbox/critique-r10 build
+    - id: A6
+      description: Rendered on next start 3010-3019 (public) at 375 768 1280 - dates card first, disclosure directly after, both texts equal the d05c85a5 baseline, one disclosure with one chip painting and exposing one label
+      command: node .agent/memory/project/specs/nos-critique-r10/checks/f2-rendered.mjs

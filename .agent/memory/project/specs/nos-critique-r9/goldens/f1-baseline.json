@@ -1,0 +1,68 @@
+{
+ "recorded": "2026-10-17 from the built r8 tree 6bffbe7c, next start, DPR 1, fresh context, scrolled to the bottom",
+ "bytesBefore": {
+  "1280": {
+   "requests": 3,
+   "bytes": 537176
+  },
+  "390": {
+   "requests": 3,
+   "bytes": 537176
+  }
+ },
+ "files": {
+  "headerPng": 102551,
+  "footerHorizontalPng": 106262,
+  "footerVerticalPng": 328363
+ },
+ "alt": "National Orchid Show, Western Cape 2027",
+ "display": {
+  "1280": {
+   "header": {
+    "w": 448,
+    "h": 109.75,
+    "natural": [
+     1200,
+     294
+    ],
+    "attrs": [
+     "1200",
+     "294"
+    ]
+   },
+   "footer": {
+    "kind": "horizontal",
+    "w": 448,
+    "h": 109.75,
+    "natural": [
+     1200,
+     294
+    ]
+   }
+  },
+  "390": {
+   "header": {
+    "w": 390,
+    "h": 95.55,
+    "natural": [
+     1200,
+     294
+    ]
+   },
+   "footer": {
+    "kind": "vertical",
+    "w": 342,
+    "h": 300.58,
+    "natural": [
+     900,
+     791
+    ],
+    "attrs": [
+     "900",
+     "791"
+    ]
+   }
+  }
+ },
+ "note": "The header and footer boxes include the transparent margin that the CSS pulls back with negative margins. Displayed widths are 448/390 (header) and 448/342 (footer), NOT the 306/220/400/260 in the first brief, so a sizes value built from those would upscale the chosen candidate."
+}

@@ -1,0 +1,41 @@
+# Sources: Codi FINAL rulings relayed by the lead (2026-10-17), interim QA P3s on r8, nos-v4 goldens. No new copy.
+schema: athanor.contract/v1
+slug: nos-critique-r9
+goal: >-
+  Close the 419/420, 374/375 and 359/360 fractional-width gaps in the chip tracking and short-tag media steps in .tmp/sandbox/critique-r9 with range syntax, keeping every r8 value (0 below 375, 0.02em below 420, 0.06em up to 700, short tag below 360).
+  Exit criterion (Brad via the lead; design-cb's rulings are final): this feature loops build, critique, fix until impeccable scores >= 39/40 with
+  P0/P1/P2 = 0 AND design-cb PASSes. The lead runs that loop and relays the PASS; the gate below stays mechanical.
+created_at: '2026-10-17'
+autonomy: high
+exclusions:
+  - item: 'every file outside the stacked allowlist'
+    reason: 'Enforced by A2 (stacked footprint, goldens/f1..f4-footprint.json).'
+features:
+  - id: F3
+    name: No fractional-width gap in the chip media steps
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r9/goldens/f3-spec.md
+  - .agent/memory/project/specs/nos-critique-r9/goldens/f3-footprint.json
+  - .agent/memory/project/specs/nos-critique-r9/goldens/checks-f3.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f3 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r9/goldens/checks-f3.sha256
+    - id: A2
+      description: Footprint (stacked branch) - f1..f4 paths and docs/nos-critique-r9.md only; nothing off limits
+      command: node .agent/memory/project/specs/nos-critique-r9/checks/f3-footprint.mjs
+    - id: A3
+      description: Static S1-S4 - no integer-complement media pairs, range steps width<360px width<375px width<420px and an inclusive 700, docs exist
+      command: node .agent/memory/project/specs/nos-critique-r9/checks/f3-static.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r9 type-check && pnpm --dir .tmp/sandbox/critique-r9 exec eslint --max-warnings 0 components/nos-chrome components/nos components/show "app/(marketing)/national-show"'
+    - id: A5
+      description: Production build passes (input for the rendered and fixture checks)
+      command: pnpm --dir .tmp/sandbox/critique-r9 build
+    - id: A6
+      description: Rendered on next start 3010-3019 (public) - computed tracking and visible label at 359 360 374 375 419 420 700 701 on exhibitors and plan-your-visit, plus production CSS coverage on a 0.05px grid 300-701 with no gap
+      command: node .agent/memory/project/specs/nos-critique-r9/checks/f3-rendered.mjs

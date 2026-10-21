@@ -1,0 +1,25 @@
+{
+ "note": "nos-critique-r13 F1 (Codi R64, title follows the h1 wording; lead ruling 2026-10-18): checks and goldens whose pinned titles r13 changes.",
+ "edited": [
+  {
+   "file": ".agent/memory/project/specs/launch-weekend/goldens/f24/titles.json",
+   "rule": "F24-A2 golden titles for /about and /contact",
+   "ruling": "Codi R64 via the lead 2026-10-18: /about becomes \"About the South African Orchid Council | South African Orchid Council\", /contact becomes \"Contact SAOC | South African Orchid Council\" (their rendered h1 plus the site suffix).",
+   "how": "two values replaced, nothing else (r13 f1-static S2). /societies stays (sentence exception). F24 check-b passes on the prototype."
+  }
+ ],
+ "amendedByRuling": [
+  {
+   "file": ".agent/memory/project/specs/nos-critique-r12/checks/f4-rendered.mjs",
+   "rule": "SAOC targets keep their 26fde668 title (/about, /judging, /contact)",
+   "ruling": "same R64 ruling.",
+   "how": "not edited: r12 is merged and its gate closed. r13 f1-rendered now asserts those titles equal their h1."
+  }
+ ],
+ "notSuperseded": [
+  {
+   "rule": "F24 T3 (titles.json _note, _rules.mjs titleProblems): a NOS inner head never repeats 'National Show'",
+   "how": "kept. /national-show/about, /symposium and /archive are r13 EXCEPTIONS by lead ruling 2026-10-18; R64 vs T3 sent to Codi."
+  }
+ ]
+}

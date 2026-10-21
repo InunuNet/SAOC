@@ -1,0 +1,152 @@
+{
+ "recorded": "from the 26fde668 build (next start, public mode); title, h1 and description are the BASE values, for the record",
+ "routes": {
+  "/about": {
+   "title": "About SAOC | South African Orchid Council",
+   "h1": "About the South African Orchid Council",
+   "canonical": "https://saoc.co.za/about",
+   "hero": "Our heritageAbout the South African Orchid Council",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/judging": {
+   "title": "Judging | South African Orchid Council",
+   "h1": "Judging at SAOC",
+   "canonical": "https://saoc.co.za/judging",
+   "hero": "SAOC judging systemJudging at SAOCAccreditation, awards, and how plants are scored across South Africa.",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/events": {
+   "title": "Events | South African Orchid Council",
+   "h1": "Events",
+   "canonical": "https://saoc.co.za/events",
+   "hero": "SAOC calendarEventsShows, workshops, and council meetings across South Africa's affiliated orchid societies.",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/contact": {
+   "title": "Contact | South African Orchid Council",
+   "h1": "Contact SAOC",
+   "canonical": "https://saoc.co.za/contact",
+   "hero": "Get in touchContact SAOCQuestions about societies, shows, judging, or membership? Reach the right person, or send us a message.",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/sponsors": {
+   "title": "Sponsors | South African Orchid Council",
+   "h1": "Sponsors",
+   "canonical": "https://saoc.co.za/sponsors",
+   "hero": "Our sponsorsSponsorsOrganisations and businesses that support orchid growing, showing, and judging across South Africa.",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/tickets/day-visitor": {
+   "title": "Day Visitor Ticket | South African Orchid Council",
+   "h1": "Day Visitor Ticket",
+   "canonical": "https://saoc.co.za/tickets/day-visitor",
+   "hero": "Day Visitor TicketSingle-day general admission to the National Show — choose your day.",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/tickets/early-bird": {
+   "title": "Early-Bird Exhibition Ticket | South African Orchid Council",
+   "h1": "Early-Bird Exhibition Ticket",
+   "canonical": "https://saoc.co.za/tickets/early-bird",
+   "hero": "Early-Bird Exhibition TicketSingle-day admission to the National Show during the early-bird window.",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/tickets/fictional-test-show-general-admission": {
+   "title": "General Admission (Fictional Test Show) | South African Orchid Council",
+   "h1": "General Admission (Fictional Test Show)",
+   "canonical": "https://saoc.co.za/tickets/fictional-test-show-general-admission",
+   "hero": "General Admission (Fictional Test Show)Test data — never real pricing. Used to exercise the ticketing pipeline end-to-end in isolation from the real show. Never active except for a brief, human-supervised test window.",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/tickets/field-trip": {
+   "title": "Field Trip (per outing) | South African Orchid Council",
+   "h1": "Field Trip (per outing)",
+   "canonical": "https://saoc.co.za/tickets/field-trip",
+   "hero": "Field Trip (per outing)Transport and entry for one guided field trip outing.",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/tickets/qa-fixture-ticket": {
+   "title": "QA Fixture Ticket — Do Not Purchase | South African Orchid Council",
+   "h1": "QA Fixture Ticket — Do Not Purchase",
+   "canonical": "https://saoc.co.za/tickets/qa-fixture-ticket",
+   "hero": "QA Fixture Ticket — Do Not PurchasePermanent fixture for contracts/checks/ticketing-hardening (TARGET_TICKET_TYPE). Not a real product — never remove the category value or this becomes purchasable.",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/tickets/saoc-symposium": {
+   "title": "National Orchid Show Symposium | South African Orchid Council",
+   "h1": "National Orchid Show Symposium",
+   "canonical": "https://saoc.co.za/tickets/saoc-symposium",
+   "hero": "National Orchid Show SymposiumFull registration for the National Orchid Show Symposium track.",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/tickets/sunset-cocktails-single": {
+   "title": "Sunset Cocktails (Single) | South African Orchid Council",
+   "h1": "Sunset Cocktails (Single)",
+   "canonical": "https://saoc.co.za/tickets/sunset-cocktails-single",
+   "hero": "Sunset Cocktails (Single)Admission to the Sunset Cocktails evening reception. 18+ event.",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/tickets/vip": {
+   "title": "VIP Ticket | South African Orchid Council",
+   "h1": "VIP Ticket",
+   "canonical": "https://saoc.co.za/tickets/vip",
+   "hero": "VIP TicketReception access plus full-weekend admission to the National Show.",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/tickets/weekend-pass": {
+   "title": "Weekend Pass | South African Orchid Council",
+   "h1": "Weekend Pass",
+   "canonical": "https://saoc.co.za/tickets/weekend-pass",
+   "hero": "Weekend PassFull-weekend admission to the National Show.",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/tickets/weekend-pass-early-bird": {
+   "title": "Weekend Pass (Early Bird) | South African Orchid Council",
+   "h1": "Weekend Pass (Early Bird)",
+   "canonical": "https://saoc.co.za/tickets/weekend-pass-early-bird",
+   "hero": "Weekend Pass (Early Bird)Full-weekend admission to the National Show at the early-bird price.",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/tickets/wosa-conference": {
+   "title": "WOSA Conference | South African Orchid Council",
+   "h1": "WOSA Conference",
+   "canonical": "https://saoc.co.za/tickets/wosa-conference",
+   "hero": "WOSA ConferenceFull registration for the WOSA Conference track.",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/national-show/what-to-expect": {
+   "title": "What to Expect — National Orchid Show | SAOC",
+   "h1": "What to expect",
+   "canonical": "https://saoc.co.za/national-show/what-to-expect",
+   "hero": "What to expect",
+   "description": "Opening hours, admission, food, photography, cloakroom and accessibility at the South African National Orchid Show."
+  },
+  "/national-show/plan-your-visit": {
+   "title": "Plan Your Visit — National Orchid Show | SAOC",
+   "h1": "Plan your visit",
+   "canonical": "https://saoc.co.za/national-show/plan-your-visit",
+   "hero": "Plan your visitEverything you need to get to the National Orchid Show and make a day of it. Travel and accommodation guidance for the venue is still being put together; the show committee will confirm the final details.",
+   "description": "Everything you need to get to the National Orchid Show and make a day of it."
+  },
+  "/national-show/sponsors": {
+   "title": "Show Sponsors — National Orchid Show | SAOC",
+   "h1": "Sponsors",
+   "canonical": "https://saoc.co.za/national-show/sponsors",
+   "hero": "Sponsors",
+   "description": "No Show sponsors have been confirmed for 2027 yet."
+  },
+  "/societies": {
+   "title": "Affiliated Societies | South African Orchid Council",
+   "h1": "Find an orchid society near you",
+   "canonical": "https://saoc.co.za/societies",
+   "hero": "Affiliated societiesFind an orchid society near you",
+   "description": "The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968."
+  },
+  "/national-show/symposium": {
+   "title": "Symposium — National Orchid Show | SAOC",
+   "h1": "National Orchid Show Symposium",
+   "canonical": "https://saoc.co.za/national-show/symposium",
+   "hero": "National Orchid Show SymposiumFrom Wild Origins to Cultivated Excellence: The Future of Orchids",
+   "description": "This page is the programme and registration hub for the SAOC Symposium."
+  }
+ }
+}

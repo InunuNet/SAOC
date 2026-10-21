@@ -1,0 +1,40 @@
+schema: athanor.contract/v1
+slug: nos-critique-r3
+goal: >-
+  Close NOS ruling R43 in nos-critique-r3: replace the internal presenter order note with the existing R11 'To be confirmed by the show committee' chip, and lift running prose below 16px to the body role at 390px (17px NOS, 16px SAOC home and 2-up class cards) while leaving labels and meta alone. Lead order: shared components, page files only where unavoidable (hub 586/614, tickets 188/199, plan-your-visit, what-to-expect).
+created_at: '2026-10-16'
+autonomy: high
+exclusions:
+  - item: 'ShowContentState (incl. .nos-show-page-notice 15px), nos-theme.css and heading margins, NosSkipLink, vendors CTA, wosa-conference page, ticketing components, /workshops and /conferences ticket text, R34'
+    reason: Lead standing exclusions and holds; enforced by the footprint guard.
+features:
+  - id: F2
+    name: R43 order-note chip and 390px body floor
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r3/goldens/spec.md
+  - .agent/memory/project/specs/nos-critique-r3/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: B1
+      description: 'All QA check scripts (F1-F4, incl. architect-updated pinned checks) are unmodified since @architect wrote them'
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r3/goldens/checks.sha256
+    - id: B2
+      description: 'Footprint guard (all four features, stacked tree) against 242f51fb'
+      command: node .tmp/sandbox/critique-r3/contracts/checks/nos-critique-r3/check-footprint.mjs --through=4
+    - id: B3
+      description: 'Static - R11 ConfirmationBadge reused (no Sample sequence, no .pc-order-note), 18 class-only prose edits present with old strings gone, no new copy, docs record R43 and the touched page files'
+      command: node .tmp/sandbox/critique-r3/contracts/checks/nos-critique-r3/check-static-f2.mjs
+    - id: B4
+      description: 'TypeScript compiles; ESLint clean with zero warnings on the touched files'
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r3 type-check && pnpm --dir .tmp/sandbox/critique-r3 exec eslint --max-warnings 0 components/nos/PresenterSection.tsx components/nos/VisitorLinkCard.tsx components/nos/JudgingGroupCard.tsx components/nos/ExhibitorStageCard.tsx components/show/VenueCard.tsx components/show/ExhibitorKeyDates.tsx components/show/ExhibitorQuestions.tsx components/show/ShowFaqList.tsx components/show/nos/RealEmptyListing.tsx components/home/NavCards.tsx components/home/PartnersSection.tsx contracts/checks/nos-critique-r3'
+    - id: B5
+      description: 'Production build passes (input for the rendered check)'
+      command: pnpm --dir .tmp/sandbox/critique-r3 build
+    - id: B6
+      description: 'Older pinned checks that R43 touches still pass (presenter-cards section source, key-dates stack, sponsor enquiry, F1 static; check-tap-targets is stale against base (expects font-mono on the VenueCard map link) and unrelated)'
+      command: sh -c 'for f in nos-presenter-cards/check-section-source nos-audit-fixes/check-key-dates-stack nos-audit-fixes/check-sponsor-enquiry nos-critique-r3/check-static; do node ".tmp/sandbox/critique-r3/contracts/checks/$f.mjs" || exit 1; done'
+    - id: B7
+      description: 'Rendered at 390: 31 named elements at their AFTER size (17px NOS, 16px home/class cards; prints the before->after table), 7 meta pins unchanged, 10-route prose sweep (no running prose < 16px), label sweep (12-14px), no overflow'
+      command: node .tmp/sandbox/critique-r3/contracts/checks/nos-critique-r3/check-rendered-f2.mjs

@@ -1,0 +1,32 @@
+# Sources: lead task and rulings 2026-10-18 (four pre-existing provenance items; (b) ALIGN per launch-weekend f18-spec.md:122/:181), 6f805df0, menu-system-layout4 goldens/f8-tickets-rail.json, F24 911fd349, Lee-Ann's Drive. No new copy.
+schema: athanor.contract/v1
+slug: nos-critique-r12
+goal: >-
+  In .tmp/sandbox/critique-r12, align the archive and symposium manifest purposes to their nav descriptors (generator and manifest), retire the featureRail blurb check that F8 superseded,
+  and re-pin the vendors title in check-labels-static to F24's, so descriptor provenance runs fully green.
+created_at: '2026-10-18'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json and docs/nos-critique-r12.md'
+    reason: 'Enforced by A2. The two contracts/checks files are QA inputs committed by @architect on fix/nos-critique-r12, never edited by @dev.'
+features:
+  - id: F1
+    name: Provenance items (a) archive and (b) symposium purposes and label, (c) retire the featureRail blurb check, (d) re-pin the vendors title
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r12/goldens/f1-spec.md
+  - .agent/memory/project/specs/nos-critique-r12/goldens/f1-footprint.json
+  - .agent/memory/project/specs/nos-critique-r12/goldens/supersession.json
+  - .agent/memory/project/specs/nos-critique-r12/goldens/checks-f1.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f1 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r12/goldens/checks-f1.sha256
+    - id: A2
+      description: Footprint - only the manifest generator and manifest, the two re-recorded checks and docs/nos-critique-r12.md differ from main 26fde668, HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r12/checks/f1-footprint.mjs
+    - id: A3
+      description: Static S1-S6 - archive and symposium purposes and the symposium label aligned in generator and manifest only, every ShowSectionNav label equals the manifest and generator label, descriptor provenance fully green, blurb check RETIRED with its body unchanged, labels-static re-pinned to the F24 title and green with launch-weekend F18-A13, docs exist
+      command: node .agent/memory/project/specs/nos-critique-r12/checks/f1-static.mjs

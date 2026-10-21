@@ -1,0 +1,46 @@
+# Sources: Codi FINAL ruling relayed by the lead (2026-10-17) superseding nos-v4 plan-your-visit.html l.605-616; the foot text is the existing Sanity contact.note. No new copy.
+schema: athanor.contract/v1
+slug: nos-critique-r8
+goal: >-
+  Rebuild the plan-your-visit emergency section in .tmp/sandbox/critique-r8 to Codi's ruling: the national numbers are always plain tel targets directly under the h2, never in a surface or chip;
+  the on-site first aid contact follows status.emergencyContacts, in ONE pale disclosure with one chip and its note when unconfirmed (inline short tag dropped), plain when confirmed;
+  numbers first, then the on-site contact; the whole section is a full-bleed var(--gold) band (VisitEmergency renders a NosSection, placed after the main NosSection) with a 32px h2 gap; exposed as VisitEmergency in VisitDisclosure.tsx and fixture-tested with props.
+  Exit criterion (Brad via the lead; design-cb's rulings are final): this feature loops build, critique, fix until impeccable scores >= 39/40 with
+  P0/P1/P2 = 0 AND design-cb PASSes. The lead runs that loop and relays the PASS; the gate below stays mechanical.
+created_at: '2026-10-17'
+autonomy: high
+exclusions:
+  - item: 'every file but VisitDisclosure.tsx and the plan-your-visit page'
+    reason: 'Enforced by A2 (stacked footprint, goldens/f1..f5-footprint.json).'
+features:
+  - id: F5
+    name: Emergency section - plain national numbers, status-driven on-site disclosure
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r8/goldens/f5-spec.md
+  - .agent/memory/project/specs/nos-critique-r8/goldens/f5-footprint.json
+  - .agent/memory/project/specs/nos-critique-r8/goldens/checks-f5.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f5 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r8/goldens/checks-f5.sha256
+    - id: A2
+      description: Footprint (stacked branch) - f1..f5 paths and docs/nos-critique-r8.md only; nothing off limits
+      command: node .agent/memory/project/specs/nos-critique-r8/checks/f5-footprint.mjs
+    - id: A3
+      description: Static S1-S4 plus S3b - VisitEmergency exported, rendered as a gold NosSection band placed after the main NosSection with the dial/on-site split and pale tone, the page delegates with the unchanged label and a deviation comment, no ConfirmationBadge, PHONE_SHAPED or tel in the page, no new copy
+      command: node .agent/memory/project/specs/nos-critique-r8/checks/f5-static.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r8 type-check && pnpm --dir .tmp/sandbox/critique-r8 exec eslint --max-warnings 0 components/nos components/show "app/(marketing)/national-show"'
+    - id: A5
+      description: Production build passes (input for A6 and A7)
+      command: pnpm --dir .tmp/sandbox/critique-r8 build
+    - id: A6
+      description: Fixture - VisitEmergency renders the gold band section in every state, over pending, research, unset, confirmed, on-site first, dial-only and empty (props only, run under tsx); national numbers never inside a to-be-confirmed group
+      command: node .agent/memory/project/specs/nos-critique-r8/checks/f5-fixture.mjs
+    - id: A7
+      description: Rendered on next start 3010-3019 in both modes at 390 and 1280 - a full-bleed rgb(243, 242, 214) band with a 32px h2 gap and no horizontal overflow, plain national tel targets of 44px whose nearest filled ancestor is the band, one pale rgb(251, 250, 240) on-site disclosure with one chip and its note, no inline short tag, chips equal disclosures
+      command: node .agent/memory/project/specs/nos-critique-r8/checks/f5-rendered.mjs

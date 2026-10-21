@@ -2680,3 +2680,94 @@ unparseable contracts" above.)
 - 2026-10-19 Codi ticket-state review -> site-7d r19 (cancelled CTA alignment, confirmation not-found pattern, page titles). COPY FLAG (pre-launch, needs owner): cancelled message "Your reservation has been left open as reserved — you are welcome to try again whenever you are ready" (app/(marketing)/tickets/cancelled/page.tsx:37 fallback; Sanity copy.cancelledMessage may override). Reservations actually expire (expiresAt ~15-30 min; F31 QA observed), so "whenever you are ready" is inaccurate. Not reworded (no-invention).
 - 2026-10-19 Codi NOS footer sign-up review -> site-7d r20: border alpha .36->.55 (1.4.11), autocomplete/name=email (1.3.5), visible "Email address" label (reuses aria-label text).
 - 2026-10-19 r18 MERGED main 93940e04 -> 5c30b171 (FF; gate 5/5 + R6 line-break check; Codex R3 PASS; secrets 0): checkout live region on Total only, card title <p>, breadcrumb with nk-crumb units (no orphan dash), aria-current on last crumb (hub too). r19 (43c9758b) asked to restack onto 5c30b171.
+- 2026-10-19 r18 LIVE on beta (a4807791, CI success): /tickets/early-bird + /tickets/saoc-symposium 200 with breadcrumb + aria-current (checkout route is /tickets/<slug>, not /national-show/tickets/<slug>).
+- 2026-10-19 Codi r18 live PASS (a4807791, 1280/390): live region, heading outline, breadcrumb (separator and crumb wrap as a pair). Checkout review closed. Open: r19 restack, r20 footer sign-up.
+- 2026-10-19 Codi P2 doubled section gap: workshops at 390 fixed (64px); what-to-expect at 1280 still 262px (adjacent same-tone .nos-section 120+120) -> added to site-7d r20.
+- 2026-10-20 Codi plan-your-visit P2 (no map link) NOT REPRODUCED: Sanity nationalShow + show-19-2027 venue.mapsUrl already = the golden OSM URL; beta /national-show/plan-your-visit HTML has 2x openstreetmap + 2x "Open in a map". No change made. Pin = airfield reference point, not entrance: owner to confirm before go-live.
+- 2026-10-20 Codi r19 code pre-check PASS (3 rulings). Flag: ConfirmationPoller router.refresh() on 404 could loop if server isBookingNotFound throws -> site-7d told to add a one-shot ref guard + Codex before merge.
+- 2026-10-20 Codi RULING r20-footer (per Brad direction "NOS Footer should follow the same layout as the SAOC footer"): supersedes r17 layout; SAOC Footer.tsx grid (4x280 at 1280), gold vertical lockup 248px in col 1, REG/NPO left under it 32px gap, NOS tokens only; acceptance height within +-40 of 476px, cols x 32/344/656/968. Folded into site-7d r20 with the sign-up fixes and the doubled gap.
+- 2026-10-20 01:13 SAST BLOCKED: machine DNS down since ~00:55 (scutil --dns has no nameservers; github/beta curl 000). Blocks pushes, next build (Google Fonts), rendered checks, CI and deploys. site-7d suspects the MacOS Tweaks session (killed a site-7d process at 00:48). Escalated to Brad via push notification; no agent touches system or network settings.
+- 2026-10-20 Codi F18a recheck: CLOSED photo reuse + sa-exhibitors h2=h1. -> site-7d r21: programme heading outline (P2), sentence-case headings (P3). OWNER/LEE-ANN FLAGS (pre-launch): /sa-exhibitors lede duplicates the /vendors h2 word for word; /national-show/programme still shows the "PLACEHOLDER COPY ... AI-generated" banner (R51 go-live blocker, needs approved copy).
+- 2026-10-20 r21 spec a715a89a (local, spec only). MY QUEUED SANITY EDITS, to run AFTER the r21 gate passes, with backup + ifRevisionID, verified against live data: showPage-11-programme intro heading unset; showPage-11-programme how-the-programme-will-work heading -> "How the programme will work"; showPage-04-south-african-exhibitors title -> "South African exhibitors"; its overview heading -> "South African exhibitors"; its directory-coming heading -> "Exhibitor directory". Codi notes out of scope: OG image text, nav label, workshops/conferences "Programme" h2.
+- 2026-10-20 Codi symposium review: OWNER/LEE-ANN BLOCKER pre-launch: Sanity conferencePresenter "elbert-wijaya" bio contains the author draft note "(for example, Dendrobium sp. with blue flowers, you know the species name!)", publicly visible. Supply the species name or remove the parenthesis. QUEUED for Lee-Ann questions doc once DNS is back. P3 bio toggle label -> site-7d r22 ("Show less" when expanded, my ruling as a UI control label).
+- 2026-10-20 Codi intl-guests + wosa-conference (390): P2 h2=h1 + P3 casing folded into site-7d r21. GO-LIVE BLOCKER (R51): "PLACEHOLDER COPY ... AI-generated" notices remain on 3 NOS pages: programme, international-guests (x2), wosa-conference (x3). Need approved copy from Lee-Ann.
+- 2026-10-20 r21 addendum 2 d47756c9. MY POST-GATE SANITY EDITS now 9: (6) showPage-05-international-guests-and-exhibitors title -> "International guests and exhibitors"; (7) its intro heading unset; (8) its who-will-appear heading -> "Who will appear"; (9) showPage-07-wosa-conference about-the-conference heading -> "About the conference". Plus the earlier 5. Verify against live data, back up, ifRevisionID, after the r21 gate.
+- 2026-10-20 Codi /national-show/exhibitors review (390) -> site-7d r23: status sentence pill -> body text in disclosure; key-date TBC pill -> short nowrap "To be confirmed"; sticky "On this page" at <=700 (my ruling, no new copy). Note: the page still says "Exhibitor entries are not yet open ... Contact the council", while exhibitors now apply via the vendor form (r17 F1). Copy consistency question for Lee-Ann.
+- 2026-10-20 Codi FAQ review (390): r23 widened, short nowrap TBC pill at the StatusMarker component for all routes <640. LEE-ANN/OWNER flag: FAQ entries "Where exactly is the show being held?" and "How do I get to the show from Cape Town International Airport?" carry the TBC pill although their answers state the confirmed venue (The Hangar). The per-entry Sanity flag contradicts the rest of the site; confirm and unflag. The price entry is rightly flagged (provisional).
+
+- [ ] LEE-ANN FLAG (Codi 2026-10-20, /events): hero lede promises events "across South Africa's affiliated orchid societies" but only 1 event (National Show) is loaded. Either society events need loading into Sanity, or the lede needs her adjustment. Add to her doc once DNS is back.
+
+## NOS/SAOC critique queue — state at session wrap 2026-10-20 (saoc-82)
+BLOCKER: Mac DNS/system resolver broken since ~00:55 20 Oct (host resolves, git/gh/curl fail) + Chromium mach error 141 (post-logout). Brad to fix network settings (possibly the MacOS Tweaks session). Twice-daily health check could not run (no GitHub/Firebase reach); last known: main a4807791, CI green, beta healthy.
+site-7d queue, merge strictly in order, each: Codex → push → CI + rollout → Codi live check:
+- r19 fix/nos-critique-r19-restack: gate 5/0 + Codex r2 PASS — READY TO PUSH on DNS.
+- r20 SAOC-layout footer / signup a11y; r21 programme outline + sentence case (then 9 Sanity heading edits, listed above); r22 "Show less"; r23 exhibitors notice / sticky TOC / StatusMarker short tags.
+- r24 9c66e6ee: CTA pairs full width ≤700 (archive, hub, archive/[year]); baselines after r23.
+- r25 b328cfc2: SAOC brass button --radius-1 2px (UtilityBar pill excluded per Codi) + /judging Contact link 44px.
+- r26 21eaa9a8: DownloadTicketButton + VendorRegisterForm submit → NOS Button primary.
+- r27 14218649 (stacked on r26): NOS Button disabled state opacity .6 / not-allowed; r26 must merge first.
+- r28 c521de30: /societies note → p-sm sans; chips full names, scrolling row <480, ≥24px peek, scrollLeft nudge.
+- r29 (arrow only, SHA pending): EventCard → glyph as SocietyCard.
+- r30 (ruled, to spec): formatShowDateRange cross-month/year (Codi dash rule), EventCard block start-date for cross-month, single TZ Africa/Johannesburg.
+Lee-Ann doc flags pending DNS: listed above + /events lede vs single event.
+Cron c8d8059d (health checks) is session-only — re-create next session.
+- [ ] 2026-10-20 LEE-ANN DOC APPEND BLOCKED (DNS). Queued "Questions — 20 October 2026": (1) Brad: access to the responses of Google Form https://docs.google.com/forms/d/e/1FAIpQLSc_Wh63oPJDoNQ9PCK7Tzz0a1C-NDf41QxX0RMVWx9iYqJTRw/viewform (add Brad as collaborator, or share the responses Sheet); (2) /events lede vs the single listed event. The Elbert bio question is probably already in the doc (Part B, index ~1051), so it is skipped unless a re-read shows otherwise. ALSO: gws deleted its credentials.enc (keyring auth failure), so Brad must run `gws auth login` after DNS is fixed. Then re-run via Analyst F32.
+- [ ] 2026-10-20 Codi route 30 /members ruling (1 P2: SuggestionForm per-field errors; 2 P3s; full text at the comms.md tail): queue for site-7d after r30. NOTE: after the restart, the session listed as "SAOC Site" is Codi. Site-7d is now the session named "NOS Design" (confirmed 2026-10-20).
+- [ ] 2026-10-20 HARNESS HAZARD: `make update-template` (and `make sync-clones`) clone-syncs CLAUDE.md and GEMINI.md from AGENTS.md. SAOC's AGENTS.md holds stale architect-agent text (2.5KB, since 2026-06), so the sync overwrote the 17.6KB SAOC CLAUDE.md developer guide. Reverted with `git checkout -- CLAUDE.md GEMINI.md` before commit cbda2c43. It will recur on every update until AGENTS.md carries the real guide. That needs Brad: AGENTS.md is floor-protected. File upstream: clone-sync must refuse to shrink a target by more than about 50%.
+- [ ] 2026-10-20 vendor-invite M1/F1 AWAITING BRAD SIGN-OFF: rebased onto cbda2c43, pushed as origin/feat/vendor-invite-r2 @ 69c1d6d6 (old remote feat/vendor-invite 3609ac46 is stale; a force push was denied by the floor). A10 fix (review table re-syncs rows) in ce85e48b. Contract updated: A2 now checks the transactional create; A12/A13 triad checks added. Gate: 11 PASS, A12/A13 ERROR until it is on beta. After sign-off: merge, deploy beta, run BrowserAgent and the gws manifests, re-gate, then the docs chain step.
+- 2026-10-20 HEALTH CHECK (~17:40 SAST):
+  - CI main green: cbda2c43 run 39446514738 success. The 10-19 CI reds were fixed by later runs.
+  - RED: Refresh llms-full.txt fails daily because its direct push hits GH006 protected main (required check "build"). Dispatched Dev_Son5_M1-F1_HealthCheck to switch it to a PR flow.
+  - App Hosting saoc-prod latest rollout build-2026-10-20-001 SUCCEEDED (13:14Z).
+  - Cloud Logging: 0 ERROR entries in 12h.
+  - Beta smoke: all 6 routes as expected (5x200, 404).
+  - FIRESTORE: 29 orders stranded `reserved` past expiry (expiries 08-18 x4, 08-19 x1, 08-22 x8, 09-14 x1, 10-06 x1, 10-07 x10, 10-19 x4). These are sandbox test checkouts, and no reconcile-orders alert was logged in 12h. Check whether the Cloud Scheduler job is running, and clean these up before prod (extends the earlier "6 sandbox orders" item).
+- 2026-10-20 CI: required check "build" never reported, because the CI job was named "ci". Fixed by PR #8 (3ca3fcf5), which renamed the job to build. refresh-llms now opens a PR instead of pushing to main. Bot-authored PRs need (a) a human to approve the pull_request run (first-time-contributor policy) and (b) a manual merge, since allow_auto_merge=false. BRAD DECISION: enable auto-merge and loosen the Actions approval policy for the bot, OR add a PAT/App token, OR accept a daily manual approval and merge. Also: admin pushes bypass the build check; consider "Do not allow bypassing".
+- 2026-10-21 09:04 HEALTH CHECK: clean. CI main green (latest 1c9fa99f); rollout build-2026-10-20-004 SUCCEEDED; 0 ERROR logs in 12h; beta smoke 6/6 as expected. Unchanged: 29 sandbox orders stranded `reserved` (no new ones since 10-19); cleanup item stands.
+
+### Health check 2026-10-21 (PM)
+- CI main green (latest 10 runs green; CI 39569312765 and refresh-llms 39561200337 succeeded 2026-10-21). Only old reds remain, all from before #8.
+- App Hosting rollout-2026-10-20-004 SUCCEEDED; 0 ERROR logs in 12h; beta smoke 6/6 (5×200, 1×404).
+- Firestore: 29 sandbox orders stranded `reserved` past expiry, unchanged and none new since 10-19.
+- **reconcile-orders never runs:** the Cloud Scheduler API is NOT enabled on saoc-webapp (PERMISSION_DENIED listing jobs), so no job exists. That explains why there are no alerts. Enabling it is a GCP project config change, so it needs Brad's OK.
+- [ ] 2026-10-21 NEW LEE-ANN SOURCE: "SAOC /3. Societies/All Society data and history.docx" (Drive 1cSEjn8Dg-WXOKq-ZWEYKiDpy5dc3yULW, 2026-10-21 17:16Z). It covers 12 societies with contacts, meetings, committee, socials and history, and is synced to content/drive-source v1.0. NOS Site gap report: .tmp/sandbox/society-gap/gap-report.md in the NOS Site tree.
+  - Sanity `society` has no fields for email, phone, committee or socials, so adding them is a schema/design decision.
+  - 5 societies have no page.
+  - 15 site societies are not in her doc.
+  - Founding years conflict with our placeholders; hers win.
+  - Questions were appended to the Lee-Ann doc as "Questions — 21 October 2026" (gws working again). That covers the queued 10-20 items (Form access, /events lede) and the society items. Build is queued after the r-queue, pending her answers.
+- [ ] 2026-10-21 Hygiene: wt-f31 removed (merged). Memory PR #12 merged as 2e6765ec. NOS Site PR #13 (memory/specs) conflicts with #12, and its E2E failed on a next/font/google fetch, so it needs a rebase and re-run.
+  - Brad decides: branding/ working-tree changes (r1–r4 emblem PNGs deleted, Eulophia-speciosa-emblem.png and National Show 2027/Word Templates/ (23MB) added) are his, uncommitted and untouched by me.
+  - Also Brad: NOS Site's feat/nos-hero-lockup (15 unapplied commits) and its stash "main-tree-move 20261019" (archive folder gone, so the stash may be the only copy).
+- [ ] 2026-10-22 Codi ROUTE 31 /about @390 (beta 1c9fa99f, Layout PASS); queued after /members.
+  - P2: national committee shows 6 identical "To be confirmed" h3 cards. Replace with ONE list of the 6 roles plus one R11 note, "Names to be confirmed". When a name lands: name = h3, role = label, no pill.
+  - P3: drop the duplicate "1968 / Founded" stat (keep "28 July 1968", leaving 3 stats).
+  - P3: raise stat labels from 10px to the handoff label size (min 11px).
+  - OWNER: committee names (Lee-Ann).
+- [ ] 2026-10-22 Codi RULING soc-detail (/societies/[slug], source = Lee-Ann "All Society data and history" v1.0); queued after route 31. Order under the hero:
+  1. Meet them: day/time/venue; SA times without seconds; email as mailto, phone as tel.
+  2. Committee dl: Chair/Secretary/Treasurer; merge rows when one person holds both roles.
+  3. Online: links only for real URLs, never guessed.
+  4. About: verbatim history replaces the generic copy and pill; annual show as a fact row.
+  - Never print "Not supplied"; omit empty rows and groups.
+  - SocietyDetailsCallout only when meeting AND contact are both missing.
+  - Directory cards: add a meeting-day line.
+  - DATA: Cape founded 1957 (not 1947); drop the estimate where the source gives the year.
+  - BLOCKERS before build:
+    - The Sanity `society` schema lacks contact, committee and social fields (schema change, needs a contract).
+    - POPIA consent for the personal emails and phones, asked in Lee-Ann doc 21 Oct (e).
+  - Owner flags: "Pietermaritzberg" typo; 12 of 21 societies supplied.
+- [ ] 2026-10-22 Codi ROUTE 33 /contact @390 (beta 2980ec06, PASS); queued after soc-detail.
+  - P3: info@saoc.co.za standalone link is 24px tall → min-h-11.
+  - P3: ContactForm validates only the message (l.33). Add per-field name/email checks matching the /members ruling; SuggestionForm reuses ContactForm's wiring.
+  - P3: input radius 4px → --radius-1 2px, riding r25.
+  - OWNER: info@saoc.co.za is "Not confirmed by SAOC" but used site-wide. Asked in Lee-Ann doc as 21 Oct item (i).
+- [ ] 2026-10-22 Codi ROUTE 34 /refunds @390 (beta 1373a12d, Layout PASS); queued after route 33.
+  - P3: use the compact hero (no image) on /refunds, /terms and /privacy; the 480px photo hero pushes the policy below the fold.
+  - P3: reuse the r23 "On this page" disclosure (page is 5079px, 9 sections).
+  - GO-LIVE BLOCKER (Brad/Council): refunds, terms and privacy say "drafted with AI assistance" with no lawyer review, yet checkout sells under them. Legal sign-off is needed before real ticket sales (sandbox only today). Asked in Lee-Ann doc as 21 Oct item (j).
+- [ ] 2026-10-22 BRAD (relayed by Codi, verbatim): "Don't test with Payfast use OZOW Lee-Anns choice."
+  - Firestore read shows checkout is ALREADY on Ozow: adminSettings/activePaymentGateway=ozow (since 2026-09-02) and ozowSandboxTestMode enabled (since 2026-08-24). No code or spec change is needed.
+  - Rule from now: all test payments (E2E, contract checks, manual) go through Ozow test mode, never PayFast sandbox. Team notified.
+  - CLAUDE.md's "PayFast (sandbox)" stack row is stale (floor-protected; Brad/Route 1 to fix).
+  - Codi wants to review checkout payment step, redirect copy and confirm/failed states at 1280/390 on the next render.

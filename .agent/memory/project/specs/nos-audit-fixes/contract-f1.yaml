@@ -1,0 +1,70 @@
+schema: athanor.contract/v1
+slug: nos-audit-fixes
+goal: >-
+  Fix the lead- and Codi-approved NOS audit findings in the SAOC worktree
+  .tmp/sandbox/nos-fixes (branch fix/nos-audit-p1, base 047d610e) without
+  rewriting copy. (2) The /national-show/exhibitors key-dates table stacks
+  below sm. (3) The ticket steppers, quantity inputs, submit button and
+  "Open in a map" link are at least 44x44px. (4) The archive stats and the
+  conferences Joint-track lede carry the existing ConfirmationBadge
+  status="pending". (5) /national-show/sponsors gains a mailto:info@saoc.co.za
+  enquiry action, using the existing site label, and a pending marker on its
+  unsourced absence sentence. Golden: goldens/audit-fixes.golden.md.
+created_at: '2026-10-15'
+autonomy: high
+exclusions:
+  - item: 'Audit item 1 — /national-show/vendors disclosure'
+    reason: >-
+      DROPPED as a false positive. The VendorIntro copy is Lee-Ann's (Drive
+      1UKUdzZ9NAJHsqWHSV0mN9tnTrp6NE8I4). content/drive-source/ is
+      gitignored on purpose, so classifySection (lib/data/show-pages.ts:328)
+      fails closed. The lead owns that fix. The vendors heading, menu and
+      section nav are untouched: Brad renames them to "Exhibitors and Vendors"
+      in the lead's F7. Guard A9 keeps vendors byte-identical.
+  - item: 'Chrome (components/chrome/**, nav-config)'
+    reason: Frozen. Header and newsletter controls under 44px are not fixed here (guard A8).
+  - item: 'RealEmptyListing dashed border (R18/5), sa-exhibitors/international-guests absence copy, workshop ticket-type data drift'
+    reason: Reported in golden §1 only. Not in the approved scope.
+features:
+  - id: F1
+    name: NOS audit fixes — key-dates stack, 44px tap targets, R7 pending markers, sponsors enquiry
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-audit-fixes/goldens/audit-fixes.golden.md
+  - .agent/memory/project/specs/nos-audit-fixes/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The QA check scripts are unmodified since @architect wrote them (@dev never edits QA inputs)
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-audit-fixes/goldens/checks.sha256
+    - id: A2
+      description: Item 2 — the key-dates table stacks below sm, with no inner scroll or 560px floor under 640px (golden §2)
+      command: node .tmp/sandbox/nos-fixes/contracts/checks/nos-audit-fixes/check-key-dates-stack.mjs
+    - id: A3
+      description: Item 3 — steppers, quantity inputs, submit and "Open in a map" are at least 44px, with existing classes and focus rings kept (golden §3)
+      command: node .tmp/sandbox/nos-fixes/contracts/checks/nos-audit-fixes/check-tap-targets.mjs
+    - id: A4
+      description: Item 4 — archive stats and the conferences lede each carry ConfirmationBadge status="pending", copy unchanged (golden §4)
+      command: node .tmp/sandbox/nos-fixes/contracts/checks/nos-audit-fixes/check-disclosures.mjs
+    - id: A5
+      description: Item 5 — the sponsors panel carries a pending marker plus "Talk to us about sponsorship" to mailto:info@saoc.co.za, with no date and no R11 notice (golden §5)
+      command: node .tmp/sandbox/nos-fixes/contracts/checks/nos-audit-fixes/check-sponsor-enquiry.mjs
+    - id: A6
+      description: TypeScript compiles
+      command: pnpm --dir .tmp/sandbox/nos-fixes type-check
+    - id: A7
+      description: ESLint is clean with zero warnings on every file this feature changes, plus the checks
+      command: pnpm --dir .tmp/sandbox/nos-fixes exec eslint --max-warnings 0 components/show/ExhibitorKeyDates.tsx components/tickets/TicketTypeCard.tsx components/tickets/DayQuantityPicker.tsx components/tickets/TicketPurchaseForm.tsx components/show/VenueCard.tsx components/show/nos/RealEmptyListing.tsx "app/(marketing)/national-show/archive/page.tsx" "app/(marketing)/national-show/conferences/page.tsx" "app/(marketing)/national-show/sponsors/page.tsx" contracts/checks/nos-audit-fixes
+    - id: A8
+      description: Chrome frozen — components/chrome and nav-config are identical to base
+      command: git -C .tmp/sandbox/nos-fixes diff --quiet 9e619821 -- components/chrome lib/nav-config.ts components/chrome/nav-config.ts
+    - id: A9
+      description: The /national-show/vendors body copy (VendorIntro) and route are byte-identical to base, with no disclosure added
+      command: git -C .tmp/sandbox/nos-fixes diff --quiet 9e619821 -- components/vendors "app/(marketing)/national-show/vendors"
+    - id: A10
+      description: The shared components reused for item 4 (CategoryTicketsPage, ConfirmationBadge, StatusMarker) are not edited
+      command: git -C .tmp/sandbox/nos-fixes diff --quiet 9e619821 -- components/tickets/CategoryTicketsPage.tsx components/show/ConfirmationBadge.tsx components/show/_shared/StatusMarker.tsx
+    - id: A11
+      description: The site-level /sponsors page that supplies the cited label is not edited
+      command: git -C .tmp/sandbox/nos-fixes diff --quiet 9e619821 -- "app/(marketing)/sponsors/page.tsx"

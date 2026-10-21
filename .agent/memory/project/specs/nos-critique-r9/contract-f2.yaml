@@ -1,0 +1,41 @@
+# Sources: Codi FINAL rulings relayed by the lead (2026-10-17), interim QA P3s on r8, nos-v4 goldens. No new copy.
+schema: athanor.contract/v1
+slug: nos-critique-r9
+goal: >-
+  Make a research chip inside every disclosure (ShowStatusLine, Getting there, attractions, emergency) show the existing text Not yet confirmed at every width, with the full researchLabel wording in the group aria-label and a visible foot, in .tmp/sandbox/critique-r9; pending and bare markers unchanged, no new copy.
+  Exit criterion (Brad via the lead; design-cb's rulings are final): this feature loops build, critique, fix until impeccable scores >= 39/40 with
+  P0/P1/P2 = 0 AND design-cb PASSes. The lead runs that loop and relays the PASS; the gate below stays mechanical.
+created_at: '2026-10-17'
+autonomy: high
+exclusions:
+  - item: 'every file outside the stacked allowlist'
+    reason: 'Enforced by A2 (stacked footprint, goldens/f1..f4-footprint.json).'
+features:
+  - id: F2
+    name: Research chip reads Not yet confirmed at every width, full wording in the foot and aria-label
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r9/goldens/f2-spec.md
+  - .agent/memory/project/specs/nos-critique-r9/goldens/f2-footprint.json
+  - .agent/memory/project/specs/nos-critique-r9/goldens/checks-f2.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f2 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r9/goldens/checks-f2.sha256
+    - id: A2
+      description: Footprint (stacked branch) - f1..f4 paths and docs/nos-critique-r9.md only; nothing off limits
+      command: node .agent/memory/project/specs/nos-critique-r9/checks/f2-footprint.mjs
+    - id: A3
+      description: Static S1-S4 - shortResearch opt-in on StatusMarker via FALLBACK_RESEARCH_LABEL, forwarded by ConfirmationBadge, passed by all disclosures, full wording in a ShowStatusFoot, the short string typed once, docs exist
+      command: node .agent/memory/project/specs/nos-critique-r9/checks/f2-static.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r9 type-check && pnpm --dir .tmp/sandbox/critique-r9 exec eslint --max-warnings 0 components/nos-chrome components/nos components/show "app/(marketing)/national-show"'
+    - id: A5
+      description: Production build passes (input for the rendered and fixture checks)
+      command: pnpm --dir .tmp/sandbox/critique-r9 build
+    - id: A6
+      description: Fixture - research chips in the four disclosures show only Not yet confirmed with the full wording in the group aria-label and a foot; bare, opted-out, pending and mixed groups unchanged (props only, run under tsx)
+      command: node .agent/memory/project/specs/nos-critique-r9/checks/f2-fixture.mjs

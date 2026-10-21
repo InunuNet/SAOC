@@ -1,0 +1,38 @@
+# Sources: lead task 2026-10-18 (main defect found in the r8 re-base), nos-v4 plan-your-visit.html (in-project copy, r6 goldens). No new copy, no new value.
+schema: athanor.contract/v1
+slug: nos-critique-r10
+goal: >-
+  Define --fs-sm, --fs-base and --fs-lg in nos-theme.css from the nos-v4 golden and drop their five inline fallbacks in nos-structure.css in .tmp/sandbox/critique-r10,
+  with zero visual change, so no var(--x) under the NOS and ticket trees lacks a definition and no fallback allowlist remains.
+created_at: '2026-10-18'
+autonomy: high
+exclusions:
+  - item: 'every file but nos-theme.css, nos-structure.css and docs/nos-critique-r10.md (plus the F2 path on the shared branch)'
+    reason: 'Enforced by A2 (goldens/f1..f2-footprint.json). The --nk-field fallback stays (inline per-product setter); nos-structure.css:805 --fs-xs is reported to the lead, not changed.'
+features:
+  - id: F1
+    name: Define the nos-structure.css type-scale tokens and drop their fallbacks
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r10/goldens/f1-spec.md
+  - .agent/memory/project/specs/nos-critique-r10/goldens/f1-footprint.json
+  - .agent/memory/project/specs/nos-critique-r10/goldens/f1-baseline.json
+  - .agent/memory/project/specs/nos-critique-r10/goldens/checks-f1.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f1 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r10/goldens/checks-f1.sha256
+    - id: A2
+      description: Footprint (one branch) - f1..f2 paths (nos-theme.css, nos-structure.css, what-to-expect/page.tsx) and docs/nos-critique-r10.md only, HEAD descends from d05c85a5
+      command: node .agent/memory/project/specs/nos-critique-r10/checks/f1-footprint.mjs
+    - id: A3
+      description: Static S1-S5 - nos-theme.css declares --fs-sm 0.875rem --fs-base 1rem --fs-lg 1.5625rem in the .nos-theme --fs-body rule citing nos-v4, adds nothing else, nos-structure.css only drops the five --fs fallbacks, every var(--x) in the NOS and ticket trees is defined with no fallback allowlist, docs exist
+      command: node .agent/memory/project/specs/nos-critique-r10/checks/f1-static.mjs
+    - id: A4
+      description: Production build passes (input for the rendered check)
+      command: pnpm --dir .tmp/sandbox/critique-r10 build
+    - id: A5
+      description: Rendered on next start 3010-3019 (public) - computed font-size of the five --fs uses and the .nk-stub backgrounds at 375 and 1280 on the tickets hub, workshops and the first checkout page equal the d05c85a5 baseline
+      command: node .agent/memory/project/specs/nos-critique-r10/checks/f1-rendered.mjs

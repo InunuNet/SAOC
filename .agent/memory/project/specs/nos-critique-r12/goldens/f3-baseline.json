@@ -1,0 +1,87 @@
+{
+ "recorded": "from the 26fde668 build (next start, beta mode, DPR 1); section = [x, y, w, h] of the not-found <section>, doc = [scrollWidth, scrollHeight]",
+ "widths": [
+  375,
+  1280
+ ],
+ "boxes": {
+  "/zz-r12-missing": {
+   "375": {
+    "section": [
+     0,
+     0,
+     375,
+     640
+    ],
+    "doc": [
+     375,
+     900
+    ]
+   },
+   "1280": {
+    "section": [
+     0,
+     0,
+     1280,
+     640
+    ],
+    "doc": [
+     1280,
+     900
+    ]
+   }
+  },
+  "/tickets/zz-r12-missing": {
+   "375": {
+    "section": [
+     0,
+     144.23,
+     375,
+     640
+    ],
+    "doc": [
+     375,
+     2159
+    ]
+   },
+   "1280": {
+    "section": [
+     0,
+     96.94,
+     1280,
+     640
+    ],
+    "doc": [
+     1280,
+     1335
+    ]
+   }
+  },
+  "/societies/zz-r12-missing": {
+   "375": {
+    "section": [
+     0,
+     106.14,
+     375,
+     640
+    ],
+    "doc": [
+     375,
+     2056
+    ]
+   },
+   "1280": {
+    "section": [
+     0,
+     120.05,
+     1280,
+     640
+    ],
+    "doc": [
+     1280,
+     1236
+    ]
+   }
+  }
+ }
+}
