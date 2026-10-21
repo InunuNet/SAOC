@@ -1,8 +1,8 @@
 # nos-critique-r20 F1: the NOS footer "Stay in touch" sign-up (border contrast, autocomplete, a visible label)
 
-BASE: `origin/main` `a4807791` (r18 merged). Branch `fix/nos-critique-r20`, worktree `.tmp/sandbox/critique-r20`. Independent of r19
-(the ticket state pages); neither r18 nor r19 touches `components/nos-chrome/`. If r19 merges first, BASE is re-pinned and this branch
-restacked.
+BASE: `origin/main` `7fb251a1` (r18 and r19 merged). Branch `fix/nos-critique-r20`, worktree `.tmp/sandbox/critique-r20`. Re-pinned
+from `a4807791`: r19 (the ticket state pages, `7fb251a1`) merged in between and this branch was restacked onto it; neither r18 nor r19
+touches `components/nos-chrome/`.
 Rulings: Codi, FINAL, relayed by the lead on 2026-10-19. The layout stays the same: input and button side by side at 390. Only CSS and
 attributes change. No new strings, tokens or colours.
 Three features, one branch, one dev: F1 is this sign-up; F2 is the same-tone section gap (`f2-spec.md`); F3 puts the NOS footer on the

@@ -1,6 +1,7 @@
 # nos-critique-r20 F3: the NOS footer follows the SAOC footer layout
 
-BASE: `origin/main` `a4807791`. Branch `fix/nos-critique-r20`.
+BASE: `origin/main` `7fb251a1` (re-pinned from `a4807791`: r19 (`7fb251a1`) merged in between; it touches neither footer). Branch
+`fix/nos-critique-r20`.
 Ruling: Codi, FINAL, on Brad's direction that the "NOS Footer should follow the same layout as the SAOC footer", relayed verbatim by the
 lead on 2026-10-20. It supersedes the r17 full-row centred brand (nos-critique-r17 F2) and retires the 0.25 x emblem clear-space gap.
 Goldens: `f3-edits.json` (exact SAOC-side edits, retired NOS rules, acceptance numbers), `f3-footprint.json`, `f3-baseline.json` (the SAOC

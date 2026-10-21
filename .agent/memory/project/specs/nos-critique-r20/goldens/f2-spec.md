@@ -1,8 +1,11 @@
 # nos-critique-r20 F2: adjacent same-tone sections share one rhythm unit
 
-BASE: `origin/main` `a4807791`. Branch `fix/nos-critique-r20`. Ruling: Codi, FINAL, P2 craft floor (spacing rhythm), relayed by the lead on
+BASE: `origin/main` `7fb251a1` (re-pinned from `a4807791`: r19 (`7fb251a1`) merged in between; its one nos-structure.css rule is at
+line 2028, below this rule's line 570, which is unchanged). Branch `fix/nos-critique-r20`. Ruling: Codi, FINAL, P2 craft floor (spacing rhythm), relayed by the lead on
 2026-10-20. The scope is separate from F1 and F3. Goldens: `f2-edits.json` (the exact rule block, routes, target), `f2-footprint.json`,
 `f2-baseline.json` (BASE pairs).
+`f2-footprint.json` also lists `.agent/memory/project/specs/nos-critique-r19/goldens/f1-spec.md`: a one-phrase wording fix to the
+r19 spec ("PayFast's cancel_url" -> "the gateway's cancel_url", approved by the lead 2026-10-22) carried on this branch. It is not F2 code.
 
 ## The defect
 
@@ -62,3 +65,7 @@ Not chosen:
   - P4: what-to-expect at 1280 loses exactly one 120px padding after "Accessibility".
 - **A5, nonreg:** puts each removed band back (its BASE height, in the follower's ground) and holds every other pixel and box above the
   footer to BASE. That covers the hub, about, workshops and what-to-expect.
+- **Capture note (re-pin to `7fb251a1`, 2026-10-22):** baselines were captured on Google Chrome 155 headless (the installed Chrome, via
+  the `use-chrome.cjs` launch preload; Playwright's own chromium-headless-shell is not installed). One nonreg capture is taller than
+  16384px: preview `/national-show/exhibitors` @390 (17870px). Chrome 155 is unstable below y=16384 on such a full-page capture, so
+  `nonreg-baseline.json` is only self-consistent when nonreg runs on the same Chrome; run it with the same preload.

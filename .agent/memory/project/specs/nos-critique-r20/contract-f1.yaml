@@ -1,4 +1,4 @@
-# Sources: Codi's FINAL review of the NOS footer "Stay in touch" sign-up, relayed by the lead 2026-10-19; architect measurements on BASE a4807791 (goldens/f1-spec.md).
+# Sources: Codi's FINAL review of the NOS footer "Stay in touch" sign-up, relayed by the lead 2026-10-19; architect measurements on BASE 7fb251a1, re-pinned from a4807791 after r19 merged (goldens/f1-spec.md).
 schema: athanor.contract/v1
 slug: nos-critique-r20
 goal: >-
@@ -26,7 +26,7 @@ assertions:
       description: f1 check scripts and goldens are unmodified since @architect wrote them
       command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r20/goldens/checks-f1.sha256
     - id: A2
-      description: Footprint - the r20 branch differs from origin/main a4807791 only in the three r20 footprints, docs/nos-critique-r20.md and the spec dir, and HEAD descends from it
+      description: Footprint - the r20 branch differs from origin/main 7fb251a1 only in the three r20 footprints, docs/nos-critique-r20.md and the spec dir, and HEAD descends from it
       command: node .agent/memory/project/specs/nos-critique-r20/checks/footprint.mjs
     - id: A3
       description: Static - one nf-head label for nf-email between the blurb and the form, the input with id/type/name/autoComplete/placeholder/required and no aria-label, the input rule with alpha 0.55 and no 0.36 left, the label display:block rule block, no new copy, docs F1

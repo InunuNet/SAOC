@@ -15,7 +15,7 @@
 //       footer ground is the NOS royal rgb(33, 26, 87). No horizontal overflow.
 //   L7  the SAOC footer is unchanged: on golden saocRoutes its box, columns, bar and lockup equal BASE (+-1px) and its pixels (16px block
 //       means, colour level 8) equal BASE's.
-// `--capture` prints goldens/f3-baseline.json (captured by @architect on BASE a4807791, both modes).
+// `--capture` prints goldens/f3-baseline.json (captured by @architect on BASE 7fb251a1, both modes).
 import { BASE, finish, goldenJson } from './_lib.mjs';
 import { MODES, require, serve } from './_server.mjs';
 

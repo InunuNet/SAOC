@@ -9,7 +9,7 @@
 //   P3  every route has the BASE pairs, in order, with the BASE tones; no horizontal overflow.
 //   P4  the ruling's case: /national-show/what-to-expect at 1280, the pair led by the "Accessibility" block, loses exactly one section
 //       padding (the follower's BASE padding-top, 120px at 1280).
-// `--capture` prints goldens/f2-baseline.json (captured by @architect on BASE a4807791, both modes).
+// `--capture` prints goldens/f2-baseline.json (captured by @architect on BASE 7fb251a1, both modes).
 import { BASE, finish, goldenJson } from './_lib.mjs';
 import { MODES, require, serve } from './_server.mjs';
 

@@ -27,7 +27,7 @@ assertions:
       description: f3 check scripts and goldens are unmodified since @architect wrote them
       command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r20/goldens/checks-f3.sha256
     - id: A2
-      description: Footprint - the r20 branch differs from origin/main a4807791 only in the three r20 footprints, docs/nos-critique-r20.md and the spec dir, and HEAD descends from it
+      description: Footprint - the r20 branch differs from origin/main 7fb251a1 only in the three r20 footprints, docs/nos-critique-r20.md and the spec dir, and HEAD descends from it
       command: node .agent/memory/project/specs/nos-critique-r20/checks/footprint.mjs
     - id: A3
       description: Static - footer-data.ts gains exactly FOOTER_LAYOUT, Footer.tsx exactly swaps its five layout literals for it, NosFooter uses each key once in SAOC column order with LOCKUP_BOX 248 and no nf-wrap/nf-grid, the r17 brand rules retired and the lockup at 248px, no new copy, docs F3

@@ -10,7 +10,7 @@
 //       two states on preview, r16) with the removed bands put back, reduced to 32px block means, equals the BASE capture over the full
 //       block rows above the footer: at most `tolerance.blocks` blocks may differ by more than `tolerance.level` (0-255) in any channel.
 //   N3  no horizontal overflow.
-// `--capture` prints goldens/nonreg-baseline.json (captured by @architect on BASE a4807791, both modes).
+// `--capture` prints goldens/nonreg-baseline.json (captured by @architect on BASE 7fb251a1, both modes).
 import { deflateSync, inflateSync } from 'node:zlib';
 
 import { BASE, finish, golden } from './_lib.mjs';
