@@ -1,7 +1,7 @@
 /**
  * Sandbox test-send for the email-shell mission (contract email-shell, assertions A14/A15).
  *
- *   pnpm exec tsx scripts/email-shell-test-send.ts A|B|C|D
+ *   pnpm exec tsx scripts/email-shell-test-send.ts A|B|C
  *
  * Sends ONE fictional-fixture email per family through lib/email.ts sendEmail(), to
  * TEST_RECIPIENT only. Hard-wired: it refuses any other recipient and refuses to run without
@@ -25,7 +25,6 @@ const FAMILY_PICKS: Record<string, FamilyPick> = {
   A: { fixtureName: 'VendorPaymentConfirmation', subject: 'Your National Orchid Show stand payment is confirmed' },
   B: { fixtureName: 'VendorApplicationConfirmation', subject: 'We received your vendor application — SAOC' },
   C: { fixtureName: 'VendorApplicationAdminNotice', subject: 'New vendor application submitted — SAOC' },
-  D: { fixtureName: 'ContactConfirmation', subject: 'We received your message — SAOC' },
 };
 
 function fail(message: string): never {
@@ -38,7 +37,7 @@ async function main(): Promise<void> {
 
   const family = process.argv[2];
   const pick = family ? FAMILY_PICKS[family] : undefined;
-  if (!pick) fail('usage: email-shell-test-send.ts A|B|C|D');
+  if (!pick) fail('usage: email-shell-test-send.ts A|B|C');
   if (!process.env.RESEND_API_KEY) fail('RESEND_API_KEY is not set; refusing to send');
 
   const fixture = FIXTURES.find((f) => f.name === pick.fixtureName);

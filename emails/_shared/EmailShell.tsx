@@ -12,25 +12,15 @@ import { FOOTER_REG } from '@/components/chrome/footer-data';
  *   A  Show transactional   NOS    royal header + footer with the reversed-gold logos
  *   B  Show message         NOS    same chrome as A
  *   C  Admin notice         NOS-light   4px royal top rule, no logo band, no <img>
- *   D  Council              SAOC   parchment header/card, sage footer, bone outer
+ *   D  Council              SAOC   held for a follow-up (contract-f2); not themed here yet
  */
-export type EmailShellFamily = 'A' | 'B' | 'C' | 'D';
+export type EmailShellFamily = 'A' | 'B' | 'C';
 
 export const ROYAL = '#211a57';
 export const GOLD = '#f3f2d6';
 const GOLD_100 = '#fbfaf0';
 const INK_700 = '#3a3654';
 const NOS_RULE = '#e3e1c9';
-
-const BONE = '#e8e6dc';
-const PARCHMENT = '#f4f3ec';
-const SAGE = '#384138';
-const SAOC_RULE = '#d9d6ca';
-// Codi's D opacities, pre-blended onto their backgrounds (email clients drop rgba/opacity):
-// ink #171917 at 80% on parchment, parchment at 65% and 80% on sage.
-const SAOC_INK_80 = '#434542';
-const PARCHMENT_65_ON_SAGE = '#b2b5ad';
-const PARCHMENT_80_ON_SAGE = '#cecfc8';
 
 interface ShellTheme {
   outer: string;
@@ -67,23 +57,6 @@ const NOS_THEME: ShellTheme = {
   footerLineColor: GOLD,
 };
 
-const SAOC_THEME: ShellTheme = {
-  outer: BONE,
-  card: PARCHMENT,
-  header: PARCHMENT,
-  footer: SAGE,
-  accent: SAGE,
-  onAccent: PARCHMENT,
-  ink: SAOC_INK_80,
-  rule: SAOC_RULE,
-  radius: '2px',
-  buttonRadius: '2px',
-  headingFont: "'Crimson Pro', Georgia, serif",
-  bodyFont: 'Manrope, Arial, Helvetica, sans-serif',
-  footerRegColor: PARCHMENT_65_ON_SAGE,
-  footerLineColor: PARCHMENT_80_ON_SAGE,
-};
-
 const ThemeContext = createContext<ShellTheme>(NOS_THEME);
 
 const CONTAINER_WIDTH = 600;
@@ -98,13 +71,8 @@ const HEADER_LOGO_WIDTH = 280;
 const HEADER_LOGO_HEIGHT = 69;
 const NOS_FOOTER_LOCKUP_WIDTH = 120;
 const NOS_FOOTER_LOCKUP_HEIGHT = 105;
-const SAOC_FOOTER_LOCKUP_WIDTH = 220;
 const NOS_LOGO_ALT = 'National Orchid Show 2027';
-const SAOC_LOGO_ALT = 'South African Orchid Council';
 const FOOTER_LINE = 'South African Orchid Council — saoc.co.za';
-/** D's REG line separates the two numbers with a middle dot; the numbers come from FOOTER_REG. */
-const SAOC_FOOTER_REG = FOOTER_REG.replace(/\s{2,}/, ' · ');
-
 /** SITE_URL is only available at App Hosting runtime; same fallback as lib/confirmation-email.ts. */
 const DEFAULT_SITE_URL = 'https://saoc.co.za';
 
@@ -143,30 +111,23 @@ interface EmailShellProps {
   children: ReactNode;
 }
 
-function Header({ family, theme: t }: { family: EmailShellFamily; theme: ShellTheme }) {
-  const isSaoc = family === 'D';
+function Header({ theme: t }: { theme: ShellTheme }) {
   return (
     <tr>
       <td
-        className={isSaoc ? 'shell-header shell-gutter' : 'shell-header shell-header-nos'}
+        className="shell-header shell-header-nos"
         {...bgAttr(t.header)}
         align="left"
         style={{
           backgroundColor: t.header,
-          padding: isSaoc
-            ? `28px ${GUTTER}px`
-            : `28px ${GUTTER}px 28px ${GUTTER - NOS_HEADER_LOGO_INSET}px`,
+          padding: `28px ${GUTTER}px 28px ${GUTTER - NOS_HEADER_LOGO_INSET}px`,
         }}
       >
         <Img
-          src={logoUrl(
-            isSaoc
-              ? 'saoc-horizontal-colour-on-light-560.png'
-              : 'nos-reversed-gold-horizontal-560.png',
-          )}
-          alt={isSaoc ? SAOC_LOGO_ALT : NOS_LOGO_ALT}
+          src={logoUrl('nos-reversed-gold-horizontal-560.png')}
+          alt={NOS_LOGO_ALT}
           width={HEADER_LOGO_WIDTH}
-          height={isSaoc ? undefined : HEADER_LOGO_HEIGHT}
+          height={HEADER_LOGO_HEIGHT}
           style={{ display: 'block', border: 0, width: `${HEADER_LOGO_WIDTH}px`, height: 'auto' }}
         />
       </td>
@@ -174,9 +135,7 @@ function Header({ family, theme: t }: { family: EmailShellFamily; theme: ShellTh
   );
 }
 
-function BrandedFooter({ family, theme: t }: { family: EmailShellFamily; theme: ShellTheme }) {
-  const isSaoc = family === 'D';
-  const lockupWidth = isSaoc ? SAOC_FOOTER_LOCKUP_WIDTH : NOS_FOOTER_LOCKUP_WIDTH;
+function BrandedFooter({ theme: t }: { theme: ShellTheme }) {
   return (
     <tr>
       <td
@@ -186,19 +145,15 @@ function BrandedFooter({ family, theme: t }: { family: EmailShellFamily; theme: 
         style={{ backgroundColor: t.footer, padding: `28px ${GUTTER}px`, textAlign: 'center' }}
       >
         <Img
-          src={logoUrl(
-            isSaoc
-              ? 'saoc-horizontal-colour-on-dark-440.png'
-              : 'nos-reversed-gold-vertical-240.png',
-          )}
-          alt={isSaoc ? SAOC_LOGO_ALT : NOS_LOGO_ALT}
-          width={lockupWidth}
-          height={isSaoc ? undefined : NOS_FOOTER_LOCKUP_HEIGHT}
+          src={logoUrl('nos-reversed-gold-vertical-240.png')}
+          alt={NOS_LOGO_ALT}
+          width={NOS_FOOTER_LOCKUP_WIDTH}
+          height={NOS_FOOTER_LOCKUP_HEIGHT}
           style={{
             display: 'block',
             border: 0,
             margin: '0 auto',
-            width: `${lockupWidth}px`,
+            width: `${NOS_FOOTER_LOCKUP_WIDTH}px`,
             height: 'auto',
           }}
         />
@@ -211,7 +166,7 @@ function BrandedFooter({ family, theme: t }: { family: EmailShellFamily; theme: 
             color: t.footerRegColor,
           }}
         >
-          {isSaoc ? SAOC_FOOTER_REG : FOOTER_REG}
+          {FOOTER_REG}
         </p>
         <p
           style={{
@@ -255,7 +210,7 @@ function PlainFooter({ theme: t }: { theme: ShellTheme }) {
 }
 
 export default function EmailShell({ family, preview, children }: EmailShellProps) {
-  const t = family === 'D' ? SAOC_THEME : NOS_THEME;
+  const t = NOS_THEME;
   const branded = family !== 'C';
 
   return (
@@ -306,7 +261,7 @@ export default function EmailShell({ family, preview, children }: EmailShellProp
                 >
                   <tbody>
                     {branded ? (
-                      <Header family={family} theme={t} />
+                      <Header theme={t} />
                     ) : (
                       <tr>
                         <td
@@ -340,7 +295,7 @@ export default function EmailShell({ family, preview, children }: EmailShellProp
                       </td>
                     </tr>
                     {branded ? (
-                      <BrandedFooter family={family} theme={t} />
+                      <BrandedFooter theme={t} />
                     ) : (
                       <PlainFooter theme={t} />
                     )}
