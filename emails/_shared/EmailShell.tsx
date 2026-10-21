@@ -16,12 +16,18 @@ import { FOOTER_REG } from '@/components/chrome/footer-data';
  */
 export type EmailShellFamily = 'A' | 'B' | 'C';
 
+// Palette: every value is a named NOS token. Royal, gold, gold-100, ink-700 and the rule colour
+// come from Codi's ruling (.agent/memory/project/specs/email-shell/goldens/design-ruling.md).
 export const ROYAL = '#211a57';
 export const GOLD = '#f3f2d6';
 const GOLD_100 = '#fbfaf0';
 const INK_700 = '#3a3654';
 const NOS_RULE = '#e3e1c9';
-const INK_MUTED = '#55507e';
+// --nos-ink-muted: derived token, 6.52:1 on gold-100, see
+// .agent/memory/project/specs/nos-design-system/goldens/nos-contrast.golden.md (design-ruling "ink-muted").
+const NOS_INK_MUTED = '#55507e';
+// QR tile ground: Codi's final ruling (white tile keeps the QR scannable in dark mode).
+const QR_TILE_WHITE = '#ffffff';
 
 interface ShellTheme {
   outer: string;
@@ -54,7 +60,7 @@ const NOS_THEME: ShellTheme = {
   headingFont: 'Fraunces, Georgia, serif',
   headingWeight: 400,
   bodyFont: 'Karla, Arial, Helvetica, sans-serif',
-  muted: INK_MUTED,
+  muted: NOS_INK_MUTED,
 };
 
 const ThemeContext = createContext<ShellTheme>(NOS_THEME);
@@ -612,9 +618,9 @@ export function ShellQrTile({ children }: { children: ReactNode }) {
       <tbody>
         <tr>
           <td
-            {...bgAttr('#ffffff')}
+            {...bgAttr(QR_TILE_WHITE)}
             style={{
-              backgroundColor: '#ffffff',
+              backgroundColor: QR_TILE_WHITE,
               padding: `${QR_TILE_PADDING}px`,
               borderRadius: '8px',
               lineHeight: 0,
