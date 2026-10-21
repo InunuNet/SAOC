@@ -105,6 +105,7 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
         getRowId={(row) => row.id}
         renderCell={renderCell}
         cellTitle={cellTitle}
+        sortedDescColumnId="purchased"
         emptyText={EMPTY_TEXT}
         card={(row) => ({
           title: row.attendeeName,

@@ -1,5 +1,5 @@
 import type { TicketType } from '@/types/index';
-import { DOOR_INVALID_BANNER_CLASS } from './tokens';
+import { DOOR_INVALID_BANNER_CLASS, DOOR_VALID_BANNER_CLASS } from './tokens';
 
 export type CheckInResult =
   | {
@@ -23,8 +23,8 @@ const BANNER_BASE = 'flex min-h-[72px] items-center gap-4 rounded-[2px] border-2
 
 // Every state carries an icon and text as well as colour, so none relies on colour alone.
 const BANNER_STYLES: Record<BannerKind, string> = {
-  valid: 'border-primary bg-primary-100 text-primary-800',
-  'already-used': 'border-accent bg-accent-soft text-ink',
+  valid: DOOR_VALID_BANNER_CLASS,
+  'already-used': 'border-accent bg-accent text-primary-800',
   invalid: DOOR_INVALID_BANNER_CLASS,
 };
 
@@ -44,8 +44,8 @@ interface DoorResultBannerProps {
 }
 
 // In-flow result under the camera, at least 72px tall so it is readable at arm's length.
-// Valid: sage tint, ✓, the attendee's name. Already used: brass, a warning icon. Invalid: ink
-// border, ✕, the refusal reason. The check-in API returns no first-check-in time, so the
+// Valid: primary, ✓, the attendee's name. Already used: brass, a warning icon. Invalid: error
+// red, ✕, the refusal reason. The check-in API returns no first-check-in time, so the
 // already-used state names the refusal only.
 export function DoorResultBanner({ result }: DoorResultBannerProps) {
   const kind = bannerKind(result);

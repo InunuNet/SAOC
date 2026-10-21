@@ -31,6 +31,8 @@ interface AdminTableProps<T> {
   card: (row: T) => TableCard;
   /** When set, the whole card and the row's View control open the record. */
   onOpen?: (row: T) => void;
+  /** Column the server orders by, newest first; marked with aria-sort on its header. */
+  sortedDescColumnId?: string;
   emptyText: string;
 }
 
@@ -52,6 +54,7 @@ export function AdminTable<T>({
   cellTitle,
   card,
   onOpen,
+  sortedDescColumnId,
   emptyText,
 }: AdminTableProps<T>) {
   if (rows.length === 0) {
@@ -82,6 +85,7 @@ export function AdminTable<T>({
                 <th
                   key={column.id}
                   scope="col"
+                  aria-sort={column.id === sortedDescColumnId ? 'descending' : undefined}
                   className={`sticky top-14 z-10 h-10 truncate border-b border-rule bg-bone px-3 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted lg:top-0 ${alignClass(column)} ${PRIORITY_CELL[column.priority]}`}
                 >
                   {column.label}

@@ -232,6 +232,7 @@ export function VendorApplicationReviewTable({ applications }: VendorApplication
         renderCell={renderCell}
         cellTitle={cellTitle}
         onOpen={(row) => open(row.id)}
+        sortedDescColumnId="submitted"
         emptyText={EMPTY_TEXT}
         card={(row) => ({
           title: row.businessName,

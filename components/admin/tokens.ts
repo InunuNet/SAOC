@@ -1,14 +1,11 @@
 // Class strings shared across the admin surfaces. Colours come only from app/globals.css tokens.
 //
-// TOKEN GAPS pending a ruling from Codi (mission admin-redesign). Each stands in with an
-// existing token and is a single named constant, so the ruling is a one-line change here:
-//   - the admin pill's "sage-light" dot
-//   - the door scanner's "red-700" invalid banner (until then: ink + the ✕ icon + text,
-//     never colour alone)
-//   - the dashboard's brass tile for a pending count > 0
+// Codi's token rulings: the pill dot is accent-soft; --color-error is used only by the door's
+// invalid banner and admin inline errors; the pending brass tile is accent with primary-800 text.
 export const ADMIN_PILL_DOT_CLASS = 'bg-accent-soft';
-export const DOOR_INVALID_BANNER_CLASS = 'border-ink bg-ivory text-ink';
-export const STAT_TILE_PENDING_CLASS = 'bg-accent text-ink';
+export const DOOR_INVALID_BANNER_CLASS = 'border-error bg-error text-white';
+export const DOOR_VALID_BANNER_CLASS = 'border-primary bg-primary text-white';
+export const STAT_TILE_PENDING_CLASS = 'bg-accent text-primary-800';
 export const STAT_TILE_CLASS = 'bg-bone text-primary';
 
 export const FOCUS_RING =

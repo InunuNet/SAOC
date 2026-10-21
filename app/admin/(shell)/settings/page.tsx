@@ -157,10 +157,10 @@ export default function AdminSettingsPage() {
   );
 }
 
-// An error is ink text with a ✕ icon, never colour alone, and announced to assistive tech.
+// An error is --color-error text with a ✕ icon, never colour alone, and is announced to assistive tech.
 function ErrorText({ children }: { children: React.ReactNode }) {
   return (
-    <p role="alert" className="mt-3 flex items-start gap-2 font-sans text-[13px] font-medium text-ink">
+    <p role="alert" className="mt-3 flex items-start gap-2 font-sans text-[13px] font-medium text-error">
       <span aria-hidden="true">✕</span>
       <span>{children}</span>
     </p>

@@ -120,6 +120,7 @@
   --color-muted: var(--muted);
   --color-rule: var(--rule);
   --color-rule-soft: var(--rule-soft);
+  --color-error: #9b2c2c; /* Codi ruling: door invalid banner and admin inline errors only */
 
   /* NOS brand — Tickets rail only, see :root's own comment above. */
   --color-nos-royal-purple: var(--nos-royal-purple);
