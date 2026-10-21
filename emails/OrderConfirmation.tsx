@@ -1,15 +1,12 @@
-import {
-  Body,
-  Container,
-  Head,
-  Heading,
-  Hr,
-  Html,
-  Img,
-  Link,
-  Preview,
-  Text,
-} from '@react-email/components';
+import { Img } from '@react-email/components';
+
+import EmailShell, {
+  ShellDetailRow,
+  ShellHeading,
+  ShellLink,
+  ShellRule,
+  ShellText,
+} from './_shared/EmailShell';
 
 /**
  * F11 (ticketing-foundation) — multi-position confirmation email (spec §6). Separate from the
@@ -21,6 +18,9 @@ import {
  * for why this replaced the earlier data: URI, which Gmail renders as a broken image) and its
  * bookingRef as visible text, so a client that fails to render the inline image at all still
  * leaves the buyer/door-volunteer able to use the reference directly.
+ *
+ * Chrome: EmailShell family A (mission email-shell). The QR carries alt="" because the shell's
+ * alt-text rule allows only the logo names; the booking reference beside it is the text fallback.
  */
 
 export interface OrderConfirmationPosition {
@@ -36,58 +36,46 @@ export interface OrderConfirmationProps {
   recoveryUrl: string | null;
 }
 
+const QR_SIZE = 200;
+
 export default function OrderConfirmation({
   buyerName,
   positions,
   recoveryUrl,
 }: OrderConfirmationProps) {
   return (
-    <Html>
-      <Head />
-      <Preview>Your National Orchid Show order is confirmed</Preview>
-      <Body style={{ fontFamily: 'sans-serif', backgroundColor: '#f9f9f9', margin: '0', padding: '0' }}>
-        <Container style={{ maxWidth: '600px', margin: '0 auto', padding: '24px', backgroundColor: '#ffffff' }}>
-          <Heading style={{ fontSize: '24px', color: '#1a1a1a' }}>Order Confirmation</Heading>
-          <Text style={{ fontSize: '16px', color: '#333' }}>Dear {buyerName},</Text>
-          <Text style={{ fontSize: '16px', color: '#333' }}>
-            Thank you for your order. Your ticket{positions.length > 1 ? 's are' : ' is'} confirmed —
-            each ticket below has its own QR code for door check-in.
-          </Text>
-          {positions.map((position) => (
-            <div key={position.bookingRef}>
-              <Hr />
-              <Text style={{ fontSize: '14px', color: '#555' }}>
-                <strong>Attendee:</strong> {position.attendeeName}
-              </Text>
-              <Text style={{ fontSize: '14px', color: '#555' }}>
-                <strong>Ticket type:</strong> {position.ticketType}
-              </Text>
-              <Text style={{ fontSize: '14px', color: '#555' }}>
-                <strong>Booking reference:</strong> {position.bookingRef}
-              </Text>
-              <Img
-                src={`cid:${position.qrContentId}`}
-                alt={`QR code for booking reference ${position.bookingRef}`}
-                width="200"
-                height="200"
-              />
-            </div>
-          ))}
-          <Hr />
-          <Text style={{ fontSize: '14px', color: '#555' }}>
-            Present this email — or just the booking reference — at the door for check-in.
-          </Text>
-          {recoveryUrl !== null && (
-            <Text style={{ fontSize: '14px', color: '#555' }}>
-              Lost this email?{' '}
-              <Link href={recoveryUrl}>Click here to recover your tickets</Link>
-            </Text>
-          )}
-          <Text style={{ fontSize: '12px', color: '#999', marginTop: '24px' }}>
-            South African Orchid Council — saoc.co.za
-          </Text>
-        </Container>
-      </Body>
-    </Html>
+    <EmailShell family="A" preview="Your National Orchid Show order is confirmed">
+      <ShellHeading>Order Confirmation</ShellHeading>
+      <ShellText>Dear {buyerName},</ShellText>
+      <ShellText>
+        Thank you for your order. Your ticket{positions.length > 1 ? 's are' : ' is'} confirmed —
+        each ticket below has its own QR code for door check-in.
+      </ShellText>
+      {positions.map((position) => (
+        <div key={position.bookingRef}>
+          <ShellRule />
+          <ShellDetailRow label="Attendee:">{position.attendeeName}</ShellDetailRow>
+          <ShellDetailRow label="Ticket type:">{position.ticketType}</ShellDetailRow>
+          <ShellDetailRow label="Booking reference:">{position.bookingRef}</ShellDetailRow>
+          <Img
+            src={`cid:${position.qrContentId}`}
+            alt=""
+            width={QR_SIZE}
+            height={QR_SIZE}
+            style={{ display: 'block', marginTop: '16px' }}
+          />
+        </div>
+      ))}
+      <ShellRule />
+      <ShellText size="small">
+        Present this email — or just the booking reference — at the door for check-in.
+      </ShellText>
+      {recoveryUrl !== null && (
+        <ShellText size="small">
+          Lost this email?{' '}
+          <ShellLink href={recoveryUrl}>Click here to recover your tickets</ShellLink>
+        </ShellText>
+      )}
+    </EmailShell>
   );
 }
