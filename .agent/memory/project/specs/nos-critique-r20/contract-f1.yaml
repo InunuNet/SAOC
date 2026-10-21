@@ -8,7 +8,7 @@ goal: >-
 created_at: '2026-10-20'
 autonomy: high
 exclusions:
-  - item: 'every file outside goldens/f1-footprint.json, f2-footprint.json, f3-footprint.json, docs/nos-critique-r20.md and this spec dir'
+  - item: 'every file outside goldens/f1-footprint.json, f2-footprint.json, f3-footprint.json, f4-footprint.json, docs/nos-critique-r20.md and this spec dir'
     reason: 'Enforced by A2. F1 adds no string (FOOTER_BULLETIN.emailLabel already holds "Email address"); the footer grid is F3.'
 features:
   - id: F1
@@ -26,7 +26,7 @@ assertions:
       description: f1 check scripts and goldens are unmodified since @architect wrote them
       command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r20/goldens/checks-f1.sha256
     - id: A2
-      description: Footprint - the r20 branch differs from origin/main 7fb251a1 only in the three r20 footprints, docs/nos-critique-r20.md and the spec dir, and HEAD descends from it
+      description: Footprint - the r20 branch differs from origin/main 7fb251a1 only in the four r20 footprints, docs/nos-critique-r20.md and the spec dir, and HEAD descends from it
       command: node .agent/memory/project/specs/nos-critique-r20/checks/footprint.mjs
     - id: A3
       description: Static - one nf-head label for nf-email between the blurb and the form, the input with id/type/name/autoComplete/placeholder/required and no aria-label, the input rule with alpha 0.55 and no 0.36 left, the label display:block rule block, no new copy, docs F1

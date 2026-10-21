@@ -37,7 +37,8 @@ Options weighed:
      pixel-for-pixel on the SAOC routes.
    - NosFooter uses the same keys, so the grid, breakpoints, order and bar cannot drift. Colour and type stay NOS (nos-chrome.css), and
      the column internals stay NOS.
-   - Blast radius onto SAOC is a no-op refactor, checked by L7.
+   - Blast radius onto SAOC is a no-op refactor, checked by L7. (F4 later changes the SAOC rows on purpose. S1/S2 accept BASE + F3
+     or BASE + F3 + F4, and L7 holds what F4 does not reach; see `f4-spec.md`.)
    - Tailwind v4 scans footer-data.ts like any source file.
 
 ## Exact SAOC-side edits (`f3-edits.json`)
@@ -83,7 +84,10 @@ nos-chrome.css:
 - **L4:** the lockup is 248 wide, centred over column 1, on the column top, and level with Explore at 1280.
 - **L5:** REG/NPO is left-aligned across the column, 32px under the lockup, in the label role, and gold.
 - **L6:** the headings, the WOSA block and the royal ground are in place, with no overflow.
-- **L7:** the SAOC footer on /, /about, /events and /contact equals BASE in boxes and pixels.
+- **L7:** the SAOC footer on /, /about, /events and /contact equals BASE in boxes and pixels. Amended by F4 (2026-10-22,
+  `f4-spec.md`): F4 changes the SAOC Partners rows, so L7 now holds column 1 (box and pixels), the lockup, the bar (x, width, height,
+  pixels) and every column's x and width to BASE. The column heights, the footer height at 390 and the bar's y belong to F4.
+  `f3-baseline.json` was re-captured on BASE for the new shots.
 
 ## Superseded
 

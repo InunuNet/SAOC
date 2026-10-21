@@ -22,7 +22,7 @@ export const gitRoot = process.env.NOS_CR20_GIT ? path.resolve(process.env.NOS_C
 
 export const DOC = 'docs/nos-critique-r20.md';
 export const SPEC_PREFIX = '.agent/memory/project/specs/nos-critique-r20/';
-const FOOTPRINTS = ['f1-footprint.json', 'f2-footprint.json', 'f3-footprint.json'];
+const FOOTPRINTS = ['f1-footprint.json', 'f2-footprint.json', 'f3-footprint.json', 'f4-footprint.json'];
 
 export function readRepoFile(rel) {
   const abs = path.join(repoRoot, rel);

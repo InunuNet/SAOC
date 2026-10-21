@@ -13,8 +13,10 @@
 //       .nf-head family, size, letter-spacing, uppercase) and gold (the computed colour of the gold sign-up button's ground).
 //   L6  content: columns 2-4 open with "Explore", "Partners", "Stay in touch"; column 4 also holds "Looking for wild orchids?". The
 //       footer ground is the NOS royal rgb(33, 26, 87). No horizontal overflow.
-//   L7  the SAOC footer is unchanged: on golden saocRoutes its box, columns, bar and lockup equal BASE (+-1px) and its pixels (16px block
-//       means, colour level 8) equal BASE's.
+//   L7  the SAOC footer keeps BASE where r20 F4 (the footer rhythm, goldens/f4-edits.json) does not reach: on golden saocRoutes its
+//       column 1 box and the lockup equal BASE (+-1px), the footer, grid and every column keep BASE's x and width, the bar, copyright
+//       and legal group keep BASE's x, width and height, and column 1 and the bar row match BASE's pixels (16px block means, colour
+//       level 8). The column heights, the footer height at 390 and the bar's y are F4's (its Partners rows grow to 44px).
 // `--capture` prints goldens/f3-baseline.json (captured by @architect on BASE 7fb251a1, both modes).
 import { BASE, finish, goldenJson } from './_lib.mjs';
 import { MODES, require, serve } from './_server.mjs';
@@ -57,21 +59,27 @@ const measure = (page, sel) => page.evaluate((sel) => {
   };
 }, sel);
 
-const means = async (page, sel) => {
+// One capture of `sel`, reduced to BLOCK px block means inside each [x, y, w, h] rect (px relative to the capture).
+const means = async (page, sel, rects) => {
   const png = await page.locator(sel).last().screenshot({ animations: 'disabled', caret: 'hide' });
-  return page.evaluate(async ({ b64, block }) => {
+  return page.evaluate(async ({ b64, block, rects }) => {
     const img = new Image(); img.src = `data:image/png;base64,${b64}`; await img.decode();
     const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
     const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0);
-    const d = x.getImageData(0, 0, c.width, c.height).data;
-    const bw = Math.ceil(c.width / block); const bh = Math.ceil(c.height / block);
-    const out = new Array(bw * bh * 3).fill(0); const n = new Array(bw * bh).fill(0);
-    for (let yy = 0; yy < c.height; yy++) for (let xx = 0; xx < c.width; xx++) {
-      const b = Math.floor(yy / block) * bw + Math.floor(xx / block); const i = (yy * c.width + xx) * 4;
-      out[b * 3] += d[i]; out[b * 3 + 1] += d[i + 1]; out[b * 3 + 2] += d[i + 2]; n[b] += 1;
-    }
-    return { w: c.width, h: c.height, means: out.map((v, k) => Math.round(v / n[Math.floor(k / 3)])) };
-  }, { b64: png.toString('base64'), block: BLOCK });
+    return rects.map(([rx, ry, rw, rh]) => {
+      const x0 = Math.max(0, rx); const y0 = Math.max(0, ry);
+      const w = Math.max(0, Math.min(rw, c.width - x0)); const h = Math.max(0, Math.min(rh, c.height - y0));
+      if (w === 0 || h === 0) return { w, h, means: [] };
+      const d = x.getImageData(x0, y0, w, h).data;
+      const bw = Math.ceil(w / block); const bh = Math.ceil(h / block);
+      const out = new Array(bw * bh * 3).fill(0); const n = new Array(bw * bh).fill(0);
+      for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) {
+        const b = Math.floor(yy / block) * bw + Math.floor(xx / block); const i = (yy * w + xx) * 4;
+        out[b * 3] += d[i]; out[b * 3 + 1] += d[i + 1]; out[b * 3 + 2] += d[i + 2]; n[b] += 1;
+      }
+      return { w, h, means: out.map((v, k) => Math.round(v / n[Math.floor(k / 3)])) };
+    });
+  }, { b64: png.toString('base64'), block: BLOCK, rects });
 };
 
 const load = async (page, origin, route, at) => {
@@ -96,7 +104,11 @@ for (const mode of MODES) {
       for (const route of G.saocRoutes) {
         const at = `${mode} SAOC ${route} @${width}`;
         if (!(await load(page, srv.origin, route, at))) continue;
-        got[at] = { ...(await measure(page, 'last')), shot: await means(page, 'footer') };
+        const m = await measure(page, 'last');
+        // L7 compares column 1 and the bar row (what F4 does not govern), cropped from one full-footer capture: [x, y, w, h] in footer px.
+        const rect = (b) => (b ? [Math.round(b.x - m.footer.x), Math.round(b.y), Math.round(b.w), Math.round(b.h)] : [0, 0, 0, 0]);
+        const [brandShot, barShot] = await means(page, 'footer', [rect(m.cols[0]), rect(m.bar)]);
+        got[at] = { ...m, brandShot, barShot };
       }
       if (CAPTURE) { await ctx.close(); continue; }
       const saoc = got[`${mode} SAOC ${G.saoc.route} @${width}`];
@@ -157,7 +169,7 @@ for (const mode of MODES) {
 
 if (CAPTURE) {
   if (failures.length) finish(NAME, failures);
-  process.stdout.write(`${JSON.stringify({ recorded: `${MODES.join(' and ')} builds of BASE ${BASE}: the SAOC footer (boxes and ${BLOCK}px block means) on ${G.saocRoutes.join(', ')}`, got })}\n`);
+  process.stdout.write(`${JSON.stringify({ recorded: `${MODES.join(' and ')} builds of BASE ${BASE}: the SAOC footer (boxes, and ${BLOCK}px block means of column 1 and the bar row) on ${G.saocRoutes.join(', ')}`, got })}\n`);
   process.exit(0);
 }
 
@@ -166,13 +178,18 @@ const baseline = goldenJson('f3-baseline.json').got;
 for (const [key, b] of Object.entries(baseline)) {
   const m = got[key];
   if (!m) { failures.push(`${key}: in the baseline but not measured (L7)`); continue; }
-  const boxes = ['footer', 'grid', 'bar', 'copy', 'legal', 'lockup'];
-  for (const k of boxes) if (!same(m[k], b[k])) failures.push(`${key}: SAOC footer ${k} ${JSON.stringify(m[k])}, BASE ${JSON.stringify(b[k])} (L7)`);
-  if (m.cols.length !== b.cols.length || !m.cols.every((c, k) => same(c, b.cols[k]))) failures.push(`${key}: SAOC footer columns moved (L7)`);
-  if (m.shot.w !== b.shot.w || m.shot.h !== b.shot.h) failures.push(`${key}: SAOC footer capture ${m.shot.w}x${m.shot.h}, BASE ${b.shot.w}x${b.shot.h} (L7)`);
-  else {
-    const off = m.shot.means.filter((v, k) => Math.abs(v - b.shot.means[k]) > LEVEL).length;
-    if (off > 0) failures.push(`${key}: ${off} SAOC footer colour samples differ from BASE by more than ${LEVEL} (L7)`);
+  const xw = (p, q) => p && q && near(p.x, q.x) && near(p.w, q.w);
+  const xwh = (p, q) => xw(p, q) && near(p.h, q.h);
+  for (const k of ['footer', 'grid']) if (!xw(m[k], b[k])) failures.push(`${key}: SAOC footer ${k} x/w ${JSON.stringify(m[k])}, BASE ${JSON.stringify(b[k])} (L7)`);
+  for (const k of ['bar', 'copy', 'legal']) if (!xwh(m[k], b[k])) failures.push(`${key}: SAOC footer ${k} x/w/h ${JSON.stringify(m[k])}, BASE ${JSON.stringify(b[k])} (L7)`);
+  if (!same(m.lockup, b.lockup)) failures.push(`${key}: SAOC footer lockup ${JSON.stringify(m.lockup)}, BASE ${JSON.stringify(b.lockup)} (L7)`);
+  if (m.cols.length !== b.cols.length || !m.cols.every((c, k) => xw(c, b.cols[k]))) failures.push(`${key}: SAOC footer columns moved across (L7)`);
+  else if (!same(m.cols[0], b.cols[0])) failures.push(`${key}: SAOC footer column 1 ${JSON.stringify(m.cols[0])}, BASE ${JSON.stringify(b.cols[0])} (L7)`);
+  for (const s of ['brandShot', 'barShot']) {
+    if (!m[s] || !b[s]) { failures.push(`${key}: no ${s} (L7)`); continue; }
+    if (m[s].w !== b[s].w || m[s].h !== b[s].h) { failures.push(`${key}: SAOC footer ${s} ${m[s].w}x${m[s].h}, BASE ${b[s].w}x${b[s].h} (L7)`); continue; }
+    const off = m[s].means.filter((v, k) => Math.abs(v - b[s].means[k]) > LEVEL).length;
+    if (off > 0) failures.push(`${key}: ${off} SAOC footer ${s} colour samples differ from BASE by more than ${LEVEL} (L7)`);
   }
 }
-finish(NAME, failures, `NOS footer on the SAOC grid (${MODES.join('/')}, ${WIDTHS.join('/')}): columns, bar and height match SAOC, 248px lockup centred with REG/NPO 32px under it in gold, SAOC footer unchanged.`);
+finish(NAME, failures, `NOS footer on the SAOC grid (${MODES.join('/')}, ${WIDTHS.join('/')}): columns, bar and height match SAOC, 248px lockup centred with REG/NPO 32px under it in gold, SAOC column 1 and bar unchanged.`);

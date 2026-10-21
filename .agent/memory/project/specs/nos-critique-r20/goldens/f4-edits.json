@@ -1,0 +1,107 @@
+{
+  "footerData": {
+    "file": "components/chrome/footer-data.ts",
+    "lineEdits": [
+      {
+        "line": 22,
+        "from": "};",
+        "to": "};\n\n/** The footer column rhythm, shared by both skins (r20 F4, Codi FINAL 2026-10-22): one list, one 44px row; the skin adds its own type and colour. */\nexport const FOOTER_RHYTHM = {\n  list: 'flex flex-col',\n  row: 'inline-flex min-h-11 items-center text-[14px]',\n};"
+      }
+    ],
+    "drops": []
+  },
+  "saocFooter": {
+    "file": "components/chrome/Footer.tsx",
+    "lineEdits": [
+      {
+        "line": 22,
+        "from": "  FOOTER_REG,",
+        "to": "  FOOTER_REG,\n  FOOTER_RHYTHM,"
+      },
+      {
+        "line": 52,
+        "from": "          <ul className=\"flex flex-col\">",
+        "to": "          <ul className={FOOTER_RHYTHM.list}>"
+      },
+      {
+        "line": 57,
+        "from": "                  className=\"inline-flex min-h-11 min-w-11 items-center font-sans text-[14px] text-ivory/80 hover:text-ivory transition-colors duration-150\"",
+        "to": "                  className={`${FOOTER_RHYTHM.row} min-w-11 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150`}"
+      },
+      {
+        "line": 71,
+        "from": "          <ul className=\"flex flex-col gap-2\">",
+        "to": "          <ul className={FOOTER_RHYTHM.list}>"
+      },
+      {
+        "line": 74,
+        "from": "                <span className=\"font-sans text-[14px] text-ivory/80\">{p.name}</span>",
+        "to": "                <span className={`${FOOTER_RHYTHM.row} font-sans text-ivory/80`}>{p.name}</span>"
+      },
+      {
+        "line": 118,
+        "from": "              className=\"inline-flex min-h-11 min-w-11 items-center font-sans text-[14px] text-ivory/80 hover:text-ivory transition-colors duration-150\"",
+        "to": "              className={`${FOOTER_RHYTHM.row} min-w-11 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150`}"
+      }
+    ],
+    "drops": [],
+    "why": "The Explore and Partners lists use FOOTER_RHYTHM.list (no gap: Partners' gap-2 goes) and every row (Explore links, Partners names, the WOSA link) starts with FOOTER_RHYTHM.row. The skin classes after it are BASE's, minus the four the shared row now carries (inline-flex, min-h-11, items-center, text-[14px]); links keep min-w-11 (44px target). The headings, the column gap-3 and the Stay in touch blocks are untouched: BASE already spaces each heading 16px from its first row (mb-1 4px + gap-3 12px), the handoff kit's 16px."
+  },
+  "nosFooter": {
+    "file": "components/nos-chrome/NosFooter.tsx",
+    "import": "FOOTER_RHYTHM",
+    "uses": {
+      "list": 2,
+      "row": 3
+    },
+    "lists": "<ul className={`nf-list ${FOOTER_RHYTHM.list}`}>",
+    "rows": [
+      "<Link className={FOOTER_RHYTHM.row} href={n.href}>",
+      "<span className={FOOTER_RHYTHM.row}>{p.name}</span>",
+      "<a className={FOOTER_RHYTHM.row} href={FOOTER_WOSA.href}"
+    ],
+    "why": "Content-pinned (F1 and F3 rebuild this file): the two lists take nf-list plus FOOTER_RHYTHM.list, the Explore link, the Partners name and the WOSA link take FOOTER_RHYTHM.row. NOS type and colour stay in nos-chrome.css."
+  },
+  "nosCss": {
+    "file": "components/nos-chrome/nos-chrome.css",
+    "rules": [
+      ".nf-list { list-style: none; margin: 0; padding: 0; }",
+      ".nf-list a, .nf-list span { line-height: 1.35; color: var(--nc-lilac); text-decoration: none; }",
+      ".nf-wild a { color: var(--nc-ground); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }",
+      ".nf-col > .nf-head { margin-bottom: 16px; }"
+    ],
+    "retired": [
+      ".nf-list span {",
+      "min-height: 44px; font-size: 15px"
+    ],
+    "why": "nos-chrome.css is unlayered, so its rules beat Tailwind's layered utilities: the row geometry and size come off .nf-list a/span and .nf-wild a (display, align-items, min-height, font-size 15px, the span's padding-block 11px) and off .nf-list (display: grid) so FOOTER_RHYTHM applies; NOS colour, line-height and underline stay. The column headings get the 16px bottom margin; .nf-col > .nf-head also reaches F1's sign-up <label class=nf-head> (a direct child of .nf-col-touch), which keeps F1 R3 (label margin = heading margin) true."
+  },
+  "handoff": {
+    "file": "design/design_handoff_saoc/ui_kits/website/components.jsx",
+    "line": 469,
+    "text": "marginBottom: 16,",
+    "note": "src/styles.css:1108 .footer__label says margin-bottom: 18px; the ruling names 16px, which is the UI kit's value."
+  },
+  "rowHeight": 44,
+  "headingGap": 16,
+  "rowFontSize": "14px",
+  "widths": [
+    1280,
+    1920,
+    390
+  ],
+  "alignedWidths": [
+    1280,
+    1920
+  ],
+  "headings": {
+    "explore": "Explore",
+    "partners": "Partners",
+    "touch": "Stay in touch"
+  },
+  "submit": {
+    "saoc": "<form className=\"flex flex-wrap items-end gap-0\" onSubmit={(e) => e.preventDefault()}>",
+    "nos": "<form id=\"nf-form\" className=\"nf-form\" onSubmit={(e) => e.preventDefault()}>"
+  },
+  "allowCopy": []
+}

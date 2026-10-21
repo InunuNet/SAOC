@@ -8,7 +8,7 @@ goal: >-
 created_at: '2026-10-20'
 autonomy: high
 exclusions:
-  - item: 'every file outside goldens/f1-footprint.json, f2-footprint.json, f3-footprint.json, docs/nos-critique-r20.md and this spec dir'
+  - item: 'every file outside goldens/f1-footprint.json, f2-footprint.json, f3-footprint.json, f4-footprint.json, docs/nos-critique-r20.md and this spec dir'
     reason: 'Enforced by A2. No page markup changes; the hub nos-section-joined, r12 disclosure and r14 tickets-hub collapses are kept.'
 features:
   - id: F2
@@ -28,7 +28,7 @@ assertions:
       description: f2 check scripts and goldens are unmodified since @architect wrote them
       command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r20/goldens/checks-f2.sha256
     - id: A2
-      description: Footprint - the r20 branch differs from origin/main 7fb251a1 only in the three r20 footprints, docs/nos-critique-r20.md and the spec dir, and HEAD descends from it
+      description: Footprint - the r20 branch differs from origin/main 7fb251a1 only in the four r20 footprints, docs/nos-critique-r20.md and the spec dir, and HEAD descends from it
       command: node .agent/memory/project/specs/nos-critique-r20/checks/footprint.mjs
     - id: A3
       description: Static - nos-structure.css equals BASE plus exactly the same-tone rule block after line 570, docs F2
