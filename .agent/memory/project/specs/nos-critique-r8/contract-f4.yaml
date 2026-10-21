@@ -1,0 +1,41 @@
+# Sources: Codi FINAL rulings relayed by the lead (2026-10-17), nos-v4 goldens. No new copy.
+schema: athanor.contract/v1
+slug: nos-critique-r8
+goal: >-
+  Make the attraction heading and link ids unique and safe whatever the CMS key, draw TravelRoutes route headings as h3 under the h2, and refresh the stale page comment, in .tmp/sandbox/critique-r8.
+  Exit criterion (Brad via the lead; design-cb's rulings are final): this feature loops build, critique, fix until impeccable scores >= 39/40 with
+  P0/P1/P2 = 0 AND design-cb PASSes. The lead runs that loop and relays the PASS; the gate below stays mechanical.
+created_at: '2026-10-17'
+autonomy: high
+exclusions:
+  - item: 'every file but VisitDisclosure.tsx, TravelRoutes.tsx and the plan-your-visit page'
+    reason: 'Enforced by A2 (stacked footprint, goldens/f1..f4-footprint.json).'
+features:
+  - id: F4
+    name: Interim QA P3s - unique attraction ids, TravelRoutes h3, current comment
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r8/goldens/f4-spec.md
+  - .agent/memory/project/specs/nos-critique-r8/goldens/f4-footprint.json
+  - .agent/memory/project/specs/nos-critique-r8/goldens/checks-f4.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f4 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r8/goldens/checks-f4.sha256
+    - id: A2
+      description: Footprint (stacked branch) - f1..f4 paths and docs/nos-critique-r8.md only; nothing off limits
+      command: node .agent/memory/project/specs/nos-critique-r8/checks/f4-footprint.mjs
+    - id: A3
+      description: Static S1-S4 - no bare `_key ?? index` id, TravelRoutes h3 only, page comment current, no new copy
+      command: node .agent/memory/project/specs/nos-critique-r8/checks/f4-static.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r8 type-check && pnpm --dir .tmp/sandbox/critique-r8 exec eslint --max-warnings 0 components/nos components/show "app/(marketing)/national-show"'
+    - id: A5
+      description: Production build passes (input for the rendered and fixture checks)
+      command: pnpm --dir .tmp/sandbox/critique-r8 build
+    - id: A6
+      description: Fixture - attraction ids unique and safe for duplicate, numeric, whitespace, markup and missing keys in both states, aria-labelledby resolves, TravelRoutes yields levels [2, 3, 3] (props only, run under tsx)
+      command: node .agent/memory/project/specs/nos-critique-r8/checks/f4-fixture.mjs

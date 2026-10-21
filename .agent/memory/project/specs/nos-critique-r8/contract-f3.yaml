@@ -1,0 +1,41 @@
+# Sources: Codi FINAL rulings relayed by the lead (2026-10-17), nos-v4 goldens. No new copy.
+schema: athanor.contract/v1
+slug: nos-critique-r8
+goal: >-
+  Define --green-1 #A7A841 and --green-2 #7F7D33 in nos-theme.css (nos-v4 index.html l.19-20), drop the inline --green-1 fallback in ShowHoldingNote.tsx and de-grandfather it so the undefined-var scan covers it, in .tmp/sandbox/critique-r8.
+  Exit criterion (Brad via the lead; design-cb's rulings are final): this feature loops build, critique, fix until impeccable scores >= 39/40 with
+  P0/P1/P2 = 0 AND design-cb PASSes. The lead runs that loop and relays the PASS; the gate below stays mechanical.
+created_at: '2026-10-17'
+autonomy: high
+exclusions:
+  - item: 'every file but nos-theme.css and ShowHoldingNote.tsx'
+    reason: 'Enforced by A2 (stacked footprint, goldens/f1..f3-footprint.json).'
+features:
+  - id: F3
+    name: Define --green-1 and --green-2
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r8/goldens/f3-spec.md
+  - .agent/memory/project/specs/nos-critique-r8/goldens/f3-footprint.json
+  - .agent/memory/project/specs/nos-critique-r8/goldens/checks-f3.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f3 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r8/goldens/checks-f3.sha256
+    - id: A2
+      description: Footprint (stacked branch) - f1..f3 paths and docs/nos-critique-r8.md only; nothing off limits
+      command: node .agent/memory/project/specs/nos-critique-r8/checks/f3-footprint.mjs
+    - id: A3
+      description: Static S1-S4 - tokens defined beside --ink-700 with a v4 citation, only token and comment lines added, ShowHoldingNote uses var(--green-1) with no fallback, every var(--x) in the NOS trees defined
+      command: node .agent/memory/project/specs/nos-critique-r8/checks/f3-static.mjs
+    - id: A4
+      description: TypeScript compiles and ESLint is clean with zero warnings
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r8 type-check && pnpm --dir .tmp/sandbox/critique-r8 exec eslint --max-warnings 0 components/nos components/show "app/(marketing)/national-show"'
+    - id: A5
+      description: Production build passes (input for the rendered and fixture checks)
+      command: pnpm --dir .tmp/sandbox/critique-r8 build
+    - id: A6
+      description: Rendered on next start 3010-3019 - .nos-theme resolves --green-1 #a7a841 and --green-2 #7f7d33; the holding-note underline, where drawn, is rgb(167, 168, 65)
+      command: node .agent/memory/project/specs/nos-critique-r8/checks/f3-rendered.mjs

@@ -1,0 +1,69 @@
+schema: athanor.contract/v1
+slug: nos-provenance-fix
+goal: >-
+  H1 security fix, split from the nos-provenance-fix spec and not gated on
+  Option A. Stop the App Hosting server image from shipping private and
+  non-runtime files (documents/*.docx including "Website Development
+  SpecificationV1.docx", docs/secret-*.md, execution/**, contracts/**, agent
+  files) that lib/data/show-pages.ts's dynamic process.cwd() reads cause
+  Turbopack to trace for the six gated national-show routes. Layer 1 marks the
+  three process.cwd() calls /*turbopackIgnore: true*/. Layer 2 adds
+  outputFileTracingExcludes ('/**') and an explicit outputFileTracingIncludes
+  for content/drive-recovered/**/content.md ('/national-show/*') to
+  next.config.ts. Worktree .tmp/sandbox/trace-fix, branch fix/trace-excludes,
+  base 9e619821 (rebased from 5ae1f3cf; the 4 intervening files are vendor labels and
+  vendor-p1 checks, none tracing-related). Golden: goldens/h1-trace-excludes.md.
+created_at: '2026-10-15'
+autonomy: high
+exclusions:
+  - item: Option A (relink sourcePath to content/drive-recovered) and any Sanity write
+    reason: Awaiting operator approval in spec.md. F2 must not change any provenance outcome.
+  - item: Purging tracked private files (documents/, docs/) from git history
+    reason: A separate, outward-facing decision. F2 only keeps them out of the deployed image.
+  - item: Deploy to beta
+    reason: SAOC rule is to keep it local until Brad approves, then push to beta.
+features:
+  - id: F2
+    name: H1 — trim server traces so private and non-runtime files never ship (turbopackIgnore + tracing excludes/includes)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-provenance-fix/goldens/h1-trace-excludes.md
+  - .agent/memory/project/specs/nos-provenance-fix/goldens/f2-checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: The QA check scripts are unmodified since @architect wrote them (@dev never edits QA inputs)
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-provenance-fix/goldens/f2-checks.sha256
+    - id: A2
+      description: Standalone production build succeeds, the way App Hosting builds it (log kept for A3)
+      command: NEXT_PRIVATE_STANDALONE=true pnpm --dir .tmp/sandbox/trace-fix build > .tmp/sandbox/trace-fix-f2-build.log 2>&1
+    - id: A3
+      description: Layer 1 works — the build no longer warns that the whole project was traced
+      command: test -s .tmp/sandbox/trace-fix-f2-build.log && ! grep -q "whole project was traced unintentionally" .tmp/sandbox/trace-fix-f2-build.log
+    - id: A4
+      description: No forbidden tree, root dot-entry (anything but .next), *.docx, .env*, key, sops, apphosting or root agent/ops file in ANY .next/**/*.nft.json or in .next/standalone (FAILS on base 5ae1f3cf with 5936 entries — golden §1)
+      command: node .tmp/sandbox/trace-fix/contracts/checks/trace-excludes/scan-traces.mjs .tmp/sandbox/trace-fix
+    - id: A5
+      description: The runtime-read files ARE traced — every content/drive-recovered/**/content.md in each of the six gated national-show route traces
+      command: node .tmp/sandbox/trace-fix/contracts/checks/trace-excludes/check-required-traced.mjs .tmp/sandbox/trace-fix
+    - id: A6
+      description: Standalone server on 127.0.0.1:3017 serves /national-show/sa-exhibitors, /symposium and /faq with 200 and rendered sections, symposium theme clean (drive-recovered readable at runtime); stops only its own PID
+      command: node .tmp/sandbox/trace-fix/contracts/checks/trace-excludes/check-runtime.mjs .tmp/sandbox/trace-fix
+    - id: A7
+      description: next.config.ts declares the '/**' excludes key with the private trees and the '/national-show/*' include for drive-recovered content.md (golden §3 Layer 2)
+      command: |-
+        grep -q "'/\*\*': NEVER_SHIP" .tmp/sandbox/trace-fix/next.config.ts && grep -q "'/national-show/\*': \['content/drive-recovered/\*\*/content.md'\]" .tmp/sandbox/trace-fix/next.config.ts && grep -q "'documents/\*\*'" .tmp/sandbox/trace-fix/next.config.ts && grep -q "'content/drive-source/\*\*'" .tmp/sandbox/trace-fix/next.config.ts && grep -q "'.anti/\*\*'" .tmp/sandbox/trace-fix/next.config.ts && grep -q "'.scratch-render/\*\*'" .tmp/sandbox/trace-fix/next.config.ts && grep -q "'.vscode/\*\*'" .tmp/sandbox/trace-fix/next.config.ts && grep -q "'.firebaserc'" .tmp/sandbox/trace-fix/next.config.ts
+    - id: A8
+      description: Every process.cwd() in lib/data/show-pages.ts carries /*turbopackIgnore true*/ (all 3, none left bare)
+      command: |-
+        test "$(grep -c 'process.cwd()' .tmp/sandbox/trace-fix/lib/data/show-pages.ts)" = 3 && test "$(grep -c '/\*turbopackIgnore: true\*/ process.cwd()' .tmp/sandbox/trace-fix/lib/data/show-pages.ts)" = 3
+    - id: A9
+      description: Scope — only next.config.ts and lib/data/show-pages.ts change, and show-pages.ts logic is byte-identical to base apart from the markers and // comments
+      command: node .tmp/sandbox/trace-fix/contracts/checks/trace-excludes/check-scope.mjs .tmp/sandbox/trace-fix 9e619821
+    - id: A10
+      description: TypeScript compiles
+      command: pnpm --dir .tmp/sandbox/trace-fix type-check
+    - id: A11
+      description: ESLint is clean with zero warnings on the changed files and the checks
+      command: pnpm --dir .tmp/sandbox/trace-fix exec eslint --max-warnings 0 next.config.ts lib/data/show-pages.ts contracts/checks/trace-excludes

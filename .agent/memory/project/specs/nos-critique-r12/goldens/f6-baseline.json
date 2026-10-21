@@ -1,0 +1,761 @@
+{
+ "recorded": "from the 26fde668 build (next start, public mode); target gaps are the BASE (doubled) values, for the record",
+ "got": {
+  "/national-show/what-to-expect @375": {
+   "gap": 144,
+   "disclosure": [
+    16,
+    818.4,
+    343,
+    238.4
+   ],
+   "followerHeight": 1987.4,
+   "hero": [
+    0,
+    144.2,
+    375,
+    341.6
+   ],
+   "text": "{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"National Show\",\"item\":\"https://saoc.co.za/national-show\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"What to expect\",\"item\":\"https://saoc.co.za/national-show/what-to-expect\"}]}What to expectAbout the showWhat to expectPlan your visitFAQShow datesThursday 23 to Sunday 26 September 2027※To be confirmed by the show committeeTo be confirmedOpening hours · admission · food and refreshments · photography · cloakroom and plant holding · accessibility.Be the first to knowThe 2027 South African National Orchid Show promises an immersive experience celebrating the beauty, science and future of orchids.HostWestern CapeVenueThe Hangar, Stellenbosch Flying ClubCycleTriennialExplore breathtaking displays showcasing thousands of flowering orchids, from rare species found in nature to award-winning cultivated hybrids that demonstrate decades of careful breeding and horticultural achievement. Watch South Africa’s leading judges evaluate exceptional plants as exhibitors compete for prestigious national awards that recognise excellence in orchid cultivation.Browse the extensive plant sales area, where specialist nurseries from across South Africa will be joined by selected international orchid vendors, offering an exceptional range of orchid species, hybrids, companion plants, growing media and specialist supplies. Whether you are purchasing your very first orchid or searching for a rare collector’s specimen, knowledgeable growers from around the world will be on hand to share their expertise and passion.The National Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research. Integrated throughout the symposium, presentations by Wild Orchids of Southern Africa (WOSA) will highlight the ecology and conservation of indigenous orchids, illustrating how research undertaken in natural habitats continues to influence cultivation practices, breeding programmes and the long-term future of orchids.Visitors can further develop their knowledge through practical workshops, meet orchid societies from across the country, engage with researchers and conservationists, and discover how every aspect of the National Show reflects this year’s theme—from the protection of orchids in the wild to the pursuit of cultivated excellence.The 2027 National Show is made possible through the generous support of our headline sponsors, donors and partners, whose commitment to horticulture, conservation, education and scientific advancement enables the South African Orchid Council to present a truly world-class event.Whether your passion lies in conservation, scientific discovery, judging, growing or simply enjoying the extraordinary beauty of orchids, the 2027 South African National Orchid Show offers an unforgettable experience that celebrates the complete journey of orchids and the people dedicated to their future.TicketsPlan your visitExplore the showVisitTicketsPlan your visitWhat to expectProgrammeFAQTake partExhibitor entry guideExhibitors and VendorsWorkshopsConference registrationThe showAbout the showSymposiumWOSA ConferenceSouth African exhibitorsInternational guestsShow sponsorsPast shows"
+  },
+  "/national-show/workshops @375": {
+   "gap": 144,
+   "disclosure": [
+    16,
+    508.4,
+    343,
+    146.5
+   ],
+   "followerHeight": 36.8,
+   "hero": [
+    0,
+    144.2,
+    375,
+    247.2
+   ],
+   "text": "{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"National Show\",\"item\":\"https://saoc.co.za/national-show\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"Workshops\",\"item\":\"https://saoc.co.za/national-show/workshops\"}]}Workshops & Field TripsBook Sunset Cocktails and guided Field Trip outings at the National Show.ProgrammeWorkshopsSymposiumWOSA ConferenceConference registration※To be confirmed by the show committeeTo be confirmedPer-session bookings are not yet available for purchase.Programme23ThursdayAdmit oneThursday 23 SeptemberSunset Cocktails (Single)18h00 to 21h00200 of 200 places leftR2501Buy ticket10places a sessionAdmit oneSchedule to followWorkshops10 places in each sessionR100eachExplore the showVisitTicketsPlan your visitWhat to expectProgrammeFAQTake partExhibitor entry guideExhibitors and VendorsWorkshopsConference registrationThe showAbout the showSymposiumWOSA ConferenceSouth African exhibitorsInternational guestsShow sponsorsPast shows"
+  },
+  "/national-show @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     144.2,
+     1075.1
+    ],
+    [
+     "section",
+     1219.3,
+     630.3
+    ],
+    [
+     "section",
+     1849.6,
+     959.2
+    ],
+    [
+     "section",
+     2808.8,
+     1787
+    ],
+    [
+     "section",
+     4595.8,
+     1371.9
+    ],
+    [
+     "section",
+     5967.7,
+     293.2
+    ]
+   ],
+   "docHeight": 7635
+  },
+  "/national-show/tickets @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     144.2,
+     1502.1
+    ],
+    [
+     "section",
+     1646.3,
+     1300.7
+    ],
+    [
+     "section",
+     2947,
+     1785.6
+    ],
+    [
+     "section",
+     4732.6,
+     1761.6
+    ],
+    [
+     "section",
+     6494.2,
+     643.8
+    ],
+    [
+     "nav",
+     7138,
+     1348
+    ]
+   ],
+   "docHeight": 9860
+  },
+  "/national-show/plan-your-visit @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     144.2,
+     525.6
+    ],
+    [
+     "nav",
+     669.8,
+     45
+    ],
+    [
+     "section",
+     714.8,
+     1323.3
+    ],
+    [
+     "section",
+     2038.1,
+     763.1
+    ],
+    [
+     "section",
+     2801.2,
+     464.7
+    ],
+    [
+     "nav",
+     3265.9,
+     1348
+    ]
+   ],
+   "docHeight": 5988
+  },
+  "/national-show/exhibitors @375": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     144.2,
+     328.2
+    ],
+    [
+     "nav",
+     472.4,
+     45
+    ],
+    [
+     "section",
+     517.4,
+     12197
+    ],
+    [
+     "nav",
+     12714.4,
+     1348
+    ]
+   ],
+   "docHeight": 15437
+  },
+  "/national-show/what-to-expect @390": {
+   "gap": 144,
+   "disclosure": [
+    16,
+    820.1,
+    358,
+    238.4
+   ],
+   "followerHeight": 1937.8,
+   "hero": [
+    0,
+    145.9,
+    390,
+    341.6
+   ],
+   "text": "{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"National Show\",\"item\":\"https://saoc.co.za/national-show\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"What to expect\",\"item\":\"https://saoc.co.za/national-show/what-to-expect\"}]}What to expectAbout the showWhat to expectPlan your visitFAQShow datesThursday 23 to Sunday 26 September 2027※To be confirmed by the show committeeTo be confirmedOpening hours · admission · food and refreshments · photography · cloakroom and plant holding · accessibility.Be the first to knowThe 2027 South African National Orchid Show promises an immersive experience celebrating the beauty, science and future of orchids.HostWestern CapeVenueThe Hangar, Stellenbosch Flying ClubCycleTriennialExplore breathtaking displays showcasing thousands of flowering orchids, from rare species found in nature to award-winning cultivated hybrids that demonstrate decades of careful breeding and horticultural achievement. Watch South Africa’s leading judges evaluate exceptional plants as exhibitors compete for prestigious national awards that recognise excellence in orchid cultivation.Browse the extensive plant sales area, where specialist nurseries from across South Africa will be joined by selected international orchid vendors, offering an exceptional range of orchid species, hybrids, companion plants, growing media and specialist supplies. Whether you are purchasing your very first orchid or searching for a rare collector’s specimen, knowledgeable growers from around the world will be on hand to share their expertise and passion.The National Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research. Integrated throughout the symposium, presentations by Wild Orchids of Southern Africa (WOSA) will highlight the ecology and conservation of indigenous orchids, illustrating how research undertaken in natural habitats continues to influence cultivation practices, breeding programmes and the long-term future of orchids.Visitors can further develop their knowledge through practical workshops, meet orchid societies from across the country, engage with researchers and conservationists, and discover how every aspect of the National Show reflects this year’s theme—from the protection of orchids in the wild to the pursuit of cultivated excellence.The 2027 National Show is made possible through the generous support of our headline sponsors, donors and partners, whose commitment to horticulture, conservation, education and scientific advancement enables the South African Orchid Council to present a truly world-class event.Whether your passion lies in conservation, scientific discovery, judging, growing or simply enjoying the extraordinary beauty of orchids, the 2027 South African National Orchid Show offers an unforgettable experience that celebrates the complete journey of orchids and the people dedicated to their future.TicketsPlan your visitExplore the showVisitTicketsPlan your visitWhat to expectProgrammeFAQTake partExhibitor entry guideExhibitors and VendorsWorkshopsConference registrationThe showAbout the showSymposiumWOSA ConferenceSouth African exhibitorsInternational guestsShow sponsorsPast shows"
+  },
+  "/national-show/workshops @390": {
+   "gap": 144,
+   "disclosure": [
+    16,
+    510.1,
+    358,
+    146.5
+   ],
+   "followerHeight": 36.8,
+   "hero": [
+    0,
+    145.9,
+    390,
+    247.2
+   ],
+   "text": "{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"National Show\",\"item\":\"https://saoc.co.za/national-show\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"Workshops\",\"item\":\"https://saoc.co.za/national-show/workshops\"}]}Workshops & Field TripsBook Sunset Cocktails and guided Field Trip outings at the National Show.ProgrammeWorkshopsSymposiumWOSA ConferenceConference registration※To be confirmed by the show committeeTo be confirmedPer-session bookings are not yet available for purchase.Programme23ThursdayAdmit oneThursday 23 SeptemberSunset Cocktails (Single)18h00 to 21h00200 of 200 places leftR2501Buy ticket10places a sessionAdmit oneSchedule to followWorkshops10 places in each sessionR100eachExplore the showVisitTicketsPlan your visitWhat to expectProgrammeFAQTake partExhibitor entry guideExhibitors and VendorsWorkshopsConference registrationThe showAbout the showSymposiumWOSA ConferenceSouth African exhibitorsInternational guestsShow sponsorsPast shows"
+  },
+  "/national-show @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     145.9,
+     1051.7
+    ],
+    [
+     "section",
+     1197.6,
+     630.3
+    ],
+    [
+     "section",
+     1827.8,
+     959.2
+    ],
+    [
+     "section",
+     2787,
+     1762.2
+    ],
+    [
+     "section",
+     4549.2,
+     1371.9
+    ],
+    [
+     "section",
+     5921.1,
+     293.2
+    ]
+   ],
+   "docHeight": 7569
+  },
+  "/national-show/tickets @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     145.9,
+     1502.1
+    ],
+    [
+     "section",
+     1648,
+     1275.9
+    ],
+    [
+     "section",
+     2923.9,
+     1746.4
+    ],
+    [
+     "section",
+     4670.3,
+     1738.7
+    ],
+    [
+     "section",
+     6409,
+     616.1
+    ],
+    [
+     "nav",
+     7025.1,
+     1348
+    ]
+   ],
+   "docHeight": 9727
+  },
+  "/national-show/plan-your-visit @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     145.9,
+     498.6
+    ],
+    [
+     "nav",
+     644.5,
+     45
+    ],
+    [
+     "section",
+     689.5,
+     1270.6
+    ],
+    [
+     "section",
+     1960.1,
+     741.4
+    ],
+    [
+     "section",
+     2701.5,
+     464.7
+    ],
+    [
+     "nav",
+     3166.2,
+     1348
+    ]
+   ],
+   "docHeight": 5868
+  },
+  "/national-show/exhibitors @390": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     145.9,
+     328.2
+    ],
+    [
+     "nav",
+     474.1,
+     45
+    ],
+    [
+     "section",
+     519.1,
+     11874.2
+    ],
+    [
+     "nav",
+     12393.3,
+     1348
+    ]
+   ],
+   "docHeight": 15096
+  },
+  "/national-show/what-to-expect @768": {
+   "gap": 144,
+   "disclosure": [
+    19.2,
+    1113.3,
+    729.6,
+    213.6
+   ],
+   "followerHeight": 1307.7,
+   "hero": [
+    0,
+    96.9,
+    768,
+    712.3
+   ],
+   "text": "{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"National Show\",\"item\":\"https://saoc.co.za/national-show\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"What to expect\",\"item\":\"https://saoc.co.za/national-show/what-to-expect\"}]}What to expectAbout the showWhat to expectPlan your visitFAQShow datesThursday 23 to Sunday 26 September 2027※To be confirmed by the show committeeTo be confirmedOpening hours · admission · food and refreshments · photography · cloakroom and plant holding · accessibility.Be the first to knowThe 2027 South African National Orchid Show promises an immersive experience celebrating the beauty, science and future of orchids.HostWestern CapeVenueThe Hangar, Stellenbosch Flying ClubCycleTriennialExplore breathtaking displays showcasing thousands of flowering orchids, from rare species found in nature to award-winning cultivated hybrids that demonstrate decades of careful breeding and horticultural achievement. Watch South Africa’s leading judges evaluate exceptional plants as exhibitors compete for prestigious national awards that recognise excellence in orchid cultivation.Browse the extensive plant sales area, where specialist nurseries from across South Africa will be joined by selected international orchid vendors, offering an exceptional range of orchid species, hybrids, companion plants, growing media and specialist supplies. Whether you are purchasing your very first orchid or searching for a rare collector’s specimen, knowledgeable growers from around the world will be on hand to share their expertise and passion.The National Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research. Integrated throughout the symposium, presentations by Wild Orchids of Southern Africa (WOSA) will highlight the ecology and conservation of indigenous orchids, illustrating how research undertaken in natural habitats continues to influence cultivation practices, breeding programmes and the long-term future of orchids.Visitors can further develop their knowledge through practical workshops, meet orchid societies from across the country, engage with researchers and conservationists, and discover how every aspect of the National Show reflects this year’s theme—from the protection of orchids in the wild to the pursuit of cultivated excellence.The 2027 National Show is made possible through the generous support of our headline sponsors, donors and partners, whose commitment to horticulture, conservation, education and scientific advancement enables the South African Orchid Council to present a truly world-class event.Whether your passion lies in conservation, scientific discovery, judging, growing or simply enjoying the extraordinary beauty of orchids, the 2027 South African National Orchid Show offers an unforgettable experience that celebrates the complete journey of orchids and the people dedicated to their future.TicketsPlan your visitExplore the showVisitTicketsPlan your visitWhat to expectProgrammeFAQTake partExhibitor entry guideExhibitors and VendorsWorkshopsConference registrationThe showAbout the showSymposiumWOSA ConferenceSouth African exhibitorsInternational guestsShow sponsorsPast shows"
+  },
+  "/national-show/workshops @768": {
+   "gap": 144,
+   "disclosure": [
+    19.2,
+    500.6,
+    729.6,
+    123.3
+   ],
+   "followerHeight": 41.7,
+   "hero": [
+    0,
+    96.9,
+    768,
+    286.6
+   ],
+   "text": "{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"National Show\",\"item\":\"https://saoc.co.za/national-show\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"Workshops\",\"item\":\"https://saoc.co.za/national-show/workshops\"}]}Workshops & Field TripsBook Sunset Cocktails and guided Field Trip outings at the National Show.ProgrammeWorkshopsSymposiumWOSA ConferenceConference registration※To be confirmed by the show committeeTo be confirmedPer-session bookings are not yet available for purchase.Programme23ThursdayAdmit oneThursday 23 SeptemberSunset Cocktails (Single)18h00 to 21h00200 of 200 places leftR2501Buy ticket10places a sessionAdmit oneSchedule to followWorkshops10 places in each sessionR100eachExplore the showVisitTicketsPlan your visitWhat to expectProgrammeFAQTake partExhibitor entry guideExhibitors and VendorsWorkshopsConference registrationThe showAbout the showSymposiumWOSA ConferenceSouth African exhibitorsInternational guestsShow sponsorsPast shows"
+  },
+  "/national-show @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     1097.9
+    ],
+    [
+     "section",
+     1194.8,
+     581.1
+    ],
+    [
+     "section",
+     1775.9,
+     868.8
+    ],
+    [
+     "section",
+     2644.7,
+     1328.7
+    ],
+    [
+     "section",
+     3973.4,
+     886.2
+    ],
+    [
+     "section",
+     4859.7,
+     237.3
+    ]
+   ],
+   "docHeight": 5959
+  },
+  "/national-show/tickets @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     1025.7
+    ],
+    [
+     "section",
+     1122.6,
+     921.5
+    ],
+    [
+     "section",
+     2044.2,
+     1291.1
+    ],
+    [
+     "section",
+     3335.3,
+     1250.4
+    ],
+    [
+     "section",
+     4585.6,
+     409.5
+    ],
+    [
+     "nav",
+     4995.1,
+     1348
+    ]
+   ],
+   "docHeight": 7205
+  },
+  "/national-show/plan-your-visit @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     894.3
+    ],
+    [
+     "nav",
+     991.3,
+     45
+    ],
+    [
+     "section",
+     1036.3,
+     1080.9
+    ],
+    [
+     "section",
+     2117.2,
+     546.9
+    ],
+    [
+     "section",
+     2664,
+     389.9
+    ],
+    [
+     "nav",
+     3054,
+     1348
+    ]
+   ],
+   "docHeight": 5264
+  },
+  "/national-show/exhibitors @768": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     382.6
+    ],
+    [
+     "nav",
+     479.6,
+     45
+    ],
+    [
+     "section",
+     524.6,
+     8922.7
+    ],
+    [
+     "nav",
+     9447.3,
+     1348
+    ]
+   ],
+   "docHeight": 11657
+  },
+  "/national-show/what-to-expect @1280": {
+   "gap": 230.4,
+   "disclosure": [
+    32,
+    881.3,
+    1216,
+    213.6
+   ],
+   "followerHeight": 1153.1,
+   "hero": [
+    0,
+    96.9,
+    1280,
+    409.6
+   ],
+   "text": "{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"National Show\",\"item\":\"https://saoc.co.za/national-show\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"What to expect\",\"item\":\"https://saoc.co.za/national-show/what-to-expect\"}]}What to expectAbout the showWhat to expectPlan your visitFAQShow datesThursday 23 to Sunday 26 September 2027※To be confirmed by the show committeeTo be confirmedOpening hours · admission · food and refreshments · photography · cloakroom and plant holding · accessibility.Be the first to knowThe 2027 South African National Orchid Show promises an immersive experience celebrating the beauty, science and future of orchids.HostWestern CapeVenueThe Hangar, Stellenbosch Flying ClubCycleTriennialExplore breathtaking displays showcasing thousands of flowering orchids, from rare species found in nature to award-winning cultivated hybrids that demonstrate decades of careful breeding and horticultural achievement. Watch South Africa’s leading judges evaluate exceptional plants as exhibitors compete for prestigious national awards that recognise excellence in orchid cultivation.Browse the extensive plant sales area, where specialist nurseries from across South Africa will be joined by selected international orchid vendors, offering an exceptional range of orchid species, hybrids, companion plants, growing media and specialist supplies. Whether you are purchasing your very first orchid or searching for a rare collector’s specimen, knowledgeable growers from around the world will be on hand to share their expertise and passion.The National Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research. Integrated throughout the symposium, presentations by Wild Orchids of Southern Africa (WOSA) will highlight the ecology and conservation of indigenous orchids, illustrating how research undertaken in natural habitats continues to influence cultivation practices, breeding programmes and the long-term future of orchids.Visitors can further develop their knowledge through practical workshops, meet orchid societies from across the country, engage with researchers and conservationists, and discover how every aspect of the National Show reflects this year’s theme—from the protection of orchids in the wild to the pursuit of cultivated excellence.The 2027 National Show is made possible through the generous support of our headline sponsors, donors and partners, whose commitment to horticulture, conservation, education and scientific advancement enables the South African Orchid Council to present a truly world-class event.Whether your passion lies in conservation, scientific discovery, judging, growing or simply enjoying the extraordinary beauty of orchids, the 2027 South African National Orchid Show offers an unforgettable experience that celebrates the complete journey of orchids and the people dedicated to their future.TicketsPlan your visitExplore the showVisitTicketsPlan your visitWhat to expectProgrammeFAQTake partExhibitor entry guideExhibitors and VendorsWorkshopsConference registrationThe showAbout the showSymposiumWOSA ConferenceSouth African exhibitorsInternational guestsShow sponsorsPast shows"
+  },
+  "/national-show/workshops @1280": {
+   "gap": 230.4,
+   "disclosure": [
+    32,
+    637.1,
+    1216,
+    123.3
+   ],
+   "followerHeight": 44.8,
+   "hero": [
+    0,
+    96.9,
+    1280,
+    380
+   ],
+   "text": "{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"National Show\",\"item\":\"https://saoc.co.za/national-show\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"Workshops\",\"item\":\"https://saoc.co.za/national-show/workshops\"}]}Workshops & Field TripsBook Sunset Cocktails and guided Field Trip outings at the National Show.ProgrammeWorkshopsSymposiumWOSA ConferenceConference registration※To be confirmed by the show committeeTo be confirmedPer-session bookings are not yet available for purchase.Programme23ThursdayAdmit oneThursday 23 SeptemberSunset Cocktails (Single)18h00 to 21h00200 of 200 places leftR2501Buy ticket10places a sessionAdmit oneSchedule to followWorkshops10 places in each sessionR100eachExplore the showVisitTicketsPlan your visitWhat to expectProgrammeFAQTake partExhibitor entry guideExhibitors and VendorsWorkshopsConference registrationThe showAbout the showSymposiumWOSA ConferenceSouth African exhibitorsInternational guestsShow sponsorsPast shows"
+  },
+  "/national-show @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     803
+    ],
+    [
+     "section",
+     899.9,
+     504.7
+    ],
+    [
+     "section",
+     1404.7,
+     964.7
+    ],
+    [
+     "section",
+     2369.4,
+     767.5
+    ],
+    [
+     "section",
+     3136.9,
+     818.6
+    ],
+    [
+     "section",
+     3955.5,
+     354.8
+    ]
+   ],
+   "docHeight": 4908
+  },
+  "/national-show/tickets @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     644.8
+    ],
+    [
+     "section",
+     741.7,
+     663.5
+    ],
+    [
+     "section",
+     1405.3,
+     966.2
+    ],
+    [
+     "section",
+     2371.5,
+     882.2
+    ],
+    [
+     "section",
+     3253.7,
+     440.6
+    ],
+    [
+     "nav",
+     3694.3,
+     669
+    ]
+   ],
+   "docHeight": 4961
+  },
+  "/national-show/plan-your-visit @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     409.6
+    ],
+    [
+     "nav",
+     506.5,
+     45
+    ],
+    [
+     "section",
+     551.5,
+     731
+    ],
+    [
+     "section",
+     1282.6,
+     596.3
+    ],
+    [
+     "section",
+     1878.9,
+     485.8
+    ],
+    [
+     "nav",
+     2364.7,
+     669
+    ]
+   ],
+   "docHeight": 3631
+  },
+  "/national-show/exhibitors @1280": {
+   "blocks": [
+    [
+     "script",
+     0,
+     0
+    ],
+    [
+     "section",
+     96.9,
+     380
+    ],
+    [
+     "nav",
+     476.9,
+     45
+    ],
+    [
+     "section",
+     521.9,
+     9041.4
+    ],
+    [
+     "nav",
+     9563.4,
+     669
+    ]
+   ],
+   "docHeight": 10830
+  }
+ }
+}

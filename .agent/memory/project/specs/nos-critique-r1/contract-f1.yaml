@@ -1,0 +1,60 @@
+schema: athanor.contract/v1
+slug: nos-critique-r1
+goal: >-
+  Close NOS critique round 1 items (b)#3, #9 and #12 in .tmp/sandbox/critique-r1 (branch
+  fix/nos-critique-r1, base 1e1f5732), inside the lead-cleared footprint only.
+  (1) /national-show/sponsors replaces the RealEmptyListing scaffold with a page-local G2
+  empty state (sourced heading, R11 chip plus one line, mailto next step).
+  (2) Prose on sponsors, symposium and wosa-conference is capped at 60ch by a page-local
+  `contents` wrapper scoped to .nos-show-page-prose, so grid cards keep their tracks.
+  (3) The presenters focus ring follows R9/3 per Codi's CORRECTED 2026-10-16 ruling: the
+  theme violet ring at 2px solid with a 2px offset (pale gold on dark). Only the dead
+  outline/3px-offset declaration in presenters.css is removed; there is no --ring-focus re-point.
+  Golden: goldens/critique-r1.golden.md and goldens/sponsors.page.golden.tsx.
+created_at: '2026-10-16'
+autonomy: high
+exclusions:
+  - item: 'F2-owned and uncleared files (components/nos/*, components/tickets/*, ShowContentState, RealEmptyListing.tsx, hub, archive, exhibitors, nos-theme.css, StatusMarker.tsx)'
+    reason: Off limits per the lead; enforced by A2 (footprint guard).
+  - item: 'R11 chip anatomy (G1 dashed 2px Karla)'
+    reason: Lives in StatusMarker.tsx, which is not cleared. Golden §6. nos-theme.css --ring-focus-on-light stays violet (R9/3, Codi 2026-10-16).
+  - item: 'Presenter bio measure 68ch (presenters.css:84) and hub measure 154ch'
+    reason: The 68ch stays (Codi 2026-10-16, the Brad-approved presenters handoff). The hub is F2's.
+features:
+  - id: F1
+    name: Sponsors G2 empty state, 60ch prose measure, presenters R9/3 focus (dead-code removal)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r1/goldens/critique-r1.golden.md
+  - .agent/memory/project/specs/nos-critique-r1/goldens/sponsors.page.golden.tsx
+  - .agent/memory/project/specs/nos-critique-r1/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: QA check scripts are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r1/goldens/checks.sha256
+    - id: A2
+      description: Footprint guard — only the lead-cleared paths differ from base 1e1f5732 (golden §1)
+      command: node .tmp/sandbox/critique-r1/contracts/checks/nos-critique-r1/check-footprint.mjs
+    - id: A3
+      description: Sponsors G2 is sourced and ordered; the scaffold is gone; the 60ch wrapper is scoped to .nos-show-page-prose (never [data-nos-content-state] or grid li) and the G2 line and wosa credit take max-w-[60ch] directly; no unsourced copy added (golden §2, §3)
+      command: node .tmp/sandbox/critique-r1/contracts/checks/nos-critique-r1/check-static.mjs
+    - id: A4
+      description: presenters.css line 58 loses only its dead outline/3px offset (border-radius kept); no --ring-focus re-point; nothing else changes (golden §4, amended)
+      command: node .tmp/sandbox/critique-r1/contracts/checks/nos-critique-r1/check-presenters-focus.mjs
+    - id: A5
+      description: The nos-presenter-cards style pins still hold, with the focus pin set to the corrected R9/3 ruling (no presenter outline, radius 4px, no --ring-focus)
+      command: node .tmp/sandbox/critique-r1/contracts/checks/nos-presenter-cards/check-styles.mjs
+    - id: A6
+      description: TypeScript compiles
+      command: pnpm --dir .tmp/sandbox/critique-r1 type-check
+    - id: A7
+      description: ESLint is clean with zero warnings on the changed pages and the checks
+      command: pnpm --dir .tmp/sandbox/critique-r1 exec eslint --max-warnings 0 "app/(marketing)/national-show/sponsors/page.tsx" "app/(marketing)/national-show/symposium/page.tsx" "app/(marketing)/national-show/wosa-conference/page.tsx" contracts/checks/nos-critique-r1 contracts/checks/nos-presenter-cards/check-styles.mjs
+    - id: A8
+      description: Production build passes (also the input for A9)
+      command: pnpm --dir .tmp/sandbox/critique-r1 build
+    - id: A9
+      description: Rendered critique round at 375/768/1280 (+360 overflow) on next start (port 3010-3019) — B3 prose <=60ch and lede <=58ch, C4 no overflow, SCOPE probe (an injected grid li fills its track, prose li <=60ch), G2 sponsors, D3 presenters ring theme violet rgb(126,63,151) at 2px/2px, pale gold inside .nos-on-dark (golden §5)
+      command: node .tmp/sandbox/critique-r1/contracts/checks/nos-critique-r1/check-rendered.mjs

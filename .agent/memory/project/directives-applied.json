@@ -5,6 +5,12 @@
       "harness_version": "3.7.152",
       "note": "channel verified: update-template applied, make directives lists the id, show prints the untrusted envelope",
       "result": "applied"
+    },
+    "ATH-20261020-session-titles": {
+      "at": "2026-10-20T15:14:56Z",
+      "harness_version": "3.8.41",
+      "note": "",
+      "result": "applied"
     }
   },
   "schema": "athanor.directives-applied/v1"

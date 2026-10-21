@@ -1,0 +1,40 @@
+schema: athanor.contract/v1
+slug: nos-critique-r3
+goal: >-
+  Close NOS ruling R44 A5 in nos-critique-r3: symposium 'Presenters (N)' jump link under the hero (count derived from data, nothing rendered when empty, scroll-margin-top clearing the 74/62px sticky header) and the presenter grid 2-up from 768px.
+created_at: '2026-10-16'
+autonomy: high
+exclusions:
+  - item: 'ShowContentState (incl. .nos-show-page-notice 15px), nos-theme.css and heading margins, NosSkipLink, vendors CTA, wosa-conference page, ticketing components, /workshops and /conferences ticket text, R34'
+    reason: Lead standing exclusions and holds; enforced by the footprint guard.
+features:
+  - id: F3
+    name: R44 A5 symposium jump link and 2-up grid from 768
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r3/goldens/spec.md
+  - .agent/memory/project/specs/nos-critique-r3/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: C1
+      description: 'All QA check scripts (F1-F4, incl. architect-updated pinned checks) are unmodified since @architect wrote them'
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r3/goldens/checks.sha256
+    - id: C2
+      description: 'Footprint guard (all four features, stacked tree) against 242f51fb'
+      command: node .tmp/sandbox/critique-r3/contracts/checks/nos-critique-r3/check-footprint.mjs --through=4
+    - id: C3
+      description: 'Static - presenterSectionId/PresenterJumpLink, derived count, null when empty, id on .pc-sec-top, symposium order, wosa untouched, docs record R44'
+      command: node .tmp/sandbox/critique-r3/contracts/checks/nos-critique-r3/check-static-f3.mjs
+    - id: C4b
+      description: 'presenters.css pins (R44 supersedes 1120 breakpoint, 768-1119 card geometry, scroll-margin-top 90px, .pc-jump-link); requires F1-F4 CSS landed'
+      command: node .tmp/sandbox/critique-r3/contracts/checks/nos-presenter-cards/check-styles.mjs
+    - id: C4
+      description: 'TypeScript compiles; ESLint clean with zero warnings on the touched files'
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r3 type-check && pnpm --dir .tmp/sandbox/critique-r3 exec eslint --max-warnings 0 components/nos/PresenterSection.tsx components/nos/PresenterGrid.tsx contracts/checks/nos-critique-r3'
+    - id: C5
+      description: 'Production build passes (input for the rendered check)'
+      command: pnpm --dir .tmp/sandbox/critique-r3 build
+    - id: C6
+      description: 'Rendered symposium: link text/count/target/order/44px/header clearance, 1/2/2 columns at 375/768/1280, no overflow, 768 name column >= 150px, no link on wosa-conference'
+      command: node .tmp/sandbox/critique-r3/contracts/checks/nos-critique-r3/check-rendered-f3.mjs

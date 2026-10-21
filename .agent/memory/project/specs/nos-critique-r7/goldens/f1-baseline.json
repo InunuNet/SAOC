@@ -1,0 +1,49 @@
+{
+  "recorded": "2026-10-17 from the built tree at bcf8684b (live Sanity), 390 and 1280 identical",
+  "planYourVisit": {
+    "preview": {
+      "badgeBlocks": [
+        "Parking",
+        "Public transport",
+        "Where to stay",
+        "In an emergency"
+      ],
+      "disclosures": 0
+    },
+    "public": {
+      "badgeBlocks": [
+        "Parking",
+        "Public transport",
+        "Where to stay",
+        "In an emergency"
+      ],
+      "disclosures": 0
+    },
+    "pendingLabel": "To be confirmed by the show committee",
+    "shortLabel": "To be confirmed",
+    "shortLabelNow": {
+      "tag": "SPAN",
+      "fontSize": "26px",
+      "fontWeight": "500",
+      "note": "the on-site first aid and show duty contact number, a Sanity value"
+    }
+  },
+  "whatToExpectMustNotChange": {
+    "preview": {
+      "badgeBlocks": [
+        "Opening hours",
+        "Admission",
+        "Food and refreshments",
+        "Photography",
+        "Cloakroom and plant holding",
+        "Accessibility"
+      ]
+    },
+    "public": {
+      "badgeBlocks": [
+        "Show dates"
+      ],
+      "disclosures": 1
+    }
+  }
+}

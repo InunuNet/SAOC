@@ -1,0 +1,53 @@
+schema: athanor.contract/v1
+slug: nos-critique-r4
+goal: >-
+  Close NOS ruling R44-A3 on /national-show/faq in .tmp/sandbox/critique-r4 (base 07e09ef3): add a wrapping
+  set of in-page jump chips, one per existing FAQ category that has questions, built from ShowFaqList's own
+  CATEGORY_ORDER / CATEGORY_LABELS, with scroll-margin on each heading. No filter field; per-answer TBC (R41) untouched.
+created_at: '2026-10-16'
+autonomy: high
+exclusions:
+  - item: 'Filter field over the questions'
+    reason: Ruled out by R44-A3 (adds a control that pays nothing back over 14 questions); enforced by A3 and A8.
+  - item: 'Per-answer To be confirmed chips'
+    reason: R41 is a data fix; the ConfirmationBadge element must stay byte-identical (A3).
+  - item: 'Hub, /national-show/tickets, vendors CTA, ShowContentState, nos-theme heading margins, NosSkipLink, Header, Footer, globals.css'
+    reason: Off limits per the lead; enforced by A2.
+features:
+  - id: F1
+    name: R44-A3 FAQ category jump chips (wrapping, labelled nav, 44px targets, theme focus ring, scroll-margin)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r4/goldens/spec.md
+  - .agent/memory/project/specs/nos-critique-r4/goldens/ShowFaqList.reference.tsx
+  - .agent/memory/project/specs/nos-critique-r4/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: QA check scripts (r4 checks plus the two existing r3 checks reused here) are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r4/goldens/checks.sha256
+    - id: A2
+      description: Footprint guard — only ShowFaqList.tsx, the faq route, docs/nos-critique-r4.md and the r4 checks differ from 07e09ef3
+      command: node .tmp/sandbox/critique-r4/contracts/checks/nos-critique-r4/check-footprint.mjs
+    - id: A3
+      description: Static source — labelled nav before the sections, chips from CATEGORY_ORDER/LABELS with no hard-coded list or href, stable ids, scroll-mt on h2, wrap and 44px and theme focus ring, no filter or client code, no new copy, badge untouched, docs present
+      command: node .tmp/sandbox/critique-r4/contracts/checks/nos-critique-r4/check-static.mjs
+    - id: A4
+      description: faq/page.tsx is unchanged from the base and keeps its page-local 60ch prose caps (scoped replacement for the r2 six-route check)
+      command: node .tmp/sandbox/critique-r4/contracts/checks/nos-critique-r4/check-faq-cap.mjs
+    - id: A5
+      description: Existing R43 class-edit pins (FAQ answers 17px) still pass statically
+      command: node .tmp/sandbox/critique-r4/contracts/checks/nos-critique-r3/check-static-f2.mjs
+    - id: A6
+      description: TypeScript compiles and ESLint is clean with zero warnings on the touched components and checks
+      command: sh -c 'pnpm --dir .tmp/sandbox/critique-r4 type-check && pnpm --dir .tmp/sandbox/critique-r4 exec eslint --max-warnings 0 components/show/ShowFaqList.tsx "app/(marketing)/national-show/faq/page.tsx" contracts/checks/nos-critique-r4'
+    - id: A7
+      description: Production build passes (input for A8 and A9)
+      command: pnpm --dir .tmp/sandbox/critique-r4 build
+    - id: A8
+      description: Rendered on next start 3010-3019 at 320, 375, 768 and 1280 — one chip per category section in source order, labelled nav after the hero, hrefs resolve to the h2s, <=2 rows, no overflow, targets >=44px, heading clears the sticky header after each click, theme focus ring, instant scroll, reduced motion, no-JS, no filter control
+      command: node .tmp/sandbox/critique-r4/contracts/checks/nos-critique-r4/check-rendered.mjs
+    - id: A9
+      description: Existing rendered R43 body-floor check (FAQ answers 17px, no overflow) still passes against the new build
+      command: node .tmp/sandbox/critique-r4/contracts/checks/nos-critique-r3/check-rendered-f2.mjs

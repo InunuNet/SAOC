@@ -1,0 +1,40 @@
+# Sources: lead task 2026-10-18 (sweep-26f: nine routes on the site default description), lib/seo.ts buildPageMetadata/fitDescription (F24), launch-weekend F24-A3 sweep and rules, each page's own rendered lede or Drive copy. No new copy.
+schema: athanor.contract/v1
+slug: nos-critique-r12
+goal: >-
+  In .tmp/sandbox/critique-r12, give /about, /judging, /events, /contact, /sponsors and every /tickets/<slug> a unique meta description taken from text the page
+  already renders, through buildPageMetadata only, leaving /societies at the default (no source); give every ticket page the NOS title template, recase three NOS
+  titles to their h1 (Codi R64), give the Symposium the word-boundary ellipsis cut of its own lede under one explicit F24-A3 exception, and leave
+  canonicals, heroes and SAOC titles unchanged.
+created_at: '2026-10-18'
+autonomy: high
+exclusions:
+  - item: 'every file outside the union of goldens/f1- to f4-footprint.json and docs/nos-critique-r12.md'
+    reason: 'Enforced by A2. lib/seo.ts and the F24 checks are reused, never edited; /societies has no sourced lede and stays at the default; R64 wording mismatches are reported in f4-spec.md (r13), not changed.'
+features:
+  - id: F4
+    name: Unique meta descriptions for five SAOC pages and the ticket pages, NOS ticket titles, R64 title casing
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r12/goldens/f4-spec.md
+  - .agent/memory/project/specs/nos-critique-r12/goldens/f4-footprint.json
+  - .agent/memory/project/specs/nos-critique-r12/goldens/f4-baseline.json
+  - .agent/memory/project/specs/nos-critique-r12/goldens/checks-f4.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f4 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r12/goldens/checks-f4.sha256
+    - id: A2
+      description: Footprint - the r12 branch differs from main 26fde668 only inside the f1-f4 allowlist and the docs file, HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r12/checks/f4-footprint.mjs
+    - id: A3
+      description: Static S1-S6 - buildPageMetadata with BASE titles and own paths, no string not already in the BASE page, /societies unchanged, ticket generateMetadata through buildPageMetadata after the notFound() branch with the absolute NOS title, docs record F4, three NOS pages recased to their h1 and nothing else, symposium changes only its description line to a literal ending in an ellipsis
+      command: node .agent/memory/project/specs/nos-critique-r12/checks/f4-static.mjs
+    - id: A5
+      description: F24-A1 self-test - the rules, including the single-route ellipsis exception and its two negative cases, agree with every golden case
+      command: node .tmp/sandbox/critique-r12/contracts/checks/launch-weekend/f24/check-a-rules-selftest.mjs
+    - id: A4
+      description: Rendered (public) - F24 D1-D4 on every swept route plus every ticket page (constants, live Sanity, hub links), no shared description, targets off the default with descriptions from their own main text (tickets - the standfirst), ticket titles h1 plus NOS suffix, NOS title heads equal their h1 bar reported wording mismatches, SAOC titles, canonicals and heroes equal 26fde668, the Symposium description equals the ellipsisCut of its rendered lede and F24 ELLIPSIS_EXCEPTIONS is that one route
+      command: node .agent/memory/project/specs/nos-critique-r12/checks/f4-rendered.mjs
