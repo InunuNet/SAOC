@@ -57,9 +57,6 @@ const NOS_THEME: ShellTheme = {
   muted: INK_MUTED,
 };
 
-// Admin notices (family C) keep the heavier heading weight; A and B match the PDF and the site.
-const ADMIN_THEME: ShellTheme = { ...NOS_THEME, headingWeight: 600 };
-
 const ThemeContext = createContext<ShellTheme>(NOS_THEME);
 
 const CONTAINER_WIDTH = 600;
@@ -222,7 +219,7 @@ function PlainFooter({ theme: t }: { theme: ShellTheme }) {
 }
 
 export default function EmailShell({ family, preview, children }: EmailShellProps) {
-  const t = family === 'C' ? ADMIN_THEME : NOS_THEME;
+  const t = NOS_THEME;
   const branded = family !== 'C';
 
   return (

@@ -60,7 +60,7 @@ const DEFAULT_PENDING_LABEL = 'To be confirmed';
 
 function VisitDetails({ visit }: { visit: OrderConfirmationVisit | null | undefined }) {
   const pill = <ShellPill>{visit?.pendingLabel ?? DEFAULT_PENDING_LABEL}</ShellPill>;
-  const times = visit?.openingTimes?.filter((entry) => entry.value) ?? [];
+  const times = visit?.openingTimes ?? [];
 
   return (
     <>
@@ -82,7 +82,7 @@ function VisitDetails({ visit }: { visit: OrderConfirmationVisit | null | undefi
           ? times.map((entry) => (
               <div key={entry.label}>
                 {entry.label ? `${entry.label}: ` : ''}
-                {entry.value}
+                {entry.value ?? pill}
               </div>
             ))
           : pill}
