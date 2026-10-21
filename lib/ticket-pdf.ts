@@ -116,11 +116,14 @@ const QR_MODULE_AREA_MM = 55;
 const QR_TOP = 58.4;
 const INSTRUCTION_GAP = 8;
 const VISIT_OFFSET = 14;
+const TIMES_VALUE_WIDTH = 41; // from the value column to the show-dates column gutter
 const VISIT_HEADING_Y = 155.5 + VISIT_OFFSET;
 const BAND_TRACKING = 0.14;
 const REF_TRACKING = 0.08;
 const MIN_SMALL_CAPS_SIZE = 7; // smallest caps/pill text printed
 const PILL_HEIGHT = 4.4;
+const PILL_LINE_PITCH = 3;
+const ROW_PITCH = 7;
 const PILL_PAD_X = 2.4;
 const FOOTNOTE_SIZE = 9;
 const FOOTNOTE_Y = 256;
@@ -291,27 +294,55 @@ function drawWrapped(
   return at.y + Math.max(lines.length - 1, 0) * at.lineHeight;
 }
 
-/** Outlined "To be confirmed" pill (the single unknown-value marker). `top` is the pill's top edge. */
-function drawPill(ctx: Ctx, x: number, top: number): number {
+/** Wraps a tracked caps label into lines no wider than `maxMm`; a word is never split or cut. */
+function wrapPillLabel(ctx: Ctx, label: string, maxMm: number): string[] {
+  const widthMm = (text: string) =>
+    textWidthPt(text, ctx.fonts.bold, MIN_SMALL_CAPS_SIZE, BAND_TRACKING) / PT_PER_MM;
+  const lines: string[] = [];
+  let line = '';
+  for (const word of label.split(/\s+/).filter(Boolean)) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (line && widthMm(candidate) > maxMm) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+/**
+ * Outlined "To be confirmed" pill (the single unknown-value marker). `top` is the pill's top edge.
+ * A long label wraps to extra lines inside the outline instead of overflowing `maxWidth` (mm);
+ * the wording is never shortened. Returns the pill's height in mm.
+ */
+function drawPill(ctx: Ctx, x: number, top: number, maxWidth: number): number {
   const label = ctx.pendingLabel.toUpperCase();
-  const size = MIN_SMALL_CAPS_SIZE;
-  const textMm = textWidthPt(label, ctx.fonts.bold, size, BAND_TRACKING) / PT_PER_MM;
-  const width = textMm + PILL_PAD_X * 2;
-  ctx.page.drawSvgPath(roundedPath(x, top, width, PILL_HEIGHT, Array(4).fill(PILL_HEIGHT / 2)), {
+  const lines = wrapPillLabel(ctx, label, maxWidth - PILL_PAD_X * 2);
+  const height = PILL_HEIGHT + (lines.length - 1) * PILL_LINE_PITCH;
+  const textWidth = Math.max(
+    ...lines.map((line) => textWidthPt(line, ctx.fonts.bold, MIN_SMALL_CAPS_SIZE, BAND_TRACKING) / PT_PER_MM)
+  );
+  const radius = Math.min(height / 2, PILL_HEIGHT / 2 + (lines.length - 1) * 0.8);
+  ctx.page.drawSvgPath(roundedPath(x, top, textWidth + PILL_PAD_X * 2, height, Array(4).fill(radius)), {
     x: 0,
     y: PAGE_HEIGHT,
     borderColor: ROYAL,
     borderWidth: 0.5,
   });
-  drawText(ctx, label, {
-    x: x + PILL_PAD_X,
-    y: top + PILL_HEIGHT / 2 + 0.85,
-    font: ctx.fonts.bold,
-    size,
-    color: ROYAL,
-    tracking: BAND_TRACKING,
-  });
-  return width;
+  lines.forEach((line, i) =>
+    drawText(ctx, line, {
+      x: x + PILL_PAD_X,
+      y: top + PILL_HEIGHT / 2 + 0.85 + i * PILL_LINE_PITCH,
+      font: ctx.fonts.bold,
+      size: MIN_SMALL_CAPS_SIZE,
+      color: ROYAL,
+      tracking: BAND_TRACKING,
+    })
+  );
+  return height;
 }
 
 function caps(ctx: Ctx, text: string, x: number, y: number, color: Color, size = 7.5): void {
@@ -388,7 +419,7 @@ function drawSchedule(ctx: Ctx, schedule: TicketPdfSchedule | null | undefined, 
         maxWidth: room,
       });
     } else {
-      drawPill(ctx, textX, 88.6);
+      drawPill(ctx, textX, 88.6, PERFORATION_X - 6 - textX);
     }
     return;
   }
@@ -406,7 +437,7 @@ function drawSchedule(ctx: Ctx, schedule: TicketPdfSchedule | null | undefined, 
     }
     return;
   }
-  drawPill(ctx, x, 79);
+  drawPill(ctx, x, 79, 100 - x);
 }
 
 function drawStub(ctx: Ctx, position: TicketPdfPosition): void {
@@ -506,8 +537,7 @@ function heading(ctx: Ctx, text: string, x: number, y: number): void {
 
 function rowOrPill(ctx: Ctx, value: string | null, x: number, y: number, maxWidth: number): number {
   if (!value) {
-    drawPill(ctx, x, y - 3.2);
-    return y + PILL_HEIGHT;
+    return y - 3.2 + drawPill(ctx, x, y - 3.2, maxWidth) + 1.4;
   }
   return drawWrapped(ctx, value, { x, y, maxWidth, maxLines: 3, lineHeight: 4.6 }, 9) + 5;
 }
@@ -518,7 +548,7 @@ function drawVenueColumn(ctx: Ctx, visit: TicketPdfVisit): void {
   if (visit.venueName) {
     drawText(ctx, visit.venueName, { x, y: 163 + VISIT_OFFSET, font: ctx.fonts.bold, size: 9, color: ROYAL, maxWidth: 62 });
   } else {
-    drawPill(ctx, x, 159.8 + VISIT_OFFSET);
+    drawPill(ctx, x, 159.8 + VISIT_OFFSET, 62);
   }
   const y = rowOrPill(ctx, visit.venueAddress, x, 168 + VISIT_OFFSET, 62);
   caps(ctx, 'Parking and entrance', x, y + 1, MUTED, MIN_SMALL_CAPS_SIZE);
@@ -533,15 +563,17 @@ function drawTimesColumn(ctx: Ctx, position: TicketPdfPosition, visit: TicketPdf
     rowOrPill(ctx, null, x, 164 + VISIT_OFFSET, 56);
     return;
   }
-  times.slice(0, 5).forEach((time, i) => {
-    const y = 164 + VISIT_OFFSET + i * 7;
+  let y = 164 + VISIT_OFFSET;
+  for (const time of times.slice(0, 5)) {
     drawText(ctx, time.label, { x, y, font: ctx.fonts.bold, size: 9, color: ROYAL });
     if (time.value) {
       drawText(ctx, time.value, { x: x + 16, y, font: ctx.fonts.body, size: 9, color: INK, maxWidth: 40 });
+      y += ROW_PITCH;
     } else {
-      drawPill(ctx, x + 16, y - 3.2);
+      const height = drawPill(ctx, x + 16, y - 3.2, TIMES_VALUE_WIDTH);
+      y += Math.max(ROW_PITCH, height + 2.6);
     }
-  });
+  }
 }
 
 function drawDatesColumn(ctx: Ctx, visit: TicketPdfVisit): void {
@@ -576,7 +608,7 @@ function drawEmergencyFootnote(ctx: Ctx, visit: TicketPdfVisit): void {
       MUTED
     );
   } else {
-    drawPill(ctx, MARGIN_X + prefixWidth + 2, FOOTNOTE_Y - 3.2);
+    drawPill(ctx, MARGIN_X + prefixWidth + 2, FOOTNOTE_Y - 3.2, CONTENT_WIDTH - prefixWidth - 2);
   }
   const onSite = 'On-site first aid and show duty contact';
   const onSiteWidth = drawText(ctx, onSite, {
@@ -595,7 +627,7 @@ function drawEmergencyFootnote(ctx: Ctx, visit: TicketPdfVisit): void {
       color: MUTED,
     });
   } else {
-    drawPill(ctx, MARGIN_X + onSiteWidth + 2, FOOTNOTE_Y + FOOTNOTE_LINE_PITCH - 3.2);
+    drawPill(ctx, MARGIN_X + onSiteWidth + 2, FOOTNOTE_Y + FOOTNOTE_LINE_PITCH - 3.2, CONTENT_WIDTH - onSiteWidth - 2);
   }
 }
 
@@ -628,7 +660,7 @@ function drawFooter(
   if (visit.showOffice) {
     text(visit.showOffice, x + lead + 1.5, y3);
   } else {
-    drawPill(ctx, x + lead + 2, y3 - 3.2);
+    drawPill(ctx, x + lead + 2, y3 - 3.2, RIGHT_X - x - lead - 2);
   }
   text(
     `Questions: ${visit.questionsEmail ?? pendingLabel} · Quote your booking reference.`,
