@@ -1,4 +1,5 @@
 import type { OrderConfirmationVisit } from '@/emails/OrderConfirmation';
+import { logFailureSafely } from '@/lib/safe-log';
 import { formatShowDateRange, formatVenueAddress } from '@/lib/show-identity';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowVenueQuery, showVisitorInfoQuery } from '@/sanity/queries';
@@ -63,9 +64,7 @@ export async function loadOrderVisit(): Promise<OrderConfirmationVisit> {
     ]);
     return buildOrderVisit(show, info);
   } catch (error) {
-    console.error('[order-confirmation] visit info load failed — rendering with pills', {
-      errorType: error instanceof Error ? error.name : typeof error,
-    });
+    logFailureSafely('[order-confirmation] visit info load failed — rendering with pills', error);
     return EMPTY_ORDER_VISIT;
   }
 }

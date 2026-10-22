@@ -15,6 +15,7 @@ import OrderConfirmation, {
   type OrderConfirmationVisit,
 } from '@/emails/OrderConfirmation';
 import { loadOrderVisit } from '@/lib/order-visit-info';
+import { logFailureSafely } from '@/lib/safe-log';
 import type { TicketType } from '@/types/index';
 
 /**
@@ -117,10 +118,10 @@ async function buildPdfAttachment(
       contentType: 'application/pdf',
     };
   } catch (error) {
-    console.error('[confirmation-email] ticket PDF generation failed; sending without attachment', {
-      errorType: error instanceof Error ? error.name : typeof error,
-      errorMessage: error instanceof Error ? error.message : String(error),
-    });
+    logFailureSafely(
+      '[confirmation-email] ticket PDF generation failed; sending without attachment',
+      error
+    );
     return null;
   }
 }
