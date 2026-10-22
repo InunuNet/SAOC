@@ -1,0 +1,82 @@
+diff --git a/app/(marketing)/national-show/faq/page.tsx b/app/(marketing)/national-show/faq/page.tsx
+index 23457b25..3dfca919 100644
+--- a/app/(marketing)/national-show/faq/page.tsx
++++ b/app/(marketing)/national-show/faq/page.tsx
+@@ -54,14 +54,6 @@ export default async function ShowFaqPage() {
+ 
+   // R77 #2: a public build shows only answered questions; with none left the page holds.
+   const hideUnanswered = withholdPlaceholderProse();
+-  // ONE derived list: what the page shows, in the order it shows it (ShowFaqList lays its
+-  // sections out by category, and keeps this order within each). The list and the FAQPage node
+-  // both come from it, so a future hide rule applies to both.
+-  const visibleFaqs = [...(faqs ?? [])]
+-    .filter((faq) => faq?.question && (!hideUnanswered || hasFaqAnswer(faq)))
+-    .sort((a, b) => categoryRank(a) - categoryRank(b));
+-  const holds = hideUnanswered && visibleFaqs.length === 0;
+-
+   // r57: two rows are answered from facts the site already publishes, so they cannot disagree with
+   // the page that publishes them. The cost row reads the tickets hub's own loader and labels; the
+   // venue row reads the show's venue.name (the fact strip's source), only while the committee has
+@@ -89,6 +81,23 @@ export default async function ShowFaqPage() {
+     };
+   }
+ 
++  // ONE derived list: what the page shows, in the order it shows it (ShowFaqList lays its
++  // sections out by category, and keeps this order within each). The list and the FAQPage node
++  // both come from it, so a future hide rule applies to both.
++  // r57b: a public build shows a row only when its answer has a source: the row is wired (read from
++  // a published fact) or the committee has confirmed it (its Sanity status). A section left with no
++  // row is not drawn by ShowFaqList. A preview build keeps every row.
++  const sortedFaqs = [...(faqs ?? [])]
++    .filter((faq) => faq?.question)
++    .sort((a, b) => categoryRank(a) - categoryRank(b));
++  const isSourced = (faq: ShowFaq) =>
++    Boolean(wired[faq._id]) || (faq.status === 'confirmed' && hasFaqAnswer(faq));
++  const visibleFaqs = sortedFaqs.filter(
++    (faq) => !hideUnanswered || (hasFaqAnswer(faq) && isSourced(faq))
++  );
++  const withheldCount = sortedFaqs.length - visibleFaqs.length;
++  const holds = hideUnanswered && visibleFaqs.length === 0;
++
+   // SEO: the entries the page presents as settled. A public build (`hideUnanswered`) renders no
+   // badges, so every answered entry there reads as settled; a beta build badges everything that
+   // is not 'confirmed'.
+@@ -115,14 +124,14 @@ export default async function ShowFaqPage() {
+         <HoldingState facts={facts} contentState="published" />
+       ) : (
+         <NosSection wrapClassName="[&_details_p]:max-w-[60ch]">
+-          {hideUnanswered ? null : (
++          {!hideUnanswered || withheldCount > 0 ? (
+             <ShowStatusLine
+               kind="confirmation"
+               status="pending"
+               pendingLabel={info?.pendingLabel}
+               researchLabel={info?.researchLabel}
+             />
+-          )}
++          ) : null}
+           <ShowFaqList
+             faqs={visibleFaqs}
+             pendingLabel={info?.pendingLabel}
+diff --git a/docs/nos-faq-public-r57b.md b/docs/nos-faq-public-r57b.md
+new file mode 100644
+index 00000000..07dae1c1
+--- /dev/null
++++ b/docs/nos-faq-public-r57b.md
+@@ -0,0 +1,16 @@
++# nos-faq-public-r57b - public FAQ shows sourced rows only
++
++Round r57b (stacked on r57). Codi's ruling on owner question O4: a public build hides every FAQ row without a sourced answer, and any section left empty.
++
++## The sourced-row rule
++A row is sourced when it is **wired** (r57: answered from a published fact, keyed by showFaq `_id`) or its Sanity `status` is `confirmed`. Both are read from data; no row is named in the rule. Preview keeps every row.
++Evidence (Sanity read only, published perspective, 2026-10-22): of 14 rows, `showFaq-general-3` "When is the show?" is `confirmed`; the cost and venue rows are `pending` in Sanity but wired. The other 11 are `pending`.
++
++## Page-level notice
++One ShowStatusLine (the R11 marker, the Sanity `pendingLabel`), drawn once before the list when at least one row is withheld. No new copy.
++
++## JSON-LD
++The FAQPage node is built from the shown rows, so it lists only the sourced rows.
++
++## Owner flags
++Rows return to the public page as the committee confirms them in Sanity (status `confirmed`); nothing here writes Sanity.
