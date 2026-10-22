@@ -2,9 +2,9 @@
 // receives the two capability booleans as props from a server layout that resolved them with
 // hasCapability(); nothing here makes an authorisation decision.
 //
-// Newsletter is `available: false` until the newsletter branch lands. Flip that one flag (and
-// wire the subscriber count in lib/admin-dashboard.ts) and both the nav row and the dashboard
-// card appear — no filesystem probing, nothing hidden by accident.
+// Newsletter is `available: true` (mission footer-newsletter-subscribe): the one flag drives both
+// the nav row and the dashboard card, with the subscriber count in lib/admin-dashboard.ts — no
+// filesystem probing, nothing hidden by accident.
 
 export type AdminNavIcon =
   | 'dashboard'
@@ -73,7 +73,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       {
         id: 'newsletter',
         label: 'Newsletter',
-        available: false,
+        available: true,
         href: '/admin/newsletter',
         icon: 'newsletter',
       },

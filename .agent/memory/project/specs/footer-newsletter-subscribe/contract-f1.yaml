@@ -12,6 +12,9 @@ enforcement_edits:
 # files) is implemented ONLY after NOS Site's r20 (fix/nos-critique-r20: F1 sign-up a11y, F3 grid) has merged, rebased on top of it.
 # Do not edit components/chrome/Footer.tsx or components/nos-chrome/NosFooter.tsx before then.
 # PENDING COMMITTEE COPY: the success line "You're subscribed." and the unsubscribe-done line are placeholders (goldens/copy.md).
+# A22/A23 are POST-DEPLOY gates: their manifests (.agent/memory/scratch/footer-newsletter-*-manifest.json) are written by the BrowserAgent
+# run against beta at the deployed commit, so they cannot exist before deploy and are not faked. A22 errors until that run; A23 is
+# not applicable (no email sent) and is declared only for the triad linter.
 # FOLLOW-UP (owner): welcome/confirmation email is out of scope; needs SAOC-voice copy and a sender identity.
 
 features:
@@ -55,7 +58,7 @@ assertions:
       command: grep -Eq "noindex" "app/(marketing)/newsletter/unsubscribe/page.tsx" && grep -q "no-referrer" "app/(marketing)/newsletter/unsubscribe/page.tsx"
     - id: A9
       description: Admin subscriber list page and layout gate exist, layout redirects when session not ok
-      command: test -f app/admin/newsletter/page.tsx && grep -q "getAdminSession" app/admin/newsletter/layout.tsx && grep -q "redirect" app/admin/newsletter/layout.tsx
+      command: test -f "app/admin/(shell)/newsletter/page.tsx" && grep -q "getAdminSession" "app/admin/(shell)/newsletter/layout.tsx" && grep -q "redirect" "app/admin/(shell)/newsletter/layout.tsx"
     - id: A10
       description: No client-side Firestore rules open the collection (Admin SDK only)
       command: bash .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-wiring.sh no-client-rules
@@ -90,7 +93,7 @@ assertions:
       description: No dead preventDefault submit handler remains in either footer
       command: bash .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-wiring.sh no-preventdefault-submit
     - id: A24
-      description: Footer wiring is rebased on top of r20 (no unmerged origin/fix/nos-critique-r20)
+      description: r20 (PR 23, squash-merged as 1a7479f1) is present on HEAD and both footers carry its FOOTER_RHYTHM markers, not an ancestry check on the deleted branch
       command: bash .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-wiring.sh r20-merged
     - id: A25
       description: Client IP helper takes the second-to-last X-Forwarded-For entry (sole entry when 1), never first or last, null when empty
@@ -101,6 +104,9 @@ assertions:
     - id: A27
       description: Subscribe response-time floor is at least 1000 ms and the residual timing risk is documented
       command: bash .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-wiring.sh timing-floor
+    - id: A28
+      description: Attempt store stays bounded under a key flood (pruning caps, decideRateLimit unchanged)
+      command: npx tsx .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-rate-store.mjs
     - id: A21
       description: Codex adversarial review of the whole diff
       type: codex_qa

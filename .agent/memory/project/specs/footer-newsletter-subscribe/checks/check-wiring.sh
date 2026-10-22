@@ -3,9 +3,10 @@
 set -u
 case "${1:-}" in
   r20-merged)
-    # Footer wiring only after r20 lands: fail while an unmerged r20 branch is still on the remote.
-    git rev-parse --verify -q origin/fix/nos-critique-r20 >/dev/null || exit 0
-    git merge-base --is-ancestor origin/fix/nos-critique-r20 HEAD ;;
+    # r20 (PR 23) was squash-merged, so branch ancestry is meaningless. Its squash commit must be on HEAD
+    # and both footers must carry the FOOTER_RHYTHM markers r20 introduced.
+    git merge-base --is-ancestor 1a7479f1a4ab01d4a4b10e619e8efc7404e153df HEAD || { echo "r20 squash commit not on HEAD"; exit 1; }
+    grep -q "FOOTER_RHYTHM" components/chrome/Footer.tsx && grep -q "FOOTER_RHYTHM" components/nos-chrome/NosFooter.tsx ;;
   route-uses-handler)
     for f in app/api/newsletter/subscribe/route.ts app/api/newsletter/unsubscribe/route.ts app/api/admin/newsletter/export-csv/route.ts; do
       test -f "$f" && grep -q "newsletter-handler" "$f" || { echo "missing/unwired: $f"; exit 1; }
