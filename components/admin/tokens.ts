@@ -10,6 +10,11 @@ export const STAT_TILE_CLASS = 'bg-bone text-primary';
 export const FOCUS_RING =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-800';
 
+// Codi ruling: controls sitting on a dark surface draw the ring inset in accent-soft, so it stays on
+// that surface (about 7:1) instead of landing on the page behind it (1.4.11).
+export const FOCUS_RING_ON_DARK =
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-accent-soft';
+
 export const BUTTON_BASE =
   'inline-flex min-h-[44px] touch-manipulation items-center justify-center gap-2 rounded-[2px] px-4 font-sans text-[14px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 export const BUTTON_PRIMARY = `${BUTTON_BASE} bg-primary text-ivory hover:bg-primary-800 ${FOCUS_RING}`;

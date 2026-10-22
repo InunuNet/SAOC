@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 
 import { studioEditHref } from '@/lib/studio-links';
-import { ADMIN_PILL_DOT_CLASS } from './tokens';
+import { ADMIN_PILL_DOT_CLASS, FOCUS_RING_ON_DARK } from './tokens';
 import { signOutAdmin } from './useAdminSignOut';
 
 // Floating admin shortcut on public pages, for signed-in admins only. Fixed bottom-right and
@@ -20,7 +20,7 @@ const NOT_ADMIN_CACHE_MS = 10 * 60 * 1000;
 const PILL_SURFACE =
   'bg-primary-800/92 text-ivory backdrop-blur-sm shadow-sheet print:hidden';
 const ITEM_CLASS =
-  'flex min-h-[44px] items-center px-3 font-sans text-[14px] font-medium text-ivory hover:text-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft';
+  `flex min-h-[44px] items-center px-3 font-sans text-[14px] font-medium text-ivory hover:text-accent-soft ${FOCUS_RING_ON_DARK}`;
 
 function readNotAdminCache(): boolean {
   try {
@@ -136,7 +136,7 @@ export function AdminPill() {
           type="button"
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((open) => !open)}
-          className={`flex h-11 items-center gap-2 rounded-full px-4 font-mono text-[11px] uppercase tracking-[0.12em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft ${PILL_SURFACE}`}
+          className={`flex h-11 items-center gap-2 rounded-full px-4 font-mono text-[11px] uppercase tracking-[0.12em] ${FOCUS_RING_ON_DARK} ${PILL_SURFACE}`}
         >
           <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${ADMIN_PILL_DOT_CLASS}`} />
           Admin
