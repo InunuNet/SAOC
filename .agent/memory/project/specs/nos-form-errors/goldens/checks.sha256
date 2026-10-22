@@ -3,9 +3,9 @@
 16ef22b77816752d8c838f3637db36fee021004e738eaa757248a713647201d0  .agent/memory/project/specs/nos-form-errors/checks/_edits.mjs
 05f97f4947deff7565ec45292f7bb109a7a07eab4a1ce52a7252172f1de75439  .agent/memory/project/specs/nos-form-errors/checks/footprint.mjs
 8282409bddcb188ec7625a876662a5e56ad36b71064f507605ac63a3932a9979  .agent/memory/project/specs/nos-form-errors/checks/static.mjs
-12dda3e822502062f2d086aaf7e8d9405333675319119f158fb8925e814d1593  .agent/memory/project/specs/nos-form-errors/checks/rendered.mjs
-31ac030167694c27107461cf294cc6344ae2a316b9c03e90c3db1fc60a87a634  .agent/memory/project/specs/nos-form-errors/goldens/edits.json
+be3a56d92625420d54856a741d3152525e0fcf449a01ba2013289e31d5c7e6b1  .agent/memory/project/specs/nos-form-errors/checks/rendered.mjs
+6b4dbc3c8b0c5c6886967bdeab6cbce1a30943dd0322b6a857d70e64bdb332c9  .agent/memory/project/specs/nos-form-errors/goldens/edits.json
 f0a70a7c815342a5ae07459a223a5fa6f7f984d3ebe63e46e81b454e3a969974  .agent/memory/project/specs/nos-form-errors/goldens/footprint.json
-e6ee13738d6ea50b2bd03d91cede09efdfce2118c0ce33d7d7c0b53ee05fab6a  .agent/memory/project/specs/nos-form-errors/goldens/spec.md
+556f80b2a5b089d2574be1fb8cdf3dea0e7dad343ec7ae9ad1573ab8b8fa06c8  .agent/memory/project/specs/nos-form-errors/goldens/spec.md
 3a274dda231ee6c81d6f563371462f30cefa2da359f06f7293745885cdfc07ba  .agent/memory/project/specs/nos-form-errors/contract-f1.yaml
 deda973aa8bad59b41e19922821e8c17d76abe47211d473ade9f0854449e63c7  e2e/contact-form-mocked.spec.ts

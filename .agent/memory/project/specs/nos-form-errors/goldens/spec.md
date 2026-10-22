@@ -23,6 +23,16 @@ Rulings (design lead Codi, verbatim):
 
 Exact source: `design/design_handoff_saoc/src/pages-show-events-contact.jsx:476` (`'Required'`) and `:477` (`'Enter a valid email'`; its regex `/^[^@\s]+@[^@\s]+\.[^@\s]+$/` is equivalent to the API's, either is accepted). Wherever the text below says `All fields are required.` or `Invalid email address.` for client validation, read `Required` and `Enter a valid email`. The API strings appear nowhere in the forms' source (static S4 fails them); they only reach the user at runtime as `data.error` in the form-level alert after a non-OK reply.
 
+## Amendment 2 (design lead Codi, alert visual; team-lead, Codex FAIL on clear-on-edit)
+
+Codi, verbatim: "On SAOC the alert renders as a grey filled band, about 48px tall and full field width, so each error box is as heavy as the field it belongs to. With four empty fields the form becomes a stack of grey bars (impeccable 4.4.0 critique.md: visual weight matches importance). My ruling was the left rule and text only, with no box. Remove the background, so the alert is transparent with the 2px left rule, the ⚠ and the text. Set its top margin to 4-6px under the field so it reads as belonging to it, and give it about 16px below before the next label. It's probably inheriting a SAOC alert background class; override that in the shared component so NOS and SAOC render the same."
+
+Where the grey comes from (measured): `bg-bone` in `ALERT_CLASS` (TicketFormField.tsx, r45 F3). `--bone` is #e8e6dc on SAOC (app/globals.css:15) but the NOS theme remaps it to the card gold #f3f2d6, so on NOS the same fill is invisible. Together with `py-3` (12px each side) the box is about 44-48px.
+Fix, in the shared class only (edits.json `alertClass` and the fourth `ticketFormField` substitution): `bg-bone` becomes `bg-transparent` and `py-3` becomes `py-0`, so the 2px rule hugs the text; nothing else about the class changes. NOS and SAOC then render the same because they are the same class (rendered check compares the computed styles). No CSS file is needed; the footprint is unchanged.
+Geometry the rendered check measures (edits.json `geometry`): the previous sibling of the alert (input, hint or day options) to the alert top 4-6px (today `space-y-1.5` and `mt-1.5` give 6px); the alert bottom to the top of the next field's block 14-20px. NOTE for Codi: the form's `space-y-5` already puts 20px there (the label's text box, an inline element, sits about 7px lower, 27px). "About 16px" is accepted as 14-20 measured to the block, rather than forcing a negative margin that would crowd the next field closer than field-to-field spacing; if exactly 16 is wanted that is a separate decision.
+
+Codex FAIL, as relayed: the field onChange handlers never clear that field's fieldErrors entry, so a corrected field stays aria-invalid with its alert and describedby until the next submit (ContactForm.tsx:124,148,171,197; SuggestionForm.tsx:130,154,180). Required: typing a valid value into a field removes that field's aria-invalid, its alert and its error id in aria-describedby; the other fields stay invalid; the message keeps its hint id. (Rendered check E.)
+
 ## Decision: how the SAOC forms reuse the alert
 
 Import `TicketFieldAlert` from `@/components/tickets/TicketFormField` in both forms. The class stays defined once, in TicketFormField

@@ -12,6 +12,10 @@
 //   C  email fixed: exactly one request with the golden body (the honeypot never sent), "Thank you" shown.
 //   D  fresh load, all valid, mock replies 500 {error}: one request, one role="alert" (the form-level one, id cf-form-error / msf-form-error,
 //      shared class, existing string), no field aria-invalid="true"; axe clean.
+//   E  (amendment 2) fresh load, empty submit, then a valid value typed into each field in turn: that field loses aria-invalid, its alert and
+//      its describedby error id (the message keeps its hint id); the others stay invalid with their alerts.
+//   Geometry (amendment 2, Codi): the alert has no fill (transparent), at most 2px vertical padding, 4-6px between the field and its alert and
+//      14-20px (about 16) from the alert to the next field's block; the same computed styles as the NOS ticket alert (hub, Buy with no day).
 //   Element screenshots: <checkout>/.tmp/fe-shots/<form>-<width>-<empty|email>.png.
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
@@ -29,28 +33,42 @@ const SHOTS = path.join(repoRoot, '.tmp', 'fe-shots');
 mkdirSync(SHOTS, { recursive: true });
 const failures = [];
 let runs = 0;
+const sigs = {}; // width -> { form key or 'nos' -> computed alert signature }
+const sigOf = (a) => JSON.stringify([a.rawBg, a.color, a.left, a.others, a.padding, a.fontSize, a.display, a.columnGap, a.className.replace(/^mt-1\.5 /, '')]);
 
 const rgb = (s) => (s.match(/[\d.]+/g) ?? []).map(Number);
 const lum = (s) => { const c = rgb(s).slice(0, 3).map((x) => x / 255).map((x) => (x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
 const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 const expectedText = (kind) => G.strings[kind].text;
 
+// Computed facts about one role="alert" element, run inside the page (installed on every context as window.__feAlert so the SAOC forms
+// and the NOS ticket alert are measured by the very same code).
+function alertInfoFn(a) {
+  const visible = (el) => { if (!el) return false; const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none'; };
+  const surface = (el) => { for (let n = el; n; n = n.parentElement) { const bg = getComputedStyle(n).backgroundColor; const m = bg.match(/[\d.]+/g); if (m && (m.length < 4 || Number(m[3]) > 0)) return bg; } return 'rgb(255, 255, 255)'; };
+  const cs = getComputedStyle(a);
+  const icon = a.firstElementChild;
+  const r = a.getBoundingClientRect();
+  const prev = a.previousElementSibling;
+  const next = a.parentElement ? a.parentElement.nextElementSibling : null; // the next field's block (its label is inline, so its text box sits a few px lower)
+  return {
+    id: a.id, tag: a.tagName, className: a.getAttribute('class') ?? '', color: cs.color, left: [cs.borderLeftWidth, cs.borderLeftStyle, cs.borderLeftColor],
+    others: [cs.borderTopWidth, cs.borderRightWidth, cs.borderBottomWidth], outline: [cs.outlineStyle, cs.outlineWidth], bg: surface(a), around: surface(a.parentElement),
+    rawBg: cs.backgroundColor, padding: [cs.paddingTop, cs.paddingRight, cs.paddingBottom, cs.paddingLeft], fontSize: cs.fontSize, display: cs.display, columnGap: cs.columnGap,
+    gapAbove: prev && visible(prev) ? r.top - prev.getBoundingClientRect().bottom : null,
+    gapBelow: next && visible(next) ? next.getBoundingClientRect().top - r.bottom : null,
+    icon: icon ? { tag: icon.tagName, hidden: icon.getAttribute('aria-hidden'), color: getComputedStyle(icon).color } : null,
+    text: [...a.childNodes].filter((n) => !(n.nodeType === 1 && n.getAttribute('aria-hidden') === 'true')).map((n) => n.textContent).join('').trim(),
+    visible: visible(a),
+  };
+}
+const INSTALL = `window.__feAlert = ${alertInfoFn.toString()};`;
+
 // Everything the checks read, in one pass: per field the input's state and its describedby targets, plus the form's alerts and focus.
 async function snapshot(page, F) {
   const m = await page.evaluate(({ sel, fields }) => {
     const visible = (el) => { if (!el) return false; const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none'; };
-    const surface = (el) => { for (let n = el; n; n = n.parentElement) { const bg = getComputedStyle(n).backgroundColor; const a = bg.match(/[\d.]+/g); if (a && (a.length < 4 || Number(a[3]) > 0)) return bg; } return 'rgb(255, 255, 255)'; };
-    const alertInfo = (a) => {
-      const cs = getComputedStyle(a);
-      const icon = a.firstElementChild;
-      return {
-        id: a.id, tag: a.tagName, className: a.getAttribute('class') ?? '', color: cs.color, left: [cs.borderLeftWidth, cs.borderLeftStyle, cs.borderLeftColor],
-        others: [cs.borderTopWidth, cs.borderRightWidth, cs.borderBottomWidth], outline: [cs.outlineStyle, cs.outlineWidth], bg: surface(a), around: surface(a.parentElement),
-        icon: icon ? { tag: icon.tagName, hidden: icon.getAttribute('aria-hidden'), color: getComputedStyle(icon).color } : null,
-        text: [...a.childNodes].filter((n) => !(n.nodeType === 1 && n.getAttribute('aria-hidden') === 'true')).map((n) => n.textContent).join('').trim(),
-        visible: visible(a),
-      };
-    };
+    const alertInfo = window.__feAlert;
     const root = document.querySelector(sel);
     const alerts = root ? [...root.querySelectorAll('[role="alert"]')] : [];
     return {
@@ -72,7 +90,8 @@ async function snapshot(page, F) {
   return m;
 }
 
-function expectAlertStyle(a, at) {
+// `geo` is true for a field's own error (gaps above and below are the ruling's), 'above' for the NOS day alert (no field follows it).
+function expectAlertStyle(a, at, geo = false) {
   const T = G.token.rgb;
   if (a.tag !== 'P') failures.push(`${at}: the alert is a <${a.tag}>, want <p role="alert"> (shared TicketFieldAlert)`);
   if (!a.className.endsWith(G.alertClass)) failures.push(`${at}: the alert's class is ${JSON.stringify(a.className)}, want one ending with the shared TicketFieldAlert class`);
@@ -82,6 +101,16 @@ function expectAlertStyle(a, at) {
   if (a.outline[0] !== 'none' && a.outline[1] !== '0px') failures.push(`${at}: the alert has an outline ${a.outline.join(' ')}`);
   if (!a.icon || a.icon.tag !== 'SPAN' || a.icon.hidden !== 'true' || a.icon.color !== T) failures.push(`${at}: the alert's leading sign is ${JSON.stringify(a.icon)}, want an aria-hidden SPAN in ${T}`);
   if (!a.visible) failures.push(`${at}: the alert is not visible`);
+  const alpha = (a.rawBg.match(/[\d.]+/g) ?? [])[3];
+  if (a.rawBg !== 'transparent' && alpha !== '0') failures.push(`${at}: the alert has a background fill ${a.rawBg}, want transparent (Codi, amendment 2)`);
+  const [pt, , pb] = a.padding.map(parseFloat);
+  if (pt > G.geometry.maxVerticalPadding || pb > G.geometry.maxVerticalPadding) failures.push(`${at}: the alert's vertical padding is ${a.padding[0]} / ${a.padding[2]}, want at most ${G.geometry.maxVerticalPadding}px so the rule hugs the text`);
+  if (geo) {
+    const [lo, hi] = G.geometry.gapAbove;
+    if (a.gapAbove === null || a.gapAbove < lo - 0.5 || a.gapAbove > hi + 0.5) failures.push(`${at}: ${a.gapAbove === null ? 'no' : a.gapAbove.toFixed(1) + 'px'} gap between the field and its alert, want ${lo}-${hi}px`);
+    const [bl, bh] = G.geometry.gapBelow;
+    if (geo !== 'above' && a.gapBelow !== null && (a.gapBelow < bl - 0.5 || a.gapBelow > bh + 0.5)) failures.push(`${at}: ${a.gapBelow.toFixed(1)}px from the alert to the next field, want about 16 (${bl}-${bh}px)`);
+  }
   const tr = ratio(a.color, a.bg);
   if (tr < G.minContrast) failures.push(`${at}: alert text ${a.color} on ${a.bg} is ${tr.toFixed(2)}:1, want ${G.minContrast}:1`);
   const br = ratio(a.left[2], a.around);
@@ -122,7 +151,7 @@ function expectInvalid(m, F, want, at) {
     if (!err) { failures.push(`${at}: no role="alert" element with id ${f.errorId}`); continue; }
     const wantText = want[fld.id];
     if (err.text !== wantText) failures.push(`${at}: ${f.errorId} reads ${JSON.stringify(err.text)}, want ${JSON.stringify(wantText)} (an existing string)`);
-    expectAlertStyle(err, `${at} ${f.errorId}`);
+    expectAlertStyle(err, `${at} ${f.errorId}`, true);
     if (fld.borders.some((c) => c !== T)) failures.push(`${at}: #${fld.id} borders ${fld.borders.join(' / ')} while invalid, want ${T} on all four sides (handoff styles.css .field.is-error, in the --color-error token)`);
   }
 }
@@ -146,6 +175,7 @@ async function openForm(ctx, srv, F, mock) {
 async function runForm(browser, srv, key, width) {
   const F = G.forms[key];
   const ctx = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
+  await ctx.addInitScript(INSTALL);
   const at = `${MODE} ${F.route} @${width}`;
   try {
     // A, B, C on one page.
@@ -161,6 +191,8 @@ async function runForm(browser, srv, key, width) {
     let m = await snapshot(page, F);
     const wantA = Object.fromEntries(F.fields.map((f) => [f.id, expectedText(f.empty)]));
     expectInvalid(m, F, wantA, `${at} A(empty)`);
+    const first = m.alerts.find((x) => x.id === F.fields[0].errorId);
+    if (first) (sigs[width] ??= {})[key] = sigOf(first);
     if (m.focus !== F.fields[0].id) failures.push(`${at} A(empty): focus is on #${m.focus}, want the first invalid field #${F.fields[0].id}`);
     if (posts.length) failures.push(`${at} A(empty): ${posts.length} request(s) sent though the client guard failed`);
     await axe(page, F.form, `${at} A(empty)`);
@@ -199,6 +231,31 @@ async function runForm(browser, srv, key, width) {
     }
     if (md.fields.some((f) => f.invalid === 'true')) failures.push(`${at} D(500): a field is aria-invalid="true" after a server error`);
     await axe(d.page, F.form, `${at} D(500)`);
+    // E: editing a field clears its own error and only its own (Codex FAIL on the first rFE build).
+    const e = await openForm(ctx, srv, F, ok);
+    await e.page.getByRole('button', { name: F.submit }).click();
+    await e.page.waitForTimeout(SETTLE_MS);
+    let remaining = F.fields.map((f) => f.id);
+    for (const f of F.fields) {
+      await e.page.locator(`#${f.id}`).fill(f.valid);
+      await e.page.waitForTimeout(150);
+      remaining = remaining.filter((x) => x !== f.id);
+      const me = await snapshot(e.page, F);
+      const here = me.fields.find((x) => x.id === f.id);
+      const ate = `${at} E(typing a valid ${f.id})`;
+      if (here.invalid === 'true') failures.push(`${ate}: #${f.id} is still aria-invalid="true"`);
+      if (here.tokens.includes(f.errorId)) failures.push(`${ate}: #${f.id} aria-describedby still names ${f.errorId}`);
+      if (me.alerts.some((x) => x.id === f.errorId)) failures.push(`${ate}: the alert ${f.errorId} is still shown`);
+      if (f.hintId && !here.tokens.includes(f.hintId)) failures.push(`${ate}: #${f.id} lost its hint ${f.hintId} in aria-describedby`);
+      for (const t of here.targets) if (!t.found) failures.push(`${ate}: aria-describedby token ${t.id} resolves to nothing`);
+      for (const id of remaining) {
+        const other = me.fields.find((x) => x.id === id);
+        const eid = F.fields.find((x) => x.id === id).errorId;
+        if (other.invalid !== 'true' || !other.tokens.includes(eid) || !me.alerts.some((x) => x.id === eid)) failures.push(`${ate}: #${id}, not yet corrected, lost its invalid state, describedby or alert`);
+      }
+      if (me.alerts.length !== remaining.length) failures.push(`${ate}: ${me.alerts.length} alert(s), want ${remaining.length}`);
+    }
+    await e.page.close();
     runs += 1;
   } catch (e) {
     failures.push(`${at}: render error: ${e && e.message ? e.message : e}`);
@@ -207,12 +264,47 @@ async function runForm(browser, srv, key, width) {
   }
 }
 
+// The NOS ticket alert (hub Day Pass card, Buy with no day) must render with the very same computed styles as the SAOC form alerts.
+async function runNos(browser, srv, width) {
+  const ctx = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
+  await ctx.addInitScript(INSTALL);
+  const at = `${MODE} ${G.nosHub} @${width}`;
+  try {
+    await ctx.route('**/api/tickets/checkout**', (route) => route.abort());
+    const page = await ctx.newPage();
+    const r = await page.goto(`${srv.origin}${G.nosHub}`, { waitUntil: 'networkidle' });
+    if (!r || r.status() !== 200) { failures.push(`${at}: HTTP ${r ? r.status() : 0} (INFRA)`); return; }
+    await page.locator('article#ticket-day [data-ticket-cta]').first().click();
+    await page.waitForTimeout(SETTLE_MS);
+    const a = await page.evaluate((sel) => { const el = document.querySelector(sel); return el ? window.__feAlert(el) : null; }, 'article#ticket-day fieldset.nk-days [role="alert"]');
+    if (!a) { failures.push(`${at}: no "Choose a day" alert after Buy with no day (INFRA: is the Day Pass on sale?)`); return; }
+    expectAlertStyle(a, `${at} NOS day alert`, 'above'); // below it sits the quantity stepper, not a form label
+    (sigs[width] ??= {}).nos = sigOf(a);
+  } catch (e) {
+    failures.push(`${at}: render error: ${e && e.message ? e.message : e}`);
+  } finally {
+    await ctx.close();
+  }
+}
+
+function expectSameStyles(width) {
+  const s = sigs[width] ?? {};
+  for (const key of Object.keys(G.forms)) {
+    if (!s[key] || !s.nos) failures.push(`@${width}: no alert signature for ${key} or nos (INFRA)`);
+    else if (s[key] !== s.nos) failures.push(`@${width}: the ${key} form alert's computed styles differ from the NOS ticket alert's:\n      ${key}: ${s[key]}\n      nos: ${s.nos}`);
+  }
+}
+
 const srv = await serve(MODE);
 if (srv.failures) failures.push(...srv.failures.map((f) => `${MODE}: ${f}`));
 else {
   const browser = await chromium.launch();
   try {
-    for (const width of WIDTHS) for (const key of Object.keys(G.forms)) await runForm(browser, srv, key, width);
+    for (const width of WIDTHS) {
+      for (const key of Object.keys(G.forms)) await runForm(browser, srv, key, width);
+      await runNos(browser, srv, width);
+      expectSameStyles(width);
+    }
   } finally {
     await browser.close();
     await srv.stop();
