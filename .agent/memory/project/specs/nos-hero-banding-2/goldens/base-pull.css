@@ -1,0 +1,16 @@
+[data-hero-scrim='bone'] {
+  background-image: linear-gradient(
+    to top,
+    var(--parchment) 0,
+    rgb(244 243 236 / 0.82) 24px,
+    rgb(244 243 236 / 0.5) 54px,
+    rgb(244 243 236 / 0.2) 84px,
+    rgb(244 243 236 / 0.1451) 90px,
+    rgb(244 243 236 / 0.102) 96px,
+    rgb(244 243 236 / 0.0667) 102px,
+    rgb(244 243 236 / 0.0353) 108px,
+    rgb(244 243 236 / 0.0157) 114px,
+    rgb(244 243 236 / 0.0039) 120px,
+    rgb(244 243 236 / 0) 126px
+  );
+}

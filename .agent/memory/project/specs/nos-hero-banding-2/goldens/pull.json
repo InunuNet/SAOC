@@ -1,0 +1,180 @@
+{
+ "ease": "smootherstep, alpha(p) = 1 - (6p^5 - 15p^4 + 10p^3), p = distance above the seam / H; 25 stops, 24 equal segments",
+ "stops": [
+  {
+   "at": 0,
+   "alpha": 1
+  },
+  {
+   "at": 4.1667,
+   "alpha": 0.9993
+  },
+  {
+   "at": 8.3333,
+   "alpha": 0.9949
+  },
+  {
+   "at": 12.5,
+   "alpha": 0.9839
+  },
+  {
+   "at": 16.6667,
+   "alpha": 0.9645
+  },
+  {
+   "at": 20.8333,
+   "alpha": 0.9355
+  },
+  {
+   "at": 25.0,
+   "alpha": 0.8965
+  },
+  {
+   "at": 29.1667,
+   "alpha": 0.8478
+  },
+  {
+   "at": 33.3333,
+   "alpha": 0.7901
+  },
+  {
+   "at": 37.5,
+   "alpha": 0.7248
+  },
+  {
+   "at": 41.6667,
+   "alpha": 0.6534
+  },
+  {
+   "at": 45.8333,
+   "alpha": 0.5778
+  },
+  {
+   "at": 50.0,
+   "alpha": 0.5
+  },
+  {
+   "at": 54.1667,
+   "alpha": 0.4222
+  },
+  {
+   "at": 58.3333,
+   "alpha": 0.3466
+  },
+  {
+   "at": 62.5,
+   "alpha": 0.2752
+  },
+  {
+   "at": 66.6667,
+   "alpha": 0.2099
+  },
+  {
+   "at": 70.8333,
+   "alpha": 0.1522
+  },
+  {
+   "at": 75.0,
+   "alpha": 0.1035
+  },
+  {
+   "at": 79.1667,
+   "alpha": 0.0645
+  },
+  {
+   "at": 83.3333,
+   "alpha": 0.0355
+  },
+  {
+   "at": 87.5,
+   "alpha": 0.0161
+  },
+  {
+   "at": 91.6667,
+   "alpha": 0.0051
+  },
+  {
+   "at": 95.8333,
+   "alpha": 0.0007
+  },
+  {
+   "at": 100,
+   "alpha": 0
+  }
+ ],
+ "height": {
+  "css": "126px",
+  "min": 126.0,
+  "vw": 0.0,
+  "max": 126.0
+ },
+ "parchment": [
+  244,
+  243,
+  236
+ ],
+ "viewports": [
+  [
+   1280,
+   1
+  ],
+  [
+   2056,
+   2
+  ],
+  [
+   390,
+   3
+  ],
+  [
+   2000,
+   1
+  ],
+  [
+   2560,
+   1
+  ]
+ ],
+ "grounds": [
+  "#384138",
+  "#3e3145"
+ ],
+ "minSlides": 3,
+ "coherentKink": 0.3,
+ "slopeJump": 0.25,
+ "profileTol": 3,
+ "seam": 2,
+ "contrast": 5.57,
+ "contentMargin": 8,
+ "dotMin": 3,
+ "dotPad": 6,
+ "dropTol": 0.05,
+ "staticSlopeChange": 0.2,
+ "viewportHeight": 1600,
+ "seamSlope": 0.05,
+ "guard": {
+  "viewport": [
+   2056,
+   2
+  ],
+  "asset": "1adbddbb"
+ },
+ "brad": {
+  "file": "brad-slide3.png",
+  "size": [
+   2000,
+   489
+  ],
+  "dpr": 1,
+  "lastHeroRow": 422,
+  "pullHeight": 126,
+  "skipX": [
+   [
+    880,
+    1110
+   ]
+  ]
+ },
+ "profileGround": "#000000",
+ "why": "Calibration 2026-10-22 on the worktree's PUBLIC and PREVIEW builds (no hero filter, 4 slides), 5 viewports, golden injected (--calibrate --simulate) against c6702259's pull in the same run. coherentKink 0.30: golden 0.10-0.25 L*/px everywhere; c6702259 0.27-0.55 (slide 3 1adbddbb 0.39-0.52; preview 2056@2 slide 3 0.46; Brad's PNG 0.46). seamSlope 0.05 (Codi): golden <= 0.022 over the photo and alone; c6702259 0.31-0.52. slopeJump 0.25 (Codi): golden <= 0.19 on the real grounds (0.27 over pure black, L* toe; black is P4 only); c6702259 0.51-0.65. profileTol 3 levels: golden <= 1.50. seam 2 levels: golden 0.00. contrast 5.57 (Codi's copy floor): golden min 5.57 = c6702259's. dotMin 3 with floor min(3, c6702259's value) (Codi): golden 2.48-3.35 against c6702259 2.40-3.35, worst drop 0.03; 20 of 40 slide x viewport cells are already under 3:1 on c6702259 (separate P2). dropTol 0.05: capture-to-capture noise on the contrast and dot ratios. Clamp candidate (Codi's first REQUIRED, 16 segments, clamp(126px, 9vw, 220px)) measured dots 1.00-1.93:1 at >= 2000px and was withdrawn."
+}

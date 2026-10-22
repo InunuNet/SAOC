@@ -1,0 +1,11 @@
+ae21615eac63cd7b9a8ef9e691e5850f3b8876184b2f83a0979c1d5553f36875  .agent/memory/project/specs/nos-hero-banding-2/checks/_lib.mjs
+9dcd21c466a0d688dbeac1f700ee48887e98d0676e344ed71836dfba2b12b154  .agent/memory/project/specs/nos-hero-banding-2/checks/_metrics.mjs
+7a60215f501861c5f770f7db76e65874356658ec9e36fed37e4f24a91156f256  .agent/memory/project/specs/nos-hero-banding-2/checks/_server.mjs
+26bfea163b6f40883e908be0fa38eef0d767a2754351f3f23cb65e2dcd3a7c7b  .agent/memory/project/specs/nos-hero-banding-2/checks/brad.mjs
+82b2f8d792d30e170ae559816d34f903369aab74c91dd73f30d9b95622b740e0  .agent/memory/project/specs/nos-hero-banding-2/checks/rendered.mjs
+f4a21adc0ee4ecb4919c0b8089e26f19dc262349442762140421c9eddf21119d  .agent/memory/project/specs/nos-hero-banding-2/checks/shots.mjs
+a594867250e513d56c5d3101d73ecfe5360606fa7ecadc89b87a64031581edbd  .agent/memory/project/specs/nos-hero-banding-2/checks/static.mjs
+b47adfd5f78be45de255a04d35c52e39560e20f2b6c77923d8d85ad4024b5220  .agent/memory/project/specs/nos-hero-banding-2/goldens/base-pull.css
+246069e38c7ac3812036d0905edbde0e3360ad3a7166ea6ebdf16da3017e6265  .agent/memory/project/specs/nos-hero-banding-2/goldens/fixtures/brad-slide3.png
+8445c3c87dac13a3fbf34178b64540ba44c1610bae45f06194555f56c45138e1  .agent/memory/project/specs/nos-hero-banding-2/goldens/pull.css
+a586d7b18e1f40ca419852c46ec1d6060e91503d7d5fbb246f580549dbb73c94  .agent/memory/project/specs/nos-hero-banding-2/goldens/pull.json

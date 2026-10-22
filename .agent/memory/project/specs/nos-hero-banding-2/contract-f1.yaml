@@ -1,0 +1,52 @@
+# Sources: spec.md (Brad's report, the architect's root cause, Codi's rulings verbatim incl. the final (B), saoc-82's locks).
+# Basis: impeccable craft-floor gradients (H8); WCAG 1.4.11 for the pager dots. No new copy, tokens or colours (docs/rules/no-invention.md).
+schema: athanor.contract/v1
+slug: nos-hero-banding-2
+goal: >-
+  Replace the home hero's piecewise-linear parchment pull with a 24-segment smootherstep over a fixed 126px, C1 at both ends and every
+  joint, so Brad's slide-3 banding (Mach lines at the stop joints and the seam) is gone, with copy, seam and pager dots no worse.
+created_at: '2026-10-22'
+autonomy: high
+exclusions:
+  - item: 'every file other than app/globals.css, docs/nos-hero-banding.md and this spec dir'
+    reason: 'Enforced by A2 (static S1) against BASE c6702259.'
+  - item: "Codi's first REQUIRED (2), the height clamp(126px, 9vw, 220px)"
+    reason: "Withdrawn by Codi's ruling (B): it measured the pager dots at 1.00-1.93:1 at >= 2000px against 2.59-3.17:1 on c6702259."
+  - item: 'the pager dots already under 3:1 on c6702259 (20 of 40 slide x viewport cells)'
+    reason: "Codi: a separate P2 ticket, not this round. P6 floors the dots at min(3, c6702259's value)."
+  - item: "Codi's by-eye gate in Canary (slides 3 and 4 at 2056@2)"
+    reason: "Final and Codi's own (checks/shots.mjs produces the shots); not a contract assertion. A visible line there reopens with a dot change, not more pull tuning."
+features:
+  - id: F1
+    name: Home hero parchment pull as a 24-segment smootherstep over 126px (rHB2)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-hero-banding-2/goldens/pull.css
+  - .agent/memory/project/specs/nos-hero-banding-2/goldens/base-pull.css
+  - .agent/memory/project/specs/nos-hero-banding-2/goldens/pull.json
+  - .agent/memory/project/specs/nos-hero-banding-2/goldens/fixtures/brad-slide3.png
+  - .agent/memory/project/specs/nos-hero-banding-2/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: rHB2 check scripts, goldens and Brad's fixture are unmodified
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-hero-banding-2/goldens/checks.sha256
+    - id: A2
+      description: Static - footprint vs c6702259; the bone rule equals goldens/pull.css (24-segment smootherstep, 126px tile, parchment only); veil and diagonal unchanged
+      command: node .agent/memory/project/specs/nos-hero-banding-2/checks/static.mjs
+    - id: A3
+      description: Check of the check - the new C1 metric flags Brad's own capture (full-width slope break and seam slope over their limits)
+      command: node .agent/memory/project/specs/nos-hero-banding-2/checks/brad.mjs
+    - id: A4
+      description: Rendered on PUBLIC and PREVIEW, 4 slides x 1280@1 2056@2 390@3 2000@1 2560@1 - P1 full-width slope break <= 0.30 L*/px and seam slope <= 0.05, P2 no seam, P3 pull alone 4px slope jump <= 0.25 of peak, P4 pull profile = golden, P5 copy >= 5.57:1, P6 dots >= min(3, c6702259), P7 slides
+      command: node .agent/memory/project/specs/nos-hero-banding-2/checks/rendered.mjs
+    - id: A5
+      description: Regression guard (Codi) - c6702259's pull re-injected on preview 2056@2 slide 1adbddbb still FAILS P1 and P3
+      command: node .agent/memory/project/specs/nos-hero-banding-2/checks/rendered.mjs --guard
+    - id: A6
+      description: Prettier (saoc-82) on every file touched since c6702259
+      command: git diff --name-only --diff-filter=d c6702259 | xargs pnpm exec prettier --check --ignore-unknown
+    - id: A7
+      description: docs/nos-hero-banding.md carries the rHB2 section (smootherstep, Mach bands, why the clamp was dropped)
+      command: grep -q "rHB2" docs/nos-hero-banding.md
