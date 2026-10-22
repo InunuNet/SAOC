@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 
 import { AccommodationList, TravelRoutes, VenueCard } from '@/components/show';
 import { Button } from '@/components/nos/Button';
@@ -19,6 +18,7 @@ import { buildPageMetadata } from '@/lib/seo';
 import type { ShowVenue, ShowVisitorInfo } from '@/types';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
+import { saocUrl } from '@/lib/site-hosts';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
@@ -138,7 +138,7 @@ export default async function PlanYourVisitPage() {
         title="Be the first to know"
         lede="Parking, public transport and accommodation are confirmed by the show committee as the event draws closer. Ask the council to be notified the moment they are settled, or point out anything missing here."
         action={
-          <Button as={Link} href="/contact" variant="on-dark">
+          <Button as="a" href={saocUrl('/contact')} variant="on-dark">
             Ask the council
           </Button>
         }

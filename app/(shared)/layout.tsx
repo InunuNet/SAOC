@@ -5,7 +5,7 @@ import { SaocFrame } from '@/components/site-chrome/SaocFrame';
 import { NosThemeScope } from '@/components/nos/NosThemeScope';
 import { requestSite } from '@/lib/request-site';
 import { nosOrigin, saocOrigin } from '@/lib/site-hosts';
-import { buildSiteMetadata } from '@/lib/site-metadata';
+import { NOS_TITLE, buildSiteMetadata } from '@/lib/site-metadata';
 
 // nos-site-split F1: host-neutral content (privacy, terms, refunds, newsletter unsubscribe) is one
 // source rendered inside whichever site's chrome the request came in on, so a buyer mid-checkout on
@@ -14,7 +14,8 @@ import { buildSiteMetadata } from '@/lib/site-metadata';
 // show pages.
 export async function generateMetadata(): Promise<Metadata> {
   const site = await requestSite();
-  return buildSiteMetadata(site === 'nos' ? nosOrigin() : saocOrigin());
+  if (site === 'nos') return { ...buildSiteMetadata(nosOrigin()), title: NOS_TITLE };
+  return buildSiteMetadata(saocOrigin());
 }
 
 export default async function SharedLayout({ children }: { children: React.ReactNode }) {

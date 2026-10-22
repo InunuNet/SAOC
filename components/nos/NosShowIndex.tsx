@@ -10,9 +10,10 @@
 
 import Link from 'next/link';
 
-import { NAV } from '@/components/chrome/nav-config';
+import { NOS_NAV } from '@/components/nos-chrome/nos-nav';
 import { PAST_SHOWS_HREF } from '@/lib/data/past-shows';
 import { showPastShowsRoute } from '@/lib/data/past-shows-public';
+import { nosPath } from '@/lib/nos-paths';
 
 const EYEBROW = 'Explore the show';
 
@@ -68,7 +69,7 @@ function collectLabels(node: unknown, into: Map<string, string>): void {
 
 const LABELS = (() => {
   const labels = new Map<string, string>();
-  collectLabels(NAV, labels);
+  collectLabels(NOS_NAV, labels);
   for (const { hrefs } of GROUPS) {
     for (const href of hrefs) {
       if (!labels.has(href)) throw new Error(`NosShowIndex: nav-config has no label for ${href}`);
@@ -108,7 +109,7 @@ export async function NosShowIndex({ current, currentTone = 'accent' }: NosShowI
                   return (
                     <li key={href}>
                       <Link
-                        href={href}
+                        href={nosPath(href)}
                         aria-current={isCurrent ? 'page' : undefined}
                         className={isCurrent && currentTone === 'accent' ? 'text-accent' : undefined}
                         data-current-ink={isCurrent && currentTone === 'ink' ? '' : undefined}

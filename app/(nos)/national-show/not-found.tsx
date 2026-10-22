@@ -33,15 +33,15 @@ export default function NationalShowNotFound() {
         </p>
       </div>
       <div className="mt-8 flex flex-col gap-3 min-[480px]:flex-row min-[480px]:flex-wrap min-[480px]:gap-4">
-        <Button as={Link} href="/national-show/tickets" variant="primary" className={LINK_CLASS}>
+        <Button as={Link} href="/tickets" variant="primary" className={LINK_CLASS}>
           Tickets
         </Button>
-        <Button as={Link} href="/national-show" variant="ghost" className={LINK_CLASS}>
+        <Button as={Link} href="/" variant="ghost" className={LINK_CLASS}>
           National Show
         </Button>
         <Button
           as={Link}
-          href="/national-show/plan-your-visit"
+          href="/plan-your-visit"
           variant="ghost"
           className={LINK_CLASS}
         >

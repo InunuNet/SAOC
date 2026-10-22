@@ -208,7 +208,7 @@ export default async function WhatToExpectPage() {
             researchLabel={researchLabel}
           >
             {admissionWired ? <AdmissionPriceList cards={loaded.cards} /> : null}
-            <Button as={Link} href="/national-show/tickets" className="mt-4">
+            <Button as={Link} href="/tickets" className="mt-4">
               {info?.admissionLinkLabel ?? 'See ticket prices and book'} →
             </Button>
           </VisitorInfoBlock>

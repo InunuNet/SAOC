@@ -18,6 +18,8 @@
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
+import { nosPath } from '@/lib/nos-paths';
+
 import type { NosSubNavItem } from './nos-subnav-groups';
 
 export interface NosSubNavProps {
@@ -94,7 +96,7 @@ export function NosSubNav({ label, items, currentHref, exact }: NosSubNavProps) 
             return (
               <li key={item.href}>
                 <Link
-                  href={item.href}
+                  href={nosPath(item.href)}
                   aria-current={isCurrent ? (exact ? 'page' : 'true') : undefined}
                   className="nos-subnav-link"
                 >

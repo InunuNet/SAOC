@@ -23,6 +23,7 @@ import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import type { ShowExhibitorInfo, ShowExhibitorStep } from '@/types';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
+import { saocUrl } from '@/lib/site-hosts';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
@@ -176,7 +177,7 @@ export default async function ExhibitorInfoPage() {
   const researchFoot = namesFor('research').length > 0 ? (researchLabel ?? undefined) : undefined;
   const contactButton = (
     <p>
-      <Button as={Link} href="/contact" variant="primary" className="min-h-[44px]">
+      <Button as="a" href={saocUrl('/contact')} variant="primary" className="min-h-[44px]">
         {CONTACT_LABEL}
       </Button>
     </p>
@@ -271,7 +272,7 @@ export default async function ExhibitorInfoPage() {
               {name === 'classes' ? (
                 <p className="mt-4">
                   <Link
-                    href="/national-show"
+                    href="/"
                     className="inline-flex min-h-6 items-center font-sans text-[15px] font-medium text-primary underline underline-offset-4"
                   >
                     {info?.classesLinkLabel ?? 'Show classes'} →
@@ -280,12 +281,12 @@ export default async function ExhibitorInfoPage() {
               ) : null}
               {name === 'judging' ? (
                 <p className="mt-4">
-                  <Link
-                    href="/judging"
+                  <a
+                    href={saocUrl('/judging')}
                     className="inline-flex min-h-6 items-center font-sans text-[15px] font-medium text-primary underline underline-offset-4"
                   >
                     {info?.judgingLinkLabel ?? 'SAOC judging standards'} →
-                  </Link>
+                  </a>
                 </p>
               ) : null}
               {name === 'permits' ? (
@@ -319,10 +320,10 @@ export default async function ExhibitorInfoPage() {
             </p>
           ) : null}
           <div className="mt-6 flex flex-wrap gap-4">
-            <Button as={Link} href="/contact" variant="primary">
+            <Button as="a" href={saocUrl('/contact')} variant="primary">
               {CONTACT_LABEL}
             </Button>
-            <Button as={Link} href="/judging" variant="ghost">
+            <Button as="a" href={saocUrl('/judging')} variant="ghost">
               {info?.judgingLinkLabel ?? 'SAOC judging standards'}
             </Button>
           </div>

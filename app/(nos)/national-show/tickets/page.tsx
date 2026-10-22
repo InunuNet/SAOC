@@ -5,7 +5,7 @@ import { Button } from '@/components/nos/Button';
 import { Card } from '@/components/nos/Card';
 import { NosSection } from '@/components/nos/NosSection';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
-import { NAV } from '@/components/chrome/nav-config';
+import { NOS_NAV } from '@/components/nos-chrome/nos-nav';
 import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestModeBanner';
 import {
   ArrowIcon,
@@ -31,6 +31,7 @@ import {
 import { viewerIsVerifiedAdmin } from '@/lib/admin-viewer';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery } from '@/sanity/queries';
+import { nosPath } from '@/lib/nos-paths';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
@@ -55,14 +56,14 @@ const FOOT_OPTIONS = [
     heading: "I'm exhibiting orchids",
     body: 'See what is involved in exhibiting at the National Show.',
     cta: 'Apply to exhibit',
-    href: '/national-show/vendors/apply',
+    href: '/vendors/apply',
   },
   {
     id: 'trade',
     heading: "I'm a nursery or trader",
     body: 'Trade vendor showcase, application and registration.',
     cta: 'Vendor registration',
-    href: '/national-show/vendors/apply',
+    href: '/vendors/apply',
   },
 ] as const;
 
@@ -71,12 +72,12 @@ const PASS_PRODUCTS: readonly TicketProductId[] = ['weekend', 'day'];
 
 // The mega's own leaves, so the "Before you visit" labels can never differ from the header's.
 function resolveVisitLinks(): VisitLink[] {
-  const mega = NAV.find((n) => n.type === 'mega');
+  const mega = NOS_NAV.find((n) => n.type === 'mega');
   const leaves = mega?.columns.flatMap((c) => c.links) ?? [];
   return BEFORE_YOU_VISIT_HREFS.map((href) => {
     const leaf = leaves.find((l) => l.href === href);
     if (!leaf) throw new Error(`no leaf for ${href}`);
-    return { label: leaf.label, href };
+    return { label: leaf.label, href: nosPath(href) };
   });
 }
 

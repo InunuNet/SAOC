@@ -40,24 +40,21 @@
 .nh-label { position: relative; }
 .nh-trigger[data-current] .nh-label::after { content: ""; position: absolute; left: 0; right: 0; bottom: -8px; height: 2px; border-radius: 1px; background: var(--nc-green-1); }
 
-.nh-mega { position: absolute; left: 0; right: 0; top: 100%; z-index: 61; background: var(--nc-ground); border-top: 1px solid var(--nc-line); box-shadow: 0 20px 44px rgba(33, 26, 87, 0.12); }
-.nh-mega-grid { display: grid; grid-template-columns: 1.05fr 1fr 1fr 1fr 0.9fr; max-width: calc(var(--nc-wide) + 2 * var(--nc-gutter)); margin-inline: auto; padding: 28px var(--nc-gutter) 28px; }
-.nh-mega-col { padding-inline: 24px; border-left: 1px solid var(--nc-line); }
-.nh-mega-lead { padding-right: 24px; }
-.nh-mega-lead-link { display: inline-flex; align-items: center; min-height: 44px; font: 400 1.35rem/1.15 var(--nc-serif); color: var(--nc-royal); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
-.nh-mega-meta { display: block; max-width: 30ch; margin: 4px 0 20px; font-size: 13px; line-height: 1.45; color: var(--nc-ink-500); }
-.nh-mega-head { margin: 0 0 4px; font: 700 12px/1.4 var(--nc-sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--nc-olive-700); }
 .nh-mega-list { list-style: none; margin: 0; padding: 0; display: grid; }
+/* Top-row disclosure panels (R1.2): click-only list panels hung under their trigger. */
+.nh-item { position: relative; }
+.nh-panel { position: absolute; top: calc(100% + 10px); left: 0; z-index: 61; width: max-content; min-width: 320px; max-width: 400px; padding: 6px 16px; background: var(--nc-ground); border: 1px solid var(--nc-line); border-radius: 14px; box-shadow: 0 20px 44px rgba(33, 26, 87, 0.12); }
+@media (prefers-reduced-motion: no-preference) {
+  .nh-panel:not([hidden]) { animation: nh-panel-in 180ms var(--nc-ease) both; }
+}
+@keyframes nh-panel-in { from { opacity: 0; transform: translateY(-4px); } }
 .nh-mega-list li + li { border-top: 1px solid var(--nc-line); }
-.nh-mega-list a { display: grid; gap: 2px; padding: 9px 8px; margin-inline: -8px; border-radius: 10px; text-decoration: none; }
+.nh-mega-list a { min-height: 44px; align-content: center; }
 .nh-mega-list a:hover { background: var(--nc-gold); }
+.nh-mega-list a { display: grid; gap: 2px; padding: 9px 8px; margin-inline: -8px; border-radius: 10px; text-decoration: none; }
 .nh-leaf { font-size: 14.5px; font-weight: 700; line-height: 1.3; color: var(--nc-royal); }
 .nh-desc { font-size: 12.5px; line-height: 1.4; color: var(--nc-ink-500); }
-.nh-mega-list a[aria-current="page"] .nh-leaf, .nd-sub a[aria-current="page"] { text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 2px; text-underline-offset: 5px; }
-.nh-mega-rail { padding: 22px 24px; border-left: 1px solid var(--nc-line); background: var(--nc-gold); border-radius: 0 16px 16px 0; }
-.nh-mega-rail .nh-mega-meta { margin: 0 0 6px; }
-.nh-mega-rail .nh-mega-list a { min-height: 44px; align-content: center; }
-.nh-mega-rail h4 { margin: 0 0 8px; font: 400 1.35rem/1.15 var(--nc-serif); color: var(--nc-royal); }
+.nh-panel a[aria-current="page"] .nh-leaf, .nd-sub a[aria-current="page"] .nh-leaf { text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 2px; text-underline-offset: 5px; }
 
 /* The one primary action: Tickets. On the tickets page it is the current page, so it drops to outline. */
 .nh-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 24px; border-radius: 10px; background: var(--nc-royal); color: var(--nc-ground); font: 700 13px/1 var(--nc-sans); letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; white-space: nowrap; transition: background-color 200ms var(--nc-ease), color 200ms var(--nc-ease); }
@@ -99,14 +96,12 @@
 .nd-item[aria-expanded="true"] .nc-chev { transform: rotate(180deg); }
 .nd-item[data-current] { text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 2px; text-underline-offset: 7px; }
 .nd-sub { padding: 4px 0 20px; display: grid; gap: 18px; }
-.nd-lead { display: grid; gap: 2px; }
-.nd-lead a { display: inline-flex; align-items: center; min-height: 44px; font: 400 1.2rem/1.2 var(--nc-serif); color: var(--nc-royal); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
-.nd-lead span { font-size: 14px; color: var(--nc-ink-500); }
-.nd-group h3 { margin: 0 0 2px; font: 700 12px/1.4 var(--nc-sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--nc-olive-700); }
 .nd-group ul { list-style: none; margin: 0; padding: 0; display: grid; }
 .nd-group a { display: grid; gap: 2px; padding: 9px 0; text-decoration: none; }
 .nd-group a .nh-leaf { font-size: 16px; }
 .nd-group a .nh-desc { font-size: 13px; }
+.nd-credit { margin: 8px 0 0; padding-top: 16px; border-top: 1px solid var(--nc-line); }
+.nd-credit a { display: inline-flex; align-items: center; min-height: 44px; font: 600 15px/1.3 var(--nc-sans); color: var(--nc-royal); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
 @media (prefers-reduced-motion: no-preference) {
   .nd:not([hidden]) { animation: nd-in 260ms var(--nc-ease) both; }
 }
@@ -121,6 +116,12 @@
 /* r20 F3 (Codi FINAL): the lockup in the SAOC footer's brand column (FOOTER_LAYOUT), 248px, never wider than the column. */
 .nf-lockup { display: block; width: 248px; max-width: 100%; line-height: 0; border-radius: 4px; }
 .nf-lockup img { display: block; width: 100%; max-width: none; height: auto; }
+.nf-credit { display: grid; justify-items: start; gap: 8px; min-height: 44px; padding: 4px 0; color: var(--nc-lilac); text-decoration: none; border-radius: 4px; }
+.nf-credit img { display: block; width: auto; height: 48px; max-width: none; }
+.nf-credit-label { padding: 2px 8px; border: 1px solid rgba(210, 203, 232, 0.55); border-radius: 4px; font: 600 12px/1.4 var(--nc-sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--nc-lilac); }
+.nf-credit-name { font: 600 15px/1.35 var(--nc-sans); color: var(--nc-ground); }
+.nf-credit-reg { font: 400 13px/1.4 var(--nc-sans); letter-spacing: 0.08em; color: var(--nc-gold); font-variant-numeric: tabular-nums; }
+.nf-credit:hover .nf-credit-name { text-decoration: underline; text-decoration-color: var(--nc-green-1); text-underline-offset: 4px; }
 .nf-text { margin: 0; max-width: 44ch; font-size: 15px; line-height: 1.6; color: var(--nc-lilac); }
 .nf-head { margin: 0 0 6px; font: 700 12px/1.3 var(--nc-sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--nc-green-1); }
 /* REG/NPO in the label role (.nf-head), in gold. */
@@ -156,7 +157,7 @@
   --nc-sans: var(--font-nos-karla), "Karla", "Helvetica Neue", Arial, sans-serif;
 }
 /* display:grid / flex on these would otherwise win over the UA [hidden] rule. */
-.nh-mega[hidden], .nd[hidden], .nd-sub[hidden] { display: none; }
+.nh-panel[hidden], .nd[hidden], .nd-sub[hidden] { display: none; }
 /* 44px touch floor for the short panel links (Day Visitor, Weekend Pass). */
 .nd-group a { min-height: 44px; align-content: center; }
 /* The lockup's transparent margin is pulled back with negative margins (C:34), so the image box is

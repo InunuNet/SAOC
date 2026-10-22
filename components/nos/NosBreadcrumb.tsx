@@ -14,6 +14,8 @@
 
 import Link from 'next/link';
 
+import { nosPath } from '@/lib/nos-paths';
+
 export interface NosBreadcrumbItem {
   label: string;
   /** Omit on the last item: it is the current page and renders unlinked. */
@@ -36,7 +38,7 @@ export function NosBreadcrumb({ items }: NosBreadcrumbProps) {
             {index > 0 ? <span aria-hidden="true">—</span> : null}
             {href ? (
               <Link
-                href={href}
+                href={nosPath(href)}
                 className="inline-flex min-h-[44px] items-center text-primary underline decoration-[var(--olive)] decoration-[1.5px] underline-offset-4 hover:decoration-[var(--primary)]"
               >
                 {label}

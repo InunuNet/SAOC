@@ -6,7 +6,7 @@
 // pages already render, never a flag. See docs/nos-archive-public-r64.md.
 // =============================================================
 
-import { NAV } from '@/components/chrome/nav-config';
+import { NOS_NAV } from '@/components/nos-chrome/nos-nav';
 import type { NavItem } from '@/components/chrome/nav-config';
 import type { SanityShowProjection } from '@/lib/data/mergeShows';
 import { PAST_SHOWS_HREF, hasPastShowRecords, navWithoutHref } from '@/lib/data/past-shows';
@@ -24,7 +24,7 @@ export async function showPastShowsRoute(): Promise<boolean> {
   return hasPastShowRecords(shows);
 }
 
-/** The nav every chrome and sub-nav surface renders: NAV, minus the Past shows leaf while the route is withheld. */
+/** The show nav every NOS chrome and sub-nav surface renders: NOS_NAV, minus the Past shows leaf while the route is withheld. */
 export async function getVisibleNav(): Promise<readonly NavItem[]> {
-  return (await showPastShowsRoute()) ? NAV : navWithoutHref(NAV, PAST_SHOWS_HREF);
+  return (await showPastShowsRoute()) ? NOS_NAV : navWithoutHref(NOS_NAV, PAST_SHOWS_HREF);
 }

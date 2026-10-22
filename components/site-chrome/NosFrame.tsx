@@ -11,24 +11,20 @@ import { AdminPill } from '@/components/admin/AdminPill';
 import { NosFooter } from '@/components/nos-chrome/NosFooter';
 import { NosHeader } from '@/components/nos-chrome/NosHeader';
 import { NosSkipLink } from '@/components/nos-chrome/NosSkipLink';
-import { sanityFetch } from '@/sanity/lib/fetch';
-import { nationalShowQuery } from '@/sanity/queries';
-import type { ShowIdentity } from '@/types';
+import { getVisibleNav } from '@/lib/data/past-shows-public';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 
 export async function NosFrame({ children }: { children: React.ReactNode }) {
-  const show = await sanityFetch<ShowIdentity>({
-    query: nationalShowQuery,
-    tags: ['nationalShow', 'sanity'],
-  });
+  const nav = await getVisibleNav();
 
   return (
     <>
       <NosSkipLink />
-      <NosHeader show={show} />
+      <NosHeader nav={nav} />
       <main id="main-content" tabIndex={-1}>
         {children}
       </main>
-      <NosFooter />
+      <NosFooter showPlaceholders={!withholdPlaceholderProse()} />
       <AdminPill />
     </>
   );

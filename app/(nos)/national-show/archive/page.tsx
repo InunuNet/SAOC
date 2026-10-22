@@ -20,6 +20,7 @@ import { showPastShowsRoute } from '@/lib/data/past-shows-public';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
+import { saocUrl } from '@/lib/site-hosts';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -96,7 +97,7 @@ export default async function ShowArchivePage() {
         priority
         actions={
           <Link
-            href="/national-show"
+            href="/"
             data-nos-backlink=""
             className="inline-flex min-h-[44px] items-center font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
           >
@@ -118,7 +119,7 @@ export default async function ShowArchivePage() {
               itemKey={(show) => String(show.year)}
               renderCard={(show) => (
                 <EditionCard
-                  href={`/national-show/archive/${show.year}`}
+                  href={`/archive/${show.year}`}
                   year={show.year}
                   title={
                     show.title ??
@@ -158,10 +159,10 @@ export default async function ShowArchivePage() {
           lede={upcomingSentence}
           action={
             <div className="flex flex-wrap justify-center gap-4">
-              <Button as={Link} href="/national-show" variant="on-dark">
+              <Button as={Link} href="/" variant="on-dark">
                 View {upcomingLabel} details
               </Button>
-              <Button as={Link} href="/contact" variant="ghost-on-dark">
+              <Button as="a" href={saocUrl('/contact')} variant="ghost-on-dark">
                 Ask the council
               </Button>
             </div>

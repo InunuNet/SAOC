@@ -4,6 +4,7 @@ import { getVisibleNav } from '@/lib/data/past-shows-public';
 import { NosBreadcrumbJsonLd } from '@/components/nos/NosBreadcrumbJsonLd';
 import { NosThemeScope } from '@/components/nos/NosThemeScope';
 import { nosOrigin } from '@/lib/site-hosts';
+import { NOS_TITLE } from '@/lib/site-metadata';
 
 // F1: the `.nos-theme` scope element redeclares the SAOC site's own semantic
 // custom-property names (--bg, --fg, --accent, etc. — see nos-theme.css) with
@@ -25,12 +26,7 @@ const NATIONAL_SHOW_ROOT = '/national-show';
 // F24: every inner page names itself and this template adds the show. The hub
 // (/national-show) is the segment's own page, so the template does not reach it and it keeps
 // its own full title.
-export const metadata: Metadata = {
-  title: {
-    template: '%s — National Orchid Show | SAOC',
-    default: 'National Orchid Show | South African Orchid Council',
-  },
-};
+export const metadata: Metadata = { title: NOS_TITLE };
 
 /** First label nav-config carries for each /national-show href, depth first. */
 function collectLabels(node: unknown, into: Record<string, string>): void {

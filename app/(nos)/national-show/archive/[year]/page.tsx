@@ -153,7 +153,7 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
         priority
         actions={
           <Link
-            href="/national-show/archive"
+            href="/archive"
             data-nos-backlink=""
             className="inline-flex min-h-[44px] items-center font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
           >
@@ -214,7 +214,7 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
       >
         {prevShow ? (
           <Link
-            href={`/national-show/archive/${prevShow.year}`}
+            href={`/archive/${prevShow.year}`}
             className="group flex flex-col gap-1"
           >
             <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
@@ -229,7 +229,7 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
         )}
         {nextShow ? (
           <Link
-            href={`/national-show/archive/${nextShow.year}`}
+            href={`/archive/${nextShow.year}`}
             className="group flex flex-col gap-1 text-right"
           >
             <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.18em] text-muted transition-colors duration-150 group-hover:text-primary">
@@ -248,10 +248,10 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
         title={`Next up: the ${upcomingLabel}${upcomingWhere}`}
         action={
           <div className="flex flex-wrap justify-center gap-4">
-            <Button as={Link} href="/national-show" variant="on-dark">
+            <Button as={Link} href="/" variant="on-dark">
               View {upcomingLabel}
             </Button>
-            <Button as={Link} href="/national-show/archive" variant="ghost-on-dark">
+            <Button as={Link} href="/archive" variant="ghost-on-dark">
               Past shows
             </Button>
           </div>

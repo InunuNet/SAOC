@@ -198,10 +198,10 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
   const summaryDay = cardData.requiresDaySelection ? day : null;
   const breadcrumbs = (
     <nav className="nk-crumbs" aria-label="Breadcrumb">
-      <Link href="/national-show">National Show</Link>
+      <Link href="/">National Show</Link>
       <span className="nk-crumb">
         <span className="nk-sep" aria-hidden="true" />
-        <Link href="/national-show/tickets">Tickets</Link>
+        <Link href="/tickets">Tickets</Link>
       </span>
       <span className="nk-crumb">
         <span className="nk-sep" aria-hidden="true" />

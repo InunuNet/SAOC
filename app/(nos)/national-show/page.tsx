@@ -2,7 +2,7 @@ import { Suspense, type ReactNode } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { NAV } from '@/components/chrome/nav-config';
+import { NOS_NAV } from '@/components/nos-chrome/nos-nav';
 import { ConfirmationBadge, ShowCountdown } from '@/components/show';
 import { Button } from '@/components/nos/Button';
 import { CtaBand } from '@/components/nos/CtaBand';
@@ -29,7 +29,9 @@ import { showClasses as staticClasses } from '@/lib/data/showClasses';
 import { cheapestAdmission, formatRand } from '@/components/nos/cheapest-admission';
 import { effectiveCapacity, resolveEffectivePrice } from '@/lib/checkout-reservation';
 import { buildPageMetadata } from '@/lib/seo';
-import { nosUrl } from '@/lib/site-hosts';
+import { nosPath } from '@/lib/nos-paths';
+import { NOS_TITLE_DEFAULT } from '@/lib/site-metadata';
+import { nosUrl, saocUrl } from '@/lib/site-hosts';
 import {
   formatShowMonthYear,
   formatVenueAddress,
@@ -78,18 +80,22 @@ const heroLede = (chip: ReactNode) =>
 // Sourced: Sanity holds exactly ten showClass documents.
 const JUDGING_LEDE = 'Every exhibit is entered in one of ten botanical classes.';
 
-export const metadata: Metadata = buildPageMetadata({
-  title: 'National Orchid Show',
-  image: nosOgImage('National Orchid Show'),
-  description: PAGE_DESCRIPTION,
-  path: '/national-show',
-});
+// The hub keeps the full NOS default title; the group template would only repeat the show's name.
+export const metadata: Metadata = {
+  ...buildPageMetadata({
+    title: 'National Orchid Show',
+    image: nosOgImage('National Orchid Show'),
+    description: PAGE_DESCRIPTION,
+    path: '/national-show',
+  }),
+  title: { absolute: NOS_TITLE_DEFAULT },
+};
 
 /** The hub's `<h1>` (R68, Brad): the show's plain name. nav-config keeps its own longer label
  *  as the mega-menu lead, so the two are deliberately separate. */
 const HUB_HEADING = 'National Orchid Show';
 
-const HUB_MEGA = NAV.find((n) => n.type === 'mega');
+const HUB_MEGA = NOS_NAV.find((n) => n.type === 'mega');
 
 /** The mega's own Tickets leaf (the removed header CTA used to resolve it the same way). Throws at
  *  load if the leaf is ever removed rather than rendering a hero CTA with no destination. */
@@ -392,7 +398,7 @@ export default async function NationalShowPage() {
                 <div className="nos-hero-actions">
                   <Button<typeof Link>
                     as={Link}
-                    href={TICKETS_CTA.href}
+                    href={nosPath(TICKETS_CTA.href)}
                     variant="on-dark"
                     data-nos-hero-button=""
                   >
@@ -400,7 +406,7 @@ export default async function NationalShowPage() {
                   </Button>
                   <Button<typeof Link>
                     as={Link}
-                    href={HUB_PLAN_LINK.href}
+                    href={nosPath(HUB_PLAN_LINK.href)}
                     variant="ghost-on-dark"
                     data-nos-hero-button=""
                   >
@@ -475,9 +481,13 @@ export default async function NationalShowPage() {
               a pending marker. */}
           <p className="mt-4 font-sans text-[16px] leading-[1.55] text-ink/80">
             Every plant is assessed by{' '}
-            <Link href="/judging" className="text-[var(--accent)] underline underline-offset-2">
+            {/* The judges are the Council's: a plain anchor to the SAOC site, same tab, no arrow. */}
+            <a
+              href={saocUrl('/judging')}
+              className="text-[var(--accent)] underline underline-offset-2"
+            >
               accredited SAOC judges
-            </Link>{' '}
+            </a>{' '}
             {WITHHOLD_UNSOURCED ? (
               <>across ten botanical classes.</>
             ) : (
@@ -522,7 +532,7 @@ export default async function NationalShowPage() {
         <ul data-nos-destinations="">
           {visitorCards.map(({ href, title: cardTitle, description }) => (
             <li key={href}>
-              <Link href={href}>
+              <Link href={nosPath(href)}>
                 <strong>{cardTitle}</strong>
                 <span>{description}</span>
                 <i className="go" aria-hidden="true">
@@ -626,10 +636,10 @@ export default async function NationalShowPage() {
             Register your interest through your society or contact the council directly.
           </p>
           <div className="flex flex-wrap gap-4">
-            <Button<typeof Link> as={Link} href="/societies" variant="on-dark">
+            <Button as="a" href={saocUrl('/societies')} variant="on-dark">
               Find your society
             </Button>
-            <Button<typeof Link> as={Link} href="/national-show/exhibitors" variant="ghost-on-dark">
+            <Button<typeof Link> as={Link} href="/exhibitors" variant="ghost-on-dark">
               Exhibitor information
             </Button>
           </div>
@@ -642,10 +652,10 @@ export default async function NationalShowPage() {
         title={ctaSentence}
         action={
           <div className="flex flex-wrap justify-center gap-4">
-            <Button<typeof Link> as={Link} href={TICKETS_CTA.href} variant="on-dark">
+            <Button<typeof Link> as={Link} href={nosPath(TICKETS_CTA.href)} variant="on-dark">
               {TICKETS_CTA.label}
             </Button>
-            <Button<typeof Link> as={Link} href={HUB_PLAN_LINK.href} variant="ghost-on-dark">
+            <Button<typeof Link> as={Link} href={nosPath(HUB_PLAN_LINK.href)} variant="ghost-on-dark">
               {HUB_PLAN_LINK.label}
             </Button>
           </div>

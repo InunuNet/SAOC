@@ -18,6 +18,7 @@ import { buildPageMetadata } from '@/lib/seo';
 import type { ShowFaq, ShowVisitorInfo } from '@/types';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
+import { saocUrl } from '@/lib/site-hosts';
 
 // The order ShowFaqList lays its category sections out in; the FAQPage node follows it so the
 // markup reads in the order the page does.
@@ -68,7 +69,7 @@ export default async function ShowFaqPage() {
       body: (
         <>
           <AdmissionPriceList cards={loaded.cards} />
-          <Button as={Link} href="/national-show/tickets" variant="ghost" className="mt-4">
+          <Button as={Link} href="/tickets" variant="ghost" className="mt-4">
             {info?.admissionLinkLabel ?? 'See ticket prices and book'} →
           </Button>
         </>
@@ -153,10 +154,10 @@ export default async function ShowFaqPage() {
               </p>
             ) : null}
             <div className="mt-5 flex flex-wrap gap-4">
-              <Button as={Link} href="/contact" variant="primary">
+              <Button as="a" href={saocUrl('/contact')} variant="primary">
                 Ask the council →
               </Button>
-              <Button as={Link} href="/national-show/plan-your-visit" variant="ghost">
+              <Button as={Link} href="/plan-your-visit" variant="ghost">
                 Plan your visit
               </Button>
             </div>

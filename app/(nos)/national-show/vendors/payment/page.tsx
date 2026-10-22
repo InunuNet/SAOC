@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
@@ -15,6 +14,7 @@ import {
 import { verifyVendorStandPaymentToken } from '@/lib/vendor-stand-payment-token';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
+import { saocUrl } from '@/lib/site-hosts';
 
 /**
  * Public stand-payment page (mission vendor-gated-registration-flow, M3/F29). Token-gated via
@@ -86,9 +86,9 @@ export default async function VendorStandPaymentPage({
         ) : (
           <p className="font-sans text-[15px] text-ink">
             This payment link is no longer valid. Please{' '}
-            <Link href="/contact" className="text-ink underline underline-offset-2">
+            <a href={saocUrl('/contact')} className="text-ink underline underline-offset-2">
               contact SAOC
-            </Link>{' '}
+            </a>{' '}
             if you believe this is an error.
           </p>
         )}

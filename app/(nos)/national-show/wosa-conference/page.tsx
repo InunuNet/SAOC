@@ -81,7 +81,7 @@ export default async function WosaConferencePage() {
           holding={{ facts, keepAfterProse: true }}
           afterProse={
             <div className="space-y-8">
-              <Button as={Link} href="/national-show/tickets#ticket-wosa" variant="primary">
+              <Button as={Link} href="/tickets#ticket-wosa" variant="primary">
                 Buy ticket
               </Button>
               {/* SAOC attributes and links out; it never authors conservation content in its

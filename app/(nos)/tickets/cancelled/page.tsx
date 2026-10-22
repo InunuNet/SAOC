@@ -50,7 +50,7 @@ export default async function TicketCancelledPage({
         <div className="nk-state">
           {ref ? <p className="font-sans text-[15px] text-muted">Booking ref: {ref}</p> : null}
           <Link
-            href="/national-show/tickets"
+            href="/tickets"
             className="nk-btn nk-cta mt-8 inline-flex w-auto"
           >
             {cancelledButtonLabel}

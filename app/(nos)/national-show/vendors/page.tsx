@@ -94,7 +94,7 @@ export default async function VendorsPage() {
         actions={
           <Button<typeof Link>
             as={Link}
-            href="/national-show/vendors/apply"
+            href="/vendors/apply"
             variant="on-dark"
             data-nos-hero-button=""
           >
@@ -134,7 +134,7 @@ export default async function VendorsPage() {
               No nurseries have been confirmed for the South African Exhibitors Pavilion yet.
             </p>
             <div className="mt-6">
-              <Button<typeof Link> as={Link} href="/national-show/vendors/apply" variant="primary">
+              <Button<typeof Link> as={Link} href="/vendors/apply" variant="primary">
                 Vendor Application
               </Button>
             </div>
@@ -145,7 +145,7 @@ export default async function VendorsPage() {
       <CtaBand
         title="Interested in exhibiting at the 2027 National Orchid Show?"
         action={
-          <Button as={Link} href="/national-show/vendors/apply" variant="on-dark">
+          <Button as={Link} href="/vendors/apply" variant="on-dark">
             Register as a vendor
           </Button>
         }

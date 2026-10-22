@@ -84,10 +84,10 @@ export function LongFormPage({
 
       {cta ? (
         <div data-nos-longform-cta="" className="nos-longform-cta">
-          <Button as={Link} href="/national-show/tickets" variant="primary">
+          <Button as={Link} href="/tickets" variant="primary">
             Tickets
           </Button>
-          <Button as={Link} href="/national-show/plan-your-visit" variant="ghost">
+          <Button as={Link} href="/plan-your-visit" variant="ghost">
             Plan your visit
           </Button>
         </div>

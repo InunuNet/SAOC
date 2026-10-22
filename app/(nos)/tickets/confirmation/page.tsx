@@ -80,7 +80,7 @@ async function BookingNotFound() {
       />
       <NosSection>
         <div className="nk-state">
-          <Link href="/national-show/tickets" className="nk-btn nk-cta">
+          <Link href="/tickets" className="nk-btn nk-cta">
             Back to tickets
           </Link>
         </div>
@@ -180,7 +180,7 @@ export default async function TicketConfirmationPage({
           ) : null}
 
           <Link
-            href="/national-show/tickets"
+            href="/tickets"
             className="mt-8 inline-block py-0.5 font-sans text-[14px] text-ink underline underline-offset-2 hover:text-accent"
           >
             Back to tickets
