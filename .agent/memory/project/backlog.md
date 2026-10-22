@@ -2828,3 +2828,23 @@ Cron c8d8059d (health checks) is session-only — re-create next session.
 - [ ] P1 door-scanner finding (saoc-82, verified in code 2026-10-22): lib/checkin.ts is single-use per ticket with NO date/product check. Refusal codes are only bad-request / not-found / wrong-show / unpaid / already-checked-in (lib/checkin.ts:29,89). So: (a) a VIP QR is admitted on any day Fri–Sun (once); (b) a Day Pass for a chosen day is admitted on any day; (c) a Weekend Pass is admitted on its first day and REFUSED "Already checked in" (409) on days 2 and 3. (c) breaks a paid product at the door. Needs a door-policy decision (per-day check-in for multi-day passes; enforce chosenDay / event day?) → spec + full chain, checkout/door security path.
 - [ ] P2 layout axis at 1280: hero H1/lede at x32 vs form column centred at x385 (496px). One left axis — use the shared F19 container axis (craft-floor.md).
   - Codi design input for the door-policy spec (2026-10-22): (1) result banner shows product name + valid day(s) under the valid/invalid line, from TICKET_PRODUCTS (e.g. "Weekend Pass · Friday 24 to Sunday 26 September"); (2) per-day check-in record — Weekend Pass shows "Day 2 of 3" not "Already checked in"; same-day repeat shows that day's first scan time (folds in the parked /api/admin/checkin first-check-in-time gap); (3) distinct wrong-day refusal, #9b2c2c invalid banner + ✕ icon, wording = Brad's call. Codi reviews door screens once the spec has goldens.
+
+## /national-show/programme — Codi route 47 (2026-10-22, beta 1280: PASS)
+- [ ] P3-a: "Programme" is both H1 and first content H2 — drop the H2 (or use existing "Sessions" label if present); no new copy (audit.md headings).
+- [ ] P3-b: lede promises a schedule but every item reads "Dates/Schedule to follow". Keep lede (R7); move the existing "Be the first to know" sign-up directly under the lede.
+- [ ] OWNER: Symposium, WOSA, Workshops dates + session times — already Lee-Ann items 3–5; page reads unfinished until they land.
+
+## /national-show/vendors — Codi route 48 (2026-10-22, beta 1280: PASS)
+- [ ] P2: only action "Register as a vendor" → /national-show/vendors/apply sits at y≈2,089 after four paragraphs. Add the same existing link as a primary button directly under the lede (~y 300); keep the end one. Same label, no new copy (critique.md user control; craft-floor.md primary action above the fold).
+
+## /admin/door — Codi route 50 (2026-10-22, LIVE 390 Canary: PASS)
+- [ ] P2: when the camera can't start (permission denied / old phone / iframe) the empty 1:1 camera tile still takes ~300px, pushing Manual entry to y≈650/784. Collapse the tile when camera is unavailable — show only the existing message + "Try camera again" with Manual entry directly beneath; keep the tile when the camera runs. Fold into the door-policy spec (route 46) since it touches the same screen.
+- [ ] Ticketing: add an HTTP-level test (mocked request) for the checkout route rejecting a requiresDaySelection position with chosenDay null; today proved by source-position check only (nos-ticket-day-stub/checks/f1-server.mjs, PASS on main 335e64be). Fold into door-policy spec.
+- [ ] Harness (upstream Athanor): contract wrapper reports ERROR, not SKIP, for a gws_inbox_check assertion marked required:false with no manifest (footer-newsletter A23). File upstream per athanor.md.
+
+## Health check 2026-10-22 ~07:00 SAST (saoc-82)
+- GitHub: last 10 main runs green (through 7a85740f #31). Older main failures (39688615039 2026-10-21) superseded by later green runs.
+- App Hosting saoc-prod: rollouts success for #26 #27 #25 #28 #29 #30 #31.
+- Cloud Logging 12h: only 4 × 500 on old /_next/static/chunks/*.js at 05:16:55 UTC, right after the admin-redesign rollout — version skew from an already-open tab requesting the previous build's chunks (matches Codi's "reload admin once" note). No app errors. P3: consider Next deploymentId/skew protection so old tabs reload instead of 500ing on chunks.
+- Firestore: 29 orders stranded in `reserved` past expiry — unchanged; Cloud Scheduler for reconcile-orders still not enabled (carried-over Brad item).
+- Beta smoke (basic auth): / /national-show /national-show/tickets /national-show/vendors /contact = 200; /no-such-page = 404.
