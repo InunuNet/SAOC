@@ -49,9 +49,10 @@ export const NOS_FOOTER_EXPLORE: readonly NosFooterLink[] = (() => {
   });
 })();
 
-/** The legal row's pages served on the NOS site (R2.5). Media kit joins in F4, once its NOS page exists. */
+/** The legal row's pages served on the NOS site (R2.5). */
 export const NOS_FOOTER_LEGAL: readonly NosFooterLink[] = [
   { id: 'privacy', label: 'Privacy', href: '/privacy' },
   { id: 'terms', label: 'Terms', href: '/terms' },
   { id: 'refunds', label: 'Refunds', href: '/refunds' },
+  { id: 'media-kit', label: 'Media kit', href: '/national-show/media-kit' },
 ];
