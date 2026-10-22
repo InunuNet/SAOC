@@ -42,9 +42,9 @@ function AppleLogo() {
  * Uses Apple's "White with outline" permitted button style (white fill, black mark and
  * text, 1px black-ish border) — architect decision, so this button reads as part of the
  * same family as the other two on this card's warm ivory background, rather than Apple's
- * default solid-black button standing apart. `min-h-[44px]` is deliberately taller than
- * the other two buttons' `min-h-[40px]`: Apple's HIG sets 44pt as a hard minimum tap
- * target for this specific button and it must not be shrunk to match its neighbours.
+ * default solid-black button standing apart. `min-h-[44px]` matches the other
+ * two buttons: Apple's HIG sets 44pt as a hard minimum tap target for this button, and admin
+ * buttons are 44px tall.
  */
 export function AppleSignInButton({ onClick, disabled, loading }: AppleSignInButtonProps) {
   return (

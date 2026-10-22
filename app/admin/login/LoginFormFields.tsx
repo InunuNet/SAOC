@@ -16,7 +16,7 @@ interface LoginFormFieldsProps {
 // Matches ContactForm's input/label treatment (components/contact/ContactForm.tsx)
 // plus a visible focus ring — the site's own inputs otherwise rely on border colour alone.
 const inputClass =
-  'w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-800 disabled:opacity-60';
+  'min-h-[44px] w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-800 disabled:opacity-60';
 const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 
 /**
@@ -81,7 +81,7 @@ export function LoginFormFields({
       <button
         type="submit"
         disabled={disabled}
-        className="w-full rounded-sm bg-primary px-4 py-2.5 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-800 disabled:cursor-not-allowed disabled:opacity-60"
+        className="min-h-[44px] w-full rounded-sm bg-primary px-4 py-2.5 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-800 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? 'Signing in…' : 'Sign in'}
       </button>
