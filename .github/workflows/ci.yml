@@ -83,7 +83,7 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: E2E tests
-        run: pnpm test:e2e
+        run: bash scripts/ci-e2e.sh
 
       # ADDED 2026-09-08 (mission ticketing-complete M1/F7, contract-f7.yaml A20/A25/
       # A29), corrected 2026-09-08 after a Codex GPT-5.5 review caught this comment
