@@ -1,0 +1,16 @@
+{
+  "faqPath": "/national-show/faq",
+  "widths": [
+    1280,
+    390
+  ],
+  "costQuestion": "How much does it cost to get in?",
+  "venueQuestion": "Where exactly is the show being held?",
+  "datesQuestion": "When is the show?",
+  "wiredHook": "data-faq-wired",
+  "shots": ".tmp/ex-shots",
+  "sanityApiVersion": "2024-01-01",
+  "sanityFaqQuery": "*[_type==\"showFaq\" && active==true]{_id,question,status}",
+  "wtePath": "/national-show/what-to-expect",
+  "ticketsHref": "/national-show/tickets"
+}
