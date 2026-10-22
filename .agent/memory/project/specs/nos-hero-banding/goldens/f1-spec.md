@@ -31,7 +31,7 @@ l.125 (the dark sage diagonal, plus a bone-to-transparent pull at the bottom).
 | lib/data/heroImages.ts:4 | the orchid-yellow entry becomes a comment that it returns with a high-quality original. Violet, pink, dark keep their order. public/images/orchid-yellow.jpg stays |
 | lib/image-loader.ts:31 | a quality other than DEFAULT_QUALITY (75) maps `/images/x.jpg` to `x.jpg-<w>-q<quality>.webp`. The Sanity branch already sends `q` |
 | scripts/generate-image-variants.mjs:12, 44, 45, 57 | HERO_SOURCES (the fallback's three files) also get a `-q88` set, written with `{ quality: 88, smartSubsample: true }`. Every other variant stays `{ quality: 75 }` |
-| app/globals.css:356, 365, 374, 379 | the comment, the <768 veil tail, the >=768 veil tail (Codi's exact stops), the pull on --parchment with Codi's stops. The diagonal is unchanged. No dither, noise or filter layer |
+| app/globals.css:356, 365, 374, 379 | the comment, the <768 veil tail, the >=768 veil tail (Codi's exact stops), the pull on --parchment with Codi's stops to 56px and the amended ease-in to 84px (below). The diagonal is unchanged. No dither, noise or filter layer |
 
 **The <768 veil tail is derived, not invented.** Codi's desktop tail is mapped proportionally onto the mobile shoulder (70%, 0.86). A
 stop's position becomes 70 + 30 x (p - 62) / 38, and its alpha becomes 0.86 x a / 0.84. Positions round to the whole percent and alphas
@@ -64,7 +64,7 @@ slide is made active by its dot. Viewports are 1440 and 1920 at DPR 1 and 2, in 
 
 | measure | BASE (yellow kept) | golden fix simulated on BASE |
 |---|---|---|
-| R2a step | 16.0-17.0 on every slide (at the hero/MissionBlock boundary) | 2.48-4.32 (the steepest part of the pull) |
+| R2a step | 16.0-17.0 on every slide (at the hero/MissionBlock boundary) | 2.36-4.32 (the steepest part of the pull) |
 | R2b bpp | yellow 0.46-0.53 FAIL; pink 1.38-1.57 (lowest kept); dark 4.30-4.89; violet 5.64-6.41 | unchanged (the source) |
 | R3 seam | 16-17 | 0-1 |
 | R4 min contrast | 5.57:1 (dark, the h1 em) | 5.57:1 |
@@ -72,10 +72,57 @@ slide is made active by its dot. Viewports are 1440 and 1920 at DPR 1 and 2, in 
 Pink is the closest kept slide to the starvation line (1.38 at 2048 wide). The simulation injected the golden stops and moved the slide
 srcset to q=88 on BASE's page, so it is exactly what the thresholds were set against.
 
-**Open risk, for the lead and Codi.** Codi's pull still starts at 72px with alpha slope 0.0125/px (0 -> 0.2 over 16px). BASE's starts
-with 1/72 = 0.0139/px. The onset kink, a faint horizontal line about 72 CSS px above the hero's bottom edge, is therefore about 90% as
-strong as on BASE. Pixel samples on pink at x=200 are identical in BASE and the simulated fix down to 660px. R2a passes because the
-line is a kink, not a step. Softening it needs a gentler first stop, which is Codi's call, not this spec's.
+## Amendment: the pull eases in (Codi, 2026-10-22)
+
+Codi's ruling on the architect's risk, verbatim: "yes, remove the line in rHB. The aim of the round is that no line is visible, and a
+kink reads as a line at 90% strength (impeccable 4.4.0 craft-floor.md: gradients must be smooth with no visible seams, and an
+eye-visible slope change counts as a seam). Make the pull ease in so its slope at the join equals BASE's (0.0139/px), with no slope
+jump. Either start it higher with a smooth-step (ease-in) segment, or add a first stop that matches the tangent. Acceptance: the
+band-step metric stays where your fix has it (≤4.3 levels), add a kink metric (the change in per-px slope across the join must be ≤10%
+of BASE), copy contrast ≥5.57:1 holds, and I'll judge a 1280 and a 390 screenshot by eye."
+
+His first pull went 0.2 at 56px to 0 at 72px, a slope of 0.0125/px against BASE's 0.0139/px, so about 90% of the line survived.
+Codi's stops from 0 to 56px are kept. Above 56px the pull becomes a quadratic ease-in, alpha(u) = 0.2 x (u/28)^2 with u = 84px - d. It
+is sampled every 4px and rounded to whole 1/255 steps: 37, 26, 17, 9, 4, 1, 0 of 255 at 60 to 84px.
+
+Chrome keeps a stop's alpha in 8 bits, which is why the steps are whole. A first try at 4-decimal stops 2px apart rendered unevenly, and
+its computed alphas came back rounded.
+
+In 1/255-per-px units, BASE's join kink is 255/72 = 3.54.
+
+| point | slope change | of BASE |
+|---|---|---|
+| top (above it the slope is 0) | first chord 0.25 | 7.1% |
+| interior joints | 0.5, 0.5, 0.75, 0.25, 0.5, 0.75 | 14-21%, below Codi's own 16px joint (34%) |
+| the meeting with Codi's 36-56px segment (last chord 3.5 against 3.825) | 0.325 | 9.2% |
+
+The pull now reaches 84px, still inside the section's 96px bottom padding.
+
+**Kink metric (R7).** The 8-bit render cannot resolve a 10% slope change row by row: a vertical gradient paints whole rows one level
+apart, and per-row second differences measured about 2-3.5 levels/px on BASE and the fix alike. So R7 is taken in the alpha domain from
+the pull's computed stops, where it is exact. The render is then held to those stops: the pull alone over a black field must match
+parchment x alpha(y) within 3 levels.
+
+**Limits:**
+- the top stop: at most 10% of BASE (Codi);
+- every other joint at or above 46px: at most 25%.
+
+**Calibration, BASE against the amended fix simulated on BASE:**
+
+| measure | BASE | amended fix |
+|---|---|---|
+| top kink | 1.0 | 0.072 |
+| worst joint at or above 46px | 1.0 | 0.234 |
+| profile (levels) | 0.42-2.09 | 0.56-2.34 |
+| R2a band step | 16-17 | 2.36-4.32 |
+
+The R2a ceiling is 4.35 rather than 4.3, because the fix itself measures 4.32. The seam (0-1) and copy contrast (5.57:1 minimum)
+are unchanged from the fix.
+
+**No 2560 variant (R6), confirmed by Codi** on condition that the largest hero candidate is at least 1920w and sizes picks it at 1280
+DPR2. At 1280x2 the hero picks w=2048, its largest candidate, under sizes="100vw", on BASE and on the fix.
+
+Codi judges a 1280 and a 390 screenshot by eye once the dev has applied the amended lines.
 
 ## Rendered harness (test only)
 

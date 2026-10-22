@@ -8,7 +8,7 @@
 //   R2  BAND METRIC, two parts, both over the scrim region (the hero's bottom third through 8 CSS px into MissionBlock):
 //       (a) step: the per-row mean colour (all columns) must not jump by more than `rowStep` levels (any channel, 0-255) between adjacent
 //           device rows. A horizontally coherent step - a band edge, a stripe, the seam - moves the whole row mean; photo texture and
-//           Chrome's +-1 gradient dither average out. BASE: 16.0-17.0 on every slide (bone pull vs parchment section); golden fix 2.5-4.3.
+//           Chrome's +-1 gradient dither average out. BASE: 16.0-17.0 on every slide (bone pull vs parchment section); golden fix 2.36-4.32.
 //       (b) starvation: source bytes x 8 / delivered pixels of the active slide >= `sourceBpp`. A source with fewer bits than the
 //           delivered pixels contours (rings) in smooth areas whatever q is asked; BASE yellow 0.46-0.53, pink 1.38-1.57.
 //   R3  seam: the last hero row and the first MissionBlock row (row means) differ by <= `seam` per channel, and that MissionBlock row
@@ -17,6 +17,10 @@
 //       between its computed colour and the lightest backdrop pixel in its box (+ contentMargin), the eyebrow pill's own fill composited.
 //   R5  slide count: slides, dots and the "n of N" labels all equal `slides` (3 under the filter); dot k is "Show slide k"; with motion
 //       allowed, autoplay (clock-driven, `intervalMs`) visits 1 -> 2 -> 3 -> 1.
+//   R6  no 2560 variant: at 1280 DPR2 the hero picks its largest srcset candidate under sizes 100vw, and that candidate is >= 1920w.
+//   R7  no line at the pull's top (Codi's amendment): from the pull's computed stops, the slope change at the top stop is <= 10% of BASE's
+//       join kink (0 -> 1/72 alpha/px) and every other joint at or above 46px <= 25%; the pull rendered alone over black matches
+//       parchment x alpha(y) within 3 levels (1280x1, 1280x2, 390x2, 1920x1).
 // --calibrate runs the unfiltered (yellow) build and prints the R2-R4 numbers per slide; --calibrate --simulate also injects the golden
 // scrim stops and q=88 into BASE's page (calibration only: what the thresholds were set against). Neither asserts.
 import { finish, goldenJson } from './_lib.mjs';
@@ -205,6 +209,66 @@ for (const mode of MODES) {
         if (JSON.stringify(seen) !== JSON.stringify(want)) failures.push(`${mode} @${width}: autoplay visited ${JSON.stringify(seen.map((v) => v + 1))}, want ${JSON.stringify(want.map((v) => v + 1))} (R5)`);
         await mctx.close();
       }
+    }
+    // R6: no 2560 variant, so at 1280 DPR2 (2560 device px) sizes="100vw" must pick the largest candidate, and that must be >= 1920w.
+    for (const [width, dpr] of T.largestAt) {
+      const ctx = await browser.newContext({ viewport: { width, height: 1200 }, deviceScaleFactor: dpr, reducedMotion: 'reduce' });
+      await authorize(ctx, srv);
+      const page = await ctx.newPage();
+      await page.goto(`${srv.origin}/`, { waitUntil: 'networkidle' });
+      if (SIMULATE) await page.evaluate((SLIDES) => document.querySelectorAll(`${SLIDES} img`).forEach((img) => { img.srcset = img.srcset.replace(/q=75/g, 'q=88'); }), SLIDES);
+      await page.waitForFunction((SLIDES) => { const img = document.querySelector(`${SLIDES} img`); return img && img.complete && img.naturalWidth > 0; }, SLIDES, { timeout: 60_000 });
+      const pick = await page.evaluate((SLIDES) => { const img = document.querySelector(`${SLIDES} img`); return { src: img.currentSrc, sizes: img.sizes, widths: img.srcset.split(',').map((c) => Number(c.trim().split(/\s+/)[1].replace('w', ''))) }; }, SLIDES);
+      let w = null; try { w = Number(new URL(pick.src).searchParams.get('w')); } catch { /* reported below */ }
+      const largest = Math.max(...pick.widths);
+      report.push({ at: `${mode} @${width}x${dpr}`, largestCandidate: largest, picked: w, sizes: pick.sizes });
+      if (!CALIBRATE) {
+        if (largest < T.minLargestWidth) failures.push(`${mode} @${width}x${dpr}: the largest hero candidate is ${largest}w, want >= ${T.minLargestWidth}w (R6)`);
+        if (w !== largest || pick.sizes !== '100vw') failures.push(`${mode} @${width}x${dpr}: picked w=${w} with sizes ${JSON.stringify(pick.sizes)}, want the largest candidate (${largest}w) under sizes 100vw (R6)`);
+      }
+      await ctx.close();
+    }
+    // R7 kink, in the alpha domain where it is exact: the pull layer's computed stops (alpha, px from the bottom) give the chord slope of
+    // every segment; the slope above the top stop is 0. A joint's kink is the change of slope across it. Every joint at or above
+    // kinkZone px must change the slope by <= kinkInterior x BASE's join kink (BASE: 0 -> 1/72 = 0.0139/px at 72px), and the top stop
+    // (the join, Codi's criterion) by <= kinkRatio x it. The 8-bit render cannot resolve a 10% slope change row by row (a vertical gradient paints whole rows one level apart), so the
+    // render is held to the stops instead: the pull alone over a black field (slides, copy, diagonal and veil hidden) must match
+    // parchment x alpha(y) within profileTol levels on every row of the bottom kinkBand px.
+    for (const [width, dpr] of T.kinkViewports) {
+      const vp = `${width}x${dpr}`;
+      const ctx = await browser.newContext({ viewport: { width, height: 1200 }, deviceScaleFactor: dpr, reducedMotion: 'reduce' });
+      await authorize(ctx, srv);
+      const page = await ctx.newPage();
+      await page.goto(`${srv.origin}/`, { waitUntil: 'networkidle' });
+      if (SIMULATE) await page.addStyleTag({ content: SIM_CSS });
+      const bg = await page.evaluate((HERO) => getComputedStyle(document.querySelector(`${HERO} > [data-hero-scrim='bone']`)).backgroundImage, HERO);
+      const stops = [...bg.matchAll(/rgba?\(([^)]*)\)\s+(-?[\d.]+)px/g)].map((m) => { const c = m[1].split(/[\s,/]+/).filter(Boolean).map(Number); return { a: c.length > 3 ? c[3] : 1, at: Number(m[2]), rgb: c.slice(0, 3) }; });
+      if (!/^linear-gradient\(to top,/.test(bg) || stops.length < 2) { failures.push(`${mode} @${vp}: cannot read the pull's stops from ${JSON.stringify(bg.slice(0, 120))} (R7)`); await ctx.close(); continue; }
+      const seg = stops.slice(1).map((q, k) => (stops[k].a - q.a) / (q.at - stops[k].at));
+      const joints = stops.slice(1).map((q, k) => ({ at: q.at, kink: Math.abs((k + 1 < seg.length ? seg[k + 1] : 0) - seg[k]) }));
+      const zone = joints.filter((j) => j.at >= T.kinkZone);
+      const worst = zone.reduce((m, j) => (j.kink > m.kink ? j : m), { at: null, kink: 0 });
+      const alphaAt = (d) => { if (d <= stops[0].at) return stops[0].a; for (let k = 1; k < stops.length; k++) if (d <= stops[k].at) return stops[k - 1].a + ((stops[k].a - stops[k - 1].a) * (d - stops[k - 1].at)) / (stops[k].at - stops[k - 1].at); return 0; };
+      await page.addStyleTag({ content: `${HERO}{background:#000 !important}${SLIDES},${COPY},${HERO} > [data-hero-scrim='diagonal'],${HERO} > [data-hero-scrim='veil']{visibility:hidden !important}` });
+      const { hero } = await info(page);
+      const shot = await page.screenshot({ clip: { x: 0, y: hero.y + hero.h - T.kinkBand, width: hero.w, height: T.kinkBand }, animations: 'disabled', caret: 'hide' });
+      const { data: kd, info: ki } = await sharp(shot).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+      const ground = stops[0].rgb.reduce((t, v) => t + v, 0) / 3;
+      let off = 0; let offAt = 0;
+      for (let y = 0; y < ki.height - T.profileSkip * dpr; y++) {
+        let t = 0; for (let x = 0; x < ki.width; x++) { const k = (y * ki.width + x) * 3; t += kd[k] + kd[k + 1] + kd[k + 2]; }
+        const d = T.kinkBand - (y + 0.5) / dpr;
+        const e = Math.abs(t / (3 * ki.width) - ground * alphaAt(d));
+        if (e > off) { off = e; offAt = d; }
+      }
+      report.push({ at: `${mode} @${vp}`, top: stops[stops.length - 1].at, joinKink: Number((joints[joints.length - 1].kink / T.kinkBase).toFixed(3)), worstKink: Number((worst.kink / T.kinkBase).toFixed(3)), worstAt: worst.at, profileOff: Number(off.toFixed(2)), profileOffAt: Number(offAt.toFixed(1)) });
+      if (!CALIBRATE) {
+        const join = joints[joints.length - 1];
+        if (join.kink > T.kinkRatio * T.kinkBase) failures.push(`${mode} @${vp}: the pull's slope jumps by ${(join.kink / T.kinkBase).toFixed(3)} x BASE's at its top (${join.at}px), max ${T.kinkRatio} (R7)`);
+        if (worst.kink > T.kinkInterior * T.kinkBase) failures.push(`${mode} @${vp}: the pull's slope changes by ${(worst.kink / T.kinkBase).toFixed(3)} x BASE's join kink at ${worst.at}px, max ${T.kinkInterior} for a joint below the top (R7)`);
+        if (off > T.profileTol) failures.push(`${mode} @${vp}: the rendered pull is ${off.toFixed(2)} levels off its stops at ${offAt.toFixed(1)}px above the hero's bottom, max ${T.profileTol} (R7)`);
+      }
+      await ctx.close();
     }
   } catch (e) {
     failures.push(`${mode}: render error: ${e && e.message ? e.message : e}`);

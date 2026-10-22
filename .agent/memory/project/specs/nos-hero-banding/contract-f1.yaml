@@ -5,7 +5,7 @@ slug: nos-hero-banding
 goal: >-
   Remove the banding in the home hero's bottom third: the hero slide Image requests q=88 (and only it), the static fallback drops
   orchid-yellow and gets a q88 smartSubsample variant set, the veil tails ease out on Codi's exact stops (<768 derived proportionally),
-  the pull ends on MissionBlock's --parchment so there is no seam, and dots, labels and autoplay follow the slide data (3 once the lead
+  the pull ends on MissionBlock's --parchment so there is no seam and eases in at its top so there is no line, and dots, labels and autoplay follow the slide data (3 once the lead
   removes yellow in Sanity), with no new copy, tokens or colours.
 created_at: '2026-10-22'
 autonomy: high
@@ -42,7 +42,7 @@ assertions:
       description: Variants and loader - the build's generator writes a -q88 smartSubsample webp set for violet/pink/dark byte-equal to sharp, every plain variant stays q75 byte-equal, no other -q88 set; the loader maps quality 88 to it and sends q=88 to Sanity
       command: node .agent/memory/project/specs/nos-hero-banding/checks/f1-variants.mjs
     - id: A5
-      description: Rendered (public + preview builds on live Sanity with the test-only yellow filter; 1440/1920 x DPR 1/2; every slide) - q=88 delivery, band step <= 6 levels and source >= 1.0 bpp in the bottom third, no seam into Our purpose, copy >= 4.5:1, 3 slides/dots/labels and autoplay 1-2-3-1
+      description: Rendered (public + preview builds on live Sanity with the test-only yellow filter; 1440/1920 x DPR 1/2; every slide) - q=88 delivery, band step <= 4.35 levels and source >= 1.0 bpp in the bottom third, no seam into Our purpose, copy >= 4.5:1, 3 slides/dots/labels and autoplay 1-2-3-1, the 2048w candidate picked at 1280 DPR2, and the pull's top kink <= 10% of BASE (other eased joints <= 25%) with the render matching its stops
       command: node .agent/memory/project/specs/nos-hero-banding/checks/f1-rendered.mjs
     - id: A6
       description: Non-regression - 17 SAOC/NOS routes at 1280/390 in both builds keep BASE geometry and screenshot blocks (home hero masked), no horizontal overflow
