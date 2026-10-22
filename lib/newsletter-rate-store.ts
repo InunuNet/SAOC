@@ -1,42 +1,59 @@
 import type { RateLimitAttempt } from './newsletter-rate-limit';
 
-/**
- * Per-instance in-memory attempt history for the newsletter routes. Same known limitation as
- * the vendor routes: each server instance counts on its own, and a restart clears it.
- */
+// Per-instance in-memory attempt history for the newsletter routes. Same known limitation as
+// the vendor routes: each server instance counts on its own, and a restart clears it.
 
-const MAX_TRACKED_KEYS = 10_000;
+export const MAX_TRACKED_KEYS = 10_000;
+// Above the highest per-key limit (10), so trimming never lowers a key's in-window count below it.
+const MAX_ATTEMPTS_PER_KEY = 50;
 
 export interface AttemptStore {
   getPriorAttempts(key: string): RateLimitAttempt[];
   recordAttempt(key: string, at: Date): void;
 }
 
-export function createAttemptStore(windowMs: number): AttemptStore {
+// The Map is kept in last-activity order (a key is deleted and re-inserted on every attempt), so
+// its first entry is always the least recently active key. Each record then does bounded work:
+// drop head entries whose newest attempt has aged out of the window, then, if the map is still
+// over `maxKeys`, evict from the head. No full scan ever runs.
+//
+// Evicting the oldest-active key (rather than refusing new keys) is deliberate. Refusing new keys
+// under pressure would let a flood of throwaway addresses lock every real visitor out. Evicting
+// costs the attacker nothing they did not already have, since each address is limited on its own
+// counter, and it only resets the counter of the key idle longest; resetting that counter takes
+// `maxKeys` other distinct addresses, each of which spends its own allowance.
+export function createAttemptStore(windowMs: number, maxKeys = MAX_TRACKED_KEYS): AttemptStore {
   const attemptsByKey = new Map<string, RateLimitAttempt[]>();
 
-  function live(attempts: RateLimitAttempt[], now: number): RateLimitAttempt[] {
-    return attempts.filter((attempt) => now - attempt.at.getTime() < windowMs);
+  function newestAt(attempts: RateLimitAttempt[]): number {
+    return attempts[attempts.length - 1]?.at.getTime() ?? 0;
+  }
+
+  function evictFromHead(now: number): void {
+    for (const [trackedKey, attempts] of attemptsByKey) {
+      const expired = now - newestAt(attempts) >= windowMs;
+      if (!expired && attemptsByKey.size <= maxKeys) return;
+      attemptsByKey.delete(trackedKey);
+    }
   }
 
   return {
     getPriorAttempts: (key) => attemptsByKey.get(key) ?? [],
     recordAttempt: (key, at) => {
       const now = at.getTime();
-      attemptsByKey.set(key, [...live(attemptsByKey.get(key) ?? [], now), { key, at }]);
-      if (attemptsByKey.size <= MAX_TRACKED_KEYS) return;
-      for (const [trackedKey, attempts] of attemptsByKey) {
-        if (live(attempts, now).length === 0) attemptsByKey.delete(trackedKey);
-      }
+      const kept = (attemptsByKey.get(key) ?? []).filter(
+        (attempt) => now - attempt.at.getTime() < windowMs,
+      );
+      attemptsByKey.delete(key);
+      attemptsByKey.set(key, [...kept, { key, at }].slice(-MAX_ATTEMPTS_PER_KEY));
+      evictFromHead(now);
     },
   };
 }
 
-/**
- * Wraps a store for ONE request. Firestore re-runs transaction callbacks on contention, and the
- * handler calls getPriorAttempts/recordAttempt each time it runs; this snapshots the history on
- * first read and records at most once, so a retried callback cannot count the request twice.
- */
+// Wraps a store for ONE request. Firestore re-runs transaction callbacks on contention, and the
+// handler calls getPriorAttempts/recordAttempt each time it runs; this snapshots the history on
+// first read and records at most once, so a retried callback cannot count the request twice.
 export function scopeAttemptsToRequest(store: AttemptStore): AttemptStore {
   const snapshots = new Map<string, RateLimitAttempt[]>();
   const recorded = new Set<string>();
