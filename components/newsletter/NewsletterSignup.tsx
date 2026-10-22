@@ -11,8 +11,13 @@ interface NewsletterSignupProps {
   emailLabel: string;
   placeholder: string;
   submitLabel: string;
+  /** Keeps each footer's existing ids stable. */
+  inputId: string;
+  formId?: string;
   /** Each footer keeps its own markup classes (SAOC Tailwind, NOS `nf-*`). */
   formClassName?: string;
+  /** Wraps the input and button only, so the label and status sit outside a flex row. */
+  fieldsClassName?: string;
   labelClassName?: string;
   inputClassName?: string;
   buttonClassName?: string;
@@ -20,14 +25,15 @@ interface NewsletterSignupProps {
   errorClassName?: string;
 }
 
-const INPUT_ID_PREFIX = 'newsletter-email';
-
 export function NewsletterSignup({
   source,
   emailLabel,
   placeholder,
   submitLabel,
+  inputId,
+  formId,
   formClassName,
+  fieldsClassName,
   labelClassName,
   inputClassName,
   buttonClassName,
@@ -40,7 +46,6 @@ export function NewsletterSignup({
   const [errorMessage, setErrorMessage] = useState('');
   const [emailInvalid, setEmailInvalid] = useState(false);
 
-  const inputId = `${INPUT_ID_PREFIX}-${source}`;
   const errorId = `${inputId}-error`;
   const showError = status === 'error' && errorMessage !== '';
 
@@ -74,24 +79,36 @@ export function NewsletterSignup({
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className={formClassName}>
+    <form id={formId} onSubmit={handleSubmit} noValidate className={formClassName}>
       <label htmlFor={inputId} className={labelClassName}>
         {emailLabel}
       </label>
-      <input
-        id={inputId}
-        type="email"
-        name="email"
-        autoComplete="email"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder={placeholder}
-        aria-invalid={emailInvalid ? 'true' : undefined}
-        aria-describedby={showError ? errorId : undefined}
-        className={inputClassName}
-      />
-      <div className="hidden" aria-hidden="true">
+      <div className={fieldsClassName}>
+        <input
+          id={inputId}
+          type="email"
+          name="email"
+          autoComplete="email"
+          inputMode="email"
+          spellCheck={false}
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder={placeholder}
+          aria-invalid={emailInvalid ? 'true' : undefined}
+          aria-describedby={showError ? errorId : undefined}
+          className={inputClassName}
+        />
+        <button
+          type="submit"
+          disabled={status === 'submitting'}
+          aria-busy={status === 'submitting'}
+          className={buttonClassName}
+        >
+          {submitLabel}
+        </button>
+      </div>
+      <div hidden className="hidden" aria-hidden="true">
         <label>
           {NEWSLETTER_COPY.honeypotLabel}
           <input
@@ -104,14 +121,6 @@ export function NewsletterSignup({
           />
         </label>
       </div>
-      <button
-        type="submit"
-        disabled={status === 'submitting'}
-        aria-busy={status === 'submitting'}
-        className={buttonClassName}
-      >
-        {submitLabel}
-      </button>
       {/* Live region present before submit so the success line is announced when it arrives. */}
       <div role="status" aria-live="polite" className={statusClassName}>
         {status === 'success' ? NEWSLETTER_COPY.success : null}

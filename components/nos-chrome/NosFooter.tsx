@@ -24,6 +24,7 @@ import {
   FOOTER_RHYTHM,
   FOOTER_WOSA,
 } from '@/components/chrome/footer-data';
+import { NewsletterSignup } from '@/components/newsletter/NewsletterSignup';
 import { partners } from '@/lib/data';
 
 import { nosChromeFontClass } from './fonts';
@@ -94,20 +95,18 @@ export function NosFooter() {
         <div className="nf-col nf-col-touch">
           <div className="nf-head">{FOOTER_HEADINGS.touch}</div>
           <p className="nf-text">{FOOTER_BULLETIN.blurb}</p>
-          <label className="nf-head" htmlFor="nf-email">{FOOTER_BULLETIN.emailLabel}</label>
-          <form id="nf-form" className="nf-form" onSubmit={(e) => e.preventDefault()}>
-            <input
-              id="nf-email"
-              type="email"
-              name="email"
-              autoComplete="email"
-              inputMode="email"
-              spellCheck={false}
-              placeholder={FOOTER_BULLETIN.placeholder}
-              required
-            />
-            <button type="submit">{FOOTER_BULLETIN.submitLabel}</button>
-          </form>
+          <NewsletterSignup
+            source="nos-footer"
+            inputId="nf-email"
+            formId="nf-signup"
+            emailLabel={FOOTER_BULLETIN.emailLabel}
+            placeholder={FOOTER_BULLETIN.placeholder}
+            submitLabel={FOOTER_BULLETIN.submitLabel}
+            fieldsClassName="nf-form"
+            labelClassName="nf-head"
+            statusClassName="nf-text nf-signup-status"
+            errorClassName="nf-text"
+          />
           <div className="nf-wild">
             <div className="nf-head">{FOOTER_WOSA.heading}</div>
             <a className={FOOTER_RHYTHM.row} href={FOOTER_WOSA.href}

@@ -175,3 +175,6 @@
 }
 .nh-skip:focus { transform: translateY(0); }
 .nh-skip:focus-visible { outline: 2px solid var(--nc-violet); outline-offset: 2px; transition: none; }
+/* Newsletter sign-up status line (footer-newsletter-subscribe): hidden while empty so the live region adds no gap. */
+.nf-signup-status:empty { display: none; }
+.nf-signup-status { margin: 8px 0 0; }
