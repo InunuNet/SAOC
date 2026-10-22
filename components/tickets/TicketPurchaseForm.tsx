@@ -78,36 +78,43 @@ export function TicketPurchaseForm({
   const dayInvalid = dayRequested && cart.day === null;
 
   // A 409 for a chosen day may mean that day sold out between load and submit. The counts are
-  // re-read (router.refresh re-runs the page's hub loader); if the day is now closed the server's
-  // own text is shown at the day group, else it stays the form-level alert.
+  // re-read (router.refresh re-runs the page's hub loader); if the day that was submitted is now
+  // closed the server's own text is shown at the day group, else it stays the form-level alert.
+  // Each submit's 409 is judged once, for the day that submit carried.
   const router = useRouter();
   const [refreshing, startRefresh] = useTransition();
   const [dayError, setDayError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState<{ day: string; judged: boolean } | null>(null);
   const sawRefresh = useRef(false);
   const raced =
-    ticketType.requiresDaySelection && cart.errorStatus === HTTP_CONFLICT && cart.day !== null;
+    ticketType.requiresDaySelection &&
+    cart.errorStatus === HTTP_CONFLICT &&
+    submitted !== null &&
+    !submitted.judged;
 
   useEffect(() => {
     if (raced) startRefresh(() => router.refresh());
   }, [raced, router]);
 
   useEffect(() => {
-    if (!raced) return;
+    if (!raced || submitted === null) return;
     if (refreshing) {
       sawRefresh.current = true;
       return;
     }
     if (!sawRefresh.current) return;
     sawRefresh.current = false;
-    const count = dayCounts?.find((c) => c.day === cart.day);
-    if (!count || !isDayClosed(count)) return;
+    setSubmitted({ day: submitted.day, judged: true });
+    const count = dayCounts?.find((c) => c.day === submitted.day);
+    // A buyer who has moved to another day since keeps the error form-level.
+    if (cart.day !== submitted.day || !count || !isDayClosed(count)) return;
     // The refreshed counts arrive from the server after the render, so this can only be learned here.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDayError(cart.errorMessage);
     cart.setDay(null);
     window.dispatchEvent(new CustomEvent(CHECKOUT_DAY_EVENT, { detail: null }));
     dayGroupRef.current?.querySelector<HTMLInputElement>('input:not(:disabled)')?.focus();
-  }, [raced, refreshing, dayCounts, cart]);
+  }, [raced, submitted, refreshing, dayCounts, cart]);
 
   if (cart.redirect) {
     return (
@@ -138,6 +145,7 @@ export function TicketPurchaseForm({
       hintRef.current?.focus();
       return;
     }
+    if (cart.day !== null) setSubmitted({ day: cart.day, judged: false });
     void cart.submit();
   }
 
