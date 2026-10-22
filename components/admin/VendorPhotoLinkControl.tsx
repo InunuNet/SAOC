@@ -1,5 +1,7 @@
 'use client';
 
+import { BUTTON_SECONDARY } from './tokens';
+
 interface VendorPhotoLinkControlProps {
   isPending: boolean;
   photoUrl: string | null;
@@ -18,13 +20,13 @@ export function VendorPhotoLinkControl({
   onRequestLink,
 }: VendorPhotoLinkControlProps) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex w-full flex-col gap-1 sm:w-60">
       <button
         type="button"
         disabled={isPending}
         onClick={onRequestLink}
         aria-label="Get vendor photo upload link and copy it to the clipboard"
-        className="rounded-sm border border-rule bg-ivory px-3 py-1.5 font-sans text-[13px] font-medium text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-50"
+        className={BUTTON_SECONDARY}
       >
         {isPending ? 'Generating…' : photoUrl ? 'Copy photo upload link' : 'Get photo upload link'}
       </button>
@@ -35,7 +37,7 @@ export function VendorPhotoLinkControl({
           value={photoUrl}
           aria-label="Vendor photo upload link"
           onFocus={(event) => event.currentTarget.select()}
-          className="w-56 rounded-sm border border-rule bg-bone px-2 py-1 font-mono text-[11px] text-ink"
+          className="w-full rounded-[2px] border border-rule bg-bone px-2 py-1 font-mono text-[11px] text-ink"
         />
       )}
     </div>

@@ -47,7 +47,7 @@ export function MicrosoftSignInButton({ onClick, disabled, loading }: MicrosoftS
       onClick={onClick}
       disabled={disabled}
       aria-label="Sign in with Microsoft"
-      className="inline-flex min-h-[40px] w-full items-center justify-center gap-3 rounded-sm border border-[#8C8C8C] bg-white px-4 py-2.5 font-sans text-[14px] font-medium leading-5 text-[#5E5E5E] transition-colors duration-150 hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex min-h-[44px] w-full items-center justify-center gap-3 rounded-sm border border-[#8C8C8C] bg-white px-4 py-2.5 font-sans text-[14px] font-medium leading-5 text-[#5E5E5E] transition-colors duration-150 hover:bg-black/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-800 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {loading ? (
         <span aria-hidden="true">Signing in…</span>

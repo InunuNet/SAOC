@@ -1,29 +1,39 @@
-import type { TicketStatus } from '@/types/index';
-
-// Reuses only existing tokens — no new colours. Filled sage reads as "settled/present",
-// the tinted sage reads as "paid but not yet checked in", bone is neutral/pending, and
-// cancelled is deliberately muted+struck rather than a red we don't have a token for.
+// Reuses only existing tokens, per Codi's ruling: approved and paid are solid dark, pending is the
+// pale brass fill, and submitted, under-review, reserved and declined/cancelled/rejected are
+// muted outline pills (no strikethrough). The status word is always printed, so the meaning
+// never rests on colour alone.
 const STATUS_STYLES: Record<string, string> = {
-  paid: 'bg-primary-100 text-primary-800',
-  'checked-in': 'bg-primary text-ivory',
+  neutral: 'bg-bone text-ink border border-rule',
+  paid: 'bg-primary text-ivory',
+  'checked-in': 'bg-primary-800 text-ivory',
   reserved: 'bg-bone text-muted border border-rule',
-  cancelled: 'bg-ivory text-muted border border-rule line-through',
+  cancelled: 'bg-ivory text-muted border border-rule',
+  pending: 'bg-accent-soft text-primary-800',
+  approved: 'bg-primary text-ivory',
+  declined: 'bg-ivory text-muted border border-rule',
+  submitted: 'bg-ivory text-muted border border-rule',
+  'under-review': 'bg-ivory text-muted border border-rule',
+  rejected: 'bg-ivory text-muted border border-rule',
 };
 
 const FALLBACK_STYLE = 'bg-bone text-muted border border-rule';
 
 interface StatusPillProps {
-  status: TicketStatus;
+  status: string;
+  /** Printed text when it should differ from the stored status value. */
+  label?: string;
+  /** Style key when it should differ from the printed text (e.g. stand-payment states). */
+  tone?: string;
 }
 
-export function StatusPill({ status }: StatusPillProps) {
-  const style = STATUS_STYLES[status] ?? FALLBACK_STYLE;
+export function StatusPill({ status, label, tone }: StatusPillProps) {
+  const style = STATUS_STYLES[tone ?? status] ?? FALLBACK_STYLE;
 
   return (
     <span
-      className={`inline-flex items-center rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${style}`}
+      className={`inline-flex max-w-full items-center rounded-full px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.1em] ${style}`}
     >
-      {status}
+      <span className="truncate">{label ?? status}</span>
     </span>
   );
 }

@@ -120,6 +120,7 @@
   --color-muted: var(--muted);
   --color-rule: var(--rule);
   --color-rule-soft: var(--rule-soft);
+  --color-error: #9b2c2c; /* Codi ruling: door invalid banner and admin inline errors only */
 
   /* NOS brand — Tickets rail only, see :root's own comment above. */
   --color-nos-royal-purple: var(--nos-royal-purple);
@@ -313,6 +314,8 @@ body {
 }
 #qr-reader video {
   width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
   border-radius: var(--radius-1);
 }
 
@@ -418,4 +421,19 @@ body {
   border-top: 1px solid var(--rule);
   padding-block: var(--space-5);
   color: var(--fg-muted);
+}
+
+/* Admin detail drawer: from 1440 the list narrows so the 520px drawer covers nothing; below that
+   the drawer overlays and the Business column stays visible. */
+@media (min-width: 1440px) {
+  body[data-detail-open] #admin-main {
+    padding-right: 520px;
+  }
+}
+
+/* With the drawer open the list is narrow: drop the lowest-priority columns, as on a tablet. */
+@media (min-width: 1440px) {
+  body[data-detail-open] [data-priority='3'] {
+    display: none;
+  }
 }

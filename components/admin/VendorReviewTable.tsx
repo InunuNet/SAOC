@@ -5,6 +5,15 @@ import { useEffect, useRef, useState } from 'react';
 import type { VendorSubmission, VendorSubmissionStatus, VendorStandOrderStatus } from '@/types/index';
 import type { VendorReviewAction } from '@/lib/vendor-review';
 import { isVendorListingEligible } from '@/lib/vendor-listing';
+import { formatAdminDate, formatAdminDateTime } from '@/lib/admin-format';
+import { vendorCategoryLabels } from '@/lib/vendor-category-labels';
+import { DetailDrawer, DetailSection } from './DetailDrawer';
+import { StatusPill } from './StatusPill';
+import { AdminTable } from './table/AdminTable';
+import { VENDOR_COLUMNS } from './table/columns';
+import { TableToolbar, type FilterOption } from './table/TableToolbar';
+import { BUTTON_PRIMARY, BUTTON_SECONDARY, FOCUS_RING } from './tokens';
+import { useDrawerParam } from './useDrawerParam';
 import { VendorPaymentLinkControl } from './VendorPaymentLinkControl';
 import { VendorPhotoLinkControl } from './VendorPhotoLinkControl';
 
@@ -19,25 +28,34 @@ const STAND_PAYMENT_LABELS: Record<VendorStandOrderStatus | 'not-started', strin
   cancelled: 'Failed',
 };
 
-const STAND_PAYMENT_STYLES: Record<VendorStandOrderStatus | 'not-started', string> = {
-  'not-started': 'bg-bone text-muted border border-rule',
-  pending: 'bg-primary-100 text-primary-800',
-  paid: 'bg-primary text-ivory',
-  failed: 'bg-ivory text-muted border border-rule',
-  cancelled: 'bg-ivory text-muted border border-rule',
+// Stand-payment pill tones reuse StatusPill's existing styles: in-flight reads as "in progress",
+// paid as "settled", anything else as neutral.
+const STAND_PAYMENT_TONES: Record<VendorStandOrderStatus | 'not-started', string> = {
+  'not-started': 'neutral',
+  pending: 'under-review',
+  paid: 'approved',
+  failed: 'neutral',
+  cancelled: 'neutral',
 };
 
-const HEADER_CELL_CLASS =
-  'border-b border-rule bg-bone px-4 py-3 text-left font-mono text-[11px] tracking-[0.16em] text-muted';
-const BODY_CELL_CLASS =
-  'border-b border-rule-soft px-4 py-3 font-sans text-[14px] text-ink';
+type StatusFilter = 'all' | VendorSubmissionStatus;
 
-const STATUS_STYLES: Record<string, string> = {
-  submitted: 'bg-bone text-muted border border-rule',
-  'under-review': 'bg-primary-100 text-primary-800',
-  approved: 'bg-primary text-ivory',
-  rejected: 'bg-ivory text-muted border border-rule line-through',
-};
+const STATUS_OPTIONS: readonly FilterOption[] = [
+  { value: 'all', label: 'All' },
+  { value: 'submitted', label: 'Submitted' },
+  { value: 'under-review', label: 'Under review' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'rejected', label: 'Rejected' },
+];
+
+const EMPTY_TEXT = 'No vendor applications have been submitted yet.';
+const NOT_PROVIDED = '—';
+
+function matchesSearch(row: VendorSubmission, needle: string): boolean {
+  return [row.businessName, row.contactPersonName, row.contactEmail, row.vendorCategory.join(' ')].some(
+    (value) => value.toLowerCase().includes(needle),
+  );
+}
 
 // Which review action(s) are offered for a given current status. A submission at
 // 'approved'/'rejected' offers none — it is a terminal state in
@@ -240,183 +258,276 @@ export function VendorReviewTable({ submissions, standPaymentStatusById = {} }: 
     }
   }
 
-  if (rows.length === 0) {
+  const { viewId, open, close } = useDrawerParam();
+  const [status, setStatus] = useState<StatusFilter>('all');
+  const [search, setSearch] = useState('');
+
+  const needle = search.trim().toLowerCase();
+  const visible = rows.filter(
+    (row) => (status === 'all' || row.status === status) && (!needle || matchesSearch(row, needle)),
+  );
+  const selected = viewId ? (rows.find((row) => row.id === viewId) ?? null) : null;
+
+  const errorBanner = error ? (
+    <p
+      ref={errorRef}
+      className="mb-4 border border-rule bg-ivory px-4 py-3 font-sans text-[14px] text-ink"
+      role="alert"
+    >
+      {error}
+    </p>
+  ) : null;
+
+  function standPaymentOf(id: string): VendorStandOrderStatus | 'not-started' {
+    return standPaymentStatusById[id] ?? 'not-started';
+  }
+
+  function renderCell(columnId: string, row: VendorSubmission): React.ReactNode {
+    switch (columnId) {
+      case 'business':
+        return (
+          <>
+            <span className="block truncate font-medium">{row.businessName}</span>
+            <span className="block truncate text-[13px] text-muted">
+              {row.contactPersonName} · {row.contactEmail}
+            </span>
+          </>
+        );
+      case 'category':
+        return vendorCategoryLabels(row.vendorCategory);
+      case 'submitted':
+        return formatAdminDate(row.submittedAt);
+      case 'status':
+        return <StatusPill status={row.status} />;
+      case 'standPayment': {
+        const payment = standPaymentOf(row.id);
+        return <StatusPill status={payment} label={STAND_PAYMENT_LABELS[payment]} tone={STAND_PAYMENT_TONES[payment]} />;
+      }
+      case 'view':
+        return (
+          <button
+            type="button"
+            data-row-view={row.id}
+            onClick={() => open(row.id)}
+            aria-label={`View ${row.businessName}`}
+            className={`min-h-[44px] px-2 font-sans text-[14px] font-semibold text-primary underline decoration-accent underline-offset-4 hover:text-primary-800 ${FOCUS_RING}`}
+          >
+            View
+          </button>
+        );
+      default:
+        return null;
+    }
+  }
+
+  function cellTitle(columnId: string, row: VendorSubmission): string | undefined {
+    switch (columnId) {
+      case 'business':
+        return `${row.businessName} — ${row.contactPersonName}, ${row.contactEmail}`;
+      case 'category':
+        return vendorCategoryLabels(row.vendorCategory);
+      case 'submitted':
+        return formatAdminDateTime(row.submittedAt);
+      default:
+        return undefined;
+    }
+  }
+
+  function renderFooter(row: VendorSubmission): React.ReactNode {
+    const actions = AVAILABLE_ACTIONS[row.status] ?? [];
+    const standPaymentStatus = standPaymentOf(row.id);
+    const uploadedProductPhotoCount = countUploadedProductPhotos(row);
+    const showPhotoLink =
+      uploadedProductPhotoCount < REQUIRED_PRODUCT_PHOTO_COUNT && row.status !== 'rejected';
+    const listingState = listingStateById[row.id] ?? (row.listingDocumentId ? 'Published' : null);
+    const showPublishListing = isVendorListingEligible({
+      status: row.status,
+      paymentReceived: row.paymentReceived,
+      standOrderStatus: standPaymentStatusById[row.id] ?? null,
+    });
+    const busy = pendingId === row.id;
+    const hasAnyAction =
+      actions.length > 0 ||
+      (row.status === 'approved' && standPaymentStatus !== 'paid') ||
+      showPhotoLink ||
+      showPublishListing;
+
     return (
-      <div className="border border-rule bg-ivory px-6 py-16 text-center">
-        <p className="font-sans text-[15px] text-muted">No vendor applications have been submitted yet.</p>
+      <div>
+        {errorBanner}
+        <div className="flex flex-wrap items-start gap-3">
+          {!hasAnyAction ? <span className="text-muted">—</span> : null}
+          {actions.map((action) => (
+            <button
+              key={action}
+              type="button"
+              disabled={busy}
+              onClick={() => handleAction(row.id, action)}
+              className={action === 'reject' ? BUTTON_SECONDARY : BUTTON_PRIMARY}
+            >
+              {busy ? 'Saving…' : ACTION_LABELS[action]}
+            </button>
+          ))}
+          {row.status === 'approved' && standPaymentStatus !== 'paid' && (
+            <VendorPaymentLinkControl
+              isPending={busy}
+              paymentUrl={paymentUrlById[row.id] ?? null}
+              onRequestLink={() => handleResendPaymentLink(row.id)}
+            />
+          )}
+          {showPublishListing &&
+            (listingState ? (
+              <span className="text-muted">{listingState}</span>
+            ) : (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => handlePublishListing(row.id)}
+                className={BUTTON_SECONDARY}
+              >
+                {busy ? 'Saving…' : 'Publish to listing'}
+              </button>
+            ))}
+          {showPhotoLink && (
+            <VendorPhotoLinkControl
+              isPending={busy}
+              photoUrl={photoUrlById[row.id] ?? null}
+              onRequestLink={() => handleGetPhotoLink(row.id)}
+            />
+          )}
+        </div>
       </div>
+    );
+  }
+
+  function renderDetail(row: VendorSubmission): React.ReactNode {
+    const payment = standPaymentOf(row.id);
+    const photoCount = countUploadedProductPhotos(row);
+    const photosComplete = photoCount >= REQUIRED_PRODUCT_PHOTO_COUNT;
+
+    return (
+      <>
+        <DetailSection
+          title="Business"
+          items={[
+            { label: 'Business name', value: row.businessName },
+            { label: 'Trading name', value: row.tradingName || NOT_PROVIDED },
+            { label: 'Category', value: vendorCategoryLabels(row.vendorCategory) },
+            { label: 'Status', value: <StatusPill status={row.status} /> },
+            { label: 'Submitted', value: formatAdminDateTime(row.submittedAt) },
+          ]}
+        />
+        <DetailSection
+          title="Contact"
+          items={[
+            { label: 'Contact person', value: row.contactPersonName },
+            { label: 'Email', value: row.contactEmail },
+            { label: 'Cell phone', value: row.contactCellPhone },
+            { label: 'Emergency contact', value: row.emergencyContactName || NOT_PROVIDED },
+            { label: 'Emergency phone', value: row.emergencyContactCellPhone || NOT_PROVIDED },
+          ]}
+        />
+        <DetailSection
+          title="Stand"
+          items={[
+            { label: 'Booth size', value: row.boothSize ?? row.boothCount ?? NOT_PROVIDED },
+            { label: 'Booth number', value: row.boothNumber || NOT_PROVIDED },
+          ]}
+        />
+        <DetailSection
+          title="Permits"
+          items={[
+            { label: 'Phytosanitary / import permit', value: row.phytosanitaryPermitNumber || NOT_PROVIDED },
+            { label: 'CITES permit', value: row.citesPermitNumber || NOT_PROVIDED },
+            { label: 'Food-handling certificate', value: row.foodHandlingCertificateNumber || NOT_PROVIDED },
+            {
+              label: 'Note',
+              value: (
+                <span className="text-[12px] text-muted">
+                  Permit and certificate numbers are recorded as submitted and have not been verified by SAOC.
+                </span>
+              ),
+            },
+          ]}
+        />
+        <DetailSection
+          title="Payment"
+          items={[
+            {
+              label: 'Stand payment',
+              value: (
+                <StatusPill status={payment} label={STAND_PAYMENT_LABELS[payment]} tone={STAND_PAYMENT_TONES[payment]} />
+              ),
+            },
+            { label: 'Office payment', value: row.paymentReceived ? 'Received' : 'Not received' },
+          ]}
+        />
+        <DetailSection
+          title="Photos"
+          items={[
+            {
+              label: 'Product photos',
+              value: (
+                <>
+                  {photoCount}/{REQUIRED_PRODUCT_PHOTO_COUNT} photos
+                  {!photosComplete && (
+                    <span className="mt-1 block text-[12px] text-muted">Incomplete — not yet all 3 required</span>
+                  )}
+                </>
+              ),
+            },
+            { label: 'Logo', value: row.logoPath ? 'Uploaded' : NOT_PROVIDED },
+          ]}
+        />
+      </>
     );
   }
 
   return (
     <div>
-      {error && (
-        <p
-          ref={errorRef}
-          className="mb-4 border border-rule bg-ivory px-4 py-3 font-sans text-[14px] text-ink"
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
-      <div className="overflow-x-auto border border-rule bg-ivory">
-        <table className="w-full min-w-[840px] border-collapse">
-          <caption className="sr-only">Vendor application review status</caption>
-          <thead>
-            <tr>
-              <th scope="col" className={HEADER_CELL_CLASS}>
-                Business Name
-              </th>
-              <th scope="col" className={HEADER_CELL_CLASS}>
-                Contact
-              </th>
-              <th scope="col" className={HEADER_CELL_CLASS}>
-                Category
-              </th>
-              <th scope="col" className={HEADER_CELL_CLASS}>
-                Permits &amp; Certificates
-              </th>
-              <th scope="col" className={HEADER_CELL_CLASS}>
-                Status
-              </th>
-              <th scope="col" className={HEADER_CELL_CLASS}>
-                Stand Payment
-              </th>
-              <th scope="col" className={HEADER_CELL_CLASS}>
-                Marketing Uploads
-              </th>
-              <th scope="col" className={HEADER_CELL_CLASS}>
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const actions = AVAILABLE_ACTIONS[row.status] ?? [];
-              const style = STATUS_STYLES[row.status] ?? 'bg-bone text-muted border border-rule';
-              const standPaymentStatus = standPaymentStatusById[row.id] ?? 'not-started';
-              const uploadedProductPhotoCount = countUploadedProductPhotos(row);
-              const uploadsComplete = uploadedProductPhotoCount >= REQUIRED_PRODUCT_PHOTO_COUNT;
-              const showPhotoLink = !uploadsComplete && row.status !== 'rejected';
-              const listingState = listingStateById[row.id] ?? (row.listingDocumentId ? 'Published' : null);
-              const showPublishListing = isVendorListingEligible({
-                status: row.status,
-                paymentReceived: row.paymentReceived,
-                standOrderStatus: standPaymentStatusById[row.id] ?? null,
-              });
+      <TableToolbar
+        searchLabel="Search vendors"
+        search={search}
+        onSearchChange={setSearch}
+        filterLabel="Vendor status"
+        filterOptions={STATUS_OPTIONS}
+        filterValue={status}
+        onFilterChange={(value) => setStatus(value as StatusFilter)}
+        countText={`${visible.length} ${visible.length === 1 ? 'vendor' : 'vendors'}`}
+      />
+      {selected ? null : errorBanner}
+      <AdminTable
+        caption="Vendor application review status"
+        columns={VENDOR_COLUMNS}
+        rows={visible}
+        getRowId={(row) => row.id}
+        renderCell={renderCell}
+        cellTitle={cellTitle}
+        onOpen={(row) => open(row.id)}
+        sortedDescColumnId="submitted"
+        selectedId={selected?.id ?? null}
+        emptyText={EMPTY_TEXT}
+        card={(row) => ({
+          title: row.businessName,
+          status: <StatusPill status={row.status} />,
+          fields: [
+            { label: 'Contact', value: row.contactPersonName },
+            { label: 'Submitted', value: formatAdminDate(row.submittedAt) },
+            { label: 'Stand payment', value: STAND_PAYMENT_LABELS[standPaymentOf(row.id)] },
+          ],
+        })}
+      />
 
-              return (
-                <tr key={row.id} className="hover:bg-parchment/60">
-                  <th scope="row" className={`${BODY_CELL_CLASS} font-medium`}>
-                    {row.businessName}
-                  </th>
-                  <td className={`${BODY_CELL_CLASS} break-words`}>
-                    {row.contactPersonName}
-                    <br />
-                    <span className="text-muted">{row.contactEmail}</span>
-                  </td>
-                  <td className={BODY_CELL_CLASS}>{row.vendorCategory.join(', ')}</td>
-                  <td className={`${BODY_CELL_CLASS} max-w-[260px] align-top`}>
-                    <dl className="space-y-1">
-                      <div>
-                        <dt className="inline text-muted">Phytosanitary/import permit: </dt>
-                        <dd className="inline">{row.phytosanitaryPermitNumber || '—'}</dd>
-                      </div>
-                      <div>
-                        <dt className="inline text-muted">CITES permit: </dt>
-                        <dd className="inline">{row.citesPermitNumber || '—'}</dd>
-                      </div>
-                      <div>
-                        <dt className="inline text-muted">Food-handling certificate: </dt>
-                        <dd className="inline">{row.foodHandlingCertificateNumber || '—'}</dd>
-                      </div>
-                    </dl>
-                    <p className="mt-1 text-[11px] text-muted">
-                      Permit and certificate numbers are recorded as submitted and have not been verified by SAOC.
-                    </p>
-                  </td>
-                  <td className={BODY_CELL_CLASS}>
-                    <span
-                      className={`inline-flex items-center whitespace-nowrap rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${style}`}
-                    >
-                      {row.status}
-                    </span>
-                  </td>
-                  <td className={BODY_CELL_CLASS}>
-                    <span
-                      className={`inline-flex items-center whitespace-nowrap rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${STAND_PAYMENT_STYLES[standPaymentStatus]}`}
-                    >
-                      {STAND_PAYMENT_LABELS[standPaymentStatus]}
-                    </span>
-                  </td>
-                  <td className={BODY_CELL_CLASS}>
-                    <span
-                      className={`inline-flex items-center whitespace-nowrap rounded-pill px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] ${
-                        uploadsComplete
-                          ? 'bg-primary text-ivory'
-                          : 'bg-ivory text-muted border border-rule'
-                      }`}
-                    >
-                      {uploadedProductPhotoCount}/{REQUIRED_PRODUCT_PHOTO_COUNT} photos
-                    </span>
-                    {!uploadsComplete && (
-                      <p className="mt-1 text-[11px] text-muted">Incomplete — not yet all 3 required</p>
-                    )}
-                  </td>
-                  <td className={BODY_CELL_CLASS}>
-                    <div className="flex flex-wrap items-start gap-2">
-                      {actions.length === 0 &&
-                        !(row.status === 'approved' && standPaymentStatus !== 'paid') &&
-                        !showPhotoLink &&
-                        !showPublishListing && (
-                        <span className="text-muted">—</span>
-                      )}
-                      {actions.map((action) => (
-                        <button
-                          key={action}
-                          type="button"
-                          disabled={pendingId === row.id}
-                          onClick={() => handleAction(row.id, action)}
-                          className="rounded-sm border border-rule bg-ivory px-3 py-1.5 font-sans text-[13px] font-medium text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {pendingId === row.id ? 'Saving…' : ACTION_LABELS[action]}
-                        </button>
-                      ))}
-                      {row.status === 'approved' && standPaymentStatus !== 'paid' && (
-                        <VendorPaymentLinkControl
-                          isPending={pendingId === row.id}
-                          paymentUrl={paymentUrlById[row.id] ?? null}
-                          onRequestLink={() => handleResendPaymentLink(row.id)}
-                        />
-                      )}
-                      {showPublishListing &&
-                        (listingState ? (
-                          <span className="text-muted">{listingState}</span>
-                        ) : (
-                          <button
-                            type="button"
-                            disabled={pendingId === row.id}
-                            onClick={() => handlePublishListing(row.id)}
-                            className="rounded-sm border border-rule bg-ivory px-3 py-1.5 font-sans text-[13px] font-medium text-ink transition-colors hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {pendingId === row.id ? 'Saving…' : 'Publish to listing'}
-                          </button>
-                        ))}
-                      {showPhotoLink && (
-                        <VendorPhotoLinkControl
-                          isPending={pendingId === row.id}
-                          photoUrl={photoUrlById[row.id] ?? null}
-                          onRequestLink={() => handleGetPhotoLink(row.id)}
-                        />
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <DetailDrawer
+        open={selected !== null}
+        title={selected?.businessName ?? ''}
+        subtitle={selected ? selected.contactEmail : undefined}
+        onClose={close}
+        rowId={selected?.id}
+        footer={selected ? renderFooter(selected) : null}
+      >
+        {selected ? renderDetail(selected) : null}
+      </DetailDrawer>
     </div>
   );
 }

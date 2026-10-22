@@ -42,9 +42,9 @@ function AppleLogo() {
  * Uses Apple's "White with outline" permitted button style (white fill, black mark and
  * text, 1px black-ish border) — architect decision, so this button reads as part of the
  * same family as the other two on this card's warm ivory background, rather than Apple's
- * default solid-black button standing apart. `min-h-[44px]` is deliberately taller than
- * the other two buttons' `min-h-[40px]`: Apple's HIG sets 44pt as a hard minimum tap
- * target for this specific button and it must not be shrunk to match its neighbours.
+ * default solid-black button standing apart. `min-h-[44px]` matches the other
+ * two buttons: Apple's HIG sets 44pt as a hard minimum tap target for this button, and admin
+ * buttons are 44px tall.
  */
 export function AppleSignInButton({ onClick, disabled, loading }: AppleSignInButtonProps) {
   return (
@@ -53,7 +53,7 @@ export function AppleSignInButton({ onClick, disabled, loading }: AppleSignInBut
       onClick={onClick}
       disabled={disabled}
       aria-label="Sign in with Apple"
-      className="inline-flex min-h-[44px] w-full items-center justify-center gap-3 rounded-sm border border-black bg-white px-4 py-2.5 font-sans text-[14px] font-medium leading-5 text-black transition-colors duration-150 hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-parchment disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex min-h-[44px] w-full items-center justify-center gap-3 rounded-sm border border-black bg-white px-4 py-2.5 font-sans text-[14px] font-medium leading-5 text-black transition-colors duration-150 hover:bg-black/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-800 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {loading ? (
         <span aria-hidden="true">Signing in…</span>

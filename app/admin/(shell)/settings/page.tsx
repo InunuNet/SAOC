@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 
+import { PageHeader, PageShell } from '@/components/admin/PageHeader';
+import { CARD_CLASS } from '@/components/admin/tokens';
 import type { GatewayId } from '@/lib/payments/active-gateway';
 
 /**
  * /admin/settings -- owner-only Ozow sandbox test-mode toggle (mission ozow-sandbox-toggle F1)
  * plus the active-payment-gateway picker (mission gateway-picker-admin-only F1). Sits inside
- * app/admin/settings/layout.tsx's capability gate. Client component: reads/writes each setting
+ * app/admin/(shell)/settings/layout.tsx's capability gate. Client component: reads/writes each setting
  * via its own admin GET/PUT route, same fetch-from-client pattern as this project's other
  * interactive admin surfaces (e.g. VendorReviewTable's approve/reject actions).
  */
@@ -99,46 +101,39 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <main>
-      <div className="mx-auto max-w-[1280px] px-4 py-10 sm:px-8 sm:py-16">
-        <span className="eyebrow">Admin</span>
-        <h1 className="mt-4 font-serif text-[28px] font-semibold leading-tight text-ink sm:text-[34px]">
-          Payment Settings
-        </h1>
+    <PageShell>
+      <PageHeader title="Settings" />
 
-        <div className="mt-8 max-w-[520px] border border-rule bg-bone px-6 py-6">
+      <div className="flex max-w-[520px] flex-col gap-4">
+        <section className={CARD_CLASS}>
           <label className="flex items-start gap-3">
             <input
               type="checkbox"
               checked={enabled}
               disabled={loading || saving}
               onChange={(e) => void handleToggle(e.target.checked)}
-              className="mt-1"
+              className="mt-1 h-4 w-4"
             />
             <span>
               <span className="block font-sans text-[15px] text-ink">
                 Ozow sandbox test mode
               </span>
-              <span className="mt-1 block font-mono text-[11px] tracking-[0.16em] text-muted">
+              <span className="mt-1 block font-sans text-[13px] text-muted">
                 When on, Ozow charges R0.01 instead of the displayed price. PayFast is unaffected.
               </span>
             </span>
           </label>
-          {error ? (
-            <p className="mt-3 font-mono text-[11px] tracking-[0.16em] text-red-700">
-              {error}
-            </p>
-          ) : null}
-        </div>
+          {error ? <ErrorText>{error}</ErrorText> : null}
+        </section>
 
-        <div className="mt-6 max-w-[520px] border border-rule bg-bone px-6 py-6">
+        <section className={CARD_CLASS}>
           <span className="block font-sans text-[15px] text-ink">Active payment gateway</span>
-          <span className="mt-1 block font-mono text-[11px] tracking-[0.16em] text-muted">
+          <span className="mt-1 block font-sans text-[13px] text-muted">
             Customers no longer choose a gateway at checkout — this is used for every purchase.
           </span>
           <div className="mt-3 flex gap-4">
             {(['ozow', 'payfast'] as const).map((option) => (
-              <label key={option} className="flex items-center gap-2 font-sans text-[15px] text-ink">
+              <label key={option} className="flex min-h-[44px] items-center gap-2 font-sans text-[15px] text-ink">
                 <input
                   type="radio"
                   name="activeGateway"
@@ -146,23 +141,28 @@ export default function AdminSettingsPage() {
                   checked={gateway === option}
                   disabled={gatewayLoading || gatewaySaving}
                   onChange={() => void handleGatewayChange(option)}
+                  className="h-4 w-4"
                 />
                 {option === 'ozow' ? 'Ozow' : 'PayFast'}
               </label>
             ))}
           </div>
           {gateway === null && !gatewayLoading ? (
-            <p className="mt-3 font-mono text-[11px] tracking-[0.16em] text-red-700">
-              No gateway is set — checkout will refuse purchases until one is chosen.
-            </p>
+            <ErrorText>No gateway is set — checkout will refuse purchases until one is chosen.</ErrorText>
           ) : null}
-          {gatewayError ? (
-            <p className="mt-3 font-mono text-[11px] tracking-[0.16em] text-red-700">
-              {gatewayError}
-            </p>
-          ) : null}
-        </div>
+          {gatewayError ? <ErrorText>{gatewayError}</ErrorText> : null}
+        </section>
       </div>
-    </main>
+    </PageShell>
+  );
+}
+
+// An error is --color-error text with a ✕ icon, never colour alone, and is announced to assistive tech.
+function ErrorText({ children }: { children: React.ReactNode }) {
+  return (
+    <p role="alert" className="mt-3 flex items-start gap-2 font-sans text-[13px] font-medium text-error">
+      <span aria-hidden="true">✕</span>
+      <span>{children}</span>
+    </p>
   );
 }
