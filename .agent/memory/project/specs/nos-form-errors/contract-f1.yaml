@@ -1,0 +1,49 @@
+# Sources: design lead Codi's rFE ruling, route 30 P2 (components/members/SuggestionForm.tsx), route 33 (components/contact/ContactForm.tsx) and
+# saoc-82 (app/globals.css comment), verbatim in goldens/spec.md. Visual: design/design_handoff_saoc/README.md:192, src/styles.css:2120-2128,
+# src/pages-show-events-contact.jsx:474-481, in the ruled --color-error token (docs/rules/no-invention.md). Rendered check: run from the
+# worktree with NODE_OPTIONS='--require ../r19-chrome/use-chrome.cjs' (the Chrome shim); the e2e assertion needs the same.
+schema: athanor.contract/v1
+slug: nos-form-errors
+goal: >-
+  ContactForm and SuggestionForm validate every field on the client (name, email, ContactForm subject, message) with existing strings only,
+  mark each invalid field aria-invalid and aria-describedby its error (the message also keeps its Minimum 10 characters hint, now with an id
+  on both forms), focus the first invalid field and send nothing; the errors and the form-level alert are the shared TicketFieldAlert
+  (optional id added), and the --color-error comment names the SAOC form alerts as users. No new copy, colour or token.
+created_at: '2026-10-22'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/footprint.json, docs/nos-form-errors.md and this spec dir (enforced by A2), including e2e/contact-form-mocked.spec.ts'
+    reason: 'Codi: input radius, the info@ link height, the hero lede and every other route 30/33 P3 are out of rFE; the e2e spec must stay green without being weakened.'
+features:
+  - id: F1
+    name: Per-field errors with aria-invalid/aria-describedby and first-invalid focus on ContactForm and SuggestionForm, on the shared TicketFieldAlert (rFE)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-form-errors/goldens/spec.md
+  - .agent/memory/project/specs/nos-form-errors/goldens/edits.json
+  - .agent/memory/project/specs/nos-form-errors/goldens/footprint.json
+  - .agent/memory/project/specs/nos-form-errors/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Check scripts and goldens (and the e2e spec) are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-form-errors/goldens/checks.sha256
+    - id: A2
+      description: Footprint - the branch differs from origin/main 64cf1bd2 only in the four footprint files, docs/nos-form-errors.md and the spec dir, and HEAD descends from it
+      command: node .agent/memory/project/specs/nos-form-errors/checks/footprint.mjs
+    - id: A3
+      description: Static - TicketFieldAlert id and the --color-error comment are exact substitutions, the alert class is defined once, both forms render TicketFieldAlert with the golden ids, aria-invalid, aria-describedby and focus, existing strings and the API email regex only, honeypot/noValidate/fetch/body/input radius untouched, e2e spec/API/pages equal BASE, docs
+      command: node .agent/memory/project/specs/nos-form-errors/checks/static.mjs
+    - id: A4
+      description: Lint clean on the three TSX files
+      command: pnpm exec eslint components/contact/ContactForm.tsx components/members/SuggestionForm.tsx components/tickets/TicketFormField.tsx
+    - id: A5
+      description: Type-check clean
+      command: pnpm exec tsc --noEmit
+    - id: A6
+      description: The mocked e2e spec for /contact and /members passes unchanged (and is identical to BASE)
+      command: git diff --quiet 64cf1bd2 -- e2e/contact-form-mocked.spec.ts && pnpm exec playwright test e2e/contact-form-mocked.spec.ts
+    - id: A7
+      description: Rendered (public build, 1280/390, /contact and /members) - empty and bad-email submits send nothing and mark exactly the invalid fields aria-invalid with aria-describedby on visible existing-string errors in the shared rgb(155, 44, 44) alert, the first invalid field is focused, axe clean; a valid submit posts the golden body and shows Thank you; a 500 reply is one form-level alert
+      command: node .agent/memory/project/specs/nos-form-errors/checks/rendered.mjs
