@@ -56,6 +56,6 @@ Per-component font classes, the SAOC forms, NosSection, labels (14px role), the 
 - footprint.mjs: only goldens/footprint.json (5 files), docs/nos-vendor-apply-form.md and this spec dir differ from the merge-base with origin/main.
 - static.mjs: S1-S6 (the exact rule, footer, inline padding, prop, no invention, docs).
 - rendered.mjs: fresh public build, 1280 and 390: R1 every visible text control >= 16px on vendor apply, vendor register code entry, the first two ticket checkouts and the footer input; R2 gap 40-56px; R3 stands <= 14ch at 1280 and within its container at 390, other fields still form-width; R4 no overflow, no clipped footer input; R5 axe no new violations (goldens/render-baseline.json from the base render); R6 hero bottom, subnav height and unrelated font-sizes unchanged.
-- prettier --check on the five touched files, eslint on the three TSX files, tsc.
+- prettier.mjs (A4): origin/main already fails `prettier --check` on components/nos-chrome/nos-chrome.css (777 lines prettier would change) and components/vendors/VendorApplyForm.tsx (15); reformatting them is out of scope. The check requires the three clean files to stay clean and the two dirty ones to be no dirtier than their base copy (changed-line count, deterministic), eslint on the three TSX files, tsc.
 - To re-record the baseline (only on an unmodified base): `NOS_VA_RECORD=1 node .../checks/rendered.mjs`.
 - Chrome: run from the worktree with `NODE_OPTIONS='--require ../r19-chrome/use-chrome.cjs'`, or from anywhere with `NOS_VA_CHROME=<Chrome binary>`.
