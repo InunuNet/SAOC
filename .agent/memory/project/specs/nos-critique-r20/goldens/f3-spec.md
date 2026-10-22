@@ -83,7 +83,8 @@ nos-chrome.css:
 - **L2:** the height is within 40px of SAOC's (476px at 1280) at 1280 and 390.
 - **L3:** the bar equals SAOC's.
 - **L4:** the lockup is 248 wide, centred over column 1, on the column top, and level with Explore at 1280.
-- **L5:** REG/NPO is left-aligned across the column, 32px under the lockup, in the label role, and gold.
+- **L5:** REG/NPO is left-aligned across the column, 32px under the lockup, in the label role (family, size, uppercase), and gold. Its
+  weight and tracking are r20 F5's: SAOC REG/NPO's, checked by f5-rendered P4.
 - **L6:** the headings, the WOSA block and the royal ground are in place, with no overflow.
 - **L7:** the SAOC footer on /, /about, /events and /contact equals BASE in boxes and pixels. Amended by F4 (2026-10-22,
   `f4-spec.md`): F4 changes the SAOC Partners rows, so L7 now holds column 1 (box and pixels), the lockup, the bar (x, width, height,

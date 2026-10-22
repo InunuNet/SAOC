@@ -9,8 +9,8 @@
 //   R3  the label is visible, above the input, on the input's left edge, and its computed type equals the footer's label role (the
 //       "Stay in touch" .nf-head): family, size, weight, line-height, letter-spacing, transform, colour; and it sits 6px (+-1) above the
 //       input, SAOC's label mb-1.5 (Codi FINAL 2026-10-22: the NOS column gaps take SAOC Footer.tsx's exact values).
-//   R4  at 390 the input and the button share one row (same top +-1px, button right of the input); at 1280 the form keeps its stacked
-//       layout (the button under the input, same left edge and width +-1px). The footer's grid and boxes are F3's (f3-rendered.mjs).
+//   R4  at 1280 and 390 the input and the button share one row (same top +-1px, button right of the input; r20 F5 item 1 retired the
+//       >=701px stacked form). The footer's grid and boxes are F3's (f3-rendered.mjs).
 import { finish, goldenJson } from './_lib.mjs';
 import { MODES, require, serve } from './_server.mjs';
 
@@ -108,9 +108,7 @@ for (const mode of MODES) {
 
         // R4
         if (!m.button) failures.push(`${at}: no submit button (R4)`);
-        else if (width <= 390) {
-          if (!near(m.button.y, i.y) || m.button.x < i.x + i.w - 0.5) failures.push(`${at}: input (${Math.round(i.x)},${Math.round(i.y)}) and button (${Math.round(m.button.x)},${Math.round(m.button.y)}) are not side by side (R4)`);
-        } else if (!near(m.button.x, i.x) || !near(m.button.w, i.w) || m.button.y < i.y + i.h - 0.5) failures.push(`${at}: the form is not stacked: input (${Math.round(i.x)},${Math.round(i.y)} ${Math.round(i.w)}w), button (${Math.round(m.button.x)},${Math.round(m.button.y)} ${Math.round(m.button.w)}w) (R4)`);
+        else if (!near(m.button.y, i.y) || m.button.x < i.x + i.w - 0.5) failures.push(`${at}: input (${Math.round(i.x)},${Math.round(i.y)}) and button (${Math.round(m.button.x)},${Math.round(m.button.y)}) are not side by side (R4)`);
 
         if (m.overflow > 0) failures.push(`${at}: scrolls horizontally by ${m.overflow}px (R4)`);
       }
@@ -124,4 +122,4 @@ for (const mode of MODES) {
   }
 }
 
-finish(NAME, failures, `${checks} NOS footer captures (${MODES.join('/')}, ${WIDTHS.join('/')}): border alpha .55 at >= 3:1, name/autocomplete email, a visible nf-head label names the input, side by side at 390, stacked at 1280.`);
+finish(NAME, failures, `${checks} NOS footer captures (${MODES.join('/')}, ${WIDTHS.join('/')}): border alpha .55 at >= 3:1, name/autocomplete email, a visible nf-head label names the input, side by side at 1280 and 390.`);

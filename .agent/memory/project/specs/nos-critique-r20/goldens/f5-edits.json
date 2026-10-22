@@ -1,0 +1,58 @@
+{
+  "saocFooter": {
+    "file": "components/chrome/Footer.tsx",
+    "lineEdits": [
+      {
+        "line": 93,
+        "from": "              {FOOTER_BULLETIN.placeholder}",
+        "to": "              {FOOTER_BULLETIN.emailLabel}"
+      },
+      {
+        "line": 98,
+        "from": "              autoComplete=\"email\"",
+        "to": "              autoComplete=\"email\"\n              inputMode=\"email\"\n              spellCheck={false}"
+      }
+    ],
+    "drops": [],
+    "why": "Item 2: the SAOC visible label reads FOOTER_BULLETIN.emailLabel (\"Email address\"), the NOS label's string; the placeholder stays FOOTER_BULLETIN.placeholder. Item 3: inputMode=email and spellCheck={false} after the existing autoComplete=email. Lines 93 and 98 are distinct from F3's (19, 29, 38, 39, 128, 133) and F4's (22, 52, 57, 71, 74, 118). saoc-82 must be flagged in the PR: this changes the SAOC Footer.tsx."
+  },
+  "nosFooter": {
+    "file": "components/nos-chrome/NosFooter.tsx",
+    "inputAttrs": [
+      "id=\"nf-email\"",
+      "type=\"email\"",
+      "name=\"email\"",
+      "autoComplete=\"email\"",
+      "inputMode=\"email\"",
+      "spellCheck={false}"
+    ],
+    "why": "Item 3, content-pinned (F1, F3 and F4 rebuild this file): the NOS input adds inputMode=email and spellCheck={false}; it already has autoComplete=email."
+  },
+  "nosCss": {
+    "file": "components/nos-chrome/nos-chrome.css",
+    "rules": [
+      ".nf-list a, .nf-list span { line-height: 1.35; color: var(--nc-lilac); text-decoration: none; letter-spacing: 0; }",
+      ".nf-wild a { color: var(--nc-ground); text-decoration: none; }",
+      ".nf-wild a:hover, .nf-wild a:focus-visible { text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }",
+      ".nf-brand .nf-reg { color: var(--nc-gold); font-variant-numeric: tabular-nums; font-weight: 400; letter-spacing: 0.1em; }"
+    ],
+    "replaces": {
+      ".nf-list a, .nf-list span { line-height: 1.35; color: var(--nc-lilac); text-decoration: none; }": ".nf-list a, .nf-list span { line-height: 1.35; color: var(--nc-lilac); text-decoration: none; letter-spacing: 0; }",
+      ".nf-wild a { color: var(--nc-ground); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }": ".nf-wild a { color: var(--nc-ground); text-decoration: none; }",
+      ".nf-brand .nf-reg { color: var(--nc-gold); font-variant-numeric: tabular-nums; }": ".nf-brand .nf-reg { color: var(--nc-gold); font-variant-numeric: tabular-nums; font-weight: 400; letter-spacing: 0.1em; }"
+    },
+    "retired": [
+      "@media (min-width: 701px) { .nf-form { flex-direction: column; } .nf-form input, .nf-form button { width: 100%; } }"
+    ],
+    "why": "Item 1: the whole >=701px rule that stacked the form (column direction plus 100% widths) goes, so the input and Subscribe sit inline at every width (.nf-form is already display:flex with gap 8px; NOS colours unchanged). Item 4: footer list rows letter-spacing 0, as SAOC. Item 5: the WOSA link has no underline at rest and the existing underline (green-1, 1.5px, offset 4px) on hover and focus-visible. Item 6: REG/NPO takes SAOC's weight (400) and tracking (0.1em, SAOC's tracking-[0.1em]) and keeps NOS gold. F4's .nf-list a/span and .nf-wild a rules are replaced (`replaces`), so f4-static accepts either form."
+  },
+  "label": "Email address",
+  "placeholder": "your@email.co.za",
+  "widths": [
+    1280,
+    390
+  ],
+  "wosaHref": "https://wildorchids.co.za",
+  "trackingTolerance": 0.005,
+  "allowCopy": []
+}

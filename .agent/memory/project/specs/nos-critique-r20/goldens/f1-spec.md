@@ -62,5 +62,5 @@ Sources: `docs/rules/no-invention.md`.
   - R1: the border colour on all sides, still 1px solid with a 10px radius, and contrast of at least 3:1.
   - R2: the attributes; exactly one `<label>`; the textbox's role name is "Email address", exact.
   - R3: the label is visible, above the input, on its left edge, and its computed type equals the "Stay in touch" `.nf-head`.
-  - R4: side by side at 390; stacked at 1280 (button under the input, same left edge and width); no overflow.
+  - R4: side by side at 1280 and 390 (r20 F5 item 1 retired the >=701px stacked form, superseding the column layout above); no overflow.
   - The footer's grid and column boxes belong to F3 and its checks.

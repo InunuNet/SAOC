@@ -4,6 +4,8 @@
 //   S1  components/chrome/footer-data.ts equals BASE plus exactly F3's FOOTER_LAYOUT block and F4's FOOTER_RHYTHM block (list, row).
 //   S2  components/chrome/Footer.tsx equals BASE plus exactly F3's and F4's line edits: FOOTER_RHYTHM imported, both lists on
 //       FOOTER_RHYTHM.list (Partners' gap-2 gone), the Explore link, the Partners name and the WOSA link each led by FOOTER_RHYTHM.row.
+//       r20 F5 (footer parity, goldens/f5-edits.json) edits it on two more BASE lines, so S2 also accepts BASE + F3 + F4 + F5, and S4
+//       accepts F5's replacement (f5-edits.json nosCss.replaces) in place of a rule F5 replaces.
 //   S3  components/nos-chrome/NosFooter.tsx imports FOOTER_RHYTHM from footer-data and uses FOOTER_RHYTHM.list in 2 classNames and
 //       FOOTER_RHYTHM.row in 3, as the golden markup (the two nf-list lists, the Explore link, the Partners name, the WOSA link).
 //   S4  components/nos-chrome/nos-chrome.css carries each golden rule exactly once (the row geometry and size off .nf-list a/span,
@@ -18,13 +20,16 @@ import { exactEdits, newProse } from './_edits.mjs';
 const NAME = 'f4-static.mjs';
 const G = goldenJson('f4-edits.json');
 const G3 = goldenJson('f3-edits.json');
+const G5 = goldenJson('f5-edits.json');
 const FP = goldenJson('f4-footprint.json');
 const failures = [];
 const count = (text, needle) => text.split(needle).length - 1;
 const both = (f3, f4) => [[...f3.lineEdits, ...f4.lineEdits], [...f3.drops, ...f4.drops]];
 
 failures.push(...exactEdits(G.footerData.file, ...both(G3.footerData, G.footerData), 'S1'));
-failures.push(...exactEdits(G.saocFooter.file, ...both(G3.saocFooter, G.saocFooter), 'S2'));
+const s2 = exactEdits(G.saocFooter.file, ...both(G3.saocFooter, G.saocFooter), 'S2');
+const s2f5 = [G3.saocFooter, G.saocFooter, G5.saocFooter];
+failures.push(...(s2.length === 0 || exactEdits(G.saocFooter.file, s2f5.flatMap((p) => p.lineEdits), s2f5.flatMap((p) => p.drops), 'S2').length === 0 ? [] : s2));
 
 const N = G.nosFooter;
 const tsx = readRepoFile(N.file);
@@ -43,7 +48,11 @@ const C = G.nosCss;
 const css = readRepoFile(C.file);
 if (css === null) failures.push(`${C.file}: missing (S4)`);
 else {
-  for (const r of C.rules) if (count(css, r) !== 1) failures.push(`${C.file}: ${count(css, r)} copies of ${JSON.stringify(r)}, want 1 (S4)`);
+  for (const r of C.rules) {
+    const f5 = G5.nosCss.replaces[r];
+    if (count(css, r) === 1 || (f5 && count(css, r) === 0 && count(css, f5) === 1)) continue;
+    failures.push(`${C.file}: ${count(css, r)} copies of ${JSON.stringify(r)}${f5 ? ` (${count(css, f5)} of its F5 replacement)` : ''}, want 1 (S4)`);
+  }
   for (const gone of C.retired) if (css.includes(gone)) failures.push(`${C.file}: still carries ${JSON.stringify(gone)} (S4)`);
 }
 

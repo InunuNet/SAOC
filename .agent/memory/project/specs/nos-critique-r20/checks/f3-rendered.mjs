@@ -10,7 +10,7 @@
 //   L4  brand: the one NOS-2027 gold vertical lockup, 248px wide (aspect kept), centred over column 1 (+-1px), its top on the column
 //       top; at 1280 also level with the "Explore" heading (+-1px).
 //   L5  REG/NPO: left-aligned on column 1's left edge across its width, 32px under the lockup (+-1px), in the NOS label role (the
-//       .nf-head family, size, letter-spacing, uppercase) and gold (the computed colour of the gold sign-up button's ground).
+//       .nf-head family, size, uppercase; tracking is F5's, matched to SAOC REG/NPO in f5-rendered P4) and gold (the computed colour of the gold sign-up button's ground).
 //   L6  content: columns 2-4 open with "Explore", "Partners", "Stay in touch"; column 4 also holds "Looking for wild orchids?". The
 //       footer ground is the NOS royal rgb(33, 26, 87). No horizontal overflow.
 //   L7  the SAOC footer keeps BASE where r20 F4 (the footer rhythm, goldens/f4-edits.json) does not reach: on golden saocRoutes its
@@ -152,7 +152,7 @@ for (const mode of MODES) {
         else {
           if (!near(R.x, c1.x) || !near(R.w, c1.w) || R.style['text-align'] !== 'start' && R.style['text-align'] !== 'left') failures.push(`${at}: REG/NPO at x ${Math.round(R.x)} w ${Math.round(R.w)} ${R.style['text-align']}, want column 1 (${Math.round(c1.x)}, ${Math.round(c1.w)}) left-aligned (L5)`);
           if (L && !near(R.y - (L.y + L.h), G.brandGap)) failures.push(`${at}: REG/NPO ${Math.round(R.y - (L.y + L.h))}px under the lockup, want ${G.brandGap} (L5)`);
-          for (const p of ['font-family', 'font-size', 'letter-spacing', 'text-transform']) if (n.roleStyle && R.style[p] !== n.roleStyle[p]) failures.push(`${at}: REG/NPO ${p} ${R.style[p]}, label role ${n.roleStyle[p]} (L5)`);
+          for (const p of ['font-family', 'font-size', 'text-transform']) if (n.roleStyle && R.style[p] !== n.roleStyle[p]) failures.push(`${at}: REG/NPO ${p} ${R.style[p]}, label role ${n.roleStyle[p]} (L5)`);
           if (!n.gold || R.style.color !== n.gold) failures.push(`${at}: REG/NPO colour ${R.style.color}, gold ${n.gold} (L5)`);
         }
         // L6

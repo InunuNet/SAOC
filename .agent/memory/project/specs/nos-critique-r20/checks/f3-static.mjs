@@ -2,7 +2,8 @@
 //   S1  components/chrome/footer-data.ts equals BASE plus exactly the FOOTER_LAYOUT block (SAOC's five layout class strings, verbatim).
 //   S2  components/chrome/Footer.tsx equals BASE with exactly its five layout class literals replaced by the FOOTER_LAYOUT keys (a pure
 //       refactor: same strings, same DOM) and FOOTER_LAYOUT imported.
-//       r20 F4 (footer rhythm, goldens/f4-edits.json) edits both files on other BASE lines: S1/S2 accept BASE + F3, or BASE + F3 + F4.
+//       r20 F4 (footer rhythm, goldens/f4-edits.json) edits both files on other BASE lines: S1/S2 accept BASE + F3, or BASE + F3 + F4;
+//       r20 F5 (footer parity, goldens/f5-edits.json) edits Footer.tsx on two more, so S2 also accepts BASE + F3 + F4 + F5.
 //   S3  components/nos-chrome/NosFooter.tsx imports FOOTER_LAYOUT and uses each key exactly once in a className; the columns run brand,
 //       Explore, Partners, Stay in touch (with the WOSA block) in source order; the lockup's density box is 248; no .nf-wrap / .nf-grid.
 //   S4  components/nos-chrome/nos-chrome.css drops the r17 brand layout and the NOS grid (golden `nosRetired`) and sets the lockup at
@@ -15,18 +16,23 @@ import { exactEdits, newProse } from './_edits.mjs';
 const NAME = 'f3-static.mjs';
 const G = goldenJson('f3-edits.json');
 const G4 = goldenJson('f4-edits.json');
+const G5 = goldenJson('f5-edits.json');
 const FP = goldenJson('f3-footprint.json');
 const failures = [];
 const count = (text, needle) => text.split(needle).length - 1;
 
-// BASE + F3 alone, else BASE + F3 + F4; when neither matches, the F3-alone diff is reported.
-const f3OrF4 = (f3, f4, tag) => {
+// BASE + F3 alone, else BASE + F3 plus each later amendment in order; when none matches, the F3-alone diff is reported.
+const f3OrLater = (f3, later, tag) => {
   const alone = exactEdits(f3.file, f3.lineEdits, f3.drops, tag);
   if (alone.length === 0) return alone;
-  return exactEdits(f3.file, [...f3.lineEdits, ...f4.lineEdits], [...f3.drops, ...f4.drops], tag).length === 0 ? [] : alone;
+  for (let k = 1; k <= later.length; k += 1) {
+    const parts = [f3, ...later.slice(0, k)];
+    if (exactEdits(f3.file, parts.flatMap((p) => p.lineEdits), parts.flatMap((p) => p.drops), tag).length === 0) return [];
+  }
+  return alone;
 };
-failures.push(...f3OrF4(G.footerData, G4.footerData, 'S1'));
-failures.push(...f3OrF4(G.saocFooter, G4.saocFooter, 'S2'));
+failures.push(...f3OrLater(G.footerData, [G4.footerData], 'S1'));
+failures.push(...f3OrLater(G.saocFooter, [G4.saocFooter, G5.saocFooter], 'S2'));
 
 const NOS = 'components/nos-chrome/NosFooter.tsx';
 const tsx = readRepoFile(NOS);
