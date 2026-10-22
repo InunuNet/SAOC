@@ -5,6 +5,7 @@
 // Both pages get the same rewrite, so the hub's own day cell is the oracle (no hard-coded style). The server render still shows the old cell,
 // so React recovers by client-rendering from the rewritten payload (a hydration warning is expected and ignored); every check waits for the
 // forced state to appear. POST /api/tickets/checkout is fulfilled by a mock (409 {error}) and counted; it is never allowed through.
+// D6 uses a second server whose sold-count read is forced on the server (checks/_forceday.cjs): page.tsx's own decision is what is tested.
 // D is the checkout's FIRST day, so "focus the first enabled day" has to skip a disabled first option.
 //   D1  forced D, hub and checkout: the option is a native disabled radio (no aria-disabled), unchecked, label class is-out, its line reads
 //       "Sold out" (TICKET_COPY.soldOutStamp); every other option is enabled and not is-out; the checkout cell markup equals the hub's.
@@ -83,10 +84,25 @@ async function axeIn(page, at, label) {
 }
 
 const srv = await serve(MODE);
+let srv2 = null; // the second server, whose sold-count read is forced server-side (checks/_forceday.cjs), for D6
 if (srv.failures) { failures.push(...srv.failures.map((f) => `${MODE}: ${f}`)); }
 else {
   const browser = await chromium.launch();
   try {
+    // The checkout's first day, from the unforced server, is the day the second server reports sold out.
+    const pre = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    await authorize(pre, srv);
+    const prePage = await pre.newPage();
+    await prePage.goto(`${srv.origin}${G.hub}`, { waitUntil: 'networkidle' });
+    const preSlug = await prePage.evaluate(() => document.querySelector('article#ticket-day')?.dataset.ticketSlug ?? null);
+    if (preSlug) await prePage.goto(`${srv.origin}/tickets/${preSlug}?quantity=1`, { waitUntil: 'networkidle' });
+    const firstDay = preSlug ? await prePage.evaluate(() => document.querySelector('form[data-nos-ticket-form] fieldset.nk-days input[type="radio"]')?.value ?? null) : null;
+    await pre.close();
+    if (!firstDay) failures.push(`${MODE}: could not read the checkout's first day for the server-side force (INFRA)`);
+    else {
+      srv2 = await serve(MODE, { forceDay: firstDay });
+      if (srv2.failures) { failures.push(...srv2.failures.map((f) => `${MODE} (forced server): ${f}`)); srv2 = null; }
+    }
     for (const width of WIDTHS) {
       const ctx = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
       await authorize(ctx, srv);
@@ -227,26 +243,38 @@ else {
       const where = await page.evaluate(() => [...document.querySelectorAll('form[data-nos-ticket-form] [role="alert"]')].map((x) => !!x.closest('fieldset.nk-days')));
       if (where.length !== 1 || where[0] !== false) failures.push(`${at}&day=${E}: with the day still open the server error must stay form-level (outside the day group); inGroup=${JSON.stringify(where)} (D5)`);
 
-      // D6 (amendment 2a, Codi): a sold-out ?day= is ignored on load: nothing is checked, the group is unselected (r45's no-default state),
-      // the summary keeps the product's own stub, and Continue to payment with no day is r45's "Choose a day" error and sends nothing.
-      posts.length = 0;
-      forceDay = D;
-      forced = [];
-      o = await open(`${url}&day=${D}`, `${FORM} fieldset.nk-days`, D, true);
-      if (!o || !o.days.find((d) => d.day === D)?.disabled) failures.push(`${at}&day=${D}: ${D} is not disabled when linked (D6)`);
+      // D6 (amendment 2a, Codi): a sold-out ?day= is ignored on load. This runs against the SECOND server, whose sold-count read reports D sold
+      // out on the server (checks/_forceday.cjs), so page.tsx computes initialDay and the summary from the closed day itself: nothing is
+      // checked, the group is unselected (r45's no-default state), the summary keeps the product's own stub, and Continue to payment with no
+      // day is r45's "Choose a day" error and sends nothing.
+      if (!srv2) failures.push(`${at}: no forced server for D6 (INFRA)`);
       else {
-        if (o.days.some((d) => d.checked)) failures.push(`${at}&day=${D}: a sold-out linked day leaves ${o.days.filter((d) => d.checked).map((d) => d.day).join(', ')} checked, want nothing checked (D6)`);
-        if (o.invalid !== 'false' || o.alerts) failures.push(`${at}&day=${D}: the group opens with aria-invalid=${o.invalid} alerts=${o.alerts}, want "false" / 0 (D6)`);
-        const stub = await page.evaluate(() => { const sm = document.querySelector('article[data-ticket-variant="summary"]'); return sm ? [sm.querySelector('[data-ticket-numeral]')?.textContent ?? null, sm.querySelector('.nk-numlab')?.textContent ?? null] : null; });
-        if (!stub || stub[0] !== '' || stub[1] !== '') failures.push(`${at}&day=${D}: the summary stub is ${JSON.stringify(stub)}, want the product's own ["",""] (the sold-out day is ignored) (D6)`);
-        await page.mouse.move(0, 0);
-        await page.locator(FORM).screenshot({ path: path.join(SHOTS, `lc-soldout-${width}-linked-initial.png`), animations: 'disabled' });
-        await fillAttendee();
-        await page.locator(`${FORM} button[type="submit"]`).click();
-        await page.waitForTimeout(500);
-        const e6 = await page.evaluate(() => { const fs = document.querySelector('form[data-nos-ticket-form] fieldset.nk-days'); return { invalid: fs.getAttribute('aria-invalid'), alerts: [...fs.querySelectorAll('[role="alert"]')].map((x) => [...x.childNodes].filter((n) => !(n.nodeType === 1 && n.getAttribute('aria-hidden') === 'true')).map((n) => n.textContent).join('')) }; });
-        if (e6.invalid !== 'true' || e6.alerts.length !== 1 || e6.alerts[0] !== G.chooseDay) failures.push(`${at}&day=${D}: submit after a sold-out link: aria-invalid=${e6.invalid} alerts=${JSON.stringify(e6.alerts)}, want "true" and one "${G.chooseDay}" (D6)`);
-        if (posts.length) failures.push(`${at}&day=${D}: a sold-out linked day was submitted (${posts.length} POST(s)): it must be ignored, not carried (D6)`);
+        posts.length = 0;
+        const hub2 = await page.goto(`${srv2.origin}${G.hub}`, { waitUntil: 'networkidle' });
+        const slug2 = hub2 && hub2.status() === 200 ? await page.evaluate(() => document.querySelector('article#ticket-day')?.dataset.ticketSlug ?? null) : null;
+        if (!slug2) failures.push(`${tag}: forced server: no Day Pass card on the hub (INFRA)`);
+        else {
+          const at2 = `forced-server @${width} /tickets/${slug2}?quantity=1&day=${D}`;
+          const r2 = await page.goto(`${srv2.origin}/tickets/${slug2}?quantity=1&day=${D}`, { waitUntil: 'networkidle' });
+          await page.evaluate(async () => { await document.fonts.ready; });
+          o = r2 && r2.status() === 200 ? await page.evaluate(readOption, { root: `${FORM} fieldset.nk-days`, day: D }) : null;
+          const dOpt = o ? o.days.find((d) => d.day === D) : null;
+          if (!dOpt || !dOpt.disabled || !dOpt.out) failures.push(`${at2}: the server-side force did not close ${D}: ${JSON.stringify(dOpt)} (INFRA)`);
+          else {
+            if (o.days.some((d) => d.checked)) failures.push(`${at2}: a sold-out linked day leaves ${o.days.filter((d) => d.checked).map((d) => d.day).join(', ')} checked, want nothing checked (D6)`);
+            if (o.invalid !== 'false' || o.alerts) failures.push(`${at2}: the group opens with aria-invalid=${o.invalid} alerts=${o.alerts}, want "false" / 0 (D6)`);
+            const stub = await page.evaluate(() => { const sm = document.querySelector('article[data-ticket-variant="summary"]'); return sm ? [sm.querySelector('[data-ticket-numeral]')?.textContent ?? null, sm.querySelector('.nk-numlab')?.textContent ?? null] : null; });
+            if (!stub || stub[0] !== '' || stub[1] !== '') failures.push(`${at2}: the summary stub is ${JSON.stringify(stub)}, want the product's own ["",""] (the sold-out day is ignored) (D6)`);
+            await page.mouse.move(0, 0);
+            await page.locator(FORM).screenshot({ path: path.join(SHOTS, `lc-soldout-${width}-linked-initial.png`), animations: 'disabled' });
+            await fillAttendee();
+            await page.locator(`${FORM} button[type="submit"]`).click();
+            await page.waitForTimeout(500);
+            const e6 = await page.evaluate(() => { const fs = document.querySelector('form[data-nos-ticket-form] fieldset.nk-days'); return { invalid: fs.getAttribute('aria-invalid'), alerts: [...fs.querySelectorAll('[role="alert"]')].map((x) => [...x.childNodes].filter((n) => !(n.nodeType === 1 && n.getAttribute('aria-hidden') === 'true')).map((n) => n.textContent).join('')) }; });
+            if (e6.invalid !== 'true' || e6.alerts.length !== 1 || e6.alerts[0] !== G.chooseDay) failures.push(`${at2}: submit after a sold-out link: aria-invalid=${e6.invalid} alerts=${JSON.stringify(e6.alerts)}, want "true" and one "${G.chooseDay}" (D6)`);
+            if (posts.length) failures.push(`${at2}: a sold-out linked day was submitted (${posts.length} POST(s)): it must be ignored, not carried (D6)`);
+          }
+        }
       }
 
       // D7 (amendment 2b, Codi): the race. E is open at load and chosen; it sells out before submit. The mock replies 409 {"error":"Sold out."};
@@ -320,6 +348,7 @@ else {
   } finally {
     await browser.close();
     await srv.stop();
+    if (srv2) await srv2.stop();
   }
 }
 

@@ -18,7 +18,7 @@ import net from 'node:net';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 
-import { BASE, SPEC_PREFIX, DOC, changedPaths, git, repoRoot } from './_lib.mjs';
+import { BASE, SPEC_PREFIX, DOC, changedPaths, checksDir, git, repoRoot } from './_lib.mjs';
 
 const USER = 'nos-left-counts';
 const PASS = 'local-render-check';
@@ -110,7 +110,7 @@ function portFree(port) {
 }
 
 /** Builds (if needed) and serves `mode`. Returns { origin, headers, stop } or { failures }. NOS_LC_ORIGIN_<MODE> skips both. */
-export async function serve(mode) {
+export async function serve(mode, extra = {}) {
   const headers = mode === 'preview' ? { authorization: AUTH } : {};
   const fixed = process.env[`NOS_LC_ORIGIN_${mode.toUpperCase()}`];
   if (fixed) return { origin: fixed.replace(/\/$/, ''), headers, stop: async () => {} };
@@ -124,7 +124,7 @@ export async function serve(mode) {
   const origin = `http://127.0.0.1:${port}`;
   const server = spawn(path.join(repoRoot, 'node_modules', '.bin', 'next'), ['start', '-p', String(port), '-H', '127.0.0.1'], {
     cwd: repoRoot,
-    env: modeEnv(mode),
+    env: extra.forceDay ? { ...modeEnv(mode), NODE_OPTIONS: `--require ${path.relative(repoRoot, path.join(checksDir, '_forceday.cjs'))}`, NOS_LC_FORCE_DAY: extra.forceDay } : modeEnv(mode),
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: true, // own process group, so stop() reaches the forked next-server child too
   });
