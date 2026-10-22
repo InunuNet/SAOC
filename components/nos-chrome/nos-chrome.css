@@ -136,10 +136,11 @@
 .nf-col > div.nf-head { margin-bottom: 16px; }
 /* r20 (Codi FINAL 2026-10-19): the sign-up's visible label, in the label role (.nf-head); a <label> is inline, so it is set as a block. */
 .nf-col-touch label.nf-head { display: block; }
-.nf-form { display: flex; gap: 8px; max-width: 360px; }
-.nf-form input { flex: 1; min-width: 0; min-height: 44px; padding: 0 14px; border: 1px solid rgba(210, 203, 232, 0.55); border-radius: 10px; background: rgba(11, 10, 20, 0.22); color: var(--nc-ground); font: var(--body-md) var(--nc-sans); }
-.nf-form input::placeholder { color: rgba(210, 203, 232, 0.72); }
-.nf-form input:focus-visible { outline: 2px solid var(--nc-ground); outline-offset: 2px; }
+.nf-form { display: flex; flex-wrap: wrap; gap: 8px; max-width: 360px; }
+.nf-form input[type="email"] { flex: 1; min-width: 0; min-height: 44px; padding: 0 14px; border: 1px solid rgba(210, 203, 232, 0.55); border-radius: 10px; background: rgba(11, 10, 20, 0.22); color: var(--nc-ground); font: var(--body-md) var(--nc-sans); }
+.nf-form input[type="email"]::placeholder { color: rgba(210, 203, 232, 0.72); }
+.nf-form input[type="email"]:focus-visible { outline: 2px solid var(--nc-ground); outline-offset: 2px; }
+.nf-form input[type="checkbox"] { accent-color: var(--nc-gold); }
 .nf-form button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--nc-gold); color: var(--nc-royal); font: 700 13px/1 var(--nc-sans); letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }
 .nf-form button:hover { background: var(--nc-gold-300); }
 .nf-wild { margin-top: 20px; }

@@ -9,9 +9,13 @@ Firestore client rules touch it.
 
 Collection `newsletterSubscribers`, doc id = sha256 hex of the normalised email (no PII in the id):
 `email`, `status` (`subscribed` | `unsubscribed`), `source` (`saoc-footer` | `nos-footer`),
+optional `topics` (`saoc` and/or `nos`, stored in that order),
 `subscribedAt`, `unsubscribedAt` (null while subscribed), `unsubscribeToken` (256-bit,
 base64url, 43 chars). Re-subscribing flips the same document back and keeps its original token and
-source, so links already issued keep working.
+source, so links already issued keep working. Legacy documents without `topics` are read with a
+single topic derived from `source`; no backfill is needed. A subscribe request without `topics`
+uses that same source default. An explicit empty list or unknown topic is rejected. Re-subscribing
+merges topics into the existing list, including when the address is already subscribed.
 
 ## Flow
 
@@ -23,11 +27,15 @@ source, so links already issued keep working.
 - `GET /newsletter/unsubscribe?token=...` renders a confirm button and performs no Firestore work
   (a mail scanner prefetching the link cannot unsubscribe anyone). The page is `noindex` and
   `no-referrer` because the token is a bearer credential. The button POSTs to
-  `POST /api/newsletter/unsubscribe`. Malformed and unknown tokens give the same generic 400.
+  `POST /api/newsletter/unsubscribe`. Unsubscribing applies to the whole address, across both
+  topics; topic-level unsubscribe is outside this feature. Malformed and unknown tokens give the
+  same generic 400.
 - `GET /api/admin/newsletter/export-csv` is gated by `getAdminSession` (401 no/invalid session, 403
   every other refusal, list never read when refused) and exports `subscribed` rows only as
-  `email,source,subscribedAt,unsubscribeUrl`. Cells starting with `= + - @` are prefixed with `'`.
-  `unsubscribeUrl` is built from `SITE_URL` (default `https://saoc.co.za`), never the request Host.
+  `email,source,subscribedAt,unsubscribeUrl,topics`, with topics joined by `;`. Cells starting
+  with `= + - @` are prefixed with `'`.
+  `unsubscribeUrl` uses the configured NOS origin for `nos-footer` and the SAOC origin for
+  `saoc-footer`, never the request Host.
   The response is `Cache-Control: no-store`.
 - `/admin/newsletter` lists subscribers with counts and a Download CSV link. Any allowlisted admin
   can open it (no capability check, contract decision D3).
@@ -70,6 +78,11 @@ committee wording, marked `PENDING-COMMITTEE-COPY` in the source:
 - `unsubscribeDone`: "You have been unsubscribed."
 
 ## Copy gaps
+
+The newsletter chooser's none-selected error has no approved copy. Its preview-only text is
+marked `COPY GAP — AI-generated placeholder` and is withheld by `withholdPlaceholderProse()` in
+public mode. The error still blocks submission, flags the checkbox group, and focuses its first
+checkbox. The chooser legend uses the existing `FOOTER_HEADINGS.touch` in visually hidden text.
 
 These strings have no golden entry (functional form and admin chrome), so they were placed in
 `NEWSLETTER_COPY` as-is and need a decision: `honeypotLabel`, `adminHeading`, `adminDownloadCsv`,

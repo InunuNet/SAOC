@@ -26,7 +26,7 @@ check('session throw never exports', thrown.status >= 400 && listed === 0);
 const ok = await handleNewsletterExport({ origin: 'https://beta.saoc.co.za', getSession: async () => ({ ok: true, decodedToken: {} }), listSubscribers });
 const lines = ok.body.split('\n');
 check('ok => 200', ok.status === 200);
-check('subscribed only', lines.length === 2 && lines[0] === 'email,source,subscribedAt,unsubscribeUrl' && lines[1].startsWith('a@example.com,') && lines[1].endsWith('https://beta.saoc.co.za/newsletter/unsubscribe?token=' + 'A'.repeat(43)) && !ok.body.includes('gone@') && !ok.body.includes('G'.repeat(43)));
+check('subscribed only', lines.length === 2 && lines[0] === 'email,source,subscribedAt,unsubscribeUrl,topics' && lines[1].startsWith('a@example.com,') && lines[1].endsWith('https://beta.saoc.co.za/newsletter/unsubscribe?token=' + 'A'.repeat(43) + ',saoc') && !ok.body.includes('gone@') && !ok.body.includes('G'.repeat(43)));
 check('csv headers', ok.headers['Content-Type'].startsWith('text/csv') && ok.headers['Content-Disposition'] === 'attachment; filename="newsletter-subscribers.csv"' && ok.headers['Cache-Control'] === 'no-store');
 
 if (failures.length) { console.error('FAIL', failures); process.exit(1); }

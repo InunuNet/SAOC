@@ -987,6 +987,7 @@ export interface NewsletterSubscriber {
   email: string;
   status: 'subscribed' | 'unsubscribed';
   source: 'saoc-footer' | 'nos-footer';
+  topics: Array<'saoc' | 'nos'>;
   subscribedAt: Date | null;
   unsubscribedAt: Date | null;
   unsubscribeToken: string;
