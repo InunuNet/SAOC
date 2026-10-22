@@ -1,0 +1,6 @@
+[
+  "app/(marketing)/national-show/exhibitors/page.tsx",
+  "app/(marketing)/national-show/nos-structure.css",
+  "components/show/ExhibitorKeyDates.tsx",
+  "components/show/ExhibitorQuestions.tsx"
+]
