@@ -40,6 +40,10 @@ export function ContactForm() {
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
+  function clearFieldError(key: FieldKey) {
+    setFieldErrors((prev) => ({ ...prev, [key]: undefined }));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (status === 'submitting') return;
@@ -121,7 +125,10 @@ export function ContactForm() {
           autoComplete="name"
           required
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+            clearFieldError('name');
+          }}
           disabled={status === 'submitting'}
           placeholder="Your name"
           className={inputClass}
@@ -145,7 +152,10 @@ export function ContactForm() {
           autoComplete="email"
           required
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            clearFieldError('email');
+          }}
           disabled={status === 'submitting'}
           placeholder="your@email.co.za"
           className={inputClass}
@@ -168,7 +178,10 @@ export function ContactForm() {
           name="subject"
           required
           value={subject}
-          onChange={(e) => setSubject(e.target.value)}
+          onChange={(e) => {
+            setSubject(e.target.value);
+            clearFieldError('subject');
+          }}
           disabled={status === 'submitting'}
           placeholder="What is your enquiry about?"
           className={inputClass}
@@ -194,7 +207,10 @@ export function ContactForm() {
           aria-describedby={fieldErrors.message ? `${HINT_ID} cf-message-error` : HINT_ID}
           aria-invalid={fieldErrors.message ? 'true' : undefined}
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={(e) => {
+            setMessage(e.target.value);
+            clearFieldError('message');
+          }}
           disabled={status === 'submitting'}
           placeholder="Write your message here…"
           className={`${inputClass} resize-y`}

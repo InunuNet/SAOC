@@ -44,3 +44,15 @@ The SAOC form alert is now 14px (it was 16px with `leading-[1.55]`) because it u
 
 Closed by the amendment: "Required" is field-neutral, so no copy gap remains. (Before the amendment,
 "All fields are required." sat under a single field and read oddly; recorded for the design lead.)
+
+## Amendment 2 (Codi)
+
+- The shared alert is transparent: `ALERT_CLASS` in `TicketFormField.tsx` is now
+  `flex gap-2 border-l-2 border-error bg-transparent px-4 py-0 font-sans text-[14px] text-error`
+  (was `bg-bone px-4 py-3`). `--bone` is a grey on SAOC, so the filled alert was as heavy as its field.
+  This applies to the NOS ticket forms too: the shared alert is transparent there as well, with less
+  padding, so it renders the same on NOS and SAOC. The left rule hugs the text; the gap above comes from
+  the field wrapper's spacing and the gap below from the form spacing.
+- Clear on edit: each field's `onChange` drops that field's own `fieldErrors` entry, so a corrected field
+  loses its error and `aria-invalid` immediately instead of at the next submit. The message field keeps its
+  hint id in `aria-describedby`.
