@@ -1,4 +1,4 @@
-# Sources: Codi's ruling on r57 owner question O4 (NOS design lead, final authority), verbatim in goldens/spec.md. Stacked on fix/nos-faq-r57 (PR #42, 6c170c4e).
+# Sources: Codi's ruling on r57 owner question O4 (NOS design lead, final authority), verbatim in goldens/spec.md. On origin/main b1c29304 (r56 and r57 merged).
 # The rule is data-driven: a row is sourced when it is wired (r57) or its Sanity status is 'confirmed'. No new copy. Sanity is READ only.
 # Rendered checks: one mode per call, ports 3010-3019 minus 3002, 3013, 3016.
 schema: athanor.contract/v1
@@ -31,13 +31,13 @@ assertions:
       description: Check scripts and goldens are unmodified since @architect wrote them
       command: shasum -a 256 -c .agent/memory/project/specs/nos-faq-public-r57b/goldens/checks.sha256
     - id: A2
-      description: Footprint - the branch differs from 6c170c4e only in faq/page.tsx, nos-structure.css, docs/nos-faq-public-r57b.md and the spec dir
+      description: Footprint - the branch differs from b1c29304 only in faq/page.tsx, nos-structure.css, docs/nos-faq-public-r57b.md and the spec dir
       command: node .agent/memory/project/specs/nos-faq-public-r57b/checks/footprint.mjs
     - id: A3
       description: Static - badge rule in nos-structure.css (S7), data-driven sourced rule, one existing ShowStatusLine, JSON-LD from the shown rows, no invention, no Sanity write, docs
       command: node .agent/memory/project/specs/nos-faq-public-r57b/checks/static.mjs
     - id: A4
-      description: Prettier - faq/page.tsx stays clean and nos-structure.css (10 dirty lines at 6c170c4e) gets no dirtier
+      description: Prettier - faq/page.tsx stays clean and nos-structure.css (10 dirty lines at b1c29304) gets no dirtier
       command: node .agent/memory/project/specs/nos-faq-public-r57b/checks/prettier.mjs
     - id: A5
       description: Lint clean on the touched file
@@ -49,5 +49,5 @@ assertions:
       description: Rendered public build (1280/390) - only sourced rows, no empty section, chips and JSON-LD match, one existing page-level line, every marker (FAQ and what-to-expect gap notice) sentence case with normal tracking, axe no worse
       command: NOS_FAQ_MODES=public node .agent/memory/project/specs/nos-faq-public-r57b/checks/rendered.mjs
     - id: A8
-      description: Rendered preview build (1280/390) - identical to 6c170c4e in rows, marker text, page-level line and JSON-LD (marker CASE changes by design), every marker sentence case with normal tracking
+      description: Rendered preview build (1280/390) - identical to b1c29304 in rows, marker text, page-level line and JSON-LD (marker CASE changes by design), every marker sentence case with normal tracking
       command: NOS_FAQ_MODES=preview node .agent/memory/project/specs/nos-faq-public-r57b/checks/rendered.mjs

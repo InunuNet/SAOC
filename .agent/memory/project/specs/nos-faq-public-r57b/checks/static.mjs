@@ -4,7 +4,7 @@
 //   S3  The page-level gap line is the existing ShowStatusLine, drawn once, no longer behind `hideUnanswered ? null`; the JSON-LD still comes from visibleFaqs.
 //   S4  ShowFaqList, the CSS and every other component are untouched (footprint) and the page carries no 'use client'.
 //   S5  No invention: added lines carry no hex colour, font-family, TBC literal, Sanity write call or new multi-word string literal.
-//   S7  nos-structure.css: one rule after the R19 block gives [data-confirmation-badge] (and [data-exhibitor-marker]) letter-spacing normal / text-transform none; r57's .nos-faq-answer rule is gone; the R19 block is untouched.
+//   S7  nos-structure.css: r56's rule (after the R19 block) is extended to [data-confirmation-badge] (and [data-exhibitor-marker]) letter-spacing normal / text-transform none; r57's .nos-faq-answer rule is gone; the R19 block is untouched.
 //   S6  docs/nos-faq-public-r57b.md records r57b, the sourced-row rule and its evidence (status field), O4, JSON-LD, ShowStatusLine and the owner flags.
 import { finish, git, readBaseFile, readRepoFile, BASE, DOC } from './_lib.mjs';
 
@@ -49,6 +49,8 @@ if (css === null || cssBase === null) failures.push(`S7: ${CSS} is missing`);
 else {
   const r19 = css.indexOf('R19 status marker');
   const upper = css.match(/\.nos-theme \[data-confirmation-badge\],\s*\.nos-theme \[data-exhibitor-marker\]\s*\{[^}]*text-transform:\s*none[^}]*\}/g) ?? [];
+  const ruleCount = (css.match(/[^{}]*\[data-exhibitor-marker\][^{}]*\{[^}]*text-transform:\s*none[^}]*\}/g) ?? []).length;
+  if (ruleCount !== 1) failures.push(`S7: expected r56's sentence-case rule to be extended in place (one text-transform:none rule naming [data-exhibitor-marker]), found ${ruleCount}`);
   const track = css.match(/@layer base\s*\{\s*\.nos-theme \[data-confirmation-badge\],\s*\.nos-theme \[data-exhibitor-marker\]\s*\{[^}]*letter-spacing:\s*normal\s*!important[^}]*\}\s*\}/g) ?? [];
   if (upper.length !== 1 || track.length !== 1) failures.push(`S7: expected one text-transform:none rule and one @layer base letter-spacing:normal !important rule for [data-confirmation-badge] and [data-exhibitor-marker], found ${upper.length} and ${track.length}`);
   else if (css.indexOf(upper[0]) < r19) failures.push('S7: the sentence-case rule must come after the R19 block');

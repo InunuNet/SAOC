@@ -1,4 +1,4 @@
-// nos-faq-public-r57b (r57b) footprint guard: the branch may differ from BASE (fix/nos-faq-r57 head, 6c170c4e) only in goldens/footprint.json,
+// nos-faq-public-r57b (r57b) footprint guard: the branch may differ from BASE (origin/main b1c29304) only in goldens/footprint.json,
 // docs/nos-faq-public-r57b.md and this spec directory; HEAD descends from BASE.
 import { finish, footprintFailures } from './_lib.mjs';
 

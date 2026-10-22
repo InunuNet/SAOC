@@ -1,7 +1,7 @@
 # nos-faq-public-r57b - public FAQ shows sourced rows only (Codi, owner question O4 of r57; 2026-10-22)
 
 Ruling (Codi, NOS design lead, final authority, verbatim): "Q1 (O4): hide non-confirmed rows in public. Thirteen 'has not been confirmed' answers make the FAQ read as empty. That's my original r57 P2 and the same rule as r56/r64. Public shows only rows with a sourced answer (When, cost, venue), and any FAQ section left empty is hidden. Use the existing R11 gap-notice component and its existing copy once at page level, with no new copy. Preview keeps every row (critique H8; 17 Oct public-mode rule)."
-Base: fix/nos-faq-r57 head 6c170c4e (PR #42, not yet merged). Stacked branch fix/nos-faq-public-r57b. No invention; Sanity is read only.
+Base: origin/main b1c29304 (r56 #41 and r57 #42 squash-merged). Branch fix/nos-faq-public-r57b. (Facts below were measured on the r57 head 6c170c4e; the FAQ page and components are identical at b1c29304, so render-baseline.json stands.) No invention; Sanity is read only.
 
 ## The sourced-row rule, from data
 There IS a per-row confirmation field: `showFaq.status` (`pending` | `research` | `confirmed`, schema sanity/schemas/documents/showFaq.ts; selected by `showFaqsQuery`).
@@ -28,21 +28,21 @@ Files: `app/(marketing)/national-show/faq/page.tsx` and (P3, below) `app/(market
 
 ## P3 - status pill in sentence case (Codi's reversal, H4)
 Codi (verbatim): "the public gap notice on what-to-expect still renders its pill as 'TO BE CONFIRMED BY THE SHOW COMMITTEE' in uppercase. I told you to leave [data-confirmation-badge]; I'm reversing that. Make it sentence case with normal tracking too, so public, email and PDF match (H4)."
-r56's `[data-exhibitor-marker]` sentence-case rule is NOT at 6c170c4e, so the combined rule covers both selectors and the r56 merge resolves.
-In `nos-structure.css`, after the R19 block (untouched; its uppercase and .14em declarations keep their counts):
-- `.nos-theme [data-confirmation-badge], .nos-theme [data-exhibitor-marker] { text-transform: none; }` (unlayered, wins over R19 by order).
-- `@layer base { .nos-theme [data-confirmation-badge], .nos-theme [data-exhibitor-marker] { letter-spacing: normal !important; } }`.
-Remove r57's `.nos-theme .nos-faq-answer [data-confirmation-badge]` rule (redundant).
+r56's rule exists at base (nos-structure.css, after the R19 block): `.nos-theme [data-exhibitor-marker] { letter-spacing: normal; text-transform: none; }`. EXTEND it in place, do not add a second one.
+In `nos-structure.css` (the R19 block stays untouched; its uppercase and .14em declarations keep their counts):
+- r56's selector becomes `.nos-theme [data-confirmation-badge], .nos-theme [data-exhibitor-marker] { letter-spacing: normal; text-transform: none; }` (unlayered, wins over R19 by order).
+- Add `@layer base { .nos-theme [data-confirmation-badge], .nos-theme [data-exhibitor-marker] { letter-spacing: normal !important; } }` right after it.
+- Remove r57's `.nos-theme .nos-faq-answer [data-confirmation-badge]` rule (redundant); update r56's comment to say it now covers both.
 Why the second block is layered and !important: at 375-700px ShowStatusLine's chip-fit ladder sets 0.02-0.06em with !important Tailwind utilities (in @layer utilities). Important declarations from an earlier layer beat later layers, and any unlayered important loses to them; so a plain or unlayered-!important rule left 0.24px at 390 (measured). `@layer base` is earlier than utilities. Verified green with it. Not touched: ShowStatusLine.tsx (the ladder is still wanted by SAOC pages outside .nos-theme).
 Prettier: nos-structure.css was 10 dirty lines at base; keep it at 10 (the trial measures 10).
 "Sunset Cocktails (Single)" is an owner item: not touched.
 Check B1 (rendered, both modes, both widths): every [data-confirmation-badge] in main on /national-show/faq and /national-show/what-to-expect computes text-transform none and letter-spacing normal (0); the public what-to-expect gap notice must draw >= 1 marker (else INFRA). A8 compares marker text via textContent, so the case change is allowed there and B1 pins it.
 
 ## Checks
-A1 hashes. A2 footprint vs 6c170c4e (faq/page.tsx, nos-structure.css, docs, spec dir). A3 static (S1-S7). A4 prettier no dirtier. A5 eslint. A6 tsc. A7 rendered public (D1-D6, B1, X1). A8 rendered preview equals base apart from marker case (V1, B1). `render-baseline.json` is the render of 6c170c4e in both modes. The expected row set is computed live: base wired rows plus rows whose Sanity status is confirmed (read from the public CDN), so a row the committee confirms later is expected to appear.
+A1 hashes. A2 footprint vs b1c29304 (faq/page.tsx, nos-structure.css, docs, spec dir). A3 static (S1-S7). A4 prettier no dirtier. A5 eslint. A6 tsc. A7 rendered public (D1-D6, B1, X1). A8 rendered preview equals base apart from marker case (V1, B1). `render-baseline.json` is the render of 6c170c4e in both modes. The expected row set is computed live: base wired rows plus rows whose Sanity status is confirmed (read from the public CDN), so a row the committee confirms later is expected to appear.
 
 ## Owner notes
 - Public JSON-LD for the venue row still carries the Sanity answer text while the page shows the venue name only (a r57 carry-over; JSON-LD answers are unchanged by r57b). Flag for Codi: should the venue JSON-LD answer be the venue name?
 - Public hero lede stays hidden (r57 behaviour). The FAQ intro says unconfirmed answers are marked; not shown in public.
 - A row returns to the public page when the committee sets its Sanity status to confirmed (or when it gains a wired source). No code change needed.
-- Stacked on PR #42: merge it first. If #42 is squash-merged, BASE (6c170c4e) in checks/_lib.mjs must be re-pointed to the squash commit.
+- BASE in checks/_lib.mjs is origin/main b1c29304; re-point it if the branch is rebased again.

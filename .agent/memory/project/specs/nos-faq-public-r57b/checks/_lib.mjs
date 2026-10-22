@@ -1,8 +1,8 @@
 // Shared helpers for the nos-faq-public-r57b (r57b) checks (QA inputs written by @architect; @dev must not edit them, goldens/checks.sha256
 // locks them). They inspect the checkout named by NOS_FAQ_ROOT; by default the .tmp/sandbox/r57b worktree when it exists under the
 // checkout holding this spec, otherwise that checkout itself.
-// This branch is STACKED on fix/nos-faq-r57 (PR #42): BASE is that branch's head, 6c170c4e, a fixed commit, so "no dirtier than base" and the
-// footprint are measured against r57's finished work, not against origin/main.
+// BASE is origin/main b1c29304 (r56 #41 and r57 #42 squash-merged), a fixed commit: "no dirtier than base" and the footprint are measured
+// against it.
 //   NOS_FAQ_ROOT   checkout to inspect (relative to the cwd)
 //   NOS_FAQ_GIT    checkout whose git history supplies the BASE file contents (default: NOS_FAQ_ROOT)
 import { execFileSync } from 'node:child_process';
@@ -19,8 +19,8 @@ const defaultRoot = existsSync(path.join(projectRoot, WORKTREE, 'package.json'))
 export const repoRoot = process.env.NOS_FAQ_ROOT ? path.resolve(process.env.NOS_FAQ_ROOT) : defaultRoot;
 export const gitRoot = process.env.NOS_FAQ_GIT ? path.resolve(process.env.NOS_FAQ_GIT) : repoRoot;
 
-// BASE is the commit this branch was cut from (fix/nos-faq-r57 head); HEAD must always descend from it.
-export const BASE = '6c170c4e';
+// HEAD must always descend from BASE.
+export const BASE = 'b1c29304';
 export const ORIGIN = BASE;
 
 export const DOC = 'docs/nos-faq-public-r57b.md';

@@ -59,31 +59,32 @@ index 23457b25..3dfca919 100644
              faqs={visibleFaqs}
              pendingLabel={info?.pendingLabel}
 diff --git a/app/(marketing)/national-show/nos-structure.css b/app/(marketing)/national-show/nos-structure.css
-index 6cd51660..bb36192c 100644
+index 58a1ad33..350eef98 100644
 --- a/app/(marketing)/national-show/nos-structure.css
 +++ b/app/(marketing)/national-show/nos-structure.css
-@@ -186,6 +186,20 @@
-   background-color: transparent;
-   color: var(--ivory);
+@@ -180,11 +180,20 @@
+   line-height: 1.5;
+   text-transform: uppercase;
  }
-+/* r57b (H4): the status pill reads in sentence case with normal tracking wherever it is drawn, so the
-+   public gap notice, email and PDF match. After the R19 block above, which is left as is. Tracking is !important in
-+   the base layer: an important declaration in an earlier layer outranks the chip-fit ladder's !important
-+   utilities in ShowStatusLine (0.02-0.06em at 375-700px), which an unlayered !important cannot. */
+-/* r56: the exhibitor marker is sentence case with no tracking, like the email and PDF pills. */
++/* r56/r57b (H4): the status pills are sentence case with no tracking, like the email and PDF pills. Tracking is
++   !important in the base layer: an important declaration in an earlier layer outranks the chip-fit ladder's
++   !important utilities in ShowStatusLine (0.02-0.06em at 375-700px), which an unlayered !important cannot. */
 +.nos-theme [data-confirmation-badge],
-+.nos-theme [data-exhibitor-marker] {
-+  text-transform: none;
-+}
+ .nos-theme [data-exhibitor-marker] {
+   letter-spacing: normal;
+   text-transform: none;
+ }
 +@layer base {
 +  .nos-theme [data-confirmation-badge],
 +  .nos-theme [data-exhibitor-marker] {
 +    letter-spacing: normal !important;
 +  }
 +}
- 
- /* S7: form labels and legends are sentence case (vendors/apply, vendors/register). */
- .nos-theme form:not([data-nos-ticket-form]) :is(label, legend),
-@@ -753,11 +767,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
+ .nos-theme .nos-on-dark [data-confirmation-badge],
+ .nos-theme .nos-on-dark [data-exhibitor-marker] {
+   border-color: var(--ivory);
+@@ -758,11 +767,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
  .nos-faq-answer {
    padding: 0 clamp(20px, 3vw, 32px) 24px;
  }

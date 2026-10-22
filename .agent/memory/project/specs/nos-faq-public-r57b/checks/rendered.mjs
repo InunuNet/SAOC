@@ -1,5 +1,5 @@
 // nos-faq-public-r57b rendered: PUBLIC and PREVIEW production builds of /national-show/faq at 1280 and 390 (_server.mjs; ports 3010-3019 minus 3002,
-// 3013, 3016). QA input, hash-locked. Golden: goldens/edits.json and goldens/render-baseline.json (the render of the base, 6c170c4e = r57 finished,
+// 3013, 3016). QA input, hash-locked. Golden: goldens/edits.json and goldens/render-baseline.json (the render of the FAQ at the base, 6c170c4e, the r57 head; its FAQ page and components are identical to b1c29304,
 // recorded with NOS_FAQ_RECORD=1). Nothing here writes: pages are only loaded and measured; Sanity is READ (published perspective, public CDN).
 //   The rule under test (Codi, O4): a public build shows only rows with a sourced answer - a row is sourced when it is wired (r57: the base public render
 //   carries a [data-faq-wired] block in it) or its Sanity status is 'confirmed' (read live below). Any section left empty is not drawn.
