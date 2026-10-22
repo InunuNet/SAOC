@@ -133,7 +133,7 @@ export default function OrderConfirmation({
       <ShellFootnote>
         In an emergency: 10111 Police (national) · 10177 Ambulance and fire (national) · 112 All
         emergencies, from a mobile phone · On-site first aid and show duty contact{' '}
-        <ShellPill>To be confirmed</ShellPill>
+        <ShellPill>{visit?.pendingLabel ?? DEFAULT_PENDING_LABEL}</ShellPill>
       </ShellFootnote>
     </EmailShell>
   );
