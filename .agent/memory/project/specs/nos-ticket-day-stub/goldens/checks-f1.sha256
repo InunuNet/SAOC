@@ -1,0 +1,15 @@
+48133ee94946750c9d0862a2bfcf185c38676bbb74c47082fae150facb18c7b6  .agent/memory/project/specs/nos-ticket-day-stub/checks/_lib.mjs
+11aa417dcf43dd572fbb6b5e135c1e90bf736254380d94a04af30e73db47fc48  .agent/memory/project/specs/nos-ticket-day-stub/checks/_server.mjs
+f67f37e8885f4c8876eb3b2695b5f2243440c588e09055129c3c093b75d6ebfb  .agent/memory/project/specs/nos-ticket-day-stub/checks/_edits.mjs
+531485440376b80f0cbbe4574348732dda385ddd04bf85513e309be65b9dff06  .agent/memory/project/specs/nos-ticket-day-stub/checks/footprint.mjs
+a6282f4e0911fa53feb0c5b890ac90551b410f4a78dc896dab9c22f4a05985c2  .agent/memory/project/specs/nos-ticket-day-stub/checks/f1-static.mjs
+2a124a84abd8a75d738a0965fa1fa396300b671cc8853839c7e174a1eb0b1458  .agent/memory/project/specs/nos-ticket-day-stub/checks/f1-server.mjs
+be96f169bb639bc7da6d4fd2ba162c42f756a49d97ff84220a66fc424b058d09  .agent/memory/project/specs/nos-ticket-day-stub/checks/f1-rendered.mjs
+3dfa70f3b4e87d618b3aeecb47cf18afcf7c830d8cea326ee6bd22920ef0a623  .agent/memory/project/specs/nos-ticket-day-stub/checks/nonreg.mjs
+0187c06dbe7c26346b7ee159e77c4d7534c38c77fb1321d57d36cae9202be282  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f1-edits.json
+d1afa0bd32ebd2afe440b7384eb57a80007e6288eb0753676abb7ad810850bae  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f1-footprint.json
+65e06cf93b22c36ceb1565a1b69dad45beda21404f59a821ccfb393e2284e2f0  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f1-spec.md
+d454d580b9d2d70780262b0d4e4cdd896fde0842dd9554ff1f9a61d4608a9152  .agent/memory/project/specs/nos-ticket-day-stub/goldens/nonreg-baseline.json
+0500980364ae93823b3a5cdcc116a1a63b96d4555bf620525f2b639fd72e21e9  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f2-footprint.json
+e492399a8e313447e2c66b8b66933455e8f323d1dc80de21b252fc2bfa4e96c6  .agent/memory/project/specs/nos-ticket-day-stub/contract-f1.yaml
+9bbc428ff2a8e1cf1855d4eb3ac86e3043ada71cb0e53f70ba8f7a78f57c35e3  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f3-edits.json

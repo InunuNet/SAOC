@@ -1,4 +1,4 @@
-// Day-cell rules of the Day Pass, shared by the card (client) and the hero mini ticket (server).
+// Day-cell rules of the Day Pass card, and the count display the other cards share.
 
 import { TICKET_COPY } from '@/lib/data/ticket-presentation';
 
@@ -28,8 +28,4 @@ export function daySubline(day: KeepsakeDay, counts: CountDisplay = 'real'): str
   if (counts === 'withhold') return null;
   if (day.remaining !== null && day.total !== null) return `${day.remaining} of ${day.total}`;
   return null;
-}
-
-export function firstSelectableDay(days: KeepsakeDay[] | null): string | null {
-  return days?.find((d) => !isDayClosed(d))?.day ?? null;
 }

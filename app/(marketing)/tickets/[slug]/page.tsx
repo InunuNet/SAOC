@@ -173,7 +173,8 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
   const quantity = parseQuantity(query.quantity);
   const day = typeof query.day === 'string' && showDays.includes(query.day) ? query.day : null;
   const productId = productIdForSlug(ticketType.slug);
-  const summaryDay = cardData.requiresDaySelection ? (day ?? showDays[0] ?? null) : null;
+  // r45b: with no ?day the summary keeps the product's own stub and when line, never the first show day.
+  const summaryDay = cardData.requiresDaySelection ? day : null;
   const purchasable = salesOpen && !cardData.soldOut;
 
   const breadcrumbs = (

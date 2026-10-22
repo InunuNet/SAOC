@@ -7,7 +7,7 @@
 // real limits and the stepper here is presentational.
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 
 import { formatRand } from '@/components/nos/cheapest-admission';
 import { TICKET_COPY, type TicketProduct } from '@/lib/data/ticket-presentation';
@@ -27,6 +27,8 @@ interface BuyBlockProps {
   session?: boolean;
   /** The chosen day (Day Pass only), appended to the checkout link. */
   day?: string | null;
+  /** Day Pass only: called instead of following the link while no day is chosen. */
+  onMissingDay?: () => void;
   // The CMS name of the regular SKU that follows an early-bird SKU.
   regularName?: string | null;
 }
@@ -37,6 +39,12 @@ function checkoutHref(slug: string, quantity: number, day: string | null | undef
   return `/tickets/${slug}?${query.toString()}`;
 }
 
+// Only a plain primary click is held for the missing day. A modified or middle click opens the
+// checkout as any link does, and the checkout asks for the day itself (r45b).
+function isPlainClick(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+}
+
 export function BuyBlock({
   vm,
   name,
@@ -44,6 +52,7 @@ export function BuyBlock({
   session = false,
   day = null,
   regularName = null,
+  onMissingDay,
 }: BuyBlockProps) {
   const [quantity, setQuantity] = useState(MIN_QUANTITY);
 
@@ -146,7 +155,20 @@ export function BuyBlock({
           <PlusIcon />
         </button>
       </div>
-      <Link data-ticket-cta="" className="nk-btn nk-cta" href={checkoutHref(vm.slug, current, day)}>
+      <Link
+        data-ticket-cta=""
+        className="nk-btn nk-cta"
+        href={checkoutHref(vm.slug, current, day)}
+        onClick={
+          onMissingDay && !day
+            ? (event) => {
+                if (!isPlainClick(event)) return;
+                event.preventDefault();
+                onMissingDay();
+              }
+            : undefined
+        }
+      >
         {TICKET_COPY.buy}
         <ArrowIcon />
       </Link>

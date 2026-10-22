@@ -1,0 +1,59 @@
+{
+  "form": {
+    "file": "components/tickets/TicketPurchaseForm.tsx",
+    "lineEdits": [
+      {
+        "line": 17,
+        "from": "// The CTA stays enabled at quantity 0; a click there fills the hint and moves focus to it.",
+        "to": "// The CTA stays enabled at quantity 0; a click there fills the hint and moves focus to it.\n// It also stays enabled with no day chosen (r45b): a click shows the picker's required-field error\n// and moves focus to the picker."
+      },
+      {
+        "line": 38,
+        "from": "// A day product opens on the day the link named, else on the first show day.",
+        "to": "// A day product opens on the day the link named, else with no day chosen (r45b: never a default)."
+      },
+      {
+        "line": 45,
+        "from": "  return requested && showDays.includes(requested) ? requested : (showDays[0] ?? null);",
+        "to": "  return requested && showDays.includes(requested) ? requested : null;"
+      },
+      {
+        "line": 62,
+        "from": "  const hintVisible = hintRequested && cart.quantity < MIN_QUANTITY;",
+        "to": "  const hintVisible = hintRequested && cart.quantity < MIN_QUANTITY;\n  const dayGroupRef = useRef<HTMLFieldSetElement>(null);\n  const [dayRequested, setDayRequested] = useState(false);\n  const dayInvalid = dayRequested && cart.day === null;"
+      },
+      {
+        "line": 81,
+        "from": "    e.preventDefault();",
+        "to": "    e.preventDefault();\n    if (ticketType.requiresDaySelection && cart.day === null) {\n      setDayRequested(true);\n      dayGroupRef.current?.querySelector<HTMLInputElement>('input:not(:disabled)')?.focus();\n      return;\n    }"
+      },
+      {
+        "line": 102,
+        "from": "        <fieldset className=\"days nk-days\">",
+        "to": "        <fieldset ref={dayGroupRef} className=\"days nk-days\" aria-invalid={dayInvalid}>"
+      },
+      {
+        "line": 121,
+        "from": "          </div>",
+        "to": "          </div>\n          {dayInvalid ? (\n            <p\n              role=\"alert\"\n              className=\"mt-1.5 border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800\"\n            >\n              {TICKET_COPY.chooseDay}\n            </p>\n          ) : null}"
+      }
+    ],
+    "drops": [],
+    "why": "Codi r45b: no default day on the checkout form. startDay returns the ?day the link named or null, never showDays[0]. Continue to payment stays an enabled submit button; with a day product and no day it shows the r45 error (TICKET_COPY.chooseDay under the \"Choose a day\" legend, the TicketFormField alert class plus mt-1.5, aria-invalid on the fieldset) and focuses the first enabled radio of the group, the same focus target as the hub card (F1), before the quantity hint, attendee validation or any request. With ?day the day is pre-selected as before."
+  },
+  "page": {
+    "file": "app/(marketing)/tickets/[slug]/page.tsx",
+    "lineEdits": [
+      {
+        "line": 176,
+        "from": "  const summaryDay = cardData.requiresDaySelection ? (day ?? showDays[0] ?? null) : null;",
+        "to": "  // r45b: with no ?day the summary keeps the product's own stub and when line, never the first show day.\n  const summaryDay = cardData.requiresDaySelection ? day : null;"
+      }
+    ],
+    "drops": [],
+    "why": "Without ?day the summary TicketCard gets day null, so (F1's `day ? showDayStub(day) : null`) its stub is TICKET_PRODUCTS.day's own '' / '' and its when line is TICKET_PRODUCTS.day.when, \"Friday, Saturday or Sunday\": no date. A day picked in the form still reaches it through CHECKOUT_DAY_EVENT."
+  },
+  "errorClass": "mt-1.5 border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800",
+  "dayWhen": "Friday, Saturday or Sunday",
+  "submitLabel": "Continue to payment"
+}

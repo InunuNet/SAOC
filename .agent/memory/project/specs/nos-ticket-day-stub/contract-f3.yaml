@@ -1,0 +1,60 @@
+# Sources: .tmp/sandbox/queue/r45-ruling.md, "Codi on f090281f (2026-10-22): behaviour PASS; F3 fix before PR" (verbatim FIX), and the
+# admin-redesign Codi token ruling (--color-error: #9b2c2c). Architect measurements and contrast in goldens/f3-spec.md. Same branch and
+# PR as F1/F2 (contract-f1.yaml, contract-f2.yaml); F3 is applied on top of F2 (f090281f).
+schema: athanor.contract/v1
+slug: nos-ticket-day-stub
+goal: >-
+  The ticket forms' required-field alert reads as an error: one TicketFieldAlert in TicketFormField (error-colour #9b2c2c text and a 2px
+  left border, a leading aria-hidden warning sign, no box outline), rendered by TicketFormField, both day pickers and the checkout's cart
+  error; an aria-invalid day group draws its options in the same colour until a day is picked. One new token, --color-error (tolerant of
+  admin-redesign #28's identical line), no new copy. The hub's missing-day Buy handler intercepts only a plain primary click (Codex P2).
+created_at: '2026-10-22'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json, goldens/f2-footprint.json, goldens/f3-footprint.json, docs/nos-ticket-day-stub.md and this spec dir'
+    reason: 'Enforced by A2. ContactForm and SuggestionForm (queued as rFE, team-lead) and DownloadTicketButton keep their own outlined alert; f3-static S5 pins them at BASE.'
+features:
+  - id: F3
+    name: Error-visible required-field alert (Codi) - TicketFieldAlert defined once, --color-error, invalid day group borders; modified clicks on Buy pass through (Codex P2)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-ticket-day-stub/goldens/f3-spec.md
+  - .agent/memory/project/specs/nos-ticket-day-stub/goldens/f3-edits.json
+  - .agent/memory/project/specs/nos-ticket-day-stub/goldens/f3-footprint.json
+  - .agent/memory/project/specs/nos-ticket-day-stub/goldens/checks-f3.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: F3 check scripts and goldens (and the shared helpers, the amended F1/F2 checks, their goldens and nonreg) are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-ticket-day-stub/goldens/checks-f3.sha256
+    - id: A2
+      description: Footprint - the branch differs from origin/main 1a7479f1 only in the f1/f2/f3 footprints, docs/nos-ticket-day-stub.md and the spec dir, and HEAD descends from it
+      command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/footprint.mjs
+    - id: A3
+      description: Static - exact F3 substitutions in five files, the alert class defined once, --color-error #9b2c2c once in @theme with globals.css otherwise BASE or origin/main, contrast at least 4.5:1 on every theme surface, BuyBlock lets modified clicks through, out-of-scope forms untouched, no new copy, docs
+      command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/f3-static.mjs
+    - id: A4
+      description: F1 static (amended) still green with F3 applied
+      command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/f1-static.mjs
+    - id: A5
+      description: F2 static (amended) still green with F3 applied
+      command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/f2-static.mjs
+    - id: A6
+      description: Lint clean on the four F3 TSX files
+      command: pnpm exec eslint components/tickets/TicketFormField.tsx components/tickets/TicketPurchaseForm.tsx components/tickets/keepsake/TicketCard.tsx components/tickets/keepsake/BuyBlock.tsx
+    - id: A7
+      description: Type-check clean
+      command: pnpm exec tsc --noEmit
+    - id: A8
+      description: Rendered (public, 1280/390, hub card and checkout) - the alert is rgb(155, 44, 44) text with a 2px solid left border, 0px elsewhere, no outline, an aria-hidden warning sign, "Choose a day"; the invalid group's options take the colour; contrast and axe clean; picking a day restores the options; Ctrl/Meta- and Shift-click on Buy with no day are not intercepted
+      command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/f3-rendered.mjs
+    - id: A9
+      description: F1 rendered (amended) - hub error state in the F3 class with the 2px left border, both builds, 1280/390
+      command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/f1-rendered.mjs
+    - id: A10
+      description: F2 rendered (amended) - checkout error state in the F3 class, both builds, 1280/390
+      command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/f2-rendered.mjs
+    - id: A11
+      description: Non-regression - 8 ticket routes at 1280/390 in both builds keep BASE geometry and screenshot blocks, no horizontal overflow
+      command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/nonreg.mjs
