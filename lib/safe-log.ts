@@ -24,8 +24,9 @@ const SAFE_ERROR_NAMES: ReadonlySet<string> = new Set([
 export function safeErrorType(error: unknown): string {
   try {
     if (!(error instanceof Error)) return typeof error;
-    const name = String(error.name);
-    return SAFE_ERROR_NAMES.has(name) ? name : GENERIC_ERROR_TYPE;
+    // No coercion: a non-string name could run attacker-controlled toString/toPrimitive code.
+    const name: unknown = error.name;
+    return typeof name === 'string' && SAFE_ERROR_NAMES.has(name) ? name : GENERIC_ERROR_TYPE;
   } catch {
     return UNKNOWN_ERROR_TYPE;
   }
