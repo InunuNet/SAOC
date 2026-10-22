@@ -37,3 +37,13 @@ The same three source files (violet, pink, dark) feed ten other surfaces through
 ## Verification
 
 The rendered checks run against a local build with `checks/hero-filter.cjs` preloaded. That is test-only: it drops array elements naming `a620a97f` from `*.sanity.io` responses so the live dataset renders with three slides, as it will once yellow is removed in Sanity. It is never shipped.
+
+## rPL: longer parchment pull (2026-10-22)
+
+Codi (P3 after rHB): on slide 3 the dark spotted orchid darkened and then lifted to parchment within about 60px, which read faintly as a fog bar. Every stop of the `[data-hero-scrim='bone']` pull in `app/globals.css` is now 1.5x rHB's (0.2 alpha at 84px, the 1/255 ease-in steps 6px apart, transparent at 126px), with the same alphas.
+
+- A 2x trial (top at 168px) removed the fog bar too, but the haze reached the carousel pager and the dots fell from 3.11:1 to 2.30-2.46:1 against the hero behind them, under the 3:1 of WCAG 1.4.11. Codi accepted that drop as a guard failure and chose 1.5x.
+- At 1.5x the dots measure 3.11:1 at 1280 and 3.06:1 at 390 (worst slide, worst dot), against 3.11:1 for rHB's pull.
+- rHB's rendered metrics (band step, seam, copy contrast, slides and autoplay) pass unchanged on public and preview builds.
+- The pull now runs past the hero section's 96px bottom padding, over the image; nothing interactive sits in that strip.
+- Checks: `.agent/memory/project/specs/nos-hero-pull/` (contract A1-A5). Its nonreg baseline was re-captured on main 62dd9f63, so it no longer flags pages changed by r45, rFT, rFE and the newsletter.

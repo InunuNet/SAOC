@@ -1,0 +1,43 @@
+# Sources: Codi's rPL ruling (queue rPL-ruling.md, 2026-10-22) and Codi's ship ruling for trial126 (goldens/pull.json, verbatim).
+# Basis: impeccable 4.4.0 craft-floor.md (fades read as atmosphere); WCAG 1.4.11 for the pager dots. No new copy, tokens or colours.
+schema: athanor.contract/v1
+slug: nos-hero-pull
+goal: >-
+  Lengthen the home hero's parchment pull to 1.5x rHB's stops (top at 126px) so slide 3 reads as atmosphere, not a fog bar, with the
+  pager dots' contrast unchanged and the rHB banding metrics still green; nonreg re-baselined on main 62dd9f63.
+created_at: '2026-10-22'
+autonomy: high
+exclusions:
+  - item: 'every file other than app/globals.css, docs/nos-hero-banding.md and this spec dir'
+    reason: 'Enforced by A2 (static P1).'
+  - item: 'the 2x pull (trial168)'
+    reason: 'Dropped: the pager dots fell to 2.30-2.46:1, under 3:1 (WCAG 1.4.11).'
+features:
+  - id: F1
+    name: Home hero parchment pull at 1.5x rHB (rPL)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-hero-pull/goldens/pull.json
+  - .agent/memory/project/specs/nos-hero-pull/goldens/f1-edits.json
+  - .agent/memory/project/specs/nos-hero-pull/goldens/f1-thresholds.json
+  - .agent/memory/project/specs/nos-hero-pull/goldens/f1-calibration.json
+  - .agent/memory/project/specs/nos-hero-pull/goldens/nonreg-baseline.json
+  - .agent/memory/project/specs/nos-hero-pull/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: rPL check scripts and goldens are unmodified
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-hero-pull/goldens/checks.sha256
+    - id: A2
+      description: Static - footprint is app/globals.css, docs/nos-hero-banding.md and the spec dir against BASE 62dd9f63; the pull carries exactly the golden 1.5x stops, once; veil and diagonal unchanged
+      command: node .agent/memory/project/specs/nos-hero-pull/checks/static.mjs
+    - id: A3
+      description: Rendered (rHB f1-rendered, unchanged thresholds) - band step, source bpp, no seam into Our purpose, copy >= 4.5:1, slides/dots/labels and autoplay, on public and preview builds
+      command: node .agent/memory/project/specs/nos-hero-pull/checks/f1-rendered.mjs
+    - id: A4
+      description: Pager dot contrast >= 3:1 on every slide at 1280 and 390, and no more than 0.1 under the rHB pull
+      command: node .agent/memory/project/specs/nos-hero-pull/checks/dots.mjs
+    - id: A5
+      description: Non-regression against a fresh baseline of main 62dd9f63 (17 SAOC/NOS routes, 1280/390, both builds, home hero masked)
+      command: node .agent/memory/project/specs/nos-hero-pull/checks/nonreg.mjs
