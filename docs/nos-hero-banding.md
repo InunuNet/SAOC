@@ -47,3 +47,29 @@ Codi (P3 after rHB): on slide 3 the dark spotted orchid darkened and then lifted
 - rHB's rendered metrics (band step, seam, copy contrast, slides and autoplay) pass unchanged on public and preview builds.
 - The pull now runs past the hero section's 96px bottom padding, over the image; nothing interactive sits in that strip.
 - Checks: `.agent/memory/project/specs/nos-hero-pull/` (contract A1-A5). Its nonreg baseline was re-captured on main 62dd9f63, so it no longer flags pages changed by r45, rFT, rFE and the newsletter.
+
+## rHB2: smootherstep pull (2026-10-22)
+
+Brad still saw banding after rHB and rPL: on slide 3 (and slide 4) at about 2000px wide, the bottom of the hero went violet, then a
+flat grey-lilac stripe, then parchment.
+
+- **Cause:** Mach bands at the pull's slope breaks, not a colour step. The pull's alpha slope changed abruptly at its stop joints and
+  dropped straight to zero at the seam into MissionBlock. Rendered alone over flat violet, the pull reproduced both lines at full
+  width: L* slope breaks of 0.41/px at the seam and 0.18/px at the 24px stop. Brad's capture measures 0.48 and 0.18 at the same rows.
+  The photo, the veil and the diagonal measured 0.02 or less, and there was no 8-bit quantisation. Translucent parchment over
+  saturated violet does pass near-neutral (chroma 0.042 to 0.005), but it only reads as grey because the two lines frame it.
+- **Why the rHB check missed it:** it measured row-mean steps (C0) only, and a slope break has no step. It never checked the slope at
+  the seam or the 24px joint, and no viewport went above 1920px.
+- **Fix:** every stop of `[data-hero-scrim='bone']` follows a 24-segment smootherstep, alpha = 1 - (6p^5 - 15p^4 + 10p^3) with p the
+  distance above the seam over 126px. It is sized as a `100% 126px` background tile anchored at the bottom, so the percentage stops
+  scale with the tile. CSS interpolates linearly between stops, so this is a 24-segment piecewise-linear sample of the curve, not
+  an exact C1 curve: the end segments are nearly flat (alpha moves 0.0007 over the first and last 5.25px), and adjacent slopes
+  change by at most 12.9% of the peak, inside Codi's 20% limit. Every stop is `rgb(244 243 236 / a)`, so there is no new colour.
+- **Why the height clamp was dropped:** Codi first asked for `clamp(126px, 9vw, 220px)`. The pager dots sit about 110-120px above
+  the seam at every width, so any taller pull puts parchment behind them, and at 2000px and wider they fell to 1.0-1.9:1. Codi chose
+  the fixed 126px.
+- **Measured** (public and preview, 4 slides, 1280@1, 2056@2, 390@3, 2000@1, 2560@1): the full-width slope break is 0.10-0.25 L*/px
+  (was 0.27-0.55), the seam slope is 0.022 or less (was 0.31-0.52), copy contrast stays at 5.57:1 or better, and the dots stay
+  no worse than before (2.48-3.35:1). Some slides were already under 3:1 before this change; that is a separate ticket.
+- Checks: `.agent/memory/project/specs/nos-hero-banding-2/` (contract A1-A7). `--guard` keeps the old pull failing on preview
+  2056@2, and `brad.mjs` keeps Brad's own capture failing the metric.

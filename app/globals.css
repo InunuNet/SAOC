@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   /* ---------- Palette — Sage & Paper ---------- */
@@ -45,8 +45,10 @@
 
   /* ---------- Type families ---------- */
   --serif: var(--font-serif-loaded), 'Crimson Pro', Georgia, 'Times New Roman', serif;
-  --sans: var(--font-sans-loaded), 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --mono: var(--font-mono-loaded), 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --sans:
+    var(--font-sans-loaded), 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --mono:
+    var(--font-mono-loaded), 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   --serif-weight: 500;
 
   /* ---------- Type scale — display ---------- */
@@ -357,9 +359,11 @@ body {
 
 /* F19 hero scrim (design_system_README l.125): the README's sage diagonal 60% to 25%, a text-zone veil
    that keeps the copy at 4.5:1 over the carousel, and a pull at the section's bottom. rHB (Codi): the veil eases out over five
-   stops instead of one 0.84 -> 0 ramp; the pull ends on --parchment, MissionBlock's ground, so no seam, and eases in at its top so
-   the top edge reads as no line. rPL (Codi): every pull stop is 1.5x rHB's (alpha 0.2 (u/42)^2 above 84px on whole 1/255 steps,
-   6px apart, top at 126px, past the 96px bottom padding), so slide 3 reads as atmosphere, not a fog bar; 2x put the pager dots under 3:1. */
+   stops instead of one 0.84 -> 0 ramp, and the pull ends on --parchment, MissionBlock's ground, so no seam. rHB2 (Codi
+   2026-10-22): the pull samples a smootherstep (alpha = 1 - (6p^5 - 15p^4 + 10p^3) over 126px) at 25 stops. The browser
+   joins them with straight lines, so the slope is near zero at both ends and changes by at most 12.9% of the peak at any
+   joint; the kinked stops before it read as Mach bands on wide screens. A taller
+   pull was dropped because it put the pager dots under 3:1. */
 [data-hero-scrim='diagonal'] {
   background-image: linear-gradient(135deg, rgb(56 65 56 / 0.6), rgb(56 65 56 / 0.25));
 }
@@ -387,21 +391,39 @@ body {
     );
   }
 }
+/* prettier-ignore */
 [data-hero-scrim='bone'] {
   background-image: linear-gradient(
     to top,
-    var(--parchment) 0,
-    rgb(244 243 236 / 0.82) 24px,
-    rgb(244 243 236 / 0.5) 54px,
-    rgb(244 243 236 / 0.2) 84px,
-    rgb(244 243 236 / 0.1451) 90px,
-    rgb(244 243 236 / 0.102) 96px,
-    rgb(244 243 236 / 0.0667) 102px,
-    rgb(244 243 236 / 0.0353) 108px,
-    rgb(244 243 236 / 0.0157) 114px,
-    rgb(244 243 236 / 0.0039) 120px,
-    rgb(244 243 236 / 0) 126px
+    var(--parchment) 0%,
+    rgb(244 243 236 / 0.9993) 4.1667%,
+    rgb(244 243 236 / 0.9949) 8.3333%,
+    rgb(244 243 236 / 0.9839) 12.5%,
+    rgb(244 243 236 / 0.9645) 16.6667%,
+    rgb(244 243 236 / 0.9355) 20.8333%,
+    rgb(244 243 236 / 0.8965) 25%,
+    rgb(244 243 236 / 0.8478) 29.1667%,
+    rgb(244 243 236 / 0.7901) 33.3333%,
+    rgb(244 243 236 / 0.7248) 37.5%,
+    rgb(244 243 236 / 0.6534) 41.6667%,
+    rgb(244 243 236 / 0.5778) 45.8333%,
+    rgb(244 243 236 / 0.5000) 50%,
+    rgb(244 243 236 / 0.4222) 54.1667%,
+    rgb(244 243 236 / 0.3466) 58.3333%,
+    rgb(244 243 236 / 0.2752) 62.5%,
+    rgb(244 243 236 / 0.2099) 66.6667%,
+    rgb(244 243 236 / 0.1522) 70.8333%,
+    rgb(244 243 236 / 0.1035) 75%,
+    rgb(244 243 236 / 0.0645) 79.1667%,
+    rgb(244 243 236 / 0.0355) 83.3333%,
+    rgb(244 243 236 / 0.0161) 87.5%,
+    rgb(244 243 236 / 0.0051) 91.6667%,
+    rgb(244 243 236 / 0.0007) 95.8333%,
+    rgb(244 243 236 / 0) 100%
   );
+  background-size: 100% 126px;
+  background-position: bottom;
+  background-repeat: no-repeat;
 }
 
 /* F19 /judging: heading left, prose right (4fr/7fr), one column below 1024. */
