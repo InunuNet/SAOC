@@ -92,7 +92,7 @@ export function AdminTable<T>({
                   scope="col"
                   data-priority={column.priority}
                   aria-sort={column.id === sortedDescColumnId ? 'descending' : undefined}
-                  className={`sticky top-[62px] z-10 h-10 truncate border-b border-rule bg-bone px-3 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted min-[1280px]:top-[74px]${alignClass(column)} ${PRIORITY_CELL[column.priority]}`}
+                  className={`sticky top-[62px] z-10 h-10 truncate border-b border-rule bg-bone px-3 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted min-[1280px]:top-[74px] ${alignClass(column)} ${PRIORITY_CELL[column.priority]}`}
                 >
                   {column.label}
                 </th>

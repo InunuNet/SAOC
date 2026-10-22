@@ -6,7 +6,7 @@ import { Menu } from 'lucide-react';
 
 import { FOCUS_RING } from '@/components/admin/tokens';
 
-// The site header's frame (components/chrome/Header.tsx): sticky parchment, no border, the same
+// The public site header's frame: sticky parchment, no border, the same
 // lockup file at the same widths, 62px tall and 74px from 1280. The public nav and search are
 // dropped; the only control is the menu toggle below 1024. The lockup is left-anchored so it
 // lines up with the sidebar item text. Sidebar and table offsets in AdminShell/AdminTable use
