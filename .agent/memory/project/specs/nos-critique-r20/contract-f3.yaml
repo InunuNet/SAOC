@@ -1,0 +1,37 @@
+# Sources: Codi's FINAL ruling on Brad's direction ("NOS Footer should follow the same layout as the SAOC footer"), relayed verbatim by the lead 2026-10-20; supersedes nos-critique-r17 F2 (goldens/f3-spec.md).
+schema: athanor.contract/v1
+slug: nos-critique-r20
+goal: >-
+  Put the NOS footer on the SAOC footer's layout through shared FOOTER_LAYOUT class constants (four columns brand / Explore /
+  Partners / Stay in touch, the same breakpoints and bottom bar), with the 248px NOS-2027 gold vertical lockup centred in column 1 and
+  REG/NPO left-aligned 32px under it in the gold NOS label role, NOS tokens only, the SAOC footer byte-identical apart from F4's rows (f4-spec.md).
+created_at: '2026-10-20'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json, f2-footprint.json, f3-footprint.json, f4-footprint.json, docs/nos-critique-r20.md and this spec dir'
+    reason: 'Enforced by A2. Footer.tsx changes only by the FOOTER_LAYOUT refactor and F4''s FOOTER_RHYTHM rows (S2 exact, L7 column 1 and bar pixels); no copy, token or colour is added.'
+features:
+  - id: F3
+    name: NOS footer on the SAOC footer layout via shared FOOTER_LAYOUT; 248px lockup, REG/NPO left under it
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r20/goldens/f3-spec.md
+  - .agent/memory/project/specs/nos-critique-r20/goldens/f3-edits.json
+  - .agent/memory/project/specs/nos-critique-r20/goldens/f3-footprint.json
+  - .agent/memory/project/specs/nos-critique-r20/goldens/f3-baseline.json
+  - .agent/memory/project/specs/nos-critique-r20/goldens/checks-f3.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f3 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r20/goldens/checks-f3.sha256
+    - id: A2
+      description: Footprint - the r20 branch differs from origin/main 7fb251a1 only in the four r20 footprints, docs/nos-critique-r20.md and the spec dir, and HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r20/checks/footprint.mjs
+    - id: A3
+      description: Static - footer-data.ts gains exactly FOOTER_LAYOUT, Footer.tsx exactly swaps its five layout literals for it (each also accepting F4's exact edits), NosFooter uses each key once in SAOC column order with LOCKUP_BOX 248 and no nf-wrap/nf-grid, the r17 brand rules retired and the lockup at 248px, no new copy, docs F3
+      command: node .agent/memory/project/specs/nos-critique-r20/checks/f3-static.mjs
+    - id: A4
+      description: Rendered (public + preview, 1280/900/390) - NOS columns at SAOC's x/width (32/344/656/968 at 1280), height within 40px of SAOC's (476 at 1280), SAOC's bar, 248px lockup centred on the column top, REG/NPO left 32px under it in gold, royal ground, SAOC column 1, lockup, bar and column x/width unchanged against BASE (F4 owns the row heights)
+      command: node .agent/memory/project/specs/nos-critique-r20/checks/f3-rendered.mjs

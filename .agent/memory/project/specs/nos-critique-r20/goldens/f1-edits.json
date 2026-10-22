@@ -1,0 +1,50 @@
+{
+  "footer": {
+    "file": "components/nos-chrome/NosFooter.tsx",
+    "lineEdits": [
+      {
+        "line": 91,
+        "from": "            <p className=\"nf-text\">{FOOTER_BULLETIN.blurb}</p>",
+        "to": "            <p className=\"nf-text\">{FOOTER_BULLETIN.blurb}</p>\n            <label className=\"nf-head\" htmlFor=\"nf-email\">{FOOTER_BULLETIN.emailLabel}</label>"
+      },
+      {
+        "line": 94,
+        "from": "                type=\"email\"",
+        "to": "                id=\"nf-email\"\n                type=\"email\"\n                name=\"email\"\n                autoComplete=\"email\""
+      }
+    ],
+    "drops": [
+      [
+        95,
+        95
+      ]
+    ],
+    "why": "P3: a visible <label for> above the form (outside the flex row, so the 390 row stays input + button) in the footer's label role .nf-head, text FOOTER_BULLETIN.emailLabel (the BASE aria-label string); the aria-label goes. P2 WCAG 1.3.5: name=email, autoComplete=email. Nothing reads the field name: the form's only handler is onSubmit preventDefault, with no action, server action or FormData reader. The lineEdits show the F1 change against BASE; F3 rebuilds the same file on the SAOC grid, so f1-static pins this markup by content (S1), not by BASE line number."
+  },
+  "css": {
+    "file": "components/nos-chrome/nos-chrome.css",
+    "lineEdits": [
+      {
+        "line": 137,
+        "from": ".nf-col .nf-text { margin-bottom: 14px; }",
+        "to": ".nf-col .nf-text { margin-bottom: 14px; }\n/* r20 (Codi FINAL 2026-10-19): the sign-up's visible label, in the label role (.nf-head); a <label> is inline, so it is set as a block. */\n.nf-col-touch label.nf-head { display: block; }"
+      },
+      {
+        "line": 139,
+        "from": ".nf-form input { flex: 1; min-width: 0; min-height: 44px; padding: 0 14px; border: 1px solid rgba(210, 203, 232, 0.36); border-radius: 10px; background: rgba(11, 10, 20, 0.22); color: var(--nc-ground); font: 15px var(--nc-sans); }",
+        "to": ".nf-form input { flex: 1; min-width: 0; min-height: 44px; padding: 0 14px; border: 1px solid rgba(210, 203, 232, 0.55); border-radius: 10px; background: rgba(11, 10, 20, 0.22); color: var(--nc-ground); font: 15px var(--nc-sans); }"
+      }
+    ],
+    "drops": [],
+    "why": "P2 WCAG 1.4.11: only the alpha of the input border rises, .36 -> .55. The colour is a literal in the .nf-form input rule (nos-chrome.css:139), not a token, so nothing else changes; the other rgba(210, 203, 232, ...) uses (placeholder .72, .nf-base rule .2) are different alphas on different rules and are untouched."
+  },
+  "label": "Email address",
+  "inputId": "nf-email",
+  "borderColor": "rgba(210, 203, 232, 0.55)",
+  "routes": [
+    "/national-show",
+    "/national-show/tickets",
+    "/national-show/about"
+  ],
+  "allowCopy": []
+}
