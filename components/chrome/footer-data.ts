@@ -45,11 +45,14 @@ export const FOOTER_BULLETIN = {
   submitLabel: 'Subscribe',
 };
 
+/** The Wild Orchids of Southern Africa link, once per footer: the first Partner on SAOC, the credit column on NOS. */
 export const FOOTER_WOSA = {
-  heading: 'Looking for wild orchids?',
-  linkLabel: 'Visit Wild Orchids of Southern Africa →',
+  label: 'Wild Orchids of Southern Africa',
   href: 'https://wildorchids.co.za',
 };
+
+/** Screen-reader cue for a link that opens in a new tab; the visible mark is the arrow. */
+export const FOOTER_NEW_TAB_CUE = '(opens in a new tab)';
 
 // The SAOC site's legal row. Media kit is the SAOC media kit (members only).
 export const FOOTER_LEGAL_LINKS = [
@@ -60,11 +63,16 @@ export const FOOTER_LEGAL_LINKS = [
   { href: '/media-kit', label: 'Media kit' },
 ];
 
-/** The footer grid, brand column and bottom bar, shared by both skins so the NOS footer keeps the SAOC layout (r20). */
+/**
+ * The footer grid, brand column and bottom bar, shared by both skins so the NOS footer keeps the SAOC
+ * layout (r20). From 1280px the grid is three content-width tracks and the 300px sign-up, spread
+ * edge to edge, so the three gaps are equal by construction and the outer edges sit on the container
+ * (NOS Design FT1). The brand block hugs its content and aligns with the copyright line (FT2).
+ */
 export const FOOTER_LAYOUT = {
-  grid: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 py-16 px-8 max-w-[1280px] mx-auto',
-  brandColumn: 'flex flex-col gap-4',
-  brandMark: 'mb-4 flex justify-center',
+  grid: 'grid grid-cols-1 gap-x-8 gap-y-12 py-16 px-8 max-w-[1280px] mx-auto md:grid-cols-2 min-[1280px]:grid-cols-[auto_auto_auto_300px] min-[1280px]:justify-between',
+  brandColumn: 'flex w-fit flex-col items-center gap-4',
+  brandMark: 'flex justify-center',
   bar: 'mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-8 py-4 flex-wrap',
   legal: 'flex items-center gap-4 flex-wrap',
 };
