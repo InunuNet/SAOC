@@ -178,7 +178,7 @@ export function NeedsAttentionList({ items }: { items: PendingApplicationSummary
           key={item.id}
           className="flex min-h-[48px] items-center justify-between gap-3 border-b border-rule-soft py-1 last:border-b-0"
         >
-          <span className="min-w-0 flex-1 min-[90rem]:self-stretch">
+          <span className="min-w-0 flex-1">
             <span
               className="block truncate font-sans text-[14px] font-medium text-ink"
               title={item.businessName}
