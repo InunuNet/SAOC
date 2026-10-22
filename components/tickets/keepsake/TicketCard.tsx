@@ -20,7 +20,8 @@ import {
 
 import { BuyBlock } from './BuyBlock';
 import { CHECKOUT_DAY_EVENT } from './checkout-day';
-import { countDisplay, daySubline, isDayClosed } from './days';
+import { DayCount, DayCountNote } from './DayCount';
+import { countDisplay, isDayClosed } from './days';
 import { TicketCount, TicketPrice, TicketStub } from './parts';
 import type { KeepsakeCardVm, KeepsakeDay } from './types';
 
@@ -72,8 +73,6 @@ function DayPicker({
       <div className="nk-days-row">
         {days.map((d) => {
           const closed = isDayClosed(d);
-          const counts = countDisplay(d.provisional, showProvisional);
-          const sub = daySubline(d, counts);
           const classes = ['nk-day', closed ? 'is-out' : '', d.state === 'low' ? 'is-low' : '']
             .filter(Boolean)
             .join(' ');
@@ -88,23 +87,13 @@ function DayPicker({
                 onChange={() => onChoose(d.day)}
               />
               <b>{formatShowDayShort(d.day)}</b>
-              {sub && d.remaining !== null && sub === `${d.remaining} of ${d.total}` ? (
-                <span data-placeholder={counts === 'placeholder' ? 'true' : undefined}>
-                  <span className="nk-of">{sub}</span>
-                  <span className="nk-left">{`${d.remaining} left`}</span>
-                </span>
-              ) : sub ? (
-                <span data-placeholder={counts === 'placeholder' ? 'true' : undefined}>{sub}</span>
-              ) : null}
-              {d.state === 'low' ? <span className="nk-sub">{TICKET_COPY.fewLeft}</span> : null}
+              <DayCount d={d} showProvisional={showProvisional} />
             </label>
           );
         })}
       </div>
       {invalid ? <TicketFieldAlert spaced>{TICKET_COPY.chooseDay}</TicketFieldAlert> : null}
-      {showProvisional && days.some((d) => d.provisional && daySubline(d, 'placeholder')) ? (
-        <p className="nk-unconfirmed">{TICKET_COPY.notYetConfirmed}</p>
-      ) : null}
+      <DayCountNote days={days} showProvisional={showProvisional} />
     </fieldset>
   );
 }

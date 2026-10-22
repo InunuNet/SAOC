@@ -48,6 +48,8 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
   const [attendeeErrors, setAttendeeErrors] = useState<AttendeeFieldErrors>({});
   const [status, setStatus] = useState<CheckoutStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  // The checkout reply's HTTP status when it refused the order; null for validation, network and success.
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [redirect, setRedirect] = useState<CheckoutRedirect | null>(null);
   // One key per form instance, never persisted across a PayFast Back navigation.
   const [idempotencyKey] = useState(() => crypto.randomUUID());
@@ -70,6 +72,8 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
 
   async function submit() {
     if (status === 'submitting' || quantity < MIN_QUANTITY) return;
+    // A new attempt clears the last refusal's status, even if client validation stops it below.
+    setErrorStatus(null);
 
     const quantities = { [ticketType.slug]: quantity };
     const rowErrors = validateAttendees([ticketType], quantities, {
@@ -118,6 +122,7 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
 
       if (!res.ok || !data.processUrl || !data.fields || !data.amount || !data.providerId) {
         setStatus('error');
+        setErrorStatus(res.ok ? null : res.status);
         setErrorMessage(data.error ?? 'Failed to start checkout. Please try again.');
         return;
       }
@@ -141,6 +146,7 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
     attendeeErrors,
     status,
     errorMessage,
+    errorStatus,
     redirect,
     estimatedTotal: computeCartTotal({ [ticketType.slug]: quantity }, [ticketType]),
     setQuantity,

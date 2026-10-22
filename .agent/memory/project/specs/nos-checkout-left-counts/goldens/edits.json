@@ -1,0 +1,124 @@
+{
+  "why": "nos-checkout-left-counts (rLC, r45 P3): the checkout day picker shows the same per-day count cell as the hub's Day Pass card. Source: design lead Codi's r45 ruling, .tmp/sandbox/queue/r45-ruling.md:31, verbatim in goldens/spec.md.",
+  "files": {
+    "page": "app/(marketing)/tickets/[slug]/page.tsx",
+    "form": "components/tickets/TicketPurchaseForm.tsx",
+    "card": "components/tickets/keepsake/TicketCard.tsx",
+    "dayCount": "components/tickets/keepsake/DayCount.tsx",
+    "cart": "components/tickets/useTicketCart.ts"
+  },
+  "leftFormat": "`${d.remaining} left`",
+  "leftFormatRegex": "`\\$\\{[A-Za-z_.]*remaining\\} left`",
+  "classes": {
+    "of": "nk-of",
+    "left": "nk-left",
+    "unconfirmed": "nk-unconfirmed",
+    "low": "is-low",
+    "sub": "nk-sub"
+  },
+  "hub": "/national-show/tickets",
+  "submitLabel": "Continue to payment",
+  "chooseDay": "Choose a day",
+  "hubLoader": {
+    "import": "loadTicketCardViewModels",
+    "from": "@/lib/data/admission-availability",
+    "showProvisional": "!withholdPlaceholderProse()",
+    "mappingProduct": "day"
+  },
+  "forbiddenInPage": [
+    "getPoolRemaining",
+    "pool-remaining",
+    "getSoldCounts",
+    "load-ticket-card",
+    "firebase-admin",
+    "getFirestore",
+    "buildTicketCardViewModels"
+  ],
+  "forbiddenInForm": [
+    "fetch(",
+    "sanityFetch",
+    "getPoolRemaining",
+    "firebase",
+    "loadTicketCardViewModels"
+  ],
+  "baseLinesKept": {
+    "form": [
+      "aria-label={formatShowDay(day)}",
+      "checked={cart.day === day}",
+      "aria-invalid={dayInvalid}",
+      "{dayInvalid ? <TicketFieldAlert spaced>{TICKET_COPY.chooseDay}</TicketFieldAlert> : null}",
+      "<time dateTime={day}>{formatShowDayShort(day)}</time>"
+    ]
+  },
+  "unchangedFiles": [
+    "app/globals.css",
+    "app/(marketing)/national-show/nos-structure.css",
+    "lib/data/admission-availability.ts",
+    "lib/data/ticket-card-view-models.ts",
+    "components/tickets/keepsake/days.ts",
+    "components/tickets/keepsake/types.ts",
+    "components/tickets/keepsake/parts.tsx",
+    "app/(marketing)/national-show/tickets/page.tsx"
+  ],
+  "proseCorpus": [
+    "components/tickets/keepsake/TicketCard.tsx",
+    "components/tickets/TicketPurchaseForm.tsx",
+    "lib/data/ticket-presentation.ts",
+    "components/tickets/keepsake/days.ts"
+  ],
+  "docMust": [
+    "rLC",
+    "r45",
+    "loadTicketCardViewModels",
+    "DayCount",
+    "nk-left",
+    "nk-of",
+    "left",
+    "withholdPlaceholderProse",
+    "TicketCard",
+    "409",
+    "router.refresh"
+  ],
+  "shots": ".tmp/lc-shots",
+  "soldOut": {
+    "why": "Amendment 1 (Codi): a sold-out day is a native disabled option on the checkout, as on the hub. Ruling verbatim in goldens/spec.md.",
+    "serverError": "Sold out.",
+    "serverErrorSource": "app/api/tickets/checkout/route.ts:420 (the API's own fallback string; used only as the mocked reply in the rendered check)",
+    "soldOutLine": "Sold out",
+    "soldOutLineSource": "lib/data/ticket-presentation.ts TICKET_COPY.soldOutStamp, via daySubline",
+    "style": {
+      "opacity": "0.62",
+      "cursor": "not-allowed",
+      "nameDecoration": "line-through"
+    },
+    "styleSource": "app/(marketing)/national-show/nos-structure.css .nk-day.is-out (opacity .62, cursor not-allowed) and .nk-day.is-out b (line-through): the hub's, unchanged",
+    "formMust": [
+      "isDayClosed",
+      "is-out"
+    ],
+    "formForbidden": [
+      "aria-disabled"
+    ],
+    "pageForbiddenLiteral": "remaining:"
+  },
+  "amendment2": {
+    "why": "Amendment 2 (Codi): a sold-out ?day= is ignored on load; a 409 race renders the server's text in the day group's TicketFieldAlert. Ruling verbatim in goldens/spec.md.",
+    "cartMust": [
+      "errorStatus",
+      "res.status"
+    ],
+    "formMust": [
+      "useRouter",
+      "router.refresh(",
+      "409",
+      "errorStatus"
+    ],
+    "pageMust": [
+      "isDayClosed"
+    ],
+    "shots": [
+      "lc-soldout-<width>-linked-initial.png",
+      "lc-soldout-<width>-race-409.png"
+    ]
+  }
+}
