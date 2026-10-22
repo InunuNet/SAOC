@@ -6,7 +6,8 @@
 //       Buy is a live link (href, not disabled or aria-disabled) whose href names no day.
 //   R3  error (Buy clicked, and again Buy by keyboard Enter, with no day): the page does not navigate; the fieldset is aria-invalid="true";
 //       it holds exactly one role="alert" <p> reading the picker's own legend "Choose a day" with the golden class (TicketFormField's
-//       pattern), 6px below the day row; focus is on the first enabled day radio, unchecked; the stub is still '' / ''; axe finds no
+//       pattern; amended for F3: TicketFieldAlert spaced, goldens/f3-edits.json, its aria-hidden sign left out of the text, a 2px left
+//       border and none on top), 6px below the day row; focus is on the first enabled day radio, unchecked; the stub is still '' / ''; axe finds no
 //       violation in the card.
 //   R4  chosen (the second enabled day clicked): the stub shows that day's numeral and weekday, the alert is gone, aria-invalid is
 //       "false", Buy's href carries day=<iso>; following it lands on /tickets/<slug>?quantity=1&day=<iso> (200) where the summary stub and
@@ -22,6 +23,7 @@ import { MODES, authorize, axeSource, require, serve } from './_server.mjs';
 const { chromium } = require('playwright');
 const NAME = 'f1-rendered.mjs';
 const G = goldenJson('f1-edits.json');
+const G3 = goldenJson('f3-edits.json');
 const WIDTHS = [1280, 390];
 const HUB = G.routes.hub;
 const ERROR_GAP = 6;
@@ -53,9 +55,9 @@ const state = (page) => page.evaluate(() => {
       legend: fs?.querySelector('legend')?.textContent ?? null,
       invalid: fs ? fs.getAttribute('aria-invalid') : null,
       radios: radios.map((r) => ({ value: r.value, checked: r.checked, disabled: r.disabled })),
-      alerts: alerts.map((x) => ({ text: x.textContent, tag: x.tagName, cls: x.getAttribute('class') })),
+      alerts: alerts.map((x) => ({ text: [...x.childNodes].filter((n) => !(n.nodeType === 1 && n.getAttribute('aria-hidden') === 'true')).map((n) => n.textContent).join(''), tag: x.tagName, cls: x.getAttribute('class') })),
       alertGap: a && row ? a.getBoundingClientRect().top - row.getBoundingClientRect().bottom : null,
-      alertStyle: a ? { bw: getComputedStyle(a).borderTopWidth, bs: getComputedStyle(a).borderTopStyle, fs: getComputedStyle(a).fontSize } : null,
+      alertStyle: a ? { bw: getComputedStyle(a).borderLeftWidth, bs: getComputedStyle(a).borderLeftStyle, top: getComputedStyle(a).borderTopWidth, fs: getComputedStyle(a).fontSize } : null,
       cta: cta ? { href: cta.getAttribute('href'), tag: cta.tagName, disabled: cta.hasAttribute('disabled'), ariaDisabled: cta.getAttribute('aria-disabled') } : null,
       focus: active && fs && fs.contains(active) && active.matches('input[type="radio"]') ? { value: active.value, checked: active.checked, disabled: active.disabled } : null,
       focusTag: active ? `${active.tagName}${active.id ? `#${active.id}` : ''}` : null,
@@ -88,9 +90,9 @@ function expectError(s, at, how) {
   if (d.alerts.length !== 1) failures.push(`${at}: after ${how} with no day ${d.alerts.length} alerts in the picker, want 1 (R3)`);
   else {
     const a = d.alerts[0];
-    if (a.text !== G.copy.chooseDay || a.tag !== 'P' || a.cls !== G.errorClass) failures.push(`${at}: the alert is <${a.tag} class="${a.cls}">${a.text}, want <P class="${G.errorClass}">${G.copy.chooseDay} (R3)`);
+    if (a.text !== G.copy.chooseDay || a.tag !== 'P' || a.cls !== G3.spacedClass) failures.push(`${at}: the alert is <${a.tag} class="${a.cls}">${a.text}, want <P class="${G3.spacedClass}">${G.copy.chooseDay} (R3)`);
     if (d.alertGap === null || !near(d.alertGap, ERROR_GAP)) failures.push(`${at}: the alert sits ${d.alertGap}px below the day row, want ${ERROR_GAP} (R3)`);
-    if (!d.alertStyle || d.alertStyle.bw !== '1px' || d.alertStyle.bs !== 'solid' || d.alertStyle.fs !== '14px') failures.push(`${at}: the alert's computed border/font ${JSON.stringify(d.alertStyle)}, want 1px solid / 14px (R3)`);
+    if (!d.alertStyle || d.alertStyle.bw !== '2px' || d.alertStyle.bs !== 'solid' || d.alertStyle.top !== '0px' || d.alertStyle.fs !== '14px') failures.push(`${at}: the alert's computed border/font ${JSON.stringify(d.alertStyle)}, want a 2px solid left border, 0px top / 14px (R3)`);
   }
   if (d.legend !== G.copy.chooseDay) failures.push(`${at}: the picker legend reads ${JSON.stringify(d.legend)}, want "${G.copy.chooseDay}" (R3)`);
   const first = d.radios.find((r) => !r.disabled);

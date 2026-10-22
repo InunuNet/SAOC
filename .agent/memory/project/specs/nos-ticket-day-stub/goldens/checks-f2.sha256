@@ -1,10 +1,10 @@
-505678349094da7f5f74e619b7a43de6fe64483794ab37fac853e9aaef833167  .agent/memory/project/specs/nos-ticket-day-stub/checks/_lib.mjs
+3ed0fa0ecc541d5e8e9fdf20d88fa22abf78e46ed446ade9f178c706c45abaef  .agent/memory/project/specs/nos-ticket-day-stub/checks/_lib.mjs
 11aa417dcf43dd572fbb6b5e135c1e90bf736254380d94a04af30e73db47fc48  .agent/memory/project/specs/nos-ticket-day-stub/checks/_server.mjs
-90d9c17345385d25209dbe189373c5a6ad170f5a3ef1edafb36d2c166cf9157b  .agent/memory/project/specs/nos-ticket-day-stub/checks/_edits.mjs
+f67f37e8885f4c8876eb3b2695b5f2243440c588e09055129c3c093b75d6ebfb  .agent/memory/project/specs/nos-ticket-day-stub/checks/_edits.mjs
 531485440376b80f0cbbe4574348732dda385ddd04bf85513e309be65b9dff06  .agent/memory/project/specs/nos-ticket-day-stub/checks/footprint.mjs
 2a124a84abd8a75d738a0965fa1fa396300b671cc8853839c7e174a1eb0b1458  .agent/memory/project/specs/nos-ticket-day-stub/checks/f1-server.mjs
-216a1375d303bdf93221b3e3232f41f2ca68a72787017e6c539115fca67fd37b  .agent/memory/project/specs/nos-ticket-day-stub/checks/f2-static.mjs
-6f80850ba613eb89a4b8fc32de429f8d9140a5071ab1ede4672eb3af39581d0b  .agent/memory/project/specs/nos-ticket-day-stub/checks/f2-rendered.mjs
+7a5e79dfb28e8844f9591ba43afd416f17825abe73324550af9092138f86bacb  .agent/memory/project/specs/nos-ticket-day-stub/checks/f2-static.mjs
+9dd188bd1d1b9196b7eb82ec49005c358d214d8cb58fd33ff2cce972a537995f  .agent/memory/project/specs/nos-ticket-day-stub/checks/f2-rendered.mjs
 3dfa70f3b4e87d618b3aeecb47cf18afcf7c830d8cea326ee6bd22920ef0a623  .agent/memory/project/specs/nos-ticket-day-stub/checks/nonreg.mjs
 0187c06dbe7c26346b7ee159e77c4d7534c38c77fb1321d57d36cae9202be282  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f1-edits.json
 d1afa0bd32ebd2afe440b7384eb57a80007e6288eb0753676abb7ad810850bae  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f1-footprint.json
@@ -13,3 +13,4 @@ d1afa0bd32ebd2afe440b7384eb57a80007e6288eb0753676abb7ad810850bae  .agent/memory/
 82d67bd1afde03595e4ae3771d00647dc7e25e0a53b573fbc89cc18ec69494e6  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f2-spec.md
 d454d580b9d2d70780262b0d4e4cdd896fde0842dd9554ff1f9a61d4608a9152  .agent/memory/project/specs/nos-ticket-day-stub/goldens/nonreg-baseline.json
 c7c4588c26b97e6c4600cbc402c2709d88eb818b01cd25dba853e1bfb36fa669  .agent/memory/project/specs/nos-ticket-day-stub/contract-f2.yaml
+9bbc428ff2a8e1cf1855d4eb3ac86e3043ada71cb0e53f70ba8f7a78f57c35e3  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f3-edits.json

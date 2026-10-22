@@ -4,7 +4,8 @@
 //       is the URL's day or null.
 //   S3  the error is r45's: the same class as F1's hub error (goldens/f1-edits.json errorClass, TicketFormField's alert class plus
 //       mt-1.5), text {TICKET_COPY.chooseDay}, aria-invalid on the fieldset; the submit button's only disabled condition is still
-//       `submitting`; no new prose (NO INVENTION).
+//       `submitting`; no new prose (NO INVENTION). (Amended for F3: the error is TicketFormField's TicketFieldAlert, spaced,
+//       goldens/f3-edits.json.)
 //   S4  docs/nos-ticket-day-stub.md records r45b.
 import { finish, goldenJson, readRepoFile } from './_lib.mjs';
 import { exactEdits, newProse } from './_edits.mjs';
@@ -12,6 +13,7 @@ import { exactEdits, newProse } from './_edits.mjs';
 const NAME = 'f2-static.mjs';
 const G = goldenJson('f2-edits.json');
 const G1 = goldenJson('f1-edits.json');
+const G3 = goldenJson('f3-edits.json');
 const failures = [];
 
 // S1
@@ -26,9 +28,7 @@ if (!page.includes('const summaryDay = cardData.requiresDaySelection ? day : nul
 
 // S3
 if (G.errorClass !== G1.errorClass) failures.push('goldens: the checkout error class differs from the hub error class (S3)');
-const alert = form.match(/<p\s+role="alert"\s+className="(mt-1\.5[^"]*)"\s*>\s*\{([^}]+)\}\s*<\/p>/);
-if (!alert) failures.push(`${G.form.file}: no role="alert" day error <p> (S3)`);
-else if (alert[1] !== G1.errorClass || alert[2].trim() !== 'TICKET_COPY.chooseDay') failures.push(`${G.form.file}: day error <p class="${alert[1]}">{${alert[2].trim()}}, want class "${G1.errorClass}" and {TICKET_COPY.chooseDay} (S3)`);
+if (!form.includes(G3.uses.formDay)) failures.push(`${G.form.file}: the day error is not ${G3.uses.formDay} (S3)`);
 if (!form.includes('<fieldset ref={dayGroupRef} className="days nk-days" aria-invalid={dayInvalid}>')) failures.push(`${G.form.file}: aria-invalid is not on the day fieldset (S3)`);
 const submit = form.match(/<button\s+type="submit"[\s\S]*?>/);
 if (!submit || !/disabled=\{submitting\}/.test(submit[0])) failures.push(`${G.form.file}: the submit button's disabled condition is no longer just {submitting} (S3)`);

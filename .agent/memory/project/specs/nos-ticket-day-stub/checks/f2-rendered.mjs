@@ -7,7 +7,8 @@
 //       is not disabled.
 //   C2  "Continue to payment" with no day (click, then again by keyboard Enter after a reload): the page stays, no checkout request is
 //       sent; the fieldset is aria-invalid="true" and holds exactly one role="alert" <p> reading the "Choose a day" legend with the r45
-//       class (goldens/f1-edits.json errorClass), 6px below the day row; focus is on the first enabled day radio, unchecked; the button
+//       class (goldens/f1-edits.json errorClass; amended for F3: goldens/f3-edits.json spacedClass, its aria-hidden sign left out of
+//       the text), 6px below the day row; focus is on the first enabled day radio, unchecked; the button
 //       is still not disabled; axe finds no violation in the form.
 //   C3  choosing the second day clears the alert and aria-invalid ("false") and the summary stub follows it (CHECKOUT_DAY_EVENT).
 //   C4  /tickets/<day slug>?quantity=1&day=<iso>: that day is pre-selected and the summary stub is that day (as before).
@@ -23,6 +24,7 @@ const { chromium } = require('playwright');
 const NAME = 'f2-rendered.mjs';
 const G = goldenJson('f2-edits.json');
 const G1 = goldenJson('f1-edits.json');
+const G3 = goldenJson('f3-edits.json');
 const WIDTHS = [1280, 390];
 const ERROR_GAP = 6;
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -51,7 +53,7 @@ const state = (page) => page.evaluate((label) => {
     legend: fs?.querySelector('legend')?.textContent ?? null,
     invalid: fs ? fs.getAttribute('aria-invalid') : null,
     radios: radios.map((r) => ({ value: r.value, checked: r.checked, disabled: r.disabled })),
-    alerts: alerts.map((x) => ({ text: x.textContent, tag: x.tagName, cls: x.getAttribute('class') })),
+    alerts: alerts.map((x) => ({ text: [...x.childNodes].filter((n) => !(n.nodeType === 1 && n.getAttribute('aria-hidden') === 'true')).map((n) => n.textContent).join(''), tag: x.tagName, cls: x.getAttribute('class') })),
     alertGap: a && row ? a.getBoundingClientRect().top - row.getBoundingClientRect().bottom : null,
     button: btn ? { disabled: btn.disabled, ariaDisabled: btn.getAttribute('aria-disabled') } : null,
     focus: active && fs && fs.contains(active) && active.matches('input[type="radio"]') ? { value: active.value, checked: active.checked, disabled: active.disabled } : null,
@@ -74,7 +76,7 @@ function expectError(s, at, how) {
   if (s.alerts.length !== 1) failures.push(`${at}: after ${how} with no day ${s.alerts.length} alerts in the picker, want 1 (C2)`);
   else {
     const a = s.alerts[0];
-    if (a.text !== G1.copy.chooseDay || a.tag !== 'P' || a.cls !== G1.errorClass) failures.push(`${at}: the alert is <${a.tag} class="${a.cls}">${a.text}, want <P class="${G1.errorClass}">${G1.copy.chooseDay} (C2)`);
+    if (a.text !== G1.copy.chooseDay || a.tag !== 'P' || a.cls !== G3.spacedClass) failures.push(`${at}: the alert is <${a.tag} class="${a.cls}">${a.text}, want <P class="${G3.spacedClass}">${G1.copy.chooseDay} (C2)`);
     if (s.alertGap === null || !near(s.alertGap, ERROR_GAP)) failures.push(`${at}: the alert sits ${s.alertGap}px below the day row, want ${ERROR_GAP} (C2)`);
   }
   if (s.legend !== G1.copy.chooseDay) failures.push(`${at}: the legend reads ${JSON.stringify(s.legend)}, want "${G1.copy.chooseDay}" (C2)`);

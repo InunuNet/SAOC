@@ -5,9 +5,10 @@
 //       null; its stub is a day's only when a day is chosen.
 //   S4  the error reuses what exists: its text is TICKET_COPY.chooseDay (the picker's legend, still "Choose a day" in
 //       lib/data/ticket-presentation.ts), its class is TicketFormField's role="alert" class (plus mt-1.5, that field's space-y-1.5 gap),
-//       aria-invalid sits on the fieldset, and no new prose appears in the four files (NO INVENTION).
+//       aria-invalid sits on the fieldset, and no new prose appears in the four files (NO INVENTION). (Amended for F3: the pattern is
+//       now TicketFormField's TicketFieldAlert, goldens/f3-edits.json, and the picker renders it spaced.)
 //   S5  out of scope and untouched: ticket-presentation, the fan, the masthead and the server path. (Amended for F2, r45b: the checkout
-//       form and the checkout page are F2's, pinned by f2-static.mjs S1.)
+//       form and the checkout page are F2's, pinned by f2-static.mjs S1; TicketFormField is F3's, pinned by f3-static.mjs.)
 //   S6  docs/nos-ticket-day-stub.md exists and records the root cause and the server check.
 import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
@@ -17,13 +18,13 @@ import { exactEdits, newProse } from './_edits.mjs';
 
 const NAME = 'f1-static.mjs';
 const G = goldenJson('f1-edits.json');
+const G3 = goldenJson('f3-edits.json');
 const failures = [];
 const KEYS = ['mini', 'card', 'buy', 'days'];
 const PRESENTATION = 'lib/data/ticket-presentation.ts';
 const FIELD = 'components/tickets/TicketFormField.tsx';
 const UNTOUCHED = [
   PRESENTATION,
-  FIELD,
   'components/tickets/keepsake/TicketFan.tsx',
   'components/tickets/keepsake/TicketsMasthead.tsx',
   'components/tickets/keepsake/checkout-day.ts',
@@ -56,14 +57,10 @@ if (!card.includes('const dayStub = day ? showDayStub(day) : null;')) failures.p
 const pres = readRepoFile(PRESENTATION) ?? '';
 if (!pres.includes(`chooseDay: '${G.copy.chooseDay}'`)) failures.push(`${PRESENTATION}: TICKET_COPY.chooseDay is no longer "${G.copy.chooseDay}" (S4)`);
 const field = readRepoFile(FIELD) ?? '';
-if (!field.includes(`className="${G.patternSource.className}"`) || !field.includes(G.patternSource.wrapperGap)) failures.push(`${FIELD}: the required-field pattern this error reuses has changed (S4)`);
+if (!field.includes(`'${G3.alertClass}'`) || !field.includes(G.patternSource.wrapperGap) || !field.includes(G3.uses.field)) failures.push(`${FIELD}: the required-field pattern this error reuses (TicketFieldAlert, goldens/f3-edits.json) has changed (S4)`);
 if (G.errorClass !== `mt-1.5 ${G.patternSource.className}`) failures.push('goldens: errorClass is not the pattern class plus mt-1.5 (S4)');
-const alert = card.match(/<p\s+role="alert"\s+className="([^"]+)"\s*>\s*\{([^}]+)\}\s*<\/p>/);
-if (!alert) failures.push(`${G.card.file}: no role="alert" <p> in the picker (S4)`);
-else {
-  if (alert[1] !== G.errorClass) failures.push(`${G.card.file}: the alert class is ${JSON.stringify(alert[1])}, want ${JSON.stringify(G.errorClass)} (S4)`);
-  if (alert[2].trim() !== 'TICKET_COPY.chooseDay') failures.push(`${G.card.file}: the alert reads {${alert[2].trim()}}, want {TICKET_COPY.chooseDay} (S4)`);
-}
+if (G3.spacedClass !== `mt-1.5 ${G3.alertClass}`) failures.push('goldens: f3 spacedClass is not the alert class plus mt-1.5 (S4)');
+if (!card.includes(G3.uses.cardDay)) failures.push(`${G.card.file}: the picker does not render ${G3.uses.cardDay} (S4)`);
 if (!card.includes('<fieldset ref={groupRef} className="nk-days" aria-invalid={invalid}>')) failures.push(`${G.card.file}: aria-invalid is not on the picker's fieldset (S4)`);
 const corpus = [PRESENTATION, FIELD, 'components/tickets/TicketPurchaseForm.tsx', ...KEYS.map((k) => G[k].file)];
 for (const k of KEYS) failures.push(...newProse(G[k].file, corpus));

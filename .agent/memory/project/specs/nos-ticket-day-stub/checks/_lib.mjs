@@ -22,7 +22,7 @@ export const gitRoot = process.env.NOS_TDS_GIT ? path.resolve(process.env.NOS_TD
 
 export const DOC = 'docs/nos-ticket-day-stub.md';
 export const SPEC_PREFIX = '.agent/memory/project/specs/nos-ticket-day-stub/';
-const FOOTPRINTS = ['f1-footprint.json', 'f2-footprint.json'];
+const FOOTPRINTS = ['f1-footprint.json', 'f2-footprint.json', 'f3-footprint.json'];
 
 export function readRepoFile(rel) {
   const abs = path.join(repoRoot, rel);
@@ -50,7 +50,7 @@ export function changedPaths() {
   return new Set([...lines(git('diff', '--name-only', BASE)), ...lines(git('ls-files', '--others', '--exclude-standard'))]);
 }
 
-/** Footprint guard against BASE for the whole r45 branch (F1 + F2, r45b): only the goldens/fN-footprint.json paths, the docs file and this spec directory may differ. */
+/** Footprint guard against BASE for the whole r45 branch (F1 + F2, r45b, + F3, the error-visible alert): only the goldens/fN-footprint.json paths, the docs file and this spec directory may differ. */
 export function footprintFailures() {
   const failures = [];
   const allowed = new Set([DOC, ...FOOTPRINTS.flatMap((f) => goldenJson(f))]);
