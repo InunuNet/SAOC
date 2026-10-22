@@ -738,7 +738,7 @@ function drawFooter(
     x: RIGHT_X,
     y: FOOTER_TEXT_Y,
     font: fonts.bold,
-    size: 6.5,
+    size: FOOTNOTE_SIZE,
     color: MUTED,
     tracking: BAND_TRACKING,
     align: 'right',
