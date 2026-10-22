@@ -70,6 +70,9 @@ const nextConfig: NextConfig = {
   },
   outputFileTracingIncludes: {
     '/national-show/*': ['content/drive-recovered/**/content.md'],
+    // ticket-pdf: fonts and logos are read from disk at runtime by lib/ticket-pdf.ts (the route and
+    // the ITN email attachment); an untraced file would crash on App Hosting.
+    '/api/tickets/**': ['lib/ticket-pdf-assets/**'],
     // firebase-admin/auth reaches semver through jsonwebtoken; the trace kept semver/index.js
     // but dropped most of semver/functions/*, so those routes crashed with
     // "Cannot find module './functions/valid'" on App Hosting.
