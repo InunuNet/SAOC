@@ -3,13 +3,19 @@ import { getConfirmedOrderForDisplay } from '@/lib/orders';
 import { formatShowDay, formatShowDayShort, showDayStub } from '@/lib/show-day-format';
 import { formatShowDateRange, formatVenueAddress } from '@/lib/show-identity';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { nationalShowVenueQuery, showVisitorInfoQuery } from '@/sanity/queries';
+import {
+  nationalShowVenueQuery,
+  showVisitorInfoQuery,
+  ticketTypeScheduleTraitsQuery,
+} from '@/sanity/queries';
+import { resolveTicketSchedule } from '@/lib/ticket-pdf-schedule';
 import type {
   TicketPdfPosition,
   TicketPdfSchedule,
   TicketPdfTime,
   TicketPdfVisit,
 } from '@/lib/ticket-pdf';
+import type { TicketTypeTraits } from '@/lib/ticket-pdf-schedule';
 import type { ConfirmationBlock, ShowVenue, ShowVisitorInfo } from '@/types';
 
 /**
@@ -99,27 +105,61 @@ export async function loadTicketPdfVisit(): Promise<TicketPdfVisit> {
   }
 }
 
+interface TicketTypeTraitsDoc extends TicketTypeTraits {
+  name?: string | null;
+  slug?: string | null;
+}
+
 /**
- * Per-ticket schedule from what the order actually holds: a day-selection ticket's `chosenDay`
- * gives the numeral, weekday and date, and the time comes from the matching Sanity opening-hours
- * row. Without a chosenDay the schedule is unknown (null), which renders the pill.
+ * Ticket-type traits keyed by slug and by name, because an order position stores whichever the
+ * checkout wrote. A loader failure yields an empty map: every ticket then prints the pill.
+ */
+export async function loadTicketTypeTraits(): Promise<Map<string, TicketTypeTraits>> {
+  const traits = new Map<string, TicketTypeTraits>();
+  try {
+    const docs = await sanityFetch<TicketTypeTraitsDoc[]>({
+      query: ticketTypeScheduleTraitsQuery,
+      tags: ['ticketType', 'sanity'],
+    });
+    for (const doc of docs ?? []) {
+      const entry = { category: doc.category, requiresDaySelection: doc.requiresDaySelection };
+      if (doc.slug) traits.set(doc.slug, entry);
+      if (doc.name) traits.set(doc.name, entry);
+    }
+  } catch (error) {
+    console.error('[ticket-pdf] ticket type lookup failed — rendering with pills', {
+      errorType: error instanceof Error ? error.name : typeof error,
+    });
+  }
+  return traits;
+}
+
+/**
+ * Per-ticket schedule (D11, resolveTicketSchedule): a buyer-chosen day gives the numeral, weekday
+ * and date, with the time from the matching Sanity opening-hours row; a show-span admission
+ * prints the show's date range as given; anything else is unconfirmed (null), which renders the
+ * pill. No date is ever invented.
  */
 export function buildPositionSchedule(
+  type: TicketTypeTraits,
   chosenDay: string | null | undefined,
   visit: TicketPdfVisit
 ): TicketPdfSchedule | null {
-  const stub = chosenDay ? showDayStub(chosenDay) : null;
-  if (chosenDay && stub) {
+  const resolved = resolveTicketSchedule(type, chosenDay ?? null, visit.showDates);
+  if (resolved.kind === 'show-span') {
+    return { eyebrow: null, numeral: null, dateText: resolved.dateText, timeText: null };
+  }
+  if (resolved.kind === 'chosen-day' && chosenDay) {
+    const stub = showDayStub(chosenDay);
     const label = formatShowDayShort(chosenDay);
     const time = visit.openingTimes?.find((entry) => entry.label === label)?.value ?? null;
     return {
-      eyebrow: stub.caption,
-      numeral: stub.numeral,
-      dateText: formatShowDay(chosenDay),
+      eyebrow: stub?.caption ?? null,
+      numeral: stub?.numeral ?? null,
+      dateText: resolved.dateText ?? formatShowDay(chosenDay),
       timeText: time,
     };
   }
-  // No chosenDay and no per-ticket-type window in Sanity: unknown, so the PDF shows the pill.
   return null;
 }
 
@@ -128,13 +168,18 @@ type PdfPositionSource = Pick<TicketPdfPosition, 'bookingRef' | 'attendeeName' |
 export function toPdfPositions(
   positions: PdfPositionSource[],
   chosenDays: ReadonlyMap<string, string | null>,
-  visit: TicketPdfVisit
+  visit: TicketPdfVisit,
+  traits: ReadonlyMap<string, TicketTypeTraits>
 ): TicketPdfPosition[] {
   return positions.map(({ bookingRef, attendeeName, ticketType }) => ({
     bookingRef,
     attendeeName,
     ticketType,
-    schedule: buildPositionSchedule(chosenDays.get(bookingRef), visit),
+    schedule: buildPositionSchedule(
+      traits.get(ticketType) ?? {},
+      chosenDays.get(bookingRef),
+      visit
+    ),
   }));
 }
 

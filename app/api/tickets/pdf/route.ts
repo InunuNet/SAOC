@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { getConfirmedOrderForDisplay } from '@/lib/orders';
 import { buildTicketPdf } from '@/lib/ticket-pdf';
 import { authoriseTicketPdfRequest, refPrefix } from '@/lib/ticket-pdf-access';
-import { loadTicketPdfVisit, toPdfPositions } from '@/lib/ticket-pdf-data';
+import { loadTicketPdfVisit, loadTicketTypeTraits, toPdfPositions } from '@/lib/ticket-pdf-data';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -36,13 +36,14 @@ export async function GET(request: Request): Promise<NextResponse> {
   if (!access.ok) return notFound();
 
   try {
-    const visit = await loadTicketPdfVisit();
+    const [visit, traits] = await Promise.all([loadTicketPdfVisit(), loadTicketTypeTraits()]);
     const bytes = await buildTicketPdf({
       orderReference: access.orderReference,
       positions: toPdfPositions(
         access.positions,
         new Map(access.positions.map((p) => [p.bookingRef, p.chosenDay ?? null])),
-        visit
+        visit,
+        traits
       ),
       visit,
     });
