@@ -90,6 +90,8 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: imageWidths.deviceSizes,
     imageSizes: imageWidths.imageSizes,
+    // Next 16 allows only quality 75 unless listed: 88 is the home hero's (rHB).
+    qualities: [75, 88],
     remotePatterns: [
       {
         protocol: 'https',
