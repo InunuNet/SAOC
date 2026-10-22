@@ -32,18 +32,20 @@ Email sender variables are unchanged.
 
 `lib/site-hosts.ts` is the only origin builder. Trailing slashes are stripped.
 
-- SAOC: `NEXT_PUBLIC_SAOC_SITE_URL`, else `SITE_URL`, else `http://localhost:3002`
-  when `NODE_ENV !== 'production'`, else `https://saoc.co.za`.
-- NOS: `NEXT_PUBLIC_NOS_SITE_URL`, else `http://nos.localhost:3002` outside
-  production, else `https://nos.saoc.co.za`.
+- SAOC: `NEXT_PUBLIC_SAOC_SITE_URL`, else `http://localhost:3002` when
+  `NODE_ENV !== 'production'`.
+- NOS: `NEXT_PUBLIC_NOS_SITE_URL`, else `http://nos.localhost:3002` when
+  `NODE_ENV !== 'production'`.
 
-`SITE_URL` exists only on the server. The NOS header is a client component, so
-`NosFrame` passes the resolved SAOC hrefs in as props.
+`SITE_URL` no longer feeds either origin. The NOS header is a client component, so
+`NosFrame` resolves the SAOC hrefs on the server and passes them in as props.
 
-Those production last resorts are the public hosts. They are never the App Hosting
-`*.hosted.app` backend. A production build with either `NEXT_PUBLIC_*` unset inlines
-that public last resort. The apex does not point at this backend. The static
-`safety` check fails if either variable is missing from `apphosting.yaml`.
+There is no production fallback. In production an unset `NEXT_PUBLIC_*` variable
+throws `<VAR> must be set in production (site origin)`. It throws lazily, inside
+`saocOrigin()` or `nosOrigin()`, so the module stays edge-safe. A `pnpm build` with
+either variable unset fails on the first page that resolves an origin. CI's Build step
+sets both to the hosted values from `apphosting.yaml`. The static `safety` check fails
+if either variable is missing from `apphosting.yaml`.
 `siteForHost` reads `x-forwarded-host` (first value) or else `host`, strips the
 port, and lower-cases it. `beta.saoc.co.za`, any `*.hosted.app` host, localhost and
 the apex are `saoc`. A host is `nos` when its hostname equals the NOS origin's
