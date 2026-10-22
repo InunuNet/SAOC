@@ -99,6 +99,7 @@ export function Hero({ images, show, showLede = false }: HeroProps) {
             className="object-cover"
             priority={i === 0}
             sizes="100vw"
+            quality={88}
           />
         </div>
       ))}

@@ -353,7 +353,8 @@ body {
 }
 
 /* F19 hero scrim (design_system_README l.125): the README's sage diagonal 60% to 25%, a text-zone veil
-   that keeps the copy at 4.5:1 over the carousel, and a short bone pull inside the section's bottom padding. */
+   that keeps the copy at 4.5:1 over the carousel, and a short pull inside the section's bottom padding. rHB (Codi): the veil
+   eases out over five stops instead of one 0.84 -> 0 ramp, and the pull ends on --parchment, MissionBlock's ground, so no seam. */
 [data-hero-scrim='diagonal'] {
   background-image: linear-gradient(135deg, rgb(56 65 56 / 0.6), rgb(56 65 56 / 0.25));
 }
@@ -362,6 +363,9 @@ body {
     ellipse 100% 62% at 50% 50%,
     rgb(34 40 31 / 0.9) 0%,
     rgb(34 40 31 / 0.86) 70%,
+    rgb(34 40 31 / 0.63) 79%,
+    rgb(34 40 31 / 0.35) 89%,
+    rgb(34 40 31 / 0.12) 95%,
     rgb(34 40 31 / 0) 100%
   );
 }
@@ -371,12 +375,22 @@ body {
       ellipse 56% 54% at 50% 50%,
       rgb(34 40 31 / 0.88) 0%,
       rgb(34 40 31 / 0.84) 62%,
+      rgb(34 40 31 / 0.62) 74%,
+      rgb(34 40 31 / 0.34) 86%,
+      rgb(34 40 31 / 0.12) 94%,
       rgb(34 40 31 / 0) 100%
     );
   }
 }
 [data-hero-scrim='bone'] {
-  background-image: linear-gradient(to top, var(--bone) 0, rgb(232 230 220 / 0) 72px);
+  background-image: linear-gradient(
+    to top,
+    var(--parchment) 0,
+    rgb(244 243 236 / 0.82) 16px,
+    rgb(244 243 236 / 0.5) 36px,
+    rgb(244 243 236 / 0.2) 56px,
+    rgb(244 243 236 / 0) 72px
+  );
 }
 
 /* F19 /judging: heading left, prose right (4fr/7fr), one column below 1024. */
