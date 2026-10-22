@@ -16,19 +16,20 @@ import {
   EMPTY_SALES_CLOSED_FIXTURE_HTML,
   SOLD_OUT_FIXTURE_HTML,
 } from './fixtures/tickets-fixtures';
+import { nosBase } from './utils/site-urls';
 
 test.describe('sold-out and empty states', () => {
-  test('renders the sold-out state', async ({ page }) => {
+  test('renders the sold-out state', async ({ page, baseURL }) => {
     await page.route('**/tickets', (route) =>
       route.fulfill({ status: 200, contentType: 'text/html', body: SOLD_OUT_FIXTURE_HTML }),
     );
 
-    await page.goto('/tickets');
+    await page.goto(`${nosBase(baseURL!)}/tickets`);
 
     await expect(page.getByRole('status')).toContainText('Sold out');
   });
 
-  test('renders the empty (sales-closed) state', async ({ page }) => {
+  test('renders the empty (sales-closed) state', async ({ page, baseURL }) => {
     await page.route('**/tickets', (route) =>
       route.fulfill({
         status: 200,
@@ -37,7 +38,7 @@ test.describe('sold-out and empty states', () => {
       }),
     );
 
-    await page.goto('/tickets');
+    await page.goto(`${nosBase(baseURL!)}/tickets`);
 
     await expect(page.getByRole('status')).toContainText('Sales closed');
     await expect(page.getByRole('status')).toContainText(

@@ -5,6 +5,8 @@
 // (playwright.config.ts's own webServer-managed dynamic-port dev
 // server, injected via Playwright's `baseURL` fixture) rather than an
 // ambient port -- closing the gap contract-f6.yaml's A4 left open.
+// nos-site-split F3: the checker also fetches the show nav (NOS_NAV) from the NOS host,
+// http://nos.localhost:<the same port>, which the dev server's proxy serves as the NOS site.
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 
@@ -29,9 +31,11 @@ const TICKETS_SOFT_404_FIXTURE = path.resolve(
 
 function runChecker(baseUrl: string, extraArgs: string[]) {
   try {
+    // Under tsx so the nav modules' '@/' imports resolve (nos-site-split F3: nav-config now imports
+    // the site-host helpers).
     const stdout = execFileSync(
       'node',
-      [CHECKER, '--base-url', baseUrl, '--pending-routes', EMPTY_PENDING, ...extraArgs],
+      ['--import', 'tsx', CHECKER, '--base-url', baseUrl, '--pending-routes', EMPTY_PENDING, ...extraArgs],
       { encoding: 'utf8' },
     );
     return { code: 0, output: stdout };

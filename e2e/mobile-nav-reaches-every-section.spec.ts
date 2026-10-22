@@ -1,257 +1,208 @@
 // =============================================================
 // SAOC — e2e/mobile-nav-reaches-every-section.spec.ts
-// Mission menu-system-layout4 M2/F3 — rewritten for Layout 4's single
-// "National Show" mega (see contract-f3.yaml's A6). The pre-Layout-4 shape
-// (three separate top-level mega triggers — Visit / Programme / Exhibit,
-// each its own accordion) is superseded: there is now one drawer trigger,
-// "National Show", and the four groups underneath it (The Show, Visit,
-// Programme, Exhibit & Trade) render as flat headed lists once it's
-// expanded — no per-group sub-accordion.
+// Mission menu-system-layout4 M2/F3, rewritten for the two-site split (mission nos-site-split F3).
 //
-// Reads goldens/fixtures/f1-pending-nos-routes.json — the single current
-// source of truth for which NOS-lane routes don't exist yet (contract-f1.yaml's
-// A9), not the stale, superseded
-// .agent/memory/project/specs/ticketing-complete/goldens/fixtures/f6-pending-nos-routes.json.
-// Pending destinations are explicitly test.skip'd with a named reason — an
-// auditable gap, not a silent omission — rather than asserted reachable before
-// the route exists. Every group has at least one non-pending destination
-// actually exercised.
+// The SAOC site's drawer is a flat list of SAOC sections plus one absolute link to the National
+// Orchid Show site; the show's own menu panel (NOS host, NOS Design R1.4) holds the three
+// disclosure groups, Show sponsors, Past shows and Contact. Mobile is not a lesser-tested surface:
+// this opens each menu at 390px and 320px and click-navigates through every destination, each with
+// its own real Playwright navigation assertion (waitForURL + toHaveURL) — never a text-presence
+// check, which would pass even for a hidden, unreachable element. A link that leaves the site (the
+// SAOC drawer's National Show, either menu's Contact) is asserted by href instead of followed.
 //
-// Mobile is not a lesser-tested surface: this opens the drawer at 390px and
-// 320px and click-navigates through every flat top-level SAOC destination plus
-// every leaf inside every one of the mega's four groups, each with its own
-// real Playwright navigation assertion (waitForURL + toHaveURL) — never a
-// text-presence check, which would pass even for a hidden, unreachable
-// element.
+// Both lists are DERIVED from the nav data (NAV, NOS_NAV), so a changed or added leaf is picked up
+// automatically. Reads goldens/fixtures/f1-pending-nos-routes.json — the single current source of
+// truth for which NOS-lane routes don't exist yet; pending destinations are test.skip'd with a
+// named reason, an auditable gap rather than a silent omission.
+//
+// The Past shows route is withheld in a public build until Sanity holds a past show (r64): the
+// panel then has no such link at all, and the spec asserts exactly that rather than following it.
 import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
-import { NAV, type NavColumn, type NavItem } from '@/components/chrome/nav-config';
+import { NAV } from '@/components/chrome/nav-config';
 import pendingNosRoutes from '../.agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-pending-nos-routes.json';
 import { collectHrefs } from './utils/collect-nav-hrefs';
+import {
+  NOS_GROUPS,
+  NOS_PAST_SHOWS_PATH,
+  NOS_PLAIN_LEAVES,
+  NOS_TICKETS,
+  cleanHref,
+} from './utils/nos-nav-hrefs';
+import { isAbsolute, nosBase } from './utils/site-urls';
 
 const VIEWPORT_HEIGHT = 800;
 const PENDING_ROUTES = new Set<string>(pendingNosRoutes.pendingRoutes);
-const NATIONAL_SHOW_TRIGGER = 'National Show';
-
-interface FlatDestination {
-  label: string;
-  href: string;
-  hrefPattern: RegExp;
-}
-
-interface GroupDestination {
-  label: string;
-  href: string;
-}
-
-interface Group {
-  heading: string;
-  destinations: GroupDestination[];
-}
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// Codex cross-model review, 2026-09-10: FLAT_DESTINATIONS and GROUPS used to be
-// a hand-copied second (really third, alongside nav-links-200.spec.ts's
-// collectHrefs and nav-rendered-reachability.spec.ts's collectAllNavHrefs)
-// transcription of nav-config.ts's NAV export. A hand-copied list can drift —
-// add a mobile-visible leaf, rename a route — while this suite stays green,
-// which is exactly the defect this whole mission started from (see this
-// file's own original header comment). Both are now DERIVED from NAV, so a
-// changed or added leaf is picked up automatically. This derivation logic is
-// new (nothing before it grouped destinations by heading+label the way the
-// mobile drawer renders them); collectHrefs, the flat-href collector already
-// shared with nav-links-200.spec.ts, is reused below as an independent
-// consistency cross-check rather than re-implemented a third time.
-
-// Mirrors nav-config.ts's flat top-level `link` items — everything except the
-// single `National Show` mega, which is exercised via GROUPS below.
-function deriveFlatDestinations(items: readonly NavItem[]): FlatDestination[] {
-  return items
-    .filter((item): item is Extract<NavItem, { type: 'link' }> => item.type === 'link' && !item.disabled)
-    .map((item) => ({
-      label: item.label,
-      href: item.href,
-      hrefPattern: new RegExp(`${escapeRegExp(item.href)}$`),
-    }));
+// A destination's accessible name is its label followed by its descriptor, so match the label at
+// the start of the name.
+function labelMatcher(label: string): RegExp {
+  return new RegExp(`^${escapeRegExp(label)}\\b`);
 }
 
-// A column's own destinations, in MobileMenu.tsx's render order: the heading
-// itself renders as a clickable <Link> whenever `headingHref` is non-null
-// (MobileMenu.tsx: `column.headingHref ? <Link>... : <span>...`), *ahead of*
-// its leaf links — not a theoretical case; it's null on every column today,
-// but the two-way consistency check below requires the derivation to cover
-// it the moment it isn't.
-function deriveColumnDestinations(column: NavColumn): GroupDestination[] {
-  const destinations: GroupDestination[] = [];
-  if (column.headingHref) {
-    destinations.push({ label: column.heading, href: column.headingHref });
-  }
-  destinations.push(...column.links.map((link) => ({ label: link.label, href: link.href })));
-  return destinations;
+function urlPattern(path: string): RegExp {
+  return new RegExp(`${escapeRegExp(path)}$`);
 }
 
-// Mirrors nav-config.ts's National Show mega, in MobileMenu.tsx's own render
-// order: the feature-rail CTA renders first, then the lead block (its own
-// leadHref link, separate from "The Show" group folded underneath it), then
-// the group columns — all render as flat headed lists once the single
-// "National Show" trigger is expanded (see MobileMenu.tsx: featureRail
-// block, then lead block, then `[n.lead?.theShow, ...n.columns]`). The
-// feature rail and lead link aren't part of any NavColumn, so each gets its
-// own single-destination "group" here purely to share GROUPS' heading+list
-// shape and the same click-and-navigate test loop below.
-function deriveGroups(item: Extract<NavItem, { type: 'mega' }>): Group[] {
-  const groups: Group[] = [];
-  if (item.featureRail) {
-    groups.push({
-      heading: 'Feature rail',
-      destinations: item.featureRail.destinations.map((destination) => ({
-        label: destination.label,
-        href: destination.href,
-      })),
-    });
-  }
-  if (item.lead) {
-    groups.push({
-      heading: 'Lead',
-      destinations: [{ label: item.lead.leadLabel, href: item.lead.leadHref }],
-    });
-    groups.push({
-      heading: item.lead.theShow.heading,
-      destinations: deriveColumnDestinations(item.lead.theShow),
-    });
-  }
-  for (const column of item.columns) {
-    groups.push({ heading: column.heading, destinations: deriveColumnDestinations(column) });
-  }
-  return groups;
-}
+// ---------------------------------------------------------------
+// SAOC drawer
+// ---------------------------------------------------------------
+const SAOC_LINKS = NAV.filter((item) => !item.disabled).map((item) => ({
+  label: item.label,
+  href: item.href,
+}));
+const SAOC_PAGES = SAOC_LINKS.filter((l) => !isAbsolute(l.href));
+const SAOC_CROSS_SITE = SAOC_LINKS.filter((l) => isAbsolute(l.href));
 
-const NATIONAL_SHOW_ITEM = NAV.find(
-  (item): item is Extract<NavItem, { type: 'mega' }> =>
-    item.type === 'mega' && item.label === NATIONAL_SHOW_TRIGGER,
-);
-if (!NATIONAL_SHOW_ITEM) {
-  throw new Error(`nav-config.ts has no mega item labelled "${NATIONAL_SHOW_TRIGGER}"`);
-}
-
-const FLAT_DESTINATIONS: FlatDestination[] = deriveFlatDestinations(NAV);
-const GROUPS: Group[] = deriveGroups(NATIONAL_SHOW_ITEM);
-
-// Consistency proof, not test coverage of its own — and a genuine two-way
-// set equality, not the one-way subset check this used to be (Codex
-// cross-model review, 2026-09-10: a one-way "every derived href is in
-// collectHrefs" check can never catch a href collectHrefs finds that the
-// derivation omits — exactly the defect class this whole file exists to
-// close). Every href this spec is about to exercise must appear in
-// collectHrefs(NAV), and every href collectHrefs(NAV) finds must appear
-// among this spec's derived destinations — otherwise the two NAV collectors
-// have silently diverged.
+// Consistency proof, not test coverage of its own: every href the SAOC drawer is about to exercise
+// must be one collectHrefs(NAV) finds, and the other way round.
 {
-  const allCollected = new Set(collectHrefs(NAV));
-  const derivedHrefs = new Set<string>([
-    ...FLAT_DESTINATIONS.map((d) => d.href),
-    ...GROUPS.flatMap((g) => g.destinations.map((d) => d.href)),
-  ]);
-  const missingFromDerived = [...allCollected].filter((href) => !derivedHrefs.has(href));
-  const missingFromCollected = [...derivedHrefs].filter((href) => !allCollected.has(href));
+  const collected = new Set(collectHrefs(NAV));
+  const derived = new Set(SAOC_LINKS.map((l) => l.href));
+  const missingFromDerived = [...collected].filter((href) => !derived.has(href));
+  const missingFromCollected = [...derived].filter((href) => !collected.has(href));
   if (missingFromDerived.length > 0 || missingFromCollected.length > 0) {
     throw new Error(
       'NAV collectors have diverged — ' +
-        `collectHrefs(NAV) found hrefs this spec's derived destinations miss: ` +
-        `[${missingFromDerived.join(', ')}]; ` +
-        `this spec's derived destinations have hrefs collectHrefs(NAV) doesn't find: ` +
-        `[${missingFromCollected.join(', ')}]`,
+        `collectHrefs(NAV) found hrefs this spec misses: [${missingFromDerived.join(', ')}]; ` +
+        `this spec has hrefs collectHrefs(NAV) doesn't find: [${missingFromCollected.join(', ')}]`,
     );
   }
 }
 
-async function openMobileMenuAndClick(page: import('@playwright/test').Page, label: string) {
-  await page.getByRole('button', { name: 'Open menu' }).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('dialog').getByRole('link', { name: label, exact: true }).click();
-}
-
-async function openNationalShow(page: import('@playwright/test').Page) {
+async function openSaocDrawer(page: Page) {
   await page.getByRole('button', { name: 'Open menu' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
-
-  const trigger = dialog.getByRole('button', { name: NATIONAL_SHOW_TRIGGER, exact: true });
-  await expect(trigger).toBeVisible();
-  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-  await trigger.click();
-  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
   return dialog;
 }
 
+// ---------------------------------------------------------------
+// NOS menu panel
+// ---------------------------------------------------------------
+async function openNosPanel(page: Page, baseURL: string) {
+  await page.goto(`${nosBase(baseURL)}/`);
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
+  const panel = page.getByRole('navigation', { name: 'Main menu' });
+  await expect(panel).toBeVisible();
+  return panel;
+}
+
+async function expandGroup(panel: import('@playwright/test').Locator, heading: string) {
+  const trigger = panel.getByRole('button', { name: heading, exact: true });
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  await trigger.click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+}
+
 for (const width of [390, 320] as const) {
-  test(`mobile nav flat links reach every SAOC section at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: VIEWPORT_HEIGHT });
-    await page.goto('/');
+  test.describe(`mobile menus at ${width}px`, () => {
+    test.use({ viewport: { width, height: VIEWPORT_HEIGHT } });
 
-    for (const { label, hrefPattern } of FLAT_DESTINATIONS) {
-      await openMobileMenuAndClick(page, label);
-      await page.waitForURL(hrefPattern);
-      await expect(page).toHaveURL(hrefPattern);
-      await page.goto('/');
-    }
-  });
-
-  for (const group of GROUPS) {
-    for (const dest of group.destinations) {
-      const testName = `mobile nav National Show "${group.heading}" reaches "${dest.label}" at ${width}px`;
-
-      if (PENDING_ROUTES.has(dest.href)) {
-        test.skip(
-          `${testName} (pending NOS route — see f1-pending-nos-routes.json)`,
-          async ({ page }) => {
-            await page.setViewportSize({ width, height: VIEWPORT_HEIGHT });
-            await page.goto('/');
-            const dialog = await openNationalShow(page);
-            // .first(): mission menu-system-layout4 M2/F8 intentionally
-            // duplicates the "Tickets" destination (theShow's own leaf +
-            // the feature rail's primary row) — same label, same href, two
-            // affordances in two regions (architect ruling, see
-            // f8-tickets-rail.json's rail.destinations.duplicateLinkRuling).
-            // Either match proves this destination is reachable.
-            const destination = dialog.getByRole('link', { name: dest.label, exact: true }).first();
-            await expect(destination).toBeVisible();
-            await destination.click();
-            const hrefPattern = new RegExp(`${dest.href.replace(/\//g, '\\/')}$`);
-            await page.waitForURL(hrefPattern);
-            await expect(page).toHaveURL(hrefPattern);
-          },
-        );
-        continue;
-      }
-
-      test(testName, async ({ page }) => {
-        await page.setViewportSize({ width, height: VIEWPORT_HEIGHT });
+    for (const { label, href } of SAOC_PAGES) {
+      test(`SAOC drawer reaches "${label}"`, async ({ page }) => {
         await page.goto('/');
-
-        const dialog = await openNationalShow(page);
-
-        // Real reachability, not a text-presence check — Playwright's click()
-        // auto-scrolls the drawer to bring the target into view and fails
-        // outright if it's actually clipped, so this proves the destination is
-        // genuinely reachable inside the drawer at this viewport.
-        // .first(): mission menu-system-layout4 M2/F8 intentionally
-        // duplicates the "Tickets" destination (theShow's own leaf +
-        // the feature rail's primary row) — same label, same href, two
-        // affordances in two regions (architect ruling, see
-        // f8-tickets-rail.json's rail.destinations.duplicateLinkRuling).
-        // Either match proves this destination is reachable.
-        const destination = dialog.getByRole('link', { name: dest.label, exact: true }).first();
-        await expect(destination).toBeVisible();
-        await destination.click();
-
-        const hrefPattern = new RegExp(`${dest.href.replace(/\//g, '\\/')}$`);
-        await page.waitForURL(hrefPattern);
-        await expect(page).toHaveURL(hrefPattern);
+        const dialog = await openSaocDrawer(page);
+        await dialog.getByRole('link', { name: label, exact: true }).click();
+        await page.waitForURL(urlPattern(href));
+        await expect(page).toHaveURL(urlPattern(href));
       });
     }
-  }
+
+    for (const { label, href } of SAOC_CROSS_SITE) {
+      test(`SAOC drawer links "${label}" to the NOS site (asserted by href, not followed)`, async ({
+        page,
+      }) => {
+        await page.goto('/');
+        const dialog = await openSaocDrawer(page);
+        const link = dialog.getByRole('link', { name: label, exact: true });
+        await expect(link).toHaveAttribute('href', href);
+        await expect(link).not.toHaveAttribute('target', /.+/);
+      });
+    }
+
+    for (const group of NOS_GROUPS) {
+      for (const leaf of group.links) {
+        const path = cleanHref(leaf);
+        const testName = `NOS menu "${group.heading}" reaches "${leaf.label}"`;
+
+        if (PENDING_ROUTES.has(leaf.href)) {
+          test.skip(`${testName} (pending NOS route — see f1-pending-nos-routes.json)`, () => {});
+          continue;
+        }
+
+        test(testName, async ({ page, baseURL }) => {
+          const panel = await openNosPanel(page, baseURL!);
+          await expandGroup(panel, group.heading);
+
+          // Real reachability: Playwright's click() auto-scrolls the panel to bring the target
+          // into view and fails outright if it is clipped.
+          const destination = panel.getByRole('link', { name: labelMatcher(leaf.label) }).first();
+          await expect(destination).toBeVisible();
+          await destination.click();
+
+          await page.waitForURL(urlPattern(path));
+          await expect(page).toHaveURL(urlPattern(path));
+        });
+      }
+    }
+
+    for (const leaf of NOS_PLAIN_LEAVES) {
+      const path = cleanHref(leaf);
+      const isPastShows = path === NOS_PAST_SHOWS_PATH;
+
+      test(`NOS menu reaches "${leaf.label}"${isPastShows ? ' (withheld in public, r64)' : ''}`, async ({
+        page,
+        baseURL,
+      }) => {
+        const panel = await openNosPanel(page, baseURL!);
+        const destination = panel.getByRole('link', { name: leaf.label, exact: true });
+
+        if (isPastShows) {
+          const probe = await page.request.get(`${nosBase(baseURL!)}${path}`);
+          if (probe.status() === 404) {
+            await expect(destination).toHaveCount(0);
+            return;
+          }
+        }
+
+        await expect(destination).toBeVisible();
+        await destination.click();
+        await page.waitForURL(urlPattern(path));
+        await expect(page).toHaveURL(urlPattern(path));
+      });
+    }
+
+    test('NOS header keeps the Tickets call to action at this width and it reaches Tickets', async ({
+      page,
+      baseURL,
+    }) => {
+      await page.goto(`${nosBase(baseURL!)}/`);
+      const cta = page.locator('header#nh').getByRole('link', { name: NOS_TICKETS.label, exact: true });
+      await expect(cta).toBeVisible();
+      await cta.click();
+      await page.waitForURL(urlPattern(cleanHref(NOS_TICKETS)));
+    });
+
+    test('NOS menu links Contact to the SAOC site and ends with the SAOC credit', async ({
+      page,
+      baseURL,
+    }) => {
+      const panel = await openNosPanel(page, baseURL!);
+      const contact = panel.getByRole('link', { name: 'Contact', exact: true });
+      const href = (await contact.getAttribute('href')) ?? '';
+      expect(isAbsolute(href), `Contact must be an absolute SAOC URL, got ${href}`).toBe(true);
+      expect(new URL(href).pathname).toBe('/contact');
+      expect(new URL(href).hostname.startsWith('nos.')).toBe(false);
+
+      const credit = panel.locator('.nd-credit a');
+      await expect(credit).toHaveText('South African Orchid Council');
+      expect(new URL((await credit.getAttribute('href')) ?? '').pathname).toBe('/');
+    });
+  });
 }

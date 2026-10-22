@@ -3,71 +3,32 @@
 // Mission ticketing-complete M3/F6 — keyboard operability, not hover-only. Per
 // this repo's own coding.md accessibility rule ("every interactive element needs
 // a label, role, and keyboard handler"), a dropdown that only opens on `:hover`
-// is broken for keyboard and touch users. Exercises components/chrome/MegaMenu.tsx
-// (reused for the Visit / Programme / Exhibit & Trade group triggers) via a real
-// keyboard press — never `.hover()` as the only way the panel opens — and checks
-// for a REAL visible-focus computed-style change (getComputedStyle), never a
-// class-name proxy, matching F7's own A7 standard: "real geometry, not a
-// class-name standing in for verification."
+// is broken for keyboard and touch users. Exercises the National Orchid Show
+// header's three disclosure groups (Visit / Programme / Exhibit & trade, NOS Design R1.2) via a
+// real keyboard press — never `.hover()` as the only way a panel opens — and checks for a REAL
+// visible-focus computed-style change (getComputedStyle), never a class-name proxy, matching F7's
+// own A7 standard: "real geometry, not a class-name standing in for verification."
+//
+// Mission nos-site-split F3: the show is its own site (the NOS host), and its header's dropdowns
+// are click-only disclosure list panels (aria-expanded on the trigger, Escape closes and returns
+// focus). The SAOC header no longer has a dropdown to test.
+//
+// Codex cross-model review, 2026-09-10: the original version of this spec Tabbed once after
+// opening the panel and asserted a focus ring existed, but never proved the focused element was
+// actually INSIDE the open panel. An empty or unreachable panel would let Tab move straight to the
+// next header control, that control has its own focus ring, and the assertion would pass — the
+// "satisfiable by something that isn't the real property" defect class this repo audits for. So
+// the focused element is asserted to be inside the open panel, and to be its FIRST link in DOM
+// order, derived from NOS_NAV, not hardcoded.
 import { expect, test } from '@playwright/test';
 
-import { NAV, type NavItem } from '@/components/chrome/nav-config';
+import { NOS_GROUPS, cleanHref } from './utils/nos-nav-hrefs';
+import { nosBase } from './utils/site-urls';
 
-// Mission menu-system-layout4 M2/F2: retargeted from the pre-Layout-4 three-mega
-// shape's old trigger name to the single National Show mega trigger — see
-// contract-f2.yaml's A5/A6. Tab order into the open panel runs lead -> groups ->
-// feature rail (mission section 6 property 4) because that's the panel's real DOM
-// order in components/chrome/MegaMenu.tsx; nothing here needs to special-case it.
-const TRIGGER_NAME = 'National Show';
-
-// Codex cross-model review, 2026-09-10: the original version of this spec Tabbed
-// once after opening the panel and asserted a focus ring existed, but never
-// proved the focused element was actually INSIDE the open panel. An empty or
-// unreachable panel would let Tab move straight to the next header control
-// (e.g. Contact), that control has its own focus ring, and the old assertion
-// would pass — the exact "satisfiable by something that isn't the real
-// property" defect class this repo audits for.
-//
-// Fixed by asserting two things instead: (1) the focused element is a
-// descendant of the open `role="menu"` panel, and (2) it is specifically the
-// FIRST focusable leaf in the panel's real DOM order. That order is derived
-// from NAV here (mirroring MegaMenu.tsx's render order exactly: lead.leadHref
-// is always a <Link>; lead.theShow.headingHref and each column's headingHref
-// render as a <Link> only when non-null, else a plain <span>; every leaf link
-// is always a <Link>; every featureRail.destinations entry is always a
-// <Link>), not hardcoded —
-// @qa independently drove this by hand and recorded the same order: lead ->
-// theShow -> Visit -> Programme -> Exhibit & Trade -> feature rail. Today that
-// resolves to lead.leadHref ('/national-show'), since theShow.headingHref is
-// null and lead.leadHref is the panel's first rendered anchor.
-function focusableHrefsInPanelOrder(item: Extract<NavItem, { type: 'mega' }>): string[] {
-  const hrefs: string[] = [];
-  if (item.lead) {
-    hrefs.push(item.lead.leadHref);
-    if (item.lead.theShow.headingHref) hrefs.push(item.lead.theShow.headingHref);
-    for (const link of item.lead.theShow.links) hrefs.push(link.href);
-  }
-  for (const column of item.columns) {
-    if (column.headingHref) hrefs.push(column.headingHref);
-    for (const link of column.links) hrefs.push(link.href);
-  }
-  if (item.featureRail) {
-    for (const destination of item.featureRail.destinations) hrefs.push(destination.href);
-  }
-  return hrefs;
-}
-
-const NATIONAL_SHOW_ITEM = NAV.find(
-  (item): item is Extract<NavItem, { type: 'mega' }> =>
-    item.type === 'mega' && item.label === TRIGGER_NAME,
-);
-if (!NATIONAL_SHOW_ITEM) {
-  throw new Error(`nav-config.ts has no mega item labelled "${TRIGGER_NAME}" — update TRIGGER_NAME`);
-}
-const FIRST_PANEL_HREF = focusableHrefsInPanelOrder(NATIONAL_SHOW_ITEM)[0];
-if (!FIRST_PANEL_HREF) {
-  throw new Error(`"${TRIGGER_NAME}" mega has no focusable leaf at all — nothing for Tab to reach`);
-}
+const GROUP = NOS_GROUPS[0];
+const TRIGGER_NAME = GROUP.heading;
+const PANEL_HREFS = GROUP.links.map(cleanHref);
+const FIRST_PANEL_HREF = PANEL_HREFS[0];
 
 // Tabs forward from the top of the document until an element with the given
 // accessible name is focused, or the attempt budget runs out. Avoids hardcoding
@@ -86,64 +47,83 @@ async function tabToAccessibleName(page: import('@playwright/test').Page, name: 
   throw new Error(`could not reach an element named "${name}" by tabbing`);
 }
 
-test.describe('nav keyboard operability', () => {
-  test('National Show group dropdown opens via Enter on its trigger (not hover-only)', async ({
+async function openNosHome(page: import('@playwright/test').Page, baseURL: string) {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`${nosBase(baseURL)}/`);
+}
+
+const panelLocator = (page: import('@playwright/test').Page) =>
+  page.locator(`#nh-panel-${GROUP.id}`);
+
+async function hasVisibleFocusRing(locator: import('@playwright/test').Locator) {
+  const style = await locator.evaluate((el) => {
+    const s = getComputedStyle(el);
+    return { outlineStyle: s.outlineStyle, outlineWidth: s.outlineWidth, boxShadow: s.boxShadow };
+  });
+  return {
+    style,
+    visible:
+      (style.outlineStyle !== 'none' && style.outlineWidth !== '0px') || style.boxShadow !== 'none',
+  };
+}
+
+test.describe('nav keyboard operability (NOS header)', () => {
+  test('a group dropdown opens via Enter on its trigger (not hover-only)', async ({
     page,
+    baseURL,
   }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/');
+    await openNosHome(page, baseURL!);
 
     const trigger = await tabToAccessibleName(page, TRIGGER_NAME);
-    await expect(trigger).toHaveAttribute('aria-haspopup', 'true');
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
     await page.keyboard.press('Enter');
 
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-    const panel = page.getByRole('menu', { name: TRIGGER_NAME });
-    await expect(panel).toBeVisible();
+    await expect(panelLocator(page)).toBeVisible();
   });
 
-  test('National Show group dropdown opens via Space on its trigger (not hover-only)', async ({
+  test('a group dropdown opens via Space on its trigger (not hover-only)', async ({
     page,
+    baseURL,
   }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/');
+    await openNosHome(page, baseURL!);
 
     const trigger = await tabToAccessibleName(page, TRIGGER_NAME);
     await page.keyboard.press(' ');
 
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-    const panel = page.getByRole('menu', { name: TRIGGER_NAME });
-    await expect(panel).toBeVisible();
+    await expect(panelLocator(page)).toBeVisible();
   });
 
-  test('the trigger shows a visible focus indicator via real computed style', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/');
+  test('hovering does not open a dropdown (click and keyboard only)', async ({ page, baseURL }) => {
+    await openNosHome(page, baseURL!);
+
+    await page.getByRole('button', { name: TRIGGER_NAME, exact: true }).hover();
+
+    await expect(panelLocator(page)).toBeHidden();
+  });
+
+  test('the trigger shows a visible focus indicator via real computed style', async ({
+    page,
+    baseURL,
+  }) => {
+    await openNosHome(page, baseURL!);
 
     const trigger = await tabToAccessibleName(page, TRIGGER_NAME);
-
-    const focusedStyle = await trigger.evaluate((el) => {
-      const s = getComputedStyle(el);
-      return { outlineStyle: s.outlineStyle, outlineWidth: s.outlineWidth, boxShadow: s.boxShadow };
-    });
-
-    const hasVisibleFocusRing =
-      (focusedStyle.outlineStyle !== 'none' && focusedStyle.outlineWidth !== '0px') ||
-      focusedStyle.boxShadow !== 'none';
+    const { style, visible } = await hasVisibleFocusRing(trigger);
 
     expect(
-      hasVisibleFocusRing,
-      `expected a real focus indicator via getComputedStyle, got ${JSON.stringify(focusedStyle)}`,
+      visible,
+      `expected a real focus indicator via getComputedStyle, got ${JSON.stringify(style)}`,
     ).toBe(true);
   });
 
   test('an item inside the open dropdown shows a visible focus indicator via real computed style', async ({
     page,
+    baseURL,
   }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/');
+    await openNosHome(page, baseURL!);
 
     const trigger = await tabToAccessibleName(page, TRIGGER_NAME);
     await page.keyboard.press('Enter');
@@ -152,86 +132,60 @@ test.describe('nav keyboard operability', () => {
     // Tab once more, into the now-open panel, onto its first link.
     await page.keyboard.press('Tab');
 
-    // Assert the focused element is actually a descendant of the OPEN panel —
-    // not merely that something focusable exists somewhere. An empty panel
-    // would let this Tab land on the next header control instead; that
-    // control lying outside `panel` is exactly what this catches.
-    const panel = page.getByRole('menu', { name: TRIGGER_NAME });
-    const itemInPanel = panel.locator(':focus');
+    const itemInPanel = panelLocator(page).locator(':focus');
     await expect(
       itemInPanel,
-      'after opening the "National Show" panel and pressing Tab, focus did not land inside it — ' +
+      `after opening the "${TRIGGER_NAME}" panel and pressing Tab, focus did not land inside it — ` +
         'an empty or unreachable panel would let Tab skip straight to the next header control',
     ).toHaveCount(1);
 
-    // Assert WHICH link — the first focusable leaf in the panel's real DOM
-    // order, derived from NAV above, not hardcoded.
     const focusedHref = await itemInPanel.getAttribute('href');
     expect(
       focusedHref,
-      `expected Tab to land on the first focusable leaf in DOM order (${FIRST_PANEL_HREF}), got href=${focusedHref}`,
+      `expected Tab to land on the first link in DOM order (${FIRST_PANEL_HREF}), got href=${focusedHref}`,
     ).toBe(FIRST_PANEL_HREF);
 
-    const focusedStyle = await itemInPanel.evaluate((el) => {
-      const s = getComputedStyle(el);
-      return { outlineStyle: s.outlineStyle, outlineWidth: s.outlineWidth, boxShadow: s.boxShadow };
-    });
-
-    const hasVisibleFocusRing =
-      (focusedStyle.outlineStyle !== 'none' && focusedStyle.outlineWidth !== '0px') ||
-      focusedStyle.boxShadow !== 'none';
-
+    const { style, visible } = await hasVisibleFocusRing(itemInPanel);
     expect(
-      hasVisibleFocusRing,
-      `expected a real focus indicator via getComputedStyle, got ${JSON.stringify(focusedStyle)}`,
+      visible,
+      `expected a real focus indicator via getComputedStyle, got ${JSON.stringify(style)}`,
     ).toBe(true);
   });
 
-  test('Escape closes the dropdown and returns focus to the trigger', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/');
+  test('Escape closes the dropdown and returns focus to the trigger', async ({ page, baseURL }) => {
+    await openNosHome(page, baseURL!);
 
     const trigger = await tabToAccessibleName(page, TRIGGER_NAME);
     await page.keyboard.press('Enter');
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 
+    await page.keyboard.press('Tab'); // into the panel, so Escape must pull focus back out
     await page.keyboard.press('Escape');
 
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect(trigger).toBeFocused();
   });
 
-  test('every focusable leaf in the open panel shows a visible focus indicator, not just the first', async ({
+  test('every link in the open panel shows a visible focus indicator, not just the first', async ({
     page,
+    baseURL,
   }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/');
+    await openNosHome(page, baseURL!);
 
     const trigger = await tabToAccessibleName(page, TRIGGER_NAME);
     await page.keyboard.press('Enter');
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 
-    const panel = page.getByRole('menu', { name: TRIGGER_NAME });
-    const expectedHrefs = focusableHrefsInPanelOrder(NATIONAL_SHOW_ITEM);
-    expect(expectedHrefs.length).toBeGreaterThan(1);
+    expect(PANEL_HREFS.length).toBeGreaterThan(1);
 
-    // Iterate the DOM anchors themselves, by position, not by href
-    // lookup -- focusableHrefsInPanelOrder does not dedupe, and
-    // /national-show/tickets legitimately appears twice (theShow.links
-    // AND the featureRail primary CTA, the ruled F8 duplication). A
-    // href-keyed `.first()` lookup silently collapses the second
-    // occurrence onto the same DOM node as the first, so it is never
-    // independently focus-tested. Asserting the DOM anchor count
-    // equals expectedHrefs.length (duplicates included) means this
-    // test cannot pass by rendering fewer anchors than the config
-    // declares, either.
-    const panelLinks = panel.locator('a[href]');
+    // Iterate the DOM anchors themselves, by position. Asserting the DOM anchor count equals the
+    // NAV-derived count means this test cannot pass by rendering fewer anchors than the nav declares.
+    const panelLinks = panelLocator(page).locator('a[href]');
     await expect(
       panelLinks,
-      `panel DOM anchor count must equal the NAV-derived expected count ` +
-        `(${expectedHrefs.length}, duplicates included) -- a mismatch means this test is not ` +
-        `walking every rendered anchor.`,
-    ).toHaveCount(expectedHrefs.length);
+      `panel DOM anchor count must equal the NAV-derived expected count (${PANEL_HREFS.length}) — ` +
+        'a mismatch means this test is not walking every rendered anchor.',
+    ).toHaveCount(PANEL_HREFS.length);
 
     const linkCount = await panelLinks.count();
     for (let i = 0; i < linkCount; i++) {
@@ -240,42 +194,49 @@ test.describe('nav keyboard operability', () => {
       await link.evaluate((el) => (el as HTMLElement).focus());
       await expect(link).toBeFocused();
 
-      const style = await link.evaluate((el) => {
-        const s = getComputedStyle(el);
-        return { outlineStyle: s.outlineStyle, outlineWidth: s.outlineWidth, boxShadow: s.boxShadow };
-      });
-      const hasVisibleFocusRing =
-        (style.outlineStyle !== 'none' && style.outlineWidth !== '0px') || style.boxShadow !== 'none';
-
+      const { style, visible } = await hasVisibleFocusRing(link);
       expect(
-        hasVisibleFocusRing,
+        visible,
         `panel anchor #${i} (href=${href}) has no real focus indicator via getComputedStyle: ${JSON.stringify(style)}`,
       ).toBe(true);
     }
   });
 
-  test('Tab past the last focusable leaf leaves the panel (no focus trap)', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/');
+  test('Tab past the last link leaves the panel (no focus trap) and closes it', async ({
+    page,
+    baseURL,
+  }) => {
+    await openNosHome(page, baseURL!);
 
     const trigger = await tabToAccessibleName(page, TRIGGER_NAME);
     await page.keyboard.press('Enter');
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 
-    const panel = page.getByRole('menu', { name: TRIGGER_NAME });
-    const allHrefs = focusableHrefsInPanelOrder(NATIONAL_SHOW_ITEM);
-    const lastHref = allHrefs[allHrefs.length - 1];
-
-    const lastLink = panel.locator(`a[href="${lastHref}"]`).first();
+    const panel = panelLocator(page);
+    const lastLink = panel.locator('a[href]').last();
     await lastLink.evaluate((el) => (el as HTMLElement).focus());
     await expect(lastLink).toBeFocused();
 
     await page.keyboard.press('Tab');
 
-    const stillInPanel = panel.locator(':focus');
     await expect(
-      stillInPanel,
-      'focus is still inside the open panel after tabbing past its last leaf -- this is a focus trap',
+      panel.locator(':focus'),
+      'focus is still inside the open panel after tabbing past its last link — this is a focus trap',
     ).toHaveCount(0);
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('opening one group closes the one before it', async ({ page, baseURL }) => {
+    await openNosHome(page, baseURL!);
+
+    const first = page.getByRole('button', { name: NOS_GROUPS[0].heading, exact: true });
+    const second = page.getByRole('button', { name: NOS_GROUPS[1].heading, exact: true });
+    await first.click();
+    await expect(first).toHaveAttribute('aria-expanded', 'true');
+
+    await second.click();
+
+    await expect(second).toHaveAttribute('aria-expanded', 'true');
+    await expect(first).toHaveAttribute('aria-expanded', 'false');
   });
 });

@@ -61,6 +61,16 @@
 //   --nav-file for a real gate run -- it exists for
 //   goldens/fixtures/f1-negative-fixtures/ only.
 //
+// nos-site-split F3: the show is its own site on its own host. The SAOC NAV now carries only SAOC
+// pages plus an ABSOLUTE link to the NOS site (asserted by href elsewhere, never fetched here); the
+// show's own menu is NOS_NAV (components/nos-chrome/nos-nav.ts). A real run therefore checks the SAOC
+// NAV against --base-url and NOS_NAV against the NOS host (http://nos.localhost:<same port>, or
+// --nos-base-url), with each show-internal href (/national-show/x, /tickets/x, /vsp) fetched at its
+// clean public path. The checker runs under tsx (node --import tsx) so the nav modules' '@/' imports
+// resolve. The Past shows route is withheld in a public build until records exist (r64), so its
+// href is not fetched. --nav-file fixtures are SAOC-shaped NAVs whose show-internal hrefs are routed
+// to the NOS host the same way.
+//
 // Exit 0 = list empty AND all 17 hrefs return 200 (property 1 genuinely
 // satisfied). Exit 1 = list empty but at least one href did not return 200, OR
 // returned 200 with a soft-404 signal (noindex meta tag) -- both named. Exit 3
@@ -87,6 +97,7 @@ function parseArgs(argv) {
   let baseUrl = null;
   let pendingRoutesPath = DEFAULT_PENDING_ROUTES;
   let navFile = null;
+  let nosBaseUrl = null;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--base-url') {
@@ -95,6 +106,9 @@ function parseArgs(argv) {
     } else if (arg === '--pending-routes') {
       pendingRoutesPath = path.resolve(process.cwd(), argv[++i] ?? '');
       if (!pendingRoutesPath) usageError('--pending-routes requires a value');
+    } else if (arg === '--nos-base-url') {
+      nosBaseUrl = argv[++i];
+      if (!nosBaseUrl) usageError('--nos-base-url requires a value');
     } else if (arg === '--nav-file') {
       navFile = argv[++i];
       if (!navFile) usageError('--nav-file requires a value');
@@ -102,8 +116,13 @@ function parseArgs(argv) {
       usageError(`unrecognised argument: ${arg}`);
     }
   }
-  return { baseUrl, pendingRoutesPath, navFile };
+  return { baseUrl, pendingRoutesPath, navFile, nosBaseUrl };
 }
+
+const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', 'nos.localhost']);
+const NOS_INTERNAL_PREFIX = '/national-show';
+const NOS_TOP_LEVEL_PREFIXES = ['/tickets/', '/vsp'];
+const PAST_SHOWS_HREF = '/national-show/archive';
 
 function assertLocalOrigin(url) {
   let parsed;
@@ -112,7 +131,7 @@ function assertLocalOrigin(url) {
   } catch {
     usageError(`--base-url is not a valid URL: ${url}`);
   }
-  if (parsed.hostname !== 'localhost' && parsed.hostname !== '127.0.0.1') {
+  if (!LOCAL_HOSTNAMES.has(parsed.hostname)) {
     usageError(
       `refusing to check routes against non-local origin ${url} -- this check must only run ` +
         'against a real local dev server, never a deployed/live origin.',
@@ -164,8 +183,23 @@ function collectAllNavHrefs(items) {
   return [...new Set(hrefs)];
 }
 
+// The URL to fetch for one nav href, or null when the href is absolute (a cross-site link, asserted
+// by href elsewhere) or withheld. Show-internal hrefs go to the NOS host at their clean path.
+function fetchUrlFor(href, baseUrl, nosBaseUrl) {
+  if (/^https?:\/\//.test(href)) return null;
+  if (href === PAST_SHOWS_HREF) return null;
+  if (href === NOS_INTERNAL_PREFIX) return `${nosBaseUrl}/`;
+  if (href.startsWith(`${NOS_INTERNAL_PREFIX}/`)) {
+    return `${nosBaseUrl}${href.slice(NOS_INTERNAL_PREFIX.length)}`;
+  }
+  if (NOS_TOP_LEVEL_PREFIXES.some((prefix) => href.startsWith(prefix))) return `${nosBaseUrl}${href}`;
+  return `${baseUrl}${href}`;
+}
+
 async function main() {
-  const { baseUrl, pendingRoutesPath, navFile } = parseArgs(process.argv.slice(2));
+  const { baseUrl, pendingRoutesPath, navFile, nosBaseUrl: nosBaseUrlArg } = parseArgs(
+    process.argv.slice(2),
+  );
   const pendingRoutes = loadPendingRoutes(pendingRoutesPath);
 
   console.log(
@@ -194,21 +228,33 @@ async function main() {
     );
   }
   assertLocalOrigin(baseUrl);
+  const nosBaseUrl = nosBaseUrlArg ?? `http://nos.localhost:${new URL(baseUrl).port}`;
+  assertLocalOrigin(nosBaseUrl);
 
   const navModulePath = navFile
     ? path.resolve(process.cwd(), navFile)
     : path.join(REPO_ROOT, 'components/chrome/nav-config.ts');
   const { NAV } = await import(navModulePath);
-  const hrefs = collectAllNavHrefs(NAV);
+  const navItems = [...NAV];
+  if (!navFile) {
+    const { NOS_NAV } = await import(path.join(REPO_ROOT, 'components/nos-chrome/nos-nav.ts'));
+    navItems.push(...NOS_NAV);
+  }
+  const hrefs = collectAllNavHrefs(navItems);
   console.log(`pendingRoutes is empty -- running the real HTTP check against all ${hrefs.length} NAV hrefs.`);
 
   const SOFT_404_SIGNAL = '<meta name="robots" content="noindex"';
   const failures = [];
   for (const href of hrefs) {
+    const target = fetchUrlFor(href, baseUrl, nosBaseUrl);
+    if (target === null) {
+      console.log(`SKIP ${href}: absolute cross-site link or withheld route, not fetched here`);
+      continue;
+    }
     let status;
     let softNotFound = false;
     try {
-      const res = await fetch(`${baseUrl}${href}`, { redirect: 'manual' });
+      const res = await fetch(target, { redirect: 'manual' });
       status = res.status;
       const body = await res.text();
       softNotFound = status === 200 && body.includes(SOFT_404_SIGNAL);
