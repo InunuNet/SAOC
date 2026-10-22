@@ -17,16 +17,18 @@ import {
   FOOTER_BULLETIN,
   FOOTER_COPYRIGHT_TAIL,
   FOOTER_HEADINGS,
+  FOOTER_LAYOUT,
   FOOTER_LEGAL_LINKS,
   FOOTER_NAV,
   FOOTER_REG,
+  FOOTER_RHYTHM,
   FOOTER_WOSA,
 } from './footer-data';
 
 export function Footer() {
   return (
     <footer className="bg-primary-800 text-ivory">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 py-16 px-8 max-w-[1280px] mx-auto">
+      <div className={FOOTER_LAYOUT.grid}>
         {/* Col 1 — lockup + registration line. Live HTML/CSS lockup (SaocLockup,
             orientation="vertical" tone="dark"): only the emblem (E4 Lapis
             monotone) is an image, the wordmark/rule/tagline are real text
@@ -35,8 +37,8 @@ export function Footer() {
             Brad's instruction (the earlier raster export baked a navy box
             behind it, which was wrong). See SaocLockup.tsx's own header
             comment for the full metrics() derivation. */}
-        <div className="flex flex-col gap-4">
-          <div className="mb-4 flex justify-center">
+        <div className={FOOTER_LAYOUT.brandColumn}>
+          <div className={FOOTER_LAYOUT.brandMark}>
             <SaocLockup orientation="vertical" tone="dark" />
           </div>
           <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ivory/65">
@@ -49,12 +51,12 @@ export function Footer() {
           <div className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory/55 mb-1">
             {FOOTER_HEADINGS.explore}
           </div>
-          <ul className="flex flex-col">
+          <ul className={FOOTER_RHYTHM.list}>
             {FOOTER_NAV.map((n) => (
               <li key={n.id}>
                 <Link
                   href={n.href}
-                  className="inline-flex min-h-11 min-w-11 items-center font-sans text-[14px] text-ivory/80 hover:text-ivory transition-colors duration-150"
+                  className={`${FOOTER_RHYTHM.row} min-w-11 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150`}
                 >
                   {n.label}
                 </Link>
@@ -68,10 +70,10 @@ export function Footer() {
           <div className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory/55 mb-1">
             {FOOTER_HEADINGS.partners}
           </div>
-          <ul className="flex flex-col gap-2">
+          <ul className={FOOTER_RHYTHM.list}>
             {partners.map((p) => (
               <li key={p.name}>
-                <span className="font-sans text-[14px] text-ivory/80">{p.name}</span>
+                <span className={`${FOOTER_RHYTHM.row} font-sans text-ivory/80`}>{p.name}</span>
               </li>
             ))}
           </ul>
@@ -90,12 +92,14 @@ export function Footer() {
               htmlFor="footer-newsletter-email"
               className="mb-1.5 block w-full font-mono text-[11px] tracking-[0.16em] text-ivory/65"
             >
-              {FOOTER_BULLETIN.placeholder}
+              {FOOTER_BULLETIN.emailLabel}
             </label>
             <input
               id="footer-newsletter-email"
               type="email"
               autoComplete="email"
+              inputMode="email"
+              spellCheck={false}
               placeholder={FOOTER_BULLETIN.placeholder}
               required
               className="min-h-11 min-w-0 flex-1 bg-ivory/10 border border-ivory/20 text-ivory placeholder:text-ivory/40 font-sans text-[13px] px-3 py-2 focus:outline-none focus:border-ivory/40"
@@ -115,7 +119,7 @@ export function Footer() {
               href={FOOTER_WOSA.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 min-w-11 items-center font-sans text-[14px] text-ivory/80 hover:text-ivory transition-colors duration-150"
+              className={`${FOOTER_RHYTHM.row} min-w-11 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150`}
             >
               {FOOTER_WOSA.linkLabel}
             </a>
@@ -125,12 +129,12 @@ export function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t border-ivory/10">
-        <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-8 py-4 flex-wrap">
+        <div className={FOOTER_LAYOUT.bar}>
           <span className="font-sans text-[13px] text-ivory/65">
             &copy; {new Date().getFullYear()}
             {FOOTER_COPYRIGHT_TAIL}
           </span>
-          <div className="flex items-center gap-4 flex-wrap">
+          <div className={FOOTER_LAYOUT.legal}>
             {FOOTER_LEGAL_LINKS.map((l) => (
               <Link
                 key={l.href}

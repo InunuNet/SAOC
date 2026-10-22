@@ -1,0 +1,41 @@
+{
+  "css": {
+    "file": "app/(marketing)/national-show/nos-structure.css",
+    "lineEdits": [
+      {
+        "line": 570,
+        "from": "}",
+        "to": "}\n/* r20 F2 (Codi FINAL): two adjacent sections on the SAME ground share ONE rhythm unit (the leader's padding-bottom), not two\n   stacked units. Tone is the NosSection tone class (none = the default ground); a section painted by a bg- utility (the\n   VisitDisclosure gold band) is its own ground and never matches. Different-ground neighbours keep both paddings. */\n.nos-theme .nos-section:not(.nos-section-gold, .nos-section-royal, .nos-section-black, [class*='bg-']) + .nos-section:not(.nos-section-gold, .nos-section-royal, .nos-section-black, [class*='bg-']),\n.nos-theme .nos-section-gold + .nos-section-gold,\n.nos-theme .nos-section-royal + .nos-section-royal,\n.nos-theme .nos-section-black + .nos-section-black {\n  padding-top: 0;\n}"
+      }
+    ],
+    "drops": [],
+    "why": "ONE rule block, after the r14 tickets-hub rule (BASE 568-570), collapsing the follower's padding-top between two adjacent same-tone .nos-section siblings. Tone is expressed by NosSection's tone class (components/nos/NosSection.tsx TONE_CLASSES: default '' / nos-section-gold / nos-section-royal nos-on-dark / nos-section-black nos-on-dark). VisitDisclosure paints a default-tone NosSection gold with className bg-[var(--gold)], so a bg- utility excludes a section from the default-ground match."
+  },
+  "routes": [
+    "/national-show",
+    "/national-show/about",
+    "/national-show/what-to-expect",
+    "/national-show/workshops",
+    "/national-show/symposium",
+    "/national-show/wosa-conference",
+    "/national-show/faq",
+    "/national-show/exhibitors",
+    "/national-show/vendors",
+    "/national-show/programme",
+    "/national-show/plan-your-visit",
+    "/national-show/international-guests",
+    "/national-show/sa-exhibitors",
+    "/national-show/sponsors",
+    "/national-show/conferences"
+  ],
+  "target": {
+    "route": "/national-show/what-to-expect",
+    "width": 1280,
+    "leaderHeading": "Accessibility"
+  },
+  "workshops": {
+    "route": "/national-show/workshops",
+    "width": 390,
+    "gap": 64
+  }
+}

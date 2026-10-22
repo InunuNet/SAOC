@@ -1,0 +1,36 @@
+# Sources: Codi's FINAL footer-parity ruling (six items), relayed by the lead 2026-10-22 (goldens/f5-spec.md); architect probe on HEAD 45f4f9bd.
+schema: athanor.contract/v1
+slug: nos-critique-r20
+goal: >-
+  Footer parity: the NOS sign-up inline at every width, the SAOC label on FOOTER_BULLETIN.emailLabel, inputMode/spellCheck/autoComplete
+  email on both inputs, footer rows at letter-spacing 0 and one line each, the WOSA link underlined only on hover/focus, NOS REG/NPO at
+  SAOC's weight and tracking in NOS gold; no new copy, tokens or colours.
+created_at: '2026-10-22'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json through f5-footprint.json, docs/nos-critique-r20.md and this spec dir'
+    reason: 'Enforced by A2. F5 adds no string and no colour; the submit behaviour belongs to footer-newsletter-subscribe (S4). saoc-82 is flagged in the PR (SAOC Footer.tsx edited).'
+features:
+  - id: F5
+    name: Footer parity - inline sign-up, Email address labels, email input hints, one-line rows, WOSA hover underline, REG/NPO weight
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r20/goldens/f5-spec.md
+  - .agent/memory/project/specs/nos-critique-r20/goldens/f5-edits.json
+  - .agent/memory/project/specs/nos-critique-r20/goldens/f5-footprint.json
+  - .agent/memory/project/specs/nos-critique-r20/goldens/checks-f5.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f5 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r20/goldens/checks-f5.sha256
+    - id: A2
+      description: Footprint - the r20 branch differs from origin/main 7fb251a1 only in the five r20 footprints, docs/nos-critique-r20.md and the spec dir, and HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r20/checks/footprint.mjs
+    - id: A3
+      description: Static - Footer.tsx is BASE plus exactly F3's, F4's and F5's edits, the NOS input carries inputMode and spellCheck, the NOS rules replaced and the stacked form rule retired, both forms untouched, no new copy, docs F5
+      command: node .agent/memory/project/specs/nos-critique-r20/checks/f5-static.mjs
+    - id: A4
+      description: Rendered (public + preview, 1280/390, SAOC and NOS routes) - sign-up inline in both footers, every link row one line, WOSA plain at rest and underlined on NOS hover, NOS REG/NPO at SAOC weight and em tracking in gold, Email address labels, email input hints
+      command: node .agent/memory/project/specs/nos-critique-r20/checks/f5-rendered.mjs

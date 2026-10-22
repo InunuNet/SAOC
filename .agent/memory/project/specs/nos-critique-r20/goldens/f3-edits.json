@@ -1,0 +1,104 @@
+{
+  "footerData": {
+    "file": "components/chrome/footer-data.ts",
+    "lineEdits": [
+      {
+        "line": 47,
+        "from": "/** Text that follows \"\u00a9 {year}\" in the copyright line. */",
+        "to": "/** The footer grid, brand column and bottom bar, shared by both skins so the NOS footer keeps the SAOC layout (r20). */\nexport const FOOTER_LAYOUT = {\n  grid: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 py-16 px-8 max-w-[1280px] mx-auto',\n  brandColumn: 'flex flex-col gap-4',\n  brandMark: 'mb-4 flex justify-center',\n  bar: 'mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-8 py-4 flex-wrap',\n  legal: 'flex items-center gap-4 flex-wrap',\n};\n\n/** Text that follows \"\u00a9 {year}\" in the copyright line. */"
+      }
+    ],
+    "drops": []
+  },
+  "saocFooter": {
+    "file": "components/chrome/Footer.tsx",
+    "lineEdits": [
+      {
+        "line": 19,
+        "from": "  FOOTER_HEADINGS,",
+        "to": "  FOOTER_HEADINGS,\n  FOOTER_LAYOUT,"
+      },
+      {
+        "line": 29,
+        "from": "      <div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 py-16 px-8 max-w-[1280px] mx-auto\">",
+        "to": "      <div className={FOOTER_LAYOUT.grid}>"
+      },
+      {
+        "line": 38,
+        "from": "        <div className=\"flex flex-col gap-4\">",
+        "to": "        <div className={FOOTER_LAYOUT.brandColumn}>"
+      },
+      {
+        "line": 39,
+        "from": "          <div className=\"mb-4 flex justify-center\">",
+        "to": "          <div className={FOOTER_LAYOUT.brandMark}>"
+      },
+      {
+        "line": 128,
+        "from": "        <div className=\"mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-8 py-4 flex-wrap\">",
+        "to": "        <div className={FOOTER_LAYOUT.bar}>"
+      },
+      {
+        "line": 133,
+        "from": "          <div className=\"flex items-center gap-4 flex-wrap\">",
+        "to": "          <div className={FOOTER_LAYOUT.legal}>"
+      }
+    ],
+    "drops": [],
+    "why": "A pure refactor: the five layout class strings move to FOOTER_LAYOUT with identical values, so the SAOC footer's DOM and classes are byte-identical (R7 measures it against BASE)."
+  },
+  "layoutKeys": [
+    "grid",
+    "brandColumn",
+    "brandMark",
+    "bar",
+    "legal"
+  ],
+  "nosRetired": [
+    ".nf-wrap",
+    ".nf-grid",
+    "grid-column: 1 / -1",
+    "25% * 2350 / 3272",
+    "min(360px, 100%)",
+    "min(280px, 100%)",
+    "76px"
+  ],
+  "lockup": {
+    "src": "/images/NOS-2027-logo-reversed-gold-vertical.png",
+    "width": 248,
+    "natural": [
+      3272,
+      2876
+    ]
+  },
+  "saoc": {
+    "route": "/about",
+    "height1280": 476,
+    "columnsX1280": [
+      32,
+      344,
+      656,
+      968
+    ],
+    "heightTolerance": 40
+  },
+  "brandGap": 32,
+  "nosRoutes": [
+    "/national-show",
+    "/national-show/tickets",
+    "/national-show/about"
+  ],
+  "saocRoutes": [
+    "/",
+    "/about",
+    "/events",
+    "/contact"
+  ],
+  "headings": {
+    "explore": "Explore",
+    "partners": "Partners",
+    "touch": "Stay in touch",
+    "wild": "Looking for wild orchids?"
+  },
+  "allowCopy": []
+}

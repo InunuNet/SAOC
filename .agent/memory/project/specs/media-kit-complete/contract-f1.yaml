@@ -1,0 +1,61 @@
+schema: athanor.contract/v1
+slug: media-kit-complete
+goal: The media kit offers every approved South African Orchid Council lockup and colour variation (three renditions, six inks, horizontal and vertical, light and dark, mark-only) plus the approved National Show 2027 PNG logos, each with a preview, approved-wording label, format, dimensions and download link.
+created_at: '2026-10-22'
+autonomy: high
+
+features:
+  - id: F1
+    name: complete media kit - deterministic generator, 75 downloads, 6 bundles and 4 usage illustrations, manifest-driven page in Codi's pinned layout
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/media-kit-complete/goldens/media-kit-spec.md
+  - .agent/memory/project/specs/media-kit-complete/goldens/inventory.json
+  - .agent/memory/project/specs/media-kit-complete/goldens/labels.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: every inventory file and zip exists with exact dimensions (marks 1254x1254, chips 512x512, NOS native, PNG only), lockup dimension rules hold, transparent/ground corners correct, NOS and colour mark byte-identical to source, zip members match, no stray files
+      command: python3 contracts/checks/media-kit-complete/check_inventory.py
+    - id: A2
+      description: manifest equals the inventory and the disk, every label uses approved wording only, page imports the manifest and hard-codes no missing file (page lists no file that does not exist)
+      command: python3 contracts/checks/media-kit-complete/check_manifest_page.py
+    - id: A3
+      description: each duotone's deepest tone is its stated ink, greyscale and reversed grey are neutral and match the sampled p.3-4 tones, reversed grey is lighter
+      command: python3 contracts/checks/media-kit-complete/check_colour.py
+    - id: A4
+      description: generator runs twice into .tmp/sandbox with identical hashes, and nothing under branding/ changes or is written to
+      command: python3 contracts/checks/media-kit-complete/check_generate.py
+    - id: A5
+      description: generator reuses the approved recolour constants (contrast stretch 1.35 / -0.2, luminance weights) rather than a new algorithm
+      command: grep -q "1.35" scripts/generate-saoc-media-kit.py
+    - id: A6
+      description: generator reads the public/images emblem copy so a clean checkout builds
+      command: grep -q "public/images/Eulophia-speciosa-emblem.png" scripts/generate-saoc-media-kit.py
+    - id: A7
+      description: while the untracked branding emblem exists it stays byte-identical to the public/images copy the build reads
+      command: test ! -f "branding/SA Orchid Council/emblem/Eulophia-speciosa-emblem.png" || cmp -s "branding/SA Orchid Council/emblem/Eulophia-speciosa-emblem.png" public/images/Eulophia-speciosa-emblem.png
+    - id: A8
+      description: the SAOC SVG/EPS note is kept on the page
+      command: grep -rq "Vector masters" "app/(marketing)/media-kit"
+    - id: A9
+      description: type-check passes
+      command: pnpm type-check
+    - id: A10
+      description: lint passes on the page and data
+      command: pnpm exec eslint "app/(marketing)/media-kit" lib/data
+    - id: A11
+      description: Codi's pinned layout in source (section order, Quick start, per-section zip links, radio-group ink picker with hash, sticky On this page reuse, focus-visible, a[download], no tabs)
+      command: python3 contracts/checks/media-kit-complete/check_layout_static.py
+    - id: A12
+      description: Codi's pinned layout rendered at 1280 and 390 (needs a production build on disk, pnpm build; the check starts its own server on dedicated port 3021, fails if 3021 is in use, never touches 3002) - section order, 2x2 grids on real grounds, exactly 4 duotone cards, keyboard ink picker with focus ring and hash, 16 chips, verbatim usage copy, every download link 200, no overflow and one card per row at 390
+      command: node contracts/checks/media-kit-complete/check_layout_browser.mjs
+    - id: A13
+      description: deployed /media-kit renders 200 on the beta origin with the new kit (post-deploy manifest, same convention as saoc-emblem-lockup A12)
+      type: browser_deployed_check
+      phase: 2
+      target: .agent/memory/scratch/media-kit-complete-browser-manifest.json
+      required: true

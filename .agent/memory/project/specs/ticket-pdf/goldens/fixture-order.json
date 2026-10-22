@@ -1,0 +1,130 @@
+{
+  "orderReference": "SAOC-2027-FIXTUREORD1",
+  "positions": [
+    {
+      "bookingRef": "SAOC-2027-RF82DCQDZ61R",
+      "attendeeName": "Thandiwe Mokoena",
+      "ticketType": "VIP Opening",
+      "slug": "vip",
+      "schedule": {
+        "eyebrow": "Thursday evening",
+        "numeral": "23",
+        "dateText": "Thursday 23 September",
+        "timeText": "16h00 to 19h00"
+      },
+      "timesHeading": "Opening times",
+      "times": [
+        {
+          "label": "Thu 23",
+          "value": "16h00 to 19h00"
+        },
+        {
+          "label": "Fri 24",
+          "value": null
+        },
+        {
+          "label": "Sat 25",
+          "value": null
+        },
+        {
+          "label": "Sun 26",
+          "value": null
+        }
+      ]
+    },
+    {
+      "bookingRef": "SAOC-2027-K4T9WQ2MZ8LA",
+      "attendeeName": "Thandiwe Mokoena",
+      "ticketType": "Sunset Cocktails",
+      "slug": "sunset-cocktails-single",
+      "schedule": {
+        "eyebrow": null,
+        "numeral": "23",
+        "dateText": "Thursday 23 September",
+        "timeText": "18h00 to 21h00"
+      },
+      "timesHeading": "Opening times",
+      "times": [
+        {
+          "label": "Thu 23",
+          "value": "18h00 to 21h00"
+        }
+      ]
+    },
+    {
+      "bookingRef": "SAOC-2027-W3KD9X7Q2M4P",
+      "attendeeName": "Thandiwe Mokoena",
+      "ticketType": "Weekend Pass",
+      "slug": "weekend-pass",
+      "schedule": {
+        "eyebrow": null,
+        "numeral": null,
+        "dateText": "Friday 24 to Sunday 26 September",
+        "timeText": "Entry on all three show days"
+      },
+      "timesHeading": "Opening times",
+      "times": [
+        {
+          "label": "Fri 24",
+          "value": null
+        },
+        {
+          "label": "Sat 25",
+          "value": null
+        },
+        {
+          "label": "Sun 26",
+          "value": null
+        }
+      ]
+    },
+    {
+      "bookingRef": "SAOC-2027-S5YH8R2N6TBC",
+      "attendeeName": "Thandiwe Mokoena",
+      "ticketType": "National Orchid Show Symposium",
+      "slug": "saoc-symposium",
+      "schedule": {
+        "eyebrow": "Programme",
+        "numeral": null,
+        "dateText": null,
+        "timeText": null
+      },
+      "timesHeading": "Session times",
+      "times": [
+        {
+          "label": "Day",
+          "value": null
+        },
+        {
+          "label": "Time",
+          "value": null
+        }
+      ]
+    }
+  ],
+  "visit": {
+    "venueName": "The Hangar, Stellenbosch Flying Club",
+    "venueAddress": "Stellenbosch Airfield, R44, Stellenbosch, 7600, Western Cape",
+    "venueParking": null,
+    "showDates": "Thursday 23 to Sunday 26 September 2027",
+    "showUrl": "saoc.co.za/national-show",
+    "emergency": [
+      {
+        "number": "10111",
+        "label": "Police (national)"
+      },
+      {
+        "number": "10177",
+        "label": "Ambulance and fire (national)"
+      },
+      {
+        "number": "112",
+        "label": "All emergencies, from a mobile phone"
+      }
+    ],
+    "onSiteContact": null,
+    "organiser": "South African Orchid Council",
+    "showOffice": null,
+    "questionsEmail": "info@saoc.co.za"
+  }
+}

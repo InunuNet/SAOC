@@ -1,0 +1,16 @@
+885206b228fffcf32a71db0d5d0d4bda743829796eabfc6ed07652097d57e8e2  .agent/memory/project/specs/nos-critique-r20/checks/_lib.mjs
+df47d58715e872fe9ebe4eb9e3761bf71b20e97d9be86f5260f8aa3486886b0e  .agent/memory/project/specs/nos-critique-r20/checks/_server.mjs
+81415d0cb2cf24e4afee34f8e03edb0806911e1ef86ff30d27f91c93ad33449e  .agent/memory/project/specs/nos-critique-r20/checks/_edits.mjs
+11b4559069345ad667d358a8998e6255653c212e86c5204ea2ddad5172743508  .agent/memory/project/specs/nos-critique-r20/checks/footprint.mjs
+177ee88b6044052ef4b20e9c7cdebe94a6af5ea09c9697c05797e7b295585e5d  .agent/memory/project/specs/nos-critique-r20/goldens/f1-footprint.json
+649ddba292082113309026d2c97d931fbc92398977f68ca13e7a06d007f34c7b  .agent/memory/project/specs/nos-critique-r20/goldens/f2-footprint.json
+2c01dbbc02d0e65bb9d8beb2eeaa4abdfa43bbb3088c3935a95aff70053ff220  .agent/memory/project/specs/nos-critique-r20/goldens/f4-footprint.json
+9f17170101bf035d5220d8d396913d96defb1914e8c4cbcea13a47ceca74fc3c  .agent/memory/project/specs/nos-critique-r20/checks/f3-static.mjs
+af0da58bb0b948bba446a27f0cf02d9dd05f7050d67fd728c13049545cd62bdd  .agent/memory/project/specs/nos-critique-r20/checks/f3-rendered.mjs
+7af3be69c104e21f541237572433b1a0ec03b5742edbe280919b0bf1d6964311  .agent/memory/project/specs/nos-critique-r20/goldens/f3-footprint.json
+677d685904dd345be308ccd6000c4e57c294ef6f3d83e4632d01778b965cbe9f  .agent/memory/project/specs/nos-critique-r20/goldens/f3-edits.json
+53de86fbf15b9f4002b1c8020c4340075f57635c69d3caaa28e5b8fbd67f8d2d  .agent/memory/project/specs/nos-critique-r20/goldens/f4-edits.json
+c5447e5eae321b7ab15f5d1c3405a5c3e35bcb06066f032f04d7d21d227267c6  .agent/memory/project/specs/nos-critique-r20/goldens/f3-spec.md
+7c5de8b8b335f0a4a64aa6d5328a2ab13d02240acd403492b5bedd5209f994b9  .agent/memory/project/specs/nos-critique-r20/contract-f3.yaml
+abd01adf5edd330233ce99b60d2b7cce9591017f2ffd9fcbbe0fce7ac33182f0  .agent/memory/project/specs/nos-critique-r20/goldens/f5-footprint.json
+54bcfd7f10beb7a95ce027359b511de0ecd0118a987038509f4c5509545f57e8  .agent/memory/project/specs/nos-critique-r20/goldens/f5-edits.json

@@ -2126,3 +2126,7 @@ Beta a4807791. Layout PASS: no overflow, inputs 16px/47px, submit 44px, CTA pair
 - **Gitignored paths:** paths like `.venv` and `build` are no longer demanded.
 - **When:** update at your next natural break, not mid-delivery. Directive ATH-20261020-local-manifest has the steps; see also `docs/harness/LOCAL_MANIFEST.md`.
 - **Session titles:** this directive also covers the v3.8.41 change, so one update and one ack covers both.
+
+## [SAOC -> OPERATOR] 2026-10-22 00:56 — session waiting on a permission prompt
+
+Claude needs your permission. Nothing proceeds until someone answers it in the terminal. (permission_gate.sh; one notice per 30 min)

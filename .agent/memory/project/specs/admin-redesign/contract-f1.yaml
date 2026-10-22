@@ -1,0 +1,124 @@
+schema: athanor.contract/v1
+slug: admin-redesign
+goal: Replace the inconsistent, horizontally-scrolling admin pages with one sidebar shell, dashboard, standard tables with a detail drawer, a floating admin pill and a mobile-first door scanner, exactly per Codi's ruling.
+created_at: '2026-10-22'
+autonomy: high
+
+features:
+  - id: F1
+    name: Admin shell, dashboard, table standard, detail drawer, admin pill, door scanner
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/admin-redesign/goldens/codi-ruling.md
+  - .agent/memory/project/specs/admin-redesign/goldens/route-nav-map.md
+  - .agent/memory/project/specs/admin-redesign/goldens/table-columns.md
+  - .agent/memory/project/specs/admin-redesign/goldens/state-matrix.md
+  - .agent/memory/project/specs/admin-redesign/goldens/dashboard-data-map.md
+  - .agent/memory/project/specs/admin-redesign/goldens/codex-qa-prompt.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: All 7 route files exist under the (shell) group, login stays outside it, no app/admin/layout.tsx
+      command: bash contracts/checks/admin-redesign/static.sh routes
+    - id: A2
+      description: Admin pages and components no longer reference the public chrome
+      command: bash contracts/checks/admin-redesign/static.sh no-public-chrome
+    - id: A3
+      description: No ADMIN chip anywhere in admin UI
+      command: bash contracts/checks/admin-redesign/static.sh no-admin-chip
+    - id: A4
+      description: No table cell min-w, whitespace-nowrap or overflow-x scroll wrapper
+      command: bash contracts/checks/admin-redesign/static.sh tables-no-hscroll
+    - id: A5
+      description: Every admin table uses table-fixed
+      command: bash contracts/checks/admin-redesign/static.sh tables-fixed
+    - id: A6
+      description: Column configs have at most 6 columns, priorities 1-3 and the exact header labels from the golden
+      command: npx tsx contracts/checks/admin-redesign/check-columns.mts
+    - id: A7
+      description: Sidebar sets aria-current and has 44px touch rows
+      command: bash contracts/checks/admin-redesign/static.sh nav-aria-current
+    - id: A8
+      description: Mobile drawer and detail drawer have dialog semantics, Esc, focus trap, body scroll lock and the handoff scrim
+      command: bash contracts/checks/admin-redesign/static.sh drawers-a11y
+    - id: A9
+      description: Data-driven nav config has the four groups, Door scanner label, and Newsletter defaulting to available false
+      command: bash contracts/checks/admin-redesign/static.sh nav-config
+    - id: A10
+      description: Ruling-quoted new strings are present (Quick actions, Needs attention, View site, Edit this page)
+      command: bash contracts/checks/admin-redesign/static.sh copy
+    - id: A11
+      description: Admin pill is fixed, non-draggable, print-hidden, hidden in /admin, mounted after main in the marketing layout, uses session-gated whoami and the Studio link map
+      command: bash contracts/checks/admin-redesign/static.sh pill
+    - id: A12
+      description: No client module imports firebase-admin or lib/admin-auth
+      command: bash contracts/checks/admin-redesign/static.sh no-admin-sdk-in-client
+    - id: A13
+      description: Door scanner has autocapitalize characters, Wake Lock, Scan next and a 72px result banner
+      command: bash contracts/checks/admin-redesign/static.sh door
+    - id: A14
+      description: Fixture route is flag-gated with notFound, the flag is absent from deploy and env config, pathnameOverride does not leak
+      command: bash contracts/checks/admin-redesign/static.sh fixtures-safe
+    - id: A15
+      description: No hex colour outside origin/main globals.css and the design handoff, except exactly one new token --color-error #9b2c2c defined once in globals.css
+      command: python3 contracts/checks/admin-redesign/check_tokens.py
+    - id: A16
+      description: Auth gates and admin API routes unchanged versus origin/main
+      command: bash contracts/checks/admin-redesign/auth-gate.sh
+    - id: A17
+      description: TypeScript compiles
+      command: pnpm type-check
+      timeout_seconds: 400
+    - id: A18
+      description: ESLint passes
+      command: pnpm lint
+      timeout_seconds: 400
+    - id: A19
+      description: Production build succeeds
+      command: pnpm build
+      timeout_seconds: 590
+    - id: A20
+      description: Fixture route returns 404 when ADMIN_FIXTURES is unset (cannot ship enabled)
+      command: node contracts/checks/admin-redesign/render-check.mjs --no-flag
+      timeout_seconds: 120
+    - id: A21
+      description: 7 routes at 1280, 1024, 768 and 390 have no horizontal scroll, unique H1s with the expected titles, a fresh pending application first in Applications and in Needs attention, pending badge 4, correct aria-current, working drawer by keyboard, tables become cards at 390; screenshots saved
+      command: node contracts/checks/admin-redesign/render-check.mjs
+      timeout_seconds: 590
+    - id: A22
+      description: Screenshots exist for Codi review (28 files)
+      command: test "$(ls .tmp/sandbox/admin-redesign/screens/*.png | wc -l)" -ge 28
+    - id: A26
+      description: Every admin list query orders newest-first server-side, none left as an unordered get()
+      command: bash contracts/checks/admin-redesign/static.sh list-order
+    - id: A27
+      description: Applications page is titled Applications and Vendors page is titled Vendors; legacy shared title removed
+      command: bash contracts/checks/admin-redesign/static.sh titles
+    - id: A28
+      description: Applications default filter is pending or all and the table never re-sorts client-side
+      command: bash contracts/checks/admin-redesign/static.sh default-filter
+    - id: A29
+      description: Codi token rulings encoded (accent-soft pill dot, error/primary door banners with white text, accent tile with primary-800 text, aria-sort on Submitted, Orders = paid, tickets newest-first)
+      command: bash contracts/checks/admin-redesign/static.sh rulings
+    - id: A30
+      description: SITE_PUBLIC_LAUNCH is not set in apphosting.yaml or any committed env file (standing order; render check sets it only on its own local server)
+      command: bash contracts/checks/admin-redesign/static.sh no-launch-flag
+    - id: A23
+      description: Codex adversarial review of the whole diff
+      type: codex_qa
+      target: .agent/memory/project/specs/admin-redesign/goldens/codex-qa-prompt.md
+      timeout_seconds: 1300
+      required: true
+    - id: A24
+      description: BrowserAgent on beta confirms shell, dashboard, tickets and applications tables, detail drawer, door scanner and the pill at 390 and 1280, and screenshots go to Codi
+      type: browser_deployed_check
+      target: .agent/memory/scratch/admin-redesign-browser-manifest.json
+      required: true
+    - id: A25
+      description: gws inbox check not applicable (no email sent); declared non-required for the triad linter
+      type: gws_inbox_check
+      target: .agent/memory/scratch/admin-redesign-gws-manifest.json
+      required: false
