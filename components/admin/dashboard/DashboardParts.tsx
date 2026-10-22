@@ -73,14 +73,14 @@ function buildStatCards(data: DashboardData, options: StatCardOptions): StatCard
 // 2 across from 640, 1 below. Each card is one link to its list.
 export function StatCards({ data, options }: { data: DashboardData; options: StatCardOptions }) {
   return (
-    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <ul className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 min-[90rem]:grid-cols-4">
       {buildStatCards(data, options).map((card) => {
         const Icon = card.icon;
         return (
           <li key={card.id}>
             <Link
               href={card.href}
-              className={`flex min-h-[88px] items-center gap-4 ${CARD_CLASS} hover:bg-bone/50 ${FOCUS_RING}`}
+              className={`flex h-full min-h-[88px] items-start gap-4 ${CARD_CLASS} hover:bg-bone/50 ${FOCUS_RING}`}
             >
               <span
                 className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[2px] ${
