@@ -28,7 +28,9 @@ export default function imageLoader({ src, width, quality }: ImageLoaderProps): 
   if (path.startsWith(SOURCE_DIR) && RASTER_EXTENSION.test(path)) {
     // The source extension stays in the name so a.jpg and a.png never share variants.
     const name = path.slice(SOURCE_DIR.length).replace(/\.[^.]+$/, (ext) => ext.toLowerCase());
-    return `${VARIANT_DIR}/${name}-${snapWidth(width)}.webp`;
+    // A non-default quality has its own variant set (generate-image-variants.mjs: the hero sources at q88).
+    const suffix = quality && quality !== DEFAULT_QUALITY ? `-q${quality}` : '';
+    return `${VARIANT_DIR}/${name}-${snapWidth(width)}${suffix}.webp`;
   }
   if (src.startsWith('https://')) {
     const url = new URL(src);
