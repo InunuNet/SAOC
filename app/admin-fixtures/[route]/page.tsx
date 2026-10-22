@@ -50,7 +50,7 @@ function renderBody(route: string, now: Date): React.ReactNode {
       return (
         <PageShell>
           <PageHeader title="Dashboard" subtitle={`Updated ${formatAdminClock(now)}`} />
-          <StatCards data={data} options={{ canReviewVendors: true, showNewsletter: false }} />
+          <StatCards data={data} options={{ canReviewVendors: true, showNewsletter: true }} />
           <div className="mt-6 grid grid-cols-1 gap-4 min-[1280px]:grid-cols-2">
             <DashboardPanel>
               <h2 className={PANEL_HEADING_CLASS}>Quick actions</h2>

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 
 import { FOCUS_RING } from '@/components/admin/tokens';
+import { useAdminSignOut } from '@/components/admin/useAdminSignOut';
 import { isNavItemActive, type AdminNavGroup } from '@/lib/admin-nav-config';
 import { NavIcon } from './NavIcon';
 
@@ -14,6 +15,10 @@ interface SidebarContentProps {
   onNavigate?: () => void;
 }
 
+// View site and Sign out live in the drawer foot below 1024; from 1024 the floating pill holds them.
+const FOOT_ROW_CLASS =
+  'flex min-h-[44px] items-center font-sans text-[14px] font-medium text-ink hover:text-primary';
+
 export function SidebarContent({
   groups,
   pathname,
@@ -21,6 +26,8 @@ export function SidebarContent({
   pendingCount,
   onNavigate,
 }: SidebarContentProps) {
+  const signOut = useAdminSignOut();
+
   return (
     <div className="flex h-full flex-col">
       <nav aria-label="Admin" className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-2">
@@ -72,6 +79,21 @@ export function SidebarContent({
         <p className="truncate font-sans text-[13px] text-muted" title={email}>
           {email}
         </p>
+        <div className="mt-2 flex flex-col lg:hidden">
+          <Link href="/" onClick={onNavigate} className={`${FOOT_ROW_CLASS} ${FOCUS_RING}`}>
+            View site ↗
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              onNavigate?.();
+              void signOut();
+            }}
+            className={`${FOOT_ROW_CLASS} text-left ${FOCUS_RING}`}
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     </div>
   );

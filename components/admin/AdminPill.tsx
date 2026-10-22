@@ -12,7 +12,8 @@ import { signOutAdmin } from './useAdminSignOut';
 // Floating admin shortcut for signed-in admins, on public pages and inside the admin shell.
 // On public pages it asks /api/admin/whoami; the admin shell has already verified the session
 // server-side, so it passes verifiedAdmin and the pill starts visible with no fetch. In the
-// admin context its items are View site, then sign out (which lands on /admin/login); there is
+// admin context it shows from 1024 up only (below that the drawer holds View site and Sign out)
+// and its items are View site, then sign out (which lands on /admin/login); there is
 // no Edit this page. Never shown on /admin/login. Fixed bottom-right and never repositionable by pointer (WCAG 2.5.7). It lifts above a sticky CTA through
 // --sticky-cta-offset (set that variable on a sticky bottom bar, default 0), hides in print,
 // and is mounted after <main> so it comes last in reading order.
@@ -131,6 +132,7 @@ export function AdminPill({ verifiedAdmin = false }: AdminPillProps) {
         type="button"
         onClick={() => void handleSignOut()}
         aria-label="Sign out"
+        title="Sign out"
         className={`${ITEM_CLASS} min-w-[44px] justify-center`}
       >
         <LogOut size={18} strokeWidth={1.75} aria-hidden="true" />
@@ -141,10 +143,10 @@ export function AdminPill({ verifiedAdmin = false }: AdminPillProps) {
   return (
     <div
       ref={containerRef}
-      className="fixed right-4 z-40 bottom-[calc(1rem+var(--sticky-cta-offset,0px)+env(safe-area-inset-bottom,0px))] print:hidden"
+      className={`fixed right-4 z-40 bottom-[calc(1rem+var(--sticky-cta-offset,0px)+env(safe-area-inset-bottom,0px))] print:hidden ${verifiedAdmin ? 'hidden lg:block' : ''}`}
     >
       <div
-        className={`hidden h-11 items-center gap-1 rounded-full pl-4 pr-1 sm:flex ${PILL_SURFACE}`}
+        className={`hidden h-11 items-center gap-1 rounded-full pl-4 pr-1 ${verifiedAdmin ? 'lg:flex' : 'sm:flex'} ${PILL_SURFACE}`}
       >
         <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em]">
           <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${ADMIN_PILL_DOT_CLASS}`} />
@@ -153,24 +155,29 @@ export function AdminPill({ verifiedAdmin = false }: AdminPillProps) {
         {items}
       </div>
 
-      <div className="sm:hidden">
-        {menuOpen ? (
-          <div
-            className={`absolute bottom-full right-0 mb-2 flex min-w-[200px] flex-col rounded-[2px] py-1 ${PILL_SURFACE}`}
+      {verifiedAdmin ? null : (
+        <div className="sm:hidden">
+          {menuOpen ? (
+            <div
+              className={`absolute bottom-full right-0 mb-2 flex min-w-[200px] flex-col rounded-[2px] py-1 ${PILL_SURFACE}`}
+            >
+              {items}
+            </div>
+          ) : null}
+          <button
+            type="button"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+            className={`flex h-11 items-center gap-2 rounded-full px-4 font-mono text-[11px] uppercase tracking-[0.12em] ${FOCUS_RING_ON_DARK} ${PILL_SURFACE}`}
           >
-            {items}
-          </div>
-        ) : null}
-        <button
-          type="button"
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((open) => !open)}
-          className={`flex h-11 items-center gap-2 rounded-full px-4 font-mono text-[11px] uppercase tracking-[0.12em] ${FOCUS_RING_ON_DARK} ${PILL_SURFACE}`}
-        >
-          <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${ADMIN_PILL_DOT_CLASS}`} />
-          Admin
-        </button>
-      </div>
+            <span
+              aria-hidden="true"
+              className={`h-1.5 w-1.5 rounded-full ${ADMIN_PILL_DOT_CLASS}`}
+            />
+            Admin
+          </button>
+        </div>
+      )}
     </div>
   );
 }

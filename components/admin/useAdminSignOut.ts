@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { getAuth, signOut } from 'firebase/auth';
 
 import { getFirebaseApp } from '@/lib/firebase';
@@ -19,4 +20,12 @@ export async function signOutAdmin(): Promise<void> {
   } finally {
     await fetch('/api/admin/session', { method: 'DELETE' }).catch(() => undefined);
   }
+}
+
+export function useAdminSignOut(): () => Promise<void> {
+  const router = useRouter();
+  return async () => {
+    await signOutAdmin();
+    router.push('/admin/login');
+  };
 }
