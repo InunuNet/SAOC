@@ -2795,3 +2795,36 @@ Cron c8d8059d (health checks) is session-only — re-create next session.
 - [ ] 2026-10-22 rNH (Codi ruling nos-type-hero, Brad P1): every NOS route without a photo gets the Disa graminifolia SVG emblem (right half ≥1024, 55% at 640–1023, 120px centred <640; unaltered, decorative; served <600KB). plan-your-visit loses the yellow photo and becomes an emblem hero. Queued for NOS Site after rHB. Owner Q to Brad: is the Ormerod photo set rights-cleared? If yes, Codi re-rules photos per route.
 - 2026-10-22 media-kit Codi ruling: one wordmark only ("South African Orchid Council"); sampled tints confirmed; NOS PNG only; layout mirrors the presentation, ink picker, no tabs. Architect amending the contract.
 - [ ] 2026-10-22 Brad P1 "Vendor email has no branding": sent to Codi. Only emails/OrderConfirmation.tsx is branded; 11 templates are plain (5 vendor-facing, Contact, Supporter, 4 admin notices). Asked Codi to rule a shared shell, brand per email and admin treatment. Build with NOS Site after rNH unless Codi re-ranks. Verify via gws inbox.
+
+- [ ] ticket-pdf: tagged-PDF (structure tree + logo alt text) — pdf-lib cannot emit one; evaluate a tagged-PDF library later. Accepted gap by Codi 2026-10-22 at c8529cf2.
+
+## /sponsors — Codi route 39 (2026-10-22, 390px beta: PASS)
+- [ ] OWNER / go-live blocker: 4 public "Not confirmed by SAOC" flags on /sponsors (stats, support copy, benefits list). Add to Lee-Ann's confirmation list together with /about stats (21 societies, 1968, 18 shows, 56 judges, 184-page yearbook). Must not go live flagged.
+- [ ] P3-a: stat labels 11px tracked mono → 13px; do with /about route 31 in one change (craft-floor.md min label size).
+- [ ] P3-b: drop hero eyebrow "Our sponsors" (duplicates H1 "Sponsors"); removal only, no new copy (critique.md redundancy).
+- [ ] P3-c: "Become a sponsor" card at 390px: left-align the 7-line body; at most heading + button centred (craft-floor.md).
+
+## NOS 404 (/national-show/<unknown>) — Codi route 40 (2026-10-22, 390px beta: PASS)
+- [ ] P3-a: lede "The page you're looking for doesn't exist or may have moved." renders ~13px grey → body size 16px, standard body ink (craft-floor.md).
+- [ ] P3-b: add the existing "South African Orchid Council" home link as a quiet text link under the buttons (existing label, no new copy; critique.md).
+
+## /privacy (+ /terms) — Codi route 41 (2026-10-22, 390px beta: PASS on reading)
+- [ ] OWNER / go-live blocker: /privacy reads "Draft pending legal review" with AI-assisted text. POPIA obligation (site collects names, emails, cellphones, vendor data) — needs legal review before launch. Add to Lee-Ann item (j) alongside /refunds.
+- [ ] Extend /refunds route-34 ruling to /privacy and /terms in ONE change: compact hero instead of the 480px photo hero; add the same "On this page" in-page list (8 sections on /privacy). (critique.md consistency)
+
+## Header site search — Codi route 42 (2026-10-22, beta 1280 + keyboard: dialog a11y PASS)
+- [ ] P1 content coverage: index holds only societies/shows/classes/awards; "ticket", "national show", "vendor", "sponsor", "contact" → "No matches". Index every public page using its existing <title> + meta description (no new copy): NOS hub, tickets, programme, plan your visit, vendors, FAQ, sponsors, contact, about, events, judging, media kit, legal pages. Rank page-title matches above records. Needs Brad sign-off as new scope (no unscoped missions). Codi wants the "ticket" and "vendor" result lists once fixed.
+- [ ] P3: empty-state hint "Try Cape, Durban or judging" → add "tickets" (existing nav label) once pages are indexed.
+
+## /media-kit — Codi route 44 (2026-10-22, LIVE beta 390: PASS)
+- [ ] P2 page length 21,157px at 390 (critique.md progressive disclosure). Apply the Duotone picker pattern: "Mark only" (5,531px, 26 cards) → one preview card + ink/colourway radio picker, downloads follow selection; "National Show 2027" (5,625px, 19 cards) → one card per orientation (horizontal, vertical) + colourway picker over the 8 supplied colourways. Same files/labels, no new copy/assets; keep section zips. Target <9,000px at 390.
+
+## /national-show/tickets hero fan — Codi route 45 (2026-10-22, beta 1280)
+- [ ] P1: 4th fan card "Early-Bird Exhibition Ticket R120" shows numeral "24" + "Friday"; it is the day ticket (TICKET_PRODUCTS.day: when "Friday, Saturday or Sunday", numeral ''). Must show no numeral + existing when text. Find root cause (Sanity override vs fallback to first show day) and fix at source — same rule as ticket-pdf D11. Routed to NOS Site (fan is their lane).
+- [ ] P2 (Brad/Lee-Ann copy decision → morning list): product names differ by surface — fan "VIP Ticket"/"Early-Bird Exhibition Ticket" vs PDF/email (TICKET_PRODUCTS) "VIP Opening"/"Day Pass". Pick one name source for fan, checkout, PDF, email; code change is only to read from it.
+
+## /tickets/vip checkout — Codi route 46 (2026-10-22, beta 1280: form PASS)
+- [ ] P1 OWNER (top of Brad's morning list): VIP entitlement conflict. lib/provisional-figures.ts:221 description "Reception access plus full-weekend admission to the National Show." (leftover from old R625 VIP Pass) vs its own sourceCitation (Lee-Ann sheet line 19: "VIP Thursday, Opening 3 Hours on thursday evening (R300) 16h00-19h00") and TICKET_PRODUCTS / PDF / email (Thu 23, 16h00–19h00 only). Brad/Lee-Ann confirm; no copy change until then (R7). If Thursday-only, VIP category 'admission' should match the event products (drove D11 show-range).
+- [ ] P1 door-scanner finding (saoc-82, verified in code 2026-10-22): lib/checkin.ts is single-use per ticket with NO date/product check. Refusal codes are only bad-request / not-found / wrong-show / unpaid / already-checked-in (lib/checkin.ts:29,89). So: (a) a VIP QR is admitted on any day Fri–Sun (once); (b) a Day Pass for a chosen day is admitted on any day; (c) a Weekend Pass is admitted on its first day and REFUSED "Already checked in" (409) on days 2 and 3. (c) breaks a paid product at the door. Needs a door-policy decision (per-day check-in for multi-day passes; enforce chosenDay / event day?) → spec + full chain, checkout/door security path.
+- [ ] P2 layout axis at 1280: hero H1/lede at x32 vs form column centred at x385 (496px). One left axis — use the shared F19 container axis (craft-floor.md).
+  - Codi design input for the door-policy spec (2026-10-22): (1) result banner shows product name + valid day(s) under the valid/invalid line, from TICKET_PRODUCTS (e.g. "Weekend Pass · Friday 24 to Sunday 26 September"); (2) per-day check-in record — Weekend Pass shows "Day 2 of 3" not "Already checked in"; same-day repeat shows that day's first scan time (folds in the parked /api/admin/checkin first-check-in-time gap); (3) distinct wrong-day refusal, #9b2c2c invalid banner + ✕ icon, wording = Brad's call. Codi reviews door screens once the spec has goldens.

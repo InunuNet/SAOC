@@ -13,13 +13,15 @@ if added != {NEW_TOKEN_HEX}:
     print(f'FAIL[tokens]: globals.css new hexes {sorted(added)}, want exactly {NEW_TOKEN_HEX}'); sys.exit(1)
 if len(re.findall(NEW_TOKEN_HEX, cur, re.I)) != 1 or not re.search(r'--color-error:\s*' + NEW_TOKEN_HEX, cur, re.I):
     print('FAIL[tokens]: --color-error must be defined exactly once as --color-error in globals.css'); sys.exit(1)
+# Third-party sign-in logo colours in pre-existing files (exact paths).
+EXCLUDED = {'app/admin/login/GoogleSignInButton.tsx', 'app/admin/login/MicrosoftSignInButton.tsx'}
 roots = ['app/admin', 'app/admin-fixtures', 'components/admin', 'lib/admin-nav-config.ts', 'lib/studio-links.ts']
 bad = []
 for r in roots:
     rp = pathlib.Path(r)
     files = [rp] if rp.is_file() else list(rp.rglob('*')) if rp.exists() else []
     for f in files:
-        if f.suffix not in {'.ts', '.tsx', '.css'}:
+        if f.suffix not in {'.ts', '.tsx', '.css'} or str(f) in EXCLUDED:
             continue
         for i, line in enumerate(f.read_text().splitlines(), 1):
             if line.lstrip().startswith(('//', '*', '/*')):

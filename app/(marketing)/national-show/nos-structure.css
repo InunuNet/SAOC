@@ -568,6 +568,15 @@
 .nos-theme:has(> .nk-masthead) .nk-section + :is(.nos-section, .nk-section) {
   padding-top: 0;
 }
+/* r20 F2 (Codi FINAL): two adjacent sections on the SAME ground share ONE rhythm unit (the leader's padding-bottom), not two
+   stacked units. Tone is the NosSection tone class (none = the default ground); a section painted by a bg- utility (the
+   VisitDisclosure gold band) is its own ground and never matches. Different-ground neighbours keep both paddings. */
+.nos-theme .nos-section:not(.nos-section-gold, .nos-section-royal, .nos-section-black, [class*='bg-']) + .nos-section:not(.nos-section-gold, .nos-section-royal, .nos-section-black, [class*='bg-']),
+.nos-theme .nos-section-gold + .nos-section-gold,
+.nos-theme .nos-section-royal + .nos-section-royal,
+.nos-theme .nos-section-black + .nos-section-black {
+  padding-top: 0;
+}
 /* F17: on ticket-flow routes the index marks the current item in ink with an underline (no violet). */
 .nos-theme .nos-index-group a[data-current-ink][aria-current='page'] {
   color: var(--ink);

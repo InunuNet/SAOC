@@ -8,7 +8,7 @@ Single feature: three rulings on two sibling pages sharing one button treatment 
 Goldens: `f1-edits.json`, `f1-footprint.json`, `f1-baseline.json` (BASE captures), `nonreg-baseline.json`.
 Sources: `docs/rules/no-invention.md`; `design/design_handoff_saoc/`; `branding/National Show 2027/`.
 
-**Routes, verified in code:** `/tickets/cancelled` (`app/(marketing)/tickets/cancelled/page.tsx`, PayFast's cancel_url) and
+**Routes, verified in code:** `/tickets/cancelled` (`app/(marketing)/tickets/cancelled/page.tsx`, the gateway's cancel_url) and
 `/tickets/confirmation` (`app/(marketing)/tickets/confirmation/page.tsx`, return_url). Neither lives under /national-show; both link
 "Back to tickets" to `/national-show/tickets`. Titles go through the root template `%s | South African Orchid Council`.
 

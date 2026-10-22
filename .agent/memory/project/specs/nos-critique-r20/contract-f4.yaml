@@ -1,0 +1,37 @@
+# Sources: Codi's FINAL footer-rhythm ruling, relayed by the lead 2026-10-22 (goldens/f4-spec.md); architect measurements on BASE 7fb251a1.
+schema: athanor.contract/v1
+slug: nos-critique-r20
+goal: >-
+  Give both footers one rhythm: a single FOOTER_RHYTHM (gapless list, inline-flex min-h-11 items-center 14px row) defined once in
+  footer-data.ts and used by Footer.tsx and NosFooter.tsx for every Explore, Partners and WOSA row (44px each, Partners still plain
+  text), the column headings 16px above their first row with equal tops and first-row tops at 1280 and 1920, NOS tokens only, the
+  sign-up forms untouched, no new copy, tokens or colours.
+created_at: '2026-10-22'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json, f2-footprint.json, f3-footprint.json, f4-footprint.json, docs/nos-critique-r20.md and this spec dir'
+    reason: 'Enforced by A2. F4 adds no string and no colour; the submit behaviour belongs to footer-newsletter-subscribe (S5).'
+features:
+  - id: F4
+    name: Footer rhythm - one shared 44px row and gapless list in both footers, 16px headings, aligned first rows
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-critique-r20/goldens/f4-spec.md
+  - .agent/memory/project/specs/nos-critique-r20/goldens/f4-edits.json
+  - .agent/memory/project/specs/nos-critique-r20/goldens/f4-footprint.json
+  - .agent/memory/project/specs/nos-critique-r20/goldens/checks-f4.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: f4 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-critique-r20/goldens/checks-f4.sha256
+    - id: A2
+      description: Footprint - the r20 branch differs from origin/main 7fb251a1 only in the four r20 footprints, docs/nos-critique-r20.md and the spec dir, and HEAD descends from it
+      command: node .agent/memory/project/specs/nos-critique-r20/checks/footprint.mjs
+    - id: A3
+      description: Static - footer-data.ts and Footer.tsx are BASE plus exactly F3's and F4's edits, NosFooter uses FOOTER_RHYTHM.list twice and .row three times, the NOS row geometry rules retired and the 16px heading rule added, both forms untouched, no new copy, docs F4
+      command: node .agent/memory/project/specs/nos-critique-r20/checks/f4-static.mjs
+    - id: A4
+      description: Rendered (public + preview, 1280/1920/390, SAOC and NOS routes) - every Explore/Partners row 44px on the shared inline-flex 14px row, WOSA on it too, headings 16px above their first element, heading and first-row tops equal at 1280/1920, stacked at 390
+      command: node .agent/memory/project/specs/nos-critique-r20/checks/f4-rendered.mjs

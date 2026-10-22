@@ -125,6 +125,13 @@ case "${1:-}" in
     grep -rq "'paid'" "app/admin/(shell)/page.tsx" || fail rulings "Orders must count status paid"
     grep -q "purchasedAt', 'desc'" "app/admin/(shell)/tickets/page.tsx" || fail rulings "tickets newest-first"
     ;;
+  no-launch-flag)
+    files="apphosting.yaml $(git ls-files '.env*' 'apphosting*' | tr '\n' ' ')"
+    for f in $files; do
+      test -f "$f" || continue
+      ! grep -v '^[[:space:]]*#' "$f" | grep -aq "SITE_PUBLIC_LAUNCH" || fail no-launch-flag "$f sets SITE_PUBLIC_LAUNCH (must never be set on beta)"
+    done
+    ;;
   *) fail usage "unknown case '${1:-}'";;
 esac
 echo "PASS[$1]"
