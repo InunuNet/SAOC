@@ -1,5 +1,5 @@
 // footer-newsletter-subscribe -- attempt store stays bounded under a key flood. Run: npx tsx <this file>
-import { createAttemptStore, MAX_TRACKED_KEYS } from '../../../../../../lib/newsletter-rate-store.ts';
+import { createAttemptStore, MAX_PRUNE_PER_RECORD, MAX_TRACKED_KEYS } from '../../../../../../lib/newsletter-rate-store.ts';
 import { decideRateLimit } from '../../../../../../lib/resend-rate-limit.ts';
 
 const failures = [];
@@ -32,6 +32,17 @@ const aging = createAttemptStore(HOUR, 1000);
 aging.recordAttempt('old', at(0));
 aging.recordAttempt('new', at(HOUR + 1));
 check('expired key pruned on the next record', aging.getPriorAttempts('old').length === 0 && aging.getPriorAttempts('new').length === 1);
+
+// when every key has expired, one record prunes at most MAX_PRUNE_PER_RECORD entries and repeated calls converge on live keys only
+const EXPIRED_KEYS = MAX_PRUNE_PER_RECORD * 4;
+const drain = createAttemptStore(HOUR, 100000);
+for (let i = 0; i < EXPIRED_KEYS; i++) drain.recordAttempt(`dead:${i}`, at(i));
+const before = countTracked(drain, 'dead', EXPIRED_KEYS);
+drain.recordAttempt('live:0', at(HOUR * 2));
+const removedByOne = before - countTracked(drain, 'dead', EXPIRED_KEYS);
+check(`one record prunes at most ${MAX_PRUNE_PER_RECORD} expired keys (removed ${removedByOne})`, removedByOne >= 1 && removedByOne <= MAX_PRUNE_PER_RECORD);
+for (let i = 1; i <= EXPIRED_KEYS; i++) drain.recordAttempt(`live:${i}`, at(HOUR * 2 + i));
+check('map converges to live keys only', countTracked(drain, 'dead', EXPIRED_KEYS) === 0 && drain.getPriorAttempts('live:0').length === 1);
 
 // per-key limiting still works, including a hot key flooded past the per-key trim
 const limited = createAttemptStore(HOUR, CAP);

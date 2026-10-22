@@ -6,6 +6,9 @@ import type { RateLimitAttempt } from './newsletter-rate-limit';
 export const MAX_TRACKED_KEYS = 10_000;
 // Above the highest per-key limit (10), so trimming never lowers a key's in-window count below it.
 const MAX_ATTEMPTS_PER_KEY = 50;
+// Expired head entries removed per record call, so one request never walks the whole map; the
+// rest drain over later requests.
+export const MAX_PRUNE_PER_RECORD = 64;
 
 export interface AttemptStore {
   getPriorAttempts(key: string): RateLimitAttempt[];
@@ -14,8 +17,9 @@ export interface AttemptStore {
 
 // The Map is kept in last-activity order (a key is deleted and re-inserted on every attempt), so
 // its first entry is always the least recently active key. Each record then does bounded work:
-// drop head entries whose newest attempt has aged out of the window, then, if the map is still
-// over `maxKeys`, evict from the head. No full scan ever runs.
+// drop up to MAX_PRUNE_PER_RECORD head entries whose newest attempt has aged out of the window,
+// then evict from the head while over `maxKeys`. Each insert adds at most one key, so the map is
+// at most one over the cap and the over-cap loop runs once. No full scan ever runs.
 //
 // Evicting the oldest-active key (rather than refusing new keys) is deliberate. Refusing new keys
 // under pressure would let a flood of throwaway addresses lock every real visitor out. Evicting
@@ -30,10 +34,18 @@ export function createAttemptStore(windowMs: number, maxKeys = MAX_TRACKED_KEYS)
   }
 
   function evictFromHead(now: number): void {
+    let pruned = 0;
     for (const [trackedKey, attempts] of attemptsByKey) {
+      const overCap = attemptsByKey.size > maxKeys;
       const expired = now - newestAt(attempts) >= windowMs;
-      if (!expired && attemptsByKey.size <= maxKeys) return;
-      attemptsByKey.delete(trackedKey);
+      if (overCap) {
+        attemptsByKey.delete(trackedKey);
+      } else if (expired && pruned < MAX_PRUNE_PER_RECORD) {
+        attemptsByKey.delete(trackedKey);
+        pruned++;
+      } else {
+        return;
+      }
     }
   }
 
