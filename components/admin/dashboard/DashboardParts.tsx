@@ -77,7 +77,8 @@ function buildStatCards(data: DashboardData, options: StatCardOptions): StatCard
   return cards;
 }
 
-// 2 across from 640, 1 below, and from 1440 one row of equal columns whatever the count.
+// 2 across from 640, 1 below, and from 1440 one row of equal columns whatever the count,
+// with the icon tile stacked above the figure so labels get the full card width.
 // Each card is one link to its list.
 export function StatCards({ data, options }: { data: DashboardData; options: StatCardOptions }) {
   const cards = buildStatCards(data, options);
@@ -92,7 +93,7 @@ export function StatCards({ data, options }: { data: DashboardData; options: Sta
           <li key={card.id}>
             <Link
               href={card.href}
-              className={`flex h-full min-h-[88px] items-start gap-4 ${CARD_CLASS} hover:bg-bone/50 ${FOCUS_RING}`}
+              className={`relative flex h-full min-h-[88px] items-start gap-4 min-[90rem]:flex-col ${CARD_CLASS} hover:bg-bone/50 ${FOCUS_RING}`}
             >
               <span
                 className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[2px] ${
@@ -107,7 +108,10 @@ export function StatCards({ data, options }: { data: DashboardData; options: Sta
                 </span>
                 <span className="mt-1 block text-[13px] text-muted">{card.label}</span>
               </span>
-              <span aria-hidden="true" className="text-[18px] text-muted">
+              <span
+                aria-hidden="true"
+                className="text-[18px] text-muted min-[90rem]:absolute min-[90rem]:right-6 min-[90rem]:top-6"
+              >
                 →
               </span>
             </Link>
