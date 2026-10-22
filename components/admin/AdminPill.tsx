@@ -16,6 +16,7 @@ import { signOutAdmin } from './useAdminSignOut';
 const WHOAMI_URL = '/api/admin/whoami';
 const NOT_ADMIN_CACHE_KEY = 'saoc-admin-pill-not-admin';
 const NOT_ADMIN_CACHE_MS = 10 * 60 * 1000;
+const WHOAMI_TIMEOUT_MS = 5000;
 
 const PILL_SURFACE =
   'bg-primary-800/92 text-ivory backdrop-blur-sm shadow-sheet print:hidden';
@@ -49,8 +50,13 @@ export function AdminPill() {
   useEffect(() => {
     if (insideAdmin || readNotAdminCache()) return;
     let cancelled = false;
-    fetch(WHOAMI_URL, { credentials: 'same-origin', cache: 'no-store' })
-      .then((res) => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), WHOAMI_TIMEOUT_MS);
+    fetch(WHOAMI_URL, { credentials: 'same-origin', cache: 'no-store', signal: controller.signal })
+      .then(async (res) => {
+        // Drain the body: a response nobody reads keeps the request open, which stalls the
+        // page's network-idle state (and the e2e specs that wait on it).
+        await res.arrayBuffer();
         if (cancelled) return;
         if (res.ok) {
           setIsAdmin(true);
@@ -58,9 +64,12 @@ export function AdminPill() {
           writeNotAdminCache();
         }
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => window.clearTimeout(timeout));
     return () => {
       cancelled = true;
+      controller.abort();
+      window.clearTimeout(timeout);
     };
   }, [insideAdmin]);
 
