@@ -18,10 +18,8 @@ const NOT_ADMIN_CACHE_KEY = 'saoc-admin-pill-not-admin';
 const NOT_ADMIN_CACHE_MS = 10 * 60 * 1000;
 const WHOAMI_TIMEOUT_MS = 5000;
 
-const PILL_SURFACE =
-  'bg-primary-800/92 text-ivory backdrop-blur-sm shadow-sheet print:hidden';
-const ITEM_CLASS =
-  `flex min-h-[44px] items-center px-3 font-sans text-[14px] font-medium text-ivory hover:text-accent-soft ${FOCUS_RING_ON_DARK}`;
+const PILL_SURFACE = 'bg-primary-800/92 text-ivory backdrop-blur-sm shadow-sheet print:hidden';
+const ITEM_CLASS = `flex min-h-[44px] items-center px-3 font-sans text-[14px] font-medium text-ivory hover:text-accent-soft ${FOCUS_RING_ON_DARK}`;
 
 function readNotAdminCache(): boolean {
   try {
@@ -125,7 +123,9 @@ export function AdminPill() {
       ref={containerRef}
       className="fixed right-4 z-40 bottom-[calc(1rem+var(--sticky-cta-offset,0px)+env(safe-area-inset-bottom,0px))] print:hidden"
     >
-      <div className={`hidden h-11 items-center gap-1 rounded-full pl-4 pr-1 sm:flex ${PILL_SURFACE}`}>
+      <div
+        className={`hidden h-11 items-center gap-1 rounded-full pl-4 pr-1 sm:flex ${PILL_SURFACE}`}
+      >
         <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em]">
           <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${ADMIN_PILL_DOT_CLASS}`} />
           Admin
