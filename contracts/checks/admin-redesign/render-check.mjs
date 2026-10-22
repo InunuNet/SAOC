@@ -22,7 +22,8 @@ const ROUTES = [
   { name: 'login', url: '/admin/login', active: null },
 ];
 
-const env = { ...process.env, PORT: String(PORT) };
+// SITE_PUBLIC_LAUNCH=true only to get past the beta-wall proxy for this local server; never set elsewhere.
+const env = { ...process.env, PORT: String(PORT), SITE_PUBLIC_LAUNCH: 'true' };
 delete env.ADMIN_FIXTURES;
 if (!NO_FLAG) env.ADMIN_FIXTURES = '1';
 const server = spawn('pnpm', ['exec', 'next', 'start', '-p', String(PORT)], { env, stdio: 'ignore' });

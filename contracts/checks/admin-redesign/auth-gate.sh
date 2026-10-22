@@ -3,17 +3,24 @@
 # lib/admin-auth.ts and every pre-existing admin API route must be byte-identical.
 set -u
 fail() { echo "FAIL[auth-gate]: $1" >&2; exit 1; }
-PAT='getAdminSession|hasCapability|redirect\(|session\.ok|decodedToken|NATIONAL_SHOW_ID|review-vendor-applications|manage-payment-settings|resolveShowWindowLookup'
-pairs="app/admin/door/layout.tsx|app/admin/(shell)/door/layout.tsx
-app/admin/vendors/layout.tsx|app/admin/(shell)/vendors/layout.tsx
-app/admin/settings/layout.tsx|app/admin/(shell)/settings/layout.tsx"
-while IFS='|' read -r old new; do
+# Executable gate calls only: comment lines and trailing comments are ignored, so dead code and
+# comments may be removed. Each moved layout must keep every session/redirect line from main and
+# its own capability string (the one it actually gates on).
+GATE='getAdminSession\(|session\.ok|redirect\('
+strip() { sed -E 's://.*$::' | grep -vE '^[[:space:]]*(\*|/\*)' | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' | grep -v '^$'; }
+pairs="app/admin/door/layout.tsx|app/admin/(shell)/door/layout.tsx|
+app/admin/vendors/layout.tsx|app/admin/(shell)/vendors/layout.tsx|review-vendor-applications
+app/admin/settings/layout.tsx|app/admin/(shell)/settings/layout.tsx|manage-payment-settings"
+while IFS='|' read -r old new cap; do
   test -f "$new" || fail "missing $new"
-  a=$(git show "origin/main:$old" | grep -E "$PAT" | grep -v '^import' | sed 's/^[ \t]*//' | sort -u)
-  b=$(grep -E "$PAT" "$new" | grep -v '^import' | sed 's/^[ \t]*//' | sort -u)
-  # every gate line from main must still exist; the new file may add nothing weaker
+  a=$(git show "origin/main:$old" | strip | grep -E "$GATE" | grep -v '^import' | sort -u)
+  b=$(strip < "$new" | grep -E "$GATE" | grep -v '^import' | sort -u)
   missing=$(comm -23 <(echo "$a") <(echo "$b"))
   test -z "$missing" || fail "$new lost gate lines: $missing"
+  if [ -n "$cap" ]; then
+    strip < "$new" | grep -q "hasCapability" || fail "$new: no hasCapability call"
+    strip < "$new" | grep -q "'$cap'" || fail "$new: lost capability $cap"
+  fi
 done <<< "$pairs"
 # dashboard and tickets pages keep the session redirect
 for f in "app/admin/(shell)/page.tsx" "app/admin/(shell)/tickets/page.tsx"; do
