@@ -2,7 +2,7 @@
 
 Source: Codi's FINAL ruling with his re-ruling, relayed by the lead saoc-82 on 2026-10-22. Brad: "There is banding in the hero image
 looks shit." The banding is in the desktop home hero's bottom third: stepped bands and stripes through the blurred photo and the scrim.
-BASE is origin/main `1a7479f1` (r20 merged; the spec was first written on 7fb251a1, and r20 touched none of the five footprint files, so
+BASE is origin/main `1a7479f1` (r20 merged; the spec was first written on 7fb251a1, and r20 touched none of the footprint files (five at the time; next.config.ts was added after Codex's P2), so
 every BASE line number below holds on both). Rules: docs/rules/no-invention.md. Design source: design/design_handoff_saoc/design_system_README.md
 l.125 (the dark sage diagonal, plus a bone-to-transparent pull at the bottom).
 
@@ -31,6 +31,7 @@ l.125 (the dark sage diagonal, plus a bone-to-transparent pull at the bottom).
 | lib/data/heroImages.ts:4 | the orchid-yellow entry becomes a comment that it returns with a high-quality original. Violet, pink, dark keep their order. public/images/orchid-yellow.jpg stays |
 | lib/image-loader.ts:31 | a quality other than DEFAULT_QUALITY (75) maps `/images/x.jpg` to `x.jpg-<w>-q<quality>.webp`. The Sanity branch already sends `q` |
 | scripts/generate-image-variants.mjs:12, 44, 45, 57 | HERO_SOURCES (the fallback's three files) also get a `-q88` set, written with `{ quality: 88, smartSubsample: true }`. Every other variant stays `{ quality: 75 }` |
+| next.config.ts:89 | `images` gains `qualities: [75, 88]` with a one-line comment (Codex rHB P2: Next 16 allows only 75 by default, so quality={88} warned; the custom loader still delivered q=88). Static S10 asserts both values |
 | app/globals.css:356, 365, 374, 379 | the comment, the <768 veil tail, the >=768 veil tail (Codi's exact stops), the pull on --parchment with Codi's stops to 56px and the amended ease-in to 84px (below). The diagonal is unchanged. No dither, noise or filter layer |
 
 **The <768 veil tail is derived, not invented.** Codi's desktop tail is mapped proportionally onto the mobile shoulder (70%, 0.86). A

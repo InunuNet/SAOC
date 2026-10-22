@@ -11,6 +11,7 @@
 //       CSS other than the veil's BASE rgb(34 40 31) and --parchment's own value (#f4f3ec = 244 243 236).
 //   S7  the drop-listed asset id (a620a97f) appears in no shipped file: the yellow removal happens in Sanity, never in code.
 //   S8  the pull's end colour is the next section's ground: MissionBlock's section is still bg-parchment and --parchment is #f4f3ec.
+//   S10 next.config.ts images.qualities lists the default (75) and the hero's (88), so Next does not warn on quality={88}.
 //   S9  docs/nos-hero-banding.md exists and covers the quality, smartSubsample, the parchment pull, the <768 derivation, the 2560
 //       decision, the yellow removal and the harness filter.
 import { execFileSync } from 'node:child_process';
@@ -26,7 +27,7 @@ const failures = [];
 const count = (text, needle) => text.split(needle).length - 1;
 
 // S1
-for (const k of ['hero', 'fallback', 'loader', 'variants', 'css']) failures.push(...exactEdits(G[k].file, G[k].lineEdits, G[k].drops, 'S1'));
+for (const k of ['hero', 'fallback', 'loader', 'variants', 'config', 'css']) failures.push(...exactEdits(G[k].file, G[k].lineEdits, G[k].drops, 'S1'));
 
 // S2
 const tracked = git('ls-files', '--', 'app', 'components').split('\n').filter((f) => /\.(t|j)sx$/.test(f));
@@ -101,9 +102,14 @@ const mission = readRepoFile(G.scrims.nextSection.file) ?? '';
 if (mission.split('\n')[G.scrims.nextSection.line - 1] !== G.scrims.nextSection.text) failures.push(`${G.scrims.nextSection.file}:${G.scrims.nextSection.line}: the next section is no longer bg-parchment; the pull's end colour must follow it (S8)`);
 if (!new RegExp(`--parchment:\\s*${G.scrims.nextSection.hex}`, 'i').test(css)) failures.push(`${G.css.file}: --parchment is not ${G.scrims.nextSection.hex} (S8)`);
 
+// S10
+const qualities = (readRepoFile(G.config.file) ?? '').match(/\bimages:\s*\{[\s\S]*?\bqualities:\s*\[([^\]]*)\]/);
+const listedQ = qualities ? qualities[1].split(',').map((v) => Number(v.trim())).filter((v) => !Number.isNaN(v)) : [];
+for (const q of [G.defaultQuality, G.heroQuality]) if (!listedQ.includes(q)) failures.push(`${G.config.file}: images.qualities ${qualities ? JSON.stringify(listedQ) : '(absent)'} does not include ${q} (S10)`);
+
 // S9
 const doc = readRepoFile(DOC);
 if (doc === null) failures.push(`${DOC}: missing (S9)`);
 else for (const needle of ['quality={88}', 'smartSubsample', '--parchment', '79%', '2560', 'orchid-yellow', G.dropAsset, 'hero-filter']) if (!doc.includes(needle)) failures.push(`${DOC}: does not mention ${needle} (S9)`);
 
-finish(NAME, failures, 'F1 static: exact edits, one quality={88} on the hero Image, exact scrim stops ending on --parchment, yellow out of the fallback, q88 hero variants, no new copy or colours, no asset id in code, docs.');
+finish(NAME, failures, 'F1 static: exact edits, one quality={88} on the hero Image and in images.qualities, exact scrim stops ending on --parchment, yellow out of the fallback, q88 hero variants, no new copy or colours, no asset id in code, docs.');

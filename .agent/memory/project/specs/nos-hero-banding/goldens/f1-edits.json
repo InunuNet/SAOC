@@ -62,6 +62,18 @@
     "drops": [],
     "why": "Codi rHB 2 (variants): hero fallback variants are webp q88 with sharp smartSubsample: true, as an extra -q88 set beside the unchanged q75 set; every other variant stays q75 and byte-identical. No 2560 hero variant is added (optional in the ruling; widths stay capped at 2048 by lib/image-widths.json)."
   },
+  "config": {
+    "file": "next.config.ts",
+    "lineEdits": [
+      {
+        "line": 89,
+        "from": "    imageSizes: imageWidths.imageSizes,",
+        "to": "    imageSizes: imageWidths.imageSizes,\n    // Next 16 allows only quality 75 unless listed: 88 is the home hero's (rHB).\n    qualities: [75, 88],"
+      }
+    ],
+    "drops": [],
+    "why": "Codex rHB P2: Next 16 defaults images.qualities to [75], so quality={88} on the hero Image raises Next's unconfigured-quality warning (next/dist/shared/lib/get-img-props.js warnOnce when quality is not in config.qualities). The custom loader still delivers q=88 (R1), so it is a warning, not a delivery fault; listing [75, 88] is the configured route."
+  },
   "css": {
     "file": "app/globals.css",
     "lineEdits": [

@@ -1,1 +1,1 @@
-["app/globals.css", "components/home/Hero.tsx", "lib/data/heroImages.ts", "lib/image-loader.ts", "scripts/generate-image-variants.mjs"]
+["app/globals.css", "components/home/Hero.tsx", "lib/data/heroImages.ts", "lib/image-loader.ts", "next.config.ts", "scripts/generate-image-variants.mjs"]

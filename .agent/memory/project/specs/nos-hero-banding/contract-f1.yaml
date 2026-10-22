@@ -36,7 +36,7 @@ assertions:
       description: Footprint - the branch differs from origin/main 1a7479f1 only in goldens/f1-footprint.json, docs/nos-hero-banding.md and the spec dir, and HEAD descends from it
       command: node .agent/memory/project/specs/nos-hero-banding/checks/footprint.mjs
     - id: A3
-      description: Static - exact BASE-numbered edits in the five files, one quality={88} (hero Image) and no other quality prop, exact scrim stops ending on --parchment with the diagonal unchanged, yellow out of the fallback with the comment, HERO_SOURCES equals the fallback list, no new copy/tokens/colours, no asset id in code, MissionBlock still bg-parchment, docs
+      description: Static - exact BASE-numbered edits in the six files, one quality={88} (hero Image) and no other quality prop, next.config.ts images.qualities includes 75 and 88, exact scrim stops ending on --parchment with the diagonal unchanged, yellow out of the fallback with the comment, HERO_SOURCES equals the fallback list, no new copy/tokens/colours, no asset id in code, MissionBlock still bg-parchment, docs
       command: node .agent/memory/project/specs/nos-hero-banding/checks/f1-static.mjs
     - id: A4
       description: Variants and loader - the build's generator writes a -q88 smartSubsample webp set for violet/pink/dark byte-equal to sharp, every plain variant stays q75 byte-equal, no other -q88 set; the loader maps quality 88 to it and sends q=88 to Sanity
