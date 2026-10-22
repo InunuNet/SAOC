@@ -15,7 +15,7 @@ export type Site = 'saoc' | 'nos';
 
 const SAOC_DEV_ORIGIN = 'http://localhost:3002';
 const NOS_DEV_ORIGIN = 'http://nos.localhost:3002';
-const NOS_HOST_PREFIX = 'nos.';
+const NOS_DEV_HOSTNAME = 'nos.localhost';
 
 function stripTrailingSlashes(origin: string): string {
   return origin.replace(/\/+$/, '');
@@ -62,15 +62,16 @@ function hostnameOfOrigin(origin: string): string {
 
 /**
  * Which site a request host belongs to. Pass `x-forwarded-host` when present, else `host`.
- * Only the NOS origin's hostname or any `nos.*` host is 'nos'; beta.saoc.co.za, *.hosted.app,
- * localhost and the apex are all 'saoc'.
+ * Only the configured NOS origin's exact hostname is 'nos' (plus nos.localhost outside production).
+ * There is no `nos.*` prefix match: Host and X-Forwarded-Host are client-controlled, so a spoofed
+ * `nos.attacker.example` is never the NOS site. Everything else is 'saoc'.
  */
 export function siteForHost(host: string | null): Site {
   if (!host) return 'saoc';
   const hostname = hostnameOf(host);
   if (!hostname) return 'saoc';
   if (hostname === hostnameOfOrigin(nosOrigin())) return 'nos';
-  return hostname.startsWith(NOS_HOST_PREFIX) ? 'nos' : 'saoc';
+  return !isProduction() && hostname === NOS_DEV_HOSTNAME ? 'nos' : 'saoc';
 }
 
 export function saocUrl(path: string): string {

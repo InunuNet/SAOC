@@ -48,8 +48,12 @@ sets both to the hosted values from `apphosting.yaml`. The static `safety` check
 if either variable is missing from `apphosting.yaml`.
 `siteForHost` reads `x-forwarded-host` (first value) or else `host`, strips the
 port, and lower-cases it. `beta.saoc.co.za`, any `*.hosted.app` host, localhost and
-the apex are `saoc`. A host is `nos` when its hostname equals the NOS origin's
-hostname or starts with `nos.`.
+the apex are `saoc`. A host is `nos` only when its hostname exactly equals the
+configured NOS origin's hostname, or is `nos.localhost` outside production. There is
+no `nos.*` prefix match, because Host and X-Forwarded-Host are client-controlled.
+Every proxy redirect builds its Location from a configured origin (`nosUrl` or
+`saocUrl`), never from the request host. The HTTP gate checks spoofed Host and
+X-Forwarded-Host values.
 
 Exports: `Site`, `siteForHost`, `saocOrigin`, `nosOrigin`, `saocUrl`, `nosUrl`.
 `*Url(path)` is origin plus path, verbatim. Show, payment and email absolute URLs

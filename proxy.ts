@@ -220,12 +220,11 @@ function redirectTo(location: string): Response {
   return new Response(null, { status: PERMANENT_REDIRECT, headers: { Location: location } });
 }
 
-// Same-host redirect. Built from the request's own URL so Next normalises Location to a relative
-// path (it only accepts an absolute URL from a proxy, and relativises one that matches the request).
-function redirectWithinHost(request: NextRequest, pathname: string): Response {
-  const target = request.nextUrl.clone();
-  target.pathname = pathname;
-  return NextResponse.redirect(target, PERMANENT_REDIRECT);
+// Same-host redirect on the NOS site. Location is built from the configured NOS origin, never from
+// the request's Host or X-Forwarded-Host (both client-controlled), so a spoofed host cannot steer it.
+// A proxy redirect must be absolute; Next may relativise it when it matches the request.
+function redirectWithinNos(request: NextRequest, pathname: string): Response {
+  return redirectTo(nosUrl(`${pathname}${request.nextUrl.search}`));
 }
 
 function rewriteTo(request: NextRequest, pathname: string): Response {
@@ -241,7 +240,7 @@ function routeNosHost(request: NextRequest): Response {
     return redirectTo(saocUrl(`${pathname}${search}`));
   }
   if (isUnder(pathname, NOS_INTERNAL_PREFIX) && pathname !== NOS_OG_PATH) {
-    return redirectWithinHost(request, nosPath(pathname));
+    return redirectWithinNos(request, nosPath(pathname));
   }
   if (pathname === NOS_OG_PATH || SHARED_EXACT.has(pathname) || isUnderAny(pathname, SHARED_PREFIXES)) {
     return NextResponse.next();

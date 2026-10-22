@@ -32,9 +32,9 @@ const server = spawn('node_modules/.bin/next', ['start', '-p', String(PORT)], {
   },
 });
 
-function get(host, path, { auth = true } = {}) {
+function get(host, path, { auth = true, extraHeaders = {} } = {}) {
   return new Promise((resolve, reject) => {
-    const headers = { host };
+    const headers = { host, ...extraHeaders };
     if (auth) headers.authorization = AUTH;
     const req = http.request({ host: '127.0.0.1', port: PORT, path, method: 'GET', headers }, (res) => {
       const chunks = [];
@@ -52,7 +52,9 @@ function check(name, ok, detail = '') {
   if (!ok) failures.push(`${name} ${detail}`);
   console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${ok ? '' : ` ${detail}`}`);
 }
-const redirectsTo = (r, location) => r.status === 308 && r.headers.location === location;
+// Same-host redirects may come back absolute (configured origin) or relativised by Next.
+const redirectsTo = (r, location) =>
+  r.status === 308 && (r.headers.location === location || (location.startsWith('/') && r.headers.location === `${NOS_ORIGIN}${location}`));
 
 async function waitUp() {
   for (let i = 0; i < 90; i++) {
@@ -154,6 +156,20 @@ async function run() {
   for (const [label, host, p] of [['saoc', SAOC_HOST, '/media-kit'], ['nos', NOS_HOST, '/media-kit']]) {
     const r = await get(host, p);
     check(`media-kit-gated-${label}`, [302, 303, 307].includes(r.status) && /\/admin\/login/.test(r.headers.location || ''), `status=${r.status} location=${r.headers.location}`);
+  }
+
+  // Host spoofing: a client-chosen nos.* Host or X-Forwarded-Host is never the NOS site, and no
+  // redirect Location ever names the spoofed host.
+  const EVIL = 'nos.evil.example';
+  for (const [label, host, extraHeaders] of [
+    ['host', EVIL, {}],
+    ['x-forwarded-host', NOS_HOST, { 'x-forwarded-host': EVIL }],
+  ]) {
+    for (const p of ['/national-show/symposium?x=1', '/national-show', '/contact']) {
+      const r = await get(host, p, { extraHeaders });
+      const loc = r.headers.location || '';
+      check(`spoof-${label}-${p}`, !loc.includes('evil') && r.headers['x-site'] !== 'nos', `status=${r.status} location=${loc} x-site=${r.headers['x-site']}`);
+    }
   }
 
   // Internal-only SAOC test: no stray route-group URL leaks.
