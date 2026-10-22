@@ -96,7 +96,7 @@
 .nd-item[aria-expanded="true"] .nc-chev { transform: rotate(180deg); }
 .nd-item[data-current] { text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 2px; text-underline-offset: 7px; }
 .nd-sub { padding: 4px 0 20px; display: grid; gap: 18px; }
-.nd-group ul { list-style: none; margin: 0; padding: 0; display: grid; }
+.nd-group ul { list-style: none; margin: 0; padding: 0 0 0 12px; border-left: 1px solid var(--nc-line); display: grid; }
 .nd-group a { display: grid; gap: 2px; padding: 9px 0; text-decoration: none; }
 .nd-group a .nh-leaf { font-size: 16px; }
 .nd-group a .nh-desc { font-size: 13px; }
@@ -117,7 +117,7 @@
 .nf-lockup { display: block; width: 248px; max-width: 100%; line-height: 0; border-radius: 4px; }
 .nf-lockup img { display: block; width: 100%; max-width: none; height: auto; }
 .nf-credit { display: grid; justify-items: start; gap: 8px; min-height: 44px; padding: 4px 0; color: var(--nc-lilac); text-decoration: none; border-radius: 4px; }
-.nf-credit img { display: block; width: auto; height: 48px; max-width: none; }
+.nf-credit img { display: block; width: auto; height: 56px; max-width: none; }
 .nf-credit-label { padding: 2px 8px; border: 1px solid rgba(210, 203, 232, 0.55); border-radius: 4px; font: 600 12px/1.4 var(--nc-sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--nc-lilac); }
 .nf-credit-name { font: 600 15px/1.35 var(--nc-sans); color: var(--nc-ground); }
 .nf-credit-reg { font: 400 13px/1.4 var(--nc-sans); letter-spacing: 0.08em; color: var(--nc-gold); font-variant-numeric: tabular-nums; }

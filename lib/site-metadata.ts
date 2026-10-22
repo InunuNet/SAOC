@@ -11,7 +11,7 @@ export const SITE_DESCRIPTION =
 // One title pattern for every page on the NOS site (nos-site-split F3): the show's inner pages
 // already ended " | SAOC"; the hub keeps its full title; the shared legal pages join the same
 // pattern when served on the NOS host.
-export const NOS_TITLE_DEFAULT = 'National Orchid Show | South African Orchid Council';
+export const NOS_TITLE_DEFAULT = 'National Orchid Show | SAOC';
 export const NOS_TITLE: NonNullable<Metadata['title']> = {
   template: '%s — National Orchid Show | SAOC',
   default: NOS_TITLE_DEFAULT,

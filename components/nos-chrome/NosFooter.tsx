@@ -40,11 +40,11 @@ const LOCKUP_HEIGHT = 2876;
 // The lockup's rendered box is 248px wide (nos-chrome.css). A width with no `sizes` gives a 1x/2x
 // density srcset, so a high-density screen never fetches more than twice the box.
 const LOCKUP_BOX = 248;
-// The SAOC mark: the cream flat silhouette, shown uncropped at about 48px tall.
-const SAOC_MARK_SRC = '/images/saoc-logo-flat-paper.png';
+// The SAOC mark: the supplied full-colour original, uncropped and not recoloured, 56px tall.
+const SAOC_MARK_SRC = '/images/saoc-logo-original.png';
 const SAOC_MARK_WIDTH = 767;
 const SAOC_MARK_HEIGHT = 700;
-const SAOC_MARK_BOX_HEIGHT = 48;
+const SAOC_MARK_BOX_HEIGHT = 56;
 // COPY GAP: the credit's label ("Organised by" or the Council's own wording) is not supplied. It
 // shows as this existing marker string on the preview only and is omitted in public.
 const CREDIT_LABEL_PLACEHOLDER = 'To be confirmed';

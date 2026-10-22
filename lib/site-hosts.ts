@@ -6,17 +6,15 @@
 // Edge-safe and pure: it reads only `process.env`, imports nothing, and is used from proxy.ts
 // (Edge runtime), Server Components, route handlers and Node-side URL builders alike.
 //
-// Origin precedence (golden host-routing.golden.md):
-//   SAOC: NEXT_PUBLIC_SAOC_SITE_URL, else SITE_URL, else dev default, else production default.
-//   NOS:  NEXT_PUBLIC_NOS_SITE_URL, else dev default, else production default.
-// The dev defaults apply only when NODE_ENV !== 'production'.
+// Origins: NEXT_PUBLIC_SAOC_SITE_URL and NEXT_PUBLIC_NOS_SITE_URL. The localhost dev defaults apply
+// only when NODE_ENV !== 'production'. In production an unset variable throws, lazily inside the
+// origin functions (not at module load), naming the variable. SITE_URL never feeds an origin: it is
+// a hosted.app URL on App Hosting and would put raw hosted.app links on the public site.
 
 export type Site = 'saoc' | 'nos';
 
 const SAOC_DEV_ORIGIN = 'http://localhost:3002';
 const NOS_DEV_ORIGIN = 'http://nos.localhost:3002';
-const SAOC_PRODUCTION_ORIGIN = 'https://saoc.co.za';
-const NOS_PRODUCTION_ORIGIN = 'https://nos.saoc.co.za';
 const NOS_HOST_PREFIX = 'nos.';
 
 function stripTrailingSlashes(origin: string): string {
@@ -32,19 +30,19 @@ function isProduction(): boolean {
   return process.env.NODE_ENV === 'production';
 }
 
+function originFrom(variable: string, value: string | undefined, devOrigin: string): string {
+  const set = configured(value);
+  if (set) return set;
+  if (isProduction()) throw new Error(`${variable} must be set in production (site origin)`);
+  return devOrigin;
+}
+
 export function saocOrigin(): string {
-  return (
-    configured(process.env.NEXT_PUBLIC_SAOC_SITE_URL) ??
-    configured(process.env.SITE_URL) ??
-    (isProduction() ? SAOC_PRODUCTION_ORIGIN : SAOC_DEV_ORIGIN)
-  );
+  return originFrom('NEXT_PUBLIC_SAOC_SITE_URL', process.env.NEXT_PUBLIC_SAOC_SITE_URL, SAOC_DEV_ORIGIN);
 }
 
 export function nosOrigin(): string {
-  return (
-    configured(process.env.NEXT_PUBLIC_NOS_SITE_URL) ??
-    (isProduction() ? NOS_PRODUCTION_ORIGIN : NOS_DEV_ORIGIN)
-  );
+  return originFrom('NEXT_PUBLIC_NOS_SITE_URL', process.env.NEXT_PUBLIC_NOS_SITE_URL, NOS_DEV_ORIGIN);
 }
 
 function hostnameOf(hostHeader: string): string {

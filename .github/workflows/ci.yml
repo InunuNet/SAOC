@@ -70,6 +70,10 @@ jobs:
         run: pnpm type-check
 
       - name: Build
+        # The two site origins, as in apphosting.yaml: lib/site-hosts.ts throws in production without them.
+        env:
+          NEXT_PUBLIC_SAOC_SITE_URL: https://beta.saoc.co.za
+          NEXT_PUBLIC_NOS_SITE_URL: https://nos.saoc.co.za
         run: pnpm build
 
       # ADDED 2026-09-08 (mission ticketing-complete M1/F7) — folds the Playwright
