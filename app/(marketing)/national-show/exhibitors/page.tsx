@@ -129,6 +129,7 @@ export default async function ExhibitorInfoPage() {
     return renders && !(publicMode && markerOf(status[name]) === 'question');
   });
   const openQuestions = (info?.openQuestions ?? []).filter((item) => item?.question);
+  const questionsShown = !publicMode && openQuestions.length > 0;
   const entryFormStatus = status.entryForm;
   const entryFormShown = !(publicMode && markerOf(entryFormStatus) === 'question');
 
@@ -145,7 +146,7 @@ export default async function ExhibitorInfoPage() {
       const heading = info?.[name]?.heading;
       return heading ? { href: `#exhibitor-${name}`, label: heading } : null;
     }),
-    openQuestions.length > 0 && info?.questionsHeading
+    questionsShown && info?.questionsHeading
       ? { href: '#exhibitor-questions', label: info.questionsHeading }
       : null,
   ].filter((chip): chip is { href: string; label: string } => chip !== null);
@@ -271,7 +272,7 @@ export default async function ExhibitorInfoPage() {
                 <p className="mt-4">
                   <Link
                     href="/national-show"
-                    className="font-sans text-[15px] font-medium text-primary underline underline-offset-4"
+                    className="inline-flex min-h-6 items-center font-sans text-[15px] font-medium text-primary underline underline-offset-4"
                   >
                     {info?.classesLinkLabel ?? 'Show classes'} →
                   </Link>
@@ -281,7 +282,7 @@ export default async function ExhibitorInfoPage() {
                 <p className="mt-4">
                   <Link
                     href="/judging"
-                    className="font-sans text-[15px] font-medium text-primary underline underline-offset-4"
+                    className="inline-flex min-h-6 items-center font-sans text-[15px] font-medium text-primary underline underline-offset-4"
                   >
                     {info?.judgingLinkLabel ?? 'SAOC judging standards'} →
                   </Link>
@@ -292,7 +293,7 @@ export default async function ExhibitorInfoPage() {
                   <a
                     href="https://wildorchids.co.za"
                     rel="noopener noreferrer"
-                    className="font-sans text-[15px] font-medium text-primary underline underline-offset-4"
+                    className="inline-flex min-h-6 items-center font-sans text-[15px] font-medium text-primary underline underline-offset-4"
                   >
                     Wild Orchids of Southern Africa →
                   </a>
@@ -302,12 +303,14 @@ export default async function ExhibitorInfoPage() {
           ))}
         </div>
 
-        <ExhibitorQuestions
-          heading={info?.questionsHeading}
-          intro={info?.questionsIntro}
-          questions={info?.openQuestions}
-          headingId="exhibitor-questions"
-        />
+        {questionsShown ? (
+          <ExhibitorQuestions
+            heading={info?.questionsHeading}
+            intro={info?.questionsIntro}
+            questions={info?.openQuestions}
+            headingId="exhibitor-questions"
+          />
+        ) : null}
 
         <section className="border-t border-rule pt-8">
           {info?.contactNote ? (
