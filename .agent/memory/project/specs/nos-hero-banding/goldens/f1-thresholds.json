@@ -1,0 +1,12 @@
+{
+  "viewports": [[1440, 1], [1440, 2], [1920, 1], [1920, 2]],
+  "slides": 3,
+  "intervalMs": 5500,
+  "quality": 88,
+  "rowStep": 6,
+  "sourceBpp": 1.0,
+  "seam": 2,
+  "contrast": 4.5,
+  "contentMargin": 8,
+  "why": "rowStep: the band metric's step part, max |row-mean step| (any channel, 0-255) down the hero's bottom third and 8 CSS px into MissionBlock, content boxes masked; BASE 16.0-17.0 on every slide (the bone->parchment seam), the golden fix simulated on BASE 2.5-4.3 (the steepest part of the pull). sourceBpp: the band metric's starvation part, source bytes x 8 / delivered pixels of the active slide; BASE yellow 0.46-0.53, the lowest kept slide is pink at 1.38 (2048 wide) and 1.57 (1920). seam: last hero row vs first MissionBlock row, per channel. Calibration numbers: goldens/f1-calibration.json."
+}

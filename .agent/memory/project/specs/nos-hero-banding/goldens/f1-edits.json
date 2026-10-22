@@ -1,0 +1,139 @@
+{
+  "hero": {
+    "file": "components/home/Hero.tsx",
+    "lineEdits": [
+      {
+        "line": 101,
+        "from": "            sizes=\"100vw\"",
+        "to": "            sizes=\"100vw\"\n            quality={88}"
+      }
+    ],
+    "drops": [],
+    "why": "Codi rHB 2: the hero slide Image alone passes quality={88}; the custom loader sends q=88 to the Sanity CDN and picks the q88 variant set for the static fallback. Dots, slide labels and the autoplay modulus already read slides.length (BASE lines 71, 88, 179-183), so 3 slides need no edit there; f1-rendered R4 proves it."
+  },
+  "fallback": {
+    "file": "lib/data/heroImages.ts",
+    "lineEdits": [
+      {
+        "line": 4,
+        "from": "  { name: 'orchid-yellow', path: '/images/orchid-yellow.jpg', alt: 'Yellow orchid' },",
+        "to": "  // orchid-yellow returns to the rotation when a high-quality original arrives; the current file bands under the scrim (rHB)."
+      }
+    ],
+    "drops": [],
+    "why": "Codi rHB 1: yellow leaves the static fallback, the comment says it returns with a high-quality original; public/images/orchid-yellow.jpg stays (other pages use it). Violet, pink, dark keep their order."
+  },
+  "loader": {
+    "file": "lib/image-loader.ts",
+    "lineEdits": [
+      {
+        "line": 31,
+        "from": "    return `${VARIANT_DIR}/${name}-${snapWidth(width)}.webp`;",
+        "to": "    // A non-default quality has its own variant set (generate-image-variants.mjs: the hero sources at q88).\n    const suffix = quality && quality !== DEFAULT_QUALITY ? `-q${quality}` : '';\n    return `${VARIANT_DIR}/${name}-${snapWidth(width)}${suffix}.webp`;"
+      }
+    ],
+    "drops": [],
+    "why": "Codi rHB 2 (variants): the same three source files feed ten other pages (NavCards, PageHeader images, NOS hero photos, ticket cards) through the same variant names, so re-encoding them in place at q88 would move every other image off 75. The hero's quality prop instead selects a separate -q88 set; every request without a quality prop maps to the BASE name, byte-identical."
+  },
+  "variants": {
+    "file": "scripts/generate-image-variants.mjs",
+    "lineEdits": [
+      {
+        "line": 12,
+        "from": "const WEBP_QUALITY = 75;",
+        "to": "const WEBP_QUALITY = 75;\n// The home hero's static fallback (lib/data/heroImages.ts) also gets a q88 set, which the loader serves for quality={88} (rHB).\nconst HERO_WEBP_QUALITY = 88;\nconst HERO_SOURCES = new Set(['orchid-violet.jpg', 'orchid-pink.jpg', 'orchid-dark.jpg'].map((name) => path.join(SOURCE_ROOT, name)));"
+      },
+      {
+        "line": 44,
+        "from": "  for (const width of WIDTHS) {",
+        "to": "  const encodings = [['', { quality: WEBP_QUALITY }]];\n  if (HERO_SOURCES.has(source)) encodings.push([`-q${HERO_WEBP_QUALITY}`, { quality: HERO_WEBP_QUALITY, smartSubsample: true }]);\n  for (const width of WIDTHS) for (const [suffix, webp] of encodings) {"
+      },
+      {
+        "line": 45,
+        "from": "    const output = path.join(OUTPUT_ROOT, `${relative}-${width}.webp`);",
+        "to": "    const output = path.join(OUTPUT_ROOT, `${relative}-${width}${suffix}.webp`);"
+      },
+      {
+        "line": 57,
+        "from": "      .webp({ quality: WEBP_QUALITY })",
+        "to": "      .webp(webp)"
+      }
+    ],
+    "drops": [],
+    "why": "Codi rHB 2 (variants): hero fallback variants are webp q88 with sharp smartSubsample: true, as an extra -q88 set beside the unchanged q75 set; every other variant stays q75 and byte-identical. No 2560 hero variant is added (optional in the ruling; widths stay capped at 2048 by lib/image-widths.json)."
+  },
+  "css": {
+    "file": "app/globals.css",
+    "lineEdits": [
+      {
+        "line": 356,
+        "from": "   that keeps the copy at 4.5:1 over the carousel, and a short bone pull inside the section's bottom padding. */",
+        "to": "   that keeps the copy at 4.5:1 over the carousel, and a short pull inside the section's bottom padding. rHB (Codi): the veil\n   eases out over five stops instead of one 0.84 -> 0 ramp, and the pull ends on --parchment, MissionBlock's ground, so no seam. */"
+      },
+      {
+        "line": 365,
+        "from": "    rgb(34 40 31 / 0) 100%",
+        "to": "    rgb(34 40 31 / 0.63) 79%,\n    rgb(34 40 31 / 0.35) 89%,\n    rgb(34 40 31 / 0.12) 95%,\n    rgb(34 40 31 / 0) 100%"
+      },
+      {
+        "line": 374,
+        "from": "      rgb(34 40 31 / 0) 100%",
+        "to": "      rgb(34 40 31 / 0.62) 74%,\n      rgb(34 40 31 / 0.34) 86%,\n      rgb(34 40 31 / 0.12) 94%,\n      rgb(34 40 31 / 0) 100%"
+      },
+      {
+        "line": 379,
+        "from": "  background-image: linear-gradient(to top, var(--bone) 0, rgb(232 230 220 / 0) 72px);",
+        "to": "  background-image: linear-gradient(\n    to top,\n    var(--parchment) 0,\n    rgb(244 243 236 / 0.82) 16px,\n    rgb(244 243 236 / 0.5) 36px,\n    rgb(244 243 236 / 0.2) 56px,\n    rgb(244 243 236 / 0) 72px\n  );"
+      }
+    ],
+    "drops": [],
+    "why": "Codi rHB 3. Veil >=768: Codi's exact stops. Veil <768: Codi's desktop tail mapped proportionally onto the mobile shoulder (70%, 0.86): position = 70 + 30 x (p - 62) / 38, alpha = 0.86 x a / 0.84, positions rounded to whole percent, alphas to 2 decimals (74 -> 79.47 -> 79%, 0.62 -> 0.635 -> 0.63; 86 -> 88.95 -> 89%, 0.34 -> 0.348 -> 0.35; 94 -> 95.26 -> 95%, 0.12 -> 0.123 -> 0.12). Pull: Codi's stops, but on --parchment (#f4f3ec = rgb 244 243 236), not --bone: MissionBlock's section is bg-parchment (components/home/MissionBlock.tsx:42), so a bone pull ends 12-16 levels off the next section (the seam). The diagonal is unchanged; no dither or noise layer."
+  },
+  "scrims": {
+    "veilMobile": [
+      "rgb(34 40 31 / 0.9) 0%",
+      "rgb(34 40 31 / 0.86) 70%",
+      "rgb(34 40 31 / 0.63) 79%",
+      "rgb(34 40 31 / 0.35) 89%",
+      "rgb(34 40 31 / 0.12) 95%",
+      "rgb(34 40 31 / 0) 100%"
+    ],
+    "veilDesktop": [
+      "rgb(34 40 31 / 0.88) 0%",
+      "rgb(34 40 31 / 0.84) 62%",
+      "rgb(34 40 31 / 0.62) 74%",
+      "rgb(34 40 31 / 0.34) 86%",
+      "rgb(34 40 31 / 0.12) 94%",
+      "rgb(34 40 31 / 0) 100%"
+    ],
+    "pull": [
+      "var(--parchment) 0",
+      "rgb(244 243 236 / 0.82) 16px",
+      "rgb(244 243 236 / 0.5) 36px",
+      "rgb(244 243 236 / 0.2) 56px",
+      "rgb(244 243 236 / 0) 72px"
+    ],
+    "diagonal": "  background-image: linear-gradient(135deg, rgb(56 65 56 / 0.6), rgb(56 65 56 / 0.25));",
+    "nextSection": {
+      "file": "components/home/MissionBlock.tsx",
+      "line": 42,
+      "text": "    <section className=\"py-24 bg-parchment\">",
+      "token": "--parchment",
+      "hex": "#f4f3ec",
+      "rgb": [
+        244,
+        243,
+        236
+      ]
+    }
+  },
+  "heroQuality": 88,
+  "defaultQuality": 75,
+  "heroSources": [
+    "orchid-violet.jpg",
+    "orchid-pink.jpg",
+    "orchid-dark.jpg"
+  ],
+  "dropAsset": "a620a97f",
+  "allowCopy": []
+}

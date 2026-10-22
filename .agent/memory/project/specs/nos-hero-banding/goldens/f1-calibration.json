@@ -1,0 +1,1127 @@
+{
+ "recorded": "f1-rendered.mjs --calibrate (BASE 1a7479f1, unfiltered: yellow kept) and --calibrate --simulate (the golden scrim stops injected and the slide srcset moved to q=88 on the same BASE page), public and preview builds, live Sanity, 2026-10-22, Chrome 155 headless",
+ "base": [
+  {
+   "at": "public @1440x1",
+   "slide": 1,
+   "asset": "a620a97f ?w=1920&auto=format&q=75",
+   "delivered": "1920x1440",
+   "step": 17,
+   "stepAt": 720,
+   "bpp": 0.527,
+   "seam": 17,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.06,
+    "h1": 8.18,
+    "h1 em": 5.76,
+    "secondary CTA": 11.12
+   }
+  },
+  {
+   "at": "public @1440x1",
+   "slide": 2,
+   "asset": "5ec5cc02 ?w=1920&auto=format&q=75",
+   "delivered": "1920x1280",
+   "step": 16.97,
+   "stepAt": 720,
+   "bpp": 6.411,
+   "seam": 16.97,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8.56,
+    "h1": 9.82,
+    "h1 em": 5.72,
+    "secondary CTA": 10.39
+   }
+  },
+  {
+   "at": "public @1440x1",
+   "slide": 3,
+   "asset": "1adbddbb ?w=1920&auto=format&q=75",
+   "delivered": "1920x2880",
+   "step": 16.75,
+   "stepAt": 720,
+   "bpp": 1.572,
+   "seam": 16.75,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 10.4,
+    "h1": 8.28,
+    "h1 em": 5.97,
+    "secondary CTA": 11.74
+   }
+  },
+  {
+   "at": "public @1440x1",
+   "slide": 4,
+   "asset": "894baf3b ?w=1920&auto=format&q=75",
+   "delivered": "1920x1280",
+   "step": 16.99,
+   "stepAt": 720,
+   "bpp": 4.887,
+   "seam": 16.99,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.91,
+    "h1": 8.27,
+    "h1 em": 5.57,
+    "secondary CTA": 9.88
+   }
+  },
+  {
+   "at": "public @1440x2",
+   "slide": 1,
+   "asset": "a620a97f ?w=2048&auto=format&q=75",
+   "delivered": "2048x1536",
+   "step": 16.25,
+   "stepAt": 720,
+   "bpp": 0.463,
+   "seam": 16.25,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.06,
+    "h1": 8.07,
+    "h1 em": 5.76,
+    "secondary CTA": 10.99
+   }
+  },
+  {
+   "at": "public @1440x2",
+   "slide": 2,
+   "asset": "5ec5cc02 ?w=2048&auto=format&q=75",
+   "delivered": "2048x1365",
+   "step": 16.09,
+   "stepAt": 720,
+   "bpp": 5.636,
+   "seam": 16.09,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8.46,
+    "h1": 9.82,
+    "h1 em": 5.72,
+    "secondary CTA": 10.39
+   }
+  },
+  {
+   "at": "public @1440x2",
+   "slide": 3,
+   "asset": "1adbddbb ?w=2048&auto=format&q=75",
+   "delivered": "2048x3072",
+   "step": 16,
+   "stepAt": 720,
+   "bpp": 1.382,
+   "seam": 16,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 10.39,
+    "h1": 8.19,
+    "h1 em": 5.97,
+    "secondary CTA": 11.74
+   }
+  },
+  {
+   "at": "public @1440x2",
+   "slide": 4,
+   "asset": "894baf3b ?w=2048&auto=format&q=75",
+   "delivered": "2048x1365",
+   "step": 16.24,
+   "stepAt": 720,
+   "bpp": 4.296,
+   "seam": 16.24,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.91,
+    "h1": 8.24,
+    "h1 em": 5.57,
+    "secondary CTA": 9.88
+   }
+  },
+  {
+   "at": "public @1920x1",
+   "slide": 1,
+   "asset": "a620a97f ?w=1920&auto=format&q=75",
+   "delivered": "1920x1440",
+   "step": 16.98,
+   "stepAt": 720,
+   "bpp": 0.527,
+   "seam": 16.98,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.02,
+    "h1": 10.52,
+    "h1 em": 5.84,
+    "secondary CTA": 11.09
+   }
+  },
+  {
+   "at": "public @1920x1",
+   "slide": 2,
+   "asset": "5ec5cc02 ?w=1920&auto=format&q=75",
+   "delivered": "1920x1280",
+   "step": 16.91,
+   "stepAt": 720,
+   "bpp": 6.411,
+   "seam": 16.91,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8.33,
+    "h1": 10.4,
+    "h1 em": 5.81,
+    "secondary CTA": 11.24
+   }
+  },
+  {
+   "at": "public @1920x1",
+   "slide": 3,
+   "asset": "1adbddbb ?w=1920&auto=format&q=75",
+   "delivered": "1920x2880",
+   "step": 16.64,
+   "stepAt": 720,
+   "bpp": 1.572,
+   "seam": 16.64,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.83,
+    "h1": 11.21,
+    "h1 em": 6.05,
+    "secondary CTA": 11.62
+   }
+  },
+  {
+   "at": "public @1920x1",
+   "slide": 4,
+   "asset": "894baf3b ?w=1920&auto=format&q=75",
+   "delivered": "1920x1280",
+   "step": 16.9,
+   "stepAt": 720,
+   "bpp": 4.887,
+   "seam": 16.9,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.05,
+    "h1": 9.88,
+    "h1 em": 5.64,
+    "secondary CTA": 9.85
+   }
+  },
+  {
+   "at": "public @1920x2",
+   "slide": 1,
+   "asset": "a620a97f ?w=2048&auto=format&q=75",
+   "delivered": "2048x1536",
+   "step": 16.23,
+   "stepAt": 720,
+   "bpp": 0.463,
+   "seam": 16.23,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8.98,
+    "h1": 10.52,
+    "h1 em": 5.77,
+    "secondary CTA": 11.09
+   }
+  },
+  {
+   "at": "public @1920x2",
+   "slide": 2,
+   "asset": "5ec5cc02 ?w=2048&auto=format&q=75",
+   "delivered": "2048x1365",
+   "step": 16.1,
+   "stepAt": 720,
+   "bpp": 5.636,
+   "seam": 16.1,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8.25,
+    "h1": 10.31,
+    "h1 em": 5.81,
+    "secondary CTA": 11.12
+   }
+  },
+  {
+   "at": "public @1920x2",
+   "slide": 3,
+   "asset": "1adbddbb ?w=2048&auto=format&q=75",
+   "delivered": "2048x3072",
+   "step": 16,
+   "stepAt": 720,
+   "bpp": 1.382,
+   "seam": 16,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.86,
+    "h1": 11.2,
+    "h1 em": 6.05,
+    "secondary CTA": 11.61
+   }
+  },
+  {
+   "at": "public @1920x2",
+   "slide": 4,
+   "asset": "894baf3b ?w=2048&auto=format&q=75",
+   "delivered": "2048x1365",
+   "step": 16.13,
+   "stepAt": 720,
+   "bpp": 4.296,
+   "seam": 16.13,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.01,
+    "h1": 9.88,
+    "h1 em": 5.65,
+    "secondary CTA": 9.88
+   }
+  },
+  {
+   "at": "preview @1440x1",
+   "slide": 1,
+   "asset": "a620a97f ?w=1920&auto=format&q=75",
+   "delivered": "1920x1440",
+   "step": 17,
+   "stepAt": 850,
+   "bpp": 0.527,
+   "seam": 17,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8.04,
+    "h1": 6.61,
+    "h1 em": 5.71,
+    "lede": 10.72,
+    "secondary CTA": 11.19
+   }
+  },
+  {
+   "at": "preview @1440x1",
+   "slide": 2,
+   "asset": "5ec5cc02 ?w=1920&auto=format&q=75",
+   "delivered": "1920x1280",
+   "step": 16.99,
+   "stepAt": 850,
+   "bpp": 6.411,
+   "seam": 16.99,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 7.57,
+    "h1": 6.96,
+    "h1 em": 5.75,
+    "lede": 10.43,
+    "secondary CTA": 10.8
+   }
+  },
+  {
+   "at": "preview @1440x1",
+   "slide": 3,
+   "asset": "1adbddbb ?w=1920&auto=format&q=75",
+   "delivered": "1920x2880",
+   "step": 16.68,
+   "stepAt": 850,
+   "bpp": 1.572,
+   "seam": 16.68,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.71,
+    "h1": 8.49,
+    "h1 em": 6.03,
+    "lede": 11.67,
+    "secondary CTA": 11.27
+   }
+  },
+  {
+   "at": "preview @1440x1",
+   "slide": 4,
+   "asset": "894baf3b ?w=1920&auto=format&q=75",
+   "delivered": "1920x1280",
+   "step": 17,
+   "stepAt": 850,
+   "bpp": 4.887,
+   "seam": 17,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 10.97,
+    "h1": 8.25,
+    "h1 em": 5.57,
+    "lede": 10.03,
+    "secondary CTA": 9.85
+   }
+  },
+  {
+   "at": "preview @1440x2",
+   "slide": 1,
+   "asset": "a620a97f ?w=2048&auto=format&q=75",
+   "delivered": "2048x1536",
+   "step": 16.42,
+   "stepAt": 850,
+   "bpp": 0.463,
+   "seam": 16.42,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8.03,
+    "h1": 6.59,
+    "h1 em": 5.69,
+    "lede": 10.72,
+    "secondary CTA": 11.19
+   }
+  },
+  {
+   "at": "preview @1440x2",
+   "slide": 2,
+   "asset": "5ec5cc02 ?w=2048&auto=format&q=75",
+   "delivered": "2048x1365",
+   "step": 16.2,
+   "stepAt": 850,
+   "bpp": 5.636,
+   "seam": 16.2,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 7.57,
+    "h1": 6.93,
+    "h1 em": 5.73,
+    "lede": 10.43,
+    "secondary CTA": 10.8
+   }
+  },
+  {
+   "at": "preview @1440x2",
+   "slide": 3,
+   "asset": "1adbddbb ?w=2048&auto=format&q=75",
+   "delivered": "2048x3072",
+   "step": 16,
+   "stepAt": 850,
+   "bpp": 1.382,
+   "seam": 16,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.6,
+    "h1": 8.43,
+    "h1 em": 6.03,
+    "lede": 11.56,
+    "secondary CTA": 11
+   }
+  },
+  {
+   "at": "preview @1440x2",
+   "slide": 4,
+   "asset": "894baf3b ?w=2048&auto=format&q=75",
+   "delivered": "2048x1365",
+   "step": 16.43,
+   "stepAt": 850,
+   "bpp": 4.296,
+   "seam": 16.43,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 10.98,
+    "h1": 8.22,
+    "h1 em": 5.57,
+    "lede": 10.03,
+    "secondary CTA": 9.84
+   }
+  },
+  {
+   "at": "preview @1920x1",
+   "slide": 1,
+   "asset": "a620a97f ?w=1920&auto=format&q=75",
+   "delivered": "1920x1440",
+   "step": 17,
+   "stepAt": 850,
+   "bpp": 0.527,
+   "seam": 17,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 7.93,
+    "h1": 9.44,
+    "h1 em": 5.82,
+    "lede": 10.87,
+    "secondary CTA": 10.99
+   }
+  },
+  {
+   "at": "preview @1920x1",
+   "slide": 2,
+   "asset": "5ec5cc02 ?w=1920&auto=format&q=75",
+   "delivered": "1920x1280",
+   "step": 16.91,
+   "stepAt": 850,
+   "bpp": 6.411,
+   "seam": 16.91,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 7.27,
+    "h1": 10.43,
+    "h1 em": 5.81,
+    "lede": 10.8,
+    "secondary CTA": 10.59
+   }
+  },
+  {
+   "at": "preview @1920x1",
+   "slide": 3,
+   "asset": "1adbddbb ?w=1920&auto=format&q=75",
+   "delivered": "1920x2880",
+   "step": 16.54,
+   "stepAt": 850,
+   "bpp": 1.572,
+   "seam": 16.54,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.97,
+    "h1": 11.39,
+    "h1 em": 6.03,
+    "lede": 11.67,
+    "secondary CTA": 10.83
+   }
+  },
+  {
+   "at": "preview @1920x1",
+   "slide": 4,
+   "asset": "894baf3b ?w=1920&auto=format&q=75",
+   "delivered": "1920x1280",
+   "step": 16.91,
+   "stepAt": 850,
+   "bpp": 4.887,
+   "seam": 16.91,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 11.42,
+    "h1": 8.17,
+    "h1 em": 5.64,
+    "lede": 10.16,
+    "secondary CTA": 9.88
+   }
+  },
+  {
+   "at": "preview @1920x2",
+   "slide": 1,
+   "asset": "a620a97f ?w=2048&auto=format&q=75",
+   "delivered": "2048x1536",
+   "step": 16.4,
+   "stepAt": 850,
+   "bpp": 0.463,
+   "seam": 16.4,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 7.92,
+    "h1": 9.4,
+    "h1 em": 5.82,
+    "lede": 10.99,
+    "secondary CTA": 10.99
+   }
+  },
+  {
+   "at": "preview @1920x2",
+   "slide": 2,
+   "asset": "5ec5cc02 ?w=2048&auto=format&q=75",
+   "delivered": "2048x1365",
+   "step": 16.16,
+   "stepAt": 850,
+   "bpp": 5.636,
+   "seam": 16.16,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 7.28,
+    "h1": 10.31,
+    "h1 em": 5.76,
+    "lede": 10.8,
+    "secondary CTA": 10.55
+   }
+  },
+  {
+   "at": "preview @1920x2",
+   "slide": 3,
+   "asset": "1adbddbb ?w=2048&auto=format&q=75",
+   "delivered": "2048x3072",
+   "step": 16.01,
+   "stepAt": 850,
+   "bpp": 1.382,
+   "seam": 16.01,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.94,
+    "h1": 11.39,
+    "h1 em": 6.05,
+    "lede": 11.62,
+    "secondary CTA": 10.95
+   }
+  },
+  {
+   "at": "preview @1920x2",
+   "slide": 4,
+   "asset": "894baf3b ?w=2048&auto=format&q=75",
+   "delivered": "2048x1365",
+   "step": 16.31,
+   "stepAt": 850,
+   "bpp": 4.296,
+   "seam": 16.31,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 11.29,
+    "h1": 8.04,
+    "h1 em": 5.57,
+    "lede": 10.16,
+    "secondary CTA": 9.85
+   }
+  }
+ ],
+ "simulatedFix": [
+  {
+   "at": "public @1440x1",
+   "slide": 1,
+   "asset": "a620a97f ?w=1920&auto=format&q=88",
+   "delivered": "1920x1440",
+   "step": 4.22,
+   "stepAt": 689,
+   "bpp": 0.527,
+   "seam": 1,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.36,
+    "h1": 8.57,
+    "h1 em": 5.78,
+    "secondary CTA": 11.12
+   }
+  },
+  {
+   "at": "public @1440x1",
+   "slide": 2,
+   "asset": "5ec5cc02 ?w=1920&auto=format&q=88",
+   "delivered": "1920x1280",
+   "step": 4.07,
+   "stepAt": 669,
+   "bpp": 6.411,
+   "seam": 0.95,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8.77,
+    "h1": 10.11,
+    "h1 em": 5.75,
+    "secondary CTA": 10.39
+   }
+  },
+  {
+   "at": "public @1440x1",
+   "slide": 3,
+   "asset": "1adbddbb ?w=1920&auto=format&q=88",
+   "delivered": "1920x2880",
+   "step": 3.97,
+   "stepAt": 667,
+   "bpp": 1.572,
+   "seam": 0.96,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 10.61,
+    "h1": 8.61,
+    "h1 em": 5.97,
+    "secondary CTA": 11.86
+   }
+  },
+  {
+   "at": "public @1440x1",
+   "slide": 4,
+   "asset": "894baf3b ?w=1920&auto=format&q=88",
+   "delivered": "1920x1280",
+   "step": 4.28,
+   "stepAt": 665,
+   "bpp": 4.887,
+   "seam": 0.99,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 10.11,
+    "h1": 8.6,
+    "h1 em": 5.57,
+    "secondary CTA": 9.89
+   }
+  },
+  {
+   "at": "public @1440x2",
+   "slide": 1,
+   "asset": "a620a97f ?w=2048&auto=format&q=88",
+   "delivered": "2048x1536",
+   "step": 2.65,
+   "stepAt": 669.5,
+   "bpp": 0.463,
+   "seam": 0,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.47,
+    "h1": 8.47,
+    "h1 em": 5.78,
+    "secondary CTA": 10.99
+   }
+  },
+  {
+   "at": "public @1440x2",
+   "slide": 2,
+   "asset": "5ec5cc02 ?w=2048&auto=format&q=88",
+   "delivered": "2048x1365",
+   "step": 2.61,
+   "stepAt": 648.5,
+   "bpp": 5.636,
+   "seam": 0,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8.76,
+    "h1": 10.11,
+    "h1 em": 5.72,
+    "secondary CTA": 10.39
+   }
+  },
+  {
+   "at": "public @1440x2",
+   "slide": 3,
+   "asset": "1adbddbb ?w=2048&auto=format&q=88",
+   "delivered": "2048x3072",
+   "step": 2.72,
+   "stepAt": 648.5,
+   "bpp": 1.382,
+   "seam": 0,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 10.61,
+    "h1": 8.5,
+    "h1 em": 5.97,
+    "secondary CTA": 11.74
+   }
+  },
+  {
+   "at": "public @1440x2",
+   "slide": 4,
+   "asset": "894baf3b ?w=2048&auto=format&q=88",
+   "delivered": "2048x1365",
+   "step": 2.74,
+   "stepAt": 649.5,
+   "bpp": 4.296,
+   "seam": 0,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 10.07,
+    "h1": 8.54,
+    "h1 em": 5.57,
+    "secondary CTA": 9.86
+   }
+  },
+  {
+   "at": "public @1920x1",
+   "slide": 1,
+   "asset": "a620a97f ?w=1920&auto=format&q=88",
+   "delivered": "1920x1440",
+   "step": 4.25,
+   "stepAt": 667,
+   "bpp": 0.527,
+   "seam": 0.98,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.4,
+    "h1": 10.52,
+    "h1 em": 5.84,
+    "secondary CTA": 11.09
+   }
+  },
+  {
+   "at": "public @1920x1",
+   "slide": 2,
+   "asset": "5ec5cc02 ?w=1920&auto=format&q=88",
+   "delivered": "1920x1280",
+   "step": 3.63,
+   "stepAt": 671,
+   "bpp": 6.411,
+   "seam": 0.88,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8.63,
+    "h1": 10.43,
+    "h1 em": 5.81,
+    "secondary CTA": 11.12
+   }
+  },
+  {
+   "at": "public @1920x1",
+   "slide": 3,
+   "asset": "1adbddbb ?w=1920&auto=format&q=88",
+   "delivered": "1920x2880",
+   "step": 3.91,
+   "stepAt": 685,
+   "bpp": 1.572,
+   "seam": 0.9,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 10.18,
+    "h1": 11.21,
+    "h1 em": 6.05,
+    "secondary CTA": 11.62
+   }
+  },
+  {
+   "at": "public @1920x1",
+   "slide": 4,
+   "asset": "894baf3b ?w=1920&auto=format&q=88",
+   "delivered": "1920x1280",
+   "step": 4.22,
+   "stepAt": 677,
+   "bpp": 4.887,
+   "seam": 0.88,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.37,
+    "h1": 9.89,
+    "h1 em": 5.65,
+    "secondary CTA": 9.88
+   }
+  },
+  {
+   "at": "public @1920x2",
+   "slide": 1,
+   "asset": "a620a97f ?w=2048&auto=format&q=88",
+   "delivered": "2048x1536",
+   "step": 2.65,
+   "stepAt": 649.5,
+   "bpp": 0.463,
+   "seam": 0,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.4,
+    "h1": 10.52,
+    "h1 em": 5.78,
+    "secondary CTA": 11.09
+   }
+  },
+  {
+   "at": "public @1920x2",
+   "slide": 2,
+   "asset": "5ec5cc02 ?w=2048&auto=format&q=88",
+   "delivered": "2048x1365",
+   "step": 2.61,
+   "stepAt": 648.5,
+   "bpp": 5.636,
+   "seam": 0,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8.6,
+    "h1": 10.31,
+    "h1 em": 5.81,
+    "secondary CTA": 11.12
+   }
+  },
+  {
+   "at": "public @1920x2",
+   "slide": 3,
+   "asset": "1adbddbb ?w=2048&auto=format&q=88",
+   "delivered": "2048x3072",
+   "step": 2.68,
+   "stepAt": 648.5,
+   "bpp": 1.382,
+   "seam": 0,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 10.05,
+    "h1": 11.21,
+    "h1 em": 5.99,
+    "secondary CTA": 11.61
+   }
+  },
+  {
+   "at": "public @1920x2",
+   "slide": 4,
+   "asset": "894baf3b ?w=2048&auto=format&q=88",
+   "delivered": "2048x1365",
+   "step": 2.62,
+   "stepAt": 664.5,
+   "bpp": 4.296,
+   "seam": 0,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.27,
+    "h1": 9.88,
+    "h1 em": 5.65,
+    "secondary CTA": 9.85
+   }
+  },
+  {
+   "at": "preview @1440x1",
+   "slide": 1,
+   "asset": "a620a97f ?w=1920&auto=format&q=88",
+   "delivered": "1920x1440",
+   "step": 4.32,
+   "stepAt": 795,
+   "bpp": 0.527,
+   "seam": 1,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8.44,
+    "h1": 7.15,
+    "h1 em": 5.71,
+    "lede": 10.72,
+    "secondary CTA": 11.19
+   }
+  },
+  {
+   "at": "preview @1440x1",
+   "slide": 2,
+   "asset": "5ec5cc02 ?w=1920&auto=format&q=88",
+   "delivered": "1920x1280",
+   "step": 3.96,
+   "stepAt": 797,
+   "bpp": 6.411,
+   "seam": 0.96,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8.09,
+    "h1": 7.45,
+    "h1 em": 5.72,
+    "lede": 10.43,
+    "secondary CTA": 10.81
+   }
+  },
+  {
+   "at": "preview @1440x1",
+   "slide": 3,
+   "asset": "1adbddbb ?w=1920&auto=format&q=88",
+   "delivered": "1920x2880",
+   "step": 3.91,
+   "stepAt": 819,
+   "bpp": 1.572,
+   "seam": 0.91,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 10.01,
+    "h1": 8.94,
+    "h1 em": 6.05,
+    "lede": 11.56,
+    "secondary CTA": 11.27
+   }
+  },
+  {
+   "at": "preview @1440x1",
+   "slide": 4,
+   "asset": "894baf3b ?w=1920&auto=format&q=88",
+   "delivered": "1920x1280",
+   "step": 4.31,
+   "stepAt": 817,
+   "bpp": 4.887,
+   "seam": 1,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 11.22,
+    "h1": 8.51,
+    "h1 em": 5.57,
+    "lede": 10.03,
+    "secondary CTA": 9.85
+   }
+  },
+  {
+   "at": "preview @1440x2",
+   "slide": 1,
+   "asset": "a620a97f ?w=2048&auto=format&q=88",
+   "delivered": "2048x1536",
+   "step": 2.74,
+   "stepAt": 779.5,
+   "bpp": 0.463,
+   "seam": 0.03,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8.47,
+    "h1": 7.13,
+    "h1 em": 5.71,
+    "lede": 10.72,
+    "secondary CTA": 11.18
+   }
+  },
+  {
+   "at": "preview @1440x2",
+   "slide": 2,
+   "asset": "5ec5cc02 ?w=2048&auto=format&q=88",
+   "delivered": "2048x1365",
+   "step": 2.61,
+   "stepAt": 778.5,
+   "bpp": 5.636,
+   "seam": 0.03,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8,
+    "h1": 7.45,
+    "h1 em": 5.72,
+    "lede": 10.43,
+    "secondary CTA": 10.8
+   }
+  },
+  {
+   "at": "preview @1440x2",
+   "slide": 3,
+   "asset": "1adbddbb ?w=2048&auto=format&q=88",
+   "delivered": "2048x3072",
+   "step": 2.72,
+   "stepAt": 778.5,
+   "bpp": 1.382,
+   "seam": 0,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 9.97,
+    "h1": 8.94,
+    "h1 em": 6.03,
+    "lede": 11.65,
+    "secondary CTA": 11
+   }
+  },
+  {
+   "at": "preview @1440x2",
+   "slide": 4,
+   "asset": "894baf3b ?w=2048&auto=format&q=88",
+   "delivered": "2048x1365",
+   "step": 2.75,
+   "stepAt": 800.5,
+   "bpp": 4.296,
+   "seam": 0.15,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 11.22,
+    "h1": 8.54,
+    "h1 em": 5.57,
+    "lede": 10.03,
+    "secondary CTA": 9.85
+   }
+  },
+  {
+   "at": "preview @1920x1",
+   "slide": 1,
+   "asset": "a620a97f ?w=1920&auto=format&q=88",
+   "delivered": "1920x1440",
+   "step": 4.12,
+   "stepAt": 795,
+   "bpp": 0.527,
+   "seam": 1,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8.36,
+    "h1": 9.7,
+    "h1 em": 5.83,
+    "lede": 10.86,
+    "secondary CTA": 10.99
+   }
+  },
+  {
+   "at": "preview @1920x1",
+   "slide": 2,
+   "asset": "5ec5cc02 ?w=1920&auto=format&q=88",
+   "delivered": "1920x1280",
+   "step": 3.88,
+   "stepAt": 795,
+   "bpp": 6.411,
+   "seam": 0.86,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 7.75,
+    "h1": 10.43,
+    "h1 em": 5.81,
+    "lede": 10.83,
+    "secondary CTA": 10.55
+   }
+  },
+  {
+   "at": "preview @1920x1",
+   "slide": 3,
+   "asset": "1adbddbb ?w=1920&auto=format&q=88",
+   "delivered": "1920x2880",
+   "step": 3.9,
+   "stepAt": 801,
+   "bpp": 1.572,
+   "seam": 0.88,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 10.18,
+    "h1": 11.39,
+    "h1 em": 6.05,
+    "lede": 11.67,
+    "secondary CTA": 10.83
+   }
+  },
+  {
+   "at": "preview @1920x1",
+   "slide": 4,
+   "asset": "894baf3b ?w=1920&auto=format&q=88",
+   "delivered": "1920x1280",
+   "step": 4.1,
+   "stepAt": 817,
+   "bpp": 4.887,
+   "seam": 0.89,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 11.45,
+    "h1": 8.46,
+    "h1 em": 5.64,
+    "lede": 10.16,
+    "secondary CTA": 9.88
+   }
+  },
+  {
+   "at": "preview @1920x2",
+   "slide": 1,
+   "asset": "a620a97f ?w=2048&auto=format&q=88",
+   "delivered": "2048x1536",
+   "step": 2.69,
+   "stepAt": 779.5,
+   "bpp": 0.463,
+   "seam": 0.03,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 8.4,
+    "h1": 9.7,
+    "h1 em": 5.82,
+    "lede": 10.87,
+    "secondary CTA": 10.98
+   }
+  },
+  {
+   "at": "preview @1920x2",
+   "slide": 2,
+   "asset": "5ec5cc02 ?w=2048&auto=format&q=88",
+   "delivered": "2048x1365",
+   "step": 2.48,
+   "stepAt": 796.5,
+   "bpp": 5.636,
+   "seam": 0,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 7.66,
+    "h1": 10.43,
+    "h1 em": 5.79,
+    "lede": 10.83,
+    "secondary CTA": 10.56
+   }
+  },
+  {
+   "at": "preview @1920x2",
+   "slide": 3,
+   "asset": "1adbddbb ?w=2048&auto=format&q=88",
+   "delivered": "2048x3072",
+   "step": 2.64,
+   "stepAt": 778.5,
+   "bpp": 1.382,
+   "seam": 0,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 10.26,
+    "h1": 11.38,
+    "h1 em": 6.05,
+    "lede": 11.62,
+    "secondary CTA": 10.87
+   }
+  },
+  {
+   "at": "preview @1920x2",
+   "slide": 4,
+   "asset": "894baf3b ?w=2048&auto=format&q=88",
+   "delivered": "2048x1365",
+   "step": 2.54,
+   "stepAt": 782.5,
+   "bpp": 4.296,
+   "seam": 0.1,
+   "mbOff": 0,
+   "contrast": {
+    "eyebrow": 11.46,
+    "h1": 8.33,
+    "h1 em": 5.64,
+    "lede": 10.16,
+    "secondary CTA": 9.85
+   }
+  }
+ ]
+}
