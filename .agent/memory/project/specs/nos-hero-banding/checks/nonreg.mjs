@@ -4,7 +4,8 @@
 //   N1  geometry: main's top-level blocks [tag, top, height] and the last footer's top equal the BASE capture (+-1px).
 //   N2  screenshot: a full-page capture (lazy images forced, animations disabled, the home hero and the home yearbook cover masked - the
 //       cover settles in one of two states on preview, r16) reduced to 32px block means equals the BASE capture: at most
-//       `tolerance.blocks` blocks may differ by more than `tolerance.level` (0-255) in any channel.
+//       `tolerance.blocks` blocks may differ by more than `tolerance.level` (0-255) in any channel. Whole block rows only: the capture
+//       height may differ by 1px and the partial last row is not compared (preview's bottom 1-6px drifted run to run).
 //   N3  no horizontal overflow.
 // `--capture` prints goldens/nonreg-baseline.json (captured by @architect on BASE 1a7479f1, both modes, filter on).
 import { deflateSync, inflateSync } from 'node:zlib';
@@ -95,10 +96,11 @@ for (const [key, m] of Object.entries(got)) {
   if (!b) { failures.push(`${key}: no baseline`); continue; }
   if (m.blocks.length !== b.blocks.length || !m.blocks.every((x, i) => near(x, b.blocks[i]))) failures.push(`${key}: main blocks moved: ${JSON.stringify(m.blocks)}, BASE ${JSON.stringify(b.blocks)} (N1)`);
   if (Math.abs(m.footTop - b.footTop) > 1) failures.push(`${key}: footer top ${m.footTop}, BASE ${b.footTop} (N1)`);
-  if (m.shot.w !== b.shot.w || m.shot.bh !== b.shot.bh) { failures.push(`${key}: capture ${m.shot.w}x${m.shot.h}, BASE ${b.shot.w}x${b.shot.h} (N2)`); continue; }
+  if (m.shot.w !== b.shot.w || Math.abs(m.shot.h - b.shot.h) > 1) { failures.push(`${key}: capture ${m.shot.w}x${m.shot.h}, BASE ${b.shot.w}x${b.shot.h} (N2)`); continue; }
   const base = unpack(b.shot.means);
   const diff = [];
-  for (let blk = 0; blk < m.shot.bw * m.shot.bh; blk++) {
+  // Whole 32px block rows only: the last row is partial (1-6px on these pages) and its mean swings with the page's sub-pixel height.
+  for (let blk = 0; blk < m.shot.bw * Math.floor(Math.min(m.shot.h, b.shot.h) / BLOCK); blk++) {
     const d = Math.max(...[0, 1, 2].map((c) => Math.abs(m.shot.means[blk * 3 + c] - base[blk * 3 + c])));
     if (d > TOL.level) diff.push(`(${(blk % m.shot.bw) * BLOCK},${Math.floor(blk / m.shot.bw) * BLOCK}) d${d}`);
   }

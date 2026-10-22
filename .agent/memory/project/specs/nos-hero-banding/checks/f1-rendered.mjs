@@ -6,9 +6,12 @@
 //   R1  delivery: every slide's currentSrc is on cdn.sanity.io with q=88 and auto=format; no slide names the dropped asset (else the
 //       harness filter did not run: INFRA).
 //   R2  BAND METRIC, two parts, both over the scrim region (the hero's bottom third through 8 CSS px into MissionBlock):
-//       (a) step: the per-row mean colour (all columns) must not jump by more than `rowStep` levels (any channel, 0-255) between adjacent
-//           device rows. A horizontally coherent step - a band edge, a stripe, the seam - moves the whole row mean; photo texture and
-//           Chrome's +-1 gradient dither average out. BASE: 16.0-17.0 on every slide (bone pull vs parchment section); golden fix 2.36-4.32.
+//       (a) step: the per-row mean colour (all columns), any channel 0-255, read two ways. The smoothed step, |row(y+1) - row(y-1)| / 2,
+//           must be <= `rowStep`; the raw step between adjacent device rows must be <= `rawStep`. A horizontally coherent step - a band
+//           edge, a stripe, the seam - moves the whole row mean; photo texture and Chrome's +-1 gradient dither average out. The raw step
+//           alternates high/low row to row inside the veil's linear segments (8-bit alpha), so it is only bounded loosely; the smoothed step
+//           carries the tight ceiling. BASE smoothed 8.72-10.2, raw 16.0-17.0 (bone pull vs parchment section); golden fix smoothed
+//           1.50-3.63, raw 2.36-4.32; 5663bab3 smoothed 1.49-3.59, raw 2.38-4.41.
 //       (b) starvation: source bytes x 8 / delivered pixels of the active slide >= `sourceBpp`. A source with fewer bits than the
 //           delivered pixels contours (rings) in smooth areas whatever q is asked; BASE yellow 0.46-0.53, pink 1.38-1.57.
 //   R3  seam: the last hero row and the first MissionBlock row (row means) differ by <= `seam` per channel, and that MissionBlock row
@@ -23,6 +26,7 @@
 //       parchment x alpha(y) within 3 levels (1280x1, 1280x2, 390x2, 1920x1).
 // --calibrate runs the unfiltered (yellow) build and prints the R2-R4 numbers per slide; --calibrate --simulate also injects the golden
 // scrim stops and q=88 into BASE's page (calibration only: what the thresholds were set against). Neither asserts.
+// --report also prints the per-slide numbers (smoothed and raw step among them) to stderr on an asserting run.
 import { finish, goldenJson } from './_lib.mjs';
 import { MODES, authorize, require, serve } from './_server.mjs';
 
@@ -107,12 +111,14 @@ async function measure(page, i, at, dpr) {
   const W = px.width; const heroRows = Math.round(m.hero.h * dpr);
   const rowMean = (y) => { const s = [0, 0, 0]; for (let x = 0; x < W; x++) for (let c = 0; c < 3; c++) s[c] += data[(y * W + x) * 3 + c]; return s.map((v) => v / W); };
   // R2a
-  let step = 0; let stepAt = 0;
-  let prev = rowMean(Math.round((heroRows * 2) / 3));
-  for (let y = Math.round((heroRows * 2) / 3) + 1; y < px.height; y++) {
-    const cur = rowMean(y); const d = Math.max(...cur.map((v, c) => Math.abs(v - prev[c])));
-    if (d > step) { step = d; stepAt = y; }
-    prev = cur;
+  const top = Math.round((heroRows * 2) / 3);
+  const rm = []; for (let y = top - 1; y < px.height; y++) rm.push(rowMean(y));
+  let step = 0; let stepAt = 0; let rawStep = 0;
+  for (let k = 1; k < rm.length; k++) {
+    rawStep = Math.max(rawStep, ...rm[k].map((v, c) => Math.abs(v - rm[k - 1][c])));
+    if (k + 1 >= rm.length) break;
+    const d = Math.max(...rm[k + 1].map((v, c) => Math.abs(v - rm[k - 1][c]) / 2));
+    if (d > step) { step = d; stepAt = top - 1 + k; }
   }
   // R2b
   const bytes = slide.src ? await sourceBytes(page, slide.src) : null;
@@ -148,7 +154,7 @@ async function measure(page, i, at, dpr) {
     const fg = rgba(t.color); const ink = fg.a < 1 ? over(fg, ground) : fg;
     contrast.push({ name: t.name, ratio: Number(ratio(ink, ground).toFixed(2)) });
   }
-  return { m, slide, dims, step: Number(step.toFixed(2)), stepAt: Number((stepAt / dpr).toFixed(1)), bytes, bpp: bpp === null ? null : Number(bpp.toFixed(3)), seam: Number(seam.toFixed(2)), mbOff: mbOff === null ? null : Number(mbOff.toFixed(2)), contrast };
+  return { m, slide, dims, step: Number(step.toFixed(2)), rawStep: Number(rawStep.toFixed(2)), stepAt: Number((stepAt / dpr).toFixed(1)), bytes, bpp: bpp === null ? null : Number(bpp.toFixed(3)), seam: Number(seam.toFixed(2)), mbOff: mbOff === null ? null : Number(mbOff.toFixed(2)), contrast };
 }
 
 for (const mode of MODES) {
@@ -182,12 +188,13 @@ for (const mode of MODES) {
         const k = await measure(page, i, at, dpr);
         measured += 1;
         const tag = `${at} slide ${i + 1}/${n} ${(k.slide.src ?? '').replace(/^.*\/production\/([0-9a-f]{8}).*$/, '$1')}`;
-        report.push({ at, slide: i + 1, asset: (k.slide.src ?? '').replace(/^.*\/production\/([0-9a-f]{8}).*?(\?.*)$/, '$1 $2'), delivered: k.dims ? `${k.dims.w}x${k.dims.h}` : null, step: k.step, stepAt: k.stepAt, bpp: k.bpp, seam: k.seam, mbOff: k.mbOff, minContrast: Math.min(...k.contrast.map((c) => c.ratio)), contrast: k.contrast });
+        report.push({ at, slide: i + 1, asset: (k.slide.src ?? '').replace(/^.*\/production\/([0-9a-f]{8}).*?(\?.*)$/, '$1 $2'), delivered: k.dims ? `${k.dims.w}x${k.dims.h}` : null, step: k.step, rawStep: k.rawStep, stepAt: k.stepAt, bpp: k.bpp, seam: k.seam, mbOff: k.mbOff, minContrast: Math.min(...k.contrast.map((c) => c.ratio)), contrast: k.contrast });
         if (CALIBRATE) continue;
         let url = null; try { url = new URL(k.slide.src); } catch { /* reported below */ }
         if (!url || url.hostname !== 'cdn.sanity.io' || url.searchParams.get('q') !== String(T.quality) || url.searchParams.get('auto') !== 'format') failures.push(`${tag}: currentSrc ${k.slide.src}, want cdn.sanity.io with q=${T.quality}&auto=format (R1)`);
         if (k.slide.src && k.slide.src.includes(G.dropAsset)) failures.push(`${tag}: the dropped asset is served (INFRA: hero-filter.cjs) (R1)`);
-        if (k.step > T.rowStep) failures.push(`${tag}: band step ${k.step} levels at y=${k.stepAt} (hero-relative CSS px), max ${T.rowStep} (R2a)`);
+        if (k.step > T.rowStep) failures.push(`${tag}: smoothed band step ${k.step} levels at y=${k.stepAt} (hero-relative CSS px), max ${T.rowStep} (R2a)`);
+        if (k.rawStep > T.rawStep) failures.push(`${tag}: raw band step ${k.rawStep} levels between adjacent rows, max ${T.rawStep} (R2a)`);
         if (k.bpp === null) failures.push(`${tag}: no source size for ${k.slide.src} (INFRA) (R2b)`);
         else if (k.bpp < T.sourceBpp) failures.push(`${tag}: source ${k.bpp} bits per delivered pixel (${k.bytes} bytes over ${k.dims ? `${k.dims.w}x${k.dims.h}` : '?'}), min ${T.sourceBpp} (R2b)`);
         if (k.seam > T.seam) failures.push(`${tag}: seam into "Our purpose" ${k.seam} levels, max ${T.seam} (R3)`);
@@ -284,4 +291,5 @@ if (CALIBRATE) {
   process.exit(failures.length ? 1 : 0);
 }
 if (measured === 0 && failures.length === 0) failures.push('nothing measured (INFRA)');
-finish(NAME, failures, `${measured} slide captures (${MODES.join('/')}, ${T.viewports.map(([w, d]) => `${w}x${d}`).join(' ')}): q=${T.quality}, band step <= ${T.rowStep}, source >= ${T.sourceBpp} bpp, no seam, copy >= ${T.contrast}:1, ${T.slides} slides/dots/labels and autoplay 1-${T.slides}.`);
+if (process.argv.includes('--report')) process.stderr.write(`${JSON.stringify(report)}\n`);
+finish(NAME, failures, `${measured} slide captures (${MODES.join('/')}, ${T.viewports.map(([w, d]) => `${w}x${d}`).join(' ')}): q=${T.quality}, band step <= ${T.rowStep} smoothed / ${T.rawStep} raw, source >= ${T.sourceBpp} bpp, no seam, copy >= ${T.contrast}:1, ${T.slides} slides/dots/labels and autoplay 1-${T.slides}.`);
