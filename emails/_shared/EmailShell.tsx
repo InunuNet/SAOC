@@ -567,16 +567,20 @@ export function ShellFootnote({ children }: { children: ReactNode }) {
   return <p style={{ ...footerLineStyle(t), margin: '8px 0 0' }}>{children}</p>;
 }
 
-// Small outlined status pill for an unknown value, e.g. "To be confirmed".
+// Small outlined status pill for an unknown value, e.g. "To be confirmed". It wraps inside its
+// outline when the label is long (Sanity pendingLabel); it never clips.
 export function ShellPill({ children }: { children: ReactNode }) {
   const t = useContext(ThemeContext);
   return (
     <span
       style={{
         border: `1px solid ${t.muted}`,
-        borderRadius: '999px',
+        borderRadius: '12px',
         padding: '1px 8px',
-        whiteSpace: 'nowrap',
+        display: 'inline-block',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        lineHeight: '1.35',
       }}
     >
       {children}
