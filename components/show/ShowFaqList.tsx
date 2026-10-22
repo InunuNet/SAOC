@@ -62,6 +62,8 @@ export function hasFaqAnswer(faq: ShowFaq): boolean {
 export interface WiredFaq {
   kind: string;
   body: ReactNode;
+  // The plain text of `body`'s answer, for the FAQPage node: the same words the row shows.
+  text: string;
   replaces: boolean;
 }
 
@@ -86,7 +88,7 @@ export function ShowFaqList({
   wired = {},
 }: ShowFaqListProps) {
   const entries = (faqs ?? []).filter(
-    (faq) => faq?.question && (!hideUnanswered || hasFaqAnswer(faq))
+    (faq) => faq?.question && (!hideUnanswered || hasFaqAnswer(faq) || Boolean(wired[faq._id]))
   );
   if (entries.length === 0) return null;
 

@@ -59,9 +59,11 @@ export default async function ShowFaqPage() {
   // venue row reads the show's venue.name (the fact strip's source), only while the committee has
   // confirmed the venue. Either falls back to its Sanity answer when its source has nothing.
   const wired: Record<string, WiredFaq> = {};
-  if (admissionPriceLabels(loaded.cards).length > 0) {
+  const priceLabels = admissionPriceLabels(loaded.cards);
+  if (priceLabels.length > 0) {
     wired['showFaq-tickets-1'] = {
       kind: 'prices',
+      text: priceLabels.join('; '),
       replaces: false,
       body: (
         <>
@@ -76,6 +78,7 @@ export default async function ShowFaqPage() {
   if (show?.venue?.name && info?.confirmations?.venue === 'confirmed') {
     wired['showFaq-getting-there-3'] = {
       kind: 'venue',
+      text: show.venue.name,
       replaces: true,
       body: <p>{show.venue.name}</p>,
     };
@@ -92,21 +95,24 @@ export default async function ShowFaqPage() {
     .sort((a, b) => categoryRank(a) - categoryRank(b));
   const isSourced = (faq: ShowFaq) =>
     Boolean(wired[faq._id]) || (faq.status === 'confirmed' && hasFaqAnswer(faq));
-  const visibleFaqs = sortedFaqs.filter(
-    (faq) => !hideUnanswered || (hasFaqAnswer(faq) && isSourced(faq))
-  );
+  const visibleFaqs = sortedFaqs.filter((faq) => !hideUnanswered || isSourced(faq));
   const withheldCount = sortedFaqs.length - visibleFaqs.length;
   const holds = hideUnanswered && visibleFaqs.length === 0;
 
-  // SEO: the entries the page presents as settled. A public build (`hideUnanswered`) renders no
-  // badges, so every answered entry there reads as settled; a beta build badges everything that
-  // is not 'confirmed'.
+  // SEO: the entries the page presents as settled, i.e. the sourced rows. r57b (Codi, H4): each
+  // answer is the row's visible answer word for word, so a wired row reads its resolved fact (the
+  // venue name, the hub's price list), never the Sanity prose it replaces.
+  const answerText = (faq: ShowFaq) => {
+    const sanityText = portableTextToPlainText(faq.answer ?? []);
+    const wiredRow = wired[faq._id];
+    if (!wiredRow) return sanityText;
+    return wiredRow.replaces
+      ? wiredRow.text
+      : [sanityText, wiredRow.text].filter(Boolean).join(' ');
+  };
   const faqEntries = visibleFaqs
-    .filter((faq) => hasFaqAnswer(faq) && (hideUnanswered || faq.status === 'confirmed'))
-    .map((faq) => ({
-      question: faq.question as string,
-      answer: portableTextToPlainText(faq.answer ?? []),
-    }))
+    .filter((faq) => isSourced(faq))
+    .map((faq) => ({ question: faq.question as string, answer: answerText(faq) }))
     .filter((entry) => entry.answer !== '');
 
   return (

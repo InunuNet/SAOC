@@ -10,7 +10,7 @@ Evidence (Sanity read only, published perspective, 2026-10-22): of 14 rows, `sho
 One ShowStatusLine (the R11 marker, the Sanity `pendingLabel`), drawn once before the list when at least one row is withheld. No new copy.
 
 ## JSON-LD
-The FAQPage node is built from the shown rows, so it lists only the sourced rows.
+The FAQPage node is built from the shown rows, so it lists only the sourced rows, in both modes. Each `acceptedAnswer` is the row's visible answer word for word (Codi, H4; Google's structured-data policy): a wired row carries a plain-text `text` (`WiredFaq` in `components/show/ShowFaqList.tsx`). The venue row's answer is the venue name, and the cost row's answer is its Sanity sentence followed by the hub's price labels. The Tickets link is not part of the answer. The price labels are joined with "; " where the page shows list items: the words are identical, the separator stands in for the list break. A wired row stays visible even if its Sanity answer is later emptied, because the wired fact is its source.
 
 ## Owner flags
 Rows return to the public page as the committee confirms them in Sanity (status `confirmed`); nothing here writes Sanity.
