@@ -1,5 +1,6 @@
 // Breadcrumb component available from @/components/chrome for interior pages
 import { SkipLink, UtilityBar, Header, Footer } from '@/components/chrome';
+import { AdminPill } from '@/components/admin/AdminPill';
 import { ChromeFrame } from '@/components/nos-chrome/ChromeFrame';
 import { NosSkipLink } from '@/components/nos-chrome/NosSkipLink';
 import { NosFooter } from '@/components/nos-chrome/NosFooter';
@@ -20,29 +21,32 @@ export default async function MarketingLayout({ children }: { children: React.Re
   });
 
   return (
-    <ChromeFrame
-      saoc={{
-        skip: <SkipLink />,
-        top: (
-          <>
-            <UtilityBar show={show} />
-            <Header show={show} />
-          </>
-        ),
-        bottom: <Footer />,
-      }}
-      nos={{
-        skip: <NosSkipLink />,
-        top: (
-          <>
-            <UtilityBar variant="nos" />
-            <NosHeader show={show} />
-          </>
-        ),
-        bottom: <NosFooter />,
-      }}
-    >
-      {children}
-    </ChromeFrame>
+    <>
+      <ChromeFrame
+        saoc={{
+          skip: <SkipLink />,
+          top: (
+            <>
+              <UtilityBar show={show} />
+              <Header show={show} />
+            </>
+          ),
+          bottom: <Footer />,
+        }}
+        nos={{
+          skip: <NosSkipLink />,
+          top: (
+            <>
+              <UtilityBar variant="nos" />
+              <NosHeader show={show} />
+            </>
+          ),
+          bottom: <NosFooter />,
+        }}
+      >
+        {children}
+      </ChromeFrame>
+      <AdminPill />
+    </>
   );
 }

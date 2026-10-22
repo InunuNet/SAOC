@@ -103,6 +103,9 @@ assertions:
     - id: A29
       description: Codi token rulings encoded (accent-soft pill dot, error/primary door banners with white text, accent tile with primary-800 text, aria-sort on Submitted, Orders = paid, tickets newest-first)
       command: bash contracts/checks/admin-redesign/static.sh rulings
+    - id: A30
+      description: SITE_PUBLIC_LAUNCH is not set in apphosting.yaml or any committed env file (standing order; render check sets it only on its own local server)
+      command: bash contracts/checks/admin-redesign/static.sh no-launch-flag
     - id: A23
       description: Codex adversarial review of the whole diff
       type: codex_qa

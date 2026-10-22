@@ -5,7 +5,7 @@ created_at: '2026-10-22'
 autonomy: high
 features:
 - id: F1
-  name: Shared EmailShell and the eleven A/B/C templates restyled; ContactConfirmation held unchanged (D is F2)
+  name: Shared EmailShell and the A/B/C templates restyled per Codi and Brad review 2026-10-22; ContactConfirmation held unchanged (D is F2)
   status: pending
 goldens:
 - .agent/memory/project/specs/email-shell/goldens/design-ruling.md
@@ -22,6 +22,9 @@ goldens:
 - .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorPaymentAdminNotice.txt
 - .agent/memory/project/specs/email-shell/goldens/copy-baseline/ReconciliationAlert.txt
 - .agent/memory/project/specs/email-shell/goldens/copy-baseline/ContactConfirmation.txt
+- .agent/memory/project/specs/email-shell/goldens/brad-review-2026-10-22.md
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorApprovalConfirmationWithCode.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline-origin/OrderConfirmation.txt
 assertions:
   phase: 4
   checks:
@@ -32,16 +35,16 @@ assertions:
     description: Every A/B/C template renders through EmailShell with its ruled family and imports it
     command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts families
   - id: A3
-    description: Visible copy of all 12 templates is identical to the origin/main baseline (text extraction, preheader excluded, only REG/NPO footer line allowed to be added)
+    description: 'Visible copy equals the amended baseline: origin/main text plus ONLY Brad decisions (sentence-case A/B headings, em dash, "Recover your tickets", code shown alone, "Present this ticket", emergency footnote); C and ContactConfirmation unchanged apart from the em dash'
     command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts copy
   - id: A4
     description: No img alt beyond the logo names and the verbatim OrderConfirmation QR alt; every img has an alt (OrderConfirmation QR alt kept verbatim from origin/main per Codi)
     command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts alt
   - id: A5
-    description: NOS logo assets exist at 560 and 240 wide and the shell wires display widths 280 and 120
+    description: 'NOS header logo export (full-colour reversed horizontal) is 560 wide and the 48px vertical mark export is 96 tall, both pure resizes of the branding sources (no crop/recolour); shell wires 280 display, 48 mark height and the 27px/7px inset-adjusted padding (13px inset re-measured: 192/4108 of 280); old gold lockups not wired'
     command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts assets
   - id: A6
-    description: Every A/B/C band has bgcolor and matching inline background-color; A/B have royal header and footer, C has the royal top rule and no img; color-scheme declared
+    description: Every A/B/C band has bgcolor and matching inline background-color; A/B have a royal header band, C has the royal top rule and no img; color-scheme declared
     command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts bands
   - id: A7
     description: Rendered HTML carries the max-width 620px stack media query (applies at 375px)
@@ -59,8 +62,8 @@ assertions:
     description: Stand forfeiture notice constant unchanged versus origin/main
     command: git diff --quiet origin/main -- lib/vendor-stand-forfeiture-notice.ts
   - id: A11
-    description: EmailShell does not reference SAOC lockup assets in F1 (D held)
-    command: test ! -f emails/_shared/EmailShell.tsx || ! grep -q "saoc-horizontal-colour" emails/_shared/EmailShell.tsx
+    description: EmailShell does not reference SAOC lockup assets or the old gold NOS lockups in F1
+    command: test ! -f emails/_shared/EmailShell.tsx || ! grep -q "saoc-horizontal-colour\|nos-reversed-gold" emails/_shared/EmailShell.tsx
   - id: A12
     description: 'ContactConfirmation is held: unchanged versus origin/main until F2 (media-kit lockups not yet merged)'
     command: git diff --quiet origin/main -- emails/ContactConfirmation.tsx
@@ -71,10 +74,10 @@ assertions:
     description: Test-send script uses lib/email sendEmail (no new email code)
     command: grep -q "sendEmail" scripts/email-shell-test-send.ts
   - id: A16
-    description: Per-family (A, B, C) screenshot set exists under .tmp/sandbox/email-shell/screens
+    description: Per-family (A, B, C) screenshots plus order-confirmation.png and vendor-approved.png exist under .tmp/sandbox/email-shell/screens
     command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts screens
   - id: A17
-    description: Codi approval of the renders is recorded and predates every A/B/C test-send manifest
+    description: Codi approval names the OrderConfirmation and VendorApprovalConfirmation renders and predates every A/B/C test-send manifest (renders go to Codi before merge)
     command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts review-order
   - id: A18
     description: type-check passes
@@ -108,3 +111,15 @@ assertions:
     type: browser_deployed_check
     target: .agent/memory/scratch/email-shell-browser-manifest.json
     required: false
+  - id: A25
+    description: 'A/B: one large header logo (full-colour reversed horizontal), no big vertical footer lockup, condensed footer on the page ground (1px rule, 12px, two lines, optional 48px mark)'
+    command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts footer
+  - id: A26
+    description: Order email carries the emergency footnote line verbatim at 12px above the footer, with the on-site first-aid "To be confirmed" item
+    command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts emergency
+  - id: A27
+    description: Old vertical footer lockup export is not shipped
+    command: test ! -f public/images/email/nos-reversed-gold-vertical-240.png
+  - id: A28
+    description: Order fixture carries the confirmed visit values (venue, address, dates, Thu 23 hours) and renders neither "The venue To be confirmed" nor "Show dates To be confirmed"
+    command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts visit

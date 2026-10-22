@@ -10,6 +10,9 @@ const SOURCE_ROOT = 'public/images';
 const OUTPUT_ROOT = path.join(SOURCE_ROOT, '_opt');
 const RASTER_EXTENSION = /\.(jpe?g|png)$/i;
 const WEBP_QUALITY = 75;
+// The home hero's static fallback (lib/data/heroImages.ts) also gets a q88 set, which the loader serves for quality={88} (rHB).
+const HERO_WEBP_QUALITY = 88;
+const HERO_SOURCES = new Set(['orchid-violet.jpg', 'orchid-pink.jpg', 'orchid-dark.jpg'].map((name) => path.join(SOURCE_ROOT, name)));
 
 const { deviceSizes, imageSizes } = JSON.parse(await readFile('lib/image-widths.json', 'utf8'));
 const WIDTHS = [...new Set([...deviceSizes, ...imageSizes])].sort((a, b) => a - b);
@@ -41,8 +44,10 @@ for await (const source of walk(SOURCE_ROOT)) {
     .replace(/\.[^.]+$/, (ext) => ext.toLowerCase());
   const { mtimeMs } = await stat(source);
   await mkdir(path.dirname(path.join(OUTPUT_ROOT, relative)), { recursive: true });
-  for (const width of WIDTHS) {
-    const output = path.join(OUTPUT_ROOT, `${relative}-${width}.webp`);
+  const encodings = [['', { quality: WEBP_QUALITY }]];
+  if (HERO_SOURCES.has(source)) encodings.push([`-q${HERO_WEBP_QUALITY}`, { quality: HERO_WEBP_QUALITY, smartSubsample: true }]);
+  for (const width of WIDTHS) for (const [suffix, webp] of encodings) {
+    const output = path.join(OUTPUT_ROOT, `${relative}-${width}${suffix}.webp`);
     const key = output.toLowerCase();
     if (claimed.has(key)) {
       throw new Error(`image variant collision: ${source} and ${claimed.get(key)} -> ${output}`);
@@ -54,7 +59,7 @@ for await (const source of walk(SOURCE_ROOT)) {
     }
     await sharp(source)
       .resize({ width, withoutEnlargement: true })
-      .webp({ quality: WEBP_QUALITY })
+      .webp(webp)
       .toFile(output);
     generated += 1;
   }

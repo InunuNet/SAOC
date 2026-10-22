@@ -1,70 +1,122 @@
-import type { Ticket } from '@/types/index';
+'use client';
+
+import { useState } from 'react';
+
+import { formatAdminDate, formatAdminDateTime } from '@/lib/admin-format';
 import { StatusPill } from './StatusPill';
+import { AdminTable } from './table/AdminTable';
+import { TICKET_COLUMNS } from './table/columns';
+import { TableToolbar, type FilterOption } from './table/TableToolbar';
 
-const HEADER_CELL_CLASS =
-  'whitespace-nowrap border-b border-rule bg-bone px-4 py-3 text-left font-mono text-[11px] tracking-[0.16em] text-muted';
-const BODY_CELL_CLASS = 'whitespace-nowrap border-b border-rule-soft px-4 py-3 font-sans text-[14px] text-ink';
-
-interface TicketsTableProps {
-  tickets: Ticket[];
+/** Serialisable view of a ticket: Firestore Timestamps never cross into this client module. */
+export interface TicketRow {
+  id: string;
+  bookingRef: string;
+  attendeeName: string;
+  attendeeEmail: string;
+  ticketType: string;
+  status: string;
+  purchasedAt: string | null;
 }
 
-function formatPurchasedAt(ticket: Ticket): string {
-  return ticket.purchasedAt ? new Date(ticket.purchasedAt.toMillis()).toISOString() : '—';
+const ALL_STATUSES = 'all';
+const STATUS_OPTIONS: readonly FilterOption[] = [
+  { value: ALL_STATUSES, label: 'All' },
+  { value: 'paid', label: 'Paid' },
+  { value: 'checked-in', label: 'Checked in' },
+  { value: 'reserved', label: 'Reserved' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
+
+const EMPTY_TEXT = 'No tickets have been sold yet.';
+
+function matchesSearch(row: TicketRow, needle: string): boolean {
+  return [row.bookingRef, row.attendeeName, row.attendeeEmail, row.ticketType].some((value) =>
+    value.toLowerCase().includes(needle),
+  );
+}
+
+interface TicketsTableProps {
+  tickets: TicketRow[];
 }
 
 export function TicketsTable({ tickets }: TicketsTableProps) {
-  if (tickets.length === 0) {
-    return (
-      <div className="border border-rule bg-ivory px-6 py-16 text-center">
-        <p className="font-sans text-[15px] text-muted">No tickets have been sold yet.</p>
-      </div>
-    );
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState(ALL_STATUSES);
+
+  const needle = search.trim().toLowerCase();
+  const visible = tickets.filter(
+    (row) => (status === ALL_STATUSES || row.status === status) && (!needle || matchesSearch(row, needle)),
+  );
+
+  function renderCell(columnId: string, row: TicketRow): React.ReactNode {
+    switch (columnId) {
+      case 'bookingRef':
+        return <span className="font-mono text-[13px]">{row.bookingRef}</span>;
+      case 'name':
+        return row.attendeeName;
+      case 'email':
+        return row.attendeeEmail;
+      case 'ticketType':
+        return row.ticketType;
+      case 'purchased':
+        return formatAdminDate(row.purchasedAt);
+      case 'status':
+        return <StatusPill status={row.status} />;
+      default:
+        return null;
+    }
+  }
+
+  function cellTitle(columnId: string, row: TicketRow): string | undefined {
+    switch (columnId) {
+      case 'bookingRef':
+        return row.bookingRef;
+      case 'name':
+        return row.attendeeName;
+      case 'email':
+        return row.attendeeEmail;
+      case 'ticketType':
+        return row.ticketType;
+      case 'purchased':
+        return formatAdminDateTime(row.purchasedAt);
+      default:
+        return undefined;
+    }
   }
 
   return (
-    <div className="overflow-x-auto border border-rule bg-ivory">
-      <table className="w-full min-w-[720px] border-collapse">
-        <caption className="sr-only">Ticket sales and check-in status</caption>
-        <thead>
-          <tr>
-            <th scope="col" className={HEADER_CELL_CLASS}>
-              Booking Ref
-            </th>
-            <th scope="col" className={HEADER_CELL_CLASS}>
-              Attendee Name
-            </th>
-            <th scope="col" className={HEADER_CELL_CLASS}>
-              Attendee Email
-            </th>
-            <th scope="col" className={HEADER_CELL_CLASS}>
-              Ticket Type
-            </th>
-            <th scope="col" className={HEADER_CELL_CLASS}>
-              Status
-            </th>
-            <th scope="col" className={HEADER_CELL_CLASS}>
-              Purchased At
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {tickets.map((ticket) => (
-            <tr key={ticket.id} className="hover:bg-parchment/60">
-              <th scope="row" className={`${BODY_CELL_CLASS} tabular-nums font-medium`}>
-                {ticket.bookingRef}
-              </th>
-              <td className={BODY_CELL_CLASS}>{ticket.attendeeName}</td>
-              <td className={BODY_CELL_CLASS}>{ticket.attendeeEmail}</td>
-              <td className={BODY_CELL_CLASS}>{ticket.ticketType}</td>
-              <td className={BODY_CELL_CLASS}>
-                <StatusPill status={ticket.status} />
-              </td>
-              <td className={`${BODY_CELL_CLASS} tabular-nums`}>{formatPurchasedAt(ticket)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div>
+      <TableToolbar
+        searchLabel="Search tickets"
+        search={search}
+        onSearchChange={setSearch}
+        filterLabel="Ticket status"
+        filterOptions={STATUS_OPTIONS}
+        filterValue={status}
+        onFilterChange={setStatus}
+        countText={`${visible.length} ${visible.length === 1 ? 'ticket' : 'tickets'}`}
+        csvHref="/api/admin/export-csv"
+      />
+      <AdminTable
+        caption="Ticket sales and check-in status"
+        columns={TICKET_COLUMNS}
+        rows={visible}
+        getRowId={(row) => row.id}
+        renderCell={renderCell}
+        cellTitle={cellTitle}
+        sortedDescColumnId="purchased"
+        emptyText={EMPTY_TEXT}
+        card={(row) => ({
+          title: row.attendeeName,
+          status: <StatusPill status={row.status} />,
+          fields: [
+            { label: 'Booking ref', value: row.bookingRef },
+            { label: 'Ticket type', value: row.ticketType },
+            { label: 'Purchased', value: formatAdminDate(row.purchasedAt) },
+          ],
+        })}
+      />
     </div>
   );
 }

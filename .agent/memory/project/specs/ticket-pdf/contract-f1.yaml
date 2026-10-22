@@ -1,6 +1,6 @@
 schema: athanor.contract/v1
 slug: ticket-pdf
-goal: Order confirmations carry a branded A4 PDF ticket (one page per position, to Codi's artifact 1Zc87ALWvhA7eRdVkdq12W v1792425877-d0a8 read 2026-10-22) that is also what the confirmation page downloads, with access no weaker than today and an email that still sends if PDF generation fails.
+goal: Order confirmations carry a branded A4 PDF ticket (one page per position, to Brad's 2026-10-22 review over Codi's artifact 1Zc87ALWvhA7eRdVkdq12W v1792425877-d0a8 read 2026-10-22) that is also what the confirmation page downloads, with access no weaker than today and an email that still sends if PDF generation fails.
 created_at: '2026-10-22'
 autonomy: high
 
@@ -24,11 +24,20 @@ assertions:
       description: pdf-lib and @pdf-lib/fontkit pinned exactly (no caret) in dependencies and present in pnpm-lock; no headless-browser or alternative PDF runtime dependency
       command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts deps
     - id: A2
-      description: fonts (Fraunces, Karla; .ttf/.woff, from @fontsource or the repo TTFs) and the reversed-gold horizontal logo export (>=1500px) are vendored in lib/ticket-pdf-assets and traced via next.config.ts
+      description: fonts (Fraunces, Karla; .ttf/.woff, from @fontsource or the repo TTFs) and the header logo (full-colour-reversed horizontal, jpg or png, >=1500px) and the ink-purple vertical footer mark (>=300px) are vendored in lib/ticket-pdf-assets and traced via next.config.ts
       command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts assets
     - id: A3
       description: PDF renders from the fixture order and rasters (fixture.pdf, page-1.png, page-2.png written to .tmp/sandbox/ticket-pdf for Codi)
       command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts render
+    - id: A28
+      description: exact lines per page - Brad's instruction line, the emergency footnote, the footer line and REG/NPO line, PAGE n OF N; no Fold here, no old instruction wording
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts lines
+    - id: A29
+      description: a very long attendee name wraps or shrinks inside the stub - every word present and ending left of the QR tile (x 108.3 mm), never overlapping it
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts longname
+    - id: A30
+      description: schedule rule (decisions.md D11 rev) - dates come from TICKET_PRODUCTS via productIdForSlug (event/pass print the product's own when and meta, day-selection types the chosen day, programme/workshop/unmapped the pill); rendered stubs - VIP Thursday 23 September 16h00 to 19h00 and no 24/25/26, Sunset its when and meta with no pill, Weekend Friday 24 to Sunday 26 September, Symposium the pill and no date
+      command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts schedule
     - id: A4
       description: every page is A4 portrait (595.28 x 841.89 pt)
       command: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts a4

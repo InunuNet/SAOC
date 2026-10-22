@@ -1,5 +1,5 @@
 // ticket-pdf contract checks. Usage: pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts <cmd>
-//   render | a4 | pages | size | text | fonts | qr | colours | copy | access | route | email | assets | trace | deps | review-order
+//   render | lines | longname | schedule | a4 | pages | size | text | fonts | qr | colours | copy | access | route | email | assets | trace | deps | review-order
 // Every command exits 0 on pass, 1 on fail (printing each failure), 2 on an unknown command or missing tool.
 // Needs poppler (pdftoppm, pdftotext, pdffonts) on PATH for the raster/text/font checks.
 import { execFileSync } from 'node:child_process';
@@ -8,6 +8,7 @@ import path from 'node:path';
 import jsQR from 'jsqr';
 import { PNG } from 'pngjs';
 import { PDFDocument } from 'pdf-lib';
+import sharp from 'sharp';
 
 const SANDBOX = '.tmp/sandbox/ticket-pdf';
 const GOLDENS = '.agent/memory/project/specs/ticket-pdf/goldens';
@@ -144,6 +145,74 @@ if (cmd === 'render') {
   strings.forEach((s) => words(s).forEach((w) => allowedWords.add(w)));
   const stray = [...new Set(words(text).filter((w) => !allowedWords.has(w)))];
   if (stray.length) fail(`words not in the copy baseline or fixture: ${stray.join(' | ')}`);
+} else if (cmd === 'lines') {
+  const pdf = await ensureFixturePdf();
+  const norm = (t: string) => t.replace(/\s+/g, ' ');
+  const want = ['In an emergency: 10111 Police (national) · 10177 Ambulance and fire (national) · 112 All emergencies, from a mobile phone', 'South African Orchid Council — saoc.co.za', 'REG# 1978/004040/08 · NPO 043-901'];
+  for (let i = 0; i < fixture.positions.length; i++) {
+    const page = norm(tool('pdftotext', ['-raw', '-f', String(i + 1), '-l', String(i + 1), pdf, '-']));
+    for (const w of want) if (!page.includes(w)) fail(`page ${i + 1}: missing exact line "${w}"`);
+    if (!page.includes('Present this ticket at the door for check in.')) fail(`page ${i + 1}: instruction line not exact`);
+    if (page.includes('check-in') || page.includes('or just the booking reference')) fail(`page ${i + 1}: old instruction wording present`);
+    if (!new RegExp(`PAGE ${i + 1} OF ${fixture.positions.length}`, 'i').test(page)) fail(`page ${i + 1}: PAGE n OF N missing`);
+    if (/organiser/i.test(page)) fail(`page ${i + 1}: Organiser line must not appear (dropped by Codi)`);
+    if (/fold here/i.test(page)) fail(`page ${i + 1}: Fold here must not appear`);
+  }
+} else if (cmd === 'schedule') {
+  const { resolveTicketSchedule } = await import('../../../lib/ticket-pdf-schedule.ts');
+  const { TICKET_PRODUCTS, productIdForSlug } = await import('../../../lib/data/ticket-presentation.ts');
+  type R = { kind: string; dateText: string | null; metaText: string | null };
+  const run = (slug: string, rds: boolean | null, day: string | null) => resolveTicketSchedule({ slug, requiresDaySelection: rds } as never, day) as R;
+  for (const slug of ['vip', 'sunset-cocktails-single', 'weekend-pass', 'weekend-pass-early-bird']) {
+    const id = productIdForSlug(slug);
+    const p = id ? TICKET_PRODUCTS[id] : null;
+    const r = run(slug, false, null);
+    if (!p || r.kind !== 'product' || r.dateText !== p.when || r.metaText !== p.meta) fail(`${slug}: want the product's own when/meta ("${p?.when}" / "${p?.meta}"), got ${JSON.stringify(r)}`);
+  }
+  if (/2[456]/.test(JSON.stringify(run('vip', false, null)))) fail('vip must not carry 24/25/26');
+  for (const [slug, day] of [['day-visitor', '2027-09-24'], ['early-bird', '2027-09-25']] as const) {
+    const r = run(slug, true, day);
+    if (r.kind !== 'chosen-day' || !(r.dateText && /\b2[45]\b/.test(r.dateText))) fail(`${slug}: chosen day not used (${JSON.stringify(r)})`);
+    const none = run(slug, true, null);
+    if (none.kind !== 'unconfirmed' || none.dateText !== null) fail(`${slug} without chosenDay must be the pill, got ${JSON.stringify(none)}`);
+  }
+  for (const slug of ['saoc-symposium', 'wosa-conference', 'workshops', 'field-trip', 'qa-fixture-ticket', 'no-such-slug']) {
+    const r = run(slug, false, null);
+    if (r.kind !== 'unconfirmed' || r.dateText !== null || r.metaText !== null) fail(`${slug}: must be the pill with no date, got ${JSON.stringify(r)}`);
+  }
+  const pdf = await ensureFixturePdf();
+  const stubWords = (page: number) => {
+    const html = tool('pdftotext', ['-bbox', '-f', String(page), '-l', String(page), pdf, '-']);
+    const cardBottomPt = (143.9 * 72) / 25.4, stubRightPt = (108.3 * 72) / 25.4;
+    return [...html.matchAll(/<word xMin="([\d.]+)" yMin="[\d.]+" xMax="([\d.]+)" yMax="([\d.]+)">([^<]*)<\/word>/g)].filter((m) => Number(m[3]) < cardBottomPt && Number(m[2]) < stubRightPt).map((m) => m[4].toLowerCase());
+  };
+  const pageOf = (slug: string) => fixture.positions.findIndex((p) => (p as { slug?: string }).slug === slug) + 1;
+  const need = (label: string, words: string[], have: string[]) => { for (const w of words) if (!have.includes(w.toLowerCase())) fail(`${label}: stub lacks "${w}"`); };
+  const forbid = (label: string, words: string[], have: string[]) => { for (const w of words) if (have.includes(w.toLowerCase())) fail(`${label}: stub must not contain "${w}"`); };
+  const pages = { vip: pageOf('vip'), sunset: pageOf('sunset-cocktails-single'), weekend: pageOf('weekend-pass'), symposium: pageOf('saoc-symposium') };
+  if (Object.values(pages).some((n) => n < 1)) fail('fixture lacks vip / sunset / weekend / symposium positions');
+  else {
+    const vip = stubWords(pages.vip), sunset = stubWords(pages.sunset), weekend = stubWords(pages.weekend), sym = stubWords(pages.symposium);
+    need('VIP', ['Thursday', '23', 'September', '16h00', '19h00'], vip); forbid('VIP', ['24', '25', '26', 'confirmed'], vip);
+    need('Sunset', ['Thursday', '23', 'September', '18h00', '21h00'], sunset); forbid('Sunset', ['confirmed'], sunset);
+    need('Weekend', ['Friday', '24', 'Sunday', '26', 'September', 'Entry', 'three'], weekend); forbid('Weekend', ['Thursday', 'confirmed'], weekend);
+    need('Symposium', ['confirmed'], sym); forbid('Symposium', ['september', '2027', 'thursday'], sym);
+  }
+} else if (cmd === 'longname') {
+  // A very long attendee name must wrap/shrink inside the stub: every word stays present and ends left of the QR tile (x = 108.3 mm).
+  const name = 'Bongani Sibusiso Maximilian Oppenheimer-Vanderbijlpark Mokoena-Thandiwe Nkosazana III';
+  const input = { ...fixtureWith(1), positions: [{ ...fixture.positions[0], attendeeName: name }] };
+  mkdirSync(SANDBOX, { recursive: true });
+  const p = path.join(SANDBOX, 'longname.pdf');
+  writeFileSync(p, await buildPdf(input));
+  const html = tool('pdftotext', ['-bbox', '-f', '1', '-l', '1', p, '-']);
+  const boxes = [...html.matchAll(/<word xMin="([\d.]+)" yMin="[\d.]+" xMax="([\d.]+)" yMax="[\d.]+">([^<]*)<\/word>/g)].map((m) => ({ xMax: Number(m[2]), w: m[3] }));
+  const limitPt = (108.3 * 72) / 25.4 - 2;
+  for (const token of name.split(' ')) {
+    const hit = boxes.find((b) => b.w === token);
+    if (!hit) fail(`long name: word "${token}" missing or truncated`);
+    else if (hit.xMax > limitPt) fail(`long name: word "${token}" ends at ${hit.xMax.toFixed(1)}pt, overlapping the QR tile (limit ${limitPt.toFixed(1)}pt)`);
+  }
 } else if (cmd === 'access') {
   const { authoriseTicketPdfRequest } = await import('../../../lib/ticket-pdf-access.ts');
   const mk = (bookingRef: string) => ({ bookingRef, attendeeName: 'X', ticketType: 'VIP Opening', amount: 1, qrDataUri: 'data:' });
@@ -221,9 +290,10 @@ if (cmd === 'render') {
   const files = existsSync(dir) ? readdirSync(dir) : [];
   const ttf = files.filter((f) => /\.(ttf|otf|woff)$/.test(f));
   for (const fam of ['Fraunces', 'Karla']) if (!ttf.some((f) => f.includes(fam))) fail(`no ${fam} .ttf/.woff in ${dir}`);
-  const widthOf = (f: string) => PNG.sync.read(readFileSync(path.join(dir, f))).width;
-  const h = files.find((f) => /horizontal.*\.png$/.test(f));
-  if (!h || widthOf(h) < 1500) fail('horizontal reversed-gold logo export missing or < 1500 px wide');
+  const widthOf = async (f: string) => (await sharp(path.join(dir, f)).metadata()).width ?? 0;
+  const h = files.find((f) => /horizontal.*\.(jpg|png)$/.test(f)), v = files.find((f) => /vertical.*\.png$/.test(f));
+  if (!h || (await widthOf(h)) < 1500) fail('header logo (full-colour-reversed horizontal) export missing or < 1500 px wide');
+  if (!v || (await widthOf(v)) < 300) fail('footer ink-purple vertical mark export missing or < 300 px wide');
   if (!readFileSync('next.config.ts', 'utf8').includes('lib/ticket-pdf-assets')) fail('next.config.ts does not trace lib/ticket-pdf-assets');
 } else if (cmd === 'trace') {
   // After `pnpm build`: the route and the ITN route (email attachment) must both carry the fonts and logos in their file trace.
@@ -235,7 +305,7 @@ if (cmd === 'render') {
       if (!t) { fail(`no nft trace for ${route}`); continue; }
       const files: string[] = JSON.parse(readFileSync(t, 'utf8')).files;
       if (!files.some((f) => f.includes('ticket-pdf-assets') && /\.(ttf|otf|woff)$/.test(f))) fail(`${route}: fonts not in trace`);
-      if (!files.some((f) => f.includes('ticket-pdf-assets') && f.endsWith('.png'))) fail(`${route}: logos not in trace`);
+      if (!files.some((f) => f.includes('ticket-pdf-assets') && /\.(png|jpg)$/.test(f))) fail(`${route}: logos not in trace`);
     }
   }
 } else if (cmd === 'deps') {

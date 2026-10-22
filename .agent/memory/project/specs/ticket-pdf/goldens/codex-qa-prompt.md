@@ -3,7 +3,7 @@
 Review the full diff (lib/ticket-pdf.ts, lib/ticket-pdf-data.ts, lib/ticket-pdf-access.ts, lib/ticket-pdf-assets/,
 app/api/tickets/pdf/route.ts, lib/confirmation-email.ts, lib/email.ts, components/tickets/DownloadTicketButton.tsx,
 app/(marketing)/tickets/confirmation/page.tsx, next.config.ts, package.json/pnpm-lock) against
-.agent/memory/project/specs/ticket-pdf/goldens/decisions.md and layout-spec.md (the Codi artifact 1Zc87ALWvhA7eRdVkdq12W v1792425877-d0a8 is the golden; the ruling's fold rule/royal footer band are NOT to be built).
+.agent/memory/project/specs/ticket-pdf/goldens/decisions.md and layout-spec.md (brad-review-2026-10-22.md supersedes the Codi artifact 1Zc87ALWvhA7eRdVkdq12W v1792425877-d0a8, which supersedes codi-ruling.md; no fold rule, no royal footer band, no big footer lockup, no emergency card, exactly one large logo).
 Hunt for:
 1. ACCESS: any way to obtain another order's PDF or ticket data: `position` param not constrained to the resolved order's positions,
    a bookingRef accepted without the order ref, differing 404 bodies/statuses (oracle), unpaid/reserved orders served, buyer

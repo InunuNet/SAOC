@@ -2,8 +2,20 @@ import type { ReactElement } from 'react';
 
 import { generateBookingRefQrPngBuffer } from '@/lib/qr';
 import { buildRecoveryUrl } from '@/lib/recovery-url';
+import { buildTicketPdf as renderTicketPdf, type TicketPdfPosition } from '@/lib/ticket-pdf';
+import {
+  loadChosenDays,
+  loadTicketPdfVisit,
+  loadTicketTypeTraits,
+  toPdfPositions,
+} from '@/lib/ticket-pdf-data';
 import { sendEmail, TICKETS_FROM_ADDRESS, type EmailAttachment } from '@/lib/email';
-import OrderConfirmation, { type OrderConfirmationPosition } from '@/emails/OrderConfirmation';
+import OrderConfirmation, {
+  type OrderConfirmationPosition,
+  type OrderConfirmationVisit,
+} from '@/emails/OrderConfirmation';
+import { loadOrderVisit } from '@/lib/order-visit-info';
+import { logFailureSafely } from '@/lib/safe-log';
 import type { TicketType } from '@/types/index';
 
 /**
@@ -41,6 +53,13 @@ export interface SendConfirmationEmailInput {
   buyerName: string;
   positions: ConfirmationEmailPosition[];
   recoveryToken: string | null;
+  /** Order reference (`m_payment_id`): names the PDF file and prints in its footer. Optional. */
+  orderReference?: string;
+}
+
+export interface TicketPdfEmailInput {
+  orderReference: string | null;
+  positions: TicketPdfPosition[];
 }
 
 /** Deliberately narrow — matches only what lib/email.ts's real `sendEmail` already satisfies
@@ -59,6 +78,52 @@ export interface SendConfirmationEmailDeps {
   mailer?: ConfirmationEmailMailer;
   generateQrPngBuffer?: (bookingRef: string) => Promise<Buffer>;
   siteUrl?: string;
+  /** Injectable for tests; the default reads the confirmed visit info from Sanity. */
+  loadVisit?: () => Promise<OrderConfirmationVisit>;
+  /** Injectable for tests; the default loads the visit info and renders the real PDF. */
+  buildTicketPdf?: (input: TicketPdfEmailInput) => Promise<Uint8Array>;
+}
+
+async function defaultBuildTicketPdf(input: TicketPdfEmailInput): Promise<Uint8Array> {
+  const [visit, chosenDays, traits] = await Promise.all([
+    loadTicketPdfVisit(),
+    loadChosenDays(input.orderReference),
+    loadTicketTypeTraits(),
+  ]);
+  return renderTicketPdf({
+    orderReference: input.orderReference,
+    positions: toPdfPositions(input.positions, chosenDays, visit, traits),
+    visit,
+  });
+}
+
+/** Never throws: any failure (sync or async) is logged and yields null so the email still sends. */
+async function buildPdfAttachment(
+  input: SendConfirmationEmailInput,
+  build: (pdfInput: TicketPdfEmailInput) => Promise<Uint8Array>
+): Promise<EmailAttachment | null> {
+  try {
+    const bytes = await build({
+      orderReference: input.orderReference ?? null,
+      positions: input.positions.map(({ bookingRef, attendeeName, ticketType }) => ({
+        bookingRef,
+        attendeeName,
+        ticketType,
+      })),
+    });
+    const stem = (input.orderReference ?? input.positions[0].bookingRef).replace(/[^A-Za-z0-9-]/g, '-');
+    return {
+      content: Buffer.from(bytes),
+      filename: `saoc-ticket-${stem}.pdf`,
+      contentType: 'application/pdf',
+    };
+  } catch (error) {
+    logFailureSafely(
+      '[confirmation-email] ticket PDF generation failed; sending without attachment',
+      error
+    );
+    return null;
+  }
 }
 
 /**
@@ -73,9 +138,11 @@ export interface SendConfirmationEmailDeps {
  * original error unchanged. Isolation from the payment path is exclusively
  * `deliverConfirmationEmailAfterCommit`'s job (already proven by F10's A7).
  *
- * NEVER log recoveryToken's value, a signature, a passphrase, or any credential — this project
- * has an absolute rule against credential exposure in logs. This function contains no
- * `console.*` call anywhere in its body for exactly that reason.
+ * The ticket PDF is best-effort (ticket-pdf D3): generation has its own try/catch, a failure is
+ * logged by operation and error type only, and the email still sends without the attachment.
+ *
+ * NEVER log recoveryToken's value, a signature, a passphrase, a booking reference or any
+ * credential — this project has an absolute rule against credential exposure in logs.
  */
 export async function sendConfirmationEmail(
   input: SendConfirmationEmailInput,
@@ -88,6 +155,7 @@ export async function sendConfirmationEmail(
   const mailer = deps.mailer ?? { send: sendEmail };
   const generateQrPngBuffer = deps.generateQrPngBuffer ?? generateBookingRefQrPngBuffer;
   const siteUrl = deps.siteUrl ?? resolveSiteUrl();
+  const loadVisit = deps.loadVisit ?? loadOrderVisit;
 
   const positions: OrderConfirmationPosition[] = [];
   const attachments: EmailAttachment[] = [];
@@ -108,12 +176,16 @@ export async function sendConfirmationEmail(
     });
   }
 
+  const pdfAttachment = await buildPdfAttachment(input, deps.buildTicketPdf ?? defaultBuildTicketPdf);
+  if (pdfAttachment) attachments.push(pdfAttachment);
+
   const recoveryUrl = buildRecoveryUrl(input.recoveryToken, siteUrl);
+  const visit = await loadVisit();
 
   await mailer.send({
     to: input.buyerEmail,
     subject: 'Your National Orchid Show order is confirmed',
-    react: OrderConfirmation({ buyerName: input.buyerName, positions, recoveryUrl }),
+    react: OrderConfirmation({ buyerName: input.buyerName, positions, recoveryUrl, visit }),
     from: TICKETS_FROM_ADDRESS,
     attachments,
   });
