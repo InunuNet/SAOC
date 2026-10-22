@@ -1,0 +1,7 @@
+[
+  "app/(marketing)/national-show/nos-theme.css",
+  "components/nos-chrome/nos-chrome.css",
+  "app/(marketing)/national-show/vendors/apply/page.tsx",
+  "components/vendors/VendorFormField.tsx",
+  "components/vendors/VendorApplyForm.tsx"
+]
