@@ -1,0 +1,77 @@
+# nos-form-errors (rFE): both SAOC forms get the full per-field error pattern (architect, 2026-10-22)
+
+BASE = origin/main 64cf1bd2. Branch fix/saoc-form-errors. Machine-readable twin: goldens/edits.json.
+
+## Sources (NO INVENTION, docs/rules/no-invention.md)
+
+Visual: `design/design_handoff_saoc/README.md:192` (contact form validation: name required, email regex, message at least 10
+characters; errors show a red border and a message under the field), `design/design_handoff_saoc/src/styles.css:2120-2128`
+(`.field.is-error input` border, `.field__err` below the field), `design/design_handoff_saoc/src/pages-show-events-contact.jsx:474-481`
+(the validate function). The red is the ruled token `--color-error` (#9b2c2c, admin-redesign / r45 F3), not the prototype's #a43a3a, and
+the message is the shared `TicketFieldAlert` (r45 F3, `components/tickets/TicketFormField.tsx`), per the rFE ruling. `branding/` carries no
+form-error decision. Copy: only existing strings (below). No new colour, token, class string or prose.
+
+Rulings (design lead Codi, verbatim):
+- rFE: "Contact and Suggestion: yes, "every form" includes them. Keep r45 to the ticket forms so this PR stays focused. Put ContactForm and SuggestionForm onto the shared error-alert class in a follow-up round, rFE. Fold in my earlier P2s from route 30 (/members) and route 33 (/contact), the per-field errors with aria-invalid/describedby, so both SAOC forms get the full pattern at once."
+- route 30 P2 (components/members/SuggestionForm.tsx): "the client guard checks only message length (l.39-44). An empty name or a bad email goes to the API, and the single role=alert message isn't tied to any field. Fix: per-field checks (name non-empty, email format, message >=10). On each invalid field set aria-invalid + aria-describedby -> its error id, and focus the first invalid field. Give the "Minimum 10 characters." hint (l.143) an id and add it to the textarea's aria-describedby. Reuse the existing/API error strings; no new copy (R7)."
+- route 33 (components/contact/ContactForm.tsx): "ContactForm validates only the message (l.33). Add per-field name/email checks matching the /members ruling; SuggestionForm reuses ContactForm's wiring."
+- saoc-82: the `--color-error` comment in app/globals.css becomes a shared-use comment (error alerts: door invalid banner, admin inline errors, ticket field alert; add the SAOC form alerts). "Change the comment only, never the value."
+
+## Decision: how the SAOC forms reuse the alert
+
+Import `TicketFieldAlert` from `@/components/tickets/TicketFormField` in both forms. The class stays defined once, in TicketFormField
+(static S2 fails any copy of it). One change to that file: `TicketFieldAlert` takes an optional `id`, rendered on the `<p role="alert">`,
+so an input's `aria-describedby` can name it (three exact substitutions, edits.json `ticketFormField`). Without an id the output is
+byte-identical, so every ticket caller is unchanged. Not moved to a shared folder: moving it would touch the four ticket files r45 F3
+pinned; an import from `components/tickets/` costs one line per form. Consequence the dev must accept: the alert is 14px (the shared
+class), where the old SAOC alert was 16px with leading-[1.55]. That is the ruling ("onto the shared error-alert class").
+
+## What the dev implements (both forms; Contact first, Suggestion mirrors it)
+
+1. State: per-field error strings (empty = valid) replace `messageInvalid`; `errorMessage` keeps only the form-level cases (honeypot,
+   non-OK reply, network). The submit handler order stays: busy guard, honeypot (no API call), then client validation, then fetch.
+2. Client validation (all fields checked on every submit, trimmed): name empty -> `All fields are required.`; email empty -> `All fields are
+   required.`, else failing `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` (the API's own regex, route.ts:21) -> `Invalid email address.`; ContactForm only: subject
+   empty -> `All fields are required.` (the API rejects an empty subject with the same string: route.ts:14); message shorter than 10 trimmed
+   characters -> the form's existing string (Contact: `Please write a message of at least 10 characters.`; Suggestion: `Please write a suggestion of at
+   least 10 characters.`). If any field is invalid: set the errors, do not fetch, focus the first invalid field in DOM order
+   (`document.getElementById(id)?.focus()` is enough), return.
+3. Per field: `aria-invalid="true"` only while it has an error (absent otherwise, as the message field does today); `aria-describedby` = the
+   field's error id while it has one, else absent; the message field keeps its hint: `aria-describedby` = hint id, plus the error id while
+   invalid (SuggestionForm's hint gets an id: `msf-message-hint`). The error renders directly under the input as
+   `<TicketFieldAlert id={errorId}>{error}</TicketFieldAlert>`. The input takes the error border while invalid (Tailwind `aria-invalid:border-error`
+   appended to the input class, or equal): the handoff's `.field.is-error input` in the token colour.
+4. Ids: Contact `cf-name-error`, `cf-email-error`, `cf-subject-error`, `cf-message-error` (existing const), hint `cf-message-hint`, form-level
+   `cf-form-error`; Suggestion `msf-name-error`, `msf-email-error`, `msf-message-error`, `msf-message-hint`, `msf-form-error`.
+5. The form-level case (honeypot, non-OK reply, network) renders `<TicketFieldAlert id={formErrorId}>`, above the submit button, as the old
+   alert did. No field is aria-invalid for it.
+6. Untouched: the honeypot, `noValidate`, the fetch call and its body line (still no `_hp`), the success panel, the input class
+   (`rounded-sm` etc.; only the invalid variant is added), labels, placeholders, hint text, the pages, the API route.
+7. `app/globals.css`: the `--color-error` comment only. `components/tickets/TicketFormField.tsx`: the `id` prop only.
+8. `docs/nos-form-errors.md`: the pattern, the string sources and the 16 -> 14px note (static S6 lists the required mentions).
+
+## Copy table (each string, its source; nothing invented)
+
+| field | when | string | source |
+|---|---|---|---|
+| name, email, subject | empty | All fields are required. | app/api/contact/route.ts:16 |
+| email | not empty, fails the regex | Invalid email address. | app/api/contact/route.ts:23 |
+| message (Contact) | under 10 characters | Please write a message of at least 10 characters. | components/contact/ContactForm.tsx:36 |
+| message (Suggestion) | under 10 characters | Please write a suggestion of at least 10 characters. | components/members/SuggestionForm.tsx:42 |
+| hint | always | Minimum 10 characters. | ContactForm.tsx:162, SuggestionForm.tsx:143 |
+
+COPY GAP (reported, not filled): no existing string names a single field ("Enter your name"). "All fields are required." is the API's generic
+reply and reads slightly oddly under one field. The handoff prototype has `Required` / `Enter a valid email`
+(pages-show-events-contact.jsx:476-478), but that is prototype copy, and the ruling says reuse the API strings. Decision for Codi if he wants
+field-specific wording: it would be new copy.
+
+## Checks
+
+- static.mjs: S1 exact substitutions (TicketFormField, globals.css); S2 alert class defined once, forms render TicketFieldAlert and hold no
+  role="alert" or old class; S3 ids, aria-invalid, aria-describedby, focus, noValidate, honeypot, fetch and body lines, input-class prefix;
+  S4 existing strings + API regex + no new prose; S5 e2e spec, API route and both pages equal BASE; S6 docs.
+- rendered.mjs: see its header (A empty, B bad email, C valid posts, D 500 reply; 1280 and 390; both forms; axe).
+- e2e/contact-form-mocked.spec.ts runs unchanged (contract A6) and is byte-pinned (A1, S5).
+- footprint.mjs: only goldens/footprint.json, docs/nos-form-errors.md and the spec dir. Out of scope and forbidden by that: input radius, the
+  info@ link height, the hero lede, every other route 30/33 P3, the ticket components, the pages.
+- Run the rendered check from the worktree with `NODE_OPTIONS='--require ../r19-chrome/use-chrome.cjs'` (Chrome shim).
