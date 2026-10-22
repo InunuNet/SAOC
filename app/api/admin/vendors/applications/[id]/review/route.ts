@@ -18,6 +18,7 @@ import {
 import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
 import { sendVendorApprovalConfirmationEmail } from '@/lib/vendor-approval-confirmation';
 import type { VendorApplicationStatus } from '@/types/index';
+import { nosUrl } from '@/lib/site-hosts';
 
 /**
  * POST /api/admin/vendors/applications/[id]/review -- admin-only status-transition action
@@ -50,15 +51,6 @@ import type { VendorApplicationStatus } from '@/types/index';
  * contracts/golden/vendor-gated-registration-flow-f1/README.md.
  */
 const VALID_ACTIONS: readonly VendorApplicationReviewAction[] = ['approve', 'decline'];
-
-/** Site URL fallback, matching lib/confirmation-email.ts's own DEFAULT_SITE_URL convention --
- *  duplicated locally rather than imported, since that fallback is private to its own module
- *  and SITE_URL is only available at Firebase App Hosting runtime, not build time. */
-const DEFAULT_SITE_URL = 'https://saoc.co.za';
-
-function resolveSiteUrl(): string {
-  return process.env['SITE_URL'] ?? DEFAULT_SITE_URL;
-}
 
 interface ReviewRequestBody {
   action?: unknown;
@@ -216,7 +208,7 @@ export async function POST(
       // Captured into a const so the closure below keeps TypeScript's narrowing -- `minted`
       // itself is a `let`, which loses narrowing inside a nested function expression.
       const mintedCode = minted;
-      const registrationLink = `${resolveSiteUrl()}/national-show/vendors/register?name=${encodeURIComponent(String(data.businessName ?? ''))}&code=${mintedCode.codeId}`;
+      const registrationLink = nosUrl(`/vendors/register?name=${encodeURIComponent(String(data.businessName ?? ''))}&code=${mintedCode.codeId}`);
 
       await deliverConfirmationEmailAfterCommit(
         () =>

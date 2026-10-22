@@ -8,6 +8,7 @@ import {
   newsletterDocId,
   normaliseNewsletterEmail,
   type NewsletterSubscriberDoc,
+  type UnsubscribeOrigin,
 } from './newsletter';
 import { NEWSLETTER_COPY } from '../components/chrome/newsletter-copy';
 import {
@@ -155,7 +156,7 @@ export async function handleNewsletterUnsubscribe(
 
 export interface ExportDeps {
   getSession(): Promise<AdminAuthResult>;
-  origin: string;
+  origin: UnsubscribeOrigin;
   listSubscribers(): Promise<
     {
       email: string;

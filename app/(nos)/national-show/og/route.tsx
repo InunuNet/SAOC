@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises';
 import { ImageResponse } from 'next/og';
 import type { NextRequest } from 'next/server';
 
+import { nosOrigin } from '@/lib/site-hosts';
+
 // The National Show's own share card (NOS Design J3): the reversed NOS horizontal lockup top-left
 // on the royal ground, the page title below it in Fraunces 300, and the show's address in Karla
 // gold bottom-left. SAOC routes keep app/og/route.tsx. satori reads static TTFs only, so the two
@@ -100,7 +102,7 @@ export async function GET(request: NextRequest): Promise<ImageResponse> {
           color: GOLD,
         }}
       >
-        saoc.co.za/national-show
+        {nosOrigin().replace(/^https?:\/\//, '')}
       </div>
     </div>,
     {

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { NAV } from '@/components/chrome/nav-config';
 import { NosBreadcrumbJsonLd } from '@/components/nos/NosBreadcrumbJsonLd';
 import { NosThemeScope } from '@/components/nos/NosThemeScope';
+import { nosOrigin } from '@/lib/site-hosts';
 
 // F1: the `.nos-theme` scope element redeclares the SAOC site's own semantic
 // custom-property names (--bg, --fg, --accent, etc. — see nos-theme.css) with
@@ -54,7 +55,7 @@ collectLabels(NAV, BREADCRUMB_LABELS);
 export default function NationalShowLayout({ children }: { children: React.ReactNode }) {
   return (
     <NosThemeScope>
-      <NosBreadcrumbJsonLd labels={BREADCRUMB_LABELS} />
+      <NosBreadcrumbJsonLd labels={BREADCRUMB_LABELS} origin={nosOrigin()} />
       {children}
     </NosThemeScope>
   );

@@ -12,6 +12,7 @@ import { sendVendorApprovalConfirmationEmail } from '@/lib/vendor-approval-confi
 import { mintVendorStandPaymentToken } from '@/lib/vendor-stand-payment-token';
 import { sendVendorStandPaymentNoticeEmail } from '@/lib/vendor-stand-payment-notice';
 import type { VendorSubmissionStatus } from '@/types/index';
+import { nosUrl } from '@/lib/site-hosts';
 
 /**
  * POST /api/admin/vendors/[id]/review -- admin-only status-transition action (mission
@@ -32,14 +33,8 @@ import type { VendorSubmissionStatus } from '@/types/index';
  * runs, and gating THAT commit on the payment-token secret would wrongly couple two
  * independent decisions. See the M3 golden README's "Approval triggers the mint".
  */
-const DEFAULT_SITE_URL = 'https://saoc.co.za';
-
-function resolveSiteUrl(): string {
-  return process.env.SITE_URL?.trim().replace(/\/+$/, '') || DEFAULT_SITE_URL;
-}
-
 function buildVendorStandPaymentUrl(token: string): string {
-  return `${resolveSiteUrl()}/national-show/vendors/payment?token=${encodeURIComponent(token)}`;
+  return nosUrl(`/vendors/payment?token=${encodeURIComponent(token)}`);
 }
 const VALID_ACTIONS: readonly VendorReviewAction[] = ['start-review', 'approve', 'reject'];
 

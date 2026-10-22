@@ -11,6 +11,7 @@ import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
 import { sendVendorApplicationConfirmationEmail } from '@/lib/vendor-application-confirmation';
 import { sendVendorApplicationAdminNoticeEmail } from '@/lib/vendor-application-admin-notice';
 import type { VendorApplicationDraft } from '@/types/index';
+import { saocUrl } from '@/lib/site-hosts';
 
 /**
  * POST /api/vendors/apply -- public, unauthenticated vendor application route (mission
@@ -30,14 +31,6 @@ import type { VendorApplicationDraft } from '@/types/index';
  * fails this route. See contracts/golden/vendor-flow-notifications/README.md.
  */
 
-/** Site URL fallback, matching lib/confirmation-email.ts's own DEFAULT_SITE_URL convention --
- *  duplicated locally rather than imported (that fallback is private to its own module and
- *  SITE_URL is runtime-only, not available at build time). */
-const DEFAULT_SITE_URL = 'https://saoc.co.za';
-
-function resolveSiteUrl(): string {
-  return process.env['SITE_URL'] ?? DEFAULT_SITE_URL;
-}
 export async function POST(request: NextRequest): Promise<NextResponse> {
   let rawInput: unknown;
   try {
@@ -91,7 +84,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           businessName: built.businessName,
           contactPersonName: built.contactPersonName,
           applicationId: ref.id,
-          reviewUrl: `${resolveSiteUrl()}/admin/vendors/applications`,
+          reviewUrl: saocUrl('/admin/vendors/applications'),
         }),
       (error) => {
         console.error(

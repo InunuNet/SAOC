@@ -27,6 +27,7 @@ import { showClasses as staticClasses } from '@/lib/data/showClasses';
 import { cheapestAdmission, formatRand } from '@/components/nos/cheapest-admission';
 import { effectiveCapacity, resolveEffectivePrice } from '@/lib/checkout-reservation';
 import { buildPageMetadata } from '@/lib/seo';
+import { nosUrl } from '@/lib/site-hosts';
 import {
   formatShowMonthYear,
   formatVenueAddress,
@@ -116,8 +117,8 @@ const HUB_PLAN_LINK = {
 // returns null and NO node is emitted — a placeholder date or venue is never substituted.
 // ---------------------------------------------------------------------------------------
 
-const EVENT_URL = 'https://saoc.co.za/national-show';
-const TICKET_PRODUCT_BASE_URL = 'https://saoc.co.za/tickets';
+const EVENT_URL = nosUrl('/');
+const TICKET_PRODUCT_BASE_URL = nosUrl('/tickets');
 const OFFER_CURRENCY = 'ZAR';
 
 interface SanityAdmissionTicketType {

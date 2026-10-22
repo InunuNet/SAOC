@@ -18,6 +18,7 @@ import {
 import { createInMemoryVendorRegistrationRateLimitStore } from '@/lib/vendor-registration-rate-limit';
 import { sendVendorRegistrationConfirmationEmail } from '@/lib/vendor-registration-confirmation';
 import { sendVendorSubmissionAdminNoticeEmail } from '@/lib/vendor-submission-admin-notice';
+import { saocUrl } from '@/lib/site-hosts';
 
 /**
  * POST /api/vendors/register -- gated, single-use vendor submission route (mission
@@ -72,15 +73,6 @@ import { sendVendorSubmissionAdminNoticeEmail } from '@/lib/vendor-submission-ad
 const rateLimitStore = createInMemoryVendorRegistrationRateLimitStore();
 
 const GENERIC_INVALID_TOKEN_MESSAGE = 'This registration link is no longer valid.';
-
-/** Site URL fallback, matching lib/confirmation-email.ts's own DEFAULT_SITE_URL convention --
- *  duplicated locally rather than imported (that fallback is private to its own module and
- *  SITE_URL is runtime-only, not available at build time). G1 (vendor-flow-notifications). */
-const DEFAULT_SITE_URL = 'https://saoc.co.za';
-
-function resolveSiteUrl(): string {
-  return process.env['SITE_URL'] ?? DEFAULT_SITE_URL;
-}
 
 /**
  * Rate-limit key derived from the request's `x-forwarded-for` header -- a documented
@@ -186,7 +178,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     sendAdminNotice: (input) =>
       sendVendorSubmissionAdminNoticeEmail({
         ...input,
-        reviewUrl: `${resolveSiteUrl()}/admin/vendors`,
+        reviewUrl: saocUrl('/admin/vendors'),
       }),
     onEmailError: (error) => {
       console.error(

@@ -26,7 +26,9 @@ import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { productIdForSlug } from '@/lib/data/ticket-presentation';
 import { buildShowWindow, computeShowDays } from '@/lib/show-window-lookup';
 import { resolveActiveShow } from '@/lib/show-resolution';
+import { nosPath } from '@/lib/nos-paths';
 import { buildPageMetadata } from '@/lib/seo';
+import { nosUrl } from '@/lib/site-hosts';
 
 // F2 (ticketing-flow-redesign, M2) — the dedicated single-type buy screen. Same
 // force-dynamic reasoning as app/(nos)/tickets/page.tsx: getSoldCountsByTicketType()
@@ -37,7 +39,6 @@ const NOS_TITLE_SUFFIX = ' — National Orchid Show | SAOC';
 
 // r18 (Codi): the checkout step carries the tickets hub's breadcrumb (TicketsMasthead) one level
 // deeper, and mirrors the hub's BreadcrumbList (NosBreadcrumbJsonLd) with the product appended.
-const SITE_ORIGIN = 'https://saoc.co.za';
 const HUB_TRAIL = [
   { name: 'National Show', href: '/national-show' },
   { name: 'Tickets', href: '/national-show/tickets' },
@@ -213,8 +214,8 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
     <>
       <JsonLd
         data={breadcrumbJsonLd([
-          ...HUB_TRAIL.map(({ name, href }) => ({ name, url: `${SITE_ORIGIN}${href}` })),
-          { name: ticketType.name, url: `${SITE_ORIGIN}/tickets/${encodeURIComponent(slug)}` },
+          ...HUB_TRAIL.map(({ name, href }) => ({ name, url: nosUrl(nosPath(href)) })),
+          { name: ticketType.name, url: nosUrl(`/tickets/${encodeURIComponent(slug)}`) },
         ])}
       />
       <NosHero

@@ -102,14 +102,18 @@ function csvField(value: string): string {
   return safe;
 }
 
-export function buildSubscribersCsv(rows: NewsletterCsvRow[], origin: string): string {
-  const lines = rows.map((row) =>
-    [
+/** The origin that hosts the unsubscribe page for a subscriber: one string, or chosen per source. */
+export type UnsubscribeOrigin = string | ((source: string) => string);
+
+export function buildSubscribersCsv(rows: NewsletterCsvRow[], origin: UnsubscribeOrigin): string {
+  const lines = rows.map((row) => {
+    const rowOrigin = typeof origin === 'function' ? origin(row.source) : origin;
+    return [
       csvField(row.email),
       csvField(row.source),
       csvField(row.subscribedAt ? row.subscribedAt.toISOString() : ''),
-      csvField(`${origin}/newsletter/unsubscribe?token=${encodeURIComponent(row.unsubscribeToken)}`),
-    ].join(','),
-  );
+      csvField(`${rowOrigin}/newsletter/unsubscribe?token=${encodeURIComponent(row.unsubscribeToken)}`),
+    ].join(',');
+  });
   return [CSV_HEADER, ...lines].join('\n');
 }
