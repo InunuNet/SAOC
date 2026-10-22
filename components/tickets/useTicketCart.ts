@@ -72,6 +72,8 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
 
   async function submit() {
     if (status === 'submitting' || quantity < MIN_QUANTITY) return;
+    // A new attempt clears the last refusal's status, even if client validation stops it below.
+    setErrorStatus(null);
 
     const quantities = { [ticketType.slug]: quantity };
     const rowErrors = validateAttendees([ticketType], quantities, {
@@ -102,7 +104,6 @@ export function useTicketCart(ticketType: TicketTypeCardData, init: CartInit) {
 
     setStatus('submitting');
     setErrorMessage('');
-    setErrorStatus(null);
 
     try {
       const res = await fetch('/api/tickets/checkout', {
