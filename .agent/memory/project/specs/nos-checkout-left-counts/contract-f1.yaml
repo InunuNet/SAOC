@@ -36,8 +36,8 @@ assertions:
       description: Static - the count format, nk-of/nk-left and the unconfirmed note are defined once in DayCount and used by the hub card and the checkout form, the page reads the hub loader (cards.day, hub showProvisional) for the Day Pass only with no second data source, the form fetches nothing and keeps every r45 line, no CSS or copy added, docs
       command: node .agent/memory/project/specs/nos-checkout-left-counts/checks/static.mjs
     - id: A4
-      description: Lint clean on the four TSX files
-      command: pnpm exec eslint "app/(marketing)/tickets/[slug]/page.tsx" components/tickets/TicketPurchaseForm.tsx components/tickets/keepsake/TicketCard.tsx components/tickets/keepsake/DayCount.tsx
+      description: Lint clean on the five TS/TSX files
+      command: pnpm exec eslint "app/(marketing)/tickets/[slug]/page.tsx" components/tickets/TicketPurchaseForm.tsx components/tickets/keepsake/TicketCard.tsx components/tickets/keepsake/DayCount.tsx components/tickets/useTicketCart.ts
     - id: A5
       description: Type-check clean
       command: pnpm exec tsc --noEmit

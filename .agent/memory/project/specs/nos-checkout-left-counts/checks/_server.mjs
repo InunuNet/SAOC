@@ -124,7 +124,7 @@ export async function serve(mode, extra = {}) {
   const origin = `http://127.0.0.1:${port}`;
   const server = spawn(path.join(repoRoot, 'node_modules', '.bin', 'next'), ['start', '-p', String(port), '-H', '127.0.0.1'], {
     cwd: repoRoot,
-    env: extra.forceDay ? { ...modeEnv(mode), NODE_OPTIONS: `--require ${path.relative(repoRoot, path.join(checksDir, '_forceday.cjs'))}`, NOS_LC_FORCE_DAY: extra.forceDay } : modeEnv(mode),
+    env: extra.forceDay ? { ...modeEnv(mode), NODE_OPTIONS: `--require "${path.join(checksDir, '_forceday.cjs')}"`, NOS_LC_FORCE_DAY: extra.forceDay } : modeEnv(mode),
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: true, // own process group, so stop() reaches the forked next-server child too
   });
