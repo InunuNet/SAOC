@@ -9,7 +9,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const BASE = '1a7479f1';
+export const BASE = '7877fffc'; // bumped from 1a7479f1 after the rebase onto admin-redesign #28
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const projectRoot = path.resolve(here, '../../../../../..');
