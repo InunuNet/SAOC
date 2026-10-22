@@ -47,3 +47,18 @@ valid `?day`, and the checkout page passed `summaryDay = day ?? showDays[0]` to 
 
 "Continue to payment" stays an enabled submit button. The error uses the same class and copy as the hub card; no new copy or visuals.
 With a valid `?day` the day is pre-selected as before. `useTicketCart`, `lib/cart.ts` and the server are unchanged.
+
+## F3: the required-field alert reads as an error
+
+The alert of r45 and r45b drew in the page's primary colour inside a box, so it did not read as an error. F3 defines it once.
+
+| file | change |
+|---|---|
+| `components/tickets/TicketFormField.tsx` | New exported `TicketFieldAlert({ children, spaced })`: a `role="alert"` paragraph with a 2px left border and text in the error colour, and a leading warning sign hidden from assistive tech. The field's own error uses it. |
+| `components/tickets/keepsake/TicketCard.tsx` | The hub picker alert is `<TicketFieldAlert spaced>`. |
+| `components/tickets/TicketPurchaseForm.tsx` | The checkout day alert is `<TicketFieldAlert spaced>` and the cart error is `<TicketFieldAlert>`. |
+| `app/globals.css` | `--color-error: #9b2c2c;` in `@theme`, defined once. |
+| `app/(marketing)/national-show/nos-structure.css` | An unanswered day group (`.nk-days[aria-invalid='true']`) draws its options with `border-color: var(--color-error)`. |
+| `components/tickets/keepsake/BuyBlock.tsx` | `isPlainClick(event)`: the missing-day handler returns early for a modified or middle click, so those open the checkout as any link does, and the checkout asks for the day. Keyboard Enter is still intercepted. |
+
+`ContactForm`, `SuggestionForm` and `DownloadTicketButton` are unchanged.

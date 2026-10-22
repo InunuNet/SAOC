@@ -7,7 +7,7 @@
 // real limits and the stepper here is presentational.
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 
 import { formatRand } from '@/components/nos/cheapest-admission';
 import { TICKET_COPY, type TicketProduct } from '@/lib/data/ticket-presentation';
@@ -37,6 +37,12 @@ function checkoutHref(slug: string, quantity: number, day: string | null | undef
   const query = new URLSearchParams({ quantity: String(quantity) });
   if (day) query.set('day', day);
   return `/tickets/${slug}?${query.toString()}`;
+}
+
+// Only a plain primary click is held for the missing day. A modified or middle click opens the
+// checkout as any link does, and the checkout asks for the day itself (r45b).
+function isPlainClick(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 }
 
 export function BuyBlock({
@@ -156,6 +162,7 @@ export function BuyBlock({
         onClick={
           onMissingDay && !day
             ? (event) => {
+                if (!isPlainClick(event)) return;
                 event.preventDefault();
                 onMissingDay();
               }

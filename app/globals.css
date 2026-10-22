@@ -122,6 +122,10 @@
   --color-rule-soft: var(--rule-soft);
   --color-error: #9b2c2c; /* Codi ruling: door invalid banner and admin inline errors only */
 
+  /* The one error colour (Codi token ruling, admin-redesign goldens/table-columns.md), defined
+     once: the ticket forms' required-field alert and an unanswered day group. */
+  --color-error: #9b2c2c;
+
   /* NOS brand — Tickets rail only, see :root's own comment above. */
   --color-nos-royal-purple: var(--nos-royal-purple);
   --color-nos-purple-700: var(--nos-purple-700);

@@ -9,6 +9,7 @@
 import Link from 'next/link';
 import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 
+import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
 import { formatShowDayShort, showDayStub } from '@/lib/show-day-format';
 import {
   TICKET_COPY,
@@ -100,14 +101,7 @@ function DayPicker({
           );
         })}
       </div>
-      {invalid ? (
-        <p
-          role="alert"
-          className="mt-1.5 border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800"
-        >
-          {TICKET_COPY.chooseDay}
-        </p>
-      ) : null}
+      {invalid ? <TicketFieldAlert spaced>{TICKET_COPY.chooseDay}</TicketFieldAlert> : null}
       {showProvisional && days.some((d) => d.provisional && daySubline(d, 'placeholder')) ? (
         <p className="nk-unconfirmed">{TICKET_COPY.notYetConfirmed}</p>
       ) : null}

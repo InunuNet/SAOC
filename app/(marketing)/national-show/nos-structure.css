@@ -1289,6 +1289,12 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   color: var(--nk-muted);
 }
 
+/* An unanswered day group (Buy or Continue to payment with no day) draws its options in its alert's
+   error colour; they return to the rule once a day is picked (nos-ticket-day-stub F3). */
+.nos-theme .nk-days[aria-invalid='true'] .nk-day {
+  border-color: var(--color-error);
+}
+
 /* Wide container: the stub moves to the right-hand end, as on a printed ticket. A container
    query, not a viewport query, so one card works in one, two or three columns. */
 @container (min-width: 470px) {

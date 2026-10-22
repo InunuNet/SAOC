@@ -6,6 +6,7 @@ import { formatRand } from '@/components/nos/cheapest-admission';
 import { CartAttendeeFields } from '@/components/tickets/CartAttendeeFields';
 import { CheckoutRedirectNotice } from '@/components/tickets/CheckoutRedirectNotice';
 import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestModeBanner';
+import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
 import type { TicketTypeCardData } from '@/components/tickets/TicketTypeCard';
 import { useTicketCart } from '@/components/tickets/useTicketCart';
 import { ArrowIcon, MinusIcon, PlusIcon } from '@/components/tickets/keepsake/parts';
@@ -129,14 +130,7 @@ export function TicketPurchaseForm({
               </label>
             ))}
           </div>
-          {dayInvalid ? (
-            <p
-              role="alert"
-              className="mt-1.5 border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800"
-            >
-              {TICKET_COPY.chooseDay}
-            </p>
-          ) : null}
+          {dayInvalid ? <TicketFieldAlert spaced>{TICKET_COPY.chooseDay}</TicketFieldAlert> : null}
         </fieldset>
       ) : null}
 
@@ -192,12 +186,7 @@ export function TicketPurchaseForm({
       />
 
       {cart.status === 'error' && cart.errorMessage ? (
-        <p
-          role="alert"
-          className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800"
-        >
-          {cart.errorMessage}
-        </p>
+        <TicketFieldAlert>{cart.errorMessage}</TicketFieldAlert>
       ) : null}
 
       <div data-catalogue-total="" className="nk-checkout-total">
