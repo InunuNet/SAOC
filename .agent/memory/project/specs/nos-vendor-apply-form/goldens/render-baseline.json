@@ -1,0 +1,106 @@
+{
+  "/national-show/vendors/apply@1280": {
+    "axe": {},
+    "heroBottom": 476.9375,
+    "navHeight": 45,
+    "typography": {
+      "main h1": "56.32px",
+      "main .nos-form-label": "14px",
+      "main form > p": "16px",
+      ".nf-text": "15px",
+      ".nf-form button": "13px",
+      "main section.nos-section label": "14px"
+    }
+  },
+  "/national-show/vendors/register@1280": {
+    "axe": {},
+    "heroBottom": 476.9375,
+    "navHeight": 45,
+    "typography": {
+      "main h1": "56.32px",
+      "main .nos-form-label": null,
+      "main form > p": "15px",
+      ".nf-text": "15px",
+      ".nf-form button": "13px",
+      "main section.nos-section label": "12px"
+    }
+  },
+  "/tickets/{ticket1}?quantity=2@1280": {
+    "axe": {},
+    "heroBottom": 308.5,
+    "navHeight": null,
+    "typography": {
+      "main h1": "56.32px",
+      "main .nos-form-label": null,
+      "main form > p": "14px",
+      ".nf-text": "15px",
+      ".nf-form button": "13px",
+      "main section.nos-section label": null
+    }
+  },
+  "/tickets/{ticket2}?quantity=2@1280": {
+    "axe": {},
+    "heroBottom": 308.5,
+    "navHeight": null,
+    "typography": {
+      "main h1": "56.32px",
+      "main .nos-form-label": null,
+      "main form > p": "14px",
+      ".nf-text": "15px",
+      ".nf-form button": "13px",
+      "main section.nos-section label": null
+    }
+  },
+  "/national-show/vendors/apply@390": {
+    "axe": {},
+    "heroBottom": 432.484375,
+    "navHeight": 45,
+    "typography": {
+      "main h1": "41.6px",
+      "main .nos-form-label": "14px",
+      "main form > p": "16px",
+      ".nf-text": "15px",
+      ".nf-form button": "13px",
+      "main section.nos-section label": "14px"
+    }
+  },
+  "/national-show/vendors/register@390": {
+    "axe": {},
+    "heroBottom": 351.484375,
+    "navHeight": 45,
+    "typography": {
+      "main h1": "41.6px",
+      "main .nos-form-label": null,
+      "main form > p": "15px",
+      ".nf-text": "15px",
+      ".nf-form button": "13px",
+      "main section.nos-section label": "12px"
+    }
+  },
+  "/tickets/{ticket1}?quantity=2@390": {
+    "axe": {},
+    "heroBottom": 364.734375,
+    "navHeight": null,
+    "typography": {
+      "main h1": "41.6px",
+      "main .nos-form-label": null,
+      "main form > p": "14px",
+      ".nf-text": "15px",
+      ".nf-form button": "13px",
+      "main section.nos-section label": null
+    }
+  },
+  "/tickets/{ticket2}?quantity=2@390": {
+    "axe": {},
+    "heroBottom": 439.578125,
+    "navHeight": null,
+    "typography": {
+      "main h1": "41.6px",
+      "main .nos-form-label": null,
+      "main form > p": "14px",
+      ".nf-text": "15px",
+      ".nf-form button": "13px",
+      "main section.nos-section label": null
+    }
+  }
+}

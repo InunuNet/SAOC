@@ -23,12 +23,13 @@ interface VendorFormFieldProps {
   inputMode?: 'numeric' | 'tel' | 'email' | 'text';
   showRequirement?: boolean;
   error?: string;
+  inputClassName?: string;
 }
 
 const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 const requirementLabelClass = 'nos-form-label';
 const inputClass =
-  'w-full rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60';
+  'block w-full rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60';
 const inputErrorClass = 'border-[var(--status-error)]';
 const errorClass = 'font-sans text-[14px] text-[var(--status-error)]';
 
@@ -49,11 +50,13 @@ export function VendorFormField({
   inputMode,
   showRequirement = false,
   error,
+  inputClassName,
 }: VendorFormFieldProps) {
   const id = `vendor-register-${fieldKey}`;
   const errorId = `${id}-error`;
   const describedBy = error ? errorId : undefined;
-  const fieldClass = error ? `${inputClass} ${inputErrorClass}` : inputClass;
+  const baseClass = error ? `${inputClass} ${inputErrorClass}` : inputClass;
+  const fieldClass = inputClassName ? `${baseClass} ${inputClassName}` : baseClass;
 
   return (
     <div className="space-y-1.5">

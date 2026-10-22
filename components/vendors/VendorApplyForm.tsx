@@ -334,6 +334,7 @@ export function VendorApplyForm() {
         min={1}
         step={1}
         inputMode="numeric"
+        inputClassName="max-w-[12ch]"
         showRequirement
         error={errorFor('indicativeBoothCount')}
       />
