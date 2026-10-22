@@ -37,7 +37,8 @@ export interface EmailAttachment {
   content: Buffer;
   filename: string;
   contentType: string;
-  contentId: string;
+  /** Only inline (CID-referenced) attachments need one; a plain attachment such as the ticket PDF has none. */
+  contentId?: string;
 }
 
 export function buildEmailPayload({
