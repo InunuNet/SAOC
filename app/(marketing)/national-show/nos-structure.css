@@ -180,10 +180,19 @@
   line-height: 1.5;
   text-transform: uppercase;
 }
-/* r56: the exhibitor marker is sentence case with no tracking, like the email and PDF pills. */
+/* r56/r57b (H4): the status pills are sentence case with no tracking, like the email and PDF pills. Tracking is
+   !important in the base layer: an important declaration in an earlier layer outranks the chip-fit ladder's
+   !important utilities in ShowStatusLine (0.02-0.06em at 375-700px), which an unlayered !important cannot. */
+.nos-theme [data-confirmation-badge],
 .nos-theme [data-exhibitor-marker] {
   letter-spacing: normal;
   text-transform: none;
+}
+@layer base {
+  .nos-theme [data-confirmation-badge],
+  .nos-theme [data-exhibitor-marker] {
+    letter-spacing: normal !important;
+  }
 }
 .nos-theme .nos-on-dark [data-confirmation-badge],
 .nos-theme .nos-on-dark [data-exhibitor-marker] {
@@ -757,11 +766,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 .nos-faq-answer {
   padding: 0 clamp(20px, 3vw, 32px) 24px;
-}
-/* r57: the answer-panel marker reads in sentence case (the R19 pill above is uppercase). */
-.nos-theme .nos-faq-answer [data-confirmation-badge] {
-  letter-spacing: normal;
-  text-transform: none;
 }
 
 /* F18-KEEPSAKE-START */

@@ -54,22 +54,16 @@ export default async function ShowFaqPage() {
 
   // R77 #2: a public build shows only answered questions; with none left the page holds.
   const hideUnanswered = withholdPlaceholderProse();
-  // ONE derived list: what the page shows, in the order it shows it (ShowFaqList lays its
-  // sections out by category, and keeps this order within each). The list and the FAQPage node
-  // both come from it, so a future hide rule applies to both.
-  const visibleFaqs = [...(faqs ?? [])]
-    .filter((faq) => faq?.question && (!hideUnanswered || hasFaqAnswer(faq)))
-    .sort((a, b) => categoryRank(a) - categoryRank(b));
-  const holds = hideUnanswered && visibleFaqs.length === 0;
-
   // r57: two rows are answered from facts the site already publishes, so they cannot disagree with
   // the page that publishes them. The cost row reads the tickets hub's own loader and labels; the
   // venue row reads the show's venue.name (the fact strip's source), only while the committee has
   // confirmed the venue. Either falls back to its Sanity answer when its source has nothing.
   const wired: Record<string, WiredFaq> = {};
-  if (admissionPriceLabels(loaded.cards).length > 0) {
+  const priceLabels = admissionPriceLabels(loaded.cards);
+  if (priceLabels.length > 0) {
     wired['showFaq-tickets-1'] = {
       kind: 'prices',
+      text: priceLabels.join('; '),
       replaces: false,
       body: (
         <>
@@ -84,20 +78,41 @@ export default async function ShowFaqPage() {
   if (show?.venue?.name && info?.confirmations?.venue === 'confirmed') {
     wired['showFaq-getting-there-3'] = {
       kind: 'venue',
+      text: show.venue.name,
       replaces: true,
       body: <p>{show.venue.name}</p>,
     };
   }
 
-  // SEO: the entries the page presents as settled. A public build (`hideUnanswered`) renders no
-  // badges, so every answered entry there reads as settled; a beta build badges everything that
-  // is not 'confirmed'.
+  // ONE derived list: what the page shows, in the order it shows it (ShowFaqList lays its
+  // sections out by category, and keeps this order within each). The list and the FAQPage node
+  // both come from it, so a future hide rule applies to both.
+  // r57b: a public build shows a row only when its answer has a source: the row is wired (read from
+  // a published fact) or the committee has confirmed it (its Sanity status). A section left with no
+  // row is not drawn by ShowFaqList. A preview build keeps every row.
+  const sortedFaqs = [...(faqs ?? [])]
+    .filter((faq) => faq?.question)
+    .sort((a, b) => categoryRank(a) - categoryRank(b));
+  const isSourced = (faq: ShowFaq) =>
+    Boolean(wired[faq._id]) || (faq.status === 'confirmed' && hasFaqAnswer(faq));
+  const visibleFaqs = sortedFaqs.filter((faq) => !hideUnanswered || isSourced(faq));
+  const withheldCount = sortedFaqs.length - visibleFaqs.length;
+  const holds = hideUnanswered && visibleFaqs.length === 0;
+
+  // SEO: the entries the page presents as settled, i.e. the sourced rows. r57b (Codi, H4): each
+  // answer is the row's visible answer word for word, so a wired row reads its resolved fact (the
+  // venue name, the hub's price list), never the Sanity prose it replaces.
+  const answerText = (faq: ShowFaq) => {
+    const sanityText = portableTextToPlainText(faq.answer ?? []);
+    const wiredRow = wired[faq._id];
+    if (!wiredRow) return sanityText;
+    return wiredRow.replaces
+      ? wiredRow.text
+      : [sanityText, wiredRow.text].filter(Boolean).join(' ');
+  };
   const faqEntries = visibleFaqs
-    .filter((faq) => hasFaqAnswer(faq) && (hideUnanswered || faq.status === 'confirmed'))
-    .map((faq) => ({
-      question: faq.question as string,
-      answer: portableTextToPlainText(faq.answer ?? []),
-    }))
+    .filter((faq) => isSourced(faq))
+    .map((faq) => ({ question: faq.question as string, answer: answerText(faq) }))
     .filter((entry) => entry.answer !== '');
 
   return (
@@ -115,14 +130,14 @@ export default async function ShowFaqPage() {
         <HoldingState facts={facts} contentState="published" />
       ) : (
         <NosSection wrapClassName="[&_details_p]:max-w-[60ch]">
-          {hideUnanswered ? null : (
+          {!hideUnanswered || withheldCount > 0 ? (
             <ShowStatusLine
               kind="confirmation"
               status="pending"
               pendingLabel={info?.pendingLabel}
               researchLabel={info?.researchLabel}
             />
-          )}
+          ) : null}
           <ShowFaqList
             faqs={visibleFaqs}
             pendingLabel={info?.pendingLabel}
