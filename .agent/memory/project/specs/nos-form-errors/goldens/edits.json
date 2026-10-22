@@ -2,19 +2,55 @@
   "why": "nos-form-errors (rFE): ContactForm and SuggestionForm get per-field errors on the shared TicketFieldAlert. Sources: Codi rFE ruling, route 30 P2 (components/members/SuggestionForm.tsx), route 33 (components/contact/ContactForm.tsx) and saoc-82 (app/globals.css comment), all quoted verbatim in goldens/spec.md.",
   "alertClass": "flex gap-2 border-l-2 border-error bg-bone px-4 py-3 font-sans text-[14px] text-error",
   "oldClass": "border border-primary-800 bg-bone px-4 py-3 font-sans text-[16px] leading-[1.55] text-primary-800",
-  "token": { "name": "--color-error", "rgb": "rgb(155, 44, 44)" },
+  "token": {
+    "name": "--color-error",
+    "rgb": "rgb(155, 44, 44)"
+  },
   "import": "import { TicketFieldAlert } from '@/components/tickets/TicketFormField';",
-  "emailRegex": "/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/",
-  "emailRegexSource": "app/api/contact/route.ts:21 (BASE 64cf1bd2), the API's own email test",
+  "emailRegexSource": "app/api/contact/route.ts:21 (the API's test) or the handoff's identical-in-effect design/design_handoff_saoc/src/pages-show-events-contact.jsx:477",
   "minContrast": 4.5,
   "nonText": 3,
   "strings": {
-    "required": { "text": "All fields are required.", "source": "app/api/contact/route.ts:16 (BASE) - the API's reply to an empty name, email, subject or message", "usedFor": "empty name, empty email, empty subject (ContactForm only)" },
-    "invalidEmail": { "text": "Invalid email address.", "source": "app/api/contact/route.ts:23 (BASE) - the API's reply to a malformed email", "usedFor": "non-empty email failing the regex" },
-    "contactMessage": { "text": "Please write a message of at least 10 characters.", "source": "components/contact/ContactForm.tsx:36 (BASE) - the existing client guard", "usedFor": "ContactForm message shorter than 10 trimmed characters (empty included)" },
-    "suggestionMessage": { "text": "Please write a suggestion of at least 10 characters.", "source": "components/members/SuggestionForm.tsx:42 (BASE) - the existing client guard", "usedFor": "SuggestionForm message shorter than 10 trimmed characters (empty included)" },
-    "hint": { "text": "Minimum 10 characters.", "source": "components/contact/ContactForm.tsx:162 and components/members/SuggestionForm.tsx:143 (BASE)", "usedFor": "the message hint, now with an id on both forms" },
-    "serverError": { "text": "Failed to submit. Please try again.", "source": "app/api/contact/route.ts:65 and the forms' own fallback (BASE)", "usedFor": "form-level alert after a non-OK reply (rendered check D)" }
+    "required": {
+      "text": "Required",
+      "source": "design/design_handoff_saoc/src/pages-show-events-contact.jsx:476 (validate: name) - existing approved design copy, Codi amendment",
+      "usedFor": "empty name, empty email, empty subject (ContactForm only)"
+    },
+    "invalidEmail": {
+      "text": "Enter a valid email",
+      "source": "design/design_handoff_saoc/src/pages-show-events-contact.jsx:477 (validate: email) - existing approved design copy, Codi amendment",
+      "usedFor": "non-empty email failing the regex"
+    },
+    "contactMessage": {
+      "text": "Please write a message of at least 10 characters.",
+      "source": "components/contact/ContactForm.tsx:36 (BASE) - the existing client guard",
+      "usedFor": "ContactForm message shorter than 10 trimmed characters (empty included)"
+    },
+    "suggestionMessage": {
+      "text": "Please write a suggestion of at least 10 characters.",
+      "source": "components/members/SuggestionForm.tsx:42 (BASE) - the existing client guard",
+      "usedFor": "SuggestionForm message shorter than 10 trimmed characters (empty included)"
+    },
+    "hint": {
+      "text": "Minimum 10 characters.",
+      "source": "components/contact/ContactForm.tsx:162 and components/members/SuggestionForm.tsx:143 (BASE)",
+      "usedFor": "the message hint, now with an id on both forms"
+    },
+    "serverError": {
+      "text": "Failed to submit. Please try again.",
+      "source": "app/api/contact/route.ts:65 and the forms' own fallback (BASE)",
+      "usedFor": "form-level alert after a non-OK reply (rendered check D)"
+    },
+    "apiRequired": {
+      "text": "All fields are required.",
+      "source": "app/api/contact/route.ts:16 - server fallback only, never a client-validation string",
+      "usedFor": "nothing in the forms' source"
+    },
+    "apiInvalidEmail": {
+      "text": "Invalid email address.",
+      "source": "app/api/contact/route.ts:23 - server fallback only, never a client-validation string",
+      "usedFor": "nothing in the forms' source"
+    }
   },
   "forms": {
     "contact": {
@@ -23,13 +59,40 @@
       "submit": "Send message",
       "form": "form:has(#cf-name)",
       "fields": [
-        { "id": "cf-name", "errorId": "cf-name-error", "valid": "Playwright Test", "empty": "required" },
-        { "id": "cf-email", "errorId": "cf-email-error", "valid": "playwright-test@example.com", "empty": "required", "bad": "invalidEmail" },
-        { "id": "cf-subject", "errorId": "cf-subject-error", "valid": "Automated harness check", "empty": "required" },
-        { "id": "cf-message", "errorId": "cf-message-error", "hintId": "cf-message-hint", "valid": "This message is generated by the Playwright harness and is mocked.", "empty": "contactMessage" }
+        {
+          "id": "cf-name",
+          "errorId": "cf-name-error",
+          "valid": "Playwright Test",
+          "empty": "required"
+        },
+        {
+          "id": "cf-email",
+          "errorId": "cf-email-error",
+          "valid": "playwright-test@example.com",
+          "empty": "required",
+          "bad": "invalidEmail"
+        },
+        {
+          "id": "cf-subject",
+          "errorId": "cf-subject-error",
+          "valid": "Automated harness check",
+          "empty": "required"
+        },
+        {
+          "id": "cf-message",
+          "errorId": "cf-message-error",
+          "hintId": "cf-message-hint",
+          "valid": "This message is generated by the Playwright harness and is mocked.",
+          "empty": "contactMessage"
+        }
       ],
       "formErrorId": "cf-form-error",
-      "body": { "name": "Playwright Test", "email": "playwright-test@example.com", "subject": "Automated harness check", "message": "This message is generated by the Playwright harness and is mocked." }
+      "body": {
+        "name": "Playwright Test",
+        "email": "playwright-test@example.com",
+        "subject": "Automated harness check",
+        "message": "This message is generated by the Playwright harness and is mocked."
+      }
     },
     "suggestion": {
       "file": "components/members/SuggestionForm.tsx",
@@ -37,12 +100,34 @@
       "submit": "Send suggestion",
       "form": "form:has(#msf-name)",
       "fields": [
-        { "id": "msf-name", "errorId": "msf-name-error", "valid": "Playwright Test", "empty": "required" },
-        { "id": "msf-email", "errorId": "msf-email-error", "valid": "playwright-test@example.com", "empty": "required", "bad": "invalidEmail" },
-        { "id": "msf-message", "errorId": "msf-message-error", "hintId": "msf-message-hint", "valid": "This suggestion is generated by the Playwright harness and is mocked.", "empty": "suggestionMessage" }
+        {
+          "id": "msf-name",
+          "errorId": "msf-name-error",
+          "valid": "Playwright Test",
+          "empty": "required"
+        },
+        {
+          "id": "msf-email",
+          "errorId": "msf-email-error",
+          "valid": "playwright-test@example.com",
+          "empty": "required",
+          "bad": "invalidEmail"
+        },
+        {
+          "id": "msf-message",
+          "errorId": "msf-message-error",
+          "hintId": "msf-message-hint",
+          "valid": "This suggestion is generated by the Playwright harness and is mocked.",
+          "empty": "suggestionMessage"
+        }
       ],
       "formErrorId": "msf-form-error",
-      "body": { "name": "Playwright Test", "email": "playwright-test@example.com", "subject": "Members Portal suggestion", "message": "This suggestion is generated by the Playwright harness and is mocked." }
+      "body": {
+        "name": "Playwright Test",
+        "email": "playwright-test@example.com",
+        "subject": "Members Portal suggestion",
+        "message": "This suggestion is generated by the Playwright harness and is mocked."
+      }
     }
   },
   "ticketFormField": {
@@ -76,5 +161,10 @@
     "contactBody": "body: JSON.stringify({ name, email, subject, message }), // NOTE: no _hp",
     "suggestionBody": "body: JSON.stringify({ name, email, subject: SUGGESTION_SUBJECT, message }),",
     "fetch": "await fetch('/api/contact', {"
-  }
+  },
+  "emailRegexes": [
+    "/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/",
+    "/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/"
+  ],
+  "handoffCopy": "design/design_handoff_saoc/src/pages-show-events-contact.jsx"
 }

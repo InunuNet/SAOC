@@ -2,10 +2,33 @@
 
 import { useState } from 'react';
 
+import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
+
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
 const HINT_ID = 'cf-message-hint';
-const ERROR_ID = 'cf-message-error';
+const FORM_ERROR_ID = 'cf-form-error';
+const MIN_MESSAGE_LENGTH = 10;
+// The API's own email test (app/api/contact/route.ts).
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type FieldKey = 'name' | 'email' | 'subject' | 'message';
+type FieldErrors = Partial<Record<FieldKey, string>>;
+
+// DOM order: the first invalid field takes focus.
+const FIELD_ORDER: FieldKey[] = ['name', 'email', 'subject', 'message'];
+
+function validate(values: Record<FieldKey, string>): FieldErrors {
+  const errors: FieldErrors = {};
+  if (values.name.trim() === '') errors.name = 'Required';
+  if (values.email.trim() === '') errors.email = 'Required';
+  else if (!EMAIL_PATTERN.test(values.email.trim())) errors.email = 'Enter a valid email';
+  if (values.subject.trim() === '') errors.subject = 'Required';
+  if (values.message.trim().length < MIN_MESSAGE_LENGTH) {
+    errors.message = 'Please write a message of at least 10 characters.';
+  }
+  return errors;
+}
 
 export function ContactForm() {
   const [name, setName] = useState('');
@@ -15,14 +38,14 @@ export function ContactForm() {
   const [hp, setHp] = useState(''); // honeypot — never sent to the API
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  const [messageInvalid, setMessageInvalid] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (status === 'submitting') return;
 
     // 1. Honeypot — if filled, a bot did it. Show generic error, DO NOT call the API.
-    setMessageInvalid(false);
+    setFieldErrors({});
     if (hp.trim() !== '') {
       setStatus('error');
       setErrorMessage('Something went wrong. Please try again.');
@@ -30,10 +53,13 @@ export function ContactForm() {
     }
 
     // 2. Client guard mirrors the API (cheap UX, API is still source of truth)
-    if (message.trim().length < 10) {
-      setStatus('error');
-      setMessageInvalid(true);
-      setErrorMessage('Please write a message of at least 10 characters.');
+    const errors = validate({ name, email, subject, message });
+    const firstInvalid = FIELD_ORDER.find((key) => errors[key]);
+    if (firstInvalid) {
+      setStatus('idle');
+      setErrorMessage('');
+      setFieldErrors(errors);
+      document.getElementById(`cf-${firstInvalid}`)?.focus();
       return;
     }
 
@@ -63,7 +89,7 @@ export function ContactForm() {
 
   // The field boundary is --muted (a 3:1 non-text contrast, WCAG 1.4.11); the hairline --rule is too faint for an input.
   const inputClass =
-    'w-full rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[16px] text-ink placeholder:text-muted outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2 transition-colors disabled:opacity-60';
+    'w-full rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[16px] text-ink placeholder:text-muted outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2 transition-colors disabled:opacity-60 aria-invalid:border-error';
   const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 
   const showError = status === 'error' && errorMessage !== '';
@@ -99,7 +125,12 @@ export function ContactForm() {
           disabled={status === 'submitting'}
           placeholder="Your name"
           className={inputClass}
+          aria-invalid={fieldErrors.name ? 'true' : undefined}
+          aria-describedby={fieldErrors.name ? 'cf-name-error' : undefined}
         />
+        {fieldErrors.name ? (
+          <TicketFieldAlert id="cf-name-error">{fieldErrors.name}</TicketFieldAlert>
+        ) : null}
       </div>
 
       {/* Email */}
@@ -118,7 +149,12 @@ export function ContactForm() {
           disabled={status === 'submitting'}
           placeholder="your@email.co.za"
           className={inputClass}
+          aria-invalid={fieldErrors.email ? 'true' : undefined}
+          aria-describedby={fieldErrors.email ? 'cf-email-error' : undefined}
         />
+        {fieldErrors.email ? (
+          <TicketFieldAlert id="cf-email-error">{fieldErrors.email}</TicketFieldAlert>
+        ) : null}
       </div>
 
       {/* Subject */}
@@ -136,7 +172,12 @@ export function ContactForm() {
           disabled={status === 'submitting'}
           placeholder="What is your enquiry about?"
           className={inputClass}
+          aria-invalid={fieldErrors.subject ? 'true' : undefined}
+          aria-describedby={fieldErrors.subject ? 'cf-subject-error' : undefined}
         />
+        {fieldErrors.subject ? (
+          <TicketFieldAlert id="cf-subject-error">{fieldErrors.subject}</TicketFieldAlert>
+        ) : null}
       </div>
 
       {/* Message */}
@@ -150,8 +191,8 @@ export function ContactForm() {
           required
           minLength={10}
           rows={6}
-          aria-describedby={showError && messageInvalid ? `${HINT_ID} ${ERROR_ID}` : HINT_ID}
-          aria-invalid={messageInvalid ? 'true' : undefined}
+          aria-describedby={fieldErrors.message ? `${HINT_ID} cf-message-error` : HINT_ID}
+          aria-invalid={fieldErrors.message ? 'true' : undefined}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           disabled={status === 'submitting'}
@@ -161,6 +202,9 @@ export function ContactForm() {
         <p id={HINT_ID} className="font-mono text-[11px] text-muted">
           Minimum 10 characters.
         </p>
+        {fieldErrors.message ? (
+          <TicketFieldAlert id="cf-message-error">{fieldErrors.message}</TicketFieldAlert>
+        ) : null}
       </div>
 
       {/* Honeypot — visually hidden, tab-unreachable, aria-hidden */}
@@ -180,13 +224,7 @@ export function ContactForm() {
 
       {/* Inline error */}
       {showError ? (
-        <p
-          id={ERROR_ID}
-          role="alert"
-          className="border border-primary-800 bg-bone px-4 py-3 font-sans text-[16px] leading-[1.55] text-primary-800"
-        >
-          {errorMessage}
-        </p>
+        <TicketFieldAlert id={FORM_ERROR_ID}>{errorMessage}</TicketFieldAlert>
       ) : null}
 
       <button

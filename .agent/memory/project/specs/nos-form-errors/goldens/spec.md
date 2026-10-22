@@ -17,6 +17,12 @@ Rulings (design lead Codi, verbatim):
 - route 33 (components/contact/ContactForm.tsx): "ContactForm validates only the message (l.33). Add per-field name/email checks matching the /members ruling; SuggestionForm reuses ContactForm's wiring."
 - saoc-82: the `--color-error` comment in app/globals.css becomes a shared-use comment (error alerts: door invalid banner, admin inline errors, ticket field alert; add the SAOC form alerts). "Change the comment only, never the value."
 
+## Amendment (design lead Codi, copy ruling; supersedes the API-string choice below where they differ), verbatim
+
+"yes, use the handoff strings. "Required" under an empty field and "Enter a valid email" under a bad email. They're existing approved design copy (pages-show-events-contact.jsx:476-478), so this isn't new copy and R7 holds. ... Keep the existing "at least 10 characters" message for the message field, since it's already field-specific. The API strings stay as the server fallback if a request slips past client checks. Checking an empty subject is right. The shared 14px alert size is fine on both sites."
+
+Exact source: `design/design_handoff_saoc/src/pages-show-events-contact.jsx:476` (`'Required'`) and `:477` (`'Enter a valid email'`; its regex `/^[^@\s]+@[^@\s]+\.[^@\s]+$/` is equivalent to the API's, either is accepted). Wherever the text below says `All fields are required.` or `Invalid email address.` for client validation, read `Required` and `Enter a valid email`. The API strings appear nowhere in the forms' source (static S4 fails them); they only reach the user at runtime as `data.error` in the form-level alert after a non-OK reply.
+
 ## Decision: how the SAOC forms reuse the alert
 
 Import `TicketFieldAlert` from `@/components/tickets/TicketFormField` in both forms. The class stays defined once, in TicketFormField
@@ -30,9 +36,8 @@ class), where the old SAOC alert was 16px with leading-[1.55]. That is the rulin
 
 1. State: per-field error strings (empty = valid) replace `messageInvalid`; `errorMessage` keeps only the form-level cases (honeypot,
    non-OK reply, network). The submit handler order stays: busy guard, honeypot (no API call), then client validation, then fetch.
-2. Client validation (all fields checked on every submit, trimmed): name empty -> `All fields are required.`; email empty -> `All fields are
-   required.`, else failing `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` (the API's own regex, route.ts:21) -> `Invalid email address.`; ContactForm only: subject
-   empty -> `All fields are required.` (the API rejects an empty subject with the same string: route.ts:14); message shorter than 10 trimmed
+2. Client validation (all fields checked on every submit, trimmed): name empty -> `Required`; email empty -> `Required`, else failing `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` (the API's regex, route.ts:21; the handoff's at jsx:477 is equivalent) -> `Enter a valid email`; ContactForm only: subject
+   empty -> `Required` (Codi: checking an empty subject is right); message shorter than 10 trimmed
    characters -> the form's existing string (Contact: `Please write a message of at least 10 characters.`; Suggestion: `Please write a suggestion of at
    least 10 characters.`). If any field is invalid: set the errors, do not fetch, focus the first invalid field in DOM order
    (`document.getElementById(id)?.focus()` is enough), return.
@@ -54,16 +59,14 @@ class), where the old SAOC alert was 16px with leading-[1.55]. That is the rulin
 
 | field | when | string | source |
 |---|---|---|---|
-| name, email, subject | empty | All fields are required. | app/api/contact/route.ts:16 |
-| email | not empty, fails the regex | Invalid email address. | app/api/contact/route.ts:23 |
+| name, email, subject | empty | Required | design/design_handoff_saoc/src/pages-show-events-contact.jsx:476 |
+| email | not empty, fails the regex | Enter a valid email | design/design_handoff_saoc/src/pages-show-events-contact.jsx:477 |
+| form-level (non-OK reply) | server `data.error` | the API's own text (e.g. All fields are required. / Invalid email address., app/api/contact/route.ts:16, :23) | server fallback only, not in the forms' source |
 | message (Contact) | under 10 characters | Please write a message of at least 10 characters. | components/contact/ContactForm.tsx:36 |
 | message (Suggestion) | under 10 characters | Please write a suggestion of at least 10 characters. | components/members/SuggestionForm.tsx:42 |
 | hint | always | Minimum 10 characters. | ContactForm.tsx:162, SuggestionForm.tsx:143 |
 
-COPY GAP (reported, not filled): no existing string names a single field ("Enter your name"). "All fields are required." is the API's generic
-reply and reads slightly oddly under one field. The handoff prototype has `Required` / `Enter a valid email`
-(pages-show-events-contact.jsx:476-478), but that is prototype copy, and the ruling says reuse the API strings. Decision for Codi if he wants
-field-specific wording: it would be new copy.
+COPY GAP: closed by the Codi amendment above; no new copy remains.
 
 ## Checks
 

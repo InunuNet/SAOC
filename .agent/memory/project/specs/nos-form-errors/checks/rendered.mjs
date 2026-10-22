@@ -2,12 +2,12 @@
 // input, hash-locked. Golden: goldens/edits.json. /contact and /members at 1280 and 390. POST /api/contact is fulfilled by a mock in
 // the browser (page.route) and counted; it is never allowed through (a real send would email and write Firestore).
 //   A  submit empty: no request; every field aria-invalid="true"; each aria-describedby token resolves to a visible element holding the
-//      existing string (name/email/subject "All fields are required.", message the form's own 10-character string); the message also
+//      existing string (name/email/subject "Required", message the form's own 10-character string); the message also
 //      describes itself with its hint ("Minimum 10 characters."); the error is a <p role="alert"> whose class ends with the shared
 //      TicketFieldAlert class, text and left border rgb(155, 44, 44) (2px solid, 0px elsewhere, no outline), an aria-hidden sign first,
 //      text 4.5:1 and border 3:1; the invalid inputs' four borders are the same colour; focus is on the first field; exactly one
 //      role="alert" per invalid field and no form-level one; axe (WCAG 2.2 AA) clean.
-//   B  valid except email "not-an-email": no request; only the email is invalid ("Invalid email address."), the others carry no
+//   B  valid except email "not-an-email": no request; only the email is invalid ("Enter a valid email"), the others carry no
 //      aria-invalid="true" and no error; focus on the email; one alert; axe clean.
 //   C  email fixed: exactly one request with the golden body (the honeypot never sent), "Thank you" shown.
 //   D  fresh load, all valid, mock replies 500 {error}: one request, one role="alert" (the form-level one, id cf-form-error / msf-form-error,

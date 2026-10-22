@@ -5,7 +5,7 @@
 //       ContactForm and SuggestionForm import TicketFieldAlert, render it, hold no role="alert" or old outlined class of their own.
 //   S3  per-field wiring present in both forms: every field's error id, the message hint id, aria-invalid and aria-describedby, a
 //       focus call, the form-level alert id; the shared inputs stay (rounded-sm prefix, noValidate, honeypot, fetch and body lines BASE).
-//   S4  copy: only existing strings (goldens/edits.json strings, each with its BASE source), the API's email regex; no new prose.
+//   S4  copy: only existing strings (goldens/edits.json strings, each with its source): handoff "Required" / "Enter a valid email", the forms' own message strings; the API strings are not client strings; the API or handoff email regex; no new prose.
 //   S5  nothing else: e2e/contact-form-mocked.spec.ts, the API route and the two pages equal BASE (the footprint allows no others).
 //   S6  docs/nos-form-errors.md records rFE.
 import { finish, goldenJson, readBaseFile, readRepoFile } from './_lib.mjs';
@@ -22,7 +22,7 @@ failures.push(...exactSubstitutions(G.globals.file, G.globals.substitutions, 'S1
 if (!(readRepoFile(G.globals.file) ?? '').includes('--color-error: #9b2c2c;')) failures.push(`${G.globals.file}: the --color-error value changed (S1)`);
 
 // S2-S4 per form
-const corpus = [G.forms.contact.file, G.forms.suggestion.file, 'app/api/contact/route.ts', 'components/tickets/TicketFormField.tsx', 'lib/data/ticket-presentation.ts'];
+const corpus = [G.forms.contact.file, G.forms.suggestion.file, 'app/api/contact/route.ts', 'components/tickets/TicketFormField.tsx', 'lib/data/ticket-presentation.ts', G.handoffCopy];
 for (const [key, f] of Object.entries(G.forms)) {
   const src = readRepoFile(f.file) ?? '';
   const base = readBaseFile(f.file) ?? '';
@@ -46,9 +46,12 @@ for (const [key, f] of Object.entries(G.forms)) {
   if (!src.includes(key === 'contact' ? G.unchangedLiterals.contactBody : G.unchangedLiterals.suggestionBody)) failures.push(at('the request body line changed: it must still omit _hp (S3)'));
   if (!src.includes('hp.trim() !== \'\'')) failures.push(at('the honeypot guard is gone (S3)'));
   for (const s of [G.strings.required.text, G.strings.invalidEmail.text, key === 'contact' ? G.strings.contactMessage.text : G.strings.suggestionMessage.text]) {
-    if (!src.includes(s)) failures.push(at(`missing the existing string ${JSON.stringify(s)} (S4)`));
+    if (!src.includes(`'${s}'`)) failures.push(at(`missing the string literal '${s}' (S4)`));
   }
-  if (!src.includes(G.emailRegex)) failures.push(at(`does not use the API's email regex ${G.emailRegex} (S4)`));
+  for (const s of [G.strings.apiRequired.text, G.strings.apiInvalidEmail.text]) {
+    if (src.includes(s)) failures.push(at(`holds the API string ${JSON.stringify(s)}: it is the server fallback only, not a client-validation string (S4)`));
+  }
+  if (!G.emailRegexes.some((r) => src.includes(r))) failures.push(at(`uses neither accepted email regex ${G.emailRegexes.join(' nor ')} (S4)`));
   if (key === 'suggestion' && src.includes(G.strings.contactMessage.text)) failures.push(at('uses the ContactForm message string (S4)'));
   failures.push(...newProse(f.file, corpus));
   if (!base) failures.push(at('missing at BASE (INFRA)'));
@@ -65,6 +68,6 @@ for (const rel of ['e2e/contact-form-mocked.spec.ts', 'app/api/contact/route.ts'
 // S6
 const doc = readRepoFile('docs/nos-form-errors.md');
 if (doc === null) failures.push('docs/nos-form-errors.md is missing (S6)');
-else for (const must of ['rFE', 'TicketFieldAlert', 'aria-invalid', 'aria-describedby', '--color-error', 'All fields are required.', 'Invalid email address.']) if (!doc.includes(must)) failures.push(`docs/nos-form-errors.md never mentions ${must} (S6)`);
+else for (const must of ['rFE', 'TicketFieldAlert', 'aria-invalid', 'aria-describedby', '--color-error', 'Required', 'Enter a valid email', 'pages-show-events-contact.jsx']) if (!doc.includes(must)) failures.push(`docs/nos-form-errors.md never mentions ${must} (S6)`);
 
 finish(NAME, failures, 'TicketFieldAlert takes an id and is the only alert class holder, both SAOC forms render it per field with ids, aria-invalid, aria-describedby and focus, copy is existing strings only, --color-error comment is the shared-use one, nothing out of scope touched, docs present.');

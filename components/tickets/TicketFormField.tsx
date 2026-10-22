@@ -15,11 +15,13 @@ interface TicketFieldAlertProps {
   children: ReactNode;
   // The day pickers set the alert 6px below their options.
   spaced?: boolean;
+  // The SAOC forms tie the alert to its field with aria-describedby.
+  id?: string;
 }
 
-export function TicketFieldAlert({ children, spaced = false }: TicketFieldAlertProps) {
+export function TicketFieldAlert({ children, spaced = false, id }: TicketFieldAlertProps) {
   return (
-    <p role="alert" className={spaced ? `mt-1.5 ${ALERT_CLASS}` : ALERT_CLASS}>
+    <p id={id} role="alert" className={spaced ? `mt-1.5 ${ALERT_CLASS}` : ALERT_CLASS}>
       <span aria-hidden="true">{ALERT_ICON}</span>
       <span>{children}</span>
     </p>
