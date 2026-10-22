@@ -58,12 +58,49 @@ index 23457b25..3dfca919 100644
            <ShowFaqList
              faqs={visibleFaqs}
              pendingLabel={info?.pendingLabel}
+diff --git a/app/(marketing)/national-show/nos-structure.css b/app/(marketing)/national-show/nos-structure.css
+index 6cd51660..bb36192c 100644
+--- a/app/(marketing)/national-show/nos-structure.css
++++ b/app/(marketing)/national-show/nos-structure.css
+@@ -186,6 +186,20 @@
+   background-color: transparent;
+   color: var(--ivory);
+ }
++/* r57b (H4): the status pill reads in sentence case with normal tracking wherever it is drawn, so the
++   public gap notice, email and PDF match. After the R19 block above, which is left as is. Tracking is !important in
++   the base layer: an important declaration in an earlier layer outranks the chip-fit ladder's !important
++   utilities in ShowStatusLine (0.02-0.06em at 375-700px), which an unlayered !important cannot. */
++.nos-theme [data-confirmation-badge],
++.nos-theme [data-exhibitor-marker] {
++  text-transform: none;
++}
++@layer base {
++  .nos-theme [data-confirmation-badge],
++  .nos-theme [data-exhibitor-marker] {
++    letter-spacing: normal !important;
++  }
++}
+ 
+ /* S7: form labels and legends are sentence case (vendors/apply, vendors/register). */
+ .nos-theme form:not([data-nos-ticket-form]) :is(label, legend),
+@@ -753,11 +767,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
+ .nos-faq-answer {
+   padding: 0 clamp(20px, 3vw, 32px) 24px;
+ }
+-/* r57: the answer-panel marker reads in sentence case (the R19 pill above is uppercase). */
+-.nos-theme .nos-faq-answer [data-confirmation-badge] {
+-  letter-spacing: normal;
+-  text-transform: none;
+-}
+ 
+ /* F18-KEEPSAKE-START */
+ /* F18b (launch-weekend, v13 keepsake tickets): the ticket, the pool banner, the hero fan and the
 diff --git a/docs/nos-faq-public-r57b.md b/docs/nos-faq-public-r57b.md
 new file mode 100644
-index 00000000..07dae1c1
+index 00000000..fb957b91
 --- /dev/null
 +++ b/docs/nos-faq-public-r57b.md
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,19 @@
 +# nos-faq-public-r57b - public FAQ shows sourced rows only
 +
 +Round r57b (stacked on r57). Codi's ruling on owner question O4: a public build hides every FAQ row without a sourced answer, and any section left empty.
@@ -80,3 +117,6 @@ index 00000000..07dae1c1
 +
 +## Owner flags
 +Rows return to the public page as the committee confirms them in Sanity (status `confirmed`); nothing here writes Sanity.
++
++## Badge case (H4)
++The status pill reads in sentence case with normal tracking: one rule in nos-structure.css after the R19 block covers `[data-confirmation-badge]` and `[data-exhibitor-marker]`. r57's `.nos-faq-answer` rule is removed as redundant.

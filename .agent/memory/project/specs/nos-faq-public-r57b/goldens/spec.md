@@ -18,7 +18,7 @@ Existing component and copy: `ShowStatusLine kind="confirmation" status="pending
 If the committee ever wants the line to say WHICH topics are pending, that needs new copy: not written here (gap, owner).
 
 ## Dev brief
-One file: `app/(marketing)/national-show/faq/page.tsx`.
+Files: `app/(marketing)/national-show/faq/page.tsx` and (P3, below) `app/(marketing)/national-show/nos-structure.css`.
 1. Move the r57 `wired` block above the derived list (the rule reads it).
 2. Replace `visibleFaqs` by: `sortedFaqs` = rows with a question, sorted by `categoryRank`; `isSourced(faq)` = `Boolean(wired[faq._id]) || (faq.status === 'confirmed' && hasFaqAnswer(faq))`; `visibleFaqs` = `sortedFaqs.filter((faq) => !hideUnanswered || (hasFaqAnswer(faq) && isSourced(faq)))`; `withheldCount = sortedFaqs.length - visibleFaqs.length`. `holds` unchanged.
 3. The page-level line: draw `<ShowStatusLine ...>` (same props as today) when `!hideUnanswered || withheldCount > 0`.
@@ -26,8 +26,20 @@ One file: `app/(marketing)/national-show/faq/page.tsx`.
 5. `docs/nos-faq-public-r57b.md`: r57b, the rule and its evidence (status field), the wired map, O4, the JSON-LD effect, ShowStatusLine, owner flags.
 `goldens/reference-trial.patch` is the architect's trial (page.tsx and the doc), proven green on A3, A7, A8, then reverted. Non-binding.
 
+## P3 - status pill in sentence case (Codi's reversal, H4)
+Codi (verbatim): "the public gap notice on what-to-expect still renders its pill as 'TO BE CONFIRMED BY THE SHOW COMMITTEE' in uppercase. I told you to leave [data-confirmation-badge]; I'm reversing that. Make it sentence case with normal tracking too, so public, email and PDF match (H4)."
+r56's `[data-exhibitor-marker]` sentence-case rule is NOT at 6c170c4e, so the combined rule covers both selectors and the r56 merge resolves.
+In `nos-structure.css`, after the R19 block (untouched; its uppercase and .14em declarations keep their counts):
+- `.nos-theme [data-confirmation-badge], .nos-theme [data-exhibitor-marker] { text-transform: none; }` (unlayered, wins over R19 by order).
+- `@layer base { .nos-theme [data-confirmation-badge], .nos-theme [data-exhibitor-marker] { letter-spacing: normal !important; } }`.
+Remove r57's `.nos-theme .nos-faq-answer [data-confirmation-badge]` rule (redundant).
+Why the second block is layered and !important: at 375-700px ShowStatusLine's chip-fit ladder sets 0.02-0.06em with !important Tailwind utilities (in @layer utilities). Important declarations from an earlier layer beat later layers, and any unlayered important loses to them; so a plain or unlayered-!important rule left 0.24px at 390 (measured). `@layer base` is earlier than utilities. Verified green with it. Not touched: ShowStatusLine.tsx (the ladder is still wanted by SAOC pages outside .nos-theme).
+Prettier: nos-structure.css was 10 dirty lines at base; keep it at 10 (the trial measures 10).
+"Sunset Cocktails (Single)" is an owner item: not touched.
+Check B1 (rendered, both modes, both widths): every [data-confirmation-badge] in main on /national-show/faq and /national-show/what-to-expect computes text-transform none and letter-spacing normal (0); the public what-to-expect gap notice must draw >= 1 marker (else INFRA). A8 compares marker text via textContent, so the case change is allowed there and B1 pins it.
+
 ## Checks
-A1 hashes. A2 footprint vs 6c170c4e. A3 static (S1-S6). A4 prettier no dirtier. A5 eslint. A6 tsc. A7 rendered public (D1-D6, X1). A8 rendered preview equals base (V1). `render-baseline.json` is the render of 6c170c4e in both modes. The expected row set is computed live: base wired rows plus rows whose Sanity status is confirmed (read from the public CDN), so a row the committee confirms later is expected to appear.
+A1 hashes. A2 footprint vs 6c170c4e (faq/page.tsx, nos-structure.css, docs, spec dir). A3 static (S1-S7). A4 prettier no dirtier. A5 eslint. A6 tsc. A7 rendered public (D1-D6, B1, X1). A8 rendered preview equals base apart from marker case (V1, B1). `render-baseline.json` is the render of 6c170c4e in both modes. The expected row set is computed live: base wired rows plus rows whose Sanity status is confirmed (read from the public CDN), so a row the committee confirms later is expected to appear.
 
 ## Owner notes
 - Public JSON-LD for the venue row still carries the Sanity answer text while the page shows the venue name only (a r57 carry-over; JSON-LD answers are unchanged by r57b). Flag for Codi: should the venue JSON-LD answer be the venue name?

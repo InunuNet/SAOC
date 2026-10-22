@@ -4,6 +4,7 @@
 //   S3  The page-level gap line is the existing ShowStatusLine, drawn once, no longer behind `hideUnanswered ? null`; the JSON-LD still comes from visibleFaqs.
 //   S4  ShowFaqList, the CSS and every other component are untouched (footprint) and the page carries no 'use client'.
 //   S5  No invention: added lines carry no hex colour, font-family, TBC literal, Sanity write call or new multi-word string literal.
+//   S7  nos-structure.css: one rule after the R19 block gives [data-confirmation-badge] (and [data-exhibitor-marker]) letter-spacing normal / text-transform none; r57's .nos-faq-answer rule is gone; the R19 block is untouched.
 //   S6  docs/nos-faq-public-r57b.md records r57b, the sourced-row rule and its evidence (status field), O4, JSON-LD, ShowStatusLine and the owner flags.
 import { finish, git, readBaseFile, readRepoFile, BASE, DOC } from './_lib.mjs';
 
@@ -40,8 +41,24 @@ else {
     for (const m of code.matchAll(/(['"`])([^'"`]*\s[^'"`]*\s[^'"`]*)\1/g)) if (/^(?:[A-Za-z.,'’-]+ ){2,}[A-Za-z.,'’-]+$/.test(m[2])) failures.push(`S5: new multi-word string literal ${JSON.stringify(m[2])} (no invention: every string comes from an existing source)`);
   }
 }
+// S7
+const CSS = 'app/(marketing)/national-show/nos-structure.css';
+const css = readRepoFile(CSS);
+const cssBase = readBaseFile(CSS);
+if (css === null || cssBase === null) failures.push(`S7: ${CSS} is missing`);
+else {
+  const r19 = css.indexOf('R19 status marker');
+  const upper = css.match(/\.nos-theme \[data-confirmation-badge\],\s*\.nos-theme \[data-exhibitor-marker\]\s*\{[^}]*text-transform:\s*none[^}]*\}/g) ?? [];
+  const track = css.match(/@layer base\s*\{\s*\.nos-theme \[data-confirmation-badge\],\s*\.nos-theme \[data-exhibitor-marker\]\s*\{[^}]*letter-spacing:\s*normal\s*!important[^}]*\}\s*\}/g) ?? [];
+  if (upper.length !== 1 || track.length !== 1) failures.push(`S7: expected one text-transform:none rule and one @layer base letter-spacing:normal !important rule for [data-confirmation-badge] and [data-exhibitor-marker], found ${upper.length} and ${track.length}`);
+  else if (css.indexOf(upper[0]) < r19) failures.push('S7: the sentence-case rule must come after the R19 block');
+  if (/\.nos-faq-answer \[data-confirmation-badge\]/.test(css)) failures.push("S7: r57's .nos-faq-answer [data-confirmation-badge] rule is still there (redundant)");
+  const count = (s, re) => (s.match(re) ?? []).length;
+  if (count(css, /text-transform: uppercase;/g) !== count(cssBase, /text-transform: uppercase;/g)) failures.push('S7: an uppercase declaration was added or removed (the R19 block must stay as is)');
+  if (count(css, /letter-spacing: 0\.14em;/g) !== count(cssBase, /letter-spacing: 0\.14em;/g)) failures.push('S7: the R19 letter-spacing declarations changed');
+}
 // S6
 const doc = readRepoFile(DOC);
 if (doc === null) failures.push(`S6: ${DOC} is missing`);
-else for (const [re, what] of [[/r57b/, 'r57b'], [/confirmed/, 'confirmed'], [/status/, 'the showFaq status field'], [/O4/, 'O4'], [/JSON-LD/, 'JSON-LD'], [/ShowStatusLine/, 'ShowStatusLine'], [/owner/i, 'the owner flags'], [/Sanity/, 'Sanity'], [/wired/, 'wired']]) if (!re.test(doc)) failures.push(`S6: ${DOC} does not mention ${what}`);
-finish('static.mjs', failures, 'S1-S6 hold: a data-driven sourced rule, one existing gap line, JSON-LD from the shown rows, nothing invented.');
+else for (const [re, what] of [[/r57b/, 'r57b'], [/confirmed/, 'confirmed'], [/status/, 'the showFaq status field'], [/O4/, 'O4'], [/JSON-LD/, 'JSON-LD'], [/ShowStatusLine/, 'ShowStatusLine'], [/owner/i, 'the owner flags'], [/Sanity/, 'Sanity'], [/wired/, 'wired'], [/sentence case/i, 'the sentence-case badge rule'], [/nos-structure/, 'nos-structure.css']]) if (!re.test(doc)) failures.push(`S6: ${DOC} does not mention ${what}`);
+finish('static.mjs', failures, 'S1-S7 hold: a data-driven sourced rule, one existing gap line, JSON-LD from the shown rows, nothing invented.');

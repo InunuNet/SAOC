@@ -12,8 +12,10 @@
 //   D6  heading outline equals base minus the withheld sections' h2.
 //   PREVIEW
 //   V1  the page equals base: rows, order, answers, wired blocks, per-row markers, the page-level line, JSON-LD, outline.
+//   BOTH  B1 (Codi, H4): every [data-confirmation-badge] in main - on the FAQ (the page-level line, and in preview the per-row markers) and on what-to-expect (the
+//         public gap notice, and in preview the section markers) - computes text-transform none and letter-spacing normal (0). what-to-expect public must hold >= 1.
 //   BOTH  X1: no horizontal overflow; axe no worse than base; hero text unchanged.
-// Element screenshots (r57b-faq-<mode>-<width>.png) land in <checkout>/.tmp/ex-shots/.
+// V1 compares marker text (textContent), so the case change does not trip it; B1 pins the case. Element screenshots (r57b-faq-<mode>-<width>.png) land in <checkout>/.tmp/ex-shots/.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -51,7 +53,7 @@ async function readStatuses() {
 function measure({ hook }) {
   const squash = (s) => s.replace(/\s+/g, ' ').trim();
   const main = document.querySelector('main') ?? document.body;
-  const markerOf = (m) => ({ text: squash(m.textContent), tt: getComputedStyle(m).textTransform });
+  const markerOf = (m) => ({ text: squash(m.textContent), tt: getComputedStyle(m).textTransform, ls: getComputedStyle(m).letterSpacing });
   const first = main.querySelector('section[aria-labelledby^="faq-"]');
   const chips = main.querySelector('[aria-label="FAQ categories"]');
   return {
@@ -78,6 +80,7 @@ function measure({ hook }) {
       .filter((m) => !m.closest('details'))
       .map((m) => ({ ...markerOf(m), beforeList: first ? Boolean(m.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING) : false })),
     allMarkers: main.querySelectorAll('[data-confirmation-badge]').length,
+    badgeStyles: [...main.querySelectorAll('[data-confirmation-badge]')].map(markerOf),
     sections: [...main.querySelectorAll('section[aria-labelledby^="faq-"]')].map((s) => ({ id: s.getAttribute('aria-labelledby'), title: squash(s.querySelector('h2')?.textContent ?? ''), items: s.querySelectorAll('li.nos-faq-item').length })),
     chips: chips ? [...chips.querySelectorAll('a')].map((a) => a.getAttribute('href')) : [],
     jsonld: [...document.querySelectorAll('script[type="application/ld+json"]')].map((s) => s.textContent.trim()).filter((t) => t.includes('FAQPage')),
@@ -125,6 +128,22 @@ try {
           for (const [rule, n] of Object.entries(axe)) if (n > (base.axe[rule] ?? 0)) failures.push(`${at}: axe "${rule}" has ${n} node(s), base had ${base.axe[rule] ?? 0} (X1)`);
           if (m.heroText !== base.heroText) failures.push(`${at}: hero text changed (X1)`);
 
+          // B1 faq
+          for (const k of m.badgeStyles) {
+            if (k.tt !== 'none') failures.push(`${at}: marker "${k.text}" text-transform is ${k.tt}, needs none (B1)`);
+            if (k.ls !== 'normal' && parseFloat(k.ls) !== 0) failures.push(`${at}: marker "${k.text}" letter-spacing is ${k.ls}, needs normal (B1)`);
+          }
+          // B1 what-to-expect
+          const wres = await page.goto(`${srv.origin}${G.wtePath}`, { waitUntil: 'networkidle' });
+          if (!wres || wres.status() !== 200) failures.push(`${at}: ${G.wtePath} answered ${wres?.status()} (INFRA)`);
+          else {
+            const wb = await page.evaluate(() => [...(document.querySelector('main') ?? document.body).querySelectorAll('[data-confirmation-badge]')].map((m) => ({ text: m.textContent.replace(/\s+/g, ' ').trim(), tt: getComputedStyle(m).textTransform, ls: getComputedStyle(m).letterSpacing })));
+            if (mode === 'public' && wb.length === 0) failures.push(`${at}: INFRA - the public what-to-expect gap notice drew no marker (B1)`);
+            for (const k of wb) {
+              if (k.tt !== 'none') failures.push(`${at}: ${G.wtePath} marker "${k.text}" text-transform is ${k.tt}, needs none (B1)`);
+              if (k.ls !== 'normal' && parseFloat(k.ls) !== 0) failures.push(`${at}: ${G.wtePath} marker "${k.text}" letter-spacing is ${k.ls}, needs normal (B1)`);
+            }
+          }
           if (mode === 'preview') {
             // V1
             const flat = (rows) => rows.map((r) => ({ q: r.q, summaryText: r.summaryText, answerText: r.answerText, badges: r.panelBadges.map((b) => b.text), wired: r.wired }));
@@ -188,4 +207,4 @@ if (RECORD) {
   console.log(`RECORDED: ${Object.keys(recorded).length} mode/width baselines (${failures.length} measurement failure(s) ignored while recording)`);
   process.exit(0);
 }
-finish('rendered.mjs', failures, `D1-D6, V1 and X1 hold on ${Object.keys(recorded).length} mode/width renders.`);
+finish('rendered.mjs', failures, `D1-D6, V1, B1 and X1 hold on ${Object.keys(recorded).length} mode/width renders.`);
