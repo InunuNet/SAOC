@@ -1,0 +1,11 @@
+d6e2d33543be94bd726e8a2790375240fbf1f6faff7515290757e6ef2fc3e6da  .agent/memory/project/specs/nos-exhibitors-r56/checks/_build.mjs
+26e204fd058a60e84b947d12462565c13b7a3909956e9e16797850f3dcf6040e  .agent/memory/project/specs/nos-exhibitors-r56/checks/_lib.mjs
+4c9e0feed8da3bfdeb26d3e9950c44bd502f02a2b7a885e207cd8751e1de4421  .agent/memory/project/specs/nos-exhibitors-r56/checks/_server.mjs
+9fac3f87834867a72c514f50b0059da581390f318519b8bdcefcdcdcf9ec69c0  .agent/memory/project/specs/nos-exhibitors-r56/checks/footprint.mjs
+44bb83f22b52282fc9b5d23b5ab25b76d0812f02e990b4661f00d1aea58340a7  .agent/memory/project/specs/nos-exhibitors-r56/checks/prettier.mjs
+e0116d2953880c7d821c902ebba621a9ca65482283202cca086746aecf3a2105  .agent/memory/project/specs/nos-exhibitors-r56/checks/rendered.mjs
+5ff1c1464bf757dc749f675fbb70fc0ca51e18a7d3a518984b9874df3fd94be8  .agent/memory/project/specs/nos-exhibitors-r56/checks/static.mjs
+f9294d6fc9f23f48b56ced473edd99839e654e3a8976df825bb77053cb595565  .agent/memory/project/specs/nos-exhibitors-r56/goldens/edits.json
+4afcd15dcfc14cf891f2658f9aa95dac3cb992b48a6c088b3ea16b037746b76c  .agent/memory/project/specs/nos-exhibitors-r56/goldens/footprint.json
+201e09c60e3b133c484f25743354d9b20d8fe7ab1fe610603bc9444965a6a87d  .agent/memory/project/specs/nos-exhibitors-r56/goldens/render-baseline.json
+91e6fc6ddb933c7a66af3207b2e6150fcd0f2c2dad87992180e3dbd8bb0c19af  .agent/memory/project/specs/nos-exhibitors-r56/goldens/spec.md

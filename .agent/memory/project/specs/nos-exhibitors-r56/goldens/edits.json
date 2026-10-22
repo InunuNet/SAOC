@@ -1,0 +1,12 @@
+{
+  "widths": [390, 1280],
+  "route": "/national-show/exhibitors",
+  "shots": ".tmp/ex-shots",
+  "questionsId": "exhibitor-questions",
+  "targets": { "linkMinPx": 24, "summaryMinPx": 44, "summaryMaxPx": 120 },
+  "focus": { "minOutlinePx": 2 },
+  "pill": { "pendingMaxHeightPx": 34 },
+  "height": { "slackPx": 120, "capPx": 1500, "codiReductionPx": 3300 },
+  "links": ["Show classes", "SAOC judging standards", "Wild Orchids of Southern Africa"],
+  "forbiddenCopy": ["Date to be confirmed"]
+}

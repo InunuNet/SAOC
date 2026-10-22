@@ -180,6 +180,11 @@
   line-height: 1.5;
   text-transform: uppercase;
 }
+/* r56: the exhibitor marker is sentence case with no tracking, like the email and PDF pills. */
+.nos-theme [data-exhibitor-marker] {
+  letter-spacing: normal;
+  text-transform: none;
+}
 .nos-theme .nos-on-dark [data-confirmation-badge],
 .nos-theme .nos-on-dark [data-exhibitor-marker] {
   border-color: var(--ivory);

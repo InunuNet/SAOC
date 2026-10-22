@@ -28,14 +28,8 @@ export function ExhibitorQuestions({
   const open = (questions ?? []).filter((item) => item?.question);
   if (open.length === 0) return null;
 
-  return (
-    <section id={id}>
-      {heading ? (
-        <h2 id={headingId} className="scroll-mt-[62px] font-serif text-ink md:scroll-mt-[74px]">
-          {heading}
-        </h2>
-      ) : null}
-
+  const body = (
+    <>
       {intro ? (
         <p className="mt-3 max-w-3xl font-sans text-[16px] leading-[1.55] text-ink/80">{intro}</p>
       ) : null}
@@ -62,6 +56,39 @@ export function ExhibitorQuestions({
           </li>
         ))}
       </ul>
+    </>
+  );
+
+  if (!heading) return <section id={id}>{body}</section>;
+
+  // r56: preview-only, so it starts closed; the summary is a copy of ExhibitorJumpNav's.
+  return (
+    <section id={id}>
+      <details>
+        <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 font-sans leading-[1.55] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring-focus)] [&::-webkit-details-marker]:hidden">
+          <h2
+            id={headingId}
+            className="my-0 scroll-mt-[62px] font-serif text-ink md:scroll-mt-[74px]"
+          >
+            {heading}
+          </h2>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 20 20"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="shrink-0 motion-safe:transition-transform [details[open]_&]:rotate-180"
+          >
+            <path d="M5 8l5 5 5-5" />
+          </svg>
+        </summary>
+        {body}
+      </details>
     </section>
   );
 }
