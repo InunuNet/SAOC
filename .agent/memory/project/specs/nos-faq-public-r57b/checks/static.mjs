@@ -2,6 +2,7 @@
 //   S1  faq/page.tsx decides "sourced" from data: the row is wired (wired[faq._id]) or faq.status === 'confirmed'; the public list is filtered on it.
 //   S2  No hardcoded row ids beyond the two r57 wired ids (the rule is data-driven, not a list of questions).
 //   S3  The page-level gap line is the existing ShowStatusLine, drawn once, no longer behind `hideUnanswered ? null`; the JSON-LD still comes from visibleFaqs.
+//   S8  faqEntries filters on isSourced (both modes), so the FAQPage node lists only sourced rows, preview included.
 //   S4  ShowFaqList, the CSS and every other component are untouched (footprint) and the page carries no 'use client'.
 //   S5  No invention: added lines carry no hex colour, font-family, TBC literal, Sanity write call or new multi-word string literal.
 //   S7  nos-structure.css: r56's rule (after the R19 block) is extended to [data-confirmation-badge] (and [data-exhibitor-marker]) letter-spacing normal / text-transform none; r57's .nos-faq-answer rule is gone; the R19 block is untouched.
@@ -26,6 +27,8 @@ else {
   if (lines !== 1) failures.push(`S3: expected exactly one <ShowStatusLine> in the page, found ${lines}`);
   if (/hideUnanswered\s*\?\s*null\s*:\s*\(\s*<ShowStatusLine/.test(src)) failures.push('S3: the gap line is still withheld in a public build');
   if (!/faqEntries\s*=\s*visibleFaqs/.test(src)) failures.push('S3: the FAQPage entries must still be derived from visibleFaqs');
+  // S8
+  if (!/const faqEntries[\s\S]{0,500}isSourced\(/.test(src)) failures.push('S8: faqEntries must filter on isSourced(...) in both modes (the JSON-LD lists only sourced rows)');
   // S4
   if (/'use client'|"use client"/.test(src)) failures.push('S4: the FAQ page must stay a server component');
   // S5
@@ -63,4 +66,4 @@ else {
 const doc = readRepoFile(DOC);
 if (doc === null) failures.push(`S6: ${DOC} is missing`);
 else for (const [re, what] of [[/r57b/, 'r57b'], [/confirmed/, 'confirmed'], [/status/, 'the showFaq status field'], [/O4/, 'O4'], [/JSON-LD/, 'JSON-LD'], [/ShowStatusLine/, 'ShowStatusLine'], [/owner/i, 'the owner flags'], [/Sanity/, 'Sanity'], [/wired/, 'wired'], [/sentence case/i, 'the sentence-case badge rule'], [/nos-structure/, 'nos-structure.css']]) if (!re.test(doc)) failures.push(`S6: ${DOC} does not mention ${what}`);
-finish('static.mjs', failures, 'S1-S7 hold: a data-driven sourced rule, one existing gap line, JSON-LD from the shown rows, nothing invented.');
+finish('static.mjs', failures, 'S1-S8 hold: a data-driven sourced rule, one existing gap line, JSON-LD from the shown rows, nothing invented.');

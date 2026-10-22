@@ -34,7 +34,7 @@ assertions:
       description: Footprint - the branch differs from b1c29304 only in faq/page.tsx, nos-structure.css, docs/nos-faq-public-r57b.md and the spec dir
       command: node .agent/memory/project/specs/nos-faq-public-r57b/checks/footprint.mjs
     - id: A3
-      description: Static - badge rule in nos-structure.css (S7), data-driven sourced rule, one existing ShowStatusLine, JSON-LD from the shown rows, no invention, no Sanity write, docs
+      description: Static - JSON-LD entries filtered on isSourced (S8), badge rule in nos-structure.css (S7), data-driven sourced rule, one existing ShowStatusLine, JSON-LD from the shown rows, no invention, no Sanity write, docs
       command: node .agent/memory/project/specs/nos-faq-public-r57b/checks/static.mjs
     - id: A4
       description: Prettier - faq/page.tsx stays clean and nos-structure.css (10 dirty lines at b1c29304) gets no dirtier
@@ -46,8 +46,8 @@ assertions:
       description: Type-check clean
       command: pnpm exec tsc --noEmit
     - id: A7
-      description: Rendered public build (1280/390) - only sourced rows, no empty section, chips and JSON-LD match, one existing page-level line, every marker (FAQ and what-to-expect gap notice) sentence case with normal tracking, axe no worse
+      description: Rendered public build (1280/390) - only sourced rows, no empty section, chips and JSON-LD match, one existing page-level line, every marker (FAQ and what-to-expect gap notice) sentence case with normal tracking, JSON-LD answers equal to the rendered answers word for word (J1), axe no worse
       command: NOS_FAQ_MODES=public node .agent/memory/project/specs/nos-faq-public-r57b/checks/rendered.mjs
     - id: A8
-      description: Rendered preview build (1280/390) - identical to b1c29304 in rows, marker text, page-level line and JSON-LD (marker CASE changes by design), every marker sentence case with normal tracking
+      description: Rendered preview build (1280/390) - identical to b1c29304 in rows, marker text, page-level line and JSON-LD (marker CASE changes by design), every marker sentence case with normal tracking, JSON-LD answer parity (J1)
       command: NOS_FAQ_MODES=preview node .agent/memory/project/specs/nos-faq-public-r57b/checks/rendered.mjs

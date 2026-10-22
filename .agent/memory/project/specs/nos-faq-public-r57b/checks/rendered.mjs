@@ -7,15 +7,18 @@
 //   D1  the shown rows are exactly the sourced rows, in base order; the sourced set holds at least the dates, cost and venue rows (else INFRA).
 //   D2  each shown row's answer text and wired block equal base.
 //   D3  the sections are exactly the sourced rows' sections, each with its sourced rows; the jump chips (when more than one section) match the sections.
-//   D4  JSON-LD FAQPage lists exactly the shown rows, each with its base answer.
+//   D4  (superseded by J1: the JSON-LD answers are no longer the base's Sanity text.)
 //   D5  exactly one marker in main, outside every row, before the first section, whose text is the preview page-level line (existing copy); none in a summary.
 //   D6  heading outline equals base minus the withheld sections' h2.
 //   PREVIEW
-//   V1  the page equals base: rows, order, answers, wired blocks, per-row markers, the page-level line, JSON-LD, outline.
+//   V1  the page equals base: rows, order, answers, wired blocks, per-row markers, the page-level line, outline (JSON-LD is J1's).
+//   BOTH  J1 (Codi, JSON-LD ruling): the FAQPage JSON-LD names exactly the visible sourced rows (wired, or Sanity status confirmed, read live), and each
+//         acceptedAnswer.text equals its row's rendered answer word for word: both sides tokenised into [A-Za-z0-9]+ words, case-sensitive, compared as sequences.
+//         The rendered side is the answer panel text without the per-row status marker and without the Tickets link/button (the CTA).
 //   BOTH  B1 (Codi, H4): every [data-confirmation-badge] in main - on the FAQ (the page-level line, and in preview the per-row markers) and on what-to-expect (the
 //         public gap notice, and in preview the section markers) - computes text-transform none and letter-spacing normal (0). what-to-expect public must hold >= 1.
 //   BOTH  X1: no horizontal overflow; axe no worse than base; hero text unchanged.
-// V1 compares marker text (textContent), so the case change does not trip it; B1 pins the case. Element screenshots (r57b-faq-<mode>-<width>.png) land in <checkout>/.tmp/ex-shots/.
+// V1 compares marker text (textContent), so the case change does not trip it; B1 pins the case. Element screenshots (r57b-faq-<mode>-<width>.png with the cost and venue rows open; r57b-wte-<mode>-<width>.png for the what-to-expect badge pass) land in <checkout>/.tmp/ex-shots/.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -50,8 +53,10 @@ async function readStatuses() {
 }
 
 // Runs in the page.
-function measure({ hook }) {
+function measure({ hook, tickets }) {
   const squash = (s) => s.replace(/\s+/g, ' ').trim();
+  // Text nodes joined by a space, so adjacent blocks (list items, the Sanity answer and the price list) never fuse into one word.
+  const spaced = (el) => { const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); const out = []; while (w.nextNode()) out.push(w.currentNode.nodeValue); return squash(out.join(' ')); };
   const main = document.querySelector('main') ?? document.body;
   const markerOf = (m) => ({ text: squash(m.textContent), tt: getComputedStyle(m).textTransform, ls: getComputedStyle(m).letterSpacing });
   const first = main.querySelector('section[aria-labelledby^="faq-"]');
@@ -66,6 +71,9 @@ function measure({ hook }) {
       const panel = d.querySelector('.nos-faq-answer');
       const clone = panel ? panel.cloneNode(true) : null;
       if (clone) clone.querySelectorAll('[data-confirmation-badge]').forEach((n) => n.remove());
+      // J1: the same panel without the Tickets CTA, for the word-for-word comparison with the JSON-LD answer.
+      const bare = clone ? clone.cloneNode(true) : null;
+      if (bare) bare.querySelectorAll(`a[href="${tickets}"]`).forEach((n) => n.remove());
       return {
         q: squash(s.querySelector('[data-faq-question] > span')?.textContent ?? s.textContent),
         section: d.closest('section')?.getAttribute('aria-labelledby') ?? '',
@@ -73,6 +81,7 @@ function measure({ hook }) {
         summaryBadges: s.querySelectorAll('[data-confirmation-badge]').length,
         panelBadges: panel ? [...panel.querySelectorAll('[data-confirmation-badge]')].map(markerOf) : [],
         answerText: clone ? squash(clone.textContent) : '',
+        parityText: bare ? spaced(bare) : '',
         wired: panel ? [...panel.querySelectorAll(`[${hook}]`)].map((w) => ({ kind: w.getAttribute(hook), text: squash(w.textContent) })) : [],
       };
     }),
@@ -111,7 +120,7 @@ try {
         const key = `faq:${mode}@${width}`;
         const res = await page.goto(`${srv.origin}${G.faqPath}`, { waitUntil: 'networkidle' });
         if (!res || res.status() !== 200) { failures.push(`${at}: ${G.faqPath} answered ${res?.status()} (INFRA)`); await ctx.close(); continue; }
-        const m = await page.evaluate(measure, { hook: G.wiredHook });
+        const m = await page.evaluate(measure, { hook: G.wiredHook, tickets: G.ticketsHref });
         const base = RECORD ? null : BASELINE[key];
         if (!RECORD && !base) { failures.push(`${at}: no baseline for ${key} (INFRA)`); await ctx.close(); continue; }
 
@@ -128,6 +137,9 @@ try {
           for (const [rule, n] of Object.entries(axe)) if (n > (base.axe[rule] ?? 0)) failures.push(`${at}: axe "${rule}" has ${n} node(s), base had ${base.axe[rule] ?? 0} (X1)`);
           if (m.heroText !== base.heroText) failures.push(`${at}: hero text changed (X1)`);
 
+          // Real FAQ shot (Codi): the cost and venue rows open, taken before the what-to-expect pass below.
+          await page.evaluate(([cost, venue]) => { for (const s of document.querySelectorAll('[data-faq-summary]')) { const q = s.querySelector('[data-faq-question] > span')?.textContent?.trim(); if (q === cost || q === venue) s.closest('details').open = true; } }, [G.costQuestion, G.venueQuestion]);
+          await page.locator('main').first().screenshot({ path: path.join(SHOTS, `r57b-wte-${mode}-${width}.png`) }).catch(() => {});
           // B1 faq
           for (const k of m.badgeStyles) {
             if (k.tt !== 'none') failures.push(`${at}: marker "${k.text}" text-transform is ${k.tt}, needs none (B1)`);
@@ -144,12 +156,24 @@ try {
               if (k.ls !== 'normal' && parseFloat(k.ls) !== 0) failures.push(`${at}: ${G.wtePath} marker "${k.text}" letter-spacing is ${k.ls}, needs normal (B1)`);
             }
           }
+          // J1 (both modes)
+          {
+            const words = (t) => (t ?? '').match(/[A-Za-z0-9]+/g) ?? [];
+            const sourcedRows = m.rows.filter((r) => r.wired.length > 0 || statuses[r.q] === 'confirmed');
+            for (const need of [G.datesQuestion, G.costQuestion, G.venueQuestion]) if (!sourcedRows.some((r) => r.q === need)) failures.push(`${at}: INFRA - "${need}" is not sourced (wired or confirmed), the rule's evidence has changed (J1)`);
+            const ld = faqJson(m.jsonld);
+            if (!same(ld.map((e) => e[0]).sort(), sourcedRows.map((r) => r.q).sort())) failures.push(`${at}: JSON-LD questions ${JSON.stringify(ld.map((e) => e[0]))} are not the visible sourced rows ${JSON.stringify(sourcedRows.map((r) => r.q))} (J1)`);
+            for (const [name, text] of ld) {
+              const row = m.rows.find((r) => r.q === name);
+              if (!row) { failures.push(`${at}: JSON-LD question "${name}" has no visible row (J1)`); continue; }
+              if (!same(words(text), words(row.parityText))) failures.push(`${at}: JSON-LD answer of "${name}" differs from the rendered answer word for word. JSON-LD: ${JSON.stringify(text)}; rendered: ${JSON.stringify(row.parityText)} (J1)`);
+            }
+          }
           if (mode === 'preview') {
             // V1
             const flat = (rows) => rows.map((r) => ({ q: r.q, summaryText: r.summaryText, answerText: r.answerText, badges: r.panelBadges.map((b) => b.text), wired: r.wired }));
             if (!same(flat(m.rows), flat(base.rows))) failures.push(`${at}: the rows differ from base (V1)`);
             if (!same(m.pageMarkers.map((p) => p.text), base.pageMarkers.map((p) => p.text))) failures.push(`${at}: the page-level line differs from base (V1)`);
-            if (!same(faqJson(m.jsonld), faqJson(base.jsonld))) failures.push(`${at}: the FAQPage JSON-LD differs from base (V1)`);
             if (!same(m.outline, base.outline)) failures.push(`${at}: heading outline differs from base (V1)`);
             if (!same(m.sections.map((s) => [s.id, s.items]), base.sections.map((s) => [s.id, s.items]))) failures.push(`${at}: sections differ from base (V1)`);
           } else {
@@ -173,9 +197,6 @@ try {
             for (const s of m.sections) if (s.items !== sourced.filter((r) => r.section === s.id).length) failures.push(`${at}: section ${s.id} holds ${s.items} row(s), needs ${sourced.filter((r) => r.section === s.id).length} (D3)`);
             const wantChips = wantSections.length > 1 ? wantSections.map((id) => `#${id}`) : [];
             if (!same(m.chips, wantChips)) failures.push(`${at}: jump chips ${JSON.stringify(m.chips)} do not match the sections ${JSON.stringify(wantChips)} (D3)`);
-            // D4
-            const wantLd = faqJson(base.jsonld).filter(([name]) => sourced.some((r) => r.q === name));
-            if (!same(faqJson(m.jsonld), wantLd)) failures.push(`${at}: FAQPage JSON-LD ${JSON.stringify(faqJson(m.jsonld).map((e) => e[0]))} is not the shown rows with their base answers (D4)`);
             // D5
             const previewLine = BASELINE[`faq:preview@${width}`]?.pageMarkers?.[0]?.text;
             if (m.allMarkers !== 1 || m.pageMarkers.length !== 1) failures.push(`${at}: ${m.allMarkers} marker(s) in main, needs exactly the one page-level line (D5)`);
@@ -207,4 +228,4 @@ if (RECORD) {
   console.log(`RECORDED: ${Object.keys(recorded).length} mode/width baselines (${failures.length} measurement failure(s) ignored while recording)`);
   process.exit(0);
 }
-finish('rendered.mjs', failures, `D1-D6, V1, B1 and X1 hold on ${Object.keys(recorded).length} mode/width renders.`);
+finish('rendered.mjs', failures, `D1-D6, J1, V1, B1 and X1 hold on ${Object.keys(recorded).length} mode/width renders.`);

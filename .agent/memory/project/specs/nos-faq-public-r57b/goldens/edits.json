@@ -11,5 +11,6 @@
   "shots": ".tmp/ex-shots",
   "sanityApiVersion": "2024-01-01",
   "sanityFaqQuery": "*[_type==\"showFaq\" && active==true]{_id,question,status}",
-  "wtePath": "/national-show/what-to-expect"
+  "wtePath": "/national-show/what-to-expect",
+  "ticketsHref": "/national-show/tickets"
 }
