@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { societies } from '@/lib/data';
 import type { Society } from '@/types';
+import { nosUrl } from '@/lib/site-hosts';
 
 interface SearchOverlayProps {
   open: boolean;
@@ -27,14 +28,10 @@ interface SocietyResult {
   href: string;
 }
 
-const SUGGESTIONS: ReadonlyArray<{ label: string; href: string }> = [
+const SUGGESTIONS: ReadonlyArray<{ label: string; href: string; crossSite?: boolean }> = [
   { label: 'About SAOC', href: '/about' },
   { label: 'Find a society', href: '/societies' },
-  { label: 'National Show', href: '/national-show' },
-  { label: 'Plan your visit to the show', href: '/national-show/plan-your-visit' },
-  { label: 'What to expect at the show', href: '/national-show/what-to-expect' },
-  { label: 'Visitor questions', href: '/national-show/faq' },
-  { label: 'Exhibit at the National Show', href: '/national-show/vendors/apply' },
+  { label: 'National Show', href: nosUrl('/'), crossSite: true },
   { label: 'Events calendar', href: '/events' },
   { label: 'Contact the council', href: '/contact' },
 ];
@@ -134,20 +131,23 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                 Try
               </div>
               <ul className="flex flex-col gap-1">
-                {SUGGESTIONS.map((s) => (
-                  <li key={s.href}>
-                    <Link
-                      href={s.href}
-                      onClick={onClose}
-                      className="flex items-center justify-between px-3 py-2 rounded-sm hover:bg-bone text-ink"
-                    >
-                      <span>{s.label}</span>
-                      <span aria-hidden className="text-muted">
-                        →
-                      </span>
-                    </Link>
-                  </li>
-                ))}
+                {SUGGESTIONS.map((s) => {
+                  const SuggestionLink = s.crossSite ? 'a' : Link;
+                  return (
+                    <li key={s.href}>
+                      <SuggestionLink
+                        href={s.href}
+                        onClick={onClose}
+                        className="flex items-center justify-between px-3 py-2 rounded-sm hover:bg-bone text-ink"
+                      >
+                        <span>{s.label}</span>
+                        <span aria-hidden className="text-muted">
+                          →
+                        </span>
+                      </SuggestionLink>
+                    </li>
+                  );
+                })}
               </ul>
             </>
           )}

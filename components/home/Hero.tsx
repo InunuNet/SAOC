@@ -11,6 +11,7 @@ import { heroImages as staticHeroImages } from '@/lib/data';
 import { showLabelWithEdition, showYearOf } from '@/lib/show-identity';
 import { urlFor } from '@/sanity/lib/image';
 import type { ShowIdentity } from '@/types';
+import { nosUrl } from '@/lib/site-hosts';
 
 const CAROUSEL_INTERVAL_MS = 5500;
 const HEADING_ID = 'home-hero-heading';
@@ -148,13 +149,13 @@ export function Hero({ images, show, showLede = false }: HeroProps) {
             Find your society
             <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" />
           </Link>
-          <Link
-            href="/national-show"
+          <a
+            href={nosUrl('/')}
             data-hero-cta="secondary"
             className={`${HERO_CTA_BASE} border-ivory text-ivory hover:bg-ivory/10`}
           >
             {showCtaLabel}
-          </Link>
+          </a>
         </div>
 
         {/* Pause/Play (WCAG 2.2.2) precedes the dots in DOM order. Moot under reduced motion. */}

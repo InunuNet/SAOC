@@ -53,16 +53,19 @@ export function Footer() {
             {FOOTER_HEADINGS.explore}
           </div>
           <ul className={FOOTER_RHYTHM.list}>
-            {FOOTER_NAV.map((n) => (
-              <li key={n.id}>
-                <Link
-                  href={n.href}
-                  className={`${FOOTER_RHYTHM.row} min-w-11 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150`}
-                >
-                  {n.label}
-                </Link>
-              </li>
-            ))}
+            {FOOTER_NAV.map((n) => {
+              const NavLink = n.crossSite ? 'a' : Link;
+              return (
+                <li key={n.id}>
+                  <NavLink
+                    href={n.href}
+                    className={`${FOOTER_RHYTHM.row} min-w-11 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150`}
+                  >
+                    {n.label}
+                  </NavLink>
+                </li>
+              );
+            })}
           </ul>
         </div>
 

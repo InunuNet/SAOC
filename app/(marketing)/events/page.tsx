@@ -5,6 +5,7 @@ import { EventCard, MonthGroup, eventHref } from '@/components/events';
 import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
 import { ConfirmationBadge } from '@/components/show';
 import { buildPageMetadata } from '@/lib/seo';
+import { saocUrl } from '@/lib/site-hosts';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { upcomingEventsQuery } from '@/sanity/queries';
 import type { SanityEvent } from '@/types';
@@ -24,7 +25,11 @@ export const metadata: Metadata = buildPageMetadata({
   path: '/events',
 });
 
-const BASE_URL = 'https://saoc.co.za';
+/** Absolute URL of an event's page: SAOC's own, or the NOS home for the National Show. */
+function eventUrl(event: Parameters<typeof eventHref>[0]): string {
+  const href = eventHref(event);
+  return href.startsWith('/') ? saocUrl(href) : href;
+}
 
 /** Month label from an ISO date string, e.g. "June 2026" */
 function monthLabel(dateStr: string): string {
@@ -86,7 +91,7 @@ export default async function EventsPage() {
               venue: event.venue,
               description: event.description,
               organizer: event.hostSociety?.name,
-              url: `${BASE_URL}${eventHref(event)}`,
+              url: eventUrl(event),
             })}
           />
         ))}

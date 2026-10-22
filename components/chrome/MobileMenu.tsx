@@ -6,34 +6,24 @@
 // Rendered by Header; receives the same NAV array.
 // =============================================================
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronDown, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 import { useFocusTrap } from '@/lib/hooks/useFocusTrap';
-import { CONTACT_LINK, type NavColumn, type NavItem } from './nav-config';
-import { formatShowDateRange } from '@/lib/show-identity';
-import type { ShowIdentity } from '@/types';
+import { CONTACT_LINK, type NavLinkItem } from './nav-config';
 
 export const MOBILE_MENU_ID = 'mobile-menu';
 
 interface MobileMenuProps {
   open: boolean;
   onClose: () => void;
-  nav: ReadonlyArray<NavItem>;
+  nav: ReadonlyArray<NavLinkItem>;
   triggerRef?: React.RefObject<HTMLElement | null>;
-  /**
-   * The nationalShow Sanity singleton — same source UtilityBar already reads,
-   * threaded down from app/(marketing)/layout.tsx via Header. Never hardcode
-   * a venue or a date here; this prop is the only source. Optional because
-   * Header also renders on surfaces (e.g. /admin) that don't fetch it.
-   */
-  show?: ShowIdentity | null;
 }
 
-export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuProps) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+export function MobileMenu({ open, onClose, nav, triggerRef }: MobileMenuProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Marks every other <body> child (header, main, footer, the SearchOverlay root, etc.)
@@ -77,22 +67,6 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
     if (e.target === e.currentTarget) onClose();
   };
 
-  // Meta lines: computed at render time from the nationalShow singleton, never
-  // authored as literal copy in nav-config.ts. Whether showDate/showEndDate
-  // are set is live Sanity content this file does not control and must not
-  // assume a fixed state for: when both are null, formatShowDateRange
-  // returns null, the lead line renders venue-only with no dangling
-  // separator, and the feature rail's date-only meta renders nothing
-  // (cleanly omitted); when set, both pick up the real values with no code
-  // change. Do not re-snapshot "as of <date>, the dates are/aren't null"
-  // here — a dataset fact frozen into a code comment goes stale silently the
-  // next time Studio content changes, with nothing to catch it.
-  const venueName = show?.venue?.name ?? null;
-  const dateRange = formatShowDateRange(show?.showDate, show?.showEndDate);
-  const leadMeta =
-    [venueName, dateRange].filter((part): part is string => Boolean(part)).join(' · ') || null;
-  const featureRailMeta = dateRange;
-
   return (
     <div
       ref={containerRef}
@@ -134,141 +108,6 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
         <nav aria-label="Mobile primary">
           <ul className="flex flex-col gap-1">
             {nav.map((n) => {
-              if (n.type === 'mega') {
-                const isExpanded = expandedId === n.id;
-                return (
-                  <li key={n.id}>
-                    <button
-                      type="button"
-                      aria-expanded={isExpanded}
-                      onClick={() => setExpandedId(isExpanded ? null : n.id)}
-                      className="flex w-full items-center justify-between px-3 py-3 font-sans text-[15px] text-ink hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-                    >
-                      {n.label}
-                      <ChevronDown
-                        size={16}
-                        strokeWidth={1.5}
-                        className={isExpanded ? 'rotate-180 transition-transform' : 'transition-transform'}
-                      />
-                    </button>
-                    {isExpanded && (
-                      <div className="pl-3 pb-4">
-                        {/* Feature block — sits at the top of the expanded
-                            section, per mission section 1/3 F3. */}
-                        {n.featureRail && (
-                          <div className="mt-2 rounded-sm bg-bone p-4">
-                            {featureRailMeta && (
-                              <span className="font-mono text-[12px] text-muted">
-                                {featureRailMeta}
-                              </span>
-                            )}
-                            <p className="mt-1 font-serif text-[16px] font-medium text-ink">
-                              {n.featureRail.heading}
-                            </p>
-                            {/* NOS brand colours (mission menu-system-layout4
-                                M2/F8) are scoped to the desktop rail only —
-                                see goldens/f8-tickets-rail.json's
-                                scopeBoundary. The mobile drawer stays SAOC. */}
-                            <div className="mt-3 flex flex-col space-y-2">
-                              {n.featureRail.destinations.map((destination) => (
-                                <Link
-                                  key={destination.id}
-                                  href={destination.href}
-                                  onClick={onClose}
-                                  className={
-                                    destination.variant === 'primary'
-                                      ? 'inline-flex w-fit items-center justify-center rounded-sm bg-primary px-4 py-2 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment'
-                                      : 'inline-flex w-fit items-center justify-center rounded-sm border border-primary px-4 py-2 font-sans text-[14px] font-medium text-primary transition-colors duration-150 hover:bg-primary hover:text-ivory focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment'
-                                  }
-                                >
-                                  {destination.label}
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Lead — eyebrow, serif lead linking the hub, meta line. */}
-                        {n.lead && (
-                          <div className="mt-4 px-3">
-                            <span className="inline-flex w-fit items-center rounded-pill bg-bone px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-primary">
-                              {n.lead.eyebrow}
-                            </span>
-                            <Link
-                              href={n.lead.leadHref}
-                              onClick={onClose}
-                              className="mt-2 block w-fit rounded-sm font-serif text-[16px] font-medium text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-                            >
-                              {n.lead.leadLabel}
-                            </Link>
-                            {leadMeta && (
-                              <span className="mt-1 block font-mono text-[12px] text-muted">
-                                {leadMeta}
-                              </span>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Four groups as headed lists with descriptors — The
-                            Show (folded into lead on desktop, its own group
-                            here since mobile has no column-width constraint),
-                            Visit, Programme, Exhibit & Trade. */}
-                        {(
-                          [n.lead?.theShow, ...n.columns].filter(
-                            (column): column is NavColumn => Boolean(column),
-                          )
-                        ).map((column) => (
-                          <div key={column.id} className="mt-4">
-                            {column.headingHref ? (
-                              <Link
-                                href={column.headingHref}
-                                onClick={onClose}
-                                className="block px-3 py-2 font-serif text-[14px] font-medium text-ink hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-                              >
-                                {column.heading}
-                              </Link>
-                            ) : (
-                              <span className="block px-3 py-2 font-serif text-[14px] font-medium text-ink">
-                                {column.heading}
-                              </span>
-                            )}
-                            <ul className="flex flex-col">
-                              {/* The descriptor sits OUTSIDE the anchor: an <a> wrapping
-                                  both the name and the descriptor gives the link an
-                                  accessible name that's the concatenation of both, which
-                                  breaks exact link-name lookups (e2e/mobile-nav-reaches-
-                                  every-section.spec.ts) and hands screen-reader users a
-                                  noisier link name than the visible "bold name over a
-                                  muted descriptor" leaf pattern implies. The row's
-                                  hover/press affordance stays on the wrapping div, not
-                                  the anchor, so the whole leaf still highlights as one
-                                  touch target even though only the name is a link. */}
-                              {column.links.map((link) => (
-                                <li key={link.id}>
-                                  <div className="rounded-sm px-6 py-2 transition-colors duration-150 hover:bg-bone">
-                                    <Link
-                                      href={link.href}
-                                      onClick={onClose}
-                                      className="block font-sans text-[14px] font-bold text-ink transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-                                    >
-                                      {link.label}
-                                    </Link>
-                                    {link.descriptor && (
-                                      <span className="mt-0.5 block font-sans text-[12px] text-muted">
-                                        {link.descriptor}
-                                      </span>
-                                    )}
-                                  </div>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </li>
-                );
-              }
               if (n.disabled) {
                 return (
                   <li key={n.id}>
@@ -284,9 +123,11 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
                   </li>
                 );
               }
+              // National Show leaves this site for the NOS one: a plain anchor, same tab, no arrow.
+              const NavLink = n.crossSite ? 'a' : Link;
               return (
                 <li key={n.id}>
-                  <Link
+                  <NavLink
                     href={n.href}
                     onClick={onClose}
                     className={[
@@ -295,7 +136,7 @@ export function MobileMenu({ open, onClose, nav, triggerRef, show }: MobileMenuP
                     ].join(' ')}
                   >
                     {n.label}
-                  </Link>
+                  </NavLink>
                 </li>
               );
             })}

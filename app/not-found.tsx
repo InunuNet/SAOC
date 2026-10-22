@@ -75,7 +75,7 @@ export default async function NotFound() {
     <>
       <SkipLink />
       <UtilityBar show={show} />
-      <Header show={show} />
+      <Header />
       <main id="main-content" tabIndex={-1}>
         <NotFoundSection />
       </main>

@@ -1,10 +1,10 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { useMemo } from 'react';
 
 import { useCountdown } from '@/lib/hooks/useCountdown';
+import { nosUrl } from '@/lib/site-hosts';
 import { formatShowDateRange, showLabelWithEdition, showTitleWithEdition } from '@/lib/show-identity';
 import type { ShowIdentity } from '@/types';
 
@@ -139,27 +139,27 @@ export function ShowBand({ show }: ShowBandProps) {
             <CountdownBox target={target} edition={show?.edition} />
 
             <div className="flex flex-wrap items-center gap-3">
-              <Link
-                href="/national-show/tickets"
+              <a
+                href={nosUrl('/tickets')}
                 data-show-band-cta="primary"
                 className="inline-flex items-center justify-center text-[14px] font-medium tracking-[0.01em] rounded-[2px] border transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-accent-soft focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 px-[22px] py-[14px] max-[559px]:w-full border-transparent bg-accent text-ink hover:bg-accent-soft hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0"
               >
                 Book tickets
-              </Link>
-              <Link
-                href="/national-show"
+              </a>
+              <a
+                href={nosUrl('/')}
                 data-show-band-cta="secondary"
                 className="inline-flex items-center justify-center text-[14px] font-medium tracking-[0.01em] rounded-[2px] border transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-accent-soft focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 px-[22px] py-[14px] text-ivory border-ivory/45 hover:border-ivory hover:bg-white/6 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0"
               >
                 Show details
-              </Link>
-              <Link
-                href="/national-show/exhibitors"
+              </a>
+              <a
+                href={nosUrl('/exhibitors')}
                 data-show-band-cta="tertiary"
                 className="inline-flex items-center justify-center text-[14px] font-medium tracking-[0.01em] rounded-[2px] border transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-accent-soft focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 min-h-[44px] px-1 border-transparent text-ivory underline decoration-accent decoration-1 underline-offset-4 hover:text-accent-soft hover:decoration-accent-soft"
               >
                 Exhibitor info
-              </Link>
+              </a>
             </div>
           </div>
         </div>

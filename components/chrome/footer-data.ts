@@ -1,17 +1,26 @@
 // =============================================================
 // SAOC — components/chrome/footer-data.ts
-// The one home of the site footer's copy and link lists. Footer.tsx (SAOC skin)
-// and components/nos-chrome/NosFooter.tsx (NOS skin) both render from here, so
-// the two skins can never carry different words.
+// The footer's shared copy, layout and rhythm, plus the SAOC site's own link lists. Footer.tsx
+// (SAOC skin) and components/nos-chrome/NosFooter.tsx (NOS skin) both render the shared parts
+// from here, so the two skins can never carry different words; the NOS link lists live in
+// components/nos-chrome/nos-footer-data.ts (nos-site-split F3, NOS Design R3.7).
 // =============================================================
+
+import { nosUrl } from '@/lib/site-hosts';
 
 export const FOOTER_ORG_NAME = 'South African Orchid Council';
 
-export const FOOTER_NAV = [
+export const FOOTER_NAV: ReadonlyArray<{
+  id: string;
+  label: string;
+  href: string;
+  /** Leaves for the NOS site: a plain anchor, same tab, no arrow. */
+  crossSite?: boolean;
+}> = [
   { id: 'about', label: 'About', href: '/about' },
   { id: 'societies', label: 'Societies', href: '/societies' },
   { id: 'judging', label: 'Judging & Awards', href: '/judging' },
-  { id: 'show', label: 'National Show', href: '/national-show' },
+  { id: 'show', label: 'National Show', href: nosUrl('/'), crossSite: true },
   { id: 'events', label: 'Events', href: '/events' },
 ];
 
@@ -42,6 +51,7 @@ export const FOOTER_WOSA = {
   href: 'https://wildorchids.co.za',
 };
 
+// The SAOC site's legal row. Media kit is the SAOC media kit (members only).
 export const FOOTER_LEGAL_LINKS = [
   { href: '/privacy', label: 'Privacy' },
   { href: '/terms', label: 'Terms' },

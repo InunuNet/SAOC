@@ -32,7 +32,7 @@ export async function SaocFrame({ children }: { children: React.ReactNode }) {
       />
       <SkipLink />
       <UtilityBar show={show} />
-      <Header show={show} />
+      <Header />
       <main id="main-content" tabIndex={-1}>
         {children}
       </main>
