@@ -431,20 +431,6 @@ function drawSchedule(ctx: Ctx, schedule: TicketPdfSchedule | null | undefined, 
     }
     return;
   }
-  if (schedule?.dateText) {
-    drawText(ctx, schedule.dateText, {
-      x,
-      y: 86.9,
-      font: fonts.bold,
-      size: 10.5,
-      color: ROYAL,
-      maxWidth: PERFORATION_X - 6 - x,
-    });
-    if (schedule.timeText) {
-      drawText(ctx, schedule.timeText, { x, y: 92, font: fonts.body, size: 10, color: INK });
-    }
-    return;
-  }
   drawPill(ctx, x, 79, 100 - x);
 }
 

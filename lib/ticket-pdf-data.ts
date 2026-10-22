@@ -102,7 +102,7 @@ export async function loadTicketPdfVisit(): Promise<TicketPdfVisit> {
 /**
  * Per-ticket schedule from what the order actually holds: a day-selection ticket's `chosenDay`
  * gives the numeral, weekday and date, and the time comes from the matching Sanity opening-hours
- * row. Any other ticket carries the show's date range. Unknown parts stay null (pill).
+ * row. Without a chosenDay the schedule is unknown (null), which renders the pill.
  */
 export function buildPositionSchedule(
   chosenDay: string | null | undefined,
@@ -119,9 +119,8 @@ export function buildPositionSchedule(
       timeText: time,
     };
   }
-  return visit.showDates
-    ? { eyebrow: null, numeral: null, dateText: visit.showDates, timeText: null }
-    : null;
+  // No chosenDay and no per-ticket-type window in Sanity: unknown, so the PDF shows the pill.
+  return null;
 }
 
 type PdfPositionSource = Pick<TicketPdfPosition, 'bookingRef' | 'attendeeName' | 'ticketType'>;
