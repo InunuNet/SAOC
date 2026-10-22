@@ -22,7 +22,7 @@ Files: `app/(marketing)/national-show/faq/page.tsx` and (P3, below) `app/(market
 1. Move the r57 `wired` block above the derived list (the rule reads it).
 2. Replace `visibleFaqs` by: `sortedFaqs` = rows with a question, sorted by `categoryRank`; `isSourced(faq)` = `Boolean(wired[faq._id]) || (faq.status === 'confirmed' && hasFaqAnswer(faq))`; `visibleFaqs` = `sortedFaqs.filter((faq) => !hideUnanswered || (hasFaqAnswer(faq) && isSourced(faq)))`; `withheldCount = sortedFaqs.length - visibleFaqs.length`. `holds` unchanged.
 3. The page-level line: draw `<ShowStatusLine ...>` (same props as today) when `!hideUnanswered || withheldCount > 0`.
-4. JSON-LD: `faqEntries` keeps deriving from `visibleFaqs`, so it lists only the shown rows (its filter already passes every shown row in public). Nothing else in the file changes. `ShowFaqList`, the CSS and what-to-expect are untouched.
+4. JSON-LD: `faqEntries` keeps deriving from `visibleFaqs`, so it lists only the shown rows (its filter already passes every shown row in public). Nothing else in the file changes. what-to-expect is untouched; `ShowFaqList.tsx` only gains `WiredFaq.text` (J1 plan).
 5. `docs/nos-faq-public-r57b.md`: r57b, the rule and its evidence (status field), the wired map, O4, the JSON-LD effect, ShowStatusLine, owner flags.
 `goldens/reference-trial.patch` is the architect's trial (page.tsx and the doc), proven green on A3, A7, A8, then reverted. Non-binding.
 

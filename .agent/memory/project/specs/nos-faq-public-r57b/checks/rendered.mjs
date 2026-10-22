@@ -139,7 +139,7 @@ try {
 
           // Real FAQ shot (Codi): the cost and venue rows open, taken before the what-to-expect pass below.
           await page.evaluate(([cost, venue]) => { for (const s of document.querySelectorAll('[data-faq-summary]')) { const q = s.querySelector('[data-faq-question] > span')?.textContent?.trim(); if (q === cost || q === venue) s.closest('details').open = true; } }, [G.costQuestion, G.venueQuestion]);
-          await page.locator('main').first().screenshot({ path: path.join(SHOTS, `r57b-wte-${mode}-${width}.png`) }).catch(() => {});
+          await page.locator('main').first().screenshot({ path: path.join(SHOTS, `r57b-faq-${mode}-${width}.png`) }).catch(() => {});
           // B1 faq
           for (const k of m.badgeStyles) {
             if (k.tt !== 'none') failures.push(`${at}: marker "${k.text}" text-transform is ${k.tt}, needs none (B1)`);
@@ -209,7 +209,7 @@ try {
             if (!same(m.outline, base.outline.filter((h) => !hiddenTitles.includes(h)))) failures.push(`${at}: heading outline ${JSON.stringify(m.outline)} is not base minus the withheld sections (D6)`);
           }
         }
-        await page.locator('main').first().screenshot({ path: path.join(SHOTS, `r57b-faq-${mode}-${width}.png`) }).catch(() => {});
+        await page.locator('main').first().screenshot({ path: path.join(SHOTS, `r57b-wte-${mode}-${width}.png`) }).catch(() => {});
         await ctx.close();
       }
     } finally {

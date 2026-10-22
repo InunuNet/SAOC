@@ -11,8 +11,8 @@ autonomy: high
 exclusions:
   - item: 'Sunset Cocktails (Single) label'
     reason: 'owner item (Codi); untouched'
-  - item: 'every file outside goldens/footprint.json (faq/page.tsx, nos-structure.css), docs/nos-faq-public-r57b.md and this spec dir (enforced by A2)'
-    reason: 'Codi ruled on the public FAQ only. what-to-expect, ShowFaqList, StatusMarker, ShowStatusLine and Sanity prose are untouched (the pill case is CSS only); Sanity is never written.'
+  - item: 'every file outside goldens/footprint.json (faq/page.tsx, ShowFaqList.tsx, nos-structure.css), docs/nos-faq-public-r57b.md and this spec dir (enforced by A2)'
+    reason: 'Codi ruled on the public FAQ only. what-to-expect, StatusMarker, ShowStatusLine and Sanity prose are untouched (the pill case is CSS only); Sanity is never written.'
 features:
   - id: F1
     name: Public FAQ - hide rows without a sourced answer and empty sections, one existing gap line; status pill in sentence case (r57b)
@@ -31,17 +31,17 @@ assertions:
       description: Check scripts and goldens are unmodified since @architect wrote them
       command: shasum -a 256 -c .agent/memory/project/specs/nos-faq-public-r57b/goldens/checks.sha256
     - id: A2
-      description: Footprint - the branch differs from b1c29304 only in faq/page.tsx, nos-structure.css, docs/nos-faq-public-r57b.md and the spec dir
+      description: Footprint - the branch differs from b1c29304 only in faq/page.tsx, ShowFaqList.tsx (WiredFaq.text), nos-structure.css, docs/nos-faq-public-r57b.md and the spec dir
       command: node .agent/memory/project/specs/nos-faq-public-r57b/checks/footprint.mjs
     - id: A3
       description: Static - JSON-LD entries filtered on isSourced (S8), badge rule in nos-structure.css (S7), data-driven sourced rule, one existing ShowStatusLine, JSON-LD from the shown rows, no invention, no Sanity write, docs
       command: node .agent/memory/project/specs/nos-faq-public-r57b/checks/static.mjs
     - id: A4
-      description: Prettier - faq/page.tsx stays clean and nos-structure.css (10 dirty lines at b1c29304) gets no dirtier
+      description: Prettier - faq/page.tsx and ShowFaqList.tsx stay clean and nos-structure.css (10 dirty lines at b1c29304) gets no dirtier
       command: node .agent/memory/project/specs/nos-faq-public-r57b/checks/prettier.mjs
     - id: A5
       description: Lint clean on the touched file
-      command: pnpm exec eslint "app/(marketing)/national-show/faq/page.tsx"
+      command: pnpm exec eslint "app/(marketing)/national-show/faq/page.tsx" components/show/ShowFaqList.tsx
     - id: A6
       description: Type-check clean
       command: pnpm exec tsc --noEmit
