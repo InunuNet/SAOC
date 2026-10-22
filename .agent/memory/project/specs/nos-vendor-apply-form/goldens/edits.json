@@ -1,0 +1,13 @@
+{
+  "widths": [1280, 390],
+  "minControlPx": 16,
+  "gap": { "route": "/national-show/vendors/apply", "minPx": 40, "maxPx": 56, "note": "subnav bottom to the first form text (the required-fields sentence); Codi: about 48px = --space-7" },
+  "stands": { "id": "vendor-register-indicativeBoothCount", "maxCh": 14, "note": "Codi: about 12ch" },
+  "routes": [
+    { "path": "/national-show/vendors/apply", "mustHave": ["vendor-register-businessName", "vendor-register-tradingName", "vendor-register-contactPersonName", "vendor-register-contactEmail", "vendor-register-contactCellPhone", "vendor-register-indicativeBoothCount", "nf-email"] },
+    { "path": "/national-show/vendors/register", "mustHave": ["vendor-register-code-entry-business-name", "vendor-register-code-entry-code", "nf-email"] },
+    { "path": "/tickets/{ticket}?quantity=2", "mustHave": ["ticket-quantity", "nf-email"], "mustHavePrefix": ["attendee-"] }
+  ],
+  "typographyProbes": ["main h1", "main .nos-form-label", "main form > p", ".nf-text", ".nf-form button", "main section.nos-section label"],
+  "shots": ".tmp/va-shots"
+}

@@ -31,7 +31,7 @@ export default function VendorApplyPage() {
         priority
       />
 
-      <NosSection>
+      <NosSection style={{ paddingBlockStart: 'var(--space-7)' }}>
         <div className="max-w-2xl">
           <VendorApplyForm />
         </div>

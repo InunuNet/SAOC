@@ -1,0 +1,47 @@
+# Sources: design lead Codi's r55 ruling (verbatim in goldens/spec.md). Values: --body-md 16px (app/globals.css, design/design_handoff_saoc/colors_and_type.css:55), --space-7 48px
+# (same files), 12ch from Codi. No design asset is added; no copy changes. Rendered check: public build only, ports 3010-3019 minus 3002, 3013, 3016. Run it from the worktree with
+# NODE_OPTIONS='--require ../r19-chrome/use-chrome.cjs', or set NOS_VA_CHROME to the Chrome binary.
+schema: athanor.contract/v1
+slug: nos-vendor-apply-form
+goal: >-
+  Every NOS text control (vendor application, vendor registration, ticket checkout, NOS footer newsletter) computes to at least 16px via the existing --body-md token (iOS focus zoom);
+  the vendor application page's subnav-to-form band shrinks from 115px to the --space-7 48px; the "Indicative number of stands" input is about 12ch wide. Nothing else changes.
+created_at: '2026-10-22'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/footprint.json, docs/nos-vendor-apply-form.md and this spec dir (enforced by A2)'
+    reason: 'Codi ruled on three items for /national-show/vendors/apply and on the 16px floor for NOS forms. SAOC forms, other NOS pages, labels, buttons and copy stay as they are.'
+features:
+  - id: F1
+    name: NOS forms at 16px, 48px band above the vendor application form, 12ch stands field (r55)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-vendor-apply-form/goldens/spec.md
+  - .agent/memory/project/specs/nos-vendor-apply-form/goldens/edits.json
+  - .agent/memory/project/specs/nos-vendor-apply-form/goldens/footprint.json
+  - .agent/memory/project/specs/nos-vendor-apply-form/goldens/render-baseline.json
+  - .agent/memory/project/specs/nos-vendor-apply-form/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-vendor-apply-form/goldens/checks.sha256
+    - id: A2
+      description: Footprint - the branch differs from its merge-base with origin/main only in the five footprint files, docs/nos-vendor-apply-form.md and the spec dir, and HEAD descends from dc664ef9
+      command: node .agent/memory/project/specs/nos-vendor-apply-form/checks/footprint.mjs
+    - id: A3
+      description: Static - one NOS-scoped :is(input, select, textarea) rule with font-size var(--body-md), footer input on var(--body-md), apply-page section top var(--space-7), inputClassName max-w-[12ch] on the stands field only, no colour/token/font/copy added, docs
+      command: node .agent/memory/project/specs/nos-vendor-apply-form/checks/static.mjs
+    - id: A4
+      description: Prettier - the three files clean at base stay clean, and the two already-dirty files (nos-chrome.css, VendorApplyForm.tsx) get no dirtier than their base copy (pre-existing debt, see goldens/spec.md)
+      command: node .agent/memory/project/specs/nos-vendor-apply-form/checks/prettier.mjs
+    - id: A5
+      description: Lint clean on the three TSX files
+      command: pnpm exec eslint "app/(marketing)/national-show/vendors/apply/page.tsx" components/vendors/VendorFormField.tsx components/vendors/VendorApplyForm.tsx
+    - id: A6
+      description: Type-check clean
+      command: pnpm exec tsc --noEmit
+    - id: A7
+      description: Rendered (public build, 1280/390) - every visible text control on vendor apply, vendor register code entry, two ticket checkouts and the NOS footer is >= 16px; apply band 40-56px; stands <= 14ch (1280) and inside its container (390) with the other fields full width; no overflow; axe no worse than the base render; hero, subnav and unrelated font sizes unchanged
+      command: node .agent/memory/project/specs/nos-vendor-apply-form/checks/rendered.mjs
