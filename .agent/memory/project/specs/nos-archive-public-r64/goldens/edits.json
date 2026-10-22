@@ -1,0 +1,11 @@
+{
+  "archivePath": "/national-show/archive",
+  "yearPath": "/national-show/archive/2027",
+  "yearPathPast": "/national-show/archive/2024",
+  "noun": "Past shows",
+  "oldNouns": ["National Show archive", "National Show Archive"],
+  "sanityApiVersion": "2025-02-19",
+  "sanityPastQuery": "*[_type == \"show\" && status == \"past\"] | order(year desc){_id, year, status, location, entries, exhibitors, awards}",
+  "leakProbePages": ["/national-show", "/national-show/faq", "/national-show/sponsors", "/national-show/tickets", "/about"],
+  "shots": ".tmp/ex-shots"
+}

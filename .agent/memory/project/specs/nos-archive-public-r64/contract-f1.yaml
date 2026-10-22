@@ -1,0 +1,56 @@
+# Sources: Codi's ruling on r64 P2/P3 (NOS design lead, final authority), verbatim in goldens/spec.md; saoc-82 approved hiding in public only. On origin/main b1c29304.
+# The rule is data-driven: "records exist" = the Sanity `show` documents the archive already renders (pastShowsQuery -> mergePastShows) hold at least one past show
+# with a recorded fact. No new flag. Sanity and Firestore are READ only.
+# Rendered checks: one mode per call (NOS_ARCH_MODES), ports 3010-3019 minus 3002, 3013, 3016.
+schema: athanor.contract/v1
+slug: nos-archive-public-r64
+goal: >-
+  In a public build /national-show/archive (and /archive/[year]) answers 404 and no surface links to it (header mega menus, mobile menu, sub-nav, Explore index, hub
+  Planning-a-visit list, breadcrumb labels, sitemap) until Sanity holds a past show with recorded facts; a preview build keeps all of it; the page says "Past shows" in its H1, title and og text.
+created_at: '2026-10-22'
+autonomy: high
+exclusions:
+  - item: 'content/national-show-routes.json, nav-config.ts, footer-data.ts, ShowSectionNav.tsx'
+    reason: 'The manifest and nav-config stay the single source of the route and its label; hiding is done at the render sites. ShowSectionNav is not rendered anywhere (its "Past Shows" entry is dead code, flagged).'
+  - item: 'every file outside goldens/footprint.json, docs/nos-archive-public-r64.md and this spec dir (enforced by A2)'
+    reason: 'Codi ruled on the archive route and its noun only. The empty-state copy in archive/page.tsx stays (it is reachable in preview only); Sanity and Firestore are never written.'
+features:
+  - id: F1
+    name: Public build hides the Past shows route until records exist; one noun "Past shows" (r64)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-archive-public-r64/goldens/spec.md
+  - .agent/memory/project/specs/nos-archive-public-r64/goldens/edits.json
+  - .agent/memory/project/specs/nos-archive-public-r64/goldens/footprint.json
+  - .agent/memory/project/specs/nos-archive-public-r64/goldens/reference-trial.patch
+  - .agent/memory/project/specs/nos-archive-public-r64/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-archive-public-r64/goldens/checks.sha256
+    - id: A2
+      description: Footprint - the branch differs from b1c29304 only in the files of goldens/footprint.json, docs/nos-archive-public-r64.md and the spec dir
+      command: node .agent/memory/project/specs/nos-archive-public-r64/checks/footprint.mjs
+    - id: A3
+      description: Static - pure predicate module, data-driven route flag, notFound on both archive routes, every linking surface on the shared predicate, one noun, no invention, no writes, docs
+      command: node .agent/memory/project/specs/nos-archive-public-r64/checks/static.mjs
+    - id: A4
+      description: Unit - hasPastShowRecords (9 fixtures incl. the live shape) and navWithoutHref (no mutation, exactly the one leaf removed)
+      command: pnpm exec tsx .agent/memory/project/specs/nos-archive-public-r64/checks/unit.mjs
+    - id: A5
+      description: Prettier - touched files stay clean, files already dirty at b1c29304 get no dirtier
+      command: node .agent/memory/project/specs/nos-archive-public-r64/checks/prettier.mjs
+    - id: A6
+      description: Lint clean on the touched files
+      command: pnpm exec eslint lib/data/past-shows.ts lib/data/past-shows-public.ts app/sitemap.ts "app/(marketing)/layout.tsx" "app/(marketing)/national-show/layout.tsx" "app/(marketing)/national-show/page.tsx" "app/(marketing)/national-show/archive/page.tsx" "app/(marketing)/national-show/archive/[year]/page.tsx" components/chrome/Header.tsx components/nos-chrome/NosHeader.tsx components/nos/NosHero.tsx components/nos/nos-subnav-groups.ts components/nos/NosShowIndex.tsx
+    - id: A7
+      description: Type-check clean
+      command: pnpm exec tsc --noEmit
+    - id: A8
+      description: Rendered public build - archive and year routes 404, no probe page nor the 404 page carries national-show/archive, hub list 4, Explore index 15, sitemap without the route
+      command: NOS_ARCH_MODES=public node .agent/memory/project/specs/nos-archive-public-r64/checks/rendered.mjs
+    - id: A9
+      description: Rendered preview build - archive 200 with H1 and title "Past shows", every probe page still links it, hub list 5, Explore index 16, sitemap lists it
+      command: NOS_ARCH_MODES=preview node .agent/memory/project/specs/nos-archive-public-r64/checks/rendered.mjs

@@ -1,0 +1,604 @@
+diff --git a/app/(marketing)/layout.tsx b/app/(marketing)/layout.tsx
+index c9efc941..0563e1f3 100644
+--- a/app/(marketing)/layout.tsx
++++ b/app/(marketing)/layout.tsx
+@@ -5,6 +5,7 @@ import { ChromeFrame } from '@/components/nos-chrome/ChromeFrame';
+ import { NosSkipLink } from '@/components/nos-chrome/NosSkipLink';
+ import { NosFooter } from '@/components/nos-chrome/NosFooter';
+ import { NosHeader } from '@/components/nos-chrome/NosHeader';
++import { getVisibleNav } from '@/lib/data/past-shows-public';
+ import { sanityFetch } from '@/sanity/lib/fetch';
+ import { nationalShowQuery } from '@/sanity/queries';
+ import type { ShowIdentity } from '@/types';
+@@ -15,10 +16,10 @@ import type { ShowIdentity } from '@/types';
+ // the NOS own-brand chrome (ChromeFrame picks by route segment); every other route is unchanged.
+ // Brad (2026-10-16) keeps the SAOC utility bar above the NOS header, as its `nos` variant.
+ export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
+-  const show = await sanityFetch<ShowIdentity>({
+-    query: nationalShowQuery,
+-    tags: ['nationalShow', 'sanity'],
+-  });
++  const [show, nav] = await Promise.all([
++    sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
++    getVisibleNav(),
++  ]);
+ 
+   return (
+     <>
+@@ -28,7 +29,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
+           top: (
+             <>
+               <UtilityBar show={show} />
+-              <Header show={show} />
++              <Header show={show} nav={nav} />
+             </>
+           ),
+           bottom: <Footer />,
+@@ -38,7 +39,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
+           top: (
+             <>
+               <UtilityBar variant="nos" />
+-              <NosHeader show={show} />
++              <NosHeader show={show} nav={nav} />
+             </>
+           ),
+           bottom: <NosFooter />,
+diff --git a/app/(marketing)/national-show/archive/[year]/page.tsx b/app/(marketing)/national-show/archive/[year]/page.tsx
+index 505819a4..0f8fdc8c 100644
+--- a/app/(marketing)/national-show/archive/[year]/page.tsx
++++ b/app/(marketing)/national-show/archive/[year]/page.tsx
+@@ -6,6 +6,7 @@ import { mergePastShows, type ArchiveShow } from '@/lib/data/mergeShows';
+ import type { SanityShowProjection } from '@/lib/data/mergeShows';
+ import { sanityFetch } from '@/sanity/lib/fetch';
+ import { nationalShowQuery, pastShowsQuery } from '@/sanity/queries';
++import { showPastShowsRoute } from '@/lib/data/past-shows-public';
+ import { showLabelWithEdition, showYearOf } from '@/lib/show-identity';
+ import { buildPageMetadata } from '@/lib/seo';
+ import type { ShowIdentity } from '@/types';
+@@ -92,6 +93,7 @@ export async function generateMetadata({
+ }): Promise<Metadata> {
+   const { year } = await params;
+   const path = `/national-show/archive/${year}`;
++  if (!(await showPastShowsRoute())) notFound();
+   const pastShows = await loadPastShows();
+   const show = pastShows.find((s) => String(s.year) === year);
+ 
+@@ -113,6 +115,7 @@ export async function generateMetadata({
+ 
+ export default async function ShowYearPage({ params }: { params: Promise<{ year: string }> }) {
+   const { year } = await params;
++  if (!(await showPastShowsRoute())) notFound();
+   const [pastShows, upcoming] = await Promise.all([
+     loadPastShows(),
+     sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
+@@ -154,7 +157,7 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
+             data-nos-backlink=""
+             className="inline-flex min-h-[44px] items-center font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
+           >
+-            ← Archive
++            ← Past shows
+           </Link>
+         }
+       />
+@@ -162,7 +165,7 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
+       {/* Ruling 2026-10-16 #6: the edition label is the current crumb, not a hero eyebrow. */}
+       <NosBreadcrumb
+         items={[
+-          { label: 'Show history', href: '/national-show/archive' },
++          { label: 'Past shows', href: '/national-show/archive' },
+           { label: editionLabel(show) },
+         ]}
+       />
+@@ -249,7 +252,7 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
+               View {upcomingLabel}
+             </Button>
+             <Button as={Link} href="/national-show/archive" variant="ghost-on-dark">
+-              Full archive
++              Past shows
+             </Button>
+           </div>
+         }
+diff --git a/app/(marketing)/national-show/archive/page.tsx b/app/(marketing)/national-show/archive/page.tsx
+index 9d1d5014..15d91584 100644
+--- a/app/(marketing)/national-show/archive/page.tsx
++++ b/app/(marketing)/national-show/archive/page.tsx
+@@ -1,5 +1,6 @@
+ import type { Metadata } from 'next';
+ import Link from 'next/link';
++import { notFound } from 'next/navigation';
+ 
+ import { mergePastShows } from '@/lib/data/mergeShows';
+ import type { SanityShowProjection } from '@/lib/data/mergeShows';
+@@ -15,6 +16,7 @@ import { NosHero } from '@/components/nos/NosHero';
+ import { NosSection } from '@/components/nos/NosSection';
+ import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
+ import { ConfirmationBadge } from '@/components/show';
++import { showPastShowsRoute } from '@/lib/data/past-shows-public';
+ import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+ import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+ import { NosShowIndex } from '@/components/nos/NosShowIndex';
+@@ -28,13 +30,18 @@ export const revalidate = 60;
+ // and a second Event under the live show's own name would compete with it. See M6/B8e.
+ const LEDE = 'The South African National Orchid Show is the council’s triennial event.';
+ 
+-export const metadata: Metadata = buildPageMetadata({
+-  title: 'Archive',
+-  image: nosOgImage('National Show Archive'),
+-  description: 'Past editions of the South African National Orchid Show.',
+-  lede: LEDE,
+-  path: '/national-show/archive',
+-});
++// notFound() here as well as in the page, so a withheld route's 404 carries the not-found's head
++// rather than a canonical and og:url pointing at the missing page.
++export async function generateMetadata(): Promise<Metadata> {
++  if (!(await showPastShowsRoute())) notFound();
++  return buildPageMetadata({
++    title: 'Past shows',
++    image: nosOgImage('Past shows'),
++    description: 'Past editions of the South African National Orchid Show.',
++    lede: LEDE,
++    path: '/national-show/archive',
++  });
++}
+ 
+ function toRomanOrdinal(n: number): string {
+   const val = [50, 40, 10, 9, 5, 4, 1];
+@@ -50,6 +57,10 @@ function toRomanOrdinal(n: number): string {
+ }
+ 
+ export default async function ShowArchivePage() {
++  // A public build has no Past shows page until Sanity holds a past show with recorded facts
++  // (docs/nos-archive-public-r64.md); a preview build keeps it.
++  if (!(await showPastShowsRoute())) notFound();
++
+   // F7: the CTA band advertised the edition, the month/year and the city as literals.
+   // Every one of them is a Studio edit away from being wrong, so all three come from
+   // the nationalShow singleton. See show-identity-surfaces.golden.md.
+@@ -80,7 +91,7 @@ export default async function ShowArchivePage() {
+     <>
+       <NosHero
+         route="/national-show/archive"
+-        title="National Show archive"
++        title="Past shows"
+         lede={LEDE}
+         priority
+         actions={
+diff --git a/app/(marketing)/national-show/layout.tsx b/app/(marketing)/national-show/layout.tsx
+index d6e2afbf..dd13c496 100644
+--- a/app/(marketing)/national-show/layout.tsx
++++ b/app/(marketing)/national-show/layout.tsx
+@@ -1,6 +1,6 @@
+ import type { Metadata } from 'next';
+ 
+-import { NAV } from '@/components/chrome/nav-config';
++import { getVisibleNav } from '@/lib/data/past-shows-public';
+ import { NosBreadcrumbJsonLd } from '@/components/nos/NosBreadcrumbJsonLd';
+ import { NosThemeScope } from '@/components/nos/NosThemeScope';
+ 
+@@ -48,13 +48,13 @@ function collectLabels(node: unknown, into: Record<string, string>): void {
+   for (const value of Object.values(record)) collectLabels(value, into);
+ }
+ 
+-const BREADCRUMB_LABELS: Record<string, string> = {};
+-collectLabels(NAV, BREADCRUMB_LABELS);
+-
+-export default function NationalShowLayout({ children }: { children: React.ReactNode }) {
++export default async function NationalShowLayout({ children }: { children: React.ReactNode }) {
++  // Labels come from the visible nav, so a withheld route is not named in the breadcrumb data either.
++  const breadcrumbLabels: Record<string, string> = {};
++  collectLabels(await getVisibleNav(), breadcrumbLabels);
+   return (
+     <NosThemeScope>
+-      <NosBreadcrumbJsonLd labels={BREADCRUMB_LABELS} />
++      <NosBreadcrumbJsonLd labels={breadcrumbLabels} />
+       {children}
+     </NosThemeScope>
+   );
+diff --git a/app/(marketing)/national-show/page.tsx b/app/(marketing)/national-show/page.tsx
+index 8b542d88..379354cc 100644
+--- a/app/(marketing)/national-show/page.tsx
++++ b/app/(marketing)/national-show/page.tsx
+@@ -22,6 +22,8 @@ import {
+   showVisitorInfoQuery,
+ } from '@/sanity/queries';
+ import { buildShowFacts } from '@/lib/data/show-facts';
++import { PAST_SHOWS_HREF } from '@/lib/data/past-shows';
++import { showPastShowsRoute } from '@/lib/data/past-shows-public';
+ import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+ import { showClasses as staticClasses } from '@/lib/data/showClasses';
+ import { cheapestAdmission, formatRand } from '@/components/nos/cheapest-admission';
+@@ -226,7 +228,7 @@ const VISITOR_CARDS = [
+       'The questions we are asked most, answered — and honestly marked where they are not yet settled.',
+   },
+   {
+-    href: '/national-show/archive',
++    href: PAST_SHOWS_HREF,
+     title: 'Past shows',
+     description: 'Previous editions.',
+   },
+@@ -265,6 +267,9 @@ const EXHIBITOR_STAGES = [
+ ];
+ 
+ export default async function NationalShowPage() {
++  const visitorCards = (await showPastShowsRoute())
++    ? VISITOR_CARDS
++    : VISITOR_CARDS.filter((card) => card.href !== PAST_SHOWS_HREF);
+   const [sanityClasses, sanityShow, visitorInfo, salesState, admissionTicketTypes] =
+     await Promise.all([
+       sanityFetch<SanityShowClass[]>({ query: showClassesQuery, tags: ['showClass', 'sanity'] }),
+@@ -514,7 +519,7 @@ export default async function NationalShowPage() {
+           Planning a visit
+         </h2>
+         <ul data-nos-destinations="">
+-          {VISITOR_CARDS.map(({ href, title: cardTitle, description }) => (
++          {visitorCards.map(({ href, title: cardTitle, description }) => (
+             <li key={href}>
+               <Link href={href}>
+                 <strong>{cardTitle}</strong>
+diff --git a/app/sitemap.ts b/app/sitemap.ts
+index 5c663f5a..b66b0720 100644
+--- a/app/sitemap.ts
++++ b/app/sitemap.ts
+@@ -3,6 +3,8 @@ import type { MetadataRoute } from 'next';
+ import { sanityFetch } from '@/sanity/lib/fetch';
+ import { societySlugsQuery, eventSlugsQuery, pastShowsQuery } from '@/sanity/queries';
+ import { mergePastShows, type SanityShowProjection } from '@/lib/data/mergeShows';
++import { PAST_SHOWS_HREF, hasPastShowRecords } from '@/lib/data/past-shows';
++import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+ import routeManifest from '@/content/national-show-routes.json';
+ 
+ const BASE_URL = 'https://saoc.co.za';
+@@ -44,10 +46,11 @@ function priorityFor(archetype: string): number {
+   return 0.5;
+ }
+ 
+-function buildNationalShowChildRoutes(): MetadataRoute.Sitemap {
++function buildNationalShowChildRoutes(showPastShows: boolean): MetadataRoute.Sitemap {
+   const manifest = routeManifest as NosRouteManifest;
+   return manifest.routes
+     .filter((route) => route.indexable && !route.dynamic)
++    .filter((route) => showPastShows || route.slug !== PAST_SHOWS_HREF)
+     .map((route) => ({
+       url: `${BASE_URL}${route.slug}`,
+       lastModified: new Date(),
+@@ -72,12 +75,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+     { url: `${BASE_URL}/contact`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.5 },
+   ];
+ 
+-  const nationalShowChildRoutes: MetadataRoute.Sitemap = buildNationalShowChildRoutes();
++  // A public build lists neither the Past shows page nor its years until a past show with recorded
++  // facts exists (the page answers 404 until then); a preview build lists them as before.
++  const showPastShows = !withholdPlaceholderProse() || hasPastShowRecords(pastShowsRaw);
++  const nationalShowChildRoutes: MetadataRoute.Sitemap =
++    buildNationalShowChildRoutes(showPastShows);
+ 
+   // Sourced from Sanity (+ the static archive fallback), never hardcoded — see
+   // lib/data/mergeShows.ts, the same union-on-year merge the archive pages themselves
+   // read, so the sitemap can never list a year the archive doesn't actually render.
+-  const archiveYearRoutes: MetadataRoute.Sitemap = mergePastShows(pastShowsRaw).map((show) => ({
++  const archiveYearRoutes: MetadataRoute.Sitemap = (
++    showPastShows ? mergePastShows(pastShowsRaw) : []
++  ).map((show) => ({
+     url: `${BASE_URL}/national-show/archive/${show.year}`,
+     lastModified: new Date(),
+     changeFrequency: 'yearly' as const,
+diff --git a/components/chrome/Header.tsx b/components/chrome/Header.tsx
+index d2f834ec..91ff5354 100644
+--- a/components/chrome/Header.tsx
++++ b/components/chrome/Header.tsx
+@@ -16,7 +16,7 @@ import { usePathname } from 'next/navigation';
+ import { MobileMenu, MOBILE_MENU_ID } from './MobileMenu';
+ import { SearchOverlay } from './SearchOverlay';
+ import { MegaMenu } from './MegaMenu';
+-import { CONTACT_LINK, NAV } from './nav-config';
++import { CONTACT_LINK, NAV, type NavItem } from './nav-config';
+ import type { ShowIdentity } from '@/types';
+ 
+ interface HeaderProps {
+@@ -28,9 +28,11 @@ interface HeaderProps {
+    * line, never a hardcoded placeholder.
+    */
+   show?: ShowIdentity | null;
++  /** The nav to render (app/(marketing)/layout.tsx passes it without withheld routes). Defaults to the full NAV. */
++  nav?: readonly NavItem[];
+ }
+ 
+-export function Header({ show }: HeaderProps = {}) {
++export function Header({ show, nav = NAV }: HeaderProps = {}) {
+   const [scrolled, setScrolled] = useState(false);
+   const [mobileOpen, setMobileOpen] = useState(false);
+   const [searchOpen, setSearchOpen] = useState(false);
+@@ -115,7 +117,7 @@ export function Header({ show }: HeaderProps = {}) {
+ 
+           {/* Zone 2 — primary nav */}
+           <nav aria-label="Primary" className="hidden min-[1240px]:flex shrink-0 items-center gap-4 whitespace-nowrap">
+-            {NAV.map((n) => {
++            {nav.map((n) => {
+               if (n.type === 'mega') {
+                 return <MegaMenu key={n.id} item={n} show={show} />;
+               }
+@@ -200,7 +202,7 @@ export function Header({ show }: HeaderProps = {}) {
+       <MobileMenu
+         open={mobileOpen}
+         onClose={() => setMobileOpen(false)}
+-        nav={NAV}
++        nav={nav}
+         triggerRef={hamburgerRef}
+         show={show}
+       />
+diff --git a/components/nos-chrome/NosHeader.tsx b/components/nos-chrome/NosHeader.tsx
+index 9d15b345..4df7d4a1 100644
+--- a/components/nos-chrome/NosHeader.tsx
++++ b/components/nos-chrome/NosHeader.tsx
+@@ -51,8 +51,6 @@ const lockupProps = (width: number) =>
+ const wideLockup = lockupProps(LOCKUP_BOX_WIDE);
+ const narrowLockup = lockupProps(LOCKUP_BOX_NARROW);
+ 
+-const megaItem = NAV.find((n): n is MegaItem => n.type === 'mega');
+-
+ function Chevron() {
+   return (
+     <svg className="nc-chev" viewBox="0 0 24 24" aria-hidden="true">
+@@ -68,10 +66,13 @@ function groupsOf(mega: MegaItem): NavColumn[] {
+ interface NosHeaderProps {
+   /** The nationalShow Sanity singleton, fetched once in app/(marketing)/layout.tsx. */
+   show?: ShowIdentity | null;
++  /** The nav to render (app/(marketing)/layout.tsx passes it without withheld routes). Defaults to the full NAV. */
++  nav?: readonly NavItem[];
+ }
+ 
+-export function NosHeader({ show }: NosHeaderProps) {
++export function NosHeader({ show, nav = NAV }: NosHeaderProps) {
+   const pathname = usePathname();
++  const megaItem = nav.find((n): n is MegaItem => n.type === 'mega');
+   const meta = getShowMeta(show);
+   const [scrolled, setScrolled] = useState(false);
+   const [megaOpen, setMegaOpen] = useState(false);
+@@ -237,7 +238,7 @@ export function NosHeader({ show }: NosHeaderProps) {
+ 
+           <nav className="nh-nav" aria-label="Primary">
+             <ul>
+-              {NAV.map((n) => {
++              {nav.map((n) => {
+                 if (n.type === 'link') {
+                   return (
+                     <li key={n.id}>
+@@ -360,7 +361,7 @@ export function NosHeader({ show }: NosHeaderProps) {
+       >
+         <div className="nd-inner">
+           <ul className="nd-list">
+-            {NAV.map((n) => {
++            {nav.map((n) => {
+               if (n.type === 'link') {
+                 return (
+                   <li key={n.id}>
+diff --git a/components/nos/NosHero.tsx b/components/nos/NosHero.tsx
+index 27f6afdc..589034ad 100644
+--- a/components/nos/NosHero.tsx
++++ b/components/nos/NosHero.tsx
+@@ -28,6 +28,7 @@ import type { CSSProperties, ReactNode } from 'react';
+ 
+ import { heroPhotoFor } from './hero-photos';
+ import { NosSubNav } from './NosSubNav';
++import { getVisibleNav } from '@/lib/data/past-shows-public';
+ import { subNavGroupFor } from './nos-subnav-groups';
+ 
+ /** Routes whose hero carries no group sub-nav: the hub (it has the destinations list) and tickets. */
+@@ -58,7 +59,7 @@ export interface NosHeroProps {
+   className?: string;
+ }
+ 
+-export function NosHero({
++export async function NosHero({
+   route,
+   title,
+   titleSize = 'default',
+@@ -73,7 +74,7 @@ export function NosHero({
+   const kind = isHub ? 'hub' : 'inner';
+   const photo = heroPhotoFor(route);
+   const variant = photo ? 'photo' : 'type';
+-  const group = NO_SUBNAV_ROUTES.has(route) ? null : subNavGroupFor(route);
++  const group = NO_SUBNAV_ROUTES.has(route) ? null : subNavGroupFor(route, await getVisibleNav());
+ 
+   return (
+     <>
+diff --git a/components/nos/NosShowIndex.tsx b/components/nos/NosShowIndex.tsx
+index 625be71f..2f3d9b48 100644
+--- a/components/nos/NosShowIndex.tsx
++++ b/components/nos/NosShowIndex.tsx
+@@ -11,6 +11,8 @@
+ import Link from 'next/link';
+ 
+ import { NAV } from '@/components/chrome/nav-config';
++import { PAST_SHOWS_HREF } from '@/lib/data/past-shows';
++import { showPastShowsRoute } from '@/lib/data/past-shows-public';
+ 
+ const EYEBROW = 'Explore the show';
+ 
+@@ -48,7 +50,7 @@ const GROUPS: readonly IndexGroup[] = [
+       '/national-show/sa-exhibitors',
+       '/national-show/international-guests',
+       '/national-show/sponsors',
+-      '/national-show/archive',
++      PAST_SHOWS_HREF,
+     ],
+   },
+ ];
+@@ -86,13 +88,18 @@ export interface NosShowIndexProps {
+   currentTone?: 'accent' | 'ink';
+ }
+ 
+-export function NosShowIndex({ current, currentTone = 'accent' }: NosShowIndexProps) {
++export async function NosShowIndex({ current, currentTone = 'accent' }: NosShowIndexProps) {
++  const showPastShows = await showPastShowsRoute();
++  const groups = GROUPS.map((group) => ({
++    ...group,
++    hrefs: group.hrefs.filter((href) => showPastShows || href !== PAST_SHOWS_HREF),
++  }));
+   return (
+     <nav aria-label="Explore the show pages" className="nos-index">
+       <div data-nos-wrap="">
+         <h2 className="nos-index-eyebrow">{EYEBROW}</h2>
+         <div className="nos-index-grid">
+-          {GROUPS.map(({ heading, hrefs }) => (
++          {groups.map(({ heading, hrefs }) => (
+             <div key={heading} className="nos-index-group">
+               <h3>{heading}</h3>
+               <ul>
+diff --git a/components/nos/nos-subnav-groups.ts b/components/nos/nos-subnav-groups.ts
+index fe8efa8a..a4e7ab16 100644
+--- a/components/nos/nos-subnav-groups.ts
++++ b/components/nos/nos-subnav-groups.ts
+@@ -8,7 +8,7 @@
+ // path prefix of it; that leaf is `aria-current="true"` (an exact leaf match is "page").
+ // =============================================================
+ 
+-import { NAV } from '@/components/chrome/nav-config';
++import type { NavItem } from '@/components/chrome/nav-config';
+ 
+ export interface NosSubNavItem {
+   label: string;
+@@ -22,18 +22,19 @@ export interface NosSubNavGroup {
+   exact: boolean;
+ }
+ 
+-const MEGA = NAV.find((item) => item.type === 'mega');
+-const GROUPS: readonly { heading: string; items: NosSubNavItem[] }[] =
+-  MEGA && MEGA.type === 'mega' && MEGA.lead
+-    ? [MEGA.lead.theShow, ...MEGA.columns].map((column) => ({
+-        heading: column.heading,
+-        items: column.links.map((link) => ({ label: link.label, href: link.href })),
+-      }))
+-    : [];
++function groupsOf(nav: readonly NavItem[]): readonly { heading: string; items: NosSubNavItem[] }[] {
++  const mega = nav.find((item) => item.type === 'mega');
++  if (!mega || mega.type !== 'mega' || !mega.lead) return [];
++  return [mega.lead.theShow, ...mega.columns].map((column) => ({
++    heading: column.heading,
++    items: column.links.map((link) => ({ label: link.label, href: link.href })),
++  }));
++}
+ 
+-export function subNavGroupFor(route: string): NosSubNavGroup | null {
++/** `nav` is the visible nav (getVisibleNav), so a withheld route is not offered in the sub-nav. */
++export function subNavGroupFor(route: string, nav: readonly NavItem[]): NosSubNavGroup | null {
+   let best: NosSubNavGroup | null = null;
+-  for (const group of GROUPS) {
++  for (const group of groupsOf(nav)) {
+     for (const item of group.items) {
+       const matches = route === item.href || route.startsWith(`${item.href}/`);
+       if (matches && (!best || item.href.length > best.currentHref.length)) {
+diff --git a/docs/nos-archive-public-r64.md b/docs/nos-archive-public-r64.md
+new file mode 100644
+index 00000000..9f20667b
+--- /dev/null
++++ b/docs/nos-archive-public-r64.md
+@@ -0,0 +1,19 @@
++# Past shows hidden in public until records exist (r64)
++
++Mission `nos-archive-public-r64`. Codi (NOS design lead, final authority), P2: "in public mode, remove 'Past shows' from the subnav and the Explore index and return notFound for the route until records exist; keep it in preview. Same rule as r56/r57: empty sections are hidden in public." P3: one noun, "Past shows", for the H1 and the title (H4). saoc-82 approved hiding in public only.
++
++## The rule
++
++`hasPastShowRecords()` (`lib/data/past-shows.ts`) is true when the Sanity `show` documents the archive already renders (`pastShowsQuery` through `mergePastShows`, `status == "past"`) hold a past show with a recorded fact: a venue, or entries, exhibitors or awards above zero. A year and a title alone are a label, not a record. `showPastShowsRoute()` (`lib/data/past-shows-public.ts`) is true in preview and, in public, when `hasPastShowRecords()` holds. No new flag or env var: the public/preview switch is `withholdPlaceholderProse()`.
++
++Evidence (2026-10-22, published perspective, read only): the dataset holds no `show` with status past (one upcoming 2027, one cancelled test show without a year). The coverage map of `site-content-alignment` has no entry for the archive. Firestore `nationalShows` is read by no page.
++
++## Surfaces that follow the rule
++
++Header and NosHeader (desktop mega, mobile menu) take the `nav` prop that `app/(marketing)/layout.tsx` fills from `getVisibleNav()`; the NOS sub-nav (`NosHero`), the Explore index (`NosShowIndex`), the hub Planning a visit list, the breadcrumb labels (`national-show/layout.tsx`) and the sitemap (the route and its years) do the same. `/national-show/archive` and `/archive/[year]` answer 404 through `notFound()`. A preview build is unchanged apart from the noun.
++
++## Owner flags
++
++- A Sanity outage reads as "no records": a public build hides the route until the next revalidation (60 s).
++- The empty-state copy on the archive page ("Show history awaiting committee records") is now preview-only.
++- `ShowSectionNav` still lists "Past Shows" but is rendered nowhere; left alone.
+diff --git a/lib/data/past-shows-public.ts b/lib/data/past-shows-public.ts
+new file mode 100644
+index 00000000..dcecaa9e
+--- /dev/null
++++ b/lib/data/past-shows-public.ts
+@@ -0,0 +1,30 @@
++// =============================================================
++// NOS — lib/data/past-shows-public.ts
++// Mission nos-archive-public-r64. In a public build /national-show/archive and every link to it
++// are withheld until the Sanity `show` documents hold a past show with a recorded fact; a
++// preview build keeps the route. "Until records exist" is read from the dataset the archive
++// pages already render, never a flag. See docs/nos-archive-public-r64.md.
++// =============================================================
++
++import { NAV } from '@/components/chrome/nav-config';
++import type { NavItem } from '@/components/chrome/nav-config';
++import type { SanityShowProjection } from '@/lib/data/mergeShows';
++import { PAST_SHOWS_HREF, hasPastShowRecords, navWithoutHref } from '@/lib/data/past-shows';
++import { withholdPlaceholderProse } from '@/lib/data/show-pages';
++import { sanityFetch } from '@/sanity/lib/fetch';
++import { pastShowsQuery } from '@/sanity/queries';
++
++/** True when the Past shows route and its links are shown: always in preview, in public once records exist. */
++export async function showPastShowsRoute(): Promise<boolean> {
++  if (!withholdPlaceholderProse()) return true;
++  const shows = await sanityFetch<SanityShowProjection[]>({
++    query: pastShowsQuery,
++    tags: ['show', 'sanity'],
++  });
++  return hasPastShowRecords(shows);
++}
++
++/** The nav every chrome and sub-nav surface renders: NAV, minus the Past shows leaf while the route is withheld. */
++export async function getVisibleNav(): Promise<readonly NavItem[]> {
++  return (await showPastShowsRoute()) ? NAV : navWithoutHref(NAV, PAST_SHOWS_HREF);
++}
+diff --git a/lib/data/past-shows.ts b/lib/data/past-shows.ts
+new file mode 100644
+index 00000000..637c95ff
+--- /dev/null
++++ b/lib/data/past-shows.ts
+@@ -0,0 +1,47 @@
++// =============================================================
++// NOS — lib/data/past-shows.ts
++// Pure half of the "Past shows" visibility rule (mission nos-archive-public-r64). Kept free of
++// next/* and the Sanity client so a script can import it. The async half, which reads the
++// dataset and the public/preview switch, is lib/data/past-shows-public.ts.
++// =============================================================
++
++import type { NavItem } from '@/components/chrome/nav-config';
++import { mergePastShows, type SanityShowProjection } from '@/lib/data/mergeShows';
++
++export const PAST_SHOWS_HREF = '/national-show/archive';
++
++/**
++ * True when the same record set the archive pages render holds at least one past show with a
++ * recorded fact (venue, entries, exhibitors or awards). A year and a title alone are a label,
++ * not a record.
++ */
++export function hasPastShowRecords(shows: SanityShowProjection[] | null | undefined): boolean {
++  return mergePastShows(shows).some(
++    (show) =>
++      Boolean(show.venue?.trim()) ||
++      (show.entries ?? 0) > 0 ||
++      (show.exhibitors ?? 0) > 0 ||
++      (show.awards ?? 0) > 0
++  );
++}
++
++/** A copy of the nav without any leaf (or rail destination) that links to `href`. Never mutates. */
++export function navWithoutHref(nav: readonly NavItem[], href: string): NavItem[] {
++  const keep = <T extends { href: string }>(links: readonly T[]): T[] =>
++    links.filter((link) => link.href !== href);
++  return nav.map((item) => {
++    if (item.type !== 'mega') return item;
++    return {
++      ...item,
++      lead: item.lead && {
++        ...item.lead,
++        theShow: { ...item.lead.theShow, links: keep(item.lead.theShow.links) },
++      },
++      columns: item.columns.map((column) => ({ ...column, links: keep(column.links) })),
++      featureRail: item.featureRail && {
++        ...item.featureRail,
++        destinations: keep(item.featureRail.destinations),
++      },
++    };
++  });
++}

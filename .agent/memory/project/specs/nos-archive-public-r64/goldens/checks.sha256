@@ -1,0 +1,12 @@
+d6e2d33543be94bd726e8a2790375240fbf1f6faff7515290757e6ef2fc3e6da  .agent/memory/project/specs/nos-archive-public-r64/checks/_build.mjs
+55ea370e56dc07930fb98b78a64e6d339987c56722f6cabc6c2a91b183a1bbf7  .agent/memory/project/specs/nos-archive-public-r64/checks/_lib.mjs
+e0c2e90b1e2fef5dd400a1f35d5aeea0e1a8589bc50ec978422b26ad95affbfc  .agent/memory/project/specs/nos-archive-public-r64/checks/_server.mjs
+17e77f93486e85fc22633763bf7980dbb99330ae30b0f01af170752cc124bbea  .agent/memory/project/specs/nos-archive-public-r64/checks/footprint.mjs
+45dfe132b2aa7cf33ceafa825279ee868c4ec795de9036e95aab12cf9145cdeb  .agent/memory/project/specs/nos-archive-public-r64/checks/prettier.mjs
+fa896712e4237442cdb8ae71815fd64f6495b7ae8e580b468fa5231af9c9625c  .agent/memory/project/specs/nos-archive-public-r64/checks/rendered.mjs
+0fd606dd32bbab7314b1ca47dca60999fc4ef0b1f1410fd09a4e085ad12d3f27  .agent/memory/project/specs/nos-archive-public-r64/checks/static.mjs
+a387f1d4898d8c892224f31d6b7690350c2306ab69cac51251f37cc268eab8aa  .agent/memory/project/specs/nos-archive-public-r64/checks/unit.mjs
+33d5d22c444ab04e85d958bda6cabb802bb33d38be5c756bf31d6d69592fc569  .agent/memory/project/specs/nos-archive-public-r64/goldens/spec.md
+61d50cc0e178262271d67a4b572b99a19e12354ea65d098cf390a3cf92865264  .agent/memory/project/specs/nos-archive-public-r64/goldens/edits.json
+edfe96ec0dcdf9c77bad53be93920b8f158ab8baecd92a1f7f65b2989834fe97  .agent/memory/project/specs/nos-archive-public-r64/goldens/footprint.json
+925126018ef3c7e7bfed4bbd7af698eec759f425dd32a59af255c4477c7a774d  .agent/memory/project/specs/nos-archive-public-r64/goldens/reference-trial.patch

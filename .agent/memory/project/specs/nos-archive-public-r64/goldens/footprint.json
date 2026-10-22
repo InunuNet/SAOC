@@ -1,0 +1,15 @@
+[
+  "lib/data/past-shows.ts",
+  "lib/data/past-shows-public.ts",
+  "app/(marketing)/layout.tsx",
+  "app/(marketing)/national-show/layout.tsx",
+  "app/(marketing)/national-show/page.tsx",
+  "app/(marketing)/national-show/archive/page.tsx",
+  "app/(marketing)/national-show/archive/[year]/page.tsx",
+  "app/sitemap.ts",
+  "components/chrome/Header.tsx",
+  "components/nos-chrome/NosHeader.tsx",
+  "components/nos/NosHero.tsx",
+  "components/nos/nos-subnav-groups.ts",
+  "components/nos/NosShowIndex.tsx"
+]
