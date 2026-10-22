@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 
 import { mergePastShows } from '@/lib/data/mergeShows';
 import type { SanityShowProjection } from '@/lib/data/mergeShows';
@@ -15,6 +16,7 @@ import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
 import { ConfirmationBadge } from '@/components/show';
+import { showPastShowsRoute } from '@/lib/data/past-shows-public';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
@@ -28,13 +30,18 @@ export const revalidate = 60;
 // and a second Event under the live show's own name would compete with it. See M6/B8e.
 const LEDE = 'The South African National Orchid Show is the council’s triennial event.';
 
-export const metadata: Metadata = buildPageMetadata({
-  title: 'Archive',
-  image: nosOgImage('National Show Archive'),
-  description: 'Past editions of the South African National Orchid Show.',
-  lede: LEDE,
-  path: '/national-show/archive',
-});
+// notFound() here as well as in the page, so a withheld route's 404 carries the not-found's head
+// rather than a canonical and og:url pointing at the missing page.
+export async function generateMetadata(): Promise<Metadata> {
+  if (!(await showPastShowsRoute())) notFound();
+  return buildPageMetadata({
+    title: 'Past shows',
+    image: nosOgImage('Past shows'),
+    description: 'Past editions of the South African National Orchid Show.',
+    lede: LEDE,
+    path: '/national-show/archive',
+  });
+}
 
 function toRomanOrdinal(n: number): string {
   const val = [50, 40, 10, 9, 5, 4, 1];
@@ -50,6 +57,10 @@ function toRomanOrdinal(n: number): string {
 }
 
 export default async function ShowArchivePage() {
+  // A public build has no Past shows page until Sanity holds a past show with recorded facts
+  // (docs/nos-archive-public-r64.md); a preview build keeps it.
+  if (!(await showPastShowsRoute())) notFound();
+
   // F7: the CTA band advertised the edition, the month/year and the city as literals.
   // Every one of them is a Studio edit away from being wrong, so all three come from
   // the nationalShow singleton. See show-identity-surfaces.golden.md.
@@ -80,7 +91,7 @@ export default async function ShowArchivePage() {
     <>
       <NosHero
         route="/national-show/archive"
-        title="National Show archive"
+        title="Past shows"
         lede={LEDE}
         priority
         actions={

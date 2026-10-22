@@ -3,6 +3,8 @@ import type { MetadataRoute } from 'next';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { societySlugsQuery, eventSlugsQuery, pastShowsQuery } from '@/sanity/queries';
 import { mergePastShows, type SanityShowProjection } from '@/lib/data/mergeShows';
+import { PAST_SHOWS_HREF, hasPastShowRecords } from '@/lib/data/past-shows';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import routeManifest from '@/content/national-show-routes.json';
 
 const BASE_URL = 'https://saoc.co.za';
@@ -44,10 +46,11 @@ function priorityFor(archetype: string): number {
   return 0.5;
 }
 
-function buildNationalShowChildRoutes(): MetadataRoute.Sitemap {
+function buildNationalShowChildRoutes(showPastShows: boolean): MetadataRoute.Sitemap {
   const manifest = routeManifest as NosRouteManifest;
   return manifest.routes
     .filter((route) => route.indexable && !route.dynamic)
+    .filter((route) => showPastShows || route.slug !== PAST_SHOWS_HREF)
     .map((route) => ({
       url: `${BASE_URL}${route.slug}`,
       lastModified: new Date(),
@@ -72,12 +75,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/contact`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.5 },
   ];
 
-  const nationalShowChildRoutes: MetadataRoute.Sitemap = buildNationalShowChildRoutes();
+  // A public build lists neither the Past shows page nor its years until a past show with recorded
+  // facts exists (the page answers 404 until then); a preview build lists them as before.
+  const showPastShows = !withholdPlaceholderProse() || hasPastShowRecords(pastShowsRaw);
+  const nationalShowChildRoutes: MetadataRoute.Sitemap =
+    buildNationalShowChildRoutes(showPastShows);
 
   // Sourced from Sanity (+ the static archive fallback), never hardcoded — see
   // lib/data/mergeShows.ts, the same union-on-year merge the archive pages themselves
   // read, so the sitemap can never list a year the archive doesn't actually render.
-  const archiveYearRoutes: MetadataRoute.Sitemap = mergePastShows(pastShowsRaw).map((show) => ({
+  const archiveYearRoutes: MetadataRoute.Sitemap = (
+    showPastShows ? mergePastShows(pastShowsRaw) : []
+  ).map((show) => ({
     url: `${BASE_URL}/national-show/archive/${show.year}`,
     lastModified: new Date(),
     changeFrequency: 'yearly' as const,

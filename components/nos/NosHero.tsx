@@ -28,6 +28,7 @@ import type { CSSProperties, ReactNode } from 'react';
 
 import { heroPhotoFor } from './hero-photos';
 import { NosSubNav } from './NosSubNav';
+import { getVisibleNav } from '@/lib/data/past-shows-public';
 import { subNavGroupFor } from './nos-subnav-groups';
 
 /** Routes whose hero carries no group sub-nav: the hub (it has the destinations list) and tickets. */
@@ -58,7 +59,7 @@ export interface NosHeroProps {
   className?: string;
 }
 
-export function NosHero({
+export async function NosHero({
   route,
   title,
   titleSize = 'default',
@@ -73,7 +74,7 @@ export function NosHero({
   const kind = isHub ? 'hub' : 'inner';
   const photo = heroPhotoFor(route);
   const variant = photo ? 'photo' : 'type';
-  const group = NO_SUBNAV_ROUTES.has(route) ? null : subNavGroupFor(route);
+  const group = NO_SUBNAV_ROUTES.has(route) ? null : subNavGroupFor(route, await getVisibleNav());
 
   return (
     <>

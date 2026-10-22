@@ -51,8 +51,6 @@ const lockupProps = (width: number) =>
 const wideLockup = lockupProps(LOCKUP_BOX_WIDE);
 const narrowLockup = lockupProps(LOCKUP_BOX_NARROW);
 
-const megaItem = NAV.find((n): n is MegaItem => n.type === 'mega');
-
 function Chevron() {
   return (
     <svg className="nc-chev" viewBox="0 0 24 24" aria-hidden="true">
@@ -68,10 +66,13 @@ function groupsOf(mega: MegaItem): NavColumn[] {
 interface NosHeaderProps {
   /** The nationalShow Sanity singleton, fetched once in app/(marketing)/layout.tsx. */
   show?: ShowIdentity | null;
+  /** The nav to render (app/(marketing)/layout.tsx passes it without withheld routes). Defaults to the full NAV. */
+  nav?: readonly NavItem[];
 }
 
-export function NosHeader({ show }: NosHeaderProps) {
+export function NosHeader({ show, nav = NAV }: NosHeaderProps) {
   const pathname = usePathname();
+  const megaItem = nav.find((n): n is MegaItem => n.type === 'mega');
   const meta = getShowMeta(show);
   const [scrolled, setScrolled] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
@@ -237,7 +238,7 @@ export function NosHeader({ show }: NosHeaderProps) {
 
           <nav className="nh-nav" aria-label="Primary">
             <ul>
-              {NAV.map((n) => {
+              {nav.map((n) => {
                 if (n.type === 'link') {
                   return (
                     <li key={n.id}>
@@ -360,7 +361,7 @@ export function NosHeader({ show }: NosHeaderProps) {
       >
         <div className="nd-inner">
           <ul className="nd-list">
-            {NAV.map((n) => {
+            {nav.map((n) => {
               if (n.type === 'link') {
                 return (
                   <li key={n.id}>

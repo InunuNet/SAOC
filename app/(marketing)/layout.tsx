@@ -5,6 +5,7 @@ import { ChromeFrame } from '@/components/nos-chrome/ChromeFrame';
 import { NosSkipLink } from '@/components/nos-chrome/NosSkipLink';
 import { NosFooter } from '@/components/nos-chrome/NosFooter';
 import { NosHeader } from '@/components/nos-chrome/NosHeader';
+import { getVisibleNav } from '@/lib/data/past-shows-public';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery } from '@/sanity/queries';
 import type { ShowIdentity } from '@/types';
@@ -15,10 +16,10 @@ import type { ShowIdentity } from '@/types';
 // the NOS own-brand chrome (ChromeFrame picks by route segment); every other route is unchanged.
 // Brad (2026-10-16) keeps the SAOC utility bar above the NOS header, as its `nos` variant.
 export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
-  const show = await sanityFetch<ShowIdentity>({
-    query: nationalShowQuery,
-    tags: ['nationalShow', 'sanity'],
-  });
+  const [show, nav] = await Promise.all([
+    sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
+    getVisibleNav(),
+  ]);
 
   return (
     <>
@@ -28,7 +29,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
           top: (
             <>
               <UtilityBar show={show} />
-              <Header show={show} />
+              <Header show={show} nav={nav} />
             </>
           ),
           bottom: <Footer />,
@@ -38,7 +39,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
           top: (
             <>
               <UtilityBar variant="nos" />
-              <NosHeader show={show} />
+              <NosHeader show={show} nav={nav} />
             </>
           ),
           bottom: <NosFooter />,

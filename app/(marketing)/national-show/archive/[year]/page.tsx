@@ -6,6 +6,7 @@ import { mergePastShows, type ArchiveShow } from '@/lib/data/mergeShows';
 import type { SanityShowProjection } from '@/lib/data/mergeShows';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery, pastShowsQuery } from '@/sanity/queries';
+import { showPastShowsRoute } from '@/lib/data/past-shows-public';
 import { showLabelWithEdition, showYearOf } from '@/lib/show-identity';
 import { buildPageMetadata } from '@/lib/seo';
 import type { ShowIdentity } from '@/types';
@@ -92,6 +93,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { year } = await params;
   const path = `/national-show/archive/${year}`;
+  if (!(await showPastShowsRoute())) notFound();
   const pastShows = await loadPastShows();
   const show = pastShows.find((s) => String(s.year) === year);
 
@@ -113,6 +115,7 @@ export async function generateMetadata({
 
 export default async function ShowYearPage({ params }: { params: Promise<{ year: string }> }) {
   const { year } = await params;
+  if (!(await showPastShowsRoute())) notFound();
   const [pastShows, upcoming] = await Promise.all([
     loadPastShows(),
     sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
@@ -154,7 +157,7 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
             data-nos-backlink=""
             className="inline-flex min-h-[44px] items-center font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
           >
-            ← Archive
+            ← Past shows
           </Link>
         }
       />
@@ -162,7 +165,7 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
       {/* Ruling 2026-10-16 #6: the edition label is the current crumb, not a hero eyebrow. */}
       <NosBreadcrumb
         items={[
-          { label: 'Show history', href: '/national-show/archive' },
+          { label: 'Past shows', href: '/national-show/archive' },
           { label: editionLabel(show) },
         ]}
       />
@@ -249,7 +252,7 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
               View {upcomingLabel}
             </Button>
             <Button as={Link} href="/national-show/archive" variant="ghost-on-dark">
-              Full archive
+              Past shows
             </Button>
           </div>
         }

@@ -16,7 +16,7 @@ import { usePathname } from 'next/navigation';
 import { MobileMenu, MOBILE_MENU_ID } from './MobileMenu';
 import { SearchOverlay } from './SearchOverlay';
 import { MegaMenu } from './MegaMenu';
-import { CONTACT_LINK, NAV } from './nav-config';
+import { CONTACT_LINK, NAV, type NavItem } from './nav-config';
 import type { ShowIdentity } from '@/types';
 
 interface HeaderProps {
@@ -28,9 +28,11 @@ interface HeaderProps {
    * line, never a hardcoded placeholder.
    */
   show?: ShowIdentity | null;
+  /** The nav to render (app/(marketing)/layout.tsx passes it without withheld routes). Defaults to the full NAV. */
+  nav?: readonly NavItem[];
 }
 
-export function Header({ show }: HeaderProps = {}) {
+export function Header({ show, nav = NAV }: HeaderProps = {}) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -115,7 +117,7 @@ export function Header({ show }: HeaderProps = {}) {
 
           {/* Zone 2 — primary nav */}
           <nav aria-label="Primary" className="hidden min-[1240px]:flex shrink-0 items-center gap-4 whitespace-nowrap">
-            {NAV.map((n) => {
+            {nav.map((n) => {
               if (n.type === 'mega') {
                 return <MegaMenu key={n.id} item={n} show={show} />;
               }
@@ -200,7 +202,7 @@ export function Header({ show }: HeaderProps = {}) {
       <MobileMenu
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        nav={NAV}
+        nav={nav}
         triggerRef={hamburgerRef}
         show={show}
       />
