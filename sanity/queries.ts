@@ -597,14 +597,13 @@ export const showSponsorsQuery = defineQuery(`
   }
 `);
 
-// ticket-pdf (D11): the date a ticket prints depends on its type's category and day-selection
+// ticket-pdf (D11 rev): the date a ticket prints depends on its type's slug and day-selection
 // flag. Includes inactive types because a paid order can outlive the type being switched off.
 // Read-only; used by lib/ticket-pdf-data.ts.
 export const ticketTypeScheduleTraitsQuery = defineQuery(`
   *[_type == "ticketType"]{
     name,
     "slug": slug.current,
-    category,
     requiresDaySelection
   }
 `);

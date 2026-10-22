@@ -37,6 +37,8 @@ export interface TicketPdfPosition {
   bookingRef: string;
   attendeeName: string;
   ticketType: string;
+  /** The Sanity ticket-type slug the schedule was resolved from. */
+  slug?: string;
   schedule?: TicketPdfSchedule | null;
   timesHeading?: string | null;
   times?: TicketPdfTime[] | null;

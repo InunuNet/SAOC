@@ -8,6 +8,7 @@ import {
   showVisitorInfoQuery,
   ticketTypeScheduleTraitsQuery,
 } from '@/sanity/queries';
+import { TICKET_PRODUCTS, productIdForSlug } from '@/lib/data/ticket-presentation';
 import { resolveTicketSchedule } from '@/lib/ticket-pdf-schedule';
 import type {
   TicketPdfPosition,
@@ -105,14 +106,16 @@ export async function loadTicketPdfVisit(): Promise<TicketPdfVisit> {
   }
 }
 
-interface TicketTypeTraitsDoc extends TicketTypeTraits {
+interface TicketTypeTraitsDoc {
   name?: string | null;
   slug?: string | null;
+  requiresDaySelection?: boolean | null;
 }
 
 /**
- * Ticket-type traits keyed by slug and by name, because an order position stores whichever the
- * checkout wrote. A loader failure yields an empty map: every ticket then prints the pill.
+ * Ticket-type slug and day-selection flag keyed by slug and by name, because an order position
+ * stores whichever the checkout wrote. A loader failure yields an empty map: toPdfPositions then
+ * treats the stored ticketType as the slug, and an unmapped one prints the pill.
  */
 export async function loadTicketTypeTraits(): Promise<Map<string, TicketTypeTraits>> {
   const traits = new Map<string, TicketTypeTraits>();
@@ -122,8 +125,9 @@ export async function loadTicketTypeTraits(): Promise<Map<string, TicketTypeTrai
       tags: ['ticketType', 'sanity'],
     });
     for (const doc of docs ?? []) {
-      const entry = { category: doc.category, requiresDaySelection: doc.requiresDaySelection };
-      if (doc.slug) traits.set(doc.slug, entry);
+      if (!doc.slug) continue;
+      const entry = { slug: doc.slug, requiresDaySelection: doc.requiresDaySelection };
+      traits.set(doc.slug, entry);
       if (doc.name) traits.set(doc.name, entry);
     }
   } catch (error) {
@@ -135,19 +139,26 @@ export async function loadTicketTypeTraits(): Promise<Map<string, TicketTypeTrai
 }
 
 /**
- * Per-ticket schedule (D11, resolveTicketSchedule): a buyer-chosen day gives the numeral, weekday
- * and date, with the time from the matching Sanity opening-hours row; a show-span admission
- * prints the show's date range as given; anything else is unconfirmed (null), which renders the
- * pill. No date is ever invented.
+ * Per-ticket schedule (D11 rev, resolveTicketSchedule): a buyer-chosen day gives the numeral,
+ * weekday and date, with the time from the matching Sanity opening-hours row; an event or pass
+ * product prints its own date and meta line from TICKET_PRODUCTS (an event also its stub numeral);
+ * anything else is unconfirmed (null), which renders the pill. No date is ever invented.
  */
 export function buildPositionSchedule(
   type: TicketTypeTraits,
   chosenDay: string | null | undefined,
   visit: TicketPdfVisit
 ): TicketPdfSchedule | null {
-  const resolved = resolveTicketSchedule(type, chosenDay ?? null, visit.showDates);
-  if (resolved.kind === 'show-span') {
-    return { eyebrow: null, numeral: null, dateText: resolved.dateText, timeText: null };
+  const resolved = resolveTicketSchedule(type, chosenDay ?? null);
+  if (resolved.kind === 'product') {
+    const productId = productIdForSlug(type.slug);
+    const product = productId ? TICKET_PRODUCTS[productId] : null;
+    return {
+      eyebrow: null,
+      numeral: product?.kind === 'event' ? product.numeral || null : null,
+      dateText: resolved.dateText,
+      timeText: resolved.metaText,
+    };
   }
   if (resolved.kind === 'chosen-day' && chosenDay) {
     const stub = showDayStub(chosenDay);
@@ -156,7 +167,7 @@ export function buildPositionSchedule(
     return {
       eyebrow: stub?.caption ?? null,
       numeral: stub?.numeral ?? null,
-      dateText: resolved.dateText ?? formatShowDay(chosenDay),
+      dateText: resolved.dateText,
       timeText: time,
     };
   }
@@ -171,16 +182,16 @@ export function toPdfPositions(
   visit: TicketPdfVisit,
   traits: ReadonlyMap<string, TicketTypeTraits>
 ): TicketPdfPosition[] {
-  return positions.map(({ bookingRef, attendeeName, ticketType }) => ({
-    bookingRef,
-    attendeeName,
-    ticketType,
-    schedule: buildPositionSchedule(
-      traits.get(ticketType) ?? {},
-      chosenDays.get(bookingRef),
-      visit
-    ),
-  }));
+  return positions.map(({ bookingRef, attendeeName, ticketType }) => {
+    const type = traits.get(ticketType) ?? { slug: ticketType };
+    return {
+      bookingRef,
+      attendeeName,
+      ticketType,
+      slug: type.slug,
+      schedule: buildPositionSchedule(type, chosenDays.get(bookingRef), visit),
+    };
+  });
 }
 
 /** Email path: the ITN outcome carries no chosenDay, so read it back from the paid order. */

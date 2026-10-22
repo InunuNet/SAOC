@@ -1,38 +1,46 @@
+import { TICKET_PRODUCTS, productIdForSlug } from '@/lib/data/ticket-presentation';
 import { formatShowDay } from '@/lib/show-day-format';
 
 /**
- * ticket-pdf (D11) — which date a ticket prints, decided from the ticket type's own data and
- * never invented. A buyer-chosen day prints that day, a show-span admission prints the show's
- * date range exactly as Sanity gives it, and everything else (conference, field trip, unknown
- * category) is unconfirmed, which renders the "To be confirmed" pill.
+ * ticket-pdf (D11 rev) — which date a ticket prints, taken from data that already exists and
+ * never invented. A buyer-chosen day prints that day, an 'event' or 'pass' product prints its own
+ * `when` and `meta` from TICKET_PRODUCTS (the source the live tickets page prints), and anything
+ * else (programme, workshop, unmapped slug) is unconfirmed, which renders the "To be confirmed"
+ * pill.
  */
 
 export interface TicketTypeTraits {
-  category?: string | null;
+  slug: string;
   requiresDaySelection?: boolean | null;
 }
 
-export type TicketScheduleKind = 'show-span' | 'chosen-day' | 'unconfirmed';
+export type TicketScheduleKind = 'chosen-day' | 'product' | 'unconfirmed';
 
 export interface ResolvedTicketSchedule {
   kind: TicketScheduleKind;
   dateText: string | null;
+  metaText: string | null;
 }
 
-const ADMISSION_CATEGORY = 'admission';
-const UNCONFIRMED: ResolvedTicketSchedule = { kind: 'unconfirmed', dateText: null };
+const UNCONFIRMED: ResolvedTicketSchedule = { kind: 'unconfirmed', dateText: null, metaText: null };
+const DATED_PRODUCT_KINDS: readonly string[] = ['event', 'pass'];
+const DAY_PRODUCT_ID = 'day';
 
 export function resolveTicketSchedule(
   type: TicketTypeTraits,
-  chosenDay: string | null,
-  showRange: string | null
+  chosenDay: string | null
 ): ResolvedTicketSchedule {
-  if (type.requiresDaySelection === true) {
-    const dateText = chosenDay ? formatShowDay(chosenDay) : null;
-    return dateText ? { kind: 'chosen-day', dateText } : UNCONFIRMED;
+  const productId = productIdForSlug(type.slug);
+  // The 'day' product's own text is "Friday, Saturday or Sunday": never printed as a date, so a
+  // day product is day-selection even if the type flag could not be read.
+  if (type.requiresDaySelection === true || productId === DAY_PRODUCT_ID) {
+    return chosenDay
+      ? { kind: 'chosen-day', dateText: formatShowDay(chosenDay), metaText: null }
+      : UNCONFIRMED;
   }
-  if (type.category === ADMISSION_CATEGORY && showRange) {
-    return { kind: 'show-span', dateText: showRange };
+  const product = productId ? TICKET_PRODUCTS[productId] : null;
+  if (product && DATED_PRODUCT_KINDS.includes(product.kind)) {
+    return { kind: 'product', dateText: product.when, metaText: product.meta };
   }
   return UNCONFIRMED;
 }
