@@ -9,8 +9,11 @@ import { studioEditHref } from '@/lib/studio-links';
 import { ADMIN_PILL_DOT_CLASS, FOCUS_RING_ON_DARK } from './tokens';
 import { signOutAdmin } from './useAdminSignOut';
 
-// Floating admin shortcut on public pages, for signed-in admins only. Fixed bottom-right and
-// never repositionable by pointer (WCAG 2.5.7). It lifts above a sticky CTA through
+// Floating admin shortcut for signed-in admins, on public pages and inside the admin shell.
+// On public pages it asks /api/admin/whoami; the admin shell has already verified the session
+// server-side, so it passes verifiedAdmin and the pill starts visible with no fetch. In the
+// admin context its items are View site, then sign out (which lands on /admin/login); there is
+// no Edit this page. Never shown on /admin/login. Fixed bottom-right and never repositionable by pointer (WCAG 2.5.7). It lifts above a sticky CTA through
 // --sticky-cta-offset (set that variable on a sticky bottom bar, default 0), hides in print,
 // and is mounted after <main> so it comes last in reading order.
 const WHOAMI_URL = '/api/admin/whoami';
@@ -38,15 +41,22 @@ function writeNotAdminCache(): void {
   }
 }
 
-export function AdminPill() {
+const LOGIN_PATH = '/admin/login';
+
+interface AdminPillProps {
+  // Set by the admin shell, which has already verified the session server-side.
+  verifiedAdmin?: boolean;
+}
+
+export function AdminPill({ verifiedAdmin = false }: AdminPillProps) {
   const pathname = usePathname();
-  const insideAdmin = pathname.startsWith('/admin');
-  const [isAdmin, setIsAdmin] = useState(false);
+  const onLogin = pathname.startsWith(LOGIN_PATH);
+  const [isAdmin, setIsAdmin] = useState(verifiedAdmin);
   const [menuOpen, setMenuOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (insideAdmin || readNotAdminCache()) return;
+    if (verifiedAdmin || onLogin || readNotAdminCache()) return;
     let cancelled = false;
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), WHOAMI_TIMEOUT_MS);
@@ -69,7 +79,7 @@ export function AdminPill() {
       controller.abort();
       window.clearTimeout(timeout);
     };
-  }, [insideAdmin]);
+  }, [verifiedAdmin, onLogin]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -87,21 +97,31 @@ export function AdminPill() {
     };
   }, [menuOpen]);
 
-  if (insideAdmin || !isAdmin) return null;
+  if (onLogin || !isAdmin) return null;
 
-  const editHref = studioEditHref(pathname);
+  const editHref = verifiedAdmin ? null : studioEditHref(pathname);
 
   async function handleSignOut() {
     await signOutAdmin();
     setIsAdmin(false);
-    window.location.reload();
+    if (verifiedAdmin) {
+      window.location.assign(LOGIN_PATH);
+    } else {
+      window.location.reload();
+    }
   }
 
   const items = (
     <>
-      <Link href="/admin" className={ITEM_CLASS}>
-        Dashboard
-      </Link>
+      {verifiedAdmin ? (
+        <Link href="/" className={ITEM_CLASS}>
+          View site ↗
+        </Link>
+      ) : (
+        <Link href="/admin" className={ITEM_CLASS}>
+          Dashboard
+        </Link>
+      )}
       {editHref ? (
         <a href={editHref} className={ITEM_CLASS}>
           Edit this page ↗

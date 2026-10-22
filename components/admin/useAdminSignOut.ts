@@ -1,12 +1,11 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { getAuth, signOut } from 'firebase/auth';
 
 import { getFirebaseApp } from '@/lib/firebase';
 
 /**
- * Sign-out flow lifted unchanged from the old AdminNav: the server-side cookie clear must run
+ * Sign-out flow lifted unchanged from the old AdminNav, now used by AdminPill: the server-side cookie clear must run
  * even if the Firebase client call throws, so it is try/finally, not a bare sequential await.
  */
 export async function signOutAdmin(): Promise<void> {
@@ -20,12 +19,4 @@ export async function signOutAdmin(): Promise<void> {
   } finally {
     await fetch('/api/admin/session', { method: 'DELETE' }).catch(() => undefined);
   }
-}
-
-export function useAdminSignOut(): () => Promise<void> {
-  const router = useRouter();
-  return async () => {
-    await signOutAdmin();
-    router.push('/admin/login');
-  };
 }

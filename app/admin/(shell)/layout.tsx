@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 
+import { AdminPill } from '@/components/admin/AdminPill';
 import { AdminShell } from '@/components/admin/shell/AdminShell';
 import { getAdminSession, hasCapability } from '@/lib/admin-auth';
 import { fetchPendingApplicationCount } from '@/lib/admin-dashboard';
@@ -25,24 +26,27 @@ export default async function AdminShellLayout({ children }: { children: React.R
     session.decodedToken,
     NATIONAL_SHOW_ID,
     'review-vendor-applications',
-    { now, lookupShowWindow },
+    { now, lookupShowWindow }
   );
   const canManagePaymentSettings = hasCapability(
     session.decodedToken,
     NATIONAL_SHOW_ID,
     'manage-payment-settings',
-    { now, lookupShowWindow },
+    { now, lookupShowWindow }
   );
   const pendingCount = canReviewVendors ? await fetchPendingApplicationCount() : null;
 
   return (
-    <AdminShell
-      email={session.decodedToken.email ?? ''}
-      canReviewVendors={canReviewVendors}
-      canManagePaymentSettings={canManagePaymentSettings}
-      pendingCount={pendingCount}
-    >
-      {children}
-    </AdminShell>
+    <>
+      <AdminShell
+        email={session.decodedToken.email ?? ''}
+        canReviewVendors={canReviewVendors}
+        canManagePaymentSettings={canManagePaymentSettings}
+        pendingCount={pendingCount}
+      >
+        {children}
+      </AdminShell>
+      <AdminPill verifiedAdmin />
+    </>
   );
 }

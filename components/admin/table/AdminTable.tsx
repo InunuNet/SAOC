@@ -92,7 +92,7 @@ export function AdminTable<T>({
                   scope="col"
                   data-priority={column.priority}
                   aria-sort={column.id === sortedDescColumnId ? 'descending' : undefined}
-                  className={`sticky top-14 z-10 h-10 truncate border-b border-rule bg-bone px-3 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted lg:top-0 ${alignClass(column)} ${PRIORITY_CELL[column.priority]}`}
+                  className={`sticky top-[62px] z-10 h-10 truncate border-b border-rule bg-bone px-3 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted min-[1280px]:top-[74px]${alignClass(column)} ${PRIORITY_CELL[column.priority]}`}
                 >
                   {column.label}
                 </th>
@@ -162,7 +162,8 @@ export function AdminTable<T>({
               </span>
             </>
           );
-          const cardClass = 'block w-full rounded-[2px] border border-rule bg-parchment p-4 text-left';
+          const cardClass =
+            'block w-full rounded-[2px] border border-rule bg-parchment p-4 text-left';
           return (
             <li key={getRowId(row)} data-admin-card>
               {onOpen ? (
