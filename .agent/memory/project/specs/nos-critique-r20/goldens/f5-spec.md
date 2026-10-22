@@ -24,9 +24,9 @@ Sources: `components/chrome/Footer.tsx`, `components/nos-chrome/NosFooter.tsx`, 
 - SAOC label renders `{FOOTER_BULLETIN.placeholder}` ("your@email.co.za"); the NOS label already renders "Email address".
 - Neither input has `inputMode` or `spellCheck`; both have `autoComplete="email"`.
 - NOS link letter-spacing is already `normal` (computed 0). SANBI's Karla text is 282.3px in a 280px column at 1280, so it wraps;
-  SAOC's Manrope SANBI fits. **Item 4's letter-spacing 0 is therefore a no-op on NOS SANBI, and P2 will fail there** until the lead
-  or Codi rules on how it fits (e.g. `white-space: nowrap` on the row). That is a DECISION NEEDED, raised to the lead; F5 does not
-  invent a fix.
+  SAOC's Manrope SANBI fits. Item 4's letter-spacing 0 is a no-op on NOS SANBI. **Codi FINAL (SANBI):** accept two lines for SANBI on
+  NOS, no `nowrap` (a nowrap row overflows under text-spacing overrides or text zoom, WCAG 1.4.12 / 1.4.4, and would hide the next long
+  partner name); the row stays >=44px with the wrapped line top-aligned (`.nf-list li > * { vertical-align: top; }`). Golden `twoLineRow`.
 - SAOC REG/NPO: `font-mono`, 11px, `tracking-[0.1em]` (1.1px), weight 400. NOS REG/NPO: `.nf-head` (700, 12px, 0.14em = 1.68px), gold.
 
 ## Build route
@@ -56,7 +56,7 @@ This is flagged to the lead.
 - S1 `Footer.tsx` = BASE + F3 + F4 + F5 edits exactly. S2 the NOS input carries each golden attribute once. S3 each golden NOS rule
   once, the rules it replaces gone, the stacked rule gone. S4 both forms' BASE submit lines untouched. S5 no new prose. S6 docs `## F5`.
 - Rendered, public and preview, 1280 and 390, SAOC and NOS routes: P1 input and Subscribe on one row in both footers; P2 every list
-  row, the WOSA link and every legal link one line; P3 WOSA `text-decoration-line: none` at rest, underlined on NOS hover; P4 NOS
+  row, the WOSA link and every legal link one line, except NOS SANBI at 1280 (at most two lines, >=44px, top on its li's top); P3 WOSA `text-decoration-line: none` at rest, underlined on NOS hover; P4 NOS
   REG/NPO weight equals SAOC's, tracking equal in em, colour the NOS gold; P5 both labels "Email address", placeholder unchanged;
   P6 `autocomplete=email`, `inputmode=email`, `spellcheck=false` on both inputs.
 - Kept: the F4 44px rows and column assertions (f4-rendered). Amended for F5: f1-rendered R4 (inline at 1280 too), f3-rendered L5

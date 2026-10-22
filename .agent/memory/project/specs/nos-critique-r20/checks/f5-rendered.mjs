@@ -4,6 +4,8 @@
 // golden saoc.route on the same build. Fixed and sticky chrome outside the footer is hidden first (visibility, so no box moves).
 //   P1  the sign-up input and its submit button share one row in both footers at both widths (same top +-1px, button right of the input).
 //   P2  every footer link row is one line: each list row, the WOSA link and each legal link (distinct line-box tops of its text = 1).
+//       One exception (Codi FINAL, golden twoLineRow): NOS SANBI at 1280 may take two lines, and then its row is >=44px tall with its
+//       top on its li's top +-1px (top-aligned; no nowrap, WCAG 1.4.12 / 1.4.4).
 //   P3  the WOSA link has text-decoration-line none at rest in both footers; in the NOS footer it is underlined on hover.
 //   P4  NOS REG/NPO has SAOC REG/NPO's computed font-weight and tracking (letter-spacing / font-size, +-0.005em; SAOC sets 0.1em at 11px,
 //       NOS keeps its 12px), and keeps the NOS gold (the computed ground of the gold sign-up button).
@@ -39,7 +41,7 @@ const measure = (page, sel, wosaHref) => page.evaluate(({ sel, wosaHref }) => {
   if (!f) return null;
   const box = (el) => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top + scrollY, w: r.width, h: r.height }; };
   const lines = (el) => { const r = document.createRange(); r.selectNodeContents(el); return new Set([...r.getClientRects()].filter((q) => q.width > 0).map((q) => Math.round(q.top))).size; };
-  const row = (el) => ({ text: el.textContent.replace(/\s+/g, ' ').trim(), lines: lines(el) });
+  const row = (el) => { const r = el.getBoundingClientRect(); const p = el.parentElement.getBoundingClientRect(); return { text: el.textContent.replace(/\s+/g, ' ').trim(), lines: lines(el), h: r.height, dy: r.top - p.top }; };
   const grid = f.firstElementChild;
   const col1 = grid ? grid.firstElementChild : null;
   const reg = f.querySelector('.nf-reg') ?? (col1 ? col1.querySelector(':scope > span') : null);
@@ -59,14 +61,20 @@ const measure = (page, sel, wosaHref) => page.evaluate(({ sel, wosaHref }) => {
   };
 }, { sel, wosaHref });
 
-function judge(m, at, skin, saocReg) {
+function judge(m, at, skin, saocReg, width) {
   if (!m) { failures.push(`${at}: footer not measurable (INFRA)`); return; }
   const i = m.input; const b = m.button;
   // P1
   if (!i || !b) failures.push(`${at}: no sign-up input/button (P1)`);
   else if (!near(b.y, i.y) || b.x < i.x + i.w - 0.5) failures.push(`${at}: input (${Math.round(i.x)},${Math.round(i.y)} ${Math.round(i.w)}w) and button (${Math.round(b.x)},${Math.round(b.y)}) are not on one row (P1)`);
   // P2
-  for (const r of [...m.rows, ...m.legal, ...(m.wosa ? [m.wosa] : [])]) if (r.lines !== 1) failures.push(`${at}: "${r.text}" runs to ${r.lines} lines, want 1 (P2)`);
+  const X = G.twoLineRow;
+  for (const r of m.rows) {
+    if (skin === X.skin && width === X.width && r.text === X.text && r.lines > 1) {
+      if (r.lines > X.maxLines || r.h < X.minHeight - 0.5 || !near(r.dy, 0)) failures.push(`${at}: "${r.text}" ${r.lines} lines, ${r.h.toFixed(1)}px tall, ${r.dy.toFixed(1)}px below its li top; want <= ${X.maxLines} lines, >= ${X.minHeight}px, top-aligned (P2)`);
+    } else if (r.lines !== 1) failures.push(`${at}: "${r.text}" runs to ${r.lines} lines, want 1 (P2)`);
+  }
+  for (const r of [...m.legal, ...(m.wosa ? [m.wosa] : [])]) if (r.lines !== 1) failures.push(`${at}: "${r.text}" runs to ${r.lines} lines, want 1 (P2)`);
   if (m.rows.length === 0) failures.push(`${at}: no list rows (P2)`);
   // P3
   if (!m.wosa) failures.push(`${at}: no WOSA link (P3)`);
@@ -104,7 +112,7 @@ for (const mode of MODES) {
           checks += 1;
           const at = `${mode} ${skin} ${route} @${width}`;
           if (!(await load(page, srv.origin, route, at))) continue;
-          judge(await measure(page, sel, G.wosaHref), at, skin, saocReg);
+          judge(await measure(page, sel, G.wosaHref), at, skin, saocReg, width);
           if (skin === 'NOS') {
             const link = page.locator(`footer#nf a[href="${G.wosaHref}"]`);
             if (await link.count()) {
@@ -126,4 +134,4 @@ for (const mode of MODES) {
   }
 }
 
-finish(NAME, failures, `${checks} footer captures (${MODES.join('/')}, ${G.widths.join('/')}): the sign-up inline in both footers, every link row one line, WOSA plain at rest and underlined on NOS hover, NOS REG/NPO at SAOC's weight and tracking in gold, "Email address" labels, email inputs with spellcheck off.`);
+finish(NAME, failures, `${checks} footer captures (${MODES.join('/')}, ${G.widths.join('/')}): the sign-up inline in both footers, every link row one line (NOS SANBI at 1280 up to two, 44px, top-aligned), WOSA plain at rest and underlined on NOS hover, NOS REG/NPO at SAOC's weight and tracking in gold, "Email address" labels, email inputs with spellcheck off.`);

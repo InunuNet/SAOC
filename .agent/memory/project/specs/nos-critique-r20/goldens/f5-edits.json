@@ -54,5 +54,13 @@
   ],
   "wosaHref": "https://wildorchids.co.za",
   "trackingTolerance": 0.005,
-  "allowCopy": []
+  "allowCopy": [],
+  "twoLineRow": {
+    "skin": "NOS",
+    "width": 1280,
+    "text": "South African National Biodiversity Institute",
+    "maxLines": 2,
+    "minHeight": 44,
+    "why": "Codi FINAL 2026-10-22 (SANBI): accept two lines for SANBI on NOS at 1280, no nowrap (WCAG 1.4.12 / 1.4.4 text-spacing and zoom overflow; it would hide the next long partner name). The row stays >=44px and top-aligned (.nf-list li > * { vertical-align: top; }): its top on its li's top +-1px. Every other row, at every width and in both footers, is one line."
+  }
 }
