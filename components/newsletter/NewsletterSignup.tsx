@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
 
@@ -45,6 +45,7 @@ export function NewsletterSignup({
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [emailInvalid, setEmailInvalid] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const errorId = `${inputId}-error`;
   const showError = status === 'error' && errorMessage !== '';
@@ -72,9 +73,11 @@ export function NewsletterSignup({
       setStatus('error');
       setEmailInvalid(data.field === 'email');
       setErrorMessage(data.error ?? NEWSLETTER_COPY.genericError);
+      inputRef.current?.focus();
     } catch {
       setStatus('error');
       setErrorMessage(NEWSLETTER_COPY.genericError);
+      inputRef.current?.focus();
     }
   }
 
@@ -86,6 +89,7 @@ export function NewsletterSignup({
       <div className={fieldsClassName}>
         <input
           id={inputId}
+        ref={inputRef}
           type="email"
           name="email"
           autoComplete="email"
@@ -121,15 +125,16 @@ export function NewsletterSignup({
           />
         </label>
       </div>
-      {/* Live region present before submit so the success line is announced when it arrives. */}
+      {/* One polite live region, in the DOM before submit, announces the success line and any
+          error. Focus returns to the input on error. */}
       <div role="status" aria-live="polite" className={statusClassName}>
         {status === 'success' ? NEWSLETTER_COPY.success : null}
+        {showError ? (
+          <p id={errorId} className={errorClassName}>
+            {errorMessage}
+          </p>
+        ) : null}
       </div>
-      {showError ? (
-        <p id={errorId} role="alert" className={errorClassName}>
-          {errorMessage}
-        </p>
-      ) : null}
     </form>
   );
 }
