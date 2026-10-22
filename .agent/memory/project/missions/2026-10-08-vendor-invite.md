@@ -37,6 +37,7 @@ milestones:
   name: Invite a vendor, built on feat/vendor-invite, full chain, Brad sign-off before
     main
   status: pending
+force_orphaned_at: '2026-10-21T22:57:26.306274+00:00'
 ---
 
 # Mission: Admin 'Invite a vendor' action (Brad-approved 2026-10-08): committee invites a known nursery from /admin/vendors, which issues the existing single-use registration token and emails the full-form link directly, skipping the public apply step (kept as secondary). The full form remains the SAOC-vendor contract (terms, declarations, signature) per Lee-Ann. Built on branch feat/vendor-invite in worktree .tmp/sandbox/wt-vendor-invite off origin/main.

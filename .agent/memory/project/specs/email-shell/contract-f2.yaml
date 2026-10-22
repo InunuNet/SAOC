@@ -1,0 +1,91 @@
+schema: athanor.contract/v1
+slug: email-shell
+goal: 'Family D: ContactConfirmation renders through EmailShell with SAOC chrome per Codi''s ruling, after the media-kit-complete lockup exports have merged, with visible copy unchanged.'
+created_at: '2026-10-22'
+autonomy: high
+features:
+- id: F2
+  name: Family D (ContactConfirmation, SAOC) wiring; depends on media-kit-complete lockup exports being merged to main
+  status: pending
+goldens:
+- .agent/memory/project/specs/email-shell/goldens/design-ruling.md
+- .agent/memory/project/specs/email-shell/goldens/codex-qa-prompt.md
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/OrderConfirmation.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorPaymentConfirmation.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorApplicationConfirmation.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorApprovalConfirmation.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorRegistrationConfirmation.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorStandPaymentReady.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/SupporterRegistrationConfirmation.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorApplicationAdminNotice.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorSubmissionAdminNotice.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorPaymentAdminNotice.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/ReconciliationAlert.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/ContactConfirmation.txt
+assertions:
+  phase: 4
+  checks:
+  - id: A1
+    description: 'BLOCKED-until check: media-kit-complete light lockup source exists'
+    command: test -f public/downloads/media-kit/saoc/lockup/saoc-lockup-south-african-orchid-council-horizontal-colour-on-light.png
+  - id: A2
+    description: 'BLOCKED-until check: media-kit-complete dark lockup source exists'
+    command: test -f public/downloads/media-kit/saoc/lockup/saoc-lockup-south-african-orchid-council-horizontal-colour-on-dark.png
+  - id: A3
+    description: ContactConfirmation renders through EmailShell family D and imports it
+    command: EMAIL_SHELL_SCOPE=D pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts families
+  - id: A4
+    description: Visible copy of every template (incl. ContactConfirmation) still matches the origin/main baseline
+    command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts copy
+  - id: A5
+    description: Lockup alt is the logo name only
+    command: EMAIL_SHELL_SCOPE=D pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts alt
+  - id: A6
+    description: SAOC exports exist at 560 and 440 wide, are pure resizes of the media-kit sources, and the shell wires display widths 280 and 220
+    command: EMAIL_SHELL_SCOPE=D pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts assets
+  - id: A7
+    description: 'D bands: bone outer, parchment header/card, sage footer, bgcolor plus inline background-color, no NOS royal, color-scheme declared'
+    command: EMAIL_SHELL_SCOPE=D pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts bands
+  - id: A8
+    description: 620px stack media query present
+    command: EMAIL_SHELL_SCOPE=D pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts media
+  - id: A9
+    description: Crimson Pro declared
+    command: grep -q "Crimson Pro" emails/_shared/EmailShell.tsx
+  - id: A10
+    description: Manrope declared
+    command: grep -q "Manrope" emails/_shared/EmailShell.tsx
+  - id: A11
+    description: Family D screenshot exists under .tmp/sandbox/email-shell/screens
+    command: EMAIL_SHELL_SCOPE=D pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts screens
+  - id: A12
+    description: Codi approval of the D render predates the D test-send manifest
+    command: EMAIL_SHELL_SCOPE=D pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts review-order
+  - id: A13
+    description: A/B/C still pass after D wiring (copy of the F1 families unchanged)
+    command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts families
+  - id: A14
+    description: Test-send script supports family D (ContactConfirmation)
+    command: grep -q "ContactConfirmation" scripts/email-shell-test-send.ts
+  - id: A15
+    description: type-check passes
+    command: pnpm type-check
+  - id: A16
+    description: lint passes
+    command: pnpm lint
+  - id: A17
+    description: Codex adversarial review of the D diff
+    type: codex_qa
+    target: .agent/memory/project/specs/email-shell/goldens/codex-qa-prompt.md
+    timeout_seconds: 1300
+    required: true
+  - id: A18
+    description: Brad receives the family D email (ContactConfirmation) via the sandbox test-send script
+    type: gws_inbox_check
+    target: .agent/memory/scratch/email-shell-gws-manifest-D.json
+    required: true
+  - id: A19
+    description: Browser check inapplicable (email, not a page); Codi screenshot review A11/A12 stands in
+    type: browser_deployed_check
+    target: .agent/memory/scratch/email-shell-browser-manifest.json
+    required: false

@@ -1,0 +1,125 @@
+schema: athanor.contract/v1
+slug: email-shell
+goal: Every vendor, supporter and admin email in families A, B and C renders through one branded EmailShell per Codi's ruling with visible copy unchanged from origin/main; family D (ContactConfirmation) is held unchanged until F2.
+created_at: '2026-10-22'
+autonomy: high
+features:
+- id: F1
+  name: Shared EmailShell and the A/B/C templates restyled per Codi and Brad review 2026-10-22; ContactConfirmation held unchanged (D is F2)
+  status: pending
+goldens:
+- .agent/memory/project/specs/email-shell/goldens/design-ruling.md
+- .agent/memory/project/specs/email-shell/goldens/codex-qa-prompt.md
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/OrderConfirmation.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorPaymentConfirmation.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorApplicationConfirmation.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorApprovalConfirmation.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorRegistrationConfirmation.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorStandPaymentReady.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/SupporterRegistrationConfirmation.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorApplicationAdminNotice.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorSubmissionAdminNotice.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorPaymentAdminNotice.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/ReconciliationAlert.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/ContactConfirmation.txt
+- .agent/memory/project/specs/email-shell/goldens/brad-review-2026-10-22.md
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline/VendorApprovalConfirmationWithCode.txt
+- .agent/memory/project/specs/email-shell/goldens/copy-baseline-origin/OrderConfirmation.txt
+assertions:
+  phase: 4
+  checks:
+  - id: A1
+    description: EmailShell component exists
+    command: test -f emails/_shared/EmailShell.tsx
+  - id: A2
+    description: Every A/B/C template renders through EmailShell with its ruled family and imports it
+    command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts families
+  - id: A3
+    description: 'Visible copy equals the amended baseline: origin/main text plus ONLY Brad decisions (sentence-case A/B headings, em dash, "Recover your tickets", code shown alone, "Present this ticket", emergency footnote); C and ContactConfirmation unchanged apart from the em dash'
+    command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts copy
+  - id: A4
+    description: No img alt beyond the logo names and the verbatim OrderConfirmation QR alt; every img has an alt (OrderConfirmation QR alt kept verbatim from origin/main per Codi)
+    command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts alt
+  - id: A5
+    description: 'NOS header logo export (full-colour reversed horizontal) is 560 wide and the 48px vertical mark export is 96 tall, both pure resizes of the branding sources (no crop/recolour); shell wires 280 display, 48 mark height and the 27px/7px inset-adjusted padding (13px inset re-measured: 192/4108 of 280); old gold lockups not wired'
+    command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts assets
+  - id: A6
+    description: Every A/B/C band has bgcolor and matching inline background-color; A/B have a royal header band, C has the royal top rule and no img; color-scheme declared
+    command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts bands
+  - id: A7
+    description: Rendered HTML carries the max-width 620px stack media query (applies at 375px)
+    command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts media
+  - id: A8
+    description: Supporter family is a single literal in a single place (one-line move to D)
+    command: grep -c 'family="B"' emails/SupporterRegistrationConfirmation.tsx | grep -qx 1
+  - id: A9
+    description: Georgia fallback present
+    command: grep -q "Georgia" emails/_shared/EmailShell.tsx
+  - id: A10
+    description: Karla body fallback present
+    command: grep -q "Karla" emails/_shared/EmailShell.tsx
+  - id: A13
+    description: Stand forfeiture notice constant unchanged versus origin/main
+    command: git diff --quiet origin/main -- lib/vendor-stand-forfeiture-notice.ts
+  - id: A11
+    description: EmailShell does not reference SAOC lockup assets or the old gold NOS lockups in F1
+    command: test ! -f emails/_shared/EmailShell.tsx || ! grep -q "saoc-horizontal-colour\|nos-reversed-gold" emails/_shared/EmailShell.tsx
+  - id: A12
+    description: 'ContactConfirmation is held: unchanged versus origin/main until F2 (media-kit lockups not yet merged)'
+    command: git diff --quiet origin/main -- emails/ContactConfirmation.tsx
+  - id: A14
+    description: Test-send script exists, is hard-locked to brad@inunu.net and uses the existing sendEmail path
+    command: grep -q "brad@inunu.net" scripts/email-shell-test-send.ts
+  - id: A15
+    description: Test-send script uses lib/email sendEmail (no new email code)
+    command: grep -q "sendEmail" scripts/email-shell-test-send.ts
+  - id: A16
+    description: Per-family (A, B, C) screenshots plus order-confirmation.png and vendor-approved.png exist under .tmp/sandbox/email-shell/screens
+    command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts screens
+  - id: A17
+    description: Codi approval names the OrderConfirmation and VendorApprovalConfirmation renders and predates every A/B/C test-send manifest (renders go to Codi before merge)
+    command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts review-order
+  - id: A18
+    description: type-check passes
+    command: pnpm type-check
+  - id: A19
+    description: lint passes
+    command: pnpm lint
+  - id: A20
+    description: Codex adversarial review of the whole diff
+    type: codex_qa
+    target: .agent/memory/project/specs/email-shell/goldens/codex-qa-prompt.md
+    timeout_seconds: 1300
+    required: true
+  - id: A21
+    description: Brad receives the family A email (VendorPaymentConfirmation), sent via the sandbox test-send script
+    type: gws_inbox_check
+    target: .agent/memory/scratch/email-shell-gws-manifest-A.json
+    required: true
+  - id: A22
+    description: Brad receives the family B email (VendorApplicationConfirmation), sent via the sandbox test-send script
+    type: gws_inbox_check
+    target: .agent/memory/scratch/email-shell-gws-manifest-B.json
+    required: true
+  - id: A23
+    description: Brad receives the family C email (VendorApplicationAdminNotice), sent via the sandbox test-send script
+    type: gws_inbox_check
+    target: .agent/memory/scratch/email-shell-gws-manifest-C.json
+    required: true
+  - id: A24
+    description: Browser check is inapplicable (emails are not pages; Codi's per-family screenshot review A16/A17 stands in), declared only for triad coverage
+    type: browser_deployed_check
+    target: .agent/memory/scratch/email-shell-browser-manifest.json
+    required: false
+  - id: A25
+    description: 'A/B: one large header logo (full-colour reversed horizontal), no big vertical footer lockup, condensed footer on the page ground (1px rule, 12px, two lines, optional 48px mark)'
+    command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts footer
+  - id: A26
+    description: Order email carries the emergency footnote line verbatim at 12px above the footer, with the on-site first-aid "To be confirmed" item
+    command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts emergency
+  - id: A27
+    description: Old vertical footer lockup export is not shipped
+    command: test ! -f public/images/email/nos-reversed-gold-vertical-240.png
+  - id: A28
+    description: Order fixture carries the confirmed visit values (venue, address, dates, Thu 23 hours) and renders neither "The venue To be confirmed" nor "Show dates To be confirmed"
+    command: pnpm exec tsx contracts/checks/email-shell/check-email-shell.mts visit

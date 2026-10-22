@@ -2771,3 +2771,60 @@ Cron c8d8059d (health checks) is session-only — re-create next session.
   - Rule from now: all test payments (E2E, contract checks, manual) go through Ozow test mode, never PayFast sandbox. Team notified.
   - CLAUDE.md's "PayFast (sandbox)" stack row is stale (floor-protected; Brad/Route 1 to fix).
   - Codi wants to review checkout payment step, redirect copy and confirm/failed states at 1280/390 on the next render.
+- [ ] 2026-10-22 Codi ROUTE 35 /constitution @390 (beta 1fb50377, Layout PASS); queued after r30.
+  - P3: cut the body's repeated clause "and will be published on this page once supplied" (keep the notice; no new words).
+  - P3: hide "Last updated: June 2026" until constitution text exists.
+  - OWNER: constitution text from Council via Lee-Ann.
+- [ ] 2026-10-22 rHB hero banding, P1 Brad (Codi ruling plus amendment, YES). The hero is fed from Sanity heroImages via the custom loader at q=75.
+  - Code (NOS Site): hero q=88 from the Sanity CDN; eased veil and bone-pull stops; dots, labels and timing data-driven; static fallback gets a comment plus variants q88.
+  - Sanity (ME, after rHB is live on beta): back up, then remove asset a620a97f (orchid-yellow 3100x2325, 137KB, ~0.15bpp; the handoff original is byte-identical) and any other sub-1bpp hero asset from heroImages, using ifRevisionID.
+  - OWNER: a high-quality yellow orchid original (Council via Lee-Ann).
+- 2026-10-22 dev.saoc.co.za: the hosts file points it at 127.0.0.1; the launchd za.co.saoc.devproxy forwards :80 to :3002. The :3002 Next dev server is NOT launchd-managed. Brad's "refused" happened because nothing was on :3002 and the main tree was missing sharp (fixed with pnpm install). The server is restarted from the saoc-82 session and dies with it. Option for Brad: a launchd entry for the dev server.
+- [ ] 2026-10-22 ~00:30 Brad: "dev is not working, fuck it im going to bed" (UNATTENDED set). Diagnosis: http://dev.saoc.co.za returns 401 (basic auth) on both v4 and v6, so the server and proxy are fine. Nothing listens on :443, and Brad's Chrome shows ERR_CONNECTION_REFUSED with the bare host typed, so Chrome is upgrading to HTTPS. No HSTS on saoc.co.za, www or new (beta.saoc.co.za has HSTS without includeSubDomains), so the cause is Chrome's typed-URL HTTPS behaviour.
+  - Fix options for Brad: (a) type http://dev.saoc.co.za in full, or bookmark it; (b) allow insecure for dev.saoc.co.za in Chrome site settings, or turn off "Always use secure connections"; (c) serve local HTTPS on :443 with a locally trusted cert (mkcert installs a CA in the system trust store; that's a security setting, so Brad only).
+  - Also: the :3002 dev server is a child of the saoc-82 session; a launchd entry would make it persistent.
+- [ ] 2026-10-22 Brad P1 footer column rhythm. Cause: Explore uses 44px Links with no gap; Partners use spans with gap-2 (~29px). Codi ruling, folded into r20 as F4 for both footers:
+  - one shared 44px row class
+  - headings: one eyebrow class with a 16px bottom margin
+  - first rows aligned across columns
+  - Partners stay plain text
+  - OWNER: SANBI and Kirstenbosch partner URLs (only WOSA's is sourced)
+- [ ] 2026-10-22 mission footer-newsletter-subscribe (Brad approved single opt-in): Firestore newsletterSubscribers, unsubscribe token, admin CSV export, footer wiring after r20 merges. No welcome email (no copy; owner item). Architect writing the contract.
+- [ ] 2026-10-22 Brad P1 "vendor application form has no hero image". Cause: Codi R29 (components/nos/hero-photos.ts) puts 5 rights-cleared photos on 5 routes; every other NOS route gets the typographic hero. The Ormerod set in branding/ is not rights-cleared (D5). Codi asked to revisit R29 (reuse, Disa emblem, other). Asked Brad whether the Ormerod set can be cleared.
+- [ ] 2026-10-22 media-kit-complete contract written (127 files). Codi rulings pending: wordmark (SA vs full name), duotone ground tints, reversed grey, NOS JPG dups (~46MB), layout.
+- [ ] 2026-10-22 rNH (Codi ruling nos-type-hero, Brad P1): every NOS route without a photo gets the Disa graminifolia SVG emblem (right half ≥1024, 55% at 640–1023, 120px centred <640; unaltered, decorative; served <600KB). plan-your-visit loses the yellow photo and becomes an emblem hero. Queued for NOS Site after rHB. Owner Q to Brad: is the Ormerod photo set rights-cleared? If yes, Codi re-rules photos per route.
+- 2026-10-22 media-kit Codi ruling: one wordmark only ("South African Orchid Council"); sampled tints confirmed; NOS PNG only; layout mirrors the presentation, ink picker, no tabs. Architect amending the contract.
+- [ ] 2026-10-22 Brad P1 "Vendor email has no branding": sent to Codi. Only emails/OrderConfirmation.tsx is branded; 11 templates are plain (5 vendor-facing, Contact, Supporter, 4 admin notices). Asked Codi to rule a shared shell, brand per email and admin treatment. Build with NOS Site after rNH unless Codi re-ranks. Verify via gws inbox.
+
+- [ ] ticket-pdf: tagged-PDF (structure tree + logo alt text) — pdf-lib cannot emit one; evaluate a tagged-PDF library later. Accepted gap by Codi 2026-10-22 at c8529cf2.
+
+## /sponsors — Codi route 39 (2026-10-22, 390px beta: PASS)
+- [ ] OWNER / go-live blocker: 4 public "Not confirmed by SAOC" flags on /sponsors (stats, support copy, benefits list). Add to Lee-Ann's confirmation list together with /about stats (21 societies, 1968, 18 shows, 56 judges, 184-page yearbook). Must not go live flagged.
+- [ ] P3-a: stat labels 11px tracked mono → 13px; do with /about route 31 in one change (craft-floor.md min label size).
+- [ ] P3-b: drop hero eyebrow "Our sponsors" (duplicates H1 "Sponsors"); removal only, no new copy (critique.md redundancy).
+- [ ] P3-c: "Become a sponsor" card at 390px: left-align the 7-line body; at most heading + button centred (craft-floor.md).
+
+## NOS 404 (/national-show/<unknown>) — Codi route 40 (2026-10-22, 390px beta: PASS)
+- [ ] P3-a: lede "The page you're looking for doesn't exist or may have moved." renders ~13px grey → body size 16px, standard body ink (craft-floor.md).
+- [ ] P3-b: add the existing "South African Orchid Council" home link as a quiet text link under the buttons (existing label, no new copy; critique.md).
+
+## /privacy (+ /terms) — Codi route 41 (2026-10-22, 390px beta: PASS on reading)
+- [ ] OWNER / go-live blocker: /privacy reads "Draft pending legal review" with AI-assisted text. POPIA obligation (site collects names, emails, cellphones, vendor data) — needs legal review before launch. Add to Lee-Ann item (j) alongside /refunds.
+- [ ] Extend /refunds route-34 ruling to /privacy and /terms in ONE change: compact hero instead of the 480px photo hero; add the same "On this page" in-page list (8 sections on /privacy). (critique.md consistency)
+
+## Header site search — Codi route 42 (2026-10-22, beta 1280 + keyboard: dialog a11y PASS)
+- [ ] P1 content coverage: index holds only societies/shows/classes/awards; "ticket", "national show", "vendor", "sponsor", "contact" → "No matches". Index every public page using its existing <title> + meta description (no new copy): NOS hub, tickets, programme, plan your visit, vendors, FAQ, sponsors, contact, about, events, judging, media kit, legal pages. Rank page-title matches above records. Needs Brad sign-off as new scope (no unscoped missions). Codi wants the "ticket" and "vendor" result lists once fixed.
+- [ ] P3: empty-state hint "Try Cape, Durban or judging" → add "tickets" (existing nav label) once pages are indexed.
+
+## /media-kit — Codi route 44 (2026-10-22, LIVE beta 390: PASS)
+- [ ] P2 page length 21,157px at 390 (critique.md progressive disclosure). Apply the Duotone picker pattern: "Mark only" (5,531px, 26 cards) → one preview card + ink/colourway radio picker, downloads follow selection; "National Show 2027" (5,625px, 19 cards) → one card per orientation (horizontal, vertical) + colourway picker over the 8 supplied colourways. Same files/labels, no new copy/assets; keep section zips. Target <9,000px at 390.
+
+## /national-show/tickets hero fan — Codi route 45 (2026-10-22, beta 1280)
+- [ ] P1: 4th fan card "Early-Bird Exhibition Ticket R120" shows numeral "24" + "Friday"; it is the day ticket (TICKET_PRODUCTS.day: when "Friday, Saturday or Sunday", numeral ''). Must show no numeral + existing when text. Find root cause (Sanity override vs fallback to first show day) and fix at source — same rule as ticket-pdf D11. Routed to NOS Site (fan is their lane).
+- [ ] P2 (Brad/Lee-Ann copy decision → morning list): product names differ by surface — fan "VIP Ticket"/"Early-Bird Exhibition Ticket" vs PDF/email (TICKET_PRODUCTS) "VIP Opening"/"Day Pass". Pick one name source for fan, checkout, PDF, email; code change is only to read from it.
+
+## /tickets/vip checkout — Codi route 46 (2026-10-22, beta 1280: form PASS)
+- [ ] P1 OWNER (top of Brad's morning list): VIP entitlement conflict. lib/provisional-figures.ts:221 description "Reception access plus full-weekend admission to the National Show." (leftover from old R625 VIP Pass) vs its own sourceCitation (Lee-Ann sheet line 19: "VIP Thursday, Opening 3 Hours on thursday evening (R300) 16h00-19h00") and TICKET_PRODUCTS / PDF / email (Thu 23, 16h00–19h00 only). Brad/Lee-Ann confirm; no copy change until then (R7). If Thursday-only, VIP category 'admission' should match the event products (drove D11 show-range).
+- [ ] P1 door-scanner finding (saoc-82, verified in code 2026-10-22): lib/checkin.ts is single-use per ticket with NO date/product check. Refusal codes are only bad-request / not-found / wrong-show / unpaid / already-checked-in (lib/checkin.ts:29,89). So: (a) a VIP QR is admitted on any day Fri–Sun (once); (b) a Day Pass for a chosen day is admitted on any day; (c) a Weekend Pass is admitted on its first day and REFUSED "Already checked in" (409) on days 2 and 3. (c) breaks a paid product at the door. Needs a door-policy decision (per-day check-in for multi-day passes; enforce chosenDay / event day?) → spec + full chain, checkout/door security path.
+- [ ] P2 layout axis at 1280: hero H1/lede at x32 vs form column centred at x385 (496px). One left axis — use the shared F19 container axis (craft-floor.md).
+  - Codi design input for the door-policy spec (2026-10-22): (1) result banner shows product name + valid day(s) under the valid/invalid line, from TICKET_PRODUCTS (e.g. "Weekend Pass · Friday 24 to Sunday 26 September"); (2) per-day check-in record — Weekend Pass shows "Day 2 of 3" not "Already checked in"; same-day repeat shows that day's first scan time (folds in the parked /api/admin/checkin first-check-in-time gap); (3) distinct wrong-day refusal, #9b2c2c invalid banner + ✕ icon, wording = Brad's call. Codi reviews door screens once the spec has goldens.
