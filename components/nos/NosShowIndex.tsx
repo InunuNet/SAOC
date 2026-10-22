@@ -11,6 +11,8 @@
 import Link from 'next/link';
 
 import { NAV } from '@/components/chrome/nav-config';
+import { PAST_SHOWS_HREF } from '@/lib/data/past-shows';
+import { showPastShowsRoute } from '@/lib/data/past-shows-public';
 
 const EYEBROW = 'Explore the show';
 
@@ -48,7 +50,7 @@ const GROUPS: readonly IndexGroup[] = [
       '/national-show/sa-exhibitors',
       '/national-show/international-guests',
       '/national-show/sponsors',
-      '/national-show/archive',
+      PAST_SHOWS_HREF,
     ],
   },
 ];
@@ -86,13 +88,18 @@ export interface NosShowIndexProps {
   currentTone?: 'accent' | 'ink';
 }
 
-export function NosShowIndex({ current, currentTone = 'accent' }: NosShowIndexProps) {
+export async function NosShowIndex({ current, currentTone = 'accent' }: NosShowIndexProps) {
+  const showPastShows = await showPastShowsRoute();
+  const groups = GROUPS.map((group) => ({
+    ...group,
+    hrefs: group.hrefs.filter((href) => showPastShows || href !== PAST_SHOWS_HREF),
+  }));
   return (
     <nav aria-label="Explore the show pages" className="nos-index">
       <div data-nos-wrap="">
         <h2 className="nos-index-eyebrow">{EYEBROW}</h2>
         <div className="nos-index-grid">
-          {GROUPS.map(({ heading, hrefs }) => (
+          {groups.map(({ heading, hrefs }) => (
             <div key={heading} className="nos-index-group">
               <h3>{heading}</h3>
               <ul>

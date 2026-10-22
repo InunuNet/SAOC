@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { NAV } from '@/components/chrome/nav-config';
+import { getVisibleNav } from '@/lib/data/past-shows-public';
 import { NosBreadcrumbJsonLd } from '@/components/nos/NosBreadcrumbJsonLd';
 import { NosThemeScope } from '@/components/nos/NosThemeScope';
 import { nosOrigin } from '@/lib/site-hosts';
@@ -49,13 +49,13 @@ function collectLabels(node: unknown, into: Record<string, string>): void {
   for (const value of Object.values(record)) collectLabels(value, into);
 }
 
-const BREADCRUMB_LABELS: Record<string, string> = {};
-collectLabels(NAV, BREADCRUMB_LABELS);
-
-export default function NationalShowLayout({ children }: { children: React.ReactNode }) {
+export default async function NationalShowLayout({ children }: { children: React.ReactNode }) {
+  // Labels come from the visible nav, so a withheld route is not named in the breadcrumb data either.
+  const breadcrumbLabels: Record<string, string> = {};
+  collectLabels(await getVisibleNav(), breadcrumbLabels);
   return (
     <NosThemeScope>
-      <NosBreadcrumbJsonLd labels={BREADCRUMB_LABELS} origin={nosOrigin()} />
+      <NosBreadcrumbJsonLd labels={breadcrumbLabels} origin={nosOrigin()} />
       {children}
     </NosThemeScope>
   );

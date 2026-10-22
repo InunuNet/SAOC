@@ -8,7 +8,7 @@
 // path prefix of it; that leaf is `aria-current="true"` (an exact leaf match is "page").
 // =============================================================
 
-import { NAV } from '@/components/chrome/nav-config';
+import type { NavItem } from '@/components/chrome/nav-config';
 
 export interface NosSubNavItem {
   label: string;
@@ -22,18 +22,19 @@ export interface NosSubNavGroup {
   exact: boolean;
 }
 
-const MEGA = NAV.find((item) => item.type === 'mega');
-const GROUPS: readonly { heading: string; items: NosSubNavItem[] }[] =
-  MEGA && MEGA.type === 'mega' && MEGA.lead
-    ? [MEGA.lead.theShow, ...MEGA.columns].map((column) => ({
-        heading: column.heading,
-        items: column.links.map((link) => ({ label: link.label, href: link.href })),
-      }))
-    : [];
+function groupsOf(nav: readonly NavItem[]): readonly { heading: string; items: NosSubNavItem[] }[] {
+  const mega = nav.find((item) => item.type === 'mega');
+  if (!mega || mega.type !== 'mega' || !mega.lead) return [];
+  return [mega.lead.theShow, ...mega.columns].map((column) => ({
+    heading: column.heading,
+    items: column.links.map((link) => ({ label: link.label, href: link.href })),
+  }));
+}
 
-export function subNavGroupFor(route: string): NosSubNavGroup | null {
+/** `nav` is the visible nav (getVisibleNav), so a withheld route is not offered in the sub-nav. */
+export function subNavGroupFor(route: string, nav: readonly NavItem[]): NosSubNavGroup | null {
   let best: NosSubNavGroup | null = null;
-  for (const group of GROUPS) {
+  for (const group of groupsOf(nav)) {
     for (const item of group.items) {
       const matches = route === item.href || route.startsWith(`${item.href}/`);
       if (matches && (!best || item.href.length > best.currentHref.length)) {

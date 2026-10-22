@@ -22,6 +22,8 @@ import {
   showVisitorInfoQuery,
 } from '@/sanity/queries';
 import { buildShowFacts } from '@/lib/data/show-facts';
+import { PAST_SHOWS_HREF } from '@/lib/data/past-shows';
+import { showPastShowsRoute } from '@/lib/data/past-shows-public';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { showClasses as staticClasses } from '@/lib/data/showClasses';
 import { cheapestAdmission, formatRand } from '@/components/nos/cheapest-admission';
@@ -227,7 +229,7 @@ const VISITOR_CARDS = [
       'The questions we are asked most, answered — and honestly marked where they are not yet settled.',
   },
   {
-    href: '/national-show/archive',
+    href: PAST_SHOWS_HREF,
     title: 'Past shows',
     description: 'Previous editions.',
   },
@@ -266,6 +268,9 @@ const EXHIBITOR_STAGES = [
 ];
 
 export default async function NationalShowPage() {
+  const visitorCards = (await showPastShowsRoute())
+    ? VISITOR_CARDS
+    : VISITOR_CARDS.filter((card) => card.href !== PAST_SHOWS_HREF);
   const [sanityClasses, sanityShow, visitorInfo, salesState, admissionTicketTypes] =
     await Promise.all([
       sanityFetch<SanityShowClass[]>({ query: showClassesQuery, tags: ['showClass', 'sanity'] }),
@@ -515,7 +520,7 @@ export default async function NationalShowPage() {
           Planning a visit
         </h2>
         <ul data-nos-destinations="">
-          {VISITOR_CARDS.map(({ href, title: cardTitle, description }) => (
+          {visitorCards.map(({ href, title: cardTitle, description }) => (
             <li key={href}>
               <Link href={href}>
                 <strong>{cardTitle}</strong>
