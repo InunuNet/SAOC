@@ -1,0 +1,13 @@
+9a6d09e52561cf611d844458225c7c1dbbc75587b6ffc1afefc4d27b8e17d937  .agent/memory/project/specs/nos-ticket-day-stub/checks/_lib.mjs
+18d32a848b02f04a9768c1a2468e8f4d704eac18656b5d686f3f2b98d3e5d2da  .agent/memory/project/specs/nos-ticket-day-stub/checks/_server.mjs
+90d9c17345385d25209dbe189373c5a6ad170f5a3ef1edafb36d2c166cf9157b  .agent/memory/project/specs/nos-ticket-day-stub/checks/_edits.mjs
+aab81ce0e761e6d5ff28ce656dd700c1bc8ac0873ac3eea247eaedf1887a8536  .agent/memory/project/specs/nos-ticket-day-stub/checks/footprint.mjs
+70e47cff60ad82aff9c8d78851f1403daa5a8cbaf8cdf242a61ae1932d980854  .agent/memory/project/specs/nos-ticket-day-stub/checks/f1-static.mjs
+2a124a84abd8a75d738a0965fa1fa396300b671cc8853839c7e174a1eb0b1458  .agent/memory/project/specs/nos-ticket-day-stub/checks/f1-server.mjs
+27ab26de86754d190c661b7d9e026fbae94950472d89b1f8f0aef9ba6964a0f5  .agent/memory/project/specs/nos-ticket-day-stub/checks/f1-rendered.mjs
+46bf67f28375b1732226a5b023690963fd8f72d0b0a61f82d0720cc7de0fe5ce  .agent/memory/project/specs/nos-ticket-day-stub/checks/nonreg.mjs
+0187c06dbe7c26346b7ee159e77c4d7534c38c77fb1321d57d36cae9202be282  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f1-edits.json
+d1afa0bd32ebd2afe440b7384eb57a80007e6288eb0753676abb7ad810850bae  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f1-footprint.json
+f81ea7179917749b64e9441d469df24c533908e4f7ff7feafa9881d786669abc  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f1-spec.md
+dea5aeca2e123882316b1f3fe5ab0c37b6e82e067d4e53fa3a45626de1a326ee  .agent/memory/project/specs/nos-ticket-day-stub/goldens/nonreg-baseline.json
+af29879c9cbf0e48f407d0e74899ea2a80844bc31828c0c2771ba5a59bed84b8  .agent/memory/project/specs/nos-ticket-day-stub/contract-f1.yaml

@@ -1,0 +1,188 @@
+{
+  "mini": {
+    "file": "components/tickets/keepsake/TicketMini.tsx",
+    "lineEdits": [
+      {
+        "line": 3,
+        "from": "// no id and no heading, so the full card of the same product stays the page's one target.",
+        "to": "// no id and no heading, so the full card of the same product stays the page's one target. Its stub\n// is the product's own numeral and caption, never a show day (r45: the Day Pass names no day)."
+      },
+      {
+        "line": 33,
+        "from": "        numeral={dayStub ? dayStub.numeral : product.numeral}",
+        "to": "        numeral={product.numeral}"
+      },
+      {
+        "line": 34,
+        "from": "        caption={dayStub ? dayStub.caption : product.caption}",
+        "to": "        caption={product.caption}"
+      }
+    ],
+    "drops": [
+      [
+        6,
+        6
+      ],
+      [
+        9,
+        9
+      ],
+      [
+        22,
+        24
+      ]
+    ],
+    "why": "Root cause (saoc-82 approved): TicketMini.tsx:22-24 drew showDayStub(firstSelectableDay(vm.days)) on the fan whenever vm.days exists, so the Day Pass mini read \"24 / Friday\" over its own numeral '' and caption ''. The fan now uses product.numeral and product.caption only; showDayStub and firstSelectableDay leave its imports."
+  },
+  "card": {
+    "file": "components/tickets/keepsake/TicketCard.tsx",
+    "lineEdits": [
+      {
+        "line": 6,
+        "from": "// drives the stub numeral and the checkout link.",
+        "to": "// drives the stub numeral and the checkout link. No day is chosen until the buyer picks one (r45):\n// the stub stays the product's own, and Buy with no day shows the picker's required-field error."
+      },
+      {
+        "line": 9,
+        "from": "import { useEffect, useId, useState } from 'react';",
+        "to": "import { useEffect, useId, useRef, useState, type RefObject } from 'react';"
+      },
+      {
+        "line": 21,
+        "from": "import { countDisplay, daySubline, firstSelectableDay, isDayClosed } from './days';",
+        "to": "import { countDisplay, daySubline, isDayClosed } from './days';"
+      },
+      {
+        "line": 48,
+        "from": "  groupName: string;",
+        "to": "  groupName: string;\n  groupRef: RefObject<HTMLFieldSetElement | null>;"
+      },
+      {
+        "line": 52,
+        "from": "  showProvisional: boolean;",
+        "to": "  showProvisional: boolean;\n  // Buy was pressed with no day chosen: the checkout forms' required-field error, in the picker's label.\n  invalid: boolean;"
+      },
+      {
+        "line": 55,
+        "from": "function DayPicker({ groupName, days, chosen, onChoose, showProvisional }: DayPickerProps) {",
+        "to": "function DayPicker({\n  groupName,\n  groupRef,\n  days,\n  chosen,\n  onChoose,\n  showProvisional,\n  invalid,\n}: DayPickerProps) {"
+      },
+      {
+        "line": 57,
+        "from": "    <fieldset className=\"nk-days\">",
+        "to": "    <fieldset ref={groupRef} className=\"nk-days\" aria-invalid={invalid}>"
+      },
+      {
+        "line": 90,
+        "from": "      </div>",
+        "to": "      </div>\n      {invalid ? (\n        <p\n          role=\"alert\"\n          className=\"mt-1.5 border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800\"\n        >\n          {TICKET_COPY.chooseDay}\n        </p>\n      ) : null}"
+      },
+      {
+        "line": 116,
+        "from": "  const [day, setDay] = useState<string | null>(() =>",
+        "to": "  const [day, setDay] = useState<string | null>(summary ? summaryDay : null);\n  const [dayMissing, setDayMissing] = useState(false);\n  const pickerRef = useRef<HTMLFieldSetElement>(null);"
+      },
+      {
+        "line": 129,
+        "from": "  const dayStub = vm.days || (summary && day) ? showDayStub(day ?? vm.days?.[0]?.day ?? '') : null;",
+        "to": "  const dayStub = day ? showDayStub(day) : null;"
+      },
+      {
+        "line": 131,
+        "from": "  const caption = dayStub ? dayStub.caption : product.caption;",
+        "to": "  const caption = dayStub ? dayStub.caption : product.caption;\n\n  // Buy with no day chosen stays a live button: it shows the picker's error and moves focus to the\n  // first day the buyer can choose.\n  function showDayMissing() {\n    setDayMissing(true);\n    pickerRef.current?.querySelector<HTMLInputElement>('input:not(:disabled)')?.focus();\n  }"
+      },
+      {
+        "line": 179,
+        "from": "                  groupName={groupName}",
+        "to": "                  groupName={groupName}\n                  groupRef={pickerRef}"
+      },
+      {
+        "line": 183,
+        "from": "                  showProvisional={showProvisional}",
+        "to": "                  showProvisional={showProvisional}\n                  invalid={dayMissing && day === null}"
+      },
+      {
+        "line": 191,
+        "from": "                regularName={regularName ?? vm.regularName ?? null}",
+        "to": "                regularName={regularName ?? vm.regularName ?? null}\n                onMissingDay={vm.days ? showDayMissing : undefined}"
+      }
+    ],
+    "drops": [
+      [
+        117,
+        118
+      ]
+    ],
+    "why": "Codi via saoc-82: for the Day Pass (the only card with vm.days, i.e. requiresDaySelection) the picker has no default (useState starts at null, not firstSelectableDay), the stub is product.numeral/caption until a day is picked and that day's showDayStub after; Buy stays enabled and, with no day, shows TICKET_COPY.chooseDay (the picker's own legend) in the TicketFormField required-field pattern (role=alert p, same classes; mt-1.5 = that field's space-y-1.5 gap), sets aria-invalid on the fieldset and focuses the first enabled radio. The summary variant keeps its behaviour: its day still comes from the page and CHECKOUT_DAY_EVENT, and `day ? showDayStub(day) : null` renders exactly what BASE did for it (BASE summary vm.days is null)."
+  },
+  "buy": {
+    "file": "components/tickets/keepsake/BuyBlock.tsx",
+    "lineEdits": [
+      {
+        "line": 29,
+        "from": "  day?: string | null;",
+        "to": "  day?: string | null;\n  /** Day Pass only: called instead of following the link while no day is chosen. */\n  onMissingDay?: () => void;"
+      },
+      {
+        "line": 46,
+        "from": "  regularName = null,",
+        "to": "  regularName = null,\n  onMissingDay,"
+      },
+      {
+        "line": 149,
+        "from": "      <Link data-ticket-cta=\"\" className=\"nk-btn nk-cta\" href={checkoutHref(vm.slug, current, day)}>",
+        "to": "      <Link\n        data-ticket-cta=\"\"\n        className=\"nk-btn nk-cta\"\n        href={checkoutHref(vm.slug, current, day)}\n        onClick={\n          onMissingDay && !day\n            ? (event) => {\n                event.preventDefault();\n                onMissingDay();\n              }\n            : undefined\n        }\n      >"
+      }
+    ],
+    "drops": [],
+    "why": "The CTA stays the same enabled link; only when the card passes onMissingDay (Day Pass) and no day is chosen does a click stay on the page and hand over to the card. Every other card passes nothing, so its link is untouched."
+  },
+  "days": {
+    "file": "components/tickets/keepsake/days.ts",
+    "lineEdits": [
+      {
+        "line": 1,
+        "from": "// Day-cell rules of the Day Pass, shared by the card (client) and the hero mini ticket (server).",
+        "to": "// Day-cell rules of the Day Pass card, and the count display the other cards share."
+      }
+    ],
+    "drops": [
+      [
+        32,
+        35
+      ]
+    ],
+    "why": "firstSelectableDay had two callers, the fan default and the card default, and r45 removes both; it goes with them (no dead code). The mini ticket no longer reads this file."
+  },
+  "copy": {
+    "chooseDay": "Choose a day"
+  },
+  "errorClass": "mt-1.5 border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800",
+  "patternSource": {
+    "file": "components/tickets/TicketFormField.tsx",
+    "className": "border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800",
+    "wrapperGap": "space-y-1.5"
+  },
+  "fanStubs": {
+    "vip": [
+      "23",
+      "Thursday"
+    ],
+    "sunset": [
+      "23",
+      "Thursday"
+    ],
+    "weekend": [
+      "24",
+      "to 26 Sept"
+    ],
+    "day": [
+      "",
+      ""
+    ]
+  },
+  "routes": {
+    "hub": "/national-show/tickets"
+  }
+}

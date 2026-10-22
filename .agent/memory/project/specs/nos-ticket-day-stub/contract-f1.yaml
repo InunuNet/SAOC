@@ -1,0 +1,55 @@
+# Sources: .tmp/sandbox/queue/r45-ruling.md (Codi route 45 via saoc-82, 2026-10-22: the approved fan fix, Codi's "TicketCard IN r45"
+# ruling and saoc-82's server check). Architect measurements on BASE 1a7479f1 (goldens/f1-spec.md).
+schema: athanor.contract/v1
+slug: nos-ticket-day-stub
+goal: >-
+  The tickets hero fan and the hub Day Pass card show the product's own stub (no numeral, no caption) until the buyer picks a day:
+  no default day, a picked day drives the stub and the checkout link, and Buy with no day stays enabled but shows "Choose a day" in
+  the existing required-field error pattern at the picker, moves focus there and sets aria-invalid; the server still refuses a
+  requiresDaySelection position with no chosenDay. No new copy, tokens or colours; no names change.
+created_at: '2026-10-22'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json, docs/nos-ticket-day-stub.md and this spec dir'
+    reason: 'Enforced by A2 and A3 (S5). The checkout form, the checkout page summaryDay default and the server path stay as at BASE.'
+  - item: 'the checkout screen default day (TicketPurchaseForm.startDay, page summaryDay = showDays[0])'
+    reason: 'Not in the ruling (TicketCard and the hub Buy only): DECISION NEEDED in goldens/f1-spec.md; pinned by A3 S5 and A8.'
+  - item: 'product names (VIP Ticket vs VIP Opening)'
+    reason: 'Copy decision for Brad/Lee-Ann (Codi P2, not actioned).'
+features:
+  - id: F1
+    name: Ticket day stub - fan and Day Pass card use the product's own stub until a day is chosen, no default day, required-field error on Buy, server guard test
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-ticket-day-stub/goldens/f1-spec.md
+  - .agent/memory/project/specs/nos-ticket-day-stub/goldens/f1-edits.json
+  - .agent/memory/project/specs/nos-ticket-day-stub/goldens/f1-footprint.json
+  - .agent/memory/project/specs/nos-ticket-day-stub/goldens/nonreg-baseline.json
+  - .agent/memory/project/specs/nos-ticket-day-stub/goldens/checks-f1.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: r45 check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-ticket-day-stub/goldens/checks-f1.sha256
+    - id: A2
+      description: Footprint - the branch differs from origin/main 1a7479f1 only in goldens/f1-footprint.json, docs/nos-ticket-day-stub.md and the spec dir, and HEAD descends from it
+      command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/footprint.mjs
+    - id: A3
+      description: Static - exact BASE-numbered edits in TicketMini/TicketCard/BuyBlock/days.ts, fan stub from the product only, no default-day helper left, error text TICKET_COPY.chooseDay in TicketFormField's alert class with aria-invalid on the fieldset, no new copy, out-of-scope files equal BASE, docs
+      command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/f1-static.mjs
+    - id: A4
+      description: Server guard (saoc-82) - parseLineItems/resolveChosenDayForPosition/buildLineItemsFromCart never invent a day, the route 400s a requiresDaySelection item with no chosenDay before reserveTicket and payment, and nothing on the path defaults one
+      command: pnpm exec tsx .agent/memory/project/specs/nos-ticket-day-stub/checks/f1-server.mjs
+    - id: A5
+      description: Lint clean on the keepsake ticket components
+      command: pnpm exec eslint components/tickets/keepsake
+    - id: A6
+      description: Type-check clean
+      command: pnpm exec tsc --noEmit
+    - id: A7
+      description: Rendered (public + preview builds, 1280/390, hub and Day Pass checkout) - fan and card stub '' until chosen, no pre-selected day, Buy (click and Enter) with no day stays put with aria-invalid, one "Choose a day" alert and focus on the first enabled day, axe clean; a chosen day drives the stub, href and checkout summary/form; other cards keep their stubs
+      command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/f1-rendered.mjs
+    - id: A8
+      description: Non-regression - 9 ticket routes (hub, programme, six checkouts incl. the Day Pass with and without ?day) at 1280/390 in both builds keep BASE geometry and screenshot blocks (Day Pass card and fan mini masked), no horizontal overflow
+      command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/nonreg.mjs
