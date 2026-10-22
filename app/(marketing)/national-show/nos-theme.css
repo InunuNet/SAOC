@@ -799,3 +799,15 @@
   letter-spacing: 0;
   text-transform: none;
 }
+
+/* r55 (Codi): every NOS text control renders at 16px so iOS does not zoom on focus. Unlayered, so it
+   beats the components' layered text-[15px]/text-[14px]. */
+.nos-theme
+  :is(input, select, textarea):not(
+    [type='checkbox'],
+    [type='radio'],
+    [type='file'],
+    [type='hidden']
+  ) {
+  font-size: var(--body-md);
+}
