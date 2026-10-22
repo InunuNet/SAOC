@@ -109,7 +109,7 @@ for (const mode of MODES) {
       await authorize(ctx, srv);
       const page = await ctx.newPage();
       const at = `${mode} ${HUB} @${width}`;
-      const shot = (name) => page.locator('article#ticket-day').screenshot({ path: path.join(SHOTS, `${mode}-${width}-${name}.png`), animations: 'disabled' });
+      const shot = async (name) => { await page.mouse.move(0, 0); await page.locator('article#ticket-day').screenshot({ path: path.join(SHOTS, `${mode}-${width}-${name}.png`), animations: 'disabled' }); };
       checks += 1;
       let s = await hub(page, srv, at);
       if (!s) { await ctx.close(); continue; }

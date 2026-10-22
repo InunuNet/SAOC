@@ -3,20 +3,22 @@
 // production builds. Both read the live Sanity dataset and the sold counts (.env.local); nothing here writes anywhere but .next.
 // ensureBuild(mode) keeps one stamped build per mode: the live one in .next (stamp .next/TDS_MODE) and the other parked under
 // .tmp/tds-next/<mode> (gitignored). A build is reused only when it carries the stamp and no changed path (vs BASE) is newer than its
-// BUILD_ID; otherwise the variant generator and `next build` run with that mode's env (3 tries: the Google Fonts fetch fails
+// BUILD_ID and the build's source fingerprint (the diff against BASE, so a revert counts as a change too: F2 amendment) still
+// matches; otherwise the variant generator and `next build` run with that mode's env (3 tries: the Google Fonts fetch fails
 // transiently). NOS_TDS_NO_BUILD=1 reports a missing/stale build instead of building.
 //   public   SITE_PUBLIC_LAUNCH=true, no beta wall, no preview opt-in            -> withholdPlaceholderProse() === true
 //   preview  beta wall up (basic auth), SHOW_PLACEHOLDER_PREVIEW=true, not launched -> withholdPlaceholderProse() === false
 // The caller's NODE_OPTIONS (the Chrome shim, `--require ../r19-chrome/use-chrome.cjs` from the worktree) never reaches the build or
 // the server: a preload path with spaces broke `next build`. Ports 3010-3019, never 3002, 3013 or 3016. stop() kills only the process
 // group this module spawned.
+import { createHash } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 
-import { SPEC_PREFIX, DOC, changedPaths, repoRoot } from './_lib.mjs';
+import { BASE, SPEC_PREFIX, DOC, changedPaths, git, repoRoot } from './_lib.mjs';
 
 const USER = 'nos-ticket-day-stub';
 const PASS = 'local-render-check';
@@ -36,11 +38,24 @@ export function modeEnv(mode) {
   throw new Error(`unknown mode ${mode}`);
 }
 
-const stampOf = (dir) => { try { return readFileSync(path.join(dir, STAMP), 'utf8').trim(); } catch { return null; } };
+const stampOf = (dir) => { try { return readFileSync(path.join(dir, STAMP), 'utf8').split('\n')[0].trim(); } catch { return null; } };
+const printOf = (dir) => { try { return readFileSync(path.join(dir, STAMP), 'utf8').split('\n')[1]?.trim() ?? null; } catch { return null; } };
+
+// The source the build was made from: a hash of the tracked diff and the changed files against BASE (spec dir and doc excluded).
+function fingerprint() {
+  const h = createHash('sha256');
+  h.update(git('diff', BASE, '--', '.', `:(exclude)${SPEC_PREFIX}`, `:(exclude)${DOC}`));
+  for (const p of [...changedPaths()].filter((x) => !x.startsWith(SPEC_PREFIX) && x !== DOC).sort()) {
+    h.update(p);
+    if (existsSync(path.join(repoRoot, p))) h.update(readFileSync(path.join(repoRoot, p)));
+  }
+  return h.digest('hex');
+}
 
 function freshness(dir) {
   const id = path.join(dir, 'BUILD_ID');
   if (!existsSync(id)) return ['no BUILD_ID'];
+  if (printOf(dir) !== fingerprint()) return ['the source differs from the one the build was made from'];
   const builtAt = statSync(id).mtimeMs;
   return [...changedPaths()]
     .filter((p) => !p.startsWith(SPEC_PREFIX) && p !== DOC && existsSync(path.join(repoRoot, p)) && statSync(path.join(repoRoot, p)).mtimeMs > builtAt)
@@ -59,13 +74,14 @@ export function ensureBuild(mode) {
   if (process.env.NOS_TDS_NO_BUILD === '1') return [`no fresh ${mode} build (NOS_TDS_NO_BUILD=1): ${[...freshness(NEXT), `stamp ${stampOf(NEXT)}`].join('; ')}`];
   park();
   const env = modeEnv(mode);
+  const print = fingerprint();
   // The package build script runs the WebP variant generator before `next build` (public/images/_opt is gitignored).
   const v = spawnSync(process.execPath, ['scripts/generate-image-variants.mjs'], { cwd: repoRoot, env, encoding: 'utf8', maxBuffer: 67108864 });
   if (v.status !== 0) return [`image variants (${mode}) failed: ${`${v.stdout}${v.stderr}`.slice(-3000)}`];
   for (let attempt = 1; attempt <= 3; attempt++) {
     const r = spawnSync(path.join(repoRoot, 'node_modules', '.bin', 'next'), ['build'], { cwd: repoRoot, env, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
     if (r.status === 0) {
-      writeFileSync(path.join(NEXT, STAMP), `${mode}\n`);
+      writeFileSync(path.join(NEXT, STAMP), `${mode}\n${print}\n`);
       return [];
     }
     if (attempt === 3) return [`next build (${mode}) failed 3 times:\n${`${r.stdout}${r.stderr}`.slice(-3000)}`];

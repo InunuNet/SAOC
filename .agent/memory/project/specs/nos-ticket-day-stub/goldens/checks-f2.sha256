@@ -1,0 +1,15 @@
+505678349094da7f5f74e619b7a43de6fe64483794ab37fac853e9aaef833167  .agent/memory/project/specs/nos-ticket-day-stub/checks/_lib.mjs
+11aa417dcf43dd572fbb6b5e135c1e90bf736254380d94a04af30e73db47fc48  .agent/memory/project/specs/nos-ticket-day-stub/checks/_server.mjs
+90d9c17345385d25209dbe189373c5a6ad170f5a3ef1edafb36d2c166cf9157b  .agent/memory/project/specs/nos-ticket-day-stub/checks/_edits.mjs
+531485440376b80f0cbbe4574348732dda385ddd04bf85513e309be65b9dff06  .agent/memory/project/specs/nos-ticket-day-stub/checks/footprint.mjs
+2a124a84abd8a75d738a0965fa1fa396300b671cc8853839c7e174a1eb0b1458  .agent/memory/project/specs/nos-ticket-day-stub/checks/f1-server.mjs
+216a1375d303bdf93221b3e3232f41f2ca68a72787017e6c539115fca67fd37b  .agent/memory/project/specs/nos-ticket-day-stub/checks/f2-static.mjs
+6f80850ba613eb89a4b8fc32de429f8d9140a5071ab1ede4672eb3af39581d0b  .agent/memory/project/specs/nos-ticket-day-stub/checks/f2-rendered.mjs
+3dfa70f3b4e87d618b3aeecb47cf18afcf7c830d8cea326ee6bd22920ef0a623  .agent/memory/project/specs/nos-ticket-day-stub/checks/nonreg.mjs
+0187c06dbe7c26346b7ee159e77c4d7534c38c77fb1321d57d36cae9202be282  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f1-edits.json
+d1afa0bd32ebd2afe440b7384eb57a80007e6288eb0753676abb7ad810850bae  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f1-footprint.json
+9829e25628585dab73b78fe823327f02f9494ce5517267c3420a2c3a5e7067e6  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f2-edits.json
+0500980364ae93823b3a5cdcc116a1a63b96d4555bf620525f2b639fd72e21e9  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f2-footprint.json
+82d67bd1afde03595e4ae3771d00647dc7e25e0a53b573fbc89cc18ec69494e6  .agent/memory/project/specs/nos-ticket-day-stub/goldens/f2-spec.md
+d454d580b9d2d70780262b0d4e4cdd896fde0842dd9554ff1f9a61d4608a9152  .agent/memory/project/specs/nos-ticket-day-stub/goldens/nonreg-baseline.json
+c7c4588c26b97e6c4600cbc402c2709d88eb818b01cd25dba853e1bfb36fa669  .agent/memory/project/specs/nos-ticket-day-stub/contract-f2.yaml

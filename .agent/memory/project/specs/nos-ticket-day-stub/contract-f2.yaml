@@ -1,0 +1,50 @@
+# Sources: .tmp/sandbox/queue/r45-ruling.md, "r45b - Codi DECISION (2026-10-22), verbatim" (the architect's F1 DECISION NEEDED taken as
+# r45b). Architect measurements on F1-HEAD (goldens/f2-spec.md). Same branch and PR as F1 (contract-f1.yaml).
+schema: athanor.contract/v1
+slug: nos-ticket-day-stub
+goal: >-
+  The Day Pass checkout has no default day either: without ?day no radio is checked and the summary shows the product's own stub and
+  "Friday, Saturday or Sunday" (never showDays[0]); "Continue to payment" with no day stays enabled, sends nothing and shows r45's
+  error (TICKET_COPY.chooseDay in the TicketFormField alert class, aria-invalid on the group, focus to the group); with ?day that day
+  is pre-selected as before. No new copy, tokens or colours.
+created_at: '2026-10-22'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/f1-footprint.json, goldens/f2-footprint.json, docs/nos-ticket-day-stub.md and this spec dir'
+    reason: 'Enforced by A2 and the F1 S5 list. useTicketCart, lib/cart.ts and the server path stay as at BASE; the server already 400s a missing day (A4).'
+features:
+  - id: F2
+    name: Checkout day (r45b) - no default day without ?day, neutral summary, Continue to payment shows the r45 required-field error
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-ticket-day-stub/goldens/f2-spec.md
+  - .agent/memory/project/specs/nos-ticket-day-stub/goldens/f2-edits.json
+  - .agent/memory/project/specs/nos-ticket-day-stub/goldens/f2-footprint.json
+  - .agent/memory/project/specs/nos-ticket-day-stub/goldens/checks-f2.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: r45b check scripts and goldens (and the shared helpers, F1 goldens it reads, and nonreg) are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-ticket-day-stub/goldens/checks-f2.sha256
+    - id: A2
+      description: Footprint - the branch differs from origin/main 1a7479f1 only in the f1/f2 footprints, docs/nos-ticket-day-stub.md and the spec dir, and HEAD descends from it
+      command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/footprint.mjs
+    - id: A3
+      description: Static - exact BASE-numbered edits in TicketPurchaseForm.tsx and the checkout page, no showDays[0] default, r45's error class/text with aria-invalid on the fieldset, submit disabled only while submitting, no new copy, docs
+      command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/f2-static.mjs
+    - id: A4
+      description: Server guard (kept from F1) - the route still 400s a requiresDaySelection item with no chosenDay before reservation and payment, and nothing defaults one
+      command: pnpm exec tsx .agent/memory/project/specs/nos-ticket-day-stub/checks/f1-server.mjs
+    - id: A5
+      description: Lint clean on the two F2 files
+      command: pnpm exec eslint components/tickets/TicketPurchaseForm.tsx "app/(marketing)/tickets/[slug]/page.tsx"
+    - id: A6
+      description: Type-check clean
+      command: pnpm exec tsc --noEmit
+    - id: A7
+      description: Rendered (public + preview, 1280/390) - no ?day leaves no day checked and a neutral summary; submit with no day (click and Enter) stays, sends no request, shows one "Choose a day" alert in r45's class with aria-invalid and focus on the group, button enabled, axe clean; a chosen or linked day drives the summary; the Weekend Pass checkout is unchanged
+      command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/f2-rendered.mjs
+    - id: A8
+      description: Non-regression (F1's, amended) - 8 ticket routes at 1280/390 in both builds keep BASE geometry and screenshot blocks, no horizontal overflow
+      command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/nonreg.mjs

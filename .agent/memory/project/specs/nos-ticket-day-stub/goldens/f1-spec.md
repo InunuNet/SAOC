@@ -42,6 +42,12 @@ alert. Focus goes to the first enabled day radio (the first invalid control of t
 | ticket-pdf D11 `lib/ticket-pdf-schedule.ts` | not reused | still only on `origin/feat/ticket-pdf` at spec time (not on origin/main). It resolves a printed date line (`kind`, `dateText`, `metaText`), not a stub numeral/caption, so it does not fit the stub; the rule it encodes (a day product shows its own data until a day is chosen) is the same one applied here |
 | product names ("VIP Ticket" vs "VIP Opening") | no | copy decision for Brad/Lee-Ann |
 
+## Amendment for F2 (r45b, Codi 2026-10-22)
+
+Codi took the DECISION NEEDED above as r45b, specced as F2 (`contract-f2.yaml`, `goldens/f2-spec.md`) on this branch. So that F1 stays
+green with F2 applied: the checkout form and page leave F1's S5 list (F2's f2-static S1 pins them), the footprint covers
+f2-footprint.json too, and nonreg drops `/tickets/early-bird?quantity=1` (its baseline entries are removed; the route is f2-rendered's).
+
 ## Checks (QA inputs, hash-locked by goldens/checks-f1.sha256)
 
 Run from the checkout under test (the r45 worktree). The rendered checks need the Chrome shim:
@@ -57,7 +63,7 @@ the caller's NODE_OPTIONS to the build or the server). The beta basic-auth heade
   Enter; aria-invalid, one alert "Choose a day" in the pattern class 6px under the row, focus on the first enabled radio, axe clean),
   R4 chosen (stub, href, checkout summary and form), R5 the other cards, R6 overflow. Element screenshots of unchosen/error/chosen go
   to `.tmp/tds-shots/` (for Codi).
-- `nonreg.mjs`: 9 ticket routes x 2 widths x 2 builds vs `goldens/nonreg-baseline.json` (BASE capture), Day Pass card and fan mini
+- `nonreg.mjs`: 8 ticket routes (9 before the F2 amendment) x 2 widths x 2 builds vs `goldens/nonreg-baseline.json` (BASE capture), Day Pass card and fan mini
   masked.
 
 ## Proof (architect, 2026-10-22)

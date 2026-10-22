@@ -6,7 +6,8 @@
 //   S4  the error reuses what exists: its text is TICKET_COPY.chooseDay (the picker's legend, still "Choose a day" in
 //       lib/data/ticket-presentation.ts), its class is TicketFormField's role="alert" class (plus mt-1.5, that field's space-y-1.5 gap),
 //       aria-invalid sits on the fieldset, and no new prose appears in the four files (NO INVENTION).
-//   S5  out of scope and untouched: the checkout form, the checkout page, ticket-presentation, the fan, the masthead and the server path.
+//   S5  out of scope and untouched: ticket-presentation, the fan, the masthead and the server path. (Amended for F2, r45b: the checkout
+//       form and the checkout page are F2's, pinned by f2-static.mjs S1.)
 //   S6  docs/nos-ticket-day-stub.md exists and records the root cause and the server check.
 import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
@@ -21,8 +22,6 @@ const KEYS = ['mini', 'card', 'buy', 'days'];
 const PRESENTATION = 'lib/data/ticket-presentation.ts';
 const FIELD = 'components/tickets/TicketFormField.tsx';
 const UNTOUCHED = [
-  'components/tickets/TicketPurchaseForm.tsx',
-  'app/(marketing)/tickets/[slug]/page.tsx',
   PRESENTATION,
   FIELD,
   'components/tickets/keepsake/TicketFan.tsx',

@@ -10,10 +10,10 @@ goal: >-
 created_at: '2026-10-22'
 autonomy: high
 exclusions:
-  - item: 'every file outside goldens/f1-footprint.json, docs/nos-ticket-day-stub.md and this spec dir'
-    reason: 'Enforced by A2 and A3 (S5). The checkout form, the checkout page summaryDay default and the server path stay as at BASE.'
+  - item: 'every file outside goldens/f1-footprint.json, goldens/f2-footprint.json, docs/nos-ticket-day-stub.md and this spec dir'
+    reason: 'Enforced by A2 and A3 (S5). The server path stays as at BASE.'
   - item: 'the checkout screen default day (TicketPurchaseForm.startDay, page summaryDay = showDays[0])'
-    reason: 'Not in the ruling (TicketCard and the hub Buy only): DECISION NEEDED in goldens/f1-spec.md; pinned by A3 S5 and A8.'
+    reason: 'Not F1: Codi ruled it in as r45b, which is F2 (contract-f2.yaml) in the same PR.'
   - item: 'product names (VIP Ticket vs VIP Opening)'
     reason: 'Copy decision for Brad/Lee-Ann (Codi P2, not actioned).'
 features:
@@ -51,5 +51,5 @@ assertions:
       description: Rendered (public + preview builds, 1280/390, hub and Day Pass checkout) - fan and card stub '' until chosen, no pre-selected day, Buy (click and Enter) with no day stays put with aria-invalid, one "Choose a day" alert and focus on the first enabled day, axe clean; a chosen day drives the stub, href and checkout summary/form; other cards keep their stubs
       command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/f1-rendered.mjs
     - id: A8
-      description: Non-regression - 9 ticket routes (hub, programme, six checkouts incl. the Day Pass with and without ?day) at 1280/390 in both builds keep BASE geometry and screenshot blocks (Day Pass card and fan mini masked), no horizontal overflow
+      description: Non-regression - 8 ticket routes (hub, programme, six checkouts incl. the Day Pass with ?day; without ?day is F2's) at 1280/390 in both builds keep BASE geometry and screenshot blocks (Day Pass card and fan mini masked), no horizontal overflow
       command: node .agent/memory/project/specs/nos-ticket-day-stub/checks/nonreg.mjs

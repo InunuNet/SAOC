@@ -1,7 +1,8 @@
 // nos-ticket-day-stub (r45) non-regression (fresh PUBLIC and PREVIEW production builds on live Sanity, next start 3010-3019 minus 3002,
 // 3013 and 3016). QA input, hash-locked; the rHB pattern. Widths 1280 and 390. r45 changes only the Day Pass: its hub card and its fan
 // mini (f1-rendered.mjs owns both), so those two are masked on the hub; every other ticket card, the programme cards and the checkout
-// screens must still match BASE, including the Day Pass checkout reached directly (no ?day, out of r45's scope) and with a ?day.
+// screens must still match BASE, including the Day Pass checkout with a ?day. (Amended for F2, r45b: the Day Pass checkout without
+// ?day changes by ruling and is f2-rendered.mjs's; its route and baseline entries are gone.)
 //   N1  geometry: main's top-level blocks [tag, top, height] and the last footer's top equal the BASE capture (+-1px).
 //   N2  screenshot: a full-page capture (lazy images forced, animations disabled, the two Day Pass masks) reduced to 32px block means
 //       equals the BASE capture: at most `tolerance.blocks` blocks may differ by more than `tolerance.level` (0-255) in any channel.
@@ -19,7 +20,7 @@ const CAPTURE = process.argv.includes('--capture');
 const WIDTHS = [1280, 390];
 const BLOCK = 32;
 const TOL = { level: 16, blocks: 6 };
-const ROUTES = ['/national-show/tickets', '/national-show/programme', '/tickets/vip?quantity=1', '/tickets/sunset-cocktails-single?quantity=1', '/tickets/weekend-pass-early-bird?quantity=1', '/tickets/saoc-symposium?quantity=1', '/tickets/wosa-conference?quantity=1', '/tickets/early-bird?quantity=1', '/tickets/early-bird?quantity=1&day=2027-09-25'];
+const ROUTES = ['/national-show/tickets', '/national-show/programme', '/tickets/vip?quantity=1', '/tickets/sunset-cocktails-single?quantity=1', '/tickets/weekend-pass-early-bird?quantity=1', '/tickets/saoc-symposium?quantity=1', '/tickets/wosa-conference?quantity=1', '/tickets/early-bird?quantity=1&day=2027-09-25'];
 const MASKS = ['article#ticket-day', '[data-fan-link][href="#ticket-day"]'];
 const failures = [];
 const got = {};

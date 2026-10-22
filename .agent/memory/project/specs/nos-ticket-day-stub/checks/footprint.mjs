@@ -1,5 +1,5 @@
-// nos-ticket-day-stub (r45) footprint guard (single F1): the branch may differ from BASE (origin/main 1a7479f1) only in
-// goldens/f1-footprint.json, docs/nos-ticket-day-stub.md and this spec directory; HEAD descends from BASE (a rebase onto a newer main
+// nos-ticket-day-stub (r45) footprint guard (F1 and F2, r45b): the branch may differ from BASE (origin/main 1a7479f1) only in
+// goldens/f1-footprint.json, goldens/f2-footprint.json, docs/nos-ticket-day-stub.md and this spec directory; HEAD descends from BASE (a rebase onto a newer main
 // keeps BASE as an ancestor).
 import { finish, footprintFailures } from './_lib.mjs';
 
