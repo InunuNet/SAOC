@@ -102,7 +102,7 @@ Rulings:
 - /wosa links OUT to WOSA and generates NO wild-orchid conservation content. Standing ruling.
 - Five layout archetypes, not seventeen page designs: hub, prose (FAQ is a prose variant), schedule, listing, transactional.
 - Reachability is HUB-BASED, not header-based. There is no approved header dropdown; the handoff specifies a flat six-item nav. Every page must be reachable from the /national-show hub AND from ShowSectionNav. No assertion may depend on a header entry existing.
-- Empty listings (/sa-exhibitors, /international-guests, /sponsors) name WHAT will appear and WHEN, with the page's own structure visible (heading, intro, shape of the coming card) and the absence stated in words. Never "no results". The rendered treatment is Codi's and is downstream of building.
+- Empty listings (/sa-exhibitors, /international-guests, /sponsors) name WHAT will appear and WHEN, with the page's own structure visible (heading, intro, shape of the coming card) and the absence stated in words. Never "no results". The rendered treatment is NOS Design's and is downstream of building.
 - Owned by saoc-eb, do not edit: components/chrome/**, app/(marketing)/tickets/**, /national-show/tickets, /national-show/conferences, /sponsors, /judging, /contact, /societies, all redirects, all route deletions outside /national-show.
 - Binding design rulings: R1 (SAOC chrome untouched), R11 (disclosure chip → sentence → dashed 2px rail, warning tokens for AI-generated, muted for researched, never error/red), R12 (no NOS header or second nav), R13 (grid orphan rule, columns derived from rendered count, never a hardcoded grid-cols class; when no c avoids the orphan, keep the content ceiling and let the FINAL CARD SPAN the remainder — never a partial row, never a centred lone card; binds at c>=3, EXEMPT BY RULING at c=2).
 
@@ -111,7 +111,7 @@ Process (Brad, 2026-09-10):
 - The site is EARLY ALPHA — no real users, no bookmarks, no live payments. Route changes are free; never preserve a bad structure for migration safety.
 - Branch for this lane is `nos-site`. `origin/nos-design` belongs to the design lane — never push to it.
 
-- Design-ruling authority is Codi's `.agent/memory/project/design/nos-design-rulings.md` (R1-R13, commits 6687b13/5c103ea) IN CODI'S WORKSPACE. The same relative path in this tree is a STALE MIRROR and is not the authority. Cite rulings by number; never treat the local copy as canonical.
+- Design-ruling authority is NOS Design's `.agent/memory/project/design/nos-design-rulings.md` (R1-R13, commits 6687b13/5c103ea) IN NOS DESIGN'S WORKSPACE. The same relative path in this tree is a STALE MIRROR and is not the authority. Cite rulings by number; never treat the local copy as canonical.
 
 ## Branch and PR rule — standing, all three lanes, 2026-09-10 (Brad delegated to saoc-eb)
 
@@ -258,3 +258,4 @@ Full detail: `.claude/rules/sandbox.md`.
 - (2026-10-13, Brad) Never ask Lee-Ann about missing content (empty folders, sections not yet written); ask only about content already supplied. Questions go in the Google Doc https://docs.google.com/document/d/1C2_2EKYvJwzB5ejtwf0wpm5bk7z916-c8UQQrkQmSjc/edit
 - (2026-10-13, Brad) Test email addressing: every email an agent or test sends to Brad uses Google plus-addressing so Gmail filters can move it out of his primary inbox. Shape: brad+<site>-<flow>@inunu.net, where <site> is saoc or nos and <flow> is ticket, form, approve or check-in (e.g. brad+saoc-form@inunu.net, brad+nos-ticket@inunu.net, brad+nos-approve@inunu.net, brad+nos-check-in@inunu.net). Never send test mail to bare brad@inunu.net. Brad: "use google + addressing when sending emails to me brad+saoc/nos(ticket/form/approve/check-in)@inunu.net we can setup filters in gmail and move them out my primary inbox for testing."
 - (2026-10-13, Brad) Contact routing: all site contact (section 18 Contact, every audience) goes to info@saoc.co.za / brad+saoc@inunu.net for now, unless the council asks otherwise. Not a question for Lee-Ann. Brad: "18. Contact everything to info@saoc.co.za/brad+saoc@inunu.net for now unless they request."
+- (2026-10-23, Brad) Session names: SAOC = coordinator, NOS Site = builder, NOS Design = design rulings. Earlier names (saoc-82, site-7d, Codi) are retired; dated historical lines keep them.
