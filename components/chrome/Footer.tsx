@@ -89,6 +89,7 @@ export function Footer() {
             {FOOTER_BULLETIN.blurb}
           </p>
           <NewsletterSignup
+            site="saoc"
             source="saoc-footer"
             inputId="footer-newsletter-email"
             emailLabel={FOOTER_BULLETIN.emailLabel}

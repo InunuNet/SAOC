@@ -7,7 +7,9 @@ import {
   maskEmail,
   newsletterDocId,
   normaliseNewsletterEmail,
+  parseNewsletterTopics,
   type NewsletterSubscriberDoc,
+  type NewsletterTopic,
   type UnsubscribeOrigin,
 } from './newsletter';
 import { NEWSLETTER_COPY } from '../components/chrome/newsletter-copy';
@@ -100,6 +102,10 @@ export async function handleNewsletterSubscribe(
   if (!isNewsletterSource(source)) {
     return { status: HTTP_BAD_REQUEST, body: { error: NEWSLETTER_COPY.genericError } };
   }
+  const topics = parseNewsletterTopics(body['topics'], source);
+  if (topics === null) {
+    return { status: HTTP_BAD_REQUEST, body: { error: NEWSLETTER_COPY.genericError, field: 'topics' } };
+  }
 
   const id = newsletterDocId(email);
   try {
@@ -107,6 +113,7 @@ export async function handleNewsletterSubscribe(
     const doc = applySubscribe(existing, {
       email,
       source,
+      topics,
       now: deps.now,
       token: deps.generateToken(),
     });
@@ -161,6 +168,7 @@ export interface ExportDeps {
     {
       email: string;
       source: string;
+      topics?: NewsletterTopic[];
       status: string;
       subscribedAt: Date | null;
       unsubscribeToken: string;

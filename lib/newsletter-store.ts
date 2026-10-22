@@ -1,7 +1,7 @@
 import { getFirestore, Timestamp, type DocumentData, type Transaction } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
-import type { NewsletterSubscriberDoc } from '@/lib/newsletter';
+import { subscriberTopics, type NewsletterSubscriberDoc } from '@/lib/newsletter';
 import type { NewsletterSubscriber } from '@/types/index';
 
 /**
@@ -21,6 +21,7 @@ function toSubscriber(id: string, data: DocumentData): NewsletterSubscriber {
     email: String(data['email'] ?? ''),
     status: data['status'] === 'unsubscribed' ? 'unsubscribed' : 'subscribed',
     source: data['source'] === 'nos-footer' ? 'nos-footer' : 'saoc-footer',
+    topics: subscriberTopics(data['topics'], data['source'] === 'nos-footer' ? 'nos-footer' : 'saoc-footer'),
     subscribedAt: toDate(data['subscribedAt']),
     unsubscribedAt: toDate(data['unsubscribedAt']),
     unsubscribeToken: String(data['unsubscribeToken'] ?? ''),
@@ -38,6 +39,7 @@ export function toSubscriberDoc(data: DocumentData): NewsletterSubscriberDoc | n
     email: subscriber.email,
     status: subscriber.status,
     source: subscriber.source,
+    topics: subscriber.topics,
     subscribedAt: subscriber.subscribedAt,
     unsubscribedAt: subscriber.unsubscribedAt,
     unsubscribeToken: subscriber.unsubscribeToken,

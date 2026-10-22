@@ -96,6 +96,7 @@ export function NosFooter() {
           <div className="nf-head">{FOOTER_HEADINGS.touch}</div>
           <p className="nf-text">{FOOTER_BULLETIN.blurb}</p>
           <NewsletterSignup
+            site="nos"
             source="nos-footer"
             inputId="nf-email"
             formId="nf-signup"
