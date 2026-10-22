@@ -40,7 +40,7 @@ export function VendorPaymentLinkControl({
           value={paymentUrl}
           aria-label="Vendor stand payment link"
           onFocus={(event) => event.currentTarget.select()}
-          className="w-full rounded-[2px] border border-rule bg-bone px-2 py-1 font-mono text-[11px] text-ink"
+          className="w-full rounded-[2px] border border-rule bg-bone px-2 py-1 font-mono text-[16px] leading-[17.05px] text-ink"
         />
       )}
     </div>

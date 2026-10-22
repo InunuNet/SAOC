@@ -40,7 +40,7 @@ export function TableToolbar({
         aria-label={searchLabel}
         placeholder={searchLabel}
         autoComplete="off"
-        className={`h-11 min-w-0 flex-1 basis-[220px] rounded-[2px] border border-rule bg-ivory px-3 font-sans text-[14px] text-ink placeholder:text-muted ${FOCUS_RING}`}
+        className={`h-11 min-w-0 flex-1 basis-[220px] rounded-[2px] border border-rule bg-ivory px-3 font-sans text-[16px] text-ink placeholder:text-muted ${FOCUS_RING}`}
       />
       {filterOptions && onFilterChange ? (
         <div
