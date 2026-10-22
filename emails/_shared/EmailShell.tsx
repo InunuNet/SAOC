@@ -1,4 +1,3 @@
-import { createContext, useContext } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { Head, Html, Img, Preview } from '@react-email/components';
 
@@ -63,8 +62,8 @@ const NOS_THEME: ShellTheme = {
   muted: NOS_INK_MUTED,
 };
 
-const ThemeContext = createContext<ShellTheme>(NOS_THEME);
-
+// Helpers read NOS_THEME directly: emails render in the server graph, where React context is
+// unavailable. Reintroduce a theme prop (not context) if family D brings a second theme.
 const CONTAINER_WIDTH = 600;
 const STACK_BREAKPOINT = 620;
 const GUTTER = 40;
@@ -312,7 +311,7 @@ export default function EmailShell({ family, preview, children }: EmailShellProp
                           color: t.ink,
                         }}
                       >
-                        <ThemeContext.Provider value={t}>{children}</ThemeContext.Provider>
+                        {children}
                       </td>
                     </tr>
                     {branded ? (
@@ -332,7 +331,7 @@ export default function EmailShell({ family, preview, children }: EmailShellProp
 }
 
 export function ShellHeading({ children }: { children: ReactNode }) {
-  const t = useContext(ThemeContext);
+  const t = NOS_THEME;
   return (
     <h1
       style={{
@@ -350,7 +349,7 @@ export function ShellHeading({ children }: { children: ReactNode }) {
 }
 
 export function ShellSubheading({ children }: { children: ReactNode }) {
-  const t = useContext(ThemeContext);
+  const t = NOS_THEME;
   return (
     <h2
       style={{
@@ -376,7 +375,7 @@ export function ShellText({
   children: ReactNode;
   size?: keyof typeof BODY_SIZE;
 }) {
-  const t = useContext(ThemeContext);
+  const t = NOS_THEME;
   return (
     <p
       className="shell-ink"
@@ -397,7 +396,7 @@ const LABEL_COLUMN_WIDTH = 150;
 
 /** One label/value detail row with a 1px rule beneath it. Put the colon in the label. */
 export function ShellDetailRow({ label, children }: { label: ReactNode; children: ReactNode }) {
-  const t = useContext(ThemeContext);
+  const t = NOS_THEME;
   return (
     <table
       role="presentation"
@@ -445,13 +444,13 @@ export function ShellDetailRow({ label, children }: { label: ReactNode; children
 }
 
 export function ShellRule() {
-  const t = useContext(ThemeContext);
+  const t = NOS_THEME;
   return <hr style={{ margin: '24px 0', border: 0, borderTop: `1px solid ${t.rule}`, height: 0 }} />;
 }
 
 /** Reference card: optional label then a heading-font 28px value with .08em tracking. */
 export function ShellCodeBlock({ label, children }: { label?: ReactNode; children: ReactNode }) {
-  const t = useContext(ThemeContext);
+  const t = NOS_THEME;
   return (
     <table
       role="presentation"
@@ -508,7 +507,7 @@ const BUTTON_HEIGHT = 48;
 
 /** Bulletproof button: accent fill, on-accent text, 48px tall. */
 export function ShellButton({ href, children }: { href: string; children: ReactNode }) {
-  const t = useContext(ThemeContext);
+  const t = NOS_THEME;
   return (
     <table
       role="presentation"
@@ -553,7 +552,7 @@ export function ShellButton({ href, children }: { href: string; children: ReactN
 }
 
 export function ShellLink({ href, children }: { href: string; children: ReactNode }) {
-  const t = useContext(ThemeContext);
+  const t = NOS_THEME;
   return (
     <a href={href} style={{ color: t.accent, textDecoration: 'underline' }}>
       {children}
@@ -563,14 +562,14 @@ export function ShellLink({ href, children }: { href: string; children: ReactNod
 
 // One-line 12px secondary note above the footer, e.g. the order email's emergency numbers.
 export function ShellFootnote({ children }: { children: ReactNode }) {
-  const t = useContext(ThemeContext);
+  const t = NOS_THEME;
   return <p style={{ ...footerLineStyle(t), margin: '8px 0 0' }}>{children}</p>;
 }
 
 // Small outlined status pill for an unknown value, e.g. "To be confirmed". It wraps inside its
 // outline when the label is long (Sanity pendingLabel); it never clips.
 export function ShellPill({ children }: { children: ReactNode }) {
-  const t = useContext(ThemeContext);
+  const t = NOS_THEME;
   return (
     <span
       style={{
@@ -590,7 +589,7 @@ export function ShellPill({ children }: { children: ReactNode }) {
 
 // A bordered card on the card ground, used to group one ticket's rows.
 export function ShellCard({ children }: { children: ReactNode }) {
-  const t = useContext(ThemeContext);
+  const t = NOS_THEME;
   return (
     <table
       role="presentation"
