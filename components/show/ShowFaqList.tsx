@@ -19,6 +19,7 @@
 // =============================================================
 
 import { PortableText } from '@portabletext/react';
+import type { ReactNode } from 'react';
 
 import type { ShowFaq } from '@/types';
 
@@ -53,7 +54,19 @@ export function hasFaqAnswer(faq: ShowFaq): boolean {
   return Array.isArray(faq.answer) && faq.answer.length > 0;
 }
 
+/**
+ * A row whose answer is read from a published source rather than typed in Sanity (keyed by the
+ * showFaq _id). `replaces` swaps the Sanity answer for `body`; otherwise `body` follows it. A wired
+ * row carries no marker: its source is the page that publishes the fact.
+ */
+export interface WiredFaq {
+  kind: string;
+  body: ReactNode;
+  replaces: boolean;
+}
+
 export interface ShowFaqListProps {
+  wired?: Readonly<Record<string, WiredFaq>>;
   faqs?: ShowFaq[] | null;
   pendingLabel?: string | null;
   researchLabel?: string | null;
@@ -70,6 +83,7 @@ export function ShowFaqList({
   pendingLabel,
   researchLabel,
   hideUnanswered = false,
+  wired = {},
 }: ShowFaqListProps) {
   const entries = (faqs ?? []).filter(
     (faq) => faq?.question && (!hideUnanswered || hasFaqAnswer(faq))
@@ -111,20 +125,8 @@ export function ShowFaqList({
                       data-faq-summary=""
                       className="nos-faq-summary cursor-pointer font-serif text-[19px] font-medium leading-snug text-ink hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--ring-focus)]"
                     >
-                      {/* The marker sits inline after the question, inside the summary, not in
-                          the panel: a marker inside a closed disclosure is invisible to a visitor
-                          scanning the list, so fourteen unconfirmed answers read as settled fact
-                          until each one is opened. */}
                       <span data-faq-question="" className="nos-faq-question">
                         <span>{faq.question}</span>
-                        {hideUnanswered ? null : (
-                          <ConfirmationBadge
-                            as="span"
-                            status={faq.status}
-                            pendingLabel={pendingLabel}
-                            researchLabel={researchLabel}
-                          />
-                        )}
                       </span>
                       <span data-faq-icon="" aria-hidden="true" className="nos-faq-icon">
                         <svg
@@ -143,10 +145,22 @@ export function ShowFaqList({
                     </summary>
 
                     <div className="nos-faq-answer">
-                      {faq.answer && faq.answer.length > 0 ? (
+                      {/* The marker sits in the answer panel, not the summary: a marker in the summary
+                          is part of every accessible name and doubles the row's height at 390. */}
+                      {hideUnanswered || wired[faq._id] ? null : (
+                        <ConfirmationBadge
+                          status={faq.status}
+                          pendingLabel={pendingLabel}
+                          researchLabel={researchLabel}
+                        />
+                      )}
+                      {faq.answer && faq.answer.length > 0 && !wired[faq._id]?.replaces ? (
                         <div className="max-w-3xl font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/80">
                           <PortableText value={faq.answer} />
                         </div>
+                      ) : null}
+                      {wired[faq._id] ? (
+                        <div data-faq-wired={wired[faq._id].kind}>{wired[faq._id].body}</div>
                       ) : null}
                     </div>
                   </details>
