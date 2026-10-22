@@ -2,15 +2,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { JsonLd, faqPageJsonLd, portableTextToPlainText } from '@/components/seo/JsonLd';
-import { ShowFaqList } from '@/components/show';
-import { hasFaqAnswer } from '@/components/show/ShowFaqList';
+import { ShowFaqList, ShowStatusLine } from '@/components/show';
+import { AdmissionPriceList, admissionPriceLabels } from '@/components/show/AdmissionPriceList';
+import { hasFaqAnswer, type WiredFaq } from '@/components/show/ShowFaqList';
 import { HoldingState } from '@/components/show/nos/HoldingState';
 import { Button } from '@/components/nos/Button';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { showFaqsQuery, showVisitorInfoQuery } from '@/sanity/queries';
-import { loadShowFacts } from '@/lib/data/show-facts';
+import { nationalShowQuery, showFaqsQuery, showVisitorInfoQuery } from '@/sanity/queries';
+import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
+import { loadShowFacts, type ShowFactsSource } from '@/lib/data/show-facts';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import type { ShowFaq, ShowVisitorInfo } from '@/types';
@@ -39,13 +41,15 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default async function ShowFaqPage() {
-  const [info, faqs, facts] = await Promise.all([
+  const [info, faqs, facts, show, loaded] = await Promise.all([
     sanityFetch<ShowVisitorInfo>({
       query: showVisitorInfoQuery,
       tags: ['showVisitorInfo', 'sanity'],
     }),
     sanityFetch<ShowFaq[]>({ query: showFaqsQuery, tags: ['showFaq', 'sanity'] }),
     loadShowFacts(),
+    sanityFetch<ShowFactsSource>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
+    loadTicketCardViewModels(),
   ]);
 
   // R77 #2: a public build shows only answered questions; with none left the page holds.
@@ -57,6 +61,33 @@ export default async function ShowFaqPage() {
     .filter((faq) => faq?.question && (!hideUnanswered || hasFaqAnswer(faq)))
     .sort((a, b) => categoryRank(a) - categoryRank(b));
   const holds = hideUnanswered && visibleFaqs.length === 0;
+
+  // r57: two rows are answered from facts the site already publishes, so they cannot disagree with
+  // the page that publishes them. The cost row reads the tickets hub's own loader and labels; the
+  // venue row reads the show's venue.name (the fact strip's source), only while the committee has
+  // confirmed the venue. Either falls back to its Sanity answer when its source has nothing.
+  const wired: Record<string, WiredFaq> = {};
+  if (admissionPriceLabels(loaded.cards).length > 0) {
+    wired['showFaq-tickets-1'] = {
+      kind: 'prices',
+      replaces: false,
+      body: (
+        <>
+          <AdmissionPriceList cards={loaded.cards} />
+          <Button as={Link} href="/national-show/tickets" variant="ghost" className="mt-4">
+            {info?.admissionLinkLabel ?? 'See ticket prices and book'} →
+          </Button>
+        </>
+      ),
+    };
+  }
+  if (show?.venue?.name && info?.confirmations?.venue === 'confirmed') {
+    wired['showFaq-getting-there-3'] = {
+      kind: 'venue',
+      replaces: true,
+      body: <p>{show.venue.name}</p>,
+    };
+  }
 
   // SEO: the entries the page presents as settled. A public build (`hideUnanswered`) renders no
   // badges, so every answered entry there reads as settled; a beta build badges everything that
@@ -84,11 +115,20 @@ export default async function ShowFaqPage() {
         <HoldingState facts={facts} contentState="published" />
       ) : (
         <NosSection wrapClassName="[&_details_p]:max-w-[60ch]">
+          {hideUnanswered ? null : (
+            <ShowStatusLine
+              kind="confirmation"
+              status="pending"
+              pendingLabel={info?.pendingLabel}
+              researchLabel={info?.researchLabel}
+            />
+          )}
           <ShowFaqList
             faqs={visibleFaqs}
             pendingLabel={info?.pendingLabel}
             researchLabel={info?.researchLabel}
             hideUnanswered={hideUnanswered}
+            wired={wired}
           />
 
           <div className="mt-14 border-t border-rule pt-8">

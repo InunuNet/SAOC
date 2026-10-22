@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { connection } from 'next/server';
 
 import { ConfirmationBadge, ShowHoldingNote, VisitorInfoBlock } from '@/components/show';
+import { AdmissionPriceList, admissionPriceLabels } from '@/components/show/AdmissionPriceList';
 import { carriesUnsourcedVisitorText } from '@/components/show/ShowHoldingNote';
 import { Button } from '@/components/nos/Button';
 import { Card } from '@/components/nos/Card';
@@ -12,6 +13,7 @@ import { NosSection } from '@/components/nos/NosSection';
 import { SectionHeading } from '@/components/nos/SectionHeading';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery, showVisitorInfoQuery } from '@/sanity/queries';
+import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
 import { buildShowFacts, type ShowFactsSource } from '@/lib/data/show-facts';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
@@ -73,12 +75,13 @@ export default async function WhatToExpectPage() {
   // The public-versus-preview switch reads the environment, so this page renders per request
   // rather than being frozen at build time with whichever setting the build happened to have.
   await connection();
-  const [info, show] = await Promise.all([
+  const [info, show, loaded] = await Promise.all([
     sanityFetch<ShowVisitorInfo>({
       query: showVisitorInfoQuery,
       tags: ['showVisitorInfo', 'sanity'],
     }),
     sanityFetch<ShowFactsSource>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
+    loadTicketCardViewModels(),
   ]);
 
   const pendingLabel = info?.pendingLabel;
@@ -106,10 +109,19 @@ export default async function WhatToExpectPage() {
     !!pendingLabel?.toLowerCase().startsWith(hours.trim().toLowerCase());
   // A row whose hours only restate the status line is left out whole (its term and its value).
   const hoursRows = openingHours.filter((entry) => !restatesStatus(entry.hours));
+  // r57: the Admission card answers from the tickets hub's own loader and labels. The Sanity admission
+  // prose (per person per day, concessions) conflicts with the priced products, so it is not drawn
+  // while the prices are; it stays in Sanity for the owner to revise. The priced list is the tickets
+  // page's own published fact, so the card carries no marker of its own.
+  const admissionWired = admissionPriceLabels(loaded.cards).length > 0;
   // Each logistics block in page order: whether it renders at all, and whether it is confirmed.
   const blocks = [
     { heading: HEADING_HOURS, present: openingHours.length > 0, status: status.openingHours },
-    { heading: HEADING_ADMISSION, present: true, status: status.admission },
+    {
+      heading: HEADING_ADMISSION,
+      present: true,
+      status: admissionWired ? 'confirmed' : status.admission,
+    },
     { heading: HEADING_FOOD, present: !!info?.food, status: status.food },
     {
       heading: HEADING_PHOTOGRAPHY,
@@ -190,11 +202,12 @@ export default async function WhatToExpectPage() {
           <VisitorInfoBlock
             heading={HEADING_ADMISSION}
             headingLevel="h2"
-            body={admissionNote}
-            status={status.admission}
+            body={admissionWired ? null : admissionNote}
+            status={admissionWired ? 'confirmed' : status.admission}
             pendingLabel={pendingLabel}
             researchLabel={researchLabel}
           >
+            {admissionWired ? <AdmissionPriceList cards={loaded.cards} /> : null}
             <Button as={Link} href="/national-show/tickets" className="mt-4">
               {info?.admissionLinkLabel ?? 'See ticket prices and book'} →
             </Button>

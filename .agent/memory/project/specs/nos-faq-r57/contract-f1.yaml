@@ -1,0 +1,51 @@
+# Sources: Codi's r57 ruling with the route-58, route-63 and re-rank addenda (verbatim in .tmp/sandbox/queue/r57-ruling.md, summarised in goldens/spec.md).
+# Every value is read from an existing source (the tickets hub loader, the fact strip's venue, existing components); no new copy. Sanity is READ only.
+# Rendered checks: one mode per call, ports 3010-3019 minus 3002, 3013, 3016.
+schema: athanor.contract/v1
+slug: nos-faq-r57
+goal: >-
+  /national-show/faq and /national-show/what-to-expect: the FAQ cost row and the Admission card answer from the tickets hub's own loader and link to Tickets; the FAQ venue row
+  reads the fact strip's venue while the committee has confirmed it; the FAQ marker leaves the summary (one page-level line, sentence case in the panel); nothing else changes.
+created_at: '2026-10-22'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/footprint.json, docs/nos-faq-r57.md and this spec dir (enforced by A2)'
+    reason: 'Codi ruled on the FAQ and what-to-expect pages only. Travel, parking and transport stay TBC (no source); Sanity prose is an owner flag, never edited here.'
+features:
+  - id: F1
+    name: FAQ and what-to-expect - wire cost, venue and Admission to their published sources; marker out of the FAQ summary (r57)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-faq-r57/goldens/spec.md
+  - .agent/memory/project/specs/nos-faq-r57/goldens/edits.json
+  - .agent/memory/project/specs/nos-faq-r57/goldens/footprint.json
+  - .agent/memory/project/specs/nos-faq-r57/goldens/render-baseline.json
+  - .agent/memory/project/specs/nos-faq-r57/goldens/reference-trial.patch
+  - .agent/memory/project/specs/nos-faq-r57/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-faq-r57/goldens/checks.sha256
+    - id: A2
+      description: Footprint - the branch differs from its merge-base with origin/main only in the five footprint files, docs/nos-faq-r57.md and the spec dir, and HEAD descends from 8e686f06
+      command: node .agent/memory/project/specs/nos-faq-r57/checks/footprint.mjs
+    - id: A3
+      description: Static - hub loader and AdmissionPriceList wiring, confirmed-venue gate, no marker in the summary, sentence-case rule, no invention, no Sanity write, docs
+      command: node .agent/memory/project/specs/nos-faq-r57/checks/static.mjs
+    - id: A4
+      description: Prettier - files clean at base stay clean and nos-structure.css (10 dirty lines at base) gets no dirtier
+      command: node .agent/memory/project/specs/nos-faq-r57/checks/prettier.mjs
+    - id: A5
+      description: Lint clean on the touched TSX files
+      command: pnpm exec eslint "app/(marketing)/national-show/faq/page.tsx" "app/(marketing)/national-show/what-to-expect/page.tsx" components/show/ShowFaqList.tsx components/show/AdmissionPriceList.tsx
+    - id: A6
+      description: Type-check clean
+      command: pnpm exec tsc --noEmit
+    - id: A7
+      description: Rendered public build (1280/390) - cost and venue rows wired, Admission card on what-to-expect and out of the holding note, no markers, rows/JSON-LD/other cards unchanged, axe no worse
+      command: NOS_FAQ_MODES=public node .agent/memory/project/specs/nos-faq-r57/checks/rendered.mjs
+    - id: A8
+      description: Rendered preview build (1280/390) - as public, plus no marker in any summary, one page-level line, one sentence-case marker per unconfirmed panel, summaries as tall as the bare question
+      command: NOS_FAQ_MODES=preview node .agent/memory/project/specs/nos-faq-r57/checks/rendered.mjs

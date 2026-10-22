@@ -758,6 +758,11 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-faq-answer {
   padding: 0 clamp(20px, 3vw, 32px) 24px;
 }
+/* r57: the answer-panel marker reads in sentence case (the R19 pill above is uppercase). */
+.nos-theme .nos-faq-answer [data-confirmation-badge] {
+  letter-spacing: normal;
+  text-transform: none;
+}
 
 /* F18-KEEPSAKE-START */
 /* F18b (launch-weekend, v13 keepsake tickets): the ticket, the pool banner, the hero fan and the

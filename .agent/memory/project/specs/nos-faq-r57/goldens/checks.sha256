@@ -1,0 +1,12 @@
+d6e2d33543be94bd726e8a2790375240fbf1f6faff7515290757e6ef2fc3e6da  .agent/memory/project/specs/nos-faq-r57/checks/_build.mjs
+f9797bf1626037d0f3870936c107fef093b4b1d2376ac1982169f8343def105d  .agent/memory/project/specs/nos-faq-r57/checks/_lib.mjs
+7633e88db9f469dbbe366935fda3665ffd4195e202259f8e77aa0f2e178c1a8a  .agent/memory/project/specs/nos-faq-r57/checks/_server.mjs
+be59f07dc650a3b7db564612166c6162de3ce3116e979b73b54346eebb285017  .agent/memory/project/specs/nos-faq-r57/checks/footprint.mjs
+002cd76821f92c8d1a700a8f403f7b63e52b969bfc87c93bed8e03b1d1ff76ef  .agent/memory/project/specs/nos-faq-r57/checks/prettier.mjs
+6bcd257c8f7b25a633c4c02986111c19f27a148a36dfeb6b5113a174aa43af54  .agent/memory/project/specs/nos-faq-r57/checks/rendered.mjs
+6170df78ca7618628dd4632351db248ac4d6661a4a91a4adc0fd140623bd96e2  .agent/memory/project/specs/nos-faq-r57/checks/static.mjs
+156516f273338842340376fd9af6276c2050581f436c78df4de0c3582e138e7b  .agent/memory/project/specs/nos-faq-r57/goldens/edits.json
+661bebb4dedc12fcd915d49d7aa5c3555e701154aabfae1cd3772201485f3e8a  .agent/memory/project/specs/nos-faq-r57/goldens/footprint.json
+94596a22a834afae7423c4c42d4ad4da48c052d7004df782293733a1976b37a3  .agent/memory/project/specs/nos-faq-r57/goldens/render-baseline.json
+a4df34cf94feb04f4d2d7c080c0dc4393c72ca5ee0f2ba49c18f1e55e9656b14  .agent/memory/project/specs/nos-faq-r57/goldens/spec.md
+deacc9544e92056b3f9bc1c044210927698b4831609f0043ff114498870faaed  .agent/memory/project/specs/nos-faq-r57/goldens/reference-trial.patch
