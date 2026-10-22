@@ -62,7 +62,7 @@ export function SocietiesClient({ societies, provinces }: SocietiesClientProps) 
           value={q}
           onChange={(e) => setParam('q', e.target.value)}
           placeholder={SEARCH_PLACEHOLDER}
-          className="w-full max-w-md rounded-sm border border-muted bg-parchment px-4 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none focus:border-ink/40"
+          className="w-full max-w-md rounded-sm border border-muted bg-parchment px-4 py-2.5 font-sans text-[16px] text-ink placeholder:text-muted outline-none focus:border-ink/40"
         />
       </div>
 

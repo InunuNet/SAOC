@@ -96,7 +96,7 @@ export function Footer() {
             submitLabel={FOOTER_BULLETIN.submitLabel}
             fieldsClassName="flex flex-wrap items-end gap-0"
             labelClassName="mb-1.5 block w-full font-mono text-[11px] tracking-[0.16em] text-ivory/65"
-            inputClassName="min-h-11 min-w-0 flex-1 bg-ivory/10 border border-ivory/20 text-ivory placeholder:text-ivory/40 font-sans text-[13px] px-3 py-2 focus:outline-none focus:border-ivory/40"
+            inputClassName="min-h-11 min-w-0 flex-1 bg-ivory/10 border border-ivory/20 text-ivory placeholder:text-ivory/40 font-sans text-[16px] px-3 py-2 focus:outline-none focus:border-ivory/40"
             buttonClassName="min-h-11 min-w-11 bg-accent text-primary-800 font-sans text-[13px] font-medium px-4 py-2 hover:bg-accent-soft transition-colors duration-150 shrink-0 disabled:opacity-60"
             statusClassName="mt-2 font-sans text-[13px] text-ivory/80 empty:hidden"
             errorClassName="mt-2 font-sans text-[13px] text-ivory"
