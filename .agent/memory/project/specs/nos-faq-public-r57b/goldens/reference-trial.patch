@@ -1,0 +1,123 @@
+diff --git a/app/(marketing)/national-show/faq/page.tsx b/app/(marketing)/national-show/faq/page.tsx
+index 23457b25..3dfca919 100644
+--- a/app/(marketing)/national-show/faq/page.tsx
++++ b/app/(marketing)/national-show/faq/page.tsx
+@@ -54,14 +54,6 @@ export default async function ShowFaqPage() {
+ 
+   // R77 #2: a public build shows only answered questions; with none left the page holds.
+   const hideUnanswered = withholdPlaceholderProse();
+-  // ONE derived list: what the page shows, in the order it shows it (ShowFaqList lays its
+-  // sections out by category, and keeps this order within each). The list and the FAQPage node
+-  // both come from it, so a future hide rule applies to both.
+-  const visibleFaqs = [...(faqs ?? [])]
+-    .filter((faq) => faq?.question && (!hideUnanswered || hasFaqAnswer(faq)))
+-    .sort((a, b) => categoryRank(a) - categoryRank(b));
+-  const holds = hideUnanswered && visibleFaqs.length === 0;
+-
+   // r57: two rows are answered from facts the site already publishes, so they cannot disagree with
+   // the page that publishes them. The cost row reads the tickets hub's own loader and labels; the
+   // venue row reads the show's venue.name (the fact strip's source), only while the committee has
+@@ -89,6 +81,23 @@ export default async function ShowFaqPage() {
+     };
+   }
+ 
++  // ONE derived list: what the page shows, in the order it shows it (ShowFaqList lays its
++  // sections out by category, and keeps this order within each). The list and the FAQPage node
++  // both come from it, so a future hide rule applies to both.
++  // r57b: a public build shows a row only when its answer has a source: the row is wired (read from
++  // a published fact) or the committee has confirmed it (its Sanity status). A section left with no
++  // row is not drawn by ShowFaqList. A preview build keeps every row.
++  const sortedFaqs = [...(faqs ?? [])]
++    .filter((faq) => faq?.question)
++    .sort((a, b) => categoryRank(a) - categoryRank(b));
++  const isSourced = (faq: ShowFaq) =>
++    Boolean(wired[faq._id]) || (faq.status === 'confirmed' && hasFaqAnswer(faq));
++  const visibleFaqs = sortedFaqs.filter(
++    (faq) => !hideUnanswered || (hasFaqAnswer(faq) && isSourced(faq))
++  );
++  const withheldCount = sortedFaqs.length - visibleFaqs.length;
++  const holds = hideUnanswered && visibleFaqs.length === 0;
++
+   // SEO: the entries the page presents as settled. A public build (`hideUnanswered`) renders no
+   // badges, so every answered entry there reads as settled; a beta build badges everything that
+   // is not 'confirmed'.
+@@ -115,14 +124,14 @@ export default async function ShowFaqPage() {
+         <HoldingState facts={facts} contentState="published" />
+       ) : (
+         <NosSection wrapClassName="[&_details_p]:max-w-[60ch]">
+-          {hideUnanswered ? null : (
++          {!hideUnanswered || withheldCount > 0 ? (
+             <ShowStatusLine
+               kind="confirmation"
+               status="pending"
+               pendingLabel={info?.pendingLabel}
+               researchLabel={info?.researchLabel}
+             />
+-          )}
++          ) : null}
+           <ShowFaqList
+             faqs={visibleFaqs}
+             pendingLabel={info?.pendingLabel}
+diff --git a/app/(marketing)/national-show/nos-structure.css b/app/(marketing)/national-show/nos-structure.css
+index 58a1ad33..350eef98 100644
+--- a/app/(marketing)/national-show/nos-structure.css
++++ b/app/(marketing)/national-show/nos-structure.css
+@@ -180,11 +180,20 @@
+   line-height: 1.5;
+   text-transform: uppercase;
+ }
+-/* r56: the exhibitor marker is sentence case with no tracking, like the email and PDF pills. */
++/* r56/r57b (H4): the status pills are sentence case with no tracking, like the email and PDF pills. Tracking is
++   !important in the base layer: an important declaration in an earlier layer outranks the chip-fit ladder's
++   !important utilities in ShowStatusLine (0.02-0.06em at 375-700px), which an unlayered !important cannot. */
++.nos-theme [data-confirmation-badge],
+ .nos-theme [data-exhibitor-marker] {
+   letter-spacing: normal;
+   text-transform: none;
+ }
++@layer base {
++  .nos-theme [data-confirmation-badge],
++  .nos-theme [data-exhibitor-marker] {
++    letter-spacing: normal !important;
++  }
++}
+ .nos-theme .nos-on-dark [data-confirmation-badge],
+ .nos-theme .nos-on-dark [data-exhibitor-marker] {
+   border-color: var(--ivory);
+@@ -758,11 +767,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
+ .nos-faq-answer {
+   padding: 0 clamp(20px, 3vw, 32px) 24px;
+ }
+-/* r57: the answer-panel marker reads in sentence case (the R19 pill above is uppercase). */
+-.nos-theme .nos-faq-answer [data-confirmation-badge] {
+-  letter-spacing: normal;
+-  text-transform: none;
+-}
+ 
+ /* F18-KEEPSAKE-START */
+ /* F18b (launch-weekend, v13 keepsake tickets): the ticket, the pool banner, the hero fan and the
+diff --git a/docs/nos-faq-public-r57b.md b/docs/nos-faq-public-r57b.md
+new file mode 100644
+index 00000000..fb957b91
+--- /dev/null
++++ b/docs/nos-faq-public-r57b.md
+@@ -0,0 +1,19 @@
++# nos-faq-public-r57b - public FAQ shows sourced rows only
++
++Round r57b (stacked on r57). Codi's ruling on owner question O4: a public build hides every FAQ row without a sourced answer, and any section left empty.
++
++## The sourced-row rule
++A row is sourced when it is **wired** (r57: answered from a published fact, keyed by showFaq `_id`) or its Sanity `status` is `confirmed`. Both are read from data; no row is named in the rule. Preview keeps every row.
++Evidence (Sanity read only, published perspective, 2026-10-22): of 14 rows, `showFaq-general-3` "When is the show?" is `confirmed`; the cost and venue rows are `pending` in Sanity but wired. The other 11 are `pending`.
++
++## Page-level notice
++One ShowStatusLine (the R11 marker, the Sanity `pendingLabel`), drawn once before the list when at least one row is withheld. No new copy.
++
++## JSON-LD
++The FAQPage node is built from the shown rows, so it lists only the sourced rows.
++
++## Owner flags
++Rows return to the public page as the committee confirms them in Sanity (status `confirmed`); nothing here writes Sanity.
++
++## Badge case (H4)
++The status pill reads in sentence case with normal tracking: one rule in nos-structure.css after the R19 block covers `[data-confirmation-badge]` and `[data-exhibitor-marker]`. r57's `.nos-faq-answer` rule is removed as redundant.

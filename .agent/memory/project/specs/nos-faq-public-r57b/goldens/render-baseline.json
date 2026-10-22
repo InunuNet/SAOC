@@ -1,0 +1,944 @@
+{
+  "faq:public@1280": {
+    "docH": 3597,
+    "overflowX": 0,
+    "outline": [
+      "H3 The show",
+      "H3 Visit",
+      "H3 Programme",
+      "H3 Exhibit & trade",
+      "H4 Tickets",
+      "H3 The show",
+      "H3 Visit",
+      "H3 Programme",
+      "H3 Exhibit & trade",
+      "H3 Tickets",
+      "H1 Frequently asked questions",
+      "H2 Getting there",
+      "H2 Tickets",
+      "H2 Accessibility",
+      "H2 Plant sales",
+      "H2 General",
+      "H2 Explore the show",
+      "H3 Visit",
+      "H3 Take part",
+      "H3 The show"
+    ],
+    "heroText": "Frequently asked questions",
+    "rows": [
+      {
+        "q": "How do I get to the show from Cape Town International Airport?",
+        "section": "faq-getting-there",
+        "summaryText": "How do I get to the show from Cape Town International Airport?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "The show is at Stellenbosch Flying Club, on the R44 at Stellenbosch Airfield in the Cape Winelands. Public transport options to the venue have not been confirmed. Detailed travel guidance for the venue will be added to the Plan your visit page once it is confirmed.",
+        "wired": []
+      },
+      {
+        "q": "Is there parking at the venue?",
+        "section": "faq-getting-there",
+        "summaryText": "Is there parking at the venue?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Parking arrangements have not been confirmed by the show committee. We will publish rates and directions once the booking is confirmed.",
+        "wired": []
+      },
+      {
+        "q": "Where exactly is the show being held?",
+        "section": "faq-getting-there",
+        "summaryText": "Where exactly is the show being held?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "The Hangar, Stellenbosch Flying Club",
+        "wired": [
+          {
+            "kind": "venue",
+            "text": "The Hangar, Stellenbosch Flying Club"
+          }
+        ]
+      },
+      {
+        "q": "How much does it cost to get in?",
+        "section": "faq-tickets",
+        "summaryText": "How much does it cost to get in?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Current prices are listed on the ticket page. They remain provisional until the council confirms them.VIP Ticket, R300Sunset Cocktails (Single), R800Weekend Pass (Early Bird), R360Early-Bird Exhibition Ticket, R120See ticket prices and book \u2192",
+        "wired": [
+          {
+            "kind": "prices",
+            "text": "VIP Ticket, R300Sunset Cocktails (Single), R800Weekend Pass (Early Bird), R360Early-Bird Exhibition Ticket, R120See ticket prices and book \u2192"
+          }
+        ]
+      },
+      {
+        "q": "Can I buy a ticket at the door?",
+        "section": "faq-tickets",
+        "summaryText": "Can I buy a ticket at the door?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Whether tickets will be sold at the door as well as in advance has not been confirmed.",
+        "wired": []
+      },
+      {
+        "q": "Are there concessions for pensioners, children or society members?",
+        "section": "faq-tickets",
+        "summaryText": "Are there concessions for pensioners, children or society members?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Yes \u2014 concession rates for pensioners and children, and a reduced rate for members of affiliated SAOC societies, are planned. The amounts are provisional until the council confirms them.",
+        "wired": []
+      },
+      {
+        "q": "Is the venue wheelchair accessible?",
+        "section": "faq-accessibility",
+        "summaryText": "Is the venue wheelchair accessible?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Accessibility specifics have not been confirmed. We will publish the confirmed detail, including accessible parking and assistance on request, once the committee supplies it.",
+        "wired": []
+      },
+      {
+        "q": "Are assistance dogs welcome?",
+        "section": "faq-accessibility",
+        "summaryText": "Are assistance dogs welcome?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "This has not been confirmed. Please contact us before the show so we can give you a definite answer.",
+        "wired": []
+      },
+      {
+        "q": "Can I buy plants at the show?",
+        "section": "faq-plant-sales",
+        "summaryText": "Can I buy plants at the show?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Plant sales are a normal part of a national show, but the sales arrangements for 2027 have not been confirmed.",
+        "wired": []
+      },
+      {
+        "q": "Can I leave plants I have bought somewhere while I carry on looking?",
+        "section": "faq-plant-sales",
+        "summaryText": "Can I leave plants I have bought somewhere while I carry on looking?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Cloakroom and plant-holding arrangements have not been confirmed. We expect a holding area will be available and will confirm here.",
+        "wired": []
+      },
+      {
+        "q": "Can I take plants I buy across a provincial or national border?",
+        "section": "faq-plant-sales",
+        "summaryText": "Can I take plants I buy across a provincial or national border?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Moving plants across borders can require permits, and the requirements depend on where you are travelling to. Check with the relevant authority well before the show. We will add specific guidance once the committee confirms which sellers will be present.",
+        "wired": []
+      },
+      {
+        "q": "May I take photographs?",
+        "section": "faq-general",
+        "summaryText": "May I take photographs?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "The photography policy has not been confirmed. Personal photography is normally welcome; tripods, flash near the benches and any commercial or press photography usually need prior arrangement.",
+        "wired": []
+      },
+      {
+        "q": "Will there be food and drink available?",
+        "section": "faq-general",
+        "summaryText": "Will there be food and drink available?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Catering arrangements have not been confirmed.",
+        "wired": []
+      },
+      {
+        "q": "When is the show?",
+        "section": "faq-general",
+        "summaryText": "When is the show?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Thursday 23 to Sunday 26 September 2027, confirmed by the show committee.",
+        "wired": []
+      }
+    ],
+    "pageMarkers": [],
+    "allMarkers": 0,
+    "sections": [
+      {
+        "id": "faq-getting-there",
+        "title": "Getting there",
+        "items": 3
+      },
+      {
+        "id": "faq-tickets",
+        "title": "Tickets",
+        "items": 3
+      },
+      {
+        "id": "faq-accessibility",
+        "title": "Accessibility",
+        "items": 2
+      },
+      {
+        "id": "faq-plant-sales",
+        "title": "Plant sales",
+        "items": 3
+      },
+      {
+        "id": "faq-general",
+        "title": "General",
+        "items": 3
+      }
+    ],
+    "chips": [
+      "#faq-getting-there",
+      "#faq-tickets",
+      "#faq-accessibility",
+      "#faq-plant-sales",
+      "#faq-general"
+    ],
+    "jsonld": [
+      "{\"@context\":\"https://schema.org\",\"@type\":\"FAQPage\",\"mainEntity\":[{\"@type\":\"Question\",\"name\":\"How do I get to the show from Cape Town International Airport?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"The show is at Stellenbosch Flying Club, on the R44 at Stellenbosch Airfield in the Cape Winelands. Public transport options to the venue have not been confirmed. Detailed travel guidance for the venue will be added to the Plan your visit page once it is confirmed.\"}},{\"@type\":\"Question\",\"name\":\"Is there parking at the venue?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Parking arrangements have not been confirmed by the show committee. We will publish rates and directions once the booking is confirmed.\"}},{\"@type\":\"Question\",\"name\":\"Where exactly is the show being held?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"At the hangar at Stellenbosch Flying Club, Stellenbosch Airfield, on the R44 in the Cape Winelands. On-site details such as the entrance to use, parking and accessibility are still being worked out and will be published here as they are settled.\"}},{\"@type\":\"Question\",\"name\":\"How much does it cost to get in?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Current prices are listed on the ticket page. They remain provisional until the council confirms them.\"}},{\"@type\":\"Question\",\"name\":\"Can I buy a ticket at the door?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Whether tickets will be sold at the door as well as in advance has not been confirmed.\"}},{\"@type\":\"Question\",\"name\":\"Are there concessions for pensioners, children or society members?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Yes \u2014 concession rates for pensioners and children, and a reduced rate for members of affiliated SAOC societies, are planned. The amounts are provisional until the council confirms them.\"}},{\"@type\":\"Question\",\"name\":\"Is the venue wheelchair accessible?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Accessibility specifics have not been confirmed. We will publish the confirmed detail, including accessible parking and assistance on request, once the committee supplies it.\"}},{\"@type\":\"Question\",\"name\":\"Are assistance dogs welcome?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"This has not been confirmed. Please contact us before the show so we can give you a definite answer.\"}},{\"@type\":\"Question\",\"name\":\"Can I buy plants at the show?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Plant sales are a normal part of a national show, but the sales arrangements for 2027 have not been confirmed.\"}},{\"@type\":\"Question\",\"name\":\"Can I leave plants I have bought somewhere while I carry on looking?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Cloakroom and plant-holding arrangements have not been confirmed. We expect a holding area will be available and will confirm here.\"}},{\"@type\":\"Question\",\"name\":\"Can I take plants I buy across a provincial or national border?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Moving plants across borders can require permits, and the requirements depend on where you are travelling to. Check with the relevant authority well before the show. We will add specific guidance once the committee confirms which sellers will be present.\"}},{\"@type\":\"Question\",\"name\":\"May I take photographs?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"The photography policy has not been confirmed. Personal photography is normally welcome; tripods, flash near the benches and any commercial or press photography usually need prior arrangement.\"}},{\"@type\":\"Question\",\"name\":\"Will there be food and drink available?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Catering arrangements have not been confirmed.\"}},{\"@type\":\"Question\",\"name\":\"When is the show?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Thursday 23 to Sunday 26 September 2027, confirmed by the show committee.\"}}]}"
+    ],
+    "axe": {}
+  },
+  "faq:public@390": {
+    "docH": 5306,
+    "overflowX": 0,
+    "outline": [
+      "H3 The show",
+      "H3 Visit",
+      "H3 Programme",
+      "H3 Exhibit & trade",
+      "H4 Tickets",
+      "H3 The show",
+      "H3 Visit",
+      "H3 Programme",
+      "H3 Exhibit & trade",
+      "H3 Tickets",
+      "H1 Frequently asked questions",
+      "H2 Getting there",
+      "H2 Tickets",
+      "H2 Accessibility",
+      "H2 Plant sales",
+      "H2 General",
+      "H2 Explore the show",
+      "H3 Visit",
+      "H3 Take part",
+      "H3 The show"
+    ],
+    "heroText": "Frequently asked questions",
+    "rows": [
+      {
+        "q": "How do I get to the show from Cape Town International Airport?",
+        "section": "faq-getting-there",
+        "summaryText": "How do I get to the show from Cape Town International Airport?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "The show is at Stellenbosch Flying Club, on the R44 at Stellenbosch Airfield in the Cape Winelands. Public transport options to the venue have not been confirmed. Detailed travel guidance for the venue will be added to the Plan your visit page once it is confirmed.",
+        "wired": []
+      },
+      {
+        "q": "Is there parking at the venue?",
+        "section": "faq-getting-there",
+        "summaryText": "Is there parking at the venue?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Parking arrangements have not been confirmed by the show committee. We will publish rates and directions once the booking is confirmed.",
+        "wired": []
+      },
+      {
+        "q": "Where exactly is the show being held?",
+        "section": "faq-getting-there",
+        "summaryText": "Where exactly is the show being held?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "The Hangar, Stellenbosch Flying Club",
+        "wired": [
+          {
+            "kind": "venue",
+            "text": "The Hangar, Stellenbosch Flying Club"
+          }
+        ]
+      },
+      {
+        "q": "How much does it cost to get in?",
+        "section": "faq-tickets",
+        "summaryText": "How much does it cost to get in?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Current prices are listed on the ticket page. They remain provisional until the council confirms them.VIP Ticket, R300Sunset Cocktails (Single), R800Weekend Pass (Early Bird), R360Early-Bird Exhibition Ticket, R120See ticket prices and book \u2192",
+        "wired": [
+          {
+            "kind": "prices",
+            "text": "VIP Ticket, R300Sunset Cocktails (Single), R800Weekend Pass (Early Bird), R360Early-Bird Exhibition Ticket, R120See ticket prices and book \u2192"
+          }
+        ]
+      },
+      {
+        "q": "Can I buy a ticket at the door?",
+        "section": "faq-tickets",
+        "summaryText": "Can I buy a ticket at the door?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Whether tickets will be sold at the door as well as in advance has not been confirmed.",
+        "wired": []
+      },
+      {
+        "q": "Are there concessions for pensioners, children or society members?",
+        "section": "faq-tickets",
+        "summaryText": "Are there concessions for pensioners, children or society members?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Yes \u2014 concession rates for pensioners and children, and a reduced rate for members of affiliated SAOC societies, are planned. The amounts are provisional until the council confirms them.",
+        "wired": []
+      },
+      {
+        "q": "Is the venue wheelchair accessible?",
+        "section": "faq-accessibility",
+        "summaryText": "Is the venue wheelchair accessible?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Accessibility specifics have not been confirmed. We will publish the confirmed detail, including accessible parking and assistance on request, once the committee supplies it.",
+        "wired": []
+      },
+      {
+        "q": "Are assistance dogs welcome?",
+        "section": "faq-accessibility",
+        "summaryText": "Are assistance dogs welcome?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "This has not been confirmed. Please contact us before the show so we can give you a definite answer.",
+        "wired": []
+      },
+      {
+        "q": "Can I buy plants at the show?",
+        "section": "faq-plant-sales",
+        "summaryText": "Can I buy plants at the show?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Plant sales are a normal part of a national show, but the sales arrangements for 2027 have not been confirmed.",
+        "wired": []
+      },
+      {
+        "q": "Can I leave plants I have bought somewhere while I carry on looking?",
+        "section": "faq-plant-sales",
+        "summaryText": "Can I leave plants I have bought somewhere while I carry on looking?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Cloakroom and plant-holding arrangements have not been confirmed. We expect a holding area will be available and will confirm here.",
+        "wired": []
+      },
+      {
+        "q": "Can I take plants I buy across a provincial or national border?",
+        "section": "faq-plant-sales",
+        "summaryText": "Can I take plants I buy across a provincial or national border?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Moving plants across borders can require permits, and the requirements depend on where you are travelling to. Check with the relevant authority well before the show. We will add specific guidance once the committee confirms which sellers will be present.",
+        "wired": []
+      },
+      {
+        "q": "May I take photographs?",
+        "section": "faq-general",
+        "summaryText": "May I take photographs?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "The photography policy has not been confirmed. Personal photography is normally welcome; tripods, flash near the benches and any commercial or press photography usually need prior arrangement.",
+        "wired": []
+      },
+      {
+        "q": "Will there be food and drink available?",
+        "section": "faq-general",
+        "summaryText": "Will there be food and drink available?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Catering arrangements have not been confirmed.",
+        "wired": []
+      },
+      {
+        "q": "When is the show?",
+        "section": "faq-general",
+        "summaryText": "When is the show?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Thursday 23 to Sunday 26 September 2027, confirmed by the show committee.",
+        "wired": []
+      }
+    ],
+    "pageMarkers": [],
+    "allMarkers": 0,
+    "sections": [
+      {
+        "id": "faq-getting-there",
+        "title": "Getting there",
+        "items": 3
+      },
+      {
+        "id": "faq-tickets",
+        "title": "Tickets",
+        "items": 3
+      },
+      {
+        "id": "faq-accessibility",
+        "title": "Accessibility",
+        "items": 2
+      },
+      {
+        "id": "faq-plant-sales",
+        "title": "Plant sales",
+        "items": 3
+      },
+      {
+        "id": "faq-general",
+        "title": "General",
+        "items": 3
+      }
+    ],
+    "chips": [
+      "#faq-getting-there",
+      "#faq-tickets",
+      "#faq-accessibility",
+      "#faq-plant-sales",
+      "#faq-general"
+    ],
+    "jsonld": [
+      "{\"@context\":\"https://schema.org\",\"@type\":\"FAQPage\",\"mainEntity\":[{\"@type\":\"Question\",\"name\":\"How do I get to the show from Cape Town International Airport?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"The show is at Stellenbosch Flying Club, on the R44 at Stellenbosch Airfield in the Cape Winelands. Public transport options to the venue have not been confirmed. Detailed travel guidance for the venue will be added to the Plan your visit page once it is confirmed.\"}},{\"@type\":\"Question\",\"name\":\"Is there parking at the venue?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Parking arrangements have not been confirmed by the show committee. We will publish rates and directions once the booking is confirmed.\"}},{\"@type\":\"Question\",\"name\":\"Where exactly is the show being held?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"At the hangar at Stellenbosch Flying Club, Stellenbosch Airfield, on the R44 in the Cape Winelands. On-site details such as the entrance to use, parking and accessibility are still being worked out and will be published here as they are settled.\"}},{\"@type\":\"Question\",\"name\":\"How much does it cost to get in?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Current prices are listed on the ticket page. They remain provisional until the council confirms them.\"}},{\"@type\":\"Question\",\"name\":\"Can I buy a ticket at the door?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Whether tickets will be sold at the door as well as in advance has not been confirmed.\"}},{\"@type\":\"Question\",\"name\":\"Are there concessions for pensioners, children or society members?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Yes \u2014 concession rates for pensioners and children, and a reduced rate for members of affiliated SAOC societies, are planned. The amounts are provisional until the council confirms them.\"}},{\"@type\":\"Question\",\"name\":\"Is the venue wheelchair accessible?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Accessibility specifics have not been confirmed. We will publish the confirmed detail, including accessible parking and assistance on request, once the committee supplies it.\"}},{\"@type\":\"Question\",\"name\":\"Are assistance dogs welcome?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"This has not been confirmed. Please contact us before the show so we can give you a definite answer.\"}},{\"@type\":\"Question\",\"name\":\"Can I buy plants at the show?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Plant sales are a normal part of a national show, but the sales arrangements for 2027 have not been confirmed.\"}},{\"@type\":\"Question\",\"name\":\"Can I leave plants I have bought somewhere while I carry on looking?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Cloakroom and plant-holding arrangements have not been confirmed. We expect a holding area will be available and will confirm here.\"}},{\"@type\":\"Question\",\"name\":\"Can I take plants I buy across a provincial or national border?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Moving plants across borders can require permits, and the requirements depend on where you are travelling to. Check with the relevant authority well before the show. We will add specific guidance once the committee confirms which sellers will be present.\"}},{\"@type\":\"Question\",\"name\":\"May I take photographs?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"The photography policy has not been confirmed. Personal photography is normally welcome; tripods, flash near the benches and any commercial or press photography usually need prior arrangement.\"}},{\"@type\":\"Question\",\"name\":\"Will there be food and drink available?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Catering arrangements have not been confirmed.\"}},{\"@type\":\"Question\",\"name\":\"When is the show?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Thursday 23 to Sunday 26 September 2027, confirmed by the show committee.\"}}]}"
+    ],
+    "axe": {}
+  },
+  "faq:preview@1280": {
+    "docH": 3633,
+    "overflowX": 0,
+    "outline": [
+      "H3 The show",
+      "H3 Visit",
+      "H3 Programme",
+      "H3 Exhibit & trade",
+      "H4 Tickets",
+      "H3 The show",
+      "H3 Visit",
+      "H3 Programme",
+      "H3 Exhibit & trade",
+      "H3 Tickets",
+      "H1 Frequently asked questions",
+      "H2 Getting there",
+      "H2 Tickets",
+      "H2 Accessibility",
+      "H2 Plant sales",
+      "H2 General",
+      "H2 Explore the show",
+      "H3 Visit",
+      "H3 Take part",
+      "H3 The show"
+    ],
+    "heroText": "Frequently asked questionsAnswers to what visitors ask us most. Many of these depend on details the show committee has not yet confirmed; those answers are marked as such and will be updated as the arrangements firm up.",
+    "rows": [
+      {
+        "q": "How do I get to the show from Cape Town International Airport?",
+        "section": "faq-getting-there",
+        "summaryText": "How do I get to the show from Cape Town International Airport?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "The show is at Stellenbosch Flying Club, on the R44 at Stellenbosch Airfield in the Cape Winelands. Public transport options to the venue have not been confirmed. Detailed travel guidance for the venue will be added to the Plan your visit page once it is confirmed.",
+        "wired": []
+      },
+      {
+        "q": "Is there parking at the venue?",
+        "section": "faq-getting-there",
+        "summaryText": "Is there parking at the venue?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "Parking arrangements have not been confirmed by the show committee. We will publish rates and directions once the booking is confirmed.",
+        "wired": []
+      },
+      {
+        "q": "Where exactly is the show being held?",
+        "section": "faq-getting-there",
+        "summaryText": "Where exactly is the show being held?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "The Hangar, Stellenbosch Flying Club",
+        "wired": [
+          {
+            "kind": "venue",
+            "text": "The Hangar, Stellenbosch Flying Club"
+          }
+        ]
+      },
+      {
+        "q": "How much does it cost to get in?",
+        "section": "faq-tickets",
+        "summaryText": "How much does it cost to get in?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Current prices are listed on the ticket page. They remain provisional until the council confirms them.VIP Ticket, R300Sunset Cocktails (Single), R800Weekend Pass (Early Bird), R360Early-Bird Exhibition Ticket, R120See ticket prices and book \u2192",
+        "wired": [
+          {
+            "kind": "prices",
+            "text": "VIP Ticket, R300Sunset Cocktails (Single), R800Weekend Pass (Early Bird), R360Early-Bird Exhibition Ticket, R120See ticket prices and book \u2192"
+          }
+        ]
+      },
+      {
+        "q": "Can I buy a ticket at the door?",
+        "section": "faq-tickets",
+        "summaryText": "Can I buy a ticket at the door?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "Whether tickets will be sold at the door as well as in advance has not been confirmed.",
+        "wired": []
+      },
+      {
+        "q": "Are there concessions for pensioners, children or society members?",
+        "section": "faq-tickets",
+        "summaryText": "Are there concessions for pensioners, children or society members?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "Yes \u2014 concession rates for pensioners and children, and a reduced rate for members of affiliated SAOC societies, are planned. The amounts are provisional until the council confirms them.",
+        "wired": []
+      },
+      {
+        "q": "Is the venue wheelchair accessible?",
+        "section": "faq-accessibility",
+        "summaryText": "Is the venue wheelchair accessible?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "Accessibility specifics have not been confirmed. We will publish the confirmed detail, including accessible parking and assistance on request, once the committee supplies it.",
+        "wired": []
+      },
+      {
+        "q": "Are assistance dogs welcome?",
+        "section": "faq-accessibility",
+        "summaryText": "Are assistance dogs welcome?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "This has not been confirmed. Please contact us before the show so we can give you a definite answer.",
+        "wired": []
+      },
+      {
+        "q": "Can I buy plants at the show?",
+        "section": "faq-plant-sales",
+        "summaryText": "Can I buy plants at the show?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "Plant sales are a normal part of a national show, but the sales arrangements for 2027 have not been confirmed.",
+        "wired": []
+      },
+      {
+        "q": "Can I leave plants I have bought somewhere while I carry on looking?",
+        "section": "faq-plant-sales",
+        "summaryText": "Can I leave plants I have bought somewhere while I carry on looking?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "Cloakroom and plant-holding arrangements have not been confirmed. We expect a holding area will be available and will confirm here.",
+        "wired": []
+      },
+      {
+        "q": "Can I take plants I buy across a provincial or national border?",
+        "section": "faq-plant-sales",
+        "summaryText": "Can I take plants I buy across a provincial or national border?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "Moving plants across borders can require permits, and the requirements depend on where you are travelling to. Check with the relevant authority well before the show. We will add specific guidance once the committee confirms which sellers will be present.",
+        "wired": []
+      },
+      {
+        "q": "May I take photographs?",
+        "section": "faq-general",
+        "summaryText": "May I take photographs?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "The photography policy has not been confirmed. Personal photography is normally welcome; tripods, flash near the benches and any commercial or press photography usually need prior arrangement.",
+        "wired": []
+      },
+      {
+        "q": "Will there be food and drink available?",
+        "section": "faq-general",
+        "summaryText": "Will there be food and drink available?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "Catering arrangements have not been confirmed.",
+        "wired": []
+      },
+      {
+        "q": "When is the show?",
+        "section": "faq-general",
+        "summaryText": "When is the show?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Thursday 23 to Sunday 26 September 2027, confirmed by the show committee.",
+        "wired": []
+      }
+    ],
+    "pageMarkers": [
+      {
+        "text": "\u203bTo be confirmed by the show committeeTo be confirmed",
+        "tt": "uppercase",
+        "beforeList": true
+      }
+    ],
+    "allMarkers": 12,
+    "sections": [
+      {
+        "id": "faq-getting-there",
+        "title": "Getting there",
+        "items": 3
+      },
+      {
+        "id": "faq-tickets",
+        "title": "Tickets",
+        "items": 3
+      },
+      {
+        "id": "faq-accessibility",
+        "title": "Accessibility",
+        "items": 2
+      },
+      {
+        "id": "faq-plant-sales",
+        "title": "Plant sales",
+        "items": 3
+      },
+      {
+        "id": "faq-general",
+        "title": "General",
+        "items": 3
+      }
+    ],
+    "chips": [
+      "#faq-getting-there",
+      "#faq-tickets",
+      "#faq-accessibility",
+      "#faq-plant-sales",
+      "#faq-general"
+    ],
+    "jsonld": [
+      "{\"@context\":\"https://schema.org\",\"@type\":\"FAQPage\",\"mainEntity\":[{\"@type\":\"Question\",\"name\":\"When is the show?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Thursday 23 to Sunday 26 September 2027, confirmed by the show committee.\"}}]}"
+    ],
+    "axe": {}
+  },
+  "faq:preview@390": {
+    "docH": 5517,
+    "overflowX": 0,
+    "outline": [
+      "H3 The show",
+      "H3 Visit",
+      "H3 Programme",
+      "H3 Exhibit & trade",
+      "H4 Tickets",
+      "H3 The show",
+      "H3 Visit",
+      "H3 Programme",
+      "H3 Exhibit & trade",
+      "H3 Tickets",
+      "H1 Frequently asked questions",
+      "H2 Getting there",
+      "H2 Tickets",
+      "H2 Accessibility",
+      "H2 Plant sales",
+      "H2 General",
+      "H2 Explore the show",
+      "H3 Visit",
+      "H3 Take part",
+      "H3 The show"
+    ],
+    "heroText": "Frequently asked questionsAnswers to what visitors ask us most. Many of these depend on details the show committee has not yet confirmed; those answers are marked as such and will be updated as the arrangements firm up.",
+    "rows": [
+      {
+        "q": "How do I get to the show from Cape Town International Airport?",
+        "section": "faq-getting-there",
+        "summaryText": "How do I get to the show from Cape Town International Airport?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "The show is at Stellenbosch Flying Club, on the R44 at Stellenbosch Airfield in the Cape Winelands. Public transport options to the venue have not been confirmed. Detailed travel guidance for the venue will be added to the Plan your visit page once it is confirmed.",
+        "wired": []
+      },
+      {
+        "q": "Is there parking at the venue?",
+        "section": "faq-getting-there",
+        "summaryText": "Is there parking at the venue?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "Parking arrangements have not been confirmed by the show committee. We will publish rates and directions once the booking is confirmed.",
+        "wired": []
+      },
+      {
+        "q": "Where exactly is the show being held?",
+        "section": "faq-getting-there",
+        "summaryText": "Where exactly is the show being held?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "The Hangar, Stellenbosch Flying Club",
+        "wired": [
+          {
+            "kind": "venue",
+            "text": "The Hangar, Stellenbosch Flying Club"
+          }
+        ]
+      },
+      {
+        "q": "How much does it cost to get in?",
+        "section": "faq-tickets",
+        "summaryText": "How much does it cost to get in?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Current prices are listed on the ticket page. They remain provisional until the council confirms them.VIP Ticket, R300Sunset Cocktails (Single), R800Weekend Pass (Early Bird), R360Early-Bird Exhibition Ticket, R120See ticket prices and book \u2192",
+        "wired": [
+          {
+            "kind": "prices",
+            "text": "VIP Ticket, R300Sunset Cocktails (Single), R800Weekend Pass (Early Bird), R360Early-Bird Exhibition Ticket, R120See ticket prices and book \u2192"
+          }
+        ]
+      },
+      {
+        "q": "Can I buy a ticket at the door?",
+        "section": "faq-tickets",
+        "summaryText": "Can I buy a ticket at the door?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "Whether tickets will be sold at the door as well as in advance has not been confirmed.",
+        "wired": []
+      },
+      {
+        "q": "Are there concessions for pensioners, children or society members?",
+        "section": "faq-tickets",
+        "summaryText": "Are there concessions for pensioners, children or society members?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "Yes \u2014 concession rates for pensioners and children, and a reduced rate for members of affiliated SAOC societies, are planned. The amounts are provisional until the council confirms them.",
+        "wired": []
+      },
+      {
+        "q": "Is the venue wheelchair accessible?",
+        "section": "faq-accessibility",
+        "summaryText": "Is the venue wheelchair accessible?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "Accessibility specifics have not been confirmed. We will publish the confirmed detail, including accessible parking and assistance on request, once the committee supplies it.",
+        "wired": []
+      },
+      {
+        "q": "Are assistance dogs welcome?",
+        "section": "faq-accessibility",
+        "summaryText": "Are assistance dogs welcome?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "This has not been confirmed. Please contact us before the show so we can give you a definite answer.",
+        "wired": []
+      },
+      {
+        "q": "Can I buy plants at the show?",
+        "section": "faq-plant-sales",
+        "summaryText": "Can I buy plants at the show?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "Plant sales are a normal part of a national show, but the sales arrangements for 2027 have not been confirmed.",
+        "wired": []
+      },
+      {
+        "q": "Can I leave plants I have bought somewhere while I carry on looking?",
+        "section": "faq-plant-sales",
+        "summaryText": "Can I leave plants I have bought somewhere while I carry on looking?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "Cloakroom and plant-holding arrangements have not been confirmed. We expect a holding area will be available and will confirm here.",
+        "wired": []
+      },
+      {
+        "q": "Can I take plants I buy across a provincial or national border?",
+        "section": "faq-plant-sales",
+        "summaryText": "Can I take plants I buy across a provincial or national border?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "Moving plants across borders can require permits, and the requirements depend on where you are travelling to. Check with the relevant authority well before the show. We will add specific guidance once the committee confirms which sellers will be present.",
+        "wired": []
+      },
+      {
+        "q": "May I take photographs?",
+        "section": "faq-general",
+        "summaryText": "May I take photographs?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "The photography policy has not been confirmed. Personal photography is normally welcome; tripods, flash near the benches and any commercial or press photography usually need prior arrangement.",
+        "wired": []
+      },
+      {
+        "q": "Will there be food and drink available?",
+        "section": "faq-general",
+        "summaryText": "Will there be food and drink available?",
+        "summaryBadges": 0,
+        "panelBadges": [
+          {
+            "text": "\u203bTo be confirmed by the show committee",
+            "tt": "none"
+          }
+        ],
+        "answerText": "Catering arrangements have not been confirmed.",
+        "wired": []
+      },
+      {
+        "q": "When is the show?",
+        "section": "faq-general",
+        "summaryText": "When is the show?",
+        "summaryBadges": 0,
+        "panelBadges": [],
+        "answerText": "Thursday 23 to Sunday 26 September 2027, confirmed by the show committee.",
+        "wired": []
+      }
+    ],
+    "pageMarkers": [
+      {
+        "text": "\u203bTo be confirmed by the show committeeTo be confirmed",
+        "tt": "uppercase",
+        "beforeList": true
+      }
+    ],
+    "allMarkers": 12,
+    "sections": [
+      {
+        "id": "faq-getting-there",
+        "title": "Getting there",
+        "items": 3
+      },
+      {
+        "id": "faq-tickets",
+        "title": "Tickets",
+        "items": 3
+      },
+      {
+        "id": "faq-accessibility",
+        "title": "Accessibility",
+        "items": 2
+      },
+      {
+        "id": "faq-plant-sales",
+        "title": "Plant sales",
+        "items": 3
+      },
+      {
+        "id": "faq-general",
+        "title": "General",
+        "items": 3
+      }
+    ],
+    "chips": [
+      "#faq-getting-there",
+      "#faq-tickets",
+      "#faq-accessibility",
+      "#faq-plant-sales",
+      "#faq-general"
+    ],
+    "jsonld": [
+      "{\"@context\":\"https://schema.org\",\"@type\":\"FAQPage\",\"mainEntity\":[{\"@type\":\"Question\",\"name\":\"When is the show?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"Thursday 23 to Sunday 26 September 2027, confirmed by the show committee.\"}}]}"
+    ],
+    "axe": {}
+  }
+}
