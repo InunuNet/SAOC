@@ -113,7 +113,9 @@
 @keyframes nd-in { from { opacity: 0; transform: translateY(-8px); } }
 
 /* Footer: SAOC's footer content and structure on royal, the supplied reversed NOS lockup in the brand slot. */
-.nf { background: var(--nc-royal); color: var(--nc-lilac); font-family: var(--nc-sans); padding-bottom: env(safe-area-inset-bottom, 0px); }
+/* rFT (Codi P2 2026-10-22): a 1px full-bleed top rule in the .nf-base rule colour, drawn inset so the footer gains no height; forced colours drop shadows, so there it is a border. */
+.nf { background: var(--nc-royal); color: var(--nc-lilac); font-family: var(--nc-sans); padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: inset 0 1px 0 rgba(210, 203, 232, 0.2); }
+@media (forced-colors: active) { .nf { border-top: 1px solid CanvasText; } }
 .nf :focus-visible { outline: 2px solid var(--nc-ground); outline-offset: 3px; border-radius: 4px; }
 .nf ::selection { background: var(--nc-gold); color: var(--nc-royal); }
 /* r20 F3 (Codi FINAL): the lockup in the SAOC footer's brand column (FOOTER_LAYOUT), 248px, never wider than the column. */
