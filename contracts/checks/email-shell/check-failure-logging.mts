@@ -25,6 +25,7 @@ const hostileName = Object.create(Error.prototype, {
 });
 const LEAKY_NAME = 'jane.doe@example.invalid sk_live_TOKEN123';
 const leakyNameError = Object.assign(new Error('x'), { name: LEAKY_NAME });
+const classNamedError = Object.assign(new Error('x'), { name: 'CustomerSecretError' });
 const hostileProxy = new Proxy(
   {},
   {
@@ -65,6 +66,7 @@ for (const [label, thrown] of [
   ['non-Error with throwing toString', hostileNonError],
   ['Error with throwing name getter', hostileName],
   ['Error whose name carries an email and a token', leakyNameError],
+  ['Error named like a class (CustomerSecretError)', classNamedError],
   ['Proxy that throws on every trap', hostileProxy],
 ] as const) {
   const sent: Array<{ attachments?: Array<{ contentType: string }> }> = [];
@@ -85,6 +87,8 @@ for (const [label, thrown] of [
   if (run.logs.length === 0) fail(`${label}: failure was not logged`);
   if (run.logs.some((l) => l.includes(CANARY) || l.includes('buyer@'))) fail(`${label}: log leaked the error message`);
   if (run.logs.some((l) => l.includes('jane.doe') || l.includes('sk_live'))) fail(`${label}: log leaked the error name`);
+  if (thrown === classNamedError && !run.logs.some((l) => l.includes('"errorType":"Error"'))) fail(`${label}: label is not the plain "Error"`);
+  if (run.logs.some((l) => l.includes('CustomerSecret'))) fail(`${label}: log leaked the error name`);
   if (thrown === leakyNameError && !run.logs.some((l) => l.includes('"errorType":"Error"'))) fail(`${label}: label is not the plain "Error"`);
 }
 
