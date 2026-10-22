@@ -1,0 +1,808 @@
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+
+import fontkit from '@pdf-lib/fontkit';
+import {
+  PDFDocument,
+  PDFFont,
+  PDFImage,
+  PDFPage,
+  rgb,
+  setCharacterSpacing,
+  type Color,
+} from 'pdf-lib';
+import { create as createQr } from 'qrcode';
+
+/**
+ * ticket-pdf (F1) — the NOS A4 ticket, one page per position, drawn at explicit coordinates.
+ * Layout, colours and measures follow goldens/layout-spec.md (Codi's ruling wins over the
+ * artifact). All text is real embedded text (Fraunces + Karla, never a standard-14 font); the QR
+ * is vector rectangles, so it stays crisp and decodes from print. No purchaser or payment data
+ * ever reaches this module: its input is only what the confirmation page already shows.
+ */
+
+export interface TicketPdfSchedule {
+  eyebrow: string | null;
+  numeral: string | null;
+  dateText: string | null;
+  timeText: string | null;
+}
+
+export interface TicketPdfTime {
+  label: string;
+  value: string | null;
+}
+
+export interface TicketPdfPosition {
+  bookingRef: string;
+  attendeeName: string;
+  ticketType: string;
+  /** The Sanity ticket-type slug the schedule was resolved from. */
+  slug?: string;
+  schedule?: TicketPdfSchedule | null;
+  timesHeading?: string | null;
+  times?: TicketPdfTime[] | null;
+}
+
+export interface TicketPdfEmergencyContact {
+  number: string;
+  label: string;
+}
+
+export interface TicketPdfVisit {
+  pendingLabel?: string | null;
+  venueName: string | null;
+  venueAddress: string | null;
+  venueParking: string | null;
+  showDates: string | null;
+  showUrl: string | null;
+  emergency: TicketPdfEmergencyContact[];
+  onSiteContact: string | null;
+  organiser: string | null;
+  showOffice: string | null;
+  questionsEmail: string | null;
+  openingTimes?: TicketPdfTime[] | null;
+}
+
+export interface TicketPdfInput {
+  orderReference?: string | null;
+  positions: TicketPdfPosition[];
+  visit: TicketPdfVisit;
+}
+
+// ---- units and page ----
+const PT_PER_MM = 72 / 25.4;
+const A4_WIDTH_MM = 210;
+const A4_HEIGHT_MM = 297;
+const PAGE_WIDTH = 595.28;
+const PAGE_HEIGHT = 841.89;
+const mm = (value: number): number => value * PT_PER_MM;
+
+// ---- colour tokens (layout-spec.md) ----
+const hex = (value: string): Color =>
+  rgb(
+    parseInt(value.slice(1, 3), 16) / 255,
+    parseInt(value.slice(3, 5), 16) / 255,
+    parseInt(value.slice(5, 7), 16) / 255
+  );
+const ROYAL = hex('#211a57');
+const GOLD_100 = hex('#fbfaf0');
+const GOLD_200 = hex('#f3f2d6');
+const INK = hex('#3a3654');
+const MUTED = hex('#6a6780');
+const OLIVE = hex('#a7a841');
+const RULE = hex('#e3e1c9');
+const WHITE = hex('#ffffff');
+const BLACK = hex('#000000');
+const BAND_TEXT = GOLD_200; // text on the royal header band
+
+// ---- copy that already exists elsewhere on the site (allowed-strings.txt) ----
+const DEFAULT_PENDING_LABEL = 'To be confirmed';
+const DEFAULT_TIMES_HEADING = 'Opening times';
+const INSTRUCTION = 'Present this ticket at the door for check in.';
+const FOOTER_REG = 'REG# 1978/004040/08 · NPO 043-901';
+const FOOTER_LINE = 'South African Orchid Council — saoc.co.za';
+
+// ---- layout measures, mm from the top-left (layout-spec.md, Codi's artifact) ----
+const MARGIN_X = 13.9;
+const RIGHT_X = 196;
+const CONTENT_WIDTH = RIGHT_X - MARGIN_X;
+const HEADER_HEIGHT = 29.8;
+const HEADER_LOGO_WIDTH = 70.3;
+const CARD_TOP = 40;
+const CARD_BOTTOM = 143.9;
+const CARD_RADIUS = 3.7;
+const PERFORATION_X = 108.3;
+const STUB_TEXT_X = 22.9;
+const QR_MODULE_AREA_MM = 55;
+const QR_TOP = 58.4;
+const INSTRUCTION_GAP = 8;
+const VISIT_OFFSET = 14;
+const TIMES_VALUE_WIDTH = 41; // from the value column to the show-dates column gutter
+const VISIT_HEADING_Y = 155.5 + VISIT_OFFSET;
+const BAND_TRACKING = 0.14;
+const REF_TRACKING = 0.08;
+const ATTENDEE_NAME_SIZE = 12;
+const ATTENDEE_NAME_MIN_SIZE = 9;
+const ATTENDEE_NAME_PREFERRED_LINES = 2;
+const ATTENDEE_NAME_MAX_LINES = 4; // fits the empty stub below the name; ellipsis only beyond this
+const ATTENDEE_NAME_Y = 115.5;
+const ATTENDEE_NAME_PITCH = 5.2;
+const HIDDEN_TEXT_SIZE = 3; // invisible full-name copy: tiny so it never collides with visible text
+const HIDDEN_LINE_PITCH = 1.2;
+const HIDDEN_NAME_Y = ATTENDEE_NAME_Y + ATTENDEE_NAME_MAX_LINES * ATTENDEE_NAME_PITCH;
+const MIN_SMALL_CAPS_SIZE = 7; // smallest caps/pill text printed
+const PILL_HEIGHT = 4.4;
+const PILL_LINE_PITCH = 3;
+const ROW_PITCH = 7;
+const PILL_PAD_X = 2.4;
+const FOOTNOTE_SIZE = 9;
+const FOOTNOTE_Y = 256;
+const FOOTNOTE_LINE_PITCH = 4.6;
+const FOOTER_RULE_Y = 265.5;
+const FOOTER_MARK_TOP = 268.5;
+const FOOTER_TEXT_Y = 272.5;
+const FOOTER_LINE_PITCH = 4.6;
+const HEADER_LOGO_LEFT_PAD = 192 / 4108; // transparent left margin of the logo file, as a fraction of its width
+const FOOTER_MARK_HEIGHT = 16;
+const FONT_DIR = 'lib/ticket-pdf-assets';
+
+interface Fonts {
+  display: PDFFont;
+  bold: PDFFont;
+  body: PDFFont;
+}
+
+interface Logos {
+  horizontal: PDFImage;
+  vertical: PDFImage;
+}
+
+interface Ctx {
+  page: PDFPage;
+  fonts: Fonts;
+  logos: Logos;
+  pendingLabel: string;
+}
+
+interface TextOptions {
+  x: number;
+  y: number;
+  font: PDFFont;
+  size: number;
+  color: Color;
+  tracking?: number;
+  align?: 'left' | 'right' | 'center';
+  maxWidth?: number;
+}
+
+const assetBytes = new Map<string, Promise<Buffer>>();
+
+function readAsset(relative: string): Promise<Buffer> {
+  let cached = assetBytes.get(relative);
+  if (!cached) {
+    cached = readFile(path.join(process.cwd(), FONT_DIR, relative));
+    assetBytes.set(relative, cached);
+  }
+  return cached;
+}
+
+// ---- primitives ----
+
+function textWidthPt(text: string, font: PDFFont, size: number, tracking: number): number {
+  return font.widthOfTextAtSize(text, size) + tracking * size * Math.max(text.length - 1, 0);
+}
+
+function drawText(ctx: Ctx, text: string, options: TextOptions): number {
+  const { font, color, x, y, align = 'left', maxWidth } = options;
+  const tracking = options.tracking ?? 0;
+  let size = options.size;
+  if (maxWidth !== undefined) {
+    while (size > 5 && textWidthPt(text, font, size, tracking) > mm(maxWidth)) size -= 0.25;
+  }
+  const width = textWidthPt(text, font, size, tracking);
+  const left = align === 'left' ? mm(x) : align === 'right' ? mm(x) - width : mm(x) - width / 2;
+  if (tracking) ctx.page.pushOperators(setCharacterSpacing(tracking * size));
+  ctx.page.drawText(text, { x: left, y: PAGE_HEIGHT - mm(y), font, size, color });
+  if (tracking) ctx.page.pushOperators(setCharacterSpacing(0));
+  return width / PT_PER_MM;
+}
+
+function fillRect(ctx: Ctx, x: number, y: number, w: number, h: number, color: Color): void {
+  ctx.page.drawRectangle({
+    x: mm(x),
+    y: PAGE_HEIGHT - mm(y + h),
+    width: mm(w),
+    height: mm(h),
+    color,
+  });
+}
+
+/** Rounded rectangle as an SVG path in pt, y-down; radii: top-left, top-right, bottom-right, bottom-left. */
+function roundedPath(x: number, y: number, w: number, h: number, radii: number[]): string {
+  const [tl, tr, br, bl] = radii.map(mm);
+  const [left, top, width, height] = [mm(x), mm(y), mm(w), mm(h)];
+  const arc = (r: number, dx: number, dy: number) =>
+    r > 0 ? `A ${r} ${r} 0 0 1 ${left + dx} ${top + dy}` : `L ${left + dx} ${top + dy}`;
+  return [
+    `M ${left + tl} ${top}`,
+    `L ${left + width - tr} ${top}`,
+    arc(tr, width, tr),
+    `L ${left + width} ${top + height - br}`,
+    arc(br, width - br, height),
+    `L ${left + bl} ${top + height}`,
+    arc(bl, 0, height - bl),
+    `L ${left} ${top + tl}`,
+    arc(tl, tl, 0),
+    'Z',
+  ].join(' ');
+}
+
+function fillRounded(
+  ctx: Ctx,
+  box: [number, number, number, number],
+  radii: number[],
+  color: Color,
+  border?: Color
+): void {
+  ctx.page.drawSvgPath(roundedPath(...box, radii), {
+    x: 0,
+    y: PAGE_HEIGHT,
+    color,
+    ...(border ? { borderColor: border, borderWidth: 0.5 } : {}),
+  });
+}
+
+function dashedLine(
+  ctx: Ctx,
+  from: [number, number],
+  to: [number, number],
+  color: Color,
+  dash: [number, number]
+): void {
+  ctx.page.drawLine({
+    start: { x: mm(from[0]), y: PAGE_HEIGHT - mm(from[1]) },
+    end: { x: mm(to[0]), y: PAGE_HEIGHT - mm(to[1]) },
+    thickness: 0.5,
+    color,
+    dashArray: [mm(dash[0]), mm(dash[1])],
+  });
+}
+
+function wrap(text: string, font: PDFFont, size: number, maxWidthMm: number): string[] {
+  const lines: string[] = [];
+  let line = '';
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (line && font.widthOfTextAtSize(candidate, size) > mm(maxWidthMm)) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function drawWrapped(
+  ctx: Ctx,
+  text: string,
+  at: { x: number; y: number; maxWidth: number; maxLines: number; lineHeight: number },
+  size: number,
+  color: Color = INK
+): number {
+  const lines = wrap(text, ctx.fonts.body, size, at.maxWidth).slice(0, at.maxLines);
+  lines.forEach((line, i) =>
+    drawText(ctx, line, {
+      x: at.x,
+      y: at.y + i * at.lineHeight,
+      font: ctx.fonts.body,
+      size,
+      color,
+    })
+  );
+  return at.y + Math.max(lines.length - 1, 0) * at.lineHeight;
+}
+
+/** Wraps a pill label (drawn as written, untracked) into lines no wider than `maxMm`; a word is never split or cut. */
+function wrapPillLabel(ctx: Ctx, label: string, maxMm: number): string[] {
+  const widthMm = (text: string) =>
+    textWidthPt(text, ctx.fonts.bold, MIN_SMALL_CAPS_SIZE, 0) / PT_PER_MM;
+  const lines: string[] = [];
+  let line = '';
+  for (const word of label.split(/\s+/).filter(Boolean)) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (line && widthMm(candidate) > maxMm) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+/**
+ * Outlined "To be confirmed" pill (the single unknown-value marker). `top` is the pill's top edge.
+ * A long label wraps to extra lines inside the outline instead of overflowing `maxWidth` (mm);
+ * the wording is never shortened. Returns the pill's height in mm.
+ */
+function drawPill(ctx: Ctx, x: number, top: number, maxWidth: number): number {
+  const label = ctx.pendingLabel;
+  const lines = wrapPillLabel(ctx, label, maxWidth - PILL_PAD_X * 2);
+  const height = PILL_HEIGHT + (lines.length - 1) * PILL_LINE_PITCH;
+  const textWidth = Math.max(
+    ...lines.map((line) => textWidthPt(line, ctx.fonts.bold, MIN_SMALL_CAPS_SIZE, 0) / PT_PER_MM)
+  );
+  const radius = Math.min(height / 2, PILL_HEIGHT / 2 + (lines.length - 1) * 0.8);
+  ctx.page.drawSvgPath(roundedPath(x, top, textWidth + PILL_PAD_X * 2, height, Array(4).fill(radius)), {
+    x: 0,
+    y: PAGE_HEIGHT,
+    borderColor: ROYAL,
+    borderWidth: 0.5,
+  });
+  lines.forEach((line, i) =>
+    drawText(ctx, line, {
+      x: x + PILL_PAD_X,
+      y: top + PILL_HEIGHT / 2 + 0.85 + i * PILL_LINE_PITCH,
+      font: ctx.fonts.bold,
+      size: MIN_SMALL_CAPS_SIZE,
+      color: ROYAL,
+    })
+  );
+  return height;
+}
+
+function caps(ctx: Ctx, text: string, x: number, y: number, color: Color, size = 7.5): void {
+  drawText(ctx, text.toUpperCase(), {
+    x,
+    y,
+    font: ctx.fonts.bold,
+    size,
+    color,
+    tracking: BAND_TRACKING,
+  });
+}
+
+// ---- header ----
+
+function drawHeader(ctx: Ctx, index: number, total: number): void {
+  fillRect(ctx, 0, 0, A4_WIDTH_MM, HEADER_HEIGHT, ROYAL);
+  const { width, height } = ctx.logos.horizontal;
+  const logoHeightMm = (HEADER_LOGO_WIDTH * height) / width;
+  ctx.page.drawImage(ctx.logos.horizontal, {
+    x: mm(MARGIN_X - HEADER_LOGO_LEFT_PAD * HEADER_LOGO_WIDTH),
+    y: PAGE_HEIGHT - mm((HEADER_HEIGHT + logoHeightMm) / 2),
+    width: mm(HEADER_LOGO_WIDTH),
+    height: mm(logoHeightMm),
+  });
+  drawText(ctx, 'ADMIT ONE', {
+    x: RIGHT_X,
+    y: 11.5,
+    font: ctx.fonts.bold,
+    size: 7.5,
+    color: BAND_TEXT,
+    tracking: BAND_TRACKING,
+    align: 'right',
+  });
+  drawText(ctx, `Ticket ${index + 1} of ${total}`, {
+    x: RIGHT_X,
+    y: 17.3,
+    font: ctx.fonts.body,
+    size: 8.5,
+    color: BAND_TEXT,
+    align: 'right',
+  });
+}
+
+// ---- ticket card ----
+
+function drawSchedule(ctx: Ctx, schedule: TicketPdfSchedule | null | undefined, x: number): void {
+  const { fonts } = ctx;
+  if (schedule?.numeral && schedule.dateText) {
+    const numeralWidth = drawText(ctx, schedule.numeral, {
+      x,
+      y: 88,
+      font: fonts.display,
+      size: 44,
+      color: ROYAL,
+    });
+    const textX = x + numeralWidth + 4;
+    const room = PERFORATION_X - 6 - textX;
+    drawText(ctx, schedule.dateText, {
+      x: textX,
+      y: 86.9,
+      font: fonts.bold,
+      size: 10.5,
+      color: ROYAL,
+      maxWidth: room,
+    });
+    if (schedule.timeText) {
+      drawText(ctx, schedule.timeText, {
+        x: textX,
+        y: 92,
+        font: fonts.body,
+        size: 10,
+        color: INK,
+        maxWidth: room,
+      });
+    } else {
+      drawPill(ctx, textX, 88.6, PERFORATION_X - 6 - textX);
+    }
+    return;
+  }
+  if (schedule?.dateText) {
+    drawText(ctx, schedule.dateText, {
+      x,
+      y: 86.9,
+      font: fonts.bold,
+      size: 10.5,
+      color: ROYAL,
+      maxWidth: PERFORATION_X - 6 - x,
+    });
+    if (schedule.timeText) {
+      drawText(ctx, schedule.timeText, { x, y: 92, font: fonts.body, size: 10, color: INK });
+    }
+    return;
+  }
+  drawPill(ctx, x, 79, 100 - x);
+}
+
+/** Greedy word wrap that hard-breaks a word wider than the line, so no line ever exceeds `maxMm`. */
+function wrapBreaking(text: string, font: PDFFont, size: number, maxMm: number): string[] {
+  const fits = (value: string) => textWidthPt(value, font, size, 0) <= mm(maxMm);
+  const lines: string[] = [];
+  let line = '';
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (fits(candidate)) {
+      line = candidate;
+      continue;
+    }
+    if (line) lines.push(line);
+    line = '';
+    let rest = word;
+    while (!fits(rest)) {
+      let cut = rest.length - 1;
+      while (cut > 1 && !fits(rest.slice(0, cut))) cut--;
+      lines.push(rest.slice(0, cut));
+      rest = rest.slice(cut);
+    }
+    line = rest;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+/**
+ * Attendee name: wraps to two lines at its normal size inside the stub, shrinks to a 9pt floor
+ * if it must, then uses up to four lines, and only beyond that ellipsizes the last line. The full name always
+ * stays in the PDF text (an invisible copy when the visible line is cut), and nothing ever
+ * crosses the stub divider.
+ */
+function drawAttendeeName(ctx: Ctx, name: string, x: number, room: number): void {
+  const font = ctx.fonts.bold;
+  let size = ATTENDEE_NAME_SIZE;
+  let lines = wrapBreaking(name, font, size, room);
+  while (lines.length > ATTENDEE_NAME_PREFERRED_LINES && size > ATTENDEE_NAME_MIN_SIZE) {
+    size -= 0.5;
+    lines = wrapBreaking(name, font, size, room);
+  }
+  const cut = lines.length > ATTENDEE_NAME_MAX_LINES;
+  if (cut) {
+    lines = lines.slice(0, ATTENDEE_NAME_MAX_LINES);
+    let last = lines[ATTENDEE_NAME_MAX_LINES - 1];
+    while (last.length > 1 && textWidthPt(`${last}…`, font, size, 0) > mm(room)) last = last.slice(0, -1);
+    lines[ATTENDEE_NAME_MAX_LINES - 1] = `${last}…`;
+  }
+  lines.forEach((line, i) =>
+    drawText(ctx, line, { x, y: ATTENDEE_NAME_Y + i * ATTENDEE_NAME_PITCH, font, size, color: ROYAL })
+  );
+  if (cut) {
+    // Keep the full name in the text layer: invisible wrapped copy below the visible lines.
+    const full = wrapBreaking(name, font, size, room);
+    full.forEach((line, i) =>
+      ctx.page.drawText(line, {
+        x: mm(x),
+        y: PAGE_HEIGHT - mm(HIDDEN_NAME_Y + i * HIDDEN_LINE_PITCH),
+        font,
+        size: HIDDEN_TEXT_SIZE,
+        color: ROYAL,
+        opacity: 0,
+      })
+    );
+  }
+}
+
+function drawStub(ctx: Ctx, position: TicketPdfPosition): void {
+  const { fonts } = ctx;
+  const x = STUB_TEXT_X;
+  const room = 100 - x;
+  if (position.schedule?.eyebrow) caps(ctx, position.schedule.eyebrow, x, 50.4, MUTED, 7.5);
+  drawText(ctx, position.ticketType, {
+    x,
+    y: 63.5,
+    font: fonts.display,
+    size: 29,
+    color: ROYAL,
+    maxWidth: room,
+  });
+  fillRect(ctx, x, 71.6, room, 0.5, OLIVE);
+  drawSchedule(ctx, position.schedule, x);
+  caps(ctx, 'Attendee', x, 110.4, MUTED);
+  drawAttendeeName(ctx, position.attendeeName, x, room);
+}
+
+/** QR as one vector path: ~55 mm of black modules on the white tile (the tile is the quiet zone). */
+function drawQrTile(ctx: Ctx, bookingRef: string): void {
+  const modules = createQr(bookingRef).modules;
+  const moduleMm = QR_MODULE_AREA_MM / modules.size;
+  const centreX = (PERFORATION_X + RIGHT_X) / 2;
+  const originX = centreX - QR_MODULE_AREA_MM / 2;
+
+  const runs: string[] = [];
+  for (let row = 0; row < modules.size; row++) {
+    for (let col = 0; col < modules.size; col++) {
+      if (!modules.get(row, col)) continue;
+      let end = col;
+      while (end + 1 < modules.size && modules.get(row, end + 1)) end++;
+      const [rx, ry] = [mm(originX + col * moduleMm), mm(QR_TOP + row * moduleMm)];
+      const rw = mm((end - col + 1) * moduleMm);
+      runs.push(`M ${rx} ${ry} h ${rw} v ${mm(moduleMm)} h ${-rw} Z`);
+      col = end;
+    }
+  }
+  ctx.page.drawSvgPath(runs.join(' '), { x: 0, y: PAGE_HEIGHT, color: BLACK });
+
+  drawText(ctx, 'SCAN AT THE DOOR', {
+    x: centreX,
+    y: 125.9,
+    font: ctx.fonts.bold,
+    size: 7,
+    color: ROYAL,
+    tracking: BAND_TRACKING,
+    align: 'center',
+  });
+  drawText(ctx, bookingRef, {
+    x: centreX,
+    y: 131.7,
+    font: ctx.fonts.bold,
+    size: 10.5,
+    color: ROYAL,
+    tracking: REF_TRACKING,
+    align: 'center',
+    maxWidth: RIGHT_X - PERFORATION_X - 8,
+  });
+}
+
+function drawCard(ctx: Ctx, position: TicketPdfPosition): void {
+  const height = CARD_BOTTOM - CARD_TOP;
+  fillRounded(
+    ctx,
+    [MARGIN_X, CARD_TOP, PERFORATION_X - MARGIN_X, height],
+    [CARD_RADIUS, 0, 0, CARD_RADIUS],
+    GOLD_200,
+    RULE
+  );
+  fillRounded(
+    ctx,
+    [PERFORATION_X, CARD_TOP, RIGHT_X - PERFORATION_X, height],
+    [0, CARD_RADIUS, CARD_RADIUS, 0],
+    WHITE,
+    RULE
+  );
+  dashedLine(ctx, [PERFORATION_X, CARD_TOP + 1], [PERFORATION_X, CARD_BOTTOM - 1], ROYAL, [1, 1]);
+  drawStub(ctx, position);
+  drawQrTile(ctx, position.bookingRef);
+}
+
+// ---- visit information ----
+
+function heading(ctx: Ctx, text: string, x: number, y: number): void {
+  drawText(ctx, text, { x, y, font: ctx.fonts.display, size: 13, color: ROYAL });
+}
+
+function rowOrPill(ctx: Ctx, value: string | null, x: number, y: number, maxWidth: number): number {
+  if (!value) {
+    return y - 3.2 + drawPill(ctx, x, y - 3.2, maxWidth) + 1.4;
+  }
+  return drawWrapped(ctx, value, { x, y, maxWidth, maxLines: 3, lineHeight: 4.6 }, 9) + 5;
+}
+
+function drawVenueColumn(ctx: Ctx, visit: TicketPdfVisit): void {
+  const x = MARGIN_X;
+  heading(ctx, 'The venue', x, VISIT_HEADING_Y);
+  if (visit.venueName) {
+    drawText(ctx, visit.venueName, { x, y: 163 + VISIT_OFFSET, font: ctx.fonts.bold, size: 9, color: ROYAL, maxWidth: 62 });
+  } else {
+    drawPill(ctx, x, 159.8 + VISIT_OFFSET, 62);
+  }
+  const y = rowOrPill(ctx, visit.venueAddress, x, 168 + VISIT_OFFSET, 62);
+  caps(ctx, 'Parking and entrance', x, y + 1, MUTED, MIN_SMALL_CAPS_SIZE);
+  rowOrPill(ctx, visit.venueParking, x, y + 5.5, 62);
+}
+
+function drawTimesColumn(ctx: Ctx, position: TicketPdfPosition, visit: TicketPdfVisit): void {
+  const x = 82.2;
+  heading(ctx, position.timesHeading ?? DEFAULT_TIMES_HEADING, x, VISIT_HEADING_Y);
+  const times = position.times ?? visit.openingTimes ?? [];
+  if (times.length === 0) {
+    rowOrPill(ctx, null, x, 164 + VISIT_OFFSET, 56);
+    return;
+  }
+  let y = 164 + VISIT_OFFSET;
+  for (const time of times.slice(0, 5)) {
+    drawText(ctx, time.label, { x, y, font: ctx.fonts.bold, size: 9, color: ROYAL });
+    if (time.value) {
+      drawText(ctx, time.value, { x: x + 16, y, font: ctx.fonts.body, size: 9, color: INK, maxWidth: 40 });
+      y += ROW_PITCH;
+    } else {
+      const height = drawPill(ctx, x + 16, y - 3.2, TIMES_VALUE_WIDTH);
+      y += Math.max(ROW_PITCH, height + 2.6);
+    }
+  }
+}
+
+function drawDatesColumn(ctx: Ctx, visit: TicketPdfVisit): void {
+  const x = 142.5;
+  heading(ctx, 'Show dates', x, VISIT_HEADING_Y);
+  const y = rowOrPill(ctx, visit.showDates, x, 163 + VISIT_OFFSET, RIGHT_X - x);
+  if (visit.showUrl) {
+    drawText(ctx, visit.showUrl, { x, y, font: ctx.fonts.body, size: 9, color: INK, maxWidth: RIGHT_X - x });
+  }
+}
+
+// ---- footnote and footer ----
+
+/** One 12px footnote: the emergency numbers on one line, the on-site contact (or its pill) after. */
+function drawEmergencyFootnote(ctx: Ctx, visit: TicketPdfVisit): void {
+  const { fonts } = ctx;
+  const prefix = 'In an emergency:';
+  const prefixWidth = drawText(ctx, prefix, {
+    x: MARGIN_X,
+    y: FOOTNOTE_Y,
+    font: fonts.bold,
+    size: FOOTNOTE_SIZE,
+    color: MUTED,
+  });
+  const numbers = visit.emergency.map((contact) => `${contact.number} ${contact.label}`).join(' · ');
+  if (numbers) {
+    drawWrapped(
+      ctx,
+      numbers,
+      { x: MARGIN_X + prefixWidth + 1.5, y: FOOTNOTE_Y, maxWidth: CONTENT_WIDTH - prefixWidth - 1.5, maxLines: 1, lineHeight: 4.4 },
+      FOOTNOTE_SIZE,
+      MUTED
+    );
+  } else {
+    drawPill(ctx, MARGIN_X + prefixWidth + 2, FOOTNOTE_Y - 3.2, CONTENT_WIDTH - prefixWidth - 2);
+  }
+  const onSite = 'On-site first aid and show duty contact';
+  const onSiteWidth = drawText(ctx, onSite, {
+    x: MARGIN_X,
+    y: FOOTNOTE_Y + FOOTNOTE_LINE_PITCH,
+    font: fonts.bold,
+    size: FOOTNOTE_SIZE,
+    color: MUTED,
+  });
+  if (visit.onSiteContact) {
+    drawText(ctx, visit.onSiteContact, {
+      x: MARGIN_X + onSiteWidth + 2,
+      y: FOOTNOTE_Y + FOOTNOTE_LINE_PITCH,
+      font: fonts.body,
+      size: FOOTNOTE_SIZE,
+      color: MUTED,
+    });
+  } else {
+    drawPill(ctx, MARGIN_X + onSiteWidth + 2, FOOTNOTE_Y + FOOTNOTE_LINE_PITCH - 3.2, CONTENT_WIDTH - onSiteWidth - 2);
+  }
+}
+
+function drawFooter(
+  ctx: Ctx,
+  input: TicketPdfInput,
+  index: number
+): void {
+  const { fonts, logos, pendingLabel } = ctx;
+  const { visit } = input;
+  const page = `Page ${index + 1} of ${input.positions.length}`;
+  drawText(ctx, INSTRUCTION, { x: MARGIN_X, y: CARD_BOTTOM + INSTRUCTION_GAP, font: fonts.body, size: 9, color: INK, maxWidth: CONTENT_WIDTH });
+  fillRect(ctx, MARGIN_X, FOOTER_RULE_Y, CONTENT_WIDTH, 0.1, RULE);
+
+  const { width, height } = logos.vertical;
+  const markWidth = (FOOTER_MARK_HEIGHT * width) / height;
+  ctx.page.drawImage(logos.vertical, {
+    x: mm(MARGIN_X),
+    y: PAGE_HEIGHT - mm(FOOTER_MARK_TOP + FOOTER_MARK_HEIGHT),
+    width: mm(markWidth),
+    height: mm(FOOTER_MARK_HEIGHT),
+  });
+  const x = MARGIN_X + markWidth + 4;
+  const y3 = FOOTER_TEXT_Y + FOOTER_LINE_PITCH * 2;
+  const text = (value: string, at: number, y: number): number =>
+    drawText(ctx, value, { x: at, y, font: fonts.body, size: FOOTNOTE_SIZE, color: MUTED });
+  text(FOOTER_LINE, x, FOOTER_TEXT_Y);
+  text(FOOTER_REG, x, FOOTER_TEXT_Y + FOOTER_LINE_PITCH);
+  const lead = text('Show office', x, y3);
+  if (visit.showOffice) {
+    text(visit.showOffice, x + lead + 1.5, y3);
+  } else {
+    drawPill(ctx, x + lead + 2, y3 - 3.2, RIGHT_X - x - lead - 2);
+  }
+  text(
+    `Questions: ${visit.questionsEmail ?? pendingLabel} · Quote your booking reference.`,
+    x,
+    y3 + FOOTER_LINE_PITCH
+  );
+  drawText(ctx, input.orderReference ? `Order ${input.orderReference} · ${page}` : page, {
+    x: RIGHT_X,
+    y: FOOTER_TEXT_Y,
+    font: fonts.body,
+    size: FOOTNOTE_SIZE,
+    color: MUTED,
+    align: 'right',
+  });
+}
+
+function drawPage(
+  ctx: Ctx,
+  input: TicketPdfInput,
+  position: TicketPdfPosition,
+  index: number
+): void {
+  fillRect(ctx, 0, 0, A4_WIDTH_MM, A4_HEIGHT_MM, GOLD_100);
+  drawHeader(ctx, index, input.positions.length);
+  drawCard(ctx, position);
+  drawVenueColumn(ctx, input.visit);
+  drawTimesColumn(ctx, position, input.visit);
+  drawDatesColumn(ctx, input.visit);
+  drawEmergencyFootnote(ctx, input.visit);
+  drawFooter(ctx, input, index);
+}
+
+async function loadAssets(pdf: PDFDocument): Promise<{ fonts: Fonts; logos: Logos }> {
+  const [display, bold, body, horizontal, vertical] = await Promise.all([
+    readAsset('Fraunces-Light.ttf'),
+    readAsset('Karla-Bold.ttf'),
+    readAsset('fonts/Karla-Regular.woff'),
+    readAsset('nos-full-colour-reversed-horizontal-1600.png'),
+    readAsset('nos-ink-purple-vertical-500.png'),
+  ]);
+  return {
+    fonts: {
+      display: await pdf.embedFont(display, { subset: true }),
+      bold: await pdf.embedFont(bold, { subset: true }),
+      body: await pdf.embedFont(body, { subset: true }),
+    },
+    logos: {
+      horizontal: await pdf.embedPng(horizontal),
+      vertical: await pdf.embedPng(vertical),
+    },
+  };
+}
+
+export async function buildTicketPdf(input: TicketPdfInput): Promise<Uint8Array> {
+  if (input.positions.length === 0) {
+    throw new Error('buildTicketPdf: at least one position is required');
+  }
+  const pdf = await PDFDocument.create();
+  pdf.registerFontkit(fontkit);
+  const { fonts, logos } = await loadAssets(pdf);
+  const ctx = {
+    fonts,
+    logos,
+    pendingLabel: input.visit.pendingLabel?.trim() || DEFAULT_PENDING_LABEL,
+  };
+  input.positions.forEach((position, index) => {
+    drawPage({ ...ctx, page: pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]) }, input, position, index);
+  });
+  pdf.setTitle(`Ticket ${input.positions[0].bookingRef}`);
+  pdf.setLanguage('en-ZA');
+  pdf.catalog.getOrCreateViewerPreferences().setDisplayDocTitle(true);
+  pdf.setProducer('pdf-lib');
+  pdf.setCreator('pdf-lib');
+  pdf.setAuthor('');
+  return pdf.save();
+}

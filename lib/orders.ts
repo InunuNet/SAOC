@@ -568,6 +568,8 @@ export interface ConfirmedTicketDisplay {
   ticketType: TicketType;
   amount: number;
   qrDataUri: string;
+  /** F5: the buyer's chosen show day (YYYY-MM-DD) for day-selection tickets, else null. */
+  chosenDay?: string | null;
 }
 
 /**
@@ -690,6 +692,7 @@ export async function getConfirmedOrderForDisplay(
       ticketType,
       amount,
       qrDataUri: await generateQrDataUri(bookingRef),
+      chosenDay: position?.chosenDay ?? null,
     });
   }
 
