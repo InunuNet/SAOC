@@ -22,7 +22,6 @@ import { CONTACT_LINK } from '@/components/chrome/nav-config';
 import type { NavColumn, NavItem, NavLeaf } from '@/components/chrome/nav-config';
 import { FOOTER_ORG_NAME } from '@/components/chrome/footer-data';
 import { nosPath } from '@/lib/nos-paths';
-import { saocUrl } from '@/lib/site-hosts';
 
 import { nosChromeFontClass } from './fonts';
 import './nos-chrome.css';
@@ -46,6 +45,7 @@ const PLAIN_LEAF_IDS = ['show-sponsors', 'past-shows'] as const;
 
 const lockupProps = (width: number) =>
   getImageProps({
+    priority: true,
     src: LOCKUP_SRC,
     alt: LOCKUP_ALT,
     width,
@@ -65,9 +65,15 @@ function Chevron() {
 interface NosHeaderProps {
   /** The show nav (lib/data/past-shows-public.ts getVisibleNav), without withheld routes. */
   nav: readonly NavItem[];
+  /**
+   * Absolute SAOC URLs, resolved on the server. This is a client component, and the SAOC origin
+   * can come from a variable the client bundle does not carry, so it is never resolved here.
+   */
+  saocHomeHref: string;
+  saocContactHref: string;
 }
 
-export function NosHeader({ nav }: NosHeaderProps) {
+export function NosHeader({ nav, saocHomeHref, saocContactHref }: NosHeaderProps) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   // At most one top-row disclosure panel is open at a time.
@@ -294,7 +300,7 @@ export function NosHeader({ nav }: NosHeaderProps) {
               <li>
                 {/* The show is organised by SAOC, so Contact is the SAOC contact: a plain anchor to
                     the SAOC site, same tab, no arrow. */}
-                <a className="nh-link" href={saocUrl(CONTACT_LINK.href)}>
+                <a className="nh-link" href={saocContactHref}>
                   {CONTACT_LINK.label}
                 </a>
               </li>
@@ -375,7 +381,7 @@ export function NosHeader({ nav }: NosHeaderProps) {
               </li>
             ))}
             <li>
-              <a className="nd-item" href={saocUrl(CONTACT_LINK.href)}>
+              <a className="nd-item" href={saocContactHref}>
                 {CONTACT_LINK.label}
               </a>
             </li>
@@ -383,7 +389,7 @@ export function NosHeader({ nav }: NosHeaderProps) {
           {/* R1.4: after a rule, the SAOC credit as text only: the organisation's name, linking
               to the SAOC site. */}
           <p className="nd-credit">
-            <a href={saocUrl('/')}>{FOOTER_ORG_NAME}</a>
+            <a href={saocHomeHref}>{FOOTER_ORG_NAME}</a>
           </p>
         </div>
       </nav>

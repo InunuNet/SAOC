@@ -12,7 +12,9 @@ import { NosFooter } from '@/components/nos-chrome/NosFooter';
 import { NosHeader } from '@/components/nos-chrome/NosHeader';
 import { NosSkipLink } from '@/components/nos-chrome/NosSkipLink';
 import { getVisibleNav } from '@/lib/data/past-shows-public';
+import { CONTACT_LINK } from '@/components/chrome/nav-config';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+import { saocUrl } from '@/lib/site-hosts';
 
 export async function NosFrame({ children }: { children: React.ReactNode }) {
   const nav = await getVisibleNav();
@@ -20,7 +22,11 @@ export async function NosFrame({ children }: { children: React.ReactNode }) {
   return (
     <>
       <NosSkipLink />
-      <NosHeader nav={nav} />
+      <NosHeader
+        nav={nav}
+        saocHomeHref={saocUrl('/')}
+        saocContactHref={saocUrl(CONTACT_LINK.href)}
+      />
       <main id="main-content" tabIndex={-1}>
         {children}
       </main>
