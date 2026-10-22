@@ -86,3 +86,13 @@ Acceptance:
 - Ticket and Applications tables fit at 1280, become cards at 390, and the detail drawer works.
 - Pill: no overlap at 390 or 1280; keyboard and screen reader can use it.
 Send me screenshots per route before beta, and I'll check in Canary after deploy.
+
+---
+
+## Codi later ruling (supersedes (c) stat cards), 2026-10-22
+
+Verbatim, relayed by the lead after Codex read the older (c) line:
+
+"2 columns from 640 to 1439 and 4 columns from 1440 (2xl, or a 1440 breakpoint), so the labels stay on 1–2 lines. Equal heights at every width with items-stretch / h-full on the card, so the numbers sit on one baseline."
+
+This replaces the "4 across at ≥1280, 2 at 640–1279, 1 below 640" line in (c). Implemented as `min-[90rem]:grid-cols-4` (90rem = 1440px, written in rem so Tailwind v4 orders it after `sm:`; the project has no Tailwind 1440 token; the drawer uses a raw 1440px media query in app/globals.css).
