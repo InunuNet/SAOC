@@ -1,0 +1,95 @@
+{
+  "why": "nos-ticket-day-stub F3 (Codi on f090281f, 2026-10-22, .tmp/sandbox/queue/r45-ruling.md): the required-field alert reads as an error. Each substitution replaces exactly one occurrence of `from` in the file as it stands after F1/F2 (BASE plus goldens/f1-edits.json and f2-edits.json; BASE itself for the three files F1/F2 never touched). _edits.mjs exactEdits applies them after the F1/F2 line edits, so every exact-edit check expects the F3 text.",
+  "alertClass": "flex gap-2 border-l-2 border-error bg-bone px-4 py-3 font-sans text-[14px] text-error",
+  "spacedClass": "mt-1.5 flex gap-2 border-l-2 border-error bg-bone px-4 py-3 font-sans text-[14px] text-error",
+  "icon": "⚠︎",
+  "token": {
+    "name": "--color-error",
+    "value": "#9b2c2c",
+    "rgb": "rgb(155, 44, 44)"
+  },
+  "minContrast": 4.5,
+  "uses": {
+    "field": "{error ? <TicketFieldAlert>{error}</TicketFieldAlert> : null}",
+    "cardDay": "{invalid ? <TicketFieldAlert spaced>{TICKET_COPY.chooseDay}</TicketFieldAlert> : null}",
+    "formDay": "{dayInvalid ? <TicketFieldAlert spaced>{TICKET_COPY.chooseDay}</TicketFieldAlert> : null}",
+    "formCart": "<TicketFieldAlert>{cart.errorMessage}</TicketFieldAlert>"
+  },
+  "oldClass": "border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800",
+  "substitutions": {
+    "components/tickets/TicketFormField.tsx": [
+      {
+        "from": "// parent form.\ninterface TicketFormFieldProps {",
+        "to": "// parent form.\nimport type { ReactNode } from 'react';\n\n// nos-ticket-day-stub F3 (Codi): the ticket forms' required-field alert, defined once here. Text and\n// a 2px left border in the error colour, a leading warning sign hidden from assistive tech, no box\n// outline. The day pickers (hub card and checkout) and the checkout's own error render it too.\nconst ALERT_CLASS =\n  'flex gap-2 border-l-2 border-error bg-bone px-4 py-3 font-sans text-[14px] text-error';\n// U+FE0E asks for the text glyph, so the sign takes the error colour rather than an emoji's.\nconst ALERT_ICON = '\\u26A0\\uFE0E';\n\ninterface TicketFieldAlertProps {\n  children: ReactNode;\n  // The day pickers set the alert 6px below their options.\n  spaced?: boolean;\n}\n\nexport function TicketFieldAlert({ children, spaced = false }: TicketFieldAlertProps) {\n  return (\n    <p role=\"alert\" className={spaced ? `mt-1.5 ${ALERT_CLASS}` : ALERT_CLASS}>\n      <span aria-hidden=\"true\">{ALERT_ICON}</span>\n      <span>{children}</span>\n    </p>\n  );\n}\n\ninterface TicketFormFieldProps {"
+      },
+      {
+        "from": "      {error ? (\n        <p\n          role=\"alert\"\n          className=\"border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800\"\n        >\n          {error}\n        </p>\n      ) : null}",
+        "to": "      {error ? <TicketFieldAlert>{error}</TicketFieldAlert> : null}"
+      }
+    ],
+    "components/tickets/TicketPurchaseForm.tsx": [
+      {
+        "from": "import type { TicketTypeCardData } from '@/components/tickets/TicketTypeCard';",
+        "to": "import { TicketFieldAlert } from '@/components/tickets/TicketFormField';\nimport type { TicketTypeCardData } from '@/components/tickets/TicketTypeCard';"
+      },
+      {
+        "from": "          {dayInvalid ? (\n            <p\n              role=\"alert\"\n              className=\"mt-1.5 border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800\"\n            >\n              {TICKET_COPY.chooseDay}\n            </p>\n          ) : null}",
+        "to": "          {dayInvalid ? <TicketFieldAlert spaced>{TICKET_COPY.chooseDay}</TicketFieldAlert> : null}"
+      },
+      {
+        "from": "      {cart.status === 'error' && cart.errorMessage ? (\n        <p\n          role=\"alert\"\n          className=\"border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800\"\n        >\n          {cart.errorMessage}\n        </p>\n      ) : null}",
+        "to": "      {cart.status === 'error' && cart.errorMessage ? (\n        <TicketFieldAlert>{cart.errorMessage}</TicketFieldAlert>\n      ) : null}"
+      }
+    ],
+    "components/tickets/keepsake/TicketCard.tsx": [
+      {
+        "from": "import { formatShowDayShort, showDayStub } from '@/lib/show-day-format';",
+        "to": "import { TicketFieldAlert } from '@/components/tickets/TicketFormField';\nimport { formatShowDayShort, showDayStub } from '@/lib/show-day-format';"
+      },
+      {
+        "from": "      {invalid ? (\n        <p\n          role=\"alert\"\n          className=\"mt-1.5 border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800\"\n        >\n          {TICKET_COPY.chooseDay}\n        </p>\n      ) : null}",
+        "to": "      {invalid ? <TicketFieldAlert spaced>{TICKET_COPY.chooseDay}</TicketFieldAlert> : null}"
+      }
+    ],
+    "components/tickets/keepsake/BuyBlock.tsx": [
+      {
+        "from": "import { useState } from 'react';",
+        "to": "import { useState, type MouseEvent } from 'react';"
+      },
+      {
+        "from": "  return `/tickets/${slug}?${query.toString()}`;\n}\n",
+        "to": "  return `/tickets/${slug}?${query.toString()}`;\n}\n\n// Only a plain primary click is held for the missing day. A modified or middle click opens the\n// checkout as any link does, and the checkout asks for the day itself (r45b).\nfunction isPlainClick(event: MouseEvent<HTMLAnchorElement>): boolean {\n  return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;\n}\n"
+      },
+      {
+        "from": "            ? (event) => {\n                event.preventDefault();",
+        "to": "            ? (event) => {\n                if (!isPlainClick(event)) return;\n                event.preventDefault();"
+      }
+    ],
+    "app/(marketing)/national-show/nos-structure.css": [
+      {
+        "from": ".nos-theme .nk-day span.nk-sub {\n  font-size: 12px;\n  font-weight: 600;\n  color: var(--nk-muted);\n}\n",
+        "to": ".nos-theme .nk-day span.nk-sub {\n  font-size: 12px;\n  font-weight: 600;\n  color: var(--nk-muted);\n}\n\n/* An unanswered day group (Buy or Continue to payment with no day) draws its options in its alert's\n   error colour; they return to the rule once a day is picked (nos-ticket-day-stub F3). */\n.nos-theme .nk-days[aria-invalid='true'] .nk-day {\n  border-color: var(--color-error);\n}\n"
+      }
+    ]
+  },
+  "tokenEdit": {
+    "file": "app/globals.css",
+    "why": "Not an exact edit: admin-redesign PR #28 adds the identical line. f3-static S3 asserts the token is defined exactly once, with this value, inside @theme, and that globals.css otherwise equals BASE or origin/main. If #28 lands first, the rebase drops this edit and the check still passes.",
+    "from": "  --color-rule-soft: var(--rule-soft);\n",
+    "to": "  --color-rule-soft: var(--rule-soft);\n\n  /* The one error colour (Codi token ruling, admin-redesign goldens/table-columns.md), defined\n     once: the ticket forms' required-field alert and an unanswered day group. */\n  --color-error: #9b2c2c;\n"
+  },
+  "modifiedClick": {
+    "file": "components/tickets/keepsake/BuyBlock.tsx",
+    "use": "if (!isPlainClick(event)) return;",
+    "source": "Codex P2 on BuyBlock.tsx:158 (team-lead, 2026-10-22): intercept only an unmodified primary activation"
+  },
+  "outOfScope": [
+    "components/contact/ContactForm.tsx",
+    "components/members/SuggestionForm.tsx",
+    "components/tickets/DownloadTicketButton.tsx",
+    "components/vendors/VendorRegisterStatusBanner.tsx",
+    "components/admin/VendorApplicationReviewTable.tsx",
+    "components/tickets/CartAttendeeFields.tsx",
+    "app/(marketing)/national-show/nos-theme.css"
+  ]
+}

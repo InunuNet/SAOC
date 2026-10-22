@@ -1,12 +1,11 @@
 // The small ticket of the hero fan (goldens/f18b HANDOFF section 3.5 / mock `data-mini`): stub,
 // date, name and price, and nothing to press: the whole ticket is one link (FanLink). It carries
-// no id and no heading, so the full card of the same product stays the page's one target.
+// no id and no heading, so the full card of the same product stays the page's one target. Its stub
+// is the product's own numeral and caption, never a show day (r45: the Day Pass names no day).
 
 import { formatRand } from '@/components/nos/cheapest-admission';
-import { showDayStub } from '@/lib/show-day-format';
 import { TICKET_COPY, TICKET_PRODUCTS, type TicketProductId } from '@/lib/data/ticket-presentation';
 
-import { firstSelectableDay } from './days';
 import { TicketPrice, TicketStub } from './parts';
 import type { KeepsakeCardVm } from './types';
 
@@ -19,9 +18,6 @@ export interface TicketMiniProps {
 export function TicketMini({ productId, vm, name: nameProp }: TicketMiniProps) {
   const product = TICKET_PRODUCTS[productId];
   const name = nameProp ?? vm.name ?? product.name;
-  const dayStub = vm.days
-    ? showDayStub(firstSelectableDay(vm.days) ?? vm.days[0]?.day ?? '')
-    : null;
   const muted = vm.state === 'soldOut' || vm.state === 'earlyBirdSoldOut';
   const closed = vm.state === 'salesClosed';
   const price = vm.state === 'pricePending' ? null : vm.price;
@@ -30,8 +26,8 @@ export function TicketMini({ productId, vm, name: nameProp }: TicketMiniProps) {
     <div data-ticket-mini="" data-ticket-state={vm.state} className="nk-ticket">
       <TicketStub
         product={product}
-        numeral={dayStub ? dayStub.numeral : product.numeral}
-        caption={dayStub ? dayStub.caption : product.caption}
+        numeral={product.numeral}
+        caption={product.caption}
         admit={TICKET_COPY.admit}
         soldOut={vm.state === 'soldOut'}
       />
