@@ -73,7 +73,7 @@ committee wording, marked `PENDING-COMMITTEE-COPY` in the source:
 
 These strings have no golden entry (functional form and admin chrome), so they were placed in
 `NEWSLETTER_COPY` as-is and need a decision: `honeypotLabel`, `adminHeading`, `adminDownloadCsv`,
-the four `adminColumn*` labels, `adminCountSubscribed`, `adminCountUnsubscribed`, `adminNavLabel`.
+the four `adminColumn*` labels, `adminCountSubscribed`, `adminCountUnsubscribed`, `adminNavLabel`. The empty table state shows no message (the count line above it reads 0); a message needs committee wording.
 
 ## Follow-ups
 
