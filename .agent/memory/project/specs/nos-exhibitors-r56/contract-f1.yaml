@@ -1,0 +1,49 @@
+# Sources: Codi's r56 ruling and re-rank (verbatim in .tmp/sandbox/queue/r56-ruling.md, summarised in goldens/spec.md). Values are existing classes and tokens only
+# (ExhibitorJumpNav summary classes, --ring-focus, Tailwind min-h-6); no new copy. Rendered checks: one mode per call, ports 3010-3019 minus 3002, 3013, 3016.
+schema: athanor.contract/v1
+slug: nos-exhibitors-r56
+goal: >-
+  /national-show/exhibitors: ExhibitorQuestions is absent from the public build and a closed details (H2 in the summary) in preview; the exhibitor status pill is sentence case with no
+  tracking; the Key-dates per-row pending pills are gone; the three standalone links are at least 24px tall. Nothing else changes.
+created_at: '2026-10-22'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/footprint.json, docs/nos-exhibitors-r56.md and this spec dir (enforced by A2)'
+    reason: 'Codi ruled on /national-show/exhibitors only. The confirmation badge on visitor pages, other NOS pages and all copy stay as they are.'
+features:
+  - id: F1
+    name: Exhibitors page - public-hide and collapse the questions, sentence-case pill, no key-date pills, 24px links (r56)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/nos-exhibitors-r56/goldens/spec.md
+  - .agent/memory/project/specs/nos-exhibitors-r56/goldens/edits.json
+  - .agent/memory/project/specs/nos-exhibitors-r56/goldens/footprint.json
+  - .agent/memory/project/specs/nos-exhibitors-r56/goldens/render-baseline.json
+  - .agent/memory/project/specs/nos-exhibitors-r56/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/nos-exhibitors-r56/goldens/checks.sha256
+    - id: A2
+      description: Footprint - the branch differs from its merge-base with origin/main only in the four footprint files, docs/nos-exhibitors-r56.md and the spec dir, and HEAD descends from 015698f7
+      command: node .agent/memory/project/specs/nos-exhibitors-r56/checks/footprint.mjs
+    - id: A3
+      description: Static - questionsShown gate on section and chip, details/summary with the H2 and the jump-nav summary classes, min-h-6 links, one separate sentence-case marker rule, key-date badge limited to research/question, no invention, docs
+      command: node .agent/memory/project/specs/nos-exhibitors-r56/checks/static.mjs
+    - id: A4
+      description: Prettier - the three files clean at base stay clean and nos-structure.css (10 dirty lines at base) gets no dirtier
+      command: node .agent/memory/project/specs/nos-exhibitors-r56/checks/prettier.mjs
+    - id: A5
+      description: Lint clean on the three TSX files
+      command: pnpm exec eslint "app/(marketing)/national-show/exhibitors/page.tsx" components/show/ExhibitorQuestions.tsx components/show/ExhibitorKeyDates.tsx
+    - id: A6
+      description: Type-check clean
+      command: pnpm exec tsc --noEmit
+    - id: A7
+      description: Rendered public build (1280/390) - ExhibitorQuestions absent from DOM, chip and page HTML, outline minus the questions slice, one details left, links >= 24px, no overflow, axe no worse than base
+      command: NOS_EX_MODES=public node .agent/memory/project/specs/nos-exhibitors-r56/checks/rendered.mjs
+    - id: A8
+      description: Rendered preview build (1280/390) - closed details with the H2 in the summary, 44px target, focus ring, marker, outline intact, page shorter by about the questions section, pills sentence case, no key-date pills, links >= 24px, axe no worse
+      command: NOS_EX_MODES=preview node .agent/memory/project/specs/nos-exhibitors-r56/checks/rendered.mjs
