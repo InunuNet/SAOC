@@ -89,7 +89,10 @@ export async function fetchDashboardData(ordersStatus: OrderStatus): Promise<Das
         db.collection(VENDOR_APPLICATIONS_COLLECTION).where('status', '==', 'approved'),
       ),
       isNewsletterAvailable()
-        ? countOf('newsletter-subscribers', db.collection(NEWSLETTER_SUBSCRIBERS_COLLECTION))
+        ? countOf(
+            'newsletter-subscribers',
+            db.collection(NEWSLETTER_SUBSCRIBERS_COLLECTION).where('status', '==', 'subscribed'),
+          )
         : Promise.resolve(null),
       fetchNeedsAttention(),
     ]);

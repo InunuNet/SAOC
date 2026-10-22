@@ -49,7 +49,12 @@ case "${1:-}" in
     f=lib/admin-nav-config.ts
     test -f $f || fail nav-config "missing $f"
     for s in "SHOW" "VENDORS" "COMMUNICATIONS" "SYSTEM" "Door scanner" "Newsletter" "available"; do grep -q "$s" $f || fail nav-config "$f lacks $s"; done
-    grep -A3 -i "newsletter" $f | grep -q "available: false" || fail nav-config "Newsletter must default available: false"
+    # Newsletter shipped (mission footer-newsletter-subscribe): it must be available and point at a real, session-gated page.
+    grep -A6 -i "id: 'newsletter'" $f | grep -q "available: true" || fail nav-config "Newsletter must be available: true"
+    href=$(grep -A6 -i "id: 'newsletter'" $f | grep -Eo "href: '/admin[^']*'" | head -1 | sed -E "s/href: '(.*)'/\1/")
+    test -n "$href" || fail nav-config "Newsletter nav item has no /admin href"
+    test -f "app/admin/(shell)${href#/admin}/page.tsx" || fail nav-config "Newsletter href $href has no page under app/admin/(shell)"
+    grep -q "getAdminSession" "app/admin/(shell)/layout.tsx" || fail nav-config "(shell) layout is not session-gated"
     ;;
   copy)
     grep -rq "Quick actions" "app/admin/(shell)/page.tsx" || fail copy "Quick actions"

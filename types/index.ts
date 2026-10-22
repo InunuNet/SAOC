@@ -979,3 +979,15 @@ export interface VendorStandOrder {
   paidAt: Date | null;
   failedAt: Date | null;
 }
+
+// Footer newsletter subscriber (mission footer-newsletter-subscribe). Single opt-in; `id` is the
+// sha256 of the normalised email. Admin-SDK-only collection `newsletterSubscribers`.
+export interface NewsletterSubscriber {
+  id: string;
+  email: string;
+  status: 'subscribed' | 'unsubscribed';
+  source: 'saoc-footer' | 'nos-footer';
+  subscribedAt: Date | null;
+  unsubscribedAt: Date | null;
+  unsubscribeToken: string;
+}

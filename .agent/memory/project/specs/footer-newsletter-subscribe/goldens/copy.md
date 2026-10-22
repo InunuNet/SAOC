@@ -33,3 +33,6 @@ Each PENDING-COMMITTEE-COPY entry carries the literal comment marker `PENDING-CO
 docs/newsletter-subscribe.md under "Pending committee copy". The existing StatusMarker/R11 placeholder mechanism renders
 badges on page content and does not apply to a single inline status line; the code comment plus doc entry is the register.
 No marketing language. Submitting state: button disabled + `aria-busy`, label unchanged.
+
+Codi ruling 2026-10-22: admin empty state, pattern EMPTY_TEXT (as in the other admin tables); Brad may change. String: "No one has subscribed yet." (local const EMPTY_TEXT in components/admin/NewsletterSubscribersTable.tsx).
+Codi ruling 2026-10-22: admin Source column labels `adminSourceSaoc` = "SAOC" for saoc-footer and `adminSourceNos` = "National Orchid Show" for nos-footer; an unknown source shows the raw value.

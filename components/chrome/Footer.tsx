@@ -12,6 +12,7 @@
 
 import Link from 'next/link';
 import { partners } from '@/lib/data';
+import { NewsletterSignup } from '@/components/newsletter/NewsletterSignup';
 import { SaocLockup } from './SaocLockup';
 import {
   FOOTER_BULLETIN,
@@ -87,30 +88,19 @@ export function Footer() {
           <p className="font-sans text-[13.5px] leading-relaxed text-ivory/65">
             {FOOTER_BULLETIN.blurb}
           </p>
-          <form className="flex flex-wrap items-end gap-0" onSubmit={(e) => e.preventDefault()}>
-            <label
-              htmlFor="footer-newsletter-email"
-              className="mb-1.5 block w-full font-mono text-[11px] tracking-[0.16em] text-ivory/65"
-            >
-              {FOOTER_BULLETIN.emailLabel}
-            </label>
-            <input
-              id="footer-newsletter-email"
-              type="email"
-              autoComplete="email"
-              inputMode="email"
-              spellCheck={false}
-              placeholder={FOOTER_BULLETIN.placeholder}
-              required
-              className="min-h-11 min-w-0 flex-1 bg-ivory/10 border border-ivory/20 text-ivory placeholder:text-ivory/40 font-sans text-[13px] px-3 py-2 focus:outline-none focus:border-ivory/40"
-            />
-            <button
-              type="submit"
-              className="min-h-11 min-w-11 bg-primary text-ivory font-sans text-[13px] font-medium px-4 py-2 hover:bg-primary-800 transition-colors duration-150 shrink-0"
-            >
-              {FOOTER_BULLETIN.submitLabel}
-            </button>
-          </form>
+          <NewsletterSignup
+            source="saoc-footer"
+            inputId="footer-newsletter-email"
+            emailLabel={FOOTER_BULLETIN.emailLabel}
+            placeholder={FOOTER_BULLETIN.placeholder}
+            submitLabel={FOOTER_BULLETIN.submitLabel}
+            fieldsClassName="flex flex-wrap items-end gap-0"
+            labelClassName="mb-1.5 block w-full font-mono text-[11px] tracking-[0.16em] text-ivory/65"
+            inputClassName="min-h-11 min-w-0 flex-1 bg-ivory/10 border border-ivory/20 text-ivory placeholder:text-ivory/40 font-sans text-[13px] px-3 py-2 focus:outline-none focus:border-ivory/40"
+            buttonClassName="min-h-11 min-w-11 bg-accent text-primary-800 font-sans text-[13px] font-medium px-4 py-2 hover:bg-accent-soft transition-colors duration-150 shrink-0 disabled:opacity-60"
+            statusClassName="mt-2 font-sans text-[13px] text-ivory/80 empty:hidden"
+            errorClassName="mt-2 font-sans text-[13px] text-ivory"
+          />
           <div className="mt-2">
             <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/55 mb-2">
               {FOOTER_WOSA.heading}
