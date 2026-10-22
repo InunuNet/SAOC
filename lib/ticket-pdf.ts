@@ -122,9 +122,13 @@ const BAND_TRACKING = 0.14;
 const REF_TRACKING = 0.08;
 const ATTENDEE_NAME_SIZE = 12;
 const ATTENDEE_NAME_MIN_SIZE = 9;
-const ATTENDEE_NAME_MAX_LINES = 2;
+const ATTENDEE_NAME_PREFERRED_LINES = 2;
+const ATTENDEE_NAME_MAX_LINES = 4; // fits the empty stub below the name; ellipsis only beyond this
 const ATTENDEE_NAME_Y = 115.5;
 const ATTENDEE_NAME_PITCH = 5.2;
+const HIDDEN_TEXT_SIZE = 3; // invisible full-name copy: tiny so it never collides with visible text
+const HIDDEN_LINE_PITCH = 1.2;
+const HIDDEN_NAME_Y = ATTENDEE_NAME_Y + ATTENDEE_NAME_MAX_LINES * ATTENDEE_NAME_PITCH;
 const MIN_SMALL_CAPS_SIZE = 7; // smallest caps/pill text printed
 const PILL_HEIGHT = 4.4;
 const PILL_LINE_PITCH = 3;
@@ -471,8 +475,8 @@ function wrapBreaking(text: string, font: PDFFont, size: number, maxMm: number):
 }
 
 /**
- * Attendee name: wraps to at most two lines at its normal size inside the stub, shrinks to a
- * floor if it must, and only as a last resort ellipsizes the second line. The full name always
+ * Attendee name: wraps to two lines at its normal size inside the stub, shrinks to a 9pt floor
+ * if it must, then uses up to four lines, and only beyond that ellipsizes the last line. The full name always
  * stays in the PDF text (an invisible copy when the visible line is cut), and nothing ever
  * crosses the stub divider.
  */
@@ -480,7 +484,7 @@ function drawAttendeeName(ctx: Ctx, name: string, x: number, room: number): void
   const font = ctx.fonts.bold;
   let size = ATTENDEE_NAME_SIZE;
   let lines = wrapBreaking(name, font, size, room);
-  while (lines.length > ATTENDEE_NAME_MAX_LINES && size > ATTENDEE_NAME_MIN_SIZE) {
+  while (lines.length > ATTENDEE_NAME_PREFERRED_LINES && size > ATTENDEE_NAME_MIN_SIZE) {
     size -= 0.5;
     lines = wrapBreaking(name, font, size, room);
   }
@@ -500,9 +504,9 @@ function drawAttendeeName(ctx: Ctx, name: string, x: number, room: number): void
     full.forEach((line, i) =>
       ctx.page.drawText(line, {
         x: mm(x),
-        y: PAGE_HEIGHT - mm(ATTENDEE_NAME_Y + (ATTENDEE_NAME_MAX_LINES + i) * ATTENDEE_NAME_PITCH),
+        y: PAGE_HEIGHT - mm(HIDDEN_NAME_Y + i * HIDDEN_LINE_PITCH),
         font,
-        size,
+        size: HIDDEN_TEXT_SIZE,
         color: ROYAL,
         opacity: 0,
       })
