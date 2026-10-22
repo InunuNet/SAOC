@@ -3,10 +3,11 @@
 // One keepsake ticket for a product slot (goldens/f18b HANDOFF sections 2 and 3.1). It renders a
 // view model and never re-derives its state: the server's `state` is final, and a higher state
 // masks every slot a lower one would show. The Day Pass adds the day selector, whose chosen day
-// drives the stub numeral and the checkout link.
+// drives the stub numeral and the checkout link. No day is chosen until the buyer picks one (r45):
+// the stub stays the product's own, and Buy with no day shows the picker's required-field error.
 
 import Link from 'next/link';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 
 import { formatShowDayShort, showDayStub } from '@/lib/show-day-format';
 import {
@@ -18,7 +19,7 @@ import {
 
 import { BuyBlock } from './BuyBlock';
 import { CHECKOUT_DAY_EVENT } from './checkout-day';
-import { countDisplay, daySubline, firstSelectableDay, isDayClosed } from './days';
+import { countDisplay, daySubline, isDayClosed } from './days';
 import { TicketCount, TicketPrice, TicketStub } from './parts';
 import type { KeepsakeCardVm, KeepsakeDay } from './types';
 
@@ -46,15 +47,26 @@ export interface TicketCardProps {
 
 interface DayPickerProps {
   groupName: string;
+  groupRef: RefObject<HTMLFieldSetElement | null>;
   days: KeepsakeDay[];
   chosen: string | null;
   onChoose: (day: string) => void;
   showProvisional: boolean;
+  // Buy was pressed with no day chosen: the checkout forms' required-field error, in the picker's label.
+  invalid: boolean;
 }
 
-function DayPicker({ groupName, days, chosen, onChoose, showProvisional }: DayPickerProps) {
+function DayPicker({
+  groupName,
+  groupRef,
+  days,
+  chosen,
+  onChoose,
+  showProvisional,
+  invalid,
+}: DayPickerProps) {
   return (
-    <fieldset className="nk-days">
+    <fieldset ref={groupRef} className="nk-days" aria-invalid={invalid}>
       <legend>{TICKET_COPY.chooseDay}</legend>
       <div className="nk-days-row">
         {days.map((d) => {
@@ -88,6 +100,14 @@ function DayPicker({ groupName, days, chosen, onChoose, showProvisional }: DayPi
           );
         })}
       </div>
+      {invalid ? (
+        <p
+          role="alert"
+          className="mt-1.5 border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800"
+        >
+          {TICKET_COPY.chooseDay}
+        </p>
+      ) : null}
       {showProvisional && days.some((d) => d.provisional && daySubline(d, 'placeholder')) ? (
         <p className="nk-unconfirmed">{TICKET_COPY.notYetConfirmed}</p>
       ) : null}
@@ -113,9 +133,9 @@ export function TicketCard({
   const detailHref = TICKET_DETAIL_HREFS[productId];
   const groupName = useId();
   const summary = variant === 'summary';
-  const [day, setDay] = useState<string | null>(() =>
-    summary ? summaryDay : firstSelectableDay(vm.days)
-  );
+  const [day, setDay] = useState<string | null>(summary ? summaryDay : null);
+  const [dayMissing, setDayMissing] = useState(false);
+  const pickerRef = useRef<HTMLFieldSetElement>(null);
 
   useEffect(() => {
     if (!summary) return undefined;
@@ -126,9 +146,16 @@ export function TicketCard({
     return () => window.removeEventListener(CHECKOUT_DAY_EVENT, follow);
   }, [summary]);
 
-  const dayStub = vm.days || (summary && day) ? showDayStub(day ?? vm.days?.[0]?.day ?? '') : null;
+  const dayStub = day ? showDayStub(day) : null;
   const numeral = dayStub ? dayStub.numeral : product.numeral;
   const caption = dayStub ? dayStub.caption : product.caption;
+
+  // Buy with no day chosen stays a live button: it shows the picker's error and moves focus to the
+  // first day the buyer can choose.
+  function showDayMissing() {
+    setDayMissing(true);
+    pickerRef.current?.querySelector<HTMLInputElement>('input:not(:disabled)')?.focus();
+  }
 
   return (
     <article
@@ -177,10 +204,12 @@ export function TicketCard({
               {vm.days ? (
                 <DayPicker
                   groupName={groupName}
+                  groupRef={pickerRef}
                   days={vm.days}
                   chosen={day}
                   onChoose={setDay}
                   showProvisional={showProvisional}
+                  invalid={dayMissing && day === null}
                 />
               ) : null}
               <BuyBlock
@@ -189,6 +218,7 @@ export function TicketCard({
                 product={product}
                 day={day}
                 regularName={regularName ?? vm.regularName ?? null}
+                onMissingDay={vm.days ? showDayMissing : undefined}
               />
             </>
           )}

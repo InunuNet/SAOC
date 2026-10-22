@@ -27,6 +27,8 @@ interface BuyBlockProps {
   session?: boolean;
   /** The chosen day (Day Pass only), appended to the checkout link. */
   day?: string | null;
+  /** Day Pass only: called instead of following the link while no day is chosen. */
+  onMissingDay?: () => void;
   // The CMS name of the regular SKU that follows an early-bird SKU.
   regularName?: string | null;
 }
@@ -44,6 +46,7 @@ export function BuyBlock({
   session = false,
   day = null,
   regularName = null,
+  onMissingDay,
 }: BuyBlockProps) {
   const [quantity, setQuantity] = useState(MIN_QUANTITY);
 
@@ -146,7 +149,19 @@ export function BuyBlock({
           <PlusIcon />
         </button>
       </div>
-      <Link data-ticket-cta="" className="nk-btn nk-cta" href={checkoutHref(vm.slug, current, day)}>
+      <Link
+        data-ticket-cta=""
+        className="nk-btn nk-cta"
+        href={checkoutHref(vm.slug, current, day)}
+        onClick={
+          onMissingDay && !day
+            ? (event) => {
+                event.preventDefault();
+                onMissingDay();
+              }
+            : undefined
+        }
+      >
         {TICKET_COPY.buy}
         <ArrowIcon />
       </Link>
