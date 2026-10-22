@@ -1,0 +1,10 @@
+50cd80185e24308c16379fba1f1032e02964611392ea4d42985c1e0d8a79ae45  .agent/memory/project/specs/nos-checkout-left-counts/checks/_edits.mjs
+440859e081b528d5d92b0ea0f5ade9d1fe0f0fe3a527e0d4886561911b095f2f  .agent/memory/project/specs/nos-checkout-left-counts/checks/_lib.mjs
+c746b9f2e086352b23af21b0a91187e3e5a4d4619c8e3fa28b2e78351b390d6c  .agent/memory/project/specs/nos-checkout-left-counts/checks/_server.mjs
+8e4e818a04eba586ab112547205ef73b20c4f0581815269b6ad61ef46eded17f  .agent/memory/project/specs/nos-checkout-left-counts/checks/footprint.mjs
+6c8db4f3250342d0e16a0b05ae0c31efc72c6d2fad6369e18670b6f040ec572b  .agent/memory/project/specs/nos-checkout-left-counts/checks/rendered.mjs
+67f17b71bc5f4cedd8132aca24a9fd709bb32c84c0acbf77807e0924caa8dbf0  .agent/memory/project/specs/nos-checkout-left-counts/checks/static.mjs
+59bcb76dc58f917db7824afcce96ab8f2619e656747c2c812730bcd750e284fe  .agent/memory/project/specs/nos-checkout-left-counts/goldens/edits.json
+880252dd0b2401f3a38c98c6c94c9ccdb64bf5193fdbe14670e208363d3fc117  .agent/memory/project/specs/nos-checkout-left-counts/goldens/footprint.json
+1b0f36e1749842820206024815e11fb296013f103280949c31435c09d13fe63a  .agent/memory/project/specs/nos-checkout-left-counts/goldens/spec.md
+990457cc38e0e585cf7665c685e36a4e39fcd07776f936add7c188a9cff8becc  .agent/memory/project/specs/nos-checkout-left-counts/contract-f1.yaml

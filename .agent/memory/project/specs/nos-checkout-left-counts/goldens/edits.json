@@ -1,0 +1,32 @@
+{
+  "why": "nos-checkout-left-counts (rLC, r45 P3): the checkout day picker shows the same per-day count cell as the hub's Day Pass card. Source: design lead Codi's r45 ruling, .tmp/sandbox/queue/r45-ruling.md:31, verbatim in goldens/spec.md.",
+  "files": {
+    "page": "app/(marketing)/tickets/[slug]/page.tsx",
+    "form": "components/tickets/TicketPurchaseForm.tsx",
+    "card": "components/tickets/keepsake/TicketCard.tsx",
+    "dayCount": "components/tickets/keepsake/DayCount.tsx"
+  },
+  "leftFormat": "`${d.remaining} left`",
+  "leftFormatRegex": "`\\$\\{[A-Za-z_.]*remaining\\} left`",
+  "classes": { "of": "nk-of", "left": "nk-left", "unconfirmed": "nk-unconfirmed", "low": "is-low", "sub": "nk-sub" },
+  "hub": "/national-show/tickets",
+  "submitLabel": "Continue to payment",
+  "chooseDay": "Choose a day",
+  "hubLoader": { "import": "loadTicketCardViewModels", "from": "@/lib/data/admission-availability", "showProvisional": "!withholdPlaceholderProse()", "mappingProduct": "day" },
+  "forbiddenInPage": ["getPoolRemaining", "pool-remaining", "getSoldCounts", "load-ticket-card", "firebase-admin", "getFirestore", "buildTicketCardViewModels"],
+  "forbiddenInForm": ["fetch(", "useEffect", "sanityFetch", "getPoolRemaining", "firebase", "loadTicketCardViewModels"],
+  "baseLinesKept": {
+    "form": [
+      "aria-label={formatShowDay(day)}",
+      "checked={cart.day === day}",
+      "aria-invalid={dayInvalid}",
+      "{dayInvalid ? <TicketFieldAlert spaced>{TICKET_COPY.chooseDay}</TicketFieldAlert> : null}",
+      "return requested && showDays.includes(requested) ? requested : null;",
+      "<time dateTime={day}>{formatShowDayShort(day)}</time>"
+    ]
+  },
+  "unchangedFiles": ["app/globals.css", "app/(marketing)/national-show/nos-structure.css", "lib/data/admission-availability.ts", "lib/data/ticket-card-view-models.ts", "components/tickets/keepsake/days.ts", "components/tickets/keepsake/types.ts", "components/tickets/keepsake/parts.tsx", "components/tickets/useTicketCart.ts", "app/(marketing)/national-show/tickets/page.tsx"],
+  "proseCorpus": ["components/tickets/keepsake/TicketCard.tsx", "components/tickets/TicketPurchaseForm.tsx", "lib/data/ticket-presentation.ts", "components/tickets/keepsake/days.ts"],
+  "docMust": ["rLC", "r45", "loadTicketCardViewModels", "DayCount", "nk-left", "nk-of", "left", "withholdPlaceholderProse", "TicketCard"],
+  "shots": ".tmp/lc-shots"
+}
