@@ -121,6 +121,7 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
           <p className="nf-text">{FOOTER_BULLETIN.blurb}</p>
           <NewsletterSignup
             site="nos"
+            showCopyGap={showPlaceholders}
             source="nos-footer"
             inputId="nf-email"
             formId="nf-signup"

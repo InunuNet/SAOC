@@ -23,7 +23,7 @@ export default async function AdminLoginLayout({ children }: { children: React.R
       <UtilityBar show={show} />
       <Header />
       <main>{children}</main>
-      <Footer />
+      <Footer showCopyGap={false} />
     </>
   );
 }

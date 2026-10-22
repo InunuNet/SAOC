@@ -26,7 +26,7 @@ import {
   FOOTER_WOSA,
 } from './footer-data';
 
-export function Footer() {
+export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
   return (
     <footer className="bg-primary-800 text-ivory">
       <div className={FOOTER_LAYOUT.grid}>
@@ -93,6 +93,7 @@ export function Footer() {
           </p>
           <NewsletterSignup
             site="saoc"
+            showCopyGap={showCopyGap}
             source="saoc-footer"
             inputId="footer-newsletter-email"
             emailLabel={FOOTER_BULLETIN.emailLabel}

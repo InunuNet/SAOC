@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 import { SkipLink, UtilityBar, Header, Footer } from '@/components/chrome';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery } from '@/sanity/queries';
 import type { ShowIdentity } from '@/types';
@@ -79,7 +80,7 @@ export default async function NotFound() {
       <main id="main-content" tabIndex={-1}>
         <NotFoundSection />
       </main>
-      <Footer />
+      <Footer showCopyGap={!withholdPlaceholderProse()} />
     </>
   );
 }

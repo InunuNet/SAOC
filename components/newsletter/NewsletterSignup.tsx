@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
 import { FOOTER_HEADINGS } from '@/components/chrome/footer-data';
@@ -10,6 +10,8 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
 
 interface NewsletterSignupProps {
   site: 'saoc' | 'nos';
+  /** True on the beta preview, where unsupplied copy shows as a visible COPY GAP; decided on the server. */
+  showCopyGap: boolean;
   source: 'saoc-footer' | 'nos-footer';
   emailLabel: string;
   placeholder: string;
@@ -30,6 +32,7 @@ interface NewsletterSignupProps {
 
 export function NewsletterSignup({
   site,
+  showCopyGap,
   source,
   emailLabel,
   placeholder,
@@ -51,16 +54,8 @@ export function NewsletterSignup({
   const [emailInvalid, setEmailInvalid] = useState(false);
   const [topics, setTopics] = useState<NewsletterTopic[]>([site]);
   const [topicsInvalid, setTopicsInvalid] = useState(false);
-  const [showCopyGap, setShowCopyGap] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const firstTopicRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    void fetch('/api/newsletter/placeholder-mode', { cache: 'no-store' })
-      .then((response) => response.ok ? response.json() : null)
-      .then((data: { showCopyGap?: boolean } | null) => setShowCopyGap(data?.showCopyGap === true))
-      .catch(() => setShowCopyGap(false));
-  }, []);
 
   const errorId = `${inputId}-error`;
   const topicsErrorId = `${inputId}-topics-error`;
@@ -159,14 +154,16 @@ export function NewsletterSignup({
             ))}
           </div>
           {topicsInvalid ? (
-            <p id={topicsErrorId} role="alert" className="mt-1.5 border-l-2 border-error px-4 font-sans text-[14px] text-ivory">
-              <span aria-hidden="true">⚠︎</span>{' '}
-              {showCopyGap ? (
+            showCopyGap ? (
+              <p id={topicsErrorId} role="alert" className="mt-1.5 border-l-2 border-error px-4 font-sans text-[14px] text-ivory">
+                <span aria-hidden="true">⚠︎</span>{' '}
                 <span>COPY GAP — AI-generated placeholder: Select at least one newsletter topic.</span>
-              ) : (
-                <span className="sr-only">{NEWSLETTER_COPY.genericError}</span>
-              )}
-            </p>
+              </p>
+            ) : (
+              <p id={topicsErrorId} role="alert" className="sr-only">
+                {NEWSLETTER_COPY.genericError}
+              </p>
+            )
           ) : null}
         </fieldset>
         <button

@@ -9,6 +9,7 @@
 
 import { SkipLink, UtilityBar, Header, Footer } from '@/components/chrome';
 import { AdminPill } from '@/components/admin/AdminPill';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { saocOrigin } from '@/lib/site-hosts';
 import { buildOrganizationJsonLd } from '@/lib/site-metadata';
 import { sanityFetch } from '@/sanity/lib/fetch';
@@ -36,7 +37,7 @@ export async function SaocFrame({ children }: { children: React.ReactNode }) {
       <main id="main-content" tabIndex={-1}>
         {children}
       </main>
-      <Footer />
+      <Footer showCopyGap={!withholdPlaceholderProse()} />
       <AdminPill />
     </>
   );
