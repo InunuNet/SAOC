@@ -168,7 +168,7 @@ export function SubmitEventForm() {
           required
           value={values.title}
           onChange={set('title')}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
         />
         {errors.title && <p className="text-red-600 text-xs mt-1">{errors.title}</p>}
       </div>
@@ -184,7 +184,7 @@ export function SubmitEventForm() {
           required
           value={values.kind}
           onChange={set('kind')}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5 h-[39px]"
         >
           <option value="">Select type…</option>
           {ALLOWED_KINDS.map((k) => (
@@ -208,7 +208,7 @@ export function SubmitEventForm() {
           required
           value={values.date}
           onChange={set('date')}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
         />
         {errors.date && <p className="text-red-600 text-xs mt-1">{errors.date}</p>}
       </div>
@@ -224,7 +224,7 @@ export function SubmitEventForm() {
           type="date"
           value={values.endDate}
           onChange={set('endDate')}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
         />
         {errors.endDate && <p className="text-red-600 text-xs mt-1">{errors.endDate}</p>}
       </div>
@@ -241,7 +241,7 @@ export function SubmitEventForm() {
           required
           value={values.venue}
           onChange={set('venue')}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
         />
         {errors.venue && <p className="text-red-600 text-xs mt-1">{errors.venue}</p>}
       </div>
@@ -258,7 +258,7 @@ export function SubmitEventForm() {
           required
           value={values.location}
           onChange={set('location')}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
         />
         {errors.location && <p className="text-red-600 text-xs mt-1">{errors.location}</p>}
       </div>
@@ -275,7 +275,7 @@ export function SubmitEventForm() {
           rows={4}
           value={values.description}
           onChange={set('description')}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
         />
         {errors.description && <p className="text-red-600 text-xs mt-1">{errors.description}</p>}
       </div>
@@ -291,7 +291,7 @@ export function SubmitEventForm() {
           type="text"
           value={values.hostSocietyId}
           onChange={set('hostSocietyId')}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
         />
       </div>
 

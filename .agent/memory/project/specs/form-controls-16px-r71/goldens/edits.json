@@ -1,0 +1,37 @@
+{
+  "width": 390,
+  "minFontPx": 16,
+  "heightTolerancePx": 0.5,
+  "searchRoute": "/about",
+  "vendorDrawerCount": 3,
+  "adminRoutes": [
+    "/admin/login",
+    "/admin-fixtures/dashboard",
+    "/admin-fixtures/tickets",
+    "/admin-fixtures/door",
+    "/admin-fixtures/vendors",
+    "/admin-fixtures/applications",
+    "/admin-fixtures/settings"
+  ],
+  "publicRoutes": [
+    "/",
+    "/about",
+    "/contact",
+    "/members",
+    "/societies",
+    "/events",
+    "/events/submit",
+    "/refunds",
+    "/vsp",
+    "/tickets/cancelled",
+    "/tickets/confirmation",
+    "/national-show",
+    "/national-show/tickets",
+    "/national-show/vendors",
+    "/national-show/vendors/apply",
+    "/national-show/vendors/register",
+    "/national-show/vendors/payment",
+    "/national-show/vendors/photos"
+  ],
+  "syntheticRoute": "synthetic:/events/submit#SubmitEventForm"
+}

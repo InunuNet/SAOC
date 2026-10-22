@@ -1,0 +1,28 @@
+{
+  "_doc": "Every .tsx file under app/ and components/ that renders a text-entry control (input other than hidden/checkbox/radio/file, select, textarea), and how each is kept at >= 16px. own: the control's own resolved className must give >= 16px (requireLeading: the line-height is pinned so the box height does not move). nos-rule: the file renders only inside the .nos-theme scope, where the unlayered r55 rule in national-show/nos-theme.css sets var(--body-md) (16px); the rendered check proves the scope. prop: the control takes its className from a prop and each mount must pass a 16px class (mustMatch).",
+  "files": {
+    "app/(marketing)/societies/SocietiesClient.tsx": { "kind": "own" },
+    "app/admin/login/LoginFormFields.tsx": { "kind": "own", "requireLeading": true },
+    "components/admin/DoorScannerClient.tsx": { "kind": "own" },
+    "components/admin/VendorPaymentLinkControl.tsx": { "kind": "own", "requireLeading": true },
+    "components/admin/VendorPhotoLinkControl.tsx": { "kind": "own", "requireLeading": true },
+    "components/admin/table/TableToolbar.tsx": { "kind": "own" },
+    "components/chrome/SearchOverlay.tsx": { "kind": "own" },
+    "components/contact/ContactForm.tsx": { "kind": "own" },
+    "components/members/SuggestionForm.tsx": { "kind": "own" },
+    "components/events/SubmitEventForm.tsx": { "kind": "own", "requireLeading": true },
+    "components/newsletter/NewsletterSignup.tsx": { "kind": "prop" },
+    "components/tickets/TicketFormField.tsx": { "kind": "nos-rule" },
+    "components/tickets/TicketTypeCard.tsx": { "kind": "nos-rule" },
+    "components/tickets/TicketPurchaseForm.tsx": { "kind": "nos-rule" },
+    "components/vendors/VendorElectricalEquipmentTable.tsx": { "kind": "nos-rule" },
+    "components/vendors/VendorGasEquipmentTable.tsx": { "kind": "nos-rule" },
+    "components/vendors/VendorFormField.tsx": { "kind": "nos-rule" },
+    "components/vendors/VendorRegistrationCodeEntryForm.tsx": { "kind": "nos-rule" }
+  },
+  "propMounts": [
+    { "file": "components/chrome/Footer.tsx", "mustMatch": "inputClassName=\"[^\"]*font-sans text-\\[16px\\]" },
+    { "file": "components/nos-chrome/nos-chrome.css", "mustMatch": "\\.nf-form input \\{[^}]*font: var\\(--body-md\\)" }
+  ],
+  "honeypotName": "_hp"
+}

@@ -1,0 +1,53 @@
+# Source: Codi's ruling on r71 (design lead, final authority), verbatim in goldens/spec.md. On origin/main 85cf0814 (r70 merged).
+# Rendered checks: one mode per call (FC16_MODES), ports 3010-3019 minus 3002, 3013, 3016. Sanity and Firestore are READ only; nothing submits a form or signs in.
+schema: athanor.contract/v1
+slug: form-controls-16px-r71
+goal: >-
+  No visible text input, select or textarea on a public route or an admin surface computes a font-size below 16px at 390px (iOS stops zooming on focus), the box
+  heights do not move, and a rendered gate plus a classified control inventory stop the class coming back.
+created_at: '2026-10-23'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/footprint.json, docs/form-controls-16px-r71.md and this spec dir (enforced by A2)'
+    reason: 'Per-component class edits only; no CSS, token or global rule. The NOS controls are already 16px through the r55 rule, and SocietiesClient, the SAOC footer email, ContactForm, SuggestionForm, SearchOverlay and DoorScannerClient are already text-[16px].'
+  - item: 'checkboxes, radios, file pickers, buttons, hidden inputs'
+    reason: 'Not text entry: iOS does not zoom on them, and the ruling names text inputs, selects and textareas.'
+features:
+  - id: F1
+    name: Sweep - every text control at 16px at 390 with unchanged box heights (r71)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/form-controls-16px-r71/goldens/spec.md
+  - .agent/memory/project/specs/form-controls-16px-r71/goldens/edits.json
+  - .agent/memory/project/specs/form-controls-16px-r71/goldens/controls.json
+  - .agent/memory/project/specs/form-controls-16px-r71/goldens/footprint.json
+  - .agent/memory/project/specs/form-controls-16px-r71/goldens/heights-base.json
+  - .agent/memory/project/specs/form-controls-16px-r71/goldens/reference-trial.patch
+  - .agent/memory/project/specs/form-controls-16px-r71/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/form-controls-16px-r71/goldens/checks.sha256
+    - id: A2
+      description: Footprint - the branch differs from 85cf0814 only in the five files of goldens/footprint.json, docs/form-controls-16px-r71.md and the spec dir
+      command: node .agent/memory/project/specs/form-controls-16px-r71/checks/footprint.mjs
+    - id: A3
+      description: Static - control inventory classified, own files resolve to >= 16px with pinned line-heights, r55 rule intact, edits are class-only, no tokens, docs state the limits
+      command: node .agent/memory/project/specs/form-controls-16px-r71/checks/static.mjs
+    - id: A4
+      description: Prettier - touched files stay clean, files already dirty at base get no dirtier
+      command: node .agent/memory/project/specs/form-controls-16px-r71/checks/prettier.mjs
+    - id: A5
+      description: Lint clean on the touched files
+      command: pnpm exec eslint components/events/SubmitEventForm.tsx app/admin/login/LoginFormFields.tsx components/admin/table/TableToolbar.tsx components/admin/VendorPaymentLinkControl.tsx components/admin/VendorPhotoLinkControl.tsx
+    - id: A6
+      description: Type-check clean
+      command: pnpm exec tsc --noEmit
+    - id: A7
+      description: Rendered public build at 390 - no visible text control below 16px on any walked public route, /admin/login and the admin fixtures; heights equal base
+      command: FC16_MODES=public node .agent/memory/project/specs/form-controls-16px-r71/checks/rendered.mjs
+    - id: A8
+      description: Rendered preview build at 390 - the same walk in preview
+      command: FC16_MODES=preview node .agent/memory/project/specs/form-controls-16px-r71/checks/rendered.mjs

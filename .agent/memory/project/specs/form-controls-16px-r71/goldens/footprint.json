@@ -1,0 +1,7 @@
+[
+  "components/events/SubmitEventForm.tsx",
+  "app/admin/login/LoginFormFields.tsx",
+  "components/admin/table/TableToolbar.tsx",
+  "components/admin/VendorPaymentLinkControl.tsx",
+  "components/admin/VendorPhotoLinkControl.tsx"
+]
