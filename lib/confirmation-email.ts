@@ -10,7 +10,12 @@ import {
   toPdfPositions,
 } from '@/lib/ticket-pdf-data';
 import { sendEmail, TICKETS_FROM_ADDRESS, type EmailAttachment } from '@/lib/email';
-import OrderConfirmation, { type OrderConfirmationPosition } from '@/emails/OrderConfirmation';
+import OrderConfirmation, {
+  type OrderConfirmationPosition,
+  type OrderConfirmationVisit,
+} from '@/emails/OrderConfirmation';
+import { loadOrderVisit } from '@/lib/order-visit-info';
+import { logFailureSafely } from '@/lib/safe-log';
 import type { TicketType } from '@/types/index';
 
 /**
@@ -73,6 +78,8 @@ export interface SendConfirmationEmailDeps {
   mailer?: ConfirmationEmailMailer;
   generateQrPngBuffer?: (bookingRef: string) => Promise<Buffer>;
   siteUrl?: string;
+  /** Injectable for tests; the default reads the confirmed visit info from Sanity. */
+  loadVisit?: () => Promise<OrderConfirmationVisit>;
   /** Injectable for tests; the default loads the visit info and renders the real PDF. */
   buildTicketPdf?: (input: TicketPdfEmailInput) => Promise<Uint8Array>;
 }
@@ -111,10 +118,10 @@ async function buildPdfAttachment(
       contentType: 'application/pdf',
     };
   } catch (error) {
-    console.error('[confirmation-email] ticket PDF generation failed; sending without attachment', {
-      errorType: error instanceof Error ? error.name : typeof error,
-      errorMessage: error instanceof Error ? error.message : String(error),
-    });
+    logFailureSafely(
+      '[confirmation-email] ticket PDF generation failed; sending without attachment',
+      error
+    );
     return null;
   }
 }
@@ -148,6 +155,7 @@ export async function sendConfirmationEmail(
   const mailer = deps.mailer ?? { send: sendEmail };
   const generateQrPngBuffer = deps.generateQrPngBuffer ?? generateBookingRefQrPngBuffer;
   const siteUrl = deps.siteUrl ?? resolveSiteUrl();
+  const loadVisit = deps.loadVisit ?? loadOrderVisit;
 
   const positions: OrderConfirmationPosition[] = [];
   const attachments: EmailAttachment[] = [];
@@ -172,11 +180,12 @@ export async function sendConfirmationEmail(
   if (pdfAttachment) attachments.push(pdfAttachment);
 
   const recoveryUrl = buildRecoveryUrl(input.recoveryToken, siteUrl);
+  const visit = await loadVisit();
 
   await mailer.send({
     to: input.buyerEmail,
     subject: 'Your National Orchid Show order is confirmed',
-    react: OrderConfirmation({ buyerName: input.buyerName, positions, recoveryUrl }),
+    react: OrderConfirmation({ buyerName: input.buyerName, positions, recoveryUrl, visit }),
     from: TICKETS_FROM_ADDRESS,
     attachments,
   });

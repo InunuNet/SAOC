@@ -1,13 +1,12 @@
-import {
-  Body,
-  Container,
-  Head,
-  Heading,
-  Hr,
-  Html,
-  Preview,
-  Text,
-} from '@react-email/components';
+import EmailShell, {
+  ShellCodeBlock,
+  ShellDetailRow,
+  ShellHeading,
+  ShellLink,
+  ShellRule,
+  ShellSubheading,
+  ShellText,
+} from './_shared/EmailShell';
 
 import type { VendorBoothType } from '@/types/index';
 
@@ -158,8 +157,7 @@ export function resolveStaffAttendanceDisplay(
 
 /**
  * Vendor approval confirmation email (mission vendor-registration F8). Modelled on
- * emails/VendorRegistrationConfirmation.tsx -- no invented brand colours/typography (project
- * rule), no regulatory permit non-verification note (that is a later feature's concern, not
+ * emails/VendorRegistrationConfirmation.tsx -- chrome is EmailShell family B (mission email-shell), no regulatory permit non-verification note (that is a later feature's concern, not
  * this one's). See contracts/golden/vendor-f8-approval-email/README.md.
  *
  * Every one of the seven logistics recap fields is routed through formatBoothNumber or
@@ -184,116 +182,89 @@ export default function VendorApprovalConfirmation({
   registrationCode,
 }: VendorApprovalConfirmationProps) {
   return (
-    <Html>
-      <Head />
-      <Preview>
-        {registrationLink
+    <EmailShell
+      family="B"
+      preview={
+        registrationLink
           ? 'Your SAOC vendor application has been approved'
-          : 'Your SAOC vendor registration has been approved'}
-      </Preview>
-      <Body style={{ fontFamily: 'sans-serif', backgroundColor: '#f9f9f9', margin: '0', padding: '0' }}>
-        <Container style={{ maxWidth: '600px', margin: '0 auto', padding: '24px', backgroundColor: '#ffffff' }}>
-          <Heading style={{ fontSize: '24px', color: '#1a1a1a' }}>
-            {registrationLink ? 'Vendor Application Approved' : 'Vendor Registration Approved'}
-          </Heading>
-          <Text style={{ fontSize: '16px', color: '#333' }}>
-            Dear {contactPersonName},
-          </Text>
-          {registrationLink ? (
-            <>
-              <Text style={{ fontSize: '16px', color: '#333' }}>
-                Good news -- your vendor application for <strong>{businessName}</strong> at the
-                National Orchid Show has been approved.
-              </Text>
-              <Heading as="h2" style={{ fontSize: '18px', color: '#1a1a1a' }}>
-                Your registration code
-              </Heading>
-              <Text style={{ fontSize: '24px', color: '#1a1a1a', letterSpacing: '2px' }}>
-                {businessName}-{formatRegistrationCodeForReadAloud(registrationCode)}
-              </Text>
-              <Text style={{ fontSize: '16px', color: '#333' }}>
-                Go to the full registration form and enter your business name and this 4-digit
-                code to continue. Keep this code -- you (or the show office) may need to read it
-                aloud.
-              </Text>
-              <Text style={{ fontSize: '16px', color: '#333' }}>
-                <a href={registrationLink}>{registrationLink}</a>
-              </Text>
-              <Hr />
-            </>
-          ) : (
-            <>
-              <Text style={{ fontSize: '16px', color: '#333' }}>
-                Good news -- your vendor registration for <strong>{businessName}</strong> at the
-                National Orchid Show has been approved.
-              </Text>
-              <Text style={{ fontSize: '16px', color: '#333' }}>
-                Your booth number: <strong>{formatBoothNumber(boothNumber)}</strong>
-              </Text>
-              <Hr />
-              <Heading as="h2" style={{ fontSize: '18px', color: '#1a1a1a' }}>
-                Your submitted logistics (please verify)
-              </Heading>
-              <Text style={{ fontSize: '16px', color: '#333' }}>
-                Please check the details below against what you submitted, and let us know as
-                soon as possible if anything needs correcting before show day.
-              </Text>
-              <Text style={{ fontSize: '16px', color: '#333' }}>
-                Booth number: {formatBoothNumber(boothNumber)}
-              </Text>
-              <Text style={{ fontSize: '16px', color: '#333' }}>
-                Booth type: {formatOptionalField(boothType)}
-              </Text>
-              {(() => {
-                const staffAttendance = resolveStaffAttendanceDisplay({
-                  staffPerDay,
-                  staffCountSetupDay,
-                  staffCountDay1,
-                  staffCountDay2,
-                  staffCountDay3,
-                  staffCountBreakdownDay,
-                });
-                if (staffAttendance.mode === 'breakdown') {
-                  return (
-                    <>
-                      <Text style={{ fontSize: '16px', color: '#333' }}>Number of Staff</Text>
-                      {staffAttendance.days.map((day) => (
-                        <Text key={day.label} style={{ fontSize: '16px', color: '#333' }}>
-                          {day.label}: {day.value}
-                        </Text>
-                      ))}
-                    </>
-                  );
-                }
-                return (
-                  <Text style={{ fontSize: '16px', color: '#333' }}>
-                    Staff per day:{' '}
-                    {staffAttendance.mode === 'legacy'
-                      ? staffAttendance.value
-                      : LOGISTICS_NOT_SPECIFIED_LABEL}
-                  </Text>
-                );
-              })()}
-              <Text style={{ fontSize: '16px', color: '#333' }}>
-                Power required: {formatOptionalField(powerRequired)}
-              </Text>
-              <Text style={{ fontSize: '16px', color: '#333' }}>
-                Water required: {formatOptionalField(waterRequired)}
-              </Text>
-              <Text style={{ fontSize: '16px', color: '#333' }}>
-                Load-in slot: {formatOptionalField(loadInSlot)}
-              </Text>
-              <Text style={{ fontSize: '16px', color: '#333' }}>
-                Load-out slot: {formatOptionalField(loadOutSlot)}
-              </Text>
-              <Hr />
-            </>
-          )}
-          <Text style={{ fontSize: '12px', color: '#999', marginTop: '24px' }}>
-            South African Orchid Council — saoc.co.za
-          </Text>
-        </Container>
-      </Body>
-    </Html>
+          : 'Your SAOC vendor registration has been approved'
+      }
+    >
+      <ShellHeading>
+        {registrationLink ? 'Vendor application approved' : 'Vendor registration approved'}
+      </ShellHeading>
+      <ShellText>Dear {contactPersonName},</ShellText>
+      {registrationLink ? (
+        <>
+          <ShellText>
+            Good news — your vendor application for <strong>{businessName}</strong> at the
+            National Orchid Show has been approved.
+          </ShellText>
+          <ShellSubheading>Your registration code</ShellSubheading>
+          <ShellCodeBlock>
+            {formatRegistrationCodeForReadAloud(registrationCode)}
+          </ShellCodeBlock>
+          <ShellText>
+            Go to the full registration form and enter your business name and this 4-digit
+            code to continue. Keep this code — you (or the show office) may need to read it
+            aloud.
+          </ShellText>
+          <ShellText>
+            <ShellLink href={registrationLink}>{registrationLink}</ShellLink>
+          </ShellText>
+        </>
+      ) : (
+        <>
+          <ShellText>
+            Good news — your vendor registration for <strong>{businessName}</strong> at the
+            National Orchid Show has been approved.
+          </ShellText>
+          <ShellText>
+            Your booth number: <strong>{formatBoothNumber(boothNumber)}</strong>
+          </ShellText>
+          <ShellRule />
+          <ShellSubheading>Your submitted logistics (please verify)</ShellSubheading>
+          <ShellText>
+            Please check the details below against what you submitted, and let us know as
+            soon as possible if anything needs correcting before show day.
+          </ShellText>
+          <ShellDetailRow label="Booth number:">{formatBoothNumber(boothNumber)}</ShellDetailRow>
+          <ShellDetailRow label="Booth type:">{formatOptionalField(boothType)}</ShellDetailRow>
+          {(() => {
+            const staffAttendance = resolveStaffAttendanceDisplay({
+              staffPerDay,
+              staffCountSetupDay,
+              staffCountDay1,
+              staffCountDay2,
+              staffCountDay3,
+              staffCountBreakdownDay,
+            });
+            if (staffAttendance.mode === 'breakdown') {
+              return (
+                <>
+                  <ShellText>Number of Staff</ShellText>
+                  {staffAttendance.days.map((day) => (
+                    <ShellDetailRow key={day.label} label={`${day.label}:`}>
+                      {day.value}
+                    </ShellDetailRow>
+                  ))}
+                </>
+              );
+            }
+            return (
+              <ShellDetailRow label="Staff per day:">
+                {staffAttendance.mode === 'legacy'
+                  ? staffAttendance.value
+                  : LOGISTICS_NOT_SPECIFIED_LABEL}
+              </ShellDetailRow>
+            );
+          })()}
+          <ShellDetailRow label="Power required:">{formatOptionalField(powerRequired)}</ShellDetailRow>
+          <ShellDetailRow label="Water required:">{formatOptionalField(waterRequired)}</ShellDetailRow>
+          <ShellDetailRow label="Load-in slot:">{formatOptionalField(loadInSlot)}</ShellDetailRow>
+          <ShellDetailRow label="Load-out slot:">{formatOptionalField(loadOutSlot)}</ShellDetailRow>
+        </>
+      )}
+    </EmailShell>
   );
 }
