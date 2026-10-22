@@ -26,6 +26,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 import { isBetaWallConfigured, isPubliclyLaunched } from '@/lib/beta-public-launch';
+import { NOS_INTERNAL_PREFIX, nosPath } from '@/lib/nos-paths';
+import { saocUrl, nosUrl, siteForHost, type Site } from '@/lib/site-hosts';
 
 // Exact-match only — never a prefix/startsWith check. A prefix match would also
 // exempt /api/tickets/itn-evil or (pre-URL-normalisation) a traversal attempt like
@@ -152,6 +154,116 @@ export async function decideBasicAuth(input: AuthDecisionInput): Promise<boolean
   return userMatches && passwordMatches;
 }
 
+// ---------------------------------------------------------------------------
+// Host routing (mission nos-site-split F1; golden host-routing.golden.md). One app serves two
+// sites: the SAOC site (everything not NOS) and the National Orchid Show site (nos.saoc.co.za).
+// It runs AFTER the wall decision above, so a 401 is identical on both hosts and no redirect ever
+// leaks the existence of a path to an unauthenticated caller.
+// ---------------------------------------------------------------------------
+const SITE_HEADER = 'x-site';
+const PERMANENT_REDIRECT = 308; // 308, not 301: the method and body survive the hop.
+
+// Host-neutral: served identically on every host, never redirected or rewritten. /admin and
+// /api/admin share one sign-in; /api carries the payment webhooks; /og and /studio are tooling.
+const NEUTRAL_PREFIXES = ['/admin', '/api', '/studio', '/og', '/_next'];
+const NEUTRAL_EXACT = new Set<string>([
+  '/robots.txt',
+  '/sitemap.xml',
+  '/events.ics',
+  '/favicon.ico',
+  '/icon.png',
+  '/apple-icon.png',
+]);
+// The NOS share card lives at /national-show/og; the bare /og route is SAOC's card, so on the NOS
+// host the show card keeps its internal path instead of being prefix-stripped.
+const NOS_OG_PATH = `${NOS_INTERNAL_PREFIX}/og`;
+
+// SAOC-hosted trees: asked for on the NOS host they redirect to the SAOC origin.
+const SAOC_ONLY_EXACT = new Set<string>(['/contact', '/members', '/constitution', '/judging']);
+const SAOC_ONLY_PREFIXES = ['/societies', '/events'];
+// Host-neutral content rendered by both sites' chrome (app/(shared)).
+const SHARED_EXACT = new Set<string>(['/privacy', '/terms', '/refunds']);
+const SHARED_PREFIXES = ['/newsletter'];
+// Show routes that exist as short top-level URLs (Ozow caps the cancel URL at 50 characters).
+const NOS_TOP_LEVEL_PREFIXES = ['/vsp', '/tickets'];
+const NOS_TICKETS_ROOT = '/tickets';
+const NOS_TICKETS_BUY_PREFIX = '/tickets/buy';
+// What the SAOC host hands to the NOS origin.
+const SHOW_PREFIXES = [NOS_INTERNAL_PREFIX, '/tickets', '/vsp'];
+
+function isUnder(pathname: string, base: string): boolean {
+  return pathname === base || pathname.startsWith(`${base}/`);
+}
+
+function isUnderAny(pathname: string, bases: readonly string[]): boolean {
+  return bases.some((base) => isUnder(pathname, base));
+}
+
+function hasFileExtension(pathname: string): boolean {
+  const lastSegment = pathname.slice(pathname.lastIndexOf('/') + 1);
+  return lastSegment.includes('.');
+}
+
+export function isHostNeutralPath(pathname: string): boolean {
+  return (
+    NEUTRAL_EXACT.has(pathname) ||
+    isUnderAny(pathname, NEUTRAL_PREFIXES) ||
+    hasFileExtension(pathname)
+  );
+}
+
+function siteOfRequest(request: NextRequest): Site {
+  return siteForHost(request.headers.get('x-forwarded-host') ?? request.headers.get('host'));
+}
+
+function redirectTo(location: string): Response {
+  return new Response(null, { status: PERMANENT_REDIRECT, headers: { Location: location } });
+}
+
+// Same-host redirect. Built from the request's own URL so Next normalises Location to a relative
+// path (it only accepts an absolute URL from a proxy, and relativises one that matches the request).
+function redirectWithinHost(request: NextRequest, pathname: string): Response {
+  const target = request.nextUrl.clone();
+  target.pathname = pathname;
+  return NextResponse.redirect(target, PERMANENT_REDIRECT);
+}
+
+function rewriteTo(request: NextRequest, pathname: string): Response {
+  const target = request.nextUrl.clone();
+  target.pathname = pathname;
+  return NextResponse.rewrite(target);
+}
+
+function routeNosHost(request: NextRequest): Response {
+  const { pathname, search } = request.nextUrl;
+
+  if (SAOC_ONLY_EXACT.has(pathname) || isUnderAny(pathname, SAOC_ONLY_PREFIXES)) {
+    return redirectTo(saocUrl(`${pathname}${search}`));
+  }
+  if (isUnder(pathname, NOS_INTERNAL_PREFIX) && pathname !== NOS_OG_PATH) {
+    return redirectWithinHost(request, nosPath(pathname));
+  }
+  if (pathname === NOS_OG_PATH || SHARED_EXACT.has(pathname) || isUnderAny(pathname, SHARED_PREFIXES)) {
+    return NextResponse.next();
+  }
+  if (pathname === NOS_TICKETS_ROOT || isUnder(pathname, NOS_TICKETS_BUY_PREFIX)) {
+    return rewriteTo(request, `${NOS_INTERNAL_PREFIX}${pathname}`);
+  }
+  if (isUnderAny(pathname, NOS_TOP_LEVEL_PREFIXES)) return NextResponse.next();
+  return rewriteTo(request, pathname === '/' ? NOS_INTERNAL_PREFIX : `${NOS_INTERNAL_PREFIX}${pathname}`);
+}
+
+function routeSaocHost(request: NextRequest): Response {
+  const { pathname, search } = request.nextUrl;
+  if (isUnderAny(pathname, SHOW_PREFIXES)) return redirectTo(nosUrl(`${pathname}${search}`));
+  return NextResponse.next();
+}
+
+function routeByHost(request: NextRequest, site: Site): Response {
+  if (isHostNeutralPath(request.nextUrl.pathname)) return NextResponse.next();
+  return site === 'nos' ? routeNosHost(request) : routeSaocHost(request);
+}
+
 export async function proxy(request: NextRequest): Promise<Response> {
   const publiclyLaunched = isPubliclyLaunched(process.env.SITE_PUBLIC_LAUNCH);
 
@@ -177,6 +289,8 @@ export async function proxy(request: NextRequest): Promise<Response> {
     return wallUp ? applyWallHeaders(response) : response;
   }
 
-  const response = NextResponse.next();
+  const site = siteOfRequest(request);
+  const response = routeByHost(request, site);
+  response.headers.set(SITE_HEADER, site);
   return wallUp ? applyWallHeaders(response) : response;
 }
