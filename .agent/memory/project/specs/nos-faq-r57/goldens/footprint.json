@@ -1,0 +1,7 @@
+[
+  "app/(marketing)/national-show/faq/page.tsx",
+  "app/(marketing)/national-show/what-to-expect/page.tsx",
+  "app/(marketing)/national-show/nos-structure.css",
+  "components/show/ShowFaqList.tsx",
+  "components/show/AdmissionPriceList.tsx"
+]

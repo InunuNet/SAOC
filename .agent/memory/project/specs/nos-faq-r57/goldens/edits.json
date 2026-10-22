@@ -1,0 +1,17 @@
+{
+  "faqPath": "/national-show/faq",
+  "wtePath": "/national-show/what-to-expect",
+  "hubPath": "/national-show/tickets",
+  "showPath": "/national-show",
+  "widths": [1280, 390],
+  "costQuestion": "How much does it cost to get in?",
+  "venueQuestion": "Where exactly is the show being held?",
+  "datesQuestion": "When is the show?",
+  "venueFact": "The Hangar, Stellenbosch Flying Club",
+  "ticketsHref": "/national-show/tickets",
+  "linkLabel": "See ticket prices and book",
+  "unsourcedAdmissionPhrases": ["charged per person per day", "concession rates for pensioners"],
+  "wiredHook": "data-faq-wired",
+  "linkMinPx": 44,
+  "shots": ".tmp/ex-shots"
+}

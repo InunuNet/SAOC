@@ -1,0 +1,325 @@
+diff --git a/app/(marketing)/national-show/faq/page.tsx b/app/(marketing)/national-show/faq/page.tsx
+index a750ee12..23457b25 100644
+--- a/app/(marketing)/national-show/faq/page.tsx
++++ b/app/(marketing)/national-show/faq/page.tsx
+@@ -2,15 +2,17 @@ import type { Metadata } from 'next';
+ import Link from 'next/link';
+ 
+ import { JsonLd, faqPageJsonLd, portableTextToPlainText } from '@/components/seo/JsonLd';
+-import { ShowFaqList } from '@/components/show';
+-import { hasFaqAnswer } from '@/components/show/ShowFaqList';
++import { ShowFaqList, ShowStatusLine } from '@/components/show';
++import { AdmissionPriceList, admissionPriceLabels } from '@/components/show/AdmissionPriceList';
++import { hasFaqAnswer, type WiredFaq } from '@/components/show/ShowFaqList';
+ import { HoldingState } from '@/components/show/nos/HoldingState';
+ import { Button } from '@/components/nos/Button';
+ import { NosHero } from '@/components/nos/NosHero';
+ import { NosSection } from '@/components/nos/NosSection';
+ import { sanityFetch } from '@/sanity/lib/fetch';
+-import { showFaqsQuery, showVisitorInfoQuery } from '@/sanity/queries';
+-import { loadShowFacts } from '@/lib/data/show-facts';
++import { nationalShowQuery, showFaqsQuery, showVisitorInfoQuery } from '@/sanity/queries';
++import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
++import { loadShowFacts, type ShowFactsSource } from '@/lib/data/show-facts';
+ import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+ import { buildPageMetadata } from '@/lib/seo';
+ import type { ShowFaq, ShowVisitorInfo } from '@/types';
+@@ -39,13 +41,15 @@ export const metadata: Metadata = buildPageMetadata({
+ });
+ 
+ export default async function ShowFaqPage() {
+-  const [info, faqs, facts] = await Promise.all([
++  const [info, faqs, facts, show, loaded] = await Promise.all([
+     sanityFetch<ShowVisitorInfo>({
+       query: showVisitorInfoQuery,
+       tags: ['showVisitorInfo', 'sanity'],
+     }),
+     sanityFetch<ShowFaq[]>({ query: showFaqsQuery, tags: ['showFaq', 'sanity'] }),
+     loadShowFacts(),
++    sanityFetch<ShowFactsSource>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
++    loadTicketCardViewModels(),
+   ]);
+ 
+   // R77 #2: a public build shows only answered questions; with none left the page holds.
+@@ -58,6 +62,33 @@ export default async function ShowFaqPage() {
+     .sort((a, b) => categoryRank(a) - categoryRank(b));
+   const holds = hideUnanswered && visibleFaqs.length === 0;
+ 
++  // r57: two rows are answered from facts the site already publishes, so they cannot disagree with
++  // the page that publishes them. The cost row reads the tickets hub's own loader and labels; the
++  // venue row reads the show's venue.name (the fact strip's source), only while the committee has
++  // confirmed the venue. Either falls back to its Sanity answer when its source has nothing.
++  const wired: Record<string, WiredFaq> = {};
++  if (admissionPriceLabels(loaded.cards).length > 0) {
++    wired['showFaq-tickets-1'] = {
++      kind: 'prices',
++      replaces: false,
++      body: (
++        <>
++          <AdmissionPriceList cards={loaded.cards} />
++          <Button as={Link} href="/national-show/tickets" variant="ghost" className="mt-4">
++            {info?.admissionLinkLabel ?? 'See ticket prices and book'} →
++          </Button>
++        </>
++      ),
++    };
++  }
++  if (show?.venue?.name && info?.confirmations?.venue === 'confirmed') {
++    wired['showFaq-getting-there-3'] = {
++      kind: 'venue',
++      replaces: true,
++      body: <p>{show.venue.name}</p>,
++    };
++  }
++
+   // SEO: the entries the page presents as settled. A public build (`hideUnanswered`) renders no
+   // badges, so every answered entry there reads as settled; a beta build badges everything that
+   // is not 'confirmed'.
+@@ -84,11 +115,20 @@ export default async function ShowFaqPage() {
+         <HoldingState facts={facts} contentState="published" />
+       ) : (
+         <NosSection wrapClassName="[&_details_p]:max-w-[60ch]">
++          {hideUnanswered ? null : (
++            <ShowStatusLine
++              kind="confirmation"
++              status="pending"
++              pendingLabel={info?.pendingLabel}
++              researchLabel={info?.researchLabel}
++            />
++          )}
+           <ShowFaqList
+             faqs={visibleFaqs}
+             pendingLabel={info?.pendingLabel}
+             researchLabel={info?.researchLabel}
+             hideUnanswered={hideUnanswered}
++            wired={wired}
+           />
+ 
+           <div className="mt-14 border-t border-rule pt-8">
+diff --git a/app/(marketing)/national-show/nos-structure.css b/app/(marketing)/national-show/nos-structure.css
+index 81efde7c..6cd51660 100644
+--- a/app/(marketing)/national-show/nos-structure.css
++++ b/app/(marketing)/national-show/nos-structure.css
+@@ -753,6 +753,11 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
+ .nos-faq-answer {
+   padding: 0 clamp(20px, 3vw, 32px) 24px;
+ }
++/* r57: the answer-panel marker reads in sentence case (the R19 pill above is uppercase). */
++.nos-theme .nos-faq-answer [data-confirmation-badge] {
++  letter-spacing: normal;
++  text-transform: none;
++}
+ 
+ /* F18-KEEPSAKE-START */
+ /* F18b (launch-weekend, v13 keepsake tickets): the ticket, the pool banner, the hero fan and the
+diff --git a/app/(marketing)/national-show/what-to-expect/page.tsx b/app/(marketing)/national-show/what-to-expect/page.tsx
+index 30dbd389..1e13fe48 100644
+--- a/app/(marketing)/national-show/what-to-expect/page.tsx
++++ b/app/(marketing)/national-show/what-to-expect/page.tsx
+@@ -3,6 +3,7 @@ import Link from 'next/link';
+ import { connection } from 'next/server';
+ 
+ import { ConfirmationBadge, ShowHoldingNote, VisitorInfoBlock } from '@/components/show';
++import { AdmissionPriceList, admissionPriceLabels } from '@/components/show/AdmissionPriceList';
+ import { carriesUnsourcedVisitorText } from '@/components/show/ShowHoldingNote';
+ import { Button } from '@/components/nos/Button';
+ import { Card } from '@/components/nos/Card';
+@@ -12,6 +13,7 @@ import { NosSection } from '@/components/nos/NosSection';
+ import { SectionHeading } from '@/components/nos/SectionHeading';
+ import { sanityFetch } from '@/sanity/lib/fetch';
+ import { nationalShowQuery, showVisitorInfoQuery } from '@/sanity/queries';
++import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
+ import { buildShowFacts, type ShowFactsSource } from '@/lib/data/show-facts';
+ import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+ import { buildPageMetadata } from '@/lib/seo';
+@@ -73,12 +75,13 @@ export default async function WhatToExpectPage() {
+   // The public-versus-preview switch reads the environment, so this page renders per request
+   // rather than being frozen at build time with whichever setting the build happened to have.
+   await connection();
+-  const [info, show] = await Promise.all([
++  const [info, show, loaded] = await Promise.all([
+     sanityFetch<ShowVisitorInfo>({
+       query: showVisitorInfoQuery,
+       tags: ['showVisitorInfo', 'sanity'],
+     }),
+     sanityFetch<ShowFactsSource>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
++    loadTicketCardViewModels(),
+   ]);
+ 
+   const pendingLabel = info?.pendingLabel;
+@@ -106,10 +109,19 @@ export default async function WhatToExpectPage() {
+     !!pendingLabel?.toLowerCase().startsWith(hours.trim().toLowerCase());
+   // A row whose hours only restate the status line is left out whole (its term and its value).
+   const hoursRows = openingHours.filter((entry) => !restatesStatus(entry.hours));
++  // r57: the Admission card answers from the tickets hub's own loader and labels. The Sanity admission
++  // prose (per person per day, concessions) conflicts with the priced products, so it is not drawn
++  // while the prices are; it stays in Sanity for the owner to revise. The priced list is the tickets
++  // page's own published fact, so the card carries no marker of its own.
++  const admissionWired = admissionPriceLabels(loaded.cards).length > 0;
+   // Each logistics block in page order: whether it renders at all, and whether it is confirmed.
+   const blocks = [
+     { heading: HEADING_HOURS, present: openingHours.length > 0, status: status.openingHours },
+-    { heading: HEADING_ADMISSION, present: true, status: status.admission },
++    {
++      heading: HEADING_ADMISSION,
++      present: true,
++      status: admissionWired ? 'confirmed' : status.admission,
++    },
+     { heading: HEADING_FOOD, present: !!info?.food, status: status.food },
+     {
+       heading: HEADING_PHOTOGRAPHY,
+@@ -190,11 +202,12 @@ export default async function WhatToExpectPage() {
+           <VisitorInfoBlock
+             heading={HEADING_ADMISSION}
+             headingLevel="h2"
+-            body={admissionNote}
+-            status={status.admission}
++            body={admissionWired ? null : admissionNote}
++            status={admissionWired ? 'confirmed' : status.admission}
+             pendingLabel={pendingLabel}
+             researchLabel={researchLabel}
+           >
++            {admissionWired ? <AdmissionPriceList cards={loaded.cards} /> : null}
+             <Button as={Link} href="/national-show/tickets" className="mt-4">
+               {info?.admissionLinkLabel ?? 'See ticket prices and book'} →
+             </Button>
+diff --git a/components/show/AdmissionPriceList.tsx b/components/show/AdmissionPriceList.tsx
+new file mode 100644
+index 00000000..6e167598
+--- /dev/null
++++ b/components/show/AdmissionPriceList.tsx
+@@ -0,0 +1,40 @@
++// =============================================================
++// NOS — components/show/AdmissionPriceList.tsx
++// Server Component — the admission products and their prices, worded exactly as the tickets hub's
++// fan links word them (fanLinkLabel over TICKET_FAN_ORDER) and read from the same view models
++// (loadTicketCardViewModels). The FAQ cost row and the what-to-expect Admission card both draw it,
++// so a price can never read differently from the tickets page (R7: no price is typed here).
++// =============================================================
++
++import { fanLinkLabel } from '@/components/tickets/keepsake/TicketMini';
++import type { TicketCard } from '@/lib/data/ticket-card-view-models';
++import { TICKET_FAN_ORDER, type TicketProductId } from '@/lib/data/ticket-presentation';
++
++type AdmissionCards = Partial<Record<TicketProductId, TicketCard>>;
++
++/** One label per admission product that has a price to show; the hub fan names the same ones. */
++export function admissionPriceLabels(cards: AdmissionCards): string[] {
++  return TICKET_FAN_ORDER.flatMap((id) => {
++    const vm = cards[id];
++    if (!vm || vm.price === null) return [];
++    if (vm.state === 'salesClosed' || vm.state === 'pricePending' || vm.state === 'soldOut') {
++      return [];
++    }
++    return [fanLinkLabel(id, vm)];
++  });
++}
++
++export function AdmissionPriceList({ cards }: { cards: AdmissionCards }) {
++  const labels = admissionPriceLabels(cards);
++  if (labels.length === 0) return null;
++  return (
++    <ul
++      data-admission-prices=""
++      className="mt-3 space-y-1 font-sans text-[16px] leading-[1.55] text-ink/80"
++    >
++      {labels.map((label) => (
++        <li key={label}>{label}</li>
++      ))}
++    </ul>
++  );
++}
+diff --git a/components/show/ShowFaqList.tsx b/components/show/ShowFaqList.tsx
+index a4a77178..e646bd71 100644
+--- a/components/show/ShowFaqList.tsx
++++ b/components/show/ShowFaqList.tsx
+@@ -19,6 +19,7 @@
+ // =============================================================
+ 
+ import { PortableText } from '@portabletext/react';
++import type { ReactNode } from 'react';
+ 
+ import type { ShowFaq } from '@/types';
+ 
+@@ -53,7 +54,19 @@ export function hasFaqAnswer(faq: ShowFaq): boolean {
+   return Array.isArray(faq.answer) && faq.answer.length > 0;
+ }
+ 
++/**
++ * A row whose answer is read from a published source rather than typed in Sanity (keyed by the
++ * showFaq _id). `replaces` swaps the Sanity answer for `body`; otherwise `body` follows it. A wired
++ * row carries no marker: its source is the page that publishes the fact.
++ */
++export interface WiredFaq {
++  kind: string;
++  body: ReactNode;
++  replaces: boolean;
++}
++
+ export interface ShowFaqListProps {
++  wired?: Readonly<Record<string, WiredFaq>>;
+   faqs?: ShowFaq[] | null;
+   pendingLabel?: string | null;
+   researchLabel?: string | null;
+@@ -70,6 +83,7 @@ export function ShowFaqList({
+   pendingLabel,
+   researchLabel,
+   hideUnanswered = false,
++  wired = {},
+ }: ShowFaqListProps) {
+   const entries = (faqs ?? []).filter(
+     (faq) => faq?.question && (!hideUnanswered || hasFaqAnswer(faq))
+@@ -111,20 +125,8 @@ export function ShowFaqList({
+                       data-faq-summary=""
+                       className="nos-faq-summary cursor-pointer font-serif text-[19px] font-medium leading-snug text-ink hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--ring-focus)]"
+                     >
+-                      {/* The marker sits inline after the question, inside the summary, not in
+-                          the panel: a marker inside a closed disclosure is invisible to a visitor
+-                          scanning the list, so fourteen unconfirmed answers read as settled fact
+-                          until each one is opened. */}
+                       <span data-faq-question="" className="nos-faq-question">
+                         <span>{faq.question}</span>
+-                        {hideUnanswered ? null : (
+-                          <ConfirmationBadge
+-                            as="span"
+-                            status={faq.status}
+-                            pendingLabel={pendingLabel}
+-                            researchLabel={researchLabel}
+-                          />
+-                        )}
+                       </span>
+                       <span data-faq-icon="" aria-hidden="true" className="nos-faq-icon">
+                         <svg
+@@ -143,11 +145,23 @@ export function ShowFaqList({
+                     </summary>
+ 
+                     <div className="nos-faq-answer">
+-                      {faq.answer && faq.answer.length > 0 ? (
++                      {/* The marker sits in the answer panel, not the summary: a marker in the summary
++                          is part of every accessible name and doubles the row's height at 390. */}
++                      {hideUnanswered || wired[faq._id] ? null : (
++                        <ConfirmationBadge
++                          status={faq.status}
++                          pendingLabel={pendingLabel}
++                          researchLabel={researchLabel}
++                        />
++                      )}
++                      {faq.answer && faq.answer.length > 0 && !wired[faq._id]?.replaces ? (
+                         <div className="max-w-3xl font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/80">
+                           <PortableText value={faq.answer} />
+                         </div>
+                       ) : null}
++                      {wired[faq._id] ? (
++                        <div data-faq-wired={wired[faq._id].kind}>{wired[faq._id].body}</div>
++                      ) : null}
+                     </div>
+                   </details>
+                 </li>
+diff --git a/docs/nos-faq-r57.md b/docs/nos-faq-r57.md
+new file mode 100644
+index 00000000..dcccf1c6
+--- /dev/null
++++ b/docs/nos-faq-r57.md
+@@ -0,0 +1,2 @@
++# nos-faq-r57 (trial)
++r57 TICKET_PRODUCTS confirmations.venue showFaq-tickets-1 showFaq-getting-there-3 owner Admission Sanity
