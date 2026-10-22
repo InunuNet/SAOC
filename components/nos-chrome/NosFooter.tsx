@@ -101,6 +101,8 @@ export function NosFooter() {
               type="email"
               name="email"
               autoComplete="email"
+              inputMode="email"
+              spellCheck={false}
               placeholder={FOOTER_BULLETIN.placeholder}
               required
             />

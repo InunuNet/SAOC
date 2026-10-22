@@ -122,9 +122,9 @@
 .nf-text { margin: 0; max-width: 44ch; font-size: 15px; line-height: 1.6; color: var(--nc-lilac); }
 .nf-head { margin: 0 0 6px; font: 700 12px/1.3 var(--nc-sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--nc-green-1); }
 /* REG/NPO in the label role (.nf-head), in gold. */
-.nf-brand .nf-reg { color: var(--nc-gold); font-variant-numeric: tabular-nums; }
+.nf-brand .nf-reg { color: var(--nc-gold); font-variant-numeric: tabular-nums; font-weight: 400; letter-spacing: 0.1em; }
 .nf-list { list-style: none; margin: 0; padding: 0; }
-.nf-list a, .nf-list span { line-height: 1.35; color: var(--nc-lilac); text-decoration: none; }
+.nf-list a, .nf-list span { line-height: 1.35; color: var(--nc-lilac); text-decoration: none; letter-spacing: 0; }
 /* r20 F4: a row sits at the top of its li, so the li's own strut never adds to the 44px row pitch. */
 .nf-list li > * { vertical-align: top; }
 .nf a:hover { color: var(--nc-ground); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-underline-offset: 4px; }
@@ -141,10 +141,10 @@
 .nf-form button:hover { background: var(--nc-gold-300); }
 .nf-wild { margin-top: 20px; }
 .nf-wild .nf-head { margin-bottom: 8px; }
-.nf-wild a { color: var(--nc-ground); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+.nf-wild a { color: var(--nc-ground); text-decoration: none; }
+.nf-wild a:hover, .nf-wild a:focus-visible { text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
 .nf-base { border-top: 1px solid rgba(210, 203, 232, 0.2); font-size: 13px; letter-spacing: 0; }
 .nf-legal a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; color: var(--nc-lilac); text-decoration: none; }
-@media (min-width: 701px) { .nf-form { flex-direction: column; } .nf-form input, .nf-form button { width: 100%; } }
 
 /* Additions to the approved sheet (no approved declaration is changed or dropped).
    next/font exposes its families through variables set on the elements that carry the font classes

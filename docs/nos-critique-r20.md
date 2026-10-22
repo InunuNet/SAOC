@@ -34,4 +34,13 @@ the legal links land within 2px of the SAOC bar's (L3).
 `FOOTER_RHYTHM` in `footer-data.ts` (`list: 'flex flex-col'`, `row: 'inline-flex min-h-11 items-center text-[14px]'`) is the one
 list and row for both footers: every Explore, Partners and WOSA row is 44px at 14px. The SAOC Partners rows lose their `gap-2`.
 In the NOS footer the row geometry comes off `nos-chrome.css` (it is unlayered and would beat the utilities), and
-`.nf-col > .nf-head` sets the 16px heading margin, which also reaches the F1 label. Partners stay plain text (no URLs).
+`.nf-col > div.nf-head` sets the 16px heading margin on the column headings only, so the F1 label keeps its 6px. Partners stay plain text (no URLs).
+
+## F5
+
+Footer parity (Codi FINAL): the NOS Subscribe button sits inline to the right of the input at every width (the stacked
+`>=701px` form rule is removed). The SAOC visible label reads `FOOTER_BULLETIN.emailLabel`, so this edits the SAOC `Footer.tsx`
+(flag saoc-82 in the PR). Both email inputs carry `autoComplete="email"`, `inputMode="email"` and `spellCheck={false}`. Footer
+list rows get `letter-spacing: 0` as SAOC. The WOSA link has no underline at rest and the existing underline on hover and
+focus-visible. NOS REG/NPO takes SAOC's weight (400) and tracking (0.1em) and keeps the NOS gold. NOS SANBI still wraps at 1280,
+pending a ruling; no fix is invented here.

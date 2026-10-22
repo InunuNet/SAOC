@@ -92,12 +92,14 @@ export function Footer() {
               htmlFor="footer-newsletter-email"
               className="mb-1.5 block w-full font-mono text-[11px] tracking-[0.16em] text-ivory/65"
             >
-              {FOOTER_BULLETIN.placeholder}
+              {FOOTER_BULLETIN.emailLabel}
             </label>
             <input
               id="footer-newsletter-email"
               type="email"
               autoComplete="email"
+              inputMode="email"
+              spellCheck={false}
               placeholder={FOOTER_BULLETIN.placeholder}
               required
               className="min-h-11 min-w-0 flex-1 bg-ivory/10 border border-ivory/20 text-ivory placeholder:text-ivory/40 font-sans text-[13px] px-3 py-2 focus:outline-none focus:border-ivory/40"
