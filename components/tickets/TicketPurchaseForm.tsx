@@ -15,6 +15,8 @@ import { TICKET_COPY } from '@/lib/data/ticket-presentation';
 import { formatShowDay, formatShowDayShort } from '@/lib/show-day-format';
 
 // The CTA stays enabled at quantity 0; a click there fills the hint and moves focus to it.
+// It also stays enabled with no day chosen (r45b): a click shows the picker's required-field error
+// and moves focus to the picker.
 const BUY_HINT_ID = 'ticket-buy-hint';
 const MIN_QUANTITY = 1;
 const DAY_GROUP = 'checkout-day';
@@ -35,14 +37,14 @@ function startQuantity(requested: number | undefined): number {
   return Math.min(CART_MAX_LINE_ITEMS, Math.max(MIN_QUANTITY, Math.trunc(requested)));
 }
 
-// A day product opens on the day the link named, else on the first show day.
+// A day product opens on the day the link named, else with no day chosen (r45b: never a default).
 function startDay(
   type: TicketTypeCardData,
   showDays: string[],
   requested: string | null | undefined
 ): string | null {
   if (!type.requiresDaySelection) return null;
-  return requested && showDays.includes(requested) ? requested : (showDays[0] ?? null);
+  return requested && showDays.includes(requested) ? requested : null;
 }
 
 export function TicketPurchaseForm({
@@ -60,6 +62,9 @@ export function TicketPurchaseForm({
   const hintRef = useRef<HTMLParagraphElement>(null);
   const [hintRequested, setHintRequested] = useState(false);
   const hintVisible = hintRequested && cart.quantity < MIN_QUANTITY;
+  const dayGroupRef = useRef<HTMLFieldSetElement>(null);
+  const [dayRequested, setDayRequested] = useState(false);
+  const dayInvalid = dayRequested && cart.day === null;
 
   if (cart.redirect) {
     return (
@@ -79,6 +84,11 @@ export function TicketPurchaseForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (ticketType.requiresDaySelection && cart.day === null) {
+      setDayRequested(true);
+      dayGroupRef.current?.querySelector<HTMLInputElement>('input:not(:disabled)')?.focus();
+      return;
+    }
     if (cart.quantity < MIN_QUANTITY) {
       setHintRequested(true);
       hintRef.current?.focus();
@@ -99,7 +109,7 @@ export function TicketPurchaseForm({
       {showTestModeBanner ? <OzowSandboxTestModeBanner /> : null}
 
       {ticketType.requiresDaySelection ? (
-        <fieldset className="days nk-days">
+        <fieldset ref={dayGroupRef} className="days nk-days" aria-invalid={dayInvalid}>
           <legend>{TICKET_COPY.chooseDay}</legend>
           <div className="nk-days-row">
             {showDays.map((day) => (
@@ -119,6 +129,14 @@ export function TicketPurchaseForm({
               </label>
             ))}
           </div>
+          {dayInvalid ? (
+            <p
+              role="alert"
+              className="mt-1.5 border border-primary-800 bg-bone px-4 py-3 font-sans text-[14px] text-primary-800"
+            >
+              {TICKET_COPY.chooseDay}
+            </p>
+          ) : null}
         </fieldset>
       ) : null}
 
