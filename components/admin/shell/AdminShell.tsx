@@ -2,10 +2,9 @@
 
 import { useCallback, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { Menu } from 'lucide-react';
 
-import { FOCUS_RING } from '@/components/admin/tokens';
-import { pageNameForPath, visibleNavGroups } from '@/lib/admin-nav-config';
+import { visibleNavGroups } from '@/lib/admin-nav-config';
+import { AdminHeader } from './AdminHeader';
 import { MobileDrawer } from './MobileDrawer';
 import { SidebarContent } from './SidebarContent';
 
@@ -19,8 +18,6 @@ interface AdminShellProps {
   pathnameOverride?: string;
   children: React.ReactNode;
 }
-
-const DOOR_PATH = '/admin/door';
 
 export function AdminShell({
   email,
@@ -36,7 +33,6 @@ export function AdminShell({
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   const groups = visibleNavGroups({ canReviewVendors, canManagePaymentSettings });
-  const isDoor = pathname === DOOR_PATH;
   const sidebar = (onNavigate?: () => void) => (
     <SidebarContent
       groups={groups}
@@ -55,34 +51,16 @@ export function AdminShell({
       >
         Skip to content
       </a>
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] border-r border-rule bg-parchment lg:block">
+      <AdminHeader menuOpen={menuOpen} onToggleMenu={() => setMenuOpen(true)} />
+      <aside className="fixed bottom-0 left-0 top-[62px] z-30 hidden w-[248px] border-r border-rule bg-parchment min-[1280px]:top-[74px] lg:block">
         {sidebar()}
       </aside>
-
-      <header
-        className={`sticky top-0 z-30 flex items-center gap-2 border-b border-rule bg-parchment px-4 lg:hidden ${
-          isDoor ? 'h-12 sm:h-14' : 'h-14'
-        }`}
-      >
-        <button
-          type="button"
-          onClick={() => setMenuOpen(true)}
-          aria-label="Open menu"
-          aria-expanded={menuOpen}
-          className={`-ml-[11px] flex h-11 w-11 items-center justify-center text-ink ${FOCUS_RING}`}
-        >
-          <Menu size={22} strokeWidth={1.75} aria-hidden="true" />
-        </button>
-        <p className="font-sans text-[15px] font-medium text-ink">
-          Admin · {pageNameForPath(pathname)}
-        </p>
-      </header>
 
       <MobileDrawer open={menuOpen} onClose={closeMenu}>
         {sidebar(closeMenu)}
       </MobileDrawer>
 
-      <main id="admin-main" tabIndex={-1} className="lg:pl-[248px]">
+      <main id="admin-main" tabIndex={-1} className="pb-20 lg:pl-[248px]">
         {children}
       </main>
     </div>

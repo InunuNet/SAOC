@@ -10,12 +10,7 @@ import {
 
 import { formatAdminDate } from '@/lib/admin-format';
 import type { DashboardData, PendingApplicationSummary } from '@/lib/admin-dashboard';
-import {
-  CARD_CLASS,
-  FOCUS_RING,
-  STAT_TILE_CLASS,
-  STAT_TILE_PENDING_CLASS,
-} from '../tokens';
+import { CARD_CLASS, FOCUS_RING, STAT_TILE_CLASS, STAT_TILE_PENDING_CLASS } from '../tokens';
 
 const APPLICATIONS_HREF = '/admin/vendors/applications';
 const NO_VALUE = '—';
@@ -36,8 +31,20 @@ export interface StatCardOptions {
 
 function buildStatCards(data: DashboardData, options: StatCardOptions): StatCard[] {
   const cards: StatCard[] = [
-    { id: 'tickets', label: 'Tickets sold', value: data.ticketsSold, href: '/admin/tickets', icon: Ticket },
-    { id: 'orders', label: 'Orders', value: data.orders, href: '/admin/tickets', icon: ShoppingBag },
+    {
+      id: 'tickets',
+      label: 'Tickets sold',
+      value: data.ticketsSold,
+      href: '/admin/tickets',
+      icon: Ticket,
+    },
+    {
+      id: 'orders',
+      label: 'Orders',
+      value: data.orders,
+      href: '/admin/tickets',
+      icon: ShoppingBag,
+    },
   ];
   if (options.canReviewVendors) {
     cards.push(
@@ -55,7 +62,7 @@ function buildStatCards(data: DashboardData, options: StatCardOptions): StatCard
         value: data.vendorsApproved,
         href: APPLICATIONS_HREF,
         icon: BadgeCheck,
-      },
+      }
     );
   }
   if (options.showNewsletter) {
@@ -70,11 +77,16 @@ function buildStatCards(data: DashboardData, options: StatCardOptions): StatCard
   return cards;
 }
 
-// 2 across from 640, 1 below. Each card is one link to its list.
+// 2 across from 640, 1 below, and from 1440 one row of equal columns whatever the count.
+// Each card is one link to its list.
 export function StatCards({ data, options }: { data: DashboardData; options: StatCardOptions }) {
+  const cards = buildStatCards(data, options);
   return (
-    <ul className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 min-[90rem]:grid-cols-4">
-      {buildStatCards(data, options).map((card) => {
+    <ul
+      className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 min-[90rem]:[grid-template-columns:repeat(var(--stat-count),minmax(0,1fr))]"
+      style={{ '--stat-count': cards.length } as React.CSSProperties} // custom property is not in CSSProperties
+    >
+      {cards.map((card) => {
         const Icon = card.icon;
         return (
           <li key={card.id}>
@@ -163,7 +175,10 @@ export function NeedsAttentionList({ items }: { items: PendingApplicationSummary
           className="flex min-h-[48px] items-center justify-between gap-3 border-b border-rule-soft py-1 last:border-b-0"
         >
           <span className="min-w-0 flex-1">
-            <span className="block truncate font-sans text-[14px] font-medium text-ink" title={item.businessName}>
+            <span
+              className="block truncate font-sans text-[14px] font-medium text-ink"
+              title={item.businessName}
+            >
               {item.businessName}
             </span>
             <span className="block text-[13px] tabular-nums text-muted">

@@ -26,7 +26,16 @@ const TICKET_TYPES = [
 const TICKET_STATUSES = ['paid', 'checked-in', 'reserved', 'cancelled'] as const;
 const TICKET_FIXTURE_COUNT = 40;
 const FIRST_NAMES = ['Thandi', 'Pieter', 'Naledi', 'Johan', 'Ayesha', 'Sipho', 'Marié', 'Kagiso'];
-const LAST_NAMES = ['Nkosi', 'van der Merwe', 'Dlamini', 'Botha', 'Patel', 'Mokoena', 'Jacobs', 'Naidoo'];
+const LAST_NAMES = [
+  'Nkosi',
+  'van der Merwe',
+  'Dlamini',
+  'Botha',
+  'Patel',
+  'Mokoena',
+  'Jacobs',
+  'Naidoo',
+];
 
 export function fixtureTickets(now: Date): TicketRow[] {
   return Array.from({ length: TICKET_FIXTURE_COUNT }, (_, i) => {
@@ -35,7 +44,8 @@ export function fixtureTickets(now: Date): TicketRow[] {
     return {
       id: `fixture-ticket-${i}`,
       bookingRef: `SAOC-${String(7400 + i)}`,
-      attendeeName: i === 2 ? 'Bartholomew Wolfeschlegelsteinhausen-Montgomery' : `${first} ${last}`,
+      attendeeName:
+        i === 2 ? 'Bartholomew Wolfeschlegelsteinhausen-Montgomery' : `${first} ${last}`,
       attendeeEmail: `${first}.${last}.${i}@example.org`.toLowerCase().replace(/\s/g, ''),
       ticketType: TICKET_TYPES[i % TICKET_TYPES.length],
       status: TICKET_STATUSES[i % TICKET_STATUSES.length],
@@ -83,13 +93,21 @@ export function fixtureApplications(now: Date): VendorApplication[] {
   }));
 }
 
-const VENDOR_STATUSES: VendorSubmission['status'][] = ['submitted', 'under-review', 'approved', 'rejected'];
+const VENDOR_STATUSES: VendorSubmission['status'][] = [
+  'submitted',
+  'under-review',
+  'approved',
+  'rejected',
+];
 const VENDOR_FIXTURE_COUNT = 12;
 
 export function fixtureVendors(now: Date): VendorSubmission[] {
   return Array.from({ length: VENDOR_FIXTURE_COUNT }, (_, i) => ({
     id: `fixture-vendor-${i}`,
-    businessName: i === 1 ? 'The Extraordinarily Long-Named Cape Peninsula Orchid Growers Collective' : `Fixture Vendor ${i + 1}`,
+    businessName:
+      i === 1
+        ? 'The Extraordinarily Long-Named Cape Peninsula Orchid Growers Collective'
+        : `Fixture Vendor ${i + 1}`,
     contactPersonName: `Vendor Contact ${i + 1}`,
     contactCellPhone: '083 000 0000',
     contactEmail: `vendor${i + 1}@example.org`,
@@ -127,7 +145,7 @@ export function fixtureDashboard(now: Date): DashboardData {
     orders: 87,
     pendingApplications: FIXTURE_PENDING_COUNT,
     vendorsApproved: 3,
-    newsletterSubscribers: null,
+    newsletterSubscribers: 214,
     needsAttention: pending,
     generatedAt: now,
   };

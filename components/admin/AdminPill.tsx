@@ -9,8 +9,12 @@ import { studioEditHref } from '@/lib/studio-links';
 import { ADMIN_PILL_DOT_CLASS, FOCUS_RING_ON_DARK } from './tokens';
 import { signOutAdmin } from './useAdminSignOut';
 
-// Floating admin shortcut on public pages, for signed-in admins only. Fixed bottom-right and
-// never repositionable by pointer (WCAG 2.5.7). It lifts above a sticky CTA through
+// Floating admin shortcut for signed-in admins, on public pages and inside the admin shell.
+// On public pages it asks /api/admin/whoami; the admin shell has already verified the session
+// server-side, so it passes verifiedAdmin and the pill starts visible with no fetch. In the
+// admin context it shows from 1024 up only (below that the drawer holds View site and Sign out)
+// and its items are View site, then sign out (which lands on /admin/login); there is
+// no Edit this page. Never shown on /admin/login. Fixed bottom-right and never repositionable by pointer (WCAG 2.5.7). It lifts above a sticky CTA through
 // --sticky-cta-offset (set that variable on a sticky bottom bar, default 0), hides in print,
 // and is mounted after <main> so it comes last in reading order.
 const WHOAMI_URL = '/api/admin/whoami';
@@ -38,15 +42,22 @@ function writeNotAdminCache(): void {
   }
 }
 
-export function AdminPill() {
+const LOGIN_PATH = '/admin/login';
+
+interface AdminPillProps {
+  // Set by the admin shell, which has already verified the session server-side.
+  verifiedAdmin?: boolean;
+}
+
+export function AdminPill({ verifiedAdmin = false }: AdminPillProps) {
   const pathname = usePathname();
-  const insideAdmin = pathname.startsWith('/admin');
-  const [isAdmin, setIsAdmin] = useState(false);
+  const onLogin = pathname.startsWith(LOGIN_PATH);
+  const [isAdmin, setIsAdmin] = useState(verifiedAdmin);
   const [menuOpen, setMenuOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (insideAdmin || readNotAdminCache()) return;
+    if (verifiedAdmin || onLogin || readNotAdminCache()) return;
     let cancelled = false;
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), WHOAMI_TIMEOUT_MS);
@@ -69,7 +80,7 @@ export function AdminPill() {
       controller.abort();
       window.clearTimeout(timeout);
     };
-  }, [insideAdmin]);
+  }, [verifiedAdmin, onLogin]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -87,21 +98,31 @@ export function AdminPill() {
     };
   }, [menuOpen]);
 
-  if (insideAdmin || !isAdmin) return null;
+  if (onLogin || !isAdmin) return null;
 
-  const editHref = studioEditHref(pathname);
+  const editHref = verifiedAdmin ? null : studioEditHref(pathname);
 
   async function handleSignOut() {
     await signOutAdmin();
     setIsAdmin(false);
-    window.location.reload();
+    if (verifiedAdmin) {
+      window.location.assign(LOGIN_PATH);
+    } else {
+      window.location.reload();
+    }
   }
 
   const items = (
     <>
-      <Link href="/admin" className={ITEM_CLASS}>
-        Dashboard
-      </Link>
+      {verifiedAdmin ? (
+        <Link href="/" className={ITEM_CLASS}>
+          View site ↗
+        </Link>
+      ) : (
+        <Link href="/admin" className={ITEM_CLASS}>
+          Dashboard
+        </Link>
+      )}
       {editHref ? (
         <a href={editHref} className={ITEM_CLASS}>
           Edit this page ↗
@@ -111,6 +132,7 @@ export function AdminPill() {
         type="button"
         onClick={() => void handleSignOut()}
         aria-label="Sign out"
+        title="Sign out"
         className={`${ITEM_CLASS} min-w-[44px] justify-center`}
       >
         <LogOut size={18} strokeWidth={1.75} aria-hidden="true" />
@@ -121,10 +143,10 @@ export function AdminPill() {
   return (
     <div
       ref={containerRef}
-      className="fixed right-4 z-40 bottom-[calc(1rem+var(--sticky-cta-offset,0px)+env(safe-area-inset-bottom,0px))] print:hidden"
+      className={`fixed right-4 z-40 bottom-[calc(1rem+var(--sticky-cta-offset,0px)+env(safe-area-inset-bottom,0px))] print:hidden ${verifiedAdmin ? 'hidden lg:block' : ''}`}
     >
       <div
-        className={`hidden h-11 items-center gap-1 rounded-full pl-4 pr-1 sm:flex ${PILL_SURFACE}`}
+        className={`hidden h-11 items-center gap-1 rounded-full pl-4 pr-1 ${verifiedAdmin ? 'lg:flex' : 'sm:flex'} ${PILL_SURFACE}`}
       >
         <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em]">
           <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${ADMIN_PILL_DOT_CLASS}`} />
@@ -133,24 +155,29 @@ export function AdminPill() {
         {items}
       </div>
 
-      <div className="sm:hidden">
-        {menuOpen ? (
-          <div
-            className={`absolute bottom-full right-0 mb-2 flex min-w-[200px] flex-col rounded-[2px] py-1 ${PILL_SURFACE}`}
+      {verifiedAdmin ? null : (
+        <div className="sm:hidden">
+          {menuOpen ? (
+            <div
+              className={`absolute bottom-full right-0 mb-2 flex min-w-[200px] flex-col rounded-[2px] py-1 ${PILL_SURFACE}`}
+            >
+              {items}
+            </div>
+          ) : null}
+          <button
+            type="button"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+            className={`flex h-11 items-center gap-2 rounded-full px-4 font-mono text-[11px] uppercase tracking-[0.12em] ${FOCUS_RING_ON_DARK} ${PILL_SURFACE}`}
           >
-            {items}
-          </div>
-        ) : null}
-        <button
-          type="button"
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((open) => !open)}
-          className={`flex h-11 items-center gap-2 rounded-full px-4 font-mono text-[11px] uppercase tracking-[0.12em] ${FOCUS_RING_ON_DARK} ${PILL_SURFACE}`}
-        >
-          <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${ADMIN_PILL_DOT_CLASS}`} />
-          Admin
-        </button>
-      </div>
+            <span
+              aria-hidden="true"
+              className={`h-1.5 w-1.5 rounded-full ${ADMIN_PILL_DOT_CLASS}`}
+            />
+            Admin
+          </button>
+        </div>
+      )}
     </div>
   );
 }

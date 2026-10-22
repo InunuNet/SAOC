@@ -117,20 +117,11 @@ export function visibleNavGroups(caps: AdminNavCapabilities): AdminNavGroup[] {
 
 export function isNewsletterAvailable(): boolean {
   return ADMIN_NAV_GROUPS.some((group) =>
-    group.items.some((item) => item.id === 'newsletter' && item.available),
+    group.items.some((item) => item.id === 'newsletter' && item.available)
   );
 }
 
 /** Exact match for every item: /admin/vendors must not light up on /admin/vendors/applications. */
 export function isNavItemActive(item: AdminNavItem, pathname: string): boolean {
   return pathname === item.href;
-}
-
-export function pageNameForPath(pathname: string): string {
-  for (const group of ADMIN_NAV_GROUPS) {
-    for (const item of group.items) {
-      if (item.href === pathname) return item.label;
-    }
-  }
-  return 'Admin';
 }
