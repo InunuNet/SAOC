@@ -2145,3 +2145,31 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-size: 14px;
   color: var(--muted);
 }
+
+/* Card family on the NOS home (NOS Design hero-cards-ruling B1, B2, B8): the same petal echo, in NOS
+   tokens. A cream card, one soft layered shadow, and a plate behind it offset 10px right and down,
+   royal at 10% on a light ground. These cards are not links, so there is no hover lift. */
+.nos-theme .nos-petal {
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--radius-card);
+  background-color: var(--parchment);
+  box-shadow:
+    0 1px 2px rgba(33, 26, 87, 0.05),
+    0 14px 32px -12px rgba(33, 26, 87, 0.18);
+}
+.nos-theme .nos-petal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--radius-card);
+  background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+  transform: translate(10px, 10px);
+}
+.nos-theme .nos-stage-card.nos-petal {
+  background-color: rgba(255, 255, 255, 0.07);
+}
+.nos-theme .nos-stage-card.nos-petal::before {
+  background-color: rgba(255, 255, 255, 0.08);
+}

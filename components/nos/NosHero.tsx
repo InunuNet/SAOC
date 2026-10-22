@@ -31,6 +31,9 @@ import { NosSubNav } from './NosSubNav';
 import { getVisibleNav } from '@/lib/data/past-shows-public';
 import { subNavGroupFor } from './nos-subnav-groups';
 
+// The hub hero is a full-bleed photograph, served from the quality-88 variant set (up to 3840 wide, lib/image-loader.ts).
+const HUB_HERO_QUALITY = 88;
+
 /** Routes whose hero carries no group sub-nav: the hub (it has the destinations list) and tickets. */
 const NO_SUBNAV_ROUTES: ReadonlySet<string> = new Set(['/national-show', '/national-show/tickets']);
 
@@ -104,6 +107,7 @@ export async function NosHero({
               priority={priority}
               fetchPriority={priority ? 'high' : undefined}
               sizes="100vw"
+              quality={isHub ? HUB_HERO_QUALITY : undefined}
               className="nos-hero-img"
             />
           </div>

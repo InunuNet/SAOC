@@ -12,7 +12,9 @@ const RASTER_EXTENSION = /\.(jpe?g|png)$/i;
 const WEBP_QUALITY = 75;
 // The home hero's static fallback (lib/data/heroImages.ts) also gets a q88 set, which the loader serves for quality={88} (rHB).
 const HERO_WEBP_QUALITY = 88;
-const HERO_SOURCES = new Set(['orchid-violet.jpg', 'orchid-pink.jpg', 'orchid-dark.jpg'].map((name) => path.join(SOURCE_ROOT, name)));
+const HERO_SOURCES = new Set(['orchid-violet.jpg', 'orchid-purple.jpg', 'orchid-dark.jpg'].map((name) => path.join(SOURCE_ROOT, name)));
+// Widths above this exist for hero sources only (their q88 set); everything else keeps the cap, to protect build time.
+const STANDARD_MAX_WIDTH = 2048;
 
 const { deviceSizes, imageSizes } = JSON.parse(await readFile('lib/image-widths.json', 'utf8'));
 const WIDTHS = [...new Set([...deviceSizes, ...imageSizes])].sort((a, b) => a - b);
@@ -24,6 +26,13 @@ async function* walk(dir) {
     if (entry.isDirectory()) yield* walk(full);
     else if (RASTER_EXTENSION.test(entry.name)) yield full;
   }
+}
+
+function encodingsFor(width, isHero) {
+  const encodings = [];
+  if (width <= STANDARD_MAX_WIDTH) encodings.push(['', { quality: WEBP_QUALITY }]);
+  if (isHero) encodings.push([`-q${HERO_WEBP_QUALITY}`, { quality: HERO_WEBP_QUALITY, smartSubsample: true }]);
+  return encodings;
 }
 
 async function isFresh(output, sourceMtimeMs) {
@@ -44,9 +53,8 @@ for await (const source of walk(SOURCE_ROOT)) {
     .replace(/\.[^.]+$/, (ext) => ext.toLowerCase());
   const { mtimeMs } = await stat(source);
   await mkdir(path.dirname(path.join(OUTPUT_ROOT, relative)), { recursive: true });
-  const encodings = [['', { quality: WEBP_QUALITY }]];
-  if (HERO_SOURCES.has(source)) encodings.push([`-q${HERO_WEBP_QUALITY}`, { quality: HERO_WEBP_QUALITY, smartSubsample: true }]);
-  for (const width of WIDTHS) for (const [suffix, webp] of encodings) {
+  const isHero = HERO_SOURCES.has(source);
+  for (const width of WIDTHS) for (const [suffix, webp] of encodingsFor(width, isHero)) {
     const output = path.join(OUTPUT_ROOT, `${relative}-${width}${suffix}.webp`);
     const key = output.toLowerCase();
     if (claimed.has(key)) {

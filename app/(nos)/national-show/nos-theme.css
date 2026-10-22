@@ -542,7 +542,7 @@
   mask-image: linear-gradient(90deg, transparent 0, #000 16%);
 }
 .nos-theme .nos-hero-hub .nos-hero-img {
-  object-position: 68% 50%;
+  object-position: var(--nos-hero-pos, 68% 50%);
 }
 .nos-theme .nos-hero-hub .nos-hero-copy {
   display: flex;
@@ -678,7 +678,7 @@
     mask-image: none;
   }
   .nos-theme .nos-hero-hub .nos-hero-img {
-    object-position: 64% 50%;
+    object-position: var(--nos-hero-pos, 64% 50%);
   }
   .nos-theme .nos-hero-scrim {
     display: none;

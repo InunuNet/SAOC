@@ -21,7 +21,8 @@ export interface NosHeroPhoto {
 }
 
 export const HERO_PHOTOS: Readonly<Record<string, NosHeroPhoto>> = {
-  '/national-show': { src: '/images/orchid-dark.jpg', objectPosition: '68% 50%' },
+  // NOS Design hero ruling (2026-10-23): the hub opens on H4 so the two homes never share a photograph.
+  '/national-show': { src: '/images/orchid-purple.jpg', objectPosition: '50% 26%' },
   '/national-show/plan-your-visit': { src: '/images/orchid-yellow.jpg', objectPosition: '50% 99%' },
   '/national-show/symposium': { src: '/images/orchid-violet.jpg', objectPosition: '50% 98%' },
   '/national-show/programme': { src: '/images/orchid-purple.jpg', objectPosition: '50% 39%' },
