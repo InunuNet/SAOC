@@ -17,7 +17,7 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowVenueQuery, showVisitorInfoQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
 import type { ShowVenue, ShowVisitorInfo } from '@/types';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.

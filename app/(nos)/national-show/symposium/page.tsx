@@ -6,7 +6,7 @@ import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { loadPresenterViewModels } from '@/lib/view-models/load-presenters';
 import { loadTicketCardViewModel } from '@/lib/view-models/load-ticket-card';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // F12 (national-show-ia-alignment, M4) — created route. One sentence of real source
@@ -23,7 +23,7 @@ import { NosShowIndex } from '@/components/nos/NosShowIndex';
 // still reserved and unrendered.
 // `dynamic = 'force-dynamic'` is added because loadTicketCardViewModel() reaches Firebase
 // Admin (getPoolRemaining -> getSoldCountsByTicketType) — same rule this codebase already
-// applies everywhere else that call chain is reachable (see app/(marketing)/national-show/
+// applies everywhere else that call chain is reachable (see app/(nos)/national-show/
 // workshops/page.tsx's own identical comment on CategoryTicketsPage).
 export const dynamic = 'force-dynamic';
 export const revalidate = 60;

@@ -16,7 +16,7 @@ import { NosBreadcrumb } from '@/components/nos/NosBreadcrumb';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { ConfirmationBadge } from '@/components/show';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish

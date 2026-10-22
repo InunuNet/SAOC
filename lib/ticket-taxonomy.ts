@@ -40,7 +40,7 @@ export type TicketTypePurchaseSurface = 'admission' | 'conference' | 'workshop-f
 
 /**
  * Exhibitor entry: deliberately unresolved. Exhibitor Entry's real purchase surface is
- * `/national-show/exhibitors`, inside `app/(marketing)/national-show/**` -- a tree this
+ * `/national-show/exhibitors`, inside `app/(nos)/national-show/**` -- a tree this
  * mission is barred from touching (F5's negotiated boundary). Which of the 3 schema
  * `category` values (if any) an exhibitor `ticketType` document should carry is genuinely
  * undecided pending F5's component-API handoff. This is an EXPLICIT literal, never a silent

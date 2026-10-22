@@ -16,7 +16,7 @@ import { NosSection } from '@/components/nos/NosSection';
 import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
 import { ConfirmationBadge } from '@/components/show';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for

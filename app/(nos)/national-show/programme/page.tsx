@@ -9,7 +9,7 @@ import { loadShowPageOrFallback, withholdPlaceholderProse } from '@/lib/data/sho
 import { buildSectionLedes } from '@/lib/data/ticket-section-ledes';
 import { PROGRAMME_PRODUCTS, TICKET_COPY, TICKET_PRODUCTS, partnerNameOf } from '@/lib/data/ticket-presentation';
 import { buildPageMetadata } from '@/lib/seo';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // F12 (national-show-ia-alignment, M4) — created route. Placeholder copy under an R11

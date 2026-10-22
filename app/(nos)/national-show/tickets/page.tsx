@@ -32,7 +32,7 @@ import { viewerIsVerifiedAdmin } from '@/lib/admin-viewer';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 // The Ozow test-mode strip is shown to verified admins only, which reads the session cookie, so
 // this route renders per request (Sanity reads stay in the data cache).

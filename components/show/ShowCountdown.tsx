@@ -123,7 +123,7 @@ export function ShowCountdown({ countdownDate, edition, pendingLabel }: ShowCoun
       {units.map(({ label, value }) => (
         <div key={label} className="text-center">
           {/* This countdown's one call site (the national-show landing hero,
-              app/(marketing)/national-show/page.tsx) sits directly over full-
+              app/(nos)/national-show/page.tsx) sits directly over full-
               bleed photography, not a flat ground. Brand-tint violet
               (text-accent-soft) and a 0.6-alpha label measured well under
               4.5:1 against orchid-yellow.jpg/orchid-pink.jpg's bright petals

@@ -4,7 +4,7 @@ import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { VendorApplyForm } from '@/components/vendors';
 import { buildPageMetadata } from '@/lib/seo';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 // Indexable (this is the public front door of the vendor flow) but carries no Event or Offer
 // markup — the flow it leads into is invitation-gated, which Google excludes (M6/B8c).

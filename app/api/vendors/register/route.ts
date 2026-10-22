@@ -30,7 +30,7 @@ import { sendVendorSubmissionAdminNoticeEmail } from '@/lib/vendor-submission-ad
  * cookie (minted by POST /api/vendors/register/verify-code the moment the human-readable code
  * verifies -- see contracts/golden/vendor-gated-registration-flow-m4/README.md's "Migration")
  * and RE-VERIFIES it here, server-side -- never trusting that the page-level check
- * (app/(marketing)/national-show/vendors/register/page.tsx) already ran, since a direct POST
+ * (app/(nos)/national-show/vendors/register/page.tsx) already ran, since a direct POST
  * bypassing the browser must be gated exactly like the page. Every failure mode -- missing
  * cookie, malformed, bad signature, expired, application not found, wrong status, already
  * consumed -- returns the SAME generic message, never a distinguishing error (same fail-closed

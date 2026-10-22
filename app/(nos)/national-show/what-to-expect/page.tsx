@@ -18,7 +18,7 @@ import { buildShowFacts, type ShowFactsSource } from '@/lib/data/show-facts';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import type { ShowVisitorInfo } from '@/types';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.

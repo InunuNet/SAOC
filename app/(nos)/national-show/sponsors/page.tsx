@@ -11,7 +11,7 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { showSponsorsQuery } from '@/sanity/queries';
 import { loadShowPageOrFallback, withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // F14 (national-show-ia-alignment, M4) — created route, reinstated by Brad. Its OWN data

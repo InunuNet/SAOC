@@ -14,7 +14,7 @@ import { getTicketStatus } from '@/lib/ticket-status';
 // F1 (confirmation-page-qr-and-download) — this page reads live Firestore via the Admin SDK
 // (getConfirmedOrderForDisplay, ticketing-multi-line-item-cart-ui F3) on every request, so it
 // cannot be statically prerendered or ISR-cached — same reasoning as
-// app/(marketing)/tickets/page.tsx's force-dynamic.
+// app/(nos)/tickets/page.tsx's force-dynamic.
 export const dynamic = 'force-dynamic';
 
 export function normalizeBookingRefParam(ref: string | string[] | undefined): string {

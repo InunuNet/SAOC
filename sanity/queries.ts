@@ -109,7 +109,7 @@ export const nationalShowSalesQuery = defineQuery(`
 `);
 
 // F9 (ticketing-foundation): `demo,` is additive — every other selected field is unchanged.
-// The public /tickets page (app/(marketing)/tickets/page.tsx) filters the result through
+// The public /tickets page (app/(nos)/tickets/page.tsx) filters the result through
 // filterPubliclyListableTicketTypes() (lib/demo-ticket-type.ts) before rendering, so this
 // query must select the field the filter depends on. See
 // contracts/golden/ticketing-f9-demo-ticket/README.md, "A real, pre-existing gap this

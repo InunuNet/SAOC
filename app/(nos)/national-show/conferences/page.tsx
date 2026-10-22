@@ -7,7 +7,7 @@ import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { TICKET_COPY, partnerNameOf, type TicketProductId } from '@/lib/data/ticket-presentation';
 import { buildPageMetadata } from '@/lib/seo';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 // Live stock reaches this page through Firebase Admin credentials that exist only at runtime,
 // so it can never be prerendered at build time.

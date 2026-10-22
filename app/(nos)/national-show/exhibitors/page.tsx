@@ -21,7 +21,7 @@ import { showExhibitorInfoQuery, showExhibitorStepsQuery } from '@/sanity/querie
 import { buildPageMetadata } from '@/lib/seo';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import type { ShowExhibitorInfo, ShowExhibitorStep } from '@/types';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.

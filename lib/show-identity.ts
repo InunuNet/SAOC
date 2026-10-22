@@ -2,7 +2,7 @@
 // SAOC — lib/show-identity.ts
 // Formatting helpers for show-identity facts (edition, dates, venue).
 //
-// Extracted from app/(marketing)/national-show/page.tsx in round 2 of the
+// Extracted from app/(nos)/national-show/page.tsx in round 2 of the
 // show-visitor-info mission: seven surfaces now render these facts from the
 // nationalShow singleton, and seven copies of the same Intl call is how the
 // site ended up advertising two different venues in one viewport.

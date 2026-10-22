@@ -9,7 +9,7 @@ import { southAfricanNurseriesQuery } from '@/sanity/queries';
 import { loadShowFacts } from '@/lib/data/show-facts';
 import { loadShowPage, loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
 // F14 (national-show-ia-alignment, M4) — created route. THE PUBLIC NURSERY DIRECTORY,

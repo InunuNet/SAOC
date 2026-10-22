@@ -9,7 +9,7 @@ import {
   type VendorStandReturnState,
 } from '@/lib/vendor-stand-return';
 import { buildPageMetadata } from '@/lib/seo';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 /**
  * Gateway return page for vendor stand payments. Success, cancel and error all land here with

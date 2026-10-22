@@ -211,7 +211,7 @@ async function seedTicketsPage(client: SanityClient): Promise<void> {
     // Reworded 2026-09 to stop contradicting /refunds's real tiered cancellation schedule —
     // this field no longer asserts "non-refundable" itself (the page renders a hardcoded,
     // code-owned link to /refunds as the single source of truth for that policy; see
-    // app/(marketing)/tickets/page.tsx). This field is reserved for content specific to
+    // app/(nos)/tickets/page.tsx). This field is reserved for content specific to
     // admission tickets that /refunds doesn't already cover, e.g. the transfer instructions.
     termsNote:
       'Admission tickets may be transferred to another attendee by emailing info@saoc.co.za ' +

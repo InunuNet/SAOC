@@ -140,7 +140,7 @@ export const ticketType = defineType({
           // folded into 'admission' (entering plants for judging is a different
           // transaction from attending). Schema-only addition — F2 does not seed any
           // document using this value; the exhibitor purchase surface itself lives in
-          // app/(marketing)/national-show/**, out of scope for this mission. See
+          // app/(nos)/national-show/**, out of scope for this mission. See
           // .agent/memory/project/specs/ticketing-complete/goldens/f2-README.md §10.
           { title: 'Exhibitor Entry', value: 'exhibitor-entry' },
         ],

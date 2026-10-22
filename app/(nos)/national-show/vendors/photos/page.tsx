@@ -8,7 +8,7 @@ import { VendorPhotoResumeUploads } from '@/components/vendors/VendorPhotoResume
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import { resolveVendorPhotoResumeState } from '@/lib/vendor-photo-resume-gate';
 import { buildPageMetadata } from '@/lib/seo';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 /**
  * Public product-photo resume page (mission vendor-flow-fixes, F2). Token-gated via a `?token=`

@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next';
 
 import { isPubliclyLaunched } from '@/lib/beta-public-launch';
+import { requestSite } from '@/lib/request-site';
+import { nosUrl, saocUrl } from '@/lib/site-hosts';
 
 // Mission beta-password-wall F1 — force-dynamic, never statically generated:
 // this must re-read SITE_PUBLIC_LAUNCH on every request, not bake in whatever
@@ -11,8 +13,6 @@ import { isPubliclyLaunched } from '@/lib/beta-public-launch';
 // exact string 'true'. See that file's header comment for why this is no
 // longer keyed off the Host header.
 export const dynamic = 'force-dynamic';
-
-const BASE_URL = 'https://saoc.co.za';
 
 // AI / LLM crawlers explicitly welcomed to index SAOC content.
 const AI_BOTS = [
@@ -25,7 +25,7 @@ const AI_BOTS = [
   'Google-Extended',
 ] as const;
 
-export default function robots(): MetadataRoute.Robots {
+export default async function robots(): Promise<MetadataRoute.Robots> {
   if (!isPubliclyLaunched(process.env.SITE_PUBLIC_LAUNCH)) {
     return {
       rules: [
@@ -53,6 +53,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: '/',
       },
     ],
-    sitemap: `${BASE_URL}/sitemap.xml`,
+    // Each site lists its own sitemap (nos-site-split F1).
+    sitemap: (await requestSite()) === 'nos' ? nosUrl('/sitemap.xml') : saocUrl('/sitemap.xml'),
   };
 }

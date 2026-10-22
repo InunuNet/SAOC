@@ -14,7 +14,7 @@ import {
 } from '@/lib/payments/pending-hold';
 import { verifyVendorStandPaymentToken } from '@/lib/vendor-stand-payment-token';
 import { buildPageMetadata } from '@/lib/seo';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 /**
  * Public stand-payment page (mission vendor-gated-registration-flow, M3/F29). Token-gated via

@@ -6,7 +6,7 @@
 // .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/route-manifest-schema.golden.md.
 //
 // A hand-maintained manifest drifts silently; this script is the single source that
-// writes it. It walks app/(marketing)/national-show/ for page.tsx files (so a route
+// writes it. It walks app/(nos)/national-show/ for page.tsx files (so a route
 // that does not exist on disk cannot appear, and a route that exists but is not listed
 // here is caught by RM1's disk->manifest direction at gate time) and joins the result
 // against ROUTE_TABLE, the metadata Brad's approved tree assigns each row — label,

@@ -29,7 +29,7 @@ import path from 'node:path';
 const PROJECT_ROOT = process.cwd();
 const RESULTS_DIR = path.resolve(PROJECT_ROOT, '.tmp/sandbox/nos-ia');
 const RESULTS_FILE = path.join(RESULTS_DIR, 'm4-results.txt');
-const NOS_APP_DIR = path.resolve(PROJECT_ROOT, 'app/(marketing)/national-show');
+const NOS_APP_DIR = path.resolve(PROJECT_ROOT, 'app/(nos)/national-show');
 const SHOW_PAGES_DIR = path.resolve(PROJECT_ROOT, 'content/show-pages');
 const RETIRED_DIR = path.join(SHOW_PAGES_DIR, 'retired');
 const MANIFEST_PATH = path.resolve(PROJECT_ROOT, 'content/national-show-routes.json');
@@ -238,7 +238,7 @@ function runRoutesChecks(manifest: RouteManifest): void {
   let r2ok = true;
   const r2fail: string[] = [];
   for (const dir of UNTOUCHABLE_DIRS) {
-    const rel = `app/(marketing)/national-show/${dir}`;
+    const rel = `app/(nos)/national-show/${dir}`;
     const changed = gitDiffNames(baseRef, rel);
     if (changed.length > 0) {
       r2ok = false;
@@ -310,7 +310,7 @@ function runRoutesChecks(manifest: RouteManifest): void {
   const LANE_BOUNDARY_PATHS = [
     'components/chrome',
     'next.config.ts',
-    'app/(marketing)/tickets',
+    'app/(nos)/tickets',
     'app/(marketing)/sponsors',
     'app/(marketing)/judging',
     'app/(marketing)/contact',
@@ -455,7 +455,7 @@ function runManifestChecks(manifest: RouteManifest): void {
 // ====================================================================
 function runExhibitorGuard(manifest: RouteManifest): void {
   const baseRef = process.env.M4_BASE_REF ?? 'origin/main';
-  const x1changed = gitDiffNames(baseRef, 'app/(marketing)/national-show/exhibitors');
+  const x1changed = gitDiffNames(baseRef, 'app/(nos)/national-show/exhibitors');
   check('X1', x1changed.length === 0, 'no diff under national-show/exhibitors/', x1changed.join('; '));
 
   const exhibitors = manifest.routes.find((r) => r.slug === '/national-show/exhibitors');

@@ -10,7 +10,7 @@ import { VENDOR_APPLICATIONS_COLLECTION } from '@/lib/vendor-applications';
 import { verifyVendorRegistrationToken } from '@/lib/vendor-registration-token';
 import { VENDOR_REGISTRATION_SESSION_COOKIE_NAME } from '@/lib/vendor-registration-code-verify-handler';
 import { buildPageMetadata } from '@/lib/seo';
-import { nosOgImage } from '@/app/(marketing)/national-show/og-image';
+import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 /**
  * F23 (vendor-gated-registration-flow, M4) -- REWRITTEN from the M1/F7 `?token=` gate. The

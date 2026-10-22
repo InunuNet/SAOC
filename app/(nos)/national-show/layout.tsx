@@ -16,7 +16,7 @@ import { NosThemeScope } from '@/components/nos/NosThemeScope';
 // ticket routes (/tickets/*) wear the same scope as the show pages.
 //
 // The site header and footer for these routes are the NOS own-brand chrome,
-// mounted by app/(marketing)/layout.tsx (components/nos-chrome). This layout
+// mounted by app/(nos)/layout.tsx (components/nos-chrome). This layout
 // renders inside that layout's <main>, so it carries no header, footer, masthead
 // or lockup of its own.
 const NATIONAL_SHOW_ROOT = '/national-show';

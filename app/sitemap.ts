@@ -4,10 +4,15 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { societySlugsQuery, eventSlugsQuery, pastShowsQuery } from '@/sanity/queries';
 import { mergePastShows, type SanityShowProjection } from '@/lib/data/mergeShows';
 import routeManifest from '@/content/national-show-routes.json';
+import { nosPath } from '@/lib/nos-paths';
+import { requestSite } from '@/lib/request-site';
+import { nosOrigin, saocOrigin } from '@/lib/site-hosts';
 
-const BASE_URL = 'https://saoc.co.za';
-
-// F12/RM2 (national-show-ia-alignment, M4) — the /national-show/* block of this sitemap
+// nos-site-split F1: the sitemap is per host. The NOS host lists only the show (its public paths
+// have the /national-show prefix stripped, see lib/nos-paths.ts); the SAOC host lists the SAOC pages,
+// societies and events and no show entries. Reading the host makes this route dynamic.
+//
+// F12/RM2 (national-show-ia-alignment, M4) — the show block of the NOS sitemap
 // is DERIVED from content/national-show-routes.json, the artifact the saoc-eb lane also
 // builds its header from. A hand-kept list drifts silently: this file previously listed a
 // route since deleted from the tree, and omitted seven real routes entirely. See
@@ -44,65 +49,71 @@ function priorityFor(archetype: string): number {
   return 0.5;
 }
 
-function buildNationalShowChildRoutes(): MetadataRoute.Sitemap {
+function buildNationalShowChildRoutes(baseUrl: string): MetadataRoute.Sitemap {
   const manifest = routeManifest as NosRouteManifest;
   return manifest.routes
     .filter((route) => route.indexable && !route.dynamic)
     .map((route) => ({
-      url: `${BASE_URL}${route.slug}`,
+      url: `${baseUrl}${nosPath(route.slug)}`,
       lastModified: new Date(),
       changeFrequency: changeFrequencyFor(route.archetype),
       priority: priorityFor(route.archetype),
     }));
 }
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [societies, events, pastShowsRaw] = await Promise.all([
-    sanityFetch<{ slug: string }[]>({ query: societySlugsQuery, tags: ['society'] }),
-    sanityFetch<{ slug: string }[]>({ query: eventSlugsQuery, tags: ['societyEvent'] }),
-    sanityFetch<SanityShowProjection[]>({ query: pastShowsQuery, tags: ['show', 'sanity'] }),
-  ]);
-
-  const staticRoutes: MetadataRoute.Sitemap = [
-    { url: BASE_URL, lastModified: new Date(), changeFrequency: 'weekly', priority: 1 },
-    { url: `${BASE_URL}/about`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
-    { url: `${BASE_URL}/societies`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
-    { url: `${BASE_URL}/judging`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${BASE_URL}/events`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${BASE_URL}/contact`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.5 },
-  ];
-
-  const nationalShowChildRoutes: MetadataRoute.Sitemap = buildNationalShowChildRoutes();
+async function buildNosSitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = nosOrigin();
+  const pastShowsRaw = await sanityFetch<SanityShowProjection[]>({
+    query: pastShowsQuery,
+    tags: ['show', 'sanity'],
+  });
 
   // Sourced from Sanity (+ the static archive fallback), never hardcoded — see
   // lib/data/mergeShows.ts, the same union-on-year merge the archive pages themselves
   // read, so the sitemap can never list a year the archive doesn't actually render.
   const archiveYearRoutes: MetadataRoute.Sitemap = mergePastShows(pastShowsRaw).map((show) => ({
-    url: `${BASE_URL}/national-show/archive/${show.year}`,
+    url: `${baseUrl}${nosPath(`/national-show/archive/${show.year}`)}`,
     lastModified: new Date(),
     changeFrequency: 'yearly' as const,
     priority: 0.5,
   }));
 
+  return [...buildNationalShowChildRoutes(baseUrl), ...archiveYearRoutes];
+}
+
+async function buildSaocSitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = saocOrigin();
+  const [societies, events] = await Promise.all([
+    sanityFetch<{ slug: string }[]>({ query: societySlugsQuery, tags: ['society'] }),
+    sanityFetch<{ slug: string }[]>({ query: eventSlugsQuery, tags: ['societyEvent'] }),
+  ]);
+
+  const staticRoutes: MetadataRoute.Sitemap = [
+    { url: baseUrl, lastModified: new Date(), changeFrequency: 'weekly', priority: 1 },
+    { url: `${baseUrl}/about`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${baseUrl}/societies`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${baseUrl}/judging`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${baseUrl}/events`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${baseUrl}/contact`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.5 },
+  ];
+
   const societyRoutes: MetadataRoute.Sitemap = (societies ?? []).map((s) => ({
-    url: `${BASE_URL}/societies/${s.slug}`,
+    url: `${baseUrl}/societies/${s.slug}`,
     lastModified: new Date(),
     changeFrequency: 'monthly' as const,
     priority: 0.6,
   }));
 
   const eventRoutes: MetadataRoute.Sitemap = (events ?? []).map((e) => ({
-    url: `${BASE_URL}/events/${e.slug}`,
+    url: `${baseUrl}/events/${e.slug}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,
     priority: 0.7,
   }));
 
-  return [
-    ...staticRoutes,
-    ...nationalShowChildRoutes,
-    ...archiveYearRoutes,
-    ...societyRoutes,
-    ...eventRoutes,
-  ];
+  return [...staticRoutes, ...societyRoutes, ...eventRoutes];
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  return (await requestSite()) === 'nos' ? buildNosSitemap() : buildSaocSitemap();
 }

@@ -30,7 +30,7 @@ export interface VendorGasEquipmentEntryFormRow {
 
 /**
  * Controlled-input-friendly state for the public vendor registration form
- * (app/(marketing)/national-show/vendors/register). Every value is a string, string[], or
+ * (app/(nos)/national-show/vendors/register). Every value is a string, string[], or
  * boolean -- never `number` -- because HTML form controls only ever hand back strings; all
  * coercion to the real VendorSubmissionDraft shape happens inside
  * buildVendorRegistrationPayload(), never in component state. See

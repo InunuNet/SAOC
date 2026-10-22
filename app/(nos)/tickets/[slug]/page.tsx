@@ -29,7 +29,7 @@ import { resolveActiveShow } from '@/lib/show-resolution';
 import { buildPageMetadata } from '@/lib/seo';
 
 // F2 (ticketing-flow-redesign, M2) — the dedicated single-type buy screen. Same
-// force-dynamic reasoning as app/(marketing)/tickets/page.tsx: getSoldCountsByTicketType()
+// force-dynamic reasoning as app/(nos)/tickets/page.tsx: getSoldCountsByTicketType()
 // (Firebase Admin SDK, runtime-only credentials) means this route can never be prerendered.
 export const dynamic = 'force-dynamic';
 
