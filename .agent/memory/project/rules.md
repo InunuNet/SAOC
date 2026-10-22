@@ -102,7 +102,7 @@ Rulings:
 - /wosa links OUT to WOSA and generates NO wild-orchid conservation content. Standing ruling.
 - Five layout archetypes, not seventeen page designs: hub, prose (FAQ is a prose variant), schedule, listing, transactional.
 - Reachability is HUB-BASED, not header-based. There is no approved header dropdown; the handoff specifies a flat six-item nav. Every page must be reachable from the /national-show hub AND from ShowSectionNav. No assertion may depend on a header entry existing.
-- Empty listings (/sa-exhibitors, /international-guests, /sponsors) name WHAT will appear and WHEN, with the page's own structure visible (heading, intro, shape of the coming card) and the absence stated in words. Never "no results". The rendered treatment is NOS Design's and is downstream of building.
+- Empty listings (/sa-exhibitors, /international-guests, /sponsors) name WHAT will appear and WHEN, with the page's own structure visible (heading, intro, shape of the coming card) and the absence stated in words. Never "no results". The rendered treatment is NOS Design's (formerly Codi) and is downstream of building.
 - Owned by saoc-eb, do not edit: components/chrome/**, app/(marketing)/tickets/**, /national-show/tickets, /national-show/conferences, /sponsors, /judging, /contact, /societies, all redirects, all route deletions outside /national-show.
 - Binding design rulings: R1 (SAOC chrome untouched), R11 (disclosure chip → sentence → dashed 2px rail, warning tokens for AI-generated, muted for researched, never error/red), R12 (no NOS header or second nav), R13 (grid orphan rule, columns derived from rendered count, never a hardcoded grid-cols class; when no c avoids the orphan, keep the content ceiling and let the FINAL CARD SPAN the remainder — never a partial row, never a centred lone card; binds at c>=3, EXEMPT BY RULING at c=2).
 
@@ -111,7 +111,7 @@ Process (Brad, 2026-09-10):
 - The site is EARLY ALPHA — no real users, no bookmarks, no live payments. Route changes are free; never preserve a bad structure for migration safety.
 - Branch for this lane is `nos-site`. `origin/nos-design` belongs to the design lane — never push to it.
 
-- Design-ruling authority is NOS Design's `.agent/memory/project/design/nos-design-rulings.md` (R1-R13, commits 6687b13/5c103ea) IN NOS DESIGN'S WORKSPACE. The same relative path in this tree is a STALE MIRROR and is not the authority. Cite rulings by number; never treat the local copy as canonical.
+- Design-ruling authority is NOS Design's (formerly Codi) `.agent/memory/project/design/nos-design-rulings.md` (R1-R13, commits 6687b13/5c103ea) IN NOS DESIGN'S WORKSPACE. The same relative path in this tree is a STALE MIRROR and is not the authority. Cite rulings by number; never treat the local copy as canonical.
 
 ## Branch and PR rule — standing, all three lanes, 2026-09-10 (Brad delegated to saoc-eb)
 
