@@ -1,0 +1,128 @@
+diff --git a/app/admin/login/LoginFormFields.tsx b/app/admin/login/LoginFormFields.tsx
+index 5ef4e5ce..b75bc469 100644
+--- a/app/admin/login/LoginFormFields.tsx
++++ b/app/admin/login/LoginFormFields.tsx
+@@ -16,7 +16,7 @@ interface LoginFormFieldsProps {
+ // Matches ContactForm's input/label treatment (components/contact/ContactForm.tsx)
+ // plus a visible focus ring — the site's own inputs otherwise rely on border colour alone.
+ const inputClass =
+-  'min-h-[44px] w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-800 disabled:opacity-60';
++  'min-h-[44px] w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[16px] leading-[23.25px] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-800 disabled:opacity-60';
+ const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
+ 
+ /**
+diff --git a/components/admin/VendorPaymentLinkControl.tsx b/components/admin/VendorPaymentLinkControl.tsx
+index c8d2e571..b36b1847 100644
+--- a/components/admin/VendorPaymentLinkControl.tsx
++++ b/components/admin/VendorPaymentLinkControl.tsx
+@@ -40,7 +40,7 @@ export function VendorPaymentLinkControl({
+           value={paymentUrl}
+           aria-label="Vendor stand payment link"
+           onFocus={(event) => event.currentTarget.select()}
+-          className="w-full rounded-[2px] border border-rule bg-bone px-2 py-1 font-mono text-[11px] text-ink"
++          className="w-full rounded-[2px] border border-rule bg-bone px-2 py-1 font-mono text-[16px] leading-[17.05px] text-ink"
+         />
+       )}
+     </div>
+diff --git a/components/admin/VendorPhotoLinkControl.tsx b/components/admin/VendorPhotoLinkControl.tsx
+index 9b4427db..8852f6d9 100644
+--- a/components/admin/VendorPhotoLinkControl.tsx
++++ b/components/admin/VendorPhotoLinkControl.tsx
+@@ -37,7 +37,7 @@ export function VendorPhotoLinkControl({
+           value={photoUrl}
+           aria-label="Vendor photo upload link"
+           onFocus={(event) => event.currentTarget.select()}
+-          className="w-full rounded-[2px] border border-rule bg-bone px-2 py-1 font-mono text-[11px] text-ink"
++          className="w-full rounded-[2px] border border-rule bg-bone px-2 py-1 font-mono text-[16px] leading-[17.05px] text-ink"
+         />
+       )}
+     </div>
+diff --git a/components/admin/table/TableToolbar.tsx b/components/admin/table/TableToolbar.tsx
+index db05e57f..93281cac 100644
+--- a/components/admin/table/TableToolbar.tsx
++++ b/components/admin/table/TableToolbar.tsx
+@@ -40,7 +40,7 @@ export function TableToolbar({
+         aria-label={searchLabel}
+         placeholder={searchLabel}
+         autoComplete="off"
+-        className={`h-11 min-w-0 flex-1 basis-[220px] rounded-[2px] border border-rule bg-ivory px-3 font-sans text-[14px] text-ink placeholder:text-muted ${FOCUS_RING}`}
++        className={`h-11 min-w-0 flex-1 basis-[220px] rounded-[2px] border border-rule bg-ivory px-3 font-sans text-[16px] text-ink placeholder:text-muted ${FOCUS_RING}`}
+       />
+       {filterOptions && onFilterChange ? (
+         <div
+diff --git a/components/events/SubmitEventForm.tsx b/components/events/SubmitEventForm.tsx
+index bf1720d4..85edb082 100644
+--- a/components/events/SubmitEventForm.tsx
++++ b/components/events/SubmitEventForm.tsx
+@@ -168,7 +168,7 @@ export function SubmitEventForm() {
+           required
+           value={values.title}
+           onChange={set('title')}
+-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
++          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
+         />
+         {errors.title && <p className="text-red-600 text-xs mt-1">{errors.title}</p>}
+       </div>
+@@ -184,7 +184,7 @@ export function SubmitEventForm() {
+           required
+           value={values.kind}
+           onChange={set('kind')}
+-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
++          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5 h-[39px]"
+         >
+           <option value="">Select type…</option>
+           {ALLOWED_KINDS.map((k) => (
+@@ -208,7 +208,7 @@ export function SubmitEventForm() {
+           required
+           value={values.date}
+           onChange={set('date')}
+-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
++          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
+         />
+         {errors.date && <p className="text-red-600 text-xs mt-1">{errors.date}</p>}
+       </div>
+@@ -224,7 +224,7 @@ export function SubmitEventForm() {
+           type="date"
+           value={values.endDate}
+           onChange={set('endDate')}
+-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
++          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
+         />
+         {errors.endDate && <p className="text-red-600 text-xs mt-1">{errors.endDate}</p>}
+       </div>
+@@ -241,7 +241,7 @@ export function SubmitEventForm() {
+           required
+           value={values.venue}
+           onChange={set('venue')}
+-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
++          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
+         />
+         {errors.venue && <p className="text-red-600 text-xs mt-1">{errors.venue}</p>}
+       </div>
+@@ -258,7 +258,7 @@ export function SubmitEventForm() {
+           required
+           value={values.location}
+           onChange={set('location')}
+-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
++          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
+         />
+         {errors.location && <p className="text-red-600 text-xs mt-1">{errors.location}</p>}
+       </div>
+@@ -275,7 +275,7 @@ export function SubmitEventForm() {
+           rows={4}
+           value={values.description}
+           onChange={set('description')}
+-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
++          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
+         />
+         {errors.description && <p className="text-red-600 text-xs mt-1">{errors.description}</p>}
+       </div>
+@@ -291,7 +291,7 @@ export function SubmitEventForm() {
+           type="text"
+           value={values.hostSocietyId}
+           onChange={set('hostSocietyId')}
+-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
++          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
+         />
+       </div>
+ 
