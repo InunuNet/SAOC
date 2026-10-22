@@ -36,8 +36,21 @@ No new copy, colour, style or data source. The count line, its markup, its class
 - `docs/nos-checkout-left-counts.md`: record rLC (sources, the trace, the 420px rule, the gaps below).
 - Nothing else. Footprint check A2 fails any other file.
 
-## Known gaps (not in scope; for Codi)
+## Amendment 1 (design lead Codi, 2026-10-22), verbatim
 
-1. A sold-out, price-pending or early-bird-ended day: the hub disables it (`is-out`, `disabled`); the checkout still lets it be chosen (server rejects at submit). With rLC it now prints "Sold out" on a selectable option. Disabling it is a behaviour change outside the ruling ("show the counts"), so it is not made here.
-2. At 420px and above the hub (and so the checkout) shows "N of T", not "N left". The ruling quotes "997 left"; matching the hub means the viewport rule decides which line shows. If Codi wants "N left" at every width on the checkout only, that is a separate, one-rule decision.
-3. The counts are as fresh as the hub's (force-dynamic page, same stock read); checkout still re-checks capacity authoritatively.
+"1. Match the hub at every width. The shared DayCount is the point, and the hub's "N of 1000" at 420px and wider vs "N left" below was already reviewed (critique H4 consistency). No checkout-only variant.
+2. Fold it in this round. A day labelled "Sold out" that you can still select contradicts its own label and invites a server rejection (H5 error prevention). Treat it the same way as the hub: a native disabled input, which is enough on its own (add aria-disabled only if it's a custom control). Use the same muted style, and add no new copy. If a pre-selected day sells out before submit, the existing server error must still render at the field. Accept: at 1280/390, a sold-out day can't be chosen by click or keyboard, and the rest is unchanged."
+
+(1) changes nothing: the checks already require the hub's markup and CSS at each width. (2) is checks/soldout.mjs and static S4b:
+
+- **Rule:** the hub's `isDayClosed(d)` (sold out, price pending, early bird ended). The checkout option gets `disabled={submitting || closed}` and the label class `is-out` (the hub's muted style: `.nk-day.is-out`, opacity .62, cursor not-allowed, day name line-through, nos-structure.css:1275-1281; no CSS change). Its line is the hub's `daySubline` ("Sold out"), which DayCount already prints. Native `disabled` only; `aria-disabled` is forbidden (the control is a native radio).
+- **Unchanged:** the rest of r45 (`startDay`, the no-day alert, `aria-invalid`). The existing no-day handler already focuses the first `input:not(:disabled)`, so a sold-out first day is skipped.
+- **Server error "at the field":** the existing cart error (`cart.status === 'error'`, a `TicketFieldAlert` in the form) is what renders; nothing new. Check D5 pins that it still renders after a day sells out between load and submit (a day chosen, the server replies 409 "Sold out.") and when a sold-out day is linked (`?day=D`: the page loads with D disabled, submit sends D, the server's verdict shows). The alert's position is the existing one (form level, above the total), not inside the fieldset; if Codi wants it inside the day group that is a new placement, not "still renders".
+- **Linked sold-out day (decision):** a day reached by `?day=D` that is closed renders as a disabled radio that stays CHECKED (`checked={cart.day === day}` is a pinned r45 line, S4). The hub unchecks a closed day because its day is local state it can drop; the checkout's day is the cart's, and Codi's rule is that the server's verdict must still render, which needs the submit to carry the day. A disabled-but-checked option cannot be re-chosen by the buyer, shows the ticked, muted, struck-through, "Sold out" cell, and is left by choosing another day. Accepted; S4 is unchanged.
+- **Harness (live data has no sold-out day):** the hub and checkout document responses are rewritten in flight (page.route) so the RSC payload's day object for the checkout's first day reads `state:"soldOut", remaining:0`; the hub's own cell is the oracle for markup and computed style. This needs the page to pass the hub's day objects to the form unchanged (static S4b forbids a `remaining:` literal in page.tsx). The server-rendered cell still shows the old state, so React client-renders from the payload (a hydration warning is expected).
+
+## Known gaps
+
+1. The "Server error at the field" wording: see above.
+2. The counts are as fresh as the hub's (force-dynamic page, same stock read); checkout still re-checks capacity authoritatively.
+3. The sold-out harness depends on the RSC payload shape (`"day":..,"state":..,"remaining":..`); if Next changes how it serialises props the check reports "could not force" (INFRA), not a silent pass.

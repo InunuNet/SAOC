@@ -6,6 +6,7 @@
 //       (productId day) with requiresDaySelection, and passes them to TicketPurchaseForm; no second data source is imported.
 //   S4  TicketPurchaseForm.tsx takes the counts as props, renders DayCount per option with aria-describedby, fetches nothing, and keeps
 //       every r45 line (no default day, required-day alert, aria-invalid).
+//   S4b (amendment 1) a closed day is disabled in the form with the hub's isDayClosed and is-out, native only; the page passes the hub's day objects through unchanged.
 //   S5  no new copy (existing strings only), no CSS: stylesheets, the hub page and the data/view-model modules equal BASE.
 //   S6  docs/nos-checkout-left-counts.md records rLC.
 import { finish, goldenJson, readBaseFile, readRepoFile } from './_lib.mjs';
@@ -67,6 +68,18 @@ for (const line of G.baseLinesKept.form) {
   if (!form.includes(line)) failures.push(`${F.form}: r45 line gone: ${line} (S4)`);
 }
 if (/useState\(\s*(showDays|dayCounts)/.test(form) || /cart\.setDay\(\s*showDays\[0\]/.test(form)) failures.push(`${F.form}: a default day is set (r45: no default day) (S4)`);
+
+// S4b (amendment 1: sold-out days disabled)
+const SO = G.soldOut;
+for (const must of SO.formMust) if (!form.includes(must)) failures.push(`${F.form}: never uses ${must}: a closed day must be disabled with the hub's is-out class (S4b)`);
+if (!/import\s*\{[^}]*\bisDayClosed\b[^}]*\}\s*from\s*'[^']*keepsake\/days'/.test(form)) failures.push(`${F.form}: does not import isDayClosed from keepsake/days, the hub's own rule (S4b)`);
+{
+  const at = form.indexOf('type="radio"');
+  const radio = at < 0 ? '' : form.slice(at, at + 700);
+  if (!/disabled=\{[^}]*(closed|isDayClosed)[^}]*\}/.test(radio)) failures.push(`${F.form}: the day radio's disabled does not include the closed-day rule (S4b)`);
+}
+for (const bad of SO.formForbidden) if (form.includes(bad)) failures.push(`${F.form}: holds ${bad}: a native disabled input is enough (S4b)`);
+if (page.includes(SO.pageForbiddenLiteral)) failures.push(`${F.page}: holds ${SO.pageForbiddenLiteral} - the hub's day objects must pass through unchanged (the sold-out harness forces them in flight) (S4b)`);
 
 // S5
 for (const f of [F.dayCount, F.card, F.form, F.page]) failures.push(...newProse(f, G.proseCorpus));

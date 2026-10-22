@@ -7,13 +7,13 @@ slug: nos-checkout-left-counts
 goal: >-
   The Day Pass checkout day picker (/tickets/<slug>) shows each day's remaining count exactly as the hub's Day Pass card does: same server source
   (loadTicketCardViewModels, cards.day), same provisional rule (!withholdPlaceholderProse()), same cell markup, format string and CSS, from one shared
-  DayCount component. Other products show no count. r45 behaviour (no default day, required-day alert, aria-invalid, focus) is untouched. No new copy,
+  DayCount component. Other products show no count. Amendment 1 (Codi): a sold-out day is a native disabled, is-out option exactly as on the hub. r45 behaviour (no default day, required-day alert, aria-invalid, focus) is untouched. No new copy,
   style or data source.
 created_at: '2026-10-22'
 autonomy: high
 exclusions:
   - item: 'every file outside goldens/footprint.json, docs/nos-checkout-left-counts.md and this spec dir (enforced by A2)'
-    reason: 'Codi queued only the counts. Disabling sold-out days on the checkout and an N-left-at-every-width rule are separate decisions (goldens/spec.md, Known gaps).'
+    reason: 'Codi queued the counts and, in amendment 1, disabling sold-out days (match the hub at every width; no checkout-only variant). Nothing else.'
 features:
   - id: F1
     name: Per-day "N left" counts on the checkout day picker from the hub's own source and one shared DayCount (r45 P3)
@@ -44,3 +44,6 @@ assertions:
     - id: A6
       description: Rendered (public and preview builds, 1280/390, live data) - each shared day option carries the hub's own count cell ("N left"/"N of T", Few left, unconfirmed note) described by its radio; r45 behaviour holds; axe clean in initial, error and chosen states; no overflow; Weekend Pass and VIP checkouts show no count; the hub cells keep their shape
       command: node .agent/memory/project/specs/nos-checkout-left-counts/checks/rendered.mjs
+    - id: A7
+      description: Rendered, sold-out harness (amendment 1, Codi; public build, 1280/390, a day forced sold out in flight on the hub and the checkout) - the sold-out day is a native disabled, unchecked, is-out option reading Sold out with the hub's own muted style, cannot be chosen by click, arrow keys or Tab, r45's no-day alert focuses the first enabled day, the existing server error still renders for an enabled and for a linked sold-out day, axe clean, no overflow
+      command: node .agent/memory/project/specs/nos-checkout-left-counts/checks/soldout.mjs
