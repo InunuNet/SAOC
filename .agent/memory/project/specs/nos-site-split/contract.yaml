@@ -1,0 +1,117 @@
+schema: athanor.contract/v1
+slug: nos-site-split
+goal: Serve the National Orchid Show as its own host-routed front end at nos.saoc.co.za from the same Next.js app, with the show tree, tickets and vendors moved off the SAOC host, cross-linked chrome, one wall, NOS-host email and payment URLs, per-site sponsors and media kit, and topic-choice newsletter.
+created_at: '2026-10-23'
+autonomy: high
+
+features:
+  - id: F1
+    name: Host module, proxy host routing and redirects, route-group moves, per-host layouts, robots, sitemap, metadata
+    status: pending
+  - id: F2
+    name: Absolute URLs for email, payment return and notify, vendor token links, canonical and apphosting env use the NOS host
+    status: pending
+  - id: F3
+    name: Per-site menus and footers, cross-links both ways, SAOC credit on NOS, e2e path updates
+    status: pending
+  - id: F4
+    name: Per-site sponsors verification and per-site media kit behind a login gate
+    status: pending
+  - id: F5
+    name: Newsletter topic choice (SAOC and or NOS) with backward compatibility
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/nos-site-split/goldens/host-routing.golden.md
+  - .agent/memory/project/specs/nos-site-split/goldens/absolute-urls-and-payments.golden.md
+  - .agent/memory/project/specs/nos-site-split/goldens/chrome-and-crosslinks.golden.md
+  - .agent/memory/project/specs/nos-site-split/goldens/sponsors-and-media-kit.golden.md
+  - .agent/memory/project/specs/nos-site-split/goldens/newsletter-topics.golden.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: F1 host module exists and exports the stable API
+      command: grep -q "export function siteForHost" lib/site-hosts.ts
+    - id: A2
+      description: F1 host module exports origin helpers used by F2 and F3
+      command: grep -q "export function nosUrl" lib/site-hosts.ts
+    - id: A3
+      description: F1 route trees moved (show under app/(nos), shared pages under app/(shared), none left in app/(marketing))
+      command: bash scripts/checks/nos-split-static.sh trees
+    - id: A4
+      description: F1 proxy.ts performs host routing and sets x-site
+      command: grep -q "x-site" proxy.ts
+    - id: A5
+      description: F1 existing wall decision spec still green (decideBasicAuth contract unchanged)
+      command: pnpm exec playwright test e2e/beta-password-wall-decision.spec.ts
+    - id: A6
+      description: F1..F5 typecheck is clean
+      command: pnpm type-check
+    - id: A7
+      description: F1..F5 production build succeeds (required by the HTTP gate below)
+      command: pnpm build
+    - id: A8
+      description: F1/F3 host-routed HTTP matrix against local next start (wall on both hosts, redirects both directions, shared and neutral routes, robots, sitemaps, cross-links, media-kit gate); sandbox-only, GET-only
+      command: node scripts/checks/nos-split-http.mjs
+    - id: A9
+      description: F2 no hardcoded nos or beta host literals outside lib/site-hosts.ts
+      command: bash scripts/checks/nos-split-static.sh host-literals
+    - id: A10
+      description: F2 old per-file https://saoc.co.za fallbacks removed from show, payment and email builders
+      command: bash scripts/checks/nos-split-static.sh no-saoc-fallback-in-show-urls
+    - id: A11
+      description: F2 payment checkout builds return and notify URLs from nosUrl
+      command: grep -q "nosUrl" app/api/tickets/checkout/route.ts
+    - id: A12
+      description: F2 vendor stand payment initiate builds URLs from nosUrl
+      command: grep -q "nosUrl" app/api/vendors/stand-payment/initiate/route.ts
+    - id: A13
+      description: F2 ticket confirmation email links use nosUrl
+      command: grep -q "nosUrl" lib/confirmation-email.ts
+    - id: A14
+      description: F2 vendor registration confirmation links use nosUrl
+      command: grep -q "nosUrl" lib/vendor-registration-confirmation.ts
+    - id: A15
+      description: F2 safety, SITE_PUBLIC_LAUNCH still undeclared and both public site env vars declared in apphosting.yaml
+      command: bash scripts/checks/nos-split-static.sh safety
+    - id: A16
+      description: F2 Ozow stays the sandbox gateway, PayFast not referenced by the new host module
+      command: "! grep -qi payfast lib/site-hosts.ts"
+    - id: A17
+      description: F3 NOS footer credits SAOC with an SAOC-origin link
+      command: grep -q "saocUrl" components/nos-chrome/NosFooter.tsx
+    - id: A18
+      description: F3 SAOC nav-config show links go through nosUrl
+      command: grep -q "nosUrl" components/chrome/nav-config.ts
+    - id: A19
+      description: F3 ChromeFrame segment switch removed (chrome is per route group now)
+      command: "! grep -rq \"NOS_SEGMENTS\" components app"
+    - id: A20
+      description: F3 existing nav e2e green after path updates
+      command: pnpm exec playwright test e2e/nav-links-200.spec.ts e2e/nav-property1-http-gate.spec.ts
+    - id: A21
+      description: F4 NOS media kit route exists and both kits use the shared gate helper
+      command: test -f lib/media-kit-gate.ts
+    - id: A22
+      description: F4 NOS media kit page exists in the NOS tree
+      command: test -f "app/(nos)/national-show/media-kit/page.tsx"
+    - id: A23
+      description: F4 SAOC media kit uses the gate
+      command: grep -q "media-kit-gate" "app/(marketing)/media-kit/page.tsx"
+    - id: A24
+      description: F5 newsletter topics wired in store, handler and CSV export
+      command: bash scripts/checks/nos-split-static.sh newsletter
+    - id: A25
+      description: F5 newsletter footer renders the chooser from the existing NEWSLETTER_COPY labels
+      command: grep -rq "adminSourceNos" components/newsletter
+    - id: A26
+      description: F3 no /national-show hrefs remain in SAOC chrome or the NOS chrome (clean NOS URLs)
+      command: "! grep -rq \"/national-show\" components/chrome/nav-config.ts components/chrome/footer-data.ts components/nos-chrome/NosHeader.tsx components/nos-chrome/NosFooter.tsx"
+    - id: A27
+      description: F1 proxy implements the clean-URL strip and admin redirect rules
+      command: grep -q "national-show" proxy.ts
+    - id: A28
+      description: F3 design-rulings credit block and legal links on NOS footer (Constitution links to SAOC)
+      command: grep -q "constitution" components/nos-chrome/NosFooter.tsx
