@@ -1,1 +1,1 @@
-["app/(marketing)/tickets/[slug]/page.tsx","components/tickets/TicketPurchaseForm.tsx","components/tickets/keepsake/TicketCard.tsx","components/tickets/keepsake/DayCount.tsx"]
+["app/(marketing)/tickets/[slug]/page.tsx", "components/tickets/TicketPurchaseForm.tsx", "components/tickets/keepsake/TicketCard.tsx", "components/tickets/keepsake/DayCount.tsx", "components/tickets/useTicketCart.ts"]

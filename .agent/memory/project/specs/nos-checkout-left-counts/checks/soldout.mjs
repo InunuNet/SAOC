@@ -19,7 +19,13 @@
 //       (?day=D) submit sends one POST naming D and the same alert renders (the form does not hide the server's verdict). The attendee name and
 //       email are filled first with fixed test values (otherwise cartValidation stops the submit). The linked day stays checked while disabled
 //       (goldens/spec.md): the selection is the buyer's, the server's verdict is the check.
-//   D6  axe (WCAG 2.2 AA) clean on the form in the forced state, no horizontal overflow.
+//   D6  (amendment 2a) a sold-out ?day= is ignored on load: nothing checked, group unselected, summary stub the product's own, submit is
+//       r45's "Choose a day" error with no request.
+//   D7  (amendment 2b) the race: a 409 "Sold out." for a chosen day that sold out -> after the page's refresh the server's text shows in the
+//       day group's TicketFieldAlert (same class as "Choose a day"), aria-invalid, focus in the group on an enabled radio, the tile Sold out,
+//       disabled and unchecked, no form-level alert, choosing another day clears it; with the day still open the error stays form-level (D5).
+//       Shots: lc-soldout-<width>-linked-initial.png and lc-soldout-<width>-race-409.png.
+//   D8  axe (WCAG 2.2 AA) clean on the form in the forced state, no horizontal overflow.
 // Screenshots: <checkout>/.tmp/lc-shots/lc-soldout-<width>-*.png.
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
@@ -73,7 +79,7 @@ function readOption({ root, day }) {
 async function axeIn(page, at, label) {
   if (!(await page.evaluate(() => Boolean(window.axe)))) await page.addScriptTag({ path: axeSource() });
   const v = await page.evaluate(async (tags) => (await window.axe.run('form[data-nos-ticket-form]', { runOnly: { type: 'tag', values: tags } })).violations.map((x) => `${x.id}: ${x.nodes.map((n) => n.target.join(' ')).join(', ')}`), AXE_TAGS);
-  if (v.length) failures.push(`${at}: axe in the ${label} state: ${v.join('; ')} (D6)`);
+  if (v.length) failures.push(`${at}: axe in the ${label} state: ${v.join('; ')} (D8)`);
 }
 
 const srv = await serve(MODE);
@@ -89,7 +95,9 @@ else {
       let forced = [];
       await ctx.route('**/api/tickets/checkout**', (route) => { posts.push(route.request().postData() ?? ''); return route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: S.serverError }) }); });
       await ctx.route((u) => u.origin === srv.origin && !u.pathname.startsWith('/_next') && !u.pathname.startsWith('/api'), async (route) => {
-        if (!forceDay || route.request().resourceType() !== 'document') return route.fallback();
+        const u = new URL(route.request().url());
+        // The document, and the RSC payload router.refresh() fetches (the same URL with ?_rsc=).
+        if (!forceDay || !(route.request().resourceType() === 'document' || u.searchParams.has('_rsc'))) return route.fallback();
         const resp = await route.fetch();
         let body = await resp.text();
         let n = 0;
@@ -154,7 +162,7 @@ else {
       }
       for (const d of co.days.filter((x) => x.day !== D)) if (d.disabled || d.out) failures.push(`${at}: ${d.day} is disabled=${d.disabled} is-out=${d.out} but only ${D} sold out (D1)`);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-      if (overflow > 0) failures.push(`${at}: scrolls horizontally by ${overflow}px (D6)`);
+      if (overflow > 0) failures.push(`${at}: scrolls horizontally by ${overflow}px (D8)`);
       await axeIn(page, at, 'forced sold-out');
       await page.mouse.move(0, 0);
       await page.locator(FORM).screenshot({ path: path.join(SHOTS, `lc-soldout-${width}-initial.png`), animations: 'disabled' });
@@ -215,18 +223,95 @@ else {
       const btn = await page.evaluate(() => { const b = [...document.querySelectorAll('form[data-nos-ticket-form] button[type="submit"]')][0]; return b ? b.disabled : null; });
       if (btn !== false) failures.push(`${at}&day=${E}: the submit button is stuck (disabled=${btn}) after the server error (D5)`);
 
-      // D5: sold out and linked.
+      // D5 location: with E still open after the refresh the error is not about a day, so it stays the form-level alert (outside the group).
+      const where = await page.evaluate(() => [...document.querySelectorAll('form[data-nos-ticket-form] [role="alert"]')].map((x) => !!x.closest('fieldset.nk-days')));
+      if (where.length !== 1 || where[0] !== false) failures.push(`${at}&day=${E}: with the day still open the server error must stay form-level (outside the day group); inGroup=${JSON.stringify(where)} (D5)`);
+
+      // D6 (amendment 2a, Codi): a sold-out ?day= is ignored on load: nothing is checked, the group is unselected (r45's no-default state),
+      // the summary keeps the product's own stub, and Continue to payment with no day is r45's "Choose a day" error and sends nothing.
       posts.length = 0;
       forceDay = D;
       forced = [];
       o = await open(`${url}&day=${D}`, `${FORM} fieldset.nk-days`, D, true);
-      if (!o || !o.days.find((d) => d.day === D)?.disabled) failures.push(`${at}&day=${D}: ${D} is not disabled when linked (D5)`);
-      await fillAttendee();
-      await page.locator(`${FORM} button[type="submit"]`).click();
-      await page.waitForTimeout(600);
-      texts = await alertText();
-      if (posts.length !== 1 || !posts[0].includes(D)) failures.push(`${at}&day=${D}: ${posts.length} POST(s) when submitting with the linked sold-out day, want one naming ${D} (the server decides) (D5)`);
-      if (texts.length !== 1 || texts[0] !== S.serverError) failures.push(`${at}&day=${D}: alerts ${JSON.stringify(texts)}, want one "${S.serverError}" (D5)`);
+      if (!o || !o.days.find((d) => d.day === D)?.disabled) failures.push(`${at}&day=${D}: ${D} is not disabled when linked (D6)`);
+      else {
+        if (o.days.some((d) => d.checked)) failures.push(`${at}&day=${D}: a sold-out linked day leaves ${o.days.filter((d) => d.checked).map((d) => d.day).join(', ')} checked, want nothing checked (D6)`);
+        if (o.invalid !== 'false' || o.alerts) failures.push(`${at}&day=${D}: the group opens with aria-invalid=${o.invalid} alerts=${o.alerts}, want "false" / 0 (D6)`);
+        const stub = await page.evaluate(() => { const sm = document.querySelector('article[data-ticket-variant="summary"]'); return sm ? [sm.querySelector('[data-ticket-numeral]')?.textContent ?? null, sm.querySelector('.nk-numlab')?.textContent ?? null] : null; });
+        if (!stub || stub[0] !== '' || stub[1] !== '') failures.push(`${at}&day=${D}: the summary stub is ${JSON.stringify(stub)}, want the product's own ["",""] (the sold-out day is ignored) (D6)`);
+        await page.mouse.move(0, 0);
+        await page.locator(FORM).screenshot({ path: path.join(SHOTS, `lc-soldout-${width}-linked-initial.png`), animations: 'disabled' });
+        await fillAttendee();
+        await page.locator(`${FORM} button[type="submit"]`).click();
+        await page.waitForTimeout(500);
+        const e6 = await page.evaluate(() => { const fs = document.querySelector('form[data-nos-ticket-form] fieldset.nk-days'); return { invalid: fs.getAttribute('aria-invalid'), alerts: [...fs.querySelectorAll('[role="alert"]')].map((x) => [...x.childNodes].filter((n) => !(n.nodeType === 1 && n.getAttribute('aria-hidden') === 'true')).map((n) => n.textContent).join('')) }; });
+        if (e6.invalid !== 'true' || e6.alerts.length !== 1 || e6.alerts[0] !== G.chooseDay) failures.push(`${at}&day=${D}: submit after a sold-out link: aria-invalid=${e6.invalid} alerts=${JSON.stringify(e6.alerts)}, want "true" and one "${G.chooseDay}" (D6)`);
+        if (posts.length) failures.push(`${at}&day=${D}: a sold-out linked day was submitted (${posts.length} POST(s)): it must be ignored, not carried (D6)`);
+      }
+
+      // D7 (amendment 2b, Codi): the race. E is open at load and chosen; it sells out before submit. The mock replies 409 {"error":"Sold out."};
+      // the page's refresh (router.refresh -> the RSC request, rewritten here to say E is sold out) brings the new counts. Settled state: the
+      // server's text in the day group's TicketFieldAlert (same class as "Choose a day"), aria-invalid="true", focus in the group on an enabled
+      // radio, E disabled/is-out/unchecked reading "Sold out", and NO form-level alert; choosing another day clears the group error.
+      posts.length = 0;
+      forceDay = null;
+      o = await open(`${url}&day=${E}`, `${FORM} fieldset.nk-days`, E, false);
+      if (!o || !o.days.find((d) => d.day === E)?.checked) failures.push(`${at}&day=${E}: ${E} is not pre-selected for the race (INFRA)`);
+      else {
+        // r45's group-alert class, captured from a no-day error on a fresh load of the same picker.
+        await open(url, `${FORM} fieldset.nk-days`, '', false);
+        await page.locator(`${FORM} button[type="submit"]`).click();
+        await page.waitForTimeout(300);
+        const groupClass = await page.evaluate(() => document.querySelector('form[data-nos-ticket-form] fieldset.nk-days [role="alert"]')?.getAttribute('class') ?? null);
+        await open(`${url}&day=${E}`, `${FORM} fieldset.nk-days`, E, false);
+        await fillAttendee();
+        posts.length = 0;
+        forced = [];
+        forceDay = E;
+        await page.locator(`${FORM} button[type="submit"]`).click();
+        try {
+          await page.waitForFunction((d) => document.querySelector(`form[data-nos-ticket-form] label.nk-day:has(input[value="${d}"])`)?.classList.contains('is-out'), E, { timeout: 8000 });
+        } catch { /* reported below */ }
+        await page.waitForTimeout(500);
+        forceDay = null;
+        const race = await page.evaluate(({ day }) => {
+          const form = document.querySelector('form[data-nos-ticket-form]');
+          const fs = form.querySelector('fieldset.nk-days');
+          const lbl = fs.querySelector(`label.nk-day:has(input[value="${day}"])`);
+          const inp = lbl.querySelector('input');
+          const a = document.activeElement;
+          const strip = (x) => [...x.childNodes].filter((n) => !(n.nodeType === 1 && n.getAttribute('aria-hidden') === 'true')).map((n) => n.textContent).join('');
+          const all = [...form.querySelectorAll('[role="alert"]')];
+          return {
+            out: lbl.classList.contains('is-out'), disabled: inp.disabled, checked: inp.checked, line: [...lbl.querySelectorAll('span')].filter((x) => x.getBoundingClientRect().width > 0).map((x) => x.textContent).join(' | '),
+            invalid: fs.getAttribute('aria-invalid'),
+            group: [...fs.querySelectorAll('[role="alert"]')].map((x) => ({ tag: x.tagName, cls: x.getAttribute('class'), text: strip(x) })),
+            formLevel: all.filter((x) => !x.closest('fieldset.nk-days')).map(strip),
+            focusInGroup: !!(a && fs.contains(a)), focusIsEnabledRadio: !!(a && a.matches('input[type="radio"]') && !a.disabled), focusValue: a && a.matches('input[type="radio"]') ? a.value : null,
+            checkedAny: [...fs.querySelectorAll('input:checked')].map((r) => r.value),
+            buttonDisabled: form.querySelector('button[type="submit"]').disabled,
+          };
+        }, { day: E });
+        if (posts.length !== 1 || !posts[0].includes(E)) failures.push(`${at}&day=${E}: race: ${posts.length} POST(s), want exactly one naming ${E} (D7)`);
+        if (!race.out || !race.disabled || race.checked || race.line !== S.soldOutLine) failures.push(`${at}&day=${E}: race: the tile did not flip to Sold out and disabled: ${JSON.stringify({ out: race.out, disabled: race.disabled, checked: race.checked, line: race.line })} (D7)`);
+        if (race.group.length !== 1 || race.group[0].tag !== 'P' || race.group[0].text !== S.serverError || race.group[0].cls !== groupClass) failures.push(`${at}&day=${E}: race: group alerts ${JSON.stringify(race.group)}, want one <P class="${groupClass}"> reading "${S.serverError}" (the TicketFieldAlert of "Choose a day") (D7)`);
+        if (race.invalid !== 'true') failures.push(`${at}&day=${E}: race: the group's aria-invalid is ${race.invalid}, want "true" (D7)`);
+        if (race.formLevel.length) failures.push(`${at}&day=${E}: race: a form-level alert also shows ${JSON.stringify(race.formLevel)}: the error belongs to the day group only (D7)`);
+        if (!race.focusInGroup || !race.focusIsEnabledRadio || race.checkedAny.length) failures.push(`${at}&day=${E}: race: focus ${JSON.stringify({ inGroup: race.focusInGroup, enabledRadio: race.focusIsEnabledRadio, value: race.focusValue })} and checked ${JSON.stringify(race.checkedAny)}, want focus on an enabled radio in the group and nothing checked (D7)`);
+        if (race.buttonDisabled) failures.push(`${at}&day=${E}: race: the submit button is stuck disabled (D7)`);
+        await page.mouse.move(0, 0);
+        await page.locator(FORM).screenshot({ path: path.join(SHOTS, `lc-soldout-${width}-race-409.png`), animations: 'disabled' });
+        await axeIn(page, at, 'race error');
+        // Another day clears the group error.
+        const other = (await page.evaluate(readOption, { root: `${FORM} fieldset.nk-days`, day: E })).days.find((d) => !d.disabled);
+        if (other) {
+          await page.locator(`${FORM} label.nk-day:has(input[value="${other.day}"])`).click();
+          await page.waitForTimeout(250);
+          const after = await page.evaluate(readOption, { root: `${FORM} fieldset.nk-days`, day: E });
+          if (after.alerts || after.invalid !== 'false') failures.push(`${at}&day=${E}: race: after choosing ${other.day} the group still shows alerts=${after.alerts} aria-invalid=${after.invalid} (D7)`);
+          if (!after.days.find((d) => d.day === other.day)?.checked) failures.push(`${at}&day=${E}: race: ${other.day} not checked after choosing it (D7)`);
+        }
+      }
 
       await ctx.close();
     }

@@ -4,7 +4,8 @@
     "page": "app/(marketing)/tickets/[slug]/page.tsx",
     "form": "components/tickets/TicketPurchaseForm.tsx",
     "card": "components/tickets/keepsake/TicketCard.tsx",
-    "dayCount": "components/tickets/keepsake/DayCount.tsx"
+    "dayCount": "components/tickets/keepsake/DayCount.tsx",
+    "cart": "components/tickets/useTicketCart.ts"
   },
   "leftFormat": "`${d.remaining} left`",
   "leftFormatRegex": "`\\$\\{[A-Za-z_.]*remaining\\} left`",
@@ -35,7 +36,6 @@
   ],
   "forbiddenInForm": [
     "fetch(",
-    "useEffect",
     "sanityFetch",
     "getPoolRemaining",
     "firebase",
@@ -47,7 +47,6 @@
       "checked={cart.day === day}",
       "aria-invalid={dayInvalid}",
       "{dayInvalid ? <TicketFieldAlert spaced>{TICKET_COPY.chooseDay}</TicketFieldAlert> : null}",
-      "return requested && showDays.includes(requested) ? requested : null;",
       "<time dateTime={day}>{formatShowDayShort(day)}</time>"
     ]
   },
@@ -59,7 +58,6 @@
     "components/tickets/keepsake/days.ts",
     "components/tickets/keepsake/types.ts",
     "components/tickets/keepsake/parts.tsx",
-    "components/tickets/useTicketCart.ts",
     "app/(marketing)/national-show/tickets/page.tsx"
   ],
   "proseCorpus": [
@@ -77,7 +75,9 @@
     "nk-of",
     "left",
     "withholdPlaceholderProse",
-    "TicketCard"
+    "TicketCard",
+    "409",
+    "router.refresh"
   ],
   "shots": ".tmp/lc-shots",
   "soldOut": {
@@ -100,5 +100,25 @@
       "aria-disabled"
     ],
     "pageForbiddenLiteral": "remaining:"
+  },
+  "amendment2": {
+    "why": "Amendment 2 (Codi): a sold-out ?day= is ignored on load; a 409 race renders the server's text in the day group's TicketFieldAlert. Ruling verbatim in goldens/spec.md.",
+    "cartMust": [
+      "errorStatus",
+      "res.status"
+    ],
+    "formMust": [
+      "useRouter",
+      "router.refresh(",
+      "409",
+      "errorStatus"
+    ],
+    "pageMust": [
+      "isDayClosed"
+    ],
+    "shots": [
+      "lc-soldout-<width>-linked-initial.png",
+      "lc-soldout-<width>-race-409.png"
+    ]
   }
 }

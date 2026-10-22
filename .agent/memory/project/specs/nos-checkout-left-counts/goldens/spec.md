@@ -49,8 +49,36 @@ No new copy, colour, style or data source. The count line, its markup, its class
 - **Linked sold-out day (decision):** a day reached by `?day=D` that is closed renders as a disabled radio that stays CHECKED (`checked={cart.day === day}` is a pinned r45 line, S4). The hub unchecks a closed day because its day is local state it can drop; the checkout's day is the cart's, and Codi's rule is that the server's verdict must still render, which needs the submit to carry the day. A disabled-but-checked option cannot be re-chosen by the buyer, shows the ticked, muted, struck-through, "Sold out" cell, and is left by choosing another day. Accepted; S4 is unchanged.
 - **Harness (live data has no sold-out day):** the hub and checkout document responses are rewritten in flight (page.route) so the RSC payload's day object for the checkout's first day reads `state:"soldOut", remaining:0`; the hub's own cell is the oracle for markup and computed style. This needs the page to pass the hub's day objects to the form unchanged (static S4b forbids a `remaining:` literal in page.tsx). The server-rendered cell still shows the old state, so React client-renders from the payload (a hydration warning is expected).
 
+## Amendment 2 (design lead Codi, 2026-10-22; reverses the amendment 1 decision on a linked sold-out day), verbatim
+
+"The visuals PASS: the hub and checkout counts match at 390 ("997 left / 1000 left"), the sold-out tile is struck through and muted like the hub, and the "Choose a day" error anatomy is unchanged. Two changes before the PR:
+(a) Don't keep a sold-out ?day= checked. Checked + disabled sends the buyer straight into a guaranteed 409. It also can't take focus, and a disabled radio isn't submitted natively, which is why you're carrying it some other way. Ignore a sold-out ?day= on load: the group starts unselected (the same no-default state as r45), and the tile already says "Sold out". No new copy (critique H5 error prevention).
+(b) The race case (the day sells out between load and submit): render the server's "Sold out." through the existing TicketFieldAlert at the day group, the same anatomy as "Choose a day", so it isn't a new pattern. Move focus to the group, and refresh the counts so that tile shows Sold out and is disabled. The form-level alert stays for errors that can't be tied to a field (critique H9: error at its source; WCAG 3.3.1).
+Send me two shots (?day=<soldout> initial; race 409 at 390) and then open the PR."
+
+The amendment 1 section above ("Linked sold-out day (decision): ... stays CHECKED") is SUPERSEDED by (a). Pinned line `return requested && showDays.includes(requested) ? requested : null;` is released from S4 (the day is now also filtered for closed days); every other r45 line stays pinned.
+
+### How the 409 identifies the day (measured in app/api/tickets/checkout/route.ts)
+
+It does not. Over-capacity returns `NextResponse.json({ error: await fetchSoldOutMessage() }, { status: 409 })` (route.ts:908-910): the body is only the CMS `ticketsPage.soldOutMessage` or the fallback "Sold out." (route.ts:420-426); no day, no ticket type, no code. It also covers the shared early-bird pool and the plain per-type capacity, not only the per-day cap (`dayCapResult` and `capacityResult` both return `over-capacity`). The other 409s (route.ts:649, 918, 929, 937: key mismatch, reservation expired, already paid, provider mismatch) carry different texts and are not capacity at all. Adding a day or a code to the body would be a new API contract, so it is NOT done.
+
+### How the client ties it to the day (existing mechanisms only)
+
+1. The cart already knows the chosen day (`cart.day`) and the reply status is available where the reply is read (useTicketCart.ts, the `!res.ok` branch). The hook exposes it as `errorStatus: number | null` (`res.status`; null for validation, network and success; reset when a submit starts).
+2. On `errorStatus === 409` for a day-selection product with a chosen day, the form calls `router.refresh()` (next/navigation; the existing mechanism: it re-runs page.tsx, which re-reads the hub's own loader `loadTicketCardViewModels()`, a force-dynamic read of the same sold counts). No new data source, API or client fetch.
+3. When the refreshed `dayCounts` say the chosen day is now closed (`isDayClosed`), the 409 is about that day: the server's own text (cart.errorMessage, "Sold out." verbatim, no new copy) is shown by `TicketFieldAlert spaced` inside the day fieldset (the "Choose a day" anatomy), the fieldset is `aria-invalid="true"`, the chosen day is cleared (the tile is now disabled and unchecked, as on a load), focus goes to the first enabled radio (r45's own focus call), and the form-level alert does not show this error. If the chosen day is still open after the refresh (the pool sold out, an expired reservation, an already-paid key...), the error cannot be tied to the field and stays the form-level alert exactly as today. Choosing a day clears the group error.
+4. Honest limit: the tie is inferred from the refreshed counts, not from the reply. A day that sells out and then frees up again in the instants between the 409 and the refresh would leave the error form-level; that is the safe direction.
+
+### Brief for the dev (footprint now also includes components/tickets/useTicketCart.ts)
+
+- `app/(marketing)/tickets/[slug]/page.tsx`: compute `dayCounts` before `day`/`summaryDay`; a `?day=` whose count `isDayClosed` is treated as no day (so `initialDay` and the summary stub are the product's own, as with no `?day=`). Pass the hub's day objects through unchanged (no `remaining:` literal).
+- `components/tickets/useTicketCart.ts`: add `errorStatus` as above. Nothing else.
+- `components/tickets/TicketPurchaseForm.tsx`: `useRouter`; the 409 handling in point 2-3; a state for the day-group error text; clear it on `chooseDay`; hide the form-level `cart.errorMessage` alert while the error is the day group's (optionally also while the refresh is pending after a 409 on a day product, so it does not flash). The r45 lines (no default day, `aria-invalid={dayInvalid}`, the "Choose a day" alert, `input:not(:disabled)` focus) stay.
+- Codex flagged `countDisplay` at TicketCard.tsx:24 as dead. Measured on the dev head: it is imported at l.24 AND used at l.185 (`counts={countDisplay(vm.scarcity?.provisional, showProvisional)}` for TicketCount), so it is not dead; no change. Static S2b still fails any imported-but-unused `countDisplay`, `daySubline` or `TICKET_COPY` in TicketCard.tsx, should an edit orphan one.
+- Must not change: DayCount, TicketCard, the hub, the API route, any stylesheet, any copy.
+
 ## Known gaps
 
-1. The "Server error at the field" wording: see above.
+1. The "Server error at the field" wording: amendment 2 puts a day-tied 409 in the day group; any other error stays form-level.
 2. The counts are as fresh as the hub's (force-dynamic page, same stock read); checkout still re-checks capacity authoritatively.
 3. The sold-out harness depends on the RSC payload shape (`"day":..,"state":..,"remaining":..`); if Next changes how it serialises props the check reports "could not force" (INFRA), not a silent pass.

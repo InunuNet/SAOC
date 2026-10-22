@@ -42,6 +42,11 @@ for (const must of ['data-ticket-day', 'is-out', 'is-low', 'disabled={closed}', 
   if (!card.includes(must)) failures.push(`${F.card}: lost ${must} (S2)`);
 }
 
+// S2b (Codex): no dead import left behind by the DayCount extraction.
+for (const name of ['countDisplay', 'daySubline', 'TICKET_COPY']) {
+  if (new RegExp(`\\b${name}\\b`).test(card.split('\n').filter((l) => /^import|^\\s+\\w+,?$|from '/.test(l)).join('\n')) && (card.match(new RegExp(`\\b${name}\\b`, 'g')) ?? []).length < 2) failures.push(`${F.card}: ${name} is imported but never used (S2b)`);
+}
+
 // S3
 if (!page.includes(G.hubLoader.import) || !page.includes(G.hubLoader.from)) failures.push(`${F.page}: does not import ${G.hubLoader.import} from ${G.hubLoader.from} (S3)`);
 if (!page.includes(G.hubLoader.showProvisional)) failures.push(`${F.page}: showProvisional is not ${G.hubLoader.showProvisional}, the hub's own expression (S3)`);
@@ -80,6 +85,14 @@ if (!/import\s*\{[^}]*\bisDayClosed\b[^}]*\}\s*from\s*'[^']*keepsake\/days'/.tes
 }
 for (const bad of SO.formForbidden) if (form.includes(bad)) failures.push(`${F.form}: holds ${bad}: a native disabled input is enough (S4b)`);
 if (page.includes(SO.pageForbiddenLiteral)) failures.push(`${F.page}: holds ${SO.pageForbiddenLiteral} - the hub's day objects must pass through unchanged (the sold-out harness forces them in flight) (S4b)`);
+
+// S4c (amendment 2: sold-out ?day= ignored, 409 race at the day group)
+const A2 = G.amendment2;
+const cart = src.cart ?? '';
+for (const must of A2.cartMust) if (!cart.includes(must)) failures.push(`${F.cart}: never uses ${must}: the form needs the reply status to tie a 409 to the chosen day (S4c)`);
+for (const must of A2.formMust) if (!form.includes(must)) failures.push(`${F.form}: never uses ${must} (the 409 race refreshes the counts with router.refresh and tells the day group apart by the status) (S4c)`);
+if (!/from\s*'next\/navigation'/.test(form)) failures.push(`${F.form}: does not import useRouter from next/navigation (S4c)`);
+for (const must of A2.pageMust) if (!page.includes(must)) failures.push(`${F.page}: never uses ${must}: a sold-out ?day= must be ignored before it reaches the form and the summary (S4c)`);
 
 // S5
 for (const f of [F.dayCount, F.card, F.form, F.page]) failures.push(...newProse(f, G.proseCorpus));
