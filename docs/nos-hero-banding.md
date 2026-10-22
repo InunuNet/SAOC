@@ -31,10 +31,9 @@ The same three source files (violet, pink, dark) feed ten other surfaces through
 - The veil eases out over five stops instead of one 0.84 to 0 ramp. At 768px and up these are Codi's exact stops: 0.62 at 74%, 0.34 at 86%, 0.12 at 94%, 0 at 100%.
 - Below 768px the tail is derived, not invented: Codi's desktop tail mapped proportionally onto the mobile shoulder (70%, 0.86), position = 70 + 30 x (p - 62) / 38 and alpha = 0.86 x a / 0.84, rounded to whole percents and 2 decimals. The result is 0.63 at 79%, 0.35 at 89%, 0.12 at 95%, 0 at 100%.
 - The bottom pull now ends on `var(--parchment)`, MissionBlock's ground, with Codi's stops (alpha 0.82, 0.5, 0.2, 0 at 16, 36, 56, 72px) written in parchment's own channels.
+- Codi's amendment eases the pull in at its top. Above 56px the alpha follows 0.2 (u/28)^2, where u is the distance up from 84px, quantised to whole 1/255 steps every 4px (0.1451 at 60px down to 0.0039 at 80px, 0 at 84px), so the top edge reads as no line. This replaces the faint onset kink of the original 72px stop.
 - The diagonal is unchanged. No dither, noise or filter layer was added.
 
 ## Verification
 
 The rendered checks run against a local build with `checks/hero-filter.cjs` preloaded. That is test-only: it drops array elements naming `a620a97f` from `*.sanity.io` responses so the live dataset renders with three slides, as it will once yellow is removed in Sanity. It is never shipped.
-
-Known open risk (Codi's call): the pull still starts at 72px with an alpha slope of 0.0125/px against 0.0139/px before, so a faint onset kink about 72 CSS px above the hero's bottom edge remains at about 90% of its previous strength.

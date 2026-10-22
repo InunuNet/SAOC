@@ -354,7 +354,8 @@ body {
 
 /* F19 hero scrim (design_system_README l.125): the README's sage diagonal 60% to 25%, a text-zone veil
    that keeps the copy at 4.5:1 over the carousel, and a short pull inside the section's bottom padding. rHB (Codi): the veil
-   eases out over five stops instead of one 0.84 -> 0 ramp, and the pull ends on --parchment, MissionBlock's ground, so no seam. */
+   eases out over five stops instead of one 0.84 -> 0 ramp; the pull ends on --parchment, MissionBlock's ground, so no seam, and
+   eases in above 56px (alpha 0.2 (u/28)^2 on whole 1/255 steps, 4px apart, top at 84px), so its top edge reads as no line. */
 [data-hero-scrim='diagonal'] {
   background-image: linear-gradient(135deg, rgb(56 65 56 / 0.6), rgb(56 65 56 / 0.25));
 }
@@ -389,7 +390,13 @@ body {
     rgb(244 243 236 / 0.82) 16px,
     rgb(244 243 236 / 0.5) 36px,
     rgb(244 243 236 / 0.2) 56px,
-    rgb(244 243 236 / 0) 72px
+    rgb(244 243 236 / 0.1451) 60px,
+    rgb(244 243 236 / 0.102) 64px,
+    rgb(244 243 236 / 0.0667) 68px,
+    rgb(244 243 236 / 0.0353) 72px,
+    rgb(244 243 236 / 0.0157) 76px,
+    rgb(244 243 236 / 0.0039) 80px,
+    rgb(244 243 236 / 0) 84px
   );
 }
 
