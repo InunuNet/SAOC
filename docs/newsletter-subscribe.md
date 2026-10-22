@@ -73,7 +73,7 @@ committee wording, marked `PENDING-COMMITTEE-COPY` in the source:
 
 These strings have no golden entry (functional form and admin chrome), so they were placed in
 `NEWSLETTER_COPY` as-is and need a decision: `honeypotLabel`, `adminHeading`, `adminDownloadCsv`,
-the four `adminColumn*` labels, `adminCountSubscribed`, `adminCountUnsubscribed`, `adminNavLabel`. The empty table state shows no message (the count line above it reads 0); a message needs committee wording.
+the four `adminColumn*` labels, `adminCountSubscribed`, `adminCountUnsubscribed`, `adminNavLabel`. `adminSourceSaoc` ("SAOC") and `adminSourceNos` ("National Orchid Show") are Codi's labels for the stored source slugs. The empty-state line "No one has subscribed yet." is Codi's admin microcopy ruling (see goldens/copy.md); Brad may change it.
 
 ## Follow-ups
 

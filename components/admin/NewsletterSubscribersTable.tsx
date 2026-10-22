@@ -15,6 +15,9 @@ export interface SubscriberRow {
   subscribedAt: string | null;
 }
 
+// Admin microcopy on the shared EMPTY_TEXT pattern (Codi ruling 2026-10-22; Brad may change).
+const EMPTY_TEXT = 'No one has subscribed yet.';
+
 const SUBSCRIBER_COLUMNS: readonly ColumnDef[] = [
   { id: 'email', label: NEWSLETTER_COPY.adminColumnEmail, width: '40%', priority: 1, align: 'left' },
   { id: 'source', label: NEWSLETTER_COPY.adminColumnSource, width: '20%', priority: 3, align: 'left' },
@@ -28,12 +31,22 @@ const STATUS_TONE: Record<SubscriberRow['status'], string> = {
   unsubscribed: 'declined',
 };
 
+// Display labels for the stored source slugs; an unknown slug is shown as stored.
+const SOURCE_LABELS: Record<string, string> = {
+  'saoc-footer': NEWSLETTER_COPY.adminSourceSaoc,
+  'nos-footer': NEWSLETTER_COPY.adminSourceNos,
+};
+
+function sourceLabel(source: string): string {
+  return SOURCE_LABELS[source] ?? source;
+}
+
 function renderCell(columnId: string, row: SubscriberRow): React.ReactNode {
   switch (columnId) {
     case 'email':
       return row.email;
     case 'source':
-      return row.source;
+      return sourceLabel(row.source);
     case 'status':
       return <StatusPill status={row.status} tone={STATUS_TONE[row.status]} />;
     case 'subscribed':
@@ -64,12 +77,12 @@ export function NewsletterSubscribersTable({ rows }: { rows: readonly Subscriber
       renderCell={renderCell}
       cellTitle={cellTitle}
       sortedDescColumnId="subscribed"
-      emptyText=""
+      emptyText={EMPTY_TEXT}
       card={(row) => ({
         title: row.email,
         status: <StatusPill status={row.status} tone={STATUS_TONE[row.status]} />,
         fields: [
-          { label: NEWSLETTER_COPY.adminColumnSource, value: row.source },
+          { label: NEWSLETTER_COPY.adminColumnSource, value: sourceLabel(row.source) },
           { label: NEWSLETTER_COPY.adminColumnSubscribed, value: formatAdminDate(row.subscribedAt) },
         ],
       })}

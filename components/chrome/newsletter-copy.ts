@@ -25,4 +25,6 @@ export const NEWSLETTER_COPY = {
   adminCountSubscribed: 'subscribed',
   adminCountUnsubscribed: 'unsubscribed',
   adminNavLabel: 'Subscribers',
+  adminSourceSaoc: 'SAOC',
+  adminSourceNos: 'National Orchid Show',
 } as const;
