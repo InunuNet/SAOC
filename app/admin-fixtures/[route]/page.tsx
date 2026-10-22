@@ -9,6 +9,7 @@ import {
   QuickActionList,
   StatCards,
 } from '@/components/admin/dashboard/DashboardParts';
+import { AdminPill } from '@/components/admin/AdminPill';
 import { AdminShell } from '@/components/admin/shell/AdminShell';
 import { TicketsTable } from '@/components/admin/TicketsTable';
 import { VendorApplicationReviewTable } from '@/components/admin/VendorApplicationReviewTable';
@@ -49,11 +50,13 @@ function renderBody(route: string, now: Date): React.ReactNode {
       return (
         <PageShell>
           <PageHeader title="Dashboard" subtitle={`Updated ${formatAdminClock(now)}`} />
-          <StatCards data={data} options={{ canReviewVendors: true, showNewsletter: false }} />
+          <StatCards data={data} options={{ canReviewVendors: true, showNewsletter: true }} />
           <div className="mt-6 grid grid-cols-1 gap-4 min-[1280px]:grid-cols-2">
             <DashboardPanel>
               <h2 className={PANEL_HEADING_CLASS}>Quick actions</h2>
-              <QuickActionList options={{ canReviewVendors: true, canManagePaymentSettings: true }} />
+              <QuickActionList
+                options={{ canReviewVendors: true, canManagePaymentSettings: true }}
+              />
             </DashboardPanel>
             <DashboardPanel>
               <h2 className={PANEL_HEADING_CLASS}>Needs attention</h2>
@@ -107,14 +110,17 @@ export default async function AdminFixturePage({ params }: { params: Promise<{ r
   }
 
   return (
-    <AdminShell
-      email={FIXTURE_EMAIL}
-      canReviewVendors
-      canManagePaymentSettings
-      pendingCount={FIXTURE_PENDING_COUNT}
-      pathnameOverride={pathname}
-    >
-      {renderBody(route, new Date())}
-    </AdminShell>
+    <>
+      <AdminShell
+        email={FIXTURE_EMAIL}
+        canReviewVendors
+        canManagePaymentSettings
+        pendingCount={FIXTURE_PENDING_COUNT}
+        pathnameOverride={pathname}
+      >
+        {renderBody(route, new Date())}
+      </AdminShell>
+      <AdminPill verifiedAdmin />
+    </>
   );
 }

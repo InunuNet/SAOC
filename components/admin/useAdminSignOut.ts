@@ -6,7 +6,7 @@ import { getAuth, signOut } from 'firebase/auth';
 import { getFirebaseApp } from '@/lib/firebase';
 
 /**
- * Sign-out flow lifted unchanged from the old AdminNav: the server-side cookie clear must run
+ * Sign-out flow lifted unchanged from the old AdminNav, now used by AdminPill: the server-side cookie clear must run
  * even if the Firebase client call throws, so it is try/finally, not a bare sequential await.
  */
 export async function signOutAdmin(): Promise<void> {

@@ -2,9 +2,9 @@ interface PageShellProps {
   children: React.ReactNode;
 }
 
-/** Content wrapper: 32px padding (16px below 640), max-width 1280. */
+/** Content wrapper: 32px padding (16px below 640), max-width 1280, left-anchored. */
 export function PageShell({ children }: PageShellProps) {
-  return <div className="mx-auto w-full max-w-[1280px] p-4 sm:p-8">{children}</div>;
+  return <div className="w-full max-w-[1280px] p-4 sm:p-8">{children}</div>;
 }
 
 interface PageHeaderProps {

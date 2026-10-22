@@ -15,7 +15,7 @@ interface MobileDrawerProps {
   children: React.ReactNode;
 }
 
-/** Left drawer, 280px or 85vw, below 1024. Traps focus, closes on Esc and scrim click, and
+/** Left drawer below the 62px header, 280px or 85vw, below 1024. Traps focus, closes on Esc and scrim click, and
  *  locks body scroll while open. Rendered only while open. */
 export function MobileDrawer({ open, onClose, children }: MobileDrawerProps) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -42,7 +42,7 @@ export function MobileDrawer({ open, onClose, children }: MobileDrawerProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 lg:hidden">
+    <div className="fixed inset-x-0 bottom-0 top-[62px] z-50 lg:hidden">
       <div className={`absolute inset-0 ${SCRIM_CLASS}`} onClick={onClose} aria-hidden="true" />
       <div
         ref={panelRef}

@@ -178,7 +178,7 @@ export function DoorScannerClient({ initialCheckedInCount }: DoorScannerClientPr
         (decodedText) => {
           void handleCheckIn(decodedText);
         },
-        undefined, // per-frame "no QR found" noise — expected during normal scanning, not an error
+        undefined // per-frame "no QR found" noise — expected during normal scanning, not an error
       )
       .then(() => {
         setCameraStatus('running');
@@ -239,7 +239,7 @@ export function DoorScannerClient({ initialCheckedInCount }: DoorScannerClientPr
 
   return (
     <PageShell>
-      <div className="mx-auto w-full max-w-[480px]">
+      <div className="mx-auto w-full max-w-[480px] lg:mx-0">
         <PageHeader
           title="Door scanner"
           subtitle={checkedInCount === null ? undefined : `Checked in: ${checkedInCount}`}
@@ -273,12 +273,13 @@ export function DoorScannerClient({ initialCheckedInCount }: DoorScannerClientPr
           </button>
         )}
 
-        <div className="mt-4 min-h-[72px]">
-          {result && <DoorResultBanner result={result} />}
-        </div>
+        <div className="mt-4 min-h-[72px]">{result && <DoorResultBanner result={result} />}</div>
 
         <form onSubmit={handleManualSubmit} className="mt-4 space-y-2">
-          <label htmlFor="manual-ref" className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted">
+          <label
+            htmlFor="manual-ref"
+            className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted"
+          >
             Manual entry
           </label>
           <div className="flex gap-3">

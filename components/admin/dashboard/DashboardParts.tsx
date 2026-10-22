@@ -10,12 +10,7 @@ import {
 
 import { formatAdminDate } from '@/lib/admin-format';
 import type { DashboardData, PendingApplicationSummary } from '@/lib/admin-dashboard';
-import {
-  CARD_CLASS,
-  FOCUS_RING,
-  STAT_TILE_CLASS,
-  STAT_TILE_PENDING_CLASS,
-} from '../tokens';
+import { CARD_CLASS, FOCUS_RING, STAT_TILE_CLASS, STAT_TILE_PENDING_CLASS } from '../tokens';
 
 const APPLICATIONS_HREF = '/admin/vendors/applications';
 const NO_VALUE = '—';
@@ -36,8 +31,20 @@ export interface StatCardOptions {
 
 function buildStatCards(data: DashboardData, options: StatCardOptions): StatCard[] {
   const cards: StatCard[] = [
-    { id: 'tickets', label: 'Tickets sold', value: data.ticketsSold, href: '/admin/tickets', icon: Ticket },
-    { id: 'orders', label: 'Orders', value: data.orders, href: '/admin/tickets', icon: ShoppingBag },
+    {
+      id: 'tickets',
+      label: 'Tickets sold',
+      value: data.ticketsSold,
+      href: '/admin/tickets',
+      icon: Ticket,
+    },
+    {
+      id: 'orders',
+      label: 'Orders',
+      value: data.orders,
+      href: '/admin/tickets',
+      icon: ShoppingBag,
+    },
   ];
   if (options.canReviewVendors) {
     cards.push(
@@ -55,7 +62,7 @@ function buildStatCards(data: DashboardData, options: StatCardOptions): StatCard
         value: data.vendorsApproved,
         href: APPLICATIONS_HREF,
         icon: BadgeCheck,
-      },
+      }
     );
   }
   if (options.showNewsletter) {
@@ -70,17 +77,23 @@ function buildStatCards(data: DashboardData, options: StatCardOptions): StatCard
   return cards;
 }
 
-// 2 across from 640, 1 below. Each card is one link to its list.
+// 2 across from 640, 1 below, and from 1440 one row of equal columns whatever the count,
+// with the icon tile stacked above the figure so labels get the full card width.
+// Each card is one link to its list.
 export function StatCards({ data, options }: { data: DashboardData; options: StatCardOptions }) {
+  const cards = buildStatCards(data, options);
   return (
-    <ul className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 min-[90rem]:grid-cols-4">
-      {buildStatCards(data, options).map((card) => {
+    <ul
+      className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 min-[90rem]:[grid-template-columns:repeat(var(--stat-count),minmax(0,1fr))]"
+      style={{ '--stat-count': cards.length } as React.CSSProperties} // custom property is not in CSSProperties
+    >
+      {cards.map((card) => {
         const Icon = card.icon;
         return (
           <li key={card.id}>
             <Link
               href={card.href}
-              className={`flex h-full min-h-[88px] items-start gap-4 ${CARD_CLASS} hover:bg-bone/50 ${FOCUS_RING}`}
+              className={`relative flex h-full min-h-[88px] items-start gap-4 min-[90rem]:flex-col ${CARD_CLASS} hover:bg-bone/50 ${FOCUS_RING}`}
             >
               <span
                 className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[2px] ${
@@ -89,13 +102,16 @@ export function StatCards({ data, options }: { data: DashboardData; options: Sta
               >
                 <Icon size={20} strokeWidth={1.75} aria-hidden="true" />
               </span>
-              <span className="min-w-0 flex-1">
+              <span className="min-w-0 flex-1 min-[90rem]:self-stretch">
                 <span className="block font-serif text-[32px] font-semibold leading-none tabular-nums text-ink">
                   {card.value ?? NO_VALUE}
                 </span>
                 <span className="mt-1 block text-[13px] text-muted">{card.label}</span>
               </span>
-              <span aria-hidden="true" className="text-[18px] text-muted">
+              <span
+                aria-hidden="true"
+                className="text-[18px] text-muted min-[90rem]:absolute min-[90rem]:right-6 min-[90rem]:top-6"
+              >
                 →
               </span>
             </Link>
@@ -163,7 +179,10 @@ export function NeedsAttentionList({ items }: { items: PendingApplicationSummary
           className="flex min-h-[48px] items-center justify-between gap-3 border-b border-rule-soft py-1 last:border-b-0"
         >
           <span className="min-w-0 flex-1">
-            <span className="block truncate font-sans text-[14px] font-medium text-ink" title={item.businessName}>
+            <span
+              className="block truncate font-sans text-[14px] font-medium text-ink"
+              title={item.businessName}
+            >
               {item.businessName}
             </span>
             <span className="block text-[13px] tabular-nums text-muted">
