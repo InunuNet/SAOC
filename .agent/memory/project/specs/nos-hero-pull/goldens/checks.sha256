@@ -1,0 +1,14 @@
+938c6a14b5bc5f06524d3369740f2b4b7d9dc05251adc960d8ae6dffd58355f9  .agent/memory/project/specs/nos-hero-pull/checks/_edits.mjs
+3c36b36ca9c2d50b120032ec6f6ab6ace8d0a347f817f105a4032379a7013c1c  .agent/memory/project/specs/nos-hero-pull/checks/_lib.mjs
+22bc947f971dfa23b6d914cc46ead92856abc9c9f56c8bc2adc1c4e93fa0c6c4  .agent/memory/project/specs/nos-hero-pull/checks/_server.mjs
+52d11ffe0ef128ea9aa07547b55d56715da41ebb3d8fc21471ab177c4562fd3d  .agent/memory/project/specs/nos-hero-pull/checks/dots.mjs
+33a838154d329f3b64c477828893db6a8fc9420749fc514e9e63963fb7cfe941  .agent/memory/project/specs/nos-hero-pull/checks/f1-rendered.mjs
+7b43b1e0af7a6edea46323bf63025e8c1adc18b7e0ed4a0beed0b02925d0738e  .agent/memory/project/specs/nos-hero-pull/checks/nonreg.mjs
+a2ced989de74d392008d1a7972dcad21cd6c55960073200c82c0a76d18d52c34  .agent/memory/project/specs/nos-hero-pull/checks/static.mjs
+467e35f1270e39dfa7b10499ecbad5ea62172766780c648e6b4ed19cd512f6ec  .agent/memory/project/specs/nos-hero-pull/checks/hero-filter.cjs
+9c188bb16333f1bde608db6674915499c0f8abb50b3aa96336129669c26f7bfa  .agent/memory/project/specs/nos-hero-pull/goldens/pull.json
+d84a18b7d8dac48c4796e63656ee028dd7bc498f86fa93ea4f7435aef90a0487  .agent/memory/project/specs/nos-hero-pull/goldens/f1-edits.json
+df24bb26eeb485a8367d7e6fe0568add3407d84829d814087eebe72a2ac9a03e  .agent/memory/project/specs/nos-hero-pull/goldens/f1-thresholds.json
+9fb789ed2ac9a2257d0dabb271b33aa6bd57ee65b3f69f6e5fd625f59c196d55  .agent/memory/project/specs/nos-hero-pull/goldens/f1-calibration.json
+3da293887ce9ec77a88c31ddbc80afc03a42cc339c4ac772c16dc3d26bfe0248  .agent/memory/project/specs/nos-hero-pull/goldens/nonreg-baseline.json
+8a4677bad84caf85e8a821bfaf8f32ab8da6080b30f8a4953dcdfabc12992aab  .agent/memory/project/specs/nos-hero-pull/contract-f1.yaml

@@ -1,0 +1,18 @@
+{
+  "ruling": "Codi 2026-10-22: \"ship trial126 as rPL. By eye at 1280 it removes the fog bar, the petals dissolve, and the haze stops well short of the dots. The guard passes: dot contrast 3.11/3.06, the same as now84, so 1.4.11 holds. The rHB checks pass on 24 captures. Good call holding trial168 when the guard failed. Re-baseline nonreg on current main before you merge, rather than masking it.\"",
+  "stops": [
+    "var(--parchment) 0",
+    "rgb(244 243 236 / 0.82) 24px",
+    "rgb(244 243 236 / 0.5) 54px",
+    "rgb(244 243 236 / 0.2) 84px",
+    "rgb(244 243 236 / 0.1451) 90px",
+    "rgb(244 243 236 / 0.102) 96px",
+    "rgb(244 243 236 / 0.0667) 102px",
+    "rgb(244 243 236 / 0.0353) 108px",
+    "rgb(244 243 236 / 0.0157) 114px",
+    "rgb(244 243 236 / 0.0039) 120px",
+    "rgb(244 243 236 / 0) 126px"
+  ],
+  "baseStops": "rHB: 0, 16, 36, 56, 60, 64, 68, 72, 76, 80, 84px with the same alphas",
+  "dots": { "minRatio": 3, "maxDropFromBase": 0.1 }
+}
