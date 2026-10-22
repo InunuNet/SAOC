@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState, useTransition } from 'react';
 
 import { formatRand } from '@/components/nos/cheapest-admission';
 import { CartAttendeeFields } from '@/components/tickets/CartAttendeeFields';
@@ -24,6 +25,7 @@ import { formatShowDay, formatShowDayShort } from '@/lib/show-day-format';
 const BUY_HINT_ID = 'ticket-buy-hint';
 const MIN_QUANTITY = 1;
 const DAY_GROUP = 'checkout-day';
+const HTTP_CONFLICT = 409;
 
 interface TicketPurchaseFormProps {
   ticketTypes: TicketTypeCardData[];
@@ -75,6 +77,38 @@ export function TicketPurchaseForm({
   const [dayRequested, setDayRequested] = useState(false);
   const dayInvalid = dayRequested && cart.day === null;
 
+  // A 409 for a chosen day may mean that day sold out between load and submit. The counts are
+  // re-read (router.refresh re-runs the page's hub loader); if the day is now closed the server's
+  // own text is shown at the day group, else it stays the form-level alert.
+  const router = useRouter();
+  const [refreshing, startRefresh] = useTransition();
+  const [dayError, setDayError] = useState<string | null>(null);
+  const sawRefresh = useRef(false);
+  const raced =
+    ticketType.requiresDaySelection && cart.errorStatus === HTTP_CONFLICT && cart.day !== null;
+
+  useEffect(() => {
+    if (raced) startRefresh(() => router.refresh());
+  }, [raced, router]);
+
+  useEffect(() => {
+    if (!raced) return;
+    if (refreshing) {
+      sawRefresh.current = true;
+      return;
+    }
+    if (!sawRefresh.current) return;
+    sawRefresh.current = false;
+    const count = dayCounts?.find((c) => c.day === cart.day);
+    if (!count || !isDayClosed(count)) return;
+    // The refreshed counts arrive from the server after the render, so this can only be learned here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDayError(cart.errorMessage);
+    cart.setDay(null);
+    window.dispatchEvent(new CustomEvent(CHECKOUT_DAY_EVENT, { detail: null }));
+    dayGroupRef.current?.querySelector<HTMLInputElement>('input:not(:disabled)')?.focus();
+  }, [raced, refreshing, dayCounts, cart]);
+
   if (cart.redirect) {
     return (
       <CheckoutRedirectNotice
@@ -87,6 +121,7 @@ export function TicketPurchaseForm({
   }
 
   function chooseDay(day: string) {
+    setDayError(null);
     cart.setDay(day);
     window.dispatchEvent(new CustomEvent(CHECKOUT_DAY_EVENT, { detail: day }));
   }
@@ -118,7 +153,12 @@ export function TicketPurchaseForm({
       {showTestModeBanner ? <OzowSandboxTestModeBanner /> : null}
 
       {ticketType.requiresDaySelection ? (
-        <fieldset ref={dayGroupRef} className="days nk-days" aria-invalid={dayInvalid}>
+        <fieldset
+          ref={dayGroupRef}
+          className="days nk-days"
+          aria-invalid={dayInvalid}
+          {...(dayError === null ? {} : { 'aria-invalid': true })}
+        >
           <legend>{TICKET_COPY.chooseDay}</legend>
           <div className="nk-days-row">
             {showDays.map((day) => {
@@ -156,6 +196,7 @@ export function TicketPurchaseForm({
             })}
           </div>
           {dayInvalid ? <TicketFieldAlert spaced>{TICKET_COPY.chooseDay}</TicketFieldAlert> : null}
+          {dayError ? <TicketFieldAlert spaced>{dayError}</TicketFieldAlert> : null}
           {dayCounts ? <DayCountNote days={dayCounts} showProvisional={showProvisional} /> : null}
         </fieldset>
       ) : null}
@@ -211,7 +252,7 @@ export function TicketPurchaseForm({
         onAttendeeChange={cart.updateAttendeeField}
       />
 
-      {cart.status === 'error' && cart.errorMessage ? (
+      {cart.status === 'error' && cart.errorMessage && dayError === null ? (
         <TicketFieldAlert>{cart.errorMessage}</TicketFieldAlert>
       ) : null}
 

@@ -8,6 +8,7 @@ import { JsonLd, breadcrumbJsonLd } from '@/components/seo/JsonLd';
 import { SalesClosedNotice, TicketPurchaseForm } from '@/components/tickets';
 import type { TicketTypeCardData } from '@/components/tickets';
 import { TicketCard } from '@/components/tickets/keepsake';
+import { isDayClosed } from '@/components/tickets/keepsake/days';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import {
   activeShowWindowQuery,
@@ -175,10 +176,7 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
   };
 
   const quantity = parseQuantity(query.quantity);
-  const day = typeof query.day === 'string' && showDays.includes(query.day) ? query.day : null;
   const productId = productIdForSlug(ticketType.slug);
-  // r45b: with no ?day the summary keeps the product's own stub and when line, never the first show day.
-  const summaryDay = cardData.requiresDaySelection ? day : null;
   const purchasable = salesOpen && !cardData.soldOut;
   // rLC (r45 P3): the Day Pass shows the hub card's own per-day counts, from the hub's own
   // loader; no other product has them. A failed load leaves `cards` empty, so no counts show.
@@ -187,7 +185,16 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
       ? ((await loadTicketCardViewModels()).cards.day?.days ?? null)
       : null;
   const showProvisional = !withholdPlaceholderProse();
-
+  // A linked day that is sold out is ignored: the group starts unselected, as with no ?day.
+  const linkedCount = dayCounts?.find((c) => c.day === query.day);
+  const day =
+    typeof query.day === 'string' &&
+    showDays.includes(query.day) &&
+    !(linkedCount && isDayClosed(linkedCount))
+      ? query.day
+      : null;
+  // r45b: with no ?day the summary keeps the product's own stub and when line, never the first show day.
+  const summaryDay = cardData.requiresDaySelection ? day : null;
   const breadcrumbs = (
     <nav className="nk-crumbs" aria-label="Breadcrumb">
       <Link href="/national-show">National Show</Link>
