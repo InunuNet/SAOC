@@ -13,6 +13,8 @@
 //   R5  axe (WCAG 2.2 AA) finds no more of any rule than the base render did, per route and width.
 //   R6  nothing else moved: the hero's bottom, the subnav height and the computed font-size of labels, the h1, the required sentence, the
 //       footer text and button equal the base render.
+//   R7  vendor apply, every vendor field: the control sits below its label (control top >= label bottom), and the stands control's left edge
+//       is its label's left edge (a max-width input must not slide up beside an inline label).
 //   Element screenshots (r55-<width>-<route>.png) land in <checkout>/.tmp/va-shots/.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -56,7 +58,15 @@ function measure({ probes, standsId }) {
   const firstText = form ? [...form.children].find((c) => c.tagName === 'P') ?? null : null;
   const nf = document.querySelector('.nf-form');
   const nfInput = document.getElementById('nf-email');
+  const stack = [...document.querySelectorAll('input[id^="vendor-register-"], textarea[id^="vendor-register-"]')]
+    .filter((e) => !SKIP.has(e.type) && shown(e))
+    .map((e) => {
+      const label = document.querySelector(`label[for="${e.id}"]`);
+      const c = e.getBoundingClientRect(), l = label ? label.getBoundingClientRect() : null;
+      return { id: e.id, hasLabel: Boolean(label), below: l ? c.top - l.bottom : null, dx: l ? c.left - l.left : null };
+    });
   return {
+    stack,
     controls,
     overflowX: document.documentElement.scrollWidth - window.innerWidth,
     footerClip: nf && nfInput ? nfInput.scrollWidth - nfInput.clientWidth : 0,
@@ -116,6 +126,13 @@ try {
         // R2
         if (m.gap === null) failures.push(`${at}: no subnav or no first form text to measure the gap (R2)`);
         else if (m.gap < G.gap.minPx || m.gap > G.gap.maxPx) failures.push(`${at}: subnav-to-form-text gap is ${m.gap.toFixed(1)}px, outside ${G.gap.minPx}-${G.gap.maxPx}px (R2)`);
+        // R7
+        for (const f of m.stack) {
+          if (!f.hasLabel) failures.push(`${at}: "${f.id}" has no label (R7)`);
+          else if (f.below < -0.5) failures.push(`${at}: "${f.id}" sits ${(-f.below).toFixed(1)}px up inside its label row, not below it (R7)`);
+          else if (f.id === G.stands.id && Math.abs(f.dx) > 1) failures.push(`${at}: stands control starts ${f.dx.toFixed(1)}px from its label's left edge (R7)`);
+        }
+        if (!m.stack.some((f) => f.id === G.stands.id)) failures.push(`${at}: stands control missing from the stacking check (R7)`);
         // R3
         const s = m.stands;
         if (!s) failures.push(`${at}: the stands input #${G.stands.id} is missing (R3)`);
@@ -162,4 +179,4 @@ if (RECORD) {
   console.log(`RECORDED: ${Object.keys(recorded).length} route/width baselines (${failures.length} measurement failure(s) ignored while recording)`);
   process.exit(0);
 }
-finish('rendered.mjs', failures, `R1-R6 hold on ${Object.keys(recorded).length} route/width renders.`);
+finish('rendered.mjs', failures, `R1-R7 hold on ${Object.keys(recorded).length} route/width renders.`);
