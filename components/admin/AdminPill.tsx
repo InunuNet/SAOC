@@ -104,7 +104,7 @@ export function AdminPill() {
         type="button"
         onClick={() => void handleSignOut()}
         aria-label="Sign out"
-        className={`${ITEM_CLASS} justify-center`}
+        className={`${ITEM_CLASS} min-w-[44px] justify-center`}
       >
         <LogOut size={18} strokeWidth={1.75} aria-hidden="true" />
       </button>
