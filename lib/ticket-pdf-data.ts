@@ -1,6 +1,6 @@
 import { resolveReplyTo } from '@/lib/email';
 import { getConfirmedOrderForDisplay } from '@/lib/orders';
-import { formatShowDay, formatShowDayShort, showDayStub } from '@/lib/show-day-format';
+import { formatShowDayShort, showDayStub } from '@/lib/show-day-format';
 import { formatShowDateRange, formatVenueAddress } from '@/lib/show-identity';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import {
