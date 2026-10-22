@@ -15,9 +15,13 @@ import {
   ticketsPageQuery,
   ticketTypeBySlugQuery,
 } from '@/sanity/queries';
-import { getAdmissionSoldOutBySlug } from '@/lib/data/admission-availability';
+import {
+  getAdmissionSoldOutBySlug,
+  loadTicketCardViewModels,
+} from '@/lib/data/admission-availability';
 import { CART_MAX_LINE_ITEMS } from '@/lib/cart';
 import { resolveEffectivePrice } from '@/lib/checkout-reservation';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { productIdForSlug } from '@/lib/data/ticket-presentation';
 import { buildShowWindow, computeShowDays } from '@/lib/show-window-lookup';
 import { resolveActiveShow } from '@/lib/show-resolution';
@@ -176,6 +180,13 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
   // r45b: with no ?day the summary keeps the product's own stub and when line, never the first show day.
   const summaryDay = cardData.requiresDaySelection ? day : null;
   const purchasable = salesOpen && !cardData.soldOut;
+  // rLC (r45 P3): the Day Pass shows the hub card's own per-day counts, from the hub's own
+  // loader; no other product has them. A failed load leaves `cards` empty, so no counts show.
+  const dayCounts =
+    purchasable && cardData.requiresDaySelection && productId === 'day'
+      ? ((await loadTicketCardViewModels()).cards.day?.days ?? null)
+      : null;
+  const showProvisional = !withholdPlaceholderProse();
 
   const breadcrumbs = (
     <nav className="nk-crumbs" aria-label="Breadcrumb">
@@ -242,6 +253,8 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
             showDays={showDays}
             initialQuantity={quantity ?? undefined}
             initialDay={day}
+            dayCounts={dayCounts}
+            showProvisional={showProvisional}
             showTestModeBanner={await viewerIsVerifiedAdmin()}
           />
         ) : null}

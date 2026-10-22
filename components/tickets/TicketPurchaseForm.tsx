@@ -11,6 +11,9 @@ import type { TicketTypeCardData } from '@/components/tickets/TicketTypeCard';
 import { useTicketCart } from '@/components/tickets/useTicketCart';
 import { ArrowIcon, MinusIcon, PlusIcon } from '@/components/tickets/keepsake/parts';
 import { CHECKOUT_DAY_EVENT } from '@/components/tickets/keepsake/checkout-day';
+import { DayCount, DayCountNote, hasDayCountLine } from '@/components/tickets/keepsake/DayCount';
+import { isDayClosed } from '@/components/tickets/keepsake/days';
+import type { KeepsakeDay } from '@/components/tickets/keepsake/types';
 import { CART_MAX_LINE_ITEMS } from '@/lib/cart';
 import { TICKET_COPY } from '@/lib/data/ticket-presentation';
 import { formatShowDay, formatShowDayShort } from '@/lib/show-day-format';
@@ -31,6 +34,9 @@ interface TicketPurchaseFormProps {
   // True only for a verified admin viewer (resolved server-side); the Ozow test-mode strip is
   // never public.
   showTestModeBanner?: boolean;
+  // The Day Pass's per-day counts, read server-side from the hub's own loader (rLC, r45 P3).
+  dayCounts?: KeepsakeDay[] | null;
+  showProvisional?: boolean;
 }
 
 function startQuantity(requested: number | undefined): number {
@@ -54,6 +60,8 @@ export function TicketPurchaseForm({
   initialQuantity,
   initialDay,
   showTestModeBanner = false,
+  dayCounts = null,
+  showProvisional = false,
 }: TicketPurchaseFormProps) {
   const ticketType = ticketTypes[0];
   const cart = useTicketCart(ticketType, {
@@ -113,24 +121,42 @@ export function TicketPurchaseForm({
         <fieldset ref={dayGroupRef} className="days nk-days" aria-invalid={dayInvalid}>
           <legend>{TICKET_COPY.chooseDay}</legend>
           <div className="nk-days-row">
-            {showDays.map((day) => (
-              <label key={day} className="nk-day">
-                <input
-                  type="radio"
-                  name={DAY_GROUP}
-                  value={day}
-                  checked={cart.day === day}
-                  disabled={submitting}
-                  aria-label={formatShowDay(day)}
-                  onChange={() => chooseDay(day)}
-                />
-                <b>
-                  <time dateTime={day}>{formatShowDayShort(day)}</time>
-                </b>
-              </label>
-            ))}
+            {showDays.map((day) => {
+              const count = dayCounts?.find((c) => c.day === day);
+              const counted = count !== undefined && hasDayCountLine(count, showProvisional);
+              const closed = count !== undefined && isDayClosed(count);
+              const dayClasses = [
+                'nk-day',
+                closed ? 'is-out' : '',
+                count?.state === 'low' ? 'is-low' : '',
+              ]
+                .filter(Boolean)
+                .join(' ');
+              const countId = `${DAY_GROUP}-count-${day}`;
+              return (
+                <label key={day} className={dayClasses}>
+                  <input
+                    type="radio"
+                    name={DAY_GROUP}
+                    value={day}
+                    checked={cart.day === day}
+                    disabled={submitting || closed}
+                    aria-label={formatShowDay(day)}
+                    aria-describedby={counted ? countId : undefined}
+                    onChange={() => chooseDay(day)}
+                  />
+                  <b>
+                    <time dateTime={day}>{formatShowDayShort(day)}</time>
+                  </b>
+                  {count ? (
+                    <DayCount d={count} showProvisional={showProvisional} id={countId} />
+                  ) : null}
+                </label>
+              );
+            })}
           </div>
           {dayInvalid ? <TicketFieldAlert spaced>{TICKET_COPY.chooseDay}</TicketFieldAlert> : null}
+          {dayCounts ? <DayCountNote days={dayCounts} showProvisional={showProvisional} /> : null}
         </fieldset>
       ) : null}
 
