@@ -705,7 +705,7 @@ function drawFooter(
 ): void {
   const { fonts, logos, pendingLabel } = ctx;
   const { visit } = input;
-  const page = `PAGE ${index + 1} OF ${input.positions.length}`;
+  const page = `Page ${index + 1} of ${input.positions.length}`;
   drawText(ctx, INSTRUCTION, { x: MARGIN_X, y: CARD_BOTTOM + INSTRUCTION_GAP, font: fonts.body, size: 9, color: INK, maxWidth: CONTENT_WIDTH });
   fillRect(ctx, MARGIN_X, FOOTER_RULE_Y, CONTENT_WIDTH, 0.1, RULE);
 
@@ -734,13 +734,12 @@ function drawFooter(
     x,
     y3 + FOOTER_LINE_PITCH
   );
-  drawText(ctx, input.orderReference ? `ORDER ${input.orderReference} · ${page}` : page, {
+  drawText(ctx, input.orderReference ? `Order ${input.orderReference} · ${page}` : page, {
     x: RIGHT_X,
     y: FOOTER_TEXT_Y,
-    font: fonts.bold,
+    font: fonts.body,
     size: FOOTNOTE_SIZE,
     color: MUTED,
-    tracking: BAND_TRACKING,
     align: 'right',
   });
 }
