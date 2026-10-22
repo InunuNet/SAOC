@@ -1,0 +1,16 @@
+938c6a14b5bc5f06524d3369740f2b4b7d9dc05251adc960d8ae6dffd58355f9  .agent/memory/project/specs/nos-hero-banding/checks/_edits.mjs
+d0fa44dfb461b418934553a63bddfcce85918a047d724545786e39e1cd9d107d  .agent/memory/project/specs/nos-hero-banding/checks/_lib.mjs
+22bc947f971dfa23b6d914cc46ead92856abc9c9f56c8bc2adc1c4e93fa0c6c4  .agent/memory/project/specs/nos-hero-banding/checks/_server.mjs
+33a838154d329f3b64c477828893db6a8fc9420749fc514e9e63963fb7cfe941  .agent/memory/project/specs/nos-hero-banding/checks/f1-rendered.mjs
+cd42c8421b19870fd52639a4ef10dcf928c83ff2790dd2cdfffdcb213835e948  .agent/memory/project/specs/nos-hero-banding/checks/f1-static.mjs
+64196291db34a565b2f2b315ff086c1b02d9ecf3a5afc3c4a3262265bbd1880e  .agent/memory/project/specs/nos-hero-banding/checks/f1-variants.mjs
+bede8701ff42569e3d20699c16aef83c6cc97e47de8b75550d7e14e0dacd8cb6  .agent/memory/project/specs/nos-hero-banding/checks/footprint.mjs
+467e35f1270e39dfa7b10499ecbad5ea62172766780c648e6b4ed19cd512f6ec  .agent/memory/project/specs/nos-hero-banding/checks/hero-filter.cjs
+7b43b1e0af7a6edea46323bf63025e8c1adc18b7e0ed4a0beed0b02925d0738e  .agent/memory/project/specs/nos-hero-banding/checks/nonreg.mjs
+e5e39452c68b6995a2e49d77a08567f86974535e45f94328390aca47b8ffbc08  .agent/memory/project/specs/nos-hero-banding/contract-f1.yaml
+9fb789ed2ac9a2257d0dabb271b33aa6bd57ee65b3f69f6e5fd625f59c196d55  .agent/memory/project/specs/nos-hero-banding/goldens/f1-calibration.json
+d84a18b7d8dac48c4796e63656ee028dd7bc498f86fa93ea4f7435aef90a0487  .agent/memory/project/specs/nos-hero-banding/goldens/f1-edits.json
+d8c580751d18846ea48582724ccdc7f8d878b2922a7484e36addc3f07178e801  .agent/memory/project/specs/nos-hero-banding/goldens/f1-footprint.json
+6144a9b30e46f3e067ca093570e5665f45abc12df32ed3b44038c5913b49286a  .agent/memory/project/specs/nos-hero-banding/goldens/f1-spec.md
+df24bb26eeb485a8367d7e6fe0568add3407d84829d814087eebe72a2ac9a03e  .agent/memory/project/specs/nos-hero-banding/goldens/f1-thresholds.json
+aa02521856cbd3ce76cacaa8f9e63957d8c92ba77de20eadc56adce8d4db7f4c  .agent/memory/project/specs/nos-hero-banding/goldens/nonreg-baseline.json
