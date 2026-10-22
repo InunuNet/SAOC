@@ -30,7 +30,7 @@ assertions:
       description: Check scripts and goldens are unmodified since @architect wrote them
       command: shasum -a 256 -c .agent/memory/project/specs/nos-checkout-left-counts/goldens/checks.sha256
     - id: A2
-      description: Footprint - the branch differs from origin/main 62dd9f63 only in the four footprint files, docs/nos-checkout-left-counts.md and the spec dir, and HEAD descends from it
+      description: Footprint - the branch differs from its merge-base with origin/main only in the four footprint files, docs/nos-checkout-left-counts.md and the spec dir, and HEAD descends from 62dd9f63
       command: node .agent/memory/project/specs/nos-checkout-left-counts/checks/footprint.mjs
     - id: A3
       description: Static - the count format, nk-of/nk-left and the unconfirmed note are defined once in DayCount and used by the hub card and the checkout form, the page reads the hub loader (cards.day, hub showProvisional) for the Day Pass only with no second data source, the form fetches nothing and keeps every r45 line, no CSS or copy added, docs

@@ -1,11 +1,11 @@
 50cd80185e24308c16379fba1f1032e02964611392ea4d42985c1e0d8a79ae45  .agent/memory/project/specs/nos-checkout-left-counts/checks/_edits.mjs
-440859e081b528d5d92b0ea0f5ade9d1fe0f0fe3a527e0d4886561911b095f2f  .agent/memory/project/specs/nos-checkout-left-counts/checks/_lib.mjs
+642c0f4db916b94176568bcf9e4018c0db7c6fb770fb6db6183c13d84f56a215  .agent/memory/project/specs/nos-checkout-left-counts/checks/_lib.mjs
 c746b9f2e086352b23af21b0a91187e3e5a4d4619c8e3fa28b2e78351b390d6c  .agent/memory/project/specs/nos-checkout-left-counts/checks/_server.mjs
-8e4e818a04eba586ab112547205ef73b20c4f0581815269b6ad61ef46eded17f  .agent/memory/project/specs/nos-checkout-left-counts/checks/footprint.mjs
+3620559101181e90f90e773c7bd8b2d8c66a94cb5f51ab8fbeaa1b7d3d9236bf  .agent/memory/project/specs/nos-checkout-left-counts/checks/footprint.mjs
 6c8db4f3250342d0e16a0b05ae0c31efc72c6d2fad6369e18670b6f040ec572b  .agent/memory/project/specs/nos-checkout-left-counts/checks/rendered.mjs
 da9bfefccafe0bb6bab1c80a343f5b8707236d349b2b10de0be88f2acf309c25  .agent/memory/project/specs/nos-checkout-left-counts/checks/soldout.mjs
 9420626f9b7bef5deb9bfb9b0f0785143cc093b24e5870b841922f0ae538a799  .agent/memory/project/specs/nos-checkout-left-counts/checks/static.mjs
 e70f6d895d793c9fc148ed25922b64b59f317934296d55dcb74bca31706f7d02  .agent/memory/project/specs/nos-checkout-left-counts/goldens/edits.json
 880252dd0b2401f3a38c98c6c94c9ccdb64bf5193fdbe14670e208363d3fc117  .agent/memory/project/specs/nos-checkout-left-counts/goldens/footprint.json
-1ba0647eb879c5dc269bfd9eae7405a019f0573dd1b6a499a8459e10345dbda5  .agent/memory/project/specs/nos-checkout-left-counts/goldens/spec.md
-15928f9c69e843beecd5b0f3e7e9a041f105f2ec96b932b96188dff8f6c443dc  .agent/memory/project/specs/nos-checkout-left-counts/contract-f1.yaml
+2708f6c3553a6dab2ae51e5a1f651b5c5c7813d4c8c854632406f9a75a67fa0d  .agent/memory/project/specs/nos-checkout-left-counts/goldens/spec.md
+fe3e2e5841fd77d8f417572740f430e981619a77ca3b52f8c61afc6cb0c0e1dd  .agent/memory/project/specs/nos-checkout-left-counts/contract-f1.yaml

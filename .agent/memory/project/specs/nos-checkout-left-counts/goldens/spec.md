@@ -1,6 +1,6 @@
 # nos-checkout-left-counts (rLC, r45 P3): the checkout day picker shows the hub's per-day counts (architect, 2026-10-22)
 
-BASE = origin/main 62dd9f63. Branch fix/nos-checkout-left-counts. Machine-readable twin: goldens/edits.json.
+BASE = the merge-base of HEAD and origin/main (cut from origin/main 62dd9f63; the check follows rebases, HEAD must still descend from 62dd9f63). Branch fix/nos-checkout-left-counts. Machine-readable twin: goldens/edits.json.
 
 ## Source (NO INVENTION, docs/rules/no-invention.md)
 

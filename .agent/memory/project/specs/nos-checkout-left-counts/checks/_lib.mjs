@@ -1,15 +1,13 @@
 // Shared helpers for the nos-checkout-left-counts (rLC) checks (QA inputs written by @architect; @dev must not edit them, goldens/checks.sha256
 // locks them). They inspect the checkout named by NOS_LC_ROOT; by default the .tmp/sandbox/rlc worktree when it exists under the
 // checkout holding this spec, otherwise that checkout itself.
-// BASE is origin/main 62dd9f63 (rFE merged).
+// BASE is the merge-base of HEAD and origin/main (see below); the branch was cut from origin/main 62dd9f63 (rFE merged).
 //   NOS_LC_ROOT   checkout to inspect (relative to the cwd)
 //   NOS_LC_GIT    checkout whose git history supplies the BASE file contents (default: NOS_LC_ROOT)
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-export const BASE = '62dd9f63';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const projectRoot = path.resolve(here, '../../../../../..');
@@ -19,6 +17,19 @@ const WORKTREE = '.tmp/sandbox/rlc';
 const defaultRoot = existsSync(path.join(projectRoot, WORKTREE, 'package.json')) ? path.join(projectRoot, WORKTREE) : projectRoot;
 export const repoRoot = process.env.NOS_LC_ROOT ? path.resolve(process.env.NOS_LC_ROOT) : defaultRoot;
 export const gitRoot = process.env.NOS_LC_GIT ? path.resolve(process.env.NOS_LC_GIT) : repoRoot;
+
+// ORIGIN is the commit this branch was cut from (origin/main 62dd9f63): HEAD must always descend from it. BASE is what the diffs are
+// scoped to: the merge-base of HEAD and origin/main, so a rebase onto a newer main (other PRs' files and globals.css changes) is not
+// counted as this branch's change. It falls back to ORIGIN when origin/main cannot be resolved.
+export const ORIGIN = '62dd9f63';
+function resolveBase() {
+  try {
+    return execFileSync('git', ['-C', gitRoot, 'merge-base', 'HEAD', 'origin/main'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || ORIGIN;
+  } catch {
+    return ORIGIN;
+  }
+}
+export const BASE = resolveBase();
 
 export const DOC = 'docs/nos-checkout-left-counts.md';
 export const SPEC_PREFIX = '.agent/memory/project/specs/nos-checkout-left-counts/';
@@ -56,9 +67,9 @@ export function footprintFailures() {
   const changed = changedPaths();
   for (const p of changed) if (!allowed.has(p) && !p.startsWith(SPEC_PREFIX)) failures.push(`path not on the rLC allowlist (goldens/footprint.json, the docs file, the spec dir): ${p}`);
   try {
-    git('merge-base', '--is-ancestor', BASE, git('rev-parse', 'HEAD').trim());
+    git('merge-base', '--is-ancestor', ORIGIN, git('rev-parse', 'HEAD').trim());
   } catch {
-    failures.push(`HEAD does not descend from ${BASE}`);
+    failures.push(`HEAD does not descend from ${ORIGIN}`);
   }
   return { failures, count: changed.size };
 }
