@@ -2,15 +2,17 @@ import type { ReactElement } from 'react';
 
 import { generateBookingRefQrPngBuffer } from '@/lib/qr';
 import { buildRecoveryUrl } from '@/lib/recovery-url';
-import { nosUrl } from '@/lib/site-hosts';
+import { nosUrl, type Site } from '@/lib/site-hosts';
 import { buildTicketPdf as renderTicketPdf, type TicketPdfPosition } from '@/lib/ticket-pdf';
 import {
   loadChosenDays,
   loadTicketPdfVisit,
   loadTicketTypeTraits,
+  resolveTicketTypeTitle,
   toPdfPositions,
 } from '@/lib/ticket-pdf-data';
-import { sendEmail, TICKETS_FROM_ADDRESS, type EmailAttachment } from '@/lib/email';
+import type { TicketTypeTraits } from '@/lib/ticket-pdf-schedule';
+import { sendEmail, NOS_TICKETS_FROM_ADDRESS, type EmailAttachment } from '@/lib/email';
 import OrderConfirmation, {
   type OrderConfirmationPosition,
   type OrderConfirmationVisit,
@@ -63,6 +65,7 @@ export interface ConfirmationEmailMailer {
     subject: string;
     react: ReactElement;
     attachments?: EmailAttachment[];
+    site?: Site;
   }): Promise<void>;
 }
 
@@ -72,6 +75,8 @@ export interface SendConfirmationEmailDeps {
   siteUrl?: string;
   /** Injectable for tests; the default reads the confirmed visit info from Sanity. */
   loadVisit?: () => Promise<OrderConfirmationVisit>;
+  /** Injectable for tests; the default reads the ticket type names from Sanity. */
+  loadTicketTypeTraits?: () => Promise<ReadonlyMap<string, TicketTypeTraits>>;
   /** Injectable for tests; the default loads the visit info and renders the real PDF. */
   buildTicketPdf?: (input: TicketPdfEmailInput) => Promise<Uint8Array>;
 }
@@ -148,6 +153,7 @@ export async function sendConfirmationEmail(
   const generateQrPngBuffer = deps.generateQrPngBuffer ?? generateBookingRefQrPngBuffer;
   const siteUrl = deps.siteUrl ?? nosUrl('');
   const loadVisit = deps.loadVisit ?? loadOrderVisit;
+  const traits = await (deps.loadTicketTypeTraits ?? loadTicketTypeTraits)();
 
   const positions: OrderConfirmationPosition[] = [];
   const attachments: EmailAttachment[] = [];
@@ -163,7 +169,7 @@ export async function sendConfirmationEmail(
     positions.push({
       bookingRef: position.bookingRef,
       attendeeName: position.attendeeName,
-      ticketType: position.ticketType,
+      ticketTypeTitle: resolveTicketTypeTitle(position.ticketType, traits),
       qrContentId: contentId,
     });
   }
@@ -178,7 +184,8 @@ export async function sendConfirmationEmail(
     to: input.buyerEmail,
     subject: withTestSubjectPrefix('Your National Orchid Show order is confirmed'),
     react: OrderConfirmation({ buyerName: input.buyerName, positions, recoveryUrl, visit }),
-    from: TICKETS_FROM_ADDRESS,
+    from: NOS_TICKETS_FROM_ADDRESS,
+    site: 'nos',
     attachments,
   });
 }

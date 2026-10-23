@@ -24,7 +24,7 @@ export const metadata: Metadata = withTicketingTestTitle(
     image: nosOgImage('Conferences — National Show'),
     description:
       // prettier-ignore
-      'Register for the National Orchid Show Symposium or the WOSA Conference at the South African National Orchid Show.',
+      'Register for the National Orchid Show Symposium or the WOSA Conference at the National Orchid Show.',
     path: '/national-show/conferences',
   })
 );

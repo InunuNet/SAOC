@@ -64,7 +64,7 @@ export const TICKET_PRODUCTS: Record<TicketProductId, TicketProduct> = {
   vip: {
     id: 'vip',
     kind: 'event',
-    name: 'VIP Opening',
+    name: 'VIP Ticket',
     when: 'Thursday 23 September',
     meta: '16h00 to 19h00',
     theme: null,

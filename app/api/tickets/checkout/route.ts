@@ -52,7 +52,7 @@ import { MAX_LINE_ITEMS, NATIONAL_SHOW_ID, RESERVATION_TTL_MINUTES } from '@/lib
 // keeps working — the single source of truth is still lib/tickets-constants.ts.
 export { MAX_LINE_ITEMS };
 
-const TICKET_ITEM_LABEL = 'SAOC 2027 National Show Ticket';
+const TICKET_ITEM_LABEL = 'The National Orchid Show Ticket';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

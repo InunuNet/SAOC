@@ -4,6 +4,7 @@ import { LongFormPage } from '@/components/nos/LongFormPage';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { loadShowFacts } from '@/lib/data/show-facts';
+import { SHOW_TITLE, SHOW_TITLE_SUB } from '@/lib/show-title';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
@@ -31,7 +32,13 @@ export default async function NationalShowAboutPage() {
     <>
       <NosHero
         route="/national-show/about"
-        title="2027 South African National Orchid Show"
+        title={
+          <>
+            {SHOW_TITLE}
+            <span className="sr-only"> - </span>
+            <span style={{ fontSize: '0.5em', fontWeight: 300 }}>{SHOW_TITLE_SUB}</span>
+          </>
+        }
         priority
       />
 

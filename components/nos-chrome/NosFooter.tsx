@@ -29,6 +29,7 @@ import { ExternalArrow } from '@/components/chrome/ExternalArrow';
 import { MediaKitFooterLink } from '@/components/chrome/MediaKitFooterLink';
 import { NewsletterSignup } from '@/components/newsletter/NewsletterSignup';
 import { nosPath } from '@/lib/nos-paths';
+import { SHOW_TITLE_EXPANDED } from '@/lib/show-title';
 import { saocUrl } from '@/lib/site-hosts';
 
 import { nosChromeFontClass } from './fonts';
@@ -36,7 +37,7 @@ import { NOS_FOOTER_EXPLORE, NOS_FOOTER_LEGAL, NOS_FOOTER_MEDIA_KIT } from './no
 import './nos-chrome.css';
 
 const HUB_HREF = '/';
-const LOCKUP_ALT = 'National Orchid Show, Western Cape 2027';
+const LOCKUP_ALT = SHOW_TITLE_EXPANDED;
 const LOCKUP_SRC = '/images/NOS-2027-logo-reversed-gold-vertical.png';
 const LOCKUP_WIDTH = 3272;
 const LOCKUP_HEIGHT = 2876;

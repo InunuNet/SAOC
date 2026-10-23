@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { sendEmail, FORMS_FROM_ADDRESS } from '@/lib/email';
+import { sendEmail, NOS_FORMS_FROM_ADDRESS } from '@/lib/email';
 import VendorRegistrationConfirmation from '@/emails/VendorRegistrationConfirmation';
 import { mintVendorPhotoUploadUrl } from '@/lib/vendor-photo-resume-link';
 import { nosUrl } from '@/lib/site-hosts';
@@ -62,6 +62,7 @@ export async function sendVendorRegistrationConfirmationEmail(
       contactPersonName: input.contactPersonName,
       photoUploadUrl: resolvePhotoUploadUrl(input.vendorSubmissionId),
     }),
-    from: FORMS_FROM_ADDRESS,
+    from: NOS_FORMS_FROM_ADDRESS,
+    site: 'nos',
   });
 }

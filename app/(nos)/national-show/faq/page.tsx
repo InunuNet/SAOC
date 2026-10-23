@@ -36,7 +36,7 @@ export const metadata: Metadata = buildPageMetadata({
   title: 'Frequently asked questions',
   image: nosOgImage('Visitor Questions — National Orchid Show'),
   description:
-    'Answers to the questions visitors ask most about the South African National Orchid Show — ' +
+    'Answers to the questions visitors ask most about the National Orchid Show — ' +
     'getting there, tickets, accessibility and plant sales.',
   path: '/national-show/faq',
 });

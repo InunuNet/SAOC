@@ -35,7 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: 'Plan your visit',
     image: nosOgImage('Plan your visit — National Orchid Show'),
     description:
-      'Getting to the South African National Orchid Show: travel from the airports, parking, ' +
+      'Getting to the National Orchid Show: travel from the airports, parking, ' +
       'public transport, where to stay and what else to see while you are in town.',
     lede: info?.planIntro ?? undefined,
     path: '/national-show/plan-your-visit',

@@ -29,7 +29,7 @@ export const revalidate = 60;
 
 // Self-canonical, and deliberately carries no Event markup: a past edition is not bookable,
 // and a second Event under the live show's own name would compete with it. See M6/B8e.
-const LEDE = 'The South African National Orchid Show is the council’s triennial event.';
+const LEDE = 'The National Orchid Show is the council’s triennial event.';
 
 // notFound() here as well as in the page, so a withheld route's 404 carries the not-found's head
 // rather than a canonical and og:url pointing at the missing page.
@@ -38,7 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return buildPageMetadata({
     title: 'Past shows',
     image: nosOgImage('Past shows'),
-    description: 'Past editions of the South African National Orchid Show.',
+    description: 'Past editions of the National Orchid Show.',
     lede: LEDE,
     path: '/national-show/archive',
   });
