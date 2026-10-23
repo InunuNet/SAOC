@@ -16,8 +16,8 @@ import { useEffect, useRef } from 'react';
 
 const ENTRY_KEY = '__nosScrollId';
 const STORE_KEY = 'nos-scroll-offsets';
-const RESTORE_INTERVAL_MS = 50;
-const RESTORE_MAX_TRIES = 30;
+const RESTORE_MAX_MS = 10000;
+const USER_INPUT_EVENTS = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const;
 const RESTORE_TOLERANCE_PX = 2;
 const FREEZE_MS = 2000;
 
@@ -56,6 +56,26 @@ function ensureEntryId(): void {
   const state: unknown = window.history.state;
   const base = state && typeof state === 'object' ? (state as Record<string, unknown>) : {};
   window.history.replaceState({ ...base, [ENTRY_KEY]: id }, '');
+}
+
+// Scroll to `target` and keep trying as the document grows (the restored page may still be a short
+// loader shell). Stops on success, on the first user input, or after RESTORE_MAX_MS. Returns cleanup.
+function restoreOffset(target: number): () => void {
+  const observer = new ResizeObserver(() => attempt());
+  const hardCap = window.setTimeout(stop, RESTORE_MAX_MS);
+  function stop() {
+    observer.disconnect();
+    window.clearTimeout(hardCap);
+    for (const type of USER_INPUT_EVENTS) window.removeEventListener(type, stop);
+  }
+  function attempt() {
+    window.scrollTo({ top: target, left: 0, behavior: 'instant' });
+    if (Math.abs(window.scrollY - target) <= RESTORE_TOLERANCE_PX) stop();
+  }
+  for (const type of USER_INPUT_EVENTS) window.addEventListener(type, stop, { passive: true });
+  observer.observe(document.body);
+  attempt();
+  return stop;
 }
 
 export function NosRouteScroll() {
@@ -126,16 +146,7 @@ export function NosRouteScroll() {
       const target = popTarget.current;
       popTarget.current = undefined;
       if (target === null) return;
-      // The restored page may still be a short loader shell: retry until the document is tall enough.
-      let tries = 0;
-      const timer = window.setInterval(() => {
-        window.scrollTo({ top: target, left: 0, behavior: 'instant' });
-        tries += 1;
-        if (Math.abs(window.scrollY - target) <= RESTORE_TOLERANCE_PX || tries >= RESTORE_MAX_TRIES) {
-          window.clearInterval(timer);
-        }
-      }, RESTORE_INTERVAL_MS);
-      return () => window.clearInterval(timer);
+      return restoreOffset(target);
     }
     ensureEntryId();
     if (window.location.hash) return;
