@@ -3,6 +3,7 @@
 **Spec:** `contracts/golden/door-reject-test-tickets/README.md` (golden input:
 `contracts/golden/door-reject-test-tickets/truth-table.json`).
 **Check:** `contracts/checks/door-reject-test-tickets/admission.test.mjs`.
+**Contract:** `contracts/door-reject-test-tickets.yaml` (8 assertions).
 
 This document covers the door check-in change that refuses test-mode tickets once payments go
 live. It assumes familiarity with the check-in flow in `app/api/admin/checkin/route.ts` and the
