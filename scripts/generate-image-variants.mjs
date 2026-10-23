@@ -12,10 +12,31 @@ const RASTER_EXTENSION = /\.(jpe?g|png)$/i;
 const WEBP_QUALITY = 75;
 // The home hero's static fallback (lib/data/heroImages.ts) also gets a q88 set, which the loader serves for quality={88} (rHB).
 const HERO_WEBP_QUALITY = 88;
-const HERO_SOURCES = new Set(['orchid-violet.jpg', 'orchid-pink.jpg', 'orchid-dark.jpg'].map((name) => path.join(SOURCE_ROOT, name)));
+const HERO_SOURCES = new Set(['orchid-violet.jpg', 'orchid-pink.jpg', 'orchid-dark.jpg', 'orchid-purple.jpg'].map((name) => path.join(SOURCE_ROOT, name)));
+// Every image keeps this cap (lib/image-loader.ts). Only the full-bleed hero photographs in
+// lib/hero-source-widths.json go above it, at q88, up to their own native width and never beyond.
+const STANDARD_MAX_WIDTH = 2048;
 
 const { deviceSizes, imageSizes } = JSON.parse(await readFile('lib/image-widths.json', 'utf8'));
-const WIDTHS = [...new Set([...deviceSizes, ...imageSizes])].sort((a, b) => a - b);
+const ALL_WIDTHS = [...new Set([...deviceSizes, ...imageSizes])].sort((a, b) => a - b);
+const WIDTHS = ALL_WIDTHS.filter((width) => width <= STANDARD_MAX_WIDTH);
+const NATIVE_WIDTHS = JSON.parse(await readFile('lib/hero-source-widths.json', 'utf8'));
+
+/** The widths a source gets: the standard set, plus the large set and its native width for a full-bleed hero source. */
+function widthsFor(source) {
+  const native = NATIVE_WIDTHS[source.slice('public'.length)];
+  if (native === undefined) return WIDTHS.map((width) => [width, false]);
+  const large = [...new Set([...ALL_WIDTHS.filter((width) => width <= native), native])];
+  return [...WIDTHS.map((width) => [width, false]), ...large.filter((width) => width > STANDARD_MAX_WIDTH).map((width) => [width, true])];
+}
+
+/** Variants for one width: q75 up to the cap, plus q88 for a hero source (at every width for a full-bleed one). */
+function encodingsFor(isHero, isLarge) {
+  const encodings = [];
+  if (!isLarge) encodings.push(['', { quality: WEBP_QUALITY }]);
+  if (isHero) encodings.push([`-q${HERO_WEBP_QUALITY}`, { quality: HERO_WEBP_QUALITY, smartSubsample: true }]);
+  return encodings;
+}
 
 async function* walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -44,9 +65,8 @@ for await (const source of walk(SOURCE_ROOT)) {
     .replace(/\.[^.]+$/, (ext) => ext.toLowerCase());
   const { mtimeMs } = await stat(source);
   await mkdir(path.dirname(path.join(OUTPUT_ROOT, relative)), { recursive: true });
-  const encodings = [['', { quality: WEBP_QUALITY }]];
-  if (HERO_SOURCES.has(source)) encodings.push([`-q${HERO_WEBP_QUALITY}`, { quality: HERO_WEBP_QUALITY, smartSubsample: true }]);
-  for (const width of WIDTHS) for (const [suffix, webp] of encodings) {
+  const isHero = HERO_SOURCES.has(source);
+  for (const [width, isLarge] of widthsFor(source)) for (const [suffix, webp] of encodingsFor(isHero, isLarge)) {
     const output = path.join(OUTPUT_ROOT, `${relative}-${width}${suffix}.webp`);
     const key = output.toLowerCase();
     if (claimed.has(key)) {

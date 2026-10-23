@@ -26,10 +26,16 @@
 import Image from 'next/image';
 import type { CSSProperties, ReactNode } from 'react';
 
+import heroSourceWidths from '@/lib/hero-source-widths.json';
+
 import { heroPhotoFor } from './hero-photos';
 import { NosSubNav } from './NosSubNav';
 import { getVisibleNav } from '@/lib/data/past-shows-public';
 import { subNavGroupFor } from './nos-subnav-groups';
+
+// A full-bleed hero photograph with large variants (lib/hero-source-widths.json) is served from the quality-88 set,
+// up to its native width (lib/image-loader.ts), so it is never stretched on a high-density screen.
+const FULL_BLEED_QUALITY = 88;
 
 /** Routes whose hero carries no group sub-nav: the hub (it has the destinations list) and tickets. */
 const NO_SUBNAV_ROUTES: ReadonlySet<string> = new Set(['/national-show', '/national-show/tickets']);
@@ -104,6 +110,7 @@ export async function NosHero({
               priority={priority}
               fetchPriority={priority ? 'high' : undefined}
               sizes="100vw"
+              quality={photo.src in heroSourceWidths ? FULL_BLEED_QUALITY : undefined}
               className="nos-hero-img"
             />
           </div>

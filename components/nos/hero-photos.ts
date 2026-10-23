@@ -24,7 +24,8 @@ export const HERO_PHOTOS: Readonly<Record<string, NosHeroPhoto>> = {
   '/national-show': { src: '/images/orchid-dark.jpg', objectPosition: '68% 50%' },
   '/national-show/plan-your-visit': { src: '/images/orchid-yellow.jpg', objectPosition: '50% 99%' },
   '/national-show/symposium': { src: '/images/orchid-violet.jpg', objectPosition: '50% 98%' },
-  '/national-show/programme': { src: '/images/orchid-purple.jpg', objectPosition: '50% 39%' },
+  // H4 (purple) is out for now: its black plant clip shows at 390 and 768. A secondary bloom of S2 instead, not the carousel's main bloom.
+  '/national-show/programme': { src: '/images/orchid-violet.jpg', objectPosition: '25% 100%' },
   '/national-show/what-to-expect': { src: '/images/orchid-pink.jpg', objectPosition: '50% 63%' },
 };
 
