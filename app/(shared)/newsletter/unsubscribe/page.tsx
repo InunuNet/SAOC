@@ -1,42 +1,69 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
-import { UnsubscribeConfirm } from '@/components/newsletter/UnsubscribeConfirm';
-import { isWellFormedUnsubscribeToken } from '@/lib/newsletter';
+import { PreferencesForm } from '@/components/newsletter/PreferencesForm';
+import { isWellFormedUnsubscribeToken, NEWSLETTER_TOPICS } from '@/lib/newsletter';
+import { findSubscriberByToken } from '@/lib/newsletter-store';
+import { requestSite } from '@/lib/request-site';
 
 // The token is a bearer credential in the URL: keep the page out of search indexes and stop the
 // browser sending it onward in a Referer header.
 export const metadata: Metadata = {
-  title: NEWSLETTER_COPY.unsubscribeHeading,
+  title: NEWSLETTER_COPY.prefsHeading,
   robots: 'noindex, nofollow',
   referrer: 'no-referrer',
 };
 
-// GET performs no Firestore read or write; the confirm button POSTs the token to the API.
-export default async function NewsletterUnsubscribePage({
+const CONTACT_HREF = '/contact';
+
+const H1_CLASS =
+  'font-serif tracking-[-0.015em] font-normal min-[640px]:font-light text-[28px] leading-tight text-ink sm:text-[34px]';
+
+// GET reads the subscriber and changes nothing: a mail scanner or link prefetcher that opens the
+// link must never alter a subscription. Every change is a POST to /api/newsletter/preferences.
+export default async function NewsletterPreferencesPage({
   searchParams,
 }: {
   searchParams: Promise<{ token?: string | string[] }>;
 }) {
   const { token } = await searchParams;
-  const valid = isWellFormedUnsubscribeToken(token);
+  // Malformed and unknown tokens take the same branch, so the page never says which addresses exist.
+  const subscriber = isWellFormedUnsubscribeToken(token) ? await findSubscriberByToken(token) : null;
+  const site = await requestSite();
 
   return (
-    <main id="main-content">
-      <div className="mx-auto max-w-[640px] px-4 py-16 sm:px-8 sm:py-24">
-        <h1 className="font-serif tracking-[-0.015em] font-normal min-[640px]:font-light text-[28px] leading-tight text-ink sm:text-[34px]">
-          {NEWSLETTER_COPY.unsubscribeHeading}
-        </h1>
+    <div className="mx-auto max-w-[560px] px-4 py-16 sm:px-8 sm:py-24">
+      <h1 id="prefs-heading" className={H1_CLASS}>
+        {NEWSLETTER_COPY.prefsHeading}
+      </h1>
+      {subscriber === null || !isWellFormedUnsubscribeToken(token) ? (
         <div className="mt-8">
-          {valid ? (
-            <UnsubscribeConfirm token={token} />
-          ) : (
-            <p role="alert" className="font-sans text-[16px] leading-[1.55] text-ink">
-              {NEWSLETTER_COPY.unsubscribeInvalid}
-            </p>
-          )}
+          <p role="alert" className="font-sans text-[16px] leading-[1.55] text-ink">
+            {NEWSLETTER_COPY.unsubscribeInvalid}
+          </p>
+          <p className="mt-4">
+            <Link
+              href={CONTACT_HREF}
+              className="inline-flex min-h-11 items-center font-sans text-[14px] text-ink underline underline-offset-4 hover:text-primary"
+            >
+              {NEWSLETTER_COPY.prefsContactLink}
+            </Link>
+          </p>
         </div>
-      </div>
-    </main>
+      ) : (
+        <div className="mt-4">
+          <PreferencesForm
+            token={token}
+            site={site}
+            email={subscriber.email}
+            allRemoved={subscriber.status === 'unsubscribed'}
+            topics={subscriber.topics}
+            available={NEWSLETTER_TOPICS.filter((topic) =>
+              [...subscriber.topics, ...subscriber.previousTopics, ...subscriber.restoreTopics].includes(topic))}
+          />
+        </div>
+      )}
+    </div>
   );
 }

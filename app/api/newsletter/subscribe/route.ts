@@ -7,9 +7,10 @@ import { initAdmin } from '@/lib/firebase-admin';
 import { generateUnsubscribeToken } from '@/lib/newsletter';
 import {
   handleNewsletterSubscribe,
+  NEWSLETTER_MIN_SUCCESS_RESPONSE_MS,
   NEWSLETTER_RATE_LIMIT_WINDOW_MS,
-  type NewsletterHandlerResult,
 } from '@/lib/newsletter-handler';
+import { padToFloor, toNewsletterResponse } from '@/lib/newsletter-http';
 import {
   createAttemptStore,
   scopeAttemptsToRequest,
@@ -18,27 +19,11 @@ import { subscriberRef, toSubscriberDoc } from '@/lib/newsletter-store';
 
 const HTTP_SERVER_ERROR = 500;
 const HTTP_OK = 200;
-// A new address costs a transaction write and an existing one does not; padding successful
-// responses to a floor hides that difference from a timing observer. Approximate by design.
-const MIN_SUCCESS_RESPONSE_MS = 1000;
 
 const attempts = createAttemptStore(NEWSLETTER_RATE_LIMIT_WINDOW_MS);
 
 function logError(message: string, context: Record<string, string>): void {
   console.error(`[newsletter/subscribe] ${message}`, context);
-}
-
-function toResponse(result: NewsletterHandlerResult): NextResponse {
-  const headers: Record<string, string> = {};
-  if (result.retryAfterSeconds !== undefined) {
-    headers['Retry-After'] = String(result.retryAfterSeconds);
-  }
-  return NextResponse.json(result.body, { status: result.status, headers });
-}
-
-async function padToFloor(startedAt: number): Promise<void> {
-  const remaining = MIN_SUCCESS_RESPONSE_MS - (Date.now() - startedAt);
-  if (remaining > 0) await new Promise((resolve) => setTimeout(resolve, remaining));
 }
 
 function rateLimitKeyFor(request: NextRequest): string {
@@ -80,8 +65,8 @@ export async function POST(request: NextRequest) {
         },
       ),
     );
-    if (result.status === HTTP_OK) await padToFloor(startedAt);
-    return toResponse(result);
+    if (result.status === HTTP_OK) await padToFloor(startedAt, NEWSLETTER_MIN_SUCCESS_RESPONSE_MS);
+    return toNewsletterResponse(result);
   } catch (error) {
     logError('transaction failed', {
       operation: 'subscribe',

@@ -987,8 +987,20 @@ export interface NewsletterSubscriber {
   email: string;
   status: 'subscribed' | 'unsubscribed';
   source: 'saoc-footer' | 'nos-footer';
+  // The topics the address is subscribed to now; empty once everything is unsubscribed.
   topics: Array<'saoc' | 'nos'>;
+  // Append-only audit of removed topics; empty on a legacy document.
+  topicRemovals: Array<{
+    topic: 'saoc' | 'nos';
+    removedAt: Date | null;
+    via: 'link' | 'one-click' | 'self-service-form' | 'admin';
+    by: string | null;
+  }>;
+  // The topics held just before the last one was removed ("Subscribe again" puts these back).
+  restoreTopics: Array<'saoc' | 'nos'>;
   subscribedAt: Date | null;
   unsubscribedAt: Date | null;
+  unsubscribedVia: 'link' | 'one-click' | 'self-service-form' | 'admin' | null;
+  unsubscribedBy: string | null;
   unsubscribeToken: string;
 }

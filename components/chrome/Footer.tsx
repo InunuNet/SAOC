@@ -128,6 +128,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
             buttonClassName="min-h-11 min-w-11 bg-accent text-primary-800 font-sans text-[13px] font-medium px-4 py-2 hover:bg-accent-soft transition-colors duration-150 shrink-0 disabled:opacity-60"
             statusClassName="mt-2 font-sans text-[13px] text-ivory/80 empty:hidden"
             errorClassName="mt-2 font-sans text-[13px] text-ivory"
+            unsubscribeLinkClassName="inline-flex min-h-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150"
           />
         </div>
       </div>

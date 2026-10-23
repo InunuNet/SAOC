@@ -24,16 +24,18 @@ interface StatusPillProps {
   label?: string;
   /** Style key when it should differ from the printed text (e.g. stand-payment states). */
   tone?: string;
+  // Extra classes for the printed text only (a list the address has been taken off is struck through).
+  textClassName?: string;
 }
 
-export function StatusPill({ status, label, tone }: StatusPillProps) {
+export function StatusPill({ status, label, tone, textClassName }: StatusPillProps) {
   const style = STATUS_STYLES[tone ?? status] ?? FALLBACK_STYLE;
 
   return (
     <span
       className={`inline-flex max-w-full items-center rounded-full px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.1em] ${style}`}
     >
-      <span className="truncate">{label ?? status}</span>
+      <span className={textClassName ? `truncate ${textClassName}` : 'truncate'}>{label ?? status}</span>
     </span>
   );
 }
