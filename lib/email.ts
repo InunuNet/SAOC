@@ -16,18 +16,32 @@ function getResend(): Resend {
 // so a deliverability problem on one category (e.g. a marketing send) can't drag down another
 // (e.g. ticket confirmations). Add a new *_FROM_ADDRESS + env var pair when a new category of
 // email is introduced, rather than routing it through an existing one.
+// An env value that is blank, or that contains a CR or LF (header injection), is ignored and the
+// default applies. Only the variable name is logged, never the value.
+const HEADER_BREAK = /[\r\n]/;
+
+function readHeaderEnv(name: string): string | undefined {
+  const raw = process.env[name];
+  if (raw === undefined) return undefined;
+  if (HEADER_BREAK.test(raw)) {
+    console.error('[email] ignoring env value containing a line break', { variable: name });
+    return undefined;
+  }
+  return raw.trim() || undefined;
+}
+
 export const TICKETS_FROM_ADDRESS =
-  process.env.RESEND_FROM_TICKETS ?? 'SAOC Tickets <tickets@tickets.saoc.co.za>';
+  readHeaderEnv('RESEND_FROM_TICKETS') ?? 'SAOC Tickets <tickets@tickets.saoc.co.za>';
 export const FORMS_FROM_ADDRESS =
-  process.env.RESEND_FROM_FORMS ?? 'SAOC <noreply@forms.saoc.co.za>';
+  readHeaderEnv('RESEND_FROM_FORMS') ?? 'SAOC <noreply@forms.saoc.co.za>';
 
 // The National Orchid Show sends its customer-facing mail as the show, not as SAOC
 // (mission official-title-sweep). A blank value falls back to the default.
 export const NOS_TICKETS_FROM_ADDRESS =
-  process.env.RESEND_FROM_TICKETS_NOS?.trim() ||
+  readHeaderEnv('RESEND_FROM_TICKETS_NOS') ??
   'The National Orchid Show <tickets@tickets.saoc.co.za>';
 export const NOS_FORMS_FROM_ADDRESS =
-  process.env.RESEND_FROM_FORMS_NOS?.trim() ||
+  readHeaderEnv('RESEND_FROM_FORMS_NOS') ??
   'The National Orchid Show <noreply@forms.saoc.co.za>';
 
 // "Enable Receiving" is deliberately OFF on both sending subdomains (send-only by design), so
@@ -38,7 +52,7 @@ const DEFAULT_REPLY_TO = 'info@saoc.co.za';
 const DEFAULT_REPLY_TO_NOS = 'show@saoc.co.za';
 
 export function resolveReplyTo(site: Site = 'saoc'): string {
-  const raw = (site === 'nos' ? process.env.RESEND_REPLY_TO_NOS : process.env.RESEND_REPLY_TO)?.trim();
+  const raw = readHeaderEnv(site === 'nos' ? 'RESEND_REPLY_TO_NOS' : 'RESEND_REPLY_TO');
   if (raw) return raw;
   return site === 'nos' ? DEFAULT_REPLY_TO_NOS : DEFAULT_REPLY_TO;
 }

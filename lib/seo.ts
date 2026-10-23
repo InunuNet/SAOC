@@ -127,7 +127,8 @@ export function buildPageMetadata({
   const canonical = canonicalUrlFor(path);
   const ogImage = image ?? `/og?title=${encodeURIComponent(title)}`;
   const description = fitDescription(rawDescription, lede);
-  const ogTitle = path.startsWith(`${NOS_ROOT}/`) ? `${title}${NOS_OG_SUFFIX}` : title;
+  const ogTitle =
+    path.startsWith(`${NOS_ROOT}/`) || isTopLevelShowRoute(path) ? `${title}${NOS_OG_SUFFIX}` : title;
 
   return {
     title,

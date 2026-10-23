@@ -193,7 +193,7 @@ export function toPdfPositions(
     return {
       bookingRef,
       attendeeName,
-      ticketType: type.name ?? ticketType,
+      ticketType: resolveTicketTypeTitle(ticketType, traits),
       slug: type.slug,
       schedule: buildPositionSchedule(type, chosenDays.get(bookingRef), visit),
     };
