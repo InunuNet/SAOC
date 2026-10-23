@@ -68,9 +68,26 @@ function isEmpty(value: unknown): boolean {
   return value === null || value === undefined;
 }
 
-function sameValue(a: unknown, b: unknown): boolean {
+/**
+ * Order-independent form for comparison: Sanity returns object keys in its own order (sorted),
+ * and an absent key equals a null one. Arrays keep their order.
+ */
+function canonical(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([, v]) => !isEmpty(v))
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        .map(([k, v]) => [k, canonical(v)]),
+    );
+  }
+  return value;
+}
+
+export function sameValue(a: unknown, b: unknown): boolean {
   if (isEmpty(a) && isEmpty(b)) return true;
-  return JSON.stringify(a) === JSON.stringify(b);
+  return JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 }
 
 function planMatched(existing: ExistingDoc, doc: SocietyDocFields): PlanItem {
