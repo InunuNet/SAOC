@@ -160,7 +160,7 @@ export function QuickActionList({ options }: { options: QuickActionOptions }) {
       ) : null}
       {options.canManagePaymentSettings ? (
         <li>
-          <Link href="/admin/settings" className={ACTION_ROW_CLASS}>
+          <Link href="/admin/payments" className={ACTION_ROW_CLASS}>
             Payment settings
             <span aria-hidden="true">→</span>
           </Link>

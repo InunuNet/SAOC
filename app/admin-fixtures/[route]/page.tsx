@@ -11,10 +11,11 @@ import {
 } from '@/components/admin/dashboard/DashboardParts';
 import { AdminPill } from '@/components/admin/AdminPill';
 import { AdminShell } from '@/components/admin/shell/AdminShell';
+import { PaymentSettingsPanel } from '@/components/admin/PaymentSettingsPanel';
+import { SettingsProfile } from '@/components/admin/SettingsProfile';
 import { TicketsTable } from '@/components/admin/TicketsTable';
 import { VendorApplicationReviewTable } from '@/components/admin/VendorApplicationReviewTable';
 import { VendorReviewTable } from '@/components/admin/VendorReviewTable';
-import AdminSettingsPage from '@/app/admin/(shell)/settings/page';
 import { formatAdminClock } from '@/lib/admin-format';
 import {
   FIXTURE_PENDING_COUNT,
@@ -40,6 +41,7 @@ const ROUTE_PATHS: Record<string, string> = {
   door: '/admin/door',
   vendors: '/admin/vendors',
   applications: '/admin/vendors/applications',
+  payments: '/admin/payments',
   settings: '/admin/settings',
 };
 
@@ -92,8 +94,43 @@ function renderBody(route: string, now: Date): React.ReactNode {
           <VendorApplicationReviewTable applications={fixtureApplications(now)} />
         </PageShell>
       );
+    case 'payments':
+      return (
+        <PageShell>
+          <PageHeader title="Payment gateway settings" />
+          <PaymentSettingsPanel
+            initialGateway="ozow"
+            initialTestAmount
+            recent={[
+              {
+                id: 'fixture-change',
+                setting: 'activePaymentGateway',
+                from: { gateway: 'payfast' },
+                to: { gateway: 'ozow' },
+                byEmail: FIXTURE_EMAIL,
+                at: now,
+              },
+            ]}
+          />
+        </PageShell>
+      );
     case 'settings':
-      return <AdminSettingsPage />;
+      return (
+        <PageShell>
+          <PageHeader title="Settings" />
+          <div className="flex max-w-[520px] flex-col gap-4">
+            <SettingsProfile
+              name="Fixture Admin"
+              email={FIXTURE_EMAIL}
+              providerLabel="Google"
+              roleLines={['All shows: owner']}
+              signOutLabel="Sign out"
+              signOutHelp="Signing out ends your session on every device."
+              signOutControl={null}
+            />
+          </div>
+        </PageShell>
+      );
     default:
       return notFound();
   }

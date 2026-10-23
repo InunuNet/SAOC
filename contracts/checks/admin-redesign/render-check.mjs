@@ -18,6 +18,8 @@ const ROUTES = [
   { name: 'door', url: '/admin-fixtures/door', active: '/admin/door' },
   { name: 'vendors', url: '/admin-fixtures/vendors', active: '/admin/vendors', table: true },
   { name: 'applications', url: '/admin-fixtures/applications', active: '/admin/vendors/applications', table: true },
+  // Mission payment-gateway-settings: the payment page moved to /admin/payments; /admin/settings is general Settings.
+  { name: 'payments', url: '/admin-fixtures/payments', active: '/admin/payments' },
   { name: 'settings', url: '/admin-fixtures/settings', active: '/admin/settings' },
   { name: 'login', url: '/admin/login', active: null },
 ];
