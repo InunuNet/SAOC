@@ -8,6 +8,7 @@
 // =============================================================
 
 import { AdminPill } from '@/components/admin/AdminPill';
+import { TicketingTestBar } from '@/components/tickets/TicketingTestBar';
 import { NosFooter } from '@/components/nos-chrome/NosFooter';
 import { NosHeader } from '@/components/nos-chrome/NosHeader';
 import { NosSkipLink } from '@/components/nos-chrome/NosSkipLink';
@@ -22,6 +23,7 @@ export async function NosFrame({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <TicketingTestBar />
       <NosSkipLink />
       <NosRouteScroll />
       <NosHeader

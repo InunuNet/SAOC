@@ -7,11 +7,18 @@ import {
   PDFFont,
   PDFImage,
   PDFPage,
+  degrees,
   rgb,
   setCharacterSpacing,
   type Color,
 } from 'pdf-lib';
 import { create as createQr } from 'qrcode';
+
+import {
+  TICKETING_TEST_BANNER_HEADLINE,
+  TICKETING_TEST_BANNER_SUBLINE,
+  isTicketingTestMode,
+} from '@/lib/ticketing-test-mode';
 
 /**
  * ticket-pdf (F1) — the NOS A4 ticket, one page per position, drawn at explicit coordinates.
@@ -78,6 +85,7 @@ const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
 const mm = (value: number): number => value * PT_PER_MM;
 
+
 // ---- colour tokens (layout-spec.md) ----
 const hex = (value: string): Color =>
   rgb(
@@ -95,6 +103,20 @@ const RULE = hex('#e3e1c9');
 const WHITE = hex('#ffffff');
 const BLACK = hex('#000000');
 const BAND_TEXT = GOLD_200; // text on the royal header band
+
+// ---- committee-testing treatment ----
+const TEST_AMBER = hex('#F2C230');
+const TEST_INK = hex('#14110A');
+const TEST_BAND_HEIGHT = 7.7;
+const TEST_BAND_TEXT_SIZE = 12;
+const TEST_BAND_TEXT_Y = 34.9;
+const TEST_BAND_SEPARATOR = '  ·  ';
+const WATERMARK_MAX_FONT_SIZE = 64;
+const WATERMARK_ANGLE_DEGREES = 45;
+// The diagonal starts in the info block and ends in the stub, left of the perforation, so it never reaches the QR tile or its caption.
+const WATERMARK_START_X = 16;
+const WATERMARK_START_Y = 220;
+const WATERMARK_RUN_MM = 88; // horizontal extent of the text run, ends left of the perforation
 
 // ---- copy that already exists elsewhere on the site (allowed-strings.txt) ----
 const DEFAULT_PENDING_LABEL = 'To be confirmed';
@@ -159,6 +181,7 @@ interface Logos {
 }
 
 interface Ctx {
+  testMode: boolean;
   page: PDFPage;
   fonts: Fonts;
   logos: Logos;
@@ -536,6 +559,13 @@ function drawStub(ctx: Ctx, position: TicketPdfPosition): void {
 }
 
 /** QR as one vector path: ~55 mm of black modules on the white tile (the tile is the quiet zone). */
+// The QR tile as drawn by drawQrTile, mm from the page top-left; the watermark never enters it.
+export const TICKET_PDF_QR_BOX_MM = {
+  left: (PERFORATION_X + RIGHT_X) / 2 - QR_MODULE_AREA_MM / 2,
+  top: QR_TOP,
+  size: QR_MODULE_AREA_MM,
+};
+
 function drawQrTile(ctx: Ctx, bookingRef: string): void {
   const modules = createQr(bookingRef).modules;
   const moduleMm = QR_MODULE_AREA_MM / modules.size;
@@ -746,6 +776,35 @@ function drawFooter(
   });
 }
 
+// Committee testing: amber band under the header carrying the headline and the sub-line.
+function drawTestBand(ctx: Ctx): void {
+  fillRect(ctx, 0, HEADER_HEIGHT, A4_WIDTH_MM, TEST_BAND_HEIGHT, TEST_AMBER);
+  drawText(ctx, `${TICKETING_TEST_BANNER_HEADLINE}${TEST_BAND_SEPARATOR}${TICKETING_TEST_BANNER_SUBLINE}`, {
+    x: A4_WIDTH_MM / 2,
+    y: TEST_BAND_TEXT_Y,
+    font: ctx.fonts.bold,
+    size: TEST_BAND_TEXT_SIZE,
+    color: TEST_INK,
+    align: 'center',
+  });
+}
+
+// Committee testing: the headline drawn once, diagonally from the stub up toward the QR, ending
+// below and left of the QR box so the QR is never crossed, after the content.
+function drawTestWatermark(ctx: Ctx): void {
+  const unitWidth = ctx.fonts.bold.widthOfTextAtSize(TICKETING_TEST_BANNER_HEADLINE, 1);
+  const fitted = Math.floor((mm(WATERMARK_RUN_MM) * Math.SQRT2) / unitWidth);
+  ctx.page.drawText(TICKETING_TEST_BANNER_HEADLINE, {
+    x: mm(WATERMARK_START_X),
+    y: PAGE_HEIGHT - mm(WATERMARK_START_Y),
+    font: ctx.fonts.bold,
+    size: Math.min(WATERMARK_MAX_FONT_SIZE, fitted),
+    color: TEST_INK,
+    opacity: 0.3,
+    rotate: degrees(WATERMARK_ANGLE_DEGREES),
+  });
+}
+
 function drawPage(
   ctx: Ctx,
   input: TicketPdfInput,
@@ -754,12 +813,14 @@ function drawPage(
 ): void {
   fillRect(ctx, 0, 0, A4_WIDTH_MM, A4_HEIGHT_MM, GOLD_100);
   drawHeader(ctx, index, input.positions.length);
+  if (ctx.testMode) drawTestBand(ctx);
   drawCard(ctx, position);
   drawVenueColumn(ctx, input.visit);
   drawTimesColumn(ctx, position, input.visit);
   drawDatesColumn(ctx, input.visit);
   drawEmergencyFootnote(ctx, input.visit);
   drawFooter(ctx, input, index);
+  if (ctx.testMode) drawTestWatermark(ctx);
 }
 
 async function loadAssets(pdf: PDFDocument): Promise<{ fonts: Fonts; logos: Logos }> {
@@ -783,7 +844,10 @@ async function loadAssets(pdf: PDFDocument): Promise<{ fonts: Fonts; logos: Logo
   };
 }
 
-export async function buildTicketPdf(input: TicketPdfInput): Promise<Uint8Array> {
+export async function buildTicketPdf(
+  input: TicketPdfInput,
+  options: { testMode?: boolean } = {}
+): Promise<Uint8Array> {
   if (input.positions.length === 0) {
     throw new Error('buildTicketPdf: at least one position is required');
   }
@@ -791,6 +855,7 @@ export async function buildTicketPdf(input: TicketPdfInput): Promise<Uint8Array>
   pdf.registerFontkit(fontkit);
   const { fonts, logos } = await loadAssets(pdf);
   const ctx = {
+    testMode: options.testMode ?? isTicketingTestMode(),
     fonts,
     logos,
     pendingLabel: input.visit.pendingLabel?.trim() || DEFAULT_PENDING_LABEL,

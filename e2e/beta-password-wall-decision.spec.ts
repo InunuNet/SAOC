@@ -20,7 +20,7 @@
 import { expect, test } from '@playwright/test';
 import { NextRequest } from 'next/server';
 
-import { isPubliclyLaunched } from '../lib/beta-public-launch';
+import { isPasswordWallOff, isPubliclyLaunched } from '../lib/beta-public-launch';
 import {
   WALL_CACHE_CONTROL,
   WALL_MARKER_COOKIE,
@@ -310,5 +310,105 @@ test.describe('proxy() end-to-end response shape', () => {
     expect(response.status).toBe(401);
     expect(response.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
     expect(response.headers.get('Cache-Control')).toBe(WALL_CACHE_CONTROL);
+  });
+});
+
+// Mission committee-testing F1 -- BETA_PASSWORD_WALL_OFF lifts only the Basic Auth prompt.
+test.describe('lib/beta-public-launch.ts isPasswordWallOff -- exact true only', () => {
+  test('exactly "true" turns the prompt off', () => {
+    expect(isPasswordWallOff('true')).toBe(true);
+  });
+
+  test('unset and near-miss values keep the prompt', () => {
+    for (const value of [undefined, '', 'TRUE', 'True', '1', 'yes', ' true', 'true ', 'false']) {
+      expect(isPasswordWallOff(value)).toBe(false);
+    }
+  });
+});
+
+test.describe('proxy.ts decideBasicAuth with passwordWallOff', () => {
+  const baseInput = {
+    pathname: '/',
+    authorizationHeader: null as string | null,
+    expectedUser: 'councilbeta',
+    expectedPassword: 's3cr3t-value',
+    isProduction: true,
+    publiclyLaunched: false,
+  };
+
+  test('passwordWallOff=true allows with no header, a wrong password, /admin, or no credentials', async () => {
+    expect(await decideBasicAuth({ ...baseInput, passwordWallOff: true })).toBe(true);
+    expect(
+      await decideBasicAuth({
+        ...baseInput,
+        passwordWallOff: true,
+        authorizationHeader: basicAuthHeader('councilbeta', 'wrong'),
+      }),
+    ).toBe(true);
+    expect(await decideBasicAuth({ ...baseInput, passwordWallOff: true, pathname: '/admin' })).toBe(
+      true,
+    );
+    expect(
+      await decideBasicAuth({
+        ...baseInput,
+        passwordWallOff: true,
+        expectedUser: undefined,
+        expectedPassword: undefined,
+      }),
+    ).toBe(true);
+  });
+
+  test('passwordWallOff false or omitted still denies, and unset credentials still fail closed', async () => {
+    expect(await decideBasicAuth({ ...baseInput, passwordWallOff: false })).toBe(false);
+    expect(await decideBasicAuth({ ...baseInput })).toBe(false);
+    expect(
+      await decideBasicAuth({
+        ...baseInput,
+        passwordWallOff: false,
+        expectedUser: undefined,
+        expectedPassword: undefined,
+      }),
+    ).toBe(false);
+  });
+});
+
+test.describe('proxy() with BETA_PASSWORD_WALL_OFF', () => {
+  const ORIGINAL_ENV = { ...process.env };
+
+  test.afterEach(() => {
+    process.env = { ...ORIGINAL_ENV };
+  });
+
+  function arrangeWall(wallOff: string | undefined): void {
+    delete process.env.SITE_PUBLIC_LAUNCH;
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: 'production',
+      configurable: true,
+      writable: true,
+      enumerable: true,
+    });
+    process.env.BETA_BASIC_AUTH_USER = 'councilbeta';
+    process.env.BETA_BASIC_AUTH_PASSWORD = 's3cr3t-value';
+    if (wallOff === undefined) delete process.env.BETA_PASSWORD_WALL_OFF;
+    else process.env.BETA_PASSWORD_WALL_OFF = wallOff;
+  }
+
+  test('switch on, no Authorization: not 401, and noindex, no-store and the wall cookie hold', async () => {
+    arrangeWall('true');
+
+    const response = await proxy(new NextRequest('https://beta.saoc.co.za/'));
+
+    expect(response.status).not.toBe(401);
+    expect(response.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+    expect(response.headers.get('Cache-Control')).toBe(WALL_CACHE_CONTROL);
+    expect(response.headers.getSetCookie()).toContain(WALL_MARKER_COOKIE);
+  });
+
+  test('near-miss switch values stay 401', async () => {
+    for (const value of ['TRUE', '1', ' true', 'true ']) {
+      arrangeWall(value);
+      const response = await proxy(new NextRequest('https://beta.saoc.co.za/'));
+      expect(response.status).toBe(401);
+    }
   });
 });

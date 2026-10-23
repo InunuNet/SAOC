@@ -1,4 +1,5 @@
 import EmailShell, { ShellButton, ShellHeading, ShellText } from './_shared/EmailShell';
+import { TestingNotice } from './_shared/TestingNotice';
 
 interface VendorStandPaymentReadyProps {
   businessName: string;
@@ -19,6 +20,7 @@ export default function VendorStandPaymentReady({
 }: VendorStandPaymentReadyProps) {
   return (
     <EmailShell family="B" preview="Pay for your National Orchid Show stand">
+      <TestingNotice />
       <ShellHeading>Time to pay for your stand</ShellHeading>
       <ShellText>Dear {contactPersonName},</ShellText>
       <ShellText>

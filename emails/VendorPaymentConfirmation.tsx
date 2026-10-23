@@ -5,6 +5,7 @@ import EmailShell, {
   ShellHeading,
   ShellText,
 } from './_shared/EmailShell';
+import { TestingNotice } from './_shared/TestingNotice';
 
 interface VendorPaymentConfirmationProps {
   businessName: string;
@@ -29,6 +30,7 @@ export default function VendorPaymentConfirmation({
 }: VendorPaymentConfirmationProps) {
   return (
     <EmailShell family="A" preview="Your National Orchid Show stand payment is confirmed">
+      <TestingNotice />
       <ShellHeading>Stand payment confirmed</ShellHeading>
       <ShellText>
         Thank you — <strong>{businessName}</strong>&rsquo;s stand payment for the National Orchid Show has been received.

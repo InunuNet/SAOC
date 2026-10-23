@@ -3,6 +3,7 @@ import React from 'react';
 import { sendEmail, FORMS_FROM_ADDRESS } from '@/lib/email';
 import { getVendorAdminNotifyRecipients } from '@/lib/vendor-admin-notify-recipients';
 import VendorPaymentAdminNotice from '@/emails/VendorPaymentAdminNotice';
+import { withTestSubjectPrefix } from '@/lib/ticketing-test-mode';
 
 /**
  * G1 (vendor-flow-notifications) -- admin notice fired when a vendor's stand payment settles as
@@ -56,7 +57,7 @@ export async function sendVendorPaymentAdminNoticeEmail(
     recipients.map((to) =>
       mailer.send({
         to,
-        subject: 'Vendor stand payment received — SAOC',
+        subject: withTestSubjectPrefix('Vendor stand payment received — SAOC'),
         react,
         from: FORMS_FROM_ADDRESS,
       }),
