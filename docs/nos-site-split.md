@@ -252,3 +252,4 @@ for `https://nos.saoc.co.za`. Studio stays on the beta host. Cloud Scheduler
 - **Members.** No member authentication exists. Both media kits admit an
   allowlisted admin session only, until a members check replaces
   `requireMediaKitAccess`.
+- **Launch flip.** Flipping `SITE_PUBLIC_LAUNCH` requires a fresh rollout (it always does on App Hosting).

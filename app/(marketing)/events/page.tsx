@@ -67,6 +67,8 @@ export default async function EventsPage() {
 
   const events: SanityEvent[] = raw ?? [];
 
+  // The preview gate is evaluated at static/ISR render. On App Hosting any env or secret change creates a new
+  // build and rollout, so a preview-built cache cannot outlive a SITE_PUBLIC_LAUNCH flip.
   // Brad: keep the invented events in, noted as awaiting SAOC's official calendar. Preview only: a public
   // build lists none. They join the rows below but never `events`, which feeds the JSON-LD Event nodes.
   const placeholders = withholdPlaceholderProse() ? [] : upcomingPlaceholderEvents(new Date(), events);
