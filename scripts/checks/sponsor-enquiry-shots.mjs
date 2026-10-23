@@ -1,6 +1,6 @@
 // sponsor-enquiry-form: screenshots of the enquiry section on both hosts at 1280 and 390, at rest, after
 // an empty submit (the errors) and in the success state. Needs a prior `pnpm build` made with
-// NEXT_PUBLIC_*_SITE_URL on port 3221. The success state is reached by answering the POST inside the
+// NEXT_PUBLIC_*_SITE_URL on port 3221. Run with SHOW_PLACEHOLDER_PREVIEW=true (built the same way) to shoot the marked beta preview. The success state is reached by answering the POST inside the
 // browser with a stubbed 201, so nothing is ever written to Firestore and no email is sent.
 import { spawn } from 'node:child_process';
 import { mkdirSync, openSync } from 'node:fs';
@@ -14,6 +14,7 @@ const LOG_DIR = '.tmp/sandbox/sponsor-enquiry';
 const HOSTS = { saoc: `saoc.localhost:${PORT}`, nos: `nos.localhost:${PORT}` };
 const VIEWPORTS = [1280, 390];
 const HORIZONTAL_SCROLL_TOLERANCE_PX = 1;
+const AFTER_CLICK_SETTLE_MS = 1200;
 
 mkdirSync(SHOT_DIR, { recursive: true });
 mkdirSync(LOG_DIR, { recursive: true });
@@ -67,7 +68,13 @@ async function run() {
       await page.goto(`http://${host}/sponsors`, { waitUntil: 'networkidle' });
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       console.log(`${site} ${width}: horizontal overflow ${overflow}px ${overflow <= HORIZONTAL_SCROLL_TOLERANCE_PX ? 'ok' : 'FAIL'}`);
+      await page.screenshot({ path: `${SHOT_DIR}/${site}-${width}-hero.png` });
       await shoot(page, `${site}-${width}-rest`);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.getByRole('link', { name: 'Talk to us about sponsorship' }).click();
+      await page.waitForTimeout(AFTER_CLICK_SETTLE_MS);
+      await page.screenshot({ path: `${SHOT_DIR}/${site}-${width}-after-cta.png` });
+      console.log(`${site} ${width}: focus after CTA -> ${await page.evaluate(() => document.activeElement?.id)}`);
 
       await page.getByRole('button', { name: 'Send enquiry' }).click();
       await shoot(page, `${site}-${width}-errors`);

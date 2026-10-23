@@ -37,6 +37,7 @@ All held in `lib/sponsor-enquiry-copy.ts`, each marked `PENDING-COMMITTEE-COPY`,
 - G2 the introduction under the heading. No wording exists; the beta preview shows a bracketed stand-in with the marker, a public build shows nothing.
 - G3 the POPIA consent label and its privacy-link text. Functional, so rendered in both modes; the marker is beta-only. Needs committee approval.
 - G4 labels with no existing equivalent: "Organisation or company (optional)", "Phone number (optional)", "Sponsorship level (optional)".
+- G6 the NOS success body. The SAOC string names the SAOC secretariat, so NOS has no wording yet; the beta preview shows a bracketed stand-in with the marker, a public build shows the heading alone.
 - G5 the acknowledgement and admin email wording. An email cannot be beta-only, so it is always sent.
 
 Reused verbatim from existing copy: the CTA label, "Name", "Email address", "Message", "Website (optional)", the thank-you heading and body, and the validation texts. The level select's empty first option is "Choose a level" (SAOC ruling, Amendment 4; value `""`, stored as null). The five levels are Lee-Ann's Website Development Specification V3, line 484; the level is optional.

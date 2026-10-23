@@ -7,6 +7,7 @@ import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
 import {
   ENQUIRY_CONSENT_LABEL,
   ENQUIRY_LABELS,
+  ENQUIRY_NOS_SUCCESS_BODY_PLACEHOLDER,
   ENQUIRY_PRIVACY_LINK_TEXT,
   ENQUIRY_REUSED,
 } from '@/lib/sponsor-enquiry-copy';
@@ -16,6 +17,7 @@ import {
   validateSponsorEnquiry,
   type SponsorEnquiryField,
   type SponsorEnquiryFieldErrors,
+  type SponsorEnquirySite,
 } from '@/lib/sponsor-enquiry';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
@@ -74,11 +76,12 @@ function Field({ id, label, error, children }: FieldProps) {
 }
 
 interface SponsorEnquiryFormProps {
-  /** Beta preview only: the consent wording is awaiting committee approval, so it is marked. */
-  markConsent: boolean;
+  site: SponsorEnquirySite;
+  /** Beta preview only: wording awaiting committee approval is marked. */
+  markPlaceholders: boolean;
 }
 
-export function SponsorEnquiryForm({ markConsent }: SponsorEnquiryFormProps) {
+export function SponsorEnquiryForm({ site, markPlaceholders }: SponsorEnquiryFormProps) {
   const [values, setValues] = useState<Values>(EMPTY_VALUES);
   const [honeypot, setHoneypot] = useState('');
   const [status, setStatus] = useState<Status>('idle');
@@ -173,9 +176,18 @@ export function SponsorEnquiryForm({ markConsent }: SponsorEnquiryFormProps) {
         >
           {ENQUIRY_REUSED.successHeading}
         </h3>
-        <p className="mt-3 font-sans text-[16px] leading-[1.55] text-ink/80">
-          {ENQUIRY_REUSED.successBody}
-        </p>
+        {site === 'saoc' ? (
+          <p className="mt-3 font-sans text-[16px] leading-[1.55] text-ink/80">
+            {ENQUIRY_REUSED.successBody}
+          </p>
+        ) : markPlaceholders ? (
+          <div data-placeholder="true" className="mt-3 flex flex-col items-start">
+            <p className="font-sans text-[16px] leading-[1.55] text-ink/80">
+              {ENQUIRY_NOS_SUCCESS_BODY_PLACEHOLDER}
+            </p>
+            <PlaceholderMarker />
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -301,7 +313,7 @@ export function SponsorEnquiryForm({ markConsent }: SponsorEnquiryFormProps) {
             fieldErrors.message ? `${MESSAGE_HINT_ID} se-message-error` : MESSAGE_HINT_ID
           }
         />
-        <p id={MESSAGE_HINT_ID} className="font-mono text-[11px] text-muted">
+        <p id={MESSAGE_HINT_ID} className="font-sans text-[14px] normal-case tracking-normal text-muted">
           Minimum 10 characters.
         </p>
       </Field>
@@ -310,7 +322,7 @@ export function SponsorEnquiryForm({ markConsent }: SponsorEnquiryFormProps) {
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <label
             htmlFor="se-consent"
-            className="flex min-h-11 items-center gap-2.5 font-sans text-[15px] leading-relaxed text-ink"
+            className="flex min-h-11 items-start gap-2.5 py-2.5 font-sans text-[15px] leading-relaxed text-ink"
           >
             <input
               id="se-consent"
@@ -320,7 +332,7 @@ export function SponsorEnquiryForm({ markConsent }: SponsorEnquiryFormProps) {
               checked={values.consent}
               onChange={setField('consent')}
               disabled={disabled}
-              className="h-4 w-4 rounded-sm border border-rule outline-none focus:ring-2 focus:ring-ink/40 disabled:opacity-60"
+              className="mt-1 h-4 w-4 shrink-0 rounded-sm border border-rule outline-none focus:ring-2 focus:ring-ink/40 disabled:opacity-60"
               aria-invalid={invalid('consent')}
               aria-describedby={describedBy('consent')}
             />
@@ -333,7 +345,7 @@ export function SponsorEnquiryForm({ markConsent }: SponsorEnquiryFormProps) {
             {ENQUIRY_PRIVACY_LINK_TEXT}
           </a>
         </div>
-        {markConsent ? <PlaceholderMarker /> : null}
+        {markPlaceholders ? <PlaceholderMarker /> : null}
         {fieldErrors.consent ? (
           <TicketFieldAlert id="se-consent-error">{fieldErrors.consent}</TicketFieldAlert>
         ) : null}

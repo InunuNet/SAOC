@@ -18,6 +18,11 @@ export const ENQUIRY_CONSENT_LABEL =
   'I agree to SAOC using these details to respond to my enquiry.';
 export const ENQUIRY_PRIVACY_LINK_TEXT = 'Privacy policy';
 
+// PENDING-COMMITTEE-COPY (G6): the NOS success body. The SAOC string names the SAOC secretariat, which is not
+// the National Show's voice, so NOS has no wording yet: the beta preview shows this stand-in, marked, and a
+// public build shows the heading alone. "Thank you" stays on both.
+export const ENQUIRY_NOS_SUCCESS_BODY_PLACEHOLDER = '[Confirmation message to be supplied by the committee]';
+
 // PENDING-COMMITTEE-COPY (G4): labels with no existing equivalent on the site. Functional.
 export const ENQUIRY_LABELS = {
   organisation: 'Organisation or company (optional)',

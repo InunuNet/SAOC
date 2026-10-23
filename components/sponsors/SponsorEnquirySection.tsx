@@ -25,7 +25,7 @@ export function SponsorEnquirySection({ site }: SponsorEnquirySectionProps) {
       id="enquire"
       data-sponsor-enquiry={site}
       aria-labelledby="enquire-heading"
-      className="scroll-mt-24 border border-rule bg-bone p-6 sm:p-10"
+      className="scroll-mt-36 border border-rule bg-bone p-6 sm:p-10"
     >
       <div className="max-w-[640px]">
         <h2
@@ -44,7 +44,7 @@ export function SponsorEnquirySection({ site }: SponsorEnquirySectionProps) {
           </div>
         )}
         <div className="mt-8">
-          <SponsorEnquiryForm markConsent={!withhold} />
+          <SponsorEnquiryForm site={site} markPlaceholders={!withhold} />
         </div>
       </div>
       <SponsorEnquiryFocus />
