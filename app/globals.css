@@ -91,6 +91,7 @@
   --radius-0: 0; /* cards, image wells */
   --radius-1: 2px; /* buttons, inputs */
   --radius-pill: 999px; /* eyebrow pills only */
+  --radius-card: 16px; /* cards (NOS Design hero-cards-ruling B1); image wells and buttons keep their own */
 
   /* ---------- Elevation ---------- */
   --shadow-float: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
@@ -425,6 +426,140 @@ body {
   .home-hero-drift {
     animation: none;
     will-change: auto;
+  }
+}
+
+/* Card family (NOS Design hero-cards-ruling B1-B7, 2026-10-23, Brad: pretty, elegant, like an orchid).
+   One move: a plate behind the card, offset 10px right and down like a petal echo, plus one soft
+   layered shadow. On hover the card lifts 4px and the plate stays put, so the offset opens from 10
+   to 14px. Transform, box-shadow and colour only; reduced motion keeps the colour change alone. */
+.petal-card {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-card);
+  transition: transform 250ms var(--ease);
+}
+/* The face is a layer of its own, above the plate and below the content: a negative z-index child
+   paints over its parent's background, so the card colour and shadow cannot sit on the card itself. */
+.petal-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--radius-card);
+  background: var(--parchment);
+  box-shadow:
+    0 1px 2px rgb(34 40 31 / 0.05),
+    0 14px 32px -12px rgb(34 40 31 / 0.18);
+  transition: box-shadow 250ms var(--ease);
+}
+.petal-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-card);
+  /* NOS Design #51: a --bone plate vanished on the --bone section; a warm brass tint reads. */
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  transform: translate(10px, 10px);
+  transition: transform 250ms var(--ease);
+}
+.petal-card-well {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+.petal-card-photo {
+  object-fit: cover;
+  transition: transform 250ms var(--ease);
+}
+.petal-card-chip {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--parchment) 92%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: var(--primary);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.petal-card-arrow {
+  display: grid;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-pill);
+  color: var(--primary);
+  transition:
+    background-color 250ms var(--ease),
+    color 250ms var(--ease);
+}
+.petal-card-arrow svg {
+  transition: transform 250ms var(--ease);
+}
+.petal-card:hover,
+.petal-card:focus-visible {
+  transform: translateY(-4px);
+}
+.petal-card:hover::after,
+.petal-card:focus-visible::after {
+  box-shadow:
+    0 2px 4px rgb(34 40 31 / 0.06),
+    0 22px 40px -14px rgb(34 40 31 / 0.22);
+}
+.petal-card:hover::before,
+.petal-card:focus-visible::before {
+  transform: translate(10px, 14px);
+}
+.petal-card:hover .petal-card-photo,
+.petal-card:focus-visible .petal-card-photo {
+  transform: scale(1.05);
+}
+.petal-card:hover .petal-card-arrow,
+.petal-card:focus-visible .petal-card-arrow {
+  background: var(--accent);
+  color: var(--primary-800);
+}
+.petal-card:hover .petal-card-arrow svg,
+.petal-card:focus-visible .petal-card-arrow svg {
+  transform: translateX(3px);
+}
+.petal-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .petal-card,
+  .petal-card::before,
+  .petal-card::after,
+  .petal-card-photo,
+  .petal-card-arrow svg {
+    transition-property: background-color, color, border-color;
+  }
+  .petal-card:hover,
+  .petal-card:focus-visible {
+    transform: none;
+  }
+  .petal-card:hover::before,
+  .petal-card:focus-visible::before {
+    transform: translate(10px, 10px);
+  }
+  .petal-card:hover .petal-card-photo,
+  .petal-card:focus-visible .petal-card-photo,
+  .petal-card:hover .petal-card-arrow svg,
+  .petal-card:focus-visible .petal-card-arrow svg {
+    transform: none;
   }
 }
 

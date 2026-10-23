@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 
 import { formatShowShortMonthYear, showLabelWithEdition, showYearOf } from '@/lib/show-identity';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
@@ -33,7 +34,7 @@ const NAV_CARDS: NavCardData[] = [
     title: 'Twenty-one societies, nine provinces',
     body: 'From Cape Town to Polokwane — meet the affiliates, find one near you.',
     meta: '21 societies',
-    image: '/images/orchid-pink.jpg',
+    image: '/images/cards/societies.jpg',
     alt: 'Pink orchid',
     unsourced: true,
   },
@@ -45,7 +46,7 @@ const NAV_CARDS: NavCardData[] = [
     title: '',
     body: 'Every three years. Four days. A thousand plants at their peak.',
     meta: '',
-    image: '/images/orchid-yellow.jpg',
+    image: '/images/cards/show.jpg',
     alt: 'Yellow orchid',
   },
   {
@@ -54,8 +55,8 @@ const NAV_CARDS: NavCardData[] = [
     title: 'A system overhauled in 1990, still evolving',
     body: 'AM, FCC, HCC and the regional judging network — how we award quality.',
     meta: '56 accredited judges',
-    image: '/images/orchid-dark.jpg',
-    alt: 'Dark orchid',
+    image: '/images/cards/judging.jpg',
+    alt: 'Pink orchid petals',
     unsourced: true,
   },
   {
@@ -64,8 +65,8 @@ const NAV_CARDS: NavCardData[] = [
     title: 'Since 1968, a federated body',
     body: 'Founded in Bloemfontein by four societies. Today a national council.',
     meta: 'Reg# 1978/004040/08',
-    image: '/images/orchid-violet.jpg',
-    alt: 'Violet orchid',
+    image: '/images/cards/about.jpg',
+    alt: 'Purple orchid',
     unsourced: true,
   },
 ];
@@ -101,7 +102,7 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
   const cards = buildNavCards(show, withhold);
 
   return (
-    <section data-home-section="nav-cards" className="py-24 bg-bone">
+    <section data-home-section="nav-cards" className="bg-bone pt-24 pb-[calc(6rem+10px)]">
       <div className="saoc-container">
         <div className="mb-12">
           <div className="mb-3">
@@ -112,7 +113,7 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 min-[560px]:grid-cols-2 min-[1100px]:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 gap-7 min-[640px]:grid-cols-2 min-[1024px]:grid-cols-4">
           {cards.map((card) => {
             const CardLink = card.crossSite ? 'a' : Link;
             return (
@@ -121,35 +122,32 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
                 href={card.href}
                 data-nav-card
                 data-placeholder={card.unsourced && !withhold ? 'true' : undefined}
-                className="group flex flex-col bg-parchment border border-rule transition-[translate,box-shadow,border-color] duration-150 ease-(--ease) hover:-translate-y-1 hover:border-accent hover:shadow-[0_20px_50px_rgba(34,40,31,0.08)] focus-visible:-translate-y-1 focus-visible:border-accent focus-visible:shadow-[0_20px_50px_rgba(34,40,31,0.08)] active:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 motion-reduce:active:translate-y-0"
+                className="petal-card group"
               >
-                <div className="relative aspect-[3/2] min-[560px]:aspect-[4/5] overflow-hidden">
+                <div className="petal-card-well">
                   <Image
                     src={card.image}
                     alt={card.alt}
                     fill
-                    className="object-cover transition-[scale] duration-150 ease-(--ease) group-hover:scale-[1.03] group-focus-visible:scale-[1.03] motion-reduce:group-hover:scale-100 motion-reduce:group-focus-visible:scale-100"
-                    sizes="(min-width: 1100px) 25vw, (min-width: 560px) 50vw, 100vw"
+                    className="petal-card-photo"
+                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
                   />
-                  <span
-                    data-nav-card-badge
-                    className="absolute top-3 left-3 font-mono text-[10.5px] uppercase tracking-[0.16em] text-ivory bg-primary/80 px-[11px] py-[5px] rounded-[2px]"
-                  >
+                  <span data-nav-card-badge className="petal-card-chip">
                     {card.badge}
                   </span>
                 </div>
 
-                <div className="flex flex-col flex-1 p-[22px]">
+                <div className="flex flex-1 flex-col p-6">
                   {card.title ? (
                     <h3
                       data-nav-card-title
-                      className="font-serif text-[24px] font-semibold leading-[1.18] text-primary mb-3 underline decoration-transparent decoration-1 underline-offset-4 transition-[color,text-decoration-color] duration-150 ease-(--ease) group-hover:text-primary-800 group-hover:decoration-accent group-focus-visible:text-primary-800 group-focus-visible:decoration-accent text-pretty"
+                      className="mb-3 text-pretty font-serif text-[24px] font-semibold leading-[1.18] text-primary"
                     >
                       {card.title}
                     </h3>
                   ) : null}
 
-                  <p className="font-sans text-[16px] leading-[1.55] text-muted mb-auto pb-5">
+                  <p className="mb-auto pb-5 font-sans text-[16px] leading-[1.55] text-muted">
                     {card.body}
                   </p>
                   {card.unsourced && !withhold ? (
@@ -158,19 +156,15 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
                     </div>
                   ) : null}
 
-                  <div className="flex items-center justify-between gap-3 border-t border-rule pt-4">
+                  <div className="flex items-center justify-between gap-3 pt-2">
                     <span
                       data-nav-card-meta
                       className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted"
                     >
                       {card.meta}
                     </span>
-                    <span
-                      data-nav-card-arrow
-                      className="font-serif text-[18px] text-primary transition-[translate,color] duration-150 ease-(--ease) group-hover:translate-x-1 group-hover:text-accent group-focus-visible:translate-x-1 group-focus-visible:text-accent motion-reduce:group-hover:translate-x-0 motion-reduce:group-focus-visible:translate-x-0"
-                      aria-hidden="true"
-                    >
-                      →
+                    <span data-nav-card-arrow className="petal-card-arrow" aria-hidden="true">
+                      <ArrowRight size={16} strokeWidth={1.5} />
                     </span>
                   </div>
                 </div>
