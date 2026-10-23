@@ -3,6 +3,7 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initAdmin } from '@/lib/firebase-admin';
 import { PENDING_PAYMENT_HOLD_MINUTES } from '@/lib/payments/pending-hold';
 import { generateBookingRefQrDataUri } from '@/lib/qr';
+import { isTicketingTestMode } from '@/lib/ticketing-test-mode';
 import type { Order, OrderStatus, Ticket, TicketStatus, TicketType } from '@/types/index';
 
 /**
@@ -76,6 +77,7 @@ export interface OrdersCollectionLike {
 
 export interface OrdersTransactionLike {
   set(ref: OrdersDocRefLike, data: Record<string, unknown>): unknown;
+  get?(ref: OrdersDocRefLike): Promise<{ exists: boolean }>;
 }
 
 export interface OrdersFirestoreLike {
@@ -113,6 +115,7 @@ export async function createOrderWithPosition(
   input: CreateOrderPositionInput,
   deps: { db?: OrdersFirestoreLike } = {}
 ): Promise<CreateOrderPositionResult> {
+  const issuedInTestMode = isTicketingTestMode();
   const db: OrdersFirestoreLike = deps.db ?? getFirestore(initAdmin());
   const orders = db.collection(ORDERS_COLLECTION);
   const tickets = db.collection(TICKETS_COLLECTION);
@@ -122,7 +125,19 @@ export async function createOrderWithPosition(
   const positionRef = tickets.doc(input.bookingRef);
 
   await db.runTransaction(async (transaction) => {
+    // Real Firestore transactions can read existing refs. A replay must retain their
+    // original provenance, including a missing marker on a legacy record.
+    if (transaction.get) {
+      const existingOrder = await transaction.get(orderRef);
+      const existingPosition = await transaction.get(positionRef);
+      if (existingOrder.exists !== existingPosition.exists) {
+        throw new Error('Order and ticket must be created together');
+      }
+      if (existingOrder.exists) return;
+    }
+
     const order: Omit<Order, 'id'> = {
+      issuedInTestMode,
       showId: input.showId,
       buyerName: input.buyerName,
       buyerEmail: input.buyerEmail,
@@ -142,6 +157,7 @@ export async function createOrderWithPosition(
     transaction.set(orderRef, order);
 
     const position: Omit<Ticket, 'id'> = {
+      issuedInTestMode,
       bookingRef: input.bookingRef,
       showId: input.showId,
       attendeeName: input.attendeeName,

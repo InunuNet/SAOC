@@ -1,6 +1,8 @@
 import { getFirestore, Timestamp, type Transaction } from 'firebase-admin/firestore';
 
 import { initAdmin } from '@/lib/firebase-admin';
+import { decideTestTicketAdmission } from '@/lib/checkin-test-ticket-guard';
+import { isTicketingTestMode } from '@/lib/ticketing-test-mode';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import type { Ticket, TicketStatus, TicketType } from '@/types/index';
 
@@ -25,6 +27,7 @@ export type CheckinRefusalCode =
   | 'bad-request'
   | 'not-found'
   | 'wrong-show'
+  | 'test_ticket'
   | 'unpaid'
   | 'already-checked-in';
 
@@ -45,6 +48,7 @@ const REFUSALS: Record<CheckinRefusalCode, RefusalSpec> = {
   'bad-request': { httpStatus: 400, error: 'A booking reference is required.' },
   'not-found': { httpStatus: 404, error: 'Ticket not found' },
   'wrong-show': { httpStatus: 403, error: 'This ticket is not for this show.' },
+  test_ticket: { httpStatus: 403, error: 'Test ticket — not valid for entry' },
   unpaid: { httpStatus: 403, error: 'This ticket has not been paid for.' },
   'already-checked-in': { httpStatus: 409, error: 'Already checked in' },
 };
@@ -82,6 +86,11 @@ async function admit(transaction: Transaction, bookingRef: string): Promise<Chec
   const data = doc.data();
 
   if ((data['showId'] as string) !== NATIONAL_SHOW_ID) return refuse('wrong-show');
+
+  if (decideTestTicketAdmission({
+    issuedInTestMode: data['issuedInTestMode'],
+    liveMode: !isTicketingTestMode(),
+  }) === 'reject_test_ticket') return refuse('test_ticket');
 
   // Ordered before the paid check on purpose: a checked-in ticket is by definition no
   // longer 'paid', and door staff must be told what actually happened. The existing
