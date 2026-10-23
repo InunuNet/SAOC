@@ -1,10 +1,8 @@
-import type { SanityEvent } from '@/types';
-
-import { EventCard } from './EventCard';
+import { EventCard, type ListedEvent } from './EventCard';
 
 export interface MonthGroupProps {
   month: string;
-  events: SanityEvent[];
+  events: ListedEvent[];
 }
 
 export function MonthGroup({ month, events }: MonthGroupProps) {
