@@ -1,15 +1,15 @@
-// Route-level Suspense fallback while the Sanity workshop & field trip ticket types load.
-// Sage & Paper tokens only, no new colours — same pattern as exhibitors/loading.tsx.
-export default function WorkshopsLoading() {
+// nos-flash-scroll: route-level fallback for a dynamic NOS route. Renders the existing NOS hero
+// geometry (nos-theme.css `.nos-hero`) with an empty copy block, so the first frame is the dark
+// hero rather than a grey skeleton. No text, no new tokens.
+export default function Loading() {
   return (
-    <div className="mx-auto max-w-[1280px] space-y-6 px-8 py-16" aria-busy="true" aria-live="polite">
-      <div className="h-[420px] animate-pulse bg-bone" aria-hidden="true" />
-      <div className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="h-56 animate-pulse border border-rule bg-bone" aria-hidden="true" />
-        <div className="h-56 animate-pulse border border-rule bg-bone" aria-hidden="true" />
-        <div className="h-56 animate-pulse border border-rule bg-bone" aria-hidden="true" />
-      </div>
-      <span className="sr-only">Loading workshops &amp; field trips…</span>
-    </div>
+    <section
+      data-nos-hero="inner"
+      data-nos-hero-variant="type"
+      aria-busy="true"
+      className="nos-on-dark nos-hero nos-hero-inner nos-hero-type"
+    >
+      <div className="nos-hero-copy" />
+    </section>
   );
 }
