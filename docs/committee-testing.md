@@ -30,6 +30,22 @@ The bar shows on 10 public NOS-host surfaces: `/tickets`, `/tickets/[slug]`,
 ticketing surface (it 308-redirects to NOS), so it has no bar. Visual values (amber `#F2C230`, ink
 `#14110A`, sizes) are NOS Design's ruling and are pinned in the static check.
 
+### Page titles: layouts and the same-segment wrap
+
+Next applies a layout's `title.template` to child segments only, never to the `page.tsx` in the
+same folder. So the title prefix is mounted in two ways, and each route gets exactly one:
+
+- Child-segment pages (`/tickets/[slug]`, `/tickets/confirmation`, `/tickets/cancelled`,
+  `/vendors/payment/status`) take the `[Testing only, not live] %s` template from the ticketing
+  layout above them (`app/(nos)/tickets/layout.tsx`, `vsp/layout.tsx` and the five
+  `national-show/*` layouts).
+- Pages that sit beside a ticketing layout (the `national-show` tickets, conferences, workshops,
+  wosa-conference and vendors/payment pages, and `/vsp`) wrap their own metadata with
+  `withTicketingTestTitle()` from `lib/ticketing-test-metadata.ts`, which prefixes the title and
+  returns it unchanged when `isTicketingTestMode()` is false.
+
+`/tickets/[slug]` uses a plain `title` (not `title.absolute`) so the template can apply.
+
 ### How payments are sandboxed
 
 1. Adapter level, always on: `lib/payments/ozow.ts` hard-codes `OZOW_IS_TEST = 'true'` and reads
