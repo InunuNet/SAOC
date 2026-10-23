@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 
-import { getAdminSession, hasCapability } from '@/lib/admin-auth';
+import { getAdminSession, hasCapability, type AdminAuthResult } from '@/lib/admin-auth';
 import { initAdmin } from '@/lib/firebase-admin';
-import {
-  ACTIVE_GATEWAY_COLLECTION,
-  ACTIVE_GATEWAY_DOC_ID,
-  isValidGatewayId,
-  resolveActiveGateway,
-} from '@/lib/payments/active-gateway';
+import { parsePaymentMode } from '@/lib/payment-mode';
+import { writeAuditedSettingChange } from '@/lib/payment-settings-audit';
+import { isValidGatewayId, resolveActiveGateway } from '@/lib/payments/active-gateway';
 import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 
@@ -18,11 +15,17 @@ import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
  * hasCapability(..., 'manage-payment-settings', ...), same shape as
  * app/api/admin/settings/ozow-sandbox-test-mode/route.ts. See
  * contracts/golden/gateway-picker-admin-only-f1/README.md §6.
+ *
+ * Mission payment-gateway-settings M1: PUT is an audited write (setting + adminSettingsAudit entry
+ * in one transaction) and accepts an optional `mode`, which parsePaymentMode accepts only as
+ * sandbox. The page moved to /admin/payments; this URL did not.
  */
 
-async function checkGate(): Promise<
-  { ok: true } | { ok: false; response: NextResponse }
-> {
+type GateResult =
+  | { ok: true; session: Extract<AdminAuthResult, { ok: true }> }
+  | { ok: false; response: NextResponse };
+
+async function checkGate(): Promise<GateResult> {
   const session = await getAdminSession();
   if (!session.ok) {
     const status = session.reason === 'no-session' || session.reason === 'invalid-session' ? 401 : 403;
@@ -38,7 +41,7 @@ async function checkGate(): Promise<
     return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
   }
 
-  return { ok: true };
+  return { ok: true, session };
 }
 
 export async function GET(): Promise<NextResponse> {
@@ -46,7 +49,7 @@ export async function GET(): Promise<NextResponse> {
   if (!gate.ok) return gate.response;
 
   const gateway = await resolveActiveGateway();
-  return NextResponse.json({ gateway });
+  return NextResponse.json({ gateway, mode: 'sandbox' });
 }
 
 export async function PUT(request: NextRequest): Promise<NextResponse> {
@@ -72,19 +75,31 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
     );
   }
 
+  const parsedMode = parsePaymentMode(
+    typeof body === 'object' && body !== null && 'mode' in body
+      ? (body as { mode: unknown }).mode
+      : undefined,
+  );
+  if (!parsedMode.ok) {
+    return NextResponse.json(
+      { error: 'Only sandbox mode is available.', reason: parsedMode.reason },
+      { status: 400 },
+    );
+  }
+
   try {
-    const session = await getAdminSession();
-    const email = session.ok ? session.decodedToken.email ?? null : null;
+    const { session } = gate;
     const db = getFirestore(initAdmin());
-    await db
-      .collection(ACTIVE_GATEWAY_COLLECTION)
-      .doc(ACTIVE_GATEWAY_DOC_ID)
-      .set({ gateway, updatedAt: FieldValue.serverTimestamp(), updatedByEmail: email });
-    return NextResponse.json({ gateway });
+    const result = await writeAuditedSettingChange(db, {
+      setting: 'activePaymentGateway',
+      next: { gateway },
+      actor: { uid: session.decodedToken.uid, email: session.decodedToken.email ?? null },
+    });
+    return NextResponse.json({ gateway, mode: parsedMode.mode, changed: result.changed });
   } catch (error) {
     console.error(
       '[admin/settings/active-payment-gateway] Failed to write setting:',
-      error instanceof Error ? error.message : 'unknown error',
+      error instanceof Error ? error.name : 'unknown error',
     );
     return NextResponse.json({ error: 'Failed to update active payment gateway.' }, { status: 500 });
   }
