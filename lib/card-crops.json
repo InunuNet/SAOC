@@ -1,0 +1,14 @@
+{
+  "_note": "The four 'Four ways into SAOC' card photographs: 4:5 windows cut from the existing sources by scripts/crop-card-photos.mjs. rect is in source pixels. exclude lists source regions that must stay out of the window (the plant clip in orchid-purple.jpg). Each window is at least 1500 source px wide.",
+  "minWindowWidth": 1500,
+  "crops": {
+    "/images/cards/societies.jpg": { "source": "/images/orchid-pink.jpg", "rect": { "x": 0, "y": 780, "w": 3456, "h": 4320 } },
+    "/images/cards/show.jpg": { "source": "/images/orchid-yellow.jpg", "rect": { "x": 150, "y": 0, "w": 1860, "h": 2325 } },
+    "/images/cards/judging.jpg": { "source": "/images/orchid-violet.jpg", "rect": { "x": 3660, "y": 0, "w": 2198, "h": 2747 } },
+    "/images/cards/about.jpg": {
+      "source": "/images/orchid-purple.jpg",
+      "rect": { "x": 1062, "y": 318, "w": 2760, "h": 3450 },
+      "exclude": [{ "name": "plant clip", "x": 3900, "y": 2960, "w": 1100, "h": 1100 }]
+    }
+  }
+}

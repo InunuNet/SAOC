@@ -22,7 +22,7 @@ export function ExhibitorStageCard({
   confirmation,
 }: NosExhibitorStageCardProps) {
   return (
-    <div className="nos-stage-card">
+    <div className="nos-stage-card nos-petal">
       <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--olive)]">
         Stage {stage}
       </p>
