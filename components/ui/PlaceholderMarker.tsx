@@ -16,7 +16,13 @@ const TONE_CLASSES: Record<PlaceholderMarkerTone, string> = {
   dark: 'border-ivory/30 bg-ivory/10 text-ivory/80',
 };
 
-export function PlaceholderMarker({ tone = 'light' }: { tone?: PlaceholderMarkerTone }) {
+export function PlaceholderMarker({
+  tone = 'light',
+  label = MARKER_LABEL,
+}: {
+  tone?: PlaceholderMarkerTone;
+  label?: string;
+}) {
   return (
     <span
       data-placeholder-marker
@@ -26,7 +32,7 @@ export function PlaceholderMarker({ tone = 'light' }: { tone?: PlaceholderMarker
         TONE_CLASSES[tone],
       ].join(' ')}
     >
-      {MARKER_LABEL}
+      {label}
     </span>
   );
 }

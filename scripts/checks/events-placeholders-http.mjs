@@ -26,6 +26,8 @@ const todayIso = new Date().toISOString().slice(0, 10);
 // legitimately appear in the feeds; every other invented title must not.
 const REAL_COLLISION = /National Orchid Show/;
 const NATIONAL_SHOW = 'National Orchid Show';
+const EVENT_LABEL = "AI event: waiting on SAOC's official events";
+const DEFAULT_LABEL = 'Not confirmed by SAOC';
 const mentions = (text) => entries.filter((e) => !REAL_COLLISION.test(e.title) && text.includes(e.title)).length;
 const upcoming = entries.filter((e) => e.end >= todayIso);
 
@@ -93,14 +95,19 @@ async function run() {
   const tab = await context.newPage();
   await tab.goto(`http://${HOST}/events`, { waitUntil: 'networkidle' });
   const all = await tab.$$eval('article', (articles) =>
-    articles.map((a) => ({ text: a.textContent, marked: a.querySelector('[data-placeholder-marker]') !== null, linked: a.querySelector('a') !== null })),
+    articles.map((a) => ({ text: a.textContent, label: a.querySelector('[data-placeholder-marker]')?.textContent ?? '', marked: a.querySelector('[data-placeholder-marker]') !== null, linked: a.querySelector('a') !== null })),
   );
   const rows = all.filter((r) => r.marked);
   const showRows = all.filter((r) => r.text.includes(NATIONAL_SHOW)).length;
+  const other = await context.newPage();
+  await other.goto(`http://${HOST}/`, { waitUntil: 'networkidle' });
+  const otherLabels = MODE === 'preview' ? await other.$$eval('[data-placeholder-marker]', (n) => n.map((x) => x.textContent)) : [];
   await context.close();
   if (MODE === 'preview') {
     check(`preview: ${upcoming.length} marked invented rows (today ${todayIso})`, upcoming.length > 0 && rows.length === upcoming.length && upcoming.every((e) => rows.some((r) => r.text.includes(e.title))), `marked rows=${rows.length}`);
     check('preview: the National Orchid Show is listed once', showRows === 1, `rows=${showRows}`);
+    check('preview: every invented row carries the AI-event label', rows.length > 0 && rows.every((r) => r.label === EVENT_LABEL));
+    check('preview: another page keeps the default marker text', otherLabels.length > 0 && otherLabels.every((t) => t === DEFAULT_LABEL), `labels=${JSON.stringify(otherLabels.slice(0, 3))}`);
     check('preview: invented rows are not links', rows.every((r) => !r.linked));
   } else {
     check('public: no marked row on /events', rows.length === 0, `marked rows=${rows.length}`);

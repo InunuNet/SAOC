@@ -4,6 +4,8 @@ import { useId } from 'react';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import type { SanityEvent } from '@/types';
 
+const EVENT_PLACEHOLDER_LABEL = "AI event: waiting on SAOC's official events";
+
 /** An invented event on the beta preview carries `isPlaceholder`; it is marked and never linked. */
 export type ListedEvent = SanityEvent & { isPlaceholder?: boolean };
 
@@ -82,7 +84,7 @@ export function EventCard({ event }: EventCardProps) {
             </div>
           ) : null}
         </dl>
-        {event.isPlaceholder ? <PlaceholderMarker /> : null}
+        {event.isPlaceholder ? <PlaceholderMarker label={EVENT_PLACEHOLDER_LABEL} /> : null}
       </div>
     </>
   );
