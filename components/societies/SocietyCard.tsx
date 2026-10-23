@@ -17,6 +17,13 @@ export interface SanitySociety {
   logo: SanityImageSource | null;
   website: string | null;
   markBadge: boolean | null;
+  /** Lee-Ann's society docs: public contact, committee, links and annual show. All verbatim. */
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  committee?: { role: string; name: string }[] | null;
+  facebookUrl?: string | null;
+  instagramUrl?: string | null;
+  annualShow?: string | null;
   /** True when `founded` is an unconfirmed estimate rather than a confirmed figure. */
   foundedPlaceholder?: boolean | null;
   /** True when `memberCount` is an unconfirmed estimate rather than a confirmed figure. */

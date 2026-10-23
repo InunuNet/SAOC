@@ -7,14 +7,12 @@
 //   - "/" key when no input/textarea is focused
 //   - Header search button (via `open` prop from parent)
 // Closes on Esc, backdrop click, or close button.
-// Live-filters societies (by name + province) from @/lib/data.
+// Live-searches the listed societies via /api/societies/search (Sanity, `listed != false`).
 // =============================================================
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
-import { societies } from '@/lib/data';
-import type { Society } from '@/types';
 import { nosUrl } from '@/lib/site-hosts';
 
 interface SearchOverlayProps {
@@ -22,11 +20,20 @@ interface SearchOverlayProps {
   onClose: () => void;
 }
 
+interface SocietyHit {
+  name: string;
+  slug: string;
+  province: string | null;
+  region: string | null;
+}
+
 interface SocietyResult {
   kind: 'society';
-  item: Society;
+  item: SocietyHit;
   href: string;
 }
+
+const SEARCH_DEBOUNCE_MS = 150;
 
 const SUGGESTIONS: ReadonlyArray<{ label: string; href: string; crossSite?: boolean }> = [
   { label: 'About SAOC', href: '/about' },
@@ -80,16 +87,30 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     };
   }, [open]);
 
-  // Live filter
-  const societyResults = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    if (term.length === 0) return [] as SocietyResult[];
-
-    return societies
-      .filter((s) => s.name.toLowerCase().includes(term) || s.province.toLowerCase().includes(term))
-      .slice(0, 5)
-      .map((item): SocietyResult => ({ kind: 'society', item, href: '/societies' }));
+  // Live search: listed societies only, from the server (never a hardcoded list).
+  const [hits, setHits] = useState<SocietyHit[]>([]);
+  useEffect(() => {
+    const term = q.trim();
+    if (term.length === 0) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      fetch(`/api/societies/search?q=${encodeURIComponent(term)}`, { signal: controller.signal })
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data: SocietyHit[]) => setHits(Array.isArray(data) ? data : []))
+        .catch(() => {
+          if (!controller.signal.aborted) setHits([]);
+        });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, [q]);
+
+  const societyResults: SocietyResult[] =
+    q.trim().length === 0
+      ? []
+      : hits.map((item) => ({ kind: 'society', item, href: `/societies/${item.slug}` }));
 
   if (!open) return null;
 
@@ -166,7 +187,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
               </div>
               <ul className="flex flex-col gap-1">
                 {societyResults.map((r) => (
-                  <li key={`s-${r.item.name}`}>
+                  <li key={`s-${r.item.slug}`}>
                     <Link
                       href={r.href}
                       onClick={onClose}
@@ -175,7 +196,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                       <span>
                         <span className="block">{r.item.name}</span>
                         <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-                          {r.item.province} · {r.item.city}
+                          {[r.item.province, r.item.region].filter(Boolean).join(' · ')}
                         </span>
                       </span>
                       <span aria-hidden className="text-muted">

@@ -123,7 +123,7 @@ async function main(): Promise<void> {
   // -- Affiliated Societies --
   const societies = await fetchSection<Society[]>(
     'societies',
-    `*[_type == "society"] | order(name asc){ name, province, region, meets, description }`
+    `*[_type == "society" && listed != false] | order(name asc){ name, province, region, meets, description }`
   );
 
   {

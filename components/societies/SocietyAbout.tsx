@@ -19,7 +19,8 @@ export interface SocietyAboutProps {
 }
 
 export function SocietyAbout({ society, withhold = false }: SocietyAboutProps) {
-  if (withhold && !society.description && !society.website) return null;
+  const hasLinks = Boolean(society.website || society.facebookUrl || society.instagramUrl);
+  if (withhold && !society.description && !hasLinks) return null;
   const region = society.region ?? society.province ?? 'South Africa';
 
   return (
@@ -30,15 +31,39 @@ export function SocietyAbout({ society, withhold = false }: SocietyAboutProps) {
           {society.description}
         </p>
       ) : null}
-      {society.website ? (
-        <a
-          href={society.website}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 inline-block text-ink underline underline-offset-2"
-        >
-          Visit society website →
-        </a>
+      {hasLinks ? (
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
+          {society.website ? (
+            <a
+              href={society.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block text-ink underline underline-offset-2"
+            >
+              Visit society website →
+            </a>
+          ) : null}
+          {society.facebookUrl ? (
+            <a
+              href={society.facebookUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block text-ink underline underline-offset-2"
+            >
+              Facebook page →
+            </a>
+          ) : null}
+          {society.instagramUrl ? (
+            <a
+              href={society.instagramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block text-ink underline underline-offset-2"
+            >
+              Instagram page →
+            </a>
+          ) : null}
+        </div>
       ) : null}
       {!society.description && !withhold && (
         <div data-placeholder="true" className="mt-5 max-w-3xl">

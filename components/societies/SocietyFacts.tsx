@@ -15,7 +15,13 @@ export interface SocietyFactsProps {
 }
 
 export function SocietyFacts({ society }: SocietyFactsProps) {
-  const hasConfirmedMeeting = Boolean(society.meets || society.venue);
+  const hasConfirmedMeeting = Boolean(
+    society.meets ||
+      society.venue ||
+      society.contactEmail ||
+      society.contactPhone ||
+      society.annualShow,
+  );
   const estimateParts: string[] = [];
   if (society.founded) estimateParts.push(`Founded ${society.founded}`);
   if (society.memberCount !== null && society.memberCount !== undefined) {
@@ -43,6 +49,41 @@ export function SocietyFacts({ society }: SocietyFactsProps) {
                 Venue
               </dt>
               <dd className="mt-1 font-sans text-[15px] text-ink">{society.venue}</dd>
+            </div>
+          ) : null}
+          {society.annualShow ? (
+            <div>
+              <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+                Annual show
+              </dt>
+              <dd className="mt-1 font-sans text-[15px] text-ink">{society.annualShow}</dd>
+            </div>
+          ) : null}
+          {society.contactEmail ? (
+            <div>
+              <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+                Email
+              </dt>
+              <dd className="mt-1 font-sans text-[15px] text-ink">
+                <a href={`mailto:${society.contactEmail}`} className="underline underline-offset-2">
+                  {society.contactEmail}
+                </a>
+              </dd>
+            </div>
+          ) : null}
+          {society.contactPhone ? (
+            <div>
+              <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+                Telephone
+              </dt>
+              <dd className="mt-1 font-sans text-[15px] text-ink">
+                <a
+                  href={`tel:${society.contactPhone.replace(/[^+\d]/g, '')}`}
+                  className="underline underline-offset-2"
+                >
+                  {society.contactPhone}
+                </a>
+              </dd>
             </div>
           ) : null}
         </dl>
