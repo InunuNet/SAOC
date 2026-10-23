@@ -24,8 +24,20 @@ check('a single-day event is gone at 00:30 SAST next day', !isUpcoming(single, a
 check('start of the SAST day for 22:30Z is the next day', sastStartOfDay(at('2026-11-10T22:30:00Z')) === '2026-11-10T22:00:00.000Z');
 check('params carry only todayStart', Object.keys(upcomingEventsParams(at('2026-11-10T10:00:00Z'))).join() === 'todayStart');
 
+// Values that are not canonical ".000Z": an offset end, a no-millisecond end, and a date-only last day.
+const offset = { date: '2026-11-10T08:00:00+02:00', endDate: '2026-11-13T23:00:00+02:00' };
+check('+02:00 end is listed on its last day', isUpcoming(offset, at('2026-11-13T20:00:00Z')));
+check('+02:00 end is gone the next day', !isUpcoming(offset, at('2026-11-14T10:00:00Z')));
+const noMillis = { date: '2026-11-10T06:00:00Z', endDate: '2026-11-13T15:00:00Z' };
+check('no-millisecond end is listed on its last day', isUpcoming(noMillis, at('2026-11-13T14:00:00Z')));
+check('no-millisecond end is gone the next day', !isUpcoming(noMillis, at('2026-11-14T10:00:00Z')));
+const dateOnly = { date: '2026-11-10', endDate: '2026-11-13' };
+check('date-only last day is listed all that SAST day', isUpcoming(dateOnly, at('2026-11-13T21:30:00Z')));
+check('date-only last day is gone the next SAST day', !isUpcoming(dateOnly, at('2026-11-13T22:30:00Z')));
+
 const queries = readFileSync('sanity/queries.ts', 'utf8');
 check('no upcoming query uses GROQ now()', !queries.includes('now()'));
-check('both upcoming queries compare coalesce(endDate, date)', queries.split('coalesce(endDate, date) >= $todayStart').length - 1 === 2);
+const FILTER = 'dateTime(coalesce(endDate, date)) >= dateTime($todayStart)';
+check('both upcoming queries compare instants with dateTime()', queries.split(FILTER).length - 1 === 2);
 
 process.exit(failures ? 1 : 0);

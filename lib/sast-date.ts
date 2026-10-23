@@ -20,14 +20,23 @@ export function sastStartOfDay(now: Date): string {
 
 /**
  * Params for the upcoming-events GROQ queries. An event stays listed until its last day ends:
- * `coalesce(endDate, date) >= $todayStart`. GROQ's now() is deliberately not used, so the real
+ * `dateTime(coalesce(endDate, date)) >= dateTime($todayStart)`. GROQ's now() is deliberately not used, so the real
  * events and the preview placeholders share this one notion of "today".
  */
 export function upcomingEventsParams(now: Date = new Date()): { todayStart: string } {
   return { todayStart: sastStartOfDay(now) };
 }
 
-/** The upcoming-events filter, mirrored in JS for the unit check. ISO UTC strings compare as text. */
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * The upcoming-events filter, mirrored in JS for the unit check; compares instants, so offset and
+ * no-millisecond values sort correctly. A date-only value is the SAST calendar date and stays listed
+ * for that whole SAST day. (Sanity datetime fields cannot hold one, and GROQ's dateTime() returns null
+ * for it, so the query side leaves it out.)
+ */
 export function isUpcoming(event: { date: string; endDate?: string | null }, now: Date): boolean {
-  return (event.endDate ?? event.date) >= sastStartOfDay(now);
+  const last = event.endDate ?? event.date;
+  if (DATE_ONLY.test(last)) return last >= sastDate(now);
+  return Date.parse(last) >= Date.parse(sastStartOfDay(now));
 }
