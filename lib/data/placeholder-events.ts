@@ -16,6 +16,7 @@
 //   - Nothing is written to Sanity; the real events stay the source of truth.
 // =============================================================
 
+import { sastDate } from '../sast-date.ts';
 import type { SanityEvent, SocietyEvent } from '@/types';
 
 /** The row /events renders for an invented event: a SanityEvent with no slug (so never a link) and the flag. */
@@ -191,13 +192,6 @@ export const placeholderEvents: SocietyEvent[] = [
 
 const PLACEHOLDER_ID_PREFIX = 'placeholder-';
 const ISO_DATE_LENGTH = 10;
-const SAST_TIME_ZONE = 'Africa/Johannesburg';
-const SAST_DATE_FORMAT = new Intl.DateTimeFormat('en-CA', { timeZone: SAST_TIME_ZONE });
-
-/** The calendar date (YYYY-MM-DD) in South Africa at `now`; the UTC date lags it by two hours each night. */
-export function sastDate(now: Date): string {
-  return SAST_DATE_FORMAT.format(now);
-}
 
 const TITLE_WORD = /[a-z0-9]+/g;
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { upcomingEventsParams } from '@/lib/sast-date';
 import { buildVCalendar, type IcsEventInput } from '@/lib/ics';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { upcomingEventsQuery } from '@/sanity/queries';
@@ -20,6 +21,7 @@ function toInput(event: SanityEvent): IcsEventInput {
 export async function GET(): Promise<NextResponse> {
   const raw = await sanityFetch<SanityEvent[]>({
     query: upcomingEventsQuery,
+    params: upcomingEventsParams(),
     tags: ['events', 'sanity'],
   });
 
