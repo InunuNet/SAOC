@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { PresenterSection } from '@/components/nos/PresenterSection';
+import { NOS_ROUTE_HEROES } from '@/components/nos/nos-route-heroes';
 import { ShowContentState } from '@/components/show/nos/ShowContentState';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
@@ -30,14 +31,14 @@ export const revalidate = 60;
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Symposium',
-  image: nosOgImage('National Orchid Show Symposium'),
+  image: nosOgImage(NOS_ROUTE_HEROES.symposium.title),
   description: 'Uniting conservation, science, and horticulture to explore how orchids in their natural environments inform responsible growing, breeding, and the…',
   path: '/national-show/symposium',
 });
 
 export default async function SymposiumPage() {
   const result = await loadShowPageOrFallback('06-saoc-symposium', {
-    label: 'National Orchid Show Symposium',
+    label: NOS_ROUTE_HEROES.symposium.title,
     purpose: 'The National Orchid Show Symposium — what it is, its theme, and who it is for.',
   });
 
