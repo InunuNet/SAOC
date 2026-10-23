@@ -54,5 +54,7 @@ export const NOS_FOOTER_LEGAL: readonly NosFooterLink[] = [
   { id: 'privacy', label: 'Privacy', href: '/privacy' },
   { id: 'terms', label: 'Terms', href: '/terms' },
   { id: 'refunds', label: 'Refunds', href: '/refunds' },
-  { id: 'media-kit', label: 'Media kit', href: '/national-show/media-kit' },
 ];
+
+/** Shown only to a signed-in admin session (MediaKitFooterLink); the page gate is separate. */
+export const NOS_FOOTER_MEDIA_KIT: NosFooterLink = { id: 'media-kit', label: 'Media kit', href: '/national-show/media-kit' };

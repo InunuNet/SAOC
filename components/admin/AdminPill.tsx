@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LogOut } from 'lucide-react';
@@ -8,6 +8,7 @@ import { LogOut } from 'lucide-react';
 import { studioEditHref } from '@/lib/studio-links';
 import { ADMIN_PILL_DOT_CLASS, FOCUS_RING_ON_DARK } from './tokens';
 import { signOutAdmin } from './useAdminSignOut';
+import { askWhoami, readNotAdminCache } from './useIsAdmin';
 
 // Floating admin shortcut for signed-in admins, on public pages and inside the admin shell.
 // On public pages it asks /api/admin/whoami; the admin shell has already verified the session
@@ -15,34 +16,22 @@ import { signOutAdmin } from './useAdminSignOut';
 // admin context it shows from 1024 up only (below that the drawer holds View site and Sign out)
 // and its items are View site, then sign out (which lands on /admin/login); there is
 // no Edit this page. Never shown on /admin/login. Fixed bottom-right and never repositionable by pointer (WCAG 2.5.7). It lifts above a sticky CTA through
-// --sticky-cta-offset (set that variable on a sticky bottom bar, default 0), hides in print,
+// --sticky-cta-offset (set that variable on a sticky bottom bar, default 0), lifts clear of the
+// footer's bottom bar ([data-footer-bar]) while that bar is in view, hides in print,
 // and is mounted after <main> so it comes last in reading order.
-const WHOAMI_URL = '/api/admin/whoami';
-const NOT_ADMIN_CACHE_KEY = 'saoc-admin-pill-not-admin';
-const NOT_ADMIN_CACHE_MS = 10 * 60 * 1000;
-const WHOAMI_TIMEOUT_MS = 5000;
-
 const PILL_SURFACE = 'bg-primary-800/92 text-ivory backdrop-blur-sm shadow-sheet print:hidden';
 const ITEM_CLASS = `flex min-h-[44px] items-center px-3 font-sans text-[14px] font-medium text-ivory hover:text-accent-soft ${FOCUS_RING_ON_DARK}`;
 
-function readNotAdminCache(): boolean {
-  try {
-    const stored = window.sessionStorage.getItem(NOT_ADMIN_CACHE_KEY);
-    return stored !== null && Date.now() - Number(stored) < NOT_ADMIN_CACHE_MS;
-  } catch {
-    return false;
-  }
-}
-
-function writeNotAdminCache(): void {
-  try {
-    window.sessionStorage.setItem(NOT_ADMIN_CACHE_KEY, String(Date.now()));
-  } catch {
-    // Storage blocked: the pill just asks again on the next page.
-  }
-}
-
 const LOGIN_PATH = '/admin/login';
+const FOOTER_BAR_SELECTOR = '[data-footer-bar]';
+
+/** How far the footer's bottom bar reaches up into the viewport: 0 off screen, its full height once fully in view. */
+function footerBarLift(): number {
+  const bar = document.querySelector(FOOTER_BAR_SELECTOR);
+  if (!bar) return 0;
+  const rect = bar.getBoundingClientRect();
+  return Math.min(Math.max(window.innerHeight - rect.top, 0), rect.height);
+}
 
 interface AdminPillProps {
   // Set by the admin shell, which has already verified the session server-side.
@@ -54,31 +43,29 @@ export function AdminPill({ verifiedAdmin = false }: AdminPillProps) {
   const onLogin = pathname.startsWith(LOGIN_PATH);
   const [isAdmin, setIsAdmin] = useState(verifiedAdmin);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [barLift, setBarLift] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const update = () => setBarLift(footerBarLift());
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, [isAdmin, pathname]);
 
   useEffect(() => {
     if (verifiedAdmin || onLogin || readNotAdminCache()) return;
     let cancelled = false;
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), WHOAMI_TIMEOUT_MS);
-    fetch(WHOAMI_URL, { credentials: 'same-origin', cache: 'no-store', signal: controller.signal })
-      .then(async (res) => {
-        // Drain the body: a response nobody reads keeps the request open, which stalls the
-        // page's network-idle state (and the e2e specs that wait on it).
-        await res.arrayBuffer();
-        if (cancelled) return;
-        if (res.ok) {
-          setIsAdmin(true);
-        } else {
-          writeNotAdminCache();
-        }
-      })
-      .catch(() => undefined)
-      .finally(() => window.clearTimeout(timeout));
+    void askWhoami().then((ok) => {
+      if (!cancelled && ok) setIsAdmin(true);
+    });
     return () => {
       cancelled = true;
-      controller.abort();
-      window.clearTimeout(timeout);
     };
   }, [verifiedAdmin, onLogin]);
 
@@ -143,7 +130,8 @@ export function AdminPill({ verifiedAdmin = false }: AdminPillProps) {
   return (
     <div
       ref={containerRef}
-      className={`fixed right-4 z-40 bottom-[calc(1rem+var(--sticky-cta-offset,0px)+env(safe-area-inset-bottom,0px))] print:hidden ${verifiedAdmin ? 'hidden lg:block' : ''}`}
+      style={{ '--footer-bar-lift': `${barLift}px` } as CSSProperties} // CSSProperties has no custom-property keys
+      className={`fixed right-4 z-40 bottom-[calc(1rem+var(--footer-bar-lift,0px)+var(--sticky-cta-offset,0px)+env(safe-area-inset-bottom,0px))] print:hidden ${verifiedAdmin ? 'hidden lg:block' : ''}`}
     >
       <div
         className={`hidden h-11 items-center gap-1 rounded-full pl-4 pr-1 ${verifiedAdmin ? 'lg:flex' : 'sm:flex'} ${PILL_SURFACE}`}
