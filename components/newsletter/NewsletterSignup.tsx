@@ -134,7 +134,7 @@ export function NewsletterSignup({
         />
         <fieldset className="mt-2 w-full basis-full">
           <legend className="sr-only">{FOOTER_HEADINGS.touch}</legend>
-          <div className="flex flex-wrap gap-x-3 max-[360px]:flex-col">
+          <div className="flex flex-col">
             {orderedTopics.map((topic, index) => (
               <label key={topic} className={`inline-flex min-h-11 cursor-pointer items-center gap-2 font-sans text-[16px] ${site === 'nos' ? 'text-[var(--nc-ground)]' : 'text-ivory'}`}>
                 <input
@@ -149,7 +149,7 @@ export function NewsletterSignup({
                   className="h-5 w-5 shrink-0 accent-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ivory"
                   style={site === 'nos' ? { accentColor: 'var(--nc-gold)' } : undefined}
                 />
-                {topic === 'saoc' ? NEWSLETTER_COPY.adminSourceSaoc : NEWSLETTER_COPY.adminSourceNos}
+                {topic === 'saoc' ? NEWSLETTER_COPY.topicLabelSaoc : NEWSLETTER_COPY.topicLabelNos}
               </label>
             ))}
           </div>

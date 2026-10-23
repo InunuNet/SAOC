@@ -27,4 +27,6 @@ export const NEWSLETTER_COPY = {
   adminNavLabel: 'Subscribers',
   adminSourceSaoc: 'SAOC',
   adminSourceNos: 'National Orchid Show',
+  topicLabelSaoc: 'South African Orchid Council',
+  topicLabelNos: 'The National Orchid Show',
 } as const;
