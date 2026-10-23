@@ -21,12 +21,17 @@ import { nosUrl, saocUrl } from '@/lib/site-hosts';
 // pure, so this module stays free of app/ imports.
 const NOS_TOP_LEVEL_PREFIXES = ['/tickets', '/vsp'];
 
+function isTopLevelShowRoute(path: string): boolean {
+  return NOS_TOP_LEVEL_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+}
+
+function isNosPath(path: string): boolean {
+  return path === NOS_ROOT || path.startsWith(`${NOS_ROOT}/`) || isTopLevelShowRoute(path);
+}
+
 function canonicalUrlFor(path: string): string {
   if (path === NOS_ROOT || path.startsWith(`${NOS_ROOT}/`)) return nosUrl(nosPath(path));
-  const isTopLevelShowRoute = NOS_TOP_LEVEL_PREFIXES.some(
-    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
-  );
-  return isTopLevelShowRoute ? nosUrl(path) : saocUrl(path);
+  return isTopLevelShowRoute(path) ? nosUrl(path) : saocUrl(path);
 }
 
 const OG_IMAGE_WIDTH = 1200;
@@ -43,6 +48,7 @@ const LEDE_MAX = 155;
 // title (layout title template). `openGraph.title` does not receive that template, so
 // social cards add the show name back for inner routes.
 const NOS_ROOT = NOS_INTERNAL_PREFIX;
+const SAOC_SITE_NAME = 'South African Orchid Council';
 const NOS_OG_SUFFIX = ` | ${SHOW_TITLE}`;
 
 function normaliseSpace(text: string): string {
@@ -104,7 +110,7 @@ export interface BuildPageMetadataInput {
  * `openGraph` and `twitter` consistently — a route hand-rolling its own `openGraph`
  * block after this helper exists is a defect (golden Part B.2).
  *
- * Open Graph is deliberately limited to the four properties ogp.me actually defines —
+ * Open Graph is deliberately limited to the properties ogp.me defines (plus `og:site_name`, which a page-level openGraph would otherwise drop) —
  * `og:title`, `og:type`, `og:image`, `og:url` — plus the optional `og:description`.
  * `type` is always the base `'website'` value; ogp.me defines no event type, so this
  * must never be overridden to invent one (B8a / D-M6b).
@@ -127,6 +133,7 @@ export function buildPageMetadata({
     description,
     alternates: { canonical },
     openGraph: {
+      siteName: isNosPath(path) ? SHOW_TITLE : SAOC_SITE_NAME,
       title: ogTitle,
       description,
       type: 'website',

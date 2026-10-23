@@ -36,12 +36,12 @@ Next applies a layout's `title.template` to child segments only, never to the `p
 same folder. So the title prefix is mounted in two ways, and each route gets exactly one:
 
 - Child-segment pages (`/tickets/[slug]`, `/tickets/confirmation`, `/tickets/cancelled`,
-  `/vendors/payment/status`) take the `[Testing only, not live] %s` template from the ticketing
+  `/vendors/payment/status`) take the `[Testing only, not live] %s | The National Orchid Show` template from the ticketing
   layout above them (`app/(nos)/tickets/layout.tsx`, `vsp/layout.tsx` and the five
   `national-show/*` layouts).
 - Pages that sit beside a ticketing layout (the `national-show` tickets, conferences, workshops,
   wosa-conference and vendors/payment pages, and `/vsp`) wrap their own metadata with
-  `withTicketingTestTitle()` from `lib/ticketing-test-metadata.ts`, which prefixes the title and
+  `withTicketingTestTitle()` from `lib/ticketing-test-metadata.ts`, which prefixes and suffixes the title and
   returns it unchanged when `isTicketingTestMode()` is false.
 
 `/tickets/[slug]` uses a plain `title` (not `title.absolute`) so the template can apply.

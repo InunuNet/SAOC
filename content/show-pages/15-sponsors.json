@@ -2,11 +2,11 @@
   "pageKey": "15-sponsors",
   "specNumber": 15,
   "title": "Sponsors",
-  "summary": "Recognising the headline and supporting sponsors and donors of the National Orchid Show.",
+  "summary": "Recognising the headline and supporting sponsors and donors of The National Orchid Show.",
   "sections": [
     {
       "sectionKey": "intro",
-      "heading": null,
+      "heading": "Sponsors",
       "kind": "prose",
       "provenance": "placeholder-ai",
       "body": [
@@ -19,7 +19,7 @@
             {
               "_type": "span",
               "_key": "intro-b1-s1",
-              "text": "This page will recognise the headline and supporting sponsors of the National Orchid Show.",
+              "text": "This page will recognise the headline and supporting sponsors of The National Orchid Show.",
               "marks": []
             }
           ]
