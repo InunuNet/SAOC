@@ -80,17 +80,25 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     ],
   },
   {
-    id: 'system',
-    label: 'SYSTEM',
+    id: 'payments',
+    label: 'PAYMENTS',
     items: [
       {
-        id: 'settings',
-        label: 'Settings',
-        href: '/admin/settings',
-        icon: 'settings',
+        id: 'payment-settings',
+        label: 'Payment settings',
+        href: '/admin/payments',
+        icon: 'tickets',
         available: true,
         capability: 'manage-payment-settings',
       },
+    ],
+  },
+  {
+    id: 'system',
+    label: 'SYSTEM',
+    items: [
+      // General Settings (profile): open to every signed-in admin, so no capability.
+      { id: 'settings', label: 'Settings', href: '/admin/settings', icon: 'settings', available: true },
     ],
   },
 ];

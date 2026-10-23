@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 
-import { getAdminSession, hasCapability } from '@/lib/admin-auth';
+import { getAdminSession, hasCapability, type AdminAuthResult } from '@/lib/admin-auth';
 import { initAdmin } from '@/lib/firebase-admin';
-import {
-  isOzowSandboxTestModeEnabled,
-  OZOW_SANDBOX_TEST_MODE_COLLECTION,
-  OZOW_SANDBOX_TEST_MODE_DOC_ID,
-} from '@/lib/ozow-sandbox-test-mode';
+import { isOzowSandboxTestModeEnabled } from '@/lib/ozow-sandbox-test-mode';
+import { writeAuditedSettingChange } from '@/lib/payment-settings-audit';
 import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 
@@ -16,11 +13,16 @@ import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
  * toggle (mission ozow-sandbox-toggle F1). Gated on getAdminSession() first, THEN
  * hasCapability(..., 'manage-payment-settings', ...), same call shape as
  * app/api/admin/vendors/route.ts. See contracts/golden/ozow-sandbox-toggle-f1/README.md §4.
+ *
+ * Mission payment-gateway-settings M1: PUT is an audited write (setting + adminSettingsAudit entry
+ * in one transaction). The page moved to /admin/payments; this URL did not.
  */
 
-async function checkGate(): Promise<
-  { ok: true } | { ok: false; response: NextResponse }
-> {
+type GateResult =
+  | { ok: true; session: Extract<AdminAuthResult, { ok: true }> }
+  | { ok: false; response: NextResponse };
+
+async function checkGate(): Promise<GateResult> {
   const session = await getAdminSession();
   if (!session.ok) {
     const status = session.reason === 'no-session' || session.reason === 'invalid-session' ? 401 : 403;
@@ -36,7 +38,7 @@ async function checkGate(): Promise<
     return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
   }
 
-  return { ok: true };
+  return { ok: true, session };
 }
 
 export async function GET(): Promise<NextResponse> {
@@ -70,18 +72,18 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
   const enabled = (body as { enabled: boolean }).enabled;
 
   try {
-    const session = await getAdminSession();
-    const email = session.ok ? session.decodedToken.email ?? null : null;
+    const { session } = gate;
     const db = getFirestore(initAdmin());
-    await db
-      .collection(OZOW_SANDBOX_TEST_MODE_COLLECTION)
-      .doc(OZOW_SANDBOX_TEST_MODE_DOC_ID)
-      .set({ enabled, updatedAt: FieldValue.serverTimestamp(), updatedByEmail: email });
-    return NextResponse.json({ enabled });
+    const result = await writeAuditedSettingChange(db, {
+      setting: 'ozowSandboxTestMode',
+      next: { enabled },
+      actor: { uid: session.decodedToken.uid, email: session.decodedToken.email ?? null },
+    });
+    return NextResponse.json({ enabled, changed: result.changed });
   } catch (error) {
     console.error(
       '[admin/settings/ozow-sandbox-test-mode] Failed to write flag:',
-      error instanceof Error ? error.message : 'unknown error',
+      error instanceof Error ? error.name : 'unknown error',
     );
     return NextResponse.json({ error: 'Failed to update Ozow sandbox test mode.' }, { status: 500 });
   }
