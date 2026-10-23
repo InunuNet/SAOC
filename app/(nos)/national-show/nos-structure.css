@@ -2145,3 +2145,43 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-size: 14px;
   color: var(--muted);
 }
+
+/* Card family on the NOS home (NOS Design hero-cards-ruling B1, B2, B8): the same petal echo, in NOS
+   tokens. A cream face, one soft layered shadow, and a plate behind it offset 8px right and down,
+   in the glyph chips' lavender (--primary-100). The face and plate are pseudo layers (a negative z-index child paints over its
+   parent's own background), so the card itself carries no colour or shadow. These cards are not
+   links, so there is no hover lift. */
+.nos-theme .nos-petal {
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--radius-card);
+  background-color: transparent;
+  box-shadow: none;
+}
+.nos-theme .nos-petal::before,
+.nos-theme .nos-petal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-card);
+}
+.nos-theme .nos-petal::before {
+  z-index: -2;
+  /* NOS Design #51: plate shares the glyph chips' lavender; 8px offset. */
+  background-color: var(--primary-100);
+  transform: translate(8px, 8px);
+}
+.nos-theme .nos-petal::after {
+  z-index: -1;
+  background-color: var(--parchment);
+  box-shadow:
+    0 1px 2px rgba(33, 26, 87, 0.05),
+    0 14px 32px -12px rgba(33, 26, 87, 0.18);
+}
+.nos-theme .nos-stage-card.nos-petal::before {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+.nos-theme .nos-stage-card.nos-petal::after {
+  background-color: color-mix(in srgb, #fff 7%, var(--primary));
+  box-shadow: none;
+}

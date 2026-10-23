@@ -22,5 +22,11 @@
     ],
     "status": "RE-PINNED by launch-weekend F16: exempt=false. The shared TicketTypeCard no longer carries a photograph (R53 #2); check-f3-imagery.mjs A12 now enforces it on /conferences and /workshops.",
     "hook": "an <img> inside an element that also holds an 'Add to booking' or 'Buy Ticket' control"
+  },
+  "flaggedInterim": {
+    "_status": "FLAGGED-INTERIM, not passed (NOS Design final ruling, 2026-10-23). Exit: H4 retouch lands (hub H4, programme S3, symposium S2).",
+    "/national-show/programme": "/images/orchid-violet.jpg",
+    "/national-show/symposium": "/images/orchid-violet.jpg",
+    "note": "programme and symposium both show S2 until the H4 retouch. The home Judging card is a tight crop of S2 on a secondary bloom (public/images/cards/judging.jpg), also flagged-interim."
   }
 }

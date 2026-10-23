@@ -575,7 +575,7 @@ export default async function NationalShowPage() {
           }
         />
 
-        <div className={`mt-10 grid grid-cols-2 gap-4 ${judgingColumnsClass}`}>
+        <div className={`mt-10 grid grid-cols-2 gap-7 ${judgingColumnsClass}`}>
           {classes.map((cls, index) => {
             // Only the final card in the spanning tie-break case (n = 13, 25, 37, ...)
             // gets a span class — the exact case resolveGridLayout falls back to a
@@ -609,7 +609,7 @@ export default async function NationalShowPage() {
             that field. The exhibitor journey has one source — showExhibitorStep, rendered at
             /national-show/exhibitors — and what stays here is a process summary that links
             there, not a second copy an editor would have to keep in step. */}
-        <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-12 grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-4">
           {EXHIBITOR_STAGES.map(({ stage, title: stageTitle, description }) => (
             <ExhibitorStageCard
               key={stage}
