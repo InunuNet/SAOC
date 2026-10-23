@@ -13,6 +13,8 @@ import { loadShowPageOrFallback, withholdPlaceholderProse } from '@/lib/data/sho
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
+import { NosSection } from '@/components/nos/NosSection';
+import { SponsorEnquirySection } from '@/components/sponsors/SponsorEnquirySection';
 
 // F14 (national-show-ia-alignment, M4) — created route, reinstated by Brad. Its OWN data
 // scope: showSponsor, never the site-level `sponsor` type site-level /sponsors reads —
@@ -103,7 +105,7 @@ export default async function ShowSponsorsPage() {
                   <div className="mt-6">
                     <Button
                       as="a"
-                      href="mailto:info@saoc.co.za"
+                      href="#enquire"
                       className="whitespace-nowrap max-sm:w-full max-sm:!px-2"
                     >
                       Talk to us about sponsorship
@@ -115,6 +117,9 @@ export default async function ShowSponsorsPage() {
           }
         />
       </div>
+      <NosSection>
+        <SponsorEnquirySection site="nos" />
+      </NosSection>
       <NosShowIndex current="/national-show/sponsors" />
     </>
   );
