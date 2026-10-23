@@ -139,7 +139,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
               <Link
                 key={l.href}
                 href={l.href}
-                className="inline-flex min-h-11 min-w-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150"
+                className="inline-flex min-h-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150"
               >
                 {l.label}
               </Link>

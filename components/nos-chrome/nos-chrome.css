@@ -142,7 +142,7 @@
 .nf-form button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--nc-gold); color: var(--nc-royal); font: 700 13px/1 var(--nc-sans); letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }
 .nf-form button:hover { background: var(--nc-gold-300); }
 .nf-base { border-top: 1px solid rgba(210, 203, 232, 0.2); font-size: 13px; letter-spacing: 0; }
-.nf-legal a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; color: var(--nc-lilac); text-decoration: none; }
+.nf-legal a { display: inline-flex; align-items: center; min-height: 44px; color: var(--nc-lilac); text-decoration: none; }
 
 /* Additions to the approved sheet (no approved declaration is changed or dropped).
    next/font exposes its families through variables set on the elements that carry the font classes

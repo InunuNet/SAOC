@@ -6,6 +6,7 @@
 //   FT2/3 each column's heading and first link share its left x; headings share a top line; the first
 //        item sits 16px under the heading; list rows are a 44px pitch
 //   FT4  WOSA appears once per footer (one link, one mention)
+//   bar  the legal links in the bottom bar are spaced by one gap, equal within 1px
 //   FT6  the SAOC tagline is 11px
 //   FT7  the admin pill's box never intersects the bottom bar, at the page end and part-way
 // Screenshots go to ../split-shots (relative to the worktree), footer-NAME.png. Exit 1 on any failed assertion.
@@ -128,6 +129,23 @@ async function checkColumns(browser) {
   }
 }
 
+async function checkBarLinkGaps(browser) {
+  for (const width of WIDE_VIEWPORTS) {
+    for (const [site, host, , barSelector] of SITES) {
+      const { context, page } = await open(browser, host, [width, 900]);
+      const boxes = await page.$$eval(`${barSelector} a`, (links) =>
+        links.map((a) => {
+          const r = a.getBoundingClientRect();
+          return { left: r.left, right: r.right };
+        }),
+      );
+      const gaps = boxes.slice(1).map((b, i) => b.left - boxes[i].right);
+      check(`bar ${site} ${width}: ${boxes.length} legal links, gaps equal within ${GAP_TOLERANCE}px`, boxes.length > 1 && Math.max(...gaps) - Math.min(...gaps) <= GAP_TOLERANCE, gaps.map((g) => g.toFixed(1)).join(' / '));
+      await context.close();
+    }
+  }
+}
+
 async function checkWosaAndTagline(browser) {
   for (const [site, host, root] of SITES) {
     const { context, page } = await open(browser, host, [1440, 900]);
@@ -198,6 +216,7 @@ try {
   await waitUp();
   const browser = await chromium.launch();
   await checkColumns(browser);
+  await checkBarLinkGaps(browser);
   await checkWosaAndTagline(browser);
   await checkAdminPill(browser);
   await shoot(browser);
