@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { NosHero } from '@/components/nos/NosHero';
+import { NOS_ROUTE_HEROES } from '@/components/nos/nos-route-heroes';
 import { NosSection } from '@/components/nos/NosSection';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { ShowStatusFoot, ShowStatusLine } from '@/components/show/ShowStatusLine';
@@ -21,7 +22,7 @@ export const dynamic = 'force-dynamic';
 // unlock a rich result is exactly what M6/B8d forbids.
 export const metadata: Metadata = withTicketingTestTitle(
   buildPageMetadata({
-    title: 'Workshops & Field Trips',
+    title: NOS_ROUTE_HEROES.workshops.title,
     image: nosOgImage('Workshops & Field Trips — National Show'),
     description:
       'Book Sunset Cocktails and guided Field Trip outings at the South African National ' +
@@ -63,9 +64,9 @@ export default async function WorkshopsFieldTripsTicketsPage() {
   return (
     <>
       <NosHero
-        route="/national-show/workshops"
-        title="Workshops & Field Trips"
-        lede="Book Sunset Cocktails and guided Field Trip outings at the National Show."
+        route={NOS_ROUTE_HEROES.workshops.route}
+        title={NOS_ROUTE_HEROES.workshops.title}
+        lede={NOS_ROUTE_HEROES.workshops.lede}
         priority
       />
       <NosSection>

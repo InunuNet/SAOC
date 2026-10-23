@@ -1,12 +1,12 @@
 import { viewerIsVerifiedAdmin } from '@/lib/admin-viewer';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { NosHero } from '@/components/nos/NosHero';
 import { JsonLd, breadcrumbJsonLd } from '@/components/seo/JsonLd';
 import { SalesClosedNotice, TicketPurchaseForm } from '@/components/tickets';
 import type { TicketTypeCardData } from '@/components/tickets';
+import { TicketBuyCrumbs } from '@/components/tickets/TicketBuyCrumbs';
 import { TicketCard } from '@/components/tickets/keepsake';
 import { isDayClosed } from '@/components/tickets/keepsake/days';
 import { sanityFetch } from '@/sanity/lib/fetch';
@@ -195,19 +195,7 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
       : null;
   // r45b: with no ?day the summary keeps the product's own stub and when line, never the first show day.
   const summaryDay = cardData.requiresDaySelection ? day : null;
-  const breadcrumbs = (
-    <nav className="nk-crumbs" aria-label="Breadcrumb">
-      <Link href="/">National Show</Link>
-      <span className="nk-crumb">
-        <span className="nk-sep" aria-hidden="true" />
-        <Link href="/tickets">Tickets</Link>
-      </span>
-      <span className="nk-crumb">
-        <span className="nk-sep" aria-hidden="true" />
-        <span aria-current="page">{ticketType.name}</span>
-      </span>
-    </nav>
-  );
+  const breadcrumbs = <TicketBuyCrumbs name={ticketType.name} />;
 
   return (
     <>

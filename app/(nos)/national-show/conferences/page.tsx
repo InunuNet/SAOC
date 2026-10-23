@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { NosHero } from '@/components/nos/NosHero';
+import { NOS_ROUTE_HEROES } from '@/components/nos/nos-route-heroes';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { SalesStatusLine, TicketCard, TicketSection } from '@/components/tickets/keepsake';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
@@ -19,7 +20,7 @@ export const dynamic = 'force-dynamic';
 // unlock a rich result is exactly what M6/B8d forbids.
 export const metadata: Metadata = withTicketingTestTitle(
   buildPageMetadata({
-    title: 'Conferences',
+    title: NOS_ROUTE_HEROES.conferences.title,
     image: nosOgImage('Conferences — National Show'),
     description:
       // prettier-ignore
@@ -37,9 +38,9 @@ export default async function ConferencesTicketsPage() {
   return (
     <>
       <NosHero
-        route="/national-show/conferences"
-        title="Conferences"
-        lede="Register for the National Orchid Show Symposium or the WOSA Conference."
+        route={NOS_ROUTE_HEROES.conferences.route}
+        title={NOS_ROUTE_HEROES.conferences.title}
+        lede={NOS_ROUTE_HEROES.conferences.lede}
         priority
       />
       {!salesOpen ? <SalesStatusLine /> : null}
