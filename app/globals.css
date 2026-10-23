@@ -357,73 +357,79 @@ body {
   padding-inline: var(--container-pad);
 }
 
-/* F19 hero scrim (design_system_README l.125): the README's sage diagonal 60% to 25%, a text-zone veil
-   that keeps the copy at 4.5:1 over the carousel, and a pull at the section's bottom. rHB (Codi): the veil eases out over five
-   stops instead of one 0.84 -> 0 ramp, and the pull ends on --parchment, MissionBlock's ground, so no seam. rHB2 (Codi
-   2026-10-22): the pull samples a smootherstep (alpha = 1 - (6p^5 - 15p^4 + 10p^3) over 126px) at 25 stops. The browser
-   joins them with straight lines, so the slope is near zero at both ends and changes by at most 12.9% of the peak at any
-   joint; the kinked stops before it read as Mach bands on wide screens. A taller
-   pull was dropped because it put the pager dots under 3:1. */
-[data-hero-scrim='diagonal'] {
-  background-image: linear-gradient(135deg, rgb(56 65 56 / 0.6), rgb(56 65 56 / 0.25));
+/* Home hero (NOS Design hero-cards-ruling, 2026-10-23, Brad P0). One localised scrim: the copy column
+   is dark and the right 30% is bare photograph (A4); there is no fade band, so the hero ends on a hard
+   edge onto the parchment (A5). Motion is transform and opacity only (A7): a slow drift on the slide that
+   is showing, and a progress line whose end advances the carousel. Pause holds both; reduced motion
+   drops both. */
+.home-hero {
+  min-height: max(600px, min(88vh, 860px));
 }
-[data-hero-scrim='veil'] {
-  background-image: radial-gradient(
-    ellipse 100% 62% at 50% 50%,
-    rgb(34 40 31 / 0.9) 0%,
-    rgb(34 40 31 / 0.86) 70%,
-    rgb(34 40 31 / 0.63) 79%,
-    rgb(34 40 31 / 0.35) 89%,
-    rgb(34 40 31 / 0.12) 95%,
-    rgb(34 40 31 / 0) 100%
+.home-hero-img {
+  object-fit: cover;
+  object-position: var(--hero-pos-sm);
+}
+@media (min-width: 768px) {
+  .home-hero-img {
+    object-position: var(--hero-pos);
+  }
+}
+[data-hero-scrim='copy'] {
+  background-image: linear-gradient(
+    to top,
+    rgb(34 40 31 / 0.88) 0%,
+    rgb(34 40 31 / 0.7) 45%,
+    rgb(34 40 31 / 0.15) 80%
   );
 }
 @media (min-width: 768px) {
-  [data-hero-scrim='veil'] {
-    background-image: radial-gradient(
-      ellipse 56% 54% at 50% 50%,
+  [data-hero-scrim='copy'] {
+    background-image: linear-gradient(
+      90deg,
       rgb(34 40 31 / 0.88) 0%,
-      rgb(34 40 31 / 0.84) 62%,
-      rgb(34 40 31 / 0.62) 74%,
-      rgb(34 40 31 / 0.34) 86%,
-      rgb(34 40 31 / 0.12) 94%,
-      rgb(34 40 31 / 0) 100%
+      rgb(34 40 31 / 0.82) 48%,
+      rgb(34 40 31 / 0.32) 64%,
+      transparent 76%
     );
   }
 }
-/* prettier-ignore */
-[data-hero-scrim='bone'] {
-  background-image: linear-gradient(
-    to top,
-    var(--parchment) 0%,
-    rgb(244 243 236 / 0.9993) 4.1667%,
-    rgb(244 243 236 / 0.9949) 8.3333%,
-    rgb(244 243 236 / 0.9839) 12.5%,
-    rgb(244 243 236 / 0.9645) 16.6667%,
-    rgb(244 243 236 / 0.9355) 20.8333%,
-    rgb(244 243 236 / 0.8965) 25%,
-    rgb(244 243 236 / 0.8478) 29.1667%,
-    rgb(244 243 236 / 0.7901) 33.3333%,
-    rgb(244 243 236 / 0.7248) 37.5%,
-    rgb(244 243 236 / 0.6534) 41.6667%,
-    rgb(244 243 236 / 0.5778) 45.8333%,
-    rgb(244 243 236 / 0.5000) 50%,
-    rgb(244 243 236 / 0.4222) 54.1667%,
-    rgb(244 243 236 / 0.3466) 58.3333%,
-    rgb(244 243 236 / 0.2752) 62.5%,
-    rgb(244 243 236 / 0.2099) 66.6667%,
-    rgb(244 243 236 / 0.1522) 70.8333%,
-    rgb(244 243 236 / 0.1035) 75%,
-    rgb(244 243 236 / 0.0645) 79.1667%,
-    rgb(244 243 236 / 0.0355) 83.3333%,
-    rgb(244 243 236 / 0.0161) 87.5%,
-    rgb(244 243 236 / 0.0051) 91.6667%,
-    rgb(244 243 236 / 0.0007) 95.8333%,
-    rgb(244 243 236 / 0) 100%
-  );
-  background-size: 100% 126px;
-  background-position: bottom;
-  background-repeat: no-repeat;
+/* Under the pause and progress controls, bottom right, where the photograph is bare. */
+[data-hero-scrim='shade'] {
+  background-image: linear-gradient(to top, rgb(34 40 31 / 0.35), transparent 30%);
+}
+@keyframes home-hero-drift {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.04);
+  }
+}
+@keyframes home-hero-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.home-hero-drift {
+  animation: home-hero-drift 8s linear both;
+  will-change: transform;
+}
+.home-hero-fill {
+  transform-origin: left;
+  animation: home-hero-fill var(--hero-interval) linear both;
+}
+.home-hero[data-paused] .home-hero-drift,
+.home-hero[data-paused] .home-hero-fill {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-drift {
+    animation: none;
+    will-change: auto;
+  }
 }
 
 /* F19 /judging: heading left, prose right (4fr/7fr), one column below 1024. */
