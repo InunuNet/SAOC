@@ -9,6 +9,7 @@ import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { TICKET_COPY, partnerNameOf, type TicketProductId } from '@/lib/data/ticket-presentation';
 import { buildPageMetadata } from '@/lib/seo';
+import { withTicketingTestTitle } from '@/lib/ticketing-test-metadata';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 // Live stock reaches this page through Firebase Admin credentials that exist only at runtime,
@@ -18,14 +19,16 @@ export const dynamic = 'force-dynamic';
 // Description restates the page's own rendered lede below — no new claim is introduced here.
 // Deliberately no Event markup: ticketType carries no session date, and inventing one to
 // unlock a rich result is exactly what M6/B8d forbids.
-export const metadata: Metadata = buildPageMetadata({
-  title: 'Workshops & Field Trips',
-  image: nosOgImage('Workshops & Field Trips — National Show'),
-  description:
-    'Book Sunset Cocktails and guided Field Trip outings at the South African National ' +
-    'Orchid Show.',
-  path: '/national-show/workshops',
-});
+export const metadata: Metadata = withTicketingTestTitle(
+  buildPageMetadata({
+    title: 'Workshops & Field Trips',
+    image: nosOgImage('Workshops & Field Trips — National Show'),
+    description:
+      'Book Sunset Cocktails and guided Field Trip outings at the South African National ' +
+      'Orchid Show.',
+    path: '/national-show/workshops',
+  })
+);
 
 const SESSIONS_NOTE =
   'Individual session times are still being finalised — the products below are the ' +

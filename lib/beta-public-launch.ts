@@ -32,3 +32,11 @@ export function isBetaWallConfigured(
 export function isPubliclyLaunched(flagValue: string | undefined): boolean {
   return flagValue === 'true';
 }
+
+// Mission committee-testing F1 -- BETA_PASSWORD_WALL_OFF lifts ONLY the Basic Auth prompt, so the
+// committee can open the site. noindex, no-store, the wall cookie and robots.ts's disallow-all
+// stay in force until SITE_PUBLIC_LAUNCH. Exact, case-sensitive 'true' only; anything else keeps
+// the prompt. Read only by proxy.ts.
+export function isPasswordWallOff(flagValue: string | undefined): boolean {
+  return flagValue === 'true';
+}

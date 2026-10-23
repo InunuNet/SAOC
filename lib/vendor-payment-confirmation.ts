@@ -3,6 +3,7 @@ import React from 'react';
 import { sendEmail, FORMS_FROM_ADDRESS } from '@/lib/email';
 import VendorPaymentConfirmation from '@/emails/VendorPaymentConfirmation';
 import { nosUrl } from '@/lib/site-hosts';
+import { withTestSubjectPrefix } from '@/lib/ticketing-test-mode';
 
 /**
  * F1 (vendor-payment-confirmation) -- the vendor-facing receipt fired when a vendor's stand
@@ -43,7 +44,7 @@ export async function sendVendorPaymentConfirmationEmail(
 
   await mailer.send({
     to: input.contactEmail,
-    subject: 'Your National Orchid Show stand payment is confirmed',
+    subject: withTestSubjectPrefix('Your National Orchid Show stand payment is confirmed'),
     react: React.createElement(VendorPaymentConfirmation, {
       businessName: input.businessName,
       boothSize: input.boothSize,
