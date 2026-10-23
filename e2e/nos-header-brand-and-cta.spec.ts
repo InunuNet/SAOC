@@ -11,13 +11,14 @@
 // without the property it claims to prove" defect class).
 import { expect, test } from '@playwright/test';
 
+import { SHOW_TITLE_EXPANDED } from '../lib/show-title';
 import { NOS_TICKETS, cleanHref } from './utils/nos-nav-hrefs';
 import { nosBase } from './utils/site-urls';
 
 const NOS_ROYAL_PURPLE = 'rgb(33, 26, 87)'; // --nc-royal #211A57
 const NOS_GROUND = 'rgb(251, 250, 240)'; // --nc-ground #FBFAF0
 const LOCKUP_FILE = 'nos-full-colour-horizontal';
-const LOCKUP_ALT = 'National Orchid Show, Western Cape 2027';
+const LOCKUP_ALT = SHOW_TITLE_EXPANDED;
 const LOCKUP_BOX_WIDE = 448;
 const LOCKUP_BOX_NARROW = 390;
 const TOLERANCE_PX = 1.5;
