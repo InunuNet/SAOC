@@ -4,6 +4,7 @@ import { PageHero } from '@/components/ui/PageHero';
 import { EventCard, MonthGroup, eventHref, type ListedEvent } from '@/components/events';
 import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
 import { ConfirmationBadge } from '@/components/show';
+import { upcomingEventsParams } from '@/lib/sast-date';
 import { upcomingPlaceholderEvents } from '@/lib/data/placeholder-events';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
@@ -62,6 +63,7 @@ function groupByMonth(events: ListedEvent[]): Array<{ month: string; events: Lis
 export default async function EventsPage() {
   const raw = await sanityFetch<SanityEvent[]>({
     query: upcomingEventsQuery,
+    params: upcomingEventsParams(),
     tags: ['events', 'sanity'],
   });
 

@@ -18,6 +18,7 @@ import {
   SocietyDetailsCallout,
 } from '@/components/societies';
 import type { SanitySociety } from '@/components/societies';
+import { upcomingEventsParams } from '@/lib/sast-date';
 import { societies as staticSocieties } from '@/lib/data/societies';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { withholdSocietyEstimates } from '@/lib/data/society-withhold';
@@ -86,7 +87,7 @@ async function getSociety(slug: string): Promise<SanitySociety | null> {
 async function getSocietyEvents(society: SanitySociety): Promise<SanityEvent[]> {
   const events = await sanityFetch<SanityEvent[]>({
     query: societyUpcomingEventsQuery,
-    params: { slug: society.slug },
+    params: { slug: society.slug, ...upcomingEventsParams() },
     tags: ['events', 'sanity'],
   });
   return events ?? [];

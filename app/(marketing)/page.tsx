@@ -11,6 +11,7 @@ import {
   PartnersSection,
 } from '@/components/home';
 import { JsonLd, organizationJsonLd } from '@/components/seo/JsonLd';
+import { upcomingEventsParams } from '@/lib/sast-date';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import {
@@ -60,7 +61,7 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const [home, eventsData, partnersData, show] = await Promise.all([
     sanityFetch<HomePageData>({ query: homePageQuery, tags: ['homePage', 'sanity'] }),
-    sanityFetch<SanityEvent[]>({ query: upcomingEventsQuery, tags: ['societyEvent', 'sanity'] }),
+    sanityFetch<SanityEvent[]>({ query: upcomingEventsQuery, params: upcomingEventsParams(), tags: ['societyEvent', 'sanity'] }),
     sanityFetch<SanityPartner[]>({ query: partnersQuery, tags: ['sponsor', 'sanity'] }),
     sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
   ]);

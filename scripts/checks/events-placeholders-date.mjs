@@ -1,6 +1,7 @@
 // Mission nos-site-split: the invented-events "upcoming" boundary is the South African calendar day.
 // Runs the real module under Node's type stripping; no build needed.
-import { sastDate, upcomingPlaceholderEvents } from '../../lib/data/placeholder-events.ts';
+import { upcomingPlaceholderEvents } from '../../lib/data/placeholder-events.ts';
+import { sastDate } from '../../lib/sast-date.ts';
 
 let failures = 0;
 function check(name, ok, detail = '') {
