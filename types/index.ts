@@ -144,6 +144,7 @@ export type TicketType = string;
 
 export interface Ticket {
   id: string;
+  issuedInTestMode?: boolean;
   bookingRef: string;
   showId: string;
   attendeeName: string;
@@ -202,6 +203,7 @@ export type OrderStatus = 'reserved' | 'paid' | 'cancelled';
 // omitted from the mission-brief dispatch's field list.
 export interface Order {
   id: string;
+  issuedInTestMode?: boolean;
   showId: string;
   buyerName: string;
   buyerEmail: string;

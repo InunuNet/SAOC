@@ -1,5 +1,6 @@
 import type { Timestamp } from 'firebase-admin/firestore';
 
+import { isTicketingTestMode } from '@/lib/ticketing-test-mode';
 import type { Order, Ticket, TicketType } from '@/types/index';
 
 /**
@@ -8,9 +9,8 @@ import type { Order, Ticket, TicketType } from '@/types/index';
  * contracts/golden/ticketing-checkout-orders/README.md for the full decision record,
  * including why this is a NEW sibling module rather than an extension of lib/orders.ts.
  *
- * `buildReservationDocs` is pure — no Firestore import, no Date.now()/new Date() call
- * anywhere in this file. Time is always the caller-supplied `now`, exactly like
- * lib/recovery-token.ts's own pattern.
+ * Builders perform no I/O or clock reads. Time is always the caller-supplied `now`;
+ * issuance mode comes from the server's ticketing mode flag.
  */
 
 export interface BuildReservationDocsInput {
@@ -38,8 +38,8 @@ export interface ReservationDocs {
 }
 
 /**
- * Builds the order body and the position body for a fresh checkout reservation. Pure
- * construction only — the caller writes both via `writeReservationPair()` inside its own
+ * Builds the order body and the position body for a fresh checkout reservation.
+ * Construction only — the caller writes both via `writeReservationPair()` inside its own
  * already-open transaction.
  *
  * `buyerName`/`buyerEmail` are set to `attendeeName`/`attendeeEmail` — checkout's request
@@ -47,7 +47,9 @@ export interface ReservationDocs {
  * attendeeName/attendeeEmail, for now").
  */
 export function buildReservationDocs(input: BuildReservationDocsInput): ReservationDocs {
+  const issuedInTestMode = isTicketingTestMode();
   const order: Omit<Order, 'id'> = {
+    issuedInTestMode,
     showId: input.showId,
     buyerName: input.attendeeName,
     buyerEmail: input.attendeeEmail,
@@ -69,6 +71,7 @@ export function buildReservationDocs(input: BuildReservationDocsInput): Reservat
   };
 
   const position: Omit<Ticket, 'id'> & { idempotencyKey: string } = {
+    issuedInTestMode,
     bookingRef: input.bookingRef,
     showId: input.showId,
     attendeeName: input.attendeeName,
@@ -249,7 +252,7 @@ export interface MultiReservationDocs {
 
 /**
  * Builds the order body and every position body for a fresh multi-line-item checkout
- * reservation. Pure construction only — the caller writes all of them via
+ * reservation. Construction only — the caller writes all of them via
  * `writeMultiReservationPair()` inside its own already-open transaction.
  *
  * `order.amount` is the SUM of every line item's own amount, never a client-supplied total.
@@ -260,10 +263,12 @@ export interface MultiReservationDocs {
 export function buildMultiReservationDocs(
   input: BuildMultiReservationDocsInput
 ): MultiReservationDocs {
+  const issuedInTestMode = isTicketingTestMode();
   const firstLineItem = input.lineItems[0];
   const totalAmount = input.lineItems.reduce((sum, lineItem) => sum + lineItem.amount, 0);
 
   const order: Omit<Order, 'id'> = {
+    issuedInTestMode,
     showId: input.showId,
     buyerName: firstLineItem.attendeeName,
     buyerEmail: firstLineItem.attendeeEmail,
@@ -283,6 +288,7 @@ export function buildMultiReservationDocs(
 
   const positions: (Omit<Ticket, 'id'> & { idempotencyKey: string })[] = input.lineItems.map(
     (lineItem) => ({
+      issuedInTestMode,
       bookingRef: lineItem.bookingRef,
       showId: input.showId,
       attendeeName: lineItem.attendeeName,

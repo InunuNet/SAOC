@@ -27,13 +27,14 @@ import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
  * route yet. See the README's "Hard prerequisite" before adding one.
  */
 
-/** Maps lib/checkin.ts's five-member CheckinRefusalCode onto F7's honestly-wider outcome
+/** Maps lib/checkin.ts's refusal codes onto F7's honestly-wider outcome
  *  enum — 'bad-request' becomes 'malformed' (see golden README "Judgement call 1"); every
  *  other name is unchanged. */
 const REFUSAL_CODE_TO_OUTCOME: Record<CheckinRefusalCode, CheckinAttemptOutcome> = {
   'bad-request': 'malformed',
   'not-found': 'not-found',
   'wrong-show': 'wrong-show',
+  test_ticket: 'test_ticket',
   unpaid: 'unpaid',
   'already-checked-in': 'already-checked-in',
 };
@@ -115,7 +116,7 @@ export async function POST(request: Request) {
     const showId = outcome === 'not-found' || outcome === 'malformed' ? null : NATIONAL_SHOW_ID;
     await audit(outcome, bookingRef, showId, null, result.error);
     return NextResponse.json(
-      { success: false, error: result.error },
+      { success: false, code: result.code, error: result.error },
       { status: result.httpStatus }
     );
   }
