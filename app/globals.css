@@ -393,10 +393,6 @@ body {
     );
   }
 }
-/* Under the pause and progress controls, bottom right, where the photograph is bare. */
-[data-hero-scrim='shade'] {
-  background-image: linear-gradient(to top, rgb(34 40 31 / 0.35), transparent 30%);
-}
 @keyframes home-hero-drift {
   from {
     transform: scale(1);

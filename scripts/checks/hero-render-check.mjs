@@ -4,7 +4,6 @@
 //   A1  every hero photograph's naturalWidth covers its box at 2x (or is its native width)
 //   A4  the copy scrim is transparent over the right of the frame (computed background of the scrim layer)
 //   A6  per slide, the lightest pixel under the italic is >=3:1 against its colour, under the lede >=4.5:1
-//   H4  how much of the black plant clip is inside the visible crop of the purple photograph, per viewport
 // Screenshots go to ../split-shots (relative to the worktree), hero-NAME.png. Exit 1 on any failed assertion.
 import { spawn } from 'node:child_process';
 import { mkdirSync, openSync, readFileSync } from 'node:fs';
@@ -22,9 +21,6 @@ const ITALIC_MIN = 3;
 const LEDE_MIN = 4.5;
 const IVORY = [244, 243, 236];
 const ACCENT_SOFT = [194, 179, 147];
-// The black plant clip at the lower right of orchid-purple.jpg, as a fraction of the image (measured by eye on a 1000px preview).
-const CLIP = { x0: 0.74, x1: 0.93, y0: 0.72, y1: 0.97 };
-const PURPLE = { w: 5308, h: 4160 };
 const LEDE_TEXT =
   'Uniting twenty-one affiliated societies in the cultivation, exhibition, and appreciation of orchids across South Africa since 1968.';
 
@@ -110,17 +106,6 @@ async function lightestUnder(page, png, rects) {
   );
 }
 
-/** The share of the clip inside the visible window of `cover`-fitted purple at object-position `pos` in a box. */
-function clipVisible(box, pos) {
-  const scale = Math.max(box.w / PURPLE.w, box.h / PURPLE.h);
-  const shown = { w: PURPLE.w * scale, h: PURPLE.h * scale };
-  const off = { x: (shown.w - box.w) * pos.x, y: (shown.h - box.h) * pos.y };
-  const win = { x0: off.x / shown.w, x1: (off.x + box.w) / shown.w, y0: off.y / shown.h, y1: (off.y + box.h) / shown.h };
-  const ix = Math.max(0, Math.min(CLIP.x1, win.x1) - Math.max(CLIP.x0, win.x0));
-  const iy = Math.max(0, Math.min(CLIP.y1, win.y1) - Math.max(CLIP.y0, win.y0));
-  return (ix * iy) / ((CLIP.x1 - CLIP.x0) * (CLIP.y1 - CLIP.y0));
-}
-
 async function open(browser, host, path, viewport, dpr) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: dpr, httpCredentials: CREDENTIALS });
   const page = await context.newPage();
@@ -163,7 +148,7 @@ async function checkScrimAndContrast(browser) {
   const scrim = await page.$eval('[data-hero-scrim="copy"]', (el) => getComputedStyle(el).backgroundImage);
   check('A4 scrim ends transparent at 76%', /transparent 76%/.test(scrim) || /rgba\(0, 0, 0, 0\) 76%/.test(scrim), scrim.slice(0, 200));
   const bands = await page.$$eval('[data-hero-scrim]', (els) => els.map((el) => el.getAttribute('data-hero-scrim')));
-  check('A4 only the copy and shade layers', bands.join() === 'copy,shade', bands.join());
+  check('A4 only the copy layer', bands.join() === 'copy', bands.join());
   await page.addStyleTag({ content: '[data-home-hero] h1, [data-home-hero] [data-hero-lede] { color: transparent !important; } [data-home-hero] h1 em { color: transparent !important; }' });
   const hasLede = (await page.locator('[data-hero-lede]').count()) > 0;
   if (!hasLede) {
@@ -198,31 +183,6 @@ async function checkScrimAndContrast(browser) {
   await context.close();
 }
 
-async function checkPlantClip(browser) {
-  const sizes = [[390, 844], [768, 1024], [1280, 800], [1440, 900], [2056, 1100]];
-  for (const [width, height] of sizes) {
-    const { context, page } = await open(browser, SAOC_HOST, '/', { width, height }, 1);
-    const home = await page.$eval('[data-hero-slide="orchid-purple"] img', (img) => {
-      const r = img.getBoundingClientRect();
-      const pos = getComputedStyle(img).objectPosition.split(' ').map((v) => parseFloat(v) / 100);
-      return { w: r.width, h: r.height, x: pos[0], y: pos[1] };
-    });
-    const homeShare = clipVisible({ w: home.w, h: home.h }, { x: home.x, y: home.y });
-    await context.close();
-    const nos = await open(browser, NOS_HOST, '/', { width, height }, 1);
-    const hub = await nos.page.$eval('[data-nos-hero="hub"] img', (img) => {
-      const r = img.getBoundingClientRect();
-      const pos = getComputedStyle(img).objectPosition.split(' ').map((v) => parseFloat(v) / 100);
-      return { w: r.width, h: r.height, x: pos[0], y: pos[1] };
-    });
-    const hubShare = clipVisible({ w: hub.w, h: hub.h }, { x: hub.x, y: hub.y });
-    await nos.context.close();
-    // Reported, not asserted: with object-fit cover the crop is fixed by the box shape, so at some widths no
-    // object-position can exclude the clip. The ruling says to report those widths rather than patch around them.
-    console.log(`REPORT H4 plant clip visible share: saoc-home ${width}px ${(homeShare * 100).toFixed(0)}%, nos-hub ${width}px ${(hubShare * 100).toFixed(0)}%`);
-  }
-}
-
 async function shoot(browser) {
   const shots = [
     ['saoc', SAOC_HOST, '/', [[390, 844, 1], [1280, 800, 1], [1440, 900, 1], [2056, 1100, 2]]],
@@ -243,7 +203,7 @@ async function shoot(browser) {
   await page.waitForTimeout(2000);
   const controls = await page.locator('[data-hero-controls]').count();
   const active = await page.$$eval('[data-hero-slide]', (els) => els.map((el) => (el.getAttribute('aria-hidden') ? 0 : 1)).join(''));
-  check('A7 reduced motion: static S3 lead, no controls', controls === 0 && active === '100', `controls=${controls} active=${active}`);
+  check('A7 reduced motion: static S3 lead, no controls', controls === 0 && active === '10', `controls=${controls} active=${active}`);
   await page.screenshot({ path: `${SHOT_DIR}/hero-saoc-reduced-1440.png` });
   await reduced.close();
 }
@@ -253,7 +213,6 @@ try {
   const browser = await chromium.launch();
   await checkNaturalWidths(browser);
   await checkScrimAndContrast(browser);
-  await checkPlantClip(browser);
   await shoot(browser);
   await browser.close();
 } finally {

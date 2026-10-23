@@ -124,10 +124,9 @@ export function Hero({ show, showLede = false }: HeroProps) {
 
       {/* One localised scrim (NOS Design ruling A4): the copy column is dark, the right 30% is bare photograph. */}
       <div aria-hidden="true" data-hero-scrim="copy" className="absolute inset-0 -z-10" />
-      <div aria-hidden="true" data-hero-scrim="shade" className="absolute inset-0 -z-10" />
 
       {/* Content: left-aligned in the container, a 640px column (A3). */}
-      <div className="saoc-container w-full pt-16 pb-28 md:py-24">
+      <div className="saoc-container w-full py-16 md:py-24">
         <div className="flex max-w-[640px] flex-col items-start text-left">
           <span className="mb-8 rounded-full border border-ivory/30 bg-white/10 px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.22em] text-ivory">
             SINCE 1968 · BLOEMFONTEIN
@@ -173,20 +172,17 @@ export function Hero({ show, showLede = false }: HeroProps) {
               {showCtaLabel}
             </a>
           </div>
-        </div>
-      </div>
 
-      {/* Pause/Play (WCAG 2.2.2) precedes the indicators in DOM order. Out of the composition, bottom right (A8).
-          Under reduced motion there is no autoplay, so no controls. */}
-      {reduceMotion ? null : (
-        <div className="pointer-events-none absolute inset-x-0 bottom-8 z-10">
-          <div className="saoc-container flex justify-end">
-            <div data-hero-controls className="pointer-events-auto flex items-center gap-1 rounded-full bg-primary-800/70 p-1 pr-3">
+          {/* Pause/Play (WCAG 2.2.2) precedes the indicators in DOM order, after the CTAs. They sit at the foot of the
+              copy column, 56px below the CTAs, so the bloom side of the photograph carries no UI. Under reduced
+              motion there is no autoplay, so no controls. */}
+          {reduceMotion ? null : (
+            <div data-hero-controls className="mt-14 flex items-center gap-1">
               <button
                 type="button"
                 aria-label={userPaused ? 'Play' : 'Pause'}
                 onClick={() => setUserPaused((paused) => !paused)}
-                className={`inline-flex h-11 w-11 items-center justify-center rounded-full border border-ivory/60 text-ivory transition-colors duration-150 hover:bg-ivory/10 ${CONTROL_FOCUS}`}
+                className={`inline-flex h-11 w-11 items-center justify-center rounded-full border border-ivory/40 text-ivory transition-colors duration-150 hover:bg-ivory/10 ${CONTROL_FOCUS}`}
               >
                 {userPaused ? (
                   <Play size={16} strokeWidth={1.5} aria-hidden="true" />
@@ -226,9 +222,10 @@ export function Hero({ show, showLede = false }: HeroProps) {
                 ))}
               </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
+
     </section>
   );
 }
