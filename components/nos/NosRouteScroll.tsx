@@ -61,14 +61,16 @@ function ensureEntryId(): void {
 }
 
 // Scroll to `target` and keep trying as the document grows (the restored page may still be a short
-// loader shell). Stops on success, on the first user input, or after RESTORE_MAX_MS. Returns cleanup.
-function restoreOffset(target: number): () => void {
+// loader shell). Stops on success, on the first user input, or after RESTORE_MAX_MS, then calls
+// `onStop`. Returns cleanup.
+function restoreOffset(target: number, onStop: () => void): () => void {
   const observer = new ResizeObserver(() => attempt());
   const hardCap = window.setTimeout(stop, RESTORE_MAX_MS);
   function stop() {
     observer.disconnect();
     window.clearTimeout(hardCap);
     for (const type of USER_INPUT_EVENTS) window.removeEventListener(type, stop);
+    onStop();
   }
   function attempt() {
     window.scrollTo({ top: target, left: 0, behavior: 'instant' });
@@ -85,13 +87,13 @@ export function NosRouteScroll() {
   const popTarget = useRef<number | null | undefined>(undefined);
   const mounted = useRef(false);
   const frozenId = useRef<string | null>(null);
+  const freezeTimer = useRef(0);
 
   useEffect(() => {
-    let freezeTimer = 0;
     const freeze = (id: string | null) => {
       frozenId.current = id;
-      window.clearTimeout(freezeTimer);
-      freezeTimer = window.setTimeout(() => {
+      window.clearTimeout(freezeTimer.current);
+      freezeTimer.current = window.setTimeout(() => {
         frozenId.current = null;
       }, FREEZE_MS);
     };
@@ -152,7 +154,7 @@ export function NosRouteScroll() {
     return () => {
       window.removeEventListener('popstate', onPop);
       document.removeEventListener('click', onClick, true);
-      window.clearTimeout(freezeTimer);
+      window.clearTimeout(freezeTimer.current);
       window.clearInterval(searchTimer);
       window.removeEventListener('scroll', onScroll);
       if (frame) window.cancelAnimationFrame(frame);
@@ -169,7 +171,12 @@ export function NosRouteScroll() {
       const target = popTarget.current;
       popTarget.current = undefined;
       if (target === null) return;
-      return restoreOffset(target);
+      // Hold the offset-record freeze for the restore's whole lifetime: clamped intermediate
+      // positions must not overwrite the saved target. Released when the restore stops.
+      window.clearTimeout(freezeTimer.current);
+      return restoreOffset(target, () => {
+        frozenId.current = null;
+      });
     }
     ensureEntryId();
     if (window.location.hash) return;
