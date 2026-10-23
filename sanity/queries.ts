@@ -9,7 +9,7 @@ export const homePageQuery = defineQuery(`
 `);
 
 export const societyListQuery = defineQuery(`
-  *[_type == "society"] | order(name asc){
+  *[_type == "society" && listed != false] | order(name asc){
     _id,
     name,
     "slug": slug.current,
@@ -23,6 +23,12 @@ export const societyListQuery = defineQuery(`
     logo,
     website,
     markBadge,
+    contactEmail,
+    contactPhone,
+    committee[]{ role, name },
+    facebookUrl,
+    instagramUrl,
+    annualShow,
     foundedPlaceholder,
     memberCountPlaceholder,
     meetPlaceholder,
@@ -339,7 +345,7 @@ export const awardsQuery = defineQuery(`
 `);
 
 export const societyBySlugQuery = defineQuery(`
-  *[_type == "society" && slug.current == $slug][0]{
+  *[_type == "society" && listed != false && slug.current == $slug][0]{
     _id,
     name,
     "slug": slug.current,
@@ -353,6 +359,12 @@ export const societyBySlugQuery = defineQuery(`
     logo,
     website,
     markBadge,
+    contactEmail,
+    contactPhone,
+    committee[]{ role, name },
+    facebookUrl,
+    instagramUrl,
+    annualShow,
     foundedPlaceholder,
     memberCountPlaceholder,
     meetPlaceholder,
@@ -361,7 +373,7 @@ export const societyBySlugQuery = defineQuery(`
 `);
 
 export const societySlugsQuery = defineQuery(`
-  *[_type == "society" && defined(slug.current)]{ "slug": slug.current }
+  *[_type == "society" && listed != false && defined(slug.current)]{ "slug": slug.current }
 `);
 
 // Society detail page (F-societies-detail-redesign): upcoming events hosted by one

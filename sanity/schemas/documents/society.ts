@@ -16,6 +16,39 @@ export const society = defineType({
     defineField({ name: 'description', title: 'Description', type: 'text' }),
     defineField({ name: 'logo', title: 'Logo', type: 'image' }),
     defineField({ name: 'website', title: 'Website', type: 'url' }),
+    defineField({
+      name: 'listed',
+      title: 'Listed on the site',
+      type: 'boolean',
+      description:
+        'Off hides the society from /societies, its own page and the sitemap. Nothing is ' +
+        'deleted. Only societies in the SAOC society documents are listed.',
+      initialValue: true,
+    }),
+    defineField({ name: 'contactEmail', title: 'Public contact email', type: 'string' }),
+    defineField({ name: 'contactPhone', title: 'Public contact telephone', type: 'string' }),
+    defineField({
+      name: 'committee',
+      title: 'Committee',
+      type: 'array',
+      of: [{ type: 'societyCommitteeMember' }],
+    }),
+    defineField({
+      name: 'committeeNote',
+      title: 'Committee note (internal)',
+      type: 'text',
+      description: 'A note the society sent with its form. Never shown on the site.',
+    }),
+    defineField({ name: 'facebookUrl', title: 'Facebook page', type: 'url' }),
+    defineField({ name: 'instagramUrl', title: 'Instagram page', type: 'url' }),
+    defineField({ name: 'annualShow', title: 'Annual show', type: 'string' }),
+    defineField({
+      name: 'driveSource',
+      title: 'Drive source',
+      type: 'string',
+      description: 'The Drive document versions this society was last synced from.',
+      readOnly: true,
+    }),
     defineField({ name: 'markBadge', title: 'Mark Badge', type: 'boolean' }),
     defineField({
       name: 'foundedPlaceholder',

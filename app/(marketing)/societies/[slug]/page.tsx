@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 
 import { PageHero } from '@/components/ui/PageHero';
 import { CTASection } from '@/components/ui/CTASection';
+import { client } from '@/sanity/lib/client';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import {
   societyBySlugQuery,
@@ -13,6 +14,7 @@ import {
 import {
   SocietyFacts,
   SocietyAbout,
+  SocietyCommittee,
   SocietyExpect,
   SocietyEvents,
   SocietyDetailsCallout,
@@ -44,7 +46,9 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
   if (slugs && slugs.length > 0) {
     return slugs.filter((s) => s.slug).map((s) => ({ slug: s.slug }));
   }
-  // Build-time fallback so SSG works with no Sanity connection.
+  // Build-time fallback so SSG works with no Sanity connection. With Sanity configured the
+  // hardcoded array is never used: it would resurrect societies hidden with `listed: false`.
+  if (client !== null) return [];
   return staticSocieties.map((s) => ({ slug: s.slug ?? slugify(s.name) }));
 }
 
@@ -56,7 +60,8 @@ async function getSociety(slug: string): Promise<SanitySociety | null> {
   });
   if (doc) return doc;
 
-  // Static fallback by synthesised slug.
+  // Static fallback by synthesised slug, only when Sanity is not configured at all.
+  if (client !== null) return null;
   const match = staticSocieties.find((s) => (s.slug ?? slugify(s.name)) === slug);
   if (!match) return null;
   return {
@@ -142,6 +147,8 @@ export default async function SocietyPage({
         <SocietyFacts society={shown} />
 
         <SocietyAbout society={shown} withhold={withhold} />
+
+        <SocietyCommittee society={shown} />
 
         <SocietyEvents societyName={society.name} events={events} />
 

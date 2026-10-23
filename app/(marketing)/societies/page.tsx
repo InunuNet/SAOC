@@ -6,6 +6,7 @@ import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { SocietiesClient } from './SocietiesClient';
 import { SocietiesFallback } from './SocietiesFallback';
 import type { SanitySociety } from '@/components/societies';
+import { client } from '@/sanity/lib/client';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { provinceListQuery, societyListQuery } from '@/sanity/queries';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
@@ -47,6 +48,35 @@ interface SanityProvince {
   order: number | null;
 }
 
+// The hardcoded array is a fallback for a missing Sanity connection only. With Sanity
+// configured it would resurrect societies hidden with `listed: false`.
+function staticFallbackSocieties(): SanitySociety[] {
+  if (client !== null) return [];
+  return staticSocieties.map((s, i) => ({
+    _id: `static-${i}`,
+    name: s.name,
+    slug: s.slug ?? slugify(s.name),
+    province: s.province ?? null,
+    region: s.region ?? null,
+    founded: s.founded ?? null,
+    meets: s.meet ?? null,
+    venue: s.venue ?? null,
+    memberCount: s.members ?? null,
+    description: null,
+    logo: null,
+    website: s.websiteUrl ?? null,
+    markBadge: null,
+    // Static fallback founding years and member counts are our own
+    // estimates, not Lee-Ann-sourced or Sanity-sourced data.
+    foundedPlaceholder: true,
+    memberCountPlaceholder: true,
+    // Meeting day/time and venue have not been supplied at all (s.meet/s.venue
+    // are unset) — flag so the UI shows "to be confirmed" instead of nothing.
+    meetPlaceholder: true,
+    venuePlaceholder: true,
+  }));
+}
+
 export default async function SocietiesPage() {
   const withhold = withholdPlaceholderProse();
   const [sanityList, sanityProvinces] = await Promise.all([
@@ -75,31 +105,7 @@ export default async function SocietiesPage() {
       : staticProvinces.filter((p) => p.code !== 'ALL');
 
   const societies: SanitySociety[] =
-    sanityList && sanityList.length > 0
-      ? sanityList
-      : staticSocieties.map((s, i) => ({
-          _id: `static-${i}`,
-          name: s.name,
-          slug: s.slug ?? slugify(s.name),
-          province: s.province ?? null,
-          region: s.region ?? null,
-          founded: s.founded ?? null,
-          meets: s.meet ?? null,
-          venue: s.venue ?? null,
-          memberCount: s.members ?? null,
-          description: null,
-          logo: null,
-          website: s.websiteUrl ?? null,
-          markBadge: null,
-          // Static fallback founding years and member counts are our own
-          // estimates, not Lee-Ann-sourced or Sanity-sourced data.
-          foundedPlaceholder: true,
-          memberCountPlaceholder: true,
-          // Meeting day/time and venue have not been supplied at all (s.meet/s.venue
-          // are unset) — flag so the UI shows "to be confirmed" instead of nothing.
-          meetPlaceholder: true,
-          venuePlaceholder: true,
-        }));
+    sanityList && sanityList.length > 0 ? sanityList : staticFallbackSocieties();
   const listed = societies.map((s) => withholdSocietyEstimates(s, withhold));
 
   return (

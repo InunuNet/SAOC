@@ -24,7 +24,6 @@ import {
   partners,
   provinces,
   showClasses,
-  societies,
 } from '../lib/data';
 
 // ---------------------------------------------------------------------------
@@ -113,31 +112,6 @@ function mapProvinces(): Record<string, unknown>[] {
     }));
 }
 
-function mapSocieties(): Record<string, unknown>[] {
-  return societies.map((s) => ({
-    _id: safeid('society', s.name),
-    _type: 'society',
-    name: s.name,
-    slug: { _type: 'slug', current: slugify(s.name) },
-    province: s.province,
-    region: s.region,
-    founded: s.founded,
-    memberCount: s.members,
-    // The whole static societies array is our own estimate, not sourced from
-    // Lee-Ann or the affiliated societies themselves — see lib/data/societies.ts.
-    foundedPlaceholder: true,
-    memberCountPlaceholder: true,
-    // meet/venue are omitted from lib/data/societies.ts entirely rather than
-    // filled with an invented schedule/location (a wrong meeting time or venue
-    // is actionable, not just inaccurate). createOrReplace means an omitted key
-    // here clears any previously-seeded value on re-seed, same as a live unset.
-    ...(s.meet !== undefined ? { meets: s.meet } : {}),
-    ...(s.venue !== undefined ? { venue: s.venue } : {}),
-    meetPlaceholder: s.meet === undefined,
-    venuePlaceholder: s.venue === undefined,
-  }));
-}
-
 function mapShowClasses(): Record<string, unknown>[] {
   return showClasses.map((c) => ({
     _id: safeid('showClass', c.code),
@@ -179,7 +153,8 @@ async function main(): Promise<void> {
   await seedBatch('awards', mapAwards());
   await seedBatch('boardMembers', mapBoardMembers());
   await seedBatch('provinces', mapProvinces());
-  await seedBatch('societies', mapSocieties());
+  // Societies are not seeded: they come from Lee-Ann's Drive docs via `pnpm sync:societies`
+  // (societies-content F1). Re-seeding the old placeholders would resurrect hidden societies.
   await seedBatch('showClasses', mapShowClasses());
   await seedBatch('partners (→ sponsor)', mapPartners());
 

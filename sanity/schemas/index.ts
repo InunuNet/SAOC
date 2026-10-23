@@ -37,6 +37,8 @@ import { travelRoute } from './objects/travelRoute';
 import { accommodationOption } from './objects/accommodationOption';
 import { attraction } from './objects/attraction';
 import { emergencyContact } from './objects/emergencyContact';
+// societies-content F1
+import { societyCommitteeMember } from './objects/societyCommitteeMember';
 import { openingHoursEntry } from './objects/openingHoursEntry';
 import { confirmationStatuses } from './objects/confirmationStatuses';
 import { exhibitorSection } from './objects/exhibitorSection';
@@ -90,6 +92,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   accommodationOption,
   attraction,
   emergencyContact,
+  societyCommitteeMember,
   openingHoursEntry,
   confirmationStatuses,
   // F1 (show-exhibitor-info) objects
