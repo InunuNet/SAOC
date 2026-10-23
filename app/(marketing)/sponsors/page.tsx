@@ -99,7 +99,7 @@ export default async function SponsorsPage() {
             <dl className="grid w-full grid-cols-2 gap-8 border-y border-rule py-10 sm:grid-cols-4">
               {REACH_STATS.map((stat) => (
                 <div key={stat.label}>
-                  <dt className="font-serif font-light text-[32px] text-ink">{stat.value}</dt>
+                  <dt className="font-serif tracking-[-0.015em] font-light text-[32px] text-ink">{stat.value}</dt>
                   <dd className="mt-1 font-mono text-[11px] tracking-[0.16em] text-muted">
                     {stat.label}
                   </dd>

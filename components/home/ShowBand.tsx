@@ -74,7 +74,7 @@ function CountdownBox({ target, edition }: { target: Date | null; edition?: numb
         >
           <div
             data-countdown-value
-            className="font-serif font-light text-[34px] sm:text-[42px] leading-none text-accent-soft tabular-nums"
+            className="font-serif tracking-[-0.015em] font-light text-[34px] sm:text-[42px] leading-none text-accent-soft tabular-nums"
           >
             {cell.value}
           </div>

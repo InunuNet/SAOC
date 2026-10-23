@@ -27,7 +27,7 @@ export function MissionBlock({ missionText, withhold = false }: MissionBlockProp
     <dl className="grid w-full grid-cols-2 gap-x-8 gap-y-8 border-t border-rule pt-10 md:grid-cols-4">
       {stats.map((stat) => (
         <div key={stat.label}>
-          <dt className="font-serif font-light text-[clamp(36px,4vw,56px)] text-primary leading-none">
+          <dt className="font-serif tracking-[-0.015em] font-light text-[clamp(36px,4vw,56px)] text-primary leading-none">
             {stat.value}
           </dt>
           <dd className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted mt-2">

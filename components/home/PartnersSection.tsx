@@ -71,7 +71,7 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
               <>
                 <span
                   data-partner-name
-                  className="font-serif font-normal min-[1000px]:font-light text-[clamp(28px,3.2vw,42px)] leading-[1.12] text-primary underline decoration-transparent decoration-1 underline-offset-[6px] transition-[color,text-decoration-color] duration-150 ease-(--ease) group-hover:text-primary-800 group-hover:decoration-accent group-focus-visible:text-primary-800 group-focus-visible:decoration-accent"
+                  className="text-balance font-serif tracking-[-0.015em] font-normal min-[1000px]:font-light text-[clamp(28px,3.2vw,42px)] leading-[1.12] text-primary underline decoration-transparent decoration-1 underline-offset-[6px] transition-[color,text-decoration-color] duration-150 ease-(--ease) group-hover:text-primary-800 group-hover:decoration-accent group-focus-visible:text-primary-800 group-focus-visible:decoration-accent"
                 >
                   {card.name}
                 </span>

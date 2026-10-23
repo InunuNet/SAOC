@@ -25,7 +25,7 @@ export default function NationalShowNotFound() {
         <span className="font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
           404 — Page not found
         </span>
-        <h1 className="nos-opsz-fluid font-serif text-[clamp(28px,3.6vw,44px)] leading-[1.1] text-ink">
+        <h1 className="nos-opsz-fluid font-serif tracking-[-0.015em] text-[clamp(28px,3.6vw,44px)] leading-[1.1] text-ink">
           This orchid has left the bench.
         </h1>
         <p className="max-w-[58ch] font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-muted">

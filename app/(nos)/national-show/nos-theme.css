@@ -352,7 +352,7 @@
      reaches the 48px role at a 1080px viewport). */
   font-size: clamp(2rem, 1.2rem + 2.667vw, 3rem);
   line-height: 1.15;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   font-variation-settings: 'opsz' 48;
 }
 .nos-theme :is(h3, h4, h5, h6) {
@@ -409,6 +409,7 @@
 }
 .nos-theme .nos-figure.font-serif {
   font-weight: 300;
+  letter-spacing: -0.015em;
   line-height: 1;
   font-variation-settings: 'opsz' 72;
   font-variant-numeric: lining-nums tabular-nums;
@@ -492,7 +493,7 @@
   margin: 0;
   font-weight: 300;
   line-height: 1;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   color: var(--ivory);
   hyphens: manual;
   overflow-wrap: normal;
@@ -757,7 +758,7 @@
     max-width: none;
     font-size: clamp(52px, 4.9vw, 96px);
     line-height: 1;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
     text-wrap: balance;
   }
   .nos-theme .nos-hero-hub .nos-hero-body {

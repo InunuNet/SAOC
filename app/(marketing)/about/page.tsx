@@ -179,7 +179,7 @@ export default async function AboutPage() {
           <dl className="grid grid-cols-2 gap-x-8 gap-y-8 border-y border-rule py-10 sm:grid-cols-4">
             {HERITAGE_STATS.map((stat) => (
               <div key={stat.label}>
-                <dt className="font-serif font-normal min-[1231px]:font-light text-[clamp(24px,2.6vw,38px)] leading-none text-primary">
+                <dt className="font-serif tracking-[-0.015em] font-normal min-[1231px]:font-light text-[clamp(24px,2.6vw,38px)] leading-none text-primary">
                   {stat.value}
                 </dt>
                 <dd className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">

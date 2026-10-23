@@ -176,7 +176,7 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {stats.map(({ value, label }) => (
               <Card key={label} className="text-center">
-                <div className="font-serif text-[38px] font-medium leading-none text-primary">
+                <div className="font-serif tracking-[-0.015em] text-[38px] font-medium leading-none text-primary">
                   {value}
                 </div>
                 <div className="mt-2 font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">

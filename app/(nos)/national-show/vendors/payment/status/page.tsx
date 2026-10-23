@@ -68,7 +68,7 @@ export default async function VendorStandPaymentStatusPage({
       />
 
       <div className="mx-auto max-w-2xl px-6 py-16 sm:px-8 sm:py-20">
-        <h2 className="font-serif text-[20px] font-semibold text-ink">{copy.heading}</h2>
+        <h2 className="font-serif text-[20px] font-normal text-ink">{copy.heading}</h2>
         <p className="mt-4 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink">{copy.body}</p>
         <p className="mt-4 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink">
           Please contact SAOC if you believe this is an error.

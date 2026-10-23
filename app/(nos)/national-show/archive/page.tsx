@@ -146,7 +146,7 @@ export default async function ShowArchivePage() {
         ) : (
           <div className="nos-surface">
             {holds ? null : <ConfirmationBadge status="pending" />}
-            <h2 className={`${holds ? '' : 'mt-3 '}font-serif text-[28px] font-medium text-ink`}>
+            <h2 className={`${holds ? '' : 'mt-3 '}font-serif text-[28px] font-normal text-ink`}>
               Show history awaiting committee records
             </h2>
           </div>

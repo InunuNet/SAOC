@@ -51,7 +51,7 @@ export function SectionHeading({
       ) : null}
       <TitleTag
         className={[
-          'nos-opsz-fluid font-serif text-[clamp(28px,3.6vw,44px)] leading-[1.1]',
+          'nos-opsz-fluid font-serif tracking-[-0.015em] text-[clamp(28px,3.6vw,44px)] leading-[1.1]',
           isDark ? 'text-ivory' : 'text-ink',
         ].join(' ')}
       >

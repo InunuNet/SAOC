@@ -525,7 +525,7 @@ export default async function NationalShowPage() {
       <NosSection tone="gold" aria-labelledby="planning-title">
         <h2
           id="planning-title"
-          className="nos-opsz-fluid font-serif text-[clamp(28px,3.6vw,44px)] leading-[1.1] text-ink"
+          className="nos-opsz-fluid font-serif tracking-[-0.015em] text-[clamp(28px,3.6vw,44px)] leading-[1.1] text-ink"
         >
           Planning a visit
         </h2>
@@ -629,7 +629,7 @@ export default async function NationalShowPage() {
         </div>
 
         <div className="mt-14 flex flex-col items-start gap-5">
-          <p className="font-serif text-[clamp(1.5rem,1.2rem+1.2vw,2rem)] leading-tight text-ivory">
+          <p className="font-serif tracking-[-0.015em] text-[clamp(1.5rem,1.2rem+1.2vw,2rem)] leading-tight text-ivory">
             Start planning your entry now.
           </p>
           <p className="max-w-[58ch] font-sans text-[18px] leading-[1.55] text-[var(--lilac-muted)]">

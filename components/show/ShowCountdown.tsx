@@ -133,7 +133,7 @@ export function ShowCountdown({ countdownDate, edition, pendingLabel }: ShowCoun
               at that same one call site. */}
           <div
             data-nos-hero-text={`countdown-${label.toLowerCase()}-value`}
-            className="nos-figure font-serif font-light text-[42px] leading-none text-ivory"
+            className="nos-figure font-serif tracking-[-0.015em] font-light text-[42px] leading-none text-ivory"
           >
             {String(value).padStart(2, '0')}
           </div>

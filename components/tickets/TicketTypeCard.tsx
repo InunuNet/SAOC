@@ -96,7 +96,7 @@ export function TicketTypeCard({
       <p className="font-serif font-normal text-[22px] leading-tight text-ink">{name}</p>
       <p
         data-ticket-price=""
-        className="font-serif font-light text-[clamp(34px,4.4vw,48px)] leading-none tabular-nums text-ink"
+        className="font-serif tracking-[-0.015em] font-light text-[clamp(34px,4.4vw,48px)] leading-none tabular-nums text-ink"
       >
         {price === 0 ? 'Free' : formatRand(price)}
       </p>

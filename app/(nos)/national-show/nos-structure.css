@@ -957,7 +957,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-weight: 300;
   font-size: calc(58px * var(--nk-ts));
   line-height: 0.86;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
   color: var(--ivory);
   font-variant-numeric: lining-nums;
   font-variation-settings: 'opsz' 120;
@@ -1131,7 +1131,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   color: var(--nk-ink);
   font-variant-numeric: lining-nums tabular-nums;
   font-variation-settings: 'opsz' 96;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   white-space: nowrap;
 }
 .nos-theme .nk-price .nk-cur {
@@ -1384,6 +1384,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-weight: 300;
   font-size: clamp(3rem, 2.4rem + 2vw, 4.25rem);
   line-height: 0.95;
+  letter-spacing: -0.015em;
   color: var(--bone);
   font-variant-numeric: lining-nums tabular-nums;
   font-variation-settings: 'opsz' 96;
@@ -1474,7 +1475,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-weight: 400;
   font-size: clamp(2rem, 1.5rem + 1.6vw, 2.4375rem);
   line-height: 1.15;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   color: var(--primary);
   font-variation-settings: 'opsz' 48;
 }
@@ -1571,7 +1572,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   line-height: 1;
   color: var(--ivory);
   font-variation-settings: 'opsz' 96;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 .nos-theme .nk-facts {
   margin: 0;

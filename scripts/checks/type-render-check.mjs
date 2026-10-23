@@ -4,6 +4,7 @@
 // Read-only: GET only. For every text element set in a serif face (Crimson Pro on SAOC, Fraunces on NOS):
 //   SAOC   computed weight follows the size rule: >=32px 300, 20-31.99px 400, <20px 500 (T2)
 //   NOS    display sizes (>=20px) sit at 300-400 so the two sites match (T5); small text is only held to the loaded-face rule
+//   >=32px letter-spacing is -0.015em (T2), display numerals included
 //   both   the computed weight is a weight the browser actually loaded for that face, so nothing is
 //          synthesised (document.fonts), and no serif element computes to 600 or above outside the lockup
 // `--report` lists the offenders grouped by element signature instead of failing on the first.
@@ -26,7 +27,16 @@ const PAGES = [
   ['saoc-judging', SAOC_HOST, '/judging', 'saoc'],
   ['nos-hub', NOS_HOST, '/', 'nos'],
   ['nos-about', NOS_HOST, '/about', 'nos'],
+  ['nos-vendors', NOS_HOST, '/vendors', 'nos'],
+  ['nos-tickets', NOS_HOST, '/tickets', 'nos'],
+  ['nos-tickets-cancelled', NOS_HOST, '/tickets/cancelled', 'nos'],
+  ['nos-tickets-confirmation', NOS_HOST, '/tickets/confirmation', 'nos'],
 ];
+// NOS Design ruling on #54: /admin and components/admin keep 600 as their UI register, so no admin page is in
+// PAGES, and a page whose path is under one of these prefixes is skipped if it is ever added.
+const ADMIN_EXEMPT_PREFIXES = ['/admin'];
+const TRACKING_EM = -0.015;
+const TRACKING_TOLERANCE_PX = 0.06;
 const DISPLAY_PX = 32;
 const SUBHEAD_PX = 20;
 const SAOC_WEIGHTS = { display: 300, subhead: 400, small: 500 };
@@ -95,6 +105,7 @@ function collectSerif() {
       text: el.textContent.trim().replace(/\s+/g, ' ').slice(0, 40),
       face: /fraunces/i.test(primary) ? 'fraunces' : 'crimson',
       size: parseFloat(cs.fontSize),
+      tracking: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing),
       weight,
       style,
       loadedFace: faces.some((f) => inRange(f.weight, weight)),
@@ -114,6 +125,7 @@ function expectedWeights(site, size) {
 }
 
 async function checkPage(browser, [label, host, path, site], [width, height]) {
+  if (ADMIN_EXEMPT_PREFIXES.some((prefix) => path.startsWith(prefix))) return;
   const context = await browser.newContext({ viewport: { width, height }, httpCredentials: CREDENTIALS });
   const page = await context.newPage();
   await page.goto(`http://${host}${path}`, { waitUntil: 'networkidle' });
@@ -134,6 +146,9 @@ async function checkPage(browser, [label, host, path, site], [width, height]) {
     const problems = [];
     if (want && !want.includes(row.weight)) problems.push(`weight ${row.weight}, expected ${want.join('/')}`);
     if (!row.loadedFace) problems.push(`weight ${row.weight} is not a loaded ${row.face} ${row.style} face (synthesised)`);
+    if (row.size >= DISPLAY_PX - SIZE_EPSILON && Math.abs(row.tracking - TRACKING_EM * row.size) > TRACKING_TOLERANCE_PX) {
+      problems.push(`tracking ${row.tracking.toFixed(2)}px, expected ${(TRACKING_EM * row.size).toFixed(2)}px (-0.015em)`);
+    }
     if (problems.length) bad.push({ row, problems });
   }
   check(`type ${tag}: ${rows.length} serif elements follow the weight rule`, rows.length > 0 && bad.length === 0, bad.slice(0, 3).map((b) => `${b.row.tag}.${b.row.size}px "${b.row.text}" ${b.problems[0]}`).join(' | '));

@@ -32,7 +32,7 @@ export function EventRow({ event }: EventRowProps) {
         className="flex flex-col items-center justify-center w-[110px] shrink-0 py-5 border-l-[3px]"
         style={{ borderLeftColor: 'var(--accent)' }}
       >
-        <span className="font-serif font-light text-[32px] leading-none text-primary">{day}</span>
+        <span className="font-serif tracking-[-0.015em] font-light text-[32px] leading-none text-primary">{day}</span>
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted mt-1">
           {month}
         </span>

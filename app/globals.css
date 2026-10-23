@@ -181,7 +181,7 @@ body {
   letter-spacing: -0.015em;
   color: var(--fg);
   margin: 0;
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 .h2 {
   font-family: var(--serif);
@@ -191,7 +191,7 @@ body {
   letter-spacing: -0.015em;
   color: var(--fg);
   margin: 0;
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 .h3 {
   font-family: var(--serif);
@@ -208,6 +208,12 @@ body {
     font-weight: 300;
     letter-spacing: -0.015em;
   }
+}
+/* A serif heading breaks into even lines (NOS Design: "Wild Orchids of / Southern Africa"). */
+h1.font-serif,
+h2.font-serif,
+h3.font-serif {
+  text-wrap: balance;
 }
 /* italic-inside-roman headline accent */
 .h1 em,
