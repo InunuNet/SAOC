@@ -258,7 +258,12 @@ export type MarkOrderPaidOutcome =
       buyerEmail: string;
       buyerName: string;
       recoveryToken: string | null;
-      positions: { bookingRef: string; attendeeName: string; ticketType: TicketType }[];
+      positions: {
+        bookingRef: string;
+        attendeeName: string;
+        ticketType: TicketType;
+        chosenDay: string | null;
+      }[];
     }
   | {
       committed: false;
@@ -412,6 +417,7 @@ export async function markOrderAndPositionPaidByPaymentId(
         bookingRef: (position?.bookingRef as string | undefined) ?? positionRef.id,
         attendeeName: (position?.attendeeName as string | undefined) ?? '',
         ticketType: position?.ticketType as TicketType,
+        chosenDay: position?.chosenDay ?? null,
       };
     });
 

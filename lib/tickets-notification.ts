@@ -8,6 +8,8 @@ import {
   markOrderPaymentPendingByPaymentId,
 } from '@/lib/orders';
 import { deliverConfirmationEmailAfterCommit, sendConfirmationEmail } from '@/lib/confirmation-email';
+import { saocUrl } from '@/lib/site-hosts';
+import { sendTicketSaleAdminNotice } from '@/lib/ticket-sale-admin-notice';
 
 /**
  * Payment notification handler — SECURITY BOUNDARY, FAIL CLOSED.
@@ -330,6 +332,31 @@ export async function POST(
         reference,
         orderId: outcome.orderId,
         error,
+      });
+    }
+  );
+
+  // 12. Admin ticket-sale notice, once per order. Reached only when THIS call's transaction moved
+  // the order from 'reserved' to 'paid' (the `!outcome.committed` return above), so a re-sent
+  // notification, which finds the order already paid, never sends a second one. Same isolation as
+  // the receipt: a failure is logged (error name only, a mailer message can embed an address) and
+  // never rolls back or blocks the settlement.
+  await deliverConfirmationEmailAfterCommit(
+    () =>
+      sendTicketSaleAdminNotice({
+        orderReference: reference,
+        buyerName: outcome.buyerName,
+        buyerEmail: outcome.buyerEmail,
+        positions: outcome.positions,
+        total: lookup.amount,
+        adminUrl: saocUrl('/admin/tickets'),
+      }),
+    (error) => {
+      console.error('[tickets/itn] Admin ticket-sale notice failed — payment already committed, not rolled back', {
+        provider: paymentProvider.id,
+        reference,
+        orderId: outcome.orderId,
+        error: error instanceof Error ? error.name : 'unknown error',
       });
     }
   );
