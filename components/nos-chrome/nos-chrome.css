@@ -86,6 +86,14 @@
 }
 @media (max-width: 420px) { :root { --nc-logo-w: min(390px, calc((100vw - 32px) / 0.904)); } }
 
+/* Ticketing pages carry the sticky "Testing only" bar (committee-testing); hold the header under it. */
+@media (min-width: 700px) {
+  body:has([data-ticketing-test-bar]) .nh { top: calc(44px + env(safe-area-inset-top, 0px)); }
+}
+@media (min-width: 768px) {
+  body:has([data-ticketing-test-bar]) .nh { top: calc(48px + env(safe-area-inset-top, 0px)); }
+}
+
 /* Menu panel (below 1260px): SAOC's drawer list, NOS type. */
 .nd { position: fixed; left: 0; right: 0; bottom: 0; top: 0; z-index: 59; overflow-y: auto; overscroll-behavior: contain; background: var(--nc-ground); color: var(--nc-royal); font-family: var(--nc-sans); padding: 16px var(--nc-gutter) calc(40px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--nc-line); }
 .nd-inner { max-width: 720px; }

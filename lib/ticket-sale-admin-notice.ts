@@ -3,6 +3,7 @@ import React from 'react';
 import { sendEmail, FORMS_FROM_ADDRESS } from '@/lib/email';
 import { getAdminNotifyRecipients } from '@/lib/admin-notify-recipients';
 import TicketSaleAdminNotice from '@/emails/TicketSaleAdminNotice';
+import { withTestSubjectPrefix } from '@/lib/ticketing-test-mode';
 
 /**
  * Admin notice fired once when a ticket order settles as 'paid' (Brad via SAOC: "Admin emails
@@ -94,7 +95,7 @@ export async function sendTicketSaleAdminNotice(
     recipients.map((to) =>
       mailer.send({
         to,
-        subject: 'Ticket payment received — SAOC',
+        subject: withTestSubjectPrefix('Ticket payment received — SAOC'),
         react,
         from: FORMS_FROM_ADDRESS,
       }),

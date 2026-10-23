@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestModeBanner';
 import { PayfastRedirectForm } from '@/components/tickets/PayfastRedirectForm';
+import { TicketingTestPayNotice } from '@/components/tickets/TicketingTestPayNotice';
 import {
   VENDOR_STAND_BOOTH_SIZES,
   VENDOR_STAND_BOOTH_SIZE_LABELS,
@@ -74,12 +75,18 @@ export function VendorStandPaymentForm({ token, businessName }: VendorStandPayme
     }
   }
 
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submitting) return;
+    void handlePay();
+  }
+
   if (redirect) {
     return <PayfastRedirectForm processUrl={redirect.processUrl} fields={redirect.fields} />;
   }
 
   return (
-    <div className="space-y-8">
+    <form className="space-y-8" onSubmit={handleSubmit}>
       <OzowSandboxTestModeBanner />
       <p className="font-sans text-[15px] text-ink">
         Stand payment for <strong>{businessName}</strong>.
@@ -120,14 +127,15 @@ export function VendorStandPaymentForm({ token, businessName }: VendorStandPayme
         </p>
       )}
 
+      <TicketingTestPayNotice />
+
       <button
-        type="button"
+        type="submit"
         disabled={submitting}
-        onClick={handlePay}
         className="rounded-sm border border-rule bg-ivory px-4 py-2 font-sans text-[14px] font-medium text-ink transition-colors hover:bg-parchment disabled:cursor-not-allowed disabled:opacity-50"
       >
         {submitting ? 'Starting payment…' : 'Pay Now'}
       </button>
-    </div>
+    </form>
   );
 }

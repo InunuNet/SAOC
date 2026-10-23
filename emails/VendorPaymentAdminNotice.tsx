@@ -4,6 +4,7 @@ import EmailShell, {
   ShellHeading,
   ShellText,
 } from './_shared/EmailShell';
+import { TestingNotice } from './_shared/TestingNotice';
 
 interface VendorPaymentAdminNoticeProps {
   businessName: string;
@@ -26,6 +27,7 @@ export default function VendorPaymentAdminNotice({
 }: VendorPaymentAdminNoticeProps) {
   return (
     <EmailShell family="C" preview="Vendor stand payment received — SAOC">
+      <TestingNotice />
       <ShellHeading>Vendor Stand Payment Received</ShellHeading>
       <ShellText>
         <strong>{businessName}</strong> ({contactPersonName}) has paid for their stand at the

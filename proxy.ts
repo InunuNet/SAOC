@@ -25,7 +25,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-import { isBetaWallConfigured, isPubliclyLaunched } from '@/lib/beta-public-launch';
+import { isBetaWallConfigured, isPasswordWallOff, isPubliclyLaunched } from '@/lib/beta-public-launch';
 import { NOS_INTERNAL_PREFIX, nosPath } from '@/lib/nos-paths';
 import { saocUrl, nosUrl, siteForHost, type Site } from '@/lib/site-hosts';
 
@@ -104,6 +104,7 @@ export type AuthDecisionInput = {
   expectedPassword: string | undefined;
   isProduction: boolean;
   publiclyLaunched: boolean;
+  passwordWallOff?: boolean;
 };
 
 // Pure decision function — no NextRequest/NextResponse dependency, so it is
@@ -115,6 +116,8 @@ export type AuthDecisionInput = {
 //   2. `publiclyLaunched` (lib/beta-public-launch.ts's SITE_PUBLIC_LAUNCH ===
 //      'true' exact match) always passes when true — this is the ONE explicit
 //      switch that lifts the wall; nothing else (host, environment) does.
+//      `passwordWallOff` (BETA_PASSWORD_WALL_OFF === 'true') also passes, but lifts ONLY the
+//      prompt: wallUp stays !publiclyLaunched, so noindex, no-store and the wall cookie remain.
 //   3. If no credentials are configured (BETA_BASIC_AUTH_USER/PASSWORD unset),
 //      FAIL CLOSED in production (no credential could ever be supplied that
 //      would satisfy an unconfigured secret, so every request is denied) and
@@ -126,6 +129,7 @@ export type AuthDecisionInput = {
 export async function decideBasicAuth(input: AuthDecisionInput): Promise<boolean> {
   if (isExemptPath(input.pathname)) return true;
   if (input.publiclyLaunched) return true;
+  if (input.passwordWallOff === true) return true;
 
   const credentialsConfigured = isBetaWallConfigured(input.expectedUser, input.expectedPassword);
   if (!credentialsConfigured) {
@@ -273,6 +277,7 @@ export async function proxy(request: NextRequest): Promise<Response> {
     expectedPassword: process.env.BETA_BASIC_AUTH_PASSWORD,
     isProduction: process.env.NODE_ENV === 'production',
     publiclyLaunched,
+    passwordWallOff: isPasswordWallOff(process.env.BETA_PASSWORD_WALL_OFF),
   });
 
   const wallUp = !publiclyLaunched;

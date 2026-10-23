@@ -7,6 +7,7 @@ import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { TICKET_COPY, partnerNameOf, type TicketProductId } from '@/lib/data/ticket-presentation';
 import { buildPageMetadata } from '@/lib/seo';
+import { withTicketingTestTitle } from '@/lib/ticketing-test-metadata';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 // Live stock reaches this page through Firebase Admin credentials that exist only at runtime,
@@ -16,14 +17,16 @@ export const dynamic = 'force-dynamic';
 // Description restates the page's own rendered lede below — no new claim is introduced here.
 // Deliberately no Event markup: ticketType carries no session date, and inventing one to
 // unlock a rich result is exactly what M6/B8d forbids.
-export const metadata: Metadata = buildPageMetadata({
-  title: 'Conferences',
-  image: nosOgImage('Conferences — National Show'),
-  description:
-    // prettier-ignore
-    'Register for the National Orchid Show Symposium or the WOSA Conference at the South African National Orchid Show.',
-  path: '/national-show/conferences',
-});
+export const metadata: Metadata = withTicketingTestTitle(
+  buildPageMetadata({
+    title: 'Conferences',
+    image: nosOgImage('Conferences — National Show'),
+    description:
+      // prettier-ignore
+      'Register for the National Orchid Show Symposium or the WOSA Conference at the South African National Orchid Show.',
+    path: '/national-show/conferences',
+  })
+);
 
 const CONFERENCE_PRODUCTS: readonly TicketProductId[] = ['symposium', 'wosa'];
 
