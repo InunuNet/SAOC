@@ -143,7 +143,7 @@ export function SaocLockup({ orientation, tone, compact = false, className, prio
   //
   // Wordmark/rule/tagline sizes are metrics().v at the default state,
   // app.js:92, scaled at s=0.55 (unchanged from round 1): name = 50*1.1*0.55
-  // ≈ 30, ruleW ≈ 133, tagGap ≈ 9, tag ≈ 9.
+  // ≈ 30, ruleW ≈ 133, tagGap ≈ 9, tag 11 (the craft-floor minimum; NOS Design FT6).
   //
   // Emblem is NOT sized off embBoxH (130*1.4=182 — that figure describes the
   // UNTRIMMED 1254² export canvas; applying it to the already-trimmed asset
@@ -180,7 +180,7 @@ export function SaocLockup({ orientation, tone, compact = false, className, prio
         </span>
         <span className="mt-[8px] h-px w-[133px]" style={{ background: col.rule }} />
         <span
-          className="mt-[9px] font-mono font-medium uppercase text-[9px] leading-[1.3] whitespace-nowrap"
+          className="mt-[9px] font-mono font-medium uppercase text-[11px] leading-[1.3] whitespace-nowrap"
           style={{ letterSpacing: '0.22em', color: col.tag }}
         >
           {TAGLINE}

@@ -19,6 +19,7 @@ import {
   FOOTER_COPYRIGHT_TAIL,
   FOOTER_HEADINGS,
   FOOTER_LAYOUT,
+  FOOTER_NEW_TAB_CUE,
   FOOTER_ORG_NAME,
   FOOTER_REG,
   FOOTER_RHYTHM,
@@ -114,6 +115,21 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
             <span className="nf-credit-name">{FOOTER_ORG_NAME}</span>
             <span className="nf-credit-reg">{FOOTER_REG}</span>
           </a>
+          {/* WOSA appears once in this footer: a Partner link under the credit (NOS Design FT4). */}
+          <ul className={`nf-list ${FOOTER_RHYTHM.list}`}>
+            <li>
+              <a
+                className={`${FOOTER_RHYTHM.row} gap-1`}
+                href={FOOTER_WOSA.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {FOOTER_WOSA.label}
+                <span aria-hidden="true">↗</span>
+                <span className="sr-only">{FOOTER_NEW_TAB_CUE}</span>
+              </a>
+            </li>
+          </ul>
         </div>
 
         <div className="nf-col nf-col-touch">
@@ -129,25 +145,14 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
             placeholder={FOOTER_BULLETIN.placeholder}
             submitLabel={FOOTER_BULLETIN.submitLabel}
             fieldsClassName="nf-form"
-            labelClassName="nf-head"
+            labelClassName="sr-only"
             statusClassName="nf-text nf-signup-status"
             errorClassName="nf-text"
           />
-          <div className="nf-wild">
-            <div className="nf-head">{FOOTER_WOSA.heading}</div>
-            <a
-              className={FOOTER_RHYTHM.row}
-              href={FOOTER_WOSA.href}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {FOOTER_WOSA.linkLabel}
-            </a>
-          </div>
         </div>
       </div>
 
-      <div className="nf-base">
+      <div data-footer-bar className="nf-base">
         <div className={FOOTER_LAYOUT.bar}>
           <span>
             &copy; {new Date().getFullYear()}
