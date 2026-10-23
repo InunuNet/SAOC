@@ -1,0 +1,51 @@
+schema: athanor.contract/v1
+slug: door-reject-test-tickets
+goal: Reject sandbox and unmarked tickets at the door as soon as the existing launch flag switches to live, while preserving committee scanner testing.
+created_at: '2026-10-23'
+autonomy: high
+features:
+  - id: F1
+    name: >-
+      Stamp every new order and ticket with a server-derived boolean issuedInTestMode
+      in buildReservationDocs, buildMultiReservationDocs and createOrderWithPosition.
+      Export the pure decideTestTicketAdmission({ issuedInTestMode, liveMode }) function
+      from lib/checkin-test-ticket-guard.ts. Live admission requires literal false;
+      test mode always returns allow from this guard. Call it in lib/checkin.ts inside
+      the transaction after the ticket read and show check, before status checks and
+      any checked-in write. The real admin route uses this service; do not duplicate
+      admission logic in the route. Return HTTP 403 with success false, code test_ticket
+      and error 'Test ticket — not valid for entry'. Extend the refusal and audit enums
+      and route mapping with test_ticket. Reuse DoorResultBanner unchanged visually.
+      Preserve issuance provenance during payment updates; never backfill legacy tickets
+      to false. Full implementation boundaries and acceptance rules are in the golden README.
+    status: pending
+goldens:
+  - contracts/golden/door-reject-test-tickets/README.md
+  - contracts/golden/door-reject-test-tickets/truth-table.json
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: Pure exported guard consumes the golden live/test truth table including missing, null and non-booleans; explicit undefined also fails closed in live mode.
+      command: node --test --test-name-pattern='truth table' contracts/checks/door-reject-test-tickets/admission.test.mjs
+    - id: A2
+      description: Both reservation builders and the comp creation primitive emit boolean own-properties on orders and every ticket in both modes, ignore forged input markers, and contain no undefined properties.
+      command: node --test --test-name-pattern='builders' contracts/checks/door-reject-test-tickets/admission.test.mjs
+    - id: A3
+      description: Real POST through real admission service calls the real guard before checked-in writes; every golden refusal produces no admission write, explicit HTTP/code/copy, one audit record, and existing rendered error banner.
+      command: node --test --test-name-pattern='route' contracts/checks/door-reject-test-tickets/admission.test.mjs
+    - id: A4
+      description: Auth, not-found, wrong-show, unpaid and already-checked-in still refuse without writes in both modes.
+      command: node --test --test-name-pattern='regressions' contracts/checks/door-reject-test-tickets/admission.test.mjs
+    - id: A5
+      description: The reviewed launch constant remains false; this feature does not launch payments.
+      command: grep -qx 'const TICKETING_PAYMENTS_LIVE = false;' lib/ticketing-test-mode.ts
+    - id: A6
+      description: Project TypeScript check covers all touched TypeScript files and exhaustiveness of the extended refusal/audit mappings.
+      command: pnpm type-check
+    - id: A7
+      description: ESLint is clean on the specified implementation surface and new unit test; include any additional touched TypeScript files in the implementation review.
+      command: pnpm exec eslint lib/checkin-test-ticket-guard.ts lib/checkin.ts lib/checkout-reservation.ts lib/orders.ts lib/checkin-audit.ts app/api/admin/checkin/route.ts types/index.ts components/admin/DoorResultBanner.tsx components/admin/DoorScannerClient.tsx contracts/checks/door-reject-test-tickets/admission.test.mjs
+    - id: A8
+      description: Run the complete new offline unit test file using Node's installed test runner; package.json has no unit-test script to invoke.
+      command: node --test contracts/checks/door-reject-test-tickets/admission.test.mjs
