@@ -4,6 +4,7 @@ import EmailShell, {
   ShellHeading,
   ShellText,
 } from './_shared/EmailShell';
+import { TestingNotice } from './_shared/TestingNotice';
 
 interface TicketSaleAdminNoticeLine {
   product: string;
@@ -35,6 +36,7 @@ export default function TicketSaleAdminNotice({
 }: TicketSaleAdminNoticeProps) {
   return (
     <EmailShell family="C" preview="Ticket payment received — SAOC">
+      <TestingNotice />
       <ShellHeading>Ticket Payment Received</ShellHeading>
       <ShellText>
         <strong>{buyerName}</strong> ({buyerEmail}) has paid for tickets to the National Orchid

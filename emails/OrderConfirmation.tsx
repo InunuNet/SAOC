@@ -11,6 +11,7 @@ import EmailShell, {
   ShellSubheading,
   ShellText,
 } from './_shared/EmailShell';
+import { TestingNotice } from './_shared/TestingNotice';
 
 /**
  * F11 (ticketing-foundation) — multi-position confirmation email (spec §6). Separate from the
@@ -53,6 +54,8 @@ export interface OrderConfirmationProps {
   positions: OrderConfirmationPosition[];
   recoveryUrl: string | null;
   visit?: OrderConfirmationVisit | null;
+  /** Defaults to isTicketingTestMode(); explicit so the live (off) rendering is testable. */
+  testMode?: boolean;
 }
 
 const QR_SIZE = 200;
@@ -97,9 +100,11 @@ export default function OrderConfirmation({
   positions,
   recoveryUrl,
   visit,
+  testMode,
 }: OrderConfirmationProps) {
   return (
     <EmailShell family="A" preview="Your National Orchid Show order is confirmed">
+      <TestingNotice testMode={testMode} />
       <ShellHeading>Order confirmation</ShellHeading>
       <ShellText>Dear {buyerName},</ShellText>
       <ShellText>
@@ -111,6 +116,7 @@ export default function OrderConfirmation({
           <ShellDetailRow label="Attendee:">{position.attendeeName}</ShellDetailRow>
           <ShellDetailRow label="Ticket type:">{position.ticketType}</ShellDetailRow>
           <ShellDetailRow label="Booking reference:">{position.bookingRef}</ShellDetailRow>
+          <TestingNotice testMode={testMode} />
           <ShellQrTile>
             <Img
               src={`cid:${position.qrContentId}`}
@@ -126,8 +132,7 @@ export default function OrderConfirmation({
       <ShellText size="small">Present this ticket at the door for check in.</ShellText>
       {recoveryUrl !== null && (
         <ShellText size="small">
-          Lost this email?{' '}
-          <ShellLink href={recoveryUrl}>Recover your tickets</ShellLink>
+          Lost this email? <ShellLink href={recoveryUrl}>Recover your tickets</ShellLink>
         </ShellText>
       )}
       <ShellFootnote>

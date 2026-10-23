@@ -39,3 +39,4 @@ To be confirmed
 re:Order \S+ · Page \d+ of \d+
 re:Page \d+ of \d+
 Testing only, not live
+No real payment is taken
