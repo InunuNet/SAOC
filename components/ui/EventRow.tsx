@@ -32,7 +32,7 @@ export function EventRow({ event }: EventRowProps) {
         className="flex flex-col items-center justify-center w-[110px] shrink-0 py-5 border-l-[3px]"
         style={{ borderLeftColor: 'var(--accent)' }}
       >
-        <span className="font-serif text-[32px] font-medium leading-none text-primary">{day}</span>
+        <span className="font-serif tracking-[-0.015em] font-light text-[32px] leading-none text-primary">{day}</span>
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted mt-1">
           {month}
         </span>
@@ -46,7 +46,7 @@ export function EventRow({ event }: EventRowProps) {
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted mb-2">
           {event.kind}
         </p>
-        <p id={titleId} className="font-serif text-[20px] font-medium text-primary leading-snug">
+        <p id={titleId} className="font-serif font-normal text-[20px] text-primary leading-snug">
           {event.title}
         </p>
         <p id={venueId} className="font-sans text-[14px] text-ink/70 mt-1">
@@ -62,7 +62,7 @@ export function EventRow({ event }: EventRowProps) {
           </span>
         )}
         {linked && (
-          <span className="font-serif text-[18px] text-primary" aria-hidden="true">
+          <span className="font-serif font-medium text-[18px] text-primary" aria-hidden="true">
             →
           </span>
         )}

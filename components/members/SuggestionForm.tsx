@@ -104,7 +104,7 @@ export function SuggestionForm() {
   if (status === 'success') {
     return (
       <div className="border border-rule bg-parchment p-8">
-        <h3 className="font-serif text-[22px] font-semibold text-ink">Thank you</h3>
+        <h3 className="font-serif font-normal text-[22px] text-ink">Thank you</h3>
         <p className="mt-3 font-sans text-[16px] leading-[1.55] text-ink/80">
           Your suggestion has reached the SAOC secretariat. We&apos;ll take it into account as
           the Members Portal is built.

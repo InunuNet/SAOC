@@ -6,7 +6,7 @@ import Link from 'next/link';
 export function VendorEmptyState() {
   return (
     <section className="border border-rule bg-bone p-10 text-center">
-      <h2 className="font-serif text-[26px] font-medium text-ink">
+      <h2 className="font-serif font-normal text-[26px] text-ink">
         Nurseries will be announced soon
       </h2>
       <p className="mx-auto mt-3 max-w-xl font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70">

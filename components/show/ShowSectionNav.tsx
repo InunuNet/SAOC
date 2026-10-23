@@ -130,7 +130,7 @@ export function ShowSectionNav({ current }: ShowSectionNavProps) {
                 href={nosPath(href)}
                 className="flex h-full flex-col gap-2 bg-parchment p-5 transition-colors duration-150 hover:bg-parchment/60"
               >
-                <span className="font-serif text-[18px] font-medium text-ink">{label}</span>
+                <span className="font-serif font-medium text-[18px] text-ink">{label}</span>
                 <span className="font-sans text-[13px] leading-snug text-ink/70">{hint}</span>
                 <span aria-hidden="true" className="mt-auto pt-3 text-muted">
                   →

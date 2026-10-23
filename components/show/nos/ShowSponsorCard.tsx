@@ -16,7 +16,7 @@ export interface ShowSponsorCardData {
 export function ShowSponsorCard({ sponsor }: { sponsor: ShowSponsorCardData }) {
   return (
     <Card className="flex h-full flex-col gap-3">
-      <h3 className="font-serif text-[20px] font-medium text-ink">{sponsor.name}</h3>
+      <h3 className="font-serif font-normal text-[20px] text-ink">{sponsor.name}</h3>
       {sponsor.tier ? (
         <p className="font-sans text-[13px] font-semibold uppercase tracking-[0.14em] text-muted">
           {sponsor.tier}

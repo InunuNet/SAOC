@@ -54,12 +54,12 @@ export function ExhibitorSteps({
           <li key={step._id} className="nos-surface grid grid-cols-[auto_minmax(0,1fr)] gap-5">
             <span
               aria-hidden="true"
-              className="mt-1 flex h-8 w-8 items-center justify-center border border-rule bg-parchment font-serif text-[16px] text-muted"
+              className="mt-1 flex h-8 w-8 items-center justify-center border border-rule bg-parchment font-serif font-medium text-[16px] text-muted"
             >
               {index + 1}
             </span>
             <div>
-              <h3 className="font-serif text-[22px] font-medium leading-snug text-ink">
+              <h3 className="font-serif font-normal text-[22px] leading-snug text-ink">
                 {step.title}
               </h3>
               {step.when ? (

@@ -157,7 +157,7 @@ export default async function MediaKitPage() {
         <section id="usage" aria-labelledby="usage-heading" className="scroll-mt-32">
           <h2
             id="usage-heading"
-            className="mb-6 font-serif text-[32px] font-medium leading-[1.15] text-ink"
+            className="mb-6 font-serif tracking-[-0.015em] font-light text-[32px] leading-[1.15] text-ink"
           >
             Clear space and minimum size
           </h2>
@@ -193,7 +193,7 @@ export default async function MediaKitPage() {
             <dl className="grid w-full grid-cols-2 gap-8 border-y border-rule py-10 sm:grid-cols-4">
               {facts.map((stat) => (
                 <div key={stat.label}>
-                  <dt className="font-serif text-[32px] font-medium text-ink">{stat.value}</dt>
+                  <dt className="font-serif tracking-[-0.015em] font-light text-[32px] text-ink">{stat.value}</dt>
                   <dd className="mt-1 font-mono text-[11px] tracking-[0.16em] text-muted">
                     {stat.label}
                   </dd>
@@ -209,7 +209,7 @@ export default async function MediaKitPage() {
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-6">
             About SAOC
           </p>
-          <p className="font-serif text-[20px] leading-[1.55] text-ink">
+          <p className="font-serif font-normal text-[20px] leading-[1.55] text-ink">
             The South African Orchid Council (SAOC) is the national coordinating body for
             affiliated orchid societies across South Africa.
           </p>

@@ -47,7 +47,7 @@ export function ExhibitorSection({
       {section?.heading ? (
         <h3
           id={headingId}
-          className="nos-opsz-32 scroll-mt-[62px] font-serif text-[24px] text-ink md:scroll-mt-[74px]"
+          className="nos-opsz-32 scroll-mt-[62px] font-serif font-normal text-[24px] text-ink md:scroll-mt-[74px]"
         >
           {section.heading}
         </h3>

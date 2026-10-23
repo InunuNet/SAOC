@@ -27,7 +27,7 @@ export function MissionBlock({ missionText, withhold = false }: MissionBlockProp
     <dl className="grid w-full grid-cols-2 gap-x-8 gap-y-8 border-t border-rule pt-10 md:grid-cols-4">
       {stats.map((stat) => (
         <div key={stat.label}>
-          <dt className="font-serif text-[clamp(36px,4vw,56px)] font-medium text-primary leading-none">
+          <dt className="font-serif tracking-[-0.015em] font-light text-[clamp(36px,4vw,56px)] text-primary leading-none">
             {stat.value}
           </dt>
           <dd className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted mt-2">
@@ -48,7 +48,7 @@ export function MissionBlock({ missionText, withhold = false }: MissionBlockProp
             <div className="mb-5">
               <span className="eyebrow">Our purpose</span>
             </div>
-            <h2 className="font-serif text-[clamp(28px,3.4vw,46px)] font-medium leading-[1.08] tracking-[-0.01em] text-primary">
+            <h2 className="font-serif font-normal min-[942px]:font-light text-[clamp(28px,3.4vw,46px)] leading-[1.08] tracking-[-0.015em] text-primary">
               Where South African growers bring their finest blooms to the bench.
             </h2>
           </div>

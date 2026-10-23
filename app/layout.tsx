@@ -8,7 +8,7 @@ const crimsonPro = Crimson_Pro({
   subsets: ['latin'],
   variable: '--font-serif-loaded',
   display: 'swap',
-  weight: ['400', '500', '600', '700'],
+  weight: ['300', '400', '500', '600'],
   style: ['normal', 'italic'],
 });
 

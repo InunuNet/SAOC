@@ -39,11 +39,11 @@ export function VisitorInfoBlock({
   return (
     <section id={id} className="nos-surface">
       {headingLevel === 'h2' ? (
-        <h2 className="nos-opsz-fluid font-serif text-[clamp(28px,3.6vw,44px)] leading-[1.1] text-ink">
+        <h2 className="nos-opsz-fluid font-serif tracking-[-0.015em] font-normal min-[889px]:font-light text-[clamp(28px,3.6vw,44px)] leading-[1.1] text-ink">
           {heading}
         </h2>
       ) : (
-        <h3 className="nos-opsz-32 font-serif text-[24px] text-ink">{heading}</h3>
+        <h3 className="nos-opsz-32 font-serif font-normal text-[24px] text-ink">{heading}</h3>
       )}
       <ConfirmationBadge
         status={status}

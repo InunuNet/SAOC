@@ -14,7 +14,7 @@ export function SalesClosedNotice({ message }: SalesClosedNoticeProps) {
       <p className="font-sans text-[12px] font-bold uppercase tracking-[0.14em] text-ink">
         Sales closed
       </p>
-      <p className="mt-3 font-serif text-[20px] leading-relaxed text-ink">{message}</p>
+      <p className="mt-3 font-serif font-normal text-[20px] leading-relaxed text-ink">{message}</p>
     </div>
   );
 }

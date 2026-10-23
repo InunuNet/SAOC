@@ -49,7 +49,7 @@ export function SocietyCard({ society }: SocietyCardProps) {
         </p>
       ) : null}
 
-      <h2 className="mt-2 font-serif text-[20px] font-semibold leading-snug text-ink">
+      <h2 className="mt-2 font-serif font-normal text-[20px] leading-snug text-ink">
         {society.name}
       </h2>
 

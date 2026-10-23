@@ -29,13 +29,13 @@ export function SocietyExpect() {
   return (
     <section>
       <span className="eyebrow">What to expect</span>
-      <h2 className="mt-3 max-w-2xl font-serif text-[clamp(26px,3vw,36px)] font-medium leading-[1.15] tracking-[-0.01em] text-primary">
+      <h2 className="mt-3 max-w-2xl font-serif font-normal min-[1067px]:font-light text-[clamp(26px,3vw,36px)] leading-[1.15] tracking-[-0.015em] text-primary">
         Life at an affiliated orchid society
       </h2>
       <ul className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2">
         {EXPECTATIONS.map((item) => (
           <li key={item.heading}>
-            <h3 className="font-serif text-[18px] font-medium text-ink">{item.heading}</h3>
+            <h3 className="font-serif font-medium text-[18px] text-ink">{item.heading}</h3>
             <p className="mt-2 font-sans text-[15px] leading-relaxed text-ink/70">{item.body}</p>
           </li>
         ))}

@@ -22,7 +22,7 @@ interface VendorContactFieldsetProps {
 export function VendorContactFieldset({ state, onFieldChange, disabled }: VendorContactFieldsetProps) {
   return (
     <div className="space-y-5">
-      <h2 className="font-serif text-[20px] font-semibold text-ink">Contact &amp; business details</h2>
+      <h2 className="font-serif font-normal text-[20px] text-ink">Contact &amp; business details</h2>
 
       <VendorBusinessIdentityFieldset state={state} onFieldChange={onFieldChange} disabled={disabled} />
 

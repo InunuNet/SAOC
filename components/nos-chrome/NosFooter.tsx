@@ -25,6 +25,7 @@ import {
   FOOTER_RHYTHM,
   FOOTER_WOSA,
 } from '@/components/chrome/footer-data';
+import { ExternalArrow } from '@/components/chrome/ExternalArrow';
 import { MediaKitFooterLink } from '@/components/chrome/MediaKitFooterLink';
 import { NewsletterSignup } from '@/components/newsletter/NewsletterSignup';
 import { nosPath } from '@/lib/nos-paths';
@@ -126,7 +127,7 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
                 rel="noopener noreferrer"
               >
                 {FOOTER_WOSA.label}
-                <span aria-hidden="true">↗</span>
+                <ExternalArrow />
                 <span className="sr-only">{FOOTER_NEW_TAB_CUE}</span>
               </a>
             </li>

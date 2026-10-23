@@ -108,7 +108,7 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
           <div className="mb-3">
             <span className="eyebrow eyebrow--on-tint">Find your way in</span>
           </div>
-          <h2 className="font-serif text-[clamp(34px,4.4vw,54px)] font-medium leading-[1.08] tracking-[-0.01em] text-primary">
+          <h2 className="font-serif font-light text-[clamp(34px,4.4vw,54px)] leading-[1.08] tracking-[-0.015em] text-primary">
             Four ways into SAOC
           </h2>
         </div>
@@ -141,7 +141,7 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
                   {card.title ? (
                     <h3
                       data-nav-card-title
-                      className="mb-3 text-pretty font-serif text-[24px] font-semibold leading-[1.18] text-primary"
+                      className="mb-3 text-pretty font-serif font-normal text-[24px] leading-[1.18] text-primary"
                     >
                       {card.title}
                     </h3>

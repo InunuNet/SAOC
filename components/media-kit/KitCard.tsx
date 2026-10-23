@@ -61,7 +61,7 @@ export function KitCard({ item, ground, layout = 'lockup', title, alsoAs = [], e
         ) : null}
       </div>
       <div className="flex flex-1 flex-col gap-1 p-4">
-        <h3 className="font-serif text-[16px] font-medium leading-[1.3] text-ink">{heading}</h3>
+        <h3 className="font-serif font-medium text-[16px] leading-[1.3] text-ink">{heading}</h3>
         {formats.map((format) => (
           <div key={format.path} className="flex flex-wrap items-center justify-between gap-x-4">
             <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted">

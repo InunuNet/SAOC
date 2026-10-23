@@ -111,7 +111,7 @@ export function ConfirmationPoller({ bookingRef }: ConfirmationPollerProps) {
         {(state === 'checking' || state === 'reserved') && (
           <div role="status" aria-live="polite">
             <p className="font-sans text-[13px] font-semibold text-muted">Reserved</p>
-            <h2 className="mt-3 font-serif text-[32px] font-medium text-ink">
+            <h2 className="mt-3 font-serif tracking-[-0.015em] font-light text-[32px] text-ink">
               {confirmationPendingHeading}
             </h2>
             <p className="mt-4 font-sans text-[15px] leading-relaxed text-ink/80">
@@ -122,7 +122,7 @@ export function ConfirmationPoller({ bookingRef }: ConfirmationPollerProps) {
 
         {state === 'timed-out' && (
           <div role="status" aria-live="polite">
-            <h2 className="font-serif text-[32px] font-medium text-ink">
+            <h2 className="font-serif tracking-[-0.015em] font-light text-[32px] text-ink">
               {confirmationPendingHeading}
             </h2>
             <p className="mt-4 font-sans text-[15px] leading-relaxed text-ink/80">

@@ -108,7 +108,7 @@ export default async function EventDetailPage({
       ) : null}
 
       {/* Title */}
-      <h1 className="mt-3 font-serif text-[36px] font-semibold leading-tight text-ink">
+      <h1 className="mt-3 font-serif tracking-[-0.015em] font-light text-[36px] leading-tight text-ink">
         {event.title}
       </h1>
 

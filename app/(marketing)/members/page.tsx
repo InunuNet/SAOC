@@ -58,7 +58,7 @@ export default function MembersPage() {
           <section className="space-y-4 border-t border-rule pt-10">
             <div>
               <span className="eyebrow">Help shape it</span>
-              <h2 className="mt-3 font-serif text-[22px] font-semibold text-ink">
+              <h2 className="mt-3 font-serif font-normal text-[22px] text-ink">
                 Tell us what you&apos;d want from it
               </h2>
               <p className="mt-2 font-sans text-[16px] leading-[1.55] text-ink/80">

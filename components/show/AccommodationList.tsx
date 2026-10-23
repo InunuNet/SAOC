@@ -62,7 +62,7 @@ export function AccommodationList({ options }: AccommodationListProps) {
                     index === lastIndex && finalCardSpans > 1 ? SPAN_CLASS[finalCardSpans] : ''
                   }`}
                 >
-                  <h4 className="font-serif text-[18px] font-medium text-ink">{option.name}</h4>
+                  <h4 className="font-serif font-medium text-[18px] text-ink">{option.name}</h4>
                   {option.area ? (
                     <p className="mt-1 font-sans text-[12px] font-semibold uppercase tracking-[0.16em] text-muted">
                       {option.area}

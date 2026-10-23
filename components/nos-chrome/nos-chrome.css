@@ -114,7 +114,8 @@
 .nf :focus-visible { outline: 2px solid var(--nc-ground); outline-offset: 3px; border-radius: 4px; }
 .nf ::selection { background: var(--nc-gold); color: var(--nc-royal); }
 /* r20 F3 (Codi FINAL): the lockup in the SAOC footer's brand column (FOOTER_LAYOUT), 248px, never wider than the column. */
-.nf-lockup { display: block; width: 248px; max-width: 100%; line-height: 0; border-radius: 4px; }
+/* The PNG carries transparent padding (measured: 229px left, 250px right, 224px top and 257px bottom of 3272x2876). At the 248px box the negative margins below trim it, so the column hugs the visible ink and the footer gaps and the top line are measured from the artwork, not the box. */
+.nf-lockup { display: block; width: 248px; margin: -16px -19px -19px -17px; line-height: 0; border-radius: 4px; }
 .nf-lockup img { display: block; width: 100%; max-width: none; height: auto; }
 .nf-credit { display: grid; justify-items: start; gap: 8px; min-height: 44px; padding: 4px 0; color: var(--nc-lilac); text-decoration: none; border-radius: 4px; }
 .nf-credit img { display: block; width: auto; height: 56px; max-width: none; }

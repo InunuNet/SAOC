@@ -32,7 +32,7 @@ const WASTE_TYPE_OPTIONS = [
 export function VendorWasteFieldset({ state, onFieldChange, disabled }: VendorWasteFieldsetProps) {
   return (
     <div className="space-y-5">
-      <h2 className="font-serif text-[20px] font-semibold text-ink">
+      <h2 className="font-serif font-normal text-[20px] text-ink">
         Waste, cleaning and enviromental impacts
       </h2>
 

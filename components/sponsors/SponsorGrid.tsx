@@ -52,7 +52,7 @@ export function SponsorGrid({ sponsors }: SponsorGridProps) {
                     className="h-16 w-auto object-contain"
                   />
                 ) : null}
-                <h3 className="font-serif text-[20px] font-semibold leading-snug text-ink mt-4">
+                <h3 className="font-serif font-normal text-[20px] leading-snug text-ink mt-4">
                   {sponsor.name}
                 </h3>
                 {sponsor.description ? (

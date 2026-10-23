@@ -125,7 +125,7 @@ export function ShowFaqList({
                   <details>
                     <summary
                       data-faq-summary=""
-                      className="nos-faq-summary cursor-pointer font-serif text-[19px] font-medium leading-snug text-ink hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--ring-focus)]"
+                      className="nos-faq-summary cursor-pointer font-serif font-medium text-[19px] leading-snug text-ink hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--ring-focus)]"
                     >
                       <span data-faq-question="" className="nos-faq-question">
                         <span>{faq.question}</span>

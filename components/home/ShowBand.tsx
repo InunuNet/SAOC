@@ -74,7 +74,7 @@ function CountdownBox({ target, edition }: { target: Date | null; edition?: numb
         >
           <div
             data-countdown-value
-            className="font-serif text-[34px] sm:text-[42px] font-medium leading-none text-accent-soft tabular-nums"
+            className="font-serif tracking-[-0.015em] font-light text-[34px] sm:text-[42px] leading-none text-accent-soft tabular-nums"
           >
             {cell.value}
           </div>
@@ -121,7 +121,7 @@ export function ShowBand({ show }: ShowBandProps) {
               <span className="eyebrow eyebrow--light">Flagship Event</span>
             </div>
 
-            <h2 className="font-serif text-[clamp(32px,3.8vw,48px)] font-medium leading-[1.1] tracking-[-0.01em] text-ivory mb-8 text-balance">
+            <h2 className="font-serif font-light text-[clamp(32px,3.8vw,48px)] leading-[1.1] tracking-[-0.015em] text-ivory mb-8 text-balance">
               {showTitleWithEdition(show?.edition, 'South African National Orchid Show')}
             </h2>
 
