@@ -221,6 +221,10 @@ Phase D2 (Stripe SA payment gateway) and D4 (ticket buy flow) are implemented bu
 3. Add Stripe keys to Secret Manager: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 4. Add `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` to `apphosting.yaml` env (safe to inline)
 5. Enable the buy-flow pages (currently behind a feature flag — ask InunuNet)
+6. Flipping `TICKETING_PAYMENTS_LIVE` also activates the door's test-ticket rejection. Before
+   launch, re-issue any legitimate pre-launch tickets (for example comps), since older tickets
+   are refused at the door in live mode. Verify one sandbox ticket is refused at the door. See
+   [docs/door-reject-test-tickets.md](door-reject-test-tickets.md).
 
 ---
 
