@@ -4,6 +4,9 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initAdmin } from '@/lib/firebase-admin';
 import { sendEmail, FORMS_FROM_ADDRESS } from '@/lib/email';
 import ContactConfirmation from '@/emails/ContactConfirmation';
+import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
+import { sendContactSubmissionAdminNotice } from '@/lib/contact-submission-admin-notice';
+import { logFailureSafely } from '@/lib/safe-log';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,12 +38,18 @@ export async function POST(request: NextRequest) {
     initAdmin();
     const db = getFirestore();
 
-    await db.collection('contactSubmissions').add({
-      name: String(name).trim(),
-      email: String(email).trim().toLowerCase(),
-      subject: String(subject).trim(),
-      message: String(message).trim(),
-      submittedAt: Timestamp.now(),
+    const submittedAt = Timestamp.now();
+    const storedName = String(name).trim();
+    const storedEmail = String(email).trim().toLowerCase();
+    const storedSubject = String(subject).trim();
+    const storedMessage = String(message).trim();
+
+    const ref = await db.collection('contactSubmissions').add({
+      name: storedName,
+      email: storedEmail,
+      subject: storedSubject,
+      message: storedMessage,
+      submittedAt,
       status: 'new',
     });
 
@@ -57,6 +66,19 @@ export async function POST(request: NextRequest) {
     } catch (emailErr) {
       console.error('[contact/route] Email send failed (non-fatal):', emailErr);
     }
+
+    await deliverConfirmationEmailAfterCommit(
+      () =>
+        sendContactSubmissionAdminNotice({
+          submissionId: ref.id,
+          name: storedName,
+          email: storedEmail,
+          subject: storedSubject,
+          message: storedMessage,
+          submittedAt: submittedAt.toDate(),
+        }),
+      (error) => logFailureSafely('[contact/route] admin notice failed (non-fatal)', error),
+    );
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
