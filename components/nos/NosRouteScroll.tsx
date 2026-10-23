@@ -20,6 +20,8 @@ const RESTORE_MAX_MS = 10000;
 const USER_INPUT_EVENTS = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const;
 const RESTORE_TOLERANCE_PX = 2;
 const FREEZE_MS = 2000;
+const SEARCH_POLL_MS = 50;
+const SEARCH_POLL_MAX_MS = 2000;
 
 type Offsets = Record<string, number>;
 
@@ -103,6 +105,22 @@ export function NosRouteScroll() {
     // Next scrolls to its own target (and the browser clamps) before the new history entry exists,
     // so that scroll would be recorded against the page being left. Snapshot the offset when a
     // link to another path is activated and freeze that entry until the navigation settles.
+    // usePathname() ignores query changes, so a link to the same path with a new query (no hash)
+    // is watched here: once the URL shows the new search, reset to the top like any push.
+    let searchTimer = 0;
+    const resetOnSearchChange = (search: string) => {
+      window.clearInterval(searchTimer);
+      const started = Date.now();
+      searchTimer = window.setInterval(() => {
+        if (window.location.search === search) {
+          window.clearInterval(searchTimer);
+          ensureEntryId();
+          if (!window.location.hash) window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        } else if (Date.now() - started >= SEARCH_POLL_MAX_MS) {
+          window.clearInterval(searchTimer);
+        }
+      }, SEARCH_POLL_MS);
+    };
     const onClick = (event: MouseEvent) => {
       const modified = event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
       if (event.button !== 0 || modified) return;
@@ -110,10 +128,14 @@ export function NosRouteScroll() {
       const id = currentEntryId();
       if (!anchor || !id || (anchor.getAttribute('target') ?? '_self') !== '_self') return;
       const url = new URL((anchor as HTMLAnchorElement).href, window.location.href);
-      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) return;
+      if (url.origin !== window.location.origin) return;
+      const samePath = url.pathname === window.location.pathname;
+      const searchChange = samePath && !url.hash && url.search !== window.location.search;
+      if (samePath && !searchChange) return;
       popTarget.current = undefined;
       writeOffset(id, window.scrollY);
       freeze(id);
+      if (searchChange) resetOnSearchChange(url.search);
     };
     let frame = 0;
     const onScroll = () => {
@@ -131,6 +153,7 @@ export function NosRouteScroll() {
       window.removeEventListener('popstate', onPop);
       document.removeEventListener('click', onClick, true);
       window.clearTimeout(freezeTimer);
+      window.clearInterval(searchTimer);
       window.removeEventListener('scroll', onScroll);
       if (frame) window.cancelAnimationFrame(frame);
     };
