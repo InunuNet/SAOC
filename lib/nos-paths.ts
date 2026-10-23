@@ -20,3 +20,6 @@ export function nosPath(href: string): string {
   if (path.startsWith(`${NOS_INTERNAL_PREFIX}/`)) return `${path.slice(NOS_INTERNAL_PREFIX.length)}${suffix}`;
   return href;
 }
+
+/** The internal route of the show's own contact page; the NOS host serves it at `/contact`. */
+export const NOS_CONTACT_PATH = '/national-show/contact';

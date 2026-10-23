@@ -189,7 +189,6 @@ const NEVER_CREATE_SLUGS = [
   '/national-show/plant-exhibition',
   '/national-show/plant-sales',
   '/national-show/judging-and-awards',
-  '/national-show/contact',
 ] as const;
 
 const UNTOUCHABLE_DIRS = ['tickets', 'conferences', 'exhibitors', 'vendors', 'archive'] as const;
