@@ -25,6 +25,7 @@ const todayIso = new Date().toISOString().slice(0, 10);
 // A real National Show event is in Sanity under the same title as the invented one, so that one title may
 // legitimately appear in the feeds; every other invented title must not.
 const REAL_COLLISION = /National Orchid Show/;
+const NATIONAL_SHOW = 'National Orchid Show';
 const mentions = (text) => entries.filter((e) => !REAL_COLLISION.test(e.title) && text.includes(e.title)).length;
 const upcoming = entries.filter((e) => e.end >= todayIso);
 
@@ -83,7 +84,7 @@ async function waitUp() {
 
 async function run() {
   await waitUp();
-  check('the invented-events module parses to 18 entries', entries.length === 18, `parsed ${entries.length}`);
+  check('the invented-events module parses to 17 entries', entries.length === 17, `parsed ${entries.length}`);
   const page = await get('/events');
   check(`${MODE}: /events 200`, page.status === 200, `status=${page.status}`);
   const ld = [...page.body.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join('\n');
@@ -91,12 +92,15 @@ async function run() {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, httpCredentials: { username: 's', password: 'p' } });
   const tab = await context.newPage();
   await tab.goto(`http://${HOST}/events`, { waitUntil: 'networkidle' });
-  const rows = await tab.$$eval('article', (articles) =>
-    articles.filter((a) => a.querySelector('[data-placeholder-marker]')).map((a) => ({ text: a.textContent, linked: a.querySelector('a') !== null })),
+  const all = await tab.$$eval('article', (articles) =>
+    articles.map((a) => ({ text: a.textContent, marked: a.querySelector('[data-placeholder-marker]') !== null, linked: a.querySelector('a') !== null })),
   );
+  const rows = all.filter((r) => r.marked);
+  const showRows = all.filter((r) => r.text.includes(NATIONAL_SHOW)).length;
   await context.close();
   if (MODE === 'preview') {
     check(`preview: ${upcoming.length} marked invented rows (today ${todayIso})`, upcoming.length > 0 && rows.length === upcoming.length && upcoming.every((e) => rows.some((r) => r.text.includes(e.title))), `marked rows=${rows.length}`);
+    check('preview: the National Orchid Show is listed once', showRows === 1, `rows=${showRows}`);
     check('preview: invented rows are not links', rows.every((r) => !r.linked));
   } else {
     check('public: no marked row on /events', rows.length === 0, `marked rows=${rows.length}`);

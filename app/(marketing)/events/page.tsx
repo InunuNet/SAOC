@@ -69,7 +69,7 @@ export default async function EventsPage() {
 
   // Brad: keep the invented events in, noted as awaiting SAOC's official calendar. Preview only: a public
   // build lists none. They join the rows below but never `events`, which feeds the JSON-LD Event nodes.
-  const placeholders = withholdPlaceholderProse() ? [] : upcomingPlaceholderEvents(new Date());
+  const placeholders = withholdPlaceholderProse() ? [] : upcomingPlaceholderEvents(new Date(), events);
   const listed: ListedEvent[] = [...events, ...placeholders].sort((a, b) => a.date.localeCompare(b.date));
 
   const featured = listed.filter((e) => e.isFeatured === true);

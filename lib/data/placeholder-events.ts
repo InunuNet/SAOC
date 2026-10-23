@@ -5,7 +5,7 @@
 // Brad, verbatim: "If we have invented events, then just keep the invented events in and then note
 // them as AI events waiting on SAOC's official events to populate the page."
 //
-// These 18 entries are the invented calendar that lib/data/events.ts held before commit b45971b0
+// These 17 entries are the invented calendar that lib/data/events.ts held before commit b45971b0
 // removed it (restored from b45971b0^). They are NOT Council-supplied. Rules that keep them honest:
 //   - /events is the only reader (app/(marketing)/events/page.tsx), and only while
 //     withholdPlaceholderProse() is false (SHOW_PLACEHOLDER_PREVIEW with the beta wall up).
@@ -187,27 +187,37 @@ export const placeholderEvents: SocietyEvent[] = [
     kind: 'Council',
     province: 'GP',
   },
-  {
-    id: 15,
-    date: '2027-09-23',
-    endDate: '2027-09-26',
-    title: '19th South African National Orchid Show',
-    host: 'Cape Orchid Society',
-    venue: 'The Hangar, Stellenbosch Flying Club',
-    kind: 'Show',
-    province: 'WC',
-    description: 'The 19th National Orchid Show, hosted by the Cape orchid societies in Cape Town.',
-  },
 ];
 
 const PLACEHOLDER_ID_PREFIX = 'placeholder-';
 const ISO_DATE_LENGTH = 10;
 
-/** The invented events dated today or later, as /events rows with stable `placeholder-` ids, oldest first. */
-export function upcomingPlaceholderEvents(today: Date): PlaceholderEventRow[] {
+const TITLE_WORD = /[a-z0-9]+/g;
+
+function titleWords(title: string): Set<string> {
+  return new Set(title.toLowerCase().match(TITLE_WORD) ?? []);
+}
+
+// A real event always wins: same start date, and every word of the shorter title is in the longer one.
+function duplicatesRealEvent(event: SocietyEvent, realEvents: readonly SanityEvent[]): boolean {
+  const words = titleWords(event.title);
+  return realEvents.some((real) => {
+    if (real.date.slice(0, ISO_DATE_LENGTH) !== event.date) return false;
+    const realWords = titleWords(real.title);
+    const [small, large] = words.size <= realWords.size ? [words, realWords] : [realWords, words];
+    return [...small].every((word) => large.has(word));
+  });
+}
+
+/** The invented events dated today or later and not duplicating a real event, as /events rows, oldest first. */
+export function upcomingPlaceholderEvents(
+  today: Date,
+  realEvents: readonly SanityEvent[] = [],
+): PlaceholderEventRow[] {
   const todayIso = today.toISOString().slice(0, ISO_DATE_LENGTH);
   return placeholderEvents
     .filter((event) => (event.endDate ?? event.date) >= todayIso)
+    .filter((event) => !duplicatesRealEvent(event, realEvents))
     .sort((a, b) => a.date.localeCompare(b.date))
     .map((event) => ({
       _id: `${PLACEHOLDER_ID_PREFIX}${Math.abs(event.id)}-${event.date}`,
