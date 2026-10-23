@@ -7,11 +7,14 @@ import {
   PDFFont,
   PDFImage,
   PDFPage,
+  degrees,
   rgb,
   setCharacterSpacing,
   type Color,
 } from 'pdf-lib';
 import { create as createQr } from 'qrcode';
+
+import { TICKETING_TEST_BANNER_HEADLINE, isTicketingTestMode } from '@/lib/ticketing-test-mode';
 
 /**
  * ticket-pdf (F1) — the NOS A4 ticket, one page per position, drawn at explicit coordinates.
@@ -77,6 +80,11 @@ const A4_HEIGHT_MM = 297;
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
 const mm = (value: number): number => value * PT_PER_MM;
+
+// ---- committee-testing watermark ----
+const WATERMARK_FONT_SIZE = 64;
+const WATERMARK_ANGLE_DEGREES = 45;
+const WATERMARK_INK = rgb(0x14 / 255, 0x11 / 255, 0x0a / 255);
 
 // ---- colour tokens (layout-spec.md) ----
 const hex = (value: string): Color =>
@@ -746,6 +754,22 @@ function drawFooter(
   });
 }
 
+// Committee testing: the headline drawn once, diagonally across the page centre, after the content.
+function drawTestWatermark(ctx: Ctx): void {
+  const size = WATERMARK_FONT_SIZE;
+  const width = ctx.fonts.bold.widthOfTextAtSize(TICKETING_TEST_BANNER_HEADLINE, size);
+  const half = (width / 2) * Math.SQRT1_2;
+  ctx.page.drawText(TICKETING_TEST_BANNER_HEADLINE, {
+    x: PAGE_WIDTH / 2 - half,
+    y: PAGE_HEIGHT / 2 - half,
+    font: ctx.fonts.bold,
+    size,
+    color: WATERMARK_INK,
+    opacity: 0.3,
+    rotate: degrees(WATERMARK_ANGLE_DEGREES),
+  });
+}
+
 function drawPage(
   ctx: Ctx,
   input: TicketPdfInput,
@@ -760,6 +784,7 @@ function drawPage(
   drawDatesColumn(ctx, input.visit);
   drawEmergencyFootnote(ctx, input.visit);
   drawFooter(ctx, input, index);
+  if (isTicketingTestMode()) drawTestWatermark(ctx);
 }
 
 async function loadAssets(pdf: PDFDocument): Promise<{ fonts: Fonts; logos: Logos }> {

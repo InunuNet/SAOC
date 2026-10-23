@@ -35,7 +35,6 @@ import { nosUrl } from '@/lib/site-hosts';
 // (Firebase Admin SDK, runtime-only credentials) means this route can never be prerendered.
 export const dynamic = 'force-dynamic';
 
-const NOS_TITLE_SUFFIX = ' — National Orchid Show | SAOC';
 
 // r18 (Codi): the checkout step carries the tickets hub's breadcrumb (TicketsMasthead) one level
 // deeper, and mirrors the hub's BreadcrumbList (NosBreadcrumbJsonLd) with the product appended.
@@ -102,12 +101,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     tags: ['ticketType', 'sanity'],
   });
   if (!ticketType) notFound();
-  // A ticket is a NOS page (R62 #1), but /tickets/* sits outside national-show/layout.tsx's
-  // title template, so the NOS suffix is spelled out here.
+  // A ticket is a NOS page (R62 #1): the title comes from the (nos) template, or from the
+  // committee-testing prefix template while payments are not live.
   // Sanity does not require a description: without one the page keeps the site default
   // (fitDescription cannot take a missing string).
   if (!ticketType.description?.trim()) {
-    return { title: { absolute: `${ticketType.name}${NOS_TITLE_SUFFIX}` } };
+    return { title: ticketType.name };
   }
   return {
     ...buildPageMetadata({
@@ -116,7 +115,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       lede: ticketType.description,
       path: `/tickets/${slug}`,
     }),
-    title: { absolute: `${ticketType.name}${NOS_TITLE_SUFFIX}` },
+    title: ticketType.name,
   };
 }
 

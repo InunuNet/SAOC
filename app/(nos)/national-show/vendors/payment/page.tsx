@@ -13,6 +13,7 @@ import {
 } from '@/lib/payments/pending-hold';
 import { verifyVendorStandPaymentToken } from '@/lib/vendor-stand-payment-token';
 import { buildPageMetadata } from '@/lib/seo';
+import { withTicketingTestTitle } from '@/lib/ticketing-test-metadata';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { saocUrl } from '@/lib/site-hosts';
 
@@ -30,13 +31,15 @@ import { saocUrl } from '@/lib/site-hosts';
 // noIndex: token-gated, not public content, and excluded from the sitemap. No Event or Offer
 // markup here either — the stand fee is a gated B2B transaction, not a public ticket sale
 // (M6/B8c).
-export const metadata: Metadata = buildPageMetadata({
-  title: 'Vendor stand payment',
-  image: nosOgImage('Vendor stand payment — National Show'),
-  description: 'Select your stand size and complete payment for the 2027 National Orchid Show.',
-  path: '/national-show/vendors/payment',
-  noIndex: true,
-});
+export const metadata: Metadata = withTicketingTestTitle(
+  buildPageMetadata({
+    title: 'Vendor stand payment',
+    image: nosOgImage('Vendor stand payment — National Show'),
+    description: 'Select your stand size and complete payment for the 2027 National Orchid Show.',
+    path: '/national-show/vendors/payment',
+    noIndex: true,
+  })
+);
 
 // Reads Firestore at request time -- must never be prerendered at build time (FIREBASE_ADMIN_*
 // secrets are runtime-only), same rationale as the gated vendor registration page's own
@@ -78,7 +81,9 @@ export default async function VendorStandPaymentPage({
       <div className="mx-auto max-w-2xl px-6 py-16 sm:px-8 sm:py-20">
         {usable && awaitingConfirmation ? (
           <div role="status" aria-live="polite">
-            <h2 className="font-sans text-[15px] font-semibold text-ink">{PENDING_NOTICE_HEADING}</h2>
+            <h2 className="font-sans text-[15px] font-semibold text-ink">
+              {PENDING_NOTICE_HEADING}
+            </h2>
             <p className="mt-2 font-sans text-[15px] text-ink">{PENDING_NOTICE_BODY}</p>
           </div>
         ) : usable ? (
@@ -105,7 +110,11 @@ export default async function VendorStandPaymentPage({
  * the register page's own gate check.
  */
 async function resolveUsability(token: string): Promise<UsabilityResult> {
-  const fallback: UsabilityResult = { usable: false, businessName: '', awaitingConfirmation: false };
+  const fallback: UsabilityResult = {
+    usable: false,
+    businessName: '',
+    awaitingConfirmation: false,
+  };
   if (!token) return fallback;
 
   const secret = process.env.VENDOR_STAND_PAYMENT_TOKEN_SECRET;

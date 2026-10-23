@@ -7,6 +7,7 @@ import { ShowContentState } from '@/components/show/nos/ShowContentState';
 import { loadShowFacts } from '@/lib/data/show-facts';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
+import { withTicketingTestTitle } from '@/lib/ticketing-test-metadata';
 import { loadPresenterViewModels } from '@/lib/view-models/load-presenters';
 import { loadTicketCardViewModel } from '@/lib/view-models/load-ticket-card';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
@@ -34,12 +35,14 @@ import { NosShowIndex } from '@/components/nos/NosShowIndex';
 export const dynamic = 'force-dynamic';
 export const revalidate = 60;
 
-export const metadata: Metadata = buildPageMetadata({
-  title: 'WOSA Conference',
-  image: nosOgImage('WOSA Conference — National Orchid Show'),
-  description: 'The WOSA Conference, held alongside the National Show, and what it is for.',
-  path: '/national-show/wosa-conference',
-});
+export const metadata: Metadata = withTicketingTestTitle(
+  buildPageMetadata({
+    title: 'WOSA Conference',
+    image: nosOgImage('WOSA Conference — National Orchid Show'),
+    description: 'The WOSA Conference, held alongside the National Show, and what it is for.',
+    path: '/national-show/wosa-conference',
+  })
+);
 
 export default async function WosaConferencePage() {
   const [result, facts] = await Promise.all([

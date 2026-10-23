@@ -201,6 +201,10 @@ env:
     secret: BETA_BASIC_AUTH_PASSWORD
     availability:
       - RUNTIME
+  # BETA_PASSWORD_WALL_OFF (mission committee-testing) is deliberately NOT declared here. SAOC ops
+  # set it to the exact value 'true' as a RUNTIME variable, only after the "Testing only, not
+  # live" treatment is verified on the deployed site. It lifts the Basic Auth prompt only; noindex,
+  # no-store and robots disallow-all stay until SITE_PUBLIC_LAUNCH. See docs/committee-testing.md.
   # Beta-only preview of the labelled AI placeholder prose on the National Show pages, kept
   # on for Lee-Ann's review. Safe at launch: withholdPlaceholderProse() in
   # lib/data/show-pages.ts withholds whenever SITE_PUBLIC_LAUNCH=true, or whenever the beta

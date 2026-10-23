@@ -8,6 +8,7 @@ import { CartAttendeeFields } from '@/components/tickets/CartAttendeeFields';
 import { CheckoutRedirectNotice } from '@/components/tickets/CheckoutRedirectNotice';
 import { OzowSandboxTestModeBanner } from '@/components/tickets/OzowSandboxTestModeBanner';
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
+import { TicketingTestPayNotice } from '@/components/tickets/TicketingTestPayNotice';
 import type { TicketTypeCardData } from '@/components/tickets/TicketTypeCard';
 import { useTicketCart } from '@/components/tickets/useTicketCart';
 import { ArrowIcon, MinusIcon, PlusIcon } from '@/components/tickets/keepsake/parts';
@@ -264,6 +265,7 @@ export function TicketPurchaseForm({
         <TicketFieldAlert>{cart.errorMessage}</TicketFieldAlert>
       ) : null}
 
+      <TicketingTestPayNotice />
       <div data-catalogue-total="" className="nk-checkout-total">
         <p aria-live="polite" aria-atomic="true">
           Total <strong>{formatRand(cart.estimatedTotal)}</strong>

@@ -17,6 +17,7 @@ import OrderConfirmation, {
 } from '@/emails/OrderConfirmation';
 import { loadOrderVisit } from '@/lib/order-visit-info';
 import { logFailureSafely } from '@/lib/safe-log';
+import { withTestSubjectPrefix } from '@/lib/ticketing-test-mode';
 import type { TicketType } from '@/types/index';
 
 /**
@@ -175,7 +176,7 @@ export async function sendConfirmationEmail(
 
   await mailer.send({
     to: input.buyerEmail,
-    subject: 'Your National Orchid Show order is confirmed',
+    subject: withTestSubjectPrefix('Your National Orchid Show order is confirmed'),
     react: OrderConfirmation({ buyerName: input.buyerName, positions, recoveryUrl, visit }),
     from: TICKETS_FROM_ADDRESS,
     attachments,

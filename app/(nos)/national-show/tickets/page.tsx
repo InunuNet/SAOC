@@ -33,20 +33,23 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowQuery } from '@/sanity/queries';
 import { nosPath } from '@/lib/nos-paths';
 import { buildPageMetadata } from '@/lib/seo';
+import { withTicketingTestTitle } from '@/lib/ticketing-test-metadata';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 // The Ozow test-mode strip is shown to verified admins only, which reads the session cookie, so
 // this route renders per request (Sanity reads stay in the data cache).
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = buildPageMetadata({
-  title: 'Tickets',
-  image: nosOgImage('Tickets — National Show'),
-  description:
-    "Choose the option that matches why you're coming to the 2027 National Orchid Show — " +
-    "we'll take you straight to the right form.",
-  path: '/national-show/tickets',
-});
+export const metadata: Metadata = withTicketingTestTitle(
+  buildPageMetadata({
+    title: 'Tickets',
+    image: nosOgImage('Tickets — National Show'),
+    description:
+      "Choose the option that matches why you're coming to the 2027 National Orchid Show — " +
+      "we'll take you straight to the right form.",
+    path: '/national-show/tickets',
+  })
+);
 
 // The exhibitor and trade routes are not tickets: they stay as a compact two-card row at the
 // foot of the hub, with no stub. Copy is preserved verbatim from the pre-v13 page.

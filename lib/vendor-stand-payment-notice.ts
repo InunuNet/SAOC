@@ -2,6 +2,7 @@ import React from 'react';
 
 import { sendEmail, FORMS_FROM_ADDRESS } from '@/lib/email';
 import VendorStandPaymentReady from '@/emails/VendorStandPaymentReady';
+import { withTestSubjectPrefix } from '@/lib/ticketing-test-mode';
 
 /**
  * M3 (vendor-gated-registration-flow, F28) -- sender for the stand-payment-link email. Mints
@@ -39,7 +40,7 @@ export async function sendVendorStandPaymentNoticeEmail(
 
   await mailer.send({
     to: input.contactEmail,
-    subject: 'Pay for your National Orchid Show stand',
+    subject: withTestSubjectPrefix('Pay for your National Orchid Show stand'),
     react: React.createElement(VendorStandPaymentReady, {
       businessName: input.businessName,
       contactPersonName: input.contactPersonName,
