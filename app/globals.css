@@ -462,7 +462,8 @@ body {
   z-index: -2;
   border: 1px solid var(--rule);
   border-radius: var(--radius-card);
-  background: var(--bone);
+  /* NOS Design #51: a --bone plate vanished on the --bone section; a warm brass tint reads. */
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
   transform: translate(10px, 10px);
   transition: transform 250ms var(--ease);
 }
