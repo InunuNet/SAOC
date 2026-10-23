@@ -201,6 +201,12 @@ env:
     secret: BETA_BASIC_AUTH_PASSWORD
     availability:
       - RUNTIME
+  # Lifts the Basic Auth prompt only; noindex, no-store and robots disallow-all are unchanged.
+  # Needs the "Testing only, not live" ticketing banner (PR #60) live first.
+  - variable: BETA_PASSWORD_WALL_OFF
+    value: "true"
+    availability:
+      - RUNTIME
   # Beta-only preview of the labelled AI placeholder prose on the National Show pages, kept
   # on for Lee-Ann's review. Safe at launch: withholdPlaceholderProse() in
   # lib/data/show-pages.ts withholds whenever SITE_PUBLIC_LAUNCH=true, or whenever the beta
