@@ -3,6 +3,9 @@ import { getAuth } from 'firebase-admin/auth';
 import { createClient } from '@sanity/client';
 
 import { initAdmin } from '@/lib/firebase-admin';
+import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
+import { sendEventSubmissionAdminNotice } from '@/lib/event-submission-admin-notice';
+import { logFailureSafely } from '@/lib/safe-log';
 import { projectId, dataset, apiVersion } from '@/sanity/env';
 
 export const runtime = 'nodejs';
@@ -132,6 +135,25 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Failed to create draft' }, { status: 500 });
   }
 
-  // 7. Respond 201
+  // 7. Notify admins (non-blocking: a failure never changes the response)
+  await deliverConfirmationEmailAfterCommit(
+    () =>
+      sendEventSubmissionAdminNotice({
+        eventDraftId: id,
+        title,
+        kind,
+        date,
+        endDate: endDate ?? null,
+        venue,
+        location,
+        description,
+        hostSocietyId: hostSocietyId ?? null,
+        submittedByUid: uid,
+        submittedAt: new Date(),
+      }),
+    (error) => logFailureSafely('[events/submit] admin notice failed (non-fatal)', error),
+  );
+
+  // 8. Respond 201
   return NextResponse.json({ id, slug }, { status: 201 });
 }
