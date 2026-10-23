@@ -297,7 +297,7 @@ export const upcomingEventsQuery = defineQuery(`
     venue,
     location,
     isFeatured,
-    "hostSociety": hostSociety->{ _id, name, "slug": slug.current }
+    "hostSociety": select(hostSociety->listed != false => hostSociety->{ _id, name, "slug": slug.current })
   }
 `);
 
@@ -391,7 +391,7 @@ export const societyUpcomingEventsQuery = defineQuery(`
     venue,
     location,
     isFeatured,
-    "hostSociety": hostSociety->{ _id, name, "slug": slug.current }
+    "hostSociety": select(hostSociety->listed != false => hostSociety->{ _id, name, "slug": slug.current })
   }
 `);
 
@@ -471,7 +471,7 @@ export const eventBySlugQuery = defineQuery(`
     venue,
     location,
     isFeatured,
-    "hostSociety": hostSociety->{ _id, name, "slug": slug.current }
+    "hostSociety": select(hostSociety->listed != false => hostSociety->{ _id, name, "slug": slug.current })
   }
 `);
 

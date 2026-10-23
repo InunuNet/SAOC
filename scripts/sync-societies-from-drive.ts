@@ -13,9 +13,11 @@
  *  - 21 societies are listed (matched by exact name: PATCH, else CREATE `society-<slug>`). The 16
  *    ids in HIDE_TARGETS get `listed: false` and nothing else. Nothing is ever deleted or
  *    unpublished. Any other society document prints `UNLISTED <id>` and exits 3 before a write.
- *  - --apply first backs up every society document (published and drafts) under the backup dir
- *    and re-reads the file to verify the count; each patch is locked to its fetched revision
- *    (ifRevisionID), so a document edited since the read fails and the run stops.
+ *  - --apply re-reads the store, rebuilds and re-validates the plan from that state (exit 3 on
+ *    any unknown society), backs up every society document (published and drafts) under the
+ *    backup dir and verifies the count, then commits every create, patch and hide in ONE
+ *    transaction (all or nothing). Each patch is locked to its fetched revision
+ *    (ifRevisionID); creates use `create`, so an id collision fails the transaction.
  *  - A second run over the result is a no-op.
  *
  * Env is parsed straight from .env.local (no dotenv). SANITY_API_TOKEN is only needed for
@@ -44,6 +46,7 @@ import {
 
 const EXIT_USAGE = 2;
 const EXIT_UNEXPECTED_STATE = 3;
+const DRAFT_ID_PREFIX = 'drafts.';
 const DEFAULT_BACKUP_DIR = '.tmp/sandbox/societies-content/backup';
 const SOURCE_DIR = 'content/drive-source/SAOC /3. Societies';
 const SOURCE_A_DIR = `${SOURCE_DIR}/All Society data and history/v1.0`;
@@ -219,17 +222,29 @@ async function run(options: CliOptions): Promise<void> {
     return;
   }
 
-  const touched = new Set(plan.items.filter((i) => i.kind !== 'noop').map((i) => i.id));
+  // Re-read at write time and rebuild the plan from exactly that state: whatever changed since
+  // the plan above (a society added in Studio, an edit) is caught here, before any write.
   const everything = await store.listAllForBackup();
+  const published = everything.filter((d) => !d._id.startsWith(DRAFT_ID_PREFIX));
+  const writePlan = planSync(docs, published, HIDE_TARGETS);
+  if (writePlan.unlisted.length > 0) {
+    for (const id of writePlan.unlisted) console.log(`UNLISTED ${id}`);
+    throw new UnexpectedStateError(`${writePlan.unlisted.length} society document(s) not in the plan`);
+  }
+  if (JSON.stringify(writePlan.items) !== JSON.stringify(plan.items)) {
+    throw new UnexpectedStateError('society documents changed since the plan was shown; re-run');
+  }
+  const touched = new Set(writePlan.items.filter((i) => i.kind !== 'noop').map((i) => i.id));
   for (const id of draftsShadowing(everything, touched)) console.log(`WARN draft exists for ${id}`);
   const backup = writeBackup(options.backupDir, everything);
   console.log(`BACKUP ${backup} docs=${everything.length}`);
-  for (const item of plan.items) {
+  const ops = writePlan.items.flatMap((item) => {
     const op = planToWriteOp(item);
-    if (op) await store.commit(op);
-  }
+    return op ? [op] : [];
+  });
+  await store.commitAll(ops);
   await store.finish();
-  console.log(`APPLIED create=${create} patch=${patch} hide=${hide}`);
+  console.log(`APPLIED create=${create} patch=${patch} hide=${hide} transaction=single`);
 }
 
 async function main(): Promise<void> {

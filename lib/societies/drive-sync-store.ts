@@ -33,20 +33,26 @@ export function createFixtureStore(inputFile: string, outputFile: string | null)
     async listAllForBackup() {
       return [...docs.values()].map((d) => structuredClone(d));
     },
-    async commit(op: WriteOp) {
-      if (op.kind === 'create') {
-        if (!op.doc) throw new Error(`create ${op.id} has no document`);
-        if (!docs.has(op.id)) docs.set(op.id, { ...op.doc, _rev: nextRev(op.id) } as ExistingDoc);
-        return;
+    async commitAll(ops: readonly WriteOp[]) {
+      const staged = new Map(docs);
+      for (const op of ops) {
+        if (op.kind === 'create') {
+          if (!op.doc) throw new Error(`create ${op.id} has no document`);
+          if (staged.has(op.id)) throw new Error(`create collision: ${op.id} already exists`);
+          staged.set(op.id, { ...op.doc, _rev: nextRev(op.id) } as ExistingDoc);
+          continue;
+        }
+        const current = staged.get(op.id);
+        if (!current) throw new Error(`patch target missing: ${op.id}`);
+        if (current._rev !== op.rev) {
+          throw new Error(`stale revision on ${op.id}: expected ${op.rev}, found ${current._rev}`);
+        }
+        const next: ExistingDoc = { ...current, ...(op.set ?? {}), _rev: nextRev(op.id) };
+        for (const key of op.unset ?? []) Reflect.deleteProperty(next, key);
+        staged.set(op.id, next);
       }
-      const current = docs.get(op.id);
-      if (!current) throw new Error(`patch target missing: ${op.id}`);
-      if (current._rev !== op.rev) {
-        throw new Error(`stale revision on ${op.id}: expected ${op.rev}, found ${current._rev}`);
-      }
-      const next: ExistingDoc = { ...current, ...(op.set ?? {}), _rev: nextRev(op.id) };
-      for (const key of op.unset ?? []) Reflect.deleteProperty(next, key);
-      docs.set(op.id, next);
+      docs.clear();
+      for (const [id, doc] of staged) docs.set(id, doc);
     },
     async finish() {
       if (outputFile) writeFileSync(outputFile, JSON.stringify([...docs.values()], null, 2));
@@ -71,19 +77,18 @@ export function createSanityStore(
     kind: 'sanity',
     listPublished: () => client.fetch<ExistingDoc[]>(PUBLISHED_QUERY),
     listAllForBackup: () => client.fetch<ExistingDoc[]>(ALL_QUERY),
-    async commit(op: WriteOp) {
-      if (op.kind === 'create') {
-        if (!op.doc) throw new Error(`create ${op.id} has no document`);
-        await client
-          .transaction()
-          .createIfNotExists(op.doc as { _id: string; _type: string })
-          .commit();
-        return;
+    async commitAll(ops: readonly WriteOp[]) {
+      let tx = client.transaction();
+      for (const op of ops) {
+        if (op.kind === 'create') {
+          if (!op.doc) throw new Error(`create ${op.id} has no document`);
+          // `create`, not createIfNotExists: an id collision must fail the whole transaction.
+          tx = tx.create(op.doc as { _id: string; _type: string });
+        } else {
+          tx = tx.patch(op.id, { ifRevisionID: op.rev, set: op.set ?? {}, unset: op.unset ?? [] });
+        }
       }
-      await client
-        .transaction()
-        .patch(op.id, { ifRevisionID: op.rev, set: op.set ?? {}, unset: op.unset ?? [] })
-        .commit();
+      await tx.commit();
     },
     async finish() {},
   };

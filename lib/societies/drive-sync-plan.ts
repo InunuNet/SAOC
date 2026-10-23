@@ -55,8 +55,11 @@ export interface DocStore {
   listPublished(): Promise<ExistingDoc[]>;
   /** Every `society` document, published and drafts, for the backup. */
   listAllForBackup(): Promise<ExistingDoc[]>;
-  /** One transaction. A patch is locked to `rev`; a stale revision must throw. */
-  commit(op: WriteOp): Promise<void>;
+  /**
+   * Every write in ONE transaction: all land or none do. A patch is locked to its `rev` and a
+   * stale revision fails the transaction; a create of an existing id fails it too.
+   */
+  commitAll(ops: readonly WriteOp[]): Promise<void>;
   /** Flush a fixture store to its output file. */
   finish(): Promise<void>;
 }
