@@ -8,12 +8,7 @@ import { LogOut } from 'lucide-react';
 import { studioEditHref } from '@/lib/studio-links';
 import { ADMIN_PILL_DOT_CLASS, FOCUS_RING_ON_DARK } from './tokens';
 import { signOutAdmin } from './useAdminSignOut';
-import {
-  readNotAdminCache,
-  WHOAMI_TIMEOUT_MS,
-  WHOAMI_URL,
-  writeNotAdminCache,
-} from './useIsAdmin';
+import { askWhoami, readNotAdminCache } from './useIsAdmin';
 
 // Floating admin shortcut for signed-in admins, on public pages and inside the admin shell.
 // On public pages it asks /api/admin/whoami; the admin shell has already verified the session
@@ -66,26 +61,11 @@ export function AdminPill({ verifiedAdmin = false }: AdminPillProps) {
   useEffect(() => {
     if (verifiedAdmin || onLogin || readNotAdminCache()) return;
     let cancelled = false;
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), WHOAMI_TIMEOUT_MS);
-    fetch(WHOAMI_URL, { credentials: 'same-origin', cache: 'no-store', signal: controller.signal })
-      .then(async (res) => {
-        // Drain the body: a response nobody reads keeps the request open, which stalls the
-        // page's network-idle state (and the e2e specs that wait on it).
-        await res.arrayBuffer();
-        if (cancelled) return;
-        if (res.ok) {
-          setIsAdmin(true);
-        } else {
-          writeNotAdminCache();
-        }
-      })
-      .catch(() => undefined)
-      .finally(() => window.clearTimeout(timeout));
+    void askWhoami().then((ok) => {
+      if (!cancelled && ok) setIsAdmin(true);
+    });
     return () => {
       cancelled = true;
-      controller.abort();
-      window.clearTimeout(timeout);
     };
   }, [verifiedAdmin, onLogin]);
 

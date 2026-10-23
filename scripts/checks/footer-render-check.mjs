@@ -7,7 +7,8 @@
 //        item sits 16px under the heading; list rows are a 44px pitch
 //   FT4  WOSA appears once per footer (one link, one mention)
 //   bar  the legal links in the bottom bar are spaced by one gap, equal within 1px; the Media kit link
-//        is absent for an anonymous visitor and present when whoami (stubbed) confirms a session
+//        is absent for an anonymous visitor and present when whoami (stubbed) confirms a session;
+//        whoami is requested exactly once per page load in both runs
 //   FT6  the SAOC tagline is 11px
 //   FT7  the admin pill's box never intersects the bottom bar, at the page end and part-way
 // Screenshots go to ../split-shots (relative to the worktree), footer-NAME.png. Exit 1 on any failed assertion.
@@ -72,9 +73,13 @@ async function waitUp() {
 async function open(browser, host, [width, height], { admin = false } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, httpCredentials: CREDENTIALS });
   const page = await context.newPage();
+  const whoami = { count: 0 };
+  page.on('request', (request) => {
+    if (request.url().includes('/api/admin/whoami')) whoami.count += 1;
+  });
   if (admin) await page.route('**/api/admin/whoami', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
   await page.goto(`http://${host}/`, { waitUntil: 'networkidle' });
-  return { context, page };
+  return { context, page, whoami };
 }
 
 /** Geometry of every footer column: box, heading, first link or field, first item top. */
@@ -134,7 +139,7 @@ async function checkBarLinkGaps(browser) {
   for (const width of WIDE_VIEWPORTS) {
     for (const [site, host, , barSelector] of SITES) {
       for (const admin of [false, true]) {
-        const { context, page } = await open(browser, host, [width, 900], { admin });
+        const { context, page, whoami } = await open(browser, host, [width, 900], { admin });
         const kit = page.locator(`${barSelector} a[href$="/media-kit"]`);
         if (admin) await kit.waitFor({ state: 'attached', timeout: 5000 }).catch(() => undefined);
         const who = admin ? 'signed in' : 'anonymous';
@@ -147,6 +152,7 @@ async function checkBarLinkGaps(browser) {
         );
         const gaps = boxes.slice(1).map((b, i) => b.left - boxes[i].right);
         check(`bar ${site} ${width} ${who}: ${boxes.length} legal links, gaps equal within ${GAP_TOLERANCE}px`, boxes.length > 1 && Math.max(...gaps) - Math.min(...gaps) <= GAP_TOLERANCE, gaps.map((g) => g.toFixed(1)).join(' / '));
+        check(`whoami ${site} ${width} ${who}: exactly one request per page load`, whoami.count === 1, `requests=${whoami.count}`);
         await context.close();
       }
     }
