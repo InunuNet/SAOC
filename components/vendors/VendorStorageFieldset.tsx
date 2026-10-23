@@ -22,7 +22,7 @@ export function VendorStorageFieldset({
 }: VendorStorageFieldsetProps) {
   return (
     <div className="space-y-5">
-      <h2 className="font-serif text-[20px] font-semibold text-ink">Storage &amp; security</h2>
+      <h2 className="font-serif font-normal text-[20px] text-ink">Storage &amp; security</h2>
 
       <VendorCheckboxField
         fieldKey="storageRiskAcknowledged"

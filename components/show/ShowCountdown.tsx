@@ -102,7 +102,7 @@ export function ShowCountdown({ countdownDate, edition, pendingLabel }: ShowCoun
         {/* Same photography-legibility reasoning as the ticking state below. */}
         <p
           data-nos-hero-text="countdown-tbc"
-          className="nos-light font-serif text-[24px] leading-none text-ivory"
+          className="nos-light font-serif font-normal text-[24px] leading-none text-ivory"
         >
           Show dates to be confirmed
         </p>
@@ -133,7 +133,7 @@ export function ShowCountdown({ countdownDate, edition, pendingLabel }: ShowCoun
               at that same one call site. */}
           <div
             data-nos-hero-text={`countdown-${label.toLowerCase()}-value`}
-            className="nos-figure font-serif text-[42px] leading-none text-ivory"
+            className="nos-figure font-serif font-light text-[42px] leading-none text-ivory"
           >
             {String(value).padStart(2, '0')}
           </div>

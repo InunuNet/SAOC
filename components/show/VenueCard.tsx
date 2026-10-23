@@ -42,7 +42,7 @@ export function VenueCard({
 
   return (
     <section className="nos-surface">
-      <h3 className="font-serif text-[22px] font-medium text-ink">{heading}</h3>
+      <h3 className="font-serif font-normal text-[22px] text-ink">{heading}</h3>
       <ConfirmationBadge
         status={status}
         pendingLabel={pendingLabel}
@@ -50,7 +50,7 @@ export function VenueCard({
       />
 
       <address className="mt-4 not-italic font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/80">
-        <span className="block font-serif text-[18px] text-ink">{venue.name}</span>
+        <span className="block font-serif font-medium text-[18px] text-ink">{venue.name}</span>
         {addressLines.map((line) => (
           <span key={line} className="block">
             {line}

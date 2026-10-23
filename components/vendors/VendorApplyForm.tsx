@@ -175,7 +175,7 @@ export function VendorApplyForm() {
   if (status === 'success') {
     return (
       <div role="status" className="space-y-3 border border-rule bg-parchment p-8">
-        <h3 className="font-serif text-[22px] font-semibold text-ink">Thank you</h3>
+        <h3 className="font-serif font-normal text-[22px] text-ink">Thank you</h3>
         <p className="font-sans text-[15px] leading-relaxed text-ink/80">
           Your vendor application has been received. The committee will review it and, if
           approved, will email you a link to complete your full registration and agreement.

@@ -45,7 +45,7 @@ export function VendorMarketingFieldset({ state, onFieldChange, disabled }: Vend
 
   return (
     <div className="space-y-5">
-      <h2 className="font-serif text-[20px] font-semibold text-ink">Marketing</h2>
+      <h2 className="font-serif font-normal text-[20px] text-ink">Marketing</h2>
 
       <VendorFormField
         fieldKey="bio"

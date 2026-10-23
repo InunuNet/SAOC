@@ -51,7 +51,7 @@ const FOOD_VENDOR_CERTIFICATION_OPTIONS = [
 export function VendorCategoryFieldset({ state, onFieldChange, disabled }: VendorCategoryFieldsetProps) {
   return (
     <div className="space-y-5">
-      <h2 className="font-serif text-[20px] font-semibold text-ink">Products &amp; category</h2>
+      <h2 className="font-serif font-normal text-[20px] text-ink">Products &amp; category</h2>
 
       <VendorCheckboxGroupField
         fieldKey="vendorCategory"

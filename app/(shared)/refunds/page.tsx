@@ -60,7 +60,7 @@ export default function RefundsPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Terms pending confirmation
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -75,7 +75,7 @@ export default function RefundsPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Refunds
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -87,7 +87,7 @@ export default function RefundsPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Cancellations
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -127,7 +127,7 @@ export default function RefundsPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Admission tickets
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -138,7 +138,7 @@ export default function RefundsPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Conference tickets
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -153,7 +153,7 @@ export default function RefundsPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Workshop, field trip, and cocktail tickets
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -164,7 +164,7 @@ export default function RefundsPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Vendor stand bookings
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -178,7 +178,7 @@ export default function RefundsPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Exceptional circumstances
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -189,7 +189,7 @@ export default function RefundsPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             How to request a refund or cancellation
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">

@@ -86,7 +86,7 @@ export interface VisitGettingThereProps {
 function GettingThereItem({ item }: { item: VisitGettingThereItem }) {
   return (
     <div className="grid gap-2">
-      <h3 className="nos-opsz-32 font-serif text-[22px] leading-[1.2] text-ink">{item.heading}</h3>
+      <h3 className="nos-opsz-32 font-serif font-normal text-[22px] leading-[1.2] text-ink">{item.heading}</h3>
       {item.body ? (
         <p className="font-sans text-[16px] leading-[1.55] text-[var(--ink-700)]">{item.body}</p>
       ) : null}
@@ -167,7 +167,7 @@ function AttractionBody({ attraction, id }: { attraction: VisitAttraction; id: s
   const linkId = `${id}-link`;
   return (
     <>
-      <h3 id={id} className="font-serif text-[18px] font-medium text-ink">
+      <h3 id={id} className="font-serif font-medium text-[18px] text-ink">
         {attraction.name}
       </h3>
       {attraction.note ? (
@@ -340,7 +340,7 @@ export function VisitEmergency({
         <div className="space-y-4">
           {onSiteContacts.map((contact, index) => (
             <div key={keyOf(contact, index)} className="grid gap-2">
-              <h3 className="nos-opsz-32 font-serif text-[20px] leading-[1.2] text-ink">
+              <h3 className="nos-opsz-32 font-serif font-normal text-[20px] leading-[1.2] text-ink">
                 {contact.label}
               </h3>
               {contact.number ? (
@@ -370,7 +370,7 @@ export function VisitEmergency({
           </div>
           {onSiteContacts.map((contact, index) => (
             <div key={keyOf(contact, index)} className="grid gap-2">
-              <h3 className="nos-opsz-32 font-serif text-[20px] leading-[1.2] text-ink">
+              <h3 className="nos-opsz-32 font-serif font-normal text-[20px] leading-[1.2] text-ink">
                 {contact.label}
               </h3>
               {contact.note ? (

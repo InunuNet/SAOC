@@ -134,7 +134,7 @@ export function Hero({ show, showLede = false }: HeroProps) {
 
           <h1
             id={HEADING_ID}
-            className="h1 font-serif text-[clamp(48px,7.4vw,96px)] font-light leading-[1.02] tracking-[-0.02em] text-ivory"
+            className="h1 font-serif font-light text-[clamp(48px,7.4vw,96px)] leading-[1.02] tracking-[-0.02em] text-ivory"
           >
             The national home of <em>orchid culture</em> in South Africa.
           </h1>

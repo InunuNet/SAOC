@@ -25,7 +25,7 @@ export function CheckoutRedirectNotice({
 }: CheckoutRedirectNoticeProps) {
   return (
     <div className="space-y-4">
-      <p role="status" className="font-serif text-[18px] text-ink">
+      <p role="status" className="font-serif font-medium text-[18px] text-ink">
         You&apos;re about to pay <strong>R{amount}</strong> via {providerLabel(providerId)}…
       </p>
       <PayfastRedirectForm processUrl={processUrl} fields={fields} />

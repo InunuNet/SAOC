@@ -24,7 +24,7 @@ const PAYMENT_METHOD_OPTIONS = [
 export function VendorPaymentFieldset({ state, onFieldChange, disabled }: VendorPaymentFieldsetProps) {
   return (
     <div className="space-y-5">
-      <h2 className="font-serif text-[20px] font-semibold text-ink">Payment &amp; terms</h2>
+      <h2 className="font-serif font-normal text-[20px] text-ink">Payment &amp; terms</h2>
 
       {/* F1 (vendor-form-copy-20261007) -- Lee-Ann's 2026-10-07 source doc places this note
           between the Gas section and VENDOR DECLARATION; thematically it is about payment

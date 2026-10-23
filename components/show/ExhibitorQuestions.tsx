@@ -45,7 +45,7 @@ export function ExhibitorQuestions({
                 {item.topic.replace(/-/g, ' ')}
               </p>
             ) : null}
-            <h3 className="mt-2 font-serif text-[20px] font-medium leading-snug text-ink">
+            <h3 className="mt-2 font-serif font-normal text-[20px] leading-snug text-ink">
               {item.question}
             </h3>
             {item.context ? (

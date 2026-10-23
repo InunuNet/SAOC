@@ -36,7 +36,7 @@ export function NotFoundSection() {
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ivory mb-4">
           404 — Page not found
         </p>
-        <h1 className="font-serif text-[clamp(42px,6vw,80px)] font-medium leading-[1.04] tracking-[-0.012em] text-ivory max-w-[20ch] mx-auto mb-6">
+        <h1 className="font-serif font-light text-[clamp(42px,6vw,80px)] leading-[1.04] tracking-[-0.015em] text-ivory max-w-[20ch] mx-auto mb-6">
           This orchid has left the bench.
         </h1>
         <p className="font-sans text-[18px] leading-relaxed text-ivory/70 max-w-[46ch] mx-auto mb-10">

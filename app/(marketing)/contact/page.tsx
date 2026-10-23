@@ -86,7 +86,7 @@ export default async function ContactPage() {
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
           {/* LEFT — direct contacts sidebar */}
           <aside className="space-y-6">
-            <h2 className="font-serif text-[22px] font-semibold text-ink">Direct contacts</h2>
+            <h2 className="font-serif font-normal text-[22px] text-ink">Direct contacts</h2>
             <ul className="space-y-5">
               {contacts.map((c, i) => {
                 const marked = isLabelUnsourced(c.role) || isLabelUnsourced(c.name);
@@ -101,7 +101,7 @@ export default async function ContactPage() {
                     {role ? (
                       <p className="font-mono text-[11px] tracking-[0.16em] text-muted">{role}</p>
                     ) : null}
-                    {name ? <p className="mt-1 font-serif text-[17px] text-ink">{name}</p> : null}
+                    {name ? <p className="mt-1 font-serif font-medium text-[17px] text-ink">{name}</p> : null}
                     {c.email ? (
                       <a
                         href={`mailto:${c.email}`}
@@ -137,7 +137,7 @@ export default async function ContactPage() {
 
           {/* RIGHT — contact form */}
           <div>
-            <h2 className="font-serif text-[22px] font-semibold text-ink">Send a message</h2>
+            <h2 className="font-serif font-normal text-[22px] text-ink">Send a message</h2>
             <div className="mt-6">
               <ContactForm />
             </div>

@@ -97,7 +97,7 @@ export function ExhibitorKeyDates({
               >
                 <th
                   scope="row"
-                  className="py-4 pr-4 align-top max-sm:block max-sm:pb-1 font-serif text-[17px] font-medium text-ink"
+                  className="py-4 pr-4 align-top max-sm:block max-sm:pb-1 font-serif font-medium text-[17px] text-ink"
                 >
                   {row.label}
                 </th>

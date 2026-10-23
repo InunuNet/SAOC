@@ -46,7 +46,7 @@ export function VendorGrid({ nurseries }: VendorGridProps) {
               className="h-16 w-auto object-contain"
             />
           ) : null}
-          <h3 className="font-serif text-[20px] font-semibold leading-snug text-ink mt-4">
+          <h3 className="font-serif font-normal text-[20px] leading-snug text-ink mt-4">
             {nursery.name}
           </h3>
           {nursery.country ? (

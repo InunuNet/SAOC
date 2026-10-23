@@ -79,7 +79,7 @@ export default async function SponsorsPage() {
           </p>
           {withhold ? null : (
             <div data-placeholder="true" className="flex flex-col items-start gap-1">
-              <p className="font-serif text-[20px] leading-[1.55] text-ink">{SUPPORT_LEAD}</p>
+              <p className="font-serif font-normal text-[20px] leading-[1.55] text-ink">{SUPPORT_LEAD}</p>
               <PlaceholderMarker />
             </div>
           )}
@@ -99,7 +99,7 @@ export default async function SponsorsPage() {
             <dl className="grid w-full grid-cols-2 gap-8 border-y border-rule py-10 sm:grid-cols-4">
               {REACH_STATS.map((stat) => (
                 <div key={stat.label}>
-                  <dt className="font-serif text-[32px] font-medium text-ink">{stat.value}</dt>
+                  <dt className="font-serif font-light text-[32px] text-ink">{stat.value}</dt>
                   <dd className="mt-1 font-mono text-[11px] tracking-[0.16em] text-muted">
                     {stat.label}
                   </dd>
@@ -134,7 +134,7 @@ export default async function SponsorsPage() {
 
         {/* Single consolidated CTA */}
         <section className="border border-rule bg-bone p-10 text-center">
-          <h2 className="font-serif text-[26px] font-medium text-ink">Become a sponsor</h2>
+          <h2 className="font-serif font-normal text-[26px] text-ink">Become a sponsor</h2>
           {withhold ? null : (
             <div data-placeholder="true" className="flex flex-col items-center">
               <p className="mx-auto mt-3 max-w-xl font-sans text-[16px] leading-[1.55] text-ink/70">

@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { partners } from '@/lib/data';
 import { NewsletterSignup } from '@/components/newsletter/NewsletterSignup';
 import { SaocLockup } from './SaocLockup';
+import { ExternalArrow } from './ExternalArrow';
 import { MediaKitFooterLink } from './MediaKitFooterLink';
 import {
   FOOTER_BULLETIN,
@@ -42,8 +43,10 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
             behind it, which was wrong). See SaocLockup.tsx's own header
             comment for the full metrics() derivation. */}
         <div className={FOOTER_LAYOUT.brandColumn}>
-          {/* The lockup is sized by its container, so the auto track needs a definite width to hug. */}
-          <div className={`${FOOTER_LAYOUT.brandMark} w-[280px]`}>
+          {/* The lockup is sized by its container, so the auto track needs a definite width to hug.
+              -mt-[30px] cancels the emblem PNG's transparent top (116px of 618 at the 160px box), so the
+              artwork's top sits on the column headings' top line (NOS Design). */}
+          <div className={`${FOOTER_LAYOUT.brandMark} -mt-[30px] w-[280px]`}>
             <SaocLockup orientation="vertical" tone="dark" />
           </div>
           <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ivory/65">
@@ -90,7 +93,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
                     className={`${FOOTER_RHYTHM.row} gap-1 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150`}
                   >
                     {p.name}
-                    <span aria-hidden="true">↗</span>
+                    <ExternalArrow />
                     <span className="sr-only">{FOOTER_NEW_TAB_CUE}</span>
                   </a>
                 </li>

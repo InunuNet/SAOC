@@ -105,7 +105,7 @@ export default async function JudgingPage() {
       tone: 'parchment',
       content: prose(
         data?.intro,
-        <p className="font-serif text-[20px] leading-[1.55] text-ink">
+        <p className="font-serif font-normal text-[20px] leading-[1.55] text-ink">
           SAOC operates a national orchid judging system, standardised in 1990 to replace
           regional variation with a single set of published criteria. Accredited judges
           score plants on form, colour, size, and cultural condition at affiliated shows
@@ -191,7 +191,7 @@ export default async function JudgingPage() {
               <dl className="grid w-full grid-cols-2 gap-x-8 gap-y-8 border-y border-rule py-10 sm:grid-cols-4">
                 {stats.map((stat, i) => (
                   <div key={`${stat.label}-${i}`}>
-                    <dt className="font-serif text-[clamp(36px,4vw,56px)] font-medium leading-none text-primary">
+                    <dt className="font-serif font-light text-[clamp(36px,4vw,56px)] leading-none text-primary">
                       {stat.value}
                     </dt>
                     <dd className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">

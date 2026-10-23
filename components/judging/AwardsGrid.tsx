@@ -49,7 +49,7 @@ function AwardCards({ awards, headingLevel, withhold }: AwardCardsProps) {
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
               {award.code}
             </p>
-            <Heading className="mt-2 font-serif text-[20px] font-semibold leading-snug text-ink">
+            <Heading className="mt-2 font-serif font-normal text-[20px] leading-snug text-ink">
               {award.name}
             </Heading>
             {threshold ? (
@@ -101,7 +101,7 @@ export function AwardsGrid({ awards, withhold = false }: AwardsGridProps) {
 
       {other.length > 0 ? (
         <div className="space-y-6">
-          <h3 className="font-serif text-[20px] font-semibold text-ink">{OTHER_AWARDS_LABEL}</h3>
+          <h3 className="font-serif font-normal text-[20px] text-ink">{OTHER_AWARDS_LABEL}</h3>
           <AwardCards awards={other} headingLevel="h4" withhold={withhold} />
         </div>
       ) : null}

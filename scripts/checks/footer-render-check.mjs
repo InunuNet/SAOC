@@ -9,6 +9,9 @@
 //   bar  the legal links in the bottom bar are spaced by one gap, equal within 1px; the Media kit link
 //        is absent for an anonymous visitor and present when whoami (stubbed) confirms a session;
 //        whoami is requested exactly once per page load in both runs
+//   ink  the brand artwork's visible ink (alpha > 0, not its box) starts on the headings' top line, and on
+//        NOS the ink's right edge to the Explore column equals the other column gaps
+//   icon both footers' external links carry the same lucide arrow (same size and stroke), no text glyph
 //   FT6  the SAOC tagline is 11px
 //   FT7  the admin pill's box never intersects the bottom bar, at the page end and part-way
 // Screenshots go to ../split-shots (relative to the worktree), footer-NAME.png. Exit 1 on any failed assertion.
@@ -159,6 +162,68 @@ async function checkBarLinkGaps(browser) {
   }
 }
 
+const INK_ALPHA = 16;
+const INK_TOP_TOLERANCE = 2;
+const ICON_SIZE = '14';
+const ICON_STROKE = '1.5';
+
+// Runs in the page: the brand artwork's visible ink rectangle (CSS px) and the column geometry beside it.
+async function measureInk([root, imgSelector, headingSelector, alphaMin]) {
+  const footer = document.querySelector(root);
+  footer.scrollIntoView();
+  const img = [...footer.querySelectorAll(imgSelector)].find((i) => i.getBoundingClientRect().width > 0);
+  for (let i = 0; i < 50 && !(img.complete && img.currentSrc); i += 1) await new Promise((resolve) => setTimeout(resolve, 100));
+  const bitmap = await createImageBitmap(await (await fetch(img.currentSrc)).blob());
+  const canvas = document.createElement('canvas');
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(bitmap, 0, 0);
+  const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  let top = canvas.height;
+  let right = 0;
+  for (let y = 0; y < canvas.height; y += 1) {
+    for (let x = 0; x < canvas.width; x += 1) {
+      if (data[(y * canvas.width + x) * 4 + 3] > alphaMin) {
+        if (y < top) top = y;
+        if (x > right) right = x;
+      }
+    }
+  }
+  const box = img.getBoundingClientRect();
+  const scale = box.width / canvas.width;
+  const cols = [...footer.firstElementChild.children].map((c) => c.getBoundingClientRect());
+  const heading = footer.firstElementChild.children[1].querySelector(headingSelector).getBoundingClientRect();
+  return { inkTop: box.top + top * scale, inkRight: box.left + (right + 1) * scale, headingTop: heading.top, cols: cols.map((c) => ({ left: c.left, right: c.right })) };
+}
+
+async function checkInkAndIcon(browser) {
+  const targets = [
+    ['saoc', SAOC_HOST, 'footer', 'img[src*="saoc-emblem"]', 'div.font-mono'],
+    ['nos', NOS_HOST, '#nf', '.nf-lockup img', '.nf-head'],
+  ];
+  for (const width of WIDE_VIEWPORTS) {
+    for (const [site, host, root, imgSelector, headingSelector] of targets) {
+      const { context, page } = await open(browser, host, [width, 900]);
+      const ink = await page.evaluate(measureInk, [root, imgSelector, headingSelector, INK_ALPHA]);
+      check(`ink ${site} ${width}: artwork top on the headings' top line`, Math.abs(ink.inkTop - ink.headingTop) <= INK_TOP_TOLERANCE, `ink top ${ink.inkTop.toFixed(1)} vs heading top ${ink.headingTop.toFixed(1)}`);
+      if (site === 'nos') {
+        const gaps = [ink.cols[1].left - ink.inkRight, ink.cols[2].left - ink.cols[1].right, ink.cols[3].left - ink.cols[2].right];
+        check(`ink nos ${width}: brand-to-Explore gap (from the ink) equals the other gaps`, Math.max(...gaps) - Math.min(...gaps) <= GAP_TOLERANCE, gaps.map((g) => g.toFixed(1)).join(' / '));
+      }
+      const icons = await page.evaluate((selector) => {
+        const footer = document.querySelector(selector);
+        return {
+          svgs: [...footer.querySelectorAll('svg.lucide-arrow-up-right')].map((el) => `${el.getAttribute('width')}/${el.getAttribute('stroke-width')}`),
+          glyphs: (footer.textContent.match(/↗/g) ?? []).length,
+        };
+      }, root);
+      check(`icon ${site} ${width}: lucide arrow ${ICON_SIZE}/${ICON_STROKE}, no text glyph`, icons.svgs.length > 0 && icons.svgs.every((v) => v === `${ICON_SIZE}/${ICON_STROKE}`) && icons.glyphs === 0, `${icons.svgs.join(',')} glyphs=${icons.glyphs}`);
+      await context.close();
+    }
+  }
+}
+
 async function checkWosaAndTagline(browser) {
   for (const [site, host, root] of SITES) {
     const { context, page } = await open(browser, host, [1440, 900]);
@@ -230,6 +295,7 @@ try {
   const browser = await chromium.launch();
   await checkColumns(browser);
   await checkBarLinkGaps(browser);
+  await checkInkAndIcon(browser);
   await checkWosaAndTagline(browser);
   await checkAdminPill(browser);
   await shoot(browser);

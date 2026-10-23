@@ -24,7 +24,7 @@ export default async function NewsletterUnsubscribePage({
   return (
     <main id="main-content">
       <div className="mx-auto max-w-[640px] px-4 py-16 sm:px-8 sm:py-24">
-        <h1 className="font-serif text-[28px] font-semibold leading-tight text-ink sm:text-[34px]">
+        <h1 className="font-serif font-normal min-[640px]:font-light text-[28px] leading-tight text-ink sm:text-[34px]">
           {NEWSLETTER_COPY.unsubscribeHeading}
         </h1>
         <div className="mt-8">

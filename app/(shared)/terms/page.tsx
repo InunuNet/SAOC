@@ -36,7 +36,7 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Use of this site
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -47,7 +47,7 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Content ownership
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -58,7 +58,7 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Conditions of sale — tickets and admission
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -97,7 +97,7 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Disclaimer
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -107,7 +107,7 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Contact
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">

@@ -39,7 +39,7 @@ export function JudgesDirectory({ judges, showPublicDirectory }: JudgesDirectory
           className="flex items-center gap-4 border border-rule bg-parchment p-5"
         >
           <div>
-            <p className="font-serif text-[17px] font-semibold text-ink">{judge.name}</p>
+            <p className="font-serif font-medium text-[17px] text-ink">{judge.name}</p>
             {judge.region ? (
               <p className="font-sans text-[13px] text-ink/70">{judge.region}</p>
             ) : null}

@@ -37,7 +37,7 @@ export function EventCard({ event }: EventCardProps) {
         dateTime={event.date}
         className="flex w-12 shrink-0 flex-col items-center justify-start pt-0.5"
       >
-        <span className="font-serif text-[28px] font-medium leading-none text-primary">{day}</span>
+        <span className="font-serif font-normal text-[28px] leading-none text-primary">{day}</span>
         <span className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
           {month}
         </span>
@@ -48,7 +48,7 @@ export function EventCard({ event }: EventCardProps) {
         <div className="flex flex-wrap items-start gap-2">
           <span
             id={titleId}
-            className={`font-serif text-[18px] font-semibold leading-snug text-ink${
+            className={`font-serif font-medium text-[18px] leading-snug text-ink${
               linked ? ' group-hover:underline group-focus-visible:underline' : ''
             }`}
           >

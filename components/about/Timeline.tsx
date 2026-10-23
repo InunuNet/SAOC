@@ -31,7 +31,7 @@ export function Timeline({ nodes }: TimelineProps) {
           <p className="font-mono text-[13px] font-medium tracking-[0.1em] text-primary">
             {node.year}
           </p>
-          <h3 className="mt-1 font-serif text-[19px] font-medium leading-snug text-ink">
+          <h3 className="mt-1 font-serif font-medium text-[19px] leading-snug text-ink">
             {node.heading}
           </h3>
           <p className="mt-2 max-w-2xl font-sans text-[15px] leading-relaxed text-ink/75">

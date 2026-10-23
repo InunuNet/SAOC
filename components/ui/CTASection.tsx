@@ -31,7 +31,7 @@ export function CTASection({ eyebrow, heading, body, marked = false, primaryCta,
     <section className="bg-primary-800">
       <div className="on-dark saoc-container py-20 text-center">
         <span className="eyebrow eyebrow--light">{eyebrow}</span>
-        <h2 className="mt-6 font-serif text-[clamp(30px,3.6vw,46px)] font-medium leading-[1.1] tracking-[-0.01em] text-ivory">
+        <h2 className="mt-6 font-serif font-normal min-[889px]:font-light text-[clamp(30px,3.6vw,46px)] leading-[1.1] tracking-[-0.015em] text-ivory">
           {heading}
         </h2>
         {body ? (

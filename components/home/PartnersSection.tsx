@@ -71,7 +71,7 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
               <>
                 <span
                   data-partner-name
-                  className="font-serif text-[clamp(26px,3vw,36px)] font-medium leading-[1.15] text-primary underline decoration-transparent decoration-1 underline-offset-[6px] transition-[color,text-decoration-color] duration-150 ease-(--ease) group-hover:text-primary-800 group-hover:decoration-accent group-focus-visible:text-primary-800 group-focus-visible:decoration-accent"
+                  className="font-serif font-normal min-[1000px]:font-light text-[clamp(28px,3.2vw,42px)] leading-[1.12] text-primary underline decoration-transparent decoration-1 underline-offset-[6px] transition-[color,text-decoration-color] duration-150 ease-(--ease) group-hover:text-primary-800 group-hover:decoration-accent group-focus-visible:text-primary-800 group-focus-visible:decoration-accent"
                 >
                   {card.name}
                 </span>
@@ -84,7 +84,7 @@ export function PartnersSection({ partners }: PartnersSectionProps) {
                   <span
                     data-partner-arrow
                     aria-hidden="true"
-                    className="col-start-2 row-start-1 min-[900px]:col-start-3 font-serif text-[20px] text-primary transition-[translate,color] duration-150 ease-(--ease) group-hover:translate-x-1 group-hover:text-accent group-focus-visible:translate-x-1 group-focus-visible:text-accent motion-reduce:group-hover:translate-x-0 motion-reduce:group-focus-visible:translate-x-0"
+                    className="col-start-2 row-start-1 min-[900px]:col-start-3 font-serif font-normal text-[20px] text-primary transition-[translate,color] duration-150 ease-(--ease) group-hover:translate-x-1 group-hover:text-accent group-focus-visible:translate-x-1 group-focus-visible:text-accent motion-reduce:group-hover:translate-x-0 motion-reduce:group-focus-visible:translate-x-0"
                   >
                     →
                   </span>

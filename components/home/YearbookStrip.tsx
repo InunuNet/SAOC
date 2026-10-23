@@ -20,7 +20,7 @@ export function YearbookStrip() {
             <div className="mb-5">
               <span className="eyebrow eyebrow--on-tint">In print</span>
             </div>
-            <h2 className="font-serif text-[clamp(34px,4.4vw,54px)] font-medium leading-[1.08] tracking-[-0.01em] text-primary mb-6 text-balance">
+            <h2 className="font-serif font-light text-[clamp(34px,4.4vw,54px)] leading-[1.08] tracking-[-0.015em] text-primary mb-6 text-balance">
               <em className="whitespace-nowrap">Orchids South Africa</em>
               &nbsp;· 2025 yearbook
             </h2>

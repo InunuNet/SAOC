@@ -33,7 +33,7 @@ export function VendorDeclarationFieldset({
 }: VendorDeclarationFieldsetProps) {
   return (
     <div className="space-y-5">
-      <h2 className="font-serif text-[20px] font-semibold text-ink">Declaration &amp; Terms</h2>
+      <h2 className="font-serif font-normal text-[20px] text-ink">Declaration &amp; Terms</h2>
 
       <ol className="list-decimal space-y-2 pl-5 font-sans text-[14.5px] leading-relaxed text-ink/90">
         {DECLARATION_POINTS.map((point) => (
@@ -48,7 +48,7 @@ export function VendorDeclarationFieldset({
           Business Name are READ-ONLY reflections of contactPosition/businessName, never a
           second editable input -- see the M2 golden README's "The signature block". */}
       <div className="space-y-3 border-t border-rule pt-5">
-        <h3 className="font-serif text-[16px] font-semibold text-ink">
+        <h3 className="font-serif font-medium text-[16px] text-ink">
           Vendor / Authorised Representative
         </h3>
         <VendorFormField

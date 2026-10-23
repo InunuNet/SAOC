@@ -36,7 +36,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Data we collect
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -63,7 +63,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Who we share it with
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -93,7 +93,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             How long we keep it
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -106,7 +106,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Cookies and analytics
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -116,7 +116,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Your rights
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -126,7 +126,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Information Officer
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -143,7 +143,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Complaints — the Information Regulator
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">
@@ -163,7 +163,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-[22px] font-medium text-primary">
+          <h2 className="font-serif font-normal text-[22px] text-primary">
             Questions
           </h2>
           <p className="font-sans text-[16px] leading-relaxed text-ink/80">

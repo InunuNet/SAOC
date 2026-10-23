@@ -23,7 +23,7 @@ export function BoardGrid({ members }: BoardGridProps) {
           data-placeholder={m.placeholder ? 'true' : undefined}
           className="border border-rule bg-parchment p-6"
         >
-          <h3 className="font-serif text-[20px] font-semibold text-ink leading-snug">
+          <h3 className="font-serif font-normal text-[20px] text-ink leading-snug">
             {m.name}
           </h3>
           {m.role ? (

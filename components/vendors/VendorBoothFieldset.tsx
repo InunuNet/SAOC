@@ -50,7 +50,7 @@ const VEHICLE_REGISTRATION_FIELDS: Array<{
 export function VendorBoothFieldset({ state, onFieldChange, disabled }: VendorBoothFieldsetProps) {
   return (
     <div className="space-y-5">
-      <h2 className="font-serif text-[20px] font-semibold text-ink">Booth &amp; logistics</h2>
+      <h2 className="font-serif font-normal text-[20px] text-ink">Booth &amp; logistics</h2>
 
       <VendorRadioGroupField
         fieldKey="boothSize"

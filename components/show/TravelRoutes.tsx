@@ -32,7 +32,7 @@ export function TravelRoutes({ routes }: TravelRoutesProps) {
             index === lastIndex && finalCardSpans > 1 ? SPAN_CLASS[finalCardSpans] : ''
           }`}
         >
-          <h3 className="font-serif text-[19px] font-medium leading-snug text-ink">
+          <h3 className="font-serif font-medium text-[19px] leading-snug text-ink">
             {route.origin}
           </h3>
 

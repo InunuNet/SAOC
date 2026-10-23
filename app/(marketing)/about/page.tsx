@@ -179,7 +179,7 @@ export default async function AboutPage() {
           <dl className="grid grid-cols-2 gap-x-8 gap-y-8 border-y border-rule py-10 sm:grid-cols-4">
             {HERITAGE_STATS.map((stat) => (
               <div key={stat.label}>
-                <dt className="font-serif text-[clamp(24px,2.6vw,38px)] font-medium leading-none text-primary">
+                <dt className="font-serif font-normal min-[1231px]:font-light text-[clamp(24px,2.6vw,38px)] leading-none text-primary">
                   {stat.value}
                 </dt>
                 <dd className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
@@ -205,7 +205,7 @@ export default async function AboutPage() {
             <div className="mb-3">
               <span className="eyebrow">Our committee</span>
             </div>
-            <h2 className="font-serif text-[clamp(30px,3.6vw,44px)] font-medium leading-[1.1] tracking-[-0.01em] text-primary">
+            <h2 className="font-serif font-normal min-[889px]:font-light text-[clamp(30px,3.6vw,44px)] leading-[1.1] tracking-[-0.015em] text-primary">
               The national committee
             </h2>
           </div>
