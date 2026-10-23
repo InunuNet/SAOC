@@ -11,6 +11,8 @@ import { formatShowDay } from '@/lib/show-day-format';
 
 export interface TicketTypeTraits {
   slug: string;
+  /** The Sanity ticket type name: the title printed on the ticket and in the email. */
+  name?: string | null;
   requiresDaySelection?: boolean | null;
 }
 

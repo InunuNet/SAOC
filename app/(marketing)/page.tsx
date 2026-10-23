@@ -42,6 +42,7 @@ export const metadata: Metadata = {
   description:
     'The South African Orchid Council — coordinating orchid societies across South Africa since 1968.',
   openGraph: {
+    siteName: 'South African Orchid Council',
     url: BASE_URL,
     title: 'South African Orchid Council',
     description:

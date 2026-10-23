@@ -209,7 +209,7 @@ async function seedNationalShow(): Promise<void> {
   await client.createOrReplace({
     _id: 'nationalShow',
     _type: 'nationalShow',
-    title: 'The South African National Orchid Show',
+    title: 'The National Orchid Show',
     // showDate: absent — only a non-parseable display string exists (golden gap).
     location: 'The Hangar, Stellenbosch Flying Club',
     hero,

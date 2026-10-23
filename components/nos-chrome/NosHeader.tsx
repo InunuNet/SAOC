@@ -22,6 +22,7 @@ import { CONTACT_LINK } from '@/components/chrome/nav-config';
 import type { NavColumn, NavItem, NavLeaf } from '@/components/chrome/nav-config';
 import { FOOTER_ORG_NAME } from '@/components/chrome/footer-data';
 import { nosPath } from '@/lib/nos-paths';
+import { SHOW_TITLE_EXPANDED } from '@/lib/show-title';
 
 import { nosChromeFontClass } from './fonts';
 import './nos-chrome.css';
@@ -30,7 +31,7 @@ type MegaItem = Extract<NavItem, { type: 'mega' }>;
 
 const HUB_HREF = '/';
 const LOCKUP_SRC = '/images/nos/nos-full-colour-horizontal-1200.png';
-const LOCKUP_ALT = 'National Orchid Show, Western Cape 2027';
+const LOCKUP_ALT = SHOW_TITLE_EXPANDED;
 const LOCKUP_WIDTH = 1200;
 const LOCKUP_HEIGHT = 294;
 // The box is 448px wide from 700px up and 390px below it. A width with no `sizes` gives a 1x/2x

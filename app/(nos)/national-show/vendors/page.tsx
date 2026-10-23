@@ -43,7 +43,7 @@ export const metadata: Metadata = buildPageMetadata({
 // same straight apostrophes (react-dom/server would encode a plain apostrophe as &#x27;, so
 // they are set as HTML like VendorIntro sets them).
 const VENDORS_LEDE =
-  'Meet the specialist nurseries showcasing their finest orchids at the South African National Orchid Show.';
+  'Meet the specialist nurseries showcasing their finest orchids at the National Orchid Show.';
 
 const INTRO_HEADING = 'Showcasing the finest in South African orchid growing';
 

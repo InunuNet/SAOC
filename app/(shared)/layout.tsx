@@ -4,6 +4,7 @@ import { NosFrame } from '@/components/site-chrome/NosFrame';
 import { SaocFrame } from '@/components/site-chrome/SaocFrame';
 import { NosThemeScope } from '@/components/nos/NosThemeScope';
 import { requestSite } from '@/lib/request-site';
+import { SHOW_TITLE } from '@/lib/show-title';
 import { nosOrigin, saocOrigin } from '@/lib/site-hosts';
 import { NOS_TITLE, buildSiteMetadata } from '@/lib/site-metadata';
 
@@ -14,7 +15,7 @@ import { NOS_TITLE, buildSiteMetadata } from '@/lib/site-metadata';
 // show pages.
 export async function generateMetadata(): Promise<Metadata> {
   const site = await requestSite();
-  if (site === 'nos') return { ...buildSiteMetadata(nosOrigin()), title: NOS_TITLE };
+  if (site === 'nos') return { ...buildSiteMetadata(nosOrigin(), SHOW_TITLE), title: NOS_TITLE };
   return buildSiteMetadata(saocOrigin());
 }
 

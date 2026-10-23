@@ -54,7 +54,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return buildPageMetadata({
     title: 'Sponsors',
     image: nosOgImage('Sponsors — National Orchid Show'),
-    description: "The National Show's own sponsors.",
+    description: "The National Orchid Show's own sponsors.",
     lede: (sponsors ?? []).length === 0 ? NO_SPONSORS_YET : undefined,
     path: '/national-show/sponsors',
   });
@@ -64,7 +64,7 @@ export default async function ShowSponsorsPage() {
   const [result, sponsors] = await Promise.all([
     loadShowPageOrFallback('15-sponsors', {
       label: 'Show Sponsors',
-      purpose: 'The sponsors behind the National Show.',
+      purpose: 'The sponsors behind the National Orchid Show.',
     }),
     sanityFetch<ShowSponsorCardData[]>({
       query: showSponsorsQuery,

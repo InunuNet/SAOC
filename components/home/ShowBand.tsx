@@ -122,7 +122,7 @@ export function ShowBand({ show }: ShowBandProps) {
             </div>
 
             <h2 className="font-serif font-light text-[clamp(32px,3.8vw,48px)] leading-[1.1] tracking-[-0.015em] text-ivory mb-8 text-balance">
-              {showTitleWithEdition(show?.edition, 'South African National Orchid Show')}
+              {showTitleWithEdition(show?.edition, 'National Orchid Show')}
             </h2>
 
             <dl data-show-band-facts className="grid grid-cols-2 gap-x-10 gap-y-5 mb-8">

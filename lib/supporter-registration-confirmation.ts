@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { sendEmail, FORMS_FROM_ADDRESS } from '@/lib/email';
+import { sendEmail, NOS_FORMS_FROM_ADDRESS } from '@/lib/email';
+import type { Site } from '@/lib/site-hosts';
 import SupporterRegistrationConfirmation from '@/emails/SupporterRegistrationConfirmation';
 
 /**
@@ -32,6 +33,7 @@ export interface SupporterRegistrationConfirmationMailer {
     subject: string;
     react: React.ReactElement;
     from: string;
+    site?: Site;
   }): Promise<void>;
 }
 
@@ -52,6 +54,7 @@ export async function sendSupporterRegistrationConfirmationEmail(
       firstName: input.firstName,
       confirmUrl: input.confirmUrl,
     }),
-    from: FORMS_FROM_ADDRESS,
+    from: NOS_FORMS_FROM_ADDRESS,
+    site: 'nos',
   });
 }

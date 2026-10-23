@@ -38,7 +38,7 @@
 //
 // Run as: npx tsx contracts/checks/ticketing-ux-defects-browser-found/check-confirmation-array-ref.mjs
 
-import { normalizeBookingRefParam } from '../../../app/(marketing)/tickets/confirmation/page.tsx';
+import { normalizeBookingRefParam } from '../../../lib/booking-ref.ts';
 
 const failures = [];
 

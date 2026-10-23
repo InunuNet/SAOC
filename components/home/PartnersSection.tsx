@@ -25,7 +25,7 @@ const STATIC_PARTNERS: PartnerCard[] = [
     _id: 'wosa',
     name: 'Wild Orchids of Southern Africa',
     website: 'https://wildorchids.co.za',
-    description: 'Partner organisation hosting the WOSA Conference at the 2027 National Show.',
+    description: 'Partner organisation hosting the WOSA Conference at the National Orchid Show.',
   },
   {
     _id: 'sanbi',

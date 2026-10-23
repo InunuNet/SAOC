@@ -5,24 +5,29 @@
 // only the host-neutral title template and description.
 import type { Metadata } from 'next';
 
+import { SHOW_TITLE, SHOW_TITLE_EXPANDED } from '@/lib/show-title';
+
 export const SITE_DESCRIPTION =
   'The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968.';
 
 // One title pattern for every page on the NOS site (nos-site-split F3): the show's inner pages
-// already ended " | SAOC"; the hub keeps its full title; the shared legal pages join the same
-// pattern when served on the NOS host.
-export const NOS_TITLE_DEFAULT = 'National Orchid Show | SAOC';
+// read "<Page> | The National Orchid Show"; the hub keeps the expanded official title; the shared
+// legal pages join the same pattern when served on the NOS host. "| SAOC" is dropped there.
+export const NOS_TITLE_DEFAULT = SHOW_TITLE_EXPANDED;
 export const NOS_TITLE: NonNullable<Metadata['title']> = {
-  template: '%s — National Orchid Show | SAOC',
+  template: `%s | ${SHOW_TITLE}`,
   default: NOS_TITLE_DEFAULT,
 };
 
-export function buildSiteMetadata(origin: string): Metadata {
+export function buildSiteMetadata(
+  origin: string,
+  siteName = 'South African Orchid Council',
+): Metadata {
   return {
     metadataBase: new URL(origin),
     alternates: { canonical: './' },
     openGraph: {
-      siteName: 'South African Orchid Council',
+      siteName,
       locale: 'en_ZA',
       type: 'website',
       url: origin,

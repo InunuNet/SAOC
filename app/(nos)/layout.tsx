@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { NosFrame } from '@/components/site-chrome/NosFrame';
+import { SHOW_TITLE } from '@/lib/show-title';
 import { nosOrigin } from '@/lib/site-hosts';
 import { NOS_TITLE, buildSiteMetadata } from '@/lib/site-metadata';
 
@@ -9,7 +10,7 @@ import { NOS_TITLE, buildSiteMetadata } from '@/lib/site-metadata';
 // these routes. Chrome is the NOS own-brand header and footer; metadataBase is the NOS origin.
 // The `.nos-theme` scope is applied by the segment layouts (national-show, tickets, vsp).
 export function generateMetadata(): Metadata {
-  return { ...buildSiteMetadata(nosOrigin()), title: NOS_TITLE };
+  return { ...buildSiteMetadata(nosOrigin(), SHOW_TITLE), title: NOS_TITLE };
 }
 
 export default function NosLayout({ children }: { children: React.ReactNode }) {
