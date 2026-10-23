@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
 import { PreferencesForm } from '@/components/newsletter/PreferencesForm';
 import { isWellFormedUnsubscribeToken, NEWSLETTER_TOPICS } from '@/lib/newsletter';
+import { maskEmailForDisplay } from '@/lib/newsletter-preferences';
 import { findSubscriberByToken } from '@/lib/newsletter-store';
 import { requestSite } from '@/lib/request-site';
 
@@ -40,7 +41,7 @@ export default async function NewsletterPreferencesPage({
       {subscriber === null || !isWellFormedUnsubscribeToken(token) ? (
         <div className="mt-8">
           <p role="alert" className="font-sans text-[16px] leading-[1.55] text-ink">
-            {NEWSLETTER_COPY.unsubscribeInvalid}
+            {NEWSLETTER_COPY.prefsTokenError}
           </p>
           <p className="mt-4">
             <Link
@@ -56,7 +57,7 @@ export default async function NewsletterPreferencesPage({
           <PreferencesForm
             token={token}
             site={site}
-            email={subscriber.email}
+            maskedEmail={maskEmailForDisplay(subscriber.email)}
             allRemoved={subscriber.status === 'unsubscribed'}
             topics={subscriber.topics}
             available={NEWSLETTER_TOPICS.filter((topic) =>

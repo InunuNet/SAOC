@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
-import { maskEmailForDisplay } from '@/lib/newsletter-preferences';
 import type { NewsletterTopic } from '@/lib/newsletter-topics';
 
 type View = 'form' | 'none';
@@ -12,7 +11,8 @@ interface PreferencesFormProps {
   token: string;
   /** Which host the page is on: that host's own topic is listed first. */
   site: 'saoc' | 'nos';
-  email: string;
+  /** Already masked on the server: the raw address never reaches this component. */
+  maskedEmail: string;
   /** True once every topic has been removed; the form then offers "Subscribe again". */
   allRemoved: boolean;
   /** The topics the address is subscribed to now. */
@@ -26,6 +26,7 @@ interface PreferencesResponse {
   status?: string;
   topics?: NewsletterTopic[];
   error?: string;
+  field?: string;
 }
 
 const PRIMARY_BUTTON =
@@ -42,7 +43,7 @@ function ownTopicFirst(site: 'saoc' | 'nos', topics: readonly NewsletterTopic[])
   return order.filter((topic) => topics.includes(topic));
 }
 
-export function PreferencesForm({ token, site, email, allRemoved, topics, available }: PreferencesFormProps) {
+export function PreferencesForm({ token, site, maskedEmail, allRemoved, topics, available }: PreferencesFormProps) {
   const [view, setView] = useState<View>(allRemoved ? 'none' : 'form');
   const [offered, setOffered] = useState<NewsletterTopic[]>(available);
   const [selected, setSelected] = useState<NewsletterTopic[]>(topics);
@@ -74,7 +75,8 @@ export function PreferencesForm({ token, site, email, allRemoved, topics, availa
       });
       const data: PreferencesResponse = await res.json().catch(() => ({}));
       if (res.ok) return data;
-      setError(data.error === NEWSLETTER_COPY.unsubscribeInvalid
+      // A 400 with no `field` is the invalid-link answer; a field error is a bad selection.
+      setError(res.status === 400 && data.field === undefined
         ? NEWSLETTER_COPY.prefsTokenError
         : (data.error ?? NEWSLETTER_COPY.genericError));
       return null;
@@ -119,7 +121,7 @@ export function PreferencesForm({ token, site, email, allRemoved, topics, availa
 
   return (
     <div>
-      <p className="font-sans text-[16px] leading-[1.55] text-ink">{maskEmailForDisplay(email)}</p>
+      <p className="font-sans text-[16px] leading-[1.55] text-ink">{maskedEmail}</p>
 
       <div
         ref={statusRef}
