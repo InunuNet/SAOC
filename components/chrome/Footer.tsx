@@ -14,12 +14,14 @@ import Link from 'next/link';
 import { partners } from '@/lib/data';
 import { NewsletterSignup } from '@/components/newsletter/NewsletterSignup';
 import { SaocLockup } from './SaocLockup';
+import { MediaKitFooterLink } from './MediaKitFooterLink';
 import {
   FOOTER_BULLETIN,
   FOOTER_COPYRIGHT_TAIL,
   FOOTER_HEADINGS,
   FOOTER_LAYOUT,
   FOOTER_LEGAL_LINKS,
+  FOOTER_MEDIA_KIT,
   FOOTER_NAV,
   FOOTER_NEW_TAB_CUE,
   FOOTER_REG,
@@ -144,6 +146,10 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
                 {l.label}
               </Link>
             ))}
+            <MediaKitFooterLink
+              {...FOOTER_MEDIA_KIT}
+              className="inline-flex min-h-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150"
+            />
           </div>
         </div>
       </div>

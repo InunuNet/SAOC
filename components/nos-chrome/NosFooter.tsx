@@ -25,12 +25,13 @@ import {
   FOOTER_RHYTHM,
   FOOTER_WOSA,
 } from '@/components/chrome/footer-data';
+import { MediaKitFooterLink } from '@/components/chrome/MediaKitFooterLink';
 import { NewsletterSignup } from '@/components/newsletter/NewsletterSignup';
 import { nosPath } from '@/lib/nos-paths';
 import { saocUrl } from '@/lib/site-hosts';
 
 import { nosChromeFontClass } from './fonts';
-import { NOS_FOOTER_EXPLORE, NOS_FOOTER_LEGAL } from './nos-footer-data';
+import { NOS_FOOTER_EXPLORE, NOS_FOOTER_LEGAL, NOS_FOOTER_MEDIA_KIT } from './nos-footer-data';
 import './nos-chrome.css';
 
 const HUB_HREF = '/';
@@ -164,6 +165,7 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
                 {l.label}
               </Link>
             ))}
+            <MediaKitFooterLink href={nosPath(NOS_FOOTER_MEDIA_KIT.href)} label={NOS_FOOTER_MEDIA_KIT.label} />
             {/* The Constitution is the Council's: a plain anchor to the SAOC site, same tab. */}
             <a href={saocUrl('/constitution')}>Constitution</a>
           </div>

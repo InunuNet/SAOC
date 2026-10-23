@@ -6,7 +6,8 @@
 //   FT2/3 each column's heading and first link share its left x; headings share a top line; the first
 //        item sits 16px under the heading; list rows are a 44px pitch
 //   FT4  WOSA appears once per footer (one link, one mention)
-//   bar  the legal links in the bottom bar are spaced by one gap, equal within 1px
+//   bar  the legal links in the bottom bar are spaced by one gap, equal within 1px; the Media kit link
+//        is absent for an anonymous visitor and present when whoami (stubbed) confirms a session
 //   FT6  the SAOC tagline is 11px
 //   FT7  the admin pill's box never intersects the bottom bar, at the page end and part-way
 // Screenshots go to ../split-shots (relative to the worktree), footer-NAME.png. Exit 1 on any failed assertion.
@@ -132,16 +133,22 @@ async function checkColumns(browser) {
 async function checkBarLinkGaps(browser) {
   for (const width of WIDE_VIEWPORTS) {
     for (const [site, host, , barSelector] of SITES) {
-      const { context, page } = await open(browser, host, [width, 900]);
-      const boxes = await page.$$eval(`${barSelector} a`, (links) =>
-        links.map((a) => {
-          const r = a.getBoundingClientRect();
-          return { left: r.left, right: r.right };
-        }),
-      );
-      const gaps = boxes.slice(1).map((b, i) => b.left - boxes[i].right);
-      check(`bar ${site} ${width}: ${boxes.length} legal links, gaps equal within ${GAP_TOLERANCE}px`, boxes.length > 1 && Math.max(...gaps) - Math.min(...gaps) <= GAP_TOLERANCE, gaps.map((g) => g.toFixed(1)).join(' / '));
-      await context.close();
+      for (const admin of [false, true]) {
+        const { context, page } = await open(browser, host, [width, 900], { admin });
+        const kit = page.locator(`${barSelector} a[href$="/media-kit"]`);
+        if (admin) await kit.waitFor({ state: 'attached', timeout: 5000 }).catch(() => undefined);
+        const who = admin ? 'signed in' : 'anonymous';
+        check(`media kit ${site} ${width}: ${who} ${admin ? 'sees' : 'does not see'} the link`, (await kit.count()) === (admin ? 1 : 0), `count=${await kit.count()}`);
+        const boxes = await page.$$eval(`${barSelector} a`, (links) =>
+          links.map((a) => {
+            const r = a.getBoundingClientRect();
+            return { left: r.left, right: r.right };
+          }),
+        );
+        const gaps = boxes.slice(1).map((b, i) => b.left - boxes[i].right);
+        check(`bar ${site} ${width} ${who}: ${boxes.length} legal links, gaps equal within ${GAP_TOLERANCE}px`, boxes.length > 1 && Math.max(...gaps) - Math.min(...gaps) <= GAP_TOLERANCE, gaps.map((g) => g.toFixed(1)).join(' / '));
+        await context.close();
+      }
     }
   }
 }

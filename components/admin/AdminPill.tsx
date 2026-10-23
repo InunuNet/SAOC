@@ -8,6 +8,12 @@ import { LogOut } from 'lucide-react';
 import { studioEditHref } from '@/lib/studio-links';
 import { ADMIN_PILL_DOT_CLASS, FOCUS_RING_ON_DARK } from './tokens';
 import { signOutAdmin } from './useAdminSignOut';
+import {
+  readNotAdminCache,
+  WHOAMI_TIMEOUT_MS,
+  WHOAMI_URL,
+  writeNotAdminCache,
+} from './useIsAdmin';
 
 // Floating admin shortcut for signed-in admins, on public pages and inside the admin shell.
 // On public pages it asks /api/admin/whoami; the admin shell has already verified the session
@@ -18,30 +24,8 @@ import { signOutAdmin } from './useAdminSignOut';
 // --sticky-cta-offset (set that variable on a sticky bottom bar, default 0), lifts clear of the
 // footer's bottom bar ([data-footer-bar]) while that bar is in view, hides in print,
 // and is mounted after <main> so it comes last in reading order.
-const WHOAMI_URL = '/api/admin/whoami';
-const NOT_ADMIN_CACHE_KEY = 'saoc-admin-pill-not-admin';
-const NOT_ADMIN_CACHE_MS = 10 * 60 * 1000;
-const WHOAMI_TIMEOUT_MS = 5000;
-
 const PILL_SURFACE = 'bg-primary-800/92 text-ivory backdrop-blur-sm shadow-sheet print:hidden';
 const ITEM_CLASS = `flex min-h-[44px] items-center px-3 font-sans text-[14px] font-medium text-ivory hover:text-accent-soft ${FOCUS_RING_ON_DARK}`;
-
-function readNotAdminCache(): boolean {
-  try {
-    const stored = window.sessionStorage.getItem(NOT_ADMIN_CACHE_KEY);
-    return stored !== null && Date.now() - Number(stored) < NOT_ADMIN_CACHE_MS;
-  } catch {
-    return false;
-  }
-}
-
-function writeNotAdminCache(): void {
-  try {
-    window.sessionStorage.setItem(NOT_ADMIN_CACHE_KEY, String(Date.now()));
-  } catch {
-    // Storage blocked: the pill just asks again on the next page.
-  }
-}
 
 const LOGIN_PATH = '/admin/login';
 const FOOTER_BAR_SELECTOR = '[data-footer-bar]';

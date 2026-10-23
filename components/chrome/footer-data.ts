@@ -54,14 +54,16 @@ export const FOOTER_WOSA = {
 /** Screen-reader cue for a link that opens in a new tab; the visible mark is the arrow. */
 export const FOOTER_NEW_TAB_CUE = '(opens in a new tab)';
 
-// The SAOC site's legal row. Media kit is the SAOC media kit (members only).
+// The SAOC site's legal row.
 export const FOOTER_LEGAL_LINKS = [
   { href: '/privacy', label: 'Privacy' },
   { href: '/terms', label: 'Terms' },
   { href: '/refunds', label: 'Refunds' },
   { href: '/constitution', label: 'Constitution' },
-  { href: '/media-kit', label: 'Media kit' },
 ];
+
+/** Shown only to a signed-in admin session (MediaKitFooterLink); the page gate is separate. */
+export const FOOTER_MEDIA_KIT = { href: '/media-kit', label: 'Media kit' };
 
 /**
  * The footer grid, brand column and bottom bar, shared by both skins so the NOS footer keeps the SAOC
