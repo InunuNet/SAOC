@@ -547,6 +547,22 @@
   scroll-margin-top: 112px;
 }
 
+/* Hash links land clear of the sticky header (nos-chrome.css zeroes html scroll-padding-top). */
+.nos-theme [id] {
+  scroll-margin-top: 112px;
+}
+/* Ticketing pages: the sticky testing bar (44px from 700px, 48px from 768px) sits above the header. */
+@media (min-width: 700px) {
+  body:has([data-ticketing-test-bar]) .nos-theme [id] {
+    scroll-margin-top: calc(112px + 44px);
+  }
+}
+@media (min-width: 768px) {
+  body:has([data-ticketing-test-bar]) .nos-theme [id] {
+    scroll-margin-top: calc(112px + 48px);
+  }
+}
+
 /* F17 (launch-weekend): a section that follows a same-ground section shares ONE rhythm unit with
    it (the first section's padding-bottom), not two stacked units. Key-dates caption: the table is
    display:block (row cards above), so the caption has no table box to size against and

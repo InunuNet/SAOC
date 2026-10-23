@@ -1,15 +1,15 @@
-// F2 (ticketing-pages) — route-level Suspense fallback while Sanity/Firestore data
-// for /tickets is fetched. Sage & Paper tokens only, no new colours.
-export default function TicketsLoading() {
+// nos-flash-scroll: route-level fallback for a dynamic NOS route. Renders the existing NOS hero
+// geometry (nos-theme.css `.nos-hero`) with an empty copy block, so the first frame is the dark
+// hero rather than a grey skeleton. No text, no new tokens.
+export default function Loading() {
   return (
-    <div className="mx-auto max-w-[720px] px-8 py-16 space-y-6" aria-busy="true" aria-live="polite">
-      <div className="h-[480px] bg-bone" aria-hidden="true" />
-      <div className="space-y-4 pt-4">
-        <div className="h-24 border border-rule bg-bone" aria-hidden="true" />
-        <div className="h-24 border border-rule bg-bone" aria-hidden="true" />
-        <div className="h-24 border border-rule bg-bone" aria-hidden="true" />
-      </div>
-      <span className="sr-only">Loading ticket information…</span>
-    </div>
+    <section
+      data-nos-hero="inner"
+      data-nos-hero-variant="type"
+      aria-busy="true"
+      className="nos-on-dark nos-hero nos-hero-inner nos-hero-type"
+    >
+      <div className="nos-hero-copy" />
+    </section>
   );
 }
