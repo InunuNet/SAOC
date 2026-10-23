@@ -31,7 +31,8 @@ import { TestingNotice } from './_shared/TestingNotice';
 export interface OrderConfirmationPosition {
   bookingRef: string;
   attendeeName: string;
-  ticketType: string;
+  /** The ticket type's display title (Sanity), never the stored slug. */
+  ticketTypeTitle: string;
   qrContentId: string;
 }
 
@@ -114,7 +115,7 @@ export default function OrderConfirmation({
       {positions.map((position) => (
         <ShellCard key={position.bookingRef}>
           <ShellDetailRow label="Attendee:">{position.attendeeName}</ShellDetailRow>
-          <ShellDetailRow label="Ticket type:">{position.ticketType}</ShellDetailRow>
+          <ShellDetailRow label="Ticket type:">{position.ticketTypeTitle}</ShellDetailRow>
           <ShellDetailRow label="Booking reference:">{position.bookingRef}</ShellDetailRow>
           <TestingNotice testMode={testMode} />
           <ShellQrTile>

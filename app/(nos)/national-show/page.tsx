@@ -30,6 +30,7 @@ import { cheapestAdmission, formatRand } from '@/components/nos/cheapest-admissi
 import { effectiveCapacity, resolveEffectivePrice } from '@/lib/checkout-reservation';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosPath } from '@/lib/nos-paths';
+import { SHOW_TITLE, SHOW_TITLE_EXPANDED } from '@/lib/show-title';
 import { NOS_TITLE_DEFAULT } from '@/lib/site-metadata';
 import { nosUrl, saocUrl } from '@/lib/site-hosts';
 import {
@@ -52,7 +53,7 @@ export const revalidate = 60;
 const WITHHOLD_UNSOURCED = withholdPlaceholderProse();
 
 const PAGE_DESCRIPTION_LEAD =
-  'The South African National Orchid Show — the flagship triennial competition';
+  'The National Orchid Show — the flagship triennial competition';
 const PAGE_DESCRIPTION_CLAUSE =
   ' bringing together growers, judges and enthusiasts from all nine provinces';
 const PAGE_DESCRIPTION = WITHHOLD_UNSOURCED
@@ -83,8 +84,8 @@ const JUDGING_LEDE = 'Every exhibit is entered in one of ten botanical classes.'
 // The hub keeps the full NOS default title; the group template would only repeat the show's name.
 export const metadata: Metadata = {
   ...buildPageMetadata({
-    title: 'National Orchid Show',
-    image: nosOgImage('National Orchid Show'),
+    title: SHOW_TITLE_EXPANDED,
+    image: nosOgImage(SHOW_TITLE),
     description: PAGE_DESCRIPTION,
     path: '/national-show',
   }),
@@ -93,7 +94,7 @@ export const metadata: Metadata = {
 
 /** The hub's `<h1>` (R68, Brad): the show's plain name. nav-config keeps its own longer label
  *  as the mega-menu lead, so the two are deliberately separate. */
-const HUB_HEADING = 'National Orchid Show';
+const HUB_HEADING = SHOW_TITLE;
 
 const HUB_MEGA = NOS_NAV.find((n) => n.type === 'mega');
 
@@ -339,7 +340,7 @@ export default async function NationalShowPage() {
   // The one Event node on the site. Offers are omitted entirely while sales are closed —
   // there is nothing purchasable to advertise, and an offer list is not a place to guess.
   const eventData = nationalShowEventJsonLd({
-    name: sanityShow?.title,
+    name: SHOW_TITLE_EXPANDED,
     startDate: toShowIsoDate(sanityShow?.showDate),
     endDate: toShowIsoDate(sanityShow?.showEndDate),
     description: PAGE_DESCRIPTION,

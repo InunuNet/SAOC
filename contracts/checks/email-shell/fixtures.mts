@@ -50,8 +50,8 @@ export const FIXTURES: Fixture[] = [
         ],
       },
       positions: [
-        { bookingRef: 'TEST-0001', attendeeName: PERSON, ticketType: 'Day Visitor', qrContentId: 'qr-1' },
-        { bookingRef: 'TEST-0002', attendeeName: 'Second Person', ticketType: 'Weekend Pass', qrContentId: 'qr-2' },
+        { bookingRef: 'TEST-0001', attendeeName: PERSON, ticketTypeTitle: 'Day Visitor', qrContentId: 'qr-1' },
+        { bookingRef: 'TEST-0002', attendeeName: 'Second Person', ticketTypeTitle: 'Weekend Pass', qrContentId: 'qr-2' },
       ],
     }),
   },

@@ -72,7 +72,7 @@ switch on:
 - `/admin` and `/studio` keep their own sign-in.
 - `/api/*` is reachable without Basic Auth (the routes keep their own checks).
 
-`apphosting.yaml` carries a comment for the variable and never a value.
+The variable is declared in `apphosting.yaml` (set to `"true"` by #63, `RUNTIME`).
 
 ## Deploy order
 

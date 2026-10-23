@@ -167,6 +167,20 @@ env:
     value: "info@saoc.co.za"
     availability:
       - RUNTIME
+  # The National Orchid Show sends its customer-facing mail as the show (lib/email.ts, docs/official-title.md).
+  # Same sending domains as above, so no new DNS; Reply-To is the show's own inbox.
+  - variable: RESEND_FROM_TICKETS_NOS
+    value: "The National Orchid Show <tickets@tickets.saoc.co.za>"
+    availability:
+      - RUNTIME
+  - variable: RESEND_FROM_FORMS_NOS
+    value: "The National Orchid Show <noreply@forms.saoc.co.za>"
+    availability:
+      - RUNTIME
+  - variable: RESEND_REPLY_TO_NOS
+    value: "show@saoc.co.za"
+    availability:
+      - RUNTIME
 
   # Vendor flow HMAC secrets (mission vendor-gated-registration-flow). Both were missing from
   # this file entirely until 2026-09-01, which meant application approval refused in production

@@ -1,6 +1,8 @@
 import { Resend } from 'resend';
 import { JSX } from 'react';
 
+import type { Site } from '@/lib/site-hosts';
+
 let resend: Resend | null = null;
 
 function getResend(): Resend {
@@ -19,15 +21,26 @@ export const TICKETS_FROM_ADDRESS =
 export const FORMS_FROM_ADDRESS =
   process.env.RESEND_FROM_FORMS ?? 'SAOC <noreply@forms.saoc.co.za>';
 
+// The National Orchid Show sends its customer-facing mail as the show, not as SAOC
+// (mission official-title-sweep). A blank value falls back to the default.
+export const NOS_TICKETS_FROM_ADDRESS =
+  process.env.RESEND_FROM_TICKETS_NOS?.trim() ||
+  'The National Orchid Show <tickets@tickets.saoc.co.za>';
+export const NOS_FORMS_FROM_ADDRESS =
+  process.env.RESEND_FROM_FORMS_NOS?.trim() ||
+  'The National Orchid Show <noreply@forms.saoc.co.za>';
+
 // "Enable Receiving" is deliberately OFF on both sending subdomains (send-only by design), so
 // FROM is a dead end for anyone who hits Reply. reply_to gives replies a real inbox to land in.
 // Resolved at CALL time (not module-load time like the *_FROM_ADDRESS constants above) so a
 // blank/unset env var always falls back safely instead of baking a stale value in at import.
 const DEFAULT_REPLY_TO = 'info@saoc.co.za';
+const DEFAULT_REPLY_TO_NOS = 'show@saoc.co.za';
 
-export function resolveReplyTo(): string {
-  const raw = process.env.RESEND_REPLY_TO?.trim();
-  return raw ? raw : DEFAULT_REPLY_TO;
+export function resolveReplyTo(site: Site = 'saoc'): string {
+  const raw = (site === 'nos' ? process.env.RESEND_REPLY_TO_NOS : process.env.RESEND_REPLY_TO)?.trim();
+  if (raw) return raw;
+  return site === 'nos' ? DEFAULT_REPLY_TO_NOS : DEFAULT_REPLY_TO;
 }
 
 // ticket-confirmation-email-qr-fix (F1) — attachment shape matching Resend's own Attachment
@@ -47,12 +60,14 @@ export function buildEmailPayload({
   react,
   from,
   attachments,
+  site,
 }: {
   to: string;
   subject: string;
   react: JSX.Element;
   from: string;
   attachments?: EmailAttachment[];
+  site?: Site;
 }): {
   to: string;
   subject: string;
@@ -66,7 +81,7 @@ export function buildEmailPayload({
     subject,
     react,
     from,
-    replyTo: resolveReplyTo(),
+    replyTo: resolveReplyTo(site),
     ...(attachments !== undefined ? { attachments } : {}),
   };
 }
@@ -77,15 +92,17 @@ export async function sendEmail({
   react,
   from,
   attachments,
+  site,
 }: {
   to: string;
   subject: string;
   react: JSX.Element;
   from: string;
   attachments?: EmailAttachment[];
+  site?: Site;
 }): Promise<void> {
   const { error } = await getResend().emails.send(
-    buildEmailPayload({ to, subject, react, from, attachments })
+    buildEmailPayload({ to, subject, react, from, attachments, site })
   );
   if (error) throw new Error(`Resend send failed: ${error.message}`);
 }

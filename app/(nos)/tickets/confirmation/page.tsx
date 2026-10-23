@@ -8,6 +8,7 @@ import { ConfirmationPoller } from '@/components/tickets/ConfirmationPoller';
 import { DownloadTicketButton } from '@/components/tickets/DownloadTicketButton';
 import { client } from '@/sanity/lib/client';
 import { ticketsPageQuery } from '@/sanity/queries';
+import { normalizeBookingRefParam } from '@/lib/booking-ref';
 import { getConfirmedOrderForDisplay as getConfirmedOrderUncached } from '@/lib/orders';
 import { getTicketStatus } from '@/lib/ticket-status';
 
@@ -16,10 +17,6 @@ import { getTicketStatus } from '@/lib/ticket-status';
 // cannot be statically prerendered or ISR-cached — same reasoning as
 // app/(nos)/tickets/page.tsx's force-dynamic.
 export const dynamic = 'force-dynamic';
-
-export function normalizeBookingRefParam(ref: string | string[] | undefined): string {
-  return typeof ref === 'string' ? ref.trim() : '';
-}
 
 interface TicketsPageCopy {
   confirmationSuccessHeading?: string | null;

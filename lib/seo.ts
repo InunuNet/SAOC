@@ -11,6 +11,7 @@
 import type { Metadata } from 'next';
 
 import { NOS_INTERNAL_PREFIX, nosPath } from '@/lib/nos-paths';
+import { SHOW_TITLE } from '@/lib/show-title';
 import { nosUrl, saocUrl } from '@/lib/site-hosts';
 
 // nos-site-split F2: a page's canonical lives on the host that serves it. The show tree
@@ -38,11 +39,11 @@ const DESCRIPTION_MIN = 70;
 const DESCRIPTION_MAX = 160;
 const LEDE_MAX = 155;
 
-// The National Show layout appends " — National Orchid Show | SAOC" to every inner page
+// The National Show layout appends " | The National Orchid Show" to every inner page
 // title (layout title template). `openGraph.title` does not receive that template, so
 // social cards add the show name back for inner routes.
 const NOS_ROOT = NOS_INTERNAL_PREFIX;
-const NOS_OG_SUFFIX = ' — National Orchid Show';
+const NOS_OG_SUFFIX = ` | ${SHOW_TITLE}`;
 
 function normaliseSpace(text: string): string {
   return text.replace(/\s+/g, ' ').trim();

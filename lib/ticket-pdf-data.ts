@@ -128,7 +128,11 @@ export async function loadTicketTypeTraits(): Promise<Map<string, TicketTypeTrai
     });
     for (const doc of docs ?? []) {
       if (!doc.slug) continue;
-      const entry = { slug: doc.slug, requiresDaySelection: doc.requiresDaySelection };
+      const entry = {
+        slug: doc.slug,
+        name: doc.name ?? null,
+        requiresDaySelection: doc.requiresDaySelection,
+      };
       traits.set(doc.slug, entry);
       if (doc.name) traits.set(doc.name, entry);
     }
@@ -189,11 +193,27 @@ export function toPdfPositions(
     return {
       bookingRef,
       attendeeName,
-      ticketType,
+      ticketType: type.name ?? ticketType,
       slug: type.slug,
       schedule: buildPositionSchedule(type, chosenDays.get(bookingRef), visit),
     };
   });
+}
+
+const FALLBACK_TICKET_TITLE = 'Ticket';
+
+/**
+ * The title a buyer reads for a stored ticket type: the Sanity name, else the presentation
+ * product's name, else the generic 'Ticket'. The stored slug is never shown.
+ */
+export function resolveTicketTypeTitle(
+  stored: string,
+  traits: ReadonlyMap<string, TicketTypeTraits>
+): string {
+  const named = traits.get(stored)?.name?.trim();
+  if (named) return named;
+  const productId = productIdForSlug(stored);
+  return productId ? TICKET_PRODUCTS[productId].name : FALLBACK_TICKET_TITLE;
 }
 
 /** Email path: the ITN outcome carries no chosenDay, so read it back from the paid order. */

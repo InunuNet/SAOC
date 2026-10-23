@@ -148,7 +148,7 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
     <>
       <NosHero
         route={`/national-show/archive/${show.year}`}
-        title={`The ${show.year} South African National Orchid Show`}
+        title={`The ${show.year} National Orchid Show`}
         lede={subtitle(show)}
         priority
         actions={

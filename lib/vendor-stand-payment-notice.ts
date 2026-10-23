@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { sendEmail, FORMS_FROM_ADDRESS } from '@/lib/email';
+import { sendEmail, NOS_FORMS_FROM_ADDRESS } from '@/lib/email';
 import VendorStandPaymentReady from '@/emails/VendorStandPaymentReady';
 import { withTestSubjectPrefix } from '@/lib/ticketing-test-mode';
 
@@ -46,6 +46,7 @@ export async function sendVendorStandPaymentNoticeEmail(
       contactPersonName: input.contactPersonName,
       paymentUrl: input.paymentUrl,
     }),
-    from: FORMS_FROM_ADDRESS,
+    from: NOS_FORMS_FROM_ADDRESS,
+    site: 'nos',
   });
 }
