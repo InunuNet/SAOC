@@ -110,8 +110,9 @@ export interface BuildPageMetadataInput {
  * `openGraph` and `twitter` consistently — a route hand-rolling its own `openGraph`
  * block after this helper exists is a defect (golden Part B.2).
  *
- * Open Graph is deliberately limited to the properties ogp.me defines (plus `og:site_name`, which a page-level openGraph would otherwise drop) —
- * `og:title`, `og:type`, `og:image`, `og:url` — plus the optional `og:description`.
+ * Open Graph is deliberately limited to the properties ogp.me actually defines —
+ * `og:title`, `og:type`, `og:image`, `og:url` — plus the optional `og:description` and
+ * `og:site_name` (a page-level openGraph replaces the layout one, so it is set here too).
  * `type` is always the base `'website'` value; ogp.me defines no event type, so this
  * must never be overridden to invent one (B8a / D-M6b).
  */
