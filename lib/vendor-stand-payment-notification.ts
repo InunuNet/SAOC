@@ -13,6 +13,7 @@ import { vendorStandOrderAmountMatches } from '@/lib/vendor-stand-order-amount';
 import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
 import { sendVendorPaymentAdminNoticeEmail } from '@/lib/vendor-payment-admin-notice';
 import { sendVendorPaymentConfirmationEmail } from '@/lib/vendor-payment-confirmation';
+import { saocUrl } from '@/lib/site-hosts';
 
 /**
  * Vendor stand-payment notification handler -- SECURITY BOUNDARY, FAIL CLOSED (mission
@@ -31,15 +32,6 @@ import { sendVendorPaymentConfirmationEmail } from '@/lib/vendor-payment-confirm
 /** Always 200 -- the gateway must stop retrying regardless of validation outcome. */
 function acknowledge(): NextResponse {
   return NextResponse.json({ received: true }, { status: 200 });
-}
-
-/** Site URL fallback, matching lib/confirmation-email.ts's own DEFAULT_SITE_URL convention --
- *  duplicated locally rather than imported (that fallback is private to its own module and
- *  SITE_URL is runtime-only, not available at build time). G1 (vendor-flow-notifications). */
-const DEFAULT_SITE_URL = 'https://saoc.co.za';
-
-function resolveSiteUrl(): string {
-  return process.env['SITE_URL'] ?? DEFAULT_SITE_URL;
 }
 
 /** F2 (vendor-stand-payment-confirm-gate) -- a hung downstream email send must not block its
@@ -444,7 +436,7 @@ export async function POST(
             businessName: notice.businessName,
             contactPersonName: notice.contactPersonName,
             standOrderRef: notice.standOrderRef,
-            reviewUrl: `${resolveSiteUrl()}/admin/vendors`,
+            reviewUrl: saocUrl('/admin/vendors'),
           }),
           EMAIL_SEND_TIMEOUT_MS,
         ),

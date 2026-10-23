@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { Head, Html, Img, Preview } from '@react-email/components';
 
 import { FOOTER_REG } from '@/components/chrome/footer-data';
+import { saocUrl } from '@/lib/site-hosts';
 
 /**
  * Shared email chrome (mission email-shell). Design source: Codi's final ruling, see
@@ -84,12 +85,10 @@ const NOS_LOGO_ALT = 'National Orchid Show 2027';
 // The two registration numbers come from FOOTER_REG; only the separator changes.
 const FOOTER_REG_LINE = FOOTER_REG.replace(/\s{2,}/, ' · ');
 const FOOTER_LINE = 'South African Orchid Council — saoc.co.za';
-/** SITE_URL is only available at App Hosting runtime; same fallback as lib/confirmation-email.ts. */
-const DEFAULT_SITE_URL = 'https://saoc.co.za';
 
+// Static assets are served on every host (proxy.ts passes file paths through); the SAOC origin hosts them.
 function logoUrl(file: string): string {
-  const origin = (process.env['SITE_URL'] ?? DEFAULT_SITE_URL).replace(/\/+$/, '');
-  return `${origin}/images/email/${file}`;
+  return saocUrl(`/images/email/${file}`);
 }
 
 function shellCss(t: ShellTheme): string {

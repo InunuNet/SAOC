@@ -44,6 +44,7 @@ import {
   DAY_VISITOR_SHAPED_SLUGS,
 } from '@/lib/provisional-figures';
 import { resolveActiveShow } from '@/lib/show-resolution';
+import { nosUrl } from '@/lib/site-hosts';
 import { MAX_LINE_ITEMS, NATIONAL_SHOW_ID, RESERVATION_TTL_MINUTES } from '@/lib/tickets-constants';
 
 // Re-exported (not just imported) so contracts/checks/ticketing-multi-line-item-cart/
@@ -51,25 +52,7 @@ import { MAX_LINE_ITEMS, NATIONAL_SHOW_ID, RESERVATION_TTL_MINUTES } from '@/lib
 // keeps working — the single source of truth is still lib/tickets-constants.ts.
 export { MAX_LINE_ITEMS };
 
-/**
- * Canonical production origin. Used only as the fallback when `SITE_URL` is unset.
- * Sandbox testing MUST override it — `saoc.co.za` still resolves to the old Joomla
- * site, so a sandbox notification callback built on this origin would be delivered
- * there and never reach this app. Set `SITE_URL` to the App Hosting origin instead.
- */
-const DEFAULT_SITE_URL = 'https://saoc.co.za';
 const TICKET_ITEM_LABEL = 'SAOC 2027 National Show Ticket';
-
-/**
- * Resolve the origin at request time, not module load. Firebase App Hosting supplies
- * `SITE_URL` with RUNTIME availability only, so reading it at module scope would
- * capture `undefined` during the build and bake the fallback into the bundle.
- * Deliberately NOT `NEXT_PUBLIC_` — a public prefix is inlined at build time, which
- * would defeat the same runtime lookup.
- */
-function resolveSiteUrl(): string {
-  return process.env.SITE_URL?.trim().replace(/\/+$/, '') || DEFAULT_SITE_URL;
-}
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -947,7 +930,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // Assembling the fields, ordering them and authenticating them all belong to the provider
   // (lib/payments/); what stays here is the reference, the server-derived amount and our own
   // callback URLs. Nothing below may reach for a gateway-specific field name again.
-  const siteUrl = resolveSiteUrl();
   // ozow-sandbox-toggle F1 (README §3c) — derived from the RESERVATION OUTCOME's own
   // expectedGatewayAmount, never from ozowSandboxTestModeEnabled (whose only remaining use is
   // the resolveExpectedGatewayAmount(...) call above, before reserveTicket()). This is what
@@ -957,9 +939,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     reference,
     amountFormatted: initiateAmountFormatted,
     itemName: TICKET_ITEM_LABEL,
-    returnUrl: `${siteUrl}/tickets/confirmation?ref=${reference}`,
-    cancelUrl: `${siteUrl}/tickets/cancelled?ref=${reference}`,
-    notifyUrl: `${siteUrl}${NOTIFY_PATH_BY_PROVIDER_ID[providerId]}`,
+    returnUrl: nosUrl(`/tickets/confirmation?ref=${reference}`),
+    cancelUrl: nosUrl(`/tickets/cancelled?ref=${reference}`),
+    notifyUrl: nosUrl(NOTIFY_PATH_BY_PROVIDER_ID[providerId]),
   });
 
   // The gateway credential guard again, and this is DEFENCE IN DEPTH rather than redundancy:

@@ -339,7 +339,7 @@ async function main(): Promise<void> {
     let consumerSites: string[] = [];
     try {
       notFoundSites = execSync(
-        `grep -rl "notFound(" "app/(marketing)/national-show/" --include='*.tsx'`,
+        `grep -rl "notFound(" "app/(nos)/national-show/" --include='*.tsx'`,
         { cwd: PROJECT_ROOT, encoding: 'utf8' },
       )
         .split('\n')
@@ -350,7 +350,7 @@ async function main(): Promise<void> {
     }
     try {
       consumerSites = execSync(
-        `grep -rl "loadShowPageOrFallback" "app/(marketing)/national-show/" --include='*.tsx'`,
+        `grep -rl "loadShowPageOrFallback" "app/(nos)/national-show/" --include='*.tsx'`,
         { cwd: PROJECT_ROOT, encoding: 'utf8' },
       )
         .split('\n')
@@ -359,7 +359,7 @@ async function main(): Promise<void> {
     } catch {
       consumerSites = [];
     }
-    const expectedNotFound = ['app/(marketing)/national-show/archive/[year]/page.tsx'];
+    const expectedNotFound = ['app/(nos)/national-show/archive/[year]/page.tsx'];
     const expectedConsumers = inScopeRoutes.map((r) => slugToPagePath(r.slug));
     const notFoundSetEq =
       notFoundSites.length === expectedNotFound.length &&

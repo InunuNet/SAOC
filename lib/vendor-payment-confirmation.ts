@@ -2,6 +2,7 @@ import React from 'react';
 
 import { sendEmail, FORMS_FROM_ADDRESS } from '@/lib/email';
 import VendorPaymentConfirmation from '@/emails/VendorPaymentConfirmation';
+import { nosUrl } from '@/lib/site-hosts';
 
 /**
  * F1 (vendor-payment-confirmation) -- the vendor-facing receipt fired when a vendor's stand
@@ -13,15 +14,6 @@ import VendorPaymentConfirmation from '@/emails/VendorPaymentConfirmation';
  * POPIA-relevant submitter PII and must never reach a log line, same absolute rule every other
  * vendor-email sender in this project follows.
  */
-
-/** Site URL fallback, matching lib/confirmation-email.ts's own DEFAULT_SITE_URL convention --
- *  duplicated locally rather than imported (that fallback is private to its own module and
- *  SITE_URL is runtime-only, not available at build time). */
-const DEFAULT_SITE_URL = 'https://saoc.co.za';
-
-function resolveSiteUrl(): string {
-  return process.env['SITE_URL'] ?? DEFAULT_SITE_URL;
-}
 
 export interface VendorPaymentConfirmationInput {
   businessName: string;
@@ -47,7 +39,7 @@ export async function sendVendorPaymentConfirmationEmail(
   deps: SendVendorPaymentConfirmationDeps = {},
 ): Promise<void> {
   const mailer = deps.mailer ?? { send: sendEmail };
-  const siteUrl = deps.siteUrl ?? resolveSiteUrl();
+  const siteUrl = deps.siteUrl ?? nosUrl('');
 
   await mailer.send({
     to: input.contactEmail,
@@ -57,7 +49,7 @@ export async function sendVendorPaymentConfirmationEmail(
       boothSize: input.boothSize,
       amount: input.amount,
       standOrderRef: input.standOrderRef,
-      showDetailsUrl: `${siteUrl}/national-show`,
+      showDetailsUrl: `${siteUrl}/`,
     }),
     from: FORMS_FROM_ADDRESS,
   });

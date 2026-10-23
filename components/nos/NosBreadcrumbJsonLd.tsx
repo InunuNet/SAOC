@@ -10,17 +10,23 @@
 import { usePathname } from 'next/navigation';
 
 import { JsonLd, breadcrumbJsonLd } from '@/components/seo/JsonLd';
-
-const ORIGIN = 'https://saoc.co.za';
-const ROOT = '/national-show';
+import { NOS_INTERNAL_PREFIX as ROOT, nosPath } from '@/lib/nos-paths';
 
 export interface NosBreadcrumbJsonLdProps {
   /** nav-config label by href, for hrefs under /national-show. */
   labels: Readonly<Record<string, string>>;
+  /** The NOS origin, passed from the server layout so server and client render the same URL. */
+  origin: string;
 }
 
-export function NosBreadcrumbJsonLd({ labels }: NosBreadcrumbJsonLdProps) {
-  const pathname = usePathname() ?? ROOT;
+export function NosBreadcrumbJsonLd({ labels, origin }: NosBreadcrumbJsonLdProps) {
+  // On the NOS host the browser path is clean (`/faq`) while labels are keyed by the internal
+  // `/national-show/faq` href; accept either form.
+  const rawPathname = usePathname() ?? ROOT;
+  const pathname =
+    rawPathname === ROOT || rawPathname.startsWith(`${ROOT}/`)
+      ? rawPathname
+      : `${ROOT}${rawPathname === '/' ? '' : rawPathname}`;
   const segments = pathname.slice(ROOT.length).split('/').filter(Boolean);
 
   const trail: { name: string; url: string }[] = [];
@@ -29,7 +35,7 @@ export function NosBreadcrumbJsonLd({ labels }: NosBreadcrumbJsonLdProps) {
     if (depth > 0) href = `${href}/${segments[depth - 1]}`;
     const name = labels[href];
     if (!name) break;
-    trail.push({ name, url: `${ORIGIN}${href}` });
+    trail.push({ name, url: `${origin}${nosPath(href)}` });
   }
   if (trail.length === 0) return null;
 

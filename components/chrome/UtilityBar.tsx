@@ -13,6 +13,7 @@
 import Link from 'next/link';
 
 import { formatShowShortMonthYear, showLabelWithEdition } from '@/lib/show-identity';
+import { nosUrl } from '@/lib/site-hosts';
 import type { ShowIdentity } from '@/types';
 
 export interface UtilityBarProps {
@@ -63,12 +64,10 @@ export function UtilityBar({ show, variant = 'saoc' }: UtilityBarProps) {
 
         {/* Right: action pills */}
         <div className="flex items-center gap-2">
-          <Link
-            href="/national-show"
-            className={`hidden min-[900px]:inline-block ${SHOW_PILL_CLASS}`}
-          >
+          {/* The show lives on its own site: a plain anchor to the NOS home, same tab, no arrow. */}
+          <a href={nosUrl('/')} className={`hidden min-[900px]:inline-block ${SHOW_PILL_CLASS}`}>
             {showPillLabel}
-          </Link>
+          </a>
           <Link
             href="/societies"
             className="bg-accent text-ink rounded-full px-3 py-1 text-[13px] font-sans font-medium hover:bg-accent-soft transition-colors duration-150"

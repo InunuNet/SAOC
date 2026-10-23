@@ -10,6 +10,7 @@ import { VENDOR_STAND_ORDERS_COLLECTION } from '@/lib/vendor-stand-orders';
 import { mintVendorStandPaymentToken } from '@/lib/vendor-stand-payment-token';
 import { sendVendorStandPaymentNoticeEmail } from '@/lib/vendor-stand-payment-notice';
 import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
+import { nosUrl } from '@/lib/site-hosts';
 
 /**
  * POST /api/admin/vendors/[id]/resend-payment-link -- the escape hatch for a lost/failed
@@ -28,14 +29,8 @@ import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
  * the email send is non-fatal (same deliverConfirmationEmailAfterCommit pattern as the review
  * route) so a Resend failure never blocks the admin from getting the URL back.
  */
-const DEFAULT_SITE_URL = 'https://saoc.co.za';
-
-function resolveSiteUrl(): string {
-  return process.env.SITE_URL?.trim().replace(/\/+$/, '') || DEFAULT_SITE_URL;
-}
-
 function buildVendorStandPaymentUrl(token: string): string {
-  return `${resolveSiteUrl()}/national-show/vendors/payment?token=${encodeURIComponent(token)}`;
+  return nosUrl(`/vendors/payment?token=${encodeURIComponent(token)}`);
 }
 
 export async function POST(

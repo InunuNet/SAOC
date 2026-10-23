@@ -27,6 +27,7 @@
 import Link from 'next/link';
 
 import { COLUMN_CLASS, resolveGridLayout } from '@/lib/grid-columns';
+import { nosPath } from '@/lib/nos-paths';
 
 interface SectionLink {
   href: string;
@@ -126,7 +127,7 @@ export function ShowSectionNav({ current }: ShowSectionNavProps) {
           {links.map(({ href, label, hint }) => (
             <li key={href}>
               <Link
-                href={href}
+                href={nosPath(href)}
                 className="flex h-full flex-col gap-2 bg-parchment p-5 transition-colors duration-150 hover:bg-parchment/60"
               >
                 <span className="font-serif text-[18px] font-medium text-ink">{label}</span>

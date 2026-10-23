@@ -1087,7 +1087,7 @@ function runRouteMapChecks(): void {
   let r2ok = true;
   const r2Failures: string[] = [];
   for (const dir of untouchableDirs) {
-    const relDir = `app/(marketing)/national-show/${dir}`;
+    const relDir = `app/(nos)/national-show/${dir}`;
     let diffOutput = '';
     try {
       diffOutput = execSync(`git diff --name-only HEAD -- "${relDir}"`, {
@@ -1107,9 +1107,9 @@ function runRouteMapChecks(): void {
   check('R2', r2ok, 'tickets/vendors/archive/upcoming unmodified against HEAD', r2Failures.join('; '));
 
   // R5 — no colour/font-family/border-radius/box-shadow literal in any .tsx under
-  // app/(marketing)/national-show/. nos-theme.css is the token layer itself and is
+  // app/(nos)/national-show/. nos-theme.css is the token layer itself and is
   // exempt by construction (it is not a .tsx file).
-  const nosRoot = path.resolve(PROJECT_ROOT, 'app/(marketing)/national-show');
+  const nosRoot = path.resolve(PROJECT_ROOT, 'app/(nos)/national-show');
   const tsxFiles = listFilesRecursive(nosRoot).filter((f) => f.endsWith('.tsx'));
   const literalRe = /(#[0-9a-fA-F]{3,8}\b)|font-family\s*:|border-radius\s*:|box-shadow\s*:|\[(?:#|rgb\(|hsl\()/;
   let r5ok = true;
@@ -1126,7 +1126,7 @@ function runRouteMapChecks(): void {
       r5Failures.push(path.relative(PROJECT_ROOT, file));
     }
   }
-  check('R5', r5ok, 'no invented brand-asset literals under app/(marketing)/national-show/*.tsx', r5Failures.join(', '));
+  check('R5', r5ok, 'no invented brand-asset literals under app/(nos)/national-show/*.tsx', r5Failures.join(', '));
 
   // R1, R3, R4 — M4 build checks. The routes do not exist yet at M1.
   skip('R1', 'M4 build check — routes are not built yet at M1');

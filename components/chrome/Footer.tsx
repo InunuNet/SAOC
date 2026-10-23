@@ -26,7 +26,7 @@ import {
   FOOTER_WOSA,
 } from './footer-data';
 
-export function Footer() {
+export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
   return (
     <footer className="bg-primary-800 text-ivory">
       <div className={FOOTER_LAYOUT.grid}>
@@ -53,16 +53,19 @@ export function Footer() {
             {FOOTER_HEADINGS.explore}
           </div>
           <ul className={FOOTER_RHYTHM.list}>
-            {FOOTER_NAV.map((n) => (
-              <li key={n.id}>
-                <Link
-                  href={n.href}
-                  className={`${FOOTER_RHYTHM.row} min-w-11 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150`}
-                >
-                  {n.label}
-                </Link>
-              </li>
-            ))}
+            {FOOTER_NAV.map((n) => {
+              const NavLink = n.crossSite ? 'a' : Link;
+              return (
+                <li key={n.id}>
+                  <NavLink
+                    href={n.href}
+                    className={`${FOOTER_RHYTHM.row} min-w-11 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150`}
+                  >
+                    {n.label}
+                  </NavLink>
+                </li>
+              );
+            })}
           </ul>
         </div>
 
@@ -89,6 +92,8 @@ export function Footer() {
             {FOOTER_BULLETIN.blurb}
           </p>
           <NewsletterSignup
+            site="saoc"
+            showCopyGap={showCopyGap}
             source="saoc-footer"
             inputId="footer-newsletter-email"
             emailLabel={FOOTER_BULLETIN.emailLabel}

@@ -10,11 +10,23 @@
 
 import type { Metadata } from 'next';
 
-// Matches app/layout.tsx's own BASE_URL constant. Kept as a separate literal (not an
-// import) because layout.tsx's copy is intentionally load-bearing on its own file and
-// this module must stay free of app/ imports to avoid a circular dependency between
-// the root layout and every page that calls buildPageMetadata().
-const BASE_URL = 'https://saoc.co.za';
+import { NOS_INTERNAL_PREFIX, nosPath } from '@/lib/nos-paths';
+import { nosUrl, saocUrl } from '@/lib/site-hosts';
+
+// nos-site-split F2: a page's canonical lives on the host that serves it. The show tree
+// (/national-show/**) is published on the NOS origin under its clean path (the prefix is
+// stripped, see lib/nos-paths.ts); the top-level show routes (/tickets/**, /vsp) keep their path
+// on the NOS origin; everything else is a SAOC page. lib/site-hosts.ts and lib/nos-paths.ts are
+// pure, so this module stays free of app/ imports.
+const NOS_TOP_LEVEL_PREFIXES = ['/tickets', '/vsp'];
+
+function canonicalUrlFor(path: string): string {
+  if (path === NOS_ROOT || path.startsWith(`${NOS_ROOT}/`)) return nosUrl(nosPath(path));
+  const isTopLevelShowRoute = NOS_TOP_LEVEL_PREFIXES.some(
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+  );
+  return isTopLevelShowRoute ? nosUrl(path) : saocUrl(path);
+}
 
 const OG_IMAGE_WIDTH = 1200;
 const OG_IMAGE_HEIGHT = 630;
@@ -29,7 +41,7 @@ const LEDE_MAX = 155;
 // The National Show layout appends " — National Orchid Show | SAOC" to every inner page
 // title (layout title template). `openGraph.title` does not receive that template, so
 // social cards add the show name back for inner routes.
-const NOS_ROOT = '/national-show';
+const NOS_ROOT = NOS_INTERNAL_PREFIX;
 const NOS_OG_SUFFIX = ' — National Orchid Show';
 
 function normaliseSpace(text: string): string {
@@ -104,7 +116,7 @@ export function buildPageMetadata({
   image,
   noIndex,
 }: BuildPageMetadataInput): Metadata {
-  const canonical = `${BASE_URL}${path}`;
+  const canonical = canonicalUrlFor(path);
   const ogImage = image ?? `/og?title=${encodeURIComponent(title)}`;
   const description = fitDescription(rawDescription, lede);
   const ogTitle = path.startsWith(`${NOS_ROOT}/`) ? `${title}${NOS_OG_SUFFIX}` : title;

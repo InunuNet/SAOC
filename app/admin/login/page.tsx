@@ -12,6 +12,7 @@ import {
 } from 'firebase/auth';
 
 import { getFirebaseApp } from '@/lib/firebase';
+import { safeNextPath } from '@/lib/safe-next-path';
 import { FederatedSignInButtons } from './FederatedSignInButtons';
 import { LoginFormFields } from './LoginFormFields';
 
@@ -96,6 +97,11 @@ function federatedSignInErrorMessage(err: unknown): string {
   }
 }
 
+/** Where to go after sign-in: the validated `next` query parameter, else the admin home. */
+function postSignInPath(): string {
+  return safeNextPath(new URLSearchParams(window.location.search).get('next'));
+}
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -114,7 +120,7 @@ export default function AdminLoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await userCredential.user.getIdToken();
       await mintSession(idToken);
-      router.push('/admin');
+      router.push(postSignInPath());
     } catch (err: unknown) {
       console.error('Password sign-in failed', { code: firebaseErrorCode(err), error: err });
       const message = err instanceof Error ? err.message : GENERIC_SIGN_IN_ERROR;
@@ -134,7 +140,7 @@ export default function AdminLoginPage() {
       const userCredential = await signInWithPopup(auth, provider);
       const idToken = await userCredential.user.getIdToken();
       await mintSession(idToken);
-      router.push('/admin');
+      router.push(postSignInPath());
     } catch (err: unknown) {
       const code = firebaseErrorCode(err);
       console.error('Federated sign-in failed', { provider: id, code, error: err });

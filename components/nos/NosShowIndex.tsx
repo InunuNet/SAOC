@@ -10,7 +10,10 @@
 
 import Link from 'next/link';
 
-import { NAV } from '@/components/chrome/nav-config';
+import { NOS_NAV } from '@/components/nos-chrome/nos-nav';
+import { PAST_SHOWS_HREF } from '@/lib/data/past-shows';
+import { showPastShowsRoute } from '@/lib/data/past-shows-public';
+import { nosPath } from '@/lib/nos-paths';
 
 const EYEBROW = 'Explore the show';
 
@@ -48,7 +51,7 @@ const GROUPS: readonly IndexGroup[] = [
       '/national-show/sa-exhibitors',
       '/national-show/international-guests',
       '/national-show/sponsors',
-      '/national-show/archive',
+      PAST_SHOWS_HREF,
     ],
   },
 ];
@@ -66,7 +69,7 @@ function collectLabels(node: unknown, into: Map<string, string>): void {
 
 const LABELS = (() => {
   const labels = new Map<string, string>();
-  collectLabels(NAV, labels);
+  collectLabels(NOS_NAV, labels);
   for (const { hrefs } of GROUPS) {
     for (const href of hrefs) {
       if (!labels.has(href)) throw new Error(`NosShowIndex: nav-config has no label for ${href}`);
@@ -86,13 +89,18 @@ export interface NosShowIndexProps {
   currentTone?: 'accent' | 'ink';
 }
 
-export function NosShowIndex({ current, currentTone = 'accent' }: NosShowIndexProps) {
+export async function NosShowIndex({ current, currentTone = 'accent' }: NosShowIndexProps) {
+  const showPastShows = await showPastShowsRoute();
+  const groups = GROUPS.map((group) => ({
+    ...group,
+    hrefs: group.hrefs.filter((href) => showPastShows || href !== PAST_SHOWS_HREF),
+  }));
   return (
     <nav aria-label="Explore the show pages" className="nos-index">
       <div data-nos-wrap="">
         <h2 className="nos-index-eyebrow">{EYEBROW}</h2>
         <div className="nos-index-grid">
-          {GROUPS.map(({ heading, hrefs }) => (
+          {groups.map(({ heading, hrefs }) => (
             <div key={heading} className="nos-index-group">
               <h3>{heading}</h3>
               <ul>
@@ -101,7 +109,7 @@ export function NosShowIndex({ current, currentTone = 'accent' }: NosShowIndexPr
                   return (
                     <li key={href}>
                       <Link
-                        href={href}
+                        href={nosPath(href)}
                         aria-current={isCurrent ? 'page' : undefined}
                         className={isCurrent && currentTone === 'accent' ? 'text-accent' : undefined}
                         data-current-ink={isCurrent && currentTone === 'ink' ? '' : undefined}

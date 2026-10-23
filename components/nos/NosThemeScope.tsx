@@ -9,9 +9,9 @@
 
 import { Fraunces, Karla } from 'next/font/google';
 
-import '@/app/(marketing)/national-show/nos-theme.css';
-import '@/app/(marketing)/national-show/nos-structure.css';
-import '@/app/(marketing)/national-show/presenters.css';
+import '@/app/(nos)/national-show/nos-theme.css';
+import '@/app/(nos)/national-show/nos-structure.css';
+import '@/app/(nos)/national-show/presenters.css';
 import { TICKET_THEME_VARS } from '@/lib/data/ticket-presentation';
 
 // NOS-only fonts, scoped via CSS variables so nothing outside `.nos-theme` picks them up.

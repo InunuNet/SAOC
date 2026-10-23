@@ -18,6 +18,7 @@ import {
 import { heroImages } from '@/lib/data/heroImages';
 import manifest from '@/lib/data/media-kit-manifest.json';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+import { requireMediaKitAccess } from '@/lib/media-kit-gate';
 
 import { UsageSection } from './UsageSection';
 
@@ -76,7 +77,8 @@ function LockupCards({ items }: { items: MediaKitItem[] }) {
   ));
 }
 
-export default function MediaKitPage() {
+export default async function MediaKitPage() {
+  await requireMediaKitAccess('/media-kit');
   const withhold = withholdPlaceholderProse();
   const facts = withhold ? SOURCED_FACTS : QUICK_FACTS;
   // Every file offered for download comes from the generated manifest; nothing is linked by hand.

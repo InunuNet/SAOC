@@ -1,9 +1,12 @@
+import { nosUrl } from '@/lib/site-hosts';
 import type { SanityEvent } from '@/types';
 
-const NATIONAL_SHOW_PATH = '/national-show';
 const NATIONAL_SHOW_TITLE = /national.*show/i;
 
-/** The National Show has its own section; every other society event keeps its /events page. */
+/**
+ * The National Show has its own site, so its event links to the NOS home (absolute); every other
+ * society event keeps its /events page on this site (a relative path).
+ */
 export function eventHref(event: Pick<SanityEvent, 'title' | 'slug'>): string {
-  return NATIONAL_SHOW_TITLE.test(event.title) ? NATIONAL_SHOW_PATH : `/events/${event.slug}`;
+  return NATIONAL_SHOW_TITLE.test(event.title) ? nosUrl('/') : `/events/${event.slug}`;
 }

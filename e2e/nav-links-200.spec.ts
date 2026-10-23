@@ -8,60 +8,87 @@
 // it and the derived list here disagree, nav-config.ts changed and the golden
 // should be updated in the same commit as a reviewable diff.
 //
-// Mission menu-system-layout4 M1/F1 — the Layout 4 National Show mega now wires
-// a lead block (lead.leadHref, lead.theShow.links), column heading links
-// (column.headingHref) and a feature rail (featureRail.ctaHref) in addition to
-// the ordinary column links, and six hrefs under it
-// (/national-show/programme, /national-show/symposium,
-// /national-show/wosa-conference, /national-show/sa-exhibitors,
-// /national-show/international-guests, /national-show/sponsors) don't exist as
-// real routes yet — the NOS lane (origin/nos-site) is building them, and the
-// routing agreement between the two sessions is final regardless.
-// goldens/fixtures/f1-pending-nos-routes.json is the single source of truth for
-// which hrefs are a KNOWN, LISTED exception to the 200-status check below — this
-// file must read it directly rather than hand-maintain its own skip list, which
-// could silently drift from nav-config.ts's real pending set. Every href NOT in
-// that list still asserts 200 exactly as before.
+// Mission nos-site-split F3 — the show is its own site. The SAOC NAV now holds SAOC pages and one
+// ABSOLUTE link to the NOS home: SAOC hrefs are fetched on the SAOC host, the absolute link is
+// asserted by value (it leaves the site; the NOS home is fetched below). The show's own menu is
+// NOS_NAV (components/nos-chrome/nos-nav.ts), whose internal hrefs are fetched on the NOS host at
+// their clean public path. The Past shows route is withheld in a public build until Sanity holds a
+// past show (r64), so it must be 200 or 404, never anything else.
 //
-// collectHrefs() (Codex cross-model review, 2026-09-10) now lives in
-// ./utils/collect-nav-hrefs.ts, shared with
-// e2e/mobile-nav-reaches-every-section.spec.ts — it used to be defined here
-// only, and that spec had grown its own hand-copied, drift-prone second list
-// instead of reusing this one.
+// goldens/fixtures/f1-pending-nos-routes.json is the single source of truth for which hrefs are a
+// KNOWN, LISTED exception to the 200-status check below — this file reads it directly rather than
+// hand-maintaining its own skip list. Every href NOT in that list still asserts 200.
+//
+// collectHrefs() lives in ./utils/collect-nav-hrefs.ts, shared with
+// e2e/mobile-nav-reaches-every-section.spec.ts.
 import { expect, test } from '@playwright/test';
 
 import { NAV } from '@/components/chrome/nav-config';
+import { NOS_NAV } from '@/components/nos-chrome/nos-nav';
+import { PAST_SHOWS_HREF } from '@/lib/data/past-shows';
+import { nosUrl } from '@/lib/site-hosts';
 import pendingNosRoutes from '../.agent/memory/project/specs/menu-system-layout4/goldens/fixtures/f1-pending-nos-routes.json';
 import { collectHrefs } from './utils/collect-nav-hrefs';
+import { isAbsolute, nosHref } from './utils/site-urls';
 
 const PENDING_ROUTES = new Set<string>(pendingNosRoutes.pendingRoutes);
 
-const ALL_NAV_HREFS = collectHrefs(NAV);
-const NAV_HREFS = ALL_NAV_HREFS.filter((href) => !PENDING_ROUTES.has(href));
-const SKIPPED_HREFS = ALL_NAV_HREFS.filter((href) => PENDING_ROUTES.has(href));
+const ALL_SAOC_HREFS = collectHrefs(NAV);
+const SAOC_PAGE_HREFS = ALL_SAOC_HREFS.filter((href) => !isAbsolute(href));
+const SAOC_CROSS_SITE_HREFS = ALL_SAOC_HREFS.filter(isAbsolute);
+
+const ALL_SHOW_HREFS = collectHrefs(NOS_NAV);
+const SHOW_HREFS = ALL_SHOW_HREFS.filter(
+  (href) => !PENDING_ROUTES.has(href) && href !== PAST_SHOWS_HREF,
+);
+const SKIPPED_HREFS = ALL_SHOW_HREFS.filter((href) => PENDING_ROUTES.has(href));
 
 test.describe('nav links return 200', () => {
   test('NAV export is non-empty', () => {
-    expect(ALL_NAV_HREFS.length).toBeGreaterThan(0);
+    expect(ALL_SAOC_HREFS.length).toBeGreaterThan(0);
+    expect(ALL_SHOW_HREFS.length).toBeGreaterThan(0);
   });
 
-  for (const href of NAV_HREFS) {
-    test(`${href} returns 200`, async ({ page }) => {
+  for (const href of SAOC_PAGE_HREFS) {
+    test(`SAOC ${href} returns 200`, async ({ page }) => {
       const response = await page.goto(href);
       expect(response, `no response navigating to ${href}`).not.toBeNull();
       expect(response!.status(), `${href} did not return 200`).toBe(200);
     });
   }
 
-  // KNOWN, LISTED exceptions — the NOS session is building these routes. Skipped
-  // (not silently omitted from the file, not asserted 200) so a future reader sees
-  // exactly which hrefs are pending and why, per f1-pending-nos-routes.json.
+  // A SAOC link to the show leaves the site: assert where it points, not that it loads here.
+  for (const href of SAOC_CROSS_SITE_HREFS) {
+    test(`SAOC cross-site ${href} points at the NOS site`, () => {
+      expect(href.startsWith(nosUrl('/')), `${href} is not a NOS URL`).toBe(true);
+    });
+  }
+
+  for (const href of SHOW_HREFS) {
+    test(`NOS ${href} returns 200`, async ({ page, baseURL }) => {
+      const url = nosHref(baseURL!, href);
+      const response = await page.goto(url);
+      expect(response, `no response navigating to ${url}`).not.toBeNull();
+      expect(response!.status(), `${url} did not return 200`).toBe(200);
+    });
+  }
+
+  test('NOS Past shows route is 200 (preview) or withheld 404 (public), nothing else', async ({
+    page,
+    baseURL,
+  }) => {
+    const response = await page.goto(nosHref(baseURL!, PAST_SHOWS_HREF));
+    expect([200, 404]).toContain(response!.status());
+  });
+
+  // KNOWN, LISTED exceptions — skipped (not silently omitted from the file, not asserted 200) so a
+  // future reader sees exactly which hrefs are pending and why, per f1-pending-nos-routes.json.
   for (const href of SKIPPED_HREFS) {
     test.skip(`${href} returns 200 (pending NOS route — see f1-pending-nos-routes.json)`, async ({
       page,
+      baseURL,
     }) => {
-      const response = await page.goto(href);
-      expect(response, `no response navigating to ${href}`).not.toBeNull();
+      const response = await page.goto(nosHref(baseURL!, href));
       expect(response!.status(), `${href} did not return 200`).toBe(200);
     });
   }

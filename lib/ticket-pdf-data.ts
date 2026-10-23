@@ -1,4 +1,5 @@
 import { resolveReplyTo } from '@/lib/email';
+import { nosOrigin } from '@/lib/site-hosts';
 import { getConfirmedOrderForDisplay } from '@/lib/orders';
 import { formatShowDayShort, showDayStub } from '@/lib/show-day-format';
 import { formatShowDateRange, formatVenueAddress } from '@/lib/show-identity';
@@ -27,7 +28,8 @@ import type { ConfirmationBlock, ShowVenue, ShowVisitorInfo } from '@/types';
  */
 
 const ORGANISER = 'South African Orchid Council';
-const SHOW_URL = 'saoc.co.za/national-show';
+// Printed on the ticket without a scheme: the NOS host, where the show is published.
+const SHOW_URL = nosOrigin().replace(/^https?:\/\//, '');
 
 interface NationalShowVenueDoc {
   showDate?: string | null;

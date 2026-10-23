@@ -298,6 +298,6 @@ export const TICKET_THEME_VARS: Record<string, string> = {
 
 // The products whose card name links to the page that describes them.
 export const TICKET_DETAIL_HREFS: Partial<Record<TicketProductId, string>> = {
-  symposium: '/national-show/symposium',
-  wosa: '/national-show/wosa-conference',
+  symposium: '/symposium',
+  wosa: '/wosa-conference',
 };

@@ -5,7 +5,7 @@ import { mintVendorPhotoResumeToken } from './vendor-photo-resume-token.ts';
  * supplies the site URL, secret and clock.
  */
 
-export const VENDOR_PHOTO_UPLOAD_PATH = '/national-show/vendors/photos';
+export const VENDOR_PHOTO_UPLOAD_PATH = '/vendors/photos';
 
 const TRAILING_SLASHES = /\/+$/;
 

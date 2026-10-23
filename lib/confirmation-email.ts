@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 
 import { generateBookingRefQrPngBuffer } from '@/lib/qr';
 import { buildRecoveryUrl } from '@/lib/recovery-url';
+import { nosUrl } from '@/lib/site-hosts';
 import { buildTicketPdf as renderTicketPdf, type TicketPdfPosition } from '@/lib/ticket-pdf';
 import {
   loadChosenDays,
@@ -30,16 +31,6 @@ import type { TicketType } from '@/types/index';
  * `emails/OrderConfirmation.tsx`. See contracts/golden/ticketing-f10-itn-repin/README.md "The
  * F10/F11 boundary" for why the call site and input shape are pinned separately from the body.
  */
-
-/** Site URL fallback, matching app/api/tickets/checkout/route.ts's own DEFAULT_SITE_URL
- *  convention — duplicated locally rather than imported (that fallback is private to a route
- *  handler module, and SITE_URL is only available at Firebase App Hosting runtime, not build
- *  time, so it must be read inside the function body, not hoisted to module scope). */
-const DEFAULT_SITE_URL = 'https://saoc.co.za';
-
-function resolveSiteUrl(): string {
-  return process.env['SITE_URL'] ?? DEFAULT_SITE_URL;
-}
 
 export interface ConfirmationEmailPosition {
   bookingRef: string;
@@ -154,7 +145,7 @@ export async function sendConfirmationEmail(
 
   const mailer = deps.mailer ?? { send: sendEmail };
   const generateQrPngBuffer = deps.generateQrPngBuffer ?? generateBookingRefQrPngBuffer;
-  const siteUrl = deps.siteUrl ?? resolveSiteUrl();
+  const siteUrl = deps.siteUrl ?? nosUrl('');
   const loadVisit = deps.loadVisit ?? loadOrderVisit;
 
   const positions: OrderConfirmationPosition[] = [];

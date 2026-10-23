@@ -15,22 +15,9 @@ import { Search, Menu } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { MobileMenu, MOBILE_MENU_ID } from './MobileMenu';
 import { SearchOverlay } from './SearchOverlay';
-import { MegaMenu } from './MegaMenu';
 import { CONTACT_LINK, NAV } from './nav-config';
-import type { ShowIdentity } from '@/types';
 
-interface HeaderProps {
-  /**
-   * The nationalShow Sanity singleton — fetched once in app/(marketing)/layout.tsx
-   * (the same source UtilityBar already reads) and threaded down to MegaMenu and
-   * MobileMenu for the mega's lead/feature-rail meta lines. Optional: surfaces
-   * that render Header without fetching it (e.g. /admin) simply render no meta
-   * line, never a hardcoded placeholder.
-   */
-  show?: ShowIdentity | null;
-}
-
-export function Header({ show }: HeaderProps = {}) {
+export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -116,9 +103,6 @@ export function Header({ show }: HeaderProps = {}) {
           {/* Zone 2 — primary nav */}
           <nav aria-label="Primary" className="hidden min-[1240px]:flex shrink-0 items-center gap-4 whitespace-nowrap">
             {NAV.map((n) => {
-              if (n.type === 'mega') {
-                return <MegaMenu key={n.id} item={n} show={show} />;
-              }
               const active = !n.disabled && isActive(n.href);
               if (n.disabled) {
                 return (
@@ -134,8 +118,10 @@ export function Header({ show }: HeaderProps = {}) {
                   </span>
                 );
               }
+              // National Show leaves this site for the NOS one: a plain anchor, same tab, no arrow.
+              const NavLink = n.crossSite ? 'a' : Link;
               return (
-                <Link
+                <NavLink
                   key={n.id}
                   href={n.href}
                   className={[
@@ -151,7 +137,7 @@ export function Header({ show }: HeaderProps = {}) {
                       className="absolute left-0 right-0 -bottom-1 h-px bg-primary"
                     />
                   )}
-                </Link>
+                </NavLink>
               );
             })}
             <Link
@@ -202,7 +188,6 @@ export function Header({ show }: HeaderProps = {}) {
         onClose={() => setMobileOpen(false)}
         nav={NAV}
         triggerRef={hamburgerRef}
-        show={show}
       />
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>

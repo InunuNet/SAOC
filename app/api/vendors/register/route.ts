@@ -18,6 +18,7 @@ import {
 import { createInMemoryVendorRegistrationRateLimitStore } from '@/lib/vendor-registration-rate-limit';
 import { sendVendorRegistrationConfirmationEmail } from '@/lib/vendor-registration-confirmation';
 import { sendVendorSubmissionAdminNoticeEmail } from '@/lib/vendor-submission-admin-notice';
+import { saocUrl } from '@/lib/site-hosts';
 
 /**
  * POST /api/vendors/register -- gated, single-use vendor submission route (mission
@@ -30,7 +31,7 @@ import { sendVendorSubmissionAdminNoticeEmail } from '@/lib/vendor-submission-ad
  * cookie (minted by POST /api/vendors/register/verify-code the moment the human-readable code
  * verifies -- see contracts/golden/vendor-gated-registration-flow-m4/README.md's "Migration")
  * and RE-VERIFIES it here, server-side -- never trusting that the page-level check
- * (app/(marketing)/national-show/vendors/register/page.tsx) already ran, since a direct POST
+ * (app/(nos)/national-show/vendors/register/page.tsx) already ran, since a direct POST
  * bypassing the browser must be gated exactly like the page. Every failure mode -- missing
  * cookie, malformed, bad signature, expired, application not found, wrong status, already
  * consumed -- returns the SAME generic message, never a distinguishing error (same fail-closed
@@ -72,15 +73,6 @@ import { sendVendorSubmissionAdminNoticeEmail } from '@/lib/vendor-submission-ad
 const rateLimitStore = createInMemoryVendorRegistrationRateLimitStore();
 
 const GENERIC_INVALID_TOKEN_MESSAGE = 'This registration link is no longer valid.';
-
-/** Site URL fallback, matching lib/confirmation-email.ts's own DEFAULT_SITE_URL convention --
- *  duplicated locally rather than imported (that fallback is private to its own module and
- *  SITE_URL is runtime-only, not available at build time). G1 (vendor-flow-notifications). */
-const DEFAULT_SITE_URL = 'https://saoc.co.za';
-
-function resolveSiteUrl(): string {
-  return process.env['SITE_URL'] ?? DEFAULT_SITE_URL;
-}
 
 /**
  * Rate-limit key derived from the request's `x-forwarded-for` header -- a documented
@@ -186,7 +178,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     sendAdminNotice: (input) =>
       sendVendorSubmissionAdminNoticeEmail({
         ...input,
-        reviewUrl: `${resolveSiteUrl()}/admin/vendors`,
+        reviewUrl: saocUrl('/admin/vendors'),
       }),
     onEmailError: (error) => {
       console.error(

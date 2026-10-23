@@ -23,6 +23,10 @@ const run = (b, d, key = 'ip:1') => handleNewsletterSubscribe({ body: b, rateLim
   check('resubscribe response identical', same(r1, r3));
   check('resubscribe flipped back', store.get(id).status === 'subscribed' && store.get(id).unsubscribedAt === null && store.size === 1);
   check('success body', same(r1.body, { success: true }));
+  check('old request shape preserved', same(r1, { status: 200, body: { success: true } }));
+  const r4 = await run(body('jane@example.com', { topics: ['nos', 'saoc', 'nos'] }), deps, 'ip:d');
+  check('existing subscribed merges and orders topics', r4.status === 200 && same(store.get(id).topics, ['saoc', 'nos']));
+  check('existing merge keeps token and source', store.get(id).unsubscribeToken === doc.unsubscribeToken && store.get(id).source === doc.source);
 }
 
 // validation
@@ -34,6 +38,10 @@ const run = (b, d, key = 'ip:1') => handleNewsletterSubscribe({ body: b, rateLim
   }
   const r = await run(body('jane@example.com', { source: 'evil' }), deps, 'ip:s');
   check('bad source => 400', r.status === 400);
+  for (const [i, topics] of [[], ['unknown'], ['saoc', 'unknown'], 'saoc', null].entries()) {
+    const invalid = await run(body('jane@example.com', { topics }), deps, `ip:t${i}`);
+    check(`bad topics ${i} => 400`, invalid.status === 400 && invalid.body.field === 'topics');
+  }
   const r2 = await run(body('nope'), deps, 'ip:e');
   check('invalid email names the field', r2.body.field === 'email');
   check('no store access on invalid input', calls.get === 0 && calls.write === 0);

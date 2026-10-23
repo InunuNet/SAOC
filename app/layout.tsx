@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Crimson_Pro, Manrope, JetBrains_Mono } from 'next/font/google';
+
+import { SITE_DESCRIPTION } from '@/lib/site-metadata';
 import './globals.css';
 
 const crimsonPro = Crimson_Pro({
@@ -24,46 +26,15 @@ const jetBrainsMono = JetBrains_Mono({
   weight: ['400', '500'],
 });
 
-const BASE_URL = 'https://saoc.co.za';
-const DEFAULT_DESCRIPTION =
-  'The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968.';
-
-const ORGANIZATION_JSON_LD = {
-  '@context': 'https://schema.org',
-  '@type': 'NGO',
-  name: 'South African Orchid Council',
-  alternateName: 'SAOC',
-  url: BASE_URL,
-  foundingDate: '1968',
-  description: DEFAULT_DESCRIPTION,
-  email: 'secretary@saoc.co.za',
-};
-
+// nos-site-split F1: only host-neutral metadata lives here. metadataBase, canonical, openGraph and
+// the Organization JSON-LD are owned by the route-group layouts (lib/site-metadata.ts), because the
+// SAOC and NOS sites share this root and a hard-coded origin here would be wrong for one of them.
 export const metadata: Metadata = {
-  metadataBase: new URL(BASE_URL),
   title: {
     template: '%s | South African Orchid Council',
     default: 'South African Orchid Council',
   },
-  description: DEFAULT_DESCRIPTION,
-  alternates: { canonical: './' },
-  openGraph: {
-    siteName: 'South African Orchid Council',
-    locale: 'en_ZA',
-    type: 'website',
-    url: BASE_URL,
-    images: [
-      {
-        url: '/og?title=South+African+Orchid+Council',
-        width: 1200,
-        height: 630,
-        alt: 'South African Orchid Council',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-  },
+  description: SITE_DESCRIPTION,
 };
 
 export default function RootLayout({
@@ -73,13 +44,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${crimsonPro.variable} ${manrope.variable} ${jetBrainsMono.variable}`}>
-      <head>
-        <script
-          type="application/ld+json"
-          // Developer-controlled static JSON (no user input) — safe to inline.
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_JSON_LD) }}
-        />
-      </head>
       <body>{children}</body>
     </html>
   );

@@ -10,6 +10,7 @@ import {
 } from '@/lib/supporter-registration-rate-limit';
 import type { MintedSupporterRegistrationToken } from '@/lib/supporter-registration-token';
 import type { SupporterRegistrationConfirmationInput } from '@/lib/supporter-registration-confirmation';
+import { nosUrl } from '@/lib/site-hosts';
 
 /**
  * Pure orchestrator for POST /api/supporters/register (mission public-supporter-registration,
@@ -68,18 +69,8 @@ export type SupporterRegistrationHandlerResult =
  *  when allowed is false, so this branch is defensive, not load-bearing. */
 const SUPPORTER_REGISTER_DEFAULT_RETRY_AFTER_MS = 60 * 60 * 1000;
 
-/** Canonical production origin. `SITE_URL` is only available at Firebase App Hosting runtime,
- *  matching the same fallback pattern as lib/confirmation-email.ts and
- *  app/api/tickets/checkout/route.ts -- read at call time, never at module scope. */
-const DEFAULT_SITE_URL = 'https://saoc.co.za';
-
-function resolveSupporterSiteUrl(): string {
-  const raw = process.env['SITE_URL']?.trim().replace(/\/+$/, '');
-  return raw ? raw : DEFAULT_SITE_URL;
-}
-
 function buildConfirmUrl(token: string): string {
-  return `${resolveSupporterSiteUrl()}/api/supporters/confirm?token=${encodeURIComponent(token)}`;
+  return nosUrl(`/api/supporters/confirm?token=${encodeURIComponent(token)}`);
 }
 
 /**

@@ -94,6 +94,19 @@ env:
     value: "https://beta.saoc.co.za"
     availability:
       - RUNTIME
+  # nos-site-split F2: the two public site origins, read by lib/site-hosts.ts. NEXT_PUBLIC_* is
+  # inlined at build time, so BUILD is required alongside RUNTIME. SAOC equals SITE_URL above
+  # (kept for back-compat); NOS is the National Orchid Show host.
+  - variable: NEXT_PUBLIC_SAOC_SITE_URL
+    value: "https://beta.saoc.co.za"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_NOS_SITE_URL
+    value: "https://nos.saoc.co.za"
+    availability:
+      - BUILD
+      - RUNTIME
   # PayFast SANDBOX credentials. Without these the deployed checkout route returns
   # "Payment gateway is not configured" and no purchase can be tested at all — the state
   # this backend was in until 2026-08-13. These are the council's own sandbox account

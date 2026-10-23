@@ -79,9 +79,9 @@ const nextConfig: NextConfig = {
     '/**': ['node_modules/.pnpm/semver@*/node_modules/semver/**/*.js'],
   },
   // Local dev is reached at https://dev.saoc.co.za (see scripts/install-dev-domain.sh and
-  // the `dev:secure` script). Without this, Next refuses that origin's dev requests because
+  // the `dev:secure` script); the NOS site is reached at http://nos.localhost:<port>. Without this, Next refuses that origin's dev requests because
   // it is not localhost. Dev-only — it has no effect on a production build.
-  allowedDevOrigins: ['dev.saoc.co.za'],
+  allowedDevOrigins: ['dev.saoc.co.za', 'nos.localhost'],
   images: {
     // Custom loader, not the optimiser: App Hosting's adapter disables the optimiser unless a
     // loader is set (docs/image-delivery.md). Widths are capped at 2048.

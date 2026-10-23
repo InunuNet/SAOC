@@ -23,6 +23,7 @@ import {
   resolveOzowInitiateAmount,
 } from '@/lib/ozow-sandbox-test-mode';
 import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
+import { nosOrigin, nosUrl } from '@/lib/site-hosts';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 
 /**
@@ -42,12 +43,6 @@ const ALREADY_PAID_MESSAGE = 'This stand has already been paid for.';
 const PRICING_NOT_CONFIRMED_MESSAGE =
   'Stand pricing has not yet been confirmed by the Show Organising Committee. Payment is not available yet.';
 const GATEWAY_NOT_CONFIGURED_MESSAGE = 'Payment gateway is not configured. Please try again later.';
-
-const DEFAULT_SITE_URL = 'https://saoc.co.za';
-
-function resolveSiteUrl(): string {
-  return process.env.SITE_URL?.trim().replace(/\/+$/, '') || DEFAULT_SITE_URL;
-}
 
 /** Each provider's own NotifyUrl path for THIS payment surface -- deliberately distinct from
  *  the ticket checkout route's own NOTIFY_PATH_BY_PROVIDER_ID, since a stand-order settlement
@@ -262,7 +257,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: transactionResult.message }, { status: 409 });
   }
 
-  const siteUrl = resolveSiteUrl();
   const initiation = await paymentProvider.initiate({
     reference: attemptReference,
     amountFormatted: resolveOzowInitiateAmount(expectedGatewayAmount, amount.toFixed(2)),
@@ -270,9 +264,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       `National Orchid Show — Vendor Stand (${submissionData.businessName ?? ''})`,
       PAYFAST_FIELD_MAX_LENGTH.item_name,
     ),
-    returnUrl: buildVendorStandReturnUrl(siteUrl, attemptId),
-    cancelUrl: buildVendorStandReturnUrl(siteUrl, attemptId),
-    notifyUrl: `${siteUrl}${NOTIFY_PATH_BY_PROVIDER_ID[activeGateway]}`,
+    returnUrl: buildVendorStandReturnUrl(nosOrigin(), attemptId),
+    cancelUrl: buildVendorStandReturnUrl(nosOrigin(), attemptId),
+    notifyUrl: nosUrl(NOTIFY_PATH_BY_PROVIDER_ID[activeGateway]),
   });
 
   if (!initiation.ok) {

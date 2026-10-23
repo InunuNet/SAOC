@@ -4,7 +4,7 @@
 // no-fabricated-content.spec.ts's provisional-badge check.
 //
 // WHY A FULL-PAGE FIXTURE, NOT A NARROWER NETWORK MOCK: /tickets
-// (app/(marketing)/tickets/page.tsx) is a Server Component with `dynamic =
+// (app/(nos)/tickets/page.tsx) is a Server Component with `dynamic =
 // 'force-dynamic'` — it fetches ticket-type data from Sanity and live sold counts
 // from the Firebase Admin SDK entirely on the Node server during SSR/RSC render.
 // There is no client-side `fetch()` for ticket data (no browser-boundary call

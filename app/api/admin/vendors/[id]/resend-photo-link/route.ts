@@ -7,6 +7,7 @@ import { resolveShowWindowLookup } from '@/lib/show-window-lookup';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
 import { mintVendorPhotoUploadUrl } from '@/lib/vendor-photo-resume-link';
+import { nosOrigin } from '@/lib/site-hosts';
 
 /**
  * POST /api/admin/vendors/[id]/resend-photo-link -- gives an admin a fresh photo-resume link
@@ -18,12 +19,6 @@ import { mintVendorPhotoUploadUrl } from '@/lib/vendor-photo-resume-link';
  * `photoUrl` to the vendor. Refused for rejected submissions and ones already holding all 3
  * product photos.
  */
-const DEFAULT_SITE_URL = 'https://saoc.co.za';
-
-function resolveSiteUrl(): string {
-  return process.env.SITE_URL?.trim().replace(/\/+$/, '') || DEFAULT_SITE_URL;
-}
-
 export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -84,7 +79,7 @@ export async function POST(
     vendorSubmissionId: id,
     secret,
     now,
-    siteUrl: resolveSiteUrl(),
+    siteUrl: nosOrigin(),
   });
 
   return NextResponse.json({ success: true, photoUrl: url });

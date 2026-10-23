@@ -12,6 +12,8 @@ export const NEWSLETTER_EMAIL_MAX_LENGTH = 254;
 export const NEWSLETTER_SOURCES = ['saoc-footer', 'nos-footer'] as const;
 
 export type NewsletterSource = (typeof NEWSLETTER_SOURCES)[number];
+export const NEWSLETTER_TOPICS = ['saoc', 'nos'] as const;
+export type NewsletterTopic = (typeof NEWSLETTER_TOPICS)[number];
 
 export type NewsletterStatus = 'subscribed' | 'unsubscribed';
 
@@ -19,6 +21,7 @@ export interface NewsletterSubscriberDoc {
   email: string;
   status: NewsletterStatus;
   source: NewsletterSource;
+  topics?: NewsletterTopic[];
   subscribedAt: Date;
   unsubscribedAt: Date | null;
   unsubscribeToken: string;
@@ -27,6 +30,7 @@ export interface NewsletterSubscriberDoc {
 export interface NewsletterCsvRow {
   email: string;
   source: string;
+  topics?: NewsletterTopic[];
   subscribedAt: Date | null;
   unsubscribeToken: string;
 }
@@ -34,7 +38,7 @@ export interface NewsletterCsvRow {
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UNSUBSCRIBE_TOKEN_SHAPE = /^[A-Za-z0-9_-]{43}$/;
 const TOKEN_BYTES = 32;
-const CSV_HEADER = 'email,source,subscribedAt,unsubscribeUrl';
+const CSV_HEADER = 'email,source,subscribedAt,unsubscribeUrl,topics';
 // A cell starting with any of these is evaluated as a formula by spreadsheet software.
 const FORMULA_LEADERS = ['=', '+', '-', '@', '\t', '\r'];
 const EMAIL_FORMULA_LEADERS = ['=', '+', '-', '@'];
@@ -50,6 +54,25 @@ export function normaliseNewsletterEmail(raw: unknown): string | null {
 
 export function isNewsletterSource(value: unknown): value is NewsletterSource {
   return typeof value === 'string' && (NEWSLETTER_SOURCES as readonly string[]).includes(value);
+}
+
+export function topicsFromSource(source: NewsletterSource): NewsletterTopic[] {
+  return [source === 'nos-footer' ? 'nos' : 'saoc'];
+}
+
+/** Undefined preserves the original request shape; malformed supplied values are rejected. */
+export function parseNewsletterTopics(value: unknown, source: NewsletterSource): NewsletterTopic[] | null {
+  if (value === undefined) return topicsFromSource(source);
+  if (!Array.isArray(value) || value.length === 0 ||
+      value.some((topic) => !NEWSLETTER_TOPICS.includes(topic))) return null;
+  const topics = NEWSLETTER_TOPICS.filter((topic) => value.includes(topic));
+  return topics.length ? topics : null;
+}
+
+export function subscriberTopics(topics: unknown, source: NewsletterSource): NewsletterTopic[] {
+  if (!Array.isArray(topics)) return topicsFromSource(source);
+  const valid = NEWSLETTER_TOPICS.filter((topic) => topics.includes(topic));
+  return valid.length ? valid : topicsFromSource(source);
 }
 
 export function newsletterDocId(normalisedEmail: string): string {
@@ -72,24 +95,32 @@ export function maskEmail(email: string): string {
 
 export function applySubscribe(
   existing: NewsletterSubscriberDoc | null,
-  input: { email: string; source: NewsletterSource; now: Date; token: string },
+  input: { email: string; source: NewsletterSource; topics?: NewsletterTopic[]; now: Date; token: string },
 ): NewsletterSubscriberDoc | null {
+  const requestedTopics = subscriberTopics(input.topics, input.source);
   if (existing === null) {
     return {
       email: input.email,
       status: 'subscribed',
       source: input.source,
+      topics: requestedTopics,
       subscribedAt: input.now,
       unsubscribedAt: null,
       unsubscribeToken: input.token,
     };
   }
-  if (existing.status === 'subscribed') return null;
+  const topics = NEWSLETTER_TOPICS.filter((topic) =>
+    subscriberTopics(existing.topics, existing.source).includes(topic) || requestedTopics.includes(topic));
+  if (existing.status === 'subscribed') {
+    if (topics.length === subscriberTopics(existing.topics, existing.source).length && existing.topics) return null;
+    return { ...existing, topics };
+  }
   // Re-subscribe keeps the original token and source so previously issued links keep working.
   return {
     email: existing.email,
     status: 'subscribed',
     source: existing.source,
+    topics,
     subscribedAt: input.now,
     unsubscribedAt: null,
     unsubscribeToken: existing.unsubscribeToken,
@@ -102,14 +133,19 @@ function csvField(value: string): string {
   return safe;
 }
 
-export function buildSubscribersCsv(rows: NewsletterCsvRow[], origin: string): string {
-  const lines = rows.map((row) =>
-    [
+/** The origin that hosts the unsubscribe page for a subscriber: one string, or chosen per source. */
+export type UnsubscribeOrigin = string | ((source: string) => string);
+
+export function buildSubscribersCsv(rows: NewsletterCsvRow[], origin: UnsubscribeOrigin): string {
+  const lines = rows.map((row) => {
+    const rowOrigin = typeof origin === 'function' ? origin(row.source) : origin;
+    return [
       csvField(row.email),
       csvField(row.source),
       csvField(row.subscribedAt ? row.subscribedAt.toISOString() : ''),
-      csvField(`${origin}/newsletter/unsubscribe?token=${encodeURIComponent(row.unsubscribeToken)}`),
-    ].join(','),
-  );
+      csvField(`${rowOrigin}/newsletter/unsubscribe?token=${encodeURIComponent(row.unsubscribeToken)}`),
+      csvField(subscriberTopics(row.topics, row.source === 'nos-footer' ? 'nos-footer' : 'saoc-footer').join(';')),
+    ].join(',');
+  });
   return [CSV_HEADER, ...lines].join('\n');
 }

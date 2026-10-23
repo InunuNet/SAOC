@@ -56,7 +56,7 @@ export function TicketsMasthead({
       <div data-nos-wrap="" className="nk-masthead-grid">
         <div className="nk-masthead-copy">
           <nav className="nk-crumbs" aria-label="Breadcrumb">
-            <Link href="/national-show">National Show</Link>
+            <Link href="/">National Show</Link>
             <span className="nk-crumb">
               <span className="nk-sep" aria-hidden="true" />
               <span aria-current="page">Tickets</span>

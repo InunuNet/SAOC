@@ -10,9 +10,9 @@
 // confirmed.
 // =============================================================
 
-import Link from 'next/link';
 
 import { ShowStatusLine } from './ShowStatusLine';
+import { saocUrl } from '@/lib/site-hosts';
 
 const LIST_SEPARATOR = ' · ';
 
@@ -49,12 +49,12 @@ export function ShowHoldingNote({ hidden, pendingLabel }: ShowHoldingNoteProps) 
       separator={LIST_SEPARATOR}
     >
       <p>
-        <Link
-          href="/contact"
+        <a
+          href={saocUrl('/contact')}
           className="inline-flex min-h-[44px] items-center font-sans text-[15px] font-medium text-primary underline decoration-[var(--green-1)] decoration-2 underline-offset-4"
         >
           Be the first to know
-        </Link>
+        </a>
       </p>
     </ShowStatusLine>
   );

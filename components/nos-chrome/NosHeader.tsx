@@ -2,13 +2,15 @@
 
 // =============================================================
 // NOS — components/nos-chrome/NosHeader.tsx
-// The NOS own-brand header for /national-show/*: the supplied full-colour
-// lockup (links the hub), SAOC's top-level menu in NOS type, a click-only
-// National Show mega-menu, the Tickets call to action, and (below 1260px) a
-// menu panel. Labels, descriptors and hrefs all come from nav-config; the venue
-// and dates come from the nationalShow singleton via show-meta. Renders the
-// header and the menu panel as siblings so the panel can inert the rest of the
-// page without inerting itself.
+// The National Orchid Show site's own header (nos-site-split F3, NOS Design R1): the supplied
+// full-colour lockup (links the NOS home), a top row of three click-only disclosure panels
+// (Visit, Programme, Exhibit & trade), Show sponsors, Past shows (withheld in public until there is
+// content, r64) and Contact (SAOC organises the show, so Contact is the SAOC contact), the Tickets
+// call to action, and below 1260px a menu panel that ends with the SAOC credit. Labels, descriptors
+// and order come from nos-nav.ts, which the SAOC site's old show mega carried verbatim; hrefs are
+// shown as their public clean paths (nosPath). There is no SAOC utility bar here (R1.5).
+// Renders the header and the menu panel as siblings so the panel can inert the rest of the page
+// without inerting itself.
 // =============================================================
 
 import { useEffect, useRef, useState } from 'react';
@@ -16,19 +18,17 @@ import { getImageProps } from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { NAV } from '@/components/chrome/nav-config';
-import type { NavColumn, NavItem } from '@/components/chrome/nav-config';
-import type { ShowIdentity } from '@/types';
+import { CONTACT_LINK } from '@/components/chrome/nav-config';
+import type { NavColumn, NavItem, NavLeaf } from '@/components/chrome/nav-config';
+import { FOOTER_ORG_NAME } from '@/components/chrome/footer-data';
+import { nosPath } from '@/lib/nos-paths';
 
 import { nosChromeFontClass } from './fonts';
-import { getShowMeta } from './show-meta';
 import './nos-chrome.css';
 
 type MegaItem = Extract<NavItem, { type: 'mega' }>;
 
-const HUB_HREF = '/national-show';
-const TICKETS_HREF = '/national-show/tickets';
-const CONTACT_HREF = '/contact';
+const HUB_HREF = '/';
 const LOCKUP_SRC = '/images/nos/nos-full-colour-horizontal-1200.png';
 const LOCKUP_ALT = 'National Orchid Show, Western Cape 2027';
 const LOCKUP_WIDTH = 1200;
@@ -39,10 +39,13 @@ const LOCKUP_BOX_WIDE = 448;
 const LOCKUP_BOX_NARROW = 390;
 const PANEL_BREAKPOINT_QUERY = '(min-width: 1260px)';
 const INERT_SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'LINK', 'TEMPLATE']);
-const SUB_ID = 'nd-sub-national-show';
+// The "The show" links the top row carries as plain links; Tickets is the call to action.
+const TICKETS_LEAF_ID = 'tickets';
+const PLAIN_LEAF_IDS = ['show-sponsors', 'past-shows'] as const;
 
 const lockupProps = (width: number) =>
   getImageProps({
+    priority: true,
     src: LOCKUP_SRC,
     alt: LOCKUP_ALT,
     width,
@@ -50,8 +53,6 @@ const lockupProps = (width: number) =>
   }).props;
 const wideLockup = lockupProps(LOCKUP_BOX_WIDE);
 const narrowLockup = lockupProps(LOCKUP_BOX_NARROW);
-
-const megaItem = NAV.find((n): n is MegaItem => n.type === 'mega');
 
 function Chevron() {
   return (
@@ -61,40 +62,48 @@ function Chevron() {
   );
 }
 
-function groupsOf(mega: MegaItem): NavColumn[] {
-  return [mega.lead?.theShow, ...mega.columns].filter((c): c is NavColumn => Boolean(c));
-}
-
 interface NosHeaderProps {
-  /** The nationalShow Sanity singleton, fetched once in app/(marketing)/layout.tsx. */
-  show?: ShowIdentity | null;
+  /** The show nav (lib/data/past-shows-public.ts getVisibleNav), without withheld routes. */
+  nav: readonly NavItem[];
+  /**
+   * Absolute SAOC URLs, resolved on the server. This is a client component, and the SAOC origin
+   * can come from a variable the client bundle does not carry, so it is never resolved here.
+   */
+  saocHomeHref: string;
+  saocContactHref: string;
 }
 
-export function NosHeader({ show }: NosHeaderProps) {
+export function NosHeader({ nav, saocHomeHref, saocContactHref }: NosHeaderProps) {
   const pathname = usePathname();
-  const meta = getShowMeta(show);
   const [scrolled, setScrolled] = useState(false);
-  const [megaOpen, setMegaOpen] = useState(false);
+  // At most one top-row disclosure panel is open at a time.
+  const [openGroupId, setOpenGroupId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  // The header only renders on NOS routes, so National Show is always the current section: its
-  // disclosure starts open (aria-expanded follows the state).
-  const [subOpen, setSubOpen] = useState(true);
+  // Drawer disclosure sections, independent of the top row.
+  const [drawerGroupId, setDrawerGroupId] = useState<string | null>(null);
   const headerRef = useRef<HTMLElement>(null);
   const sentinelRef = useRef<HTMLSpanElement>(null);
-  const itemRef = useRef<HTMLLIElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const navRef = useRef<HTMLUListElement>(null);
   const burgerRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
   // Set only by an explicit close (Menu button, Escape); every other close (a followed link, a
   // navigation, the viewport widening, unmount) leaves the scroll position alone.
   const restoreOnCloseRef = useRef(false);
 
+  const mega = nav.find((n): n is MegaItem => n.type === 'mega');
+  const groups: NavColumn[] = mega?.columns ?? [];
+  const showLeaves = mega?.lead?.theShow.links ?? [];
+  const ticketsLeaf = showLeaves.find((l) => l.id === TICKETS_LEAF_ID);
+  const plainLeaves = PLAIN_LEAF_IDS.map((id) => showLeaves.find((l) => l.id === id)).filter(
+    (l): l is NavLeaf => Boolean(l),
+  );
+
   // Any navigation (Tickets button, back/forward, a link) closes both surfaces, so the new page
   // is never left inert behind an open panel.
   const [seenPath, setSeenPath] = useState(pathname);
   if (seenPath !== pathname) {
     setSeenPath(pathname);
-    setMegaOpen(false);
+    setOpenGroupId(null);
     setDrawerOpen(false);
   }
 
@@ -108,19 +117,19 @@ export function NosHeader({ show }: NosHeaderProps) {
     return () => observer.disconnect();
   }, []);
 
-  // Mega-menu: a mousedown outside the item closes it.
+  // Disclosure panels: a mousedown outside the top row closes the open one.
   useEffect(() => {
-    if (!megaOpen) return;
+    if (!openGroupId) return;
     const onMouseDown = (e: MouseEvent) => {
-      if (!(e.target instanceof Node) || !itemRef.current?.contains(e.target)) setMegaOpen(false);
+      if (!(e.target instanceof Node) || !navRef.current?.contains(e.target)) setOpenGroupId(null);
     };
     document.addEventListener('mousedown', onMouseDown);
     return () => document.removeEventListener('mousedown', onMouseDown);
-  }, [megaOpen]);
+  }, [openGroupId]);
 
   // Escape closes whichever surface is open and returns focus to its opener.
   useEffect(() => {
-    if (!megaOpen && !drawerOpen) return;
+    if (!openGroupId && !drawerOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       if (drawerOpen) {
@@ -128,13 +137,16 @@ export function NosHeader({ show }: NosHeaderProps) {
         setDrawerOpen(false);
         burgerRef.current?.focus({ preventScroll: true });
       } else {
-        setMegaOpen(false);
-        triggerRef.current?.focus();
+        const opener = navRef.current?.querySelector<HTMLElement>(
+          `[data-group-trigger="${openGroupId}"]`,
+        );
+        setOpenGroupId(null);
+        opener?.focus();
       }
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [megaOpen, drawerOpen]);
+  }, [openGroupId, drawerOpen]);
 
   // Menu panel: the header stays live, everything else on the path to <body> goes inert, the
   // body stops scrolling, and on phones (header not sticky) the page returns to the top and
@@ -189,23 +201,24 @@ export function NosHeader({ show }: NosHeaderProps) {
     return () => query.removeEventListener('change', onChange);
   }, []);
 
-  const current = (href: string) => (pathname === href ? ('page' as const) : undefined);
+  // Hrefs are shown as public clean paths. The browser path on the NOS host is clean too; the
+  // internal form is accepted so the header also reads correctly on a host-less dev origin.
+  const isCurrent = (href: string) => pathname === nosPath(href) || pathname === href;
+  const current = (href: string) => (isCurrent(href) ? ('page' as const) : undefined);
+  const groupIsCurrent = (group: NavColumn) => group.links.some((l) => isCurrent(l.href));
   const toggleDrawer = () => {
     restoreOnCloseRef.current = drawerOpen;
     setDrawerOpen(!drawerOpen);
   };
 
-  const renderLeaf = (link: NavColumn['links'][number]) => (
+  const renderLeaf = (link: NavLeaf) => (
     <li key={link.id}>
-      <Link href={link.href} aria-current={current(link.href)}>
+      <Link href={nosPath(link.href)} aria-current={current(link.href)}>
         <span className="nh-leaf">{link.label}</span>
         {link.descriptor && <span className="nh-desc">{link.descriptor}</span>}
       </Link>
     </li>
   );
-
-  const railLinks =
-    megaItem?.featureRail?.destinations.filter((d) => d.variant === 'secondary') ?? [];
 
   return (
     <>
@@ -236,97 +249,73 @@ export function NosHeader({ show }: NosHeaderProps) {
           </Link>
 
           <nav className="nh-nav" aria-label="Primary">
-            <ul>
-              {NAV.map((n) => {
-                if (n.type === 'link') {
-                  return (
-                    <li key={n.id}>
-                      <Link className="nh-link" href={n.href} aria-current={current(n.href)}>
-                        {n.label}
-                      </Link>
-                    </li>
-                  );
-                }
+            <ul ref={navRef}>
+              {groups.map((group) => {
+                const open = openGroupId === group.id;
                 return (
                   <li
-                    key={n.id}
-                    id="nh-show"
-                    ref={itemRef}
+                    key={group.id}
+                    className="nh-item"
                     onBlur={(e) => {
                       const next = e.relatedTarget;
-                      if (!(next instanceof Node && e.currentTarget.contains(next))) {
-                        setMegaOpen(false);
+                      if (open && !(next instanceof Node && e.currentTarget.contains(next))) {
+                        setOpenGroupId(null);
                       }
                     }}
                   >
                     <button
-                      id="nh-show-trigger"
-                      ref={triggerRef}
                       type="button"
                       className="nh-trigger"
-                      aria-expanded={megaOpen}
-                      aria-controls="nh-mega"
-                      data-current=""
-                      onClick={() => setMegaOpen((open) => !open)}
+                      data-group-trigger={group.id}
+                      aria-expanded={open}
+                      aria-controls={`nh-panel-${group.id}`}
+                      data-current={groupIsCurrent(group) ? '' : undefined}
+                      onClick={() => setOpenGroupId(open ? null : group.id)}
                     >
-                      <span className="nh-label">{n.label}</span>
+                      <span className="nh-label">{group.heading}</span>
                       <Chevron />
                     </button>
                     <div
-                      id="nh-mega"
-                      className="nh-mega"
-                      hidden={!megaOpen}
+                      id={`nh-panel-${group.id}`}
+                      className="nh-panel"
+                      hidden={!open}
                       onClick={(e) => {
-                        if (e.target instanceof Element && e.target.closest('a')) setMegaOpen(false);
+                        if (e.target instanceof Element && e.target.closest('a')) {
+                          setOpenGroupId(null);
+                        }
                       }}
                     >
-                      <div className="nh-mega-grid">
-                        {n.lead && (
-                          <div className="nh-mega-lead">
-                            <Link
-                              className="nh-mega-lead-link"
-                              href={n.lead.leadHref}
-                              aria-current={current(n.lead.leadHref)}
-                            >
-                              {n.lead.leadLabel}
-                            </Link>
-                            {meta.lead && <span className="nh-mega-meta">{meta.lead}</span>}
-                            <h3 className="nh-mega-head">{n.lead.theShow.heading}</h3>
-                            <ul className="nh-mega-list">{n.lead.theShow.links.map(renderLeaf)}</ul>
-                          </div>
-                        )}
-                        {n.columns.map((column) => (
-                          <div key={column.id} className="nh-mega-col">
-                            <h3 className="nh-mega-head">{column.heading}</h3>
-                            <ul className="nh-mega-list">{column.links.map(renderLeaf)}</ul>
-                          </div>
-                        ))}
-                        {n.featureRail && (
-                          <div className="nh-mega-rail">
-                            {meta.rail && <span className="nh-mega-meta">{meta.rail}</span>}
-                            <h4>{n.featureRail.heading}</h4>
-                            <ul className="nh-mega-list">
-                              {railLinks.map((d) => (
-                                <li key={d.id}>
-                                  <Link href={d.href} aria-current={current(d.href)}>
-                                    <span className="nh-leaf">{d.label}</span>
-                                  </Link>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
+                      <ul className="nh-mega-list">{group.links.map(renderLeaf)}</ul>
                     </div>
                   </li>
                 );
               })}
+              {plainLeaves.map((leaf) => (
+                <li key={leaf.id}>
+                  <Link className="nh-link" href={nosPath(leaf.href)} aria-current={current(leaf.href)}>
+                    {leaf.label}
+                  </Link>
+                </li>
+              ))}
+              <li>
+                {/* The show is organised by SAOC, so Contact is the SAOC contact: a plain anchor to
+                    the SAOC site, same tab, no arrow. */}
+                <a className="nh-link" href={saocContactHref}>
+                  {CONTACT_LINK.label}
+                </a>
+              </li>
             </ul>
           </nav>
 
-          <Link className="nh-cta" href={TICKETS_HREF} aria-current={current(TICKETS_HREF)}>
-            Tickets
-          </Link>
+          {ticketsLeaf && (
+            <Link
+              className="nh-cta"
+              href={nosPath(ticketsLeaf.href)}
+              aria-current={current(ticketsLeaf.href)}
+            >
+              {ticketsLeaf.label}
+            </Link>
+          )}
 
           <button
             id="nh-burger"
@@ -360,69 +349,48 @@ export function NosHeader({ show }: NosHeaderProps) {
       >
         <div className="nd-inner">
           <ul className="nd-list">
-            {NAV.map((n) => {
-              if (n.type === 'link') {
-                return (
-                  <li key={n.id}>
-                    <Link className="nd-item" href={n.href} aria-current={current(n.href)}>
-                      {n.label}
-                    </Link>
-                  </li>
-                );
-              }
+            {groups.map((group) => {
+              const open = drawerGroupId === group.id;
               return (
-                <li key={n.id}>
+                <li key={group.id}>
                   <button
                     type="button"
                     className="nd-item"
                     data-sub=""
-                    data-current=""
-                    aria-expanded={subOpen}
-                    aria-controls={SUB_ID}
-                    onClick={() => setSubOpen((open) => !open)}
+                    data-current={groupIsCurrent(group) ? '' : undefined}
+                    aria-expanded={open}
+                    aria-controls={`nd-sub-${group.id}`}
+                    onClick={() => setDrawerGroupId(open ? null : group.id)}
                   >
-                    <span>{n.label}</span>
+                    <span>{group.heading}</span>
                     <Chevron />
                   </button>
-                  <div id={SUB_ID} className="nd-sub" hidden={!subOpen}>
-                    {n.lead && (
-                      <div className="nd-lead">
-                        <Link href={n.lead.leadHref} aria-current={current(n.lead.leadHref)}>
-                          {n.lead.leadLabel}
-                        </Link>
-                        {meta.lead && <span>{meta.lead}</span>}
-                      </div>
-                    )}
-                    {groupsOf(n).map((group) => (
-                      <div key={group.id} className="nd-group">
-                        <h3>{group.heading}</h3>
-                        <ul>{group.links.map(renderLeaf)}</ul>
-                      </div>
-                    ))}
-                    {n.featureRail && (
-                      <div className="nd-group">
-                        <h3>{n.featureRail.heading}</h3>
-                        <ul>
-                          {railLinks.map((d) => (
-                            <li key={d.id}>
-                              <Link href={d.href} aria-current={current(d.href)}>
-                                <span className="nh-leaf">{d.label}</span>
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                  <div id={`nd-sub-${group.id}`} className="nd-sub" hidden={!open}>
+                    <div className="nd-group">
+                      <ul>{group.links.map(renderLeaf)}</ul>
+                    </div>
                   </div>
                 </li>
               );
             })}
+            {plainLeaves.map((leaf) => (
+              <li key={leaf.id}>
+                <Link className="nd-item" href={nosPath(leaf.href)} aria-current={current(leaf.href)}>
+                  {leaf.label}
+                </Link>
+              </li>
+            ))}
             <li>
-              <Link className="nd-item" href={CONTACT_HREF} aria-current={current(CONTACT_HREF)}>
-                Contact
-              </Link>
+              <a className="nd-item" href={saocContactHref}>
+                {CONTACT_LINK.label}
+              </a>
             </li>
           </ul>
+          {/* R1.4: after a rule, the SAOC credit as text only: the organisation's name, linking
+              to the SAOC site. */}
+          <p className="nd-credit">
+            <a href={saocHomeHref}>{FOOTER_ORG_NAME}</a>
+          </p>
         </div>
       </nav>
     </>

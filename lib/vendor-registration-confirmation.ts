@@ -3,6 +3,7 @@ import React from 'react';
 import { sendEmail, FORMS_FROM_ADDRESS } from '@/lib/email';
 import VendorRegistrationConfirmation from '@/emails/VendorRegistrationConfirmation';
 import { mintVendorPhotoUploadUrl } from '@/lib/vendor-photo-resume-link';
+import { nosUrl } from '@/lib/site-hosts';
 
 /**
  * Confirmation email for POST /api/vendors/register (mission vendor-registration F5). See
@@ -39,13 +40,11 @@ export interface SendVendorRegistrationConfirmationDeps {
   mailer?: VendorRegistrationConfirmationMailer;
 }
 
-const DEFAULT_SITE_URL = 'https://saoc.co.za';
-
 function resolvePhotoUploadUrl(vendorSubmissionId: string | undefined): string | undefined {
   const secret = process.env.VENDOR_STAND_PAYMENT_TOKEN_SECRET;
   if (!vendorSubmissionId || !secret) return undefined;
 
-  const siteUrl = process.env.SITE_URL?.trim() || DEFAULT_SITE_URL;
+  const siteUrl = nosUrl('');
   return mintVendorPhotoUploadUrl({ vendorSubmissionId, secret, now: new Date(), siteUrl }).url;
 }
 
