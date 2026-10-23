@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 
 import { PageHero } from '@/components/ui/PageHero';
-import { EventCard, MonthGroup, eventHref } from '@/components/events';
+import { EventCard, MonthGroup, eventHref, type ListedEvent } from '@/components/events';
 import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
 import { ConfirmationBadge } from '@/components/show';
+import { upcomingPlaceholderEvents } from '@/lib/data/placeholder-events';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { saocUrl } from '@/lib/site-hosts';
 import { sanityFetch } from '@/sanity/lib/fetch';
@@ -41,8 +43,8 @@ function monthLabel(dateStr: string): string {
  * Group a sorted list of events by calendar month.
  * Returns an ordered array of [monthLabel, events] pairs.
  */
-function groupByMonth(events: SanityEvent[]): Array<{ month: string; events: SanityEvent[] }> {
-  const map = new Map<string, SanityEvent[]>();
+function groupByMonth(events: ListedEvent[]): Array<{ month: string; events: ListedEvent[] }> {
+  const map = new Map<string, ListedEvent[]>();
 
   for (const event of events) {
     const label = monthLabel(event.date);
@@ -65,8 +67,13 @@ export default async function EventsPage() {
 
   const events: SanityEvent[] = raw ?? [];
 
-  const featured = events.filter((e) => e.isFeatured === true);
-  const remaining = events.filter((e) => e.isFeatured !== true);
+  // Brad: keep the invented events in, noted as awaiting SAOC's official calendar. Preview only: a public
+  // build lists none. They join the rows below but never `events`, which feeds the JSON-LD Event nodes.
+  const placeholders = withholdPlaceholderProse() ? [] : upcomingPlaceholderEvents(new Date());
+  const listed: ListedEvent[] = [...events, ...placeholders].sort((a, b) => a.date.localeCompare(b.date));
+
+  const featured = listed.filter((e) => e.isFeatured === true);
+  const remaining = listed.filter((e) => e.isFeatured !== true);
   const monthGroups = groupByMonth(remaining);
 
   return (
@@ -119,7 +126,7 @@ export default async function EventsPage() {
               <MonthGroup key={month} month={month} events={monthEvents} />
             ))}
           </div>
-        ) : events.length === 0 ? (
+        ) : listed.length === 0 ? (
           <div className="space-y-3">
             <p className="font-sans text-[16px] text-ink/70">No upcoming events scheduled.</p>
             <ConfirmationBadge status="pending" />

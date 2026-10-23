@@ -1,10 +1,14 @@
 import Link from 'next/link';
 import { useId } from 'react';
 
+import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import type { SanityEvent } from '@/types';
 
+/** An invented event on the beta preview carries `isPlaceholder`; it is marked and never linked. */
+export type ListedEvent = SanityEvent & { isPlaceholder?: boolean };
+
 export interface EventCardProps {
-  event: SanityEvent;
+  event: ListedEvent;
 }
 
 const CARD_CLASSES = 'flex gap-5 border border-rule bg-parchment px-5 py-4 transition hover:bg-bone';
@@ -27,7 +31,7 @@ export function EventCard({ event }: EventCardProps) {
   const titleId = `${id}-title`;
   const dateId = `${id}-date`;
   const venueId = `${id}-venue`;
-  const linked = Boolean(event.slug);
+  const linked = Boolean(event.slug) && !event.isPlaceholder;
 
   const content = (
     <>
@@ -78,6 +82,7 @@ export function EventCard({ event }: EventCardProps) {
             </div>
           ) : null}
         </dl>
+        {event.isPlaceholder ? <PlaceholderMarker /> : null}
       </div>
     </>
   );
