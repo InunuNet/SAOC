@@ -2,7 +2,7 @@
 
 Mission `sponsor-enquiry-form`, M1/F1. Brad (via SAOC): "Become a sponsor. That button needs to be a button to get the necessary information from the company or person who's interested in becoming a sponsor. It needs to be a form."
 
-Both "Talk to us about sponsorship" buttons (SAOC `/sponsors`, NOS `/sponsors`) are now plain `href="#enquire"` anchors that jump to an inline section on the same page. There is no separate route and no host-routing change: each existing sponsors page renders `SponsorEnquirySection` for its own site, so a host serves only its own form by construction. `SponsorEnquiryFocus` adds smooth scroll (instant under `prefers-reduced-motion`), keeps `#enquire` in the URL and focuses the section heading; the anchor works without JavaScript.
+The single "Talk to us about sponsorship" button on each sponsors page (SAOC `/sponsors`, NOS `/sponsors`) sits in the page hero under the lede, in every state, and is a plain `href="#enquire"` anchor (NOS Design D4, Amendment 3; the NOS empty-state card keeps its message but has no button of its own, and the SAOC page's separate CTA block has no button) that jump to an inline section on the same page. There is no separate route and no host-routing change: each existing sponsors page renders `SponsorEnquirySection` for its own site, so a host serves only its own form by construction. `SponsorEnquiryFocus` adds smooth scroll (instant under `prefers-reduced-motion`), keeps `#enquire` in the URL and focuses the section heading; the anchor works without JavaScript.
 
 ## Flow
 
@@ -39,11 +39,11 @@ All held in `lib/sponsor-enquiry-copy.ts`, each marked `PENDING-COMMITTEE-COPY`,
 - G4 labels with no existing equivalent: "Organisation or company (optional)", "Phone number (optional)", "Sponsorship level (optional)".
 - G5 the acknowledgement and admin email wording. An email cannot be beta-only, so it is always sent.
 
-Reused verbatim from existing copy: the CTA label, "Name", "Email address", "Message", "Website (optional)", the empty level option "Select type…" (the only empty select option in the repo, although "type" is not the word "level"), the thank-you heading and body, and the validation texts. The five levels are Lee-Ann's Website Development Specification V3, line 484; the level is optional.
+Reused verbatim from existing copy: the CTA label, "Name", "Email address", "Message", "Website (optional)", the thank-you heading and body, and the validation texts. The level select's empty first option is "Choose a level" (SAOC ruling, Amendment 4; value `""`, stored as null). The five levels are Lee-Ann's Website Development Specification V3, line 484; the level is optional.
 
 ## Open decisions
 
 - D1 CAPTCHA: a provider is a Brad/INUNU decision.
 - D2 Copy gaps G1 to G5 need committee wording.
 - D3 `/api/contact` and the other public forms lack consent and rate limiting; out of scope.
-- D4 NOS: the CTA exists only in the no-sponsors empty state, but the section always renders. With sponsors listed there is no CTA to it; NOS Design to rule whether one is wanted.
+- D4 resolved by Amendment 3: one hero CTA in every state and on both hosts.

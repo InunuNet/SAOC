@@ -81,6 +81,11 @@ export default async function ShowSponsorsPage() {
           result={result}
           route="/national-show/sponsors"
           layout="listing"
+          heroActions={
+            <Button as="a" href="#enquire" className="whitespace-nowrap max-sm:w-full max-sm:!px-2">
+              Talk to us about sponsorship
+            </Button>
+          }
           listingContent={
             list.length > 0 ? (
               <ShowEntityGrid
@@ -102,15 +107,6 @@ export default async function ShowSponsorsPage() {
                   <p className="mt-3 max-w-[60ch] font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/80">
                     {NO_SPONSORS_YET}
                   </p>
-                  <div className="mt-6">
-                    <Button
-                      as="a"
-                      href="#enquire"
-                      className="whitespace-nowrap max-sm:w-full max-sm:!px-2"
-                    >
-                      Talk to us about sponsorship
-                    </Button>
-                  </div>
                 </Card>
               </div>
             )

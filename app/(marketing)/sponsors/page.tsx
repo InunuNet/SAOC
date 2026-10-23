@@ -67,6 +67,14 @@ export default async function SponsorsPage() {
         eyebrow="Our sponsors"
         heading="Sponsors"
         lede={LEDE}
+        actions={
+          <Link
+            href="#enquire"
+            className="mt-8 inline-flex min-h-11 items-center rounded-[length:var(--radius-1)] bg-accent px-6 py-3 font-sans text-[14px] font-medium text-ink transition-colors duration-150 hover:bg-accent-soft"
+          >
+            Talk to us about sponsorship
+          </Link>
+        }
       />
 
       <div className="saoc-container py-16 space-y-16">
@@ -144,12 +152,6 @@ export default async function SponsorsPage() {
               <PlaceholderMarker />
             </div>
           )}
-          <Link
-            href="#enquire"
-            className="mt-6 inline-flex min-h-11 items-center rounded-[length:var(--radius-1)] bg-primary px-6 py-3 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary-800"
-          >
-            Talk to us about sponsorship
-          </Link>
         </section>
 
         <SponsorEnquirySection site="saoc" />

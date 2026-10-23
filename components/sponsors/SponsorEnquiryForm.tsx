@@ -275,7 +275,7 @@ export function SponsorEnquiryForm({ markConsent }: SponsorEnquiryFormProps) {
           aria-invalid={invalid('level')}
           aria-describedby={describedBy('level')}
         >
-          <option value="">Select type…</option>
+          <option value="">Choose a level</option>
           {SPONSOR_LEVELS.map((level) => (
             <option key={level.value} value={level.value}>
               {level.label}

@@ -25,7 +25,7 @@ export const ENQUIRY_LABELS = {
   level: 'Sponsorship level (optional)',
 } as const;
 
-// Reused verbatim from existing site copy: ContactForm, VendorContactFieldset, SubmitEventForm (the empty level option, 'Select type…', is literal in the form).
+// Reused verbatim from existing site copy: ContactForm, VendorContactFieldset, SubmitEventForm. The empty level option, 'Choose a level', is literal in the form (SAOC ruling).
 export const ENQUIRY_REUSED = {
   name: 'Name',
   email: 'Email address',

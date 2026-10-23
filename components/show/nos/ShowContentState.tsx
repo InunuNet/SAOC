@@ -63,6 +63,8 @@ export interface ShowContentStateProps {
    * "Presenters (N)" jump link, R44-A5). No wrapper or styling of its own.
    */
   afterHero?: ReactNode;
+  /** Rendered inside the hero under the lede (e.g. a call to action), in every state. */
+  heroActions?: ReactNode;
   /** `theme` renders the page summary as the show's theme line in the hero (R70, symposium). */
   ledeKind?: 'theme';
   /**
@@ -96,6 +98,7 @@ export function ShowContentState({
   listingContent,
   afterProse,
   afterHero,
+  heroActions,
   ledeKind,
   hideContentGap,
   holding,
@@ -114,7 +117,7 @@ export function ShowContentState({
   // Public mode drops a builder-brief summary from the lede; beta shows it as it always did.
   const lede = withhold ? publicHeroLede(page.summary) : (page.summary ?? undefined);
   const hero = (
-    <NosHero route={route} title={page.title} lede={lede} ledeKind={ledeKind} priority />
+    <NosHero route={route} title={page.title} lede={lede} ledeKind={ledeKind} actions={heroActions} priority />
   );
 
   // The fallback page's own sections (a gap block, the manifest purpose) are never real prose.
