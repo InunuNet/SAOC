@@ -11,10 +11,19 @@ interface PageHeroProps {
   eyebrow: string;
   heading: ReactNode;
   lede?: string;
+  /** Rendered under the lede, e.g. a call to action. */
+  actions?: ReactNode;
   minHeight?: string;
 }
 
-export function PageHero({ image, eyebrow, heading, lede, minHeight = '480px' }: PageHeroProps) {
+export function PageHero({
+  image,
+  eyebrow,
+  heading,
+  lede,
+  actions,
+  minHeight = '480px',
+}: PageHeroProps) {
   return (
     <section
       data-page-hero
@@ -46,6 +55,7 @@ export function PageHero({ image, eyebrow, heading, lede, minHeight = '480px' }:
             {lede}
           </p>
         ) : null}
+        {actions}
       </div>
     </section>
   );

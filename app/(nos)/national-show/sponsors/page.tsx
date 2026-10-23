@@ -13,6 +13,8 @@ import { loadShowPageOrFallback, withholdPlaceholderProse } from '@/lib/data/sho
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
+import { NosSection } from '@/components/nos/NosSection';
+import { SponsorEnquirySection } from '@/components/sponsors/SponsorEnquirySection';
 
 // F14 (national-show-ia-alignment, M4) — created route, reinstated by Brad. Its OWN data
 // scope: showSponsor, never the site-level `sponsor` type site-level /sponsors reads —
@@ -79,6 +81,11 @@ export default async function ShowSponsorsPage() {
           result={result}
           route="/national-show/sponsors"
           layout="listing"
+          heroActions={
+            <Button as="a" href="#enquire" className="whitespace-nowrap max-sm:w-full max-sm:!px-2">
+              Talk to us about sponsorship
+            </Button>
+          }
           listingContent={
             list.length > 0 ? (
               <ShowEntityGrid
@@ -100,21 +107,15 @@ export default async function ShowSponsorsPage() {
                   <p className="mt-3 max-w-[60ch] font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/80">
                     {NO_SPONSORS_YET}
                   </p>
-                  <div className="mt-6">
-                    <Button
-                      as="a"
-                      href="mailto:info@saoc.co.za"
-                      className="whitespace-nowrap max-sm:w-full max-sm:!px-2"
-                    >
-                      Talk to us about sponsorship
-                    </Button>
-                  </div>
                 </Card>
               </div>
             )
           }
         />
       </div>
+      <NosSection>
+        <SponsorEnquirySection site="nos" />
+      </NosSection>
       <NosShowIndex current="/national-show/sponsors" />
     </>
   );
