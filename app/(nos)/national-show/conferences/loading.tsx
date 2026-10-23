@@ -1,15 +1,15 @@
-// nos-flash-scroll: route-level fallback for a dynamic NOS route. Renders the existing NOS hero
-// geometry (nos-theme.css `.nos-hero`) with an empty copy block, so the first frame is the dark
-// hero rather than a grey skeleton. No text, no new tokens.
+import { NosHero } from '@/components/nos/NosHero';
+import { NOS_ROUTE_HEROES } from '@/components/nos/nos-route-heroes';
+
+// nos-loader-h1: the page's own hero, so the h1 and the group sub-nav are on screen from the first
+// frame and do not move when the page streams in.
 export default function Loading() {
   return (
-    <section
-      data-nos-hero="inner"
-      data-nos-hero-variant="type"
-      aria-busy="true"
-      className="nos-on-dark nos-hero nos-hero-inner nos-hero-type"
-    >
-      <div className="nos-hero-copy" />
-    </section>
+    <NosHero
+      route={NOS_ROUTE_HEROES.conferences.route}
+      title={NOS_ROUTE_HEROES.conferences.title}
+      lede={NOS_ROUTE_HEROES.conferences.lede}
+      priority
+    />
   );
 }

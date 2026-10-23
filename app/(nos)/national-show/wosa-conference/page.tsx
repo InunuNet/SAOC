@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { Button } from '@/components/nos/Button';
 import { PresenterSection } from '@/components/nos/PresenterSection';
+import { NOS_ROUTE_HEROES } from '@/components/nos/nos-route-heroes';
 import { ShowContentState } from '@/components/show/nos/ShowContentState';
 import { loadShowFacts } from '@/lib/data/show-facts';
 import { loadShowPageOrFallback } from '@/lib/data/show-pages';
@@ -37,7 +38,7 @@ export const revalidate = 60;
 
 export const metadata: Metadata = withTicketingTestTitle(
   buildPageMetadata({
-    title: 'WOSA Conference',
+    title: NOS_ROUTE_HEROES.wosaConference.title,
     image: nosOgImage('WOSA Conference — National Orchid Show'),
     description: 'The WOSA Conference, held alongside the National Show, and what it is for.',
     path: '/national-show/wosa-conference',
@@ -47,7 +48,7 @@ export const metadata: Metadata = withTicketingTestTitle(
 export default async function WosaConferencePage() {
   const [result, facts] = await Promise.all([
     loadShowPageOrFallback('07-wosa-conference', {
-      label: 'WOSA Conference',
+      label: NOS_ROUTE_HEROES.wosaConference.title,
       purpose:
         'What the WOSA Conference is and who it is for, with a link out to WOSA for wild-orchid content.',
     }),
@@ -107,7 +108,7 @@ export default async function WosaConferencePage() {
         />
       </div>
 
-      <PresenterSection eyebrow="WOSA Conference" presenters={presenters} />
+      <PresenterSection eyebrow={NOS_ROUTE_HEROES.wosaConference.title} presenters={presenters} />
       <NosShowIndex current="/national-show/wosa-conference" />
     </>
   );
