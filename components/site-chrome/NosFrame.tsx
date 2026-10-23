@@ -12,6 +12,7 @@ import { TicketingTestBar } from '@/components/tickets/TicketingTestBar';
 import { NosFooter } from '@/components/nos-chrome/NosFooter';
 import { NosHeader } from '@/components/nos-chrome/NosHeader';
 import { NosSkipLink } from '@/components/nos-chrome/NosSkipLink';
+import { NosRouteScroll } from '@/components/nos/NosRouteScroll';
 import { getVisibleNav } from '@/lib/data/past-shows-public';
 import { CONTACT_LINK } from '@/components/chrome/nav-config';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
@@ -24,6 +25,7 @@ export async function NosFrame({ children }: { children: React.ReactNode }) {
     <>
       <TicketingTestBar />
       <NosSkipLink />
+      <NosRouteScroll />
       <NosHeader
         nav={nav}
         saocHomeHref={saocUrl('/')}
