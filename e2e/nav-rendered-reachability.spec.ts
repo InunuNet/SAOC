@@ -135,8 +135,8 @@ test.describe('NOS nav hrefs are reachable from the rendered NOS header', () => 
 
     assertNoneMissing(NOS_REQUIRED_HEADER_HREFS, rendered, 'desktop NOS header');
     expect(
-      [...rendered].some((href) => isSaocLink(href, CONTACT_LINK.href)),
-      'the NOS header has no absolute link to the SAOC Contact page',
+      [...rendered].some((href) => href === CONTACT_LINK.href),
+      'the NOS header has no NOS /contact link',
     ).toBe(true);
   });
 
@@ -167,8 +167,8 @@ test.describe('NOS nav hrefs are reachable from the rendered NOS header', () => 
     for (const href of await renderedAnchorHrefs(header)) rendered.add(href);
     assertNoneMissing(NOS_REQUIRED_HEADER_HREFS, rendered, 'mobile NOS header and menu');
     expect(
-      [...rendered].some((href) => isSaocLink(href, CONTACT_LINK.href)),
-      'the NOS menu panel has no absolute link to the SAOC Contact page',
+      [...rendered].some((href) => href === CONTACT_LINK.href),
+      'the NOS menu panel has no NOS /contact link',
     ).toBe(true);
   });
 

@@ -102,15 +102,18 @@ test.describe('NOS header — lockup and Tickets call to action', () => {
     }
   });
 
-  test('Contact leaves for the SAOC site as a plain same-tab link', async ({ page, baseURL }) => {
+  test('Contact stays on the NOS site as a same-tab link to the show contact page', async ({
+    page,
+    baseURL,
+  }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`${nosBase(baseURL!)}/`);
 
     const contact = page.locator('header#nh').getByRole('link', { name: 'Contact', exact: true });
     const href = (await contact.getAttribute('href')) ?? '';
-    const url = new URL(href);
+    const url = new URL(href, page.url());
     expect(url.pathname).toBe('/contact');
-    expect(url.hostname.startsWith('nos.')).toBe(false);
+    expect(url.hostname.startsWith('nos.')).toBe(true);
     await expect(contact).not.toHaveAttribute('target', /.+/);
   });
 });

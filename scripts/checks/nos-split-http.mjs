@@ -102,7 +102,7 @@ async function run() {
   check('nos-national-show-root-to-slash', redirectsTo(hubAlias, '/'), `status=${hubAlias.status} location=${hubAlias.headers.location}`);
   const stripped = await get(NOS_HOST, '/national-show/symposium?x=1');
   check('nos-prefix-stripped', redirectsTo(stripped, '/symposium?x=1'), `status=${stripped.status} location=${stripped.headers.location}`);
-  for (const p of ['/symposium', '/tickets', '/vendors', '/sponsors', '/about', '/faq', '/privacy', '/terms', '/refunds']) {
+  for (const p of ['/symposium', '/tickets', '/vendors', '/sponsors', '/about', '/faq', '/contact', '/privacy', '/terms', '/refunds']) {
     const r = await get(NOS_HOST, p);
     check(`nos-serves-${p}`, r.status === 200 && r.headers['x-site'] === 'nos', `status=${r.status}`);
   }
@@ -110,7 +110,7 @@ async function run() {
     const r = await get(SAOC_HOST, p);
     check(`saoc-serves-shared-${p}`, r.status === 200 && r.headers['x-site'] === 'saoc', `status=${r.status}`);
   }
-  for (const p of ['/contact', '/societies', '/events', '/judging', '/constitution', '/members']) {
+  for (const p of ['/societies', '/events', '/judging', '/constitution', '/members']) {
     const r = await get(NOS_HOST, p);
     check(`nos-redirects-${p}-to-saoc`, redirectsTo(r, `${SAOC_ORIGIN}${p}`), `status=${r.status} location=${r.headers.location}`);
   }
