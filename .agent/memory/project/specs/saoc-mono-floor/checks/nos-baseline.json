@@ -2,11 +2,8585 @@
  "origin": "c0e4e380bed890e96bb4862428fe48a0445cbbfd",
  "pristine": true,
  "entries": {
-  "1280 /": [],
-  "1280 /faq": [],
-  "1280 /plan-your-visit": [],
-  "390 /": [],
-  "390 /faq": [],
-  "390 /plan-your-visit": []
+  "1280 /": [
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Skip to main content",
+    "size": 14,
+    "tracking": "0.56px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Visit",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "About the show",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The show's theme, what it brings togethe",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What to expect",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Hours, admission and on-the-day detail f",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Plan your visit",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Travel, parking, accommodation and nearb",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "FAQ",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The questions visitors ask us most.",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The overall schedule of sessions across ",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Workshops",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Book Sunset Cocktails and guided Field T",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Symposium",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The National Orchid Show Symposium — wha",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "WOSA Conference",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What the WOSA Conference is and who it i",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Conference registration",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Register for the Symposium and WOSA Conf",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibit & trade",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African exhibitors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of South African nurser",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "International guests",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of international guests",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitor entry guide",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Entry process, fees, classes, judging an",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitors and vendors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Trade vendor showcase, application and r",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Contact",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 13,
+    "tracking": "1.56px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Menu",
+    "size": 13,
+    "tracking": "1.56px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Visit",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "About the show",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The show's theme, what it brings togethe",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What to expect",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Hours, admission and on-the-day detail f",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Plan your visit",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Travel, parking, accommodation and nearb",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "FAQ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The questions visitors ask us most.",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The overall schedule of sessions across ",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Workshops",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Book Sunset Cocktails and guided Field T",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Symposium",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The National Orchid Show Symposium — wha",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "WOSA Conference",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What the WOSA Conference is and who it i",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Conference registration",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Register for the Symposium and WOSA Conf",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibit & trade",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African exhibitors",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of South African nurser",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "International guests",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of international guests",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitor entry guide",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Entry process, fees, classes, judging an",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitors and vendors",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Trade vendor showcase, application and r",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Contact",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "South African Orchid Council",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H1",
+    "text": "The National Orchid Show",
+    "size": 62.72,
+    "tracking": "-0.9408px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "South Africa’s triennial orchid competit",
+    "size": 26,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Tickets",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Plan your visit",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Early-Bird Exhibition Ticket from R120",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Opens in",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "00",
+    "size": 42,
+    "tracking": "-0.63px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Days",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "00",
+    "size": 42,
+    "tracking": "-0.63px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Hours",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "00",
+    "size": 42,
+    "tracking": "-0.63px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Min",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "00",
+    "size": 42,
+    "tracking": "-0.63px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Sec",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Dates",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "23–26 September 2027",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Host",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "Western Cape",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Venue",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "The Hangar, Stellenbosch Flying Club",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Cycle",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "Triennial",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Three years in the making, four days on ",
+    "size": 48,
+    "tracking": "-0.72px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The National Orchid Show is the country’",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Every plant is assessed by across ten bo",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "accredited SAOC judges",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Cycle",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "3 yr",
+    "size": 57.6,
+    "tracking": "-0.864px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Judging classes",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "10",
+    "size": 57.6,
+    "tracking": "-0.864px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Planning a visit",
+    "size": 48,
+    "tracking": "-0.72px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "STRONG",
+    "text": "About the show",
+    "size": 25,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The 2027 theme, what the National Show b",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "STRONG",
+    "text": "Plan your visit",
+    "size": 25,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Travel from the airports, parking, publi",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "STRONG",
+    "text": "What to expect",
+    "size": 25,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Opening hours, admission, food, photogra",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "STRONG",
+    "text": "Visitor questions",
+    "size": 25,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The questions we are asked most, answere",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Ten judging groups",
+    "size": 48,
+    "tracking": "-0.72px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Every exhibit is entered in one of ten b",
+    "size": 18,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "C",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 1",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Cattleya Alliance",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Cattleya, Laelia, Brassavola, Rhyncholae",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Cy",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 2",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Cymbidium",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Standard, miniature, pendulous and speci",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "D",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 3",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Dendrobium",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Den-Phal, hard-cane, soft-cane, nobile t",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "m",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 4",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Miniatures",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Plants with flowers under 4cm at widest ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "N",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 5",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Novice",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Growers who have not won a first prize a",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "O",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 6",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Oncidium Alliance",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Oncidium, Miltoniopsis, Odontoglossum an",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "P",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 7",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Paphiopedilum & Phragmipedium",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Slipper orchids — species and hybrids.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Ph",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 8",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Phalaenopsis",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Standard, novelty, multifloral and speci",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "S",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 9",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Species",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "All botanical species, including indigen",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "V",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 10",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Vandaceous",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Vanda, Ascocenda, Aerides and related ge",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Exhibitor information",
+    "size": 48,
+    "tracking": "-0.72px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Stage 01",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Register your interest",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Contact your provincial society to expre",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Stage 02",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Confirm entry and classes",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Submit your entry form with plant list a",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Stage 03",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Staging and preparation",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Arrive at the venue for bench set-up fro",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Stage 04",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Judging and awards",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "SAOC accredited judges assess each class",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Start planning your entry now.",
+    "size": 32,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Register your interest through your soci",
+    "size": 18,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Find your society",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Exhibitor information",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "The 19th National Orchid Show opens in S",
+    "size": 48,
+    "tracking": "-0.72px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Explore",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Programme",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Exhibitors and vendors",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "FAQ",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African Orchid Council",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "REG# 1978/004040/08   NPO 043-901",
+    "size": 13,
+    "tracking": "1.04px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Wild Orchids of Southern Africa",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "(opens in a new tab)",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Stay in touch",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Quarterly bulletin — show dates, judging",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "Email address",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LEGEND",
+    "text": "Stay in touch",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "The National Orchid Show",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "South African Orchid Council",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "BUTTON",
+    "text": "Subscribe",
+    "size": 13,
+    "tracking": "1.3px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "Leave this field empty",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "© 2026 South African Orchid Council. All",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Privacy",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Terms",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Refunds",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Constitution",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   }
+  ],
+  "1280 /faq": [
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Skip to main content",
+    "size": 14,
+    "tracking": "0.56px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Visit",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "About the show",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The show's theme, what it brings togethe",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What to expect",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Hours, admission and on-the-day detail f",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Plan your visit",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Travel, parking, accommodation and nearb",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "FAQ",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The questions visitors ask us most.",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The overall schedule of sessions across ",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Workshops",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Book Sunset Cocktails and guided Field T",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Symposium",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The National Orchid Show Symposium — wha",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "WOSA Conference",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What the WOSA Conference is and who it i",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Conference registration",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Register for the Symposium and WOSA Conf",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibit & trade",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African exhibitors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of South African nurser",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "International guests",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of international guests",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitor entry guide",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Entry process, fees, classes, judging an",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitors and vendors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Trade vendor showcase, application and r",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Contact",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 13,
+    "tracking": "1.56px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Menu",
+    "size": 13,
+    "tracking": "1.56px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Visit",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "About the show",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The show's theme, what it brings togethe",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What to expect",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Hours, admission and on-the-day detail f",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Plan your visit",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Travel, parking, accommodation and nearb",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "FAQ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The questions visitors ask us most.",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The overall schedule of sessions across ",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Workshops",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Book Sunset Cocktails and guided Field T",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Symposium",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The National Orchid Show Symposium — wha",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "WOSA Conference",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What the WOSA Conference is and who it i",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Conference registration",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Register for the Symposium and WOSA Conf",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibit & trade",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African exhibitors",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of South African nurser",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "International guests",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of international guests",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitor entry guide",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Entry process, fees, classes, judging an",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitors and vendors",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Trade vendor showcase, application and r",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Contact",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "South African Orchid Council",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H1",
+    "text": "Frequently asked questions",
+    "size": 56.32,
+    "tracking": "-0.8448px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "About the show",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "What to expect",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "FAQ",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "※",
+    "size": 12,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "To be confirmed by the show committee",
+    "size": 12,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Getting there",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "General",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Getting there",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Where exactly is the show being held?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The Hangar, Stellenbosch Flying Club",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Tickets",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "How much does it cost to get in?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Current prices are listed on the ticket ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LI",
+    "text": "VIP Ticket, R300",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LI",
+    "text": "Sunset Cocktails (Single), R800",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LI",
+    "text": "Weekend Pass (Early Bird), R360",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LI",
+    "text": "Early-Bird Exhibition Ticket, R120",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "See ticket prices and book →",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "General",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "When is the show?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Thursday 23 to Sunday 26 September 2027,",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Not answered here? We would rather hear ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Ask the council →",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Explore the show",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Visit",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "What to expect",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Programme",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "FAQ",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Take part",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Exhibitor entry guide",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Exhibitors and vendors",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Workshops",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Conference registration",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "The show",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "About the show",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Symposium",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "WOSA Conference",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "South African exhibitors",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "International guests",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Explore",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Programme",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Exhibitors and vendors",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "FAQ",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African Orchid Council",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "REG# 1978/004040/08   NPO 043-901",
+    "size": 13,
+    "tracking": "1.04px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Wild Orchids of Southern Africa",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "(opens in a new tab)",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Stay in touch",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Quarterly bulletin — show dates, judging",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "Email address",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LEGEND",
+    "text": "Stay in touch",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "The National Orchid Show",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "South African Orchid Council",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "BUTTON",
+    "text": "Subscribe",
+    "size": 13,
+    "tracking": "1.3px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "Leave this field empty",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "© 2026 South African Orchid Council. All",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Privacy",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Terms",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Refunds",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Constitution",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   }
+  ],
+  "1280 /plan-your-visit": [
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Skip to main content",
+    "size": 14,
+    "tracking": "0.56px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Visit",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "About the show",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The show's theme, what it brings togethe",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What to expect",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Hours, admission and on-the-day detail f",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Plan your visit",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Travel, parking, accommodation and nearb",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "FAQ",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The questions visitors ask us most.",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The overall schedule of sessions across ",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Workshops",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Book Sunset Cocktails and guided Field T",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Symposium",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The National Orchid Show Symposium — wha",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "WOSA Conference",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What the WOSA Conference is and who it i",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Conference registration",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Register for the Symposium and WOSA Conf",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibit & trade",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African exhibitors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of South African nurser",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "International guests",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of international guests",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitor entry guide",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Entry process, fees, classes, judging an",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitors and vendors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Trade vendor showcase, application and r",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Contact",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 13,
+    "tracking": "1.56px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Menu",
+    "size": 13,
+    "tracking": "1.56px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Visit",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "About the show",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The show's theme, what it brings togethe",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What to expect",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Hours, admission and on-the-day detail f",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Plan your visit",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Travel, parking, accommodation and nearb",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "FAQ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The questions visitors ask us most.",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The overall schedule of sessions across ",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Workshops",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Book Sunset Cocktails and guided Field T",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Symposium",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The National Orchid Show Symposium — wha",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "WOSA Conference",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What the WOSA Conference is and who it i",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Conference registration",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Register for the Symposium and WOSA Conf",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibit & trade",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African exhibitors",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of South African nurser",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "International guests",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of international guests",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitor entry guide",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Entry process, fees, classes, judging an",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitors and vendors",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Trade vendor showcase, application and r",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Contact",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "South African Orchid Council",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H1",
+    "text": "Plan your visit",
+    "size": 56.32,
+    "tracking": "-0.8448px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Everything you need to get to the Nation",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "About the show",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "What to expect",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "FAQ",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Getting there",
+    "size": 48,
+    "tracking": "-0.72px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Travel, parking and accommodation guidan",
+    "size": 18,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "※",
+    "size": 12,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "To be confirmed by the show committee",
+    "size": 12,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Parking",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Parking arrangements have not been confi",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Public transport",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Public transport options to The Hangar, ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Where to stay",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Accommodation guidance for the Stellenbo",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "The venue",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The Hangar, Stellenbosch Flying Club",
+    "size": 18,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Stellenbosch Airfield",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "R44",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Stellenbosch, 7600",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Western Cape",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The show is held at the hangar at Stelle",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Open in a map ↗",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "In an emergency",
+    "size": 48,
+    "tracking": "-0.72px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Police (national)",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "10111",
+    "size": 38.4,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Ambulance and fire (national)",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "10177",
+    "size": 38.4,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "All emergencies, from a mobile phone",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "112",
+    "size": 38.4,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "Works from any mobile, including one wit",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "※",
+    "size": 12,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "To be confirmed by the show committee",
+    "size": 12,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "On-site first aid and show duty contact",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The committee will supply the on-site co",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Stay informed",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Be the first to know",
+    "size": 48,
+    "tracking": "-0.72px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Parking, public transport and accommodat",
+    "size": 18,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Ask the council",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Explore the show",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Visit",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "What to expect",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Programme",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "FAQ",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Take part",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Exhibitor entry guide",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Exhibitors and vendors",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Workshops",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Conference registration",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "The show",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "About the show",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Symposium",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "WOSA Conference",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "South African exhibitors",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "International guests",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Explore",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Programme",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Exhibitors and vendors",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "FAQ",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African Orchid Council",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "REG# 1978/004040/08   NPO 043-901",
+    "size": 13,
+    "tracking": "1.04px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Wild Orchids of Southern Africa",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "(opens in a new tab)",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Stay in touch",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Quarterly bulletin — show dates, judging",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "Email address",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LEGEND",
+    "text": "Stay in touch",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "The National Orchid Show",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "South African Orchid Council",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "BUTTON",
+    "text": "Subscribe",
+    "size": 13,
+    "tracking": "1.3px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "Leave this field empty",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "© 2026 South African Orchid Council. All",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Privacy",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Terms",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Refunds",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Constitution",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   }
+  ],
+  "390 /": [
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Skip to main content",
+    "size": 14,
+    "tracking": "0.56px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Visit",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "About the show",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The show's theme, what it brings togethe",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What to expect",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Hours, admission and on-the-day detail f",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Plan your visit",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Travel, parking, accommodation and nearb",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "FAQ",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The questions visitors ask us most.",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The overall schedule of sessions across ",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Workshops",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Book Sunset Cocktails and guided Field T",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Symposium",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The National Orchid Show Symposium — wha",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "WOSA Conference",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What the WOSA Conference is and who it i",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Conference registration",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Register for the Symposium and WOSA Conf",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibit & trade",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African exhibitors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of South African nurser",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "International guests",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of international guests",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitor entry guide",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Entry process, fees, classes, judging an",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitors and vendors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Trade vendor showcase, application and r",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Contact",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 13,
+    "tracking": "1.56px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Menu",
+    "size": 13,
+    "tracking": "1.56px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Visit",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "About the show",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The show's theme, what it brings togethe",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What to expect",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Hours, admission and on-the-day detail f",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Plan your visit",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Travel, parking, accommodation and nearb",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "FAQ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The questions visitors ask us most.",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The overall schedule of sessions across ",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Workshops",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Book Sunset Cocktails and guided Field T",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Symposium",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The National Orchid Show Symposium — wha",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "WOSA Conference",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What the WOSA Conference is and who it i",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Conference registration",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Register for the Symposium and WOSA Conf",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibit & trade",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African exhibitors",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of South African nurser",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "International guests",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of international guests",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitor entry guide",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Entry process, fees, classes, judging an",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitors and vendors",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Trade vendor showcase, application and r",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Contact",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "South African Orchid Council",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H1",
+    "text": "The National Orchid Show",
+    "size": 46.8,
+    "tracking": "-0.702px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "South Africa’s triennial orchid competit",
+    "size": 18,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Tickets",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Plan your visit",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Early-Bird Exhibition Ticket from R120",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Opens in",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "00",
+    "size": 42,
+    "tracking": "-0.63px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Days",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "00",
+    "size": 42,
+    "tracking": "-0.63px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Hours",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "00",
+    "size": 42,
+    "tracking": "-0.63px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Min",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "00",
+    "size": 42,
+    "tracking": "-0.63px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Sec",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Dates",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "23–26 September 2027",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Host",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "Western Cape",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Venue",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "The Hangar, Stellenbosch Flying Club",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Cycle",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "Triennial",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Three years in the making, four days on ",
+    "size": 32,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The National Orchid Show is the country’",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Every plant is assessed by across ten bo",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "accredited SAOC judges",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Cycle",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "3 yr",
+    "size": 41.6,
+    "tracking": "-0.624px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Judging classes",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "10",
+    "size": 41.6,
+    "tracking": "-0.624px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Planning a visit",
+    "size": 32,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "STRONG",
+    "text": "About the show",
+    "size": 25,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The 2027 theme, what the National Show b",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "STRONG",
+    "text": "Plan your visit",
+    "size": 25,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Travel from the airports, parking, publi",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "STRONG",
+    "text": "What to expect",
+    "size": 25,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Opening hours, admission, food, photogra",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "STRONG",
+    "text": "Visitor questions",
+    "size": 25,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The questions we are asked most, answere",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Ten judging groups",
+    "size": 32,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Every exhibit is entered in one of ten b",
+    "size": 18,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "C",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 1",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Cattleya Alliance",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Cattleya, Laelia, Brassavola, Rhyncholae",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Cy",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 2",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Cymbidium",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Standard, miniature, pendulous and speci",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "D",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 3",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Dendrobium",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Den-Phal, hard-cane, soft-cane, nobile t",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "m",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 4",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Miniatures",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Plants with flowers under 4cm at widest ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "N",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 5",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Novice",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Growers who have not won a first prize a",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "O",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 6",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Oncidium Alliance",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Oncidium, Miltoniopsis, Odontoglossum an",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "P",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 7",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Paphiopedilum & Phragmipedium",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Slipper orchids — species and hybrids.",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Ph",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 8",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Phalaenopsis",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Standard, novelty, multifloral and speci",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "S",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 9",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Species",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "All botanical species, including indigen",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "V",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Group 10",
+    "size": 12,
+    "tracking": "1.92px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Vandaceous",
+    "size": 17,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Vanda, Ascocenda, Aerides and related ge",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Exhibitor information",
+    "size": 32,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Stage 01",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Register your interest",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Contact your provincial society to expre",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Stage 02",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Confirm entry and classes",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Submit your entry form with plant list a",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Stage 03",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Staging and preparation",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Arrive at the venue for bench set-up fro",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Stage 04",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Judging and awards",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "SAOC accredited judges assess each class",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Start planning your entry now.",
+    "size": 24,
+    "tracking": "-0.36px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Register your interest through your soci",
+    "size": 18,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Find your society",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Exhibitor information",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "The 19th National Orchid Show opens in S",
+    "size": 32,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Explore",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Programme",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Exhibitors and vendors",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "FAQ",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African Orchid Council",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "REG# 1978/004040/08   NPO 043-901",
+    "size": 13,
+    "tracking": "1.04px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Wild Orchids of Southern Africa",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "(opens in a new tab)",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Stay in touch",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Quarterly bulletin — show dates, judging",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "Email address",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LEGEND",
+    "text": "Stay in touch",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "The National Orchid Show",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "South African Orchid Council",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "BUTTON",
+    "text": "Subscribe",
+    "size": 13,
+    "tracking": "1.3px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "Leave this field empty",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "© 2026 South African Orchid Council. All",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Privacy",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Terms",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Refunds",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Constitution",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   }
+  ],
+  "390 /faq": [
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Skip to main content",
+    "size": 14,
+    "tracking": "0.56px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Visit",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "About the show",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The show's theme, what it brings togethe",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What to expect",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Hours, admission and on-the-day detail f",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Plan your visit",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Travel, parking, accommodation and nearb",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "FAQ",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The questions visitors ask us most.",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The overall schedule of sessions across ",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Workshops",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Book Sunset Cocktails and guided Field T",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Symposium",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The National Orchid Show Symposium — wha",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "WOSA Conference",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What the WOSA Conference is and who it i",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Conference registration",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Register for the Symposium and WOSA Conf",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibit & trade",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African exhibitors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of South African nurser",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "International guests",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of international guests",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitor entry guide",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Entry process, fees, classes, judging an",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitors and vendors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Trade vendor showcase, application and r",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Contact",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 13,
+    "tracking": "1.56px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Menu",
+    "size": 13,
+    "tracking": "1.56px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Visit",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "About the show",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The show's theme, what it brings togethe",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What to expect",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Hours, admission and on-the-day detail f",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Plan your visit",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Travel, parking, accommodation and nearb",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "FAQ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The questions visitors ask us most.",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The overall schedule of sessions across ",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Workshops",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Book Sunset Cocktails and guided Field T",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Symposium",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The National Orchid Show Symposium — wha",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "WOSA Conference",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What the WOSA Conference is and who it i",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Conference registration",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Register for the Symposium and WOSA Conf",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibit & trade",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African exhibitors",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of South African nurser",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "International guests",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of international guests",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitor entry guide",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Entry process, fees, classes, judging an",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitors and vendors",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Trade vendor showcase, application and r",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Contact",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "South African Orchid Council",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H1",
+    "text": "Frequently asked questions",
+    "size": 41.6,
+    "tracking": "-0.624px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "About the show",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "What to expect",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "FAQ",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "※",
+    "size": 12,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "To be confirmed by the show committee",
+    "size": 12,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Getting there",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "General",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Getting there",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Where exactly is the show being held?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The Hangar, Stellenbosch Flying Club",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Tickets",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "How much does it cost to get in?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Current prices are listed on the ticket ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LI",
+    "text": "VIP Ticket, R300",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LI",
+    "text": "Sunset Cocktails (Single), R800",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LI",
+    "text": "Weekend Pass (Early Bird), R360",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LI",
+    "text": "Early-Bird Exhibition Ticket, R120",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "See ticket prices and book →",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "General",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "When is the show?",
+    "size": 19,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Thursday 23 to Sunday 26 September 2027,",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Not answered here? We would rather hear ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Ask the council →",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Explore the show",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Visit",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "What to expect",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Programme",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "FAQ",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Take part",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Exhibitor entry guide",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Exhibitors and vendors",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Workshops",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Conference registration",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "The show",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "About the show",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Symposium",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "WOSA Conference",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "South African exhibitors",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "International guests",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Explore",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Programme",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Exhibitors and vendors",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "FAQ",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African Orchid Council",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "REG# 1978/004040/08   NPO 043-901",
+    "size": 13,
+    "tracking": "1.04px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Wild Orchids of Southern Africa",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "(opens in a new tab)",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Stay in touch",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Quarterly bulletin — show dates, judging",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "Email address",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LEGEND",
+    "text": "Stay in touch",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "The National Orchid Show",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "South African Orchid Council",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "BUTTON",
+    "text": "Subscribe",
+    "size": 13,
+    "tracking": "1.3px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "Leave this field empty",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "© 2026 South African Orchid Council. All",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Privacy",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Terms",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Refunds",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Constitution",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   }
+  ],
+  "390 /plan-your-visit": [
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Skip to main content",
+    "size": 14,
+    "tracking": "0.56px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Visit",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "About the show",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The show's theme, what it brings togethe",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What to expect",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Hours, admission and on-the-day detail f",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Plan your visit",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Travel, parking, accommodation and nearb",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "FAQ",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The questions visitors ask us most.",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The overall schedule of sessions across ",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Workshops",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Book Sunset Cocktails and guided Field T",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Symposium",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The National Orchid Show Symposium — wha",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "WOSA Conference",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What the WOSA Conference is and who it i",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Conference registration",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Register for the Symposium and WOSA Conf",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibit & trade",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African exhibitors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of South African nurser",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "International guests",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of international guests",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitor entry guide",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Entry process, fees, classes, judging an",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitors and vendors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Trade vendor showcase, application and r",
+    "size": 12.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Contact",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 13,
+    "tracking": "1.56px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Menu",
+    "size": 13,
+    "tracking": "1.56px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Visit",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "About the show",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The show's theme, what it brings togethe",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What to expect",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Hours, admission and on-the-day detail f",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Plan your visit",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Travel, parking, accommodation and nearb",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "FAQ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The questions visitors ask us most.",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Programme",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The overall schedule of sessions across ",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Workshops",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Book Sunset Cocktails and guided Field T",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Symposium",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The National Orchid Show Symposium — wha",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "WOSA Conference",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "What the WOSA Conference is and who it i",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Conference registration",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Register for the Symposium and WOSA Conf",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibit & trade",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African exhibitors",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of South African nurser",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "International guests",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Public directory of international guests",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitor entry guide",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Entry process, fees, classes, judging an",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Exhibitors and vendors",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Trade vendor showcase, application and r",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Contact",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "South African Orchid Council",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H1",
+    "text": "Plan your visit",
+    "size": 41.6,
+    "tracking": "-0.624px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Everything you need to get to the Nation",
+    "size": 18,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "About the show",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "What to expect",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "FAQ",
+    "size": 14.5,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Getting there",
+    "size": 32,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Travel, parking and accommodation guidan",
+    "size": 18,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "※",
+    "size": 12,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "To be confirmed by the show committee",
+    "size": 12,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Parking",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Parking arrangements have not been confi",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Public transport",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Public transport options to The Hangar, ",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Where to stay",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Accommodation guidance for the Stellenbo",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "The venue",
+    "size": 22,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "The Hangar, Stellenbosch Flying Club",
+    "size": 18,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Stellenbosch Airfield",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "R44",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Stellenbosch, 7600",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Western Cape",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The show is held at the hangar at Stelle",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Open in a map ↗",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "In an emergency",
+    "size": 32,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Police (national)",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "10111",
+    "size": 38.4,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "Ambulance and fire (national)",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "10177",
+    "size": 38.4,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DT",
+    "text": "All emergencies, from a mobile phone",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "112",
+    "size": 38.4,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DD",
+    "text": "Works from any mobile, including one wit",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "※",
+    "size": 12,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "To be confirmed by the show committee",
+    "size": 12,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "On-site first aid and show duty contact",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "The committee will supply the on-site co",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "Stay informed",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Be the first to know",
+    "size": 32,
+    "tracking": "-0.48px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Parking, public transport and accommodat",
+    "size": 18,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Ask the council",
+    "size": 14,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H2",
+    "text": "Explore the show",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Visit",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "What to expect",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Programme",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "FAQ",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "Take part",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Exhibitor entry guide",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Exhibitors and vendors",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Workshops",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Conference registration",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "H3",
+    "text": "The show",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "About the show",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Symposium",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "WOSA Conference",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "South African exhibitors",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "International guests",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 20,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Explore",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Tickets",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Programme",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Plan your visit",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Exhibitors and vendors",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Show sponsors",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "FAQ",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "South African Orchid Council",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "REG# 1978/004040/08   NPO 043-901",
+    "size": 13,
+    "tracking": "1.04px",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Wild Orchids of Southern Africa",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "(opens in a new tab)",
+    "size": 14,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "DIV",
+    "text": "Stay in touch",
+    "size": 12,
+    "tracking": "1.68px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "P",
+    "text": "Quarterly bulletin — show dates, judging",
+    "size": 15,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "Email address",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LEGEND",
+    "text": "Stay in touch",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "The National Orchid Show",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "South African Orchid Council",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "BUTTON",
+    "text": "Subscribe",
+    "size": 13,
+    "tracking": "1.3px",
+    "transform": "uppercase",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "LABEL",
+    "text": "Leave this field empty",
+    "size": 16,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "SPAN",
+    "text": "© 2026 South African Orchid Council. All",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Privacy",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Terms",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Refunds",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   },
+   {
+    "lockup": false,
+    "tag": "A",
+    "text": "Constitution",
+    "size": 13,
+    "tracking": "normal",
+    "transform": "none",
+    "mono": false
+   }
+  ]
  }
 }

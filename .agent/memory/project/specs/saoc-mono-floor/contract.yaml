@@ -25,10 +25,10 @@ assertions:
       description: frozen goldens and check scripts are unmodified since the architect wrote them
       command: shasum -a 256 -c .agent/memory/project/specs/saoc-mono-floor/goldens/checks.sha256
     - id: A2
-      description: static - mono tokens at least 12px, tracking and case intact, the global floor rule covers every sub-12px font-mono literal in source, no NOS file changed, NOS baseline committed
+      description: static - the lockup tagline exemption is in place at both sites and in the floor selector, mono tokens at least 12px, tracking and case intact, the global floor rule covers every sub-12px font-mono literal in source, no NOS file changed, NOS baseline committed
       command: node .agent/memory/project/specs/saoc-mono-floor/checks/check-static.mjs
     - id: A3
-      description: diff limited to app/globals.css, e2e specs, docs, the baseline and this spec
+      description: diff limited to app/globals.css, the SaocLockup tagline exemption (comments and data attribute only), e2e specs, docs, the baseline and this spec
       command: node .agent/memory/project/specs/saoc-mono-floor/checks/check-diff-scope.mjs
     - id: A4
       description: typescript compiles
@@ -37,10 +37,10 @@ assertions:
       description: production build passes (Sanity ids from apphosting.yaml, local site URLs, wall-off flag unset)
       command: bash .agent/memory/project/specs/saoc-mono-floor/checks/build.sh
     - id: A6
-      description: computed font-size of every SAOC mono-face element is at least 12px on eleven SAOC routes at 1280 and 390
+      description: computed font-size of every SAOC mono-face element is at least 12px on eleven SAOC routes plus /admin/login at 1280 and 390, except the logo lockup tagline, which must compute to exactly 11px at 0.22em
       command: node .agent/memory/project/specs/saoc-mono-floor/checks/gate-mono.mjs saoc
     - id: A7
-      description: NOS non-regression - mono-role element size, tracking and case unchanged against the pristine baseline on three NOS routes at 1280 and 390
+      description: NOS non-regression - computed size, tracking and case of every text-bearing element unchanged against a non-empty pristine baseline on three NOS routes at 1280 and 390
       command: node .agent/memory/project/specs/saoc-mono-floor/checks/gate-mono.mjs nos
     - id: A8
       description: lint is clean

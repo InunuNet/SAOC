@@ -1,7 +1,7 @@
 // Computed-size probe. Usage: node gate-mono.mjs <saoc|nos|record-nos>.
 //  saoc: every visible text element whose computed font-family is the SAOC mono face is >= 12px, on 11 SAOC routes at 1280 and 390.
-//  nos: for 3 NOS routes the sizes of mono-role elements (.font-mono, .mono, .mono-label, .eyebrow) equal the baseline recorded on the
-//       pristine origin/main build (nos-baseline.json).
+//  nos: for 3 NOS routes the computed font-size, letter-spacing and text-transform of EVERY text-bearing element equal the baseline recorded
+//       on the pristine origin/main build (nos-baseline.json). The baseline must be non-empty (at least MIN_BASELINE_PER_ROUTE per route and viewport).
 //  record-nos: writes that baseline. Refuses unless app, components and lib are identical to origin/main.
 import { execFileSync, spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
@@ -10,7 +10,8 @@ import { mkdirSync, openSync, readFileSync, writeFileSync, existsSync } from 'no
 const mode = process.argv[2];
 if (!['saoc', 'nos', 'record-nos'].includes(mode)) { console.error('usage: gate-mono.mjs <saoc|nos|record-nos>'); process.exit(2); }
 const BASELINE = '.agent/memory/project/specs/saoc-mono-floor/checks/nos-baseline.json';
-const SAOC_ROUTES = ['/', '/about', '/societies', '/judging', '/events', '/sponsors', '/contact', '/privacy', '/terms', '/refunds', '/constitution'];
+const SAOC_ROUTES = ['/', '/about', '/societies', '/judging', '/events', '/sponsors', '/contact', '/privacy', '/terms', '/refunds', '/constitution', '/admin/login'];
+const MIN_BASELINE_PER_ROUTE = 20;
 const NOS_ROUTES = ['/', '/faq', '/plan-your-visit'];
 const VPS = [{ name: '1280', width: 1280, height: 800, dsf: 1 }, { name: '390', width: 390, height: 844, dsf: 3 }];
 const PORT = Number(process.env.SAOC_MONO_PORT ?? 3081) + 1;
@@ -30,7 +31,6 @@ const check = (name, ok, detail = '') => { if (!ok) failures.push(`${name}${deta
 
 function collect(kind) {
   const out = [];
-  const role = '.font-mono, .mono, .mono-label, .eyebrow';
   for (const el of document.querySelectorAll('body *')) {
     const cs = getComputedStyle(el);
     if (cs.display === 'none' || cs.visibility === 'hidden') continue;
@@ -38,8 +38,7 @@ function collect(kind) {
     if (!own) continue;
     const mono = /JetBrains Mono|ui-monospace|Menlo|monospace/i.test(cs.fontFamily);
     if (kind === 'saoc' && !mono) continue;
-    if (kind === 'nos' && !el.matches(role)) continue;
-    out.push({ text: own.slice(0, 40), size: parseFloat(cs.fontSize), tracking: cs.letterSpacing, transform: cs.textTransform, mono });
+    out.push({ lockup: el.hasAttribute('data-lockup-tagline'), tag: el.tagName, text: own.slice(0, 40), size: parseFloat(cs.fontSize), tracking: cs.letterSpacing, transform: cs.textTransform, mono });
   }
   return out;
 }
@@ -64,13 +63,20 @@ async function run() {
         const found = await page.evaluate(collect, mode === 'saoc' ? 'saoc' : 'nos');
         if (mode === 'saoc') {
           check(`${tag} the page has mono-face text to probe`, found.length > 0 || route === '/constitution' || route === '/terms' || route === '/refunds' || route === '/privacy');
-          const small = found.filter((f) => f.size < 12);
+          const tagline = found.filter((f) => f.lockup);
+          if (route !== '/admin/login') check(`${tag} the logo lockup tagline is present to be checked`, tagline.length >= 1);
+          check(`${tag} the lockup tagline is exempt and computes to exactly 11px at 0.22em (Brad: never alter lockups)`, tagline.every((f) => f.size === 11 && Math.abs(parseFloat(f.tracking) - 2.42) < 0.02), JSON.stringify(tagline));
+          const small = found.filter((f) => f.size < 12 && !f.lockup);
           check(`${tag} every mono element is at least 12px`, small.length === 0, JSON.stringify(small.slice(0, 6)));
-        } else recorded[`${vp.name} ${route}`] = found;
+        } else {
+          check(`${tag} collected at least ${MIN_BASELINE_PER_ROUTE} text elements (a probe that collects nothing proves nothing)`, found.length >= MIN_BASELINE_PER_ROUTE, String(found.length));
+          recorded[`${vp.name} ${route}`] = found;
+        }
       }
       await ctx.close();
     }
     if (mode === 'record-nos') {
+      if (failures.length) throw new Error('refusing to write an empty or thin baseline');
       writeFileSync(BASELINE, JSON.stringify({ origin: execFileSync('git', ['rev-parse', 'origin/main'], { encoding: 'utf8' }).trim(), pristine: true, entries: recorded }, null, 1));
       console.log(`baseline written: ${BASELINE}`);
     } else if (mode === 'nos') {
@@ -79,12 +85,18 @@ async function run() {
       check('baseline was recorded on a pristine tree', base.pristine === true);
       for (const [key, before] of Object.entries(base.entries)) {
         const after = recorded[key] ?? [];
+        check(`[nos ${key}] baseline holds at least ${MIN_BASELINE_PER_ROUTE} elements`, before.length >= MIN_BASELINE_PER_ROUTE, String(before.length));
+        const used = new Set();
+        let matched = 0;
         for (const b of before) {
-          const a = after.find((x) => x.text === b.text);
-          if (!a) continue; // live Sanity copy may differ between runs; only matching elements are compared
-          check(`[nos ${key}] "${b.text}" size, tracking and case unchanged`, a.size === b.size && a.tracking === b.tracking && a.transform === b.transform, `${JSON.stringify(b)} -> ${JSON.stringify(a)}`);
+          const idx = after.findIndex((x, i) => !used.has(i) && x.tag === b.tag && x.text === b.text);
+          if (idx === -1) continue; // live Sanity copy may differ between runs; only matching elements are compared
+          used.add(idx);
+          matched += 1;
+          const a = after[idx];
+          check(`[nos ${key}] <${b.tag}> "${b.text}" size, tracking and case unchanged`, a.size === b.size && a.tracking === b.tracking && a.transform === b.transform, `${JSON.stringify(b)} -> ${JSON.stringify(a)}`);
         }
-        check(`[nos ${key}] some mono-role elements matched the baseline`, before.length === 0 || before.some((b) => after.some((x) => x.text === b.text)));
+        check(`[nos ${key}] at least 80% of baseline elements were matched and compared`, before.length > 0 && matched >= before.length * 0.8, `${matched}/${before.length}`);
       }
     }
   } finally { await browser.close(); }

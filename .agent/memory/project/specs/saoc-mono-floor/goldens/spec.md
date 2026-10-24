@@ -25,6 +25,17 @@ D5 No `.tsx`, no NOS file, no token rename. Do not touch tracking or case.
 
 Step 0, BEFORE any edit: build (A6 command) then `node .agent/memory/project/specs/saoc-mono-floor/checks/gate-mono.mjs record-nos`. It writes `checks/nos-baseline.json` and refuses on a modified tree. Commit the baseline with the change. Then make D1-D3, rebuild, run the gates.
 
+## 3b. QA amendments (Codex FAIL on #71, 2026-10-24)
+
+1. The NOS parity probe compares the computed font-size, letter-spacing and text-transform of EVERY text-bearing element on /, /faq and /plan-your-visit at 1280 and 390 (not only mono-role classes, which matched nothing on NOS and made the first baseline vacuous). The baseline must be non-empty: at least 20 elements per route and viewport, enforced when recording and when comparing, and at least 80% of baseline elements must be matched on comparison.
+2. The runtime probe also visits /admin/login (public, `font-mono text-[11px]`), since D4 put admin in scope.
+3. The static check no longer needs `font-mono` and the literal on one line: a sub-12px `text-[..]` literal counts when `font-mono` is within 400 characters in the same file. Runtime coverage (gate-mono.mjs) is the authority; the static check only has to make the floor selector complete.
+Dev must re-record the baseline from pristine origin/main (step 0) with the amended script.
+
+## 3c. Lockup tagline exemption (NOS Design ruling on #71, 2026-10-24)
+
+The SaocLockup tagline (`components/chrome/SaocLockup.tsx`, both sites: `font-mono ... text-[11px]`, tracking 0.22em) is part of the logo and Brad's rule is never to alter lockups, so it stays 11px / 0.22em. Mechanism: a `data-lockup-tagline` attribute on both tagline spans plus a one-line comment at each stating the exemption, and `:not([data-lockup-tagline])` appended to the floor selector in `app/globals.css`. Nothing else in SaocLockup.tsx changes (A2 checks the diff is comments and the attribute only). The runtime probe skips these elements for the 12px floor but asserts they compute to exactly 11px at 0.22em (2.42px) on every SAOC route that renders the lockup.
+
 ## 4. What the gates prove
 
 - static: tokens >= 12px, tracking and case rules intact, the floor rule exists and covers every sub-12px `font-mono` literal in the source, no NOS file changed.

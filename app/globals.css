@@ -302,7 +302,7 @@ h3.font-serif {
     [class*='text-[10px]'],
     [class*='text-[10.5px]'],
     [class*='text-[11px]']
-  ) {
+  ):not([data-lockup-tagline]) {
   font-size: 0.75rem;
 }
 
