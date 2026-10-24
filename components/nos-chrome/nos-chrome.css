@@ -56,13 +56,12 @@
 @keyframes nh-panel-in { from { opacity: 0; transform: translateY(-4px); } }
 .nh-mega-list li + li { border-top: 1px solid var(--nc-line); }
 .nh-mega-list a { min-height: 44px; align-content: center; }
-.nh-mega-list a:hover { background: var(--nc-gold); }
 .nh-mega-list a { display: grid; gap: 2px; padding: 9px 8px; margin-inline: -8px; border-radius: 10px; text-decoration: none; }
 .nh-leaf { font-size: 14.5px; font-weight: 700; line-height: 1.3; color: var(--nc-royal); }
 .nh-desc { font-size: 12.5px; line-height: 1.4; color: var(--nc-ink-500); }
 .nh-panel a[aria-current="page"] .nh-leaf, .nd-sub a[aria-current="page"] .nh-leaf { text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 2px; text-underline-offset: 5px; }
 .nh-mega-list a:focus-visible { outline: none; }
-.nh-mega-list a:focus-visible .nh-leaf { text-decoration: underline; text-decoration-color: var(--nc-royal); text-decoration-thickness: 2px; text-underline-offset: 5px; }
+.nh-mega-list a:hover .nh-leaf, .nh-mega-list a:focus-visible .nh-leaf { text-decoration: underline; text-decoration-color: var(--nc-royal); text-decoration-thickness: 2px; text-underline-offset: 5px; }
 
 /* The one primary action: Tickets. On the tickets page it is the current page, so it drops to outline. */
 .nh-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 24px; border-radius: 10px; background: var(--nc-royal); color: var(--nc-ground); font: 700 13px/1 var(--nc-sans); letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; white-space: nowrap; transition: background-color 200ms var(--nc-ease), color 200ms var(--nc-ease); }
