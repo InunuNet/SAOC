@@ -32,6 +32,8 @@ export type CheckinAttemptOutcome =
   | 'test_ticket'
   | 'unpaid'
   | 'already-checked-in'
+  | 'not_show_day'
+  | 'wrong_day'
   | 'malformed'
   | 'not-authorized'
   | 'infra-error';

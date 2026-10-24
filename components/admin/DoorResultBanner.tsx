@@ -3,6 +3,7 @@ import type { TicketType } from '@/types/index';
 export type CheckInResult =
   | {
       success: true;
+      firstAdmission: boolean;
       ticket: {
         attendeeName: string;
         ticketType: TicketType;

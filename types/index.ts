@@ -154,6 +154,7 @@ export interface Ticket {
   amount: number;
   purchasedAt: Timestamp | null;
   checkedInAt: Timestamp | null;
+  checkIns?: Record<string, Timestamp>;
   m_payment_id: string | null;
   pf_payment_id: string | null;
   // F2 (ticketing-foundation) — nullable because the pre-F2 legacy positions predate this

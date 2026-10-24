@@ -12,13 +12,27 @@ const require = createRequire(import.meta.url);
 const cases = JSON.parse(readFileSync(path.join(root, 'contracts/golden/door-reject-test-tickets/truth-table.json'), 'utf8'));
 const message = 'Test ticket — not valid for entry';
 const stamp = { seconds: 1, nanoseconds: 0 };
+// Keep #69's provenance and single-use regressions on a valid, deterministic show day.
+const today = '2027-09-24';
+const now = `${today}T10:00:00.000Z`;
+const showWindow = { startDate: new Date(`${today}T07:00:00.000Z`), endDate: new Date(`${today}T15:00:00.000Z`) };
 
 // Transpile real source in memory. Only named dependencies can load: no SDK, secrets,
 // process, network, dynamic imports, or application initialisation enter this sandbox.
 function loader({ testMode = true, db, session = { ok: true, decodedToken: { uid: 'staff' } }, events = [], audits = [] } = {}) {
   const cache = new Map();
   const stubs = {
-    'firebase-admin/firestore': { getFirestore: () => db, Timestamp: { now: () => stamp } },
+    'firebase-admin/firestore': { getFirestore: () => db, Timestamp: { now: () => stamp, fromDate: (date) => ({ seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0, toDate: () => new Date(date) }) } },
+    // Mock schedule dependencies; the real context and day policy still execute.
+    '@/sanity/lib/client': { client: { fetch: async () => [] } },
+    '@/sanity/queries': { ticketTypeScheduleTraitsQuery: 'fixture schedule traits' },
+    '@/lib/show-window-lookup': {
+      resolveShowWindowLookup: async () => () => showWindow,
+      computeShowDays: (window) => {
+        assert.equal(window, showWindow);
+        return [today];
+      },
+    },
     '@/lib/firebase-admin': { initAdmin: () => ({}) },
     '@/lib/ticketing-test-mode': { isTicketingTestMode: () => testMode },
     '@/lib/admin-auth': { getAdminSession: async () => session },
@@ -27,7 +41,7 @@ function loader({ testMode = true, db, session = { ok: true, decodedToken: { uid
     'next/server': { NextResponse: { json: (body, init) => Response.json(body, init) } },
     'react/jsx-runtime': require('react/jsx-runtime'),
   };
-  const allowed = new Set(['lib/checkin.ts', 'lib/checkin-test-ticket-guard.ts', 'lib/checkin-audit.ts', 'lib/tickets-constants.ts', 'lib/checkout-reservation.ts', 'lib/orders.ts', 'lib/payments/pending-hold.ts', 'app/api/admin/checkin/route.ts', 'components/admin/DoorResultBanner.tsx']);
+  const allowed = new Set(['lib/checkin.ts', 'lib/checkin-day-policy.ts', 'lib/checkin-context.ts', 'lib/checkin-test-ticket-guard.ts', 'lib/checkin-audit.ts', 'lib/tickets-constants.ts', 'lib/checkout-reservation.ts', 'lib/orders.ts', 'lib/payments/pending-hold.ts', 'app/api/admin/checkin/route.ts', 'components/admin/DoorResultBanner.tsx']);
   function load(relative) {
     assert.ok(allowed.has(relative), `Unapproved module: ${relative}`);
     if (cache.has(relative)) return cache.get(relative).exports;
@@ -45,6 +59,10 @@ function loader({ testMode = true, db, session = { ok: true, decodedToken: { uid
     if (relative === 'lib/checkin-test-ticket-guard.ts') {
       const decide = loadedModule.exports.decideTestTicketAdmission;
       loadedModule.exports.decideTestTicketAdmission = (input) => { events.push({ kind: 'guard', input }); return decide(input); };
+    }
+    if (relative === 'lib/checkin.ts') {
+      const checkIn = loadedModule.exports.checkInByBookingRef;
+      loadedModule.exports.checkInByBookingRef = (ref) => checkIn(ref, { now: () => new Date(now) });
     }
     return loadedModule.exports;
   }
@@ -116,7 +134,7 @@ async function scan(row, { status = 'paid', auth = true, found = true, wrongShow
     }),
   };
   const load = loader({ testMode: !row.input.liveMode, db, events, audits, session: auth ? { ok: true, decodedToken: { uid: 'staff' } } : { ok: false, reason: 'no-session' } });
-  data = { bookingRef: 'ref', showId: wrongShow ? 'other' : load('lib/tickets-constants.ts').NATIONAL_SHOW_ID, attendeeName: 'Guest', attendeeEmail: 'guest@example.invalid', ticketType: 'day-visitor', status, amount: 100, purchasedAt: stamp, checkedInAt: status === 'checked-in' ? stamp : null, orderId: 'order', m_payment_id: 'ref', pf_payment_id: null };
+  data = { bookingRef: 'ref', showId: wrongShow ? 'other' : load('lib/tickets-constants.ts').NATIONAL_SHOW_ID, attendeeName: 'Guest', attendeeEmail: 'guest@example.invalid', ticketType: 'day-visitor', chosenDay: today, status, amount: 100, purchasedAt: stamp, checkedInAt: status === 'checked-in' ? stamp : null, orderId: 'order', m_payment_id: 'ref', pf_payment_id: null };
   if (Object.hasOwn(row.input, 'issuedInTestMode')) data.issuedInTestMode = row.input.issuedInTestMode;
   const before = JSON.stringify(data);
   const response = await load('app/api/admin/checkin/route.ts').POST(new Request('http://fixture.invalid/api/admin/checkin', { method: 'POST', body: JSON.stringify({ bookingRef: 'ref', issuedInTestMode: false, liveMode: false }) }));
@@ -168,6 +186,7 @@ test('regressions: existing refusals and auth remain effective in both modes', a
       assert.equal(result.response.status, status);
       assert.equal(result.body.error, error);
       assert.equal(result.writes.length, 0);
+      assert.equal(result.audits.length, 1);
     }
   }
 });
