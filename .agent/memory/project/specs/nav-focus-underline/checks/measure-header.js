@@ -32,7 +32,11 @@
     barGap: bar ? px(cs(bar).columnGap) : null,
     brandLeft: brand ? r1(brand.getBoundingClientRect().left) : null,
     brandTop: brand ? r1(brand.getBoundingClientRect().top - hr.top) : null,
-    brandHeight: brand ? r1(brand.getBoundingClientRect().height) : null,
+    brandWidth: brand ? r1(brand.getBoundingClientRect().width) : null,
+    brandCenterOffset: brand && bar ? r1(brand.getBoundingClientRect().top + brand.getBoundingClientRect().height/2 - (bar.getBoundingClientRect().top + bar.getBoundingClientRect().height/2)) : null,
+    barContentWidth: bar ? r1(bar.clientWidth - px(cs(bar).paddingLeft) - px(cs(bar).paddingRight)) : null,
+    barRows: bar ? new Set([...bar.children].filter(shown).map((el) => Math.round(el.getBoundingClientRect().top))).size : null,
+    brandHeight: brand ? r1(brand.getBoundingClientRect().height) : null, // informational: heights differ by aspect once the widths are equal
     navSingleLine: items.length ? new Set(items.map((el) => Math.round(el.getBoundingClientRect().top))).size === 1 : null,
     itemHeightMin: items.length ? r1(Math.min(...items.map((el) => el.getBoundingClientRect().height))) : null,
     itemHeightMax: items.length ? r1(Math.max(...items.map((el) => el.getBoundingClientRect().height))) : null,

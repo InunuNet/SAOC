@@ -9,8 +9,9 @@ autonomy: high
 # SEQUENCING (binding): Footer.tsx is also rewritten by fix/saoc-societies-footer (PR #80: Partners column removed, WOSA under REG/NPO). Build on top of PR #80 (rebase onto it or
 # main once it merges) before touching the footer; put info@saoc.co.za directly under the FOOTER_REG span. footer-data.ts is released for the email constant (scope-f2.json).
 # ONE DEV implements F1 and F2 in one pass; the gate runs both contracts.
-# DECISION NEEDED (see hd1-header-parity.md, risk 1): the full-name SAOC lockup at 70px ink height is about 533px wide and cannot sit next to the full nav at 1260. The gate encodes the spec as
-# written and will fail rather than pass by shrinking anything. Dev: if the measurement fails, stop and report; do not reduce the ink height, the nav or the CTA to fit.
+# LOCKUP RULING (NOS Design, option (d), final): parity by ink WIDTH (405 at >= breakpoints.row, full row below), shared measured breakpoints full/row in header-geometry.json for both hosts.
+# OPEN BLOCKER: at the spec's numbers the SAOC full nav needs 1325.1px of bar and the container is 1320px, so BP-FULL has no passing value (breakpoints.provenance). 1440 is provisional; B15 fails
+# until NOS Design rules on the 5.1px (options A-D in hd1-header-parity.md). Dev: do not shrink the lockup, items, gaps or CTA to make it fit; report the measured overflow.
 # Hooks: both headers carry data-hd="bar|brand|nav|item|label|cta|menu" (SAOC also "search"); see hd1-header-parity.md.
 # POST-DEPLOY gates: B15-B17 need the measurements file and manifests written by the BrowserAgent run at the deployed commit
 # (.agent/memory/scratch/hd1-geometry-measurements.json: hosts.{saoc,nos}.<width> from checks/measure-header.js, crossSite.1440.{before,after}, routes, commitSha). They error until then.
@@ -40,7 +41,7 @@ assertions:
       description: SAOC header has the Join a society CTA to /societies, a labelled Menu button, the supplied lockup file uncropped and unfiltered, and search reachable in the drawer
       command: node .agent/memory/project/specs/nav-focus-underline/checks/check-header-spec.mjs saoc-header
     - id: B4
-      description: Breakpoints are identical, 1260 full nav and 699/700 phone, no 1240 left in the SAOC header
+      description: Shared breakpoints from header-geometry.json (full and row) on both hosts, covering media queries, the panel query and lockup source media, with no old 1240/1260/699 left
       command: node .agent/memory/project/specs/nav-focus-underline/checks/check-header-spec.mjs breakpoints
     - id: B5
       description: SAOC menu items have no hover or focus fill, the -8px bar slot, a 2px bar driven by aria-current, and a hover bar
@@ -78,7 +79,7 @@ assertions:
       timeout_seconds: 1300
       required: true
     - id: B15
-      description: Measured header parity on the deployed hosts at 2056/1440/1280/1024/390 (height, lockup ink, nav items, CTA box and right edge, MENU, active bar, content start, no overflow, cross-site click does not move the header), on the deployed commit
+      description: Measured header parity on the deployed hosts at 2056/1440/1280/1024/390 and full-1, full, row-1, row (bar height, lockup ink width and centring, one row, nav items, CTA box and right edge, MENU, active bar, content start, no overflow, cross-site click does not move the header), on the deployed commit
       command: node .agent/memory/project/specs/nav-focus-underline/checks/compare-geometry.mjs .agent/memory/scratch/hd1-geometry-measurements.json --feature f2
     - id: B16
       description: BrowserAgent on the SAOC host took the side-by-side shots at 1280 and 390 and the National Show click-through frame pair

@@ -79,12 +79,20 @@ if (mode === 'hooks') {
   const search = read('components/chrome/MobileMenu.tsx');
   if (!/search/i.test(search)) fail('components/chrome/MobileMenu.tsx: SAOC search moves into the drawer below 1260 and must be reachable there');
 } else if (mode === 'breakpoints') {
+  // Shared breakpoints live in goldens/header-geometry.json (breakpoints.full / .row) and apply to BOTH hosts together.
+  const { full, row } = JSON.parse(read(new URL('../goldens/header-geometry.json', import.meta.url).pathname)).breakpoints;
+  const need = (text, label, re) => { if (!re.test(text)) fail(`${label}: missing ${re}`); };
   const s = read(SAOC);
-  if (!/1260px/.test(s)) fail(`${SAOC}: full nav from 1260px (NOS .nh-nav breakpoint)`);
-  if (/1240|1239/.test(s)) fail(`${SAOC}: 1240/1239 breakpoint text remains (identical breakpoints, 1260)`);
-  if (!/699|700/.test(s)) fail(`${SAOC}: no 700/699 phone breakpoint (lockup row one, header scrolls)`);
+  need(s, SAOC, new RegExp(`min-\\[${full}px\\]`));
+  need(s, SAOC, new RegExp(`(min|max)-\\[(${row}|${row - 1})px\\]`));
+  if (/1240|1239|1260|699/.test(s) && !(row - 1 === 699 || full === 1260)) fail(`${SAOC}: an old breakpoint (1240/1239/1260/699) remains; use ${full} and ${row}`);
   const { raw } = cssRules();
-  if (!/@media \(min-width: 1260px\)/.test(raw) || !/@media \(max-width: 699px\)/.test(raw)) fail(`${NOS_CSS}: the 1260 / 699 media queries are the reference and must stay`);
+  need(raw, NOS_CSS, new RegExp(`@media \\(min-width: ${full}px\\)`));
+  need(raw, NOS_CSS, new RegExp(`@media \\(max-width: ${row - 1}px\\)`));
+  if (/min-width: 1260px|max-width: 699px/.test(raw) && full !== 1260 && row !== 700) fail(`${NOS_CSS}: the old 1260/699 media queries remain; both hosts move to ${full}/${row} together`);
+  need(read(NOS), NOS, new RegExp(`\\(min-width: ${full}px\\)`));
+  if (/699px/.test(read(NOS))) fail(`${NOS}: the lockup <picture> source media still uses 699px; follow breakpoints.row (${row - 1}px)`);
+  if (/\(min-width: 1260px\)/.test(read(NOS)) && full !== 1260) fail(`${NOS}: PANEL_BREAKPOINT_QUERY still 1260px`);
 } else if (mode === 'states-saoc') {
   const items = withHd(elements(SAOC), 'item');
   if (!items.length) fail(`${SAOC}: no data-hd="item" elements`);

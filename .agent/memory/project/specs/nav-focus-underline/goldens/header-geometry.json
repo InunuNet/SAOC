@@ -1,5 +1,5 @@
 {
-  "$comment": "HD-1 golden. Targets and tolerances for checks/compare-geometry.mjs; edit numbers here, never in the script. Measurements come from checks/measure-header.js run on both hosts at each width (scroll 0). 'when': full = viewport >= 1260, menu = 700..1259, phone = < 700, wide = >= 700, all. 'pair' = |saoc - nos| <= tol. 'same' = strings equal (fonts differ per host by design, so no family metric). 'target' = value within tol on every host that shows the element. 'hostOnly' restricts a rule to one host. A metric that is null on exactly one host fails; null on both is skipped. Rules carry 'feature': f2 (default) or f3 (HD-1b container); the CLI filters with --feature. 'sameAsMetric' compares two metrics on the same host within tol (content left edge vs lockup left edge).",
+  "$comment": "HD-1 golden. Targets and tolerances for checks/compare-geometry.mjs; edit numbers here, never in the script. Measurements come from checks/measure-header.js run on both hosts at each width (scroll 0). 'when': full = viewport >= breakpoints.full, menu = breakpoints.row .. full-1, phone = < breakpoints.row, wide = >= breakpoints.row, all. Breakpoints are shared by both hosts and are always changed together (NOS Design ruling (d)). The widths measured are `widths` plus full-1, full, row-1, row. 'pair' = |saoc - nos| <= tol. 'same' = strings equal (fonts differ per host by design, so no family metric). 'target' = value within tol on every host that shows the element. 'hostOnly' restricts a rule to one host. A metric that is null on exactly one host fails; null on both is skipped. Rules carry 'feature': f2 (default) or f3 (HD-1b container); the CLI filters with --feature. 'sameAsMetric' compares two metrics on the same host within tol (content left edge vs lockup left edge).",
   "widths": [
     2056,
     1440,
@@ -19,19 +19,6 @@
       "metric": "utilityBars",
       "when": "all",
       "each": 0
-    },
-    {
-      "id": "header-height-pair",
-      "metric": "headerHeight",
-      "when": "all",
-      "pair": 1
-    },
-    {
-      "id": "header-height-97",
-      "metric": "headerHeight",
-      "when": "full",
-      "target": 97,
-      "tol": 1
     },
     {
       "id": "header-position",
@@ -70,23 +57,62 @@
       "pair": 1
     },
     {
-      "id": "brand-top",
-      "metric": "brandTop",
-      "when": "all",
+      "id": "header-height-pair",
+      "metric": "headerHeight",
+      "when": "wide",
       "pair": 1
     },
     {
-      "id": "brand-ink-height-pair",
-      "metric": "brandHeight",
+      "id": "header-height-97",
+      "metric": "headerHeight",
+      "when": "wide",
+      "target": 97,
+      "tol": 1
+    },
+    {
+      "id": "brand-ink-width-pair",
+      "metric": "brandWidth",
       "when": "all",
       "pair": 2
     },
     {
-      "id": "brand-ink-height-70",
-      "metric": "brandHeight",
+      "id": "brand-ink-width-405",
+      "metric": "brandWidth",
       "when": "wide",
-      "target": 70,
+      "target": 405,
       "tol": 2
+    },
+    {
+      "id": "brand-fills-first-row",
+      "metric": "brandWidth",
+      "when": "phone",
+      "sameAsMetric": "barContentWidth",
+      "tol": 2
+    },
+    {
+      "id": "brand-centred-in-bar",
+      "metric": "brandCenterOffset",
+      "when": "all",
+      "target": 0,
+      "tol": 1
+    },
+    {
+      "id": "bar-single-row",
+      "metric": "barRows",
+      "when": "full",
+      "each": 1
+    },
+    {
+      "id": "bar-single-row-menu",
+      "metric": "barRows",
+      "when": "menu",
+      "each": 1
+    },
+    {
+      "id": "bar-two-rows-phone",
+      "metric": "barRows",
+      "when": "phone",
+      "each": 2
     },
     {
       "id": "nav-single-line",
@@ -306,5 +332,71 @@
       "when": "full",
       "feature": "f3"
     }
-  ]
+  ],
+  "breakpoints": {
+    "full": 1440,
+    "row": 780,
+    "provenance": "row: MEASURED. Chromium (playwright) laid out the repo's own Manrope and Karla woff2 files: SAOC CTA 'Join a society' 120.4 + 48 = 168.4, NOS 'Tickets' 61.3 + 48 = 109.3 (matches the live 109), MENU button 104. Row = 405 lockup + 24 + 168.4 + 24 + 104 = 725.4 content; content = W - 2*clamp(16px,2.5vw,32px) gives W >= 764; 780 adds a 16px margin for a classic scrollbar. full: PROVISIONAL, see below. SAOC nav at 600 14.5px/1 Manrope = items 497.7 + 7*18 padding + 6*2 gaps = 635.7; bar = 405 + 24 + 635.7 + 24 + 44 + 24 + 168.4 = 1325.1px, but the content box never exceeds 1320px (--nc-wide), so the full row cannot fit at the spec's numbers at ANY width (5.1px short). 1440 is NOS Design's start value; the gate will fail at it until the spec changes. Not confirmed by a build yet: the gate measures the real header at full-1, full, row-1 and row.",
+    "measuredWidths": {
+      "saocNavItems": [
+        [
+          "About",
+          42.3
+        ],
+        [
+          "Societies",
+          65.1
+        ],
+        [
+          "Judging & Awards",
+          120.9
+        ],
+        [
+          "Events",
+          47.2
+        ],
+        [
+          "National Show",
+          99.5
+        ],
+        [
+          "Sponsors",
+          65.6
+        ],
+        [
+          "Contact",
+          57.1
+        ]
+      ],
+      "nosNavItems": [
+        [
+          "Visit",
+          31.1
+        ],
+        [
+          "Programme",
+          79.3
+        ],
+        [
+          "Exhibit & trade",
+          106
+        ],
+        [
+          "Show sponsors",
+          103.1
+        ],
+        [
+          "Contact",
+          53.5
+        ]
+      ],
+      "saocCta": 168.4,
+      "nosCta": 109.3,
+      "menuButton": 104,
+      "saocNav": 635.7,
+      "saocFullRowContent": 1325.1,
+      "saocRowContent": 725.4
+    }
+  },
+  "derivedWidths": "breakpoints.full-1, full, row-1, row are added at run time"
 }
