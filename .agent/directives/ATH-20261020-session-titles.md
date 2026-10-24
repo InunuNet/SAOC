@@ -3,10 +3,10 @@ schema: athanor.directive/v1
 id: ATH-20261020-session-titles
 targets: [all]
 issued_at: '2026-10-20'
-status: active
+status: superseded
 priority: p2
 supersedes: ATH-20261017-floor-search-globs
-superseded_by: null
+superseded_by: ATH-20261020-local-manifest
 platforms: [all]
 summary: v3.8.38-41 — exclusion globs, contract reaping, session titles "<Project> · <mission>"
 verify: python3 execution/directives.py list

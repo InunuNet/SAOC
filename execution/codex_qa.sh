@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# codex_qa.sh — headless cross-model QA wrapper around `codex exec` (gpt-5.6-terra, pinned).
+# codex_qa.sh — headless cross-model QA wrapper around `codex exec` (gpt-6-sol, pinned).
+# --apex reviews on gpt-6-astra, for features declaring tier: apex. The mirror
+# for sessions running in Codex is claude_qa.sh (Claude reviews GPT).
 #
 # Usage:
-#   execution/codex_qa.sh <file_path_or_prompt>
-#   execution/codex_qa.sh          # prompt read from stdin if $1 omitted
+#   execution/codex_qa.sh [--apex] <file_path_or_prompt>
+#   execution/codex_qa.sh [--apex]  # prompt read from stdin if omitted
 #   cat prompt.txt | execution/codex_qa.sh
 #
 # Stdout contract: line 1 is exactly PASS or FAIL. On FAIL, findings/reason
@@ -28,6 +30,15 @@ fail_safe() {
     echo "FAIL: $1"
     exit 1
 }
+
+STANDARD_MODEL="gpt-6-sol"
+APEX_MODEL="gpt-6-astra"
+
+model="$STANDARD_MODEL"
+if [ "${1:-}" = "--apex" ]; then
+    model="$APEX_MODEL"
+    shift
+fi
 
 # --- Step 1: codex binary must be present -----------------------------------
 if ! command -v codex >/dev/null 2>&1; then
@@ -77,7 +88,7 @@ trap 'rm -f "$tmpfile"' EXIT
 # Effort is high: the gate's documented setting, and measured to catch defects
 # medium passes (GH #1438). CODEX_QA_EFFORT overrides for a quick sanity check.
 timeout "${CODEX_QA_TIMEOUT:-1200}" codex exec \
-    -m gpt-5.6-terra \
+    -m "$model" \
     -c model_reasoning_effort="${CODEX_QA_EFFORT:-high}" \
     -s read-only \
     -o "$tmpfile" \

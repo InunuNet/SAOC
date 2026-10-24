@@ -19,6 +19,7 @@ Usage:
 """
 import argparse
 import fcntl
+import importlib.util
 import json
 import os
 import re
@@ -320,6 +321,20 @@ def emit_compaction_hint(trigger: str, reason: str) -> None:
     except Exception:
         pass
     print("COMPACTION_HINT: " + json.dumps(payload))
+
+
+AUTOCOMPACT_DECIDER = Path(__file__).resolve().parent / "hooks" / "lib" / "autocompact_decider.py"
+
+
+def arm_autocompact(slug: str, mission_file) -> None:
+    """Write the one-shot flag the Stop hook consumes after a clean close-out. Never raises."""
+    try:
+        spec = importlib.util.spec_from_file_location("autocompact_decider", AUTOCOMPACT_DECIDER)
+        decider = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(decider)
+        decider.write_arm_flag(slug, mission_file)
+    except Exception:
+        pass
 
 
 # ── Subcommands ────────────────────────────────────────────────────────────────
@@ -1690,6 +1705,7 @@ def cmd_close_out(args):
         print(f"ERROR: wrap_mission.sh failed:\n{result.stderr}", file=sys.stderr)
         sys.exit(1)
     emit_compaction_hint("close_out", slug)
+    arm_autocompact(slug, args.mission)
     print("DONE: mission closed. Commit now.")
 
 

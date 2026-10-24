@@ -90,76 +90,6 @@ def wire_autonomy_hook(target_dir: str) -> None:
         print("  ok check_autonomy.sh already wired")
 
 
-AUTOCOMPACT_WINDOW_DEFAULT = 400000
-
-
-def seed_autocompact_window(target_dir: str, settings_path: str | None = None) -> None:
-    """Seed the auto-compact window as a SETTINGS KEY, not an env var (#1430).
-
-    The env var CLAUDE_CODE_AUTO_COMPACT_WINDOW sits at the top of the
-    auto-compact precedence chain (env var -> --autocompact flag ->
-    autoCompactWindow settings key -> model default), so setting it there
-    makes the /autocompact command inert: the CLI answers "is set and takes
-    precedence. Unset it to change this setting here." Those env keys are
-    stripped by the manifest retractions; this restores the same default
-    through the settings key, which holds a default while leaving
-    /autocompact free to override it interactively.
-
-    Documented as an INTEGER token count from 100000 to 1000000 -- a string
-    like "300k" is not the documented type ("500k" reads as 500 and clamps to
-    the minimum), so the value is written as a number.
-
-    Idempotent, and deliberately NON-clobbering: an operator who has already
-    chosen a window keeps it. Only a missing key is seeded.
-
-    settings_path exists for testability and defaults to the real location.
-    The autonomy floor denies writing ANY path matching */.claude/settings.json
-    -- throwaway sandbox fixtures included -- so without an injectable path
-    this function could not be exercised by a golden at all, and a settings
-    writer that cannot be tested is one that gets verified by reading it.
-    """
-    if settings_path is None:
-        settings_path = os.path.join(target_dir, ".claude", "settings.json")
-    if not os.path.exists(settings_path):
-        print("  warn settings.json not found — autoCompactWindow seed skipped")
-        return
-
-    try:
-        with open(settings_path) as f:
-            settings = json.load(f)
-    except Exception as e:
-        print(f"  warn settings.json parse error, autoCompactWindow seed skipped: {e}")
-        return
-
-    current = settings.get("autoCompactWindow")
-    # The default is a FLOOR, not just a seed. A project that already carried a
-    # lower value kept compacting early forever, because this only ever wrote
-    # the key when it was absent: mumbl-ai-f0 was observed compacting at 27%
-    # context on 2026-09-21 with the key already present at the old value.
-    # Raising the floor has to reach existing projects or it reaches nobody.
-    # A HIGHER value is the operator's own deliberate choice (/autocompact)
-    # and is never lowered.
-    if isinstance(current, (int, float)) and not isinstance(current, bool):
-        if current >= AUTOCOMPACT_WINDOW_DEFAULT:
-            print(f"  ok autoCompactWindow already {current!r} "
-                  f"(>= floor {AUTOCOMPACT_WINDOW_DEFAULT}) — left alone")
-            return
-        print(f"  raising autoCompactWindow {current!r} -> "
-              f"{AUTOCOMPACT_WINDOW_DEFAULT} (floor)")
-    elif current is not None:
-        print(f"  replacing non-numeric autoCompactWindow ({current!r}) -> "
-              f"{AUTOCOMPACT_WINDOW_DEFAULT}")
-
-    settings["autoCompactWindow"] = AUTOCOMPACT_WINDOW_DEFAULT
-    try:
-        with open(settings_path, "w") as f:
-            json.dump(settings, f, indent=2)
-    except Exception as e:
-        print(f"  warn autoCompactWindow seed write failed: {e}")
-        return
-    print(f"  ok seeded autoCompactWindow={AUTOCOMPACT_WINDOW_DEFAULT} (/autocompact can still override)")
-
-
 STATUSLINE_COMMAND = "python3 execution/statusline.py"
 
 
@@ -430,9 +360,6 @@ def main(target_dir: str, version: str) -> None:
 
     print("[Gap 4] Wiring check_autonomy.sh into PreToolUse hooks...")
     wire_autonomy_hook(target_dir)
-
-    print("[Gap 7] Seeding autoCompactWindow settings key (#1430)...")
-    seed_autocompact_window(target_dir)
 
     print("[Gap 8] Wiring project-scoped statusline...")
     wire_statusline(target_dir)

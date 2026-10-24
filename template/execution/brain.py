@@ -402,7 +402,7 @@ def write_reboot(summary: str, next_items: list = None, facts: list = None, do_n
 # later gate/handoff reads, and handoffs/ (handoffs.py SCRATCH_DIR) holds the
 # handoff artifacts 3.8.1's own hooks require — purging either caused false-red
 # gates and lost handoffs (GH #1403).
-SCRATCH_PURGE_EXEMPT = {"template_baselines.json", "compaction-hint.json", ".quota_status.json",
+SCRATCH_PURGE_EXEMPT = {"template_baselines.json", "compaction-hint.json", "autocompact-armed.json", "autocompact-route-a.json",".quota_status.json",
                         ".last_activity.json", "contract-results", "handoffs"}
 
 
@@ -824,6 +824,15 @@ def main():
                 do_not_touch=getattr(args, "do_not_touch", None),
                 closure_candidates=getattr(args, "closure_candidates", None),
                 force_reboot=getattr(args, "force_reboot", False))
+        # Billable projects: the summary becomes today's timesheet note and
+        # the operator sees the day's time (operator 2026-10-23). Silent
+        # otherwise; a timesheet failure never fails the wrap-up.
+        try:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            from timesheet import wrap_up_report
+            wrap_up_report(args.summary)
+        except Exception as e:  # noqa: BLE001
+            print(f"timesheet report skipped: {type(e).__name__}: {e}", file=sys.stderr)
     elif args.action == "last-session":
         last_session(args.quiet)
     elif args.action == "export":

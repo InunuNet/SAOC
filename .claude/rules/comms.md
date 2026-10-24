@@ -16,6 +16,13 @@ reading, and only the operator carrying it by hand got it to the right place.
 | queued ≠ delivered | a write is delivered when the recipient **replies**, never before |
 | keep it short | findings, decisions, warnings; working notes go in your own `.agent/memory/` |
 
+## Your inbox at boot
+
+Boot lists the unread messages addressed to this project or to `FLEET`
+(`execution/comms_inbox.py`). Read them with `python3 execution/comms_inbox.py show`,
+act on them or reply, then run `python3 execution/comms_inbox.py ack`. Until
+you ack, every boot lists them again.
+
 ## The one sanctioned cross-project write
 
 `scope.md` says nothing outside the project folder is written without
