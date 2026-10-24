@@ -19,7 +19,7 @@ import shutil
 import subprocess
 import sys
 
-from PIL import Image, ImageChops
+from PIL import Image
 
 PDF = "branding/SA Orchid Council/SA Orchid Council Logo Presentation.pdf"
 PAGE = "4"
@@ -59,8 +59,8 @@ def check():
     extract(out)
     a = Image.open(os.path.join(out, EMBLEM_OUT)).convert("RGBA")
     b = Image.open(os.path.join(SHIPPED_DIR, EMBLEM_OUT)).convert("RGBA")
-    same = a.size == b.size and ImageChops.difference(a, b).getbbox() is None
-    print("PASS" if same else "FAIL", EMBLEM_OUT, "pixel-identical RGBA", a.size)
+    same = a.size == b.size and a.mode == b.mode and a.tobytes() == b.tobytes()  # every RGBA byte, including RGB under alpha 0
+    print("PASS" if same else "FAIL", EMBLEM_OUT, "identical RGBA bytes", a.size)
     return 0 if same else 1
 
 

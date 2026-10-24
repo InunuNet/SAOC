@@ -11,6 +11,8 @@
 // fold); the custom image loader maps it to its pre-built WebP candidates.
 // =============================================================
 
+import { Fragment } from 'react';
+
 import { getImageProps } from 'next/image';
 import Link from 'next/link';
 
@@ -106,7 +108,14 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
               href={saocUrl('/')}
               testId="nf-saoc-lockup"
             />
-            <span className="nf-credit-reg">{FOOTER_REG}</span>
+            <span className="nf-credit-reg">
+              {FOOTER_REG.split(/\s{2,}/).map((part, i) => (
+                <Fragment key={part}>
+                  {i > 0 && ' '}
+                  <span className="nf-reg-item">{part}</span>
+                </Fragment>
+              ))}
+            </span>
           </div>
           {/* WOSA appears once in this footer: a Partner link under the credit (NOS Design FT4). */}
           <ul className={`nf-list ${FOOTER_RHYTHM.list}`}>

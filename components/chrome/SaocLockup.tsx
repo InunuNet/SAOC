@@ -239,24 +239,30 @@ function OfficialMonoLockup({
     <a
       href={href}
       data-testid={testId}
-      className={['block w-[244px] max-w-full [container-type:inline-size]', className ?? ''].join(' ')}
+      className={[
+        'block w-[207px] max-w-full [container-type:inline-size]',
+        className ?? '',
+      ].join(' ')}
     >
-      <span className="block">
+      <span className="flex w-full flex-col items-center">
         <span className="relative block w-full aspect-[768/490]">
-          <Image src={OFFICIAL_MONO_EMBLEM} alt="" fill sizes="244px" className="object-contain" priority={priority} />
+          <Image src={OFFICIAL_MONO_EMBLEM} alt="" fill sizes="207px" className="object-contain" priority={priority} />
         </span>
         <span
-          className={[lora.className, 'mt-[12px] block leading-[1.02] whitespace-nowrap'].join(' ')}
-          style={{ fontSize: '7.3cqw', letterSpacing: '-0.005em', ...solid }}
+          className={[lora.className, 'block leading-[1.02] whitespace-nowrap'].join(' ')}
+          style={{ marginTop: '4.92cqw', fontSize: '7.3cqw', letterSpacing: '-0.005em', ...solid }}
         >
           {WORDMARK}
         </span>
-        <span className="mt-[8px] block h-px w-[133px]" style={{ background: 'var(--lockup-rule-on-royal)' }} />
-        {/* Logo tagline: exempt from the global 12px mono floor (lockups are never altered). */}
+        <span
+          className="block h-px"
+          style={{ marginTop: '3.28cqw', width: '54.5cqw', background: 'var(--lockup-rule-on-royal)' }}
+        />
+        {/* Logo tagline: scales with the lockup (as wide as the wordmark); exempt from the 12px mono floor. */}
         <span
           data-lockup-tagline
-          className="mt-[9px] block font-mono font-medium uppercase text-[11px] leading-[1.3] whitespace-nowrap"
-          style={{ letterSpacing: '0.22em', ...solid }}
+          className="block font-mono font-medium uppercase leading-[1.3] whitespace-nowrap"
+          style={{ marginTop: '3.69cqw', fontSize: '4.06cqw', letterSpacing: '0.22em', ...solid }}
         >
           {TAGLINE}
         </span>
