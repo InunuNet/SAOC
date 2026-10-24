@@ -37,13 +37,24 @@ const REFUSAL_CODE_TO_OUTCOME: Record<CheckinRefusalCode, CheckinAttemptOutcome>
   test_ticket: 'test_ticket',
   unpaid: 'unpaid',
   'already-checked-in': 'already-checked-in',
+  not_show_day: 'not_show_day',
+  wrong_day: 'wrong_day',
 };
 
 export async function POST(request: Request) {
   const session = await getAdminSession();
   if (!session.ok) {
     const status = session.reason === 'no-session' || session.reason === 'invalid-session' ? 401 : 403;
-    return NextResponse.json({ error: status === 401 ? 'Unauthorized' : 'Forbidden' }, { status });
+    const error = status === 401 ? 'Unauthorized' : 'Forbidden';
+    const bookingRef = null;
+    const showId = null;
+    const outcome = 'not-authorized';
+    const result = await recordCheckinAttempt(createFirestoreCheckinAttemptsStore(), {
+      bookingRef, showId, orderId: null, outcome, refusalReason: error,
+      scannedByUid: null, now: new Date(),
+    });
+    if (!result.recorded) logAuditWriteFailure({ bookingRef, showId, outcome, error: result.error });
+    return NextResponse.json({ success: false, code: 'not-authorized', error }, { status });
   }
 
   const scannedByUid = session.decodedToken.uid;
@@ -78,7 +89,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('[admin/checkin] Failed to parse request body:', error);
     await audit('malformed', null, null, null, 'Invalid request body.');
-    return NextResponse.json({ success: false, error: 'Invalid request body.' }, { status: 400 });
+    return NextResponse.json({ success: false, code: 'bad-request', error: 'Invalid request body.' }, { status: 400 });
   }
 
   const bookingRef = typeof body.bookingRef === 'string' ? body.bookingRef.trim() : null;
@@ -101,7 +112,7 @@ export async function POST(request: Request) {
       console.error('[admin/checkin] Unexpected audit failure on infra-error path:', auditError);
     }
     return NextResponse.json(
-      { success: false, error: 'Check-in failed. Please try again.' },
+      { success: false, code: 'infra-error', error: 'Check-in failed. Please try again.' },
       { status: 500 }
     );
   }
@@ -128,5 +139,5 @@ export async function POST(request: Request) {
     result.ticket.orderId,
     null
   );
-  return NextResponse.json({ success: true, ticket: result.ticket });
+  return NextResponse.json({ success: true, ticket: result.ticket, firstAdmission: result.firstAdmission });
 }

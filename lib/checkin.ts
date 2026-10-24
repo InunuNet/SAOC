@@ -2,6 +2,8 @@ import { getFirestore, Timestamp, type Transaction } from 'firebase-admin/firest
 
 import { initAdmin } from '@/lib/firebase-admin';
 import { decideTestTicketAdmission } from '@/lib/checkin-test-ticket-guard';
+import { decideDayAdmission, sastDay } from '@/lib/checkin-day-policy';
+import { getCheckinContext, type CheckinContext } from '@/lib/checkin-context';
 import { isTicketingTestMode } from '@/lib/ticketing-test-mode';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 import type { Ticket, TicketStatus, TicketType } from '@/types/index';
@@ -29,10 +31,12 @@ export type CheckinRefusalCode =
   | 'wrong-show'
   | 'test_ticket'
   | 'unpaid'
-  | 'already-checked-in';
+  | 'already-checked-in'
+  | 'not_show_day'
+  | 'wrong_day';
 
 export type CheckinResult =
-  | { ok: true; ticket: Ticket }
+  | { ok: true; ticket: Ticket; firstAdmission: boolean }
   | { ok: false; code: CheckinRefusalCode; httpStatus: number; error: string };
 
 interface RefusalSpec {
@@ -51,6 +55,8 @@ const REFUSALS: Record<CheckinRefusalCode, RefusalSpec> = {
   test_ticket: { httpStatus: 403, error: 'Test ticket — not valid for entry' },
   unpaid: { httpStatus: 403, error: 'This ticket has not been paid for.' },
   'already-checked-in': { httpStatus: 409, error: 'Already checked in' },
+  not_show_day: { httpStatus: 403, error: 'The show is not open today.' },
+  wrong_day: { httpStatus: 403, error: 'This ticket has no valid selected day. Please contact the ticket desk.' },
 };
 
 function refuse(code: CheckinRefusalCode): CheckinResult {
@@ -69,13 +75,15 @@ function toTicket(id: string, data: FirebaseFirestore.DocumentData): Ticket {
     amount: data['amount'] as number,
     purchasedAt: (data['purchasedAt'] as Timestamp) ?? null,
     checkedInAt: (data['checkedInAt'] as Timestamp) ?? null,
+    ...(data['chosenDay'] !== undefined ? { chosenDay: data['chosenDay'] as string | null } : {}),
+    ...(data['checkIns'] !== undefined ? { checkIns: data['checkIns'] as Record<string, Timestamp> } : {}),
     m_payment_id: (data['m_payment_id'] as string) ?? null,
     pf_payment_id: (data['pf_payment_id'] as string) ?? null,
     orderId: (data['orderId'] as string) ?? null,
   };
 }
 
-async function admit(transaction: Transaction, bookingRef: string): Promise<CheckinResult> {
+async function admit(transaction: Transaction, bookingRef: string, now: Date, context: CheckinContext | null, contextError: unknown): Promise<CheckinResult> {
   const db = getFirestore(initAdmin());
   const snapshot = await transaction.get(
     db.collection(TICKETS_COLLECTION).where('bookingRef', '==', bookingRef).limit(1)
@@ -92,17 +100,33 @@ async function admit(transaction: Transaction, bookingRef: string): Promise<Chec
     liveMode: !isTicketingTestMode(),
   }) === 'reject_test_ticket') return refuse('test_ticket');
 
-  // Ordered before the paid check on purpose: a checked-in ticket is by definition no
-  // longer 'paid', and door staff must be told what actually happened. The existing
-  // checkedInAt is the audit record of when that person walked in — never overwritten.
-  if ((data['status'] as TicketStatus) === 'checked-in') return refuse('already-checked-in');
+  if (contextError) throw contextError;
+  if (!context) throw new Error('Check-in context unavailable');
+  const firstStamp = data['checkedInAt'];
+  const firstDate = firstStamp && typeof firstStamp.toDate === 'function' ? firstStamp.toDate() : null;
+  const decision = decideDayAdmission({
+    ticket: {
+      ticketType: data['ticketType'], status: data['status'], chosenDay: data['chosenDay'],
+      checkIns: data['checkIns'], checkedInAt: firstDate,
+    },
+    now, window: context.window,
+    requiresDaySelection: context.daySelectionTypes.includes(data['ticketType'] as string),
+  });
+  if (!decision.ok) return decision;
 
-  if ((data['status'] as TicketStatus) !== 'paid') return refuse('unpaid');
+  const checkedInAt = firstDate && Number.isFinite(firstDate.getTime()) ? firstStamp as Timestamp : Timestamp.fromDate(now);
+  const previous = data['checkIns'];
+  const checkIns: Record<string, Timestamp> = previous && typeof previous === 'object' && !Array.isArray(previous)
+    ? { ...previous } : {};
+  if (firstDate && Number.isFinite(firstDate.getTime())) {
+    const firstDay = sastDay(firstDate);
+    if (!Object.prototype.hasOwnProperty.call(checkIns, firstDay)) checkIns[firstDay] = checkedInAt;
+  }
+  checkIns[decision.day] = Timestamp.fromDate(now);
+  transaction.update(doc.ref, { status: 'checked-in', checkedInAt, checkIns });
 
-  const checkedInAt = Timestamp.now();
-  transaction.update(doc.ref, { status: 'checked-in', checkedInAt });
-
-  return { ok: true, ticket: { ...toTicket(doc.id, data), status: 'checked-in', checkedInAt } };
+  return { ok: true, firstAdmission: decision.firstAdmission,
+    ticket: { ...toTicket(doc.id, data), status: 'checked-in', checkedInAt, checkIns } };
 }
 
 /**
@@ -112,11 +136,22 @@ async function admit(transaction: Transaction, bookingRef: string): Promise<Chec
  * without touching the winner's timestamp. No network calls other than Firestore happen
  * inside the transaction — Firestore retries the body.
  */
-export async function checkInByBookingRef(bookingRef: unknown): Promise<CheckinResult> {
+export async function checkInByBookingRef(
+  bookingRef: unknown,
+  deps?: { now?: () => Date; getContext?: (now: Date) => Promise<CheckinContext> }
+): Promise<CheckinResult> {
   if (typeof bookingRef !== 'string' || bookingRef.trim().length === 0) {
     return refuse('bad-request');
   }
 
+  const now = deps?.now?.() ?? new Date();
+  let context: CheckinContext | null = null;
+  let contextError: unknown = null;
+  try {
+    context = await (deps?.getContext ?? getCheckinContext)(now);
+  } catch (error) {
+    contextError = error;
+  }
   const db = getFirestore(initAdmin());
-  return db.runTransaction((transaction) => admit(transaction, bookingRef.trim()));
+  return db.runTransaction((transaction) => admit(transaction, bookingRef.trim(), now, context, contextError));
 }

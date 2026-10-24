@@ -98,7 +98,7 @@ export function DoorScannerClient({ initialCheckedInCount }: DoorScannerClientPr
     setResult(data);
     pauseScanning();
     if (data.success) {
-      setCheckedInCount((count) => (count === null ? count : count + 1));
+      if (data.firstAdmission) setCheckedInCount((count) => (count === null ? count : count + 1));
       dismissTimerRef.current = setTimeout(() => {
         dismissTimerRef.current = null;
         setResult(null);
