@@ -82,12 +82,6 @@ export type HeroImage = {
   alt: string;
 };
 
-export type Partner = {
-  name: string;
-  url?: string;
-  logoUrl?: string;
-};
-
 export type Province = {
   code: string;
   name: string;

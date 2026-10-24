@@ -2,15 +2,15 @@
 
 import { useMemo } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { Search } from 'lucide-react';
 
-import { SocietyCard } from '@/components/societies';
+import { SocietiesGrid } from '@/components/societies';
 import type { SanitySociety } from '@/components/societies';
+import { provinceCounts } from '@/lib/societies-view';
 import type { Province } from '@/types';
 
-// The "All" chip is a UI affordance, not a province document — it is synthesised here
-// so no editor can delete it and break filtering.
+// The search string lives here once: it is both the placeholder and the accessible name.
 const SEARCH_PLACEHOLDER = 'Search by name or region…';
-const ALL_CHIP: Province = { code: 'ALL', name: 'All provinces' };
 
 export interface SocietiesClientProps {
   societies: SanitySociety[];
@@ -37,6 +37,8 @@ export function SocietiesClient({ societies, provinces }: SocietiesClientProps) 
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
 
+  const counts = useMemo(() => provinceCounts(societies, provinces), [societies, provinces]);
+
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     return societies.filter((s) => {
@@ -51,54 +53,61 @@ export function SocietiesClient({ societies, provinces }: SocietiesClientProps) 
 
   return (
     <div className="space-y-8">
-      {/* Search input */}
-      <div className="space-y-1.5">
-        <label htmlFor="societies-search" className="block font-mono text-[11px] tracking-[0.16em] text-muted">
-          {SEARCH_PLACEHOLDER}
-        </label>
-        <input
-          id="societies-search"
-          type="search"
-          value={q}
-          onChange={(e) => setParam('q', e.target.value)}
-          placeholder={SEARCH_PLACEHOLDER}
-          className="w-full max-w-md rounded-sm border border-muted bg-parchment px-4 py-2.5 font-sans text-[16px] text-ink placeholder:text-muted outline-none focus:border-ink/40"
-        />
+      {/* One filters row: province chips left, search right (golden .filters). */}
+      <div className="flex flex-wrap items-center justify-between gap-5 border-b border-rule pb-6">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by province">
+          {[ALL_CHIP, ...provinces].map((p) => {
+            const active = province === p.code;
+            const count = counts[p.code] ?? 0;
+            return (
+              <button
+                key={p.code}
+                type="button"
+                onClick={() => setParam('province', p.code)}
+                aria-pressed={active}
+                aria-label={`${p.name}, ${count}`}
+                className={
+                  active
+                    ? 'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-primary bg-primary px-3.5 py-1.5 font-sans text-[14px] text-ivory transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2'
+                    : 'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-rule bg-parchment px-3.5 py-1.5 font-sans text-[14px] text-ink transition-colors duration-150 hover:border-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2'
+                }
+              >
+                {/* Full name from 481px up, abbreviation at 480px and below; the accessible name
+                    (aria-label) is the full name and count at every width. */}
+                <span aria-hidden="true" className="min-[481px]:hidden">
+                  {p.code === 'ALL' ? 'All' : p.code}
+                </span>
+                <span aria-hidden="true" className="hidden min-[481px]:inline">
+                  {p.name}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={`font-mono text-[10.5px] ${active ? 'opacity-85' : 'opacity-70'}`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex min-h-11 min-w-[260px] items-center gap-2 rounded-sm border border-rule bg-parchment px-3 text-muted focus-within:outline-2 focus-within:outline-solid focus-within:outline-primary focus-within:outline-offset-2">
+          <Search size={16} aria-hidden />
+          <input
+            id="societies-search"
+            type="search"
+            value={q}
+            onChange={(e) => setParam('q', e.target.value)}
+            placeholder={SEARCH_PLACEHOLDER}
+            aria-label={SEARCH_PLACEHOLDER}
+            className="min-w-0 flex-1 border-0 bg-transparent py-2 font-sans text-[16px] text-ink placeholder:text-muted outline-none"
+          />
+        </div>
       </div>
 
       <p role="status" aria-live="polite" className="sr-only">
         {filtered.length} {filtered.length === 1 ? 'society' : 'societies'}
       </p>
-
-      {/* Province chips */}
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by province">
-        {[ALL_CHIP, ...provinces].map((p) => {
-          const active = province === p.code;
-          return (
-            <button
-              key={p.code}
-              type="button"
-              onClick={() => setParam('province', p.code)}
-              aria-pressed={active}
-              aria-label={p.name}
-              className={
-                active
-                  ? 'inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-ink bg-ink px-3.5 py-1.5 font-mono text-[11px] tracking-[0.16em] text-ivory'
-                  : 'inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-rule bg-parchment px-3.5 py-1.5 font-mono text-[11px] tracking-[0.16em] text-muted hover:border-ink/40'
-              }
-            >
-              {/* Full name from 481px up, abbreviation at 480px and below; the accessible name
-                  (aria-label) is the full name at every width. */}
-              <span aria-hidden="true" className="min-[481px]:hidden">
-                {p.code === 'ALL' ? 'All' : p.code}
-              </span>
-              <span aria-hidden="true" className="hidden min-[481px]:inline">
-                {p.name}
-              </span>
-            </button>
-          );
-        })}
-      </div>
 
       {/* Results */}
       {filtered.length === 0 ? (
@@ -113,13 +122,13 @@ export function SocietiesClient({ societies, provinces }: SocietiesClientProps) 
               pending confirmation from each society.
             </p>
           ) : null}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((s) => (
-              <SocietyCard key={s._id} society={s} />
-            ))}
-          </div>
+          <SocietiesGrid societies={filtered} />
         </div>
       )}
     </div>
   );
 }
+
+// The "All" chip is a UI affordance, not a province document: it is synthesised here so no editor
+// can delete it and break filtering. Declared below the component, read only at render.
+const ALL_CHIP: Province = { code: 'ALL', name: 'All provinces' };

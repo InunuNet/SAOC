@@ -122,7 +122,7 @@ export default async function SocietiesPage() {
             <PlaceholderMarker />
           </div>
         )}
-        <Suspense fallback={<SocietiesFallback count={societies.length} />}>
+        <Suspense fallback={<SocietiesFallback societies={listed} />}>
           <SocietiesClient societies={listed} provinces={provinceChips} />
         </Suspense>
       </div>
