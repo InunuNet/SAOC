@@ -225,6 +225,8 @@ Phase D2 (Stripe SA payment gateway) and D4 (ticket buy flow) are implemented bu
    launch, re-issue any legitimate pre-launch tickets (for example comps), since older tickets
    are refused at the door in live mode. Verify one sandbox ticket is refused at the door. See
    [docs/door-reject-test-tickets.md](door-reject-test-tickets.md).
+7. Confirm the active show's dates in Sanity match the real show days before opening; the door
+   refuses every ticket outside those dates. See [docs/door-day-aware.md](door-day-aware.md).
 
 ---
 
