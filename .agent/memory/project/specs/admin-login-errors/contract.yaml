@@ -10,7 +10,7 @@ exclusions:
   - item: 'self-signup, lib/admin-auth.ts gating, app/api/admin/session, any Firebase or Firestore write'
     reason: 'Out of scope per SAOC; A4 enforces the diff scope.'
   - item: 'new visual design, colours or tokens for the Forgot control'
-    reason: 'docs/rules/no-invention.md; A3 fails any class token not already in the login directory at origin/main.'
+    reason: 'docs/rules/no-invention.md; A3 fails any class token not already used in app/ or components/ at origin/main. Treatments reuse inline-link and TicketFieldAlert (NOS Design ruling on #73).'
 features:
   - id: F1
     name: Plain error mapping, no raw Firebase text, Forgot password reset on /admin/login
@@ -29,7 +29,7 @@ assertions:
       description: unit tests on every mapped code (six codes return one identical string, too-many-requests, network, default), hostile inputs including an Error whose message starts with Firebase never leak, and the reset returns identical text for success and every rejection incl. user-not-found with a mocked send, prompting on empty email without calling it
       command: pnpm exec tsx .agent/memory/project/specs/admin-login-errors/checks/unit.mjs
     - id: A3
-      description: static checks - no err.message or Firebase literal reaching setError, catch uses the mapper, module has no firebase import, Forgot control and status region present, copy strings each defined once, OAuth and session literals intact, no new Tailwind class tokens
+      description: static checks - no err.message or Firebase literal reaching setError, catch uses the mapper, module has no firebase import, Forgot control is type=button with inline-link, errors use the shared TicketFieldAlert, status region present, copy strings each defined once, OAuth and session literals intact, no class token unused on origin/main and no hex or rgb
       command: node .agent/memory/project/specs/admin-login-errors/checks/check-static.mjs
     - id: A4
       description: diff limited to the login page and fields, the new module, e2e, docs and this spec
@@ -38,7 +38,7 @@ assertions:
       description: production build passes
       command: bash .agent/memory/project/specs/admin-login-errors/checks/build.sh
     - id: A6
-      description: on the A5 build at 1280 and 390 - Forgot control visible and 44px tall, empty-email prompt, identical reset text for success and user-not-found, invalid credential shows the plain copy, no raw Firebase text, no unmocked external call, screenshots written to .tmp/sandbox/admin-login-gate
+      description: on the A5 build at 1280 and 390 - Forgot control type=button, underlined, >=44px tall by padding, 0-8px below and right-aligned with the password field, focus ring; empty email gives an inline role=alert on Email with focus on Email; reset success role=status identical to user-not-found; Enter in password submits sign-in once; sign-in error is role=alert with glyph, #9B2C2C and left rule, focus on it; status and error differ; no raw Firebase text; no unmocked external call; screenshots in .tmp/sandbox/admin-login-gate
       command: node .agent/memory/project/specs/admin-login-errors/checks/gate-browser.mjs
     - id: A7
       description: CI full e2e step is green (Sanity env exported or 6 NOS tests fail on env)

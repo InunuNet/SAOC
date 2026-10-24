@@ -35,19 +35,37 @@ calls in the page. `app/admin/login/page.tsx` keeps its OAuthProvider literals a
 - `handleSubmit` catch: `setError(passwordSignInErrorMessage(err))`. Keep the `console.error` with code. No `.message`
   access anywhere in the file.
 - Add `notice` state and `handleForgotPassword`: clears `error`, calls
-  `requestPasswordReset(email, (e) => sendPasswordResetEmail(getAuth(getFirebaseApp()), e))`. On `prompt`: `setError(message)`,
+  `requestPasswordReset(email, (e) => sendPasswordResetEmail(getAuth(getFirebaseApp()), e))`. On `prompt`: `setEmailError(message)`,
   `setNotice('')`. On `sent`: `setNotice(message)`, `setError('')`. `handleSubmit` and the federated handler clear `notice`.
 - Import `sendPasswordResetEmail` from `firebase/auth`.
 
-## `app/admin/login/LoginFormFields.tsx` (presentational only)
+## `app/admin/login/LoginFormFields.tsx` (presentational only) - amended after NOS Design FAIL of #73 (33/40)
 
-- New props `notice: string`, `onForgotPassword: () => void`.
-- A `type="button"` control labelled exactly `Forgot password?`, `data-testid="admin-forgot-password"`, between the
-  password field and the alert slot, `disabled` with the form, at least 44px tall.
-- `notice` renders in a `role="status"` paragraph using the SAME class string as the existing `role="alert"` box.
-- Styling: class tokens already present in the login directory at origin/main only (A3 enforces: every class token on an
-  added line already exists in the baseline). No new colours, sizes or tokens (docs/rules/no-invention.md). The
-  design/design_handoff_saoc handoff adds nothing for this control.
+Rulings, quoted from NOS Design via team-lead:
+- Fix 1: "Forgot password?" goes directly under the password field, right-aligned, 8px gap, in the site's existing inline link
+  style (the underline treatment on 'Wild Orchids of Southern Africa' in the footer). No new style. Hit area >= 44px tall via
+  padding, not font size. Visible focus ring. A `<button type="button">` with link styling, so Enter in password still submits.
+- Fix 2: the error and the success must differ. Error: the existing field-alert treatment (#9B2C2C text, warning glyph, left
+  rule), role="alert", focus moved to it. Reset sent: keep the neutral box, role="status". No new colours or tokens.
+- Empty email on reset: an inline error on the Email field with the SAOC-approved string, focus on Email.
+
+Implementation:
+- Props: `notice: string`, `emailError: string`, `onForgotPassword: () => void`; page.tsx owns focus (ref or id focus).
+- Forgot control: `type="button"`, `data-testid="admin-forgot-password"`, label exactly `Forgot password?`, class `inline-link`
+  (app/globals.css, the footer's treatment: `components/home/MissionBlock.tsx`) plus padding (e.g. py-3) for a >= 44px box
+  and the page's existing `focus-visible:outline ...` ring tokens. Inside the password block, right-aligned (`flex justify-end`),
+  top of the control box 0-8px below the input bottom (mind the form's `space-y-5`; place it inside the password block).
+  Disabled with the form. Enter in #password must still submit (no preventing default, button not type=submit).
+- Sign-in error: the shared alert `TicketFieldAlert` from `components/tickets/TicketFormField.tsx` (SAOC per-field errors, #33
+  rFE; ALERT_CLASS = flex gap-2 border-l-2 border-error ...). Do not edit that component. It is not focusable, so wrap it in an
+  element with `tabIndex={-1}` and focus the wrapper after setting the error (the alert is inside it). Replaces the old bone box.
+- Empty-email prompt: `TicketFieldAlert` directly under the Email input with an id, `aria-invalid` on #email,
+  `aria-describedby` to that id, and focus moved to #email. Cleared on the next reset, sign-in attempt or edit.
+- In-flight guard (Codex finding on page.tsx): `handleForgotPassword` returns early while a reset is pending (state or ref), and the
+  control is `disabled` while pending, so a double click sends exactly one request. Re-enabled when the send settles.
+- Reset sent: keep the existing neutral bone box, `role="status"`, no glyph, not error-coloured.
+- Class tokens: only tokens already used somewhere in app/ or components/ at origin/main (A3 enforces; `inline-link` allowed). No
+  hex or rgb values, no globals.css change.
 
 ## Copy (goldens/copy.json is the source of truth)
 

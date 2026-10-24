@@ -11,7 +11,7 @@ const ALLOWED = [
   /^\.agent\/memory\/project\/specs\/admin-login-errors\//,
   /^\.agent\/memory\/(scratch|project\/(learned|backlog))/,
 ];
-const FORBIDDEN = [/^lib\/admin-auth\.ts$/, /^app\/api\/admin\//, /^CLAUDE\.md$/, /^apphosting\.yaml$/, /^package\.json$/, /^pnpm-lock\.yaml$/, /^firestore\.rules$/, /^firebase\.json$/, /^sanity\//, /^app\/globals\.css$/];
+const FORBIDDEN = [/^lib\/admin-auth\.ts$/, /^app\/api\/admin\//, /^CLAUDE\.md$/, /^apphosting\.yaml$/, /^package\.json$/, /^pnpm-lock\.yaml$/, /^firestore\.rules$/, /^firebase\.json$/, /^sanity\//, /^app\/globals\.css$/, /^components\//];
 const bad = [...changed].filter((f) => FORBIDDEN.some((r) => r.test(f)) || !ALLOWED.some((r) => r.test(f)));
 if (bad.length) { console.error(`out-of-scope changes:\n${bad.join('\n')}`); process.exit(1); }
 console.log(`diff scope ok (${changed.size} files)`);

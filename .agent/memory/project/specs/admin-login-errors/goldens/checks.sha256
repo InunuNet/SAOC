@@ -1,7 +1,7 @@
-294f61c182fabed6eec6c95867a1319d4866721e4369b055bb3405807a8dce81  .agent/memory/project/specs/admin-login-errors/goldens/spec.md
+395e454719422727fa5f1af31e3186929b0ac0af5c4c14214068eef4e5901f39  .agent/memory/project/specs/admin-login-errors/goldens/spec.md
 262060ab1f4e70ec9fc912ab6d59454bbb8748e95cabdfed301501d1504b8343  .agent/memory/project/specs/admin-login-errors/goldens/copy.json
 ab53a9629491632f7aa0dc5fb85a56a854fc188630e3712d506aae094f18b124  .agent/memory/project/specs/admin-login-errors/checks/unit.mjs
-a87f653caa9f26432745799a114ff2f640aaf35ebf4c0c00ecc3a147f0b426bc  .agent/memory/project/specs/admin-login-errors/checks/check-static.mjs
-a1b007552a7593354e2bfceb02e3bab221a3d24c5c1e590d20d56ea7dce62800  .agent/memory/project/specs/admin-login-errors/checks/check-diff-scope.mjs
+75db124c70da1c8c288b29487c1f7222d3dc6e8990e7717e0833634bc3b86831  .agent/memory/project/specs/admin-login-errors/checks/check-static.mjs
+40b132a1e11443557cb6dafb59a87cf82ce8278ba602f4e9fd93eda1864363d5  .agent/memory/project/specs/admin-login-errors/checks/check-diff-scope.mjs
 9e661a8b8edb4ecdfd836cb1be2af841b8315be9ed332336b76d34527d35502c  .agent/memory/project/specs/admin-login-errors/checks/build.sh
-767f432734f82d48ace61a64d8392ed990aacd4ad2b35bd37d21bd01dc8c9ae3  .agent/memory/project/specs/admin-login-errors/checks/gate-browser.mjs
+98c0f967500cea4ed2369a0309be20947d853f8c734b7d5c59f426bd822157e1  .agent/memory/project/specs/admin-login-errors/checks/gate-browser.mjs
