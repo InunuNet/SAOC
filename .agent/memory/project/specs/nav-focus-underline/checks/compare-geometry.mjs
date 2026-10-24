@@ -63,7 +63,7 @@ function baseline() {
     const content = Math.min(w - 32, 1320);
     const make = () => ({
       utilityBars: 0, headerHeight: wide ? 97 : 110, headerPosition: wide ? 'sticky' : 'relative', barMaxWidth: full ? 1384 : null,
-      barPaddingTop: 13, barPaddingLeft: 32, barGap: wide ? 24 : 12, brandLeft: 361, brandWidth: Math.min(content, 405), brandWidthBound: Math.min(content, 405), brandCenterOffset: 0,
+      barPaddingTop: 13, barPaddingLeft: 32, barGap: wide ? 24 : 12, brandLeft: 361, brandWidth: Math.min(content, 405), brandWidthBound: Math.min(content, 405), brandCenterOffset: 0, brandRowCenterOffset: wide ? null : 0,
       gapBrandNav: full ? 24 : null, gapNavSearch: null, gapSearchCta: null, gapNavCta: full ? 12 : null,
       barContentWidth: content, barRows: wide ? 1 : 2,
       navSingleLine: full ? true : null, itemHeightMin: full ? 44 : null, itemHeightMax: full ? 44 : null,
@@ -105,6 +105,8 @@ function selftest() {
   expect('CTA right edge off by 5', (m) => { m.hosts.saoc[1280].ctaRight = 1695; }, 'cta-right-edge');
   expect('nav item 24 tall', (m) => { m.hosts.saoc[1440].itemHeightMin = 24; }, 'item-height-44');
   expect('lockup ink 380 wide', (m) => { m.hosts.saoc[2056].brandWidth = 380; }, 'brand-ink-width-pair');
+  expect('phone lockup off the first-row centre', (m) => { m.hosts.saoc[390].brandRowCenterOffset = 9; }, 'brand-centred-in-first-row');
+  expect('phone band is not judged by the whole-bar centre', (m) => { m.hosts.saoc[390].brandCenterOffset = -26; }, null);
   expect('lockup not centred', (m) => { m.hosts.saoc[1440].brandCenterOffset = 8; }, 'brand-centred-in-bar');
   expect('lockup short of the phone row', (m) => { m.hosts.saoc[390].brandWidth = 300; }, 'brand-width-capped');
   expect('lockup grows past 405 at 760', (m) => { m.hosts.nos[760].brandWidth = 728; }, 'brand-width-capped');
@@ -139,7 +141,7 @@ else if (arg) {
   const failures = compare(m, feature);
   const head = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   if (m.commitSha !== head) failures.push(`commitSha ${m.commitSha} is not HEAD ${head} (measurements must be taken on the deployed commit)`);
-  if (!m.routes?.saoc || !m.routes?.nos) failures.push('routes.saoc and routes.nos must name the pages measured (a page whose h1 is left-aligned, with a current nav item)');
+  for (const k of ['saoc', 'nos', 'activeBarSaoc', 'activeBarNos']) if (m.routes?.[k] !== golden.routes[k]) failures.push(`routes.${k} must be ${golden.routes[k]} (goldens/header-geometry.json routes), got ${m.routes?.[k]}`);
   if (failures.length) { console.error(`FAIL\n- ${failures.join('\n- ')}`); process.exit(1); }
   console.log(`header geometry parity holds (${feature})`);
 } else { console.error('usage: compare-geometry.mjs <measurements.json> [--feature f2|f3] | --selftest'); process.exit(2); }

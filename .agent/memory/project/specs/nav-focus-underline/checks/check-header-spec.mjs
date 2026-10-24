@@ -1,5 +1,5 @@
 // nav-focus-underline HD-1 -- static checks that the two headers share one structure. Run from the project root: node <this file> <mode>
-// Modes: menu-border | drawer-search | hooks | saoc-header | breakpoints | states-saoc | states-nos | nos-values | banner-footer
+// Modes: e2e-breakpoints | menu-border | drawer-search | hooks | saoc-header | breakpoints | states-saoc | states-nos | nos-values | banner-footer
 // The measured parity (checks/compare-geometry.mjs) is the real gate; these catch what a measurement cannot name.
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
@@ -62,6 +62,18 @@ if (mode === 'hooks') {
   }
   if (!withHd(s, 'search').length) fail(`${SAOC}: needs data-hd="search" on the search button`);
   if (withHd(n, 'label').length < 3) fail(`${NOS}: trigger, plain links and Contact each need a data-hd="label" span (the bar slot); found ${withHd(n, 'label').length}`);
+} else if (mode === 'e2e-breakpoints') {
+  // The two NOS e2e specs hard-coded the old 1260 panel breakpoint; they must follow the shared breakpoints (full 1384, row 780).
+  const { full, row } = JSON.parse(read(new URL('../goldens/header-geometry.json', import.meta.url).pathname)).breakpoints;
+  const layout = read('e2e/nos-header-layout.spec.ts');
+  const cta = read('e2e/nos-header-brand-and-cta.spec.ts');
+  for (const [name, text] of [['e2e/nos-header-layout.spec.ts', layout], ['e2e/nos-header-brand-and-cta.spec.ts', cta]]) {
+    if (/\b1260\b|\b699\b|\b1259\b/.test(text)) fail(`${name}: the old 1260/699 breakpoint remains; follow ${full}/${row}`);
+  }
+  if (!new RegExp(`PANEL_BREAKPOINT\\s*=\\s*${full}\\b`).test(layout)) fail(`e2e/nos-header-layout.spec.ts: PANEL_BREAKPOINT = ${full}`);
+  if (/\[\s*1440\s*,\s*1280\s*,\s*PANEL_BREAKPOINT/.test(layout)) fail('e2e/nos-header-layout.spec.ts: the inline-nav panel test must not run at 1280 (menu mode below 1384); use widths >= PANEL_BREAKPOINT');
+  if (!new RegExp(`width\\s*>=\\s*${full}\\b`).test(cta)) fail(`e2e/nos-header-brand-and-cta.spec.ts: the "nothing right of Tickets" branch is width >= ${full}`);
+  if (!new RegExp(`\\b${row}\\b`).test(layout + cta)) fail(`the e2e specs assert the lockup/row layout at ${row} (and ${row - 1}): the 405px footprint at ${row}, the container-wide first row below`);
 } else if (mode === 'menu-border') {
   // NOS Design ruling: the MENU button border is 1.5px solid, nav ink at 28% over the ground, as one solid named token per host.
   const spec = JSON.parse(read(new URL('../goldens/header-geometry.json', import.meta.url).pathname)).menuButton;

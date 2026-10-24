@@ -62,6 +62,9 @@ assertions:
     - id: B20
       description: Below the full breakpoint the drawer's first row is a full-width 44px search row with the 18px icon and the label Search SAOC that opens the same dialog, and the header icon keeps aria-label Open search
       command: node .agent/memory/project/specs/nav-focus-underline/checks/check-header-spec.mjs drawer-search
+    - id: B21
+      description: The two NOS e2e specs follow the shared breakpoints (PANEL_BREAKPOINT 1384, Tickets-last branch at width >= 1384, no 1260/699, the 780 row layout asserted, no inline-nav panel test at 1280)
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-header-spec.mjs e2e-breakpoints
     - id: B9
       description: No UtilityBar reference remains in app, components or lib
       command: "! grep -rq UtilityBar app components lib"

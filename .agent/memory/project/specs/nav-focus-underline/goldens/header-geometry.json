@@ -1,5 +1,5 @@
 {
-  "$comment": "HD-1 golden. Targets and tolerances for checks/compare-geometry.mjs; edit numbers here, never in the script. Measurements come from checks/measure-header.js run on both hosts at each width (scroll 0). 'when': full = viewport >= breakpoints.full, menu = breakpoints.row .. full-1, phone = < breakpoints.row, wide = >= breakpoints.row, all. Breakpoints are shared by both hosts and are always changed together (NOS Design ruling (d)). The widths measured are `widths` plus full-1, full, row-1, row. 'pair' = |saoc - nos| <= tol. 'same' = strings equal (fonts differ per host by design, so no family metric). 'target' = value within tol on every host that shows the element. 'hostOnly' restricts a rule to one host. A metric that is null on exactly one host fails; null on both is skipped. Rules carry 'feature': f2 (default) or f3 (HD-1b container); the CLI filters with --feature. 'sameAsMetric' compares two metrics on the same host within tol (content left edge vs lockup left edge). 'min' = value >= min - tol on every host that shows the element. Height parity (header-height-pair) holds at every width including 760 and 390: below breakpoints.row the first (lockup) row gets a min-height equal to the NOS lockup ink height at that width and the SAOC lockup is vertically centred in it; lockup width there is min(container content width, 405) (brand-width-capped).",
+  "$comment": "HD-1 golden. Targets and tolerances for checks/compare-geometry.mjs; edit numbers here, never in the script. Measurements come from checks/measure-header.js run on both hosts at each width (scroll 0). 'when': full = viewport >= breakpoints.full, menu = breakpoints.row .. full-1, phone = < breakpoints.row, wide = >= breakpoints.row, all. Breakpoints are shared by both hosts and are always changed together (NOS Design ruling (d)). The widths measured are `widths` plus full-1, full, row-1, row. 'pair' = |saoc - nos| <= tol. 'same' = strings equal (fonts differ per host by design, so no family metric). 'target' = value within tol on every host that shows the element. 'hostOnly' restricts a rule to one host. A metric that is null on exactly one host fails; null on both is skipped. Rules carry 'feature': f2 (default) or f3 (HD-1b container); the CLI filters with --feature. 'sameAsMetric' compares two metrics on the same host within tol (content left edge vs lockup left edge). 'min' = value >= min - tol on every host that shows the element. Height parity (header-height-pair) holds at every width including 760 and 390: below breakpoints.row the first (lockup) row gets a min-height equal to the NOS lockup ink height at that width and the SAOC lockup is vertically centred in it; lockup width there is min(container content width, 405) (brand-width-capped). barRows counts rows by vertical centre lines (children whose centres differ by more than 8px are different rows), not by distinct tops: the 70px lockup and 44px items never share a top. brandCenterOffset (centre vs the whole bar) applies at >= row only; below row the lockup is alone on row 1, so brandRowCenterOffset (centre vs the first row's box) applies instead.",
   "widths": [
     2056,
     1440,
@@ -93,7 +93,14 @@
     {
       "id": "brand-centred-in-bar",
       "metric": "brandCenterOffset",
-      "when": "all",
+      "when": "wide",
+      "target": 0,
+      "tol": 1
+    },
+    {
+      "id": "brand-centred-in-first-row",
+      "metric": "brandRowCenterOffset",
+      "when": "phone",
       "target": 0,
       "tol": 1
     },
@@ -469,5 +476,12 @@
     "searchCta": 12,
     "navCtaNos": 12,
     "note": "brand-nav via nav margin-left:auto with a 24px minimum; nav-search and search-cta are 12 on SAOC; NOS has no search, so nav-cta is 12. Item padding stays 0 9 (the 44px hit area)."
+  },
+  "routes": {
+    "saoc": "/",
+    "nos": "/faq",
+    "activeBarSaoc": "/about",
+    "activeBarNos": "/faq",
+    "why": "contentLeft needs an h1 that starts on the container's left edge: SAOC / (home Hero, left-aligned in .saoc-container) and NOS /faq (NosHero, left). SAOC /about uses PageHero, whose h1 is centred, so it is only used for the active-bar metrics, which need a current nav item (not present on /). Measure every width on routes.saoc / routes.nos; at widths >= breakpoints.full also load activeBarSaoc and merge its activeBarBottom and activeBarHeight into the same width entry."
   }
 }

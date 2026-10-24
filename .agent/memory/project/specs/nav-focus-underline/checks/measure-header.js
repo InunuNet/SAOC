@@ -35,13 +35,14 @@
     brandTop: brand ? r1(brand.getBoundingClientRect().top - hr.top) : null,
     brandWidth: brand ? r1(brand.getBoundingClientRect().width) : null,
     brandCenterOffset: brand && bar ? r1(brand.getBoundingClientRect().top + brand.getBoundingClientRect().height/2 - (bar.getBoundingClientRect().top + bar.getBoundingClientRect().height/2)) : null,
+    brandRowCenterOffset: brand && bar ? (() => { const kids = [...bar.children].filter(shown).filter((el) => el !== brand && !el.contains(brand) && !brand.contains(el)); const first = kids.length ? Math.min(...kids.map((el) => el.getBoundingClientRect().top)) : null; if (first === null) return null; const top = bar.getBoundingClientRect().top + px(cs(bar).paddingTop); const rowBottom = first - px(cs(bar).rowGap); const b = brand.getBoundingClientRect(); return r1(b.top + b.height / 2 - (top + rowBottom) / 2); })() : null, // phone band only: lockup centre vs the first row's box
     barContentWidth: bar ? r1(bar.clientWidth - px(cs(bar).paddingLeft) - px(cs(bar).paddingRight)) : null,
     brandWidthBound: bar ? r1(Math.min(bar.clientWidth - px(cs(bar).paddingLeft) - px(cs(bar).paddingRight), 405)) : null,
     gapBrandNav: brand && nav ? r1(nav.getBoundingClientRect().left - brand.getBoundingClientRect().right) : null,
     gapNavSearch: nav && search ? r1(search.getBoundingClientRect().left - nav.getBoundingClientRect().right) : null,
     gapSearchCta: search && cta ? r1(cta.getBoundingClientRect().left - search.getBoundingClientRect().right) : null,
     gapNavCta: nav && cta && !search ? r1(cta.getBoundingClientRect().left - nav.getBoundingClientRect().right) : null,
-    barRows: bar ? new Set([...bar.children].filter(shown).map((el) => Math.round(el.getBoundingClientRect().top))).size : null,
+    barRows: bar ? [...bar.children].filter(shown).map((el) => { const b = el.getBoundingClientRect(); return b.top + b.height / 2; }).sort((a, b) => a - b).reduce((n, c, i, a) => (i === 0 || c - a[i - 1] > 8 ? n + 1 : n), 0) : null, // rows by centre line, not by distinct tops
     brandHeight: brand ? r1(brand.getBoundingClientRect().height) : null, // informational: heights differ by aspect once the widths are equal
     navSingleLine: items.length ? new Set(items.map((el) => Math.round(el.getBoundingClientRect().top))).size === 1 : null,
     itemHeightMin: items.length ? r1(Math.min(...items.map((el) => el.getBoundingClientRect().height))) : null,

@@ -6,7 +6,10 @@
   "^lib/show-identity\\.ts$",
   "^docs/header-parity\\.md$",
   "^e2e/header-parity[^/]*$",
-  "^components/chrome/footer-data\\.ts$"
+  "^components/chrome/footer-data\\.ts$",
+  "^app/admin/login/layout\\.tsx$",
+  "^e2e/nos-header-layout\\.spec\\.ts$",
+  "^e2e/nos-header-brand-and-cta\\.spec\\.ts$"
  ],
  "mustStay": [],
  "release": [
