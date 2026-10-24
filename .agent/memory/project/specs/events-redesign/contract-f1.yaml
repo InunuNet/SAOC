@@ -1,0 +1,66 @@
+# Sources: NOS Design ruling EV-1..EV-6 FINAL (nos-design-ruling-ev.md, relayed 2026-10-24); audit P0-1 (.tmp/sandbox/audit/site-audit-2026-10-25.md);
+# golden design/design_handoff_saoc/src/pages-show-events-contact.jsx (event-row); docs/rules/no-invention.md.
+schema: athanor.contract/v1
+slug: events-redesign
+goal: >-
+  /events opens on the real 19th National Show band, then a write-up/actions slot, then month-grouped event rows (no AI placeholders in the
+  public build, controls only at 6+ events, nothing listed when zero), and the date-only National Show reappears on /events and the home
+  strip, with no new copy and the calendar-subscribe label held as a null COPY GAP.
+created_at: '2026-10-25'
+autonomy: high
+exclusions:
+  - item: 'every file outside goldens/footprint.json and this spec dir'
+    reason: 'Enforced by A2. Home page and EventsStrip are deliberately untouched: the shared upcomingEventsQuery fix restores the show there (ev-spec.md section 1).'
+  - item: 'Sanity content writes (eventsPage document, societyEvent date fix)'
+    reason: 'Code-side fix only. eventsPage.intro stays empty until Lee-Ann supplies copy; the date-only values are handled in the query, not patched live.'
+  - item: 'calendar-subscribe label'
+    reason: 'COPY GAP: no source. EVENTS_CALENDAR_SUBSCRIBE_LABEL stays null and the button does not render until Brad or Lee-Ann approves a label (A3, A9 E6).'
+features:
+  - id: F1
+    name: /events redesign (EV-1..EV-6) plus date-only National Show query fix
+    status: pending
+goldens:
+  - .agent/memory/project/specs/events-redesign/goldens/ev-spec.md
+  - .agent/memory/project/specs/events-redesign/goldens/event-row.golden.md
+  - .agent/memory/project/specs/events-redesign/goldens/footprint.json
+  - .agent/memory/project/specs/events-redesign/goldens/copy.json
+  - .agent/memory/project/specs/events-redesign/goldens/rendered.json
+  - .agent/memory/project/specs/events-redesign/goldens/codex-qa-prompt.md
+  - .agent/memory/project/specs/events-redesign/goldens/post-deploy-checks.md
+  - .agent/memory/project/specs/events-redesign/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: check scripts and goldens are unmodified since @architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/events-redesign/goldens/checks.sha256
+    - id: A2
+      description: Footprint - the branch differs from origin/main a20a0023 only in goldens/footprint.json, docs/events-redesign.md and the spec dir
+      command: node .agent/memory/project/specs/events-redesign/checks/footprint.mjs
+    - id: A3
+      description: Static - public/preview gate, ShowBand reuse with untouched labels, month h2 serif 24/400, row spec, 44px classes, controls gating, null subscribe constant, eventsPage.intro isolation, query fix text, no new copy, docs COPY GAP
+      command: node .agent/memory/project/specs/events-redesign/checks/static.mjs
+    - id: A4
+      description: Logic - featured exclusion, month grouping in SAST, date block, 6-event controls threshold, zero-listed state, kind options, todayDate param, date-only show is upcoming
+      command: node .agent/memory/project/specs/events-redesign/checks/logic.mjs
+    - id: A5
+      description: Live read-only - the committed upcomingEventsQuery returns the 19th National Show from the production dataset (root cause of the missing real show)
+      command: node .agent/memory/project/specs/events-redesign/checks/live-query.mjs
+    - id: A6
+      description: Existing upcoming-events-until-last-day check still passes against the new filter and params
+      command: node scripts/checks/events-until-last-day.mjs
+    - id: A7
+      description: Existing placeholder static guard still passes (placeholders never reach JSON-LD, sitemap, .ics, slug page)
+      command: node scripts/checks/events-placeholders-static.mjs
+    - id: A8
+      description: Typecheck is clean (whole project)
+      command: pnpm exec tsc --noEmit
+    - id: A9
+      description: Rendered public + preview at 1280/768/390 - band first, no duplicate show row, no placeholders or markers in public, zero-listed omits the list, controls iff 6+, no subscribe button, 44px targets, no overflow, home strip lists the show
+      command: node .agent/memory/project/specs/events-redesign/checks/rendered.mjs
+    - id: A10
+      description: ESLint clean on the events surface
+      command: pnpm exec eslint lib/events-list.ts components/events 'app/(marketing)/events'
+    - id: A11
+      description: Codex QA prompt and wrapper are in place for the cross-model review step
+      command: test -s .agent/memory/project/specs/events-redesign/goldens/codex-qa-prompt.md -a -x execution/codex_qa.sh
