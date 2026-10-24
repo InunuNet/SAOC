@@ -5,7 +5,9 @@ import { readdirSync, readFileSync } from 'node:fs';
 
 if (process.env.CHECK_ROOT) process.chdir(process.env.CHECK_ROOT); // only for running outside the project root (e.g. from another worktree)
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
-const base = git('merge-base', 'HEAD', 'main');
+// origin/main first: a stale local main would make an already-merged PR look like this fix's diff.
+const baseRef = (() => { try { git('rev-parse', '--verify', 'origin/main'); return 'origin/main'; } catch { return 'main'; } })();
+const base = git('merge-base', 'HEAD', baseRef);
 const changed = new Set([
   ...git('diff', '--name-only', base).split('\n'),
   ...git('ls-files', '--others', '--exclude-standard').split('\n'),
