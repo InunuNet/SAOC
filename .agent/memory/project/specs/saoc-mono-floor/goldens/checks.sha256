@@ -1,0 +1,5 @@
+fd044dba2ef83309200bc507df7d51dd1a95f19a37d26c79c30510b3604e2827  .agent/memory/project/specs/saoc-mono-floor/goldens/spec.md
+78a2b901b9f30aa53eee73488fa8f6871d64c1749d215ddfae115cc256318dcc  .agent/memory/project/specs/saoc-mono-floor/checks/build.sh
+fe080e6ecd77d06b4004fe84c82893ce6c9c15281c2f0a68d7fa816fb6d432e6  .agent/memory/project/specs/saoc-mono-floor/checks/check-static.mjs
+f3f89b92a7487fed8815c33f8167dd865a89503c6fb06f5a01b81c51348aa435  .agent/memory/project/specs/saoc-mono-floor/checks/check-diff-scope.mjs
+59615f1b5ccf8075bfb929a02928c27d4cb7376dfd894e256603a9ff678697a1  .agent/memory/project/specs/saoc-mono-floor/checks/gate-mono.mjs
