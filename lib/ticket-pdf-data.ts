@@ -1,4 +1,4 @@
-import { resolveReplyTo } from '@/lib/email';
+import { SHOW_OFFICE_PHONE, resolveShowQuestionsEmail } from '@/lib/show-contact';
 import { nosOrigin } from '@/lib/site-hosts';
 import { getConfirmedOrderForDisplay } from '@/lib/orders';
 import { formatShowDayShort, showDayStub } from '@/lib/show-day-format';
@@ -85,7 +85,8 @@ export function buildTicketPdfVisit(
           return number && label ? [{ number, label }] : [];
         })
       : [],
-    questionsEmail: resolveReplyTo(),
+    showOffice: SHOW_OFFICE_PHONE,
+    questionsEmail: resolveShowQuestionsEmail(),
     openingTimes,
   };
 }
@@ -104,7 +105,11 @@ export async function loadTicketPdfVisit(): Promise<TicketPdfVisit> {
     console.error('[ticket-pdf] visit info load failed — rendering with pills', {
       errorType: error instanceof Error ? error.name : typeof error,
     });
-    return { ...EMPTY_VISIT, questionsEmail: resolveReplyTo() };
+    return {
+      ...EMPTY_VISIT,
+      showOffice: SHOW_OFFICE_PHONE,
+      questionsEmail: resolveShowQuestionsEmail(),
+    };
   }
 }
 
