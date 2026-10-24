@@ -40,3 +40,9 @@ re:Order \S+ · Page \d+ of \d+
 re:Page \d+ of \d+
 Testing only, not live
 No real payment is taken
+# leeann-content-build F2 (Lee-Ann, 24 Oct 2026 answers 19c, 19d, 19h; goldens/source in specs/leeann-content-build):
+Friday 24 September
+Saturday 25 September
+9am to 5pm
+073 428 4398
+# ^ SAOC Symposium "24th September 9am to 5pm", WOSA Conference "25th September 9am to 5pm", show office phone "0734284398" (spaced as her Contact doc writes it).

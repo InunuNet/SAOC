@@ -84,22 +84,11 @@
       "ticketType": "National Orchid Show Symposium",
       "slug": "saoc-symposium",
       "schedule": {
-        "eyebrow": "Programme",
+        "eyebrow": null,
         "numeral": null,
-        "dateText": null,
-        "timeText": null
-      },
-      "timesHeading": "Session times",
-      "times": [
-        {
-          "label": "Day",
-          "value": null
-        },
-        {
-          "label": "Time",
-          "value": null
-        }
-      ]
+        "dateText": "Friday 24 September",
+        "timeText": "9am to 5pm"
+      }
     }
   ],
   "visit": {
