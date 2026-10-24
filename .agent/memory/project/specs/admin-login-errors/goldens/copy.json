@@ -1,0 +1,17 @@
+{
+  "invalidCredential": "Email or password not recognised.",
+  "resetResponse": "If that address has an admin account, a reset link is on its way.",
+  "network": "Network error — check your connection and try again.",
+  "generic": "Sign-in failed. Please try again.",
+  "tooManyRequests": "Too many attempts. Please wait a few minutes and try again.",
+  "resetEmptyPrompt": "Enter your email address first, then choose Forgot password.",
+  "codesSameAsInvalidCredential": [
+    "auth/invalid-credential",
+    "auth/invalid-login-credentials",
+    "auth/wrong-password",
+    "auth/user-not-found",
+    "auth/invalid-email",
+    "auth/missing-password"
+  ],
+  "_gaps": "All strings confirmed by SAOC 2026-10-24; resetResponse ends with a full stop."
+}

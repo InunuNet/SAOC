@@ -173,7 +173,6 @@ const NEVER_CREATE_SLUGS = [
   '/national-show/plant-exhibition',
   '/national-show/plant-sales',
   '/national-show/judging-and-awards',
-  '/national-show/contact',
 ] as const;
 
 // `nextjs-portal` is DELIBERATELY EXCLUDED, unlike the golden's literal list. Verified
