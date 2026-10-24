@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """assertion_lint.py -- lint rules for contract assertion shell commands.
 
-Two rules today, both about assertions whose recorded verdict does not
-actually depend on the thing they claim to test:
+Three error rules and one advisory. The error rules are about assertions
+whose recorded verdict does not actually depend on the thing they claim to
+test:
 
   vacuous-exit           An assertion's top-level control flow can only ever
                           reach a constant-success statement (echo/printf/
@@ -27,6 +28,8 @@ import shlex
 
 RULE_VACUOUS = "vacuous-exit"
 RULE_SELF_REF = "self-referential-grep"
+RULE_AWK_NL = "awk-newline-regex"
+RULE_BRITTLE_COUNT = "brittle-exact-count"
 
 # Commands whose exit status is a compile-time constant (0), independent of
 # their arguments -- the shapes seen wrapping a real test in the corpus.
@@ -34,6 +37,22 @@ CONST_SUCCESS_CMDS = {"echo", "printf", "true", ":"}
 
 # Commands that READ a file's content rather than execute it.
 READER_CMDS = {"grep", "egrep", "fgrep", "awk", "sed", "cat"}
+
+AWK_CMDS = {"awk", "gawk", "mawk", "nawk"}
+
+# awk options that consume the following token, so it is not the program.
+AWK_ARG_FLAGS = {"-v", "-F", "-f", "-e", "-i", "-E"}
+
+# A regex literal may only start where an operand is expected; after one of
+# these characters a `/` is division instead.
+AWK_OPERAND_END = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_)]$")
+
+# `grep -c ...` inside a command substitution, compared for exact equality
+# against a non-zero literal. Zero is excluded: "no match" is stable.
+BRITTLE_COUNT_RE = re.compile(
+    r"grep(?=\s)[^)]*?(?:\s-[A-Za-z]*c[A-Za-z]*|\s--count)\b[^)]*\)[\"']?\s*"
+    r"(?:-eq|==?)\s*(?!0\b)\d+"
+)
 
 
 def _tokenize(text):
@@ -265,6 +284,123 @@ def _lint_self_ref(cmd, depth=0):
     return findings
 
 
+def _awk_program_regexes(prog):
+    """Yield (regex_body) for every regex literal in an awk program, telling
+    them apart from string literals ("...\\n" is a string, not a regex) and
+    from division. Only PATTERN-position regexes (brace depth 0: rule
+    patterns and range operands) are yielded -- one inside an action body
+    `{...}` (split/match/sub/gsub/`~` on a string) can legitimately match a
+    newline. A real newline inside a literal ends the scan of it and is
+    reported as part of the body, since awk rejects or never matches it."""
+    i, n = 0, len(prog)
+    prev = ""  # previous non-space character outside strings/regexes
+    depth = 0
+    while i < n:
+        c = prog[i]
+        if c == '"':
+            i += 1
+            while i < n and prog[i] != '"':
+                i += 2 if prog[i] == "\\" else 1
+            prev = '"'
+            i += 1
+        elif c == "#":
+            while i < n and prog[i] != "\n":
+                i += 1
+        elif c == "/" and prev not in AWK_OPERAND_END and prev != '"':
+            j, in_class = i + 1, False
+            while j < n:
+                if prog[j] == "\\":
+                    j += 2
+                    continue
+                if prog[j] == "[":
+                    in_class = True
+                elif prog[j] == "]":
+                    in_class = False
+                elif (prog[j] == "/" and not in_class) or prog[j] == "\n":
+                    break
+                j += 1
+            if depth == 0:
+                yield prog[i + 1:j + 1] if j < n and prog[j] == "\n" else prog[i + 1:j]
+            prev = "/"
+            i = j + 1
+        else:
+            if c == "{":
+                depth += 1
+            elif c == "}":
+                depth = max(0, depth - 1)
+            if not c.isspace():
+                prev = c
+            i += 1
+
+
+def _awk_invocation(toks):
+    """Split an awk token list (everything after the awk word) into
+    (program, rs_changed). The program is the first non-option token."""
+    prog, rs_changed, i = None, False, 0
+    while i < len(toks):
+        t = toks[i]
+        if t in ("-e", "--source") and i + 1 < len(toks):
+            prog = toks[i + 1]
+            break
+        if t.startswith("--source="):
+            prog = t[len("--source="):]
+            break
+        if t in AWK_ARG_FLAGS and i + 1 < len(toks):
+            if t == "-v" and re.match(r"RS=", toks[i + 1]):
+                rs_changed = True
+            if t == "-f":
+                return None, True  # program lives in a file; cannot judge it
+            i += 2
+            continue
+        if t.startswith("-v") and t[2:].startswith("RS="):
+            rs_changed = True
+        elif t.startswith("-") and t != "-":
+            pass
+        else:
+            prog = t
+            break
+        i += 1
+    if prog is not None and re.search(r"\bRS\s*=(?!=)", prog):
+        rs_changed = True
+    return prog, rs_changed
+
+
+def _lint_awk_newline(cmd, depth=0):
+    findings = []
+    if depth > 4:
+        return findings
+    for text, _op in _split_top_level(cmd, {"&&", "||", ";"}):
+        for stage_text, _pop in _split_top_level(text, {"|"}):
+            toks = _tokenize(stage_text)
+            for i, tok in enumerate(toks):
+                name = tok.split("/")[-1]
+                if name in ("bash", "sh") and "-c" in toks[i:]:
+                    ci = toks.index("-c", i)
+                    if ci + 1 < len(toks):
+                        findings.extend(_lint_awk_newline(toks[ci + 1], depth + 1))
+                    break
+                if name not in AWK_CMDS:
+                    continue
+                prog, rs_changed = _awk_invocation(toks[i + 1:])
+                if prog is None or rs_changed:
+                    break
+                for body in _awk_program_regexes(prog):
+                    if "\\n" in body or "\n" in body:
+                        findings.append({
+                            "rule": RULE_AWK_NL,
+                            "message": (
+                                f"awk regex /{body.strip()[:40]}/ contains a newline -- awk is "
+                                "line-oriented, so it can never match a record and a range "
+                                "`/start/,/end\\n.../` never terminates (runs to EOF); use "
+                                "sed -n '/a/,/b/p' or an anchored single-line end pattern, "
+                                "or set RS"
+                            ),
+                        })
+                        break
+                break
+    return findings
+
+
 def lint_command(cmd):
     """Lint a single assertion shell command. Returns a list of
     {"rule": str, "message": str} findings; empty when clean."""
@@ -275,4 +411,20 @@ def lint_command(cmd):
     if msg:
         findings.append({"rule": RULE_VACUOUS, "message": msg})
     findings.extend(_lint_self_ref(cmd))
+    findings.extend(_lint_awk_newline(cmd))
     return findings
+
+
+def advise_command(cmd):
+    """Advisory findings for a shell command: same shape as lint_command, but
+    a caller must report them as warnings and never reject on them."""
+    if not cmd or not BRITTLE_COUNT_RE.search(cmd):
+        return []
+    return [{
+        "rule": RULE_BRITTLE_COUNT,
+        "message": (
+            "grep -c compared for exact equality breaks on any harmless refactor "
+            "that adds or removes a matching line; use -ge N unless the exact "
+            "count is the point"
+        ),
+    }]
