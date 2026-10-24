@@ -12,6 +12,7 @@
 
   --parchment: #f4f3ec; /* paper — default page background */
   --ivory: #f4f3ec; /* alias */
+  --lockup-rule-on-royal: #6f6a92; /* the old 0.35 white rule composited on the NOS footer ground #211a57 */
   --bone: #e8e6dc; /* eyebrow pills, section tint, soft panels */
 
   --ink: #171917; /* body copy on paper */
