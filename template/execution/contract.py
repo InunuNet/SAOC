@@ -452,6 +452,28 @@ def _multiline_python3_c_violation(cmd: str) -> bool:
     return False
 
 
+def _load_assertion_lint():
+    """Import the assertion_lint module. Returns (module, None) or
+    (None, exception). A missing lint must never read as a clean lint, so
+    callers that gate on it turn the exception into a visible refusal.
+
+    Loaded by file path, never by module name: checks/ sits first on
+    sys.path, and a stale pre-v3.8.49 checks/assertion_lint.py left in a
+    downstream tree shadowed this one (MacOS Tweaks, 2026-10-25)."""
+    try:
+        import importlib.util
+        path = Path(__file__).resolve().parent / "assertion_lint.py"
+        spec = importlib.util.spec_from_file_location("assertion_lint", path)
+        if spec is None or spec.loader is None:
+            raise ImportError("assertion_lint not found at %s" % path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        sys.modules["assertion_lint"] = module
+        return module, None
+    except Exception as exc:
+        return None, exc
+
+
 def _attributed_and_chain_script(cmd: str) -> str:
     """Rewrite a top-level `A && B && C` command so that on failure, the
     captured evidence names exactly which conjunct failed (Omarchy failure
@@ -463,11 +485,10 @@ def _attributed_and_chain_script(cmd: str) -> str:
     with that same code; if every conjunct succeeds it exits 0, exactly what
     a real `&&` chain that reaches its end does.
     """
-    try:
-        import assertion_lint
-        parts = [t for t, _ in assertion_lint._split_top_level(cmd, {"&&"})]
-    except Exception:
-        return cmd
+    lint_mod, _exc = _load_assertion_lint()
+    if lint_mod is None:
+        return cmd  # only affects evidence wording; the lint refusal is loud elsewhere
+    parts = [t for t, _ in lint_mod._split_top_level(cmd, {"&&"})]
     if len(parts) <= 1:
         return cmd
     lines = []
@@ -573,12 +594,10 @@ def validate_cmd(args):
     ids = set()
     binary_kinds = {"shell", "file_exists", "file_contains", "json_path", "handoff_field", "codex_qa"}
     binary_count = 0
-    assertion_lint = None
-    try:
-        import assertion_lint as _al
-        assertion_lint = _al
-    except Exception:
-        pass
+    assertion_lint, lint_exc = _load_assertion_lint()
+    if assertion_lint is None:
+        err(f"assertion_lint could not be imported ({type(lint_exc).__name__}: {lint_exc}) "
+            "-- refusing to validate without the assertion lint")
 
     for i, a in enumerate(assertions):
         aid = a.get("id", "")
@@ -665,6 +684,8 @@ def validate_cmd(args):
         if assertion_lint is not None and verify.get("kind") == "shell" and cmd.strip():
             for finding in assertion_lint.lint_command(cmd):
                 err(f"Assertion {aid}: {finding['rule']} -- {finding['message']}", ln)
+            for advice in assertion_lint.advise_command(cmd):
+                print(f"  WARNING Assertion {aid}: {advice['rule']} -- {advice['message']}")
 
     strict = getattr(args, "strict", False)
     if strict and binary_count == 0 and len(assertions) > 0:
@@ -808,11 +829,13 @@ def check_cmd(args):
         # F5/F6: refuse to run (and never record a verdict for) an assertion
         # whose command shape cannot report a real failure -- validate alone
         # is not enough, because check/gate --run-checks never calls it.
-        try:
-            import assertion_lint
-            lint_findings = assertion_lint.lint_command(cmd)
-        except Exception:
-            lint_findings = []
+        lint_mod, lint_exc = _load_assertion_lint()
+        if lint_mod is None:
+            lint_findings = [{"rule": "assertion_lint-unavailable", "message": (
+                f"assertion_lint could not be imported ({type(lint_exc).__name__}) -- "
+                "refusing to record a pass without the lint")}]
+        else:
+            lint_findings = lint_mod.lint_command(cmd)
         if lint_findings:
             evidence = ("assertion_lint rejected this command: " + "; ".join(
                 f"{f['rule']}: {f['message']}" for f in lint_findings))[:EVIDENCE_DISPLAY_MAX]

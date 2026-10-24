@@ -119,6 +119,17 @@
         ]
       }
     ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/autocompact_after_mission.sh ] || exit 0; bash execution/hooks/autocompact_after_mission.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
     "SubagentStop": [
       {
         "matcher": "analyst|architect|designer|dev|docs|lead|maintainer|qa",
@@ -156,7 +167,6 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "BASH_DEFAULT_TIMEOUT_MS": "300000"
   },
-  "autoCompactWindow": 400000,
   "sandbox": {
     "enabled": false,
     "credentials": {
