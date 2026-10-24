@@ -123,7 +123,9 @@ export function SaocLockup({ orientation, tone, compact = false, className, prio
               >
                 {WORDMARK}
               </span>
+              {/* Logo tagline: exempt from the global 12px mono floor (lockups are never altered). */}
               <span
+                data-lockup-tagline
                 className="font-mono font-medium uppercase text-[11px] leading-[1.3] whitespace-nowrap"
                 style={{ letterSpacing: '0.22em', color: col.tag }}
               >
@@ -179,7 +181,9 @@ export function SaocLockup({ orientation, tone, compact = false, className, prio
           {WORDMARK}
         </span>
         <span className="mt-[8px] h-px w-[133px]" style={{ background: col.rule }} />
+        {/* Logo tagline: exempt from the global 12px mono floor (lockups are never altered). */}
         <span
+          data-lockup-tagline
           className="mt-[9px] font-mono font-medium uppercase text-[11px] leading-[1.3] whitespace-nowrap"
           style={{ letterSpacing: '0.22em', color: col.tag }}
         >

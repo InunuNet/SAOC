@@ -25,10 +25,11 @@ import {
   FOOTER_RHYTHM,
   FOOTER_WOSA,
 } from '@/components/chrome/footer-data';
+import { CONTACT_LINK } from '@/components/chrome/nav-config';
 import { ExternalArrow } from '@/components/chrome/ExternalArrow';
 import { MediaKitFooterLink } from '@/components/chrome/MediaKitFooterLink';
 import { NewsletterSignup } from '@/components/newsletter/NewsletterSignup';
-import { nosPath } from '@/lib/nos-paths';
+import { NOS_CONTACT_PATH, nosPath } from '@/lib/nos-paths';
 import { SHOW_TITLE_EXPANDED } from '@/lib/show-title';
 import { saocUrl } from '@/lib/site-hosts';
 
@@ -102,6 +103,11 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
                 </Link>
               </li>
             ))}
+            <li>
+              <Link className={FOOTER_RHYTHM.row} href={nosPath(NOS_CONTACT_PATH)}>
+                {CONTACT_LINK.label}
+              </Link>
+            </li>
           </ul>
         </div>
 

@@ -66,8 +66,8 @@
 
   /* ---------- Type scale — mono ---------- */
   --mono-md: 12px; /* eyebrow, nav links */
-  --mono-sm: 11px; /* meta, tags */
-  --mono-xs: 10.5px; /* captions */
+  --mono-sm: 12px; /* meta, tags */
+  --mono-xs: 12px; /* captions */
   --mono-tracking: 0.18em; /* default letter-spacing for mono eyebrows */
 
   /* ---------- Spacing (8-pt base) ---------- */
@@ -296,6 +296,15 @@ h3.font-serif {
   text-transform: uppercase;
   color: var(--fg-muted);
 }
+/* Floor: Tailwind mono literals below 12px render at 12px. Unlayered so it beats the utility layer. */
+.font-mono:is(
+    [class*='text-[9px]'],
+    [class*='text-[10px]'],
+    [class*='text-[10.5px]'],
+    [class*='text-[11px]']
+  ):not([data-lockup-tagline]) {
+  font-size: 0.75rem;
+}
 
 /* ---------- Links ---------- */
 .inline-link {
@@ -505,7 +514,7 @@ h3.font-serif {
   backdrop-filter: blur(6px);
   color: var(--primary);
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }

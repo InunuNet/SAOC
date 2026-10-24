@@ -1,5 +1,7 @@
 import EmailShell, { ShellDetailRow, ShellHeading } from './_shared/EmailShell';
 import { formatAdminDateTime } from '@/lib/admin-format';
+import { SHOW_TITLE } from '@/lib/show-title';
+import type { Site } from '@/lib/site-hosts';
 
 interface ContactSubmissionAdminNoticeProps {
   submissionId: string;
@@ -8,6 +10,7 @@ interface ContactSubmissionAdminNoticeProps {
   subject: string;
   message: string;
   submittedAt: Date;
+  site?: Site;
 }
 
 /**
@@ -22,11 +25,13 @@ export default function ContactSubmissionAdminNotice({
   subject,
   message,
   submittedAt,
+  site,
 }: ContactSubmissionAdminNoticeProps) {
   return (
     <EmailShell family="C" preview="New contact message — SAOC">
       <ShellHeading>New contact message</ShellHeading>
       <ShellDetailRow label="Submission ID:">{submissionId}</ShellDetailRow>
+      {site === 'nos' ? <ShellDetailRow label="Site:">{SHOW_TITLE}</ShellDetailRow> : null}
       <ShellDetailRow label="Name:">{name}</ShellDetailRow>
       <ShellDetailRow label="Email address:">{email}</ShellDetailRow>
       <ShellDetailRow label="Subject:">{subject}</ShellDetailRow>

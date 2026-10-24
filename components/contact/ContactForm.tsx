@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
+import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
+import { NOS_CONTACT_SUCCESS_BODY_PLACEHOLDER } from '@/lib/nos-contact-copy';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -30,7 +32,14 @@ function validate(values: Record<FieldKey, string>): FieldErrors {
   return errors;
 }
 
-export function ContactForm() {
+interface ContactFormProps {
+  /** Which site renders the form; only the success wording differs. */
+  site?: 'saoc' | 'nos';
+  /** True on the beta preview, where an unsupplied NOS success body shows as a marked stand-in. */
+  markPlaceholders?: boolean;
+}
+
+export function ContactForm({ site = 'saoc', markPlaceholders = false }: ContactFormProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
@@ -39,6 +48,12 @@ export function ContactForm() {
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const successHeading = useRef<HTMLHeadingElement>(null);
+  const formError = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (status === 'success') successHeading.current?.focus();
+  }, [status]);
 
   function clearFieldError(key: FieldKey) {
     setFieldErrors((prev) => ({ ...prev, [key]: undefined }));
@@ -98,16 +113,38 @@ export function ContactForm() {
 
   const showError = status === 'error' && errorMessage !== '';
 
+  // The submit button is disabled while sending, which drops focus to <body>: a failure takes it.
+  useEffect(() => {
+    if (showError) formError.current?.focus();
+  }, [showError]);
+
   return (
     <>
       {/* Live region: present before submit so the success message is announced when it arrives. */}
       <div role="status" aria-live="polite">
         {status === 'success' ? (
-          <div className="border border-rule bg-parchment p-8">
-            <h3 className="font-serif font-normal text-[22px] text-ink">Thank you</h3>
-            <p className="mt-3 font-sans text-[16px] leading-[1.55] text-ink/80">
-              Your message has reached the SAOC secretariat. We&apos;ll be in touch soon.
-            </p>
+          <div
+            className={`border border-rule bg-parchment p-8${site === 'nos' ? ' rounded-[14px]' : ''}`}
+          >
+            <h3
+              ref={successHeading}
+              tabIndex={-1}
+              className="font-serif font-normal text-[22px] text-ink outline-none"
+            >
+              Thank you
+            </h3>
+            {site === 'saoc' ? (
+              <p className="mt-3 font-sans text-[16px] leading-[1.55] text-ink/80">
+                Your message has reached the SAOC secretariat. We&apos;ll be in touch soon.
+              </p>
+            ) : markPlaceholders ? (
+              <div data-placeholder="true" className="mt-3 flex flex-col items-start">
+                <p className="font-sans text-[16px] leading-[1.55] text-ink/80">
+                  {NOS_CONTACT_SUCCESS_BODY_PLACEHOLDER}
+                </p>
+                <PlaceholderMarker />
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -240,7 +277,9 @@ export function ContactForm() {
 
       {/* Inline error */}
       {showError ? (
-        <TicketFieldAlert id={FORM_ERROR_ID}>{errorMessage}</TicketFieldAlert>
+        <div ref={formError} tabIndex={-1} className="outline-none">
+          <TicketFieldAlert id={FORM_ERROR_ID}>{errorMessage}</TicketFieldAlert>
+        </div>
       ) : null}
 
       <button
