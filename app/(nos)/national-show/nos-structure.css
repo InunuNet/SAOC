@@ -64,6 +64,12 @@
   }
 }
 
+/* An empty first block (a listing page with no prose sections renders an empty space-y wrapper) keeps its
+   bottom margin, which collapses through it and pushes the wrap 48px down: it takes no part in the rhythm. */
+.nos-theme [data-nos-wrap] > :first-child:empty {
+  margin-block: 0;
+}
+
 /* R27 group sub-nav: directly under the inner hero, not sticky. Karla 700 14.5px royal,
    44px items, 24px gap, 1px --line rule on gold-100. <768px: one snap-scrolling row, hidden
    scrollbar, a 40px edge fade only on an edge that hides items. 767 rather than the R27 700

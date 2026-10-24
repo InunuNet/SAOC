@@ -710,9 +710,19 @@
 }
 /* Below 768px (G2): the photo is a full-width 2:1 band at the top of the hero, the copy follows
    on black at padding-top 48px, no panel radius. */
-/* 768-1023px: the copy column is 54% less its margins, so the h1 steps down to keep two lines. */
+/* 768-1023px (NOS Design, 2026-10-24): the copy column takes 58% and the panel 42%; the h1 balances its
+   lines with no ch cap and steps down (floor 36px) so it stays within two lines. */
 @media (min-width: 768px) and (max-width: 1023px) {
+  .nos-theme .nos-hero-inner .nos-hero-media {
+    width: 42%;
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {
+    width: 58%;
+    padding-right: 32px;
+  }
   .nos-theme .nos-hero-inner .nos-hero-title {
+    max-width: none;
+    text-wrap: balance;
     font-size: clamp(2.25rem, 4.9vw, 3rem);
   }
 }

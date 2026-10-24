@@ -39,8 +39,8 @@ import { subNavGroupFor } from './nos-subnav-groups';
 // up to its native width (lib/image-loader.ts), so it is never stretched on a high-density screen.
 const FULL_BLEED_QUALITY = 88;
 
-// The inner photo is a 46% panel from 768px and a full-width band below it (nos-theme.css).
-const INNER_PHOTO_SIZES = '(min-width: 768px) 46vw, 100vw';
+// The inner photo is a 46% panel from 1024px, a 42% panel from 768px and a full-width band below it (nos-theme.css).
+const INNER_PHOTO_SIZES = '(min-width: 1024px) 46vw, (min-width: 768px) 42vw, 100vw';
 
 /** Routes whose hero carries no group sub-nav: the hub (it has the destinations list) and tickets. */
 const NO_SUBNAV_ROUTES: ReadonlySet<string> = new Set(['/national-show', '/national-show/tickets']);
