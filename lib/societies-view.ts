@@ -15,3 +15,17 @@ export function provinceCounts(
   }
   return counts;
 }
+
+type MaybeProvince = { province?: string | null };
+
+// The province chip row is only truthful when every listed society carries a province: until
+// then a chip filters to a subset and implies the rest do not exist. Null, undefined, empty and
+// whitespace-only all count as missing.
+export function allSocietiesHaveProvince(societies: MaybeProvince[]): boolean {
+  return societies.every((s) => (s.province ?? '').trim() !== '');
+}
+
+// A stale ?province= param must never hide results behind a chip row the visitor cannot see.
+export function effectiveProvinceFilter(requested: string, chipsVisible: boolean): string {
+  return chipsVisible ? requested : ALL_PROVINCES;
+}
