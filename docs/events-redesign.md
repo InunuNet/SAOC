@@ -11,7 +11,7 @@ Top to bottom, `/events` is now:
 3. `EventsAbout` (`data-events-about`): the write-up (`eventsPage.intro`, max 62ch) on the left, "Find your society" (`/societies`) on the right.
 4. The list (`data-events-list`): month `<h2>` in the serif at 24px/400, then one row per event. The National Show and any `isFeatured` event are excluded from the list, because the band already shows them.
 
-The row (`EventCard`, `data-event-row`) follows the handoff event row: date block (day or `23–26` range, MON, year, with a 2px accent left border), `kind · location` eyebrow, serif title, venue, host society right-aligned, and a decorative arrow. Hover and focus are a title underline plus a 2px left bar; there is no box, ring or tint (NAV-1 family). Every row, chip, select and action is at least 44px tall.
+The row (`EventCard`, `data-event-row`) follows the handoff event row: date block (day, MON, year, with a 2px accent left border; a same-month range reads `23–26`, a cross-month one `30` over `OCT – 2 NOV`), `kind · location` eyebrow, serif title, venue, host society right-aligned, and a decorative arrow. Hover and focus are a 2px title underline plus a 2px left bar in `--primary` (the brass accent is only 2.9:1 on the page background, under the 3:1 non-text bar); there is no box, ring or tint (NAV-1 family). Every row, chip, select and action is at least 44px tall.
 
 Pure helpers live in `lib/events-list.ts` (erasable TypeScript, run directly by `checks/logic.mjs`).
 
@@ -57,3 +57,7 @@ A new singleton document, `eventsPage` (`sanity/schemas/documents/eventsPage.ts`
 - Public with an empty intro: only the write-up column collapses; "Find your society" stays so a zero-listed page still has an onward link.
 - The home strip keeps the show as a row; excluding it there would recreate the "No upcoming events scheduled." contradiction under the band.
 - The eyebrow second half is the event's own `location` field: the society province is not part of the `upcomingEventsQuery` projection (and province display is gated elsewhere until every society has one).
+
+## Checks beyond the architect's set
+
+`checks/row-bar.mjs` (added after QA found the bar never rendered: `static.mjs` only reads class strings). It builds a linked row in the built preview page from the real `EventCard.tsx` class strings and measures the computed result at 1280/768/390: `::before` opacity 0 at rest and 1 on hover and on keyboard focus, bar contrast of at least 3:1 against the page, 2px title underline, no outline ring or background tint. Run: `node .agent/memory/project/specs/events-redesign/checks/row-bar.mjs`.

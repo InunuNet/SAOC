@@ -24,9 +24,9 @@ const ROW_CLASSES = [
 ].join(' ');
 
 const BAR_CLASSES = [
-  'before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:bg-accent before:opacity-0',
+  'before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:bg-primary before:opacity-0',
   'before:transition-opacity before:duration-150 motion-reduce:before:transition-none',
-  'group-hover:before:opacity-100 group-focus-visible:before:opacity-100',
+  'hover:before:opacity-100 focus-visible:before:opacity-100',
 ].join(' ');
 
 // r16 F3 (Codi): the whole row is one link to /events/<slug>, named by the event title alone and
@@ -64,7 +64,7 @@ export function EventCard({ event }: EventCardProps) {
         <span
           id={titleId}
           className={`mt-1 block font-serif text-[22px] font-semibold leading-snug text-primary${
-            linked ? ' underline-offset-4 group-hover:underline group-focus-visible:underline' : ''
+            linked ? ' underline-offset-4 decoration-2 group-hover:underline group-focus-visible:underline' : ''
           }`}
         >
           {event.title}

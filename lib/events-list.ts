@@ -105,18 +105,30 @@ export function groupByMonth<T extends DatedEvent>(events: T[]): MonthBucket<T>[
   return Array.from(buckets.values()).sort((a, b) => a.key.localeCompare(b.key));
 }
 
-/** Day, MON and year for the row's date block; a multi-day event within one month shows `23–26`. */
-export function eventDateBlock(date: string, endDate?: string | null): DateBlock {
-  const start = sastDay(date);
-  const m = MONTH_SHORT_FORMAT.format(sastNoon(date))
+/** Three-letter uppercase month for a SAST calendar day. */
+function shortMonth(value: string): string {
+  return MONTH_SHORT_FORMAT.format(sastNoon(value))
     .slice(0, MONTH_ABBREVIATION_LENGTH)
     .toUpperCase();
+}
+
+/**
+ * Day, MON and year for the row's date block. A multi-day event within one month shows `23–26`; one
+ * that crosses a month shows `30` over `OCT – 2 NOV` (start day and month, end day and month).
+ */
+export function eventDateBlock(date: string, endDate?: string | null): DateBlock {
+  const start = sastDay(date);
+  const m = shortMonth(date);
   const day = String(Number(start.day));
   if (endDate) {
     const end = sastDay(endDate);
-    const sameMonth = end.year === start.year && end.month === start.month;
-    if (sameMonth && end.day !== start.day) {
-      return { d: `${day}${RANGE_DASH}${Number(end.day)}`, m, y: start.year };
+    const endDay = String(Number(end.day));
+    if (end.year === start.year && end.month === start.month) {
+      if (end.day !== start.day) return { d: `${day}${RANGE_DASH}${endDay}`, m, y: start.year };
+    } else if (
+      `${end.year}-${end.month}-${end.day}` > `${start.year}-${start.month}-${start.day}`
+    ) {
+      return { d: day, m: `${m} ${RANGE_DASH} ${endDay} ${shortMonth(endDate)}`, y: start.year };
     }
   }
   return { d: day, m, y: start.year };
