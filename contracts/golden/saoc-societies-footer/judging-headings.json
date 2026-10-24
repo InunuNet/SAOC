@@ -1,0 +1,14 @@
+{
+  "_comment": "JU-1 and JU-2 (NOS Design, final). The five /judging section headings keep their existing strings and become display h2s through the existing .h2 class in app/globals.css (serif token, --display-md = clamp(34px, 4.4vw, 54px), weight 300 because the size is always >= 32px, sentence case, margin 0). The pill (.eyebrow) is dropped for these five and stays only on the hero's real eyebrow. Spacing: 24px (var(--space-5)) from h2 to body, section rhythm py-24 = var(--section-y) 96px per golden .section (design_handoff_saoc/src/styles.css:134). Golden reference: pages-interior.jsx:350-415 uses .h2 with design placeholder lines which must NOT be used. Computed values below are what the deployed browser check records.",
+  "h2Rule": { "fontFamily": "var(--serif)", "fontSize": "var(--display-md)", "fontWeight": "300", "textTransform": "none" },
+  "headings": [
+    { "text": "Overview", "tag": "h2", "fontFamily": "serif", "size": "clamp(34px, 4.4vw, 54px)", "weight": 300, "case": "sentence", "source": "components/judging/JudgingSplit.tsx via page.tsx sections[0]" },
+    { "text": "How judging works", "tag": "h2", "fontFamily": "serif", "size": "clamp(34px, 4.4vw, 54px)", "weight": 300, "case": "sentence", "source": "JudgingSplit via sections[1]" },
+    { "text": "SAOC awards", "tag": "h2", "fontFamily": "serif", "size": "clamp(34px, 4.4vw, 54px)", "weight": 300, "case": "sentence", "source": "page.tsx awardsSection" },
+    { "text": "Becoming a judge", "tag": "h2", "fontFamily": "serif", "size": "clamp(34px, 4.4vw, 54px)", "weight": 300, "case": "sentence", "source": "JudgingSplit via sections[2]" },
+    { "text": "Accredited judges", "tag": "h2", "fontFamily": "serif", "size": "clamp(34px, 4.4vw, 54px)", "weight": 300, "case": "sentence", "source": "page.tsx judges section" }
+  ],
+  "keepEyebrow": ["SAOC judging system"],
+  "forbiddenText": ["Three regions, one standard", "Six awards, one 100-point scale", "The six-year pathway", "How the system works", "The awards"],
+  "contactLink": { "text": "Contact SAOC →", "file": "components/judging/JudgesDirectory.tsx", "mustHave": ["inline-flex", "items-center", "min-h-11"], "mustNotHave": ["min-h-6"], "keepLook": ["font-sans", "text-[13px]", "font-medium", "text-ink", "underline", "underline-offset-2", "hover:text-primary"] }
+}
