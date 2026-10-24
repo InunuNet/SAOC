@@ -1,0 +1,10 @@
+{
+  "origin": "NOT YET PRODUCED",
+  "path_tested": "/societies",
+  "screenshot_path": "fixtures/deployed-societies-screenshot.png",
+  "commit_sha": "NOT YET PRODUCED",
+  "timestamp": "NOT YET PRODUCED",
+  "http_status": null,
+  "outcome": "not_yet_produced",
+  "notes": "Phase 5 (post-deploy) manifest for the browser_deployed_check assertion. Same placeholder convention as saoc-emblem-lockup A12. Replace with a real BrowserAgent manifest taken against https://beta.saoc.co.za at the deployed commit before gating phase 5. The agent records: the raw server HTML of /societies (view-source or JS disabled) contains one <a href=\"/societies/<slug>\"> per listed society; the filters row at 1440 and 390 wide (chips wrap, 1px rule under the row, every chip and the input at least 44px tall, active chip in the primary green with the count in mono); the Alfred County Orchid Society card title aligned with its row neighbours; the footer at 1440, 1024 and 390 wide with three columns and equal gaps and the WOSA link under REG/NPO; and the home page with no SANBI or Kirstenbosch partner."
+}

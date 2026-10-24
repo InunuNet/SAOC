@@ -23,7 +23,7 @@ export function JudgesDirectory({ judges, showPublicDirectory }: JudgesDirectory
         </p>
         <Link
           href="/contact"
-          className="mt-3 inline-flex min-h-6 items-center font-sans text-[13px] font-medium text-ink underline underline-offset-2 hover:text-primary"
+          className="mt-3 inline-flex min-h-11 items-center font-sans text-[13px] font-medium text-ink underline underline-offset-2 hover:text-primary"
         >
           Contact SAOC →
         </Link>

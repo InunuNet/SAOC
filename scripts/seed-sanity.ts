@@ -21,7 +21,6 @@ import {
   awards,
   BOARD_PLACEHOLDER_NAME,
   boardMembers,
-  partners,
   provinces,
   showClasses,
 } from '../lib/data';
@@ -122,14 +121,6 @@ function mapShowClasses(): Record<string, unknown>[] {
   }));
 }
 
-function mapPartners(): Record<string, unknown>[] {
-  return partners.map((p) => ({
-    _id: safeid('sponsor', p.name),
-    _type: 'sponsor',
-    name: p.name,
-  }));
-}
-
 // ---------------------------------------------------------------------------
 // Seed runner
 // ---------------------------------------------------------------------------
@@ -156,7 +147,6 @@ async function main(): Promise<void> {
   // Societies are not seeded: they come from Lee-Ann's Drive docs via `pnpm sync:societies`
   // (societies-content F1). Re-seeding the old placeholders would resurrect hidden societies.
   await seedBatch('showClasses', mapShowClasses());
-  await seedBatch('partners (→ sponsor)', mapPartners());
 
   console.log('Seed complete.');
 }
