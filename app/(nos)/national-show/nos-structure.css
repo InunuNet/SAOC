@@ -866,7 +866,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
       background-color var(--dur-med) var(--ease-nos),
       color var(--dur-med) var(--ease-nos),
       border-color var(--dur-med) var(--ease-nos),
-      scale var(--dur-fast) var(--ease-nos);
+      transform var(--dur-fast) var(--ease-nos);
   }
   .nos-theme .nk-btn .nk-icon {
     transition: transform var(--dur-slow) var(--ease-nos);
@@ -1894,7 +1894,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     }
   }
   .nos-theme .nk-btn:active {
-    scale: 0.98;
+    transform: scale(0.98);
   }
 }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
