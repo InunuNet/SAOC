@@ -6,7 +6,7 @@
 // full-colour lockup (links the NOS home), a top row of three click-only disclosure panels
 // (Visit, Programme, Exhibit & trade), Show sponsors, Past shows (withheld in public until there is
 // content, r64) and Contact (SAOC organises the show, so Contact is the SAOC contact), the Tickets
-// call to action, and below 1260px a menu panel that ends with the SAOC credit. Labels, descriptors
+// call to action, and below 1384px a menu panel that ends with the SAOC credit. Labels, descriptors
 // and order come from nos-nav.ts, which the SAOC site's old show mega carried verbatim; hrefs are
 // shown as their public clean paths (nosPath). There is no SAOC utility bar here (R1.5).
 // Renders the header and the menu panel as siblings so the panel can inert the rest of the page
@@ -21,6 +21,7 @@ import { usePathname } from 'next/navigation';
 import { CONTACT_LINK } from '@/components/chrome/nav-config';
 import type { NavColumn, NavItem, NavLeaf } from '@/components/chrome/nav-config';
 import { FOOTER_ORG_NAME } from '@/components/chrome/footer-data';
+import { anyNavCurrent, navAriaCurrent } from '@/lib/nav-current';
 import { nosPath } from '@/lib/nos-paths';
 import { SHOW_TITLE_EXPANDED } from '@/lib/show-title';
 
@@ -34,11 +35,11 @@ const LOCKUP_SRC = '/images/nos/nos-full-colour-horizontal-1200.png';
 const LOCKUP_ALT = SHOW_TITLE_EXPANDED;
 const LOCKUP_WIDTH = 1200;
 const LOCKUP_HEIGHT = 294;
-// The box is 448px wide from 700px up and 390px below it. A width with no `sizes` gives a 1x/2x
+// The box is 448px wide from 780px up and 390px below it. A width with no `sizes` gives a 1x/2x
 // density srcset, so a high-density screen never fetches more than twice the box.
 const LOCKUP_BOX_WIDE = 448;
 const LOCKUP_BOX_NARROW = 390;
-const PANEL_BREAKPOINT_QUERY = '(min-width: 1260px)';
+const PANEL_BREAKPOINT_QUERY = '(min-width: 1384px)';
 const INERT_SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'LINK', 'TEMPLATE']);
 // The "The show" links the top row carries as plain links; Tickets is the call to action.
 const TICKETS_LEAF_ID = 'tickets';
@@ -203,11 +204,17 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
     return () => query.removeEventListener('change', onChange);
   }, []);
 
-  // Hrefs are shown as public clean paths. The browser path on the NOS host is clean too; the
-  // internal form is accepted so the header also reads correctly on a host-less dev origin.
-  const isCurrent = (href: string) => pathname === nosPath(href) || pathname === href;
-  const current = (href: string) => (isCurrent(href) ? ('page' as const) : undefined);
-  const groupIsCurrent = (group: NavColumn) => group.links.some((l) => isCurrent(l.href));
+  // Hrefs are shown as public clean paths. The matcher accepts both the public and the internal
+  // form, so the header also reads correctly on a host-less dev origin. A disclosure trigger does
+  // not navigate, so it carries aria-current="true" (not "page") when one of its pages is current.
+  const current = (href: string) => navAriaCurrent(pathname, href);
+  const groupCurrent = (group: NavColumn) =>
+    anyNavCurrent(
+      pathname,
+      group.links.map((l) => l.href),
+    )
+      ? ('true' as const)
+      : undefined;
   const toggleDrawer = () => {
     restoreOnCloseRef.current = drawerOpen;
     setDrawerOpen(!drawerOpen);
@@ -230,15 +237,16 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
         ref={headerRef}
         className={`nh ${nosChromeFontClass}${scrolled ? ' is-scrolled' : ''}`}
       >
-        <div className="nh-bar">
+        <div className="nh-bar" data-hd="bar">
           <Link
             className="nh-brand"
+            data-hd="brand"
             href={HUB_HREF}
             aria-label={`${LOCKUP_ALT}, National Show home`}
             aria-current={current(HUB_HREF)}
           >
             <picture>
-              <source media="(max-width: 699px)" srcSet={narrowLockup.srcSet} />
+              <source media="(max-width: 779px)" srcSet={narrowLockup.srcSet} />
               <img
                 {...wideLockup}
                 alt={LOCKUP_ALT}
@@ -250,7 +258,7 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
             </picture>
           </Link>
 
-          <nav className="nh-nav" aria-label="Primary">
+          <nav className="nh-nav" data-hd="nav" aria-label="Primary">
             <ul ref={navRef}>
               {groups.map((group) => {
                 const open = openGroupId === group.id;
@@ -268,13 +276,16 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
                     <button
                       type="button"
                       className="nh-trigger"
+                      data-hd="item"
                       data-group-trigger={group.id}
                       aria-expanded={open}
                       aria-controls={`nh-panel-${group.id}`}
-                      data-current={groupIsCurrent(group) ? '' : undefined}
+                      aria-current={groupCurrent(group)}
                       onClick={() => setOpenGroupId(open ? null : group.id)}
                     >
-                      <span className="nh-label">{group.heading}</span>
+                      <span className="nh-label" data-hd="label">
+                        {group.heading}
+                      </span>
                       <Chevron />
                     </button>
                     <div
@@ -294,14 +305,28 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
               })}
               {plainLeaves.map((leaf) => (
                 <li key={leaf.id}>
-                  <Link className="nh-link" href={nosPath(leaf.href)} aria-current={current(leaf.href)}>
-                    {leaf.label}
+                  <Link
+                    className="nh-link"
+                    data-hd="item"
+                    href={nosPath(leaf.href)}
+                    aria-current={current(leaf.href)}
+                  >
+                    <span className="nh-label" data-hd="label">
+                      {leaf.label}
+                    </span>
                   </Link>
                 </li>
               ))}
               <li>
-                <Link className="nh-link" href={contactHref} aria-current={current(contactHref)}>
-                  {CONTACT_LINK.label}
+                <Link
+                  className="nh-link"
+                  data-hd="item"
+                  href={contactHref}
+                  aria-current={current(contactHref)}
+                >
+                  <span className="nh-label" data-hd="label">
+                    {CONTACT_LINK.label}
+                  </span>
                 </Link>
               </li>
             </ul>
@@ -310,6 +335,7 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
           {ticketsLeaf && (
             <Link
               className="nh-cta"
+              data-hd="cta"
               href={nosPath(ticketsLeaf.href)}
               aria-current={current(ticketsLeaf.href)}
             >
@@ -319,6 +345,7 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
 
           <button
             id="nh-burger"
+            data-hd="menu"
             ref={burgerRef}
             type="button"
             className="nh-burger"
@@ -357,7 +384,7 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
                     type="button"
                     className="nd-item"
                     data-sub=""
-                    data-current={groupIsCurrent(group) ? '' : undefined}
+                    aria-current={groupCurrent(group)}
                     aria-expanded={open}
                     aria-controls={`nd-sub-${group.id}`}
                     onClick={() => setDrawerGroupId(open ? null : group.id)}

@@ -2,11 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 
-import { SkipLink, UtilityBar, Header, Footer } from '@/components/chrome';
+import { SkipLink, Header, Footer } from '@/components/chrome';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
-import { sanityFetch } from '@/sanity/lib/fetch';
-import { nationalShowQuery } from '@/sanity/queries';
-import type { ShowIdentity } from '@/types';
 
 export const metadata: Metadata = {
   title: 'Page not found',
@@ -32,7 +29,7 @@ export function NotFoundSection() {
         className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/50 to-transparent"
       />
 
-      <div className="relative z-10 mx-auto w-full max-w-[1280px] px-8 py-24 text-center">
+      <div className="saoc-container relative z-10 w-full py-24 text-center">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ivory mb-4">
           404 — Page not found
         </p>
@@ -66,16 +63,10 @@ export function NotFoundSection() {
 // it composes the SAOC chrome the way app/(marketing)/layout.tsx does, so a mistyped URL keeps the
 // site's header, footer and skip link. A notFound() from a marketing page renders
 // app/(marketing)/not-found.tsx instead, inside the layout's own chrome.
-export default async function NotFound() {
-  const show = await sanityFetch<ShowIdentity>({
-    query: nationalShowQuery,
-    tags: ['nationalShow', 'sanity'],
-  });
-
+export default function NotFound() {
   return (
     <>
       <SkipLink />
-      <UtilityBar show={show} />
       <Header />
       <main id="main-content" tabIndex={-1}>
         <NotFoundSection />

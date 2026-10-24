@@ -2,10 +2,13 @@
 
 // =============================================================
 // SAOC — components/chrome/Header.tsx
-// Sticky parchment header. Three zones: logo lockup, primary nav,
-// actions (search / tickets CTA / hamburger). Contact is the last nav item.
-// Becomes elevated (shadow + hairline) on scroll > 4px.
-// Below 1240px: nav + Sign in hide, hamburger appears.
+// Sticky parchment header, the same structure and sizes as the National Show header (HD-1): logo
+// lockup, primary nav, search, the "Join a society" CTA and, below the full breakpoint, a labelled
+// MENU button. Contact is the last nav item. Becomes elevated (shadow) on scroll > 4px; the 1px
+// bottom rule is permanent.
+// Shared breakpoints (components/nos-chrome/nos-chrome.css uses the same two): inline nav and
+// search from 1384px, lockup + CTA + MENU from 780px, lockup on its own row below that.
+// The data-hd attributes are the hooks both headers share so one script can measure either.
 // =============================================================
 
 import { useEffect, useRef, useState } from 'react';
@@ -15,6 +18,7 @@ import { Search, Menu } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { MobileMenu, MOBILE_MENU_ID } from './MobileMenu';
 import { SearchOverlay } from './SearchOverlay';
+import { navAriaCurrent } from '@/lib/nav-current';
 import { CONTACT_LINK, NAV } from './nav-config';
 
 export function Header() {
@@ -59,35 +63,35 @@ export function Header() {
     return () => window.removeEventListener('keydown', onKey);
   }, [searchOpen]);
 
-  const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname?.startsWith(href));
 
   return (
     <>
       <header
         className={[
-          'sticky top-0 z-40 bg-parchment transition-shadow duration-150',
-          scrolled ? 'shadow-float border-b border-rule' : '',
+          'sticky top-0 z-40 border-b border-rule bg-parchment transition-shadow duration-150 max-[780px]:relative',
+          scrolled ? 'shadow-float' : '',
         ].join(' ')}
       >
-        <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-6 px-8 py-3">
+        <div
+          data-hd="bar"
+          className="saoc-container flex items-center gap-3 py-[13px] max-[780px]:grid max-[780px]:grid-cols-[auto_1fr_auto] max-[780px]:pb-3 max-[780px]:pt-4"
+        >
           {/* Zone 1 — logo lockup. Raster combined lockup
               (saoc-lockup-horizontal-full-name.png, 3757×493 source),
               exported from Brad's lockup explorer at wordmark W2 ('South
               African Orchid Council', WM:1) by scripts/export-saoc-lockup.mjs
               — Lee-Ann's 2026-10-15 instruction to use the full name. Kept
               as a raster rather than the live SaocLockup (which remains in
-              use for the footer only): the live version widened this zone
-              enough to squeeze the primary nav into two-line wraps at
-              1280px ("Judging & Awards", "National Show"), and W2 is ~1.6x
-              wider again. Display width by tier: 190px below `sm` (640px;
-              the link may shrink so 360px viewports never overflow), 460px
-              in hamburger mode (640-1239px), 340px once the inline nav
-              shows (1240-1279px) and 380px from 1280px, so the nav does
-              not wrap. Height follows the
-              true aspect via h-auto. */}
+              use for the footer only). HD-1: the link is the NOS lockup's
+              footprint, min(container, 405px) wide and 405:70 (the NOS ink
+              box), so both headers have the same lockup width and the same
+              first-row height at every width; the full-name PNG is scaled
+              only (uncropped, unfiltered) and centred in that box. */}
           <Link
             href="/"
-            className="min-w-0 shrink rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            data-hd="brand"
+            aria-current={navAriaCurrent(pathname, '/')}
+            className="mr-3 flex aspect-[405/70] w-[min(100%,405px)] shrink-0 items-center rounded-sm max-[780px]:col-span-full max-[780px]:mr-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
             aria-label="South African Orchid Council — Making a difference since 1968"
           >
             <Image
@@ -95,97 +99,113 @@ export function Header() {
               alt=""
               width={3757}
               height={493}
+              sizes="(min-width: 780px) 405px, calc(100vw - 32px)"
               priority
-              className="h-auto w-[190px] max-w-full sm:max-[1239px]:w-[460px] min-[1240px]:w-[340px] min-[1280px]:w-[380px]"
+              className="h-auto w-full"
             />
           </Link>
 
-          {/* Zone 2 — primary nav */}
-          <nav aria-label="Primary" className="hidden min-[1240px]:flex shrink-0 items-center gap-4 whitespace-nowrap">
-            {NAV.map((n) => {
-              const active = !n.disabled && isActive(n.href);
-              if (n.disabled) {
+          {/* Zone 2 — primary nav, inline from 1384px */}
+          <nav data-hd="nav" aria-label="Primary" className="ml-auto hidden min-[1384px]:block">
+            <ul className="flex items-center gap-0.5 whitespace-nowrap">
+              {NAV.map((n) => {
+                if (n.disabled) {
+                  return (
+                    <li key={n.id}>
+                      <span
+                        aria-disabled="true"
+                        className="inline-flex min-h-11 items-center gap-2 px-[9px] font-sans text-[14.5px] font-semibold leading-none text-muted/60 cursor-not-allowed"
+                      >
+                        {n.label}
+                        <span className="rounded-pill bg-bone px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
+                          Soon
+                        </span>
+                      </span>
+                    </li>
+                  );
+                }
+                // National Show leaves this site for the NOS one: a plain anchor, same tab, no arrow.
+                const NavLink = n.crossSite ? 'a' : Link;
                 return (
-                  <span
-                    key={n.id}
-                    aria-disabled="true"
-                    className="inline-flex items-center gap-2 font-sans text-[14px] text-muted/60 cursor-not-allowed"
-                  >
-                    {n.label}
-                    <span className="rounded-pill bg-bone px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
-                      Soon
-                    </span>
-                  </span>
+                  <li key={n.id}>
+                    <NavLink
+                      href={n.href}
+                      data-hd="item"
+                      aria-current={navAriaCurrent(pathname, n.href, { crossSite: n.crossSite })}
+                      className={[
+                        'group relative inline-flex min-h-11 items-center px-[9px] font-sans text-[14.5px] font-semibold leading-none transition-colors duration-150 hover:text-primary focus-visible:text-primary focus-visible:outline-none aria-[current=page]:text-primary',
+                        n.quiet ? 'text-muted' : 'text-ink',
+                      ].join(' ')}
+                    >
+                      <span
+                        data-hd="label"
+                        className="relative after:absolute after:-bottom-2 after:left-0 after:right-0 after:h-0 after:bg-primary after:content-[''] group-hover:after:h-0.5 group-focus-visible:after:h-0.5 group-aria-[current=page]:after:h-0.5 forced-colors:group-focus-visible:underline forced-colors:group-focus-visible:decoration-2 forced-colors:group-focus-visible:underline-offset-4 forced-colors:group-aria-[current=page]:underline"
+                      >
+                        {n.label}
+                      </span>
+                    </NavLink>
+                  </li>
                 );
-              }
-              // National Show leaves this site for the NOS one: a plain anchor, same tab, no arrow.
-              const NavLink = n.crossSite ? 'a' : Link;
-              return (
-                <NavLink
-                  key={n.id}
-                  href={n.href}
-                  className={[
-                    'relative inline-flex min-h-6 items-center rounded-sm font-sans text-[14px] transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment',
-                    n.quiet ? 'text-muted' : 'text-ink',
-                    active ? 'text-primary' : '',
-                  ].join(' ')}
+              })}
+              <li>
+                <Link
+                  href={CONTACT_LINK.href}
+                  data-hd="item"
+                  aria-current={navAriaCurrent(pathname, CONTACT_LINK.href)}
+                  className="group relative inline-flex min-h-11 items-center px-[9px] font-sans text-[14.5px] font-semibold leading-none text-ink transition-colors duration-150 hover:text-primary focus-visible:text-primary focus-visible:outline-none aria-[current=page]:text-primary"
                 >
-                  {n.label}
-                  {active && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute left-0 right-0 -bottom-1 h-px bg-primary"
-                    />
-                  )}
-                </NavLink>
-              );
-            })}
-            <Link
-              href={CONTACT_LINK.href}
-              className={[
-                'relative inline-flex min-h-6 items-center rounded-sm font-sans text-[14px] transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment',
-                isActive(CONTACT_LINK.href) ? 'text-primary' : 'text-ink',
-              ].join(' ')}
-            >
-              {CONTACT_LINK.label}
-              {isActive(CONTACT_LINK.href) && (
-                <span
-                  aria-hidden="true"
-                  className="absolute left-0 right-0 -bottom-1 h-px bg-primary"
-                />
-              )}
-            </Link>
+                  <span
+                    data-hd="label"
+                    className="relative after:absolute after:-bottom-2 after:left-0 after:right-0 after:h-0 after:bg-primary after:content-[''] group-hover:after:h-0.5 group-focus-visible:after:h-0.5 group-aria-[current=page]:after:h-0.5 forced-colors:group-focus-visible:underline forced-colors:group-focus-visible:decoration-2 forced-colors:group-focus-visible:underline-offset-4 forced-colors:group-aria-[current=page]:underline"
+                  >
+                    {CONTACT_LINK.label}
+                  </span>
+                </Link>
+              </li>
+            </ul>
           </nav>
 
-          {/* Zone 3 — actions */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              aria-label="Open search"
-              className="rounded-sm p-2 text-ink hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-              onClick={() => setSearchOpen(true)}
-            >
-              <Search size={18} strokeWidth={1.5} />
-            </button>
+          {/* Zone 3 — actions. Search is inline from 1384px (below that it is the drawer's first
+              row); the CTA is the last item of the full row and the MENU button takes its place below. */}
+          <button
+            data-hd="search"
+            type="button"
+            aria-label="Open search"
+            className="hidden size-11 items-center justify-center rounded-sm text-ink transition-colors duration-150 hover:text-primary min-[1384px]:inline-flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search size={18} strokeWidth={1.5} />
+          </button>
 
-            <button
-              ref={hamburgerRef}
-              type="button"
-              aria-label="Open menu"
-              aria-expanded={mobileOpen}
-              aria-controls={MOBILE_MENU_ID}
-              className="rounded-sm p-2 text-ink min-[1240px]:hidden hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
-              onClick={() => setMobileOpen(true)}
-            >
-              <Menu size={22} strokeWidth={1.5} />
-            </button>
-          </div>
+          <Link
+            href="/societies"
+            data-hd="cta"
+            aria-current={navAriaCurrent(pathname, '/societies')}
+            className="ml-auto inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[10px] bg-accent px-6 py-[10px] font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:bg-accent-soft max-[780px]:col-start-1 max-[780px]:ml-0 min-[1384px]:ml-0 focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]"
+          >
+            Join a society
+          </Link>
+
+          <button
+            ref={hamburgerRef}
+            data-hd="menu"
+            type="button"
+            aria-label="Open menu"
+            aria-expanded={mobileOpen}
+            aria-controls={MOBILE_MENU_ID}
+            className="inline-flex min-h-11 min-w-[104px] items-center justify-center gap-2 rounded-[10px] border-[1.5px] border-[color:var(--nh-control-border)] px-3 font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:text-primary max-[780px]:col-start-3 max-[780px]:justify-self-end min-[1384px]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu size={20} strokeWidth={1.75} aria-hidden="true" />
+            Menu
+          </button>
         </div>
       </header>
 
       <MobileMenu
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
+        onSearch={() => setSearchOpen(true)}
         nav={NAV}
         triggerRef={hamburgerRef}
       />

@@ -13,6 +13,7 @@ import { NosFooter } from '@/components/nos-chrome/NosFooter';
 import { NosHeader } from '@/components/nos-chrome/NosHeader';
 import { NosSkipLink } from '@/components/nos-chrome/NosSkipLink';
 import { NosRouteScroll } from '@/components/nos/NosRouteScroll';
+import { RouteFocus } from '@/components/site-chrome/RouteFocus';
 import { getVisibleNav } from '@/lib/data/past-shows-public';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { NOS_CONTACT_PATH, nosPath } from '@/lib/nos-paths';
@@ -30,6 +31,7 @@ export async function NosFrame({ children }: { children: React.ReactNode }) {
       <main id="main-content" tabIndex={-1}>
         {children}
       </main>
+      <RouteFocus />
       <NosFooter showPlaceholders={!withholdPlaceholderProse()} />
       <AdminPill />
     </>
