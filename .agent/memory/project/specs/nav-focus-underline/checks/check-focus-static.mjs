@@ -93,7 +93,7 @@ if (mode === 'tsx-rings') {
   if (readFileSync('components/chrome/footer-data.ts', 'utf8').includes('focus-visible')) fail('components/chrome/footer-data.ts must not carry focus classes (shared with the NOS footer); put them on Footer.tsx');
 } else if (mode === 'tsx-links') {
   // Every nav/footer link on the SAOC side suppresses the UA outline, carries a focus-visible underline, and a forced-colors fallback.
-  const INDICATOR = /(^|\s)(group-)?focus-visible:(underline|decoration-2|h-0\.5|h-\[2px\]|border-b-2)/;
+  const INDICATOR = /(^|\s)(group-)?focus-visible:(after:)?(underline|decoration-2|h-0\.5|h-\[2px\]|border-b-2)/;
   let seen = 0;
   for (const el of allLinks(SAOC_TSX)) {
     seen += 1;

@@ -1,3 +1,10 @@
+# NAV-1 (F1) and HD-1 / HD-1b (F2, F3): header focus, aria-current, one header on both hosts
+
+Feature map. F1 = NAV-1 below, `contract-f1.yaml`. F2 = HD-1, one shared header structure and sizes on both hosts, `contract-f2.yaml`, spec in
+`goldens/hd1-header-parity.md`. F3 = HD-1b, one container width, `contract-f3.yaml`. All three ship on branch `fix/nav-focus-underline`. F2 amends two
+NAV-1 details, marked "F2 amendment" in the text: the bar slot (-8px, was -bottom-1) and the active bar thickness (2px, was 1px). Nothing in
+F1's assertions encodes either, so F1's contract is unchanged.
+
 # NAV-1: no focus box on nav links, focus moves to the page heading, aria-current on the current item
 
 Brad (P1, verbatim): "what the fuck is this fucking block around the selected menu item? That looks like it's from the 1980s."
@@ -18,6 +25,21 @@ the next keypress (or any `:focus-visible` heuristic hit) draws the ring on an i
 | NOS footer | `components/nos-chrome/nos-chrome.css:122`: `.nf :focus-visible { outline: 2px solid var(--nc-ground); ... }` |
 | active state, SAOC | class-driven: `Header.tsx:62` `isActive`, `:130` `active ? 'text-primary'`, `:134-139` conditional 1px span. Matching is `pathname.startsWith(href)` (marks `/eventsfoo` as Events) |
 | active state, NOS | `NosHeader.tsx:208-209` exact-match `isCurrent` (no parent marking); group triggers use `data-current` (`:274`, `:360`); `.nh-link` has `aria-current` but no CSS for it |
+
+## Current state of the two headers (feeds HD-1; measured by NOS Design live at 2056, sources cited)
+
+| | SAOC | NOS |
+|---|---|---|
+| files | `components/chrome/UtilityBar.tsx`, `Header.tsx`, `MobileMenu.tsx` (+ `SearchOverlay.tsx`), mounted by `components/site-chrome/SaocFrame.tsx:34-36` | `components/nos-chrome/NosHeader.tsx` + `nos-chrome.css` (v4 golden: `.agent/memory/project/specs/launch-weekend/goldens/nos-v4/handoff/chrome.css`), mounted by `NosFrame.tsx:25-29` |
+| utility bar | 46px, `UtilityBar.tsx:41-42` (`bg-primary-800`, `max-w-[1280px] px-8 py-2`): email left (mono 14), show pill (`:68`, hidden below 900), "Join a society" pill (`:71-76`, `/societies`) | none (`UtilityBar variant="nos"` returns null, `:34`) |
+| bar | `Header.tsx:72` `max-w-[1280px] px-8 py-3 gap-6` = content 1216, logo at x413 @2056; sticky `:68`, `bg-parchment`, shadow and `border-b border-rule` only once scrolled (`:69`); 74px | `.nh-bar` (`nos-chrome.css:29`) `max-width: calc(var(--nc-wide) + 2*var(--nc-gutter))`, `padding: 13px var(--nc-gutter)`, `gap: 24px`; `--nc-wide: 1320px`, `--nc-gutter: clamp(16px, 2.5vw, 32px)` (`:14-15`); permanent `border-bottom: 1px solid var(--nc-line)` (`:26`); 97px; logo at x361 @2056 |
+| lockup | raster `saoc-lockup-horizontal-full-name.png` 3757x493, alpha bbox is the whole image (checked: ink = image box), `Header.tsx:93-100` width 190 (<sm) / 460 (640-1239) / 340 (1240-1279) / 380 (>=1280), so 380x50 | supplied PNG 1200x294, ink 405x70 at `--nc-logo-w: 448px` (`:20`), margins pulled back so the link box is the ink box (`:32`, clipped `:167`); 390 below 700 (`:77`) |
+| nav | `Header.tsx:104` `gap-4` (16), items `min-h-6` (24, fails 44), Manrope 14/400 (`:128`), no tracking; breakpoint 1240 (`:104`) | `.nh-link, .nh-trigger` (`:37`): Karla 14.5/600/1, `min-height: 44px; padding: 0 9px`, list `gap: 2px` (`:36`), `margin-left: auto` (`:35`); chevron `.nc-chev` 14px with `gap: 6px` (`:22,:37`); breakpoint 1260 (`:69`) |
+| hover / active | hover `hover:text-primary`; active = text plus 1px bar at `-bottom-1` (`:128-139`) | hover = `background: var(--nc-gold)` fill (`:38`); active = 2px `--nc-green-1` bar at `.nh-label::after { bottom: -8px }` on triggers only (`:41`) |
+| right slot | search button `p-2` + 18px icon = 34x34 (`:165-169`), icon-only hamburger `p-2` (`:177`); "Join a society" lives in the utility bar | Tickets CTA `.nh-cta` (`:60`): `min-height: 44px; padding: 10px 24px; border-radius: 10px; font: 700 13px/1; letter-spacing: 0.12em; uppercase`, 109x44, `margin-left: auto` below 1260 (`:64`); labelled burger `.nh-burger` (`:65`, `min-width: 104px`, text from `NosHeader.tsx:335`: "Menu"/"Close", uppercased by CSS) |
+| narrow | hamburger below 1240 opens a right-sliding dialog (`MobileMenu.tsx:71-82`); header sticky at every width | menu panel `.nd` below 1260; below 700 the lockup takes row one and the header is `position: relative` (`:76-86`) |
+| page content container | `.saoc-container` (`globals.css:382-386`) from `--container-max: 1280px`, `--container-pad: 32px` (`:88-89`) = content 1216; 9 files still hard-code `max-w-[1280px]` | tokens above |
+| preview banner | never mounted on SAOC | `TicketingTestBar` in `NosFrame.tsx:26`, rendered only on ticketing surfaces while payments are not live (`TicketingTestBar.tsx`), 44/48px, header offset in `nos-chrome.css:90-95` |
 
 ## What to build
 
@@ -51,8 +73,9 @@ against its ground (1.4.11, measured by `checks/check-contrast.mjs`: 9.5:1 SAOC,
 
 SAOC, on parchment (`Header.tsx`, `MobileMenu.tsx`):
 - Desktop nav link and Contact (`Header.tsx:124-157`): on `:focus-visible` the text goes to `--primary` (same as hover) and a 2px bar in `--primary`
-  appears in the same slot as the active underline (`absolute left-0 right-0 -bottom-1`). The active item keeps its 1px bar and it thickens to 2px
-  on focus. Hover is unchanged.
+  appears in the same slot as the active bar: the label's -8px bar slot (`absolute left-0 right-0 -bottom-2`, F2/HD-1 amendment: this was `-bottom-1`
+  before HD-1 unified the slot with NOS `.nh-label::after { bottom: -8px }`). The active item's bar is a persistent 2px (HD-1 #7; it was 1px) and
+  stays 2px on focus. Hover: see F2, which gives hover the same text colour and 2px bar.
 - Mobile menu rows (`MobileMenu.tsx:130-151`) and its mailto link (`:157`): same text colour; the 2px underline sits under the label text
   (`underline decoration-2 underline-offset-4`), 1px when active and not focused. The row's `hover:bg-bone` is unchanged.
 - Every one of those links carries `focus-visible:outline-none` (without it the UA default outline would show) and a `forced-colors:` variant that

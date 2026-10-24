@@ -1,0 +1,310 @@
+{
+  "$comment": "HD-1 golden. Targets and tolerances for checks/compare-geometry.mjs; edit numbers here, never in the script. Measurements come from checks/measure-header.js run on both hosts at each width (scroll 0). 'when': full = viewport >= 1260, menu = 700..1259, phone = < 700, wide = >= 700, all. 'pair' = |saoc - nos| <= tol. 'same' = strings equal (fonts differ per host by design, so no family metric). 'target' = value within tol on every host that shows the element. 'hostOnly' restricts a rule to one host. A metric that is null on exactly one host fails; null on both is skipped. Rules carry 'feature': f2 (default) or f3 (HD-1b container); the CLI filters with --feature. 'sameAsMetric' compares two metrics on the same host within tol (content left edge vs lockup left edge).",
+  "widths": [
+    2056,
+    1440,
+    1280,
+    1024,
+    390
+  ],
+  "crossSiteWidth": 1440,
+  "crossSiteTolerance": {
+    "headerHeight": 1,
+    "brandLeft": 1,
+    "brandTop": 1
+  },
+  "rules": [
+    {
+      "id": "no-utility-bar",
+      "metric": "utilityBars",
+      "when": "all",
+      "each": 0
+    },
+    {
+      "id": "header-height-pair",
+      "metric": "headerHeight",
+      "when": "all",
+      "pair": 1
+    },
+    {
+      "id": "header-height-97",
+      "metric": "headerHeight",
+      "when": "full",
+      "target": 97,
+      "tol": 1
+    },
+    {
+      "id": "header-position",
+      "metric": "headerPosition",
+      "when": "all",
+      "same": true
+    },
+    {
+      "id": "bar-max-width",
+      "metric": "barMaxWidth",
+      "when": "full",
+      "pair": 1
+    },
+    {
+      "id": "bar-padding-top",
+      "metric": "barPaddingTop",
+      "when": "all",
+      "pair": 1
+    },
+    {
+      "id": "bar-padding-left",
+      "metric": "barPaddingLeft",
+      "when": "all",
+      "pair": 1
+    },
+    {
+      "id": "bar-gap",
+      "metric": "barGap",
+      "when": "wide",
+      "pair": 1
+    },
+    {
+      "id": "brand-left",
+      "metric": "brandLeft",
+      "when": "all",
+      "pair": 1
+    },
+    {
+      "id": "brand-top",
+      "metric": "brandTop",
+      "when": "all",
+      "pair": 1
+    },
+    {
+      "id": "brand-ink-height-pair",
+      "metric": "brandHeight",
+      "when": "all",
+      "pair": 2
+    },
+    {
+      "id": "brand-ink-height-70",
+      "metric": "brandHeight",
+      "when": "wide",
+      "target": 70,
+      "tol": 2
+    },
+    {
+      "id": "nav-single-line",
+      "metric": "navSingleLine",
+      "when": "full",
+      "each": true
+    },
+    {
+      "id": "item-height-44",
+      "metric": "itemHeightMin",
+      "when": "full",
+      "target": 44,
+      "tol": 0
+    },
+    {
+      "id": "item-height-44-max",
+      "metric": "itemHeightMax",
+      "when": "full",
+      "target": 44,
+      "tol": 0
+    },
+    {
+      "id": "item-font-size",
+      "metric": "itemFontSize",
+      "when": "full",
+      "same": true
+    },
+    {
+      "id": "item-font-weight",
+      "metric": "itemFontWeight",
+      "when": "full",
+      "same": true
+    },
+    {
+      "id": "item-line-height",
+      "metric": "itemLineHeight",
+      "when": "full",
+      "same": true
+    },
+    {
+      "id": "item-letter-spacing",
+      "metric": "itemLetterSpacing",
+      "when": "full",
+      "same": true
+    },
+    {
+      "id": "item-text-transform",
+      "metric": "itemTextTransform",
+      "when": "full",
+      "same": true
+    },
+    {
+      "id": "item-padding-x",
+      "metric": "itemPaddingLeft",
+      "when": "full",
+      "pair": 1
+    },
+    {
+      "id": "item-gap",
+      "metric": "itemGap",
+      "when": "full",
+      "pair": 1
+    },
+    {
+      "id": "cta-height-44",
+      "metric": "ctaHeight",
+      "when": "all",
+      "target": 44,
+      "tol": 1
+    },
+    {
+      "id": "cta-right-edge",
+      "metric": "ctaRight",
+      "when": "wide",
+      "pair": 1
+    },
+    {
+      "id": "cta-right-inset",
+      "metric": "ctaRightInset",
+      "when": "wide",
+      "pair": 1
+    },
+    {
+      "id": "cta-padding-y",
+      "metric": "ctaPaddingTop",
+      "when": "all",
+      "pair": 1
+    },
+    {
+      "id": "cta-padding-x",
+      "metric": "ctaPaddingLeft",
+      "when": "all",
+      "pair": 1
+    },
+    {
+      "id": "cta-radius",
+      "metric": "ctaRadius",
+      "when": "all",
+      "same": true
+    },
+    {
+      "id": "cta-font-size",
+      "metric": "ctaFontSize",
+      "when": "all",
+      "same": true
+    },
+    {
+      "id": "cta-font-weight",
+      "metric": "ctaFontWeight",
+      "when": "all",
+      "same": true
+    },
+    {
+      "id": "cta-line-height",
+      "metric": "ctaLineHeight",
+      "when": "all",
+      "same": true
+    },
+    {
+      "id": "cta-letter-spacing",
+      "metric": "ctaLetterSpacing",
+      "when": "all",
+      "same": true
+    },
+    {
+      "id": "cta-text-transform",
+      "metric": "ctaTextTransform",
+      "when": "all",
+      "same": true
+    },
+    {
+      "id": "search-width-44",
+      "metric": "searchWidth",
+      "when": "full",
+      "target": 44,
+      "tol": 0,
+      "hostOnly": "saoc"
+    },
+    {
+      "id": "search-height-44",
+      "metric": "searchHeight",
+      "when": "full",
+      "target": 44,
+      "tol": 0,
+      "hostOnly": "saoc"
+    },
+    {
+      "id": "menu-height",
+      "metric": "menuHeight",
+      "when": "menu",
+      "target": 44,
+      "tol": 1
+    },
+    {
+      "id": "menu-height-phone",
+      "metric": "menuHeight",
+      "when": "phone",
+      "target": 44,
+      "tol": 1
+    },
+    {
+      "id": "menu-label",
+      "metric": "menuText",
+      "when": "all",
+      "same": true
+    },
+    {
+      "id": "active-bar-offset",
+      "metric": "activeBarBottom",
+      "when": "full",
+      "same": true
+    },
+    {
+      "id": "active-bar-height",
+      "metric": "activeBarHeight",
+      "when": "full",
+      "same": true
+    },
+    {
+      "id": "active-bar-is-8px-2px",
+      "metric": "activeBarBottom",
+      "when": "full",
+      "each": "-8px"
+    },
+    {
+      "id": "active-bar-is-2px",
+      "metric": "activeBarHeight",
+      "when": "full",
+      "each": "2px"
+    },
+    {
+      "id": "content-starts-at-header-bottom",
+      "metric": "mainGap",
+      "when": "all",
+      "target": 0,
+      "tol": 1
+    },
+    {
+      "id": "no-horizontal-overflow",
+      "metric": "overflowX",
+      "when": "all",
+      "target": 0,
+      "tol": 0
+    },
+    {
+      "id": "content-left-edge",
+      "metric": "contentLeft",
+      "when": "full",
+      "pair": 1,
+      "feature": "f3"
+    },
+    {
+      "id": "h1-aligned-with-lockup",
+      "metric": "contentLeft",
+      "sameAsMetric": "brandLeft",
+      "tol": 1,
+      "when": "full",
+      "feature": "f3"
+    }
+  ]
+}

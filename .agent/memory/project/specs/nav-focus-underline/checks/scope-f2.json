@@ -1,0 +1,11 @@
+{
+ "allowed": [
+  "^components/chrome/UtilityBar\\.tsx$",
+  "^components/chrome/index\\.ts$",
+  "^components/chrome/header-[^/]+\\.(ts|tsx|css)$",
+  "^lib/show-identity\\.ts$",
+  "^docs/header-parity\\.md$",
+  "^e2e/header-parity[^/]*$"
+ ],
+ "mustStay": []
+}

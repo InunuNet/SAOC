@@ -1,0 +1,97 @@
+schema: athanor.contract/v1
+slug: nav-focus-underline
+goal: The SAOC and NOS headers share one structure and one set of sizes (no utility bar, same bar, lockup ink height, nav items, CTA, MENU button, breakpoints and active/hover bar), so switching sites does not move the header.
+created_at: '2026-10-24'
+autonomy: high
+
+# HD-1 (NOS Design, final). Spec: goldens/hd1-header-parity.md; numbers: goldens/header-geometry.json; current state of both headers: goldens/README.md.
+# Feature F2 on branch fix/nav-focus-underline, after F1 (NAV-1). F2 amends two F1 details in the F1 README (bar slot -8px, active bar 2px); no F1 assertion encodes them.
+# SEQUENCING (binding): Footer.tsx is also rewritten by fix/saoc-societies-footer (7d7a0986, unmerged). Rebase this branch onto that branch (or main once it merges) before touching
+# the footer; put info@saoc.co.za directly under the FOOTER_REG span.
+# DECISION NEEDED (see hd1-header-parity.md, risk 1): the full-name SAOC lockup at 70px ink height is about 533px wide and cannot sit next to the full nav at 1260. The gate encodes the spec as
+# written and will fail rather than pass by shrinking anything. Dev: if the measurement fails, stop and report; do not reduce the ink height, the nav or the CTA to fit.
+# Hooks: both headers carry data-hd="bar|brand|nav|item|label|cta|menu" (SAOC also "search"); see hd1-header-parity.md.
+# POST-DEPLOY gates: B15-B17 need the measurements file and manifests written by the BrowserAgent run at the deployed commit
+# (.agent/memory/scratch/hd1-geometry-measurements.json: hosts.{saoc,nos}.<width> from checks/measure-header.js, crossSite.1440.{before,after}, routes, commitSha). They error until then.
+# B18 is not applicable (no email); declared only for the triad linter (Athanor#1467).
+
+features:
+  - id: F2
+    name: One header structure and set of sizes on both hosts (HD-1)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/nav-focus-underline/goldens/hd1-header-parity.md
+  - .agent/memory/project/specs/nav-focus-underline/goldens/header-geometry.json
+  - .agent/memory/project/specs/nav-focus-underline/goldens/README.md
+  - .agent/memory/project/specs/nav-focus-underline/goldens/codex-qa-prompt-f2.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: B1
+      description: Geometry comparator self-test, every rule fails on its own mutation and identical headers pass
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/compare-geometry.mjs --selftest
+    - id: B2
+      description: Both headers carry the same data-hd hooks (bar, brand, nav, item, label, cta, menu; SAOC search)
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-header-spec.mjs hooks
+    - id: B3
+      description: SAOC header has the Join a society CTA to /societies, a labelled Menu button, the supplied lockup file uncropped and unfiltered, and search reachable in the drawer
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-header-spec.mjs saoc-header
+    - id: B4
+      description: Breakpoints are identical, 1260 full nav and 699/700 phone, no 1240 left in the SAOC header
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-header-spec.mjs breakpoints
+    - id: B5
+      description: SAOC menu items have no hover or focus fill, the -8px bar slot, a 2px bar driven by aria-current, and a hover bar
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-header-spec.mjs states-saoc
+    - id: B6
+      description: NOS menu items have no hover fill, the open-trigger fill is kept, and hover and current draw the 2px bar in the shared slot
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-header-spec.mjs states-nos
+    - id: B7
+      description: NOS reference values did not move (bar gap and padding, item size and type, nav gap, CTA box and type)
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-header-spec.mjs nos-values
+    - id: B8
+      description: Preview banner stays off SAOC with NOS offsets intact, email in the footer brand column under REG, show pill gone from the SAOC chrome
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-header-spec.mjs banner-footer
+    - id: B9
+      description: No UtilityBar reference remains in app, components or lib
+      command: "! grep -rq UtilityBar app components lib"
+    - id: B10
+      description: Only the fix's allow-listed files changed (F1, F2 and F3 lists merged; skip links, nav data, footer-data and newsletter component untouched)
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-scope.mjs
+    - id: B11
+      description: Type-check passes
+      command: pnpm type-check
+      timeout_seconds: 600
+    - id: B12
+      description: Lint passes on the touched header files
+      command: pnpm exec eslint components/chrome/Header.tsx components/chrome/MobileMenu.tsx components/chrome/Footer.tsx components/site-chrome/SaocFrame.tsx components/nos-chrome/NosHeader.tsx
+      timeout_seconds: 300
+    - id: B13
+      description: Doc exists and records the hooks, the measured gate and the lockup decision
+      command: test -f docs/header-parity.md && grep -q "HD-1" docs/header-parity.md && grep -q "data-hd" docs/header-parity.md && grep -q "lockup" docs/header-parity.md
+    - id: B14
+      description: Codex adversarial review of the whole diff
+      type: codex_qa
+      target: .agent/memory/project/specs/nav-focus-underline/goldens/codex-qa-prompt-f2.md
+      timeout_seconds: 1300
+      required: true
+    - id: B15
+      description: Measured header parity on the deployed hosts at 2056/1440/1280/1024/390 (height, lockup ink, nav items, CTA box and right edge, MENU, active bar, content start, no overflow, cross-site click does not move the header), on the deployed commit
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/compare-geometry.mjs .agent/memory/scratch/hd1-geometry-measurements.json --feature f2
+    - id: B16
+      description: BrowserAgent on the SAOC host took the side-by-side shots at 1280 and 390 and the National Show click-through frame pair
+      type: browser_deployed_check
+      target: .agent/memory/scratch/hd1-browser-saoc-manifest.json
+      required: true
+    - id: B17
+      description: BrowserAgent on the NOS host took the same shots and frame pair
+      type: browser_deployed_check
+      target: .agent/memory/scratch/hd1-browser-nos-manifest.json
+      script: .agent/memory/project/specs/nav-focus-underline/checks/browser-nos-origin.sh
+      required: true
+    - id: B18
+      description: gws inbox check is not applicable (no email is sent); declared non-required only to satisfy the triad coverage linter, expected to skip (Athanor#1467)
+      type: gws_inbox_check
+      target: .agent/memory/scratch/hd1-gws-manifest.json
+      required: false
