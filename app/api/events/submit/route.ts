@@ -3,6 +3,17 @@ import { getAuth } from 'firebase-admin/auth';
 import { createClient } from '@sanity/client';
 
 import { initAdmin } from '@/lib/firebase-admin';
+import {
+  hostSocietyExists,
+  isVerifiedSubmitter,
+  validateEventSubmission,
+} from '@/lib/event-submission-guard';
+import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
+import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
+import {
+  PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
+  PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
+} from '@/lib/public-form-rate-limit';
 import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
 import { sendEventSubmissionAdminNotice } from '@/lib/event-submission-admin-notice';
 import { logFailureSafely } from '@/lib/safe-log';
@@ -10,8 +21,8 @@ import { projectId, dataset, apiVersion } from '@/sanity/env';
 
 export const runtime = 'nodejs';
 
-const ALLOWED_KINDS = ['exhibition', 'meeting', 'show', 'workshop', 'social'] as const;
-type Kind = (typeof ALLOWED_KINDS)[number];
+// Parameterised: the id is a GROQ parameter, never interpolated into the query string.
+const SOCIETY_EXISTS_QUERY = 'count(*[_type == "society" && _id == $id]) > 0';
 
 type SubmitBody = {
   title: string;
@@ -23,6 +34,8 @@ type SubmitBody = {
   description: string;
   hostSocietyId?: string;
 };
+
+const attempts = createAttemptStore(PUBLIC_FORM_RATE_LIMIT_WINDOW_MS);
 
 function slugify(title: string): string {
   return title
@@ -37,62 +50,52 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const token = authz.startsWith('Bearer ') ? authz.slice(7) : null;
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // 2. Verify token
+  // 2. Verify token (revocation checked) and require a verified email
   let uid: string;
   try {
     initAdmin();
-    const decoded = await getAuth().verifyIdToken(token);
+    const decoded = await getAuth().verifyIdToken(token, true);
+    if (!isVerifiedSubmitter(decoded)) {
+      return NextResponse.json({ error: 'Email not verified' }, { status: 403 });
+    }
     uid = decoded.uid;
   } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 3. Parse + validate body
-  let body: SubmitBody;
+  // 3. Rate limit per uid, before the body is parsed
+  const limit = consumeRateLimit(
+    { now: new Date(), ...scopeAttemptsToRequest(attempts) },
+    `event-submit:${uid}`,
+    PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
+    PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
+  );
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'Too many attempts. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } },
+    );
+  }
+
+  // 4. Parse + validate body
+  let raw: unknown;
   try {
-    body = (await req.json()) as SubmitBody;
+    raw = await req.json();
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
+  const validation = validateEventSubmission(raw, new Date());
+  if (!validation.ok) {
+    return NextResponse.json(
+      { error: validation.error, field: validation.field },
+      { status: 400 },
+    );
+  }
+  const body = raw as SubmitBody; // validateEventSubmission() checked every field's type above
   const { title, kind, date, endDate, venue, location, description, hostSocietyId } = body;
 
-  if (!title?.trim()) {
-    return NextResponse.json({ error: 'Title is required', field: 'title' }, { status: 400 });
-  }
-  if (!ALLOWED_KINDS.includes(kind as Kind)) {
-    return NextResponse.json({ error: 'Invalid event kind', field: 'kind' }, { status: 400 });
-  }
-  const dateObj = date ? new Date(date) : null;
-  if (!dateObj || isNaN(dateObj.getTime()) || dateObj <= new Date()) {
-    return NextResponse.json(
-      { error: 'Date must be a valid date in the future', field: 'date' },
-      { status: 400 }
-    );
-  }
-  if (endDate) {
-    const endObj = new Date(endDate);
-    if (isNaN(endObj.getTime()) || endObj < dateObj) {
-      return NextResponse.json(
-        { error: 'End date must be on or after start date', field: 'endDate' },
-        { status: 400 }
-      );
-    }
-  }
-  if (!venue?.trim()) {
-    return NextResponse.json({ error: 'Venue is required', field: 'venue' }, { status: 400 });
-  }
-  if (!location?.trim()) {
-    return NextResponse.json({ error: 'Location is required', field: 'location' }, { status: 400 });
-  }
-  if (!description || description.trim().length < 20) {
-    return NextResponse.json(
-      { error: 'Description must be at least 20 characters', field: 'description' },
-      { status: 400 }
-    );
-  }
-
-  // 4. Build write client
+  // 5. Build write client
   const sanityToken = process.env.SANITY_API_TOKEN;
   if (!projectId || !sanityToken) {
     return NextResponse.json({ error: 'CMS not configured' }, { status: 500 });
@@ -105,12 +108,25 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     useCdn: false,
   });
 
-  // 5. Compute slug + draft id
+  // An empty id means no host society, exactly as the draft below treats it.
+  if (hostSocietyId) {
+    const societyExists = await hostSocietyExists(hostSocietyId, async (id) =>
+      writeClient.fetch<boolean>(SOCIETY_EXISTS_QUERY, { id }),
+    );
+    if (!societyExists) {
+      return NextResponse.json(
+        { error: 'Unknown host society', field: 'hostSocietyId' },
+        { status: 400 },
+      );
+    }
+  }
+
+  // 6. Compute slug + draft id
   const datePart = date.slice(0, 10);
   const slug = `${slugify(title)}-${datePart}`;
   const id = `drafts.societyEvent-${crypto.randomUUID()}`;
 
-  // 6. Create draft
+  // 7. Create draft
   const doc: { _id: string; _type: string; [key: string]: unknown } = {
     _id: id,
     _type: 'societyEvent',
@@ -135,7 +151,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Failed to create draft' }, { status: 500 });
   }
 
-  // 7. Notify admins (non-blocking: a failure never changes the response)
+  // 8. Notify admins (non-blocking: a failure never changes the response)
   await deliverConfirmationEmailAfterCommit(
     () =>
       sendEventSubmissionAdminNotice({
@@ -154,6 +170,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     (error) => logFailureSafely('[events/submit] admin notice failed (non-fatal)', error),
   );
 
-  // 8. Respond 201
+  // 9. Respond 201
   return NextResponse.json({ id, slug }, { status: 201 });
 }

@@ -9,6 +9,7 @@ import {
   PAYFAST_SANDBOX_PROCESS_URL,
   PAYFAST_SANDBOX_VALIDATE_URL,
 } from '@/lib/payfast';
+import { constantTimeStringEqual } from '@/lib/recovery-token';
 
 import type {
   ConfirmResult,
@@ -256,7 +257,7 @@ export function createPayfastProvider(deps?: PayfastProviderDeps): PaymentProvid
       if (!receivedSignature) {
         return { verified: false, reason: 'missing-signature', reference };
       }
-      if (generateNotifySignature(fields, passphrase) !== receivedSignature) {
+      if (!constantTimeStringEqual(generateNotifySignature(fields, passphrase), receivedSignature)) {
         return { verified: false, reason: 'signature-mismatch', reference };
       }
 
