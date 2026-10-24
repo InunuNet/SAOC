@@ -12,7 +12,7 @@ const RASTER_EXTENSION = /\.(jpe?g|png)$/i;
 const WEBP_QUALITY = 75;
 // The home hero's static fallback (lib/data/heroImages.ts) also gets a q88 set, which the loader serves for quality={88} (rHB).
 const HERO_WEBP_QUALITY = 88;
-const HERO_SOURCES = new Set(['orchid-violet.jpg', 'orchid-pink.jpg', 'orchid-dark.jpg', 'orchid-purple.jpg', 'orchid-yellow.jpg'].map((name) => path.join(SOURCE_ROOT, name)));
+const HERO_SOURCES = new Set(['orchid-violet.jpg', 'orchid-pink.jpg', 'orchid-dark.jpg', 'orchid-purple.jpg', 'orchid-yellow.jpg', 'nos-hero-S3a.jpg', 'nos-hero-S3b.jpg', 'nos-hero-S2a.jpg', 'nos-hero-S2c.jpg', 'nos-hero-S1b.jpg', 'nos-hero-H4a.jpg', 'nos-hero-H4b.jpg'].map((name) => path.join(SOURCE_ROOT, name)));
 // Every image keeps this cap (lib/image-loader.ts). Only the full-bleed hero photographs in
 // lib/hero-source-widths.json go above it, at q88, up to their own native width and never beyond.
 const STANDARD_MAX_WIDTH = 2048;

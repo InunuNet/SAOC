@@ -51,7 +51,7 @@ export default async function TicketCancelledPage({
           {ref ? <p className="font-sans text-[15px] text-muted">Booking ref: {ref}</p> : null}
           <Link
             href="/tickets"
-            className="nk-btn nk-cta mt-8 inline-flex w-auto"
+            className={`nk-btn nk-cta inline-flex w-auto${ref ? ' mt-8' : ''}`}
           >
             {cancelledButtonLabel}
           </Link>

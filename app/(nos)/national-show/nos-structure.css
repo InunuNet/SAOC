@@ -46,14 +46,21 @@
   color: var(--ivory);
 }
 
-/* R29 typographic hero: solid ground, no media, no scrim; copy on the axis shared with the
-   sections below (h1 and standfirst left edges equal the wrap content edge). */
-.nos-theme .nos-hero-type .nos-hero-copy {
-  padding-block: 64px 56px;
+/* R29 typographic hero (a route with no crop): solid ground, no media, no scrim; the copy is top-anchored
+   like the split hero's (nos-theme.css) and sits on the axis shared with the sections below. */
+
+/* FQ7 (NOS Design, 2026-10-23/24): the first content after the sub-nav sits 64px below it (40px below
+   768px), with no hairline between them. A page with no sub-nav (tickets, the legal family, contact)
+   measures the same 64/40 from the hero's bottom edge (G5). Replaces the 72-120px section rhythm for
+   that first block only. */
+.nos-theme .nos-subnav + *,
+.nos-theme .nos-hero-inner:not(:has(+ .nos-subnav)) + * {
+  padding-top: 64px;
 }
-@media (max-width: 1023px) {
-  .nos-theme .nos-hero-type .nos-hero-copy {
-    padding-block: 48px 40px;
+@media (max-width: 767px) {
+  .nos-theme .nos-subnav + *,
+  .nos-theme .nos-hero-inner:not(:has(+ .nos-subnav)) + * {
+    padding-top: 40px;
   }
 }
 
@@ -64,7 +71,6 @@
 .nos-theme .nos-subnav {
   position: relative;
   background-color: var(--parchment);
-  border-bottom: 1px solid var(--rule);
 }
 .nos-theme .nos-subnav-row {
   display: flex;
@@ -860,7 +866,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
       background-color var(--dur-med) var(--ease-nos),
       color var(--dur-med) var(--ease-nos),
       border-color var(--dur-med) var(--ease-nos),
-      transform var(--dur-fast) var(--ease-nos);
+      scale var(--dur-fast) var(--ease-nos);
   }
   .nos-theme .nk-btn .nk-icon {
     transition: transform var(--dur-slow) var(--ease-nos);
@@ -1888,7 +1894,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     }
   }
   .nos-theme .nk-btn:active {
-    transform: scale(0.98);
+    scale: 0.98;
   }
 }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
@@ -1917,16 +1923,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-family: var(--serif);
   font-size: 1.25rem;
   color: var(--ink-700);
-}
-
-.nos-theme .nos-hero-type.nk-hero-compact {
-  min-height: 0;
-}
-.nos-theme .nos-hero-type.nk-hero-compact .nos-hero-copy {
-  padding-block: 20px 16px;
-}
-.nos-theme .nk-hero-compact .nos-hero-lede {
-  max-width: 64ch;
 }
 
 /* ---------- Section ledes, the sales-closed line and the Day Pass "from" figure ---------- */

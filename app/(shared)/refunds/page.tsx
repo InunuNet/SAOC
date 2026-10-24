@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { PageHero } from '@/components/ui/PageHero';
+import { LegalHero } from '@/components/nos/LegalHero';
 import { ProvisionalFigure } from '@/components/ui/ProvisionalFigure';
 import { PROVISIONAL_REFUND_POLICY } from '@/lib/provisional-figures';
 
@@ -42,7 +42,8 @@ function daysInWords(days: number): string {
 export default function RefundsPage() {
   return (
     <>
-      <PageHero
+      <LegalHero
+        route="/refunds"
         image="/images/orchid-violet.jpg"
         eyebrow="Legal"
         heading="Refund & Cancellation Policy"

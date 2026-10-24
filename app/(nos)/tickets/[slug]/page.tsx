@@ -210,7 +210,6 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
         title={ticketType.name}
         lede={ticketType.description}
         crumbs={breadcrumbs}
-        className="nk-hero-compact"
       />
 
       <div className="mx-auto max-w-[560px] px-8 pb-12 pt-4">

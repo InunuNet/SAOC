@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { PageHero } from '@/components/ui/PageHero';
+import { LegalHero } from '@/components/nos/LegalHero';
 import { fitDescription } from '@/lib/seo';
 
 const LEDE =
@@ -18,7 +18,8 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <>
-      <PageHero
+      <LegalHero
+        route="/privacy"
         image="/images/orchid-violet.jpg"
         eyebrow="Legal"
         heading="Privacy Policy"

@@ -510,8 +510,7 @@
   align-items: center;
   gap: 12px;
 }
-.nos-theme .nos-hero-scrim,
-.nos-theme .nos-hero-inner.nos-hero-photo::before {
+.nos-theme .nos-hero-scrim {
   position: absolute;
   inset: 0;
   z-index: -1;
@@ -615,14 +614,16 @@
   }
 }
 
-/* ---- Inner hero (I:245-256): the tickets masthead's type on a full-bleed
-   photograph; photo shown as shot (R5). ---- */
+/* ---- Inner hero (NOS Design NH2, PR-B inputs G1-G2, 2026-10-24): the split studio panel.
+   From 768px the copy sits on solid black at the left, top-anchored (never centred, so a lede the
+   loader does not have cannot move the h1) and a photograph fills a 46% panel flush right at
+   full hero height (hard edge, 16px bottom-left radius only, no scrim). The hero fits the h1 plus
+   a 3-line lede at min(56vh, 560px) with a 420px floor; a longer lede grows it downward only.
+   Below 768px a 2:1 photo band leads and the copy follows on black (see the 767px block). ---- */
 .nos-theme .nos-hero-inner {
   display: grid;
-  align-content: center;
-}
-.nos-theme .nos-hero-inner.nos-hero-photo {
-  min-height: clamp(360px, 32vw, 460px);
+  align-content: start;
+  min-height: max(420px, min(56vh, 560px));
 }
 /* R70 symposium: the hero lede is the theme line (NosHero ledeKind="theme"), not a standfirst. */
 .nos-theme .nos-hero-inner .nos-hero-lede[data-nos-lede='theme'] {
@@ -636,20 +637,38 @@
   font-variation-settings: 'opsz' 28;
 }
 .nos-theme .nos-hero-inner .nos-hero-media {
-  inset: 0;
+  inset: 0 0 0 auto;
+  width: 46%;
+  overflow: hidden;
+  border-bottom-left-radius: var(--radius-card);
 }
 .nos-theme .nos-hero-inner .nos-hero-img {
-  object-position: 70% 50%;
-}
-.nos-theme .nos-hero-inner.nos-hero-photo::before {
-  content: '';
-  z-index: 1;
+  object-position: 50% 50%;
 }
 .nos-theme .nos-hero-inner .nos-hero-copy {
   z-index: 2;
   display: grid;
   gap: 22px;
-  padding-block: 64px;
+  padding-top: 96px;
+  padding-bottom: 64px;
+}
+/* The copy column ends 32px short of the panel: its left edge stays on the shared axis, its right
+   padding clears the 46% panel. */
+.nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {
+  max-width: none;
+  margin-inline: 0;
+  padding-left: calc(max(0px, (100cqw - var(--nos-axis-max)) / 2) + var(--nos-axis-pad));
+  padding-right: calc(46cqw + 32px);
+}
+.nos-theme .nos-hero-inner .nos-hero-eyebrow {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  color: var(--olive);
 }
 .nos-theme .nos-hero-inner .nos-hero-title {
   max-width: min(14ch, var(--hero-col));
@@ -688,22 +707,35 @@
     padding-block: 40px;
     gap: 32px;
   }
-  .nos-theme .nos-hero-inner,
-  .nos-theme .nos-hero-inner.nos-hero-photo {
-    min-height: 0;
-    align-content: start;
+}
+/* Below 768px (G2): the photo is a full-width 2:1 band at the top of the hero, the copy follows
+   on black at padding-top 48px, no panel radius. */
+/* 768-1023px: the copy column is 54% less its margins, so the h1 steps down to keep two lines. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .nos-theme .nos-hero-inner .nos-hero-title {
+    font-size: clamp(2.25rem, 4.9vw, 3rem);
   }
-  .nos-theme .nos-hero-inner.nos-hero-photo::before {
-    content: none;
+}
+@media (max-width: 767px) {
+  /* The floor is 360px; it grows with the band (50vw) so the band, the 48px top padding, an h1 and a
+     3-line lede fit without the hero growing when a longer lede arrives. */
+  .nos-theme .nos-hero-inner {
+    min-height: max(360px, calc(50vw + 232px));
   }
   .nos-theme .nos-hero-inner .nos-hero-media {
     position: relative;
     inset: auto;
-    order: 2;
-    aspect-ratio: 4 / 3;
+    width: 100%;
+    aspect-ratio: 2 / 1;
+    border-radius: 0;
   }
-  .nos-theme .nos-hero-inner .nos-hero-copy {
-    padding-block: 48px 32px;
+  .nos-theme .nos-hero-inner .nos-hero-copy,
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {
+    max-width: var(--nos-axis-max);
+    margin-inline: auto;
+    padding-inline: var(--nos-axis-pad);
+    padding-top: 48px;
+    padding-bottom: 32px;
   }
 }
 @media (max-width: 700px) {
@@ -733,13 +765,7 @@
     height: 300px;
     aspect-ratio: auto;
   }
-  .nos-theme .nos-hero-inner .nos-hero-media {
-    order: -1;
-    height: 220px;
-    aspect-ratio: auto;
-  }
-  .nos-theme .nos-hero-hub .nos-hero-img,
-  .nos-theme .nos-hero-inner .nos-hero-img {
+  .nos-theme .nos-hero-hub .nos-hero-img {
     object-position: var(--nos-hero-pos, 50% 50%);
   }
   .nos-theme .nos-hero-hub .nos-hero-lede,
@@ -773,12 +799,6 @@
     column-gap: 40px;
     row-gap: 0;
     max-width: none;
-  }
-  .nos-theme .nos-hero-inner {
-    min-height: 380px;
-  }
-  .nos-theme .nos-hero-inner.nos-hero-photo {
-    min-height: clamp(380px, 32vw, 460px);
   }
   .nos-theme .nos-hero-inner .nos-hero-title {
     max-width: none;

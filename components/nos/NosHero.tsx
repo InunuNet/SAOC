@@ -2,17 +2,19 @@
 // NOS — components/nos/NosHero.tsx
 // Server Component. The NOS hero, in two kinds that share one DOM contract:
 //
-//   photo  (R15) full-bleed studio orchid photography under one 90deg near-black ramp
-//          (never purple), copy on the dark end. Only the five rights-cleared production
-//          photographs may appear, each on exactly ONE route (R29, components/nos/
-//          hero-photos.ts); the 13-photo Ormerod set in branding/ is NOT rights-cleared
-//          (guardrail D5). No duotone, filter or vignette on the photograph itself.
-//   type   (R29) every other route: a typographic hero on solid #0B0A14. h1 and standfirst
-//          only, on the 1080px grid shared with the sections below. No image, svg, scrim.
+//   photo  (NOS Design NH2) the inner split studio panel: copy top-anchored on solid #0B0A14,
+//          one cropped studio photograph in a 46% panel flush right (16px bottom-left radius,
+//          no scrim); below 768px a 2/1 photo band leads and the copy sits under it. The hub
+//          (`titleSize="display"`) keeps its full-bleed photograph under the 6-stop ramp. Only
+//          the rights-cleared production photographs may appear (components/nos/hero-photos.ts);
+//          the 13-photo Ormerod set in branding/ is NOT rights-cleared (guardrail D5). No
+//          duotone, filter, transform or vignette on the photograph itself.
+//   type   (R29) a route with no crop: a typographic hero on solid #0B0A14, same min-height and
+//          top-anchored copy, no image, svg or scrim.
 //
-// The route decides: `route` is looked up in the photo map; a route with no entry is
-// typographic. Geometry, ramps and stack breakpoints live in nos-theme.css (`.nos-hero`),
-// cited there to the approved mock. Selected by the F2/F3 checks:
+// The route decides: `route` is looked up in the crop map (inner) or the photo map (hub); a
+// route with no entry is typographic. Geometry and stack breakpoints live in nos-theme.css
+// (`.nos-hero`). Selected by the F2/F3 checks:
 //
 //   section[data-nos-hero="hub" | "inner"][data-nos-hero-variant="photo" | "type"]
 //     [data-nos-hero-media] > img            photo kind only
@@ -28,7 +30,7 @@ import type { CSSProperties, ReactNode } from 'react';
 
 import heroSourceWidths from '@/lib/hero-source-widths.json';
 
-import { heroPhotoFor } from './hero-photos';
+import { heroCropFor, heroPhotoFor } from './hero-photos';
 import { NosSubNav } from './NosSubNav';
 import { getVisibleNav } from '@/lib/data/past-shows-public';
 import { subNavGroupFor } from './nos-subnav-groups';
@@ -36,6 +38,9 @@ import { subNavGroupFor } from './nos-subnav-groups';
 // A full-bleed hero photograph with large variants (lib/hero-source-widths.json) is served from the quality-88 set,
 // up to its native width (lib/image-loader.ts), so it is never stretched on a high-density screen.
 const FULL_BLEED_QUALITY = 88;
+
+// The inner photo is a 46% panel from 768px and a full-width band below it (nos-theme.css).
+const INNER_PHOTO_SIZES = '(min-width: 768px) 46vw, 100vw';
 
 /** Routes whose hero carries no group sub-nav: the hub (it has the destinations list) and tickets. */
 const NO_SUBNAV_ROUTES: ReadonlySet<string> = new Set(['/national-show', '/national-show/tickets']);
@@ -58,6 +63,8 @@ export interface NosHeroProps {
    * the CTAs. Inner: a single optional link row below the standfirst.
    */
   actions?: ReactNode;
+  /** A short label above the h1 (e.g. "Legal"); rendered only where the page already has the string. */
+  eyebrow?: ReactNode;
   /** An optional breadcrumb trail, rendered before the h1 (the checkout step's hub trail, r18). */
   crumbs?: ReactNode;
   /** Loads the image eagerly at high priority — reserve for the above-the-fold hero. */
@@ -72,13 +79,14 @@ export async function NosHero({
   lede,
   ledeKind,
   actions,
+  eyebrow,
   crumbs,
   priority = false,
   className = '',
 }: NosHeroProps) {
   const isHub = titleSize === 'display';
   const kind = isHub ? 'hub' : 'inner';
-  const photo = heroPhotoFor(route);
+  const photo = isHub ? heroPhotoFor(route) : heroCropFor(route);
   const variant = photo ? 'photo' : 'type';
   const group = NO_SUBNAV_ROUTES.has(route) ? null : subNavGroupFor(route, await getVisibleNav());
 
@@ -109,7 +117,7 @@ export async function NosHero({
               fill
               priority={priority}
               fetchPriority={priority ? 'high' : undefined}
-              sizes="100vw"
+              sizes={isHub ? '100vw' : INNER_PHOTO_SIZES}
               quality={photo.src in heroSourceWidths ? FULL_BLEED_QUALITY : undefined}
               className="nos-hero-img"
             />
@@ -117,6 +125,11 @@ export async function NosHero({
         ) : null}
         {isHub && photo ? <div aria-hidden="true" className="nos-hero-scrim" /> : null}
         <div className="nos-hero-copy">
+          {eyebrow ? (
+            <p data-nos-hero-eyebrow="" className="nos-hero-eyebrow">
+              {eyebrow}
+            </p>
+          ) : null}
           {crumbs}
           <h1 className="nos-hero-title">{title}</h1>
           {isHub ? (
