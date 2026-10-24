@@ -1,0 +1,60 @@
+{
+  "_comment": "Golden for finding (d), RFC 5545 section 3.6.1: an all-day event is DTSTART;VALUE=DATE with an EXCLUSIVE DTEND;VALUE=DATE (the day AFTER the last day). A stored event is all-day when its start, and its end if present, are each date-only (YYYY-MM-DD) or an instant at exactly midnight UTC (T00:00:00Z) or exactly midnight SAST (T22:00:00Z the day before). The calendar date of an aligned value is its UTC date for T00:00:00Z and its SAST date for T22:00:00Z. The endDate's calendar date is the LAST day; DTEND is that date plus one. Anything else is timed and is emitted exactly as today. Compared line by line with the DTSTAMP line removed. Line order: BEGIN, UID, DTSTART, DTEND, SUMMARY, DESCRIPTION, LOCATION, END.",
+  "cases": [
+    {
+      "name": "19th show 23-26 Sept, UTC midnight (the reported defect)",
+      "input": { "slug": "show-19", "title": "Show, 19th", "start": "2027-09-23T00:00:00Z", "end": "2027-09-26T00:00:00Z", "venue": "The Hangar", "location": "Stellenbosch" },
+      "expectedLines": ["BEGIN:VEVENT", "UID:show-19@saoc.co.za", "DTSTART;VALUE=DATE:20270923", "DTEND;VALUE=DATE:20270927", "SUMMARY:Show\\, 19th", "LOCATION:The Hangar\\, Stellenbosch", "END:VEVENT"]
+    },
+    {
+      "name": "same days stored as SAST midnight",
+      "input": { "slug": "sast", "title": "Sast", "start": "2027-09-22T22:00:00Z", "end": "2027-09-25T22:00:00Z" },
+      "expectedLines": ["BEGIN:VEVENT", "UID:sast@saoc.co.za", "DTSTART;VALUE=DATE:20270923", "DTEND;VALUE=DATE:20270927", "SUMMARY:Sast", "END:VEVENT"]
+    },
+    {
+      "name": "date-only strings",
+      "input": { "slug": "dateonly", "title": "Dateonly", "start": "2027-09-23", "end": "2027-09-26" },
+      "expectedLines": ["BEGIN:VEVENT", "UID:dateonly@saoc.co.za", "DTSTART;VALUE=DATE:20270923", "DTEND;VALUE=DATE:20270927", "SUMMARY:Dateonly", "END:VEVENT"]
+    },
+    {
+      "name": "single day, no end: DTEND is emitted as the next day",
+      "input": { "slug": "one", "title": "One", "start": "2027-10-03T00:00:00Z" },
+      "expectedLines": ["BEGIN:VEVENT", "UID:one@saoc.co.za", "DTSTART;VALUE=DATE:20271003", "DTEND;VALUE=DATE:20271004", "SUMMARY:One", "END:VEVENT"]
+    },
+    {
+      "name": "end equal to start is one day",
+      "input": { "slug": "same", "title": "Same", "start": "2027-10-03T00:00:00Z", "end": "2027-10-03T00:00:00Z" },
+      "expectedLines": ["BEGIN:VEVENT", "UID:same@saoc.co.za", "DTSTART;VALUE=DATE:20271003", "DTEND;VALUE=DATE:20271004", "SUMMARY:Same", "END:VEVENT"]
+    },
+    {
+      "name": "month rollover",
+      "input": { "slug": "month", "title": "Month", "start": "2027-09-29T00:00:00Z", "end": "2027-09-30T00:00:00Z" },
+      "expectedLines": ["BEGIN:VEVENT", "UID:month@saoc.co.za", "DTSTART;VALUE=DATE:20270929", "DTEND;VALUE=DATE:20271001", "SUMMARY:Month", "END:VEVENT"]
+    },
+    {
+      "name": "year rollover",
+      "input": { "slug": "year", "title": "Year", "start": "2027-12-30T00:00:00Z", "end": "2027-12-31T00:00:00Z" },
+      "expectedLines": ["BEGIN:VEVENT", "UID:year@saoc.co.za", "DTSTART;VALUE=DATE:20271230", "DTEND;VALUE=DATE:20280101", "SUMMARY:Year", "END:VEVENT"]
+    },
+    {
+      "name": "end before start is one day, never a negative span",
+      "input": { "slug": "backwards", "title": "Backwards", "start": "2027-09-26T00:00:00Z", "end": "2027-09-23T00:00:00Z" },
+      "expectedLines": ["BEGIN:VEVENT", "UID:backwards@saoc.co.za", "DTSTART;VALUE=DATE:20270926", "DTEND;VALUE=DATE:20270927", "SUMMARY:Backwards", "END:VEVENT"]
+    },
+    {
+      "name": "timed event with an end is unchanged",
+      "input": { "slug": "timed", "title": "Timed", "start": "2027-09-23T07:00:00Z", "end": "2027-09-23T15:00:00Z", "description": "Talk" },
+      "expectedLines": ["BEGIN:VEVENT", "UID:timed@saoc.co.za", "DTSTART:20270923T070000Z", "DTEND:20270923T150000Z", "SUMMARY:Timed", "DESCRIPTION:Talk", "END:VEVENT"]
+    },
+    {
+      "name": "timed event with no end is unchanged (no DTEND)",
+      "input": { "slug": "timednoend", "title": "Timednoend", "start": "2027-09-23T07:00:00Z" },
+      "expectedLines": ["BEGIN:VEVENT", "UID:timednoend@saoc.co.za", "DTSTART:20270923T070000Z", "SUMMARY:Timednoend", "END:VEVENT"]
+    },
+    {
+      "name": "midnight start with a timed end is timed (both must be aligned to be all-day)",
+      "input": { "slug": "mixed", "title": "Mixed", "start": "2027-09-23T00:00:00Z", "end": "2027-09-23T15:00:00Z" },
+      "expectedLines": ["BEGIN:VEVENT", "UID:mixed@saoc.co.za", "DTSTART:20270923T000000Z", "DTEND:20270923T150000Z", "SUMMARY:Mixed", "END:VEVENT"]
+    }
+  ]
+}

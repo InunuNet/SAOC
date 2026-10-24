@@ -1,0 +1,97 @@
+schema: athanor.contract/v1
+slug: saoc-seo-polish
+goal: >-
+  Fix four SEO and calendar defects QA found crawling beta: the SAOC sitemap omits six public pages,
+  six pages carry the generic og:title, /events/[slug] has no fallback description and a hard-coded
+  og:url, and all-day multi-day events export to ICS with a wrong end (the 19th show, 23-26 Sept,
+  ends at the start of the 26th). No new copy and no visual change. Governing rules:
+  docs/rules/no-invention.md; visual decisions only from design/design_handoff_saoc/ and branding/
+  (untouched here); Lee-Ann's answers in .tmp/sandbox/health/leeann-doc-2026-10-24.txt (none bear on
+  these findings). No email path is touched, so no gws_inbox_check is declared; the triad linter
+  (execution/verify_triad_coverage.py, not wired into any gate) will report that kind missing, which
+  is correct for this change. Phase 4 is the local gate; phase 5 runs only after Brad-approved
+  deploy to beta (codex_qa plus browser_deployed_check, manifest is a placeholder until then).
+created_at: '2026-10-24'
+autonomy: high
+features:
+  - id: F1
+    name: Sitemap coverage, page-title og:title, event metadata, all-day ICS
+    status: pending
+goldens:
+  - contracts/golden/saoc-seo-polish/README.md
+  - contracts/golden/saoc-seo-polish/sitemap-expected.json
+  - contracts/golden/saoc-seo-polish/event-metadata-fixtures.json
+  - contracts/golden/saoc-seo-polish/ics-fixtures.json
+  - contracts/golden/saoc-seo-polish/fixtures/browser-manifest-deployed.json
+assertions:
+  phase: 4
+  checks:
+    # ---- (a) sitemap ----
+    - id: A1
+      description: SAOC static routes live in lib/saoc-sitemap-routes.ts, equal the golden list, exclude /events/submit and /media-kit, and match the real route tree (drift guard)
+      phase: 4
+      command: pnpm exec tsx contracts/checks/saoc-seo-polish/check-sitemap-routes.mts
+    - id: A2
+      description: app/sitemap.ts builds its SAOC static entries from SAOC_STATIC_ROUTES and no longer hard-codes the old six-entry list
+      phase: 4
+      command: grep -q "SAOC_STATIC_ROUTES" app/sitemap.ts && ! grep -q "baseUrl}/judging" app/sitemap.ts
+
+    # ---- (b) og:title through buildPageMetadata ----
+    - id: A3
+      description: /members, /constitution, /privacy, /terms, /refunds and /events/submit take metadata from buildPageMetadata with the page title, own path, and noIndex only on /events/submit
+      phase: 4
+      command: node contracts/checks/saoc-seo-polish/check-page-metadata.mjs
+
+    # ---- (c) event metadata ----
+    - id: A4
+      description: buildEventMetadata gives a data-only fallback description, and og:url and canonical follow the configured origin (proved with a non-saoc.co.za origin)
+      phase: 4
+      command: pnpm exec tsx contracts/checks/saoc-seo-polish/check-event-metadata.mts
+    - id: A5
+      description: the event page's generateMetadata uses buildEventMetadata and the page has no hard-coded https://saoc.co.za (metadata or JSON-LD url)
+      phase: 4
+      command: grep -q "buildEventMetadata" "app/(marketing)/events/[slug]/page.tsx" && ! grep -q "https://saoc.co.za" "app/(marketing)/events/[slug]/page.tsx"
+
+    # ---- (d) ICS ----
+    - id: A6
+      description: ICS goldens, 11 cases, the 19th show gives DTSTART;VALUE=DATE:20270923 and DTEND;VALUE=DATE:20270927; timed events unchanged; feed and both routes go through lib/ics
+      phase: 4
+      command: pnpm exec tsx contracts/checks/saoc-seo-polish/check-ics.mts
+
+    # ---- hygiene ----
+    - id: A7
+      description: type-check passes
+      phase: 4
+      command: pnpm type-check
+      timeout_seconds: 280
+    - id: A8
+      description: eslint is clean on every touched file
+      phase: 4
+      command: pnpm exec eslint app/sitemap.ts lib/saoc-sitemap-routes.ts lib/event-metadata.ts lib/ics.ts "app/(marketing)/events/[slug]/page.tsx" "app/(marketing)/events/submit/page.tsx" "app/(marketing)/members/page.tsx" "app/(marketing)/constitution/page.tsx" "app/(shared)/privacy/page.tsx" "app/(shared)/terms/page.tsx" "app/(shared)/refunds/page.tsx"
+      timeout_seconds: 200
+
+    # ---- post-deploy triad (phase 5, after Brad-approved push to beta) ----
+    - id: A9
+      description: >-
+        POST-DEPLOY ONLY. Codex adversarial review of the whole diff. Probe: an all-day rule that
+        misreads a timed event; a sitemap entry for a gated or noindex page; a fallback description
+        containing anything not drawn from title, dates and venue; buildPageMetadata callers that
+        changed a title or description; the (shared) pages' canonical on the NOS host.
+      type: codex_qa
+      phase: 5
+      target: >-
+        Adversarially review the current git diff (mission saoc-seo-polish): app/sitemap.ts and
+        lib/saoc-sitemap-routes.ts, six pages moved to buildPageMetadata, lib/event-metadata.ts
+        and the event page, lib/ics.ts all-day handling. Golden: contracts/golden/saoc-seo-polish/.
+        Check the ICS rule against RFC 5545 section 3.6.1 and the golden's 11 cases, and look for a
+        timed event wrongly emitted as all-day.
+    - id: A10
+      description: >-
+        POST-DEPLOY ONLY. BrowserAgent against https://beta.saoc.co.za: og:title equals the page
+        title on /members, /constitution, /privacy, /terms, /refunds; og:url and canonical on an
+        /events/<slug> use the beta origin; /sitemap.xml lists the six new URLs and not
+        /events/submit or /media-kit; the downloaded ICS for the 19th show has VALUE=DATE with
+        DTEND 20270927. Manifest is a placeholder until deploy (convention: saoc-emblem-lockup A12).
+      type: browser_deployed_check
+      phase: 5
+      target: contracts/golden/saoc-seo-polish/fixtures/browser-manifest-deployed.json
