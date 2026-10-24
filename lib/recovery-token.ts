@@ -37,6 +37,11 @@ export function constantTimeEqual(a: Buffer, b: Buffer): boolean {
   return timingSafeEqual(a, b);
 }
 
+/** Constant-time string comparison for secrets and signatures; different lengths are false. */
+export function constantTimeStringEqual(a: string, b: string): boolean {
+  return constantTimeEqual(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'));
+}
+
 /**
  * Every token module in this project (this file, lib/vendor-registration-token.ts,
  * lib/supporter-registration-token.ts, lib/vendor-stand-payment-token.ts) signs with

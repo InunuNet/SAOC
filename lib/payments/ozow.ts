@@ -7,6 +7,7 @@ import {
   OZOW_TRANSACTION_STATUS_URL,
 } from '@/lib/ozow';
 import { BOOKING_REF_PREFIX } from '@/lib/booking-ref';
+import { constantTimeStringEqual } from '@/lib/recovery-token';
 import { OZOW_FIELD_MAX_LENGTH, findFieldLengthViolations } from './gateway-field-limits';
 import {
   VENDOR_STAND_ORDER_REF_PREFIX,
@@ -334,7 +335,7 @@ export function createOzowProvider(deps?: OzowProviderDeps): PaymentProvider {
       if (!receivedHash) {
         return { verified: false, reason: 'missing-signature', reference };
       }
-      if (generateOzowHash(fields, OZOW_NOTIFY_FIELD_ORDER, privateKey) !== receivedHash) {
+      if (!constantTimeStringEqual(generateOzowHash(fields, OZOW_NOTIFY_FIELD_ORDER, privateKey), receivedHash)) {
         return { verified: false, reason: 'signature-mismatch', reference };
       }
 

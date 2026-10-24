@@ -7,6 +7,11 @@ import {
   decideProofOfPaymentRateLimit,
   type ProofOfPaymentAttemptRecord,
 } from '@/lib/vendor-payment-rate-limit';
+import {
+  FILE_CONTENT_MISMATCH_ERROR,
+  leadingBytes,
+  matchesDeclaredMime,
+} from '@/lib/upload-sniff';
 
 /**
  * Pure orchestrator for POST /api/vendors/[id]/proof-of-payment (mission vendor-registration
@@ -109,6 +114,12 @@ export async function handleProofOfPaymentUpload(
         error: `Decoded file size (${decodedByteLength}) exceeds the ${PROOF_OF_PAYMENT_MAX_BYTES}-byte limit.`,
       },
     };
+  }
+
+  // The declared mimeType is a claim; the leading bytes must agree with it. Checked before the
+  // existence lookup so the 400 carries no existence signal.
+  if (!matchesDeclaredMime(leadingBytes(input.fileBase64), input.mimeType)) {
+    return { status: 400, body: { error: FILE_CONTENT_MISMATCH_ERROR } };
   }
 
   // (c) Non-enumerable existence posture: the response below is byte-for-byte identical
