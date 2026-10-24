@@ -72,11 +72,20 @@ Defect: every event is emitted as a timed UTC instant, so the 19th show (23-26 S
 
 Implement in `lib/ics.ts` only (both `app/api/events.ics/route.ts` and
 `app/api/events/[slug]/ics/route.ts` already build through `buildVCalendar`; neither may format a
-date itself). The rule, the line order and 11 cases are in `ics-fixtures.json`. Summary: all-day
-when start (and end, if any) are date-only or exactly midnight UTC or midnight SAST; emit
-`DTSTART;VALUE=DATE:YYYYMMDD` and `DTEND;VALUE=DATE:` the day after the last day (also emitted
-when there is no end). End before start is one day. Anything else is timed and emitted exactly as
-today. `toIcsDate`, `escapeIcsText`, `buildVEvent`, `buildVCalendar` keep their signatures.
+date itself). The rule, the line order and 17 cases are in `ics-fixtures.json`. An event is all-day
+ONLY when (a) its start is a date-only string, or (b) start AND end are both present, both sit on
+the SAME boundary kind (both exactly midnight UTC, or both exactly midnight SAST), and end minus
+start is a whole number of days of at least 1. Emit `DTSTART;VALUE=DATE:YYYYMMDD` and
+`DTEND;VALUE=DATE:` the day after the last day. A start with no end, mixed boundary kinds, equal or
+reversed instants, or any other time is timed and is emitted exactly as today, so a real 02:00 SAST
+(00:00Z) or 00:00 SAST (22:00Z) event is not misread. The 19th show (23-26 Sept) still gives
+`20270923`/`20270927`. `toIcsDate`, `escapeIcsText`, `buildVEvent`, `buildVCalendar` keep their
+signatures.
+
+Accepted residual ambiguity: a genuinely timed event lasting exactly N whole days from one boundary to
+the same boundary (e.g. 02:00 SAST to 02:00 SAST the next day) cannot be told from an all-day range
+and is emitted as all-day (fixtures `wholeutc24h`, `wholesast24h`). The proper fix is an explicit
+`allDay` field on the event later. A date-only start with an instant end is not fixtured.
 
 ## Email
 

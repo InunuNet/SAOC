@@ -54,7 +54,7 @@ assertions:
 
     # ---- (d) ICS ----
     - id: A6
-      description: ICS goldens, 11 cases, the 19th show gives DTSTART;VALUE=DATE:20270923 and DTEND;VALUE=DATE:20270927; timed events unchanged; feed and both routes go through lib/ics
+      description: ICS goldens, 17 cases, the 19th show gives DTSTART;VALUE=DATE:20270923 and DTEND;VALUE=DATE:20270927; timed events unchanged; feed and both routes go through lib/ics
       phase: 4
       command: pnpm exec tsx contracts/checks/saoc-seo-polish/check-ics.mts
 
@@ -83,7 +83,7 @@ assertions:
         Adversarially review the current git diff (mission saoc-seo-polish): app/sitemap.ts and
         lib/saoc-sitemap-routes.ts, six pages moved to buildPageMetadata, lib/event-metadata.ts
         and the event page, lib/ics.ts all-day handling. Golden: contracts/golden/saoc-seo-polish/.
-        Check the ICS rule against RFC 5545 section 3.6.1 and the golden's 11 cases, and look for a
+        Check the ICS rule against RFC 5545 section 3.6.1 and the golden's 17 cases, and look for a
         timed event wrongly emitted as all-day.
     - id: A10
       description: >-
