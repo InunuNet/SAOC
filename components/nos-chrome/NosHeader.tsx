@@ -337,7 +337,6 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
               className="nh-cta"
               data-hd="cta"
               href={nosPath(ticketsLeaf.href)}
-              aria-current={current(ticketsLeaf.href)}
             >
               {ticketsLeaf.label}
             </Link>
