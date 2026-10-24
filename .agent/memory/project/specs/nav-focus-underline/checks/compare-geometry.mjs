@@ -36,6 +36,11 @@ export function compare(m, feature = 'f2') {
           if (v === null) { if (r.hostOnly) failures.push(`${w} ${r.id}: ${host} does not show the element`); continue; }
           if (Math.abs(v - r.target) > r.tol) failures.push(`${tag}: ${host} outside ${r.target}+-${r.tol}`);
         }
+      } else if (r.min !== undefined) {
+        for (const [host, v] of hosts) {
+          if (v === null) { failures.push(`${w} ${r.id}: ${host} does not show the element`); continue; }
+          if (v < r.min - r.tol) failures.push(`${tag}: ${host} below ${r.min}`);
+        }
       } else if ('each' in r) {
         for (const [host, v] of hosts) if (v !== r.each) failures.push(`${tag}: ${host} must be ${JSON.stringify(r.each)}`);
       }
@@ -55,10 +60,11 @@ function baseline() {
   const hosts = { saoc: {}, nos: {} };
   for (const w of WIDTHS) {
     const full = w >= BP.full, wide = w >= BP.row;
-    const content = 358;
+    const content = Math.min(w - 32, 1320);
     const make = () => ({
       utilityBars: 0, headerHeight: wide ? 97 : 110, headerPosition: wide ? 'sticky' : 'relative', barMaxWidth: full ? 1384 : null,
-      barPaddingTop: 13, barPaddingLeft: 32, barGap: wide ? 24 : 12, brandLeft: 361, brandWidth: wide ? 405 : content, brandCenterOffset: 0,
+      barPaddingTop: 13, barPaddingLeft: 32, barGap: wide ? 24 : 12, brandLeft: 361, brandWidth: Math.min(content, 405), brandWidthBound: Math.min(content, 405), brandCenterOffset: 0,
+      gapBrandNav: full ? 24 : null, gapNavSearch: null, gapSearchCta: null, gapNavCta: full ? 12 : null,
       barContentWidth: content, barRows: wide ? 1 : 2,
       navSingleLine: full ? true : null, itemHeightMin: full ? 44 : null, itemHeightMax: full ? 44 : null,
       itemFontSize: full ? '14.5px' : null, itemFontWeight: full ? '600' : null, itemLineHeight: full ? '14.5px' : null,
@@ -70,7 +76,7 @@ function baseline() {
     });
     hosts.saoc[w] = make();
     hosts.nos[w] = make();
-    if (full) { hosts.saoc[w].searchWidth = 44; hosts.saoc[w].searchHeight = 44; }
+    if (full) { hosts.saoc[w].searchWidth = 44; hosts.saoc[w].searchHeight = 44; Object.assign(hosts.saoc[w], { gapNavSearch: 12, gapSearchCta: 12, gapNavCta: null }); }
   }
   return { hosts, crossSite: { [golden.crossSiteWidth]: { before: { headerHeight: 97, brandLeft: 361, brandTop: 13 }, after: { headerHeight: 97, brandLeft: 361, brandTop: 13 } } } };
 }
@@ -100,10 +106,16 @@ function selftest() {
   expect('nav item 24 tall', (m) => { m.hosts.saoc[1440].itemHeightMin = 24; }, 'item-height-44');
   expect('lockup ink 380 wide', (m) => { m.hosts.saoc[2056].brandWidth = 380; }, 'brand-ink-width-pair');
   expect('lockup not centred', (m) => { m.hosts.saoc[1440].brandCenterOffset = 8; }, 'brand-centred-in-bar');
-  expect('lockup short of the phone row', (m) => { m.hosts.saoc[390].brandWidth = 300; }, 'brand-fills-first-row');
+  expect('lockup short of the phone row', (m) => { m.hosts.saoc[390].brandWidth = 300; }, 'brand-width-capped');
+  expect('lockup grows past 405 at 760', (m) => { m.hosts.nos[760].brandWidth = 728; }, 'brand-width-capped');
+  expect('header heights differ at 760', (m) => { m.hosts.saoc[760].headerHeight = 130; }, 'header-height-pair');
+  expect('brand-nav gap 16', (m) => { m.hosts.saoc[1440].gapBrandNav = 16; }, 'gap-brand-nav-min-24');
+  expect('nav-search gap 24', (m) => { m.hosts.saoc[1440].gapNavSearch = 24; }, 'gap-nav-search-12');
+  expect('search-cta gap 24', (m) => { m.hosts.saoc[2056].gapSearchCta = 24; }, 'gap-search-cta-12');
+  expect('NOS nav-cta gap 24', (m) => { m.hosts.nos[1440].gapNavCta = 24; }, 'gap-nav-cta-12-nos');
   expect('bar wraps at BP-FULL', (m) => { m.hosts.saoc[BP.full].barRows = 2; }, 'bar-single-row');
   expect('bar wraps at BP-ROW', (m) => { m.hosts.nos[BP.row].barRows = 2; }, 'bar-single-row-menu');
-  expect('phone band header 15px taller is allowed (aspect), not asserted', (m) => { m.hosts.saoc[390].headerHeight = 95; }, null);
+  expect('phone band header 15px taller fails (parity holds at 390)', (m) => { m.hosts.saoc[390].headerHeight = 125; }, 'header-height-pair');
   expect('search 34 wide', (m) => { m.hosts.saoc[2056].searchWidth = 34; }, 'search-width-44');
   expect('search missing on SAOC', (m) => { m.hosts.saoc[2056].searchWidth = null; }, 'search-width-44');
   expect('menu button icon-only', (m) => { m.hosts.saoc[390].menuText = ''; }, 'menu-label');

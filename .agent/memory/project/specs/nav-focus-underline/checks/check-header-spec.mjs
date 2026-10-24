@@ -114,7 +114,7 @@ if (mode === 'hooks') {
   if (logo.length !== 1) fail(`${SAOC}: the supplied full-name lockup file must stay the header lockup`);
   else if (/(object-|filter|brightness|grayscale|invert|hue-rotate|clip|mask|contrast|saturate)/.test(logo[0].cls)) fail(`${SAOC}: the lockup is scaled only (no crop, filter or recolour classes): ${logo[0].cls}`);
   const search = read('components/chrome/MobileMenu.tsx');
-  if (!/search/i.test(search)) fail('components/chrome/MobileMenu.tsx: SAOC search moves into the drawer below 1260 and must be reachable there');
+  if (!/search/i.test(search)) fail('components/chrome/MobileMenu.tsx: SAOC search moves into the drawer below breakpoints.full and must be reachable there');
 } else if (mode === 'breakpoints') {
   // Shared breakpoints live in goldens/header-geometry.json (breakpoints.full / .row) and apply to BOTH hosts together.
   const { full, row } = JSON.parse(read(new URL('../goldens/header-geometry.json', import.meta.url).pathname)).breakpoints;
@@ -159,7 +159,7 @@ if (mode === 'hooks') {
   const { rules } = cssRules();
   const decl = (sel) => rules.filter((r) => r.parts.includes(sel)).map((r) => r.decl).join(' ');
   const want = [
-    ['.nh-bar', [/gap\s*:\s*24px/, /padding\s*:\s*13px var\(--nc-gutter\)/, /max-width\s*:\s*calc\(var\(--nc-wide\) \+ 2 \* var\(--nc-gutter\)\)/]],
+    ['.nh-bar', [/gap\s*:\s*(?:12|24)px/, /padding\s*:\s*13px var\(--nc-gutter\)/, /max-width\s*:\s*calc\(var\(--nc-wide\) \+ 2 \* var\(--nc-gutter\)\)/]],
     ['.nh-link, .nh-trigger', [/min-height\s*:\s*44px/, /padding\s*:\s*0 9px/, /font\s*:\s*600 14\.5px\/1/, /gap\s*:\s*6px/]],
     ['.nh-nav > ul', [/gap\s*:\s*2px/]],
     ['.nh-cta', [/min-height\s*:\s*44px/, /padding\s*:\s*10px 24px/, /border-radius\s*:\s*10px/, /font\s*:\s*700 13px\/1/, /letter-spacing\s*:\s*0\.12em/, /text-transform\s*:\s*uppercase/]],

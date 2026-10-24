@@ -1,10 +1,11 @@
 {
-  "$comment": "HD-1 golden. Targets and tolerances for checks/compare-geometry.mjs; edit numbers here, never in the script. Measurements come from checks/measure-header.js run on both hosts at each width (scroll 0). 'when': full = viewport >= breakpoints.full, menu = breakpoints.row .. full-1, phone = < breakpoints.row, wide = >= breakpoints.row, all. Breakpoints are shared by both hosts and are always changed together (NOS Design ruling (d)). The widths measured are `widths` plus full-1, full, row-1, row. 'pair' = |saoc - nos| <= tol. 'same' = strings equal (fonts differ per host by design, so no family metric). 'target' = value within tol on every host that shows the element. 'hostOnly' restricts a rule to one host. A metric that is null on exactly one host fails; null on both is skipped. Rules carry 'feature': f2 (default) or f3 (HD-1b container); the CLI filters with --feature. 'sameAsMetric' compares two metrics on the same host within tol (content left edge vs lockup left edge).",
+  "$comment": "HD-1 golden. Targets and tolerances for checks/compare-geometry.mjs; edit numbers here, never in the script. Measurements come from checks/measure-header.js run on both hosts at each width (scroll 0). 'when': full = viewport >= breakpoints.full, menu = breakpoints.row .. full-1, phone = < breakpoints.row, wide = >= breakpoints.row, all. Breakpoints are shared by both hosts and are always changed together (NOS Design ruling (d)). The widths measured are `widths` plus full-1, full, row-1, row. 'pair' = |saoc - nos| <= tol. 'same' = strings equal (fonts differ per host by design, so no family metric). 'target' = value within tol on every host that shows the element. 'hostOnly' restricts a rule to one host. A metric that is null on exactly one host fails; null on both is skipped. Rules carry 'feature': f2 (default) or f3 (HD-1b container); the CLI filters with --feature. 'sameAsMetric' compares two metrics on the same host within tol (content left edge vs lockup left edge). 'min' = value >= min - tol on every host that shows the element. Height parity (header-height-pair) holds at every width including 760 and 390: below breakpoints.row the first (lockup) row gets a min-height equal to the NOS lockup ink height at that width and the SAOC lockup is vertically centred in it; lockup width there is min(container content width, 405) (brand-width-capped).",
   "widths": [
     2056,
     1440,
     1280,
     1024,
+    760,
     390
   ],
   "crossSiteWidth": 1440,
@@ -59,7 +60,7 @@
     {
       "id": "header-height-pair",
       "metric": "headerHeight",
-      "when": "wide",
+      "when": "all",
       "pair": 1
     },
     {
@@ -83,10 +84,10 @@
       "tol": 2
     },
     {
-      "id": "brand-fills-first-row",
+      "id": "brand-width-capped",
       "metric": "brandWidth",
-      "when": "phone",
-      "sameAsMetric": "barContentWidth",
+      "when": "all",
+      "sameAsMetric": "brandWidthBound",
       "tol": 2
     },
     {
@@ -119,6 +120,37 @@
       "metric": "navSingleLine",
       "when": "full",
       "each": true
+    },
+    {
+      "id": "gap-brand-nav-min-24",
+      "metric": "gapBrandNav",
+      "when": "full",
+      "min": 24,
+      "tol": 0.5
+    },
+    {
+      "id": "gap-nav-search-12",
+      "metric": "gapNavSearch",
+      "when": "full",
+      "target": 12,
+      "tol": 1,
+      "hostOnly": "saoc"
+    },
+    {
+      "id": "gap-search-cta-12",
+      "metric": "gapSearchCta",
+      "when": "full",
+      "target": 12,
+      "tol": 1,
+      "hostOnly": "saoc"
+    },
+    {
+      "id": "gap-nav-cta-12-nos",
+      "metric": "gapNavCta",
+      "when": "full",
+      "target": 12,
+      "tol": 1,
+      "hostOnly": "nos"
     },
     {
       "id": "item-height-44",
@@ -334,9 +366,9 @@
     }
   ],
   "breakpoints": {
-    "full": 1440,
+    "full": 1384,
     "row": 780,
-    "provenance": "row: MEASURED. Chromium (playwright) laid out the repo's own Manrope and Karla woff2 files: SAOC CTA 'Join a society' 120.4 + 48 = 168.4, NOS 'Tickets' 61.3 + 48 = 109.3 (matches the live 109), MENU button 104. Row = 405 lockup + 24 + 168.4 + 24 + 104 = 725.4 content; content = W - 2*clamp(16px,2.5vw,32px) gives W >= 764; 780 adds a 16px margin for a classic scrollbar. full: PROVISIONAL, see below. SAOC nav at 600 14.5px/1 Manrope = items 497.7 + 7*18 padding + 6*2 gaps = 635.7; bar = 405 + 24 + 635.7 + 24 + 44 + 24 + 168.4 = 1325.1px, but the content box never exceeds 1320px (--nc-wide), so the full row cannot fit at the spec's numbers at ANY width (5.1px short). 1440 is NOS Design's start value; the gate will fail at it until the spec changes. Not confirmed by a build yet: the gate measures the real header at full-1, full, row-1 and row.",
+    "provenance": "row: MEASURED. Chromium (playwright) laid out the repo's own Manrope and Karla woff2 files: SAOC CTA 'Join a society' 120.4 + 48 = 168.4, NOS 'Tickets' 61.3 + 48 = 109.3 (matches the live 109), MENU button 104. Row = 405 lockup + 24 + 168.4 + 24 + 104 = 725.4 content; content = W - 2*clamp(16px,2.5vw,32px) gives W >= 764; 780 adds a 16px margin for a classic scrollbar. full: RULED by NOS Design (modified option B, final). SAOC nav at 600 14.5px/1 Manrope = items 497.7 + 7*18 padding + 6*2 gaps = 635.7. Bar = 405 lockup + 635.7 nav + 44 search + 168.4 CTA + 24 brand-nav (min) + 12 nav-search + 12 search-CTA = 1301.1px content. Content box = W - 2*32 once W >= 1280, so W >= 1365.1; + 16 classic scrollbar = 1381.1; rounded up with margin to 1384 (18.9px of slack over the bare fit). NOS needs less (nav narrower), so SAOC sets the shared value. Not confirmed by a build: the gate measures the real header at full-1, full, row-1 and row.",
     "measuredWidths": {
       "saocNavItems": [
         [
@@ -394,8 +426,9 @@
       "nosCta": 109.3,
       "menuButton": 104,
       "saocNav": 635.7,
-      "saocFullRowContent": 1325.1,
-      "saocRowContent": 725.4
+      "saocFullRowContent": 1301.1,
+      "saocRowContent": 725.4,
+      "saocFullRowContentSpecBefore": 1325.1
     }
   },
   "derivedWidths": "breakpoints.full-1, full, row-1, row are added at run time",
@@ -428,5 +461,13 @@
     "labelSource": "SearchOverlay.tsx:124, the dialog's own aria-label; no new string",
     "opens": "the same SearchOverlay dialog",
     "headerIconAriaLabel": "Open search (Header.tsx:164), kept above breakpoints.full"
+  },
+  "fullRowGaps": {
+    "ruling": "NOS Design HD-1 fit ruling (modified B, final)",
+    "brandNavMin": 24,
+    "navSearch": 12,
+    "searchCta": 12,
+    "navCtaNos": 12,
+    "note": "brand-nav via nav margin-left:auto with a 24px minimum; nav-search and search-cta are 12 on SAOC; NOS has no search, so nav-cta is 12. Item padding stays 0 9 (the 44px hit area)."
   }
 }

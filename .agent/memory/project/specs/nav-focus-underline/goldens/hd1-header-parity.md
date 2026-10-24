@@ -23,17 +23,18 @@ it. Only the visuals (colours, each site's own sans, the lockup, the CTA label) 
    pill used) becomes the SAOC header CTA. The show pill ("19th National Show · Sept 2027") is removed with its `showLabelWithEdition` /
    `formatShowShortMonthYear` use. `info@saoc.co.za` moves to the SAOC footer brand column, under the REG#/NPO line, as a `mailto:` link (it gets the NAV-1 link focus treatment).
 2. **Bar.** Sticky, 1px bottom rule (permanent, like NOS `:26`, not scroll-gated), `max-width: calc(1320px + 2*clamp(16px,2.5vw,32px))`, padding
-   `13px` block and the gutter inline, flex, gap 24, height 97±1 at >= 1260 on both.
-3. **Lockup (ruling (d), replaces the earlier "ink height 70").** Both hosts keep their own lockup file, uncropped, unfiltered, not recoloured (SAOC: the full-name PNG, Lee-Ann 2026-10-15). Parity is by footprint:
-   ink WIDTH equal ±2 on both hosts at every width, vertically centred in the same bar. At >= `breakpoints.row` that width is 405 (NOS unchanged, 405x70; SAOC comes out about 53 tall). Below `breakpoints.row`
-   each lockup fills the full first row, so its width equals the bar's content width ±2. Heights differ once widths are equal (aspect 7.62 vs 5.79), so the bar's height at >= row is held by a
-   `min-height` that makes SAOC 97 as well (NOS: 13+70+13+1), and the header height is not compared in the phone band. Ink = link box on both (NOS pulls its PNG's transparent margin back, `nos-chrome.css:32,167`;
-   the SAOC PNG's alpha bbox is the whole image, checked). Cost accepted by NOS Design: NOS goes to menu mode between 1260 and `breakpoints.full` and to the two-row layout below `breakpoints.row`.
-4. **Nav.** `margin-left: auto`; items `min-height: 44px`, padding `0 9px`, gap 2, own sans (SAOC Manrope, NOS Karla) at 600 14.5px/1, no tracking, no case change.
+   `13px` block and the gutter inline, flex, gap 24, height 97±1 at >= `breakpoints.row` on both.
+3. **Lockup (ruling (d) plus the fit ruling).** Both hosts keep their own lockup file, uncropped, unfiltered, not recoloured (SAOC: the full-name PNG, Lee-Ann 2026-10-15). Parity is by footprint:
+   ink WIDTH equal ±2 on both hosts at every width, vertically centred. Width = `min(container content width, 405)`: 405 at >= `breakpoints.row` (NOS unchanged, 405x70; SAOC about 53 tall), and below it the lockup never grows
+   past that desktop footprint (760: 405 wide, SAOC about 53 / NOS 70 tall; 390: both fill the 358 container). Heights differ once widths are equal (aspect 7.62 vs 5.79), so **header height is equal ±1 at every width**,
+   held by a min-height: at >= row the bar has the min-height that makes SAOC 97 (NOS 13+70+13+1); below row the first (lockup) row gets `min-height` = the NOS lockup ink height at that width and the SAOC lockup is
+   vertically centred in it, the actions row identical. Ink = link box on both (NOS pulls its PNG's transparent margin back, `nos-chrome.css:32,167`; the SAOC PNG's alpha bbox is the whole image, checked).
+   Checks: `brand-width-capped`, `header-height-pair` (gate widths include 760 and 390).
+4. **Nav.** `margin-left: auto` with a 24px minimum from the lockup (`gap-brand-nav-min-24`); nav to search 12 and search to CTA 12 on SAOC, nav to CTA 12 on NOS (no search); items items `min-height: 44px`, padding `0 9px`, gap 2, own sans (SAOC Manrope, NOS Karla) at 600 14.5px/1, no tracking, no case change.
    Disclosure triggers keep the NOS chevron as it is (`.nc-chev`, `gap: 6px`); nothing new is drawn.
 5. **CTA.** Last item, flush to the container's right edge. `min-height: 44px; padding: 10px 24px; border-radius: 10px; font: 700 13px/1; letter-spacing: .12em; uppercase`.
    NOS "Tickets", SAOC "Join a society". Same box height and right edge (±1) at >= 700.
-6. **SAOC search.** A 44x44 icon button between the nav and the CTA (24px gap), full-nav widths only; it never moves the CTA's right edge. Below 1260 it moves into the drawer.
+6. **SAOC search.** A 44x44 icon button between the nav and the CTA (12px gaps each side), full-nav widths only; it never moves the CTA's right edge. Below `full` it is the first drawer row.
 7. **States (F1 amended).** On both hosts hover and `:focus-visible` turn the item text to the indicator colour (SAOC `--primary`, NOS `--nc-royal`) with a 2px bar in the
    label's slot (`bottom: -8px`, SAOC `-bottom-2`). Active (`aria-current`) is a persistent 2px bar in the same slot (SAOC `--primary`, NOS `--nc-green-1`). No hover fill, no
    ring on menu items. Only the open mega-menu trigger (`aria-expanded`) keeps its fill. NAV-1's h1 route focus and `aria-current` rules apply unchanged. The drawer rows keep NAV-1's treatment.
@@ -52,17 +53,16 @@ or class change": five public SAOC files do not use that class and hard-code `ma
 `components/nos/SectionNav.tsx` and `components/show/ShowSectionNav.tsx` also hard-code it on NOS pages; the gate (content left edge equal ±1 on both hosts at 2056/1440/1280) decides whether they need the same swap.
 `admin/PageHeader.tsx` is out of scope.
 
-## Breakpoint measurement and the open blocker
+## Breakpoint measurement and the fit ruling
 
 Method (measured, not estimated): Chromium via playwright laid out the repo's own `Manrope` and `Karla` woff2 files at the spec sizes (values in `header-geometry.json` `breakpoints.provenance`). The method reproduces the live NOS Tickets CTA
 (61.3 + 48 = 109.3, live 109). Not yet confirmed by a build: the gate measures the real headers at full-1, full, row-1 and row.
 - **row = 780: measured.** 405 + 24 + 168.4 ("Join a society") + 24 + 104 (MENU) = 725.4 content; content = W - 2*clamp(16px,2.5vw,32px), so W >= 764; +16 for a classic scrollbar. (NOS Design's estimate was 820.)
-- **full = 1440: PROVISIONAL, and the spec as written cannot fit.** SAOC nav at 600 14.5px/1 Manrope: items 497.7 + 7x18 padding + 6x2 gaps = 635.7. Bar = 405 + 24 + 635.7 + 24 + 44 (search) + 24 + 168.4 = **1325.1px, but the content box never exceeds
-  1320px** (`--nc-wide`), so the full row fails at every width, 5.1px short. The gate will fail at B15 (overflow or wrapped nav at 1440 and 2056) rather than pass by shrinking something. Options for NOS Design, each computed:
-  (A) search lives only in the drawer at every width: 1257.1 needed, fits from about 1321 (full ~1340), but item 6 is dropped; (B) the three bar gaps 24 -> 12: 1289, full ~1370, but `.nh-bar` gap changes on both hosts;
-  (C) item padding `0 9` -> `0 7`: 1297, full ~1380, but the nav item spec changes; (D) SAOC lockup 405 -> 375, which breaks width parity. Recommendation: (A), since search is already moving into the drawer below `full`. Nothing is picked here.
-- **Phone band cost:** with the lockup filling the first row up to `row`, a 760px content box gives a 760px-wide lockup (SAOC about 100 tall, NOS about 131). That is what ruling (d) says; flagged in case it is not intended.
-- **Header height at 390** cannot be equal: equal widths, different aspects (SAOC 358/7.62 = 47 tall, NOS 358/5.79 = 62). The ruling's "header height equal ±1" is asserted at widths >= `row` only.
+- **full = 1384: RULED (NOS Design, modified option B, final).** At the earlier spec the SAOC full row needed 1325.1px, 5.1px more than the 1320px content box. The ruling: brand-nav keeps a 24 minimum, nav-search 12, search-CTA 12, NOS nav-CTA 12; item padding stays `0 9`
+  (44px hit area). SAOC full row = 405 + 635.7 + 44 + 168.4 + 24 + 12 + 12 = **1301.1** content. W >= 1301.1 + 2*32 gutters = 1365.1; + 16 classic scrollbar = 1381.1; set to **1384**. NOS is narrower so SAOC sets the shared value. Rejected by NOS Design: (A) search only in the drawer
+  (unreachable on desktop, no MENU button there), (C) thinner item padding, (D) smaller lockup. Gaps are checked by `gap-*` rules in the gate.
+- **Phone band and heights: RULED.** Below `row` the lockup is `min(container, 405)` on both hosts, and header height is equal ±1 at 390 and 760 (see 3).
+  Risk for dev: the first-row min-height must follow the NOS lockup ink height, a pure function of width (405 or width/5.79), so it is expressed in the same CSS on both hosts, not measured at runtime.
 
 2. **Sequencing with the footer.** `fix/saoc-societies-footer` (7d7a0986, not merged) rewrites `Footer.tsx` (three columns, `FOOTER_LAYOUT.gridSaoc`, WOSA under REG). F1 and F2 both edit
    `Footer.tsx`. Base F1/F2 on that branch: rebase `fix/nav-focus-underline` onto it after it merges (or onto its tip), and put the email directly under the `FOOTER_REG` span, above its WOSA list. The email may be a literal in `Footer.tsx` or a constant in

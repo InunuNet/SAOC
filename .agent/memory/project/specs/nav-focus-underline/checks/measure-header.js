@@ -1,7 +1,7 @@
 // nav-focus-underline HD-1 -- paste into the browser (javascript_tool) on a page of either host, scrolled to the top.
 // Returns the metrics checks/compare-geometry.mjs reads, keyed as in goldens/header-geometry.json. Needs the data-hd hooks:
 // bar, brand, nav, item, label, cta, search, menu. Run once per host per viewport width; for the active-bar metrics load a route
-// whose nav item is current (e.g. /about on SAOC, /faq on NOS) at the widths >= 1260.
+// whose nav item is current (e.g. /about on SAOC, /faq on NOS) at the widths >= breakpoints.full.
 (() => {
   const r1 = (n) => Math.round(n * 10) / 10;
   const hd = (name) => document.querySelector(`[data-hd="${name}"]`);
@@ -15,6 +15,7 @@
   const items = [...document.querySelectorAll('[data-hd="item"]')].filter(shown);
   const cta = shown(hd('cta'));
   const search = shown(hd('search'));
+  const nav = shown(hd('nav'));
   const menu = shown(hd('menu'));
   const main = document.querySelector('#main-content');
   const h1 = main && main.querySelector('h1');
@@ -35,6 +36,11 @@
     brandWidth: brand ? r1(brand.getBoundingClientRect().width) : null,
     brandCenterOffset: brand && bar ? r1(brand.getBoundingClientRect().top + brand.getBoundingClientRect().height/2 - (bar.getBoundingClientRect().top + bar.getBoundingClientRect().height/2)) : null,
     barContentWidth: bar ? r1(bar.clientWidth - px(cs(bar).paddingLeft) - px(cs(bar).paddingRight)) : null,
+    brandWidthBound: bar ? r1(Math.min(bar.clientWidth - px(cs(bar).paddingLeft) - px(cs(bar).paddingRight), 405)) : null,
+    gapBrandNav: brand && nav ? r1(nav.getBoundingClientRect().left - brand.getBoundingClientRect().right) : null,
+    gapNavSearch: nav && search ? r1(search.getBoundingClientRect().left - nav.getBoundingClientRect().right) : null,
+    gapSearchCta: search && cta ? r1(cta.getBoundingClientRect().left - search.getBoundingClientRect().right) : null,
+    gapNavCta: nav && cta && !search ? r1(cta.getBoundingClientRect().left - nav.getBoundingClientRect().right) : null,
     barRows: bar ? new Set([...bar.children].filter(shown).map((el) => Math.round(el.getBoundingClientRect().top))).size : null,
     brandHeight: brand ? r1(brand.getBoundingClientRect().height) : null, // informational: heights differ by aspect once the widths are equal
     navSingleLine: items.length ? new Set(items.map((el) => Math.round(el.getBoundingClientRect().top))).size === 1 : null,
