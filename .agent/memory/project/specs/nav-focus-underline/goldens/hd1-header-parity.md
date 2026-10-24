@@ -59,6 +59,16 @@ or class change": five public SAOC files do not use that class and hard-code `ma
    `Header.tsx` comment, not the full name Lee-Ann asked for on 2026-10-15); (b) the SAOC nav drops to the NOS item count; (c) lockup parity relaxed to the widths where it fits, by editing
    `header-geometry.json` (rules are data). My recommendation: (a), measured first. The dev must stop and report if the measurement fails, not cut the ink height.
 2. **Sequencing with the footer.** `fix/saoc-societies-footer` (7d7a0986, not merged) rewrites `Footer.tsx` (three columns, `FOOTER_LAYOUT.gridSaoc`, WOSA under REG). F1 and F2 both edit
-   `Footer.tsx`. Base F1/F2 on that branch: rebase `fix/nav-focus-underline` onto it after it merges (or onto its tip), and put the email directly under the `FOOTER_REG` span, above its WOSA list. Do not
-   edit `footer-data.ts` (F1's `check-scope` freezes it); the email literal lives in `Footer.tsx`.
+   `Footer.tsx`. Base F1/F2 on that branch: rebase `fix/nav-focus-underline` onto it after it merges (or onto its tip), and put the email directly under the `FOOTER_REG` span, above its WOSA list. The email may be a literal in `Footer.tsx` or a constant in
+   `footer-data.ts`: F2 releases that file from F1's freeze (`scope-f2.json` `release`), so one dev pass can edit it. PR #80 is the footer branch (Partners column removed, WOSA under REG/NPO).
 3. NOS "accent" for hover/focus text is `--nc-royal`, which is already its text colour, so on NOS the hover change is the bar only. Say so if a different token is meant.
+
+## Gaps: values with no source in the code or the handoff (listed, not picked)
+
+`design/design_handoff_saoc/` predates the NOS v4 work: it still specifies a utility bar (`README.md:92-95`) and has no header height, nav item size or search size, so it is not a source for HD-1 numbers. The NOS v4 header (`nos-chrome.css`, `NosHeader.tsx`) is the geometry source.
+- **Header 97px:** not a literal anywhere; it derives from the NOS rules (13+13 padding, 70 ink, 1px rule = 97) and was measured live by NOS Design. The gate asserts it.
+- **SAOC search 44x44:** only the HD-1 ruling; NOS has no search and SAOC's is 34x34 today (`Header.tsx:165`). No icon size, radius or border is specified, so the dev keeps the existing 18px icon and radius and sets the box.
+- **Search placement in the drawer:** the ruling says it moves there; no markup or label is specified. Existing string "Open search" (`Header.tsx:164`) is reused; nothing new is worded.
+- **SAOC MENU button look:** the ruling gives the label and 44px; the NOS `.nh-burger` rules (`:65`, `min-width: 104px`, border `1.5px rgba(...)`) are the only source and use NOS colours with a bare rgba. SAOC's border colour is not specified: use an existing SAOC token (`--rule`), flagged for NOS Design if it should differ.
+- **Hover/focus text accent on NOS:** equals the existing royal text; see risk 3.
+- **SAOC nav item count and order, tracking of the CTA on SAOC:** taken from `nav-config.ts` and the NOS CTA values as written.

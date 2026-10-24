@@ -129,8 +129,10 @@ if (mode === 'hooks') {
   if (!/data-ticketing-test-bar[\s\S]{0,60}top: calc\(44px/.test(raw) || !/top: calc\(48px/.test(raw)) fail(`${NOS_CSS}: the 44px/48px banner offsets are the reference and must stay`);
   const f = read('components/chrome/Footer.tsx');
   const reg = f.indexOf('FOOTER_REG');
-  const mail = f.indexOf('info@saoc.co.za');
-  if (mail === -1) fail('components/chrome/Footer.tsx: info@saoc.co.za moves into the brand column under the REG/NPO line');
+  // The address may be a literal in Footer.tsx or an exported constant in footer-data.ts (F2 may edit it) that Footer.tsx renders.
+  const constant = read('components/chrome/footer-data.ts').match(/export const (\w+)\s*=\s*['"`]info@saoc\.co\.za['"`]/);
+  const mail = constant ? f.indexOf(constant[1], f.indexOf('import')) === -1 ? -1 : f.lastIndexOf(constant[1]) : f.indexOf('info@saoc.co.za');
+  if (mail === -1) fail('components/chrome/Footer.tsx: info@saoc.co.za (literal, or a footer-data constant) moves into the brand column under the REG/NPO line');
   else if (reg === -1 || mail < reg) fail('components/chrome/Footer.tsx: the email sits after FOOTER_REG in the brand column');
   if (!/mailto:/.test(f)) fail('components/chrome/Footer.tsx: the email is a mailto link, as in the utility bar');
   for (const p of ['components/chrome/Header.tsx', 'components/chrome/MobileMenu.tsx', 'components/chrome/Footer.tsx']) {

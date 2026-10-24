@@ -12,11 +12,12 @@ const changed = new Set([
 ].filter(Boolean));
 
 // Allow-lists are per feature (checks/scope-f<N>.json: regex strings plus mustStay paths), merged, so a later feature adds its own
-// file instead of editing an earlier feature's list. A path in any feature's mustStay stays frozen unless no feature allows it.
+// file instead of editing an earlier feature's list. A later feature may release an earlier feature's frozen path ("release") and allow it; F2 releases footer-data.ts for the email move.
 const dir = new URL('.', import.meta.url).pathname;
 const lists = readdirSync(dir).filter((f) => /^scope-f\d+\.json$/.test(f)).map((f) => JSON.parse(readFileSync(dir + f, 'utf8')));
 const ALLOWED = lists.flatMap((l) => l.allowed).map((s) => new RegExp(s));
-const MUST_STAY = lists.flatMap((l) => l.mustStay);
+const RELEASED = new Set(lists.flatMap((l) => l.release ?? []));
+const MUST_STAY = lists.flatMap((l) => l.mustStay).filter((f) => !RELEASED.has(f));
 
 const failures = [];
 for (const f of changed) {

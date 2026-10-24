@@ -5,7 +5,11 @@
   "^components/chrome/header-[^/]+\\.(ts|tsx|css)$",
   "^lib/show-identity\\.ts$",
   "^docs/header-parity\\.md$",
-  "^e2e/header-parity[^/]*$"
+  "^e2e/header-parity[^/]*$",
+  "^components/chrome/footer-data\\.ts$"
  ],
- "mustStay": []
+ "mustStay": [],
+ "release": [
+  "components/chrome/footer-data.ts"
+ ]
 }

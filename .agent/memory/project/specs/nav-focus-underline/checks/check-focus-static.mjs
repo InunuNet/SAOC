@@ -101,6 +101,9 @@ if (mode === 'tsx-rings') {
     if (!INDICATOR.test(el.subtreeCls)) fail(`${el.path}:${el.line} <${el.tag}> has no focus-visible underline utility on itself or a descendant`);
     if (!el.subtreeCls.includes('forced-colors:')) fail(`${el.path}:${el.line} <${el.tag}> has no forced-colors: fallback for the focus indicator`);
   }
+  const header = allLinks(['components/chrome/Header.tsx']).map((el) => el.subtreeCls).join(' ');
+  if (!/-bottom-2\b|bottom-\[-8px\]/.test(header)) fail('Header.tsx: the focus/active bar sits in the label -8px slot (-bottom-2), the slot HD-1 unified with NOS');
+  if (/-bottom-1\b/.test(header)) fail('Header.tsx: the old -bottom-1 slot remains (superseded by -bottom-2 / -8px)');
   if (seen < 10) fail(`expected at least 10 SAOC nav/footer link elements, found ${seen} (parse problem or links removed)`);
 } else if (mode === 'tsx-aria-current') {
   // aria-current on the nav links of both headers and the mobile menu; the shared matcher is used; the old class-driven active state is gone.
@@ -165,6 +168,7 @@ if (mode === 'tsx-rings') {
         const decl = rs.map((r) => r.decl).join(' ');
         if (!rs.length) { fail(`${NOS_CSS}: no :focus-visible rule for ${f}`); continue; }
         if (!/outline\s*:\s*(none|0)\b/.test(decl)) fail(`${NOS_CSS}: ${f}:focus-visible does not clear the UA outline (outline: none)`);
+        if ((f === '.nh-link' || f === '.nh-trigger') && !rs.some((r) => r.parts.some((p) => p.includes(f) && p.includes('.nh-label::after')))) fail(`${NOS_CSS}: ${f}:focus-visible bar must be the shared .nh-label::after slot (bottom: -8px)`);
         if (!/\b2px\b/.test(decl) || !/(text-decoration|height|border)/.test(decl)) fail(`${NOS_CSS}: ${f}:focus-visible has no 2px underline`);
         if (!decl.includes(colour)) fail(`${NOS_CSS}: ${f}:focus-visible does not use ${colour}`);
       }

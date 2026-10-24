@@ -6,8 +6,9 @@ autonomy: high
 
 # HD-1 (NOS Design, final). Spec: goldens/hd1-header-parity.md; numbers: goldens/header-geometry.json; current state of both headers: goldens/README.md.
 # Feature F2 on branch fix/nav-focus-underline, after F1 (NAV-1). F2 amends two F1 details in the F1 README (bar slot -8px, active bar 2px); no F1 assertion encodes them.
-# SEQUENCING (binding): Footer.tsx is also rewritten by fix/saoc-societies-footer (7d7a0986, unmerged). Rebase this branch onto that branch (or main once it merges) before touching
-# the footer; put info@saoc.co.za directly under the FOOTER_REG span.
+# SEQUENCING (binding): Footer.tsx is also rewritten by fix/saoc-societies-footer (PR #80: Partners column removed, WOSA under REG/NPO). Build on top of PR #80 (rebase onto it or
+# main once it merges) before touching the footer; put info@saoc.co.za directly under the FOOTER_REG span. footer-data.ts is released for the email constant (scope-f2.json).
+# ONE DEV implements F1 and F2 in one pass; the gate runs both contracts.
 # DECISION NEEDED (see hd1-header-parity.md, risk 1): the full-name SAOC lockup at 70px ink height is about 533px wide and cannot sit next to the full nav at 1260. The gate encodes the spec as
 # written and will fail rather than pass by shrinking anything. Dev: if the measurement fails, stop and report; do not reduce the ink height, the nav or the CTA to fit.
 # Hooks: both headers carry data-hd="bar|brand|nav|item|label|cta|menu" (SAOC also "search"); see hd1-header-parity.md.
