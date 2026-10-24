@@ -157,8 +157,8 @@ export default async function JudgingPage() {
   const awardsSection = (
     <section className="bg-bone py-24">
       <div className="saoc-container">
-        <div className="mb-10">
-          <h2 className="eyebrow">SAOC awards</h2>
+        <div className="mb-6">
+          <h2 className="h2">SAOC awards</h2>
         </div>
         <AwardsGrid awards={awardsList} withhold={withhold} />
       </div>
@@ -225,7 +225,7 @@ export default async function JudgingPage() {
       <section className="bg-bone py-16">
         <div className="saoc-container">
           <div className="mb-6">
-            <h2 className="eyebrow">Accredited judges</h2>
+            <h2 className="h2">Accredited judges</h2>
           </div>
           <JudgesDirectory judges={judges} showPublicDirectory={showDirectory} />
         </div>

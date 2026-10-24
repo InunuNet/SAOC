@@ -1,0 +1,18 @@
+{
+  "_comment": "Six societies and four provinces for the /societies checks. One society has a null province (the Alfred County case); one province code is lower-case in the data and still counts, as the client filter compares upper-cased. Names are fixture names, not site copy.",
+  "provinces": [
+    { "code": "WC", "name": "Western Cape" },
+    { "code": "GP", "name": "Gauteng" },
+    { "code": "KZN", "name": "KwaZulu-Natal" },
+    { "code": "EC", "name": "Eastern Cape" }
+  ],
+  "societies": [
+    { "_id": "s1", "name": "Fixture Cape Society", "slug": "fixture-cape-society", "province": "WC" },
+    { "_id": "s2", "name": "Fixture Peninsula Society", "slug": "fixture-peninsula-society", "province": "WC" },
+    { "_id": "s3", "name": "Fixture Highveld Society", "slug": "fixture-highveld-society", "province": "GP" },
+    { "_id": "s4", "name": "Fixture Reef Society", "slug": "fixture-reef-society", "province": "gp" },
+    { "_id": "s5", "name": "Fixture Natal Society", "slug": "fixture-natal-society", "province": "KZN" },
+    { "_id": "s6", "name": "Fixture County Society", "slug": "fixture-county-society", "province": null }
+  ],
+  "expectedCounts": { "ALL": 6, "WC": 2, "GP": 2, "KZN": 1, "EC": 0 }
+}

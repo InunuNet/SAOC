@@ -1,0 +1,22 @@
+{
+  "valid": { "name": "Jo Orchid", "email": "jo@example.org", "subject": "Hello", "message": "A message." },
+  "caps": { "name": 100, "email": 254, "subject": 200, "message": 5000 },
+  "rejects": [
+    { "label": "name is a number", "patch": { "name": 7 } },
+    { "label": "email is an array", "patch": { "email": ["a@b.co"] } },
+    { "label": "subject is an object", "patch": { "subject": { "x": 1 } } },
+    { "label": "message is null", "patch": { "message": null } },
+    { "label": "name missing", "patch": { "name": "__delete__" } },
+    { "label": "email without @", "patch": { "email": "not-an-email" } },
+    { "label": "name 101 chars", "patch": { "name": { "repeat": "a", "times": 101 } } },
+    { "label": "subject 201 chars", "patch": { "subject": { "repeat": "a", "times": 201 } } },
+    { "label": "message 5001 chars", "patch": { "message": { "repeat": "a", "times": 5001 } } },
+    { "label": "email 255 chars", "patch": { "email": { "repeat": "a", "times": 243, "suffix": "@example.org" } } },
+    { "label": "whitespace-only name", "patch": { "name": "   " } }
+  ],
+  "accepts": [
+    { "label": "name exactly 100", "patch": { "name": { "repeat": "a", "times": 100 } } },
+    { "label": "message exactly 5000", "patch": { "message": { "repeat": "a", "times": 5000 } } }
+  ],
+  "nonObjectBodies": [null, "str", 5, [], true]
+}
