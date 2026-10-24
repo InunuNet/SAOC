@@ -60,3 +60,8 @@ All interactive elements this change adds are >= 44px tall (rows, chips, select,
 - DECISION NEEDED (non-blocking, copy): EV-2 says the primary action is the event page and the secondary is the existing "19th National Show, 2027" button. No such label exists in the repo (ShowBand's labels are "Book tickets", "Show details", "Exhibitor info"). Built with existing labels only: "Book tickets" stays primary (NOS tickets), "Show details" points at `/events/<slug>` on this page only. Recommendation: keep; any new label needs an approved source.
 - Public + empty `eventsPage.intro`: only the left (write-up) column collapses; "Find your society" stays so the page keeps an action. Alternative (collapse the whole section) would leave no onward link on a zero-listed page.
 - Home strip keeps the show as a row (see section 1).
+
+## 10. Addendum (dev finding, same root cause)
+- `societyUpcomingEventsQuery` (sanity/queries.ts, per-society page) takes the identical date-only filter as `upcomingEventsQuery` and keeps `&& hostSociety->slug.current == $slug`. The society page already spreads `upcomingEventsParams()`, so `todayDate` reaches it.
+- `scripts/checks/societies-hidden-leak.mjs` passes `{ todayStart, todayDate }` to `upcomingEventsQuery` (use a date-only-safe far-past `todayDate`, e.g. '2000-01-01').
+- Both paths are on goldens/footprint.json; `checks/logic.mjs` asserts them.

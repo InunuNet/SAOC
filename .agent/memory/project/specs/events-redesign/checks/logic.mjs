@@ -78,5 +78,16 @@ check('params carry todayStart and todayDate', Object.keys(params).join() === 't
 check('todayDate is the SAST calendar date', params.todayDate === '2026-11-10', String(params.todayDate));
 check('date-only show 2027-09-26 is upcoming on 2026-10-25', S.isUpcoming({ date: '2027-09-23', endDate: '2027-09-26' }, new Date('2026-10-25T10:00:00Z')));
 
+// Per-society upcoming query shares the same date-only hole (a society hosting the National Show vanished from its own page): same filter, same param.
+import { readFileSync } from 'node:fs';
+const qsrc = readFileSync(path.join(repoRoot, 'sanity/queries.ts'), 'utf8');
+const sq = (qsrc.match(/export const societyUpcomingEventsQuery = defineQuery\(`([\s\S]*?)`\);/) ?? [])[1] ?? '';
+check('societyUpcomingEventsQuery found', sq.length > 0);
+check('per-society query keeps the dateTime filter', /dateTime\(coalesce\(endDate, date\)\) >= dateTime\(\$todayStart\)/.test(sq));
+check('per-society query admits a date-only last day', /!defined\(dateTime\(coalesce\(endDate, date\)\)\)\s*&&\s*coalesce\(endDate, date\) >= \$todayDate/.test(sq));
+check('per-society query keeps the host filter', /hostSociety->slug\.current == \$slug/.test(sq));
+const leak = readFileSync(path.join(repoRoot, 'scripts/checks/societies-hidden-leak.mjs'), 'utf8');
+check('societies-hidden-leak passes todayDate to upcomingEventsQuery', /todayStart:[^}]*todayDate:/.test(leak));
+
 if (failures.length) { console.error(`FAIL: logic.mjs (${checks} checks)`); for (const f of failures) console.error(`  - ${f}`); process.exit(1); }
 console.log(`PASS: logic.mjs, ${checks} checks.`);

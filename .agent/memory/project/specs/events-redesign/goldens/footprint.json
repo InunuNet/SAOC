@@ -15,5 +15,6 @@
   "app/(marketing)/events/page.tsx",
   "scripts/checks/events-until-last-day.mjs",
   "types/index.ts",
-  "docs/events-redesign.md"
+  "docs/events-redesign.md",
+  "scripts/checks/societies-hidden-leak.mjs"
 ]
