@@ -189,16 +189,15 @@ for (const width of [390, 320] as const) {
       await page.waitForURL(urlPattern(cleanHref(NOS_TICKETS)));
     });
 
-    test('NOS menu links Contact to the SAOC site and ends with the SAOC credit', async ({
+    test('NOS menu links Contact to the show contact page and ends with the SAOC credit', async ({
       page,
       baseURL,
     }) => {
       const panel = await openNosPanel(page, baseURL!);
       const contact = panel.getByRole('link', { name: 'Contact', exact: true });
       const href = (await contact.getAttribute('href')) ?? '';
-      expect(isAbsolute(href), `Contact must be an absolute SAOC URL, got ${href}`).toBe(true);
-      expect(new URL(href).pathname).toBe('/contact');
-      expect(new URL(href).hostname.startsWith('nos.')).toBe(false);
+      expect(isAbsolute(href), `Contact must stay on the NOS site, got ${href}`).toBe(false);
+      expect(href).toBe('/contact');
 
       const credit = panel.locator('.nd-credit a');
       await expect(credit).toHaveText('South African Orchid Council');

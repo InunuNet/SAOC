@@ -535,6 +535,15 @@
   opacity: 1;
   transform: translateX(4px);
 }
+/* Contact aside (nos-contact CT4): the same index rows with a 1px gold ring around the arrow. */
+.nos-theme .nos-contact-aside .nos-index-arrow {
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+}
 @media (prefers-reduced-motion: no-preference) {
   .nos-theme .nos-index-arrow {
     transition:
