@@ -66,8 +66,6 @@
 /* The one primary action: Tickets. On the tickets page it is the current page, so it drops to outline. */
 .nh-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 24px; border-radius: 10px; background: var(--nc-royal); color: var(--nc-ground); font: 700 13px/1 var(--nc-sans); letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; white-space: nowrap; transition: background-color 200ms var(--nc-ease), color 200ms var(--nc-ease); }
 .nh-cta:hover { background: var(--nc-royal-900); }
-.nh-cta[aria-current="page"] { background: transparent; color: var(--nc-royal); box-shadow: inset 0 0 0 1.5px var(--nc-royal); }
-.nh-cta[aria-current="page"]:hover { background: var(--nc-gold); }
 .nh-cta { margin-left: auto; }
 .nh-burger { display: inline-flex; align-items: center; gap: 8px; min-width: 44px; min-height: 44px; padding: 0 12px; border: 1.5px solid var(--nh-control-border); border-radius: 10px; background: none; color: var(--nc-royal); font: 700 13px/1 var(--nc-sans); letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; }
 .nh-burger svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; }
@@ -131,7 +129,7 @@
 .nf { background: var(--nc-royal); color: var(--nc-lilac); font-family: var(--nc-sans); padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: inset 0 1px 0 rgba(210, 203, 232, 0.2); }
 @media (forced-colors: active) { .nf { border-top: 1px solid CanvasText; } }
 /* Footer link lists take an underline on focus (NAV-1); the lockup and the newsletter controls keep a ring. */
-.nf-lockup:focus-visible { outline: 2px solid var(--nc-ground); outline-offset: 3px; border-radius: 4px; }
+.nf-saoc-credit a:focus-visible, .nf-lockup:focus-visible { outline: 2px solid var(--nc-ground); outline-offset: 3px; border-radius: 4px; }
 .nf ::selection { background: var(--nc-gold); color: var(--nc-royal); }
 /* r20 F3 (Codi FINAL): the lockup in the SAOC footer's brand column (FOOTER_LAYOUT), 248px, never wider than the column. */
 /* The PNG carries transparent padding (measured: 229px left, 250px right, 224px top and 257px bottom of 3272x2876). At the 248px box the negative margins below trim it, so the column hugs the visible ink and the footer gaps and the top line are measured from the artwork, not the box. */
@@ -184,6 +182,8 @@
 
 /* Forced colours drop the bar and the text-decoration colours, so a focused link list item takes a system-colour outline. */
 @media (forced-colors: active) {
+  .nh-link:hover .nh-label::after, .nh-trigger:hover .nh-label::after, .nh-link[aria-current] .nh-label::after, .nh-trigger[aria-current] .nh-label::after, .nh-link:focus-visible .nh-label::after, .nh-trigger:focus-visible .nh-label::after { background: CanvasText; }
+  .nh-cta { border: 1px solid ButtonText; }
   .nh-link:focus-visible, .nh-trigger:focus-visible, .nh-mega-list a:focus-visible, .nd-item:focus-visible, .nd-group a:focus-visible, .nd-credit a:focus-visible, .nf-list a:focus-visible, .nf-legal a:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
 }
 

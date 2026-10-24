@@ -161,6 +161,10 @@ html {
 [data-route-focus]:focus {
   outline: none;
 }
+/* The skip-link target (main#main-content, tabindex -1) is a landing, not a control. */
+main:focus {
+  outline: none;
+}
 /* Ink on the brass accent fill is the handoff .btn--accent. On the National Show pages the accent
    fill is violet (nos-theme.css), where ink is only 2.25:1 and the ivory text the pages already
    had is the readable pairing, so the show scope keeps it. */
