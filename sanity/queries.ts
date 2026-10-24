@@ -379,7 +379,7 @@ export const societySlugsQuery = defineQuery(`
 // Society detail page (F-societies-detail-redesign): upcoming events hosted by one
 // affiliated society, keyed off the `hostSociety` reference's slug.
 export const societyUpcomingEventsQuery = defineQuery(`
-  *[_type == "societyEvent" && dateTime(coalesce(endDate, date)) >= dateTime($todayStart) && hostSociety->slug.current == $slug]
+  *[_type == "societyEvent" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(endDate, date))) && coalesce(endDate, date) >= $todayDate)) && hostSociety->slug.current == $slug]
     | order(date asc)[0...6]{
     _id,
     title,
