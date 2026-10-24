@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS require hook for offline checks */
 // Sanity client stand-in. Dispatches on the query text the app imports from sanity/queries.ts and
 // answers from goldens/catalogue.json. An unrecognised query returns null and is recorded in
 // globalThis.__unhandledQueries so a check can fail on silent drift.

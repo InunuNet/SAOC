@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS require hook for offline checks */
 // Offline harness for the ticket-onsale-predicate checks. Preload with
 //   node --require <this file> --import tsx <check>
 // The repo's .ts files are CommonJS (package.json has no "type"), so tsx loads them through
