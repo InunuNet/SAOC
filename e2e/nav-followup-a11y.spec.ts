@@ -57,7 +57,7 @@ test.describe('forced colours keep the active and focus indicators', () => {
     expect(decoration).toContain('underline');
 
     const cta = page.locator('header [data-hd="cta"]');
-    expect(await cta.evaluate((n) => getComputedStyle(n).borderTopStyle)).not.toBe('none');
+    expect(await cta.evaluate((n) => parseFloat(getComputedStyle(n).borderTopWidth))).toBeGreaterThan(0);
   });
 
   test('NOS: the active bar and the call to action draw in system colours', async ({
@@ -77,7 +77,7 @@ test.describe('forced colours keep the active and focus indicators', () => {
     expect(bar!.bg).not.toBe('rgba(0, 0, 0, 0)');
 
     const cta = page.locator('header#nh [data-hd="cta"]');
-    expect(await cta.evaluate((n) => getComputedStyle(n).borderTopStyle)).not.toBe('none');
+    expect(await cta.evaluate((n) => parseFloat(getComputedStyle(n).borderTopWidth))).toBeGreaterThan(0);
   });
 });
 
