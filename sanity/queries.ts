@@ -191,6 +191,8 @@ export const ticketTypeBySlugQuery = defineQuery(`
     _id,
     name,
     "slug": slug.current,
+    demo,
+    active,
     price,
     regularPrice,
     description,
