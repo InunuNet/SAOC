@@ -108,6 +108,7 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [federatedLoading, setFederatedLoading] = useState<FederatedProviderId | null>(null);
@@ -115,6 +116,7 @@ export default function AdminLoginPage() {
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
+    setEmailError('');
     setNotice('');
     setLoading(true);
 
@@ -134,12 +136,13 @@ export default function AdminLoginPage() {
 
   async function handleForgotPassword() {
     setError('');
+    setEmailError('');
     setNotice('');
     const { status, message: text } = await requestPasswordReset(email, (address) =>
-      sendPasswordResetEmail(getAuth(getFirebaseApp()), address),
+      sendPasswordResetEmail(getAuth(getFirebaseApp()), address)
     );
     if (status === 'prompt') {
-      setError(text);
+      setEmailError(text);
     } else {
       setNotice(text);
     }
@@ -178,10 +181,14 @@ export default function AdminLoginPage() {
 
         <LoginFormFields
           email={email}
-          onEmailChange={setEmail}
+          onEmailChange={(value) => {
+            setEmail(value);
+            setEmailError('');
+          }}
           password={password}
           onPasswordChange={setPassword}
           error={error}
+          emailError={emailError}
           notice={notice}
           onForgotPassword={handleForgotPassword}
           disabled={disabled}
