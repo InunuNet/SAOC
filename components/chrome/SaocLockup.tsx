@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Lora } from 'next/font/google';
+import localFont from 'next/font/local';
 
 // =============================================================
 // SAOC — components/chrome/SaocLockup.tsx
@@ -32,7 +32,13 @@ import { Lora } from 'next/font/google';
 // saoc-emblem-footer-lapis-2x.png (E4). Both are 640×618 (aspect 1.0356:1).
 // =============================================================
 
-const lora = Lora({ subsets: ['latin'], weight: '500', style: 'normal', display: 'swap' });
+const lora = localFont({
+  src: '../../app/fonts/lora/Lora-latin-normal.woff2',
+  weight: '500',
+  style: 'normal',
+  display: 'swap',
+  adjustFontFallback: 'Times New Roman',
+});
 
 // colours(dark, ground) at palette P2 index (id P3, "Lapis & Sun"): light
 // ground → name/tag/rule; dark ground → onDark/onDarkMuted/translucent-white
