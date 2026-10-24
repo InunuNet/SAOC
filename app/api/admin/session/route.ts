@@ -8,7 +8,16 @@ import { initAdmin } from '@/lib/firebase-admin';
 const SESSION_DURATION_MS = 60 * 60 * 24 * 5 * 1000; // 5 days
 
 export async function POST(request: NextRequest) {
-  const body = await request.json() as { idToken?: unknown };
+  let body: { idToken?: unknown };
+  try {
+    const parsed: unknown = await request.json();
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
+    body = parsed as { idToken?: unknown }; // object-checked above; idToken is checked below
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
   const { idToken } = body;
 
   if (typeof idToken !== 'string' || !idToken) {
