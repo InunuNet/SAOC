@@ -49,7 +49,14 @@ correction (`goldens/typo-corrections.json` in the spec folder). Nothing is inve
 
 ## Known leftovers
 
-- `scripts/generate-nos-route-manifest.ts` and some older contract checks still name `sa-exhibitors`; they were
-  outside this change's file list.
+- `scripts/generate-nos-route-manifest.ts` is outside the M2 file list; its `sa-exhibitors` entry was removed
+  anyway (reason: regenerating the manifest would have re-added the retired route to
+  `content/national-show-routes.json`). Recorded in `checks-updated.md`.
+- Older contract checks that still name `sa-exhibitors` and were already unable to run (a `nav-config` import
+  error) are left as they are: `launch-weekend/f12/check-a-static.mjs`, `f17/check-c-nav-labels.mjs`,
+  `f18/check-a-longform.mjs`, `f18/check-g-ledes.mjs`, `f18/check-j-archive-scope.mjs`,
+  `f18/check-l-supersession.mjs`, `trace-excludes/check-required-traced.mjs`, `trace-excludes/check-runtime.mjs`,
+  `nos-provenance-fix/*`, `nos-critique-r2/*`, `nos-critique-r3/check-rendered-f2.mjs`,
+  `menu-system-layout4-shared/check-nav-links-200-gated-by-exemptions.mjs`.
 - `MissionBlock` still carries its beta-only placeholder paragraph that mentions "21 societies" and "1990"
-  (marked as placeholder, hidden in a public build). It is prose, not a stat value.
+  (marked as placeholder, hidden in a public build). It is prose, not a stat value; left on the lead's ruling.
