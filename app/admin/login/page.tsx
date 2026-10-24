@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   getAuth,
@@ -111,6 +111,9 @@ export default function AdminLoginPage() {
   const [emailError, setEmailError] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  // A ref as well as state: two clicks in one tick both see resetting === false.
+  const resetInFlight = useRef(false);
   const [federatedLoading, setFederatedLoading] = useState<FederatedProviderId | null>(null);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -135,16 +138,24 @@ export default function AdminLoginPage() {
   }
 
   async function handleForgotPassword() {
+    if (resetInFlight.current) return;
+    resetInFlight.current = true;
+    setResetting(true);
     setError('');
     setEmailError('');
     setNotice('');
-    const { status, message: text } = await requestPasswordReset(email, (address) =>
-      sendPasswordResetEmail(getAuth(getFirebaseApp()), address)
-    );
-    if (status === 'prompt') {
-      setEmailError(text);
-    } else {
-      setNotice(text);
+    try {
+      const { status, message: text } = await requestPasswordReset(email, (address) =>
+        sendPasswordResetEmail(getAuth(getFirebaseApp()), address)
+      );
+      if (status === 'prompt') {
+        setEmailError(text);
+      } else {
+        setNotice(text);
+      }
+    } finally {
+      resetInFlight.current = false;
+      setResetting(false);
     }
   }
 
@@ -169,7 +180,7 @@ export default function AdminLoginPage() {
     }
   }
 
-  const disabled = loading || federatedLoading !== null;
+  const disabled = loading || resetting || federatedLoading !== null;
 
   return (
     <div className="flex min-h-[70vh] items-center justify-center bg-parchment px-4 py-16">

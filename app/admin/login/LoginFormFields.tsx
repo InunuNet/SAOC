@@ -92,7 +92,7 @@ export function LoginFormFields({
             className={inputClass}
           />
         </div>
-        <div className="mt-2 flex justify-end">
+        <div className="mt-2 text-right">
           <button
             type="button"
             data-testid="admin-forgot-password"
