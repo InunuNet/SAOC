@@ -6,7 +6,11 @@ import { Search } from 'lucide-react';
 
 import { SocietiesGrid } from '@/components/societies';
 import type { SanitySociety } from '@/components/societies';
-import { provinceCounts } from '@/lib/societies-view';
+import {
+  allSocietiesHaveProvince,
+  effectiveProvinceFilter,
+  provinceCounts,
+} from '@/lib/societies-view';
 import type { Province } from '@/types';
 
 // The search string lives here once: it is both the placeholder and the accessible name.
@@ -23,7 +27,12 @@ export function SocietiesClient({ societies, provinces }: SocietiesClientProps) 
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const province = (searchParams.get('province') ?? 'ALL').toUpperCase();
+  // Chips stay hidden until every listed society has a province (NOS Design ruling SO-3).
+  const chipsVisible = allSocietiesHaveProvince(societies);
+  const province = effectiveProvinceFilter(
+    (searchParams.get('province') ?? 'ALL').toUpperCase(),
+    chipsVisible,
+  );
   const q = searchParams.get('q') ?? '';
 
   function setParam(key: 'province' | 'q', value: string) {
@@ -55,43 +64,49 @@ export function SocietiesClient({ societies, provinces }: SocietiesClientProps) 
     <div className="space-y-8">
       {/* One filters row: province chips left, search right (golden .filters). */}
       <div className="flex flex-wrap items-center justify-between gap-5 border-b border-rule pb-6">
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by province">
-          {[ALL_CHIP, ...provinces].map((p) => {
-            const active = province === p.code;
-            const count = counts[p.code] ?? 0;
-            return (
-              <button
-                key={p.code}
-                type="button"
-                onClick={() => setParam('province', p.code)}
-                aria-pressed={active}
-                aria-label={`${p.name}, ${count}`}
-                className={
-                  active
-                    ? 'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-primary bg-primary px-3.5 py-1.5 font-sans text-[14px] text-ivory transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2'
-                    : 'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-rule bg-parchment px-3.5 py-1.5 font-sans text-[14px] text-ink transition-colors duration-150 hover:border-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2'
-                }
-              >
-                {/* Full name from 481px up, abbreviation at 480px and below; the accessible name
-                    (aria-label) is the full name and count at every width. */}
-                <span aria-hidden="true" className="min-[481px]:hidden">
-                  {p.code === 'ALL' ? 'All' : p.code}
-                </span>
-                <span aria-hidden="true" className="hidden min-[481px]:inline">
-                  {p.name}
-                </span>
-                <span
-                  aria-hidden="true"
-                  className={`font-mono text-[10.5px] ${active ? 'opacity-85' : 'opacity-70'}`}
+        {chipsVisible ? (
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by province">
+            {[ALL_CHIP, ...provinces].map((p) => {
+              const active = province === p.code;
+              const count = counts[p.code] ?? 0;
+              const disabled = count === 0;
+              return (
+                <button
+                  key={p.code}
+                  type="button"
+                  onClick={disabled ? undefined : () => setParam('province', p.code)}
+                  aria-pressed={active}
+                  aria-disabled={disabled || undefined}
+                  aria-label={`${p.name}, ${count}`}
+                  className={
+                    disabled
+                      ? 'inline-flex min-h-11 min-w-11 cursor-not-allowed items-center justify-center gap-2 rounded-full border border-rule bg-parchment px-3.5 py-1.5 font-sans text-[14px] text-muted focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2'
+                      : active
+                        ? 'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-primary bg-primary px-3.5 py-1.5 font-sans text-[14px] text-ivory transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2'
+                        : 'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-rule bg-parchment px-3.5 py-1.5 font-sans text-[14px] text-ink transition-colors duration-150 hover:border-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2'
+                  }
                 >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                  {/* Full name from 481px up, abbreviation at 480px and below; the accessible name
+                    (aria-label) is the full name and count at every width. */}
+                  <span aria-hidden="true" className="min-[481px]:hidden">
+                    {p.code === 'ALL' ? 'All' : p.code}
+                  </span>
+                  <span aria-hidden="true" className="hidden min-[481px]:inline">
+                    {p.name}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className={`font-mono text-[10.5px] ${active ? 'opacity-85' : 'opacity-70'}`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
 
-        <div className="flex min-h-11 min-w-[260px] items-center gap-2 rounded-sm border border-rule bg-parchment px-3 text-muted focus-within:outline-2 focus-within:outline-solid focus-within:outline-primary focus-within:outline-offset-2">
+        <div className="ml-auto flex min-h-11 min-w-[260px] items-center gap-2 rounded-sm border border-rule bg-parchment px-3 text-muted focus-within:outline-2 focus-within:outline-solid focus-within:outline-primary focus-within:outline-offset-2">
           <Search size={16} aria-hidden />
           <input
             id="societies-search"
