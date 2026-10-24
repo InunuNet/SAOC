@@ -183,7 +183,7 @@ const NEUTRAL_EXACT = new Set<string>([
 const NOS_OG_PATH = `${NOS_INTERNAL_PREFIX}/og`;
 
 // SAOC-hosted trees: asked for on the NOS host they redirect to the SAOC origin.
-const SAOC_ONLY_EXACT = new Set<string>(['/contact', '/members', '/constitution', '/judging']);
+const SAOC_ONLY_EXACT = new Set<string>(['/members', '/constitution', '/judging']);
 const SAOC_ONLY_PREFIXES = ['/societies', '/events'];
 // Host-neutral content rendered by both sites' chrome (app/(shared)).
 const SHARED_EXACT = new Set<string>(['/privacy', '/terms', '/refunds']);

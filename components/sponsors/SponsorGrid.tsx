@@ -65,7 +65,7 @@ export function SponsorGrid({ sponsors }: SponsorGridProps) {
                     href={sponsor.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-3 inline-block font-sans text-[13px] text-ink underline underline-offset-2"
+                    className="mt-3 inline-flex min-h-6 items-center font-sans text-[13px] text-ink underline underline-offset-2"
                   >
                     Visit website →
                   </a>

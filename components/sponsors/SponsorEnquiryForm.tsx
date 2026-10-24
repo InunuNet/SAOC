@@ -332,7 +332,7 @@ export function SponsorEnquiryForm({ site, markPlaceholders }: SponsorEnquiryFor
               checked={values.consent}
               onChange={setField('consent')}
               disabled={disabled}
-              className="mt-1 h-4 w-4 shrink-0 rounded-sm border border-rule outline-none focus:ring-2 focus:ring-ink/40 disabled:opacity-60"
+              className="mt-0.5 h-6 w-6 shrink-0 rounded-sm border border-rule outline-none focus:ring-2 focus:ring-ink/40 disabled:opacity-60"
               aria-invalid={invalid('consent')}
               aria-describedby={describedBy('consent')}
             />

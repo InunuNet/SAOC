@@ -71,10 +71,11 @@ interface NosHeaderProps {
    * can come from a variable the client bundle does not carry, so it is never resolved here.
    */
   saocHomeHref: string;
-  saocContactHref: string;
+  /** The show's own contact page (public NOS path). */
+  contactHref: string;
 }
 
-export function NosHeader({ nav, saocHomeHref, saocContactHref }: NosHeaderProps) {
+export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   // At most one top-row disclosure panel is open at a time.
@@ -299,11 +300,9 @@ export function NosHeader({ nav, saocHomeHref, saocContactHref }: NosHeaderProps
                 </li>
               ))}
               <li>
-                {/* The show is organised by SAOC, so Contact is the SAOC contact: a plain anchor to
-                    the SAOC site, same tab, no arrow. */}
-                <a className="nh-link" href={saocContactHref}>
+                <Link className="nh-link" href={contactHref} aria-current={current(contactHref)}>
                   {CONTACT_LINK.label}
-                </a>
+                </Link>
               </li>
             </ul>
           </nav>
@@ -382,9 +381,9 @@ export function NosHeader({ nav, saocHomeHref, saocContactHref }: NosHeaderProps
               </li>
             ))}
             <li>
-              <a className="nd-item" href={saocContactHref}>
+              <Link className="nd-item" href={contactHref} aria-current={current(contactHref)}>
                 {CONTACT_LINK.label}
-              </a>
+              </Link>
             </li>
           </ul>
           {/* R1.4: after a rule, the SAOC credit as text only: the organisation's name, linking

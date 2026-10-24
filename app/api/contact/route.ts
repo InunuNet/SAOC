@@ -1,9 +1,8 @@
-import React from 'react';
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { initAdmin } from '@/lib/firebase-admin';
-import { sendEmail, FORMS_FROM_ADDRESS } from '@/lib/email';
-import ContactConfirmation from '@/emails/ContactConfirmation';
+import { buildContactSubmissionDoc, sendContactAcknowledgement } from '@/lib/contact-submission';
+import { siteForHost } from '@/lib/site-hosts';
 import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
 import { sendContactSubmissionAdminNotice } from '@/lib/contact-submission-admin-notice';
 import { logFailureSafely } from '@/lib/safe-log';
@@ -38,31 +37,16 @@ export async function POST(request: NextRequest) {
     initAdmin();
     const db = getFirestore();
 
-    const submittedAt = Timestamp.now();
-    const storedName = String(name).trim();
-    const storedEmail = String(email).trim().toLowerCase();
-    const storedSubject = String(subject).trim();
-    const storedMessage = String(message).trim();
+    // The site comes from the request host, never from the body.
+    const site = siteForHost(request.headers.get('x-forwarded-host') ?? request.headers.get('host'));
+    const doc = buildContactSubmissionDoc({ name, email, subject, message }, site, new Date());
 
-    const ref = await db.collection('contactSubmissions').add({
-      name: storedName,
-      email: storedEmail,
-      subject: storedSubject,
-      message: storedMessage,
-      submittedAt,
-      status: 'new',
-    });
+    const ref = await db
+      .collection('contactSubmissions')
+      .add({ ...doc, submittedAt: Timestamp.fromDate(doc.submittedAt) });
 
     try {
-      await sendEmail({
-        to: email,
-        subject: 'We received your message — SAOC',
-        react: React.createElement(ContactConfirmation, {
-          name: String(name).trim(),
-          subject: String(subject).trim(),
-        }),
-        from: FORMS_FROM_ADDRESS,
-      });
+      await sendContactAcknowledgement({ name: doc.name, email, subject: doc.subject, site });
     } catch (emailErr) {
       console.error('[contact/route] Email send failed (non-fatal):', emailErr);
     }
@@ -71,11 +55,12 @@ export async function POST(request: NextRequest) {
       () =>
         sendContactSubmissionAdminNotice({
           submissionId: ref.id,
-          name: storedName,
-          email: storedEmail,
-          subject: storedSubject,
-          message: storedMessage,
-          submittedAt: submittedAt.toDate(),
+          name: doc.name,
+          email: doc.email,
+          subject: doc.subject,
+          message: doc.message,
+          submittedAt: doc.submittedAt,
+          site,
         }),
       (error) => logFailureSafely('[contact/route] admin notice failed (non-fatal)', error),
     );

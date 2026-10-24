@@ -5,6 +5,7 @@
 
 import Image from 'next/image';
 import type { ReactNode } from 'react';
+import heroSourceWidths from '@/lib/hero-source-widths.json';
 
 interface PageHeroProps {
   image: string;
@@ -36,6 +37,7 @@ export function PageHero({
         fill
         priority
         sizes="100vw"
+        quality={image in heroSourceWidths ? 88 : undefined}
         className="object-cover"
         aria-hidden="true"
       />
