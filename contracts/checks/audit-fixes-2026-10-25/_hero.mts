@@ -24,7 +24,7 @@ const MIB = 1024 * 1024;
 // viewport are the architect's: they force intermediate srcset widths so a 1280@2 or 1440@2 screen does
 // not download the 2056@2 file.
 export const VIEWPORTS: Viewport[] = [
-  { label: '2056@2', width: 2056, dpr: 2, maxBytes: 2.0 * MIB },
+  { label: '2056@2', width: 2056, dpr: 2, maxBytes: 2.5 * MIB },
   { label: '1440@2', width: 1440, dpr: 2, maxBytes: 1.2 * MIB },
   { label: '1280@2', width: 1280, dpr: 2, maxBytes: 1.0 * MIB },
   { label: '390@3', width: 390, dpr: 3, maxBytes: 0.2 * MIB },

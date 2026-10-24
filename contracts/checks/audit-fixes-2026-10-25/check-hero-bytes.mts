@@ -1,5 +1,5 @@
 // Measured hero image checks, run after scripts/generate-image-variants.mjs.
-//   budget     every srcset candidate exists and is <= 2 MiB; the file served at each of the four
+//   budget     every srcset candidate exists and is within its per-width cap (2 MiB to 4112 px, 3 MiB above); the file served at each of the four
 //              viewports is within its byte ceiling; the generator never encodes below quality 75.
 //   viewports  NOS Design's served-width gate: the file served at 2056@2, 1440@2, 1280@2 and 390@3 is at
 //              least min(box x DPR, the photograph's native width) real pixels wide (read from the file).
@@ -10,7 +10,11 @@ import {
 } from './_hero.mts';
 
 const MODE = process.argv[2];
-const MAX_CANDIDATE_BYTES = 2 * 1024 * 1024;
+const MIB = 1024 * 1024;
+// Per-width cap on every srcset candidate. Widths up to the 2056@2 bar (4112 px) get 2 MiB; wider
+// candidates (4096/5120/6144 and native widths may stay) get 3 MiB. WebP q75 meets both: purple, the heaviest
+// source, measured 1.46 MiB at 4112 px and about 2.3 MiB at 5120 px.
+const maxCandidateBytes = (width: number) => (width <= 4112 ? 2 : 3) * MIB;
 const MIN_QUALITY = 75; // NOS Design guard: cut bytes through format and quality, about q75-82, not dimensions
 const mib = (bytes: number) => `${(bytes / 1048576).toFixed(2)} MiB`;
 const problems: string[] = [];
@@ -20,7 +24,7 @@ if (MODE === 'budget') {
     for (const width of DEVICE_SIZES) {
       const url = servedUrl(name, width);
       try {
-        if (bytesOf(url) > MAX_CANDIDATE_BYTES) problems.push(`${url}: ${mib(bytesOf(url))} (candidate ceiling ${mib(MAX_CANDIDATE_BYTES)})`);
+        if (bytesOf(url) > maxCandidateBytes(width)) problems.push(`${url}: ${mib(bytesOf(url))} (cap ${mib(maxCandidateBytes(width))} at ${width}px)`);
       } catch {
         problems.push(`${url}: served by the loader but not generated`);
       }

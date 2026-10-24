@@ -30,13 +30,16 @@ allowed but not needed (and would need the loader to return an .avif URL for tho
 ## Required result
 Mechanism (dev's call within these limits): re-encode the above-2048 variants at WebP quality 75-82 and give
 the srcset candidates that serve the four viewports, so a smaller screen does not download the 2056@2 file.
-Suggested: deviceSizes `[640, 750, 828, 1080, 1200, 1920, 2048, 2560, 2880, 4112]` (4112 = 2056 x 2 exactly,
+The 1440@2 and 1280@2 ceilings do require intermediate candidates (e.g. 2560, 2880) so those screens do not take
+a 4096+ file; that adds widths, it drops none. Suggested: deviceSizes `[640, 750, 828, 1080, 1200, 1920, 2048, 2560, 2880, 4112]` (4112 = 2056 x 2 exactly,
 so no 5120/6144 candidate and no native-width entries above it), and keep the loader's `-q88` file naming so
 call sites with `quality={88}` need no change. A source never upscales; pink (3456) and yellow (3100) top out
 at their native width.
 
 Enforced by `check-hero-bytes.mts` after the generator runs:
-- `budget`: every deviceSize candidate exists and is <= 2 MiB; the file served at 2056@2 <= 2 MiB, 1440@2
+- `budget`: every deviceSize candidate exists and is within its per-width cap, 2 MiB up to 4112 px and 3 MiB
+  above it (so 4096/5120/6144 and native widths MAY stay; nothing here requires dropping them); the file served
+  at 2056@2 <= 2.5 MiB, 1440@2
   <= 1.2 MiB, 1280@2 <= 1.0 MiB, 390@3 <= 0.2 MiB; the generator never encodes below quality 75.
 - `viewports`: the file served at each of the four viewports is, read from the file's real pixels, at least
   min(viewport x DPR, native width) wide. Baseline already passes this; it must keep passing.

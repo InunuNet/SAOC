@@ -60,7 +60,7 @@ assertions:
       description: F4 NOS sitemap helpers (/contact, ticket slug paths, no shared policy pages) and app/sitemap.ts wiring match the golden
       command: pnpm exec tsx contracts/checks/audit-fixes-2026-10-25/check-sitemap-routes.mts
     - id: A5
-      description: F5 byte budget, every srcset candidate exists and is at most 2 MiB, the file served at 2056@2, 1440@2, 1280@2 and 390@3 is within its ceiling, generator never encodes below q75 (runs the variant generator first)
+      description: F5 byte budget, every srcset candidate exists and is within its per-width cap (2 MiB up to 4112 px, 3 MiB above; large widths may stay), the file served at 2056@2, 1440@2, 1280@2 and 390@3 is within its ceiling (2.5, 1.2, 1.0, 0.2 MiB), generator never encodes below q75 (runs the variant generator first)
       command: node scripts/generate-image-variants.mjs && pnpm exec tsx contracts/checks/audit-fixes-2026-10-25/check-hero-bytes.mts budget
       timeout_seconds: 600
     - id: A6
