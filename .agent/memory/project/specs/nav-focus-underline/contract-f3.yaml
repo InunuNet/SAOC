@@ -1,0 +1,65 @@
+schema: athanor.contract/v1
+slug: nav-focus-underline
+goal: The SAOC page container is the same box as NOS (1320px content, clamp gutter), through one token, so lockup, h1 and body left edges match on both hosts.
+created_at: '2026-10-24'
+autonomy: high
+
+# HD-1b (NOS Design, final), same PR as F2. The change is the two tokens in app/globals.css plus a class swap onto .saoc-container in the five public SAOC files that hard-code
+# max-w-[1280px] px-8 (Header.tsx is replaced by F2). See goldens/hd1-header-parity.md, section HD-1b, for why the token alone is not enough.
+# POST-DEPLOY gates: C7-C9 need the same measurements file as F2 (contentLeft per host and width, routes naming a page with a left-aligned h1).
+
+features:
+  - id: F3
+    name: One container width on both hosts (HD-1b)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/nav-focus-underline/goldens/hd1-header-parity.md
+  - .agent/memory/project/specs/nav-focus-underline/goldens/header-geometry.json
+  - .agent/memory/project/specs/nav-focus-underline/goldens/codex-qa-prompt-f3.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: C1
+      description: --container-max and --container-pad equal the NOS tokens (1320px content plus clamp gutter) and .saoc-container is still driven by them
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-container.mjs tokens
+    - id: C2
+      description: The public SAOC files that hard-coded max-w-[1280px] no longer do
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-container.mjs no-literals
+    - id: C3
+      description: Only allow-listed files changed
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-scope.mjs
+    - id: C4
+      description: Type-check passes
+      command: pnpm type-check
+      timeout_seconds: 600
+    - id: C5
+      description: Lint passes on the touched files
+      command: pnpm exec eslint components/chrome/Breadcrumb.tsx components/ui/PageHero.tsx "app/(marketing)/societies/[slug]/page.tsx" app/not-found.tsx
+      timeout_seconds: 300
+    - id: C6
+      description: Codex adversarial review of the whole diff
+      type: codex_qa
+      target: .agent/memory/project/specs/nav-focus-underline/goldens/codex-qa-prompt-f3.md
+      timeout_seconds: 1300
+      required: true
+    - id: C7
+      description: Content left edge equals the lockup left edge on each host and is equal across hosts (+-1) at 2056, 1440 and 1280, on the deployed commit
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/compare-geometry.mjs .agent/memory/scratch/hd1-geometry-measurements.json --feature f3
+    - id: C8
+      description: BrowserAgent on the SAOC host confirmed the left edges and took the shots
+      type: browser_deployed_check
+      target: .agent/memory/scratch/hd1b-browser-saoc-manifest.json
+      required: true
+    - id: C9
+      description: BrowserAgent on the NOS host confirmed the left edges and took the shots
+      type: browser_deployed_check
+      target: .agent/memory/scratch/hd1b-browser-nos-manifest.json
+      script: .agent/memory/project/specs/nav-focus-underline/checks/browser-nos-origin.sh
+      required: true
+    - id: C10
+      description: gws inbox check is not applicable (no email is sent); declared non-required only to satisfy the triad coverage linter, expected to skip (Athanor#1467)
+      type: gws_inbox_check
+      target: .agent/memory/scratch/hd1b-gws-manifest.json
+      required: false

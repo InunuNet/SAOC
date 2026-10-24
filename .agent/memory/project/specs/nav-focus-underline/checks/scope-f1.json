@@ -1,0 +1,22 @@
+{
+ "allowed": [
+  "^components/chrome/(Header|MobileMenu|Footer)\\.tsx$",
+  "^components/nos-chrome/(NosHeader|NosFooter)\\.tsx$",
+  "^components/nos-chrome/nos-chrome\\.css$",
+  "^components/site-chrome/(SaocFrame|NosFrame|RouteFocus)\\.tsx$",
+  "^app/globals\\.css$",
+  "^lib/(nav-current|route-focus)\\.ts$",
+  "^docs/nav-focus-underline\\.md$",
+  "^e2e/nav-focus[^/]*$",
+  "^\\.agent/memory/",
+  "^e2e/nav-keyboard-operable\\.spec\\.ts$"
+ ],
+ "mustStay": [
+  "components/chrome/SkipLink.tsx",
+  "components/nos-chrome/NosSkipLink.tsx",
+  "components/newsletter/NewsletterSignup.tsx",
+  "components/chrome/footer-data.ts",
+  "components/chrome/nav-config.ts",
+  "components/nos-chrome/nos-nav.ts"
+ ]
+}

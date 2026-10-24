@@ -20,7 +20,9 @@ const NOS_GROUND = 'rgb(251, 250, 240)'; // --nc-ground #FBFAF0
 const LOCKUP_FILE = 'nos-full-colour-horizontal';
 const LOCKUP_ALT = SHOW_TITLE_EXPANDED;
 const LOCKUP_BOX_WIDE = 448;
-const LOCKUP_BOX_NARROW = 390;
+// HD-1: the link box is min(container, 405px); on a 390px phone the container is 390 - 2 * 16.
+const LOCKUP_INK_PHONE = 358;
+const LOCKUP_INK_ROW = 405;
 const TOLERANCE_PX = 1.5;
 
 test.describe('NOS header — lockup and Tickets call to action', () => {
@@ -44,17 +46,31 @@ test.describe('NOS header — lockup and Tickets call to action', () => {
     expect(Math.abs(box!.width - LOCKUP_BOX_WIDE)).toBeLessThanOrEqual(TOLERANCE_PX);
   });
 
-  test('the lockup takes the narrow box on a phone', async ({ page, baseURL }) => {
+  test('the lockup fills the container on a phone', async ({ page, baseURL }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`${nosBase(baseURL!)}/`);
 
-    const img = page.locator('header#nh .nh-brand').getByRole('img', { name: LOCKUP_ALT });
-    await expect(img).toBeVisible();
-    const box = await img.boundingBox();
-    expect(Math.abs(box!.width - LOCKUP_BOX_NARROW)).toBeLessThanOrEqual(TOLERANCE_PX);
+    const brand = page.locator('header#nh .nh-brand');
+    await expect(brand.getByRole('img', { name: LOCKUP_ALT })).toBeVisible();
+    const box = await brand.boundingBox();
+    expect(Math.abs(box!.width - LOCKUP_INK_PHONE)).toBeLessThanOrEqual(TOLERANCE_PX);
   });
 
-  for (const width of [1440, 1280, 390]) {
+  test('the lockup is the 405px footprint at the row breakpoint (780) and just below it (779)', async ({
+    page,
+    baseURL,
+  }) => {
+    for (const width of [780, 779]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(`${nosBase(baseURL!)}/`);
+      const box = await page.locator('header#nh .nh-brand').boundingBox();
+      expect(Math.abs(box!.width - LOCKUP_INK_ROW), `lockup width at ${width}px`).toBeLessThanOrEqual(
+        TOLERANCE_PX,
+      );
+    }
+  });
+
+  for (const width of [1440, 1384, 1280, 390]) {
     test(`Tickets is the royal-purple call to action, last in the bar, at ${width}px`, async ({
       page,
       baseURL,
@@ -79,7 +95,7 @@ test.describe('NOS header — lockup and Tickets call to action', () => {
         const other = others.nth(i);
         if ((await other.evaluate((el) => el.classList.contains('nh-cta'))) === true) continue;
         const otherBox = (await other.boundingBox())!;
-        if (width >= 1260) {
+        if (width >= 1384) {
           expect(otherBox.x + otherBox.width, 'something sits to the right of Tickets').toBeLessThanOrEqual(
             ctaBox.x + TOLERANCE_PX,
           );

@@ -45,7 +45,7 @@ export function PageHero({
         className="absolute inset-0 bg-gradient-to-t from-[var(--primary-800)]/85 via-[var(--primary-800)]/55 to-[var(--primary-800)]/25"
         aria-hidden="true"
       />
-      <div className="relative z-10 mx-auto w-full max-w-[1280px] px-8 pb-16 pt-28 flex flex-col items-center text-center">
+      <div className="saoc-container relative z-10 w-full pb-16 pt-28 flex flex-col items-center text-center">
         <span className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory">
           {eyebrow}
         </span>

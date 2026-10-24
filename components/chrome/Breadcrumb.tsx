@@ -17,7 +17,7 @@ interface BreadcrumbProps {
 export function Breadcrumb({ items }: BreadcrumbProps) {
   return (
     <nav aria-label="Breadcrumb" className="bg-parchment border-b border-rule">
-      <div className="mx-auto flex max-w-[1280px] items-center flex-wrap gap-0 px-8 py-3">
+      <div className="saoc-container flex items-center flex-wrap gap-0 py-3">
         <Link
           href="/"
           className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted hover:text-primary transition-colors duration-150"

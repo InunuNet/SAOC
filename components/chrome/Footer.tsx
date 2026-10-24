@@ -50,6 +50,13 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
           <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ivory/65">
             {FOOTER_REG}
           </span>
+          {/* HD-1: moved here from the retired utility bar, directly under the registration line. */}
+          <a
+            href="mailto:info@saoc.co.za"
+            className={`${FOOTER_RHYTHM.row} font-mono text-ivory/80 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]`}
+          >
+            info@saoc.co.za
+          </a>
           {/* WOSA appears once in this footer, under the registration line (as in NosFooter). */}
           <ul className={FOOTER_RHYTHM.list}>
             <li>
@@ -57,7 +64,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
                 href={FOOTER_WOSA.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`${FOOTER_RHYTHM.row} gap-1 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150`}
+                className={`${FOOTER_RHYTHM.row} gap-1 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]`}
               >
                 {FOOTER_WOSA.label}
                 <ExternalArrow />
@@ -79,7 +86,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
                 <li key={n.id}>
                   <NavLink
                     href={n.href}
-                    className={`${FOOTER_RHYTHM.row} min-w-11 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150`}
+                    className={`${FOOTER_RHYTHM.row} min-w-11 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]`}
                   >
                     {n.label}
                   </NavLink>
@@ -127,14 +134,14 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
               <Link
                 key={l.href}
                 href={l.href}
-                className="inline-flex min-h-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150"
+                className="inline-flex min-h-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]"
               >
                 {l.label}
               </Link>
             ))}
             <MediaKitFooterLink
               {...FOOTER_MEDIA_KIT}
-              className="inline-flex min-h-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150"
+              className="inline-flex min-h-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]"
             />
           </div>
         </div>
