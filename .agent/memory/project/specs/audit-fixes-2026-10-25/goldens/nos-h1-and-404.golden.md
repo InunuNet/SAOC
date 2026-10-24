@@ -43,3 +43,24 @@ Required result, all from server HTML (not after hydration):
 - HTTP 404, `<html lang="en"` present, exactly one `<h1`, containing "This orchid has left the bench."
 - Existing copy only. `app/(nos)/national-show/not-found.tsx` and `app/not-found.tsx` strings unchanged.
 - Do not delete `[...slug]` or a not-found file to make the symptom go away (behavior.md, surgical fixes).
+
+## NOS Design G6, quoted (final): the shape of the NOS 404
+"The NOS 404 is the typographic fallback per G6: NOS black, h1 in the serif at 300, no photo, the existing
+strings only, and the unified header."
+
+Which means the 404 renders `NosHero` in its typographic variant, because that variant is exactly NOS black
+(`.nos-hero { background-color: var(--black) }`) with `.nos-hero-title` at `font-weight: 300` in the serif,
+on the 1080 grid, with no image (nos-theme.css:470, :492; NosHero.tsx header comment). Pick a `route` that
+has no entry in components/nos/hero-photos.ts, or NosHero picks the photo variant. Mapping of the existing
+strings, no new copy: the `404 — Page not found` label goes in the hero's `crumbs` slot (or just above the
+title), the h1 is `This orchid has left the bench.`, the lede is `The page you’re looking for doesn’t exist or
+may have moved.`, and the three existing buttons (Tickets, National Show, Plan your visit) stay below.
+"Unified header" is the NOS header NosFrame already renders for both group layouts.
+
+`app/(nos)/not-found.tsx` (tickets, vsp misses) currently re-exports the SAOC `NotFoundSection`, which has a
+photo (`/images/orchid-dark.jpg`) and SAOC wording; it must render the same NOS fallback instead. The SAOC
+`app/not-found.tsx` is not touched.
+
+Enforced by check-nos-404.mjs (source: NosHero, no photo, strings, route has no photo, group file no longer
+SAOC) and live-probe.mjs (served HTML: 404, lang, one h1, `nos-hero-type` and `nos-hero-title` present, no
+`/images/orchid-` photo, no "Find a society").

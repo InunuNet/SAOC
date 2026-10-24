@@ -1,12 +1,13 @@
 schema: athanor.contract/v1
 slug: audit-fixes-2026-10-25
-goal: Fix the engineering-only findings of the 2026-10-25 live-site audit (biennial word, NOS duplicate h1 and 404, NOS sitemap, hero image weight, font preloads, hard-coded origins) without touching launch gating or copy.
+goal: Fix the engineering-only findings of the 2026-10-25 live-site audit (biennial word, NOS duplicate h1 and 404, NOS sitemap, hero image weight, font preloads, hard-coded origins, newsletter focus ring) without touching launch gating or copy.
 created_at: '2026-10-25'
 autonomy: high
 
 # Governing rule: docs/rules/no-invention.md. Copy traces to Lee-Ann's Drive documents, visuals to the
 # approved handoff, everything else to Brad's instruction. This batch adds no new copy, no new brand
-# asset and no new route. Features map one-to-one to audit items 1-7 of the dispatch.
+# asset and no new route. Features map one-to-one to audit items 1-7 of the dispatch plus the newsletter focus finding (F8). NOS Design's
+# final guards on hero images and the 404 are encoded in goldens/ and in A5-A7 and the 404 and newsletter checks.
 features:
   - id: F1
     name: P0 "biennial" becomes "triennial" in SocietyExpect, nowhere else reworded
@@ -15,19 +16,22 @@ features:
     name: NOS duplicate h1 fixed at its cause (loading fallback), one h1 per NOS route
     status: pending
   - id: F3
-    name: NOS 404 server-renders with lang, 404 status, one h1, existing NOS copy
+    name: NOS 404 server-renders (lang, 404, one h1) as the typographic NosHero fallback, existing NOS strings
     status: pending
   - id: F4
     name: NOS sitemap lists /contact and the ticket pages /tickets lists, canonical URLs only
     status: pending
   - id: F5
-    name: Served hero image variants within 512 KiB and 2560 px, same photos and crops
+    name: Hero bytes cut by quality and per-width candidates, served width >= box x DPR kept at four viewports, bloom crops for NOS Design
     status: pending
   - id: F6
     name: Preload only first-paint fonts (JetBrains Mono and Lora stop preloading)
     status: pending
   - id: F7
     name: Launch-flip inventory as data, literal origins routed through lib/site-hosts.ts
+    status: pending
+  - id: F8
+    name: SAOC footer newsletter email input keeps a visible focus ring (WCAG 2.4.7), existing tokens only
     status: pending
 
 goldens:
@@ -37,6 +41,7 @@ goldens:
   - .agent/memory/project/specs/audit-fixes-2026-10-25/goldens/hero-image-budget.golden.md
   - .agent/memory/project/specs/audit-fixes-2026-10-25/goldens/fonts.golden.md
   - .agent/memory/project/specs/audit-fixes-2026-10-25/goldens/launch-flip-inventory.golden.md
+  - .agent/memory/project/specs/audit-fixes-2026-10-25/goldens/newsletter-focus.golden.md
   - .agent/memory/project/specs/audit-fixes-2026-10-25/goldens/codex-qa-prompt.md
 
 assertions:
@@ -49,45 +54,56 @@ assertions:
       description: F1 SocietyExpect says "triennial National Show"
       command: grep -q "exhibit at the triennial National Show alongside societies" components/societies/SocietyExpect.tsx
     - id: A3
-      description: F2 loading fallbacks under app/(nos) emit no h1 (titleAs="p"), every page keeps its own single h1
+      description: F2 loading fallbacks under app/(nos) emit no h1 (NosHero titleAs="p")
       command: node contracts/checks/audit-fixes-2026-10-25/check-one-h1.mjs
     - id: A4
       description: F4 NOS sitemap helpers (/contact, ticket slug paths, no shared policy pages) and app/sitemap.ts wiring match the golden
       command: pnpm exec tsx contracts/checks/audit-fixes-2026-10-25/check-sitemap-routes.mts
     - id: A5
-      description: F5 measured byte budget, every served hero srcset variant exists, is at most 2560 px and 512 KiB (runs the variant generator first)
-      command: node scripts/generate-image-variants.mjs && pnpm exec tsx contracts/checks/audit-fixes-2026-10-25/check-hero-bytes.mts
+      description: F5 byte budget, every srcset candidate exists and is at most 2 MiB, the file served at 2056@2, 1440@2, 1280@2 and 390@3 is within its ceiling, generator never encodes below q75 (runs the variant generator first)
+      command: node scripts/generate-image-variants.mjs && pnpm exec tsx contracts/checks/audit-fixes-2026-10-25/check-hero-bytes.mts budget
       timeout_seconds: 600
     - id: A6
-      description: F5 the f5 config pin no longer requires the 4096/5120/6144 widths (its other findings were red before this batch and stay out of scope)
-      command: test -z "$(grep -n '4096, 5120, 6144' contracts/checks/launch-weekend/f5/check-f-config.mjs)"
+      description: F5 NOS Design gate, served real pixel width is at least min(box x DPR, native) at 2056@2, 1440@2, 1280@2 and 390@3 for all five heroes
+      command: node scripts/generate-image-variants.mjs && pnpm exec tsx contracts/checks/audit-fixes-2026-10-25/check-hero-bytes.mts viewports
+      timeout_seconds: 600
     - id: A7
+      description: F5 1:1 bloom crop artifact at 2056@2 for each hero exists, matches the served file, and stays within 32 dB PSNR of the old q88 crop
+      command: node scripts/generate-image-variants.mjs && pnpm exec tsx contracts/checks/audit-fixes-2026-10-25/bloom-crops.mts check
+      timeout_seconds: 600
+    - id: A8
       description: F6 JetBrains Mono and Lora set preload false, Crimson Pro and Manrope keep preloading, families and files unchanged
       command: node contracts/checks/audit-fixes-2026-10-25/check-fonts.mjs
-    - id: A8
+    - id: A9
       description: F7 no literal SAOC/NOS origin in app, lib or components source
       command: node contracts/checks/audit-fixes-2026-10-25/check-no-hardcoded-origins.mjs
-    - id: A9
+    - id: A10
       description: F7 JsonLd, home page and society page import the origin helpers from lib/site-hosts
       command: test "$(grep -l '@/lib/site-hosts' components/seo/JsonLd.tsx 'app/(marketing)/page.tsx' 'app/(marketing)/societies/[slug]/page.tsx' | wc -l)" -eq 3
-    - id: A10
+    - id: A11
       description: F7 launch inventory documented as data in docs/launch-flip-inventory.md
       command: grep -q "components/seo/JsonLd.tsx" docs/launch-flip-inventory.md
-    - id: A11
+    - id: A12
+      description: F3 NOS 404 is the typographic NosHero fallback (NOS black, serif h1 at 300 via nos-hero-type, no photo), existing strings only, group not-found no longer the SAOC photo section
+      command: node contracts/checks/audit-fixes-2026-10-25/check-nos-404.mjs
+    - id: A13
+      description: F8 footer newsletter email input has the existing visible focus ring (no outline-none), WCAG 2.4.7
+      command: node contracts/checks/audit-fixes-2026-10-25/check-newsletter-focus.mjs
+    - id: A14
       description: Scope allow-list, every changed file is inside check-scope.mjs ALLOWED
       command: node contracts/checks/audit-fixes-2026-10-25/check-scope.mjs
-    - id: A12
+    - id: A15
       description: Launch gating untouched, robots, proxy and SITE_PUBLIC_LAUNCH module have no diff against origin/main
       command: git diff --quiet origin/main -- app/robots.ts proxy.ts lib/beta-public-launch.ts
-    - id: A13
-      description: F2 F3 F4 F1 live probe on next dev, NOS 404 SSR (404, lang, one h1, NOS copy), one h1 on the four NOS routes plus home and a ticket page, NOS sitemap contents, SAOC society page says triennial
+    - id: A16
+      description: F2 F3 F4 F1 live probe on next dev, NOS 404 SSR (404, lang, one h1, NOS copy, typographic NosHero, no photo), one h1 on the four NOS routes plus home and a ticket page, NOS sitemap contents, SAOC society page says triennial
       command: node contracts/checks/audit-fixes-2026-10-25/live-probe.mjs
       timeout_seconds: 900
-    - id: A14
+    - id: A17
       description: TypeScript compiles
       command: pnpm exec tsc --noEmit
       timeout_seconds: 600
-    - id: A15
+    - id: A18
       description: Codex adversarial QA of the whole diff against the goldens
       type: codex_qa
       target: >-

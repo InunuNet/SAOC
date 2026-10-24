@@ -2,7 +2,7 @@
 // Live probe against `next dev` on a private port (3013), with the beta password wall lifted for this
 // process only. Dev-server HTML equals built output for these checks: they read server-rendered markup.
 // Needs .env.local (Sanity read access). Probes, by Host header:
-//   NOS 404 is server-rendered (status 404, <html lang="en">, one h1, the NOS copy)
+//   NOS 404 is server-rendered (status 404, <html lang="en">, one h1, the NOS copy, typographic NosHero, no photo)
 //   the four NOS pages that doubled their h1, plus home and a ticket page, each have exactly one h1
 //   the NOS sitemap lists /contact and the ticket pages that /tickets links to, and no shared policy page
 //   a SAOC society page says nothing of "biennial"
@@ -74,6 +74,8 @@ try {
   need(/<html[^>]*\slang="en"/.test(notFound.body), 'NOS 404: <html> has no lang="en" in server HTML');
   need(count(notFound.body, /<h1[\s>]/g) === 1, `NOS 404: ${count(notFound.body, /<h1[\s>]/g)} h1 (want 1)`);
   need(notFound.body.includes('This orchid has left the bench.'), 'NOS 404: not-found copy missing from server HTML');
+  need(/nos-hero-type/.test(notFound.body) && /nos-hero-title/.test(notFound.body), 'NOS 404: not the typographic NosHero (nos-hero-type / nos-hero-title missing)');
+  need(!/\/images\/(_opt\/)?orchid-/.test(notFound.body), 'NOS 404: carries a hero photograph');
   need(!notFound.body.includes('Find a society'), 'NOS 404: renders the SAOC not-found copy ("Find a society") inside NOS chrome');
 
   for (const route of ['/conferences', '/symposium', '/workshops', '/wosa-conference', '/', '/tickets/vip']) {
@@ -93,7 +95,7 @@ try {
   const ticketLocs = locs.filter((p) => /^\/tickets\/[a-z0-9-]+$/.test(p) && !/^\/tickets\/(cancelled|confirmation|buy)$/.test(p));
   need(ticketLocs.length > 0, 'NOS sitemap: no /tickets/[slug] entries');
   const listing = await follow(NOS_HOST, '/tickets');
-  const linked = new Set([...listing.body.matchAll(/href="(\/tickets\/[a-z0-9-]+)"/g)].map((m) => m[1]));
+  const linked = new Set([...listing.body.matchAll(/href="(\/tickets\/[a-z0-9-]+)(?:\?[^"]*)?"/g)].map((m) => m[1]));
   for (const p of ticketLocs) need(linked.has(p), `NOS sitemap: ${p} is not linked from /tickets`);
   need(new Set(locs).size === locs.length, 'NOS sitemap: duplicate entries');
 

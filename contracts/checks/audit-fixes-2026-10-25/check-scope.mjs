@@ -15,6 +15,8 @@ const ALLOWED = [
   /^app\/not-found\.tsx$/,
   /^components\/site-chrome\/NosFrame\.tsx$/,
   /^app\/layout\.tsx$/,
+  /^components\/chrome\/Footer\.tsx$/,
+  /^components\/newsletter\/NewsletterSignup\.tsx$/,
   /^components\/chrome\/SaocLockup\.tsx$/,
   /^app\/sitemap\.ts$/,
   /^lib\/nos-sitemap-routes\.ts$/,
@@ -33,10 +35,11 @@ const ALLOWED = [
   /^\.agent\/memory\//,
 ];
 
-const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
+const gitRaw = (...args) => execFileSync('git', args, { encoding: 'utf8' });
+const git = (...args) => gitRaw(...args).trim();
 const base = git('merge-base', 'HEAD', 'origin/main');
 const changed = new Set(git('diff', '--name-only', base).split('\n').filter(Boolean));
-for (const line of git('status', '--porcelain', '--untracked-files=all').split('\n').filter(Boolean)) {
+for (const line of gitRaw('status', '--porcelain', '--untracked-files=all').split('\n').filter(Boolean)) {
   changed.add(line.slice(3).replace(/^"|"$/g, '').replace(/.* -> /, ''));
 }
 const outside = [...changed].filter((file) => !ALLOWED.some((re) => re.test(file)));
