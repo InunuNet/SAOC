@@ -1,0 +1,5701 @@
+[
+  {
+    "id": "day-visitor/2027-09-22/2027-09-22T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-22/2027-09-22T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-22": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-22/2027-09-22T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-23/2027-09-22T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-23/2027-09-22T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-23/2027-09-22T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-23/2027-09-23T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-23/2027-09-23T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-23/2027-09-23T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-24/2027-09-23T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-24",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-24/2027-09-23T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-24": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-24/2027-09-23T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-25/2027-09-24T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-25/2027-09-24T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-25": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-25/2027-09-24T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-26/2027-09-26T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-26/2027-09-26T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-26": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-26/2027-09-26T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-27/2027-09-26T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-27/2027-09-26T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-27": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "day-visitor/2027-09-27/2027-09-26T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "early-bird/2027-09-22/2027-09-22T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "early-bird/2027-09-22/2027-09-22T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-22": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "early-bird/2027-09-22/2027-09-22T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "early-bird/2027-09-23/2027-09-22T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "early-bird/2027-09-23/2027-09-22T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "early-bird/2027-09-23/2027-09-22T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "early-bird/2027-09-23/2027-09-23T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "early-bird/2027-09-23/2027-09-23T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "early-bird/2027-09-23/2027-09-23T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "early-bird/2027-09-24/2027-09-23T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-24",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "early-bird/2027-09-24/2027-09-23T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-24": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "early-bird/2027-09-24/2027-09-23T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "early-bird/2027-09-25/2027-09-24T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "early-bird/2027-09-25/2027-09-24T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-25": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "early-bird/2027-09-25/2027-09-24T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "early-bird/2027-09-26/2027-09-26T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "early-bird/2027-09-26/2027-09-26T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-26": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "early-bird/2027-09-26/2027-09-26T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "early-bird/2027-09-27/2027-09-26T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "early-bird/2027-09-27/2027-09-26T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-27": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "early-bird/2027-09-27/2027-09-26T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-22/2027-09-22T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-22/2027-09-22T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-22": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-22/2027-09-22T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-23/2027-09-22T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-23/2027-09-22T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-23/2027-09-22T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-23/2027-09-23T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-23/2027-09-23T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-23/2027-09-23T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-24/2027-09-23T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-24",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-24/2027-09-23T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-24": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-24/2027-09-23T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-25/2027-09-24T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-25/2027-09-24T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-25": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-25/2027-09-24T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-26/2027-09-26T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-26/2027-09-26T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-26": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-26/2027-09-26T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 24 September 2027"
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-27/2027-09-26T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-27/2027-09-26T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-27": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "future-day-product/2027-09-27/2027-09-26T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "future-day-product",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-22/2027-09-22T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-22/2027-09-22T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-22": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-22/2027-09-22T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-23/2027-09-22T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-23",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-23/2027-09-22T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-23/2027-09-22T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-23/2027-09-23T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-23",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-23/2027-09-23T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-23/2027-09-23T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-24/2027-09-23T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-24",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-24/2027-09-23T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-24": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-24/2027-09-23T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-24",
+      "firstAdmission": false
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-25/2027-09-24T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-25",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-25/2027-09-24T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-25": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-25/2027-09-24T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-25",
+      "firstAdmission": false
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-26/2027-09-26T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-26",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-26/2027-09-26T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-26": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-26/2027-09-26T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-26",
+      "firstAdmission": false
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-27/2027-09-26T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-27/2027-09-26T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-27": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "weekend-pass/2027-09-27/2027-09-26T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-22/2027-09-22T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-22/2027-09-22T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-22": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-22/2027-09-22T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-23/2027-09-22T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-23",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-23/2027-09-22T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-23/2027-09-22T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-23/2027-09-23T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-23",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-23/2027-09-23T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-23/2027-09-23T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-24/2027-09-23T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-24",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-24/2027-09-23T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-24": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-24/2027-09-23T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-24",
+      "firstAdmission": false
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-25/2027-09-24T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-25",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-25/2027-09-24T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-25": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-25/2027-09-24T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-25",
+      "firstAdmission": false
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-26/2027-09-26T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-26",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-26/2027-09-26T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-26": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-26/2027-09-26T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-26",
+      "firstAdmission": false
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-27/2027-09-26T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-27/2027-09-26T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-27": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "weekend-pass-early-bird/2027-09-27/2027-09-26T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass-early-bird",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "vip/2027-09-22/2027-09-22T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "vip/2027-09-22/2027-09-22T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-22": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "vip/2027-09-22/2027-09-22T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "vip/2027-09-23/2027-09-22T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-23",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "vip/2027-09-23/2027-09-22T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "vip/2027-09-23/2027-09-22T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "vip/2027-09-23/2027-09-23T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-23",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "vip/2027-09-23/2027-09-23T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "vip/2027-09-23/2027-09-23T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "vip/2027-09-24/2027-09-23T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-24",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "vip/2027-09-24/2027-09-23T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-24": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "vip/2027-09-24/2027-09-23T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "vip/2027-09-25/2027-09-24T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-25",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "vip/2027-09-25/2027-09-24T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-25": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "vip/2027-09-25/2027-09-24T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "vip/2027-09-26/2027-09-26T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-26",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "vip/2027-09-26/2027-09-26T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-26": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "vip/2027-09-26/2027-09-26T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "vip/2027-09-27/2027-09-26T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "vip/2027-09-27/2027-09-26T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-27": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "vip/2027-09-27/2027-09-26T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "general/2027-09-22/2027-09-22T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "general/2027-09-22/2027-09-22T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-22": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "general/2027-09-22/2027-09-22T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "general/2027-09-23/2027-09-22T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-23",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "general/2027-09-23/2027-09-22T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "general/2027-09-23/2027-09-22T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "general/2027-09-23/2027-09-23T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-23",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "general/2027-09-23/2027-09-23T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "general/2027-09-23/2027-09-23T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "general/2027-09-24/2027-09-23T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-24",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "general/2027-09-24/2027-09-23T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-24": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "general/2027-09-24/2027-09-23T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "general/2027-09-25/2027-09-24T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-25",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "general/2027-09-25/2027-09-24T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-25": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "general/2027-09-25/2027-09-24T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "general/2027-09-26/2027-09-26T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-26",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "general/2027-09-26/2027-09-26T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-26": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "general/2027-09-26/2027-09-26T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "general/2027-09-27/2027-09-26T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "general/2027-09-27/2027-09-26T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-27": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "general/2027-09-27/2027-09-26T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "general",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "unknown/2027-09-22/2027-09-22T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "unknown/2027-09-22/2027-09-22T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-22": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "unknown/2027-09-22/2027-09-22T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "unknown/2027-09-23/2027-09-22T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-23",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "unknown/2027-09-23/2027-09-22T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "unknown/2027-09-23/2027-09-22T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "unknown/2027-09-23/2027-09-23T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-23",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "unknown/2027-09-23/2027-09-23T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "unknown/2027-09-23/2027-09-23T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "unknown/2027-09-24/2027-09-23T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-24",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "unknown/2027-09-24/2027-09-23T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-24": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "unknown/2027-09-24/2027-09-23T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "unknown/2027-09-25/2027-09-24T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-25",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "unknown/2027-09-25/2027-09-24T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-25": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "unknown/2027-09-25/2027-09-24T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "unknown/2027-09-26/2027-09-26T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-26",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "unknown/2027-09-26/2027-09-26T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-26": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "unknown/2027-09-26/2027-09-26T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "unknown/2027-09-27/2027-09-26T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "unknown/2027-09-27/2027-09-26T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-27": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "unknown/2027-09-27/2027-09-26T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "unknown",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-22/2027-09-22T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-22/2027-09-22T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-22": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-22/2027-09-22T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-23/2027-09-22T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-23",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-23/2027-09-22T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-23/2027-09-22T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-22T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-23/2027-09-23T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-23",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-23/2027-09-23T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-23/2027-09-23T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-24/2027-09-23T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-24",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-24/2027-09-23T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-24": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-24/2027-09-23T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-23T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-25/2027-09-24T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-25",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-25/2027-09-24T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-25": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-25/2027-09-24T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-24T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-26/2027-09-26T21:59:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-26",
+      "firstAdmission": true
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-26/2027-09-26T21:59:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-26": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-26/2027-09-26T21:59:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T21:59:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-27/2027-09-26T22:00:00Z/none",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "paid",
+        "chosenDay": "2027-09-24",
+        "checkIns": {},
+        "checkedInAt": null
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-27/2027-09-26T22:00:00Z/today",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-27": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "early-bird-weekend-pass/2027-09-27/2027-09-26T22:00:00Z/yesterday",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        },
+        "checkedInAt": "2027-09-23T10:00:00Z"
+      },
+      "now": "2027-09-26T22:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "invalid-chosen/None",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": null
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "This ticket has no valid selected day. Please contact the ticket desk."
+    }
+  },
+  {
+    "id": "invalid-chosen/",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": ""
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "This ticket has no valid selected day. Please contact the ticket desk."
+    }
+  },
+  {
+    "id": "invalid-chosen/2027-02-30",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-02-30"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "This ticket has no valid selected day. Please contact the ticket desk."
+    }
+  },
+  {
+    "id": "invalid-chosen/2027-9-24",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-9-24"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "This ticket has no valid selected day. Please contact the ticket desk."
+    }
+  },
+  {
+    "id": "invalid-chosen/garbage",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "garbage"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "This ticket has no valid selected day. Please contact the ticket desk."
+    }
+  },
+  {
+    "id": "invalid-chosen/2027-09-24T00:00:00Z",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": "2027-09-24T00:00:00Z"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "This ticket has no valid selected day. Please contact the ticket desk."
+    }
+  },
+  {
+    "id": "invalid-chosen/42",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "checked-in",
+        "chosenDay": 42
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "This ticket has no valid selected day. Please contact the ticket desk."
+    }
+  },
+  {
+    "id": "missing-chosen",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "paid"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "This ticket has no valid selected day. Please contact the ticket desk."
+    }
+  },
+  {
+    "id": "unpaid/vip/reserved",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "reserved",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        }
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "unpaid",
+      "httpStatus": 403,
+      "error": "This ticket has not been paid for."
+    }
+  },
+  {
+    "id": "unpaid/weekend-pass/reserved",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "reserved",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        }
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "unpaid",
+      "httpStatus": 403,
+      "error": "This ticket has not been paid for."
+    }
+  },
+  {
+    "id": "unpaid/vip/cancelled",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "cancelled",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        }
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "unpaid",
+      "httpStatus": 403,
+      "error": "This ticket has not been paid for."
+    }
+  },
+  {
+    "id": "unpaid/weekend-pass/cancelled",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "cancelled",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        }
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "unpaid",
+      "httpStatus": 403,
+      "error": "This ticket has not been paid for."
+    }
+  },
+  {
+    "id": "unpaid/vip/refunded",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "refunded",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        }
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "unpaid",
+      "httpStatus": 403,
+      "error": "This ticket has not been paid for."
+    }
+  },
+  {
+    "id": "unpaid/weekend-pass/refunded",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "refunded",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        }
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "unpaid",
+      "httpStatus": 403,
+      "error": "This ticket has not been paid for."
+    }
+  },
+  {
+    "id": "unpaid/vip/unknown",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "unknown",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        }
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "unpaid",
+      "httpStatus": 403,
+      "error": "This ticket has not been paid for."
+    }
+  },
+  {
+    "id": "unpaid/weekend-pass/unknown",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "unknown",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        }
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "unpaid",
+      "httpStatus": 403,
+      "error": "This ticket has not been paid for."
+    }
+  },
+  {
+    "id": "unpaid/vip/None",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": null,
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        }
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "unpaid",
+      "httpStatus": 403,
+      "error": "This ticket has not been paid for."
+    }
+  },
+  {
+    "id": "unpaid/weekend-pass/None",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": null,
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        }
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "unpaid",
+      "httpStatus": 403,
+      "error": "This ticket has not been paid for."
+    }
+  },
+  {
+    "id": "duplicate-before-unpaid",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "refunded",
+        "checkIns": {
+          "2027-09-24": null
+        }
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "invalid-window/None",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "paid"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": null,
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "invalid-window/{'startDate': '2027-09-26T10:00:00Z', 'endDate': '2027-09-23T10:00:00Z'}",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "paid"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-26T10:00:00Z",
+        "endDate": "2027-09-23T10:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "invalid-window/{'startDate': 'bad', 'endDate': 'bad'}",
+    "input": {
+      "ticket": {
+        "ticketType": "vip",
+        "status": "paid"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "bad",
+        "endDate": "bad"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  },
+  {
+    "id": "legacy-identity/None",
+    "input": {
+      "ticket": {
+        "ticketType": null,
+        "status": "checked-in"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "legacy-identity/",
+    "input": {
+      "ticket": {
+        "ticketType": "",
+        "status": "checked-in"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "legacy-identity/Weekend Pass",
+    "input": {
+      "ticket": {
+        "ticketType": "Weekend Pass",
+        "status": "checked-in"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "legacy-identity/early-bird-weekend-pass",
+    "input": {
+      "ticket": {
+        "ticketType": "early-bird-weekend-pass",
+        "status": "checked-in"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "legacy-history/2027-09-24T00:00:00Z",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "checkedInAt": "2027-09-24T00:00:00Z"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "legacy-history/None",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "checkedInAt": null
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "legacy-history/bad",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "checkedInAt": "bad"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "legacy-history/2027-09-23T21:59:00Z",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "checkedInAt": "2027-09-23T21:59:00Z"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-24",
+      "firstAdmission": false
+    }
+  },
+  {
+    "id": "legacy-history/2027-09-23T22:00:00Z",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "checkedInAt": "2027-09-23T22:00:00Z"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "out-of-window-chosen",
+    "input": {
+      "ticket": {
+        "ticketType": "day-visitor",
+        "status": "paid",
+        "chosenDay": "2027-10-01"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Friday 1 October 2027"
+    }
+  },
+  {
+    "id": "null-history",
+    "input": {
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "checkIns": null,
+        "checkedInAt": "2027-09-24T00:00:00Z"
+      },
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "partial-map-first-today",
+    "input": {
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false,
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "checkedInAt": "2027-09-24T00:00:00Z",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        }
+      }
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "partial-map-seed-first",
+    "input": {
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false,
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "checkedInAt": "2027-09-23T10:00:00Z",
+        "checkIns": {
+          "2027-09-25": "2027-09-25T10:00:00Z"
+        }
+      }
+    },
+    "expected": {
+      "ok": true,
+      "day": "2027-09-24",
+      "firstAdmission": false
+    }
+  },
+  {
+    "id": "malformed-map/[]",
+    "input": {
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false,
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "checkedInAt": null,
+        "checkIns": []
+      }
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "malformed-map/corrupt",
+    "input": {
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false,
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "checkedInAt": null,
+        "checkIns": "corrupt"
+      }
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "malformed-map/42",
+    "input": {
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false,
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "checkedInAt": null,
+        "checkIns": 42
+      }
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "history-but-invalid-first/None",
+    "input": {
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false,
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "checkedInAt": null,
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        }
+      }
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "history-but-invalid-first/bad",
+    "input": {
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": false,
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "checkedInAt": "bad",
+        "checkIns": {
+          "2027-09-23": "2027-09-23T10:00:00Z"
+        }
+      }
+    },
+    "expected": {
+      "ok": false,
+      "code": "already-checked-in",
+      "httpStatus": 409,
+      "error": "Already checked in"
+    }
+  },
+  {
+    "id": "pass-required-day-wins",
+    "input": {
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-23T07:00:00Z",
+        "endDate": "2027-09-26T13:00:00Z"
+      },
+      "requiresDaySelection": true,
+      "ticket": {
+        "ticketType": "weekend-pass",
+        "status": "checked-in",
+        "checkedInAt": "2027-09-23T10:00:00Z",
+        "chosenDay": "2027-09-25",
+        "checkIns": {}
+      }
+    },
+    "expected": {
+      "ok": false,
+      "code": "wrong_day",
+      "httpStatus": 403,
+      "error": "Valid on Saturday 25 September 2027"
+    }
+  },
+  {
+    "id": "same-day-reversed-instants",
+    "input": {
+      "now": "2027-09-24T10:00:00Z",
+      "window": {
+        "startDate": "2027-09-24T13:00:00Z",
+        "endDate": "2027-09-24T07:00:00Z"
+      },
+      "requiresDaySelection": false,
+      "ticket": {
+        "ticketType": "vip",
+        "status": "paid"
+      }
+    },
+    "expected": {
+      "ok": false,
+      "code": "not_show_day",
+      "httpStatus": 403,
+      "error": "The show is not open today."
+    }
+  }
+]
