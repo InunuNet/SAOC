@@ -8,6 +8,8 @@ interface LoginFormFieldsProps {
   password: string;
   onPasswordChange: (value: string) => void;
   error: string;
+  notice: string;
+  onForgotPassword: () => void;
   disabled: boolean;
   loading: boolean;
   onSubmit: (e: FormEvent<HTMLFormElement>) => void;
@@ -31,6 +33,8 @@ export function LoginFormFields({
   password,
   onPasswordChange,
   error,
+  notice,
+  onForgotPassword,
   disabled,
   loading,
   onSubmit,
@@ -69,12 +73,31 @@ export function LoginFormFields({
         />
       </div>
 
+      <button
+        type="button"
+        data-testid="admin-forgot-password"
+        onClick={onForgotPassword}
+        disabled={disabled}
+        className="min-h-[44px] font-sans text-[14px] text-primary-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-800 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        Forgot password?
+      </button>
+
       {error && (
         <p
           role="alert"
           className="rounded-sm border border-rule bg-bone px-3.5 py-2.5 font-sans text-[14px] text-primary-800"
         >
           {error}
+        </p>
+      )}
+
+      {notice && (
+        <p
+          role="status"
+          className="rounded-sm border border-rule bg-bone px-3.5 py-2.5 font-sans text-[14px] text-primary-800"
+        >
+          {notice}
         </p>
       )}
 

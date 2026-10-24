@@ -1,0 +1,7 @@
+294f61c182fabed6eec6c95867a1319d4866721e4369b055bb3405807a8dce81  .agent/memory/project/specs/admin-login-errors/goldens/spec.md
+262060ab1f4e70ec9fc912ab6d59454bbb8748e95cabdfed301501d1504b8343  .agent/memory/project/specs/admin-login-errors/goldens/copy.json
+ab53a9629491632f7aa0dc5fb85a56a854fc188630e3712d506aae094f18b124  .agent/memory/project/specs/admin-login-errors/checks/unit.mjs
+a87f653caa9f26432745799a114ff2f640aaf35ebf4c0c00ecc3a147f0b426bc  .agent/memory/project/specs/admin-login-errors/checks/check-static.mjs
+a1b007552a7593354e2bfceb02e3bab221a3d24c5c1e590d20d56ea7dce62800  .agent/memory/project/specs/admin-login-errors/checks/check-diff-scope.mjs
+9e661a8b8edb4ecdfd836cb1be2af841b8315be9ed332336b76d34527d35502c  .agent/memory/project/specs/admin-login-errors/checks/build.sh
+b4937d95efde835c63a5bb60e3029c365d95688f3f67930d3dfd430297fc2a70  .agent/memory/project/specs/admin-login-errors/checks/gate-browser.mjs

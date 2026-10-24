@@ -1,0 +1,54 @@
+# Source: SAOC relay of Brad's live test (P1). Assertions run from the repo root of the worktree .tmp/sandbox/admin-login.
+# A5 builds; A6 needs the A5 build. Nothing here touches Firebase or Firestore: the browser gate mocks identitytoolkit calls.
+# Copy confirmed by SAOC 2026-10-24.
+schema: athanor.contract/v1
+slug: admin-login-errors
+goal: /admin/login shows plain non-enumerating copy for email and password failures, never raw Firebase text, and offers a non-enumerating Forgot password reset.
+created_at: '2026-10-24'
+autonomy: high
+exclusions:
+  - item: 'self-signup, lib/admin-auth.ts gating, app/api/admin/session, any Firebase or Firestore write'
+    reason: 'Out of scope per SAOC; A4 enforces the diff scope.'
+  - item: 'new visual design, colours or tokens for the Forgot control'
+    reason: 'docs/rules/no-invention.md; A3 fails any class token not already in the login directory at origin/main.'
+features:
+  - id: F1
+    name: Plain error mapping, no raw Firebase text, Forgot password reset on /admin/login
+    status: pending
+goldens:
+  - .agent/memory/project/specs/admin-login-errors/goldens/spec.md
+  - .agent/memory/project/specs/admin-login-errors/goldens/copy.json
+  - .agent/memory/project/specs/admin-login-errors/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: frozen goldens and check scripts are unmodified since the architect wrote them
+      command: shasum -a 256 -c .agent/memory/project/specs/admin-login-errors/goldens/checks.sha256
+    - id: A2
+      description: unit tests on every mapped code (six codes return one identical string, too-many-requests, network, default), hostile inputs including an Error whose message starts with Firebase never leak, and the reset returns identical text for success and every rejection incl. user-not-found with a mocked send, prompting on empty email without calling it
+      command: pnpm exec tsx .agent/memory/project/specs/admin-login-errors/checks/unit.mjs
+    - id: A3
+      description: static checks - no err.message or Firebase literal reaching setError, catch uses the mapper, module has no firebase import, Forgot control and status region present, copy strings each defined once, OAuth and session literals intact, no new Tailwind class tokens
+      command: node .agent/memory/project/specs/admin-login-errors/checks/check-static.mjs
+    - id: A4
+      description: diff limited to the login page and fields, the new module, e2e, docs and this spec
+      command: node .agent/memory/project/specs/admin-login-errors/checks/check-diff-scope.mjs
+    - id: A5
+      description: production build passes
+      command: bash .agent/memory/project/specs/admin-login-errors/checks/build.sh
+    - id: A6
+      description: on the A5 build at 1280 and 390 - Forgot control visible and 44px tall, empty-email prompt, identical reset text for success and user-not-found, invalid credential shows the plain copy, no raw Firebase text, no unmocked external call, screenshots written to .tmp/sandbox/admin-login-gate
+      command: node .agent/memory/project/specs/admin-login-errors/checks/gate-browser.mjs
+    - id: A7
+      description: CI full e2e step is green (Sanity env exported or 6 NOS tests fail on env)
+      command: env NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production bash scripts/ci-e2e.sh pnpm test:e2e
+    - id: A8
+      description: typescript compiles
+      command: pnpm exec tsc --noEmit
+    - id: A9
+      description: lint is clean
+      command: pnpm exec eslint app lib e2e
+    - id: A10
+      description: docs section for the mapping, the reset and the copy gaps exists
+      command: grep -q "Sign-in errors and password reset" docs/admin-access.md

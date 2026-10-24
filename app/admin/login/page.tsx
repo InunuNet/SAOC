@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   getAuth,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
@@ -12,12 +13,18 @@ import {
 } from 'firebase/auth';
 
 import { getFirebaseApp } from '@/lib/firebase';
+import {
+  GENERIC_SIGN_IN_ERROR,
+  NETWORK_ERROR_MESSAGE,
+  firebaseErrorCode,
+  passwordSignInErrorMessage,
+  requestPasswordReset,
+} from '@/lib/admin-login-errors';
 import { safeNextPath } from '@/lib/safe-next-path';
 import { FederatedSignInButtons } from './FederatedSignInButtons';
 import { LoginFormFields } from './LoginFormFields';
 
 const SESSION_ERROR_MESSAGE = 'Session creation failed';
-const GENERIC_SIGN_IN_ERROR = 'Sign-in failed. Please try again.';
 
 export type FederatedProviderId = 'google.com' | 'microsoft.com' | 'apple.com';
 
@@ -38,12 +45,6 @@ async function mintSession(idToken: string): Promise<void> {
     console.error('mintSession failed', { status: response.status });
     throw new Error(SESSION_ERROR_MESSAGE);
   }
-}
-
-function firebaseErrorCode(err: unknown): string | undefined {
-  return typeof err === 'object' && err !== null && 'code' in err
-    ? String((err as { code: unknown }).code)
-    : undefined;
 }
 
 /**
@@ -89,7 +90,7 @@ function federatedSignInErrorMessage(err: unknown): string {
     case 'auth/operation-not-allowed':
       return 'This sign-in method is not enabled for this project. Contact an administrator.';
     case 'auth/network-request-failed':
-      return 'Network error — check your connection and try again.';
+      return NETWORK_ERROR_MESSAGE;
     case 'auth/cancelled-popup-request':
       return 'Another sign-in attempt is already in progress.';
     default:
@@ -107,12 +108,14 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [federatedLoading, setFederatedLoading] = useState<FederatedProviderId | null>(null);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
+    setNotice('');
     setLoading(true);
 
     try {
@@ -123,15 +126,28 @@ export default function AdminLoginPage() {
       router.push(postSignInPath());
     } catch (err: unknown) {
       console.error('Password sign-in failed', { code: firebaseErrorCode(err), error: err });
-      const message = err instanceof Error ? err.message : GENERIC_SIGN_IN_ERROR;
-      setError(message);
+      setError(passwordSignInErrorMessage(err));
     } finally {
       setLoading(false);
     }
   }
 
+  async function handleForgotPassword() {
+    setError('');
+    setNotice('');
+    const { status, message: text } = await requestPasswordReset(email, (address) =>
+      sendPasswordResetEmail(getAuth(getFirebaseApp()), address),
+    );
+    if (status === 'prompt') {
+      setError(text);
+    } else {
+      setNotice(text);
+    }
+  }
+
   async function handleFederatedSignIn(id: FederatedProviderId) {
     setError('');
+    setNotice('');
     setFederatedLoading(id);
 
     try {
@@ -166,6 +182,8 @@ export default function AdminLoginPage() {
           password={password}
           onPasswordChange={setPassword}
           error={error}
+          notice={notice}
+          onForgotPassword={handleForgotPassword}
           disabled={disabled}
           loading={loading}
           onSubmit={handleSubmit}
