@@ -3,7 +3,7 @@
 // Mission nos-site-split F3 (NOS Design R1.2, R1.3, R1.4). Replaces
 // mega-menu-layout4-visual-fidelity.spec.ts, which measured the geometry of the SAOC site's old
 // five-track National Show mega. The NOS header now has click-only disclosure list panels hung
-// under their triggers and a menu panel below 1260px; this spec measures real layout on the
+// under their triggers and a menu panel below 1384px; this spec measures real layout on the
 // rendered DOM (bounding boxes and computed style), never a class name.
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -11,7 +11,10 @@ import type { Page } from '@playwright/test';
 import { NOS_GROUPS } from './utils/nos-nav-hrefs';
 import { nosBase } from './utils/site-urls';
 
-const PANEL_BREAKPOINT = 1260;
+// Shared with the SAOC header (HD-1): inline nav from 1384, lockup + CTA + Menu from 780, lockup on its own row below.
+const PANEL_BREAKPOINT = 1384;
+const ROW_BREAKPOINT = 780;
+const LOCKUP_FOOTPRINT_PX = 405;
 const MIN_TARGET_PX = 44;
 const PANEL_MIN_WIDTH = 320;
 const PANEL_MAX_WIDTH = 400;
@@ -24,7 +27,7 @@ async function gotoNos(page: Page, baseURL: string, width: number, path = '/faq'
 }
 
 test.describe('NOS header — desktop panels', () => {
-  for (const width of [1440, 1280, PANEL_BREAKPOINT]) {
+  for (const width of [1440, PANEL_BREAKPOINT]) {
     test(`an opened panel hangs under its trigger and stays inside the viewport at ${width}px`, async ({
       page,
       baseURL,
@@ -117,6 +120,32 @@ test.describe('NOS header — desktop panels', () => {
     await expect(page.locator('#nh-burger')).toBeVisible();
   });
 
+  test('the lockup is the 405px footprint at the row breakpoint and fills a one-row bar there', async ({
+    page,
+    baseURL,
+  }) => {
+    await gotoNos(page, baseURL!, ROW_BREAKPOINT);
+
+    const brand = (await page.locator('header#nh .nh-brand').boundingBox())!;
+    const cta = (await page.locator('header#nh .nh-cta').boundingBox())!;
+    const burger = (await page.locator('#nh-burger').boundingBox())!;
+    expect(Math.abs(brand.width - LOCKUP_FOOTPRINT_PX)).toBeLessThanOrEqual(SLOP_PX);
+    expect(cta.y, 'Tickets wrapped below the lockup').toBeLessThan(brand.y + brand.height);
+    expect(burger.y, 'Menu wrapped below the lockup').toBeLessThan(brand.y + brand.height);
+  });
+
+  test('below the row breakpoint the lockup takes the first row and the actions sit below it', async ({
+    page,
+    baseURL,
+  }) => {
+    await gotoNos(page, baseURL!, ROW_BREAKPOINT - 1);
+
+    const brand = (await page.locator('header#nh .nh-brand').boundingBox())!;
+    const cta = (await page.locator('header#nh .nh-cta').boundingBox())!;
+    expect(Math.abs(brand.width - LOCKUP_FOOTPRINT_PX)).toBeLessThanOrEqual(SLOP_PX);
+    expect(cta.y, 'Tickets stayed beside the lockup').toBeGreaterThanOrEqual(brand.y + brand.height - SLOP_PX);
+  });
+
   test('header type resolves to a real generic family, not a lucky substring', async ({
     page,
     baseURL,
@@ -142,7 +171,7 @@ test.describe('NOS header — desktop panels', () => {
 });
 
 test.describe('NOS header — no horizontal scroll', () => {
-  for (const width of [1440, 1280, PANEL_BREAKPOINT, 1024, 768, 390, 320]) {
+  for (const width of [1440, PANEL_BREAKPOINT, PANEL_BREAKPOINT - 1, 1280, 1024, ROW_BREAKPOINT, ROW_BREAKPOINT - 1, 390, 320]) {
     test(`the NOS home does not scroll sideways at ${width}px`, async ({ page, baseURL }) => {
       await gotoNos(page, baseURL!, width, '/');
 
