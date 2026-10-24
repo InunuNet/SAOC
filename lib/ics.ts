@@ -33,6 +33,47 @@ export function escapeIcsText(value: string): string {
     .replace(/\r?\n/g, '\\n');
 }
 
+const MS_PER_HOUR = 60 * 60 * 1000;
+const MS_PER_DAY = 24 * MS_PER_HOUR;
+const SAST_OFFSET_HOURS = 2;
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+// Calendar date (as UTC-midnight ms) of a stored value that sits on a day boundary: a date-only
+// string, midnight UTC, or midnight SAST (22:00Z). Null for anything else, i.e. a timed value.
+function allDayDate(iso: string): number | null {
+  const ms = DATE_ONLY.test(iso) ? Date.parse(`${iso}T00:00:00Z`) : Date.parse(iso);
+  if (Number.isNaN(ms)) return null;
+  const sinceMidnightUtc = ((ms % MS_PER_DAY) + MS_PER_DAY) % MS_PER_DAY;
+  if (sinceMidnightUtc === 0) return ms;
+  if (sinceMidnightUtc === (24 - SAST_OFFSET_HOURS) * MS_PER_HOUR) {
+    return ms + SAST_OFFSET_HOURS * MS_PER_HOUR;
+  }
+  return null;
+}
+
+function toIcsDateOnly(dayMs: number): string {
+  return toIcsDate(new Date(dayMs).toISOString()).slice(0, 8);
+}
+
+// DTSTART and DTEND lines. RFC 5545 section 3.6.1: an all-day event is VALUE=DATE with an
+// exclusive DTEND, the day after the last day.
+function buildDateLines(input: IcsEventInput): string[] {
+  const startDay = allDayDate(input.start);
+  const endDay = input.end ? allDayDate(input.end) : null;
+
+  if (startDay === null || (input.end && endDay === null)) {
+    const lines = [`DTSTART:${toIcsDate(input.start)}`];
+    if (input.end) lines.push(`DTEND:${toIcsDate(input.end)}`);
+    return lines;
+  }
+
+  const lastDay = endDay !== null && endDay > startDay ? endDay : startDay;
+  return [
+    `DTSTART;VALUE=DATE:${toIcsDateOnly(startDay)}`,
+    `DTEND;VALUE=DATE:${toIcsDateOnly(lastDay + MS_PER_DAY)}`,
+  ];
+}
+
 export function buildVEvent(input: IcsEventInput): string {
   const dtstamp = toIcsDate(new Date().toISOString());
   const locationParts = [input.venue, input.location].filter(Boolean);
@@ -42,12 +83,8 @@ export function buildVEvent(input: IcsEventInput): string {
     'BEGIN:VEVENT',
     `UID:${input.slug}@saoc.co.za`,
     `DTSTAMP:${dtstamp}`,
-    `DTSTART:${toIcsDate(input.start)}`,
+    ...buildDateLines(input),
   ];
-
-  if (input.end) {
-    lines.push(`DTEND:${toIcsDate(input.end)}`);
-  }
 
   lines.push(`SUMMARY:${escapeIcsText(input.title)}`);
 

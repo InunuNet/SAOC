@@ -2,18 +2,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { PageHero } from '@/components/ui/PageHero';
-import { fitDescription } from '@/lib/seo';
+import { buildPageMetadata } from '@/lib/seo';
 
 const LEDE =
   'Conditions governing use of the South African Orchid Council website and the purchase of tickets through it.';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Terms of Use',
-  description: fitDescription(
-    'Terms of use for the South African Orchid Council website.',
-    LEDE,
-  ),
-};
+  description: 'Terms of use for the South African Orchid Council website.',
+  lede: LEDE,
+  path: '/terms',
+});
 
 export default function TermsPage() {
   return (

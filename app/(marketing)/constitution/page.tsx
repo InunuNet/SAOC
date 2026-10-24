@@ -1,18 +1,17 @@
 import type { Metadata } from 'next';
 
 import { PageHero } from '@/components/ui/PageHero';
-import { fitDescription } from '@/lib/seo';
+import { buildPageMetadata } from '@/lib/seo';
 
 const LEDE =
   'The founding document governing the South African Orchid Council.';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Constitution',
-  description: fitDescription(
-    'The Constitution of the South African Orchid Council.',
-    LEDE,
-  ),
-};
+  description: 'The Constitution of the South African Orchid Council.',
+  lede: LEDE,
+  path: '/constitution',
+});
 
 export default function ConstitutionPage() {
   return (

@@ -1,20 +1,19 @@
 import type { Metadata } from 'next';
 
 import { PageHero } from '@/components/ui/PageHero';
-import { fitDescription } from '@/lib/seo';
+import { buildPageMetadata } from '@/lib/seo';
 import { CTASection } from '@/components/ui/CTASection';
 import { SuggestionForm } from '@/components/members/SuggestionForm';
 
 const LEDE =
   'A restricted area for paid-up SAOC members, separate from the public-facing pages on this site.';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Members Portal',
-  description: fitDescription(
-    'A restricted area for paid-up SAOC members, coming to this site.',
-    LEDE,
-  ),
-};
+  description: 'A restricted area for paid-up SAOC members, coming to this site.',
+  lede: LEDE,
+  path: '/members',
+});
 
 export default function MembersPage() {
   return (
