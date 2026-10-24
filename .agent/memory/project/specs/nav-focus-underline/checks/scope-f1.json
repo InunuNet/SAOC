@@ -8,7 +8,8 @@
   "^lib/(nav-current|route-focus)\\.ts$",
   "^docs/nav-focus-underline\\.md$",
   "^e2e/nav-focus[^/]*$",
-  "^\\.agent/memory/"
+  "^\\.agent/memory/",
+  "^e2e/nav-keyboard-operable\\.spec\\.ts$"
  ],
  "mustStay": [
   "components/chrome/SkipLink.tsx",

@@ -9,7 +9,8 @@
   "^components/chrome/footer-data\\.ts$",
   "^app/admin/login/layout\\.tsx$",
   "^e2e/nos-header-layout\\.spec\\.ts$",
-  "^e2e/nos-header-brand-and-cta\\.spec\\.ts$"
+  "^e2e/nos-header-brand-and-cta\\.spec\\.ts$",
+  "^e2e/nav-rendered-reachability\\.spec\\.ts$"
  ],
  "mustStay": [],
  "release": [
