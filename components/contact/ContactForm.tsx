@@ -49,6 +49,7 @@ export function ContactForm({ site = 'saoc', markPlaceholders = false }: Contact
   const [errorMessage, setErrorMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const successHeading = useRef<HTMLHeadingElement>(null);
+  const formError = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (status === 'success') successHeading.current?.focus();
@@ -111,6 +112,11 @@ export function ContactForm({ site = 'saoc', markPlaceholders = false }: Contact
   const labelClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
 
   const showError = status === 'error' && errorMessage !== '';
+
+  // The submit button is disabled while sending, which drops focus to <body>: a failure takes it.
+  useEffect(() => {
+    if (showError) formError.current?.focus();
+  }, [showError]);
 
   return (
     <>
@@ -269,7 +275,9 @@ export function ContactForm({ site = 'saoc', markPlaceholders = false }: Contact
 
       {/* Inline error */}
       {showError ? (
-        <TicketFieldAlert id={FORM_ERROR_ID}>{errorMessage}</TicketFieldAlert>
+        <div ref={formError} tabIndex={-1} className="outline-none">
+          <TicketFieldAlert id={FORM_ERROR_ID}>{errorMessage}</TicketFieldAlert>
+        </div>
       ) : null}
 
       <button
