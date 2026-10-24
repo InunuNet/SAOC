@@ -3,6 +3,8 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
+import { buildEventMetadata } from '@/lib/event-metadata';
+import { saocUrl } from '@/lib/site-hosts';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { eventBySlugQuery, eventSlugsQuery } from '@/sanity/queries';
 import type { SanityEvent } from '@/types';
@@ -36,17 +38,7 @@ export async function generateMetadata({
     tags: ['societyEvent', 'sanity'],
   });
   if (!event) notFound();
-  const title = event.title;
-  const description = event.description ?? undefined;
-  const ogTitle = encodeURIComponent(title);
-  return {
-    title,
-    description,
-    openGraph: {
-      url: `https://saoc.co.za/events/${slug}`,
-      images: [{ url: `/og?title=${ogTitle}`, width: 1200, height: 630, alt: title }],
-    },
-  };
+  return buildEventMetadata(event, slug);
 }
 
 function formatDate(dateStr: string): string {
@@ -85,7 +77,7 @@ export default async function EventDetailPage({
           venue: event.venue,
           description: event.description,
           organizer: event.hostSociety?.name,
-          url: `https://saoc.co.za/events/${event.slug}`,
+          url: saocUrl(`/events/${event.slug}`),
         })}
       />
 

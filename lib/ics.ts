@@ -33,6 +33,67 @@ export function escapeIcsText(value: string): string {
     .replace(/\r?\n/g, '\\n');
 }
 
+const MS_PER_HOUR = 60 * 60 * 1000;
+const MS_PER_DAY = 24 * MS_PER_HOUR;
+const SAST_OFFSET_HOURS = 2;
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+type BoundaryKind = 'utc' | 'sast';
+
+// Which day boundary an instant sits exactly on: midnight UTC, midnight SAST (22:00Z), or neither.
+function boundaryKind(ms: number): BoundaryKind | null {
+  const sinceMidnightUtc = ((ms % MS_PER_DAY) + MS_PER_DAY) % MS_PER_DAY;
+  if (sinceMidnightUtc === 0) return 'utc';
+  if (sinceMidnightUtc === (24 - SAST_OFFSET_HOURS) * MS_PER_HOUR) return 'sast';
+  return null;
+}
+
+// Calendar date of a boundary instant, as UTC-midnight ms. A SAST midnight falls on the next UTC day.
+function calendarDay(ms: number, kind: BoundaryKind): number {
+  return kind === 'sast' ? ms + SAST_OFFSET_HOURS * MS_PER_HOUR : ms;
+}
+
+function toIcsDateOnly(dayMs: number): string {
+  return toIcsDate(new Date(dayMs).toISOString()).slice(0, 8);
+}
+
+// First and last calendar day of an all-day event, or null when the event is timed. All-day only
+// when the start is date-only, or start and end sit on the same boundary kind a whole number of
+// days (at least one) apart. A lone midnight is a real timed instant, not an all-day marker.
+function allDayRange(input: IcsEventInput): { first: number; last: number } | null {
+  const { start, end } = input;
+  if (DATE_ONLY.test(start)) {
+    const first = Date.parse(`${start}T00:00:00Z`);
+    if (!end) return { first, last: first };
+    if (!DATE_ONLY.test(end)) return null;
+    const last = Date.parse(`${end}T00:00:00Z`);
+    return { first, last: last > first ? last : first };
+  }
+  if (!end) return null;
+  const startMs = Date.parse(start);
+  const endMs = Date.parse(end);
+  const kind = boundaryKind(startMs);
+  if (kind === null || kind !== boundaryKind(endMs)) return null;
+  const span = endMs - startMs;
+  if (span < MS_PER_DAY || span % MS_PER_DAY !== 0) return null;
+  return { first: calendarDay(startMs, kind), last: calendarDay(endMs, kind) };
+}
+
+// DTSTART and DTEND lines. RFC 5545 section 3.6.1: an all-day event is VALUE=DATE with an
+// exclusive DTEND, the day after the last day.
+function buildDateLines(input: IcsEventInput): string[] {
+  const range = allDayRange(input);
+  if (range === null) {
+    const lines = [`DTSTART:${toIcsDate(input.start)}`];
+    if (input.end) lines.push(`DTEND:${toIcsDate(input.end)}`);
+    return lines;
+  }
+  return [
+    `DTSTART;VALUE=DATE:${toIcsDateOnly(range.first)}`,
+    `DTEND;VALUE=DATE:${toIcsDateOnly(range.last + MS_PER_DAY)}`,
+  ];
+}
+
 export function buildVEvent(input: IcsEventInput): string {
   const dtstamp = toIcsDate(new Date().toISOString());
   const locationParts = [input.venue, input.location].filter(Boolean);
@@ -42,12 +103,8 @@ export function buildVEvent(input: IcsEventInput): string {
     'BEGIN:VEVENT',
     `UID:${input.slug}@saoc.co.za`,
     `DTSTAMP:${dtstamp}`,
-    `DTSTART:${toIcsDate(input.start)}`,
+    ...buildDateLines(input),
   ];
-
-  if (input.end) {
-    lines.push(`DTEND:${toIcsDate(input.end)}`);
-  }
 
   lines.push(`SUMMARY:${escapeIcsText(input.title)}`);
 
