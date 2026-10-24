@@ -5,6 +5,7 @@
 
 import Image from 'next/image';
 import type { ReactNode } from 'react';
+import heroSourceWidths from '@/lib/hero-source-widths.json';
 
 interface PageHeroProps {
   image: string;
@@ -14,6 +15,8 @@ interface PageHeroProps {
   /** Rendered under the lede, e.g. a call to action. */
   actions?: ReactNode;
   minHeight?: string;
+  /** CSS object-position for the photo; omit to keep the centred crop. */
+  imagePosition?: string;
 }
 
 export function PageHero({
@@ -23,6 +26,7 @@ export function PageHero({
   lede,
   actions,
   minHeight = '480px',
+  imagePosition,
 }: PageHeroProps) {
   return (
     <section
@@ -36,7 +40,9 @@ export function PageHero({
         fill
         priority
         sizes="100vw"
+        quality={image in heroSourceWidths ? 88 : undefined}
         className="object-cover"
+        style={imagePosition ? { objectPosition: imagePosition } : undefined}
         aria-hidden="true"
       />
       <div
