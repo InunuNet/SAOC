@@ -126,6 +126,10 @@ if (cmd === 'products') {
   // Q-D12 default: no organiser line is printed on the ticket.
   const text = await pdfText('no-organiser', fixture);
   if (/organiser/i.test(text)) fail('the ticket must not print an organiser line until Q-D12 is answered');
+  // The visit's organiser value must not be drawn either: a sentinel in that field must not reach the page.
+  const sentinel = 'Zzyzx Sentinel Organiser Value';
+  const sentinelText = await pdfText('no-organiser-sentinel', { ...fixture, visit: { ...fixture.visit, organiser: sentinel } });
+  if (sentinelText.includes('Zzyzx')) fail('the visit organiser value is drawn on the ticket (Q-D12 default: not printed)');
   finish('fe no-organiser');
 } else if (cmd === 'email-parking') {
   // 19f: the order email carries a Parking row, filled only from a confirmed parking block.

@@ -8,7 +8,7 @@ import type { LegalBlock, LegalDocument } from './types';
 // Privacy, Terms and the company documents so the three pages cannot drift.
 // =============================================================
 
-const INLINE = /\*\*([^*]+)\*\*|<(https?:\/\/[^>]+)>/g;
+const INLINE = /\*\*([^*]+)\*\*|<((?:https?:\/\/|mailto:)[^>]+)>/g;
 const LINK_CLASS = 'text-ink underline underline-offset-2';
 const PARAGRAPH_CLASS = 'font-sans text-[16px] leading-relaxed text-ink/80';
 
@@ -27,7 +27,7 @@ function renderInline(text: string): ReactNode[] {
     } else {
       nodes.push(
         <a key={match.index} href={url} className={LINK_CLASS}>
-          {url}
+          {url.replace(/^mailto:/, '')}
         </a>
       );
     }

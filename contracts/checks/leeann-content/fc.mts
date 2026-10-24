@@ -22,7 +22,7 @@ interface Doc {
 const DOCS: Doc[] = [
   {
     source: 'privacy-policy', path: '/privacy', hosts: [SAOC_HOST, NOS_HOST], chrome: ['Legal'], h1: 'her-title',
-    links: ['https://saoc.co.za/', 'https://inforegulator.org.za/complaints/', 'https://inforegulator.org.za/contact-us/'],
+    links: ['https://saoc.co.za/', 'https://inforegulator.org.za/complaints/', 'https://inforegulator.org.za/contact-us/', 'mailto:secretary@saoc.co.za'],
   },
   {
     source: 'terms-and-conditions', path: '/terms', hosts: [SAOC_HOST, NOS_HOST], chrome: ['Legal'], h1: 'her-title',
