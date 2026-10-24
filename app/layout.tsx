@@ -1,29 +1,45 @@
 import type { Metadata } from 'next';
-import { Crimson_Pro, Manrope, JetBrains_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 
 import { SITE_DESCRIPTION } from '@/lib/site-metadata';
 import './globals.css';
 
-const crimsonPro = Crimson_Pro({
-  subsets: ['latin'],
+const crimsonPro = localFont({
+  src: [
+    { path: './fonts/crimson-pro/CrimsonPro-latin-normal.woff2', weight: '300', style: 'normal' },
+    { path: './fonts/crimson-pro/CrimsonPro-latin-normal.woff2', weight: '400', style: 'normal' },
+    { path: './fonts/crimson-pro/CrimsonPro-latin-normal.woff2', weight: '500', style: 'normal' },
+    { path: './fonts/crimson-pro/CrimsonPro-latin-normal.woff2', weight: '600', style: 'normal' },
+    { path: './fonts/crimson-pro/CrimsonPro-latin-italic.woff2', weight: '300', style: 'italic' },
+    { path: './fonts/crimson-pro/CrimsonPro-latin-italic.woff2', weight: '400', style: 'italic' },
+    { path: './fonts/crimson-pro/CrimsonPro-latin-italic.woff2', weight: '500', style: 'italic' },
+    { path: './fonts/crimson-pro/CrimsonPro-latin-italic.woff2', weight: '600', style: 'italic' },
+  ],
   variable: '--font-serif-loaded',
   display: 'swap',
-  weight: ['300', '400', '500', '600'],
-  style: ['normal', 'italic'],
+  adjustFontFallback: 'Times New Roman',
 });
 
-const manrope = Manrope({
-  subsets: ['latin'],
+const manrope = localFont({
+  src: [
+    { path: './fonts/manrope/Manrope-latin-normal.woff2', weight: '400', style: 'normal' },
+    { path: './fonts/manrope/Manrope-latin-normal.woff2', weight: '500', style: 'normal' },
+    { path: './fonts/manrope/Manrope-latin-normal.woff2', weight: '600', style: 'normal' },
+    { path: './fonts/manrope/Manrope-latin-normal.woff2', weight: '700', style: 'normal' },
+  ],
   variable: '--font-sans-loaded',
   display: 'swap',
-  weight: ['400', '500', '600', '700'],
+  adjustFontFallback: 'Arial',
 });
 
-const jetBrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
+const jetBrainsMono = localFont({
+  src: [
+    { path: './fonts/jetbrains-mono/JetBrainsMono-latin-normal.woff2', weight: '400', style: 'normal' },
+    { path: './fonts/jetbrains-mono/JetBrainsMono-latin-normal.woff2', weight: '500', style: 'normal' },
+  ],
   variable: '--font-mono-loaded',
   display: 'swap',
-  weight: ['400', '500'],
+  adjustFontFallback: 'Arial',
 });
 
 // nos-site-split F1: only host-neutral metadata lives here. metadataBase, canonical, openGraph and

@@ -95,7 +95,7 @@
   --color-rule: #dad7c8;
   --color-rule-soft: #e8e6c2;
 
-  /* ---- Typography (D2). next/font/google publishes these fonts through CSS
+  /* ---- Typography (D2). next/font/local publishes these fonts through CSS
      custom properties on the same .nos-theme element via layout.tsx's
      className; this file assigns them into BOTH name pairs, because two
      independent consumers read two different names:

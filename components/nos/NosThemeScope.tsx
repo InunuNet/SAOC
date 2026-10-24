@@ -7,7 +7,7 @@
 // footer are not inside it: they are the NOS own-brand chrome mounted by the marketing layout.
 // =============================================================
 
-import { Fraunces, Karla } from 'next/font/google';
+import localFont from 'next/font/local';
 
 import '@/app/(nos)/national-show/nos-theme.css';
 import '@/app/(nos)/national-show/nos-structure.css';
@@ -21,21 +21,28 @@ import { TICKET_THEME_VARS } from '@/lib/data/ticket-presentation';
 // real face) and Karla (400–700) are the NOS faces. components/nos-chrome/fonts.ts declares
 // the identical config for the header and footer, which sit outside `.nos-theme`; keep the
 // two in step.
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  axes: ['opsz'],
-  style: ['normal', 'italic'],
+const fraunces = localFont({
+  src: [
+    { path: '../../app/fonts/fraunces/Fraunces-latin-normal.woff2', weight: '100 900', style: 'normal' },
+    { path: '../../app/fonts/fraunces/Fraunces-latin-italic.woff2', weight: '100 900', style: 'italic' },
+  ],
   variable: '--font-nos-fraunces',
   display: 'swap',
   preload: false,
+  adjustFontFallback: 'Times New Roman',
 });
 
-const karla = Karla({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+const karla = localFont({
+  src: [
+    { path: '../../app/fonts/karla/Karla-latin-normal.woff2', weight: '400', style: 'normal' },
+    { path: '../../app/fonts/karla/Karla-latin-normal.woff2', weight: '500', style: 'normal' },
+    { path: '../../app/fonts/karla/Karla-latin-normal.woff2', weight: '600', style: 'normal' },
+    { path: '../../app/fonts/karla/Karla-latin-normal.woff2', weight: '700', style: 'normal' },
+  ],
   variable: '--font-nos-karla',
   display: 'swap',
   preload: false,
+  adjustFontFallback: 'Arial',
 });
 
 export function NosThemeScope({ children }: { children: React.ReactNode }) {
