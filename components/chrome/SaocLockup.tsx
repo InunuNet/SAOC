@@ -240,13 +240,13 @@ function OfficialMonoLockup({
       href={href}
       data-testid={testId}
       className={[
-        'block w-[207px] max-w-full [container-type:inline-size]',
+        'block w-[206px] max-w-full [container-type:inline-size]',
         className ?? '',
       ].join(' ')}
     >
       <span className="flex w-full flex-col items-center">
         <span className="relative block w-full aspect-[768/490]">
-          <Image src={OFFICIAL_MONO_EMBLEM} alt="" fill sizes="207px" className="object-contain" priority={priority} />
+          <Image src={OFFICIAL_MONO_EMBLEM} alt="" fill sizes="206px" className="object-contain" priority={priority} />
         </span>
         <span
           className={[lora.className, 'block leading-[1.02] whitespace-nowrap'].join(' ')}
