@@ -123,7 +123,9 @@ export function ContactForm({ site = 'saoc', markPlaceholders = false }: Contact
       {/* Live region: present before submit so the success message is announced when it arrives. */}
       <div role="status" aria-live="polite">
         {status === 'success' ? (
-          <div className="border border-rule bg-parchment p-8">
+          <div
+            className={`border border-rule bg-parchment p-8${site === 'nos' ? ' rounded-[14px]' : ''}`}
+          >
             <h3
               ref={successHeading}
               tabIndex={-1}
