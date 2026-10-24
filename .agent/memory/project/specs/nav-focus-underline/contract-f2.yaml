@@ -12,6 +12,7 @@ autonomy: high
 # LOCKUP RULING (NOS Design, option (d), final): parity by ink WIDTH (405 at >= breakpoints.row, full row below), shared measured breakpoints full/row in header-geometry.json for both hosts.
 # OPEN BLOCKER: at the spec's numbers the SAOC full nav needs 1325.1px of bar and the container is 1320px, so BP-FULL has no passing value (breakpoints.provenance). 1440 is provisional; B15 fails
 # until NOS Design rules on the 5.1px (options A-D in hd1-header-parity.md). Dev: do not shrink the lockup, items, gaps or CTA to make it fit; report the measured overflow.
+# GAP RULINGS (NOS Design, final): MENU border token --nh-control-border (B19); drawer search first row labelled "Search SAOC" (B20). Both in header-geometry.json (menuButton, drawerSearch).
 # Hooks: both headers carry data-hd="bar|brand|nav|item|label|cta|menu" (SAOC also "search"); see hd1-header-parity.md.
 # POST-DEPLOY gates: B15-B17 need the measurements file and manifests written by the BrowserAgent run at the deployed commit
 # (.agent/memory/scratch/hd1-geometry-measurements.json: hosts.{saoc,nos}.<width> from checks/measure-header.js, crossSite.1440.{before,after}, routes, commitSha). They error until then.
@@ -55,6 +56,12 @@ assertions:
     - id: B8
       description: Preview banner stays off SAOC with NOS offsets intact, email in the footer brand column under REG, show pill gone from the SAOC chrome
       command: node .agent/memory/project/specs/nav-focus-underline/checks/check-header-spec.mjs banner-footer
+    - id: B19
+      description: MENU button border is 1.5px solid var(--nh-control-border) on both hosts, the token equals nav ink at 28% over the ground (SAOC b6b6b0, NOS bebbc5), and --rule is not used
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-header-spec.mjs menu-border
+    - id: B20
+      description: Below the full breakpoint the drawer's first row is a full-width 44px search row with the 18px icon and the label Search SAOC that opens the same dialog, and the header icon keeps aria-label Open search
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-header-spec.mjs drawer-search
     - id: B9
       description: No UtilityBar reference remains in app, components or lib
       command: "! grep -rq UtilityBar app components lib"

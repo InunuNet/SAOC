@@ -1,5 +1,5 @@
 // nav-focus-underline HD-1 -- static checks that the two headers share one structure. Run from the project root: node <this file> <mode>
-// Modes: hooks | saoc-header | breakpoints | states-saoc | states-nos | nos-values | banner-footer
+// Modes: menu-border | drawer-search | hooks | saoc-header | breakpoints | states-saoc | states-nos | nos-values | banner-footer
 // The measured parity (checks/compare-geometry.mjs) is the real gate; these catch what a measurement cannot name.
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
@@ -62,6 +62,43 @@ if (mode === 'hooks') {
   }
   if (!withHd(s, 'search').length) fail(`${SAOC}: needs data-hd="search" on the search button`);
   if (withHd(n, 'label').length < 3) fail(`${NOS}: trigger, plain links and Contact each need a data-hd="label" span (the bar slot); found ${withHd(n, 'label').length}`);
+} else if (mode === 'menu-border') {
+  // NOS Design ruling: the MENU button border is 1.5px solid, nav ink at 28% over the ground, as one solid named token per host.
+  const spec = JSON.parse(read(new URL('../goldens/header-geometry.json', import.meta.url).pathname)).menuButton;
+  const g = read('app/globals.css');
+  const n = read(NOS_CSS);
+  const hex = (css, name) => { const m = css.match(new RegExp(`${name}\\s*:\\s*(#[0-9a-fA-F]{6})\\b`)); return m ? m[1] : null; };
+  const mix = (ink, ground) => [1, 3, 5].map((i) => Math.round(0.28*parseInt(ink.slice(i, i + 2), 16) + 0.72*parseInt(ground.slice(i, i + 2), 16)));
+  const near = (a, b) => a && b && [1, 3, 5].every((i, k) => Math.abs(parseInt(a.slice(i, i + 2), 16) - b[k]) <= spec.channelTolerance);
+  const sInk = hex(g, '--ink'), sGround = hex(g, '--parchment'), nInk = hex(n, '--nc-royal'), nGround = hex(n, '--nc-ground');
+  if (!near(hex(g, spec.token), mix(sInk, sGround))) fail(`app/globals.css: ${spec.token} must be solid ${spec.saoc.composite} (--ink 28% over --parchment, recomputed from the file's own tokens)`);
+  if (!near(hex(n, spec.token), mix(nInk, nGround))) fail(`${NOS_CSS}: ${spec.token} must be solid ${spec.nos.composite} (--nc-royal 28% over --nc-ground)`);
+  const { rules } = cssRules();
+  const burger = rules.filter((r) => r.parts.includes('.nh-burger')).map((r) => r.decl).join(' ');
+  if (!/border\s*:\s*1\.5px solid var\(--nh-control-border\)/.test(burger)) fail(`${NOS_CSS}: .nh-burger border must be 1.5px solid var(--nh-control-border) (no rgba)`);
+  const menu = withHd(elements(SAOC), 'menu');
+  if (menu.length !== 1 || !/nh-control-border/.test(menu[0].cls) || !/1\.5px/.test(menu[0].cls)) fail(`${SAOC}: the MENU button border is 1.5px with var(--nh-control-border)`);
+  if (menu.length === 1 && /--rule|border-rule/.test(menu[0].cls)) fail(`${SAOC}: --rule does not match the composite (dE 12.6 > 2); use the token`);
+} else if (mode === 'drawer-search') {
+  // NOS Design ruling: below breakpoints.full the drawer's FIRST row is a full-width 44px search row, existing icon and the dialog's own label.
+  const path = 'components/chrome/MobileMenu.tsx';
+  const text = read(path);
+  const els = elements(path);
+  const row = els.filter((e) => e.hd === 'drawer-search');
+  if (row.length !== 1) { fail(`${path}: exactly one data-hd="drawer-search" row (found ${row.length})`); }
+  else {
+    if (!/Search SAOC/.test(row[0].text)) fail(`${path}: the visible label is "Search SAOC" (SearchOverlay's own aria-label, no new string)`);
+    if (/Open search/.test(row[0].text)) fail(`${path}: "Open search" is the header icon's aria-label, not the drawer label`);
+    if (!/min-h-11|h-11|min-h-\[44px\]|h-\[44px\]/.test(row[0].cls)) fail(`${path}: the row is 44px tall`);
+    if (!/w-full|flex-1|block/.test(row[0].cls)) fail(`${path}: the row is full width`);
+    if (!/size=\{18\}/.test(text)) fail(`${path}: the existing 18px Search icon (size={18})`);
+    if (!row[0].attrs.has('onClick')) fail(`${path}: the row opens the search dialog (onClick)`);
+  }
+  const at = text.indexOf('data-hd="drawer-search"');
+  const items = text.search(/nav\.map\(/);
+  if (at === -1 || items === -1 || at > items) fail(`${path}: the search row comes before the nav items`);
+  if (!/Open search/.test(read(SAOC))) fail(`${SAOC}: the header icon keeps aria-label "Open search"`);
+  if (!/onSearch/.test(read(SAOC)) || !/onSearch/.test(text)) fail('Header.tsx passes onSearch to MobileMenu, which calls it');
 } else if (mode === 'saoc-header') {
   const s = elements(SAOC);
   const cta = withHd(s, 'cta');

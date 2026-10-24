@@ -398,5 +398,35 @@
       "saocRowContent": 725.4
     }
   },
-  "derivedWidths": "breakpoints.full-1, full, row-1, row are added at run time"
+  "derivedWidths": "breakpoints.full-1, full, row-1, row are added at run time",
+  "menuButton": {
+    "ruling": "NOS Design HD-1 gap ruling 1 (final)",
+    "border": "1.5px solid var(--nh-control-border)",
+    "token": "--nh-control-border",
+    "recipe": "nav ink at 28% composited over the header ground, one solid token per host (NOS today: border 1.5px solid rgba(33,26,87,.28), nos-chrome.css:65)",
+    "saoc": {
+      "ink": "--ink #171917",
+      "ground": "--parchment #f4f3ec",
+      "composite": "#b6b6b0"
+    },
+    "nos": {
+      "ink": "--nc-royal #211A57",
+      "ground": "--nc-ground #FBFAF0",
+      "composite": "#bebbc5"
+    },
+    "ruleQualifies": false,
+    "ruleCheck": "CIE76 dE of the SAOC composite #b6b6b0 vs --rule #d9d7c9 = 12.6 (vs --rule-soft #e4e1d0 = 16.5); the ruling allows --rule only within dE 2, so a new token is required. Border is decorative (label identifies the control): no 3:1 gate.",
+    "channelTolerance": 2
+  },
+  "drawerSearch": {
+    "ruling": "NOS Design HD-1 gap ruling 2 (final)",
+    "below": "breakpoints.full",
+    "position": "first row of the drawer, above the nav items",
+    "row": "full width, 44px tall",
+    "icon": "existing lucide Search icon at 18px (Header.tsx:168)",
+    "label": "Search SAOC",
+    "labelSource": "SearchOverlay.tsx:124, the dialog's own aria-label; no new string",
+    "opens": "the same SearchOverlay dialog",
+    "headerIconAriaLabel": "Open search (Header.tsx:164), kept above breakpoints.full"
+  }
 }
