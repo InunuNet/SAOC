@@ -49,8 +49,8 @@ const firstInput = {
   submissionId: SUBMISSION_ID,
   fileName: 'proof-v1.pdf',
   mimeType: 'application/pdf',
-  sizeBytes: 12, // 'first-upload'
-  fileBase64: 'Zmlyc3QtdXBsb2Fk',
+  sizeBytes: 12, // '%PDF-first-1'
+  fileBase64: 'JVBERi1maXJzdC0x',
 };
 // A different original file name -- proves the stored path is mime-derived, not
 // filename-derived, so a second upload with a DIFFERENT file name still lands at the SAME path.
@@ -58,8 +58,8 @@ const secondInput = {
   submissionId: SUBMISSION_ID,
   fileName: 'proof-corrected-v2.pdf',
   mimeType: 'application/pdf',
-  sizeBytes: 13, // 'second-upload'
-  fileBase64: 'c2Vjb25kLXVwbG9hZA==',
+  sizeBytes: 13, // '%PDF-second-2'
+  fileBase64: 'JVBERi1zZWNvbmQtMg==',
 };
 
 const firstDeps = makeDeps(firstNow);
