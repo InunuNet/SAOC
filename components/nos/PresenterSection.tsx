@@ -1,6 +1,5 @@
 import { PresenterGrid } from '@/components/nos/PresenterGrid';
-import { ConfirmationBadge } from '@/components/show';
-import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+import { CONTENT_GAP_LABEL, withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { hasProvisionalOrder, orderPresenters } from '@/lib/view-models/presenter-order';
 import type { PresenterCardViewModel } from '@/lib/view-models/ticket-card';
 
@@ -51,14 +50,11 @@ export function PresenterSection({
             <h2 id={titleId} className="pc-title">
               Presenters
             </h2>
+            {/* A TBC note never reaches the public site (R76); beta keeps the quiet legend. */}
+            {provisional && !withholdPlaceholderProse() ? (
+              <p data-presenters-legend="">{`※ ${CONTENT_GAP_LABEL}`}</p>
+            ) : null}
           </div>
-          {/* A TBC note never reaches the public site (R76); beta keeps the chip. */}
-          {provisional && !withholdPlaceholderProse() ? (
-            <ConfirmationBadge
-              status="pending"
-              pendingLabel="To be confirmed by the show committee"
-            />
-          ) : null}
         </div>
         <PresenterGrid presenters={ordered} idBase={idBase} />
       </div>

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { PageHero } from '@/components/ui/PageHero';
+import { LegalHero } from '@/components/nos/LegalHero';
 import { fitDescription } from '@/lib/seo';
 
 const LEDE =
@@ -18,14 +18,15 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <>
-      <PageHero
+      <LegalHero
+        route="/privacy"
         image="/images/orchid-violet.jpg"
         eyebrow="Legal"
         heading="Privacy Policy"
         lede={LEDE}
       />
 
-      <div className="mx-auto max-w-[720px] px-8 py-20 space-y-10">
+      <section className="nos-section mx-auto max-w-[720px] px-8 py-20 space-y-10">
         <section className="space-y-3 border border-rule bg-primary/5 px-6 py-5">
           <p className="font-sans text-[14px] leading-relaxed text-ink/80">
             <strong className="font-medium text-ink">Draft pending legal review.</strong>{' '}
@@ -178,7 +179,7 @@ export default function PrivacyPage() {
         <p className="font-mono text-[11px] tracking-[0.16em] text-muted pt-4 border-t border-rule">
           Last updated: August 2026
         </p>
-      </div>
+      </section>
     </>
   );
 }

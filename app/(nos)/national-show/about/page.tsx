@@ -36,7 +36,10 @@ export default async function NationalShowAboutPage() {
           <>
             {SHOW_TITLE}
             <span className="sr-only"> - </span>
-            <span style={{ fontSize: '0.5em', fontWeight: 300 }}>{SHOW_TITLE_SUB}</span>
+            {/* "Western Cape 2027": its own line, 8px below the title, same serif and size (NOS Design). */}
+            <span className="mt-2 block" style={{ fontSize: '0.5em', fontWeight: 300 }}>
+              {SHOW_TITLE_SUB}
+            </span>
           </>
         }
         priority
