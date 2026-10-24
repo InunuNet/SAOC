@@ -286,7 +286,7 @@ export const ticketsPageQuery = defineQuery(`
 `);
 
 export const upcomingEventsQuery = defineQuery(`
-  *[_type == "societyEvent" && dateTime(coalesce(endDate, date)) >= dateTime($todayStart)] | order(date asc){
+  *[_type == "societyEvent" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(endDate, date))) && coalesce(endDate, date) >= $todayDate))] | order(date asc){
     _id,
     title,
     "slug": slug.current,
@@ -430,6 +430,8 @@ export const provinceListQuery = defineQuery(`
     order
   }
 `);
+
+export const eventsPageQuery = defineQuery(`*[_type == "eventsPage"][0]{ intro }`);
 
 export const judgingPageQuery = defineQuery(`
   *[_type == "judgingPage"][0]{
