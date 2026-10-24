@@ -59,9 +59,27 @@ interface SaocLockupProps {
   compact?: boolean;
   className?: string;
   priority?: boolean;
+  /** 'official-mono' reads only on vertical + dark (the NOS footer). */
+  variant?: 'standard' | 'official-mono';
+  /** When set, the root is a plain <a href> (cross-site, same tab) instead of next/link. */
+  href?: string;
+  testId?: string;
 }
 
-export function SaocLockup({ orientation, tone, compact = false, className, priority }: SaocLockupProps) {
+export function SaocLockup({
+  orientation,
+  tone,
+  compact = false,
+  className,
+  priority,
+  variant = 'standard',
+  href,
+  testId,
+}: SaocLockupProps) {
+  if (orientation === 'vertical' && tone === 'dark' && variant === 'official-mono') {
+    return <OfficialMonoLockup href={href} testId={testId} className={className} priority={priority} />;
+  }
+
   const col = TONE_COLOURS[tone];
   const emblemSrc = tone === 'dark' ? '/images/saoc-emblem-footer-lapis-2x.png' : '/images/saoc-emblem-lockup-2x.png';
 
@@ -193,3 +211,51 @@ export function SaocLockup({ orientation, tone, compact = false, className, prio
     </Link>
   );
 }
+
+// official-mono:start
+// NOS footer: the approved logo's light-type-on-dark vertical. Inks are named tokens (--ivory is the
+// SAOC ivory and the PDF's own name ink; --lockup-rule-on-royal is the old 35% white rule composited on
+// the NOS footer ground), solid, no alpha. The emblem is extracted from the logo PDF by
+// scripts/extract-saoc-footer-lockup.py. The wordmark is sized in container-query units so the live text
+// is about as wide as the 768x490 emblem box (244px) it sits under.
+const OFFICIAL_MONO_EMBLEM = '/images/saoc-lockup-vertical-emblem.png';
+
+// The accessible name is the visible text (label-in-name): no aria-label, nothing aria-hidden inside.
+// The focus ring comes from the host's :focus-visible rule (the NOS footer's .nf :focus-visible).
+function OfficialMonoLockup({
+  href,
+  testId,
+  className,
+  priority,
+}: Pick<SaocLockupProps, 'href' | 'testId' | 'className' | 'priority'>) {
+  const solid = { color: 'var(--ivory)' };
+  return (
+    <a
+      href={href}
+      data-testid={testId}
+      className={['block w-[244px] max-w-full [container-type:inline-size]', className ?? ''].join(' ')}
+    >
+      <span className="block">
+        <span className="relative block w-full aspect-[768/490]">
+          <Image src={OFFICIAL_MONO_EMBLEM} alt="" fill sizes="244px" className="object-contain" priority={priority} />
+        </span>
+        <span
+          className={[lora.className, 'mt-[12px] block leading-[1.02] whitespace-nowrap'].join(' ')}
+          style={{ fontSize: '7.3cqw', letterSpacing: '-0.005em', ...solid }}
+        >
+          {WORDMARK}
+        </span>
+        <span className="mt-[8px] block h-px w-[133px]" style={{ background: 'var(--lockup-rule-on-royal)' }} />
+        {/* Logo tagline: exempt from the global 12px mono floor (lockups are never altered). */}
+        <span
+          data-lockup-tagline
+          className="mt-[9px] block font-mono font-medium uppercase text-[11px] leading-[1.3] whitespace-nowrap"
+          style={{ letterSpacing: '0.22em', ...solid }}
+        >
+          {TAGLINE}
+        </span>
+      </span>
+    </a>
+  );
+}
+// official-mono:end
