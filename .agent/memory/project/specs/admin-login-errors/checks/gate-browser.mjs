@@ -57,14 +57,14 @@ async function run() {
       await page.screenshot({ path: `${OUT}/login-${vp.name}.png`, fullPage: true });
 
       await forgot.click();
-      check(`${tag} empty email shows the prompt`, (await page.locator('[role="alert"]:not(#__next-route-announcer)').innerText()).trim() === copy.resetEmptyPrompt);
+      check(`${tag} empty email shows the prompt`, (await page.locator('[role="alert"]:not([id^="__next-route-announcer"])').innerText()).trim() === copy.resetEmptyPrompt);
 
       await page.fill('#email', 'lee-ann@example.test');
       await forgot.click();
       await page.getByRole('status').waitFor();
       const okText = (await page.getByRole('status').innerText()).trim();
       check(`${tag} reset success text verbatim`, okText === copy.resetResponse, okText);
-      check(`${tag} prompt alert cleared after a send`, (await page.locator('[role="alert"]:not(#__next-route-announcer)').count()) === 0);
+      check(`${tag} prompt alert cleared after a send`, (await page.locator('[role="alert"]:not([id^="__next-route-announcer"])').count()) === 0);
       await page.screenshot({ path: `${OUT}/login-${vp.name}-reset-sent.png`, fullPage: true });
 
       resetOutcome = 'not-found';
@@ -73,9 +73,9 @@ async function run() {
       check(`${tag} user-not-found shows the identical text`, (await page.getByRole('status').innerText()).trim() === okText);
 
       await page.fill('#password', 'wrong-password-1');
-      await page.getByRole('button', { name: 'Sign in' }).click();
-      await page.locator('[role="alert"]:not(#__next-route-announcer)').waitFor();
-      const errText = (await page.locator('[role="alert"]:not(#__next-route-announcer)').innerText()).trim();
+      await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+      await page.locator('[role="alert"]:not([id^="__next-route-announcer"])').waitFor();
+      const errText = (await page.locator('[role="alert"]:not([id^="__next-route-announcer"])').innerText()).trim();
       check(`${tag} invalid credential shows plain copy`, errText === copy.invalidCredential, errText);
       check(`${tag} no raw Firebase text anywhere on the page`, !/Firebase: |auth\/[a-z-]+/.test(await page.locator('body').innerText()));
       await page.screenshot({ path: `${OUT}/login-${vp.name}-error.png`, fullPage: true });
