@@ -85,8 +85,10 @@
   --space-10: 128px;
 
   --section-y: 96px;
-  --container-pad: 32px;
-  --container-max: 1280px;
+  --container-pad: clamp(16px, 2.5vw, 32px);
+  --container-max: calc(1320px + 2 * clamp(16px, 2.5vw, 32px));
+  /* HD-1: MENU button border, nav ink at 28% over the header ground, as one solid colour (NOS: nos-chrome.css). */
+  --nh-control-border: #b6b6b0;
 
   /* ---------- Radii ---------- */
   --radius-0: 0; /* cards, image wells */
@@ -149,9 +151,19 @@ body {
   margin: 0;
   padding: 0;
 }
-/* WCAG 2.4.11: the sticky header (74px desktop / 62px mobile) must not cover a focused element. */
+/* WCAG 2.4.11: the sticky header (97px, HD-1) must not cover a focused element. */
 html {
-  scroll-padding-top: 5rem;
+  scroll-padding-top: 6.5rem;
+}
+/* NAV-1: after a client-side navigation focus lands on the page heading (or main); it is a
+   programmatic landing, not a control, so it takes no ring. The marker exists only while a route
+   focus holds focus, so the skip link's focus on main keeps its behaviour. */
+[data-route-focus]:focus {
+  outline: none;
+}
+/* The skip-link target (main#main-content, tabindex -1) is a landing, not a control. */
+main:focus {
+  outline: none;
 }
 /* Ink on the brass accent fill is the handoff .btn--accent. On the National Show pages the accent
    fill is violet (nos-theme.css), where ink is only 2.25:1 and the ivory text the pages already

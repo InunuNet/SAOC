@@ -14,31 +14,37 @@
   --nc-gutter: clamp(16px, 2.5vw, 32px);
   --nc-wide: 1320px;
   --nc-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  /* Header lockup: the supplied full-colour horizontal file (1200 x 294, ink 54..1139 x 54..241).
-     448px puts the location line's cap at 7.2px; the transparent margin is pulled back so the ink
-     box (405 x 70) is what the bar lays out. */
-  --nc-logo-w: 448px;
 }
 .nc-chev { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; transition: transform 200ms var(--nc-ease); }
 .nh-sentinel { position: absolute; top: 4px; left: 0; width: 1px; height: 1px; pointer-events: none; }
 
 /* Header */
+/* HD-1: the MENU button border, nav ink at 28% over the header ground, as one solid colour (SAOC has its own in globals.css). */
+.nh { --nh-control-border: #bebbc5; }
 .nh { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 60; background: var(--nc-ground); color: var(--nc-royal); font-family: var(--nc-sans); border-bottom: 1px solid var(--nc-line); transition: box-shadow 150ms; }
 .nh.is-scrolled { box-shadow: var(--nc-shadow-float); }
-.nh :focus-visible, .nd :focus-visible { outline: 2px solid var(--nc-violet); outline-offset: 2px; border-radius: 4px; box-shadow: none; }
-.nh-bar { display: flex; align-items: center; gap: 24px; max-width: calc(var(--nc-wide) + 2 * var(--nc-gutter)); margin-inline: auto; padding: 13px var(--nc-gutter); }
+.nh-bar { display: flex; align-items: center; gap: 12px; max-width: calc(var(--nc-wide) + 2 * var(--nc-gutter)); margin-inline: auto; padding: 13px var(--nc-gutter); }
 .nh-bar > * { flex: none; }
-.nh-brand { display: block; line-height: 0; border-radius: 4px; }
-.nh-brand img { width: var(--nc-logo-w); max-width: none; height: auto; margin: calc(var(--nc-logo-w) * -0.045) calc(var(--nc-logo-w) * -0.0508) calc(var(--nc-logo-w) * -0.0442) calc(var(--nc-logo-w) * -0.045); }
+/* The supplied full-colour horizontal file (1200 x 294, ink 54..1139 x 54..241). HD-1: the link box is the
+   ink box, min(container, 405px) wide (405 x 70 at full size), and 12px of margin plus the bar gap keep the
+   nav at least 24px away. The image is 110.6% of that box and its transparent margin is pulled back with
+   negative margins, in container units so the lockup scales with the box. */
+.nh-brand { display: block; width: min(100%, 405px); margin-right: 12px; container-type: inline-size; line-height: 0; border-radius: 4px; }
+.nh-brand img { width: 110.6cqw; max-width: none; height: auto; margin: -4.977cqw -5.622cqw -4.885cqw -4.977cqw; }
 
 /* SAOC's menu, in NOS type. National Show opens its full mega-menu on click only (R12). */
 .nh-nav { display: none; margin-left: auto; }
 .nh-nav > ul { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 2px; }
 .nh-link, .nh-trigger { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 9px; border: 0; border-radius: 10px; background: none; color: var(--nc-royal); font: 600 14.5px/1 var(--nc-sans); text-decoration: none; white-space: nowrap; cursor: pointer; transition: background-color 150ms; }
-.nh-link:hover, .nh-trigger:hover, .nh-trigger[aria-expanded="true"] { background: var(--nc-gold); }
+.nh-trigger[aria-expanded="true"] { background: var(--nc-gold); }
 .nh-trigger[aria-expanded="true"] .nc-chev { transform: rotate(180deg); }
 .nh-label { position: relative; }
-.nh-trigger[data-current] .nh-label::after { content: ""; position: absolute; left: 0; right: 0; bottom: -8px; height: 2px; border-radius: 1px; background: var(--nc-green-1); }
+/* One bar slot (-8px, 2px) for the current page, hover and keyboard focus on both headers (HD-1, NAV-1). */
+.nh-link:hover .nh-label::after, .nh-trigger:hover .nh-label::after, .nh-link[aria-current] .nh-label::after, .nh-trigger[aria-current] .nh-label::after { content: ""; position: absolute; left: 0; right: 0; bottom: -8px; height: 2px; border-radius: 1px; background: var(--nc-green-1); }
+.nh-link:hover .nh-label::after, .nh-trigger:hover .nh-label::after { background: var(--nc-royal); }
+/* Focus wins over current: royal reaches 3:1 on the ground, green-1 does not. The UA outline is cleared; the bar is the indicator. */
+.nh-link:focus-visible, .nh-trigger:focus-visible { outline: none; }
+.nh-link:focus-visible .nh-label::after, .nh-trigger:focus-visible .nh-label::after { content: ""; position: absolute; left: 0; right: 0; bottom: -8px; height: 2px; border-radius: 1px; background: var(--nc-royal); }
 
 .nh-mega-list { list-style: none; margin: 0; padding: 0; display: grid; }
 /* Top-row disclosure panels (R1.2): click-only list panels hung under their trigger. */
@@ -50,41 +56,40 @@
 @keyframes nh-panel-in { from { opacity: 0; transform: translateY(-4px); } }
 .nh-mega-list li + li { border-top: 1px solid var(--nc-line); }
 .nh-mega-list a { min-height: 44px; align-content: center; }
-.nh-mega-list a:hover { background: var(--nc-gold); }
 .nh-mega-list a { display: grid; gap: 2px; padding: 9px 8px; margin-inline: -8px; border-radius: 10px; text-decoration: none; }
 .nh-leaf { font-size: 14.5px; font-weight: 700; line-height: 1.3; color: var(--nc-royal); }
 .nh-desc { font-size: 12.5px; line-height: 1.4; color: var(--nc-ink-500); }
 .nh-panel a[aria-current="page"] .nh-leaf, .nd-sub a[aria-current="page"] .nh-leaf { text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 2px; text-underline-offset: 5px; }
+.nh-mega-list a:focus-visible { outline: none; }
+.nh-mega-list a:hover .nh-leaf, .nh-mega-list a:focus-visible .nh-leaf { text-decoration: underline; text-decoration-color: var(--nc-royal); text-decoration-thickness: 2px; text-underline-offset: 5px; }
 
 /* The one primary action: Tickets. On the tickets page it is the current page, so it drops to outline. */
 .nh-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 24px; border-radius: 10px; background: var(--nc-royal); color: var(--nc-ground); font: 700 13px/1 var(--nc-sans); letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; white-space: nowrap; transition: background-color 200ms var(--nc-ease), color 200ms var(--nc-ease); }
 .nh-cta:hover { background: var(--nc-royal-900); }
-.nh-cta[aria-current="page"] { background: transparent; color: var(--nc-royal); box-shadow: inset 0 0 0 1.5px var(--nc-royal); }
-.nh-cta[aria-current="page"]:hover { background: var(--nc-gold); }
 .nh-cta { margin-left: auto; }
-.nh-burger { display: inline-flex; align-items: center; gap: 8px; min-width: 44px; min-height: 44px; padding: 0 12px; border: 1.5px solid rgba(33, 26, 87, 0.28); border-radius: 10px; background: none; color: var(--nc-royal); font: 700 13px/1 var(--nc-sans); letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; }
+.nh-burger { display: inline-flex; align-items: center; gap: 8px; min-width: 44px; min-height: 44px; padding: 0 12px; border: 1.5px solid var(--nh-control-border); border-radius: 10px; background: none; color: var(--nc-royal); font: 700 13px/1 var(--nc-sans); letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; }
 .nh-burger svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; }
 .nh-burger .is-x, .nh-burger[aria-expanded="true"] .is-bars { display: none; }
 .nh-burger[aria-expanded="true"] .is-x { display: block; }
-@media (min-width: 1260px) {
+/* Controls and the brand lockup are not link lists: they keep an explicit ring. */
+.nh-brand:focus-visible, .nh-cta:focus-visible, .nh-burger:focus-visible { outline: 2px solid var(--nc-violet); outline-offset: 2px; }
+@media (min-width: 1384px) {
   .nh-nav { display: block; }
   .nh-cta { margin-left: 0; }
   .nh-burger { display: none; }
 }
-/* Phones: the lockup takes the full first row at a legible size, the actions sit below it, and
+/* Below the row breakpoint the lockup takes the whole first row, the actions sit below it, and
    the header scrolls with the page rather than holding a sixth of the screen. */
-@media (max-width: 699px) {
-  :root { --nc-logo-w: 390px; }
+@media (max-width: 779px) {
   .nh { position: relative; }
   /* Not sticky here, so nothing covers a focused element; the global 5rem scroll-padding-top would
      only make a click on Menu (near the top) scroll the page before the panel's saved position. */
   html:has(#nh) { scroll-padding-top: 0; }
-  .nh-bar { flex-wrap: wrap; gap: 12px; padding-block: 16px 12px; }
-  .nh-brand { flex-basis: 100%; }
-  .nh-cta { margin-left: 0; }
-  .nh-burger { margin-left: auto; }
+  .nh-bar { display: grid; grid-template-columns: auto 1fr auto; padding-block: 16px 12px; }
+  .nh-brand { grid-column: 1 / -1; margin-right: 0; }
+  .nh-cta { grid-column: 1; margin-left: 0; }
+  .nh-burger { grid-column: 3; justify-self: end; }
 }
-@media (max-width: 420px) { :root { --nc-logo-w: min(390px, calc((100vw - 32px) / 0.904)); } }
 
 /* Ticketing pages carry the sticky "Testing only" bar (committee-testing); hold the header under it. */
 @media (min-width: 700px) {
@@ -94,7 +99,7 @@
   body:has([data-ticketing-test-bar]) .nh { top: calc(48px + env(safe-area-inset-top, 0px)); }
 }
 
-/* Menu panel (below 1260px): SAOC's drawer list, NOS type. */
+/* Menu panel (below 1384px): SAOC's drawer list, NOS type. */
 .nd { position: fixed; left: 0; right: 0; bottom: 0; top: 0; z-index: 59; overflow-y: auto; overscroll-behavior: contain; background: var(--nc-ground); color: var(--nc-royal); font-family: var(--nc-sans); padding: 16px var(--nc-gutter) calc(40px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--nc-line); }
 .nd-inner { max-width: 720px; }
 .nd-list { list-style: none; margin: 0; padding: 0; }
@@ -102,14 +107,18 @@
 .nd-item { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; padding: 0; border: 0; background: none; color: var(--nc-royal); font: 400 1.375rem/1.2 var(--nc-serif); text-decoration: none; cursor: pointer; text-align: left; }
 .nd-item .nc-chev { width: 18px; height: 18px; }
 .nd-item[aria-expanded="true"] .nc-chev { transform: rotate(180deg); }
-.nd-item[data-current] { text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 2px; text-underline-offset: 7px; }
+.nd-item[aria-current] { text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 2px; text-underline-offset: 7px; }
+.nd-item:focus-visible { outline: none; text-decoration: underline; text-decoration-color: var(--nc-royal); text-decoration-thickness: 2px; text-underline-offset: 7px; }
 .nd-sub { padding: 4px 0 20px; display: grid; gap: 18px; }
 .nd-group ul { list-style: none; margin: 0; padding: 0 0 0 12px; border-left: 1px solid var(--nc-line); display: grid; }
 .nd-group a { display: grid; gap: 2px; padding: 9px 0; text-decoration: none; }
 .nd-group a .nh-leaf { font-size: 16px; }
 .nd-group a .nh-desc { font-size: 13px; }
+.nd-group a:focus-visible { outline: none; }
+.nd-group a:focus-visible .nh-leaf { text-decoration: underline; text-decoration-color: var(--nc-royal); text-decoration-thickness: 2px; text-underline-offset: 5px; }
 .nd-credit { margin: 8px 0 0; padding-top: 16px; border-top: 1px solid var(--nc-line); }
 .nd-credit a { display: inline-flex; align-items: center; min-height: 44px; font: 600 15px/1.3 var(--nc-sans); color: var(--nc-royal); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+.nd-credit a:focus-visible { outline: none; text-decoration-color: var(--nc-royal); text-decoration-thickness: 2px; }
 @media (prefers-reduced-motion: no-preference) {
   .nd:not([hidden]) { animation: nd-in 260ms var(--nc-ease) both; }
 }
@@ -119,7 +128,8 @@
 /* rFT (Codi P2 2026-10-22): a 1px full-bleed top rule in the .nf-base rule colour, drawn inset so the footer gains no height; forced colours drop shadows, so there it is a border. */
 .nf { background: var(--nc-royal); color: var(--nc-lilac); font-family: var(--nc-sans); padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: inset 0 1px 0 rgba(210, 203, 232, 0.2); }
 @media (forced-colors: active) { .nf { border-top: 1px solid CanvasText; } }
-.nf :focus-visible { outline: 2px solid var(--nc-ground); outline-offset: 3px; border-radius: 4px; }
+/* Footer link lists take an underline on focus (NAV-1); the lockup and the newsletter controls keep a ring. */
+.nf-saoc-credit a:focus-visible, .nf-lockup:focus-visible { outline: 2px solid var(--nc-ground); outline-offset: 3px; border-radius: 4px; }
 .nf ::selection { background: var(--nc-gold); color: var(--nc-royal); }
 /* r20 F3 (Codi FINAL): the lockup in the SAOC footer's brand column (FOOTER_LAYOUT), 248px, never wider than the column. */
 /* The PNG carries transparent padding (measured: 229px left, 250px right, 224px top and 257px bottom of 3272x2876). At the 248px box the negative margins below trim it, so the column hugs the visible ink and the footer gaps and the top line are measured from the artwork, not the box. */
@@ -137,6 +147,7 @@
 /* r20 F4: a row sits at the top of its li, so the li's own strut never adds to the 44px row pitch. */
 .nf-list li > * { vertical-align: top; }
 .nf a:hover { color: var(--nc-ground); text-decoration: underline; text-decoration-color: var(--nc-green-1); text-underline-offset: 4px; }
+.nf-list a:focus-visible, .nf-legal a:focus-visible { outline: none; color: var(--nc-ground); text-decoration: underline; text-decoration-color: var(--nc-ground); text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .nf-col .nf-text { margin-bottom: 12px; }
 /* r20 F4 (Codi FINAL): the column headings sit 16px above their first element, as in the SAOC footer; this also reaches the sign-up label. */
 .nf-col > div.nf-head { margin-bottom: 16px; }
@@ -147,6 +158,7 @@
 .nf-form input[type="checkbox"] { accent-color: var(--nc-gold); }
 .nf-form button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--nc-gold); color: var(--nc-royal); font: 700 13px/1 var(--nc-sans); letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }
 .nf-form button:hover { background: var(--nc-gold-300); }
+.nf-form button:focus-visible, .nf-form input[type="checkbox"]:focus-visible { outline: 2px solid var(--nc-ground); outline-offset: 2px; }
 .nf-base { border-top: 1px solid rgba(210, 203, 232, 0.2); font-size: 13px; letter-spacing: 0; }
 .nf-legal a { display: inline-flex; align-items: center; min-height: 44px; color: var(--nc-lilac); text-decoration: none; }
 
@@ -167,6 +179,13 @@
 .nh-brand { overflow: clip; }
 /* Menu/Close: a fixed width that fits the longer label keeps the button's right edge on the gutter. */
 .nh-burger { min-width: 104px; justify-content: center; }
+
+/* Forced colours drop the bar and the text-decoration colours, so a focused link list item takes a system-colour outline. */
+@media (forced-colors: active) {
+  .nh-link:hover .nh-label::after, .nh-trigger:hover .nh-label::after, .nh-link[aria-current] .nh-label::after, .nh-trigger[aria-current] .nh-label::after, .nh-link:focus-visible .nh-label::after, .nh-trigger:focus-visible .nh-label::after { background: CanvasText; }
+  .nh-cta { border: 1px solid ButtonText; }
+  .nh-link:focus-visible, .nh-trigger:focus-visible, .nh-mega-list a:focus-visible, .nd-item:focus-visible, .nd-group a:focus-visible, .nd-credit a:focus-visible, .nf-list a:focus-visible, .nf-legal a:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
+}
 
 /* Skip link (launch-weekend F1, NOS look): royal fill, pale-gold text, the R9/3 violet ring. It sits
    outside .nh, so it carries its own Karla stack; off-screen until focused. */

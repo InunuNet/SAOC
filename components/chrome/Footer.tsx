@@ -2,16 +2,14 @@
 
 // =============================================================
 // SAOC — components/chrome/Footer.tsx
-// Client Component — dark sage footer with four columns.
-// Col 1: stacked logo lockup + mission + reg numbers
+// Client Component — dark sage footer with three columns.
+// Col 1: stacked logo lockup + reg numbers + WOSA link
 // Col 2: Explore nav links
-// Col 3: Partners list
-// Col 4: Stay in touch (newsletter form + WOSA link)
+// Col 3: Stay in touch (newsletter form)
 // All copy and link lists live in ./footer-data (shared with the NOS footer).
 // =============================================================
 
 import Link from 'next/link';
-import { partners } from '@/lib/data';
 import { NewsletterSignup } from '@/components/newsletter/NewsletterSignup';
 import { SaocLockup } from './SaocLockup';
 import { ExternalArrow } from './ExternalArrow';
@@ -33,7 +31,7 @@ import {
 export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
   return (
     <footer className="bg-primary-800 text-ivory">
-      <div className={FOOTER_LAYOUT.grid}>
+      <div className={FOOTER_LAYOUT.gridSaoc}>
         {/* Col 1 — lockup + registration line. Live HTML/CSS lockup (SaocLockup,
             orientation="vertical" tone="dark"): only the emblem (E4 Lapis
             monotone) is an image, the wordmark/rule/tagline are real text
@@ -52,6 +50,28 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
           <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ivory/65">
             {FOOTER_REG}
           </span>
+          {/* HD-1: moved here from the retired utility bar, directly under the registration line. */}
+          <a
+            href="mailto:info@saoc.co.za"
+            className={`${FOOTER_RHYTHM.row} font-mono text-ivory/80 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]`}
+          >
+            info@saoc.co.za
+          </a>
+          {/* WOSA appears once in this footer, under the registration line (as in NosFooter). */}
+          <ul className={FOOTER_RHYTHM.list}>
+            <li>
+              <a
+                href={FOOTER_WOSA.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${FOOTER_RHYTHM.row} gap-1 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]`}
+              >
+                {FOOTER_WOSA.label}
+                <ExternalArrow />
+                <span className="sr-only">{FOOTER_NEW_TAB_CUE}</span>
+              </a>
+            </li>
+          </ul>
         </div>
 
         {/* Col 2 — Explore */}
@@ -66,7 +86,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
                 <li key={n.id}>
                   <NavLink
                     href={n.href}
-                    className={`${FOOTER_RHYTHM.row} min-w-11 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150`}
+                    className={`${FOOTER_RHYTHM.row} min-w-11 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]`}
                   >
                     {n.label}
                   </NavLink>
@@ -76,37 +96,7 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
           </ul>
         </div>
 
-        {/* Col 3 — Partners */}
-        <div className="flex flex-col gap-3">
-          <div className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory/55 mb-1">
-            {FOOTER_HEADINGS.partners}
-          </div>
-          <ul className={FOOTER_RHYTHM.list}>
-            {partners.map((p) => {
-              const href = p.url ?? (p.name === FOOTER_WOSA.label ? FOOTER_WOSA.href : undefined);
-              return href ? (
-                <li key={p.name}>
-                  <a
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`${FOOTER_RHYTHM.row} gap-1 font-sans text-ivory/80 hover:text-ivory transition-colors duration-150`}
-                  >
-                    {p.name}
-                    <ExternalArrow />
-                    <span className="sr-only">{FOOTER_NEW_TAB_CUE}</span>
-                  </a>
-                </li>
-              ) : (
-                <li key={p.name}>
-                  <span className={`${FOOTER_RHYTHM.row} font-sans text-ivory/80`}>{p.name}</span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-
-        {/* Col 4 — Stay in touch */}
+        {/* Col 3 — Stay in touch */}
         <div className="flex flex-col gap-3">
           <div className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory/55 mb-1">
             {FOOTER_HEADINGS.touch}
@@ -144,14 +134,14 @@ export function Footer({ showCopyGap }: { showCopyGap: boolean }) {
               <Link
                 key={l.href}
                 href={l.href}
-                className="inline-flex min-h-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150"
+                className="inline-flex min-h-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]"
               >
                 {l.label}
               </Link>
             ))}
             <MediaKitFooterLink
               {...FOOTER_MEDIA_KIT}
-              className="inline-flex min-h-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150"
+              className="inline-flex min-h-11 items-center font-sans text-[13px] text-ivory/65 hover:text-ivory transition-colors duration-150 focus-visible:text-ivory focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]"
             />
           </div>
         </div>

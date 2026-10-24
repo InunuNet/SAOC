@@ -1,0 +1,15 @@
+[
+  { "input": "plain", "expected": "plain" },
+  { "input": "", "expected": "" },
+  { "input": "=1+1", "expected": "'=1+1" },
+  { "input": "+44123", "expected": "'+44123" },
+  { "input": "-2+3", "expected": "'-2+3" },
+  { "input": "@SUM(A1)", "expected": "'@SUM(A1)" },
+  { "input": "\tcmd", "expected": "'\tcmd" },
+  { "input": "\rcmd", "expected": "\"'\rcmd\"" },
+  { "input": "a,b", "expected": "\"a,b\"" },
+  { "input": "say \"hi\"", "expected": "\"say \"\"hi\"\"\"" },
+  { "input": "line1\nline2", "expected": "\"line1\nline2\"" },
+  { "input": "=a,b", "expected": "\"'=a,b\"" },
+  { "input": "a=b", "expected": "a=b" }
+]

@@ -7,20 +7,11 @@
 // is scoped to /admin/login only, mirroring app/(marketing)/layout.tsx.
 // =============================================================
 
-import { UtilityBar, Header, Footer } from '@/components/chrome';
-import { sanityFetch } from '@/sanity/lib/fetch';
-import { nationalShowQuery } from '@/sanity/queries';
-import type { ShowIdentity } from '@/types';
+import { Header, Footer } from '@/components/chrome';
 
-export default async function AdminLoginLayout({ children }: { children: React.ReactNode }) {
-  const show = await sanityFetch<ShowIdentity>({
-    query: nationalShowQuery,
-    tags: ['nationalShow', 'sanity'],
-  });
-
+export default function AdminLoginLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <UtilityBar show={show} />
       <Header />
       <main>{children}</main>
       <Footer showCopyGap={false} />

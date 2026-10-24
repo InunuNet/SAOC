@@ -1,0 +1,12 @@
+{
+ "allowed": [
+  "^components/chrome/Breadcrumb\\.tsx$",
+  "^components/ui/PageHero\\.tsx$",
+  "^app/\\(marketing\\)/societies/\\[slug\\]/page\\.tsx$",
+  "^app/not-found\\.tsx$",
+  "^components/nos/SectionNav\\.tsx$",
+  "^components/show/ShowSectionNav\\.tsx$",
+  "^docs/header-parity\\.md$"
+ ],
+ "mustStay": []
+}

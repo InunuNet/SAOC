@@ -143,7 +143,7 @@ export default async function SocietyPage({
         heading={society.name}
         lede={society.region ?? undefined}
       />
-      <div className="mx-auto max-w-[1280px] space-y-16 px-8 py-16 md:px-16">
+      <div className="saoc-container space-y-16 py-16">
         <SocietyFacts society={shown} />
 
         <SocietyAbout society={shown} withhold={withhold} />

@@ -28,7 +28,7 @@ export function SectionNav({ items, className = '' }: NosSectionNavProps) {
         .filter(Boolean)
         .join(' ')}
     >
-      <ul className="mx-auto flex max-w-[1280px] flex-wrap gap-x-6 gap-y-2 overflow-x-auto px-8 py-3">
+      <ul className="saoc-container flex flex-wrap gap-x-6 gap-y-2 overflow-x-auto py-3">
         {items.map((item) => (
           <li key={item.href}>
             <a

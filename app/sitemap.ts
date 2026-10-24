@@ -7,6 +7,7 @@ import { PAST_SHOWS_HREF, hasPastShowRecords } from '@/lib/data/past-shows';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import routeManifest from '@/content/national-show-routes.json';
 import { nosPath } from '@/lib/nos-paths';
+import { SAOC_STATIC_ROUTES } from '@/lib/saoc-sitemap-routes';
 import { requestSite } from '@/lib/request-site';
 import { nosOrigin, saocOrigin } from '@/lib/site-hosts';
 
@@ -26,8 +27,8 @@ import { nosOrigin, saocOrigin } from '@/lib/site-hosts';
 // `archiveYearRoutes` below, which enumerates real years from Sanity — a template slug
 // with a literal `[year]` segment is not a URL.
 //
-// SCOPED TO THIS BLOCK ONLY: staticRoutes (the SAOC pages) and the Sanity
-// society/event blocks below are untouched — they belong to the other lane.
+// The SAOC static pages come from lib/saoc-sitemap-routes.ts, which a contract check guards
+// against route-tree drift.
 interface NosManifestRoute {
   slug: string;
   indexable: boolean;
@@ -97,14 +98,12 @@ async function buildSaocSitemap(): Promise<MetadataRoute.Sitemap> {
     sanityFetch<{ slug: string }[]>({ query: eventSlugsQuery, tags: ['societyEvent'] }),
   ]);
 
-  const staticRoutes: MetadataRoute.Sitemap = [
-    { url: baseUrl, lastModified: new Date(), changeFrequency: 'weekly', priority: 1 },
-    { url: `${baseUrl}/about`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
-    { url: `${baseUrl}/societies`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
-    { url: `${baseUrl}/judging`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${baseUrl}/events`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${baseUrl}/contact`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.5 },
-  ];
+  const staticRoutes: MetadataRoute.Sitemap = SAOC_STATIC_ROUTES.map((route) => ({
+    url: `${baseUrl}${route.path}`,
+    lastModified: new Date(),
+    changeFrequency: route.changeFrequency,
+    priority: route.priority,
+  }));
 
   const societyRoutes: MetadataRoute.Sitemap = (societies ?? []).map((s) => ({
     url: `${baseUrl}/societies/${s.slug}`,

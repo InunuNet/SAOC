@@ -2,11 +2,14 @@ import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 
 import { SubmitEventForm } from '@/components/events/SubmitEventForm';
+import { buildPageMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: 'Submit an Event — SAOC',
-  robots: { index: false },
-};
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Submit an Event',
+  description: 'Your submission will be reviewed by the council before it appears on the site.',
+  path: '/events/submit',
+  noIndex: true,
+});
 
 async function isAuthenticated(): Promise<boolean> {
   try {

@@ -1,0 +1,106 @@
+schema: athanor.contract/v1
+slug: saoc-societies-footer
+goal: >-
+  Make /societies crawlable and finish the NOS Design rulings on it, and align the SAOC footer with
+  Lee-Ann's partner answer. (e) the society card links are in the server HTML and client JS only
+  filters; (f) SO-1 province chips in the sans 14px with a mono count, one filters row with the search
+  field, 44px targets; (g) SO-2 every card reserves its province eyebrow line; (h) P3 the duplicate
+  visible search label goes, the input keeps an aria-label; (i) FT-1 the Partners column is removed,
+  WOSA moves under the lockup below REG#/NPO as in the NOS footer (#77), the footer is three equal
+  columns, and no SANBI or Kirstenbosch partner remains on SAOC pages; (j) JU-1 the five /judging
+  section headings become display h2s (existing strings, no pill, no new copy); (k) JU-2 the
+  "Contact SAOC" link gets a 44px target. Governing rules:
+  docs/rules/no-invention.md; visual decisions only from design/design_handoff_saoc/ and branding/;
+  Lee-Ann's answers in .tmp/sandbox/health/leeann-doc-2026-10-24.txt (l.44-46). No email path is
+  touched, so no gws_inbox_check is declared; the triad linter (not wired into any gate) will report
+  that kind missing, which is correct here. Phase 4 is the local gate; phase 5 runs only after a
+  Brad-approved deploy to beta, and its browser manifest is a placeholder until then.
+created_at: '2026-10-24'
+autonomy: high
+features:
+  - id: F1
+    name: Societies SSR links, SO-1 filters and chips, SO-2 eyebrow, P3 label, FT-1 footer, JU-1 judging h2s, JU-2 contact target
+    status: pending
+goldens:
+  - contracts/golden/saoc-societies-footer/README.md
+  - contracts/golden/saoc-societies-footer/societies-fixture.json
+  - contracts/golden/saoc-societies-footer/judging-headings.json
+  - contracts/golden/saoc-societies-footer/fixtures/browser-manifest-deployed.json
+assertions:
+  phase: 4
+  checks:
+    # ---- (e) SSR links ----
+    - id: A1
+      description: SocietiesGrid, rendered server-side for the fixture, has exactly one link per society and no skeleton
+      phase: 4
+      command: pnpm exec tsx contracts/checks/saoc-societies-footer/check-societies-ssr.mts
+    - id: A2
+      description: the grid is server-safe and shared, the page's Suspense fallback is SocietiesFallback with every society, skeleton blocks are gone, and (f)(h) the filters row, chips and single search label match the golden
+      phase: 4
+      command: node contracts/checks/saoc-societies-footer/check-societies-static.mjs
+
+    # ---- (f) counts and (g) eyebrow ----
+    - id: A3
+      description: provinceCounts gives the fixture counts (ALL 6, WC 2, GP 2, KZN 1, EC 0), is computed from its input, and SocietyCard reserves the eyebrow line with identical classes and an aria-hidden non-breaking space when province is null
+      phase: 4
+      command: pnpm exec tsx contracts/checks/saoc-societies-footer/check-societies-view.mts
+
+    # ---- (i) footer and partners ----
+    - id: A4
+      description: Footer has no Partners column, WOSA sits once under FOOTER_REG in the NOS pattern, gridSaoc is three equal tracks, the NOS four-track grid is unchanged, and no SANBI or Kirstenbosch partner remains
+      phase: 4
+      command: node contracts/checks/saoc-societies-footer/check-footer-static.mjs
+    - id: A5
+      description: no SANBI, Kirstenbosch or Biodiversity text anywhere under components/ (placeholder-events venue 'Kirstenbosch Hall' lives in lib/data and is deliberately not covered)
+      phase: 4
+      command: "! grep -rniE 'sanbi|kirstenbosch|biodiversity' components"
+    - id: A6
+      description: lib/data/partners.ts is gone or clean, and nothing still imports a removed partners export
+      phase: 4
+      command: "! grep -rnE \"from '@/lib/data'\" components/chrome/Footer.tsx && (test ! -e lib/data/partners.ts || ! grep -qiE 'sanbi|kirstenbosch' lib/data/partners.ts)"
+
+    # ---- (j) JU-1 and (k) JU-2 ----
+    - id: A11
+      description: the five /judging headings (Overview, How judging works, SAOC awards, Becoming a judge, Accredited judges) are h2s on the .h2 display class with no eyebrow pill, strings unchanged, no design placeholder copy, 24px to body, hero eyebrow kept; Contact SAOC link is inline-flex, items-center, min-h-11 with its look unchanged
+      phase: 4
+      command: node contracts/checks/saoc-societies-footer/check-judging-static.mjs
+
+    # ---- hygiene ----
+    - id: A7
+      description: type-check passes (catches a dangling partners import or a missing SocietiesGrid export)
+      phase: 4
+      command: pnpm type-check
+      timeout_seconds: 280
+    - id: A8
+      description: eslint is clean on every touched file
+      phase: 4
+      command: pnpm exec eslint "app/(marketing)/societies" components/societies components/chrome/Footer.tsx components/chrome/footer-data.ts components/home/PartnersSection.tsx lib/societies-view.ts scripts/seed-sanity.ts "app/(marketing)/judging" components/judging
+      timeout_seconds: 200
+
+    # ---- post-deploy triad (phase 5, after Brad-approved push to beta) ----
+    - id: A9
+      description: >-
+        POST-DEPLOY ONLY. Codex adversarial review of the whole diff. Probe: a hydration mismatch
+        between the server fallback grid and the client grid; filters that stop working once JS loads;
+        a chip or the search field under 44px; the NOS footer changing; WOSA appearing twice; a
+        reintroduced SANBI or Kirstenbosch partner; a province invented for a society that has none.
+      type: codex_qa
+      phase: 5
+      target: >-
+        Adversarially review the current git diff (mission saoc-societies-footer): SocietiesGrid and
+        the Suspense fallback on /societies, SocietiesClient filters row and chips, lib/societies-view.ts,
+        SocietyCard eyebrow, SAOC Footer and footer-data, PartnersSection and lib/data/partners.ts.
+        Golden: contracts/golden/saoc-societies-footer/. Check that the NOS footer is byte-for-byte
+        unaffected and that no new colour, font or token was added.
+    - id: A10
+      description: >-
+        POST-DEPLOY ONLY. BrowserAgent against https://beta.saoc.co.za: raw server HTML of /societies
+        has one society link per card with JavaScript disabled; filtering still works with it on; filters
+        row, chips and counts at 1440 and 390 wide; Alfred County card title aligned with its row; footer
+        at 1440, 1024 and 390 wide with three columns, equal gaps and WOSA under REG#/NPO; home page
+        with no SANBI or Kirstenbosch; /judging computed styles of the five h2s (serif, size, weight 300,
+        text-transform none) against judging-headings.json, and the Contact SAOC link box at least 44px tall. Manifest is a placeholder until deploy (convention:
+        saoc-emblem-lockup A12).
+      type: browser_deployed_check
+      phase: 5
+      target: contracts/golden/saoc-societies-footer/fixtures/browser-manifest-deployed.json

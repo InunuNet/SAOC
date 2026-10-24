@@ -50,11 +50,14 @@ export function SocietyCard({ society }: SocietyCardProps) {
         </span>
       ) : null}
 
-      {society.province ? (
-        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-          {society.province}
-        </p>
-      ) : null}
+      {/* Without a province the same line is reserved (aria-hidden NBSP) so titles align across a
+          row; nothing is invented or announced. */}
+      <p
+        className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted"
+        aria-hidden={society.province ? undefined : 'true'}
+      >
+        {society.province ?? ' '}
+      </p>
 
       <h2 className="mt-2 font-serif font-normal text-[20px] leading-snug text-ink">
         {society.name}

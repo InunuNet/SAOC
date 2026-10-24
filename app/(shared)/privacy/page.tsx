@@ -2,18 +2,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { LegalHero } from '@/components/nos/LegalHero';
-import { fitDescription } from '@/lib/seo';
+import { buildPageMetadata } from '@/lib/seo';
 
 const LEDE =
   'How the South African Orchid Council handles your information.';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Privacy Policy',
-  description: fitDescription(
-    'Privacy policy for the South African Orchid Council website.',
-    LEDE,
-  ),
-};
+  description: 'Privacy policy for the South African Orchid Council website.',
+  lede: LEDE,
+  path: '/privacy',
+});
 
 export default function PrivacyPage() {
   return (

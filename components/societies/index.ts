@@ -1,5 +1,7 @@
 export { SocietyCard } from './SocietyCard';
 export type { SanitySociety, SocietyCardProps } from './SocietyCard';
+export { SocietiesGrid } from './SocietiesGrid';
+export type { SocietiesGridProps } from './SocietiesGrid';
 export { SocietyFacts } from './SocietyFacts';
 export type { SocietyFactsProps } from './SocietyFacts';
 export { SocietyAbout } from './SocietyAbout';

@@ -60,10 +60,10 @@ const VALID_INPUT = {
   fileName: 'logo.png',
   mimeType: 'image/png',
   // sizeBytes must equal the real decoded byte length of fileBase64 below (16 bytes --
-  // 'fake-png-content') -- see the M2 fix pass, 2026-09-01, that made this the authority
+  // the 8 PNG magic bytes + 'fakebody'; real magic bytes so the content sniff accepts it) -- see the M2 fix pass, 2026-09-01, that made this the authority
   // (Codex GPT-5.5 finding) in lib/vendor-marketing-upload-handler.ts.
   sizeBytes: 16,
-  fileBase64: 'ZmFrZS1wbmctY29udGVudA==',
+  fileBase64: 'iVBORw0KGgpmYWtlYm9keQ==',
 };
 
 function makeDeps({ key, exists, priorAttempts = [] }) {

@@ -4,11 +4,13 @@ import Link from 'next/link';
 import { LegalHero } from '@/components/nos/LegalHero';
 import { ProvisionalFigure } from '@/components/ui/ProvisionalFigure';
 import { PROVISIONAL_REFUND_POLICY } from '@/lib/provisional-figures';
+import { buildPageMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Refund & Cancellation Policy',
   description: 'Refund and cancellation policy for South African Orchid Council ticket sales.',
-};
+  path: '/refunds',
+});
 
 const [earlyTier, midTier, lateTier] = PROVISIONAL_REFUND_POLICY.cancellationTiers;
 

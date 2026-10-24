@@ -1,0 +1,487 @@
+{
+  "$comment": "HD-1 golden. Targets and tolerances for checks/compare-geometry.mjs; edit numbers here, never in the script. Measurements come from checks/measure-header.js run on both hosts at each width (scroll 0). 'when': full = viewport >= breakpoints.full, menu = breakpoints.row .. full-1, phone = < breakpoints.row, wide = >= breakpoints.row, all. Breakpoints are shared by both hosts and are always changed together (NOS Design ruling (d)). The widths measured are `widths` plus full-1, full, row-1, row. 'pair' = |saoc - nos| <= tol. 'same' = strings equal (fonts differ per host by design, so no family metric). 'target' = value within tol on every host that shows the element. 'hostOnly' restricts a rule to one host. A metric that is null on exactly one host fails; null on both is skipped. Rules carry 'feature': f2 (default) or f3 (HD-1b container); the CLI filters with --feature. 'sameAsMetric' compares two metrics on the same host within tol (content left edge vs lockup left edge). 'min' = value >= min - tol on every host that shows the element. Height parity (header-height-pair) holds at every width including 760 and 390: below breakpoints.row the first (lockup) row gets a min-height equal to the NOS lockup ink height at that width and the SAOC lockup is vertically centred in it; lockup width there is min(container content width, 405) (brand-width-capped). barRows counts rows by vertical centre lines (children whose centres differ by more than 8px are different rows), not by distinct tops: the 70px lockup and 44px items never share a top. brandCenterOffset (centre vs the whole bar) applies at >= row only; below row the lockup is alone on row 1, so brandRowCenterOffset (centre vs the first row's box) applies instead.",
+  "widths": [
+    2056,
+    1440,
+    1280,
+    1024,
+    760,
+    390
+  ],
+  "crossSiteWidth": 1440,
+  "crossSiteTolerance": {
+    "headerHeight": 1,
+    "brandLeft": 1,
+    "brandTop": 1
+  },
+  "rules": [
+    {
+      "id": "no-utility-bar",
+      "metric": "utilityBars",
+      "when": "all",
+      "each": 0
+    },
+    {
+      "id": "header-position",
+      "metric": "headerPosition",
+      "when": "all",
+      "same": true
+    },
+    {
+      "id": "bar-max-width",
+      "metric": "barMaxWidth",
+      "when": "full",
+      "pair": 1
+    },
+    {
+      "id": "bar-padding-top",
+      "metric": "barPaddingTop",
+      "when": "all",
+      "pair": 1
+    },
+    {
+      "id": "bar-padding-left",
+      "metric": "barPaddingLeft",
+      "when": "all",
+      "pair": 1
+    },
+    {
+      "id": "bar-gap",
+      "metric": "barGap",
+      "when": "wide",
+      "pair": 1
+    },
+    {
+      "id": "brand-left",
+      "metric": "brandLeft",
+      "when": "all",
+      "pair": 1
+    },
+    {
+      "id": "header-height-pair",
+      "metric": "headerHeight",
+      "when": "all",
+      "pair": 1
+    },
+    {
+      "id": "header-height-97",
+      "metric": "headerHeight",
+      "when": "wide",
+      "target": 97,
+      "tol": 1
+    },
+    {
+      "id": "brand-ink-width-pair",
+      "metric": "brandWidth",
+      "when": "all",
+      "pair": 2
+    },
+    {
+      "id": "brand-ink-width-405",
+      "metric": "brandWidth",
+      "when": "wide",
+      "target": 405,
+      "tol": 2
+    },
+    {
+      "id": "brand-width-capped",
+      "metric": "brandWidth",
+      "when": "all",
+      "sameAsMetric": "brandWidthBound",
+      "tol": 2
+    },
+    {
+      "id": "brand-centred-in-bar",
+      "metric": "brandCenterOffset",
+      "when": "wide",
+      "target": 0,
+      "tol": 1
+    },
+    {
+      "id": "brand-centred-in-first-row",
+      "metric": "brandRowCenterOffset",
+      "when": "phone",
+      "target": 0,
+      "tol": 1
+    },
+    {
+      "id": "bar-single-row",
+      "metric": "barRows",
+      "when": "full",
+      "each": 1
+    },
+    {
+      "id": "bar-single-row-menu",
+      "metric": "barRows",
+      "when": "menu",
+      "each": 1
+    },
+    {
+      "id": "bar-two-rows-phone",
+      "metric": "barRows",
+      "when": "phone",
+      "each": 2
+    },
+    {
+      "id": "nav-single-line",
+      "metric": "navSingleLine",
+      "when": "full",
+      "each": true
+    },
+    {
+      "id": "gap-brand-nav-min-24",
+      "metric": "gapBrandNav",
+      "when": "full",
+      "min": 24,
+      "tol": 0.5
+    },
+    {
+      "id": "gap-nav-search-12",
+      "metric": "gapNavSearch",
+      "when": "full",
+      "target": 12,
+      "tol": 1,
+      "hostOnly": "saoc"
+    },
+    {
+      "id": "gap-search-cta-12",
+      "metric": "gapSearchCta",
+      "when": "full",
+      "target": 12,
+      "tol": 1,
+      "hostOnly": "saoc"
+    },
+    {
+      "id": "gap-nav-cta-12-nos",
+      "metric": "gapNavCta",
+      "when": "full",
+      "target": 12,
+      "tol": 1,
+      "hostOnly": "nos"
+    },
+    {
+      "id": "item-height-44",
+      "metric": "itemHeightMin",
+      "when": "full",
+      "target": 44,
+      "tol": 0
+    },
+    {
+      "id": "item-height-44-max",
+      "metric": "itemHeightMax",
+      "when": "full",
+      "target": 44,
+      "tol": 0
+    },
+    {
+      "id": "item-font-size",
+      "metric": "itemFontSize",
+      "when": "full",
+      "same": true
+    },
+    {
+      "id": "item-font-weight",
+      "metric": "itemFontWeight",
+      "when": "full",
+      "same": true
+    },
+    {
+      "id": "item-line-height",
+      "metric": "itemLineHeight",
+      "when": "full",
+      "same": true
+    },
+    {
+      "id": "item-letter-spacing",
+      "metric": "itemLetterSpacing",
+      "when": "full",
+      "same": true
+    },
+    {
+      "id": "item-text-transform",
+      "metric": "itemTextTransform",
+      "when": "full",
+      "same": true
+    },
+    {
+      "id": "item-padding-x",
+      "metric": "itemPaddingLeft",
+      "when": "full",
+      "pair": 1
+    },
+    {
+      "id": "item-gap",
+      "metric": "itemGap",
+      "when": "full",
+      "pair": 1
+    },
+    {
+      "id": "cta-height-44",
+      "metric": "ctaHeight",
+      "when": "all",
+      "target": 44,
+      "tol": 1
+    },
+    {
+      "id": "cta-right-edge",
+      "metric": "ctaRight",
+      "when": "wide",
+      "pair": 1
+    },
+    {
+      "id": "cta-right-inset",
+      "metric": "ctaRightInset",
+      "when": "wide",
+      "pair": 1
+    },
+    {
+      "id": "cta-padding-y",
+      "metric": "ctaPaddingTop",
+      "when": "all",
+      "pair": 1
+    },
+    {
+      "id": "cta-padding-x",
+      "metric": "ctaPaddingLeft",
+      "when": "all",
+      "pair": 1
+    },
+    {
+      "id": "cta-radius",
+      "metric": "ctaRadius",
+      "when": "all",
+      "same": true
+    },
+    {
+      "id": "cta-font-size",
+      "metric": "ctaFontSize",
+      "when": "all",
+      "same": true
+    },
+    {
+      "id": "cta-font-weight",
+      "metric": "ctaFontWeight",
+      "when": "all",
+      "same": true
+    },
+    {
+      "id": "cta-line-height",
+      "metric": "ctaLineHeight",
+      "when": "all",
+      "same": true
+    },
+    {
+      "id": "cta-letter-spacing",
+      "metric": "ctaLetterSpacing",
+      "when": "all",
+      "same": true
+    },
+    {
+      "id": "cta-text-transform",
+      "metric": "ctaTextTransform",
+      "when": "all",
+      "same": true
+    },
+    {
+      "id": "search-width-44",
+      "metric": "searchWidth",
+      "when": "full",
+      "target": 44,
+      "tol": 0,
+      "hostOnly": "saoc"
+    },
+    {
+      "id": "search-height-44",
+      "metric": "searchHeight",
+      "when": "full",
+      "target": 44,
+      "tol": 0,
+      "hostOnly": "saoc"
+    },
+    {
+      "id": "menu-height",
+      "metric": "menuHeight",
+      "when": "menu",
+      "target": 44,
+      "tol": 1
+    },
+    {
+      "id": "menu-height-phone",
+      "metric": "menuHeight",
+      "when": "phone",
+      "target": 44,
+      "tol": 1
+    },
+    {
+      "id": "menu-label",
+      "metric": "menuText",
+      "when": "all",
+      "same": true
+    },
+    {
+      "id": "active-bar-offset",
+      "metric": "activeBarBottom",
+      "when": "full",
+      "same": true
+    },
+    {
+      "id": "active-bar-height",
+      "metric": "activeBarHeight",
+      "when": "full",
+      "same": true
+    },
+    {
+      "id": "active-bar-is-8px-2px",
+      "metric": "activeBarBottom",
+      "when": "full",
+      "each": "-8px"
+    },
+    {
+      "id": "active-bar-is-2px",
+      "metric": "activeBarHeight",
+      "when": "full",
+      "each": "2px"
+    },
+    {
+      "id": "content-starts-at-header-bottom",
+      "metric": "mainGap",
+      "when": "all",
+      "target": 0,
+      "tol": 1
+    },
+    {
+      "id": "no-horizontal-overflow",
+      "metric": "overflowX",
+      "when": "all",
+      "target": 0,
+      "tol": 0
+    },
+    {
+      "id": "content-left-edge",
+      "metric": "contentLeft",
+      "when": "full",
+      "pair": 1,
+      "feature": "f3"
+    },
+    {
+      "id": "h1-aligned-with-lockup",
+      "metric": "contentLeft",
+      "sameAsMetric": "brandLeft",
+      "tol": 1,
+      "when": "full",
+      "feature": "f3"
+    }
+  ],
+  "breakpoints": {
+    "full": 1384,
+    "row": 780,
+    "provenance": "row: MEASURED. Chromium (playwright) laid out the repo's own Manrope and Karla woff2 files: SAOC CTA 'Join a society' 120.4 + 48 = 168.4, NOS 'Tickets' 61.3 + 48 = 109.3 (matches the live 109), MENU button 104. Row = 405 lockup + 24 + 168.4 + 24 + 104 = 725.4 content; content = W - 2*clamp(16px,2.5vw,32px) gives W >= 764; 780 adds a 16px margin for a classic scrollbar. full: RULED by NOS Design (modified option B, final). SAOC nav at 600 14.5px/1 Manrope = items 497.7 + 7*18 padding + 6*2 gaps = 635.7. Bar = 405 lockup + 635.7 nav + 44 search + 168.4 CTA + 24 brand-nav (min) + 12 nav-search + 12 search-CTA = 1301.1px content. Content box = W - 2*32 once W >= 1280, so W >= 1365.1; + 16 classic scrollbar = 1381.1; rounded up with margin to 1384 (18.9px of slack over the bare fit). NOS needs less (nav narrower), so SAOC sets the shared value. Not confirmed by a build: the gate measures the real header at full-1, full, row-1 and row.",
+    "measuredWidths": {
+      "saocNavItems": [
+        [
+          "About",
+          42.3
+        ],
+        [
+          "Societies",
+          65.1
+        ],
+        [
+          "Judging & Awards",
+          120.9
+        ],
+        [
+          "Events",
+          47.2
+        ],
+        [
+          "National Show",
+          99.5
+        ],
+        [
+          "Sponsors",
+          65.6
+        ],
+        [
+          "Contact",
+          57.1
+        ]
+      ],
+      "nosNavItems": [
+        [
+          "Visit",
+          31.1
+        ],
+        [
+          "Programme",
+          79.3
+        ],
+        [
+          "Exhibit & trade",
+          106
+        ],
+        [
+          "Show sponsors",
+          103.1
+        ],
+        [
+          "Contact",
+          53.5
+        ]
+      ],
+      "saocCta": 168.4,
+      "nosCta": 109.3,
+      "menuButton": 104,
+      "saocNav": 635.7,
+      "saocFullRowContent": 1301.1,
+      "saocRowContent": 725.4,
+      "saocFullRowContentSpecBefore": 1325.1
+    }
+  },
+  "derivedWidths": "breakpoints.full-1, full, row-1, row are added at run time",
+  "menuButton": {
+    "ruling": "NOS Design HD-1 gap ruling 1 (final)",
+    "border": "1.5px solid var(--nh-control-border)",
+    "token": "--nh-control-border",
+    "recipe": "nav ink at 28% composited over the header ground, one solid token per host (NOS today: border 1.5px solid rgba(33,26,87,.28), nos-chrome.css:65)",
+    "saoc": {
+      "ink": "--ink #171917",
+      "ground": "--parchment #f4f3ec",
+      "composite": "#b6b6b0"
+    },
+    "nos": {
+      "ink": "--nc-royal #211A57",
+      "ground": "--nc-ground #FBFAF0",
+      "composite": "#bebbc5"
+    },
+    "ruleQualifies": false,
+    "ruleCheck": "CIE76 dE of the SAOC composite #b6b6b0 vs --rule #d9d7c9 = 12.6 (vs --rule-soft #e4e1d0 = 16.5); the ruling allows --rule only within dE 2, so a new token is required. Border is decorative (label identifies the control): no 3:1 gate.",
+    "channelTolerance": 2
+  },
+  "drawerSearch": {
+    "ruling": "NOS Design HD-1 gap ruling 2 (final)",
+    "below": "breakpoints.full",
+    "position": "first row of the drawer, above the nav items",
+    "row": "full width, 44px tall",
+    "icon": "existing lucide Search icon at 18px (Header.tsx:168)",
+    "label": "Search SAOC",
+    "labelSource": "SearchOverlay.tsx:124, the dialog's own aria-label; no new string",
+    "opens": "the same SearchOverlay dialog",
+    "headerIconAriaLabel": "Open search (Header.tsx:164), kept above breakpoints.full"
+  },
+  "fullRowGaps": {
+    "ruling": "NOS Design HD-1 fit ruling (modified B, final)",
+    "brandNavMin": 24,
+    "navSearch": 12,
+    "searchCta": 12,
+    "navCtaNos": 12,
+    "note": "brand-nav via nav margin-left:auto with a 24px minimum; nav-search and search-cta are 12 on SAOC; NOS has no search, so nav-cta is 12. Item padding stays 0 9 (the 44px hit area)."
+  },
+  "routes": {
+    "saoc": "/",
+    "nos": "/faq",
+    "activeBarSaoc": "/about",
+    "activeBarNos": "/faq",
+    "why": "contentLeft needs an h1 that starts on the container's left edge: SAOC / (home Hero, left-aligned in .saoc-container) and NOS /faq (NosHero, left). SAOC /about uses PageHero, whose h1 is centred, so it is only used for the active-bar metrics, which need a current nav item (not present on /). Measure every width on routes.saoc / routes.nos; at widths >= breakpoints.full also load activeBarSaoc and merge its activeBarBottom and activeBarHeight into the same width entry."
+  }
+}

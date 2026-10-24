@@ -26,7 +26,6 @@ export const FOOTER_NAV: ReadonlyArray<{
 
 export const FOOTER_HEADINGS = {
   explore: 'Explore',
-  partners: 'Partners',
   touch: 'Stay in touch',
 };
 
@@ -45,7 +44,7 @@ export const FOOTER_BULLETIN = {
   submitLabel: 'Subscribe',
 };
 
-/** The Wild Orchids of Southern Africa link, once per footer: the first Partner on SAOC, the credit column on NOS. */
+/** The Wild Orchids of Southern Africa link, once per footer: under the lockup on both skins. */
 export const FOOTER_WOSA = {
   label: 'Wild Orchids of Southern Africa',
   href: 'https://wildorchids.co.za',
@@ -72,10 +71,12 @@ export const FOOTER_MEDIA_KIT = { href: '/media-kit', label: 'Media kit' };
  * (NOS Design FT1). The brand block hugs its content and aligns with the copyright line (FT2).
  */
 export const FOOTER_LAYOUT = {
-  grid: 'grid grid-cols-1 gap-x-8 gap-y-12 py-16 px-8 max-w-[1280px] mx-auto md:grid-cols-2 xl:grid-cols-[auto_auto_auto_300px] xl:justify-between',
+  grid: 'grid grid-cols-1 gap-x-8 gap-y-12 py-16 saoc-container md:grid-cols-2 xl:grid-cols-[auto_auto_auto_300px] xl:justify-between',
+  gridSaoc:
+    'grid grid-cols-1 gap-x-8 gap-y-12 py-16 saoc-container md:grid-cols-2 xl:grid-cols-[auto_auto_300px] xl:justify-between',
   brandColumn: 'flex w-fit flex-col items-center gap-4',
   brandMark: 'flex justify-center',
-  bar: 'mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-8 py-4 flex-wrap',
+  bar: 'saoc-container flex items-center justify-between gap-4 py-4 flex-wrap',
   legal: 'flex items-center gap-4 flex-wrap',
 };
 
