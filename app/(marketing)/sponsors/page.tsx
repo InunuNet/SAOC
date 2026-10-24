@@ -63,8 +63,7 @@ export default async function SponsorsPage() {
   return (
     <>
       <PageHero
-        image="/images/nos-hero-saoc-sponsors.jpg"
-        imagePosition="50% 50%"
+        image="/images/orchid-yellow.jpg"
         eyebrow="Our sponsors"
         heading="Sponsors"
         lede={LEDE}
