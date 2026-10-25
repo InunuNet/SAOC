@@ -48,10 +48,11 @@ interface JudgingPageData {
 
 const PHOTO_CAPTION = 'Form, colour, size, condition — judged against published criteria';
 
-// Fallback figure: the award-tier count derived from the awards actually returned rather than
-// hardcoded. The judge, year and society figures are left out (Lee-Ann, 24 Oct 2026).
+// Fallback figure: the award-tier count derived from the awards actually returned. With none
+// returned there is no figure to show, so no stat is drawn (nothing is invented). The judge, year and
+// society figures are left out (Lee-Ann, 24 Oct 2026).
 function buildFallbackStats(awardCount: number): StatItem[] {
-  return [{ value: String(awardCount || 6), label: 'Award Tiers' }];
+  return awardCount > 0 ? [{ value: String(awardCount), label: 'Award Tiers' }] : [];
 }
 
 interface ProseSection {

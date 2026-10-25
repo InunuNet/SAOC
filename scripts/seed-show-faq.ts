@@ -8,20 +8,27 @@
  *
  * --apply:
  *   1. reads NEXT_PUBLIC_SANITY_PROJECT_ID, NEXT_PUBLIC_SANITY_DATASET and SANITY_API_TOKEN (write
- *      enabled) from the environment or .env.local,
- *   2. backs up every existing showFaq document to .tmp/sandbox/faq-backup/ and stops if that fails,
- *   3. re-reads the revisions just before committing and stops if any showFaq document changed
- *      since the backup,
- *   4. commits one transaction: createOrReplace on showFaq-q<N> for each question, then delete of
- *      the legacy ids.
+ *      enabled) from the environment first, falling back to .env.local only for a variable the
+ *      environment lacks (a missing .env.local is fine when the environment has all three),
+ *   2. fetches every existing showFaq document once, writes that exact fetch to
+ *      .tmp/sandbox/faq-backup/ and stops if the backup fails; the revisions in that fetch are the
+ *      ones the write is guarded by,
+ *   3. commits ONE transaction in which every change to an existing document carries ifRevisionID
+ *      (the revision captured at backup time), so a concurrent Studio edit aborts the whole
+ *      transaction instead of being overwritten:
+ *        - a question that already exists is replaced through a revision-guarded patch (every seed
+ *          field set, every other field unset),
+ *        - a brand-new question is created with `create`, which fails if the id appeared meanwhile,
+ *        - each legacy id is guarded by a revision-checked no-op patch, then deleted.
+ *      Drafts (drafts.showFaq-...) are never touched.
  *
  * Run with: pnpm exec tsx scripts/seed-show-faq.ts [--apply]
  */
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { createClient, type SanityClient } from '@sanity/client';
+import { createClient, type SanityClient, type Transaction } from '@sanity/client';
 
 const API_VERSION = '2024-01-01';
 const BACKUP_DIR = '.tmp/sandbox/faq-backup';
@@ -740,10 +747,25 @@ export function buildDocuments(): FaqDocument[] {
   });
 }
 
+const SYSTEM_FIELDS: ReadonlySet<string> = new Set([
+  '_id',
+  '_type',
+  '_rev',
+  '_createdAt',
+  '_updatedAt',
+]);
+
+interface ExistingDocument {
+  _id: string;
+  _rev: string;
+  [field: string]: unknown;
+}
+
 function readEnvLocal(): Record<string, string> {
-  const raw = readFileSync(path.resolve(process.cwd(), '.env.local'), 'utf8');
+  const file = path.resolve(process.cwd(), '.env.local');
+  if (!existsSync(file)) return {};
   const out: Record<string, string> = {};
-  for (const line of raw.split('\n')) {
+  for (const line of readFileSync(file, 'utf8').split('\n')) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
     const eq = trimmed.indexOf('=');
@@ -760,58 +782,89 @@ function readEnvLocal(): Record<string, string> {
   return out;
 }
 
-function requireEnv(name: string, local: Record<string, string>): string {
-  const value = process.env[name] ?? local[name];
+// The environment wins; .env.local is read only when a variable is missing from it.
+function readCredential(name: string, getLocal: () => Record<string, string>): string {
+  const value = process.env[name] ?? getLocal()[name];
   if (!value) throw new Error(`${name} is not set (environment or .env.local)`);
   return value;
 }
 
 function makeClient(): SanityClient {
-  const local = readEnvLocal();
+  let local: Record<string, string> | null = null;
+  const getLocal = (): Record<string, string> => (local ??= readEnvLocal());
   return createClient({
-    projectId: requireEnv('NEXT_PUBLIC_SANITY_PROJECT_ID', local),
-    dataset: requireEnv('NEXT_PUBLIC_SANITY_DATASET', local),
-    token: requireEnv('SANITY_API_TOKEN', local),
+    projectId: readCredential('NEXT_PUBLIC_SANITY_PROJECT_ID', getLocal),
+    dataset: readCredential('NEXT_PUBLIC_SANITY_DATASET', getLocal),
+    token: readCredential('SANITY_API_TOKEN', getLocal),
     apiVersion: API_VERSION,
     useCdn: false,
   });
 }
 
-interface RevisionRow {
-  _id: string;
-  _rev: string;
-}
-
-async function currentRevisions(client: SanityClient): Promise<RevisionRow[]> {
-  return client.fetch<RevisionRow[]>('*[_type == "showFaq"]{_id, _rev} | order(_id asc)');
-}
-
-async function backupExisting(client: SanityClient): Promise<string> {
-  const existing = await client.fetch<unknown[]>('*[_type == "showFaq"] | order(_id asc)');
+/** One fetch: the backup file and the revisions the write is guarded by come from the same read. */
+async function backupExisting(
+  client: SanityClient
+): Promise<{ file: string; existing: Map<string, ExistingDocument> }> {
+  const rows = await client.fetch<ExistingDocument[]>('*[_type == "showFaq"] | order(_id asc)');
   mkdirSync(BACKUP_DIR, { recursive: true });
   const file = path.join(BACKUP_DIR, `showFaq-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
-  writeFileSync(file, JSON.stringify(existing, null, 2));
-  return file;
+  writeFileSync(file, JSON.stringify(rows, null, 2));
+  return { file, existing: new Map(rows.map((row) => [row._id, row])) };
+}
+
+function replaceGuarded(
+  transaction: Transaction,
+  doc: FaqDocument,
+  current: ExistingDocument
+): void {
+  const { _id, _type, ...fields } = doc;
+  const stale = Object.keys(current).filter(
+    (key) => !SYSTEM_FIELDS.has(key) && !(key in fields)
+  );
+  transaction.patch(_id, {
+    ifRevisionID: current._rev,
+    set: { ...fields },
+    ...(stale.length > 0 ? { unset: stale } : {}),
+  });
+  if (current._type !== _type) {
+    throw new Error(`${_id} exists with type ${String(current._type)}; refusing to overwrite it.`);
+  }
 }
 
 async function apply(documents: FaqDocument[]): Promise<void> {
   const client = makeClient();
-  const before = await currentRevisions(client);
-  const backupFile = await backupExisting(client);
-  const after = await currentRevisions(client);
-  if (JSON.stringify(before) !== JSON.stringify(after)) {
-    throw new Error('showFaq documents changed while backing up; nothing was written. Re-run.');
-  }
+  const { file: backupFile, existing } = await backupExisting(client);
   const transaction = client.transaction();
-  for (const doc of documents) transaction.createOrReplace(doc);
-  for (const id of LEGACY_IDS) transaction.delete(id);
+  let created = 0;
+  let replaced = 0;
+  for (const doc of documents) {
+    const current = existing.get(doc._id);
+    if (current) {
+      replaceGuarded(transaction, doc, current);
+      replaced += 1;
+    } else {
+      transaction.create(doc);
+      created += 1;
+    }
+  }
+  let deleted = 0;
+  for (const id of LEGACY_IDS) {
+    const current = existing.get(id);
+    if (!current) continue;
+    // A revision-checked no-op: it fails the whole transaction if the document changed, and the
+    // delete that follows removes it.
+    transaction.patch(id, { ifRevisionID: current._rev, setIfMissing: { active: false } });
+    transaction.delete(id);
+    deleted += 1;
+  }
   const result = await transaction.commit();
   process.stdout.write(
     `${JSON.stringify({
       mode: 'apply',
       backup: backupFile,
-      written: documents.length,
-      deleted: LEGACY_IDS.length,
+      created,
+      replaced,
+      deleted,
       transactionId: result.transactionId,
     })}\n`
   );

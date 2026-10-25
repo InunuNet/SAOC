@@ -9,3 +9,7 @@ Each entry is a pre-existing check that pinned copy or a type shape this milesto
 # Outside the M2 allow-list, edited with the lead's ruling (M2)
 
 - `scripts/generate-nos-route-manifest.ts`: the `/national-show/sa-exhibitors` entry is removed, because the route was retired (merged into `/national-show/vendors`) and regenerating `content/national-show-routes.json` would otherwise re-add it. Not a check, but outside the allow-list.
+
+# Superseded, not edited (M2)
+
+- `contracts/checks/launch-weekend/f14/check-i-copy.mjs` (line 31) still pins "21 societies" and "56 accredited judges" on the home page. Her H1 answer ("You can leave this information out for now") removes the unsourced stats, so those pins are superseded by `leeann-content/ff.mts stats`. The check was already unable to run (it throws in `page.evaluate`), so it is left unedited.
