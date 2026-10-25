@@ -5,6 +5,7 @@ import { NosHero, heroFactsForEvent } from '@/components/nos/NosHero';
 import { NOS_ROUTE_HEROES } from '@/components/nos/nos-route-heroes';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { SalesStatusLine, TicketCard } from '@/components/tickets/keepsake';
+import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
 import { loadShowFacts } from '@/lib/data/show-facts';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
@@ -96,16 +97,34 @@ export default async function ConferencesTicketsPage() {
         priority
       />
       {!salesOpen ? <SalesStatusLine /> : null}
-      <div className="nos-cr-body" data-doc-layout="">
-        <div data-nos-wrap="">
-          {CONFERENCE_ROWS.map((row) => {
-            const vm = cards[row.id];
-            return (
-              <section
-                key={row.id}
-                data-conference-row=""
-                className="nos-cr-row"
-                aria-labelledby={`cr-${row.id}-h`}
+      <div className="nos-cr-body">
+        {CONFERENCE_ROWS.map((row) => {
+          const vm = cards[row.id];
+          return (
+            <section
+              key={row.id}
+              data-conference-row=""
+              className="nos-cr-row"
+              aria-labelledby={`cr-${row.id}-h`}
+            >
+              <DocumentLayout
+                aside={
+                  vm ? (
+                    <div className="nk-grid">
+                      <div className="nk-wrap">
+                        <TicketCard
+                          productId={row.id}
+                          vm={vm}
+                          name={vm.name}
+                          partnerName={partnerNameOf(row.id, cards)}
+                          showProvisional={showProvisional}
+                        />
+                      </div>
+                    </div>
+                  ) : undefined
+                }
+                asideFirst
+                asideBare
               >
                 <div className="nos-cr-main">
                   <h2 id={`cr-${row.id}-h`}>{row.heading}</h2>
@@ -119,25 +138,10 @@ export default async function ConferencesTicketsPage() {
                     {row.linkLabel} <span aria-hidden="true">&rarr;</span>
                   </Link>
                 </div>
-                {vm ? (
-                  <div className="nos-cr-ticket">
-                    <div className="nk-grid">
-                      <div className="nk-wrap">
-                        <TicketCard
-                          productId={row.id}
-                          vm={vm}
-                          name={vm.name}
-                          partnerName={partnerNameOf(row.id, cards)}
-                          showProvisional={showProvisional}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-              </section>
-            );
-          })}
-        </div>
+              </DocumentLayout>
+            </section>
+          );
+        })}
       </div>
       <NosShowIndex current="/national-show/conferences" />
     </>

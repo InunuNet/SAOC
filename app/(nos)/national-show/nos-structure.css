@@ -174,6 +174,11 @@
 .nos-theme p {
   max-width: 60ch;
 }
+/* A smaller note inside .doc-prose takes the column's 60ch, not 60ch of its own smaller font. */
+/* (the legal draft notice) */
+.nos-theme .doc-prose > p.text-muted {
+  max-width: none;
+}
 
 /* R17: controls are 10px (mock .btn, I:99-107). nos-theme.css carries the older 2px. */
 .nos-theme {
@@ -913,9 +918,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 
 /* PR-1 / IG-G1: the shared editorial profile, portrait left (320), never a card grid. */
-.nos-theme .nos-pr-body {
-  padding-block: clamp(48px, 5vw, 72px) clamp(72px, 9vw, 120px);
-}
 .nos-theme .nos-pr-section-head {
   display: grid;
   gap: 10px;
@@ -1152,23 +1154,9 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     font-size: 1.1875rem;
   }
 }
-/* SY-G1 / WO-G1: an event page is the copy at 7, the live ticket at 5 (first below 1024), then its presenters. */
-.nos-theme .nos-ev-body {
-  display: grid;
-  padding-block: clamp(56px, 6vw, 88px) clamp(72px, 9vw, 120px);
-}
-.nos-theme .nos-ev-body > [data-nos-wrap] {
-  display: grid;
-  gap: clamp(72px, 8vw, 112px);
-}
-.nos-theme .nos-ev-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-  gap: clamp(40px, 6vw, 80px);
-  align-items: start;
-}
-.nos-theme .nos-ev-grid > * {
-  min-width: 0;
+/* SY-G1 / WO-G1: an event page is the copy at 7, the live ticket at 5 (DocumentLayout, aside first below 1024, bare), then its presenters. */
+.nos-theme .nos-ev-presenters {
+  padding-bottom: clamp(72px, 9vw, 120px);
 }
 .nos-theme .nos-ev-main {
   display: grid;
@@ -1187,12 +1175,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-size: 1.0625rem;
   line-height: 1.65;
 }
-.nos-theme .nos-ev-ticket {
-  position: sticky;
-  top: 100px;
-}
-.nos-theme .nos-ev-ticket > *,
-.nos-theme .nos-ev-ticket .nk-grid {
+.nos-theme [data-doc-aside] .nk-grid {
   margin: 0;
 }
 .nos-theme .nos-ev-faq {
@@ -1218,7 +1201,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nos-qa h3 {
   margin: 0;
   font-weight: 400;
-  font-size: 1.375rem;
+  font-size: var(--fs-lg);
   line-height: 1.25;
 }
 .nos-theme .nos-qa p {
@@ -1226,16 +1209,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   margin: 0;
   font-size: 1rem;
   line-height: 1.6;
-}
-@media (max-width: 1023px) {
-  .nos-theme .nos-ev-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .nos-theme .nos-ev-ticket {
-    position: static;
-    order: -1;
-    max-width: 440px;
-  }
 }
 /* LT-1: a long inner title (over 20 characters) takes a smaller clamp and the whole column, so it stays on one line. */
 .nos-theme .nos-hero-inner .nos-hero-title.is-long {
@@ -2905,6 +2878,11 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   box-shadow: var(--shadow-md);
   padding: clamp(24px, 3vw, 36px);
 }
+.nos-theme .doc-aside.doc-aside--bare {
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
 @media (min-width: 1024px) {
   .nos-theme .doc-aside[data-doc-aside-kind='index'] {
     max-height: calc(100vh - 124px);
@@ -3010,7 +2988,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-family: var(--serif);
   font-size: 1.5625rem;
   font-weight: 400;
-  line-height: 1.2;
+  line-height: 1.15;
   color: var(--ink);
 }
 .nos-theme .nos-sp-card p {
@@ -3106,7 +3084,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-family: var(--serif);
   font-size: 1.5625rem;
   font-weight: 400;
-  line-height: 1.2;
+  line-height: 1.25;
   color: var(--ink);
   transition: transform var(--dur-slow) var(--ease-nos);
 }
@@ -3901,25 +3879,21 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 .nos-theme .nos-cr-body {
   display: grid;
-  padding-block: clamp(56px, 6vw, 88px) clamp(72px, 9vw, 120px);
+  padding-block: 0 clamp(24px, 4vw, 56px);
 }
-.nos-theme .nos-cr-row {
-  display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-  gap: clamp(40px, 6vw, 80px);
-  align-items: center;
-  padding-block: clamp(48px, 5vw, 72px);
+/* The first row's DocumentLayout carries the 64/48 gap itself; the wrapper must not add it again. */
+.nos-theme .nos-subnav + .nos-cr-body {
+  padding-top: 0;
+}
+.nos-theme .nos-cr-row + .nos-cr-row {
   border-top: 1px solid var(--rule-soft);
 }
-.nos-theme .nos-cr-row:first-child {
-  padding-top: 0;
-  border-top: 0;
+.nos-theme .nos-cr-row .doc-layout {
+  align-items: center;
+  padding-bottom: clamp(48px, 5vw, 72px);
 }
-.nos-theme .nos-cr-row:last-child {
-  padding-bottom: 0;
-}
-.nos-theme .nos-cr-row > * {
-  min-width: 0;
+.nos-theme .nos-cr-row + .nos-cr-row .doc-layout {
+  padding-top: clamp(48px, 5vw, 72px);
 }
 .nos-theme .nos-cr-main {
   display: grid;
@@ -3956,36 +3930,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   text-decoration-color: var(--olive);
   text-decoration-thickness: 1.5px;
   text-underline-offset: 4px;
-}
-.nos-theme .nos-cr-ticket > *,
-.nos-theme .nos-cr-ticket .nk-grid {
-  margin: 0;
-}
-@media (max-width: 1023px) {
-  .nos-theme .nos-cr-row {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 20px;
-    align-items: start;
-  }
-  .nos-theme .nos-cr-main {
-    display: contents;
-  }
-  .nos-theme .nos-cr-main h2 {
-    order: 1;
-  }
-  .nos-theme .nos-cr-main .doc-standfirst {
-    order: 2;
-  }
-  .nos-theme .nos-cr-ticket {
-    order: 3;
-    max-width: 440px;
-  }
-  .nos-theme .nos-cr-text {
-    order: 4;
-  }
-  .nos-theme .nos-cr-link {
-    order: 5;
-  }
 }
 
 /* CT-G1 /contact: the form and the committee in the left column, the sticky address card in the right. */
@@ -4056,7 +4000,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-family: var(--serif);
   font-weight: 400;
   font-size: 1.125rem;
-  line-height: 1.3;
+  line-height: 1.15;
   letter-spacing: normal;
   text-transform: none;
   color: var(--ink);
@@ -4406,4 +4350,37 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   color: var(--ivory);
   margin: 0 auto 32px;
   text-wrap: balance;
+}
+
+/* Loader hero: an empty block holds the facts row's height so the sub-nav does not shift when the page streams in. */
+.nos-theme .nos-hero-actions:has(> .nos-hero-facts-skeleton) {
+  display: block;
+}
+.nos-theme .nos-hero-facts-skeleton {
+  min-height: 188px;
+}
+.nos-theme .nos-hero-facts-skeleton--cr {
+  min-height: 181px;
+}
+@media (min-width: 768px) {
+  .nos-theme .nos-hero-facts-skeleton,
+  .nos-theme .nos-hero-facts-skeleton--cr {
+    min-height: 76px;
+  }
+}
+@media (min-width: 1024px) {
+  .nos-theme .nos-hero-facts-skeleton {
+    min-height: 130px;
+  }
+  .nos-theme .nos-hero-facts-skeleton--cr {
+    min-height: 77px;
+  }
+}
+@media (min-width: 1280px) {
+  .nos-theme .nos-hero-facts-skeleton {
+    min-height: 106px;
+  }
+  .nos-theme .nos-hero-facts-skeleton--cr {
+    min-height: 79px;
+  }
 }

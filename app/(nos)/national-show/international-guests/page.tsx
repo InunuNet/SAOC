@@ -3,9 +3,11 @@ import type { Metadata } from 'next';
 import { heroFactsFromShow, NosHero } from '@/components/nos/NosHero';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { PresenterList } from '@/components/nos/PresenterSection';
+import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { loadShowFacts } from '@/lib/data/show-facts';
 import { buildPageMetadata } from '@/lib/seo';
 import { loadInternationalGuests } from '@/lib/view-models/load-presenters';
+import { orderPresenters } from '@/lib/view-models/presenter-order';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 // IG-G1 (NOS Design, comms.md 2026-10-25; spec 4.5): one editorial profile per guest, in record order,
@@ -43,11 +45,14 @@ export default async function InternationalGuestsPage() {
       />
 
       {guests.length > 0 ? (
-        <div className="nos-pr-body" data-doc-layout="">
-          <div data-nos-wrap="">
-            <PresenterList profiles={guests} level={2} showAppearing />
-          </div>
-        </div>
+        <DocumentLayout
+          index={orderPresenters(guests).map((guest) => ({
+            id: `guest-${guest.id}`,
+            label: guest.name,
+          }))}
+        >
+          <PresenterList profiles={guests} level={2} showAppearing />
+        </DocumentLayout>
       ) : null}
       <NosShowIndex current="/national-show/international-guests" />
     </>

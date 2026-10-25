@@ -540,6 +540,12 @@
     ],
     "exact": true,
     "golden": "EX-G1"
+   },
+   "h2Spec": {
+    "golden": "EX-G1",
+    "family": "fraunces",
+    "weight": "400",
+    "px": 25
    }
   },
   {
@@ -1039,6 +1045,12 @@
     "terms": null,
     "exact": false,
     "golden": "AR-1: none until records give real values"
+   },
+   "h2Spec": {
+    "golden": "AR-1",
+    "family": "fraunces",
+    "weight": "400",
+    "px": 25
    }
   },
   {

@@ -7,6 +7,7 @@ import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { PresenterSection } from '@/components/nos/PresenterSection';
 import { NOS_ROUTE_HEROES } from '@/components/nos/nos-route-heroes';
 import { TicketCard } from '@/components/tickets/keepsake';
+import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
 import { FAQ_SECTIONS } from '@/lib/data/faq-sections';
 import { loadShowFacts } from '@/lib/data/show-facts';
@@ -35,10 +36,18 @@ export const revalidate = 60;
 
 const EVENT = 'wosa-conference';
 const FAQ_HEADING = 'Frequently asked questions';
-const FAQ_IDS = ['showFaq-q46', 'showFaq-q49', 'showFaq-q51', 'showFaq-q53', 'showFaq-q54', 'showFaq-q55', 'showFaq-q56'];
+const FAQ_IDS = [
+  'showFaq-q46',
+  'showFaq-q49',
+  'showFaq-q51',
+  'showFaq-q53',
+  'showFaq-q54',
+  'showFaq-q55',
+  'showFaq-q56',
+];
 // What to Expect v1.0, the WOSA sentence, word for word.
 const STANDFIRST =
-  "A Conference held by Wild Orchids Southern Africa (WOSA) will highlight the ecology and conservation of indigenous orchids, illustrating how research undertaken in natural habitats continues to influence cultivation practices, breeding programmes and the long-term future of orchids.";
+  'A Conference held by Wild Orchids Southern Africa (WOSA) will highlight the ecology and conservation of indigenous orchids, illustrating how research undertaken in natural habitats continues to influence cultivation practices, breeding programmes and the long-term future of orchids.';
 // About v1.2, section 2.1, the WOSA paragraph, word for word.
 const WOSA_PARAGRAPH =
   "An important feature of the 2027 programme will be the participation of Wild Orchids of Southern Africa (WOSA). They will hold their annual conference as part of the National Orchid Show. Their involvement reflects the National Orchid Show's commitment to connecting conservation science with horticultural excellence, demonstrating how knowledge gained from orchids in the wild continues to shape responsible cultivation and the future sustainability of the orchid community.";
@@ -94,44 +103,45 @@ export default async function WosaConferencePage() {
         priority
       />
 
-      <div className="nos-ev-body" data-doc-layout="">
-        <div data-nos-wrap="">
-          <div className="nos-ev-grid">
-            <div className="nos-ev-main" data-doc-main="">
-              <p className="doc-standfirst">{STANDFIRST}</p>
-              <p>{WOSA_PARAGRAPH}</p>
-              {answered.length > 0 ? (
-                <section className="nos-ev-faq" aria-labelledby="wosa-faq-h">
-                  <h2 id="wosa-faq-h">{FAQ_HEADING}</h2>
-                  <div className="nos-qa">
-                    {answered.map((faq) => (
-                      <div key={faq._id}>
-                        <h3>{faq.question}</h3>
-                        <PortableText value={faq.answer ?? []} />
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              ) : null}
+      <DocumentLayout
+        aside={
+          card ? (
+            <div className="nk-grid">
+              <div className="nk-wrap">
+                <TicketCard
+                  productId="wosa"
+                  vm={card}
+                  name={card.name}
+                  partnerName={null}
+                  showProvisional={!withholdPlaceholderProse()}
+                />
+              </div>
             </div>
-            {card ? (
-              <aside className="nos-ev-ticket" data-doc-aside="" data-doc-aside-kind="content" aria-label="WOSA Conference ticket">
-                <div className="nk-grid">
-                  <div className="nk-wrap">
-                    <TicketCard
-                      productId="wosa"
-                      vm={card}
-                      name={card.name}
-                      partnerName={null}
-                      showProvisional={!withholdPlaceholderProse()}
-                    />
+          ) : undefined
+        }
+        asideFirst
+        asideBare
+      >
+        <div className="nos-ev-main">
+          <p className="doc-standfirst">{STANDFIRST}</p>
+          <p>{WOSA_PARAGRAPH}</p>
+          {answered.length > 0 ? (
+            <section className="nos-ev-faq" aria-labelledby="wosa-faq-h">
+              <h2 id="wosa-faq-h">{FAQ_HEADING}</h2>
+              <div className="nos-qa">
+                {answered.map((faq) => (
+                  <div key={faq._id}>
+                    <h3>{faq.question}</h3>
+                    <PortableText value={faq.answer ?? []} />
                   </div>
-                </div>
-              </aside>
-            ) : null}
-          </div>
-          <PresenterSection presenters={presenters} />
+                ))}
+              </div>
+            </section>
+          ) : null}
         </div>
+      </DocumentLayout>
+      <div className="nos-ev-presenters" data-nos-wrap="">
+        <PresenterSection presenters={presenters} />
       </div>
       <NosShowIndex current="/national-show/wosa-conference" />
     </>

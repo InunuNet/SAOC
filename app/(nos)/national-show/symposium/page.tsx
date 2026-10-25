@@ -4,6 +4,7 @@ import { heroFactsForEvent, NosHero } from '@/components/nos/NosHero';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { PresenterSection } from '@/components/nos/PresenterSection';
 import { TicketCard } from '@/components/tickets/keepsake';
+import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
 import { loadShowFacts } from '@/lib/data/show-facts';
 import { SYMPOSIUM_THEME_LINE } from '@/lib/data/show-page-presentation';
@@ -29,10 +30,10 @@ const PAGE_TITLE = 'Symposium';
 const EVENT = 'saoc-symposium';
 // Symposium Theme document (Drive: National Show / Symposium), the sentence under her theme title, word for word.
 const THEME_SENTENCE =
-  "Uniting conservation, science, and horticulture to explore how orchids in their natural environments inform responsible growing, breeding, and the sustainability of the orchid industry.";
+  'Uniting conservation, science, and horticulture to explore how orchids in their natural environments inform responsible growing, breeding, and the sustainability of the orchid industry.';
 // What to Expect v1.0, the Symposium paragraph: its first sentence, word for word.
 const PROGRAMME_SENTENCE =
-  "The National Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research.";
+  'The National Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research.';
 
 export const metadata: Metadata = buildPageMetadata({
   title: PAGE_TITLE,
@@ -66,31 +67,32 @@ export default async function SymposiumPage() {
         priority
       />
 
-      <div className="nos-ev-body" data-doc-layout="">
-        <div data-nos-wrap="">
-          <div className="nos-ev-grid">
-            <div className="nos-ev-main" data-doc-main="">
-              <p className="doc-standfirst">{THEME_SENTENCE}</p>
-              <p>{PROGRAMME_SENTENCE}</p>
+      <DocumentLayout
+        aside={
+          card ? (
+            <div className="nk-grid">
+              <div className="nk-wrap">
+                <TicketCard
+                  productId="symposium"
+                  vm={card}
+                  name={card.name}
+                  partnerName={null}
+                  showProvisional={!withholdPlaceholderProse()}
+                />
+              </div>
             </div>
-            {card ? (
-              <aside className="nos-ev-ticket" data-doc-aside="" data-doc-aside-kind="content" aria-label="Symposium ticket">
-                <div className="nk-grid">
-                  <div className="nk-wrap">
-                    <TicketCard
-                      productId="symposium"
-                      vm={card}
-                      name={card.name}
-                      partnerName={null}
-                      showProvisional={!withholdPlaceholderProse()}
-                    />
-                  </div>
-                </div>
-              </aside>
-            ) : null}
-          </div>
-          <PresenterSection presenters={presenters} />
+          ) : undefined
+        }
+        asideFirst
+        asideBare
+      >
+        <div className="nos-ev-main">
+          <p className="doc-standfirst">{THEME_SENTENCE}</p>
+          <p>{PROGRAMME_SENTENCE}</p>
         </div>
+      </DocumentLayout>
+      <div className="nos-ev-presenters" data-nos-wrap="">
+        <PresenterSection presenters={presenters} />
       </div>
       <NosShowIndex current="/national-show/symposium" />
     </>

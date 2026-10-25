@@ -10,6 +10,7 @@ export default function Loading() {
       title={NOS_ROUTE_HEROES.workshops.title}
       crumbLabel={NOS_ROUTE_HEROES.workshops.title}
       titleAs="p"
+      actions={<div className="nos-hero-facts-skeleton" aria-hidden="true" />}
       priority
     />
   );

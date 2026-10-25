@@ -6,6 +6,7 @@ import { heroFactsFromShow, NosHero } from '@/components/nos/NosHero';
 import { NOS_ROUTE_HEROES } from '@/components/nos/nos-route-heroes';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { TicketCard } from '@/components/tickets/keepsake';
+import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
 import { loadShowFacts } from '@/lib/data/show-facts';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
@@ -29,8 +30,8 @@ const FACTS_LABELS = ['Dates', 'Venue', 'Host'] as const;
 const FAQ_HEADING = 'Frequently asked questions';
 const FAQ_IDS = ['showFaq-q58', 'showFaq-q59', 'showFaq-q60'];
 // FAQ v1.0 question 57, its first two sentences, word for word.
-const STANDFIRST = "Workshops are planned as part of the wider event programme.";
-const BODY = "The topics, instructors, dates, costs and booking arrangements are to be confirmed.";
+const STANDFIRST = 'Workshops are planned as part of the wider event programme.';
+const BODY = 'The topics, instructors, dates, costs and booking arrangements are to be confirmed.';
 const WORKSHOP_FAQ_QUERY = defineQuery(`
   *[_type == "showFaq" && active == true && _id in $ids] | order(order asc){
     _id,
@@ -76,44 +77,43 @@ export default async function WorkshopsPage() {
         priority
       />
 
-      <div className="nos-ev-body" data-doc-layout="">
-        <div data-nos-wrap="">
-          <div className="nos-ev-grid">
-            <div className="nos-ev-main" data-doc-main="">
-              <p className="doc-standfirst">{STANDFIRST}</p>
-              <p>{BODY}</p>
-              {answered.length > 0 ? (
-                <section className="nos-ev-faq" aria-labelledby="workshops-faq-h">
-                  <h2 id="workshops-faq-h">{FAQ_HEADING}</h2>
-                  <div className="nos-qa">
-                    {answered.map((faq) => (
-                      <div key={faq._id}>
-                        <h3>{faq.question}</h3>
-                        <PortableText value={faq.answer ?? []} />
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              ) : null}
+      <DocumentLayout
+        aside={
+          card ? (
+            <div className="nk-grid">
+              <div className="nk-wrap">
+                <TicketCard
+                  productId="workshops"
+                  vm={card}
+                  name={card.name}
+                  partnerName={null}
+                  showProvisional={!withholdPlaceholderProse()}
+                />
+              </div>
             </div>
-            {card ? (
-              <aside className="nos-ev-ticket" data-doc-aside="" data-doc-aside-kind="content" aria-label="Workshops ticket">
-                <div className="nk-grid">
-                  <div className="nk-wrap">
-                    <TicketCard
-                      productId="workshops"
-                      vm={card}
-                      name={card.name}
-                      partnerName={null}
-                      showProvisional={!withholdPlaceholderProse()}
-                    />
+          ) : undefined
+        }
+        asideFirst
+        asideBare
+      >
+        <div className="nos-ev-main">
+          <p className="doc-standfirst">{STANDFIRST}</p>
+          <p>{BODY}</p>
+          {answered.length > 0 ? (
+            <section className="nos-ev-faq" aria-labelledby="workshops-faq-h">
+              <h2 id="workshops-faq-h">{FAQ_HEADING}</h2>
+              <div className="nos-qa">
+                {answered.map((faq) => (
+                  <div key={faq._id}>
+                    <h3>{faq.question}</h3>
+                    <PortableText value={faq.answer ?? []} />
                   </div>
-                </div>
-              </aside>
-            ) : null}
-          </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
         </div>
-      </div>
+      </DocumentLayout>
       <NosShowIndex current="/national-show/workshops" />
     </>
   );

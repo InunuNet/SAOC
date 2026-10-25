@@ -10,7 +10,6 @@ import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { buildSectionLedes } from '@/lib/data/ticket-section-ledes';
 import {
   PROGRAMME_PRODUCTS,
-  TICKET_COPY,
   TICKET_DETAIL_HREFS,
   TICKET_PRODUCTS,
   partnerNameOf,
@@ -45,11 +44,17 @@ interface ShowDay {
 }
 
 const TIMETABLE_HEADING = 'Show dates – for public entrance';
+const TICKETS_HEADING = 'Tickets';
 const TIMETABLE_DATE_LINE = 'Thursday 23 to Sunday 26 September 2027';
 const OPENING_HOURS_LABEL = 'Opening hours';
 
 const SHOW_DAYS: readonly ShowDay[] = [
-  { weekday: 'Thursday', day: '23', month: 'September', hours: 'VIP Ticket Holders – 14.00 to 19.00' },
+  {
+    weekday: 'Thursday',
+    day: '23',
+    month: 'September',
+    hours: 'VIP Ticket Holders – 14.00 to 19.00',
+  },
   { weekday: 'Friday', day: '24', month: 'September', hours: '9.00 to 17.00' },
   { weekday: 'Saturday', day: '25', month: 'September', hours: '9.00 to 17.00' },
   { weekday: 'Sunday', day: '26', month: 'September', hours: '9.00 to 16.00' },
@@ -63,11 +68,14 @@ const CLOCK_TIME = /(\d{1,2})(?::(\d{2}))?\s*(am|pm)/gi;
 const NOON = 12;
 
 function herTimeStyle(meta: string): string {
-  return meta.replace(CLOCK_TIME, (_all, hour: string, minutes: string | undefined, meridiem: string) => {
-    const base = Number(hour) % NOON;
-    const h24 = meridiem.toLowerCase() === 'pm' ? base + NOON : base;
-    return `${h24}.${minutes ?? '00'}`;
-  });
+  return meta.replace(
+    CLOCK_TIME,
+    (_all, hour: string, minutes: string | undefined, meridiem: string) => {
+      const base = Number(hour) % NOON;
+      const h24 = meridiem.toLowerCase() === 'pm' ? base + NOON : base;
+      return `${h24}.${minutes ?? '00'}`;
+    }
+  );
 }
 
 function Arrow() {
@@ -93,13 +101,21 @@ function sessionsOn(weekday: string, day: string): Session[] {
     const product = TICKET_PRODUCTS[id];
     const href = TICKET_DETAIL_HREFS[id];
     if (!href || !product.when.startsWith(`${weekday} ${day} `)) return [];
-    return [{ id, href, time: product.meta ? herTimeStyle(product.meta) : null, name: product.name, subtitle: product.theme }];
+    return [
+      {
+        id,
+        href,
+        time: product.meta ? herTimeStyle(product.meta) : null,
+        name: product.name,
+        subtitle: product.theme,
+      },
+    ];
   });
 }
 
 function undatedProducts() {
   return PROGRAMME_PRODUCTS.map((id) => TICKET_PRODUCTS[id]).filter(
-    (product) => !SHOW_DAYS.some((d) => product.when.startsWith(`${d.weekday} ${d.day} `)),
+    (product) => !SHOW_DAYS.some((d) => product.when.startsWith(`${d.weekday} ${d.day} `))
   );
 }
 
@@ -137,62 +153,52 @@ export default async function ProgrammePage() {
       />
 
       <div data-programme-body="" className="nos-pg-body">
-        <div data-nos-wrap="">
-          <section className="nos-pg-days" aria-labelledby="pg-days-h">
-            <header className="nos-pg-head">
-              <h2 id="pg-days-h">{TIMETABLE_HEADING}</h2>
-              <p>{TIMETABLE_DATE_LINE}</p>
-            </header>
-            <ol className="nos-pg-board" data-programme-board="">
-              {SHOW_DAYS.map((d) => (
-                <li key={d.weekday} className="nos-pg-day">
-                  <p className="nos-pg-date">
-                    <span className="wd">{d.weekday}</span> <span className="d">{d.day}</span>{' '}
-                    <span className="m">{d.month}</span>
-                  </p>
-                  <div className="nos-pg-slots">
-                    <div className="nos-pg-hours">
-                      <span className="k">{OPENING_HOURS_LABEL}</span>{' '}
-                      <span className="v">{d.hours}</span>
-                    </div>
-                    {sessionsOn(d.weekday, d.day).map((session) => (
-                      <Link key={session.id} href={session.href} className="nos-pg-session">
-                        {session.time ? <span className="t">{session.time}</span> : null}{' '}
-                        <span className="n">{session.name}</span>
-                        {session.subtitle ? (
-                          <>
-                            {' '}
-                            <span className="s">{session.subtitle}</span>
-                          </>
-                        ) : null}
-                        <Arrow />
-                      </Link>
-                    ))}
+        <section className="nos-pg-days" data-nos-wrap="" aria-labelledby="pg-days-h">
+          <header className="nos-pg-head">
+            <h2 id="pg-days-h">{TIMETABLE_HEADING}</h2>
+            <p>{TIMETABLE_DATE_LINE}</p>
+          </header>
+          <ol className="nos-pg-board" data-programme-board="">
+            {SHOW_DAYS.map((d) => (
+              <li key={d.weekday} className="nos-pg-day">
+                <p className="nos-pg-date">
+                  <span className="wd">{d.weekday}</span> <span className="d">{d.day}</span>{' '}
+                  <span className="m">{d.month}</span>
+                </p>
+                <div className="nos-pg-slots">
+                  <div className="nos-pg-hours">
+                    <span className="k">{OPENING_HOURS_LABEL}</span>{' '}
+                    <span className="v">{d.hours}</span>
                   </div>
-                </li>
-              ))}
-            </ol>
-            {undatedProducts().map((product) => (
-              <Link key={product.id} href={WORKSHOPS_HREF} className="nos-pg-later">
-                <span className="n">{product.name}</span>{' '}
-                <span className="s">
-                  {[product.when, product.meta].filter(Boolean).join(' · ')}
-                </span>
-                <Arrow />
-              </Link>
+                  {sessionsOn(d.weekday, d.day).map((session) => (
+                    <Link key={session.id} href={session.href} className="nos-pg-session">
+                      {session.time ? <span className="t">{session.time}</span> : null}{' '}
+                      <span className="n">{session.name}</span>
+                      {session.subtitle ? (
+                        <>
+                          {' '}
+                          <span className="s">{session.subtitle}</span>
+                        </>
+                      ) : null}
+                      <Arrow />
+                    </Link>
+                  ))}
+                </div>
+              </li>
             ))}
-          </section>
-        </div>
+          </ol>
+          {undatedProducts().map((product) => (
+            <Link key={product.id} href={WORKSHOPS_HREF} className="nos-pg-later">
+              <span className="n">{product.name}</span>{' '}
+              <span className="s">{[product.when, product.meta].filter(Boolean).join(' · ')}</span>
+              <Arrow />
+            </Link>
+          ))}
+        </section>
       </div>
 
       {hasProgramme ? (
-        <TicketSection
-          id="programme"
-          title={TICKET_COPY.sections.programme}
-          lede={ledes.programme}
-          columns={3}
-          hideHeading
-        >
+        <TicketSection id="programme" title={TICKETS_HEADING} lede={ledes.programme} columns={3}>
           {PROGRAMME_PRODUCTS.map((id) => {
             const vm = cards[id];
             return vm ? (
