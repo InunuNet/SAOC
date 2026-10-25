@@ -11,3 +11,7 @@
 - contracts/checks/polish-wave-2026-10-25/f5-event-detail-rendered.mjs (F9 P2): the "band is below the meta table"
   assertion now measures against the h1, because the National Show event page drops its meta <dl> when the band
   renders (ruling P2). The band-once, CTA-href, chip and back-link assertions are unchanged.
+- contracts/checks/polish-wave-2026-10-25/f9-submit-rendered.mjs (F9 P3 fix): the centre reference was
+  documentElement.clientWidth / 2, which ignores the 15px `scrollbar-gutter: stable` reservation (measured 712.5 vs 720 at 1440,
+  952.5 vs 960 at 1920). It now compares the form centre with the centre of [data-page-hero] (falling back to main), per the
+  ruling's "centred under the hero". The 2px tolerance and the 480-640px width bounds are unchanged.
