@@ -166,7 +166,13 @@ export default async function ShowSponsorsPage() {
         lede={LEDE}
         facts={heroFactsFromShow(showFacts, FACTS_LABELS)}
         actions={
-          <Button as="a" href={SPONSORSHIP_MAILTO} variant="on-dark" className="nos-sp-hero-cta">
+          <Button
+            as="a"
+            href={SPONSORSHIP_MAILTO}
+            variant="on-dark"
+            className="nos-sp-hero-cta"
+            data-sponsors-hero-cta=""
+          >
             {CTA_LABEL}
             <Arrow />
           </Button>
@@ -250,7 +256,7 @@ export default async function ShowSponsorsPage() {
                   src={src}
                   alt=""
                   fill
-                  sizes="(min-width: 768px) 40vw, 100vw"
+                  sizes="(min-width: 1384px) 560px, (min-width: 768px) 42vw, 100vw"
                   style={{ objectPosition: position }}
                 />
               </li>

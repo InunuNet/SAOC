@@ -2861,16 +2861,15 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 
 .nos-theme .nos-sp-wall-head {
   display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-  gap: 24px clamp(40px, 6vw, 80px);
-  align-items: end;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
   margin-bottom: 40px;
 }
 .nos-theme .nos-sp-wall-head .doc-h2 {
   margin: 0;
 }
 .nos-theme .nos-sp-wall-head p {
-  max-width: 48ch;
+  max-width: 60ch;
   margin: 0;
   font-size: 1.0625rem;
   line-height: 1.6;
@@ -2992,4 +2991,70 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   grid-row: 2;
   font-family: var(--sans);
   font-size: 15px;
+}
+
+/* DS-1 (c) .ihero: the photograph's box runs from 38% to the right edge with no radius, its left 22%
+   masked into the black, under one 90deg ramp. The copy overlaps the masked part; from 1024 its column
+   is min(1080px, 62% of the content width). Below 768 the 2:1 band of PG-1 stands. */
+@media (min-width: 768px) {
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-media {
+    inset: 0 0 0 38%;
+    width: auto;
+    border-radius: 0;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, black 22%);
+    mask-image: linear-gradient(90deg, transparent 0, black 22%);
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 0 38%;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      rgba(11, 10, 20, 0.9) 0%,
+      rgba(11, 10, 20, 0.55) 24%,
+      rgba(11, 10, 20, 0.18) 52%,
+      rgba(11, 10, 20, 0.04) 100%
+    );
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {
+    width: auto;
+    padding-right: var(--nos-axis-pad);
+  }
+}
+@media (min-width: 1024px) {
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {
+    width: calc(
+      max(0px, (100cqw - var(--nos-axis-max)) / 2) + var(--nos-axis-pad) +
+        min(1080px, 0.62 * (min(var(--nos-axis-max), 100cqw) - 2 * var(--nos-axis-pad)))
+    );
+    padding-right: 0;
+  }
+}
+@media (max-width: 767px) {
+  .nos-theme .nos-hero-inner.nos-hero-photo::before {
+    content: none;
+  }
+  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-media {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+@media (min-width: 768px) {
+  .nos-theme .nos-hero-inner .nk-crumbs a {
+    margin-block: -11px;
+  }
+  .nos-theme .nos-hero-inner {
+    padding-block: clamp(40px, 3.2vw, 56px);
+  }
+  .nos-theme .nos-hero-inner .nos-hero-copy {
+    gap: 16px;
+  }
+}
+.nos-theme .hero-facts > div:first-child dd {
+  white-space: nowrap;
+}
+.nos-theme .hero-facts dd {
+  text-wrap: balance;
 }
