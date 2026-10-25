@@ -68,7 +68,7 @@ export function MissionBlock({ missionText, withhold = false }: MissionBlockProp
               </a>{' '}
               leads that work.
             </p>
-            {withhold ? null : <PlaceholderMarker />}
+            {!withhold && cmsUnsourced ? <PlaceholderMarker /> : null}
           </div>
         </div>
 

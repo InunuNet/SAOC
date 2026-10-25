@@ -36,6 +36,8 @@ export function EventCard({ event }: EventCardProps) {
   const dateId = `${id}-date`;
   const venueId = `${id}-venue`;
   const linked = Boolean(event.slug) && !event.isPlaceholder;
+  const locationInVenue = event.venue && event.location && event.venue.includes(event.location);
+  const venueLine = [event.venue, locationInVenue ? null : event.location].filter(Boolean).join(', ');
 
   const content = (
     <>
@@ -61,9 +63,9 @@ export function EventCard({ event }: EventCardProps) {
         >
           {event.title}
         </span>
-        {event.venue ? (
+        {venueLine ? (
           <p id={venueId} className="mt-1 font-sans text-[13.5px] text-ink/70">
-            {event.venue}
+            {venueLine}
           </p>
         ) : null}
       </div>
@@ -92,7 +94,7 @@ export function EventCard({ event }: EventCardProps) {
           data-event-row
           href={`/events/${event.slug}`}
           aria-labelledby={titleId}
-          aria-describedby={event.venue ? `${dateId} ${venueId}` : dateId}
+          aria-describedby={venueLine ? `${dateId} ${venueId}` : dateId}
           className={`group ${ROW_CLASSES} ${BAR_CLASSES}`}
         >
           {content}
