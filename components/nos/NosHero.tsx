@@ -40,7 +40,7 @@ import { subNavGroupFor } from './nos-subnav-groups';
 const FULL_BLEED_QUALITY = 88;
 
 // The inner photo is a 46% panel from 1024px, a 42% panel from 768px and a full-width band below it (nos-theme.css).
-// The panel is far narrower than the 1.9:1 crop is wide, so object-fit: cover scales the crop to the
+// The panel is far narrower than the 1.9:1 crop is wide, so object-fit: cover fits the crop to the
 // panel's HEIGHT: the painted width is height x aspect, not the panel width. The hero is at least
 // min(56vh, 560px) tall (nos-theme.css) and grows downward with a long lede, so `sizes` declares the
 // width painted at the 560px cap, never less than the panel itself, and the srcset is chosen for the
