@@ -102,7 +102,10 @@ export default async function ShowSponsorsPage() {
                     pendingLabel="To be confirmed by the show committee"
                   />
                 )}
-                <Card data-nos-empty-state="sponsors" className="mt-6 p-8">
+                <Card
+                  data-nos-empty-state="sponsors"
+                  className={withholdPlaceholderProse() ? 'p-8' : 'mt-6 p-8'}
+                >
                   <SectionHeading title="Become a sponsor" />
                   <p className="mt-3 max-w-[60ch] font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/80">
                     {NO_SPONSORS_YET}
