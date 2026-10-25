@@ -71,19 +71,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 3a. Rate limit per client IP, after auth: uids are free to mint, so the per-uid limit below
-  // does not bound a caller who registers new accounts. It runs only for a verified submitter,
-  // so unauthenticated traffic cannot use up an address's allowance for real users behind it.
-  const ip = clientIpFromForwardedFor(req.headers.get('x-forwarded-for'));
-  const ipLimit = consumeRateLimit(
-    { now: new Date(), ...scopeAttemptsToRequest(attempts) },
-    `event-submit-ip:${ip ?? 'unknown'}`,
-    PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
-    PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
-  );
-  if (!ipLimit.allowed) return tooManyAttempts(ipLimit.retryAfterSeconds);
-
-  // 3b. Rate limit per uid, before the body is parsed
+  // 3. Rate limit per uid, before the body is parsed
   const limit = consumeRateLimit(
     { now: new Date(), ...scopeAttemptsToRequest(attempts) },
     `event-submit:${uid}`,
@@ -109,6 +97,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
   const body = raw as SubmitBody; // validateEventSubmission() checked every field's type above
   const { title, kind, date, endDate, venue, location, description, hostSocietyId } = body;
+
+  // 4a. Rate limit per client IP: uids are free to mint, so the per-uid limit above does not
+  // bound a caller who registers new accounts. Only a verified submitter with a valid body
+  // counts, so unauthenticated or malformed requests cannot use up the allowance of real users
+  // behind a shared address.
+  const ip = clientIpFromForwardedFor(req.headers.get('x-forwarded-for'));
+  const ipLimit = consumeRateLimit(
+    { now: new Date(), ...scopeAttemptsToRequest(attempts) },
+    `event-submit-ip:${ip ?? 'unknown'}`,
+    PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
+    PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
+  );
+  if (!ipLimit.allowed) return tooManyAttempts(ipLimit.retryAfterSeconds);
 
   // 5. Build write client
   const sanityToken = process.env.SANITY_API_TOKEN;
