@@ -7,16 +7,28 @@ import { NosThemeScope } from '@/components/nos/NosThemeScope';
 import { NosFrame } from '@/components/site-chrome/NosFrame';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { requestSite } from '@/lib/request-site';
+import { SHOW_TITLE } from '@/lib/show-title';
 
-import { NosPageNotFound } from './(nos)/national-show/not-found';
+import {
+  NosPageNotFound,
+  metadata as nosNotFoundMetadata,
+} from './(nos)/national-show/not-found';
 
-export const metadata: Metadata = {
+export const saocNotFoundMetadata: Metadata = {
   title: 'Page not found',
   description:
     'The page you’re looking for doesn’t exist or may have moved. Start from the home page or find a society near you.',
   alternates: { canonical: null },
   robots: { index: false, follow: false },
 };
+
+// This route is the one not-found Next renders into the server HTML, so its head is host-aware too:
+// the NOS host takes the NOS strings (national-show/not-found.tsx) under the NOS title suffix, the SAOC
+// host keeps its own, unchanged. (marketing)/not-found.tsx re-exports the SAOC one as its `metadata`.
+export async function generateMetadata(): Promise<Metadata> {
+  if ((await requestSite()) !== 'nos') return saocNotFoundMetadata;
+  return { ...nosNotFoundMetadata, title: { absolute: `Page not found | ${SHOW_TITLE}` } };
+}
 
 export function NotFoundSection() {
   return (

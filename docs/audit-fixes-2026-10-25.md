@@ -34,3 +34,19 @@ NOS unmatched URLs never reached it: `proxy.ts` rewrites them to `/national-show
 Still client-rendered shells, a framework limit rather than something this batch can fix: a `notFound()` raised by a
 real NOS page (`/archive/<bad year>`, `/vendors/<bad>`, `/tickets/<bad>`) and by SAOC pages. They keep their 404
 status and `noindex`.
+
+## QA follow-up
+
+- `app/not-found.tsx` reads the request headers, so a statically generated route that calls `notFound()` for an
+  unknown param answered 500 ("Page changed from static to dynamic at runtime"), seen on NOS `/archive/1900`.
+  `app/(nos)/national-show/archive/[year]/page.tsx` is now `force-dynamic` (`dynamicParams = false` would 404 a newly
+  published year until the next deploy). The other two routes with `generateStaticParams` plus `notFound()`,
+  `/societies/[slug]` and `/events/[slug]`, were measured on a production build and answer 404, so they are unchanged.
+  `contracts/checks/audit-fixes-2026-10-25/bad-slug-probe.mjs` (needs a prior `pnpm build`) asserts 404 for each.
+- The root not-found head is host-aware (`generateMetadata`): the NOS host takes the NOS strings and the
+  `| The National Orchid Show` title suffix, the SAOC host keeps its own metadata unchanged
+  (`app/(marketing)/not-found.tsx` re-exports it as `metadata`).
+- Known, pre-existing Next limit, accepted: a `notFound()` thrown from a real page (`/archive/<bad>`, `/vendors/<bad>`,
+  `/tickets/<bad>`, SAOC `/societies/<bad>`) still ships the `__next_error__` shell (404 status, noindex, no `lang`
+  or h1 in the server HTML). Only unmatched URLs render the not-found server-side.
+- Test the NOS host on a production build with `Host: nos.saoc.co.za`; `nos.localhost` is the NOS host only in dev.
