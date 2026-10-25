@@ -18,19 +18,17 @@ export function withTestSubjectPrefix(subject: string, testMode = isTicketingTes
   return testMode ? `${TICKETING_TEST_TITLE_PREFIX} ${subject}` : subject;
 }
 
-// Public NOS-host paths and the internal /national-show/* forms they rewrite to (usePathname()
-// may report either). Matched on a segment boundary, never a string prefix.
+// The purchase and payment flows only: public NOS-host paths and the internal /national-show/*
+// forms they rewrite to (usePathname() may report either). Matched on a segment boundary, never a
+// string prefix. Information pages (/workshops, /wosa-conference) are deliberately absent: their
+// buy buttons land on /tickets/..., which is listed, so the bar still shows before any payment.
 const TICKETING_SURFACE_ROOTS = [
   '/tickets',
   '/vsp',
   '/conferences',
-  '/workshops',
-  '/wosa-conference',
   '/vendors/payment',
   '/national-show/tickets',
   '/national-show/conferences',
-  '/national-show/workshops',
-  '/national-show/wosa-conference',
   '/national-show/vendors/payment',
 ];
 
