@@ -31,10 +31,11 @@ function slideLabel(index: number, total: number, subject: string): string {
 const HERO_CTA_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 border px-6 py-3 font-sans text-[14px] font-medium transition-colors duration-150 sm:w-auto focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
 
-// Below 768px the copy sits over the bloom; this layer sits above the shared scrim and evens it out
-// (measured: the gold italic stays at or above 4.5:1 over the brightest petal at 390px).
+// Below 768px the copy sits over the bloom, so the one scrim element evens out its gradient there
+// (measured: the gold italic stays at or above 4.5:1 over the brightest petal at 390px). The
+// important modifier is needed because the base gradient in globals.css is unlayered.
 const PHONE_SCRIM_CLASSES =
-  'absolute inset-0 -z-10 bg-[linear-gradient(to_top,rgb(34_40_31/0.92)_0%,rgb(34_40_31/0.86)_60%,rgb(34_40_31/0.78)_100%)] md:hidden';
+  'absolute inset-0 -z-10 max-md:!bg-[linear-gradient(to_top,rgb(34_40_31/0.92)_0%,rgb(34_40_31/0.86)_60%,rgb(34_40_31/0.78)_100%)]';
 
 const CONTROL_FOCUS =
   'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
@@ -48,11 +49,9 @@ export interface HeroProps {
   images?: SanityImageSource[] | null;
   /** Show identity from the nationalShow singleton — the CTA label is not a literal. */
   show?: ShowIdentity | null;
-  /** False on the public build: the lede states a society count the Council has not supplied. */
-  showLede?: boolean;
 }
 
-export function Hero({ show, showLede = false }: HeroProps) {
+export function Hero({ show }: HeroProps) {
   const showYear = showYearOf(show?.showDate);
   const showCtaLabel = `${showLabelWithEdition(show?.edition)}${showYear ? `, ${showYear}` : ''}`;
   const showDates = formatShowDateRange(show?.showDate, show?.showEndDate);
@@ -128,8 +127,7 @@ export function Hero({ show, showLede = false }: HeroProps) {
       })}
 
       {/* One localised scrim (NOS Design ruling A4): the copy column is dark, the right 30% is bare photograph. */}
-      <div aria-hidden="true" data-hero-scrim="copy" className="absolute inset-0 -z-10" />
-      <div aria-hidden="true" data-hero-scrim="phone" className={PHONE_SCRIM_CLASSES} />
+      <div aria-hidden="true" data-hero-scrim="copy" className={PHONE_SCRIM_CLASSES} />
 
       {/* Content: left-aligned in the container, a 640px column (A3). */}
       <div className="saoc-container w-full py-16 md:py-24">
@@ -145,21 +143,9 @@ export function Hero({ show, showLede = false }: HeroProps) {
             The national home of <em>orchid culture</em> in South Africa.
           </h1>
 
-          {/* Lede: the society count is not in the Council's copy, so the public build withholds it. */}
-          {showLede ? (
-            <div data-placeholder="true" className="mt-4 md:mt-5">
-              <p
-                data-hero-lede
-                className="max-w-[52ch] text-pretty font-sans text-[20px] leading-[1.5] text-ivory"
-              >
-                Uniting twenty-one affiliated societies in the cultivation, exhibition, and appreciation of orchids across South Africa since 1968.
-              </p>
-            </div>
-          ) : null}
-
           <div
             data-hero-ctas
-            className={`flex w-full flex-col gap-4 sm:w-auto sm:flex-row ${showLede ? 'mt-10' : 'mt-8'}`}
+            className={`flex w-full flex-col gap-4 sm:w-auto sm:flex-row mt-8`}
           >
             <Link
               href="/societies"

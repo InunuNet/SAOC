@@ -45,7 +45,7 @@ export function SponsorEnquirySection({ site, inDocument = false }: SponsorEnqui
           </div>
         )}
         <div className="mt-8">
-          <SponsorEnquiryForm site={site} markPlaceholders={!withhold} />
+          <SponsorEnquiryForm site={site} />
         </div>
       </div>
       <SponsorEnquiryFocus />

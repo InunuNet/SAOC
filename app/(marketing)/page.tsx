@@ -73,7 +73,7 @@ export default async function HomePage() {
   return (
     <>
       <JsonLd data={organizationJsonLd()} />
-      <Hero images={home?.heroImages} show={show} showLede={!withhold} />
+      <Hero images={home?.heroImages} show={show} />
       <MissionBlock missionText={home?.missionText} withhold={withhold} />
       <NavCards show={show} withhold={withhold} />
       <ShowBand show={show} />

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 
-import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
 import {
   ENQUIRY_CONSENT_LABEL,
@@ -76,11 +75,9 @@ function Field({ id, label, error, children }: FieldProps) {
 
 interface SponsorEnquiryFormProps {
   site: SponsorEnquirySite;
-  /** Beta preview only: wording awaiting committee approval is marked. */
-  markPlaceholders: boolean;
 }
 
-export function SponsorEnquiryForm({ site, markPlaceholders }: SponsorEnquiryFormProps) {
+export function SponsorEnquiryForm({ site }: SponsorEnquiryFormProps) {
   const [values, setValues] = useState<Values>(EMPTY_VALUES);
   const [honeypot, setHoneypot] = useState('');
   const [status, setStatus] = useState<Status>('idle');
@@ -179,10 +176,6 @@ export function SponsorEnquiryForm({ site, markPlaceholders }: SponsorEnquiryFor
           <p className="mt-3 font-sans text-[16px] leading-[1.55] text-ink/80">
             {ENQUIRY_REUSED.successBody}
           </p>
-        ) : markPlaceholders ? (
-          <div data-placeholder="true" className="mt-3">
-            <PlaceholderMarker />
-          </div>
         ) : null}
       </div>
     );
