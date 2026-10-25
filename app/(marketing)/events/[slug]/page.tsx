@@ -119,7 +119,8 @@ export default async function EventDetailPage({
           : null}
       </p>
 
-      {/* Metadata */}
+      {/* Metadata: dropped for the National Show, whose band carries dates and venue */}
+      {!show ? (
       <dl className="mt-6 space-y-2 border-y border-rule py-6 font-sans text-[14px]">
         {event.hostSociety ? (
           <div className="flex gap-3">
@@ -155,6 +156,7 @@ export default async function EventDetailPage({
           </div>
         ) : null}
       </dl>
+      ) : null}
 
       {/* National Show events carry the show band (SV-1) */}
       {show ? (

@@ -15,7 +15,7 @@ export function SubmitEventPageBody({ societies }: SubmitEventPageBodyProps) {
         lede="Your submission will be reviewed by the council before it appears on the site."
       />
       <section className="saoc-container py-16">
-        <div className="max-w-xl">
+        <div className="mx-auto max-w-[640px]">
           <SubmitEventForm societies={societies} />
         </div>
       </section>
