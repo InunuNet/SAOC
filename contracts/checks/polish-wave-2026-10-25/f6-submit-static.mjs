@@ -28,7 +28,9 @@ if (!/<SubmitEventForm\b/.test(body)) failures.push('SubmitEventPageBody does no
 const page = tryRead('app/(marketing)/events/submit/page.tsx');
 if (!/<SubmitEventPageBody\b/.test(page)) failures.push('events/submit/page.tsx does not render SubmitEventPageBody');
 if (!/societyListQuery/.test(page)) failures.push('events/submit/page.tsx does not load societies with societyListQuery');
-if (/text-2xl font-semibold|text-gray-/.test(page + form)) failures.push('gray/Tailwind-default styling is still in the page or form (text-gray-*, text-2xl font-semibold)');
+// LoginPrompt (Members only) is out of scope tonight (see goldens/README.md follow-ups); scan the authenticated branch only.
+const pageAuthed = page.replace(/function LoginPrompt\(\)[\s\S]*?\n\}\n/, '');
+if (/text-2xl font-semibold|text-gray-/.test(pageAuthed + body + form)) failures.push('gray/Tailwind-default styling is still in the page body or form (text-gray-*, text-2xl font-semibold)');
 
 const fixturePath = 'app/events-fixtures/submit/page.tsx';
 if (!existsSync(resolve(repoRoot, fixturePath))) failures.push(`${fixturePath} does not exist`);

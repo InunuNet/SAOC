@@ -76,3 +76,7 @@ Edit anything under contracts/checks/polish-wave-2026-10-25/ or this spec direct
   f2-a11y-static.mjs); components/ui/PageHero.tsx is on F4's (eyebrow made optional so the /sponsors eyebrow can go).
 - f1-forms-nojs.mjs now also covers the footer newsletter form on both hosts (48 baseline findings) and asserts /events/submit renders no form in <main> without a session.
 - _server.mjs portFree tests 127.0.0.1, :: and 0.0.0.0 in turn, so another agent's server on *:3030 can no longer shadow the port.
+
+## Follow-ups (out of scope tonight)
+
+- /events/submit LoginPrompt ("Members only", `app/(marketing)/events/submit/page.tsx`) is off-system: text-2xl font-semibold, text-gray-* and a plain underlined link. F6 deliberately leaves it untouched and its static check scans only the authenticated branch, SubmitEventPageBody.tsx and SubmitEventForm.tsx. Its copy ("available to SAOC members") also needs Lee-Ann to say what members can do.
