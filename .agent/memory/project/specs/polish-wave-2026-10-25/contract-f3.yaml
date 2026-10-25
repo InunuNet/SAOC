@@ -1,0 +1,58 @@
+schema: athanor.contract/v1
+slug: polish-wave-2026-10-25
+goal: Payment-return pages are noindex, the sitemap drops the unbuilt members page, and society pages carry a word-bounded description and host-derived canonical and og:url.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F3
+    name: SEO hygiene - noindex, sitemap, society metadata
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/README.md
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/f3-seo.md
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f1.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f2.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f3.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f4.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: /members is out of SAOC_STATIC_ROUTES, the society page calls buildSocietyMetadata with no hard-coded host, and every generateMetadata return on the confirmation page and the cancelled metadata carry noindex (RED on baseline, 7 findings)
+      command: node contracts/checks/polish-wave-2026-10-25/f3-seo-static.mjs
+    - id: A2
+      description: buildSocietyMetadata keeps short descriptions, cuts long ones at a word within 160 chars, keeps the two fallbacks, and returns canonical and og:url from NEXT_PUBLIC_SAOC_SITE_URL (RED on baseline, module missing; a slice(0,160) mutation fails the word-trap fixture)
+      command: pnpm exec tsx contracts/checks/polish-wave-2026-10-25/f3-society-meta.mts
+      timeout_seconds: 300
+    - id: A3
+      description: the sitemap drift guard still passes after the golden is updated
+      command: pnpm exec tsx contracts/checks/saoc-seo-polish/check-sitemap-routes.mts
+      timeout_seconds: 300
+    - id: A4
+      description: the sitemap golden edit is logged in checks-updated.md
+      command: grep -q "sitemap-expected.json" .agent/memory/project/specs/polish-wave-2026-10-25/checks-updated.md
+    - id: A5
+      description: production build passes
+      command: NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A6
+      description: served, /tickets/confirmation and /tickets/cancelled carry a meta robots noindex, the SAOC sitemap lacks /members but keeps /about, and a society page has canonical and og:url on the request host (RED on baseline)
+      command: node contracts/checks/polish-wave-2026-10-25/f3-seo-served.mjs
+      timeout_seconds: 600
+    - id: A7
+      description: wave scope guard - every changed file is on a feature allow-list (goldens/scope/*.json) or under this mission's spec and check trees
+      command: node contracts/checks/polish-wave-2026-10-25/scope.mjs
+    - id: A8
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A9
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A10
+      description: the feature doc exists
+      command: grep -q "noindex" docs/polish-wave-f3-seo.md

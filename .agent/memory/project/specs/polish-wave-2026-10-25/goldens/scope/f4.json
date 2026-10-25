@@ -1,0 +1,10 @@
+{
+  "feature": "F4",
+  "allow": [
+    "components/judging/JudgesDirectory.tsx",
+    "components/tickets/keepsake/TicketSection.tsx",
+    "app/(nos)/national-show/programme/page.tsx",
+    "app/(marketing)/sponsors/page.tsx",
+    "docs/polish-wave-f4-removals.md"
+  ]
+}

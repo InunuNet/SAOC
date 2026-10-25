@@ -1,0 +1,50 @@
+schema: athanor.contract/v1
+slug: polish-wave-2026-10-25
+goal: Six public forms can no longer fall through to a native GET before hydration, so no field value ever reaches the URL.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: public forms use method post and a hydration-guarded submit
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/README.md
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/f1-forms.md
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f1.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f2.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f3.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f4.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: all six forms have method="post", import useHydrated, and gate their single submit button on !hydrated; lib/hooks/useHydrated.ts is the reference useSyncExternalStore pattern (RED on baseline, 24 findings)
+      command: node contracts/checks/polish-wave-2026-10-25/f1-forms-static.mjs
+    - id: A2
+      description: the reference /register form guard is untouched and still passes
+      command: node contracts/checks/vendor-register-p2-f1/check-no-native-get.mjs
+    - id: A3
+      description: production build passes (public Sanity ids and local origins, see goldens/README.md Hermetic render)
+      command: NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A4
+      description: with JavaScript disabled, Enter and a forced click on /contact, /members, /events/submit, /vendors/apply and /vendors/register at 390@3, 768, 1280 and 1440@2 never leave a field value or any query string in the URL (RED on baseline, 40 findings)
+      command: node contracts/checks/polish-wave-2026-10-25/f1-forms-nojs.mjs
+      timeout_seconds: 600
+    - id: A5
+      description: wave scope guard - every changed file is on a feature allow-list (goldens/scope/*.json) or under this mission's spec and check trees
+      command: node contracts/checks/polish-wave-2026-10-25/scope.mjs
+    - id: A6
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A7
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A8
+      description: the feature doc exists and names the hook
+      command: grep -q "useHydrated" docs/polish-wave-f1-forms.md
