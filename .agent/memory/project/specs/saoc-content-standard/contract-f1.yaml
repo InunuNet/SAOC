@@ -1,0 +1,100 @@
+schema: athanor.contract/v1
+slug: saoc-content-standard
+goal: Every SAOC document page is built against one standard (hero facts, 7fr/5fr grid, aside, type, rhythm, breadcrumb) so no page looks different.
+created_at: '2026-10-25'
+autonomy: high
+features:
+  - id: F1
+    name: "SAOC content standard (PageHero facts, DocumentLayout, migrate Event detail, About, Members, Sponsors, Media kit, Judging, Privacy, Terms, MOI, Home date)"
+    status: pending
+  - id: F2
+    name: "Lee-Ann SAOC copy fixes (see contract-f2.yaml)"
+    status: pending
+goldens:
+  - .agent/memory/project/specs/saoc-content-standard/goldens/standard.json
+  - .agent/memory/project/specs/saoc-content-standard/goldens/shared-api.md
+  - .agent/memory/project/specs/saoc-content-standard/goldens/f2-leeann-copy-fixes.md
+assertions:
+  phase: 4
+  checks:
+    - id: A-F1-01
+      description: "Body grid is 7fr/5fr with a 79-81px gap at 1440, stacks to one column at 390, on every migrated route"
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs grid
+    - id: A-F1-02
+      description: "Prose column is 60-68ch wide on every migrated route"
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs measure
+    - id: A-F1-03
+      description: "Every document h2 resolves to --display-sm at weight 300, one scale across all routes"
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs h2
+    - id: A-F1-04
+      description: "Hero bottom to content column top is 64px at 1440 and 48px at 390"
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs rhythm
+    - id: A-F1-05
+      description: "A Breadcrumb nav with an aria-current item is present on every migrated route"
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs breadcrumb
+    - id: A-F1-06
+      description: "At most one aside; kind matches the golden; radius 16, shadow, sticky below the 97px header; no nested shadows; index aside has aria-label Sections, no visible heading, rows >= 44px and one link per h2; Sponsors aside holds the sponsor CTA"
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs aside
+    - id: A-F1-07
+      description: "No body eyebrow pills or mono uppercase section labels inside the document layout"
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs eyebrow
+    - id: A-F1-08
+      description: "No paragraph whose sole child is strong inside the document body"
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs strongp
+    - id: A-F1-09
+      description: "Hero facts rows match the golden verbatim (term, value, order, count), dd weight 300, dt 15px sentence case, dd above dt; Judging, Members, Sponsors, Privacy, Terms and MOI have no row"
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs facts
+    - id: A-F1-10
+      description: "Facts end inside 900 at 1440 and inside 844 at 390; the first h2 of long documents is inside 900; the content column starts inside the first screen"
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs firstscreen
+    - id: A-F1-11
+      description: "Fact dd and dt text is >= 4.5:1 against the photo pixels behind it, at both viewports"
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs contrast
+    - id: A-F1-12
+      description: "Home shows 23-26 September 2027 beside the National Show CTA, CTA label unchanged, inside the first screen at both viewports"
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs home
+    - id: A-F1-13
+      description: "A programmatically focused route h1 shows no ring while keyboard focus on a link in main shows one"
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs focus
+    - id: A-F1-14
+      description: "No horizontal overflow at either viewport"
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs overflow
+    - id: A-F1-15
+      description: "Merged stat labels (Founding date, Bloemfontein; Award Tiers) no longer render"
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs absent
+    - id: A-F1-16
+      description: "Shared API: hero-facts.ts, PageHero facts prop and data attributes exist; no TBC field"
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f1_check.sh api-facts
+    - id: A-F1-17
+      description: "Shared API: DocumentLayout, DocumentIndex and the doc-* classes with 7fr/5fr and --display-sm exist"
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f1_check.sh api-layout
+    - id: A-F1-18
+      description: "Every in-scope route uses DocumentLayout and Breadcrumb (media-kit body included)"
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f1_check.sh routes-migrated
+    - id: A-F1-19
+      description: "Event detail is a PageHero page: orchid-dark, facts from the record, host region, ShowBand kept, old 860px wrapper and kind badge gone"
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f1_check.sh event-hero
+    - id: A-F1-20
+      description: "About facts use the approved labels; old stat label, 760px wrapper and weight hack gone"
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f1_check.sh about-facts
+    - id: A-F1-21
+      description: "Judging one-stat band and its fallback builder deleted; AwardsGrid kept"
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f1_check.sh judging-band-deleted
+    - id: A-F1-22
+      description: "Media kit keeps Quick facts, gets no facts row, mono labels become headings"
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f1_check.sh mediakit-no-row
+    - id: A-F1-23
+      description: "Sponsors and Members: mono p labels, 720px columns and the Help-shape-it eyebrow gone; sponsor CTA kept"
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f1_check.sh mono-labels-gone
+    - id: A-F1-24
+      description: "LegalBody uses doc-h2 in ink at the document width; Privacy and Terms pass an index; MOI has none"
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f1_check.sh legal-base
+    - id: A-F1-25
+      description: "Home hero carries data-home-show-date from formatShowDateRange, CTA label source kept"
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f1_check.sh home-date
+    - id: A-F1-26
+      description: "The per-page weight hack is gone from migrated routes' components"
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f1_check.sh sole-heading-hack
+    - id: A-F1-27
+      description: "tsc --noEmit is clean"
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f1_check.sh typecheck

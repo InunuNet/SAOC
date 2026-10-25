@@ -1,0 +1,71 @@
+{
+  "_doc": "Binding numbers and per-route expectations for the SAOC content standard (DS-1 r2 and DS-1 r2 . SAOC; NOS Design sign-off 2026-10-25). Read by checks/gate-standard.mjs. Fact values are verbatim from the source named in signoff.md.",
+  "viewports": { "desktop": { "width": 1440, "height": 900 }, "mobile": { "width": 390, "height": 844 } },
+  "numbers": {
+    "gridRatio": { "main": 7, "aside": 5, "tolerance": 0.03 },
+    "gapPxDesktop": { "min": 79, "max": 81 },
+    "proseMeasureCh": { "min": 60, "max": 68 },
+    "h2": { "tokenVar": "--display-sm", "weight": 300 },
+    "heroToContentPx": { "desktop": 64, "mobile": 48, "tolerance": 1.5 },
+    "sectionYPx": 96,
+    "aside": { "radiusPx": 16, "stickyTopMinPx": 97, "indexRowMinPx": 44, "indexMinEntries": 2 },
+    "heroFacts": { "min": 2, "max": 4, "ddWeight": 300, "dtSizePx": 15, "contrastMin": 4.5, "contrastPercentile": 0.99 },
+    "overflowTolerancePx": 1
+  },
+  "sharedH2": "All migrated routes with a doc-h2 must resolve to the same font-size and weight.",
+  "routes": [
+    {
+      "path": "/events/19th-south-african-national-orchid-show",
+      "id": "event-detail",
+      "facts": [
+        { "term": "Dates", "value": "23–26 September 2027" },
+        { "term": "Venue", "value": "The Hangar, Stellenbosch Flying Club" },
+        { "term": "Host region", "value": "Western Cape" }
+      ],
+      "aside": "content",
+      "prose": false,
+      "showBand": true,
+      "heroImage": "orchid-dark.jpg",
+      "firstH2InFirstScreen": false,
+      "breadcrumb": true
+    },
+    {
+      "path": "/about",
+      "id": "about",
+      "facts": [
+        { "term": "Founded, Bloemfontein", "value": "28 July 1968" },
+        { "term": "Founding societies", "value": "4" },
+        { "term": "Accredited SAOC Judges, September 1968", "value": "15" }
+      ],
+      "aside": "any",
+      "firstH2InFirstScreen": true,
+      "breadcrumb": true,
+      "absentText": ["Founding date, Bloemfontein"]
+    },
+    { "path": "/members", "id": "members", "facts": [], "aside": "any", "firstH2InFirstScreen": false, "breadcrumb": true },
+    { "path": "/sponsors", "id": "sponsors", "facts": [], "aside": "content", "asideMustContain": "Become a sponsor", "firstH2InFirstScreen": false, "breadcrumb": true },
+    { "path": "/judging", "id": "judging", "facts": [], "aside": "any", "firstH2InFirstScreen": false, "breadcrumb": true, "absentText": ["Award Tiers"] },
+    { "path": "/privacy", "id": "privacy", "facts": [], "aside": "index", "firstH2InFirstScreen": true, "breadcrumb": true },
+    { "path": "/terms", "id": "terms", "facts": [], "aside": "index", "firstH2InFirstScreen": true, "breadcrumb": true },
+    { "path": "/memorandum-of-incorporation", "id": "moi", "facts": [], "aside": "none", "firstH2InFirstScreen": false, "breadcrumb": true },
+    {
+      "path": "/media-kit",
+      "id": "media-kit",
+      "gated": true,
+      "note": "Admin-gated: runtime measurement is skipped; the static checks in f1_check.sh cover it.",
+      "facts": [],
+      "aside": "any"
+    }
+  ],
+  "home": {
+    "path": "/",
+    "dateText": "23–26 September 2027",
+    "dateSelector": "[data-home-show-date]",
+    "ctaTextContains": "National Show",
+    "firstScreenDesktop": true,
+    "firstScreenMobile": true
+  },
+  "focusRing": {
+    "note": "A programmatically focused route h1 shows no ring; keyboard focus on a link in main shows one. Guards globals.css [data-route-focus]:focus."
+  }
+}
