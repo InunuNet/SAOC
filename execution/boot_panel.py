@@ -515,6 +515,27 @@ def _collect_quota(root, checks):
     return quota
 
 
+# Harness-written settings key -> the env var that outranks it when set.
+ENV_SHADOWS = {"autoCompactWindow": "CLAUDE_CODE_AUTO_COMPACT_WINDOW"}
+
+
+def _collect_env_shadows(checks):
+    """Warn for each live env var that makes a harness-written settings key inert."""
+    for key, var in ENV_SHADOWS.items():
+        value = os.environ.get(var)
+        if value is None:
+            continue
+        checks.append(_check(
+            "settings.env_shadow", "delivery", "warn",
+            f"{var}={value} is set in the environment, so the {key} settings key "
+            f"is ignored while it is set",
+            False,
+            f"remove the {var} export from your shell startup file "
+            f"(find it with: grep -n {var} ~/.zshrc ~/.zshenv ~/.zprofile ~/.bashrc ~/.profile), "
+            "then open a new terminal",
+            basis="parsed"))
+
+
 def _check_quota_oracle(checks, detail):
     """The oracle itself is broken — a quota nobody can read is not a healthy one."""
     checks.append(_check(
@@ -1438,6 +1459,7 @@ def collect(root, refresh=False):
         "estimate": _collect_estimate(root, mission),
         "autonomy": _collect_autonomy(root, profile, active, mission, checks),
     }
+    _collect_env_shadows(checks)
     doc["checks"] = checks
     return _finalize(doc)
 

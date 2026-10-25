@@ -78,6 +78,12 @@
       "note": "template 3.8.58 -> 3.8.60 via make update-template x2",
       "result": "applied"
     },
+    "ATH-20261025-qa-unavailable-evidence": {
+      "at": "2026-10-25T02:43:05Z",
+      "harness_version": "3.8.63",
+      "note": "",
+      "result": "applied"
+    },
     "ATH-20261025-quota-auto-resume": {
       "at": "2026-10-24T23:45:55Z",
       "harness_version": "3.8.58",
