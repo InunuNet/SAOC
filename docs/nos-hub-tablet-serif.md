@@ -8,7 +8,7 @@ Ruling: "768-1023 hub stacks copy-first -> photo-last as a 4:3 block 565px tall 
 
 - Cause: the `max-width: 1023px` stacked block gave the hub media `order: 2` and `aspect-ratio: 4 / 3`. Below 768px a later block already overrides to `order: -1` and a 300px band, so 768-1023 was the only width where the photo came last.
 - Change: in that block, `order: -1` and `aspect-ratio: 2 / 1`. The 2/1 ratio is the inner-page G2 band (`nos-theme.css`, `aspect-ratio: 2 / 1`). Nothing else in the hub rules changed; 1024px and wider and below 768px are untouched.
-- Hero height (production build, live Sanity): 906px at 768, 937px at 820, 1057px at 1023. NOS Design approved a cap of 1100px at every width in 768-1023 with no spacing change.
+- Hero height (production build, live Sanity), measured by the A10 gate at 49e3b776: 906px at 768, 937px at 820, 1057px at 1023. The architect's trial build measured 902px at 768; the 4px difference is between two renders, not a change. NOS Design approved a cap of 1100px at every width in 768-1023 with no spacing change.
 - Served image: `NosHero` serves `/images/orchid-dark.jpg` with `sizes="100vw"`. Decoded width is 1920 for the 768@2 box (1536 needed), 1920 for 820@2 (1640) and 2048 for 1023@2 (2046). No asset change. The 2048 variant at 1023@2 has a 2px margin.
 - Focal point: `--nos-hero-pos` is already inline on the media element, so the 2/1 crop keeps the same focal point as 390.
 - Guard: `e2e/nos-hub-tablet-order.spec.ts` measures the photo above the h1 at 768, 1023 and 390, and a 2:1 box within 1% at 768 and 1023.
@@ -30,7 +30,7 @@ The h3-h6 base stays 400. The Fraunces face is the variable file (`weight: '100 
 
 ## Sweep result
 
-The gate is `gate-lt1-sweep.mjs` in the spec's `checks/`. It sweeps every NOS route (required, conditional and discovered) at 1280, 390, 888 and 889 against the production build. Result: 351 display-serif records at 32px or more (all weight 300), 251 serif records under 32px (all weight 400), no Karla heading at weight 300, 0 failures. `/archive` (404, no visible past shows) and `/media-kit` (redirects to the admin login) are reported as NOT SWEPT with reasons. The fluid step is witnessed by the 404 h1 at 888px (31.968px, 400) and 889px (32.004px, 300). The full list is `evidence/lt1-sweep.json` in the spec directory.
+The gate is `gate-lt1-sweep.mjs` in the spec's `checks/`. It sweeps every NOS route (required, conditional and discovered) at 1280, 390, 888 and 889 against the production build. Result, run on 49e3b776: 32 routes at each of the 4 widths, 351 display-serif records at 32px or more (all weight 300), 251 serif records under 32px (all weight 400), no Karla heading at weight 300, 0 failures. `/archive` (404, no visible past shows) and `/media-kit` (redirects to the admin login) are reported as NOT SWEPT with reasons. The fluid step is witnessed by the 404 h1 at 888px (31.968px, 400) and 889px (32.004px, 300). The full list is gate evidence outside this PR's diff, in the untracked spec directory of the primary checkout: `.agent/memory/project/specs/nos-hub-tablet-serif/evidence/lt1-sweep.json`. It is not committed to the repo.
 
 ## Follow-ups
 
