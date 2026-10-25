@@ -15,16 +15,15 @@ import {
   SocietyFacts,
   SocietyAbout,
   SocietyCommittee,
-  SocietyExpect,
   SocietyEvents,
   SocietyDetailsCallout,
 } from '@/components/societies';
 import type { SanitySociety } from '@/components/societies';
 import { upcomingEventsParams } from '@/lib/sast-date';
-import { saocUrl } from '@/lib/site-hosts';
 import { societies as staticSocieties } from '@/lib/data/societies';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { withholdSocietyEstimates } from '@/lib/data/society-withhold';
+import { buildSocietyMetadata } from '@/lib/society-metadata';
 import type { SanityEvent } from '@/types';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
@@ -107,19 +106,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const society = await getSociety(slug);
   if (!society) notFound();
-  const description = society.description
-    ?? (society.region
-      ? `${society.name} — affiliated SAOC society in ${society.region}.`
-      : `${society.name} — an affiliated SAOC society.`);
-  const ogTitle = encodeURIComponent(society.name);
-  return {
-    title: society.name,
-    description,
-    openGraph: {
-      url: saocUrl(`/societies/${slug}`),
-      images: [{ url: `/og?title=${ogTitle}`, width: 1200, height: 630, alt: society.name }],
-    },
-  };
+  return buildSocietyMetadata(society);
 }
 
 export default async function SocietyPage({
@@ -147,13 +134,11 @@ export default async function SocietyPage({
       <div className="saoc-container space-y-16 py-16">
         <SocietyFacts society={shown} />
 
-        <SocietyAbout society={shown} withhold={withhold} />
+        <SocietyAbout society={shown} />
 
         <SocietyCommittee society={shown} />
 
         <SocietyEvents societyName={society.name} events={events} />
-
-        <SocietyExpect />
 
         {detailsUnconfirmed ? <SocietyDetailsCallout societyName={society.name} /> : null}
 
@@ -168,11 +153,6 @@ export default async function SocietyPage({
       <CTASection
         eyebrow="Keep exploring"
         heading="Find another society, or reach the council"
-        body={
-          withhold
-            ? undefined
-            : 'SAOC coordinates 21 affiliated societies across South Africa. Browse the full list, or get in touch with the national committee directly.'
-        }
         primaryCta={{ href: '/societies', label: 'Find a society' }}
         secondaryCta={{ href: '/contact', label: 'Contact SAOC' }}
       />
