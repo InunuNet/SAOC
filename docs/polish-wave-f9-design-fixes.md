@@ -6,8 +6,9 @@ NOS Design's #92 judgement (2026-10-25) produced three fixes, all implemented as
   narrower content column than on home ("MINUTES" ran into "SECONDS"). `components/home/ShowBand.tsx`
   now wraps the cells in a Tailwind v4 `@container` box with a `grid grid-cols-4
   @max-[360px]:grid-cols-2` grid. Below about 360px of container width the four cells re-flow
-  2x2 (Days/Hours, then Minutes/Seconds). Type, labels and markup are unchanged, so the query
-  is a no-op wherever the band already fits (home at 390).
+  2x2 (Days/Hours, then Minutes/Seconds). Type, labels and markup are unchanged. The home band
+  at 390 (about 307px of container) also goes 2x2: four across it overflowed by 3px, so it did
+  not already fit. Wider containers keep one row of four.
 - P2: the National Show event page stated dates and venue twice (meta table, then the band
   about 100px below). `app/(marketing)/events/[slug]/page.tsx` now gates the meta `<dl>` on
   `!show`. The h1, date line and band stay; ordinary events keep their table.
