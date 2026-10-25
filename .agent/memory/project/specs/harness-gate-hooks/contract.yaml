@@ -58,12 +58,18 @@ assertions:
     - id: A6
       description: "regression guard: browser_deployed_check wrapper script still in place and executable"
       command: "test -x execution/browser_deployed_check.sh"
+      nonvacuous: false
+      nonvacuous_reason: "Regression guard: the kind script exists and is executable at base and must stay so; it is green before and after by design."
     - id: A7
       description: "regression guard: gws_inbox_check wrapper script still in place and executable"
       command: "test -x execution/gws_inbox_check.sh"
+      nonvacuous: false
+      nonvacuous_reason: "Regression guard: the kind script exists and is executable at base and must stay so; it is green before and after by design."
     - id: A8
       description: "this contract validates --strict under the installed (stock) contract.py"
       command: "python3 execution/contract.py validate .agent/memory/project/specs/harness-gate-hooks/contract.yaml --strict"
+      nonvacuous: false
+      nonvacuous_reason: "Regression guard: the contract already validates strict under the pinned gate at base; after the swap it proves the stock validator accepts it."
     - id: A10
       description: "dirty residue fixture blocks the stock gate before any assertion; hooks-pre phase carries the finding"
       command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py residue-dirty-blocks"
@@ -172,18 +178,26 @@ assertions:
       description: "legacy residue proof rewritten for the stock gate passes"
       command: "python3 execution/checks/verify_gate_residue_preflight.py"
       timeout_seconds: 180
+      nonvacuous: false
+      nonvacuous_reason: "Passes at base under the pinned gate by design; the rewritten proof must keep passing under the stock gate. Non-vacuity of the blocking behaviour is carried by A10-A13 and neutered controls A30-A31."
     - id: A41
       description: "legacy triad enforcement proof rewritten for the stock gate passes"
       command: "bash execution/checks/verify_f2_gate_enforcement.sh"
       timeout_seconds: 180
+      nonvacuous: false
+      nonvacuous_reason: "Passes at base under the pinned gate by design; the rewritten proof must keep passing under the stock gate. Non-vacuity of the blocking behaviour is carried by A14-A17 and neutered controls A32-A33, A36."
     - id: A42
       description: "legacy triad fail-closed proof rewritten for the stock gate passes"
       command: "bash execution/checks/verify_f2_triad_failclosed.sh"
       timeout_seconds: 180
+      nonvacuous: false
+      nonvacuous_reason: "Passes at base under the pinned gate by design; the rewritten proof must keep passing under the stock gate. Non-vacuity is carried by A21-A22 and neutered controls A35, A39."
     - id: A43
       description: "legacy baseline-loading fail-closed proof rewritten for the stock gate passes"
       command: "bash execution/checks/verify_f2_baseline_loading_failclosed.sh"
       timeout_seconds: 180
+      nonvacuous: false
+      nonvacuous_reason: "Passes at base under the pinned gate by design; the rewritten proof must keep passing under the stock gate. Non-vacuity is carried by A18-A20 and neutered controls A34, A37, A38."
     - id: A45
       description: "docs/gate-hooks.md documents both hooks and the exit-code differences"
       command: "grep -q \"residue-pre\" docs/gate-hooks.md"
@@ -196,6 +210,8 @@ assertions:
     - id: A48
       description: "grandfather baseline and pin files are unchanged versus base (no editing the baseline to pass a scenario)"
       command: "git diff --quiet 5165668d -- execution/triad-baseline-exempt.txt execution/triad-baseline-exempt.sha256 scripts/checks/triad-baseline-exempt.txt scripts/checks/triad-baseline-exempt.sha256"
+      nonvacuous: false
+      nonvacuous_reason: "Regression guard: the grandfather baseline and pin files are unchanged versus base, which is trivially true at base itself."
     - id: A49
       description: "real-baseline smoke: contracts/c5-submit-event.yaml (listed, pinned, unedited, linter exit 1) is reported grandfathered by the real hook"
       command: "python3 scripts/gate-hooks/triad_hook.py contracts/c5-submit-event.yaml | grep -q grandfathered"
