@@ -2095,6 +2095,23 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-size: 14px;
   color: var(--primary-800);
 }
+.nos-theme .nk-policy {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0 10px;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--primary-800);
+}
+.nos-theme .nk-policy a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px; /* ruling floor is 24px */
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
 .nos-theme .nk-card[data-ticket-variant='summary'] .nk-ticket {
   --stub: 112px;
 }
