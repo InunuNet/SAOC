@@ -8,6 +8,7 @@
     "components/members/SuggestionForm.tsx",
     "components/events/SubmitEventForm.tsx",
     "components/tickets/TicketPurchaseForm.tsx",
+    "components/newsletter/NewsletterSignup.tsx",
     "docs/polish-wave-f1-forms.md"
   ]
 }

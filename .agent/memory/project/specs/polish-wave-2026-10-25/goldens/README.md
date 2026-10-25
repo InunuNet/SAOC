@@ -67,3 +67,12 @@ Edit anything under contracts/checks/polish-wave-2026-10-25/ or this spec direct
   (--primary pinned; ContactForm's button is the accent token), (c) NewsletterSignup scope.
 - Hermetic notes: the rendered checks take their own server (free port 3030-3049). A machine-wide pkill from another session can kill a baseline run mid-way
   (ECONNREFUSED); re-run, it is not a real red. F8 runs with preview env at runtime only and takes ~90s.
+
+## Addendum 2 (check fixes after QA)
+- F2 pointer ring: the first rendered check read the first rgba in box-shadow, which Tailwind v4 makes a transparent offset shadow, so the "14 of 16 under 3:1"
+  finding above was false. It now reads the last visible shadow; with that, the pointer-ring sub-check is GREEN on the baseline and is a guard only. F2's rendered red is
+  control size (16 of 16 under 24px). The ring-ink/40 removal stays enforced by f2-a11y-static.mjs as consistency cleanup.
+- Scope: components/newsletter/NewsletterSignup.tsx is now on the F1 and F2 allow-lists (method post plus useHydrated; size-6 topic checkboxes, enforced in
+  f2-a11y-static.mjs); components/ui/PageHero.tsx is on F4's (eyebrow made optional so the /sponsors eyebrow can go).
+- f1-forms-nojs.mjs now also covers the footer newsletter form on both hosts (48 baseline findings) and asserts /events/submit renders no form in <main> without a session.
+- _server.mjs portFree tests 127.0.0.1, :: and 0.0.0.0 in turn, so another agent's server on *:3030 can no longer shadow the port.

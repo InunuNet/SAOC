@@ -11,7 +11,7 @@
 import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { contrast, finish, parseHex, read, repoRoot } from './_lib.mjs';
+import { contrast, finish, parseHex, read, repoRoot, tags } from './_lib.mjs';
 
 const failures = [];
 const CONTROL_FILES = [
@@ -67,4 +67,8 @@ else {
     if (c < 3) failures.push(`primary ${primary} on ${ground} ${g} is ${c.toFixed(2)}:1, want >=3:1`);
   }
 }
+// Footer newsletter topic checkboxes (NewsletterSignup, both hosts) share the 24px floor.
+const news = tags(read('components/newsletter/NewsletterSignup.tsx'), 'input').filter((t) => /type="checkbox"/.test(t));
+if (news.length !== 1) failures.push(`NewsletterSignup: expected one checkbox input, found ${news.length}`);
+else if (controlPx((news[0].match(/className="([^"]*)"/) ?? [])[1] ?? '') < 24) failures.push('NewsletterSignup topic checkbox is under 24px (h-5 w-5 today)');
 finish('f2-a11y-static', failures);

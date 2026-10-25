@@ -37,7 +37,7 @@ assertions:
       command: NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
       timeout_seconds: 900
     - id: A6
-      description: on /vendors/apply at 390@3, 768, 1280 and 1440@2 all 16 checkboxes are at least 24x24, rows at least 44px, keyboard focus outline solid 2px at 3:1 or more, pointer-focus ring at 3:1 or more or absent (RED on baseline, size and pointer ring)
+      description: on /vendors/apply at 390@3, 768, 1280 and 1440@2 all 16 checkboxes are at least 24x24, rows at least 44px, keyboard focus outline solid 2px at 3:1 or more, pointer-focus ring at 3:1 or more or absent (RED on baseline on control size only; the pointer ring is a guard, green on baseline)
       command: node contracts/checks/polish-wave-2026-10-25/f2-a11y-rendered.mjs
       timeout_seconds: 600
     - id: A7
