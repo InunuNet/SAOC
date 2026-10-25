@@ -1,13 +1,10 @@
 import type { Metadata } from 'next';
 
-import { AccommodationList, TravelRoutes, VenueCard } from '@/components/show';
-import { Button } from '@/components/nos/Button';
-import { CtaBand } from '@/components/nos/CtaBand';
+import { VenueCard } from '@/components/show';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { SectionHeading } from '@/components/nos/SectionHeading';
 import {
-  VisitAttractions,
   VisitEmergency,
   VisitGettingThere,
   gettingThereLede,
@@ -16,9 +13,10 @@ import { sanityFetch } from '@/sanity/lib/fetch';
 import { nationalShowVenueQuery, showVisitorInfoQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
 import type { ShowVenue, ShowVisitorInfo } from '@/types';
+import { PlanYourVisitGuide } from '@/components/show/PlanYourVisitGuide';
+import { PLAN_YOUR_VISIT_GUIDE } from '@/content/plan-your-visit/guide';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
-import { saocUrl } from '@/lib/site-hosts';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
@@ -65,19 +63,13 @@ export default async function PlanYourVisitPage() {
   const pendingLabel = info?.pendingLabel;
   const researchLabel = info?.researchLabel;
   const status = info?.confirmations ?? {};
-  const attractions = (info?.attractions ?? []).filter((a) => a?.name);
 
-  // The Getting-there items, in page order; an item with no body or list is not drawn.
+  // The Getting-there items, in page order; an item with no body is not drawn. Airport routes,
+  // accommodation and attractions are no longer drawn from Sanity: her guide above carries them.
   const gettingThereItems = [
     { heading: 'Parking', body: info?.parking, status: status.parking },
     { heading: 'Public transport', body: info?.publicTransport, status: status.publicTransport },
-    {
-      heading: 'Where to stay',
-      body: info?.accommodationIntro,
-      status: status.accommodation,
-      children: <AccommodationList options={info?.accommodation} />,
-    },
-  ].filter((item) => item.body || (item.children && (info?.accommodation ?? []).length > 0));
+  ].filter((item) => item.body);
 
   return (
     <>
@@ -88,6 +80,10 @@ export default async function PlanYourVisitPage() {
         priority
       />
 
+      <NosSection>
+        <PlanYourVisitGuide blocks={PLAN_YOUR_VISIT_GUIDE} />
+      </NosSection>
+
       <NosSection wrapClassName="space-y-12">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           <section className="space-y-8">
@@ -96,7 +92,6 @@ export default async function PlanYourVisitPage() {
               title="Getting there"
               lede={gettingThereLede(info?.gettingThereIntro, gettingThereItems)}
             />
-            <TravelRoutes routes={info?.airportRoutes} />
             <VisitGettingThere
               items={gettingThereItems}
               pendingLabel={pendingLabel}
@@ -114,14 +109,6 @@ export default async function PlanYourVisitPage() {
             />
           </aside>
         </div>
-
-        <VisitAttractions
-          title="While you are here"
-          attractions={attractions}
-          status={status.attractions}
-          pendingLabel={pendingLabel}
-          researchLabel={researchLabel}
-        />
       </NosSection>
 
       <VisitEmergency
@@ -133,16 +120,6 @@ export default async function PlanYourVisitPage() {
         researchLabel={researchLabel}
       />
 
-      <CtaBand
-        eyebrow="Stay informed"
-        title="Be the first to know"
-        lede="Parking, public transport and accommodation are confirmed by the show committee as the event draws closer. Ask the council to be notified the moment they are settled, or point out anything missing here."
-        action={
-          <Button as="a" href={saocUrl('/contact')} variant="on-dark">
-            Ask the council
-          </Button>
-        }
-      />
       <NosShowIndex current="/national-show/plan-your-visit" />
     </>
   );

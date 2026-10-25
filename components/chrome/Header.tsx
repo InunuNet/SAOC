@@ -180,8 +180,7 @@ export function Header() {
           <Link
             href="/societies"
             data-hd="cta"
-            aria-current={navAriaCurrent(pathname, '/societies')}
-            className="ml-auto inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[10px] bg-accent px-6 py-[10px] font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:bg-accent-soft max-[780px]:col-start-1 max-[780px]:ml-0 min-[1384px]:ml-0 focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]"
+            className="ml-auto inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[10px] bg-accent px-6 py-[10px] font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:bg-accent-soft max-[780px]:col-start-1 max-[780px]:ml-0 min-[1384px]:ml-0 focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:border forced-colors:border-[color:ButtonText] forced-colors:focus-visible:decoration-[color:Highlight]"
           >
             Join a society
           </Link>

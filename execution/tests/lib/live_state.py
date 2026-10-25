@@ -4,12 +4,20 @@
     live_state.py snapshot <store>   record the guarded files into <store>
     live_state.py check <store>      exit 1 naming each changed file, and put
                                      the recorded content back
+    live_state.py reset <store>      start a run with an empty restore ledger
+    live_state.py report <store>     end of run: a banner naming every restore
 
 The suite runs in the host checkout, so a test that forgets to sandbox itself
 writes into that project's real mission and backlog. Alembic reported exactly
 that on 2026-09-29: `make test` set a live milestone's gate_result to fail and
 re-flowed its notes. A per-test guard names the offender and undoes the damage,
 whichever test it is and however it got there.
+
+A restore also undoes a REAL edit made by a session working in parallel
+(JordanPumps 2026-10-20: a mission edit vanished mid-suite, and the one FAIL
+line had scrolled away). Every restore therefore goes to a ledger, and
+run_all.sh ends with a banner that names the file and where its replaced
+content was kept.
 """
 import json
 import sys
@@ -37,6 +45,40 @@ def snapshot(store: Path) -> int:
     return 0
 
 
+BANNER = "!" * 72
+
+
+def ledger(store: Path) -> Path:
+    return store.parent / "live_state_restored.log"
+
+
+def note(store: Path, line: str) -> None:
+    with open(ledger(store), "a", encoding="utf-8") as f:
+        f.write(line + "\n")
+
+
+def reset(store: Path) -> int:
+    ledger(store).unlink(missing_ok=True)
+    return 0
+
+
+def report(store: Path) -> int:
+    try:
+        lines = [ln for ln in ledger(store).read_text(encoding="utf-8").splitlines() if ln]
+    except OSError:
+        return 0
+    if lines:
+        print("")
+        print(BANNER)
+        print(f"!! LIVE PROJECT STATE WAS RESTORED {len(lines)} time(s) during this run.")
+        print("!! If a session was editing these files while the suite ran, its")
+        print("!! edit was undone. Copy the kept version back if it was real work:")
+        for ln in lines:
+            print(f"!!   {ln}")
+        print(BANNER)
+    return 0
+
+
 def check(store: Path) -> int:
     before = json.loads(store.read_text())
     now = {str(p) for p in guarded_files()}
@@ -56,8 +98,10 @@ def check(store: Path) -> int:
             keep.write_bytes(path.read_bytes())
             print(f"  FAIL test wrote live project state: {name} "
                   f"(restored; the replaced content is kept at {keep})")
+            note(store, f"{name} was restored; the version it replaced is at {keep}")
         else:
             print(f"  FAIL test deleted live project state: {name} (restored)")
+            note(store, f"{name} was deleted during the run and restored")
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, errors="surrogateescape")
         changed.append(name)
@@ -68,11 +112,11 @@ def check(store: Path) -> int:
 
 
 def main(argv) -> int:
-    if len(argv) != 3 or argv[1] not in ("snapshot", "check"):
+    commands = {"snapshot": snapshot, "check": check, "reset": reset, "report": report}
+    if len(argv) != 3 or argv[1] not in commands:
         print(__doc__, file=sys.stderr)
         return 2
-    store = Path(argv[2])
-    return snapshot(store) if argv[1] == "snapshot" else check(store)
+    return commands[argv[1]](Path(argv[2]))
 
 
 if __name__ == "__main__":

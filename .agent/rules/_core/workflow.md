@@ -22,13 +22,16 @@
   → @architect    contract + golden files
   → @dev          implements against the goldens, never against tests it wrote
   → @qa           adversarial; inputs from the orchestrator or @architect, not @dev.
-                  Cross-model by default: run `execution/codex_qa.sh` (Codex,
-                  gpt-5.6-terra pinned) against @dev's diff/output, NOT the
-                  Agent-tool @qa persona — a same-vendor Claude model checking
-                  another Claude model's work is not adversarial review, it is
-                  the same reasoning agreeing with itself. Fall back to the
-                  Agent-tool @qa persona only when `codex` is unavailable on
-                  PATH (codex_qa.sh exits 2), and say so in the verdict.
+                  Cross-model by default: the reviewer is never the vendor
+                  that wrote the code. In Claude Code run
+                  `execution/codex_qa.sh` (gpt-6-sol; `--apex` gpt-6-astra);
+                  in Codex run `execution/claude_qa.sh` (Claude Sonnet 5.5;
+                  `--apex` Opus 5.5) against @dev's diff/output, NOT the
+                  same-vendor @qa persona — one model checking its own
+                  vendor's work is not adversarial review, it is the same
+                  reasoning agreeing with itself. Fall back to the @qa
+                  persona only when the other vendor's CLI is unavailable on
+                  PATH (the script exits 2), and say so in the verdict.
   → @docs         README + docs/<feature>.md
   → gate          python3 execution/contract.py gate — every assertion green
   → @maintainer   learned.md + brain wrap-up

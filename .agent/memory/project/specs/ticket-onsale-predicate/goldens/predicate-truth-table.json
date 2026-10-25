@@ -1,0 +1,420 @@
+{
+  "_doc": "Truth table for isTicketOnSale(). Each case: start from baseDoc/baseInput, shallow-merge doc/input, delete the named doc keys, call, compare. reason precedence: demo, inactive, sales-closed, wrong-show, no-price, no-capacity, sold-out. now is an ISO string; the check converts it to Date.",
+  "baseDoc": {
+    "slug": "weekend-pass",
+    "active": true,
+    "demo": false,
+    "price": 380,
+    "regularPrice": null,
+    "earlyBirdCutoff": null,
+    "capacity": 300,
+    "releasedQuantity": null,
+    "show": {
+      "_ref": "show-19-2027"
+    }
+  },
+  "baseInput": {
+    "activeShowId": "show-19-2027",
+    "salesOpen": true,
+    "soldOut": false,
+    "now": "2026-10-25T10:00:00Z",
+    "qaFixturesAllowed": false
+  },
+  "cases": [
+    {
+      "name": "baseline sellable product",
+      "doc": {},
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": true,
+        "reason": null
+      }
+    },
+    {
+      "name": "demo flag true is refused",
+      "doc": {
+        "demo": true
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "demo"
+      }
+    },
+    {
+      "name": "reserved demo slug without the flag is refused",
+      "doc": {
+        "slug": "demo-general-admission"
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "demo"
+      }
+    },
+    {
+      "name": "the real qa fixture shape is refused in production policy",
+      "doc": {
+        "slug": "qa-fixture-ticket",
+        "demo": true,
+        "price": 0,
+        "capacity": 50
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "demo"
+      }
+    },
+    {
+      "name": "demo is allowed only when the qa policy allows it",
+      "doc": {
+        "demo": true
+      },
+      "input": {
+        "qaFixturesAllowed": true
+      },
+      "delete": [],
+      "expect": {
+        "onSale": true,
+        "reason": null
+      }
+    },
+    {
+      "name": "qa policy waives demo and nothing else: sales closed still refuses",
+      "doc": {
+        "demo": true
+      },
+      "input": {
+        "qaFixturesAllowed": true,
+        "salesOpen": false
+      },
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "sales-closed"
+      }
+    },
+    {
+      "name": "qa policy waives demo and nothing else: wrong show still refuses",
+      "doc": {
+        "demo": true,
+        "show": {
+          "_ref": "show-fictional-test"
+        }
+      },
+      "input": {
+        "qaFixturesAllowed": true
+      },
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "wrong-show"
+      }
+    },
+    {
+      "name": "demo outranks inactive",
+      "doc": {
+        "demo": true,
+        "active": false
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "demo"
+      }
+    },
+    {
+      "name": "inactive is refused",
+      "doc": {
+        "active": false
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "inactive"
+      }
+    },
+    {
+      "name": "missing active field fails closed",
+      "doc": {},
+      "input": {},
+      "delete": [
+        "active"
+      ],
+      "expect": {
+        "onSale": false,
+        "reason": "inactive"
+      }
+    },
+    {
+      "name": "null active fails closed",
+      "doc": {
+        "active": null
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "inactive"
+      }
+    },
+    {
+      "name": "sales closed is refused",
+      "doc": {},
+      "input": {
+        "salesOpen": false
+      },
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "sales-closed"
+      }
+    },
+    {
+      "name": "wrong show is refused",
+      "doc": {
+        "show": {
+          "_ref": "show-fictional-test"
+        }
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "wrong-show"
+      }
+    },
+    {
+      "name": "missing show reference is refused",
+      "doc": {},
+      "input": {},
+      "delete": [
+        "show"
+      ],
+      "expect": {
+        "onSale": false,
+        "reason": "wrong-show"
+      }
+    },
+    {
+      "name": "no resolvable active show is refused",
+      "doc": {},
+      "input": {
+        "activeShowId": null
+      },
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "wrong-show"
+      }
+    },
+    {
+      "name": "non-numeric price is refused",
+      "doc": {
+        "price": "380"
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "no-price"
+      }
+    },
+    {
+      "name": "negative price is refused",
+      "doc": {
+        "price": -1
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "no-price"
+      }
+    },
+    {
+      "name": "expired early-bird with no regular price is refused",
+      "doc": {
+        "price": 120,
+        "earlyBirdCutoff": "2026-10-01",
+        "regularPrice": null
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "no-price"
+      }
+    },
+    {
+      "name": "expired early-bird with a regular price sells at the regular price",
+      "doc": {
+        "price": 120,
+        "earlyBirdCutoff": "2026-10-01",
+        "regularPrice": 150
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": true,
+        "reason": null
+      }
+    },
+    {
+      "name": "early-bird on its cutoff day still sells",
+      "doc": {
+        "price": 120,
+        "earlyBirdCutoff": "2026-10-25",
+        "regularPrice": null
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": true,
+        "reason": null
+      }
+    },
+    {
+      "name": "zero capacity is refused",
+      "doc": {
+        "capacity": 0
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "no-capacity"
+      }
+    },
+    {
+      "name": "released quantity zero is refused",
+      "doc": {
+        "releasedQuantity": 0
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "no-capacity"
+      }
+    },
+    {
+      "name": "string capacity is refused",
+      "doc": {
+        "capacity": "300"
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "no-capacity"
+      }
+    },
+    {
+      "name": "released quantity above capacity does not widen it",
+      "doc": {
+        "capacity": 300,
+        "releasedQuantity": 9999
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": true,
+        "reason": null
+      }
+    },
+    {
+      "name": "sold out is refused",
+      "doc": {},
+      "input": {
+        "soldOut": true
+      },
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "sold-out"
+      }
+    },
+    {
+      "name": "pooled sold-out (verdict supplied by the pool planner) is refused",
+      "doc": {
+        "slug": "weekend-pass-early-bird",
+        "price": 360,
+        "capacity": 500
+      },
+      "input": {
+        "soldOut": true
+      },
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "sold-out"
+      }
+    },
+    {
+      "name": "inactive outranks sold out",
+      "doc": {
+        "active": false
+      },
+      "input": {
+        "soldOut": true
+      },
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "inactive"
+      }
+    },
+    {
+      "name": "wrong show outranks sold out",
+      "doc": {
+        "show": {
+          "_ref": "x"
+        }
+      },
+      "input": {
+        "soldOut": true
+      },
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "wrong-show"
+      }
+    },
+    {
+      "name": "sales closed outranks wrong show",
+      "doc": {
+        "show": {
+          "_ref": "x"
+        }
+      },
+      "input": {
+        "salesOpen": false
+      },
+      "delete": [],
+      "expect": {
+        "onSale": false,
+        "reason": "sales-closed"
+      }
+    },
+    {
+      "name": "a free (R0) non-demo product keeps the existing behaviour and is sellable",
+      "doc": {
+        "price": 0
+      },
+      "input": {},
+      "delete": [],
+      "expect": {
+        "onSale": true,
+        "reason": null
+      }
+    }
+  ]
+}

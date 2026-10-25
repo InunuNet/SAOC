@@ -14,8 +14,10 @@ Usage:
 import json
 import hashlib
 import os
+import re
 from pathlib import Path
 import sys
+import tempfile
 
 
 def fix_gitignore(target_dir: str) -> None:
@@ -88,76 +90,6 @@ def wire_autonomy_hook(target_dir: str) -> None:
         print("  ok wired check_autonomy.sh into PreToolUse hooks")
     else:
         print("  ok check_autonomy.sh already wired")
-
-
-AUTOCOMPACT_WINDOW_DEFAULT = 400000
-
-
-def seed_autocompact_window(target_dir: str, settings_path: str | None = None) -> None:
-    """Seed the auto-compact window as a SETTINGS KEY, not an env var (#1430).
-
-    The env var CLAUDE_CODE_AUTO_COMPACT_WINDOW sits at the top of the
-    auto-compact precedence chain (env var -> --autocompact flag ->
-    autoCompactWindow settings key -> model default), so setting it there
-    makes the /autocompact command inert: the CLI answers "is set and takes
-    precedence. Unset it to change this setting here." Those env keys are
-    stripped by the manifest retractions; this restores the same default
-    through the settings key, which holds a default while leaving
-    /autocompact free to override it interactively.
-
-    Documented as an INTEGER token count from 100000 to 1000000 -- a string
-    like "300k" is not the documented type ("500k" reads as 500 and clamps to
-    the minimum), so the value is written as a number.
-
-    Idempotent, and deliberately NON-clobbering: an operator who has already
-    chosen a window keeps it. Only a missing key is seeded.
-
-    settings_path exists for testability and defaults to the real location.
-    The autonomy floor denies writing ANY path matching */.claude/settings.json
-    -- throwaway sandbox fixtures included -- so without an injectable path
-    this function could not be exercised by a golden at all, and a settings
-    writer that cannot be tested is one that gets verified by reading it.
-    """
-    if settings_path is None:
-        settings_path = os.path.join(target_dir, ".claude", "settings.json")
-    if not os.path.exists(settings_path):
-        print("  warn settings.json not found — autoCompactWindow seed skipped")
-        return
-
-    try:
-        with open(settings_path) as f:
-            settings = json.load(f)
-    except Exception as e:
-        print(f"  warn settings.json parse error, autoCompactWindow seed skipped: {e}")
-        return
-
-    current = settings.get("autoCompactWindow")
-    # The default is a FLOOR, not just a seed. A project that already carried a
-    # lower value kept compacting early forever, because this only ever wrote
-    # the key when it was absent: mumbl-ai-f0 was observed compacting at 27%
-    # context on 2026-09-21 with the key already present at the old value.
-    # Raising the floor has to reach existing projects or it reaches nobody.
-    # A HIGHER value is the operator's own deliberate choice (/autocompact)
-    # and is never lowered.
-    if isinstance(current, (int, float)) and not isinstance(current, bool):
-        if current >= AUTOCOMPACT_WINDOW_DEFAULT:
-            print(f"  ok autoCompactWindow already {current!r} "
-                  f"(>= floor {AUTOCOMPACT_WINDOW_DEFAULT}) — left alone")
-            return
-        print(f"  raising autoCompactWindow {current!r} -> "
-              f"{AUTOCOMPACT_WINDOW_DEFAULT} (floor)")
-    elif current is not None:
-        print(f"  replacing non-numeric autoCompactWindow ({current!r}) -> "
-              f"{AUTOCOMPACT_WINDOW_DEFAULT}")
-
-    settings["autoCompactWindow"] = AUTOCOMPACT_WINDOW_DEFAULT
-    try:
-        with open(settings_path, "w") as f:
-            json.dump(settings, f, indent=2)
-    except Exception as e:
-        print(f"  warn autoCompactWindow seed write failed: {e}")
-        return
-    print(f"  ok seeded autoCompactWindow={AUTOCOMPACT_WINDOW_DEFAULT} (/autocompact can still override)")
 
 
 STATUSLINE_COMMAND = "python3 execution/statusline.py"
@@ -402,6 +334,96 @@ def _prune_retired_hook_registrations(settings_path: str) -> None:
         print(f"  Pruned {pruned_count} dead registration(s) in {settings_path}")
 
 
+HOOK_SCRIPT_RE = re.compile(r"execution/hooks/[^\s'\"`;|&()<>]+")
+RETIRED_PROVIDER_SETTINGS = (".gemini/settings.json", ".grok/settings.json")
+HOOK_REF_TRAILING_PUNCT = ".,:"
+
+
+def _hook_is_dead(entry, root: Path) -> bool:
+    """True only when EVERY execution/hooks/ script the command names is missing.
+
+    `bash gone.sh || bash live.sh` still has a live branch, so it stays; a
+    command that names no hook script is kept too.
+    """
+    if not isinstance(entry, dict):
+        return False
+    refs = [r.rstrip(HOOK_REF_TRAILING_PUNCT)
+            for r in HOOK_SCRIPT_RE.findall(str(entry.get("command", "")))]
+    return bool(refs) and all(not (root / ref).is_file() for ref in refs)
+
+
+def _settings_is_safe(path: Path, root: Path) -> bool:
+    """Never write through a symlinked provider dir or settings file, or one outside root."""
+    if path.parent.is_symlink() or path.is_symlink():
+        print(f"  warn {path} is a symlink, retired-provider hook prune skipped")
+        return False
+    if not path.resolve().is_relative_to(root.resolve()):
+        print(f"  warn {path} resolves outside {root}, retired-provider hook prune skipped")
+        return False
+    return True
+
+
+def _prune_dead_hooks(hooks: dict, root: Path) -> tuple:
+    """Return (hooks_without_dead_entries, before_count, after_count)."""
+    before = after = 0
+    cleaned = {}
+    for event, groups in hooks.items():
+        if not isinstance(groups, list):
+            cleaned[event] = groups
+            continue
+        kept_groups = []
+        for group in groups:
+            entries = group.get("hooks") if isinstance(group, dict) else None
+            if not isinstance(entries, list):
+                kept_groups.append(group)
+                continue
+            live = [h for h in entries if not _hook_is_dead(h, root)]
+            before += len(entries)
+            after += len(live)
+            if live:
+                kept_groups.append({**group, "hooks": live})
+        if kept_groups:
+            cleaned[event] = kept_groups
+    return cleaned, before, after
+
+
+def prune_retired_provider_hooks(root) -> None:
+    """Drop hook registrations whose script is gone from retired providers' settings.
+
+    Covers .gemini and .grok only; .claude has its own reconciler. A no-op
+    when the file is absent or nothing is dead, and a second run changes nothing.
+    """
+    root = Path(root)
+    for rel in RETIRED_PROVIDER_SETTINGS:
+        path = root / rel
+        if not path.is_file() or not _settings_is_safe(path, root):
+            continue
+        try:
+            settings = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            print(f"  warn {path} unreadable, retired-provider hook prune skipped: {exc}")
+            continue
+        hooks = settings.get("hooks") if isinstance(settings, dict) else None
+        if not isinstance(hooks, dict):
+            continue
+        cleaned, before, after = _prune_dead_hooks(hooks, root)
+        if before == after:
+            continue
+        if cleaned:
+            settings["hooks"] = cleaned
+        else:
+            del settings["hooks"]
+        fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=".settings.", suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                fh.write(json.dumps(settings, indent=2, ensure_ascii=False) + "\n")
+            os.replace(tmp, path)
+        except BaseException:
+            Path(tmp).unlink(missing_ok=True)
+            raise
+        print(f"  {rel}: hook registrations {before} -> {after} (dead scripts pruned)")
+
+
 def check_agents_md_placeholders(target_dir: str) -> None:
     """Warn if AGENTS.md still contains unfilled {{PLACEHOLDER}} tokens."""
     agents_md = os.path.join(target_dir, "AGENTS.md")
@@ -430,9 +452,6 @@ def main(target_dir: str, version: str) -> None:
 
     print("[Gap 4] Wiring check_autonomy.sh into PreToolUse hooks...")
     wire_autonomy_hook(target_dir)
-
-    print("[Gap 7] Seeding autoCompactWindow settings key (#1430)...")
-    seed_autocompact_window(target_dir)
 
     print("[Gap 8] Wiring project-scoped statusline...")
     wire_statusline(target_dir)

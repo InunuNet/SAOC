@@ -102,7 +102,8 @@ def run(cmd, cwd, timeout, verbose):
         print(f"    $ {' '.join(cmd)}  (cwd={cwd})", file=sys.stderr)
     try:
         proc = subprocess.run(
-            cmd, cwd=str(cwd), capture_output=True, text=True, timeout=timeout,
+            cmd, cwd=str(cwd), capture_output=True, text=True,
+            encoding="utf-8", errors="replace", timeout=timeout,
         )
     except subprocess.TimeoutExpired as exc:
         return _TimedOut(cmd, timeout, exc)

@@ -80,11 +80,6 @@ const SECTION_LINKS: readonly SectionLink[] = [
     hint: 'Register for the Symposium and WOSA Conference',
   },
   {
-    href: '/national-show/sa-exhibitors',
-    label: 'South African Exhibitors',
-    hint: 'The nurseries exhibiting at the show',
-  },
-  {
     href: '/national-show/international-guests',
     label: 'International Guests',
     hint: 'Guests and exhibitors from abroad',

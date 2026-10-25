@@ -228,7 +228,7 @@ export function SaocLockup({
 const OFFICIAL_MONO_EMBLEM = '/images/saoc-lockup-vertical-emblem.png';
 
 // The accessible name is the visible text (label-in-name): no aria-label, nothing aria-hidden inside.
-// The focus ring comes from the host's :focus-visible rule (the NOS footer's .nf :focus-visible).
+// The focus ring comes from the host's rule (nos-chrome.css, .nf-saoc-credit a:focus-visible).
 function OfficialMonoLockup({
   href,
   testId,

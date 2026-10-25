@@ -28,22 +28,15 @@ export const metadata: Metadata = buildPageMetadata({
   path: '/sponsors',
 });
 
-const REACH_STATS = [
-  { value: '21', label: 'Affiliated Societies' },
-  { value: '1968', label: 'Founding Year' },
-  { value: '18', label: 'National Shows Hosted' },
-  { value: '56', label: 'Accredited Judges' },
-] as const;
-
 const BENEFITS = [
   'Logo placement on saoc.co.za and event signage',
   'Recognition at the National Show — exhibition space, programme, and banner placement',
-  'A feature in Orchids South Africa, our 184-page annual yearbook',
+  'A feature in Orchids South Africa, our annual yearbook',
   'A mention to our affiliated-society network via newsletter and social channels',
 ] as const;
 
 const SUPPORT_LEAD =
-  'SAOC coordinates orchid growing, showing, hybridising, and judging across South Africa — reaching a national audience of 21 affiliated societies through our triennial National Show and annual yearbook.';
+  'SAOC coordinates orchid growing, showing, hybridising, and judging across South Africa — reaching a national audience through our triennial National Show and annual yearbook.';
 const SPONSOR_CTA_BODY =
   'Partner with the national body coordinating orchid societies since 1968. Get in touch to discuss sponsorship of the National Show, the yearbook, or the council itself.';
 
@@ -98,26 +91,6 @@ export default async function SponsorsPage() {
             local society meetings.
           </p>
         </section>
-
-        {/* Reach — reused stat treatment from the home page. Public: no stat list, the figures are unsourced. */}
-        {withhold ? null : (
-          <section data-placeholder="true" className="flex flex-col items-start gap-4">
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted">
-              Our reach
-            </p>
-            <dl className="grid w-full grid-cols-2 gap-8 border-y border-rule py-10 sm:grid-cols-4">
-              {REACH_STATS.map((stat) => (
-                <div key={stat.label}>
-                  <dt className="font-serif tracking-[-0.015em] font-light text-[32px] text-ink">{stat.value}</dt>
-                  <dd className="mt-1 font-mono text-[11px] tracking-[0.16em] text-muted">
-                    {stat.label}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-            <PlaceholderMarker />
-          </section>
-        )}
 
         {/* Benefits */}
         <section className="max-w-[720px]" data-placeholder="sponsorship-benefits-estimate">

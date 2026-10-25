@@ -52,7 +52,7 @@ const overlay = readFileSync('components/chrome/SearchOverlay.tsx', 'utf8');
 assert.ok(!/from '@\/lib\/data'|lib\/data\/societies/.test(overlay), 'SearchOverlay reads a hardcoded society list');
 
 // 4. events: a hidden host is projected as null, a listed host is kept.
-const upcoming = await run(upcomingEventsQuery, { todayStart: '2000-01-01T00:00:00Z' });
+const upcoming = await run(upcomingEventsQuery, { todayStart: '2000-01-01T00:00:00Z', todayDate: '2000-01-01' });
 assert.equal(upcoming.find((e) => e.slug === 'hidden-host').hostSociety, null);
 assert.equal(upcoming.find((e) => e.slug === 'listed-host').hostSociety.name, 'Cape Orchid Society');
 const detail = await run(eventBySlugQuery, { slug: 'hidden-host' });

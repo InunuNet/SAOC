@@ -92,6 +92,11 @@
           },
           {
             "type": "command",
+            "command": "[ -f execution/timesheet.py ] || exit 0; python3 execution/timesheet.py boot-check",
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "echo \"You are now operating within the $(jq -r '.project_name // \"Athanor\"' .agent/profile.json) Agentic Workspace (v$(cat .agent/version)). Identity: $(jq -r '.identity.agent_name // \"Athanor Agent\"' .agent/profile.json) | Identity Status: Active. A full boot context was just injected above \u2014 framework identity (AGENTS.md), workspace, last session, project rules, goals, learned, backlog, brain recall, blockers, and git remotes. Read the injected BOOT CONTEXT carefully. You have 8 specialized agents at your disposal (@lead, @dev, @designer, etc.). Your primary goal is autonomous self-improvement for this project. Report boot status using this exact format: \u2705 ATHANOR: [name] | \ud83e\udd16 Agents: 8 roles active | Last session: [1-line summary] | Goals: [count] active | Backlog: [count] open items | Rules loaded: yes | \u27a1\ufe0f Ready.\""
           }
         ]
@@ -152,7 +157,24 @@
           },
           {
             "type": "command",
+            "command": "[ -f execution/timesheet.py ] || exit 0; python3 execution/timesheet.py hook",
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "[ -f docs/rules/inject_no_invention.sh ] || exit 0; bash docs/rules/inject_no_invention.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/timesheet.py ] || exit 0; python3 execution/timesheet.py hook",
             "timeout": 5
           }
         ]
@@ -254,6 +276,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f execution/hooks/autocompact_after_mission.sh ] || exit 0; bash execution/hooks/autocompact_after_mission.sh",
+            "timeout": 30
+          }
+        ]
+      }
     ]
   },
   "env": {
@@ -294,7 +327,6 @@
     },
     "enabled": false
   },
-  "autoCompactWindow": 400000,
   "statusLine": {
     "type": "command",
     "command": "python3 execution/statusline.py"
