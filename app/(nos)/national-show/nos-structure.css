@@ -3389,6 +3389,16 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     );
     padding-right: 0;
   }
+  .nos-theme .nos-hero-inner.nos-hero-photo::before {
+    background: linear-gradient(
+      90deg,
+      rgba(11, 10, 20, 0.92) 0%,
+      rgba(11, 10, 20, 0.88) 38%,
+      rgba(11, 10, 20, 0.45) 56%,
+      rgba(11, 10, 20, 0.12) 76%,
+      rgba(11, 10, 20, 0.04) 100%
+    );
+  }
 }
 @media (max-width: 767px) {
   .nos-theme .nos-hero-inner.nos-hero-photo::before {
@@ -4431,9 +4441,4 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 
 .nos-theme [data-doc-aside] .nk-admit {
   font-style: normal;
-}
-.nos-theme .nos-sp-hero-cta,
-.nos-theme .nos-sp-card-cta,
-.nos-theme .nos-sp-main a[class*='btn'] {
-  border-radius: 2px;
 }

@@ -284,17 +284,16 @@
 
   /* ---- F2/F3 additions, corrected under R1/R2 (nos-design-rulings.md): NOS
      is a subsection of the SAOC site, not its own brand system, and keeps
-     SAOC's structural grammar — radius 0 on cards, 2px on buttons, elevation
+     SAOC's structural grammar — radius 0 on cards, elevation
      as borders rather than shadows. An earlier version of this file claimed
      "radii are soft and generous per the design grammar — 2px reads cold and
      was rejected"; that was Codi relaying the standalone NOS brand system's
      rules as if they applied here, and it was retracted (R1). Pill radius is
-     reserved for eyebrow pills only (R2) — --radius-button is what buttons
-     use now, not --radius-pill. ---- */
+     reserved for eyebrow pills only (R2) — buttons use --radius-button (10px, R17,
+     defined in nos-structure.css), not --radius-pill. ---- */
   --radius-card: 0px;
   --radius-lg: 0px;
   --radius-pill: 999px;
-  --radius-button: 2px;
   --border-primary: 1px;
   --border-hairline: 1px;
   --ease-nos: cubic-bezier(0.16, 1, 0.3, 1);
