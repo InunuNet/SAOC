@@ -8,7 +8,8 @@ export default function Loading() {
     <NosHero
       route={NOS_ROUTE_HEROES.symposium.route}
       title={NOS_ROUTE_HEROES.symposium.title}
-      lede={NOS_ROUTE_HEROES.symposium.lede}
+      crumbLabel={NOS_ROUTE_HEROES.symposium.title}
+      lede={`\u201c${NOS_ROUTE_HEROES.symposium.lede}\u201d`}
       ledeKind="theme"
       titleAs="p"
       priority

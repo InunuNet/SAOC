@@ -202,5 +202,13 @@
  "testBar": {
   "selector": "[aria-label=\"Testing only, not live\"]",
   "rule": "absent on every route in the table; present ONLY on /tickets/* and the payment step (paths from SAOC's branch fix/testbar-ticket-pages-only, to be taken once it merges). Brad: 'The warning is only for the selling of tickets.' /conferences is NOT a tickets page. The dev does not change lib/ticketing-test-mode.ts."
+ },
+ "workshopLevels": {
+  "source": "NOS Design's ruling (WK-G1, comms.md L3963, spec 4.12 recommendation): colours are hers, not engineering's",
+  "Beginner": "#8f9136",
+  "Intermediate": "#8a5cc2",
+  "Advanced": "royal (#211a57)",
+  "dotPx": 10,
+  "rule": "a dot beside the level WORD, never a pill; the word always shows so colour is never the only carrier"
  }
 }

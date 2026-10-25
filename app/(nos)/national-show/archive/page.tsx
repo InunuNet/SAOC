@@ -13,9 +13,8 @@ import { Button } from '@/components/nos/Button';
 import { CtaBand } from '@/components/nos/CtaBand';
 import { EditionCard } from '@/components/nos/EditionCard';
 import { NosHero } from '@/components/nos/NosHero';
-import { NosSection } from '@/components/nos/NosSection';
 import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
-import { ConfirmationBadge } from '@/components/show';
+import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { showPastShowsRoute } from '@/lib/data/past-shows-public';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
@@ -93,6 +92,7 @@ export default async function ShowArchivePage() {
       <NosHero
         route="/national-show/archive"
         title="Past shows"
+        crumbLabel="Past shows"
         lede={LEDE}
         priority
         actions={
@@ -107,13 +107,10 @@ export default async function ShowArchivePage() {
       />
 
       {/* ── Show grid ── */}
-      <NosSection>
+      <DocumentLayout>
         {pastShows.length > 0 ? (
           <>
             <h2 className="sr-only">National Show editions</h2>
-            <div className="nos-surface mb-10">
-              <ConfirmationBadge status="pending" />
-            </div>
             <ShowEntityGrid
               items={pastShows}
               itemKey={(show) => String(show.year)}
@@ -145,13 +142,12 @@ export default async function ShowArchivePage() {
           </>
         ) : (
           <div className="nos-surface">
-            {holds ? null : <ConfirmationBadge status="pending" />}
-            <h2 className={`${holds ? '' : 'mt-3 '}font-serif text-[28px] font-normal text-ink`}>
+            <h2 className="font-serif text-[28px] font-normal text-ink">
               Show history awaiting committee records
             </h2>
           </div>
         )}
-      </NosSection>
+      </DocumentLayout>
 
       {holds ? null : (
         <CtaBand

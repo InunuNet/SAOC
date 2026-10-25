@@ -11,6 +11,7 @@ export const STD = JSON.parse(readFileSync(`${SPEC}/goldens/standard.json`, 'utf
 const TABLE = JSON.parse(readFileSync(`${SPEC}/goldens/route-table.json`, 'utf8'));
 const ALL_ROUTES = TABLE.routes;
 export const RETIRED = TABLE.retired ?? [];
+export const BANNED = TABLE.bannedStrings ?? [];
 export const EXCLUDED = ALL_ROUTES.filter((r) => r.excluded);
 export const ROUTES = ALL_ROUTES.filter((r) => !r.excluded);
 export const CROPS = JSON.parse(readFileSync(`${SPEC}/goldens/crops/crop-proposals.json`, 'utf8')).crops;

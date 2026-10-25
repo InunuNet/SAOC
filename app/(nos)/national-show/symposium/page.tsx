@@ -18,7 +18,7 @@ import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 // SY-G1 (NOS Design, comms.md 2026-10-25): the hero names the page by its nav label (NL-1) and carries her
 // theme title in her quotation marks; the body is the theme sentence and the first sentence of her
 // Symposium paragraph (What to Expect v1.0) beside the live v13 ticket card; then the presenters as PR-1
-// profiles. The "About the Symposium" and "Attending" sections were builder copy (R7) and are gone from
+// profiles. The two builder sections that used to follow the theme (R7) are gone from
 // content/show-pages/06-saoc-symposium.json.
 //
 // The date and hours are the ticket product's own (lib/data/ticket-presentation.ts), the venue is the

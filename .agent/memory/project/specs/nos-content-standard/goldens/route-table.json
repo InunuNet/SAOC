@@ -254,19 +254,24 @@
    "ig": {
     "h1": "International guests",
     "lede": "Profiles of international speakers, judges, exhibitors and researchers attending the Show.",
-    "note": "IG-G1 (NOS Design, comms.md L3350). Listing rule: country set and not South Africa, any profile type; no country, no listing. Hooks the dev must add: [data-guest-profile] per row, [data-guest-portrait] around the portrait, [data-guest-role] on the role label, [data-guest-filter] on the role filter. Demo values from her shots (Ten Shin Gardens Co., Ltd.; The Exotic Plant Company; data-demo) must never appear. PR-1 (comms.md L3387): portrait box 320 max, photo rule source >= 640 (Crous 690 shows, Tibbs 201 does not).",
+    "note": "IG-G1 (NOS Design, comms.md L3350). Listing rule: country set and not South Africa, any profile type; no country, no listing. Hooks the dev must add: [data-guest-profile] per row, [data-guest-portrait] around the portrait, [data-guest-role] on the role label, [data-guest-filter] on the role filter. Demo values from her shots (Ten Shin Gardens Co., Ltd.; The Exotic Plant Company; data-demo) must never appear. PR-1 (comms.md L3387): portrait box 320 max, photo rule source >= 640 (Crous 690 shows, Tibbs 201 does not). Real data (SAOC, from her bios): exactly Wijaya (Taiwan, Ten Shin Gardens Co., Ltd.) and Fuchs (United States, R.F. Orchids) are listed; Tibbs is South Africa and Crous/Oberholzer have no country, so none of them is listed; one role (Speaker), so no filter.",
     "demoValues": [
-     "Ten Shin Gardens",
      "The Exotic Plant Company"
     ],
     "minPortraitSourceW": 640,
     "boxMax": 320,
     "nameTag": "H2",
-    "mustHavePhoto": [
-     "Crous"
-    ],
-    "mustNotHavePhoto": [
-     "Tibbs"
+    "listed": [
+     {
+      "name": "Wijaya",
+      "country": "Taiwan",
+      "organisation": "Ten Shin Gardens Co., Ltd."
+     },
+     {
+      "name": "Fuchs",
+      "country": "United States",
+      "organisation": "R.F. Orchids"
+     }
     ]
    },
    "noUpscale": true
@@ -402,13 +407,53 @@
    "nos": "/workshops",
    "group": "programme",
    "kind": "document",
-   "aside": "index",
+   "aside": "content",
    "drive": null,
    "photo": "S2c",
    "keyFacts": null,
-   "h2FlaggedForDrive": [
-    "Programme"
-   ]
+   "heroCap": {
+    "1440": 420,
+    "2056": 440
+   },
+   "heroMeasured": {
+    "1440": 328,
+    "2056": 380
+   },
+   "wk": {
+    "sg": "WK-G1 (NOS Design, comms.md L3963; spec 4.12)",
+    "h1": "Workshops",
+    "crumb": "National Show - Workshops",
+    "faqStand": 57,
+    "faqQuestions": [
+     58,
+     59,
+     60
+    ],
+    "faqH2": "Frequently asked questions",
+    "factTerms": [
+     "Dates",
+     "Venue",
+     "Host"
+    ],
+    "absentText": [
+     "Book Sunset Cocktails",
+     "guided Field Trip",
+     "To be confirmed by the show committee",
+     "Sunset Cocktails",
+     "Please check on the website for updates"
+    ],
+    "absentH2": [
+     "Programme"
+    ],
+    "levels": {
+     "Beginner": "rgb(143, 145, 54)",
+     "Intermediate": "rgb(138, 92, 194)",
+     "Advanced": "rgb(33, 26, 87)"
+    },
+    "places": "^(\\d+ of \\d+ places left|Fully booked)$",
+    "recordHooks": "[data-workshop-record] per row, [data-level] (the level word), [data-level-dot] (10px dot), [data-places]; rows render only once SAOC enters workshop records",
+    "schemaGap": "sanity/schemas/documents/workshopSession.ts has title, description, presenter (reference), timeSlot, ticketType and provenance only. SAOC has since approved optional level, duration, included and bring (no places field: the total is the ticket's capacity, the remainder is getPoolRemaining); records render nothing until Lee-Ann supplies data (owner items s to w). The browser gate checks only what a rendered row shows; check-static covers the schema."
+   }
   },
   {
    "nos": "/symposium",
@@ -435,7 +480,6 @@
     "boxMax": 320,
     "minPortraitSourceW": 640,
     "demoValues": [
-     "Ten Shin Gardens",
      "The Exotic Plant Company"
     ],
     "mustHavePhoto": [
@@ -445,8 +489,8 @@
      "Tibbs"
     ],
     "note": "PR-1 shared profile on an event page: names are h3 under the h2 'Presenters'; the facts row is omitted entirely when empty; no listing rule (country is filled by SAOC later).",
-    "mustName": "Hildagard Crous",
-    "bannedName": "Hildegard",
+    "mustName": "Hildegard Crous",
+    "bannedName": "Hildagard",
     "orderFile": "lib/view-models/presenter-order.ts",
     "orderConst": "PRESENTER_FALLBACK_SEQUENCE"
    },
@@ -501,11 +545,10 @@
     "boxMax": 320,
     "minPortraitSourceW": 640,
     "demoValues": [
-     "Ten Shin Gardens",
      "The Exotic Plant Company"
     ],
-    "mustName": "Hildagard Crous",
-    "bannedName": "Hildegard",
+    "mustName": "Hildegard Crous",
+    "bannedName": "Hildagard",
     "note": "PR-1 applies only once a conferencePresenter has event = wosa; until then there is no Presenters section at all.",
     "orderFile": "lib/view-models/presenter-order.ts",
     "orderConst": "PRESENTER_FALLBACK_SEQUENCE"
@@ -563,10 +606,57 @@
    "nos": "/conferences",
    "group": "programme",
    "kind": "document",
-   "aside": "index",
+   "aside": "content",
    "drive": null,
    "photo": "S2a",
-   "keyFacts": null
+   "keyFacts": null,
+   "heroCap": {
+    "1440": 420,
+    "2056": 440
+   },
+   "heroMeasured": {
+    "1440": 320,
+    "2056": 380
+   },
+   "cr": {
+    "sg": "CR-G1 (NOS Design, comms.md L3989)",
+    "h1": "Conference registration",
+    "crumb": "National Show - Conference registration",
+    "factTerms": [
+     "Symposium",
+     "WOSA Conference",
+     "Time"
+    ],
+    "rows": [
+     {
+      "h2": "Symposium",
+      "introHeading": "6. Symposium",
+      "faqBody": 38,
+      "dateFaq": 39,
+      "hoursLine": "SAOC Symposium",
+      "link": "About the Symposium",
+      "hrefHas": "symposium",
+      "card": "symposium"
+     },
+     {
+      "h2": "WOSA Conference",
+      "introHeading": "7. WOSA Conference",
+      "faqBody": 47,
+      "dateFaq": 48,
+      "hoursLine": "WOSA Conference",
+      "link": "About the WOSA Conference",
+      "hrefHas": "wosa-conference",
+      "card": "wosa"
+     }
+    ],
+    "absentText": [
+     "Register for the National Orchid Show Symposium or the WOSA Conference"
+    ],
+    "absentH2": [
+     "Programme"
+    ],
+    "hooks": "[data-conference-row] around each row (h2, standfirst, body, link, and that conference's one [data-ticket-card])"
+   }
   },
   {
    "nos": "/sponsors",
@@ -656,6 +746,12 @@
    "to": "/vendors",
    "status": 301,
    "note": "V1 ruling (change-list.md:54). No sub-nav item for it; the 301 is asserted by gate-standard."
+  }
+ ],
+ "bannedStrings": [
+  {
+   "text": "With Wild Orchids of Southern Africa",
+   "why": "builder theme line on the WOSA ticket card (ticket-presentation.ts `theme`); it misnames the organisation (her FAQ 46: 'Wild Orchids Southern Africa'). Never renders on any route. SAOC ruling: wosa.theme is dropped (no replacement until Lee-Ann supplies one); the org name itself is NOT gated, both of her spellings are hers."
   }
  ]
 }

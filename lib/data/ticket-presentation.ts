@@ -149,7 +149,7 @@ export const TICKET_PRODUCTS: Record<TicketProductId, TicketProduct> = {
     // Lee-Ann answers doc 2026-10-25: 'WOSA Conference 25th September 9am to 5pm'
     when: 'Saturday 25 September',
     meta: '9am to 5pm',
-    theme: 'With Wild Orchids of Southern Africa',
+    theme: null,
     numeral: 'XIX',
     caption: '19th Show',
     photo: null,

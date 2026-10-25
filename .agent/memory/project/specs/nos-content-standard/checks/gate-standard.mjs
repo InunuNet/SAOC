@@ -11,7 +11,7 @@
 //             photo pixels behind each fact; sub-nav and first h2 visible at 1440x900
 //   focus     a focused h1[tabindex="-1"] paints no outline, ring or shadow, on load and after client navigation
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { AUTH, CROPS, RETIRED, gotoRoute, EXCLUDED, ROUTES, STD, driveState, launchChromium, newContext, withServer } from './_lib.mjs';
+import { AUTH, BANNED, CROPS, RETIRED, gotoRoute, EXCLUDED, ROUTES, STD, driveState, launchChromium, newContext, withServer } from './_lib.mjs';
 
 const HERO_IMG = 'section[data-nos-hero] [data-nos-hero-media] img';
 const wantGap = (w) => (w >= 1024 ? STD.gap.atOrAbove1024 : STD.gap.below1024);
@@ -297,6 +297,7 @@ async function igChecks(page, route, vp, c, tag) {
   c.check(`${tag} IG-G1 one editorial profile per row, never a card grid: rows stack (distinct tops, same left) and no grid wraps the rows (${m.grid})`, m.grid === 0 && rows.every((r, i) => i === 0 || (r.top - rows[i - 1].top > 100 && Math.abs(r.left - rows[0].left) <= 1)));
   c.check(`${tag} IG-G1 role label present on every row and not uppercase`, rows.every((r) => r.role && r.roleUpper !== 'uppercase'));
   if (!I.event) c.check(`${tag} IG-G1 listing rule: every row has a country, and it is not South Africa (${rows.map((r) => r.country).join(' | ')})`, rows.every((r) => r.country !== null && r.country !== '' && !/^south africa$/i.test(r.country)));
+  if (I.listed) c.check(`${tag} IG-G1 lists exactly ${I.listed.map((e) => e.name).join(' and ')}, no one else, with their country and organisation from the CMS (${rows.map((x) => `${x.name}: ${x.country}`).join(' | ')})`, rows.length === I.listed.length && I.listed.every((e) => { const row = rows.find((x) => x.name.includes(e.name)); if (!row) return false; const oi = row.dts.findIndex((d) => /^organi[sz]ation$/i.test(d)); return row.country === e.country && oi >= 0 && row.dds[oi] === e.organisation; }));
   if (!I.event) c.check(`${tag} PR-1 on /international-guests the name stays an h2`, rows.every((x) => x.nameTag === (I.nameTag ?? 'H2')));
   c.check(`${tag} IG-G1 empty facts omitted: no dash, TBC or empty cell, and every dt has its dd (${rows.map((r) => r.dts.length + '/' + r.dds.length).join(',')})`, rows.every((r) => r.dts.length === r.dds.length && r.dds.every((d) => d !== '' && !/^[-–—]+$/.test(d) && !/^(tbc|to be confirmed|n\/a)$/i.test(d)) && r.dts.every((d) => d !== '')));
   c.check(`${tag} IG-G1 no portrait is upscaled (naturalWidth >= box x DPR) and no placeholder tile: a portrait element always holds a photo (${rows.map((r) => r.hasImg ? r.natW + '/' + Math.round(r.boxW * vp.dsf) : '-').join(' ')})`, rows.every((r) => !r.por || (r.hasImg && r.natW >= Math.floor(r.boxW * vp.dsf) - 1)) && rows.every((r) => !r.placeholderTile && !r.bgImg));
@@ -409,6 +410,89 @@ async function woChecks(page, route, vp, c, tag, server) {
   c.check(`${tag} WO-G1 the builder sections "About the Conference", "Attending", "About WOSA" (and its partner-site paragraph) and the PLACEHOLDER chips are gone`, W.absent.every((x) => !m.all.includes(x)), W.absent.filter((x) => m.all.includes(x)).join(', '));
   c.check(`${tag} WO-G1 no presenters section until a conferencePresenter has event = wosa (${m.profiles} profiles, "Presenters" h2 ${m.presentersH2})`, m.profiles > 0 || !m.presentersH2);
   await subnavStable(page, server, route, c, tag);
+}
+
+/** WK-G1 (NOS Design, root comms.md L3963): /workshops. Copy is FAQ v1.0 section 8 verbatim; workshop records render only once SAOC enters them. */
+async function wkChecks(page, route, vp, c, tag) {
+  const W = route.wk;
+  const faq57 = spQa(W.faqStand); const sentences = faq57 ? faq57.a.join(' ').match(/[^.!?]+[.!?]/g)?.map((x) => x.trim()) ?? [] : [];
+  const qa = W.faqQuestions.map((n) => ({ n, ...spQa(n) }));
+  c.check(`${tag} WK-G1 sources are real: FAQ ${W.faqStand} has 3 sentences and FAQ ${W.faqQuestions.join('/')} were found in the frozen copy`, sentences.length === 3 && qa.every((q) => q.q && q.a.length), String(sentences.length));
+  const m = await page.evaluate((W) => {
+    const txt = (e) => e.textContent.replace(/\s+/g, ' ').trim();
+    const hero = document.querySelector('section[data-nos-hero]'); const main = document.querySelector('[data-doc-main]'); const aside = document.querySelector('[data-doc-aside]');
+    const facts = hero ? [...hero.querySelectorAll('[data-hero-facts] dt')].map((dt) => ({ t: txt(dt), d: dt.nextElementSibling ? txt(dt.nextElementSibling) : '' })) : [];
+    const faqH2 = [...document.querySelectorAll('main h2')].find((h) => txt(h) === W.faqH2);
+    const h3s = faqH2 ? [...document.querySelectorAll('main h3')].filter((h) => faqH2.compareDocumentPosition(h) & Node.DOCUMENT_POSITION_FOLLOWING).map(txt) : [];
+    const acs = aside ? getComputedStyle(aside) : null; const ab = aside ? aside.getBoundingClientRect() : null; const mb = main ? main.getBoundingClientRect() : null;
+    const cards = document.querySelectorAll('[data-ticket-card]').length;
+    const recs = [...document.querySelectorAll('[data-workshop-record]')].map((r) => {
+      const rb = r.getBoundingClientRect(); const lvl = r.querySelector('[data-level]'); const dot = r.querySelector('[data-level-dot]'); const pl = r.querySelector('[data-places]'); const h2 = r.querySelector('h2');
+      const dds = [...r.querySelectorAll('dd')].map(txt); const pill = [r, ...r.querySelectorAll('*')].some((e) => parseFloat(getComputedStyle(e).borderTopLeftRadius) >= 999 && e.textContent.trim().length > 0);
+      return { top: rb.top + scrollY, left: rb.left, h2: Boolean(h2), level: lvl ? txt(lvl) : null, dot: dot ? { w: dot.getBoundingClientRect().width, bg: getComputedStyle(dot).backgroundColor } : null, places: pl ? txt(pl) : null, dds, pill, demo: r.querySelectorAll('[data-demo]').length };
+    });
+    const gridWrap = document.querySelectorAll('main [class*="grid"] > [data-workshop-record]').length;
+    return { h1: txt(document.querySelector('h1')), heroText: hero ? txt(hero) : '', facts, mainText: main ? txt(main) : '', all: txt(document.querySelector('main')), h2s: [...document.querySelectorAll('main h2')].map(txt), hasFaqH2: Boolean(faqH2), h3s, cards,
+      asidePos: acs?.position, asideTop: acs ? parseFloat(acs.top) : null, asideW: ab ? ab.width : 0, asideY: ab ? ab.top + scrollY : null, mainY: mb ? mb.top + scrollY : null, recs, gridWrap, demoAttr: document.querySelectorAll('[data-demo]').length,
+      crumb: hero ? txt(hero.querySelector('nav, [aria-label*="readcrumb"]') ?? hero).slice(0, 60) : '' };
+  }, W);
+  const norm = (t) => t.replace(/\s+/g, ' ').trim();
+  c.check(`${tag} WK-G1 h1 is "${W.h1}" and the crumb reads National Show - Workshops (${m.h1} | ${m.crumb})`, m.h1 === W.h1 && /National Show\s*[—–-]\s*Workshops/.test(m.crumb));
+  c.check(`${tag} WK-G1 no lede: the builder line "Book Sunset Cocktails and guided Field Trip outings..." is not in the hero`, !/Book Sunset Cocktails|Field Trip outings/.test(m.heroText));
+  c.check(`${tag} WK-G1 FACTS-1 renders whichever of ${W.factTerms.join(' / ')} exist, in that order, with no TBC or dash (${m.facts.map((f) => `${f.t}=${f.d}`).join('; ')})`, (() => { const idx = m.facts.map((f) => W.factTerms.indexOf(f.t)); return m.facts.length >= 2 && idx.every((i, k) => i >= 0 && (k === 0 || i > idx[k - 1])); })() && m.facts.every((f) => f.d !== '' && !/follow|tbc|to be confirmed|^[-–—]+$/i.test(f.d)));
+  c.check(`${tag} WK-G1 main: FAQ ${W.faqStand}'s first sentence is the standfirst, its second sentence follows as body, the third is dropped`, (() => { const a = m.mainText.indexOf(norm(sentences[0] ?? 'x')); const b = m.mainText.indexOf(norm(sentences[1] ?? 'x')); return a >= 0 && b > a && !m.mainText.includes(norm(sentences[2] ?? 'x')); })());
+  c.check(`${tag} WK-G1 h2 "${W.faqH2}" over FAQ ${W.faqQuestions.join(', ')} as h3 with the answers verbatim`, m.hasFaqH2 && JSON.stringify(m.h3s.map((t) => t.replace(/^\d+\.\s*/, ''))) === JSON.stringify(qa.map((q) => q.q)) && qa.every((q) => q.a.every((a) => m.mainText.includes(norm(a)))), m.h3s.join(' | '));
+  c.check(`${tag} WK-G1 exactly one ticket card (the live Workshops product), sticky at top 100 from 1024, static and at most 440px below (${m.cards}; ${m.asidePos} ${m.asideTop}; ${Math.round(m.asideW)}px)`, m.cards === 1 && (vp.width >= 1024 ? m.asidePos === 'sticky' && m.asideTop === 100 : (m.asidePos !== 'sticky' && m.asideW <= 441)));
+  if (vp.width < 1024) c.check(`${tag} WK-G1 below 1024 the ticket comes first (aside y ${Math.round(m.asideY)} < copy y ${Math.round(m.mainY)})`, m.asideY !== null && m.asideY < m.mainY);
+  c.check(`${tag} WK-G1 the status box and chip, the SESSIONS_NOTE sentences, the "Programme" h2 and the Sunset Cocktails card are gone`, W.absentText.every((x) => !m.all.includes(x)) && W.absentH2.every((x) => !m.h2s.includes(x)), [...W.absentText.filter((x) => m.all.includes(x)), ...W.absentH2.filter((x) => m.h2s.includes(x))].join(', '));
+  c.check(`${tag} WK-G1 demo values never ship (data-demo x${m.demoAttr})`, m.demoAttr === 0);
+  if (m.recs.length) {
+    const R = m.recs;
+    c.check(`${tag} WK-G1 workshop records are ruled rows in the main column, never a grid (${R.length} rows)`, m.gridWrap === 0 && R.every((r, i) => i === 0 || (r.top - R[i - 1].top > 60 && Math.abs(r.left - R[0].left) <= 1)) && R.every((r) => r.h2));
+    c.check(`${tag} WK-G1 each level shows its WORD beside a ${route.wk && 10}px dot in the ruled colour (Beginner / Intermediate / Advanced), never a pill (${R.map((r) => `${r.level}:${r.dot && r.dot.bg}`).join(' ')})`, R.every((r) => r.level === null || (Object.keys(W.levels).includes(r.level) && r.dot && Math.abs(r.dot.w - 10) <= 0.5 && r.dot.bg === W.levels[r.level])) && R.every((r) => !r.pill));
+    c.check(`${tag} WK-G1 places read "n of N places left" or "Fully booked"; empty fact cells are omitted (no dash, TBC or empty dd)`, R.every((r) => (r.places === null || new RegExp(W.places).test(r.places)) && r.dds.every((d) => d !== '' && !/^[-–—]+$/.test(d) && !/^(tbc|to be confirmed)$/i.test(d))));
+  } else c.note(`${tag} WK-G1 no workshop records rendered (expected until SAOC enters them and workshopSession gains level / duration / places; see spec.md gap)`);
+}
+
+/** CR-G1 (NOS Design, root comms.md L3989): /conferences, "Conference registration". Two rows, each with its own live ticket card; all copy is FAQ v1.0 verbatim. */
+async function crChecks(page, route, vp, c, tag) {
+  const C = route.cr;
+  const introOf = (heading) => { const L = readFileSync(`${SPDIR}faq.md`, 'utf8').split('\n'); const i = L.findIndex((l) => spUnmd(l) === heading); if (i < 0) return ''; for (let k = i + 1; k < L.length; k += 1) if (L[k].trim()) return spUnmd(L[k]); return ''; };
+  const rowsSrc = C.rows.map((r) => ({ ...r, intro: introOf(r.introHeading), body: spQa(r.faqBody), date: faqDate(r.dateFaq), hours: hoursOf(r.hoursLine) }));
+  c.check(`${tag} CR-G1 sources are real: both FAQ intros, FAQ ${C.rows.map((r) => r.faqBody).join('/')} answers, the dates and the hours were found in the frozen copies`, rowsSrc.every((r) => r.intro && r.body && r.body.a.length && r.date && r.hours), rowsSrc.map((r) => `${r.intro.slice(0, 20)}|${r.date}|${r.hours}`).join(' ; '));
+  const m = await page.evaluate((C) => {
+    const txt = (e) => e.textContent.replace(/\s+/g, ' ').trim();
+    const hero = document.querySelector('section[data-nos-hero]');
+    const facts = hero ? [...hero.querySelectorAll('[data-hero-facts] dt')].map((dt) => { const dd = dt.nextElementSibling; const cs = dd ? getComputedStyle(dd) : null; return { t: txt(dt), d: dd ? txt(dd) : '', ws: cs?.whiteSpace, h: dd ? dd.getBoundingClientRect().height : 0, lh: cs ? parseFloat(cs.lineHeight) : 0 }; }) : [];
+    const rows = [...document.querySelectorAll('[data-conference-row]')].map((r) => {
+      const h2 = r.querySelector('h2'); const link = [...r.querySelectorAll('a')].find((a) => /^About /.test(txt(a)));
+      const cards = r.querySelectorAll('[data-ticket-card]'); const card = cards[0]; const cb = card ? card.getBoundingClientRect() : null; const rb = r.getBoundingClientRect();
+      const rect = (sel) => { const e = r.querySelector(sel); if (!e) return null; const b = e.getBoundingClientRect(); return { top: b.top + scrollY, left: b.left, right: b.right, bottom: b.bottom + scrollY }; };
+      const sf = rect('[data-conference-standfirst]'); const bd = rect('[data-conference-body]'); const lk = link ? (() => { const b = link.getBoundingClientRect(); return { top: b.top + scrollY, left: b.left, right: b.right }; })() : null; const cardR = card ? (() => { const b = card.getBoundingClientRect(); return { top: b.top + scrollY, left: b.left, right: b.right, bottom: b.bottom + scrollY }; })() : null;
+      return { sf, bd, lk, cardR, text: txt(r), h2: h2 ? txt(h2) : null, h2Px: h2 ? parseFloat(getComputedStyle(h2).fontSize) : null, link: link ? txt(link) : null, href: link ? link.getAttribute('href') : null, linkH: link ? link.getBoundingClientRect().height : 0, cards: cards.length, cardY: cb ? cb.top + scrollY : null, cardW: cb ? cb.width : 0, top: rb.top + scrollY, h2Y: h2 ? h2.getBoundingClientRect().top + scrollY : null,
+        pill: [r, ...r.querySelectorAll('*')].some((e) => parseFloat(getComputedStyle(e).borderTopLeftRadius) >= 999 && e.textContent.trim().length > 0), ruleAbove: parseFloat(getComputedStyle(r).borderTopWidth) };
+    });
+    return { h1: txt(document.querySelector('h1')), heroText: hero ? txt(hero) : '', facts, rows, h2s: [...document.querySelectorAll('main h2')].map(txt), cards: document.querySelectorAll('[data-ticket-card]').length, all: txt(document.querySelector('main')),
+      crumb: hero ? txt(hero.querySelector('nav, [aria-label*="readcrumb"]') ?? hero).slice(0, 70) : '' };
+  }, C);
+  const norm = (t) => t.replace(/\s+/g, ' ').trim();
+  c.check(`${tag} CR-G1 h1 is "${C.h1}", the crumb reads National Show - ${C.h1} (${m.h1} | ${m.crumb})`, m.h1 === C.h1 && /National Show\s*[—–-]\s*Conference registration/.test(m.crumb));
+  c.check(`${tag} CR-G1 no lede: the builder line "Register for the National Orchid Show Symposium or the WOSA Conference." is not in the hero`, !m.heroText.includes(C.absentText[0]));
+  c.check(`${tag} CR-G1 FACTS-1 is event-labelled ${C.factTerms.join(' / ')}: each date from its FAQ, the time her wording "${rowsSrc[0].hours}", dds nowrap (${m.facts.map((f) => `${f.t}=${f.d}`).join('; ')})`,
+    JSON.stringify(m.facts.map((f) => f.t)) === JSON.stringify(C.factTerms) && m.facts[0]?.d.includes(rowsSrc[0].date) && m.facts[1]?.d.includes(rowsSrc[1].date) && m.facts[2]?.d === rowsSrc[0].hours && m.facts.every((f) => /nowrap/.test(f.ws)));
+  c.check(`${tag} CR-G1 two rows, one per conference, each with exactly its own live ticket card (${m.rows.length} rows, ${m.cards} cards)`, m.rows.length === 2 && m.cards === 2 && m.rows.every((r) => r.cards === 1));
+  rowsSrc.forEach((S, i) => {
+    const r = m.rows[i]; if (!r) return;
+    const t = r.text;
+    c.check(`${tag} CR-G1 row ${i + 1} h2 is the nav label "${S.h2}" in Fraunces display size (${r.h2} ${r.h2Px}px)`, r.h2 === S.h2 && r.h2Px >= 35);
+    c.check(`${tag} CR-G1 row ${i + 1}: her FAQ intro sentence, the FAQ ${S.faqBody} answer, then "${S.link} →" appear verbatim in that order`, (() => { const a = t.indexOf(norm(S.intro)); const b = t.indexOf(norm(S.body.a[0])); const l = t.indexOf(S.link); return a >= 0 && b > a && l > b; })(), S.intro.slice(0, 40));
+    c.check(`${tag} CR-G1 row ${i + 1} link "${r.link}" goes to ${S.hrefHas} and is at least 44px tall (${r.href}, ${Math.round(r.linkH)}px)`, Boolean(r.link) && r.link.startsWith(S.link) && (r.href ?? '').includes(S.hrefHas) && r.linkH >= 44);
+    c.check(`${tag} CR-G1 row ${i + 1} carries the hooks [data-conference-standfirst] and [data-conference-body]`, Boolean(r.sf) && Boolean(r.bd));
+    if (vp.width < 1024) c.check(`${tag} CR-G1 row ${i + 1} below 1024 the order is h2, standfirst, TICKET, body, link (y ${[r.h2Y, r.sf?.top, r.cardR?.top, r.bd?.top, r.lk?.top].map((v) => v && Math.round(v)).join(' < ')}), the card at most 440px wide`, Boolean(r.sf && r.bd && r.cardR && r.lk) && r.h2Y < r.sf.top && r.sf.top < r.cardR.top && r.cardR.top < r.bd.top && r.bd.top < r.lk.top && r.cardW <= 441);
+    else c.check(`${tag} CR-G1 row ${i + 1} from 1024 the card sits beside the main column (card left ${r.cardR && Math.round(r.cardR.left)} >= body right ${r.bd && Math.round(r.bd.right)}, overlapping the row's text vertically)`, Boolean(r.sf && r.bd && r.cardR) && r.cardR.left >= r.bd.right - 2 && r.cardR.left >= r.sf.right - 2 && r.cardR.top < r.bd.bottom && r.cardR.bottom > r.sf.top);
+  });
+  c.check(`${tag} CR-G1 the two rows are stacked, never a 2-up grid (row tops ${m.rows.map((r) => Math.round(r.top)).join(', ')}), with a rule between them and no pill`, m.rows.length === 2 && m.rows[1].top - m.rows[0].top > 200 && m.rows.every((r) => !r.pill) && m.rows[1].ruleAbove >= 1 && m.rows[0].ruleAbove === 0);
+  c.check(`${tag} CR-G1 the "Programme" h2 is gone (${m.h2s.join(' | ')})`, C.absentH2.every((x) => !m.h2s.includes(x)));
 }
 
 /** SY-G1 (NOS Design, root comms.md L3387): /symposium. Every copy string is read from a frozen source or the CMS; builder copy is flagged in spec.md. */
@@ -615,6 +699,8 @@ await withServer(1, 'standard', async (server, c) => {
         c.check(`${tag} responds 200`, res?.status() === 200, String(res?.status()));
         if (res?.status() !== 200) { await context.close(); continue; }
         await page.waitForSelector('[data-doc-layout], [data-programme-body]', { timeout: 15000 }).catch(() => {});
+        { const body = await page.evaluate(() => document.body.textContent.replace(/\s+/g, ' ')); for (const b of BANNED) c.check(`${tag} the banned string "${b.text}" never renders`, !body.includes(b.text), b.why); }
+        { const wosaTheme = await page.evaluate(() => [...document.querySelectorAll('[data-ticket-card]')].filter((k) => /WOSA/i.test(k.textContent) && !/symposium/i.test(k.querySelector('h2, h3')?.textContent ?? '')).reduce((n, k) => n + k.querySelectorAll('.nk-theme').length, 0)); c.check(`${tag} the WOSA ticket card has no theme line (.nk-theme) until Lee-Ann supplies one (${wosaTheme})`, wosaTheme === 0); }
 
         const m = await page.evaluate(({ vpW, aside }) => {
           const r = (e) => { const b = e.getBoundingClientRect(); return { top: b.top + scrollY, bottom: b.bottom + scrollY, left: b.left, right: b.right, w: b.width, h: b.height }; };
@@ -718,6 +804,8 @@ await withServer(1, 'standard', async (server, c) => {
         if (route.ig) await igChecks(page, route, vp, c, tag);
         if (route.sy) await syChecks(page, route, vp, c, tag, server);
         if (route.wo) await woChecks(page, route, vp, c, tag, server);
+        if (route.wk) await wkChecks(page, route, vp, c, tag);
+        if (route.cr) await crChecks(page, route, vp, c, tag);
         if (route.noUpscale) await noUpscaleChecks(page, vp, c, tag);
 
         // focus ring on the h1

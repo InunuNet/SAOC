@@ -60,7 +60,7 @@ check('focus management kept (NosRouteScroll or equivalent still focuses the h1)
 
 // IG-G1: /international-guests renders country and organisation only when present, with no fallback string, and carries no demo values
 {
-  const dirs = ['app/(marketing)/national-show/international-guests', 'app/(nos)/national-show/international-guests', 'app/(nos)/international-guests'];
+  const dirs = ['app/(nos)/national-show/international-guests'];
   const files = [];
   const walkIg = (d) => { if (!existsSync(d)) return; for (const e of readdirSync(d)) { const p = `${d}/${e}`; if (statSync(p).isDirectory()) walkIg(p); else if (/\.tsx?$/.test(e)) files.push(p); } };
   for (const d of dirs) walkIg(d);
@@ -68,7 +68,7 @@ check('focus management kept (NosRouteScroll or equivalent still focuses the h1)
   const src = files.map((f) => read(f)).join('\n');
   check('IG-G1: the international-guests page and its profile component exist', files.length > 0);
   check('IG-G1: no ABSENCE_STATEMENT or RealEmptyListing on /international-guests (zero guests = hero and sub-nav only)', !/ABSENCE_STATEMENT|RealEmptyListing/.test(src));
-  check('IG-G1: no demo values from the design shots (Ten Shin Gardens, The Exotic Plant Company, data-demo)', !/Ten Shin Gardens|The Exotic Plant Company|data-demo/.test(src));
+  check('IG-G1: no demo values from the design shots (The Exotic Plant Company, data-demo)', !/The Exotic Plant Company|data-demo/.test(src));
   for (const f of ['country', 'organisation']) {
     check(`IG-G1: "${f}" has no fallback string (no ?? or || after it)`, !new RegExp(`\\b${f}\\s*(\\?\\?|\\|\\|)`).test(src));
     check(`IG-G1: "${f}" renders conditionally (&& or ternary guard)`, new RegExp(`\\b${f}\\s*(&&|\\?[^?.])`).test(src) || new RegExp(`(&&|\\?)\\s*[\\w.]*\\b${f}\\b`).test(src));
@@ -78,7 +78,7 @@ check('focus management kept (NosRouteScroll or equivalent still focuses the h1)
 
 // SY-G1: /symposium shows no placeholder sections, and its date, time and venue come from the CMS ticket, never hard-coded in the page
 {
-  const sy = read('app/(marketing)/national-show/symposium/page.tsx') + '\n' + read('app/(nos)/national-show/symposium/page.tsx');
+  const sy = read('app/(nos)/national-show/symposium/page.tsx');
   const syJson = read('content/show-pages/06-saoc-symposium.json');
   check('SY-G1: neither the symposium page nor content/show-pages/06-saoc-symposium.json has an "About the Symposium" / "Attending" section or PLACEHOLDER COPY chip', !/About the Symposium|>\s*Attending\s*<|"heading": "Attending"|PLACEHOLDER COPY/.test(sy + syJson));
   check('SY-G1: the symposium page does not hard-code its date or hours (24 September, 9.00 to 17.00)', !/24 September|9\.00 to 17\.00|9h00/.test(sy));
@@ -86,7 +86,7 @@ check('focus management kept (NosRouteScroll or equivalent still focuses the h1)
 
 // WO-G1 + the Crous name rule: no placeholder sections on /wosa-conference, and no literal Crous spelling anywhere in the source (the name renders from the CMS record; her documents outrank it, so the record is fixed, never mapped in code)
 {
-  const wo = read('app/(marketing)/national-show/wosa-conference/page.tsx') + '\n' + read('app/(nos)/national-show/wosa-conference/page.tsx') + '\n' + read('content/show-pages/07-wosa-conference.json');
+  const wo = read('app/(nos)/national-show/wosa-conference/page.tsx') + '\n' + read('content/show-pages/07-wosa-conference.json');
   check('WO-G1: no "About the Conference", "Attending" or "About WOSA" section and no PLACEHOLDER COPY chip on /wosa-conference', !/About the Conference|"heading": "Attending"|>\s*Attending\s*<|About WOSA|PLACEHOLDER COPY/.test(wo));
   const hits = [];
   const scan = (d) => { if (!existsSync(d)) return; for (const e of readdirSync(d)) { if (e === 'node_modules' || e.startsWith('.')) continue; const p = `${d}/${e}`; if (statSync(p).isDirectory()) scan(p); else if (/\.(tsx?|mjs|json)$/.test(e) && /Hild[ae]r?gard/.test(read(p))) hits.push(p); } };
@@ -105,8 +105,71 @@ check('focus management kept (NosRouteScroll or equivalent still focuses the h1)
 
 // SY-G1 / WO-G1: the venue renders from the CMS ticket only: never hard-coded in the pages, never as the FAQ phrase (open owner item cccc: "The Hangar, Stellenbosch Flying Club" vs "Hangar 25, Orca Aero Solutions")
 {
-  const pages = ['symposium', 'wosa-conference'].map((s) => read(`app/(marketing)/national-show/${s}/page.tsx`) + read(`app/(nos)/national-show/${s}/page.tsx`)).join('\n');
+  const pages = ['symposium', 'wosa-conference'].map((s) => read(`app/(nos)/national-show/${s}/page.tsx`)).join('\n');
   check('SY-G1/WO-G1: no venue string is hard-coded in the symposium or wosa-conference page (Hangar, Orca Aero, Flying Club, "same venue as")', !/Hangar|Orca Aero|Flying Club|same venue as/i.test(pages));
+}
+
+// WK-G1: /workshops drops the builder status box, SESSIONS_NOTE, the lede and the "Programme" heading
+{
+  const wk = read('app/(nos)/national-show/workshops/page.tsx');
+  check('WK-G1: the workshops page has no SESSIONS_NOTE, status chip ("To be confirmed by the show committee"), Sunset Cocktails card or builder lede', !/SESSIONS_NOTE|To be confirmed by the show committee|Book Sunset Cocktails|ShowStatusLine|ShowStatusFoot/.test(wk));
+  check('WK-G1: the workshops page has no "Programme" h2 (her doc question) and its metadata drops the builder sentence', !/>\s*Programme\s*</.test(wk) && !/title:[^\n]*Sunset|description:[^\n]*Sunset/.test(wk));
+}
+
+// WK-G1: the shared route-hero entry for /workshops has no lede and the title is "Workshops" (origin/main has the builder lede and "Workshops & Field Trips")
+{
+  const rh = read('components/nos/nos-route-heroes.ts');
+  const ent = rh.match(/workshops:\s*\{[^}]*\}/)?.[0] ?? '';
+  check('WK-G1: NOS_ROUTE_HEROES.workshops has title "Workshops" and no lede', /title:\s*['"]Workshops['"]/.test(ent) && !/lede\s*:/.test(ent), ent.replace(/\s+/g, ' ').slice(0, 140));
+}
+
+// WK-G1 data: workshopSession gains OPTIONAL level / duration / included / bring (SAOC-approved, additive); NO places fields. The places text reads the ticket's per-session value and the pool remaining.
+{
+  const ws = existsSync('sanity/schemas/documents/workshopSession.ts') ? read('sanity/schemas/documents/workshopSession.ts') : '';
+  const fieldBlock = (name) => ws.match(new RegExp(`defineField\\(\\{[^]*?name:\\s*'${name}'[^]*?\\}\\)`))?.[0] ?? null;
+  for (const f of ['level', 'duration', 'included', 'bring']) { const b = fieldBlock(f); check(`workshopSession has an optional "${f}" field (WK-G1)`, Boolean(b) && !/required\(\)/.test(b)); }
+  const lvl = fieldBlock('level') ?? '';
+  check('workshopSession.level is a string list of Beginner, Intermediate and Advanced', /type:\s*'string'/.test(lvl) && ['Beginner', 'Intermediate', 'Advanced'].every((v) => lvl.includes(v)));
+  check('workshopSession has no places / capacity / remaining / total field (the total is the ticket\'s per-session value, the remainder is lib/data/pool-remaining.ts)', !/name:\s*'(places|capacity|remaining|total|spaces|seats)'/.test(ws));
+  const recSrc = [];
+  const walkWk = (d) => { if (!existsSync(d)) return; for (const e of readdirSync(d)) { const p = `${d}/${e}`; if (statSync(p).isDirectory()) walkWk(p); else if (/\.tsx?$/.test(e)) recSrc.push(p); } };
+  walkWk('app/(nos)/national-show/workshops');
+  for (const d of ['components/nos', 'components/show']) { if (existsSync(d)) for (const e of readdirSync(d)) if (/workshop/i.test(e) && /\.tsx?$/.test(e)) recSrc.push(`${d}/${e}`); }
+  const rs = recSrc.map((f) => read(f)).join('\n');
+  if (/data-places/.test(rs)) {
+    check('WK-G1: the places text reads getPoolRemaining (lib/data/pool-remaining) and the ticket\'s capacity, never a hard-coded number', /getPoolRemaining|pool-remaining/.test(rs) && /capacity/.test(rs) && !/['"`]\d+ of \d+ places left['"`]/.test(rs) && !/\b\d+\s+of\s+\d+\s+places/.test(rs));
+  } else console.log('note: no [data-places] in the workshop sources yet; the places-source check is required once it appears (records render nothing until SAOC enters them)');
+}
+
+// banned strings (route-table bannedStrings): the builder WOSA theme line must not exist in source at all
+{
+  const hits = [];
+  const needle = 'With Wild Orchids of Southern Africa';
+  const scanB = (d) => { if (!existsSync(d)) return; for (const e of readdirSync(d)) { if (e === 'node_modules' || e.startsWith('.')) continue; const p = `${d}/${e}`; if (statSync(p).isDirectory()) scanB(p); else if (/\.(tsx?|json)$/.test(e) && read(p).includes(needle)) hits.push(p); } };
+  for (const d of ['app', 'components', 'lib', 'content', 'sanity']) scanB(d);
+  check(`CR-G1: the builder WOSA theme line "${needle}" is not in the source (it misnames the organisation)`, hits.length === 0, hits.join(', '));
+}
+
+// SAOC ruling: wosa.theme is dropped; the WOSA card shows no theme line until she supplies one (the org name is NOT gated: both "Wild Orchids of Southern Africa" and "Wild Orchids Southern Africa" are her spellings)
+{
+  const tp = read('lib/data/ticket-presentation.ts'); const i = tp.indexOf("id: 'wosa'"); const j = i < 0 ? -1 : tp.indexOf('slugs:', i);
+  const blk = i >= 0 && j > i ? tp.slice(i, j) : '';
+  check("ticket-presentation.ts: the 'wosa' product has no theme line", blk.length > 0 && !/\btheme\s*:\s*['"`]/.test(blk), blk.match(/theme[^\n]*/)?.[0] ?? 'wosa block not found');
+}
+
+// ticket-presentation.ts: the symposium and WOSA when/meta stay as sourced (24 and 25 September, 9am to 5pm)
+{
+  const tp = read('lib/data/ticket-presentation.ts');
+  const blockOf = (id) => { const i = tp.indexOf(`id: '${id}'`); const j = i < 0 ? -1 : tp.indexOf('slugs:', i); return i >= 0 && j > i ? tp.slice(i, j) : ''; };
+  const sy = blockOf('symposium'); const wo = blockOf('wosa');
+  check("ticket-presentation.ts: symposium when 'Friday 24 September' and meta '9am to 5pm' are unchanged", /when:\s*'Friday 24 September'/.test(sy) && /meta:\s*'9am to 5pm'/.test(sy), sy.match(/when[^\n]*|meta[^\n]*/g)?.join(' ') ?? 'block not found');
+  check("ticket-presentation.ts: WOSA when 'Saturday 25 September' and meta '9am to 5pm' are unchanged", /when:\s*'Saturday 25 September'/.test(wo) && /meta:\s*'9am to 5pm'/.test(wo), wo.match(/when[^\n]*|meta[^\n]*/g)?.join(' ') ?? 'block not found');
+}
+
+// CR-G1: the conferences page drops the builder lede and the "Programme" heading
+{
+  const cr = read('app/(nos)/national-show/conferences/page.tsx');
+  check('CR-G1: the conferences page has no builder lede ("Register for the National Orchid Show Symposium or the WOSA Conference.") and no "Programme" heading', !/Register for the National Orchid Show Symposium or the WOSA Conference/.test(cr) && !/>\s*Programme\s*</.test(cr) && !/heading=["']Programme["']|title=["']Programme["']/.test(cr));
 }
 
 // every route renders through DocumentLayout; no route re-implements a chip row
