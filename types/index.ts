@@ -342,11 +342,18 @@ export type ShowVisitorInfo = {
 };
 
 export type ShowFaqCategory =
-  | 'getting-there'
-  | 'tickets'
-  | 'accessibility'
-  | 'plant-sales'
-  | 'general';
+  | 'general-show-information'
+  | 'tickets-and-entry'
+  | 'getting-to-the-venue-and-accessibility'
+  | 'orchid-displays-judging-and-awards'
+  | 'orchid-sales-and-vendors'
+  | 'symposium'
+  | 'wosa-conference'
+  | 'workshops-and-other-activities'
+  | 'food-refreshments-and-facilities'
+  | 'accommodation-travel-and-tourism'
+  | 'exhibitors-vendors-and-sponsors'
+  | 'policies-and-visitor-information';
 
 export type ShowFaq = {
   _id: string;

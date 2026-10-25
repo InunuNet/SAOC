@@ -5,6 +5,7 @@ import { ContactForm } from '@/components/contact/ContactForm';
 import { NosContactAside } from '@/components/contact/NosContactAside';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
+import { ShowContactDetails } from '@/components/nos/ShowContactDetails';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { NOS_CONTACT_LEDE_PLACEHOLDER } from '@/lib/nos-contact-copy';
@@ -49,6 +50,7 @@ export default async function NosContactPage() {
           <ContactForm site="nos" markPlaceholders={markPlaceholders} />
         </div>
         <div data-nos-contact-aside="">
+          <ShowContactDetails />
           <NosContactAside />
         </div>
       </NosSection>

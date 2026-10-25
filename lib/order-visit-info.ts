@@ -24,6 +24,7 @@ export const EMPTY_ORDER_VISIT: OrderConfirmationVisit = {
   venueName: null,
   venueAddress: null,
   showDates: null,
+  parking: null,
   openingTimes: null,
 };
 
@@ -44,6 +45,7 @@ export function buildOrderVisit(
     venueName: confirmed('venue') ? clean(show?.venue?.name) : null,
     venueAddress: confirmed('venue') ? formatVenueAddress(show?.venue) : null,
     showDates: confirmed('dates') ? formatShowDateRange(show?.showDate, show?.showEndDate) : null,
+    parking: confirmed('parking') ? clean(info?.parking) : null,
     openingTimes: confirmed('openingHours')
       ? (info?.openingHours ?? []).map((entry) => ({
           label: clean(entry.label) ?? '',

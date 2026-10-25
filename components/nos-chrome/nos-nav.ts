@@ -137,12 +137,6 @@ export const NOS_NAV: readonly NavItem[] = [
         headingHref: null,
         links: [
           {
-            id: 'sa-exhibitors',
-            label: 'South African exhibitors',
-            href: showPath('/sa-exhibitors'),
-            descriptor: 'Public directory of South African nurseries exhibiting at the show.',
-          },
-          {
             id: 'international-guests',
             label: 'International guests',
             href: showPath('/international-guests'),

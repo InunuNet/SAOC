@@ -3,14 +3,8 @@ import Link from 'next/link';
 
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 
-const YEARBOOK_META = [
-  { label: 'Editor', value: 'Lindiwe Khumalo' },
-  { label: 'Pages', value: '184' },
-  { label: 'ISSN', value: '1816-0336' },
-] as const;
-
-// F19 (vote 1C): nothing in this band is in the Council's Drive (no yearbook, editor, page count or
-// ISSN), so the page renders it only on the beta preview, where the whole band is marked.
+// F19 (vote 1C): nothing in this band is in the Council's Drive, so the page renders it only on the
+// beta preview, where the whole band is marked. The page count, ISSN and editor are removed (24 Oct 2026).
 export function YearbookStrip() {
   return (
     <section data-home-section="yearbook" data-placeholder="true" className="py-24 bg-bone">
@@ -29,21 +23,11 @@ export function YearbookStrip() {
               className="font-sans text-[16px] leading-[1.55] text-ink max-w-[520px]"
             >
               Our annual record of award-winning plants, hybridisation notes, society reports and
-              judges&apos; commentary. 184 pages. Available to members or via direct subscription.
+              judges&apos; commentary. Available to members or via direct subscription.
             </p>
           </div>
           <div>
-            <dl data-yearbook-meta className="grid grid-cols-3 gap-5 pt-6 mb-6 border-t border-rule">
-              {YEARBOOK_META.map((item) => (
-                <div key={item.label}>
-                  <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted mb-1">
-                    {item.label}
-                  </dt>
-                  <dd className="font-sans text-[16px] leading-[1.55] text-ink">{item.value}</dd>
-                </div>
-              ))}
-            </dl>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 border-t border-rule pt-6">
               <Link
                 href="/contact"
                 data-yearbook-cta="primary"
