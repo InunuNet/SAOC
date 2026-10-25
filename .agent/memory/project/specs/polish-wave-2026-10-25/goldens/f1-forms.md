@@ -26,10 +26,10 @@ and `method="post"` on its form. Verified green by contracts/checks/vendor-regis
    body to a page route that cannot read it; disabled alone leaves Enter-key behaviour to the browser), and the declared limits below.
 
 ## Declared limits
-- TicketPurchaseForm needs a Sanity ticket document with live stock, so its no-JS submit is covered statically only.
+- TicketPurchaseForm needs a Sanity ticket document with live stock, and SubmitEventForm sits behind a Firebase session, so both are covered statically only.
 - The rendered check proves the URL never carries values. It does not prove the POST lands anywhere useful, because with the
   button disabled it never fires.
 
 ## Checks (all in contracts/checks/polish-wave-2026-10-25/)
-f1-forms-static.mjs (six forms + hook), f1-forms-nojs.mjs (JavaScript disabled, Enter and forced click, 5 forms x 4 viewports).
+f1-forms-static.mjs (six forms + hook), f1-forms-nojs.mjs (JavaScript disabled, Enter and forced click, the main form on /contact, /members, /vendors/apply, /vendors/register x 4 viewports).
 Baseline: both red. Mutation: a form with method="post" but an enabled button still fails the static check.

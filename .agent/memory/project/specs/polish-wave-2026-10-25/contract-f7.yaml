@@ -1,0 +1,52 @@
+schema: athanor.contract/v1
+slug: polish-wave-2026-10-25
+goal: Standalone links and the societies search are 44px targets with no change in look, and both hosts reserve the scrollbar gutter.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F7
+    name: targets TG-1 and scrollbar gutter SG-1
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/README.md
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/f7-targets.md
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f1.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f2.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f3.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f4.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f5.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f6.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f7.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f8.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/f7-visual-baseline.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: globals.css reserves the scrollbar gutter (RED on baseline)
+      command: 'grep -q "scrollbar-gutter: stable" app/globals.css'
+    - id: A2
+      description: production build passes
+      command: NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A3
+      description: at 390@3, 768, 1280 and 1440@2 society email, phone, website, Facebook and Instagram links, the home Full calendar link, the contact info@ link and the societies search input are at least 44px with unchanged size, colour and underline, and both hosts report scrollbar-gutter stable (RED on baseline, every item)
+      command: node contracts/checks/polish-wave-2026-10-25/f7-targets-rendered.mjs
+      timeout_seconds: 900
+    - id: A4
+      description: wave scope guard - every changed file is on a feature allow-list (goldens/scope/*.json) or under this mission's spec and check trees
+      command: node contracts/checks/polish-wave-2026-10-25/scope.mjs
+    - id: A5
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A6
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A7
+      description: the feature doc exists
+      command: grep -q "TG-1" docs/polish-wave-f7-targets.md

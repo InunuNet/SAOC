@@ -31,7 +31,7 @@ assertions:
       command: NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
       timeout_seconds: 900
     - id: A4
-      description: with JavaScript disabled, Enter and a forced click on /contact, /members, /events/submit, /vendors/apply and /vendors/register at 390@3, 768, 1280 and 1440@2 never leave a field value or any query string in the URL (RED on baseline, 40 findings)
+      description: with JavaScript disabled, Enter and a forced click on the main form of /contact, /members, /vendors/apply and /vendors/register at 390@3, 768, 1280 and 1440@2 never leave a field value or any query string in the URL (RED on baseline, 32 findings)
       command: node contracts/checks/polish-wave-2026-10-25/f1-forms-nojs.mjs
       timeout_seconds: 600
     - id: A5
