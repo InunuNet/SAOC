@@ -212,6 +212,7 @@ export default async function PlanYourVisitPage() {
       <NosHero
         route="/national-show/plan-your-visit"
         title={PAGE_TITLE}
+        crumbLabel="Plan your visit"
         lede={guide.lede}
         facts={heroFactsFromShow(showFacts, FACTS_LABELS)}
         priority

@@ -21,13 +21,33 @@
 // =============================================================
 
 import { PortableText } from '@portabletext/react';
+import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 import { FAQ_SECTIONS, type FaqSection } from '@/lib/data/faq-sections';
+import { nosPath } from '@/lib/nos-paths';
 import type { ShowFaq } from '@/types';
 
 import { ConfirmationBadge } from './ConfirmationBadge';
 
 const FALLBACK_SECTION_ID = FAQ_SECTIONS[0].id;
+
+// Her section 10 sentence names the website's "Plan your visit" tab; the page links that name.
+const PLAN_YOUR_VISIT_NAME = 'Plan your visit';
+const PLAN_YOUR_VISIT_HREF = '/national-show/plan-your-visit';
+
+// An introduction paragraph with the Plan your visit tab name drawn as a link, the text unchanged.
+function introWithLinks(paragraph: string): ReactNode {
+  const at = paragraph.indexOf(PLAN_YOUR_VISIT_NAME);
+  if (at === -1) return paragraph;
+  return (
+    <>
+      {paragraph.slice(0, at)}
+      <Link href={nosPath(PLAN_YOUR_VISIT_HREF)}>{PLAN_YOUR_VISIT_NAME}</Link>
+      {paragraph.slice(at + PLAN_YOUR_VISIT_NAME.length)}
+    </>
+  );
+}
 
 function categoryOf(faq: ShowFaq): string {
   const category = faq.category;
@@ -45,7 +65,10 @@ export interface FaqGroup {
   section: FaqSection;
   /** Her heading: the category's number in her document, then its title. */
   heading: string;
-  /** The h2 id, `faq-<category>`. */
+  /** Her number for the category ("3.") and the title it numbers, drawn as separate spans. */
+  number: string;
+  title: string;
+  /** The h2 id, `faq-<n>-h`; its section is `faq-<n>`. */
   id: string;
   inCategory: ShowFaq[];
 }
@@ -61,7 +84,9 @@ export function faqGroups(faqs: ShowFaq[] | null | undefined, hideUnanswered = f
   return FAQ_SECTIONS.map((section, position) => ({
     section,
     heading: `${position + 1}. ${section.title}`,
-    id: `faq-${section.id}`,
+    number: `${position + 1}.`,
+    title: section.title,
+    id: `faq-${position + 1}-h`,
     inCategory: entries.filter((faq) => categoryOf(faq) === section.id),
   })).filter(({ section, inCategory }) => inCategory.length > 0 || section.intro.length > 0);
 }
@@ -94,15 +119,21 @@ export function ShowFaqList({
 
   return (
     <>
-      {groups.map(({ section, heading, id, inCategory }) => (
-        <section key={section.id} className="doc-section" aria-labelledby={id}>
-          <h2 id={id} className="doc-h2">
-            {heading}
+      {groups.map(({ section, number, title, id, inCategory }, groupIndex) => (
+        <section
+          key={section.id}
+          id={id.replace(/-h$/, '')}
+          className="doc-section"
+          aria-labelledby={id}
+        >
+          <h2 id={id} className="doc-h2 nos-faq-h2">
+            <span className="nos-faq-num">{number}</span>
+            <span>{title}</span>
           </h2>
           {inCategory.length > 0
             ? section.intro.map((paragraph) => (
                 <p key={paragraph} className="nos-faq-intro">
-                  {paragraph}
+                  {introWithLinks(paragraph)}
                 </p>
               ))
             : null}
@@ -111,18 +142,20 @@ export function ShowFaqList({
             {inCategory.length === 0
               ? section.intro.map((paragraph) => (
                   <p key={paragraph} className="nos-faq-intro nos-faq-intro-only">
-                    {paragraph}
+                    {introWithLinks(paragraph)}
                   </p>
                 ))
               : null}
             {inCategory.length > 0 ? (
               <ul>
-                {inCategory.map((faq) => (
+                {inCategory.map((faq, rowIndex) => (
                   <li key={faq._id}>
-                    <details>
+                    <details open={groupIndex === 0 && rowIndex === 0 ? true : undefined}>
                       <summary data-faq-summary="" className="nos-faq-summary">
+                        <span data-faq-number="" className="nos-faq-qn">
+                          {typeof faq.order === 'number' ? `${faq.order}.` : ''}
+                        </span>
                         <span data-faq-question="" className="nos-faq-question">
-                          {typeof faq.order === 'number' ? `${faq.order}. ` : ''}
                           {faq.question}
                         </span>
                         <span data-faq-icon="" aria-hidden="true" className="nos-faq-icon">
@@ -135,8 +168,8 @@ export function ShowFaqList({
                             strokeWidth="1.75"
                             strokeLinecap="round"
                           >
-                            <path d="M4 10h12" />
-                            <path className="nos-faq-icon-v" d="M10 4v12" />
+                            <path d="M3 10h14" />
+                            <path className="nos-faq-icon-v" d="M10 3v14" />
                           </svg>
                         </span>
                       </summary>

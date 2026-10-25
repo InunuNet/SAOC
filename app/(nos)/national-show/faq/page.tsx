@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { JsonLd, faqPageJsonLd, portableTextToPlainText } from '@/components/seo/JsonLd';
 import { ShowFaqList, faqIndexEntries, faqGroups, hasFaqAnswer } from '@/components/show/ShowFaqList';
 import { HoldingState } from '@/components/show/nos/HoldingState';
-import { NosHero } from '@/components/nos/NosHero';
+import { heroFactsFromShow, NosHero } from '@/components/nos/NosHero';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { showFaqsQuery, showVisitorInfoQuery } from '@/sanity/queries';
@@ -14,9 +14,10 @@ import { buildPageMetadata } from '@/lib/seo';
 import type { ShowFaq, ShowVisitorInfo } from '@/types';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
-// Her title, the first line of her FAQ document (Drive: National Show / 17. Frequently Asked
-// Questions, v1.0), as she wrote it.
-const PAGE_TITLE = 'Frequently Asked Questions — National Orchid Show – Western Cape 2027';
+// FQ-G1 (NOS Design): the page's own title. Her document's first line repeats the header lockup,
+// so it is neither the h1 nor a lede; the hero holds the h1 and the show facts.
+const PAGE_TITLE = 'Frequently asked questions';
+const FACTS_LABELS = ['Dates', 'Venue', 'Host'] as const;
 
 // The order ShowFaqList lays its sections out in (her order, FAQ_SECTIONS); the FAQPage node follows
 // it so the markup reads in the order the page does. An unknown category sorts with the first section,
@@ -76,7 +77,13 @@ export default async function ShowFaqPage() {
   return (
     <>
       {faqEntries.length > 0 ? <JsonLd data={faqPageJsonLd(faqEntries)} /> : null}
-      <NosHero route="/national-show/faq" title={PAGE_TITLE} priority />
+      <NosHero
+        route="/national-show/faq"
+        title={PAGE_TITLE}
+        crumbLabel="FAQ"
+        facts={heroFactsFromShow(facts, FACTS_LABELS)}
+        priority
+      />
 
       {holds ? (
         <HoldingState facts={facts} contentState="published" />

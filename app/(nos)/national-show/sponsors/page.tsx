@@ -162,6 +162,7 @@ export default async function ShowSponsorsPage() {
       <NosHero
         route="/national-show/sponsors"
         title="Sponsors"
+        crumbLabel="Sponsors"
         lede={LEDE}
         facts={heroFactsFromShow(showFacts, FACTS_LABELS)}
         actions={

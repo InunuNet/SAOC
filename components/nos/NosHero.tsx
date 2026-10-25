@@ -26,6 +26,7 @@
 // =============================================================
 
 import Image from 'next/image';
+import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
 
 import type { ShowFact } from '@/lib/data/show-facts';
@@ -117,6 +118,8 @@ export interface NosHeroProps {
   eyebrow?: ReactNode;
   /** An optional breadcrumb trail, rendered before the h1 (the checkout step's hub trail, r18). */
   crumbs?: ReactNode;
+  /** The current page's name: draws the standard "National Show — {name}" trail when `crumbs` is not given. */
+  crumbLabel?: string;
   /** Loads the image eagerly at high priority — reserve for the above-the-fold hero. */
   priority?: boolean;
   className?: string;
@@ -133,6 +136,7 @@ export async function NosHero({
   eyebrow,
   facts,
   crumbs,
+  crumbLabel,
   priority = false,
   className = '',
 }: NosHeroProps) {
@@ -183,7 +187,16 @@ export async function NosHero({
               {eyebrow}
             </p>
           ) : null}
-          {crumbs}
+          {crumbs ??
+            (crumbLabel ? (
+              <nav className="nk-crumbs" aria-label="Breadcrumb">
+                <Link href="/">National Show</Link>
+                <span className="nk-crumb">
+                  <span className="nk-sep" aria-hidden="true" />
+                  <span aria-current="page">{crumbLabel}</span>
+                </span>
+              </nav>
+            ) : null)}
           {titleAs === 'p' ? (
             // Restates the heading rule in nos-theme.css (`.nos-theme :is(h1...)`), which a p misses,
             // so the fallback is identical to the h1 it stands in for on the first frame.
