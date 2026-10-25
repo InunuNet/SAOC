@@ -40,23 +40,26 @@ const LOCKUP_HEIGHT = 589;
 // gives a width srcset over the whole variant ladder, so a 3x screen picks a wide enough one (LG-1).
 const LOCKUP_BOX_WIDE = 448;
 const LOCKUP_BOX_NARROW = 390;
+// Below 780px the image is 110.6% of the container (viewport minus a 16px gutter each side), capped
+// at the 448px box, so it reaches 448px from about 437px wide. 390px is only its width at 390.
+const LOCKUP_SIZES_NARROW = `min(${LOCKUP_BOX_WIDE}px, calc(110.6vw - 35.4px))`;
 const PANEL_BREAKPOINT_QUERY = '(min-width: 1384px)';
 const INERT_SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'LINK', 'TEMPLATE']);
 // The "The show" links the top row carries as plain links; Tickets is the call to action.
 const TICKETS_LEAF_ID = 'tickets';
 const PLAIN_LEAF_IDS = ['show-sponsors', 'past-shows'] as const;
 
-const lockupProps = (width: number) =>
+const lockupProps = (width: number, sizes: string) =>
   getImageProps({
     priority: true,
     src: LOCKUP_SRC,
     alt: LOCKUP_ALT,
     width,
     height: Math.round((width * LOCKUP_HEIGHT) / LOCKUP_WIDTH),
-    sizes: `${width}px`,
+    sizes,
   }).props;
-const wideLockup = lockupProps(LOCKUP_BOX_WIDE);
-const narrowLockup = lockupProps(LOCKUP_BOX_NARROW);
+const wideLockup = lockupProps(LOCKUP_BOX_WIDE, `${LOCKUP_BOX_WIDE}px`);
+const narrowLockup = lockupProps(LOCKUP_BOX_NARROW, LOCKUP_SIZES_NARROW);
 
 function Chevron() {
   return (
