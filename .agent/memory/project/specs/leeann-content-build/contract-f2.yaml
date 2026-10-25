@@ -1,0 +1,89 @@
+# Milestone M1 (one PR with F1): FE, ticket PDF and confirmation email fixes from her 24 Oct answers.
+# Overlaps the active TicketPdf and EmailShell sessions: rebase on origin/main before the PR and keep the diff to the allow-list.
+schema: athanor.contract/v1
+slug: leeann-content-build
+goal: The ticket PDF and order email print the Symposium and WOSA Conference dates, the show office phone and a Parking row from Lee-Ann's answers, and the Questions address is one named constant that today still prints the current address.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F2
+    name: FE ticket PDF and email - Symposium 24 Sept and WOSA 25 Sept, show phone, Questions address constant, email Parking row
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/leeann-content-build/goldens/README.md
+  - .agent/memory/project/specs/leeann-content-build/goldens/decisions.md
+  - .agent/memory/project/specs/leeann-content-build/goldens/source/show-contact.txt
+  - .agent/memory/project/specs/leeann-content-build/goldens/scope/m1.json
+  - .agent/memory/project/specs/leeann-content-build/goldens/codex-qa-prompt-m1.md
+  - .agent/memory/project/specs/ticket-pdf/goldens/fixture-order.json
+  - .agent/memory/project/specs/ticket-pdf/goldens/copy-baseline/allowed-strings.txt
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: TICKET_PRODUCTS holds Friday 24 September and Saturday 25 September with 9am to 5pm for the Symposium and WOSA Conference; workshops keep Schedule to follow; DATED_PRODUCT_KINDS includes programme
+      command: pnpm exec tsx contracts/checks/leeann-content/fe.mts products
+    - id: A2
+      description: tickets built through the production path (toPdfPositions) print each date and 9am to 5pm, never Dates to follow, and a workshop stays the pill
+      command: pnpm exec tsx contracts/checks/leeann-content/fe.mts pdf-dates
+      timeout_seconds: 300
+    - id: A3
+      description: lib/show-contact.ts exports SHOW_OFFICE_PHONE 073 428 4398; the visit carries it and the footer reads Show office 073 428 4398
+      command: pnpm exec tsx contracts/checks/leeann-content/fe.mts show-office
+      timeout_seconds: 300
+    - id: A4
+      description: the Questions line asks resolveShowQuestionsEmail; false prints info@saoc.co.za, true prints show@saoc.co.za; no bare resolveReplyTo() remains in ticket-pdf-data.ts, in the loaded and the load-failure visit alike
+      command: pnpm exec tsx contracts/checks/leeann-content/fe.mts questions-email
+      timeout_seconds: 300
+    - id: A5
+      description: SHOW_EMAIL_CONFIRMED is defined once and is false (Q-D11 default - flip it only with her answer)
+      command: pnpm exec tsx contracts/checks/leeann-content/fe.mts email-constant
+    - id: A6
+      description: no organiser line is printed on the ticket (Q-D12 default)
+      command: pnpm exec tsx contracts/checks/leeann-content/fe.mts no-organiser
+      timeout_seconds: 300
+    - id: A7
+      description: OrderConfirmationVisit.parking is set only from a confirmed parking block and the email shows a Parking row (text, or the To be confirmed pill)
+      command: pnpm exec tsx contracts/checks/leeann-content/fe.mts email-parking
+      timeout_seconds: 300
+    - id: A8
+      description: her parking sentence prints in full in the PDF Parking cell
+      command: pnpm exec tsx contracts/checks/leeann-content/fe.mts pdf-parking
+      timeout_seconds: 300
+    - id: A9
+      description: existing ticket-pdf schedule check, updated by the architect to her rule (Symposium prints its date, WOSA resolves to its product date, others stay the pill); the cached fixture PDF is cleared first
+      command: rm -f .tmp/sandbox/ticket-pdf/fixture.pdf && pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts schedule
+      timeout_seconds: 300
+    - id: A10
+      description: existing ticket-pdf lines, longname, text and email checks still pass
+      command: rm -f .tmp/sandbox/ticket-pdf/fixture.pdf && pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts lines && pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts longname && pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts text && pnpm exec tsx contracts/checks/ticket-pdf/check-ticket-pdf.mts email
+      timeout_seconds: 600
+    - id: A11
+      description: scope guard - only M1 allow-list files changed, no golden or leeann-content check edited, every pre-existing check edit named in checks-updated.md
+      command: pnpm exec tsx contracts/checks/leeann-content/scope.mts m1
+    - id: A12
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A13
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A14
+      description: production build passes
+      command: NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A15
+      description: Codex adversarial review of the whole M1 diff (F1 and F2) against her documents and the defaults in decisions.md
+      type: codex_qa
+      target: .agent/memory/project/specs/leeann-content-build/goldens/codex-qa-prompt-m1.md
+      timeout_seconds: 1300
+      required: true
+    - id: A16
+      description: Brad receives an order confirmation from a sandbox fixture order, sent to brad@inunu.net only, and the Parking row renders in a real client (gws read-only inbox check)
+      type: gws_inbox_check
+      target: .agent/memory/scratch/leeann-content-f2-gws-manifest.json
+      required: false

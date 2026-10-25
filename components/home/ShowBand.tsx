@@ -25,6 +25,8 @@ const BOX_CLASSES = 'bg-ivory/8 p-[2px] rounded-[2px] mb-8';
 
 export interface ShowBandProps {
   show?: ShowIdentity | null;
+  /** Overrides only the "Show details" href (the /events page points it at the show's event page). */
+  detailsHref?: string;
 }
 
 /** Inclusive day count across the show, derived from the dataset — never a literal. */
@@ -87,7 +89,7 @@ function CountdownBox({ target, edition }: { target: Date | null; edition?: numb
   );
 }
 
-export function ShowBand({ show }: ShowBandProps) {
+export function ShowBand({ show, detailsHref }: ShowBandProps) {
   const countdownDate = show?.countdownDate ?? null;
   const target = useMemo(() => {
     const candidate = countdownDate ? new Date(countdownDate) : null;
@@ -147,7 +149,7 @@ export function ShowBand({ show }: ShowBandProps) {
                 Book tickets
               </a>
               <a
-                href={nosUrl('/')}
+                href={detailsHref ?? nosUrl('/')}
                 data-show-band-cta="secondary"
                 className="inline-flex items-center justify-center text-[14px] font-medium tracking-[0.01em] rounded-[2px] border transition-[translate,background-color,border-color,color,text-decoration-color] duration-150 ease-(--ease) focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-accent-soft focus-visible:outline-offset-[3px] motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0 px-[22px] py-[14px] text-ivory border-ivory/45 hover:border-ivory hover:bg-white/6 hover:-translate-y-px focus-visible:-translate-y-px active:translate-y-0"
               >

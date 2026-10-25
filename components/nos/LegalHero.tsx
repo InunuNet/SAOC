@@ -18,7 +18,7 @@ export interface LegalHeroProps {
   image: string;
   eyebrow: string;
   heading: string;
-  lede: string;
+  lede?: string;
 }
 
 export async function LegalHero({ route, image, eyebrow, heading, lede }: LegalHeroProps) {

@@ -1,0 +1,61 @@
+# Milestone M2 (one PR with F3): FF, the unsourced stats come out and exhibitors and vendors become one page.
+schema: athanor.contract/v1
+slug: leeann-content-build
+goal: The home, sponsors, media kit and judging pages no longer print figures Lee-Ann has not supplied, the partners stay WOSA-only, and South African exhibitors is merged into Exhibitors and vendors with a permanent redirect.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F4
+    name: FF stats removed, partners WOSA-only, sa-exhibitors merged into vendors with a permanent redirect
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/leeann-content-build/goldens/README.md
+  - .agent/memory/project/specs/leeann-content-build/goldens/decisions.md
+  - .agent/memory/project/specs/leeann-content-build/goldens/source/exhibitors-sa.txt
+  - .agent/memory/project/specs/leeann-content-build/goldens/scope/m2.json
+  - .agent/memory/project/specs/leeann-content-build/goldens/codex-qa-prompt-m2.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: none of the unsourced figures (21, 18, 56, 1990 as stat values, the labels National Shows Hosted and Accredited Judges, the yearbook's 184 pages, ISSN and editor, 56 accredited judges, 21 affiliated) remains in the six files her H1 answer names; 1968 stays
+      command: pnpm exec tsx contracts/checks/leeann-content/ff.mts stats
+    - id: A2
+      description: the home partners list names WOSA and neither SANBI nor Kirstenbosch (H2; already true in code, kept true)
+      command: pnpm exec tsx contracts/checks/leeann-content/ff.mts partners
+    - id: A3
+      description: the sa-exhibitors route is removed, and its nav, section-nav, index and routes-manifest entries are gone while proxy.ts carries the redirect
+      command: pnpm exec tsx contracts/checks/leeann-content/ff.mts merge-static
+    - id: A4
+      description: served, the old URLs on both hosts end at nos.saoc.co.za /vendors through permanent redirects only (301 or 308), sitemap.xml drops sa-exhibitors, and the merged page carries her v1.1 exhibitors introduction verbatim and none of the v1.0 wording, the 20 invited names or her planning notes
+      command: pnpm exec tsx contracts/checks/leeann-content/ff.mts merge-render
+      timeout_seconds: 900
+    - id: A5
+      description: scope guard - only M2 allow-list files changed, no golden or leeann-content check edited, every pre-existing check edit named in checks-updated.md
+      command: pnpm exec tsx contracts/checks/leeann-content/scope.mts m2
+    - id: A6
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A7
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A8
+      description: production build passes
+      command: NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A9
+      description: Codex adversarial review of the whole M2 diff (F3 and F4) against her documents and the defaults in decisions.md
+      type: codex_qa
+      target: .agent/memory/project/specs/leeann-content-build/goldens/codex-qa-prompt-m2.md
+      timeout_seconds: 1300
+      required: true
+    - id: A10
+      description: Deployed beta - the old sa-exhibitors URL redirects to the vendors page and the home page shows no stat tiles other than 1968 (browser tool, no prompts to Brad)
+      type: browser_deployed_check
+      target: .agent/memory/scratch/leeann-content-f4-browser-manifest.json
+      required: false

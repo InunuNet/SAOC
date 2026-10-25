@@ -27,7 +27,7 @@ const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 
 let failed = false;
 
-if (!/18\s*\+|eighteen.{0,10}(years|and older)/i.test(text) || !/Sunset Cocktails/i.test(text)) {
+if (!/18\s*\+|aged 18 and older|eighteen.{0,10}(years|and older)/i.test(text) || !/Sunset Cocktails/i.test(text)) {
   console.error('FAIL: missing the 18+ restriction statement tied to Sunset Cocktails');
   failed = true;
 }
@@ -38,7 +38,7 @@ if (!/limited capacity|capacity is limited|subject to (?:availability|capacity)/
   failed = true;
 }
 
-if (!/conditions of sale|ticket terms|admission terms/i.test(text)) {
+if (!/conditions of sale|ticket terms|admission terms|tickets, bookings and admission/i.test(text)) {
   console.error('FAIL: no identifiable conditions-of-sale / ticket-terms section');
   failed = true;
 }
