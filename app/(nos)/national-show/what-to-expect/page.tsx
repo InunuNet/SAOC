@@ -29,7 +29,7 @@ export const metadata: Metadata = buildPageMetadata({
   title: PAGE_TITLE,
   image: nosOgImage('What to expect — National Orchid Show'),
   description:
-    'Opening hours, admission, food, photography, cloakroom and accessibility at the South ' +
+    'Opening hours, admission, food, photography and accessibility at the South ' +
     'African National Orchid Show.',
   path: '/national-show/what-to-expect',
 });

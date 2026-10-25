@@ -22,7 +22,7 @@ export const revalidate = 60;
 
 const PAGE_TITLE = 'About the show';
 // The theme, as her second paragraph quotes it, set off in the hero.
-const THEME = '“From Wild Origins to Cultivated Excellence: The Future of Orchids”';
+const THEME = '\u201cFrom Wild Origins to Cultivated Excellence: The Future of Orchids\u201d';
 // Dates and Venue only: S3a turns bright from mid-frame, and a third cell would land on white petal.
 const FACTS_LABELS = ['Dates', 'Venue'] as const;
 const GATEWAY_IDS = [

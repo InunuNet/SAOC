@@ -32,14 +32,16 @@ Order: Sanity `order`, then `PRESENTER_FALLBACK_SEQUENCE` keyed by `_id`
 | Route | Source | Notes |
 |---|---|---|
 | `/about` | About v1.2 | h1 "About the show", theme in the hero, gateway aside of nav labels. |
-| `/what-to-expect` | What to Expect v1.0 | Static copy plus the live admission prices. |
-| `/plan-your-visit`, `/faq`, `/sponsors`, `/programme`, `/exhibitors` | their Drive documents | See the spec. `/exhibitors` is hero and contact panel only. |
+| `/what-to-expect` | What to Expect v1.0 | WE-G1: standfirst, narrative and ruled blocks beside one sticky card (dates, hours, admission). Admission prices are read from the ticket records by name, a row is omitted when its record is not on sale. |
+| `/plan-your-visit`, `/faq`, `/sponsors`, `/programme` | their Drive documents | See the spec. |
+| `/exhibitors` | FAQ section 4 | EX-G1: FAQ 26 as the standfirst, FAQ 25, 27, 28 and 30 as four questions, a sticky gateway aside. FAQ 29 lives on What to expect. |
 | `/vendors` | South African Exhibitors v1.1 | One page for exhibitors and vendors (`/sa-exhibitors` answers 301). Invited-vendor wall hidden (D-SX1). |
 | `/international-guests` | CMS | Hero and sub-nav only while no guest has a country. |
 | `/symposium`, `/wosa-conference` | What to Expect, About, FAQ 46-56 | Live ticket card beside the copy. |
 | `/workshops` | FAQ 57-60 | One ticket card; workshop records render once SAOC enters `workshopSession` data. |
 | `/conferences` | FAQ sections 6-7, 38, 47 | One row per conference with its ticket card. |
-| `/contact` | Contact v1.1 | Committee list, form, address aside. |
+| `/contact` | Contact v1.1 | CT-G1: the form and the nine-row committee beside a sticky card (address, telephone, gateway). Presentation only: `ContactForm` keeps every field and handler. |
+| `/archive` | CMS past shows | AR-1: a ruled register of editions, newest first; no lede, no back link, no planning band. |
 | `/privacy`, `/terms`, `/refunds` | existing legal content | NOS host renders `NosHero`; SAOC host keeps its own hero. |
 
 ## Known gaps (owner items)
