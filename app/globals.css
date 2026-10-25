@@ -738,7 +738,7 @@ h3.font-serif {
   letter-spacing: -0.015em;
   color: var(--ink);
   text-wrap: pretty;
-  scroll-margin-top: 112px;
+  scroll-margin-top: var(--doc-scroll-margin, 112px);
 }
 /* A theme's own h2 rule (.nos-theme h2, 0,1,1) sets weight and wrap; the document scale keeps both. */
 .doc-h2,
@@ -764,7 +764,8 @@ h3.font-serif {
   padding-top: 0;
 }
 
-/* The one aside: a white card, sticky under the 97px header from 1024px. */
+/* The one aside: a white card, sticky under the 97px header from 1024px. A theme with a different
+   header sets --doc-aside-top, --doc-index-top and --doc-scroll-margin; the fallbacks are SAOC's. */
 .doc-aside {
   background: #fff;
   border-radius: var(--radius-card);
@@ -774,7 +775,7 @@ h3.font-serif {
 @media (min-width: 1024px) {
   .doc-aside {
     position: sticky;
-    top: 112px;
+    top: var(--doc-aside-top, 112px);
   }
 }
 .doc-aside-heading {
@@ -827,7 +828,7 @@ h3.font-serif {
   }
   .doc-aside[data-doc-aside-kind='index'] {
     position: sticky;
-    top: 97px;
+    top: var(--doc-index-top, 97px);
     z-index: 20;
     height: 48px;
     padding: 0;
