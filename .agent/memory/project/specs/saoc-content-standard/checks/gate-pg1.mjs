@@ -6,7 +6,7 @@
 // run cannot come from a blind detector. Pattern follows gate-standard.mjs. Needs node_modules and .env.local.
 import { spawn, execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import { chromium } from '@playwright/test';
 
@@ -35,12 +35,20 @@ async function sanityStamp() {
   } catch { return `unreadable:${Date.now()}`; }
 }
 
+// Untracked source counts by name AND content: an edit to a new, uncommitted file must invalidate
+// the cached measurement just as an edit to a tracked one does.
+function untrackedDigest() {
+  const files = execSync('git ls-files --others --exclude-standard -- app components lib content').toString().split('\n').filter(Boolean);
+  const h = createHash('sha1');
+  for (const f of files) h.update(f + '\0').update(existsSync(f) ? readFileSync(f) : '').update('\0');
+  return h.digest('hex');
+}
+
 async function stateKey() {
   const stamp = await sanityStamp();
   const head = execSync('git rev-parse HEAD').toString().trim();
   const diff = execSync('git diff HEAD -- app components lib content proxy.ts').toString();
-  const untracked = execSync('git ls-files --others --exclude-standard -- app components lib content').toString();
-  return createHash('sha1').update(site + (BASE_ENV ?? 'local-dev-server') + stamp + head + diff + untracked + readFileSync(`${SPEC}/goldens/pg1.json`) + readFileSync(`${SPEC}/checks/gate-pg1.mjs`)).digest('hex');
+  return createHash('sha1').update(site + (BASE_ENV ?? 'local-dev-server') + stamp + head + diff + untrackedDigest() + readFileSync(`${SPEC}/goldens/pg1.json`) + readFileSync(`${SPEC}/checks/gate-pg1.mjs`)).digest('hex');
 }
 
 function freePort() {
@@ -192,6 +200,7 @@ function judgeGap(r, m) {
     if (s.paddingTop > N.firstSection.paddingTop) v.push(`${r.id}@${m.vw}: first section padding-top ${s.paddingTop}px want 0`);
     if (s.borderTop > N.firstSection.borderTop) v.push(`${r.id}@${m.vw}: hairline (border-top ${s.borderTop}px) on the first content box`);
     if (s.pseudoHairline) v.push(`${r.id}@${m.vw}: ::before/::after rule on the first section`);
+    if (s.boxShadowHairline) v.push(`${r.id}@${m.vw}: box-shadow on the first section (a shadow hairline)`);
     if (s.rulesBeforeH2 > 0) v.push(`${r.id}@${m.vw}: ${s.rulesBeforeH2} hr/separator before the first h2`);
     if (s.firstChildOffset > N.firstSection.firstChildOffsetMax) v.push(`${r.id}@${m.vw}: first child sits ${s.firstChildOffset.toFixed(1)}px below its section (hidden margin/padding)`);
   }
@@ -297,6 +306,7 @@ async function runSelftest(browser, server) {
     { name: 'first-section padding-top', route: 'about', vp: 'w1440', judge: judgeGap, mutate: () => { document.querySelector('[data-doc-main]').firstElementChild.style.paddingTop = '40px'; } },
     { name: 'gap off by 20px', route: 'about', vp: 'w1440', judge: judgeGap, mutate: () => { document.querySelector('[data-doc-main]').style.marginTop = '20px'; } },
     { name: 'hairline on first section', route: 'about', vp: 'w1440', judge: judgeGap, mutate: () => { document.querySelector('[data-doc-main]').firstElementChild.style.borderTop = '1px solid #000'; } },
+    { name: 'shadow hairline on first section', route: 'about', vp: 'w1440', judge: judgeGap, mutate: () => { document.querySelector('[data-doc-main]').firstElementChild.style.boxShadow = '0 -1px 0 #000'; } },
     { name: 'h2 repeats h1', route: 'about', vp: 'w1440', judge: judgeDupH2, mutate: () => { const h = document.createElement('h2'); h.textContent = document.querySelector('h1').textContent; document.querySelector('[data-doc-main]').prepend(h); } },
     { name: 'split h2/body', route: 'privacy', vp: 'w1440', judge: judgeSplit, mutate: () => { const h = document.querySelector('[data-doc-main] h2'); const b = h.nextElementSibling; const w = document.createElement('div'); w.style.cssText = 'display:flex;gap:16px'; h.before(w); w.append(h, b); } },
     { name: 'hero min-height 480', route: 'members', vp: 'w1440', judge: judgeHero, mutate: () => { document.querySelector('[data-page-hero]').style.minHeight = '480px'; } },
@@ -322,6 +332,20 @@ async function runSelftest(browser, server) {
     } },
   ];
   const fails = [];
+  // Cache key: rewriting an untracked source file under the same name must change the untracked part
+  // of the key, and an unchanged file must not. Tested on untrackedDigest() itself: stateKey() also
+  // folds in the Sanity stamp, which is the clock when Sanity is unreadable, so a whole-key compare
+  // could differ for that reason alone.
+  const probe = 'components/.pg1-selftest-untracked.txt';
+  try {
+    writeFileSync(probe, 'a');
+    const a1 = untrackedDigest();
+    const a2 = untrackedDigest();
+    writeFileSync(probe, 'b');
+    const b = untrackedDigest();
+    if (a1 !== a2) fails.push('selftest "untracked content changes the cache key": digest differs for unchanged content, so it is not a content hash');
+    if (b === a1) fails.push('selftest "untracked content changes the cache key": digest unchanged after an untracked file\'s content changed');
+  } finally { rmSync(probe, { force: true }); }
   for (const c of cases) {
     const route = ROUTES.find((r) => r.id === c.route);
     const ctx = await browser.newContext({ viewport: PG.viewports[c.vp] });
