@@ -440,6 +440,8 @@
 1bea547c334e193605fa85888e7342ad0e1c54a2 template/execution/hooks/check_autonomy.sh
 1bf5571b41ec05cc287d0295b2ad021d05cf54ca execution/tests/ghost-project/herald/herald.py
 1c36b3e21d14d697181f95fb960a5338347d67ed execution/hooks/statusline.sh
+1c379fd746bacf95564d3e9301a53010087f3116 execution/hooks/lib/autocompact_decider.py
+1c379fd746bacf95564d3e9301a53010087f3116 template/execution/hooks/lib/autocompact_decider.py
 1c6fbe7d653e10b37e6e64778b543023461b969c execution/tests/cascade-routing/smoke_cascade.py
 1c99ada4fa83e4fc75786f8b487a26756045a259 .agent/workflows/init.md
 1caded0dd61b6ace4b8960ac941b82f1a0e47225 execution/tests/ghost-project/resume/tests/fixtures/resume_boundary.node.txt
@@ -1242,7 +1244,10 @@
 4fda5b5b516732c39eff7f5b49bc0defa22e7040 execution/sync_skills.sh
 4ff70552510798654f91b9354369059d1edde71a execution/hooks/post_compact_restore.sh
 4ff70552510798654f91b9354369059d1edde71a template/execution/hooks/post_compact_restore.sh
+50086793fad13c35c965e8b6c1d4c777e81fd2a0 .agent/directives/ATH-20261025-git-index-lock.md
 500d080511f807b4f368aa84247a0160f111ab7e execution/hooks/full_boot.sh
+5012240d52a4469618a8e482f1085a6ca1d35c41 execution/statusline.py
+5012240d52a4469618a8e482f1085a6ca1d35c41 template/execution/statusline.py
 5016ebeea7f634bf6684bb2ba23c0d8933c9246e execution/tests/ghost-project/bloom/tests/run_tests.sh
 50493df36547c780867b4ff19ea75b347adb94bb execution/tests/ghost-project/resume/tests/fixtures/resume_boundary_expected.txt
 50628286ff235189f3af8dc43eb3d2bca3858913 execution/checks/_archive/verify_f8_agent_report_back.sh
@@ -1321,6 +1326,8 @@
 54bd819f4c3bfdbc7f9013a8b2de2faf8124feae .agent/version
 54bd819f4c3bfdbc7f9013a8b2de2faf8124feae template/.agent/version
 54bfc26705ee62dae6d7ddde7dc1e31e3c324b0b execution/tests/ghost-project/cairn/README.md
+54cf43c91187a81c744c4c005a1b6b3f96b95a49 execution/update_template.sha256.json
+54cf43c91187a81c744c4c005a1b6b3f96b95a49 template/execution/update_template.sha256.json
 550800d56586d4fea944cbf6a2fc64c62954ce9b execution/tests/ghost-project/sentinel/SPEC.md
 5529e449d07020f05d04b9f52e5298bdf23f99f9 execution/get_pulse_status.sh
 5529e449d07020f05d04b9f52e5298bdf23f99f9 template/execution/get_pulse_status.sh
@@ -1330,6 +1337,8 @@
 5551caffa64ba26baa8f2d126346ff9dd759a232 execution/emergency_permit_selftest.py
 5551caffa64ba26baa8f2d126346ff9dd759a232 template/execution/emergency_permit_selftest.py
 5556f5d826e52a9d546fc0648454f6cd4940481a execution/mission.py
+55727472c69f290910ff71fe41ad02b0512a0572 execution/boot_panel.py
+55727472c69f290910ff71fe41ad02b0512a0572 template/execution/boot_panel.py
 557e3f6671a7d86d29f386a66ae8173aee0e4b30 template/execution/onboard_headless.py
 559a1d64c2677fc9502055328208b5d8d12c9b83 execution/tests/ghost-project/mirror/tests/fixtures/mirror_boundary.txt
 559ca0ff6a212f1470c8288d01996c7e6bb7f02f execution/mission.py
@@ -1521,6 +1530,8 @@
 6354c59d57ebd86cfb3914b12da59a53183968e4 execution/tests/ghost-project/sieve/tests/fixtures/sieve_boundary_nfc_expected.txt
 637bd10ac5a7249c8f2309096da828f4bb03b5b4 execution/tests/ghost-project/tempo/tests/test_tempo.py
 63ccf2fac1867e4d20c405b390f427bd7f4dd4a1 template/.claude/settings.json
+63d6d3520c55ad749e7e668ea608c0501f7024d3 .agent/version
+63d6d3520c55ad749e7e668ea608c0501f7024d3 template/.agent/version
 63e4634485edc8fb249a3b14ad41369304d199e3 template/AGENTS.md
 63e825a11c8b6bd0526f7ef4b3a117a5bd79dbe5 execution/bump_version.sh
 63e825a11c8b6bd0526f7ef4b3a117a5bd79dbe5 template/execution/bump_version.sh
@@ -2903,6 +2914,7 @@ bc4094ec830de976049d9c0c52fc7f3c7e7516f3 template/.agent/rules/_core/sandbox.md
 bc6e1aa7e455a036e55296946bb6b899372bea81 execution/overlay_template.sh
 bc704b1d8213c4e07c6490cdd8bc59557626cabf execution/checks/verify_mirror_sync.py
 bc73cac87347243d0313b3eb343c1910b25fac20 execution/tests/ghost-project/throttle/SPEC.md
+bc7f48e64caa9d08b9ec83cee6c7d0756f8c4a5c execution/hooks/pre_compact_snapshot.sh
 bc9de0dcc17f4d922326ec108754747b87342dfc execution/mission.py
 bca02a124f9ac1bf5ead3808c0786ad2f765e448 .agent/rules/_core/alembic.md
 bca02a124f9ac1bf5ead3808c0786ad2f765e448 .claude/rules/alembic.md
@@ -3611,6 +3623,8 @@ e6d379e5d61ed1d0c3101b09d64c285727d95c55 execution/hooks/post_compact_restore.sh
 e6d379e5d61ed1d0c3101b09d64c285727d95c55 template/execution/hooks/post_compact_restore.sh
 e6d3b9284316bbaacf791af5b8bd53a6884bdcab .agent/update-manifest.yaml
 e6d3b9284316bbaacf791af5b8bd53a6884bdcab template/.agent/update-manifest.yaml
+e6d64bd188c13c4fa174cc510407efca7a1f01e6 execution/shipped_blobs.txt
+e6d64bd188c13c4fa174cc510407efca7a1f01e6 template/execution/shipped_blobs.txt
 e6dd117241c6436956f47879e9f19ae80e64a45e .agent/providers/codex.json
 e6dd117241c6436956f47879e9f19ae80e64a45e template/.agent/providers/codex.json
 e702b8fb23a8d9c6bf6585962502344f33726acf execution/update_template.py

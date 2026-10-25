@@ -21,6 +21,16 @@ Exit-code contract for `gate` on a specific phase number (not "all"/"max"):
   ("all"/"max" phase gating always exits 2 on any failure and 0 on full
   success — the 1-vs-2 codex_qa distinction only applies to the specific-
   phase path above.)
+
+Project-owned check kinds: `<project>/.agent/contract_kinds.json` registers extra
+`type:` values so a project need not pin this file:
+  {"schema": "athanor.contract-kinds/v1",
+   "kinds": {"<name>": {"script": "execution/x.sh", "timeout_seconds": 200}}}
+The project root is the nearest ancestor of the contract file holding `.agent/`.
+A check of a registered type runs `<script> <target>` (check-level `script:`
+overrides; relative paths resolve against the project root) under the codex_qa
+wrapper protocol: 0 pass, 1 fail, 2 or anything else inconclusive (error). A
+malformed registry, or a kind shadowing a built-in, fails validate (and so gate).
 """
 import argparse
 import difflib
@@ -39,6 +49,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "checks"))
 
 RESULTS_DIR = Path(".agent/memory/scratch/contract-results")
+KINDS_REGISTRY = Path(".agent/contract_kinds.json")
+KINDS_SCHEMA = "athanor.contract-kinds/v1"
+DEFAULT_KIND_TIMEOUT_SECONDS = 200
+BUILTIN_KINDS = {"shell", "codex_qa", "file_exists", "file_contains", "json_path",
+                 "handoff_field", "agent_review"}
 MAX_TIMEOUT_SECONDS = 86400  # 24h ceiling -- generous for CI, still finite
 EVIDENCE_DISPLAY_MAX = 2000  # console print cap; storage caps match, so print is a no-op
 
@@ -116,6 +131,46 @@ def _raw_checks(raw):
     return []
 
 
+def _project_root(contract_path) -> Path | None:
+    """Nearest ancestor of the contract file that holds a `.agent/` directory."""
+    start = Path(contract_path).resolve().parent
+    for d in (start, *start.parents):
+        if (d / ".agent").is_dir():
+            return d
+    return None
+
+
+def _load_kind_registry(contract_path):
+    """Return (kinds, error, root). `kinds` maps name -> {script, timeout_seconds}
+    and is empty when the registry is absent or malformed; `error` names the
+    registry file and says what is wrong (None when absent or valid)."""
+    root = _project_root(contract_path) if contract_path else None
+    reg = root / KINDS_REGISTRY if root else None
+    if reg is None or not reg.is_file():
+        return {}, None, root
+    where = f"{KINDS_REGISTRY}"
+    try:
+        data = json.loads(reg.read_text())
+    except (OSError, ValueError) as e:
+        return {}, f"{where}: unreadable or not JSON ({type(e).__name__})", root
+    kinds = data.get("kinds") if isinstance(data, dict) else None
+    if not isinstance(data, dict) or data.get("schema") != KINDS_SCHEMA \
+            or not isinstance(kinds, dict):
+        return {}, f"{where}: expected {{\"schema\": \"{KINDS_SCHEMA}\", \"kinds\": {{...}}}}", root
+    parsed = {}
+    for name, spec in kinds.items():
+        if name in BUILTIN_KINDS:
+            return {}, f"{where}: kind {name!r} collides with a built-in kind", root
+        if not isinstance(spec, dict) or not isinstance(spec.get("script"), str) \
+                or not spec["script"].strip():
+            return {}, f"{where}: kind {name!r} needs a string `script`", root
+        ts = spec.get("timeout_seconds", DEFAULT_KIND_TIMEOUT_SECONDS)
+        if isinstance(ts, bool) or not isinstance(ts, int) or ts <= 0:
+            return {}, f"{where}: kind {name!r} timeout_seconds must be a positive int", root
+        parsed[name] = {"script": spec["script"], "timeout_seconds": ts}
+    return parsed, None, root
+
+
 def load_contract(path: str) -> dict:
     p = Path(path)
     if not p.exists():
@@ -154,13 +209,13 @@ def load_contract(path: str) -> dict:
         print(f"ERROR: failed to parse {path}: {e}", file=sys.stderr)
         sys.exit(1)
     try:
-        return normalize_contract(contract)
+        return normalize_contract(contract, path)
     except Exception as e:
         print(f"ERROR: failed to parse {path}: {e}", file=sys.stderr)
         sys.exit(1)
 
 
-def normalize_contract(contract: dict) -> dict:
+def normalize_contract(contract: dict, contract_path=None) -> dict:
     """
     Convert @architect-generated contract format to the internal format contract.py uses.
 
@@ -186,8 +241,10 @@ def normalize_contract(contract: dict) -> dict:
     Also normalizes:
       - slug -> spec (if spec missing)
       - goal -> description (if description missing at top level)
+      - checks whose `type` is a project-registered kind (contract_kinds.json)
     """
     c = dict(contract)
+    custom_kinds, _, kinds_root = _load_kind_registry(contract_path)
 
     # Normalize slug/feature -> spec
     if "spec" not in c and "slug" in c:
@@ -260,6 +317,17 @@ def normalize_contract(contract: dict) -> dict:
                     "target": check.get("target", ""),
                     "script": check.get("script", "execution/codex_qa.sh"),
                     "timeout_seconds": check.get("timeout_seconds", 200),
+                }
+            elif check_type in custom_kinds:
+                reg = custom_kinds[check_type]
+                script = Path(check.get("script", reg["script"]))
+                if not script.is_absolute():
+                    script = kinds_root / script
+                verify = {
+                    "kind": check_type,
+                    "target": check.get("target", ""),
+                    "script": str(script),
+                    "timeout_seconds": check.get("timeout_seconds", reg["timeout_seconds"]),
                 }
             else:
                 verify = {"kind": "shell", "cmd": cmd}
@@ -402,7 +470,7 @@ def _assertion_dependency_mtime(assertion: dict, handoff: str | None = None) -> 
         path = verify.get("path", "")
         if path and os.path.isfile(path):
             candidates = [path]
-    elif kind == "codex_qa":
+    elif kind == "codex_qa" or kind not in BUILTIN_KINDS:
         target = verify.get("target", "")
         if target and "://" not in target and os.path.isfile(target):
             candidates = [target]
@@ -531,6 +599,7 @@ def _timeout_seconds_error(ts) -> str | None:
 def validate_cmd(args):
     contract = load_contract(args.contract)
     errors = []
+    custom_kinds, kinds_error, _ = _load_kind_registry(args.contract)
 
     # Second, line-tracking parse of the same file purely for diagnostics --
     # never used for the actual schema decisions above, only to attach a
@@ -595,8 +664,12 @@ def validate_cmd(args):
             where = ", ".join(f"line {ln}" for ln in locs)
             err(f"Duplicate assertion ID: {rc_id} ({where})", locs[0])
 
+    if kinds_error:
+        err(kinds_error)
+
     ids = set()
-    binary_kinds = {"shell", "file_exists", "file_contains", "json_path", "handoff_field", "codex_qa"}
+    binary_kinds = {"shell", "file_exists", "file_contains", "json_path", "handoff_field",
+                    "codex_qa", *custom_kinds}
     binary_count = 0
     assertion_lint, lint_exc = _load_assertion_lint()
     if assertion_lint is None:
@@ -627,6 +700,10 @@ def validate_cmd(args):
             binary_count += 1
 
         verify = a.get("verify", {})
+        if (verify.get("kind") == "codex_qa" or verify.get("kind") in custom_kinds) \
+                and not isinstance(verify.get("target", ""), str):
+            err(f"Assertion {aid}: target must be a string, got "
+                f"{type(verify['target']).__name__} ({verify['target']!r})", ln)
         ts = verify.get("timeout_seconds")
         if ts is not None:
             ts_error = _timeout_seconds_error(ts)
@@ -792,6 +869,32 @@ def _run_check_reaped(argv, env, cwd, timeout):
     return subprocess.CompletedProcess(argv, proc.returncode, out, err)
 
 
+def _registered_kinds(contract_path) -> dict:
+    return _load_kind_registry(contract_path)[0]
+
+
+def _run_wrapper(name, script, target, timeout, fail_prefix, error_prefix, pass_text):
+    """Run `<script> <target>` under the wrapper protocol (0 pass, 1 fail,
+    2 inconclusive, anything else inconclusive). Returns (verdict, evidence)."""
+    try:
+        result = subprocess.run([script, target], capture_output=True,
+                                text=True, timeout=timeout, cwd=_RUN_CWD)
+    except subprocess.TimeoutExpired:
+        return "error", (f"{name} wrapper exceeded {timeout}s supervisory timeout "
+                         "(check_cmd level, independent of the wrapper's own internal timeout)")
+    except OSError as e:
+        return "error", f"{name} wrapper could not run {script!r}: {type(e).__name__}: {e}"
+    rc = result.returncode
+    if rc == 0:
+        return "pass", pass_text
+    if rc == 1:
+        return "fail", fail_prefix + result.stdout.strip()[:EVIDENCE_DISPLAY_MAX]
+    if rc == 2:
+        return "error", error_prefix + (result.stdout + result.stderr).strip()[:EVIDENCE_DISPLAY_MAX]
+    return "error", (f"{name} wrapper exited {rc} (neither 0, 1, nor 2) -- treated as "
+                     "inconclusive, not a QA fail")
+
+
 def check_cmd(args):
     contract = load_contract(args.contract)
     assertion_id = args.assertion
@@ -901,29 +1004,16 @@ def check_cmd(args):
                 except: pass
 
     elif kind == "codex_qa":
-        target = verify.get("target", "")
-        script = verify.get("script", "execution/codex_qa.sh")
-        timeout = verify.get("timeout_seconds", 200)
-        try:
-            result = subprocess.run([script, target], capture_output=True,
-                                     text=True, timeout=timeout, cwd=_RUN_CWD)
-            rc = result.returncode
-            if rc == 0:
-                verdict = "pass"
-                evidence = "codex_qa PASS"
-            elif rc == 1:
-                verdict = "fail"
-                evidence = "CODEX_QA_FAIL: " + result.stdout.strip()[:EVIDENCE_DISPLAY_MAX]
-            elif rc == 2:
-                verdict = "error"
-                evidence = "CODEX_QA_WRAPPER_ERROR: " + (result.stdout + result.stderr).strip()[:EVIDENCE_DISPLAY_MAX]
-            else:
-                verdict = "error"
-                evidence = f"codex_qa wrapper exited {rc} (neither 0, 1, nor 2) -- treated as inconclusive, not a QA fail"
-        except subprocess.TimeoutExpired:
-            verdict = "error"
-            evidence = (f"codex_qa wrapper exceeded {timeout}s supervisory timeout "
-                        "(check_cmd level, independent of the wrapper's own internal timeout)")
+        verdict, evidence = _run_wrapper(
+            "codex_qa", verify.get("script", "execution/codex_qa.sh"),
+            verify.get("target", ""), verify.get("timeout_seconds", 200),
+            "CODEX_QA_FAIL: ", "CODEX_QA_WRAPPER_ERROR: ", "codex_qa PASS")
+
+    elif kind in _registered_kinds(args.contract):
+        verdict, evidence = _run_wrapper(
+            kind, verify.get("script", ""), verify.get("target", ""),
+            verify.get("timeout_seconds", DEFAULT_KIND_TIMEOUT_SECONDS),
+            f"{kind}: ", f"{kind} inconclusive: ", f"{kind} PASS")
 
     elif kind == "file_exists":
         path = verify.get("path", "")
@@ -1298,10 +1388,19 @@ def _gate_single_phase(contract: dict, args) -> bool:
 
     def _print_gate_errors():
         for aid in errors:
-            print(f"\nGATE ERROR Phase {phase_n}: codex_qa wrapper did not produce a verdict for {aid}")
-            print(f"   (QA inconclusive -- not a QA failure). {evidence_by_id.get(aid, '')}")
-            print("   Fix: ensure the `codex` binary is on PATH and target/prompt is valid.")
-            print("   See docs/codex_qa.md.")
+            verify = assertions_by_id.get(aid, {}).get("verify", {})
+            kind = verify.get("kind", "")
+            if kind in BUILTIN_KINDS or not kind:
+                print(f"\nGATE ERROR Phase {phase_n}: codex_qa wrapper did not produce a verdict for {aid}")
+                print(f"   (QA inconclusive -- not a QA failure). {evidence_by_id.get(aid, '')}")
+                print("   Fix: ensure the `codex` binary is on PATH and target/prompt is valid.")
+                print("   See docs/codex_qa.md.")
+            else:
+                print(f"\nGATE ERROR Phase {phase_n}: {kind} wrapper did not produce a verdict for {aid}")
+                print(f"   (inconclusive -- not a failure). {evidence_by_id.get(aid, '')}")
+                print(f"   Fix: ensure {verify.get('script', '')} exists, is executable, and "
+                      "that its tooling is available.")
+                print("   See docs/VALIDATION_CONTRACTS.md (Project-owned check kinds).")
 
     if failing:
         codex_qa_failing = [
