@@ -28,9 +28,9 @@ export interface LockupPickerZip {
 }
 
 export interface LockupPickerProps {
-  /** Visually hidden group names. */
-  familyLegend: string;
-  variantLegend: string;
+  /** The groups' accessible names: the section's own heading words, never new copy. */
+  familyLabel: string;
+  variantLabel: string;
   /** Radio input names, unique on the page. */
   familyName: string;
   variantName: string;
@@ -71,8 +71,8 @@ function writeHash(familyId: string, variantId: string): void {
 }
 
 export function LockupPicker({
-  familyLegend,
-  variantLegend,
+  familyLabel,
+  variantLabel,
   familyName,
   variantName,
   families,
@@ -124,45 +124,39 @@ export function LockupPicker({
             ))}
         </noscript>
       </div>
-      <fieldset className="mb-4">
-        <legend className="sr-only">{familyLegend}</legend>
-        <div role="radiogroup" aria-label={familyLegend} className="flex flex-wrap">
-          {families.map((option) => (
-            <label key={option.id} className="relative -ml-px block cursor-pointer first:ml-0">
-              <input
-                type="radio"
-                name={familyName}
-                value={option.id}
-                checked={family === option.id}
-                onChange={() => writeHash(option.id, variant)}
-                // The already-selected radio fires no change event; a click still records its hash.
-                onClick={() => writeHash(option.id, variant)}
-                className="peer sr-only"
-              />
-              <span className={CHIP_CLASS}>{option.label}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-      <fieldset className="mb-6">
-        <legend className="sr-only">{variantLegend}</legend>
-        <div role="radiogroup" aria-label={variantLegend} className="flex flex-wrap gap-3">
-          {variants.map((option) => (
-            <label key={option.id} className="relative block cursor-pointer">
-              <input
-                type="radio"
-                name={variantName}
-                value={option.id}
-                checked={variant === option.id}
-                onChange={() => writeHash(family, option.id)}
-                onClick={() => writeHash(family, option.id)}
-                className="peer sr-only"
-              />
-              <span className={CHIP_CLASS}>{option.label}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <div role="radiogroup" aria-label={familyLabel} className="mb-4 flex flex-wrap">
+        {families.map((option) => (
+          <label key={option.id} className="relative -ml-px block cursor-pointer first:ml-0">
+            <input
+              type="radio"
+              name={familyName}
+              value={option.id}
+              checked={family === option.id}
+              onChange={() => writeHash(option.id, variant)}
+              // The already-selected radio fires no change event; a click still records its hash.
+              onClick={() => writeHash(option.id, variant)}
+              className="peer sr-only"
+            />
+            <span className={CHIP_CLASS}>{option.label}</span>
+          </label>
+        ))}
+      </div>
+      <div role="radiogroup" aria-label={variantLabel} className="mb-6 flex flex-wrap gap-3">
+        {variants.map((option) => (
+          <label key={option.id} className="relative block cursor-pointer">
+            <input
+              type="radio"
+              name={variantName}
+              value={option.id}
+              checked={variant === option.id}
+              onChange={() => writeHash(family, option.id)}
+              onClick={() => writeHash(family, option.id)}
+              className="peer sr-only"
+            />
+            <span className={CHIP_CLASS}>{option.label}</span>
+          </label>
+        ))}
+      </div>
       {families.flatMap((f) =>
         variants.map((v) => {
           const key = `${f.id}/${v.id}`;
@@ -175,7 +169,7 @@ export function LockupPicker({
               {panels[key]}
             </div>
           );
-        }),
+        })
       )}
     </div>
   );

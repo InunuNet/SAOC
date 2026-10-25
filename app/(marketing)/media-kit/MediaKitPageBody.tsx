@@ -115,7 +115,7 @@ function MarkPanel({ kit, stem }: { kit: MediaKit; stem: string }) {
               item={chip}
               ground={ground}
               layout="chip"
-              title={chip.ink_label ?? chip.rendition_label}
+              title={chip.label}
             />
           )),
       )}
@@ -124,6 +124,7 @@ function MarkPanel({ kit, stem }: { kit: MediaKit; stem: string }) {
 }
 
 // The merged Full colour · Greyscale picker: the two family names are the two existing section headings.
+const LOCKUPS_LABEL = 'Full colour · Greyscale';
 const LOCKUP_FAMILIES = [
   { id: 'full-colour', label: 'Full colour' },
   { id: 'greyscale', label: 'Greyscale' },
@@ -216,8 +217,8 @@ export function MediaKitPageBody() {
           <span id="full-colour" className="block scroll-mt-52" />
           <span id="greyscale" className="block scroll-mt-52" />
           <LockupPicker
-            familyLegend="Colour family"
-            variantLegend="Lockup variant"
+            familyLabel={LOCKUPS_LABEL}
+            variantLabel={LOCKUPS_LABEL}
             familyName="lockup-family"
             variantName="lockup-variant"
             families={LOCKUP_FAMILIES}
@@ -233,7 +234,7 @@ export function MediaKitPageBody() {
 
         <KitSection id="mark-only" heading="Mark only" zip={kit.sectionZips['mark-only']}>
           <OptionPicker
-            legend="Mark only"
+            label="Mark only"
             name="mark-only-colourway"
             hashPrefix="mark-only"
             defaultId="colour"
@@ -264,7 +265,7 @@ export function MediaKitPageBody() {
           zip={kit.sectionZips['national-show']}
         >
           <OptionPicker
-            legend="National Show 2027"
+            label="National Show 2027"
             name="national-show-colourway"
             hashPrefix="national-show"
             defaultId="full-colour"

@@ -44,3 +44,19 @@ Duotone and Usage are unchanged.
 
 Measured page height at 390: 9,542px (target at most 10,500px; 11,591px before the merge). At 1440:
 6,233px. Every visible preview image loads once scrolled into view.
+
+## QA round (accessible names, no-JS, shared hash)
+
+- Each radiogroup has one accessible name, its `aria-label`, and it is the section's own heading words:
+  "Mark only", "National Show 2027", and "Full colour · Greyscale" for both groups of the merged
+  picker. No fieldset or legend duplicates it, so the name is announced once. No legend or label copy
+  is new. The manifest holds no separate string for the lockup variant group, so the family and
+  variant groups share the section heading as their name (the variant radios themselves carry the
+  verbatim `lockup_label` strings).
+- Mark only cards use the manifest's own `label` as the card title (for example "Full colour — Mark
+  only — dark chip"), so the light and dark chips' download buttons no longer read identically.
+- No JavaScript: only the default panels (and the zip links) are reachable. This is accepted because
+  `/media-kit` is committee-gated behind Firebase sign-in, which itself needs JavaScript, so a
+  no-JS visitor cannot reach the page. It matches the pre-existing `DuotonePicker`.
+- The pickers share one URL hash, so choosing in one resets the others to their defaults on reload or
+  back navigation, exactly as `DuotonePicker` already does.
