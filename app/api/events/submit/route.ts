@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { createClient } from '@sanity/client';
 
+import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { initAdmin } from '@/lib/firebase-admin';
 import {
   hostSocietyExists,
@@ -44,7 +45,25 @@ function slugify(title: string): string {
     .replace(/^-|-$/g, '');
 }
 
+function tooManyAttempts(retryAfterSeconds: number): NextResponse {
+  return NextResponse.json(
+    { error: 'Too many attempts. Please try again later.' },
+    { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } },
+  );
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  // 0. Rate limit per client IP, before auth: uids are free to mint, so the per-uid limit
+  // below does not bound a caller who registers new accounts.
+  const ip = clientIpFromForwardedFor(req.headers.get('x-forwarded-for'));
+  const ipLimit = consumeRateLimit(
+    { now: new Date(), ...scopeAttemptsToRequest(attempts) },
+    `event-submit-ip:${ip ?? 'unknown'}`,
+    PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
+    PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
+  );
+  if (!ipLimit.allowed) return tooManyAttempts(ipLimit.retryAfterSeconds);
+
   // 1. Extract bearer token
   const authz = req.headers.get('authorization') ?? '';
   const token = authz.startsWith('Bearer ') ? authz.slice(7) : null;
@@ -70,12 +89,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
     PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
   );
-  if (!limit.allowed) {
-    return NextResponse.json(
-      { error: 'Too many attempts. Please try again later.' },
-      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } },
-    );
-  }
+  if (!limit.allowed) return tooManyAttempts(limit.retryAfterSeconds);
 
   // 4. Parse + validate body
   let raw: unknown;
