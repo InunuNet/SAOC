@@ -11,6 +11,7 @@ import { PageHero } from '@/components/ui/PageHero';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import {
   buildMediaKit,
+  itemMeta,
   INKS,
   type Ground,
   type MediaKit,
@@ -169,6 +170,13 @@ export function MediaKitPageBody() {
       ]),
     ),
   );
+  const lockupZips = {
+    'full-colour': {
+      href: kit.sectionZips['full-colour'].href,
+      meta: itemMeta(kit.sectionZips['full-colour']),
+    },
+    greyscale: { href: kit.sectionZips.greyscale.href, meta: itemMeta(kit.sectionZips.greyscale) },
+  };
   const markPanels = Object.fromEntries(
     MARK_OPTIONS.map((option) => [option.id, <MarkPanel key={option.id} kit={kit} stem={option.stem} />]),
   );
@@ -207,10 +215,6 @@ export function MediaKitPageBody() {
           {/* Zero-size anchors: the "On this page" links (#full-colour, #greyscale) land here with that family preselected. */}
           <span id="full-colour" className="block scroll-mt-52" />
           <span id="greyscale" className="block scroll-mt-52" />
-          <div className="mb-6 flex flex-wrap gap-x-8">
-            <ZipLink item={kit.sectionZips['full-colour']} label="Full colour" />
-            <ZipLink item={kit.sectionZips.greyscale} label="Greyscale" />
-          </div>
           <LockupPicker
             familyLegend="Colour family"
             variantLegend="Lockup variant"
@@ -219,6 +223,7 @@ export function MediaKitPageBody() {
             families={LOCKUP_FAMILIES}
             variants={lockupVariants}
             panels={lockupPanels}
+            zips={lockupZips}
           />
         </KitSection>
 

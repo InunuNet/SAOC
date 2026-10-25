@@ -35,8 +35,11 @@ not shown). `components/media-kit/LockupPicker.tsx` holds a family toggle (Full 
 and four variant radios labelled with the manifest's `lockup_label` strings verbatim. One preview
 card follows both; all eight cards are rendered and seven are hidden, so every download stays in the
 DOM. Selection is written as `#lockups-<family>-<variant>`. Zero-size anchors `#full-colour` and
-`#greyscale` keep the "On this page" links working and preselect the family. Both family zips stay
-in the section; `ZipLink` takes an optional `label` that adds the family to its accessible name.
+`#greyscale` keep the "On this page" links working and preselect the family. The section holds ONE zip link that follows the family toggle (WCAG 2.4.4): its visible text stays
+"Download this section (zip)", while its href, size line and accessible name
+(`aria-label="Download this section (zip) — <family>"`) switch with the family. Without JavaScript the
+server renders the default family's (Full colour) zip, and a `<noscript>` link keeps the Greyscale zip
+reachable; the hash preselect and the toggle need JavaScript, as the other pickers do.
 Duotone and Usage are unchanged.
 
 Measured page height at 390: 9,542px (target at most 10,500px; 11,591px before the merge). At 1440:

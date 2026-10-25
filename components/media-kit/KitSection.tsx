@@ -8,18 +8,16 @@ import type { ReactNode } from 'react';
 
 import { itemMeta, type MediaKitItem } from '@/lib/data/media-kit';
 
-const ZIP_LABEL = {
+export const ZIP_LABEL = {
   everything: 'Download everything (zip)',
   section: 'Download this section (zip)',
 } as const;
 
 export interface ZipLinkProps {
   item: MediaKitItem;
-  /** Names the zip's family when one section holds several zips; read aloud, not shown. */
-  label?: string;
 }
 
-export function ZipLink({ item, label }: ZipLinkProps) {
+export function ZipLink({ item }: ZipLinkProps) {
   return (
     <div className="flex flex-wrap items-center gap-x-4">
       <a
@@ -28,7 +26,6 @@ export function ZipLink({ item, label }: ZipLinkProps) {
         className="inline-flex min-h-[44px] items-center font-sans text-[14px] font-semibold text-ink underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         {item.bundle_for === 'everything' ? ZIP_LABEL.everything : ZIP_LABEL.section}
-        {label ? <span className="sr-only"> — {label}</span> : null}
       </a>
       <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted">
         {itemMeta(item)}

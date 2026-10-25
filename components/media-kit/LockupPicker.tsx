@@ -7,14 +7,24 @@
 // tokens as OptionPicker / DuotonePicker. The selection lives in the URL hash as
 // #lockups-<family>-<variant>; the "On this page" anchors #full-colour and #greyscale preselect the
 // family (variant defaults to the first). Every card is server-rendered and passed in; this
-// component only chooses which one is shown.
+// component only chooses which one is shown. ONE zip link follows the family toggle: same visible
+// text, href and accessible name switch with the family. Without JS the default family's zip is
+// the link, and a <noscript> link keeps every other family's zip reachable.
 // =============================================================
 
 import { useSyncExternalStore, type ReactNode } from 'react';
 
+import { ZIP_LABEL } from '@/components/media-kit/KitSection';
+
 export interface LockupPickerOption {
   id: string;
   label: string;
+}
+
+export interface LockupPickerZip {
+  href: string;
+  /** The size line shown beside the link, e.g. "ZIP · 8.5 MB". */
+  meta: string;
 }
 
 export interface LockupPickerProps {
@@ -28,7 +38,13 @@ export interface LockupPickerProps {
   variants: ReadonlyArray<LockupPickerOption>;
   /** One card per `${familyId}/${variantId}`. */
   panels: Record<string, ReactNode>;
+  /** The family's section zip, by family id. */
+  zips: Record<string, LockupPickerZip>;
 }
+
+const ZIP_LINK_CLASS =
+  'inline-flex min-h-[44px] items-center font-sans text-[14px] font-semibold text-ink underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
+const ZIP_META_CLASS = 'font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted';
 
 const HASH_PREFIX = '#lockups-';
 
@@ -62,6 +78,7 @@ export function LockupPicker({
   families,
   variants,
   panels,
+  zips,
 }: LockupPickerProps) {
   const hash = useSyncExternalStore(subscribeToHash, readHash, serverHash).toLowerCase();
   let family = families[0].id;
@@ -76,8 +93,37 @@ export function LockupPicker({
     }
   }
 
+  const selectedFamily = families.find((f) => f.id === family) ?? families[0];
+  const zip = zips[selectedFamily.id];
+
   return (
     <div>
+      <div className="mb-6 flex flex-wrap items-center gap-x-4">
+        <a
+          href={zip.href}
+          download
+          aria-label={`${ZIP_LABEL.section} — ${selectedFamily.label}`}
+          className={ZIP_LINK_CLASS}
+        >
+          {ZIP_LABEL.section}
+        </a>
+        <span className={ZIP_META_CLASS}>{zip.meta}</span>
+        <noscript>
+          {families
+            .filter((f) => f.id !== families[0].id)
+            .map((f) => (
+              <a
+                key={f.id}
+                href={zips[f.id].href}
+                download
+                aria-label={`${ZIP_LABEL.section} — ${f.label}`}
+                className={ZIP_LINK_CLASS}
+              >
+                {ZIP_LABEL.section}
+              </a>
+            ))}
+        </noscript>
+      </div>
       <fieldset className="mb-4">
         <legend className="sr-only">{familyLegend}</legend>
         <div role="radiogroup" aria-label={familyLegend} className="flex flex-wrap">
