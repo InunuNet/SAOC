@@ -9,44 +9,31 @@
 // a council document — the answer text is in the DOM even while collapsed, so the page
 // prints and in-page browser search finds it.
 //
-// Category display order is presentation, not editor content, so it is the one
-// hardcoded list this feature permits. An unrecognised category coming back from Sanity
-// is appended under General rather than silently dropped.
+// Section order, titles and introductions are Lee-Ann's: lib/data/faq-sections.ts is the one source.
+// An unrecognised category coming back from Sanity is appended under the first section rather than
+// silently dropped.
 //
 // R44-A3: a wrapping set of in-page jump chips, one per category that has questions, sits above
-// the sections. Chips are built from the same CATEGORY_ORDER / CATEGORY_LABELS as the sections and
+// the sections. Chips are built from the same FAQ_SECTIONS as the sections and
 // point at each heading's existing `faq-<category>` id. No filter field; no client code.
 // =============================================================
 
 import { PortableText } from '@portabletext/react';
 import type { ReactNode } from 'react';
 
+import { FAQ_SECTIONS } from '@/lib/data/faq-sections';
 import type { ShowFaq } from '@/types';
 
 import { ConfirmationBadge } from './ConfirmationBadge';
 import { ShowJumpChips } from './ShowJumpChips';
 
-const CATEGORY_ORDER = [
-  'getting-there',
-  'tickets',
-  'accessibility',
-  'plant-sales',
-  'general',
-] as const;
+const FALLBACK_SECTION_ID = FAQ_SECTIONS[0].id;
 
-const CATEGORY_LABELS: Record<(typeof CATEGORY_ORDER)[number], string> = {
-  'getting-there': 'Getting there',
-  tickets: 'Tickets',
-  accessibility: 'Accessibility',
-  'plant-sales': 'Plant sales',
-  general: 'General',
-};
-
-type KnownCategory = (typeof CATEGORY_ORDER)[number];
-
-function categoryOf(faq: ShowFaq): KnownCategory {
-  const category = faq.category as KnownCategory | null | undefined;
-  return category && CATEGORY_ORDER.includes(category) ? category : 'general';
+function categoryOf(faq: ShowFaq): string {
+  const category = faq.category;
+  return category && FAQ_SECTIONS.some((section) => section.id === category)
+    ? category
+    : FALLBACK_SECTION_ID;
 }
 
 /** A question carries an answer when its portable text has at least one block. */
@@ -92,32 +79,41 @@ export function ShowFaqList({
   );
   if (entries.length === 0) return null;
 
-  const groups = CATEGORY_ORDER.map((category) => ({
-    category,
-    inCategory: entries.filter((faq) => categoryOf(faq) === category),
-  })).filter(({ inCategory }) => inCategory.length > 0);
+  // A section with an introduction is drawn even with no question under it (her section 10).
+  const groups = FAQ_SECTIONS.map((section) => ({
+    section,
+    inCategory: entries.filter((faq) => categoryOf(faq) === section.id),
+  })).filter(({ section, inCategory }) => inCategory.length > 0 || section.intro.length > 0);
 
   return (
     <>
       {groups.length > 1 ? (
         <ShowJumpChips
           label="FAQ categories"
-          items={groups.map(({ category }) => ({
-            href: `#faq-${category}`,
-            label: CATEGORY_LABELS[category],
+          items={groups.map(({ section }) => ({
+            href: `#faq-${section.id}`,
+            label: section.title,
           }))}
         />
       ) : null}
 
       <div className="space-y-12">
-        {groups.map(({ category, inCategory }) => (
-          <section key={category} aria-labelledby={`faq-${category}`}>
+        {groups.map(({ section, inCategory }) => (
+          <section key={section.id} aria-labelledby={`faq-${section.id}`}>
             <h2
-              id={`faq-${category}`}
+              id={`faq-${section.id}`}
               className="nos-label scroll-mt-[62px] font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-accent md:scroll-mt-[74px]"
             >
-              {CATEGORY_LABELS[category]}
+              {section.title}
             </h2>
+            {section.intro.map((paragraph) => (
+              <p
+                key={paragraph}
+                className="mt-3 max-w-3xl font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/80"
+              >
+                {paragraph}
+              </p>
+            ))}
 
             <ul className="mt-4 space-y-4">
               {inCategory.map((faq) => (

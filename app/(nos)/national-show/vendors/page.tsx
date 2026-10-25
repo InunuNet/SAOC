@@ -37,38 +37,20 @@ export const metadata: Metadata = buildPageMetadata({
 // VendorGrid is SAOC-owned, untouched, and already re-skins through the inherited
 // nos-theme tokens; this page only composes NOS chrome around it.
 //
-// F18 (R75): the intro is Lee-Ann's verbatim "South African Exhibitors" copy, now laid out by
-// the shared long-form template. components/vendors/VendorIntro.tsx stays untouched and
-// carries the same copy; the paragraphs below are word-for-word the same, written with the
-// same straight apostrophes (react-dom/server would encode a plain apostrophe as &#x27;, so
-// they are set as HTML like VendorIntro sets them).
+// The intro is Lee-Ann's "South African Exhibitors" v1.1 copy (24 Oct 2026), the one introduction for
+// this merged page: her tagline and four paragraphs, as she wrote them. Exhibitors and vendors is the
+// one page (the separate South African exhibitors page is retired, with a permanent redirect here).
+// The paragraphs are set as HTML so her straight apostrophes reach the page unencoded.
 const VENDORS_LEDE =
   'Meet the specialist nurseries showcasing their finest orchids at the National Orchid Show.';
 
-const INTRO_HEADING = 'Showcasing the finest in South African orchid growing';
+const INTRO_HEADING = "Showcasing the Finest in South African Orchid Growing";
 
 const INTRO_PARAGRAPHS = [
-  "The 2027 South African National Orchid Show will proudly showcase the country's leading " +
-    'orchid growers, specialist nurseries, orchid societies and commercial exhibitors, ' +
-    "bringing together an exceptional collection of South Africa's finest orchids under one " +
-    'roof.',
-  'Visitors will have the opportunity to meet the passionate individuals and organisations ' +
-    "whose dedication, knowledge and years of experience have helped shape South Africa's " +
-    'vibrant orchid community. From internationally recognised breeders and award-winning ' +
-    'exhibitors to specialist species growers and emerging enthusiasts, the exhibition ' +
-    'celebrates the remarkable diversity and excellence of orchid cultivation across the ' +
-    'country.',
-  'Exhibitors will present stunning displays of species and hybrid orchids, compete for ' +
-    'prestigious national awards, and share their expertise through demonstrations, ' +
-    'discussions and informal conversations throughout the event. The plant sales area will ' +
-    'offer visitors the opportunity to purchase exceptional orchids, growing media, pots, ' +
-    "accessories and specialist products directly from many of South Africa's most respected " +
-    'orchid nurseries.',
-  'Whether you are building your first orchid collection or searching for a rare specimen to ' +
-    'complete an established collection, the South African Exhibitors Pavilion offers a ' +
-    "unique opportunity to learn from the country's leading growers while celebrating the " +
-    'innovation, craftsmanship and horticultural excellence that continue to place South ' +
-    'African orchid growing on the international stage.',
+  "The National Orchid Show - Western Cape 2027 will proudly showcase the country's leading orchid growers, specialist nurseries, orchid societies and commercial exhibitors, bringing together an exceptional collection of South Africa's finest orchids and related products under one roof.",
+  "Visitors will have the opportunity to meet the passionate individuals and organisations whose dedication, knowledge and years of experience have helped shape South Africa's vibrant orchid community. From internationally recognised breeders and award-winning exhibitors to specialist species growers and emerging enthusiasts, the exhibition celebrates the remarkable diversity and excellence of orchid cultivation across the country.",
+  "Exhibitors will present stunning displays of species and hybrid orchids, compete for prestigious national awards, and share their expertise through demonstrations, discussions and informal conversations throughout the event. The plant sales area will offer visitors the opportunity to purchase exceptional orchids, growing media, pots, accessories and specialist products directly from many of South Africa's most respected orchid nurseries.",
+  "Whether you are building your first orchid collection or searching for a rare specimen to add to an established collection, the South African Exhibitors Pavilion offers a unique opportunity to learn from the country's leading growers while celebrating the innovation, craftsmanship and horticultural excellence that continue to place South African orchid growing on the international stage.",
 ];
 
 export default async function VendorsPage() {
