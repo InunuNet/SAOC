@@ -1,0 +1,34 @@
+schema: athanor.contract/v1
+slug: gate-hooks-proof-kinds-mixed
+goal: Throwaway non-UI contract proving the triad kinds dispatch under the stock gate (pass, fail, error).
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: triad kinds dispatch
+    status: pending
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: codex_qa stub passes
+      type: codex_qa
+      target: t
+      script: ${SANDBOX}/stubs/pass.sh
+    - id: A2
+      description: browser_deployed_check stub passes
+      type: browser_deployed_check
+      target: t
+      script: ${SANDBOX}/stubs/pass.sh
+    - id: A3
+      description: gws_inbox_check stub fails (exit 1 maps to fail)
+      type: gws_inbox_check
+      target: t
+      script: ${SANDBOX}/stubs/fail.sh
+    - id: A4
+      description: browser_deployed_check stub is inconclusive (exit 2 maps to error)
+      type: browser_deployed_check
+      target: t
+      script: ${SANDBOX}/stubs/err.sh

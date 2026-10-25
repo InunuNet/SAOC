@@ -1,0 +1,18 @@
+schema: athanor.contract/v1
+slug: gate-hooks-proof-ui-missing-triad
+goal: Throwaway UI/workflow contract that references app/ but declares no triad kinds.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: UI contract without the verification triad
+    status: pending
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: references a route file under app/ (makes the linter classify this as UI)
+      command: test -n app/page.tsx
+      timeout_seconds: 10

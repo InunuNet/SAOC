@@ -1,0 +1,33 @@
+schema: athanor.contract/v1
+slug: gate-hooks-proof-ui-compliant
+goal: Throwaway UI/workflow contract that declares all three triad kinds (stub scripts, all pass).
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: UI contract with the full verification triad
+    status: pending
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: references a route file under app/ (UI classification)
+      command: test -n app/page.tsx
+      timeout_seconds: 10
+    - id: A2
+      description: codex_qa triad kind (stub, passes)
+      type: codex_qa
+      target: t
+      script: ${SANDBOX}/stubs/pass.sh
+    - id: A3
+      description: browser_deployed_check triad kind (stub, passes)
+      type: browser_deployed_check
+      target: t
+      script: ${SANDBOX}/stubs/pass.sh
+    - id: A4
+      description: gws_inbox_check triad kind (stub, passes)
+      type: gws_inbox_check
+      target: t
+      script: ${SANDBOX}/stubs/pass.sh

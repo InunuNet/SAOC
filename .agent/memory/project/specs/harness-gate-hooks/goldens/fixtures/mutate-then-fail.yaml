@@ -1,0 +1,18 @@
+schema: athanor.contract/v1
+slug: gate-hooks-proof-mutate-then-fail
+goal: Throwaway non-UI contract; its assertion dirties the residue fixture then fails.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: assertion that leaves residue and fails
+    status: pending
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: copy a dirty fixture over the scanned fixture, then fail
+      command: cp "$GATE_HOOKS_PROOF_DIRTY" "$CONTRACT_GATE_RESIDUE_FIXTURE" && false
+      timeout_seconds: 10
