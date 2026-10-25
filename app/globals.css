@@ -688,6 +688,15 @@ h3.font-serif {
     align-items: start;
     padding-top: 64px;
   }
+  /* The index aside is first in the DOM (it is a table of contents); on the grid it still takes the right cell. */
+  .doc-layout [data-doc-main] {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .doc-layout > [data-doc-aside] {
+    grid-column: 2;
+    grid-row: 1;
+  }
 }
 [data-doc-main] {
   min-width: 0;
@@ -697,7 +706,7 @@ h3.font-serif {
   font-family: var(--sans);
   font-size: 16px;
   line-height: 1.55;
-  color: rgb(23 25 23 / 0.85);
+  color: color-mix(in srgb, var(--ink) 85%, transparent);
   text-align: left;
 }
 .doc-prose > * + * {
@@ -730,6 +739,12 @@ h3.font-serif {
   color: var(--ink);
   text-wrap: pretty;
   scroll-margin-top: 112px;
+}
+/* A theme's own h2 rule (.nos-theme h2, 0,1,1) sets weight and wrap; the document scale keeps both. */
+.doc-h2,
+.nos-theme .doc-h2 {
+  font-weight: 300;
+  text-wrap: pretty;
 }
 .doc-h3 {
   margin: 0 0 12px;
@@ -807,14 +822,12 @@ h3.font-serif {
     gap: 0;
   }
   .doc-layout--index [data-doc-main] {
-    order: 1;
     padding-top: 32px;
   }
   .doc-aside[data-doc-aside-kind='index'] {
     position: sticky;
     top: 97px;
     z-index: 20;
-    order: 0;
     height: 48px;
     padding: 0;
     border-radius: 0;

@@ -39,15 +39,15 @@ export function DocumentLayout({ children, aside, index, id }: DocumentLayoutPro
       data-doc-layout
       className={`doc-layout saoc-container${indexEntries ? ' doc-layout--index' : ''}`}
     >
+      {indexEntries ? (
+        <aside data-doc-aside data-doc-aside-kind="index" className="doc-aside">
+          <DocumentIndex entries={indexEntries} />
+        </aside>
+      ) : null}
       <div data-doc-main>{children}</div>
       {aside ? (
         <aside data-doc-aside data-doc-aside-kind="content" className="doc-aside">
           {aside}
-        </aside>
-      ) : null}
-      {indexEntries ? (
-        <aside data-doc-aside data-doc-aside-kind="index" className="doc-aside">
-          <DocumentIndex entries={indexEntries} />
         </aside>
       ) : null}
     </div>

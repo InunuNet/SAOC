@@ -19,11 +19,26 @@ const check = process.argv[2];
 if (!CHECKS.includes(check)) { console.error(`unknown check ${check}; one of ${CHECKS.join(', ')}`); process.exit(2); }
 const fresh = process.argv.includes('--fresh');
 
-function stateKey() {
+// The pages render Sanity content, so the measurement is only reusable while the dataset is unchanged:
+// the stamp is the dataset's document count and latest _updatedAt, read from the API (not the CDN). If it
+// cannot be read the stamp is the clock, so nothing is ever reused on a guess.
+async function sanityStamp() {
+  try {
+    const env = Object.fromEntries(readFileSync('.env.local', 'utf8').split('\n').filter((l) => /^[A-Z_]+=/.test(l)).map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1).replace(/^["']|["']$/g, '')]));
+    const query = encodeURIComponent('{"n": count(*), "u": *|order(_updatedAt desc)[0]._updatedAt}');
+    const res = await fetch(`https://${env.NEXT_PUBLIC_SANITY_PROJECT_ID}.api.sanity.io/v2024-01-01/data/query/${env.NEXT_PUBLIC_SANITY_DATASET}?query=${query}`, { headers: env.SANITY_API_READ_TOKEN ? { Authorization: `Bearer ${env.SANITY_API_READ_TOKEN}` } : {} });
+    if (!res.ok) return `unreadable:${Date.now()}`;
+    return JSON.stringify((await res.json()).result);
+  } catch { return `unreadable:${Date.now()}`; }
+}
+
+async function stateKey() {
+  const base = process.env.SAOC_BASE_URL ?? 'local-dev-server';
+  const stamp = await sanityStamp();
   const head = execSync('git rev-parse HEAD').toString().trim();
   const diff = execSync('git diff HEAD -- app components lib content proxy.ts').toString();
   const untracked = execSync("git ls-files --others --exclude-standard -- app components lib content").toString();
-  return createHash('sha1').update(head + diff + untracked + readFileSync(`${SPEC}/goldens/standard.json`)).digest('hex');
+  return createHash('sha1').update(base + stamp + head + diff + untracked + readFileSync(`${SPEC}/goldens/standard.json`)).digest('hex');
 }
 
 function freePort() {
@@ -68,6 +83,7 @@ function pageProbe() {
   const main = q('[data-doc-main]');
   out.layout = layout ? { rect: rect(layout), cols: getComputedStyle(layout).gridTemplateColumns, gap: px(getComputedStyle(layout).columnGap), display: getComputedStyle(layout).display } : null;
   out.main = main ? rect(main) : null;
+  out.asideBeforeMain = !!(main && qa('[data-doc-aside]')[0] && (qa('[data-doc-aside]')[0].compareDocumentPosition(main) & Node.DOCUMENT_POSITION_FOLLOWING));
   const asides = qa('[data-doc-aside]');
   out.asideCount = asides.length;
   const a = asides[0];
@@ -97,8 +113,9 @@ function pageProbe() {
   out.bodyText = document.body.innerText;
   out.showBand = !!q('[data-home-section="show-band"]');
   const d = q('[data-home-show-date]');
-  const cta = qa('main a').find((x) => /National Show/i.test(x.textContent));
-  out.homeDate = d ? { text: d.textContent.trim(), rect: rect(d), inHeroCtaGroup: !!cta && !!cta.parentElement && cta.parentElement.contains(d) || (!!cta && !!cta.closest('section') && cta.closest('section').contains(d)) } : null;
+  const cta = q('a[data-hero-cta="secondary"]');
+  const vGap = d && cta ? Math.max(d.getBoundingClientRect().top - cta.getBoundingClientRect().bottom, cta.getBoundingClientRect().top - d.getBoundingClientRect().bottom, 0) : null;
+  out.homeDate = d ? { text: d.textContent.trim(), rect: rect(d), sharesWrapper: !!cta && !!cta.parentElement && cta.parentElement.contains(d) && cta.parentElement !== cta.closest('section'), gapPx: vGap } : null;
   out.homeCta = cta ? { text: cta.textContent.trim(), rect: rect(cta) } : null;
   return out;
 }
@@ -173,11 +190,11 @@ async function focusProbe(page) {
   return { h1: ring, link };
 }
 
-function loadOrMeasure() {
+async function loadOrMeasure() {
   mkdirSync(CACHE_DIR, { recursive: true });
   const file = `${CACHE_DIR}/measure.json`;
-  const key = stateKey();
-  if (!fresh && existsSync(file)) { const c = JSON.parse(readFileSync(file, 'utf8')); if (c.key === key) return Promise.resolve(c.data); }
+  const key = await stateKey();
+  if (!fresh && existsSync(file)) { const c = JSON.parse(readFileSync(file, 'utf8')); if (c.key === key) return c.data; }
   return measureAll().then((data) => { writeFileSync(file, JSON.stringify({ key, data })); return data; });
 }
 
@@ -221,7 +238,9 @@ switch (check) {
           if (m.layout.gap < N.gapPxDesktop.min || m.layout.gap > N.gapPxDesktop.max) bad(`${r.id}@desktop: gap ${m.layout.gap}px want ${N.gapPxDesktop.min}-${N.gapPxDesktop.max}`);
         }
       }
-      if (vp === 'mobile' && m.aside && Math.abs(m.aside.rect.left - m.main.left) > 1) bad(`${r.id}@mobile: aside not stacked under main`);
+      if (vp === 'mobile' && m.aside && Math.abs(m.aside.rect.left - m.main.left) > 1) bad(`${r.id}@mobile: aside not stacked with main`);
+      // Visual order must agree with DOM (keyboard and screen-reader) order below 1024.
+      if (vp === 'mobile' && m.aside && (m.aside.rect.top < m.main.top) !== m.asideBeforeMain) bad(`${r.id}@mobile: aside is ${m.aside.rect.top < m.main.top ? 'visually first' : 'visually after main'} but ${m.asideBeforeMain ? 'first' : 'after main'} in the DOM`);
       if (m.layout.rect.width < 1000 && vp === 'desktop') bad(`${r.id}@desktop: layout narrower than the container (${m.layout.rect.width})`);
     });
     break;
@@ -352,8 +371,9 @@ switch (check) {
       if (!m.homeDate) { bad(`home@${vp}: no ${STD.home.dateSelector}`); continue; }
       if (m.homeDate.text !== STD.home.dateText) bad(`home@${vp}: date "${m.homeDate.text}" want "${STD.home.dateText}"`);
       if (!m.homeCta) bad(`home@${vp}: National Show CTA not found`);
-      else if (!/National Show/.test(m.homeCta.text) || m.homeCta.text.includes(STD.home.dateText)) bad(`home@${vp}: CTA label changed: "${m.homeCta.text}"`);
-      if (!m.homeDate.inHeroCtaGroup) bad(`home@${vp}: date is not beside the CTA`);
+      else if (m.homeCta.text !== STD.home.ctaLabel) bad(`home@${vp}: CTA label is "${m.homeCta.text}", want exactly "${STD.home.ctaLabel}"`);
+      if (!m.homeDate.sharesWrapper) bad(`home@${vp}: date is not in the CTA's own wrapper`);
+      if (m.homeDate.gapPx === null || m.homeDate.gapPx > STD.home.maxGapPx) bad(`home@${vp}: date is ${m.homeDate.gapPx}px from the CTA, want at most ${STD.home.maxGapPx}`);
       if (m.homeDate.rect.bottom > STD.viewports[vp].height) bad(`home@${vp}: date at ${Math.round(m.homeDate.rect.bottom)}px is below the first screen`);
     }
     break;

@@ -67,7 +67,7 @@ export interface DocumentLayoutProps {
 }
 ```
 Slots:
-- `main` = `children`, always present. `<div data-doc-main>`.
+- `main` = `children`, always present. `<div data-doc-main>`. DOM order is main then the CONTENT aside; the INDEX aside is first in the DOM (it is a table of contents and, below 1024, a sticky bar above the body), so visual order and keyboard order agree at every width. On the grid both asides take the right cell.
 - `aside` (content variant): `<aside data-doc-aside data-doc-aside-kind="content">` holding exactly ONE card, the children inside it are not themselves cards.
 - `index` (index variant): `<aside data-doc-aside data-doc-aside-kind="index"><nav data-doc-index aria-label="Sections">` with one `<a data-doc-index-link href="#id">` per entry; no visible heading (R7). Active link: `aria-current="location"` set by scroll-spy; styled royal + green-1 underline, no side border. Rows >= 44px with hairlines between. Karla/sans 15px.
 - Neither: no aside element is rendered at all (`data-doc-aside-kind` absent) and the main column keeps its x (it does not widen).
@@ -80,7 +80,7 @@ Render:
   <aside data-doc-aside data-doc-aside-kind="content|index">...</aside>   <!-- optional -->
 </div>
 ```
-Geometry (SAOC tokens): `.saoc-container` (1280 max, 32 pad); `grid-template-columns: 7fr 5fr` from 1024px, `gap: clamp(40px, 6vw, 80px)`, `align-items: start`; below 1024 one column. DOM order main then aside at every width. Content aside follows main below 1024. Index aside below 1024 becomes a horizontal scroller (`overflow-x: auto`, edge fade) with `position: sticky; top: <header height>`; it is the same nav element (`data-doc-index` retained). `padding-top` of `.doc-layout` is 64px at >= 1024 and 48px below (the hero-to-content rhythm); sections inside separate by `var(--section-y)` (96px).
+Geometry (SAOC tokens): `.saoc-container` (1280 max, 32 pad); `grid-template-columns: 7fr 5fr` from 1024px, `gap: clamp(40px, 6vw, 80px)`, `align-items: start`; below 1024 one column. Content aside follows main below 1024. Index aside (first in DOM) below 1024 becomes a horizontal scroller (`overflow-x: auto`, edge fade) with `position: sticky; top: <header height>`; it is the same nav element (`data-doc-index` retained). `padding-top` of `.doc-layout` is 64px at >= 1024 and 48px below (the hero-to-content rhythm); sections inside separate by `var(--section-y)` (96px).
 `.doc-aside` card: `border-radius: var(--radius-card)`; `box-shadow: var(--shadow-float)`; background white (`var(--surface)`/#fff); padding `clamp(24px, 3vw, 36px)`; `position: sticky; top: 112px` at >= 1024 (header is 97px).
 
 ## 4. Type classes (document body)

@@ -63,7 +63,8 @@
     "path": "/",
     "dateText": "23–26 September 2027",
     "dateSelector": "[data-home-show-date]",
-    "ctaTextContains": "National Show",
+    "ctaLabel": "19th National Show, 2027",
+    "maxGapPx": 24,
     "firstScreenDesktop": true,
     "firstScreenMobile": true
   },
