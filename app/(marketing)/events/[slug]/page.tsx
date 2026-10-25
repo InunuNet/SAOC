@@ -2,12 +2,14 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
+import { ShowBand } from '@/components/home';
 import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
 import { buildEventMetadata } from '@/lib/event-metadata';
+import { isNationalShowEvent } from '@/lib/events-list';
 import { saocUrl } from '@/lib/site-hosts';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { eventBySlugQuery, eventSlugsQuery } from '@/sanity/queries';
-import type { SanityEvent } from '@/types';
+import { eventBySlugQuery, eventSlugsQuery, nationalShowQuery } from '@/sanity/queries';
+import type { SanityEvent, ShowIdentity } from '@/types';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -66,6 +68,10 @@ export default async function EventDetailPage({
     notFound();
   }
 
+  const show = isNationalShowEvent(event)
+    ? await sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] })
+    : null;
+
   return (
     <div className="mx-auto max-w-[860px] px-8 py-16">
       <JsonLd
@@ -84,7 +90,7 @@ export default async function EventDetailPage({
       {/* Back link */}
       <Link
         href="/events"
-        className="inline-flex min-h-6 items-center font-mono text-[11px] uppercase tracking-[0.18em] text-muted hover:text-ink"
+        className="inline-flex min-h-11 items-center font-mono text-[11px] uppercase tracking-[0.18em] text-muted hover:text-ink"
       >
         ← All events
       </Link>
@@ -92,7 +98,8 @@ export default async function EventDetailPage({
       {/* Kind badge */}
       {event.kind ? (
         <p
-          className="mt-6 inline-block rounded px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em]"
+          data-event-kind
+          className="mt-3.5 block w-fit rounded px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em]"
           style={{ backgroundColor: 'var(--bone)', color: 'var(--muted)' }}
         >
           {event.kind}
@@ -100,7 +107,7 @@ export default async function EventDetailPage({
       ) : null}
 
       {/* Title */}
-      <h1 className="mt-3 font-serif tracking-[-0.015em] font-light text-[36px] leading-tight text-ink">
+      <h1 className="mt-4 font-serif tracking-[-0.015em] font-light text-[36px] leading-tight text-ink">
         {event.title}
       </h1>
 
@@ -148,6 +155,13 @@ export default async function EventDetailPage({
           </div>
         ) : null}
       </dl>
+
+      {/* National Show events carry the show band (SV-1) */}
+      {show ? (
+        <div className="mt-8">
+          <ShowBand show={show} />
+        </div>
+      ) : null}
 
       {/* Description */}
       {event.description ? (

@@ -115,7 +115,7 @@ export function SocietiesClient({ societies, provinces }: SocietiesClientProps) 
             onChange={(e) => setParam('q', e.target.value)}
             placeholder={SEARCH_PLACEHOLDER}
             aria-label={SEARCH_PLACEHOLDER}
-            className="min-w-0 flex-1 border-0 bg-transparent py-2 font-sans text-[16px] text-ink placeholder:text-muted outline-none"
+            className="min-h-11 min-w-0 flex-1 border-0 bg-transparent py-2 font-sans text-[16px] text-ink placeholder:text-muted outline-none"
           />
         </div>
       </div>
