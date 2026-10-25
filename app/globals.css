@@ -767,9 +767,11 @@ h3.font-serif {
 .doc-section + .doc-section {
   margin-top: var(--section-y);
 }
-/* No hairline above the first block of a document; a later gap keeps its own. */
-[data-doc-main] > :first-child:is([data-content-gap]),
-[data-doc-main] > :first-child [data-content-gap] {
+/* No hairline above the first block of a document: a gap that is the main column's first child, or
+   the first child of its first section (or of that section's first block). A later gap keeps its own. */
+[data-doc-main] > [data-content-gap]:first-child,
+[data-doc-main] > :first-child > [data-content-gap]:first-child,
+[data-doc-main] > :first-child > :first-child > [data-content-gap]:first-child {
   border-top: 0;
   padding-top: 0;
 }
