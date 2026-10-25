@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { LegalBreadcrumb } from '@/components/legal/LegalBreadcrumb';
+import { DocumentLayout, type DocumentIndexEntry } from '@/components/ui/DocumentLayout';
 import { PageHero } from '@/components/ui/PageHero';
 import { ProvisionalFigure } from '@/components/ui/ProvisionalFigure';
 import { PROVISIONAL_REFUND_POLICY } from '@/lib/provisional-figures';
@@ -11,6 +13,24 @@ export const metadata: Metadata = buildPageMetadata({
   description: 'Refund and cancellation policy for South African Orchid Council ticket sales.',
   path: '/refunds',
 });
+
+// The h2 index; each id matches its heading below.
+const INDEX: DocumentIndexEntry[] = [
+  { id: 'terms-pending-confirmation', label: 'Terms pending confirmation' },
+  { id: 'refunds', label: 'Refunds' },
+  { id: 'cancellations', label: 'Cancellations' },
+  { id: 'admission-tickets', label: 'Admission tickets' },
+  { id: 'conference-tickets', label: 'Conference tickets' },
+  {
+    id: 'workshop-field-trip-and-cocktail-tickets',
+    label: 'Workshop, field trip, and cocktail tickets',
+  },
+  { id: 'vendor-stand-bookings', label: 'Vendor stand bookings' },
+  { id: 'exceptional-circumstances', label: 'Exceptional circumstances' },
+  { id: 'how-to-request-a-refund-or-cancellation', label: 'How to request a refund or cancellation' },
+];
+
+const TITLE = 'Refund & Cancellation Policy';
 
 const [earlyTier, midTier, lateTier] = PROVISIONAL_REFUND_POLICY.cancellationTiers;
 
@@ -44,28 +64,22 @@ function daysInWords(days: number): string {
 export default function RefundsPage() {
   return (
     <>
-      <PageHero
-        image="/images/orchid-violet.jpg"
-        eyebrow="Legal"
-        heading="Refund & Cancellation Policy"
-        lede="How refunds and cancellations are handled for SAOC ticket purchases."
-      />
+      <LegalBreadcrumb label={TITLE} />
+      <PageHero image="/images/orchid-violet.jpg" heading={TITLE} />
 
-      <div className="mx-auto max-w-[720px] px-8 py-20 space-y-10">
-        <section className="space-y-3 border border-rule bg-primary/5 px-6 py-5">
-          <p className="font-sans text-[14px] leading-relaxed text-ink/80">
-            <strong className="font-medium text-ink">Draft pending legal review.</strong>{' '}
+      <DocumentLayout index={INDEX}>
+        <div className="doc-prose">
+          <p className="text-[14px] text-muted">
+            <strong className="font-medium">Draft pending legal review.</strong>{' '}
             This page has been drafted with AI assistance and has not yet been reviewed by a
             qualified legal professional. It does not constitute legal advice and should not be
             relied upon as SAOC&rsquo;s final policy until formal review is complete.
           </p>
-        </section>
 
-        <section className="space-y-4">
-          <h2 className="font-serif font-normal text-[22px] text-primary">
+          <h2 id="terms-pending-confirmation" className="doc-h2">
             Terms pending confirmation
           </h2>
-          <p className="font-sans text-[16px] leading-relaxed text-ink/80">
+          <p>
             This policy covers <strong className="font-medium text-ink">admission</strong>,{' '}
             <strong className="font-medium text-ink">conference</strong>, and{' '}
             <strong className="font-medium text-ink">workshop, field trip, and cocktail</strong>{' '}
@@ -74,25 +88,21 @@ export default function RefundsPage() {
             marked <strong className="font-medium text-ink">provisional</strong> wherever they
             appear, and may still change before final review.
           </p>
-        </section>
 
-        <section className="space-y-4">
-          <h2 className="font-serif font-normal text-[22px] text-primary">
+          <h2 id="refunds" className="doc-h2">
             Refunds
           </h2>
-          <p className="font-sans text-[16px] leading-relaxed text-ink/80">
+          <p>
             Where a refund is approved, it will be issued back to the original payment
             method used at checkout, via the payment gateway used to process that purchase.
             Processing time varies by the payment method and gateway used, and any gateway
             fees may be deducted from the refunded amount.
           </p>
-        </section>
 
-        <section className="space-y-4">
-          <h2 className="font-serif font-normal text-[22px] text-primary">
+          <h2 id="cancellations" className="doc-h2">
             Cancellations
           </h2>
-          <p className="font-sans text-[16px] leading-relaxed text-ink/80">
+          <p>
             If SAOC cancels an event, workshop, or field trip outright, ticket holders for
             that activity will be offered a{' '}
             <ProvisionalFigure>
@@ -101,11 +111,11 @@ export default function RefundsPage() {
             of the ticket price, using the contact details supplied at checkout — regardless of
             how close to the event the cancellation is announced.
           </p>
-          <p className="font-sans text-[16px] leading-relaxed text-ink/80">
+          <p>
             If you wish to cancel a ticket you have purchased, the following tiered schedule
             applies based on how much notice you give before the event start date:
           </p>
-          <ul className="list-disc pl-6 space-y-2 font-sans text-[16px] leading-relaxed text-ink/80">
+          <ul className="list-disc pl-5 space-y-2">
             <li>
               <ProvisionalFigure>{daysInWords(earlyTier.minDaysNotice as number)} days</ProvisionalFigure>{' '}
               or more before the event:{' '}
@@ -126,24 +136,20 @@ export default function RefundsPage() {
               (no refund).
             </li>
           </ul>
-        </section>
 
-        <section className="space-y-4">
-          <h2 className="font-serif font-normal text-[22px] text-primary">
+          <h2 id="admission-tickets" className="doc-h2">
             Admission tickets
           </h2>
-          <p className="font-sans text-[16px] leading-relaxed text-ink/80">
+          <p>
             Admission tickets (single-day and weekend passes) are cancelled under the tiered
             schedule set out above, based on notice given before the National Show&rsquo;s
             opening day.
           </p>
-        </section>
 
-        <section className="space-y-4">
-          <h2 className="font-serif font-normal text-[22px] text-primary">
+          <h2 id="conference-tickets" className="doc-h2">
             Conference tickets
           </h2>
-          <p className="font-sans text-[16px] leading-relaxed text-ink/80">
+          <p>
             Conference tickets are named-registrant products and follow the same tiered
             cancellation schedule above. As an alternative to cancelling, a conference ticket
             may instead be transferred, free of charge, to another named attendee up to{' '}
@@ -152,24 +158,20 @@ export default function RefundsPage() {
             </ProvisionalFigure>{' '}
             before the event — contact us to arrange a transfer.
           </p>
-        </section>
 
-        <section className="space-y-4">
-          <h2 className="font-serif font-normal text-[22px] text-primary">
+          <h2 id="workshop-field-trip-and-cocktail-tickets" className="doc-h2">
             Workshop, field trip, and cocktail tickets
           </h2>
-          <p className="font-sans text-[16px] leading-relaxed text-ink/80">
+          <p>
             Workshop, field trip, and Sunset Cocktails tickets follow the same tiered
             cancellation schedule above. These tickets draw from a shared, limited-capacity
             pool; cancelling one frees a slot for another guest.
           </p>
-        </section>
 
-        <section className="space-y-4">
-          <h2 className="font-serif font-normal text-[22px] text-primary">
+          <h2 id="vendor-stand-bookings" className="doc-h2">
             Vendor stand bookings
           </h2>
-          <p className="font-sans text-[16px] leading-relaxed text-ink/80">
+          <p>
             Vendor stand bookings are a separate product with their own cancellation terms, set
             out in the vendor registration agreement, and are not covered by this policy. See{' '}
             <Link href="/national-show/vendors/apply" className="text-ink underline underline-offset-2">
@@ -177,24 +179,20 @@ export default function RefundsPage() {
             </Link>{' '}
             for details.
           </p>
-        </section>
 
-        <section className="space-y-4">
-          <h2 className="font-serif font-normal text-[22px] text-primary">
+          <h2 id="exceptional-circumstances" className="doc-h2">
             Exceptional circumstances
           </h2>
-          <p className="font-sans text-[16px] leading-relaxed text-ink/80">
+          <p>
             Requests relating to medical emergencies, bereavement, or other exceptional
             circumstances will be considered on a case-by-case basis, and SAOC may waive the
             standard cancellation fee at its discretion. Contact us to discuss your situation.
           </p>
-        </section>
 
-        <section className="space-y-4">
-          <h2 className="font-serif font-normal text-[22px] text-primary">
+          <h2 id="how-to-request-a-refund-or-cancellation" className="doc-h2">
             How to request a refund or cancellation
           </h2>
-          <p className="font-sans text-[16px] leading-relaxed text-ink/80">
+          <p>
             To request a refund or cancellation, or to ask a question about an existing
             booking, please{' '}
             <Link href="/contact" className="text-ink underline underline-offset-2">
@@ -210,12 +208,12 @@ export default function RefundsPage() {
             </Link>
             .
           </p>
-        </section>
 
-        <p className="font-mono text-[11px] tracking-[0.16em] text-muted pt-4 border-t border-rule">
-          Last updated: September 2026
-        </p>
-      </div>
+          <p className="font-mono text-[11px] tracking-[0.16em] text-muted pt-4 border-t border-rule">
+            Last updated: September 2026
+          </p>
+        </div>
+      </DocumentLayout>
     </>
   );
 }
