@@ -23,14 +23,20 @@ const srv = await startServer();
 const browser = await chromium.launch();
 try {
   const hub = await get(srv.port, '/tickets', 'nos.localhost');
-  const slug = [...hub.body.matchAll(/href="\/tickets\/([a-z0-9-]+)"/g)].map((m) => m[1]).find((s) => s !== 'confirmation' && s !== 'cancelled');
+  const slug = [...hub.body.matchAll(/href="\/tickets\/([a-z0-9-]+)(?:\?[^"]*)?"/g)].map((m) => m[1]).find((s) => s !== 'confirmation' && s !== 'cancelled');
   if (!slug) failures.push('no /tickets/<slug> link on the NOS tickets hub; the check cannot run');
   else {
     for (const vp of WIDTHS) {
       const tag = `${vp.width}@${vp.dpr}`;
       const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.dpr });
       const page = await ctx.newPage();
-      await page.goto(`http://nos.localhost:${srv.port}/tickets/${slug}`, { waitUntil: 'load', timeout: 30000 });
+      await page.goto(`http://nos.localhost:${srv.port}/tickets/${slug}`, { waitUntil: 'networkidle', timeout: 30000 });
+      // The route streams a loading.tsx shell first (empty heading, no body container): measure only the real page.
+      await page.waitForFunction(() => {
+        const h1 = document.querySelector('h1');
+        return !!h1 && (h1.textContent ?? '').replace(/\u00a0/g, '').trim().length > 0
+          && document.querySelectorAll('nav.nk-crumbs a').length >= 2 && !!document.querySelector('[data-ticket-body]');
+      }, undefined, { timeout: 20000 });
       const m = await page.evaluate(() => {
         const links = [...document.querySelectorAll('nav.nk-crumbs a')].map((a) => {
           const cs = getComputedStyle(a);

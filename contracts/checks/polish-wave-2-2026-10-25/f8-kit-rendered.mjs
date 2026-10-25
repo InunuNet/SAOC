@@ -130,6 +130,8 @@ try {
     // A deep link restores the choice.
     const deep = await ctx.newPage();
     await deep.goto(url('#mark-only-plum'), { waitUntil: 'load', timeout: 30000 });
+    // The hash is read after hydration (useSyncExternalStore's server snapshot is empty): wait for the radio, never sleep.
+    await deep.waitForFunction(() => /06 Plum/.test(document.querySelector('#mark-only input[type="radio"]:checked')?.closest('label')?.textContent ?? ''), undefined, { timeout: 15000 }).catch(() => {});
     const checked = await deep.evaluate(() => document.querySelector('#mark-only input[type="radio"]:checked')?.closest('label')?.textContent?.replace(/\s+/g, ' ').trim() ?? null);
     if (checked !== '06 Plum') failures.push(`${tag}: #mark-only-plum selected "${checked}", want "06 Plum"`);
     await ctx.close();
