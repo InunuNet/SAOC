@@ -5866,6 +5866,12 @@ def main():
                 print(f"[hooks] repair_hooks.py exited {heal.returncode} -- run "
                       "`python3 execution/repair_hooks.py` and check .claude/settings.json.")
 
+        # Retired providers (.gemini, .grok) keep a settings.json whose hooks
+        # name scripts the harness has since deleted; prune them once per apply.
+        if not dry_run and not is_template_repo:
+            from post_update import prune_retired_provider_hooks
+            prune_retired_provider_hooks(Path.cwd())
+
         # exit 0 for every --dry-run: a preview writes nothing, so it cannot
         # deliver partially. backstop_warns stays deliberately out of the
         # exit code -- it describes an incomplete SOURCE payload, not a

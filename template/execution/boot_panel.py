@@ -81,7 +81,7 @@ CLASS_DIRS = {
 # no provider reads and no sync target writes, and each phantom cell halts the
 # boot printing a remedy that can never clear it.
 
-ALEMBIC_URL = "http://localhost:7077/"
+ALEMBIC_URL = os.environ.get("ALEMBIC_URL", "http://localhost:7077/").rstrip("/") + "/"
 RELEASE_REPO = "InunuNet/Athanor"
 UNKNOWN = "unknown"
 
@@ -939,7 +939,7 @@ def _collect_essential(root, version, checks):
     essential.append({
         "name": "Alembic", "kind": "service", "status": "ok" if rc == 0 else "fail",
         "detail": f"{ALEMBIC_URL} responds" if rc == 0 else f"{ALEMBIC_URL} unreachable",
-        "blocking": True, "fix": "start Alembic (it must answer on localhost:7077)"})
+        "blocking": True, "fix": f"start Alembic (it must answer on {ALEMBIC_URL}, or set ALEMBIC_URL)"})
 
     # gws is default stack (rule gws.md), but a project that never touches
     # Google Workspace must still boot: report it, never block on it. Missing
