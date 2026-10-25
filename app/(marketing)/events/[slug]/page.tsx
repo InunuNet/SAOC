@@ -1,11 +1,12 @@
+import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import type { Metadata } from 'next';
 
 import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { ShowBand } from '@/components/home';
 import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
+import { VenueCard } from '@/components/show';
 import { PageHero } from '@/components/ui/PageHero';
 import { buildEventMetadata } from '@/lib/event-metadata';
 import { isNationalShowEvent } from '@/lib/events-list';
@@ -14,7 +15,7 @@ import { formatShowDateRange } from '@/lib/show-identity';
 import { saocUrl } from '@/lib/site-hosts';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { eventBySlugQuery, eventSlugsQuery, nationalShowQuery } from '@/sanity/queries';
-import type { SanityEvent, ShowIdentity } from '@/types';
+import type { SanityEvent, ShowIdentity, ShowVenue } from '@/types';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
@@ -61,6 +62,30 @@ function eventFacts(event: SanityEvent, show: ShowIdentity | null): HeroFact[] {
   ];
 }
 
+/** A venue block only earns its place when the record says more than the name (the hero already has it). */
+function hasVenueDetail(venue: ShowVenue | null | undefined): venue is ShowVenue {
+  return Boolean(venue?.name && (venue.addressLines?.length || venue.city || venue.mapsUrl));
+}
+
+/**
+ * The page's one contextual block. A National Show reads the show's venue through the same
+ * VenueCard /contact uses (name, address, "Open in a map"); any other event has only its own venue
+ * and location strings, so it shows a block only when the location adds to the name.
+ */
+function venueBlock(event: SanityEvent, show: ShowIdentity | null): ReactNode | null {
+  if (show) return hasVenueDetail(show.venue) ? <VenueCard venue={show.venue} /> : null;
+  if (!event.venue || !event.location) return null;
+  return (
+    <section>
+      <h3 className="doc-aside-heading">The venue</h3>
+      <address className="not-italic font-sans text-[16px] leading-[1.55] text-ink/80">
+        <span className="block font-serif font-medium text-[18px] text-ink">{event.venue}</span>
+        <span className="block">{event.location}</span>
+      </address>
+    </section>
+  );
+}
+
 export default async function EventDetailPage({
   params,
 }: {
@@ -80,7 +105,20 @@ export default async function EventDetailPage({
   const show = isNationalShowEvent(event)
     ? await sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] })
     : null;
-  const hasVenueAside = Boolean(event.venue || event.location || event.hostSociety);
+  const venue = venueBlock(event, show);
+
+  // Never an empty column. With a description it fills the prose column and the venue block is the
+  // aside. Without one, the National Show's band follows the hero directly (it carries the venue),
+  // and any other event's venue block takes the content column.
+  const layout = event.description ? (
+    <DocumentLayout aside={venue ?? undefined}>
+      <div className="doc-prose">
+        <p>{event.description}</p>
+      </div>
+    </DocumentLayout>
+  ) : venue && !show ? (
+    <DocumentLayout>{venue}</DocumentLayout>
+  ) : null;
 
   return (
     <>
@@ -105,38 +143,7 @@ export default async function EventDetailPage({
         facts={eventFacts(event, show)}
       />
 
-      <DocumentLayout
-        aside={
-          hasVenueAside ? (
-            <>
-              <h2 className="doc-aside-heading">Venue</h2>
-              {event.venue ? (
-                <p className="font-sans text-[16px] leading-[1.55] text-ink">{event.venue}</p>
-              ) : null}
-              {event.location ? (
-                <p className="font-sans text-[16px] leading-[1.55] text-ink/80">{event.location}</p>
-              ) : null}
-              {event.hostSociety ? (
-                <p className="mt-4 font-sans text-[16px] leading-[1.55] text-ink/80">
-                  Hosted by{' '}
-                  <Link
-                    href={`/societies/${event.hostSociety.slug}`}
-                    className="text-ink underline underline-offset-2"
-                  >
-                    {event.hostSociety.name}
-                  </Link>
-                </p>
-              ) : null}
-            </>
-          ) : undefined
-        }
-      >
-        {event.description ? (
-          <div className="doc-prose">
-            <p>{event.description}</p>
-          </div>
-        ) : null}
-      </DocumentLayout>
+      {layout}
 
       {/* National Show events carry the show band (SV-1) */}
       {show ? <ShowBand show={show} /> : null}

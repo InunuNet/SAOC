@@ -49,7 +49,7 @@ export function PageHero({
       <div
         className={`absolute inset-0 bg-gradient-to-t ${
           heroFacts
-            ? 'from-[var(--primary-800)]/92 via-[var(--primary-800)]/78 to-[var(--primary-800)]/40'
+            ? 'from-[var(--primary-800)]/95 via-[var(--primary-800)]/65 to-[var(--primary-800)]/35'
             : 'from-[var(--primary-800)]/85 via-[var(--primary-800)]/55 to-[var(--primary-800)]/25'
         }`}
         aria-hidden="true"

@@ -67,7 +67,7 @@ export default async function SponsorsPage() {
         actions={
           <Link
             href="#enquire"
-            className="mt-8 inline-flex min-h-11 items-center rounded-[length:var(--radius-1)] bg-accent px-6 py-3 font-sans text-[14px] font-medium text-ink transition-colors duration-150 hover:bg-accent-soft"
+            className="mt-8 inline-flex min-h-11 items-center rounded-[length:var(--radius-1)] bg-accent px-6 py-3 font-sans text-[14px] font-medium text-ink transition-colors duration-150 hover:bg-accent-soft lg:hidden"
           >
             {ENQUIRY_CTA_LABEL}
           </Link>

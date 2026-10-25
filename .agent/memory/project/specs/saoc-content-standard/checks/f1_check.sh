@@ -50,6 +50,8 @@ case "$1" in
     has "$EVENT" "formatShowDateRange"
     has "$EVENT" "hostRegion"
     has "$EVENT" "ShowBand"
+    has "$EVENT" "VenueCard"
+    lacks "$EVENT" "doc-aside-heading\">Venue"
     lacks "$EVENT" "max-w-[860px]"
     lacks "$EVENT" "data-event-kind" ;;
   about-facts)

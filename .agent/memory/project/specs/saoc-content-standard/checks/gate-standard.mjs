@@ -198,9 +198,18 @@ function eachRoute(fn, { desktopOnly = false } = {}) {
 
 const data = await loadOrMeasure();
 
+// A route that may legitimately render no body grid (a show event without a description) must then
+// carry the show band straight after the hero; anything else without a grid is a violation.
+function gridAbsent(r, m) {
+  if (m.layout || !r.layoutOptional) return false;
+  if (!m.showBand) bad(`${r.id}: no [data-doc-layout] and no show band after the hero`);
+  return true;
+}
+
 switch (check) {
   case 'grid':
     eachRoute((r, vp, m) => {
+      if (gridAbsent(r, m)) return;
       if (!m.layout) return bad(`${r.id}@${vp}: no [data-doc-layout]`);
       if (!m.main) return bad(`${r.id}@${vp}: no [data-doc-main]`);
       if (vp === 'desktop' && m.asideCount === 1) {
@@ -218,6 +227,7 @@ switch (check) {
     break;
   case 'measure':
     eachRoute((r, vp, m) => {
+      if (gridAbsent(r, m)) return;
       if (!m.prose.length) { if (r.prose !== false) bad(`${r.id}@${vp}: no .doc-prose`); return; }
       for (const p of m.prose) {
         const w = Math.max(p.paraCh, 0) || p.widthCh;
@@ -242,6 +252,7 @@ switch (check) {
   }
   case 'rhythm':
     eachRoute((r, vp, m) => {
+      if (gridAbsent(r, m)) return;
       if (!m.hero || !m.main) return bad(`${r.id}@${vp}: hero or main missing`);
       const want = vp === 'desktop' ? N.heroToContentPx.desktop : N.heroToContentPx.mobile;
       const got = m.main.top - m.hero.bottom;
@@ -256,6 +267,7 @@ switch (check) {
     break;
   case 'aside':
     eachRoute((r, vp, m) => {
+      if (gridAbsent(r, m)) return;
       if (m.asideCount > 1) bad(`${r.id}@${vp}: ${m.asideCount} asides, want at most 1`);
       const kind = m.aside?.kind ?? 'none';
       if (r.aside !== 'any' && kind !== r.aside) bad(`${r.id}@${vp}: aside kind "${kind}" want "${r.aside}"`);
@@ -303,6 +315,9 @@ switch (check) {
         if (g.dtTransform !== 'none') bad(`${r.id}@${vp}: dt text-transform ${g.dtTransform}`);
         if (!g.ddAbove) bad(`${r.id}@${vp}: dd is not visually above dt`);
       });
+      // NOS Design round 1: the dd values of one row share a baseline (a wrapped dt must not push its dd up).
+      const tops = m.facts.items.map((it) => it.ddRect.top);
+      tops.forEach((t, i) => tops.slice(i + 1).forEach((u) => { if (Math.abs(t - u) > 1 && Math.abs(t - u) < 40) bad(`${r.id}@${vp}: fact values are not on one baseline (${t.toFixed(1)} vs ${u.toFixed(1)})`); }));
       if (r.heroImage && !m.heroImage.includes(r.heroImage.replace('.jpg', '')) ) bad(`${r.id}@${vp}: hero image "${m.heroImage}" want ${r.heroImage}`);
       if (r.showBand && !m.showBand && vp === 'desktop') { /* ShowBand marker lives on home markup; event detail keeps its own band */ }
     });
@@ -319,7 +334,7 @@ switch (check) {
         if (!first) bad(`${r.id}: no h2 in main`);
         else if (first.bottom > h) bad(`${r.id}: first h2 ends at ${Math.round(first.bottom)}px, past ${h}`);
       }
-      if (!r.facts?.length && !m.main) bad(`${r.id}@${vp}: no main column`);
+      if (!r.facts?.length && !m.main && !r.layoutOptional) bad(`${r.id}@${vp}: no main column`);
       if (vp === 'desktop' && m.main && m.main.top > h) bad(`${r.id}: the content column starts at ${Math.round(m.main.top)}px, past ${h}`);
     });
     break;

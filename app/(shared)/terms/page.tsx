@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { Breadcrumb } from '@/components/chrome/Breadcrumb';
+import { LegalBreadcrumb } from '@/components/legal/LegalBreadcrumb';
 import { LEGAL_HERO_MIN_HEIGHT, LegalBody, legalIndex } from '@/components/legal/LegalBody';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { PageHero } from '@/components/ui/PageHero';
@@ -16,7 +16,7 @@ export const metadata: Metadata = buildPageMetadata({
 export default function TermsPage() {
   return (
     <>
-      <Breadcrumb items={[{ label: 'Terms of Use' }]} />
+      <LegalBreadcrumb label="Terms of Use" />
       <PageHero
         image="/images/orchid-violet.jpg"
         heading={WEBSITE_TERMS.title}

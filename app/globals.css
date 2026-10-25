@@ -636,6 +636,7 @@ h3.font-serif {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: flex-start;
   gap: 20px 40px;
   margin: 32px 0 0;
   padding: 0;
@@ -727,7 +728,7 @@ h3.font-serif {
   line-height: 1.15;
   letter-spacing: -0.015em;
   color: var(--ink);
-  text-wrap: balance;
+  text-wrap: pretty;
   scroll-margin-top: 112px;
 }
 .doc-h3 {
@@ -740,6 +741,11 @@ h3.font-serif {
 }
 .doc-section + .doc-section {
   margin-top: var(--section-y);
+}
+/* No hairline above the first block of a document. */
+[data-doc-main] [data-content-gap] {
+  border-top: 0;
+  padding-top: 0;
 }
 
 /* The one aside: a white card, sticky under the 97px header from 1024px. */

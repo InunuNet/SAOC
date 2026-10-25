@@ -22,7 +22,9 @@
         { "term": "Venue", "value": "The Hangar, Stellenbosch Flying Club" },
         { "term": "Host region", "value": "Western Cape" }
       ],
-      "aside": "content",
+      "aside": "any",
+      "layoutOptional": true,
+      "layoutOptionalNote": "NOS Design ruling (round 1): with no description a show event renders no body grid and ShowBand follows the hero directly; the gate then requires the band instead of the grid.",
       "prose": false,
       "showBand": true,
       "heroImage": "orchid-dark.jpg",

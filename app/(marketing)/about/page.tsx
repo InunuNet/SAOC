@@ -221,12 +221,6 @@ export default async function AboutPage() {
       <CTASection
         eyebrow="Get involved"
         heading="Find your society, join the council's work"
-        body={
-          withhold
-            ? undefined
-            : 'SAOC is a federation of 21 independent orchid societies. Find one near you, or get in touch with the national committee directly.'
-        }
-        marked={!withhold}
         primaryCta={{ href: '/societies', label: 'Find a society' }}
         secondaryCta={{ href: '/contact', label: 'Contact SAOC' }}
       />
