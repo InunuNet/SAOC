@@ -1,0 +1,15 @@
+# Files the ticket-onsale-predicate change may touch (git diff vs origin/main plus untracked).
+# One extended-regex per line, anchored. Anything else fails check-scope.sh.
+^lib/ticket-on-sale\.ts$
+^lib/ticket-offers\.ts$
+^lib/data/ticket-hub-source\.ts$
+^lib/data/admission-availability\.ts$
+^lib/demo-ticket-type\.ts$
+^app/api/tickets/checkout/route\.ts$
+^app/\(nos\)/tickets/\[slug\]/page\.tsx$
+^app/\(nos\)/national-show/page\.tsx$
+^sanity/queries\.ts$
+^components/seo/JsonLd\.tsx$
+^docs/ticket-onsale-predicate\.md$
+^contracts/checks/ticket-onsale-predicate/
+^\.agent/memory/project/specs/ticket-onsale-predicate/
