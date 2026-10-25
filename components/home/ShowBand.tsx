@@ -68,12 +68,12 @@ function CountdownBox({ target, edition }: { target: Date | null; edition?: numb
       aria-label={`Countdown to the ${showLabelWithEdition(edition)}`}
       className={`${BOX_CLASSES} @container`}
     >
-      <div className="grid grid-cols-4 @max-[360px]:grid-cols-2 gap-[2px]">
+      <div className="grid grid-cols-4 @max-[300px]:grid-cols-2 gap-[2px]">
       {cells.map((cell) => (
         <div
           key={cell.label}
           data-countdown-cell
-          className="min-w-0 bg-ivory/4 rounded-[1px] px-1.5 sm:px-3 py-[18px] text-center"
+          className="min-w-0 bg-ivory/4 rounded-[1px] px-0.5 sm:px-3 py-[18px] text-center"
         >
           <div
             data-countdown-value
