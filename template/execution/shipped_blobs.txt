@@ -549,6 +549,8 @@
 21bc4ca1fbc73aaffc9ac741a40263070496a1d1 execution/tests/ghost-project/argus/argus.py
 21d10886befaa5f5f4bc356fcb094f6844b70412 execution/brain.py
 21d10886befaa5f5f4bc356fcb094f6844b70412 template/execution/brain.py
+2219e06efe043dc11e0e0023644615e0fcdb6eec .agent/version
+2219e06efe043dc11e0e0023644615e0fcdb6eec template/.agent/version
 221dfd95b248f1c0453cdf4df27b7fd3af7c72a8 .agent/agents/docs.md
 225fe31e8a7240c0f72eaf186a408d94c9305e0a execution/hooks/post_compact_restore.sh
 225fe31e8a7240c0f72eaf186a408d94c9305e0a template/execution/hooks/post_compact_restore.sh
@@ -725,6 +727,8 @@
 2d68dc8cc8751d92eebccf0a1bff22ff89cabf0d template/Makefile
 2d7ca30cbbb69a6bc3ac82c5082ddb8bb16481c5 execution/contract.py
 2d831ab35ae1c4e6ffe5e4ade0330a5eba1c29bf .agent/agents/maintainer.md
+2d8415d0b583515060f349a293fbe44f10b29ced execution/update_template.sha256.json
+2d8415d0b583515060f349a293fbe44f10b29ced template/execution/update_template.sha256.json
 2d8aa114bbff93be6fcbf22b338a7e0b7212662f .agent/version
 2d8aa114bbff93be6fcbf22b338a7e0b7212662f template/.agent/version
 2d9c2bd16cb7457e796fa5b43e4e7898244179a1 .agent/version
@@ -900,6 +904,7 @@
 38f7a9bcc6f75403fc034a70960c615c55b287c8 .agent/skills/resume.md
 390498a4ed1cddc4554a483b1edc92666ecb18a8 execution/hooks/lib/target_resolve.sh
 390498a4ed1cddc4554a483b1edc92666ecb18a8 template/execution/hooks/lib/target_resolve.sh
+39277a05570d3400fc54fcd4b83aa84df8a03370 .agent/directives/ATH-20261025-chain-preconditions.md
 39370f30c1a9519e6696d4004bef9a0a4d7cbe55 execution/sync_agents.sh
 39370f30c1a9519e6696d4004bef9a0a4d7cbe55 template/execution/sync_agents.sh
 39556f6de054adb036d7c773ec4650a61f305432 template/.claude/statusline.json
@@ -1008,6 +1013,7 @@
 3fb77c1acba08f6d0431beaa59e767e8c9f19310 Makefile
 3fd432f6a0f71956a9dff39f62c5ed11bccd40d1 execution/tests/ghost-project/triage/README.md
 3fda8e2afb0b2ce65844b73e7f084710a63407b7 execution/hooks/full_boot.sh
+3fed803a41372eda285303e46196e2d0b64f948a .agent/directives/ATH-20261025-contract-gate-hooks.md
 404da2ada4a295edc8f215b216d6c5b2ec0a81d2 execution/backlog_trim.py
 404da2ada4a295edc8f215b216d6c5b2ec0a81d2 template/execution/backlog_trim.py
 405abe9e7b389f0f93c43212ae5b9cff06fb0d7e .agent/schemas/handoff.v1.json
@@ -1049,6 +1055,8 @@
 42a41a46c4525fc50f6935da4a538e635c3e2277 Makefile
 42a63c2cbe2baf05d5b9d54a561c5f56b38ac89c execution/checks/_archive/verify_pulse_legacy_label_visibility.py
 42a63c2cbe2baf05d5b9d54a561c5f56b38ac89c execution/checks/verify_pulse_legacy_label_visibility.py
+42c0bc2a1fcfe33ec82c4aa01c4a7471c9e169a9 execution/mission.py
+42c0bc2a1fcfe33ec82c4aa01c4a7471c9e169a9 template/execution/mission.py
 42d4aaf6195763d9ea742a82ab52a47af665cb55 execution/shipped_blobs.txt
 42d4aaf6195763d9ea742a82ab52a47af665cb55 template/execution/shipped_blobs.txt
 42de836c0bb3ef8e6706ecbb36bc628814c6bbfb .agent/rules/_core/workflow.md
@@ -2542,6 +2550,8 @@ a3da5d307d183bd45a2b1b8bb1e83921d5a0737b .agent/autonomy_matrix.json
 a3e92656a299855c85d2508e5cf9097dde6e28ca execution/tests/ghost-project/grid/tests/fixtures/map_walls_only.txt
 a419af65683f28a0b54f6323d0d069969631bf23 execution/post_update.py
 a419af65683f28a0b54f6323d0d069969631bf23 template/execution/post_update.py
+a4274314514a2e77de3a09df8325141344ef8550 execution/shipped_blobs.txt
+a4274314514a2e77de3a09df8325141344ef8550 template/execution/shipped_blobs.txt
 a44f0043dfd419df2df1e8f3fd9e0b42317eb7ba .agent/agents/designer.md
 a461fededecf88f9f5b14e3bc4eb23a34c6ef97d init.sh
 a4640253d0f70ed3e46bf9b8c653272d775d4ac0 execution/shipped_blobs.py
@@ -3323,6 +3333,7 @@ d37227442f30f00e891253b60a8be766783bda85 template/.claude/settings.json
 d384d06c1b0cb53deb31a8b6edc77d51e2d96890 execution/checks/verify_mirror_sync.py
 d39cf53bedfa00d9e883b4f67d675bb0fc764c11 execution/checks/_archive/verify_harness_overwrite_guard_104.sh
 d39cf53bedfa00d9e883b4f67d675bb0fc764c11 execution/checks/verify_harness_overwrite_guard_104.sh
+d3aa438a7a1a2753cdb0f96c4c4e60d5f68aeefa .agent/directives/ATH-20261025-contract-local-kinds.md
 d3ad87bc2d01cad063b9a1a6cabc2b13d746f97a execution/checks/_mock_alembic_server.py
 d3c7c8efbdb8c8bf336fa15d34a106cd807d4e30 execution/pulse_ticket.py
 d3c7c8efbdb8c8bf336fa15d34a106cd807d4e30 template/execution/pulse_ticket.py
