@@ -791,6 +791,10 @@
   margin: 0 0 24px;
   color: var(--ink-700);
 }
+/* The theme's blanket [id] rule (0,2,0) would hide the shared var; the document h2 reads it. */
+.nos-theme .doc-h2[id] {
+  scroll-margin-top: var(--doc-scroll-margin);
+}
 .nos-theme .nos-faq-intro-only {
   margin: 0;
   padding: 20px clamp(20px, 3vw, 32px);
@@ -2283,12 +2287,12 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 @media (min-width: 780px) {
   .nos-theme {
     --doc-index-top: 97px;
-    --doc-scroll-margin: 64px;
+    --doc-scroll-margin: 56px;
   }
 }
 @media (min-width: 1024px) {
   .nos-theme {
-    --doc-scroll-margin: 40px;
+    --doc-scroll-margin: 24px;
   }
 }
 
