@@ -17,6 +17,7 @@ import { TicketsTable } from '@/components/admin/TicketsTable';
 import { VendorApplicationReviewTable } from '@/components/admin/VendorApplicationReviewTable';
 import { VendorReviewTable } from '@/components/admin/VendorReviewTable';
 import { formatAdminClock } from '@/lib/admin-format';
+import { isHostedRuntime } from '@/lib/hosted-runtime';
 import {
   FIXTURE_PENDING_COUNT,
   fixtureApplications,
@@ -137,7 +138,8 @@ function renderBody(route: string, now: Date): React.ReactNode {
 }
 
 export default async function AdminFixturePage({ params }: { params: Promise<{ route: string }> }) {
-  if (process.env.ADMIN_FIXTURES !== '1') {
+  // Auth-less admin surface: the flag alone is not enough, the hosted runtime never serves it.
+  if (process.env.ADMIN_FIXTURES !== '1' || isHostedRuntime(process.env)) {
     notFound();
   }
   const { route } = await params;
