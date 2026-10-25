@@ -1,7 +1,6 @@
+import { NATIONAL_SHOW_TITLE } from '@/lib/events-list';
 import { nosUrl } from '@/lib/site-hosts';
 import type { SanityEvent } from '@/types';
-
-const NATIONAL_SHOW_TITLE = /national.*show/i;
 
 /**
  * The National Show has its own site, so its event links to the NOS home (absolute); every other

@@ -1,5 +1,9 @@
 export { EventCard } from './EventCard';
 export type { EventCardProps, ListedEvent } from './EventCard';
+export { EventsAbout, EVENTS_CALENDAR_SUBSCRIBE_LABEL } from './EventsAbout';
+export type { EventsAboutProps } from './EventsAbout';
+export { EventsList } from './EventsList';
+export type { EventsListProps } from './EventsList';
 export { MonthGroup } from './MonthGroup';
 export type { MonthGroupProps } from './MonthGroup';
 export { SubmitEventForm } from './SubmitEventForm';

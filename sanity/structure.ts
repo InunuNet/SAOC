@@ -16,6 +16,7 @@ const PINNED_SINGLETON_TYPES = [
   'nationalShow',
   'contactPage',
   'judgingPage',
+  'eventsPage',
   'membersPage',
   // F1 (ticketing-pages): pinned the same way — see ticketsPage-schema.golden.json.
   'ticketsPage',
@@ -37,6 +38,7 @@ const SINGLETON_TITLES: Record<(typeof PINNED_SINGLETON_TYPES)[number], string> 
   nationalShow: 'National Show',
   contactPage: 'Contact Page',
   judgingPage: 'Judging Page',
+  eventsPage: 'Events Page',
   membersPage: 'Members Page',
   ticketsPage: 'Tickets Page',
   showVisitorInfo: 'Show Visitor Information',

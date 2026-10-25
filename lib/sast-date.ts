@@ -21,10 +21,11 @@ export function sastStartOfDay(now: Date): string {
 /**
  * Params for the upcoming-events GROQ queries. An event stays listed until its last day ends:
  * `dateTime(coalesce(endDate, date)) >= dateTime($todayStart)`. GROQ's now() is deliberately not used, so the real
- * events and the preview placeholders share this one notion of "today".
+ * events and the preview placeholders share this one notion of "today". `todayDate` serves the date-only branch:
+ * GROQ's dateTime() is null for a date-only value, which the query compares as a string against the SAST date.
  */
-export function upcomingEventsParams(now: Date = new Date()): { todayStart: string } {
-  return { todayStart: sastStartOfDay(now) };
+export function upcomingEventsParams(now: Date = new Date()): { todayStart: string; todayDate: string } {
+  return { todayStart: sastStartOfDay(now), todayDate: sastDate(now) };
 }
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
