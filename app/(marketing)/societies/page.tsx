@@ -105,6 +105,7 @@ export default async function SocietiesPage() {
   return (
     <>
       <PageHero
+        exempt
         image="/images/orchid-purple.jpg"
         eyebrow="Affiliated societies"
         heading="Find an orchid society near you"

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 import { LegalBreadcrumb } from '@/components/legal/LegalBreadcrumb';
-import { LEGAL_HERO_MIN_HEIGHT, LegalBody, legalIndex } from '@/components/legal/LegalBody';
+import { LegalBody, legalIndex } from '@/components/legal/LegalBody';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { PageHero } from '@/components/ui/PageHero';
 import { PRIVACY_POLICY } from '@/content/legal/privacy';
@@ -21,7 +21,6 @@ export default function PrivacyPage() {
         image="/images/orchid-violet.jpg"
         heading={PRIVACY_POLICY.title}
         lede={PRIVACY_POLICY.subtitle}
-        minHeight={LEGAL_HERO_MIN_HEIGHT}
       />
       <DocumentLayout index={legalIndex(PRIVACY_POLICY)}>
         <LegalBody document={PRIVACY_POLICY} />

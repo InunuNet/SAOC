@@ -68,6 +68,7 @@ export default async function EventsPage() {
   return (
     <>
       <PageHero
+        exempt
         image="/images/orchid-purple.jpg"
         eyebrow="SAOC calendar"
         heading="Events"
