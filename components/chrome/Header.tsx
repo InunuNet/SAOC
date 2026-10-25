@@ -74,7 +74,7 @@ export function Header() {
       >
         <div
           data-hd="bar"
-          className="saoc-container flex items-center gap-3 py-[13px] max-[780px]:grid max-[780px]:grid-cols-[auto_1fr_auto] max-[780px]:pb-3 max-[780px]:pt-4"
+          className="saoc-container flex items-center gap-3 py-[13px] max-[780px]:grid max-[780px]:grid-cols-[minmax(0,1fr)_auto] max-[780px]:py-3"
         >
           {/* Zone 1 — logo lockup. Raster combined lockup
               (saoc-lockup-horizontal-full-name.png, 3757×493 source),
@@ -91,7 +91,7 @@ export function Header() {
             href="/"
             data-hd="brand"
             aria-current={navAriaCurrent(pathname, '/')}
-            className="mr-3 flex aspect-[405/70] w-[min(100%,405px)] shrink-0 items-center rounded-sm max-[780px]:col-span-full max-[780px]:mr-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            className="mr-3 flex aspect-[405/70] w-[min(100%,405px)] shrink-0 items-center rounded-sm max-[780px]:mr-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
             aria-label="South African Orchid Council — Making a difference since 1968"
           >
             <Image
@@ -180,7 +180,7 @@ export function Header() {
           <Link
             href="/societies"
             data-hd="cta"
-            className="ml-auto inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[10px] bg-accent px-6 py-[10px] font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:bg-accent-soft max-[780px]:col-start-1 max-[780px]:ml-0 min-[1384px]:ml-0 focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:border forced-colors:border-[color:ButtonText] forced-colors:focus-visible:decoration-[color:Highlight]"
+            className="ml-auto inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[10px] bg-accent max-[780px]:hidden px-6 py-[10px] font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:bg-accent-soft min-[1384px]:ml-0 focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:border forced-colors:border-[color:ButtonText] forced-colors:focus-visible:decoration-[color:Highlight]"
           >
             Join a society
           </Link>
@@ -192,11 +192,11 @@ export function Header() {
             aria-label="Open menu"
             aria-expanded={mobileOpen}
             aria-controls={MOBILE_MENU_ID}
-            className="inline-flex min-h-11 min-w-[104px] items-center justify-center gap-2 rounded-[10px] border-[1.5px] border-[color:var(--nh-control-border)] px-3 font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:text-primary max-[780px]:col-start-3 max-[780px]:justify-self-end min-[1384px]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            className="inline-flex min-h-11 min-w-[104px] items-center justify-center gap-2 max-[480px]:min-w-11 max-[480px]:px-0 rounded-[10px] border-[1.5px] border-[color:var(--nh-control-border)] px-3 font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:text-primary max-[780px]:justify-self-end min-[1384px]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
             onClick={() => setMobileOpen(true)}
           >
             <Menu size={20} strokeWidth={1.75} aria-hidden="true" />
-            Menu
+            <span className="max-[480px]:sr-only">Menu</span>
           </button>
         </div>
       </header>

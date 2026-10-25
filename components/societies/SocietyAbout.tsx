@@ -17,9 +17,9 @@ export function SocietyAbout({ society }: SocietyAboutProps) {
 
   return (
     <section>
-      <span className="eyebrow">About this society</span>
+      <h2 className="doc-h2">About this society</h2>
       {society.description ? (
-        <p className="mt-5 max-w-3xl font-sans text-[16px] leading-relaxed text-ink/80">
+        <p className="max-w-3xl font-sans text-[16px] leading-relaxed text-ink/80">
           {society.description}
         </p>
       ) : null}

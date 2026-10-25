@@ -1,0 +1,70 @@
+/* "Four ways into SAOC" cards, per the design handoff (README: radius 0 on cards and image wells,
+   hairline borders over shadows; hover lifts 4px with a brass border). The whole card is the link,
+   so there is no arrow button. Transform and colour only; reduced motion keeps the colour change. */
+.card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-0);
+  background: var(--parchment);
+  transition:
+    transform 250ms var(--ease),
+    border-color 250ms var(--ease),
+    box-shadow 250ms var(--ease);
+}
+
+.well {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: var(--radius-0);
+}
+
+.photo {
+  object-fit: cover;
+  transition: transform 250ms var(--ease);
+}
+
+.chip {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  padding: 6px 12px;
+  background: var(--parchment);
+  color: var(--primary);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.card:hover,
+.card:focus-visible {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+  box-shadow: 0 14px 32px -16px rgb(34 40 31 / 0.22);
+}
+
+.card:hover .photo,
+.card:focus-visible .photo {
+  transform: scale(1.03);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .photo {
+    transition-property: border-color;
+  }
+
+  .card:hover,
+  .card:focus-visible,
+  .card:hover .photo,
+  .card:focus-visible .photo {
+    transform: none;
+  }
+}

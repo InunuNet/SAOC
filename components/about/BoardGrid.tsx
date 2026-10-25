@@ -4,7 +4,7 @@ export interface SanityBoardMember {
   role: string | null;
   email: string | null;
   order: number | null;
-  /** True when this entry is our static fallback, not a Sanity-sourced document. */
+  /** True when this entry is our static fallback, not a Sanity-sourced document; the page never passes one to BoardGrid. */
   placeholder?: boolean;
 }
 
@@ -20,7 +20,6 @@ export function BoardGrid({ members }: BoardGridProps) {
       {members.map((m) => (
         <div
           key={m._id}
-          data-placeholder={m.placeholder ? 'true' : undefined}
           className="border border-rule bg-parchment p-6"
         >
           <h3 className="font-serif font-normal text-[20px] text-ink leading-snug">
@@ -38,11 +37,6 @@ export function BoardGrid({ members }: BoardGridProps) {
             >
               {m.email}
             </a>
-          ) : null}
-          {m.placeholder ? (
-            <p className="mt-3 inline-block border border-rule bg-bone px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
-              Awaiting confirmation
-            </p>
           ) : null}
         </div>
       ))}

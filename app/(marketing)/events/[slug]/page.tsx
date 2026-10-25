@@ -7,7 +7,7 @@ import { ShowBand } from '@/components/home';
 import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { VenueCard } from '@/components/show';
-import { PageHero } from '@/components/ui/PageHero';
+import { RouteHero } from '@/components/ui/RouteHero';
 import { buildEventMetadata } from '@/lib/event-metadata';
 import { isNationalShowEvent } from '@/lib/events-list';
 import type { HeroFact } from '@/lib/hero-facts';
@@ -136,17 +136,20 @@ export default async function EventDetailPage({
       />
 
       <Breadcrumb items={[{ label: 'Events', href: '/events' }, { label: event.title }]} />
-      <PageHero
-        image="/images/orchid-dark.jpg"
+      <RouteHero
+        route="/events/[slug]"
         eyebrow={event.kind ?? undefined}
         heading={event.title}
         facts={eventFacts(event, show)}
-      />
+      >
+        {/* National Show events carry the show band (SV-1): straight after the hero when there is no
+            document layout, otherwise after the layout */}
+        {show && !layout ? <ShowBand show={show} /> : null}
+      </RouteHero>
 
       {layout}
 
-      {/* National Show events carry the show band (SV-1) */}
-      {show ? <ShowBand show={show} /> : null}
+      {show && layout ? <ShowBand show={show} /> : null}
     </>
   );
 }

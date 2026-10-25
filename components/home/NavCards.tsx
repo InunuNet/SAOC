@@ -1,11 +1,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
 
 import { formatShowShortMonthYear, showLabelWithEdition, showYearOf } from '@/lib/show-identity';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { nosUrl } from '@/lib/site-hosts';
 import type { ShowIdentity } from '@/types';
+
+import styles from './NavCards.module.css';
 
 interface NavCardData {
   href: string;
@@ -111,6 +112,11 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
           <h2 className="font-serif font-light text-[clamp(34px,4.4vw,54px)] leading-[1.08] tracking-[-0.015em] text-primary">
             Four ways into SAOC
           </h2>
+          {cards.some((card) => card.unsourced) && !withhold ? (
+            <div className="mt-4">
+              <PlaceholderMarker />
+            </div>
+          ) : null}
         </div>
 
         <div className="grid grid-cols-1 gap-7 min-[640px]:grid-cols-2 min-[1024px]:grid-cols-4">
@@ -122,17 +128,17 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
                 href={card.href}
                 data-nav-card
                 data-placeholder={card.unsourced && !withhold ? 'true' : undefined}
-                className="petal-card group"
+                className={styles.card}
               >
-                <div className="petal-card-well">
+                <div className={styles.well}>
                   <Image
                     src={card.image}
                     alt={card.alt}
                     fill
-                    className="petal-card-photo"
+                    className={styles.photo}
                     sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
                   />
-                  <span data-nav-card-badge className="petal-card-chip">
+                  <span data-nav-card-badge className={styles.chip}>
                     {card.badge}
                   </span>
                 </div>
@@ -150,23 +156,14 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
                   <p className="mb-auto pb-5 font-sans text-[16px] leading-[1.55] text-muted">
                     {card.body}
                   </p>
-                  {card.unsourced && !withhold ? (
-                    <div className="pb-4">
-                      <PlaceholderMarker />
-                    </div>
-                  ) : null}
-
-                  <div className="flex items-center justify-between gap-3 pt-2">
-                    <span
+                  {card.meta ? (
+                    <p
                       data-nav-card-meta
-                      className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted"
+                      className="pt-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted"
                     >
                       {card.meta}
-                    </span>
-                    <span data-nav-card-arrow className="petal-card-arrow" aria-hidden="true">
-                      <ArrowRight size={16} strokeWidth={1.5} />
-                    </span>
-                  </div>
+                    </p>
+                  ) : null}
                 </div>
               </CardLink>
             );

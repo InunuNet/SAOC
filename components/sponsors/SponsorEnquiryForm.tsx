@@ -7,7 +7,6 @@ import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
 import {
   ENQUIRY_CONSENT_LABEL,
   ENQUIRY_LABELS,
-  ENQUIRY_NOS_SUCCESS_BODY_PLACEHOLDER,
   ENQUIRY_PRIVACY_LINK_TEXT,
   ENQUIRY_REUSED,
 } from '@/lib/sponsor-enquiry-copy';
@@ -181,10 +180,7 @@ export function SponsorEnquiryForm({ site, markPlaceholders }: SponsorEnquiryFor
             {ENQUIRY_REUSED.successBody}
           </p>
         ) : markPlaceholders ? (
-          <div data-placeholder="true" className="mt-3 flex flex-col items-start">
-            <p className="font-sans text-[16px] leading-[1.55] text-ink/80">
-              {ENQUIRY_NOS_SUCCESS_BODY_PLACEHOLDER}
-            </p>
+          <div data-placeholder="true" className="mt-3">
             <PlaceholderMarker />
           </div>
         ) : null}
@@ -345,7 +341,6 @@ export function SponsorEnquiryForm({ site, markPlaceholders }: SponsorEnquiryFor
             {ENQUIRY_PRIVACY_LINK_TEXT}
           </a>
         </div>
-        {markPlaceholders ? <PlaceholderMarker /> : null}
         {fieldErrors.consent ? (
           <TicketFieldAlert id="se-consent-error">{fieldErrors.consent}</TicketFieldAlert>
         ) : null}

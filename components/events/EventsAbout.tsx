@@ -2,7 +2,7 @@ import { PortableText } from '@portabletext/react';
 import type { PortableTextBlock } from '@portabletext/react';
 import Link from 'next/link';
 
-import { ConfirmationBadge } from '@/components/show';
+import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 
 /**
  * COPY GAP (EV-3): the calendar-subscribe button has no approved label, so it does not render.
@@ -15,26 +15,23 @@ const OUTLINE_BUTTON =
 
 export interface EventsAboutProps {
   intro?: PortableTextBlock[] | null;
-  /** Public build: an empty write-up renders nothing. Preview: it shows the awaiting-copy marker. */
-  withhold: boolean;
+  /** The one note above the list, set while invented events are listed on the beta preview. */
+  placeholderNote?: string | null;
 }
 
-export function EventsAbout({ intro, withhold }: EventsAboutProps) {
+export function EventsAbout({ intro, placeholderNote = null }: EventsAboutProps) {
   const hasIntro = Boolean(intro && intro.length > 0);
 
   return (
-    <section data-events-about className="saoc-container py-16">
-      <div className="grid gap-10 md:grid-cols-[minmax(0,1fr)_auto] md:gap-16">
-        {hasIntro ? (
-          <div className="max-w-[62ch] space-y-4 font-sans text-[16px] leading-[1.6] text-ink/85">
-            <PortableText value={intro ?? []} />
-          </div>
-        ) : withhold ? null : (
-          <div className="max-w-[62ch]">
-            <ConfirmationBadge status="pending" />
-          </div>
-        )}
-        <div className="flex flex-col items-start gap-3 md:col-start-2">
+    <section data-events-about className="saoc-container pb-10 pt-16">
+      {hasIntro ? (
+        <div className="mb-8 max-w-[62ch] space-y-4 font-sans text-[16px] leading-[1.6] text-ink/85">
+          <PortableText value={intro ?? []} />
+        </div>
+      ) : null}
+      <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+        {placeholderNote ? <PlaceholderMarker label={placeholderNote} /> : <span />}
+        <div className="flex flex-wrap items-center gap-3">
           <Link href="/societies" className={OUTLINE_BUTTON}>
             Find your society
           </Link>

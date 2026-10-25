@@ -177,6 +177,15 @@ export function MobileMenu({ open, onClose, onSearch, nav, triggerRef }: MobileM
           </ul>
         </nav>
 
+        {/* The header's "Join a society" button lives here at 780px and below, where the bar is one row. */}
+        <Link
+          href="/societies"
+          onClick={onClose}
+          className="mt-6 inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-[10px] bg-accent px-6 py-[10px] font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:bg-accent-soft min-[781px]:hidden focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:border forced-colors:border-[color:ButtonText] forced-colors:focus-visible:decoration-[color:Highlight]"
+        >
+          Join a society
+        </Link>
+
         {/* Footer meta */}
         <div className="mt-8 pt-6 border-t border-rule flex flex-col gap-1">
           <a

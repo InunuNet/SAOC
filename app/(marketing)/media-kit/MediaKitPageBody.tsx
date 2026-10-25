@@ -9,7 +9,7 @@ import { MediaKitJumpNav } from '@/components/media-kit/MediaKitJumpNav';
 import { LockupPicker } from '@/components/media-kit/LockupPicker';
 import { OptionPicker } from '@/components/media-kit/OptionPicker';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
-import { PageHero } from '@/components/ui/PageHero';
+import { RouteHero } from '@/components/ui/RouteHero';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import {
   buildMediaKit,
@@ -20,7 +20,6 @@ import {
   type InkId,
   type MediaKitItem,
 } from '@/lib/data/media-kit';
-import { heroImages } from '@/lib/data/heroImages';
 import manifest from '@/lib/data/media-kit-manifest.json';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 
@@ -138,8 +137,6 @@ const LOCKUP_VARIANT_IDS = [
   'vertical-on-dark',
 ] as const;
 
-const HERO_IMAGE_NAME = 'orchid-violet';
-
 function LockupCards({ items }: { items: MediaKitItem[] }) {
   return items.map((item, index) => (
     <KitCard key={item.path} item={item} ground={LOCKUP_GROUNDS[index]} />
@@ -150,8 +147,6 @@ export function MediaKitPageBody() {
   const withhold = withholdPlaceholderProse();
   // Every file offered for download comes from the generated manifest; nothing is linked by hand.
   const kit = buildMediaKit(manifest.items);
-  const hero = heroImages.find((image) => image.name === HERO_IMAGE_NAME);
-  if (!hero) throw new Error(`hero image ${HERO_IMAGE_NAME} is not in heroImages`);
   const duotonePanels = Object.fromEntries(
     INKS.map((ink) => [ink.id, <LockupCards key={ink.id} items={kit.duotone[ink.id]} />]),
   ) as Record<InkId, ReactNode>; // keyed by exactly the InkId union via INKS
@@ -196,8 +191,8 @@ export function MediaKitPageBody() {
   return (
     <>
       <Breadcrumb items={[{ label: 'Media Kit' }]} />
-      <PageHero
-        image={hero.path}
+      <RouteHero
+        route="/media-kit"
         eyebrow="Press"
         heading="Media Kit"
         lede="Resources and information for journalists, photographers and media partners."
@@ -313,11 +308,15 @@ export function MediaKitPageBody() {
                 appreciation of orchids in cultivation — through a federated network of 21
                 societies, a nationally accredited judging system first standardised in 1990, and
                 our annual publication <em>Orchids South Africa</em>
-                <PlaceholderMarker />
               </span>
             )}
             {withhold ? REMIT : `. ${REMIT}`}
           </p>
+          {withhold ? null : (
+            <div className="mt-3">
+              <PlaceholderMarker />
+            </div>
+          )}
         </section>
 
         {/* Press contact */}

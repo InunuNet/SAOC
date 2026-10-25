@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
-import { PageHero } from '@/components/ui/PageHero';
+import { RouteHero } from '@/components/ui/RouteHero';
 import { ContentGap } from '@/components/ui/ContentGap';
 import { isUnsourced } from '@/components/ui/provenance';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
@@ -60,8 +60,8 @@ export default async function SponsorsPage() {
   return (
     <>
       <Breadcrumb items={[{ label: 'Sponsors' }]} />
-      <PageHero
-        image="/images/orchid-yellow.jpg"
+      <RouteHero
+        route="/sponsors"
         heading="Sponsors"
         lede={LEDE}
         actions={

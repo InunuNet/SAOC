@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { LEGAL_HERO_MIN_HEIGHT, LegalBody } from '@/components/legal/LegalBody';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
-import { PageHero } from '@/components/ui/PageHero';
+import { RouteHero } from '@/components/ui/RouteHero';
 import { COMPANY_DOCUMENTS } from '@/content/legal/constitution';
 import { buildPageMetadata } from '@/lib/seo';
 
@@ -17,8 +17,8 @@ export default function MemorandumOfIncorporationPage() {
   return (
     <>
       <Breadcrumb items={[{ label: 'Memorandum of Incorporation' }]} />
-      <PageHero
-        image="/images/orchid-violet.jpg"
+      <RouteHero
+        route="/memorandum-of-incorporation"
         heading="Memorandum of Incorporation"
         minHeight={LEGAL_HERO_MIN_HEIGHT}
       />

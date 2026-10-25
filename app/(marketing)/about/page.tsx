@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 
 import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
-import { PageHero } from '@/components/ui/PageHero';
-import { PhotoBand } from '@/components/ui/PhotoBand';
+import { RouteHero } from '@/components/ui/RouteHero';
 import { CTASection } from '@/components/ui/CTASection';
 import { ContentGap } from '@/components/ui/ContentGap';
 import { BoardGrid } from '@/components/about';
@@ -11,7 +10,6 @@ import type { SanityBoardMember } from '@/components/about';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { aboutPageQuery, boardMembersQuery } from '@/sanity/queries';
 import { boardMembers as staticBoard } from '@/lib/data/board';
-import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import type { HeroFact } from '@/lib/hero-facts';
 import { buildPageMetadata } from '@/lib/seo';
 
@@ -69,9 +67,8 @@ export default async function AboutPage() {
     }),
   ]);
 
-  // F19 (vote 1C): the six placeholder officeholders are shown, each marked, on the beta preview
-  // only. On the public build only confirmed members render; with none, the page states the gap.
-  const withhold = withholdPlaceholderProse();
+  // The six placeholder officeholders are never drawn as cards: only confirmed members render, and
+  // when every entry is a placeholder the section shows the existing gap line instead.
   const sanityBoard = board ?? [];
   const boardForGrid: SanityBoardMember[] =
     sanityBoard.length > 0
@@ -91,13 +88,13 @@ export default async function AboutPage() {
           order: i,
           placeholder: true,
         }));
-  const visibleBoard = withhold ? boardForGrid.filter((m) => !m.placeholder) : boardForGrid;
+  const visibleBoard = boardForGrid.filter((m) => !m.placeholder);
 
   return (
     <>
       <Breadcrumb items={[{ label: 'About' }]} />
-      <PageHero
-        image="/images/orchid-violet.jpg"
+      <RouteHero
+        route="/about"
         heading={<strong>About the South African Orchid Council</strong>}
         facts={HERITAGE_FACTS}
       />
@@ -210,13 +207,6 @@ export default async function AboutPage() {
         {visibleBoard.length > 0 ? <BoardGrid members={visibleBoard} /> : <ContentGap />}
       </section>
       </DocumentLayout>
-
-      <PhotoBand
-        image="/images/orchid-pink.jpg"
-        alt="Pink orchid in bloom"
-        caption="Est. 1968 · Bloemfontein"
-        minHeight="320px"
-      />
 
       <CTASection
         eyebrow="Get involved"

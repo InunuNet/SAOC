@@ -38,7 +38,15 @@ export interface SocietyCardProps {
   society: SanitySociety;
 }
 
+// The existing wording of SocietyDetailsCallout, for a card with no detail line at all.
+const DETAILS_NOT_CONFIRMED = 'Meeting day, time and venue are not yet confirmed on this site.';
+
 export function SocietyCard({ society }: SocietyCardProps) {
+  const hasProfileLine = Boolean(
+    society.region || society.founded || (society.memberCount !== null && society.memberCount !== undefined),
+  );
+  const isEmpty = !hasProfileLine && !society.meets && !society.venue;
+
   return (
     <Link
       href={`/societies/${society.slug}`}
@@ -53,22 +61,26 @@ export function SocietyCard({ society }: SocietyCardProps) {
       {/* Without a province the same line is reserved (aria-hidden NBSP) so titles align across a
           row; nothing is invented or announced. */}
       <p
-        className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted"
+        className="min-h-[1.5em] font-mono text-[11px] uppercase tracking-[0.18em] text-muted"
         aria-hidden={society.province ? undefined : 'true'}
       >
         {society.province ?? ' '}
       </p>
 
-      <h2 className="mt-2 font-serif font-normal text-[20px] leading-snug text-ink">
-        {society.name}
-      </h2>
+      {/* The arrow shares the title's row, right-aligned, so the card carries no trailing glyph. */}
+      <div className="mt-2 flex items-start justify-between gap-4">
+        <h2 className="font-serif font-normal text-[20px] leading-snug text-ink">{society.name}</h2>
+        <span aria-hidden className="shrink-0 font-serif text-[20px] leading-snug text-muted">
+          →
+        </span>
+      </div>
 
       {society.region || society.founded || society.memberCount !== null ? (
         <p
           data-placeholder={
             society.foundedPlaceholder || society.memberCountPlaceholder ? 'true' : undefined
           }
-          className="mt-1 font-sans text-[14px] text-ink/70"
+          className="mt-1 min-h-[1.5em] font-sans text-[14px] text-ink/70"
         >
           {[
             society.region,
@@ -106,9 +118,9 @@ export function SocietyCard({ society }: SocietyCardProps) {
         </dl>
       ) : null}
 
-      <span aria-hidden className="mt-4 text-muted">
-        →
-      </span>
+      {isEmpty ? (
+        <p className="mt-4 font-sans text-[14px] leading-[1.55] text-muted">{DETAILS_NOT_CONFIRMED}</p>
+      ) : null}
     </Link>
   );
 }

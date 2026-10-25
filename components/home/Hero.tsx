@@ -6,7 +6,6 @@ import { useRef, useState, useSyncExternalStore, type CSSProperties } from 'reac
 import { ArrowRight, Pause, Play } from 'lucide-react';
 import type { SanityImageSource } from '@sanity/image-url';
 
-import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { HOME_HERO_SLIDES } from '@/lib/data/home-hero-slides';
 import { formatShowDateRange, showLabelWithEdition, showYearOf } from '@/lib/show-identity';
 import type { ShowIdentity } from '@/types';
@@ -31,6 +30,11 @@ function slideLabel(index: number, total: number, subject: string): string {
 
 const HERO_CTA_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 border px-6 py-3 font-sans text-[14px] font-medium transition-colors duration-150 sm:w-auto focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
+
+// Below 768px the copy sits over the bloom; this layer sits above the shared scrim and evens it out
+// (measured: the gold italic stays at or above 4.5:1 over the brightest petal at 390px).
+const PHONE_SCRIM_CLASSES =
+  'absolute inset-0 -z-10 bg-[linear-gradient(to_top,rgb(34_40_31/0.92)_0%,rgb(34_40_31/0.86)_60%,rgb(34_40_31/0.78)_100%)] md:hidden';
 
 const CONTROL_FOCUS =
   'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
@@ -125,6 +129,7 @@ export function Hero({ show, showLede = false }: HeroProps) {
 
       {/* One localised scrim (NOS Design ruling A4): the copy column is dark, the right 30% is bare photograph. */}
       <div aria-hidden="true" data-hero-scrim="copy" className="absolute inset-0 -z-10" />
+      <div aria-hidden="true" data-hero-scrim="phone" className={PHONE_SCRIM_CLASSES} />
 
       {/* Content: left-aligned in the container, a 640px column (A3). */}
       <div className="saoc-container w-full py-16 md:py-24">
@@ -142,14 +147,13 @@ export function Hero({ show, showLede = false }: HeroProps) {
 
           {/* Lede: the society count is not in the Council's copy, so the public build withholds it. */}
           {showLede ? (
-            <div data-placeholder="true" className="mt-4 flex flex-col items-start gap-3 md:mt-5">
+            <div data-placeholder="true" className="mt-4 md:mt-5">
               <p
                 data-hero-lede
                 className="max-w-[52ch] text-pretty font-sans text-[20px] leading-[1.5] text-ivory"
               >
                 Uniting twenty-one affiliated societies in the cultivation, exhibition, and appreciation of orchids across South Africa since 1968.
               </p>
-              <PlaceholderMarker tone="dark" />
             </div>
           ) : null}
 

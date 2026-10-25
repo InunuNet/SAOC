@@ -50,10 +50,9 @@ export function MissionBlock({ missionText, withhold = false }: MissionBlockProp
             {hasCms && !cmsUnsourced ? (
               <p className="font-sans text-[16px] leading-[1.55] text-ink">{missionText}</p>
             ) : !withhold && cmsUnsourced ? (
-              <div data-placeholder="true" className="flex flex-col items-start gap-1">
-                <p className="font-sans text-[16px] leading-[1.55] text-ink">{missionText}</p>
-                <PlaceholderMarker />
-              </div>
+              <p data-placeholder="true" className="font-sans text-[16px] leading-[1.55] text-ink">
+                {missionText}
+              </p>
             ) : null}
             <p className="font-sans text-[16px] leading-[1.55] text-ink">
               Our remit is orchids <strong>in cultivation</strong> — on the show bench, in the
@@ -69,6 +68,7 @@ export function MissionBlock({ missionText, withhold = false }: MissionBlockProp
               </a>{' '}
               leads that work.
             </p>
+            {withhold ? null : <PlaceholderMarker />}
           </div>
         </div>
 
