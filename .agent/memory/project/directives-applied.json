@@ -72,6 +72,12 @@
       "note": "delivered in 3.8.58 (PR #85)",
       "result": "applied"
     },
+    "ATH-20261025-cross-platform-parity": {
+      "at": "2026-10-25T00:45:36Z",
+      "harness_version": "3.8.60",
+      "note": "template 3.8.58 -> 3.8.60 via make update-template x2",
+      "result": "applied"
+    },
     "ATH-20261025-quota-auto-resume": {
       "at": "2026-10-24T23:45:55Z",
       "harness_version": "3.8.58",
