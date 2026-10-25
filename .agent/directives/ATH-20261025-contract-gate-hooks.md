@@ -45,7 +45,10 @@ Update at your next natural break between features.
 1. Run `make update-template` twice. The first run replaces the updater and
    may exit 1. The second run completes. Commit the result as its own commit.
 2. Only if you pin `execution/contract.py` for local gate behaviour: move
-   that behaviour into `gate_hooks` scripts, remove the pin, update again,
+   that behaviour into `gate_hooks` scripts, remove the pin, deliver the
+   stock file with `python3 execution/update_template.py --apply --force-path execution/contract.py`
+   (a pinned file has no baseline, so a plain update refuses it by design;
+   `--force-path` backs up your copy first),
    and prove the gate still blocks what it blocked before.
 3. Record the outcome, then commit the receipt file the command names:
    `python3 execution/directives.py ack ATH-20261025-contract-gate-hooks --result applied`

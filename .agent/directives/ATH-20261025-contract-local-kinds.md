@@ -38,7 +38,10 @@ Update at your next natural break between features.
 1. Run `make update-template` twice. The first run replaces the updater and
    may exit 1. The second run completes. Commit the result as its own commit.
 2. Only if you pin `execution/contract.py` for custom kinds: write the
-   registry, remove the pin, and run `make update-template` again. Then
+   registry, remove the pin, then deliver the stock file with
+   `python3 execution/update_template.py --apply --force-path execution/contract.py`
+   (a pinned file has no baseline, so a plain update refuses it by design;
+   `--force-path` backs up your copy first). Then
    prove that `python3 execution/contract.py validate <a contract using
    your kinds> --strict` passes. If your pinned copy carries other
    behaviour (SAOC: triad exit 1 vs 2), keep the pin and reply on comms
