@@ -43,7 +43,9 @@ import { subNavGroupFor } from './nos-subnav-groups';
 const FULL_BLEED_QUALITY = 88;
 
 // DS-1 (c): the photo box is 62% wide from 768px (38% to the right edge), a full-width band below it.
-const INNER_PHOTO_SIZES = '(min-width: 768px) 62vw, 100vw';
+// From 768 to 1023 the box is narrower than the 1.9:1 crop is wide at hero height, so object-fit: cover
+// paints the crop at height x aspect (about 920px at the tallest hero measured there).
+const INNER_PHOTO_SIZES = '(min-width: 1024px) 62vw, (min-width: 768px) max(62vw, 920px), 100vw';
 
 const FALLBACK_TITLE_STYLE: CSSProperties = {
   fontFamily: 'var(--serif)',

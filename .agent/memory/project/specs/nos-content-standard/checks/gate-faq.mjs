@@ -8,8 +8,9 @@ import { ROUTES, STD, launchChromium, newContext, normalise, withServer } from '
 
 const NAV = 'nav[data-doc-index][aria-label="Sections"]';
 // her category headings: bold lines "N. Title" that are not questions (no trailing "?") in the frozen FAQ doc
+const nm = (t) => normalise(t).replace(/^(\d+\.)\s*/, '$1 ');
 const faqRoute = ROUTES.find((r) => r.nos === '/faq');
-const CATEGORIES = readFileSync(faqRoute.drive.path, 'utf8').split('\n').map((l) => l.match(/^\*\*(\d+\. [^*?]+)\*\*$/)?.[1]).filter(Boolean).map(normalise);
+const CATEGORIES = readFileSync(faqRoute.drive.path, 'utf8').split('\n').map((l) => l.match(/^\*\*(\d+\. [^*?]+)\*\*$/)?.[1]).filter(Boolean).map(nm);
 
 await withServer(3, 'faq', async (server, c) => {
   const browser = await launchChromium();
@@ -34,6 +35,19 @@ await withServer(3, 'faq', async (server, c) => {
         const chips = [...document.querySelectorAll('main a, main button, main summary')].filter((e) => parseFloat(getComputedStyle(e).borderTopLeftRadius) >= 999).length;
         const hdr = document.querySelector('header'); const hdrSticky = hdr && ['sticky', 'fixed'].includes(getComputedStyle(hdr).position);
         return {
+          fq: (() => { const h1 = document.querySelector('h1'); const hero = document.querySelector('section[data-nos-hero]'); const copy = h1?.closest('.nos-hero-copy, [data-nos-hero-copy]') ?? h1?.parentElement;
+            const first = document.querySelector('[data-doc-main] details'); const cat10 = document.getElementById('faq-10'); const l10 = cat10?.querySelector('a[href$="/plan-your-visit"]');
+            const act = document.querySelector('nav[data-doc-index] a[aria-current]'); const a0 = document.querySelector('nav[data-doc-index] a'); const sec = document.querySelector('[data-doc-aside]');
+            const h2num = [...document.querySelectorAll('main section[aria-labelledby^="faq-"] > h2, main section[aria-labelledby^="faq-"] h2')].every((h) => /^\d+\.$/.test(h.firstElementChild?.textContent.trim() ?? ''));
+            const qnum = [...document.querySelectorAll('main details > summary')].every((x) => /^\d+\.$/.test(x.firstElementChild?.textContent.trim() ?? ''));
+            const h1s = h1 ? getComputedStyle(h1) : null;
+            return { h1: h1?.textContent.trim().replace(/\s+/g, ' '), lede: Boolean(hero?.querySelector('[data-nos-hero-lede]')), crumb: Boolean(copy?.querySelector('nav[aria-label="Breadcrumb"]') || document.querySelector('nav[aria-label="Breadcrumb"]')), facts: Boolean(hero?.querySelector('[data-hero-facts]')),
+              firstOpen: Boolean(first?.open), cat10Link: l10 ? l10.textContent.trim() : null, cat10Details: cat10 ? cat10.querySelectorAll('details').length : null, h2num, qnum,
+              h1px: h1s ? parseFloat(h1s.fontSize) : null, h1w: h1 ? h1.getBoundingClientRect().width : null, h1ch: h1s ? parseFloat(h1s.maxWidth) : null,
+              actW: act ? getComputedStyle(act).fontWeight : null, actUl: act ? (act.querySelector('span:last-child') ? getComputedStyle(act.querySelector('span:last-child')).textDecorationThickness : '') : '',
+              aMaxH: sec ? getComputedStyle(sec.querySelector('nav') ?? sec).maxHeight : null, aMaxHAside: sec ? getComputedStyle(sec).maxHeight : null, ih: innerHeight,
+              linkPadY: a0 ? [parseFloat(getComputedStyle(a0).paddingTop), parseFloat(getComputedStyle(a0).paddingBottom)] : null };
+          })(),
           idxLinks, chips, navFirst: Boolean(navEl && firstContent && (navEl.compareDocumentPosition(firstContent) & Node.DOCUMENT_POSITION_FOLLOWING)),
           kind: aside?.getAttribute('data-doc-aside-kind') ?? null, hdrBottom: hdrSticky ? hdr.getBoundingClientRect().bottom : 0,
           heads: heads.map((h) => ({ id: h.id, text: h.textContent.trim().replace(/\s+/g, ' '), fam: getComputedStyle(h).fontFamily.toLowerCase(), w: getComputedStyle(h).fontWeight })),
@@ -51,8 +65,16 @@ await withServer(3, 'faq', async (server, c) => {
         };
       }, NAV);
       c.check(`${tag} exactly one ${NAV}`, s.navCount === 1);
+      c.check(`${tag} FQ-G1 h1 is "Frequently asked questions" (her doc title line is not rendered) (${s.fq.h1})`, s.fq.h1 === 'Frequently asked questions');
+      c.check(`${tag} FQ-G1 hero is crumb + h1 + FACTS-1, no lede (lede ${s.fq.lede}, crumb ${s.fq.crumb})`, s.fq.lede === false && s.fq.crumb);
+      c.check(`${tag} FQ-G1 section and question numbers are separate figure spans (${s.fq.h2num} ${s.fq.qnum})`, s.fq.h2num && s.fq.qnum);
+      c.check(`${tag} FQ-G1 category 1's first question is open on load`, s.fq.firstOpen);
+      c.check(`${tag} FQ-G1 category 10 has no questions and links "Plan your visit" to /plan-your-visit (${s.fq.cat10Link}, ${s.fq.cat10Details} details)`, s.fq.cat10Link === 'Plan your visit' && s.fq.cat10Details === 0);
+      if (vp.width >= 768) c.check(`${tag} FQ-G1 h1 is clamp(3rem,1.8rem+3.2vw,4.75rem) (${s.fq.h1px})`, Math.abs(s.fq.h1px - Math.min(76, Math.max(48, 28.8 + 0.032 * vp.width))) <= 1.5);
+      if (vp.width >= STD.grid.minWidthForTwoColumns) c.check(`${tag} FQ-G1 active index row is weight 700 and the index card is max-height calc(100vh - 124px) (${s.fq.actW}, ${s.fq.aMaxH}/${s.fq.aMaxHAside})`, s.fq.actW === '700' && [s.fq.aMaxH, s.fq.aMaxHAside].some((v) => v && Math.abs(parseFloat(v) - (s.fq.ih - 124)) <= 2));
+      else c.check(`${tag} FQ-G1 scroller links have 12px block padding (${s.fq.linkPadY})`, s.fq.linkPadY && s.fq.linkPadY[0] === 12 && s.fq.linkPadY[1] === 12);
       c.check(`${tag} SEED PENDING: ${s.heads.length} categories rendered == ${CATEGORIES.length} in her FAQ doc (the lead runs the Sanity seed; this fails loudly until then, never passes silently)`, s.heads.length === CATEGORIES.length, s.heads.map((h) => h.text).join(' | '));
-      c.check(`${tag} category names are her headings verbatim, in order`, JSON.stringify(s.heads.map((h) => normalise(h.text))) === JSON.stringify(CATEGORIES));
+      c.check(`${tag} category names are her headings verbatim, in order`, JSON.stringify(s.heads.map((h) => nm(h.text))) === JSON.stringify(CATEGORIES));
       c.check(`${tag} the aside is the index kind and the index comes before the content in DOM and Tab order`, s.kind === 'index' && s.navFirst, `${s.kind} ${s.navFirst}`);
       c.check(`${tag} no element in main computes radius >= 999 (no chips)`, s.chips === 0, String(s.chips));
       c.check(`${tag} the jump-chip row is gone (no [data-faq-chips])`, await page.locator('[data-faq-chips], ul[aria-label="FAQ categories"]').count() === 0);
@@ -63,7 +85,7 @@ await withServer(3, 'faq', async (server, c) => {
       c.check(`${tag} index links ${s.links.length} == category h2s ${s.heads.length} (>= 2)`, s.heads.length >= 2 && s.links.length === s.heads.length);
       s.heads.forEach((h, i) => {
         c.check(`${tag} h2 "${h.text}" is serif 300`, h.fam.includes('fraunces') && h.w === '300', `${h.fam} ${h.w}`);
-        c.check(`${tag} link ${i + 1} text == h2 text and href #${h.id}`, s.links[i]?.text === h.text && s.links[i]?.href === `#${h.id}`, JSON.stringify(s.links[i]));
+        c.check(`${tag} link ${i + 1} text == h2 text and href #${h.id}`, nm(s.links[i]?.text ?? '') === nm(h.text) && s.links[i]?.href === `#${h.id}`, JSON.stringify(s.links[i]));
       });
       c.check(`${tag} exactly one warm card per category`, s.cardsPerSection.every((n) => n === 1), s.cardsPerSection.join(','));
       c.check(`${tag} every question row sits inside a category card, none nested`, s.detailsOutsideCard === 0 && s.cardNested === 0);

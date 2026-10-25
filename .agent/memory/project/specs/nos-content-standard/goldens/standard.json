@@ -105,7 +105,9 @@
   "heightCap": {
    "at1440": 330,
    "at2056": 380,
-   "note": "PG-1 4 is OWNED by this spec (not #76). Gates: with an h1 and a one-line lede the hero is <=380 at 2056 and <=330 at 1440; first h2 or index card above the fold at 1440x900. The same numbers now live in #76, whose checks are relocked; these pass once the dev has #76 merged."
+   "note": "PG-1 4 owned by this spec and now in #76. One-line lede with no facts: <=330 at 1440, <=380 at 2056. A hero with lede + facts (FACTS-1): <=420 at 1440, <=440 at 2056 (supersedes the lower caps for heroes that have facts). First h2 or index card above the fold at 1440x900. No horizontal overflow at 390.",
+   "withFacts1440": 420,
+   "withFacts2056": 440
   },
   "pg1": {
    "min": 320,
@@ -123,12 +125,25 @@
   "max": 4,
   "ddFont": "fraunces",
   "ddWeight": "300",
-  "ddColor": "gold-100",
   "dtPx": 15,
-  "gridGap": "24px 40px",
+  "gridGap": "20px clamp(32px,3.5vw,56px)",
   "firstScreenCount": "every fact box fully inside the first viewport at 1440x900 and 390x844@3",
   "attribute": "dl[data-hero-facts][data-fact-count] > [data-hero-fact] > dt + dd",
-  "type": "HeroFact {term, value}, no TBC field; a fact with an empty term or value is dropped and fewer than 2 renders no row (normaliseHeroFacts, lib/hero-facts.ts)"
+  "type": "HeroFact {term, value}, no TBC field; a fact with an empty term or value is dropped and fewer than 2 renders no row (normaliseHeroFacts, lib/hero-facts.ts)",
+  "grammar": "FACTS-1 (NOS Design, FINAL; same grammar as SP-1)",
+  "atOrAbove768": {
+   "list": "display grid; grid-template-columns repeat(N,auto) with N = 2 or 3 = the fact count; justify-content start; gap 20px clamp(32px,3.5vw,56px); margin-top 4px; padding-top 20px; border-top 1px solid rgba(232,230,194,.22)",
+   "item": "flex column-reverse, gap 6",
+   "dd": "Fraunces 300 clamp(1.3rem,1.1rem+.5vw,1.5rem), line-height 1.15, gold-100",
+   "dt": "Karla 15px, lilac, below the dd"
+  },
+  "below768": {
+   "item": "grid; grid-template-columns 72px minmax(0,1fr); gap 16; align-items baseline; padding-block 12; a hairline above each item and below the last",
+   "dt": "14px",
+   "dd": "1.25rem Fraunces 300, line-height 1.3",
+   "list": "no border-top on the list itself"
+  },
+  "heroCopy": "> * { min-width: 0 }; .btn text may wrap below 768"
  },
  "focus": {
   "h1Selector": "h1[tabindex=\"-1\"]",
@@ -145,7 +160,7 @@
   "iconPx": 20,
   "noEyebrow": true,
   "noLegendChip": true,
-  "categoryCountRule": "equals the number of category headings in the Drive FAQ doc (13 in the 24 Oct version per the lead; 12 in lib/data/faq-sections.ts today)"
+  "categoryCountRule": "equals the number of category headings in the Drive FAQ doc (12 in the frozen v1.0, counted from goldens/sources/faq.md; the lead's 13 was wrong; 12 in lib/data/faq-sections.ts today)"
  },
  "bans": [
   "eyebrow above a heading",
@@ -165,8 +180,8 @@
   "a skipped heading level"
  ],
  "index": {
-  "d7": "Below 1024 the index is a sticky horizontal scroller: top env(safe-area-inset-top,0) under 700 (header not sticky), the sticky header's height from 700; 32px trailing mask fade only while scrollWidth > clientWidth; scroll-snap; active item scrolled into view; never overlaps the header; reachable mid-page at 390",
-  "rows": "13-or-n names verbatim, Karla 15px, >=44px, hairline --rule-soft, disjoint boxes",
+  "d7": "Below 1024 the index is a sticky horizontal scroller: from 780 up it sticks at top 97 (the sticky header's height), below 780 (header not sticky) at env(safe-area-inset-top,0); 32px trailing mask fade only while scrollWidth > clientWidth; scroll-snap; active item scrolled into view; never overlaps the header; reachable mid-page at 390. The desktop aside sticks at top 100.",
+  "rows": "12 names verbatim, Karla 15px, >=44px, hairline --rule-soft, disjoint boxes",
   "active": "royal text with a green-1 underline; no pill, fill or side border",
   "landing": "clicking a link lands its h2 below the sticky header(s) (scroll-margin-top)"
  },

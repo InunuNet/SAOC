@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import { heroFactsFromShow, NosHero } from '@/components/nos/NosHero';
 import type { PlanGuideBlock } from '@/components/show/PlanYourVisitGuide';
+import { NosSection } from '@/components/nos/NosSection';
 import { DocumentLayout, type DocumentIndexEntry } from '@/components/ui/DocumentLayout';
 import { PLAN_YOUR_VISIT_GUIDE } from '@/content/plan-your-visit/guide';
 import { loadShowFacts } from '@/lib/data/show-facts';
@@ -38,8 +39,10 @@ const H4_GROUP_END: Readonly<Record<string, string>> = {
   'Highlights of Cape Town': 'Plan your Cape Town visit',
 };
 
-// Her website notes under "Section 1 – Plan your visit" and "Section 2 – In an emergency",
-// word for word (typos included). They sit under the guide's "1. Getting Here" and at its close.
+// Her website notes under "Section 1 – Plan your visit" and "Section 2 – In an emergency", word for
+// word (typos included). PV-G1 (NOS Design) draws them as the venue card and the emergency band.
+// Not rendered: "Stay informed" (she marks it "Remove this section"), the map and the first-aid
+// line (both "To be provided"), and her trailing "Explore the show" list (NosShowIndex carries it).
 const DESIGNATED_PARKING =
   'Designated Parking for the National Orchid Show will be provided at the Stellenbosch flying club. Please follow the signage from the R44 on arrival instructions will be provided by the Parking Attendants on where to park. Parking is free.';
 const E_HAILING =
@@ -54,27 +57,25 @@ const VENUE_ADDRESS = [
   'Western Cape',
 ] as const;
 const EMERGENCY_NUMBERS = [
-  { label: 'Police (national)', number: '10111' },
-  { label: 'Ambulance and fire (national)', number: '10177' },
-  { label: 'All emergencies, from a mobile phone', number: '112' },
+  { label: 'Police (national)', number: '10111', note: null },
+  { label: 'Ambulance and fire (national)', number: '10177', note: null },
+  {
+    label: 'All emergencies, from a mobile phone',
+    number: '112',
+    note: 'Works from any mobile, including one with no airtime.',
+  },
 ] as const;
-const EMERGENCY_NOTE = 'Works from any mobile, including one with no airtime.';
-const FIRST_AID = 'On-site first aid and show duty contact – To be provided';
 
+const VENUE_ID = 'pyv-venue';
+const EMERGENCY_ID = 'pyv-emergency';
 const INLINE = /\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\((https?:[^)]+)\)/g;
+const LINK_ONLY = /^\[([^\]]+)\]\((https?:[^)]+)\)$/;
 
 interface GuideSection {
   id: string;
   title: string;
+  number: string;
   blocks: PlanGuideBlock[];
-}
-
-function slugOf(heading: string): string {
-  return heading
-    .replace(/^\d+\.\s*/, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
 }
 
 function renderInline(text: string): ReactNode[] {
@@ -89,7 +90,7 @@ function renderInline(text: string): ReactNode[] {
       nodes.push(<em key={match.index}>{italic}</em>);
     } else {
       nodes.push(
-        <a key={match.index} href={url} target="_blank" rel="noopener noreferrer">
+        <a key={match.index} href={url} target="_blank" rel="noreferrer">
           {label}
         </a>,
       );
@@ -110,7 +111,9 @@ function splitGuide(blocks: readonly PlanGuideBlock[]) {
   const sections: GuideSection[] = [];
   for (const block of rest) {
     if (block.kind === 'h2') {
-      sections.push({ id: slugOf(block.text), title: block.text, blocks: [] });
+      const [, number, title] = block.text.match(/^(\d+\.)\s*(.+)$/) ?? [];
+      if (!number || !title) throw new Error(`Plan your visit guide: unnumbered h2 "${block.text}"`);
+      sections.push({ id: `pyv-${parseInt(number, 10)}`, title, number, blocks: [] });
     } else if (sections.length === 0) {
       intro.push(block);
     } else {
@@ -120,7 +123,45 @@ function splitGuide(blocks: readonly PlanGuideBlock[]) {
   return { lede: lede.text, standfirst: standfirst.text, intro, sections };
 }
 
-function renderBlocks(blocks: readonly PlanGuideBlock[]): ReactNode[] {
+function ArrowOut() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <path d="M7 17 17 7" />
+      <path d="M8 7h9v9" />
+    </svg>
+  );
+}
+
+function renderList(items: readonly string[], key: number): ReactNode {
+  const links = items.map((item) => item.match(LINK_ONLY));
+  if (links.every(Boolean)) {
+    return (
+      <ul key={key} className="nos-links">
+        {links.map((match, position) => (
+          <li key={match?.[2]}>
+            {position > 0 ? ' ' : null}
+            <a href={match?.[2]} target="_blank" rel="noopener noreferrer">
+              <span>{match?.[1]}</span>
+              <ArrowOut />
+            </a>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  return (
+    <ul key={key}>
+      {items.map((item, position) => (
+        <li key={item}>
+          {position > 0 ? ' ' : null}
+          {renderInline(item)}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function renderBlocks(blocks: readonly PlanGuideBlock[], closing: boolean): ReactNode[] {
   let h4Until: string | null = null;
   return blocks.map((block, index): ReactNode => {
     switch (block.kind) {
@@ -141,71 +182,81 @@ function renderBlocks(blocks: readonly PlanGuideBlock[]): ReactNode[] {
       }
       case 'lead':
         return (
-          <p key={index} className="doc-lead">
+          <p key={index} className={closing ? 'nos-close-line' : 'doc-lead'}>
             {block.text}
           </p>
         );
       case 'p':
         return <p key={index}>{renderInline(block.text)}</p>;
       case 'list':
-        return (
-          <ul key={index}>
-            {block.items.map((item, position) => (
-              <li key={item}>
-                {position > 0 ? ' ' : null}
-                {renderInline(item)}
-              </li>
-            ))}
-          </ul>
-        );
+        return renderList(block.items, index);
       case 'h2':
         throw new Error('Plan your visit guide: an h2 reached the block renderer');
     }
   });
 }
 
-function VenueNotes() {
+function VenueCard() {
   return (
-    <>
-      <p>{DESIGNATED_PARKING}</p>
-      <p>{E_HAILING}</p>
-      <p>{VENUE_SENTENCE}</p>
-      <address className="doc-address">
-        {VENUE_ADDRESS.map((line, index) => (
-          <span key={line}>
-            {index > 0 ? <br /> : null}
-            {line}
-          </span>
-        ))}
-      </address>
-    </>
+    <section id={VENUE_ID} className="nos-venue" aria-labelledby={`${VENUE_ID}-h`}>
+      <h2 id={`${VENUE_ID}-h`} className="doc-h2">
+        The venue
+      </h2>
+      <div>
+        <address>
+          {VENUE_ADDRESS.map((line, index) => (
+            <span key={line}>
+              {index > 0 ? <br /> : null}
+              {line}
+            </span>
+          ))}
+        </address>
+        <p className="nos-venue-desc">{VENUE_SENTENCE}</p>
+      </div>
+      <div className="nos-venue-how">
+        <div>
+          <h3>Getting there</h3>
+          <p>{DESIGNATED_PARKING}</p>
+        </div>
+        <div>
+          <h3>Public Transport</h3>
+          <p>{E_HAILING}</p>
+        </div>
+      </div>
+    </section>
   );
 }
 
-function EmergencyNotes() {
+function EmergencyBand() {
   return (
-    <>
-      <dl className="doc-numbers" aria-label="In an emergency">
-        {EMERGENCY_NUMBERS.map(({ label, number }) => (
+    <NosSection tone="gold" id={EMERGENCY_ID} aria-labelledby={`${EMERGENCY_ID}-h`}>
+      <h2 id={`${EMERGENCY_ID}-h`} className="doc-h2">
+        In an emergency
+      </h2>
+      <dl className="nos-numbers">
+        {EMERGENCY_NUMBERS.map(({ label, number, note }) => (
           <div key={label}>
             <dt>{label}</dt>
             <dd>
               <a href={`tel:${number}`}>{number}</a>
             </dd>
+            {note ? <dd className="nos-numbers-note">{note}</dd> : null}
           </div>
         ))}
       </dl>
-      <p>{EMERGENCY_NOTE}</p>
-      <p>{FIRST_AID}</p>
-    </>
+    </NosSection>
   );
 }
 
 export default async function PlanYourVisitPage() {
   const showFacts = await loadShowFacts();
   const guide = splitGuide(PLAN_YOUR_VISIT_GUIDE);
-  const index: DocumentIndexEntry[] = guide.sections.map(({ id, title }) => ({ id, label: title }));
   const lastSection = guide.sections.length - 1;
+  const index: DocumentIndexEntry[] = [
+    { id: `${VENUE_ID}-h`, label: 'The venue' },
+    ...guide.sections.map(({ id, number, title }) => ({ id: `${id}-h`, label: `${number} ${title}` })),
+    { id: `${EMERGENCY_ID}-h`, label: 'In an emergency' },
+  ];
 
   return (
     <>
@@ -219,23 +270,31 @@ export default async function PlanYourVisitPage() {
       />
 
       <DocumentLayout index={index}>
-        <div className="doc-prose">
-          <p className="doc-standfirst">{guide.standfirst}</p>
-          {renderBlocks(guide.intro)}
+        <div className="nos-doc-stack">
+          <div className="doc-prose">
+            <p className="doc-standfirst">{guide.standfirst}</p>
+            {renderBlocks(guide.intro, false)}
+          </div>
+          <VenueCard />
+          {guide.sections.map((section, position) => (
+            <section
+              key={section.id}
+              id={section.id}
+              className="doc-section"
+              aria-labelledby={`${section.id}-h`}
+            >
+              <div className="doc-prose">
+                <h2 id={`${section.id}-h`} className="doc-h2 nos-num-h2">
+                  <span className="nos-num">{section.number}</span>{' '}
+                  <span>{section.title}</span>
+                </h2>
+                {renderBlocks(section.blocks, position === lastSection)}
+              </div>
+            </section>
+          ))}
         </div>
-        {guide.sections.map((section, position) => (
-          <section key={section.id} className="doc-section" aria-labelledby={section.id}>
-            <div className="doc-prose">
-              <h2 id={section.id} className="doc-h2">
-                {section.title}
-              </h2>
-              {position === 0 ? <VenueNotes /> : null}
-              {renderBlocks(section.blocks)}
-              {position === lastSection ? <EmergencyNotes /> : null}
-            </div>
-          </section>
-        ))}
       </DocumentLayout>
+      <EmergencyBand />
     </>
   );
 }

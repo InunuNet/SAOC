@@ -126,8 +126,8 @@ export function ShowFaqList({
           className="doc-section"
           aria-labelledby={id}
         >
-          <h2 id={id} className="doc-h2 nos-faq-h2">
-            <span className="nos-faq-num">{number}</span>
+          <h2 id={id} className="doc-h2 nos-num-h2">
+            <span className="nos-num">{number}</span>{' '}
             <span>{title}</span>
           </h2>
           {inCategory.length > 0

@@ -10,6 +10,7 @@
 //   facts     (routes with facts) 2-4 dd/dt, every box fully inside the first viewport at 1440x900 and 390x844@3, contrast >= 4.5 on the
 //             photo pixels behind each fact; sub-nav and first h2 visible at 1440x900
 //   focus     a focused h1[tabindex="-1"] paints no outline, ring or shadow, on load and after client navigation
+import { readFileSync } from 'node:fs';
 import { CROPS, EXCLUDED, ROUTES, STD, driveState, launchChromium, newContext, withServer } from './_lib.mjs';
 
 const HERO_IMG = 'section[data-nos-hero] [data-nos-hero-media] img';
@@ -21,8 +22,14 @@ async function heroSharpness(page, route, vp, c, tag) {
   const crop = CROPS.find((k) => k.crop === route.photo);
   const found = await page.waitForFunction((sel) => { const i = document.querySelector(sel); return i && i.complete && i.naturalWidth > 0; }, HERO_IMG, { timeout: 20000 }).then(() => true, () => false);
   c.check(`${tag} hero photo present and loaded`, found);
+  const idv = await page.evaluate((sel) => document.querySelector(sel)?.currentSrc ?? '', HERO_IMG);
+  if (route.photo) c.check(`${tag} the hero serves the route's signed-off crop ${route.photo}`, decodeURIComponent(idv).includes(`nos-hero-${route.photo}`), idv);
   if (!found) return;
   const geo = await page.evaluate((sel) => { const img = document.querySelector(sel); const hero = document.querySelector('section[data-nos-hero]').getBoundingClientRect(); const b = img.getBoundingClientRect(); const h1 = document.querySelector('h1')?.getBoundingClientRect(); return { left: (b.left - hero.left) / hero.width * 100, right: (b.right - hero.left) / hero.width * 100, w: b.width, heroW: hero.width, top: b.top, h1Bottom: h1 ? h1.bottom : 0 }; }, HERO_IMG);
+  if (vp.width >= 1024) {
+    const bx = await page.evaluate((sel) => { const img = document.querySelector(sel); const media = img?.closest('[data-nos-hero-media]') ?? img?.parentElement; const radii = [img, media].filter(Boolean).map((e) => ['TopLeft', 'TopRight', 'BottomLeft', 'BottomRight'].map((k) => parseFloat(getComputedStyle(e)[`border${k}Radius`]) || 0)).flat(); const mk = [media, img, media?.parentElement].filter(Boolean).map((e) => `${getComputedStyle(e).maskImage} ${getComputedStyle(e).webkitMaskImage}`).join(' | '); return { maxRadius: Math.max(...radii), mask: mk }; }, HERO_IMG);
+    c.check(`${tag} P1 the .ihero photo box has radius 0 (${bx.maxRadius}) and its left 22% is masked into the black (${bx.mask.slice(0, 90)})`, bx.maxRadius === 0 && /linear-gradient/.test(bx.mask) && /22%/.test(bx.mask));
+  }
   if (vp.width >= 1024) c.check(`${tag} photo box runs 38%-100% of the hero (measured ${geo.left.toFixed(1)}%-${geo.right.toFixed(1)}%)`, Math.abs(geo.left - STD.hero.photoBox.atOrAbove1024.leftPctOfHero) <= STD.hero.photoBox.atOrAbove1024.tolerancePct && Math.abs(geo.right - 100) <= 1);
   else c.check(`${tag} stacked photo is full width and sits under the copy`, Math.abs(geo.w - geo.heroW) <= 1 && geo.top >= geo.h1Bottom - 1);
   const r = await page.evaluate(async (sel) => {
@@ -59,10 +66,121 @@ async function factsContrast(page, tag, c) {
 }
 
 
+/** FACTS-1: the shared hero facts grammar, measured on every route that has a facts row. */
+async function factsGrammar(page, vp, c, tag) {
+  const f = await page.evaluate(() => {
+    const dl = document.querySelector('[data-hero-facts]'); if (!dl) return null;
+    const cs = getComputedStyle(dl); const items = [...dl.querySelectorAll('[data-hero-fact]')];
+    const it = items[0] ? getComputedStyle(items[0]) : null; const dd = dl.querySelector('dd'); const dt = dl.querySelector('dt');
+    const dds = dd ? getComputedStyle(dd) : null; const dts = dt ? getComputedStyle(dt) : null;
+    const num = (v) => parseFloat(v);
+    return { n: items.length, display: cs.display, cols: cs.gridTemplateColumns.trim().split(/\s+/).length, bt: num(cs.borderTopWidth), btc: cs.borderTopColor, mt: num(cs.marginTop), pt: num(cs.paddingTop), colGap: num(cs.columnGap), rowGap: num(cs.rowGap),
+      itemDisplay: it?.display, itemDir: it?.flexDirection, itemGap: num(it?.gap), itemCols: it?.gridTemplateColumns, itemPad: num(it?.paddingTop) , itemPadB: num(it?.paddingBottom), itemBT: num(it?.borderTopWidth), lastBB: num(items.length ? getComputedStyle(items[items.length - 1]).borderBottomWidth : 0), itemAlign: it?.alignItems,
+      ddFam: dds?.fontFamily.split(',')[0].replace(/["']/g, '').toLowerCase(), ddW: dds?.fontWeight, ddPx: num(dds?.fontSize), ddLh: num(dds?.lineHeight) / num(dds?.fontSize), dtPx: num(dts?.fontSize), dtFam: dts?.fontFamily.split(',')[0].replace(/["']/g, '').toLowerCase(),
+      ddAfterDt: dd && dt ? Boolean(dt.compareDocumentPosition(dd) & Node.DOCUMENT_POSITION_FOLLOWING) : null, ddAbove: dd && dt ? dd.getBoundingClientRect().top <= dt.getBoundingClientRect().top : null,
+      dateNoWrap: (() => { const t = [...dl.querySelectorAll('[data-hero-fact]')].find((x) => /^dates$/i.test(x.querySelector('dt')?.textContent.trim() ?? '')); if (!t) return null; const d = t.querySelector('dd'); const cs = getComputedStyle(d); return { ws: cs.whiteSpace, lines: Math.round(d.getBoundingClientRect().height / parseFloat(cs.lineHeight)) }; })(), venueLines: (() => { const t = [...dl.querySelectorAll('[data-hero-fact]')].find((x) => /^venue$/i.test(x.querySelector('dt')?.textContent.trim() ?? '')); if (!t) return null; const d = t.querySelector('dd'); const cs = getComputedStyle(d); return Math.round(d.getBoundingClientRect().height / parseFloat(cs.lineHeight)); })(),
+      copyKids: [...(dl.closest('.nos-hero-copy')?.children ?? [])].every((k) => getComputedStyle(k).minWidth === '0px'), sw: document.documentElement.scrollWidth, iw: innerWidth };
+  });
+  if (!f) return;
+  const dd768 = Math.min(24, Math.max(20.8, 17.6 + 0.005 * vp.width));
+  c.check(`${tag} FACTS-1 dd is Fraunces 300 and dt is Karla (${f.ddFam} ${f.ddW}, ${f.dtFam})`, f.ddFam.includes('fraunces') && f.ddW === '300' && f.dtFam.includes('karla'));
+  c.check(`${tag} FACTS-1 hero copy children have min-width 0`, f.copyKids);
+  if (vp.width >= 1440) {
+    if (f.dateNoWrap) c.check(`${tag} the dates dd is nowrap and one line (${f.dateNoWrap.ws}, ${f.dateNoWrap.lines} line(s))`, f.dateNoWrap.ws === 'nowrap' && f.dateNoWrap.lines === 1);
+    if (f.venueLines !== null) c.check(`${tag} the venue dd takes at most 2 lines (${f.venueLines})`, f.venueLines <= 2);
+  }
+  c.check(`${tag} no horizontal overflow (${f.sw} <= ${f.iw})`, f.sw <= f.iw);
+  if (vp.width >= 768) {
+    c.check(`${tag} FACTS-1 list is a grid of ${f.n} auto columns, justify start, margin-top 4, padding-top 20, 1px top rule (${f.display}, ${f.cols} cols, mt ${f.mt}, pt ${f.pt}, bt ${f.bt})`, f.display === 'grid' && f.cols === f.n && f.mt === 4 && f.pt === 20 && f.bt === 1 && /232, 230, 194/.test(f.btc));
+    c.check(`${tag} FACTS-1 gaps 20px / clamp(32px,3.5vw,56px) (${f.rowGap} / ${f.colGap})`, f.rowGap === 20 && Math.abs(f.colGap - Math.min(56, Math.max(32, 0.035 * vp.width))) <= 1);
+    c.check(`${tag} FACTS-1 item is flex column-reverse gap 6, dd above dt (${f.itemDisplay} ${f.itemDir} ${f.itemGap})`, f.itemDisplay === 'flex' && f.itemDir === 'column-reverse' && f.itemGap === 6 && f.ddAbove === true);
+    c.check(`${tag} FACTS-1 dd ${f.ddPx.toFixed(1)}px ~ ${dd768.toFixed(1)}, line-height ${f.ddLh.toFixed(2)} ~ 1.15; dt 15px (${f.dtPx})`, Math.abs(f.ddPx - dd768) <= 0.6 && Math.abs(f.ddLh - 1.15) <= 0.03 && f.dtPx === 15);
+  } else {
+    c.check(`${tag} FACTS-1 rows: grid 72px | 1fr, gap 16, baseline, padding-block 12, hairline above each and below the last, no border-top on the list (${f.itemCols}; ${f.itemBT}; ${f.lastBB}; list ${f.bt})`, f.itemDisplay === 'grid' && /^72px /.test(f.itemCols ?? '') && f.itemGap === 16 && f.itemAlign === 'baseline' && f.itemPad === 12 && f.itemPadB === 12 && f.itemBT >= 1 && f.lastBB >= 1 && f.bt === 0);
+    c.check(`${tag} FACTS-1 dt 14px, dd 20px line-height 1.3 (${f.dtPx}, ${f.ddPx}, ${f.ddLh.toFixed(2)})`, f.dtPx === 14 && f.ddPx === 20 && Math.abs(f.ddLh - 1.3) <= 0.03);
+  }
+}
+
+/** SP-1 (NOS Design golden, root comms.md "/sponsors golden (SP-1)"): the /sponsors-only structure, copy sources and gates. */
+const SPDIR = '.agent/memory/project/specs/nos-content-standard/goldens/sources/';
+const spUnmd = (b) => b.replace(/\\([.\-_*#>()[\]!])/g, '$1').replace(/\*\*|__/g, '').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1$2').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\s+/g, ' ').trim();
+const spLine = (file, n) => spUnmd(readFileSync(SPDIR + file, 'utf8').split('\n')[n - 1] ?? '');
+function spQa(q) {
+  const L = readFileSync(SPDIR + 'faq.md', 'utf8').split('\n'); const i = L.findIndex((l) => new RegExp(`^\\*\\*${q}\\. `).test(l));
+  if (i < 0) return null; const ans = []; for (let k = i + 1; k < L.length && !/^\*\*\d+\. /.test(L[k]); k += 1) if (L[k].trim()) ans.push(spUnmd(L[k]));
+  return { q: spUnmd(L[i]).replace(/^\d+\.\s*/, ''), a: ans };
+}
+async function sp1Checks(page, route, vp, c, tag) {
+  const S = route.sp1Sources;
+  const m = await page.evaluate(() => {
+    const lum = (v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+    const L = (css) => { const n = css.match(/[\d.]+/g).map(Number); return 0.2126 * lum(n[0]) + 0.7152 * lum(n[1]) + 0.0722 * lum(n[2]); };
+    const txt = (e) => e.textContent.replace(/\s+/g, ' ').trim();
+    const btns = [...document.querySelectorAll('main a[class*="btn"], main button')].filter((b) => b.getBoundingClientRect().height > 0).map((b) => { const cs = getComputedStyle(b); const fg = L(cs.color); const bg = L(cs.backgroundColor); return { t: txt(b).slice(0, 30), h: b.getBoundingClientRect().height, ratio: (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05), bgA: cs.backgroundColor.startsWith('rgba') && /, 0\)$/.test(cs.backgroundColor) }; });
+    const aside = document.querySelector('[data-doc-aside]'); const ab = aside?.querySelector('a[class*="btn"], a');
+    const abc = ab ? getComputedStyle(ab) : null;
+    const h2s = [...document.querySelectorAll('main h2')].map(txt);
+    const bec = [...document.querySelectorAll('main h2')].find((h) => /become a sponsor/i.test(txt(h)));
+    const h3s = bec ? [...document.querySelectorAll('main h3')].filter((h) => bec.compareDocumentPosition(h) & Node.DOCUMENT_POSITION_FOLLOWING).map(txt) : [];
+    const reach = ['/symposium', '/wosa-conference', '/vendors'].map((hr) => { const a = [...document.querySelectorAll('[data-doc-main] a')].find((x) => x.getAttribute('href')?.endsWith(hr)); return a ? a.getBoundingClientRect().height : null; });
+    const cta = document.querySelector('.sp-hero-cta, [data-sponsors-hero-cta]'); const ctaShown = cta ? cta.getBoundingClientRect().height > 0 && getComputedStyle(cta).display !== 'none' : null;
+    const hero = document.querySelector('section[data-nos-hero]');
+    const reachA = [...document.querySelectorAll('[data-doc-main] a')].filter((x) => /\/(symposium|wosa-conference|vendors)$/.test(x.getAttribute('href') ?? ''));
+    const bullets = reachA.filter((a) => { const li = a.closest('li'); const ul = a.closest('ul, ol'); return (li && getComputedStyle(li).listStyleType !== 'none') || (ul && getComputedStyle(ul).listStyleType !== 'none'); }).length;
+    const wh = [...document.querySelectorAll('main h2')].find((h) => /^show sponsors$/i.test(h.textContent.trim())); const whb = wh?.getBoundingClientRect(); const thanksEl = wh ? [...document.querySelectorAll('main p')].find((p) => wh.compareDocumentPosition(p) & Node.DOCUMENT_POSITION_FOLLOWING) : null; const tb = thanksEl?.getBoundingClientRect();
+    const wallStacked = whb && tb ? { below: tb.top >= whb.bottom - 1, sameLeft: Math.abs(tb.left - whb.left) <= 2 } : null;
+    const btnRadius = Math.max(0, ...[...document.querySelectorAll('main a[class*="btn"]')].map((b) => parseFloat(getComputedStyle(b).borderTopLeftRadius) || 0));
+    const strip = [...document.querySelectorAll('main [aria-hidden="true"]')].filter((e) => e.querySelectorAll('img').length >= 1 && !e.closest('section[data-nos-hero]')).length;
+    const body = document.querySelector('main')?.textContent.replace(/\s+/g, ' ') ?? '';
+    return { bullets, wallStacked, btnRadius, h1: txt(document.querySelector('h1')), terms: [...(hero?.querySelectorAll('[data-hero-facts] dt') ?? [])].map(txt), btns, h2s, h3s, reach, ctaShown, strip, body, asideKind: aside?.getAttribute('data-doc-aside-kind'), asideBtn: abc ? { fg: L(abc.color), bg: L(abc.backgroundColor), h: ab.getBoundingClientRect().height, w: ab.getBoundingClientRect().width, aw: aside.getBoundingClientRect().width } : null, asideText: aside ? txt(aside) : '', main: document.querySelector('[data-doc-main]')?.textContent.replace(/\s+/g, ' ') ?? '' };
+  });
+  const has = (hay, needle) => hay.includes(needle);
+  c.check(`${tag} SP-1 h1 is "Sponsors" and the facts are Dates, Venue, Host (${m.h1}; ${m.terms.join(' | ')})`, m.h1 === 'Sponsors' && JSON.stringify(m.terms) === JSON.stringify(['Dates', 'Venue', 'Host']));
+  c.check(`${tag} SP-1 the standfirst is What to Expect v1.0 line ${S.standfirst.line} verbatim`, has(m.main, spLine(S.standfirst.file, S.standfirst.line)));
+  c.check(`${tag} SP-1 theme prose is About v1.2 line ${S.themeProse.line} verbatim`, has(m.main, spLine(S.themeProse.file, S.themeProse.line)) || has(m.body, spLine(S.themeProse.file, S.themeProse.line)));
+  c.check(`${tag} SP-1 reach register: three link rows to /symposium, /wosa-conference, /vendors, each >= 44px (${m.reach.join(',')})`, m.reach.every((h) => h !== null && h >= 44));
+  c.check(`${tag} SP-1 h2 "Become a sponsor" with the two FAQ Q&As (Q80, Q81) as h3, verbatim`, m.h2s.some((t) => /^become a sponsor$/i.test(t)) && S.qa.every((e, i) => { const q = spQa(e.q); return q && m.h3s[i] && m.h3s[i].replace(/^\d+\.\s*/, '') === q.q && q.a.every((a) => has(m.body, a)); }), m.h3s.join(' | '));
+  c.check(`${tag} SP-1 the sponsor wall: h2 "Show sponsors" and the council's thanks (About v1.2 line ${S.thanks.line}) verbatim`, m.h2s.some((t) => /^show sponsors$/i.test(t)) && has(m.body, spLine(S.thanks.file, S.thanks.line)));
+  c.check(`${tag} SP-1 the sponsorship email is ${S.email}, not ${S.notEmail} (D-SP1)`, has(m.body, S.email) && !has(m.body, S.notEmail));
+  c.check(`${tag} SP-1 no tier names, no preview chrome (no TBC chip, no "PLACEHOLDER COPY")`, !/PLACEHOLDER COPY/i.test(m.body) && !/(Gold|Silver|Bronze) (sponsor|partner)|Conservation Partner/i.test(m.body) && !/to be confirmed/i.test(m.body));
+  c.check(`${tag} SP-1 no bullets on the reach rows (${m.bullets})`, m.bullets === 0);
+  c.check(`${tag} SP-1 the wall head is stacked: h2, then the thanks line below it, same left edge (${JSON.stringify(m.wallStacked)})`, Boolean(m.wallStacked) && m.wallStacked.below && m.wallStacked.sameLeft);
+  c.check(`${tag} SP-1 the shared NOS Button keeps its 2px radius (${m.btnRadius}), not the golden's 10px`, m.btnRadius > 0 && m.btnRadius <= 4);
+  c.check(`${tag} SP-1 an aria-hidden photo strip of three tiles (${m.strip})`, m.strip >= 3);
+  c.check(`${tag} SP-1 the aside is ONE content card with a full-width button, pale on royal (kind ${m.asideKind})`, m.asideKind === 'content' && m.asideBtn && m.asideBtn.bg < m.asideBtn.fg && m.asideBtn.w >= m.asideBtn.aw * 0.8 - 2, JSON.stringify(m.asideBtn));
+  c.check(`${tag} SP-1 every button is >= 44px with contrast >= 4.5 (${m.btns.map((b) => `${b.t}:${b.h.toFixed(0)}/${b.ratio.toFixed(1)}`).join(' ')})`, m.btns.every((b) => b.h >= 44 && (b.ratio >= 4.5 || b.bgA)));
+  if (m.ctaShown !== null) c.check(`${tag} SP-1 the hero CTA shows only below 1024 (shown ${m.ctaShown})`, m.ctaShown === (vp.width < 1024));
+}
+
+/** PV-G1 (NOS Design golden, root comms.md from line 2964): the /plan-your-visit-only structure. */
+async function pyvChecks(page, route, vp, c, tag) {
+  const P = route.pyv;
+  const m = await page.evaluate(() => {
+    const txt = (e) => e.textContent.replace(/\s+/g, ' ').trim();
+    const idx = [...document.querySelectorAll('nav[data-doc-index] a')].map((a) => ({ n: a.querySelector('span')?.textContent.trim() ?? '', t: txt(a).slice(0) }));
+    const venue = [...document.querySelectorAll('main h2')].find((h) => /^the venue$/i.test(txt(h)))?.closest('section, div');
+    const vcs = venue ? getComputedStyle(venue) : null; const vb = venue?.getBoundingClientRect();
+    const em = [...document.querySelectorAll('main h2')].find((h) => /^in an emergency$/i.test(txt(h))); const emSec = em?.closest('section'); const eb = emSec?.getBoundingClientRect();
+    const tels = [...document.querySelectorAll('a[href^="tel:"]')].map((a) => ({ href: a.getAttribute('href'), h: a.getBoundingClientRect().height }));
+    const links = [...document.querySelectorAll('[data-doc-main] a[rel~="noopener"]')].map((a) => a.getBoundingClientRect().height);
+    const close = [...document.querySelectorAll('main *')].find((e) => e.children.length === 0 && /^start planning your visit today/i.test(txt(e)));
+    const closeStyle = close ? { tag: close.tagName, fam: getComputedStyle(close).fontFamily.toLowerCase(), w: getComputedStyle(close).fontWeight } : null;
+    const kids = venue ? [...venue.querySelectorAll('h3')].map(txt) : [];
+    return { idx, venue: Boolean(venue), venueInMain: Boolean(venue?.closest('[data-doc-main]')), venueBg: vcs?.backgroundColor, venueRadius: parseFloat(vcs?.borderTopLeftRadius ?? '0'), venueCols: venue ? Math.max(1, ...[...venue.children].map((k) => getComputedStyle(k).display === 'grid' ? getComputedStyle(k).gridTemplateColumns.trim().split(/\s+/).length : 1), vcs.display === 'grid' ? vcs.gridTemplateColumns.trim().split(/\s+/).length : 1) : 0, emOutside: Boolean(emSec && !emSec.closest('[data-doc-main]')), emFull: eb ? eb.width >= innerWidth - 1 : false, emAfterGrid: emSec ? Boolean(document.querySelector('[data-doc-layout]')?.compareDocumentPosition(emSec) & Node.DOCUMENT_POSITION_FOLLOWING) : false, tels, links, closeStyle, kids, venueAddrBr: venue?.querySelectorAll('address br').length ?? 0, sw: document.documentElement.scrollWidth, iw: innerWidth };
+  });
+  c.check(`${tag} PV-G1 the index is The venue, 1-7, In an emergency (${m.idx.length}); first and last rows have an empty number cell`, JSON.stringify(m.idx.map((e) => e.t.replace(/^\d+\.\s*/, '').trim())) === JSON.stringify(P.index.map((e) => e.replace(/^\d+\.\s*/, ''))) && m.idx[0].n === '' && m.idx[m.idx.length - 1].n === '', JSON.stringify(m.idx.map((e) => e.t)));
+  c.check(`${tag} PV-G1 "The venue" card first in the main column: white, radius 10, from her Section 1 block, address with her line breaks (${m.venueAddrBr} br), 2 columns from 768 and 1 below (${m.venueCols})`, m.venue && m.venueInMain && m.venueRadius === 10 && m.venueAddrBr >= 4 && (vp.width >= 768 ? m.venueCols >= 2 : m.venueCols === 1) && m.kids.includes('Getting there') && m.kids.includes('Public Transport'), JSON.stringify(m.kids));
+  c.check(`${tag} PV-G1 "In an emergency" is a full-bleed band after the body grid (outside the main column: ${m.emOutside}, full width: ${m.emFull}, after: ${m.emAfterGrid})`, m.emOutside && m.emFull && m.emAfterGrid);
+  c.check(`${tag} PV-G1 the three tel: links are present and >= 44px (${m.tels.map((t) => `${t.href}:${Math.round(t.h)}`).join(' ')})`, P.tel.every((h) => m.tels.some((t) => t.href === h && t.h >= 44)));
+  c.check(`${tag} PV-G1 link register rows are >= 48px with rel noopener (${m.links.length}, min ${Math.round(Math.min(...m.links, 999))})`, m.links.length > 0 && m.links.every((h) => h >= 47.5));
+  c.check(`${tag} PV-G1 her closing line is Fraunces 300 and not a heading (${JSON.stringify(m.closeStyle)})`, Boolean(m.closeStyle) && !/^H\d$/.test(m.closeStyle.tag) && m.closeStyle.fam.includes('fraunces') && m.closeStyle.w === '300');
+  c.check(`${tag} PV-G1 no overflow at any width (${m.sw} <= ${m.iw})`, m.sw <= m.iw);
+}
+
 const SECTION_NAV = 'nav[data-doc-index][aria-label="Sections"]';
 
-/** D7 (FINAL): below 1024 the index is a sticky horizontal scroller. Under 700 the header is not sticky and the scroller sticks at
- env(safe-area-inset-top, 0); from 700 it sticks at the sticky header's height. 32px trailing mask fade only while it overflows; scroll-snap;
+/** D7 (FINAL): below 1024 the index is a sticky horizontal scroller. Under 780 the header is not sticky and the scroller sticks at
+ env(safe-area-inset-top, 0); from 780 it sticks at the sticky header's height. 32px trailing mask fade only while it overflows; scroll-snap;
  the active item is kept in view. It never overlaps the header and stays reachable when scrolled mid-page. */
 async function scrollerChecks(page, vp, c, tag) {
   const s = await page.evaluate((sel) => {
@@ -82,6 +200,8 @@ async function scrollerChecks(page, vp, c, tag) {
   c.check(`${tag} 32px trailing mask fade only while it overflows (overflow ${s.over}, mask ${s.mask})`, s.mask === s.over);
   c.check(`${tag} scroll-snap on the scroller (${s.snap})`, s.snap !== 'none');
   c.check(`${tag} the scroller is sticky`, s.stick);
+  const wantTop = vp.width >= 780 ? 97 : 0;
+  c.check(`${tag} the scroller sticks at top ${wantTop}px (${s.stickTop}; 97 from 780 up, env(safe-area-inset-top,0) below)`, s.stickTop !== null && Math.abs(parseFloat(s.stickTop) - wantTop) <= 2);
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
   await page.waitForTimeout(250);
   const g = await page.evaluate(({ sel, hs }) => { const a = document.querySelector(sel)?.closest('[data-doc-aside]') ?? document.querySelector(sel); const b = a.getBoundingClientRect(); const h = document.querySelector('header'); const hb = hs && h ? h.getBoundingClientRect().bottom : 0; return { top: b.top, hb }; }, { sel: SECTION_NAV, hs: s.headerSticky });
@@ -112,9 +232,11 @@ async function extraChecks(page, route, vp, c, tag) {
     const facts = document.querySelector('[data-hero-facts]');
     const legend = [...document.querySelectorAll('main *')].filter((e) => !e.closest('details') && e.children.length === 0 && /to be confirmed by the show committee/i.test(e.textContent)).length;
     const railed = [...document.querySelectorAll('main *')].filter((e) => { const s = getComputedStyle(e); return ['Left', 'Right'].some((k) => parseFloat(s[`border${k}Width`]) > 1) || ['Top', 'Bottom', 'Left', 'Right'].some((k) => s[`border${k}Style`] === 'dashed' && parseFloat(s[`border${k}Width`]) >= 2); }).length;
-    return { nkBad, testBar, vw: innerWidth, innerMin: ic ? parseFloat(ic.minHeight) : null, innerAlign: ic ? ic.alignContent : null, innerPadT: ic ? parseFloat(ic.paddingTop) : null, innerPadB: ic ? parseFloat(ic.paddingBottom) : null, band: ib && ib.height ? ib.width / ib.height : null, skip, round, split, padTop: fs ? parseFloat(fs.paddingTop) : null, bTop: fs ? parseFloat(fs.borderTopWidth) : null, navLabels, h2s, h4s, h2lh: lh(document.querySelector('main h2')), h3lh: lh(document.querySelector('main h3')),
+    const crumb = document.querySelector('section[data-nos-hero] nav[aria-label="Breadcrumb"]'); const crumbText = crumb ? crumb.textContent.replace(/\s+/g, ' ').trim() : null;
+    return { crumbText, nkBad, testBar, vw: innerWidth, innerMin: ic ? parseFloat(ic.minHeight) : null, innerAlign: ic ? ic.alignContent : null, innerPadT: ic ? parseFloat(ic.paddingTop) : null, innerPadB: ic ? parseFloat(ic.paddingBottom) : null, band: ib && ib.height ? ib.width / ib.height : null, skip, round, split, padTop: fs ? parseFloat(fs.paddingTop) : null, bTop: fs ? parseFloat(fs.borderTopWidth) : null, navLabels, h2s, h4s, h2lh: lh(document.querySelector('main h2')), h3lh: lh(document.querySelector('main h3')),
       heroH: hero ? hero.getBoundingClientRect().height : null, legend, railed, factsCount: facts ? facts.querySelectorAll('[data-hero-fact]').length : 0, factsAttr: facts ? facts.getAttribute('data-fact-count') : null, factTerms: facts ? [...facts.querySelectorAll('dt')].map((e) => e.textContent.trim()) : [], factValues: facts ? [...facts.querySelectorAll('dd')].map((e) => e.textContent.trim()) : [], factCount2: facts ? facts.querySelectorAll('[data-hero-fact]').length >= 2 : true, indexRows: [...document.querySelectorAll('nav[data-doc-index] a')].map((a) => { const b = a.getBoundingClientRect(); return { t: b.top, b: b.bottom, l: b.left, r: b.right }; }), factsOk: facts ? [...facts.querySelectorAll('[data-hero-fact]')].every((f) => f.children[0]?.tagName === 'DT' && f.children[1]?.tagName === 'DD') : true };
   }, { eyebrowSel: '[data-nos-hero-eyebrow]' });
+  c.check(`${tag} a breadcrumb sits in the hero ('National Show - <page>'): ${x.crumbText}`, Boolean(x.crumbText) && /^National Show/.test(x.crumbText));
   c.check(`${tag} .nk-ticket/.nk-perf/.nk-stamp only inside a purchasable [data-ticket-card] (WS-1)`, x.nkBad === 0, String(x.nkBad));
   c.check(`${tag} the TESTING ONLY bar is absent (it belongs to /tickets/* and the payment step only)`, x.testBar === 0, String(x.testBar));
   {
@@ -147,8 +269,8 @@ async function extraChecks(page, route, vp, c, tag) {
     c.check(`${tag} [data-hero-facts] has data-fact-count == items (${x.factsAttr} vs ${x.factsCount}), dt before dd`, Number(x.factsAttr) === x.factsCount && x.factsOk);
   }
   if (vp.width >= 1440) { // PG-1 4, inherited from #76
-    const cap = vp.width >= 2000 ? STD.hero.heightCap.at2056 : STD.hero.heightCap.at1440;
-    c.check(`${tag} hero height ${Math.round(x.heroH)} <= ${cap} (PG-1 4)`, x.heroH !== null && x.heroH <= cap);
+    const wf = x.factsCount > 0; const cap = vp.width >= 2000 ? (wf ? STD.hero.heightCap.withFacts2056 : STD.hero.heightCap.at2056) : (wf ? STD.hero.heightCap.withFacts1440 : STD.hero.heightCap.at1440);
+    c.check(`${tag} hero height ${Math.round(x.heroH)} <= ${cap} (PG-1 4${wf ? ', with facts: FACTS-1' : ''})`, x.heroH !== null && x.heroH <= cap);
   }
 }
 
@@ -181,7 +303,7 @@ await withServer(1, 'standard', async (server, c) => {
           if (probe) prose.parentElement.appendChild(probe);
           const ch = probe ? probe.getBoundingClientRect().width : 0; probe?.remove();
           const wrap = document.querySelector('[data-doc-layout] [data-nos-wrap], [data-doc-layout]');
-          const wcs = getComputedStyle(wrap);
+          const wcs = wrap ? getComputedStyle(wrap) : null;
           const h1s = [...document.querySelectorAll('h1')]; const h2s = [...document.querySelectorAll('main h2')];
           const cs = (e) => (e ? { fam: getComputedStyle(e).fontFamily.split(',')[0].replace(/["']/g, '').toLowerCase(), w: getComputedStyle(e).fontWeight, px: parseFloat(getComputedStyle(e).fontSize) } : null);
           const bold = [...document.querySelectorAll('main p')].filter((p) => p.children.length === 1 && /^(STRONG|B)$/.test(p.firstElementChild.tagName) && p.textContent.trim() === p.firstElementChild.textContent.trim()).length;
@@ -256,6 +378,9 @@ await withServer(1, 'standard', async (server, c) => {
           }
         }
         await extraChecks(page, route, vp, c, tag);
+        await factsGrammar(page, vp, c, tag);
+        if (route.sp1) await sp1Checks(page, route, vp, c, tag);
+        if (route.pyv) await pyvChecks(page, route, vp, c, tag);
 
         // focus ring on the h1
         const ring = await page.evaluate(() => { const h = document.querySelector('h1'); if (!h) return null; h.setAttribute('tabindex', h.getAttribute('tabindex') ?? '-1'); h.focus(); const s = getComputedStyle(h); return { active: document.activeElement === h, os: s.outlineStyle, ow: parseFloat(s.outlineWidth), sh: s.boxShadow, tab: h.getAttribute('tabindex') }; });
@@ -270,6 +395,7 @@ await withServer(1, 'standard', async (server, c) => {
         await page.goto(`${server.nos}${route.nos}`, { waitUntil: 'load' });
         await heroSharpness(page, route, vp, c, `[${vp.name} ${route.nos}]`);
         await extraChecks(page, route, vp, c, `[${vp.name} ${route.nos}]`);
+        await factsGrammar(page, vp, c, `[${vp.name} ${route.nos}]`);
         await context.close();
       }
 
@@ -286,6 +412,10 @@ await withServer(1, 'standard', async (server, c) => {
           c.check(`${tag} every fact box is fully inside the first viewport`, f.facts.length > 0 && f.facts.every((b) => b.top >= 0 && b.bottom <= f.ih && b.left >= 0 && b.right <= vp.width), JSON.stringify(f.facts.find((b) => b.bottom > f.ih)));
           if (f.dd) c.check(`${tag} fact values are Fraunces 300`, f.dd.fam.includes('fraunces') && f.dd.w === '300', JSON.stringify(f.dd));
           if (vp.width === 1440 && route.photo) await factsContrast(page, tag, c);
+        }
+        if (vp.width === 1440 && route.sp1) {
+          const fold = await page.evaluate(() => { const r = (e) => (e ? e.getBoundingClientRect().bottom : null); const sf = document.querySelector('[data-doc-main] p'); const ab = document.querySelector('[data-doc-aside] a[class*="btn"], [data-doc-aside] a'); return { ih: innerHeight, facts: r(document.querySelector('[data-hero-facts]')), sub: r(document.querySelector('.nos-subnav')), sf: r(sf), ab: r(ab) }; });
+          c.check(`${tag} SP-1 at 1440x900 the hero facts, sub-nav, standfirst and aside button are above the fold (${JSON.stringify(fold)})`, [fold.facts, fold.sub, fold.sf, fold.ab].every((v) => v !== null && v <= fold.ih));
         }
         if (vp.width === 1440) {
           if (f.sub !== null) c.check(`${tag} sub-nav is visible (bottom ${Math.round(f.sub)} <= ${f.ih})`, f.sub <= f.ih);

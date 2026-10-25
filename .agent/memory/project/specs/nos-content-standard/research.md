@@ -58,7 +58,7 @@ Struck text (`~~x~~`) is deleted and never rendered; the gate asserts its absenc
 **Sanity edits for Brad/SAOC (no assertion requires them).** What to Expect: struck cloakroom block and `expectIntro`. Plan Your Visit: invented `planIntro` lede, appended directionsNote sentence, emergency chip label. FAQ: `faqIntro` (struck in her doc), the appended price list under Q10, and the invented contact note if Sanity-held. If a Sanity-held string trips a strike-absence assertion before Brad edits it, the lead adds a `strikeAbsenceExempt` entry to the route table and re-freezes `checks.sha256`.
 
 **Other notes.**
-- The FAQ has 13 categories in the Drive doc against 12 in `lib/data/faq-sections.ts`; D5 seed update is the lead's.
+- Corrected: the frozen FAQ doc has 12 categories (counted in goldens/sources/faq.md), the same count as `lib/data/faq-sections.ts`; names and order may still differ; D5 seed update is the lead's.
 - The nav label becomes "Plant Entry/Registration" (`nos-nav.ts:147` and every reuse); asserted by `mustPresentNav`/`mustAbsentNav`.
 - Gap under the sub-nav: DS-1 says 64px at >= 1024 and 48px below; #76 has 64/40. DS-1 wins; the dev edits that one rule.
 - The lead's full copy audit `.tmp/sandbox/leeann-1025/audit-report.md` does not exist on disk; the F3 fix list encodes the lead's message only.
@@ -84,7 +84,7 @@ Struck text (`~~x~~`) is deleted and never rendered; the gate asserts its absenc
 **Sanity edits for Brad/SAOC (this section is the list; no assertion requires any of it).**
 1. What to Expect: struck cloakroom block, `expectIntro`.
 2. Plan Your Visit: invented `planIntro` lede, appended directionsNote sentence, emergency chip label.
-3. FAQ: `faqIntro` (struck in her doc), the appended price list under Q10, the invented contact note and its buttons; and the FAQ SEED itself: 13 categories in her doc vs 12 in `lib/data/faq-sections.ts`. The dev may regenerate `content/show-pages/17-faq.json`, `scripts/seed-show-faq.ts` and `faq-sections.ts`; RUNNING the seed is SAOC's Sanity write. A9 fails loudly with `SEED PENDING` until it has run.
+3. FAQ: `faqIntro` (struck in her doc), the appended price list under Q10, the invented contact note and its buttons; and the FAQ SEED itself: 12 categories in her doc vs 12 in `lib/data/faq-sections.ts`. The dev may regenerate `content/show-pages/17-faq.json`, `scripts/seed-show-faq.ts` and `faq-sections.ts`; RUNNING the seed is SAOC's Sanity write. A9 fails loudly with `SEED PENDING` until it has run.
 4. Exhibitors: invented lede; CtaBand (code, but copy lives in Sanity if held there).
 5. /workshops: the "Programme" h2 if Sanity-held and not a Drive heading.
 If a Sanity-held string trips a strike-absence assertion before these edits, the lead adds `strikeAbsenceExempt` to the route table and re-freezes `checks.sha256`.
@@ -101,3 +101,27 @@ If a Sanity-held string trips a strike-absence assertion before these edits, the
 
 ## 11. Revision 4 (2026-10-25)
 PYV facts signed off by NOS Design: Dates, Venue, Host (all `buildShowFacts()`), no Stellenbosch or Cycle fact, TBC omitted, row only at >= 2 real facts; encoded in `route-table.json` `keyFacts` and gated (A7). /exhibitors joins FAQ-NAV (index aside + scroller, same gates). /sponsors EXCLUDED pending NOS Design's golden. frontend-design/SKILL.md read in full: no contradiction with the spec (see spec.md Additions). #76 owns the hero height and 64/48 gap in the lead's plan; this contract keeps the assertions, which pass once the dev has #76 merged (note: PG-1 4 is stated in this spec too; if #76 lands different numbers, the lead re-freezes).
+
+## 12. Revision 6 (2026-10-25): gate fixes from the dev's PYV step 1 (19021879)
+1. A8 h1 compare is case-insensitive for the h1 text only (route table `headings.h1CaseInsensitive`). 2. A8 `unmd` strips her single-asterisk italics. 3. A3 allows `components/nos-chrome/nos-nav.(ts|tsx)` (the label lives there). 4. A2 treats `git grep` exit 1 as no match. 5. A2 allows exactly `--doc-aside-top`, `--doc-index-top`, `--doc-scroll-margin` as new custom properties. 6. A3 counts a file as the dev's only when it differs from origin/main AND the #76 tip (`NOS_STD_REF76`, default feat/nos-pagehero) AND the pinned SAOC commit (`NOS_STD_REFSAOC`, default b2cff780); fetch both first.
+- **FAQ is 12 categories**, not 13 (counted from the frozen v1.0: General Show information through Policies and visitor information). The lead's 13 and FAQ-NAV's "13 category names" were wrong; spec.md, standard.json and the contract now say 12; the gate counts from the doc, so it never depended on the number.
+- **Real header:** 97px, sticky from 780 up, not sticky below 780. So `--doc-index-top` is 97 and the D7 breakpoint is 780, not 700 (spec.md, standard.json, gate comment re-aligned; the gate itself derives from the measured header, so it needed no number change). NOS Design to be told.
+
+## 13. Revision 7 (2026-10-25)
+FACTS-1 encoded (standard.json facts, spec.md item 2, A7 `factsGrammar`); hero caps with facts 420 at 1440 and 440 at 2056; D7 scroller top 97 from 780 up and env(safe-area-inset-top,0) below, aside top 100; crops-d sign-off recorded (NOS-DESIGN-SIGNOFF.txt is now in checks.sha256, so A1 also freezes it).
+
+## 14. Revision 8 (2026-10-25): FQ-G1 (the /faq golden, root comms.md lines 2815-2934)
+- **h1 ruling (NOS Design (b), minus the lede).** The /faq h1 is "Frequently asked questions" (faqTitle's default), max-width 14ch, `clamp(3rem,1.8rem+3.2vw,4.75rem)`, copy column `min(1080px,62%)` from 1024. Her doc title line "Frequently Asked Questions — National Orchid Show – Western Cape 2027" is the document's own heading and is not rendered; its second half repeats the header lockup, so it is no lede either. The hero holds crumb + h1 + FACTS-1 and has no lede. A8 (`dropBlocks`, `headings.h1`, `noLede`) and A9 assert this; A9's old expectation of her title line is gone.
+- **Numbers as figures.** Section h2 = `<span class="num">1.</span>` then the title; question summary = number span, question, 20px +/-. The A8 gate re-inserts the space after a leading "N." (`numberSpans`) because the spans concatenate in textContent.
+- **Gated (A9):** Q1 open on load; category 10 has no questions and its intro links "Plan your visit" to /plan-your-visit; at 390 the scroller links have 12px block padding; active index row weight 700; index card max-height calc(100vh - 124px).
+- **Owner flag for Lee-Ann's list (SAOC):** FAQ Q2 says the venue is "Hangar 25, Orca Aero Solutions, Stellenbosch Airfield"; the published show data (facts row, header, /tickets) says "The Hangar, Stellenbosch Flying Club". One is wrong. It stays verbatim in the page; neither source is edited here.
+
+## 15. Revision 9 (2026-10-25)
+- **Sponsors route un-excluded**; SP-1 encoded (route-table `sp1`/`sp1Sources`, A7 `sp1Checks`). Not asserted because the golden says it waits on data: the filled wall (no `showSponsor` records yet) and the prospectus (D-SP2). **Owner items:** D-SP1 sponsorship email (Lee-Ann's FAQ says 2027national@gmail.com, the old button says info@saoc.co.za; the build uses hers); the prospectus PDF or its text. The "theme h2" source text is not pinned beyond About v1.2; only the theme prose (L7) is asserted.
+- **Gate fixes:** gate-standard no longer crashes on a route with no `[data-doc-layout]` (it fails that route and carries on); check-static's `font-family` regex no longer backtracks (tested: `font-family: var(--serif)` passes, `Georgia, serif` trips); the "focus management kept" check is required only once #76 (`NOS_STD_REF76`, default feat/nos-pagehero) is an ancestor of HEAD, and prints a note until then. It will pass once the dev has #76 merged, provided #76's NosRouteScroll or hero still calls `.focus(`.
+
+## 16. Revision 10 (2026-10-25): sponsors review and PV-G1
+- Encoded NOS Design's review of dffa1b89 (root comms.md line 2936) and the PV-G1 golden (line 2964 to the end); details in spec.md "/plan-your-visit (PYV-1 + PV-G1)" and "Hero review items". A7 gained: hero serves the route's signed-off crop; P1 radius-0 + 22% mask on the photo box; breadcrumb in every hero; dates nowrap and venue at most 2 lines at 1440 and 2056; `sp1Checks` (no bullets, stacked wall head, 2px Button); `pyvChecks`. A8 gained: PYV nine h2, the venue and emergency strings, `mustAbsentText`.
+- **Reversal:** the earlier fix-list item "Show On-site first aid and show duty contact" is withdrawn by PV-G1 (pending copy, not shown). Owner item for SAOC/Lee-Ann: supply that contact and the venue map ("To be Provided").
+- **Owner item:** the venue card's pending map pin and site map.
+- The strip-tile `naturalWidth` numbers are the dev's to send to NOS Design; A7's sharpness formula covers the hero only.
