@@ -319,12 +319,17 @@ export function SubmitEventForm({ societies }: SubmitEventFormProps) {
           value={values.hostSocietyId}
           onChange={set('hostSocietyId')}
           className={INPUT_CLASS}
+          aria-invalid={errors.hostSocietyId ? 'true' : undefined}
+          aria-describedby={errors.hostSocietyId ? 'hostSocietyId-error' : undefined}
         >
           <option value="">Select society…</option>
           {societies.map((s) => (
             <option key={s.id} value={s.id}>{s.name}</option>
           ))}
         </select>
+        {errors.hostSocietyId && (
+          <TicketFieldAlert id="hostSocietyId-error">{errors.hostSocietyId}</TicketFieldAlert>
+        )}
       </div>
 
       <button
