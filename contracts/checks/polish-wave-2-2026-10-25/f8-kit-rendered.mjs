@@ -35,18 +35,18 @@ if (stale.length) finish('f8-kit-rendered', stale);
 
 const manifest = JSON.parse(readFileSync(resolve(repoRoot, 'lib/data/media-kit-manifest.json'), 'utf8'));
 const hrefs = (section) => manifest.items.filter((i) => i.section === section).map((i) => i.href);
-// The five labels below come from the NOS Design ruling and are NOT existing strings in the media kit data
-// (existing: lockup_label "Horizontal — dark type on light" ...); see goldens/README.md. One place to swap.
+// Variant labels are the manifest's existing lockup_label strings (lead ruling 2026-10-25: no paraphrase).
+// The heading "Lockups" is the ruling's word and is not an existing string; see goldens/README.md. One constant to swap.
 const LOCKUPS_HEADING = 'Lockups';
 const FAMILIES = [
   { id: 'full-colour', label: 'Full colour', rendition: 'colour', zip: 'full-colour' },
   { id: 'greyscale', label: 'Greyscale', rendition: 'greyscale', zip: 'greyscale' },
 ];
 const VARIANTS = [
-  { id: 'horizontal-on-light', label: 'Horizontal dark on light', orientation: 'horizontal', ground: 'light' },
-  { id: 'horizontal-on-dark', label: 'Horizontal light on dark', orientation: 'horizontal', ground: 'dark' },
-  { id: 'vertical-on-light', label: 'Vertical dark on light', orientation: 'vertical', ground: 'light' },
-  { id: 'vertical-on-dark', label: 'Vertical light on dark', orientation: 'vertical', ground: 'dark' },
+  { id: 'horizontal-on-light', label: 'Horizontal — dark type on light', orientation: 'horizontal', ground: 'light' },
+  { id: 'horizontal-on-dark', label: 'Horizontal — light type on dark', orientation: 'horizontal', ground: 'dark' },
+  { id: 'vertical-on-light', label: 'Vertical — dark type on light', orientation: 'vertical', ground: 'light' },
+  { id: 'vertical-on-dark', label: 'Vertical — light type on dark', orientation: 'vertical', ground: 'dark' },
 ];
 const MARK = {
   section: 'mark-only',
