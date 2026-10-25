@@ -37,11 +37,14 @@ async function sanityStamp() {
 // Everything a rendered page is built from, plus this gate's own code: a change under any of these
 // must invalidate the cache.
 const SOURCE_PATHS = `app components lib content sanity types public proxy.ts ${SPEC}/checks`;
+// Build and runtime config that changes the render; hashed by content (.env.local is gitignored,
+// so git diff never sees it; only its hash enters the key, never a value).
+const CONFIG_FILES = ['next.config.ts', 'postcss.config.mjs', 'package.json', 'pnpm-lock.yaml', '.env.local'];
 
 // Untracked source counts by name AND content: an edit to a new, uncommitted file must invalidate
 // the cached measurement just as an edit to a tracked one does.
 function untrackedDigest() {
-  const files = execSync(`git ls-files --others --exclude-standard -- ${SOURCE_PATHS}`).toString().split('\n').filter(Boolean);
+  const files = execSync(`git ls-files --others --exclude-standard -- ${SOURCE_PATHS}`).toString().split('\n').filter(Boolean).concat(CONFIG_FILES);
   const h = createHash('sha1');
   for (const f of files) h.update(f + '\0').update(existsSync(f) ? readFileSync(f) : '').update('\0');
   return h.digest('hex');

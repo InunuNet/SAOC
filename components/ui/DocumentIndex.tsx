@@ -81,7 +81,7 @@ export function DocumentIndex({ entries }: { entries: readonly DocumentIndexEntr
           href={`#${entry.id}`}
           aria-current={active === entry.id ? 'location' : undefined}
         >
-          {entry.number !== undefined ? <span data-index-number>{entry.number}</span> : null}
+          {entry.number !== undefined ? <><span data-index-number>{entry.number}</span>{' '}</> : null}
           {entry.label}
         </a>
       ))}
