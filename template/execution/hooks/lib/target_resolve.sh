@@ -76,48 +76,72 @@ EOF
 # operators (; && || | > >> < <<) as their own tokens so a target word can
 # be identified by its position immediately after a redirect operator
 # rather than by searching the whole string for one.
+#
+# Quote state carries across lines: a newline inside an open '...' or "..."
+# belongs to the current word and is emitted as \001 (the line-based W: protocol
+# cannot carry a real newline). Callers MUST decode \001 back to a newline
+# (${w//$'\001'/$'\n'}) so a quoted code blob keeps its line structure. A comment
+# (`#` at word start) ends at its line, as in the shell. An UNTERMINATED quote
+# fails closed: the whole input is re-lexed line by line, the old behaviour, so
+# every later line is classified as a command of its own. The same line-by-line
+# lex is forced with `-v oldlex=1`, which callers pass whenever the ORIGINAL
+# command contains `<<`: the line-based heredoc stripper runs first and cannot
+# tell a real heredoc from `<<EOF` inside a quoted string, so quote state after
+# stripping is not trustworthy.
 read -r -d '' TOKENIZE_AWK <<'EOF'
-{
-  line = $0
-  n = length(line)
-  i = 1
-  buf = ""
-  inbuf = 0
-  while (i <= n) {
-    c = substr(line, i, 1)
-    if (c == "\047") {
-      i++
-      while (i <= n && substr(line, i, 1) != "\047") { buf = buf substr(line, i, 1); i++; inbuf = 1 }
-      i++
-      continue
-    }
-    if (c == "\042") {
-      i++
-      while (i <= n && substr(line, i, 1) != "\042") {
-        cc = substr(line, i, 1)
-        if (cc == "\\" && i < n) { buf = buf substr(line, i + 1, 1); i += 2; inbuf = 1; continue }
-        buf = buf cc; i++; inbuf = 1
+function flushw() { if (inbuf) { out = out "W:" buf "\n"; buf = ""; inbuf = 0 } }
+function op(s) { flushw(); out = out "OP:" s "\n" }
+function lex(multi,   k, line, n, i, c, q, cc, cmt, ansi) {
+  buf = ""; inbuf = 0
+  for (k = 1; k <= N; k++) {
+    line = L[k]; n = length(line); i = 1; cmt = 0; esc = 0
+    while (i <= n) {
+      c = substr(line, i, 1)
+      if (multi && c == "\\" && i < n && index("\047\042$\\", substr(line, i + 1, 1)) > 0) {
+        buf = buf c substr(line, i + 1, 1); inbuf = 1; esc = i + 1; i += 2
+        continue
       }
-      i++
-      continue
+      if (c == "\047" || c == "\042") {
+        q = c
+        ansi = (multi && q == "\047" && i > 1 && substr(line, i - 1, 1) == "$" && esc != i - 1)
+        i++
+        while (1) {
+          if (i > n) {
+            if (!multi || cmt) break
+            if (k < N) { buf = buf "\001"; inbuf = 1; k++; line = L[k]; n = length(line); i = 1; continue }
+            bad = 1
+            return
+          }
+          cc = substr(line, i, 1)
+          if (cc == q) break
+          if (q == "\042" && cc == "\\" && i < n) { buf = buf substr(line, i + 1, 1); i += 2; inbuf = 1; continue }
+          if (ansi && cc == "\\" && i < n) { buf = buf cc substr(line, i + 1, 1); i += 2; inbuf = 1; continue }
+          buf = buf cc; i++; inbuf = 1
+        }
+        i++
+        continue
+      }
+      if (c == " " || c == "\t") { flushw(); i++; continue }
+      if (c == ";") { op(";"); i++; continue }
+      if (c == "&" && substr(line, i, 2) == "&&") { op("&&"); i += 2; continue }
+      if (c == "|" && substr(line, i, 2) == "||") { op("||"); i += 2; continue }
+      if (c == "|") { op("|"); i++; continue }
+      if (c == ">" && substr(line, i, 2) == ">>") { op(">>"); i += 2; continue }
+      if (c == ">") { op(">"); i++; continue }
+      if (c == "<" && substr(line, i, 2) == "<<") { op("<<"); i += 2; continue }
+      if (c == "<") { op("<"); i++; continue }
+      if (c == "#" && !inbuf) cmt = 1
+      buf = buf c; inbuf = 1; i++
     }
-    if (c == " " || c == "\t") {
-      if (inbuf) { print "W:" buf; buf = ""; inbuf = 0 }
-      i++
-      continue
-    }
-    if (c == ";") { if (inbuf) { print "W:" buf; buf = ""; inbuf = 0 } print "OP:;"; i++; continue }
-    if (c == "&" && substr(line, i, 2) == "&&") { if (inbuf) { print "W:" buf; buf = ""; inbuf = 0 } print "OP:&&"; i += 2; continue }
-    if (c == "|" && substr(line, i, 2) == "||") { if (inbuf) { print "W:" buf; buf = ""; inbuf = 0 } print "OP:||"; i += 2; continue }
-    if (c == "|") { if (inbuf) { print "W:" buf; buf = ""; inbuf = 0 } print "OP:|"; i++; continue }
-    if (c == ">" && substr(line, i, 2) == ">>") { if (inbuf) { print "W:" buf; buf = ""; inbuf = 0 } print "OP:>>"; i += 2; continue }
-    if (c == ">") { if (inbuf) { print "W:" buf; buf = ""; inbuf = 0 } print "OP:>"; i++; continue }
-    if (c == "<" && substr(line, i, 2) == "<<") { if (inbuf) { print "W:" buf; buf = ""; inbuf = 0 } print "OP:<<"; i += 2; continue }
-    if (c == "<") { if (inbuf) { print "W:" buf; buf = ""; inbuf = 0 } print "OP:<"; i++; continue }
-    buf = buf c; inbuf = 1; i++
+    op("NL")
   }
-  if (inbuf) print "W:" buf
-  print "OP:NL"
+}
+{ L[NR] = $0 }
+END {
+  N = NR
+  if (!oldlex) lex(1)
+  if (bad || oldlex) { out = ""; lex(0) }
+  printf "%s", out
 }
 EOF
 
@@ -181,6 +205,18 @@ read -r -d '' QUOTED_LITERAL_AWK <<'EOF'
   }
 }
 EOF
+
+# tr_oldlex_flag <raw-command> -- prints 1 when TOKENIZE_AWK must use its old
+# line-by-line lex, else 0. The quote-aware lex is trusted only on plain quoted
+# prose: any construct whose quoting the lexer cannot track exactly as bash
+# does (heredoc / here-string, backslash-newline, $'...', backtick, $(...))
+# forces the old lex, which fails closed.
+tr_oldlex_flag() {
+  case "$1" in
+    *'<<'*|*'\'$'\n'*|*"\$'"*|*'`'*|*'$('*) echo 1 ;;
+    *) echo 0 ;;
+  esac
+}
 
 # expand_target: literal ~ / $HOME / ${HOME} / known two-step variable
 # expansion, slash de-duplication and leading ./ stripping, then a bounded
@@ -286,22 +322,112 @@ PROTECTED_DIR_COMPONENTS=(".ssh" ".aws" ".gnupg" "secrets")
 # fixed candidate tested against it — `[[ "$literal" == $pattern ]]` lets
 # bash's own glob engine answer "could this token ever denote that name"
 # using pure pattern matching, with no filesystem access and no execution.
+#
+# A WILDCARD component is then judged by what it can actually reach, not by
+# the pattern alone, whenever the directory it is expanded in is knowable:
+# a bare `*` pattern-matches `.ssh` too, and treating that as a hit denied
+# `ls -d */` and `file .tmp/sandbox/x/*` (SAOC, 2026-10-08). When the
+# location is unknown -- a relative path in a command that changes directory
+# -- the pattern-only verdict stands, exactly as before.
 component_glob_hit() {
-  local path="$1" comp lit hit restore
+  local path="$1" comp lit hit restore prefix="" i
   local -a comps
   IFS='/' read -r -a comps <<< "$path"
-  for comp in "${comps[@]}"; do
-    [ -z "$comp" ] && continue
+  for i in "${!comps[@]}"; do
+    comp="${comps[$i]}"
+    if [ -z "$comp" ]; then
+      [ "$i" = 0 ] && prefix="/"
+      continue
+    fi
     for lit in "${PROTECTED_DIR_COMPONENTS[@]}"; do
       hit=1
       restore=0; shopt -q nocasematch || restore=1
       shopt -s nocasematch
       [[ "$lit" == $comp ]] && hit=0
       [ "$restore" = 1 ] && shopt -u nocasematch
-      [ "$hit" = 0 ] && return 0
+      if [ "$hit" = 0 ]; then
+        tr_has_glob "$comp" || return 0
+        # A shell glob never matches a leading dot implicitly: `*` and `?ssh`
+        # cannot reach `.ssh` unless the command turns dotglob on. Relied on
+        # inside the project only -- outside it, a tool with fnmatch-style
+        # matching (find -path, rsync filters) could still reach a dot-name,
+        # and a false positive there costs nothing.
+        if [ "${lit:0:1}" = "." ] && [ "${comp:0:1}" != "." ] \
+           && [ "${TR_DOTGLOB:-1}" = 0 ] && tr_glob_location_known "${prefix:-.}" \
+           && path_in_project "${prefix:-.}"; then
+          continue
+        fi
+        tr_wildcard_reaches "$prefix" "$lit" && return 0
+      fi
     done
+    case "$prefix" in
+      "")  prefix="$comp" ;;
+      "/") prefix="/$comp" ;;
+      *)   prefix="$prefix/$comp" ;;
+    esac
   done
   return 1
+}
+
+# TR_CWD_KNOWN -- set to 1 by the caller when a relative path in the command
+# resolves against this process's own working directory: the hook's cwd is
+# the session's, and the command does not change directory first. Unset or 0
+# means unknown, and every wildcard is then judged by its pattern alone.
+# TR_DOTGLOB -- set to 0 by the caller when the command cannot make a
+# wildcard match hidden names (no dotglob / GLOB_DOTS). Unset means it can.
+TR_GLOB_CAP=500
+
+# tr_has_glob <string> -- does it carry a shell wildcard character?
+tr_has_glob() {
+  case "$1" in *[\*\?\[]*) return 0 ;; esac
+  return 1
+}
+
+# tr_glob_location_known <path> -- can a wildcard in <path> be expanded
+# against the real filesystem and get the same answer the command would?
+tr_glob_location_known() {
+  case "$1" in
+    *'$'*|'~'*) return 1 ;;
+    /*)         return 0 ;;
+  esac
+  [ "${TR_CWD_KNOWN:-0}" = 1 ]
+}
+
+# tr_glob_expand <pattern> -- every filesystem match, one per line, with
+# case folded (APFS). Hidden names are included unless TR_DOTGLOB is 0: the
+# command could switch dotglob on itself. Pure pattern expansion -- nothing
+# is executed. Returns 1, printing nothing, when the match count exceeds
+# TR_GLOB_CAP, so a caller can fall back conservatively.
+tr_glob_expand() {
+  local pat="$1" restore m
+  local -a matches
+  restore=$(shopt -p nullglob dotglob nocaseglob)
+  shopt -s nullglob nocaseglob
+  if [ "${TR_DOTGLOB:-1}" = 0 ]; then shopt -u dotglob; else shopt -s dotglob; fi
+  local IFS=
+  # shellcheck disable=SC2206  # the unquoted expansion IS the glob
+  matches=( $pat )
+  eval "$restore"
+  [ "${#matches[@]}" -gt "$TR_GLOB_CAP" ] && return 1
+  for m in "${matches[@]}"; do printf '%s\n' "$m"; done
+  return 0
+}
+
+# tr_wildcard_reaches <prefix> <name> -- 0 when a wildcard component below
+# <prefix> could reach an entry called <name>, or when that cannot be known.
+tr_wildcard_reaches() {
+  local prefix="$1" lit="$2" dirs d
+  tr_glob_location_known "${prefix:-.}" || return 0
+  [ -z "$prefix" ] && prefix="."
+  if tr_has_glob "$prefix"; then
+    dirs=$(tr_glob_expand "$prefix") || return 0
+    while IFS= read -r d; do
+      [ -z "$d" ] && continue
+      { [ -e "$d/$lit" ] || [ -L "$d/$lit" ]; } && return 0
+    done <<< "$dirs"
+    return 1
+  fi
+  [ -e "$prefix/$lit" ] || [ -L "$prefix/$lit" ]
 }
 
 # brace_variants <token> -- conservative, single-group {a,b,...} expansion,
@@ -353,6 +479,17 @@ re_read_protpath_core='(^|/)\.ssh(/|$)|(^|/)\.aws(/|$)|(^|/)\.gnupg(/|$)|\.pem$|
 # checkout under $HOME is still somebody else's workspace, and the operator's
 # home is not the only place a foreign config can sit.
 re_read_protpath_settings='(^|/)\.claude/settings\.json$|(^|/)\.claude/settings\.local\.json$'
+
+# Name prefilters for the recursive-reach walk (floor-recursive-reach). A tree
+# of tens of thousands of entries cannot be sent through check_target one entry
+# at a time, so the walk keeps only entries whose NAME could be protected and
+# lets check_target (the single protected-path matcher) judge those. They are
+# deliberately loose supersets of the regexes above: matched case-folded by awk
+# (APFS folds case), with `[.]` instead of `\.` because awk -v would eat the
+# backslash. A prefilter that is too tight is a bypass; too loose only costs a
+# check_target call. RR_PREFILTER_WRITE adds the write-only names, for copies.
+RR_PREFILTER_READ='[.]ssh|[.]aws|[.]gnupg|secrets|[.]env|[.]sops[.]yaml|[.]pem$|[.]key$|settings[.]'
+RR_PREFILTER_WRITE="${RR_PREFILTER_READ}"'|init[.]sh|full_boot[.]sh|claude[.]md|agents[.]md|gemini[.]md|autonomy_matrix|enforcement_breakglass|hooks'
 
 # re_read_protpath — the union, unchanged in membership from before the split.
 # It is what the WRITE direction tests (a config file you may not read you

@@ -73,11 +73,20 @@ if [ ! -f "$MANIFEST" ]; then
 fi
 
 # --- 1. Parse manifest paths + categories with python3 (PyYAML available).
+#       .agent/update-manifest.local.yaml is the project's own classification
+#       (WORKSPACE/DERIVED only). The main manifest is HARNESS and self-syncs,
+#       so a project that classified its source there had the updater refuse
+#       the manifest (Alembic, 2026-10-20). A local entry may never be HARNESS
+#       or MERGE, nor overlap a HARNESS entry: it classifies, it never takes
+#       ownership. Problems print as "!ERR\t<message>".
 PARSED="$(python3 - <<'PY'
-import sys, yaml
+import os, sys, yaml
+LOCAL = ".agent/update-manifest.local.yaml"
+LOCAL_CATEGORIES = ("WORKSPACE", "DERIVED")
 with open(".agent/update-manifest.yaml") as f:
     m = yaml.safe_load(f) or {}
 paths = m.get("paths") or []
+harness = []
 for e in paths:
     if not isinstance(e, dict):
         continue
@@ -86,9 +95,44 @@ for e in paths:
         continue
     cat = e.get("category", "")
     strat = e.get("strategy", "") or ""
+    if cat == "HARNESS":
+        harness.append(p)
     print(f"{p}\t{cat}\t{strat}")
+
+def overlaps(a, b):
+    return a == b or a.startswith(b + "/") or b.startswith(a + "/")
+
+if os.path.exists(LOCAL):
+    try:
+        with open(LOCAL) as f:
+            lm = yaml.safe_load(f) or {}
+    except Exception as e:
+        print(f"!ERR\t{LOCAL}: not valid YAML ({type(e).__name__})")
+        sys.exit(0)
+    lpaths = lm.get("paths") if isinstance(lm, dict) else None
+    if not isinstance(lpaths, list):
+        print(f"!ERR\t{LOCAL}: needs a 'paths:' list of {{path, category}} entries")
+        sys.exit(0)
+    for e in lpaths:
+        raw = e.get("path") if isinstance(e, dict) else None
+        p = raw.rstrip("/") if isinstance(raw, str) else ""
+        if not p or any(c in p for c in "\t\n"):
+            print(f"!ERR\t{LOCAL}: entry needs a one-line string path: {e!r}")
+            continue
+        cat = e.get("category", "")
+        if cat not in LOCAL_CATEGORIES:
+            print(f"!ERR\t{LOCAL}: {p} is '{cat}'; a local entry must be WORKSPACE or DERIVED")
+            continue
+        clash = [h for h in harness if overlaps(p, h)]
+        if clash:
+            print(f"!ERR\t{LOCAL}: {p} overlaps HARNESS {', '.join(clash)}; the harness owns it")
+            continue
+        print(f"{p}\t{cat}\t")
 PY
 )"
+
+LOCAL_ERRORS="$(grep '^!ERR' <<< "$PARSED" | cut -f2- || true)"
+PARSED="$(grep -v '^!ERR' <<< "$PARSED" || true)"
 
 if [ -z "$PARSED" ]; then
   echo "ERROR: no paths parsed from $MANIFEST" >&2
@@ -194,16 +238,42 @@ while IFS= read -r path; do
   fi
 done <<< "$EXPECTED"
 
+# A gitignored path (.venv, __pycache__, build output) is never shipped or
+# updated, so it needs no classification. An ignored directory that still
+# holds a tracked (force-added) file is kept: that file is project source.
+if [ "${#UNCOVERED[@]}" -gt 0 ] && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  IGNORED_PATHS="$(printf '%s\n' "${UNCOVERED[@]}" | git check-ignore --stdin 2>/dev/null || true)"
+  if [ -n "$IGNORED_PATHS" ]; then
+    KEPT=()
+    for p in "${UNCOVERED[@]}"; do
+      if grep -Fxq "$p" <<< "$IGNORED_PATHS" && [ -z "$(git ls-files -- "$p" 2>/dev/null | head -1)" ]; then
+        continue
+      fi
+      KEPT+=("$p")
+    done
+    UNCOVERED=("${KEPT[@]+"${KEPT[@]}"}")
+  fi
+fi
+
 # --- 6. Report.
+if [ -n "$LOCAL_ERRORS" ]; then
+  while IFS= read -r e; do
+    echo "ERROR: $e" >&2
+  done <<< "$LOCAL_ERRORS"
+  exit 1
+fi
+
 if [ "${#UNCOVERED[@]}" -gt 0 ]; then
   echo "ERROR: $MANIFEST is missing classifications for the following paths:" >&2
   for p in "${UNCOVERED[@]}"; do
     echo "  - $p" >&2
   done
   echo "" >&2
-  echo "Add an entry under 'paths:' in $MANIFEST with one of:" >&2
-  echo "  category: HARNESS | WORKSPACE | DERIVED | MERGE" >&2
-  echo "(MERGE entries also need: strategy: line_union | json_deep_merge)" >&2
+  echo "Your own paths go in .agent/update-manifest.local.yaml (project-owned;" >&2
+  echo "$MANIFEST is HARNESS and every update replaces it):" >&2
+  echo "  paths:" >&2
+  echo "    - {path: src/, category: WORKSPACE}" >&2
+  echo "  category: WORKSPACE | DERIVED (generated, not committed)" >&2
   exit 1
 fi
 

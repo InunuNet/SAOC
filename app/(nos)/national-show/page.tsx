@@ -27,7 +27,9 @@ import { showPastShowsRoute } from '@/lib/data/past-shows-public';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { showClasses as staticClasses } from '@/lib/data/showClasses';
 import { cheapestAdmission, formatRand } from '@/components/nos/cheapest-admission';
-import { effectiveCapacity, resolveEffectivePrice } from '@/lib/checkout-reservation';
+import { buildHubCards, TICKET_CATEGORIES, type HubCmsTicketType } from '@/lib/data/ticket-hub-source';
+import { buildTicketOffers } from '@/lib/ticket-offers';
+import { DAY_VISITOR_SELLABLE_DAYS } from '@/lib/provisional-figures';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosPath } from '@/lib/nos-paths';
 import { SHOW_TITLE, SHOW_TITLE_EXPANDED } from '@/lib/show-title';
@@ -130,60 +132,47 @@ const EVENT_URL = nosUrl('/');
 const TICKET_PRODUCT_BASE_URL = nosUrl('/tickets');
 const OFFER_CURRENCY = 'ZAR';
 
-interface SanityAdmissionTicketType {
+interface SanityHubTicketType extends HubCmsTicketType {
   _id: string;
-  name: string;
-  slug: string | null;
   price: number;
-  regularPrice?: number | null;
-  earlyBirdCutoff?: string | null;
-  capacity: number;
-  releasedQuantity?: number | null;
-  demo?: boolean | null;
 }
 
 /**
- * One Offer per publicly listable admission ticket type, priced through the SAME
- * `resolveEffectivePrice()` checkout itself uses — so an early-bird cutoff passing can never
- * leave the rich result advertising a price the purchase flow will not honour. A type with
- * no resolvable effective price (early-bird expired, no regular price set) or no slug gets
- * NO offer rather than a guessed one. Prices reach the served page through the existing
- * `revalidate = 60` ISR bound plus the /api/revalidate Sanity webhook — never baked in.
+ * One Offer per product the tickets hub displays, derived from the hub's own card pipeline
+ * (buildHubCards, then buildTicketOffers) so the rich result and the hub can never disagree:
+ * siblings collapse to the one the hub shows, programme and field-trip products are included,
+ * a demo product never appears, and a card the hub marks sold out reads SoldOut. Prices are the
+ * ones checkout would charge now (resolveEffectivePrice, inside the card builder), so an
+ * early-bird cutoff passing never leaves the rich result advertising a price the purchase flow
+ * will not honour. Prices reach the served page through the existing `revalidate = 60` ISR bound
+ * plus the /api/revalidate Sanity webhook, never baked in.
  *
- * `availability` is derived from Sanity's released quantity alone, deliberately NOT from
- * live Firestore sold counts: this page is prerendered, and
- * contracts/contract-build-without-secrets.yaml A3/A7 forbid a prerendered page reaching
- * firebase-admin (and require this page keep `revalidate = 60`). The per-product
- * /tickets/<slug> page each offer URL points at is the surface that renders live inventory.
+ * Stock is Sanity-only (a released quantity of 0 reads SoldOut), deliberately NOT live Firestore
+ * sold counts: this page is prerendered, and contracts/contract-build-without-secrets.yaml
+ * A3/A7 forbid a prerendered page reaching firebase-admin (and require this page keep
+ * `revalidate = 60`). A pool sold out in Firestore reads SoldOut on /national-show/tickets, which
+ * is request-time; the per-product /tickets/<slug> page each offer URL points at renders live
+ * inventory.
  */
-function buildAdmissionOffers(
-  ticketTypes: SanityAdmissionTicketType[],
-  now: Date
-): NationalShowOffer[] {
-  return ticketTypes.flatMap<NationalShowOffer>((ticketType) => {
-    if (ticketType.demo || !ticketType.slug) return [];
-
-    const price = resolveEffectivePrice({
-      price: ticketType.price,
-      regularPrice: ticketType.regularPrice ?? null,
-      earlyBirdCutoff: ticketType.earlyBirdCutoff ?? null,
-      now,
-    });
-    if (price === null) return [];
-
-    const released = effectiveCapacity(ticketType.capacity, ticketType.releasedQuantity);
-
-    return [
-      {
-        name: ticketType.name,
-        price,
-        priceCurrency: OFFER_CURRENCY,
-        availability: released > 0 ? 'InStock' : 'SoldOut',
-        validThrough: toShowIsoDate(ticketType.earlyBirdCutoff),
-        url: `${TICKET_PRODUCT_BASE_URL}/${ticketType.slug}`,
-      },
-    ];
+function buildShowOffers(ticketTypes: SanityHubTicketType[], now: Date): NationalShowOffer[] {
+  const { cards } = buildHubCards({
+    cmsTypes: ticketTypes,
+    salesOpen: true,
+    soldByType: {},
+    soldByDay: null,
+    stockKnown: true,
+    now,
+    showDays: DAY_VISITOR_SELLABLE_DAYS,
   });
+  const cutoffBySlug = new Map(ticketTypes.map((t) => [t.slug, t.earlyBirdCutoff]));
+  return buildTicketOffers(cards).map((offer) => ({
+    name: offer.name,
+    price: offer.price,
+    priceCurrency: OFFER_CURRENCY,
+    availability: offer.availability,
+    validThrough: toShowIsoDate(cutoffBySlug.get(offer.slug)),
+    url: `${TICKET_PRODUCT_BASE_URL}/${offer.slug}`,
+  }));
 }
 
 interface SanityShowClass {
@@ -278,7 +267,7 @@ export default async function NationalShowPage() {
   const visitorCards = (await showPastShowsRoute())
     ? VISITOR_CARDS
     : VISITOR_CARDS.filter((card) => card.href !== PAST_SHOWS_HREF);
-  const [sanityClasses, sanityShow, visitorInfo, salesState, admissionTicketTypes] =
+  const [sanityClasses, sanityShow, visitorInfo, salesState, hubTicketTypesByCategory] =
     await Promise.all([
       sanityFetch<SanityShowClass[]>({ query: showClassesQuery, tags: ['showClass', 'sanity'] }),
       sanityFetch<SanityNationalShow>({
@@ -293,12 +282,18 @@ export default async function NationalShowPage() {
         query: nationalShowSalesQuery,
         tags: ['nationalShow', 'sanity'],
       }),
-      sanityFetch<SanityAdmissionTicketType[]>({
-        query: activeTicketTypesByCategoryQuery,
-        params: { category: 'admission' },
-        tags: ['ticketType', 'sanity'],
-      }),
+      Promise.all(
+        TICKET_CATEGORIES.map((category) =>
+          sanityFetch<SanityHubTicketType[]>({
+            query: activeTicketTypesByCategoryQuery,
+            params: { category },
+            tags: ['ticketType', 'sanity'],
+          })
+        )
+      ),
     ]);
+  const admissionTicketTypes = hubTicketTypesByCategory[0];
+  const hubTicketTypes = hubTicketTypesByCategory.flatMap((rows) => rows ?? []);
 
   // Sanity wins in every fallback below. The dataset value always comes first and the
   // literal is only the right-hand side — the reverse order would mask a published
@@ -347,10 +342,7 @@ export default async function NationalShowPage() {
     venueName: sanityShow?.venue?.name,
     venueAddress: formatVenueAddress(sanityShow?.venue),
     url: EVENT_URL,
-    offers:
-      salesState?.salesOpen === true
-        ? buildAdmissionOffers(admissionTicketTypes ?? [], new Date())
-        : [],
+    offers: salesState?.salesOpen === true ? buildShowOffers(hubTicketTypes, new Date()) : [],
   });
 
   const classes: ShowClass[] =

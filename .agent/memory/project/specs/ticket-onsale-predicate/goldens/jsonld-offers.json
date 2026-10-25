@@ -1,0 +1,56 @@
+{
+  "_doc": "Hub-derived JSON-LD offers for catalogue.json. Scenario soldByType is the Firestore sold ledger the hub would read. Offers = one per displayed hub product backed by a real ticketType (the synthetic per-session 'workshops' card has no product page and no offer), availability SoldOut iff the hub card state is soldOut. Order is not asserted.",
+  "scenarios": [
+    {
+      "name": "nothing sold",
+      "soldByType": {},
+      "offers": {
+        "early-bird": "InStock",
+        "weekend-pass-early-bird": "InStock",
+        "vip": "InStock",
+        "sunset-cocktails-single": "InStock",
+        "saoc-symposium": "InStock",
+        "wosa-conference": "InStock"
+      }
+    },
+    {
+      "name": "early-bird pool exhausted, weekend pass and VIP sold out",
+      "soldByType": {
+        "early-bird": 500,
+        "weekend-pass": 300,
+        "vip": 200
+      },
+      "offers": {
+        "day-visitor": "InStock",
+        "weekend-pass": "SoldOut",
+        "vip": "SoldOut",
+        "sunset-cocktails-single": "InStock",
+        "saoc-symposium": "InStock",
+        "wosa-conference": "InStock"
+      }
+    },
+    {
+      "name": "pooled sold-out is read from the pool not the SKU: sold on the sibling alone",
+      "soldByType": {
+        "weekend-pass-early-bird": 500
+      },
+      "offers": {
+        "day-visitor": "InStock",
+        "weekend-pass": "InStock",
+        "vip": "InStock",
+        "sunset-cocktails-single": "InStock",
+        "saoc-symposium": "InStock",
+        "wosa-conference": "InStock"
+      }
+    }
+  ],
+  "neverOffered": [
+    "qa-fixture-ticket",
+    "fictional-test-show-general-admission",
+    "demo-general-admission"
+  ],
+  "salesClosed": {
+    "salesOpen": false,
+    "offers": {}
+  }
+}

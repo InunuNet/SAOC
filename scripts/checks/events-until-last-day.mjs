@@ -22,7 +22,7 @@ const single = { date: '2026-11-10T06:00:00.000Z', endDate: null };
 check('a single-day event is listed all day', isUpcoming(single, at('2026-11-10T21:30:00Z')));
 check('a single-day event is gone at 00:30 SAST next day', !isUpcoming(single, at('2026-11-10T22:30:00Z')));
 check('start of the SAST day for 22:30Z is the next day', sastStartOfDay(at('2026-11-10T22:30:00Z')) === '2026-11-10T22:00:00.000Z');
-check('params carry only todayStart', Object.keys(upcomingEventsParams(at('2026-11-10T10:00:00Z'))).join() === 'todayStart');
+check('params carry todayStart and todayDate', Object.keys(upcomingEventsParams(at('2026-11-10T10:00:00Z'))).join() === 'todayStart,todayDate');
 
 // Values that are not canonical ".000Z": an offset end, a no-millisecond end, and a date-only last day.
 const offset = { date: '2026-11-10T08:00:00+02:00', endDate: '2026-11-13T23:00:00+02:00' };
