@@ -29,3 +29,6 @@ F8 ruling (b), "Lockups picker":
 
 ## Round 3 (NOS Design, 2026-10-25, via lead)
 F8: the merged section's h2 is "Full colour · Greyscale" (built from the two existing headings); the toggle uses the same two family names; variants are the verbatim lockup_label values; "Lockups" is dropped. #full-colour and #greyscale preselect the family.
+
+## Round 4 (NOS Design, 2026-10-25, via lead; WCAG 2.4.4)
+F8 (a): the "Full colour · Greyscale" section had two identical "Download this section (zip)" links. Ruling: ONE zip link that follows the family toggle, the selected family in its accessible name, visible text unchanged.

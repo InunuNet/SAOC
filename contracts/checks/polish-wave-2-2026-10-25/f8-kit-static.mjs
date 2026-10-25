@@ -44,6 +44,9 @@ if (/heading="Lockups"|>\s*Lockups\s*</.test(body + lockup)) failures.push('the 
 if (/<KitSection\b[^>]*id="(full-colour|greyscale)"/.test(body)) failures.push('the separate Full colour and Greyscale sections are still there');
 for (const anchor of ['full-colour', 'greyscale']) if (!new RegExp(`id="${anchor}"`).test(body)) failures.push(`the "On this page" anchor id="${anchor}" must stay (inside the Lockups section) so the existing jump links deep-link to the picker`);
 for (const key of ["kit.sectionZips['full-colour']", 'kit.sectionZips.greyscale']) if (!body.includes(key)) failures.push(`MediaKitPageBody dropped ${key} (both family zips stay in the Lockups section)`);
+const lockSection = body.match(/<KitSection\b[^>]*id="lockups"[\s\S]*?<\/KitSection>/)?.[0] ?? '';
+if ((lockSection.match(/<ZipLink\b/g) ?? []).length > 1 || (lockSection.match(/\bzip=\{/g) ?? []).length > 1) failures.push('the merged section renders more than one zip link; round 4: ONE link that follows the family toggle (WCAG 2.4.4)');
+
 for (const [href, label] of [['#full-colour', 'Full colour'], ['#greyscale', 'Greyscale']]) if (!new RegExp(`href: '${href}', label: '${label}'`).test(body)) failures.push(`JUMP_ITEMS lost { href: '${href}', label: '${label}' }`);
 const pickers = body.match(/<OptionPicker\b/g) ?? [];
 if (pickers.length !== 2) failures.push(`MediaKitPageBody renders ${pickers.length} <OptionPicker>, want 2`);

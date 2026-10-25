@@ -3,8 +3,8 @@
 //   - page height at 390 is at most 10,500px (NOS Design round 2; 9,000 withdrawn; the gated page measured 21,157px)
 //   - the merged section (NOS Design round 2; h2 "Full colour · Greyscale", built from the two existing headings): Full colour and Greyscale are one section: a family radiogroup (Full colour | Greyscale)
 //     and a variant radiogroup (4 labels), one visible preview card that follows both, its download buttons naming file and
-//     format, the selected chips distinct without colour (weight and ring), both family zips inside the section with the
-//     family in their accessible name, every lockup download still in the DOM, and the old #full-colour / #greyscale jump
+//     format, the selected chips distinct without colour (weight and ring), ONE section zip link that follows the family toggle (round 4:
+//     href switches, accessible name carries the family, visible text unchanged), every lockup download still in the DOM, and the old #full-colour / #greyscale jump
 //     anchors deep-linking with that family preselected
 //   - every visible preview image, once scrolled into view, has naturalWidth > 0 (Mark-only, the Quick start card, the four
 //     Do/Don't illustrations, the National Show picker preview, the Disa emblem)
@@ -138,16 +138,26 @@ try {
             if (hash !== `#lockups-${f.id}-${v.id}`) failures.push(`${where}: hash is "${hash}", want "#lockups-${f.id}-${v.id}"`);
           }
         }
-        // Both family zips live in the section, each named for its family; every lockup download is still in the DOM.
-        const zipLinks = await page.$$eval('#lockups a[href$=".zip"]', (as) => as.map((a) => ({ href: a.getAttribute('href'), name: (a.textContent ?? '').replace(/\s+/g, ' ').trim() })));
-        for (const f of FAMILIES) {
-          const want = hrefs(f.zip).find((h) => h.endsWith('.zip'));
-          const z = zipLinks.find((l) => l.href === want);
-          if (!z) failures.push(`${tag} #lockups: the ${f.label} zip (${want}) is not in the section`);
-          else if (!z.name.includes(f.label)) failures.push(`${tag} #lockups: the ${f.label} zip link reads "${z.name}", it must name its family`);
+        // Round 4 (WCAG 2.4.4): ONE section-zip link in the section, following the family toggle: its href switches, its
+        // accessible name carries the selected family, its visible text stays "Download this section (zip)".
+        const zipCount = await page.locator('#lockups a[href$=".zip"]').count();
+        if (zipCount !== 1) failures.push(`${tag} #lockups: ${zipCount} zip links in the section, want exactly 1 (it follows the family toggle)`);
+        else {
+          for (const [fi, f] of FAMILIES.entries()) {
+            await family.locator('label').nth(fi).click();
+            const z = await page.locator('#lockups a[href$=".zip"]').evaluate((a) => {
+              const visible = [...a.childNodes].filter((n) => !(n.nodeType === 1 && n.classList.contains('sr-only'))).map((n) => n.textContent ?? '').join('').replace(/\s+/g, ' ').trim();
+              return { href: a.getAttribute('href'), visible, name: (a.getAttribute('aria-label') ?? a.textContent ?? '').replace(/\s+/g, ' ').trim() };
+            });
+            const want = hrefs(f.zip).find((h) => h.endsWith('.zip'));
+            if (z.href !== want) failures.push(`${tag} #lockups ${f.label}: the zip link goes to ${z.href}, want ${want}`);
+            if (z.visible !== 'Download this section (zip)') failures.push(`${tag} #lockups ${f.label}: the zip link's visible text is "${z.visible}", want "Download this section (zip)"`);
+            const other = FAMILIES.find((o) => o !== f);
+            if (!z.name.includes(f.label) || z.name.includes(other.label)) failures.push(`${tag} #lockups ${f.label}: the zip link's accessible name is "${z.name}", want it to name "${f.label}" and not "${other.label}"`);
+          }
         }
         const present = new Set(await page.$$eval('#lockups a[href]', (as) => as.map((a) => a.getAttribute('href'))));
-        for (const f of FAMILIES) for (const h of hrefs(f.zip)) if (!present.has(h)) failures.push(`${tag} #lockups: manifest download ${h} is not in the DOM`);
+        for (const f of FAMILIES) for (const h of hrefs(f.zip).filter((x) => !x.endsWith('.zip'))) if (!present.has(h)) failures.push(`${tag} #lockups: manifest download ${h} is not in the DOM`);
       }
     }
 
