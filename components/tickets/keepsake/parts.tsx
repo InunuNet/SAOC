@@ -13,7 +13,7 @@ import type { CountDisplay, KeepsakeCardVm } from './types';
 
 const EMBLEM_WIDTH_PX = 45;
 const EMBLEM_HEIGHT_PX = 30;
-const STUB_PHOTO_SIZES = '(max-width: 700px) 50vw, 300px';
+const STUB_PHOTO_SIZES = '(max-width: 700px) 100vw, 421px';
 
 type FieldStyle = CSSProperties & { '--nk-field': string };
 

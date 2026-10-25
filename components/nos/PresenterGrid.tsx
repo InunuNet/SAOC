@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 import { parseBio } from '@/lib/view-models/presenter-bio';
@@ -50,12 +49,13 @@ function PresenterImage({
   presenter: PresenterCardViewModel;
 }) {
   return (
-    <Image
+    // eslint-disable-next-line @next/next/no-img-element -- Sanity CDN image, srcset built in presenter-photo.ts
+    <img
       src={photo.src}
+      srcSet={photo.srcSet}
       width={photo.width}
       height={photo.height}
       alt={`Portrait of ${presenter.name}`}
-      unoptimized
     />
   );
 }

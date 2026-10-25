@@ -14,6 +14,7 @@ interface CropBox {
 
 export interface PresenterPhoto {
   src: string;
+  srcSet: string;
   width: number;
   height: number;
 }
@@ -45,37 +46,46 @@ export const PRESENTER_PHOTO_CROPS: Record<string, CropBox> = {
   },
 };
 
-// 2x the 160px card plate.
-const MAX_REQUEST_WIDTH = 320;
-// Codi's upscale ceiling: never request wider than 1.3x the crop's own width.
-const MAX_UPSCALE = 1.3;
+// The card plate is 160 CSS px (presenters.css .pc-photo); the 2x candidate doubles it.
+const PLATE_WIDTH_1X = 160;
+const PLATE_WIDTH_2X = 320;
 const ASPECT_WIDTH = 4;
 const ASPECT_HEIGHT = 5;
+// Sanity asset refs end -<W>x<H>-<ext>: the asset's own original width.
+const ASSET_REF_WIDTH = /-(\d+)x\d+-[a-z]+$/;
 
 function heightFor(width: number): number {
   return Math.round((width * ASPECT_HEIGHT) / ASPECT_WIDTH);
+}
+
+// Widest the CDN can honestly serve: the crop rect (cut from the original) for a mapped asset,
+// else the width in the asset ref. An unparseable ref caps at the 1x plate, never upscaling blind.
+function availableWidth(assetRef: string | null, crop: CropBox | undefined): number {
+  if (crop) return crop.x1 - crop.x0;
+  const parsed = assetRef ? Number(ASSET_REF_WIDTH.exec(assetRef)?.[1]) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : PLATE_WIDTH_1X;
+}
+
+function urlAt(url: string, crop: CropBox | undefined, width: number): string {
+  const height = heightFor(width);
+  if (!crop) return `${url}?w=${width}&h=${height}&fit=max&auto=format`;
+  // Commas are percent-encoded so a naive srcset split on "," cannot cut the URL in half.
+  const rect = [crop.x0, crop.y0, crop.x1 - crop.x0, crop.y1 - crop.y0].join('%2C');
+  return `${url}?rect=${rect}&w=${width}&h=${height}&fit=max&auto=format`;
 }
 
 export function presenterPhoto(url: string | null, assetRef: string | null): PresenterPhoto | null {
   if (!url) return null;
 
   const crop = assetRef ? PRESENTER_PHOTO_CROPS[assetRef] : undefined;
-  if (!crop) {
-    const height = heightFor(MAX_REQUEST_WIDTH);
-    return {
-      src: `${url}?w=${MAX_REQUEST_WIDTH}&h=${height}&fit=crop&auto=format`,
-      width: MAX_REQUEST_WIDTH,
-      height,
-    };
-  }
-
-  const cropWidth = crop.x1 - crop.x0;
-  const cropHeight = crop.y1 - crop.y0;
-  const width = Math.min(MAX_REQUEST_WIDTH, Math.floor(cropWidth * MAX_UPSCALE));
-  const height = heightFor(width);
+  const available = availableWidth(assetRef, crop);
+  const width = Math.min(PLATE_WIDTH_1X, available);
+  const src = urlAt(url, crop, width);
+  const src2x = urlAt(url, crop, Math.min(PLATE_WIDTH_2X, available));
   return {
-    src: `${url}?rect=${crop.x0},${crop.y0},${cropWidth},${cropHeight}&w=${width}&h=${height}&auto=format`,
+    src,
+    srcSet: `${src} 1x, ${src2x} 2x`,
     width,
-    height,
+    height: heightFor(width),
   };
 }
