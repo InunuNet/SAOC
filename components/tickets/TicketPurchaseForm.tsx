@@ -290,6 +290,9 @@ export function TicketPurchaseForm({
           )}
         </button>
       </div>
+      <p className="nk-policy">
+        <Link href="/refunds">Refunds</Link> <span aria-hidden="true">·</span> <Link href="/privacy">Privacy</Link>
+      </p>
       <p
         id={BUY_HINT_ID}
         ref={hintRef}
@@ -299,9 +302,6 @@ export function TicketPurchaseForm({
         className="nk-hint"
       >
         {hintVisible ? TICKET_COPY.buyHint : ''}
-      </p>
-      <p className="nk-policy">
-        <Link href="/refunds">Refunds</Link> <span aria-hidden="true">·</span> <Link href="/privacy">Privacy</Link>
       </p>
     </form>
   );
