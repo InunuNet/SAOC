@@ -8,8 +8,12 @@ The scanner exits 1 for BOTH a confirmed finding and an uncaught crash, so the s
 marker is the only ground truth for "dirty" versus "error". The repo is located from this
 file, never from cwd, so a fixture project still finds the scanner and node_modules.
 
+Exit 1 is reserved for a confirmed finding. Output is captured as bytes and a decode failure,
+like any unexpected exception, is an infrastructure error (exit 2), never a finding.
+
 CONTRACT_GATE_RESIDUE_FIXTURE (test-only) points the scan at a local JSON file instead of
-the live Sanity dataset. Ported from the pinned contract.py's _run_dataset_residue_scan.
+the live Sanity dataset. RESIDUE_SCANNER_OVERRIDE (test-only) names an executable run in place
+of the node scanner, with the same arguments. Ported from the pinned contract.py's _run_dataset_residue_scan.
 """
 import os
 import subprocess
@@ -20,6 +24,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SCANNER_TIMEOUT_SECONDS = 120
 RESIDUE_CONFIRMED_MARKER = "FAIL: found"
 RESIDUE_FIXTURE_ENV_VAR = "CONTRACT_GATE_RESIDUE_FIXTURE"
+RESIDUE_SCANNER_ENV_VAR = "RESIDUE_SCANNER_OVERRIDE"
 EXIT_CLEAN = 0
 EXIT_FINDING = 1
 EXIT_ERROR = 2
@@ -27,7 +32,11 @@ BANNER = "=" * 78
 
 
 def _scanner_command() -> list:
-    cmd = ["node", "--import", "tsx/esm", "scripts/scan-dataset-residue.ts"]
+    override = os.environ.get(RESIDUE_SCANNER_ENV_VAR)
+    if override:
+        cmd = [override]
+    else:
+        cmd = ["node", "--import", "tsx/esm", "scripts/scan-dataset-residue.ts"]
     fixture = os.environ.get(RESIDUE_FIXTURE_ENV_VAR)
     if fixture:
         cmd += ["--fixture", fixture]
@@ -44,19 +53,25 @@ def _error(detail: str) -> int:
     return EXIT_ERROR
 
 
-def main() -> int:
+def run_scan() -> int:
     try:
         result = subprocess.run(_scanner_command(), cwd=str(REPO_ROOT), capture_output=True,
-                                text=True, timeout=SCANNER_TIMEOUT_SECONDS)
+                                timeout=SCANNER_TIMEOUT_SECONDS)
     except (OSError, subprocess.SubprocessError) as exc:
         return _error(f"scan-dataset-residue.ts could not run: {type(exc).__name__}: {exc}")
-    if result.stdout:
-        print(result.stdout.rstrip())
-    if result.stderr:
-        print(result.stderr.rstrip(), file=sys.stderr)
+    try:
+        stdout = result.stdout.decode("utf-8")
+        stderr = result.stderr.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        return _error(f"scanner output is not valid UTF-8 ({exc.reason}); exit code "
+                      f"{result.returncode} is not trusted")
+    if stdout:
+        print(stdout.rstrip())
+    if stderr:
+        print(stderr.rstrip(), file=sys.stderr)
     if result.returncode == 0:
         return EXIT_CLEAN
-    if RESIDUE_CONFIRMED_MARKER in result.stdout:
+    if RESIDUE_CONFIRMED_MARKER in stdout:
         print(BANNER)
         print("RESIDUE ALERT: the dataset holds sentinel/test residue. The gate refuses to "
               "proceed against a poisoned dataset.")
@@ -66,6 +81,13 @@ def main() -> int:
         return EXIT_FINDING
     return _error(f"scan-dataset-residue.ts exited {result.returncode} without confirming a "
                   "real residue finding")
+
+
+def main() -> int:
+    try:
+        return run_scan()
+    except Exception as exc:  # exit 1 is a finding; anything unexpected must be exit 2
+        return _error(f"unexpected {type(exc).__name__}: {exc}")
 
 
 if __name__ == "__main__":

@@ -10,7 +10,8 @@ A contract is grandfathered only when it is listed in the baseline AND pinned AN
 sha256 of its live bytes equals the pin; an edit since pinning forfeits the grandfather.
 The baseline is read only when the linter reports a finding. The contract key is its path
 relative to cwd (the project root, which the gate sets). The repo is located from this
-file, never from cwd. Ported from the pinned contract.py's _run_triad_coverage_preflight.
+file, never from cwd. Linter output is captured as bytes: a decode failure, like any
+unexpected exception, is an infrastructure error (exit 2), never a finding. Ported from the pinned contract.py's _run_triad_coverage_preflight.
 """
 import hashlib
 import os
@@ -92,15 +93,21 @@ def run_linter(contract_path: str) -> int:
     print(f"--- Verification-triad coverage preflight: {linter} ---")
     try:
         # Invoked by its own path, not sys.executable, so a non-Python stub runs under its shebang.
-        result = subprocess.run([str(linter), contract_path], capture_output=True, text=True,
+        result = subprocess.run([str(linter), contract_path], capture_output=True,
                                 timeout=LINTER_TIMEOUT_SECONDS)
     except (OSError, subprocess.SubprocessError) as exc:
         raise PreflightError(f"could not run {linter} against {contract_path} -- "
                              f"{type(exc).__name__}: {exc}")
-    if result.stdout:
-        print(result.stdout.rstrip())
-    if result.stderr:
-        print(result.stderr.rstrip(), file=sys.stderr)
+    try:
+        stdout = result.stdout.decode("utf-8")
+        stderr = result.stderr.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise PreflightError(f"{linter} output is not valid UTF-8 ({exc.reason}); exit code "
+                             f"{result.returncode} is not trusted")
+    if stdout:
+        print(stdout.rstrip())
+    if stderr:
+        print(stderr.rstrip(), file=sys.stderr)
     if result.returncode not in LINTER_VALID_EXIT_CODES:
         raise PreflightError(f"{linter} exited {result.returncode}, outside its documented "
                              f"classification contract {LINTER_VALID_EXIT_CODES}")
@@ -132,9 +139,11 @@ def main(argv: list) -> int:
         return EXIT_ERROR
     try:
         return check(argv[1])
-    except PreflightError as exc:
+    except Exception as exc:  # exit 1 is a finding; anything unexpected must be exit 2
+        detail = str(exc) if isinstance(exc, PreflightError) else \
+            f"unexpected {type(exc).__name__}: {exc}"
         print(BANNER, file=sys.stderr)
-        print(f"TRIAD PREFLIGHT ERROR: {exc}", file=sys.stderr)
+        print(f"TRIAD PREFLIGHT ERROR: {detail}", file=sys.stderr)
         print("This is an infrastructure failure, not a finding: the triad preflight fails "
               "CLOSED because it has no external dependency, so a missing or crashing linter "
               "or an unreadable baseline is a real regression.", file=sys.stderr)

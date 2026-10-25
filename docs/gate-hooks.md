@@ -12,6 +12,7 @@ Nothing here extends the pinned behaviour; the hooks port it.
 | `.agent/contract_kinds.json` | The registry the stock gate reads: two project kinds and three gate hooks. Project-owned; updates never touch it. |
 | `scripts/gate-hooks/residue_hook.py` | Dataset-residue guard, registered as `residue-pre` and `residue-post`. |
 | `scripts/gate-hooks/triad_hook.py` | Verification-triad coverage preflight, registered as `triad-coverage`. |
+| `scripts/gate-hooks/checks/verify_registry_present.py` | Registry tripwire (see below). |
 | `scripts/gate-hooks/checks/prove_gate_hooks.py` | Scenario runner for the proof (reads the oracle in the spec goldens). |
 | `scripts/gate-hooks/checks/verify_harness_untouched.sh` | Fails if a harness-owned path changed versus base commit `5165668d` outside the allowlist. |
 | `scripts/gate-hooks/checks/fixture_project.sh` | Sourced helper that builds a throwaway project with an absolute-path copy of the registry. |
@@ -34,6 +35,26 @@ Unchanged and still in `execution/`: `verify_triad_coverage.py` (the linter),
 hooks run once after the phases, even when an assertion failed. The hook's cwd is the project root
 (the nearest ancestor of the contract holding `.agent/`).
 
+## Registry tripwire
+
+The stock gate treats a missing or unreadable `.agent/contract_kinds.json` as "no hooks" and
+proceeds, which would silently disable both guards. `verify_registry_present.py [registry-path]`
+exits 0 only if the file exists, parses as a JSON object, declares exactly the gate hooks of
+`registry.expected.json` by name with the expected `stage`, `on_error` and `command`, and declares
+the two project kinds as expected. Any violation is printed and exits 1; a usage error exits 2. CI
+runs it in the `dataset-residue-guard` job of `.github/workflows/ci.yml`, before the live scan.
+
+## Infrastructure failures never exit 1
+
+Exit 1 from a hook means a confirmed finding and nothing else. Both hooks capture subprocess output
+as bytes; output that is not valid UTF-8 is an infrastructure error, and the exit code of such a run
+is not trusted. Each hook's `main()` also catches any unexpected exception, prints the matching
+banner (`RESIDUE GUARD ERROR` / `TRIAD PREFLIGHT ERROR`) and exits 2. So the residue hook fails
+open (warning, gate continues) and the triad hook fails closed (gate exits 2).
+
+Test-only: `RESIDUE_SCANNER_OVERRIDE` names an executable run in place of the node scanner, with the
+same arguments (`--fixture <x>` when `CONTRACT_GATE_RESIDUE_FIXTURE` is set). Real runs never set it.
+
 ## residue-pre / residue-post
 
 Runs `node --import tsx/esm scripts/scan-dataset-residue.ts` from the repo root (located from the
@@ -45,7 +66,7 @@ stdout marker `FAIL: found` is the only ground truth.
 |---|---|---|---|
 | exit 0 | scanner output | 0 | proceeds |
 | nonzero, stdout has `FAIL: found` | `RESIDUE ALERT` | 1 | pre: gate exits 1 before any assertion. post: gate exits 1 if it would otherwise be 0 |
-| nonzero without the marker, timeout (120s), or spawn failure | `RESIDUE GUARD ERROR` | 2 | `on_error: open`: warning, gate continues |
+| nonzero without the marker, invalid UTF-8 output, timeout (120s), or spawn failure | `RESIDUE GUARD ERROR` | 2 | `on_error: open`: warning, gate continues |
 
 ## triad-coverage
 
@@ -53,7 +74,7 @@ Takes the contract path. Runs `execution/verify_triad_coverage.py` (or
 `TRIAD_LINTER_SCRIPT_OVERRIDE`) by its own path with a 30s timeout.
 
 - Linter exit 0 (PASS or EXEMPT): hook exits 0; the baseline is never read.
-- Linter exit outside 0/1, missing script, spawn failure or timeout: `TRIAD PREFLIGHT ERROR`, exit 2.
+- Linter exit outside 0/1, missing script, spawn failure, timeout or invalid UTF-8 output: `TRIAD PREFLIGHT ERROR`, exit 2.
 - Linter exit 1: the baseline is consulted. Baseline file is `TRIAD_BASELINE_FILE` else
   `execution/triad-baseline-exempt.txt`; pin file is `TRIAD_BASELINE_HASH_FILE` else
   `execution/triad-baseline-exempt.sha256`. An env override replaces the default. A missing baseline
