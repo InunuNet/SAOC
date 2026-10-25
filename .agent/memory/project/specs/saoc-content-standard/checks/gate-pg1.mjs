@@ -332,13 +332,19 @@ async function runSelftest(browser, server) {
     } },
   ];
   const fails = [];
-  // Cache key: rewriting an untracked source file under the same name must change the key.
+  // Cache key: rewriting an untracked source file under the same name must change the untracked part
+  // of the key, and an unchanged file must not. Tested on untrackedDigest() itself: stateKey() also
+  // folds in the Sanity stamp, which is the clock when Sanity is unreadable, so a whole-key compare
+  // could differ for that reason alone.
   const probe = 'components/.pg1-selftest-untracked.txt';
   try {
     writeFileSync(probe, 'a');
-    const before = await stateKey();
+    const a1 = untrackedDigest();
+    const a2 = untrackedDigest();
     writeFileSync(probe, 'b');
-    if (await stateKey() === before) fails.push('selftest "untracked content changes the cache key": key unchanged after an untracked file\'s content changed');
+    const b = untrackedDigest();
+    if (a1 !== a2) fails.push('selftest "untracked content changes the cache key": digest differs for unchanged content, so it is not a content hash');
+    if (b === a1) fails.push('selftest "untracked content changes the cache key": digest unchanged after an untracked file\'s content changed');
   } finally { rmSync(probe, { force: true }); }
   for (const c of cases) {
     const route = ROUTES.find((r) => r.id === c.route);
