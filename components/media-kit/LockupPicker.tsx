@@ -8,7 +8,8 @@
 // #lockups-<family>-<variant>; the "On this page" anchors #full-colour and #greyscale preselect the
 // family (variant defaults to the first). Every card is server-rendered and passed in; this
 // component only chooses which one is shown. ONE zip link follows the family toggle: same visible
-// text, href and accessible name switch with the family. Without JS the default family's zip is
+// text, href and accessible name switch with the family. It follows both radio groups in DOM order,
+// so a keyboard user reaches the zip after choosing, without going back. Without JS the default family's zip is
 // the link, and a <noscript> link keeps every other family's zip reachable.
 // =============================================================
 
@@ -97,32 +98,6 @@ export function LockupPicker({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center gap-x-4">
-        <a
-          href={zip.href}
-          download
-          aria-label={`${ZIP_LABEL.section} — ${selectedFamily.label}`}
-          className={ZIP_LINK_CLASS}
-        >
-          {ZIP_LABEL.section}
-        </a>
-        <span className={ZIP_META_CLASS}>{zip.meta}</span>
-        <noscript>
-          {families
-            .filter((f) => f.id !== families[0].id)
-            .map((f) => (
-              <a
-                key={f.id}
-                href={zips[f.id].href}
-                download
-                aria-label={`${ZIP_LABEL.section} — ${f.label}`}
-                className={ZIP_LINK_CLASS}
-              >
-                {ZIP_LABEL.section}
-              </a>
-            ))}
-        </noscript>
-      </div>
       <div role="radiogroup" aria-label={familyLabel} className="mb-4 flex flex-wrap">
         {families.map((option) => (
           <label key={option.id} className="relative -ml-px block cursor-pointer first:ml-0">
@@ -161,6 +136,32 @@ export function LockupPicker({
             <span className={CHIP_CLASS}>{option.label}</span>
           </label>
         ))}
+      </div>
+      <div className="mb-6 flex flex-wrap items-center gap-x-4">
+        <a
+          href={zip.href}
+          download
+          aria-label={`${ZIP_LABEL.section} — ${selectedFamily.label}`}
+          className={ZIP_LINK_CLASS}
+        >
+          {ZIP_LABEL.section}
+        </a>
+        <span className={ZIP_META_CLASS}>{zip.meta}</span>
+        <noscript>
+          {families
+            .filter((f) => f.id !== families[0].id)
+            .map((f) => (
+              <a
+                key={f.id}
+                href={zips[f.id].href}
+                download
+                aria-label={`${ZIP_LABEL.section} — ${f.label}`}
+                className={ZIP_LINK_CLASS}
+              >
+                {ZIP_LABEL.section}
+              </a>
+            ))}
+        </noscript>
       </div>
       {families.flatMap((f) =>
         variants.map((v) => {
