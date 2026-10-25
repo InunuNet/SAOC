@@ -1,6 +1,6 @@
 // Shared helpers for the nos-content-standard gates: goldens, a `next start` on a port this gate owns (killed by exact child PID),
 // a Playwright launcher and a failure collector. Run from the repo root after build.sh.
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import net from 'node:net';
 import { createRequire } from 'node:module';
@@ -8,7 +8,9 @@ import { existsSync, mkdirSync, openSync, readFileSync } from 'node:fs';
 
 const SPEC = '.agent/memory/project/specs/nos-content-standard';
 export const STD = JSON.parse(readFileSync(`${SPEC}/goldens/standard.json`, 'utf8'));
-const ALL_ROUTES = JSON.parse(readFileSync(`${SPEC}/goldens/route-table.json`, 'utf8')).routes;
+const TABLE = JSON.parse(readFileSync(`${SPEC}/goldens/route-table.json`, 'utf8'));
+const ALL_ROUTES = TABLE.routes;
+export const RETIRED = TABLE.retired ?? [];
 export const EXCLUDED = ALL_ROUTES.filter((r) => r.excluded);
 export const ROUTES = ALL_ROUTES.filter((r) => !r.excluded);
 export const CROPS = JSON.parse(readFileSync(`${SPEC}/goldens/crops/crop-proposals.json`, 'utf8')).crops;
@@ -40,6 +42,13 @@ export function startServer(offset, { preview = true } = {}) {
     NEXT_PUBLIC_NOS_SITE_URL: `http://nos.localhost:${port}`, NEXT_PUBLIC_SAOC_SITE_URL: `http://saoc.localhost:${port}`,
   };
   delete env.BETA_PASSWORD_WALL_OFF;
+  // A retired or redirected route builds its target from a site-URL variable; every NEXT_PUBLIC_*URL the process or the dotenv files define must
+  // name the gate's own origin, or the redirect leaves the gate server (ERR_CONNECTION_REFUSED). SAOC-named variables get the saoc origin.
+  const urlKeys = new Set(Object.keys(process.env).filter((k) => /^NEXT_PUBLIC_.*URL$/.test(k)));
+  for (const f of ['.env', '.env.local', '.env.production', '.env.production.local']) { if (existsSync(f)) for (const m of readFileSync(f, 'utf8').matchAll(/^\s*(NEXT_PUBLIC_[A-Z0-9_]*URL)\s*=/gm)) urlKeys.add(m[1]); }
+  for (const k of urlKeys) { if (/^NEXT_PUBLIC_(FIREBASE|SANITY)/.test(k)) continue; env[k] = /SAOC/.test(k) ? `http://saoc.localhost:${port}` : `http://nos.localhost:${port}`; }
+  env.SITE_URL = `http://nos.localhost:${port}`;
+
   if (preview) env.SHOW_PLACEHOLDER_PREVIEW = 'true'; else delete env.SHOW_PLACEHOLDER_PREVIEW;
   const log = openSync(`${LOG_DIR}/next-start-${port}.log`, 'w');
   const proc = spawn('node_modules/.bin/next', ['start', '-p', String(port)], { stdio: ['ignore', log, log], env });
@@ -89,4 +98,24 @@ export async function withServer(offset, label, body, opts) {
   server.proc.on('exit', (code, signal) => { if (!c.done) { c.fail(new Error(`next start exited early (code ${code}, signal ${signal}); see ${LOG_DIR}/next-start-${server.port}.log`)); console.error(`next start exited early (code ${code}, signal ${signal})`); } });
   try { await waitReady(server); await body(server, c); } catch (e) { c.fail(e); console.error(e); }
   c.finish(server);
+}
+
+/** page.goto that never aborts the gate: a cross-origin redirect (or a refused connection after one) is a clear route FAIL. Returns the response, or null
+ after recording the failure on the collector. */
+export async function gotoRoute(page, server, path, c, tag, opts = { waitUntil: 'load' }) {
+  let res = null;
+  try { res = await page.goto(`${server.nos}${path}`, opts); } catch (e) {
+    c.check(`${tag} navigation stays on the gate origin ${server.nos}`, false, `${String(e.message).split('\n')[0]} (a cross-origin redirect or a retired route; check the route is live and its redirect target uses the gate origin)`);
+    return null;
+  }
+  const landed = new URL(page.url()).origin;
+  if (landed !== new URL(server.nos).origin) { c.check(`${tag} navigation stays on the gate origin ${server.nos}`, false, `redirected to ${page.url()}`); return null; }
+  return res;
+}
+
+/** SAOC's html scroll-padding-top stacks on the h2 scroll-margin, so a clicked heading lands near 216px (a known SAOC defect, not a NOS workaround case). The
+ * landing upper bound is required only once SAOC's fix commit (NOS_STD_SAOC_SCROLLFIX) is an ancestor of HEAD; until then an overshoot is a loud note. */
+export function saocScrollFixLanded() {
+  const ref = process.env.NOS_STD_SAOC_SCROLLFIX; if (!ref) return false;
+  try { execFileSync('git', ['merge-base', '--is-ancestor', ref, 'HEAD']); return true; } catch { return false; }
 }

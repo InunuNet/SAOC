@@ -11,6 +11,15 @@ const ALLOWED = [
   /^app\/\(nos\)\/national-show\/nos-(theme|structure)\.css$/,
   /^public\/images\/nos-hero-[A-Za-z0-9-]+\.jpg$/,
   /^lib\/hero-source-widths\.json$/,
+  /^components\/tickets\/keepsake\/parts\.tsx$/,
+  /^components\/nos\/(PresenterSection|PresenterGrid)\.tsx$/,
+  /^app\/\(marketing\)\/national-show\/(symposium|international-guests)\/[^/]+\.tsx$/,
+  /^lib\/view-models\/load-presenters\.ts$/,
+  /^content\/show-pages\/06-saoc-symposium\.json$/,
+  /^content\/show-pages\/07-wosa-conference\.json$/,
+  /^lib\/view-models\/presenter-order\.ts$/,
+  /^app\/\(marketing\)\/national-show\/wosa-conference\/[^/]+\.tsx$/,
+  /^sanity\/schemas\/documents\/conferencePresenter\.ts$/,
   /^lib\/data\/faq-sections\.ts$/,
   /^content\/show-pages\/17-faq\.json$/,
   /^scripts\/(cut-hero-crops\.[a-z]+|seed-show-faq\.ts)$/,
@@ -25,7 +34,7 @@ const run = (args) => { try { return execFileSync('git', args, { encoding: 'utf8
 // The dev branch carries commits that are not the dev's: origin/main, #76 and SAOC's shared API. A file counts as the dev's only when it differs from
 // origin/main AND from the #76 tip AND from the pinned SAOC commit (override with NOS_STD_REF76 / NOS_STD_REFSAOC). A file merge-resolved
 // between #76 and SAOC would also show; that is rare and the allowed set covers the NOS files either way.
-const REFS = ['origin/main', process.env.NOS_STD_REF76 ?? 'feat/nos-pagehero', process.env.NOS_STD_REFSAOC ?? 'b2cff780'];
+const REFS = ['origin/main', process.env.NOS_STD_REF76 ?? 'feat/nos-pagehero', process.env.NOS_STD_REFSAOC ?? '72f75151'];
 const sets = REFS.map((r) => run(['diff', '--name-only', r]));
 const missing = REFS.filter((_, i) => sets[i] === null);
 if (missing.length) { console.error(`nos-content-standard diff scope FAILED: cannot resolve ref(s) ${missing.join(', ')} (git fetch origin; fetch #76)`); process.exit(1); }

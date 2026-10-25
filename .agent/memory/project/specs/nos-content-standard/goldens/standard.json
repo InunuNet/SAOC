@@ -72,13 +72,13 @@
    "1440": 39
   },
   "tolerancePx": 1.5,
-  "note": "NOS Design (a), FINAL: h3 = --fs-lg 25px Fraunces 400 at every width; h2 below 768 = the v4 .h2 clamp floor, 32px at 390, weight 300; line-height h2 1.15, h3 1.25. .doc-h2 (0,2,0) beats .nos-theme h2. The only h4 in the standard is PYV-1's (Karla 16/600 ink, 24px above, 8px below).",
+  "note": "NOS Design (a), FINAL: h3 = --fs-lg 25px Fraunces 400 at every width; h2 below 768 = the v4 .h2 clamp floor, 32px at 390, weight 300; line-height h2 1.15, h3 1.25. .doc-h2 (0,2,0) beats .nos-theme h2. The only h4 in the standard is PYV-1's (Karla 16/600 ink, 24px above, 8px below). h3 exemption: h3s inside an aside or card component named by a golden (PV-G1 venue card [data-venue-card], 1.25rem; [data-doc-aside], [data-ticket-card]) are not measured; prose h3s stay 25px.",
   "h2LineHeight": 1.15,
   "h3LineHeight": 1.25,
   "mobileScale": "16/25/32 (body/h3/h2 at 390)"
  },
  "hero": {
-  "minHeightClamp": "PG-1 4: >=768 .nos-hero-inner min-height clamp(320px,22vw,380px), align-content start, padding-block clamp(48px,4vw,72px); <768 the 2:1 photo band stays and the copy follows at padding-block 32px",
+  "minHeightClamp": "PG-1 4: >=768 .nos-hero-inner min-height clamp(320px,22vw,380px), align-content start, padding-block clamp(40px,3.2vw,56px) (FQ-G1/PV-G1/SP-1; replaces #76's 48-72); <768 the 2:1 photo band stays and the copy follows at padding-block 32px",
   "photoBox": {
    "atOrAbove1024": {
     "leftPctOfHero": 38,
@@ -113,9 +113,9 @@
    "min": 320,
    "vw": 0.22,
    "max": 380,
-   "padMin": 48,
-   "padVw": 0.04,
-   "padMax": 72,
+   "padMin": 40,
+   "padVw": 0.032,
+   "padMax": 56,
    "mobilePad": 32,
    "mobileBandAspect": 2
   },

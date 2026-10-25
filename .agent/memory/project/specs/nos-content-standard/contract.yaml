@@ -1,6 +1,6 @@
 # nos-content-standard (supersedes nos-faq-redesign), revision 2 (2026-10-25). Authority: NOS Design rulings DS-1 r2, (a)/(b)/(c), PYV-1, FAQ-NAV, PG-1, D7, built FROM the
 # Brad-approved v4 golden; then Brad's directives (research.md section 1). PRECONDITION: the dev branches from the #76 tip (feat/nos-pagehero) and merges the SAOC shared API at
-# b2cff780 (components/ui/{DocumentLayout,DocumentIndex,PageHero}.tsx, lib/hero-facts.ts); NOS consumes components/ui/* and never edits it (A2 diffs it). Build order: layout (PYV
+# 72f75151 (components/ui/{DocumentLayout,DocumentIndex,PageHero}.tsx, lib/hero-facts.ts); NOS consumes components/ui/* and never edits it (A2 diffs it). Build order: layout (PYV
 # first, then FAQ, then the rest), type and Drive heading mapping, key facts, hero crops last (A10 gates the crops only).
 # Run every command from the repo root of the dev's worktree. Browser gates start their own `next start` on NOS_STD_PORT (default 3091) + an offset and kill that exact child PID;
 # they refuse a busy port. They read live Sanity data (apphosting.yaml ids), not a fixture. None runs with BETA_PASSWORD_WALL_OFF set. A9 fails loudly with SEED PENDING until
@@ -43,7 +43,7 @@ assertions:
       description: frozen goldens and check scripts are unmodified since the architect wrote them (the route table's drive versions and photo/keyFacts entries are edited by the lead only, with this step re-run)
       command: shasum -a 256 -c .agent/memory/project/specs/nos-content-standard/goldens/checks.sha256
     - id: A2
-      description: static checks - components/ui/** and lib/hero-facts.ts are the pinned shared API (unchanged from b2cff780) and no NosDocument fork exists, NosHero renders dl[data-hero-facts] through normaliseHeroFacts, every document route renders through DocumentLayout and no route uses ShowJumpChips, the :focus-visible rule is wrapped in :where, the crop files exist at the exact proposal size, ShowFaqList has no chip row, no legend and one data-faq-card, added CSS has no custom property, raw hex, font, side border, dashed rail, 999 radius or hard shadow
+      description: static checks - components/ui/** and lib/hero-facts.ts are the pinned shared API (unchanged from 72f75151) and no NosDocument fork exists, NosHero renders dl[data-hero-facts] through normaliseHeroFacts, every document route renders through DocumentLayout and no route uses ShowJumpChips, the :focus-visible rule is wrapped in :where, the crop files exist at the exact proposal size, ShowFaqList has no chip row, no legend and one data-faq-card, added CSS has no custom property, raw hex, font, side border, dashed rail, 999 radius or hard shadow
       command: node .agent/memory/project/specs/nos-content-standard/checks/check-static.mjs
     - id: A3
       description: diff against origin/main limited to the NOS hero and nav files, the FAQ components, route pages, the two NOS css files, crop files and their cut script, the FAQ content files, docs, e2e and this spec; nothing under components/ui or lib/hero-facts.ts

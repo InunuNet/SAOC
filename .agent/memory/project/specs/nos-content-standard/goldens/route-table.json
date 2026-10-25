@@ -29,7 +29,7 @@
     "mode": "listed",
     "mustPresent": [
      "The National Orchid Show is a prestigious event that takes please every three years. The Show moves between provinces on this cycle which allows the local societies the opportunity to host the delegates, judges and the public.",
-     "Show dates \u2013 for public entrance"
+     "Show dates – for public entrance"
     ],
     "strikeAbsence": "none",
     "strikeNote": "The struck cloakroom block and expectIntro are Sanity content: listed under Sanity edits in research.md; no assertion requires the Sanity change. Opening hours stay as Sanity has them (SAOC)."
@@ -96,7 +96,7 @@
     "h1": "Plan your visit",
     "h1CaseInsensitive": true,
     "lede": "Discover Stellenbosch, Cape Town, the Cape Winelands and the greater Western Cape",
-    "standfirst": "Join us for the National Orchid Show \u2013 Western Cape 2027!",
+    "standfirst": "Join us for the National Orchid Show – Western Cape 2027!",
     "h2": [
      "The venue",
      "1. Getting Here",
@@ -187,7 +187,7 @@
     "mustAbsent": [],
     "strikeNote": "Her title and her question and section numbering render as written (h2 '1. General Show information'; summaries '1. What is ...?'). The invented faqContactNote and its buttons, and the price list appended to Q10, must be absent; the struck faqIntro too unless Sanity holds it (then exempt it and list it).",
     "dropBlocks": [
-     "Frequently Asked Questions \u2014 National Orchid Show \u2013 Western Cape 2027"
+     "Frequently Asked Questions — National Orchid Show – Western Cape 2027"
     ],
     "numberSpans": true,
     "note": "FQ-G1: her title line is the document's own heading and is NOT rendered (its second half repeats the header lockup); the h1 is the existing title. Section and question numbers are rendered as separate figure spans, so the gate re-inserts the space after a leading 'N.' before matching."
@@ -231,57 +231,6 @@
    "keyFacts": null
   },
   {
-   "nos": "/sa-exhibitors",
-   "group": "exhibit",
-   "kind": "document",
-   "aside": "content",
-   "drive": {
-    "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/sa-exhibitors.md",
-    "version": "v1.1",
-    "sha256": "bd5020ac5e40ff767879d13d9c3fb87d6fc0c727a302886e23e31b7463a4707d",
-    "driveStorePath": "content/drive-source/National Show/4. South African Exhibitors/1.1 Exhibitors - South African Exhibitors/v1.1/content.md",
-    "mode": "range",
-    "from": "Showcasing the Finest in South African Orchid Growing",
-    "until": "Whether you are building your first orchid collection",
-    "strikeAbsence": "none",
-    "mustAbsentSelectors": [
-     "[data-nos-cta-band]"
-    ],
-    "strikeNote": "SX-G1: the standfirst (her L3) and her four paragraphs are asserted verbatim, plus her aside heading 'Available at the Show' and its six items. Her directory (List of Exhibitors / Short List of Invited Vendors, 21 names) is NOT asserted as rendered: it is gated (D-SX1) and the names must be absent until the gate opens. Her notes ('Every nursery has:', 'You could even include:') are not copy.",
-    "mustPresent": [
-     "Available at the Show",
-     "Species orchids",
-     "Hybrids",
-     "Miniatures",
-     "South American species",
-     "Asian species",
-     "Growing supplies"
-    ]
-   },
-   "photo": "PK1",
-   "keyFacts": null,
-   "headings": {
-    "h1": "South African exhibitors",
-    "h1CaseInsensitive": false,
-    "standfirst": "Showcasing the Finest in South African Orchid Growing"
-   },
-   "sx": {
-    "directory": "closed",
-    "note": "D-SX1: her list is headed 'invited', not confirmed. closed = the empty state only (SP-1 empty panel on the gold wall: emblem, the existing ABSENCE_STATEMENT, the Vendor application button) and none of the 21 names rendered; open (set by the lead once Lee-Ann says yes) = her 21 rows exactly, in order, from her doc or the CMS, never hand-typed. D-SX2: her spellings (Carniverous plants, Rays Retail Nursary, Gods Green Gifts) are unconfirmed and are not corrected.",
-    "absenceStatementSource": "the ABSENCE_STATEMENT constant in the sa-exhibitors page.tsx, read at gate time"
-   },
-   "subnav": {
-    "items": [
-     "South African exhibitors",
-     "International guests",
-     "Exhibitor entry guide",
-     "Exhibitors and vendors"
-    ],
-    "current": "South African exhibitors"
-   },
-   "sxG1": "NOS Design golden SX-G1, root comms.md from line 3269"
-  },
-  {
    "nos": "/international-guests",
    "group": "exhibit",
    "kind": "document",
@@ -292,13 +241,35 @@
    "driveNote": "No Drive document in the store.",
    "subnav": {
     "items": [
-     "South African exhibitors",
      "International guests",
      "Exhibitor entry guide",
      "Exhibitors and vendors"
     ],
     "current": "International guests"
-   }
+   },
+   "heroCap": {
+    "1440": 420,
+    "2056": 440
+   },
+   "ig": {
+    "h1": "International guests",
+    "lede": "Profiles of international speakers, judges, exhibitors and researchers attending the Show.",
+    "note": "IG-G1 (NOS Design, comms.md L3350). Listing rule: country set and not South Africa, any profile type; no country, no listing. Hooks the dev must add: [data-guest-profile] per row, [data-guest-portrait] around the portrait, [data-guest-role] on the role label, [data-guest-filter] on the role filter. Demo values from her shots (Ten Shin Gardens Co., Ltd.; The Exotic Plant Company; data-demo) must never appear. PR-1 (comms.md L3387): portrait box 320 max, photo rule source >= 640 (Crous 690 shows, Tibbs 201 does not).",
+    "demoValues": [
+     "Ten Shin Gardens",
+     "The Exotic Plant Company"
+    ],
+    "minPortraitSourceW": 640,
+    "boxMax": 320,
+    "nameTag": "H2",
+    "mustHavePhoto": [
+     "Crous"
+    ],
+    "mustNotHavePhoto": [
+     "Tibbs"
+    ]
+   },
+   "noUpscale": true
   },
   {
    "nos": "/exhibitors",
@@ -317,7 +288,6 @@
    },
    "subnav": {
     "items": [
-     "South African exhibitors",
      "International guests",
      "Exhibitor entry guide",
      "Exhibitors and vendors"
@@ -329,19 +299,51 @@
    "nos": "/vendors",
    "group": "exhibit",
    "kind": "document",
-   "aside": "index",
-   "drive": null,
+   "aside": "content",
+   "drive": {
+    "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/sa-exhibitors.md",
+    "version": "v1.1",
+    "sha256": "bd5020ac5e40ff767879d13d9c3fb87d6fc0c727a302886e23e31b7463a4707d",
+    "driveStorePath": "content/drive-source/National Show/4. South African Exhibitors/1.1 Exhibitors - South African Exhibitors/v1.1/content.md",
+    "mode": "range",
+    "from": "Showcasing the Finest in South African Orchid Growing",
+    "until": "Whether you are building your first orchid collection",
+    "strikeAbsence": "none",
+    "mustAbsentSelectors": [
+     "[data-nos-cta-band]"
+    ],
+    "strikeNote": "SX-G1 delta onto /vendors (NOS Design, comms.md L3350): her standfirst (L3) and four paragraphs verbatim, plus her aside heading 'Available at the Show' and its six items. Her directory (21 invited names) is NOT rendered: gated (D-SX1; Q-D6/uu, hhhh). Her notes ('Every nursery has:', 'You could even include:') are not copy.",
+    "mustPresent": [
+     "Available at the Show",
+     "Species orchids",
+     "Hybrids",
+     "Miniatures",
+     "South American species",
+     "Asian species",
+     "Growing supplies"
+    ]
+   },
    "photo": "S1b",
    "keyFacts": null,
    "subnav": {
     "items": [
-     "South African exhibitors",
      "International guests",
      "Exhibitor entry guide",
      "Exhibitors and vendors"
     ],
     "current": "Exhibitors and vendors"
-   }
+   },
+   "headings": {
+    "h1": "Exhibitors and vendors",
+    "h1CaseInsensitive": false,
+    "standfirst": "Showcasing the Finest in South African Orchid Growing"
+   },
+   "sx": {
+    "directory": "closed",
+    "note": "D-SX1: the invited-vendor wall stays hidden until Q-D6/uu and hhhh are answered; none of her 21 names renders. D-SX2 spellings unconfirmed, never corrected. No empty-state statement is asserted (the ABSENCE_STATEMENT read was removed with the delta).",
+    "noLedeText": "Meet the specialist nurseries"
+   },
+   "sxG1": "SX-G1 delta onto /vendors, NOS Design root comms.md L3350: crop S1b, crumb 'National Show - Exhibitors and vendors', h1 .is-long, hero 394/415, no lede (the 'Meet the specialist nurseries' line is not in BUILDER_BRIEF_SUMMARIES, so it is builder copy)"
   },
   {
    "nos": "/programme",
@@ -360,13 +362,13 @@
    "pgG1": "NOS Design golden PG-G1, root comms.md from line 3125. Supersedes PG-1 item 2's 'aside is the h2 index' for this route: the golden is a full-width board with two sections, no aside.",
    "pgSources": {
     "file": "what-to-expect.md",
-    "h2": "Show dates \u2013 for public entrance",
+    "h2": "Show dates – for public entrance",
     "line": "Thursday 23 to Sunday 26 September 2027",
     "days": [
      {
       "wd": "Thursday",
       "d": "23",
-      "hours": "VIP Ticket Holders \u2013 14.00 to 19.00"
+      "hours": "VIP Ticket Holders – 14.00 to 19.00"
      },
      {
       "wd": "Friday",
@@ -387,7 +389,7 @@
      }
     ],
     "h2s": [
-     "Show dates \u2013 for public entrance",
+     "Show dates – for public entrance",
      "Tickets"
     ],
     "workshopsRow": {
@@ -412,19 +414,150 @@
    "nos": "/symposium",
    "group": "programme",
    "kind": "document",
-   "aside": "index",
+   "aside": "content",
    "drive": null,
    "photo": "D1",
-   "keyFacts": null
+   "keyFacts": null,
+   "noUpscale": true,
+   "heroCap": {
+    "1440": 420,
+    "2056": 440
+   },
+   "heroMeasured": {
+    "1440": 382,
+    "2056": 402
+   },
+   "ig": {
+    "event": true,
+    "h1": "Symposium",
+    "nameTag": "H3",
+    "count": 5,
+    "boxMax": 320,
+    "minPortraitSourceW": 640,
+    "demoValues": [
+     "Ten Shin Gardens",
+     "The Exotic Plant Company"
+    ],
+    "mustHavePhoto": [
+     "Crous"
+    ],
+    "mustNotHavePhoto": [
+     "Tibbs"
+    ],
+    "note": "PR-1 shared profile on an event page: names are h3 under the h2 'Presenters'; the facts row is omitted entirely when empty; no listing rule (country is filled by SAOC later).",
+    "mustName": "Hildagard Crous",
+    "bannedName": "Hildegard",
+    "orderFile": "lib/view-models/presenter-order.ts",
+    "orderConst": "PRESENTER_FALLBACK_SEQUENCE"
+   },
+   "sy": {
+    "sg": "SY-G1 (NOS Design, comms.md L3387)",
+    "h1": "Symposium",
+    "crumb": "National Show - Symposium",
+    "themeSource": {
+     "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/symposium-theme.md",
+     "sha256": "aac673ee2eb9fa7feb1b5af0f8f77d029b2d392d4ddcf4d10913612ce30e80cc",
+     "driveRecoveredPath": "content/drive-recovered/06-saoc-symposium/theme/content.md"
+    },
+    "wteSource": ".agent/memory/project/specs/nos-content-standard/goldens/sources/what-to-expect.md",
+    "wteStarts": "The National Show Symposium will feature",
+    "factTerms": [
+     "Date",
+     "Time",
+     "Venue"
+    ],
+    "presentersH2": "Presenters",
+    "absent": [
+     "About the Symposium",
+     "Attending",
+     "PLACEHOLDER COPY"
+    ],
+    "hoursLine": "SAOC Symposium",
+    "dateFaq": 39
+   },
+   "gapNote": "Body copy is asserted by syChecks against the frozen theme doc and What to Expect v1.0 (no single Drive range)."
   },
   {
    "nos": "/wosa-conference",
    "group": "programme",
    "kind": "document",
-   "aside": "index",
+   "aside": "content",
    "drive": null,
    "photo": "PK3",
-   "keyFacts": null
+   "keyFacts": null,
+   "heroCap": {
+    "1440": 420,
+    "2056": 440
+   },
+   "heroMeasured": {
+    "1440": 406,
+    "2056": 427
+   },
+   "ig": {
+    "event": true,
+    "optional": true,
+    "h1": "WOSA Conference",
+    "nameTag": "H3",
+    "boxMax": 320,
+    "minPortraitSourceW": 640,
+    "demoValues": [
+     "Ten Shin Gardens",
+     "The Exotic Plant Company"
+    ],
+    "mustName": "Hildagard Crous",
+    "bannedName": "Hildegard",
+    "note": "PR-1 applies only once a conferencePresenter has event = wosa; until then there is no Presenters section at all.",
+    "orderFile": "lib/view-models/presenter-order.ts",
+    "orderConst": "PRESENTER_FALLBACK_SEQUENCE"
+   },
+   "wo": {
+    "sg": "WO-G1 (NOS Design, comms.md L3436)",
+    "h1": "WOSA Conference",
+    "crumb": "National Show - WOSA Conference",
+    "ledeFrom": {
+     "file": "faq.md",
+     "startsWith": "For Wild Orchids Southern Africa members"
+    },
+    "factTerms": [
+     "Date",
+     "Time",
+     "Venue"
+    ],
+    "standfirst": {
+     "file": "what-to-expect.md",
+     "startsWith": "A Conference held by Wild Orchids Southern Africa (WOSA)"
+    },
+    "paragraph": {
+     "file": "about.md",
+     "startsWith": "An important feature of the 2027 programme"
+    },
+    "faqH2": "Frequently asked questions",
+    "faqQuestions": [
+     46,
+     49,
+     51,
+     53,
+     54,
+     55,
+     56
+    ],
+    "faqOmitted": [
+     47,
+     48,
+     50,
+     52
+    ],
+    "absent": [
+     "About the Conference",
+     "Attending",
+     "About WOSA",
+     "PLACEHOLDER COPY"
+    ],
+    "venueMaxLines": 2,
+    "hoursLine": "WOSA Conference",
+    "dateFaq": 48
+   },
+   "gapNote": "WO-G1 body copy is asserted by woChecks against the frozen faq.md, what-to-expect.md and about.md."
   },
   {
    "nos": "/conferences",
@@ -516,5 +649,13 @@
  "cardImageRoutes": [
   "/programme",
   "/tickets"
+ ],
+ "retired": [
+  {
+   "from": "/sa-exhibitors",
+   "to": "/vendors",
+   "status": 301,
+   "note": "V1 ruling (change-list.md:54). No sub-nav item for it; the 301 is asserted by gate-standard."
+  }
  ]
 }

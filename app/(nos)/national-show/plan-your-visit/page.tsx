@@ -198,7 +198,7 @@ function renderBlocks(blocks: readonly PlanGuideBlock[], closing: boolean): Reac
 
 function VenueCard() {
   return (
-    <section id={VENUE_ID} className="nos-venue" aria-labelledby={`${VENUE_ID}-h`}>
+    <section id={VENUE_ID} data-venue-card="" className="nos-venue" aria-labelledby={`${VENUE_ID}-h`}>
       <h2 id={`${VENUE_ID}-h`} className="doc-h2">
         The venue
       </h2>

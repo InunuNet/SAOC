@@ -6,7 +6,7 @@
 // Struck text (~~x~~ in her document) is deleted copy: it is dropped from the expected blocks and, where strikeAbsence is "all", must be ABSENT
 // from the page (spans in strikeAbsenceExempt are Sanity-held and excluded, per the lead's no-Sanity-write limit). mustAbsentSelectors must match nothing.
 // A missing, edited-after-freeze (sha256), empty or [ERROR] source FAILS. A route with no source prints GAP; privacy/terms print verified-by-SAOC.
-import { ROUTES, STD, driveState, launchChromium, newContext, normalise, withServer } from './_lib.mjs';
+import { ROUTES, STD, driveState, launchChromium, newContext, normalise, withServer, gotoRoute } from './_lib.mjs';
 
 const unmd = (block) => normalise(block
   .replace(/\\([.\-_*#>()[\]!])/g, '$1').replace(/^\s{0,3}#{1,6}\s+/gm, '').replace(/^\s*[-*]\s+/gm, '')
@@ -53,7 +53,7 @@ await withServer(2, 'verbatim', async (server, c) => {
       for (const m of d.mustPresent ?? []) c.check(`${tag} mustPresent is a real passage of her document: "${m.slice(0, 50)}"`, blocksOf(st.text, false).some((b) => b.includes(unmd(m))));
 
       const context = await newContext(browser, STD.firstScreen[0]); const page = await context.newPage();
-      await page.goto(`${server.nos}${route.nos}`, { waitUntil: 'load' });
+      if (!(await gotoRoute(page, server, route.nos, c, tag))) { await context.close(); continue; }
       let body = normalise(await page.evaluate(() => `${document.querySelector('section[data-nos-hero]')?.textContent ?? ''} ${document.querySelector('main')?.textContent ?? ''}`));
       if (d.numberSpans) body = body.replace(/(\d+\.)(?=[A-Za-z])/g, '$1 ');
       const bodyLc = body.toLowerCase(); let cursor = 0; let missing = 0;

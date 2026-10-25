@@ -1,40 +1,55 @@
+import { PortableText } from '@portabletext/react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { defineQuery } from 'next-sanity';
 
-import { Button } from '@/components/nos/Button';
+import { heroFactsForEvent, NosHero } from '@/components/nos/NosHero';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { PresenterSection } from '@/components/nos/PresenterSection';
 import { NOS_ROUTE_HEROES } from '@/components/nos/nos-route-heroes';
-import { ShowContentState } from '@/components/show/nos/ShowContentState';
+import { TicketCard } from '@/components/tickets/keepsake';
+import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
+import { FAQ_SECTIONS } from '@/lib/data/faq-sections';
 import { loadShowFacts } from '@/lib/data/show-facts';
-import { loadShowPageOrFallback } from '@/lib/data/show-pages';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+import { TICKET_PRODUCTS } from '@/lib/data/ticket-presentation';
 import { buildPageMetadata } from '@/lib/seo';
 import { withTicketingTestTitle } from '@/lib/ticketing-test-metadata';
 import { loadPresenterViewModels } from '@/lib/view-models/load-presenters';
-import { loadTicketCardViewModel } from '@/lib/view-models/load-ticket-card';
+import { sanityFetch } from '@/sanity/lib/fetch';
+import type { ShowFaq } from '@/types';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
-import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
-// F12 (national-show-ia-alignment, M4) — created route.
+// WO-G1 (NOS Design, comms.md 2026-10-25): hero, one 7/5 grid with the ticket beside her WOSA copy, her
+// FAQ section 7 questions, and no presenters until a conferencePresenter has event = wosa-conference.
+// F12 (national-show-ia-alignment, M4): SAOC is orchids IN CULTIVATION; wild orchid identification,
+// habitat and conservation belong to WOSA's own site, so this page states what the conference is and
+// generates no wild-orchid content of its own (goldens/m3/wosa-content-boundary.golden.md).
 //
-// SAOC is orchids IN CULTIVATION (CLAUDE.md § "Critical scope boundary"). Wild orchid
-// identification, habitat and conservation belong to WOSA, a separate organisation with
-// its own site — this page states what the conference is and links OUT; it generates no
-// wild-orchid content of its own. See
-// .agent/memory/project/specs/national-show-ia-alignment/goldens/m4/route-manifest.golden.md §4
-// and goldens/m3/wosa-content-boundary.golden.md.
-//
-// F24 (M4) — replaces the hard 404 guard with loadShowPageOrFallback()/
-// <ShowContentState>, so an absent document renders a disclosed shell instead of a 404.
-// The WOSA link-out below is static and independent of the ShowPage, so it is passed as
-// `afterProse` and rendered in the published branch only — an absent page shows the
-// disclosure alone. See goldens/m4/never-404-fallback.golden.md.
-//
-// F6 (conference-workshop-tickets, M4) — additive data-fetch; same note as
-// symposium/page.tsx's own identical comment (golden §3). nos-presenter-cards renders the
-// presenters under the hero (none today, so the page is unchanged). `dynamic = 'force-dynamic'` added for the same Firebase-Admin-reachability
-// reason given there.
+// Every string is hers: the standfirst is the WOSA sentence of What to Expect v1.0, the paragraph is About
+// v1.2 section 2.1, the lede is her FAQ section 7 introduction, and the questions are showFaq q46, q49, q51
+// and q53-q56 as published. q48 (date) is in the hero, q50 and q52 (price, early bird) are on the ticket.
+// The three placeholder sections of content/show-pages/07-wosa-conference.json were builder copy (R7) and
+// are gone. `dynamic = 'force-dynamic'`: the ticket card reaches Firebase Admin, as on the symposium page.
 export const dynamic = 'force-dynamic';
 export const revalidate = 60;
+
+const EVENT = 'wosa-conference';
+const FAQ_HEADING = 'Frequently asked questions';
+const FAQ_IDS = ['showFaq-q46', 'showFaq-q49', 'showFaq-q51', 'showFaq-q53', 'showFaq-q54', 'showFaq-q55', 'showFaq-q56'];
+// What to Expect v1.0, the WOSA sentence, word for word.
+const STANDFIRST =
+  "A Conference held by Wild Orchids Southern Africa (WOSA) will highlight the ecology and conservation of indigenous orchids, illustrating how research undertaken in natural habitats continues to influence cultivation practices, breeding programmes and the long-term future of orchids.";
+// About v1.2, section 2.1, the WOSA paragraph, word for word.
+const WOSA_PARAGRAPH =
+  "An important feature of the 2027 programme will be the participation of Wild Orchids of Southern Africa (WOSA). They will hold their annual conference as part of the National Orchid Show. Their involvement reflects the National Orchid Show's commitment to connecting conservation science with horticultural excellence, demonstrating how knowledge gained from orchids in the wild continues to shape responsible cultivation and the future sustainability of the orchid community.";
+const WOSA_FAQ_QUERY = defineQuery(`
+  *[_type == "showFaq" && active == true && _id in $ids] | order(order asc){
+    _id,
+    question,
+    answer,
+    order
+  }
+`);
 
 export const metadata: Metadata = withTicketingTestTitle(
   buildPageMetadata({
@@ -45,70 +60,79 @@ export const metadata: Metadata = withTicketingTestTitle(
   })
 );
 
-export default async function WosaConferencePage() {
-  const [result, facts] = await Promise.all([
-    loadShowPageOrFallback('07-wosa-conference', {
-      label: NOS_ROUTE_HEROES.wosaConference.title,
-      purpose:
-        'What the WOSA Conference is and who it is for, with a link out to WOSA for wild-orchid content.',
-    }),
-    loadShowFacts(),
-  ]);
+function conferenceLede(): string | undefined {
+  const [lede] = FAQ_SECTIONS.find((section) => section.id === 'wosa-conference')?.intro ?? [];
+  return lede;
+}
 
-  // F6 (conference-workshop-tickets, M4) — additive; see symposium/page.tsx's identical
-  // note and the file-header comment above.
-  //
-  // Codex finding (2026-10-07, relayed by team-lead) — same fix as symposium/page.tsx's
-  // identical note: these loaders can reject on a real Sanity/Firestore backend failure;
-  // neither result may turn this public content page into a 500.
-  let presenters: Awaited<ReturnType<typeof loadPresenterViewModels>> = [];
-  try {
-    presenters = await loadPresenterViewModels('wosa-conference');
-  } catch (error) {
-    console.error('[national-show/wosa-conference] loadPresenterViewModels failed:', error);
-  }
-  let ticketCard: Awaited<ReturnType<typeof loadTicketCardViewModel>> | null = null;
-  try {
-    ticketCard = await loadTicketCardViewModel('wosa-conference');
-  } catch (error) {
-    console.error('[national-show/wosa-conference] loadTicketCardViewModel failed:', error);
-  }
-  void ticketCard;
+export default async function WosaConferencePage() {
+  // A Sanity or Firebase failure must never turn this public page into a 500 (Codex finding, 2026-10-07).
+  const [showFacts, presenters, ticketCards, faqs] = await Promise.all([
+    loadShowFacts(),
+    loadPresenterViewModels(EVENT),
+    loadTicketCardViewModels().catch((error: unknown) => {
+      console.error('[national-show/wosa-conference] loadTicketCardViewModels failed:', error);
+      return null;
+    }),
+    sanityFetch<ShowFaq[]>({
+      query: WOSA_FAQ_QUERY,
+      params: { ids: FAQ_IDS },
+      tags: ['showFaq', 'sanity'],
+    }),
+  ]);
+  const card = ticketCards?.cards.wosa ?? null;
+  const answered = (faqs ?? []).filter((faq) => faq.question && (faq.answer ?? []).length > 0);
 
   return (
     <>
-      <div className="contents [&_.nos-show-page-prose_p]:max-w-[60ch] [&_.nos-show-page-prose_li]:max-w-[60ch]">
-        <ShowContentState
-          result={result}
-          route="/national-show/wosa-conference"
-          layout="prose"
-          holding={{ facts, keepAfterProse: true }}
-          afterProse={
-            <div className="space-y-8">
-              <Button as={Link} href="/tickets#ticket-wosa" variant="primary">
-                Buy ticket
-              </Button>
-              {/* SAOC attributes and links out; it never authors conservation content in its
-                  own voice — the same standing rule the /about page's WOSA credit follows. */}
-              <p className="max-w-[60ch] border-t border-rule pt-6 font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/70">
-                For wild orchid identification, habitat and conservation, visit our partner
-                organisation{' '}
-                <a
-                  href="https://wildorchids.co.za"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-link"
-                >
-                  Wild Orchids of Southern Africa (WOSA)
-                </a>
-                .
-              </p>
-            </div>
-          }
-        />
-      </div>
+      <NosHero
+        route="/national-show/wosa-conference"
+        title={NOS_ROUTE_HEROES.wosaConference.title}
+        crumbLabel={NOS_ROUTE_HEROES.wosaConference.title}
+        lede={conferenceLede()}
+        facts={heroFactsForEvent(showFacts, TICKET_PRODUCTS.wosa)}
+        priority
+      />
 
-      <PresenterSection eyebrow={NOS_ROUTE_HEROES.wosaConference.title} presenters={presenters} />
+      <div className="nos-ev-body">
+        <div data-nos-wrap="">
+          <div className="nos-ev-grid">
+            <div className="nos-ev-main">
+              <p className="doc-standfirst">{STANDFIRST}</p>
+              <p>{WOSA_PARAGRAPH}</p>
+              {answered.length > 0 ? (
+                <section className="nos-ev-faq" aria-labelledby="wosa-faq-h">
+                  <h2 id="wosa-faq-h">{FAQ_HEADING}</h2>
+                  <div className="nos-qa">
+                    {answered.map((faq) => (
+                      <div key={faq._id}>
+                        <h3>{faq.question}</h3>
+                        <PortableText value={faq.answer ?? []} />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+            </div>
+            {card ? (
+              <aside className="nos-ev-ticket" aria-label="WOSA Conference ticket">
+                <div className="nk-grid">
+                  <div className="nk-wrap">
+                    <TicketCard
+                      productId="wosa"
+                      vm={card}
+                      name={card.name}
+                      partnerName={null}
+                      showProvisional={!withholdPlaceholderProse()}
+                    />
+                  </div>
+                </div>
+              </aside>
+            ) : null}
+          </div>
+          <PresenterSection presenters={presenters} />
+        </div>
+      </div>
       <NosShowIndex current="/national-show/wosa-conference" />
     </>
   );

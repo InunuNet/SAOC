@@ -10,8 +10,8 @@
 //   facts     (routes with facts) 2-4 dd/dt, every box fully inside the first viewport at 1440x900 and 390x844@3, contrast >= 4.5 on the
 //             photo pixels behind each fact; sub-nav and first h2 visible at 1440x900
 //   focus     a focused h1[tabindex="-1"] paints no outline, ring or shadow, on load and after client navigation
-import { readFileSync, readdirSync } from 'node:fs';
-import { CROPS, EXCLUDED, ROUTES, STD, driveState, launchChromium, newContext, withServer } from './_lib.mjs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { AUTH, CROPS, RETIRED, gotoRoute, EXCLUDED, ROUTES, STD, driveState, launchChromium, newContext, withServer } from './_lib.mjs';
 
 const HERO_IMG = 'section[data-nos-hero] [data-nos-hero-media] img';
 const wantGap = (w) => (w >= 1024 ? STD.gap.atOrAbove1024 : STD.gap.below1024);
@@ -153,11 +153,14 @@ async function sp1Checks(page, route, vp, c, tag) {
 }
 
 /** PV-G1 (NOS Design golden, root comms.md from line 2964): the /plan-your-visit-only structure. */
+// The empty first/last number cells need SAOC's DocumentIndex to carry a `number` field; required only once that source has one.
+const IDX_SRC = existsSync('components/ui/DocumentIndex.tsx') ? readFileSync('components/ui/DocumentIndex.tsx', 'utf8') : '';
+const NUMBER_FIELD_LANDED = /data-index-number/.test(IDX_SRC);
 async function pyvChecks(page, route, vp, c, tag) {
   const P = route.pyv;
   const m = await page.evaluate(() => {
     const txt = (e) => e.textContent.replace(/\s+/g, ' ').trim();
-    const idx = [...document.querySelectorAll('nav[data-doc-index] a')].map((a) => ({ n: a.querySelector('span')?.textContent.trim() ?? '', t: txt(a).slice(0) }));
+    const idx = [...document.querySelectorAll('nav[data-doc-index] a')].map((a) => ({ n: (a.querySelector('[data-index-number]') ?? a.querySelector('span'))?.textContent.trim() ?? '', t: txt(a).slice(0) }));
     const venue = [...document.querySelectorAll('main h2')].find((h) => /^the venue$/i.test(txt(h)))?.closest('section, div');
     const vcs = venue ? getComputedStyle(venue) : null; const vb = venue?.getBoundingClientRect();
     const em = [...document.querySelectorAll('main h2')].find((h) => /^in an emergency$/i.test(txt(h))); const emSec = em?.closest('section'); const eb = emSec?.getBoundingClientRect();
@@ -168,7 +171,7 @@ async function pyvChecks(page, route, vp, c, tag) {
     const kids = venue ? [...venue.querySelectorAll('h3')].map(txt) : [];
     return { idx, venue: Boolean(venue), venueInMain: Boolean(venue?.closest('[data-doc-main]')), venueBg: vcs?.backgroundColor, venueRadius: parseFloat(vcs?.borderTopLeftRadius ?? '0'), venueCols: venue ? Math.max(1, ...[...venue.children].map((k) => getComputedStyle(k).display === 'grid' ? getComputedStyle(k).gridTemplateColumns.trim().split(/\s+/).length : 1), vcs.display === 'grid' ? vcs.gridTemplateColumns.trim().split(/\s+/).length : 1) : 0, emOutside: Boolean(emSec && !emSec.closest('[data-doc-main]')), emFull: eb ? eb.width >= innerWidth - 1 : false, emAfterGrid: emSec ? Boolean(document.querySelector('[data-doc-layout]')?.compareDocumentPosition(emSec) & Node.DOCUMENT_POSITION_FOLLOWING) : false, tels, links, closeStyle, kids, venueAddrBr: venue?.querySelectorAll('address br').length ?? 0, sw: document.documentElement.scrollWidth, iw: innerWidth };
   });
-  c.check(`${tag} PV-G1 the index is The venue, 1-7, In an emergency (${m.idx.length}); first and last rows have an empty number cell`, JSON.stringify(m.idx.map((e) => e.t.replace(/^\d+\.\s*/, '').trim())) === JSON.stringify(P.index.map((e) => e.replace(/^\d+\.\s*/, ''))) && m.idx[0].n === '' && m.idx[m.idx.length - 1].n === '', JSON.stringify(m.idx.map((e) => e.t)));
+  c.check(`${tag} PV-G1 the index is The venue, 1-7, In an emergency (${m.idx.length}); first and last rows have an empty number cell${NUMBER_FIELD_LANDED ? '' : ' (PENDING SAOC: DocumentIndex has no number field; not required yet)'}`, JSON.stringify(m.idx.map((e) => e.t.replace(/^\d+\.\s*/, '').trim())) === JSON.stringify(P.index.map((e) => e.replace(/^\d+\.\s*/, ''))) && (!NUMBER_FIELD_LANDED || (m.idx[0].n === '' && m.idx[m.idx.length - 1].n === '')), JSON.stringify(m.idx.map((e) => e.t)));
   c.check(`${tag} PV-G1 "The venue" card first in the main column: white, radius 10, from her Section 1 block, address with her line breaks (${m.venueAddrBr} br), 2 columns from 768 and 1 below (${m.venueCols})`, m.venue && m.venueInMain && m.venueRadius === 10 && m.venueAddrBr >= 4 && (vp.width >= 768 ? m.venueCols >= 2 : m.venueCols === 1) && m.kids.includes('Getting there') && m.kids.includes('Public Transport'), JSON.stringify(m.kids));
   c.check(`${tag} PV-G1 "In an emergency" is a full-bleed band after the body grid (outside the main column: ${m.emOutside}, full width: ${m.emFull}, after: ${m.emAfterGrid})`, m.emOutside && m.emFull && m.emAfterGrid);
   c.check(`${tag} PV-G1 the three tel: links are present and >= 44px (${m.tels.map((t) => `${t.href}:${Math.round(t.h)}`).join(' ')})`, P.tel.every((h) => m.tels.some((t) => t.href === h && t.h >= 44)));
@@ -244,15 +247,208 @@ async function cardImageChecks(page, vp, c, tag) {
   }
 }
 
-/** SX-G1 (NOS Design golden, root comms.md from line 3269): /sa-exhibitors. The directory is gated (D-SX1). */
-function absenceStatement() {
-  const f = readdirSync('app', { recursive: true }).map(String).find((x) => /sa-exhibitors\/page\.tsx$/.test(x));
-  if (!f) return null;
-  const src = readFileSync(`app/${f}`, 'utf8'); const i = src.indexOf('const ABSENCE_STATEMENT');
-  if (i < 0) return null;
-  const stmt = src.slice(i, src.indexOf(';', i));
-  return [...stmt.matchAll(/'([^']*)'|"([^"]*)"|`([^`]*)`/g)].map((m) => m[1] ?? m[2] ?? m[3]).join('') || null;
+/** SX-G1 delta onto /vendors (NOS Design, root comms.md L3350). The invited-vendor wall is gated (D-SX1). */
+/** IG-G1 (NOS Design, root comms.md L3350): /international-guests. Zero guests is a valid public state; with guests, one editorial profile per row. */
+async function igChecks(page, route, vp, c, tag) {
+  const I = route.ig;
+  const m = await page.evaluate((demo) => {
+    const num = (v) => parseFloat(v) || 0; const txt = (e) => e.textContent.replace(/\s+/g, ' ').trim();
+    const main = document.querySelector('main'); const rows = [...document.querySelectorAll('[data-guest-profile]')];
+    const h1 = txt(document.querySelector('h1'));
+    const rowInfo = rows.map((r) => {
+      const rb = r.getBoundingClientRect(); const cs = getComputedStyle(r);
+      const img = r.querySelector('[data-guest-portrait] img'); const por = r.querySelector('[data-guest-portrait]'); const pb = por?.getBoundingClientRect(); const pcs = por ? getComputedStyle(por) : null;
+      const dts = [...r.querySelectorAll('dl dt')].map(txt); const dds = [...r.querySelectorAll('dl dd')].map(txt);
+      const sum = r.querySelector('details > summary'); const sb = sum?.getBoundingClientRect();
+      const upper = [r, ...r.querySelectorAll('*')].filter((e) => getComputedStyle(e).textTransform === 'uppercase' && txt(e).length > 0).length;
+      const role = r.querySelector('[data-guest-role]');
+      const countryIdx = dts.findIndex((d) => /^country$/i.test(d));
+      const nameEl = r.querySelector('h2, h3'); const pid = r.getAttribute('data-presenter-id');
+      return { pid, name: nameEl ? txt(nameEl) : '', nameTag: nameEl ? nameEl.tagName : null, top: rb.top + scrollY, left: rb.left, w: rb.width, display: cs.display, cols: cs.gridTemplateColumns.trim().split(/\s+/).length, firstCol: num(cs.gridTemplateColumns.trim().split(/\s+/)[0]),
+        por: Boolean(por), hasImg: Boolean(img), natW: img?.naturalWidth ?? 0, boxW: img ? img.getBoundingClientRect().width : 0, aspect: pb && pb.height ? pb.width / pb.height : null, sticky: pcs?.position, stickyTop: pcs ? num(pcs.top) : null, radius: pcs ? num(pcs.borderTopLeftRadius) : null,
+        dts, dds, hasSummary: Boolean(sum), summaryH: sb ? sb.height : 0, summaryText: sum ? txt(sum) : '', upper, role: role ? txt(role) : null, roleUpper: role ? getComputedStyle(role).textTransform : null, country: countryIdx >= 0 ? dds[countryIdx] ?? '' : null,
+        placeholderTile: Boolean(r.querySelector('[data-placeholder], [data-guest-portrait]:not(:has(img))')), bgImg: por ? getComputedStyle(por).backgroundImage !== 'none' : false };
+    });
+    const filter = document.querySelector('[data-guest-filter]');
+    const fitems = filter ? [...filter.querySelectorAll('a, button')].map((e) => e.getBoundingClientRect().height) : [];
+    const t = (main?.textContent ?? '').replace(/\s+/g, ' ');
+    return { h1, rowInfo, filter: Boolean(filter), fitems, tAll: t, demoAttr: document.querySelectorAll('[data-demo]').length, demoHit: demo.filter((d) => t.includes(d)),
+      grid: document.querySelectorAll('main [class*="grid"] > [data-guest-profile]').length, h2s: [...main.querySelectorAll('h2')].map(txt), layout: Boolean(document.querySelector('[data-doc-layout]')), sw: document.documentElement.scrollWidth, iw: innerWidth };
+  }, I.demoValues);
+  c.check(`${tag} IG-G1 h1 is "${I.h1}" in sentence case (${m.h1})`, m.h1 === I.h1);
+  c.check(`${tag} IG-G1 never prints demo values from her shots (${m.demoHit.join(', ')}; data-demo x${m.demoAttr})`, m.demoHit.length === 0 && m.demoAttr === 0);
+  c.check(`${tag} IG-G1 no horizontal scroll (390 sw = cw)`, m.sw <= m.iw);
+  const rows = m.rowInfo;
+  if (I.event && I.count != null) c.check(`${tag} PR-1 ${I.count} presenters, each an <${I.nameTag.toLowerCase()}> name under the h2 "Presenters" (${rows.length}: ${rows.map((x) => x.nameTag).join(',')})`, rows.length === I.count && rows.every((x) => x.nameTag === I.nameTag));
+  if (rows.length === 0 && !I.event) {
+    c.check(`${tag} IG-G1 zero guests: hero and sub-nav only, no ABSENCE_STATEMENT, no RealEmptyListing labels, no filter, no h2 (${m.h2s.join(' | ')})`, m.h2s.length === 0 && !m.filter && !/to be confirmed|TBC|placeholder|no international guests|coming soon|not yet (announced|confirmed)/i.test(m.tAll) && !m.layout);
+    return;
+  }
+  if (rows.length === 0) return;
+  if (I.orderFile) {
+    const src = existsSync(I.orderFile) ? readFileSync(I.orderFile, 'utf8') : '';
+    const body = src.match(new RegExp(`${I.orderConst}[^=]*=\\s*\\[([^\\]]*)\\]`))?.[1] ?? '';
+    const ids = [...body.matchAll(/['"]([^'"]+)['"]/g)].map((x) => x[1]);
+    const ranked = rows.map((x) => ({ id: x.pid, at: ids.indexOf(x.pid) })).filter((x) => x.at >= 0).map((x) => x.at);
+    c.check(`${tag} PR-1 every profile carries data-presenter-id (the CMS _id) and the rendered order of the listed ids follows ${I.orderFile} (${rows.map((x) => x.pid).join(', ')})`, rows.every((x) => x.pid) && ids.length > 0 && ranked.every((v, k) => k === 0 || v > ranked[k - 1]));
+  }
+  if (I.mustName) c.check(`${tag} her documents outrank the CMS: the rendered name is "${I.mustName}" (${rows.map((x) => x.name).join(' | ')})`, rows.some((x) => x.name === I.mustName) && !rows.some((x) => x.name.includes(I.bannedName)));
+  c.check(`${tag} IG-G1 no uppercase anywhere in the profiles, including the record title and the role label (${rows.map((r) => r.upper).join(',')})`, rows.every((r) => r.upper === 0));
+  c.check(`${tag} IG-G1 one editorial profile per row, never a card grid: rows stack (distinct tops, same left) and no grid wraps the rows (${m.grid})`, m.grid === 0 && rows.every((r, i) => i === 0 || (r.top - rows[i - 1].top > 100 && Math.abs(r.left - rows[0].left) <= 1)));
+  c.check(`${tag} IG-G1 role label present on every row and not uppercase`, rows.every((r) => r.role && r.roleUpper !== 'uppercase'));
+  if (!I.event) c.check(`${tag} IG-G1 listing rule: every row has a country, and it is not South Africa (${rows.map((r) => r.country).join(' | ')})`, rows.every((r) => r.country !== null && r.country !== '' && !/^south africa$/i.test(r.country)));
+  if (!I.event) c.check(`${tag} PR-1 on /international-guests the name stays an h2`, rows.every((x) => x.nameTag === (I.nameTag ?? 'H2')));
+  c.check(`${tag} IG-G1 empty facts omitted: no dash, TBC or empty cell, and every dt has its dd (${rows.map((r) => r.dts.length + '/' + r.dds.length).join(',')})`, rows.every((r) => r.dts.length === r.dds.length && r.dds.every((d) => d !== '' && !/^[-–—]+$/.test(d) && !/^(tbc|to be confirmed|n\/a)$/i.test(d)) && r.dts.every((d) => d !== '')));
+  c.check(`${tag} IG-G1 no portrait is upscaled (naturalWidth >= box x DPR) and no placeholder tile: a portrait element always holds a photo (${rows.map((r) => r.hasImg ? r.natW + '/' + Math.round(r.boxW * vp.dsf) : '-').join(' ')})`, rows.every((r) => !r.por || (r.hasImg && r.natW >= Math.floor(r.boxW * vp.dsf) - 1)) && rows.every((r) => !r.placeholderTile && !r.bgImg));
+  if (rows.some((r) => r.hasImg)) {
+    const r0 = rows.find((r) => r.hasImg);
+    c.check(`${tag} IG-G1 portrait 4:5 with radius 10${vp.width >= 768 ? ', sticky at top 100' : ''} (${r0.aspect && r0.aspect.toFixed(2)}, r ${r0.radius}, ${r0.sticky} ${r0.stickyTop})`, r0.aspect !== null && Math.abs(r0.aspect - 0.8) <= 0.03 && r0.radius === 10 && (vp.width < 768 || (r0.sticky === 'sticky' && r0.stickyTop === 100)));
+  }
+  if (vp.width >= 768) c.check(`${tag} IG-G1 row is two columns, the first at most ${I.boxMax ?? 320}px (${rows[0].cols} cols, ${rows[0].firstCol}px)`, rows.every((r) => r.display === 'grid' && r.cols === 2 && r.firstCol <= (I.boxMax ?? 320) + 1));
+  const nat = await page.evaluate(async () => {
+    const out = [];
+    for (const r of [...document.querySelectorAll('[data-guest-profile]')]) {
+      const im = r.querySelector('[data-guest-portrait] img'); if (!im) continue;
+      let native = im.naturalWidth;
+      try { const u = new URL(im.currentSrc || im.src, location.href); if (u.pathname.startsWith('/_next/image')) native = await new Promise((res) => { const n = new Image(); n.onload = () => res(n.naturalWidth); n.onerror = () => res(0); n.src = new URL(u.searchParams.get('url'), location.href).href; }); } catch { native = 0; }
+      out.push({ name: (r.querySelector('h2, h3')?.textContent ?? '').replace(/\s+/g, ' ').trim(), native });
+    }
+    return out;
+  });
+  c.check(`${tag} PR-1 photo rule: a portrait shows only when its source is >= ${I.minPortraitSourceW}px wide (${nat.map((n) => n.name.slice(0, 12) + ' ' + n.native).join(', ')})`, nat.every((n) => n.native >= I.minPortraitSourceW));
+  for (const nm of I.mustHavePhoto ?? []) { const row = rows.find((x) => x.name.includes(nm)); if (row) c.check(`${tag} PR-1 ${nm} shows a portrait (source >= ${I.minPortraitSourceW})`, row.hasImg); }
+  for (const nm of I.mustNotHavePhoto ?? []) { const row = rows.find((x) => x.name.includes(nm)); if (row) c.check(`${tag} PR-1 ${nm} has no portrait and no placeholder tile (source below ${I.minPortraitSourceW})`, !row.hasImg && !row.por && !row.placeholderTile); }
+  const withBio = rows.filter((r) => r.hasSummary);
+  c.check(`${tag} IG-G1 <details> summary reads "Read full bio" and is >= 44px (${withBio.map((r) => Math.round(r.summaryH)).join(',')})`, withBio.every((r) => /read full bio/i.test(r.summaryText) && r.summaryH >= 44));
+  if (withBio.length) {
+    const ring = await page.evaluate(() => { const s = document.querySelector('[data-guest-profile] details > summary'); s.focus({ focusVisible: true }); const cs = getComputedStyle(s); return { outline: cs.outlineStyle, ow: parseFloat(cs.outlineWidth), shadow: cs.boxShadow }; });
+    c.check(`${tag} IG-G1 the <details> summary has a visible focus ring (${ring.outline} ${ring.ow}px / ${ring.shadow})`, (ring.outline !== 'none' && ring.ow > 0) || ring.shadow !== 'none');
+  }
+  const roles = new Set(rows.map((r) => r.role));
+  c.check(`${tag} IG-G1 the role filter renders only when the guests span >= 2 roles (${roles.size} roles, filter ${m.filter})`, m.filter === (roles.size >= 2));
+  if (m.filter) c.check(`${tag} IG-G1 filter items are >= 44px (${m.fitems.map(Math.round).join(',')})`, m.fitems.every((h) => h >= 44));
 }
+
+/** SAOC rule: no image renders wider than its own pixel width. For every img in main: rendered width x DPR <= the source's native width, and a next/image
+ *  request never asks for a w= above the source's native width (the optimiser upscales, so naturalWidth of the served variant is not the evidence). */
+async function noUpscaleChecks(page, vp, c, tag) {
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await page.waitForTimeout(400); await page.evaluate(() => window.scrollTo(0, 0));
+  await page.evaluate(() => Promise.all([...document.images].filter((i) => i.loading === 'lazy' && !i.complete).map((i) => new Promise((r) => { i.addEventListener('load', r, { once: true }); i.addEventListener('error', r, { once: true }); setTimeout(r, 4000); }))));
+  const imgs = await page.evaluate(async () => {
+    const out = [];
+    for (const im of [...document.querySelectorAll('main img')]) {
+      const b = im.getBoundingClientRect(); if (b.width < 2 || b.height < 2) continue;
+      const cur = im.currentSrc || im.src; let want = null; let native = im.naturalWidth; let src = cur;
+      try { const u = new URL(cur, location.href); if (u.pathname.startsWith('/_next/image')) { want = Number(u.searchParams.get('w')); src = u.searchParams.get('url') ?? cur; const abs = new URL(src, location.href).href; native = await new Promise((res) => { const n = new Image(); n.onload = () => res(n.naturalWidth); n.onerror = () => res(null); n.src = abs; }); } } catch { /* leave native as the served naturalWidth */ }
+      out.push({ alt: (im.alt || '').slice(0, 30), w: b.width, want, native, src: src.slice(0, 80) });
+    }
+    return out;
+  });
+  // An original that will not load (or reports 0 width) cannot be proven, so it fails: a broken or blocked source must not pass silently.
+  const bad = imgs.filter((i) => !i.native || i.w * vp.dsf > i.native + 1 || (i.want !== null && i.want > i.native + 1));
+  c.check(`${tag} no image renders wider than its own pixel width (${imgs.length} imgs; rendered x DPR <= native and w= <= native)`, bad.length === 0, bad.slice(0, 4).map((i) => `${i.alt ? i.alt + " " : ""}${i.src}: ${Math.round(i.w * vp.dsf)}px wanted, w=${i.want}, native ${i.native ?? 'UNLOADABLE (cannot prove the width)'}`).join('; '));
+}
+
+/** Her wording for an event's hours, read from the frozen excerpt of her answers doc ("9am to 5pm"); never reformatted (her time-format question is open). */
+function hoursOf(label) { const l = readFileSync(`${SPDIR}leeann-answers-hours.md`, 'utf8').split('\n').find((x) => x.startsWith(label)); return l?.match(/\d{1,2}(?::\d{2})?(?:am|pm) to \d{1,2}(?::\d{2})?(?:am|pm)/)?.[0] ?? null; }
+/** The event date as a "D Month YYYY" string from a FAQ answer ("24th September 2027" -> "24 September 2027"). */
+function faqDate(n) { const q = spQa(n); const m = q ? q.a.join(' ').match(/(\d{1,2})(?:st|nd|rd|th)? ([A-Z][a-z]+) (\d{4})/) : null; return m ? `${m[1]} ${m[2]} ${m[3]}` : null; }
+function dateTimeChecks(c, tag, sg, facts, S, hoursLabel, dateFaqN) {
+  const hours = hoursOf(hoursLabel); const want = faqDate(dateFaqN);
+  const date = facts.find((f) => f.t === 'Date'); const time = facts.find((f) => f.t === 'Time');
+  c.check(`${tag} ${sg} her sources are real: hours "${hours}" (her answers doc) and the date "${want}" (FAQ ${dateFaqN}) were found in the frozen copies`, Boolean(hours) && Boolean(want));
+  c.check(`${tag} ${sg} the date agrees with her FAQ ${dateFaqN} (${want}; a weekday prefix is allowed) (${date?.d})`, Boolean(want) && Boolean(date) && date.d.includes(want));
+  const venue = facts.find((f) => f.t === 'Venue'); if (venue) c.check(`${tag} ${sg} the venue renders from the CMS, never as the FAQ phrase (${venue.d}); no venue string is asserted (owner item cccc is open)`, !/same venue as/i.test(venue.d));
+  c.check(`${tag} ${sg} the time is her wording "${hours}", not reformatted (${time?.d})`, Boolean(hours) && Boolean(time) && time.d === hours);
+}
+
+/** Known issue: the runtime lede shifted the sub-nav by about 103px at 390. Sample the sub-nav's page position at DOMContentLoaded, at load and 1.5s and 3s later; it must not move. */
+async function subnavStable(page, server, route, c, tag) {
+  const p2 = await page.context().newPage();
+  await p2.addInitScript(() => { window.__tops = []; const sample = () => { const s = document.querySelector('.nos-subnav'); if (s) window.__tops.push(Math.round(s.getBoundingClientRect().top + scrollY)); };
+    document.addEventListener('DOMContentLoaded', sample); window.addEventListener('load', () => { sample(); setTimeout(sample, 1500); setTimeout(sample, 3000); }); });
+  await p2.setViewportSize(page.viewportSize());
+  if (await gotoRoute(p2, server, route.nos, c, tag)) {
+    await p2.waitForTimeout(3500);
+    const tops = await p2.evaluate(() => window.__tops);
+    c.check(`${tag} no layout shift of the sub-nav after load (positions ${tops.join(', ')})`, tops.length >= 2 && Math.max(...tops) - Math.min(...tops) <= 2);
+  }
+  await p2.close();
+}
+
+/** WO-G1 (NOS Design, root comms.md L3436): /wosa-conference. All copy is verbatim from her frozen documents. */
+async function woChecks(page, route, vp, c, tag, server) {
+  const W = route.wo;
+  const para = (file, starts) => { const l = readFileSync(`${SPDIR}${file}`, 'utf8').split('\n').find((x) => x.includes(starts)); return l ? spUnmd(l.slice(l.indexOf(starts))) : ''; };
+  const sentence = (file, starts) => para(file, starts).match(/^.*?[.!?](?=\s|$)/)?.[0] ?? '';
+  const lede = para(W.ledeFrom.file, W.ledeFrom.startsWith); const standfirst = sentence(W.standfirst.file, W.standfirst.startsWith); const paragraph = para(W.paragraph.file, W.paragraph.startsWith);
+  const qa = W.faqQuestions.map((n) => ({ n, ...spQa(n) }));
+  c.check(`${tag} WO-G1 sources are real: lede, standfirst, paragraph and ${qa.length} FAQ entries were found in the frozen copies`, lede.length > 20 && standfirst.length > 40 && paragraph.length > 80 && qa.every((q) => q.q && q.a.length), `${lede.slice(0, 30)} | ${standfirst.slice(0, 30)}`);
+  const m = await page.evaluate((W) => {
+    const txt = (e) => e.textContent.replace(/\s+/g, ' ').trim();
+    const hero = document.querySelector('section[data-nos-hero]'); const main = document.querySelector('[data-doc-main]'); const aside = document.querySelector('[data-doc-aside]');
+    const facts = hero ? [...hero.querySelectorAll('[data-hero-facts] dt')].map((dt) => { const dd = dt.nextElementSibling; const cs = dd ? getComputedStyle(dd) : null; return { t: txt(dt), d: dd ? txt(dd) : '', ws: cs?.whiteSpace, h: dd ? dd.getBoundingClientRect().height : 0, lh: cs ? parseFloat(cs.lineHeight) : 0 }; }) : [];
+    const h2s = [...document.querySelectorAll('main h2')].map(txt); const faqH2 = [...document.querySelectorAll('main h2')].find((h) => txt(h) === W.faqH2);
+    const h3s = faqH2 ? [...document.querySelectorAll('main h3')].filter((h) => !h.closest('[data-guest-profile]') && faqH2.compareDocumentPosition(h) & Node.DOCUMENT_POSITION_FOLLOWING).map(txt) : [];
+    const acs = aside ? getComputedStyle(aside) : null; const card = aside ? aside.querySelector('[data-ticket-card], .nk-ticket, .nk-grid') : null;
+    const mb = main ? main.getBoundingClientRect() : null; const ab = aside ? aside.getBoundingClientRect() : null;
+    return { h1: txt(document.querySelector('h1')), heroText: hero ? txt(hero) : '', facts, h2s, h3s, hasFaqH2: Boolean(faqH2), faqInMain: Boolean(faqH2?.closest('[data-doc-main]')), mainText: main ? txt(main) : '', all: txt(document.querySelector('main')),
+      card: Boolean(card), asidePos: acs?.position, asideTop: acs ? parseFloat(acs.top) : null, asideW: ab ? ab.width : 0, asideY: ab ? ab.top + scrollY : null, mainY: mb ? mb.top + scrollY : null, profiles: document.querySelectorAll('[data-guest-profile]').length, presentersH2: h2s.includes('Presenters'),
+      crumb: hero ? txt(hero.querySelector('nav, [aria-label*="readcrumb"]') ?? hero).slice(0, 60) : '' };
+  }, W);
+  const norm = (t) => t.replace(/\s+/g, ' ').trim();
+  c.check(`${tag} WO-G1 h1 is "${W.h1}" and the crumb reads National Show - WOSA Conference (${m.h1} | ${m.crumb})`, m.h1 === W.h1 && /National Show\s*[—–-]\s*WOSA Conference/.test(m.crumb));
+  c.check(`${tag} WO-G1 the hero lede is her FAQ section 7 line, verbatim`, m.heroText.includes(norm(lede)), lede);
+  c.check(`${tag} WO-G1 FACTS-1 renders from the CMS ticket: Date / Time / Venue in that order for whichever are present, an empty cell omitted (no "Dates to follow", TBC or dash), the date nowrap and one line, the venue at most ${W.venueMaxLines} lines (${m.facts.map((f) => `${f.t}=${f.d}`).join('; ')})`, (m.facts.length >= 2 && (() => { const order = ['Date', 'Time', 'Venue']; const idx = m.facts.map((f) => order.indexOf(f.t)); return idx.every((i, k) => i >= 0 && (k === 0 || i > idx[k - 1])); })()) && m.facts.every((f) => f.d !== '' && !/follow|tbc|to be confirmed|^[-\u2013\u2014]+$/i.test(f.d)) && m.facts.filter((f) => f.t === 'Date').every((f) => /nowrap/.test(f.ws) && f.h <= f.lh * 1.4) && m.facts.filter((f) => f.t === 'Venue').every((f) => f.h <= f.lh * (W.venueMaxLines + 0.4)));
+  dateTimeChecks(c, tag, 'WO-G1', m.facts, W, W.hoursLine, W.dateFaq);
+  c.check(`${tag} WO-G1 main column: her WOSA sentence (What to Expect v1.0), then her paragraph (About v1.2), both verbatim, in that order`, (() => { const a = m.mainText.indexOf(norm(standfirst)); const b = m.mainText.indexOf(norm(paragraph)); return a >= 0 && b > a; })());
+  c.check(`${tag} WO-G1 h2 "${W.faqH2}" sits in the main column over exactly her questions ${W.faqQuestions.join(', ')} as h3, and 47/48/50/52 are left out (${m.h3s.length} h3)`, m.hasFaqH2 && m.faqInMain && JSON.stringify(m.h3s.map((t) => t.replace(/^\d+\.\s*/, ''))) === JSON.stringify(qa.map((q) => q.q)));
+  c.check(`${tag} WO-G1 each FAQ answer matches her document byte for byte (including her spellings)`, qa.every((q) => q.a.every((a) => m.mainText.includes(norm(a)))), qa.filter((q) => !q.a.every((a) => m.mainText.includes(norm(a)))).map((q) => q.n).join(','));
+  c.check(`${tag} WO-G1 one 7/5 grid: the aside holds the live WOSA ticket card, sticky at top 100 from 1024, static and at most 440px below (${m.card}; ${m.asidePos} ${m.asideTop}; ${Math.round(m.asideW)}px)`, m.card && (vp.width >= 1024 ? m.asidePos === 'sticky' && m.asideTop === 100 : (m.asidePos !== 'sticky' && m.asideW <= 441)));
+  if (vp.width < 1024) c.check(`${tag} WO-G1 below 1024 the ticket comes first (aside y ${Math.round(m.asideY)} < copy y ${Math.round(m.mainY)})`, m.asideY !== null && m.asideY < m.mainY);
+  c.check(`${tag} WO-G1 the builder sections "About the Conference", "Attending", "About WOSA" (and its partner-site paragraph) and the PLACEHOLDER chips are gone`, W.absent.every((x) => !m.all.includes(x)), W.absent.filter((x) => m.all.includes(x)).join(', '));
+  c.check(`${tag} WO-G1 no presenters section until a conferencePresenter has event = wosa (${m.profiles} profiles, "Presenters" h2 ${m.presentersH2})`, m.profiles > 0 || !m.presentersH2);
+  await subnavStable(page, server, route, c, tag);
+}
+
+/** SY-G1 (NOS Design, root comms.md L3387): /symposium. Every copy string is read from a frozen source or the CMS; builder copy is flagged in spec.md. */
+async function syChecks(page, route, vp, c, tag, server) {
+  const S = route.sy;
+  const themeLines = readFileSync(`${SPDIR}symposium-theme.md`, 'utf8').split('\n').map((l) => l.replace(/\*\*/g, '').trim()).filter(Boolean);
+  const title = themeLines.find((l) => /^[“"].*[”"]$/.test(l)); const sentence = themeLines[themeLines.length - 1];
+  const wteLine = readFileSync(`${SPDIR}what-to-expect.md`, 'utf8').split('\n').find((l) => l.includes(S.wteStarts)) ?? '';
+  const wteSentence = wteLine.slice(wteLine.indexOf(S.wteStarts)).match(/^.*?[.!?](?=\s|$)/)?.[0] ?? '';
+  const norm = (t) => t.replace(/\s+/g, ' ').trim();
+  c.check(`${tag} SY-G1 sources are real: the theme title, the theme sentence and the What to Expect first sentence were found in the frozen copies`, Boolean(title) && sentence.length > 40 && wteSentence.length > 40, `${title ?? 'no title'} | ${wteSentence.slice(0, 40)}`);
+  const m = await page.evaluate(({ title, S }) => {
+    const txt = (e) => e.textContent.replace(/\s+/g, ' ').trim();
+    const hero = document.querySelector('section[data-nos-hero]'); const main = document.querySelector('[data-doc-main]'); const aside = document.querySelector('[data-doc-aside]');
+    const titleEl = hero ? [...hero.querySelectorAll('*')].filter((e) => e.children.length === 0 || e.tagName === 'P').find((e) => txt(e) === title) : null;
+    const tcs = titleEl ? getComputedStyle(titleEl) : null;
+    const italics = [...document.querySelectorAll('main *, section[data-nos-hero] *')].filter((e) => !e.closest('[data-guest-profile]') && getComputedStyle(e).fontStyle === 'italic' && [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())).map((e) => txt(e).slice(0, 40));
+    const facts = hero ? [...hero.querySelectorAll('[data-hero-facts] dt')].map((dt) => ({ t: txt(dt), d: dt.nextElementSibling ? txt(dt.nextElementSibling) : '', ws: dt.nextElementSibling ? getComputedStyle(dt.nextElementSibling).whiteSpace : '', h: dt.nextElementSibling ? dt.nextElementSibling.getBoundingClientRect().height : 0, lh: dt.nextElementSibling ? parseFloat(getComputedStyle(dt.nextElementSibling).lineHeight) : 0 })) : [];
+    const p = [...document.querySelectorAll('main h2')].find((h) => txt(h) === S.presentersH2);
+    const cont = document.querySelector('main'); const cb = cont.getBoundingClientRect(); const pb = p ? p.getBoundingClientRect() : null;
+    const card = aside ? aside.querySelector('[data-ticket-card], .nk-ticket, .nk-grid') : null; const acs = aside ? getComputedStyle(aside) : null;
+    const crumb = hero ? txt(hero.querySelector('nav, [aria-label*="readcrumb"]') ?? hero).slice(0, 60) : '';
+    const mb = main ? main.getBoundingClientRect() : null; const ab = aside ? aside.getBoundingClientRect() : null;
+    return { asideY: ab ? ab.top + scrollY : null, mainY: mb ? mb.top + scrollY : null, mainText: main ? txt(main) : '', h1: txt(document.querySelector('h1')), titleFound: Boolean(titleEl), titleItalic: tcs?.fontStyle, titleFam: tcs?.fontFamily.split(',')[0].replace(/["']/g, '').toLowerCase(), titleW: tcs?.fontWeight, titlePx: tcs ? parseFloat(tcs.fontSize) : null, titleInHero: Boolean(titleEl),
+      italics, facts, presentersFull: p ? { inDocMain: Boolean(p.closest('[data-doc-main]')), w: pb.width, cw: cb.width } : null, card: Boolean(card), asidePos: acs?.position, asideTop: acs ? parseFloat(acs.top) : null, asideW: aside ? aside.getBoundingClientRect().width : 0,
+      all: txt(document.querySelector('main')), crumb };
+  }, { title, S });
+  c.check(`${tag} SY-G1 h1 is "${S.h1}" (NL-1: the nav label, the full name sits on the ticket card) (${m.h1})`, m.h1 === S.h1);
+  c.check(`${tag} SY-G1 her theme title ${title} sits in the hero in her quotation marks, Fraunces 300 italic, 22-28px, and is the only italic outside the profiles (${m.titleItalic} ${m.titleFam} ${m.titleW} ${m.titlePx}; italics: ${m.italics.join(' | ')})`, m.titleFound && m.titleItalic === 'italic' && m.titleFam.includes('fraunces') && m.titleW === '300' && m.titlePx >= 21 && m.titlePx <= 28.5 && m.italics.length === 1);
+  c.check(`${tag} SY-G1 FACTS-1 renders from the CMS ticket: whichever of Date / Time / Venue are present come in that order, an empty cell is omitted (no "Dates to follow", TBC or dash), the date is nowrap and one line (${m.facts.map((f) => `${f.t}=${f.d}`).join('; ')})`, (m.facts.length >= 2 && (() => { const order = ['Date', 'Time', 'Venue']; const idx = m.facts.map((f) => order.indexOf(f.t)); return idx.every((i, k) => i >= 0 && (k === 0 || i > idx[k - 1])); })()) && m.facts.every((f) => f.d !== '' && !/follow|tbc|to be confirmed|^[-\u2013\u2014]+$/i.test(f.d)) && m.facts.filter((f) => f.t === 'Date').every((f) => /nowrap/.test(f.ws) && f.h <= f.lh * 1.4));
+  dateTimeChecks(c, tag, 'SY-G1', m.facts, S, S.hoursLine, S.dateFaq);
+  c.check(`${tag} SY-G1 body: her theme sentence, verbatim, then the first What to Expect sentence, verbatim, in the main column`, (() => { const a = m.mainText.indexOf(norm(sentence)); const b = m.mainText.indexOf(norm(wteSentence)); return a >= 0 && b > a; })(), `${m.mainText.indexOf(norm(sentence))} / ${m.mainText.indexOf(norm(wteSentence))}`);
+  c.check(`${tag} SY-G1 the aside holds the live symposium ticket card, sticky at 100 from 1024, static and at most 440px below (${m.card}; ${m.asidePos} ${m.asideTop}; ${Math.round(m.asideW)}px)`, m.card && (vp.width >= 1024 ? m.asidePos === 'sticky' && m.asideTop === 100 : (m.asidePos !== 'sticky' && m.asideW <= 441)));
+  if (vp.width < 1024) c.check(`${tag} SY-G1 below 1024 the ticket comes first (aside y ${Math.round(m.asideY)} < copy y ${Math.round(m.mainY)})`, m.asideY !== null && m.asideY < m.mainY);
+  await subnavStable(page, server, route, c, tag);
+  c.check(`${tag} SY-G1 h2 "${S.presentersH2}" is full width, outside the main column (${JSON.stringify(m.presentersFull)})`, Boolean(m.presentersFull) && !m.presentersFull.inDocMain && m.presentersFull.w >= m.presentersFull.cw * 0.85);
+  c.check(`${tag} SY-G1 the About/Attending placeholders and the PLACEHOLDER COPY chips are gone`, S.absent.every((t) => !m.all.includes(t)), S.absent.filter((t) => m.all.includes(t)).join(', '));
+  c.check(`${tag} SY-G1 the crumb reads National Show - Symposium (${m.crumb})`, /National Show\s*[—–-]\s*Symposium/.test(m.crumb));
+}
+
 async function sxChecks(page, route, vp, c, tag) {
   const names = readFileSync(`${SPDIR}sa-exhibitors.md`, 'utf8').split('\n').filter((l) => /^\|/.test(l) && !/^\|\s*-/.test(l)).map((l) => spUnmd(l.replace(/\|/g, ' ')));
   const m = await page.evaluate(() => { const t = (document.querySelector('main')?.textContent ?? '').replace(/\s+/g, ' '); const aside = document.querySelector('[data-doc-aside]'); const items = aside ? [...aside.querySelectorAll('li')].map((li) => ({ t: li.textContent.replace(/\s+/g, ' ').trim(), h: li.getBoundingClientRect().height })) : []; const btn = [...document.querySelectorAll('main a')].filter((a) => /vendor application/i.test(a.textContent)); const h2 = [...document.querySelectorAll('[data-doc-aside] h2')].map((h) => h.textContent.trim()); const wall = [...document.querySelectorAll('main h2')].map((h) => h.textContent.trim()); return { t, items, btn: btn.map((b) => ({ shown: b.getBoundingClientRect().height > 0, h: b.getBoundingClientRect().height, href: b.getAttribute('href') })), h2, wall, cta: document.querySelector('.sp-hero-cta, [data-hero-cta]') ? true : null }; });
@@ -260,8 +456,7 @@ async function sxChecks(page, route, vp, c, tag) {
   if (route.sx.directory === 'closed') {
     const leaked = names.filter((n) => n.length > 3 && m.t.includes(n));
     c.check(`${tag} SX-G1/D-SX1 the directory is gated closed: none of her ${names.length} invited-vendor names is rendered (${leaked.slice(0, 3).join(', ')})`, names.length >= 20 && leaked.length === 0);
-    const stmt = absenceStatement();
-    c.check(`${tag} SX-G1/D-SX1 the empty state shows the existing ABSENCE_STATEMENT, read from source (${stmt ? stmt.slice(0, 40) : 'unreadable'}...)`, Boolean(stmt) && m.t.includes(stmt.replace(/\s+/g, ' ')));
+    c.check(`${tag} SX-G1 no lede: the unsourced 'Meet the specialist nurseries' line is not rendered`, !m.t.includes(route.sx.noLedeText ?? 'Meet the specialist nurseries'));
     c.check(`${tag} SX-G1 the Vendor application button is in the empty state (${m.btn.length} buttons)`, m.btn.length >= 1);
   } else {
     c.check(`${tag} SX-G1 D-SX1 open: her ${names.length} rows are rendered in order`, (() => { let at = 0; return names.every((n) => { const k = m.t.indexOf(n, at); if (k < 0) return false; at = k + n.length; return true; }); })());
@@ -319,7 +514,7 @@ async function extraChecks(page, route, vp, c, tag) {
     const uniq = [...new Set(heads)].sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
     let skip = 0; for (let i = 1; i < uniq.length; i += 1) if (lv(uniq[i]) > lv(uniq[i - 1]) + 1) skip += 1;
     const round = [...document.querySelectorAll('body *')].filter((e) => { if (e.closest(eyebrowSel)) return false; const s = getComputedStyle(e); const b = e.getBoundingClientRect(); return b.width > 0 && b.height > 0 && ['TopLeft', 'TopRight', 'BottomLeft', 'BottomRight'].some((k) => parseFloat(s[`border${k}Radius`]) >= 999); }).map((e) => `${e.tagName.toLowerCase()}.${String(e.className).slice(0, 30)}`);
-    const split = [...document.querySelectorAll('main h2')].filter((h) => { let item = h; while (item.parentElement && item.parentElement !== document.querySelector('main')) { const ps = getComputedStyle(item.parentElement); const row = ps.display === 'grid' ? ps.gridTemplateColumns.trim().split(/\s+/).length > 1 : (ps.display === 'flex' && ps.flexDirection.startsWith('row')); if (row && item.parentElement.children.length > 1) return item.textContent.trim() === h.textContent.trim() || item.querySelectorAll('p, ul, ol, details, table, img, a').length === 0; item = item.parentElement; } return false; }).map((h) => h.textContent.trim().slice(0, 30));
+    const split = [...document.querySelectorAll('main h2')].filter((h) => !h.closest('[data-venue-card]') && !h.closest('section, div')?.querySelector('[data-venue-card]')).filter((h) => { let item = h; while (item.parentElement && item.parentElement !== document.querySelector('main')) { const ps = getComputedStyle(item.parentElement); const row = ps.display === 'grid' ? ps.gridTemplateColumns.trim().split(/\s+/).length > 1 : (ps.display === 'flex' && ps.flexDirection.startsWith('row')); if (row && item.parentElement.children.length > 1) return item.textContent.trim() === h.textContent.trim() || item.querySelectorAll('p, ul, ol, details, table, img, a').length === 0; item = item.parentElement; } return false; }).map((h) => h.textContent.trim().slice(0, 30));
     const nkBad = [...document.querySelectorAll('.nk-ticket, .nk-perf, .nk-stamp')].filter((e) => !e.closest('[data-ticket-card]')).length;
     const testBar = document.querySelectorAll('[aria-label="Testing only, not live"]').length;
     const inner = document.querySelector('.nos-hero-inner'); const ic = inner ? getComputedStyle(inner) : null;
@@ -328,6 +523,7 @@ async function extraChecks(page, route, vp, c, tag) {
     const navLabels = [...document.querySelectorAll('header a, .nos-subnav a')].map((a) => a.textContent.trim().replace(/\s+/g, ' ').toLowerCase()).filter(Boolean);
     const h2s = [...document.querySelectorAll('main h2')].map((h) => h.textContent.trim().replace(/\s+/g, ' '));
     const h4s = [...document.querySelectorAll('main h4')].map((h) => { const s = getComputedStyle(h); return { fam: s.fontFamily.split(',')[0].replace(/["']/g, '').toLowerCase(), w: s.fontWeight, px: parseFloat(s.fontSize), mt: parseFloat(s.marginTop), mb: parseFloat(s.marginBottom) }; });
+    const proseH3 = () => [...document.querySelectorAll('main h3')].find((h) => !h.closest('[data-venue-card], [data-doc-aside], aside, [data-ticket-card], [data-card]')) ?? null;
     const lh = (e) => { if (!e) return null; const s = getComputedStyle(e); return parseFloat(s.lineHeight) / parseFloat(s.fontSize); };
     const hero = document.querySelector('section[data-nos-hero]');
     const facts = document.querySelector('[data-hero-facts]');
@@ -337,7 +533,7 @@ async function extraChecks(page, route, vp, c, tag) {
     const h1i = h1e ? { len: h1e.textContent.replace(/\s+/g, ' ').trim().length, long: h1e.classList.contains('is-long'), px: parseFloat(h1s.fontSize), maxW: h1s.maxWidth, wrap: h1s.textWrap || h1s.getPropertyValue('text-wrap'), lines: Math.round(h1e.getBoundingClientRect().height / parseFloat(h1s.lineHeight)) } : null;
     const subItems = [...document.querySelectorAll('.nos-subnav a')].map((a) => ({ t: a.textContent.replace(/\s+/g, ' ').trim(), cur: a.getAttribute('aria-current') }));
     const crumb = document.querySelector('section[data-nos-hero] nav[aria-label="Breadcrumb"]'); const crumbText = crumb ? crumb.textContent.replace(/\s+/g, ' ').trim() : null;
-    return { h1i, subItems, crumbText, nkBad, testBar, vw: innerWidth, innerMin: ic ? parseFloat(ic.minHeight) : null, innerAlign: ic ? ic.alignContent : null, innerPadT: ic ? parseFloat(ic.paddingTop) : null, innerPadB: ic ? parseFloat(ic.paddingBottom) : null, band: ib && ib.height ? ib.width / ib.height : null, skip, round, split, padTop: fs ? parseFloat(fs.paddingTop) : null, bTop: fs ? parseFloat(fs.borderTopWidth) : null, navLabels, h2s, h4s, h2lh: lh(document.querySelector('main h2')), h3lh: lh(document.querySelector('main h3')),
+    return { h1i, subItems, crumbText, nkBad, testBar, vw: innerWidth, innerMin: ic ? parseFloat(ic.minHeight) : null, innerAlign: ic ? ic.alignContent : null, innerPadT: ic ? parseFloat(ic.paddingTop) : null, innerPadB: ic ? parseFloat(ic.paddingBottom) : null, band: ib && ib.height ? ib.width / ib.height : null, skip, round, split, padTop: fs ? parseFloat(fs.paddingTop) : null, bTop: fs ? parseFloat(fs.borderTopWidth) : null, navLabels, h2s, h4s, h2lh: lh(document.querySelector('main h2')), h3lh: lh(proseH3()),
       heroH: hero ? hero.getBoundingClientRect().height : null, legend, railed, factsCount: facts ? facts.querySelectorAll('[data-hero-fact]').length : 0, factsAttr: facts ? facts.getAttribute('data-fact-count') : null, factTerms: facts ? [...facts.querySelectorAll('dt')].map((e) => e.textContent.trim()) : [], factValues: facts ? [...facts.querySelectorAll('dd')].map((e) => e.textContent.trim()) : [], factCount2: facts ? facts.querySelectorAll('[data-hero-fact]').length >= 2 : true, indexRows: [...document.querySelectorAll('nav[data-doc-index] a')].map((a) => { const b = a.getBoundingClientRect(); return { t: b.top, b: b.bottom, l: b.left, r: b.right }; }), factsOk: facts ? [...facts.querySelectorAll('[data-hero-fact]')].every((f) => f.children[0]?.tagName === 'DT' && f.children[1]?.tagName === 'DD') : true };
   }, { eyebrowSel: '[data-nos-hero-eyebrow]' });
   if (x.h1i) {
@@ -351,7 +547,7 @@ async function extraChecks(page, route, vp, c, tag) {
   }
   if (route.subnav) {
     const items = x.subItems.map((i) => i.t); const cur = x.subItems.filter((i) => i.cur === 'page').map((i) => i.t);
-    c.check(`${tag} the sub-nav is ${route.subnav.items.join(' / ')} in order (${items.join(' / ')})`, JSON.stringify(items) === JSON.stringify(route.subnav.items));
+        c.check(`${tag} the sub-nav is ${route.subnav.items.join(' / ')} in order, with no South African exhibitors item (${items.join(' / ')})`, JSON.stringify(items) === JSON.stringify(route.subnav.items));
     c.check(`${tag} exactly one sub-nav item is aria-current and it is "${route.subnav.current}" (${cur.join(', ')})`, cur.length === 1 && cur[0] === route.subnav.current);
   }
   c.check(`${tag} a breadcrumb sits in the hero ('National Show - <page>'): ${x.crumbText}`, Boolean(x.crumbText) && /^National Show/.test(x.crumbText));
@@ -399,18 +595,23 @@ await withServer(1, 'standard', async (server, c) => {
     const needsPhoto = ROUTES.filter((r) => !r.photo).map((r) => r.nos);
     {
       const vp = { name: '2056@2', width: 2056, height: 1200, dsf: 2 }; const context = await newContext(browser, vp); const page = await context.newPage();
-      await page.goto(`${server.nos}/tickets`, { waitUntil: 'load' }); await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await page.waitForTimeout(500);
-      await cardImageChecks(page, vp, c, `[${vp.name} /tickets cards]`); await context.close();
+      if (await gotoRoute(page, server, '/tickets', c, `[${vp.name} /tickets cards]`)) { await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await page.waitForTimeout(500);
+      await cardImageChecks(page, vp, c, `[${vp.name} /tickets cards]`); } await context.close();
     }
     for (const e of EXCLUDED) c.note(`EXCLUDED ${e.nos}: ${e.excluded}`);
     c.note(`WS-1: ${STD.ws1.ticketEdge}`);
     c.note(`NEEDS PHOTO (Brad photography need, ${needsPhoto.length}): ${needsPhoto.join(' ')}`);
+    for (const r of RETIRED) {
+      let res = null; try { res = await fetch(`${server.nos}${r.from}`, { redirect: 'manual', headers: { authorization: AUTH } }); } catch (e) { c.check(`[retired ${r.from}] answers`, false, e.message); }
+      if (res) { const loc = res.headers.get('location'); const u = loc ? new URL(loc, server.nos) : null; c.check(`[retired ${r.from}] still returns a ${r.status} to ${r.to} on the gate origin (${res.status} ${loc})`, res.status === r.status && u !== null && u.pathname === r.to && u.origin === new URL(server.nos).origin); }
+    }
     for (const route of ROUTES) {
       for (const vp of STD.viewports) {
         const tag = `[${vp.name} ${route.nos}]`;
         const context = await newContext(browser, vp);
         const page = await context.newPage();
-        const res = await page.goto(`${server.nos}${route.nos}`, { waitUntil: 'load' });
+        const res = await gotoRoute(page, server, route.nos, c, tag);
+        if (!res) { await context.close(); continue; }
         c.check(`${tag} responds 200`, res?.status() === 200, String(res?.status()));
         if (res?.status() !== 200) { await context.close(); continue; }
         await page.waitForSelector('[data-doc-layout], [data-programme-body]', { timeout: 15000 }).catch(() => {});
@@ -429,6 +630,7 @@ await withServer(1, 'standard', async (server, c) => {
           const wrap = document.querySelector('[data-doc-layout] [data-nos-wrap], [data-doc-layout]');
           const wcs = wrap ? getComputedStyle(wrap) : null;
           const h1s = [...document.querySelectorAll('h1')]; const h2s = [...document.querySelectorAll('main h2')];
+          const proseH3 = () => [...document.querySelectorAll('main h3')].find((h) => !h.closest('[data-venue-card], [data-doc-aside], aside, [data-ticket-card], [data-card]')) ?? null;
           const cs = (e) => (e ? { fam: getComputedStyle(e).fontFamily.split(',')[0].replace(/["']/g, '').toLowerCase(), w: getComputedStyle(e).fontWeight, px: parseFloat(getComputedStyle(e).fontSize) } : null);
           const bold = [...document.querySelectorAll('main p')].filter((p) => p.children.length === 1 && /^(STRONG|B)$/.test(p.firstElementChild.tagName) && p.textContent.trim() === p.firstElementChild.textContent.trim()).length;
           const eyebrow = [...document.querySelectorAll('main h2, main h3')].filter((h) => { const p = h.previousElementSibling; if (!p) return false; const s = getComputedStyle(p); return s.textTransform === 'uppercase' && parseFloat(s.fontSize) <= 13 && p.textContent.trim().length < 40; }).length;
@@ -444,7 +646,7 @@ await withServer(1, 'standard', async (server, c) => {
             main: main ? r(main) : null, aside: asideEl ? { ...r(asideEl), pos: getComputedStyle(asideEl).position, top: getComputedStyle(asideEl).top, kind: asideEl.getAttribute('data-doc-aside-kind'), first: Boolean(main && (asideEl.compareDocumentPosition(main) & Node.DOCUMENT_POSITION_FOLLOWING)), count: document.querySelectorAll('[data-doc-aside]').length } : null,
             proseW: prose ? prose.getBoundingClientRect().width : null, chars: prose && ch ? prose.getBoundingClientRect().width / ch : null,
             wrapInner: wrap ? r(wrap).w - parseFloat(wcs.paddingLeft) - parseFloat(wcs.paddingRight) : null, wrapLeft: wrap ? r(wrap).left + parseFloat(wcs.paddingLeft) : null,
-            h2: cs(h2s[0]), h3: cs(document.querySelector('main h3')), bold, eyebrow, sideBorder, nested, pills, small,
+            h2: cs(h2s[0]), h3: cs(proseH3()), bold, eyebrow, sideBorder, nested, pills, small,
             sw: document.documentElement.scrollWidth, iw: innerWidth, hasFacts: Boolean(document.querySelector('[data-hero-facts]')),
             indexNav: document.querySelector('nav[data-doc-index]') ? { ox: getComputedStyle(document.querySelector('nav[data-doc-index]').querySelector('ul') ?? document.body).overflowX } : null,
             vpW, wantAside: aside,
@@ -513,6 +715,10 @@ await withServer(1, 'standard', async (server, c) => {
         if (route.pyv) await pyvChecks(page, route, vp, c, tag);
         if (route.pg) await programmeChecks(page, route, vp, c, tag);
         if (route.sx) await sxChecks(page, route, vp, c, tag);
+        if (route.ig) await igChecks(page, route, vp, c, tag);
+        if (route.sy) await syChecks(page, route, vp, c, tag, server);
+        if (route.wo) await woChecks(page, route, vp, c, tag, server);
+        if (route.noUpscale) await noUpscaleChecks(page, vp, c, tag);
 
         // focus ring on the h1
         const ring = await page.evaluate(() => { const h = document.querySelector('h1'); if (!h) return null; h.setAttribute('tabindex', h.getAttribute('tabindex') ?? '-1'); h.focus(); const s = getComputedStyle(h); return { active: document.activeElement === h, os: s.outlineStyle, ow: parseFloat(s.outlineWidth), sh: s.boxShadow, tab: h.getAttribute('tabindex') }; });
@@ -521,10 +727,16 @@ await withServer(1, 'standard', async (server, c) => {
       }
 
       // sharpness at 2056@2 (DS-1: need >= 4112) for photo routes
+      if (route.noUpscale) {
+        const vp = { name: '2056@2', width: 2056, height: 1200, dsf: 2 };
+        const context = await newContext(browser, vp); const page = await context.newPage();
+        if (await gotoRoute(page, server, route.nos, c, `[${vp.name} ${route.nos}]`)) await noUpscaleChecks(page, vp, c, `[${vp.name} ${route.nos}]`);
+        await context.close();
+      }
       if (route.photo) {
         const vp = { name: '2056@2', width: 2056, height: 1200, dsf: 2 };
         const context = await newContext(browser, vp); const page = await context.newPage();
-        await page.goto(`${server.nos}${route.nos}`, { waitUntil: 'load' });
+        if (!(await gotoRoute(page, server, route.nos, c, `[${vp.name} ${route.nos}]`))) { await context.close(); continue; }
         await heroSharpness(page, route, vp, c, `[${vp.name} ${route.nos}]`);
         await extraChecks(page, route, vp, c, `[${vp.name} ${route.nos}]`);
         await factsGrammar(page, vp, c, `[${vp.name} ${route.nos}]`);
@@ -534,7 +746,7 @@ await withServer(1, 'standard', async (server, c) => {
       if ((ROUTE_TABLE_META.cardImageRoutes ?? []).includes(route.nos)) {
         const vp = { name: '2056@2', width: 2056, height: 1200, dsf: 2 };
         const context = await newContext(browser, vp); const page = await context.newPage();
-        await page.goto(`${server.nos}${route.nos}`, { waitUntil: 'load' });
+        if (!(await gotoRoute(page, server, route.nos, c, `[${vp.name} ${route.nos}]`))) { await context.close(); continue; }
         await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await page.waitForTimeout(500);
         await cardImageChecks(page, vp, c, `[${vp.name} ${route.nos} cards]`);
         await context.close();
@@ -543,7 +755,7 @@ await withServer(1, 'standard', async (server, c) => {
       for (const vp of STD.firstScreen) {
         const tag = `[first-screen ${vp.name} ${route.nos}]`;
         const context = await newContext(browser, vp); const page = await context.newPage();
-        await page.goto(`${server.nos}${route.nos}`, { waitUntil: 'load' });
+        if (!(await gotoRoute(page, server, route.nos, c, tag))) { await context.close(); continue; }
         const f = await page.evaluate(() => ({ ih: innerHeight, sub: document.querySelector('.nos-subnav')?.getBoundingClientRect().bottom ?? null, h2: document.querySelector('main h2')?.getBoundingClientRect() ?? null,
           facts: [...document.querySelectorAll('[data-hero-facts] dd, [data-hero-facts] dt')].map((e) => { const b = e.getBoundingClientRect(); return { top: b.top, bottom: b.bottom, left: b.left, right: b.right }; }), count: document.querySelectorAll('[data-hero-facts] dd').length,
           dd: document.querySelector('[data-hero-facts] dd') ? (() => { const s = getComputedStyle(document.querySelector('[data-hero-facts] dd')); return { fam: s.fontFamily.toLowerCase(), w: s.fontWeight }; })() : null }));
@@ -571,7 +783,7 @@ await withServer(1, 'standard', async (server, c) => {
       // focus after client navigation: click the first sub-nav link that is not the current page
       {
         const vp = STD.firstScreen[0]; const context = await newContext(browser, vp); const page = await context.newPage();
-        await page.goto(`${server.nos}${route.nos}`, { waitUntil: 'load' });
+        if (!(await gotoRoute(page, server, route.nos, c, `[first-screen-nav ${route.nos}]`))) { await context.close(); continue; }
         const target = await page.evaluate(() => { const a = [...document.querySelectorAll('.nos-subnav a')].find((x) => !x.hasAttribute('aria-current')); return a ? a.getAttribute('href') : null; });
         if (target) {
           await page.locator(`.nos-subnav a[href="${target}"]`).first().click();

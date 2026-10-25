@@ -85,6 +85,29 @@ export function heroFactsFromShow(
   return facts;
 }
 
+const YEAR = /\b(\d{4})\b/;
+const LEADING_WEEKDAY = /^[A-Za-z]+\s+/;
+
+/**
+ * The facts of one bookable event (SY-G1, WO-G1): its date without the weekday plus the show's year, its
+ * hours as the ticket product states them, and the venue from the published show facts. A fact with no
+ * value is left out, never filled; `normaliseHeroFacts` then drops the row below two facts.
+ */
+export function heroFactsForEvent(
+  showFacts: readonly ShowFact[],
+  product: { when: string; meta: string | null },
+): HeroFact[] {
+  const year = showFacts.find((fact) => fact.label === 'Dates')?.value.match(YEAR)?.[1];
+  const day = product.when.replace(LEADING_WEEKDAY, '');
+  const date = year && day ? `${day} ${year}` : null;
+  const venue = heroFactsFromShow(showFacts, ['Venue']);
+  return [
+    ...(date ? [{ term: 'Date', value: date }] : []),
+    ...(product.meta ? [{ term: 'Time', value: product.meta }] : []),
+    ...venue,
+  ];
+}
+
 export interface NosHeroProps {
   /** The pathname this hero heads, e.g. `/national-show/symposium` or `/national-show/archive/2024`. */
   route: string;

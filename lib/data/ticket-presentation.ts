@@ -129,6 +129,7 @@ export const TICKET_PRODUCTS: Record<TicketProductId, TicketProduct> = {
     id: 'symposium',
     kind: 'programme',
     name: 'National Orchid Show Symposium',
+    // Lee-Ann answers doc 2026-10-25: 'SAOC Symposium - 24th September 9am to 5pm'
     when: 'Friday 24 September',
     meta: '9am to 5pm',
     theme: 'From Wild Origins to Cultivated Excellence',
@@ -145,6 +146,7 @@ export const TICKET_PRODUCTS: Record<TicketProductId, TicketProduct> = {
     id: 'wosa',
     kind: 'programme',
     name: 'WOSA Conference',
+    // Lee-Ann answers doc 2026-10-25: 'WOSA Conference 25th September 9am to 5pm'
     when: 'Saturday 25 September',
     meta: '9am to 5pm',
     theme: 'With Wild Orchids of Southern Africa',

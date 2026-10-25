@@ -146,3 +146,7 @@ Workshops row asserted from source (see section 18), the awaiting-committee-copy
   2. **D-SX2:** confirm the spellings in her list ("Carniverous plants", "Rays Retail Nursary"; "Gods Green Gifts" without an apostrophe). Business names have to be right; nothing is corrected by the build.
   3. **Exhibitor entry guide copy:** schedule, classes, entry form, key dates. No source doc exists; the public build shows the hero and contact panel only until she supplies it.
 - **Assumptions:** the empty state's statement is read from the `ABSENCE_STATEMENT` constant in the sa-exhibitors page.tsx at gate time (path found by search under `app/`); the /exhibitors contact panel is detected by `[data-contact-panel]`, a `mailto:` link or a form (a hook the dev should add if none matches); the 3000px page-height bound is a heuristic for "hero + contact + index only".
+
+## 21. Revision 20 (2026-10-25)
+- Owner item (Lee-Ann): a >= 800px photo of Michael Tibbs. Until then he is listed without a photo; /symposium's card upscales his 201w source.
+- Assumption: the guest-row hooks `[data-guest-profile]`, `[data-guest-portrait]`, `[data-guest-role]`, `[data-guest-filter]` are not in NOS Design's fragment; the dev adds them. A page without `[data-guest-profile]` is treated as the zero-guest state.
