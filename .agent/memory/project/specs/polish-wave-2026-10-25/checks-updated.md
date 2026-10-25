@@ -8,3 +8,6 @@
 - contracts/golden/saoc-seo-polish/sitemap-expected.json (F3): `/members` moved from `include` to
   `exclude` with a reason. The members area has no portal yet, so the sitemap no longer lists it;
   without this edit the drift guard contracts/checks/saoc-seo-polish/check-sitemap-routes.mts fails.
+- contracts/checks/polish-wave-2026-10-25/f5-event-detail-rendered.mjs (F9 P2): the "band is below the meta table"
+  assertion now measures against the h1, because the National Show event page drops its meta <dl> when the band
+  renders (ruling P2). The band-once, CTA-href, chip and back-link assertions are unchanged.

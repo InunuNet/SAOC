@@ -1,6 +1,6 @@
 // F5 rendered (event detail, SAOC host) at 390@3, 768@1, 1280@1 and 1440@2.
 //   SV-1  the National Show event page renders the existing ShowBand ([data-home-section="show-band"])
-//         once, below the meta <dl>; its primary CTA goes to the NOS origin /tickets and its secondary
+//         once, below the title (F9 P2 drops the meta <dl> when the band renders); its primary CTA goes to the NOS origin /tickets and its secondary
 //         CTA to the NOS origin root, both derived from the configured origin (no literal nos.saoc.co.za
 //         unless that is the configured origin); an ordinary event page has no band (the live dataset holds
 //         only the show event, so that half is asserted statically in f5-event-static.mjs and here when one exists)
@@ -49,9 +49,9 @@ try {
       const n = await bands.count();
       if (n !== 1) failures.push(`${tag} show event: ${n} show bands, want 1`);
       else {
-        const dl = await page.locator('main dl, dl').first().boundingBox();
+        const h1Box = await page.locator('h1').first().boundingBox();
         const band = await bands.first().boundingBox();
-        if (!dl || !band || band.y < dl.y + dl.height - 1) failures.push(`${tag} show event: the band is not below the meta table`);
+        if (!h1Box || !band || band.y < h1Box.y + h1Box.height - 1) failures.push(`${tag} show event: the band is not below the title`);
         const primary = await page.locator('[data-show-band-cta="primary"]').first().getAttribute('href');
         const secondary = await page.locator('[data-show-band-cta="secondary"]').first().getAttribute('href');
         if (primary !== `${NOS_ORIGIN}/tickets`) failures.push(`${tag} Tickets CTA href is ${primary}, want ${NOS_ORIGIN}/tickets`);
