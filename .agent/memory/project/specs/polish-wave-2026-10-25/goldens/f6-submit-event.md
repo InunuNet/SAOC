@@ -21,9 +21,9 @@ flag is set, flag never in apphosting.yaml or .env.local.example, no auth bypass
 4. SF-2. Bring the form to the /contact pattern (components/contact/ContactForm.tsx:112-114, 285-290): labels use the same `labelClass`
    (font-mono 11px tracking-[0.16em] text-muted), fields the same input class (44px: py-2.5 and a line height that reaches >=44px, or min-h-11),
    the select and textarea included (replace the fixed `h-[39px]`), errors via the shared TicketFieldAlert as ContactForm does if that import is
-   already used there, and the submit is `inline-flex min-h-11 ... bg-primary text-ivory` with the same focus ring as ContactForm
-   (focus-visible:ring-primary). "Primary token button": the ruling says primary, ContactForm's button is the accent token today. This contract
-   pins --primary for the submit (open question to the lead). Keep every existing field, name, validation rule and message.
+   already used there, and the submit is `inline-flex min-h-11 ... bg-accent text-ink` with the same focus ring as ContactForm
+   (focus-visible:ring-primary). "Primary token button": the SAOC primary CTA ("Join a society", components/chrome/Header.tsx:183) and ContactForm both use `bg-accent text-ink` (sand). This contract
+   pins --accent for the submit (lead ruling 2026-10-25; ContactForm is unchanged). Keep every existing field, name, validation rule and message.
 5. app/events-fixtures/submit/page.tsx (new): `export const dynamic = 'force-dynamic'`; `if (process.env.EVENT_SUBMIT_FIXTURES !== '1') notFound();` then
    `<SubmitEventPageBody societies={[three static fixture societies with id-shaped ids, e.g. { id: 'soc-7f3a2c', name: 'Fixture Orchid Society A' }, ...]} />`.
    Do not add the flag anywhere else.
