@@ -29,7 +29,7 @@ if [ "$FIX_MODE" != "live" ]; then
   for f in _started.log _hits.log _misses.log _requests.log _net.log _assets.log; do : > "$FIX_LOG/$f"; done
   export SANITY_FIXTURE_DIR="$PWD/$SPEC_DIR/fixtures/sanity"
   export SANITY_FIXTURE_LOGDIR="$FIX_LOG"
-  export NODE_OPTIONS="${NODE_OPTIONS:-} --require $PWD/$SPEC_DIR/checks/block-sanity-net.cjs"
+  export NODE_OPTIONS="${NODE_OPTIONS:-} --require \"$PWD/$SPEC_DIR/checks/block-sanity-net.cjs\""
   if [ "$FIX_MODE" = "record" ]; then export SANITY_FIXTURE_MODE=record SANITY_NET_ALLOW=api SANITY_FIXTURE_RECORD_CONFIRM=1; else export SANITY_FIXTURE_MODE=replay; fi
 fi
 pnpm build

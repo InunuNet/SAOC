@@ -1,0 +1,1 @@
+{"query":"\n  *[_type == \"vendorNursery\" && defined(country) && country != \"South Africa\"] | order(name asc) {\n    _id,\n    name,\n    country,\n    bio,\n    history\n  }\n","params":{},"result":[],"capturedAt":"2026-10-25T23:51:23.595Z"}

@@ -1,0 +1,1 @@
+{"query":"\n  *[_type == \"vendorNursery\"] | order(name asc){\n    _id,\n    name,\n    logo,\n    country,\n    bio,\n    owner,\n    history,\n    specialisation,\n    plantsBrought,\n    website,\n    socialMedia[]{ _key, platform, url },\n    availableAtShow\n  }\n","params":{},"result":[],"capturedAt":"2026-10-25T23:51:19.451Z"}

@@ -1,0 +1,1 @@
+{"query":"\n  *[_type == \"nationalShow\"][0]{\n    salesOpen\n  }\n","params":{},"result":{"salesOpen":true},"capturedAt":"2026-10-25T23:51:23.597Z"}

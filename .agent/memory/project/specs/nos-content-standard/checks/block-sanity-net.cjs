@@ -50,7 +50,7 @@ if (typeof globalThis.fetch === 'function') {
   globalThis.fetch = function patchedFetch(input, init) {
     let host = '';
     try { host = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url).host; } catch { /* relative: not a Sanity host */ }
-    check(host, 'fetch');
+    try { check(host, 'fetch'); } catch (e) { return Promise.reject(e); } // fetch must reject, not throw synchronously
     return origFetch.call(this, input, init);
   };
 }

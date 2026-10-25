@@ -10,10 +10,14 @@
 // Relative imports only, so a bare tsx load works.
 // =============================================================
 
-import { createHash } from 'node:crypto';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-
 import { isHostedRuntime } from './fixture-route-guard';
+
+// This module is reachable from client bundles through sanity/lib/client.ts, where node:fs must not
+// be resolved at build time. The fixture is only ever active on the server, so the built-ins are
+// taken from the running process when first needed instead of being imported.
+const nodeFs = () => process.getBuiltinModule('node:fs');
+const sha256 = (text: string): string =>
+  process.getBuiltinModule('node:crypto').createHash('sha256').update(text).digest('hex');
 
 type FixtureMode = 'off' | 'replay' | 'record';
 type Params = Record<string, unknown>;
@@ -88,7 +92,7 @@ function canonical(value: unknown): unknown {
 /** sha256 of the trimmed query, a newline and the params with keys sorted recursively. */
 export function fixtureKey(query: string, params?: Params | null): string {
   const body = JSON.stringify(canonical(params ?? {}));
-  return createHash('sha256').update(`${query.trim()}\n${body}`).digest('hex');
+  return sha256(`${query.trim()}\n${body}`);
 }
 
 interface FixtureContext {
@@ -100,8 +104,9 @@ interface FixtureContext {
 let startedLine = '';
 
 function appendLog(ctx: FixtureContext, file: string, line: string): void {
-  mkdirSync(ctx.logDir, { recursive: true });
-  appendFileSync(`${ctx.logDir}/${file}`, `${line}\n`);
+  const fs = nodeFs();
+  fs.mkdirSync(ctx.logDir, { recursive: true });
+  fs.appendFileSync(`${ctx.logDir}/${file}`, `${line}\n`);
 }
 
 function logStart(ctx: FixtureContext): void {
@@ -113,8 +118,10 @@ function logStart(ctx: FixtureContext): void {
 
 function readEntry(ctx: FixtureContext, key: string): { result: unknown } | null {
   const file = `${ctx.dir}/${key}.json`;
-  if (!existsSync(file)) return null;
-  return JSON.parse(readFileSync(file, 'utf8')) as { result: unknown }; // written by record below
+  const fs = nodeFs();
+  if (!fs.existsSync(file)) return null;
+  // The file is written by recordFetch below.
+  return JSON.parse(fs.readFileSync(file, 'utf8')) as { result: unknown };
 }
 
 function replayFetch(
@@ -148,9 +155,10 @@ async function recordFetch(
   if (saved) return saved.result;
   const api = target.withConfig({ useCdn: false });
   const result = await api.fetch(query, params, { ...options, useCdn: false });
-  mkdirSync(ctx.dir, { recursive: true });
+  const fs = nodeFs();
+  fs.mkdirSync(ctx.dir, { recursive: true });
   const entry = { query, params: params ?? {}, result, capturedAt: new Date().toISOString() };
-  writeFileSync(`${ctx.dir}/${key}.json`, JSON.stringify(entry));
+  fs.writeFileSync(`${ctx.dir}/${key}.json`, JSON.stringify(entry));
   appendLog(ctx, FIXTURE_LOG.requests, key);
   return result;
 }

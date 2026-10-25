@@ -36,7 +36,7 @@ export function fixtureEnv(port) {
   const logdir = fixtureLogDir(port);
   mkdirSync(logdir, { recursive: true });
   for (const f of ['_started.log', '_hits.log', '_misses.log', '_requests.log', '_net.log', '_assets.log', '_browser-net.log', '_proof.json']) writeFileSync(`${logdir}/${f}`, '');
-  const nodeOptions = `${process.env.NODE_OPTIONS ?? ''} --require ${BLOCK_NET}`.trim();
+  const nodeOptions = `${process.env.NODE_OPTIONS ?? ''} --require "${BLOCK_NET}"`.trim(); // double-quoted: the repo path has spaces and Node splits an unquoted NODE_OPTIONS value on them
   return { SANITY_FIXTURE_DIR: FIXTURE_DIR, SANITY_FIXTURE_MODE: FIXTURE_MODE === 'record' ? 'record' : 'replay', SANITY_FIXTURE_LOGDIR: logdir, NODE_OPTIONS: nodeOptions, ...(FIXTURE_MODE === 'record' ? { SANITY_NET_ALLOW: 'api', SANITY_FIXTURE_RECORD_CONFIRM: '1' } : {}) };
 }
 let activeFixtureLog = null;
