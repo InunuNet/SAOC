@@ -264,6 +264,11 @@
   transition-property:
     color, background-color, border-color, text-decoration-color, opacity, transform, translate;
 }
+/* The page heading takes programmatic focus after a client-side navigation (tabindex -1). It is a
+   landing, not a control, so it keeps no ring; the extra element and attribute out-rank the reset above. */
+.nos-theme h1[tabindex="-1"]:focus {
+  outline: none;
+}
 
 .nos-theme {
   /* ---- F2/F3 additions: remaining sanctioned-palette members the primitives
@@ -618,12 +623,14 @@
    From 768px the copy sits on solid black at the left, top-anchored (never centred, so a lede the
    loader does not have cannot move the h1) and a photograph fills a 46% panel flush right at
    full hero height (hard edge, 16px bottom-left radius only, no scrim). The hero fits the h1 plus
-   a 3-line lede at min(56vh, 560px) with a 420px floor; a longer lede grows it downward only.
-   Below 768px a 2:1 photo band leads and the copy follows on black (see the 767px block). ---- */
+   a compact copy block at clamp(320px, 22vw, 380px) (PG-1); a longer lede or facts grow it downward
+   only. Below 768px a 2:1 photo band leads and the copy follows on black at 32px padding-block
+   (see the 767px block). ---- */
 .nos-theme .nos-hero-inner {
   display: grid;
   align-content: start;
-  min-height: max(420px, min(56vh, 560px));
+  min-height: clamp(320px, 22vw, 380px);
+  padding-block: clamp(48px, 4vw, 72px);
 }
 /* R70 symposium: the hero lede is the theme line (NosHero ledeKind="theme"), not a standfirst. */
 .nos-theme .nos-hero-inner .nos-hero-lede[data-nos-lede='theme'] {
@@ -649,8 +656,7 @@
   z-index: 2;
   display: grid;
   gap: 22px;
-  padding-top: 96px;
-  padding-bottom: 64px;
+  padding-block: 0;
 }
 /* The copy column ends 32px short of the panel: its left edge stays on the shared axis, its right
    padding clears the 46% panel. */
@@ -727,10 +733,10 @@
   }
 }
 @media (max-width: 767px) {
-  /* The floor is 360px; it grows with the band (50vw) so the band, the 48px top padding, an h1 and a
-     3-line lede fit without the hero growing when a longer lede arrives. */
+  /* PG-1: no height floor below 768. The hero is the band plus the copy, whose padding-block is 32px. */
   .nos-theme .nos-hero-inner {
-    min-height: max(360px, calc(50vw + 232px));
+    min-height: 0;
+    padding-block: 0;
   }
   .nos-theme .nos-hero-inner .nos-hero-media {
     position: relative;
@@ -744,8 +750,7 @@
     max-width: var(--nos-axis-max);
     margin-inline: auto;
     padding-inline: var(--nos-axis-pad);
-    padding-top: 48px;
-    padding-bottom: 32px;
+    padding-block: 32px;
   }
 }
 @media (max-width: 700px) {
