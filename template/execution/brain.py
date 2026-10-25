@@ -27,13 +27,17 @@ Database: .agent/memory/brain/ (project-local, persistent)
 from __future__ import annotations
 
 import argparse
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Windows: no fcntl; locks below use msvcrt
+    fcntl = None
 import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -43,6 +47,62 @@ MIN_PYTHON = (3, 10)
 _REEXEC_FLAG = "ATHANOR_BRAIN_REEXEC"
 _PY_CANDIDATES = ("python3.14", "python3.13", "python3.12", "python3.11", "python3.10",
                   "/opt/homebrew/bin/python3", "/usr/local/bin/python3", "python3")
+
+
+LOCK_DEADLINE_SECONDS = 120
+LOCK_POLL_SECONDS = 0.05
+
+
+def _lock_fd(fd, blocking=True, label="lock"):
+    """Exclusive lock on fd: flock on POSIX, msvcrt.locking on Windows.
+
+    Windows LK_LOCK gives up after ~10 retries, so a blocking acquire polls
+    LK_NBLCK until LOCK_DEADLINE_SECONDS, then raises TimeoutError naming
+    `label`. A non-blocking miss raises BlockingIOError, as flock does.
+    """
+    if fcntl is not None:
+        fcntl.flock(fd, fcntl.LOCK_EX | (0 if blocking else fcntl.LOCK_NB))
+        return
+    import msvcrt
+    pos = os.lseek(fd, 0, os.SEEK_CUR)
+    deadline = time.monotonic() + LOCK_DEADLINE_SECONDS
+    try:
+        while True:
+            os.lseek(fd, 0, os.SEEK_SET)
+            try:
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+                return
+            except OSError as exc:
+                if not blocking:
+                    raise BlockingIOError(*exc.args) from exc
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(
+                        "could not acquire %s within %ds" % (label, LOCK_DEADLINE_SECONDS)
+                    ) from exc
+                time.sleep(LOCK_POLL_SECONDS)
+    finally:
+        os.lseek(fd, pos, os.SEEK_SET)
+
+
+def _unlock_fd(fd):
+    if fcntl is not None:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        return
+    import msvcrt
+    pos = os.lseek(fd, 0, os.SEEK_CUR)
+    try:
+        os.lseek(fd, 0, os.SEEK_SET)
+        msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+    finally:
+        os.lseek(fd, pos, os.SEEK_SET)
+
+
+def _venv_exe(name):
+    """Path of a venv executable: Scripts/<name>.exe on Windows, bin/<name> elsewhere."""
+    if os.name == "nt":
+        exe = "python.exe" if name == "python3" else name + ".exe"
+        return os.path.join(VENV_PATH, "Scripts", exe)
+    return os.path.join(VENV_PATH, "bin", name)
 
 
 def _python_ok(exe):
@@ -88,15 +148,15 @@ def _ensure_chromadb():
         pass
 
     need = ".".join(map(str, MIN_PYTHON))
-    venv_python = os.path.join(VENV_PATH, "bin", "python3")
+    venv_python = _venv_exe("python3")
     if os.environ.get(_REEXEC_FLAG):
         _die("re-exec'd into %s but chromadb still does not import. Run: %s -m pip install chromadb"
              % (venv_python, venv_python))
     if os.path.exists(venv_python):
         if not _python_ok(venv_python):
             _die("%s is %s; brain.py needs Python %s+. Rebuild it from a newer interpreter: "
-                 "move %s aside, then run /opt/homebrew/bin/python3 -m venv %s && %s/bin/pip install chromadb"
-                 % (venv_python, _python_version(venv_python), need, VENV_PATH, VENV_PATH, VENV_PATH))
+                 "move %s aside, then run /opt/homebrew/bin/python3 -m venv %s && %s install chromadb"
+                 % (venv_python, _python_version(venv_python), need, VENV_PATH, VENV_PATH, _venv_exe("pip")))
         _reexec(venv_python)
 
     # Create the venv from an interpreter that satisfies MIN_PYTHON -- not
@@ -110,7 +170,7 @@ def _ensure_chromadb():
              % (need, VENV_PATH, sys.version.split()[0]))
     print("🧠 First run — setting up brain environment (%s)..." % base, file=sys.stderr)
     subprocess.run([base, "-m", "venv", VENV_PATH], check=True)
-    pip = os.path.join(VENV_PATH, "bin", "pip")
+    pip = _venv_exe("pip")
     subprocess.run([pip, "install", "-q", "chromadb"], check=True)
     print("✅ Brain environment ready.", file=sys.stderr)
     _reexec(venv_python)
@@ -142,9 +202,14 @@ def remember(summary: str, tags: str = "", source: str = "manual", blockers: str
     them to take turns instead.
     """
     Path(BRAIN_DIR).mkdir(parents=True, exist_ok=True)
-    lock_fd = os.open(str(Path(BRAIN_DIR) / ".brain.lock"), os.O_CREAT | os.O_RDWR, 0o644)
+    lock_path = str(Path(BRAIN_DIR) / ".brain.lock")
+    lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o644)
     try:
-        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        _lock_fd(lock_fd, label=lock_path)
+    except BaseException:
+        os.close(lock_fd)
+        raise
+    try:
         collection = get_collection()
         # Second-precision alone collides under concurrent writers too --
         # chromadb.add() with a duplicate id overwrites the earlier entry.
@@ -165,7 +230,7 @@ def remember(summary: str, tags: str = "", source: str = "manual", blockers: str
             metadatas=[metadata],
         )
     finally:
-        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        _unlock_fd(lock_fd)
         os.close(lock_fd)
     print(f"✅ Stored: {mem_id} ({metadata['word_count']} words)")
     return mem_id
