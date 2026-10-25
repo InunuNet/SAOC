@@ -253,12 +253,12 @@ def _read_mission(root):
     return None
 
 
-def _run(argv, cwd=None, timeout=PROBE_TIMEOUT_SECONDS, shell=False):
+def _run(argv, cwd=None, timeout=PROBE_TIMEOUT_SECONDS, shell=False, env=None):
     """Run a command; return (rc, first_line_of_output). Never raises."""
     try:
         proc = subprocess.run(
             argv, cwd=str(cwd) if cwd else None, shell=shell, timeout=timeout,
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env,
         )
     except (OSError, subprocess.SubprocessError):
         return 127, "command could not be executed"
@@ -267,7 +267,9 @@ def _run(argv, cwd=None, timeout=PROBE_TIMEOUT_SECONDS, shell=False):
 
 
 def _git(root, *args):
-    rc, out = _run(["git", "-C", str(root)] + list(args), timeout=NETWORK_TIMEOUT_SECONDS)
+    # A read-only panel must never take .git/index.lock (a killed `git status` leaves it stale).
+    env = dict(os.environ, GIT_OPTIONAL_LOCKS="0")
+    rc, out = _run(["git", "-C", str(root)] + list(args), timeout=NETWORK_TIMEOUT_SECONDS, env=env)
     return out if rc == 0 else None
 
 
