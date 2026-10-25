@@ -10,6 +10,7 @@ import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { buildSectionLedes } from '@/lib/data/ticket-section-ledes';
 import {
   PROGRAMME_PRODUCTS,
+  TICKET_COPY,
   TICKET_DETAIL_HREFS,
   TICKET_PRODUCTS,
   partnerNameOf,
@@ -46,7 +47,6 @@ interface ShowDay {
 const TIMETABLE_HEADING = 'Show dates – for public entrance';
 const TIMETABLE_DATE_LINE = 'Thursday 23 to Sunday 26 September 2027';
 const OPENING_HOURS_LABEL = 'Opening hours';
-const TICKETS_HEADING = 'Tickets';
 
 const SHOW_DAYS: readonly ShowDay[] = [
   { weekday: 'Thursday', day: '23', month: 'September', hours: 'VIP Ticket Holders – 14.00 to 19.00' },
@@ -186,24 +186,28 @@ export default async function ProgrammePage() {
       </div>
 
       {hasProgramme ? (
-        <div className="nos-pg-book">
-          <TicketSection id="programme" title={TICKETS_HEADING} lede={ledes.programme} columns={3}>
-            {PROGRAMME_PRODUCTS.map((id) => {
-              const vm = cards[id];
-              return vm ? (
-                <div key={id} className="nk-wrap">
-                  <TicketCard
-                    productId={id}
-                    vm={vm}
-                    name={vm.name}
-                    partnerName={partnerNameOf(id, cards)}
-                    showProvisional={showProvisional}
-                  />
-                </div>
-              ) : null;
-            })}
-          </TicketSection>
-        </div>
+        <TicketSection
+          id="programme"
+          title={TICKET_COPY.sections.programme}
+          lede={ledes.programme}
+          columns={3}
+          hideHeading
+        >
+          {PROGRAMME_PRODUCTS.map((id) => {
+            const vm = cards[id];
+            return vm ? (
+              <div key={id} className="nk-wrap">
+                <TicketCard
+                  productId={id}
+                  vm={vm}
+                  name={vm.name}
+                  partnerName={partnerNameOf(id, cards)}
+                  showProvisional={showProvisional}
+                />
+              </div>
+            ) : null;
+          })}
+        </TicketSection>
       ) : null}
       <NosShowIndex current="/national-show/programme" />
     </>

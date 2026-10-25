@@ -41,7 +41,7 @@ const JUMP_ITEMS = [
 ];
 
 const LOCKUP_GRID = 'grid grid-cols-1 gap-6 md:grid-cols-2';
-const CARD_GRID = 'grid grid-cols-1 gap-6 md:grid-cols-2';
+const CARD_GRID = 'grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3';
 
 // Lockup grids are ordered horizontal light, horizontal dark, vertical light, vertical dark.
 const LOCKUP_GROUNDS: Ground[] = ['light', 'dark', 'light', 'dark'];

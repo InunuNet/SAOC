@@ -20,6 +20,7 @@ const NOS_GROUND = 'rgb(251, 250, 240)'; // --nc-ground #FBFAF0
 const LOCKUP_FILE = 'nos-full-colour-horizontal';
 const LOCKUP_ALT = SHOW_TITLE_EXPANDED;
 const LOCKUP_BOX_WIDE = 448;
+const PHONE_WIDTH = 390;
 // HD-1: the link box is min(container, 405px); on a 390px phone the container is 390 - 2 * 16.
 const LOCKUP_INK_PHONE = 358;
 const LOCKUP_INK_ROW = 405;
@@ -46,14 +47,26 @@ test.describe('NOS header — lockup and Tickets call to action', () => {
     expect(Math.abs(box!.width - LOCKUP_BOX_WIDE)).toBeLessThanOrEqual(TOLERANCE_PX);
   });
 
-  test('the lockup fills the container on a phone', async ({ page, baseURL }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(`${nosBase(baseURL!)}/`);
+  // 358 is a phone rule, and phones use overlay scrollbars: emulate one so SG-1's
+  // `scrollbar-gutter: stable` reserves nothing, as on a real device.
+  test.describe('on an emulated phone', () => {
+    test.use({
+      viewport: { width: PHONE_WIDTH, height: 844 },
+      isMobile: true,
+      hasTouch: true,
+      deviceScaleFactor: 3,
+    });
 
-    const brand = page.locator('header#nh .nh-brand');
-    await expect(brand.getByRole('img', { name: LOCKUP_ALT })).toBeVisible();
-    const box = await brand.boundingBox();
-    expect(Math.abs(box!.width - LOCKUP_INK_PHONE)).toBeLessThanOrEqual(TOLERANCE_PX);
+    test('the lockup fills the container on a phone', async ({ page, baseURL }) => {
+      await page.goto(`${nosBase(baseURL!)}/`);
+
+      const brand = page.locator('header#nh .nh-brand');
+      await expect(brand.getByRole('img', { name: LOCKUP_ALT })).toBeVisible();
+      const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+      expect(clientWidth, 'the scrollbar gutter must be zero on a phone').toBe(PHONE_WIDTH);
+      const box = await brand.boundingBox();
+      expect(Math.abs(box!.width - LOCKUP_INK_PHONE)).toBeLessThanOrEqual(TOLERANCE_PX);
+    });
   });
 
   test('the lockup is the 405px footprint at the row breakpoint (780) and just below it (779)', async ({
