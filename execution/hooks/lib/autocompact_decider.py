@@ -29,6 +29,7 @@ ROUTE_A_RECORD = Path(".agent/memory/scratch/autocompact-route-a.json")
 CONF_FILE = Path(".agent/autocompact.conf")
 MISSIONS_DIR = Path(".agent/memory/project/missions")
 METHOD_ENV = "AUTOCOMPACT_METHOD"
+SHADOW_ENV = "CLAUDE_CODE_AUTO_COMPACT_WINDOW"
 METHODS = ("ghostty", "settings")
 OFF_METHOD = "off"
 NOT_AUTHORIZED_MARKERS = ("-1743", "not authorized to send apple events")
@@ -124,8 +125,17 @@ def expire_route_a(settings_path=SETTINGS_LOCAL, record_path=None):
         disarm_route_a(settings_path, record_path)
 
 
+def route_a_shadowed():
+    """True when the env var that outranks autoCompactWindow is set, making Route A inert."""
+    if os.environ.get(SHADOW_ENV) is None:
+        return False
+    LOG.warning("%s is set and outranks autoCompactWindow; not arming the settings route",
+                SHADOW_ENV)
+    return True
+
+
 def perform(*, safe, session_cwd, surfaces, method, injector, armer, disarmer):
-    """Orchestrate one delivery. Returns "fired", "armed" or "noop"."""
+    """Orchestrate one delivery. Returns "fired", "armed", "shadowed" or "noop"."""
     if not safe:
         return "noop"
     if method == "ghostty":
@@ -135,6 +145,8 @@ def perform(*, safe, session_cwd, surfaces, method, injector, armer, disarmer):
         injector(surface)
         return "fired"
     if method == "settings":
+        if route_a_shadowed():
+            return "shadowed"
         armer()
         return "armed"
     return "noop"
@@ -214,7 +226,8 @@ def ghostty_inject(surface_id):
     except subprocess.CalledProcessError as exc:
         if any(m in (exc.stderr or "").lower() for m in NOT_AUTHORIZED_MARKERS):
             LOG.warning("ghostty automation not granted; nothing typed, falling back to settings")
-            arm_route_a()
+            if not route_a_shadowed():
+                arm_route_a()
         else:
             LOG.error("ghostty inject outcome unknown (CalledProcessError); not retrying")
     except (OSError, subprocess.SubprocessError) as exc:
