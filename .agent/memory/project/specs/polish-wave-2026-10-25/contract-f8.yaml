@@ -1,0 +1,51 @@
+schema: athanor.contract/v1
+slug: polish-wave-2026-10-25
+goal: Every NOS page shows the same header nav, because /vendors/apply no longer freezes the build-time nav.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F8
+    name: NOS nav consistency NV-1 (revalidate on the national-show layout)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/README.md
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/f8-nos-nav.md
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f1.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f2.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f3.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f4.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f5.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f6.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f7.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f8.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: the national-show layout sets revalidate 60, the apply page file is untouched, getVisibleNav is still the single source (RED on baseline)
+      command: node contracts/checks/polish-wave-2026-10-25/f8-nav-static.mjs
+    - id: A2
+      description: production build passes in public mode (no preview env at build time, which is what freezes the nav)
+      command: NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A3
+      description: with a public build served in preview mode at runtime, nine NOS routes (including /vendors/apply) show the identical header links including Past shows after the ISR window (RED on baseline, /vendors/apply only)
+      command: node contracts/checks/polish-wave-2026-10-25/f8-nos-nav-consistency.mjs
+      timeout_seconds: 600
+    - id: A4
+      description: wave scope guard - every changed file is on a feature allow-list (goldens/scope/*.json) or under this mission's spec and check trees
+      command: node contracts/checks/polish-wave-2026-10-25/scope.mjs
+    - id: A5
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A6
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A7
+      description: the feature doc exists and names the cause
+      command: grep -q "revalidate" docs/polish-wave-f8-nos-nav.md

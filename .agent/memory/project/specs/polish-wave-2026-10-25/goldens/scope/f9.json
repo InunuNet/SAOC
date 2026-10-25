@@ -1,0 +1,9 @@
+{
+  "feature": "F9",
+  "allow": [
+    "components/home/ShowBand.tsx",
+    "app/(marketing)/events/[slug]/page.tsx",
+    "components/events/SubmitEventPageBody.tsx",
+    "docs/polish-wave-f9-design-fixes.md"
+  ]
+}

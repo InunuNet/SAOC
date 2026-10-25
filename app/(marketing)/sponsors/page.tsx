@@ -57,7 +57,6 @@ export default async function SponsorsPage() {
     <>
       <PageHero
         image="/images/orchid-yellow.jpg"
-        eyebrow="Our sponsors"
         heading="Sponsors"
         lede={LEDE}
         actions={
@@ -115,11 +114,11 @@ export default async function SponsorsPage() {
         </section>
 
         {/* Single consolidated CTA */}
-        <section className="border border-rule bg-bone p-10 text-center">
-          <h2 className="font-serif font-normal text-[26px] text-ink">Become a sponsor</h2>
+        <section className="border border-rule bg-bone p-10">
+          <h2 className="text-center font-serif font-normal text-[26px] text-ink">Become a sponsor</h2>
           {withhold ? null : (
-            <div data-placeholder="true" className="flex flex-col items-center">
-              <p className="mx-auto mt-3 max-w-xl font-sans text-[16px] leading-[1.55] text-ink/70">
+            <div data-placeholder="true" className="flex flex-col items-start">
+              <p className="mt-3 max-w-xl text-left font-sans text-[16px] leading-[1.55] text-ink/70">
                 {SPONSOR_CTA_BODY}
               </p>
               <PlaceholderMarker />

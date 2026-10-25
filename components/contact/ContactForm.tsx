@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { NOS_CONTACT_SUCCESS_BODY_PLACEHOLDER } from '@/lib/nos-contact-copy';
+import { useHydrated } from '@/lib/hooks/useHydrated';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -40,6 +41,7 @@ interface ContactFormProps {
 }
 
 export function ContactForm({ site = 'saoc', markPlaceholders = false }: ContactFormProps) {
+  const hydrated = useHydrated();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
@@ -149,7 +151,7 @@ export function ContactForm({ site = 'saoc', markPlaceholders = false }: Contact
         ) : null}
       </div>
       {status === 'success' ? null : (
-    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <form method="post" onSubmit={handleSubmit} className="space-y-5" noValidate>
       {/* Name */}
       <div className="space-y-1.5">
         <label htmlFor="cf-name" className={labelClass}>
@@ -284,7 +286,7 @@ export function ContactForm({ site = 'saoc', markPlaceholders = false }: Contact
 
       <button
         type="submit"
-        disabled={status === 'submitting'}
+        disabled={status === 'submitting' || !hydrated}
         className="inline-flex min-h-11 items-center rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink hover:bg-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {status === 'submitting' ? 'Sending…' : 'Send message'}

@@ -19,6 +19,7 @@ import type { KeepsakeDay } from '@/components/tickets/keepsake/types';
 import { CART_MAX_LINE_ITEMS } from '@/lib/cart';
 import { TICKET_COPY } from '@/lib/data/ticket-presentation';
 import { formatShowDay, formatShowDayShort } from '@/lib/show-day-format';
+import { useHydrated } from '@/lib/hooks/useHydrated';
 
 // The CTA stays enabled at quantity 0; a click there fills the hint and moves focus to it.
 // It also stays enabled with no day chosen (r45b): a click shows the picker's required-field error
@@ -66,6 +67,7 @@ export function TicketPurchaseForm({
   dayCounts = null,
   showProvisional = false,
 }: TicketPurchaseFormProps) {
+  const hydrated = useHydrated();
   const ticketType = ticketTypes[0];
   const cart = useTicketCart(ticketType, {
     quantity: startQuantity(initialQuantity),
@@ -154,6 +156,7 @@ export function TicketPurchaseForm({
 
   return (
     <form
+      method="post"
       onSubmit={handleSubmit}
       className="nk-checkout grid gap-3"
       noValidate
@@ -273,7 +276,7 @@ export function TicketPurchaseForm({
         <button
           type="submit"
           className="nk-btn nk-cta"
-          disabled={submitting}
+          disabled={submitting || !hydrated}
           aria-describedby={BUY_HINT_ID}
         >
           {submitting ? (

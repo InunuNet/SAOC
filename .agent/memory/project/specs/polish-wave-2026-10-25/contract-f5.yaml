@@ -1,0 +1,51 @@
+schema: athanor.contract/v1
+slug: polish-wave-2026-10-25
+goal: A National Show event page carries the existing show band under its meta table, its kind chip sits on its own line 16px above the title, and its back link is a 44px target.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F5
+    name: event detail - ShowBand, chip spacing, back link target
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/README.md
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/f5-event-detail.md
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f1.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f2.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f3.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f4.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f5.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f6.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f7.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f8.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: the page imports ShowBand, gates it on isNationalShowEvent, places it after the meta dl with no detailsHref, tags the chip with data-event-kind, gives the back link min-h-11, and leaves ShowBand untouched (RED on baseline, 6 findings)
+      command: node contracts/checks/polish-wave-2026-10-25/f5-event-static.mjs
+    - id: A2
+      description: production build passes
+      command: NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A3
+      description: at 390@3, 768, 1280 and 1440@2 the National Show event page has one band below the dl, CTA hrefs on the configured NOS origin, a chip alone on its line 16px above the h1, and a back link at least 44px tall (RED on baseline)
+      command: node contracts/checks/polish-wave-2026-10-25/f5-event-detail-rendered.mjs
+      timeout_seconds: 600
+    - id: A4
+      description: wave scope guard - every changed file is on a feature allow-list (goldens/scope/*.json) or under this mission's spec and check trees
+      command: node contracts/checks/polish-wave-2026-10-25/scope.mjs
+    - id: A5
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A6
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A7
+      description: the feature doc exists and records the open CTA label question
+      command: grep -q "Book tickets" docs/polish-wave-f5-event-detail.md

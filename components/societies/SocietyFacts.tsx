@@ -65,7 +65,10 @@ export function SocietyFacts({ society }: SocietyFactsProps) {
                 Email
               </dt>
               <dd className="mt-1 font-sans text-[15px] text-ink">
-                <a href={`mailto:${society.contactEmail}`} className="underline underline-offset-2">
+                <a
+                  href={`mailto:${society.contactEmail}`}
+                  className="inline-flex min-h-11 items-center underline underline-offset-2"
+                >
                   {society.contactEmail}
                 </a>
               </dd>
@@ -79,7 +82,7 @@ export function SocietyFacts({ society }: SocietyFactsProps) {
               <dd className="mt-1 font-sans text-[15px] text-ink">
                 <a
                   href={`tel:${society.contactPhone.replace(/[^+\d]/g, '')}`}
-                  className="underline underline-offset-2"
+                  className="inline-flex min-h-11 items-center underline underline-offset-2"
                 >
                   {society.contactPhone}
                 </a>

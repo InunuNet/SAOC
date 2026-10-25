@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { Button } from '@/components/nos/Button';
 import { VendorFormField } from './VendorFormField';
+import { useHydrated } from '@/lib/hooks/useHydrated';
 
 /**
  * F23 (vendor-gated-registration-flow, M4) -- the gate in front of the full registration form.
@@ -31,6 +32,7 @@ export function VendorRegistrationCodeEntryForm({
   initialBusinessName = '',
   initialCodeId = '',
 }: VendorRegistrationCodeEntryFormProps) {
+  const hydrated = useHydrated();
   const [businessName, setBusinessName] = useState(initialBusinessName);
   const [codeId, setCodeId] = useState(initialCodeId);
   const [status, setStatus] = useState<Status>('idle');
@@ -70,7 +72,7 @@ export function VendorRegistrationCodeEntryForm({
   const disabled = status === 'submitting';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+    <form method="post" onSubmit={handleSubmit} className="space-y-6" noValidate>
       <p className="font-sans text-[15px] leading-relaxed text-ink/80">
         Enter your business name and the 4-digit code from your approval email to continue to
         the full registration form.
@@ -112,11 +114,11 @@ export function VendorRegistrationCodeEntryForm({
           onChange={(e) => setCodeId(e.target.value.replace(/\D/g, '').slice(0, 4))}
           disabled={disabled}
           placeholder="0000"
-          className="w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] tracking-[0.3em] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60"
+          className="w-full rounded-sm border border-rule bg-ivory px-3.5 py-2.5 font-sans text-[15px] tracking-[0.3em] text-ink placeholder:text-muted outline-none transition-colors focus:border-ink/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60"
         />
       </div>
 
-      <Button type="submit" disabled={disabled}>
+      <Button type="submit" disabled={disabled || !hydrated}>
         {status === 'submitting' ? 'Checking…' : 'Continue'}
       </Button>
     </form>

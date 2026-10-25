@@ -1,0 +1,37 @@
+{
+  "society-email": {
+    "fontSize": "15px",
+    "color": "rgb(23, 25, 23)",
+    "deco": "underline"
+  },
+  "society-phone": {
+    "fontSize": "15px",
+    "color": "rgb(23, 25, 23)",
+    "deco": "underline"
+  },
+  "society-website": {
+    "fontSize": "16px",
+    "color": "rgb(23, 25, 23)",
+    "deco": "underline"
+  },
+  "society-facebook": {
+    "fontSize": "16px",
+    "color": "rgb(23, 25, 23)",
+    "deco": "underline"
+  },
+  "society-instagram": {
+    "fontSize": "16px",
+    "color": "rgb(23, 25, 23)",
+    "deco": "underline"
+  },
+  "home-full-calendar": {
+    "fontSize": "12px",
+    "color": "rgb(56, 65, 56)",
+    "deco": "none"
+  },
+  "contact-info-email": {
+    "fontSize": "14px",
+    "color": "rgb(23, 25, 23)",
+    "deco": "underline"
+  }
+}
