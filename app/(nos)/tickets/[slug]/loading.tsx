@@ -6,6 +6,12 @@ import { TicketBuyCrumbs } from '@/components/tickets/TicketBuyCrumbs';
 // the third crumb arrive with the page.
 export default function Loading() {
   return (
-    <NosHero route="/tickets" title={'\u00a0'} crumbs={<TicketBuyCrumbs />} className="nk-hero-compact" />
+    <NosHero
+      route="/tickets"
+      title={'\u00a0'}
+      titleAs="p"
+      crumbs={<TicketBuyCrumbs />}
+      className="nk-hero-compact"
+    />
   );
 }

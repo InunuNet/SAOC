@@ -9,6 +9,7 @@ export default function Loading() {
       route={NOS_ROUTE_HEROES.workshops.route}
       title={NOS_ROUTE_HEROES.workshops.title}
       lede={NOS_ROUTE_HEROES.workshops.lede}
+      titleAs="p"
       priority
     />
   );

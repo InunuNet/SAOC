@@ -13,7 +13,7 @@ const EXPECTATIONS = [
   },
   {
     heading: 'Shows and displays',
-    body: 'Most societies hold at least one annual show, judged under SAOC’s national standards, and many exhibit at the biennial National Show alongside societies from across the country.',
+    body: 'Most societies hold at least one annual show, judged under SAOC’s national standards, and many exhibit at the triennial National Show alongside societies from across the country.',
   },
   {
     heading: 'Judging and accreditation',

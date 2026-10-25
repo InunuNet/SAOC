@@ -16,7 +16,7 @@
 //
 //   section[data-nos-hero="hub" | "inner"][data-nos-hero-variant="photo" | "type"]
 //     [data-nos-hero-media] > img            photo kind only
-//     h1                                     exactly one
+//     h1                                     exactly one (a loading.tsx fallback passes titleAs="p")
 //     [data-nos-hero-lede]                   the lede / standfirst
 //
 // Directly after an inner hero comes the R27 group sub-nav (NosSubNav), except on the hub
@@ -37,6 +37,12 @@ import { subNavGroupFor } from './nos-subnav-groups';
 // up to its native width (lib/image-loader.ts), so it is never stretched on a high-density screen.
 const FULL_BLEED_QUALITY = 88;
 
+const FALLBACK_TITLE_STYLE: CSSProperties = {
+  fontFamily: 'var(--serif)',
+  fontOpticalSizing: 'none',
+  textWrap: 'balance',
+};
+
 /** Routes whose hero carries no group sub-nav: the hub (it has the destinations list) and tickets. */
 const NO_SUBNAV_ROUTES: ReadonlySet<string> = new Set(['/national-show', '/national-show/tickets']);
 
@@ -49,6 +55,12 @@ export interface NosHeroProps {
    * renders the hub hero (6-stop ramp, 22% photo inset) — reserve for the one flagship hero.
    */
   titleSize?: 'default' | 'display';
+  /**
+   * The element carrying the title. `p` is for a Suspense `loading.tsx` fallback: streaming leaves the
+   * fallback in the document beside the resolved page, so an h1 there would double the page's own h1.
+   * Every `.nos-hero-title` rule applies to either element.
+   */
+  titleAs?: 'h1' | 'p';
   lede?: ReactNode;
   /** `theme` sets the inner lede as a show's theme line (italic serif, R70) rather than a standfirst. */
   ledeKind?: 'theme';
@@ -69,6 +81,7 @@ export async function NosHero({
   route,
   title,
   titleSize = 'default',
+  titleAs = 'h1',
   lede,
   ledeKind,
   actions,
@@ -118,7 +131,15 @@ export async function NosHero({
         {isHub && photo ? <div aria-hidden="true" className="nos-hero-scrim" /> : null}
         <div className="nos-hero-copy">
           {crumbs}
-          <h1 className="nos-hero-title">{title}</h1>
+          {titleAs === 'p' ? (
+            // Restates the heading rule in nos-theme.css (`.nos-theme :is(h1...)`), which a p misses,
+            // so the fallback is identical to the h1 it stands in for on the first frame.
+            <p className="nos-hero-title" style={FALLBACK_TITLE_STYLE}>
+              {title}
+            </p>
+          ) : (
+            <h1 className="nos-hero-title">{title}</h1>
+          )}
           {isHub ? (
             <div className="nos-hero-body">
               {lede ? (

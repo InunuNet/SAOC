@@ -6,7 +6,10 @@ import { mergePastShows, type SanityShowProjection } from '@/lib/data/mergeShows
 import { PAST_SHOWS_HREF, hasPastShowRecords } from '@/lib/data/past-shows';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import routeManifest from '@/content/national-show-routes.json';
+import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
+import { WORKSHOPS_PRODUCT_SLUG } from '@/lib/data/ticket-presentation';
 import { nosPath } from '@/lib/nos-paths';
+import { NOS_EXTRA_STATIC_ROUTES, nosTicketSlugPaths } from '@/lib/nos-sitemap-routes';
 import { SAOC_STATIC_ROUTES } from '@/lib/saoc-sitemap-routes';
 import { requestSite } from '@/lib/request-site';
 import { nosOrigin, saocOrigin } from '@/lib/site-hosts';
@@ -88,7 +91,34 @@ async function buildNosSitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...buildNationalShowChildRoutes(baseUrl, showPastShows), ...archiveYearRoutes];
+  const extraStaticRoutes: MetadataRoute.Sitemap = NOS_EXTRA_STATIC_ROUTES.map((route) => ({
+    url: `${baseUrl}${route.path}`,
+    lastModified: new Date(),
+    changeFrequency: route.changeFrequency,
+    priority: route.priority,
+  }));
+
+  // Only the products the ticket listing shows: day-visitor and the full-price weekend pass are
+  // buyable but deliberately unlisted, so a raw ticketType query would over-list. The workshops card
+  // is the per-session booking list, not a /tickets/<slug> page, so its slug is not listed either.
+  const { cards } = await loadTicketCardViewModels();
+  const ticketRoutes: MetadataRoute.Sitemap = nosTicketSlugPaths(
+    Object.values(cards).flatMap((card) =>
+      card && card.slug !== WORKSHOPS_PRODUCT_SLUG ? [card.slug] : [],
+    ),
+  ).map((path) => ({
+    url: `${baseUrl}${path}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }));
+
+  return [
+    ...buildNationalShowChildRoutes(baseUrl, showPastShows),
+    ...extraStaticRoutes,
+    ...ticketRoutes,
+    ...archiveYearRoutes,
+  ];
 }
 
 async function buildSaocSitemap(): Promise<MetadataRoute.Sitemap> {
