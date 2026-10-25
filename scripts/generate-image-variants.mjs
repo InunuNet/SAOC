@@ -12,6 +12,10 @@ const RASTER_EXTENSION = /\.(jpe?g|png)$/i;
 const WEBP_QUALITY = 75;
 // The home hero's static fallback (lib/data/heroImages.ts) also gets a q88 set, which the loader serves for quality={88} (rHB).
 const HERO_WEBP_QUALITY = 88;
+// Hero variants wider than STANDARD_MAX_WIDTH keep the q88 file name (the loader and the call sites ask for
+// quality 88) but are encoded at this lower quality: at 2.5k-7k px the q88 files weighed 1-5 MB. Dimensions are
+// untouched (a hero is never served narrower than box x device pixel ratio), only bytes drop.
+const HERO_LARGE_WEBP_QUALITY = 78;
 const HERO_SOURCES = new Set(['orchid-violet.jpg', 'orchid-pink.jpg', 'orchid-dark.jpg', 'orchid-purple.jpg', 'orchid-yellow.jpg', 'nos-hero-S3a.jpg', 'nos-hero-S3b.jpg', 'nos-hero-S2a.jpg', 'nos-hero-S2c.jpg', 'nos-hero-S1b.jpg', 'nos-hero-H4a.jpg', 'nos-hero-H4b.jpg'].map((name) => path.join(SOURCE_ROOT, name)));
 // Every image keeps this cap (lib/image-loader.ts). Only the full-bleed hero photographs in
 // lib/hero-source-widths.json go above it, at q88, up to their own native width and never beyond.
@@ -30,11 +34,14 @@ function widthsFor(source) {
   return [...WIDTHS.map((width) => [width, false]), ...large.filter((width) => width > STANDARD_MAX_WIDTH).map((width) => [width, true])];
 }
 
-/** Variants for one width: q75 up to the cap, plus q88 for a hero source (at every width for a full-bleed one). */
+/** Variants for one width: q75 up to the cap, plus the -q88 name for a hero source (encoded at q78 above the cap). */
 function encodingsFor(isHero, isLarge) {
   const encodings = [];
   if (!isLarge) encodings.push(['', { quality: WEBP_QUALITY }]);
-  if (isHero) encodings.push([`-q${HERO_WEBP_QUALITY}`, { quality: HERO_WEBP_QUALITY, smartSubsample: true }]);
+  if (isHero) {
+    const quality = isLarge ? HERO_LARGE_WEBP_QUALITY : HERO_WEBP_QUALITY;
+    encodings.push([`-q${HERO_WEBP_QUALITY}`, { quality, smartSubsample: true }]);
+  }
   return encodings;
 }
 
