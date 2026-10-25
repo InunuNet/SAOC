@@ -78,6 +78,12 @@
       "note": "template 3.8.58 -> 3.8.60 via make update-template x2",
       "result": "applied"
     },
+    "ATH-20261025-git-index-lock": {
+      "at": "2026-10-25T03:15:37Z",
+      "harness_version": "3.8.65",
+      "note": "",
+      "result": "applied"
+    },
     "ATH-20261025-qa-unavailable-evidence": {
       "at": "2026-10-25T02:43:05Z",
       "harness_version": "3.8.63",

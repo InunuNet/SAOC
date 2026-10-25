@@ -1,8 +1,8 @@
 {
   "template_version": "3.8.57",
-  "applied_at": "2026-10-25T02:42:14Z",
+  "applied_at": "2026-10-25T03:15:12Z",
   "delivery": "partial",
-  "workspace_id": "980e821fdd760e48",
+  "workspace_id": "7deb4bb10293321f",
   "withheld": [
     ".agent/handoffs.yaml",
     ".agent/update-manifest.yaml"
