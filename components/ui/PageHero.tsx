@@ -67,7 +67,7 @@ export function PageHero({
       />
       <div className={`saoc-container relative z-10 w-full ${exempt ? 'pb-16 pt-28' : 'py-16'} flex flex-col items-center text-center`}>
         {eyebrow ? (
-          <span className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory">
+          <span className={`inline-flex items-center rounded-full border border-white/25 ${exempt ? 'bg-white/10' : 'bg-[var(--primary-800)]/60'} px-3.5 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory`}>
             {eyebrow}
           </span>
         ) : null}

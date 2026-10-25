@@ -944,7 +944,9 @@
     ],
     "exact": true,
     "golden": "CR-G1"
-   }
+   },
+   "h2AreNavLabels": true,
+   "h2Note": "CR-G1's row h2s ARE the nav labels (Symposium, WOSA Conference), so the sibling-route-name rule does not apply."
   },
   {
    "nos": "/sponsors",
@@ -990,7 +992,10 @@
     ],
     "exact": true,
     "golden": "SP-1"
-   }
+   },
+   "h4": true,
+   "h4Spec": "sp1",
+   "h4Note": "SP-1 owns its own h4 rule (level heads on the sponsor wall); the PYV-1 24px/8px spacing applies to /plan-your-visit only."
   },
   {
    "nos": "/archive",

@@ -304,6 +304,22 @@ async function runSelftest(browser, server) {
     { name: 'footer-only form must not anchor the fold', route: 'moi', vp: 'w1440', expectKind: 'main-first-block', mutate: () => { document.querySelectorAll('[data-doc-main] h2, [data-doc-aside], [data-doc-main] form').forEach((e) => e.remove()); if (!document.querySelector('footer form')) { const f = document.createElement('form'); (document.querySelector('footer') ?? document.body).append(f); f.style.minHeight = '20px'; } } },
     { name: 'band pushed to 850px with its heading below the fold', route: 'event-detail', vp: 'w1440', judge: judgeFold, mutate: () => { const b = document.querySelector('[data-home-section="show-band"]'); b.style.marginTop = `${850 - (b.getBoundingClientRect().top + scrollY)}px`; } },
     { name: 'band route anchors on the band', route: 'event-detail', vp: 'w1440', expectKind: 'band', mutate: () => { document.querySelectorAll('[data-doc-aside]').forEach((e) => e.remove()); } },
+    // CSS rule, not a judge: only the FIRST block of [data-doc-main] loses the content-gap hairline. Gaps are
+    // injected at the first-block positions (want 0) and after earlier content in the first child (want > 0).
+    { name: 'content-gap hairline only on the first block', route: 'about', vp: 'w1440', gaps: () => {
+      const gap = () => { const g = document.createElement('div'); g.setAttribute('data-content-gap', ''); g.textContent = 'x'; return g; };
+      const main = document.querySelector('[data-doc-main]');
+      const first = main.firstElementChild;
+      const width = (g) => parseFloat(getComputedStyle(g).borderTopWidth) || 0;
+      const out = [];
+      const lead = gap(); first.prepend(lead); out.push(['gap first in the first section', width(lead), true]); lead.remove();
+      const wrap = document.createElement('div'); const inner = gap(); wrap.append(inner); first.prepend(wrap);
+      out.push(['gap first in the first section\'s first block', width(inner), true]); wrap.remove();
+      const later = gap(); first.append(later); out.push(['gap after earlier content in the first section', width(later), false]);
+      const prose = first.querySelector('.doc-prose');
+      if (prose) { const deep = gap(); prose.append(deep); out.push(['gap after prose inside the first section', width(deep), false]); }
+      return out;
+    } },
   ];
   const fails = [];
   for (const c of cases) {
@@ -311,6 +327,13 @@ async function runSelftest(browser, server) {
     const ctx = await browser.newContext({ viewport: PG.viewports[c.vp] });
     const page = await ctx.newPage();
     await page.goto(server.base + route.path, { waitUntil: 'networkidle', timeout: 90000 });
+    if (c.gaps) {
+      for (const [label, w, wantZero] of await page.evaluate(c.gaps)) {
+        if (wantZero ? w > 0 : w === 0) fails.push(`selftest "${c.name}": ${label} has border-top ${w}px, want ${wantZero ? '0' : '> 0'}`);
+      }
+      await ctx.close();
+      continue;
+    }
     await page.evaluate(c.mutate);
     const m = await page.evaluate(pageProbe);
     if (c.expectKind) {

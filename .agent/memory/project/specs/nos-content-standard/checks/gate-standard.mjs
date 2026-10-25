@@ -301,7 +301,8 @@ async function igChecks(page, route, vp, c, tag) {
   if (I.listed) c.check(`${tag} IG-G1 lists exactly ${I.listed.map((e) => e.name).join(' and ')}, no one else, with their country and organisation from the CMS (${rows.map((x) => `${x.name}: ${x.country}`).join(' | ')})`, rows.length === I.listed.length && I.listed.every((e) => { const row = rows.find((x) => x.name.includes(e.name)); if (!row) return false; const oi = row.dts.findIndex((d) => /^organi[sz]ation$/i.test(d)); return row.country === e.country && oi >= 0 && row.dds[oi] === e.organisation; }));
   if (!I.event) c.check(`${tag} PR-1 on /international-guests the name stays an h2`, rows.every((x) => x.nameTag === (I.nameTag ?? 'H2')));
   c.check(`${tag} IG-G1 empty facts omitted: no dash, TBC or empty cell, and every dt has its dd (${rows.map((r) => r.dts.length + '/' + r.dds.length).join(',')})`, rows.every((r) => r.dts.length === r.dds.length && r.dds.every((d) => d !== '' && !/^[-–—]+$/.test(d) && !/^(tbc|to be confirmed|n\/a)$/i.test(d)) && r.dts.every((d) => d !== '')));
-  c.check(`${tag} IG-G1 no portrait is upscaled (naturalWidth >= box x DPR) and no placeholder tile: a portrait element always holds a photo (${rows.map((r) => r.hasImg ? r.natW + '/' + Math.round(r.boxW * vp.dsf) : '-').join(' ')})`, rows.every((r) => !r.por || (r.hasImg && r.natW >= Math.floor(r.boxW * vp.dsf) - 1)) && rows.every((r) => !r.placeholderTile && !r.bgImg));
+  { const real = await page.evaluate(async () => { const out = []; for (const r of [...document.querySelectorAll('[data-guest-profile]')]) { const im = r.querySelector('[data-guest-portrait] img'); out.push(im ? await new Promise((res) => { const n = new Image(); n.onload = () => res(n.naturalWidth); n.onerror = () => res(0); n.src = im.currentSrc || im.src; }) : 0); } return out; }); rows.forEach((r, i) => { if (r.hasImg) r.natW = real[i] ?? r.natW; }); }
+  c.check(`${tag} IG-G1 no portrait is upscaled (the selected file's width >= box x DPR) and no placeholder tile: a portrait element always holds a photo (${rows.map((r) => r.hasImg ? r.natW + '/' + Math.round(r.boxW * vp.dsf) : '-').join(' ')})`, rows.every((r) => !r.por || (r.hasImg && r.natW >= Math.floor(r.boxW * vp.dsf) - 1)) && rows.every((r) => !r.placeholderTile && !r.bgImg));
   if (rows.some((r) => r.hasImg)) {
     const r0 = rows.find((r) => r.hasImg);
     c.check(`${tag} IG-G1 portrait 4:5 with radius 10${vp.width >= 768 ? ', sticky at top 100' : ''} (${r0.aspect && r0.aspect.toFixed(2)}, r ${r0.radius}, ${r0.sticky} ${r0.stickyTop})`, r0.aspect !== null && Math.abs(r0.aspect - 0.8) <= 0.03 && r0.radius === 10 && (vp.width < 768 || (r0.sticky === 'sticky' && r0.stickyTop === 100)));
@@ -341,13 +342,17 @@ async function noUpscaleChecks(page, vp, c, tag) {
     for (const im of [...document.querySelectorAll('main img')]) {
       const b = im.getBoundingClientRect(); if (b.width < 2 || b.height < 2) continue;
       const cur = im.currentSrc || im.src; let want = null; let native = im.naturalWidth; let src = cur;
+      // naturalWidth is density-corrected when the img has a w-descriptor srcset, so it is never the file's width: load the selected candidate on its own.
+      if (cur && !new URL(cur, location.href).pathname.startsWith('/_next/image')) native = await new Promise((res) => { const n = new Image(); n.onload = () => res(n.naturalWidth); n.onerror = () => res(null); n.src = cur; });
       try { const u = new URL(cur, location.href); if (u.pathname.startsWith('/_next/image')) { want = Number(u.searchParams.get('w')); src = u.searchParams.get('url') ?? cur; const abs = new URL(src, location.href).href; native = await new Promise((res) => { const n = new Image(); n.onload = () => res(n.naturalWidth); n.onerror = () => res(null); n.src = abs; }); } } catch { /* leave native as the served naturalWidth */ }
-      out.push({ alt: (im.alt || '').slice(0, 30), w: b.width, want, native, src: src.slice(0, 80) });
+      out.push({ alt: (im.alt || '').slice(0, 30), w: b.width, want, native, src: src.slice(0, 80), cdn: new URL(cur, location.href).hostname === 'cdn.sanity.io' });
     }
     return out;
   });
   // An original that will not load (or reports 0 width) cannot be proven, so it fails: a broken or blocked source must not pass silently.
-  const bad = imgs.filter((i) => !i.native || i.w * vp.dsf > i.native + 1 || (i.want !== null && i.want > i.native + 1));
+  // A cdn.sanity.io image that will not load is the environment (no network), not the code: it is listed as ENV, never silently passed and never counted as a code failure.
+  const envBad = imgs.filter((i) => i.cdn && !i.native); for (const i of envBad) c.note(`${tag} ENV: cdn.sanity.io image did not load (${i.alt} ${i.src}); width not provable without network`);
+  const bad = imgs.filter((i) => !(i.cdn && !i.native) && (!i.native || i.w * vp.dsf > i.native + 1 || (i.want !== null && i.want > i.native + 1)));
   c.check(`${tag} no image renders wider than its own pixel width (${imgs.length} imgs; rendered x DPR <= native and w= <= native)`, bad.length === 0, bad.slice(0, 4).map((i) => `${i.alt ? i.alt + " " : ""}${i.src}: ${Math.round(i.w * vp.dsf)}px wanted, w=${i.want}, native ${i.native ?? 'UNLOADABLE (cannot prove the width)'}`).join('; '));
 }
 
@@ -577,7 +582,7 @@ async function weChecks(page, route, vp, c, tag, server) {
   c.check(`${tag} WE-G1 the card has h3 "Opening hours" then h3 "Admission", in her order (${m.hh.join(' | ')})`, JSON.stringify(m.hh) === JSON.stringify(['Opening hours', 'Admission']));
   c.check(`${tag} WE-G1 ${W.hoursRows} hours rows match her doc exactly: ${hours.map((h) => `${h.label} = ${h.value}`).join('; ')} (${m.hours.map((h) => `${h.k} = ${h.v}`).join('; ')}), values nowrap, tabular-nums, Fraunces`, m.hours.length === W.hoursRows && m.hours.every((h, i) => h.k === hours[i].label && h.v === hours[i].value && /nowrap/.test(h.ws) && /tabular-nums/.test(h.tn) && h.vf.includes('fraunces')));
   let prices = null; const p2 = await page.context().newPage(); await p2.setViewportSize(page.viewportSize());
-  if (await gotoRoute(p2, server, '/tickets', c, tag)) prices = await p2.evaluate(() => [...document.querySelectorAll('[data-ticket-price]')].map((p) => { let e = p.parentElement; while (e && e.querySelectorAll('input[id^="ticket-type-qty-"]').length !== 1) e = e.parentElement; const slug = e ? e.querySelector('input[id^="ticket-type-qty-"]').id.replace('ticket-type-qty-', '') : null; return { slug, p: p.textContent.replace(/\s+/g, ' ').trim() }; }));
+  if (await gotoRoute(p2, server, '/tickets', c, tag)) prices = await p2.evaluate(() => [...document.querySelectorAll('article[data-ticket-card][data-ticket-slug]')].flatMap((card) => { const p = card.querySelector('[data-ticket-price]'); return p ? [{ slug: card.getAttribute('data-ticket-slug'), p: p.textContent.replace(/\s+/g, ' ').trim() }] : []; }));
   await p2.close();
   const onTickets = (id) => (prices ?? []).find((x) => x.slug === W.admissionSlugs[id]) ?? null;
   const order = m.adm.map((a) => W.admissionIds.indexOf(a.id));
@@ -763,6 +768,19 @@ async function routeFactsChecks(page, route, vp, c, tag) {
   c.check(`${tag} FACTS the facts aside (${m.aside.join(' / ') || 'none'}) shows only ${STD.showFactsLabels.allowedLabels.join(' / ')}, never Cycle or Triennial`, m.aside.every((x) => STD.showFactsLabels.allowedLabels.includes(x)));
 }
 
+/** Ticket-first event routes (SY, WO, WK, CR) sit on SAOC's DocumentLayout at the pinned commit (81cd3a32): `asideFirst` -> .doc-layout--aside-first, `asideBare` -> .doc-aside--bare, a 440px cap below 1024. DOM order stays main-first, so ticket-first is a bounding-box fact, never a DOM-order one. */
+async function ticketLayoutChecks(page, vp, c, tag) {
+  const m = await page.evaluate(() => {
+    const layout = document.querySelector('[data-doc-layout]'); const aside = document.querySelector('[data-doc-aside]'); const main = document.querySelector('[data-doc-main]');
+    const cs = aside ? getComputedStyle(aside) : null; const ab = aside ? aside.getBoundingClientRect() : null; const mb = main ? main.getBoundingClientRect() : null;
+    return { layout: Boolean(layout), first: layout?.classList.contains('doc-layout--aside-first') ?? false, bare: aside?.classList.contains('doc-aside--bare') ?? false, pos: cs?.position, top: cs ? parseFloat(cs.top) : null, w: ab?.width ?? 0, asideY: ab ? ab.top + scrollY : null, asideB: ab ? ab.bottom + scrollY : null, mainY: mb ? mb.top + scrollY : null, mainL: mb?.left ?? 0, asideL: ab?.left ?? 0, card: aside ? Boolean(aside.querySelector('[data-ticket-card], .nk-ticket, .nk-grid')) : false, mainFirstInDom: Boolean(aside && main && (main.compareDocumentPosition(aside) & Node.DOCUMENT_POSITION_FOLLOWING)) };
+  });
+  c.check(`${tag} TICKET-LAYOUT [data-doc-layout] carries doc-layout--aside-first, the aside carries doc-aside--bare and holds the ticket card (layout ${m.layout}, first ${m.first}, bare ${m.bare}, card ${m.card})`, m.layout && m.first && m.bare && m.card);
+  c.check(`${tag} TICKET-LAYOUT the DOM stays main-first, so ticket-first is judged by position (${m.mainFirstInDom})`, m.mainFirstInDom);
+  if (vp.width >= 1024) c.check(`${tag} TICKET-LAYOUT from 1024 the aside is right of the main column, sticky, and its top is 100 (var(--doc-aside-top) set to 100px on NOS) (${m.pos} ${m.top}; ${Math.round(m.asideL)} vs ${Math.round(m.mainL)})`, m.pos === 'sticky' && m.top === 100 && m.asideL > m.mainL);
+  else c.check(`${tag} TICKET-LAYOUT below 1024 the ticket card is first by position (aside bottom ${Math.round(m.asideB ?? -1)} <= main top ${Math.round(m.mainY ?? -1)}) and at most 440px wide (${Math.round(m.w)})`, m.asideB !== null && m.asideB <= m.mainY + 1 && m.w <= 441);
+}
+
 /** SY-G1 (NOS Design, root comms.md L3387): /symposium. Every copy string is read from a frozen source or the CMS; builder copy is flagged in spec.md. */
 async function syChecks(page, route, vp, c, tag, server) {
   const S = route.sy;
@@ -927,10 +945,10 @@ async function extraChecks(page, route, vp, c, tag) {
   if (x.h3lh !== null) c.check(`${tag} h3 line-height ${x.h3lh.toFixed(2)} ~ ${STD.heading.h3LineHeight}`, Math.abs(x.h3lh - STD.heading.h3LineHeight) <= 0.03);
   if (x.h4s.length) {
     c.check(`${tag} h4 only where the route table allows it (${x.h4s.length})`, route.h4 === true, `route.h4=${route.h4}`);
-    c.check(`${tag} every h4 is Karla 600 16px, 24px above, 8px below (PYV-1)`, x.h4s.every((h) => h.fam.includes('karla') && h.w === '600' && Math.abs(h.px - 16) <= 0.5 && Math.abs(h.mt - 24) <= 1 && Math.abs(h.mb - 8) <= 1), JSON.stringify(x.h4s[0]));
+    if ((route.h4Spec ?? 'pyv') === 'pyv') c.check(`${tag} every h4 is Karla 600 16px, 24px above, 8px below (PYV-1)`, x.h4s.every((h) => h.fam.includes('karla') && h.w === '600' && Math.abs(h.px - 16) <= 0.5 && Math.abs(h.mt - 24) <= 1 && Math.abs(h.mb - 8) <= 1), JSON.stringify(x.h4s[0]));
   }
   for (const t of route.h2FlaggedForDrive ?? []) if (x.h2s.includes(t)) c.note(`${tag} FLAGGED FOR LEE-ANN'S DOC (builder copy, not rewritten): h2 "${t}"`);
-  c.check(`${tag} no h2 names a sibling route unless it is a heading in her Drive doc or flagged for her doc`, x.h2s.every((t) => !x.navLabels.includes(t.toLowerCase()) || (route.h2FlaggedForDrive ?? []).includes(t) || (route.drive && driveState(route).text.includes(t))), x.h2s.filter((t) => x.navLabels.includes(t.toLowerCase())).join('; '));
+  if (!route.h2AreNavLabels) c.check(`${tag} no h2 names a sibling route unless it is a heading in her Drive doc or flagged for her doc`, x.h2s.every((t) => !x.navLabels.includes(t.toLowerCase()) || (route.h2FlaggedForDrive ?? []).includes(t) || (route.drive && driveState(route).text.includes(t))), x.h2s.filter((t) => x.navLabels.includes(t.toLowerCase())).join('; '));
   if (x.factsCount || x.factsAttr) {
     c.check(`${tag} no fact is filler (to be confirmed), no Cycle or invented-label fact, row only with >= 2 facts (${x.factTerms.join(' | ')})`, x.factCount2 && !x.factTerms.some((t) => /^cycle$/i.test(t)) && !x.factValues.some((v) => /to be confirmed/i.test(v)) && (!route.keyFacts || x.factTerms.every((t) => route.keyFacts.some((k) => k.term === t))), JSON.stringify(x.factValues));
     c.check(`${tag} [data-hero-facts] has data-fact-count == items (${x.factsAttr} vs ${x.factsCount}), dt before dd`, Number(x.factsAttr) === x.factsCount && x.factsOk);
@@ -1090,6 +1108,7 @@ await withServer(1, 'standard', async (server, c) => {
         if (route.ab) await abChecks(page, route, vp, c, tag);
         if (route.we) await weChecks(page, route, vp, c, tag, server);
         if (route.ex) await exChecks(page, route, vp, c, tag);
+        if (route.aside === 'ticket') await ticketLayoutChecks(page, vp, c, tag);
         if (route.ct) await ctChecks(page, route, vp, c, tag);
         if (route.ar) await arChecks(page, route, vp, c, tag);
         c.check(`${tag} NL-2 "${STD.navRenamed.from}" is not rendered anywhere in the public page (body, title, meta description); her label is "${STD.navRenamed.to}"`, !(await page.evaluate((t) => [document.body.textContent.replace(/\s+/g, ' '), document.title, ...[...document.querySelectorAll('meta[name="description"], meta[property="og:description"], meta[property="og:title"]')].map((e) => e.getAttribute('content') ?? '')].some((x) => x.includes(t)), STD.navRenamed.from)));

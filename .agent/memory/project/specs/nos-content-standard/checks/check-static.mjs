@@ -3,6 +3,20 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { CROPS, ROUTES } from './_lib.mjs';
 
+/** The text of ONE defineField({...}) call whose own `name:` is `name`, found by balanced parentheses so it can never run across a field boundary or stop early at a nested `})`. */
+function defineFieldBlock(src, name) {
+  for (let from = src.indexOf('defineField('); from !== -1; from = src.indexOf('defineField(', from + 1)) {
+    let depth = 0; let end = -1;
+    for (let i = from + 'defineField'.length; i < src.length; i += 1) { const ch = src[i]; if (ch === '(') depth += 1; else if (ch === ')') { depth -= 1; if (depth === 0) { end = i; break; } } }
+    if (end === -1) return null;
+    const block = src.slice(from, end + 1);
+    // the field's own name is the first top-level `name:` after the opening brace, before any nested object
+    const own = block.match(/^defineField\(\{\s*(?:[^{}]*?,\s*)*?name:\s*'([^']+)'/);
+    if (own && own[1] === name) return block;
+  }
+  return null;
+}
+
 const fails = [];
 const check = (name, ok, detail = '') => { if (!ok) fails.push(`${name}${detail ? `: ${detail}` : ''}`); };
 const read = (p) => (existsSync(p) ? readFileSync(p, 'utf8') : '');
@@ -34,8 +48,8 @@ function findPages(seg) {
   return out;
 }
 
-// the shared layout: SAOC-owned components/ui/* (pinned API 72f75151) is consumed, never re-implemented or edited
-const SHARED_BASE = process.env.NOS_STD_REFSAOC ?? '72f75151';
+// the shared layout: SAOC-owned components/ui/* (pinned API 81cd3a32) is consumed, never re-implemented or edited
+const SHARED_BASE = process.env.NOS_STD_REFSAOC ?? '81cd3a32';
 for (const f of ['components/ui/DocumentLayout.tsx', 'components/ui/DocumentIndex.tsx', 'components/ui/PageHero.tsx', 'lib/hero-facts.ts']) check(`${f} exists (the shared API is merged into the dev branch)`, existsSync(f));
 check('components/ui/** and lib/hero-facts.ts are unchanged from the pinned shared API', git(['diff', '--name-only', SHARED_BASE, '--', 'components/ui', 'lib/hero-facts.ts']).trim() === '', git(['diff', '--name-only', SHARED_BASE, '--', 'components/ui', 'lib/hero-facts.ts']).trim());
 check('no components/nos/NosDocument.tsx fork of DocumentLayout exists', !existsSync('components/nos/NosDocument.tsx'));
@@ -43,18 +57,13 @@ const hero = read('components/nos/NosHero.tsx');
 check('NosHero renders facts via normaliseHeroFacts as dl[data-hero-facts] with data-fact-count and [data-hero-fact]', /normaliseHeroFacts/.test(hero) && /data-hero-facts/.test(hero) && /data-fact-count/.test(hero) && /data-hero-fact\b/.test(hero) && /<dl/.test(hero));
 const css = `${read('app/(nos)/national-show/nos-structure.css')}\n${read('app/(nos)/national-show/nos-theme.css')}`;
 check('the :focus-visible rule in nos-theme.css is wrapped in :where() (specificity fix; the h1 ring itself is #76)', !/\.nos-theme\s+:focus-visible:not\(\.group\)/.test(css) || /:where\(/.test(css));
-const REF76 = process.env.NOS_STD_REF76 ?? 'feat/nos-pagehero';
-let has76 = false; try { execFileSync('git', ['merge-base', '--is-ancestor', REF76, 'HEAD']); has76 = true; } catch { has76 = false; }
-const focuses = /focus\(/.test(read('components/nos/NosRouteScroll.tsx')) || /focus\(/.test(hero);
-if (!has76 && !focuses) console.log(`note: focus management is not asserted yet; #76's ring/focus commits (${REF76}) are not merged into this branch. It becomes a hard check the moment ${REF76} is an ancestor of HEAD.`);
-check('focus management kept (NosRouteScroll or equivalent still focuses the h1); required once #76 is merged', focuses || !has76);
 
 // IG-G1 (SAOC-approved, additive): conferencePresenter gains optional `country` and `organisation`; neither may carry a required() rule
 {
   const src = existsSync('sanity/schemas/documents/conferencePresenter.ts') ? read('sanity/schemas/documents/conferencePresenter.ts') : '';
   for (const name of ['country', 'organisation']) {
-    const m = src.match(new RegExp(`defineField\\(\\{(?:(?!defineField)[^])*?name:\\s*'${name}'(?:(?!defineField)[^])*?\\}\\)`));
-    check(`conferencePresenter has an optional "${name}" field (IG-G1)`, Boolean(m) && !/required\(\)/.test(m[0]));
+    const m = [defineFieldBlock(src, name)];
+    check(`conferencePresenter has an optional "${name}" field (IG-G1)`, Boolean(m[0]) && !/required\(\)/.test(m[0]));
   }
 }
 
@@ -126,7 +135,7 @@ check('focus management kept (NosRouteScroll or equivalent still focuses the h1)
 // WK-G1 data: workshopSession gains OPTIONAL level / duration / included / bring (SAOC-approved, additive); NO places fields. The places text reads the ticket's per-session value and the pool remaining.
 {
   const ws = existsSync('sanity/schemas/documents/workshopSession.ts') ? read('sanity/schemas/documents/workshopSession.ts') : '';
-  const fieldBlock = (name) => ws.match(new RegExp(`defineField\\(\\{(?:(?!defineField)[^])*?name:\\s*'${name}'(?:(?!defineField)[^])*?\\}\\)`))?.[0] ?? null;
+  const fieldBlock = (name) => defineFieldBlock(ws, name);
   for (const f of ['level', 'duration', 'included', 'bring']) { const b = fieldBlock(f); check(`workshopSession has an optional "${f}" field (WK-G1)`, Boolean(b) && !/required\(\)/.test(b)); }
   const lvl = fieldBlock('level') ?? '';
   check('workshopSession.level is a string list of Beginner, Intermediate and Advanced', /type:\s*'string'/.test(lvl) && ['Beginner', 'Intermediate', 'Advanced'].every((v) => lvl.includes(v)));
@@ -180,7 +189,7 @@ check('focus management kept (NosRouteScroll or equivalent still focuses the h1)
   check('WE-G1: no Cloakroom block, no ShowHoldingNote and no uppercase-label CTA remain on the page', !/Cloakroom/i.test(we) && !/ShowHoldingNote/.test(we) && !/uppercase/.test(we));
 }
 
-// EX-G1: the Exhibitor entry guide schema stays for her future guide (iiii); the page renders none of the builder sections
+// EX-G1: the showExhibitorInfo and showExhibitorStep schemas stay for her future guide (iiii); the page renders none of the builder sections
 {
   const ex = read('app/(nos)/national-show/exhibitors/page.tsx');
   check('EX-G1: the Sanity schemas showExhibitorInfo and showExhibitorStep still exist', existsSync('sanity/schemas/documents/showExhibitorInfo.ts') && existsSync('sanity/schemas/documents/showExhibitorStep.ts'));

@@ -111,6 +111,15 @@ export async function gotoRoute(page, server, path, c, tag, opts = { waitUntil: 
   }
   const landed = new URL(page.url()).origin;
   if (landed !== new URL(server.nos).origin) { c.check(`${tag} navigation stays on the gate origin ${server.nos}`, false, `redirected to ${page.url()}`); return null; }
+  // Wait for React streaming to finish: no suspended-boundary placeholders left, so a loading.tsx fallback is never what the gate measures.
+  const settled = await page.waitForFunction(() => !document.querySelector('[hidden][id^="S:"]') && !document.querySelector('template[id^="B:"]') && document.readyState === 'complete', null, { timeout: 25000 }).then(() => true, () => false);
+  if (!settled) c.check(`${tag} streaming finished (no [hidden][id^="S:"] or template[id^="B:"] left within 25s)`, false);
+  await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+  // NosShowIndex (nav.nos-index) is site chrome that sits inside <main>: it is not content, so the content gates (uppercase labels, h2/h3 counts and styles) never see it.
+  // Its own overflow is still measured here, before it is set aside.
+  const overflow = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth }));
+  if (overflow.sw > overflow.iw) c.check(`${tag} no horizontal overflow before the show index is set aside (${overflow.sw} <= ${overflow.iw})`, false);
+  await page.evaluate(() => document.querySelectorAll('nav.nos-index').forEach((e) => e.remove()));
   return res;
 }
 
