@@ -27,7 +27,18 @@ import { ticketsPageQuery } from '@/sanity/queries';
 // the timed-out state instead of refreshing in a loop.
 const POLL_INTERVAL_MS = 3_000;
 const MAX_POLL_ATTEMPTS = 20; // ~1 minute of polling before we stop and say so.
+const HTTP_TOO_MANY_REQUESTS = 429;
+const MS_PER_SECOND = 1_000;
+const MAX_RATE_LIMIT_BACKOFFS = 10;
+const MAX_RETRY_AFTER_SECONDS = 60; // a hostile or odd header must not park the poller for good.
 const CONFIRMED_STATUSES = new Set(['paid', 'checked-in']);
+
+/** Retry-After (seconds) as a poll delay: never shorter than the normal interval, never unbounded. */
+function retryDelayMs(header: string | null): number {
+  const seconds = Number(header);
+  if (!Number.isFinite(seconds) || seconds <= 0) return POLL_INTERVAL_MS;
+  return Math.max(POLL_INTERVAL_MS, Math.min(seconds, MAX_RETRY_AFTER_SECONDS) * MS_PER_SECOND);
+}
 
 interface TicketsPageCopy {
   confirmationPendingHeading?: string | null;
@@ -56,6 +67,7 @@ export function ConfirmationPoller({ bookingRef }: ConfirmationPollerProps) {
     let attempts = 0;
     let cancelled = false;
     let refreshedOn404 = false;
+    let rateLimitBackoffs = 0;
 
     async function poll() {
       if (bookingRef.trim().length === 0) {
@@ -63,6 +75,7 @@ export function ConfirmationPoller({ bookingRef }: ConfirmationPollerProps) {
         return;
       }
       attempts += 1;
+      let nextDelayMs = POLL_INTERVAL_MS;
       try {
         const res = await fetch(`/api/tickets/status?ref=${encodeURIComponent(bookingRef)}`);
         if (cancelled) return;
@@ -76,13 +89,21 @@ export function ConfirmationPoller({ bookingRef }: ConfirmationPollerProps) {
           if (!cancelled) setTimeout(poll, POLL_INTERVAL_MS);
           return;
         }
-        const data = (await res.json()) as { status?: string };
-        if (data.status && CONFIRMED_STATUSES.has(data.status)) {
-          router.refresh();
-          return;
-        }
-        if (data.status === 'reserved') {
-          setState('reserved');
+        if (res.status === HTTP_TOO_MANY_REQUESTS) {
+          // Rate limited, not an error: back off for Retry-After, then poll again. A backoff does
+          // not use up a poll attempt, but they are capped so a stuck limiter still ends.
+          rateLimitBackoffs += 1;
+          if (rateLimitBackoffs <= MAX_RATE_LIMIT_BACKOFFS) attempts -= 1;
+          nextDelayMs = retryDelayMs(res.headers.get('Retry-After'));
+        } else {
+          const data = (await res.json()) as { status?: string };
+          if (data.status && CONFIRMED_STATUSES.has(data.status)) {
+            router.refresh();
+            return;
+          }
+          if (data.status === 'reserved') {
+            setState('reserved');
+          }
         }
       } catch {
         // Network hiccup — keep polling until MAX_POLL_ATTEMPTS is reached.
@@ -91,7 +112,7 @@ export function ConfirmationPoller({ bookingRef }: ConfirmationPollerProps) {
         setState('timed-out');
         return;
       }
-      if (!cancelled) setTimeout(poll, POLL_INTERVAL_MS);
+      if (!cancelled) setTimeout(poll, nextDelayMs);
     }
 
     poll();
