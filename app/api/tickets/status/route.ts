@@ -5,12 +5,17 @@ import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
 import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
 import { getTicketStatus } from '@/lib/ticket-status';
 
-// ConfirmationPoller polls every 3s for ~1 minute (20 requests); the cap (under the attempt
-// store's 50-per-key history) leaves room for several buyers behind one venue address.
-const STATUS_RATE_LIMIT_MAX_ATTEMPTS = 40;
+// ConfirmationPoller makes up to 20 requests a minute per buyer; 120 covers six buyers on one
+// venue address. Above the attempt store's default per-key history, so it is sized explicitly.
+const STATUS_RATE_LIMIT_MAX_ATTEMPTS = 120;
 const STATUS_RATE_LIMIT_WINDOW_MS = 60_000;
+const STATUS_RATE_LIMIT_HISTORY_PER_KEY = 200;
 
-const attempts = createAttemptStore(STATUS_RATE_LIMIT_WINDOW_MS);
+const attempts = createAttemptStore(
+  STATUS_RATE_LIMIT_WINDOW_MS,
+  undefined,
+  STATUS_RATE_LIMIT_HISTORY_PER_KEY,
+);
 
 // F3 (ticketing-pages) — read-only status endpoint so /tickets/confirmation can poll
 // without claiming success or failure prematurely (the PayFast ITN race). Returns the

@@ -14,11 +14,18 @@ export const runtime = 'nodejs';
 const PRIVATE_HEADERS = { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex' };
 const NOT_FOUND_BODY = 'Not found';
 
-// Each valid request runs a CPU-bound PDF render, so the cap is tight.
-const PDF_RATE_LIMIT_MAX_ATTEMPTS = 10;
+// Each valid request runs a CPU-bound PDF render. An order holds at most MAX_LINE_ITEMS (20)
+// positions, each downloadable on its own, plus the whole-order PDF: 60 leaves headroom for
+// retries and a second buyer on the same address. Above the attempt store's default history.
+const PDF_RATE_LIMIT_MAX_ATTEMPTS = 60;
 const PDF_RATE_LIMIT_WINDOW_MS = 60_000;
+const PDF_RATE_LIMIT_HISTORY_PER_KEY = 200;
 
-const attempts = createAttemptStore(PDF_RATE_LIMIT_WINDOW_MS);
+const attempts = createAttemptStore(
+  PDF_RATE_LIMIT_WINDOW_MS,
+  undefined,
+  PDF_RATE_LIMIT_HISTORY_PER_KEY,
+);
 
 /** The one response for every access failure: same status, body and headers whatever the cause. */
 function notFound(): NextResponse {
