@@ -757,8 +757,9 @@ h3.font-serif {
 .doc-section + .doc-section {
   margin-top: var(--section-y);
 }
-/* No hairline above the first block of a document. */
-[data-doc-main] [data-content-gap] {
+/* No hairline above the first block of a document; a later gap keeps its own. */
+[data-doc-main] > :first-child:is([data-content-gap]),
+[data-doc-main] > :first-child [data-content-gap] {
   border-top: 0;
   padding-top: 0;
 }
