@@ -18,7 +18,7 @@ export const SAOC_STATIC_ROUTES: ReadonlyArray<SaocStaticRoute> = [
   { path: '/events', changeFrequency: 'weekly', priority: 0.9 },
   { path: '/contact', changeFrequency: 'yearly', priority: 0.5 },
   { path: '/sponsors', changeFrequency: 'monthly', priority: 0.5 },
-  { path: '/constitution', changeFrequency: 'yearly', priority: 0.3 },
+  { path: '/memorandum-of-incorporation', changeFrequency: 'yearly', priority: 0.3 },
   { path: '/privacy', changeFrequency: 'yearly', priority: 0.3 },
   { path: '/terms', changeFrequency: 'yearly', priority: 0.3 },
   { path: '/refunds', changeFrequency: 'yearly', priority: 0.3 },
