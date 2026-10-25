@@ -1212,14 +1212,10 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 /* LT-1: a long inner title (over 20 characters) takes a smaller clamp and the whole column, so it stays on one line. */
 .nos-theme .nos-hero-inner .nos-hero-title.is-long {
+  max-width: none;
   font-size: clamp(2.5rem, 1.6rem + 2.6vw, 4rem);
   overflow-wrap: break-word;
-}
-@media (min-width: 1024px) {
-  .nos-theme .nos-hero-inner .nos-hero-title.is-long {
-    max-width: none;
-    text-wrap: balance;
-  }
+  text-wrap: balance;
 }
 /* The exhibitor entry guide is a hero and one contact panel. */
 .nos-theme .nos-contact-panel {
