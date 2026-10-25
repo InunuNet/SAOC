@@ -1,12 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 
 import { formatShowShortMonthYear, showLabelWithEdition, showYearOf } from '@/lib/show-identity';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { nosUrl } from '@/lib/site-hosts';
 import type { ShowIdentity } from '@/types';
-
-import styles from './NavCards.module.css';
 
 interface NavCardData {
   href: string;
@@ -128,17 +127,17 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
                 href={card.href}
                 data-nav-card
                 data-placeholder={card.unsourced && !withhold ? 'true' : undefined}
-                className={styles.card}
+                className="petal-card group"
               >
-                <div className={styles.well}>
+                <div className="petal-card-well">
                   <Image
                     src={card.image}
                     alt={card.alt}
                     fill
-                    className={styles.photo}
+                    className="petal-card-photo"
                     sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
                   />
-                  <span data-nav-card-badge className={styles.chip}>
+                  <span data-nav-card-badge className="petal-card-chip">
                     {card.badge}
                   </span>
                 </div>
@@ -156,14 +155,18 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
                   <p className="mb-auto pb-5 font-sans text-[16px] leading-[1.55] text-muted">
                     {card.body}
                   </p>
-                  {card.meta ? (
-                    <p
+
+                  <div className="flex items-center justify-between gap-3 pt-2">
+                    <span
                       data-nav-card-meta
-                      className="pt-2 font-mono text-[11px] uppercase tracking-[0.12em] text-muted"
+                      className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted"
                     >
                       {card.meta}
-                    </p>
-                  ) : null}
+                    </span>
+                    <span data-nav-card-arrow className="petal-card-arrow" aria-hidden="true">
+                      <ArrowRight size={16} strokeWidth={1.5} />
+                    </span>
+                  </div>
                 </div>
               </CardLink>
             );
