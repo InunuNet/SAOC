@@ -5,7 +5,7 @@
 // `selftest` mutates the live DOM to break each rule and fails unless the judges flag the break, so a green
 // run cannot come from a blind detector. Pattern follows gate-standard.mjs. Needs node_modules and .env.local.
 import { spawn, execSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import { chromium } from '@playwright/test';
@@ -35,10 +35,13 @@ async function sanityStamp() {
   } catch { return `unreadable:${Date.now()}`; }
 }
 
+// Everything a rendered page is built from: a change under any of these must invalidate the cache.
+const SOURCE_PATHS = 'app components lib content sanity types proxy.ts';
+
 // Untracked source counts by name AND content: an edit to a new, uncommitted file must invalidate
 // the cached measurement just as an edit to a tracked one does.
 function untrackedDigest() {
-  const files = execSync('git ls-files --others --exclude-standard -- app components lib content').toString().split('\n').filter(Boolean);
+  const files = execSync(`git ls-files --others --exclude-standard -- ${SOURCE_PATHS}`).toString().split('\n').filter(Boolean);
   const h = createHash('sha1');
   for (const f of files) h.update(f + '\0').update(existsSync(f) ? readFileSync(f) : '').update('\0');
   return h.digest('hex');
@@ -47,7 +50,7 @@ function untrackedDigest() {
 async function stateKey() {
   const stamp = await sanityStamp();
   const head = execSync('git rev-parse HEAD').toString().trim();
-  const diff = execSync('git diff HEAD -- app components lib content proxy.ts').toString();
+  const diff = execSync(`git diff HEAD -- ${SOURCE_PATHS}`).toString();
   return createHash('sha1').update(site + (BASE_ENV ?? 'local-dev-server') + stamp + head + diff + untrackedDigest() + readFileSync(`${SPEC}/goldens/pg1.json`) + readFileSync(`${SPEC}/checks/gate-pg1.mjs`)).digest('hex');
 }
 
@@ -355,16 +358,18 @@ async function runSelftest(browser, server) {
   // of the key, and an unchanged file must not. Tested on untrackedDigest() itself: stateKey() also
   // folds in the Sanity stamp, which is the clock when Sanity is unreadable, so a whole-key compare
   // could differ for that reason alone.
-  const probe = 'components/.pg1-selftest-untracked.txt';
+  const probe = `components/.pg1-selftest-${randomUUID()}.txt`;
+  let created = false;
   try {
-    writeFileSync(probe, 'a');
+    writeFileSync(probe, 'a', { flag: 'wx' });
+    created = true;
     const a1 = untrackedDigest();
     const a2 = untrackedDigest();
     writeFileSync(probe, 'b');
     const b = untrackedDigest();
     if (a1 !== a2) fails.push('selftest "untracked content changes the cache key": digest differs for unchanged content, so it is not a content hash');
     if (b === a1) fails.push('selftest "untracked content changes the cache key": digest unchanged after an untracked file\'s content changed');
-  } finally { rmSync(probe, { force: true }); }
+  } finally { if (created) rmSync(probe); }
   let ran = 0;
   for (const c of cases) {
     const route = ROUTES.find((r) => r.id === c.route);

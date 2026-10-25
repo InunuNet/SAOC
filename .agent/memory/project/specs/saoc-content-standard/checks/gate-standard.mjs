@@ -6,7 +6,7 @@
 // tree state, and exits 1 listing every violation for the requested check.
 // Needs: node_modules (playwright, next) and .env.local (Sanity read) in the repo root.
 import { spawn, execSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import { chromium } from '@playwright/test';
@@ -34,10 +34,13 @@ async function sanityStamp() {
   } catch { return `unreadable:${Date.now()}`; }
 }
 
+// Everything a rendered page is built from: a change under any of these must invalidate the cache.
+const SOURCE_PATHS = 'app components lib content sanity types proxy.ts';
+
 // Untracked source counts by name AND content: an edit to a new, uncommitted file must invalidate
 // the cached measurement just as an edit to a tracked one does.
 function untrackedDigest() {
-  const files = execSync('git ls-files --others --exclude-standard -- app components lib content').toString().split('\n').filter(Boolean);
+  const files = execSync(`git ls-files --others --exclude-standard -- ${SOURCE_PATHS}`).toString().split('\n').filter(Boolean);
   const h = createHash('sha1');
   for (const f of files) h.update(f + '\0').update(existsSync(f) ? readFileSync(f) : '').update('\0');
   return h.digest('hex');
@@ -47,7 +50,7 @@ async function stateKey() {
   const base = process.env.SAOC_BASE_URL ?? 'local-dev-server';
   const stamp = await sanityStamp();
   const head = execSync('git rev-parse HEAD').toString().trim();
-  const diff = execSync('git diff HEAD -- app components lib content proxy.ts').toString();
+  const diff = execSync(`git diff HEAD -- ${SOURCE_PATHS}`).toString();
   return createHash('sha1').update(base + stamp + head + diff + untrackedDigest() + readFileSync(`${SPEC}/goldens/standard.json`)).digest('hex');
 }
 
@@ -55,16 +58,18 @@ async function stateKey() {
 // different one (compared on the digest itself; the full key also folds in the Sanity stamp).
 function untrackedDigestFails() {
   const fails = [];
-  const probe = 'components/.standard-selftest-untracked.txt';
+  const probe = `components/.standard-selftest-${randomUUID()}.txt`;
+  let created = false;
   try {
-    writeFileSync(probe, 'a');
+    writeFileSync(probe, 'a', { flag: 'wx' });
+    created = true;
     const a1 = untrackedDigest();
     const a2 = untrackedDigest();
     writeFileSync(probe, 'b');
     const b = untrackedDigest();
     if (a1 !== a2) fails.push('selftest "untracked content changes the cache key": digest differs for unchanged content');
     if (b === a1) fails.push('selftest "untracked content changes the cache key": digest unchanged after an untracked file\'s content changed');
-  } finally { rmSync(probe, { force: true }); }
+  } finally { if (created) rmSync(probe); }
   return fails;
 }
 
