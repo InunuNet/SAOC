@@ -2789,8 +2789,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   line-height: 1.4;
   color: var(--ink);
 }
-.nos-theme .doc-prose > .doc-h3 + *,
-.nos-theme .doc-prose > .doc-h4 + * {
+.nos-theme .doc-prose > .doc-h3 + :not(.doc-h3, .doc-h4),
+.nos-theme .doc-prose > .doc-h4 + :not(.doc-h3, .doc-h4) {
   margin-top: 0;
 }
 .nos-theme .doc-prose > .doc-h2 + .doc-h3 {
@@ -2996,7 +2996,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 /* /sponsors (SP-1): hero CTA below 1024 only, the reach register, the FAQ rows, the contact card,
    the photo strip and the sponsor wall. */
 @media (min-width: 1024px) {
-  .nos-theme .nos-sp-hero-cta {
+  .nos-theme .nos-sp-hero-cta,
+  .nos-theme .nos-hero-actions:has(> .nos-sp-hero-cta) {
     display: none;
   }
 }

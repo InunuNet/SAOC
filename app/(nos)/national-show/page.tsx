@@ -17,7 +17,6 @@ import {
   showVisitorInfoQuery,
 } from '@/sanity/queries';
 import { buildShowFacts } from '@/lib/data/show-facts';
-import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { cheapestAdmission, formatRand } from '@/components/nos/cheapest-admission';
 import { buildHubCards, TICKET_CATEGORIES, type HubCmsTicketType } from '@/lib/data/ticket-hub-source';
 import { resolveActiveShow, type ShowActivationFields } from '@/lib/show-resolution';
@@ -37,29 +36,6 @@ import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
 // propagates within F6's 120s round-trip window. See contracts/cms-loop-f1-cdn-purge.yaml.
 export const revalidate = 60;
-
-// "from all nine provinces" is unsourced (no Drive document or Sanity record states it), so a public
-// build drops the whole clause that carries it and keeps the rest verbatim; beta shows it all.
-const WITHHOLD_UNSOURCED = withholdPlaceholderProse();
-
-const PAGE_DESCRIPTION_LEAD =
-  'The National Orchid Show — the flagship triennial competition';
-const PAGE_DESCRIPTION_CLAUSE =
-  ' bringing together growers, judges and enthusiasts from all nine provinces';
-const PAGE_DESCRIPTION = WITHHOLD_UNSOURCED
-  ? `${PAGE_DESCRIPTION_LEAD}.`
-  : `${PAGE_DESCRIPTION_LEAD}${PAGE_DESCRIPTION_CLAUSE}.`;
-
-// The hub keeps the full NOS default title; the group template would only repeat the show's name.
-export const metadata: Metadata = {
-  ...buildPageMetadata({
-    title: SHOW_TITLE_EXPANDED,
-    image: nosOgImage(SHOW_TITLE),
-    description: PAGE_DESCRIPTION,
-    path: '/national-show',
-  }),
-  title: { absolute: NOS_TITLE_DEFAULT },
-};
 
 /** The hub's `<h1>` (R68, Brad): the show's plain name. nav-config keeps its own longer label
  *  as the mega-menu lead, so the two are deliberately separate. */
@@ -189,6 +165,17 @@ const PROGRAMME_ROWS = [
   { id: 'workshops', line: WORKSHOPS_LINE },
 ] as const;
 
+// The hub keeps the full NOS default title; the group template would only repeat the show's name.
+export const metadata: Metadata = {
+  ...buildPageMetadata({
+    title: SHOW_TITLE_EXPANDED,
+    image: nosOgImage(SHOW_TITLE),
+    description: LEDE,
+    path: '/national-show',
+  }),
+  title: { absolute: NOS_TITLE_DEFAULT },
+};
+
 interface NavLeafRef {
   id: string;
   label: string;
@@ -272,7 +259,7 @@ export default async function NationalShowPage() {
     name: SHOW_TITLE_EXPANDED,
     startDate: toShowIsoDate(sanityShow?.showDate),
     endDate: toShowIsoDate(sanityShow?.showEndDate),
-    description: PAGE_DESCRIPTION,
+    description: LEDE,
     venueName: sanityShow?.venue?.name,
     venueAddress: formatVenueAddress(sanityShow?.venue),
     url: EVENT_URL,
