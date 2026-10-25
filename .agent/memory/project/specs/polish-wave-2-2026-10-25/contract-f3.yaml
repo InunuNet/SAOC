@@ -1,0 +1,49 @@
+schema: athanor.contract/v1
+slug: polish-wave-2-2026-10-25
+goal: The ticket buy page's breadcrumb links are 44px targets and its form column sits on the same left axis as the hero.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F3
+    name: CL-1 44px crumb links, CL-2 one container axis on the ticket buy page
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/README.md
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/f3-checkout-layout.md
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f2.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f3.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f4.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f6.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f7.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f8.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "the .nk-crumbs a rule is inline-flex min-height 44px and the ticket body is a [data-nos-wrap] container with a left 560px column (RED on baseline, 7 findings). Triad coverage recorded here (the contract classifies exempt, as wave 1 F7): Codex QA via execution/codex_qa.sh at @qa time; browser layer is the orchestrator post-deploy check on the beta hosts; gws inbox layer N/A, this feature sends no email."
+      command: node contracts/checks/polish-wave-2-2026-10-25/f3-layout-static.mjs
+    - id: A2
+      description: at 390@3, 768, 1280 and 1440@2 on a real /tickets/<slug> page the crumb links are at least 44px tall with 15px and no underline unchanged, and the form column starts at the hero h1's left edge within 1px (RED on baseline)
+      command: node contracts/checks/polish-wave-2-2026-10-25/f3-layout-rendered.mjs
+      timeout_seconds: 900
+    - id: A3
+      description: production build passes (public Sanity ids and local origins, see goldens/README.md Hermetic render)
+      command: NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A4
+      description: wave scope guard - every changed file is on a feature allow-list (goldens/scope/*.json) or under this mission's spec and check trees (stacked on wave 1? set POLISH2_BASE)
+      command: node contracts/checks/polish-wave-2-2026-10-25/scope.mjs
+    - id: A5
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A6
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A7
+      description: the feature doc exists and names the item ids
+      command: grep -q "CL-1" docs/polish-wave-2-f3-checkout-layout.md

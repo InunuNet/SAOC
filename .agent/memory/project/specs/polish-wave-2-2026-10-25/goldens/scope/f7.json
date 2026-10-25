@@ -1,0 +1,7 @@
+{
+  "feature": "F7",
+  "allow": [
+    "components/events/SubmitEventForm.tsx",
+    "docs/polish-wave-2-f7-submit-success.md"
+  ]
+}
