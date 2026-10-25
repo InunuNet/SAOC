@@ -5,6 +5,7 @@
     "components/events/SubmitEventPageBody.tsx",
     "app/(marketing)/events/submit/page.tsx",
     "app/events-fixtures/submit/page.tsx",
+    "app/api/events/submit/route.ts",
     "docs/polish-wave-f6-submit-event.md"
   ]
 }
