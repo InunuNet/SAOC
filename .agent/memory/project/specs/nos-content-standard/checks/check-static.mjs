@@ -166,6 +166,67 @@ check('focus management kept (NosRouteScroll or equivalent still focuses the h1)
   check("ticket-presentation.ts: WOSA when 'Saturday 25 September' and meta '9am to 5pm' are unchanged", /when:\s*'Saturday 25 September'/.test(wo) && /meta:\s*'9am to 5pm'/.test(wo), wo.match(/when[^\n]*|meta[^\n]*/g)?.join(' ') ?? 'block not found');
 }
 
+// AB-G1: /about renders About 2.1 v1.2 verbatim (straight quotes), cites v1.2 rather than the 09-09 snapshot, and drops the facts aside and "Cycle"
+{
+  const ab = read('app/(nos)/national-show/about/page.tsx');
+  check('AB-G1: the about page does not cite the 09-09 snapshot (it renders v1.2)', !/09-09|about-national-show_2026/.test(ab));
+  check('AB-G1: the about page has no "Cycle" / "Triennial" facts label and no smartened quote in its copy', !/Cycle|Triennial:/.test(ab) && !/[\u2018\u2019\u201c\u201d]/.test(ab));
+}
+
+// ShowFacts is shared: whatever /about needs, the component must keep rendering Dates / Host / Venue / Cycle for every other route, and no existing label line may be removed
+{
+  const sf = read('components/nos/ShowFacts.tsx');
+  let removed = '';
+  try { removed = execFileSync('git', ['diff', 'origin/main', '--', 'components/nos/ShowFacts.tsx'], { encoding: 'utf8' }).split('\n').filter((l) => /^-[^-]/.test(l)).join('\n'); } catch { removed = ''; }
+  check('ShowFacts.tsx still renders Dates / Host / Venue / Cycle (the shared rows other routes rely on)', ['Dates', 'Host', 'Venue', 'Cycle'].every((l) => sf.includes(l)));
+  check('ShowFacts.tsx: the diff against origin/main removes none of the Dates / Host / Venue / Cycle labels', !/Dates|Host|Venue|Cycle/.test(removed), removed.slice(0, 120));
+}
+
+// WE-G1: /what-to-expect types no admission price; the prices come from the ticket records, and the Cloakroom block, TBC chip and holding note are gone
+{
+  const we = read('app/(nos)/national-show/what-to-expect/page.tsx');
+  check('WE-G1: the what-to-expect page types no Rand price literal (R350, R360, R120 or any R followed by digits)', !/\bR\s?\d{2,}/.test(we.replace(/\/\/.*$/gm, '')));
+  check('WE-G1: no Cloakroom block, no ShowHoldingNote and no uppercase-label CTA remain on the page', !/Cloakroom/i.test(we) && !/ShowHoldingNote/.test(we) && !/uppercase/.test(we));
+}
+
+// EX-G1: the Exhibitor entry guide schema stays for her future guide (iiii); the page renders none of the builder sections
+{
+  const ex = read('app/(nos)/national-show/exhibitors/page.tsx');
+  check('EX-G1: the Sanity schemas showExhibitorInfo and showExhibitorStep still exist', existsSync('sanity/schemas/documents/showExhibitorInfo.ts') && existsSync('sanity/schemas/documents/showExhibitorStep.ts'));
+  check('EX-G1: the exhibitors page no longer imports the jump chips or the builder sections ("Researched international show practice", "Key dates for exhibitors")', !/ShowJumpChips/.test(ex) && !/Researched international show practice/.test(ex) && !/Key dates for exhibitors/.test(ex));
+}
+
+// NAV-G1: the unsourced Workshops descriptor is dropped from nos-nav.ts and nothing else in that file changes
+{
+  const dropped = JSON.parse(readFileSync('.agent/memory/project/specs/nos-content-standard/goldens/standard.json', 'utf8')).navDropped;
+  const nav = read('components/nos-chrome/nos-nav.ts');
+  let ch = []; try { ch = execFileSync('git', ['diff', '-U0', 'origin/main', '--', 'components/nos-chrome/nos-nav.ts'], { encoding: 'utf8' }).split('\n').filter((l) => /^[-+][^-+]/.test(l)); } catch { ch = []; }
+  check('NAV-G1: nos-nav.ts no longer carries the Workshops descriptor', !nav.includes(dropped));
+  { const pre = JSON.parse(readFileSync('.agent/memory/project/specs/nos-content-standard/goldens/standard.json', 'utf8')).navDroppedPrefix; for (const f of ['components/nos/nos-route-heroes.ts', 'app/(nos)/national-show/workshops/page.tsx']) check(`NAV-G1: ${f} carries no "${pre}" line (lede or metadata description)`, !read(f).includes(pre)); }
+  check('NAV-G1: the only change to nos-nav.ts against origin/main is the removal of that one descriptor line (no other descriptor, label or href changed)', ch.length === 1 && ch[0].startsWith('-') && ch[0].includes(dropped), ch.join(' || ').slice(0, 200));
+}
+
+// CT-G1: the contact form's behaviour is out of scope: the API, its validation, the email path and the form's own field, validation and submit lines are unchanged
+{
+  const gitShow = (p) => { try { return execFileSync('git', ['show', `origin/main:${p}`], { encoding: 'utf8' }); } catch { return ''; } };
+  const behave = (src) => src.split('\n').map((l) => l.trim()).filter((l) => /name="|fetch\(|\/api\/contact|method[:=]|JSON\.stringify|body:|errors\.|\.test\(|trim\(\)|_hp|noValidate|minLength|required/.test(l)).sort().join('\n');
+  check('CT-G1: ContactForm.tsx keeps every field-name, fetch, validation and honeypot line of origin/main (only presentation lines may change)', behave(read('components/contact/ContactForm.tsx')) === behave(gitShow('components/contact/ContactForm.tsx')));
+  let touched = ''; try { touched = execFileSync('git', ['diff', '--name-only', 'origin/main', '--', 'app/api/contact', 'lib/contact-input.ts', 'lib/contact-submission.ts', 'lib/contact-submission-admin-notice.ts', 'emails'], { encoding: 'utf8' }).trim(); } catch { touched = ''; }
+  check('CT-G1: the contact API route, its input validation, the submission writers and the contact emails are untouched against origin/main', touched === '', touched.slice(0, 160));
+  const ct = read('app/(nos)/national-show/contact/page.tsx') + read('components/contact/NosContactAside.tsx') + read('components/nos/ShowContactDetails.tsx');
+  check('CT-G1: no NOT CONFIRMED badge and no "[Introduction to be supplied" placeholder remain in the contact page or its components', !/NOT CONFIRMED/i.test(ct) && !/Introduction to be supplied/i.test(ct));
+}
+
+// AR-1: the public withhold (r64) is unchanged; the archive page only changes its render
+{
+  const gitShow = (p) => { try { return execFileSync('git', ['show', `origin/main:${p}`], { encoding: 'utf8' }); } catch { return ''; } };
+  const pg = 'app/(nos)/national-show/archive/page.tsx';
+  const cnt = (src, re) => (src.match(re) ?? []).length;
+  check('AR-1: lib/data/past-shows-public.ts and lib/data/past-shows.ts (the r64 visibility rule) are identical to origin/main', read('lib/data/past-shows-public.ts') === gitShow('lib/data/past-shows-public.ts') && read('lib/data/past-shows.ts') === gitShow('lib/data/past-shows.ts'));
+  check('AR-1: the archive page keeps every showPastShowsRoute() guard and every notFound() call of origin/main (generateMetadata and the page)', cnt(read(pg), /showPastShowsRoute\(\)/g) === cnt(gitShow(pg), /showPastShowsRoute\(\)/g) && cnt(read(pg), /notFound\(\)/g) >= cnt(gitShow(pg), /notFound\(\)/g) && cnt(gitShow(pg), /notFound\(\)/g) >= 2);
+  check('AR-1: the archive page drops the EditionCard grid, the stat chips and the "Looking for the 19th National Show?" band', !/EditionCard/.test(read(pg)) && !/Looking for the 19th National Show/.test(read(pg)));
+}
+
 // CR-G1: the conferences page drops the builder lede and the "Programme" heading
 {
   const cr = read('app/(nos)/national-show/conferences/page.tsx');
