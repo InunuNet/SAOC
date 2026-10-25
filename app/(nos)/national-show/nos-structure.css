@@ -1566,7 +1566,9 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nk-crumbs a {
   color: var(--rule-soft);
   text-decoration: none;
-  padding-block: 10px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 .nos-theme .nk-crumbs a:hover {
   color: var(--ivory);
