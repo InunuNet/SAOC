@@ -7,7 +7,7 @@
 //   a "Host society" select exists: first option has an empty value, every other option's value is an id-shaped
 //   string that differs from its visible text, the visible text is a name, the names are sorted, and nothing
 //   on the page says "Sanity", "document ID" or "Host society ID"
-//   the submit button background equals the resolved --primary, and it is >=44px tall
+//   the submit button background equals the resolved --accent (the token of the Join a society CTA, Header.tsx:183, and of ContactForm), and it is >=44px tall
 //   no horizontal overflow
 // Run as: node contracts/checks/polish-wave-2026-10-25/f6-submit-rendered.mjs   (needs a current build)
 import { finish } from './_lib.mjs';
@@ -88,9 +88,9 @@ try {
 
     const btn = page.locator('form button[type=submit]');
     const bb = await btn.boundingBox();
-    const primary = await page.evaluate(() => { const s = document.createElement('span'); s.style.color = 'var(--primary)'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); return c; });
+    const accent = await page.evaluate(() => { const s = document.createElement('span'); s.style.color = 'var(--accent)'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); return c; });
     const bg = await btn.evaluate((n) => getComputedStyle(n).backgroundColor);
-    if (bg !== primary) failures.push(`${tag} submit background is ${bg}, want --primary ${primary}`);
+    if (bg !== accent) failures.push(`${tag} submit background is ${bg}, want --accent ${accent} (the Join a society CTA and ContactForm token)`);
     if (!bb || bb.height < 44) failures.push(`${tag} submit button is ${bb ? bb.height.toFixed(1) : 'missing'}px tall, want >=44`);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     if (overflow > 1) failures.push(`${tag} horizontal overflow of ${overflow}px`);
