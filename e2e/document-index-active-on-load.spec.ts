@@ -34,3 +34,26 @@ test.describe('DocumentIndex active row', () => {
     await expect(page.locator(ACTIVE)).toHaveCount(1);
   });
 });
+
+// A click on a row lands its heading where the spy counts it as read, clear of the sticky chrome,
+// with no further scrolling (html scroll-padding and the h2 scroll-margin must not stack).
+for (const { name, viewport, chromeBottom } of [
+  { name: 'desktop', viewport: { width: 1440, height: 900 }, chromeBottom: 97 },
+  { name: 'index bar below 1024', viewport: { width: 390, height: 844 }, chromeBottom: 97 + 48 },
+]) {
+  test.describe(`DocumentIndex click (${name})`, () => {
+    test.use({ viewport });
+
+    test('clicking the 3rd row makes it active straight away', async ({ page }) => {
+      await page.goto('/privacy');
+      await expect(page.locator('[data-doc-index-link]').first()).toHaveAttribute('aria-current', 'location');
+      const third = page.locator('[data-doc-index-link]').nth(2);
+      const id = (await third.getAttribute('href'))?.slice(1) as string;
+      await third.click();
+      await expect(third).toHaveAttribute('aria-current', 'location');
+      await expect(page.locator(ACTIVE)).toHaveCount(1);
+      const top = await page.evaluate((h) => document.getElementById(h)?.getBoundingClientRect().top ?? -1, id);
+      expect(top).toBeGreaterThanOrEqual(chromeBottom);
+    });
+  });
+}

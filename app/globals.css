@@ -153,7 +153,8 @@ body {
 }
 /* WCAG 2.4.11: the sticky header (97px, HD-1) must not cover a focused element. */
 html {
-  scroll-padding-top: 6.5rem;
+  --scroll-padding-top: 6.5rem;
+  scroll-padding-top: var(--scroll-padding-top);
   scrollbar-gutter: stable;
 }
 /* NAV-1: after a client-side navigation focus lands on the page heading (or main); it is a
@@ -748,7 +749,9 @@ h3.font-serif {
   letter-spacing: -0.015em;
   color: var(--ink);
   text-wrap: pretty;
-  scroll-margin-top: var(--doc-scroll-margin, 112px);
+  /* --doc-scroll-margin is where a heading lands, measured from the viewport top. The html
+     scroll-padding already supplies part of it, so only the remainder is the heading's own margin. */
+  scroll-margin-top: calc(var(--doc-scroll-margin, 112px) - var(--scroll-padding-top, 0px));
 }
 /* A theme's own h2 rule (.nos-theme h2, 0,1,1) sets weight and wrap; the document scale keeps both. */
 .doc-h2,
@@ -837,6 +840,10 @@ h3.font-serif {
   }
   .doc-layout--index [data-doc-main] {
     padding-top: 32px;
+  }
+  /* A heading reached from the bar lands below the header and the 48px bar, with 16px of air. */
+  .doc-layout--index .doc-h2 {
+    scroll-margin-top: calc(var(--doc-index-top, 97px) + 64px - var(--scroll-padding-top, 0px));
   }
   .doc-aside[data-doc-aside-kind='index'] {
     position: sticky;
