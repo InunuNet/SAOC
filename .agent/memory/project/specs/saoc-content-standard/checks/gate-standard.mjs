@@ -7,7 +7,7 @@
 // Needs: node_modules (playwright, next) and .env.local (Sanity read) in the repo root.
 import { spawn, execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import { chromium } from '@playwright/test';
 
@@ -34,13 +34,38 @@ async function sanityStamp() {
   } catch { return `unreadable:${Date.now()}`; }
 }
 
+// Untracked source counts by name AND content: an edit to a new, uncommitted file must invalidate
+// the cached measurement just as an edit to a tracked one does.
+function untrackedDigest() {
+  const files = execSync('git ls-files --others --exclude-standard -- app components lib content').toString().split('\n').filter(Boolean);
+  const h = createHash('sha1');
+  for (const f of files) h.update(f + '\0').update(existsSync(f) ? readFileSync(f) : '').update('\0');
+  return h.digest('hex');
+}
+
 async function stateKey() {
   const base = process.env.SAOC_BASE_URL ?? 'local-dev-server';
   const stamp = await sanityStamp();
   const head = execSync('git rev-parse HEAD').toString().trim();
   const diff = execSync('git diff HEAD -- app components lib content proxy.ts').toString();
-  const untracked = execSync("git ls-files --others --exclude-standard -- app components lib content").toString();
-  return createHash('sha1').update(base + stamp + head + diff + untracked + readFileSync(`${SPEC}/goldens/standard.json`)).digest('hex');
+  return createHash('sha1').update(base + stamp + head + diff + untrackedDigest() + readFileSync(`${SPEC}/goldens/standard.json`)).digest('hex');
+}
+
+// Selftest of the digest: unchanged untracked content must give the same digest, changed content a
+// different one (compared on the digest itself; the full key also folds in the Sanity stamp).
+function untrackedDigestFails() {
+  const fails = [];
+  const probe = 'components/.standard-selftest-untracked.txt';
+  try {
+    writeFileSync(probe, 'a');
+    const a1 = untrackedDigest();
+    const a2 = untrackedDigest();
+    writeFileSync(probe, 'b');
+    const b = untrackedDigest();
+    if (a1 !== a2) fails.push('selftest "untracked content changes the cache key": digest differs for unchanged content');
+    if (b === a1) fails.push('selftest "untracked content changes the cache key": digest unchanged after an untracked file\'s content changed');
+  } finally { rmSync(probe, { force: true }); }
+  return fails;
 }
 
 // An externally served build (a base URL from the environment) has no identity the cache key can
@@ -242,7 +267,7 @@ function eachRoute(fn, { desktopOnly = false } = {}) {
 }
 
 if (check === 'selftest') {
-  const selfFails = cachePolicyFails();
+  const selfFails = [...cachePolicyFails(), ...untrackedDigestFails()];
   if (selfFails.length) { console.error(`selftest: ${selfFails.length} violation(s)`); selfFails.forEach((f) => console.error('  ' + f)); process.exit(1); }
   console.log('selftest: ok');
   process.exit(0);

@@ -365,8 +365,11 @@ async function runSelftest(browser, server) {
     if (a1 !== a2) fails.push('selftest "untracked content changes the cache key": digest differs for unchanged content, so it is not a content hash');
     if (b === a1) fails.push('selftest "untracked content changes the cache key": digest unchanged after an untracked file\'s content changed');
   } finally { rmSync(probe, { force: true }); }
+  let ran = 0;
   for (const c of cases) {
     const route = ROUTES.find((r) => r.id === c.route);
+    if (!route) { console.log(`selftest "${c.name}": skipped, ${site} has no route "${c.route}"`); continue; }
+    ran++;
     const ctx = await browser.newContext({ viewport: PG.viewports[c.vp] });
     const page = await ctx.newPage();
     await page.goto(server.base + route.path, { waitUntil: 'networkidle', timeout: 90000 });
@@ -389,6 +392,7 @@ async function runSelftest(browser, server) {
     if (!found.length) fails.push(`selftest "${c.name}": judge reported nothing after the break, so it cannot catch this defect`);
     await ctx.close();
   }
+  if (!ran) fails.push(`selftest: no case could run on ${site} (none of its routes match a case), so the judges are unproven here`);
   return fails;
 }
 
