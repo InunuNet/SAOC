@@ -13,7 +13,7 @@ dfb10c263935752b78b1f9862c4680dab5393c4e5ee0d73c20c80d2881c2def5  .agent/memory/
 9a4a6417df3223b49cc0f789812031233f0b133ddb3d2176e1b7048820a1bf23  .agent/memory/project/specs/nos-content-standard/checks/fixture-load-probe.mjs
 d04cf9270c5a952834efd28bda298739c8eae98f1b18f14150cc2d19bacfdfb6  .agent/memory/project/specs/nos-content-standard/goldens/standard.json
 512bd5c0fea164d7f953f7a1843d928ad8413187fb929826822f6cccde96242b  .agent/memory/project/specs/nos-content-standard/goldens/route-table.json
-ce3adda791d32c68500bf9b74875f4a1b0222a59038c7fa220c74b669ac73687  .agent/memory/project/specs/nos-content-standard/goldens/spec.md
+f32c5aeb8d4918db6e62d60108f09699c168a7dab02a162a8eaaeadda6341ab5  .agent/memory/project/specs/nos-content-standard/goldens/spec.md
 4e48c95856ce47f314eb542e51f6c91ff48cab69025562b63edf3a85e41e715d  .agent/memory/project/specs/nos-content-standard/goldens/codex-qa-prompt.md
 979ff52251999ef22d9a9818089294a025fca7730245f1b56bdcea3f3e1514cf  .agent/memory/project/specs/nos-content-standard/goldens/crops/crop-proposals.json
 e9899deca0f51d4200c50ba7daa5651221fe3bbbc49f1d35d6d08447f3daec72  .agent/memory/project/specs/nos-content-standard/goldens/crops/make-contact-sheet.py
