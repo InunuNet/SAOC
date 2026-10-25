@@ -1,6 +1,6 @@
 // Fixture routes never render on the deployed site (Codex review). /media-kit-fixtures renders the media kit
 // body without its admin gate, /ticket-fixtures/buy the purchase form over a static ticket and
-// /admin-fixtures/[route] the admin shell over static data; all are env-flag gated for the local render checks. Firebase App Hosting runs on Cloud Run, which sets K_SERVICE, so
+// /events-fixtures/submit the submit form over static societies, /admin-fixtures/[route] the admin shell over static data; all are env-flag gated for the local render checks. Firebase App Hosting runs on Cloud Run, which sets K_SERVICE, so
 // each route must 404 whenever K_SERVICE is set (one shared rule: lib/fixture-route-guard.ts), even if its flag were set there. NODE_ENV cannot be the guard
 // (it is 'production' under the local `next start` the gates use).
 //   flag=1 and K_SERVICE set -> 404 (every route)
@@ -12,11 +12,12 @@ import { buildProblem, get, startServer } from './_server.mjs';
 const ROUTES = [
   { path: '/media-kit-fixtures', flag: 'MEDIA_KIT_FIXTURES', marker: 'Mark only' },
   { path: '/ticket-fixtures/buy', flag: 'TICKET_FIXTURES', marker: 'Continue to payment' },
+  { path: '/events-fixtures/submit', flag: 'EVENT_SUBMIT_FIXTURES', marker: 'Fixture Orchid Society A' },
   { path: '/admin-fixtures/dashboard', flag: 'ADMIN_FIXTURES', marker: null },
 ];
 
 const failures = [];
-const stale = buildProblem(['app/media-kit-fixtures/page.tsx', 'app/ticket-fixtures/buy/page.tsx', 'app/admin-fixtures/[route]/page.tsx']);
+const stale = buildProblem(['app/media-kit-fixtures/page.tsx', 'app/ticket-fixtures/buy/page.tsx', 'app/admin-fixtures/[route]/page.tsx', 'app/events-fixtures/submit/page.tsx']);
 if (stale.length) finish('fixture-hosted-guard', stale);
 
 async function probe(env) {
