@@ -32,3 +32,6 @@ F8: the merged section's h2 is "Full colour · Greyscale" (built from the two ex
 
 ## Round 4 (NOS Design, 2026-10-25, via lead; WCAG 2.4.4)
 F8 (a): the "Full colour · Greyscale" section had two identical "Download this section (zip)" links. Ruling: ONE zip link that follows the family toggle, the selected family in its accessible name, visible text unchanged.
+
+## Round 5 (NOS Design, 2026-10-25, via lead)
+F8: the lockup variant radiogroup is named via aria-labelledby pointing at the selected family chip's label ("Full colour" or "Greyscale"); the family group keeps aria-label "Full colour · Greyscale". The two groups never share a name. Implemented at f8c63b28.

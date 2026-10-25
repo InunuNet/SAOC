@@ -106,8 +106,15 @@ try {
       else {
         const family = groups.nth(0);
         const variant = groups.nth(1);
-        const names = await Promise.all([family, variant].map((gr) => gr.evaluate((el) => (el.getAttribute('aria-label') ?? el.closest('fieldset')?.querySelector('legend')?.textContent ?? '').trim())));
+        // Accessible name: aria-labelledby (ids resolved to their text), else aria-label, else the fieldset legend.
+        const nameOf = (gr) => gr.evaluate((el) => {
+          const ids = (el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean);
+          const byIds = ids.map((id) => document.getElementById(id)?.textContent ?? '').join(' ');
+          return (byIds.trim() || el.getAttribute('aria-label') || el.closest('fieldset')?.querySelector('legend')?.textContent || '').replace(/\s+/g, ' ').trim();
+        });
+        const names = await Promise.all([family, variant].map(nameOf));
         if (names.some((n) => !n)) failures.push(`${tag} #lockups: a radiogroup has no accessible name`);
+        if (names[0] !== LOCKUPS_HEADING) failures.push(`${tag} #lockups: the family group is named "${names[0]}", want "${LOCKUPS_HEADING}"`);
         const famLabels = await family.locator('label').evaluateAll((ls) => ls.map((l) => (l.textContent ?? '').replace(/\s+/g, ' ').trim()));
         if (famLabels.join('|') !== FAMILIES.map((f) => f.label).join('|')) failures.push(`${tag} #lockups: family toggle is [${famLabels.join(' | ')}], want [${FAMILIES.map((f) => f.label).join(' | ')}]`);
         const varLabels = await variant.locator('label').evaluateAll((ls) => ls.map((l) => (l.textContent ?? '').replace(/\s+/g, ' ').trim()));
@@ -120,6 +127,10 @@ try {
         }
         for (const [fi, f] of FAMILIES.entries()) {
           await family.locator('label').nth(fi).click();
+          // Round 5: the variant group is named for the selected family, and the two groups never share a name.
+          const [famName, varName] = await Promise.all([nameOf(family), nameOf(variant)]);
+          if (varName !== f.label) failures.push(`${tag} #lockups ${f.label}: the variant group is named "${varName}", want "${f.label}"`);
+          if (famName === varName) failures.push(`${tag} #lockups ${f.label}: both lockup groups are named "${famName}"`);
           for (const [vi, v] of VARIANTS.entries()) {
             await variant.locator('label').nth(vi).click();
             const cards = await page.$$eval('#lockups [data-kit-card]', (cs) => cs.filter((c) => c.offsetParent !== null).map((c) => ({
