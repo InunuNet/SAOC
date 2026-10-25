@@ -27,12 +27,9 @@ export const metadata: Metadata = {
   description: 'Media resources and press information for the South African Orchid Council.',
 };
 
-const QUICK_FACTS = [
-  { value: '21', label: 'Affiliated Societies' },
-  { value: '1968', label: 'Founding Year' },
-  { value: '18', label: 'National Shows Hosted' },
-  { value: '56', label: 'Accredited Judges' },
-] as const;
+// Only the founding year is in the Council's copy; Lee-Ann asked for the other figures to be left out
+// (24 Oct 2026).
+const QUICK_FACTS = [{ value: '1968', label: 'Founding Year' }] as const;
 
 const JUMP_ITEMS = [
   { href: '#quick-start', label: 'Quick start' },
@@ -51,13 +48,8 @@ const CARD_GRID = 'grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3';
 // Lockup grids are ordered horizontal light, horizontal dark, vertical light, vertical dark.
 const LOCKUP_GROUNDS: Ground[] = ['light', 'dark', 'light', 'dark'];
 
-// F19 (vote 1C): of these four figures only the founding year is in the Council's copy; the rest, the
-// society count, the 1990 standardisation and the yearbook name are marked on the beta preview and
-// left out of the public build.
 const REMIT =
   'Our remit is orchids in cultivation: the show bench, the greenhouse, and the community. For indigenous species in the wild, our sibling organisation Wild Orchids of Southern Africa leads that work.';
-
-const SOURCED_FACTS = QUICK_FACTS.filter((fact) => fact.value === '1968');
 
 /** Only the greyscale mark reversed for sage is made for a dark ground. */
 function markGround(item: MediaKitItem): Ground {
@@ -80,7 +72,6 @@ function LockupCards({ items }: { items: MediaKitItem[] }) {
 export default async function MediaKitPage() {
   await requireMediaKitAccess('/media-kit');
   const withhold = withholdPlaceholderProse();
-  const facts = withhold ? SOURCED_FACTS : QUICK_FACTS;
   // Every file offered for download comes from the generated manifest; nothing is linked by hand.
   const kit = buildMediaKit(manifest.items);
   const hero = heroImages.find((image) => image.name === HERO_IMAGE_NAME);
@@ -186,12 +177,9 @@ export default async function MediaKitPage() {
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-6">
             Quick facts
           </p>
-          <div
-            data-placeholder={withhold ? undefined : 'true'}
-            className="flex flex-col items-start gap-4"
-          >
+          <div className="flex flex-col items-start gap-4">
             <dl className="grid w-full grid-cols-2 gap-8 border-y border-rule py-10 sm:grid-cols-4">
-              {facts.map((stat) => (
+              {QUICK_FACTS.map((stat) => (
                 <div key={stat.label}>
                   <dt className="font-serif tracking-[-0.015em] font-light text-[32px] text-ink">{stat.value}</dt>
                   <dd className="mt-1 font-mono text-[11px] tracking-[0.16em] text-muted">
@@ -200,7 +188,6 @@ export default async function MediaKitPage() {
                 </div>
               ))}
             </dl>
-            {withhold ? null : <PlaceholderMarker />}
           </div>
         </section>
 
