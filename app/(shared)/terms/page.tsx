@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
-import { LEGAL_HERO_MIN_HEIGHT, LegalBody, legalIndex } from '@/components/legal/LegalBody';
+import { LegalBody, legalIndex } from '@/components/legal/LegalBody';
+import { LegalBreadcrumb } from '@/components/legal/LegalBreadcrumb';
 import { LegalHero } from '@/components/nos/LegalHero';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { WEBSITE_TERMS } from '@/content/legal/terms';
@@ -15,13 +16,12 @@ export const metadata: Metadata = buildPageMetadata({
 export default function TermsPage() {
   return (
     <>
+      <LegalBreadcrumb label="Terms of Use" />
       <LegalHero
         route="/terms"
         eyebrow="Legal"
-        breadcrumbLabel="Terms of Use"
         image="/images/orchid-violet.jpg"
         heading={WEBSITE_TERMS.title}
-        minHeight={LEGAL_HERO_MIN_HEIGHT}
       />
       <DocumentLayout index={legalIndex(WEBSITE_TERMS)}>
         <LegalBody document={WEBSITE_TERMS} />
