@@ -25,11 +25,12 @@ export function trimAtWord(text: string, max: number): string {
 }
 
 export function buildSocietyMetadata(society: SocietyMetadataInput): Metadata {
-  const description = society.description
-    ? trimAtWord(society.description, DESCRIPTION_MAX)
-    : society.region
+  const trimmed = society.description ? trimAtWord(society.description, DESCRIPTION_MAX) : '';
+  const description =
+    trimmed ||
+    (society.region
       ? `${society.name} — affiliated SAOC society in ${society.region}.`
-      : `${society.name} — an affiliated SAOC society.`;
+      : `${society.name} — an affiliated SAOC society.`);
   return buildPageMetadata({
     title: society.name,
     description,
