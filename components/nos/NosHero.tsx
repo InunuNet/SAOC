@@ -28,6 +28,8 @@
 import Image from 'next/image';
 import type { CSSProperties, ReactNode } from 'react';
 
+import type { ShowFact } from '@/lib/data/show-facts';
+import { type HeroFact, normaliseHeroFacts } from '@/lib/hero-facts';
 import heroSourceWidths from '@/lib/hero-source-widths.json';
 
 import { heroCropFor, heroPhotoFor } from './hero-photos';
@@ -59,6 +61,32 @@ const FALLBACK_TITLE_STYLE: CSSProperties = {
 /** Routes whose hero carries no group sub-nav: the hub (it has the destinations list) and tickets. */
 const NO_SUBNAV_ROUTES: ReadonlySet<string> = new Set(['/national-show', '/national-show/tickets']);
 
+// buildShowFacts() fills an absent field with these strings. A hero fact is a real value or it is
+// omitted: HeroFact has no "to be confirmed" shape (shared API, lib/hero-facts.ts).
+const SHOW_FACT_FILLER: ReadonlySet<string> = new Set([
+  'Dates to be confirmed',
+  'Venue to be confirmed',
+  'Host region to be confirmed',
+]);
+
+/**
+ * The hero facts a page takes from the published show facts: only the named labels, in the order
+ * named, with any filler value omitted. `normaliseHeroFacts` then drops the row below two facts.
+ */
+export function heroFactsFromShow(
+  showFacts: readonly ShowFact[],
+  labels: readonly string[],
+): HeroFact[] {
+  const facts: HeroFact[] = [];
+  for (const label of labels) {
+    const fact = showFacts.find((candidate) => candidate.label === label);
+    if (fact && !SHOW_FACT_FILLER.has(fact.value)) {
+      facts.push({ term: fact.label, value: fact.value });
+    }
+  }
+  return facts;
+}
+
 export interface NosHeroProps {
   /** The pathname this hero heads, e.g. `/national-show/symposium` or `/national-show/archive/2024`. */
   route: string;
@@ -83,6 +111,8 @@ export interface NosHeroProps {
    * the CTAs. Inner: a single optional link row below the standfirst.
    */
   actions?: ReactNode;
+  /** The facts row under the lede (2-4 real values; fewer than two renders no row). */
+  facts?: readonly HeroFact[];
   /** A short label above the h1 (e.g. "Legal"); rendered only where the page already has the string. */
   eyebrow?: ReactNode;
   /** An optional breadcrumb trail, rendered before the h1 (the checkout step's hub trail, r18). */
@@ -101,6 +131,7 @@ export async function NosHero({
   ledeKind,
   actions,
   eyebrow,
+  facts,
   crumbs,
   priority = false,
   className = '',
@@ -109,6 +140,7 @@ export async function NosHero({
   const kind = isHub ? 'hub' : 'inner';
   const photo = isHub ? heroPhotoFor(route) : heroCropFor(route);
   const variant = photo ? 'photo' : 'type';
+  const heroFacts = normaliseHeroFacts(facts);
   const group = NO_SUBNAV_ROUTES.has(route) ? null : subNavGroupFor(route, await getVisibleNav());
 
   return (
@@ -181,6 +213,16 @@ export async function NosHero({
                 >
                   {lede}
                 </p>
+              ) : null}
+              {heroFacts ? (
+                <dl data-hero-facts="" data-fact-count={heroFacts.length} className="hero-facts">
+                  {heroFacts.map((fact) => (
+                    <div key={fact.term} data-hero-fact="">
+                      <dt>{fact.term}</dt>
+                      <dd>{fact.value}</dd>
+                    </div>
+                  ))}
+                </dl>
               ) : null}
               {actions ? <div className="nos-hero-actions">{actions}</div> : null}
             </>

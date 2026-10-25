@@ -1,0 +1,324 @@
+{
+ "_note": "Photo codes are the ruling-(c) crops in goldens/crops/crop-proposals.json; a crop reused from another nav group is logged in that file. Drive sources are frozen copies under goldens/sources/ (sha256 recorded); the live store is an untracked mirror. Routes with drive null and no verifiedBySaoc are GAPs. | rev2 2026-10-25: aside values map to DocumentLayout kinds (index|categories|index -> kind index; venue|contact -> kind content); routes may carry h4:true and headings{h2,h3,h4} asserted by gate-verbatim. | rev3: photo codes re-mapped from the crops-c verdict pool (V1, V3, P1 retired; PK1=PK2); /workshops h2 'Programme' has no Drive source (builder copy), flagged for Lee-Ann, not rewritten (WS-1); data-ticket-card marks purchasable ticket cards.",
+ "routes": [
+  {
+   "nos": "/about",
+   "group": "visit",
+   "kind": "document",
+   "aside": "index",
+   "drive": {
+    "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/about.md",
+    "version": "v1.2",
+    "sha256": "bb431853bdafec3bddd130cc031c0f3a8ea53da5265a2357826d7bdee5a67837",
+    "driveStorePath": "content/drive-source/National Show/2. About/2.1 About - 2027 National Show/v1.2/content.md",
+    "mode": "full"
+   },
+   "photo": "S3a",
+   "keyFacts": null
+  },
+  {
+   "nos": "/what-to-expect",
+   "group": "visit",
+   "kind": "document",
+   "aside": "index",
+   "drive": {
+    "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/what-to-expect.md",
+    "version": "v1.0",
+    "sha256": "aeadd29ec3ef6f332d0e89e7cb2f4d26b69acbbef47bfc969ad9233e488c6bfe",
+    "driveStorePath": "content/drive-source/National Show/3. What to expect/What to Expect/v1.0/content.md",
+    "mode": "listed",
+    "mustPresent": [
+     "The National Orchid Show is a prestigious event that takes please every three years. The Show moves between provinces on this cycle which allows the local societies the opportunity to host the delegates, judges and the public.",
+     "Show dates \u2013 for public entrance"
+    ],
+    "strikeAbsence": "none",
+    "strikeNote": "The struck cloakroom block and expectIntro are Sanity content: listed under Sanity edits in research.md; no assertion requires the Sanity change. Opening hours stay as Sanity has them (SAOC)."
+   },
+   "photo": "PK1",
+   "keyFacts": null
+  },
+  {
+   "nos": "/plan-your-visit",
+   "group": "visit",
+   "kind": "document",
+   "aside": "index",
+   "drive": {
+    "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/plan-your-visit.md",
+    "version": "v1.0",
+    "sha256": "49dfa05546909299eafacb7cd6deb1f1e6896664c6b552c7cf7925db5215076b",
+    "driveStorePath": "content/drive-source/National Show/Plan your Visit/PLAN YOUR VISIT/v1.0/content.md",
+    "mode": "full+listed",
+    "until": "Start planning your visit today",
+    "mustPresent": [
+     "Designated Parking for the National Orchid Show will be provided at the Stellenbosch flying club.",
+     "On-site first aid and show duty contact \u2013 To be provided"
+    ],
+    "strikeAbsence": "all",
+    "strikeAbsenceExempt": [],
+    "strikeNote": "Everything struck in her doc is deleted copy: the invented lede, the appended directionsNote sentence, the emergency chip label, the Stay informed block and its Ask the council button. A span that turns out to live in Sanity goes in strikeAbsenceExempt (lead edit, then re-freeze) and under Sanity edits in research.md.",
+    "mustPresentNav": [
+     "Plant Entry/Registration"
+    ],
+    "mustAbsentNav": [
+     "Exhibitor entry guide"
+    ],
+    "note": "PYV-1: h2s are the seven numbered headings of the doc (the lead's message said six; the frozen v1.0 has seven, 7. Make the Most of Your Visit)."
+   },
+   "photo": "S1b",
+   "keyFacts": [
+    {
+     "term": "Dates",
+     "source": "buildShowFacts() Dates"
+    },
+    {
+     "term": "Venue",
+     "source": "buildShowFacts() Venue"
+    },
+    {
+     "term": "Host",
+     "source": "buildShowFacts() Host (hostRegion), label Host"
+    }
+   ],
+   "h4": true,
+   "headings": {
+    "h1": "Plan your visit",
+    "h1CaseInsensitive": true,
+    "lede": "Discover Stellenbosch, Cape Town, the Cape Winelands and the greater Western Cape",
+    "standfirst": "Join us for the National Orchid Show \u2013 Western Cape 2027!",
+    "h2": [
+     "1. Getting Here",
+     "2. Where to Stay",
+     "3. Discover Stellenbosch",
+     "4. Discover Cape Town",
+     "5. Explore Beyond Stellenbosch and Cape Town",
+     "6. Practical Information for International Visitors",
+     "7. Make the Most of Your Visit"
+    ],
+    "h3": [
+     "By air",
+     "Useful links",
+     "Getting from the airport to Stellenbosch",
+     "Stay in Stellenbosch",
+     "Stay in Cape Town",
+     "Which is the best place to stay?",
+     "Things to see and do",
+     "Plan your Stellenbosch visit",
+     "Highlights of Cape Town",
+     "Plan your Cape Town visit",
+     "Travel documents and visas",
+     "Weather in September",
+     "Currency and payments",
+     "Getting around",
+     "Visitor information"
+    ],
+    "h4": [
+     "History and heritage",
+     "Gardens and botanical interest",
+     "Art, culture and local shopping",
+     "The Cape Winelands",
+     "Outdoor activities",
+     "Table Mountain",
+     "Kirstenbosch National Botanical Garden",
+     "V&A Waterfront",
+     "Robben Island",
+     "Cape Point and the Cape Peninsula",
+     "Beaches and coastal villages"
+    ]
+   },
+   "keyFactsSignedOff": "NOS Design 2026-10-25: Dates, Venue, Host. No Stellenbosch fact (invented label), no Cycle fact. A TBC fact is omitted, never shown as filler; the row renders only when >= 2 real facts remain."
+  },
+  {
+   "nos": "/faq",
+   "group": "visit",
+   "kind": "faq",
+   "aside": "categories",
+   "drive": {
+    "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/faq.md",
+    "version": "v1.0",
+    "sha256": "a35ca3ad1779cb22bc8eb14355abfeb61c41ad485dde786fbe0e98c916f1f4b5",
+    "driveStorePath": "content/drive-source/National Show/17. Frequently Asked Questions/Frequently Asked Questions/v1.0/content.md",
+    "mode": "full",
+    "strikeAbsence": "all",
+    "strikeAbsenceExempt": [],
+    "mustAbsent": [],
+    "strikeNote": "Her title and her question and section numbering render as written (h2 '1. General Show information'; summaries '1. What is ...?'). The invented faqContactNote and its buttons, and the price list appended to Q10, must be absent; the struck faqIntro too unless Sanity holds it (then exempt it and list it)."
+   },
+   "photo": "H4a",
+   "keyFacts": null
+  },
+  {
+   "nos": "/contact",
+   "group": "header",
+   "kind": "document",
+   "aside": "contact",
+   "drive": {
+    "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/contact.md",
+    "version": "v1.1",
+    "sha256": "c7144cfedad11bcbc0943bf750f94a3e3414b98f1c81c7a86ff8b5e174998406",
+    "driveStorePath": "content/drive-source/National Show/18. Contact/2027 Show Contact information/v1.1/content.md",
+    "mode": "range",
+    "from": "**Committee**",
+    "until": "http://nos.saoc.co.za/",
+    "edits": [
+     {
+      "find": "(Needs Surnames) ",
+      "replace": ""
+     }
+    ],
+    "strikeAbsence": "none"
+   },
+   "photo": "H4a",
+   "keyFacts": null
+  },
+  {
+   "nos": "/sa-exhibitors",
+   "group": "exhibit",
+   "kind": "document",
+   "aside": "index",
+   "drive": {
+    "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/sa-exhibitors.md",
+    "version": "v1.1",
+    "sha256": "bd5020ac5e40ff767879d13d9c3fb87d6fc0c727a302886e23e31b7463a4707d",
+    "driveStorePath": "content/drive-source/National Show/4. South African Exhibitors/1.1 Exhibitors - South African Exhibitors/v1.1/content.md",
+    "mode": "range",
+    "from": "List of Exhibitors",
+    "until": "Gods Green Gifts",
+    "asPlainLists": true,
+    "strikeAbsence": "none",
+    "mustAbsentSelectors": [
+     "[data-nos-cta-band]"
+    ],
+    "strikeNote": "Her 'List of Exhibitors' and 'Short List of Invited Vendors' render as plain lists under her headings, typos included. No vendorNursery docs, no invented hero lede, no CtaBand. Her planning notes ('Every nursery has:', 'You could even include:') and the vendor registration form below the lists stay unpublished."
+   },
+   "photo": "PK1",
+   "keyFacts": null
+  },
+  {
+   "nos": "/international-guests",
+   "group": "exhibit",
+   "kind": "document",
+   "aside": "index",
+   "drive": null,
+   "photo": "Y1",
+   "keyFacts": null,
+   "driveNote": "No Drive document in the store."
+  },
+  {
+   "nos": "/exhibitors",
+   "group": "exhibit",
+   "kind": "document",
+   "aside": "index",
+   "drive": null,
+   "photo": "D1",
+   "keyFacts": null,
+   "noChips": "FAQ-NAV applies: the 13-pill chip row becomes the index aside at >= 1024 and the square-text scroller below; same gates as /faq"
+  },
+  {
+   "nos": "/vendors",
+   "group": "exhibit",
+   "kind": "document",
+   "aside": "index",
+   "drive": null,
+   "photo": "S1b",
+   "keyFacts": null
+  },
+  {
+   "nos": "/programme",
+   "group": "programme",
+   "kind": "document",
+   "aside": "index",
+   "drive": null,
+   "photo": "S3b",
+   "keyFacts": null
+  },
+  {
+   "nos": "/workshops",
+   "group": "programme",
+   "kind": "document",
+   "aside": "index",
+   "drive": null,
+   "photo": "S2c",
+   "keyFacts": null,
+   "h2FlaggedForDrive": [
+    "Programme"
+   ]
+  },
+  {
+   "nos": "/symposium",
+   "group": "programme",
+   "kind": "document",
+   "aside": "index",
+   "drive": null,
+   "photo": "D1",
+   "keyFacts": null
+  },
+  {
+   "nos": "/wosa-conference",
+   "group": "programme",
+   "kind": "document",
+   "aside": "index",
+   "drive": null,
+   "photo": "PK3",
+   "keyFacts": null
+  },
+  {
+   "nos": "/conferences",
+   "group": "programme",
+   "kind": "document",
+   "aside": "index",
+   "drive": null,
+   "photo": "S2a",
+   "keyFacts": null
+  },
+  {
+   "nos": "/sponsors",
+   "group": "header",
+   "kind": "document",
+   "aside": "index",
+   "drive": null,
+   "photo": "PK3",
+   "keyFacts": null,
+   "excluded": "ON HOLD: NOS Design is designing a full golden page; nothing is asserted until it lands"
+  },
+  {
+   "nos": "/archive",
+   "group": "header",
+   "kind": "listing",
+   "aside": "none",
+   "drive": null,
+   "photo": "S3a",
+   "keyFacts": null
+  },
+  {
+   "nos": "/privacy",
+   "group": "legal",
+   "kind": "document",
+   "aside": "index",
+   "drive": null,
+   "photo": "S3b",
+   "keyFacts": null,
+   "verifiedBySaoc": true,
+   "driveNote": "Drive folder 'Privacy/Terms' was skipped by the sync (a '/' in its name); SAOC verified the copy as verbatim. Nothing new is asserted here."
+  },
+  {
+   "nos": "/terms",
+   "group": "legal",
+   "kind": "document",
+   "aside": "index",
+   "drive": null,
+   "photo": "S2a",
+   "keyFacts": null,
+   "verifiedBySaoc": true,
+   "driveNote": "Drive folder 'Privacy/Terms' was skipped by the sync (a '/' in its name); SAOC verified the copy as verbatim. Nothing new is asserted here."
+  },
+  {
+   "nos": "/refunds",
+   "group": "legal",
+   "kind": "document",
+   "aside": "index",
+   "drive": null,
+   "photo": "Y1",
+   "keyFacts": null
+  }
+ ]
+}

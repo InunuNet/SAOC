@@ -2243,3 +2243,225 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   background-color: color-mix(in srgb, #fff 7%, var(--primary));
   box-shadow: none;
 }
+
+/* ============================================================
+   nos-content-standard: the shared DocumentLayout (components/ui, SAOC-owned, never edited) wearing
+   NOS values. NOS Design rulings DS-1 r2, (a) type scale, PYV-1, D7, FAQ-NAV. Scoped to .nos-theme;
+   the .doc-* classes are the shared API's, this block only re-values them for the NOS ground.
+   ============================================================ */
+
+/* One container: the header's own axis, so the header, hero, sub-nav and document share a left edge. */
+.nos-theme .doc-layout.saoc-container {
+  max-width: var(--nos-axis-max);
+  padding-inline: var(--nos-axis-pad);
+}
+
+/* Prose: 60ch, Karla 16/1.55, one rhythm. */
+.nos-theme .doc-prose {
+  max-width: 60ch;
+  color: var(--ink-700);
+}
+.nos-theme .doc-prose > * + * {
+  margin-top: 16px;
+}
+.nos-theme .doc-prose ul {
+  padding-left: 1.25em;
+  list-style: disc;
+}
+.nos-theme .doc-prose li + li {
+  margin-top: 8px;
+}
+.nos-theme .doc-prose a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-color: var(--green-1);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+}
+.nos-theme .doc-prose a:hover {
+  text-decoration-color: var(--primary);
+}
+.nos-theme .doc-prose strong {
+  color: var(--ink);
+}
+.nos-theme .doc-standfirst {
+  font-family: var(--serif);
+  font-size: var(--fs-lg);
+  font-weight: 300;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.nos-theme .doc-lead {
+  font-weight: 600;
+  color: var(--ink);
+}
+.nos-theme .doc-address {
+  font-style: normal;
+}
+
+/* Type (ruling a): h2 Fraunces 300 clamp(32, 39), h3 Fraunces 400 25px, h4 Karla 600 16px. */
+.nos-theme .doc-h2 {
+  margin: 0 0 24px;
+  font-family: var(--serif);
+  font-size: clamp(2rem, 1.5rem + 1.6vw, 2.4375rem);
+  font-weight: 300;
+  line-height: 1.15;
+  color: var(--ink);
+  scroll-margin-top: 124px;
+}
+.nos-theme .doc-prose > .doc-h3 {
+  margin-top: 32px;
+  margin-bottom: 12px;
+  font-family: var(--serif);
+  font-size: var(--fs-lg);
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--ink);
+}
+.nos-theme .doc-prose > .doc-h4 {
+  margin-top: 24px;
+  margin-bottom: 8px;
+  font-family: var(--sans);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.nos-theme .doc-prose > .doc-h3 + *,
+.nos-theme .doc-prose > .doc-h4 + * {
+  margin-top: 0;
+}
+.nos-theme .doc-prose > .doc-h2 + .doc-h3 {
+  margin-top: 0;
+}
+
+/* Sections: the first has no padding-top and no border-top; later ones are spaced, never ruled. */
+.nos-theme .doc-prose + .doc-section,
+.nos-theme .doc-section + .doc-section {
+  margin-top: clamp(72px, 9vw, 120px);
+}
+.nos-theme .doc-numbers {
+  display: grid;
+  margin: 0;
+}
+.nos-theme .doc-numbers > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding-block: 12px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.nos-theme .doc-numbers dt {
+  color: var(--ink-700);
+}
+.nos-theme .doc-numbers dd {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: var(--fs-lg);
+  font-weight: 300;
+}
+
+/* Hero facts: left-aligned in the hero copy column, Fraunces 300 values over a lilac Karla label. */
+.nos-theme .hero-facts {
+  justify-content: flex-start;
+  gap: 24px 40px;
+  margin-top: 8px;
+}
+.nos-theme .hero-facts > div {
+  align-items: flex-start;
+  text-align: left;
+}
+.nos-theme .hero-facts dd {
+  color: var(--gold-100);
+}
+.nos-theme .hero-facts dt {
+  color: var(--lilac);
+}
+
+/* The one aside: a warm card at 5fr, sticky under the header (NOS value 100px). */
+.nos-theme .doc-aside {
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  padding: clamp(24px, 3vw, 36px);
+}
+@media (min-width: 1024px) {
+  .nos-theme .doc-aside {
+    top: 100px;
+  }
+}
+.nos-theme [data-doc-index-link] {
+  font-family: var(--sans);
+  font-size: 15px;
+  color: var(--ink-700);
+  border-bottom-color: var(--rule-soft);
+}
+.nos-theme [data-doc-index-link]:hover {
+  color: var(--primary);
+}
+.nos-theme [data-doc-index-link][aria-current='location'] {
+  color: var(--primary);
+  text-decoration-color: var(--green-1);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+
+/* D7: below 1024 the index is a sticky square-link scroller above the body. Under 780 the header is
+   not sticky, so it sticks at the safe-area inset; from 780 it sticks under the header. The trailing
+   mask fades only while the row overflows and is not at its end (a scroll-driven animation is inactive
+   on a row that does not scroll, so the base style, no mask, applies). */
+@media (max-width: 1023.98px) {
+  .nos-theme .doc-aside[data-doc-aside-kind='index'] {
+    top: env(safe-area-inset-top, 0px);
+    margin-inline: calc(-1 * var(--nos-axis-pad));
+    border-bottom: 1px solid var(--rule-soft);
+    background: var(--parchment);
+  }
+  .nos-theme [data-doc-index] {
+    position: relative;
+    gap: 0;
+    height: 48px;
+    padding-inline: var(--nos-axis-pad);
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: var(--nos-axis-pad);
+  }
+  .nos-theme [data-doc-index-link] {
+    padding-inline: 14px;
+    min-height: 48px;
+    scroll-snap-align: start;
+  }
+  .nos-theme [data-doc-index-link]:first-child {
+    padding-left: 0;
+  }
+  .nos-theme .doc-h2 {
+    scroll-margin-top: 80px;
+  }
+}
+@media (min-width: 780px) and (max-width: 1023.98px) {
+  .nos-theme .doc-aside[data-doc-aside-kind='index'] {
+    top: 80px;
+  }
+  .nos-theme .doc-h2 {
+    scroll-margin-top: 152px;
+  }
+}
+@supports (animation-timeline: scroll()) {
+  @media (max-width: 1023.98px) {
+    .nos-theme [data-doc-index] {
+      animation: nos-index-edge linear both;
+      animation-timeline: scroll(self inline);
+    }
+  }
+}
+@keyframes nos-index-edge {
+  0%,
+  96% {
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
+  }
+  100% {
+    -webkit-mask-image: linear-gradient(to right, black, black);
+    mask-image: linear-gradient(to right, black, black);
+  }
+}

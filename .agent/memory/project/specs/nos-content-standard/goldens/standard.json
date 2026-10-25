@@ -1,0 +1,183 @@
+{
+ "viewports": [
+  {
+   "name": "390@3",
+   "width": 390,
+   "height": 844,
+   "dsf": 3
+  },
+  {
+   "name": "768@2",
+   "width": 768,
+   "height": 1024,
+   "dsf": 2
+  },
+  {
+   "name": "1024@2",
+   "width": 1024,
+   "height": 768,
+   "dsf": 2
+  },
+  {
+   "name": "1440@2",
+   "width": 1440,
+   "height": 900,
+   "dsf": 2
+  }
+ ],
+ "firstScreen": [
+  {
+   "name": "1440x900",
+   "width": 1440,
+   "height": 900,
+   "dsf": 2
+  },
+  {
+   "name": "390x844@3",
+   "width": 390,
+   "height": 844,
+   "dsf": 3
+  }
+ ],
+ "gap": {
+  "atOrAbove1024": 64,
+  "below1024": 48,
+  "tolerancePx": 4,
+  "note": "DS-1 r2 + PG-1 1: 64+-4 at >=1024, 48+-4 below, measured from the sub-nav bottom (hero bottom if none) to the first content element. The first section has no padding-top and no border-top. #76 FQ7 (64/40) is retired."
+ },
+ "prose": {
+  "minCh": 55,
+  "maxCh": 75,
+  "measureProbe": "main .prose p"
+ },
+ "grid": {
+  "columns": "7fr/5fr",
+  "minWidthForTwoColumns": 1024,
+  "asideStickyTop": 100,
+  "asideStickyTopTolerance": 4,
+  "maxEmptyPctOfContainerAt1440": 12,
+  "note": "Shared DocumentLayout (components/ui, b2cff780): 7fr/5fr from 1024, gap clamp(40px,6vw,80px). The INDEX aside is first in the DOM; below 1024 it is the D7 sticky scroller above the body; a CONTENT aside follows main."
+ },
+ "heading": {
+  "h2": {
+   "fontWeight": "300",
+   "family": "fraunces"
+  },
+  "h3": {
+   "fontWeight": "400",
+   "family": "fraunces"
+  },
+  "h3Px": 25,
+  "h2Px": {
+   "1440": 39
+  },
+  "tolerancePx": 1.5,
+  "note": "NOS Design (a), FINAL: h3 = --fs-lg 25px Fraunces 400 at every width; h2 below 768 = the v4 .h2 clamp floor, 32px at 390, weight 300; line-height h2 1.15, h3 1.25. .doc-h2 (0,2,0) beats .nos-theme h2. The only h4 in the standard is PYV-1's (Karla 16/600 ink, 24px above, 8px below).",
+  "h2LineHeight": 1.15,
+  "h3LineHeight": 1.25,
+  "mobileScale": "16/25/32 (body/h3/h2 at 390)"
+ },
+ "hero": {
+  "minHeightClamp": "PG-1 4: >=768 .nos-hero-inner min-height clamp(320px,22vw,380px), align-content start, padding-block clamp(48px,4vw,72px); <768 the 2:1 photo band stays and the copy follows at padding-block 32px",
+  "photoBox": {
+   "atOrAbove1024": {
+    "leftPctOfHero": 38,
+    "rightPctOfHero": 100,
+    "tolerancePct": 1,
+    "ground": "--black under the copy"
+   },
+   "below1024": "the stacked photo is full width under the copy, no scrim"
+  },
+  "scrim": "the v4 .ihero 90deg gradient (0.92 -> 0.06) remapped across the photo box",
+  "contrastMin": 4.5,
+  "sharpness": {
+   "ruling": "NOS Design (c), final: photo box 38%-100% at >=1024; need at 2056@2 about 2550, width-driven; assert BOTH width-driven and height-driven needs; stacked below 1024 full width (390@3 needs 1170)",
+   "formula": "required = ceil(max(boxW, boxH x srcW/srcH) x DPR) from the measured img box; served = naturalWidth of currentSrc in a bare Image(); required > the crop's native width fails as CLAMPED",
+   "viewports": [
+    "2056@2",
+    "1440@2",
+    "1024@2",
+    "768@2",
+    "390@3"
+   ]
+  },
+  "interimReuse": "Pool (NOS Design, crops-c verdict): D1, PK1 (= PK2), PK3, Y1 plus #76 crops with width >= 2550 (S1b, S2c, S3a, S3b, S2a, H4a; H4b is 2200 and fails need). V1, V3 and P1 FAIL and are retired. No repeat within a nav group; cross-group reuse logged. #76 crops stay live until the PR that ships .ihero; the (c) crops land in that PR.",
+  "heightCap": {
+   "at1440": 330,
+   "at2056": 380,
+   "note": "PG-1 4 is OWNED by this spec (not #76). Gates: with an h1 and a one-line lede the hero is <=380 at 2056 and <=330 at 1440; first h2 or index card above the fold at 1440x900. The same numbers now live in #76, whose checks are relocked; these pass once the dev has #76 merged."
+  },
+  "pg1": {
+   "min": 320,
+   "vw": 0.22,
+   "max": 380,
+   "padMin": 48,
+   "padVw": 0.04,
+   "padMax": 72,
+   "mobilePad": 32,
+   "mobileBandAspect": 2
+  }
+ },
+ "facts": {
+  "min": 2,
+  "max": 4,
+  "ddFont": "fraunces",
+  "ddWeight": "300",
+  "ddColor": "gold-100",
+  "dtPx": 15,
+  "gridGap": "24px 40px",
+  "firstScreenCount": "every fact box fully inside the first viewport at 1440x900 and 390x844@3",
+  "attribute": "dl[data-hero-facts][data-fact-count] > [data-hero-fact] > dt + dd",
+  "type": "HeroFact {term, value}, no TBC field; a fact with an empty term or value is dropped and fewer than 2 renders no row (normaliseHeroFacts, lib/hero-facts.ts)"
+ },
+ "focus": {
+  "h1Selector": "h1[tabindex=\"-1\"]",
+  "rule": "no outline, box-shadow or border painted on a programmatically focused h1 after client navigation; focus management itself kept (document.activeElement is the h1)"
+ },
+ "targets": {
+  "index": 44,
+  "other": 24
+ },
+ "faq": {
+  "cardsPerCategory": 1,
+  "hairlineRows": true,
+  "summaryPx": 22,
+  "iconPx": 20,
+  "noEyebrow": true,
+  "noLegendChip": true,
+  "categoryCountRule": "equals the number of category headings in the Drive FAQ doc (13 in the 24 Oct version per the lead; 12 in lib/data/faq-sections.ts today)"
+ },
+ "bans": [
+  "eyebrow above a heading",
+  "colored border-left/right above 1px",
+  "nested cards",
+  "a row of equal cards as page structure",
+  "p whose sole child is strong",
+  "h2 repeating the h1",
+  "raw hex in added CSS",
+  "new custom property",
+  "pill",
+  "any element other than the eyebrow with border-radius >= 999 (chips, pills, bubbles) on any route",
+  "the 'To be confirmed by the show committee' legend chip",
+  "a dashed 2px rail",
+  "a split section with an h2 alone in a column",
+  "an h2 naming a sibling route",
+  "a skipped heading level"
+ ],
+ "index": {
+  "d7": "Below 1024 the index is a sticky horizontal scroller: top env(safe-area-inset-top,0) under 700 (header not sticky), the sticky header's height from 700; 32px trailing mask fade only while scrollWidth > clientWidth; scroll-snap; active item scrolled into view; never overlaps the header; reachable mid-page at 390",
+  "rows": "13-or-n names verbatim, Karla 15px, >=44px, hairline --rule-soft, disjoint boxes",
+  "active": "royal text with a green-1 underline; no pill, fill or side border",
+  "landing": "clicking a link lands its h2 below the sticky header(s) (scroll-margin-top)"
+ },
+ "tbc": "A TBC disclosure = --gold fill + a 1px --rule-soft hairline + its text. No dashed 2px rail (R11 retired). No legend chip.",
+ "ws1": {
+  "ticketEdge": ".nk-ticket notches, .nk-perf and .nk-stamp stay but only inside [data-ticket-card] (purchasable ticket cards: /tickets, /workshops, /conferences ticket products); never on content, event or info cards",
+  "statusCard": "the TBC pill chip inside the status card goes; the card's sentences stay verbatim",
+  "programmeH2": "/workshops h2 'Programme' has no Drive source (checked content/drive-source and goldens/sources): builder copy, flagged for Lee-Ann's doc, not rewritten"
+ },
+ "testBar": {
+  "selector": "[aria-label=\"Testing only, not live\"]",
+  "rule": "absent on every route in the table; present ONLY on /tickets/* and the payment step (paths from SAOC's branch fix/testbar-ticket-pages-only, to be taken once it merges). Brad: 'The warning is only for the selling of tickets.' /conferences is NOT a tickets page. The dev does not change lib/ticketing-test-mode.ts."
+ }
+}
