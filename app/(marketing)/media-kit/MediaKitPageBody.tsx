@@ -1,12 +1,14 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { DuotonePicker } from '@/components/media-kit/DuotonePicker';
 import { KitCard } from '@/components/media-kit/KitCard';
 import { KitSection, ZipLink } from '@/components/media-kit/KitSection';
 import { MediaKitJumpNav } from '@/components/media-kit/MediaKitJumpNav';
 import { LockupPicker } from '@/components/media-kit/LockupPicker';
 import { OptionPicker } from '@/components/media-kit/OptionPicker';
+import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { PageHero } from '@/components/ui/PageHero';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import {
@@ -39,7 +41,7 @@ const JUMP_ITEMS = [
 ];
 
 const LOCKUP_GRID = 'grid grid-cols-1 gap-6 md:grid-cols-2';
-const CARD_GRID = 'grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3';
+const CARD_GRID = 'grid grid-cols-1 gap-6 md:grid-cols-2';
 
 // Lockup grids are ordered horizontal light, horizontal dark, vertical light, vertical dark.
 const LOCKUP_GROUNDS: Ground[] = ['light', 'dark', 'light', 'dark'];
@@ -193,6 +195,7 @@ export function MediaKitPageBody() {
 
   return (
     <>
+      <Breadcrumb items={[{ label: 'Media Kit' }]} />
       <PageHero
         image={hero.path}
         eyebrow="Press"
@@ -200,7 +203,8 @@ export function MediaKitPageBody() {
         lede="Resources and information for journalists, photographers and media partners."
       />
 
-      <div className="saoc-container py-16 space-y-16">
+      <DocumentLayout>
+      <div className="space-y-[var(--section-y)]">
         <MediaKitJumpNav items={JUMP_ITEMS} />
 
         <KitSection id="quick-start" heading="Quick start">
@@ -249,10 +253,7 @@ export function MediaKitPageBody() {
         </KitSection>
 
         <section id="usage" aria-labelledby="usage-heading" className="scroll-mt-32">
-          <h2
-            id="usage-heading"
-            className="mb-6 font-serif tracking-[-0.015em] font-light text-[32px] leading-[1.15] text-ink"
-          >
+          <h2 id="usage-heading" className="doc-h2">
             Clear space and minimum size
           </h2>
           <UsageSection illustrations={manifest.usage} />
@@ -283,9 +284,7 @@ export function MediaKitPageBody() {
 
         {/* Quick facts */}
         <section>
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-6">
-            Quick facts
-          </p>
+          <h2 className="doc-h2">Quick facts</h2>
           <div className="flex flex-col items-start gap-4">
             <dl className="grid w-full grid-cols-2 gap-8 border-y border-rule py-10 sm:grid-cols-4">
               {QUICK_FACTS.map((stat) => (
@@ -302,9 +301,7 @@ export function MediaKitPageBody() {
 
         {/* About SAOC */}
         <section className="max-w-[720px]">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-6">
-            About SAOC
-          </p>
+          <h2 className="doc-h2">About SAOC</h2>
           <p className="font-serif font-normal text-[20px] leading-[1.55] text-ink">
             The South African Orchid Council (SAOC) is the national coordinating body for
             affiliated orchid societies across South Africa.
@@ -325,9 +322,7 @@ export function MediaKitPageBody() {
 
         {/* Press contact */}
         <section className="max-w-[720px] border-t border-rule pt-10">
-          <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted mb-6">
-            Press enquiries
-          </p>
+          <h2 className="doc-h2">Press enquiries</h2>
           <p className="font-sans text-[16px] leading-[1.55] text-ink/80">
             For press enquiries, interview requests, or image permissions, email us at{' '}
             <a
@@ -348,6 +343,7 @@ export function MediaKitPageBody() {
           Last updated: October 2026
         </p>
       </div>
+      </DocumentLayout>
     </>
   );
 }

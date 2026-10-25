@@ -2,10 +2,15 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
+import { Breadcrumb } from '@/components/chrome/Breadcrumb';
 import { ShowBand } from '@/components/home';
 import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
+import { DocumentLayout } from '@/components/ui/DocumentLayout';
+import { PageHero } from '@/components/ui/PageHero';
 import { buildEventMetadata } from '@/lib/event-metadata';
 import { isNationalShowEvent } from '@/lib/events-list';
+import type { HeroFact } from '@/lib/hero-facts';
+import { formatShowDateRange } from '@/lib/show-identity';
 import { saocUrl } from '@/lib/site-hosts';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { eventBySlugQuery, eventSlugsQuery, nationalShowQuery } from '@/sanity/queries';
@@ -43,13 +48,17 @@ export async function generateMetadata({
   return buildEventMetadata(event, slug);
 }
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('en-ZA', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
+// Hero facts come straight from the event record. The National Show reads the host region from the
+// nationalShow singleton (the field ShowBand's "Host Region" reads); any other event names its host
+// society. An absent field drops out of the row (lib/hero-facts.ts); nothing stands in for it.
+function eventFacts(event: SanityEvent, show: ShowIdentity | null): HeroFact[] {
+  return [
+    { term: 'Dates', value: formatShowDateRange(event.date, event.endDate) ?? '' },
+    { term: 'Venue', value: event.venue ?? '' },
+    show
+      ? { term: 'Host region', value: show.hostRegion ?? '' }
+      : { term: 'Hosted by', value: event.hostSociety?.name ?? '' },
+  ];
 }
 
 export default async function EventDetailPage({
@@ -71,9 +80,10 @@ export default async function EventDetailPage({
   const show = isNationalShowEvent(event)
     ? await sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] })
     : null;
+  const hasVenueAside = Boolean(event.venue || event.location || event.hostSociety);
 
   return (
-    <div className="mx-auto max-w-[860px] px-8 py-16">
+    <>
       <JsonLd
         data={eventJsonLd({
           name: event.title,
@@ -87,90 +97,49 @@ export default async function EventDetailPage({
         })}
       />
 
-      {/* Back link */}
-      <Link
-        href="/events"
-        className="inline-flex min-h-11 items-center font-mono text-[11px] uppercase tracking-[0.18em] text-muted hover:text-ink"
+      <Breadcrumb items={[{ label: 'Events', href: '/events' }, { label: event.title }]} />
+      <PageHero
+        image="/images/orchid-dark.jpg"
+        eyebrow={event.kind ?? undefined}
+        heading={event.title}
+        facts={eventFacts(event, show)}
+      />
+
+      <DocumentLayout
+        aside={
+          hasVenueAside ? (
+            <>
+              <h2 className="doc-aside-heading">Venue</h2>
+              {event.venue ? (
+                <p className="font-sans text-[16px] leading-[1.55] text-ink">{event.venue}</p>
+              ) : null}
+              {event.location ? (
+                <p className="font-sans text-[16px] leading-[1.55] text-ink/80">{event.location}</p>
+              ) : null}
+              {event.hostSociety ? (
+                <p className="mt-4 font-sans text-[16px] leading-[1.55] text-ink/80">
+                  Hosted by{' '}
+                  <Link
+                    href={`/societies/${event.hostSociety.slug}`}
+                    className="text-ink underline underline-offset-2"
+                  >
+                    {event.hostSociety.name}
+                  </Link>
+                </p>
+              ) : null}
+            </>
+          ) : undefined
+        }
       >
-        ← All events
-      </Link>
-
-      {/* Kind badge */}
-      {event.kind ? (
-        <p
-          data-event-kind
-          className="mt-3.5 block w-fit rounded px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em]"
-          style={{ backgroundColor: 'var(--bone)', color: 'var(--muted)' }}
-        >
-          {event.kind}
-        </p>
-      ) : null}
-
-      {/* Title */}
-      <h1 className="mt-4 font-serif tracking-[-0.015em] font-light text-[36px] leading-tight text-ink">
-        {event.title}
-      </h1>
-
-      {/* Dates */}
-      <p className="mt-3 font-sans text-[15px] text-ink/70">
-        {formatDate(event.date)}
-        {event.endDate && event.endDate !== event.date
-          ? ` – ${formatDate(event.endDate)}`
-          : null}
-      </p>
-
-      {/* Metadata: dropped for the National Show, whose band carries dates and venue */}
-      {!show ? (
-      <dl className="mt-6 space-y-2 border-y border-rule py-6 font-sans text-[14px]">
-        {event.hostSociety ? (
-          <div className="flex gap-3">
-            <dt className="w-28 shrink-0 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-              Hosted by
-            </dt>
-            <dd className="text-ink/80">
-              <Link
-                href={`/societies/${event.hostSociety.slug}`}
-                className="hover:text-ink hover:underline"
-              >
-                {event.hostSociety.name}
-              </Link>
-            </dd>
+        {event.description ? (
+          <div className="doc-prose">
+            <p>{event.description}</p>
           </div>
         ) : null}
-
-        {event.venue ? (
-          <div className="flex gap-3">
-            <dt className="w-28 shrink-0 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-              Venue
-            </dt>
-            <dd className="text-ink/80">{event.venue}</dd>
-          </div>
-        ) : null}
-
-        {event.location ? (
-          <div className="flex gap-3">
-            <dt className="w-28 shrink-0 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-              Location
-            </dt>
-            <dd className="text-ink/80">{event.location}</dd>
-          </div>
-        ) : null}
-      </dl>
-      ) : null}
+      </DocumentLayout>
 
       {/* National Show events carry the show band (SV-1) */}
-      {show ? (
-        <div className="mt-8">
-          <ShowBand show={show} />
-        </div>
-      ) : null}
-
-      {/* Description */}
-      {event.description ? (
-        <p className="mt-8 font-sans text-[16px] leading-relaxed text-ink/80">
-          {event.description}
-        </p>
-      ) : null}
-    </div>
+      {show ? <ShowBand show={show} /> : null}
+    </>
   );
 }

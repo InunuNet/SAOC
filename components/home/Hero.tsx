@@ -8,7 +8,7 @@ import type { SanityImageSource } from '@sanity/image-url';
 
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { HOME_HERO_SLIDES } from '@/lib/data/home-hero-slides';
-import { showLabelWithEdition, showYearOf } from '@/lib/show-identity';
+import { formatShowDateRange, showLabelWithEdition, showYearOf } from '@/lib/show-identity';
 import type { ShowIdentity } from '@/types';
 import { nosUrl } from '@/lib/site-hosts';
 
@@ -51,6 +51,7 @@ export interface HeroProps {
 export function Hero({ show, showLede = false }: HeroProps) {
   const showYear = showYearOf(show?.showDate);
   const showCtaLabel = `${showLabelWithEdition(show?.edition)}${showYear ? `, ${showYear}` : ''}`;
+  const showDates = formatShowDateRange(show?.showDate, show?.showEndDate);
   const slides = HOME_HERO_SLIDES;
 
   const [activeIdx, setActiveIdx] = useState(0);
@@ -164,13 +165,20 @@ export function Hero({ show, showLede = false }: HeroProps) {
               Find your society
               <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" />
             </Link>
-            <a
-              href={nosUrl('/')}
-              data-hero-cta="secondary"
-              className={`${HERO_CTA_BASE} border-ivory text-ivory hover:bg-ivory/10`}
-            >
-              {showCtaLabel}
-            </a>
+            <div className="flex flex-col gap-2 sm:items-start">
+              <a
+                href={nosUrl('/')}
+                data-hero-cta="secondary"
+                className={`${HERO_CTA_BASE} border-ivory text-ivory hover:bg-ivory/10`}
+              >
+                {showCtaLabel}
+              </a>
+              {showDates ? (
+                <p data-home-show-date className="font-sans text-[15px] leading-[1.35] text-ivory">
+                  {showDates}
+                </p>
+              ) : null}
+            </div>
           </div>
 
           {/* Pause/Play (WCAG 2.2.2) precedes the indicators in DOM order, after the CTAs. They sit at the foot of the
