@@ -25,3 +25,8 @@ Rule: remove or rename only. No replacement wording is written (docs/rules/no-in
 ## (c) Figures out
 - components/home/MissionBlock.tsx:59 fallback paragraph: remove the sentence fragment "a federated network of 21 societies" and, because the figure goes, the whole unsourced fallback paragraph (its other claims, "first standardised in 1990" and the annual publication, are likewise not in her Drive). No replacement text. The "in cultivation" paragraph stays.
 - Same figure, one more place (flagged to lead; delete assertion A-F2-12 if not wanted): app/(marketing)/societies/[slug]/page.tsx:162 CTASection body "SAOC coordinates 21 affiliated societies...". Remove the body prop value (CTASection already accepts undefined).
+
+## Notes for @dev (F1 and F2)
+- Run `pnpm install --frozen-lockfile` in the worktree before the gate. A-F2-07 (redirect probe, needs node_modules/.bin/tsx) and every A-F1 runtime check (Playwright, next dev) need it. A symlinked node_modules breaks Turbopack; do a real install. The runtime checks also need `.env.local` in the worktree root (Sanity read), copied from the main checkout.
+- Decisions (lead, 2026-10-25): A-F2-13 stays; the whole MissionBlock fallback paragraph is removed; the neutral meta description is accepted.
+- Do not commit AGENTS.md if it shows as modified.
