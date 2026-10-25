@@ -1,6 +1,6 @@
 // F9 static (NOS Design #92 ruling, goldens/f9-nos-design-ruling-2026-10-25.md).
-//   P1  ShowBand's countdown sits in a CSS container and re-flows 2x2 below the narrow-container threshold: a `@container`
-//       class plus a container-query variant (threshold 300-330px: above the ~262px event-page box, below the ~326px home box at 390) that sets grid-cols-2 / grid-cols-4; the four
+//   P1  ShowBand's countdown sits in a CSS container and re-flows 2x2 below ~360px of container: a `@container`
+//       class plus a container-query variant (threshold 340-384px) that sets grid-cols-2 / grid-cols-4; the four
 //       labels, the cell/value/label markup and the 34/42px and 11px type are unchanged (no copy change)
 //   P2  the event detail meta <dl> is rendered only when the show band is not (gate on `show`), the band stays
 //       gated on `show`, and h1 + date line are untouched
@@ -21,8 +21,8 @@ const queryTokens = classTokens.map((t) => {
   const px = m[4] ? NAMED[m[4]] : Number(m[2]) * (m[3] === 'rem' ? 16 : 1);
   return { px, utility: m[5] };
 }).filter(Boolean);
-if (!queryTokens.some((q) => q.px >= 300 && q.px <= 330 && /grid-cols-[24]\b/.test(q.utility))) {
-  failures.push('P1: no container-query variant between 300px and 330px that sets grid-cols-2 or grid-cols-4 (e.g. `@max-[320px]:grid-cols-2`)');
+if (!queryTokens.some((q) => q.px >= 340 && q.px <= 384 && /grid-cols-[24]\b/.test(q.utility))) {
+  failures.push('P1: no container-query variant between 340px and 384px that sets grid-cols-2 or grid-cols-4 (e.g. `@max-[360px]:grid-cols-2`)');
 }
 if (!/\bgrid-cols-2\b/.test(band)) failures.push('P1: the countdown never uses grid-cols-2');
 for (const need of ["label: 'Days'", "label: 'Hours'", "label: 'Minutes'", "label: 'Seconds'", 'data-countdown-cell', 'data-countdown-value', 'text-[34px] sm:text-[42px]', 'font-mono text-[11px] uppercase tracking-[0.18em]']) {
