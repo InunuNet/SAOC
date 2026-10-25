@@ -4,7 +4,7 @@
 //     label and value text right edges <= the cell's right edge (+0.5)
 //   - the cells never overlap one another and the countdown never exceeds the viewport
 //   - where the countdown box is under 300px wide the cells are 2x2 in reading order (DAYS HOURS / MINUTES SECONDS);
-//     where it is 400px or wider they sit on one row. Between 300 and 400 either layout is accepted (the ruling says "about 360").
+//     where it is 400px or wider they sit on one row. Between 300 and 400 either layout is accepted, except the home band at 390 and 414, which must stay four across (the ruling: where it already fits the query is a no-op).
 // Run as: node contracts/checks/polish-wave-2026-10-25/f9-countdown-rendered.mjs   (needs a current build)
 import { finish } from './_lib.mjs';
 import { buildProblem, require, startServer } from './_server.mjs';
@@ -74,6 +74,7 @@ try {
       if (order !== 'days,hours,minutes,seconds' || sorted !== order) failures.push(`${tag}: cells read ${sorted}, want days,hours,minutes,seconds in reading order`);
       const rows = new Set(box.cells.map((c) => c.top)).size;
       if (box.width < 300 && (rows !== 2 || box.cells.filter((c) => c.top === box.cells[0].top).length !== 2)) failures.push(`${tag}: countdown is ${box.width.toFixed(0)}px wide and shows ${rows} row(s), want 2x2`);
+      if (p.name === 'home' && width >= 390 && rows !== 1) failures.push(`${tag}: home countdown is ${box.width.toFixed(0)}px wide and shows ${rows} rows, want four across (it already fits; the query must be a no-op there)`);
       if (box.width >= 400 && rows !== 1) failures.push(`${tag}: countdown is ${box.width.toFixed(0)}px wide and wraps to ${rows} rows, want one row`);
     }
     await ctx.close();
