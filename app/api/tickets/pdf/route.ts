@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+import { clientIpFromForwardedFor } from '@/lib/client-ip';
+import { consumeRateLimit } from '@/lib/newsletter-rate-limit';
+import { createAttemptStore, scopeAttemptsToRequest } from '@/lib/newsletter-rate-store';
 import { getConfirmedOrderForDisplay } from '@/lib/orders';
 import { buildTicketPdf } from '@/lib/ticket-pdf';
 import { authoriseTicketPdfRequest, refPrefix } from '@/lib/ticket-pdf-access';
@@ -10,6 +13,12 @@ export const runtime = 'nodejs';
 
 const PRIVATE_HEADERS = { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex' };
 const NOT_FOUND_BODY = 'Not found';
+
+// Each valid request runs a CPU-bound PDF render, so the cap is tight.
+const PDF_RATE_LIMIT_MAX_ATTEMPTS = 10;
+const PDF_RATE_LIMIT_WINDOW_MS = 60_000;
+
+const attempts = createAttemptStore(PDF_RATE_LIMIT_WINDOW_MS);
 
 /** The one response for every access failure: same status, body and headers whatever the cause. */
 function notFound(): NextResponse {
@@ -25,6 +34,20 @@ function notFound(): NextResponse {
  * reference is required, and `position` can only select one of that order's own positions.
  */
 export async function GET(request: Request): Promise<NextResponse> {
+  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
+  const limit = consumeRateLimit(
+    { now: new Date(), ...scopeAttemptsToRequest(attempts) },
+    `ticket-pdf:${ip ?? 'unknown'}`,
+    PDF_RATE_LIMIT_MAX_ATTEMPTS,
+    PDF_RATE_LIMIT_WINDOW_MS,
+  );
+  if (!limit.allowed) {
+    return new NextResponse('Too many attempts. Please try again later.', {
+      status: 429,
+      headers: { ...PRIVATE_HEADERS, 'Retry-After': String(limit.retryAfterSeconds) },
+    });
+  }
+
   const url = new URL(request.url);
   const ref = url.searchParams.get('ref');
   const position = url.searchParams.get('position');
