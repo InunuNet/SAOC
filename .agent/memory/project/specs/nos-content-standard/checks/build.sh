@@ -10,7 +10,9 @@ export NEXT_PUBLIC_NOS_SITE_URL="http://nos.localhost:${PORT}"
 export NEXT_PUBLIC_SAOC_SITE_URL="http://saoc.localhost:${PORT}"
 # Same override set as _lib.mjs startServer: NEXT_PUBLIC_*URL is inlined at build time, so every such variable the environment or the dotenv files define
 # must name the gate origin (SAOC-named ones the saoc origin). Firebase and Sanity ones are left alone.
-URL_KEYS="$( { env | cut -d= -f1; cat .env .env.local .env.production .env.production.local 2>/dev/null | sed -nE 's/^[[:space:]]*(NEXT_PUBLIC_[A-Z0-9_]*URL)[[:space:]]*=.*/\1/p'; } | grep -E '^NEXT_PUBLIC_.*URL$' | grep -vE '^NEXT_PUBLIC_(FIREBASE|SANITY)' | sort -u )"
+# Missing dotenv files are normal (a fresh checkout has none): read only the ones that exist, and let an empty match through under pipefail.
+dotenv_names() { for f in .env .env.local .env.production .env.production.local; do [ -f "$f" ] && sed -nE 's/^[[:space:]]*(NEXT_PUBLIC_[A-Z0-9_]*URL)[[:space:]]*=.*/\1/p' "$f"; done; return 0; }
+URL_KEYS="$( { env | cut -d= -f1; dotenv_names; } | { grep -E '^NEXT_PUBLIC_.*URL$' || true; } | { grep -vE '^NEXT_PUBLIC_(FIREBASE|SANITY)' || true; } | sort -u )"
 for k in $URL_KEYS; do case "$k" in *SAOC*) export "$k=http://saoc.localhost:${PORT}" ;; *) export "$k=http://nos.localhost:${PORT}" ;; esac; done
 export SITE_URL="http://nos.localhost:${PORT}"
 unset BETA_PASSWORD_WALL_OFF

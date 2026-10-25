@@ -19,6 +19,7 @@ const ALLOWED = [
   /^content\/show-pages\/07-wosa-conference\.json$/,
   /^content\/show-pages\/02-about-the-national-show\.json$/,
   /^components\/nos\/ShowFacts\.tsx$/,
+  /^lib\/data\/show-facts\.ts$/,
   /^components\/contact\/(ContactForm|NosContactAside)\.tsx$/,
   /^components\/nos\/ShowContactDetails\.tsx$/,
   /^lib\/view-models\/presenter-order\.ts$/,
@@ -31,6 +32,9 @@ const ALLOWED = [
   /^docs\/nos-content-standard\.md$/,
   /^e2e\/[^/]+$/,
   /^\.agent\/memory\/project\/specs\/nos-content-standard\//,
+  // architect-owned QA inputs the architect edits in this worktree (not the dev's)
+  /^\.agent\/memory\/project\/specs\/launch-weekend\/goldens\/(f17\/nav-labels|f18\/longform-copy)\.json$/,
+  /^contracts\/checks\/launch-weekend\/(f18\/check-a-longform\.mjs|f11\/nos-menu-baseline\.json)$/,
   /^\.agent\/memory\/(scratch|project\/(learned|backlog))/,
   /^comms\.md$/,
   /^test-results\//,
@@ -39,12 +43,16 @@ const run = (args) => { try { return execFileSync('git', args, { encoding: 'utf8
 // The dev branch carries commits that are not the dev's: origin/main, #76 and SAOC's shared API. A file counts as the dev's only when it differs from
 // origin/main AND from the #76 tip AND from the pinned SAOC commit (override with NOS_STD_REF76 / NOS_STD_REFSAOC). A file merge-resolved
 // between #76 and SAOC would also show; that is rare and the allowed set covers the NOS files either way.
-const REFS = ['origin/main', process.env.NOS_STD_REF76 ?? 'feat/nos-pagehero', process.env.NOS_STD_REFSAOC ?? '72f75151'];
+// Diff against the merge-base with origin/main, not origin/main's tip: files that came in through a merge of main are not the dev's. A file whose content
+// equals origin/main's tip is dropped as well, whichever side moved.
+const MB = (run(['merge-base', 'HEAD', 'origin/main']) ?? [])[0] ?? 'origin/main';
+const REFS = [MB, process.env.NOS_STD_REF76 ?? 'feat/nos-pagehero', process.env.NOS_STD_REFSAOC ?? '72f75151'];
 const sets = REFS.map((r) => run(['diff', '--name-only', r]));
 const missing = REFS.filter((_, i) => sets[i] === null);
 if (missing.length) { console.error(`nos-content-standard diff scope FAILED: cannot resolve ref(s) ${missing.join(', ')} (git fetch origin; fetch #76)`); process.exit(1); }
 const tracked = sets[0].filter((f) => sets.every((st) => st.includes(f)));
 const files = [...new Set([...tracked, ...run(['ls-files', '-o', '--exclude-standard'])])];
-const outside = files.filter((f) => !ALLOWED.some((re) => re.test(f)));
+const sameAsMain = (f) => { try { execFileSync('git', ['diff', '--quiet', 'origin/main', '--', f]); return true; } catch { return false; } };
+const outside = files.filter((f) => !ALLOWED.some((re) => re.test(f)) && !sameAsMain(f));
 if (outside.length) { console.error(`nos-content-standard diff scope FAILED: ${outside.length} file(s) outside the allowed set:\n- ${outside.join('\n- ')}`); process.exit(1); }
 console.log(`diff scope pass (${files.length} files, all allowed)`);

@@ -143,7 +143,7 @@ export const NOS_NAV: readonly NavItem[] = [
           },
           {
             id: 'exhibitors',
-            label: 'Exhibitor entry guide',
+            label: 'Plant Entry/Registration',
             href: showPath('/exhibitors'),
             descriptor: 'Entry process, fees, classes, judging and eligibility for growers entering plants.',
           },

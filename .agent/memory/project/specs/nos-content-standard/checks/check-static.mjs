@@ -53,7 +53,7 @@ check('focus management kept (NosRouteScroll or equivalent still focuses the h1)
 {
   const src = existsSync('sanity/schemas/documents/conferencePresenter.ts') ? read('sanity/schemas/documents/conferencePresenter.ts') : '';
   for (const name of ['country', 'organisation']) {
-    const m = src.match(new RegExp(`defineField\\(\\{[^]*?name:\\s*'${name}'[^]*?\\}\\)`));
+    const m = src.match(new RegExp(`defineField\\(\\{(?:(?!defineField)[^])*?name:\\s*'${name}'(?:(?!defineField)[^])*?\\}\\)`));
     check(`conferencePresenter has an optional "${name}" field (IG-G1)`, Boolean(m) && !/required\(\)/.test(m[0]));
   }
 }
@@ -126,7 +126,7 @@ check('focus management kept (NosRouteScroll or equivalent still focuses the h1)
 // WK-G1 data: workshopSession gains OPTIONAL level / duration / included / bring (SAOC-approved, additive); NO places fields. The places text reads the ticket's per-session value and the pool remaining.
 {
   const ws = existsSync('sanity/schemas/documents/workshopSession.ts') ? read('sanity/schemas/documents/workshopSession.ts') : '';
-  const fieldBlock = (name) => ws.match(new RegExp(`defineField\\(\\{[^]*?name:\\s*'${name}'[^]*?\\}\\)`))?.[0] ?? null;
+  const fieldBlock = (name) => ws.match(new RegExp(`defineField\\(\\{(?:(?!defineField)[^])*?name:\\s*'${name}'(?:(?!defineField)[^])*?\\}\\)`))?.[0] ?? null;
   for (const f of ['level', 'duration', 'included', 'bring']) { const b = fieldBlock(f); check(`workshopSession has an optional "${f}" field (WK-G1)`, Boolean(b) && !/required\(\)/.test(b)); }
   const lvl = fieldBlock('level') ?? '';
   check('workshopSession.level is a string list of Beginner, Intermediate and Advanced', /type:\s*'string'/.test(lvl) && ['Beginner', 'Intermediate', 'Advanced'].every((v) => lvl.includes(v)));
@@ -173,15 +173,6 @@ check('focus management kept (NosRouteScroll or equivalent still focuses the h1)
   check('AB-G1: the about page has no "Cycle" / "Triennial" facts label and no smartened quote in its copy', !/Cycle|Triennial:/.test(ab) && !/[\u2018\u2019\u201c\u201d]/.test(ab));
 }
 
-// ShowFacts is shared: whatever /about needs, the component must keep rendering Dates / Host / Venue / Cycle for every other route, and no existing label line may be removed
-{
-  const sf = read('components/nos/ShowFacts.tsx');
-  let removed = '';
-  try { removed = execFileSync('git', ['diff', 'origin/main', '--', 'components/nos/ShowFacts.tsx'], { encoding: 'utf8' }).split('\n').filter((l) => /^-[^-]/.test(l)).join('\n'); } catch { removed = ''; }
-  check('ShowFacts.tsx still renders Dates / Host / Venue / Cycle (the shared rows other routes rely on)', ['Dates', 'Host', 'Venue', 'Cycle'].every((l) => sf.includes(l)));
-  check('ShowFacts.tsx: the diff against origin/main removes none of the Dates / Host / Venue / Cycle labels', !/Dates|Host|Venue|Cycle/.test(removed), removed.slice(0, 120));
-}
-
 // WE-G1: /what-to-expect types no admission price; the prices come from the ticket records, and the Cloakroom block, TBC chip and holding note are gone
 {
   const we = read('app/(nos)/national-show/what-to-expect/page.tsx');
@@ -203,7 +194,10 @@ check('focus management kept (NosRouteScroll or equivalent still focuses the h1)
   let ch = []; try { ch = execFileSync('git', ['diff', '-U0', 'origin/main', '--', 'components/nos-chrome/nos-nav.ts'], { encoding: 'utf8' }).split('\n').filter((l) => /^[-+][^-+]/.test(l)); } catch { ch = []; }
   check('NAV-G1: nos-nav.ts no longer carries the Workshops descriptor', !nav.includes(dropped));
   { const pre = JSON.parse(readFileSync('.agent/memory/project/specs/nos-content-standard/goldens/standard.json', 'utf8')).navDroppedPrefix; for (const f of ['components/nos/nos-route-heroes.ts', 'app/(nos)/national-show/workshops/page.tsx']) check(`NAV-G1: ${f} carries no "${pre}" line (lede or metadata description)`, !read(f).includes(pre)); }
-  check('NAV-G1: the only change to nos-nav.ts against origin/main is the removal of that one descriptor line (no other descriptor, label or href changed)', ch.length === 1 && ch[0].startsWith('-') && ch[0].includes(dropped), ch.join(' || ').slice(0, 200));
+  const ren = JSON.parse(readFileSync('.agent/memory/project/specs/nos-content-standard/goldens/standard.json', 'utf8')).navRenamed;
+  const allowedLine = (l) => (l.startsWith('-') && l.includes(dropped)) || (l.startsWith('-') && l.includes(ren.from)) || (l.startsWith('+') && l.includes(ren.to) && !l.includes(ren.from));
+  check('NAV-G1 / NL-2: every change to nos-nav.ts against origin/main is the removal of the Workshops descriptor line or the rename of the nav label to her "Plant Entry/Registration" (no other descriptor, label or href changed)', ch.length >= 1 && ch.every(allowedLine) && ch.filter((l) => l.startsWith('-') && l.includes(dropped)).length === 1, ch.join(' || ').slice(0, 220));
+  check('NL-2: nos-nav.ts and the exhibitors page carry "Plant Entry/Registration" and no "Exhibitor entry guide"', [nav, read('app/(nos)/national-show/exhibitors/page.tsx')].every((src) => src.includes(ren.to) && !src.includes(ren.from)));
 }
 
 // CT-G1: the contact form's behaviour is out of scope: the API, its validation, the email path and the form's own field, validation and submit lines are unchanged
@@ -225,6 +219,19 @@ check('focus management kept (NosRouteScroll or equivalent still focuses the h1)
   check('AR-1: lib/data/past-shows-public.ts and lib/data/past-shows.ts (the r64 visibility rule) are identical to origin/main', read('lib/data/past-shows-public.ts') === gitShow('lib/data/past-shows-public.ts') && read('lib/data/past-shows.ts') === gitShow('lib/data/past-shows.ts'));
   check('AR-1: the archive page keeps every showPastShowsRoute() guard and every notFound() call of origin/main (generateMetadata and the page)', cnt(read(pg), /showPastShowsRoute\(\)/g) === cnt(gitShow(pg), /showPastShowsRoute\(\)/g) && cnt(read(pg), /notFound\(\)/g) >= cnt(gitShow(pg), /notFound\(\)/g) && cnt(gitShow(pg), /notFound\(\)/g) >= 2);
   check('AR-1: the archive page drops the EditionCard grid, the stat chips and the "Looking for the 19th National Show?" band', !/EditionCard/.test(read(pg)) && !/Looking for the 19th National Show/.test(read(pg)));
+}
+
+// HM-G1: the home page carries none of the builder copy that had no Drive source
+{
+  const home = read('app/(nos)/national-show/page.tsx') + read('app/(nos)/page.tsx');
+  for (const t of ['Three years in the making', 'Ten judging groups', '100-point', 'Start planning your entry now', 'opens in September 2027', 'honestly marked', "South Africa's triennial orchid competition", "label: 'Cycle'"]) check(`HM-G1: the home source no longer contains "${t}"`, !home.includes(t));
+  check('HM-G1: lib/data/show-facts.ts still builds Dates, Host and Venue (Cycle is gone); the home page selects Dates and Venue only', ['Dates', 'Host', 'Venue'].every((l) => read('lib/data/show-facts.ts').includes(l)));
+}
+
+// Cycle is out of ShowFacts on every route (NOS Design ruling 2026-10-25, R7): neither the component nor the facts builder may carry the label
+{
+  const banned = JSON.parse(readFileSync('.agent/memory/project/specs/nos-content-standard/goldens/standard.json', 'utf8')).showFactsLabels.banned;
+  for (const f of ['components/nos/ShowFacts.tsx', 'lib/data/show-facts.ts']) { const src = read(f); check(`${f} carries no ${banned.join(' / ')} label`, banned.every((w) => !new RegExp(`['"\`>]${w}\\b`).test(src) && !src.includes(`label: '${w}'`)), banned.filter((w) => src.includes(w)).join(', ')); }
 }
 
 // CR-G1: the conferences page drops the builder lede and the "Programme" heading

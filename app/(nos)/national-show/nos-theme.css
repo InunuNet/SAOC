@@ -586,10 +586,8 @@
   padding-left: 16px;
 }
 .nos-theme .nos-hero-facts dt {
-  font-size: 0.75rem;
+  font-size: 0.9375rem;
   font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
   color: var(--rule-soft);
 }
 .nos-theme .nos-hero-facts dd {

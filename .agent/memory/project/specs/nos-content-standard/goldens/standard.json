@@ -123,7 +123,7 @@
   "longTitleCap": {
    "at1440": 394,
    "at2056": 415,
-   "note": "LT-1 (NOS Design, SX-G1 measurement): an h1 over 20 characters gets .is-long (clamp(2.75rem,1.6rem+2.6vw,4rem), max-width none, text-wrap balance), one line in the 62% column at 1440 and 2056, on every route; its hero caps are 394 at 1440 and 415 at 2056 (lower of the two caps applies)."
+   "note": "LT-1 / NL-2 (NOS Design): an h1 over 20 characters gets .is-long (font-size clamp(2.5rem, 1.6rem + 2.6vw, 4rem), overflow-wrap: break-word, max-width none, text-wrap balance), one line in the 62% column at 1440 and 2056, on every route; its hero caps are 394 at 1440 and 415 at 2056 (lower of the two caps applies). The fit is measured on the h1's text Range rect against its content box (at 390 the text ends near 353 inside 374), never on scrollWidth."
   }
  },
  "facts": {
@@ -212,14 +212,22 @@
   "rule": "a dot beside the level WORD, never a pill; the word always shows so colour is never the only carrier"
  },
  "showFactsLabels": {
-  "labels": [
+  "allowedLabels": [
    "Dates",
-   "Host",
    "Venue",
-   "Cycle"
+   "Host"
   ],
-  "note": "components/nos/ShowFacts.tsx is shared: every route other than /about that renders [data-nos-facts] keeps exactly these four rows (AB-G1 drops the facts aside on /about only; blast-radius gate)"
+  "banned": [
+   "Cycle",
+   "Triennial"
+  ],
+  "note": "NOS Design ruling 2026-10-25: 'Cycle: Triennial' comes out of ShowFacts on every route (builder label, R7). The old rule that every route keeps Dates / Host / Venue / Cycle is dropped. Each route's hero facts equal exactly its golden's set (route table `facts`); the [data-nos-facts] aside, where a route still renders one, shows only Dates, Venue and Host."
  },
  "navDropped": "Book Sunset Cocktails and guided Field Trip outings.",
- "navDroppedPrefix": "Book Sunset Cocktails"
+ "navDroppedPrefix": "Book Sunset Cocktails",
+ "navRenamed": {
+  "from": "Exhibitor entry guide",
+  "to": "Plant Entry/Registration",
+  "source": "PLAN YOUR VISIT v1.0 line 291 (strikes 'Exhibitor entry guide', writes 'Plant Entry/Registration' in the Take part nav list); SAOC and NOS Design NL-2"
+ }
 }

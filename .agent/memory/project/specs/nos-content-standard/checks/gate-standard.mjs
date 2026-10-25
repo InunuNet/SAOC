@@ -621,7 +621,7 @@ async function exChecks(page, route, vp, c, tag) {
       chips: document.querySelectorAll('nav[data-doc-index], [data-show-jump-chips], main table, main ol, main h3').length, sw: document.documentElement.scrollWidth, iw: innerWidth };
   }, X);
   const want = [...stand.a, ...qa.flatMap((q) => q.a)];
-  c.check(`${tag} EX-G1 h1 is "${X.h1}", the crumb reads National Show - Exhibitor entry guide (${m.h1} | ${m.crumb})`, m.h1 === X.h1 && /National Show\s*[—–-]\s*Exhibitor entry guide/.test(m.crumb));
+  c.check(`${tag} EX-G1 h1 is "${X.h1}", the crumb reads National Show - ${X.h1} (${m.h1} | ${m.crumb})`, m.h1 === X.h1 && m.crumb.replace(/\s+/g, ' ').replace(/\s*[—–-]\s*/, ' - ').startsWith(X.crumb));
   c.check(`${tag} EX-G1 no hero lede: the hero holds only the crumb, h1 and facts (rest "${m.heroRest.slice(0, 40)}")`, m.heroRest.length < 8);
   c.check(`${tag} EX-G1 FACTS-1 has exactly ${X.factTerms.join(' / ')} (${m.facts.map((f) => `${f.t}=${f.d}`).join('; ')}); the Dates cell is nowrap on one line`, JSON.stringify(m.facts.map((f) => f.t)) === JSON.stringify(X.factTerms) && m.facts.every((f) => f.d !== '') && m.facts.filter((f) => f.t === 'Dates').every((f) => /nowrap/.test(f.ws) && f.h <= f.lh * 1.4));
   c.check(`${tag} EX-G1 the main column is the FAQ ${X.stand} answer as a Fraunces 300 standfirst, then exactly ${qa.length} Q&As in FAQ order (${X.faqQuestions.join(', ')}), every paragraph verbatim (${m.paras.length} paragraphs, ${want.length} expected)`, JSON.stringify(m.paras) === JSON.stringify(want) && m.firstFam?.includes('fraunces') && m.firstW === '300', want.map((b, i) => (m.paras[i] === b ? '' : `p${i + 1}`)).filter(Boolean).join(','));
@@ -703,6 +703,66 @@ async function arChecks(page, route, vp, c, tag) {
   c.check(`${tag} AR-1 no horizontal overflow (${m.sw} <= ${m.iw})`, m.sw <= m.iw);
 }
 
+/** HM-G1 (NOS Design, root comms.md HM-G1): the NOS home, /. Every sentence is verbatim from the frozen About v1.2, What to Expect v1.0 or FAQ v1.0; the home hero component is unchanged apart from its lede, the TBC chip and the facts row. */
+async function homeChecks(page, vp, c, tag) {
+  const H = ROUTE_TABLE_META.home; const norm = (t) => t.replace(/\s+/g, ' ').trim();
+  const rd = (f) => readFileSync(`${SPDIR}${f}`, 'utf8').split('\n').map((l) => l.trim()).filter(Boolean);
+  const live = (f) => rd(f).filter((l) => !/^\**~~/.test(l));
+  const wte = live('what-to-expect.md'); const s3i = wte.findIndex((l) => spUnmd(l) === 'What to Expect'); const s3 = wte.slice(s3i + 1).map(spUnmd);
+  const sentences = (p) => p.match(/[^.!?]+[.!?]+(?=\s|$)/g)?.map(norm) ?? [];
+  const wteSentence = (starts) => { for (const p of s3) { const hit = sentences(p).find((x) => x.startsWith(starts)); if (hit) return hit; } return ''; };
+  const about = live('about.md').map(spUnmd); const aboutBody = about.slice(2);
+  const iH = wte.findIndex((l) => spUnmd(l) === 'Opening hours'); const iA = wte.findIndex((l) => spUnmd(l) === 'Admission');
+  const hours = wte.slice(iH + 1, iA).map((l) => { const [a, ...b] = spUnmd(l).split(' – '); return { label: a, value: b.join(' – ') }; });
+  const dateLabel = 'Show dates – for public entrance'; const dateLine = spUnmd(wte[wte.findIndex((l) => spUnmd(l) === dateLabel) + 1] ?? '');
+  const lede = sentences(s3[0])[0]; const closing = s3[s3.length - 1];
+  const f26 = spQa(H.exhibitLead); const f27 = spQa(H.exhibitBody);
+  const prog = H.programmeRows.map((r) => ({ ...r, text: r.from === 'wte-sentence' ? wteSentence(r.starts) : (sentences(spQa(r.faq).a[0])[0] ?? '') }));
+  const corpus = norm([...about, ...wte.map(spUnmd), ...readFileSync(`${SPDIR}faq.md`, 'utf8').split('\n').map(spUnmd)].join(' '));
+  c.check(`${tag} HM-G1 sources are real: the lede, About paragraphs 1 and 3, the dates line, ${H.programmeRows.length} programme sentences, FAQ ${H.exhibitLead}/${H.exhibitBody} and the closing paragraph were found in the frozen copies`, Boolean(lede) && aboutBody.length >= 3 && Boolean(dateLine) && hours.length === 3 && prog.every((p) => p.text.length > 30) && Boolean(f26?.a.length) && Boolean(f27?.a.length) && closing.startsWith('Whether your passion lies'));
+  const m = await page.evaluate((H) => {
+    const txt = (e) => e.textContent.replace(/\s+/g, ' ').trim(); const fam = (e) => getComputedStyle(e).fontFamily.split(',')[0].replace(/["']/g, '').toLowerCase();
+    const sec = (k) => document.querySelector(`[data-hm-section="${k}"]`); const main = document.querySelector('main') ?? document.body;
+    const links = (el) => el ? [...el.querySelectorAll('a')].map((a) => ({ t: txt(a), l: Math.round(a.getBoundingClientRect().left) })) : [];
+    const lede = document.querySelector('[data-hm-lede]'); const hero = document.querySelector('section[data-nos-hero], [data-hm-hero], header + section, main > section');
+    const facts = [...document.querySelectorAll('.nos-hero-facts dt, [data-hero-facts] dt')].map((dt) => ({ t: txt(dt), tt: getComputedStyle(dt).textTransform, px: parseFloat(getComputedStyle(dt).fontSize) }));
+    const about = sec('about'); const card = document.querySelector('[data-hm-visit-card]'); const ps = (el) => el ? [...el.querySelectorAll('p')].map((p) => ({ t: txt(p), fam: fam(p), w: getComputedStyle(p).fontWeight })) : [];
+    const exempt = [...document.querySelectorAll('[data-hm-exempt]')];
+    const orphan = [...main.querySelectorAll('p')].filter((p) => !exempt.some((x) => x.contains(p)) && !p.closest('footer') && !p.closest('[data-hero-facts], .nos-hero-facts')).map(txt).filter(Boolean);
+    const closeEl = sec('closing'); const cp = closeEl ? [...closeEl.querySelectorAll('p')][0] : null; const ccs = cp ? getComputedStyle(cp) : null;
+    const rows = (el) => el ? [...el.querySelectorAll('h3')].map((h) => { const row = h.closest('li, article, div'); return { h3: txt(h), p: row ? [...row.querySelectorAll('p')].map(txt) : [], a: row ? row.querySelectorAll('a').length : 0, arrow: row ? txt(row).includes('→') : false }; }) : [];
+    return { secs: H.sections.map((k) => Boolean(sec(k))), order: H.sections.map((k) => { const e = sec(k); return e ? e.getBoundingClientRect().top + scrollY : null; }),
+      lede: lede ? txt(lede) : null, facts, h2s: [...main.querySelectorAll('h2')].map(txt), body: txt(main),
+      aboutP: ps(about), aboutLinks: links(about).map((x) => x.t).filter((t) => /→/.test(t)), cardText: card ? txt(card) : '', cardPos: card ? getComputedStyle(card).position : null, cardLinks: links(card).map((x) => x.t),
+      visit: links(sec('visit')), prog: rows(sec('programme')), exhP: ps(sec('exhibit')), exhLinks: links(sec('exhibit')).map((x) => x.t.replace(/\s*→.*$/, '')), exhOl: sec('exhibit') ? sec('exhibit').querySelectorAll('ol').length : 0,
+      closing: cp ? { t: txt(cp), fam: fam(cp), w: ccs.fontWeight, mw: ccs.maxWidth, fs: parseFloat(ccs.fontSize), wrap: ccs.textWrap || ccs.textWrapStyle } : null, closeLinks: links(closeEl).map((x) => x.t.replace(/\s*→.*$/, '')),
+      orphan, sw: document.documentElement.scrollWidth, iw: innerWidth };
+  }, H);
+  c.check(`${tag} HM-G1 the five bands exist in order: ${H.sections.join(', ')} (${m.secs.join(',')})`, m.secs.every(Boolean) && m.order.every((y, i) => i === 0 || y > m.order[i - 1]));
+  c.check(`${tag} HM-G1 gone: ${H.bannedText.filter((t) => m.body.includes(t)).join(' | ') || 'none of'} the builder strings (stats, "Ten judging groups", step cards, the old lede, "Cycle", "Past shows"); no TBC, pending or placeholder chip`, H.bannedText.every((t) => !m.body.includes(t)) && !new RegExp(H.bannedPattern, 'i').test(m.body));
+  c.check(`${tag} HM-G1 the hero lede is What to Expect v1.0 section 3 sentence 1, verbatim, in [data-hm-lede] (${m.lede && m.lede.slice(0, 50)})`, m.lede === lede);
+  c.check(`${tag} HM-G1 the hero facts are exactly ${H.factTerms.join(' / ')}, labels sentence case, 15px, not uppercase (${m.facts.map((f) => `${f.t} ${f.tt} ${f.px}`).join('; ')})`, JSON.stringify(m.facts.map((f) => f.t)) === JSON.stringify(H.factTerms) && m.facts.every((f) => f.tt === 'none' && Math.abs(f.px - 15) <= 0.5));
+  c.check(`${tag} HM-G1 About band: h2 "${H.aboutHeading}", About v1.2 paragraph 1 as a Fraunces 300 lead, paragraph 3 as body, links ${H.aboutLinks.join(' / ')} (${m.aboutP.length} paragraphs)`, m.h2s.includes(H.aboutHeading) && m.aboutP.some((p) => p.t === aboutBody[0] && p.fam.includes('fraunces') && p.w === '300') && m.aboutP.some((p) => p.t === aboutBody[2]) && JSON.stringify([...m.aboutLinks, ...m.cardLinks.filter((t) => /→/.test(t) && !m.aboutLinks.includes(t))]) === JSON.stringify(H.aboutLinks));
+  c.check(`${tag} HM-G1 the visit card is static and shows "${dateLabel}", "${dateLine}" and her ${hours.length} hours rows verbatim (${m.cardPos})`, m.cardPos !== null && m.cardPos !== 'sticky' && [dateLabel, dateLine, ...hours.map((h) => h.label), ...hours.map((h) => h.value)].every((t) => m.cardText.includes(t)));
+  { const lefts = [...new Set(m.visit.map((l) => l.l))].length; const want = vp.width >= 1024 ? H.visitColumns.desktop : vp.width >= 600 ? H.visitColumns.below1024 : H.visitColumns.below600;
+    c.check(`${tag} HM-G1 Visit: h2 "Visit" and the nav-label register ${H.visitLinks.join(' / ')} with a → each, no descriptions, ${want} column(s) (${lefts})`, m.h2s.includes('Visit') && JSON.stringify(m.visit.map((l) => l.t.replace(/\s*→.*$/, ''))) === JSON.stringify(H.visitLinks) && m.visit.every((l) => l.t.includes('→')) && lefts === want); }
+  c.check(`${tag} HM-G1 Programme: h2 "Programme" and ${prog.length} rows, h3 nav label + her sentence + →: ${prog.map((p) => p.h3).join(' / ')} (${m.prog.map((r) => r.h3).join(' / ')})`, m.h2s.includes('Programme') && m.prog.length === prog.length && prog.every((p, i) => m.prog[i].h3 === p.h3 && m.prog[i].p.includes(p.text) && m.prog[i].arrow));
+  c.check(`${tag} HM-G1 Exhibit & trade: FAQ ${H.exhibitLead} as a Fraunces 300 lead, FAQ ${H.exhibitBody} as body, a register of ${H.exhibitLinks.join(' / ')}, no ordered step cards`, m.h2s.includes('Exhibit & trade') && m.exhP.some((p) => p.t === f26.a[0] && p.fam.includes('fraunces') && p.w === '300') && m.exhP.some((p) => p.t === f27.a[0]) && JSON.stringify(m.exhLinks) === JSON.stringify(H.exhibitLinks) && m.exhOl === 0);
+  c.check(`${tag} HM-G1 closing band: her closing paragraph verbatim in Fraunces 300, max-width ${H.closingMaxWidthCh}ch, balanced, then ${H.closingLinks.join(' / ')} (${m.closing && `${m.closing.fam} ${m.closing.w} ${m.closing.mw} ${m.closing.wrap}`})`, Boolean(m.closing) && m.closing.t === closing && m.closing.fam.includes('fraunces') && m.closing.w === '300' && m.closing.wrap === 'balance' && Math.abs(parseFloat(m.closing.mw) - H.closingMaxWidthCh * m.closing.fs) <= m.closing.fs * 4 && JSON.stringify(m.closeLinks) === JSON.stringify(H.closingLinks));
+  { const bad = m.orphan.flatMap((p) => sentences(p).length ? sentences(p) : [norm(p)]).filter((x) => !corpus.includes(x)); c.check(`${tag} HM-G1 every visible sentence in a <p> traces verbatim to About v1.2, What to Expect v1.0 or FAQ v1.0 (${m.orphan.length} paragraphs; offenders: ${bad.slice(0, 2).join(' | ').slice(0, 120)})`, m.orphan.length > 0 && bad.length === 0); }
+  c.check(`${tag} HM-G1 no horizontal overflow (${m.sw} <= ${m.iw})`, m.sw <= m.iw);
+}
+
+/** Per-route facts (NOS Design ruling 2026-10-25): the hero facts equal exactly the set the route's golden lists (route table `facts`); an aside [data-nos-facts] shows only Dates / Venue / Host; "Cycle" and "Triennial" never render. */
+async function routeFactsChecks(page, route, vp, c, tag) {
+  const F = route.facts; if (!F) return;
+  const m = await page.evaluate(() => { const t = (e) => e.textContent.replace(/\s+/g, ' ').trim(); return { hero: [...document.querySelectorAll('section[data-nos-hero] [data-hero-facts] dt')].map(t), aside: [...document.querySelectorAll('[data-nos-facts] dt')].map(t) }; });
+  const allowed = [...STD.showFactsLabels.allowedLabels, 'Editions', 'First show'];
+  if (F.exact && F.terms) c.check(`${tag} FACTS the hero facts are exactly ${F.terms.join(' / ')} as ${F.golden} lists them (${m.hero.join(' / ')})`, JSON.stringify(m.hero) === JSON.stringify(F.terms));
+  else c.check(`${tag} FACTS the hero facts (${m.hero.join(' / ') || 'none'}) use only ${allowed.join(' / ')} (${F.golden}); no golden lists exact terms for this route`, m.hero.every((x) => allowed.includes(x)));
+  c.check(`${tag} FACTS the facts aside (${m.aside.join(' / ') || 'none'}) shows only ${STD.showFactsLabels.allowedLabels.join(' / ')}, never Cycle or Triennial`, m.aside.every((x) => STD.showFactsLabels.allowedLabels.includes(x)));
+}
+
 /** SY-G1 (NOS Design, root comms.md L3387): /symposium. Every copy string is read from a frozen source or the CMS; builder copy is flagged in spec.md. */
 async function syChecks(page, route, vp, c, tag, server) {
   const S = route.sy;
@@ -756,7 +816,7 @@ async function sxChecks(page, route, vp, c, tag) {
   }
 }
 
-/** /exhibitors (Exhibitor entry guide): no source doc exists, so the public build renders the hero and the contact panel only. */
+/** /exhibitors (Plant Entry/Registration): no source doc exists, so the public build renders the hero and the contact panel only. */
 async function heroOnlyChecks(page, route, vp, c, tag) {
   const m = await page.evaluate(() => { const main = document.querySelector('main'); const h2 = [...main.querySelectorAll('h2')].map((h) => h.textContent.replace(/\s+/g, ' ').trim()); return { h1: document.querySelector('h1')?.textContent.replace(/\s+/g, ' ').trim(), h2, h3: main.querySelectorAll('h3').length, layout: Boolean(document.querySelector('[data-doc-layout]')), tbc: /to be confirmed|PLACEHOLDER COPY/i.test(main.textContent), height: document.documentElement.scrollHeight, contact: Boolean(main.querySelector('[data-contact-panel], a[href^="mailto:"], form')) }; });
   c.check(`${tag} /exhibitors h1 is "${route.headings.h1}" (${m.h1})`, m.h1 === route.headings.h1);
@@ -822,7 +882,7 @@ async function extraChecks(page, route, vp, c, tag) {
     const legend = [...document.querySelectorAll('main *')].filter((e) => !e.closest('details') && e.children.length === 0 && /to be confirmed by the show committee/i.test(e.textContent)).length;
     const railed = [...document.querySelectorAll('main *')].filter((e) => { const s = getComputedStyle(e); return ['Left', 'Right'].some((k) => parseFloat(s[`border${k}Width`]) > 1) || ['Top', 'Bottom', 'Left', 'Right'].some((k) => s[`border${k}Style`] === 'dashed' && parseFloat(s[`border${k}Width`]) >= 2); }).length;
     const h1e = document.querySelector('h1'); const h1s = h1e ? getComputedStyle(h1e) : null;
-    const h1i = h1e ? { len: h1e.textContent.replace(/\s+/g, ' ').trim().length, long: h1e.classList.contains('is-long'), px: parseFloat(h1s.fontSize), maxW: h1s.maxWidth, wrap: h1s.textWrap || h1s.getPropertyValue('text-wrap'), lines: Math.round(h1e.getBoundingClientRect().height / parseFloat(h1s.lineHeight)) } : null;
+    const h1i = h1e ? { len: h1e.textContent.replace(/\s+/g, ' ').trim().length, long: h1e.classList.contains('is-long'), px: parseFloat(h1s.fontSize), maxW: h1s.maxWidth, wrap: h1s.textWrap || h1s.getPropertyValue('text-wrap'), lines: Math.round(h1e.getBoundingClientRect().height / parseFloat(h1s.lineHeight)), ow: h1s.overflowWrap, ...(() => { const rg = document.createRange(); rg.selectNodeContents(h1e); const rects = [...rg.getClientRects()].filter((q) => q.width > 0); const hb = h1e.getBoundingClientRect(); return { textRight: rects.length ? Math.max(...rects.map((q) => q.right)) : 0, boxRight: hb.right - parseFloat(h1s.paddingRight) - parseFloat(h1s.borderRightWidth) }; })() } : null;
     const subItems = [...document.querySelectorAll('.nos-subnav a')].map((a) => ({ t: a.textContent.replace(/\s+/g, ' ').trim(), cur: a.getAttribute('aria-current') }));
     const crumb = document.querySelector('section[data-nos-hero] nav[aria-label="Breadcrumb"]'); const crumbText = crumb ? crumb.textContent.replace(/\s+/g, ' ').trim() : null;
     return { h1i, subItems, crumbText, nkBad, testBar, vw: innerWidth, innerMin: ic ? parseFloat(ic.minHeight) : null, innerAlign: ic ? ic.alignContent : null, innerPadT: ic ? parseFloat(ic.paddingTop) : null, innerPadB: ic ? parseFloat(ic.paddingBottom) : null, band: ib && ib.height ? ib.width / ib.height : null, skip, round, split, padTop: fs ? parseFloat(fs.paddingTop) : null, bTop: fs ? parseFloat(fs.borderTopWidth) : null, navLabels, h2s, h4s, h2lh: lh(document.querySelector('main h2')), h3lh: lh(proseH3()),
@@ -831,9 +891,10 @@ async function extraChecks(page, route, vp, c, tag) {
   if (x.h1i) {
     const isLong = x.h1i.len > STD.hero.longTitleChars;
     c.check(`${tag} LT-1 the h1 (${x.h1i.len} chars) ${isLong ? 'carries' : 'does not carry'} .is-long`, x.h1i.long === isLong);
-    if (isLong && vp.width >= 768) {
-      const want = Math.min(64, Math.max(44, 25.6 + 0.026 * vp.width));
-      c.check(`${tag} LT-1 the long h1 is clamp(2.75rem, 1.6rem + 2.6vw, 4rem) (${x.h1i.px.toFixed(1)} ~ ${want.toFixed(1)}), max-width none, text-wrap balance (${x.h1i.maxW}, ${x.h1i.wrap})`, Math.abs(x.h1i.px - want) <= 1.5 && x.h1i.maxW === 'none' && /balance/.test(x.h1i.wrap));
+    c.check(`${tag} NL-2 the h1 text fits its box: the text Range ends at ${Math.round(x.h1i.textRight)} <= the content box right ${Math.round(x.h1i.boxRight)} (not a scrollWidth test)`, x.h1i.textRight <= x.h1i.boxRight + 0.5);
+    if (isLong) {
+      const want = Math.min(64, Math.max(40, 25.6 + 0.026 * vp.width));
+      c.check(`${tag} LT-1 the long h1 is clamp(2.5rem, 1.6rem + 2.6vw, 4rem) (${x.h1i.px.toFixed(1)} ~ ${want.toFixed(1)}), max-width none, text-wrap balance, overflow-wrap break-word (${x.h1i.maxW}, ${x.h1i.wrap}, ${x.h1i.ow})`, Math.abs(x.h1i.px - want) <= 1.5 && x.h1i.maxW === 'none' && /balance/.test(x.h1i.wrap) && x.h1i.ow === 'break-word');
       if (vp.width >= 1440) c.check(`${tag} LT-1 the long h1 holds to one line (${x.h1i.lines})`, x.h1i.lines === 1);
     }
   }
@@ -890,12 +951,17 @@ await withServer(1, 'standard', async (server, c) => {
       if (await gotoRoute(page, server, '/tickets', c, `[${vp.name} /tickets cards]`)) { await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await page.waitForTimeout(500);
       await cardImageChecks(page, vp, c, `[${vp.name} /tickets cards]`); } await context.close();
     }
+    for (const vp of STD.viewports) {
+      const tag = `[${vp.name} /]`; const context = await newContext(browser, vp); const page = await context.newPage();
+      if (await gotoRoute(page, server, '/', c, tag)) await homeChecks(page, vp, c, tag);
+      await context.close();
+    }
     for (const e of EXCLUDED) c.note(`EXCLUDED ${e.nos}: ${e.excluded}`);
     c.note(`WS-1: ${STD.ws1.ticketEdge}`);
     c.note(`NEEDS PHOTO (Brad photography need, ${needsPhoto.length}): ${needsPhoto.join(' ')}`);
     for (const r of RETIRED) {
       let res = null; try { res = await fetch(`${server.nos}${r.from}`, { redirect: 'manual', headers: { authorization: AUTH } }); } catch (e) { c.check(`[retired ${r.from}] answers`, false, e.message); }
-      if (res) { const loc = res.headers.get('location'); const u = loc ? new URL(loc, server.nos) : null; c.check(`[retired ${r.from}] still returns a ${r.status} to ${r.to} on the gate origin (${res.status} ${loc})`, res.status === r.status && u !== null && u.pathname === r.to && u.origin === new URL(server.nos).origin); }
+      if (res) { const loc = res.headers.get('location'); const u = loc ? new URL(loc, server.nos) : null; c.check(`[retired ${r.from}] still returns a ${r.status} (or Next's permanent 308) to ${r.to} on the gate origin (${res.status} ${loc})`, (res.status === r.status || (r.status === 301 && res.status === 308)) && u !== null && u.pathname === r.to && u.origin === new URL(server.nos).origin); }
     }
     for (const route of ROUTES) {
       for (const vp of STD.viewports) {
@@ -908,7 +974,7 @@ await withServer(1, 'standard', async (server, c) => {
         if (res?.status() !== 200) { await context.close(); continue; }
         await page.waitForSelector('[data-doc-layout], [data-programme-body]', { timeout: 15000 }).catch(() => {});
         { const body = await page.evaluate(() => document.body.textContent.replace(/\s+/g, ' ')); for (const b of BANNED) c.check(`${tag} the banned string "${b.text}" never renders`, !body.includes(b.text), b.why); }
-        if (route.nos !== '/about') { const lab = await page.evaluate(() => [...document.querySelectorAll('[data-nos-facts] dt')].map((e) => e.textContent.replace(/\s+/g, ' ').trim())); if (lab.length) c.check(`${tag} the shared ShowFacts rows are unchanged on every route but /about (${lab.join(' / ')})`, JSON.stringify(lab) === JSON.stringify(STD.showFactsLabels.labels)); }
+        await routeFactsChecks(page, route, vp, c, tag);
         { const wosaTheme = await page.evaluate(() => [...document.querySelectorAll('[data-ticket-card]')].filter((k) => /WOSA/i.test(k.textContent) && !/symposium/i.test(k.querySelector('h2, h3')?.textContent ?? '')).reduce((n, k) => n + k.querySelectorAll('.nk-theme').length, 0)); c.check(`${tag} the WOSA ticket card has no theme line (.nk-theme) until Lee-Ann supplies one (${wosaTheme})`, wosaTheme === 0); }
 
         const m = await page.evaluate(({ vpW, aside }) => {
@@ -924,8 +990,12 @@ await withServer(1, 'standard', async (server, c) => {
           const ch = probe ? probe.getBoundingClientRect().width : 0; probe?.remove();
           const wrap = document.querySelector('[data-doc-layout] [data-nos-wrap], [data-doc-layout]');
           const wcs = wrap ? getComputedStyle(wrap) : null;
-          const h1s = [...document.querySelectorAll('h1')]; const h2s = [...document.querySelectorAll('main h2')];
-          const proseH3 = () => [...document.querySelectorAll('main h3')].find((h) => !h.closest('[data-venue-card], [data-doc-aside], aside, [data-ticket-card], [data-card]')) ?? null;
+          const h1s = [...document.querySelectorAll('h1')];
+          // Scoped to the main column; the footer show index (nav.nos-index), aside and card headings are not prose headings unless a golden specifies them.
+          const EXCL = '[data-venue-card], [data-doc-aside], aside, [data-ticket-card], [data-card], nav, .nos-index, footer, [data-we-card], [data-ct-card], [data-hm-visit-card]';
+          const scope = document.querySelector('[data-doc-main]') ?? document.querySelector('main');
+          const h2s = [...scope.querySelectorAll('h2')].filter((h) => !h.closest(EXCL));
+          const proseH3 = () => [...scope.querySelectorAll('h3')].find((h) => !h.closest(EXCL)) ?? null;
           const cs = (e) => (e ? { fam: getComputedStyle(e).fontFamily.split(',')[0].replace(/["']/g, '').toLowerCase(), w: getComputedStyle(e).fontWeight, px: parseFloat(getComputedStyle(e).fontSize) } : null);
           const bold = [...document.querySelectorAll('main p')].filter((p) => p.children.length === 1 && /^(STRONG|B)$/.test(p.firstElementChild.tagName) && p.textContent.trim() === p.firstElementChild.textContent.trim()).length;
           const eyebrow = [...document.querySelectorAll('main h2, main h3')].filter((h) => { const p = h.previousElementSibling; if (!p) return false; const s = getComputedStyle(p); return s.textTransform === 'uppercase' && parseFloat(s.fontSize) <= 13 && p.textContent.trim().length < 40; }).length;
@@ -985,7 +1055,7 @@ await withServer(1, 'standard', async (server, c) => {
           else c.check(`${tag} measure ${m.chars.toFixed(0)}ch <= ${STD.prose.maxCh}`, m.chars <= STD.prose.maxCh);
         }
         {
-          const want = (route.aside === 'we' || route.aside === 'ct') ? 'we' : route.aside === 'none' ? null : (route.aside === 'venue' || route.aside === 'contact' || route.aside === 'content') ? 'content' : 'index';
+          const want = (route.aside === 'we' || route.aside === 'ct') ? 'we' : route.aside === 'none' ? null : (route.aside === 'venue' || route.aside === 'contact' || route.aside === 'content' || route.aside === 'ticket') ? 'content' : 'index';
           if (want === 'we') { /* WE-G1: the card is [data-we-card]; weChecks owns the aside */ }
           else if (!want) c.check(`${tag} listing route renders no [data-doc-aside]`, !m.aside);
           else {
@@ -1001,7 +1071,8 @@ await withServer(1, 'standard', async (server, c) => {
                 const empty = 100 * (1 - covered / m.wrapInner);
                 c.check(`${tag} container ${empty.toFixed(0)}% empty <= ${STD.grid.maxEmptyPctOfContainerAt1440}%`, empty <= STD.grid.maxEmptyPctOfContainerAt1440);
               }
-            } else if (m.aside && want === 'content') c.check(`${tag} content aside follows the main column`, m.aside.top >= m.main.bottom - 1);
+            } else if (m.aside && route.aside === 'ticket') c.check(`${tag} the ticket-card aside comes first below 1024 (ticket first): aside bottom ${Math.round(m.aside.bottom)} <= main top ${Math.round(m.main.top)}`, m.aside.bottom <= m.main.top + 1);
+            else if (m.aside && want === 'content') c.check(`${tag} content aside follows the main column`, m.aside.top >= m.main.bottom - 1);
             else if (m.aside) await scrollerChecks(page, vp, c, tag);
           }
         }
@@ -1021,6 +1092,7 @@ await withServer(1, 'standard', async (server, c) => {
         if (route.ex) await exChecks(page, route, vp, c, tag);
         if (route.ct) await ctChecks(page, route, vp, c, tag);
         if (route.ar) await arChecks(page, route, vp, c, tag);
+        c.check(`${tag} NL-2 "${STD.navRenamed.from}" is not rendered anywhere in the public page (body, title, meta description); her label is "${STD.navRenamed.to}"`, !(await page.evaluate((t) => [document.body.textContent.replace(/\s+/g, ' '), document.title, ...[...document.querySelectorAll('meta[name="description"], meta[property="og:description"], meta[property="og:title"]')].map((e) => e.getAttribute('content') ?? '')].some((x) => x.includes(t)), STD.navRenamed.from)));
         c.check(`${tag} NAV-G1 the unsourced Workshops line (prefix "${STD.navDroppedPrefix}") is in neither the rendered body nor <meta name="description"> / og:description`, !(await page.evaluate((t) => [document.body.textContent.replace(/\s+/g, ' '), ...[...document.querySelectorAll('meta[name="description"], meta[property="og:description"]')].map((e) => e.getAttribute('content') ?? '')].some((x) => x.includes(t)), STD.navDroppedPrefix)));
         if (route.noUpscale) await noUpscaleChecks(page, vp, c, tag);
 
@@ -1076,7 +1148,7 @@ await withServer(1, 'standard', async (server, c) => {
         if (vp.width === 1440) {
           if (f.sub !== null) c.check(`${tag} sub-nav is visible (bottom ${Math.round(f.sub)} <= ${f.ih})`, f.sub <= f.ih);
           if (f.h2) c.check(`${tag} the first h2 is visible (top ${Math.round(f.h2.top)} < ${f.ih})`, f.h2.top < f.ih - 24 && f.h2.bottom <= f.ih);
-          if (route.aside !== 'none' && route.aside !== 'we' && route.aside !== 'ct' && route.aside !== 'venue' && route.aside !== 'contact' && route.aside !== 'content') {
+          if (route.aside !== 'none' && route.aside !== 'we' && route.aside !== 'ct' && route.aside !== 'ticket' && route.aside !== 'venue' && route.aside !== 'contact' && route.aside !== 'content') {
             const card = await page.evaluate(() => { const e = document.querySelector('[data-doc-aside]'); if (!e) return null; const b = e.getBoundingClientRect(); return { top: b.top, bottom: b.bottom }; });
             c.check(`${tag} the index card is above the fold on load`, Boolean(card) && card.top < f.ih - 24, JSON.stringify(card));
           }
@@ -1099,6 +1171,6 @@ await withServer(1, 'standard', async (server, c) => {
         await context.close();
       }
     }
-    for (const [key, seen] of Object.entries(typeSeen)) c.check(`${key} computed style is identical across routes (${[...seen.keys()].join(' | ')})`, seen.size === 1);
+    for (const [key, seen] of Object.entries(typeSeen)) c.check(`${key} computed style is identical across routes (${[...seen.entries()].map(([sig, rs]) => `${sig}: ${[...new Set(rs)].join(' ')}`).join(' | ')})`, seen.size === 1);
   } finally { await browser.close(); }
 }, { preview: true });
