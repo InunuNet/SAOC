@@ -12,10 +12,6 @@ import type { LegalBlock, LegalDocument } from './types';
 // DocumentLayout, with doc-h2 headings and, for Privacy and Terms, an index.
 // =============================================================
 
-// A legal document's hero is as tall as its content: the first section heading must land in the first
-// screen, so the 480px floor of the other heroes does not apply here.
-export const LEGAL_HERO_MIN_HEIGHT = '0px';
-
 const INLINE = /\*\*([^*]+)\*\*|<((?:https?:\/\/|mailto:)[^>]+)>/g;
 const LINK_CLASS = 'text-ink underline underline-offset-2';
 const PARAGRAPH_CLASS = 'font-sans text-[16px] leading-[1.55] text-ink/85';

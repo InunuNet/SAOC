@@ -13,13 +13,16 @@ export interface DocumentIndexEntry {
   id: string;
   /** The h2 text. */
   label: string;
+  /** Optional ordinal shown before the label in its own span, so a theme can style it apart. */
+  number?: string | number;
 }
 
 // An h2 counts as "being read" once it has scrolled above this line (the 97px header plus air).
 const SPY_LINE_PX = 140;
 
+// Before any h2 reaches the line (page load), the first entry is the one being read.
 function currentSection(entries: readonly DocumentIndexEntry[]): string | null {
-  let current: string | null = null;
+  let current: string | null = entries[0]?.id ?? null;
   for (const entry of entries) {
     const heading = document.getElementById(entry.id);
     if (heading && heading.getBoundingClientRect().top <= SPY_LINE_PX) current = entry.id;
@@ -66,6 +69,7 @@ export function DocumentIndex({ entries }: { entries: readonly DocumentIndexEntr
           href={`#${entry.id}`}
           aria-current={active === entry.id ? 'location' : undefined}
         >
+          {entry.number !== undefined ? <span data-index-number>{entry.number}</span> : null}
           {entry.label}
         </a>
       ))}

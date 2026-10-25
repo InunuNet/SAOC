@@ -1,0 +1,55 @@
+schema: athanor.contract/v1
+slug: saoc-content-standard
+goal: Apply NOS Design ruling PG-1 (64/48 hero-to-content gap, no split h2/body, no h2 repeating the h1, content-driven clamp hero) to the SAOC DS-1 routes without changing the shared PageHero/DocumentLayout API.
+created_at: '2026-10-25'
+autonomy: high
+features:
+  - id: F3
+    name: PG-1 on SAOC DS-1 routes (gap, h2 stacking, h1-duplicate h2, hero clamp, first-screen)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/saoc-content-standard/goldens/pg1.json
+  - .agent/memory/project/specs/saoc-content-standard/goldens/standard.json
+  - .agent/memory/project/specs/saoc-content-standard/goldens/shared-api.md
+assertions:
+  phase: 4
+  checks:
+    - id: A-F3-01
+      description: Route list is the standard.json ungated routes minus the PG-1 exceptions, same paths. Fails if a route is missing, renamed, or an exception (home, events list, societies grid, contact, 404) is included
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f3_check.sh route-list
+    - id: A-F3-02
+      description: Hero clamp(320px, 22vw, 380px) is present in PageHero.tsx or globals.css. Fails while the clamp is absent
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f3_check.sh hero-clamp
+    - id: A-F3-03
+      description: The 480px PageHero default floor is gone. Fails if minHeight = '480px' or min-h-[480px] remains in PageHero.tsx
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f3_check.sh hero-480-gone
+    - id: A-F3-04
+      description: Shared API pinned by NOS Site is intact (HeroFact exports, facts prop, dl data-hero-facts attributes, DocumentLayout and DocumentIndex attributes and props). Fails if any pinned token is lost or renamed
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f3_check.sh shared-api
+    - id: A-F3-05
+      description: Gap from hero (or sub-nav) to first content is 64px at 1024/1440/2056 and 48px at 390/1023, and the first section has no padding-top, no border, no hr, no pseudo-element rule, no hidden first-child offset. Fails on any route outside 1.5px of the target or with a hairline
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-pg1.mjs gap --cache
+    - id: A-F3-06
+      description: At 1024/1440/2056 every main-column h2 sits above its body inside the 7fr column, the aside is a separate right-hand 5fr column (index kind is sticky), and each route meets its minimum h2 count. Fails on a side-by-side h2/body, an h2 in the 5fr column, a wrong ratio, or a page with too few h2s to prove anything
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-pg1.mjs split --cache
+    - id: A-F3-07
+      description: No h2 anywhere on a route has text equal to that route's h1 (case, punctuation and whitespace ignored). Fails on any match
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-pg1.mjs duph2 --cache
+    - id: A-F3-08
+      description: Computed hero min-height equals clamp(320px,22vw,380px) at 390/1023/1440/2056; one-line-lede heroes are at most 380px at 2056 and 330px at 1440 (and at least 3 such heroes are measured at each width, so the cap is not vacuous); h1 centred horizontally and text-align center; hero never shorter than its min-height. Fails on any breach
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-pg1.mjs hero --cache
+    - id: A-F3-09
+      description: At 1440x900 the first main-column h2 (else aside card, else a form in the page body but never the footer newsletter form, else, on a band route, the bottom of the ShowBand first heading (or first text line, never the band bottom), else the first block of the main column) ends above 900px on every route. Fails on any route whose first content anchor is below the fold
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-pg1.mjs fold --cache
+    - id: A-F3-10
+      description: Runtime shared-API shape unchanged on every route - facts container is a dl with data-fact-count equal to its items, dt before dd, inside the hero, one row, at most one data-doc-aside of kind content or index. Fails on any deviation
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-pg1.mjs api --cache
+    - id: A-F3-11
+      description: Detector self-test. Seven injected defects (first-section padding, 20px gap error, hairline, h2 repeating h1, split h2/body, 480px hero, content below fold) must each be flagged by the judges, a footer-only form must not anchor the fold, and a band route must anchor on its band. Fails if any judge stays silent or anchors wrongly, proving the gate is not blind
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-pg1.mjs selftest
+    - id: A-F3-12
+      description: Regression - F1 facts check (values, dd above dt, one baseline, hero image) still passes on every facts route. Fails if PG-1 changes any hero fact
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs facts --cache
+    - id: A-F3-13
+      description: Regression - F1 horizontal-overflow check still passes at 1440 and 390. Fails on overflow introduced by the new hero or gap
+      command: node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs overflow --cache

@@ -701,6 +701,16 @@ h3.font-serif {
 [data-doc-main] {
   min-width: 0;
 }
+/* A show band that follows the hero directly is the first content: the same 64px (48 below) gap.
+   PG-1-exempt heroes (events list, societies grid, contact) keep their band flush. */
+[data-page-hero]:not([data-hero-exempt]) + [data-home-section='show-band'] {
+  margin-top: 48px;
+}
+@media (min-width: 1024px) {
+  [data-page-hero]:not([data-hero-exempt]) + [data-home-section='show-band'] {
+    margin-top: 64px;
+  }
+}
 .doc-prose {
   max-width: 64ch;
   font-family: var(--sans);
