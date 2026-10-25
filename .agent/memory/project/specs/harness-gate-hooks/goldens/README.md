@@ -5,7 +5,7 @@ behaviours (dataset-residue guard, verification-triad coverage preflight) into A
 project-owned `gate_hooks`, declare the two triad kinds as project kinds, install the stock gate,
 and prove the stock gate still blocks what the pinned copy blocked.
 
-Base commit: `02906898` (Athanor 3.8.68 already committed on `chore/harness-3.8.66`).
+Base commit: `5165668d` (Athanor 3.8.68 already committed on `chore/harness-3.8.66`).
 
 ## Files
 
@@ -101,7 +101,7 @@ Per scenario:
    `["/usr/bin/true"]` (clean, exit 0) before running. The blocking scenarios must then exit 1 (mismatch). This is what makes the
    proof non-vacuous: it shows the assertion goes red when the hooks do nothing.
 
-`verify_harness_untouched.sh`: `git diff --name-only 02906898 -- execution template init.sh Makefile .claude/hooks .agent/agents .agent/rules .agent/skills .agent/workflows`
+`verify_harness_untouched.sh`: `git diff --name-only 5165668d -- execution template init.sh Makefile .claude/hooks .agent/agents .agent/rules .agent/skills .agent/workflows`
 minus the lines in `harness-untouched.allowlist.txt` must be empty; exit 1 and list offenders otherwise. Staged and unstaged
 changes count (diff against the base commit, not HEAD).
 
@@ -153,3 +153,7 @@ no `docs/gate-hooks.md`, four proof scripts asserting the old codes.
 | A49 | the real-baseline smoke: the hook does not exist before; after, `contracts/c5-submit-event.yaml` (listed and pinned in the real baseline, unedited, linter exit 1) must report `grandfathered` |
 
 Non-vacuity of the negative scenarios is A30-A39 (neutered hooks) and nothing else; do not weaken them.
+
+## Known: stock validate stricter
+
+Stock validate is stricter than the pinned copy: 29/263 spec contracts and 20/104 `contracts/` files fail. Not this feature's scope; recorded as a backlog item by the lead.

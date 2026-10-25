@@ -191,11 +191,11 @@ assertions:
       description: "docs/verification-triad-gate.md points at the hook (no longer says the triad is unwired or lives in contract.py)"
       command: "grep -q \"gate_hooks\" docs/verification-triad-gate.md"
     - id: A47
-      description: "no harness-owned path changed versus base 02906898 other than the allowlist"
+      description: "no harness-owned path changed versus base 5165668d other than the allowlist"
       command: "bash scripts/gate-hooks/checks/verify_harness_untouched.sh"
     - id: A48
       description: "grandfather baseline and pin files are unchanged versus base (no editing the baseline to pass a scenario)"
-      command: "git diff --quiet 02906898 -- execution/triad-baseline-exempt.txt execution/triad-baseline-exempt.sha256 scripts/checks/triad-baseline-exempt.txt scripts/checks/triad-baseline-exempt.sha256"
+      command: "git diff --quiet 5165668d -- execution/triad-baseline-exempt.txt execution/triad-baseline-exempt.sha256 scripts/checks/triad-baseline-exempt.txt scripts/checks/triad-baseline-exempt.sha256"
     - id: A49
       description: "real-baseline smoke: contracts/c5-submit-event.yaml (listed, pinned, unedited, linter exit 1) is reported grandfathered by the real hook"
       command: "python3 scripts/gate-hooks/triad_hook.py contracts/c5-submit-event.yaml | grep -q grandfathered"
