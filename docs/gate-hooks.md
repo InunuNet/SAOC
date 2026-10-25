@@ -39,10 +39,13 @@ hooks run once after the phases, even when an assertion failed. The hook's cwd i
 
 The stock gate treats a missing or unreadable `.agent/contract_kinds.json` as "no hooks" and
 proceeds, which would silently disable both guards. `verify_registry_present.py [registry-path]`
-exits 0 only if the file exists, parses as a JSON object, declares exactly the gate hooks of
-`registry.expected.json` by name with the expected `stage`, `on_error` and `command`, and declares
-the two project kinds as expected. Any violation is printed and exits 1; a usage error exits 2. CI
-runs it in the `dataset-residue-guard` job of `.github/workflows/ci.yml`, before the live scan.
+exits 0 only if the file exists, parses as a JSON object, and its `schema`, `kinds` and `gate_hooks`
+each equal those of `registry.expected.json` with plain `==`: same order, same count, every field
+including `timeout_seconds`. Matching by name would let a duplicate, a malformed entry or a shortened
+timeout through while the stock gate runs no hooks or lets scans time out and fail open. Other
+top-level keys are ignored, as the stock gate ignores them. A violation prints the first differing
+path (for example `gate_hooks[0].timeout_seconds`) and exits 1; a usage error exits 2. CI runs it in
+the `dataset-residue-guard` job of `.github/workflows/ci.yml`, before the live scan.
 
 ## Infrastructure failures never exit 1
 

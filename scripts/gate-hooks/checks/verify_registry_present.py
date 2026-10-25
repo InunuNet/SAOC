@@ -5,9 +5,9 @@ fails loudly instead.
 
 Usage: verify_registry_present.py [registry-path]  (default: REPO_ROOT/.agent/contract_kinds.json)
 
-Exit 0 iff the file exists, parses as a JSON object, declares exactly the gate hooks of
-registry.expected.json by name with the expected stage, on_error and command, and declares the
-expected project kinds. Exit 1 on any violation (each is printed), exit 2 on a usage error.
+Exit 0 iff the file exists, parses as a JSON object, and its `schema`, `kinds` and `gate_hooks`
+each equal (plain ==, same order and count, every field including timeout_seconds) those of
+registry.expected.json. Other top-level keys are ignored, as the stock gate ignores them. Exit 1 on any violation (each is printed), exit 2 on a usage error.
 Stdlib only.
 """
 import json
@@ -18,7 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_REGISTRY = REPO_ROOT / ".agent" / "contract_kinds.json"
 EXPECTED_PATH = (REPO_ROOT / ".agent" / "memory" / "project" / "specs" / "harness-gate-hooks"
                  / "goldens" / "registry.expected.json")
-HOOK_FIELDS = ("stage", "on_error", "command")
+COMPARED_KEYS = ("schema", "kinds", "gate_hooks")
 EXIT_OK = 0
 EXIT_VIOLATION = 1
 EXIT_USAGE = 2
@@ -36,29 +36,34 @@ def load_json_object(path: Path, what: str, problems: list):
     return data
 
 
-def hooks_by_name(data: dict) -> dict:
-    hooks = data.get("gate_hooks")
-    if not isinstance(hooks, list):
-        return {}
-    return {h["name"]: h for h in hooks if isinstance(h, dict) and isinstance(h.get("name"), str)}
+def first_difference(actual, expected, path: str) -> str:
+    """Name the first place two parsed JSON values differ (paths and field names only)."""
+    if isinstance(actual, dict) and isinstance(expected, dict):
+        for key in expected:
+            if key not in actual:
+                return f"{path}.{key} is missing"
+        for key in actual:
+            if key not in expected:
+                return f"{path}.{key} is unexpected"
+        for key in expected:
+            if actual[key] != expected[key]:
+                return first_difference(actual[key], expected[key], f"{path}.{key}")
+    if isinstance(actual, list) and isinstance(expected, list):
+        if len(actual) != len(expected):
+            return f"{path} has {len(actual)} entries, expected {len(expected)}"
+        for index, (got, want) in enumerate(zip(actual, expected)):
+            if got != want:
+                return first_difference(got, want, f"{path}[{index}]")
+    return f"{path} differs from the expected value"
 
 
 def compare(actual: dict, expected: dict) -> list:
+    """Plain == on the three keys the stock gate reads; other top-level keys are ignored."""
     problems = []
-    got, want = hooks_by_name(actual), hooks_by_name(expected)
-    for name in want:
-        if name not in got:
-            problems.append(f"gate hook {name!r} is not registered")
-            continue
-        for field in HOOK_FIELDS:
-            if got[name].get(field) != want[name][field]:
-                problems.append(f"gate hook {name!r} {field} is {got[name].get(field)!r}, "
-                                f"expected {want[name][field]!r}")
-    problems += [f"unexpected gate hook {n!r}" for n in got if n not in want]
-    kinds = actual.get("kinds") if isinstance(actual.get("kinds"), dict) else {}
-    for name, spec in expected.get("kinds", {}).items():
-        if kinds.get(name) != spec:
-            problems.append(f"project kind {name!r} is {kinds.get(name)!r}, expected {spec!r}")
+    for key in COMPARED_KEYS:
+        got, want = actual.get(key), expected.get(key)
+        if got != want:
+            problems.append(first_difference(got, want, key))
     return problems
 
 
@@ -77,7 +82,7 @@ def main(argv: list) -> int:
         for problem in problems:
             print(f"  - {problem}")
         return EXIT_VIOLATION
-    print(f"PASS: {path} declares the expected gate hooks and project kinds")
+    print(f"PASS: {path} matches the expected registry")
     return EXIT_OK
 
 
