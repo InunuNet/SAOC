@@ -187,6 +187,7 @@ export async function loadTicketCardViewModels(): Promise<TicketCardViewModelsRe
       stockKnown: stock !== null,
       now: new Date(),
       showDays: DAY_VISITOR_SELLABLE_DAYS,
+      activeShowId: resolveActiveShow(shows ?? []),
     });
 
     if (stock) {
