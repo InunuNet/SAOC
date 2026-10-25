@@ -17,9 +17,9 @@ interface VendorRadioGroupFieldProps {
 }
 
 const legendClass = 'font-mono text-[11px] tracking-[0.16em] text-muted';
-const optionLabelClass = 'flex items-center gap-2 font-sans text-[15px] text-ink';
+const optionLabelClass = 'flex min-h-11 items-center gap-2 font-sans text-[15px] text-ink';
 const radioClass =
-  'h-4 w-4 border border-rule outline-none focus:ring-2 focus:ring-ink/40 disabled:opacity-60';
+  'size-6 border border-rule outline-none focus:ring-2 focus:ring-primary disabled:opacity-60';
 
 export function VendorRadioGroupField({
   fieldKey,

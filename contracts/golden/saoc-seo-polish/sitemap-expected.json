@@ -1,7 +1,8 @@
 {
   "_comment": "Golden for finding (a). SAOC host static routes in the sitemap, as paths ('' is the home page). Dynamic /societies/[slug] and /events/[slug] stay Sanity-driven in app/sitemap.ts and are not listed here.",
-  "include": ["", "/about", "/societies", "/judging", "/events", "/contact", "/sponsors", "/members", "/constitution", "/privacy", "/terms", "/refunds"],
+  "include": ["", "/about", "/societies", "/judging", "/events", "/contact", "/sponsors", "/constitution", "/privacy", "/terms", "/refunds"],
   "exclude": {
+    "/members": "The members area has no portal yet; the page says so. Listing it invites a crawl of an empty page.",
     "/events/submit": "Members-only form. Its metadata is robots noindex, so listing it would send a sitemap-says-index, page-says-noindex contradiction, and a crawler fetching it is shown a sign-in wall.",
     "/media-kit": "Deliberately gated (lib/media-kit-gate.ts): a visitor is redirected 307 to /admin/login. Never list it.",
     "/newsletter/unsubscribe": "Token-driven utility page reached from an email link, not public content."

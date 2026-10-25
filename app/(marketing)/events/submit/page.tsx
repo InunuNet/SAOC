@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 
-import { SubmitEventForm } from '@/components/events/SubmitEventForm';
+import { SubmitEventPageBody } from '@/components/events/SubmitEventPageBody';
 import { buildPageMetadata } from '@/lib/seo';
+import { sanityFetch } from '@/sanity/lib/fetch';
+import { societyListQuery } from '@/sanity/queries';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Submit an Event',
@@ -10,6 +12,11 @@ export const metadata: Metadata = buildPageMetadata({
   path: '/events/submit',
   noIndex: true,
 });
+
+interface SanitySocietyRow {
+  _id: string;
+  name: string;
+}
 
 async function isAuthenticated(): Promise<boolean> {
   try {
@@ -45,13 +52,11 @@ export default async function SubmitEventPage() {
     return <LoginPrompt />;
   }
 
-  return (
-    <div className="max-w-xl mx-auto px-4 py-12">
-      <h1 className="text-2xl font-semibold mb-2">Submit an event</h1>
-      <p className="text-gray-600 text-sm mb-8">
-        Your submission will be reviewed by the council before it appears on the site.
-      </p>
-      <SubmitEventForm />
-    </div>
-  );
+  const listed = await sanityFetch<SanitySocietyRow[] | null>({
+    query: societyListQuery,
+    tags: ['societies', 'sanity'],
+  });
+  const societies = (listed ?? []).map((row) => ({ id: row._id, name: row.name }));
+
+  return <SubmitEventPageBody societies={societies} />;
 }

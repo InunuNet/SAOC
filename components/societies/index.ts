@@ -8,7 +8,6 @@ export { SocietyAbout } from './SocietyAbout';
 export type { SocietyAboutProps } from './SocietyAbout';
 export { SocietyCommittee } from './SocietyCommittee';
 export type { SocietyCommitteeProps } from './SocietyCommittee';
-export { SocietyExpect } from './SocietyExpect';
 export { SocietyEvents } from './SocietyEvents';
 export type { SocietyEventsProps } from './SocietyEvents';
 export { SocietyDetailsCallout } from './SocietyDetailsCallout';

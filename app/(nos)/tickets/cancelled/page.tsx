@@ -12,7 +12,10 @@ import { ticketsPageQuery } from '@/sanity/queries';
 // part of this pass. See contracts/golden/ticketing-m1-m2/README.md, decision #6.
 export const revalidate = 60;
 
-export const metadata: Metadata = { title: 'Payment cancelled' };
+export const metadata: Metadata = {
+  title: 'Payment cancelled',
+  robots: { index: false, follow: false },
+};
 
 interface TicketsPageCopy {
   cancelledHeading?: string | null;

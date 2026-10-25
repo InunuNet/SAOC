@@ -58,7 +58,7 @@ export const FOOTER_LEGAL_LINKS = [
   { href: '/privacy', label: 'Privacy' },
   { href: '/terms', label: 'Terms' },
   { href: '/refunds', label: 'Refunds' },
-  { href: '/constitution', label: 'Constitution' },
+  { href: '/memorandum-of-incorporation', label: 'Memorandum of Incorporation' },
 ];
 
 /** Shown only to a signed-in admin session (MediaKitFooterLink); the page gate is separate. */

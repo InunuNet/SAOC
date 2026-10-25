@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 
-import { LegalBody } from '@/components/legal/LegalBody';
+import { LEGAL_HERO_MIN_HEIGHT, LegalBody, legalIndex } from '@/components/legal/LegalBody';
 import { LegalHero } from '@/components/nos/LegalHero';
+import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { PRIVACY_POLICY } from '@/content/legal/privacy';
 import { buildPageMetadata } from '@/lib/seo';
 
@@ -16,14 +17,16 @@ export default function PrivacyPage() {
     <>
       <LegalHero
         route="/privacy"
-        image="/images/orchid-violet.jpg"
         eyebrow="Legal"
+        breadcrumbLabel="Privacy Policy"
+        image="/images/orchid-violet.jpg"
         heading={PRIVACY_POLICY.title}
         lede={PRIVACY_POLICY.subtitle}
+        minHeight={LEGAL_HERO_MIN_HEIGHT}
       />
-      <div className="nos-section nos-legal">
+      <DocumentLayout index={legalIndex(PRIVACY_POLICY)}>
         <LegalBody document={PRIVACY_POLICY} />
-      </div>
+      </DocumentLayout>
     </>
   );
 }

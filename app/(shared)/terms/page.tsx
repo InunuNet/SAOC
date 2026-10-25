@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 
-import { LegalBody } from '@/components/legal/LegalBody';
+import { LEGAL_HERO_MIN_HEIGHT, LegalBody, legalIndex } from '@/components/legal/LegalBody';
 import { LegalHero } from '@/components/nos/LegalHero';
+import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { WEBSITE_TERMS } from '@/content/legal/terms';
 import { buildPageMetadata } from '@/lib/seo';
 
@@ -16,13 +17,15 @@ export default function TermsPage() {
     <>
       <LegalHero
         route="/terms"
-        image="/images/orchid-violet.jpg"
         eyebrow="Legal"
+        breadcrumbLabel="Terms of Use"
+        image="/images/orchid-violet.jpg"
         heading={WEBSITE_TERMS.title}
+        minHeight={LEGAL_HERO_MIN_HEIGHT}
       />
-      <div className="nos-section nos-legal">
+      <DocumentLayout index={legalIndex(WEBSITE_TERMS)}>
         <LegalBody document={WEBSITE_TERMS} />
-      </div>
+      </DocumentLayout>
     </>
   );
 }
