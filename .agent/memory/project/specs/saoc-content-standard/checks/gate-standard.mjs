@@ -1,6 +1,7 @@
 // saoc-content-standard F1 runtime gate. Usage (repo root):
-//   node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs <check> [--fresh]
-// <check> is one of CHECKS below. Measures every route in goldens/standard.json at 1440x900 and 390x844
+//   node .agent/memory/project/specs/saoc-content-standard/checks/gate-standard.mjs <check> [--cache]
+// <check> is one of CHECKS below. --cache reuses a saved measurement (dev only; off by default).
+// Measures every route in goldens/standard.json at 1440x900 and 390x844
 // against a dev server it starts itself (or SAOC_BASE_URL), caches the measurements keyed on the git
 // tree state, and exits 1 listing every violation for the requested check.
 // Needs: node_modules (playwright, next) and .env.local (Sanity read) in the repo root.
@@ -17,7 +18,8 @@ const CHECKS = ['grid', 'measure', 'h2', 'rhythm', 'breadcrumb', 'aside', 'eyebr
 
 const check = process.argv[2];
 if (!CHECKS.includes(check)) { console.error(`unknown check ${check}; one of ${CHECKS.join(', ')}`); process.exit(2); }
-const fresh = process.argv.includes('--fresh');
+// Gate runs always measure fresh. Reuse of a saved measurement is a dev convenience behind an explicit --cache.
+const useCache = process.argv.includes('--cache');
 
 // The pages render Sanity content, so the measurement is only reusable while the dataset is unchanged:
 // the stamp is the dataset's document count and latest _updatedAt, read from the API (not the CDN). If it
@@ -112,10 +114,14 @@ function pageProbe() {
   out.heroImage = hero ? (q('img', hero)?.getAttribute('src') ?? '') : '';
   out.bodyText = document.body.innerText;
   out.showBand = !!q('[data-home-section="show-band"]');
+  out.bandAfterHero = !!hero && !!hero.nextElementSibling && hero.nextElementSibling.matches('[data-home-section="show-band"]');
   const d = q('[data-home-show-date]');
   const cta = q('a[data-hero-cta="secondary"]');
-  const vGap = d && cta ? Math.max(d.getBoundingClientRect().top - cta.getBoundingClientRect().bottom, cta.getBoundingClientRect().top - d.getBoundingClientRect().bottom, 0) : null;
-  out.homeDate = d ? { text: d.textContent.trim(), rect: rect(d), sharesWrapper: !!cta && !!cta.parentElement && cta.parentElement.contains(d) && cta.parentElement !== cta.closest('section'), gapPx: vGap } : null;
+  const dr = d?.getBoundingClientRect();
+  const cr = cta?.getBoundingClientRect();
+  const vGap = dr && cr ? Math.max(dr.top - cr.bottom, cr.top - dr.bottom, 0) : null;
+  const hGap = dr && cr ? Math.max(dr.left - cr.right, cr.left - dr.right, 0) : null;
+  out.homeDate = d ? { text: d.textContent.trim(), rect: rect(d), sharesWrapper: !!cta && !!cta.parentElement && cta.parentElement.contains(d) && cta.parentElement !== cta.closest('section'), gapPx: vGap, hGapPx: hGap } : null;
   out.homeCta = cta ? { text: cta.textContent.trim(), rect: rect(cta) } : null;
   return out;
 }
@@ -194,7 +200,7 @@ async function loadOrMeasure() {
   mkdirSync(CACHE_DIR, { recursive: true });
   const file = `${CACHE_DIR}/measure.json`;
   const key = await stateKey();
-  if (!fresh && existsSync(file)) { const c = JSON.parse(readFileSync(file, 'utf8')); if (c.key === key) return c.data; }
+  if (useCache && existsSync(file)) { const c = JSON.parse(readFileSync(file, 'utf8')); if (c.key === key) return c.data; }
   return measureAll().then((data) => { writeFileSync(file, JSON.stringify({ key, data })); return data; });
 }
 
@@ -219,7 +225,7 @@ const data = await loadOrMeasure();
 // carry the show band straight after the hero; anything else without a grid is a violation.
 function gridAbsent(r, m) {
   if (m.layout || !r.layoutOptional) return false;
-  if (!m.showBand) bad(`${r.id}: no [data-doc-layout] and no show band after the hero`);
+  if (!m.bandAfterHero) bad(`${r.id}: no [data-doc-layout] and the show band is not the element straight after the hero`);
   return true;
 }
 
@@ -373,7 +379,8 @@ switch (check) {
       if (!m.homeCta) bad(`home@${vp}: National Show CTA not found`);
       else if (m.homeCta.text !== STD.home.ctaLabel) bad(`home@${vp}: CTA label is "${m.homeCta.text}", want exactly "${STD.home.ctaLabel}"`);
       if (!m.homeDate.sharesWrapper) bad(`home@${vp}: date is not in the CTA's own wrapper`);
-      if (m.homeDate.gapPx === null || m.homeDate.gapPx > STD.home.maxGapPx) bad(`home@${vp}: date is ${m.homeDate.gapPx}px from the CTA, want at most ${STD.home.maxGapPx}`);
+      if (m.homeDate.gapPx === null || m.homeDate.gapPx > STD.home.maxGapPx) bad(`home@${vp}: date is ${m.homeDate.gapPx}px below or above the CTA, want at most ${STD.home.maxGapPx}`);
+      if (m.homeDate.hGapPx === null || m.homeDate.hGapPx > STD.home.maxGapPx) bad(`home@${vp}: date is ${m.homeDate.hGapPx}px beside the CTA, want at most ${STD.home.maxGapPx}`);
       if (m.homeDate.rect.bottom > STD.viewports[vp].height) bad(`home@${vp}: date at ${Math.round(m.homeDate.rect.bottom)}px is below the first screen`);
     }
     break;
