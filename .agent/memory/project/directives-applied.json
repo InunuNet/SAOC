@@ -72,11 +72,23 @@
       "note": "delivered in 3.8.58 (PR #85)",
       "result": "applied"
     },
+    "ATH-20261025-chain-preconditions": {
+      "at": "2026-10-25T06:02:54Z",
+      "harness_version": "3.8.70",
+      "note": "installed with 3.8.69",
+      "result": "applied"
+    },
+    "ATH-20261025-contract-gate-hooks": {
+      "at": "2026-10-25T06:02:54Z",
+      "harness_version": "3.8.70",
+      "note": "gate_hooks registry + two wrappers + CI registry tripwire; stock gate 59/59 green, prove-nonvacuous PASS; Codex PASS",
+      "result": "applied"
+    },
     "ATH-20261025-contract-local-kinds": {
-      "at": "2026-10-25T03:31:13Z",
-      "harness_version": "3.8.66",
-      "note": "pin kept: SAOC execution/contract.py also carries the dataset residue guard (scan-dataset-residue pre/post-flight, 44 refs) and the verification-triad coverage preflight (verify_triad_coverage), neither upstream; dropping the pin would lose both. Reported to Athanor for porting.",
-      "result": "pending"
+      "at": "2026-10-25T06:02:54Z",
+      "harness_version": "3.8.70",
+      "note": "superseded by gate_hooks: residue guard + triad preflight now project-owned hooks (scripts/gate-hooks/), contract.py unpinned",
+      "result": "applied"
     },
     "ATH-20261025-cross-platform-parity": {
       "at": "2026-10-25T00:45:36Z",
