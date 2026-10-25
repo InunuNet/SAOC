@@ -1,0 +1,55 @@
+schema: athanor.contract/v1
+slug: es1-submit-event
+goal: The /events/submit Members-only gate sits on the same serif-hero and gold-CTA anatomy as the authenticated form page and /contact, with the form, success panel, and POST payload untouched.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: ES-1 /events/submit LoginPrompt on the ContactForm anatomy (form already on-system)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/es1-submit-event/goldens/es1-spec.md
+  - .agent/memory/project/specs/es1-submit-event/goldens/baseline-red.md
+  - .agent/memory/project/specs/es1-submit-event/goldens/scope.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: static parity and LoginPrompt - SubmitEventForm LABEL/SUBMIT/INPUT classes mechanically equal ContactForm's, LoginPrompt is PageHero with the existing three strings and a /contact link carrying ContactForm's submit classes, no gray-* in page.tsx or SubmitEventForm.tsx, the Host society label, no Sanity or document ID wording, payload path unchanged (RED on baseline, 7 findings)
+      command: node contracts/checks/es1-submit-event/es1-static.mjs
+    - id: A2
+      description: frozen surface - SubmitEventForm.tsx (including the wave 2 F7 success panel and the hostSocietyId payload), SubmitEventPageBody.tsx, the fixture route, the fixture guard and app/api/events are byte-identical to base 823e6b09 (green on baseline, guard)
+      command: node contracts/checks/es1-submit-event/es1-frozen.mjs
+    - id: A3
+      description: the wave 2 F7 success panel assertions still pass (green on baseline, guard)
+      command: node contracts/checks/polish-wave-2-2026-10-25/f7-success-static.mjs
+    - id: A4
+      description: production build passes (public Sanity ids and local origins)
+      command: NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A5
+      description: rendered at 390@3 and 1280@1 against /contact - LoginPrompt (real /events/submit, no session) and the authenticated body (fixture /events-fixtures/submit) have a Crimson Pro 300 h1, a page hero, mono labels equal to /contact's, every control labelled, a submit or CTA computed-equal to /contact's submit at 44px, no horizontal overflow, no Sanity or document ID text, no gray-* class, and the select lists the fixture society names with id values and yields hostSocietyId=id in FormData; fixture 404 without the flag (RED on baseline, 12 findings all on the LoginPrompt surface; the fixture surface is a green guard)
+      command: node contracts/checks/es1-submit-event/es1-rendered.mjs
+      timeout_seconds: 600
+    - id: A6
+      description: scope guard - every changed file is on the allow-list in goldens/scope.json or under this spec and check tree (ES1_BASE overrides base 823e6b09)
+      command: node contracts/checks/es1-submit-event/scope.mjs
+    - id: A7
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A8
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A9
+      description: the feature doc exists and names ES-1 and the fixture route
+      command: grep -q "ES-1" docs/es1-submit-event.md && grep -q "events-fixtures" docs/es1-submit-event.md
+    - id: A10
+      description: Codex adversarial review of the ES-1 diff via execution/codex_qa.sh at @qa time. browser_deployed_check against the beta host (path /events/submit, unauthenticated LoginPrompt at 390) is declared by the orchestrator post-merge, with its manifest. gws_inbox_check N/A, this feature sends no email.
+      type: codex_qa
+      target: Review the git diff against base 823e6b09 for ES-1 (app/(marketing)/events/submit/page.tsx LoginPrompt only) for real bugs and regressions. Does the unauthenticated render still avoid any firebase-admin or Sanity call, does the page keep noindex metadata, does PageHero inside the gate change the document outline (one h1), does the CTA keep a 44px target and visible focus ring at 390, does any new string appear that is not already on the page, and is the authenticated branch byte-identical.
+      required: true
