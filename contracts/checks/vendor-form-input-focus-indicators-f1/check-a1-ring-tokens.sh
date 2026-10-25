@@ -12,7 +12,7 @@ fi
 
 BLOCK="$(awk '/const inputClass/,/;/' "$FILE")"
 
-for token in "focus-visible:ring-2" "focus-visible:ring-ink/40" "focus-visible:ring-offset-2" "focus-visible:ring-offset-ivory"; do
+for token in "focus-visible:ring-2" "focus-visible:ring-primary" "focus-visible:ring-offset-2" "focus-visible:ring-offset-ivory"; do
   if ! echo "$BLOCK" | grep -qF "$token"; then
     echo "FAIL: inputClass missing token: $token"
     exit 1
