@@ -24,6 +24,8 @@ if (!/type="radio"/.test(picker) || !/role="radiogroup"/.test(picker)) failures.
 if (!/min-h-\[44px\]/.test(picker)) failures.push('OptionPicker chips are not min-h-[44px]');
 if (!/hashchange/.test(picker) || !/replaceState/.test(picker)) failures.push('OptionPicker does not sync the selection to the URL hash (hashchange + history.replaceState)');
 if (!/hidden/.test(picker) || !/data-option=/.test(picker)) failures.push('OptionPicker does not render every panel with data-option and hide the unselected ones');
+if (!/peer-checked:font-semibold|peer-checked:font-bold/.test(picker) || !/peer-checked:ring-/.test(picker)) failures.push('the selected chip must be visible without colour alone: peer-checked:font-semibold (or bold) plus a peer-checked:ring-* (NOS Design ruling)');
+if (/tabIndex=\{[^}]*[1-9]/.test(picker)) failures.push('OptionPicker sets a positive tabIndex (focus order must follow the DOM: radios, preview, downloads)');
 if (/backgroundColor|#[0-9a-fA-F]{6}\b|\bhex\b/.test(picker)) failures.push('OptionPicker carries a colour or hex (swatches are not supplied for these options; text only)');
 if (/<legend\b(?![^>]*sr-only)/.test(picker)) failures.push('OptionPicker legend must be visually hidden (sr-only): the visible words are the section heading');
 

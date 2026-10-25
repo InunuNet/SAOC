@@ -12,6 +12,7 @@ features:
 goldens:
   - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/README.md
   - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/f3-checkout-layout.md
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/nos-design-rulings-2026-10-25.md
   - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f2.json
   - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f3.json
   - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f4.json
@@ -23,10 +24,10 @@ assertions:
   phase: 4
   checks:
     - id: A1
-      description: "the .nk-crumbs a rule is inline-flex min-height 44px and the ticket body is a [data-nos-wrap] container with a left 560px column (RED on baseline, 7 findings). Triad coverage recorded here (the contract classifies exempt, as wave 1 F7): Codex QA via execution/codex_qa.sh at @qa time; browser layer is the orchestrator post-deploy check on the beta hosts; gws inbox layer N/A, this feature sends no email."
+      description: "the .nk-crumbs a rule is inline-flex min-height 44px and the ticket body is a [data-nos-wrap] container with a left column that is 560px from 1024 up and full width below (RED on baseline, 7 findings). Triad coverage recorded here (the contract classifies exempt, as wave 1 F7): Codex QA via execution/codex_qa.sh at @qa time; browser layer is the orchestrator post-deploy check on the beta hosts; gws inbox layer N/A, this feature sends no email."
       command: node contracts/checks/polish-wave-2-2026-10-25/f3-layout-static.mjs
     - id: A2
-      description: at 390@3, 768, 1280 and 1440@2 on a real /tickets/<slug> page the crumb links are at least 44px tall with 15px and no underline unchanged, and the form column starts at the hero h1's left edge within 1px (RED on baseline)
+      description: at 390@3, 768, 1280, 1440@2 and 2056 on a real /tickets/<slug> page the crumb links are at least 44px tall with 15px and no underline unchanged, the form column starts at the hero h1's left edge within 1px (gate at 1280 and 2056), full width inside the gutter below 1024 and at most 560px above (RED on baseline)
       command: node contracts/checks/polish-wave-2-2026-10-25/f3-layout-rendered.mjs
       timeout_seconds: 900
     - id: A3

@@ -12,6 +12,7 @@ features:
 goldens:
   - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/README.md
   - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/f8-media-kit-pickers.md
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/nos-design-rulings-2026-10-25.md
   - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f2.json
   - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f3.json
   - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f4.json
@@ -23,10 +24,10 @@ assertions:
   phase: 4
   checks:
     - id: A1
-      description: "OptionPicker, the extracted MediaKitPageBody, the unchanged gate in page.tsx and the gated fixture route are in place (RED on baseline, 18 findings). Triad coverage recorded here (the contract classifies exempt, as wave 1 F7): Codex QA via execution/codex_qa.sh at @qa time; browser layer is the orchestrator post-deploy check on the beta hosts; gws inbox layer N/A, this feature sends no email."
+      description: "OptionPicker, the extracted MediaKitPageBody, the unchanged gate in page.tsx and the gated fixture route are in place (RED on baseline, 19 findings). Triad coverage recorded here (the contract classifies exempt, as wave 1 F7): Codex QA via execution/codex_qa.sh at @qa time; browser layer is the orchestrator post-deploy check on the beta hosts; gws inbox layer N/A, this feature sends no email."
       command: node contracts/checks/polish-wave-2-2026-10-25/f8-kit-static.mjs
     - id: A2
-      description: on the flag-gated fixture at 390@3, 768, 1280 and 1440@2 each section has 8 labelled radios at least 44px, one default, each choice shows 3 cards (4 for Greyscale) or 2 plus the emblem, the hash round-trips, every manifest download is still in the DOM, and the page is under 9000px at 390 (RED on baseline - the fixture does not exist)
+      description: on the flag-gated fixture at 390@3, 768, 1280 and 1440@2 each section has 8 labelled radios at least 44px, one default, each choice shows 3 cards (4 for Greyscale) or 2 plus the emblem, previews and download buttons follow the selection and name file and format, the selected chip differs without colour (weight and ring), Tab order is radios then downloads, the radiogroup is named, the hash round-trips, every manifest download is still in the DOM, and the page is under 9000px at 390 (RED on baseline - the fixture does not exist)
       command: node contracts/checks/polish-wave-2-2026-10-25/f8-kit-rendered.mjs
       timeout_seconds: 900
     - id: A3

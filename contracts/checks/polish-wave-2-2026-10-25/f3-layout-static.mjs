@@ -2,7 +2,8 @@
 //   CL-1 the breadcrumb links ("National Show", "Tickets") are 44px targets: `.nk-crumbs a` is inline-flex with
 //        min-height 44px, replacing the 10px block padding, with its text size, colour and underline untouched
 //   CL-2 one container axis: the ticket body sits in the shared NOS container ([data-nos-wrap], the axis the hero
-//        copy uses) with the 560px form column left on that axis, not `mx-auto max-w-[560px] px-8`
+//        copy uses) with the form column left on that axis, 560px from 1024px up and full width inside the gutter below
+//        it (NOS Design ruling 2026-10-25), not `mx-auto max-w-[560px] px-8`
 // Not in this feature (see goldens/f3-checkout-layout.md): Buy at quantity 0 stays enabled by design, and the total
 // already has aria-live="polite".
 // Run as: node contracts/checks/polish-wave-2-2026-10-25/f3-layout-static.mjs   (POLISH_ROOT optional)
@@ -22,5 +23,5 @@ const page = read('app/(nos)/tickets/[slug]/page.tsx');
 if (/mx-auto max-w-\[560px\] px-8/.test(page)) failures.push('the ticket body still uses `mx-auto max-w-[560px] px-8` (its own centred axis)');
 const wrap = page.match(/<div\b[^>]*\bdata-nos-wrap\b[^>]*data-ticket-body[^>]*>|<div\b[^>]*\bdata-ticket-body\b[^>]*data-nos-wrap[^>]*>/);
 if (!wrap) failures.push('no <div data-nos-wrap data-ticket-body> container in the ticket page');
-if (!/<div className="max-w-\[560px\]">/.test(page)) failures.push('the form column is not an inner <div className="max-w-[560px]"> (left-aligned on the axis)');
+if (!/<div className="lg:max-w-\[560px\]">/.test(page)) failures.push('the form column is not an inner <div className="lg:max-w-[560px]"> (left on the axis, 560px from 1024px, full width below)');
 finish('f3-layout-static', failures);
