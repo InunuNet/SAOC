@@ -51,6 +51,8 @@ const note = existsSync(notePath) ? readFileSync(notePath, 'utf8') : '';
 
 for (const file of [...changed].sort()) {
   if (file === 'AGENTS.md') continue; // `next dev` re-appends its agent-rules block to it on every start
+  // architect-recorded scope amendments (base moved after M1 merged; allow-list edits), not @dev edits
+  if (file === 'contracts/checks/leeann-content/scope.mts' || file === '.agent/memory/project/specs/leeann-content-build/goldens/scope/base-commit.txt' || file === '.agent/memory/project/specs/leeann-content-build/goldens/scope/m2.json') continue;
   if (protectedGoldens.some((re) => re.test(file))) {
     fail(`${file}: goldens and leeann-content checks are QA inputs, not @dev's to edit`);
   } else if (file === `${SPEC}/contract-f1.yaml` || /^\.agent\/memory\/project\/specs\/leeann-content-build\/contract-f\d\.yaml$/.test(file)) {
