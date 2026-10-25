@@ -167,6 +167,12 @@ export async function decideBasicAuth(input: AuthDecisionInput): Promise<boolean
 const SITE_HEADER = 'x-site';
 const PERMANENT_REDIRECT = 308; // 308, not 301: the method and body survive the hop.
 
+// South African exhibitors was merged into Exhibitors and vendors (mission leeann-content-build, F4).
+// Both public spellings of the retired page go straight to the merged page on the NOS origin, from
+// either host, so no one lands on a 404 and no chain of hops forms.
+const RETIRED_SA_EXHIBITORS_PATHS = new Set<string>(['/sa-exhibitors', '/national-show/sa-exhibitors']);
+const MERGED_VENDORS_PATH = '/vendors';
+
 // Host-neutral: served identically on every host, never redirected or rewritten. /admin and
 // /api/admin share one sign-in; /api carries the payment webhooks; /og and /studio are tooling.
 const NEUTRAL_PREFIXES = ['/admin', '/api', '/studio', '/og', '/_next'];
@@ -240,6 +246,7 @@ function rewriteTo(request: NextRequest, pathname: string): Response {
 function routeNosHost(request: NextRequest): Response {
   const { pathname, search } = request.nextUrl;
 
+  if (RETIRED_SA_EXHIBITORS_PATHS.has(pathname)) return redirectTo(nosUrl(MERGED_VENDORS_PATH));
   if (SAOC_ONLY_EXACT.has(pathname) || isUnderAny(pathname, SAOC_ONLY_PREFIXES)) {
     return redirectTo(saocUrl(`${pathname}${search}`));
   }
@@ -258,6 +265,7 @@ function routeNosHost(request: NextRequest): Response {
 
 function routeSaocHost(request: NextRequest): Response {
   const { pathname, search } = request.nextUrl;
+  if (RETIRED_SA_EXHIBITORS_PATHS.has(pathname)) return redirectTo(nosUrl(MERGED_VENDORS_PATH));
   if (isUnderAny(pathname, SHOW_PREFIXES)) return redirectTo(nosUrl(`${pathname}${search}`));
   return NextResponse.next();
 }

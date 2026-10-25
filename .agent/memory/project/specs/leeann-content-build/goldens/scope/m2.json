@@ -28,6 +28,7 @@
     "proxy.ts",
     "content/plan-your-visit/**",
     "content/national-show-routes.json",
+    "scripts/generate-nos-route-manifest.ts",
     "sanity/schemas/documents/showFaq.ts",
     "sanity/queries.ts",
     "types/index.ts",

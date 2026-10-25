@@ -10,9 +10,10 @@ import { Button } from '@/components/nos/Button';
 import { NosHero } from '@/components/nos/NosHero';
 import { NosSection } from '@/components/nos/NosSection';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { nationalShowQuery, showFaqsQuery, showVisitorInfoQuery } from '@/sanity/queries';
+import { showFaqsQuery, showVisitorInfoQuery } from '@/sanity/queries';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
-import { loadShowFacts, type ShowFactsSource } from '@/lib/data/show-facts';
+import { FAQ_SECTIONS } from '@/lib/data/faq-sections';
+import { loadShowFacts } from '@/lib/data/show-facts';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import type { ShowFaq, ShowVisitorInfo } from '@/types';
@@ -20,14 +21,16 @@ import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { saocUrl } from '@/lib/site-hosts';
 
-// The order ShowFaqList lays its category sections out in; the FAQPage node follows it so the
-// markup reads in the order the page does.
-const FAQ_CATEGORY_ORDER = ['getting-there', 'tickets', 'accessibility', 'plant-sales', 'general'];
-
+// The order ShowFaqList lays its sections out in (her order, FAQ_SECTIONS); the FAQPage node follows
+// it so the markup reads in the order the page does. An unknown category sorts with the first section,
+// where ShowFaqList draws it.
 function categoryRank(faq: ShowFaq): number {
-  const rank = FAQ_CATEGORY_ORDER.indexOf(faq.category ?? '');
-  return rank === -1 ? FAQ_CATEGORY_ORDER.indexOf('general') : rank;
+  const rank = FAQ_SECTIONS.findIndex((section) => section.id === faq.category);
+  return rank === -1 ? 0 : rank;
 }
+
+// Her Q10, "How much do tickets cost?": the one question the ticket-price list follows.
+const PRICES_FAQ_ID = 'showFaq-q10';
 
 // Bound CDN staleness to 60s, matching every other CMS-backed route on the site.
 export const revalidate = 60;
@@ -42,27 +45,25 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default async function ShowFaqPage() {
-  const [info, faqs, facts, show, loaded] = await Promise.all([
+  const [info, faqs, facts, loaded] = await Promise.all([
     sanityFetch<ShowVisitorInfo>({
       query: showVisitorInfoQuery,
       tags: ['showVisitorInfo', 'sanity'],
     }),
     sanityFetch<ShowFaq[]>({ query: showFaqsQuery, tags: ['showFaq', 'sanity'] }),
     loadShowFacts(),
-    sanityFetch<ShowFactsSource>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
     loadTicketCardViewModels(),
   ]);
 
   // R77 #2: a public build shows only answered questions; with none left the page holds.
   const hideUnanswered = withholdPlaceholderProse();
-  // r57: two rows are answered from facts the site already publishes, so they cannot disagree with
-  // the page that publishes them. The cost row reads the tickets hub's own loader and labels; the
-  // venue row reads the show's venue.name (the fact strip's source), only while the committee has
-  // confirmed the venue. Either falls back to its Sanity answer when its source has nothing.
+  // r57: one row is answered from a fact the site already publishes, so it cannot disagree with the
+  // page that publishes it: the cost row (her Q10) reads the tickets hub's own loader and labels, and
+  // follows her answer rather than replacing it. Her venue answer (Q18) is shown as she wrote it.
   const wired: Record<string, WiredFaq> = {};
   const priceLabels = admissionPriceLabels(loaded.cards);
   if (priceLabels.length > 0) {
-    wired['showFaq-tickets-1'] = {
+    wired[PRICES_FAQ_ID] = {
       kind: 'prices',
       text: priceLabels.join('; '),
       replaces: false,
@@ -74,14 +75,6 @@ export default async function ShowFaqPage() {
           </Button>
         </>
       ),
-    };
-  }
-  if (show?.venue?.name && info?.confirmations?.venue === 'confirmed') {
-    wired['showFaq-getting-there-3'] = {
-      kind: 'venue',
-      text: show.venue.name,
-      replaces: true,
-      body: <p>{show.venue.name}</p>,
     };
   }
 
