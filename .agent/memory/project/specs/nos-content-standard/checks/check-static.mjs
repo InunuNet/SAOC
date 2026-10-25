@@ -287,5 +287,23 @@ check('added CSS has no box-shadow with a zero blur', !added.some((l) => /box-sh
 check('added CSS has no border-radius >= 999 except on the hero eyebrow selector', !added.some((l) => /border-radius\s*:\s*(999|9999|50%|100vw|50vw)/.test(l) && !/eyebrow/.test(l)));
 check('added CSS has no dashed 2px rail', !added.some((l) => /border[a-z-]*\s*:\s*[2-9]px\s+dashed/.test(l)));
 
+// RB-1 (NOS Design, comms.md "HR-1 hero ramp + RB-1 button radius", 2026-10-26): R17 wins, every NOS Button is 10px; exactly ONE --radius-button definition in the NOS CSS, at 10px.
+{
+  const cssFiles = (d) => (existsSync(d) ? readdirSync(d, { recursive: true }).filter((f) => String(f).endsWith('.css')).map((f) => `${d}/${f}`) : []);
+  const nosCss = [...cssFiles('app/(nos)'), ...cssFiles('components/nos'), ...cssFiles('components/nos-chrome')];
+  const defs = nosCss.flatMap((f) => read(f).split('\n').map((l, i) => ({ f, i: i + 1, l })).filter((x) => /--radius-button\s*:/.test(x.l)));
+  check(`RB-1: exactly one --radius-button definition in the NOS CSS (${defs.map((d) => `${d.f}:${d.i}`).join(', ') || 'none'})`, defs.length === 1);
+  check('RB-1: that definition is 10px', defs.length === 1 && /--radius-button\s*:\s*10px\s*;/.test(defs[0].l), defs.map((d) => d.l.trim()).join(' | '));
+  check('RB-1: components/nos/Button.tsx cites R17 / 10px, not R2 2px', !/R2[^\n]*2px|2px[^\n]*R2/.test(read('components/nos/Button.tsx')));
+}
+// HR-1 (same message): on every DS-1 hero at >= 1024 the scrim ramp is exactly the value below; no plate, no crop change. The computed value is gated in gate-standard.
+{
+  const norm = (t) => t.replace(/\s+/g, '');
+  const RAMP = norm('linear-gradient(90deg, rgba(11, 10, 20, 0.92) 0%, rgba(11, 10, 20, 0.88) 38%, rgba(11, 10, 20, 0.45) 56%, rgba(11, 10, 20, 0.12) 76%, rgba(11, 10, 20, 0.04) 100%)');
+  const css = ['app/(nos)', 'components/nos'].flatMap((d) => (existsSync(d) ? readdirSync(d, { recursive: true }).filter((f) => String(f).endsWith('.css')).map((f) => read(`${d}/${f}`)) : [])).map(norm).join('\n');
+  check('HR-1: the NOS hero CSS carries the exact HR-1 ramp', css.includes(RAMP));
+  check('HR-1: the old ramp stops (0.86 at 640px+48px, 0.42 at 66%, 0.18 at 82%) are gone', !/rgba\(11,10,20,0\.86\)calc\(min\(640px,50%\)\+48px\)/.test(css) && !/rgba\(11,10,20,0\.42\)66%/.test(css));
+}
+
 if (fails.length) { console.error(`nos-content-standard static FAILED:\n- ${fails.join('\n- ')}`); process.exit(1); }
 console.log('nos-content-standard static pass');

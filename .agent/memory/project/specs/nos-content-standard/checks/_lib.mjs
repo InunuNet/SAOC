@@ -4,7 +4,8 @@ import { execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import net from 'node:net';
 import { createRequire } from 'node:module';
-import { existsSync, mkdirSync, openSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
 
 const SPEC = '.agent/memory/project/specs/nos-content-standard';
 export const STD = JSON.parse(readFileSync(`${SPEC}/goldens/standard.json`, 'utf8'));
@@ -21,6 +22,24 @@ export const AUTH_PASS = 'sandbox-pass';
 export const AUTH = `Basic ${Buffer.from(`${AUTH_USER}:${AUTH_PASS}`).toString('base64')}`;
 const LOG_DIR = '.tmp/sandbox/nos-content-standard-gate';
 mkdirSync(LOG_DIR, { recursive: true });
+
+// Sanity fixture (mission rev 43B): the Sanity API CDN quota is shared and was exhausted by gate runs, so gates read GROQ responses from a captured
+// fixture (fixtures/sanity/<hash>.json) through lib/sanity-fixture.ts and make zero Sanity API requests. NOS_STD_FIXTURE: unset or "replay" = replay
+// (default), "record" = capture through the API host (never the CDN), "live" = no fixture (only for a deliberate live comparison; A15 then fails).
+export const FIXTURE_MODE = process.env.NOS_STD_FIXTURE ?? 'replay';
+export const FIXTURE_DIR = path.resolve(`${SPEC}/fixtures/sanity`);
+const BLOCK_NET = path.resolve(`${SPEC}/checks/block-sanity-net.cjs`);
+export const fixtureLogDir = (port) => path.resolve(`${LOG_DIR}/fixture-logs-${port}`);
+/** The environment that turns the fixture on for a child process (next start, next build). */
+export function fixtureEnv(port) {
+  if (FIXTURE_MODE === 'live') return {};
+  const logdir = fixtureLogDir(port);
+  mkdirSync(logdir, { recursive: true });
+  for (const f of ['_started.log', '_hits.log', '_misses.log', '_requests.log', '_net.log', '_assets.log', '_browser-net.log', '_proof.json']) writeFileSync(`${logdir}/${f}`, '');
+  const nodeOptions = `${process.env.NODE_OPTIONS ?? ''} --require ${BLOCK_NET}`.trim();
+  return { SANITY_FIXTURE_DIR: FIXTURE_DIR, SANITY_FIXTURE_MODE: FIXTURE_MODE === 'record' ? 'record' : 'replay', SANITY_FIXTURE_LOGDIR: logdir, NODE_OPTIONS: nodeOptions, ...(FIXTURE_MODE === 'record' ? { SANITY_NET_ALLOW: 'api', SANITY_FIXTURE_RECORD_CONFIRM: '1' } : {}) };
+}
+let activeFixtureLog = null;
 
 export const normalise = (t) => t.replace(/[ \s]+/g, ' ').trim();
 
@@ -43,6 +62,9 @@ export function startServer(offset, { preview = true } = {}) {
     NEXT_PUBLIC_NOS_SITE_URL: `http://nos.localhost:${port}`, NEXT_PUBLIC_SAOC_SITE_URL: `http://saoc.localhost:${port}`,
   };
   delete env.BETA_PASSWORD_WALL_OFF;
+  delete env.K_SERVICE; // the fixture is inert on the hosted runtime (K_SERVICE); the gate is never hosted
+  Object.assign(env, fixtureEnv(port));
+  if (FIXTURE_MODE !== 'live') activeFixtureLog = fixtureLogDir(port);
   // A retired or redirected route builds its target from a site-URL variable; every NEXT_PUBLIC_*URL the process or the dotenv files define must
   // name the gate's own origin, or the redirect leaves the gate server (ERR_CONNECTION_REFUSED). SAOC-named variables get the saoc origin.
   const urlKeys = new Set(Object.keys(process.env).filter((k) => /^NEXT_PUBLIC_.*URL$/.test(k)));
@@ -70,8 +92,28 @@ export async function launchChromium() {
   return chromium.launch();
 }
 
-export function newContext(browser, vp, extra = {}) {
-  return browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.dsf, httpCredentials: { username: AUTH_USER, password: AUTH_PASS }, ...extra });
+export async function newContext(browser, vp, extra = {}) {
+  const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.dsf, httpCredentials: { username: AUTH_USER, password: AUTH_PASS }, ...extra });
+  // Browser-side guard: the page must never call the Sanity GROQ API (apicdn / api hosts) while the fixture is in use; cdn.sanity.io images are a separate quota and pass.
+  if (activeFixtureLog) await ctx.route(/^https?:\/\/([^/]+\.)?(apicdn|api)\.sanity\.io\//, (route) => { appendFileSync(`${activeFixtureLog}/_browser-net.log`, `${new Date().toISOString()} ${route.request().url().slice(0, 160)}\n`); return route.abort(); });
+  return ctx;
+}
+
+/** Written just before a gate kills its server: the proof that this gate ran with the switch and saw zero Sanity API traffic (A15 reads it). */
+export function fixtureProof(server, c) {
+  if (FIXTURE_MODE === 'live') { c.check('the gate server ran with the Sanity fixture (NOS_STD_FIXTURE=live was set)', false); return; }
+  const dir = fixtureLogDir(server.port);
+  const lines = (f) => (existsSync(`${dir}/${f}`) ? readFileSync(`${dir}/${f}`, 'utf8').split('\n').filter(Boolean) : []);
+  const started = lines('_started.log'); const hits = lines('_hits.log'); const misses = lines('_misses.log'); const net = lines('_net.log'); const bnet = lines('_browser-net.log');
+  const mode = FIXTURE_MODE === 'record' ? 'record' : 'replay';
+  c.check(`the gate server saw SANITY_FIXTURE_DIR (_started.log has mode=${mode}; ${started.length} line(s))`, started.some((l) => l.includes(`mode=${mode}`) && l.includes(FIXTURE_DIR)));
+  if (mode === 'replay') {
+    c.check(`the server served reads from the fixture (${hits.length} hits)`, hits.length > 0);
+    c.check(`no fixture miss (${misses.length}): ${misses.slice(0, 3).join(' | ')}`, misses.length === 0);
+  }
+  c.check(`zero Sanity API requests from the server process (${net.length} blocked)`, net.length === 0);
+  c.check(`zero Sanity API requests from the browser (${bnet.length})`, bnet.length === 0);
+  writeFileSync(`${dir}/_proof.json`, `${JSON.stringify({ ok: started.length > 0 && net.length === 0 && bnet.length === 0 && (mode === 'record' || (hits.length > 0 && misses.length === 0)), mode, started: started.length > 0, hits: hits.length, misses: misses.length, missSample: misses.slice(0, 3), net: net.length, browserNet: bnet.length, port: server.port, at: new Date().toISOString() })}\n`);
 }
 
 export function collector(label) {
@@ -97,7 +139,7 @@ export async function withServer(offset, label, body, opts) {
   if (busy) { c.fail(new Error(`port ${port} is already in use (stale next start?); stop that PID or set NOS_STD_PORT`)); console.error(`port ${port} is already in use`); c.finish(null); }
   const server = startServer(offset, opts);
   server.proc.on('exit', (code, signal) => { if (!c.done) { c.fail(new Error(`next start exited early (code ${code}, signal ${signal}); see ${LOG_DIR}/next-start-${server.port}.log`)); console.error(`next start exited early (code ${code}, signal ${signal})`); } });
-  try { await waitReady(server); await body(server, c); } catch (e) { c.fail(e); console.error(e); }
+  try { await waitReady(server); await body(server, c); fixtureProof(server, c); } catch (e) { c.fail(e); console.error(e); }
   c.finish(server);
 }
 

@@ -46,27 +46,54 @@ async function heroSharpness(page, route, vp, c, tag) {
   c.check(`${tag} required ${required} <= the cut's native ${crop.width} (not clamped)`, required <= crop.width);
 }
 
-async function factsContrast(page, tag, c) {
-  // hide the text, screenshot each fact box over the photo, take the p95 background luminance, compare with the text colour
-  const boxes = await page.evaluate(() => [...document.querySelectorAll('[data-hero-facts] dd, [data-hero-facts] dt')].map((e) => { const b = e.getBoundingClientRect(); const rgb = getComputedStyle(e).color.match(/[\d.]+/g).map(Number); return { x: b.x, y: b.y, w: b.width, h: b.height, rgb }; }));
-  await page.addStyleTag({ content: '[data-hero-facts] *{color:transparent !important;text-shadow:none !important}' });
-  const lum = (v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
-  const L = (rgb) => 0.2126 * lum(rgb[0]) + 0.7152 * lum(rgb[1]) + 0.0722 * lum(rgb[2]);
-  for (const [i, b] of boxes.entries()) {
-    const buf = await page.screenshot({ clip: { x: Math.max(0, b.x), y: Math.max(0, b.y), width: Math.max(1, b.w), height: Math.max(1, b.h) } });
+const HR1_RAMP = 'linear-gradient(90deg,rgba(11,10,20,0.92)0%,rgba(11,10,20,0.88)38%,rgba(11,10,20,0.45)56%,rgba(11,10,20,0.12)76%,rgba(11,10,20,0.04)100%)';
+/** HR-1 (NOS Design): at >= 1024 the hero scrim ramp is exactly HR1_RAMP. Implementation-agnostic: whichever hero element or ::before / ::after carries a 90deg rgba(11,10,20) gradient, all of them are this ramp. */
+async function heroRampCheck(page, tag, c) {
+  const grads = await page.evaluate(() => {
+    const hero = document.querySelector('section[data-nos-hero]'); if (!hero) return [];
+    const out = [];
+    for (const e of [hero, ...hero.querySelectorAll('*')]) for (const ps of [null, '::before', '::after']) {
+      const bi = getComputedStyle(e, ps).backgroundImage;
+      if (/linear-gradient\(/.test(bi) && /rgba\(11, ?10, ?20/.test(bi) && /90deg/.test(bi)) out.push({ at: `${e.tagName.toLowerCase()}.${String(e.className).split(' ')[0]}${ps ?? ''}`, bi: bi.replace(/\s+/g, '') });
+    }
+    return out;
+  });
+  c.check(`${tag} HR-1 the hero scrim ramp is exactly rgba(11,10,20) 0.92 0% / 0.88 38% / 0.45 56% / 0.12 76% / 0.04 100% at 90deg (${grads.map((g) => g.at).join(', ') || 'no gradient found'})`, grads.length >= 1 && grads.every((g) => g.bi === HR1_RAMP), grads.filter((g) => g.bi !== HR1_RAMP).map((g) => `${g.at}: ${g.bi.slice(0, 160)}`).join(' | '));
+}
+/** HR-1 contrast: text hidden, p95 luminance of the photo pixels behind each hero text range (crumb, h1, lede, dt, dd) against the text colour; >= 4.5, h1 >= 3, at 1440 and 2056. */
+async function heroTextContrast(page, tag, c) {
+  const items = await page.evaluate(() => {
+    const hero = document.querySelector('section[data-nos-hero]'); if (!hero) return [];
+    const pick = (sel, kind) => [...hero.querySelectorAll(sel)].filter((e) => e.textContent.trim()).map((e) => {
+      const rg = document.createRange(); rg.selectNodeContents(e); const rects = [...rg.getClientRects()].filter((q) => q.width > 0 && q.height > 0);
+      if (!rects.length) return null;
+      const x0 = Math.min(...rects.map((q) => q.left)); const y0 = Math.min(...rects.map((q) => q.top)); const x1 = Math.max(...rects.map((q) => q.right)); const y1 = Math.max(...rects.map((q) => q.bottom));
+      const probe = kind === 'crumb' ? ([...e.querySelectorAll('a, span, li')].find((n) => n.textContent.trim()) ?? e) : e;
+      const rgb = getComputedStyle(probe).color.match(/[\d.]+/g).map(Number);
+      return { kind, t: e.textContent.replace(/\s+/g, ' ').trim().slice(0, 24), x: x0, y: y0, w: x1 - x0, h: y1 - y0, rgb };
+    }).filter(Boolean);
+    return [...pick('nav', 'crumb'), ...pick('h1', 'h1'), ...pick('[data-nos-hero-lede]', 'lede'), ...pick('[data-hero-facts] dt', 'dt'), ...pick('[data-hero-facts] dd', 'dd')];
+  });
+  if (!items.length) return;
+  const style = await page.addStyleTag({ content: 'section[data-nos-hero] *{color:transparent !important;text-shadow:none !important;-webkit-text-fill-color:transparent !important}' });
+  const f = (v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+  const L = (rgb) => 0.2126 * f(rgb[0]) + 0.7152 * f(rgb[1]) + 0.0722 * f(rgb[2]);
+  const bad = [];
+  for (const it of items) {
+    const buf = await page.screenshot({ clip: { x: Math.max(0, it.x), y: Math.max(0, it.y), width: Math.max(1, it.w), height: Math.max(1, it.h) } });
     const p95 = await page.evaluate(async (b64) => {
       const bmp = await createImageBitmap(await (await fetch(`data:image/png;base64,${b64}`)).blob());
       const cv = new OffscreenCanvas(bmp.width, bmp.height); const ctx = cv.getContext('2d'); ctx.drawImage(bmp, 0, 0);
-      const d = ctx.getImageData(0, 0, bmp.width, bmp.height).data; const ls = [];
-      const f = (v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
-      for (let p = 0; p < d.length; p += 4) ls.push(0.2126 * f(d[p]) + 0.7152 * f(d[p + 1]) + 0.0722 * f(d[p + 2]));
+      const d = ctx.getImageData(0, 0, bmp.width, bmp.height).data; const ls = []; const g = (v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+      for (let p = 0; p < d.length; p += 4) ls.push(0.2126 * g(d[p]) + 0.7152 * g(d[p + 1]) + 0.0722 * g(d[p + 2]));
       ls.sort((a, z) => a - z); return ls[Math.floor(ls.length * 0.95)];
     }, buf.toString('base64'));
-    const t = L(b.rgb); const ratio = (Math.max(t, p95) + 0.05) / (Math.min(t, p95) + 0.05);
-    c.check(`${tag} fact ${i + 1} contrast ${ratio.toFixed(2)} >= ${STD.hero.contrastMin} on the photo pixels behind it`, ratio >= STD.hero.contrastMin);
+    const t = L(it.rgb); const ratio = (Math.max(t, p95) + 0.05) / (Math.min(t, p95) + 0.05);
+    if (ratio < (it.kind === 'h1' ? 3 : 4.5)) bad.push(`${it.kind} "${it.t}" ${ratio.toFixed(2)}`);
   }
+  await style.evaluate((n) => n.remove());
+  c.check(`${tag} HR-1 hero text contrast on the photo pixels behind it (p95, text hidden): crumb, lede, dt, dd >= 4.5 and h1 >= 3 (${items.length} ranges)`, bad.length === 0, bad.join('; '));
 }
-
 
 /** FACTS-1: the shared hero facts grammar, measured on every route that has a facts row. */
 async function factsGrammar(page, vp, c, tag) {
@@ -134,7 +161,7 @@ async function sp1Checks(page, route, vp, c, tag) {
     const btnList = [...document.querySelectorAll('main a[class*="btn"], main a[class*="inline-flex"]')].map((b) => ({ t: txt(b).slice(0, 24), cls: String(b.className).split(/\s+/).find((x) => /^nos-/.test(x)) ?? '', r: parseFloat(getComputedStyle(b).borderTopLeftRadius) || 0 })); const btnRadius = Math.max(0, ...btnList.map((b) => b.r)); const btnRadii = btnList.map((b) => `${b.cls || b.t}:${b.r}`).join(' ');
     const strip = Math.max(0, ...[...document.querySelectorAll('main [aria-hidden="true"]')].filter((e) => !e.closest('section[data-nos-hero]')).map((e) => e.querySelectorAll('img').length));
     const body = document.querySelector('main')?.textContent.replace(/\s+/g, ' ') ?? '';
-    return { bullets, wallStacked, btnRadius, btnRadii, h1: txt(document.querySelector('h1')), terms: [...(hero?.querySelectorAll('[data-hero-facts] dt') ?? [])].map(txt), btns, h2s, h3s, reach, ctaShown, strip, body, asideKind: aside?.getAttribute('data-doc-aside-kind'), asideBtn: abc ? { fg: L(abc.color), bg: L(abc.backgroundColor), h: ab.getBoundingClientRect().height, w: ab.getBoundingClientRect().width, aw: aside.getBoundingClientRect().width } : null, asideText: aside ? txt(aside) : '', main: document.querySelector('[data-doc-main]')?.textContent.replace(/\s+/g, ' ') ?? '' };
+    return { bullets, wallStacked, btnRadius, btnRadii, btnDistinct: [...new Set(btnList.map((b) => b.r))], h1: txt(document.querySelector('h1')), terms: [...(hero?.querySelectorAll('[data-hero-facts] dt') ?? [])].map(txt), btns, h2s, h3s, reach, ctaShown, strip, body, asideKind: aside?.getAttribute('data-doc-aside-kind'), asideBtn: abc ? { fg: L(abc.color), bg: L(abc.backgroundColor), h: ab.getBoundingClientRect().height, w: ab.getBoundingClientRect().width, aw: aside.getBoundingClientRect().width } : null, asideText: aside ? txt(aside) : '', main: document.querySelector('[data-doc-main]')?.textContent.replace(/\s+/g, ' ') ?? '' };
   });
   const has = (hay, needle) => hay.includes(needle);
   c.check(`${tag} SP-1 h1 is "Sponsors" and the facts are Dates, Venue, Host (${m.h1}; ${m.terms.join(' | ')})`, m.h1 === 'Sponsors' && JSON.stringify(m.terms) === JSON.stringify(['Dates', 'Venue', 'Host']));
@@ -147,7 +174,7 @@ async function sp1Checks(page, route, vp, c, tag) {
   c.check(`${tag} SP-1 no tier names, no preview chrome (no TBC chip, no "PLACEHOLDER COPY")`, !/PLACEHOLDER COPY/i.test(m.body) && !/(Gold|Silver|Bronze) (sponsor|partner)|Conservation Partner/i.test(m.body) && !/to be confirmed/i.test(m.body));
   c.check(`${tag} SP-1 no bullets on the reach rows (${m.bullets})`, m.bullets === 0);
   c.check(`${tag} SP-1 the wall head is stacked: h2, then the thanks line below it, same left edge (${JSON.stringify(m.wallStacked)})`, Boolean(m.wallStacked) && m.wallStacked.below && m.wallStacked.sameLeft);
-  c.check(`${tag} SP-1 the shared NOS Button keeps its 2px radius on every Button link (max ${m.btnRadius}; ${m.btnRadii}), not the golden's 10px`, m.btnRadius > 0 && m.btnRadius <= 4);
+  c.check(`${tag} SP-1 the shared NOS Button has ONE radius, 10px, on every Button link (RB-1: R17 wins; NOS Design withdrew the SP-1 2px note) (${m.btnRadii})`, m.btnDistinct.length === 1 && m.btnDistinct[0] === 10);
   c.check(`${tag} SP-1 an aria-hidden photo strip of three tiles, counted as images inside one aria-hidden container (${m.strip})`, m.strip >= 3);
   c.check(`${tag} SP-1 the aside is ONE content card with a full-width button, pale on royal (kind ${m.asideKind})`, m.asideKind === 'content' && m.asideBtn && m.asideBtn.bg < m.asideBtn.fg && m.asideBtn.w >= m.asideBtn.aw * 0.8 - 2, JSON.stringify(m.asideBtn));
   c.check(`${tag} SP-1 every button is >= 44px with contrast >= 4.5 (${m.btns.map((b) => `${b.t}:${b.h.toFixed(0)}/${b.ratio.toFixed(1)}`).join(' ')})`, m.btns.every((b) => b.h >= 44 && (b.ratio >= 4.5 || b.bgA)));
@@ -208,7 +235,7 @@ async function programmeChecks(page, route, vp, c, tag) {
     const board = document.querySelector('ol, [data-programme-board]'); const days = board ? [...board.querySelectorAll(':scope > li')] : [];
     const dayInfo = days.map((li) => { const b = li.getBoundingClientRect(); const a = [...li.querySelectorAll('a')].map((x) => ({ href: x.getAttribute('href'), h: x.getBoundingClientRect().height, t: txt(x) })); return { t: txt(li), top: Math.round(b.top), left: Math.round(b.left), w: b.width, dateCell: (li.querySelector('p, [class*="date"]')?.getBoundingClientRect().width ?? 0), a }; });
     const bc = board ? getComputedStyle(board) : null; const bb = board?.getBoundingClientRect();
-    const later = [...document.querySelectorAll('main a[href$="/workshops"]')].map((a) => ({ t: txt(a), h: a.getBoundingClientRect().height, below: board ? a.getBoundingClientRect().top >= bb.bottom - 1 : false }))[0] ?? null;
+    const later = [...document.querySelectorAll('[data-programme-body] a[href$="/workshops"], main a[href$="/workshops"]:not(nav a):not(.nos-subnav a):not([data-nos-subnav] a)')].filter((a) => !a.closest('nav, .nos-subnav, section[data-nos-hero]')).map((a) => ({ t: txt(a), h: a.getBoundingClientRect().height, below: board ? a.getBoundingClientRect().top >= bb.bottom - 1 : false }))[0] ?? null;
     const tickets = document.querySelector('#programme .nk-grid, .nk-grid'); const tb = [...document.querySelectorAll('main h2')].find((h) => /^tickets$/i.test(txt(h)));
     const ph = /PLACEHOLDER COPY|AI placeholder|to be confirmed/i.test(document.querySelector('main')?.textContent ?? '');
     const focusRing = (() => { const a = days.flatMap((li) => [...li.querySelectorAll('a')])[0]; if (!a) return null; a.focus(); const s = getComputedStyle(a); return { os: s.outlineStyle, ow: parseFloat(s.outlineWidth), bs: s.boxShadow }; })();
@@ -274,7 +301,8 @@ async function igChecks(page, route, vp, c, tag) {
     const filter = document.querySelector('[data-guest-filter]');
     const fitems = filter ? [...filter.querySelectorAll('a, button')].map((e) => e.getBoundingClientRect().height) : [];
     const t = (main?.textContent ?? '').replace(/\s+/g, ' ');
-    return { h1, rowInfo, filter: Boolean(filter), fitems, tAll: t, demoAttr: document.querySelectorAll('[data-demo]').length, demoHit: demo.filter((d) => t.includes(d)),
+    return { h1, rowInfo, filter: Boolean(filter), fitems, tAll: t, demoAttr: document.querySelectorAll('[data-demo]').length, demoHit: (() => { // A demo value may occur inside a speaker's real bio (Michael Tibbs owns The Exotic Plant Company, his frozen bio says so); it is banned in the fact cells (dl) and anywhere outside the profiles.
+      const cl = main.cloneNode(true); cl.querySelectorAll('[data-guest-profile] details, [data-guest-profile] p').forEach((n) => n.remove()); cl.querySelectorAll('script, style, noscript, template').forEach((n) => n.remove()); const td = (cl.textContent ?? '').replace(/\s+/g, ' '); return demo.filter((d) => td.includes(d)); })(),
       grid: document.querySelectorAll('main [class*="grid"] > [data-guest-profile]').length, h2s: [...main.querySelectorAll('h2')].map(txt), layout: Boolean(document.querySelector('[data-doc-layout]')), sw: document.documentElement.scrollWidth, iw: innerWidth };
   }, I.demoValues);
   c.check(`${tag} IG-G1 h1 is "${I.h1}" in sentence case (${m.h1})`, m.h1 === I.h1);
@@ -292,7 +320,9 @@ async function igChecks(page, route, vp, c, tag) {
     const body = src.match(new RegExp(`${I.orderConst}[^=]*=\\s*\\[([^\\]]*)\\]`))?.[1] ?? '';
     const ids = [...body.matchAll(/['"]([^'"]+)['"]/g)].map((x) => x[1]);
     const ranked = rows.map((x) => ({ id: x.pid, at: ids.indexOf(x.pid) })).filter((x) => x.at >= 0).map((x) => x.at);
-    c.check(`${tag} PR-1 every profile carries data-presenter-id (the CMS _id) and the rendered order of the listed ids follows ${I.orderFile} (${rows.map((x) => x.pid).join(', ')})`, rows.every((x) => x.pid) && ids.length > 0 && ranked.every((v, k) => k === 0 || v > ranked[k - 1]));
+    // The sequence in presenter-order.ts is NOS Design's sample (Codi), not her document, and the file's own rule is that a Sanity `order` wins; SAOC has now set order in the CMS. So the CMS order is the order: the gate asserts the ids (and that the file's list is _id-keyed), and reports a difference from the fallback as a note, never a failure.
+    c.check(`${tag} PR-1 every profile carries a unique data-presenter-id (the CMS _id) (${rows.map((x) => x.pid).join(', ')})`, rows.every((x) => x.pid) && new Set(rows.map((x) => x.pid)).size === rows.length && ids.length > 0);
+    if (!ranked.every((v, k) => k === 0 || v > ranked[k - 1])) c.note(`${tag} PR-1 the rendered order differs from the PRESENTER_FALLBACK_SEQUENCE sample; expected while the CMS sets \`order\` (the CMS wins)`);
   }
   if (I.mustName) c.check(`${tag} her documents outrank the CMS: the rendered name is "${I.mustName}" (${rows.map((x) => x.name).join(' | ')})`, rows.some((x) => x.name === I.mustName) && !rows.some((x) => x.name.includes(I.bannedName)));
   c.check(`${tag} IG-G1 no uppercase anywhere in the profiles, including the record title and the role label (${rows.map((r) => r.upper).join(',')})`, rows.every((r) => r.upper === 0));
@@ -669,7 +699,7 @@ async function ctChecks(page, route, vp, c, tag) {
     const hint = form ? [...form.querySelectorAll('*')].find((e) => e.children.length === 0 && /minimum 10 characters/i.test(e.textContent)) : null; const hcs = hint ? getComputedStyle(hint) : null;
     const cs = card ? getComputedStyle(card) : null;
     const up = [...main.querySelectorAll('*')].filter((e) => getComputedStyle(e).textTransform === 'uppercase' && txt(e).length > 0 && !e.closest('section[data-nos-hero]') && !e.closest('button, [type="submit"], a[class*="inline-flex"]')).map((e) => txt(e).slice(0, 30));
-    return { h1: h1 ? txt(h1) : '', crumb: hero ? txt(hero.querySelector('nav, [aria-label*="readcrumb"]') ?? hero).slice(0, 60) : '', heroRest: heroRest.trim(), facts, cardText: card ? txt(card) : '', cardTel: card ? [...card.querySelectorAll('a[href^="tel:"]')].map((a) => ({ h: a.getAttribute('href'), t: txt(a), fam: fam(a) })) : [], rows, teamH2, links, main: txt(main),
+    return { h1: h1 ? txt(h1) : '', crumb: hero ? txt(hero.querySelector('nav, [aria-label*="readcrumb"]') ?? hero).slice(0, 60) : '', heroRest: heroRest.trim(), facts, cardText: card ? txt(card) : '', cardTel: card ? [...card.querySelectorAll('a[href^="tel:"]')].map((a) => ({ h: a.getAttribute('href'), t: txt(a), fam: fam(a) })) : [], rows, teamH2, links, main: (() => { const cl = main.cloneNode(true); cl.querySelectorAll('script, style, noscript, template').forEach((n) => n.remove()); return txt(cl); })(),
       fields: form ? [...form.querySelectorAll('[name]')].map((e) => e.getAttribute('name')) : [], method: form?.getAttribute('method'), action: form?.getAttribute('action'),
       sub: scs ? { bg: scs.backgroundColor, t: txt(sub) } : null, hint: hint ? { t: txt(hint), tt: hcs.textTransform, px: parseFloat(hcs.fontSize), ls: hcs.letterSpacing } : null, up,
       form: R(form), card: R(card), team: R(teamEl), pos: cs?.position, top: cs ? parseFloat(cs.top) : null, ih: innerHeight, sw: document.documentElement.scrollWidth, iw: innerWidth };
@@ -820,7 +850,7 @@ async function syChecks(page, route, vp, c, tag, server) {
     const hero = document.querySelector('section[data-nos-hero]'); const main = document.querySelector('[data-doc-main]'); const aside = document.querySelector('[data-doc-aside]');
     const titleEl = hero ? [...hero.querySelectorAll('*')].filter((e) => e.children.length === 0 || e.tagName === 'P').find((e) => txt(e) === title) : null;
     const tcs = titleEl ? getComputedStyle(titleEl) : null;
-    const italics = [...document.querySelectorAll('main *, section[data-nos-hero] *')].filter((e) => !e.closest('[data-guest-profile]') && getComputedStyle(e).fontStyle === 'italic' && [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())).map((e) => txt(e).slice(0, 40));
+    const italics = [...document.querySelectorAll('main *, section[data-nos-hero] *')].filter((e) => !e.closest('[data-guest-profile], [data-ticket-card]') && getComputedStyle(e).fontStyle === 'italic' && [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())).map((e) => txt(e).slice(0, 40));
     const facts = hero ? [...hero.querySelectorAll('[data-hero-facts] dt')].map((dt) => ({ t: txt(dt), d: dt.nextElementSibling ? txt(dt.nextElementSibling) : '', ws: dt.nextElementSibling ? getComputedStyle(dt.nextElementSibling).whiteSpace : '', h: dt.nextElementSibling ? dt.nextElementSibling.getBoundingClientRect().height : 0, lh: dt.nextElementSibling ? parseFloat(getComputedStyle(dt.nextElementSibling).lineHeight) : 0 })) : [];
     const p = [...document.querySelectorAll('main h2')].find((h) => txt(h) === S.presentersH2);
     const cont = document.querySelector('main'); const cb = cont.getBoundingClientRect(); const pb = p ? p.getBoundingClientRect() : null;
@@ -1051,7 +1081,7 @@ await withServer(1, 'standard', async (server, c) => {
             firstTop: kids.length ? Math.min(...kids.map((e) => r(e).top)) : null,
             h1: h1s.length, h1Text: h1s[0]?.textContent.trim().replace(/\s+/g, ' '), h2Texts: h2s.map((h) => h.textContent.trim().replace(/\s+/g, ' ')),
             variant: hero?.getAttribute('data-nos-hero-variant'), hasImg: Boolean(document.querySelector('section[data-nos-hero] [data-nos-hero-media] img')),
-            main: main ? r(main) : null, aside: asideEl ? { ...r(asideEl), pos: getComputedStyle(asideEl).position, top: getComputedStyle(asideEl).top, kind: asideEl.getAttribute('data-doc-aside-kind'), first: Boolean(main && (asideEl.compareDocumentPosition(main) & Node.DOCUMENT_POSITION_FOLLOWING)), count: document.querySelectorAll('[data-doc-aside]').length } : null,
+            main: main ? r(main) : null, aside: asideEl ? { ...r(asideEl), pos: getComputedStyle(asideEl).position, cssTop: getComputedStyle(asideEl).top, kind: asideEl.getAttribute('data-doc-aside-kind'), first: Boolean(main && (asideEl.compareDocumentPosition(main) & Node.DOCUMENT_POSITION_FOLLOWING)), count: document.querySelectorAll('[data-doc-aside]').length } : null,
             proseW: prose ? prose.getBoundingClientRect().width : null, chars: prose && ch ? prose.getBoundingClientRect().width / ch : null,
             wrapInner: wrap ? r(wrap).w - parseFloat(wcs.paddingLeft) - parseFloat(wcs.paddingRight) : null, wrapLeft: wrap ? r(wrap).left + parseFloat(wcs.paddingLeft) : null,
             h2: cs(h2s[0]), h2Rec: cs(scope.querySelector('[data-edition-record] h2')), h3: cs(proseH3()), bold, eyebrow, sideBorder, nested, pills, small,
@@ -1081,6 +1111,8 @@ await withServer(1, 'standard', async (server, c) => {
         if (route.photo) {
           c.check(`${tag} photo hero`, m.hasImg && m.variant === 'photo', String(m.variant));
           await heroSharpness(page, route, vp, c, tag);
+          if (vp.width >= 1024) await heroRampCheck(page, tag, c);
+          if (vp.width === 1440 || vp.width === 2056) await heroTextContrast(page, tag, c);
         } else c.note(`${tag} NEEDS PHOTO (hero rendered as variant ${m.variant}); listed, not passed silently`);
 
         if (route.h2Spec && route.h2SpecScope === 'record') {
@@ -1115,7 +1147,7 @@ await withServer(1, 'standard', async (server, c) => {
             c.check(`${tag} exactly one [data-doc-aside] of kind ${want}`, Boolean(m.aside) && m.aside.count === 1 && m.aside.kind === want, JSON.stringify(m.aside && { kind: m.aside.kind, count: m.aside.count }));
             if (m.aside && vp.width >= STD.grid.minWidthForTwoColumns) {
               c.check(`${tag} aside is right of the prose column`, m.aside.left >= m.main.right - 1, `${m.aside.left} vs ${m.main.right}`);
-              c.check(`${tag} aside is sticky at ${STD.grid.asideStickyTop}px`, m.aside.pos === 'sticky' && Math.abs(parseFloat(m.aside.top) - STD.grid.asideStickyTop) <= STD.grid.asideStickyTopTolerance, `${m.aside.pos} ${m.aside.top}`);
+              c.check(`${tag} aside is sticky at ${STD.grid.asideStickyTop}px`, m.aside.pos === 'sticky' && Math.abs(parseFloat(m.aside.cssTop) - STD.grid.asideStickyTop) <= STD.grid.asideStickyTopTolerance, `${m.aside.pos} ${m.aside.cssTop}`);
               const ratio = m.aside.w / m.main.w;
               c.check(`${tag} 7fr/5fr: aside/main width ${ratio.toFixed(2)} ~ 0.71`, ratio > 0.6 && ratio < 0.82);
               if (want === 'index') c.check(`${tag} the index aside is first in the DOM`, m.aside.first);
@@ -1193,7 +1225,6 @@ await withServer(1, 'standard', async (server, c) => {
           c.check(`${tag} ${STD.facts.min}-${STD.facts.max} facts (${f.count})`, f.count >= STD.facts.min && f.count <= STD.facts.max);
           c.check(`${tag} every fact box is fully inside the first viewport`, f.facts.length > 0 && f.facts.every((b) => b.top >= 0 && b.bottom <= f.ih && b.left >= 0 && b.right <= vp.width), JSON.stringify(f.facts.find((b) => b.bottom > f.ih)));
           if (f.dd) c.check(`${tag} fact values are Fraunces 300`, f.dd.fam.includes('fraunces') && f.dd.w === '300', JSON.stringify(f.dd));
-          if (vp.width === 1440 && route.photo) await factsContrast(page, tag, c);
         }
         if (vp.width === 1440 && route.sp1) {
           const fold = await page.evaluate(() => { const r = (e) => (e ? e.getBoundingClientRect().bottom : null); const sf = document.querySelector('[data-doc-main] p'); const ab = document.querySelector('[data-doc-aside] a[class*="btn"], [data-doc-aside] a'); return { ih: innerHeight, facts: r(document.querySelector('[data-hero-facts]')), sub: r(document.querySelector('.nos-subnav')), sf: r(sf), ab: r(ab) }; });

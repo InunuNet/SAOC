@@ -2,6 +2,8 @@
 import { execFileSync } from 'node:child_process';
 
 const ALLOWED = [
+  /^lib\/sanity-fixture\.ts$/,
+  /^sanity\/lib\/client\.ts$/,
   /^components\/nos\/(NosHero|hero-photos|NosSection|NosSubNav|nos-subnav-groups|nos-route-heroes|nos-nav)\.(tsx|ts)$/,
   /^components\/nos-chrome\/nos-nav\.(ts|tsx)$/,
   /^components\/show\/(FaqIndex|ShowFaqList|ShowJumpChips)\.tsx$/,

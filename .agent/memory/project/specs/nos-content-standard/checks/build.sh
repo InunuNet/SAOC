@@ -18,4 +18,22 @@ for k in $URL_KEYS; do case "$k" in *SAOC*) export "$k=http://saoc.localhost:${P
 export SITE_URL="http://nos.localhost:${PORT}"
 unset BETA_PASSWORD_WALL_OFF
 [ -n "$NEXT_PUBLIC_SANITY_PROJECT_ID" ] && [ -n "$NEXT_PUBLIC_SANITY_DATASET" ] || { echo "could not read Sanity ids from apphosting.yaml" >&2; exit 1; }
-exec pnpm build
+# Sanity fixture (rev 43B): `next build` prerenders and reads Sanity too, so the build also reads the captured fixture and makes no Sanity API request.
+# NOS_STD_FIXTURE: unset/replay = replay (default), record = capture through the API host, live = no fixture. A miss or a blocked request fails the build.
+unset K_SERVICE
+FIX_MODE="${NOS_STD_FIXTURE:-replay}"
+SPEC_DIR=".agent/memory/project/specs/nos-content-standard"
+if [ "$FIX_MODE" != "live" ]; then
+  FIX_LOG="$PWD/.tmp/sandbox/nos-content-standard-gate/fixture-logs-build"
+  mkdir -p "$FIX_LOG"
+  for f in _started.log _hits.log _misses.log _requests.log _net.log _assets.log; do : > "$FIX_LOG/$f"; done
+  export SANITY_FIXTURE_DIR="$PWD/$SPEC_DIR/fixtures/sanity"
+  export SANITY_FIXTURE_LOGDIR="$FIX_LOG"
+  export NODE_OPTIONS="${NODE_OPTIONS:-} --require $PWD/$SPEC_DIR/checks/block-sanity-net.cjs"
+  if [ "$FIX_MODE" = "record" ]; then export SANITY_FIXTURE_MODE=record SANITY_NET_ALLOW=api SANITY_FIXTURE_RECORD_CONFIRM=1; else export SANITY_FIXTURE_MODE=replay; fi
+fi
+pnpm build
+if [ "$FIX_MODE" != "live" ]; then
+  [ ! -s "$FIX_LOG/_net.log" ] || { echo "build made a Sanity API request while the fixture was in use:" >&2; cat "$FIX_LOG/_net.log" >&2; exit 1; }
+  if [ "$FIX_MODE" = "replay" ] && [ -s "$FIX_LOG/_misses.log" ]; then echo "build hit a fixture miss (re-capture with NOS_STD_FIXTURE=record):" >&2; cat "$FIX_LOG/_misses.log" >&2; exit 1; fi
+fi
