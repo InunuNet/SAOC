@@ -1,0 +1,45 @@
+{
+  "_doc": "qaFixturesAllowed(env, paymentsLive): demo products are purchasable only outside production AND while TICKETING_PAYMENTS_LIVE is false. env.NODE_ENV undefined means not production.",
+  "cases": [
+    {
+      "NODE_ENV": "development",
+      "paymentsLive": false,
+      "expect": true
+    },
+    {
+      "NODE_ENV": "test",
+      "paymentsLive": false,
+      "expect": true
+    },
+    {
+      "NODE_ENV": null,
+      "paymentsLive": false,
+      "expect": true
+    },
+    {
+      "NODE_ENV": "production",
+      "paymentsLive": false,
+      "expect": false
+    },
+    {
+      "NODE_ENV": "development",
+      "paymentsLive": true,
+      "expect": false
+    },
+    {
+      "NODE_ENV": "test",
+      "paymentsLive": true,
+      "expect": false
+    },
+    {
+      "NODE_ENV": null,
+      "paymentsLive": true,
+      "expect": false
+    },
+    {
+      "NODE_ENV": "production",
+      "paymentsLive": true,
+      "expect": false
+    }
+  ]
+}
