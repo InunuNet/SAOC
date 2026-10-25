@@ -51,9 +51,24 @@ test.describe('ticketing test bar scope', () => {
   for (const path of ['/conferences', '/workshops', '/wosa-conference', '/vsp']) {
     test(`the bar is absent on ${path}`, async ({ page, baseURL }) => {
       const response = await page.goto(`${nosBase(baseURL!)}${path}`);
-      expect(response?.status()).toBeLessThan(500);
+      expect(response?.status()).toBe(200);
       await expect(page.locator('header#nh')).toHaveCount(1);
       await expect(page.locator(BAR)).toHaveCount(0);
+    });
+  }
+
+  for (const path of ['/conferences', '/workshops']) {
+    test(`the buy link on ${path} lands on a checkout that shows the bar`, async ({
+      page,
+      baseURL,
+    }) => {
+      await page.goto(`${nosBase(baseURL!)}${path}`);
+      const buy = page.locator('a[href^="/tickets/"]').first();
+      test.skip((await buy.count()) === 0, 'no sellable card rendered (no stock data in this env)');
+      const href = await buy.getAttribute('href');
+      await page.goto(`${nosBase(baseURL!)}${href}`);
+      expect(new URL(page.url()).pathname.startsWith('/tickets/')).toBe(true);
+      await expect(page.locator(BAR)).toHaveCount(1);
     });
   }
 });
