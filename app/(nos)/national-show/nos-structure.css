@@ -1125,7 +1125,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   .nos-theme .nos-pr-photo {
     grid-row: 1;
     position: static;
-    border-radius: 8px;
+    border-radius: 10px;
   }
   .nos-theme .nos-pr.no-photo .nos-pr-head,
   .nos-theme .nos-pr.no-photo .nos-pr-text {
@@ -3270,6 +3270,12 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 .nos-theme .nos-sp-main > * + * {
   margin-top: clamp(72px, 9vw, 112px);
+}
+.nos-theme .nos-sp-main > .doc-standfirst {
+  max-width: 44ch;
+}
+.nos-theme .nos-sp-main > .doc-standfirst + * {
+  margin-top: clamp(40px, 3vw, 48px);
 }
 
 /* Filled wall: one group per level, highest first. */

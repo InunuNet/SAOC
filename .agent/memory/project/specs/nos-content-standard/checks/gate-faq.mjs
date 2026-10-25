@@ -74,7 +74,7 @@ await withServer(3, 'faq', async (server, c) => {
       c.check(`${tag} FQ-G1 section and question numbers are separate figure spans (${s.fq.h2num} ${s.fq.qnum})`, s.fq.h2num && s.fq.qnum);
       c.check(`${tag} FQ-G1 category 1's first question is open on load`, s.fq.firstOpen);
       c.check(`${tag} FQ-G1 category 10 has no questions and links "Plan your visit" to /plan-your-visit (${s.fq.cat10Link}, ${s.fq.cat10Details} details)`, s.fq.cat10Link === 'Plan your visit' && s.fq.cat10Details === 0);
-      if (vp.width >= 768) c.check(`${tag} FQ-G1 h1 is clamp(3rem,1.8rem+3.2vw,4.75rem) (${s.fq.h1px})`, Math.abs(s.fq.h1px - Math.min(76, Math.max(48, 28.8 + 0.032 * vp.width))) <= 1.5);
+      if (vp.width >= 768) c.check(`${tag} FQ-G1 h1 is clamp(2.5rem,1.6rem+2.6vw,4rem), the NL-2 .is-long clamp (${s.fq.h1px})`, Math.abs(s.fq.h1px - Math.min(64, Math.max(40, 25.6 + 0.026 * vp.width))) <= 1.5);
       if (!FALLBACK_LANDED && s.fq.actW === null) c.note(`${tag} PENDING SAOC: DocumentIndex has no first-entry fallback, so no row is current on load; required once components/ui/DocumentIndex.tsx falls back to entries[0]`);
       if (FALLBACK_LANDED) c.check(`${tag} a row is current on load (the DocumentIndex fallback has landed)`, s.fq.actW !== null);
       if (vp.width >= STD.grid.minWidthForTwoColumns) c.check(`${tag} FQ-G1 active index row is weight 700 and the index card is max-height calc(100vh - 124px) (${s.fq.actW}, ${s.fq.aMaxH}/${s.fq.aMaxHAside})`, (s.fq.actW === '700' || (!FALLBACK_LANDED && s.fq.actW === null)) && [s.fq.aMaxH, s.fq.aMaxHAside].some((v) => v && Math.abs(parseFloat(v) - (s.fq.ih - 124)) <= 2));

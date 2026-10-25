@@ -175,7 +175,7 @@
      "Plant Entry/Registration"
     ],
     "mustAbsentNav": [
-     "Plant Entry/Registration"
+     "Exhibitor entry guide"
     ],
     "note": "PYV-1: h2s are the seven numbered headings of the doc (the lead's message said six; the frozen v1.0 has seven, 7. Make the Most of Your Visit).",
     "mustAbsentText": [
@@ -659,7 +659,10 @@
     "terms": null,
     "exact": false,
     "golden": "PG-1 names FACTS-1 but no terms"
-   }
+   },
+   "h2FlaggedForDrive": [
+    "Tickets"
+   ]
   },
   {
    "nos": "/workshops",
@@ -1001,7 +1004,10 @@
    },
    "h4": true,
    "h4Spec": "sp1",
-   "h4Note": "SP-1 owns its own h4 rule (level heads on the sponsor wall); the PYV-1 24px/8px spacing applies to /plan-your-visit only."
+   "h4Note": "SP-1 owns its own h4 rule (level heads on the sponsor wall); the PYV-1 24px/8px spacing applies to /plan-your-visit only.",
+   "h2FlaggedForDrive": [
+    "Show sponsors"
+   ]
   },
   {
    "nos": "/archive",
