@@ -87,6 +87,7 @@ export default async function ProgrammePage() {
           title={TICKET_COPY.sections.programme}
           lede={ledes.programme}
           columns={3}
+          hideHeading
         >
           {PROGRAMME_PRODUCTS.map((id) => {
             const vm = cards[id];
