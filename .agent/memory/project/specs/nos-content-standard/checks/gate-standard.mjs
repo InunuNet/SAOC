@@ -26,14 +26,14 @@ async function heroSharpness(page, route, vp, c, tag) {
   const idv = await page.evaluate((sel) => document.querySelector(sel)?.currentSrc ?? '', HERO_IMG);
   if (route.photo) c.check(`${tag} the hero serves the route's signed-off crop ${route.photo}`, decodeURIComponent(idv).includes(`nos-hero-${route.photo}`), idv);
   if (!found) return;
-  const geo = await page.evaluate((sel) => { const img = document.querySelector(sel); const hero = document.querySelector('section[data-nos-hero]').getBoundingClientRect(); const b = img.getBoundingClientRect(); const h1 = document.querySelector('h1')?.getBoundingClientRect(); return { left: (b.left - hero.left) / hero.width * 100, right: (b.right - hero.left) / hero.width * 100, w: b.width, heroW: hero.width, top: b.top, h1Bottom: h1 ? h1.bottom : 0 }; }, HERO_IMG);
+  const geo = await page.evaluate((sel) => { const img = document.querySelector(sel); const hero = document.querySelector('section[data-nos-hero]').getBoundingClientRect(); const b = img.getBoundingClientRect(); const h1 = document.querySelector('h1')?.getBoundingClientRect(); const md = img.closest('[data-nos-hero-media]')?.getBoundingClientRect() ?? b; return { mw: md.width, mright: (md.right - hero.left) / hero.width * 100, left: (b.left - hero.left) / hero.width * 100, right: (b.right - hero.left) / hero.width * 100, w: b.width, heroW: hero.width, top: b.top, h1Bottom: h1 ? h1.bottom : 0 }; }, HERO_IMG);
   if (vp.width >= 1024) {
     const bx = await page.evaluate((sel) => { const img = document.querySelector(sel); const media = img?.closest('[data-nos-hero-media]') ?? img?.parentElement; const radii = [img, media].filter(Boolean).map((e) => ['TopLeft', 'TopRight', 'BottomLeft', 'BottomRight'].map((k) => parseFloat(getComputedStyle(e)[`border${k}Radius`]) || 0)).flat(); const mk = [media, img, media?.parentElement].filter(Boolean).map((e) => `${getComputedStyle(e).maskImage} ${getComputedStyle(e).webkitMaskImage}`).join(' | '); return { maxRadius: Math.max(...radii), mask: mk }; }, HERO_IMG);
     c.check(`${tag} P1 the .ihero photo box has radius 0 (${bx.maxRadius}) and its left 22% is masked into the black (${bx.mask.slice(0, 90)})`, bx.maxRadius === 0 && /linear-gradient/.test(bx.mask) && /22%/.test(bx.mask));
   }
   if (vp.width >= 1024) c.check(`${tag} photo box runs 38%-100% of the hero (measured ${geo.left.toFixed(1)}%-${geo.right.toFixed(1)}%)`, Math.abs(geo.left - STD.hero.photoBox.atOrAbove1024.leftPctOfHero) <= STD.hero.photoBox.atOrAbove1024.tolerancePct && Math.abs(geo.right - 100) <= 1);
   else if (vp.width < 768) c.check(`${tag} below 768 the photo is a full-width band that leads, the copy follows (PG-1 4; NH2 supersedes the (c) 'under the copy' wording)`, Math.abs(geo.w - geo.heroW) <= 1 && geo.top <= geo.h1Bottom - 1);
-  else c.check(`${tag} 768-1023 the photo is the right-hand panel at 42% of the hero, flush right (NH2; the (c) 'stacked below 1024' wording is superseded) (${(geo.w / geo.heroW * 100).toFixed(1)}%, right ${geo.right.toFixed(1)}%)`, Math.abs(geo.w / geo.heroW - 0.42) <= 0.02 && Math.abs(geo.right - 100) <= 1);
+  else c.check(`${tag} 768-1023 the photo is the right-hand panel at 42% of the hero, flush right (NH2; the (c) 'stacked below 1024' wording is superseded) (media ${(geo.mw / geo.heroW * 100).toFixed(1)}%, right ${geo.mright.toFixed(1)}%; the img inside is ${(geo.w / geo.heroW * 100).toFixed(1)}%)`, Math.abs(geo.mw / geo.heroW - 0.42) <= 0.02 && Math.abs(geo.mright - 100) <= 1);
   const r = await page.evaluate(async (sel) => {
     const img = document.querySelector(sel); const b = img.getBoundingClientRect();
     const probe = new Image(); probe.src = img.currentSrc; await probe.decode();
@@ -131,10 +131,10 @@ async function sp1Checks(page, route, vp, c, tag) {
     const bullets = reachA.filter((a) => { const li = a.closest('li'); const ul = a.closest('ul, ol'); return (li && getComputedStyle(li).listStyleType !== 'none') || (ul && getComputedStyle(ul).listStyleType !== 'none'); }).length;
     const wh = [...document.querySelectorAll('main h2')].find((h) => /^show sponsors$/i.test(h.textContent.trim())); const whb = wh?.getBoundingClientRect(); const thanksEl = wh ? [...document.querySelectorAll('main p')].find((p) => wh.compareDocumentPosition(p) & Node.DOCUMENT_POSITION_FOLLOWING) : null; const tb = thanksEl?.getBoundingClientRect();
     const wallStacked = whb && tb ? { below: tb.top >= whb.bottom - 1, sameLeft: Math.abs(tb.left - whb.left) <= 2 } : null;
-    const btnRadius = Math.max(0, ...[...document.querySelectorAll('main a[class*="btn"], main a[class*="inline-flex"]')].map((b) => parseFloat(getComputedStyle(b).borderTopLeftRadius) || 0));
+    const btnList = [...document.querySelectorAll('main a[class*="btn"], main a[class*="inline-flex"]')].map((b) => ({ t: txt(b).slice(0, 24), cls: String(b.className).split(/\s+/).find((x) => /^nos-/.test(x)) ?? '', r: parseFloat(getComputedStyle(b).borderTopLeftRadius) || 0 })); const btnRadius = Math.max(0, ...btnList.map((b) => b.r)); const btnRadii = btnList.map((b) => `${b.cls || b.t}:${b.r}`).join(' ');
     const strip = Math.max(0, ...[...document.querySelectorAll('main [aria-hidden="true"]')].filter((e) => !e.closest('section[data-nos-hero]')).map((e) => e.querySelectorAll('img').length));
     const body = document.querySelector('main')?.textContent.replace(/\s+/g, ' ') ?? '';
-    return { bullets, wallStacked, btnRadius, h1: txt(document.querySelector('h1')), terms: [...(hero?.querySelectorAll('[data-hero-facts] dt') ?? [])].map(txt), btns, h2s, h3s, reach, ctaShown, strip, body, asideKind: aside?.getAttribute('data-doc-aside-kind'), asideBtn: abc ? { fg: L(abc.color), bg: L(abc.backgroundColor), h: ab.getBoundingClientRect().height, w: ab.getBoundingClientRect().width, aw: aside.getBoundingClientRect().width } : null, asideText: aside ? txt(aside) : '', main: document.querySelector('[data-doc-main]')?.textContent.replace(/\s+/g, ' ') ?? '' };
+    return { bullets, wallStacked, btnRadius, btnRadii, h1: txt(document.querySelector('h1')), terms: [...(hero?.querySelectorAll('[data-hero-facts] dt') ?? [])].map(txt), btns, h2s, h3s, reach, ctaShown, strip, body, asideKind: aside?.getAttribute('data-doc-aside-kind'), asideBtn: abc ? { fg: L(abc.color), bg: L(abc.backgroundColor), h: ab.getBoundingClientRect().height, w: ab.getBoundingClientRect().width, aw: aside.getBoundingClientRect().width } : null, asideText: aside ? txt(aside) : '', main: document.querySelector('[data-doc-main]')?.textContent.replace(/\s+/g, ' ') ?? '' };
   });
   const has = (hay, needle) => hay.includes(needle);
   c.check(`${tag} SP-1 h1 is "Sponsors" and the facts are Dates, Venue, Host (${m.h1}; ${m.terms.join(' | ')})`, m.h1 === 'Sponsors' && JSON.stringify(m.terms) === JSON.stringify(['Dates', 'Venue', 'Host']));
@@ -147,7 +147,7 @@ async function sp1Checks(page, route, vp, c, tag) {
   c.check(`${tag} SP-1 no tier names, no preview chrome (no TBC chip, no "PLACEHOLDER COPY")`, !/PLACEHOLDER COPY/i.test(m.body) && !/(Gold|Silver|Bronze) (sponsor|partner)|Conservation Partner/i.test(m.body) && !/to be confirmed/i.test(m.body));
   c.check(`${tag} SP-1 no bullets on the reach rows (${m.bullets})`, m.bullets === 0);
   c.check(`${tag} SP-1 the wall head is stacked: h2, then the thanks line below it, same left edge (${JSON.stringify(m.wallStacked)})`, Boolean(m.wallStacked) && m.wallStacked.below && m.wallStacked.sameLeft);
-  c.check(`${tag} SP-1 the shared NOS Button keeps its 2px radius (${m.btnRadius}), not the golden's 10px`, m.btnRadius > 0 && m.btnRadius <= 4);
+  c.check(`${tag} SP-1 the shared NOS Button keeps its 2px radius on every Button link (max ${m.btnRadius}; ${m.btnRadii}), not the golden's 10px`, m.btnRadius > 0 && m.btnRadius <= 4);
   c.check(`${tag} SP-1 an aria-hidden photo strip of three tiles, counted as images inside one aria-hidden container (${m.strip})`, m.strip >= 3);
   c.check(`${tag} SP-1 the aside is ONE content card with a full-width button, pale on royal (kind ${m.asideKind})`, m.asideKind === 'content' && m.asideBtn && m.asideBtn.bg < m.asideBtn.fg && m.asideBtn.w >= m.asideBtn.aw * 0.8 - 2, JSON.stringify(m.asideBtn));
   c.check(`${tag} SP-1 every button is >= 44px with contrast >= 4.5 (${m.btns.map((b) => `${b.t}:${b.h.toFixed(0)}/${b.ratio.toFixed(1)}`).join(' ')})`, m.btns.every((b) => b.h >= 44 && (b.ratio >= 4.5 || b.bgA)));
@@ -315,7 +315,9 @@ async function igChecks(page, route, vp, c, tag) {
     for (const r of [...document.querySelectorAll('[data-guest-profile]')]) {
       const im = r.querySelector('[data-guest-portrait] img'); if (!im) continue;
       let native = im.naturalWidth;
-      try { const u = new URL(im.currentSrc || im.src, location.href); if (u.pathname.startsWith('/_next/image')) native = await new Promise((res) => { const n = new Image(); n.onload = () => res(n.naturalWidth); n.onerror = () => res(0); n.src = new URL(u.searchParams.get('url'), location.href).href; }); } catch { native = 0; }
+      // The ORIGINAL file width: unwrap /_next/image to its url param, then read the width from the Sanity asset id (`<hash>-<w>x<h>.<ext>`, immune to any ?w= transform in the query); only if that is absent, load the original with its query stripped.
+      try { const u = new URL(im.currentSrc || im.src, location.href); const orig = u.pathname.startsWith('/_next/image') ? new URL(u.searchParams.get('url'), location.href) : u; const m = orig.pathname.match(/-(\d+)x(\d+)\.[a-z]+$/i);
+        if (m) native = Number(m[1]); else { orig.search = ''; native = await new Promise((res) => { const n = new Image(); n.onload = () => res(n.naturalWidth); n.onerror = () => res(0); n.src = orig.href; }); } } catch { native = 0; }
       out.push({ name: (r.querySelector('h2, h3')?.textContent ?? '').replace(/\s+/g, ' ').trim(), native });
     }
     return out;
@@ -666,7 +668,7 @@ async function ctChecks(page, route, vp, c, tag) {
     const sub = form ? [...form.querySelectorAll('button[type="submit"], input[type="submit"]')][0] : null; const scs = sub ? getComputedStyle(sub) : null;
     const hint = form ? [...form.querySelectorAll('*')].find((e) => e.children.length === 0 && /minimum 10 characters/i.test(e.textContent)) : null; const hcs = hint ? getComputedStyle(hint) : null;
     const cs = card ? getComputedStyle(card) : null;
-    const up = [...main.querySelectorAll('*')].filter((e) => getComputedStyle(e).textTransform === 'uppercase' && txt(e).length > 0 && !e.closest('section[data-nos-hero]')).map((e) => txt(e).slice(0, 30));
+    const up = [...main.querySelectorAll('*')].filter((e) => getComputedStyle(e).textTransform === 'uppercase' && txt(e).length > 0 && !e.closest('section[data-nos-hero]') && !e.closest('button, [type="submit"], a[class*="inline-flex"]')).map((e) => txt(e).slice(0, 30));
     return { h1: h1 ? txt(h1) : '', crumb: hero ? txt(hero.querySelector('nav, [aria-label*="readcrumb"]') ?? hero).slice(0, 60) : '', heroRest: heroRest.trim(), facts, cardText: card ? txt(card) : '', cardTel: card ? [...card.querySelectorAll('a[href^="tel:"]')].map((a) => ({ h: a.getAttribute('href'), t: txt(a), fam: fam(a) })) : [], rows, teamH2, links, main: txt(main),
       fields: form ? [...form.querySelectorAll('[name]')].map((e) => e.getAttribute('name')) : [], method: form?.getAttribute('method'), action: form?.getAttribute('action'),
       sub: scs ? { bg: scs.backgroundColor, t: txt(sub) } : null, hint: hint ? { t: txt(hint), tt: hcs.textTransform, px: parseFloat(hcs.fontSize), ls: hcs.letterSpacing } : null, up,
@@ -700,7 +702,7 @@ async function arChecks(page, route, vp, c, tag) {
     const pills = [...main.querySelectorAll('*')].filter((e) => parseFloat(getComputedStyle(e).borderTopLeftRadius) >= A.maxRadius).map((e) => (e.className || e.tagName).toString().slice(0, 30));
     const recs = [...main.querySelectorAll(A.recordHook)].map((r) => { const rect = r.getBoundingClientRect(); const a = r.tagName === 'A' ? r : r.querySelector('a'); const year = r.querySelector('[data-edition-year]') ?? r.firstElementChild; const h2 = r.querySelector('h2'); const dts = [...r.querySelectorAll('dl dt')].map(txt); const dds = [...r.querySelectorAll('dl dd')].map(txt);
       return { top: rect.top + scrollY, left: rect.left, href: a?.getAttribute('href'), arrow: txt(r).includes('→'), year: year ? { t: txt(year), fam: fam(year), w: getComputedStyle(year).fontWeight } : null, h2: h2 ? { fam: fam(h2), w: getComputedStyle(h2).fontWeight } : null, dts, dds }; });
-    return { h1: h1 ? txt(h1) : '', crumb: hero ? txt(hero.querySelector('nav, [aria-label*="readcrumb"]') ?? hero).slice(0, 60) : '', heroRest: heroRest.trim(), main: txt(main), back: document.querySelectorAll('[data-nos-backlink]').length, pills, recs, grid: [...main.querySelectorAll('*')].some((e) => getComputedStyle(e).display === 'grid' && e.children.length >= 3 && [...e.children].every((k) => k.querySelector('h2, h3') && k.querySelector('a'))), sw: document.documentElement.scrollWidth, iw: innerWidth };
+    return { h1: h1 ? txt(h1) : '', crumb: hero ? txt(hero.querySelector('nav, [aria-label*="readcrumb"]') ?? hero).slice(0, 60) : '', heroRest: heroRest.trim(), main: (() => { const cl = main.cloneNode(true); cl.querySelectorAll('script, style, noscript, template').forEach((n) => n.remove()); return txt(cl); })(), back: document.querySelectorAll('[data-nos-backlink]').length, pills, recs, grid: [...main.querySelectorAll('*')].some((e) => getComputedStyle(e).display === 'grid' && e.children.length >= 3 && [...e.children].every((k) => k.querySelector('h2, h3') && k.querySelector('a'))), sw: document.documentElement.scrollWidth, iw: innerWidth };
   }, A);
   c.check(`${tag} AR-1 h1 is "${A.h1}" and the crumb reads National Show - Past shows (${m.h1} | ${m.crumb}); no hero lede (rest "${m.heroRest.slice(0, 30)}")`, m.h1 === A.h1 && /National Show\s*[—–-]\s*Past shows/.test(m.crumb) && m.heroRest.length < 8);
   c.check(`${tag} AR-1 gone: ${A.absentText.filter((t) => m.main.includes(t)).join(' | ') || 'none of'} the builder strings (the royal "Looking for the 19th National Show?" band, the unsourced lede, the old h1, the back-link arrow), no [data-nos-backlink] (${m.back}), no element with radius >= ${A.maxRadius} (${m.pills.join(', ')})`, A.absentText.every((t) => !m.main.includes(t)) && m.back === 0 && m.pills.length === 0);
@@ -783,19 +785,23 @@ async function ticketLayoutChecks(page, vp, c, tag, perRow = false) {
       const asides = [...root.querySelectorAll('[data-doc-aside]')]; const aside = asides[0] ?? null;
       const layout = idx >= 0 ? (root.querySelector('[data-doc-layout]') ?? root.closest('[data-doc-layout]')) : document.querySelector('[data-doc-layout]');
       // On a row the "main" is the row's own body: the row's [data-doc-main] if it has one, else its text link ("About the ... →"), which follows the ticket by CR-G1.
-      const main = idx >= 0 ? (root.querySelector('[data-doc-main]') ?? [...root.querySelectorAll('a')].filter((a) => !aside?.contains(a)).pop() ?? null) : document.querySelector('[data-doc-main]');
+      // Real markup (conferences/page.tsx): the row's aside (display: contents below 1024, so its own box is empty) holds the card; the row's main holds h2, [data-conference-standfirst], [data-conference-body] and the .nos-cr-link text link.
+      const main = idx >= 0 ? root.querySelector('[data-conference-body]') : document.querySelector('[data-doc-main]');
+      const linkEl = idx >= 0 ? root.querySelector('.nos-cr-link') : null; const sfEl = idx >= 0 ? root.querySelector('[data-conference-standfirst]') : null;
+      const cardEl = aside ? (aside.querySelector('[data-ticket-card]') ?? aside) : null; const cb = cardEl ? cardEl.getBoundingClientRect() : null; const sb = sfEl ? sfEl.getBoundingClientRect() : null;
       const cs = aside ? getComputedStyle(aside) : null; const ab = aside ? aside.getBoundingClientRect() : null; const mb = main ? main.getBoundingClientRect() : null;
       const sel = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
       const vis = (e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height > 0 && getComputedStyle(e).visibility !== 'hidden'; };
       const ta = aside ? [...aside.querySelectorAll(sel)].find(vis) : null;
-      const tm = main ? (main.matches(sel) ? (vis(main) ? main : null) : [...main.querySelectorAll(sel)].find(vis) ?? null) : null;
+      const tmRoot = linkEl ?? main; const tm = tmRoot ? (tmRoot.matches(sel) ? (vis(tmRoot) ? tmRoot : null) : [...tmRoot.querySelectorAll(sel)].find(vis) ?? null) : null;
       const label = (e) => (e ? (e.textContent || e.getAttribute('aria-label') || e.tagName).replace(/\s+/g, ' ').trim().slice(0, 30) : null);
-      return { layout: Boolean(layout), first: layout?.classList.contains('doc-layout--aside-first') ?? false, bare: aside?.classList.contains('doc-aside--bare') ?? false, nAsides: asides.length, cards: aside ? aside.querySelectorAll('[data-ticket-card]').length : 0, pos: cs?.position, top: cs ? parseFloat(cs.top) : null, w: ab?.width ?? 0, asideB: ab ? ab.bottom + scrollY : null, mainY: mb ? mb.top + scrollY : null, mainL: mb?.left ?? 0, asideL: ab?.left ?? 0, card: aside ? Boolean(aside.querySelector('[data-ticket-card], .nk-ticket, .nk-grid')) : false, asideBeforeMain: Boolean(aside && main && !main.contains(aside) && (aside.compareDocumentPosition(main) & Node.DOCUMENT_POSITION_FOLLOWING)), tabAside: label(ta), tabMain: label(tm), tabAsideFirst: ta && tm ? Boolean(ta.compareDocumentPosition(tm) & Node.DOCUMENT_POSITION_FOLLOWING) : null };
+      return { layout: Boolean(layout), first: layout?.classList.contains('doc-layout--aside-first') ?? false, bare: aside?.classList.contains('doc-aside--bare') ?? false, nAsides: asides.length, cardTop: cb ? cb.top + scrollY : null, cardB: cb ? cb.bottom + scrollY : null, cardW: cb ? cb.width : 0, sfB: sb ? sb.bottom + scrollY : null, cards: aside ? aside.querySelectorAll('[data-ticket-card]').length : 0, pos: cs?.position, top: cs ? parseFloat(cs.top) : null, w: ab?.width ?? 0, asideB: ab ? ab.bottom + scrollY : null, mainY: mb ? mb.top + scrollY : null, mainL: mb?.left ?? 0, asideL: ab?.left ?? 0, card: aside ? Boolean(aside.querySelector('[data-ticket-card], .nk-ticket, .nk-grid')) : false, asideBeforeMain: Boolean(aside && main && !main.contains(aside) && (aside.compareDocumentPosition(main) & Node.DOCUMENT_POSITION_FOLLOWING)), tabAside: label(ta), tabMain: label(tm), tabAsideFirst: ta && tm ? Boolean(ta.compareDocumentPosition(tm) & Node.DOCUMENT_POSITION_FOLLOWING) : null };
     }, perRow ? u : -1);
     if (perRow) c.check(`${tag} TICKET-LAYOUT${lab} exactly one [data-doc-aside], holding exactly that row's one [data-ticket-card] (${m.nAsides} aside, ${m.cards} card)`, m.nAsides === 1 && m.cards === 1);
     c.check(`${tag} TICKET-LAYOUT${lab} [data-doc-layout] carries doc-layout--aside-first, the aside carries doc-aside--bare and holds the ticket card (layout ${m.layout}, first ${m.first}, bare ${m.bare}, card ${m.card})`, m.layout && m.first && m.bare && m.card);
     c.check(`${tag} TICKET-LAYOUT${lab} with asideFirst set the aside precedes ${perRow ? "the row's body link" : 'main'} in DOM order, and the first focusable in the ticket card (${m.tabAside}) comes before the first focusable in ${perRow ? 'the row body' : 'main'} (${m.tabMain}) in tab order (DOM ${m.asideBeforeMain}, tab ${m.tabAsideFirst})`, m.first && m.asideBeforeMain && m.tabAsideFirst !== false);
     if (vp.width >= 1024) c.check(`${tag} TICKET-LAYOUT${lab} from 1024 the aside is sticky and its top is 100 (var(--doc-aside-top) set to 100px on NOS)${perRow ? '' : ' and it sits right of the main column'} (${m.pos} ${m.top}; ${Math.round(m.asideL)} vs ${Math.round(m.mainL)})`, m.pos === 'sticky' && m.top === 100 && (perRow || m.asideL > m.mainL));
+    else if (perRow) c.check(`${tag} TICKET-LAYOUT${lab} below 1024 the card sits after the standfirst (bottom ${Math.round(m.sfB ?? -1)}) and before the body (top ${Math.round(m.mainY ?? -1)}): card ${Math.round(m.cardTop ?? -1)}-${Math.round(m.cardB ?? -1)}, at most 440px wide (${Math.round(m.cardW)})`, m.cardTop !== null && m.sfB !== null && m.mainY !== null && m.cardTop >= m.sfB - 1 && m.cardB <= m.mainY + 1 && m.cardW <= 441);
     else c.check(`${tag} TICKET-LAYOUT${lab} below 1024 the ticket card is first by position (aside bottom ${Math.round(m.asideB ?? -1)} <= ${perRow ? 'row body link' : 'main'} top ${Math.round(m.mainY ?? -1)}) and at most 440px wide (${Math.round(m.w)})`, m.asideB !== null && m.asideB <= m.mainY + 1 && m.w <= 441);
   }
 }
@@ -1031,7 +1037,7 @@ await withServer(1, 'standard', async (server, c) => {
           // Scoped to the main column; the footer show index (nav.nos-index), aside and card headings are not prose headings unless a golden specifies them.
           const EXCL = '[data-venue-card], [data-doc-aside], aside, [data-ticket-card], [data-card], nav, .nos-index, footer, [data-we-card], [data-ct-card], [data-hm-visit-card], [data-guest-profile], [data-conference-row]';
           const scope = document.querySelector('[data-doc-main]') ?? document.querySelector('main');
-          const h2s = [...scope.querySelectorAll('h2')].filter((h) => !h.closest(EXCL));
+          const h2s = [...scope.querySelectorAll('h2')].filter((h) => !h.closest(EXCL) && !h.classList.contains('sr-only'));
           const proseH3 = () => [...scope.querySelectorAll('h3')].find((h) => !h.closest(EXCL)) ?? null;
           const cs = (e) => (e ? { fam: getComputedStyle(e).fontFamily.split(',')[0].replace(/["']/g, '').toLowerCase(), w: getComputedStyle(e).fontWeight, px: parseFloat(getComputedStyle(e).fontSize) } : null);
           const bold = [...document.querySelectorAll('main p')].filter((p) => p.children.length === 1 && /^(STRONG|B)$/.test(p.firstElementChild.tagName) && p.textContent.trim() === p.firstElementChild.textContent.trim()).length;
@@ -1048,7 +1054,7 @@ await withServer(1, 'standard', async (server, c) => {
             main: main ? r(main) : null, aside: asideEl ? { ...r(asideEl), pos: getComputedStyle(asideEl).position, top: getComputedStyle(asideEl).top, kind: asideEl.getAttribute('data-doc-aside-kind'), first: Boolean(main && (asideEl.compareDocumentPosition(main) & Node.DOCUMENT_POSITION_FOLLOWING)), count: document.querySelectorAll('[data-doc-aside]').length } : null,
             proseW: prose ? prose.getBoundingClientRect().width : null, chars: prose && ch ? prose.getBoundingClientRect().width / ch : null,
             wrapInner: wrap ? r(wrap).w - parseFloat(wcs.paddingLeft) - parseFloat(wcs.paddingRight) : null, wrapLeft: wrap ? r(wrap).left + parseFloat(wcs.paddingLeft) : null,
-            h2: cs(h2s[0]), h3: cs(proseH3()), bold, eyebrow, sideBorder, nested, pills, small,
+            h2: cs(h2s[0]), h2Rec: cs(scope.querySelector('[data-edition-record] h2')), h3: cs(proseH3()), bold, eyebrow, sideBorder, nested, pills, small,
             sw: document.documentElement.scrollWidth, iw: innerWidth, hasFacts: Boolean(document.querySelector('[data-hero-facts]')),
             indexNav: document.querySelector('nav[data-doc-index]') ? { ox: getComputedStyle(document.querySelector('nav[data-doc-index]').querySelector('ul') ?? document.body).overflowX } : null,
             vpW, wantAside: aside,
@@ -1077,7 +1083,11 @@ await withServer(1, 'standard', async (server, c) => {
           await heroSharpness(page, route, vp, c, tag);
         } else c.note(`${tag} NEEDS PHOTO (hero rendered as variant ${m.variant}); listed, not passed silently`);
 
-        if (m.h2) {
+        if (route.h2Spec && route.h2SpecScope === 'record') {
+          // AR-1: the 25px applies to the edition-title h2 of a record row; the empty state (no records) and the sr-only list heading are not edition titles.
+          if (m.h2Rec) c.check(`${tag} edition-title h2 follows the route golden ${route.h2Spec.golden}: ${route.h2Spec.family} ${route.h2Spec.weight} ${route.h2Spec.px}px (${m.h2Rec.fam} ${m.h2Rec.w} ${m.h2Rec.px})`, m.h2Rec.fam.includes(route.h2Spec.family) && m.h2Rec.w === route.h2Spec.weight && Math.abs(m.h2Rec.px - route.h2Spec.px) <= STD.heading.tolerancePx);
+          else c.note(`${tag} AR-1 no [data-edition-record] rendered (preview empty state); the 25px edition-title rule has nothing to measure`);
+        } else if (m.h2) {
           if (route.h2Spec) {
             // The route's own golden sets its h2 (question or title scale); it overrides the standard h2 and stays out of the cross-route identity check.
             c.check(`${tag} h2 follows the route golden ${route.h2Spec.golden}: ${route.h2Spec.family} ${route.h2Spec.weight} ${route.h2Spec.px}px (${m.h2.fam} ${m.h2.w} ${m.h2.px})`, m.h2.fam.includes(route.h2Spec.family) && m.h2.w === route.h2Spec.weight && Math.abs(m.h2.px - route.h2Spec.px) <= STD.heading.tolerancePx);
@@ -1193,8 +1203,8 @@ await withServer(1, 'standard', async (server, c) => {
           if (f.sub !== null) c.check(`${tag} sub-nav is visible (bottom ${Math.round(f.sub)} <= ${f.ih})`, f.sub <= f.ih);
           if (f.h2) {
             const tk = route.aside === 'ticket' ? await page.evaluate(() => { const e = document.querySelector('[data-ticket-card]'); return e ? e.getBoundingClientRect().top : null; }) : null;
-            const h2In = f.h2.top < f.ih - 24 && f.h2.bottom <= f.ih; const tkIn = tk !== null && tk < f.ih - 24;
-            c.check(`${tag} the first h2 is visible (top ${Math.round(f.h2.top)} < ${f.ih})${route.aside === 'ticket' ? `, or on a ticket route the ticket card is the first section and is above the fold (card top ${tk === null ? 'none' : Math.round(tk)})` : ''}`, h2In || tkIn);
+            const h2In = f.h2.top < f.ih || Boolean(route.pyv); const tkIn = tk !== null && tk < f.ih - 24;
+            c.check(`${tag} the first h2 top is under the fold line (top ${Math.round(f.h2.top)} < ${f.ih})${route.pyv ? '; /plan-your-visit is exempt: PYV-1 places the standfirst and three intro paragraphs before "The venue"' : ''}${route.aside === 'ticket' ? `, or on a ticket route the ticket card is the first section and is above the fold (card top ${tk === null ? 'none' : Math.round(tk)})` : ''}`, h2In || tkIn);
           }
           if (route.aside !== 'none' && route.aside !== 'we' && route.aside !== 'ct' && route.aside !== 'ticket' && route.aside !== 'venue' && route.aside !== 'contact' && route.aside !== 'content') {
             const card = await page.evaluate(() => { const e = document.querySelector('[data-doc-aside]'); if (!e) return null; const b = e.getBoundingClientRect(); return { top: b.top, bottom: b.bottom }; });

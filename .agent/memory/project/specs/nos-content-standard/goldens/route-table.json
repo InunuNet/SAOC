@@ -393,7 +393,7 @@
      "Nerine",
      "Needs Surnames",
      "nos.saoc.co.za",
-     "Email address"
+     "Email address??"
     ],
     "cardStickyTop": 100,
     "hooks": "[data-ct-card] (the sticky card: address, telephone, gateway) and [data-ct-team] (a dl of div > dt name + dd role); the form is the page's one main form.",
@@ -977,7 +977,7 @@
     },
     "themeProse": {
      "file": "about.md",
-     "line": 7
+     "line": 9
     },
     "qa": [
      {
@@ -1057,7 +1057,8 @@
     "family": "fraunces",
     "weight": "400",
     "px": 25
-   }
+   },
+   "h2SpecScope": "record"
   },
   {
    "nos": "/privacy",
