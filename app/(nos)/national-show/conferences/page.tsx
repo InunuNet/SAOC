@@ -95,7 +95,7 @@ export default async function ConferencesTicketsPage() {
         priority
       />
       {!salesOpen ? <SalesStatusLine /> : null}
-      <div className="nos-cr-body">
+      <div className="nos-cr-body" data-doc-layout="">
         <div data-nos-wrap="">
           {CONFERENCE_ROWS.map((row) => {
             const vm = cards[row.id];

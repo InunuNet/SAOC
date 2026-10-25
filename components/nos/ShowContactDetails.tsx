@@ -14,8 +14,8 @@ import {
 
 const HEADING_ADDRESS = 'Address of the show';
 const HEADING_TELEPHONE = 'Telephone number';
-// The same eyebrow the aside's "Looking for something else?" heading uses (nos-structure.css).
-const LABEL_CLASS = 'nos-index-eyebrow border-b border-rule pb-4';
+// The card's sentence-case label, shared with the gateway heading (nos-structure.css).
+const LABEL_CLASS = 'nos-ct-label';
 const BODY_CLASS = 'mt-3 font-sans text-[16px] leading-[1.55] text-ink/80';
 
 export function ShowContactDetails() {
@@ -32,7 +32,7 @@ export function ShowContactDetails() {
       <section>
         <h2 className={LABEL_CLASS}>{HEADING_TELEPHONE}</h2>
         <p className={BODY_CLASS}>
-          <a href={SHOW_OFFICE_PHONE_HREF} className="text-ink underline underline-offset-2">
+          <a href={SHOW_OFFICE_PHONE_HREF} className="nos-ct-tel">
             {SHOW_OFFICE_PHONE}
           </a>{' '}
           - {SHOW_OFFICE_CONTACT_LINE}

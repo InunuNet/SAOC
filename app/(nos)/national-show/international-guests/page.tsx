@@ -43,7 +43,7 @@ export default async function InternationalGuestsPage() {
       />
 
       {guests.length > 0 ? (
-        <div className="nos-pr-body">
+        <div className="nos-pr-body" data-doc-layout="">
           <div data-nos-wrap="">
             <PresenterList profiles={guests} level={2} showAppearing />
           </div>

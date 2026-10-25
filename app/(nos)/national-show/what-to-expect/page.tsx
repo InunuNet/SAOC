@@ -2,24 +2,27 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { Button } from '@/components/nos/Button';
-import { NosHero } from '@/components/nos/NosHero';
+import { heroFactsFromShow, NosHero } from '@/components/nos/NosHero';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
-import { AdmissionPriceList } from '@/components/show/AdmissionPriceList';
-import { DocumentLayout, type DocumentIndexEntry } from '@/components/ui/DocumentLayout';
+import { formatRand } from '@/components/nos/cheapest-admission';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
+import { loadShowFacts } from '@/lib/data/show-facts';
 import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 // Lee-Ann's What to Expect (Drive: National Show / What to expect, v1.0), published as she wrote it
 // (typos included: docs/rules/no-invention.md). Her struck lines (the build's own held-back
 // statements) are not copy and are not rendered. Her Section 3 narrative has the page's own title, so
-// it follows the standfirst without an h2 of its own. The admission prices are the tickets page's
-// own, read live from the ticket view models: no price is typed here (R7).
+// it follows the standfirst under a screen-reader-only h2. WE-G1 (NOS Design, comms.md): the dates,
+// opening hours and admission are one sticky card. Her admission figures (R350 and the rest) are
+// superseded by the ticket records: each row's price is the tickets page's own, read live from the
+// ticket view models (R7), and a row whose record is missing or not on sale is omitted.
 // The page reads Firebase for those prices, so it renders per request.
 export const dynamic = 'force-dynamic';
 export const revalidate = 60;
 
 const PAGE_TITLE = 'What to expect';
+const FACTS_LABELS = ['Dates', 'Venue'] as const;
 const ADMISSION_LINK_LABEL = 'See ticket prices and book →';
 
 export const metadata: Metadata = buildPageMetadata({
@@ -60,47 +63,36 @@ const ACCESSIBILITY = [
   "We apologise for any inconvenience this may cause and encourage visitors who may require assistance to contact the organisers in advance so that we can advise on the available arrangements.",
 ];
 
-const SECTIONS = {
-  dates: 'wte-dates',
-  hours: 'wte-hours',
-  admission: 'wte-admission',
-  food: 'wte-food',
-  photography: 'wte-photography',
-  accessibility: 'wte-accessibility',
-} as const;
+const THEME = '“From Wild Origins to Cultivated Excellence: The Future of Orchids.”';
+const THEME_LEAD = "Visitors can further develop their knowledge through practical workshops, meet orchid societies from across the country, engage with researchers and conservationists, and discover how every aspect of the National Show reflects this year's theme - ";
+const THEME_INDEX = 4;
 
-const INDEX: DocumentIndexEntry[] = [
-  { id: `${SECTIONS.dates}-h`, label: DATES_HEADING },
-  { id: `${SECTIONS.hours}-h`, label: 'Opening hours' },
-  { id: `${SECTIONS.admission}-h`, label: 'Admission' },
-  { id: `${SECTIONS.food}-h`, label: 'Food and refreshments' },
-  { id: `${SECTIONS.photography}-h`, label: 'Photography' },
-  { id: `${SECTIONS.accessibility}-h`, label: 'Accessibility' },
+// Her four admission lines by name and in her order, each keyed to its ticketType _id; the card is
+// matched through the slug the tickets page uses for the same record.
+const ADMISSION_ROWS = [
+  { id: 'ticketType-vip', slug: 'vip', name: 'VIP Ticket' },
+  { id: 'ticketType-sunset-cocktails-single', slug: 'sunset-cocktails-single', name: 'Sunset Cocktails (Single)' },
+  { id: 'ticketType-weekend-pass-early-bird', slug: 'weekend-pass-early-bird', name: 'Weekend Pass (Early Bird)' },
+  { id: 'ticketType-early-bird', slug: 'early-bird', name: 'Early-Bird Exhibition Ticket' },
+] as const;
+const HOURS_SEPARATOR = ' – ';
+const NO_PRICE_STATES: ReadonlySet<string> = new Set(['salesClosed', 'pricePending', 'soldOut']);
+
+const RAIL_BLOCKS = [
+  { title: 'Food and refreshments', paragraphs: [FOOD] },
+  { title: 'Photography', paragraphs: PHOTOGRAPHY },
+  { title: 'Accessibility', paragraphs: ACCESSIBILITY },
 ];
-
-function Section({
-  id,
-  title,
-  children,
-}: {
-  id: string;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section id={id} className="doc-section" aria-labelledby={`${id}-h`}>
-      <div className="doc-prose">
-        <h2 id={`${id}-h`} className="doc-h2">
-          {title}
-        </h2>
-        {children}
-      </div>
-    </section>
-  );
-}
 
 export default async function WhatToExpectPage() {
   const loaded = await loadTicketCardViewModels();
+  const cards = Object.values(loaded.cards);
+  const admission = ADMISSION_ROWS.flatMap((row) => {
+    const card = cards.find((candidate) => candidate?.slug === row.slug);
+    return card && card.price !== null && !NO_PRICE_STATES.has(card.state)
+      ? [{ ...row, price: formatRand(card.price) }]
+      : [];
+  });
 
   return (
     <>
@@ -108,46 +100,75 @@ export default async function WhatToExpectPage() {
         route="/national-show/what-to-expect"
         title={PAGE_TITLE}
         crumbLabel={PAGE_TITLE}
+        facts={heroFactsFromShow(await loadShowFacts(), FACTS_LABELS)}
         priority
       />
 
-      <DocumentLayout index={INDEX}>
-        <div className="nos-doc-stack">
-          <div className="doc-prose">
-            <p className="doc-standfirst">{STANDFIRST}</p>
-            {NARRATIVE.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
-            ))}
-          </div>
-          <Section id={SECTIONS.dates} title={DATES_HEADING}>
-            <p>{DATES_LINE}</p>
-          </Section>
-          <Section id={SECTIONS.hours} title="Opening hours">
-            {HOURS.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </Section>
-          <Section id={SECTIONS.admission} title="Admission">
-            <AdmissionPriceList cards={loaded.cards} />
-            <Button as={Link} href="/tickets">
-              {ADMISSION_LINK_LABEL}
-            </Button>
-          </Section>
-          <Section id={SECTIONS.food} title="Food and refreshments">
-            <p>{FOOD}</p>
-          </Section>
-          <Section id={SECTIONS.photography} title="Photography">
-            {PHOTOGRAPHY.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
-            ))}
-          </Section>
-          <Section id={SECTIONS.accessibility} title="Accessibility">
-            {ACCESSIBILITY.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
-            ))}
-          </Section>
+      <div className="nos-we-body saoc-container" data-doc-layout="">
+        <div className="nos-we-stand">
+          <p data-we-stand="" className="doc-standfirst">
+            {STANDFIRST}
+          </p>
         </div>
-      </DocumentLayout>
+
+        <aside data-we-card="" className="nos-we-card">
+          <p className="nos-we-label">{DATES_HEADING}</p>
+          <p className="nos-we-dates">{DATES_LINE}</p>
+          <h3>Opening hours</h3>
+          <dl data-we-hours="">
+            {HOURS.map((line) => {
+              const [label, ...value] = line.split(HOURS_SEPARATOR);
+              return (
+                <div key={line}>
+                  <dt>{label}</dt>
+                  <dd>{value.join(HOURS_SEPARATOR)}</dd>
+                </div>
+              );
+            })}
+          </dl>
+          <h3>Admission</h3>
+          <dl data-we-admission="">
+            {admission.map((row) => (
+              <div key={row.id} data-ticket-id={row.id}>
+                <dt>{row.name}</dt>
+                <dd>{row.price}</dd>
+              </div>
+            ))}
+          </dl>
+          <Button as={Link} href="/tickets" className="nos-we-cta">
+            {ADMISSION_LINK_LABEL}
+          </Button>
+        </aside>
+
+        <section className="nos-we-s3" aria-labelledby="we-s3-h">
+          <h2 id="we-s3-h" className="sr-only">
+            What to Expect
+          </h2>
+          <div data-we-s3="">
+            {NARRATIVE.map((paragraph, index) =>
+              index === THEME_INDEX ? (
+                <p key={paragraph}>
+                  {THEME_LEAD}
+                  <em>{THEME}</em>
+                </p>
+              ) : (
+                <p key={paragraph}>{paragraph}</p>
+              ),
+            )}
+          </div>
+        </section>
+
+        <div data-we-rest="" className="nos-we-rest">
+          {RAIL_BLOCKS.map((block) => (
+            <section key={block.title} className="nos-we-block">
+              <h2 className="doc-h2">{block.title}</h2>
+              {block.paragraphs.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+            </section>
+          ))}
+        </div>
+      </div>
       <NosShowIndex current="/national-show/what-to-expect" />
     </>
   );

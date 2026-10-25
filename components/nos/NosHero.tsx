@@ -134,6 +134,8 @@ export interface NosHeroProps {
   actions?: ReactNode;
   /** The facts row under the lede (2-4 real values; fewer than two renders no row). */
   facts?: readonly HeroFact[];
+  /** A link target per fact term (e.g. a `tel:` href): that fact's value renders as a link. */
+  factLinks?: Readonly<Record<string, string>>;
   /** A short label above the h1 (e.g. "Legal"); rendered only where the page already has the string. */
   eyebrow?: ReactNode;
   /** An optional breadcrumb trail, rendered before the h1 (the checkout step's hub trail, r18). */
@@ -155,6 +157,7 @@ export async function NosHero({
   actions,
   eyebrow,
   facts,
+  factLinks,
   crumbs,
   crumbLabel,
   priority = false,
@@ -256,7 +259,13 @@ export async function NosHero({
                   {heroFacts.map((fact) => (
                     <div key={fact.term} data-hero-fact="">
                       <dt>{fact.term}</dt>
-                      <dd>{fact.value}</dd>
+                      <dd>
+                        {factLinks?.[fact.term] ? (
+                          <a href={factLinks[fact.term]}>{fact.value}</a>
+                        ) : (
+                          fact.value
+                        )}
+                      </dd>
                     </div>
                   ))}
                 </dl>

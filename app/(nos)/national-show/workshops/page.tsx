@@ -76,7 +76,7 @@ export default async function WorkshopsPage() {
         priority
       />
 
-      <div className="nos-ev-body">
+      <div className="nos-ev-body" data-doc-layout="">
         <div data-nos-wrap="">
           <div className="nos-ev-grid">
             <div className="nos-ev-main">

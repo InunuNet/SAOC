@@ -108,7 +108,6 @@ export const NOS_NAV: readonly NavItem[] = [
             id: 'workshops',
             label: 'Workshops',
             href: showPath('/workshops'),
-            descriptor: 'Book Sunset Cocktails and guided Field Trip outings.',
           },
           {
             id: 'symposium',
@@ -144,7 +143,7 @@ export const NOS_NAV: readonly NavItem[] = [
           },
           {
             id: 'exhibitors',
-            label: 'Plant Entry/Registration',
+            label: 'Exhibitor entry guide',
             href: showPath('/exhibitors'),
             descriptor: 'Entry process, fees, classes, judging and eligibility for growers entering plants.',
           },
