@@ -52,3 +52,18 @@ Lee-Ann must supply what members can actually do. Not fixable by removal. Raise 
 
 ## Never
 Edit anything under contracts/checks/polish-wave-2026-10-25/ or this spec directory (QA inputs). Edit AGENTS.md. Use pkill.
+
+## Addendum 2026-10-25 (F5-F8, and corrections)
+- F5 event detail, F6 /events/submit, F7 targets and scrollbar gutter, F8 NOS nav consistency were added after the first four. Goldens: f5-event-detail.md,
+  f6-submit-event.md, f7-targets.md, f8-nos-nav.md; scope lists goldens/scope/f5..f8.json. Base is origin/main 9b7e233d (PR #88 and the events redesign #89
+  are on main, so ShowBand/EV-2 needs no dependency). NOS Site PR #76 lands first: F3's cancelled-page robots edit, F8 and F2 stay clear of its hero edits
+  (F2 never touches app/(nos)/national-show/vendors/apply/page.tsx; F8 changes only the national-show layout). LT-1 (serif headings weight 300 on NOS) is
+  not asserted anywhere: no check here measures a heading font-weight on a NOS page. F6 measures weight 300 only on the SAOC /contact pattern.
+- CORRECTION to F1: /events/submit is behind a Firebase session, so the form the first F1 rendered check found there was the footer newsletter form. The rendered
+  check now targets the form inside <main> on /contact, /members, /vendors/apply and /vendors/register (4 forms x 4 viewports x Enter/click = 32 findings on the
+  baseline). SubmitEventForm is static-only. Separate finding: components/newsletter/NewsletterSignup.tsx:114 (footer, every page, both hosts) is also a native
+  GET before hydration; it is NOT in F1 because feat/nos-newsletter-topics modifies the same file. Fold in after that merges.
+- Open decisions raised to the lead: (a) F5 CTA labels ("Book tickets"/"Show details" kept vs the ruling's "Tickets"/"National Show"), (b) F6 submit button token
+  (--primary pinned; ContactForm's button is the accent token), (c) NewsletterSignup scope.
+- Hermetic notes: the rendered checks take their own server (free port 3030-3049). A machine-wide pkill from another session can kill a baseline run mid-way
+  (ECONNREFUSED); re-run, it is not a real red. F8 runs with preview env at runtime only and takes ~90s.

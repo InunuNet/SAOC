@@ -1,0 +1,10 @@
+{
+  "feature": "F6",
+  "allow": [
+    "components/events/SubmitEventForm.tsx",
+    "components/events/SubmitEventPageBody.tsx",
+    "app/(marketing)/events/submit/page.tsx",
+    "app/events-fixtures/submit/page.tsx",
+    "docs/polish-wave-f6-submit-event.md"
+  ]
+}

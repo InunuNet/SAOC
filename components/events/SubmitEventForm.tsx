@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { getAuth } from 'firebase/auth';
 
 import { getFirebaseApp } from '@/lib/firebase';
+import { useHydrated } from '@/lib/hooks/useHydrated';
 
 type FormValues = {
   title: string;
@@ -54,6 +55,7 @@ function validate(v: FormValues): Partial<Record<keyof FormValues, string>> {
 }
 
 export function SubmitEventForm() {
+  const hydrated = useHydrated();
   const [values, setValues] = useState<FormValues>(INITIAL);
   const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
@@ -151,7 +153,7 @@ export function SubmitEventForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-5">
+    <form method="post" onSubmit={handleSubmit} noValidate className="space-y-5">
       <div aria-live="polite" className="min-h-[1.25rem]">
         {serverError && <p className="text-red-600 text-sm">{serverError}</p>}
       </div>
@@ -297,7 +299,7 @@ export function SubmitEventForm() {
 
       <button
         type="submit"
-        disabled={status === 'submitting'}
+        disabled={status === 'submitting' || !hydrated}
         className="px-5 py-2 bg-gray-900 text-white text-sm rounded disabled:opacity-50"
       >
         {status === 'submitting' ? 'Submitting…' : 'Submit event'}

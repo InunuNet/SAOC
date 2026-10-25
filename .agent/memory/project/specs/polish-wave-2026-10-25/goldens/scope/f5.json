@@ -1,0 +1,7 @@
+{
+  "feature": "F5",
+  "allow": [
+    "app/(marketing)/events/[slug]/page.tsx",
+    "docs/polish-wave-f5-event-detail.md"
+  ]
+}
