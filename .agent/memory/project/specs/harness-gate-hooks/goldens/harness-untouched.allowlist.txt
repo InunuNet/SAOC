@@ -7,3 +7,11 @@ execution/checks/verify_gate_residue_preflight.py
 execution/checks/verify_f2_gate_enforcement.sh
 execution/checks/verify_f2_triad_failclosed.sh
 execution/checks/verify_f2_baseline_loading_failclosed.sh
+# Athanor 3.8.70 template update (64664d79, harness updater, not @dev)
+execution/hooks/check_autonomy.sh
+execution/shipped_blobs.txt
+execution/update_template.sha256.json
+template/.agent/version
+template/execution/hooks/check_autonomy.sh
+template/execution/shipped_blobs.txt
+template/execution/update_template.sha256.json
