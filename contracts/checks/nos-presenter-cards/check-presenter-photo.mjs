@@ -5,7 +5,10 @@
 // nos-sweep-fixes SP-1 supersedes the 1.3x ceiling: every URL carries fit=max and no requested
 // width exceeds the asset's available width (crop rect, else the width in the asset ref), with a
 // 1x and 2x srcSet at the 160px and 320px plate widths. Tibbs (201px crop) is 160 and 201. An
-// unknown asset (a photo replaced in Studio) gets no stale rect; an unparseable ref caps at 160.
+// unknown asset (a photo replaced in Studio) gets no stale rect and keeps the fit=crop 4:5 centre
+// crop: each rung is capped at min(requested, W, floor(H*4/5)) from the asset ref, so the crop
+// never upscales, and a rung that would upscale is dropped rather than repeated. An unparseable
+// ref gets one 160 fit=crop rung.
 //
 // Run as: node contracts/checks/nos-presenter-cards/check-presenter-photo.mjs
 import { finish, loadRepoModule } from './_lib.mjs';
@@ -87,16 +90,43 @@ if (typeof presenterPhoto === 'function') {
     expect(JSON.stringify(got) === JSON.stringify(want), `${k.who}: want ${JSON.stringify(want)}, got ${JSON.stringify(got)}`);
   }
 
-  const unknownUrl = `${CDN}ffffffffffffffffffffffffffffffffffffffff-1000x1000.jpg`;
-  const unknown = presenterPhoto(unknownUrl, 'image-ffffffffffffffffffffffffffffffffffffffff-1000x1000-jpg');
+  const fbUrl = (base, w) => `${base}?w=${w}&h=${heightFor(w)}&fit=crop&auto=format`;
+  const fallbackPhoto = (base, widths) => {
+    const urls = widths.map((w) => fbUrl(base, w));
+    return { src: urls[0], srcSet: urls.map((u, i) => `${u} ${i + 1}x`).join(', '), width: widths[0], height: heightFor(widths[0]) };
+  };
+  const fbBase = `${CDN}ffffffffffffffffffffffffffffffffffffffff-1000x1000.jpg`;
+  const fbRef = (W, H) => `image-ffffffffffffffffffffffffffffffffffffffff-${W}x${H}-jpg`;
+  // [W, H, expected rung widths]: cap = min(W, floor(H*4/5)); 1x = min(160, cap); 2x = 320 only when cap >= 320.
+  const fallbacks = [
+    [1000, 1000, [160, 320]],
+    [4000, 2000, [160, 320]],
+    [600, 300, [160]],
+    [1000, 1500, [160, 320]],
+    [200, 1000, [160]],
+    [120, 150, [120]],
+    [100, 400, [100]],
+    [320, 400, [160, 320]],
+    [319, 399, [160]],
+  ];
+  for (const [W, H, widths] of fallbacks) {
+    const got = presenterPhoto(fbBase, fbRef(W, H));
+    expect(
+      JSON.stringify(got) === JSON.stringify(fallbackPhoto(fbBase, widths)),
+      `fallback ${W}x${H}: want fit=crop rungs ${widths.join('/')} with no rect, got ${JSON.stringify(got)}`,
+    );
+    const cap = Math.min(W, Math.floor((H * 4) / 5));
+    const ws = [...(got?.srcSet ?? '').matchAll(/[?&]w=(\d+)&h=(\d+)/g)].map((m) => [Number(m[1]), Number(m[2])]);
+    expect(
+      ws.length > 0 && ws.every(([w, h]) => w <= cap && h <= H) && new Set(ws.map(([w]) => w)).size === ws.length,
+      `fallback ${W}x${H}: no rung may exceed what the source delivers at 4:5 (cap ${cap}) or repeat a width, got ${got?.srcSet}`,
+    );
+    expect(!/fit=max|rect=/.test(got?.srcSet ?? ''), `fallback ${W}x${H}: must be fit=crop with no rect, got ${got?.srcSet}`);
+  }
+  const unparseable = presenterPhoto(fbBase, 'image-not-a-sized-ref');
   expect(
-    JSON.stringify(unknown) === JSON.stringify(expectedPhoto(unknownUrl, null, 1000)),
-    `unknown asset: want fit=max, no rect, 160/320 srcSet, got ${JSON.stringify(unknown)}`,
-  );
-  const unparseable = presenterPhoto(unknownUrl, 'image-not-a-sized-ref');
-  expect(
-    JSON.stringify(unparseable) === JSON.stringify(expectedPhoto(unknownUrl, null, PLATE_1X)),
-    `unparseable ref: want capped at ${PLATE_1X}px (never upscale blind), got ${JSON.stringify(unparseable)}`,
+    JSON.stringify(unparseable) === JSON.stringify(fallbackPhoto(fbBase, [PLATE_1X])),
+    `unparseable ref: want one ${PLATE_1X}px fit=crop rung (never upscale blind), got ${JSON.stringify(unparseable)}`,
   );
   const tibbsPhoto = presenterPhoto(known[2].url, known[2].ref);
   expect(
@@ -107,4 +137,4 @@ if (typeof presenterPhoto === 'function') {
   expect(presenterPhoto(null, known[0].ref) === null, 'url null with a known ref must still return null');
 }
 
-finish('check-presenter-photo.mjs', failures, 'presenterPhoto: exact 4:5 rect crops per asset ref, fit=max, widths capped at the available width, 1x/2x srcSet (Tibbs 160/201), unknown refs rect-free.');
+finish('check-presenter-photo.mjs', failures, 'presenterPhoto: exact 4:5 rect crops per asset ref, mapped crops fit=max capped at the available width with a 1x/2x srcSet (Tibbs 160/201), unknown refs fit=crop 4:5 centre crops capped at min(W, floor(H*4/5)) with upscaling rungs dropped.');

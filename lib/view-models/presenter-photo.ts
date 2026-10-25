@@ -51,41 +51,62 @@ const PLATE_WIDTH_1X = 160;
 const PLATE_WIDTH_2X = 320;
 const ASPECT_WIDTH = 4;
 const ASPECT_HEIGHT = 5;
-// Sanity asset refs end -<W>x<H>-<ext>: the asset's own original width.
-const ASSET_REF_WIDTH = /-(\d+)x\d+-[a-z]+$/;
+// Sanity asset refs end -<W>x<H>-<ext>: the asset's own original size.
+const ASSET_REF_SIZE = /-(\d+)x(\d+)-[a-z]+$/;
 
 function heightFor(width: number): number {
   return Math.round((width * ASPECT_HEIGHT) / ASPECT_WIDTH);
 }
 
-// Widest the CDN can honestly serve: the crop rect (cut from the original) for a mapped asset,
-// else the width in the asset ref. An unparseable ref caps at the 1x plate, never upscaling blind.
-function availableWidth(assetRef: string | null, crop: CropBox | undefined): number {
-  if (crop) return crop.x1 - crop.x0;
-  const parsed = assetRef ? Number(ASSET_REF_WIDTH.exec(assetRef)?.[1]) : NaN;
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : PLATE_WIDTH_1X;
-}
-
-function urlAt(url: string, crop: CropBox | undefined, width: number): string {
-  const height = heightFor(width);
-  if (!crop) return `${url}?w=${width}&h=${height}&fit=max&auto=format`;
+function rectUrl(url: string, crop: CropBox, width: number): string {
   // Commas are percent-encoded so a naive srcset split on "," cannot cut the URL in half.
   const rect = [crop.x0, crop.y0, crop.x1 - crop.x0, crop.y1 - crop.y0].join('%2C');
-  return `${url}?rect=${rect}&w=${width}&h=${height}&fit=max&auto=format`;
+  return `${url}?rect=${rect}&w=${width}&h=${heightFor(width)}&fit=max&auto=format`;
+}
+
+function cropUrl(url: string, width: number): string {
+  return `${url}?w=${width}&h=${heightFor(width)}&fit=crop&auto=format`;
+}
+
+function photoFor(src: string, width: number, src2x: string | null): PresenterPhoto {
+  return {
+    src,
+    srcSet: src2x ? `${src} 1x, ${src2x} 2x` : `${src} 1x`,
+    width,
+    height: heightFor(width),
+  };
+}
+
+// Mapped asset: the crop rect is already an exact 4:5 cut of the original, so cap at its width.
+function mappedPhoto(url: string, crop: CropBox): PresenterPhoto {
+  const available = crop.x1 - crop.x0;
+  const width = Math.min(PLATE_WIDTH_1X, available);
+  return photoFor(
+    rectUrl(url, crop, width),
+    width,
+    rectUrl(url, crop, Math.min(PLATE_WIDTH_2X, available)),
+  );
+}
+
+// Unmapped asset: centre-crop to 4:5 (fit=crop). The widest 4:5 crop that needs no upscale is
+// min(W, floor(H x 4/5)); the 2x rung is dropped when it would exceed that. An unparseable ref
+// ships a single 1x rung, never upscaling blind.
+function fallbackPhoto(url: string, assetRef: string | null): PresenterPhoto {
+  const match = assetRef ? ASSET_REF_SIZE.exec(assetRef) : null;
+  const sourceWidth = match ? Number(match[1]) : 0;
+  const sourceHeight = match ? Number(match[2]) : 0;
+  const cap =
+    sourceWidth > 0 && sourceHeight > 0
+      ? Math.min(sourceWidth, Math.floor((sourceHeight * ASPECT_WIDTH) / ASPECT_HEIGHT))
+      : PLATE_WIDTH_1X;
+  const width = Math.min(PLATE_WIDTH_1X, cap);
+  const src2x = PLATE_WIDTH_2X <= cap ? cropUrl(url, PLATE_WIDTH_2X) : null;
+  return photoFor(cropUrl(url, width), width, src2x);
 }
 
 export function presenterPhoto(url: string | null, assetRef: string | null): PresenterPhoto | null {
   if (!url) return null;
 
   const crop = assetRef ? PRESENTER_PHOTO_CROPS[assetRef] : undefined;
-  const available = availableWidth(assetRef, crop);
-  const width = Math.min(PLATE_WIDTH_1X, available);
-  const src = urlAt(url, crop, width);
-  const src2x = urlAt(url, crop, Math.min(PLATE_WIDTH_2X, available));
-  return {
-    src,
-    srcSet: `${src} 1x, ${src2x} 2x`,
-    width,
-    height: heightFor(width),
-  };
+  return crop ? mappedPhoto(url, crop) : fallbackPhoto(url, assetRef);
 }
