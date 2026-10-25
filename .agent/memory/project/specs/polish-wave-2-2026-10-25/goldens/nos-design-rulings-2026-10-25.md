@@ -16,3 +16,13 @@ F8: DuotonePicker pattern for "Mark only" and "National Show 2027"; text-only op
 - ≤9,000px at 390; report measured height in shots.
 
 Buy enabled at qty 0 per r45b: agreed (no change).
+
+## Round 2 (NOS Design, 2026-10-25, after by-eye judging of shots)
+F3: PASS (h1, ticket card, form column all start x32 at 1280; card and form 560 wide; 390 gutters intact).
+F4: labels/underline/contrast/one-line PASS. Fix: links sit ~50px below "Continue to payment" — tighten to 12–16px under the CTA (Gestalt proximity). buy-fixture-390 missing page gutter treated as fixture artefact (confirm).
+F8 ruling (b), "Lockups picker":
+- Merge Full colour and Greyscale into one "Lockups" section: segmented toggle (Full colour | Greyscale) + the 4 variants as radios (Horizontal dark on light, Horizontal light on dark, Vertical dark on light, Vertical light on dark). DuotonePicker anatomy: one preview, downloads follow selection and name the file, selected state not by colour alone.
+- Keep both "Download this section (zip)" links inside the section, labelled with their family. "On this page" anchors for Full colour and Greyscale deep-link to the picker with that family preselected.
+- Duotone stays its own picker. Usage untouched in this PR.
+- Revised target: ≤ ~10,500px at 390 (9,000 withdrawn). Report measured height.
+- Before sign-off: one eager-loaded (or scroll-then-shoot) capture proving Mark-only preview, 512 Full colour card, the four Do/Don't illustrations, National Show picker preview and Disa emblem render.

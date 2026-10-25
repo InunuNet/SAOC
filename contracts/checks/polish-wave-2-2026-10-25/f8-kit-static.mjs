@@ -29,7 +29,21 @@ if (/tabIndex=\{[^}]*[1-9]/.test(picker)) failures.push('OptionPicker sets a pos
 if (/backgroundColor|#[0-9a-fA-F]{6}\b|\bhex\b/.test(picker)) failures.push('OptionPicker carries a colour or hex (swatches are not supplied for these options; text only)');
 if (/<legend\b(?![^>]*sr-only)/.test(picker)) failures.push('OptionPicker legend must be visually hidden (sr-only): the visible words are the section heading');
 
+// Round 2 (NOS Design): Full colour and Greyscale merge into one "Lockups" picker.
+const lockup = tryRead('components/media-kit/LockupPicker.tsx');
+if (!/^'use client';/m.test(lockup)) failures.push("LockupPicker is not a client component ('use client')");
+if ((lockup.match(/role="radiogroup"/g) ?? []).length < 2 || !/type="radio"/.test(lockup)) failures.push('LockupPicker needs two radio groups (family toggle and variants)');
+if (!/min-h-\[44px\]/.test(lockup)) failures.push('LockupPicker chips are not min-h-[44px]');
+if (!/hashchange/.test(lockup) || !/replaceState/.test(lockup)) failures.push('LockupPicker does not sync to the URL hash');
+if (!/peer-checked:font-semibold|peer-checked:font-bold/.test(lockup) || !/peer-checked:ring-/.test(lockup)) failures.push('LockupPicker selected state must be weight plus ring, not colour alone');
+if (/tabIndex=\{[^}]*[1-9]/.test(lockup)) failures.push('LockupPicker sets a positive tabIndex');
 const body = tryRead('app/(marketing)/media-kit/MediaKitPageBody.tsx');
+if (!/<LockupPicker\b/.test(body)) failures.push('MediaKitPageBody does not render <LockupPicker>');
+if (!/<KitSection\b[^>]*id="lockups"[^>]*heading="Lockups"/.test(body) && !/id="lockups"/.test(body)) failures.push('MediaKitPageBody has no section id="lockups" headed "Lockups"');
+if (/<KitSection\b[^>]*id="(full-colour|greyscale)"/.test(body)) failures.push('the separate Full colour and Greyscale sections are still there');
+for (const anchor of ['full-colour', 'greyscale']) if (!new RegExp(`id="${anchor}"`).test(body)) failures.push(`the "On this page" anchor id="${anchor}" must stay (inside the Lockups section) so the existing jump links deep-link to the picker`);
+for (const key of ["kit.sectionZips['full-colour']", 'kit.sectionZips.greyscale']) if (!body.includes(key)) failures.push(`MediaKitPageBody dropped ${key} (both family zips stay in the Lockups section)`);
+for (const [href, label] of [['#full-colour', 'Full colour'], ['#greyscale', 'Greyscale']]) if (!new RegExp(`href: '${href}', label: '${label}'`).test(body)) failures.push(`JUMP_ITEMS lost { href: '${href}', label: '${label}' }`);
 const pickers = body.match(/<OptionPicker\b/g) ?? [];
 if (pickers.length !== 2) failures.push(`MediaKitPageBody renders ${pickers.length} <OptionPicker>, want 2`);
 for (const id of ['mark-only', 'national-show', 'duotone']) if (!new RegExp(`id="${id}"`).test(body)) failures.push(`MediaKitPageBody lost section id="${id}"`);

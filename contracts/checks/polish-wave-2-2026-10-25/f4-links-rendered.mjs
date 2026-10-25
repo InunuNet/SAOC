@@ -3,7 +3,8 @@
 //   - flagless server: the fixture is a 404
 //   - flagged server (NOS Design ruling): the form shows "Refunds · Privacy" on ONE line after the Buy button, "Refunds"
 //     -> /refunds and "Privacy" -> /privacy, each underlined, >=24px tall, text contrast >=4.5:1 on the ground it
-//     sits on, the first starting no more than 160px below the Buy button's bottom edge, no horizontal overflow
+//     sits on, the first starting 12-16px below the Buy ("Continue to payment") button's bottom edge (NOS Design round 2),
+//     the fixture form inset from the viewport edge by the page gutter (>=16px at 390), no horizontal overflow
 // Run as: node contracts/checks/polish-wave-2-2026-10-25/f4-links-rendered.mjs
 import { finish } from './_lib.mjs';
 import { buildProblem, get, require, startServer } from './_server.mjs';
@@ -52,6 +53,7 @@ try {
       const line = (form?.querySelector('.nk-policy')?.textContent ?? '').replace(/\s+/g, ' ').trim();
       return {
         hasForm: !!form,
+        formLeft: form ? form.getBoundingClientRect().left : null,
         buyBottom: buy ? buy.getBoundingClientRect().bottom : null,
         links, ratio, line,
         overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -69,8 +71,10 @@ try {
         if (m.ratio[i] < 4.5) failures.push(`${tag}: "${l.text}" contrast ${m.ratio[i].toFixed(2)}:1, want >=4.5:1`);
       });
       if (Math.abs(m.links[0].top - m.links[1].top) > 2) failures.push(`${tag}: Refunds and Privacy are not on one line (tops ${m.links[0].top.toFixed(0)}, ${m.links[1].top.toFixed(0)})`);
-      if (m.buyBottom !== null && !(m.links[0].top >= m.buyBottom - 1 && m.links[0].top - m.buyBottom <= 160)) failures.push(`${tag}: first policy link is ${(m.links[0].top - m.buyBottom).toFixed(0)}px from Buy, want 0-160 below`);
+      const gap = m.links[0].top - m.buyBottom;
+      if (m.buyBottom === null || gap < 11.5 || gap > 16.5) failures.push(`${tag}: first policy link is ${gap.toFixed(1)}px below the Buy button, want 12-16px`);
     }
+    if (vp.width === 390 && (m.formLeft === null || m.formLeft < 16)) failures.push(`${tag}: form starts at x=${m.formLeft}, want the page gutter (>=16px)`);
     if (m.overflow > 0) failures.push(`${tag}: horizontal overflow of ${m.overflow}px`);
     await ctx.close();
   }

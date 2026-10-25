@@ -36,7 +36,9 @@ else {
   const stray = policy[1].replace(/<Link\b[\s\S]*?<\/Link>/g, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/<span aria-hidden="true">\s*·\s*<\/span>/, '').trim();
   if (stray) failures.push(`.nk-policy holds anything other than the two links and one aria-hidden dot span: "${stray.slice(0, 60)}"`);
   if (!/<\/Link>\s*<span aria-hidden="true">\s*·\s*<\/span>\s*<Link/.test(policy[1])) failures.push('the two links are not joined by <span aria-hidden="true">·</span>');
-  if (form.indexOf('className="nk-policy"') < form.indexOf('data-buy-hint')) failures.push('.nk-policy must come after the Buy hint paragraph');
+  // Round 2: the links sit 12-16px under the CTA, so nothing but the CTA row may precede them (the hint moves after them).
+  if (form.indexOf('className="nk-policy"') < form.indexOf('nk-checkout-total')) failures.push('.nk-policy must come after the .nk-checkout-total CTA row');
+  if (form.indexOf('className="nk-policy"') > form.indexOf('data-buy-hint')) failures.push('.nk-policy must come before the Buy hint paragraph (round 2: 12-16px under the CTA)');
   if (/<\/form>/.test(form) && form.indexOf('</form>') < form.indexOf('className="nk-policy"')) failures.push('.nk-policy must be inside the <form>');
 }
 

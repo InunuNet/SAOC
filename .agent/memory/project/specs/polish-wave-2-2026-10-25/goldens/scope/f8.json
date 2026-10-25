@@ -4,6 +4,8 @@
     "app/(marketing)/media-kit/page.tsx",
     "app/(marketing)/media-kit/MediaKitPageBody.tsx",
     "components/media-kit/OptionPicker.tsx",
+    "components/media-kit/LockupPicker.tsx",
+    "components/media-kit/KitSection.tsx",
     "app/media-kit-fixtures/page.tsx",
     "docs/polish-wave-2-f8-media-kit-pickers.md"
   ]

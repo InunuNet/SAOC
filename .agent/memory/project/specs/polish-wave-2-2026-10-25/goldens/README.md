@@ -26,6 +26,9 @@ contract-f1 or contract-f5 files).
 ## NOS Design rulings (final, 2026-10-25): goldens/nos-design-rulings-2026-10-25.md
 They answer design questions 2, 3 and 4 below and agree with 1 (Buy stays enabled at qty 0). F4 labels are "Refunds" and "Privacy" as "Refunds · Privacy"; F3 is left on the hero axis, full width below 1024; F8 text-only pickers with the added a11y conditions. The questions below are kept as the record of what was asked.
 
+## Round 2 flag: new copy in the Lockups picker
+The ruling's heading "Lockups" and the four variant labels are not existing strings (existing lockup_label: "Horizontal — dark type on light", "Horizontal — light type on dark", "Vertical — dark type on light", "Vertical — light type on dark"). Built as ruled because the lead and NOS Design specified them; if the no-invention rule is applied strictly, swap to the existing labels (one constant; the heading has no existing equivalent).
+
 ## DESIGN QUESTIONS (flagged, not resolved by invention)
 1. Buy button at quantity 0. TicketPurchaseForm.tsx's own comment: "The CTA stays enabled at quantity 0; a click there fills the hint and moves focus to it",
    and the same for no day chosen (r45b). The backlog asks for the opposite. A disabled submit leaves the keyboard tab order, hides the reason, and a disabled
