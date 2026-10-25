@@ -72,7 +72,7 @@ export default async function ShowArchivePage() {
       <DocumentLayout>
         {pastShows.length > 0 ? (
           <>
-            <h2 className="sr-only">National Show editions</h2>
+            <h2 className="sr-only nos-ar-heading">National Show editions</h2>
             <ul className="nos-ar-register">
               {pastShows.map((show) => {
                 const values = [show.entries, show.exhibitors, show.visitors, show.trophies];

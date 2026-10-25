@@ -83,6 +83,7 @@ export default async function WorkshopsPage() {
             <div className="nk-grid">
               <div className="nk-wrap">
                 <TicketCard
+                  headingLevel="p"
                   productId="workshops"
                   vm={card}
                   name={card.name}

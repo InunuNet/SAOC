@@ -33,7 +33,8 @@ export const metadata: Metadata = withTicketingTestTitle(
   buildPageMetadata({
     title: NOS_ROUTE_HEROES.conferences.title,
     image: nosOgImage('Conference registration — National Show'),
-    description: "For visitors interested in orchid science, cultivation, conservation and horticulture.",
+    description:
+      'For visitors interested in orchid science, cultivation, conservation and horticulture.',
     path: '/national-show/conferences',
   })
 );
@@ -48,21 +49,23 @@ interface ConferenceRow {
 }
 
 // The row headings are the show nav labels (CR-G1).
-// FAQ v1.0: section 6 / 7 introductions (first sentence), questions 38 / 47 (answers).
+// FAQ v1.0: section 6 / 7 introductions (whole), questions 38 / 47 (answers).
 const CONFERENCE_ROWS: readonly ConferenceRow[] = [
   {
     id: 'symposium',
     heading: 'Symposium',
-    standfirst: "For visitors interested in orchid science, cultivation, conservation and horticulture.",
-    body: "The Symposium is an educational programme forming part of the National Orchid Show, bringing together knowledgeable speakers to share information about orchids, their cultivation, genetics, distribution, natural habitats and conservation.",
+    standfirst:
+      'For visitors interested in orchid science, cultivation, conservation and horticulture. Bookings can be made on the website.',
+    body: 'The Symposium is an educational programme forming part of the National Orchid Show, bringing together knowledgeable speakers to share information about orchids, their cultivation, genetics, distribution, natural habitats and conservation.',
     linkLabel: 'About the Symposium',
     href: '/symposium',
   },
   {
     id: 'wosa',
     heading: 'WOSA Conference',
-    standfirst: "For Wild Orchids Southern Africa members, conservation enthusiasts and conference delegates.",
-    body: "The 7th WOSA Conference will be held in conjunction with the National Orchid Show in September 2027. It is planned as a one-day event focusing on wild orchids and related conservation and botanical topics.",
+    standfirst:
+      'For Wild Orchids Southern Africa members, conservation enthusiasts and conference delegates.',
+    body: 'The 7th WOSA Conference will be held in conjunction with the National Orchid Show in September 2027. It is planned as a one-day event focusing on wild orchids and related conservation and botanical topics.',
     linkLabel: 'About the WOSA Conference',
     href: '/wosa-conference',
   },
@@ -113,6 +116,7 @@ export default async function ConferencesTicketsPage() {
                     <div className="nk-grid">
                       <div className="nk-wrap">
                         <TicketCard
+                          headingLevel="p"
                           productId={row.id}
                           vm={vm}
                           name={vm.name}

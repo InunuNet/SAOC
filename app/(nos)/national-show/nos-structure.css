@@ -3200,10 +3200,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   .nos-theme .nos-sp-go {
     display: none;
   }
-  .nos-theme .nos-sp-reach h3,
-  .nos-theme .nos-sp-qa h3 {
-    font-size: 1.375rem;
-  }
 }
 
 .nos-theme .nos-sp-wall-head {
@@ -4052,12 +4048,17 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-size: clamp(2rem, 1.5rem + 1.5vw, 3rem);
   line-height: 1;
 }
+.nos-theme .nos-ar-heading {
+  font-weight: 400;
+  font-size: var(--fs-lg);
+  line-height: 1.25;
+}
 .nos-theme .nos-ar-title {
   grid-area: title;
   margin: 0;
   font-family: var(--serif);
   font-weight: 400;
-  font-size: 1.5rem;
+  font-size: var(--fs-lg);
   line-height: 1.25;
 }
 .nos-theme .nos-ar-facts {
@@ -4208,6 +4209,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 .nos-theme .nos-ex-q {
   font-weight: 400;
+  font-size: var(--fs-lg);
+  line-height: 1.15;
 }
 .nos-theme .nos-ct-team dd p {
   margin: 0;
@@ -4378,5 +4381,28 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
   .nos-theme .nos-hero-facts-skeleton--cr {
     min-height: 79px;
+  }
+}
+
+/* CR-G1 below 1024: h2, standfirst, the ticket, body, link. The aside is a flex item beside a transparent main. */
+@media (max-width: 1023.98px) {
+  .nos-theme .nos-cr-row [data-doc-main],
+  .nos-theme .nos-cr-main {
+    display: contents;
+  }
+  .nos-theme .nos-cr-main h2 {
+    order: 1;
+  }
+  .nos-theme .nos-cr-main .doc-standfirst {
+    order: 2;
+  }
+  .nos-theme .nos-cr-row .doc-layout--aside-first > [data-doc-aside] {
+    order: 3;
+  }
+  .nos-theme .nos-cr-text {
+    order: 4;
+  }
+  .nos-theme .nos-cr-link {
+    order: 5;
   }
 }

@@ -73,6 +73,7 @@ export default async function SymposiumPage() {
             <div className="nk-grid">
               <div className="nk-wrap">
                 <TicketCard
+                  headingLevel="p"
                   productId="symposium"
                   vm={card}
                   name={card.name}

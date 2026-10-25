@@ -109,6 +109,7 @@ export default async function WosaConferencePage() {
             <div className="nk-grid">
               <div className="nk-wrap">
                 <TicketCard
+                  headingLevel="p"
                   productId="wosa"
                   vm={card}
                   name={card.name}

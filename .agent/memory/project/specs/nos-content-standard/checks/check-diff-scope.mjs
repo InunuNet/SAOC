@@ -46,7 +46,7 @@ const run = (args) => { try { return execFileSync('git', args, { encoding: 'utf8
 // Diff against the merge-base with origin/main, not origin/main's tip: files that came in through a merge of main are not the dev's. A file whose content
 // equals origin/main's tip is dropped as well, whichever side moved.
 const MB = (run(['merge-base', 'HEAD', 'origin/main']) ?? [])[0] ?? 'origin/main';
-const REFS = [MB, process.env.NOS_STD_REF76 ?? 'feat/nos-pagehero', process.env.NOS_STD_REFSAOC ?? '81cd3a32'];
+const REFS = [MB, process.env.NOS_STD_REF76 ?? 'feat/nos-pagehero', process.env.NOS_STD_REFSAOC ?? '823308f5'];
 const sets = REFS.map((r) => run(['diff', '--name-only', r]));
 const missing = REFS.filter((_, i) => sets[i] === null);
 if (missing.length) { console.error(`nos-content-standard diff scope FAILED: cannot resolve ref(s) ${missing.join(', ')} (git fetch origin; fetch #76)`); process.exit(1); }

@@ -771,7 +771,7 @@ async function routeFactsChecks(page, route, vp, c, tag) {
   c.check(`${tag} FACTS the facts aside (${m.aside.join(' / ') || 'none'}) shows only ${STD.showFactsLabels.allowedLabels.join(' / ')}, never Cycle or Triennial`, m.aside.every((x) => STD.showFactsLabels.allowedLabels.includes(x)));
 }
 
-/** Ticket-first event routes (SY, WO, WK, CR) sit on SAOC's DocumentLayout at the pinned commit (currently 81cd3a32; rev 39 awaits the replacement sha): `asideFirst` -> .doc-layout--aside-first, `asideBare` -> .doc-aside--bare, a 440px cap below 1024. With asideFirst the aside precedes main in the DOM and in tab order (so the visual order and the focus order agree); below 1024 it is also first by bounding-box y, and from 1024 it keeps its right-hand column. */
+/** Ticket-first event routes (SY, WO, WK, CR) sit on SAOC's DocumentLayout at the pinned commit (823308f5): `asideFirst` -> .doc-layout--aside-first, `asideBare` -> .doc-aside--bare, a 440px cap below 1024. With asideFirst the aside precedes main in the DOM and in tab order (so the visual order and the focus order agree); below 1024 it is also first by bounding-box y, and from 1024 it keeps its right-hand column. */
 async function ticketLayoutChecks(page, vp, c, tag) {
   const m = await page.evaluate(() => {
     const layout = document.querySelector('[data-doc-layout]'); const aside = document.querySelector('[data-doc-aside]'); const main = document.querySelector('[data-doc-main]');
