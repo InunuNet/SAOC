@@ -26,8 +26,8 @@ assertions:
   phase: 4
   checks:
     - id: A1
-      description: globals.css reserves the scrollbar gutter (RED on baseline)
-      command: 'grep -q "scrollbar-gutter: stable" app/globals.css'
+      description: "globals.css reserves the scrollbar gutter (RED on baseline). Triad coverage for F7, recorded here because the contract classifies exempt - Codex QA PASS (gpt-6-sol, full wave + F6 delta, execution/codex_qa.sh); browser layer is the orchestrator's post-deploy check on beta.saoc.co.za; gws inbox layer N/A, F7 sends no email."
+      command: node contracts/checks/polish-wave-2026-10-25/f7-gutter-static.mjs
     - id: A2
       description: production build passes
       command: NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
