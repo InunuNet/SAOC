@@ -44,15 +44,23 @@ export function get(port, path, host) {
   });
 }
 
-export async function startServer() {
+export async function startServer({ preview = false, env: extraEnv = {} } = {}) {
   let port = null;
   for (let p = Number(process.env.POLISH_PORT || 3030); p <= 3049; p += 1) {
     if (p !== 3002 && (await portFree(p))) { port = p; break; }
   }
   if (!port) throw new Error('no free port in 3030-3049');
-  const env = { ...process.env, NODE_ENV: 'production', BETA_PASSWORD_WALL_OFF: 'true' };
-  delete env.BETA_BASIC_AUTH_USER;
-  delete env.BETA_BASIC_AUTH_PASSWORD;
+  const env = { ...process.env, NODE_ENV: 'production', BETA_PASSWORD_WALL_OFF: 'true', ...extraEnv };
+  if (preview) {
+    // Runtime-only preview mode (SHOW_PLACEHOLDER_PREVIEW plus wall credentials), like the deployed beta:
+    // the build that produced .next never saw these, so a page frozen at build time shows the public nav.
+    env.SHOW_PLACEHOLDER_PREVIEW = 'true';
+    env.BETA_BASIC_AUTH_USER = 'polish';
+    env.BETA_BASIC_AUTH_PASSWORD = 'polish-render-check';
+  } else {
+    delete env.BETA_BASIC_AUTH_USER;
+    delete env.BETA_BASIC_AUTH_PASSWORD;
+  }
   const server = spawn(resolve(repoRoot, 'node_modules/.bin/next'), ['start', '-p', String(port), '-H', '::'], {
     cwd: repoRoot, env, stdio: ['ignore', 'pipe', 'pipe'],
   });

@@ -1,0 +1,12 @@
+{
+  "feature": "F7",
+  "allow": [
+    "components/societies/SocietyFacts.tsx",
+    "components/societies/SocietyAbout.tsx",
+    "app/(marketing)/societies/SocietiesClient.tsx",
+    "components/home/EventsStrip.tsx",
+    "app/(marketing)/contact/page.tsx",
+    "app/globals.css",
+    "docs/polish-wave-f7-targets.md"
+  ]
+}

@@ -2,9 +2,9 @@
 // values into each public form and submitting by Enter, and separately by a forced click, must
 // never put a field value, or any query string, in the URL. Baseline: the forms are native GET and
 // the URL fills up. Each gesture is its own fresh page load, so one cannot mask the other.
-// Forms reached: /contact, /members, /events/submit (SAOC host); /vendors/apply and /vendors/register
-// (code-entry gate, no session cookie) on the NOS host. TicketPurchaseForm needs a Sanity ticket
-// document, so it is covered by f1-forms-static.mjs only (declared limitation).
+// Forms reached (the one inside <main>; the footer newsletter form is excluded, see goldens/README.md): /contact, /members (SAOC host); /vendors/apply and /vendors/register
+// (code-entry gate, no session cookie) on the NOS host. SubmitEventForm sits behind a Firebase session and TicketPurchaseForm needs a Sanity ticket
+// document, so both are covered by f1-forms-static.mjs only (declared limitation).
 // Run as: node contracts/checks/polish-wave-2026-10-25/f1-forms-nojs.mjs   (needs a current build)
 import { finish } from './_lib.mjs';
 import { buildProblem, require, startServer } from './_server.mjs';
@@ -17,7 +17,6 @@ const { chromium } = require('playwright');
 const TARGETS = [
   { host: 'localhost', path: '/contact' },
   { host: 'localhost', path: '/members' },
-  { host: 'localhost', path: '/events/submit' },
   { host: 'nos.localhost', path: '/vendors/apply' },
   { host: 'nos.localhost', path: '/vendors/register' },
 ];
@@ -40,7 +39,7 @@ async function attempt(target, how, vp) {
   try {
     const resp = await page.goto(`http://${target.host}:${srv.port}${target.path}`, { waitUntil: 'load', timeout: 30000 });
     if (!resp || resp.status() !== 200) { failures.push(`${label}: HTTP ${resp ? resp.status() : 'none'}, want 200`); return; }
-    const form = page.locator('form').filter({ has: page.locator('input[name], textarea[name]') }).first();
+    const form = page.locator('main form').filter({ has: page.locator('input[name], textarea[name]') }).first();
     if ((await form.count()) === 0) { failures.push(`${label}: no form with named fields rendered (check cannot run)`); return; }
     const fields = form.locator(FIELD_SELECTOR);
     const n = await fields.count();
