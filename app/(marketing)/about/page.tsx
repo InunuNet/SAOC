@@ -44,9 +44,9 @@ interface BoardMemberData {
 // §4). Every value here traces to a sentence in that document; nothing is
 // invented. The pre-mission stats band (judging-standardisation year, shows
 // hosted, affiliated-society counts) is NOT in content.md and has been
-// removed.
+// removed. The bare "1968 / Founded" stat was also removed: it restated the
+// founding date beside it and the prose already says "Established in 1968".
 const HERITAGE_STATS = [
-  { value: '1968', label: 'Founded' },
   { value: '28 July 1968', label: 'Founding date, Bloemfontein' },
   { value: '4', label: 'Founding societies' },
   { value: '15', label: 'Accredited SAOC Judges, Sept 1968' },
@@ -176,7 +176,7 @@ export default async function AboutPage() {
       {/* Heritage stats — 4 facts stated in content.md, see golden §4 */}
       <section className="bg-bone py-16">
         <div className="saoc-container">
-          <dl className="grid grid-cols-2 gap-x-8 gap-y-8 border-y border-rule py-10 sm:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-x-8 gap-y-8 border-y border-rule py-10 sm:grid-cols-3">
             {HERITAGE_STATS.map((stat) => (
               <div key={stat.label}>
                 <dt className="font-serif tracking-[-0.015em] font-normal min-[1231px]:font-light text-[clamp(24px,2.6vw,38px)] leading-none text-primary">

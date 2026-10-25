@@ -235,46 +235,48 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
         crumbs={breadcrumbs}
       />
 
-      <div className="mx-auto max-w-[560px] px-8 pb-12 pt-10 md:pt-16">
-        {!salesOpen ? (
-          <SalesClosedNotice message={salesClosedMessage} />
-        ) : cardData.soldOut ? (
-          <div className="nk-closed" role="status">
-            <p className="font-serif text-[20px] text-ink">{soldOutMessage}</p>
-          </div>
-        ) : null}
-        {purchasable && productId ? (
-          <div className="nk-wrap nk-checkout-summary">
-            <TicketCard
-              productId={productId}
-              variant="summary"
-              headingLevel="p"
-              day={summaryDay}
-              provisionalPrice={cardData.provisional}
-              name={ticketType.name}
-              vm={{
-                slug: ticketType.slug,
-                name: ticketType.name,
-                state: 'available',
-                price: effectivePrice,
-                regularPrice: null,
-                scarcity: null,
-                days: null,
-              }}
+      <div data-nos-wrap data-ticket-body className="pb-12 pt-10 md:pt-16">
+        <div className="lg:max-w-[560px]">
+          {!salesOpen ? (
+            <SalesClosedNotice message={salesClosedMessage} />
+          ) : cardData.soldOut ? (
+            <div className="nk-closed" role="status">
+              <p className="font-serif text-[20px] text-ink">{soldOutMessage}</p>
+            </div>
+          ) : null}
+          {purchasable && productId ? (
+            <div className="nk-wrap nk-checkout-summary">
+              <TicketCard
+                productId={productId}
+                variant="summary"
+                headingLevel="p"
+                day={summaryDay}
+                provisionalPrice={cardData.provisional}
+                name={ticketType.name}
+                vm={{
+                  slug: ticketType.slug,
+                  name: ticketType.name,
+                  state: 'available',
+                  price: effectivePrice,
+                  regularPrice: null,
+                  scarcity: null,
+                  days: null,
+                }}
+              />
+            </div>
+          ) : null}
+          {purchasable ? (
+            <TicketPurchaseForm
+              ticketTypes={[cardData]}
+              showDays={showDays}
+              initialQuantity={quantity ?? undefined}
+              initialDay={day}
+              dayCounts={dayCounts}
+              showProvisional={showProvisional}
+              showTestModeBanner={await viewerIsVerifiedAdmin()}
             />
-          </div>
-        ) : null}
-        {purchasable ? (
-          <TicketPurchaseForm
-            ticketTypes={[cardData]}
-            showDays={showDays}
-            initialQuantity={quantity ?? undefined}
-            initialDay={day}
-            dayCounts={dayCounts}
-            showProvisional={showProvisional}
-            showTestModeBanner={await viewerIsVerifiedAdmin()}
-          />
-        ) : null}
+          ) : null}
+        </div>
       </div>
     </>
   );

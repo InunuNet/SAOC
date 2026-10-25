@@ -1,0 +1,8 @@
+{
+  "feature": "F3",
+  "allow": [
+    "app/(nos)/tickets/[slug]/page.tsx",
+    "app/(nos)/national-show/nos-structure.css",
+    "docs/polish-wave-2-f3-checkout-layout.md"
+  ]
+}

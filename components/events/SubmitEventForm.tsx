@@ -158,9 +158,11 @@ export function SubmitEventForm({ societies }: SubmitEventFormProps) {
 
   if (status === 'success') {
     return (
-      <p className="text-green-700 text-sm" role="status">
-        Submitted for council review. Thank you — we will be in touch.
-      </p>
+      <div className="border border-rule bg-parchment p-8">
+        <p role="status" className="font-sans text-[16px] leading-[1.55] text-ink/80">
+          Submitted for council review. Thank you — we will be in touch.
+        </p>
+      </div>
     );
   }
 

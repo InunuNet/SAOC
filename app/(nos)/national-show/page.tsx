@@ -15,6 +15,7 @@ import { SectionHeading } from '@/components/nos/SectionHeading';
 import { JsonLd, nationalShowEventJsonLd, type NationalShowOffer } from '@/components/seo/JsonLd';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import {
+  activeShowWindowQuery,
   activeTicketTypesByCategoryQuery,
   showClassesQuery,
   nationalShowQuery,
@@ -28,6 +29,7 @@ import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { showClasses as staticClasses } from '@/lib/data/showClasses';
 import { cheapestAdmission, formatRand } from '@/components/nos/cheapest-admission';
 import { buildHubCards, TICKET_CATEGORIES, type HubCmsTicketType } from '@/lib/data/ticket-hub-source';
+import { resolveActiveShow, type ShowActivationFields } from '@/lib/show-resolution';
 import { buildTicketOffers } from '@/lib/ticket-offers';
 import { DAY_VISITOR_SELLABLE_DAYS } from '@/lib/provisional-figures';
 import { buildPageMetadata } from '@/lib/seo';
@@ -154,7 +156,11 @@ interface SanityHubTicketType extends HubCmsTicketType {
  * is request-time; the per-product /tickets/<slug> page each offer URL points at renders live
  * inventory.
  */
-function buildShowOffers(ticketTypes: SanityHubTicketType[], now: Date): NationalShowOffer[] {
+function buildShowOffers(
+  ticketTypes: SanityHubTicketType[],
+  now: Date,
+  activeShowId: string | null
+): NationalShowOffer[] {
   const { cards } = buildHubCards({
     cmsTypes: ticketTypes,
     salesOpen: true,
@@ -163,6 +169,7 @@ function buildShowOffers(ticketTypes: SanityHubTicketType[], now: Date): Nationa
     stockKnown: true,
     now,
     showDays: DAY_VISITOR_SELLABLE_DAYS,
+    activeShowId,
   });
   const cutoffBySlug = new Map(ticketTypes.map((t) => [t.slug, t.earlyBirdCutoff]));
   return buildTicketOffers(cards).map((offer) => ({
@@ -267,7 +274,7 @@ export default async function NationalShowPage() {
   const visitorCards = (await showPastShowsRoute())
     ? VISITOR_CARDS
     : VISITOR_CARDS.filter((card) => card.href !== PAST_SHOWS_HREF);
-  const [sanityClasses, sanityShow, visitorInfo, salesState, hubTicketTypesByCategory] =
+  const [sanityClasses, sanityShow, visitorInfo, salesState, shows, hubTicketTypesByCategory] =
     await Promise.all([
       sanityFetch<SanityShowClass[]>({ query: showClassesQuery, tags: ['showClass', 'sanity'] }),
       sanityFetch<SanityNationalShow>({
@@ -281,6 +288,10 @@ export default async function NationalShowPage() {
       sanityFetch<{ salesOpen?: boolean | null }>({
         query: nationalShowSalesQuery,
         tags: ['nationalShow', 'sanity'],
+      }),
+      sanityFetch<ShowActivationFields[]>({
+        query: activeShowWindowQuery,
+        tags: ['show', 'sanity'],
       }),
       Promise.all(
         TICKET_CATEGORIES.map((category) =>
@@ -342,7 +353,7 @@ export default async function NationalShowPage() {
     venueName: sanityShow?.venue?.name,
     venueAddress: formatVenueAddress(sanityShow?.venue),
     url: EVENT_URL,
-    offers: salesState?.salesOpen === true ? buildShowOffers(hubTicketTypes, new Date()) : [],
+    offers: salesState?.salesOpen === true ? buildShowOffers(hubTicketTypes, new Date(), resolveActiveShow(shows ?? [])) : [],
   });
 
   const classes: ShowClass[] =

@@ -1,0 +1,67 @@
+schema: athanor.contract/v1
+slug: polish-wave-2-2026-10-25
+goal: Contract A7 of the on-sale predicate can fail, and the tickets hub and National Show JSON-LD offer only tickets for the active show.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F6
+    name: OS-A non-vacuous A7, OS-B hub and JSON-LD list only the active show's tickets
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/README.md
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/f6-onsale-followups.md
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f2.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f3.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f4.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f6.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f7.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f8.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "the hub query selects show and the show reference reaches buildHubCards from both callers with no firebase-admin import on the prerendered page (RED on baseline, 7 findings). Triad coverage recorded here (the contract classifies exempt, as wave 1 F7): Codex QA via execution/codex_qa.sh at @qa time; browser layer is the orchestrator post-deploy check on the beta hosts; gws inbox layer N/A, this feature sends no email."
+      command: node contracts/checks/polish-wave-2-2026-10-25/f6-onsale-static.mjs
+    - id: A2
+      description: buildHubCards lists only ticket types whose show is the active show (show-A keeps vip and sunset, show-B keeps symposium, no active show keeps none; workshops unaffected) (RED on baseline, 3 findings)
+      command: pnpm exec tsx contracts/checks/polish-wave-2-2026-10-25/f6-hub-filter.mts
+      timeout_seconds: 300
+    - id: A3
+      description: A7 of ticket-onsale-predicate/contract-f1.yaml can fail - its filter stage keeps a VIOLATIONS line for national-show/page.tsx and prints nothing for a clean run (RED on baseline - the $p expands to nothing)
+      command: python3 contracts/checks/polish-wave-2-2026-10-25/f6-a7-nonvacuous.py
+    - id: A4
+      description: the corrected A7 command itself still passes against the tree (no prerendered page reaches firebase-admin)
+      command: "! python3 contracts/golden/build-without-secrets/check_no_prerendered_admin_routes.py . 2>&1 | sed -n '/VIOLATIONS/,$p' | grep -q \"national-show/page.tsx\""
+      timeout_seconds: 120
+    - id: A5
+      description: regression - the National Show JSON-LD offers still come from the hub pipeline with the page's mocks
+      command: pnpm exec node --require ./contracts/checks/ticket-onsale-predicate/_mocks/register.cjs --import tsx contracts/checks/ticket-onsale-predicate/check-jsonld-offers.mts
+      timeout_seconds: 300
+    - id: A6
+      description: regression - the public listing still excludes demo tickets
+      command: pnpm exec tsx contracts/checks/ticketing-f9-demo-ticket/check-public-listing-excludes-demo.mjs
+      timeout_seconds: 300
+    - id: A7
+      description: the edit to the old mission's contract is logged in checks-updated.md
+      command: grep -q "ticket-onsale-predicate/contract-f1.yaml" .agent/memory/project/specs/polish-wave-2-2026-10-25/checks-updated.md
+    - id: A8
+      description: production build passes (public Sanity ids and local origins, see goldens/README.md Hermetic render)
+      command: NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A9
+      description: wave scope guard - every changed file is on a feature allow-list (goldens/scope/*.json) or under this mission's spec and check trees (stacked on wave 1? set POLISH2_BASE)
+      command: node contracts/checks/polish-wave-2-2026-10-25/scope.mjs
+    - id: A10
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A11
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A12
+      description: the feature doc exists and names the item ids
+      command: grep -q "OS-B" docs/polish-wave-2-f6-onsale-followups.md

@@ -171,6 +171,7 @@ export const activeTicketTypesByCategoryQuery = defineQuery(`
     category,
     capacityPool,
     headcountPerUnit,
+    show,
   }
 `);
 

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 
@@ -289,6 +290,9 @@ export function TicketPurchaseForm({
           )}
         </button>
       </div>
+      <p className="nk-policy">
+        <Link href="/refunds">Refunds</Link> <span aria-hidden="true">·</span> <Link href="/privacy">Privacy</Link>
+      </p>
       <p
         id={BUY_HINT_ID}
         ref={hintRef}

@@ -8,7 +8,7 @@ import type { ReactNode } from 'react';
 
 import { itemMeta, type MediaKitItem } from '@/lib/data/media-kit';
 
-const ZIP_LABEL = {
+export const ZIP_LABEL = {
   everything: 'Download everything (zip)',
   section: 'Download this section (zip)',
 } as const;
