@@ -26,3 +26,6 @@ F8 ruling (b), "Lockups picker":
 - Duotone stays its own picker. Usage untouched in this PR.
 - Revised target: ≤ ~10,500px at 390 (9,000 withdrawn). Report measured height.
 - Before sign-off: one eager-loaded (or scroll-then-shoot) capture proving Mark-only preview, 512 Full colour card, the four Do/Don't illustrations, National Show picker preview and Disa emblem render.
+
+## Round 3 (NOS Design, 2026-10-25, via lead)
+F8: the merged section's h2 is "Full colour · Greyscale" (built from the two existing headings); the toggle uses the same two family names; variants are the verbatim lockup_label values; "Lockups" is dropped. #full-colour and #greyscale preselect the family.

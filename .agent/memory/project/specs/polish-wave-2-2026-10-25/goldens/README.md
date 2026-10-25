@@ -26,8 +26,8 @@ contract-f1 or contract-f5 files).
 ## NOS Design rulings (final, 2026-10-25): goldens/nos-design-rulings-2026-10-25.md
 They answer design questions 2, 3 and 4 below and agree with 1 (Buy stays enabled at qty 0). F4 labels are "Refunds" and "Privacy" as "Refunds · Privacy"; F3 is left on the hero axis, full width below 1024; F8 text-only pickers with the added a11y conditions. The questions below are kept as the record of what was asked.
 
-## Round 2 flag: "Lockups" heading
-The four variant radios use the existing manifest lockup_label strings (lead ruling), not the NOS Design paraphrase. The heading "Lockups" is the one remaining non-existing string; kept pending NOS Design confirmation (one constant to swap).
+## Round 2: merged lockups section, no new copy
+The merged section's h2 is "Full colour · Greyscale" (the two existing headings, NOS Design) and the four variant radios use the manifest lockup_label strings verbatim, so the picker adds no new copy. "Lockups" appears nowhere on the page (the static check forbids it); the section id is still `lockups`.
 
 ## DESIGN QUESTIONS (flagged, not resolved by invention)
 1. Buy button at quantity 0. TicketPurchaseForm.tsx's own comment: "The CTA stays enabled at quantity 0; a click there fills the hint and moves focus to it",

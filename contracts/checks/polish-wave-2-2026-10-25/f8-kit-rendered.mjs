@@ -1,7 +1,7 @@
 // F8 rendered on the env-gated fixture /media-kit-fixtures at 390@3, 768@1, 1280@1 and 1440@2.
 //   - flagless server: the fixture is a 404
 //   - page height at 390 is at most 10,500px (NOS Design round 2; 9,000 withdrawn; the gated page measured 21,157px)
-//   - "Lockups" (NOS Design round 2): Full colour and Greyscale are one section: a family radiogroup (Full colour | Greyscale)
+//   - the merged section (NOS Design round 2; h2 "Full colour · Greyscale", built from the two existing headings): Full colour and Greyscale are one section: a family radiogroup (Full colour | Greyscale)
 //     and a variant radiogroup (4 labels), one visible preview card that follows both, its download buttons naming file and
 //     format, the selected chips distinct without colour (weight and ring), both family zips inside the section with the
 //     family in their accessible name, every lockup download still in the DOM, and the old #full-colour / #greyscale jump
@@ -36,8 +36,8 @@ if (stale.length) finish('f8-kit-rendered', stale);
 const manifest = JSON.parse(readFileSync(resolve(repoRoot, 'lib/data/media-kit-manifest.json'), 'utf8'));
 const hrefs = (section) => manifest.items.filter((i) => i.section === section).map((i) => i.href);
 // Variant labels are the manifest's existing lockup_label strings (lead ruling 2026-10-25: no paraphrase).
-// The heading "Lockups" is the ruling's word and is not an existing string; see goldens/README.md. One constant to swap.
-const LOCKUPS_HEADING = 'Lockups';
+// The h2 is the two existing headings joined by a middle dot (NOS Design); the toggle uses the same two family names.
+const LOCKUPS_HEADING = 'Full colour · Greyscale';
 const FAMILIES = [
   { id: 'full-colour', label: 'Full colour', rendition: 'colour', zip: 'full-colour' },
   { id: 'greyscale', label: 'Greyscale', rendition: 'greyscale', zip: 'greyscale' },
@@ -94,7 +94,7 @@ try {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     if (overflow > 0) failures.push(`${tag}: horizontal overflow of ${overflow}px`);
 
-    // ---- Lockups picker
+    // ---- Merged Full colour · Greyscale picker (section id lockups)
     const lk = page.locator('#lockups');
     if ((await lk.count()) !== 1) failures.push(`${tag}: no #lockups section`);
     else {

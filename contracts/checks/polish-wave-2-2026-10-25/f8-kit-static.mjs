@@ -29,7 +29,7 @@ if (/tabIndex=\{[^}]*[1-9]/.test(picker)) failures.push('OptionPicker sets a pos
 if (/backgroundColor|#[0-9a-fA-F]{6}\b|\bhex\b/.test(picker)) failures.push('OptionPicker carries a colour or hex (swatches are not supplied for these options; text only)');
 if (/<legend\b(?![^>]*sr-only)/.test(picker)) failures.push('OptionPicker legend must be visually hidden (sr-only): the visible words are the section heading');
 
-// Round 2 (NOS Design): Full colour and Greyscale merge into one "Lockups" picker.
+// Round 2 (NOS Design): Full colour and Greyscale merge into one picker headed "Full colour · Greyscale".
 const lockup = tryRead('components/media-kit/LockupPicker.tsx');
 if (!/^'use client';/m.test(lockup)) failures.push("LockupPicker is not a client component ('use client')");
 if ((lockup.match(/role="radiogroup"/g) ?? []).length < 2 || !/type="radio"/.test(lockup)) failures.push('LockupPicker needs two radio groups (family toggle and variants)');
@@ -39,7 +39,8 @@ if (!/peer-checked:font-semibold|peer-checked:font-bold/.test(lockup) || !/peer-
 if (/tabIndex=\{[^}]*[1-9]/.test(lockup)) failures.push('LockupPicker sets a positive tabIndex');
 const body = tryRead('app/(marketing)/media-kit/MediaKitPageBody.tsx');
 if (!/<LockupPicker\b/.test(body)) failures.push('MediaKitPageBody does not render <LockupPicker>');
-if (!/<KitSection\b[^>]*id="lockups"[^>]*heading="Lockups"/.test(body) && !/id="lockups"/.test(body)) failures.push('MediaKitPageBody has no section id="lockups" headed "Lockups"');
+if (!/<KitSection\b[^>]*id="lockups"[^>]*heading="Full colour · Greyscale"/.test(body)) failures.push('MediaKitPageBody has no <KitSection id="lockups" heading="Full colour · Greyscale"> (the two existing headings, NOS Design)');
+if (/heading="Lockups"|>\s*Lockups\s*</.test(body + lockup)) failures.push('the visible word "Lockups" must not appear (heading or text): it is not an existing string');
 if (/<KitSection\b[^>]*id="(full-colour|greyscale)"/.test(body)) failures.push('the separate Full colour and Greyscale sections are still there');
 for (const anchor of ['full-colour', 'greyscale']) if (!new RegExp(`id="${anchor}"`).test(body)) failures.push(`the "On this page" anchor id="${anchor}" must stay (inside the Lockups section) so the existing jump links deep-link to the picker`);
 for (const key of ["kit.sectionZips['full-colour']", 'kit.sectionZips.greyscale']) if (!body.includes(key)) failures.push(`MediaKitPageBody dropped ${key} (both family zips stay in the Lockups section)`);
