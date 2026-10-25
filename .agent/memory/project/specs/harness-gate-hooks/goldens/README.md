@@ -186,3 +186,15 @@ in place of `node --import tsx/esm scripts/scan-dataset-residue.ts`, receiving t
 `fixtures/stubs/linter_bad_utf8.sh`. Scenarios `residue-scanner-bad-utf8-open` (A26) and `triad-linter-bad-utf8-closed` (A27),
 neutered controls A60 and A61. Red at HEAD: the triad scenario exits 1 (misread as a finding); the residue scenario has no
 override so the scanner runs clean and the expected `RESIDUE GUARD ERROR` never appears.
+
+### Tripwire is an exact match (Codex delta)
+Matching hooks by name collapses duplicates and ignores malformed entries, so a malformed `residue-pre` placed before a valid one
+passed the tripwire although the stock gate rejects that registry (`_parse_gate_hooks` fails the whole list) and runs no hooks;
+and an unchecked `timeout_seconds` let a shortened residue timeout make scans time out and fail open. Required: the registry's
+`gate_hooks` list must deep-equal `registry.expected.json`'s (same order, same count, every field including `timeout_seconds`),
+and `kinds` must deep-equal too, and `schema` must equal. Top-level keys other than `schema`, `kinds` and `gate_hooks` are
+allowed: the stock gate reads only those three (`_load_kind_registry` and `_parse_gate_hooks` in `template/execution/contract.py`
+use `data.get("schema")`, `data.get("kinds")` and `data.get("gate_hooks")` and ignore every other key). Do not compare the
+whole file. Compare with plain `==` on the parsed values, no per-field projection. Fixtures `registry-duplicate-malformed-before-valid.json`,
+`registry-residue-timeout-5.json`, `registry-extra-fourth-hook.json` (a duplicate of residue-post: a differently named extra hook was already caught by name), `registry-reordered.json`; assertions A58, A59, A62, A63,
+each exit exactly 1, all red at HEAD 7176ee85.

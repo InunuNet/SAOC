@@ -28,6 +28,10 @@ goldens:
   - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-residue-post-as-pre.json
   - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-no-kinds.json
   - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-malformed.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-duplicate-malformed-before-valid.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-residue-timeout-5.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-extra-fourth-hook.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-reordered.json
   - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/stubs/scanner_bad_utf8.sh
   - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/stubs/linter_bad_utf8.sh
 
@@ -271,3 +275,19 @@ assertions:
       description: "negative control: neutered hooks must make triad-linter-bad-utf8-closed MISMATCH (runner exit exactly 1)"
       command: "GATE_HOOKS_PROOF_NEUTER=1 python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-linter-bad-utf8-closed; test $? -eq 1"
       timeout_seconds: 180
+    - id: A58
+      description: "registry tripwire fails (exit exactly 1) on a malformed duplicate residue-pre placed before the valid one (the stock gate rejects such a registry and runs no hooks)"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-duplicate-malformed-before-valid.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A59
+      description: "registry tripwire fails (exit exactly 1) when the residue hook timeout is shortened to 5s (scans would time out and fail open)"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-residue-timeout-5.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A62
+      description: "registry tripwire fails (exit exactly 1) when a fourth hook is registered that duplicates residue-post (a name-keyed comparison collapses it)"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-extra-fourth-hook.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A63
+      description: "registry tripwire fails (exit exactly 1) when the hooks are reordered"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-reordered.json; test $? -eq 1"
+      timeout_seconds: 30
