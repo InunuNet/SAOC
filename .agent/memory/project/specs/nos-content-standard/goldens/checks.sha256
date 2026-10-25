@@ -6,11 +6,11 @@ b597e4966fa7e8125e9a6d54bf3e80af4392fefb9d1e47577253e2b85f0e26d6  .agent/memory/
 e553babdf6ff2b75981e86a9432fdd86254c2d421be1f64d60360e55e46235cc  .agent/memory/project/specs/nos-content-standard/checks/gate-verbatim.mjs
 f52ecfacaf7deda8fc1e562972088479b0ee52dc3e362e4dca6a1b568028e5d0  .agent/memory/project/specs/nos-content-standard/checks/gate-faq.mjs
 dfb10c263935752b78b1f9862c4680dab5393c4e5ee0d73c20c80d2881c2def5  .agent/memory/project/specs/nos-content-standard/checks/block-sanity-net.cjs
-8953cd61b9dd329cd045daec43cb94771fea8a785469043663e3bb026b7e5508  .agent/memory/project/specs/nos-content-standard/checks/check-fixture-unit.mjs
+709cbd6bb3e277ca70bf2e57068df9e889763c9c29b49037f0f5abcc39dbad2a  .agent/memory/project/specs/nos-content-standard/checks/check-fixture-unit.mjs
 828f6627af30e17041c053e13a93a00a11e4ebea986d834b63dfb88590cf6b65  .agent/memory/project/specs/nos-content-standard/checks/check-fixture-files.mjs
 27ce137ad6b8cf354a9b9d98bcbdc3cd0871d4e6d760260efc5f5b037f653d85  .agent/memory/project/specs/nos-content-standard/checks/check-fixture-proof.mjs
-7dc2ed95600a6cdecbc6eb29c2754bde447afd253b242ede53e144843ec5a6a9  .agent/memory/project/specs/nos-content-standard/checks/check-fixture-hosted.mjs
-9a4a6417df3223b49cc0f789812031233f0b133ddb3d2176e1b7048820a1bf23  .agent/memory/project/specs/nos-content-standard/checks/fixture-load-probe.mjs
+1da96bf8161563f1006ba3a877fea775fcfd2534cda54194a49ea5b4530b6018  .agent/memory/project/specs/nos-content-standard/checks/check-fixture-hosted.mjs
+dc92c4417940547a83430d015f143737d07f520b47f039323587570156c233df  .agent/memory/project/specs/nos-content-standard/checks/fixture-load-probe.mjs
 d04cf9270c5a952834efd28bda298739c8eae98f1b18f14150cc2d19bacfdfb6  .agent/memory/project/specs/nos-content-standard/goldens/standard.json
 512bd5c0fea164d7f953f7a1843d928ad8413187fb929826822f6cccde96242b  .agent/memory/project/specs/nos-content-standard/goldens/route-table.json
 f32c5aeb8d4918db6e62d60108f09699c168a7dab02a162a8eaaeadda6341ab5  .agent/memory/project/specs/nos-content-standard/goldens/spec.md

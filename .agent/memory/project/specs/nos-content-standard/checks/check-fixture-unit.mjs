@@ -2,6 +2,8 @@
 // a miss is a hard error that never reaches the network and never carries an HTTP status (so SAOC's 402/429/5xx fallback cannot swallow it), and the
 // draft perspective is never served. Run from the repo root. tsx is registered programmatically; lib/sanity-fixture.ts must import relatively (no '@/').
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { register } from 'tsx/esm/api';
 
 register();
@@ -15,7 +17,7 @@ const ENV_KEYS = ['SANITY_FIXTURE_DIR', 'SANITY_FIXTURE_MODE', 'SANITY_FIXTURE_L
 const setEnv = (o) => { for (const k of ENV_KEYS) delete process.env[k]; for (const [k, v] of Object.entries(o)) process.env[k] = v; };
 
 let mod;
-try { mod = await import(new URL('../../../../../lib/sanity-fixture.ts', import.meta.url).href); } catch (e) { console.error(`A13 FAILED: cannot import lib/sanity-fixture.ts (${e.message})`); process.exit(1); }
+try { mod = await import(pathToFileURL(path.resolve(process.env.NOS_STD_ROOT ?? process.cwd(), 'lib/sanity-fixture.ts')).href); } catch (e) { console.error(`A13 FAILED: cannot import lib/sanity-fixture.ts (${e.message})`); process.exit(1); }
 for (const n of ['withFixture', 'fixtureKey', 'isFixtureActive', 'assertFixtureEnv', 'SanityFixtureMiss']) check(`lib/sanity-fixture.ts exports ${n}`, n in mod);
 if (failures.length) { console.error(`A13 FAILED:\n- ${failures.join('\n- ')}`); process.exit(1); }
 const { withFixture, fixtureKey, isFixtureActive, assertFixtureEnv, SanityFixtureMiss } = mod;
