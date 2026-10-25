@@ -10,6 +10,7 @@ export default function Loading() {
       title={NOS_ROUTE_HEROES.symposium.title}
       lede={NOS_ROUTE_HEROES.symposium.lede}
       ledeKind="theme"
+      titleAs="p"
       priority
     />
   );

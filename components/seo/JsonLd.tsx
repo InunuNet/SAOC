@@ -1,5 +1,7 @@
 import type { PortableTextBlock } from '@portabletext/react';
 
+import { saocOrigin, saocUrl } from '@/lib/site-hosts';
+
 type JsonLdProps = {
   data: Record<string, unknown>;
 };
@@ -19,7 +21,7 @@ export function organizationJsonLd() {
     '@type': 'Organization',
     name: 'South African Orchid Council',
     alternateName: 'SAOC',
-    url: 'https://saoc.co.za',
+    url: saocOrigin(),
     description:
       'The South African Orchid Council (SAOC) — coordinating orchid societies across South Africa since 1968.',
     foundingDate: '1968',
@@ -27,7 +29,7 @@ export function organizationJsonLd() {
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'general',
-      url: 'https://saoc.co.za/contact',
+      url: saocUrl('/contact'),
     },
   };
 }
@@ -119,7 +121,7 @@ export function eventJsonLd({
     organizer: {
       '@type': 'Organization',
       name: organizer ?? 'South African Orchid Council',
-      url: 'https://saoc.co.za',
+      url: saocOrigin(),
     },
   };
 }
@@ -234,7 +236,7 @@ export function nationalShowEventJsonLd(
     organizer: {
       '@type': 'Organization',
       name: input.organizer ?? 'South African Orchid Council',
-      url: 'https://saoc.co.za',
+      url: saocOrigin(),
     },
     url: input.url,
     ...(input.offers && input.offers.length > 0

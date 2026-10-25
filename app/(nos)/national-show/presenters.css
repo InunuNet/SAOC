@@ -58,7 +58,8 @@
 .nos-presenters .pc-sec-head { display: grid; gap: 6px; }
 .nos-presenters .pc-eyebrow { margin: 0; font-size: var(--pc-fs-xs); font-weight: 700; letter-spacing: var(--pc-ls-display); text-transform: uppercase; color: var(--pc-olive-700); }
 /* R36: "Presenters" is a section heading, so it takes the nos-theme section-h2 role (nos-theme.css .nos-theme h2), not card-title. */
-.nos-presenters .pc-title { margin: 0; font-family: var(--pc-serif); font-weight: 400; font-size: clamp(2rem, 1.2rem + 2.667vw, 3rem); line-height: 1.15; letter-spacing: -0.01em; color: var(--pc-royal); text-wrap: balance; font-variation-settings: "opsz" 48; }
+.nos-presenters [data-presenters-legend] { margin: 0; font-size: 15px; line-height: 1.5; color: var(--pc-ink-700); }
+.nos-presenters .pc-title { margin: 0; font-family: var(--pc-serif); font-weight: 300; font-size: 32px; line-height: 1.15; letter-spacing: -0.01em; color: var(--pc-royal); text-wrap: balance; font-variation-settings: "opsz" 48; }
 
 /* Cards: each bio clamps to 4 lines (R39); an expanded card grows alone, so the grid does not stretch */
 .nos-presenters .pc-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; align-items: start; }
