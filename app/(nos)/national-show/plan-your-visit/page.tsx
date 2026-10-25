@@ -150,8 +150,11 @@ function renderBlocks(blocks: readonly PlanGuideBlock[]): ReactNode[] {
       case 'list':
         return (
           <ul key={index}>
-            {block.items.map((item) => (
-              <li key={item}>{renderInline(item)}</li>
+            {block.items.map((item, position) => (
+              <li key={item}>
+                {position > 0 ? ' ' : null}
+                {renderInline(item)}
+              </li>
             ))}
           </ul>
         );
