@@ -1,0 +1,56 @@
+schema: athanor.contract/v1
+slug: polish-wave-2026-10-25
+goal: Vendor form checkboxes and radios meet the 24px target and 44px row floors and their pointer-focus ring clears 3:1, reusing the existing chrome ring colour.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F2
+    name: vendor form controls target size and focus ring contrast
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/README.md
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/f2-vendor-a11y.md
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f1.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f2.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f3.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f4.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: checkbox and radio controls are at least 24px, label rows keep min-h-11, ring-ink/40 is gone from components/vendors, ring-primary is used at least 12 times, and primary clears 3:1 on ivory, bone and parchment (RED on baseline, 9 findings)
+      command: node contracts/checks/polish-wave-2026-10-25/f2-a11y-static.mjs
+    - id: A2
+      description: the two superseded pre-existing checks are updated, not deleted, and still pass
+      command: bash contracts/checks/vendor-form-input-focus-indicators-f1/check-a1-ring-tokens.sh
+    - id: A3
+      description: checkbox and radio regression guard (updated to the new class strings) passes
+      command: bash contracts/checks/vendor-form-input-focus-indicators-f1/check-a2-checkbox-radio-regression.sh
+    - id: A4
+      description: every edit to a pre-existing check is logged in checks-updated.md
+      command: grep -q "check-a2-checkbox-radio-regression.sh" .agent/memory/project/specs/polish-wave-2026-10-25/checks-updated.md
+    - id: A5
+      description: production build passes
+      command: NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A6
+      description: on /vendors/apply at 390@3, 768, 1280 and 1440@2 all 16 checkboxes are at least 24x24, rows at least 44px, keyboard focus outline solid 2px at 3:1 or more, pointer-focus ring at 3:1 or more or absent (RED on baseline, size and pointer ring)
+      command: node contracts/checks/polish-wave-2026-10-25/f2-a11y-rendered.mjs
+      timeout_seconds: 600
+    - id: A7
+      description: wave scope guard - every changed file is on a feature allow-list (goldens/scope/*.json) or under this mission's spec and check trees
+      command: node contracts/checks/polish-wave-2026-10-25/scope.mjs
+    - id: A8
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A9
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A10
+      description: the feature doc exists and records the excluded Continue button
+      command: grep -q "Continue" docs/polish-wave-f2-vendor-a11y.md
