@@ -2250,6 +2250,25 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
    the .doc-* classes are the shared API's, this block only re-values them for the NOS ground.
    ============================================================ */
 
+/* Sticky values the shared CSS reads (SAOC 9bff74a6): the aside sticks at 100px, the index scroller
+   under the NOS header (not sticky under 780), and an h2 lands below both. */
+.nos-theme {
+  --doc-aside-top: 100px;
+  --doc-index-top: env(safe-area-inset-top, 0px);
+  --doc-scroll-margin: 80px;
+}
+@media (min-width: 780px) {
+  .nos-theme {
+    --doc-index-top: 97px;
+    --doc-scroll-margin: 160px;
+  }
+}
+@media (min-width: 1024px) {
+  .nos-theme {
+    --doc-scroll-margin: 124px;
+  }
+}
+
 /* One container: the header's own axis, so the header, hero, sub-nav and document share a left edge. */
 .nos-theme .doc-layout.saoc-container {
   max-width: var(--nos-axis-max);
@@ -2307,7 +2326,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-weight: 300;
   line-height: 1.15;
   color: var(--ink);
-  scroll-margin-top: 124px;
 }
 .nos-theme .doc-prose > .doc-h3 {
   margin-top: 32px;
@@ -2386,11 +2404,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   box-shadow: var(--shadow-md);
   padding: clamp(24px, 3vw, 36px);
 }
-@media (min-width: 1024px) {
-  .nos-theme .doc-aside {
-    top: 100px;
-  }
-}
 .nos-theme [data-doc-index-link] {
   font-family: var(--sans);
   font-size: 15px;
@@ -2413,7 +2426,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
    on a row that does not scroll, so the base style, no mask, applies). */
 @media (max-width: 1023.98px) {
   .nos-theme .doc-aside[data-doc-aside-kind='index'] {
-    top: env(safe-area-inset-top, 0px);
     margin-inline: calc(-1 * var(--nos-axis-pad));
     border-bottom: 1px solid var(--rule-soft);
     background: var(--parchment);
@@ -2433,17 +2445,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
   .nos-theme [data-doc-index-link]:first-child {
     padding-left: 0;
-  }
-  .nos-theme .doc-h2 {
-    scroll-margin-top: 80px;
-  }
-}
-@media (min-width: 780px) and (max-width: 1023.98px) {
-  .nos-theme .doc-aside[data-doc-aside-kind='index'] {
-    top: 80px;
-  }
-  .nos-theme .doc-h2 {
-    scroll-margin-top: 152px;
   }
 }
 @supports (animation-timeline: scroll()) {
