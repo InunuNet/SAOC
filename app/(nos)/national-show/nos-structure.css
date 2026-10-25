@@ -791,6 +791,10 @@
   margin: 0 0 24px;
   color: var(--ink-700);
 }
+.nos-theme .nos-faq-intro-only {
+  margin: 0;
+  padding: 20px clamp(20px, 3vw, 32px);
+}
 .nos-theme .doc-section > .doc-h2 {
   margin-bottom: 24px;
 }
@@ -2279,12 +2283,12 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 @media (min-width: 780px) {
   .nos-theme {
     --doc-index-top: 97px;
-    --doc-scroll-margin: 160px;
+    --doc-scroll-margin: 64px;
   }
 }
 @media (min-width: 1024px) {
   .nos-theme {
-    --doc-scroll-margin: 124px;
+    --doc-scroll-margin: 40px;
   }
 }
 

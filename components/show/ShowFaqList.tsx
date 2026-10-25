@@ -99,14 +99,23 @@ export function ShowFaqList({
           <h2 id={id} className="doc-h2">
             {heading}
           </h2>
-          {section.intro.map((paragraph) => (
-            <p key={paragraph} className="nos-faq-intro">
-              {paragraph}
-            </p>
-          ))}
+          {inCategory.length > 0
+            ? section.intro.map((paragraph) => (
+                <p key={paragraph} className="nos-faq-intro">
+                  {paragraph}
+                </p>
+              ))
+            : null}
 
-          {inCategory.length > 0 ? (
-            <div data-faq-card="" className="nos-faq-card">
+          <div data-faq-card="" className="nos-faq-card">
+            {inCategory.length === 0
+              ? section.intro.map((paragraph) => (
+                  <p key={paragraph} className="nos-faq-intro nos-faq-intro-only">
+                    {paragraph}
+                  </p>
+                ))
+              : null}
+            {inCategory.length > 0 ? (
               <ul>
                 {inCategory.map((faq) => (
                   <li key={faq._id}>
@@ -152,8 +161,8 @@ export function ShowFaqList({
                   </li>
                 ))}
               </ul>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </section>
       ))}
     </>
