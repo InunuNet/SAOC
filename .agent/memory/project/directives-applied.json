@@ -6,10 +6,76 @@
       "note": "channel verified: update-template applied, make directives lists the id, show prints the untrusted envelope",
       "result": "applied"
     },
+    "ATH-20261013-floor-glob-fp": {
+      "at": "2026-10-24T23:45:44Z",
+      "harness_version": "3.8.58",
+      "note": "delivered by template update 3.8.41->3.8.58 (PR #85, a0bd16d4)",
+      "result": "applied"
+    },
+    "ATH-20261013-qa-gpt6-codex-tiers": {
+      "at": "2026-10-24T23:45:44Z",
+      "harness_version": "3.8.58",
+      "note": "delivered by template update 3.8.41->3.8.58 (PR #85, a0bd16d4)",
+      "result": "applied"
+    },
+    "ATH-20261014-update-delivery-safe": {
+      "at": "2026-10-24T23:45:43Z",
+      "harness_version": "3.8.58",
+      "note": "delivered by template update 3.8.41->3.8.58 (PR #85, a0bd16d4)",
+      "result": "applied"
+    },
+    "ATH-20261015-floor-bypass-subst-ssh": {
+      "at": "2026-10-24T23:45:44Z",
+      "harness_version": "3.8.58",
+      "note": "delivered by template update 3.8.41->3.8.58 (PR #85, a0bd16d4)",
+      "result": "applied"
+    },
+    "ATH-20261015-qa-handoff-verdict": {
+      "at": "2026-10-24T23:45:45Z",
+      "harness_version": "3.8.58",
+      "note": "delivered by template update 3.8.41->3.8.58 (PR #85, a0bd16d4)",
+      "result": "applied"
+    },
+    "ATH-20261015-update-pins-readme-heal": {
+      "at": "2026-10-24T23:45:44Z",
+      "harness_version": "3.8.58",
+      "note": "delivered by template update 3.8.41->3.8.58 (PR #85, a0bd16d4)",
+      "result": "applied"
+    },
+    "ATH-20261016-fleet-boot-truth": {
+      "at": "2026-10-24T23:45:45Z",
+      "harness_version": "3.8.58",
+      "note": "delivered by template update 3.8.41->3.8.58 (PR #85, a0bd16d4)",
+      "result": "applied"
+    },
+    "ATH-20261016-gate-fits-real-work": {
+      "at": "2026-10-24T23:45:45Z",
+      "harness_version": "3.8.58",
+      "note": "delivered by template update 3.8.41->3.8.58 (PR #85, a0bd16d4)",
+      "result": "applied"
+    },
     "ATH-20261020-session-titles": {
       "at": "2026-10-20T15:14:56Z",
       "harness_version": "3.8.41",
       "note": "",
+      "result": "applied"
+    },
+    "ATH-20261024-operator-window": {
+      "at": "2026-10-24T23:45:54Z",
+      "harness_version": "3.8.58",
+      "note": "delivered in 3.8.58 (PR #85)",
+      "result": "applied"
+    },
+    "ATH-20261025-autocompact-after-mission": {
+      "at": "2026-10-24T23:45:55Z",
+      "harness_version": "3.8.58",
+      "note": "delivered in 3.8.58 (PR #85)",
+      "result": "applied"
+    },
+    "ATH-20261025-quota-auto-resume": {
+      "at": "2026-10-24T23:45:55Z",
+      "harness_version": "3.8.58",
+      "note": "code delivered in 3.8.58; opt-in install awaits Brad explicit yes",
       "result": "applied"
     }
   },
