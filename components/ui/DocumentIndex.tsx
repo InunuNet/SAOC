@@ -42,7 +42,8 @@ function currentSection(entries: readonly DocumentIndexEntry[]): string | null {
 }
 
 export function DocumentIndex({ entries }: { entries: readonly DocumentIndexEntry[] }) {
-  const [active, setActive] = useState<string | null>(null);
+  // Server render and first paint already mark the first row; the scroll-spy takes over on hydrate.
+  const [active, setActive] = useState<string | null>(entries[0]?.id ?? null);
   const nav = useRef<HTMLElement>(null);
 
   useEffect(() => {
