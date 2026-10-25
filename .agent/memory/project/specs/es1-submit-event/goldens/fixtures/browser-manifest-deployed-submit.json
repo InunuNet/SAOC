@@ -1,0 +1,10 @@
+{
+  "origin": "NOT YET PRODUCED",
+  "path_tested": "/events/submit",
+  "screenshot_path": "es1-deployed-submit-390.png",
+  "commit_sha": "NOT YET PRODUCED",
+  "timestamp": "NOT YET PRODUCED",
+  "http_status": null,
+  "outcome": "not_yet_produced",
+  "notes": "Phase 5 (post-deploy) manifest for A11. Produced by the orchestrator after the ES-1 merge is deployed to beta: a logged-out BrowserAgent visit to https://beta.saoc.co.za/events/submit at 390 wide, the Members only hero and gold CTA screenshotted, then this file replaced with the real manifest (origin, http_status 200, commit_sha equal to the deployed HEAD, a timestamp inside the 4h window). The 4h freshness window means it must be written within 4h of the gate run."
+}
