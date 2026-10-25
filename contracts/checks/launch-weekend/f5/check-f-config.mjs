@@ -12,7 +12,7 @@ const need = (ok, msg) => { if (!ok) problems.push(msg); };
 
 need(/formats:\s*\[\s*'image\/avif'\s*,\s*'image\/webp'\s*\]/.test(cfg), "next.config.ts images.formats must be ['image/avif','image/webp']");
 const widths = JSON.parse(readFileSync('lib/image-widths.json', 'utf8'));
-need(/deviceSizes:\s*imageWidths\.deviceSizes/.test(cfg) && Math.max(...widths.deviceSizes) <= 6144 && widths.deviceSizes.filter((w) => w > 2048).every((w) => [4096, 5120, 6144].includes(w)), 'next.config.ts deviceSizes must come from lib/image-widths.json; above 2048 only 4096/5120/6144, which the loader serves for the sources in lib/hero-source-widths.json alone');
+need(/deviceSizes:\s*imageWidths\.deviceSizes/.test(cfg) && Math.max(...widths.deviceSizes) <= 6144 && widths.deviceSizes.filter((w) => w > 2048).every((w) => [2560, 2880, 4160, 5120, 6144].includes(w)), 'next.config.ts deviceSizes must come from lib/image-widths.json; above 2048 only 2560/2880/4160/5120/6144 (audit-fixes-2026-10-25: 2560, 2880 and 4160 serve 1280@2, 1440@2 and 2056@2), which the loader serves for the sources in lib/hero-source-widths.json alone');
 need(/loader:\s*'custom'/.test(cfg) && /loaderFile:\s*'\.\/lib\/image-loader\.ts'/.test(cfg), 'next.config.ts must set images.loader custom + loaderFile (App Hosting adapter forces unoptimized otherwise)');
 need(!/unoptimized/.test(cfg), 'next.config.ts must not set unoptimized');
 need(/async headers\(\)/.test(cfg), 'next.config.ts has no headers()');
