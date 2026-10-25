@@ -21,6 +21,7 @@ import {
 } from '@/components/societies';
 import type { SanitySociety } from '@/components/societies';
 import { upcomingEventsParams } from '@/lib/sast-date';
+import { saocUrl } from '@/lib/site-hosts';
 import { societies as staticSocieties } from '@/lib/data/societies';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { withholdSocietyEstimates } from '@/lib/data/society-withhold';
@@ -115,7 +116,7 @@ export async function generateMetadata({
     title: society.name,
     description,
     openGraph: {
-      url: `https://saoc.co.za/societies/${slug}`,
+      url: saocUrl(`/societies/${slug}`),
       images: [{ url: `/og?title=${ogTitle}`, width: 1200, height: 630, alt: society.name }],
     },
   };
