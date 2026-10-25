@@ -103,6 +103,10 @@ assertions:
       description: TypeScript compiles
       command: pnpm exec tsc --noEmit
       timeout_seconds: 600
+    - id: A19
+      description: F3 production probe, unknown values for every generateStaticParams plus notFound route answer 404 (not 500) on both hosts and the NOS 404 head carries no SAOC branding (builds first)
+      command: pnpm build && node contracts/checks/audit-fixes-2026-10-25/bad-slug-probe.mjs
+      timeout_seconds: 1500
     - id: A18
       description: Codex adversarial QA of the whole diff against the goldens
       type: codex_qa

@@ -13,6 +13,8 @@ const ALLOWED = [
   /^app\/\(nos\)\/(layout|not-found)\.tsx$/,
   /^app\/\(nos\)\/national-show\/(layout|not-found)\.tsx$/,
   /^app\/not-found\.tsx$/,
+  /^app\/\(marketing\)\/not-found\.tsx$/,
+  /^app\/\(nos\)\/national-show\/archive\/\[year\]\/page\.tsx$/,
   /^components\/site-chrome\/NosFrame\.tsx$/,
   /^app\/layout\.tsx$/,
   /^components\/chrome\/Footer\.tsx$/,
