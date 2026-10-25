@@ -4262,3 +4262,9 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   text-transform: none;
   letter-spacing: normal;
 }
+.nos-theme .nos-ex-q {
+  font-weight: 400;
+}
+.nos-theme .nos-ct-team dd p {
+  margin: 0;
+}

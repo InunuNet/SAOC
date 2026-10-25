@@ -69,12 +69,12 @@ export default async function SymposiumPage() {
       <div className="nos-ev-body" data-doc-layout="">
         <div data-nos-wrap="">
           <div className="nos-ev-grid">
-            <div className="nos-ev-main">
+            <div className="nos-ev-main" data-doc-main="">
               <p className="doc-standfirst">{THEME_SENTENCE}</p>
               <p>{PROGRAMME_SENTENCE}</p>
             </div>
             {card ? (
-              <aside className="nos-ev-ticket" aria-label="Symposium ticket">
+              <aside className="nos-ev-ticket" data-doc-aside="" data-doc-aside-kind="content" aria-label="Symposium ticket">
                 <div className="nk-grid">
                   <div className="nk-wrap">
                     <TicketCard

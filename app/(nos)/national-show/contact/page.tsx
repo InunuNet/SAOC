@@ -54,7 +54,7 @@ export default function NosContactPage() {
         priority
       />
       <div className="nos-ct-body saoc-container" data-doc-layout="" data-nos-contact="page">
-        <div data-nos-contact-form="" className="nos-ct-form">
+        <div data-nos-contact-form="" data-doc-main="" className="nos-ct-form">
           <ContactForm site="nos" />
         </div>
         <aside data-ct-card="" className="nos-ct-card">
@@ -69,7 +69,9 @@ export default function NosContactPage() {
             {COMMITTEE.map((member) => (
               <div key={member.name}>
                 <dt>{member.name}</dt>
-                <dd>{member.role}</dd>
+                <dd>
+                  <p>{member.role}</p>
+                </dd>
               </div>
             ))}
           </dl>

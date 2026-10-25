@@ -79,7 +79,7 @@ export default async function WorkshopsPage() {
       <div className="nos-ev-body" data-doc-layout="">
         <div data-nos-wrap="">
           <div className="nos-ev-grid">
-            <div className="nos-ev-main">
+            <div className="nos-ev-main" data-doc-main="">
               <p className="doc-standfirst">{STANDFIRST}</p>
               <p>{BODY}</p>
               {answered.length > 0 ? (
@@ -97,7 +97,7 @@ export default async function WorkshopsPage() {
               ) : null}
             </div>
             {card ? (
-              <aside className="nos-ev-ticket" aria-label="Workshops ticket">
+              <aside className="nos-ev-ticket" data-doc-aside="" data-doc-aside-kind="content" aria-label="Workshops ticket">
                 <div className="nk-grid">
                   <div className="nk-wrap">
                     <TicketCard

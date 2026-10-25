@@ -219,7 +219,9 @@ export async function NosHero({
               <nav className="nk-crumbs" aria-label="Breadcrumb">
                 <Link href="/">National Show</Link>
                 <span className="nk-crumb">
-                  <span className="nk-sep" aria-hidden="true" />
+                  <span className="nk-sep" aria-hidden="true">
+                    <span className="sr-only">–</span>
+                  </span>
                   <span aria-current="page">{crumbLabel}</span>
                 </span>
               </nav>

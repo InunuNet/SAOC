@@ -97,7 +97,7 @@ export default async function WosaConferencePage() {
       <div className="nos-ev-body" data-doc-layout="">
         <div data-nos-wrap="">
           <div className="nos-ev-grid">
-            <div className="nos-ev-main">
+            <div className="nos-ev-main" data-doc-main="">
               <p className="doc-standfirst">{STANDFIRST}</p>
               <p>{WOSA_PARAGRAPH}</p>
               {answered.length > 0 ? (
@@ -115,7 +115,7 @@ export default async function WosaConferencePage() {
               ) : null}
             </div>
             {card ? (
-              <aside className="nos-ev-ticket" aria-label="WOSA Conference ticket">
+              <aside className="nos-ev-ticket" data-doc-aside="" data-doc-aside-kind="content" aria-label="WOSA Conference ticket">
                 <div className="nk-grid">
                   <div className="nk-wrap">
                     <TicketCard

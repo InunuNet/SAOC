@@ -125,7 +125,7 @@ export default async function ExhibitorEntryGuidePage() {
           ))}
           {QUESTIONS.map((item) => (
             <section key={item.question}>
-              <h2 className="doc-h2">{item.question}</h2>
+              <h2 className="doc-h2 nos-ex-q">{item.question}</h2>
               {item.paragraphs.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}

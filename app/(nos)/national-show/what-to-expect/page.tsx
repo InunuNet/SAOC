@@ -105,11 +105,29 @@ export default async function WhatToExpectPage() {
       />
 
       <div className="nos-we-body saoc-container" data-doc-layout="">
-        <div className="nos-we-stand">
+        <div className="nos-we-stand" data-doc-main="">
           <p data-we-stand="" className="doc-standfirst">
             {STANDFIRST}
           </p>
         </div>
+
+        <section className="nos-we-s3" aria-labelledby="we-s3-h">
+          <h2 id="we-s3-h" className="sr-only">
+            What to Expect
+          </h2>
+          <div data-we-s3="">
+            {NARRATIVE.map((paragraph, index) =>
+              index === THEME_INDEX ? (
+                <p key={paragraph}>
+                  {THEME_LEAD}
+                  <em>{THEME}</em>
+                </p>
+              ) : (
+                <p key={paragraph}>{paragraph}</p>
+              ),
+            )}
+          </div>
+        </section>
 
         <aside data-we-card="" className="nos-we-card">
           <p className="nos-we-label">{DATES_HEADING}</p>
@@ -139,24 +157,6 @@ export default async function WhatToExpectPage() {
             {ADMISSION_LINK_LABEL}
           </Button>
         </aside>
-
-        <section className="nos-we-s3" aria-labelledby="we-s3-h">
-          <h2 id="we-s3-h" className="sr-only">
-            What to Expect
-          </h2>
-          <div data-we-s3="">
-            {NARRATIVE.map((paragraph, index) =>
-              index === THEME_INDEX ? (
-                <p key={paragraph}>
-                  {THEME_LEAD}
-                  <em>{THEME}</em>
-                </p>
-              ) : (
-                <p key={paragraph}>{paragraph}</p>
-              ),
-            )}
-          </div>
-        </section>
 
         <div data-we-rest="" className="nos-we-rest">
           {RAIL_BLOCKS.map((block) => (
