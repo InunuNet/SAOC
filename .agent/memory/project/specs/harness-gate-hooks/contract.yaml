@@ -23,6 +23,13 @@ goldens:
   - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/stubs/fail.sh
   - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/stubs/err.sh
   - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/stubs/linter_oob.sh
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-dropped-residue-post.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-triad-open.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-residue-post-as-pre.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-no-kinds.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-malformed.json
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/stubs/scanner_bad_utf8.sh
+  - .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/stubs/linter_bad_utf8.sh
 
 notes: |
   Governing rules: docs/rules/no-invention.md applies (no invented behaviour; the hooks port the pinned
@@ -33,8 +40,8 @@ notes: |
   Dev steps: (1) write .agent/contract_kinds.json and the hook scripts; (2) remove execution/contract.py from
   .agent/no-update; (3) run `make update-template` in the worktree (it exits 2 on the expected
   CLONE-FOREIGN-BLOCKED notice for the project guide file, which is fine) and confirm A2; (4) rewrite the four legacy proofs; (5) write the
-  runner and docs. Hook and runner design lives in goldens/README.md. A10-A25 are hermetic: every scenario
-  scans a local residue fixture and no scenario touches live Sanity or the network. A30-A39 are the
+  runner and docs. Hook and runner design lives in goldens/README.md. A10-A27 are hermetic: every scenario
+  scans a local residue fixture and no scenario touches live Sanity or the network. A30-A39 and A60-A61 are the
   non-vacuity controls and must not be weakened.
 
 assertions:
@@ -216,3 +223,51 @@ assertions:
       description: "real-baseline smoke: contracts/c5-submit-event.yaml (listed, pinned, unedited, linter exit 1) is reported grandfathered by the real hook"
       command: "python3 scripts/gate-hooks/triad_hook.py contracts/c5-submit-event.yaml | grep -q grandfathered"
       timeout_seconds: 60
+    - id: A26
+      description: "residue scanner emitting invalid UTF-8 is infrastructure (hook exit 2), fails open, never a finding"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py residue-scanner-bad-utf8-open"
+      timeout_seconds: 180
+    - id: A27
+      description: "triad linter emitting invalid UTF-8 is infrastructure (hook exit 2), fails closed with gate exit 2, never a finding"
+      command: "python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-linter-bad-utf8-closed"
+      timeout_seconds: 180
+    - id: A50
+      description: "registry tripwire passes on the real .agent/contract_kinds.json"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py"
+      timeout_seconds: 30
+    - id: A51
+      description: "registry tripwire fails (exit exactly 1) when the registry file is missing"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .tmp/sandbox/gate-hooks-proof/no-such-registry.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A52
+      description: "registry tripwire fails (exit exactly 1) on a malformed registry"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-malformed.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A53
+      description: "registry tripwire fails (exit exactly 1) when the residue-post hook is dropped"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-dropped-residue-post.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A54
+      description: "registry tripwire fails (exit exactly 1) when triad-coverage is downgraded to on_error open"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-triad-open.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A55
+      description: "registry tripwire fails (exit exactly 1) when residue-post is registered with the wrong stage"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-residue-post-as-pre.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A56
+      description: "registry tripwire fails (exit exactly 1) when the project kinds are missing"
+      command: "python3 scripts/gate-hooks/checks/verify_registry_present.py .agent/memory/project/specs/harness-gate-hooks/goldens/fixtures/registry-no-kinds.json; test $? -eq 1"
+      timeout_seconds: 30
+    - id: A57
+      description: "CI runs the registry tripwire inside the dataset-residue-guard job"
+      command: "awk '/^  dataset-residue-guard:/{f=1;next} /^  [a-z0-9-]+:/{f=0} f' .github/workflows/ci.yml | grep -q verify_registry_present.py"
+      timeout_seconds: 30
+    - id: A60
+      description: "negative control: neutered hooks must make residue-scanner-bad-utf8-open MISMATCH (runner exit exactly 1)"
+      command: "GATE_HOOKS_PROOF_NEUTER=1 python3 scripts/gate-hooks/checks/prove_gate_hooks.py residue-scanner-bad-utf8-open; test $? -eq 1"
+      timeout_seconds: 180
+    - id: A61
+      description: "negative control: neutered hooks must make triad-linter-bad-utf8-closed MISMATCH (runner exit exactly 1)"
+      command: "GATE_HOOKS_PROOF_NEUTER=1 python3 scripts/gate-hooks/checks/prove_gate_hooks.py triad-linter-bad-utf8-closed; test $? -eq 1"
+      timeout_seconds: 180

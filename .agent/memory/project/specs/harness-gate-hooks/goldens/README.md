@@ -157,3 +157,32 @@ Non-vacuity of the negative scenarios is A30-A39 (neutered hooks) and nothing el
 ## Known: stock validate stricter
 
 Stock validate is stricter than the pinned copy: 29/263 spec contracts and 20/104 `contracts/` files fail. Not this feature's scope; recorded as a backlog item by the lead.
+
+## Round 2 additions (Codex review findings)
+
+### Registry tripwire (finding 1)
+The stock gate treats a missing or unreadable `.agent/contract_kinds.json` as "no hooks" and proceeds, silently
+disabling both guards (`execution/contract.py` is harness-owned; reported upstream by the lead). SAOC-side tripwire:
+`scripts/gate-hooks/checks/verify_registry_present.py [registry-path]` (stdlib only, default path
+`REPO_ROOT/.agent/contract_kinds.json`, REPO_ROOT from the script location). Exit 0 iff the file exists, parses as a JSON
+object, and declares exactly the hooks of `registry.expected.json` by name with the expected `stage`, `on_error` and
+`command` (compared against the expected values, not merely present), plus the two project kinds. Exit 1 on any violation
+(print which), exit 2 only for a usage error. It runs as a step in the `dataset-residue-guard` job of
+`.github/workflows/ci.yml` (that job runs on every PR, push to main and the daily schedule), before the live scan, using
+`python3 scripts/gate-hooks/checks/verify_registry_present.py`. Broken-registry goldens: `fixtures/registry-*.json`.
+Assertions A50-A57. All red at HEAD 64664d79 because the script does not exist.
+
+### Infrastructure failures never exit 1 (finding 2)
+Both hooks currently call `subprocess.run(..., text=True)`; invalid UTF-8 output raises an uncaught `UnicodeDecodeError`,
+Python exits 1, and the gate reads a confirmed finding. Required behaviour: exit 1 is reserved for a confirmed finding and
+nothing else. Capture bytes (or `errors="replace"` plus an explicit decode-failure path) so a decode problem is detected, and
+wrap each hook's `main()` so any unexpected exception prints the matching ERROR banner (`RESIDUE GUARD ERROR` /
+`TRIAD PREFLIGHT ERROR`) and exits 2. Residue then fails open (warn, proceed), triad fails closed (gate exit 2).
+A scanner or linter that prints invalid UTF-8 but whose stdout does not carry the exact `FAIL: found` marker, or whose
+decode fails, is an error, never a finding.
+New test-only env var, mirroring `TRIAD_LINTER_SCRIPT_OVERRIDE`: `RESIDUE_SCANNER_OVERRIDE` is the path of an executable run
+in place of `node --import tsx/esm scripts/scan-dataset-residue.ts`, receiving the same arguments (`--fixture <x>` when
+`CONTRACT_GATE_RESIDUE_FIXTURE` is set). Never set in real runs. Stubs: `fixtures/stubs/scanner_bad_utf8.sh`,
+`fixtures/stubs/linter_bad_utf8.sh`. Scenarios `residue-scanner-bad-utf8-open` (A26) and `triad-linter-bad-utf8-closed` (A27),
+neutered controls A60 and A61. Red at HEAD: the triad scenario exits 1 (misread as a finding); the residue scenario has no
+override so the scanner runs clean and the expected `RESIDUE GUARD ERROR` never appears.

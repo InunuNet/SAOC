@@ -1,0 +1,33 @@
+{
+  "schema": "athanor.contract-kinds/v1",
+  "gate_hooks": [
+    {
+      "name": "residue-pre",
+      "stage": "pre",
+      "command": [
+        "scripts/gate-hooks/residue_hook.py"
+      ],
+      "on_error": "open",
+      "timeout_seconds": 300
+    },
+    {
+      "name": "triad-coverage",
+      "stage": "pre",
+      "command": [
+        "scripts/gate-hooks/triad_hook.py",
+        "{contract}"
+      ],
+      "on_error": "closed",
+      "timeout_seconds": 30
+    },
+    {
+      "name": "residue-post",
+      "stage": "post",
+      "command": [
+        "scripts/gate-hooks/residue_hook.py"
+      ],
+      "on_error": "open",
+      "timeout_seconds": 300
+    }
+  ]
+}
