@@ -2,9 +2,11 @@ import Link from 'next/link';
 import { useId } from 'react';
 
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
+import { eventDateBlock } from '@/lib/events-list';
 import type { SanityEvent } from '@/types';
 
 const EVENT_PLACEHOLDER_LABEL = "AI event: waiting on SAOC's official events";
+const EYEBROW_SEPARATOR = ' · ';
 
 /** An invented event on the beta preview carries `isPlaceholder`; it is marked and never linked. */
 export type ListedEvent = SanityEvent & { isPlaceholder?: boolean };
@@ -13,79 +15,82 @@ export interface EventCardProps {
   event: ListedEvent;
 }
 
-const CARD_CLASSES = 'flex gap-5 border border-rule bg-parchment px-5 py-4 transition hover:bg-bone';
+// Handoff event-row grid (110px 1fr auto auto), stacked to a date + content pair below 768.
+// Focus and hover are a title underline plus a 2px left bar (NAV-1 family): no box, no ring, no tint,
+// so the link's own outline is dropped in favour of those two cues.
+const ROW_CLASSES = [
+  'relative grid min-h-11 grid-cols-[88px_1fr] items-start gap-x-5 border-b border-rule py-5 outline-none',
+  'md:grid-cols-[110px_1fr_auto_auto] md:items-center md:gap-x-7 md:py-[22px]',
+].join(' ');
 
-function formatDateLabel(dateStr: string): { day: string; month: string } {
-  const date = new Date(dateStr);
-  return {
-    day: date.getUTCDate().toString(),
-    month: date.toLocaleString('en-ZA', { month: 'short', timeZone: 'UTC' }),
-  };
-}
+const BAR_CLASSES = [
+  'before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:bg-primary before:opacity-0',
+  'before:transition-opacity before:duration-150 motion-reduce:before:transition-none',
+  'hover:before:opacity-100 focus-visible:before:opacity-100',
+].join(' ');
 
-// r16 F3 (Codi): the whole card is one link to /events/<slug>, named by the event title alone and
+// r16 F3 (Codi): the whole row is one link to /events/<slug>, named by the event title alone and
 // described by the visible date and venue; the host society is plain text inside it, so nothing
 // interactive nests in or beside the row link. An event without a slug renders unlinked, never as
 // a link to a page that does not exist.
 export function EventCard({ event }: EventCardProps) {
-  const { day, month } = formatDateLabel(event.date);
+  const { d, m, y } = eventDateBlock(event.date, event.endDate);
   const id = useId();
   const titleId = `${id}-title`;
   const dateId = `${id}-date`;
   const venueId = `${id}-venue`;
   const linked = Boolean(event.slug) && !event.isPlaceholder;
+  const eyebrow = [event.kind, event.location].filter(Boolean).join(EYEBROW_SEPARATOR);
 
   const content = (
     <>
-      {/* Date column */}
+      {/* Date block: the 2px accent rule is its left border */}
       <time
         id={dateId}
         dateTime={event.date}
-        className="flex w-12 shrink-0 flex-col items-center justify-start pt-0.5"
+        className="flex flex-col border-l-2 border-accent pl-4 leading-none"
       >
-        <span className="font-serif font-normal text-[28px] leading-none text-primary">{day}</span>
-        <span className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-          {month}
+        <span className="whitespace-nowrap font-serif text-[36px] font-normal leading-none text-primary">{d}</span>
+        <span className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+          {m}
         </span>
+        <span className="mt-0.5 font-mono text-[10.5px] tracking-[0.14em] text-muted">{y}</span>
       </time>
 
-      {/* Content column */}
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-start gap-2">
-          <span
-            id={titleId}
-            className={`font-serif font-medium text-[18px] leading-snug text-ink${
-              linked ? ' group-hover:underline group-focus-visible:underline' : ''
-            }`}
-          >
-            {event.title}
-          </span>
-          {event.kind ? (
-            <span
-              className="mt-0.5 shrink-0 rounded px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em]"
-              style={{ backgroundColor: 'var(--bone)', color: 'var(--muted)' }}
-            >
-              {event.kind}
-            </span>
-          ) : null}
-        </div>
-
-        <dl className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 font-sans text-[13px] text-ink/70">
-          {event.hostSociety ? (
-            <div className="flex gap-1">
-              <dt className="sr-only">Host society</dt>
-              <dd>{event.hostSociety.name}</dd>
-            </div>
-          ) : null}
-          {event.venue ? (
-            <div className="flex gap-1">
-              <dt className="sr-only">Venue</dt>
-              <dd id={venueId}>{event.venue}</dd>
-            </div>
-          ) : null}
-        </dl>
+      <div className="min-w-0">
+        {eyebrow ? (
+          <p className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-muted">{eyebrow}</p>
+        ) : null}
+        <span
+          id={titleId}
+          className={`mt-1 block font-serif text-[22px] font-semibold leading-snug text-primary${
+            linked ? ' underline-offset-4 decoration-2 group-hover:underline group-focus-visible:underline' : ''
+          }`}
+        >
+          {event.title}
+        </span>
+        {event.venue ? (
+          <p id={venueId} className="mt-1 font-sans text-[13.5px] text-ink/70">
+            {event.venue}
+          </p>
+        ) : null}
         {event.isPlaceholder ? <PlaceholderMarker label={EVENT_PLACEHOLDER_LABEL} /> : null}
       </div>
+
+      {event.hostSociety ? (
+        <p className="col-start-2 mt-2 max-w-[200px] font-mono text-[11px] uppercase tracking-[0.14em] text-muted md:col-start-3 md:mt-0 md:text-right">
+          <span className="sr-only">Host society</span> {event.hostSociety.name}
+        </p>
+      ) : null}
+
+      {linked ? (
+        <span
+          aria-hidden="true"
+          className="hidden font-serif text-[20px] text-primary md:col-start-4 md:block"
+        >
+          →
+        </span>
+      ) : null}
     </>
   );
 
@@ -93,15 +98,18 @@ export function EventCard({ event }: EventCardProps) {
     <article>
       {linked ? (
         <Link
+          data-event-row
           href={`/events/${event.slug}`}
           aria-labelledby={titleId}
           aria-describedby={event.venue ? `${dateId} ${venueId}` : dateId}
-          className={`group ${CARD_CLASSES}`}
+          className={`group ${ROW_CLASSES} ${BAR_CLASSES}`}
         >
           {content}
         </Link>
       ) : (
-        <div className={CARD_CLASSES}>{content}</div>
+        <div data-event-row className={ROW_CLASSES}>
+          {content}
+        </div>
       )}
     </article>
   );

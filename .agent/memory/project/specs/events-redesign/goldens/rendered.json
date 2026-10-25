@@ -1,0 +1,18 @@
+{
+  "widths": [1280, 768, 390],
+  "modes": ["public", "preview"],
+  "showSlug": "19th-south-african-national-orchid-show",
+  "showTitle": "19th South African National Orchid Show",
+  "minTarget": 44,
+  "hooks": {
+    "list": "[data-events-list]",
+    "row": "[data-event-row]",
+    "controls": "[data-events-controls]",
+    "about": "[data-events-about]",
+    "band": "[data-show-band-cta]"
+  },
+  "placeholderMarkers": ["[data-placeholder-marker]"],
+  "placeholderText": ["AI event:", "East Rand Cymbidium Show", "Winelands Orchid Society"],
+  "homeStrip": "[data-home-section=\"events\"]",
+  "homeZeroText": "No upcoming events scheduled."
+}

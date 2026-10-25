@@ -1,0 +1,24 @@
+{
+  "note": "No new copy (docs/rules/no-invention.md, EV ruling 'No new prose anywhere'). A user-visible string added by the diff must already exist at BASE somewhere under components/, app/ or lib/, or be listed here with its source. Sources: 'handoff' = design/design_handoff_saoc/src/pages-show-events-contact.jsx EventsPage; 'ruling' = nos-design-ruling-ev.md.",
+  "allowed": [
+    { "text": "Kind", "source": "handoff mono-label (EV-5 chips)" },
+    { "text": "All kinds", "source": "handoff chip for ALL" },
+    { "text": "Month", "source": "handoff mono-label (EV-5 select)" },
+    { "text": "All months", "source": "handoff fmtMonthLabel('ALL')" },
+    { "text": "Find your society", "source": "ruling EV-3 (existing string)" }
+  ],
+  "forbidden": [
+    "Subscribe to calendar",
+    "Subscribe",
+    "No upcoming events",
+    "No events",
+    "Featured events"
+  ],
+  "copyGap": {
+    "id": "EV-3-subscribe-label",
+    "constant": "EVENTS_CALENDAR_SUBSCRIBE_LABEL",
+    "file": "components/events/EventsAbout.tsx",
+    "value": null,
+    "recommended": "Subscribe to calendar (NOS Design recommendation, NOT approved; goes to Lee-Ann's doc or Brad; do not ship until approved)"
+  }
+}
