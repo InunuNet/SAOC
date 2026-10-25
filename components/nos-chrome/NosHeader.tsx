@@ -31,12 +31,13 @@ import './nos-chrome.css';
 type MegaItem = Extract<NavItem, { type: 'mega' }>;
 
 const HUB_HREF = '/';
-const LOCKUP_SRC = '/images/nos/nos-full-colour-horizontal-1200.png';
+const LOCKUP_SRC = '/images/nos/nos-full-colour-horizontal-2400.png';
 const LOCKUP_ALT = SHOW_TITLE_EXPANDED;
-const LOCKUP_WIDTH = 1200;
-const LOCKUP_HEIGHT = 294;
-// The box is 448px wide from 780px up and 390px below it. A width with no `sizes` gives a 1x/2x
-// density srcset, so a high-density screen never fetches more than twice the box.
+const LOCKUP_WIDTH = 2400;
+const LOCKUP_HEIGHT = 589;
+// The box is 448px wide from 780px up and 390px below it. A width with no `sizes` gives a
+// pixel-density list that stops at twice the box, which under-serves a 3x screen. The `sizes` below
+// gives a width srcset over the whole variant ladder, so a 3x screen picks a wide enough one (LG-1).
 const LOCKUP_BOX_WIDE = 448;
 const LOCKUP_BOX_NARROW = 390;
 const PANEL_BREAKPOINT_QUERY = '(min-width: 1384px)';
@@ -52,6 +53,7 @@ const lockupProps = (width: number) =>
     alt: LOCKUP_ALT,
     width,
     height: Math.round((width * LOCKUP_HEIGHT) / LOCKUP_WIDTH),
+    sizes: `${width}px`,
   }).props;
 const wideLockup = lockupProps(LOCKUP_BOX_WIDE);
 const narrowLockup = lockupProps(LOCKUP_BOX_NARROW);
@@ -246,7 +248,11 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
             aria-current={current(HUB_HREF)}
           >
             <picture>
-              <source media="(max-width: 779px)" srcSet={narrowLockup.srcSet} />
+              <source
+                media="(max-width: 779px)"
+                srcSet={narrowLockup.srcSet}
+                sizes={narrowLockup.sizes}
+              />
               <img
                 {...wideLockup}
                 alt={LOCKUP_ALT}
