@@ -3,13 +3,11 @@ import type { Metadata } from 'next';
 import { heroFactsForEvent, NosHero } from '@/components/nos/NosHero';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { PresenterSection } from '@/components/nos/PresenterSection';
-import { showPageProseParts } from '@/components/nos/ShowPageProse';
-import { unwrapShowPageResult } from '@/components/show/nos/show-content-state-internal';
 import { TicketCard } from '@/components/tickets/keepsake';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
 import { loadShowFacts } from '@/lib/data/show-facts';
 import { SYMPOSIUM_THEME_LINE } from '@/lib/data/show-page-presentation';
-import { loadShowPageOrFallback, withholdPlaceholderProse } from '@/lib/data/show-pages';
+import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { TICKET_PRODUCTS } from '@/lib/data/ticket-presentation';
 import { buildPageMetadata } from '@/lib/seo';
 import { loadPresenterViewModels } from '@/lib/view-models/load-presenters';
@@ -29,7 +27,9 @@ export const revalidate = 60;
 
 const PAGE_TITLE = 'Symposium';
 const EVENT = 'saoc-symposium';
-const THEME_SECTION_KEY = 'theme';
+// Symposium Theme document (Drive: National Show / Symposium), the sentence under her theme title, word for word.
+const THEME_SENTENCE =
+  "Uniting conservation, science, and horticulture to explore how orchids in their natural environments inform responsible growing, breeding, and the sustainability of the orchid industry.";
 // What to Expect v1.0, the Symposium paragraph: its first sentence, word for word.
 const PROGRAMME_SENTENCE =
   "The National Show Symposium will feature an outstanding programme of presentations by respected local and international speakers covering orchid cultivation, breeding, conservation, taxonomy, judging, sustainability and emerging scientific research.";
@@ -44,11 +44,7 @@ export const metadata: Metadata = buildPageMetadata({
 
 export default async function SymposiumPage() {
   // A Sanity or Firebase failure must never turn this public page into a 500 (Codex finding, 2026-10-07).
-  const [result, showFacts, presenters, ticketCards] = await Promise.all([
-    loadShowPageOrFallback('06-saoc-symposium', {
-      label: PAGE_TITLE,
-      purpose: 'The National Orchid Show Symposium: what it is, its theme, and who it is for.',
-    }),
+  const [showFacts, presenters, ticketCards] = await Promise.all([
     loadShowFacts(),
     loadPresenterViewModels(EVENT),
     loadTicketCardViewModels().catch((error: unknown) => {
@@ -56,9 +52,6 @@ export default async function SymposiumPage() {
       return null;
     }),
   ]);
-  const page = unwrapShowPageResult(result);
-  const themeSection = page.sections.find((section) => section.sectionKey === THEME_SECTION_KEY);
-  const [themeSentence] = (themeSection ? showPageProseParts(themeSection) : null)?.paragraphs ?? [];
   const card = ticketCards?.cards.symposium ?? null;
 
   return (
@@ -77,7 +70,7 @@ export default async function SymposiumPage() {
         <div data-nos-wrap="">
           <div className="nos-ev-grid">
             <div className="nos-ev-main">
-              {themeSentence ? <p className="doc-standfirst">{themeSentence}</p> : null}
+              <p className="doc-standfirst">{THEME_SENTENCE}</p>
               <p>{PROGRAMME_SENTENCE}</p>
             </div>
             {card ? (
