@@ -4428,3 +4428,12 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     order: 5;
   }
 }
+
+.nos-theme [data-doc-aside] .nk-admit {
+  font-style: normal;
+}
+.nos-theme .nos-sp-hero-cta,
+.nos-theme .nos-sp-card-cta,
+.nos-theme .nos-sp-main a[class*='btn'] {
+  border-radius: 2px;
+}

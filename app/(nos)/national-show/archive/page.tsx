@@ -113,7 +113,7 @@ export default async function ShowArchivePage() {
         ) : (
           <div>
             <div className="nos-surface">
-              <h2 className="font-serif text-[28px] font-normal text-ink">
+              <h2 className="doc-h2">
                 Show history awaiting committee records
               </h2>
             </div>
