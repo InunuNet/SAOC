@@ -53,17 +53,6 @@ function tooManyAttempts(retryAfterSeconds: number): NextResponse {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  // 0. Rate limit per client IP, before auth: uids are free to mint, so the per-uid limit
-  // below does not bound a caller who registers new accounts.
-  const ip = clientIpFromForwardedFor(req.headers.get('x-forwarded-for'));
-  const ipLimit = consumeRateLimit(
-    { now: new Date(), ...scopeAttemptsToRequest(attempts) },
-    `event-submit-ip:${ip ?? 'unknown'}`,
-    PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
-    PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
-  );
-  if (!ipLimit.allowed) return tooManyAttempts(ipLimit.retryAfterSeconds);
-
   // 1. Extract bearer token
   const authz = req.headers.get('authorization') ?? '';
   const token = authz.startsWith('Bearer ') ? authz.slice(7) : null;
@@ -82,7 +71,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 3. Rate limit per uid, before the body is parsed
+  // 3a. Rate limit per client IP, after auth: uids are free to mint, so the per-uid limit below
+  // does not bound a caller who registers new accounts. It runs only for a verified submitter,
+  // so unauthenticated traffic cannot use up an address's allowance for real users behind it.
+  const ip = clientIpFromForwardedFor(req.headers.get('x-forwarded-for'));
+  const ipLimit = consumeRateLimit(
+    { now: new Date(), ...scopeAttemptsToRequest(attempts) },
+    `event-submit-ip:${ip ?? 'unknown'}`,
+    PUBLIC_FORM_RATE_LIMIT_MAX_ATTEMPTS,
+    PUBLIC_FORM_RATE_LIMIT_WINDOW_MS,
+  );
+  if (!ipLimit.allowed) return tooManyAttempts(ipLimit.retryAfterSeconds);
+
+  // 3b. Rate limit per uid, before the body is parsed
   const limit = consumeRateLimit(
     { now: new Date(), ...scopeAttemptsToRequest(attempts) },
     `event-submit:${uid}`,
