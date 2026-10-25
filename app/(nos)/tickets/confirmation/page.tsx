@@ -44,6 +44,9 @@ const isBookingNotFound = cache(async (bookingRef: string): Promise<boolean> => 
   }
 });
 
+// Per-order payment-return page: never indexed, whichever arm resolves.
+const NOINDEX: Metadata = { robots: { index: false, follow: false } };
+
 export async function generateMetadata({
   searchParams,
 }: {
@@ -54,12 +57,14 @@ export async function generateMetadata({
   try {
     const confirmedOrder =
       bookingRef.length > 0 ? await getConfirmedOrderForDisplay(bookingRef) : null;
-    if (confirmedOrder) return {};
+    if (confirmedOrder) return { ...NOINDEX };
   } catch {
     // The page surfaces the order lookup's error itself; the title keeps the site default.
-    return {};
+    return { ...NOINDEX };
   }
-  return (await isBookingNotFound(bookingRef)) ? { title: BOOKING_NOT_FOUND_TITLE } : {};
+  return (await isBookingNotFound(bookingRef))
+    ? { title: BOOKING_NOT_FOUND_TITLE, ...NOINDEX }
+    : { ...NOINDEX };
 }
 
 async function BookingNotFound() {

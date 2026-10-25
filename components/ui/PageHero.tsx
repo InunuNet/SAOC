@@ -9,7 +9,7 @@ import heroSourceWidths from '@/lib/hero-source-widths.json';
 
 interface PageHeroProps {
   image: string;
-  eyebrow: string;
+  eyebrow?: string;
   heading: ReactNode;
   lede?: string;
   /** Rendered under the lede, e.g. a call to action. */
@@ -46,10 +46,12 @@ export function PageHero({
         aria-hidden="true"
       />
       <div className="saoc-container relative z-10 w-full pb-16 pt-28 flex flex-col items-center text-center">
-        <span className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory">
-          {eyebrow}
-        </span>
-        <h1 className="mt-5 max-w-3xl font-serif tracking-[-0.015em] font-light text-[clamp(42px,5.4vw,72px)] leading-[1.05] text-ivory">
+        {eyebrow ? (
+          <span className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory">
+            {eyebrow}
+          </span>
+        ) : null}
+        <h1 className={`${eyebrow ? 'mt-5 ' : ''}max-w-3xl font-serif tracking-[-0.015em] font-light text-[clamp(42px,5.4vw,72px)] leading-[1.05] text-ivory`}>
           {heading}
         </h1>
         {lede ? (
