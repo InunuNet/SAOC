@@ -125,3 +125,24 @@ FACTS-1 encoded (standard.json facts, spec.md item 2, A7 `factsGrammar`); hero c
 - **Reversal:** the earlier fix-list item "Show On-site first aid and show duty contact" is withdrawn by PV-G1 (pending copy, not shown). Owner item for SAOC/Lee-Ann: supply that contact and the venue map ("To be Provided").
 - **Owner item:** the venue card's pending map pin and site map.
 - The strip-tile `naturalWidth` numbers are the dev's to send to NOS Design; A7's sharpness formula covers the hero only.
+
+## 17. Revision 11 (2026-10-25)
+- A9: the question summary is 22px at 768 and up and 19px below 768 (FQ-G1 wins over the earlier 22px-everywhere).
+- A9 on-load current row: requires SAOC's `DocumentIndex.tsx` first-entry fallback. The gate keys on the source: once `components/ui/DocumentIndex.tsx` contains an `entries[0]` / `index[0]` / `items[0]` fallback, a current row on load (weight 700) is required; before that it prints "PENDING SAOC" and still runs the scroll-spy checks. **A2 pin note:** that SAOC change edits `components/ui/**`, which A2 diffs against `b2cff780`; the lead sets `NOS_STD_REFSAOC` to SAOC's new commit when it lands (check-static.mjs now reads it, no re-freeze needed).
+
+## 18. Revision 12 (2026-10-25): PG-G1 (/programme) and card sharpness
+- PG-G1 encoded (route-table `pg`, `pgSources`, `heroCap` 375/396, `layout: board`, `aside: none`; A7 `programmeChecks`). It supersedes PG-1 item 2's "/programme aside is the h2 index" for this route.
+- **"Schedule to follow" is sourced** (lead correction): Brad's ticket news of 2026-10-07 (`lib/provisional-figures.ts:477-487`, `lib/data/ticket-presentation.ts:164`). No marker, no owner item (the earlier `data-awaiting-committee-copy` requirement and the workshops-schedule owner item are withdrawn). A7 asserts the row text equals `TICKET_PRODUCTS.workshops.when` and `.meta`, read at gate time. The D-PG1 time-format question stays an owner line for Lee-Ann/SAOC.
+- **Card images (P1):** A7 gained `cardImageChecks` for the `.nk-grid` images on /programme and /tickets at 2056@2 (naturalWidth >= box x DPR, cover-aware) and not-lazy above the fold. NOS Design's finding: the Workshops card serves `orchid-violet.jpg-640.webp` into a 421px box (0.76). `/tickets` is probed outside the route table because it is not a content route.
+- The hero caps for /programme are the golden's measured 375 (1440) and 396 (2056), not the generic 420/440.
+
+## 19. Revision 13
+Workshops row asserted from source (see section 18), the awaiting-committee-copy marker dropped.
+
+## 20. Revision 14 (2026-10-25): SX-G1, LT-1, /exhibitors withheld
+- SX-G1 encoded (route-table `sx`, `subnav`, drive range from her standfirst to her fourth paragraph; A7 `sxChecks`), LT-1 (standard.json `hero.longTitleChars` / `longTitleCap`; A7 on every route), /exhibitors `layout: hero-only` (A7 `heroOnlyChecks`).
+- **Owner list additions (Lee-Ann, via SAOC):**
+  1. **D-SX1:** may we publish the invited-vendor shortlist (her 21 names), labelled as invited? Until she answers the directory stays gated closed (empty state). The lead flips `sx.directory` to `open` in the route table and re-freezes.
+  2. **D-SX2:** confirm the spellings in her list ("Carniverous plants", "Rays Retail Nursary"; "Gods Green Gifts" without an apostrophe). Business names have to be right; nothing is corrected by the build.
+  3. **Exhibitor entry guide copy:** schedule, classes, entry form, key dates. No source doc exists; the public build shows the hero and contact panel only until she supplies it.
+- **Assumptions:** the empty state's statement is read from the `ABSENCE_STATEMENT` constant in the sa-exhibitors page.tsx at gate time (path found by search under `app/`); the /exhibitors contact panel is detected by `[data-contact-panel]`, a `mailto:` link or a form (a hook the dev should add if none matches); the 3000px page-height bound is a heuristic for "hero + contact + index only".

@@ -912,6 +912,26 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-size: clamp(3rem, 1.8rem + 3.2vw, 4.75rem);
 }
 
+/* LT-1: a long inner title (over 20 characters) takes a smaller clamp and the whole column, so it stays on one line. */
+@media (min-width: 1024px) {
+  .nos-theme .nos-hero-inner .nos-hero-title.is-long {
+    max-width: none;
+    font-size: clamp(2.75rem, 1.6rem + 2.6vw, 4rem);
+    text-wrap: balance;
+  }
+}
+/* The exhibitor entry guide is a hero and one contact panel. */
+.nos-theme .nos-contact-panel {
+  display: grid;
+  justify-items: start;
+  gap: 20px;
+  max-width: 60ch;
+}
+.nos-theme .nos-contact-panel h2,
+.nos-theme .nos-contact-panel p {
+  margin: 0;
+}
+
 /* F18-KEEPSAKE-START */
 /* F18b (launch-weekend, v13 keepsake tickets): the ticket, the pool banner, the hero fan and the
    tickets masthead, ported from the approved mock (goldens/f18b/v13-tickets.html) onto theme tokens.
@@ -2695,6 +2715,30 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   width: 100%;
   text-align: center;
 }
+.nos-theme .nos-sx-cats {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+.nos-theme .nos-sx-cats li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding-block: 8px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 15.5px;
+  color: var(--ink);
+}
+.nos-theme .nos-sx-cats li::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--green-1);
+}
 .nos-theme .nos-sp-card-cta svg,
 .nos-theme .nos-sp-hero-cta svg,
 .nos-theme .nos-sp-empty svg {
@@ -3065,6 +3109,232 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
    shows as a 15px light band at the right edge and keeps full-bleed bands short of the viewport. */
 :root:has(.nos-theme) {
   scrollbar-gutter: auto;
+}
+/* ---------- Programme (PG-G1): one timetable board, four show days, then the bookable sessions ---------- */
+.nos-theme .nos-pg-body {
+  padding-block: clamp(56px, 6vw, 88px) 0;
+}
+.nos-theme .nos-pg-head {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+.nos-theme .nos-pg-head h2 {
+  margin: 0;
+  font-weight: 300;
+  font-size: clamp(2rem, 1.5rem + 1.6vw, 2.4375rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.nos-theme .nos-pg-head p {
+  margin: 0;
+  max-width: 60ch;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--ink-500);
+}
+.nos-theme .nos-pg-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+}
+.nos-theme .nos-pg-day {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+}
+.nos-theme .nos-pg-day + .nos-pg-day {
+  border-left: 1px solid var(--rule);
+}
+.nos-theme .nos-pg-date {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: clamp(24px, 2.4vw, 32px) clamp(20px, 2vw, 28px) 20px;
+  border-bottom: 1px solid var(--rule);
+}
+.nos-theme .nos-pg-date .wd {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary);
+}
+.nos-theme .nos-pg-date .d {
+  margin-top: 6px;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(3.25rem, 2.4rem + 2.4vw, 4.5rem);
+  line-height: 1;
+  color: var(--primary);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.nos-theme .nos-pg-date .m {
+  font-size: 15px;
+  color: var(--ink-500);
+}
+.nos-theme .nos-pg-slots {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  padding: 20px clamp(20px, 2vw, 28px) clamp(24px, 2.4vw, 32px);
+}
+.nos-theme .nos-pg-hours {
+  display: grid;
+  gap: 4px;
+}
+.nos-theme .nos-pg-hours .k {
+  font-size: 14px;
+  color: var(--ink-500);
+}
+.nos-theme .nos-pg-hours .v {
+  font-size: 1rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.nos-theme .nos-pg-session {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 16px 44px 16px 16px;
+  border-radius: 8px;
+  background-color: var(--gold-100);
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color 200ms var(--ease-nos);
+}
+.nos-theme .nos-pg-session .t {
+  font-size: 14px;
+  color: var(--ink-500);
+  font-variant-numeric: tabular-nums;
+}
+.nos-theme .nos-pg-session .n {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.25rem;
+  line-height: 1.25;
+  color: var(--primary);
+}
+.nos-theme .nos-pg-session .s {
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+.nos-theme .nos-pg-session svg,
+.nos-theme .nos-pg-later svg {
+  position: absolute;
+  right: 14px;
+  top: 18px;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 240ms var(--ease-nos);
+}
+.nos-theme .nos-pg-session:hover {
+  background-color: var(--gold);
+}
+.nos-theme .nos-pg-session:hover .n,
+.nos-theme .nos-pg-later:hover .n {
+  text-decoration: underline;
+  text-decoration-color: var(--green-1);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+}
+.nos-theme .nos-pg-session:hover svg,
+.nos-theme .nos-pg-later:hover svg {
+  transform: translateX(3px);
+}
+.nos-theme .nos-pg-later {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 20px;
+  margin-top: 16px;
+  padding: 18px 48px 18px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  color: var(--ink);
+  text-decoration: none;
+}
+.nos-theme .nos-pg-later .n {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.375rem;
+  color: var(--primary);
+}
+.nos-theme .nos-pg-later .s {
+  font-size: 15px;
+  color: var(--ink-500);
+}
+.nos-theme .nos-pg-later svg {
+  top: 50%;
+  right: 4px;
+  margin-top: -9px;
+}
+.nos-theme .nos-pg-book .nk-grid {
+  margin: 0;
+}
+@media (max-width: 1023px) {
+  .nos-theme .nos-pg-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .nos-theme .nos-pg-day:nth-child(3) {
+    border-left: 0;
+  }
+  .nos-theme .nos-pg-day:nth-child(n + 3) {
+    border-top: 1px solid var(--rule);
+  }
+}
+@media (max-width: 599px) {
+  .nos-theme .nos-pg-board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nos-theme .nos-pg-day {
+    grid-template-columns: 108px minmax(0, 1fr);
+    grid-template-rows: auto;
+  }
+  .nos-theme .nos-pg-day + .nos-pg-day {
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+  }
+  .nos-theme .nos-pg-date {
+    align-content: start;
+    padding: 20px 0 20px 16px;
+    border-bottom: 0;
+  }
+  .nos-theme .nos-pg-date .d {
+    margin-top: 2px;
+    font-size: 2.75rem;
+  }
+  .nos-theme .nos-pg-date .wd,
+  .nos-theme .nos-pg-date .m {
+    font-size: 14px;
+  }
+  .nos-theme .nos-pg-slots {
+    padding: 22px 16px 20px 0;
+  }
+  .nos-theme .nos-pg-session {
+    padding: 14px 34px 14px 14px;
+  }
+  .nos-theme .nos-pg-session .n {
+    font-size: 1.125rem;
+  }
+  .nos-theme .nos-pg-session svg {
+    right: 10px;
+    top: 15px;
+  }
+  .nos-theme .nos-pg-hours .v {
+    text-wrap: balance;
+  }
 }
 /* Inline text links keep a 24px hit area without changing the line box. */
 .nos-theme .doc-prose p a,

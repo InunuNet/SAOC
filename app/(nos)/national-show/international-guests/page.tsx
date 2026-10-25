@@ -1,34 +1,30 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 
-import { ShowContentState } from '@/components/show/nos/ShowContentState';
+import { heroFactsFromShow, NosHero } from '@/components/nos/NosHero';
+import { NosSection } from '@/components/nos/NosSection';
+import { NosShowIndex } from '@/components/nos/NosShowIndex';
 import { NurseryCard, type NurseryCardData } from '@/components/show/nos/NurseryCard';
-import { RealEmptyListing } from '@/components/show/nos/RealEmptyListing';
 import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
+import { loadShowFacts } from '@/lib/data/show-facts';
+import { buildPageMetadata } from '@/lib/seo';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { internationalNurseriesQuery } from '@/sanity/queries';
-import { loadShowFacts } from '@/lib/data/show-facts';
-import { loadShowPageOrFallback } from '@/lib/data/show-pages';
-import { buildPageMetadata } from '@/lib/seo';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
-import { NosShowIndex } from '@/components/nos/NosShowIndex';
 
-// F14 (national-show-ia-alignment, M4) — created route. Placeholder prose plus a REAL
-// empty listing over vendorNursery, filtered to guests outside South Africa. Zero
-// invented guests — see route-manifest.golden.md §5.
+// F14 (national-show-ia-alignment, M4): a REAL listing over vendorNursery, filtered to guests
+// outside South Africa. Zero invented guests (route-manifest.golden.md section 5).
 //
-// F24 (M4) — replaces the hard 404 guard with loadShowPageOrFallback()/
-// <ShowContentState>, so an absent document renders a disclosed shell instead of a 404.
-// The nursery grid/RealEmptyListing is independent of the ShowPage, so it is passed as
-// `listingContent` and rendered in the published branch only. See
-// goldens/m4/never-404-fallback.golden.md.
+// nos-content-standard: there is no Drive document for this page, and the build's own intro and
+// "Who will appear" prose is AI placeholder copy (provenance placeholder-ai), so it is not rendered
+// (R7, no invention). The page is the hero and the listing: the confirmed guests, or the project's
+// own absence statement in the SP-1 empty panel until there are any.
 export const revalidate = 60;
 
-const CARD_FIELD_LABELS = [
-  'Nursery / guest',
-  'Country',
-  'Specialisation',
-  "What they'll bring",
-] as const;
+const PAGE_TITLE = 'International guests';
+const LISTING_HEADING = 'Guests and exhibitors';
+const FACTS_LABELS = ['Dates', 'Venue', 'Host'] as const;
+const EMBLEM_SIZE_PX = 88;
 
 const ABSENCE_STATEMENT =
   'No international guests or exhibitors have been confirmed for 2027 yet. Confirmed ' +
@@ -42,43 +38,49 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default async function InternationalGuestsPage() {
-  const [result, nurseries, facts] = await Promise.all([
-    loadShowPageOrFallback('05-international-guests-and-exhibitors', {
-      label: 'International Guests',
-      purpose: 'Public directory of international guests and exhibitors attending the show.',
-    }),
+  const [nurseries, showFacts] = await Promise.all([
     sanityFetch<NurseryCardData[]>({
       query: internationalNurseriesQuery,
       tags: ['vendorNursery', 'sanity'],
     }),
     loadShowFacts(),
   ]);
-
   const list = nurseries ?? [];
 
   return (
     <>
-      <ShowContentState
-        result={result}
+      <NosHero
         route="/national-show/international-guests"
-        layout="listing"
-        listingEmpty={list.length === 0}
-        holding={{ facts, statement: ABSENCE_STATEMENT }}
-        listingContent={
-          list.length > 0 ? (
-            <ShowEntityGrid
-              items={list}
-              itemKey={(nursery) => nursery._id}
-              renderCard={(nursery) => <NurseryCard nursery={nursery} />}
-            />
-          ) : (
-            <RealEmptyListing
-              fieldLabels={CARD_FIELD_LABELS}
-              absenceStatement={ABSENCE_STATEMENT}
-            />
-          )
-        }
+        title={PAGE_TITLE}
+        crumbLabel={PAGE_TITLE}
+        facts={heroFactsFromShow(showFacts, FACTS_LABELS)}
+        priority
       />
+
+      <NosSection tone="gold" aria-labelledby="ig-listing-h">
+        <div className="nos-sp-wall-head">
+          <h2 id="ig-listing-h" className="doc-h2">
+            {LISTING_HEADING}
+          </h2>
+        </div>
+        {list.length > 0 ? (
+          <ShowEntityGrid
+            items={list}
+            itemKey={(nursery) => nursery._id}
+            renderCard={(nursery) => <NurseryCard nursery={nursery} />}
+          />
+        ) : (
+          <div className="nos-sp-empty" data-nos-empty-state="international-guests">
+            <Image
+              src="/images/Eulophia-speciosa-emblem.png"
+              alt=""
+              width={EMBLEM_SIZE_PX}
+              height={EMBLEM_SIZE_PX}
+            />
+            <p>{ABSENCE_STATEMENT}</p>
+          </div>
+        )}
+      </NosSection>
       <NosShowIndex current="/national-show/international-guests" />
     </>
   );

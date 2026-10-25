@@ -10,7 +10,7 @@
 //   facts     (routes with facts) 2-4 dd/dt, every box fully inside the first viewport at 1440x900 and 390x844@3, contrast >= 4.5 on the
 //             photo pixels behind each fact; sub-nav and first h2 visible at 1440x900
 //   focus     a focused h1[tabindex="-1"] paints no outline, ring or shadow, on load and after client navigation
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { CROPS, EXCLUDED, ROUTES, STD, driveState, launchChromium, newContext, withServer } from './_lib.mjs';
 
 const HERO_IMG = 'section[data-nos-hero] [data-nos-hero-media] img';
@@ -177,6 +177,107 @@ async function pyvChecks(page, route, vp, c, tag) {
   c.check(`${tag} PV-G1 no overflow at any width (${m.sw} <= ${m.iw})`, m.sw <= m.iw);
 }
 
+/** PG-G1 (NOS Design golden, root comms.md from line 3125): the /programme timetable board. Hours come from What to Expect v1.0, verbatim. */
+/** TICKET_PRODUCTS.workshops.when and .meta, read from source at gate time (never hard-coded here). */
+function workshopsRowSource() {
+  const src = readFileSync('lib/data/ticket-presentation.ts', 'utf8');
+  const block = src.slice(src.indexOf('workshops: {'));
+  const when = block.match(/when:\s*'([^']+)'/)?.[1] ?? null;
+  const metaRaw = block.match(/meta:\s*(`[^`]*`|'[^']*')/)?.[1] ?? null;
+  const capName = metaRaw?.match(/\$\{(\w+)\}/)?.[1];
+  let cap = null;
+  if (capName) for (const f of ['lib/data/ticket-presentation.ts', ...readdirSync('lib', { recursive: true }).filter((x) => /\.ts$/.test(String(x))).map((x) => `lib/${x}`)]) { const m = readFileSync(f, 'utf8').match(new RegExp(`${capName}\\s*(?::[^=]+)?=\\s*(\\d+)`)); if (m) { cap = m[1]; break; } }
+  const meta = metaRaw ? metaRaw.slice(1, -1).replace(/\$\{\w+\}/, cap ?? '') : null;
+  return { when, meta };
+}
+async function programmeChecks(page, route, vp, c, tag) {
+  const P = route.pgSources;
+  const WS = workshopsRowSource();
+  c.check(`${tag} PG-G1 the workshops source strings were read from lib/data/ticket-presentation.ts (${JSON.stringify(WS)})`, Boolean(WS.when) && Boolean(WS.meta) && /\d/.test(WS.meta));
+  const wte = readFileSync(`${SPDIR}${P.file}`, 'utf8');
+  c.check(`${tag} PG-G1 her heading and date line exist in What to Expect v1.0 (so they can never drift)`, wte.includes(P.h2) && wte.includes(P.line));
+  for (const d of P.days) c.check(`${tag} PG-G1 her hours for ${d.wd} exist in her doc: "${d.hours}"`, wte.includes(d.hours));
+  const m = await page.evaluate(() => {
+    const txt = (e) => e.textContent.replace(/\s+/g, ' ').trim();
+    const h2s = [...document.querySelectorAll('main h2')].map(txt);
+    const board = document.querySelector('ol, [data-programme-board]'); const days = board ? [...board.querySelectorAll(':scope > li')] : [];
+    const dayInfo = days.map((li) => { const b = li.getBoundingClientRect(); const a = [...li.querySelectorAll('a')].map((x) => ({ href: x.getAttribute('href'), h: x.getBoundingClientRect().height, t: txt(x) })); return { t: txt(li), top: Math.round(b.top), left: Math.round(b.left), w: b.width, dateCell: (li.querySelector('p, [class*="date"]')?.getBoundingClientRect().width ?? 0), a }; });
+    const bc = board ? getComputedStyle(board) : null; const bb = board?.getBoundingClientRect();
+    const later = [...document.querySelectorAll('main a[href$="/workshops"]')].map((a) => ({ t: txt(a), h: a.getBoundingClientRect().height, below: board ? a.getBoundingClientRect().top >= bb.bottom - 1 : false }))[0] ?? null;
+    const tickets = document.querySelector('#programme .nk-grid, .nk-grid'); const tb = [...document.querySelectorAll('main h2')].find((h) => /^tickets$/i.test(txt(h)));
+    const ph = /PLACEHOLDER COPY|AI placeholder|to be confirmed/i.test(document.querySelector('main')?.textContent ?? '');
+    const focusRing = (() => { const a = days.flatMap((li) => [...li.querySelectorAll('a')])[0]; if (!a) return null; a.focus(); const s = getComputedStyle(a); return { os: s.outlineStyle, ow: parseFloat(s.outlineWidth), bs: s.boxShadow }; })();
+    return { h2s, dayInfo, bcols: bc ? bc.gridTemplateColumns.trim().split(/\s+/).length : 0, bradius: bc ? parseFloat(bc.borderTopLeftRadius) : null, bbg: bc?.backgroundColor, later, hasGrid: Boolean(tickets), hasTicketsH2: Boolean(tb), gridAfterH2: tb && tickets ? Boolean(tb.compareDocumentPosition(tickets) & Node.DOCUMENT_POSITION_FOLLOWING) : false, ph, focusRing, sw: document.documentElement.scrollWidth, iw: innerWidth };
+  });
+  c.check(`${tag} PG-G1 exactly two h2: "${P.h2s[0]}" and "Tickets"; no h2 "Programme" (${m.h2s.join(' | ')})`, JSON.stringify(m.h2s.map((t) => t.replace(/\s+/g, ' '))) === JSON.stringify(P.h2s) && !m.h2s.some((t) => /^programme$/i.test(t)));
+  c.check(`${tag} PG-G1 the line "${P.line}" is rendered`, m.dayInfo.length === 4 && (await page.evaluate((t) => (document.querySelector('main')?.textContent ?? '').replace(/\s+/g, ' ').includes(t), P.line)));
+  c.check(`${tag} PG-G1 the board has four days: ${P.days.map((d) => `${d.wd} ${d.d}`).join(', ')} with her opening hours verbatim`, m.dayInfo.length === 4 && P.days.every((d, i) => m.dayInfo[i].t.includes(d.wd) && m.dayInfo[i].t.includes(d.d) && m.dayInfo[i].t.includes(d.hours)), m.dayInfo.map((d) => d.t.slice(0, 40)).join(' | '));
+  c.check(`${tag} PG-G1 symposium and WOSA are linked tiles on their days (Friday, Saturday), each >= 44px`, P.days.filter((d) => d.tile).every((d, _i) => { const di = P.days.indexOf(d); return m.dayInfo[di]?.a.some((x) => x.href?.endsWith(d.tile) && x.h >= 44); }));
+  c.check(`${tag} PG-G1 the session tiles are keyboard focusable with a visible focus (${JSON.stringify(m.focusRing)})`, Boolean(m.focusRing) && ((m.focusRing.os !== 'none' && m.focusRing.ow > 0) || m.focusRing.bs !== 'none'));
+  const tops = new Set(m.dayInfo.map((d) => d.top)); const lefts = new Set(m.dayInfo.map((d) => d.left));
+  if (vp.width >= 1024) c.check(`${tag} PG-G1 four day columns in one row (${m.bcols} cols, ${tops.size} row(s))`, tops.size === 1 && lefts.size === 4);
+  else if (vp.width >= 600) c.check(`${tag} PG-G1 the board is 2x2 (${tops.size} rows, ${lefts.size} cols)`, tops.size === 2 && lefts.size === 2);
+  else c.check(`${tag} PG-G1 below 600 one row per day with a 108px date column (${tops.size} rows, date cell ${Math.round(m.dayInfo[0]?.dateCell ?? 0)})`, tops.size === 4 && lefts.size === 1 && Math.abs((m.dayInfo[0]?.dateCell ?? 0) - 108) <= 2);
+  c.check(`${tag} PG-G1 the board is one white card with radius 10 (${m.bradius}, ${m.bbg})`, m.bradius === 10 && /255, 255, 255/.test(m.bbg ?? ''));
+  c.check(`${tag} PG-G1 workshops: one ruled link row below the board whose text is TICKET_PRODUCTS.workshops.when and .meta ("${WS.when}" and "${WS.meta}"), >= 44px (${JSON.stringify(m.later)})`, Boolean(m.later) && m.later.below && m.later.h >= 44 && m.later.t.includes(WS.when ?? '\0') && m.later.t.includes(WS.meta ?? '\0') && m.later.t.includes('Workshops'));
+  c.check(`${tag} PG-G1 h2 "Tickets" is followed by the unchanged .nk-grid`, m.hasTicketsH2 && m.hasGrid && m.gridAfterH2);
+  c.check(`${tag} PG-G1 no placeholder or TBC copy anywhere`, !m.ph);
+  c.check(`${tag} PG-G1 no overflow (${m.sw} <= ${m.iw})`, m.sw <= m.iw);
+}
+
+/** Card images (the .nk-grid cards on /programme and /tickets): naturalWidth >= box x DPR at 2056@2 (no upscale), not lazy above the fold. */
+async function cardImageChecks(page, vp, c, tag) {
+  const imgs = await page.evaluate(async () => {
+    const out = [];
+    for (const img of document.querySelectorAll('.nk-grid img')) {
+      const b = img.getBoundingClientRect(); if (!b.width || !b.height) continue;
+      const probe = new Image(); probe.src = img.currentSrc; try { await probe.decode(); } catch { /* reported below as zero */ }
+      out.push({ src: img.currentSrc.slice(-60), w: b.width, h: b.height, nw: probe.naturalWidth, nh: probe.naturalHeight, dpr: devicePixelRatio, lazy: img.loading === 'lazy', top: b.top });
+    }
+    return { out, ih: innerHeight };
+  });
+  c.check(`${tag} card images exist (${imgs.out.length})`, imgs.out.length > 0);
+  for (const i of imgs.out) {
+    const req = Math.ceil(Math.max(i.w, i.h * (i.nw / Math.max(i.nh, 1))) * i.dpr - 0.5);
+    c.check(`${tag} card image served ${i.nw} >= required ${req} (box ${Math.round(i.w)}x${Math.round(i.h)}, ${(i.nw / req).toFixed(2)})`, i.nw >= req, i.src);
+    if (i.top < imgs.ih) c.check(`${tag} an above-the-fold card image is not loading=lazy`, !i.lazy, i.src);
+  }
+}
+
+/** SX-G1 (NOS Design golden, root comms.md from line 3269): /sa-exhibitors. The directory is gated (D-SX1). */
+function absenceStatement() {
+  const f = readdirSync('app', { recursive: true }).map(String).find((x) => /sa-exhibitors\/page\.tsx$/.test(x));
+  if (!f) return null;
+  const src = readFileSync(`app/${f}`, 'utf8'); const i = src.indexOf('const ABSENCE_STATEMENT');
+  if (i < 0) return null;
+  const stmt = src.slice(i, src.indexOf(';', i));
+  return [...stmt.matchAll(/'([^']*)'|"([^"]*)"|`([^`]*)`/g)].map((m) => m[1] ?? m[2] ?? m[3]).join('') || null;
+}
+async function sxChecks(page, route, vp, c, tag) {
+  const names = readFileSync(`${SPDIR}sa-exhibitors.md`, 'utf8').split('\n').filter((l) => /^\|/.test(l) && !/^\|\s*-/.test(l)).map((l) => spUnmd(l.replace(/\|/g, ' ')));
+  const m = await page.evaluate(() => { const t = (document.querySelector('main')?.textContent ?? '').replace(/\s+/g, ' '); const aside = document.querySelector('[data-doc-aside]'); const items = aside ? [...aside.querySelectorAll('li')].map((li) => ({ t: li.textContent.replace(/\s+/g, ' ').trim(), h: li.getBoundingClientRect().height })) : []; const btn = [...document.querySelectorAll('main a')].filter((a) => /vendor application/i.test(a.textContent)); const h2 = [...document.querySelectorAll('[data-doc-aside] h2')].map((h) => h.textContent.trim()); const wall = [...document.querySelectorAll('main h2')].map((h) => h.textContent.trim()); return { t, items, btn: btn.map((b) => ({ shown: b.getBoundingClientRect().height > 0, h: b.getBoundingClientRect().height, href: b.getAttribute('href') })), h2, wall, cta: document.querySelector('.sp-hero-cta, [data-hero-cta]') ? true : null }; });
+  c.check(`${tag} SX-G1 the aside is ONE card with h2 "Available at the Show", her six items (each >= 44px) and a full-width Vendor application button`, m.h2.includes('Available at the Show') && m.items.length === 6 && m.items.every((i) => i.h >= 44) && m.btn.some((b) => b.shown && b.href));
+  if (route.sx.directory === 'closed') {
+    const leaked = names.filter((n) => n.length > 3 && m.t.includes(n));
+    c.check(`${tag} SX-G1/D-SX1 the directory is gated closed: none of her ${names.length} invited-vendor names is rendered (${leaked.slice(0, 3).join(', ')})`, names.length >= 20 && leaked.length === 0);
+    const stmt = absenceStatement();
+    c.check(`${tag} SX-G1/D-SX1 the empty state shows the existing ABSENCE_STATEMENT, read from source (${stmt ? stmt.slice(0, 40) : 'unreadable'}...)`, Boolean(stmt) && m.t.includes(stmt.replace(/\s+/g, ' ')));
+    c.check(`${tag} SX-G1 the Vendor application button is in the empty state (${m.btn.length} buttons)`, m.btn.length >= 1);
+  } else {
+    c.check(`${tag} SX-G1 D-SX1 open: her ${names.length} rows are rendered in order`, (() => { let at = 0; return names.every((n) => { const k = m.t.indexOf(n, at); if (k < 0) return false; at = k + n.length; return true; }); })());
+    c.check(`${tag} SX-G1 the directory heads are her "List of Exhibitors" and "Short List of Invited Vendors"`, m.t.includes('List of Exhibitors') && m.t.includes('Short List of Invited Vendors'));
+  }
+}
+
+/** /exhibitors (Exhibitor entry guide): no source doc exists, so the public build renders the hero and the contact panel only. */
+async function heroOnlyChecks(page, route, vp, c, tag) {
+  const m = await page.evaluate(() => { const main = document.querySelector('main'); const h2 = [...main.querySelectorAll('h2')].map((h) => h.textContent.replace(/\s+/g, ' ').trim()); return { h1: document.querySelector('h1')?.textContent.replace(/\s+/g, ' ').trim(), h2, h3: main.querySelectorAll('h3').length, layout: Boolean(document.querySelector('[data-doc-layout]')), tbc: /to be confirmed|PLACEHOLDER COPY/i.test(main.textContent), height: document.documentElement.scrollHeight, contact: Boolean(main.querySelector('[data-contact-panel], a[href^="mailto:"], form')) }; });
+  c.check(`${tag} /exhibitors h1 is "${route.headings.h1}" (${m.h1})`, m.h1 === route.headings.h1);
+  c.check(`${tag} /exhibitors withheld: no document layout, no h3, h2 only the contact panel or the show index (${m.h2.join(' | ')})`, !m.layout && m.h3 === 0 && m.h2.every((t) => /contact|explore|the show/i.test(t)));
+  c.check(`${tag} /exhibitors withheld: no TBC chip or placeholder copy, and the contact panel is present`, !m.tbc && m.contact);
+  if (vp.width >= 1440) c.check(`${tag} /exhibitors withheld: the page is hero + contact panel + show index, not 10,000px of invented guidance (${m.height}px <= 3000)`, m.height <= 3000);
+}
+
 const SECTION_NAV = 'nav[data-doc-index][aria-label="Sections"]';
 
 /** D7 (FINAL): below 1024 the index is a sticky horizontal scroller. Under 780 the header is not sticky and the scroller sticks at
@@ -223,7 +324,7 @@ async function extraChecks(page, route, vp, c, tag) {
     const testBar = document.querySelectorAll('[aria-label="Testing only, not live"]').length;
     const inner = document.querySelector('.nos-hero-inner'); const ic = inner ? getComputedStyle(inner) : null;
     const img = document.querySelector('section[data-nos-hero] [data-nos-hero-media] img'); const ib = img ? img.getBoundingClientRect() : null;
-    const first = document.querySelector('[data-doc-main] > section:first-of-type, [data-doc-main] > *:first-child'); const fs = first ? getComputedStyle(first) : null;
+    const first = document.querySelector('[data-doc-main] > section:first-of-type, [data-doc-main] > *:first-child, [data-programme-body] > section:first-of-type'); const fs = first ? getComputedStyle(first) : null;
     const navLabels = [...document.querySelectorAll('header a, .nos-subnav a')].map((a) => a.textContent.trim().replace(/\s+/g, ' ').toLowerCase()).filter(Boolean);
     const h2s = [...document.querySelectorAll('main h2')].map((h) => h.textContent.trim().replace(/\s+/g, ' '));
     const h4s = [...document.querySelectorAll('main h4')].map((h) => { const s = getComputedStyle(h); return { fam: s.fontFamily.split(',')[0].replace(/["']/g, '').toLowerCase(), w: s.fontWeight, px: parseFloat(s.fontSize), mt: parseFloat(s.marginTop), mb: parseFloat(s.marginBottom) }; });
@@ -232,10 +333,27 @@ async function extraChecks(page, route, vp, c, tag) {
     const facts = document.querySelector('[data-hero-facts]');
     const legend = [...document.querySelectorAll('main *')].filter((e) => !e.closest('details') && e.children.length === 0 && /to be confirmed by the show committee/i.test(e.textContent)).length;
     const railed = [...document.querySelectorAll('main *')].filter((e) => { const s = getComputedStyle(e); return ['Left', 'Right'].some((k) => parseFloat(s[`border${k}Width`]) > 1) || ['Top', 'Bottom', 'Left', 'Right'].some((k) => s[`border${k}Style`] === 'dashed' && parseFloat(s[`border${k}Width`]) >= 2); }).length;
+    const h1e = document.querySelector('h1'); const h1s = h1e ? getComputedStyle(h1e) : null;
+    const h1i = h1e ? { len: h1e.textContent.replace(/\s+/g, ' ').trim().length, long: h1e.classList.contains('is-long'), px: parseFloat(h1s.fontSize), maxW: h1s.maxWidth, wrap: h1s.textWrap || h1s.getPropertyValue('text-wrap'), lines: Math.round(h1e.getBoundingClientRect().height / parseFloat(h1s.lineHeight)) } : null;
+    const subItems = [...document.querySelectorAll('.nos-subnav a')].map((a) => ({ t: a.textContent.replace(/\s+/g, ' ').trim(), cur: a.getAttribute('aria-current') }));
     const crumb = document.querySelector('section[data-nos-hero] nav[aria-label="Breadcrumb"]'); const crumbText = crumb ? crumb.textContent.replace(/\s+/g, ' ').trim() : null;
-    return { crumbText, nkBad, testBar, vw: innerWidth, innerMin: ic ? parseFloat(ic.minHeight) : null, innerAlign: ic ? ic.alignContent : null, innerPadT: ic ? parseFloat(ic.paddingTop) : null, innerPadB: ic ? parseFloat(ic.paddingBottom) : null, band: ib && ib.height ? ib.width / ib.height : null, skip, round, split, padTop: fs ? parseFloat(fs.paddingTop) : null, bTop: fs ? parseFloat(fs.borderTopWidth) : null, navLabels, h2s, h4s, h2lh: lh(document.querySelector('main h2')), h3lh: lh(document.querySelector('main h3')),
+    return { h1i, subItems, crumbText, nkBad, testBar, vw: innerWidth, innerMin: ic ? parseFloat(ic.minHeight) : null, innerAlign: ic ? ic.alignContent : null, innerPadT: ic ? parseFloat(ic.paddingTop) : null, innerPadB: ic ? parseFloat(ic.paddingBottom) : null, band: ib && ib.height ? ib.width / ib.height : null, skip, round, split, padTop: fs ? parseFloat(fs.paddingTop) : null, bTop: fs ? parseFloat(fs.borderTopWidth) : null, navLabels, h2s, h4s, h2lh: lh(document.querySelector('main h2')), h3lh: lh(document.querySelector('main h3')),
       heroH: hero ? hero.getBoundingClientRect().height : null, legend, railed, factsCount: facts ? facts.querySelectorAll('[data-hero-fact]').length : 0, factsAttr: facts ? facts.getAttribute('data-fact-count') : null, factTerms: facts ? [...facts.querySelectorAll('dt')].map((e) => e.textContent.trim()) : [], factValues: facts ? [...facts.querySelectorAll('dd')].map((e) => e.textContent.trim()) : [], factCount2: facts ? facts.querySelectorAll('[data-hero-fact]').length >= 2 : true, indexRows: [...document.querySelectorAll('nav[data-doc-index] a')].map((a) => { const b = a.getBoundingClientRect(); return { t: b.top, b: b.bottom, l: b.left, r: b.right }; }), factsOk: facts ? [...facts.querySelectorAll('[data-hero-fact]')].every((f) => f.children[0]?.tagName === 'DT' && f.children[1]?.tagName === 'DD') : true };
   }, { eyebrowSel: '[data-nos-hero-eyebrow]' });
+  if (x.h1i) {
+    const isLong = x.h1i.len > STD.hero.longTitleChars;
+    c.check(`${tag} LT-1 the h1 (${x.h1i.len} chars) ${isLong ? 'carries' : 'does not carry'} .is-long`, x.h1i.long === isLong);
+    if (isLong && vp.width >= 768) {
+      const want = Math.min(64, Math.max(44, 25.6 + 0.026 * vp.width));
+      c.check(`${tag} LT-1 the long h1 is clamp(2.75rem, 1.6rem + 2.6vw, 4rem) (${x.h1i.px.toFixed(1)} ~ ${want.toFixed(1)}), max-width none, text-wrap balance (${x.h1i.maxW}, ${x.h1i.wrap})`, Math.abs(x.h1i.px - want) <= 1.5 && x.h1i.maxW === 'none' && /balance/.test(x.h1i.wrap));
+      if (vp.width >= 1440) c.check(`${tag} LT-1 the long h1 holds to one line (${x.h1i.lines})`, x.h1i.lines === 1);
+    }
+  }
+  if (route.subnav) {
+    const items = x.subItems.map((i) => i.t); const cur = x.subItems.filter((i) => i.cur === 'page').map((i) => i.t);
+    c.check(`${tag} the sub-nav is ${route.subnav.items.join(' / ')} in order (${items.join(' / ')})`, JSON.stringify(items) === JSON.stringify(route.subnav.items));
+    c.check(`${tag} exactly one sub-nav item is aria-current and it is "${route.subnav.current}" (${cur.join(', ')})`, cur.length === 1 && cur[0] === route.subnav.current);
+  }
   c.check(`${tag} a breadcrumb sits in the hero ('National Show - <page>'): ${x.crumbText}`, Boolean(x.crumbText) && /^National Show/.test(x.crumbText));
   c.check(`${tag} .nk-ticket/.nk-perf/.nk-stamp only inside a purchasable [data-ticket-card] (WS-1)`, x.nkBad === 0, String(x.nkBad));
   c.check(`${tag} the TESTING ONLY bar is absent (it belongs to /tickets/* and the payment step only)`, x.testBar === 0, String(x.testBar));
@@ -269,15 +387,21 @@ async function extraChecks(page, route, vp, c, tag) {
     c.check(`${tag} [data-hero-facts] has data-fact-count == items (${x.factsAttr} vs ${x.factsCount}), dt before dd`, Number(x.factsAttr) === x.factsCount && x.factsOk);
   }
   if (vp.width >= 1440) { // PG-1 4, inherited from #76
-    const wf = x.factsCount > 0; const cap = vp.width >= 2000 ? (wf ? STD.hero.heightCap.withFacts2056 : STD.hero.heightCap.at2056) : (wf ? STD.hero.heightCap.withFacts1440 : STD.hero.heightCap.at1440);
-    c.check(`${tag} hero height ${Math.round(x.heroH)} <= ${cap} (PG-1 4${wf ? ', with facts: FACTS-1' : ''})`, x.heroH !== null && x.heroH <= cap);
+    const wf = x.factsCount > 0; const rc = route.heroCap?.[vp.width >= 2000 ? '2056' : '1440']; const ltCap = x.h1i && x.h1i.len > 20 ? (vp.width >= 2000 ? STD.hero.longTitleCap.at2056 : STD.hero.longTitleCap.at1440) : Infinity; const cap = rc ?? Math.min(ltCap,  vp.width >= 2000 ? (wf ? STD.hero.heightCap.withFacts2056 : STD.hero.heightCap.at2056) : (wf ? STD.hero.heightCap.withFacts1440 : STD.hero.heightCap.at1440));
+    c.check(`${tag} hero height ${Math.round(x.heroH)} <= ${cap} (PG-1 4${wf ? ', with facts: FACTS-1' : ''}${rc ? ', route cap from the golden' : ''})`, x.heroH !== null && x.heroH <= cap);
   }
 }
 
+const ROUTE_TABLE_META = JSON.parse(readFileSync('.agent/memory/project/specs/nos-content-standard/goldens/route-table.json', 'utf8'));
 await withServer(1, 'standard', async (server, c) => {
   const browser = await launchChromium();
   try {
     const needsPhoto = ROUTES.filter((r) => !r.photo).map((r) => r.nos);
+    {
+      const vp = { name: '2056@2', width: 2056, height: 1200, dsf: 2 }; const context = await newContext(browser, vp); const page = await context.newPage();
+      await page.goto(`${server.nos}/tickets`, { waitUntil: 'load' }); await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await page.waitForTimeout(500);
+      await cardImageChecks(page, vp, c, `[${vp.name} /tickets cards]`); await context.close();
+    }
     for (const e of EXCLUDED) c.note(`EXCLUDED ${e.nos}: ${e.excluded}`);
     c.note(`WS-1: ${STD.ws1.ticketEdge}`);
     c.note(`NEEDS PHOTO (Brad photography need, ${needsPhoto.length}): ${needsPhoto.join(' ')}`);
@@ -289,11 +413,11 @@ await withServer(1, 'standard', async (server, c) => {
         const res = await page.goto(`${server.nos}${route.nos}`, { waitUntil: 'load' });
         c.check(`${tag} responds 200`, res?.status() === 200, String(res?.status()));
         if (res?.status() !== 200) { await context.close(); continue; }
-        await page.waitForSelector('[data-doc-layout]', { timeout: 15000 }).catch(() => {});
+        await page.waitForSelector('[data-doc-layout], [data-programme-body]', { timeout: 15000 }).catch(() => {});
 
         const m = await page.evaluate(({ vpW, aside }) => {
           const r = (e) => { const b = e.getBoundingClientRect(); return { top: b.top + scrollY, bottom: b.bottom + scrollY, left: b.left, right: b.right, w: b.width, h: b.height }; };
-          const doc = document.querySelector('[data-doc-layout]');
+          const doc = document.querySelector('[data-doc-layout], [data-programme-body]');
           const sub = document.querySelector('.nos-subnav'); const hero = document.querySelector('section[data-nos-hero]');
           const anchor = sub ?? hero;
           const kids = doc ? [...doc.querySelectorAll('h2, h3, p, [data-doc-aside], [data-doc-main] > *')].filter((e) => e.getBoundingClientRect().height > 0) : [];
@@ -326,6 +450,12 @@ await withServer(1, 'standard', async (server, c) => {
             vpW, wantAside: aside,
           };
         }, { vpW: vp.width, aside: route.aside });
+        if (route.layout === 'hero-only') {
+          c.check(`${tag} exactly one h1`, m.h1 === 1, String(m.h1));
+          await heroOnlyChecks(page, route, vp, c, tag); await extraChecks(page, route, vp, c, tag); await factsGrammar(page, vp, c, tag);
+          if (route.photo) { c.check(`${tag} photo hero`, m.hasImg && m.variant === 'photo', String(m.variant)); await heroSharpness(page, route, vp, c, tag); }
+          await context.close(); continue;
+        }
         c.check(`${tag} [data-doc-layout] exists`, m.hasDoc);
         if (!m.hasDoc) { await context.close(); continue; }
         c.check(`${tag} exactly one h1`, m.h1 === 1, String(m.h1));
@@ -358,7 +488,7 @@ await withServer(1, 'standard', async (server, c) => {
           else c.check(`${tag} measure ${m.chars.toFixed(0)}ch <= ${STD.prose.maxCh}`, m.chars <= STD.prose.maxCh);
         }
         {
-          const want = route.aside === 'none' ? null : (route.aside === 'venue' || route.aside === 'contact') ? 'content' : 'index';
+          const want = route.aside === 'none' ? null : (route.aside === 'venue' || route.aside === 'contact' || route.aside === 'content') ? 'content' : 'index';
           if (!want) c.check(`${tag} listing route renders no [data-doc-aside]`, !m.aside);
           else {
             c.check(`${tag} exactly one [data-doc-aside] of kind ${want}`, Boolean(m.aside) && m.aside.count === 1 && m.aside.kind === want, JSON.stringify(m.aside && { kind: m.aside.kind, count: m.aside.count }));
@@ -381,6 +511,8 @@ await withServer(1, 'standard', async (server, c) => {
         await factsGrammar(page, vp, c, tag);
         if (route.sp1) await sp1Checks(page, route, vp, c, tag);
         if (route.pyv) await pyvChecks(page, route, vp, c, tag);
+        if (route.pg) await programmeChecks(page, route, vp, c, tag);
+        if (route.sx) await sxChecks(page, route, vp, c, tag);
 
         // focus ring on the h1
         const ring = await page.evaluate(() => { const h = document.querySelector('h1'); if (!h) return null; h.setAttribute('tabindex', h.getAttribute('tabindex') ?? '-1'); h.focus(); const s = getComputedStyle(h); return { active: document.activeElement === h, os: s.outlineStyle, ow: parseFloat(s.outlineWidth), sh: s.boxShadow, tab: h.getAttribute('tabindex') }; });
@@ -399,6 +531,14 @@ await withServer(1, 'standard', async (server, c) => {
         await context.close();
       }
 
+      if ((ROUTE_TABLE_META.cardImageRoutes ?? []).includes(route.nos)) {
+        const vp = { name: '2056@2', width: 2056, height: 1200, dsf: 2 };
+        const context = await newContext(browser, vp); const page = await context.newPage();
+        await page.goto(`${server.nos}${route.nos}`, { waitUntil: 'load' });
+        await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await page.waitForTimeout(500);
+        await cardImageChecks(page, vp, c, `[${vp.name} ${route.nos} cards]`);
+        await context.close();
+      }
       // first screen (facts, sub-nav, first h2)
       for (const vp of STD.firstScreen) {
         const tag = `[first-screen ${vp.name} ${route.nos}]`;
@@ -420,7 +560,7 @@ await withServer(1, 'standard', async (server, c) => {
         if (vp.width === 1440) {
           if (f.sub !== null) c.check(`${tag} sub-nav is visible (bottom ${Math.round(f.sub)} <= ${f.ih})`, f.sub <= f.ih);
           if (f.h2) c.check(`${tag} the first h2 is visible (top ${Math.round(f.h2.top)} < ${f.ih})`, f.h2.top < f.ih - 24 && f.h2.bottom <= f.ih);
-          if (route.aside !== 'none' && route.aside !== 'venue' && route.aside !== 'contact') {
+          if (route.aside !== 'none' && route.aside !== 'venue' && route.aside !== 'contact' && route.aside !== 'content') {
             const card = await page.evaluate(() => { const e = document.querySelector('[data-doc-aside]'); if (!e) return null; const b = e.getBoundingClientRect(); return { top: b.top, bottom: b.bottom }; });
             c.check(`${tag} the index card is above the fold on load`, Boolean(card) && card.top < f.ih - 24, JSON.stringify(card));
           }

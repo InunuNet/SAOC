@@ -118,6 +118,12 @@
    "padMax": 72,
    "mobilePad": 32,
    "mobileBandAspect": 2
+  },
+  "longTitleChars": 20,
+  "longTitleCap": {
+   "at1440": 394,
+   "at2056": 415,
+   "note": "LT-1 (NOS Design, SX-G1 measurement): an h1 over 20 characters gets .is-long (clamp(2.75rem,1.6rem+2.6vw,4rem), max-width none, text-wrap balance), one line in the 62% column at 1440 and 2056, on every route; its hero caps are 394 at 1440 and 415 at 2056 (lower of the two caps applies)."
   }
  },
  "facts": {
@@ -160,7 +166,9 @@
   "iconPx": 20,
   "noEyebrow": true,
   "noLegendChip": true,
-  "categoryCountRule": "equals the number of category headings in the Drive FAQ doc (12 in the frozen v1.0, counted from goldens/sources/faq.md; the lead's 13 was wrong; 12 in lib/data/faq-sections.ts today)"
+  "categoryCountRule": "equals the number of category headings in the Drive FAQ doc (12 in the frozen v1.0, counted from goldens/sources/faq.md; the lead's 13 was wrong; 12 in lib/data/faq-sections.ts today)",
+  "summaryPxBelow768": 19,
+  "note": "FQ-G1: question text 22px at >= 768, 19px below 768; 20px drawn +/- icon at every width"
  },
  "bans": [
   "eyebrow above a heading",

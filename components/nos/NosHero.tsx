@@ -47,6 +47,9 @@ const FULL_BLEED_QUALITY = 88;
 // paints the crop at height x aspect (about 920px at the tallest hero measured there).
 const INNER_PHOTO_SIZES = '(min-width: 1024px) 62vw, (min-width: 768px) max(62vw, 920px), 100vw';
 
+// LT-1: an inner h1 longer than this gets `.is-long`, a smaller clamp that holds it to one line in the 62% column.
+const LONG_TITLE_CHARS = 20;
+
 const FALLBACK_TITLE_STYLE: CSSProperties = {
   fontFamily: 'var(--serif)',
   fontOpticalSizing: 'none',
@@ -139,6 +142,10 @@ export async function NosHero({
   const photo = isHub ? heroPhotoFor(route) : heroCropFor(route);
   const variant = photo ? 'photo' : 'type';
   const heroFacts = normaliseHeroFacts(facts);
+  const titleClass =
+    !isHub && typeof title === 'string' && title.length > LONG_TITLE_CHARS
+      ? 'nos-hero-title is-long'
+      : 'nos-hero-title';
   const group = NO_SUBNAV_ROUTES.has(route) ? null : subNavGroupFor(route, await getVisibleNav());
 
   return (
@@ -194,11 +201,11 @@ export async function NosHero({
           {titleAs === 'p' ? (
             // Restates the heading rule in nos-theme.css (`.nos-theme :is(h1...)`), which a p misses,
             // so the fallback is identical to the h1 it stands in for on the first frame.
-            <p className="nos-hero-title" style={FALLBACK_TITLE_STYLE}>
+            <p className={titleClass} style={FALLBACK_TITLE_STYLE}>
               {title}
             </p>
           ) : (
-            <h1 className="nos-hero-title">{title}</h1>
+            <h1 className={titleClass}>{title}</h1>
           )}
           {isHub ? (
             <div className="nos-hero-body">

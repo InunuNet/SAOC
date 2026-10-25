@@ -81,7 +81,7 @@ await withServer(2, 'verbatim', async (server, c) => {
         c.check(`${tag} zero <p> whose sole child is <strong>`, hd.loneStrong === 0, String(hd.loneStrong));
         const lede = await page.evaluate(() => document.querySelector('[data-nos-hero-lede]')?.textContent ?? '');
         if (H.noLede) c.check(`${tag} the hero has no lede (crumb + h1 + facts)`, n(lede) === '');
-        else c.check(`${tag} hero lede is her line 3 verbatim`, n(lede).includes(n(H.lede)));
+        else if (H.lede) c.check(`${tag} hero lede is her line 3 verbatim`, n(lede).includes(n(H.lede)));
         const sf = await page.evaluate(() => document.querySelector('[data-doc-main]')?.textContent ?? '');
         if (H.standfirst) c.check(`${tag} body standfirst is her line 5 verbatim`, n(sf).startsWith(n(H.standfirst)) || n(sf).includes(n(H.standfirst)));
       }

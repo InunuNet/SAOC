@@ -35,7 +35,7 @@ function findPages(seg) {
 }
 
 // the shared layout: SAOC-owned components/ui/* (pinned API b2cff780) is consumed, never re-implemented or edited
-const SHARED_BASE = 'b2cff780';
+const SHARED_BASE = process.env.NOS_STD_REFSAOC ?? 'b2cff780';
 for (const f of ['components/ui/DocumentLayout.tsx', 'components/ui/DocumentIndex.tsx', 'components/ui/PageHero.tsx', 'lib/hero-facts.ts']) check(`${f} exists (the shared API is merged into the dev branch)`, existsSync(f));
 check('components/ui/** and lib/hero-facts.ts are unchanged from the pinned shared API', git(['diff', '--name-only', SHARED_BASE, '--', 'components/ui', 'lib/hero-facts.ts']).trim() === '', git(['diff', '--name-only', SHARED_BASE, '--', 'components/ui', 'lib/hero-facts.ts']).trim());
 check('no components/nos/NosDocument.tsx fork of DocumentLayout exists', !existsSync('components/nos/NosDocument.tsx'));

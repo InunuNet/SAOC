@@ -234,24 +234,52 @@
    "nos": "/sa-exhibitors",
    "group": "exhibit",
    "kind": "document",
-   "aside": "index",
+   "aside": "content",
    "drive": {
     "path": ".agent/memory/project/specs/nos-content-standard/goldens/sources/sa-exhibitors.md",
     "version": "v1.1",
     "sha256": "bd5020ac5e40ff767879d13d9c3fb87d6fc0c727a302886e23e31b7463a4707d",
     "driveStorePath": "content/drive-source/National Show/4. South African Exhibitors/1.1 Exhibitors - South African Exhibitors/v1.1/content.md",
     "mode": "range",
-    "from": "List of Exhibitors",
-    "until": "Gods Green Gifts",
-    "asPlainLists": true,
+    "from": "Showcasing the Finest in South African Orchid Growing",
+    "until": "Whether you are building your first orchid collection",
     "strikeAbsence": "none",
     "mustAbsentSelectors": [
      "[data-nos-cta-band]"
     ],
-    "strikeNote": "Her 'List of Exhibitors' and 'Short List of Invited Vendors' render as plain lists under her headings, typos included. No vendorNursery docs, no invented hero lede, no CtaBand. Her planning notes ('Every nursery has:', 'You could even include:') and the vendor registration form below the lists stay unpublished."
+    "strikeNote": "SX-G1: the standfirst (her L3) and her four paragraphs are asserted verbatim, plus her aside heading 'Available at the Show' and its six items. Her directory (List of Exhibitors / Short List of Invited Vendors, 21 names) is NOT asserted as rendered: it is gated (D-SX1) and the names must be absent until the gate opens. Her notes ('Every nursery has:', 'You could even include:') are not copy.",
+    "mustPresent": [
+     "Available at the Show",
+     "Species orchids",
+     "Hybrids",
+     "Miniatures",
+     "South American species",
+     "Asian species",
+     "Growing supplies"
+    ]
    },
    "photo": "PK1",
-   "keyFacts": null
+   "keyFacts": null,
+   "headings": {
+    "h1": "South African exhibitors",
+    "h1CaseInsensitive": false,
+    "standfirst": "Showcasing the Finest in South African Orchid Growing"
+   },
+   "sx": {
+    "directory": "closed",
+    "note": "D-SX1: her list is headed 'invited', not confirmed. closed = the empty state only (SP-1 empty panel on the gold wall: emblem, the existing ABSENCE_STATEMENT, the Vendor application button) and none of the 21 names rendered; open (set by the lead once Lee-Ann says yes) = her 21 rows exactly, in order, from her doc or the CMS, never hand-typed. D-SX2: her spellings (Carniverous plants, Rays Retail Nursary, Gods Green Gifts) are unconfirmed and are not corrected.",
+    "absenceStatementSource": "the ABSENCE_STATEMENT constant in the sa-exhibitors page.tsx, read at gate time"
+   },
+   "subnav": {
+    "items": [
+     "South African exhibitors",
+     "International guests",
+     "Exhibitor entry guide",
+     "Exhibitors and vendors"
+    ],
+    "current": "South African exhibitors"
+   },
+   "sxG1": "NOS Design golden SX-G1, root comms.md from line 3269"
   },
   {
    "nos": "/international-guests",
@@ -261,17 +289,41 @@
    "drive": null,
    "photo": "Y1",
    "keyFacts": null,
-   "driveNote": "No Drive document in the store."
+   "driveNote": "No Drive document in the store.",
+   "subnav": {
+    "items": [
+     "South African exhibitors",
+     "International guests",
+     "Exhibitor entry guide",
+     "Exhibitors and vendors"
+    ],
+    "current": "International guests"
+   }
   },
   {
    "nos": "/exhibitors",
    "group": "exhibit",
    "kind": "document",
-   "aside": "index",
+   "aside": "none",
    "drive": null,
    "photo": "D1",
    "keyFacts": null,
-   "noChips": "FAQ-NAV applies: the 13-pill chip row becomes the index aside at >= 1024 and the square-text scroller below; same gates as /faq"
+   "layout": "hero-only",
+   "withheld": "No source doc exists (R7). The public build renders the hero (h1 'Exhibitor entry guide', FACTS-1) and the contact panel only; every invented section is withheld, not shown with chips. Owner list: the entry-guide copy (schedule, classes, entry form, key dates).",
+   "headings": {
+    "h1": "Exhibitor entry guide",
+    "h1CaseInsensitive": false,
+    "noLede": false
+   },
+   "subnav": {
+    "items": [
+     "South African exhibitors",
+     "International guests",
+     "Exhibitor entry guide",
+     "Exhibitors and vendors"
+    ],
+    "current": "Exhibitor entry guide"
+   }
   },
   {
    "nos": "/vendors",
@@ -280,16 +332,69 @@
    "aside": "index",
    "drive": null,
    "photo": "S1b",
-   "keyFacts": null
+   "keyFacts": null,
+   "subnav": {
+    "items": [
+     "South African exhibitors",
+     "International guests",
+     "Exhibitor entry guide",
+     "Exhibitors and vendors"
+    ],
+    "current": "Exhibitors and vendors"
+   }
   },
   {
    "nos": "/programme",
    "group": "programme",
    "kind": "document",
-   "aside": "index",
+   "aside": "none",
    "drive": null,
    "photo": "S3b",
-   "keyFacts": null
+   "keyFacts": null,
+   "layout": "board",
+   "pg": true,
+   "heroCap": {
+    "1440": 375,
+    "2056": 396
+   },
+   "pgG1": "NOS Design golden PG-G1, root comms.md from line 3125. Supersedes PG-1 item 2's 'aside is the h2 index' for this route: the golden is a full-width board with two sections, no aside.",
+   "pgSources": {
+    "file": "what-to-expect.md",
+    "h2": "Show dates \u2013 for public entrance",
+    "line": "Thursday 23 to Sunday 26 September 2027",
+    "days": [
+     {
+      "wd": "Thursday",
+      "d": "23",
+      "hours": "VIP Ticket Holders \u2013 14.00 to 19.00"
+     },
+     {
+      "wd": "Friday",
+      "d": "24",
+      "hours": "9.00 to 17.00",
+      "tile": "/symposium"
+     },
+     {
+      "wd": "Saturday",
+      "d": "25",
+      "hours": "9.00 to 17.00",
+      "tile": "/wosa-conference"
+     },
+     {
+      "wd": "Sunday",
+      "d": "26",
+      "hours": "9.00 to 16.00"
+     }
+    ],
+    "h2s": [
+     "Show dates \u2013 for public entrance",
+     "Tickets"
+    ],
+    "workshopsRow": {
+     "href": "/workshops",
+     "source": "TICKET_PRODUCTS.workshops.when and .meta, read at gate time from lib/data/ticket-presentation.ts (sourced from Brad's ticket news of 2026-10-07, cited in lib/provisional-figures.ts:477-487 and lib/data/ticket-presentation.ts:164)"
+    }
+   }
   },
   {
    "nos": "/workshops",
@@ -407,5 +512,9 @@
    "photo": "Y1",
    "keyFacts": null
   }
+ ],
+ "cardImageRoutes": [
+  "/programme",
+  "/tickets"
  ]
 }
