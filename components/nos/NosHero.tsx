@@ -40,7 +40,15 @@ import { subNavGroupFor } from './nos-subnav-groups';
 const FULL_BLEED_QUALITY = 88;
 
 // The inner photo is a 46% panel from 1024px, a 42% panel from 768px and a full-width band below it (nos-theme.css).
-const INNER_PHOTO_SIZES = '(min-width: 1024px) 46vw, (min-width: 768px) 42vw, 100vw';
+// The panel is far narrower than the 1.9:1 crop is wide, so object-fit: cover scales the crop to the
+// panel's HEIGHT: the painted width is height x aspect, not the panel width. The hero is at least
+// min(56vh, 560px) tall (nos-theme.css) and grows downward with a long lede, so `sizes` declares the
+// width painted at the 560px cap, never less than the panel itself, and the srcset is chosen for the
+// pixels actually drawn (a vh-based height would under-serve a hero that grew past it).
+const CROP_ASPECT = 1.9;
+const PANEL_MAX_HEIGHT_PX = 560;
+const COVER_WIDTH = `${Math.round(PANEL_MAX_HEIGHT_PX * CROP_ASPECT)}px`;
+const INNER_PHOTO_SIZES = `(min-width: 1024px) max(46vw, ${COVER_WIDTH}), (min-width: 768px) max(42vw, ${COVER_WIDTH}), 100vw`;
 
 /** Routes whose hero carries no group sub-nav: the hub (it has the destinations list) and tickets. */
 const NO_SUBNAV_ROUTES: ReadonlySet<string> = new Set(['/national-show', '/national-show/tickets']);
