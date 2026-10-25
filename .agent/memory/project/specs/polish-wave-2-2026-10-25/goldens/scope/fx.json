@@ -1,0 +1,8 @@
+{
+  "feature": "FX (Codex fix: hosted-runtime guard shared by every fixture route)",
+  "allow": [
+    "lib/fixture-route-guard.ts",
+    "app/admin-fixtures/[route]/page.tsx",
+    "app/events-fixtures/submit/page.tsx"
+  ]
+}
