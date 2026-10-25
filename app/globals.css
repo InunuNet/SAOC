@@ -872,3 +872,23 @@ h3.font-serif {
     white-space: nowrap;
   }
 }
+
+/* Opt-in aside variants (off by default). Bare: the aside drops its card (background, padding,
+   shadow). Aside-first: below 1024 the aside shows above the prose, by CSS order only; the DOM
+   keeps main before a content aside, since the aside is complementary to the prose. Either one
+   caps the aside at 440px below 1024. */
+.doc-aside.doc-aside--bare {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+@media (max-width: 1023.98px) {
+  .doc-layout--aside-first > [data-doc-aside] {
+    order: -1;
+  }
+  .doc-layout--aside-first > [data-doc-aside],
+  .doc-aside.doc-aside--bare {
+    max-width: 440px;
+  }
+}
