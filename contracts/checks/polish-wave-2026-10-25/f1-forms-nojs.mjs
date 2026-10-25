@@ -19,6 +19,9 @@ const TARGETS = [
   { host: 'localhost', path: '/members' },
   { host: 'nos.localhost', path: '/vendors/apply' },
   { host: 'nos.localhost', path: '/vendors/register' },
+  // The footer newsletter form is on every page of both hosts; it leaks the email and topics before hydration.
+  { host: 'localhost', path: '/about', scope: 'footer form' },
+  { host: 'nos.localhost', path: '/vendors', scope: 'footer form' },
 ];
 const VIEWPORTS = [
   { width: 390, height: 844, dpr: 3 },
@@ -33,13 +36,13 @@ const srv = await startServer();
 const browser = await chromium.launch();
 
 async function attempt(target, how, vp) {
-  const label = `${vp.width}@${vp.dpr} ${target.host}${target.path} (${how})`;
+  const label = `${vp.width}@${vp.dpr} ${target.host}${target.path}${target.scope ? ' [' + target.scope + ']' : ''} (${how})`;
   const ctx = await browser.newContext({ javaScriptEnabled: false, viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.dpr });
   const page = await ctx.newPage();
   try {
     const resp = await page.goto(`http://${target.host}:${srv.port}${target.path}`, { waitUntil: 'load', timeout: 30000 });
     if (!resp || resp.status() !== 200) { failures.push(`${label}: HTTP ${resp ? resp.status() : 'none'}, want 200`); return; }
-    const form = page.locator('main form').filter({ has: page.locator('input[name], textarea[name]') }).first();
+    const form = page.locator(target.scope ?? 'main form').filter({ has: page.locator('input[name], textarea[name]') }).first();
     if ((await form.count()) === 0) { failures.push(`${label}: no form with named fields rendered (check cannot run)`); return; }
     const fields = form.locator(FIELD_SELECTOR);
     const n = await fields.count();
@@ -70,7 +73,19 @@ async function attempt(target, how, vp) {
   }
 }
 
+// /events/submit shows only a login prompt without a Firebase session, so it must have no form in <main>:
+// if it ever does, this check must start covering it (SubmitEventForm is otherwise static-only).
+async function assertSubmitPageIsGated() {
+  const ctx = await browser.newContext({ javaScriptEnabled: false });
+  const page = await ctx.newPage();
+  await page.goto(`http://localhost:${srv.port}/events/submit`, { waitUntil: 'load', timeout: 30000 });
+  const n = await page.locator('main form').count();
+  if (n !== 0) failures.push(`/events/submit renders ${n} form(s) in main without a session; add it as a target`);
+  await ctx.close();
+}
+
 try {
+  await assertSubmitPageIsGated();
   for (const t of TARGETS) {
     for (const vp of VIEWPORTS) {
       await attempt(t, 'enter', vp);

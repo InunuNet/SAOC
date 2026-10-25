@@ -36,7 +36,8 @@ const measure = (el) => {
   const cs = getComputedStyle(el);
   const box = el.getBoundingClientRect();
   const row = (el.closest('label') ?? el).getBoundingClientRect();
-  const shadow = cs.boxShadow === 'none' ? null : parse(cs.boxShadow.match(/rgba?\([^)]+\)/)?.[0] ?? '');
+  const shadows = cs.boxShadow === 'none' ? [] : (cs.boxShadow.match(/rgba?\([^)]+\)/g) ?? []).map(parse).filter((c) => c && c.a > 0);
+  const shadow = shadows.length ? shadows[shadows.length - 1] : null; // Tailwind v4 lists transparent offset shadows first; the ring is the last visible one
   return {
     w: box.width, h: box.height, rowH: row.height, ground,
     outline: { style: cs.outlineStyle, width: parseFloat(cs.outlineWidth), color: parse(cs.outlineColor) },

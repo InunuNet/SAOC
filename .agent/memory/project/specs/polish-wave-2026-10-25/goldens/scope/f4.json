@@ -5,6 +5,7 @@
     "components/tickets/keepsake/TicketSection.tsx",
     "app/(nos)/national-show/programme/page.tsx",
     "app/(marketing)/sponsors/page.tsx",
+    "components/ui/PageHero.tsx",
     "docs/polish-wave-f4-removals.md"
   ]
 }

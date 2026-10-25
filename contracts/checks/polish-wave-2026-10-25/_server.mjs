@@ -24,9 +24,14 @@ export function buildProblem(sourceFiles) {
 }
 
 function portFree(port) {
+  // A server bound to :: or 0.0.0.0 shadows 127.0.0.1 for clients, so every wildcard and loopback address must be free.
+  return ['127.0.0.1', '::', '0.0.0.0'].reduce((acc, host) => acc.then(async (ok) => ok && (await portFreeOn(port, host))), Promise.resolve(true));
+}
+
+function portFreeOn(port, host) {
   return new Promise((done) => {
     const s = net.createServer().once('error', () => done(false)).once('listening', () => s.close(() => done(true)));
-    s.listen(port, '127.0.0.1');
+    s.listen(port, host);
   });
 }
 
