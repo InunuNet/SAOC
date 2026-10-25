@@ -35,8 +35,9 @@ async function sanityStamp() {
   } catch { return `unreadable:${Date.now()}`; }
 }
 
-// Everything a rendered page is built from: a change under any of these must invalidate the cache.
-const SOURCE_PATHS = 'app components lib content sanity types proxy.ts';
+// Everything a rendered page is built from, plus this gate's own code: a change under any of these
+// must invalidate the cache.
+const SOURCE_PATHS = `app components lib content sanity types public proxy.ts ${SPEC}/checks`;
 
 // Untracked source counts by name AND content: an edit to a new, uncommitted file must invalidate
 // the cached measurement just as an edit to a tracked one does.
