@@ -20,7 +20,9 @@ export default function TermsPage() {
         eyebrow="Legal"
         heading={WEBSITE_TERMS.title}
       />
-      <LegalBody document={WEBSITE_TERMS} />
+      <div className="nos-section nos-legal">
+        <LegalBody document={WEBSITE_TERMS} />
+      </div>
     </>
   );
 }

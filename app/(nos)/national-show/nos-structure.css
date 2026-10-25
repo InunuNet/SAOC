@@ -64,6 +64,12 @@
   }
 }
 
+/* The shared legal pages wrap LegalBody in a .nos-section; on NOS the section carries the rhythm (64px/40px
+   above, 72-120px below), so LegalBody's own vertical padding is not added on top. SAOC never matches. */
+.nos-theme .nos-legal > div {
+  padding-block: 0;
+}
+
 /* An empty first block (a listing page with no prose sections renders an empty space-y wrapper) keeps its
    bottom margin, which collapses through it and pushes the wrap 48px down: it takes no part in the rhythm. */
 .nos-theme [data-nos-wrap] > :first-child:empty {

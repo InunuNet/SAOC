@@ -21,7 +21,9 @@ export default function PrivacyPage() {
         heading={PRIVACY_POLICY.title}
         lede={PRIVACY_POLICY.subtitle}
       />
-      <LegalBody document={PRIVACY_POLICY} />
+      <div className="nos-section nos-legal">
+        <LegalBody document={PRIVACY_POLICY} />
+      </div>
     </>
   );
 }
