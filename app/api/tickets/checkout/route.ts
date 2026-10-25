@@ -45,6 +45,12 @@ import {
 } from '@/lib/provisional-figures';
 import { resolveActiveShow } from '@/lib/show-resolution';
 import { nosUrl } from '@/lib/site-hosts';
+import { isTicketingTestMode } from '@/lib/ticketing-test-mode';
+import {
+  isTicketOnSale,
+  qaFixturesAllowed,
+  ticketTypeMatchesActiveShow as sharedTicketTypeMatchesActiveShow,
+} from '@/lib/ticket-on-sale';
 import { MAX_LINE_ITEMS, NATIONAL_SHOW_ID, RESERVATION_TTL_MINUTES } from '@/lib/tickets-constants';
 
 // Re-exported (not just imported) so contracts/checks/ticketing-multi-line-item-cart/
@@ -91,6 +97,11 @@ const TRANSACTION_MAX_ATTEMPTS = 10;
 interface SanityTicketType {
   _id: string;
   name: string;
+  slug: string | null;
+  // Selected so the on-sale predicate can see them (a field the GROQ never selects reads as
+  // absent). `demo` is the QA-fixture marker; `active` is already filtered by the query.
+  demo: boolean | null;
+  active: unknown;
   price: unknown;
   regularPrice: unknown;
   capacity: unknown;
@@ -127,8 +138,9 @@ export function ticketTypeMatchesActiveShow(
   ticketType: TicketTypeShowRef,
   activeShowId: string | null
 ): boolean {
-  if (activeShowId === null) return false;
-  return ticketType.show?._ref === activeShowId;
+  // The rule lives once, in lib/ticket-on-sale.ts, where the shared on-sale predicate also uses
+  // it. This export stays because other contracts' checks import it from this route module.
+  return sharedTicketTypeMatchesActiveShow(ticketType, activeShowId);
 }
 
 // Sanity `validation:` is a Studio-authoring guard, not a read-time guarantee — the seed
@@ -552,6 +564,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
     if (!ticketTypeDoc) {
+      return NextResponse.json({ error: `Unknown ticketType: ${slug}` }, { status: 400 });
+    }
+
+    // A demo / QA-fixture product is refused with the SAME response a nonexistent slug gets, so
+    // a refusal never confirms a fixture exists. Only the demo reason is acted on here: every
+    // other refusal below keeps its existing status and body, and the sold-out verdict stays
+    // with the reservation transaction. The policy is read per request, never at module load.
+    const onSale = isTicketOnSale({
+      doc: ticketTypeDoc,
+      activeShowId,
+      salesOpen: true,
+      soldOut: false,
+      now: new Date(),
+      qaFixturesAllowed: qaFixturesAllowed(process.env, !isTicketingTestMode()),
+    });
+    if (onSale.reason === 'demo') {
       return NextResponse.json({ error: `Unknown ticketType: ${slug}` }, { status: 400 });
     }
 
