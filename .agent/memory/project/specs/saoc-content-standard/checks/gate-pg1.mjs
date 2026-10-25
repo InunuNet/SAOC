@@ -51,6 +51,25 @@ async function stateKey() {
   return createHash('sha1').update(site + (BASE_ENV ?? 'local-dev-server') + stamp + head + diff + untrackedDigest() + readFileSync(`${SPEC}/goldens/pg1.json`) + readFileSync(`${SPEC}/checks/gate-pg1.mjs`)).digest('hex');
 }
 
+// An externally served build (a base URL from the environment) has no identity the cache key can
+// see, so its measurements are never cached: nothing is read and nothing is written.
+function cachePolicy(baseUrl, wantCache) {
+  if (baseUrl) return { read: false, write: false, note: `cache: off, ${baseUrl} is an externally served build the cache key cannot identify` };
+  return { read: wantCache, write: true, note: null };
+}
+
+// Selftest of the policy: an external base URL must neither read nor write, whatever --cache says.
+function cachePolicyFails() {
+  const fails = [];
+  for (const want of [true, false]) {
+    const ext = cachePolicy('https://example.test', want);
+    if (ext.read || ext.write || !ext.note) fails.push(`selftest "external base URL skips the cache" (--cache ${want}): read ${ext.read}, write ${ext.write}`);
+  }
+  const local = cachePolicy(undefined, true);
+  if (!local.read || !local.write) fails.push('selftest "external base URL skips the cache": the local dev server lost its --cache read or write');
+  return fails;
+}
+
 function freePort() {
   return new Promise((resolve, reject) => {
     const s = net.createServer();
@@ -377,14 +396,18 @@ const fails = [];
 const server = await startServer();
 const browser = await chromium.launch();
 try {
-  if (check === 'selftest') fails.push(...await runSelftest(browser, server));
+  if (check === 'selftest') fails.push(...cachePolicyFails(), ...await runSelftest(browser, server));
   else {
-    mkdirSync(CACHE_DIR, { recursive: true });
+    const policy = cachePolicy(BASE_ENV, useCache);
+    if (policy.note) console.log(policy.note);
     const file = `${CACHE_DIR}/measure-${site}.json`;
-    const key = await stateKey();
+    const key = policy.read || policy.write ? await stateKey() : null;
     let data = null;
-    if (useCache && existsSync(file)) { const c = JSON.parse(readFileSync(file, 'utf8')); if (c.key === key) data = c.data; }
-    if (!data) { data = await measureAll(browser, server); writeFileSync(file, JSON.stringify({ key, data })); }
+    if (policy.read && existsSync(file)) { const c = JSON.parse(readFileSync(file, 'utf8')); if (c.key === key) data = c.data; }
+    if (!data) {
+      data = await measureAll(browser, server);
+      if (policy.write) { mkdirSync(CACHE_DIR, { recursive: true }); writeFileSync(file, JSON.stringify({ key, data })); }
+    }
     let eligible = 0, h2Total = 0;
     for (const r of ROUTES) {
       for (const vpName of WIDTHS[check]) {

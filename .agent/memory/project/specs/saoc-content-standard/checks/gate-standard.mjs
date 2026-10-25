@@ -14,7 +14,7 @@ import { chromium } from '@playwright/test';
 const SPEC = '.agent/memory/project/specs/saoc-content-standard';
 const STD = JSON.parse(readFileSync(`${SPEC}/goldens/standard.json`, 'utf8'));
 const CACHE_DIR = '.tmp/sandbox/saoc-standard-gate';
-const CHECKS = ['grid', 'measure', 'h2', 'rhythm', 'breadcrumb', 'aside', 'eyebrow', 'facts', 'firstscreen', 'contrast', 'home', 'focus', 'overflow', 'strongp', 'absent'];
+const CHECKS = ['grid', 'measure', 'h2', 'rhythm', 'breadcrumb', 'aside', 'eyebrow', 'facts', 'firstscreen', 'contrast', 'home', 'focus', 'overflow', 'strongp', 'absent', 'selftest'];
 
 const check = process.argv[2];
 if (!CHECKS.includes(check)) { console.error(`unknown check ${check}; one of ${CHECKS.join(', ')}`); process.exit(2); }
@@ -41,6 +41,25 @@ async function stateKey() {
   const diff = execSync('git diff HEAD -- app components lib content proxy.ts').toString();
   const untracked = execSync("git ls-files --others --exclude-standard -- app components lib content").toString();
   return createHash('sha1').update(base + stamp + head + diff + untracked + readFileSync(`${SPEC}/goldens/standard.json`)).digest('hex');
+}
+
+// An externally served build (a base URL from the environment) has no identity the cache key can
+// see, so its measurements are never cached: nothing is read and nothing is written.
+function cachePolicy(baseUrl, wantCache) {
+  if (baseUrl) return { read: false, write: false, note: `cache: off, ${baseUrl} is an externally served build the cache key cannot identify` };
+  return { read: wantCache, write: true, note: null };
+}
+
+// Selftest of the policy: an external base URL must neither read nor write, whatever --cache says.
+function cachePolicyFails() {
+  const fails = [];
+  for (const want of [true, false]) {
+    const ext = cachePolicy('https://example.test', want);
+    if (ext.read || ext.write || !ext.note) fails.push(`selftest "external base URL skips the cache" (--cache ${want}): read ${ext.read}, write ${ext.write}`);
+  }
+  const local = cachePolicy(undefined, true);
+  if (!local.read || !local.write) fails.push('selftest "external base URL skips the cache": the local dev server lost its --cache read or write');
+  return fails;
 }
 
 function freePort() {
@@ -197,11 +216,14 @@ async function focusProbe(page) {
 }
 
 async function loadOrMeasure() {
-  mkdirSync(CACHE_DIR, { recursive: true });
+  const policy = cachePolicy(process.env.SAOC_BASE_URL, useCache);
+  if (policy.note) console.log(policy.note);
   const file = `${CACHE_DIR}/measure.json`;
-  const key = await stateKey();
-  if (useCache && existsSync(file)) { const c = JSON.parse(readFileSync(file, 'utf8')); if (c.key === key) return c.data; }
-  return measureAll().then((data) => { writeFileSync(file, JSON.stringify({ key, data })); return data; });
+  const key = policy.read || policy.write ? await stateKey() : null;
+  if (policy.read && existsSync(file)) { const c = JSON.parse(readFileSync(file, 'utf8')); if (c.key === key) return c.data; }
+  const data = await measureAll();
+  if (policy.write) { mkdirSync(CACHE_DIR, { recursive: true }); writeFileSync(file, JSON.stringify({ key, data })); }
+  return data;
 }
 
 const fails = [];
@@ -217,6 +239,13 @@ function eachRoute(fn, { desktopOnly = false } = {}) {
       fn(route, vp, m);
     }
   }
+}
+
+if (check === 'selftest') {
+  const selfFails = cachePolicyFails();
+  if (selfFails.length) { console.error(`selftest: ${selfFails.length} violation(s)`); selfFails.forEach((f) => console.error('  ' + f)); process.exit(1); }
+  console.log('selftest: ok');
+  process.exit(0);
 }
 
 const data = await loadOrMeasure();
