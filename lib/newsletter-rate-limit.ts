@@ -16,6 +16,28 @@ export interface RateLimitDeps {
   recordAttempt(key: string, at: Date): void;
 }
 
+/**
+ * Seconds until a retry would be allowed. The denied attempt is itself recorded, so a retry sees
+ * the survivors of the old window plus that attempt: enough old attempts must expire to leave
+ * at most (maxAttempts - 2) of them. That is later than the oldest one ageing out.
+ */
+function retryAfterSecondsToDropBelowCap(
+  priorAttempts: RateLimitAttempt[],
+  key: string,
+  now: Date,
+  maxAttempts: number,
+  windowMs: number,
+): number {
+  const nowMs = now.getTime();
+  const inWindow = priorAttempts
+    .filter((attempt) => attempt.key === key && nowMs - attempt.at.getTime() < windowMs)
+    .map((attempt) => attempt.at.getTime())
+    .sort((a, b) => a - b);
+  const mustExpire = inWindow.length + 2 - maxAttempts;
+  const unblockAtMs = (inWindow[mustExpire - 1] ?? nowMs) + windowMs;
+  return Math.ceil(Math.max(unblockAtMs - nowMs, 0) / MS_PER_SECOND);
+}
+
 /** Counts the attempt, deciding against the history read BEFORE it (the Nth attempt is allowed). */
 export function consumeRateLimit(
   deps: RateLimitDeps,
@@ -29,6 +51,12 @@ export function consumeRateLimit(
   if (decision.allowed) return { allowed: true };
   return {
     allowed: false,
-    retryAfterSeconds: Math.ceil((decision.retryAfterMs ?? 0) / MS_PER_SECOND),
+    retryAfterSeconds: retryAfterSecondsToDropBelowCap(
+      priorAttempts,
+      key,
+      deps.now,
+      maxAttempts,
+      windowMs,
+    ),
   };
 }
