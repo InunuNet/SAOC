@@ -5,6 +5,7 @@ import { DuotonePicker } from '@/components/media-kit/DuotonePicker';
 import { KitCard } from '@/components/media-kit/KitCard';
 import { KitSection, ZipLink } from '@/components/media-kit/KitSection';
 import { MediaKitJumpNav } from '@/components/media-kit/MediaKitJumpNav';
+import { LockupPicker } from '@/components/media-kit/LockupPicker';
 import { OptionPicker } from '@/components/media-kit/OptionPicker';
 import { PageHero } from '@/components/ui/PageHero';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
@@ -121,6 +122,18 @@ function MarkPanel({ kit, stem }: { kit: MediaKit; stem: string }) {
   );
 }
 
+// The merged Full colour · Greyscale picker: the two family names are the two existing section headings.
+const LOCKUP_FAMILIES = [
+  { id: 'full-colour', label: 'Full colour' },
+  { id: 'greyscale', label: 'Greyscale' },
+] as const;
+const LOCKUP_VARIANT_IDS = [
+  'horizontal-on-light',
+  'horizontal-on-dark',
+  'vertical-on-light',
+  'vertical-on-dark',
+] as const;
+
 const HERO_IMAGE_NAME = 'orchid-violet';
 
 function LockupCards({ items }: { items: MediaKitItem[] }) {
@@ -139,6 +152,23 @@ export function MediaKitPageBody() {
     INKS.map((ink) => [ink.id, <LockupCards key={ink.id} items={kit.duotone[ink.id]} />]),
   ) as Record<InkId, ReactNode>; // keyed by exactly the InkId union via INKS
 
+  // Variant labels are the manifest's own lockup_label strings, in LOCKUP_ORDER.
+  const lockupVariants = LOCKUP_VARIANT_IDS.map((id, index) => ({
+    id,
+    label: kit.fullColour[index].lockup_label ?? kit.fullColour[index].label,
+  }));
+  const lockupFamilyItems: ReadonlyArray<readonly [string, MediaKitItem[]]> = [
+    ['full-colour', kit.fullColour],
+    ['greyscale', kit.greyscale],
+  ];
+  const lockupPanels = Object.fromEntries(
+    lockupFamilyItems.flatMap(([family, items]) =>
+      items.map((item, index) => [
+        `${family}/${LOCKUP_VARIANT_IDS[index]}`,
+        <KitCard key={item.path} item={item} ground={LOCKUP_GROUNDS[index]} />,
+      ]),
+    ),
+  );
   const markPanels = Object.fromEntries(
     MARK_OPTIONS.map((option) => [option.id, <MarkPanel key={option.id} kit={kit} stem={option.stem} />]),
   );
@@ -173,16 +203,23 @@ export function MediaKitPageBody() {
           </div>
         </KitSection>
 
-        <KitSection id="full-colour" heading="Full colour" zip={kit.sectionZips['full-colour']}>
-          <div className={LOCKUP_GRID}>
-            <LockupCards items={kit.fullColour} />
+        <KitSection id="lockups" heading="Full colour · Greyscale">
+          {/* Zero-size anchors: the "On this page" links (#full-colour, #greyscale) land here with that family preselected. */}
+          <span id="full-colour" className="block scroll-mt-52" />
+          <span id="greyscale" className="block scroll-mt-52" />
+          <div className="mb-6 flex flex-wrap gap-x-8">
+            <ZipLink item={kit.sectionZips['full-colour']} label="Full colour" />
+            <ZipLink item={kit.sectionZips.greyscale} label="Greyscale" />
           </div>
-        </KitSection>
-
-        <KitSection id="greyscale" heading="Greyscale" zip={kit.sectionZips.greyscale}>
-          <div className={LOCKUP_GRID}>
-            <LockupCards items={kit.greyscale} />
-          </div>
+          <LockupPicker
+            familyLegend="Colour family"
+            variantLegend="Lockup variant"
+            familyName="lockup-family"
+            variantName="lockup-variant"
+            families={LOCKUP_FAMILIES}
+            variants={lockupVariants}
+            panels={lockupPanels}
+          />
         </KitSection>
 
         <KitSection id="duotone" heading="Duotone" zip={kit.sectionZips.duotone}>

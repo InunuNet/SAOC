@@ -26,3 +26,18 @@ The page body moved to `app/(marketing)/media-kit/MediaKitPageBody.tsx`; `page.t
 (`requireMediaKitAccess`) and renders it. `app/media-kit-fixtures/page.tsx` renders the body for the
 rendered check: `force-dynamic`, 404 unless `MEDIA_KIT_FIXTURES` is `'1'`, no gate call and no auth
 bypass, and the flag is in no deploy or example env file.
+
+## Round 2 and 3 (NOS Design) — merged Full colour · Greyscale picker
+
+The separate Full colour and Greyscale sections are one section, `id="lockups"`, headed
+"Full colour · Greyscale" (the two existing headings joined by a middle dot; the word "Lockups" is
+not shown). `components/media-kit/LockupPicker.tsx` holds a family toggle (Full colour, Greyscale)
+and four variant radios labelled with the manifest's `lockup_label` strings verbatim. One preview
+card follows both; all eight cards are rendered and seven are hidden, so every download stays in the
+DOM. Selection is written as `#lockups-<family>-<variant>`. Zero-size anchors `#full-colour` and
+`#greyscale` keep the "On this page" links working and preselect the family. Both family zips stay
+in the section; `ZipLink` takes an optional `label` that adds the family to its accessible name.
+Duotone and Usage are unchanged.
+
+Measured page height at 390: 9,542px (target at most 10,500px; 11,591px before the merge). At 1440:
+6,233px. Every visible preview image loads once scrolled into view.
