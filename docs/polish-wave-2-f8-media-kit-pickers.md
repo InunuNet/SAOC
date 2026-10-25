@@ -47,12 +47,12 @@ Measured page height at 390: 9,542px (target at most 10,500px; 11,591px before t
 
 ## QA round (accessible names, no-JS, shared hash)
 
-- Each radiogroup has one accessible name, its `aria-label`, and it is the section's own heading words:
-  "Mark only", "National Show 2027", and "Full colour · Greyscale" for both groups of the merged
-  picker. No fieldset or legend duplicates it, so the name is announced once. No legend or label copy
-  is new. The manifest holds no separate string for the lockup variant group, so the family and
-  variant groups share the section heading as their name (the variant radios themselves carry the
-  verbatim `lockup_label` strings).
+- Each radiogroup has one accessible name and it is never new copy: "Mark only", "National Show 2027"
+  and "Full colour · Greyscale" (the family group) are `aria-label`s of the section's own heading
+  words. The lockup variant group is named by `aria-labelledby` pointing at the selected family
+  radio's own label ("Full colour" or "Greyscale"), so its name follows the toggle. No fieldset or
+  legend duplicates a name, so each is announced once. The variant radios carry the verbatim
+  `lockup_label` strings.
 - Mark only cards use the manifest's own `label` as the card title (for example "Full colour — Mark
   only — dark chip"), so the light and dark chips' download buttons no longer read identically.
 - No JavaScript: only the default panels (and the zip links) are reachable. This is accepted because
