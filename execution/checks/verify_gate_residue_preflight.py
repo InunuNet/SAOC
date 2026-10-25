@@ -1,51 +1,54 @@
 #!/usr/bin/env python3
 """
-Behavioral, negative-verified proof for contract-m1.yaml's A12: that
-`execution/contract.py gate` really refuses to run when the dataset-residue pre-flight guard
-(RESIDUE_EXIT_CODE in execution/contract.py) finds residue, and really proceeds through the
-normal gate path when it does not — using CONTRACT_GATE_RESIDUE_FIXTURE (test-only override)
-against the existing contracts/golden/dataset-residue-guard/ fixtures. Never touches live
-Sanity credentials.
+Behavioral, negative-verified proof that the stock `execution/contract.py gate` refuses to run
+when the project-owned residue-pre gate hook (scripts/gate-hooks/residue_hook.py, registered in
+.agent/contract_kinds.json) finds dataset residue, and proceeds through the normal gate path when
+it does not -- using CONTRACT_GATE_RESIDUE_FIXTURE (test-only override) against the existing
+contracts/golden/dataset-residue-guard/ fixtures. Never touches live Sanity credentials.
 
-Negative control: pointing the scanner at the known-bad
-contracts/golden/dataset-residue-guard/fixture-all-patterns.json fixture makes `gate` exit
-with the distinct residue exit code, and its stdout never reaches the phase-gating output
-(the assertion-level "Phase 1 summary" line) — proving this is a real pre-flight refusal,
-not a cosmetic log line after the fact.
+The gate runs from a fixture project (.tmp/sandbox/residue-preflight-selftest/) that carries a copy
+of the real registry with absolute hook paths. Stock exit semantics: 1 is a hook finding, 2 an
+infrastructure error.
 
-Positive control: the same invocation against the known-clean
-contracts/golden/dataset-residue-guard/fixture-clean.json fixture must NOT exit with the
-residue code, and its stdout DOES reach "Phase 1 summary" — proving a clean dataset is not
-blocked by this guard.
+Negative control: the known-bad fixture-all-patterns.json fixture makes `gate` exit 1 with a
+RESIDUE ALERT and a hooks-pre HOOK FINDING, and the output never reaches the assertion-level
+"Phase 1 summary" line -- a real pre-flight refusal, not a cosmetic log line after the fact.
 
-Exit 0 = both controls behaved as expected. Exit 1 = at least one control failed (printed
-above the summary).
+Positive control: the known-clean fixture-clean.json fixture exits 0, reaches "Phase 1 summary"
+and the scan reports ALL CLEAR.
+
+Error control: a nonexistent fixture makes the scanner crash with the same exit code it uses for a
+finding; the hook must not call that residue (no RESIDUE ALERT), must say RESIDUE GUARD ERROR, and
+the gate fails OPEN (residue-pre is on_error open): the phase still runs and the gate exits 0.
+
+Exit 0 = every control behaved as expected. Exit 1 = at least one failed (printed above).
 """
+import json
+import os
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CONTRACT_PY = REPO_ROOT / "execution" / "contract.py"
-DIRTY_FIXTURE = "contracts/golden/dataset-residue-guard/fixture-all-patterns.json"
-CLEAN_FIXTURE = "contracts/golden/dataset-residue-guard/fixture-clean.json"
-# A fixture path that does not exist: scan-dataset-residue.ts's loadFixtureDocuments() throws,
-# its top-level main().catch() prints "Residue scan failed:" and exits 1 — the SAME exit code
-# scan-dataset-residue.ts uses for a confirmed residue finding. This simulates the
-# scanner-infrastructure-failure case (a crash, not a real finding) without touching live
-# Sanity credentials.
-NONEXISTENT_FIXTURE = "contracts/golden/dataset-residue-guard/does-not-exist.json"
-RESIDUE_EXIT_CODE = 4
+REGISTRY = REPO_ROOT / ".agent" / "contract_kinds.json"
+SAFE_DELETE = REPO_ROOT / "execution" / "safe_delete.py"
+SANDBOX = REPO_ROOT / ".tmp" / "sandbox" / "residue-preflight-selftest"
+GOLDEN_DIR = REPO_ROOT / "contracts" / "golden" / "dataset-residue-guard"
+DIRTY_FIXTURE = str(GOLDEN_DIR / "fixture-all-patterns.json")
+CLEAN_FIXTURE = str(GOLDEN_DIR / "fixture-clean.json")
+# A fixture path that does not exist: scan-dataset-residue.ts's loadFixtureDocuments() throws, its
+# top-level main().catch() prints "Residue scan failed:" and exits 1 -- the SAME exit code it uses
+# for a confirmed residue finding. Simulates a scanner crash without touching live Sanity.
+NONEXISTENT_FIXTURE = str(GOLDEN_DIR / "does-not-exist.json")
+HOOK_FINDING_EXIT_CODE = 1
 GATE_PHASE_MARKER = "Phase 1 summary"
+GATE_TIMEOUT_SECONDS = 150
 
-# A trivial, throwaway, non-mutating contract — this test only cares about whether the
-# pre-flight guard runs BEFORE phase-gating starts, not about the phase's own assertion
-# outcome, so the single assertion just needs to exist and be cheap to run.
 THROWAWAY_CONTRACT = """\
 schema: athanor.contract/v1
 slug: residue-preflight-selftest
-goal: Throwaway contract used only by verify_gate_residue_preflight.py — never a real mission.
+goal: Throwaway contract used only by verify_gate_residue_preflight.py -- never a real mission.
 created_at: '2026-08-22'
 autonomy: high
 
@@ -71,93 +74,81 @@ def check(ok: bool, label: str, detail: str = "") -> None:
         print(f"  PASS: {label}")
     else:
         failures.append(label)
-        print(f"  FAIL: {label}" + (f" — {detail}" if detail else ""))
+        print(f"  FAIL: {label}" + (f" -- {detail}" if detail else ""))
+
+
+def build_fixture_project() -> Path:
+    """A project root holding the real registry with absolute hook paths and the contract."""
+    subprocess.run([sys.executable, str(SAFE_DELETE), str(SANDBOX)], check=True,
+                   capture_output=True, text=True)
+    (SANDBOX / ".agent").mkdir(parents=True)
+    registry = json.loads(REGISTRY.read_text())
+    for hook in registry.get("gate_hooks", []):
+        if not os.path.isabs(hook["command"][0]):
+            hook["command"][0] = str(REPO_ROOT / hook["command"][0])
+    (SANDBOX / ".agent" / "contract_kinds.json").write_text(json.dumps(registry, indent=2))
+    contract = SANDBOX / "contract-throwaway.yaml"
+    contract.write_text(THROWAWAY_CONTRACT)
+    return contract
 
 
 def run_gate(contract_path: Path, fixture: str) -> subprocess.CompletedProcess:
-    env = {"CONTRACT_GATE_RESIDUE_FIXTURE": fixture}
-    import os
-    full_env = {**os.environ, **env}
+    env = {k: v for k, v in os.environ.items() if not k.startswith("TRIAD_")}
+    env["CONTRACT_GATE_RESIDUE_FIXTURE"] = fixture
     return subprocess.run(
-        [sys.executable, str(CONTRACT_PY), "gate", str(contract_path), "--phase", "1", "--run-checks"],
-        cwd=str(REPO_ROOT),
-        env=full_env,
-        capture_output=True,
-        text=True,
-        timeout=60,
+        [sys.executable, str(CONTRACT_PY), "gate", str(contract_path), "--phase", "1",
+         "--run-checks"],
+        cwd=str(REPO_ROOT), env=env, capture_output=True, text=True,
+        timeout=GATE_TIMEOUT_SECONDS,
     )
 
 
 def main() -> int:
-    with tempfile.TemporaryDirectory(prefix="residue-preflight-selftest-") as tmpdir:
-        contract_path = Path(tmpdir) / "contract-throwaway.yaml"
-        contract_path.write_text(THROWAWAY_CONTRACT)
+    contract_path = build_fixture_project()
 
-        print("--- Negative control: dirty fixture must block BEFORE any assertion runs ---")
-        dirty = run_gate(contract_path, DIRTY_FIXTURE)
-        combined_dirty = dirty.stdout + dirty.stderr
-        check(
-            dirty.returncode == RESIDUE_EXIT_CODE,
-            f"gate exits with the distinct residue code ({RESIDUE_EXIT_CODE})",
-            f"got exit code {dirty.returncode}",
-        )
-        check(
-            "RESIDUE ALERT" in combined_dirty,
-            "output contains a RESIDUE ALERT banner",
-        )
-        check(
-            GATE_PHASE_MARKER not in combined_dirty,
-            "output never reaches phase-gating (no assertion output appeared before the refusal)",
-            f"found {GATE_PHASE_MARKER!r} in output — the guard let phase-gating start anyway",
-        )
+    print("--- Negative control: dirty fixture must block BEFORE any assertion runs ---")
+    dirty = run_gate(contract_path, DIRTY_FIXTURE)
+    combined_dirty = dirty.stdout + dirty.stderr
+    check(dirty.returncode == HOOK_FINDING_EXIT_CODE,
+          f"gate exits with the hook-finding code ({HOOK_FINDING_EXIT_CODE})",
+          f"got exit code {dirty.returncode}")
+    check("RESIDUE ALERT" in combined_dirty, "output contains a RESIDUE ALERT banner")
+    check("HOOK FINDING: residue-pre" in combined_dirty,
+          "the stock gate reports the residue-pre hook finding")
+    check(GATE_PHASE_MARKER not in combined_dirty,
+          "output never reaches phase-gating (no assertion output appeared before the refusal)",
+          f"found {GATE_PHASE_MARKER!r} in output -- the guard let phase-gating start anyway")
 
-        print("\n--- Positive control: clean fixture must proceed through the normal gate path ---")
-        clean = run_gate(contract_path, CLEAN_FIXTURE)
-        combined_clean = clean.stdout + clean.stderr
-        check(
-            clean.returncode != RESIDUE_EXIT_CODE,
-            f"gate does NOT exit with the residue code ({RESIDUE_EXIT_CODE}) against a clean dataset",
-            f"got exit code {clean.returncode}",
-        )
-        check(
-            GATE_PHASE_MARKER in combined_clean,
-            "output reaches phase-gating (the normal path ran)",
-        )
-        check(
-            "ALL CLEAR" in combined_clean,
-            "pre-flight scan reported ALL CLEAR against the clean fixture",
-        )
+    print("\n--- Positive control: clean fixture must proceed through the normal gate path ---")
+    clean = run_gate(contract_path, CLEAN_FIXTURE)
+    combined_clean = clean.stdout + clean.stderr
+    check(clean.returncode == 0, "gate exits 0 against a clean dataset",
+          f"got exit code {clean.returncode}")
+    check(GATE_PHASE_MARKER in combined_clean, "output reaches phase-gating (the normal path ran)")
+    check("ALL CLEAR" in combined_clean, "pre-flight scan reported ALL CLEAR against the clean fixture")
 
-        print("\n--- Error control: scanner crash (nonexistent fixture) must NOT be treated "
-              "as confirmed residue ---")
-        errored = run_gate(contract_path, NONEXISTENT_FIXTURE)
-        combined_errored = errored.stdout + errored.stderr
-        check(
-            errored.returncode != RESIDUE_EXIT_CODE,
-            f"gate does NOT exit with the residue code ({RESIDUE_EXIT_CODE}) when the "
-            "scanner itself crashes",
-            f"got exit code {errored.returncode}",
-        )
-        check(
-            "RESIDUE ALERT" not in combined_errored,
-            "output never falsely claims a confirmed residue finding (no RESIDUE ALERT "
-            "banner) for a scanner crash",
-        )
-        check(
-            "RESIDUE GUARD ERROR" in combined_errored,
-            "output surfaces a distinct scanner-infrastructure-failure warning",
-        )
-        check(
-            GATE_PHASE_MARKER in combined_errored,
-            "gate fails OPEN on a scanner crash — phase-gating still runs instead of "
-            "blocking unrelated work on a transient tooling failure",
-        )
+    print("\n--- Error control: scanner crash (nonexistent fixture) must NOT be treated "
+          "as confirmed residue ---")
+    errored = run_gate(contract_path, NONEXISTENT_FIXTURE)
+    combined_errored = errored.stdout + errored.stderr
+    check("RESIDUE ALERT" not in combined_errored,
+          "output never falsely claims a confirmed residue finding for a scanner crash")
+    check("HOOK FINDING" not in combined_errored,
+          "a scanner crash is not reported as a hook finding")
+    check("RESIDUE GUARD ERROR" in combined_errored,
+          "output surfaces a distinct scanner-infrastructure-failure warning")
+    check(errored.returncode == 0,
+          "gate fails OPEN on a scanner crash -- it still exits 0 instead of blocking unrelated "
+          "work on a transient tooling failure", f"got exit code {errored.returncode}")
+    check(GATE_PHASE_MARKER in combined_errored, "phase-gating still ran after the scanner crash")
 
     if not failures:
-        print("\nPASS: gate's dataset-residue pre-flight guard blocks a poisoned dataset before any "
-              "assertion runs, and does not block a clean one.")
+        subprocess.run([sys.executable, str(SAFE_DELETE), str(SANDBOX)], check=True,
+                       capture_output=True, text=True)
+        print("\nPASS: the residue gate hook blocks a poisoned dataset before any assertion runs, "
+              "and does not block a clean one.")
         return 0
-    print(f"\nFAIL: {len(failures)} check(s) failed — see above.")
+    print(f"\nFAIL: {len(failures)} check(s) failed -- see above.")
     return 1
 
 
