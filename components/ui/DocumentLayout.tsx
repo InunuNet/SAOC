@@ -22,7 +22,7 @@ export interface DocumentLayoutProps {
   index?: readonly DocumentIndexEntry[];
   /** Hairline-free wrapper id for anchors; optional. */
   id?: string;
-  /** Below 1024px show the aside above the prose (CSS order only; DOM order unchanged). Off by default. */
+  /** The content aside comes before the prose in the DOM, so below 1024px it shows (and tabs) first; from 1024px it keeps the right column. Off by default. */
   asideFirst?: boolean;
   /** The aside without its card: no background, padding or shadow. Off by default. */
   asideBare?: boolean;
@@ -44,6 +44,11 @@ export function DocumentLayout({
   }
   const indexEntries = !aside && index && index.length >= INDEX_MIN_ENTRIES ? index : null;
   const asideClass = `doc-aside${asideBare ? ' doc-aside--bare' : ''}`;
+  const contentAside = aside ? (
+    <aside data-doc-aside data-doc-aside-kind="content" className={asideClass}>
+      {aside}
+    </aside>
+  ) : null;
 
   return (
     <div
@@ -58,12 +63,9 @@ export function DocumentLayout({
           <DocumentIndex entries={indexEntries} />
         </aside>
       ) : null}
+      {asideFirst ? contentAside : null}
       <div data-doc-main>{children}</div>
-      {aside ? (
-        <aside data-doc-aside data-doc-aside-kind="content" className={asideClass}>
-          {aside}
-        </aside>
-      ) : null}
+      {asideFirst ? null : contentAside}
     </div>
   );
 }

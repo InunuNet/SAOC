@@ -874,9 +874,9 @@ h3.font-serif {
 }
 
 /* Opt-in aside variants (off by default). Bare: the aside drops its card (background, padding,
-   shadow). Aside-first: below 1024 the aside shows above the prose, by CSS order only; the DOM
-   keeps main before a content aside, since the aside is complementary to the prose. Either one
-   caps the aside at 440px below 1024. */
+   shadow). Aside-first: DocumentLayout renders the aside before the prose, so it shows and tabs
+   first below 1024; from 1024 the grid rule above keeps it in the right column. Either one caps
+   the aside at 440px below 1024. */
 .doc-aside.doc-aside--bare {
   background: none;
   padding: 0;
@@ -884,9 +884,6 @@ h3.font-serif {
   box-shadow: none;
 }
 @media (max-width: 1023.98px) {
-  .doc-layout--aside-first > [data-doc-aside] {
-    order: -1;
-  }
   .doc-layout--aside-first > [data-doc-aside],
   .doc-aside.doc-aside--bare {
     max-width: 440px;

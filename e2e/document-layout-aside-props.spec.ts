@@ -2,8 +2,10 @@
 // SAOC — e2e/document-layout-aside-props.spec.ts
 // DocumentLayout's opt-in aside props (asideFirst, asideBare), off by default. The markup half
 // renders the component on the server and proves the default output is byte-identical to the
-// pre-prop markup and that each prop adds only its own class. The rendered half applies those
-// classes to a real page's layout (/sponsors, content aside) and measures the CSS.
+// pre-prop markup and that each prop adds only its own class (asideFirst also moves the aside
+// before the prose in the DOM, so visual and focus order agree). The rendered half measures the CSS
+// on a real page (/sponsors, content aside): the layout is swapped for the component's own
+// server-rendered markup where DOM order matters, or given the prop's class where only CSS does.
 // =============================================================
 import { execFileSync } from 'node:child_process';
 
@@ -25,11 +27,13 @@ test.describe('DocumentLayout aside props: markup', () => {
     expect(markup({ asideFirst: false, asideBare: false })).toBe(expected);
   });
 
-  test('asideFirst adds only its layout class and keeps DOM order', () => {
+  test('asideFirst adds its layout class and renders the aside before main', () => {
     const html = markup({ asideFirst: true });
-    expect(html).toContain('class="doc-layout saoc-container doc-layout--aside-first"');
-    expect(html).toContain('class="doc-aside"');
-    expect(html.indexOf('data-doc-main')).toBeLessThan(html.indexOf('<aside'));
+    expect(html).toBe(
+      '<div data-doc-layout="true" class="doc-layout saoc-container doc-layout--aside-first">' +
+        '<aside data-doc-aside="true" data-doc-aside-kind="content" class="doc-aside"><p>aside</p></aside>' +
+        '<div data-doc-main="true">body</div></div>'
+    );
   });
 
   test('asideBare adds only its aside class', () => {
@@ -53,13 +57,45 @@ async function sponsors(page: Page, width: number, layoutClass: string, asideCla
       const a = aside.getBoundingClientRect();
       const m = main.getBoundingClientRect();
       return {
-        asideTop: a.top, mainTop: m.top, asideLeft: a.left, mainRight: m.right, asideWidth: a.width,
-        background: cs.backgroundColor, padding: cs.paddingTop, shadow: cs.boxShadow,
-        position: cs.position, top: cs.top,
+        asideTop: a.top,
+        mainTop: m.top,
+        asideLeft: a.left,
+        mainRight: m.right,
+        asideWidth: a.width,
+        background: cs.backgroundColor,
+        padding: cs.paddingTop,
+        shadow: cs.boxShadow,
+        position: cs.position,
+        top: cs.top,
       };
     },
-    { layoutClass, asideClass },
+    { layoutClass, asideClass }
   );
+}
+
+// Swaps /sponsors' layout for DocumentLayout's own markup (one link in the aside, one in the body).
+async function injected(page: Page, width: number, props: Record<string, boolean>) {
+  await page.setViewportSize({ width, height: 900 });
+  await page.goto('/sponsors');
+  const html = markup({ ...props, links: true });
+  return page.evaluate((html) => {
+    const old = document.querySelector('[data-doc-layout]') as HTMLElement;
+    old.outerHTML = html;
+    const layout = document.querySelector('[data-doc-layout]') as HTMLElement;
+    const aside = layout.querySelector(':scope > [data-doc-aside]') as HTMLElement;
+    const main = layout.querySelector(':scope > [data-doc-main]') as HTMLElement;
+    const a = aside.getBoundingClientRect();
+    const m = main.getBoundingClientRect();
+    const cs = getComputedStyle(aside);
+    return {
+      asideTop: a.top,
+      mainTop: m.top,
+      asideLeft: a.left,
+      mainRight: m.right,
+      asideWidth: a.width,
+      position: cs.position,
+    };
+  }, html);
 }
 
 test.describe('DocumentLayout aside props: rendered', () => {
@@ -69,16 +105,45 @@ test.describe('DocumentLayout aside props: rendered', () => {
     expect(m.asideWidth).toBeGreaterThan(ASIDE_CAP_PX);
   });
 
-  test('asideFirst: aside above the prose and capped below 1024, right column from 1024', async ({ page }) => {
-    const narrow = await sponsors(page, 800, 'doc-layout--aside-first', '');
+  test('asideFirst: aside above the prose and capped below 1024, right column from 1024', async ({
+    page,
+  }) => {
+    const narrow = await injected(page, 800, { asideFirst: true });
     expect(narrow.asideTop).toBeLessThan(narrow.mainTop);
     expect(narrow.asideWidth).toBeLessThanOrEqual(ASIDE_CAP_PX);
-    const wide = await sponsors(page, 1440, 'doc-layout--aside-first', '');
+    const wide = await injected(page, 1440, { asideFirst: true });
     expect(wide.asideLeft).toBeGreaterThanOrEqual(wide.mainRight);
     expect(wide.position).toBe('sticky');
   });
 
-  test('asideBare: no card, capped below 1024, sticky top unchanged from 1024', async ({ page }) => {
+  test('asideFirst: Tab reaches the aside before the prose at 800 (focus order matches what is seen)', async ({
+    page,
+  }) => {
+    await injected(page, 800, { asideFirst: true });
+    await page.evaluate(() =>
+      (
+        document.querySelector('[data-doc-layout]') as HTMLElement
+      ).previousElementSibling?.setAttribute('tabindex', '-1')
+    );
+    await page.evaluate(() =>
+      (
+        (document.querySelector('[data-doc-layout]') as HTMLElement)
+          .previousElementSibling as HTMLElement | null
+      )?.focus()
+    );
+    const order: string[] = [];
+    for (let i = 0; i < 40 && order.length < 2; i++) {
+      await page.keyboard.press('Tab');
+      const href = await page.evaluate(() => document.activeElement?.getAttribute('href') ?? '');
+      if ((href === '#aside-link' || href === '#body-link') && !order.includes(href))
+        order.push(href);
+    }
+    expect(order).toEqual(['#aside-link', '#body-link']);
+  });
+
+  test('asideBare: no card, capped below 1024, sticky top unchanged from 1024', async ({
+    page,
+  }) => {
     const narrow = await sponsors(page, 800, '', 'doc-aside--bare');
     expect(narrow.asideWidth).toBeLessThanOrEqual(ASIDE_CAP_PX);
     const plain = await sponsors(page, 1440, '', '');
