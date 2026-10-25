@@ -4,8 +4,9 @@ import type { RateLimitAttempt } from './newsletter-rate-limit';
 // the vendor routes: each server instance counts on its own, and a restart clears it.
 
 export const MAX_TRACKED_KEYS = 10_000;
-// Above the highest per-key limit (10), so trimming never lowers a key's in-window count below it.
-const MAX_ATTEMPTS_PER_KEY = 50;
+// Above the highest per-key limit of the form routes (10), so trimming never lowers a key's
+// in-window count below it. Routes with a higher cap pass their own maxAttemptsPerKey.
+const DEFAULT_MAX_ATTEMPTS_PER_KEY = 50;
 // Expired head entries removed per record call, so one request never walks the whole map; the
 // rest drain over later requests.
 export const MAX_PRUNE_PER_RECORD = 64;
@@ -26,7 +27,11 @@ export interface AttemptStore {
 // costs the attacker nothing they did not already have, since each address is limited on its own
 // counter, and it only resets the counter of the key idle longest; resetting that counter takes
 // `maxKeys` other distinct addresses, each of which spends its own allowance.
-export function createAttemptStore(windowMs: number, maxKeys = MAX_TRACKED_KEYS): AttemptStore {
+export function createAttemptStore(
+  windowMs: number,
+  maxKeys = MAX_TRACKED_KEYS,
+  maxAttemptsPerKey = DEFAULT_MAX_ATTEMPTS_PER_KEY,
+): AttemptStore {
   const attemptsByKey = new Map<string, RateLimitAttempt[]>();
 
   function newestAt(attempts: RateLimitAttempt[]): number {
@@ -57,7 +62,7 @@ export function createAttemptStore(windowMs: number, maxKeys = MAX_TRACKED_KEYS)
         (attempt) => now - attempt.at.getTime() < windowMs,
       );
       attemptsByKey.delete(key);
-      attemptsByKey.set(key, [...kept, { key, at }].slice(-MAX_ATTEMPTS_PER_KEY));
+      attemptsByKey.set(key, [...kept, { key, at }].slice(-maxAttemptsPerKey));
       evictFromHead(now);
     },
   };
