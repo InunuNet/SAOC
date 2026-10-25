@@ -28,9 +28,9 @@ export interface LockupPickerZip {
 }
 
 export interface LockupPickerProps {
-  /** The groups' accessible names: the section's own heading words, never new copy. */
+  /** The family group's accessible name: the section's own heading words, never new copy.
+   *  The variant group is named by the selected family's own chip, so it follows the toggle. */
   familyLabel: string;
-  variantLabel: string;
   /** Radio input names, unique on the page. */
   familyName: string;
   variantName: string;
@@ -72,7 +72,6 @@ function writeHash(familyId: string, variantId: string): void {
 
 export function LockupPicker({
   familyLabel,
-  variantLabel,
   familyName,
   variantName,
   families,
@@ -137,11 +136,17 @@ export function LockupPicker({
               onClick={() => writeHash(option.id, variant)}
               className="peer sr-only"
             />
-            <span className={CHIP_CLASS}>{option.label}</span>
+            <span id={`${familyName}-${option.id}`} className={CHIP_CLASS}>
+              {option.label}
+            </span>
           </label>
         ))}
       </div>
-      <div role="radiogroup" aria-label={variantLabel} className="mb-6 flex flex-wrap gap-3">
+      <div
+        role="radiogroup"
+        aria-labelledby={`${familyName}-${family}`}
+        className="mb-6 flex flex-wrap gap-3"
+      >
         {variants.map((option) => (
           <label key={option.id} className="relative block cursor-pointer">
             <input

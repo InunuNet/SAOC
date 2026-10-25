@@ -218,7 +218,6 @@ export function MediaKitPageBody() {
           <span id="greyscale" className="block scroll-mt-52" />
           <LockupPicker
             familyLabel={LOCKUPS_LABEL}
-            variantLabel={LOCKUPS_LABEL}
             familyName="lockup-family"
             variantName="lockup-variant"
             families={LOCKUP_FAMILIES}
