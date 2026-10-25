@@ -38,7 +38,7 @@ export function SocietyAbout({ society, withhold = false }: SocietyAboutProps) {
               href={society.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-ink underline underline-offset-2"
+              className="inline-flex min-h-11 items-center text-ink underline underline-offset-2"
             >
               Visit society website →
             </a>
@@ -48,7 +48,7 @@ export function SocietyAbout({ society, withhold = false }: SocietyAboutProps) {
               href={society.facebookUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-ink underline underline-offset-2"
+              className="inline-flex min-h-11 items-center text-ink underline underline-offset-2"
             >
               Facebook page →
             </a>
@@ -58,7 +58,7 @@ export function SocietyAbout({ society, withhold = false }: SocietyAboutProps) {
               href={society.instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-ink underline underline-offset-2"
+              className="inline-flex min-h-11 items-center text-ink underline underline-offset-2"
             >
               Instagram page →
             </a>

@@ -23,7 +23,9 @@ import { projectId, dataset, apiVersion } from '@/sanity/env';
 export const runtime = 'nodejs';
 
 // Parameterised: the id is a GROQ parameter, never interpolated into the query string.
-const SOCIETY_EXISTS_QUERY = 'count(*[_type == "society" && _id == $id]) > 0';
+// Draft ids (`drafts.*`) are unpublished and must not count as a known society.
+const SOCIETY_EXISTS_QUERY =
+  'count(*[_type == "society" && _id == $id && !(_id in path("drafts.**"))]) > 0';
 
 type SubmitBody = {
   title: string;

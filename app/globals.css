@@ -154,6 +154,7 @@ body {
 /* WCAG 2.4.11: the sticky header (97px, HD-1) must not cover a focused element. */
 html {
   scroll-padding-top: 6.5rem;
+  scrollbar-gutter: stable;
 }
 /* NAV-1: after a client-side navigation focus lands on the page heading (or main); it is a
    programmatic landing, not a control, so it takes no ring. The marker exists only while a route

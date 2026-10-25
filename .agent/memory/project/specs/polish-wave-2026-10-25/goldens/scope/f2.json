@@ -1,0 +1,10 @@
+{
+  "feature": "F2",
+  "allow": [
+    "components/vendors/",
+    "contracts/checks/vendor-form-input-focus-indicators-f1/check-a1-ring-tokens.sh",
+    "contracts/checks/vendor-form-input-focus-indicators-f1/check-a2-checkbox-radio-regression.sh",
+    "components/newsletter/NewsletterSignup.tsx",
+    "docs/polish-wave-f2-vendor-a11y.md"
+  ]
+}

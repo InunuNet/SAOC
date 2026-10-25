@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import { getAuth } from 'firebase/auth';
 
+import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
 import { getFirebaseApp } from '@/lib/firebase';
+import { useHydrated } from '@/lib/hooks/useHydrated';
 
 type FormValues = {
   title: string;
@@ -26,6 +28,17 @@ const INITIAL: FormValues = {
   description: '',
   hostSocietyId: '',
 };
+
+type SubmitEventFormProps = {
+  societies: ReadonlyArray<{ id: string; name: string }>;
+};
+
+// Same field and label treatment as the /contact form. The boundary is --muted (3:1 non-text).
+const INPUT_CLASS =
+  'w-full min-h-11 rounded-sm border border-muted bg-ivory px-3.5 py-2.5 font-sans text-[16px] text-ink placeholder:text-muted outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-2 transition-colors disabled:opacity-60 aria-invalid:border-error';
+const LABEL_CLASS = 'font-mono text-[11px] tracking-[0.16em] text-muted';
+const SUBMIT_CLASS =
+  'inline-flex min-h-11 items-center rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink hover:bg-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60 disabled:cursor-not-allowed';
 
 const ALLOWED_KINDS = ['exhibition', 'meeting', 'show', 'workshop', 'social'] as const;
 
@@ -53,7 +66,8 @@ function validate(v: FormValues): Partial<Record<keyof FormValues, string>> {
   return errors;
 }
 
-export function SubmitEventForm() {
+export function SubmitEventForm({ societies }: SubmitEventFormProps) {
+  const hydrated = useHydrated();
   const [values, setValues] = useState<FormValues>(INITIAL);
   const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
@@ -151,14 +165,14 @@ export function SubmitEventForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-5">
+    <form method="post" onSubmit={handleSubmit} noValidate className="space-y-5">
       <div aria-live="polite" className="min-h-[1.25rem]">
-        {serverError && <p className="text-red-600 text-sm">{serverError}</p>}
+        {serverError && <TicketFieldAlert id="submit-event-error">{serverError}</TicketFieldAlert>}
       </div>
 
       {/* Title */}
-      <div>
-        <label htmlFor="title" className="block text-sm font-medium mb-1">
+      <div className="space-y-1.5">
+        <label htmlFor="title" className={LABEL_CLASS}>
           Event title <span aria-hidden>*</span>
         </label>
         <input
@@ -168,14 +182,16 @@ export function SubmitEventForm() {
           required
           value={values.title}
           onChange={set('title')}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
+          aria-invalid={errors.title ? 'true' : undefined}
+          aria-describedby={errors.title ? 'title-error' : undefined}
+          className={INPUT_CLASS}
         />
-        {errors.title && <p className="text-red-600 text-xs mt-1">{errors.title}</p>}
+        {errors.title && <TicketFieldAlert id="title-error">{errors.title}</TicketFieldAlert>}
       </div>
 
       {/* Kind */}
-      <div>
-        <label htmlFor="kind" className="block text-sm font-medium mb-1">
+      <div className="space-y-1.5">
+        <label htmlFor="kind" className={LABEL_CLASS}>
           Event type <span aria-hidden>*</span>
         </label>
         <select
@@ -184,7 +200,9 @@ export function SubmitEventForm() {
           required
           value={values.kind}
           onChange={set('kind')}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5 h-[39px]"
+          aria-invalid={errors.kind ? 'true' : undefined}
+          aria-describedby={errors.kind ? 'kind-error' : undefined}
+          className={INPUT_CLASS}
         >
           <option value="">Select type…</option>
           {ALLOWED_KINDS.map((k) => (
@@ -193,12 +211,12 @@ export function SubmitEventForm() {
             </option>
           ))}
         </select>
-        {errors.kind && <p className="text-red-600 text-xs mt-1">{errors.kind}</p>}
+        {errors.kind && <TicketFieldAlert id="kind-error">{errors.kind}</TicketFieldAlert>}
       </div>
 
       {/* Date */}
-      <div>
-        <label htmlFor="date" className="block text-sm font-medium mb-1">
+      <div className="space-y-1.5">
+        <label htmlFor="date" className={LABEL_CLASS}>
           Start date <span aria-hidden>*</span>
         </label>
         <input
@@ -208,15 +226,17 @@ export function SubmitEventForm() {
           required
           value={values.date}
           onChange={set('date')}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
+          aria-invalid={errors.date ? 'true' : undefined}
+          aria-describedby={errors.date ? 'date-error' : undefined}
+          className={INPUT_CLASS}
         />
-        {errors.date && <p className="text-red-600 text-xs mt-1">{errors.date}</p>}
+        {errors.date && <TicketFieldAlert id="date-error">{errors.date}</TicketFieldAlert>}
       </div>
 
       {/* End date */}
-      <div>
-        <label htmlFor="endDate" className="block text-sm font-medium mb-1">
-          End date <span className="text-gray-400 font-normal">(optional)</span>
+      <div className="space-y-1.5">
+        <label htmlFor="endDate" className={LABEL_CLASS}>
+          End date <span className="text-muted">(optional)</span>
         </label>
         <input
           id="endDate"
@@ -224,14 +244,16 @@ export function SubmitEventForm() {
           type="date"
           value={values.endDate}
           onChange={set('endDate')}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
+          aria-invalid={errors.endDate ? 'true' : undefined}
+          aria-describedby={errors.endDate ? 'endDate-error' : undefined}
+          className={INPUT_CLASS}
         />
-        {errors.endDate && <p className="text-red-600 text-xs mt-1">{errors.endDate}</p>}
+        {errors.endDate && <TicketFieldAlert id="endDate-error">{errors.endDate}</TicketFieldAlert>}
       </div>
 
       {/* Venue */}
-      <div>
-        <label htmlFor="venue" className="block text-sm font-medium mb-1">
+      <div className="space-y-1.5">
+        <label htmlFor="venue" className={LABEL_CLASS}>
           Venue <span aria-hidden>*</span>
         </label>
         <input
@@ -241,14 +263,16 @@ export function SubmitEventForm() {
           required
           value={values.venue}
           onChange={set('venue')}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
+          aria-invalid={errors.venue ? 'true' : undefined}
+          aria-describedby={errors.venue ? 'venue-error' : undefined}
+          className={INPUT_CLASS}
         />
-        {errors.venue && <p className="text-red-600 text-xs mt-1">{errors.venue}</p>}
+        {errors.venue && <TicketFieldAlert id="venue-error">{errors.venue}</TicketFieldAlert>}
       </div>
 
       {/* Location */}
-      <div>
-        <label htmlFor="location" className="block text-sm font-medium mb-1">
+      <div className="space-y-1.5">
+        <label htmlFor="location" className={LABEL_CLASS}>
           City / area <span aria-hidden>*</span>
         </label>
         <input
@@ -258,14 +282,16 @@ export function SubmitEventForm() {
           required
           value={values.location}
           onChange={set('location')}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
+          aria-invalid={errors.location ? 'true' : undefined}
+          aria-describedby={errors.location ? 'location-error' : undefined}
+          className={INPUT_CLASS}
         />
-        {errors.location && <p className="text-red-600 text-xs mt-1">{errors.location}</p>}
+        {errors.location && <TicketFieldAlert id="location-error">{errors.location}</TicketFieldAlert>}
       </div>
 
       {/* Description */}
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium mb-1">
+      <div className="space-y-1.5">
+        <label htmlFor="description" className={LABEL_CLASS}>
           Description <span aria-hidden>*</span>
         </label>
         <textarea
@@ -275,30 +301,41 @@ export function SubmitEventForm() {
           rows={4}
           value={values.description}
           onChange={set('description')}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
+          aria-invalid={errors.description ? 'true' : undefined}
+          aria-describedby={errors.description ? 'description-error' : undefined}
+          className={INPUT_CLASS}
         />
-        {errors.description && <p className="text-red-600 text-xs mt-1">{errors.description}</p>}
+        {errors.description && <TicketFieldAlert id="description-error">{errors.description}</TicketFieldAlert>}
       </div>
 
       {/* Host society */}
-      <div>
-        <label htmlFor="hostSocietyId" className="block text-sm font-medium mb-1">
-          Host society ID <span className="text-gray-400 font-normal">(optional — Sanity document ID)</span>
+      <div className="space-y-1.5">
+        <label htmlFor="hostSocietyId" className={LABEL_CLASS}>
+          Host society <span className="text-muted">(optional)</span>
         </label>
-        <input
+        <select
           id="hostSocietyId"
           name="hostSocietyId"
-          type="text"
           value={values.hostSocietyId}
           onChange={set('hostSocietyId')}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-[16px] leading-5"
-        />
+          className={INPUT_CLASS}
+          aria-invalid={errors.hostSocietyId ? 'true' : undefined}
+          aria-describedby={errors.hostSocietyId ? 'hostSocietyId-error' : undefined}
+        >
+          <option value="">Select society…</option>
+          {societies.map((s) => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </select>
+        {errors.hostSocietyId && (
+          <TicketFieldAlert id="hostSocietyId-error">{errors.hostSocietyId}</TicketFieldAlert>
+        )}
       </div>
 
       <button
         type="submit"
-        disabled={status === 'submitting'}
-        className="px-5 py-2 bg-gray-900 text-white text-sm rounded disabled:opacity-50"
+        disabled={status === 'submitting' || !hydrated}
+        className={SUBMIT_CLASS}
       >
         {status === 'submitting' ? 'Submitting…' : 'Submit event'}
       </button>

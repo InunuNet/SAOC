@@ -13,6 +13,7 @@ import {
   type VendorApplyFormValues,
 } from '@/lib/vendor-apply-form-validation';
 import type { VendorApplicationCategory } from '@/types/index';
+import { useHydrated } from '@/lib/hooks/useHydrated';
 
 /**
  * F4 (vendor-gated-registration-flow) -- the short public application form. Collects exactly
@@ -89,6 +90,7 @@ function focusField(key: VendorApplyFieldKey) {
 }
 
 export function VendorApplyForm() {
+  const hydrated = useHydrated();
   const [state, setState] = useState<VendorApplyFormState>(INITIAL_STATE);
   const [hp, setHp] = useState(''); // honeypot -- never sent to the API
   const [status, setStatus] = useState<Status>('idle');
@@ -189,13 +191,13 @@ export function VendorApplyForm() {
     clientErrors.find((entry) => entry.key === key)?.message;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8" noValidate>
+    <form method="post" onSubmit={handleSubmit} className="space-y-8" noValidate>
       <p className="font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink">
         {REQUIRED_SENTENCE}
       </p>
 
       {clientErrors.length > 0 ? (
-        <div ref={summaryRef} id={SUMMARY_ID} tabIndex={-1} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/40">
+        <div ref={summaryRef} id={SUMMARY_ID} tabIndex={-1} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
           <div
             role="alert"
             className="space-y-2 rounded-sm border border-[var(--status-error)] bg-bone p-4"
@@ -354,7 +356,7 @@ export function VendorApplyForm() {
         </label>
       </div>
 
-      <Button type="submit" disabled={disabled}>
+      <Button type="submit" disabled={disabled || !hydrated}>
         {status === 'submitting' ? 'Submitting…' : 'Submit application'}
       </Button>
     </form>

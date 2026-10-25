@@ -1,0 +1,64 @@
+schema: athanor.contract/v1
+slug: polish-wave-2026-10-25
+goal: The countdown never overflows its cells at 320-414px (2x2 below ~360px of container), the National Show event page drops its duplicate meta table, and the submit-event form column is centred at max 640px.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F9
+    name: NOS Design ruling P1 countdown container query, P2 event meta table, P3 submit column
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/README.md
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/f9-nos-design-ruling-2026-10-25.md
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f1.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f2.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f3.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f4.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f5.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f6.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f7.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f8.json
+  - .agent/memory/project/specs/polish-wave-2026-10-25/goldens/scope/f9.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "static - ShowBand countdown is an @container with a 340-384px container-query variant setting grid-cols-2/4 and unchanged labels and type (P1); the event meta dl is gated on the band being absent while h1, date line and band stay (P2); the submit form column is mx-auto max-w-[640px] (P3) (RED on baseline, every item). Triad coverage for F9, recorded here because the contract classifies exempt - Codex QA via execution/codex_qa.sh on the F9 diff; browser layer is the orchestrator's post-deploy check on beta.saoc.co.za; gws inbox layer N/A, F9 sends no email."
+      command: node contracts/checks/polish-wave-2026-10-25/f9-static.mjs
+    - id: A2
+      description: production build passes
+      command: NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A3
+      description: at 320, 360, 390 and 414 on the National Show event page and the home ShowBand no countdown label or value is wider than its cell (scrollWidth <= clientWidth, text right edge <= cell right edge), cells never overlap, and a countdown under 300px wide is 2x2 in reading order (RED on baseline at the event page 390)
+      command: node contracts/checks/polish-wave-2026-10-25/f9-countdown-rendered.mjs
+      timeout_seconds: 900
+    - id: A4
+      description: the National Show event page renders no meta table outside the band and keeps its h1, date line and one band at 390 and 1440 (an ordinary event keeps its table when the dataset has one; asserted statically in A1 otherwise)
+      command: node contracts/checks/polish-wave-2026-10-25/f9-event-meta-rendered.mjs
+      timeout_seconds: 900
+    - id: A5
+      description: at 1440@2 and 1920 the /events/submit form column is centred (within 2px) and 480-640px wide
+      command: node contracts/checks/polish-wave-2026-10-25/f9-submit-rendered.mjs
+      timeout_seconds: 900
+    - id: A6
+      description: F5 event-detail rendered check (updated for P2) still passes - band once, below the title, CTA hrefs, chip and back link
+      command: node contracts/checks/polish-wave-2026-10-25/f5-event-detail-rendered.mjs
+      timeout_seconds: 900
+    - id: A7
+      description: wave scope guard - every changed file is on a feature allow-list (goldens/scope/*.json) or under this mission's spec and check trees
+      command: node contracts/checks/polish-wave-2026-10-25/scope.mjs
+    - id: A8
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A9
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A10
+      description: the feature doc exists and names the container query
+      command: grep -q "container" docs/polish-wave-f9-design-fixes.md
