@@ -35,7 +35,8 @@ const LOCKUP_SRC = '/images/nos/nos-full-colour-horizontal-2400.png';
 const LOCKUP_ALT = SHOW_TITLE_EXPANDED;
 const LOCKUP_WIDTH = 2400;
 const LOCKUP_HEIGHT = 589;
-// The box is 448px wide from 780px up and 390px below it. A width with no `sizes` gives a
+// The box is 448px wide from 780px up; below it the box follows the viewport up to 448px (390px
+// at a 390px viewport, see LOCKUP_SIZES_NARROW). A width with no `sizes` gives a
 // pixel-density list that stops at twice the box, which under-serves a 3x screen. The `sizes` below
 // gives a width srcset over the whole variant ladder, so a 3x screen picks a wide enough one (LG-1).
 const LOCKUP_BOX_WIDE = 448;

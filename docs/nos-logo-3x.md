@@ -10,9 +10,10 @@ emits a density srcset of 1x and 2x only, so a 3x screen took the 2x candidate.
 
 ## Fix
 
-- Both components pass `sizes` equal to the drawn box (header 448px wide, 390px narrow; footer
-  248px). Next then emits a width srcset over the whole variant ladder and the browser picks the
-  right candidate for its density. The narrow `<source>` carries its own `sizes`.
+- Both components pass `sizes` equal to the drawn box (header 448px wide from 780px up; below it
+  `min(448px, calc(110.6vw - 35.4px))`, which is 396px at a 390px viewport; footer 248px).
+  Next then emits a width srcset over the whole variant ladder and the browser picks the right
+  candidate for its density. The narrow `<source>` carries its own `sizes`.
 - The header source is now `public/images/nos/nos-full-colour-horizontal-2400.png` (2400x589), so
   the 448px box at 3x (1344) can be served the 1920 variant. NOS Design ruled this option (a): a
   lanczos resize of the supplied master, no crop, recolour, re-matte or sharpening, alpha kept.
