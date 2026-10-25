@@ -62,6 +62,11 @@ const found = ['app', 'lib', 'sanity', 'components'].flatMap(walk).filter((f) =>
 const codeFound = found.filter((f) => read(f).split('\n').some((l) => /\bcreateClient\s*\(/.test(l) && !/^\s*(\/\/|\*)/.test(l)));
 check('every createClient( under app, lib, sanity and components is wrapped or inventoried with a reason (goldens/fixture-client-inventory.json)', codeFound.every((f) => known.has(f)), codeFound.filter((f) => !known.has(f)).join(', '));
 check('every inventoried bypass client says it does not run on a gated route', (inv.bypass ?? []).length > 0 && inv.bypass.every((b) => b.gatedRoutes === false && b.reason));
+// Condition 1, SAOC P0 shape (sanity/lib/cdn-fallback.ts, 34d079c0): client.ts = withCdnFallback(withFixture(createClient(...))), the fixture UNDER the fallback.
+check('sanity/lib/client.ts wraps in the order withCdnFallback(withFixture(createClient(...))) - the fixture sits under SAOC\'s CDN->API retry', /withCdnFallback\(\s*withFixture\(\s*createClient\(/.test(client), 'expected withCdnFallback(withFixture(createClient(');
+check('sanity/lib/client.ts imports withFixture from the fixture module and withCdnFallback from ./cdn-fallback', /import\s*\{[^}]*withFixture[^}]*\}\s*from\s*['"][^'"]*sanity-fixture['"]/.test(client) && /import\s*\{[^}]*withCdnFallback[^}]*\}\s*from\s*['"]\.\/cdn-fallback['"]/.test(client));
+check('sanity/lib/cdn-fallback.ts is SAOC-owned and unchanged by this mission (no fixture reference in it)', !/SANITY_FIXTURE|sanity-fixture|withFixture/.test(read('sanity/lib/cdn-fallback.ts')));
+check('lib/sanity-fixture.ts is a Proxy over the real client that returns wrapped clients from withConfig() and clone() (the fallback and any derived client must not reach the network)', /new Proxy\(/.test(lib) && /withConfig/.test(lib) && /clone/.test(lib));
 // Condition 1 (tightened to SAOC's P0 shape once the sha is pinned): any createClient in sanity/lib is passed through withFixture, so a CDN->API retry sits ABOVE the fixture.
 const libClients = ['sanity/lib/client.ts', 'sanity/lib/fetch.ts'].map(read).join('\n');
 const nClients = (libClients.match(/\bcreateClient\s*\(/g) ?? []).length; const nWraps = (libClients.match(/\bwithFixture\s*\(/g) ?? []).length;

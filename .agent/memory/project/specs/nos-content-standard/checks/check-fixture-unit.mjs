@@ -29,7 +29,7 @@ check('key ignores surrounding whitespace in the query', fixtureKey('  *[x]\n', 
 
 const fakeClient = (result) => {
   const calls = { fetch: 0, withConfig: [], opts: [] };
-  const real = { fetch: async (q, p, o) => { calls.fetch += 1; calls.opts.push(o); return structuredClone(result); }, withConfig: (c) => { calls.withConfig.push(c); return real; } };
+  const real = { fetch: async (q, p, o) => { calls.fetch += 1; calls.opts.push(o); return structuredClone(result); }, withConfig: (c) => { calls.withConfig.push(c); return real; }, config: () => ({ useCdn: true }), clone: () => real };
   real.calls = calls; return real;
 };
 const Q = '*[_type == "x"][0]{a}'; const P = { slug: 's' };
@@ -66,7 +66,8 @@ await rec.fetch(Q, P, {});
 check('record: a second identical read is served from disk (one live request in total)', f.calls.fetch === 1, String(f.calls.fetch));
 
 setEnv({ SANITY_FIXTURE_DIR: DIR, SANITY_FIXTURE_MODE: 'replay', SANITY_FIXTURE_LOGDIR: LOG });
-const dead = { fetch: async () => { throw new Error('NETWORK TOUCHED'); }, withConfig() { return dead; } };
+const deadCalls = { fetch: 0 };
+const dead = { fetch: async () => { deadCalls.fetch += 1; throw Object.assign(new Error('NETWORK TOUCHED (a CDN 402)'), { statusCode: 402 }); }, withConfig() { return dead; }, config() { return { useCdn: true }; }, clone() { return dead; } };
 const rep = withFixture(dead);
 const r2 = await rep.fetch(Q, P, { perspective: 'published', useCdn: true });
 const r2b = await rep.fetch(Q, P, { perspective: 'published', useCdn: false });
@@ -89,6 +90,28 @@ try { await rep.fetch(Q, P, { perspective: 'previewDrafts' }); } catch (e) { dra
 check('replay: the draft perspective is a miss (fixtures are published reads only)', draft instanceof SanityFixtureMiss);
 check('replay: no extra files appear in the fixture dir', readdirSync(DIR).every((n) => /^[0-9a-f]{64}\.json$/.test(n)));
 
+
+// P0 shape (SAOC sanity/lib/cdn-fallback.ts, 34d079c0): client.ts = withCdnFallback(withFixture(createClient(...))). The fallback calls client.config().useCdn and retries with the
+// SAME client's fetch, and it Proxies with bind(target); the fixture must therefore be a Proxy over the real client (not a spread: SanityClient methods live on the prototype),
+// pass config() through, and hand back WRAPPED clients from withConfig() and clone(), or a retry/derived client would reach the network.
+const wrapped = withFixture(dead);
+check('withFixture preserves config() (the fallback reads client.config().useCdn)', typeof wrapped.config === 'function' && wrapped.config().useCdn === true);
+const viaConfig = wrapped.withConfig({ useCdn: false });
+check('withConfig() returns a WRAPPED client: a read through it is served from the fixture, never the network', viaConfig !== dead && (await viaConfig.fetch(Q, P).then((r) => r && r.a === 1, () => false)) && deadCalls.fetch === 0, `network calls ${deadCalls.fetch}`);
+const viaClone = wrapped.clone();
+check('clone() returns a WRAPPED client too', viaClone !== dead && (await viaClone.fetch(Q, P).then((r) => r && r.a === 1, () => false)) && deadCalls.fetch === 0);
+const fbPath = pathToFileURL(path.resolve(process.env.NOS_STD_ROOT ?? process.cwd(), 'sanity/lib/cdn-fallback.ts')).href;
+let fbMod = null; try { fbMod = await import(fbPath); } catch (e) { check('sanity/lib/cdn-fallback.ts (SAOC P0, 34d079c0) is present and imports', false, e.message); }
+if (fbMod) {
+  const fb = fbMod.withCdnFallback(withFixture(dead));
+  const hit = await fb.fetch(Q, P, { perspective: 'published', useCdn: true }).catch((e) => e);
+  check('withCdnFallback(withFixture(client)) in replay: a hit is served with zero network calls', hit && hit.a === 1 && deadCalls.fetch === 0, `network calls ${deadCalls.fetch}`);
+  const missErr = await fb.fetch('*[_type == "never-captured-2"]', {}, { perspective: 'published', useCdn: true }).then(() => null, (e) => e);
+  check('withCdnFallback(withFixture(client)) in replay: a miss is a SanityFixtureMiss and is NOT retried against the API host (no retry, zero network calls)', missErr instanceof SanityFixtureMiss && deadCalls.fetch === 0, `${missErr && missErr.name} network calls ${deadCalls.fetch}`);
+  const missLines = readFileSync(`${LOG}/_misses.log`, 'utf8').split('\n').filter((l) => l.includes('never-captured-2'));
+  check('the miss was logged exactly once (the fallback did not retry through the fixture)', missLines.length === 1, String(missLines.length));
+  check('isCdnUnavailableError(miss) is false (a miss has no statusCode)', fbMod.isCdnUnavailableError(missErr) === false);
+}
 rmSync(SB, { recursive: true, force: true });
 if (failures.length) { console.error(`A13 FAILED:\n- ${failures.join('\n- ')}`); process.exit(1); }
 console.log('A13 pass (sanity fixture unit behaviour, incl. fail-closed on the hosted runtime)');

@@ -21,6 +21,7 @@ type FetchOptions = Record<string, unknown> & { perspective?: unknown };
 type Fetcher = {
   fetch: (query: string, params?: Params, options?: FetchOptions) => Promise<unknown>;
   withConfig: (config: Record<string, unknown>) => Fetcher;
+  clone: () => Fetcher;
 };
 
 const MODES: readonly string[] = ['off', 'replay', 'record'];
@@ -178,6 +179,7 @@ export function withFixture<C extends object>(client: C): C {
       if (prop === 'withConfig') {
         return (config: Record<string, unknown>) => withFixture(target.withConfig(config));
       }
+      if (prop === 'clone') return () => withFixture(target.clone());
       const value = Reflect.get(base, prop, base) as unknown;
       if (typeof value !== 'function') return value;
       return (value as (...args: unknown[]) => unknown).bind(base);
