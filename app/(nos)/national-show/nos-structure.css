@@ -2712,7 +2712,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 @media (min-width: 1024px) {
   .nos-theme {
-    --doc-scroll-margin: 104px;
+    --doc-scroll-margin: 112px;
   }
 }
 
@@ -2773,6 +2773,12 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-weight: 300;
   line-height: 1.15;
   color: var(--ink);
+}
+.nos-theme .doc-prose > .doc-h2 {
+  margin-top: 56px;
+}
+.nos-theme .doc-prose > .doc-h2:first-child {
+  margin-top: 0;
 }
 .nos-theme .doc-prose > .doc-h3 {
   margin-top: 32px;
