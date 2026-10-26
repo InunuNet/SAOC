@@ -3445,6 +3445,11 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   .nos-theme .hero-facts[data-fact-count="3"] > div:last-child {
     grid-column: 1 / -1;
   }
+  /* Each fact is one line in the loaded faces here. The fallback faces are wider, so without this the
+     second fact and the venue wrap, the row is a line taller until the swap, and the sub-nav jumps up. */
+  .nos-theme .hero-facts[data-fact-count="3"] dd {
+    white-space: nowrap;
+  }
 }
 
 /* PV-G1 (plan your visit): one stack rhythm, the venue card, the link register, the closing line and
