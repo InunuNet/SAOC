@@ -4428,6 +4428,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
   .nos-theme .nos-cr-row .doc-layout--aside-first > [data-doc-aside] {
     order: 3;
+    align-self: stretch; /* the ticket's wrapper is an inline-size container: centred, it collapses to 0px wide */
   }
   .nos-theme .nos-cr-text {
     order: 4;
