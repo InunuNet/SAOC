@@ -144,12 +144,12 @@ export default async function EventDetailPage({
       >
         {/* National Show events carry the show band (SV-1): straight after the hero when there is no
             document layout, otherwise after the layout */}
-        {show && !layout ? <ShowBand show={show} /> : null}
+        {show && !layout ? <ShowBand show={show} split="event" /> : null}
       </RouteHero>
 
       {layout}
 
-      {show && layout ? <ShowBand show={show} /> : null}
+      {show && layout ? <ShowBand show={show} split="event" /> : null}
     </>
   );
 }

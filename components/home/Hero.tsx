@@ -7,6 +7,7 @@ import { ArrowRight, Pause, Play } from 'lucide-react';
 import type { SanityImageSource } from '@sanity/image-url';
 
 import { HOME_HERO_SLIDES } from '@/lib/data/home-hero-slides';
+import { heroSourceAspect } from '@/lib/data/saoc-hero-photos';
 import { formatShowDateRange, showLabelWithEdition, showYearOf } from '@/lib/show-identity';
 import type { ShowIdentity } from '@/types';
 import { nosUrl } from '@/lib/site-hosts';
@@ -31,11 +32,18 @@ function slideLabel(index: number, total: number, subject: string): string {
 const HERO_CTA_BASE =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 border px-6 py-3 font-sans text-[14px] font-medium transition-colors duration-150 sm:w-auto focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
 
-// Below 768px the copy sits over the bloom, so the one scrim element evens out its gradient there
-// (measured: the gold italic stays at or above 4.5:1 over the brightest petal at 390px). The
-// important modifier is needed because the base gradient in globals.css is unlayered.
-const PHONE_SCRIM_CLASSES =
-  'absolute inset-0 -z-10 max-md:!bg-[linear-gradient(to_top,rgb(34_40_31/0.94)_0%,rgb(34_40_31/0.9)_60%,rgb(34_40_31/0.84)_100%)]';
+// The full-bleed hero's box is at least the 860px min-height of .home-hero (globals.css), so a source wider
+// than 860px x its aspect is height-driven and `sizes` must say so.
+const HERO_BOX_HEIGHT = 860;
+// The object-position drift moves the photograph this far (percent) over a slide's time on screen.
+const DRIFT_X = 4;
+const DRIFT_Y = 6;
+
+/** The end of a slide's slow drift: its object-position nudged by DRIFT_X and DRIFT_Y, capped at 100%. */
+function driftEnd(position: string): string {
+  const [x, y] = position.split(' ').map(Number.parseFloat);
+  return `${Math.min(100, x + DRIFT_X)}% ${Math.min(100, y + DRIFT_Y)}%`;
+}
 
 const CONTROL_FOCUS =
   'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
@@ -85,52 +93,58 @@ export function Hero({ show }: HeroProps) {
       aria-labelledby={HEADING_ID}
       data-home-hero
       data-paused={userPaused ? '' : undefined}
-      className="home-hero relative isolate flex items-end overflow-hidden bg-primary-800 on-dark md:items-center"
+      className="home-hero relative isolate flex flex-col overflow-hidden bg-primary-800 on-dark lg:flex-row lg:items-center"
       style={{ '--hero-interval': `${CAROUSEL_INTERVAL_MS}ms` } as CSSProperties}
     >
-      {/* Crossfade image stack: opacity, plus a slow transform drift on the slide that is showing. */}
-      {slides.map((slide, i) => {
-        const isActive = activeIdx === i;
-        const drifting = !reduceMotion && (isActive || leavingIdx === i);
-        return (
-          <div
-            key={slide.key}
-            role="group"
-            aria-roledescription="slide"
-            aria-label={slideLabel(i, slides.length, slide.alt)}
-            aria-hidden={isActive ? undefined : true}
-            data-hero-slide={slide.key}
-            className={[
-              'absolute inset-0 -z-10 transition-opacity duration-[1400ms] ease-(--ease)',
-              isActive ? 'opacity-100' : 'opacity-0',
-            ].join(' ')}
-          >
-            <div className={['absolute inset-0', drifting ? 'home-hero-drift' : ''].join(' ')}>
+      {/* Crossfade image stack: opacity, plus a slow object-position drift on the slide that is showing.
+          Up to 1023px the hero stacks: this is a 2/1 band with nothing over it and the copy sits under
+          it on solid sage; from 1024px it is the full-bleed background of the copy. */}
+      <div
+        data-home-hero-media
+        className="relative aspect-[2/1] w-full lg:absolute lg:inset-0 lg:aspect-auto"
+      >
+        {slides.map((slide, i) => {
+          const isActive = activeIdx === i;
+          const drifting = !reduceMotion && (isActive || leavingIdx === i);
+          const aspect = heroSourceAspect(slide.src);
+          return (
+            <div
+              key={slide.key}
+              role="group"
+              aria-roledescription="slide"
+              aria-label={slideLabel(i, slides.length, slide.alt)}
+              aria-hidden={isActive ? undefined : true}
+              data-hero-slide={slide.key}
+              className={[
+                'absolute inset-0 transition-opacity duration-[1400ms] ease-(--ease)',
+                isActive ? 'opacity-100' : 'opacity-0',
+              ].join(' ')}
+            >
               <Image
                 src={slide.src}
-                alt={slide.alt}
+                alt=""
                 fill
-                className="home-hero-img"
+                className={['home-hero-img', drifting ? 'home-hero-drift' : ''].join(' ')}
                 style={
                   {
                     '--hero-pos': slide.position,
-                    '--hero-pos-sm': slide.positionSmall,
+                    '--hero-pos-end': driftEnd(slide.position),
                   } as CSSProperties
                 }
                 priority={i === 0}
-                sizes="(max-width: 767px) 1350px, 100vw"
+                sizes={`(max-width: 1023px) max(100vw, calc(50vw * ${aspect})), max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px)`}
                 quality={HERO_IMAGE_QUALITY}
               />
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
 
-      {/* One localised scrim (NOS Design ruling A4): the copy column is dark, the right 30% is bare photograph. */}
-      <div aria-hidden="true" data-hero-scrim="copy" className={PHONE_SCRIM_CLASSES} />
+      {/* One localised scrim (NOS Design ruling A4): it covers the copy column only; the rest is bare photograph. */}
+      <div aria-hidden="true" data-hero-scrim="copy" className="absolute inset-0 max-lg:hidden" />
 
       {/* Content: left-aligned in the container, a 640px column (A3). */}
-      <div className="saoc-container w-full py-16 md:py-24">
+      <div className="saoc-container relative z-10 w-full py-10 lg:py-24">
         <div className="flex max-w-[640px] flex-col items-start text-left">
           <span className="mb-8 rounded-full border border-ivory/30 bg-white/10 px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.22em] text-ivory">
             SINCE 1968 · BLOEMFONTEIN

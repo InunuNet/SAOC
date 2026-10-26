@@ -1,15 +1,23 @@
 // =============================================================
 // SAOC — components/ui/PageHero.tsx
-// Server Component — shared full-bleed hero for interior pages.
+// Server Component — shared hero for interior pages (mission saoc-inner-heroes, NOS Design 2026-10-26).
+// From 768px up the photograph is full bleed with its bloom bottom-left (the left 44% is the bare
+// photograph) and the copy in a left-aligned column that starts at 52%, on a scrim local to that
+// column. Below 768px the hero stacks: a 2/1 photograph band, the copy under it on solid sage.
+// With no `image` the hero is typographic: the same copy on solid sage, no media and no scrim.
 // =============================================================
 
 import Image from 'next/image';
 import type { ReactNode } from 'react';
 import { normaliseHeroFacts, type HeroFact } from '@/lib/hero-facts';
 import heroSourceWidths from '@/lib/hero-source-widths.json';
+import { heroSourceAspect } from '@/lib/data/saoc-hero-photos';
 
 interface PageHeroProps {
-  image: string;
+  /** The photograph (a path in public/images). Omit it for the typographic hero. */
+  image?: string;
+  /** CSS object-position of the photograph: the ruled crop for the route. */
+  imagePosition?: string;
   eyebrow?: string;
   heading: ReactNode;
   lede?: string;
@@ -17,65 +25,97 @@ interface PageHeroProps {
   facts?: readonly HeroFact[];
   /** Rendered under the lede, e.g. a call to action. */
   actions?: ReactNode;
-  minHeight?: string;
-  /** The pre-PG-1 hero (480px floor, copy at the foot), kept only on the routes PG-1 exempts. */
+  /** Marks the routes the PG-1 content-driven spacing exempts (the show band that follows stays flush). */
   exempt?: boolean;
 }
 
-// PG-1: a content-driven hero. The floor scales with the viewport and the copy, centred with its pill,
-// grows past it only for a longer lede, the facts row or actions.
-const HERO_MIN_HEIGHT = 'clamp(320px, 22vw, 380px)';
-const EXEMPT_MIN_HEIGHT = '480px';
+const HERO_MIN_HEIGHT_CLASS = 'md:min-h-[480px]';
+// The wide hero's box is at least this tall, so a source wider than the box x its height is height-driven.
+const HERO_BOX_HEIGHT = 480;
+const STACK_BELOW_QUERY = '(max-width: 767px)';
+// The copy zone: the scrim is clear through the bloom side (44%) and reaches its full strength by 52%,
+// where the copy column starts. Sage only (--primary-800), no wash over the bloom.
+const SCRIM_CLEAR_UNTIL = '44%';
+const SCRIM_FULL_FROM = '52%';
+const SCRIM_ALPHA = 0.8;
+const SCRIM_BACKGROUND = `linear-gradient(90deg, transparent 0, transparent ${SCRIM_CLEAR_UNTIL}, rgb(34 40 31 / ${SCRIM_ALPHA}) ${SCRIM_FULL_FROM})`;
 
 export function PageHero({
   image,
+  imagePosition = '50% 50%',
   eyebrow,
   heading,
   lede,
   facts,
   actions,
-  minHeight,
   exempt = false,
 }: PageHeroProps) {
   const heroFacts = normaliseHeroFacts(facts);
+  const aspect = image ? heroSourceAspect(image) : null;
+  // A cover image is driven by the longer of box width and box height x aspect. Wide: the box is the
+  // viewport wide and at least HERO_BOX_HEIGHT tall. Stacked: a 2/1 band, so its height is half the width.
+  const sizes =
+    aspect === null
+      ? undefined
+      : `${STACK_BELOW_QUERY} max(100vw, calc(50vw * ${aspect})), max(100vw, ${Math.ceil(HERO_BOX_HEIGHT * aspect)}px)`;
+
   return (
     <section
       data-page-hero
+      data-page-hero-variant={image ? undefined : 'type'}
       data-hero-exempt={exempt ? '' : undefined}
-      className={`relative isolate flex overflow-hidden ${exempt ? 'items-end' : 'items-center'}`}
-      style={{ minHeight: minHeight ?? (exempt ? EXEMPT_MIN_HEIGHT : HERO_MIN_HEIGHT) }}
+      className={`relative isolate overflow-hidden bg-primary-800 md:flex md:items-center ${HERO_MIN_HEIGHT_CLASS}`}
     >
-      <Image
-        src={image}
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        quality={image in heroSourceWidths ? 88 : undefined}
-        className="object-cover"
-        aria-hidden="true"
-      />
+      {image ? (
+        <>
+          <div
+            data-page-hero-media
+            className="relative aspect-[2/1] w-full md:absolute md:inset-0 md:aspect-auto"
+          >
+            <Image
+              src={image}
+              alt=""
+              fill
+              priority
+              sizes={sizes}
+              quality={image in heroSourceWidths ? 88 : undefined}
+              className="object-cover"
+              style={{ objectPosition: imagePosition }}
+              aria-hidden="true"
+            />
+          </div>
+          <div
+            data-hero-scrim="copy"
+            aria-hidden="true"
+            className="absolute inset-0 max-md:hidden"
+            style={{ backgroundImage: SCRIM_BACKGROUND }}
+          />
+        </>
+      ) : null}
       <div
-        className={`absolute inset-0 bg-gradient-to-t ${
-          heroFacts
-            ? 'from-[var(--primary-800)]/95 via-[var(--primary-800)]/65 via-60% to-[var(--primary-800)]/45'
-            : exempt
-              ? 'from-[var(--primary-800)]/85 via-[var(--primary-800)]/55 to-[var(--primary-800)]/25'
-              : 'from-[var(--primary-800)]/88 via-[var(--primary-800)]/75 to-[var(--primary-800)]/60'
+        data-page-hero-copy
+        className={`relative z-10 flex w-full flex-col items-start px-[var(--container-pad)] py-10 text-left md:py-16 ${
+          image ? 'md:ml-[52%] md:w-[48%] md:pl-0' : 'saoc-container'
         }`}
-        aria-hidden="true"
-      />
-      <div className={`saoc-container relative z-10 w-full ${exempt ? 'pb-16 pt-28' : 'py-16'} flex flex-col items-center text-center`}>
+      >
         {eyebrow ? (
-          <span className={`inline-flex items-center rounded-full border border-white/25 ${exempt ? 'bg-white/10' : 'bg-[var(--primary-800)]/60'} px-3.5 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory`}>
+          <span
+            data-page-hero-eyebrow
+            className="inline-flex items-center rounded-full border border-white/25 bg-[var(--primary-800)]/60 px-3.5 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-ivory"
+          >
             {eyebrow}
           </span>
         ) : null}
-        <h1 className={`${eyebrow ? 'mt-5 ' : ''}max-w-3xl font-serif tracking-[-0.015em] font-light text-[clamp(42px,5.4vw,72px)] leading-[1.05] text-ivory`}>
+        <h1
+          className={`${eyebrow ? 'mt-5 ' : ''}max-w-3xl font-serif tracking-[-0.015em] font-light text-[clamp(42px,5.4vw,72px)] leading-[1.05] text-ivory`}
+        >
           {heading}
         </h1>
         {lede ? (
-          <p className="mt-5 max-w-2xl font-sans text-[16px] leading-[1.55] text-ivory/85 text-pretty">
+          <p
+            data-page-hero-lede
+            className="mt-5 max-w-2xl font-sans text-[16px] leading-[1.55] text-ivory text-pretty"
+          >
             {lede}
           </p>
         ) : null}
@@ -89,7 +129,7 @@ export function PageHero({
             ))}
           </dl>
         ) : null}
-        {actions}
+        {actions ? <div className="[&>div]:justify-start">{actions}</div> : null}
       </div>
     </section>
   );

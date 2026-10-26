@@ -1,0 +1,50 @@
+[
+  {
+    "name": "orchid-purple-flip",
+    "from": "public/images/orchid-purple.jpg",
+    "rect": { "x0": 0, "y0": 450, "x1": 5308, "y1": 2800 },
+    "flip": true
+  },
+  {
+    "name": "orchid-dark-flip",
+    "from": "public/images/orchid-dark.jpg",
+    "rect": { "x0": 0, "y0": 790, "x1": 5184, "y1": 2560 },
+    "flip": true
+  },
+  {
+    "name": "orchid-purple-home",
+    "from": "public/images/orchid-purple.jpg",
+    "rect": { "x0": 408, "y0": 560, "x1": 5308, "y1": 2904 },
+    "flip": false
+  },
+  {
+    "name": "orchid-violet-contact",
+    "from": "public/images/orchid-violet.jpg",
+    "rect": { "x0": 0, "y0": 1900, "x1": 4112, "y1": 3720 },
+    "flip": false
+  },
+  {
+    "name": "orchid-violet-about",
+    "from": "public/images/orchid-violet.jpg",
+    "rect": { "x0": 2300, "y0": 1100, "x1": 7327, "y1": 4000 },
+    "flip": false
+  },
+  {
+    "name": "orchid-violet-society",
+    "from": "public/images/orchid-violet.jpg",
+    "rect": { "x0": 0, "y0": 400, "x1": 4112, "y1": 2600 },
+    "flip": false
+  },
+  {
+    "name": "orchid-purple-band",
+    "from": "public/images/orchid-purple.jpg",
+    "rect": { "x0": 700, "y0": 750, "x1": 5308, "y1": 2050 },
+    "flip": false
+  },
+  {
+    "name": "orchid-dark-showband",
+    "from": "public/images/orchid-dark.jpg",
+    "rect": { "x0": 300, "y0": 850, "x1": 2700, "y1": 2600 },
+    "flip": false
+  }
+]

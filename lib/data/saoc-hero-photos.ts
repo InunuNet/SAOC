@@ -1,50 +1,66 @@
 // =============================================================
 // SAOC — lib/data/saoc-hero-photos.ts
-// The ONE map of which photograph and which crop each SAOC route's hero uses (critique fix 4,
-// 2026-10-25), modelled on components/nos/hero-photos.ts. Only the five hero sources in
-// public/images are used. Routes that sit next to each other in the primary nav (About, Societies,
-// Judging, Events, then Sponsors, Contact) never share a photograph, and no route's crop repeats
-// its neighbour's. `objectPosition` is read off the sharp region of each source: the in-focus
-// blooms, not the blurred ground. The hero box is a wide band, so only the vertical band that
-// holds those blooms is shown at 1440 and 2056.
+// The ONE map of which photograph and which crop each SAOC route's hero uses, applied by
+// components/ui/RouteHero.tsx. The picks are NOS Design's of 2026-10-25/26 (mission saoc-inner-heroes,
+// goldens/crop-map.json): the bloom sits bottom-left (0-44% of the hero) and the copy starts at 52%.
+// A name ending in -flip, or a cut such as orchid-violet-about, is a build-time derived source
+// (lib/hero-derived-sources.json, scripts/generate-image-variants.mjs): the flip is a file, never a CSS
+// transform. `objectPosition` is the ruled crop. A route with `typographic: true` has no photograph
+// (the solid sage hero). /404, /events/[slug] and /events/submit have no ruled crop: they keep their
+// photograph and take the shared hero treatment only.
 // =============================================================
 
-export interface SaocHeroPhoto {
-  src: string;
-  /** CSS object-position of the cropped band. */
-  objectPosition: string;
-}
+import derivedSources from '@/lib/hero-derived-sources.json';
 
-const VIOLET = '/images/orchid-violet.jpg';
-const PURPLE = '/images/orchid-purple.jpg';
-const DARK = '/images/orchid-dark.jpg';
-const PINK = '/images/orchid-pink.jpg';
-const YELLOW = '/images/orchid-yellow.jpg';
+export type SaocHeroPhoto =
+  | { typographic?: false; src: string; objectPosition: string }
+  | { typographic: true };
 
 export const SAOC_HERO_PHOTOS: Readonly<Record<string, SaocHeroPhoto>> = {
-  // Primary nav, in nav order: neighbours share neither a photograph nor a crop.
-  '/about': { src: VIOLET, objectPosition: '52% 42%' },
-  '/societies': { src: PINK, objectPosition: '50% 38%' },
-  '/judging': { src: DARK, objectPosition: '72% 42%' },
-  '/events': { src: PURPLE, objectPosition: '52% 33%' },
-  '/sponsors': { src: YELLOW, objectPosition: '38% 58%' },
-  '/contact': { src: VIOLET, objectPosition: '62% 8%' },
-  // Pages one level under a nav page take a different photograph from their parent.
-  '/societies/[slug]': { src: PURPLE, objectPosition: '28% 42%' },
-  '/events/[slug]': { src: DARK, objectPosition: '72% 42%' },
-  '/events/submit': { src: PURPLE, objectPosition: '80% 45%' },
-  // Footer and utility pages.
-  '/members': { src: PINK, objectPosition: '50% 62%' },
-  '/memorandum-of-incorporation': { src: DARK, objectPosition: '20% 45%' },
-  '/media-kit': { src: PURPLE, objectPosition: '80% 45%' },
-  '/privacy': { src: PURPLE, objectPosition: '80% 45%' },
-  '/terms': { src: YELLOW, objectPosition: '38% 58%' },
-  '/refunds': { src: VIOLET, objectPosition: '52% 42%' },
-  '/404': { src: DARK, objectPosition: '72% 42%' },
+  '/about': { src: '/images/orchid-violet-about.jpg', objectPosition: '0% 63%' },
+  '/societies': { src: '/images/orchid-purple-flip.jpg', objectPosition: '0% 20%' },
+  '/judging': { src: '/images/orchid-purple-flip.jpg', objectPosition: '0% 40%' },
+  '/events': { src: '/images/orchid-purple-flip.jpg', objectPosition: '0% 60%' },
+  '/sponsors': { src: '/images/orchid-dark-flip.jpg', objectPosition: '0% 100%' },
+  '/contact': { src: '/images/orchid-violet-contact.jpg', objectPosition: '0% 80%' },
+  '/societies/[slug]': { src: '/images/orchid-violet-society.jpg', objectPosition: '0% 50%' },
+  // No ruled crop (NOS Design 2026-10-26 is silent): the current photograph and position stand.
+  '/events/[slug]': { src: '/images/orchid-dark.jpg', objectPosition: '72% 42%' },
+  '/events/submit': { src: '/images/orchid-purple.jpg', objectPosition: '80% 45%' },
+  '/404': { src: '/images/orchid-dark.jpg', objectPosition: '72% 42%' },
+  // Typographic: solid sage, no photograph.
+  '/members': { typographic: true },
+  '/memorandum-of-incorporation': { typographic: true },
+  '/media-kit': { typographic: true },
+  '/privacy': { typographic: true },
+  '/terms': { typographic: true },
+  '/refunds': { typographic: true },
 };
 
 export function saocHeroPhoto(route: string): SaocHeroPhoto {
   const photo = SAOC_HERO_PHOTOS[route];
   if (!photo) throw new Error(`saocHeroPhoto: no hero photograph mapped for ${route}`);
   return photo;
+}
+
+// Pixel size of the originals in public/images that a hero or band uses directly.
+const ORIGINAL_SIZES: Readonly<Record<string, readonly [number, number]>> = {
+  '/images/orchid-dark.jpg': [5184, 3456],
+  '/images/orchid-purple.jpg': [5308, 4160],
+  '/images/orchid-violet.jpg': [7327, 4885],
+};
+const ASPECT_PRECISION = 1000;
+
+/**
+ * Width over height of a hero source file: a derived cut from its manifest rect, an original from its
+ * pixel size. Rounded UP to 3 places, so a `sizes` computed from it never requests a hair too little.
+ * The callers derive `sizes` from it (a height-driven cover box needs boxHeight x aspect, not 100vw).
+ */
+export function heroSourceAspect(src: string): number {
+  const cut = derivedSources.find((entry) => `/images/${entry.name}.jpg` === src);
+  const size = cut
+    ? ([cut.rect.x1 - cut.rect.x0, cut.rect.y1 - cut.rect.y0] as const)
+    : ORIGINAL_SIZES[src];
+  if (!size) throw new Error(`heroSourceAspect: no pixel size known for ${src}`);
+  return Math.ceil((size[0] / size[1]) * ASPECT_PRECISION) / ASPECT_PRECISION;
 }

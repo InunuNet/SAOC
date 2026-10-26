@@ -29,10 +29,33 @@ export interface ShowBandProps {
   detailsHref?: string;
   /** False where the page already carries a photograph above the fold (/events): the band is its text panel alone. */
   showPhoto?: boolean;
+  /**
+   * "event" is the National Show event page's 42/58 photo-to-copy split from 1025px up (NOS Design). The
+   * home page and /events keep the default 1fr/1.1fr split from 1100px.
+   */
+  split?: 'event';
 }
 
-/** The sharp region of the yellow orchid source (the in-focus lip and column), not the blurred ground. */
-const PHOTO_OBJECT_POSITION = '38% 58%';
+/** The dark-orchid cut (lib/hero-derived-sources.json, orchid-dark-showband): its sharp left cluster fills the box. */
+const PHOTO_OBJECT_POSITION = '50% 50%';
+
+// Tailwind needs whole class names, so each split carries its full set. `sizes` is the photo column's
+// slot: the 2400-wide cut covers a box up to 1200 css wide at 2x; below the side-by-side breakpoint the
+// 3/2 block is width-driven, so 100vw is right.
+const SPLITS = {
+  default: {
+    grid: 'grid grid-cols-1 min-[1100px]:grid-cols-[1fr_1.1fr] min-[1100px]:min-h-[620px]',
+    photo: 'relative w-full aspect-[3/2] min-[1100px]:aspect-auto min-[1100px]:min-h-[620px]',
+    copy: 'flex flex-col justify-center px-8 py-[60px] min-[1100px]:px-20 min-[1100px]:py-[90px] on-dark',
+    sizes: '(min-width: 1100px) 1200px, 100vw',
+  },
+  event: {
+    grid: 'grid grid-cols-1 min-[1025px]:grid-cols-[42fr_58fr] min-[1025px]:min-h-[620px]',
+    photo: 'relative w-full aspect-[3/2] min-[1025px]:aspect-auto min-[1025px]:min-h-[620px]',
+    copy: 'flex flex-col justify-center px-8 py-[60px] min-[1025px]:px-20 min-[1025px]:py-[90px] on-dark',
+    sizes: '(min-width: 1025px) 1200px, 100vw',
+  },
+} as const;
 
 /** Inclusive day count across the show, derived from the dataset — never a literal. */
 function formatDuration(start?: string | null, end?: string | null): string | null {
@@ -96,7 +119,8 @@ function CountdownBox({ target, edition }: { target: Date | null; edition?: numb
   );
 }
 
-export function ShowBand({ show, detailsHref, showPhoto = true }: ShowBandProps) {
+export function ShowBand({ show, detailsHref, showPhoto = true, split }: ShowBandProps) {
+  const layout = SPLITS[split ?? 'default'];
   const countdownDate = show?.countdownDate ?? null;
   const target = useMemo(() => {
     const candidate = countdownDate ? new Date(countdownDate) : null;
@@ -113,22 +137,19 @@ export function ShowBand({ show, detailsHref, showPhoto = true }: ShowBandProps)
   return (
     <section data-home-section="show-band" className="bg-primary-800">
       <div
-        className={
-          showPhoto
-            ? 'grid grid-cols-1 min-[1100px]:grid-cols-[1fr_1.1fr] min-[1100px]:min-h-[620px]'
-            : 'grid grid-cols-1'
-        }
+        className={showPhoto ? layout.grid : 'grid grid-cols-1'}
       >
         {/* Photo: flush to the viewport edge, no scrim (no text sits on it) */}
         {showPhoto ? (
-          <div data-show-band-image className="relative w-full aspect-[3/2] min-[1100px]:aspect-auto min-[1100px]:min-h-[620px]">
+          <div data-show-band-image className={layout.photo}>
             <Image
-              src="/images/orchid-yellow.jpg"
-              alt="Yellow orchid on the show bench"
+              src="/images/orchid-dark-showband.jpg"
+              alt="Dark orchid on the show bench"
               fill
               className="object-cover"
               style={{ objectPosition: PHOTO_OBJECT_POSITION }}
-              sizes="(min-width: 1100px) 48vw, 100vw"
+              sizes={layout.sizes}
+              quality={88}
             />
           </div>
         ) : null}
@@ -136,7 +157,7 @@ export function ShowBand({ show, detailsHref, showPhoto = true }: ShowBandProps)
         <div
           className={
             showPhoto
-              ? 'flex flex-col justify-center px-8 py-[60px] min-[1100px]:px-20 min-[1100px]:py-[90px] on-dark'
+              ? layout.copy
               : 'saoc-container w-full flex flex-col justify-center py-[60px] min-[1100px]:py-20 on-dark'
           }
         >

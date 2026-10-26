@@ -25,6 +25,10 @@ const { deviceSizes, imageSizes } = JSON.parse(await readFile('lib/image-widths.
 const ALL_WIDTHS = [...new Set([...deviceSizes, ...imageSizes])].sort((a, b) => a - b);
 const WIDTHS = ALL_WIDTHS.filter((width) => width <= STANDARD_MAX_WIDTH);
 const NATIVE_WIDTHS = JSON.parse(await readFile('lib/hero-source-widths.json', 'utf8'));
+// Hero cuts and flips (lib/hero-derived-sources.json): each entry is a rect of an original, optionally mirrored with
+// `.flop()`, emitted as variants of /images/<name>.jpg. No cut JPEG is committed and no CSS transform flips anything.
+const DERIVED_MANIFEST = 'lib/hero-derived-sources.json';
+const DERIVED_SOURCES = JSON.parse(await readFile(DERIVED_MANIFEST, 'utf8'));
 
 /** The widths a source gets: the standard set, plus the large set and its native width for a full-bleed hero source. */
 function widthsFor(source) {
@@ -65,14 +69,10 @@ async function isFresh(output, sourceMtimeMs) {
 const claimed = new Map();
 let generated = 0;
 let skipped = 0;
-for await (const source of walk(SOURCE_ROOT)) {
-  // Source extension stays in the output name so a.jpg and a.png never collide.
-  const relative = path
-    .relative(SOURCE_ROOT, source)
-    .replace(/\.[^.]+$/, (ext) => ext.toLowerCase());
-  const { mtimeMs } = await stat(source);
+
+/** Writes (or skips as fresh) every variant of one image; `pipeline(width)` returns the sharp pipeline sized to that width. */
+async function emitVariants(source, relative, isHero, mtimeMs, pipeline) {
   await mkdir(path.dirname(path.join(OUTPUT_ROOT, relative)), { recursive: true });
-  const isHero = HERO_SOURCES.has(source);
   for (const [width, isLarge] of widthsFor(source)) for (const [suffix, webp] of encodingsFor(isHero, isLarge)) {
     const output = path.join(OUTPUT_ROOT, `${relative}-${width}${suffix}.webp`);
     const key = output.toLowerCase();
@@ -84,11 +84,45 @@ for await (const source of walk(SOURCE_ROOT)) {
       skipped += 1;
       continue;
     }
-    await sharp(source)
-      .resize({ width, withoutEnlargement: true })
-      .webp(webp)
-      .toFile(output);
+    await (await pipeline(width)).webp(webp).toFile(output);
     generated += 1;
   }
+}
+
+for await (const source of walk(SOURCE_ROOT)) {
+  // Source extension stays in the output name so a.jpg and a.png never collide.
+  const relative = path
+    .relative(SOURCE_ROOT, source)
+    .replace(/\.[^.]+$/, (ext) => ext.toLowerCase());
+  const { mtimeMs } = await stat(source);
+  await emitVariants(source, relative, HERO_SOURCES.has(source), mtimeMs, (width) =>
+    sharp(source).resize({ width, withoutEnlargement: true }));
+}
+
+/** The rect (and flip) of one manifest entry as raw pixels, decoded once and resized per width. */
+async function cutOf(entry) {
+  const { x0, y0, x1, y1 } = entry.rect;
+  const { width: sourceWidth, height: sourceHeight } = await sharp(entry.from).metadata();
+  if (!(x0 >= 0 && y0 >= 0 && x1 > x0 && y1 > y0 && x1 <= sourceWidth && y1 <= sourceHeight)) {
+    throw new Error(`${entry.name}: rect ${x0},${y0}-${x1},${y1} is outside ${entry.from} (${sourceWidth}x${sourceHeight})`);
+  }
+  let cut = sharp(entry.from).extract({ left: x0, top: y0, width: x1 - x0, height: y1 - y0 });
+  if (entry.flip) cut = cut.flop();
+  return cut.raw().toBuffer({ resolveWithObject: true });
+}
+
+const manifestMtimeMs = (await stat(DERIVED_MANIFEST)).mtimeMs;
+for (const entry of DERIVED_SOURCES) {
+  const relative = `${entry.name}.jpg`;
+  const width = entry.rect.x1 - entry.rect.x0;
+  if (NATIVE_WIDTHS[`/images/${relative}`] !== width) {
+    throw new Error(`${entry.name}: lib/hero-source-widths.json must list /images/${relative} at ${width}`);
+  }
+  const mtimeMs = Math.max(manifestMtimeMs, (await stat(entry.from)).mtimeMs);
+  let cut = null;
+  await emitVariants(path.join(SOURCE_ROOT, relative), relative, true, mtimeMs, async (outputWidth) => {
+    cut ??= await cutOf(entry);
+    return sharp(cut.data, { raw: cut.info }).resize({ width: outputWidth, withoutEnlargement: true });
+  });
 }
 console.log(`image variants: ${generated} generated, ${skipped} up to date`);
