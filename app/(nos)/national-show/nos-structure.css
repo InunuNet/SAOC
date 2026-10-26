@@ -1219,11 +1219,18 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   overflow-wrap: break-word;
   text-wrap: balance;
 }
-/* A short inner title holds one line from 768 up. WOSA Conference fills 95% of its column, so in the
+/* A short inner title holds one line from 1024 up (below that the copy column is 58% and wraps). WOSA Conference fills 95% of its column, so in the
    fallback face (before the webfont lands) it wrapped and the sub-nav jumped when the font arrived. */
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .nos-theme .nos-hero-inner .nos-hero-title:not(.is-long) {
     white-space: nowrap !important; /* the loader's p has an inline text-wrap: balance, which resets the wrap mode */
+  }
+}
+/* The italic Fraunces face loads after first paint, and the fallback italic sets the theme lede one line
+   longer than the real face below 1024. On the symposium hero, reserving three lines keeps the sub-nav still when the face lands. */
+@media (max-width: 1023.98px) {
+  .nos-theme .nos-hero-inner:not(.nos-hero-about) .nos-hero-lede[data-nos-lede='theme'] {
+    min-height: 3lh;
   }
 }
 /* The exhibitor entry guide is a hero and one contact panel. */
@@ -3354,7 +3361,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 /* DS-1 (c) .ihero: the photograph's box runs from 38% to the right edge with no radius, its left 22%
    masked into the black, under one 90deg ramp. The copy overlaps the masked part; from 1024 its column
    is min(1080px, 62% of the content width). Below 768 the 2:1 band of PG-1 stands. */
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-media {
     inset: 0 0 0 38%;
     width: auto;
@@ -3368,17 +3375,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     inset: 0 0 0 38%;
     z-index: 1;
     pointer-events: none;
-    background: linear-gradient(
-      90deg,
-      rgba(11, 10, 20, 0.9) 0%,
-      rgba(11, 10, 20, 0.55) 24%,
-      rgba(11, 10, 20, 0.18) 52%,
-      rgba(11, 10, 20, 0.04) 100%
-    );
-  }
-  .nos-theme .nos-hero-inner.nos-hero-photo .nos-hero-copy {
-    width: auto;
-    padding-right: var(--nos-axis-pad);
   }
 }
 @media (min-width: 1024px) {
@@ -3426,9 +3422,9 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .hero-facts dd {
   text-wrap: balance;
 }
-/* Three facts in the 1024-1279 copy column leave the last one (the venue) about 219px, which wraps it to
+/* Three facts in the 768-1279 copy column leave the last one (the venue) about 219px, which wraps it to
    three lines. It takes the row under the other two instead; the row is no taller than the wrapped one. */
-@media (min-width: 1024px) and (max-width: 1279.98px) {
+@media (min-width: 768px) and (max-width: 1279.98px) {
   .nos-theme .hero-facts[data-fact-count="3"] > div:last-child {
     grid-column: 1 / -1;
   }
@@ -4394,7 +4390,9 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   min-height: 181px;
 }
 @media (min-width: 768px) {
-  .nos-theme .nos-hero-facts-skeleton,
+  .nos-theme .nos-hero-facts-skeleton {
+    min-height: 147px;
+  }
   .nos-theme .nos-hero-facts-skeleton--cr {
     min-height: 76px;
   }

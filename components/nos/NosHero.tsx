@@ -42,10 +42,10 @@ import { subNavGroupFor } from './nos-subnav-groups';
 // up to its native width (lib/image-loader.ts), so it is never stretched on a high-density screen.
 const FULL_BLEED_QUALITY = 88;
 
-// DS-1 (c): the photo box is 62% wide from 768px (38% to the right edge), a full-width band below it.
+// DS-1 (c): the photo box is 62% wide from 1024px (38% to the right edge), 42% from 768px, a full-width band below it.
 // From 768 to 1023 the box is narrower than the 1.9:1 crop is wide at hero height, so object-fit: cover
-// paints the crop at height x aspect (about 920px at the tallest hero measured there).
-const INNER_PHOTO_SIZES = '(min-width: 1024px) 62vw, (min-width: 768px) max(62vw, 920px), 100vw';
+// paints the crop at height x aspect (about 1126px at the tallest hero measured there, 563px).
+const INNER_PHOTO_SIZES = '(min-width: 1024px) 62vw, (min-width: 768px) max(62vw, 1200px), 100vw';
 
 // LT-1: an inner h1 longer than this gets `.is-long`, a smaller clamp that holds it to one line in the 62% column.
 const LONG_TITLE_CHARS = 20;
