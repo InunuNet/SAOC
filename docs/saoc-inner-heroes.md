@@ -30,4 +30,4 @@ Uses the `orchid-dark-showband` cut. `split="event"` (event page only) gives the
 
 ## Known gaps
 
-`/about` has no PhotoBand (removed by #109), so `orchid-purple-band` is built but unused. `/judging` PhotoBand now uses `orchid-dark.jpg`; its alt text still says "Purple orchid" (a page-copy change outside the contract's diff scope).
+`/about` has no PhotoBand (removed by #109), so `orchid-purple-band` is built but unused. `/judging` PhotoBand now uses `orchid-dark.jpg`; its alt reads "Dark orchid on the show bench".

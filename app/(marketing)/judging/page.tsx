@@ -183,7 +183,7 @@ export default async function JudgingPage() {
 
       <PhotoBand
         image="/images/orchid-dark.jpg"
-        alt="Purple orchid on the show bench"
+        alt="Dark orchid on the show bench"
         objectPosition="80% 45%"
         caption={withhold && isUnsourced(PHOTO_CAPTION) ? undefined : PHOTO_CAPTION}
         marked={!withhold}
