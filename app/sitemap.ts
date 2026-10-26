@@ -11,6 +11,7 @@ import { WORKSHOPS_PRODUCT_SLUG } from '@/lib/data/ticket-presentation';
 import { nosPath } from '@/lib/nos-paths';
 import { NOS_EXTRA_STATIC_ROUTES, nosTicketSlugPaths } from '@/lib/nos-sitemap-routes';
 import { SAOC_STATIC_ROUTES } from '@/lib/saoc-sitemap-routes';
+import { sitemapEntry } from '@/lib/sitemap-entry';
 import { requestSite } from '@/lib/request-site';
 import { nosOrigin, saocOrigin } from '@/lib/site-hosts';
 
@@ -41,6 +42,10 @@ interface NosManifestRoute {
 interface NosRouteManifest {
   routes: NosManifestRoute[];
 }
+interface SlugRow {
+  slug: string;
+  updatedAt?: string | null;
+}
 
 function changeFrequencyFor(archetype: string): MetadataRoute.Sitemap[number]['changeFrequency'] {
   if (archetype === 'transactional') return 'weekly';
@@ -60,12 +65,12 @@ function buildNationalShowChildRoutes(baseUrl: string, showPastShows: boolean): 
   return manifest.routes
     .filter((route) => route.indexable && !route.dynamic)
     .filter((route) => showPastShows || route.slug !== PAST_SHOWS_HREF)
-    .map((route) => ({
-      url: `${baseUrl}${nosPath(route.slug)}`,
-      lastModified: new Date(),
-      changeFrequency: changeFrequencyFor(route.archetype),
-      priority: priorityFor(route.archetype),
-    }));
+    .map((route) =>
+      sitemapEntry(`${baseUrl}${nosPath(route.slug)}`, {
+        changeFrequency: changeFrequencyFor(route.archetype),
+        priority: priorityFor(route.archetype),
+      }),
+    );
 }
 
 async function buildNosSitemap(): Promise<MetadataRoute.Sitemap> {
@@ -84,19 +89,19 @@ async function buildNosSitemap(): Promise<MetadataRoute.Sitemap> {
   // read, so the sitemap can never list a year the archive doesn't actually render.
   const archiveYearRoutes: MetadataRoute.Sitemap = (
     showPastShows ? mergePastShows(pastShowsRaw) : []
-  ).map((show) => ({
-    url: `${baseUrl}${nosPath(`/national-show/archive/${show.year}`)}`,
-    lastModified: new Date(),
-    changeFrequency: 'yearly' as const,
-    priority: 0.5,
-  }));
+  ).map((show) =>
+    sitemapEntry(`${baseUrl}${nosPath(`/national-show/archive/${show.year}`)}`, {
+      changeFrequency: 'yearly',
+      priority: 0.5,
+    }),
+  );
 
-  const extraStaticRoutes: MetadataRoute.Sitemap = NOS_EXTRA_STATIC_ROUTES.map((route) => ({
-    url: `${baseUrl}${route.path}`,
-    lastModified: new Date(),
-    changeFrequency: route.changeFrequency,
-    priority: route.priority,
-  }));
+  const extraStaticRoutes: MetadataRoute.Sitemap = NOS_EXTRA_STATIC_ROUTES.map((route) =>
+    sitemapEntry(`${baseUrl}${route.path}`, {
+      changeFrequency: route.changeFrequency,
+      priority: route.priority,
+    }),
+  );
 
   // Only the products the ticket listing shows: day-visitor and the full-price weekend pass are
   // buyable but deliberately unlisted, so a raw ticketType query would over-list. The workshops card
@@ -106,12 +111,9 @@ async function buildNosSitemap(): Promise<MetadataRoute.Sitemap> {
     Object.values(cards).flatMap((card) =>
       card && card.slug !== WORKSHOPS_PRODUCT_SLUG ? [card.slug] : [],
     ),
-  ).map((path) => ({
-    url: `${baseUrl}${path}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }));
+  ).map((path) =>
+    sitemapEntry(`${baseUrl}${path}`, { changeFrequency: 'weekly', priority: 0.7 }),
+  );
 
   return [
     ...buildNationalShowChildRoutes(baseUrl, showPastShows),
@@ -124,30 +126,32 @@ async function buildNosSitemap(): Promise<MetadataRoute.Sitemap> {
 async function buildSaocSitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = saocOrigin();
   const [societies, events] = await Promise.all([
-    sanityFetch<{ slug: string }[]>({ query: societySlugsQuery, tags: ['society'] }),
-    sanityFetch<{ slug: string }[]>({ query: eventSlugsQuery, tags: ['societyEvent'] }),
+    sanityFetch<SlugRow[]>({ query: societySlugsQuery, tags: ['society'] }),
+    sanityFetch<SlugRow[]>({ query: eventSlugsQuery, tags: ['societyEvent'] }),
   ]);
 
-  const staticRoutes: MetadataRoute.Sitemap = SAOC_STATIC_ROUTES.map((route) => ({
-    url: `${baseUrl}${route.path}`,
-    lastModified: new Date(),
-    changeFrequency: route.changeFrequency,
-    priority: route.priority,
-  }));
+  const staticRoutes: MetadataRoute.Sitemap = SAOC_STATIC_ROUTES.map((route) =>
+    sitemapEntry(`${baseUrl}${route.path}`, {
+      changeFrequency: route.changeFrequency,
+      priority: route.priority,
+    }),
+  );
 
-  const societyRoutes: MetadataRoute.Sitemap = (societies ?? []).map((s) => ({
-    url: `${baseUrl}/societies/${s.slug}`,
-    lastModified: new Date(),
-    changeFrequency: 'monthly' as const,
-    priority: 0.6,
-  }));
+  const societyRoutes: MetadataRoute.Sitemap = (societies ?? []).map((s) =>
+    sitemapEntry(
+      `${baseUrl}/societies/${s.slug}`,
+      { changeFrequency: 'monthly', priority: 0.6 },
+      s.updatedAt,
+    ),
+  );
 
-  const eventRoutes: MetadataRoute.Sitemap = (events ?? []).map((e) => ({
-    url: `${baseUrl}/events/${e.slug}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }));
+  const eventRoutes: MetadataRoute.Sitemap = (events ?? []).map((e) =>
+    sitemapEntry(
+      `${baseUrl}/events/${e.slug}`,
+      { changeFrequency: 'weekly', priority: 0.7 },
+      e.updatedAt,
+    ),
+  );
 
   return [...staticRoutes, ...societyRoutes, ...eventRoutes];
 }
