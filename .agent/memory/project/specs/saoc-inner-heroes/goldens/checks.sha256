@@ -2,13 +2,13 @@
 698c6a6c0535d9dd6ded4e211ebe31cf149ad1c251c3bde6cabc8f85c3955d89  .agent/memory/project/specs/saoc-inner-heroes/checks/build.sh
 73df4a5c2772c7d9efb34be361fd2a932ed8764dffb7c338e4a8cc2ff2847e31  .agent/memory/project/specs/saoc-inner-heroes/checks/check-crops-final.mjs
 e74fec02747f09d4f391a0cf5d180b97d2dd0c6afecf3bf00d1c34be4143aaa1  .agent/memory/project/specs/saoc-inner-heroes/checks/check-derived.mjs
-3c1750db9805c4259b3317ad82d852512ddc5eb6932220f86ceec65fadf3e304  .agent/memory/project/specs/saoc-inner-heroes/checks/check-diff-scope.mjs
+6f94f10d2b73832eef7bdfc6a3339ae90e4d021c7c4f6e0cbae2affffbd04e71  .agent/memory/project/specs/saoc-inner-heroes/checks/check-diff-scope.mjs
 7c700453674b23826c8d657044ed1536fcedaf1b334c3b9ae60fe08df8e7ae07  .agent/memory/project/specs/saoc-inner-heroes/checks/check-shots.mjs
 0d1cd30631b5161df78ffe87e076123a2bf7d9efb2a01b7aa32321ef45fa4a1f  .agent/memory/project/specs/saoc-inner-heroes/checks/check-static.mjs
 d28ad5b421815861cb13a0122b3334d518ae4e589bfcc1d2e9c7021a9a5ff85e  .agent/memory/project/specs/saoc-inner-heroes/checks/gate-contrast.mjs
 0c7b34ea0869b43bf9a753a072962f5da98e220812f0b2936680faf5cdd2a35b  .agent/memory/project/specs/saoc-inner-heroes/checks/gate-geometry.mjs
 cc49ddf68e9cb5356436992d09b9d6e7d79e73393ab2b7ed2128fbd030b19b18  .agent/memory/project/specs/saoc-inner-heroes/checks/gate-home.mjs
 b577cb38c533432abea4260e606907c55a8a0be2b124d683622adca1dc5fa825  .agent/memory/project/specs/saoc-inner-heroes/checks/gate-lgrf.mjs
-035110e8c4a8cba3e5d6e31c0b9bd88bb2c8971541e9877504903b48b38a32ef  .agent/memory/project/specs/saoc-inner-heroes/checks/gate-scrim-alpha.mjs
+bcffd28b17b7101f32bbd4183dd0ce0f96d187c67b82c74372bc6cb4b5ff4173  .agent/memory/project/specs/saoc-inner-heroes/checks/gate-scrim-alpha.mjs
 542e6e23f731ffe679b4a466f0ea6dba93ff2b37190a16eca6d9666e86441ed7  .agent/memory/project/specs/saoc-inner-heroes/checks/gate-served-width.mjs
 db227981b2d565040c55686bfeb88cdcf7894361529b3dc70b618e02b52d401e  .agent/memory/project/specs/saoc-inner-heroes/checks/gate-showband-split.mjs

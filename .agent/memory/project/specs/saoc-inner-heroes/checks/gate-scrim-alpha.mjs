@@ -41,6 +41,9 @@ await withServer(5, 'scrim alpha (saoc)', async (server, c) => {
         const path = await openHeroRoute(page, server, route, c, tag);
         if (!path) continue;
         await freeze(page);
+        // A 4k photo that has not painted reads as sage (alpha ~1): wait for load, decode and two frames, as the geometry gate does.
+        await page.waitForFunction((s) => { const i = document.querySelector(s); return i && i.complete && i.naturalWidth > 0; }, `${HERO} img`, { timeout: 20000 });
+        await page.evaluate(async (s) => { await document.querySelector(s).decode(); await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))); }, `${HERO} img`);
         const stacked = vp.width < T.stackedBelow;
         const geo = await page.evaluate((h) => {
           const hero = document.querySelector(h).getBoundingClientRect(); const img = document.querySelector(`${h} img`).getBoundingClientRect();

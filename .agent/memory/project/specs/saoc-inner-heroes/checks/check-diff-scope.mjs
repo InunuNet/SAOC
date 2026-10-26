@@ -1,5 +1,5 @@
 // Diff scope for the SAOC PageHero mirror (mechanical, from git). Usage: node check-diff-scope.mjs
-// Changed = tracked changes against the merge-base with origin/main (committed or not) plus untracked files. Every changed path must be in the allowlist, none
+// Changed = the COMMITTED diff, merge-base(origin/main, HEAD)..HEAD; the working tree is ignored (next dev rewrites AGENTS.md) so commit before running. Every changed path must be in the allowlist, none
 // in the stay-off list, and the content rules hold: no copy change on a page, no new custom property, no new colour literal.
 import { execFileSync } from 'node:child_process';
 
@@ -7,8 +7,7 @@ const git = (...args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer
 // The base is the merge-base, so a main that moved on after the branch point is not counted as this PR's change.
 const BASE = git('merge-base', 'HEAD', 'origin/main').trim();
 const changed = new Set([
-  ...git('diff', '--name-only', BASE).split('\n'),
-  ...git('ls-files', '--others', '--exclude-standard').split('\n'),
+  ...git('diff', '--name-only', BASE, 'HEAD').split('\n'),
 ].filter(Boolean));
 
 const ALLOW = [
@@ -45,7 +44,7 @@ for (const f of changed) {
   else if (!ALLOW.some((re) => re.test(f))) failures.push(`${f}: not in the allowlist`);
 }
 
-const diffOf = (file) => git('diff', BASE, '-U0', '--', file).split('\n').filter((l) => /^[+-]/.test(l) && !/^(\+\+\+|---)/.test(l));
+const diffOf = (file) => git('diff', BASE, 'HEAD', '-U0', '--', file).split('\n').filter((l) => /^[+-]/.test(l) && !/^(\+\+\+|---)/.test(l));
 // No copy change: a page's diff is only its image / imagePosition props. Both sides of the diff are normalised (those two attributes
 // stripped, whitespace collapsed); the removed and added lines must then be the same multiset, so a one-line <PageHero ...> edit passes
 // only when nothing but image / imagePosition changed. LegalHero.tsx (host-aware wrapper) may also drop its `image` plumbing lines.
