@@ -341,3 +341,37 @@ SAOC's P0 is `sanity/lib/cdn-fallback.ts`; `sanity/lib/client.ts` on origin/main
 - **Why that is enough, and the trap:** the retry re-enters the same wrapped `fetch`, so in replay both the CDN attempt and the API retry hit the fixture; a miss has no `statusCode`, `isCdnUnavailableError` is false, so it is rethrown and never retried or sent to the network. The trap is a wrapper that does not hand back wrapped clients: `withFixture` must be a Proxy over the real client (a spread loses the prototype methods), pass `config()` through (the fallback reads `config().useCdn`), and return a WRAPPED client from `withConfig()` AND `clone()`, otherwise any derived client reaches the network. The fixture's own record path calls the real target's `withConfig({useCdn:false})`.
 - **Gates:** A13 now (1) asserts `config()`, `withConfig()` and `clone()` through the wrapper (a read through a derived client is served from the fixture, never the network) and (2) runs the REAL `withCdnFallback(withFixture(client))` from `sanity/lib/cdn-fallback.ts`: a hit makes zero network calls (the network stub throws a 402 if reached), a miss rejects with `SanityFixtureMiss`, is logged once, and is NOT retried, and `isCdnUnavailableError(miss)` is false. A14 asserts `withCdnFallback(withFixture(createClient(` in `client.ts`, both imports, no fixture reference in `cdn-fallback.ts`, and a Proxy that wraps `withConfig` and `clone`.
 - **Checked against the dev's 2ad37650 `lib/sanity-fixture.ts`:** A13 fails one check, "clone() returns a WRAPPED client too": its Proxy wraps `withConfig` but passes `clone` straight through (bound to the real client). DEV-OWES: add `if (prop === 'clone') return () => withFixture(target.clone());`.
+
+## Rev 44 (2026-10-26): HR-1 scope and the /symposium lede reservation
+
+Source: the lead's relay of NOS Design rulings "in b8c55ad, root comms.md". That commit and text were not found in the root comms.md or the dev worktree comms.md when this revision was written; this revision follows the lead's message as quoted. Re-check against the real text when it lands.
+
+1. HR-1 applies to DS-1 content heroes only.
+   - The NOS hub (`/`) `.nos-hero-scrim` keeps its own stops: `.92 0%, .86 calc(min(640px, 50%) + 48px), .42 66%, .18 82%, .06 100%`.
+   - check-static: the "old ramp stops are gone" check is removed. It now requires both the DS-1 ramp and the hub's own stops to be present in the NOS CSS.
+   - gate-standard: `heroRampCheck` returns no gradients for `data-nos-hero="hub"` (it was already only called for the route table, which excludes the hub). `homeChecks` now runs `heroTextContrast` at 1440 and 2056: text hidden, p95 of the photo pixels behind each text range, >= 4.5:1 for text and >= 3:1 for the h1. A failing cell reports its number. The gate never retunes the stops.
+2. `/symposium` lede: the 3-line reservation is allowed for now but is a GO blocker. Open item, depends on SAOC preloading the italic Fraunces face in the shared fonts config. When that lands, the gate will assert no reservation and no lede CLS at 390 and 768. Not yet gated.
+
+### Rev 44b (2026-10-26): the italic Fraunces preload lands in our branch; the /symposium lede reservation goes
+
+Supersedes item 2 of Rev 44 (the lede reservation is no longer an open item). SAOC reviews the preload in the merge (relayed by NOS Design via the lead).
+
+- Config file: `components/nos/NosThemeScope.tsx`. It is NOS-only, so the preload reaches NOS routes and no SAOC route. `components/nos-chrome/fonts.ts` is deliberately NOT the file: the shared marketing layout imports the chrome, and its own comment says a preload there makes every SAOC route fetch the NOS faces. `app/layout.tsx` stays untouched.
+- Change: one added `localFont` config with a single src entry, `Fraunces-latin-italic.woff2`, weight `'300'`, style `'italic'`, `preload: true` (the exact weight and style of the `[data-nos-lede='theme']` rule, `nos-theme.css:633-642`). next/font preloads every src file of a config that sets `preload: true`, so the single face has to be its own config. The existing normal+italic and Karla configs stay `preload: false`. The one existing line that may change is the `className` that gains the new font class.
+- Dev must wire the lede to use the preloaded face without adding CSS beyond removing the reservation. If that proves impossible, report the one line needed to the architect; do not invent a design change.
+- Removed: the `min-height: 3lh` media block and its comment in `nos-structure.css` (`@media (max-width: 1023.98px)`, "reserving three lines").
+- check-diff-scope: `components/nos/NosThemeScope.tsx` is allowed.
+- check-static FONT-1: only the className line may be removed; exactly one `preload: true` in the file, in the added lines; the added lines declare exactly one font file, the italic at weight 300; they mention neither Karla nor the normal face; `nos-chrome/fonts.ts` and `app/layout.tsx` are unchanged. SY-G1: no `min-height: 3lh`.
+- gate-standard `symposiumLedeStable`, at 390 and 768 on `/symposium`: computed lede min-height is auto or 0; the lede box height is the same (within 1px) at DOMContentLoaded, load, 1.5s and 3s; no layout-shift entry has the lede or the sub-nav as a source; exactly one `link[rel=preload][as=font]` and an italic FontFace already `loaded` at the load event.
+- Gate-fixed vs dev-owed: all of the above is dev-owed (nothing implemented yet), so these checks fail until the dev change lands.
+
+### Rev 44c (2026-10-26): source confirmed
+
+The rulings are in root `comms.md` L4250, "[NOS Design -> NOS Site] HR-1 scope (hub scrim) + /symposium italic preload" (NOS Design log b8c55ad). This replaces the "relayed" wording in Rev 44 and 44b. Re-checked against the text: the hub stops, the 1440/2056 hub gate (p95, text hidden, >= 4.5:1, h1 >= 3:1, report the number, never retune), the one-weight/one-style preload, SAOC's acceptance ("reviews it in your merge; no separate SAOC PR") and the dropped sub-1024 reservation all match Rev 44/44b. One addition from the entry: "at 390 and 768, the lede height = its line count x line-height after fonts load, with no blank line". `symposiumLedeStable` now asserts it (Range line count x computed line-height within 2px of the box height).
+
+### Rev 44d (2026-10-26): SAOC approved NosThemeScope and added a condition
+
+`symposiumLedeStable` (390 and 768, `/symposium`) now also asserts, read from the document's own `@font-face` rules and the request log:
+- the single font preload resolves to an `@font-face` that is italic at weight 300 and has its own generated family;
+- the lede's computed `font-family` includes that family (so it is not the `nos-chrome/fonts.ts` instance, nor the existing non-preloaded NosThemeScope italic);
+- `/symposium` makes exactly one network request for an italic woff2 (any `@font-face` with `font-style` italic), and its path equals the preload href.

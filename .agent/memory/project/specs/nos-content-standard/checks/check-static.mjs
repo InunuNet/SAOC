@@ -302,7 +302,26 @@ check('added CSS has no dashed 2px rail', !added.some((l) => /border[a-z-]*\s*:\
   const RAMP = norm('linear-gradient(90deg, rgba(11, 10, 20, 0.92) 0%, rgba(11, 10, 20, 0.88) 38%, rgba(11, 10, 20, 0.45) 56%, rgba(11, 10, 20, 0.12) 76%, rgba(11, 10, 20, 0.04) 100%)');
   const css = ['app/(nos)', 'components/nos'].flatMap((d) => (existsSync(d) ? readdirSync(d, { recursive: true }).filter((f) => String(f).endsWith('.css')).map((f) => read(`${d}/${f}`)) : [])).map(norm).join('\n');
   check('HR-1: the NOS hero CSS carries the exact HR-1 ramp', css.includes(RAMP));
-  check('HR-1: the old ramp stops (0.86 at 640px+48px, 0.42 at 66%, 0.18 at 82%) are gone', !/rgba\(11,10,20,0\.86\)calc\(min\(640px,50%\)\+48px\)/.test(css) && !/rgba\(11,10,20,0\.42\)66%/.test(css));
+  const HUB = norm('rgba(11, 10, 20, 0.92) 0%, rgba(11, 10, 20, 0.86) calc(min(640px, 50%) + 48px), rgba(11, 10, 20, 0.42) 66%, rgba(11, 10, 20, 0.18) 82%, rgba(11, 10, 20, 0.06) 100%');
+  check('HR-1 scope (Rev 44, NOS Design b8c55ad): the NOS hub .nos-hero-scrim keeps its own stops (.92 0%, .86 calc(min(640px,50%)+48px), .42 66%, .18 82%, .06 100%); the DS-1 ramp applies to content heroes only', css.includes(HUB));
+}
+
+// Rev 44 (SAOC asked for the italic preload in OUR branch; they review it in the merge): the NOS-only fonts config gains exactly one preloaded face, the italic Fraunces at 300, and nothing else changes.
+// components/nos-chrome/fonts.ts stays untouched (the shared marketing layout imports the chrome; a preload there would make every SAOC route fetch the NOS faces). The lede reservation is removed.
+{
+  const F = 'components/nos/NosThemeScope.tsx';
+  const diff = git(['diff', '-U0', 'origin/main', '--', F]).split('\n').filter((l) => /^[-+][^-+]/.test(l));
+  const added = diff.filter((l) => l.startsWith('+')).map((l) => l.slice(1)); const removed = diff.filter((l) => l.startsWith('-'));
+  const addedText = added.join('\n');
+  const body = read(F);
+  check('FONT-1: NosThemeScope.tsx removes no existing line except the one className that gains the new font class (the normal/italic and Karla configs stay as they are, preload:false)', removed.length <= 1 && removed.every((l) => /className=/.test(l)), removed.join(' | '));
+  check('FONT-1: the file has exactly one `preload: true`, and it is in the added lines', (body.match(/preload\s*:\s*true/g) ?? []).length === 1 && /preload\s*:\s*true/.test(addedText));
+  check('FONT-1: the added lines declare exactly one font file: Fraunces-latin-italic.woff2, weight 300, style italic', (addedText.match(/path\s*:/g) ?? []).length === 1 && /Fraunces-latin-italic\.woff2/.test(addedText) && /weight\s*:\s*'300'/.test(addedText) && /style\s*:\s*'italic'/.test(addedText));
+  check('FONT-1: the added lines do not touch Karla or the normal face', !/Karla|latin-normal/.test(addedText));
+  check('FONT-1: components/nos-chrome/fonts.ts is unchanged from origin/main', git(['diff', '--name-only', 'origin/main', '--', 'components/nos-chrome/fonts.ts']).trim() === '');
+  check('FONT-1: app/layout.tsx is unchanged from origin/main (no root font change)', git(['diff', '--name-only', 'origin/main', '--', 'app/layout.tsx']).trim() === '');
+  const struct = read('app/(nos)/national-show/nos-structure.css');
+  check("SY-G1 (Rev 44): the min-height: 3lh lede reservation is gone from nos-structure.css", !/min-height\s*:\s*3lh/.test(struct) && !/reserving three lines/.test(struct));
 }
 
 if (fails.length) { console.error(`nos-content-standard static FAILED:\n- ${fails.join('\n- ')}`); process.exit(1); }

@@ -50,7 +50,7 @@ const HR1_RAMP = 'linear-gradient(90deg,rgba(11,10,20,0.92)0%,rgba(11,10,20,0.88
 /** HR-1 (NOS Design): at >= 1024 the hero scrim ramp is exactly HR1_RAMP. Implementation-agnostic: whichever hero element or ::before / ::after carries a 90deg rgba(11,10,20) gradient, all of them are this ramp. */
 async function heroRampCheck(page, tag, c) {
   const grads = await page.evaluate(() => {
-    const hero = document.querySelector('section[data-nos-hero]'); if (!hero) return [];
+    const hero = document.querySelector('section[data-nos-hero]'); if (!hero || hero.getAttribute('data-nos-hero') === 'hub') return [];
     const out = [];
     for (const e of [hero, ...hero.querySelectorAll('*')]) for (const ps of [null, '::before', '::after']) {
       const bi = getComputedStyle(e, ps).backgroundImage;
@@ -419,6 +419,47 @@ async function subnavStable(page, server, route, c, tag) {
   await p2.close();
 }
 
+/** Rev 44 (SAOC wants the italic preload in our branch): /symposium reserves no lede height and nothing shifts. The theme lede carries no min-height, its box is the same at DOMContentLoaded, load, 1.5s and 3s, no layout-shift entry has the lede or the sub-nav as a source, and exactly one font preload exists, with the italic face loaded by the load event. Run at 390 and 768. */
+async function symposiumLedeStable(page, server, route, vp, c, tag) {
+  if (vp.width !== 390 && vp.width !== 768) return;
+  const p2 = await page.context().newPage();
+  await p2.addInitScript(() => {
+    window.__h = []; window.__shifts = []; window.__fontAtLoad = null;
+    const sample = () => { const l = document.querySelector('[data-nos-lede="theme"]'); if (l) window.__h.push(Math.round(l.getBoundingClientRect().height * 10) / 10); };
+    try { new PerformanceObserver((list) => { for (const e of list.getEntries()) { if (e.hadRecentInput) continue; window.__shifts.push({ v: e.value, src: (e.sources || []).map((x) => { const n = x.node; return n && n.nodeType === 1 ? (n.matches('[data-nos-lede]') ? 'lede' : n.closest('.nos-subnav') ? 'subnav' : n.closest('section[data-nos-hero]') ? 'hero' : 'other') : 'other'; }) }); } }).observe({ type: 'layout-shift', buffered: true }); } catch { /* unsupported: the height samples still gate */ }
+    document.addEventListener('DOMContentLoaded', sample);
+    window.addEventListener('load', () => { window.__fontAtLoad = [...document.fonts].filter((f) => f.style === 'italic' && f.status === 'loaded').length; sample(); setTimeout(sample, 1500); setTimeout(sample, 3000); });
+  });
+  const woffReqs = []; p2.on('request', (rq) => { if (/\.woff2(\?|$)/.test(rq.url())) woffReqs.push(new URL(rq.url()).pathname); });
+  await p2.setViewportSize(page.viewportSize());
+  if (await gotoRoute(p2, server, route.nos, c, tag)) {
+    await p2.waitForTimeout(3500);
+    const m = await p2.evaluate(() => {
+      const l = document.querySelector('[data-nos-lede="theme"]'); const cs = l ? getComputedStyle(l) : null;
+      let lines = null; let lh = null; let h = null;
+      if (l) { const rg = document.createRange(); rg.selectNodeContents(l); lines = new Set([...rg.getClientRects()].filter((q) => q.width > 0).map((q) => Math.round(q.top))).size; lh = parseFloat(cs.lineHeight); h = l.getBoundingClientRect().height; }
+      const faces = []; for (const sh of document.styleSheets) { let rules; try { rules = [...sh.cssRules]; } catch { continue; } for (const r of rules) if (r.type === CSSRule.FONT_FACE_RULE) faces.push({ fam: r.style.getPropertyValue('font-family').replace(/["']/g, '').trim(), style: r.style.getPropertyValue('font-style').trim(), weight: r.style.getPropertyValue('font-weight').trim(), urls: [...r.style.getPropertyValue('src').matchAll(/url\(["']?([^"')]+)["']?\)/g)].map((x) => new URL(x[1], location.href).pathname) }); }
+      const ledeFam = cs?.fontFamily.replace(/["']/g, '') ?? '';
+      return { faces, ledeFam, lede: Boolean(l), lines, lh, h, minH: cs?.minHeight ?? null, hs: window.__h, shifts: window.__shifts, italicAtLoad: window.__fontAtLoad,
+        preloads: [...document.querySelectorAll('link[rel="preload"][as="font"]')].map((n) => n.getAttribute('href')) };
+    });
+    c.check(`${tag} SY-G1 (Rev 44) the theme lede reserves no height: computed min-height is auto or 0 (${m.minH})`, m.lede && (m.minH === 'auto' || m.minH === '0px' || m.minH === 'normal'));
+    c.check(`${tag} SY-G1 (Rev 44) the lede box does not change height after first paint (${m.hs.join(', ')})`, m.hs.length >= 2 && Math.max(...m.hs) - Math.min(...m.hs) <= 1);
+    c.check(`${tag} SY-G1 (Rev 44, NOS Design L4250) after fonts load the lede height is its line count x line-height, no blank line (${m.lines} lines x ${m.lh}px = ${Math.round(m.lines * m.lh)}, box ${Math.round(m.h)})`, m.lines >= 1 && Number.isFinite(m.lh) && Math.abs(m.h - m.lines * m.lh) <= 2);
+    const pre = m.preloads[0] ? new URL(m.preloads[0], 'http://x').pathname : null;
+    const preFace = m.faces.find((f) => pre && f.urls.includes(pre));
+    c.check(`${tag} SY-G1 (Rev 44, SAOC condition) the one font preload is an italic 300 @font-face with its own generated family (${preFace ? `${preFace.fam} ${preFace.style} ${preFace.weight}` : 'no @font-face points at the preloaded url'})`, Boolean(preFace) && /italic/.test(preFace.style) && /^300$/.test(preFace.weight));
+    c.check(`${tag} SY-G1 (Rev 44, SAOC condition) the lede's computed font-family includes that preloaded instance's generated family, not the fonts.ts one (lede: ${m.ledeFam.slice(0, 120)})`, Boolean(preFace) && m.ledeFam.includes(preFace.fam));
+    const italicUrls = new Set(m.faces.filter((f) => /italic/.test(f.style)).flatMap((f) => f.urls));
+    const italicReqs = woffReqs.filter((u) => italicUrls.has(u));
+    c.check(`${tag} SY-G1 (Rev 44, SAOC condition) /symposium makes exactly one network request for an italic woff2, and it is the preloaded url (${italicReqs.length}: ${italicReqs.join(', ')}; preload ${pre})`, italicReqs.length === 1 && italicReqs[0] === pre);
+    const bad = m.shifts.filter((x) => x.src.some((k) => k === 'lede' || k === 'subnav'));
+    c.check(`${tag} SY-G1 (Rev 44) no layout shift has the lede or the sub-nav as a source (${m.shifts.length} entries, ${bad.length} on lede or sub-nav)`, bad.length === 0, JSON.stringify(bad));
+    c.check(`${tag} SY-G1 (Rev 44) exactly one font preload on /symposium, and an italic face is already loaded at the load event (${m.preloads.length} preloads; italic loaded ${m.italicAtLoad})`, m.preloads.length === 1 && (m.italicAtLoad ?? 0) >= 1, m.preloads.join(' | '));
+  }
+  await p2.close();
+}
+
 /** WO-G1 (NOS Design, root comms.md L3436): /wosa-conference. All copy is verbatim from her frozen documents. */
 async function woChecks(page, route, vp, c, tag, server) {
   const W = route.wo;
@@ -746,6 +787,8 @@ async function arChecks(page, route, vp, c, tag) {
 
 /** HM-G1 (NOS Design, root comms.md HM-G1): the NOS home, /. Every sentence is verbatim from the frozen About v1.2, What to Expect v1.0 or FAQ v1.0; the home hero component is unchanged apart from its lede, the TBC chip and the facts row. */
 async function homeChecks(page, vp, c, tag) {
+  // Rev 44: the hub keeps its own scrim (not the DS-1 ramp); it is gated on the outcome, text hidden, p95 >= 4.5 (h1 >= 3) at 1440 and 2056. A failing cell reports its number; the stops are never retuned here.
+  if (vp.width === 1440 || vp.width === 2056) await heroTextContrast(page, tag, c);
   const H = ROUTE_TABLE_META.home; const norm = (t) => t.replace(/\s+/g, ' ').trim();
   const rd = (f) => readFileSync(`${SPDIR}${f}`, 'utf8').split('\n').map((l) => l.trim()).filter(Boolean);
   const live = (f) => rd(f).filter((l) => !/^\**~~/.test(l));
@@ -869,6 +912,7 @@ async function syChecks(page, route, vp, c, tag, server) {
   c.check(`${tag} SY-G1 the aside holds the live symposium ticket card, sticky at 100 from 1024, static and at most 440px below (${m.card}; ${m.asidePos} ${m.asideTop}; ${Math.round(m.asideW)}px)`, m.card && (vp.width >= 1024 ? m.asidePos === 'sticky' && m.asideTop === 100 : (m.asidePos !== 'sticky' && m.asideW <= 441)));
   if (vp.width < 1024) c.check(`${tag} SY-G1 below 1024 the ticket comes first (aside y ${Math.round(m.asideY)} < copy y ${Math.round(m.mainY)})`, m.asideY !== null && m.asideY < m.mainY);
   await subnavStable(page, server, route, c, tag);
+  await symposiumLedeStable(page, server, route, vp, c, tag);
   c.check(`${tag} SY-G1 h2 "${S.presentersH2}" is full width, outside the main column (${JSON.stringify(m.presentersFull)})`, Boolean(m.presentersFull) && !m.presentersFull.inDocMain && m.presentersFull.w >= m.presentersFull.cw * 0.85);
   c.check(`${tag} SY-G1 the About/Attending placeholders and the PLACEHOLDER COPY chips are gone`, S.absent.every((t) => !m.all.includes(t)), S.absent.filter((t) => m.all.includes(t)).join(', '));
   c.check(`${tag} SY-G1 the crumb reads National Show - Symposium (${m.crumb})`, /National Show\s*[—–-]\s*Symposium/.test(m.crumb));

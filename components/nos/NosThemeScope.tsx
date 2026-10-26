@@ -45,10 +45,21 @@ const karla = localFont({
   adjustFontFallback: 'Arial',
 });
 
+// The /symposium theme lede is italic 300. This face is that one weight and style of the italic file
+// above, with its own generated family, so it can preload on its own (the two Fraunces faces above
+// load on first use). Only nos-theme.css's theme lede rule names this variable.
+const frauncesLedeItalic = localFont({
+  src: [{ path: '../../app/fonts/fraunces/Fraunces-latin-italic.woff2', weight: '300', style: 'italic' }],
+  variable: '--font-nos-fraunces-lede',
+  display: 'swap',
+  preload: true,
+  adjustFontFallback: 'Times New Roman',
+});
+
 export function NosThemeScope({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className={`nos-theme ${fraunces.variable} ${karla.variable}`}
+      className={`nos-theme ${fraunces.variable} ${karla.variable} ${frauncesLedeItalic.variable}`}
       style={TICKET_THEME_VARS}
     >
       {children}

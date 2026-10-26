@@ -6,6 +6,7 @@ const ALLOWED = [
   /^sanity\/lib\/client\.ts$/,
   /^components\/nos\/(NosHero|hero-photos|NosSection|NosSubNav|nos-subnav-groups|nos-route-heroes|nos-nav)\.(tsx|ts)$/,
   /^components\/nos-chrome\/nos-nav\.(ts|tsx)$/,
+  /^components\/nos\/NosThemeScope\.tsx$/, // Rev 44: the one preloaded italic Fraunces face (see check-static)
   /^components\/show\/(FaqIndex|ShowFaqList|ShowJumpChips)\.tsx$/,
   /^app\/\(nos\)\/.*\/(page|loading)\.tsx$/,
   /^app\/\(nos\)\/page\.tsx$/,

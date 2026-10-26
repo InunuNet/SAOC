@@ -1226,14 +1226,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     white-space: nowrap !important; /* the loader's p has an inline text-wrap: balance, which resets the wrap mode */
   }
 }
-/* The italic Fraunces face loads after first paint, and the fallback italic sets the theme lede one line
-   longer than the real face below 1024. On the symposium hero, reserving three lines keeps the sub-nav still when the face lands. */
-@media (max-width: 1023.98px) {
-  .nos-theme .nos-hero-inner:not(.nos-hero-about) .nos-hero-lede[data-nos-lede='theme'] {
-    min-height: 3lh;
-  }
-}
-/* The exhibitor entry guide is a hero and one contact panel. */
 .nos-theme .nos-contact-panel {
   display: grid;
   justify-items: start;
@@ -2212,7 +2204,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   max-width: 88px;
   font-size: calc(22px * var(--nk-ts));
   line-height: 1.1;
-  min-height: 3lh;
+  min-height: calc(3 * 1lh);
 }
 .nos-theme .nk-fan .nk-price {
   font-size: calc(32px * var(--nk-ts));
