@@ -4414,6 +4414,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
   .nos-theme .nos-cr-main h2 {
     order: 1;
+    align-self: stretch; /* the flex column centres its items, which centred a short heading over left-set text */
   }
   .nos-theme .nos-cr-main .doc-standfirst {
     order: 2;
@@ -4427,6 +4428,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   }
   .nos-theme .nos-cr-link {
     order: 5;
+    align-self: flex-start;
   }
 }
 
