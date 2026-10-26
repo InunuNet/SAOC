@@ -483,3 +483,10 @@ Correction: the Rev 46j block selector `.we-block` is NOS Design's shorthand; th
 
 ### Rev 46l (2026-10-26): A17 exports the public Sanity ids itself
 A bare `gate-e2e.mjs` failed with 0 hits and an empty `_started.log`: CI's e2e step has no `.env`, so without `NEXT_PUBLIC_SANITY_PROJECT_ID` and `NEXT_PUBLIC_SANITY_DATASET` the app never builds a Sanity client, and the 46i run only passed through the dev's own wrapper. `gate-e2e.mjs` now reads those two public values from `apphosting.yaml` (never hard-coded, never from `.env*`), fails loudly if either is absent, and passes them to the suite. The replay mode, the net guard and everything else are unchanged.
+
+### Rev 46m (2026-10-26): Codex A12 fixture-layer fixes (SAOC-approved, including sanity/lib/fetch.ts)
+Source: Codex A12 output (`.tmp/sandbox/codex-a12/out.txt` in the dev tree) and SAOC's approval relayed by the lead. Three frozen checks conflicted with the fixes; nothing else changed.
+1. A14 (`check-fixture-files.mjs`) and A13 (`check-fixture-unit.mjs`): the key is `fixtureKey(query, params, perspective?)`. Undefined or `'published'` leaves the hash input byte-identical, so the 81 existing fixtures stay valid; any other perspective appends `"\n" + JSON.stringify(perspective)`. `useCdn` never enters the key. A14 now asserts the signature and the absence of `useCdn` statically; A13 asserts it behaviourally against the golden key vector (undefined and `'published'` equal the golden key, `'previewDrafts'` differs, two draft perspectives differ, an extra options argument changes nothing).
+2. A14: the hook stays in `sanity/lib/client.ts` only. `sanity/lib/fetch.ts` must not call or import `withFixture`, read `SANITY_FIXTURE*`, or import anything from the fixture module except `SanityFixtureMiss` (rethrown from its catch ahead of the `propagateErrors` check); namespace imports and re-exports of the module are refused.
+3. A3 (`check-diff-scope.mjs`): exactly two paths added, `sanity/lib/fetch.ts` and `e2e/sanity-fetch-fixture-miss.spec.ts`.
+Run against the dev tree before freezing: A14 pass (81 captured queries), A13 pass.

@@ -24,6 +24,15 @@ const { withFixture, fixtureKey, isFixtureActive, assertFixtureEnv, SanityFixtur
 
 const vec = JSON.parse(readFileSync(`${SPEC}/goldens/fixture-key-vector.json`, 'utf8'));
 for (const [i, k] of vec.cases.entries()) check(`key vector ${i}: fixtureKey equals the golden`, fixtureKey(k.query, k.params ?? undefined) === k.key, `${fixtureKey(k.query, k.params ?? undefined)} vs ${k.key}`);
+// Rev 46m (SAOC condition d): the key covers query + params + perspective. Published and undefined perspectives keep the OLD hash input byte for byte (the existing fixtures stay valid); any draft perspective appends "\n" + JSON.stringify(perspective).
+{
+  const c0 = vec.cases[0]; const old = fixtureKey(c0.query, c0.params ?? undefined);
+  check('key: perspective undefined equals the golden key', fixtureKey(c0.query, c0.params ?? undefined, undefined) === c0.key && old === c0.key);
+  check('key: perspective "published" equals the golden key (existing fixtures stay valid)', fixtureKey(c0.query, c0.params ?? undefined, 'published') === c0.key);
+  check('key: perspective "previewDrafts" gives a different key', fixtureKey(c0.query, c0.params ?? undefined, 'previewDrafts') !== c0.key);
+  check('key: two draft perspectives give different keys', fixtureKey(c0.query, c0.params ?? undefined, 'previewDrafts') !== fixtureKey(c0.query, c0.params ?? undefined, 'raw'));
+  check('key: a fourth argument (useCdn-like option) cannot change the key', fixtureKey(c0.query, c0.params ?? undefined, 'published', { useCdn: true }) === c0.key);
+}
 check('key ignores param key order', fixtureKey('*', { a: 1, b: 2 }) === fixtureKey('*', { b: 2, a: 1 }));
 check('key ignores surrounding whitespace in the query', fixtureKey('  *[x]\n', {}) === fixtureKey('*[x]', {}));
 

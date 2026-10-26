@@ -45,7 +45,9 @@ for (const n of files) {
 }
 const client = read('sanity/lib/client.ts'); const fetchTs = read('sanity/lib/fetch.ts'); const lib = read('lib/sanity-fixture.ts');
 check('sanity/lib/client.ts wraps the exported client with withFixture from the fixture module (the hook point)', /from ['"][^'"]*sanity-fixture['"]/.test(client) && /withFixture\(/.test(client));
-check('the hook is NOT in sanity/lib/fetch.ts (SAOC owns that file for the CDN-fallback P0)', !/SANITY_FIXTURE|sanity-fixture/.test(fetchTs));
+// Rev 46m (Codex A12, SAOC-approved): fetch.ts imports SanityFixtureMiss alone, to rethrow it from its catch ahead of the propagateErrors check. The hook (withFixture) stays in client.ts only.
+const fetchFixtureImports = [...fetchTs.matchAll(/import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*['"][^'"]*sanity-fixture['"]/g)].flatMap((m) => m[1].split(',').map((x) => x.trim().split(/\s+as\s+/)[0].replace(/^type\s+/, '')).filter(Boolean));
+check('the hook is NOT in sanity/lib/fetch.ts: no withFixture (call or import), no other import from the fixture module than SanityFixtureMiss, no SANITY_FIXTURE env read (SAOC owns that file; Rev 46m)', !/withFixture|SANITY_FIXTURE/.test(fetchTs) && fetchFixtureImports.every((n) => n === 'SanityFixtureMiss') && !/(?:import|export)[^;]*\*\s+(?:as\s+\w+\s+)?from\s*['"][^'"]*sanity-fixture['"]/.test(fetchTs), `imports from the fixture module: ${fetchFixtureImports.join(', ') || 'none'}`);
 check('lib/sanity-fixture.ts exports withFixture, fixtureKey, isFixtureActive and SanityFixtureMiss', ['withFixture', 'fixtureKey', 'isFixtureActive', 'assertFixtureEnv', 'SanityFixtureMiss'].every((n) => new RegExp(`export (async )?(function|class|const) ${n}\\b`).test(lib)));
 check('lib/sanity-fixture.ts reads SANITY_FIXTURE_MODE, SANITY_FIXTURE_DIR and SANITY_FIXTURE_RECORD_CONFIRM and consults isHostedRuntime from ./fixture-route-guard (relative import, so a bare tsx load works)', /SANITY_FIXTURE_DIR/.test(lib) && /SANITY_FIXTURE_MODE/.test(lib) && /SANITY_FIXTURE_RECORD_CONFIRM/.test(lib) && /isHostedRuntime/.test(lib) && /from ['"]\.\/fixture-route-guard['"]/.test(lib));
 check('lib/sanity-fixture.ts has no token, no createClient and no NEXT_PUBLIC switch', !/createClient|NEXT_PUBLIC_SANITY_FIXTURE|process\.env\.SANITY_(API_)?(READ_|WRITE_)?TOKEN/.test(lib));
@@ -53,7 +55,7 @@ check('lib/sanity-fixture.ts has no token, no createClient and no NEXT_PUBLIC sw
 // Condition 4: generic. No NOS path or route knowledge inside; the dir comes only from env (SAOC's gates reuse this file).
 check('lib/sanity-fixture.ts is generic: no NOS path, route or spec knowledge', !/nos-content-standard|national-show|\.agent\/|fixtures\/sanity|\/\(nos\)|specs\//.test(lib));
 check('lib/sanity-fixture.ts runs assertFixtureEnv() at module load (a bad environment fails the server at import)', /^assertFixtureEnv\(\);?\s*$/m.test(lib));
-check('lib/sanity-fixture.ts keys on query + params only: no useCdn or perspective in fixtureKey', (() => { const m = lib.match(/export function fixtureKey[\s\S]*?\n\}/); return Boolean(m) && !/useCdn|perspective/.test(m[0]); })());
+check('lib/sanity-fixture.ts fixtureKey takes (query, params, perspective?) and never lets useCdn into the key (Rev 46m; the behaviour is asserted in A13)', (() => { const m = lib.match(/export function fixtureKey\(([^)]*)\)[\s\S]*?\n\}/); return Boolean(m) && /perspective/.test(m[1]) && !/useCdn/.test(m[0]); })());
 // Condition 3: every client that bypasses `client` is inventoried; a new createClient in app/lib/sanity/components must be added to the inventory with a reason.
 const inv = JSON.parse(read(`${SPEC}/goldens/fixture-client-inventory.json`) || '{}');
 const known = new Set([...(inv.wrapped ?? []), ...(inv.bypass ?? []).map((b) => b.file)]);

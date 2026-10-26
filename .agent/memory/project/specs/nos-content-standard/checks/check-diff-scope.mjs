@@ -4,6 +4,8 @@ import { execFileSync } from 'node:child_process';
 const ALLOWED = [
   /^lib\/sanity-fixture\.ts$/,
   /^sanity\/lib\/client\.ts$/,
+  /^sanity\/lib\/fetch\.ts$/, // Rev 46m: SAOC-approved Codex A12 fix; rethrows SanityFixtureMiss from the catch ahead of propagateErrors (check-fixture-files: that is the only fixture import allowed)
+  /^e2e\/sanity-fetch-fixture-miss\.spec\.ts$/, // Rev 46m: the replay-miss test SAOC asked for
   /^components\/nos\/(NosHero|hero-photos|NosSection|NosSubNav|nos-subnav-groups|nos-route-heroes|nos-nav)\.(tsx|ts)$/,
   /^components\/nos-chrome\/nos-nav\.(ts|tsx)$/,
   /^components\/nos-chrome\/(NosHeader\.tsx|nos-chrome\.css)$/, // ND-1: the descriptor span and its .nh-desc styles go
