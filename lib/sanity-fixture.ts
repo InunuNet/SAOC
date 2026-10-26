@@ -25,6 +25,7 @@ type FetchOptions = Record<string, unknown> & { perspective?: unknown };
 type Fetcher = {
   fetch: (query: string, params?: Params, options?: FetchOptions) => Promise<unknown>;
   withConfig: (config: Record<string, unknown>) => Fetcher;
+  config?: () => Record<string, unknown>;
   clone: () => Fetcher;
 };
 
@@ -32,6 +33,7 @@ const MODES: readonly string[] = ['off', 'replay', 'record'];
 const RECORD_CONFIRM_FLAG = '1';
 const PUBLISHED_PERSPECTIVE = 'published';
 const MISS_QUERY_CHARS = 200;
+const SECRET_PARAM_NAME = /token|secret|password|key/i;
 const FIXTURE_LOG = {
   requests: '_requests.log',
   hits: '_hits.log',
@@ -89,10 +91,18 @@ function canonical(value: unknown): unknown {
   return value;
 }
 
-/** sha256 of the trimmed query, a newline and the params with keys sorted recursively. */
-export function fixtureKey(query: string, params?: Params | null): string {
+/** True for a perspective other than the published default (a draft or raw read). */
+function isDraftPerspective(perspective: unknown): boolean {
+  return perspective !== undefined && perspective !== PUBLISHED_PERSPECTIVE;
+}
+
+/** sha256 of the trimmed query, a newline and the params with keys sorted recursively. A
+ * non-published perspective is appended after another newline, so a published read keeps the same
+ * key it always had and a draft read can never share it. */
+export function fixtureKey(query: string, params?: Params | null, perspective?: unknown): string {
   const body = JSON.stringify(canonical(params ?? {}));
-  return sha256(`${query.trim()}\n${body}`);
+  const suffix = isDraftPerspective(perspective) ? `\n${JSON.stringify(perspective)}` : '';
+  return sha256(`${query.trim()}\n${body}${suffix}`);
 }
 
 interface FixtureContext {
@@ -130,9 +140,8 @@ function replayFetch(
   params: Params | undefined,
   options: FetchOptions | undefined,
 ): unknown {
-  const key = fixtureKey(query, params);
-  const perspective = options?.perspective;
-  const draft = perspective !== undefined && perspective !== PUBLISHED_PERSPECTIVE;
+  const key = fixtureKey(query, params, options?.perspective);
+  const draft = isDraftPerspective(options?.perspective);
   const entry = draft ? null : readEntry(ctx, key);
   if (!entry) {
     const flat = query.trim().replace(/\s+/g, ' ').slice(0, MISS_QUERY_CHARS);
@@ -143,6 +152,18 @@ function replayFetch(
   return entry.result;
 }
 
+/** Record mode writes params and results to disk verbatim, so it refuses a client that carries a
+ * token and any param whose name looks like a credential. */
+function assertRecordable(target: Fetcher, params: Params | undefined): void {
+  if (target.config?.().token) {
+    throw new Error('Sanity fixture record refuses a client configured with a token');
+  }
+  const secretParam = Object.keys(params ?? {}).find((name) => SECRET_PARAM_NAME.test(name));
+  if (secretParam) {
+    throw new Error(`Sanity fixture record refuses a param named "${secretParam}"`);
+  }
+}
+
 async function recordFetch(
   ctx: FixtureContext,
   target: Fetcher,
@@ -150,7 +171,8 @@ async function recordFetch(
   params: Params | undefined,
   options: FetchOptions | undefined,
 ): Promise<unknown> {
-  const key = fixtureKey(query, params);
+  assertRecordable(target, params);
+  const key = fixtureKey(query, params, options?.perspective);
   const saved = readEntry(ctx, key);
   if (saved) return saved.result;
   const api = target.withConfig({ useCdn: false });
