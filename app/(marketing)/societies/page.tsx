@@ -105,6 +105,7 @@ export default async function SocietiesPage() {
   return (
     <>
       <RouteHero
+        exempt
         route="/societies"
         eyebrow="Affiliated societies"
         heading="Find an orchid society near you"

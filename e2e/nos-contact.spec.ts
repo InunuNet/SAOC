@@ -13,8 +13,7 @@ import { nosBase } from './utils/site-urls';
 const ASIDE_ROWS = [
   { label: 'FAQ', href: '/faq' },
   { label: 'Plan your visit', href: '/plan-your-visit' },
-  { label: 'Exhibitor entry guide', href: '/exhibitors' },
-  { label: 'Show sponsors', href: '/sponsors#enquire' },
+  { label: 'What to expect', href: '/what-to-expect' },
 ];
 
 test.describe('NOS contact page', () => {
@@ -42,8 +41,8 @@ test.describe('NOS contact page', () => {
   test('the aside routes to the show pages', async ({ page, baseURL }) => {
     await page.goto(`${nosBase(baseURL!)}/contact`);
 
-    const aside = page.locator('[data-nos-contact-aside]');
-    await expect(aside.getByRole('heading', { name: 'Looking for something else?' })).toBeVisible();
+    const aside = page.locator('nav.nos-contact-aside');
+    await expect(aside.getByRole('heading', { name: 'Looking for something else' })).toBeVisible();
     for (const { label, href } of ASIDE_ROWS) {
       await expect(aside.getByRole('link', { name: label, exact: true })).toHaveAttribute('href', href);
     }

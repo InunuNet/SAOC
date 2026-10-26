@@ -118,7 +118,7 @@ export function Hero({ show }: HeroProps) {
                   } as CSSProperties
                 }
                 priority={i === 0}
-                sizes="100vw"
+                sizes="(max-width: 767px) 1350px, 100vw"
                 quality={HERO_IMAGE_QUALITY}
               />
             </div>

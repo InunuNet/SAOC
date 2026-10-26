@@ -68,6 +68,7 @@ export default async function EventsPage() {
   return (
     <>
       <RouteHero
+        exempt
         route="/events"
         eyebrow="SAOC calendar"
         heading="Events"

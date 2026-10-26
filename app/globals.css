@@ -153,7 +153,8 @@ body {
 }
 /* WCAG 2.4.11: the sticky header (97px, HD-1) must not cover a focused element. */
 html {
-  scroll-padding-top: 6.5rem;
+  --scroll-padding-top: 6.5rem;
+  scroll-padding-top: var(--scroll-padding-top);
   scrollbar-gutter: stable;
 }
 /* NAV-1: after a client-side navigation focus lands on the page heading (or main); it is a
@@ -701,6 +702,16 @@ h3.font-serif {
 [data-doc-main] {
   min-width: 0;
 }
+/* A show band that follows the hero directly is the first content: the same 64px (48 below) gap.
+   PG-1-exempt heroes (events list, societies grid, contact) keep their band flush. */
+[data-page-hero]:not([data-hero-exempt]) + [data-home-section='show-band'] {
+  margin-top: 48px;
+}
+@media (min-width: 1024px) {
+  [data-page-hero]:not([data-hero-exempt]) + [data-home-section='show-band'] {
+    margin-top: 64px;
+  }
+}
 .doc-prose {
   max-width: 64ch;
   font-family: var(--sans);
@@ -738,7 +749,13 @@ h3.font-serif {
   letter-spacing: -0.015em;
   color: var(--ink);
   text-wrap: pretty;
-  scroll-margin-top: var(--doc-scroll-margin, 112px);
+}
+/* --doc-scroll-margin is where a heading lands, measured from the viewport top. The html
+   scroll-padding already supplies part of it, so only the remainder is the heading's own margin.
+   (0,4,0) so a theme's blanket [id] offsets (.nos-theme [id] 0,2,0; its ticketing-bar variant
+   0,3,1) cannot override it. */
+.doc-layout [data-doc-main] .doc-h2[id] {
+  scroll-margin-top: calc(var(--doc-scroll-margin, 112px) - var(--scroll-padding-top, 0px));
 }
 /* A theme's own h2 rule (.nos-theme h2, 0,1,1) sets weight and wrap; the document scale keeps both. */
 .doc-h2,
@@ -757,9 +774,11 @@ h3.font-serif {
 .doc-section + .doc-section {
   margin-top: var(--section-y);
 }
-/* No hairline above the first block of a document; a later gap keeps its own. */
-[data-doc-main] > :first-child:is([data-content-gap]),
-[data-doc-main] > :first-child [data-content-gap] {
+/* No hairline above the first block of a document: a gap that is the main column's first child, or
+   the first child of its first section (or of that section's first block). A later gap keeps its own. */
+[data-doc-main] > [data-content-gap]:first-child,
+[data-doc-main] > :first-child > [data-content-gap]:first-child,
+[data-doc-main] > :first-child > :first-child > [data-content-gap]:first-child {
   border-top: 0;
   padding-top: 0;
 }
@@ -826,6 +845,10 @@ h3.font-serif {
   .doc-layout--index [data-doc-main] {
     padding-top: 32px;
   }
+  /* A heading reached from the bar lands below the header and the 48px bar, with 16px of air. */
+  .doc-layout--index [data-doc-main] .doc-h2[id] {
+    scroll-margin-top: calc(var(--doc-index-top, 97px) + 64px - var(--scroll-padding-top, 0px));
+  }
   .doc-aside[data-doc-aside-kind='index'] {
     position: sticky;
     top: var(--doc-index-top, 97px);
@@ -851,5 +874,22 @@ h3.font-serif {
     flex: none;
     border-bottom: 0;
     white-space: nowrap;
+  }
+}
+
+/* Opt-in aside variants (off by default). Bare: the aside drops its card (background, padding,
+   shadow). Aside-first: DocumentLayout renders the aside before the prose, so it shows and tabs
+   first below 1024; from 1024 the grid rule above keeps it in the right column. Either one caps
+   the aside at 440px below 1024. */
+.doc-aside.doc-aside--bare {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+@media (max-width: 1023.98px) {
+  .doc-layout--aside-first > [data-doc-aside],
+  .doc-aside.doc-aside--bare {
+    max-width: 440px;
   }
 }

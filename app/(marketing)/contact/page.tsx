@@ -77,6 +77,7 @@ export default async function ContactPage() {
   return (
     <>
       <RouteHero
+        exempt
         route="/contact"
         eyebrow="Get in touch"
         heading={data?.title ?? 'Contact SAOC'}

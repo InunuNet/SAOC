@@ -16,13 +16,11 @@ export interface NosRouteHero {
 export const NOS_ROUTE_HEROES = {
   workshops: {
     route: '/national-show/workshops',
-    title: 'Workshops & Field Trips',
-    lede: 'Book Sunset Cocktails and guided Field Trip outings at the National Show.',
+    title: 'Workshops',
   },
   conferences: {
     route: '/national-show/conferences',
-    title: 'Conferences',
-    lede: 'Register for the National Orchid Show Symposium or the WOSA Conference.',
+    title: 'Conference registration',
   },
   symposium: {
     route: '/national-show/symposium',

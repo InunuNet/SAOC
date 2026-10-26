@@ -48,6 +48,7 @@
     { "path": "/sponsors", "id": "sponsors", "facts": [], "aside": "content", "asideMustContain": "Become a sponsor", "firstH2InFirstScreen": false, "breadcrumb": true },
     { "path": "/judging", "id": "judging", "facts": [], "aside": "any", "firstH2InFirstScreen": false, "breadcrumb": true, "absentText": ["Award Tiers"] },
     { "path": "/privacy", "id": "privacy", "facts": [], "aside": "index", "firstH2InFirstScreen": true, "breadcrumb": true },
+    { "path": "/refunds", "id": "refunds", "facts": [], "aside": "index", "firstH2InFirstScreen": true, "breadcrumb": true },
     { "path": "/terms", "id": "terms", "facts": [], "aside": "index", "firstH2InFirstScreen": true, "breadcrumb": true },
     { "path": "/memorandum-of-incorporation", "id": "moi", "facts": [], "aside": "none", "firstH2InFirstScreen": false, "breadcrumb": true },
     {

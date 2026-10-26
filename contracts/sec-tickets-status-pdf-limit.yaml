@@ -1,0 +1,18 @@
+schema: athanor.contract/v1
+slug: sec-tickets-status-pdf-limit
+goal: Per-IP rate limits on the unauthenticated ticket status and PDF routes, sized above real use, with an accurate Retry-After and a poller that backs off on 429.
+created_at: '2026-10-25'
+autonomy: high
+features:
+  - id: F1
+    name: Ticket status and PDF per-IP limits
+    status: pending
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "Status and PDF routes trip at their caps (keyed on the real client hop, not a forged first hop), caps clear normal use, Retry-After is accurate"
+      command: pnpm exec tsx contracts/checks/sec-tickets-status-pdf-limit/check.mts
+    - id: A2
+      description: "Type-check passes"
+      command: pnpm type-check

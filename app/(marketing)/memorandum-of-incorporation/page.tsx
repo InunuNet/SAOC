@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 import { Breadcrumb } from '@/components/chrome/Breadcrumb';
-import { LEGAL_HERO_MIN_HEIGHT, LegalBody } from '@/components/legal/LegalBody';
+import { LegalBody } from '@/components/legal/LegalBody';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { RouteHero } from '@/components/ui/RouteHero';
 import { COMPANY_DOCUMENTS } from '@/content/legal/constitution';
@@ -20,7 +20,6 @@ export default function MemorandumOfIncorporationPage() {
       <RouteHero
         route="/memorandum-of-incorporation"
         heading="Memorandum of Incorporation"
-        minHeight={LEGAL_HERO_MIN_HEIGHT}
       />
       <DocumentLayout>
         <LegalBody document={COMPANY_DOCUMENTS} />

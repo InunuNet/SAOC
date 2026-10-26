@@ -543,9 +543,11 @@ def read_json(path: Path):
 
 def git(root: Path, *args: str) -> str:
     try:
+        # Runs on every render: never take .git/index.lock (a timeout kill leaves it stale).
         done = subprocess.run(["git", "-C", str(root), *args],
                               capture_output=True, text=True,
-                              timeout=GIT_TIMEOUT_SECONDS)
+                              timeout=GIT_TIMEOUT_SECONDS,
+                              env=dict(os.environ, GIT_OPTIONAL_LOCKS="0"))
         return done.stdout.strip() if done.returncode == 0 else ""
     except Exception:
         return ""

@@ -13,22 +13,37 @@ export interface DocumentIndexEntry {
   id: string;
   /** The h2 text. */
   label: string;
+  /** Optional ordinal shown before the label in its own span, so a theme can style it apart. */
+  number?: string | number;
 }
 
-// An h2 counts as "being read" once it has scrolled above this line (the 97px header plus air).
+// An h2 counts as "being read" once it has scrolled above this line (the 97px header plus air), or
+// above where a click on its row lands it (scroll-padding plus scroll-margin) plus the same air, so
+// a clicked row is always the active one whatever offsets a theme sets.
 const SPY_LINE_PX = 140;
+const SPY_AIR_PX = 28;
 
+function spyLine(heading: HTMLElement, scrollPadding: number): number {
+  const landing = scrollPadding + (parseFloat(getComputedStyle(heading).scrollMarginTop) || 0);
+  return Math.max(SPY_LINE_PX, landing + SPY_AIR_PX);
+}
+
+// Before any h2 reaches the line (page load), the first entry is the one being read.
 function currentSection(entries: readonly DocumentIndexEntry[]): string | null {
-  let current: string | null = null;
+  let current: string | null = entries[0]?.id ?? null;
+  const scrollPadding = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
   for (const entry of entries) {
     const heading = document.getElementById(entry.id);
-    if (heading && heading.getBoundingClientRect().top <= SPY_LINE_PX) current = entry.id;
+    if (heading && heading.getBoundingClientRect().top <= spyLine(heading, scrollPadding)) {
+      current = entry.id;
+    }
   }
   return current;
 }
 
 export function DocumentIndex({ entries }: { entries: readonly DocumentIndexEntry[] }) {
-  const [active, setActive] = useState<string | null>(null);
+  // Server render and first paint already mark the first row; the scroll-spy takes over on hydrate.
+  const [active, setActive] = useState<string | null>(entries[0]?.id ?? null);
   const nav = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -66,6 +81,7 @@ export function DocumentIndex({ entries }: { entries: readonly DocumentIndexEntr
           href={`#${entry.id}`}
           aria-current={active === entry.id ? 'location' : undefined}
         >
+          {entry.number !== undefined ? <><span data-index-number>{entry.number}</span>{' '}</> : null}
           {entry.label}
         </a>
       ))}

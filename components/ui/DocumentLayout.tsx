@@ -22,9 +22,20 @@ export interface DocumentLayoutProps {
   index?: readonly DocumentIndexEntry[];
   /** Hairline-free wrapper id for anchors; optional. */
   id?: string;
+  /** The content aside comes before the prose in the DOM, so below 1024px it shows (and tabs) first; from 1024px it keeps the right column. Off by default. */
+  asideFirst?: boolean;
+  /** The aside without its card: no background, padding or shadow. Off by default. */
+  asideBare?: boolean;
 }
 
-export function DocumentLayout({ children, aside, index, id }: DocumentLayoutProps) {
+export function DocumentLayout({
+  children,
+  aside,
+  index,
+  id,
+  asideFirst = false,
+  asideBare = false,
+}: DocumentLayoutProps) {
   if (aside && index) {
     // A caller bug: one page, one aside. Production keeps the content aside off the index's path.
     if (process.env.NODE_ENV !== 'production') {
@@ -32,24 +43,29 @@ export function DocumentLayout({ children, aside, index, id }: DocumentLayoutPro
     }
   }
   const indexEntries = !aside && index && index.length >= INDEX_MIN_ENTRIES ? index : null;
+  const asideClass = `doc-aside${asideBare ? ' doc-aside--bare' : ''}`;
+  const contentAside = aside ? (
+    <aside data-doc-aside data-doc-aside-kind="content" className={asideClass}>
+      {aside}
+    </aside>
+  ) : null;
 
   return (
     <div
       id={id}
       data-doc-layout
-      className={`doc-layout saoc-container${indexEntries ? ' doc-layout--index' : ''}`}
+      className={`doc-layout saoc-container${indexEntries ? ' doc-layout--index' : ''}${
+        asideFirst ? ' doc-layout--aside-first' : ''
+      }`}
     >
       {indexEntries ? (
-        <aside data-doc-aside data-doc-aside-kind="index" className="doc-aside">
+        <aside data-doc-aside data-doc-aside-kind="index" className={asideClass}>
           <DocumentIndex entries={indexEntries} />
         </aside>
       ) : null}
+      {asideFirst ? contentAside : null}
       <div data-doc-main>{children}</div>
-      {aside ? (
-        <aside data-doc-aside data-doc-aside-kind="content" className="doc-aside">
-          {aside}
-        </aside>
-      ) : null}
+      {asideFirst ? null : contentAside}
     </div>
   );
 }

@@ -1,0 +1,521 @@
+{
+ "basis": "ruling (c): photo box 38%-100% at >=1024 (62% wide), width-driven and height-driven need, stacked 2:1 band below 768 (PG-1), full width",
+ "crops": [
+  {
+   "crop": "D1",
+   "source": "/images/orchid-dark.jpg",
+   "sourceSize": [
+    5184,
+    3456
+   ],
+   "rect": [
+    0,
+    800,
+    2600,
+    2200
+   ],
+   "width": 2600,
+   "height": 1400,
+   "aspect": 1.857,
+   "objectPositionX": 0,
+   "note": "left speckled petals only",
+   "need": {
+    "2056@2": [
+     2550,
+     2550
+    ],
+    "1440@2": [
+     1786,
+     1786
+    ],
+    "1024@2": [
+     1270,
+     1412
+    ],
+    "768@2": [
+     1536
+    ],
+    "390@3": [
+     1170
+    ]
+   },
+   "passes": true
+  },
+  {
+   "crop": "PK1",
+   "source": "/images/orchid-pink.jpg",
+   "sourceSize": [
+    3456,
+    5184
+   ],
+   "rect": [
+    700,
+    800,
+    3300,
+    2100
+   ],
+   "width": 2600,
+   "height": 1300,
+   "aspect": 2.0,
+   "objectPositionX": 50,
+   "note": "top bloom band (PK2 is the same crop for the no-repeat rule)",
+   "need": {
+    "2056@2": [
+     2550,
+     2550
+    ],
+    "1440@2": [
+     1786,
+     1786
+    ],
+    "1024@2": [
+     1320,
+     1520
+    ],
+    "768@2": [
+     1536
+    ],
+    "390@3": [
+     1170
+    ]
+   },
+   "passes": true
+  },
+  {
+   "crop": "PK3",
+   "source": "/images/orchid-pink.jpg",
+   "sourceSize": [
+    3456,
+    5184
+   ],
+   "rect": [
+    0,
+    3600,
+    2600,
+    4900
+   ],
+   "width": 2600,
+   "height": 1300,
+   "aspect": 2.0,
+   "objectPositionX": 50,
+   "note": "bottom-left bloom band",
+   "need": {
+    "2056@2": [
+     2550,
+     2550
+    ],
+    "1440@2": [
+     1786,
+     1786
+    ],
+    "1024@2": [
+     1320,
+     1520
+    ],
+    "768@2": [
+     1536
+    ],
+    "390@3": [
+     1170
+    ]
+   },
+   "passes": true
+  },
+  {
+   "crop": "Y1",
+   "source": "/images/orchid-yellow.jpg",
+   "sourceSize": [
+    3100,
+    2325
+   ],
+   "rect": [
+    0,
+    700,
+    2600,
+    2000
+   ],
+   "width": 2600,
+   "height": 1300,
+   "aspect": 2.0,
+   "objectPositionX": 50,
+   "note": "left red-centred flower",
+   "need": {
+    "2056@2": [
+     2550,
+     2550
+    ],
+    "1440@2": [
+     1786,
+     1786
+    ],
+    "1024@2": [
+     1320,
+     1520
+    ],
+    "768@2": [
+     1536
+    ],
+    "390@3": [
+     1170
+    ]
+   },
+   "passes": true
+  },
+  {
+   "crop": "S1b",
+   "source": "/images/orchid-S1b.jpg",
+   "sourceSize": [
+    2600,
+    1368
+   ],
+   "rect": [
+    0,
+    0,
+    2600,
+    1368
+   ],
+   "width": 2600,
+   "height": 1368,
+   "aspect": 1.901,
+   "objectPositionX": 50,
+   "note": "#76 crop, sharpness judged by eye on this sheet",
+   "need": {
+    "2056@2": [
+     2550,
+     2550
+    ],
+    "1440@2": [
+     1786,
+     1786
+    ],
+    "1024@2": [
+     1270,
+     1445
+    ],
+    "768@2": [
+     1536
+    ],
+    "390@3": [
+     1170
+    ]
+   },
+   "passes": true
+  },
+  {
+   "crop": "S2c",
+   "source": "/images/orchid-S2c.jpg",
+   "sourceSize": [
+    2600,
+    1370
+   ],
+   "rect": [
+    0,
+    0,
+    2600,
+    1370
+   ],
+   "width": 2600,
+   "height": 1370,
+   "aspect": 1.898,
+   "objectPositionX": 50,
+   "note": "#76 crop, sharpness judged by eye on this sheet",
+   "need": {
+    "2056@2": [
+     2550,
+     2550
+    ],
+    "1440@2": [
+     1786,
+     1786
+    ],
+    "1024@2": [
+     1270,
+     1443
+    ],
+    "768@2": [
+     1536
+    ],
+    "390@3": [
+     1170
+    ]
+   },
+   "passes": true
+  },
+  {
+   "crop": "S3a",
+   "source": "/images/orchid-S3a.jpg",
+   "sourceSize": [
+    2800,
+    1474
+   ],
+   "rect": [
+    0,
+    0,
+    2800,
+    1474
+   ],
+   "width": 2800,
+   "height": 1474,
+   "aspect": 1.9,
+   "objectPositionX": 50,
+   "note": "#76 crop, sharpness judged by eye on this sheet",
+   "need": {
+    "2056@2": [
+     2550,
+     2550
+    ],
+    "1440@2": [
+     1786,
+     1786
+    ],
+    "1024@2": [
+     1270,
+     1444
+    ],
+    "768@2": [
+     1536
+    ],
+    "390@3": [
+     1170
+    ]
+   },
+   "passes": true
+  },
+  {
+   "crop": "S3b",
+   "source": "/images/orchid-S3b.jpg",
+   "sourceSize": [
+    3000,
+    1580
+   ],
+   "rect": [
+    0,
+    0,
+    3000,
+    1580
+   ],
+   "width": 3000,
+   "height": 1580,
+   "aspect": 1.899,
+   "objectPositionX": 50,
+   "note": "#76 crop, sharpness judged by eye on this sheet",
+   "need": {
+    "2056@2": [
+     2550,
+     2550
+    ],
+    "1440@2": [
+     1786,
+     1786
+    ],
+    "1024@2": [
+     1270,
+     1444
+    ],
+    "768@2": [
+     1536
+    ],
+    "390@3": [
+     1170
+    ]
+   },
+   "passes": true
+  },
+  {
+   "crop": "S2a",
+   "source": "/images/orchid-S2a.jpg",
+   "sourceSize": [
+    4400,
+    2320
+   ],
+   "rect": [
+    0,
+    0,
+    4400,
+    2320
+   ],
+   "width": 4400,
+   "height": 2320,
+   "aspect": 1.897,
+   "objectPositionX": 50,
+   "note": "#76 crop, sharpness judged by eye on this sheet",
+   "need": {
+    "2056@2": [
+     2550,
+     2550
+    ],
+    "1440@2": [
+     1786,
+     1786
+    ],
+    "1024@2": [
+     1270,
+     1442
+    ],
+    "768@2": [
+     1536
+    ],
+    "390@3": [
+     1170
+    ]
+   },
+   "passes": true
+  },
+  {
+   "crop": "H4a",
+   "source": "/images/orchid-H4a.jpg",
+   "sourceSize": [
+    2700,
+    1421
+   ],
+   "rect": [
+    0,
+    0,
+    2700,
+    1421
+   ],
+   "width": 2700,
+   "height": 1421,
+   "aspect": 1.9,
+   "objectPositionX": 50,
+   "note": "#76 crop, sharpness judged by eye on this sheet",
+   "need": {
+    "2056@2": [
+     2550,
+     2550
+    ],
+    "1440@2": [
+     1786,
+     1786
+    ],
+    "1024@2": [
+     1270,
+     1445
+    ],
+    "768@2": [
+     1536
+    ],
+    "390@3": [
+     1170
+    ]
+   },
+   "passes": true
+  }
+ ],
+ "routes": [
+  {
+   "route": "/about",
+   "group": "visit",
+   "crop": "S3a",
+   "reuseOf": null
+  },
+  {
+   "route": "/what-to-expect",
+   "group": "visit",
+   "crop": "PK1",
+   "reuseOf": null
+  },
+  {
+   "route": "/plan-your-visit",
+   "group": "visit",
+   "crop": "S1b",
+   "reuseOf": null
+  },
+  {
+   "route": "/faq",
+   "group": "visit",
+   "crop": "H4a",
+   "reuseOf": null
+  },
+  {
+   "route": "/programme",
+   "group": "programme",
+   "crop": "S3b",
+   "reuseOf": null
+  },
+  {
+   "route": "/workshops",
+   "group": "programme",
+   "crop": "S2c",
+   "reuseOf": null
+  },
+  {
+   "route": "/symposium",
+   "group": "programme",
+   "crop": "D1",
+   "reuseOf": null
+  },
+  {
+   "route": "/wosa-conference",
+   "group": "programme",
+   "crop": "PK3",
+   "reuseOf": null
+  },
+  {
+   "route": "/conferences",
+   "group": "programme",
+   "crop": "S2a",
+   "reuseOf": null
+  },
+  {
+   "route": "/international-guests",
+   "group": "exhibit",
+   "crop": "Y1",
+   "reuseOf": null
+  },
+  {
+   "route": "/exhibitors",
+   "group": "exhibit",
+   "crop": "D1",
+   "reuseOf": "/symposium (programme)"
+  },
+  {
+   "route": "/sa-exhibitors",
+   "group": "exhibit",
+   "crop": "PK1",
+   "reuseOf": "/what-to-expect (visit)"
+  },
+  {
+   "route": "/vendors",
+   "group": "exhibit",
+   "crop": "S1b",
+   "reuseOf": "/plan-your-visit (visit)"
+  },
+  {
+   "route": "/sponsors",
+   "group": "header",
+   "crop": "PK3",
+   "reuseOf": "/wosa-conference (programme)"
+  },
+  {
+   "route": "/archive",
+   "group": "header",
+   "crop": "S3a",
+   "reuseOf": "/about (visit)"
+  },
+  {
+   "route": "/contact",
+   "group": "header",
+   "crop": "H4a",
+   "reuseOf": "/faq (visit)"
+  },
+  {
+   "route": "/privacy",
+   "group": "legal",
+   "crop": "S3b",
+   "reuseOf": "/programme (programme)"
+  },
+  {
+   "route": "/terms",
+   "group": "legal",
+   "crop": "S2a",
+   "reuseOf": "/conferences (programme)"
+  },
+  {
+   "route": "/refunds",
+   "group": "legal",
+   "crop": "Y1",
+   "reuseOf": "/international-guests (exhibit)"
+  }
+ ]
+}

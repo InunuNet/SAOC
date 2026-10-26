@@ -1,0 +1,18 @@
+schema: athanor.contract/v1
+slug: sec-events-submit-ip-limit
+goal: Cap event submissions per client IP across throwaway accounts, after auth so unauthenticated traffic cannot lock out verified users behind a shared address, keeping the per-uid limit.
+created_at: '2026-10-25'
+autonomy: high
+features:
+  - id: F1
+    name: Event submit per-IP limit
+    status: pending
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "Per-IP cap trips for throwaway accounts (forged first hop ignored), unauthenticated calls do not spend the allowance, per-uid limit still holds"
+      command: pnpm exec tsx --experimental-test-module-mocks contracts/checks/sec-events-submit-ip-limit/check.mts
+    - id: A2
+      description: "Type-check passes"
+      command: pnpm type-check

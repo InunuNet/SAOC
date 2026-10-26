@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 
+import { LegalBody, legalIndex } from '@/components/legal/LegalBody';
 import { LegalBreadcrumb } from '@/components/legal/LegalBreadcrumb';
-import { LEGAL_HERO_MIN_HEIGHT, LegalBody, legalIndex } from '@/components/legal/LegalBody';
+import { NosHero } from '@/components/nos/NosHero';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { RouteHero } from '@/components/ui/RouteHero';
 import { WEBSITE_TERMS } from '@/content/legal/terms';
 import { buildPageMetadata } from '@/lib/seo';
+import { requestSite } from '@/lib/request-site';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Terms of Use',
@@ -13,15 +15,28 @@ export const metadata: Metadata = buildPageMetadata({
   path: '/terms',
 });
 
-export default function TermsPage() {
+const PAGE_LABEL = 'Terms of Use';
+
+// On the NOS host the hero is the NOS one with its own breadcrumb (NL-1: the h1 is the page's label,
+// the document's full title is its lede); the SAOC host keeps its breadcrumb and PageHero.
+export default async function TermsPage() {
+  const nos = (await requestSite()) === 'nos';
   return (
     <>
-      <LegalBreadcrumb label="Terms of Use" />
-      <RouteHero
-        route="/terms"
-        heading={WEBSITE_TERMS.title}
-        minHeight={LEGAL_HERO_MIN_HEIGHT}
-      />
+      {nos ? (
+        <NosHero
+          route="/terms"
+          title={PAGE_LABEL}
+          crumbLabel={PAGE_LABEL}
+          lede={WEBSITE_TERMS.title}
+          priority
+        />
+      ) : (
+        <>
+          <LegalBreadcrumb label={PAGE_LABEL} />
+          <RouteHero route="/terms" heading={WEBSITE_TERMS.title} />
+        </>
+      )}
       <DocumentLayout index={legalIndex(WEBSITE_TERMS)}>
         <LegalBody document={WEBSITE_TERMS} />
       </DocumentLayout>

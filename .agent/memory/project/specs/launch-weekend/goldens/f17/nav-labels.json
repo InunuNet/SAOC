@@ -123,8 +123,7 @@
           "id": "workshops",
           "href": "/national-show/workshops",
           "labelBefore": "Workshops",
-          "label": "Workshops",
-          "descriptor": "Book Sunset Cocktails and guided Field Trip outings."
+          "label": "Workshops"
         },
         {
           "id": "symposium",

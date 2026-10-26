@@ -1,0 +1,27 @@
+{
+ "rule": "key = sha256hex(query.trim() + \"\\n\" + JSON.stringify(params with keys sorted recursively, undefined dropped by JSON.stringify; null/absent params -> {}))",
+ "cases": [
+  {
+   "query": "  *[_type == \"ticketType\" && slug.current == $slug][0]{name, \"n\": count(*)}\n",
+   "params": {
+    "slug": "vip",
+    "b": [
+     2,
+     1
+    ],
+    "a": {
+     "z": 1,
+     "y": null
+    }
+   },
+   "canonicalParams": "{\"a\":{\"y\":null,\"z\":1},\"b\":[2,1],\"slug\":\"vip\"}",
+   "key": "899e116885da895522f854c0b9d555382fe57498abd86b12b0eef4675bb9aa68"
+  },
+  {
+   "query": "  *[_type == \"ticketType\" && slug.current == $slug][0]{name, \"n\": count(*)}\n",
+   "params": null,
+   "canonicalParams": "{}",
+   "key": "0231e12d916521eba5d3854eb4d81d3bc5cf589fdcc02d595bc21694d4190d57"
+  }
+ ]
+}

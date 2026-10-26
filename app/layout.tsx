@@ -39,6 +39,7 @@ const jetBrainsMono = localFont({
   ],
   variable: '--font-mono-loaded',
   display: 'swap',
+  preload: false,
   adjustFontFallback: 'Arial',
 });
 

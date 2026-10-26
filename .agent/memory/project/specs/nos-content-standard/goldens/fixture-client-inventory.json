@@ -1,0 +1,13 @@
+{
+ "rule": "Every createClient( under app/, lib/, sanity/ and components/ is either sanity/lib/client.ts (the choke point, wrapped by withFixture) or listed here with why it cannot run on a gated route. scripts/ are CLI tools that never run in the server and are out of scope. The network guard (block-sanity-net.cjs) is the backstop: any API request from the server process fails A15.",
+ "wrapped": ["sanity/lib/client.ts"],
+ "bypass": [
+  { "file": "app/api/events/submit/route.ts", "client": "writeClient", "reason": "token write client in a POST route; the gates only GET pages", "gatedRoutes": false },
+  { "file": "lib/vendor-listing-sanity.ts", "client": "createClient with a write token, useCdn false", "reason": "reached only from lib/vendor-listing.ts <- app/api/admin/vendors/[id]/publish-listing (admin POST)", "gatedRoutes": false },
+  { "file": "lib/societies/drive-sync-store.ts", "client": "createClient for the societies sync", "reason": "imported only by scripts/sync-societies-from-drive.ts (CLI)", "gatedRoutes": false }
+ ],
+ "studioOnly": [
+  { "file": "sanity/schemas/documents/show.ts", "reason": "Studio validation callback (client.fetch from the Studio context), served at /studio, which no gate visits" },
+  { "file": "sanity/schemas/documents/showPage.ts", "reason": "same: Studio validation callback" }
+ ]
+}

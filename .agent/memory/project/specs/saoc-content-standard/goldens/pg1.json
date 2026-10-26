@@ -1,0 +1,50 @@
+{
+  "_doc": "NOS Design ruling PG-1 (final; Brad asked for one standard across both sites) applied to the SAOC DS-1 routes. Read by checks/gate-pg1.mjs and checks/f3_check.sh. Route list = goldens/standard.json non-gated routes minus the exceptions below; the ids must be a subset of standard.json (f3_check.sh route-list enforces it).",
+  "rulings": {
+    "1": "Gap from hero (or sub-nav) to first content is exactly 64px at >=1024 and 48px below. First section has no padding-top and no hairline.",
+    "2": "No split h2/body: h2 sits above its body in the 7fr column; the 5fr column is the sticky index.",
+    "3": "Drop any h2 whose text equals the h1.",
+    "4": "PageHero min-height is clamp(320px,22vw,380px), content-driven; copy centred with the pill; grows only for a longer lede, the facts row or actions."
+  },
+  "outOfScope": ["home", "events-list", "societies-grid", "contact", "404"],
+  "outOfScopeNote": "Home hero, Events list, Societies grid, Contact, 404 (NF-1). Event detail IS in scope: its ShowBand counts as the first content after the hero. Media-kit is admin-gated (standard.json gated:true) so runtime measurement skips it.",
+  "viewports": {
+    "w390": { "width": 390, "height": 844 },
+    "w1023": { "width": 1023, "height": 800 },
+    "w1024": { "width": 1024, "height": 800 },
+    "w1440": { "width": 1440, "height": 900 },
+    "w2056": { "width": 2056, "height": 1200 }
+  },
+  "numbers": {
+    "gapPx": { "atLeast1024": 64, "below1024": 48, "breakpoint": 1024, "tolerance": 1.5 },
+    "firstSection": { "paddingTop": 0, "borderTop": 0, "firstChildOffsetMax": 1.5 },
+    "heroMinHeight": { "floorPx": 320, "vw": 22, "capPx": 380, "tolerance": 1 },
+    "heroOneLineCap": { "w2056": 380, "w1440": 330 },
+    "heroCenter": { "horizontalTolerancePx": 2, "verticalImbalanceMaxPx": 24, "verticalNote": "heuristic: only applied to a hero that is exactly its min-height; widen here, not in the gate, if the fixed header overlay legitimately offsets copy" },
+    "foldPx": 900,
+    "minEligibleOneLineHeroes": 3,
+    "minH2Total": 5,
+    "gridRatio": { "main": 7, "aside": 5, "tolerance": 0.03 }
+  },
+  "sharedApi": {
+    "files": {
+      "lib/hero-facts.ts": ["export interface HeroFact", "HERO_FACTS_MIN = 2", "HERO_FACTS_MAX = 4", "export function normaliseHeroFacts"],
+      "components/ui/PageHero.tsx": ["facts?:", "data-hero-facts", "data-fact-count", "data-hero-fact", "<dl", "data-page-hero"],
+      "components/ui/DocumentLayout.tsx": ["data-doc-layout", "data-doc-main", "data-doc-aside", "data-doc-aside-kind", "aside?:", "index?:"],
+      "components/ui/DocumentIndex.tsx": ["data-doc-index", "data-doc-index-link", "aria-label=\"Sections\""]
+    }
+  },
+  "routes": [
+    { "id": "event-detail", "path": "/events/19th-south-african-national-orchid-show", "firstContent": "show-band", "minH2": 0 },
+    { "id": "about", "path": "/about", "firstContent": "doc-main", "minH2": 1 },
+    { "id": "members", "path": "/members", "firstContent": "doc-main", "minH2": 0 },
+    { "id": "sponsors", "path": "/sponsors", "firstContent": "doc-main", "minH2": 1 },
+    { "id": "judging", "path": "/judging", "firstContent": "doc-main", "minH2": 0 },
+    { "id": "privacy", "path": "/privacy", "firstContent": "doc-main", "minH2": 2 },
+    { "id": "refunds", "path": "/refunds", "firstContent": "doc-main", "minH2": 2 },
+    { "id": "terms", "path": "/terms", "firstContent": "doc-main", "minH2": 2 },
+    { "id": "moi", "path": "/memorandum-of-incorporation", "firstContent": "doc-main", "minH2": 0 }
+  ],
+  "nosRoutes": [],
+  "nosNote": "NOS Site fills nosRoutes ({id,path,firstContent,minH2}) and runs: NOS_BASE_URL=<url> node checks/gate-pg1.mjs <check> --site nos. Not part of this contract's assertions (NOS routes are not ours to name); the same gate and numbers apply."
+}

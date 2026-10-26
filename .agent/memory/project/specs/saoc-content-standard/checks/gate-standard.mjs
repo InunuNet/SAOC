@@ -6,15 +6,15 @@
 // tree state, and exits 1 listing every violation for the requested check.
 // Needs: node_modules (playwright, next) and .env.local (Sanity read) in the repo root.
 import { spawn, execSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createHash, randomUUID } from 'node:crypto';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import { chromium } from '@playwright/test';
 
 const SPEC = '.agent/memory/project/specs/saoc-content-standard';
 const STD = JSON.parse(readFileSync(`${SPEC}/goldens/standard.json`, 'utf8'));
 const CACHE_DIR = '.tmp/sandbox/saoc-standard-gate';
-const CHECKS = ['grid', 'measure', 'h2', 'rhythm', 'breadcrumb', 'aside', 'eyebrow', 'facts', 'firstscreen', 'contrast', 'home', 'focus', 'overflow', 'strongp', 'absent'];
+const CHECKS = ['grid', 'measure', 'h2', 'rhythm', 'breadcrumb', 'aside', 'eyebrow', 'facts', 'firstscreen', 'contrast', 'home', 'focus', 'overflow', 'strongp', 'absent', 'selftest'];
 
 const check = process.argv[2];
 if (!CHECKS.includes(check)) { console.error(`unknown check ${check}; one of ${CHECKS.join(', ')}`); process.exit(2); }
@@ -25,6 +25,15 @@ const useCache = process.argv.includes('--cache');
 // the stamp is the dataset's document count and latest _updatedAt, read from the API (not the CDN). If it
 // cannot be read the stamp is the clock, so nothing is ever reused on a guess.
 async function sanityStamp() {
+  // Under fixture replay the dataset is the recorded fixture dir: no network call, and the stamp
+  // still changes whenever a fixture file is added, removed or edited.
+  if (process.env.SANITY_FIXTURE_MODE === 'replay') {
+    const dir = process.env.SANITY_FIXTURE_DIR;
+    if (!dir) return `unreadable:${Date.now()}`;
+    const h = createHash('sha1');
+    for (const f of readdirSync(dir).filter((n) => n.endsWith('.json')).sort()) h.update(f + '\0').update(readFileSync(`${dir}/${f}`)).update('\0');
+    return `fixture:${h.digest('hex')}`;
+  }
   try {
     const env = Object.fromEntries(readFileSync('.env.local', 'utf8').split('\n').filter((l) => /^[A-Z_]+=/.test(l)).map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1).replace(/^["']|["']$/g, '')]));
     const query = encodeURIComponent('{"n": count(*), "u": *|order(_updatedAt desc)[0]._updatedAt}');
@@ -34,13 +43,66 @@ async function sanityStamp() {
   } catch { return `unreadable:${Date.now()}`; }
 }
 
+// Everything a rendered page is built from, plus this gate's own code: a change under any of these
+// must invalidate the cache.
+const SOURCE_PATHS = `app components lib content sanity types public proxy.ts ${SPEC}/checks`;
+// Build and runtime config that changes the render; hashed by content (.env.local is gitignored,
+// so git diff never sees it; only its hash enters the key, never a value).
+const CONFIG_FILES = ['next.config.ts', 'postcss.config.mjs', 'package.json', 'pnpm-lock.yaml', '.env.local'];
+
+// Untracked source counts by name AND content: an edit to a new, uncommitted file must invalidate
+// the cached measurement just as an edit to a tracked one does.
+function untrackedDigest() {
+  const files = execSync(`git ls-files --others --exclude-standard -- ${SOURCE_PATHS}`).toString().split('\n').filter(Boolean).concat(CONFIG_FILES);
+  const h = createHash('sha1');
+  for (const f of files) h.update(f + '\0').update(existsSync(f) ? readFileSync(f) : '').update('\0');
+  return h.digest('hex');
+}
+
 async function stateKey() {
   const base = process.env.SAOC_BASE_URL ?? 'local-dev-server';
   const stamp = await sanityStamp();
   const head = execSync('git rev-parse HEAD').toString().trim();
-  const diff = execSync('git diff HEAD -- app components lib content proxy.ts').toString();
-  const untracked = execSync("git ls-files --others --exclude-standard -- app components lib content").toString();
-  return createHash('sha1').update(base + stamp + head + diff + untracked + readFileSync(`${SPEC}/goldens/standard.json`)).digest('hex');
+  const diff = execSync(`git diff HEAD -- ${SOURCE_PATHS}`).toString();
+  return createHash('sha1').update(base + stamp + head + diff + untrackedDigest() + readFileSync(`${SPEC}/goldens/standard.json`)).digest('hex');
+}
+
+// Selftest of the digest: unchanged untracked content must give the same digest, changed content a
+// different one (compared on the digest itself; the full key also folds in the Sanity stamp).
+function untrackedDigestFails() {
+  const fails = [];
+  const probe = `components/.standard-selftest-${randomUUID()}.txt`;
+  let created = false;
+  try {
+    writeFileSync(probe, 'a', { flag: 'wx' });
+    created = true;
+    const a1 = untrackedDigest();
+    const a2 = untrackedDigest();
+    writeFileSync(probe, 'b');
+    const b = untrackedDigest();
+    if (a1 !== a2) fails.push('selftest "untracked content changes the cache key": digest differs for unchanged content');
+    if (b === a1) fails.push('selftest "untracked content changes the cache key": digest unchanged after an untracked file\'s content changed');
+  } finally { if (created) rmSync(probe); }
+  return fails;
+}
+
+// An externally served build (a base URL from the environment) has no identity the cache key can
+// see, so its measurements are never cached: nothing is read and nothing is written.
+function cachePolicy(baseUrl, wantCache) {
+  if (baseUrl) return { read: false, write: false, note: `cache: off, ${baseUrl} is an externally served build the cache key cannot identify` };
+  return { read: wantCache, write: true, note: null };
+}
+
+// Selftest of the policy: an external base URL must neither read nor write, whatever --cache says.
+function cachePolicyFails() {
+  const fails = [];
+  for (const want of [true, false]) {
+    const ext = cachePolicy('https://example.test', want);
+    if (ext.read || ext.write || !ext.note) fails.push(`selftest "external base URL skips the cache" (--cache ${want}): read ${ext.read}, write ${ext.write}`);
+  }
+  const local = cachePolicy(undefined, true);
+  if (!local.read || !local.write) fails.push('selftest "external base URL skips the cache": the local dev server lost its --cache read or write');
+  return fails;
 }
 
 function freePort() {
@@ -197,11 +259,14 @@ async function focusProbe(page) {
 }
 
 async function loadOrMeasure() {
-  mkdirSync(CACHE_DIR, { recursive: true });
+  const policy = cachePolicy(process.env.SAOC_BASE_URL, useCache);
+  if (policy.note) console.log(policy.note);
   const file = `${CACHE_DIR}/measure.json`;
-  const key = await stateKey();
-  if (useCache && existsSync(file)) { const c = JSON.parse(readFileSync(file, 'utf8')); if (c.key === key) return c.data; }
-  return measureAll().then((data) => { writeFileSync(file, JSON.stringify({ key, data })); return data; });
+  const key = policy.read || policy.write ? await stateKey() : null;
+  if (policy.read && existsSync(file)) { const c = JSON.parse(readFileSync(file, 'utf8')); if (c.key === key) return c.data; }
+  const data = await measureAll();
+  if (policy.write) { mkdirSync(CACHE_DIR, { recursive: true }); writeFileSync(file, JSON.stringify({ key, data })); }
+  return data;
 }
 
 const fails = [];
@@ -217,6 +282,13 @@ function eachRoute(fn, { desktopOnly = false } = {}) {
       fn(route, vp, m);
     }
   }
+}
+
+if (check === 'selftest') {
+  const selfFails = [...cachePolicyFails(), ...untrackedDigestFails()];
+  if (selfFails.length) { console.error(`selftest: ${selfFails.length} violation(s)`); selfFails.forEach((f) => console.error('  ' + f)); process.exit(1); }
+  console.log('selftest: ok');
+  process.exit(0);
 }
 
 const data = await loadOrMeasure();

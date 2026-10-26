@@ -253,12 +253,12 @@ def _read_mission(root):
     return None
 
 
-def _run(argv, cwd=None, timeout=PROBE_TIMEOUT_SECONDS, shell=False):
+def _run(argv, cwd=None, timeout=PROBE_TIMEOUT_SECONDS, shell=False, env=None):
     """Run a command; return (rc, first_line_of_output). Never raises."""
     try:
         proc = subprocess.run(
             argv, cwd=str(cwd) if cwd else None, shell=shell, timeout=timeout,
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env,
         )
     except (OSError, subprocess.SubprocessError):
         return 127, "command could not be executed"
@@ -267,7 +267,9 @@ def _run(argv, cwd=None, timeout=PROBE_TIMEOUT_SECONDS, shell=False):
 
 
 def _git(root, *args):
-    rc, out = _run(["git", "-C", str(root)] + list(args), timeout=NETWORK_TIMEOUT_SECONDS)
+    # A read-only panel must never take .git/index.lock (a killed `git status` leaves it stale).
+    env = dict(os.environ, GIT_OPTIONAL_LOCKS="0")
+    rc, out = _run(["git", "-C", str(root)] + list(args), timeout=NETWORK_TIMEOUT_SECONDS, env=env)
     return out if rc == 0 else None
 
 
@@ -513,6 +515,27 @@ def _collect_quota(root, checks):
     })
     _check_quota_reading(checks, quota, root)
     return quota
+
+
+# Harness-written settings key -> the env var that outranks it when set.
+ENV_SHADOWS = {"autoCompactWindow": "CLAUDE_CODE_AUTO_COMPACT_WINDOW"}
+
+
+def _collect_env_shadows(checks):
+    """Warn for each live env var that makes a harness-written settings key inert."""
+    for key, var in ENV_SHADOWS.items():
+        value = os.environ.get(var)
+        if value is None:
+            continue
+        checks.append(_check(
+            "settings.env_shadow", "delivery", "warn",
+            f"{var}={value} is set in the environment, so the {key} settings key "
+            f"is ignored while it is set",
+            False,
+            f"remove the {var} export from your shell startup file "
+            f"(find it with: grep -n {var} ~/.zshrc ~/.zshenv ~/.zprofile ~/.bashrc ~/.profile), "
+            "then open a new terminal",
+            basis="parsed"))
 
 
 def _check_quota_oracle(checks, detail):
@@ -1438,6 +1461,7 @@ def collect(root, refresh=False):
         "estimate": _collect_estimate(root, mission),
         "autonomy": _collect_autonomy(root, profile, active, mission, checks),
     }
+    _collect_env_shadows(checks)
     doc["checks"] = checks
     return _finalize(doc)
 
