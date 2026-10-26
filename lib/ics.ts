@@ -1,4 +1,6 @@
 const CRLF = '\r\n';
+// RFC 5545 section 3.1: a content line is at most 75 octets; a continuation line spends one on its space.
+const MAX_LINE_OCTETS = 75;
 
 export type IcsEventInput = {
   slug: string;
@@ -30,7 +32,28 @@ export function escapeIcsText(value: string): string {
     .replace(/\\/g, '\\\\')
     .replace(/;/g, '\\;')
     .replace(/,/g, '\\,')
-    .replace(/\r?\n/g, '\\n');
+    .replace(/\r\n|\r|\n/g, '\\n');
+}
+
+// Folds one content line on UTF-8 octets, breaking only between code points.
+function foldLine(line: string): string {
+  const parts: string[] = [];
+  let current = '';
+  let currentOctets = 0;
+  let limit = MAX_LINE_OCTETS;
+  for (const char of line) {
+    const octets = Buffer.byteLength(char, 'utf8');
+    if (currentOctets + octets > limit) {
+      parts.push(current);
+      current = '';
+      currentOctets = 0;
+      limit = MAX_LINE_OCTETS - 1;
+    }
+    current += char;
+    currentOctets += octets;
+  }
+  parts.push(current);
+  return parts.join(CRLF + ' ');
 }
 
 const MS_PER_HOUR = 60 * 60 * 1000;
@@ -118,7 +141,7 @@ export function buildVEvent(input: IcsEventInput): string {
 
   lines.push('END:VEVENT');
 
-  return lines.join(CRLF);
+  return lines.map(foldLine).join(CRLF);
 }
 
 export function buildVCalendar(events: IcsEventInput[]): string {
