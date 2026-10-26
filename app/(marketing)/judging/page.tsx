@@ -182,8 +182,8 @@ export default async function JudgingPage() {
       </DocumentLayout>
 
       <PhotoBand
-        image="/images/orchid-purple.jpg"
-        alt="Purple orchid on the show bench"
+        image="/images/orchid-dark.jpg"
+        alt="Dark orchid on the show bench"
         objectPosition="80% 45%"
         caption={withhold && isUnsourced(PHOTO_CAPTION) ? undefined : PHOTO_CAPTION}
         marked={!withhold}

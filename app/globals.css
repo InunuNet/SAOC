@@ -399,48 +399,40 @@ h3.font-serif {
   padding-inline: var(--container-pad);
 }
 
-/* Home hero (NOS Design hero-cards-ruling, 2026-10-23, Brad P0). One localised scrim: the copy column
-   is dark and the right 30% is bare photograph (A4); there is no fade band, so the hero ends on a hard
-   edge onto the parchment (A5). Motion is transform and opacity only (A7): a slow drift on the slide that
-   is showing, and a progress line whose end advances the carousel. Pause holds both; reduced motion
-   drops both. */
-.home-hero {
-  min-height: max(600px, min(88vh, 860px));
+/* Home hero (NOS Design hero-cards-ruling, 2026-10-23, Brad P0; saoc-inner-heroes 2026-10-26). From 1024px
+   one localised scrim covers the copy column only (to the column's right edge, then a short fade), so the
+   rest is bare photograph; up to 1023px the hero stacks, with a 2/1 photograph band first and the copy on
+   solid sage, and there is no scrim. There is no fade band: the hero ends on a hard edge onto the
+   parchment (A5). Motion on the slide that is showing is a slow object-position drift (never a
+   transform, so the photograph's box never outgrows the viewport) and a progress line whose end
+   advances the carousel. Pause holds both; reduced motion drops both. */
+@media (min-width: 1024px) {
+  .home-hero {
+    min-height: max(600px, min(88vh, 860px));
+  }
 }
 .home-hero-img {
   object-fit: cover;
-  object-position: var(--hero-pos-sm);
+  object-position: var(--hero-pos);
 }
-@media (min-width: 768px) {
-  .home-hero-img {
-    object-position: var(--hero-pos);
-  }
-}
-[data-hero-scrim='copy'] {
-  background-image: linear-gradient(
-    to top,
-    rgb(34 40 31 / 0.88) 0%,
-    rgb(34 40 31 / 0.7) 45%,
-    rgb(34 40 31 / 0.15) 80%
-  );
-}
-@media (min-width: 768px) {
-  [data-hero-scrim='copy'] {
+@media (min-width: 1024px) {
+  .home-hero [data-hero-scrim='copy'] {
     background-image: linear-gradient(
       90deg,
-      rgb(34 40 31 / 0.88) 0%,
-      rgb(34 40 31 / 0.82) 48%,
-      rgb(34 40 31 / 0.32) 64%,
-      transparent 76%
+      rgb(34 40 31 / 0.88) 0,
+      rgb(34 40 31 / 0.88)
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px),
+      transparent
+        calc(max(0px, (100% - var(--container-max)) / 2) + var(--container-pad) + 640px + 12%)
     );
   }
 }
 @keyframes home-hero-drift {
   from {
-    transform: scale(1);
+    object-position: var(--hero-pos);
   }
   to {
-    transform: scale(1.04);
+    object-position: var(--hero-pos-end);
   }
 }
 @keyframes home-hero-fill {
@@ -453,7 +445,6 @@ h3.font-serif {
 }
 .home-hero-drift {
   animation: home-hero-drift 8s linear both;
-  will-change: transform;
 }
 .home-hero-fill {
   transform-origin: left;

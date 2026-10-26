@@ -1,16 +1,17 @@
-// The SAOC home hero's slides, in carousel order. NOS Design ruling (hero-cards-ruling A2, 2026-10-23):
-// two slides, S3 dark (the lead, and the reduced-motion static) then S2 violet, driven
-// (H4 purple is out for now: its black plant clip shows at some widths. It stays in the width manifest so a
-// retouched file can return.) from the handoff sources in public/images at full resolution rather than the Sanity heroImages.
-// `position` is the object-position from 768px up; `positionSmall` below it, where the copy sits at the
-// bottom and the bloom is held above it. Re-ordering or swapping a slide is a change to this array only.
+// The SAOC home hero's slides, in carousel order. NOS Design rulings (hero-cards-ruling A2, 2026-10-23;
+// saoc-inner-heroes HS-1, 2026-10-26): two slides, S3 dark (the lead, and the reduced-motion static) then
+// orchid purple, the derived cut orchid-purple-home (lib/hero-derived-sources.json). Violet has retired from
+// the home, and H4 purple stays out as an uncut original (its black plant clip shows at some widths; the
+// derived cut stops above it). The slides are the handoff sources at full resolution, not the Sanity heroImages.
+// `position` is the object-position of the slide: from 1024px up in the full-bleed hero, below it in the 2/1
+// band the hero stacks into. Re-ordering or swapping a slide is a change to this array only.
 
 export interface HomeHeroSlide {
   key: string;
   src: string;
+  /** The slide group's accessible label and the dot labels. The photograph itself is decorative (alt=""). */
   alt: string;
   position: string;
-  positionSmall: string;
 }
 
 export const HOME_HERO_SLIDES: readonly HomeHeroSlide[] = [
@@ -19,13 +20,11 @@ export const HOME_HERO_SLIDES: readonly HomeHeroSlide[] = [
     src: '/images/orchid-dark.jpg',
     alt: 'Dark orchid',
     position: '62% 50%',
-    positionSmall: '70% 30%',
   },
   {
-    key: 'orchid-violet',
-    src: '/images/orchid-violet.jpg',
-    alt: 'Violet orchid',
-    position: '60% 40%',
-    positionSmall: '60% 40%',
+    key: 'orchid-purple',
+    src: '/images/orchid-purple-home.jpg',
+    alt: 'Purple orchid',
+    position: '50% 50%',
   },
 ];

@@ -8,7 +8,8 @@ import Image from 'next/image';
 import type { CSSProperties } from 'react';
 
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
-import { heroSourceWidth } from '@/lib/data/heroImages';
+import { heroSourceAspect } from '@/lib/data/saoc-hero-photos';
+import heroSourceWidths from '@/lib/hero-source-widths.json';
 
 import styles from './PhotoBand.module.css';
 
@@ -16,6 +17,7 @@ export interface PhotoBandProps {
   image: string;
   alt: string;
   caption?: string;
+  /** The band's minimum height in CSS pixels, e.g. "320px". It sets `sizes` for a height-driven cover. */
   minHeight?: string;
   /** CSS object-position of the cropped band: the photograph's sharp region. */
   objectPosition?: string;
@@ -23,25 +25,38 @@ export interface PhotoBandProps {
   marked?: boolean;
 }
 
-const HERO_QUALITY = 88;
+const DEFAULT_MIN_HEIGHT_PX = 360;
+const PIXEL_HEIGHT = /^(\d+(?:\.\d+)?)px$/;
+
+function minHeightPx(minHeight: string): number {
+  const match = PIXEL_HEIGHT.exec(minHeight);
+  if (!match) throw new Error(`PhotoBand: minHeight must be a px length, got "${minHeight}"`);
+  return Number(match[1]);
+}
 
 export function PhotoBand({
   image,
   alt,
   caption,
-  minHeight = '360px',
-  objectPosition = '50% 50%',
+  minHeight = `${DEFAULT_MIN_HEIGHT_PX}px`,
+  objectPosition: imagePosition = '50% 50%',
   marked = false,
 }: PhotoBandProps) {
-  const sourceWidth = heroSourceWidth(image);
+  const sourceWidth = (heroSourceWidths as Readonly<Record<string, number>>)[image] ?? null; // JSON import is typed by its literal keys
   const bandStyle = {
     minHeight,
     '--band-src-w': sourceWidth === null ? '100%' : `${sourceWidth}px`,
   } as CSSProperties; // custom properties are not in CSSProperties
+  // The band is the viewport wide and `minHeight` tall: a cover image needs the longer of the two
+  // (width, or height x the file's aspect), not a bare 100vw.
+  const aspect = sourceWidth === null ? null : heroSourceAspect(image);
+  const sizes =
+    aspect === null ? '100vw' : `max(100vw, ${Math.ceil(minHeightPx(minHeight) * aspect)}px)`;
 
   return (
     <>
       <figure
+        data-photo-band
         data-placeholder={marked ? 'true' : undefined}
         className={`${styles.band} relative isolate m-0 overflow-hidden bg-primary-800`}
         style={bandStyle}
@@ -50,10 +65,10 @@ export function PhotoBand({
           src={image}
           alt={alt}
           fill
-          sizes="100vw"
-          quality={sourceWidth === null ? undefined : HERO_QUALITY}
+          sizes={sizes}
+          quality={image in heroSourceWidths ? 88 : undefined}
           className="object-cover"
-          style={{ objectPosition }}
+          style={{ objectPosition: imagePosition }}
         />
         {caption ? (
           <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[var(--primary-800)]/85 to-transparent pb-6 pt-16 font-mono text-[11px] uppercase tracking-[0.18em] text-ivory/90">
