@@ -376,7 +376,7 @@ export const societyBySlugQuery = defineQuery(`
 `);
 
 export const societySlugsQuery = defineQuery(`
-  *[_type == "society" && listed != false && defined(slug.current)]{ "slug": slug.current }
+  *[_type == "society" && listed != false && defined(slug.current)]{ "slug": slug.current, "updatedAt": _updatedAt }
 `);
 
 // Society detail page (F-societies-detail-redesign): upcoming events hosted by one
@@ -481,7 +481,7 @@ export const eventBySlugQuery = defineQuery(`
 `);
 
 export const eventSlugsQuery = defineQuery(`
-  *[_type == "societyEvent" && defined(slug.current)]{ "slug": slug.current }
+  *[_type == "societyEvent" && defined(slug.current)]{ "slug": slug.current, "updatedAt": _updatedAt }
 `);
 
 // F1 (show-exhibitor-info): the /national-show/exhibitors singleton.
