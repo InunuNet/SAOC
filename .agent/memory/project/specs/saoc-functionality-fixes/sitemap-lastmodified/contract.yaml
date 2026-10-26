@@ -1,0 +1,35 @@
+schema: athanor.contract/v1
+slug: sitemap-lastmodified
+goal: 'Sitemap entries carry a real source lastModified where one exists (Sanity _updatedAt) and omit it elsewhere instead of emitting now().'
+created_at: '2026-10-26'
+autonomy: high
+
+features:
+  - id: F1
+    name: 'sitemap-lastmodified'
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/saoc-functionality-fixes/sitemap-lastmodified/goldens/contract-notes.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: '[fail-on-main] sitemapEntry uses the source date as lastModified (fails on main: module absent)'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/sitemap-lastmodified/checks/check.mjs real-date-used'
+    - id: A2
+      description: '[fail-on-main] sitemapEntry omits the lastModified key for a missing or unparseable date (fails on main)'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/sitemap-lastmodified/checks/check.mjs no-date-omitted'
+    - id: A3
+      description: '[fail-on-main] app/sitemap.ts no longer stamps new Date() (fails on main)'
+      command: 'bash .agent/memory/project/specs/saoc-functionality-fixes/sitemap-lastmodified/checks/wiring.sh no-now-in-sitemap'
+    - id: A4
+      description: '[fail-on-main] society and event slug queries project _updatedAt (fails on main)'
+      command: 'bash .agent/memory/project/specs/saoc-functionality-fixes/sitemap-lastmodified/checks/wiring.sh queries-project-updatedat'
+    - id: A5
+      description: '[fail-on-main] app/sitemap.ts builds entries through sitemapEntry with updatedAt (fails on main)'
+      command: 'bash .agent/memory/project/specs/saoc-functionality-fixes/sitemap-lastmodified/checks/wiring.sh sitemap-uses-helper'
+    - id: A6
+      description: '[guard] guard: whole project typechecks'
+      command: 'pnpm exec tsc --noEmit'

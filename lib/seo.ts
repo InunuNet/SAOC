@@ -40,7 +40,7 @@ const OG_IMAGE_HEIGHT = 630;
 // F24 description bounds. A description is kept as written when it is DESCRIPTION_MIN to
 // DESCRIPTION_MAX chars; otherwise it is cut back to a whole sentence (the lede is cut at
 // LEDE_MAX, a little tighter, so a snippet never sits on the limit).
-const DESCRIPTION_MIN = 70;
+export const DESCRIPTION_MIN = 70;
 const DESCRIPTION_MAX = 160;
 const LEDE_MAX = 155;
 
