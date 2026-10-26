@@ -13,7 +13,7 @@ case "$1" in
     ! grep -q -i -E "log in|login to|sign in here|click here" "$F" || { echo "FAIL new copy introduced"; exit 1; } ;;
   guard-login-route-and-next)
     test -f "$R/app/admin/login/page.tsx" || { echo "FAIL sign-in route missing"; exit 1; }
-    "${TSX:-node_modules/.bin/tsx}" -e "import('$R/lib/safe-next-path.ts').then(m=>{ if(m.safeNextPath('/events/submit')!=='/events/submit'){console.error('FAIL next not honoured');process.exit(1)} })" ;;
+    "${TSX:-node_modules/.bin/tsx}" -e "import('$R/lib/safe-next-path.ts').then(m=>{ if(m.safeNextPath('/events/submit')!=='/events/submit'){console.error('FAIL next not honoured');process.exit(1)} })" || { echo "FAIL safeNextPath check did not pass"; exit 1; } ;;
   *) echo "unknown case $1"; exit 2 ;;
 esac
 echo "ok $1"
