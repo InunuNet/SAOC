@@ -95,3 +95,6 @@ assertions:
     - id: A16
       description: fail-closed on the hosted runtime, proven at MODULE LOAD in a fresh child process per case (same K_SERVICE pattern as lib/fixture-route-guard.ts) - hosted with mode replay, or record with the confirm flag, throws; hosted with mode unset/off (even with a dir) loads inactive; local record without the confirm flag throws; local replay without a dir throws; local replay and confirmed record load active
       command: node .agent/memory/project/specs/nos-content-standard/checks/check-fixture-hosted.mjs
+    - id: A17
+      description: the CI e2e step as CI runs it (bash scripts/ci-e2e.sh pnpm test:e2e, the literal command of ci.yml "E2E tests") under the Sanity fixture in replay with the net guard - the suite exits 0, the fixture logs show reads served from the fixture, zero misses and zero Sanity API requests. Catches stale e2e strings (the #67 miss). Run after A15.
+      command: node .agent/memory/project/specs/nos-content-standard/checks/gate-e2e.mjs

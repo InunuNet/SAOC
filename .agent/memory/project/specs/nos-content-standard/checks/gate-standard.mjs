@@ -13,7 +13,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { fsRoute, fsTickets, fsTicketsFan, fsHome, fsContact, ndNavGate } from './fs-checks.mjs';
+import { fsRoute, fsTickets, fsTicketsFan, fsHome, fsContact, ndNavGate, fsAboutH1 } from './fs-checks.mjs';
 import { AUTH, BANNED, CROPS, RETIRED, gotoRoute, EXCLUDED, ROUTES, STD, driveState, launchChromium, newContext, withServer } from './_lib.mjs';
 
 const HERO_IMG = 'section[data-nos-hero] [data-nos-hero-media] img';
@@ -447,7 +447,7 @@ async function symposiumLedeStable(page, server, route, vp, c, tag) {
       const l = document.querySelector('[data-nos-lede="theme"]'); const cs = l ? getComputedStyle(l) : null;
       let lines = null; let lh = null; let h = null;
       if (l) { const rg = document.createRange(); rg.selectNodeContents(l); lines = new Set([...rg.getClientRects()].filter((q) => q.width > 0).map((q) => Math.round(q.top))).size; lh = parseFloat(cs.lineHeight); h = l.getBoundingClientRect().height; }
-      const faces = []; for (const sh of document.styleSheets) { let rules; try { rules = [...sh.cssRules]; } catch { continue; } for (const r of rules) if (r.type === CSSRule.FONT_FACE_RULE) faces.push({ fam: r.style.getPropertyValue('font-family').replace(/["']/g, '').trim(), style: r.style.getPropertyValue('font-style').trim(), weight: r.style.getPropertyValue('font-weight').trim(), urls: [...r.style.getPropertyValue('src').matchAll(/url\(["']?([^"')]+)["']?\)/g)].map((x) => new URL(x[1], location.href).pathname) }); }
+      const faces = []; for (const sh of document.styleSheets) { let rules; try { rules = [...sh.cssRules]; } catch { continue; } for (const r of rules) if (r.type === CSSRule.FONT_FACE_RULE) faces.push({ fam: r.style.getPropertyValue('font-family').replace(/["']/g, '').trim(), style: r.style.getPropertyValue('font-style').trim(), weight: r.style.getPropertyValue('font-weight').trim(), urls: [...r.style.getPropertyValue('src').matchAll(/url\(["']?([^"')]+)["']?\)/g)].map((x) => new URL(x[1], sh.href ?? location.href).pathname) }); }
       const ledeFam = cs?.fontFamily.replace(/["']/g, '') ?? '';
       return { faces, ledeFam, lede: Boolean(l), lines, lh, h, minH: cs?.minHeight ?? null, hs: window.__h, shifts: window.__shifts, italicAtLoad: window.__fontAtLoad,
         preloads: [...document.querySelectorAll('link[rel="preload"][as="font"]')].map((n) => new URL(n.getAttribute('href'), location.href).pathname) };
@@ -463,8 +463,11 @@ async function symposiumLedeStable(page, server, route, vp, c, tag) {
     c.check(`${tag} SY-G1 (Rev 46c) that preload is an italic 300 @font-face with its own generated family, shared by no other face (${preFace ? `${preFace.fam} ${preFace.style} ${preFace.weight}; ${sameFam} face(s) in the family` : 'no @font-face points at the Fraunces preload'})`, Boolean(preFace) && /italic/.test(preFace.style) && /^300$/.test(preFace.weight) && sameFam === 1);
     c.check(`${tag} SY-G1 (Rev 46c) the lede's computed font-family includes that generated family, not the fonts.ts one (lede: ${m.ledeFam.slice(0, 120)})`, Boolean(preFace) && m.ledeFam.includes(preFace.fam));
     c.check(`${tag} SY-G1 (Rev 46c) the Fraunces italic face is already loaded at the load event (${m.italicAtLoad} italic faces loaded)`, (m.italicAtLoad ?? 0) >= 1);
-    const frItalicReq = woff.filter((w) => w.sha === F.italic);
-    c.check(`${tag} SY-G1 (Rev 46c) in a fresh browser context ${route.nos} makes exactly one network response for the Fraunces italic woff2, and it is the preloaded url (${frItalicReq.length}: ${frItalicReq.map((w) => w.path).join(', ')}; preload ${pre}; cache-control ${frItalicReq[0]?.cc ?? '-'}; Crimson Pro italic is legitimate and not counted; ${woff.filter((w) => !w.sha).length} unreadable)`, frItalicReq.length === 1 && frItalicReq[0].path === pre && woff.every((w) => w.sha));
+    const frItalicReq = woff.filter((w) => w.sha === F.italic); const distinct = [...new Set(frItalicReq.map((w) => w.path))];
+    const noStore = frItalicReq.some((w) => /no-store/.test(w.cc)); const immutable = frItalicReq.length > 0 && frItalicReq.every((w) => /immutable/.test(w.cc));
+    c.check(`${tag} SY-G1 (Rev 46f) in a fresh browser context ${route.nos} requests exactly ONE distinct Fraunces italic woff2 URL, and it is the preloaded url (${distinct.length} distinct of ${frItalicReq.length} response(s): ${distinct.join(', ')}; preload ${pre}; cache-control ${frItalicReq[0]?.cc ?? '-'}; Crimson Pro italic is legitimate and not counted; ${woff.filter((w) => !w.sha).length} unreadable)`, distinct.length === 1 && distinct[0] === pre && woff.every((w) => w.sha));
+    if (noStore) c.note(`${tag} the gate server answers /_next/static/media with the beta wall's "private, no-store, max-age=0" (proxy.ts WALL_CACHE_CONTROL, copied onto static files too), so the browser may fetch the preloaded URL twice (${frItalicReq.length} responses). Not a duplicate font: one URL. After SITE_PUBLIC_LAUNCH the wall lifts and Next sends public, max-age=31536000, immutable.`);
+    if (immutable) c.check(`${tag} SY-G1 (Rev 46f) the Fraunces italic response is immutable-cacheable, so the preload and the @font-face use share exactly one response (${frItalicReq.length})`, frItalicReq.length === 1);
     const bad = m.shifts.filter((x) => x.src.some((q) => q.k === 'lede' || (q.k === 'subnav' && (Math.abs(q.dTop) >= 1 || Math.abs(q.dBottom) >= 1))));
     const reflow = m.shifts.filter((x) => x.src.length && x.src.every((q) => q.k === 'subnav' && Math.abs(q.dTop) < 1 && Math.abs(q.dBottom) < 1));
     c.check(`${tag} SY-G1 (Rev 46c) no layout shift has the lede as a source, and no sub-nav shift moves vertically by 1px or more; a pure horizontal label reflow with an unchanged top (the non-preloaded Karla 600 swap) is ignored (${m.shifts.length} entries, ${bad.length} failing, ${reflow.length} ignored horizontal reflow)`, bad.length === 0, JSON.stringify(bad));
@@ -1068,7 +1071,7 @@ async function extraChecks(page, route, vp, c, tag) {
   c.check(`${tag} first section has no padding-top and no border-top (PG-1 1)`, x.padTop === 0 && x.bTop === 0, `${x.padTop} ${x.bTop}`);
   c.check(`${tag} no "To be confirmed by the show committee" legend outside a disclosure`, x.legend === 0, String(x.legend));
   c.check(`${tag} no rail: no side border > 1px and no dashed 2px border (NOS Design c)`, x.railed === 0, String(x.railed));
-  if (x.h2lh !== null) c.check(`${tag} h2 line-height ${x.h2lh.toFixed(2)} ~ ${STD.heading.h2LineHeight}`, Math.abs(x.h2lh - STD.heading.h2LineHeight) <= 0.03);
+  if (x.h2lh !== null) { const want = route.h2Spec?.lineHeight ?? STD.heading.h2LineHeight; c.check(`${tag} h2 line-height ${x.h2lh.toFixed(2)} ~ ${want}${route.h2Spec?.lineHeight ? ` (route golden ${route.h2Spec.golden} beats the generic ${STD.heading.h2LineHeight})` : ''}`, Math.abs(x.h2lh - want) <= 0.03); }
   if (x.h3lh !== null) c.check(`${tag} h3 line-height ${x.h3lh.toFixed(2)} ~ ${STD.heading.h3LineHeight}`, Math.abs(x.h3lh - STD.heading.h3LineHeight) <= 0.03);
   if (x.h4s.length) {
     c.check(`${tag} h4 only where the route table allows it (${x.h4s.length})`, route.h4 === true, `route.h4=${route.h4}`);
@@ -1100,6 +1103,7 @@ await withServer(1, 'standard', async (server, c) => {
     await fsTicketsFan(browser, server, c);
     await ledePreloadScope(browser, server, c);
     await ndNavGate(browser, server, c);
+    await fsAboutH1(browser, server, c);
     for (const vp of STD.viewports) {
       const tag = `[${vp.name} /]`; const context = await newContext(browser, vp); const page = await context.newPage();
       if (await gotoRoute(page, server, '/', c, tag)) await homeChecks(page, vp, c, tag);

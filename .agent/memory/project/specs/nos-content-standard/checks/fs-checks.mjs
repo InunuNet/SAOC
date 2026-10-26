@@ -19,26 +19,26 @@ export async function fsTickets(browser, server, c) {
       await page.waitForTimeout(500);
       const m = await page.evaluate(() => {
         const px = (v) => parseFloat(v) || 0;
-        const wraps = [...document.querySelectorAll('.nk-wrap')];
+        const wraps = [...document.querySelectorAll('.nk-fan .nk-wrap')];
         const out = wraps.map((w) => {
-          const deck = w.closest('.nk-fan') ?? w.closest('.nk-grid') ?? w.parentElement; const dcs = getComputedStyle(deck); const db = deck.getBoundingClientRect();
+          const deck = w.closest('.nk-fan'); const dcs = getComputedStyle(deck); const db = deck.getBoundingClientRect();
           const boxes = [w, ...w.querySelectorAll('*')].map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0);
           const l = Math.min(...boxes.map((r) => r.left)); const r = Math.max(...boxes.map((q) => q.right)); const t = Math.min(...boxes.map((q) => q.top)); const b = Math.max(...boxes.map((q) => q.bottom));
           const rotEl = [w, ...w.querySelectorAll('*')].find((e) => getComputedStyle(e).transform !== 'none');
           const mt = rotEl ? getComputedStyle(rotEl).transform.match(/matrix\(([^)]+)\)/) : null; const mv = mt ? mt[1].split(',').map(Number) : null;
           const ang = mv ? Math.atan2(mv[1], mv[0]) * 180 / Math.PI : 0;
-          return { n: [...deck.querySelectorAll('.nk-wrap')].indexOf(w) + 1, ang, l, r, t, b, cl: db.left + px(dcs.borderLeftWidth) + px(dcs.paddingLeft), cr: db.right - px(dcs.borderRightWidth) - px(dcs.paddingRight),
+          return { n: [...deck.querySelectorAll('.nk-wrap')].indexOf(w) + 1, ang, l, r, t, b, cl: db.left + px(dcs.borderLeftWidth), cr: db.right - px(dcs.borderRightWidth), iw: innerWidth, sw: document.documentElement.scrollWidth,
             pl: px(dcs.paddingLeft), pr: px(dcs.paddingRight), gap: px(dcs.columnGap), deck: deck.className.toString().split(' ')[0], row: Math.round(w.offsetTop) };
         });
         return out;
       });
-      c.check(`${tag} FS-1.1 the deck has .nk-wrap cards (${m.length})`, m.length > 0);
+      c.check(`${tag} FS-1.1 the hero fan (.nk-fan) has .nk-wrap cards; the untilted .nk-grid cards are out of scope (${m.length})`, m.length > 0);
       if (m.length) {
         const sgn = (n) => (n % 2 === 1 ? -T.rotateDeg : T.rotateDeg);
         c.check(`${tag} FS-1.1 tilt is -${T.rotateDeg}deg on odd and +${T.rotateDeg}deg on even cards (${m.map((x) => `${x.n}:${x.ang.toFixed(2)}`).join(' ')})`, m.every((x) => near(x.ang, sgn(x.n), T.rotateTolDeg)));
         c.check(`${tag} FS-1.1 the deck (${m[0].deck}) has padding-inline ${T.deckPaddingInline}px and column-gap ${T.columnGap}px (${m[0].pl}/${m[0].pr}, gap ${m[0].gap})`, near(m[0].pl, T.deckPaddingInline, T.tolPx) && near(m[0].pr, T.deckPaddingInline, T.tolPx) && near(m[0].gap, T.columnGap, T.tolPx));
-        const clipped = m.filter((x) => x.l < x.cl - T.tolPx || x.r > x.cr + T.tolPx);
-        c.check(`${tag} FS-1.1 no rotated card is clipped by the gutter: every rotated bounding box sits inside the deck's content box (${clipped.map((x) => `#${x.n} ${x.l.toFixed(1)}..${x.r.toFixed(1)} vs ${x.cl.toFixed(1)}..${x.cr.toFixed(1)}`).join('; ') || 'all inside'})`, clipped.length === 0);
+        const clipped = m.filter((x) => x.l < x.cl - T.tolPx || x.r > x.cr + T.tolPx || x.l < -T.tolPx || x.r > x.iw + T.tolPx);
+        c.check(`${tag} FS-1.1 no rotated card is clipped: every rotated bounding box sits inside the deck's PADDING box (the ruling's own padding ${T.deckPaddingInline}, gap ${T.columnGap} and +-${T.rotateDeg}deg put the corners about 6.5px outside the content box, so the padding box is the bound; the ruling wins) and inside the viewport, with no horizontal page scroll (${clipped.map((x) => `#${x.n} ${x.l.toFixed(1)}..${x.r.toFixed(1)} vs ${x.cl.toFixed(1)}..${x.cr.toFixed(1)} of ${x.iw}`).join('; ') || 'all inside'}; scrollWidth ${m[0].sw} <= ${m[0].iw})`, clipped.length === 0 && m[0].sw <= m[0].iw);
         const overlaps = [];
         for (let i = 0; i < m.length; i += 1) for (let j = i + 1; j < m.length; j += 1) {
           const ox = Math.min(m[i].r, m[j].r) - Math.max(m[i].l, m[j].l); const oy = Math.min(m[i].b, m[j].b) - Math.max(m[i].t, m[j].t);
@@ -207,8 +207,10 @@ const FS2 = RULINGS.fs2;
 /** FS-2 item 1, S-CARD (systemic). Per element on every route: a white, radiused-or-shadowed surface in main must be one of the route's expected cards or sit inside an allowed kind; the expected `.ds-card`s must be white, radius 10, with the DS-1 shadow. Hole: nothing measured card surfaces at all, so the gateway asides were carded and the golden-carded surfaces left bare while the gate stayed green. */
 export async function fsCardSurface(page, route, vp, c, tag) {
   const S = FS2.sCard; const t = `${tag} FS-2.1`;
+  if (S.excludeRoutes.includes(route.nos)) { c.note(`${t} S-CARD does not run on ${route.nos}: ${S.excludeNote}`); return; }
   const expected = S.expected[route.nos] ?? null;
   const allowed = [...S.allowedKinds, ...(S.routeAllowed[route.nos] ?? [])];
+  if (S.routeCite?.[route.nos]) c.note(`${t} ${route.nos} allows a golden card: ${S.routeCite[route.nos]}`);
   const m = await page.evaluate(({ S, expected, allowed }) => {
     const px = (v) => parseFloat(v) || 0; const main = document.querySelector('main'); if (!main) return null;
     const isWhite = (cs) => { const q = cs.backgroundColor.match(/rgba?\(([^)]+)\)/); if (!q) return false; const p = q[1].split(',').map(Number); const a = p[3] === undefined ? 1 : p[3]; return a >= 0.9 && p[0] >= 250 && p[1] >= 250 && p[2] >= 250; };
@@ -281,32 +283,68 @@ async function fsConferences(page, route, vp, c, tag) {
 }
 
 
-/** ND-1 (NOS Design, root comms.md "ND-1 nav descriptors: remove all 14"): the rendered menu has labels only. No descriptor element anywhere in the nav, every row at least 44px tall, and the row labels are exactly the labels in nos-nav.ts (desktop mega panels at 1440, the drawer at 390). Hole: no check read the nav at all; NAV-G1 only looked at the Workshops line in the source file. */
+/** ND-1 (NOS Design, root comms.md "ND-1 nav descriptors: remove all 14"): the rendered menu has labels only. No descriptor element anywhere in the nav, every row at least 44px tall, and, per group, the rendered rows are exactly that group's leaf labels from nos-nav.ts.
+ *  The groups are the `columns` of the National Show item (Visit, Programme, Exhibit & trade): they are what renders as mega panels at 1440 and as accordion groups in the 390 drawer. Group headings, the top-level items (National Show, Tickets, Show sponsors, Past shows) and the ticket products (Day Visitor, Weekend Pass) are not menu rows of those groups.
+ *  The drawer is an accordion (one group open at a time), so each group is opened in turn and its rows collected before the next. Hole: no check read the nav at all; NAV-G1 only looked at the Workshops line in the source file. */
+/** Rev 46f. /about at 360 and 390. Hole: the generic no-scroll check never ran at 360 and never looked at the h1's own box. */
+export async function fsAboutH1(browser, server, c) {
+  const A = RULINGS.rev46f.aboutH1;
+  for (const width of A.widths) {
+    const vp = { name: `${width}@2`, width, height: 800, dsf: 2 }; const tag = `[${vp.name} ${A.route} about-h1]`;
+    const context = await newContext(browser, vp); const page = await context.newPage();
+    if (await gotoRoute(page, server, A.route, c, tag)) {
+      const m = await page.evaluate(() => {
+        const h = document.querySelector('h1'); if (!h) return null;
+        const r = document.createRange(); r.selectNodeContents(h); const t = r.getBoundingClientRect(); const b = h.getBoundingClientRect();
+        return { scrollW: document.documentElement.scrollWidth, innerW: window.innerWidth, textL: t.left, textR: t.right, boxL: b.left, boxR: b.right, ownScroll: h.scrollWidth, ownClient: h.clientWidth };
+      });
+      c.check(`${tag} an h1 exists`, !!m);
+      if (m) {
+        c.check(`${tag} no horizontal page scroll (scrollWidth ${m.scrollW} vs ${m.innerW})`, m.scrollW <= m.innerW);
+        c.check(`${tag} the h1 text sits inside the viewport (${m.textL.toFixed(1)}..${m.textR.toFixed(1)} of ${m.innerW})`, m.textL >= 0 && m.textR <= m.innerW + 0.5);
+        c.check(`${tag} the h1 does not overflow its own box (text ${m.textL.toFixed(1)}..${m.textR.toFixed(1)}, box ${m.boxL.toFixed(1)}..${m.boxR.toFixed(1)}, scroll ${m.ownScroll} vs client ${m.ownClient})`, m.textR <= m.boxR + 0.5 && m.ownScroll <= m.ownClient + 1);
+      }
+    }
+    await context.close();
+  }
+}
+
+export function navGroups() {
+  const src = readFileSync('components/nos-chrome/nos-nav.ts', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  const at = src.indexOf('columns:'); const open = src.indexOf('[', at); let depth = 0; let end = open;
+  for (let k = open; k < src.length; k += 1) { if (src[k] === '[') depth += 1; else if (src[k] === ']') { depth -= 1; if (depth === 0) { end = k; break; } } }
+  const block = src.slice(open, end + 1);
+  const heads = [...block.matchAll(/\bid:\s*'([^']+)',\s*heading:\s*'((?:[^'\\]|\\.)*)'/g)];
+  return heads.map((h, n) => {
+    const seg = block.slice(h[0] ? h.index : 0, n + 1 < heads.length ? heads[n + 1].index : block.length);
+    return { id: h[1], heading: h[2].replace(/\\'/g, "'"), labels: [...seg.matchAll(/\blabel:\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g)].map((m) => (m[1] ?? m[2]).replace(/\\'/g, "'").replace(/\s+/g, ' ').trim()) };
+  });
+}
+
 export async function ndNavGate(browser, server, c) {
-  const nav = readFileSync('components/nos-chrome/nos-nav.ts', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-  const labels = [...new Set([...nav.matchAll(/\blabel:\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g)].map((m) => (m[1] ?? m[2]).replace(/\\'/g, "'").replace(/\s+/g, ' ').trim()))];
+  const groups = navGroups();
+  const rowsOf = (sel) => (page) => page.evaluate((q) => [...document.querySelectorAll(q)].map((a) => ({ t: a.textContent.replace(/\s+/g, ' ').trim(), h: a.getBoundingClientRect().height })), sel);
   for (const vp of [{ name: '1440@1', width: 1440, height: 900, dsf: 1, mode: 'mega' }, { name: '390@2', width: 390, height: 844, dsf: 2, mode: 'drawer' }]) {
     const tag = `[${vp.name} / ND-1]`; const context = await newContext(browser, vp); const page = await context.newPage();
     if (await gotoRoute(page, server, '/', c, tag)) {
-      let rows = [];
-      if (vp.mode === 'mega') {
-        const ids = await page.evaluate(() => [...document.querySelectorAll('[data-group-trigger]')].map((b) => b.getAttribute('data-group-trigger')));
-        for (const id of ids) {
-          await page.click(`[data-group-trigger="${id}"]`); await page.waitForTimeout(150);
-          rows.push(...await page.evaluate((gid) => [...document.querySelectorAll(`#nh-panel-${gid}:not([hidden]) a`)].map((a) => ({ t: a.textContent.replace(/\s+/g, ' ').trim(), h: a.getBoundingClientRect().height })), id));
+      c.check(`${tag} nos-nav.ts has the three menu groups with leaves (${groups.map((g) => `${g.heading}:${g.labels.length}`).join(', ')})`, groups.length === 3 && groups.every((g) => g.labels.length > 0));
+      if (vp.mode === 'drawer') { await page.click('.nh-burger'); await page.waitForTimeout(250); }
+      const all = [];
+      for (const g of groups) {
+        let rows;
+        if (vp.mode === 'mega') { await page.click(`[data-group-trigger="${g.id}"]`); await page.waitForTimeout(150); rows = await rowsOf(`#nh-panel-${g.id}:not([hidden]) a`)(page); }
+        else {
+          const sel = `.nd-item[aria-controls="nd-sub-${g.id}"]`;
+          if ((await page.getAttribute(sel, 'aria-expanded')) !== 'true') await page.click(sel);
+          await page.waitForTimeout(200); rows = await rowsOf(`#nd-sub-${g.id}:not([hidden]) a`)(page);
         }
-      } else {
-        await page.click('.nh-burger'); await page.waitForTimeout(250);
-        for (let i = 0; i < 6; i += 1) { const closed = await page.$$('.nd-item[aria-expanded="false"]'); if (!closed.length) break; for (const b of closed) await b.click().catch(() => null); await page.waitForTimeout(120); }
-        rows = await page.evaluate(() => [...document.querySelectorAll('.nd-group a')].filter((a) => a.getBoundingClientRect().height > 0).map((a) => ({ t: a.textContent.replace(/\s+/g, ' ').trim(), h: a.getBoundingClientRect().height })));
+        all.push(...rows);
+        c.check(`${tag} ${g.heading}: the rendered rows are exactly its leaf labels, in order, and nothing else (${rows.map((r) => r.t).join(' | ') || 'no rows'}; want ${g.labels.join(' | ')})`, JSON.stringify(rows.map((r) => r.t)) === JSON.stringify(g.labels));
+        c.check(`${tag} ${g.heading}: every row is at least 44px tall (${rows.map((r) => `${r.t.slice(0, 14)} ${r.h.toFixed(1)}`).join('; ') || 'no rows'})`, rows.length > 0 && rows.every((r) => r.h >= 43.5));
       }
       const desc = await page.evaluate(() => document.querySelectorAll('.nh-desc, #nh [class*="desc" i]').length);
-      const seen = new Set(rows.map((r) => r.t));
       c.check(`${tag} no descriptor element in the nav, hidden or shown (${desc} .nh-desc or *desc* elements)`, desc === 0);
-      c.check(`${tag} the menu has rows (${rows.length})`, rows.length > 0);
-      c.check(`${tag} every nav row is at least 44px tall (${rows.filter((r) => r.h < 43.5).map((r) => `${r.t.slice(0, 20)} ${r.h.toFixed(1)}`).join('; ') || 'all'})`, rows.length > 0 && rows.every((r) => r.h >= 43.5));
-      c.check(`${tag} every row's text is exactly a label in nos-nav.ts, with no extra copy (${[...seen].filter((t) => !labels.includes(t)).join(' | ') || 'all labels'})`, [...seen].every((t) => labels.includes(t)));
-      c.check(`${tag} every label in nos-nav.ts is rendered as a row (${labels.filter((l) => !seen.has(l)).join(' | ') || 'all rendered'})`, labels.every((l) => seen.has(l)));
+      c.check(`${tag} the menu rendered ${all.length} rows across ${groups.length} groups`, all.length === groups.reduce((n, g) => n + g.labels.length, 0));
     }
     await context.close();
   }

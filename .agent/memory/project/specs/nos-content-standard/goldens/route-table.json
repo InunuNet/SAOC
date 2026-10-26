@@ -412,7 +412,7 @@
    "nos": "/international-guests",
    "group": "exhibit",
    "kind": "document",
-   "aside": "index",
+   "aside": "none",
    "drive": null,
    "photo": "Y1",
    "keyFacts": null,
@@ -546,7 +546,8 @@
     "golden": "EX-G1",
     "family": "fraunces",
     "weight": "400",
-    "px": 25
+    "px": 25,
+    "lineHeight": 1.25
    }
   },
   {

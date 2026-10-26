@@ -1,10 +1,10 @@
 {
- "capturedAt": "2026-10-25T23:55:33.263Z",
+ "capturedAt": "2026-10-26T02:26:50.982Z",
  "host": "26yfbug4.api.sanity.io",
  "perspective": "published",
  "publicDatasetReadsOnly": true,
- "requestCount": 109,
- "queryCount": 78,
+ "requestCount": 8,
+ "queryCount": 81,
  "queries": [
   {
    "key": "041dfdb7dd624887be0a0c382c97e4572597fd912941b98e22f60210f99eaac2",
@@ -309,6 +309,12 @@
    "capturedAt": "2026-10-25T23:51:19.304Z"
   },
   {
+   "key": "7d1ce65131e00d76aad17c621ce796c656a2f6ce60660a6bbed9e5cab940df24",
+   "queryHead": "*[_type == \"ticketsPage\"][0]{ title, intro, buyButtonLabel, soldOutMessage, salesClosedMessage, termsNote, confirmationP",
+   "params": {},
+   "capturedAt": "2026-10-26T02:26:40.421Z"
+  },
+  {
    "key": "822038136c3f275a13ce45a7e495ac97030aad437a7b751231f0c6e3d0ac076b",
    "queryHead": "*[_type == \"conferencePresenter\" && defined(country) && country != \"South Africa\"] | order(order asc) { _id, name, role,",
    "params": {},
@@ -429,6 +435,14 @@
    "capturedAt": "2026-10-25T23:51:20.512Z"
   },
   {
+   "key": "96c2b2e8bce198e0682759569557140557d7cfec4edf208365df0b5f371b984f",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "does-not-exist-fixture-only-soft404"
+   },
+   "capturedAt": "2026-10-26T02:26:42.471Z"
+  },
+  {
    "key": "a04a8f0273dea155d58a73597ed036e26e7e57c9902dcd492ea631bbbf38e9df",
    "queryHead": "*[_type == \"showVisitorInfo\"][0]{ pendingLabel, researchLabel, planTitle, planIntro, gettingThereIntro, airportRoutes, p",
    "params": {},
@@ -469,6 +483,14 @@
     "todayDate": "2026-10-26"
    },
    "capturedAt": "2026-10-25T23:51:23.959Z"
+  },
+  {
+   "key": "c690a1c5272ea62b53dfa41604ad36268d1a09bb63a2ca84fa820bcf8c66911e",
+   "queryHead": "*[_type == \"ticketType\" && slug.current == $slug && active == true][0]{ _id, name, \"slug\": slug.current, demo, active, p",
+   "params": {
+    "slug": "day-visitor"
+   },
+   "capturedAt": "2026-10-26T02:26:40.427Z"
   },
   {
    "key": "c802bfc6fc9f9f661ece0e2071d3b73adcd8e56927dca0594980f3ce0a193d94",

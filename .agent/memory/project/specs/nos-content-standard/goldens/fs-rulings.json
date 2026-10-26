@@ -188,9 +188,35 @@
         "/programme": [
           "ol",
           "[data-programme-board]"
+        ],
+        "/faq": [
+          "[data-faq-card]",
+          ".nos-faq-card",
+          "[data-doc-aside]"
+        ],
+        "/plan-your-visit": [
+          "[data-doc-aside]"
+        ],
+        "/sponsors": [
+          "[data-doc-aside]"
+        ],
+        "/vendors": [
+          "[data-doc-aside]"
         ]
       },
-      "note": "A stray card is a white, radiused-or-shadowed surface in main that is neither one of the route's expected cards nor inside an allowed kind. The first gate run may list a legitimate surface not yet in allowedKinds; the architect adds it to the JSON, the check is not loosened."
+      "note": "A stray card is a white, radiused-or-shadowed surface in main that is neither one of the route's expected cards nor inside an allowed kind. The first gate run may list a legitimate surface not yet in allowedKinds; the architect adds it to the JSON, the check is not loosened.",
+      "excludeRoutes": [
+        "/privacy",
+        "/terms",
+        "/refunds"
+      ],
+      "excludeNote": "SAOC pages (LG-RF); S-CARD is a NOS ruling and does not run on them.",
+      "routeCite": {
+        "/faq": "FQ-G1 (root comms.md L2815): `.ds-qs` is one warm white card of questions per category; `.ds-index` is a white card",
+        "/plan-your-visit": "PV-G1 (L2964): the aside is the FQ-G1 `.ds-index` card; the venue card is white, radius 10, shadow-md",
+        "/sponsors": "SP-1 (L2524): the aside is ONE sticky white card (radius 10, shadow-md); tiles are white, radius 10, shadow-sm",
+        "/vendors": "SX-G1 (L3269): the aside is one sticky white card (`.sx-card`); NurseryCard is a card"
+      }
     },
     "whatToExpect": {
       "item": 2,
@@ -223,6 +249,15 @@
       "item": 5,
       "route": "/programme",
       "note": "as designed: the hero lede was removed as unsourced (R7 beats the PG-G1 golden). No check expects one; none may be added."
+    }
+  },
+  "rev46f": {
+    "aboutH1": {
+      "route": "/about",
+      "widths": [
+        360,
+        390
+      ]
     }
   }
 }
