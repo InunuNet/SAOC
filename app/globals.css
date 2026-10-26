@@ -153,7 +153,8 @@ body {
 }
 /* WCAG 2.4.11: the sticky header (97px, HD-1) must not cover a focused element. */
 html {
-  scroll-padding-top: 6.5rem;
+  --scroll-padding-top: 6.5rem;
+  scroll-padding-top: var(--scroll-padding-top);
   scrollbar-gutter: stable;
 }
 /* NAV-1: after a client-side navigation focus lands on the page heading (or main); it is a
@@ -603,19 +604,6 @@ h3.font-serif {
   }
 }
 
-/* F19 /judging: heading left, prose right (4fr/7fr), one column below 1024. */
-[data-judging-split] {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-5) var(--space-8);
-}
-@media (min-width: 1024px) {
-  [data-judging-split] {
-    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
-    align-items: start;
-  }
-}
-
 /* F19 gap state: a section withheld on the public build shows the Council's own absence sentence, muted. */
 [data-content-gap] {
   border-top: 1px solid var(--rule);
@@ -635,5 +623,269 @@ h3.font-serif {
 @media (min-width: 1440px) {
   body[data-detail-open] [data-priority='3'] {
     display: none;
+  }
+}
+
+/* ============================================================
+   saoc-content-standard (DS-1 r2 . SAOC): one standard every document page is built against.
+   Hero facts row, the 7fr/5fr body grid, one aside, one h2 scale, one rhythm. Token-neutral: custom
+   properties only, so another site's theme supplies its own values.
+   ============================================================ */
+
+/* Hero facts: dd above dt, centred, no divider, no box, no caps. DOM order stays dt then dd. */
+.hero-facts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px 40px;
+  margin: 32px 0 0;
+  padding: 0;
+}
+.hero-facts > div {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  text-align: center;
+}
+.hero-facts dd {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--ivory);
+}
+.hero-facts dt {
+  max-width: 26ch;
+  margin: 6px 0 0;
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.35;
+  color: rgb(244 243 236 / 0.85);
+  text-wrap: balance;
+}
+@media (min-width: 640px) {
+  .hero-facts {
+    gap: 24px 40px;
+  }
+}
+
+/* Body grid: prose 7fr, one aside 5fr, from 1024px; one column below. Hero to content is 64px (48 below). */
+.doc-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding-top: 48px;
+  padding-bottom: var(--section-y);
+}
+@media (min-width: 1024px) {
+  .doc-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(40px, 6vw, 80px);
+    align-items: start;
+    padding-top: 64px;
+  }
+  /* The index aside is first in the DOM (it is a table of contents); on the grid it still takes the right cell. */
+  .doc-layout [data-doc-main] {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .doc-layout > [data-doc-aside] {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+[data-doc-main] {
+  min-width: 0;
+}
+/* A show band that follows the hero directly is the first content: the same 64px (48 below) gap.
+   PG-1-exempt heroes (events list, societies grid, contact) keep their band flush. */
+[data-page-hero]:not([data-hero-exempt]) + [data-home-section='show-band'] {
+  margin-top: 48px;
+}
+@media (min-width: 1024px) {
+  [data-page-hero]:not([data-hero-exempt]) + [data-home-section='show-band'] {
+    margin-top: 64px;
+  }
+}
+.doc-prose {
+  max-width: 64ch;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--ink) 85%, transparent);
+  text-align: left;
+}
+.doc-prose > * + * {
+  margin-top: 18px;
+}
+/* Headings inside running prose (legal documents): space above, none below beyond their own margin. */
+.doc-prose > .doc-h2 {
+  margin-top: 56px;
+}
+.doc-prose > .doc-h3 {
+  margin-top: 32px;
+}
+.doc-prose > .doc-h2:first-child,
+.doc-prose > .doc-h3:first-child {
+  margin-top: 0;
+}
+.doc-prose > .doc-h2 + *,
+.doc-prose > .doc-h3 + * {
+  margin-top: 0;
+}
+
+/* One h2 scale for every document. A mono label is a heading, not a paragraph. */
+.doc-h2 {
+  margin: 0 0 24px;
+  font-family: var(--serif);
+  font-size: var(--display-sm);
+  font-weight: 300;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  text-wrap: pretty;
+  /* --doc-scroll-margin is where a heading lands, measured from the viewport top. The html
+     scroll-padding already supplies part of it, so only the remainder is the heading's own margin. */
+  scroll-margin-top: calc(var(--doc-scroll-margin, 112px) - var(--scroll-padding-top, 0px));
+}
+/* A theme's own h2 rule (.nos-theme h2, 0,1,1) sets weight and wrap; the document scale keeps both. */
+.doc-h2,
+.nos-theme .doc-h2 {
+  font-weight: 300;
+  text-wrap: pretty;
+}
+.doc-h3 {
+  margin: 0 0 12px;
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--ink);
+}
+.doc-section + .doc-section {
+  margin-top: var(--section-y);
+}
+/* No hairline above the first block of a document: a gap that is the main column's first child, or
+   the first child of its first section (or of that section's first block). A later gap keeps its own. */
+[data-doc-main] > [data-content-gap]:first-child,
+[data-doc-main] > :first-child > [data-content-gap]:first-child,
+[data-doc-main] > :first-child > :first-child > [data-content-gap]:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* The one aside: a white card, sticky under the 97px header from 1024px. A theme with a different
+   header sets --doc-aside-top, --doc-index-top and --doc-scroll-margin; the fallbacks are SAOC's. */
+.doc-aside {
+  background: #fff;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-float);
+  padding: clamp(24px, 3vw, 36px);
+}
+@media (min-width: 1024px) {
+  .doc-aside {
+    position: sticky;
+    top: var(--doc-aside-top, 112px);
+  }
+}
+.doc-aside-heading {
+  margin: 0 0 12px;
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+/* Index aside: the h2 index of a long document, rows of at least 44px with hairlines between. */
+[data-doc-index] {
+  display: flex;
+  flex-direction: column;
+}
+[data-doc-index-link] {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding-block: 8px;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.35;
+  color: var(--ink);
+  text-decoration: none;
+}
+[data-doc-index-link]:last-child {
+  border-bottom: 0;
+}
+[data-doc-index-link]:hover {
+  color: var(--primary);
+}
+[data-doc-index-link][aria-current='location'] {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+/* Below 1024 the index is a sticky horizontal bar: it takes the 48px the layout's top padding gave up. */
+@media (max-width: 1023.98px) {
+  .doc-layout--index {
+    padding-top: 0;
+    gap: 0;
+  }
+  .doc-layout--index [data-doc-main] {
+    padding-top: 32px;
+  }
+  /* A heading reached from the bar lands below the header and the 48px bar, with 16px of air. */
+  .doc-layout--index .doc-h2 {
+    scroll-margin-top: calc(var(--doc-index-top, 97px) + 64px - var(--scroll-padding-top, 0px));
+  }
+  .doc-aside[data-doc-aside-kind='index'] {
+    position: sticky;
+    top: var(--doc-index-top, 97px);
+    z-index: 20;
+    height: 48px;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--parchment);
+    border-bottom: 1px solid var(--rule);
+  }
+  [data-doc-index] {
+    flex-direction: row;
+    gap: 24px;
+    height: 47px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  [data-doc-index]::-webkit-scrollbar {
+    display: none;
+  }
+  [data-doc-index-link] {
+    flex: none;
+    border-bottom: 0;
+    white-space: nowrap;
+  }
+}
+
+/* Opt-in aside variants (off by default). Bare: the aside drops its card (background, padding,
+   shadow). Aside-first: DocumentLayout renders the aside before the prose, so it shows and tabs
+   first below 1024; from 1024 the grid rule above keeps it in the right column. Either one caps
+   the aside at 440px below 1024. */
+.doc-aside.doc-aside--bare {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+@media (max-width: 1023.98px) {
+  .doc-layout--aside-first > [data-doc-aside],
+  .doc-aside.doc-aside--bare {
+    max-width: 440px;
   }
 }

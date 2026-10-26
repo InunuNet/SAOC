@@ -49,21 +49,12 @@ export function MissionBlock({ missionText, withhold = false }: MissionBlockProp
           <div className="flex flex-col gap-6 self-end">
             {hasCms && !cmsUnsourced ? (
               <p className="font-sans text-[16px] leading-[1.55] text-ink">{missionText}</p>
-            ) : withhold ? null : (
+            ) : !withhold && cmsUnsourced ? (
               <div data-placeholder="true" className="flex flex-col items-start gap-1">
-                {cmsUnsourced ? (
-                  <p className="font-sans text-[16px] leading-[1.55] text-ink">{missionText}</p>
-                ) : (
-                  <p className="font-sans text-[16px] leading-[1.55] text-ink">
-                    SAOC exists to promote the culture, hybridisation and appreciation of orchids
-                    across South Africa. We do this through a federated network of 21 societies, a
-                    nationally accredited judging system first standardised in 1990, and our annual
-                    publication <em>Orchids South Africa</em>.
-                  </p>
-                )}
+                <p className="font-sans text-[16px] leading-[1.55] text-ink">{missionText}</p>
                 <PlaceholderMarker />
               </div>
-            )}
+            ) : null}
             <p className="font-sans text-[16px] leading-[1.55] text-ink">
               Our remit is orchids <strong>in cultivation</strong> — on the show bench, in the
               greenhouse, and in the community. For indigenous species in the wild, our sibling

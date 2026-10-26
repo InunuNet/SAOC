@@ -77,6 +77,7 @@ export default async function ContactPage() {
   return (
     <>
       <PageHero
+        exempt
         image="/images/orchid-pink.jpg"
         eyebrow="Get in touch"
         heading={data?.title ?? 'Contact SAOC'}

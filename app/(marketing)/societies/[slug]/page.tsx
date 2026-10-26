@@ -15,7 +15,6 @@ import {
   SocietyFacts,
   SocietyAbout,
   SocietyCommittee,
-  SocietyExpect,
   SocietyEvents,
   SocietyDetailsCallout,
 } from '@/components/societies';
@@ -135,13 +134,11 @@ export default async function SocietyPage({
       <div className="saoc-container space-y-16 py-16">
         <SocietyFacts society={shown} />
 
-        <SocietyAbout society={shown} withhold={withhold} />
+        <SocietyAbout society={shown} />
 
         <SocietyCommittee society={shown} />
 
         <SocietyEvents societyName={society.name} events={events} />
-
-        <SocietyExpect />
 
         {detailsUnconfirmed ? <SocietyDetailsCallout societyName={society.name} /> : null}
 
@@ -156,11 +153,6 @@ export default async function SocietyPage({
       <CTASection
         eyebrow="Keep exploring"
         heading="Find another society, or reach the council"
-        body={
-          withhold
-            ? undefined
-            : 'SAOC coordinates 21 affiliated societies across South Africa. Browse the full list, or get in touch with the national committee directly.'
-        }
         primaryCta={{ href: '/societies', label: 'Find a society' }}
         secondaryCta={{ href: '/contact', label: 'Contact SAOC' }}
       />

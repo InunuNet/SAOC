@@ -1,6 +1,7 @@
 import { createClient, type SanityClient } from 'next-sanity';
 
 import { apiVersion, dataset, projectId } from '../env';
+import { withFixture } from '../../lib/sanity-fixture';
 import { withCdnFallback } from './cdn-fallback';
 
 /**
@@ -15,12 +16,14 @@ import { withCdnFallback } from './cdn-fallback';
  */
 export const client: SanityClient | null = projectId
   ? withCdnFallback(
-      createClient({
-        projectId,
-        dataset,
-        apiVersion,
-        useCdn: true,
-        stega: { studioUrl: '/studio' },
-      })
+      withFixture(
+        createClient({
+          projectId,
+          dataset,
+          apiVersion,
+          useCdn: true,
+          stega: { studioUrl: '/studio' },
+        })
+      )
     )
   : null;

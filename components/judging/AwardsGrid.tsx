@@ -40,15 +40,15 @@ interface AwardCardsProps {
 function AwardCards({ awards, headingLevel, withhold }: AwardCardsProps) {
   const Heading = headingLevel;
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
       {awards.map((award) => {
         const threshold = thresholdOf(award, withhold);
         const description = descriptionOf(award, withhold);
         return (
           <div key={award._id} className="flex flex-col border border-rule bg-parchment p-6">
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+            <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
               {award.code}
-            </p>
+            </span>
             <Heading className="mt-2 font-serif font-normal text-[20px] leading-snug text-ink">
               {award.name}
             </Heading>

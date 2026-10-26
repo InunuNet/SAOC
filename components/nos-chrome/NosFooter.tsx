@@ -167,8 +167,8 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
               </Link>
             ))}
             <MediaKitFooterLink href={nosPath(NOS_FOOTER_MEDIA_KIT.href)} label={NOS_FOOTER_MEDIA_KIT.label} />
-            {/* The Constitution is the Council's: a plain anchor to the SAOC site, same tab. */}
-            <a href={saocUrl('/constitution')}>Constitution</a>
+            {/* The Memorandum of Incorporation is the Council's: a plain anchor to the SAOC site, same tab. */}
+            <a href={saocUrl('/memorandum-of-incorporation')}>Memorandum of Incorporation</a>
           </div>
         </div>
       </div>

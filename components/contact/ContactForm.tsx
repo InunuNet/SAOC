@@ -40,6 +40,10 @@ interface ContactFormProps {
   markPlaceholders?: boolean;
 }
 
+const SUBMIT_SAOC = 'bg-accent text-ink hover:bg-accent-soft';
+// The show's royal token (--primary in the NOS theme), not the SAOC accent.
+const SUBMIT_NOS = 'bg-primary text-white hover:bg-primary/90';
+
 export function ContactForm({ site = 'saoc', markPlaceholders = false }: ContactFormProps) {
   const hydrated = useHydrated();
   const [name, setName] = useState('');
@@ -254,7 +258,10 @@ export function ContactForm({ site = 'saoc', markPlaceholders = false }: Contact
           placeholder="Write your message here…"
           className={`${inputClass} resize-y`}
         />
-        <p id={HINT_ID} className="font-mono text-[11px] text-muted">
+        <p
+          id={HINT_ID}
+          className={site === 'nos' ? 'font-sans text-[14px] text-muted' : 'font-mono text-[11px] text-muted'}
+        >
           Minimum 10 characters.
         </p>
         {fieldErrors.message ? (
@@ -287,7 +294,9 @@ export function ContactForm({ site = 'saoc', markPlaceholders = false }: Contact
       <button
         type="submit"
         disabled={status === 'submitting' || !hydrated}
-        className="inline-flex min-h-11 items-center rounded-sm bg-accent px-5 py-2.5 font-sans text-[14px] font-medium text-ink hover:bg-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60 disabled:cursor-not-allowed"
+        className={`inline-flex min-h-11 items-center rounded-sm px-5 py-2.5 font-sans text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ivory disabled:opacity-60 disabled:cursor-not-allowed ${
+          site === 'nos' ? SUBMIT_NOS : SUBMIT_SAOC
+        }`}
       >
         {status === 'submitting' ? 'Sending…' : 'Send message'}
       </button>

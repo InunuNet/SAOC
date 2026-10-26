@@ -3,6 +3,8 @@ import type { Metadata } from 'next';
 import { PortableText } from '@portabletext/react';
 import type { PortableTextBlock } from '@portabletext/react';
 
+import { Breadcrumb } from '@/components/chrome/Breadcrumb';
+import { DocumentLayout, type DocumentIndexEntry } from '@/components/ui/DocumentLayout';
 import { PageHero } from '@/components/ui/PageHero';
 import { PhotoBand } from '@/components/ui/PhotoBand';
 import { CTASection } from '@/components/ui/CTASection';
@@ -10,7 +12,6 @@ import { ContentGap } from '@/components/ui/ContentGap';
 import { isUnsourced, sourcedBlocks } from '@/components/ui/provenance';
 import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { AwardsGrid, JudgesDirectory } from '@/components/judging';
-import { JudgingSplit } from '@/components/judging/JudgingSplit';
 import type { SanityAward, SanityJudge } from '@/components/judging';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
@@ -31,16 +32,10 @@ export const metadata: Metadata = buildPageMetadata({
   path: '/judging',
 });
 
-interface StatItem {
-  label: string;
-  value: string;
-}
-
 interface JudgingPageData {
   title?: string | null;
   intro?: PortableTextBlock[] | null;
   howItWorks?: PortableTextBlock[] | null;
-  stats?: StatItem[] | null;
   becomingAJudge?: PortableTextBlock[] | null;
   showPublicDirectory?: boolean | null;
   judges?: SanityJudge[] | null;
@@ -48,16 +43,9 @@ interface JudgingPageData {
 
 const PHOTO_CAPTION = 'Form, colour, size, condition — judged against published criteria';
 
-// Fallback figure: the award-tier count derived from the awards actually returned. With none
-// returned there is no figure to show, so no stat is drawn (nothing is invented). The judge, year and
-// society figures are left out (Lee-Ann, 24 Oct 2026).
-function buildFallbackStats(awardCount: number): StatItem[] {
-  return awardCount > 0 ? [{ value: String(awardCount), label: 'Award Tiers' }] : [];
-}
-
 interface ProseSection {
+  id: string;
   heading: string;
-  tone: 'parchment' | 'bone';
   /** Public: the blocks that state no unsourced fact. Beta: everything, marked. */
   content: ReactNode | null;
 }
@@ -81,11 +69,6 @@ export default async function JudgingPage() {
   const judges: SanityJudge[] = data?.judges ?? [];
   const showDirectory = data?.showPublicDirectory === true;
   const awardsList = awards ?? [];
-  const allStats =
-    data?.stats && data.stats.length > 0 ? data.stats : buildFallbackStats(awardsList.length);
-  const stats = withhold
-    ? allStats.filter((stat) => !isUnsourced(stat.label) && !isUnsourced(stat.value))
-    : allStats;
 
   const prose = (blocks: PortableTextBlock[] | null | undefined, fallback: ReactNode) => {
     if (blocks && blocks.length > 0) {
@@ -97,11 +80,11 @@ export default async function JudgingPage() {
 
   const sections: ProseSection[] = [
     {
+      id: 'overview',
       heading: 'Overview',
-      tone: 'parchment',
       content: prose(
         data?.intro,
-        <p className="font-serif font-normal text-[20px] leading-[1.55] text-ink">
+        <p>
           SAOC operates a national orchid judging system, standardised in 1990 to replace
           regional variation with a single set of published criteria. Accredited judges
           score plants on form, colour, size, and cultural condition at affiliated shows
@@ -111,8 +94,8 @@ export default async function JudgingPage() {
       ),
     },
     {
+      id: 'how-judging-works',
       heading: 'How judging works',
-      tone: 'parchment',
       content: prose(
         data?.howItWorks,
         <p>
@@ -126,8 +109,8 @@ export default async function JudgingPage() {
       ),
     },
     {
+      id: 'becoming-a-judge',
       heading: 'Becoming a judge',
-      tone: 'parchment',
       content: prose(
         data?.becomingAJudge,
         <p>
@@ -144,25 +127,27 @@ export default async function JudgingPage() {
   ];
   const [overview, howItWorks, becoming] = sections;
   const allWithheld = sections.every((section) => section.content === null);
-  const split = (section: ProseSection) =>
+  const proseSection = (section: ProseSection) =>
     section.content === null ? null : (
-      <JudgingSplit heading={section.heading} tone={section.tone} marked={!withhold}>
-        {section.content}
-      </JudgingSplit>
-    );
-  const awardsSection = (
-    <section className="bg-bone py-24">
-      <div className="saoc-container">
-        <div className="mb-6">
-          <h2 className="h2">SAOC awards</h2>
+      <section key={section.id} id={section.id} className="doc-section">
+        <h2 className="doc-h2">{section.heading}</h2>
+        <div data-placeholder={withhold ? undefined : 'true'} className="doc-prose">
+          {section.content}
+          {withhold ? null : <PlaceholderMarker />}
         </div>
-        <AwardsGrid awards={awardsList} withhold={withhold} />
-      </div>
-    </section>
-  );
+      </section>
+    );
+
+  const index: DocumentIndexEntry[] = [
+    ...[overview, howItWorks].filter((s) => s.content !== null),
+    { id: 'awards', heading: 'SAOC awards' },
+    ...[becoming].filter((s) => s.content !== null),
+    { id: 'judges', heading: 'Accredited judges' },
+  ].map((entry) => ({ id: entry.id, label: entry.heading }));
 
   return (
     <>
+      <Breadcrumb items={[{ label: 'Judging' }]} />
       <PageHero
         image="/images/orchid-purple.jpg"
         eyebrow="SAOC judging system"
@@ -170,39 +155,31 @@ export default async function JudgingPage() {
         lede={LEDE}
       />
 
-      {allWithheld ? (
-        <section className="bg-parchment py-24">
-          <div className="saoc-container">
-            <ContentGap />
-          </div>
-        </section>
-      ) : null}
-      {split(overview)}
-
-      {/* Stats strip: Sanity content when present, real figures otherwise; marked on the beta preview */}
-      {stats.length > 0 ? (
-        <section className="bg-bone py-16">
-          <div className="saoc-container">
-            <div data-placeholder={withhold ? undefined : 'true'} className="flex flex-col items-start gap-4">
-              <dl className="grid w-full grid-cols-2 gap-x-8 gap-y-8 border-y border-rule py-10 sm:grid-cols-4">
-                {stats.map((stat, i) => (
-                  <div key={`${stat.label}-${i}`}>
-                    <dt className="font-serif tracking-[-0.015em] font-light text-[clamp(36px,4vw,56px)] leading-none text-primary">
-                      {stat.value}
-                    </dt>
-                    <dd className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
-                      {stat.label}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-              {withhold ? null : <PlaceholderMarker />}
+      <DocumentLayout index={index}>
+        {allWithheld ? (
+          <section className="doc-section">
+            <div className="doc-prose">
+              <ContentGap />
             </div>
-          </div>
-        </section>
-      ) : null}
+          </section>
+        ) : null}
+        {proseSection(overview)}
+        {proseSection(howItWorks)}
 
-      {split(howItWorks)}
+        {/* Awards grid */}
+        <section id="awards" className="doc-section">
+          <h2 className="doc-h2">SAOC awards</h2>
+          <AwardsGrid awards={awardsList} withhold={withhold} />
+        </section>
+
+        {proseSection(becoming)}
+
+        {/* Judges directory — conditional */}
+        <section id="judges" className="doc-section">
+          <h2 className="doc-h2">Accredited judges</h2>
+          <JudgesDirectory judges={judges} showPublicDirectory={showDirectory} />
+        </section>
+      </DocumentLayout>
 
       <PhotoBand
         image="/images/orchid-dark.jpg"
@@ -211,21 +188,6 @@ export default async function JudgingPage() {
         marked={!withhold}
         minHeight="320px"
       />
-
-      {/* Awards grid */}
-      {awardsSection}
-
-      {split(becoming)}
-
-      {/* Judges directory — conditional */}
-      <section className="bg-bone py-16">
-        <div className="saoc-container">
-          <div className="mb-6">
-            <h2 className="h2">Accredited judges</h2>
-          </div>
-          <JudgesDirectory judges={judges} showPublicDirectory={showDirectory} />
-        </div>
-      </section>
 
       <CTASection
         eyebrow="Get involved"

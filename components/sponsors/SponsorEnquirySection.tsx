@@ -9,6 +9,8 @@ import { SponsorEnquiryForm } from './SponsorEnquiryForm';
 interface SponsorEnquirySectionProps {
   /** Which site's sponsors page renders this; the marker lets a check prove each host serves only its own. */
   site: SponsorEnquirySite;
+  /** Set on a page built against the content standard: the section sits in the document column on the page ground, with the shared h2. */
+  inDocument?: boolean;
 }
 
 /**
@@ -17,7 +19,7 @@ interface SponsorEnquirySectionProps {
  * The heading is a functional label shown always; the introduction and the consent wording are
  * copy gaps, so the beta preview marks them and a public build omits the introduction.
  */
-export function SponsorEnquirySection({ site }: SponsorEnquirySectionProps) {
+export function SponsorEnquirySection({ site, inDocument = false }: SponsorEnquirySectionProps) {
   const withhold = withholdPlaceholderProse();
 
   return (
@@ -25,13 +27,15 @@ export function SponsorEnquirySection({ site }: SponsorEnquirySectionProps) {
       id="enquire"
       data-sponsor-enquiry={site}
       aria-labelledby="enquire-heading"
-      className="scroll-mt-36 border border-rule bg-bone p-6 sm:p-10"
+      className={
+        inDocument ? 'doc-section scroll-mt-36' : 'scroll-mt-36 border border-rule bg-bone p-6 sm:p-10'
+      }
     >
-      <div className="max-w-[640px]">
+      <div className={inDocument ? undefined : 'max-w-[640px]'}>
         <h2
           id="enquire-heading"
           tabIndex={-1}
-          className="font-serif font-normal text-[26px] text-ink outline-none"
+          className={inDocument ? 'doc-h2 outline-none' : 'font-serif font-normal text-[26px] text-ink outline-none'}
         >
           {ENQUIRY_HEADING}
         </h2>

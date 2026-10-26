@@ -1,0 +1,1 @@
+{"query":"\n  *[_type == \"conferencePresenter\" && event == $event] | order(order asc) {\n  _id,\n  name,\n  role,\n  bio,\n  country,\n  organisation,\n  \"photoUrl\": photo.asset->url,\n  \"photoAssetRef\": photo.asset._ref,\n  event,\n  order\n}\n","params":{"event":"wosa-conference"},"result":[],"capturedAt":"2026-10-25T23:53:29.134Z"}

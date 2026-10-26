@@ -1,6 +1,6 @@
 // =============================================================
 // NOS — lib/data/show-facts.ts
-// The show's four headline facts (Dates, Host, Venue, Cycle), built ONCE from the nationalShow
+// The show's headline facts (Dates, Host, Venue), built ONCE from the nationalShow
 // singleton. The hub hero, the long-form template's aside and the holding state all read this
 // module, so a fact can never read differently on two pages (F18, goldens/f18/f18-spec.md 3.1).
 // Sanity wins in every fallback; the literals are only the right-hand side.
@@ -34,9 +34,6 @@ export function buildShowFacts(show: ShowFactsSource | null | undefined): ShowFa
     { label: 'Dates', value: dateRange ?? 'Dates to be confirmed' },
     { label: 'Host', value: hostRegion },
     { label: 'Venue', value: venueLine },
-    // Triennial is a standing constitutional fact about how the show is constituted,
-    // not a per-edition value — deliberately not a Sanity field.
-    { label: 'Cycle', value: 'Triennial' },
   ];
 }
 
