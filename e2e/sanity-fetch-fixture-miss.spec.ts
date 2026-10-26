@@ -2,7 +2,7 @@
 // Unit-style, no browser and no server (same convention as beta-password-wall-decision.spec.ts).
 // sanityFetch must not turn a Sanity fixture replay miss into the graceful `null` fallback, and
 // must keep that fallback for every other failure when the fixture is off.
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -59,6 +59,25 @@ test.describe('sanityFetch and the Sanity fixture', () => {
     await expect(sanityFetch({ query: '*[_type == "absentFixtureQuery"][0]' })).rejects.toBeInstanceOf(
       SanityFixtureMiss,
     );
+  });
+
+  test('record mode refuses a nested credential-named param before any fetch', async () => {
+    process.env.NEXT_PUBLIC_SANITY_PROJECT_ID = 'fixturetest';
+    process.env.SANITY_FIXTURE_MODE = 'record';
+    process.env.SANITY_FIXTURE_RECORD_CONFIRM = '1';
+    process.env.SANITY_FIXTURE_DIR = emptyDir;
+    process.env.SANITY_FIXTURE_LOGDIR = emptyDir;
+    await loadFreshFetch();
+    const { client } = await import('../sanity/lib/client');
+    expect(client).not.toBeNull();
+
+    await expect(
+      client!.fetch('*[_type == "x"]', { filter: { apiKey: 'x' } }),
+    ).rejects.toThrow(/refuses a param named "apiKey"/);
+    await expect(
+      client!.fetch('*[_type == "x"]', { list: [{ inner: { password: 'x' } }] }),
+    ).rejects.toThrow(/refuses a param named "password"/);
+    expect(readdirSync(emptyDir).filter((name) => name.endsWith('.json'))).toEqual([]);
   });
 
   test('with the fixture off a failed fetch still resolves to null', async () => {

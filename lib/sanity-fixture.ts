@@ -152,13 +152,32 @@ function replayFetch(
   return entry.result;
 }
 
+/** The first object key that looks like a credential, searched through nested objects and arrays. */
+function findSecretName(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findSecretName(item);
+      if (found) return found;
+    }
+    return undefined;
+  }
+  if (!value || typeof value !== 'object') return undefined;
+  for (const [name, inner] of Object.entries(value)) {
+    if (SECRET_PARAM_NAME.test(name)) return name;
+    const found = findSecretName(inner);
+    if (found) return found;
+  }
+  return undefined;
+}
+
 /** Record mode writes params and results to disk verbatim, so it refuses a client that carries a
- * token and any param whose name looks like a credential. */
+ * token and any param, at any depth, whose name looks like a credential. It runs before any saved
+ * entry is read or any request is made. */
 function assertRecordable(target: Fetcher, params: Params | undefined): void {
   if (target.config?.().token) {
     throw new Error('Sanity fixture record refuses a client configured with a token');
   }
-  const secretParam = Object.keys(params ?? {}).find((name) => SECRET_PARAM_NAME.test(name));
+  const secretParam = findSecretName(params);
   if (secretParam) {
     throw new Error(`Sanity fixture record refuses a param named "${secretParam}"`);
   }
