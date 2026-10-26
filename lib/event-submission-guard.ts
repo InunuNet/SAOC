@@ -28,18 +28,44 @@ function tooLong(field: CappedField, label: string, value: string): EventValidat
   return reject(`${label} must be at most ${EVENT_FIELD_MAX_LENGTHS[field]} characters`, field);
 }
 
+const STRICT_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const SLUG_UUID_CHARS = 8;
+
+/** Parses strict YYYY-MM-DD as a real calendar day (UTC); null for any other shape or impossible day. */
+function parseStrictDate(value: unknown): Date | null {
+  if (typeof value !== 'string' || !STRICT_DATE_PATTERN.test(value)) return null;
+  const parsed = new Date(value);
+  if (isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) return null;
+  return parsed;
+}
+
 function validateDates(record: Record<string, unknown>, now: Date): EventValidation | null {
   const { date, endDate } = record;
-  const dateObj = typeof date === 'string' && date !== '' ? new Date(date) : null;
-  if (!dateObj || isNaN(dateObj.getTime()) || dateObj <= now) {
+  const dateObj = parseStrictDate(date);
+  if (!dateObj || dateObj <= now) {
     return reject('Date must be a valid date in the future', 'date');
   }
   if (endDate === undefined || endDate === '') return null;
-  const endObj = typeof endDate === 'string' ? new Date(endDate) : null;
-  if (!endObj || isNaN(endObj.getTime()) || endObj < dateObj) {
+  const endObj = parseStrictDate(endDate);
+  if (!endObj || endObj < dateObj) {
     return reject('End date must be on or after start date', 'endDate');
   }
   return null;
+}
+
+function slugifyTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+/** Title + date + the first hex chars of the draft UUID, so identical title and date never collide. */
+export function buildEventSlug(title: string, date: string, draftId: string): string {
+  const uuidHead = draftId.match(/([0-9a-f]{8})-[0-9a-f]{4}-/i)?.[1] ?? '';
+  return [slugifyTitle(title), date.slice(0, 10), uuidHead.toLowerCase().slice(0, SLUG_UUID_CHARS)]
+    .filter(Boolean)
+    .join('-');
 }
 
 function validateRequiredText(
