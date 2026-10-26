@@ -4149,7 +4149,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 /* WE-G1 /what-to-expect: the stand, the narrative and the ruled blocks on the left, one sticky card on the right. */
 .nos-theme .nos-we-body {
   display: grid;
-  gap: 40px;
+  row-gap: 0;
   grid-template-areas: 'stand' 'card' 'rest' 's3';
   padding-block: 48px var(--section-y);
 }
@@ -4161,6 +4161,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   grid-area: card;
   min-width: 0;
   max-width: 520px;
+  margin-bottom: 40px;
 }
 .nos-theme .nos-we-s3 {
   grid-area: s3;
@@ -4172,7 +4173,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   grid-area: rest;
   min-width: 0;
   display: grid;
-  gap: 40px;
 }
 @media (min-width: 1024px) {
   .nos-theme .nos-we-body {
@@ -4187,6 +4187,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     position: sticky;
     top: 100px;
     max-width: none;
+    margin-bottom: 0;
   }
 }
 .nos-theme .nos-we-body .doc-standfirst {
@@ -4217,9 +4218,11 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-style: italic;
 }
 .nos-theme .nos-we-block {
-  max-width: 64ch;
   padding-block: clamp(32px, 4vw, 44px);
   border-top: 1px solid var(--rule);
+}
+.nos-theme .nos-we-block > * {
+  max-width: 64ch;
 }
 .nos-theme .nos-we-block p {
   margin: 12px 0 0;
