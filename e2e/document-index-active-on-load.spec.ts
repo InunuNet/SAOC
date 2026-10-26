@@ -11,6 +11,14 @@ const ACTIVE = '[data-doc-index-link][aria-current="location"]';
 test.describe('DocumentIndex active row', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
+  test('the server-rendered index already marks the first entry (first paint)', async ({ request }) => {
+    const html = await (await request.get('/privacy')).text();
+    const links = [...html.matchAll(/<a[^>]*data-doc-index-link[^>]*>/g)].map((m) => m[0]);
+    expect(links.length).toBeGreaterThan(1);
+    expect(links[0]).toContain('aria-current="location"');
+    expect(links.slice(1).some((l) => l.includes('aria-current'))).toBe(false);
+  });
+
   test('the first entry is active on load', async ({ page }) => {
     await page.goto('/privacy');
     const links = page.locator('[data-doc-index-link]');

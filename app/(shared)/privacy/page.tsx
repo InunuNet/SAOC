@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 
 import { LegalBody, legalIndex } from '@/components/legal/LegalBody';
 import { LegalBreadcrumb } from '@/components/legal/LegalBreadcrumb';
-import { LegalHero } from '@/components/nos/LegalHero';
 import { NosHero } from '@/components/nos/NosHero';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
+import { PageHero } from '@/components/ui/PageHero';
 import { PRIVACY_POLICY } from '@/content/legal/privacy';
 import { buildPageMetadata } from '@/lib/seo';
 import { requestSite } from '@/lib/request-site';
@@ -34,9 +34,7 @@ export default async function PrivacyPage() {
       ) : (
         <>
           <LegalBreadcrumb label={PAGE_LABEL} />
-          <LegalHero
-            route="/privacy"
-            eyebrow="Legal"
+          <PageHero
             image="/images/orchid-violet.jpg"
             heading={PRIVACY_POLICY.title}
             lede={PRIVACY_POLICY.subtitle}
