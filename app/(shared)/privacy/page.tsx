@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 import { LegalBody } from '@/components/legal/LegalBody';
-import { PageHero } from '@/components/ui/PageHero';
+import { LegalHero } from '@/components/nos/LegalHero';
 import { PRIVACY_POLICY } from '@/content/legal/privacy';
 import { buildPageMetadata } from '@/lib/seo';
 
@@ -14,13 +14,16 @@ export const metadata: Metadata = buildPageMetadata({
 export default function PrivacyPage() {
   return (
     <>
-      <PageHero
+      <LegalHero
+        route="/privacy"
         image="/images/orchid-violet.jpg"
         eyebrow="Legal"
         heading={PRIVACY_POLICY.title}
         lede={PRIVACY_POLICY.subtitle}
       />
-      <LegalBody document={PRIVACY_POLICY} />
+      <div className="nos-section nos-legal">
+        <LegalBody document={PRIVACY_POLICY} />
+      </div>
     </>
   );
 }

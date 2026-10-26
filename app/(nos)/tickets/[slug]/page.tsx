@@ -233,10 +233,9 @@ export default async function TicketBuyPage({ params, searchParams }: Props) {
         title={ticketType.name}
         lede={ticketType.description}
         crumbs={breadcrumbs}
-        className="nk-hero-compact"
       />
 
-      <div data-nos-wrap data-ticket-body className="pb-12 pt-4">
+      <div data-nos-wrap data-ticket-body className="pb-12 pt-10 md:pt-16">
         <div className="lg:max-w-[560px]">
           {!salesOpen ? (
             <SalesClosedNotice message={salesClosedMessage} />

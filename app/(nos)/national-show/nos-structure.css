@@ -46,15 +46,49 @@
   color: var(--ivory);
 }
 
-/* R29 typographic hero: solid ground, no media, no scrim; copy on the axis shared with the
-   sections below (h1 and standfirst left edges equal the wrap content edge). */
-.nos-theme .nos-hero-type .nos-hero-copy {
-  padding-block: 64px 56px;
+/* R29 typographic hero (a route with no crop): solid ground, no media, no scrim; the copy is top-anchored
+   like the split hero's (nos-theme.css) and sits on the axis shared with the sections below. */
+
+/* FQ7 (NOS Design, 2026-10-23/24; PG-1 2026-10-25): the first content after the sub-nav sits 64px below it
+   (48px below 1024px), with no hairline between them. A page with no sub-nav (tickets, the legal family, contact)
+   measures the same 64/48 from the hero's bottom edge (G5). Replaces the 72-120px section rhythm for
+   that first block only. */
+.nos-theme .nos-subnav + *,
+.nos-theme .nos-hero-inner:not(:has(+ .nos-subnav)) + * {
+  padding-top: 64px;
+}
+/* A .nk-section first block: its own padding-block (the ticket sections, further down) is declared later at the
+   same specificity, so the first-block value is repeated with one more class to win over it. */
+.nos-theme .nos-subnav + .nk-section,
+.nos-theme .nos-hero-inner:not(:has(+ .nos-subnav)) + .nk-section {
+  padding-top: 64px;
 }
 @media (max-width: 1023px) {
-  .nos-theme .nos-hero-type .nos-hero-copy {
-    padding-block: 48px 40px;
+  .nos-theme .nos-subnav + *,
+  .nos-theme .nos-hero-inner:not(:has(+ .nos-subnav)) + * {
+    padding-top: 48px;
   }
+  .nos-theme .nos-subnav + .nk-section,
+  .nos-theme .nos-hero-inner:not(:has(+ .nos-subnav)) + .nk-section {
+    padding-top: 48px;
+  }
+}
+
+/* The shared legal pages wrap LegalBody in a .nos-section; on NOS the section carries the rhythm (64px/48px
+   above, 72-120px below), so LegalBody's own vertical padding is not added on top. SAOC never matches. */
+.nos-theme .nos-legal > div {
+  padding-block: 0;
+}
+
+/* An empty first block (a listing page with no prose sections renders an empty space-y wrapper) keeps its
+   bottom margin, which collapses through it and pushes the wrap 48px down: it takes no part in the rhythm. */
+.nos-theme [data-nos-wrap] > :first-child:empty {
+  margin-block: 0;
+}
+
+/* A status marker that opens a section keeps no top margin: the section's 64px/48px is the whole gap. */
+.nos-theme .nos-section > [data-nos-wrap] > [data-confirmation-badge]:first-child {
+  margin-top: 0;
 }
 
 /* R27 group sub-nav: directly under the inner hero, not sticky. Karla 700 14.5px royal,
@@ -64,7 +98,6 @@
 .nos-theme .nos-subnav {
   position: relative;
   background-color: var(--parchment);
-  border-bottom: 1px solid var(--rule);
 }
 .nos-theme .nos-subnav-row {
   display: flex;
@@ -1919,16 +1952,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   font-family: var(--serif);
   font-size: 1.25rem;
   color: var(--ink-700);
-}
-
-.nos-theme .nos-hero-type.nk-hero-compact {
-  min-height: 0;
-}
-.nos-theme .nos-hero-type.nk-hero-compact .nos-hero-copy {
-  padding-block: 20px 16px;
-}
-.nos-theme .nk-hero-compact .nos-hero-lede {
-  max-width: 64ch;
 }
 
 /* ---------- Section ledes, the sales-closed line and the Day Pass "from" figure ---------- */

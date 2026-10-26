@@ -18,24 +18,20 @@ export function withTestSubjectPrefix(subject: string, testMode = isTicketingTes
   return testMode ? `${TICKETING_TEST_TITLE_PREFIX} ${subject}` : subject;
 }
 
-// Public NOS-host paths and the internal /national-show/* forms they rewrite to (usePathname()
-// may report either). Matched on a segment boundary, never a string prefix.
-const TICKETING_SURFACE_ROOTS = [
-  '/tickets',
-  '/vsp',
-  '/conferences',
-  '/workshops',
-  '/wosa-conference',
-  '/vendors/payment',
-  '/national-show/tickets',
-  '/national-show/conferences',
-  '/national-show/workshops',
-  '/national-show/wosa-conference',
-  '/national-show/vendors/payment',
-];
+// Only the ticket pages and the screen where a vendor payment is actually started. Public
+// NOS-host paths and the internal /national-show/* forms they rewrite to (usePathname() may
+// report either). Matched on a segment boundary, never a string prefix. Listing and information
+// pages (/conferences, /workshops, /wosa-conference, /vsp status) are deliberately absent: their
+// buy buttons land under /tickets/..., so the bar still shows before any payment.
+const TICKETING_SURFACE_TREES = ['/tickets', '/national-show/tickets'];
+// Exact paths only: /vendors/payment/status is a status screen, not where payment starts.
+const TICKETING_SURFACE_EXACT = ['/vendors/payment', '/national-show/vendors/payment'];
 
 export function isTicketingSurfacePath(pathname: string | null | undefined): boolean {
   if (!pathname) return false;
   const path = pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
-  return TICKETING_SURFACE_ROOTS.some((root) => path === root || path.startsWith(`${root}/`));
+  return (
+    TICKETING_SURFACE_EXACT.includes(path) ||
+    TICKETING_SURFACE_TREES.some((root) => path === root || path.startsWith(`${root}/`))
+  );
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 import { LegalBody } from '@/components/legal/LegalBody';
-import { PageHero } from '@/components/ui/PageHero';
+import { LegalHero } from '@/components/nos/LegalHero';
 import { WEBSITE_TERMS } from '@/content/legal/terms';
 import { buildPageMetadata } from '@/lib/seo';
 
@@ -14,12 +14,15 @@ export const metadata: Metadata = buildPageMetadata({
 export default function TermsPage() {
   return (
     <>
-      <PageHero
+      <LegalHero
+        route="/terms"
         image="/images/orchid-violet.jpg"
         eyebrow="Legal"
         heading={WEBSITE_TERMS.title}
       />
-      <LegalBody document={WEBSITE_TERMS} />
+      <div className="nos-section nos-legal">
+        <LegalBody document={WEBSITE_TERMS} />
+      </div>
     </>
   );
 }

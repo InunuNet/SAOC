@@ -8,6 +8,7 @@ export default function Loading() {
     <NosHero
       route={NOS_ROUTE_HEROES.wosaConference.route}
       title={NOS_ROUTE_HEROES.wosaConference.title}
+      titleAs="p"
       priority
     />
   );
