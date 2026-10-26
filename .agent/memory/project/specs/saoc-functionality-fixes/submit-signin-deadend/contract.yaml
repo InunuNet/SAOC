@@ -1,0 +1,32 @@
+schema: athanor.contract/v1
+slug: submit-signin-deadend
+goal: 'The event form''s three sign-in-again errors make those words a link to the existing admin sign-in route, with no new copy.'
+created_at: '2026-10-26'
+autonomy: high
+
+features:
+  - id: F1
+    name: 'submit-signin-deadend'
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/saoc-functionality-fixes/submit-signin-deadend/goldens/contract-notes.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: '[fail-on-main] no plain-string sign-in-again setServerError remains (fails on main)'
+      command: 'bash .agent/memory/project/specs/saoc-functionality-fixes/submit-signin-deadend/checks/check.sh no-plain-string-signin'
+    - id: A2
+      description: '[fail-on-main] SubmitEventForm links to /admin/login?next=/events/submit via next/link (fails on main)'
+      command: 'bash .agent/memory/project/specs/saoc-functionality-fixes/submit-signin-deadend/checks/check.sh link-to-login'
+    - id: A3
+      description: '[guard] guard: the three existing messages are kept verbatim and no new copy appears'
+      command: 'bash .agent/memory/project/specs/saoc-functionality-fixes/submit-signin-deadend/checks/check.sh wording-kept'
+    - id: A4
+      description: '[guard] guard: sign-in route exists and safeNextPath accepts /events/submit'
+      command: 'bash .agent/memory/project/specs/saoc-functionality-fixes/submit-signin-deadend/checks/check.sh guard-login-route-and-next'
+    - id: A5
+      description: '[guard] guard: whole project typechecks'
+      command: 'pnpm exec tsc --noEmit'

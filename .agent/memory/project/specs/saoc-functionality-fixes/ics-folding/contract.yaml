@@ -1,0 +1,38 @@
+schema: athanor.contract/v1
+slug: ics-folding
+goal: 'ICS output folds every content line at 75 octets without splitting a UTF-8 character and escapes a bare CR.'
+created_at: '2026-10-26'
+autonomy: high
+
+features:
+  - id: F1
+    name: 'ics-folding'
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/saoc-functionality-fixes/ics-folding/goldens/contract-notes.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: '[fail-on-main] long ASCII DESCRIPTION folds to <=75 octets and unfolds to the original (fails on main)'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/ics-folding/checks/check.mjs fold-ascii-75'
+    - id: A2
+      description: '[fail-on-main] multibyte SUMMARY/DESCRIPTION/LOCATION fold on octets, valid UTF-8 per line, unfold losslessly (fails on main)'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/ics-folding/checks/check.mjs fold-utf8-safe'
+    - id: A3
+      description: '[fail-on-main] buildVCalendar output is folded and still ends END:VCALENDAR CRLF (fails on main)'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/ics-folding/checks/check.mjs fold-calendar-wrapper'
+    - id: A4
+      description: '[fail-on-main] a bare CR escapes to \n and no bare CR survives (fails on main)'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/ics-folding/checks/check.mjs escape-bare-cr'
+    - id: A5
+      description: '[guard] guard: lines <=75 octets are not folded, escapes intact'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/ics-folding/checks/check.mjs guard-short-lines-unchanged'
+    - id: A6
+      description: '[guard] guard: all-day exclusive DTEND (23-26 Sept => 20270927) intact'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/ics-folding/checks/check.mjs guard-allday-dtend'
+    - id: A7
+      description: '[guard] guard: whole project typechecks'
+      command: 'pnpm exec tsc --noEmit'
