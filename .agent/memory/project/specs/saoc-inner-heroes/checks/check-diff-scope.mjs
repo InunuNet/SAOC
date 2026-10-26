@@ -51,7 +51,10 @@ const diffOf = (file) => git('diff', BASE, 'HEAD', '-U0', '--', file).split('\n'
 const PROP = /\bimage(Position)?=("[^"]*"|\{[^}]*\})/g;
 const SPLIT_PROP = /\bsplit=("[^"]*"|\{[^}]*\})/g;
 const EVENT_PAGE = 'app/(marketing)/events/[slug]/page.tsx';
-const norm = (l) => l.slice(1).replace(PROP, '').replace(SPLIT_PROP, '').replace(/\s+/g, ' ').trim();
+const JUDGING_PAGE = 'app/(marketing)/judging/page.tsx';
+// The judging PhotoBand alt follows its photograph (orchid-purple -> orchid-dark); only that exact wording pair is exempt, on that page only.
+const PHOTOBAND_ALT = /alt="(Purple|Dark) orchid on the show bench"/;
+const normFor = (f) => (l) => { const t = l.slice(1).replace(PROP, '').replace(SPLIT_PROP, '').replace(/\s+/g, ' ').trim(); return f === JUDGING_PAGE ? t.replace(PHOTOBAND_ALT, 'alt="<photoband alt>"') : t; };
 for (const f of changed) {
   const isPage = /^app\/\((marketing|shared)\)\/.*page\.tsx$/.test(f);
   const isLegal = f === 'components/nos/LegalHero.tsx';
@@ -62,8 +65,8 @@ for (const f of changed) {
   if (f === 'components/chrome/SaocLockup.tsx') for (const l of lines) if (!/\bsizes=/.test(l)) failures.push(`${f}: diff beyond the sizes lines: ${l.trim().slice(0, 70)}`);
   // events/[slug]: the diff may only touch <ShowBand ...> lines, and only to add / change the opt-in `split` prop (NOS Design: 42/58 on the event page only).
   if (f === EVENT_PAGE) for (const l of lines) if (!/<ShowBand\b/.test(l)) failures.push(`${f}: diff beyond the ShowBand split prop: ${l.trim().slice(0, 70)}`);
-  const minus = lines.filter((l) => l.startsWith('-')).map(norm).filter(Boolean).sort();
-  const plus = lines.filter((l) => l.startsWith('+')).map(norm).filter(Boolean).sort();
+  const minus = lines.filter((l) => l.startsWith('-')).map(normFor(f)).filter(Boolean).sort();
+  const plus = lines.filter((l) => l.startsWith('+')).map(normFor(f)).filter(Boolean).sort();
   if (!isLockup && JSON.stringify(minus) !== JSON.stringify(plus)) failures.push(`${f}: diff beyond image/imagePosition (no copy changes): -${minus.filter((x) => !plus.includes(x))[0]?.slice(0, 70)} +${plus.filter((x) => !minus.includes(x))[0]?.slice(0, 70)}`);
 }
 // No new tokens or colours.
