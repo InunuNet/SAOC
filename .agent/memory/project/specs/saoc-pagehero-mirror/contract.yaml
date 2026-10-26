@@ -1,0 +1,87 @@
+# SAOC PageHero mirror (HM-1, with HS-1 / HS-2). Sources: NOS Design overnight critique 2026-10-25 (comms.md tail), the queue's earlier mirror rulings,
+# nos-pagehero PR #76 spec sections 4 and 8 (mirror-pr-notes.md). Run from the repo root of the dev's worktree.
+# PRECONDITION: SAOC's branch fix/audit-2026-10-25 (lib/image-widths.json 2560/2880/4160, generator q78) has merged to main. A2 says so mechanically.
+# A8-A14 need the A7 build. None may run with BETA_PASSWORD_WALL_OFF or SITE_PUBLIC_LAUNCH set (build.sh and the gates unset them).
+# A16 has nothing pending: C1, G9 (orchid-dark-showband derived cut), G10, G11 are answered.
+# NOS Design final picks and rulings 2026-10-25 are folded in (spec.md section 1). C1 is resolved (dark-flip y1 2560).
+# Stays off: Header.tsx, nav and focus CSS (#83/#84), NewsletterSignup.tsx, the SAOC polish wave (events/submit, event detail (except the one ShowBand split prop line), societies, YearbookStrip), (shared) legal pages, the audit branch's files. A4 enforces it.
+schema: athanor.contract/v1
+slug: saoc-pagehero-mirror
+goal: Every SAOC photographic hero, band and both home carousel slides serve a photograph at least as wide as its box in device pixels with no native-cap exception, keep the bloom side bare under a scrim local to the copy, set the copy from 52% on solid ivory with per-glyph contrast, stack below 768, and use build-time flips and cuts only; the legal pages and /members are typographic.
+created_at: '2026-10-25'
+autonomy: high
+exclusions:
+  - item: 'per-route crops and the HS-1 home slide crops'
+    reason: "The final picks are in. Nothing pending (C1, G9, G10, G11 answered 2026-10-25)."
+  - item: 'Header.tsx, nav and focus CSS, NewsletterSignup.tsx, events/submit, event detail (except the one ShowBand split prop line), societies pages and components, YearbookStrip, sponsors eyebrow and 390 alignment, (shared) legal pages'
+    reason: "Other lanes (SAOC polish wave, #83/#84, #76); A4 fails any change to them. The /sponsors eyebrow overlap is listed in spec.md section 7."
+  - item: 'lib/image-widths.json, lib/image-loader.ts and the generator quality'
+    reason: "Owned by the audit branch fix/audit-2026-10-25; the mirror only requests widths from them."
+features:
+  - id: F1
+    name: "SAOC PageHero mirror - served width, localised scrim, copy from 52%, stacked below 768, /sponsors cut, per-glyph contrast, home carousel crop and alt"
+    status: pending
+goldens:
+  - .agent/memory/project/specs/saoc-pagehero-mirror/spec.md
+  - .agent/memory/project/specs/saoc-pagehero-mirror/goldens/crop-map.json
+  - .agent/memory/project/specs/saoc-pagehero-mirror/goldens/checks.sha256
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "frozen check scripts are unmodified since the architect wrote them (crop-map.json is excluded: NOS Design's picks land there)"
+      command: shasum -a 256 -c .agent/memory/project/specs/saoc-pagehero-mirror/goldens/checks.sha256
+    - id: A2
+      description: "the audit branch has merged, so lib/image-widths.json carries 2560/2880/4160 and the loader can serve them"
+      command: git merge-base --is-ancestor origin/fix/audit-2026-10-25 HEAD
+    - id: A3
+      description: "static rules from source - sizes computed from the file aspect (no bare 100vw, and not the interim 1350px home value) in PageHero, Hero and PhotoBand, PhotoBand quality 88 so the ladder is not capped at 2048, ShowBand photo sizes not the 48vw, PageHero markers (media, copy, scrim, variant, eyebrow optional, image optional for the typographic hero), no full wash, no centred copy, solid-ivory lede, 2/1 band, q88 and 100vw kept, no hex colour and sage-only scrim, no CSS flip anywhere, PhotoBand data hook and q88, HS-2 alt on the carousel img, slides dark then purple with violet retired, pink and yellow gone from every hero and band source file, typographic pages pass no image, the generator reads lib/hero-derived-sources.json and flips with .flop(), audit widths present"
+      command: node .agent/memory/project/specs/saoc-pagehero-mirror/checks/check-static.mjs
+    - id: A4
+      description: "diff limited to PageHero, PhotoBand, SaocLockup (sizes lines only), the home Hero and ShowBand, LegalHero, the slide data, the hero pages (image/imagePosition only, mechanically: both sides of the diff normalised and equal), globals.css (no new custom property or colour), the width manifest, the derived-sources manifest, the generator, docs and this spec; nothing in a stay-off lane"
+      command: node .agent/memory/project/specs/saoc-pagehero-mirror/checks/check-diff-scope.mjs
+    - id: A5
+      description: "typescript compiles"
+      command: pnpm type-check
+    - id: A6
+      description: "lint is clean"
+      command: pnpm exec eslint app components lib e2e
+    - id: A7
+      description: "production build passes with CI's public env (NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4, NEXT_PUBLIC_SANITY_DATASET=production), local site URLs, wall-off and launch flags unset"
+      command: bash .agent/memory/project/specs/saoc-pagehero-mirror/checks/build.sh
+    - id: A8
+      description: "the derived hero sources (flips and rect cuts from NOS Design) - manifest equals the golden, every rect inside its source, no clip, stake or hardware in a rect (probe pixels at most 40), widths manifest lists each at its rect width, and the largest built variant of each is W x H and matches sharp cut (flipped when ruled; the flip must beat the unflipped match) within mean abs diff 4 and PSNR 33; runs after the A7 build"
+      command: node .agent/memory/project/specs/saoc-pagehero-mirror/checks/check-derived.mjs
+    - id: A9
+      description: "served width at least max(boxW, boxH x fileW/fileH) x DPR, and the image box no wider than the viewport, at 2056, 1440, 1280, 1024, 1023, 768 and 767 at @2 and 390 at @2 and @3 (every hero, band and PhotoBand on the 14 SAOC routes, the ShowBand on / and /events included), plus a whole-page sweep at 390@2, 390@3 (real deviceScaleFactor 3), 1280@2 and 2056@2 over / , /events and the 14 routes of every raster img above 80x60 CSS px (NavCards, YearbookStrip and the footer emblem included) using the served or derived file's own aspect (img.currentSrc through a bare new Image(); goldens requiredWidth records the table; the ShowBand, 2400x1750 (1.3714:1, y1 never past 2600), is also gated; the run reports the tallest observed ShowBand photo box and fails above 875 css high at @2 (RULING NEEDED, never a clamp) at 768, 1024, 1045, 1072, 1099, 1100 and 1280-2056@2 with no clamp exception) with NO native-cap exception on every photographic hero route, both home carousel slides, the PhotoBand (/about, /judging) and the home ShowBand (whose visible object-cover crop must also exclude the cut stem stub x1815-1970 y2618-2786 - the derived orchid-dark-showband cut, whose visible region is mapped back to the original; the CSS box must also stay within the 1200 CSS the 2400 cut covers at @2) at 2056@2, 1440@2, 1280@2, 767@2 (the stacked band) and 390@3; a typographic hero must carry no photograph"
+      command: node .agent/memory/project/specs/saoc-pagehero-mirror/checks/gate-served-width.mjs
+    - id: A10
+      description: "geometry in a browser - photo full bleed from 768 with the bare photograph over the left 44% (pixel-equal with the photo painted alone, so no full wash anywhere), an aria-hidden copy scrim, every copy element at or right of 52%, left-aligned h1, rendered object-position equal to the ruled one, below 768 a 2/1 band at the top (width/2 +-1px) with the copy under it on solid sage rgb(34,40,31) and nothing over the band; the typographic hero on solid sage with no img, media or scrim; an eyebrow-less hero has h1 margin-top 0; no horizontal overflow, one h1, decorative photo; hero shots per route at 1280, 2056 and 390"
+      command: node .agent/memory/project/specs/saoc-pagehero-mirror/checks/gate-geometry.mjs
+    - id: A11
+      description: "per-glyph ink contrast on every inner hero, typographic ones included, at 2056, 1440, 1280, 1279, 1152, 1024, 1023, 767 and 390 - lede at least 4.5 and painted in solid ivory (alpha 1 through every ancestor), eyebrow and h1 at least 3, call-to-action text at least 4.5, on the lightest pixel under each glyph ink"
+      command: node .agent/memory/project/specs/saoc-pagehero-mirror/checks/gate-contrast.mjs inner
+    - id: A12
+      description: "the /sponsors lede contrast gate (P1 a11y fix) - lede at least 4.5 in solid ivory on the cut under the localised scrim at every viewport, measured by itself and required to be present"
+      command: node .agent/memory/project/specs/saoc-pagehero-mirror/checks/gate-contrast.mjs sponsors
+    - id: A13
+      description: "HS-1 per-glyph contrast on both home carousel slides (dark, purple) at every viewport including 1279, 1152, 1024 and 1023 (copy zone is dark negative space or a sharp subject, never bokeh behind copy; where the unstacked 1024-1279 band fails, the stack must extend to 1279), with a by-eye shot per slide and viewport written to the gate shots folder"
+      command: node .agent/memory/project/specs/saoc-pagehero-mirror/checks/gate-contrast.mjs home
+    - id: A14
+      description: "HS-2 and the home layout - every carousel img has alt=\"\" and the slide groups keep their aria-label; slides in ruled order; the hero is stacked (2/1 band, solid sage panel, nothing over the band) at 390, 767 and 1023, not stacked at 1280 and up, and 1024-1279 is all stacked or all unstacked; the gate prints which STACK BREAKPOINT the build has"
+      command: node .agent/memory/project/specs/saoc-pagehero-mirror/checks/gate-home.mjs
+    - id: A15
+      description: "by-eye evidence files exist - a hero shot per route at 1280, 2056 and 390 and a home shot per slide at 1280, 2056 and 390"
+      command: node .agent/memory/project/specs/saoc-pagehero-mirror/checks/check-shots.mjs
+    - id: A16
+      description: "every crop pick is in the golden - fails if a route position, a derived rect or a band source is missing or pending (nothing is pending today); picks were made against .tmp/sandbox/saoc-inner-contact-sheet/manifest.json and .tmp/sandbox/saoc-carousel-contact-sheet/grid-manifest.json"
+      command: node .agent/memory/project/specs/saoc-pagehero-mirror/checks/check-crops-final.mjs
+    - id: A17
+      description: "CI's full e2e step is green (the local gate alone has missed an e2e spec before)"
+      command: bash scripts/ci-e2e.sh pnpm test:e2e
+    - id: A18
+      description: "spec records the NOS Design rulings and the named overlaps"
+      command: grep -q "NOS Design rulings" .agent/memory/project/specs/saoc-pagehero-mirror/spec.md
+    - id: A19
+      description: "ShowBand 42/58 split on the National Show event page - above 1024 the photo column is 42% of the band (+-0.5%), the copy column is at least 420px, and at 1440 the h2 and the dates take at most 2 lines each; the home ShowBand and /events keep the 1fr/1.1fr split (the ruling names the event page only); runs after the A7 build"
+      command: node .agent/memory/project/specs/saoc-pagehero-mirror/checks/gate-showband-split.mjs

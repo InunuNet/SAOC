@@ -1,0 +1,12 @@
+39bd312e144be109ae388368cfde7849bdb3a27a0eb2d578210e8bb8e65a8b14  .agent/memory/project/specs/saoc-pagehero-mirror/checks/_lib.mjs
+73df4a5c2772c7d9efb34be361fd2a932ed8764dffb7c338e4a8cc2ff2847e31  .agent/memory/project/specs/saoc-pagehero-mirror/checks/check-crops-final.mjs
+e74fec02747f09d4f391a0cf5d180b97d2dd0c6afecf3bf00d1c34be4143aaa1  .agent/memory/project/specs/saoc-pagehero-mirror/checks/check-derived.mjs
+f24daf4e9db81556cce9c2fd86b69ecc204639e64b4a5a96566514cabbac1c99  .agent/memory/project/specs/saoc-pagehero-mirror/checks/check-diff-scope.mjs
+7c700453674b23826c8d657044ed1536fcedaf1b334c3b9ae60fe08df8e7ae07  .agent/memory/project/specs/saoc-pagehero-mirror/checks/check-shots.mjs
+20f18a78bcf3d75264257a7e63c78f41de34fb935a9ce846043bfe2763d2059c  .agent/memory/project/specs/saoc-pagehero-mirror/checks/check-static.mjs
+84a8679d793ba6791874468503a5bdc3499945f9f0c4d6a9d7e69b70a016b74a  .agent/memory/project/specs/saoc-pagehero-mirror/checks/gate-contrast.mjs
+34de017c54027f718f8d6b83922de0426e5cbb70572ea0fe26ceed949e7b767d  .agent/memory/project/specs/saoc-pagehero-mirror/checks/gate-geometry.mjs
+cc49ddf68e9cb5356436992d09b9d6e7d79e73393ab2b7ed2128fbd030b19b18  .agent/memory/project/specs/saoc-pagehero-mirror/checks/gate-home.mjs
+baf040358a697139d551d9db4b39bebf1bece8c209be29acfb550476da799f9e  .agent/memory/project/specs/saoc-pagehero-mirror/checks/gate-served-width.mjs
+4e14c8541749caab1f78fe6888b9e470b47d033ff653733e188ee818fe2210a1  .agent/memory/project/specs/saoc-pagehero-mirror/checks/gate-showband-split.mjs
+e9d18c9aeb4152aa1a25b6ff4c9c4419a4851663643b5a462528e7e334876fc7  .agent/memory/project/specs/saoc-pagehero-mirror/checks/build.sh
