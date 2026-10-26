@@ -1,8 +1,8 @@
 e20201b7bd352ea165e0f3b63247cfb6c3a7188025010463a2958b2f81f0c9b8  .agent/memory/project/specs/nos-content-standard/checks/_lib.mjs
 3718b4fbe7a7d8002a1521bc124ab2d0c3e00262a82b3c111c5b4e4794a107bb  .agent/memory/project/specs/nos-content-standard/checks/build.sh
-d75182b63f1818511b263969a46c38a5b6d7c7fa749088e1fd73f5a288543249  .agent/memory/project/specs/nos-content-standard/checks/check-diff-scope.mjs
-53a203e3f4f381ccd268f2937801ea019312a3ac15e435bb882c993e32119088  .agent/memory/project/specs/nos-content-standard/checks/check-static.mjs
-32617e42794b845e4605e7a7d8c4e1c1d5389bb15977f007fb4dc83da5ea5f9e  .agent/memory/project/specs/nos-content-standard/checks/gate-standard.mjs
+ea43e321c502178e78c1fb8bd3f340e7dc742fe653700ffe80d6129e69198f47  .agent/memory/project/specs/nos-content-standard/checks/check-diff-scope.mjs
+35c8b3fba7d7485b77d6f66633b8f22c043a1f75114d16dffff29c41db33b73e  .agent/memory/project/specs/nos-content-standard/checks/check-static.mjs
+bdd81b25a4c08f7908ab91f74e4167bf3f7c5375399b687906c5904117477e35  .agent/memory/project/specs/nos-content-standard/checks/gate-standard.mjs
 e553babdf6ff2b75981e86a9432fdd86254c2d421be1f64d60360e55e46235cc  .agent/memory/project/specs/nos-content-standard/checks/gate-verbatim.mjs
 f52ecfacaf7deda8fc1e562972088479b0ee52dc3e362e4dca6a1b568028e5d0  .agent/memory/project/specs/nos-content-standard/checks/gate-faq.mjs
 b7854171ada581b7420c3d9478868b954a499c7f66cf893630ccfdc2862773b5  .agent/memory/project/specs/nos-content-standard/checks/block-sanity-net.cjs
@@ -11,9 +11,10 @@ b7854171ada581b7420c3d9478868b954a499c7f66cf893630ccfdc2862773b5  .agent/memory/
 27ce137ad6b8cf354a9b9d98bcbdc3cd0871d4e6d760260efc5f5b037f653d85  .agent/memory/project/specs/nos-content-standard/checks/check-fixture-proof.mjs
 1da96bf8161563f1006ba3a877fea775fcfd2534cda54194a49ea5b4530b6018  .agent/memory/project/specs/nos-content-standard/checks/check-fixture-hosted.mjs
 dc92c4417940547a83430d015f143737d07f520b47f039323587570156c233df  .agent/memory/project/specs/nos-content-standard/checks/fixture-load-probe.mjs
+07735467d4369fa7599b5740ab55af4a30a77678ea460c4fb2d963cb984bd14d  .agent/memory/project/specs/nos-content-standard/checks/fs-checks.mjs
 d04cf9270c5a952834efd28bda298739c8eae98f1b18f14150cc2d19bacfdfb6  .agent/memory/project/specs/nos-content-standard/goldens/standard.json
-512bd5c0fea164d7f953f7a1843d928ad8413187fb929826822f6cccde96242b  .agent/memory/project/specs/nos-content-standard/goldens/route-table.json
-ba550070a93de139c6b2dfa333b15ce2cebd1f913f41f1629d796105a4957971  .agent/memory/project/specs/nos-content-standard/goldens/spec.md
+dab7c9f6137eaf47071a5a0d647c48d8a71a1c6fe66ff06d55941a2b336e7903  .agent/memory/project/specs/nos-content-standard/goldens/route-table.json
+3cb2bf904777009785f0fc5af974f0e1a04d2b0a862acd6d2166e6dfdefd5df1  .agent/memory/project/specs/nos-content-standard/goldens/spec.md
 4e48c95856ce47f314eb542e51f6c91ff48cab69025562b63edf3a85e41e715d  .agent/memory/project/specs/nos-content-standard/goldens/codex-qa-prompt.md
 979ff52251999ef22d9a9818089294a025fca7730245f1b56bdcea3f3e1514cf  .agent/memory/project/specs/nos-content-standard/goldens/crops/crop-proposals.json
 e9899deca0f51d4200c50ba7daa5651221fe3bbbc49f1d35d6d08447f3daec72  .agent/memory/project/specs/nos-content-standard/goldens/crops/make-contact-sheet.py
@@ -22,6 +23,7 @@ f01575e0c84ec7305dcdf14a52717345f86ac0587082697c86563eea1b0c64b8  .agent/memory/
 4df199149c8dbd90e9256ac911729e08ba1611b8897ed69cfb601a73fa0c7f72  .agent/memory/project/specs/nos-content-standard/goldens/wo-fragment.html
 2a7041b8b07142566ac07f23d40aa454bbdfb5ee3dfb60299db8596e02e80eac  .agent/memory/project/specs/nos-content-standard/goldens/fixture-key-vector.json
 ac89c6a049500479a37192a02fd65d98d8d0250048306f14253aaaf34b7f72ee  .agent/memory/project/specs/nos-content-standard/goldens/fixture-client-inventory.json
+00ed6e39445816a8a4608aee4ebbe426111288b1bc7c38feaefd6d0ecb36a521  .agent/memory/project/specs/nos-content-standard/goldens/fs-rulings.json
 bb431853bdafec3bddd130cc031c0f3a8ea53da5265a2357826d7bdee5a67837  .agent/memory/project/specs/nos-content-standard/goldens/sources/about.md
 c7144cfedad11bcbc0943bf750f94a3e3414b98f1c81c7a86ff8b5e174998406  .agent/memory/project/specs/nos-content-standard/goldens/sources/contact.md
 a35ca3ad1779cb22bc8eb14355abfeb61c41ad485dde786fbe0e98c916f1f4b5  .agent/memory/project/specs/nos-content-standard/goldens/sources/faq.md

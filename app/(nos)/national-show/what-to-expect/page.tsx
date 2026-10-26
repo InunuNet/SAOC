@@ -23,7 +23,7 @@ export const revalidate = 60;
 
 const PAGE_TITLE = 'What to expect';
 const FACTS_LABELS = ['Dates', 'Venue'] as const;
-const ADMISSION_LINK_LABEL = 'See ticket prices and book →';
+const ADMISSION_LINK_LABEL = 'See ticket prices and book';
 
 export const metadata: Metadata = buildPageMetadata({
   title: PAGE_TITLE,
@@ -111,6 +111,17 @@ export default async function WhatToExpectPage() {
           </p>
         </div>
 
+        <div data-we-rest="" className="nos-we-rest">
+          {RAIL_BLOCKS.map((block) => (
+            <section key={block.title} className="nos-we-block">
+              <h2 className="doc-h2">{block.title}</h2>
+              {block.paragraphs.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+            </section>
+          ))}
+        </div>
+
         <section className="nos-we-s3" aria-labelledby="we-s3-h">
           <h2 id="we-s3-h" className="sr-only">
             What to Expect
@@ -129,7 +140,7 @@ export default async function WhatToExpectPage() {
           </div>
         </section>
 
-        <aside data-we-card="" className="nos-we-card">
+        <aside data-we-card="" className="ds-card nos-we-card">
           <p className="nos-we-label">{DATES_HEADING}</p>
           <p className="nos-we-dates">{DATES_LINE}</p>
           <h3>Opening hours</h3>
@@ -154,20 +165,9 @@ export default async function WhatToExpectPage() {
             ))}
           </dl>
           <Button as={Link} href="/tickets" className="nos-we-cta">
-            {ADMISSION_LINK_LABEL}
+            {ADMISSION_LINK_LABEL} <span aria-hidden="true">&rarr;</span>
           </Button>
         </aside>
-
-        <div data-we-rest="" className="nos-we-rest">
-          {RAIL_BLOCKS.map((block) => (
-            <section key={block.title} className="nos-we-block">
-              <h2 className="doc-h2">{block.title}</h2>
-              {block.paragraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
-            </section>
-          ))}
-        </div>
       </div>
       <NosShowIndex current="/national-show/what-to-expect" />
     </>

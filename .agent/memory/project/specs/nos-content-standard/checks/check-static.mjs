@@ -306,22 +306,37 @@ check('added CSS has no dashed 2px rail', !added.some((l) => /border[a-z-]*\s*:\
   check('HR-1 scope (Rev 44, NOS Design b8c55ad): the NOS hub .nos-hero-scrim keeps its own stops (.92 0%, .86 calc(min(640px,50%)+48px), .42 66%, .18 82%, .06 100%); the DS-1 ramp applies to content heroes only', css.includes(HUB));
 }
 
-// Rev 44 (SAOC asked for the italic preload in OUR branch; they review it in the merge): the NOS-only fonts config gains exactly one preloaded face, the italic Fraunces at 300, and nothing else changes.
-// components/nos-chrome/fonts.ts stays untouched (the shared marketing layout imports the chrome; a preload there would make every SAOC route fetch the NOS faces). The lede reservation is removed.
+// Rev 44 / 46c (SAOC asked for the italic preload in OUR branch; they review it in the merge): exactly one new preloaded face, the italic Fraunces at 300, declared in ONE module that only the routes with a theme lede import (/symposium and /about),
+// so next/font preloads it for those routes only. NosThemeScope.tsx returns to its origin/main state; components/nos-chrome/fonts.ts (imported by the shared marketing layout) and app/layout.tsx stay untouched. The lede reservation is removed.
 {
-  const F = 'components/nos/NosThemeScope.tsx';
-  const diff = git(['diff', '-U0', 'origin/main', '--', F]).split('\n').filter((l) => /^[-+][^-+]/.test(l));
-  const added = diff.filter((l) => l.startsWith('+')).map((l) => l.slice(1)); const removed = diff.filter((l) => l.startsWith('-'));
-  const addedText = added.join('\n');
-  const body = read(F);
-  check('FONT-1: NosThemeScope.tsx removes no existing line except the one className that gains the new font class (the normal/italic and Karla configs stay as they are, preload:false)', removed.length <= 1 && removed.every((l) => /className=/.test(l)), removed.join(' | '));
-  check('FONT-1: the file has exactly one `preload: true`, and it is in the added lines', (body.match(/preload\s*:\s*true/g) ?? []).length === 1 && /preload\s*:\s*true/.test(addedText));
-  check('FONT-1: the added lines declare exactly one font file: Fraunces-latin-italic.woff2, weight 300, style italic', (addedText.match(/path\s*:/g) ?? []).length === 1 && /Fraunces-latin-italic\.woff2/.test(addedText) && /weight\s*:\s*'300'/.test(addedText) && /style\s*:\s*'italic'/.test(addedText));
-  check('FONT-1: the added lines do not touch Karla or the normal face', !/Karla|latin-normal/.test(addedText));
+  const LEDE_SEGMENTS = ['app/(nos)/national-show/symposium/', 'app/(nos)/national-show/about/'];
+  const src = ['app', 'components'].flatMap((d) => (existsSync(d) ? readdirSync(d, { recursive: true }).map((f) => `${d}/${f}`).filter((f) => /\.(ts|tsx)$/.test(f)) : []));
+  const face = src.filter((f) => /Fraunces-latin-italic/.test(read(f)) && /preload\s*:\s*true/.test(read(f)));
+  check(`FONT-1: exactly one module declares a preloaded Fraunces italic face (${face.join(', ') || 'none'})`, face.length === 1);
+  const body = face.length ? read(face[0]) : '';
+  check('FONT-1: that module has exactly one `preload: true`, one font path (Fraunces-latin-italic.woff2), weight 300, style italic, and mentions neither Karla nor the normal face', (body.match(/preload\s*:\s*true/g) ?? []).length === 1 && (body.match(/path\s*:/g) ?? []).length === 1 && /weight\s*:\s*'300'/.test(body) && /style\s*:\s*'italic'/.test(body) && !/Karla|latin-normal/.test(body));
+  const base = face.length ? face[0].replace(/^.*\//, '').replace(/\.(ts|tsx)$/, '') : '\0';
+  const importers = src.filter((f) => f !== face[0] && new RegExp(`from\\s+['"][^'"]*/${base}['"]|from\\s+['"]\\./${base}['"]`).test(read(f)));
+  check(`FONT-1: the module is imported only from the theme-lede route segments (${importers.join(', ') || 'no importer'}), so no other route preloads it`, importers.length > 0 && importers.every((f) => LEDE_SEGMENTS.some((sg) => f.startsWith(sg))));
+  check('FONT-1: components/nos/NosThemeScope.tsx is unchanged from origin/main (the preload moved out of the all-NOS-routes scope)', git(['diff', '--name-only', 'origin/main', '--', 'components/nos/NosThemeScope.tsx']).trim() === '');
   check('FONT-1: components/nos-chrome/fonts.ts is unchanged from origin/main', git(['diff', '--name-only', 'origin/main', '--', 'components/nos-chrome/fonts.ts']).trim() === '');
   check('FONT-1: app/layout.tsx is unchanged from origin/main (no root font change)', git(['diff', '--name-only', 'origin/main', '--', 'app/layout.tsx']).trim() === '');
-  const struct = read('app/(nos)/national-show/nos-structure.css');
-  check("SY-G1 (Rev 44): the min-height: 3lh lede reservation is gone from nos-structure.css", !/min-height\s*:\s*3lh/.test(struct) && !/reserving three lines/.test(struct));
+  // The reservation is matched by SELECTOR, not by text: the unrelated `.nk-fan .nk-name` rule on /tickets legitimately uses 3lh, and rewriting it to dodge a loose regex is not the gate's business.
+  const struct = read('app/(nos)/national-show/nos-structure.css') + '\n' + read('app/(nos)/national-show/nos-theme.css');
+  const ledeRules = [...struct.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((r) => /nos-hero-lede|data-nos-lede/.test(r[1]));
+  check('SY-G1 (Rev 44): no rule on the hero lede selector (.nos-hero-lede, [data-nos-lede]) reserves height with min-height 3lh or calc(3 * 1lh)', !ledeRules.some((r) => /min-height\s*:\s*(3lh|calc\(\s*3\s*\*\s*1lh\s*\))/.test(r[2])), ledeRules.filter((r) => /min-height/.test(r[2])).map((r) => r[1].trim()).join(' | '));
+  check('SY-G1 (Rev 44): the "reserving three lines" comment is gone', !/reserving three lines/.test(struct));
+}
+
+// Rev 46d (NOS Design, root comms.md "SY-G1 names + italic preload scope"): the long name "National Orchid Show Symposium" stays on the ticket, the /programme day-card tile and the nav descriptor (NL-1 covers only the h1, <title>, og:title and crumb),
+// on one condition (R7): the nav descriptor must trace to a Drive source. Its whole sentence must be a substring of a frozen source; if none exists it is builder text and must be removed.
+{
+  const fold = (t) => t.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/\*\*|__|`/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const dir = '.agent/memory/project/specs/nos-content-standard/goldens/sources';
+  const sources = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.md')).map((f) => ({ f, t: fold(read(`${dir}/${f}`)) })) : [];
+  const descs = [...read('components/nos-chrome/nos-nav.ts').matchAll(/id:\s*'symposium'[^}]*?descriptor:\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g)].map((m) => (m[1] ?? m[2]).replace(/\\'/g, "'"));
+  const bad = descs.filter((d) => !sources.some((s) => s.t.includes(fold(d))));
+  check(`NAV-G1 (Rev 46d): the descriptor of the nav entry id 'symposium', if present, is a substring of a frozen Drive source (${descs.length ? descs.map((d) => `"${d}" ${bad.includes(d) ? 'NOT FOUND in any source: builder text, remove it' : 'sourced'}`).join(' | ') : 'none present'})`, bad.length === 0);
 }
 
 if (fails.length) { console.error(`nos-content-standard static FAILED:\n- ${fails.join('\n- ')}`); process.exit(1); }

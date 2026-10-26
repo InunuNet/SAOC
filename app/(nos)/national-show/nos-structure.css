@@ -573,14 +573,12 @@
   opacity: 1;
   transform: translateX(4px);
 }
-/* Contact aside (nos-contact CT4): the same index rows with a 1px gold ring around the arrow. */
+/* Contact aside (CT-G1): the same index rows with a plain 18px arrow, no ring. */
 .nos-theme .nos-contact-aside .nos-index-arrow {
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--accent);
-  border-radius: 50%;
+  font-size: 18px;
+  line-height: 1;
 }
 @media (prefers-reduced-motion: no-preference) {
   .nos-theme .nos-index-arrow {
@@ -1156,6 +1154,19 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     font-size: 1.1875rem;
   }
 }
+/* IG-G1 / FS-1: /international-guests has no aside, so the layout stops being the 7/5 grid and each
+   profile spans the full content width, with the 400px portrait (sticky, 4:5) and the text column beside it. */
+.nos-theme .nos-subnav + .nos-ig-page {
+  padding-top: 0; /* the layout inside carries the 64/48 gap itself */
+}
+@media (min-width: 1024px) {
+  .nos-theme .nos-ig-page .doc-layout {
+    display: block;
+  }
+  .nos-theme .nos-ig-page .nos-pr {
+    grid-template-columns: minmax(0, 400px) minmax(0, 1fr);
+  }
+}
 /* SY-G1 / WO-G1: an event page is the copy at 7, the live ticket at 5 (DocumentLayout, aside first below 1024, bare), then its presenters. */
 .nos-theme .nos-ev-presenters {
   padding-bottom: clamp(72px, 9vw, 120px);
@@ -1226,6 +1237,12 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     white-space: nowrap !important; /* the loader's p has an inline text-wrap: balance, which resets the wrap mode */
   }
 }
+/* "About the show" is exactly the title's 14ch cap: in the fallback face it wrapped to two lines and the
+   page jumped 48px up when Fraunces landed, so the About title holds one line at every width. */
+.nos-theme .nos-hero-about .nos-hero-title {
+  white-space: nowrap !important;
+}
+/* The exhibitor entry guide is a hero and one contact panel. */
 .nos-theme .nos-contact-panel {
   display: grid;
   justify-items: start;
@@ -2204,7 +2221,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   max-width: 88px;
   font-size: calc(22px * var(--nk-ts));
   line-height: 1.1;
-  min-height: calc(3 * 1lh);
+  min-height: 3lh;
 }
 .nos-theme .nk-fan .nk-price {
   font-size: calc(32px * var(--nk-ts));
@@ -2302,6 +2319,14 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 @media (max-width: 419px) {
   .nos-theme .nk-fan {
     --nk-fan-cell: 377px;
+    padding-inline: 8px;
+    column-gap: 16px;
+  }
+  .nos-theme .nk-fan .nk-wrap:nth-child(odd) {
+    transform: translateY(0) rotate(-2deg);
+  }
+  .nos-theme .nk-fan .nk-wrap:nth-child(even) {
+    transform: translateY(0) rotate(2deg);
   }
 }
 
@@ -3878,7 +3903,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   padding-block: 12px;
   font-family: var(--serif);
   font-weight: 300;
-  font-size: 1.375rem;
+  font-size: clamp(1.25rem, 1.1rem + 0.4vw, 1.5rem);
   line-height: 1.25;
   color: var(--ink);
   text-decoration: none;
@@ -3888,6 +3913,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 .nos-theme .nos-ab-gateway a span {
   flex: none;
+  font-size: 20px;
+  line-height: 1;
 }
 .nos-theme .nos-cr-body {
   display: grid;
@@ -3969,12 +3996,15 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
     grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
     grid-template-areas: 'form card' 'team card';
     column-gap: clamp(40px, 6vw, 80px);
+    row-gap: clamp(72px, 9vw, 112px);
     align-items: start;
     padding-top: 64px;
   }
   .nos-theme .nos-ct-card {
     position: sticky;
     top: 100px;
+    grid-column: 2;
+    grid-row: 1 / span 2;
   }
 }
 .nos-theme .nos-ct-team dl {
@@ -4022,14 +4052,28 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   align-items: center;
   min-height: 44px;
   font-family: var(--serif);
-  font-weight: 300;
-  font-size: 1.375rem;
+  font-weight: 400;
+  font-size: 1.625rem;
   color: var(--ink);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.nos-theme .nos-ct-place {
+  margin: 12px 0 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.375rem;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.nos-theme .nos-ct-person {
+  margin: 4px 0 0;
+  font-size: 15.5px;
+  line-height: 1.5;
+  color: var(--ink-500);
+}
 .nos-theme .nos-contact-aside a {
-  min-height: 44px;
+  min-height: 56px;
 }
 .nos-theme .hero-facts dd a {
   display: inline-flex;
@@ -4106,7 +4150,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nos-we-body {
   display: grid;
   gap: 40px;
-  grid-template-areas: 'stand' 'card' 's3' 'rest';
+  grid-template-areas: 'stand' 'card' 'rest' 's3';
   padding-block: 48px var(--section-y);
 }
 .nos-theme .nos-we-stand {
@@ -4121,6 +4165,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 .nos-theme .nos-we-s3 {
   grid-area: s3;
   min-width: 0;
+  padding-top: 40px;
+  border-top: 1px solid var(--rule-soft); /* the gold-300 token (--nc-gold-300 in nos-chrome.css) */
 }
 .nos-theme .nos-we-rest {
   grid-area: rest;
@@ -4131,7 +4177,7 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 @media (min-width: 1024px) {
   .nos-theme .nos-we-body {
     grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-    grid-template-areas: 'stand card' 's3 card' 'rest card';
+    grid-template-areas: 'stand card' 'rest card' 's3 card';
     grid-template-rows: auto auto 1fr;
     column-gap: clamp(40px, 6vw, 80px);
     align-items: start;
@@ -4174,10 +4220,6 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 .nos-theme .nos-we-block p {
   margin: 12px 0 0;
-}
-.nos-theme .nos-we-card {
-  padding-top: 24px;
-  border-top: 1px solid var(--rule);
 }
 .nos-theme .nos-we-label {
   margin: 0;
@@ -4227,13 +4269,50 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   text-transform: none;
   letter-spacing: normal;
 }
+.nos-theme [data-doc-main]:has(> [data-qa-list]) {
+  display: grid;
+  row-gap: clamp(40px, 5vw, 56px);
+}
+.nos-theme .nos-ex-standfirst {
+  max-width: 30ch;
+  margin: 0;
+  font-weight: 300;
+  font-size: clamp(1.625rem, 1.3rem + 1vw, 2.125rem);
+  line-height: 1.3;
+}
+.nos-theme [data-qa-list] {
+  border-top: 1px solid var(--rule);
+}
+.nos-theme [data-qa-item] {
+  display: grid;
+  gap: 10px;
+  padding-block: 28px;
+  border-bottom: 1px solid var(--rule);
+}
+.nos-theme [data-qa-item] p {
+  max-width: 62ch;
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+}
 .nos-theme .nos-ex-q {
+  margin: 0;
   font-weight: 400;
-  font-size: var(--fs-lg);
-  line-height: 1.15;
+  font-size: 1.5625rem;
+  line-height: 1.25;
 }
 .nos-theme .nos-ct-team dd p {
   margin: 0;
+}
+
+/* DS-1 card surface: the white card with the DS-1 shadow (comms.md L3546); position is per route. */
+.nos-theme .ds-card {
+  padding: clamp(28px, 3vw, 40px);
+  border-radius: 10px;
+  background: white;
+  box-shadow:
+    0 2px 4px rgba(33, 26, 87, 0.06),
+    0 10px 28px rgba(33, 26, 87, 0.09);
 }
 
 /* HM-G1 home bands: about / visit / programme / exhibit / closing. Registers are ruled lists, no cards. */
@@ -4268,18 +4347,16 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   padding-block: 12px;
   border-bottom: 1px solid currentColor;
 }
-.nos-theme .nos-hm-card {
-  border-top: 1px solid var(--rule);
-  padding-top: 20px;
-}
 .nos-theme .nos-hm-card-label {
+  font-size: 15px;
   font-weight: 600;
+  color: var(--ink-500);
   margin: 0 0 4px;
 }
 .nos-theme .nos-hm-card-dates {
   font-family: var(--serif);
   font-weight: 300;
-  font-size: 1.5rem;
+  font-size: clamp(1.5rem, 1.3rem + 0.6vw, 1.875rem);
   line-height: 1.25;
   margin: 0 0 16px;
 }
@@ -4295,6 +4372,9 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 .nos-theme .nos-hm-card dd {
   margin: 0;
+  font-family: var(--serif);
+  font-size: 1.1875rem;
+  white-space: nowrap;
 }
 .nos-theme .nos-hm-register {
   list-style: none;
@@ -4313,6 +4393,28 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 }
 .nos-theme .nos-hm-visit {
   gap: 0 32px;
+}
+.nos-theme .nos-hm-visit li {
+  border-bottom: 1px solid var(--rule);
+}
+.nos-theme .nos-hm-visit a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  align-items: center;
+  min-height: 72px;
+  padding-block: 18px;
+}
+.nos-theme .nos-hm-visit h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.375rem;
+  line-height: 1.25;
+}
+.nos-theme .nos-hm-visit a > span {
+  justify-self: end;
+  font-size: 22px;
+  line-height: 1;
 }
 @media (min-width: 600px) {
   .nos-theme .nos-hm-visit {
@@ -4345,13 +4447,15 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   grid-column: 1;
   font-family: var(--serif);
   font-weight: 400;
-  font-size: 1.5rem;
+  font-size: clamp(1.375rem, 1.2rem + 0.6vw, 1.75rem);
   margin: 0;
 }
 .nos-theme .nos-hm-rows p {
   grid-column: 1;
-  max-width: 62ch;
+  max-width: 70ch;
   margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 .nos-theme .nos-hm-rows a > span {
   grid-column: 2;
@@ -4411,6 +4515,9 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
   .nos-theme .nos-cr-row [data-doc-main],
   .nos-theme .nos-cr-main {
     display: contents;
+  }
+  .nos-theme .nos-cr-row .doc-layout {
+    align-items: stretch; /* CR-G1 is left-set at every width: centred items put the standfirst and body mid-column */
   }
   .nos-theme .nos-cr-main h2 {
     order: 1;

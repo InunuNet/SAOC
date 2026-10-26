@@ -12,6 +12,8 @@
 //   focus     a focused h1[tabindex="-1"] paints no outline, ring or shadow, on load and after client navigation
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { fsRoute, fsTickets, fsTicketsFan, fsHome, fsContact } from './fs-checks.mjs';
 import { AUTH, BANNED, CROPS, RETIRED, gotoRoute, EXCLUDED, ROUTES, STD, driveState, launchChromium, newContext, withServer } from './_lib.mjs';
 
 const HERO_IMG = 'section[data-nos-hero] [data-nos-hero-media] img';
@@ -235,7 +237,7 @@ async function programmeChecks(page, route, vp, c, tag) {
     const board = document.querySelector('ol, [data-programme-board]'); const days = board ? [...board.querySelectorAll(':scope > li')] : [];
     const dayInfo = days.map((li) => { const b = li.getBoundingClientRect(); const a = [...li.querySelectorAll('a')].map((x) => ({ href: x.getAttribute('href'), h: x.getBoundingClientRect().height, t: txt(x) })); return { t: txt(li), top: Math.round(b.top), left: Math.round(b.left), w: b.width, dateCell: (li.querySelector('p, [class*="date"]')?.getBoundingClientRect().width ?? 0), a }; });
     const bc = board ? getComputedStyle(board) : null; const bb = board?.getBoundingClientRect();
-    const later = [...document.querySelectorAll('[data-programme-body] a[href$="/workshops"], main a[href$="/workshops"]:not(nav a):not(.nos-subnav a):not([data-nos-subnav] a)')].filter((a) => !a.closest('nav, .nos-subnav, section[data-nos-hero]')).map((a) => ({ t: txt(a), h: a.getBoundingClientRect().height, below: board ? a.getBoundingClientRect().top >= bb.bottom - 1 : false }))[0] ?? null;
+    const later = [...document.querySelectorAll('[data-programme-body] a[href$="/workshops"], main a[href$="/workshops"]:not(nav a):not(.nos-subnav a):not([data-nos-subnav] a)')].filter((a) => !a.closest('nav, .nos-subnav, section[data-nos-hero]')).map((a) => ({ t: txt(a), svg: Boolean(a.querySelector('svg')), h: a.getBoundingClientRect().height, below: board ? a.getBoundingClientRect().top >= bb.bottom - 1 : false }))[0] ?? null;
     const tickets = document.querySelector('#programme .nk-grid, .nk-grid'); const tb = [...document.querySelectorAll('main h2')].find((h) => /^tickets$/i.test(txt(h)));
     const ph = /PLACEHOLDER COPY|AI placeholder|to be confirmed/i.test(document.querySelector('main')?.textContent ?? '');
     const focusRing = (() => { const a = days.flatMap((li) => [...li.querySelectorAll('a')])[0]; if (!a) return null; a.focus(); const s = getComputedStyle(a); return { os: s.outlineStyle, ow: parseFloat(s.outlineWidth), bs: s.boxShadow }; })();
@@ -296,7 +298,7 @@ async function igChecks(page, route, vp, c, tag) {
       return { pid, name: nameEl ? txt(nameEl) : '', nameTag: nameEl ? nameEl.tagName : null, top: rb.top + scrollY, left: rb.left, w: rb.width, display: cs.display, cols: cs.gridTemplateColumns.trim().split(/\s+/).length, firstCol: num(cs.gridTemplateColumns.trim().split(/\s+/)[0]),
         por: Boolean(por), hasImg: Boolean(img), natW: img?.naturalWidth ?? 0, boxW: img ? img.getBoundingClientRect().width : 0, aspect: pb && pb.height ? pb.width / pb.height : null, sticky: pcs?.position, stickyTop: pcs ? num(pcs.top) : null, radius: pcs ? num(pcs.borderTopLeftRadius) : null,
         dts, dds, hasSummary: Boolean(sum), summaryH: sb ? sb.height : 0, summaryText: sum ? txt(sum) : '', upper, role: role ? txt(role) : null, roleUpper: role ? getComputedStyle(role).textTransform : null, country: countryIdx >= 0 ? dds[countryIdx] ?? '' : null,
-        placeholderTile: Boolean(r.querySelector('[data-placeholder], [data-guest-portrait]:not(:has(img))')), bgImg: por ? getComputedStyle(por).backgroundImage !== 'none' : false };
+        placeholderTile: Boolean(r.querySelector('[data-placeholder]')) || (Boolean(por) && !img && !(por.textContent.trim() === '' && por.querySelectorAll('*').length === 0 && pcs.backgroundImage === 'none' && /rgba\(.*, ?0\)|transparent/.test(pcs.backgroundColor) && num(pcs.borderTopWidth) === 0 && pcs.boxShadow === 'none')), bgImg: por ? getComputedStyle(por).backgroundImage !== 'none' : false };
     });
     const filter = document.querySelector('[data-guest-filter]');
     const fitems = filter ? [...filter.querySelectorAll('a, button')].map((e) => e.getBoundingClientRect().height) : [];
@@ -339,7 +341,7 @@ async function igChecks(page, route, vp, c, tag) {
     const r0 = rows.find((r) => r.hasImg);
     c.check(`${tag} IG-G1 portrait 4:5 with radius 10${vp.width >= 768 ? ', sticky at top 100' : ''} (${r0.aspect && r0.aspect.toFixed(2)}, r ${r0.radius}, ${r0.sticky} ${r0.stickyTop})`, r0.aspect !== null && Math.abs(r0.aspect - 0.8) <= 0.03 && r0.radius === 10 && (vp.width < 768 || (r0.sticky === 'sticky' && r0.stickyTop === 100)));
   }
-  if (vp.width >= 768) c.check(`${tag} IG-G1 row is two columns, the first at most ${I.boxMax ?? 320}px (${rows[0].cols} cols, ${rows[0].firstCol}px)`, rows.every((r) => r.display === 'grid' && r.cols === 2 && r.firstCol <= (I.boxMax ?? 320) + 1));
+  if (vp.width >= 768) c.check(`${tag} IG-G1 row is two columns, the first at most ${I.boxMax ?? 320}px (${rows[0].cols} cols, ${rows[0].firstCol}px)`, rows.every((r) => r.display === 'grid' && r.cols === 2 && r.firstCol <= ((vp.width >= 1024 && I.boxMaxDesktop) || I.boxMax || 320) + 1));
   const nat = await page.evaluate(async () => {
     const out = [];
     for (const r of [...document.querySelectorAll('[data-guest-profile]')]) {
@@ -354,7 +356,7 @@ async function igChecks(page, route, vp, c, tag) {
   });
   c.check(`${tag} PR-1 photo rule: a portrait shows only when its source is >= ${I.minPortraitSourceW}px wide (${nat.map((n) => n.name.slice(0, 12) + ' ' + n.native).join(', ')})`, nat.every((n) => n.native >= I.minPortraitSourceW));
   for (const nm of I.mustHavePhoto ?? []) { const row = rows.find((x) => x.name.includes(nm)); if (row) c.check(`${tag} PR-1 ${nm} shows a portrait (source >= ${I.minPortraitSourceW})`, row.hasImg); }
-  for (const nm of I.mustNotHavePhoto ?? []) { const row = rows.find((x) => x.name.includes(nm)); if (row) c.check(`${tag} PR-1 ${nm} has no portrait and no placeholder tile (source below ${I.minPortraitSourceW})`, !row.hasImg && !row.por && !row.placeholderTile); }
+  for (const nm of I.mustNotHavePhoto ?? []) { const row = rows.find((x) => x.name.includes(nm)); if (row) c.check(`${tag} PR-1 ${nm} has no photo and no placeholder tile; an EMPTY portrait cell is allowed (FS-1.3) (source below ${I.minPortraitSourceW})`, !row.hasImg && !row.placeholderTile); }
   const withBio = rows.filter((r) => r.hasSummary);
   c.check(`${tag} IG-G1 <details> summary reads "Read full bio" and is >= 44px (${withBio.map((r) => Math.round(r.summaryH)).join(',')})`, withBio.every((r) => /read full bio/i.test(r.summaryText) && r.summaryH >= 44));
   if (withBio.length) {
@@ -419,19 +421,26 @@ async function subnavStable(page, server, route, c, tag) {
   await p2.close();
 }
 
-/** Rev 44 (SAOC wants the italic preload in our branch): /symposium reserves no lede height and nothing shifts. The theme lede carries no min-height, its box is the same at DOMContentLoaded, load, 1.5s and 3s, no layout-shift entry has the lede or the sub-nav as a source, and exactly one font preload exists, with the italic face loaded by the load event. Run at 390 and 768. */
+/** Rev 44 / 46c / 46d (SAOC condition: the italic preload lives in our branch): /symposium and /about (AB-G1 sets the same italic theme under the h1) reserve no lede height, nothing shifts, and the Fraunces italic 300 face is preloaded once, by its own family, on those two routes only.
+ *  Run at 390 and 768 on the gate's own next start server (production headers), in a FRESH browser context (a shared context caches the font and logs no request).
+ *  Fonts are identified by BYTES, not by name or position: the sha256 of each preloaded or requested woff2 is compared with app/fonts/fraunces/Fraunces-latin-{italic,normal}.woff2, because next/font copies local files unchanged and the root layout's Crimson Pro and Manrope preloads must not be confused with them.
+ *  Production sends `Cache-Control: public, max-age=31536000, immutable` on /_next/static/media, so the preload and the @font-face use share one network response; dev sends no-store and shows two per URL, which is why this is not measured on dev. */
+const sha256Hex = (buf) => createHash('sha256').update(buf).digest('hex');
+const FRAUNCES_FILES = () => ({ italic: sha256Hex(readFileSync('app/fonts/fraunces/Fraunces-latin-italic.woff2')), normal: sha256Hex(readFileSync('app/fonts/fraunces/Fraunces-latin-normal.woff2')) });
+
 async function symposiumLedeStable(page, server, route, vp, c, tag) {
   if (vp.width !== 390 && vp.width !== 768) return;
-  const p2 = await page.context().newPage();
+  const F = FRAUNCES_FILES();
+  const context = await newContext(page.context().browser(), vp); const p2 = await context.newPage();
+  const woff = []; context.on('response', async (rs) => { if (!/\.woff2(\?|$)/.test(rs.url())) return; try { woff.push({ path: new URL(rs.url()).pathname, sha: sha256Hex(await rs.body()), cc: rs.headers()['cache-control'] ?? '' }); } catch { /* body unavailable: counted below as an unreadable response */ woff.push({ path: new URL(rs.url()).pathname, sha: null, cc: '' }); } });
   await p2.addInitScript(() => {
     window.__h = []; window.__shifts = []; window.__fontAtLoad = null;
     const sample = () => { const l = document.querySelector('[data-nos-lede="theme"]'); if (l) window.__h.push(Math.round(l.getBoundingClientRect().height * 10) / 10); };
-    try { new PerformanceObserver((list) => { for (const e of list.getEntries()) { if (e.hadRecentInput) continue; window.__shifts.push({ v: e.value, src: (e.sources || []).map((x) => { const n = x.node; return n && n.nodeType === 1 ? (n.matches('[data-nos-lede]') ? 'lede' : n.closest('.nos-subnav') ? 'subnav' : n.closest('section[data-nos-hero]') ? 'hero' : 'other') : 'other'; }) }); } }).observe({ type: 'layout-shift', buffered: true }); } catch { /* unsupported: the height samples still gate */ }
+    const kind = (n) => (n && n.nodeType === 1 ? (n.matches('[data-nos-lede]') ? 'lede' : n.closest('.nos-subnav') ? 'subnav' : n.closest('section[data-nos-hero]') ? 'hero' : 'other') : 'other');
+    try { new PerformanceObserver((list) => { for (const e of list.getEntries()) { if (e.hadRecentInput) continue; window.__shifts.push({ v: e.value, src: (e.sources || []).map((x) => ({ k: kind(x.node), dTop: x.currentRect.top - x.previousRect.top, dBottom: x.currentRect.bottom - x.previousRect.bottom, dLeft: x.currentRect.left - x.previousRect.left })) }); } }).observe({ type: 'layout-shift', buffered: true }); } catch { /* unsupported: the height samples still gate */ }
     document.addEventListener('DOMContentLoaded', sample);
     window.addEventListener('load', () => { window.__fontAtLoad = [...document.fonts].filter((f) => f.style === 'italic' && f.status === 'loaded').length; sample(); setTimeout(sample, 1500); setTimeout(sample, 3000); });
   });
-  const woffReqs = []; p2.on('request', (rq) => { if (/\.woff2(\?|$)/.test(rq.url())) woffReqs.push(new URL(rq.url()).pathname); });
-  await p2.setViewportSize(page.viewportSize());
   if (await gotoRoute(p2, server, route.nos, c, tag)) {
     await p2.waitForTimeout(3500);
     const m = await p2.evaluate(() => {
@@ -441,23 +450,40 @@ async function symposiumLedeStable(page, server, route, vp, c, tag) {
       const faces = []; for (const sh of document.styleSheets) { let rules; try { rules = [...sh.cssRules]; } catch { continue; } for (const r of rules) if (r.type === CSSRule.FONT_FACE_RULE) faces.push({ fam: r.style.getPropertyValue('font-family').replace(/["']/g, '').trim(), style: r.style.getPropertyValue('font-style').trim(), weight: r.style.getPropertyValue('font-weight').trim(), urls: [...r.style.getPropertyValue('src').matchAll(/url\(["']?([^"')]+)["']?\)/g)].map((x) => new URL(x[1], location.href).pathname) }); }
       const ledeFam = cs?.fontFamily.replace(/["']/g, '') ?? '';
       return { faces, ledeFam, lede: Boolean(l), lines, lh, h, minH: cs?.minHeight ?? null, hs: window.__h, shifts: window.__shifts, italicAtLoad: window.__fontAtLoad,
-        preloads: [...document.querySelectorAll('link[rel="preload"][as="font"]')].map((n) => n.getAttribute('href')) };
+        preloads: [...document.querySelectorAll('link[rel="preload"][as="font"]')].map((n) => new URL(n.getAttribute('href'), location.href).pathname) };
     });
+    const shaOf = (path) => woff.find((w) => w.path === path && w.sha)?.sha ?? null;
+    const frPre = m.preloads.map((path) => ({ path, sha: shaOf(path) })).filter((x) => x.sha === F.italic || x.sha === F.normal);
+    const pre = frPre[0]?.path ?? null; const preFace = m.faces.find((f) => pre && f.urls.includes(pre));
     c.check(`${tag} SY-G1 (Rev 44) the theme lede reserves no height: computed min-height is auto or 0 (${m.minH})`, m.lede && (m.minH === 'auto' || m.minH === '0px' || m.minH === 'normal'));
     c.check(`${tag} SY-G1 (Rev 44) the lede box does not change height after first paint (${m.hs.join(', ')})`, m.hs.length >= 2 && Math.max(...m.hs) - Math.min(...m.hs) <= 1);
     c.check(`${tag} SY-G1 (Rev 44, NOS Design L4250) after fonts load the lede height is its line count x line-height, no blank line (${m.lines} lines x ${m.lh}px = ${Math.round(m.lines * m.lh)}, box ${Math.round(m.h)})`, m.lines >= 1 && Number.isFinite(m.lh) && Math.abs(m.h - m.lines * m.lh) <= 2);
-    const pre = m.preloads[0] ? new URL(m.preloads[0], 'http://x').pathname : null;
-    const preFace = m.faces.find((f) => pre && f.urls.includes(pre));
-    c.check(`${tag} SY-G1 (Rev 44, SAOC condition) the one font preload is an italic 300 @font-face with its own generated family (${preFace ? `${preFace.fam} ${preFace.style} ${preFace.weight}` : 'no @font-face points at the preloaded url'})`, Boolean(preFace) && /italic/.test(preFace.style) && /^300$/.test(preFace.weight));
-    c.check(`${tag} SY-G1 (Rev 44, SAOC condition) the lede's computed font-family includes that preloaded instance's generated family, not the fonts.ts one (lede: ${m.ledeFam.slice(0, 120)})`, Boolean(preFace) && m.ledeFam.includes(preFace.fam));
-    const italicUrls = new Set(m.faces.filter((f) => /italic/.test(f.style)).flatMap((f) => f.urls));
-    const italicReqs = woffReqs.filter((u) => italicUrls.has(u));
-    c.check(`${tag} SY-G1 (Rev 44, SAOC condition) /symposium makes exactly one network request for an italic woff2, and it is the preloaded url (${italicReqs.length}: ${italicReqs.join(', ')}; preload ${pre})`, italicReqs.length === 1 && italicReqs[0] === pre);
-    const bad = m.shifts.filter((x) => x.src.some((k) => k === 'lede' || k === 'subnav'));
-    c.check(`${tag} SY-G1 (Rev 44) no layout shift has the lede or the sub-nav as a source (${m.shifts.length} entries, ${bad.length} on lede or sub-nav)`, bad.length === 0, JSON.stringify(bad));
-    c.check(`${tag} SY-G1 (Rev 44) exactly one font preload on /symposium, and an italic face is already loaded at the load event (${m.preloads.length} preloads; italic loaded ${m.italicAtLoad})`, m.preloads.length === 1 && (m.italicAtLoad ?? 0) >= 1, m.preloads.join(' | '));
+    c.check(`${tag} SY-G1 (Rev 46c) exactly one Fraunces font preload on ${route.nos}, and it is the italic file (${frPre.length} of ${m.preloads.length} preloads match a Fraunces file by bytes; the root layout's Crimson Pro and Manrope preloads are out of scope)`, frPre.length === 1 && frPre[0].sha === F.italic);
+    const sameFam = preFace ? m.faces.filter((f) => f.fam === preFace.fam).length : 0;
+    c.check(`${tag} SY-G1 (Rev 46c) that preload is an italic 300 @font-face with its own generated family, shared by no other face (${preFace ? `${preFace.fam} ${preFace.style} ${preFace.weight}; ${sameFam} face(s) in the family` : 'no @font-face points at the Fraunces preload'})`, Boolean(preFace) && /italic/.test(preFace.style) && /^300$/.test(preFace.weight) && sameFam === 1);
+    c.check(`${tag} SY-G1 (Rev 46c) the lede's computed font-family includes that generated family, not the fonts.ts one (lede: ${m.ledeFam.slice(0, 120)})`, Boolean(preFace) && m.ledeFam.includes(preFace.fam));
+    c.check(`${tag} SY-G1 (Rev 46c) the Fraunces italic face is already loaded at the load event (${m.italicAtLoad} italic faces loaded)`, (m.italicAtLoad ?? 0) >= 1);
+    const frItalicReq = woff.filter((w) => w.sha === F.italic);
+    c.check(`${tag} SY-G1 (Rev 46c) in a fresh browser context ${route.nos} makes exactly one network response for the Fraunces italic woff2, and it is the preloaded url (${frItalicReq.length}: ${frItalicReq.map((w) => w.path).join(', ')}; preload ${pre}; cache-control ${frItalicReq[0]?.cc ?? '-'}; Crimson Pro italic is legitimate and not counted; ${woff.filter((w) => !w.sha).length} unreadable)`, frItalicReq.length === 1 && frItalicReq[0].path === pre && woff.every((w) => w.sha));
+    const bad = m.shifts.filter((x) => x.src.some((q) => q.k === 'lede' || (q.k === 'subnav' && (Math.abs(q.dTop) >= 1 || Math.abs(q.dBottom) >= 1))));
+    const reflow = m.shifts.filter((x) => x.src.length && x.src.every((q) => q.k === 'subnav' && Math.abs(q.dTop) < 1 && Math.abs(q.dBottom) < 1));
+    c.check(`${tag} SY-G1 (Rev 46c) no layout shift has the lede as a source, and no sub-nav shift moves vertically by 1px or more; a pure horizontal label reflow with an unchanged top (the non-preloaded Karla 600 swap) is ignored (${m.shifts.length} entries, ${bad.length} failing, ${reflow.length} ignored horizontal reflow)`, bad.length === 0, JSON.stringify(bad));
   }
-  await p2.close();
+  await context.close();
+}
+
+/** Rev 46c/46d, font scope: the Fraunces italic 300 preload exists only on /symposium and /about (NOS Design, root comms.md 'SY-G1 names + italic preload scope'). The NOS home and one other NOS route that is neither of them must have NO Fraunces italic preload (next/font preloads per route segment; a preload in NosThemeScope put 82KB on every NOS route). */
+async function ledePreloadScope(browser, server, c) {
+  const F = FRAUNCES_FILES(); const vp = { name: '1440@1', width: 1440, height: 900, dsf: 1 };
+  for (const path of ['/', '/programme']) {
+    const tag = `[${vp.name} ${path} FONT-SCOPE]`; const context = await newContext(browser, vp); const page = await context.newPage();
+    if (await gotoRoute(page, server, path, c, tag)) {
+      const hrefs = await page.evaluate(() => [...document.querySelectorAll('link[rel="preload"][as="font"]')].map((n) => new URL(n.getAttribute('href'), location.href).href));
+      const shas = []; for (const h of hrefs) { try { shas.push({ h, sha: sha256Hex(await (await context.request.get(h)).body()) }); } catch { shas.push({ h, sha: null }); } }
+      c.check(`${tag} Rev 46c no Fraunces italic preload outside /symposium (${shas.length} font preloads; ${shas.filter((x) => x.sha === F.italic).length} are the Fraunces italic file; ${shas.filter((x) => !x.sha).length} unreadable)`, shas.every((x) => x.sha) && !shas.some((x) => x.sha === F.italic));
+    }
+    await context.close();
+  }
 }
 
 /** WO-G1 (NOS Design, root comms.md L3436): /wosa-conference. All copy is verbatim from her frozen documents. */
@@ -579,7 +605,7 @@ async function crChecks(page, route, vp, c, tag) {
 }
 
 /** AB-G1 (NOS Design, root comms.md L4012): /about. The seven paragraphs are About 2.1 v1.2 verbatim, straight quotes kept. */
-async function abChecks(page, route, vp, c, tag) {
+async function abChecks(page, route, vp, c, tag, server) {
   const A = route.ab;
   const m = await page.evaluate((A) => {
     const txt = (e) => e.textContent.replace(/\s+/g, ' ').trim();
@@ -588,7 +614,7 @@ async function abChecks(page, route, vp, c, tag) {
     const theme = hero ? [...hero.querySelectorAll('*')].filter((e) => e.children.length === 0 || e.tagName === 'P').find((e) => txt(e).includes(A.themeTitle)) : null;
     const tcs = theme ? getComputedStyle(theme) : null; const tl = theme ? parseFloat(tcs.lineHeight) : 0;
     const paras = main ? [...main.querySelectorAll('p')].map(txt).filter(Boolean) : [];
-    const links = aside ? [...aside.querySelectorAll('a')].map((a) => ({ t: txt(a), h: a.getBoundingClientRect().height, href: a.getAttribute('href') })) : [];
+    const links = aside ? [...aside.querySelectorAll('a')].map((a) => ({ t: txt(a), svg: Boolean(a.querySelector('svg')), h: a.getBoundingClientRect().height, href: a.getAttribute('href') })) : [];
     const acs = aside ? getComputedStyle(aside) : null; const ab = aside ? aside.getBoundingClientRect() : null; const mb = main ? main.getBoundingClientRect() : null;
     const up = [...document.querySelectorAll('main *')].filter((e) => getComputedStyle(e).textTransform === 'uppercase' && txt(e).length > 0 && !e.closest('section[data-nos-hero]')).map((e) => txt(e).slice(0, 30));
     const closing = main ? [...main.querySelectorAll('p')].pop() : null; const ccs = closing ? getComputedStyle(closing) : null;
@@ -607,7 +633,7 @@ async function abChecks(page, route, vp, c, tag) {
   c.check(`${tag} AB-G1 ${A.paragraphs} paragraphs in the main column, About 2.1 v1.2 verbatim and in her order (${m.paras.length}; v1.2 has ${blocks.length})`, blocks.length === A.paragraphs && m.paras.length === A.paragraphs && blocks.every((b, i) => m.paras[i] === norm(b)), blocks.map((b, i) => (m.paras[i] === norm(b) ? '' : `p${i + 1}`)).filter(Boolean).join(','));
   c.check(`${tag} AB-G1 her straight quotes and apostrophes are kept: no smartened quote in the main column`, !m.smart);
   c.check(`${tag} AB-G1 p1 is the Fraunces 300 standfirst and p7 the Fraunces 300 closing line (${m.firstFam} ${m.firstW}; ${m.closing && `${m.closing.fam} ${m.closing.w}`})`, m.firstFam?.includes('fraunces') && m.firstW === '300' && Boolean(m.closing) && m.closing.fam.includes('fraunces') && m.closing.w === '300');
-  c.check(`${tag} AB-G1 the gateway aside has exactly the ${A.gateway.length} nav-label links in her order, each row >= ${A.gatewayMinRow}px, each with a → arrow (not ↗) (${m.links.map((l) => `${l.t}:${Math.round(l.h)}`).join(' | ')})`, JSON.stringify(m.links.map((l) => l.t.replace(/\s*[→↗].*$/, '').trim())) === JSON.stringify(A.gateway) && m.links.every((l) => l.h >= A.gatewayMinRow && l.t.includes('→') && !l.t.includes('↗')));
+  c.check(`${tag} AB-G1 the gateway aside has exactly the ${A.gateway.length} nav-label links in her order, each row >= ${A.gatewayMinRow}px, each with a → arrow (not ↗) (${m.links.map((l) => `${l.t}:${Math.round(l.h)}`).join(' | ')})`, JSON.stringify(m.links.map((l) => l.t.replace(/\s*[→↗].*$/, '').trim())) === JSON.stringify(A.gateway) && m.links.every((l) => l.h >= A.gatewayMinRow && (l.t.includes('→') || l.svg) && !l.t.includes('↗')));
   { const ring = await page.evaluate(() => { const a = document.querySelector('[data-doc-aside] a'); if (!a) return null; a.focus({ focusVisible: true }); const cs = getComputedStyle(a); return { o: cs.outlineStyle, ow: parseFloat(cs.outlineWidth), sh: cs.boxShadow }; }); c.check(`${tag} AB-G1 the gateway links have a visible focus ring (${ring && `${ring.o} ${ring.ow}px / ${ring.sh}`})`, Boolean(ring) && ((ring.o !== 'none' && ring.ow > 0) || ring.sh !== 'none')); }
   c.check(`${tag} AB-G1 the aside is sticky at top 100 from 1024, and below 1024 static and after the text (${m.asidePos} ${m.asideTop}; aside y ${Math.round(m.asideY)} vs text bottom ${Math.round(m.mainBottom)})`, vp.width >= 1024 ? (m.asidePos === 'sticky' && m.asideTop === 100) : (m.asidePos !== 'sticky' && m.asideY >= m.mainBottom - 2));
   c.check(`${tag} AB-G1 gone: uppercase labels (${m.up.join(', ')}), "Cycle", the facts aside (dl) and the Tickets + Plan your visit button pair (${m.asideDl} dl, ${m.asideBtn} buttons)`, m.up.length === 0 && !m.all.includes('Cycle') && m.asideDl === 0 && m.asideBtn === 0);
@@ -694,7 +720,7 @@ async function exChecks(page, route, vp, c, tag) {
     const h1 = document.querySelector('h1'); let heroRest = hero ? txt(hero) : ''; if (hero) { for (const part of [h1 ? txt(h1) : '', hero.querySelector('[data-hero-facts]') ? txt(hero.querySelector('[data-hero-facts]')) : '', txt(hero.querySelector('nav, [aria-label*="readcrumb"]') ?? document.createElement('i'))]) if (part) heroRest = heroRest.replace(part, ''); }
     const paras = main ? [...main.querySelectorAll('p')].map(txt).filter(Boolean) : []; const h2s = main ? [...main.querySelectorAll('h2')].map((h) => ({ t: txt(h), fam: fam(h), w: getComputedStyle(h).fontWeight, px: parseFloat(getComputedStyle(h).fontSize) })) : [];
     const first = main ? main.querySelector('p') : null;
-    const links = aside ? [...aside.querySelectorAll('a')].map((a) => ({ t: txt(a), h: a.getBoundingClientRect().height, href: a.getAttribute('href') })) : []; const labelled = aside ? (aside.getAttribute('aria-label') ?? aside.querySelector('[aria-label]')?.getAttribute('aria-label')) : null;
+    const links = aside ? [...aside.querySelectorAll('a')].map((a) => ({ t: txt(a), svg: Boolean(a.querySelector('svg')), h: a.getBoundingClientRect().height, href: a.getAttribute('href') })) : []; const labelled = aside ? (aside.getAttribute('aria-label') ?? aside.querySelector('[aria-label]')?.getAttribute('aria-label')) : null;
     const acs = aside ? getComputedStyle(aside) : null; const ab = aside ? aside.getBoundingClientRect() : null; const mb = main ? main.getBoundingClientRect() : null;
     const pills = [...document.querySelectorAll('main *')].filter((e) => { const r = getComputedStyle(e).borderTopLeftRadius; return parseFloat(r) >= X.maxRadius; }).map((e) => (e.className || e.tagName).toString().slice(0, 30));
     const up = [...document.querySelectorAll('main *')].filter((e) => getComputedStyle(e).textTransform === 'uppercase' && txt(e).length > 0 && !e.closest('section[data-nos-hero]')).map((e) => txt(e).slice(0, 30));
@@ -710,7 +736,7 @@ async function exChecks(page, route, vp, c, tag) {
   c.check(`${tag} EX-G1 the h2s are her four questions, unnumbered, Fraunces 400 (${m.h2s.map((h) => h.t).join(' | ')})`, JSON.stringify(m.h2s.map((h) => h.t)) === JSON.stringify(qa.map((q) => q.q)) && m.h2s.every((h) => h.fam.includes('fraunces') && h.w === '400'));
   c.check(`${tag} EX-G1 her typo "${X.keepTypo}" is kept, and FAQ ${X.faqAbsent.join('/')} (photography, which lives on /what-to-expect) is not rendered`, m.main.includes(X.keepTypo) && dropped.every((d) => d.a.every((a) => !m.main.includes(a.slice(0, 60)))));
   c.check(`${tag} EX-G1 gone: every builder section, chip and pill (${X.absentText.filter((t) => m.main.includes(t)).join(' | ')}); no jump menu, table, ol or h3 (${m.chips}); no element with radius >= ${X.maxRadius} (${m.pills.join(', ')}); no uppercase label (${m.up.join(', ')})`, X.absentText.every((t) => !m.main.includes(t)) && m.chips === 0 && m.pills.length === 0 && m.up.length === 0);
-  c.check(`${tag} EX-G1 the gateway aside is labelled "${X.ariaLabel}" and has the ${X.gateway.length} links in this order, each row >= ${X.gatewayMinRow}px, each with a → arrow (${m.labelled}; ${m.links.map((l) => `${l.t}:${Math.round(l.h)}`).join(' | ')})`, m.labelled === X.ariaLabel && JSON.stringify(m.links.map((l) => l.t.replace(/\s*[→↗].*$/, '').trim())) === JSON.stringify(X.gateway) && m.links.every((l) => l.h >= X.gatewayMinRow && l.t.includes('→') && !l.t.includes('↗') && l.href));
+  c.check(`${tag} EX-G1 the gateway aside is labelled "${X.ariaLabel}" and has the ${X.gateway.length} links in this order, each row >= ${X.gatewayMinRow}px, each with a → arrow (${m.labelled}; ${m.links.map((l) => `${l.t}:${Math.round(l.h)}`).join(' | ')})`, m.labelled === X.ariaLabel && JSON.stringify(m.links.map((l) => l.t.replace(/\s*[→↗].*$/, '').trim())) === JSON.stringify(X.gateway) && m.links.every((l) => l.h >= X.gatewayMinRow && (l.t.includes('→') || l.svg) && !l.t.includes('↗') && l.href));
   { const ring = await page.evaluate(() => { const a = document.querySelector('[data-doc-aside] a'); if (!a) return null; a.focus({ focusVisible: true }); const cs = getComputedStyle(a); return { o: cs.outlineStyle, ow: parseFloat(cs.outlineWidth), sh: cs.boxShadow }; }); c.check(`${tag} EX-G1 the gateway links have a visible focus ring (${ring && `${ring.o} ${ring.ow}px / ${ring.sh}`})`, Boolean(ring) && ((ring.o !== 'none' && ring.ow > 0) || ring.sh !== 'none')); }
   c.check(`${tag} EX-G1 the aside is sticky at top 100 from 1024, and below 1024 static and after the text (${m.asidePos} ${m.asideTop}; aside y ${Math.round(m.asideY)} vs text bottom ${Math.round(m.mainBottom)})`, vp.width >= 1024 ? (m.asidePos === 'sticky' && m.asideTop === 100) : (m.asidePos !== 'sticky' && m.asideY >= m.mainBottom - 2));
   c.check(`${tag} EX-G1 no horizontal overflow (${m.sw} <= ${m.iw})`, m.sw <= m.iw);
@@ -735,7 +761,7 @@ async function ctChecks(page, route, vp, c, tag) {
     const facts = hero ? [...hero.querySelectorAll('[data-hero-facts] dt')].map((dt) => { const dd = dt.nextElementSibling; return { t: txt(dt), d: dd ? txt(dd) : '', tel: dd ? [...dd.querySelectorAll('a[href^="tel:"]')].map((a) => a.getAttribute('href')) : [], bottom: dd ? dd.getBoundingClientRect().bottom + scrollY : 0 }; }) : [];
     const rows = teamEl ? [...teamEl.querySelectorAll('div')].filter((d) => d.querySelector('dt') && d.querySelector('dd')).map((d) => ({ name: txt(d.querySelector('dt')), role: txt(d.querySelector('dd')) })) : [];
     const teamH2 = teamEl ? [...main.querySelectorAll('h2')].filter((h) => txt(h) === X.committeeH2).map(txt) : [];
-    const gate = card ? card.querySelector(`[aria-label="${X.gatewayLabel}"]`) : null; const links = gate ? [...gate.querySelectorAll('a')].map((a) => ({ t: txt(a), h: a.getBoundingClientRect().height })) : [];
+    const gate = card ? card.querySelector(`[aria-label="${X.gatewayLabel}"]`) : null; const links = gate ? [...gate.querySelectorAll('a')].map((a) => ({ t: txt(a), svg: Boolean(a.querySelector('svg')), h: a.getBoundingClientRect().height })) : [];
     const sub = form ? [...form.querySelectorAll('button[type="submit"], input[type="submit"]')][0] : null; const scs = sub ? getComputedStyle(sub) : null;
     const hint = form ? [...form.querySelectorAll('*')].find((e) => e.children.length === 0 && /minimum 10 characters/i.test(e.textContent)) : null; const hcs = hint ? getComputedStyle(hint) : null;
     const cs = card ? getComputedStyle(card) : null;
@@ -750,7 +776,8 @@ async function ctChecks(page, route, vp, c, tag) {
   c.check(`${tag} CT-G1 the tel link is valid, ${tel}, with her number as its text, in the hero and in the card (${m.facts[0]?.tel.join(',')} | ${m.cardTel.map((a) => `${a.h} ${a.t}`).join(',')})`, JSON.stringify(m.facts[0]?.tel) === JSON.stringify([tel]) && m.cardTel.length === 1 && m.cardTel[0].h === tel && m.cardTel[0].t === phone && m.cardTel[0].fam.includes('fraunces'));
   c.check(`${tag} CT-G1 the phone is in the first screen (hero fact bottom ${Math.round(m.facts[0]?.bottom ?? -1)} < viewport ${m.ih})`, Boolean(m.facts[0]) && m.facts[0].bottom < m.ih);
   c.check(`${tag} CT-G1 the card shows "Address of the show", "${place}", "${addr}", "Telephone number" and "${person} - ${role}" as written`, ['Address of the show', place, addr, 'Telephone number', `${person} - ${role}`].every((t) => m.cardText.includes(t)));
-  c.check(`${tag} CT-G1 the gateway "${X.gatewayLabel}" has ${X.gateway.join(' / ')} in order, each row >= ${X.gatewayMinRow}px, each with a → arrow (${m.links.map((l) => `${l.t}:${Math.round(l.h)}`).join(' | ')})`, JSON.stringify(m.links.map((l) => l.t.replace(/\s*[→↗].*$/, '').trim())) === JSON.stringify(X.gateway) && m.links.every((l) => l.h >= X.gatewayMinRow && l.t.includes('→')));
+  c.check(`${tag} CT-G1 the gateway "${X.gatewayLabel}" has ${X.gateway.join(' / ')} in order, each row >= ${X.gatewayMinRow}px, each with a → arrow (${m.links.map((l) => `${l.t}:${Math.round(l.h)}`).join(' | ')})`, JSON.stringify(m.links.map((l) => l.t.replace(/\s*[→↗].*$/, '').trim())) === JSON.stringify(X.gateway) && m.links.every((l) => l.h >= X.gatewayMinRow && (l.t.includes('→') || l.svg)));
+  await fsContact(page, vp, c, tag, { place, person, role, label: X.gatewayLabel });
   c.check(`${tag} CT-G1 h2 "${X.committeeH2}" and ${team.length} rows, name then role, in her order (${m.rows.length}); the unsurnamed Otto and Nerine row, the bare URL and her Email address?? notes are not rendered`, m.teamH2.length === 1 && JSON.stringify(m.rows) === JSON.stringify(team));
   c.check(`${tag} CT-G1 gone: ${X.absentText.filter((t) => m.main.includes(t)).join(' | ') || 'none of'} the NOT CONFIRMED badge, the placeholder intro, "[" and uppercase labels (${m.up.join(', ')})`, X.absentText.every((t) => !m.main.includes(t)) && m.up.length === 0);
   c.check(`${tag} CT-G1 the form is unchanged: fields ${formNames.join(', ')} and POST with no action (${m.fields.join(', ')}; ${m.method}; ${m.action})`, formNames.length >= 4 && JSON.stringify([...m.fields].sort()) === JSON.stringify([...formNames].sort()) && /^post$/i.test(m.method ?? '') && !m.action);
@@ -828,6 +855,7 @@ async function homeChecks(page, vp, c, tag) {
   c.check(`${tag} HM-G1 the hero facts are exactly ${H.factTerms.join(' / ')}, labels sentence case, 15px, not uppercase (${m.facts.map((f) => `${f.t} ${f.tt} ${f.px}`).join('; ')})`, JSON.stringify(m.facts.map((f) => f.t)) === JSON.stringify(H.factTerms) && m.facts.every((f) => f.tt === 'none' && Math.abs(f.px - 15) <= 0.5));
   c.check(`${tag} HM-G1 About band: h2 "${H.aboutHeading}", About v1.2 paragraph 1 as a Fraunces 300 lead, paragraph 3 as body, links ${H.aboutLinks.join(' / ')} (${m.aboutP.length} paragraphs)`, m.h2s.includes(H.aboutHeading) && m.aboutP.some((p) => p.t === aboutBody[0] && p.fam.includes('fraunces') && p.w === '300') && m.aboutP.some((p) => p.t === aboutBody[2]) && JSON.stringify([...m.aboutLinks, ...m.cardLinks.filter((t) => /→/.test(t) && !m.aboutLinks.includes(t))]) === JSON.stringify(H.aboutLinks));
   c.check(`${tag} HM-G1 the visit card is static and shows "${dateLabel}", "${dateLine}" and her ${hours.length} hours rows verbatim (${m.cardPos})`, m.cardPos !== null && m.cardPos !== 'sticky' && [dateLabel, dateLine, ...hours.map((h) => h.label), ...hours.map((h) => h.value)].every((t) => m.cardText.includes(t)));
+  await fsHome(page, vp, c, tag, { dateLabel, dateLine });
   { const lefts = [...new Set(m.visit.map((l) => l.l))].length; const want = vp.width >= 1024 ? H.visitColumns.desktop : vp.width >= 600 ? H.visitColumns.below1024 : H.visitColumns.below600;
     c.check(`${tag} HM-G1 Visit: h2 "Visit" and the nav-label register ${H.visitLinks.join(' / ')} with a → each, no descriptions, ${want} column(s) (${lefts})`, m.h2s.includes('Visit') && JSON.stringify(m.visit.map((l) => l.t.replace(/\s*→.*$/, ''))) === JSON.stringify(H.visitLinks) && m.visit.every((l) => l.t.includes('→')) && lefts === want); }
   c.check(`${tag} HM-G1 Programme: h2 "Programme" and ${prog.length} rows, h3 nav label + her sentence + →: ${prog.map((p) => p.h3).join(' / ')} (${m.prog.map((r) => r.h3).join(' / ')})`, m.h2s.includes('Programme') && m.prog.length === prog.length && prog.every((p, i) => m.prog[i].h3 === p.h3 && m.prog[i].p.includes(p.text) && m.prog[i].arrow));
@@ -1068,6 +1096,9 @@ await withServer(1, 'standard', async (server, c) => {
       if (await gotoRoute(page, server, '/tickets', c, `[${vp.name} /tickets cards]`)) { await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await page.waitForTimeout(500);
       await cardImageChecks(page, vp, c, `[${vp.name} /tickets cards]`); } await context.close();
     }
+    await fsTickets(browser, server, c);
+    await fsTicketsFan(browser, server, c);
+    await ledePreloadScope(browser, server, c);
     for (const vp of STD.viewports) {
       const tag = `[${vp.name} /]`; const context = await newContext(browser, vp); const page = await context.newPage();
       if (await gotoRoute(page, server, '/', c, tag)) await homeChecks(page, vp, c, tag);
@@ -1216,11 +1247,12 @@ await withServer(1, 'standard', async (server, c) => {
         if (route.wo) await woChecks(page, route, vp, c, tag, server);
         if (route.wk) await wkChecks(page, route, vp, c, tag);
         if (route.cr) await crChecks(page, route, vp, c, tag);
-        if (route.ab) await abChecks(page, route, vp, c, tag);
+        if (route.ab) { await abChecks(page, route, vp, c, tag, server); await symposiumLedeStable(page, server, route, vp, c, tag); }
         if (route.we) await weChecks(page, route, vp, c, tag, server);
         if (route.ex) await exChecks(page, route, vp, c, tag);
         if (route.aside === 'ticket') await ticketLayoutChecks(page, vp, c, tag, Boolean(route.cr));
         if (route.ct) await ctChecks(page, route, vp, c, tag);
+        await fsRoute(page, route, vp, c, tag);
         if (route.ar) await arChecks(page, route, vp, c, tag);
         c.check(`${tag} NL-2 "${STD.navRenamed.from}" is not rendered anywhere in the public page (body, title, meta description); her label is "${STD.navRenamed.to}"`, !(await page.evaluate((t) => [document.body.textContent.replace(/\s+/g, ' '), document.title, ...[...document.querySelectorAll('meta[name="description"], meta[property="og:description"], meta[property="og:title"]')].map((e) => e.getAttribute('content') ?? '')].some((x) => x.includes(t)), STD.navRenamed.from)));
         c.check(`${tag} NAV-G1 the unsourced Workshops line (prefix "${STD.navDroppedPrefix}") is in neither the rendered body nor <meta name="description"> / og:description`, !(await page.evaluate((t) => [document.body.textContent.replace(/\s+/g, ' '), ...[...document.querySelectorAll('meta[name="description"], meta[property="og:description"]')].map((e) => e.getAttribute('content') ?? '')].some((x) => x.includes(t)), STD.navDroppedPrefix)));

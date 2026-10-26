@@ -113,7 +113,6 @@ export const NOS_NAV: readonly NavItem[] = [
             id: 'symposium',
             label: 'Symposium',
             href: showPath('/symposium'),
-            descriptor: 'The National Orchid Show Symposium — what it is, its theme, and who it is for.',
           },
           {
             id: 'wosa-conference',

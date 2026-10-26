@@ -57,7 +57,7 @@ export default function NosContactPage() {
         <div data-nos-contact-form="" data-doc-main="" className="nos-ct-form">
           <ContactForm site="nos" />
         </div>
-        <aside data-ct-card="" className="nos-ct-card">
+        <aside data-ct-card="" className="ds-card nos-ct-card">
           <ShowContactDetails />
           <NosContactAside />
         </aside>

@@ -438,6 +438,7 @@
     ],
     "minPortraitSourceW": 640,
     "boxMax": 320,
+    "boxMaxDesktop": 400,
     "nameTag": "H2",
     "listed": [
      {

@@ -100,6 +100,7 @@ export default async function NationalShowAboutPage() {
       />
 
       <DocumentLayout
+        asideBare
         aside={
           <nav aria-label="Around the show" className="nos-ab-gateway">
             <ul>

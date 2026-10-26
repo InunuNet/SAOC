@@ -349,7 +349,7 @@ export default async function NationalShowPage() {
             {ABOUT_LINK_LABEL} <span aria-hidden="true">&rarr;</span>
           </Link>
         </div>
-        <div data-hm-visit-card="" className="nos-hm-card">
+        <div data-hm-visit-card="" className="ds-card nos-hm-card">
           <p className="nos-hm-card-label">{DATES_LABEL}</p>
           <p className="nos-hm-card-dates">{DATES_LINE}</p>
           <dl>
@@ -376,7 +376,8 @@ export default async function NationalShowPage() {
             return (
               <li key={id}>
                 <Link href={nosPath(leaf.href)}>
-                  {leaf.label} <span aria-hidden="true">&rarr;</span>
+                  <h3>{leaf.label}</h3>
+                  <span aria-hidden="true">&rarr;</span>
                 </Link>
               </li>
             );

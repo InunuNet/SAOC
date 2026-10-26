@@ -6,7 +6,11 @@ const ALLOWED = [
   /^sanity\/lib\/client\.ts$/,
   /^components\/nos\/(NosHero|hero-photos|NosSection|NosSubNav|nos-subnav-groups|nos-route-heroes|nos-nav)\.(tsx|ts)$/,
   /^components\/nos-chrome\/nos-nav\.(ts|tsx)$/,
-  /^components\/nos\/NosThemeScope\.tsx$/, // Rev 44: the one preloaded italic Fraunces face (see check-static)
+  /^components\/nos\/Button\.tsx$/, // RB-1 (goldens/spec.md, NOS Design HR-1/RB-1): the R17 10px comment, no R2 2px citation
+  /^components\/show\/nos\/HoldingState\.tsx$/, // NL-2 / HM-G1 label (dev e41ea785)
+  /^scripts\/generate-image-variants\.mjs$/, // DS-1 crops (dev a82919d2; goldens/crops/NOS-DESIGN-SIGNOFF.txt)
+  /^components\/nos\/FrauncesLedeScope\.tsx$/, // Rev 46c: the one preloaded italic Fraunces face; imported only by the /symposium and /about segment layouts (check-static FONT-1); NosThemeScope.tsx must stay unchanged
+  /^app\/\(nos\)\/national-show\/(symposium|about)\/layout\.tsx$/,
   /^components\/show\/(FaqIndex|ShowFaqList|ShowJumpChips)\.tsx$/,
   /^app\/\(nos\)\/.*\/(page|loading)\.tsx$/,
   /^app\/\(nos\)\/page\.tsx$/,
@@ -56,6 +60,13 @@ if (missing.length) { console.error(`nos-content-standard diff scope FAILED: can
 const tracked = sets[0].filter((f) => sets.every((st) => st.includes(f)));
 const files = [...new Set([...tracked, ...run(['ls-files', '-o', '--exclude-standard'])])];
 const sameAsMain = (f) => { try { execFileSync('git', ['diff', '--quiet', 'origin/main', '--', f]); return true; } catch { return false; } };
-const outside = files.filter((f) => !ALLOWED.some((re) => re.test(f)) && !sameAsMain(f));
+// Rev 45: a file is the dev's only when the dev authored it: it is untracked or dirty in the worktree, or a non-merge commit in merge-base..HEAD touches it that is NOT reachable from
+// SAOC's pinned commit, SAOC's branch tip (override NOS_STD_SAOC_BRANCH), the #76 ref or origin/main. A file that only arrived through a merge, or through a merge of SAOC plus #76/main
+// (components/home/Hero.tsx: SAOC b2cff780 plus #95's sizes; MediaKitPageBody.tsx: SAOC 4ab33fc2), has no such commit and is not the dev's. A conflict resolution inside a merge commit is the one edit this cannot see.
+const NOT = [REFS[2], process.env.NOS_STD_SAOC_BRANCH ?? 'origin/feat/saoc-content-standard-2026-10-25', REFS[1], 'origin/main'].filter((r) => run(['rev-parse', '--verify', '-q', r]));
+const untracked = new Set(run(['ls-files', '-o', '--exclude-standard']));
+const dirty = (f) => { try { execFileSync('git', ['diff', '--quiet', 'HEAD', '--', f]); return false; } catch { return true; } };
+const devAuthored = (f) => untracked.has(f) || dirty(f) || (run(['log', '--no-merges', '--format=%H', `${MB}..HEAD`, '--not', ...NOT, '--', f]) ?? []).length > 0;
+const outside = files.filter((f) => !ALLOWED.some((re) => re.test(f)) && !sameAsMain(f) && devAuthored(f));
 if (outside.length) { console.error(`nos-content-standard diff scope FAILED: ${outside.length} file(s) outside the allowed set:\n- ${outside.join('\n- ')}`); process.exit(1); }
 console.log(`diff scope pass (${files.length} files, all allowed)`);

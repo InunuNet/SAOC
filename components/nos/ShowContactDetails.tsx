@@ -16,6 +16,8 @@ const HEADING_ADDRESS = 'Address of the show';
 const HEADING_TELEPHONE = 'Telephone number';
 // The card's sentence-case label, shared with the gateway heading (nos-structure.css).
 const LABEL_CLASS = 'nos-ct-label';
+// The first address line is the place's name (CT-G1: Fraunces 400, 22px); the second is the address.
+const PLACE_CLASS = 'nos-ct-place';
 const BODY_CLASS = 'mt-3 font-sans text-[16px] leading-[1.55] text-ink/80';
 
 export function ShowContactDetails() {
@@ -23,8 +25,8 @@ export function ShowContactDetails() {
     <div data-show-contact-details="" className="mb-12 space-y-8">
       <section>
         <h2 className={LABEL_CLASS}>{HEADING_ADDRESS}</h2>
-        {SHOW_ADDRESS_LINES.map((line) => (
-          <p key={line} className={BODY_CLASS}>
+        {SHOW_ADDRESS_LINES.map((line, index) => (
+          <p key={line} className={index === 0 ? PLACE_CLASS : BODY_CLASS}>
             {line}
           </p>
         ))}
@@ -34,9 +36,9 @@ export function ShowContactDetails() {
         <p className={BODY_CLASS}>
           <a href={SHOW_OFFICE_PHONE_HREF} className="nos-ct-tel">
             {SHOW_OFFICE_PHONE}
-          </a>{' '}
-          - {SHOW_OFFICE_CONTACT_LINE}
+          </a>
         </p>
+        <p className="nos-ct-person">{SHOW_OFFICE_CONTACT_LINE}</p>
       </section>
     </div>
   );

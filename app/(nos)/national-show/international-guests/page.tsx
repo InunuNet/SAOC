@@ -7,14 +7,14 @@ import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { loadShowFacts } from '@/lib/data/show-facts';
 import { buildPageMetadata } from '@/lib/seo';
 import { loadInternationalGuests } from '@/lib/view-models/load-presenters';
-import { orderPresenters } from '@/lib/view-models/presenter-order';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
 // IG-G1 (NOS Design, comms.md 2026-10-25; spec 4.5): one editorial profile per guest, in record order,
 // never a card grid. A guest is any profile with a country set and not South Africa, whatever its type,
 // so presenters and international nurseries alike; no country, no listing. With no guests the page is
 // the hero and the sub-nav: the build's own absence statement and field-label skeleton were builder
-// copy (R7) and a placeholder box, and are gone.
+// copy (R7) and a placeholder box, and are gone. FS-1: no name-index aside (IG-G1 has none), so each
+// profile runs the full content width (nos-ig-page in nos-structure.css).
 export const revalidate = 60;
 
 const PAGE_TITLE = 'International guests';
@@ -45,14 +45,11 @@ export default async function InternationalGuestsPage() {
       />
 
       {guests.length > 0 ? (
-        <DocumentLayout
-          index={orderPresenters(guests).map((guest) => ({
-            id: `guest-${guest.id}`,
-            label: guest.name,
-          }))}
-        >
-          <PresenterList profiles={guests} level={2} showAppearing />
-        </DocumentLayout>
+        <div className="nos-ig-page">
+          <DocumentLayout>
+            <PresenterList profiles={guests} level={2} showAppearing />
+          </DocumentLayout>
+        </div>
       ) : null}
       <NosShowIndex current="/national-show/international-guests" />
     </>

@@ -102,6 +102,7 @@ export default async function ExhibitorEntryGuidePage() {
       />
 
       <DocumentLayout
+        asideBare
         aside={
           <nav aria-label={GATEWAY_LABEL} className="nos-ab-gateway">
             <ul>
@@ -117,14 +118,14 @@ export default async function ExhibitorEntryGuidePage() {
           </nav>
         }
       >
-        <div className="doc-prose">
-          {STANDFIRST.map((paragraph) => (
-            <p key={paragraph} className="doc-standfirst">
-              {paragraph}
-            </p>
-          ))}
+        {STANDFIRST.map((paragraph) => (
+          <p key={paragraph} className="doc-standfirst nos-ex-standfirst">
+            {paragraph}
+          </p>
+        ))}
+        <div data-qa-list="" className="nos-ex-qa">
           {QUESTIONS.map((item) => (
-            <section key={item.question}>
+            <section key={item.question} data-qa-item="">
               <h2 className="doc-h2 nos-ex-q">{item.question}</h2>
               {item.paragraphs.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
