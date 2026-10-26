@@ -234,7 +234,7 @@ export async function fsCardSurface(page, route, vp, c, tag) {
   }
 }
 
-/** FS-2 item 2. /what-to-expect: the rest column (Food, Photography, Accessibility) first, then Section 3 under a gold-300 rule. Hole: WE-G1 asserted each block's content and the stand-above-rest order, never rest-above-Section-3, so Section 3 rendering first passed. */
+/** FS-2 item 2. /what-to-expect: the rest column (Food, Photography, Accessibility) first, then Section 3 under a green-1 rule (FS-3: 1px solid #a7a841, was gold-300). Hole: WE-G1 asserted each block's content and the stand-above-rest order, never rest-above-Section-3, so Section 3 rendering first passed. */
 async function fsWe(page, route, vp, c, tag) {
   const W = FS2.whatToExpect; const t = `${tag} FS-2.2`;
   const m = await page.evaluate(() => {
@@ -247,7 +247,45 @@ async function fsWe(page, route, vp, c, tag) {
   if (!m.hooks) return;
   c.check(`${t} DOM order: the practical blocks (rest) come before Section 3`, m.dom);
   c.check(`${t} visual order: Section 3 starts below the last practical block (rest bottom ${Math.round(m.restBottom)}, Section 3 top ${Math.round(m.s3Top)})`, m.s3Top >= m.restBottom - 1);
-  c.check(`${t} Section 3 sits under a gold-300 rule (${m.rule ? `${m.rule.w}px ${m.rule.color}` : 'no top rule on Section 3 or an ancestor'}; want ${W.goldRule})`, Boolean(m.rule) && m.rule.w >= W.ruleMinPx && m.rule.color === W.goldRule && m.rule.y <= m.s3Top + 1);
+  c.check(`${t} Section 3 sits under a ${W.ruleWidthPx}px ${W.goldRule} rule (${m.rule ? `${m.rule.w}px ${m.rule.color}` : 'no top rule on Section 3 or an ancestor'}; ${W.goldRuleToken})`, Boolean(m.rule) && m.rule.w === W.ruleWidthPx && m.rule.color === W.goldRule && m.rule.y <= m.s3Top + 1);
+  const S = W.standfirst; const B = W.weBlock;
+  const q = await page.evaluate(({ sel, blockSel }) => {
+    const px = (v) => parseFloat(v) || 0; const el = document.querySelector(sel);
+    const blocks = [...document.querySelectorAll(blockSel)].map((b) => { const cs = getComputedStyle(b); return { pt: px(cs.paddingTop), pb: px(cs.paddingBottom) }; });
+    if (!el) return { stand: false, blocks };
+    const cs = getComputedStyle(el); const probe = document.createElement('span'); probe.style.cssText = 'position:absolute;visibility:hidden;width:34ch;height:0'; el.appendChild(probe);
+    const ch34 = probe.getBoundingClientRect().width; probe.remove();
+    return { stand: true, fs: px(cs.fontSize), lh: px(cs.lineHeight), mb: px(cs.marginBottom), maxW: cs.maxWidth, ch34, blocks };
+  }, { sel: S.selector, blockSel: B.selector });
+  c.check(`${t} the standfirst ${S.selector} exists`, q.stand);
+  if (q.stand) {
+    const fs = clampAt(S.fontSize, vp.width); const mb = clampAt(S.marginBottom, vp.width);
+    c.check(`${t} standfirst font-size is clamp(1.5rem,1.15rem+1.1vw,2rem) = ${fs.toFixed(1)}px at ${vp.width} (got ${q.fs})`, near(q.fs, fs, 0.6));
+    c.check(`${t} standfirst line-height is ${S.lineHeight} (${q.lh}px; want ${(q.fs * S.lineHeight).toFixed(1)})`, near(q.lh, q.fs * S.lineHeight, 0.6));
+    c.check(`${t} standfirst max-width is ${S.maxCh}ch (${q.maxW}; ${S.maxCh}ch measures ${q.ch34.toFixed(1)}px)`, near(parseFloat(q.maxW), q.ch34, 1.5));
+    c.check(`${t} standfirst margin-bottom is clamp(40px,5vw,64px) = ${mb.toFixed(1)}px at ${vp.width} (got ${q.mb})`, near(q.mb, mb, 0.6));
+  }
+  c.check(`${t} at least one ${B.selector}`, q.blocks.length > 0);
+  const G = await page.evaluate(({ blockSel }) => {
+    const px = (v) => parseFloat(v) || 0;
+    const rules = [...document.querySelectorAll(`[data-we-rest] ${blockSel}`), document.querySelector('[data-we-s3]')?.closest('section')].filter(Boolean);
+    const lastLineBottom = (el) => {
+      const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let last = null; for (let n = w.nextNode(); n; n = w.nextNode()) if (n.textContent.trim()) last = n;
+      if (!last) return null; const r = document.createRange(); r.selectNodeContents(last); const rects = [...r.getClientRects()]; const rc = rects[rects.length - 1];
+      const lh = px(getComputedStyle(last.parentElement).lineHeight); return rc.bottom + scrollY + (lh > rc.height ? (lh - rc.height) / 2 : 0);
+    };
+    return rules.map((el) => { const cs = getComputedStyle(el); const r = el.getBoundingClientRect(); return { cls: el.className, top: r.top + scrollY, width: r.width, ruleW: px(cs.borderTopWidth), lineBottom: lastLineBottom(el) }; });
+  }, { blockSel: B.selector });
+  const SP = W.spacing; const want = clampAt(SP.rule, vp.width);
+  c.check(`${t} the rest column has its blocks and the Section 3 rule to measure (${G.length} rules)`, G.length >= 2);
+  for (let i = 0; i + 1 < G.length; i += 1) {
+    const gap = G[i + 1].top - G[i].lineBottom;
+    c.check(`${t} FS-4.1 last text line of rule ${i + 1} to the next rule top is clamp(32px,4vw,44px) = ${want.toFixed(1)} +-${SP.tolerancePx} at ${vp.width} (got ${gap.toFixed(1)}; the padding must not stack on a margin or gap)`, near(gap, want, SP.tolerancePx));
+  }
+  const widths = G.map((g) => g.width); const spread = Math.max(...widths) - Math.min(...widths);
+  c.check(`${t} FS-4.2 every rule in the rest column, Section 3 included, has one width +-${W.ruleWidths.tolerancePx} (${widths.map((x) => x.toFixed(1)).join(' / ')}; spread ${spread.toFixed(1)})`, G.length > 0 && spread <= W.ruleWidths.tolerancePx);
+  const pad = clampAt(B.paddingBlock, vp.width);
+  c.check(`${t} every ${B.selector} has padding-block clamp(32px,4vw,44px) = ${pad.toFixed(1)}px at ${vp.width} (got ${q.blocks.map((x) => `${x.pt}/${x.pb}`).join(' ')})`, q.blocks.every((x) => near(x.pt, pad, 0.6) && near(x.pb, pad, 0.6)));
 }
 
 /** FS-2 item 3. /tickets at 1440 and 2056: the hero fan shows every card once it settles. Hole: only the Rev 41-era image checks looked at /tickets, and a capture mid fan-out passed. We wait for finite animations and transitions to end, then require two samples 400ms apart to match. */

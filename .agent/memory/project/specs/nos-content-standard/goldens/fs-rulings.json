@@ -221,9 +221,30 @@
     "whatToExpect": {
       "item": 2,
       "route": "/what-to-expect",
-      "goldRule": "rgb(232, 230, 194)",
-      "goldRuleToken": "--nc-gold-300 #E8E6C2",
-      "ruleMinPx": 1
+      "goldRule": "rgb(167, 168, 65)",
+      "goldRuleToken": "--green-1 #a7a841 (FS-3 ruling, root comms.md L4314 item 1; supersedes --nc-gold-300 #E8E6C2)",
+      "ruleWidthPx": 1,
+      "standfirst": {
+        "selector": ".nos-we-body .doc-standfirst",
+        "source": "FS-3 ruling, root comms.md L4314 item 2 (WE-G1: 64px and 32px at 1440)",
+        "fontSize": [24, 18.4, 0.011, 32],
+        "lineHeight": 1.38,
+        "maxCh": 34,
+        "marginBottom": [40, 0, 0.05, 64]
+      },
+      "weBlock": {
+        "selector": ".nos-we-block",
+        "paddingBlock": [32, 0, 0.04, 44]
+      },
+      "spacing": {
+        "source": "FS-4 ruling, root comms.md L4330 item 1: last text line bottom to the next rule top = clamp(32px, 4vw, 44px) +-4 (WE-G1 is 44 at 1440); the padding stacked on a margin/gap is the drift. Measured between consecutive rules in the rest column and from the last block to the Section 3 rule.",
+        "rule": [32, 0, 0.04, 44],
+        "tolerancePx": 4
+      },
+      "ruleWidths": {
+        "source": "FS-4 ruling, root comms.md L4330 item 2: every rule in the .nos-we-body rest column, the Section 3 green rule included, spans the column's full width; widths equal +-1.",
+        "tolerancePx": 1
+      }
     },
     "tickets": {
       "item": 3,
