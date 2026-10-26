@@ -1,0 +1,2378 @@
+{
+  "_doc": "Golden for the saoc-pagehero-mirror gates. Sources: NOS Design overnight critique 2026-10-25 (comms.md tail) and its final crop picks and four rulings relayed by the team lead (spec.md section 1). No native-cap exception, pink and yellow retired from every hero box. Re-targeted 2026-10-26 to the SAOC repo at 59779ff7 (mission saoc-inner-heroes): 10-26 comms table wins on conflict; copy contrast 4.5 for all copy; /constitution is /memorandum-of-incorporation; /404, /events/[slug] and /events/submit crops are open gaps (HM-2/HM-3/overflow only).",
+  "thresholds": {
+    "ledeContrastMin": 4.5,
+    "eyebrowContrastMin": 4.5,
+    "h1ContrastMin": 4.5,
+    "bloomCleanZoneEnd": 0.44,
+    "copyStart": 0.52,
+    "bandAspect": 2,
+    "bandAspectTolerancePx": 1,
+    "stackedBelow": 768,
+    "cleanZoneMeanAbsDiffMax": 2,
+    "solidGroundRgb": [
+      34,
+      40,
+      31
+    ],
+    "solidGroundTolerance": 3,
+    "homeStackFloor": 1023,
+    "homeStackCeiling": 1279,
+    "derivedWebpMeanAbsDiffMax": 4,
+    "derivedWebpPsnrMin": 33,
+    "probeMaxPixels": 40,
+    "ctaTextContrastMin": 4.5
+  },
+  "viewports": {
+    "served": [
+      {
+        "name": "2056@2",
+        "width": 2056,
+        "height": 1200,
+        "dsf": 2
+      },
+      {
+        "name": "1440@2",
+        "width": 1440,
+        "height": 900,
+        "dsf": 2
+      },
+      {
+        "name": "1280@2",
+        "width": 1280,
+        "height": 800,
+        "dsf": 2
+      },
+      {
+        "name": "767@2",
+        "width": 767,
+        "height": 1024,
+        "dsf": 2
+      },
+      {
+        "name": "390@3",
+        "width": 390,
+        "height": 844,
+        "dsf": 3
+      },
+      {
+        "name": "1024@2",
+        "width": 1024,
+        "height": 800,
+        "dsf": 2
+      },
+      {
+        "name": "1023@2",
+        "width": 1023,
+        "height": 800,
+        "dsf": 2
+      },
+      {
+        "name": "768@2",
+        "width": 768,
+        "height": 1024,
+        "dsf": 2
+      },
+      {
+        "name": "390@2",
+        "width": 390,
+        "height": 844,
+        "dsf": 2
+      }
+    ],
+    "contrast": [
+      {
+        "name": "2056",
+        "width": 2056,
+        "height": 1200
+      },
+      {
+        "name": "1440",
+        "width": 1440,
+        "height": 900
+      },
+      {
+        "name": "1280",
+        "width": 1280,
+        "height": 800
+      },
+      {
+        "name": "1279",
+        "width": 1279,
+        "height": 800
+      },
+      {
+        "name": "1152",
+        "width": 1152,
+        "height": 800
+      },
+      {
+        "name": "1024",
+        "width": 1024,
+        "height": 800
+      },
+      {
+        "name": "1023",
+        "width": 1023,
+        "height": 800
+      },
+      {
+        "name": "767",
+        "width": 767,
+        "height": 1024
+      },
+      {
+        "name": "390",
+        "width": 390,
+        "height": 844
+      }
+    ],
+    "shots": [
+      "1280",
+      "2056",
+      "390"
+    ],
+    "showBand": [
+      {
+        "name": "768@2",
+        "width": 768,
+        "height": 900,
+        "dsf": 2
+      },
+      {
+        "name": "1024@2",
+        "width": 1024,
+        "height": 900,
+        "dsf": 2
+      },
+      {
+        "name": "1045@2",
+        "width": 1045,
+        "height": 900,
+        "dsf": 2
+      },
+      {
+        "name": "1072@2",
+        "width": 1072,
+        "height": 900,
+        "dsf": 2
+      },
+      {
+        "name": "1099@2",
+        "width": 1099,
+        "height": 900,
+        "dsf": 2
+      },
+      {
+        "name": "1100@2",
+        "width": 1100,
+        "height": 900,
+        "dsf": 2
+      },
+      {
+        "name": "1280@2",
+        "width": 1280,
+        "height": 900,
+        "dsf": 2
+      },
+      {
+        "name": "1440@2",
+        "width": 1440,
+        "height": 900,
+        "dsf": 2
+      },
+      {
+        "name": "2056@2",
+        "width": 2056,
+        "height": 900,
+        "dsf": 2
+      },
+      {
+        "name": "390@3",
+        "width": 390,
+        "height": 844,
+        "dsf": 3
+      },
+      {
+        "name": "390@2",
+        "width": 390,
+        "height": 844,
+        "dsf": 2
+      }
+    ]
+  },
+  "sources": {
+    "/images/orchid-violet.jpg": 7327,
+    "/images/orchid-pink.jpg": 3456,
+    "/images/orchid-dark.jpg": 5184,
+    "/images/orchid-purple.jpg": 5308,
+    "/images/orchid-yellow.jpg": 3100,
+    "/images/orchid-purple-flip.jpg": 5308,
+    "/images/orchid-dark-flip.jpg": 5184,
+    "/images/orchid-purple-home.jpg": 4900,
+    "/images/orchid-violet-contact.jpg": 4112,
+    "/images/orchid-violet-about.jpg": 5027,
+    "/images/orchid-violet-society.jpg": 4112,
+    "/images/orchid-purple-band.jpg": 4608,
+    "/images/orchid-dark-showband.jpg": 2400
+  },
+  "heroRoutes": [
+    {
+      "path": "/about",
+      "image": "/images/orchid-violet-about.jpg",
+      "position": "0% 63%"
+    },
+    {
+      "path": "/judging",
+      "image": "/images/orchid-purple-flip.jpg",
+      "position": "0% 40%"
+    },
+    {
+      "path": "/societies",
+      "image": "/images/orchid-purple-flip.jpg",
+      "position": "0% 20%"
+    },
+    {
+      "path": "/societies/[slug]",
+      "image": "/images/orchid-violet-society.jpg",
+      "position": "0% 50%",
+      "discover": {
+        "from": "/societies",
+        "hrefPrefix": "/societies/"
+      }
+    },
+    {
+      "path": "/events",
+      "image": "/images/orchid-purple-flip.jpg",
+      "position": "0% 60%"
+    },
+    {
+      "path": "/sponsors",
+      "image": "/images/orchid-dark-flip.jpg",
+      "position": "0% 100%",
+      "lede": true
+    },
+    {
+      "path": "/contact",
+      "image": "/images/orchid-violet-contact.jpg",
+      "position": "0% 80%"
+    },
+    {
+      "path": "/media-kit",
+      "image": null,
+      "position": null,
+      "variant": "type",
+      "conditional": {
+        "reason": "requireMediaKitAccess gate: a redirect when the gate environment has no access",
+        "alternative": "a non-200 final response; the typographic hero is then asserted by the static check only"
+      }
+    },
+    {
+      "path": "/memorandum-of-incorporation",
+      "image": null,
+      "position": null,
+      "variant": "type"
+    },
+    {
+      "path": "/privacy",
+      "image": null,
+      "position": null,
+      "variant": "type"
+    },
+    {
+      "path": "/terms",
+      "image": null,
+      "position": null,
+      "variant": "type"
+    },
+    {
+      "path": "/refunds",
+      "image": null,
+      "position": null,
+      "variant": "type"
+    },
+    {
+      "path": "/members",
+      "image": null,
+      "position": null,
+      "variant": "type",
+      "conditional": {
+        "reason": "hidden route; may 404 in the gate environment",
+        "alternative": "404 and no PageHero"
+      }
+    },
+    {
+      "path": "/events/submit",
+      "image": null,
+      "position": "gap",
+      "gapNote": "crop not ruled (NOS Design 10-26 table silent); image is the current map entry"
+    },
+    {
+      "path": "/events/[slug]",
+      "image": null,
+      "position": "gap",
+      "discover": {
+        "from": "/events",
+        "hrefPrefix": "/events/"
+      },
+      "gapNote": "crop not ruled; ShowBand sits under the h1 (SV-1)"
+    },
+    {
+      "path": "/__saoc-404-probe",
+      "image": null,
+      "position": "gap",
+      "expectStatus": 404,
+      "gapNote": "app/not-found.tsx; crop not ruled; 10-26 flags its scrim (HM-2)"
+    }
+  ],
+  "home": {
+    "path": "/",
+    "slides": [
+      {
+        "key": "orchid-dark",
+        "src": "/images/orchid-dark.jpg",
+        "crop": "0,487-5184,2968",
+        "position": "62% 50%",
+        "alt": ""
+      },
+      {
+        "key": "orchid-purple",
+        "src": "/images/orchid-purple-home.jpg",
+        "crop": "408,560-4900x2344 (derived orchid-purple-home)",
+        "position": "50% 50%",
+        "alt": ""
+      }
+    ],
+    "retired": [
+      "orchid-violet"
+    ],
+    "contactSheets": ".tmp/sandbox/saoc-carousel-contact-sheet/",
+    "stackBelowOrAt": {
+      "floor": 1023,
+      "ceiling": 1279,
+      "rule": "<=1023 stacks like NOS H-a (2/1 photo band first, copy on a solid panel). At 1024-1279 the localised 270deg scrim widens to the copy block only; if the dark slide still fails per glyph there, the stack extends to <=1279. gate-home.mjs reports which."
+    }
+  },
+  "innerContactSheets": ".tmp/sandbox/saoc-inner-contact-sheet/manifest.json",
+  "derived": [
+    {
+      "name": "orchid-purple-flip",
+      "from": "public/images/orchid-purple.jpg",
+      "rect": {
+        "x0": 0,
+        "y0": 450,
+        "x1": 5308,
+        "y1": 2800
+      },
+      "flip": true,
+      "probe": "clip",
+      "ruling": "NOS Design inner picks: clip excluded"
+    },
+    {
+      "name": "orchid-dark-flip",
+      "from": "public/images/orchid-dark.jpg",
+      "rect": {
+        "x0": 0,
+        "y0": 790,
+        "x1": 5184,
+        "y1": 2560
+      },
+      "flip": true,
+      "probe": "stake",
+      "ruling": "NOS Design 2026-10-25 (C1): y1=2560, stake probe unchanged; 2590 came from a downscaled sheet. Supersedes the 10-24 G8 sponsors rect 0,790-4112,2610 (centred layout), which is rejected."
+    },
+    {
+      "name": "orchid-purple-home",
+      "from": "public/images/orchid-purple.jpg",
+      "rect": {
+        "x0": 408,
+        "y0": 560,
+        "x1": 5308,
+        "y1": 2904
+      },
+      "flip": false,
+      "probe": "clip",
+      "ruling": "home carousel slide 2 (replaces violet): stops above the black clip, top ~y3026 (measured 3140)"
+    },
+    {
+      "name": "orchid-violet-contact",
+      "from": "public/images/orchid-violet.jpg",
+      "rect": {
+        "x0": 0,
+        "y0": 1900,
+        "x1": 4112,
+        "y1": 3720
+      },
+      "flip": false,
+      "probe": "hardware"
+    },
+    {
+      "name": "orchid-violet-about",
+      "from": "public/images/orchid-violet.jpg",
+      "rect": {
+        "x0": 2300,
+        "y0": 1100,
+        "x1": 7327,
+        "y1": 4000
+      },
+      "flip": false,
+      "probe": "hardware"
+    },
+    {
+      "name": "orchid-violet-society",
+      "from": "public/images/orchid-violet.jpg",
+      "rect": {
+        "x0": 0,
+        "y0": 400,
+        "x1": 4112,
+        "y1": 2600
+      },
+      "flip": false,
+      "probe": "hardware"
+    },
+    {
+      "name": "orchid-purple-band",
+      "from": "public/images/orchid-purple.jpg",
+      "rect": {
+        "x0": 700,
+        "y0": 750,
+        "x1": 5308,
+        "y1": 2050
+      },
+      "flip": false,
+      "probe": "clip",
+      "ruling": "NOS Design final (2026-10-25): /about PhotoBand takes a purple cut 700,750-5308,2050 (4608x1300, 3.545:1) at 50% 45%; clip excluded (first dark row y3140). If the band box is height-driven past 4608 device px, record as rulingNeeded (NOS Design extends y0 towards 450), never a clamp or a pass."
+    },
+    {
+      "name": "orchid-dark-showband",
+      "from": "public/images/orchid-dark.jpg",
+      "rect": {
+        "x0": 300,
+        "y0": 850,
+        "x1": 2700,
+        "y1": 2600
+      },
+      "flip": false,
+      "probe": "stake",
+      "stub": {
+        "x0": 1815,
+        "x1": 1970,
+        "y0": 2618,
+        "y1": 2786,
+        "y1Max": 2600
+      },
+      "ruling": "NOS Design final (2026-10-25): 300,850-2700,2600 (2400x1750, 1.3714:1), 50% 50%, no flip; replaces 300,1000-2700,2542; y1 must never pass 2600 (clears the stem stub y2618-2786, x1815-1970 by 18 native px)"
+    }
+  ],
+  "probes": {
+    "clip": {
+      "desc": "black clip (purple)",
+      "key": "orchid-purple",
+      "window": [
+        3900,
+        5100,
+        2400,
+        4160
+      ],
+      "pixel": "dark"
+    },
+    "stake": {
+      "desc": "teal stake (dark)",
+      "key": "orchid-dark",
+      "window": [
+        2300,
+        2900,
+        2300,
+        3456
+      ],
+      "pixel": "teal"
+    },
+    "hardware": {
+      "desc": "black hardware (violet)",
+      "key": "orchid-violet",
+      "window": [
+        2300,
+        3000,
+        3900,
+        4885
+      ],
+      "pixel": "dark"
+    }
+  },
+  "bands": [
+    {
+      "name": "PhotoBand",
+      "selector": "figure[data-photo-band] img",
+      "routes": [
+        "/about",
+        "/judging"
+      ],
+      "image": null,
+      "sizesNote": "sizes computed from the file aspect; quality 88",
+      "perRoute": {
+        "/about": {
+          "image": "/images/orchid-purple-band.jpg",
+          "position": "50% 45%"
+        },
+        "/judging": {
+          "image": "/images/orchid-dark.jpg",
+          "position": null,
+          "note": "stays orchid-dark native (NOS Design)"
+        }
+      }
+    },
+    {
+      "name": "ShowBand",
+      "selector": "[data-show-band-image] img",
+      "routes": [
+        "/",
+        "/events"
+      ],
+      "image": "/images/orchid-dark-showband.jpg",
+      "imageToday": "/images/orchid-yellow.jpg",
+      "stubProbe": {
+        "rule": "the visible cover region of the derived cut, translated to original coordinates (offset = rect x0,y0), must not intersect the stub",
+        "offset": [
+          300,
+          850
+        ],
+        "size": [
+          2400,
+          1750
+        ],
+        "stub": {
+          "x0": 1815,
+          "x1": 1970,
+          "y0": 2618,
+          "y1": 2786
+        }
+      },
+      "position": "50% 50%",
+      "cssBox": {
+        "note": "grid 1fr/1.1fr from 1100, 3/2 block below; the 2400x1750 cut is width-driven in the 3/2 block (1.5 > 1.3714) and height-driven in the grid while H*1.3714 > W; it covers a box up to 875 css high at @2 (1750/2) and 1200 css wide; A9 measures the real box. 1045-1099@2 is GATED (no clamp exception).",
+        "maxCssWidthCovered": 1200
+      },
+      "maxBoxHeightCss": 875
+    }
+  ],
+  "requiredWidth": {
+    "formula": "required = ceil(max(boxW, boxH * fileW / fileH) * DPR) in device px, the file being the served source or derived cut (its own aspect), checked against currentSrc decoded in a bare new Image(); NOS Design ruling 2026-10-25",
+    "boxNote": "post-mirror heroes: inner hero >=768 height floor 480 (copy may make it taller: the gate measures), stacked <768 is a vw x vw/2 band; home: stacked 2/1 band <=1023 (or <=1279 if the gate says so), else vw x 720 floor (984 at 2056; SAOC QA measured about 793 high at 1023 on main); PhotoBand floor 320 (minHeight on /about and /judging); ShowBand its grid box. heightDriven marks cover boxes whose required width exceeds boxW x DPR: those need sizes = max(100vw, boxH x aspect).",
+    "rows": [
+      {
+        "name": "hero /about",
+        "file": "/images/orchid-violet-about.jpg",
+        "fileSize": [
+          5027,
+          2900
+        ],
+        "aspect": 1.733,
+        "required": {
+          "2056@2": {
+            "cssBox": [
+              2056,
+              480
+            ],
+            "requiredDevicePx": 4112,
+            "fileWidth": 5027,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1440@2": {
+            "cssBox": [
+              1440,
+              480
+            ],
+            "requiredDevicePx": 2880,
+            "fileWidth": 5027,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1280@2": {
+            "cssBox": [
+              1280,
+              480
+            ],
+            "requiredDevicePx": 2560,
+            "fileWidth": 5027,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1024@2": {
+            "cssBox": [
+              1024,
+              480
+            ],
+            "requiredDevicePx": 2048,
+            "fileWidth": 5027,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1023@2": {
+            "cssBox": [
+              1023,
+              480
+            ],
+            "requiredDevicePx": 2046,
+            "fileWidth": 5027,
+            "ok": true,
+            "heightDriven": false
+          },
+          "768@2": {
+            "cssBox": [
+              768,
+              480
+            ],
+            "requiredDevicePx": 1665,
+            "fileWidth": 5027,
+            "ok": true,
+            "heightDriven": true
+          },
+          "767@2": {
+            "cssBox": [
+              767,
+              384
+            ],
+            "requiredDevicePx": 1534,
+            "fileWidth": 5027,
+            "ok": true,
+            "heightDriven": false
+          },
+          "390@3": {
+            "cssBox": [
+              390,
+              195
+            ],
+            "requiredDevicePx": 1170,
+            "fileWidth": 5027,
+            "ok": true,
+            "heightDriven": false
+          }
+        }
+      },
+      {
+        "name": "hero /judging",
+        "file": "/images/orchid-purple-flip.jpg",
+        "fileSize": [
+          5308,
+          2350
+        ],
+        "aspect": 2.259,
+        "required": {
+          "2056@2": {
+            "cssBox": [
+              2056,
+              480
+            ],
+            "requiredDevicePx": 4112,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1440@2": {
+            "cssBox": [
+              1440,
+              480
+            ],
+            "requiredDevicePx": 2880,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1280@2": {
+            "cssBox": [
+              1280,
+              480
+            ],
+            "requiredDevicePx": 2560,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1024@2": {
+            "cssBox": [
+              1024,
+              480
+            ],
+            "requiredDevicePx": 2169,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": true
+          },
+          "1023@2": {
+            "cssBox": [
+              1023,
+              480
+            ],
+            "requiredDevicePx": 2169,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": true
+          },
+          "768@2": {
+            "cssBox": [
+              768,
+              480
+            ],
+            "requiredDevicePx": 2169,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": true
+          },
+          "767@2": {
+            "cssBox": [
+              767,
+              384
+            ],
+            "requiredDevicePx": 1733,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": true
+          },
+          "390@3": {
+            "cssBox": [
+              390,
+              195
+            ],
+            "requiredDevicePx": 1322,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": true
+          }
+        }
+      },
+      {
+        "name": "hero /societies",
+        "file": "/images/orchid-purple-flip.jpg",
+        "fileSize": [
+          5308,
+          2350
+        ],
+        "aspect": 2.259,
+        "required": {
+          "2056@2": {
+            "cssBox": [
+              2056,
+              480
+            ],
+            "requiredDevicePx": 4112,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1440@2": {
+            "cssBox": [
+              1440,
+              480
+            ],
+            "requiredDevicePx": 2880,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1280@2": {
+            "cssBox": [
+              1280,
+              480
+            ],
+            "requiredDevicePx": 2560,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1024@2": {
+            "cssBox": [
+              1024,
+              480
+            ],
+            "requiredDevicePx": 2169,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": true
+          },
+          "1023@2": {
+            "cssBox": [
+              1023,
+              480
+            ],
+            "requiredDevicePx": 2169,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": true
+          },
+          "768@2": {
+            "cssBox": [
+              768,
+              480
+            ],
+            "requiredDevicePx": 2169,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": true
+          },
+          "767@2": {
+            "cssBox": [
+              767,
+              384
+            ],
+            "requiredDevicePx": 1733,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": true
+          },
+          "390@3": {
+            "cssBox": [
+              390,
+              195
+            ],
+            "requiredDevicePx": 1322,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": true
+          }
+        }
+      },
+      {
+        "name": "hero /societies/[slug]",
+        "file": "/images/orchid-violet-society.jpg",
+        "fileSize": [
+          4112,
+          2200
+        ],
+        "aspect": 1.869,
+        "required": {
+          "2056@2": {
+            "cssBox": [
+              2056,
+              480
+            ],
+            "requiredDevicePx": 4112,
+            "fileWidth": 4112,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1440@2": {
+            "cssBox": [
+              1440,
+              480
+            ],
+            "requiredDevicePx": 2880,
+            "fileWidth": 4112,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1280@2": {
+            "cssBox": [
+              1280,
+              480
+            ],
+            "requiredDevicePx": 2560,
+            "fileWidth": 4112,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1024@2": {
+            "cssBox": [
+              1024,
+              480
+            ],
+            "requiredDevicePx": 2048,
+            "fileWidth": 4112,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1023@2": {
+            "cssBox": [
+              1023,
+              480
+            ],
+            "requiredDevicePx": 2046,
+            "fileWidth": 4112,
+            "ok": true,
+            "heightDriven": false
+          },
+          "768@2": {
+            "cssBox": [
+              768,
+              480
+            ],
+            "requiredDevicePx": 1795,
+            "fileWidth": 4112,
+            "ok": true,
+            "heightDriven": true
+          },
+          "767@2": {
+            "cssBox": [
+              767,
+              384
+            ],
+            "requiredDevicePx": 1534,
+            "fileWidth": 4112,
+            "ok": true,
+            "heightDriven": false
+          },
+          "390@3": {
+            "cssBox": [
+              390,
+              195
+            ],
+            "requiredDevicePx": 1170,
+            "fileWidth": 4112,
+            "ok": true,
+            "heightDriven": false
+          }
+        }
+      },
+      {
+        "name": "hero /events",
+        "file": "/images/orchid-purple-flip.jpg",
+        "fileSize": [
+          5308,
+          2350
+        ],
+        "aspect": 2.259,
+        "required": {
+          "2056@2": {
+            "cssBox": [
+              2056,
+              480
+            ],
+            "requiredDevicePx": 4112,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1440@2": {
+            "cssBox": [
+              1440,
+              480
+            ],
+            "requiredDevicePx": 2880,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1280@2": {
+            "cssBox": [
+              1280,
+              480
+            ],
+            "requiredDevicePx": 2560,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1024@2": {
+            "cssBox": [
+              1024,
+              480
+            ],
+            "requiredDevicePx": 2169,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": true
+          },
+          "1023@2": {
+            "cssBox": [
+              1023,
+              480
+            ],
+            "requiredDevicePx": 2169,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": true
+          },
+          "768@2": {
+            "cssBox": [
+              768,
+              480
+            ],
+            "requiredDevicePx": 2169,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": true
+          },
+          "767@2": {
+            "cssBox": [
+              767,
+              384
+            ],
+            "requiredDevicePx": 1733,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": true
+          },
+          "390@3": {
+            "cssBox": [
+              390,
+              195
+            ],
+            "requiredDevicePx": 1322,
+            "fileWidth": 5308,
+            "ok": true,
+            "heightDriven": true
+          }
+        }
+      },
+      {
+        "name": "hero /sponsors",
+        "file": "/images/orchid-dark-flip.jpg",
+        "fileSize": [
+          5184,
+          1770
+        ],
+        "aspect": 2.929,
+        "required": {
+          "2056@2": {
+            "cssBox": [
+              2056,
+              480
+            ],
+            "requiredDevicePx": 4112,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1440@2": {
+            "cssBox": [
+              1440,
+              480
+            ],
+            "requiredDevicePx": 2880,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1280@2": {
+            "cssBox": [
+              1280,
+              480
+            ],
+            "requiredDevicePx": 2812,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": true
+          },
+          "1024@2": {
+            "cssBox": [
+              1024,
+              480
+            ],
+            "requiredDevicePx": 2812,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": true
+          },
+          "1023@2": {
+            "cssBox": [
+              1023,
+              480
+            ],
+            "requiredDevicePx": 2812,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": true
+          },
+          "768@2": {
+            "cssBox": [
+              768,
+              480
+            ],
+            "requiredDevicePx": 2812,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": true
+          },
+          "767@2": {
+            "cssBox": [
+              767,
+              384
+            ],
+            "requiredDevicePx": 2247,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": true
+          },
+          "390@3": {
+            "cssBox": [
+              390,
+              195
+            ],
+            "requiredDevicePx": 1714,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": true
+          }
+        }
+      },
+      {
+        "name": "hero /contact",
+        "file": "/images/orchid-violet-contact.jpg",
+        "fileSize": [
+          4112,
+          1820
+        ],
+        "aspect": 2.259,
+        "required": {
+          "2056@2": {
+            "cssBox": [
+              2056,
+              480
+            ],
+            "requiredDevicePx": 4112,
+            "fileWidth": 4112,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1440@2": {
+            "cssBox": [
+              1440,
+              480
+            ],
+            "requiredDevicePx": 2880,
+            "fileWidth": 4112,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1280@2": {
+            "cssBox": [
+              1280,
+              480
+            ],
+            "requiredDevicePx": 2560,
+            "fileWidth": 4112,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1024@2": {
+            "cssBox": [
+              1024,
+              480
+            ],
+            "requiredDevicePx": 2169,
+            "fileWidth": 4112,
+            "ok": true,
+            "heightDriven": true
+          },
+          "1023@2": {
+            "cssBox": [
+              1023,
+              480
+            ],
+            "requiredDevicePx": 2169,
+            "fileWidth": 4112,
+            "ok": true,
+            "heightDriven": true
+          },
+          "768@2": {
+            "cssBox": [
+              768,
+              480
+            ],
+            "requiredDevicePx": 2169,
+            "fileWidth": 4112,
+            "ok": true,
+            "heightDriven": true
+          },
+          "767@2": {
+            "cssBox": [
+              767,
+              384
+            ],
+            "requiredDevicePx": 1733,
+            "fileWidth": 4112,
+            "ok": true,
+            "heightDriven": true
+          },
+          "390@3": {
+            "cssBox": [
+              390,
+              195
+            ],
+            "requiredDevicePx": 1322,
+            "fileWidth": 4112,
+            "ok": true,
+            "heightDriven": true
+          }
+        }
+      },
+      {
+        "name": "home slide orchid-dark",
+        "file": "/images/orchid-dark.jpg",
+        "fileSize": [
+          5184,
+          3456
+        ],
+        "aspect": 1.5,
+        "required": {
+          "2056@2": {
+            "cssBox": [
+              2056,
+              984
+            ],
+            "requiredDevicePx": 4112,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1440@2": {
+            "cssBox": [
+              1440,
+              720
+            ],
+            "requiredDevicePx": 2880,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1280@2": {
+            "cssBox": [
+              1280,
+              720
+            ],
+            "requiredDevicePx": 2560,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1024@2": {
+            "cssBox": [
+              1024,
+              720
+            ],
+            "requiredDevicePx": 2160,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": true
+          },
+          "1023@2": {
+            "cssBox": [
+              1023,
+              512
+            ],
+            "requiredDevicePx": 2046,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": false
+          },
+          "768@2": {
+            "cssBox": [
+              768,
+              384
+            ],
+            "requiredDevicePx": 1536,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": false
+          },
+          "767@2": {
+            "cssBox": [
+              767,
+              384
+            ],
+            "requiredDevicePx": 1534,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": false
+          },
+          "390@3": {
+            "cssBox": [
+              390,
+              195
+            ],
+            "requiredDevicePx": 1170,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": false
+          }
+        }
+      },
+      {
+        "name": "home slide orchid-purple-home",
+        "file": "/images/orchid-purple-home.jpg",
+        "fileSize": [
+          4900,
+          2344
+        ],
+        "aspect": 2.09,
+        "required": {
+          "2056@2": {
+            "cssBox": [
+              2056,
+              984
+            ],
+            "requiredDevicePx": 4114,
+            "fileWidth": 4900,
+            "ok": true,
+            "heightDriven": true
+          },
+          "1440@2": {
+            "cssBox": [
+              1440,
+              720
+            ],
+            "requiredDevicePx": 3011,
+            "fileWidth": 4900,
+            "ok": true,
+            "heightDriven": true
+          },
+          "1280@2": {
+            "cssBox": [
+              1280,
+              720
+            ],
+            "requiredDevicePx": 3011,
+            "fileWidth": 4900,
+            "ok": true,
+            "heightDriven": true
+          },
+          "1024@2": {
+            "cssBox": [
+              1024,
+              720
+            ],
+            "requiredDevicePx": 3011,
+            "fileWidth": 4900,
+            "ok": true,
+            "heightDriven": true
+          },
+          "1023@2": {
+            "cssBox": [
+              1023,
+              512
+            ],
+            "requiredDevicePx": 2139,
+            "fileWidth": 4900,
+            "ok": true,
+            "heightDriven": true
+          },
+          "768@2": {
+            "cssBox": [
+              768,
+              384
+            ],
+            "requiredDevicePx": 1606,
+            "fileWidth": 4900,
+            "ok": true,
+            "heightDriven": true
+          },
+          "767@2": {
+            "cssBox": [
+              767,
+              384
+            ],
+            "requiredDevicePx": 1604,
+            "fileWidth": 4900,
+            "ok": true,
+            "heightDriven": true
+          },
+          "390@3": {
+            "cssBox": [
+              390,
+              195
+            ],
+            "requiredDevicePx": 1223,
+            "fileWidth": 4900,
+            "ok": true,
+            "heightDriven": true
+          }
+        }
+      },
+      {
+        "name": "PhotoBand /about (orchid-purple-band 700,750-5308,2050 @50% 45%)",
+        "file": "/images/orchid-purple-band.jpg",
+        "fileSize": [
+          4608,
+          1300
+        ],
+        "aspect": 3.545,
+        "required": {
+          "2056@2": {
+            "cssBox": [
+              2056,
+              320
+            ],
+            "requiredDevicePx": 4112,
+            "fileWidth": 4608,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1440@2": {
+            "cssBox": [
+              1440,
+              320
+            ],
+            "requiredDevicePx": 2880,
+            "fileWidth": 4608,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1280@2": {
+            "cssBox": [
+              1280,
+              320
+            ],
+            "requiredDevicePx": 2560,
+            "fileWidth": 4608,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1024@2": {
+            "cssBox": [
+              1024,
+              320
+            ],
+            "requiredDevicePx": 2269,
+            "fileWidth": 4608,
+            "ok": true,
+            "heightDriven": true
+          },
+          "1023@2": {
+            "cssBox": [
+              1023,
+              320
+            ],
+            "requiredDevicePx": 2269,
+            "fileWidth": 4608,
+            "ok": true,
+            "heightDriven": true
+          },
+          "768@2": {
+            "cssBox": [
+              768,
+              320
+            ],
+            "requiredDevicePx": 2269,
+            "fileWidth": 4608,
+            "ok": true,
+            "heightDriven": true
+          },
+          "767@2": {
+            "cssBox": [
+              767,
+              320
+            ],
+            "requiredDevicePx": 2269,
+            "fileWidth": 4608,
+            "ok": true,
+            "heightDriven": true
+          },
+          "390@3": {
+            "cssBox": [
+              390,
+              320
+            ],
+            "requiredDevicePx": 3403,
+            "fileWidth": 4608,
+            "ok": true,
+            "heightDriven": true
+          }
+        },
+        "heightLimitCss": {
+          "@2": 650
+        },
+        "rulingNeededIf": "the band box is taller than 4608/(2*3.545) = 650 css at @2 (433 at @3), or any height-driven box needs more than 4608 device px: record as rulingNeeded, NOS Design extends y0 towards 450; never a pass or a clamp"
+      },
+      {
+        "name": "PhotoBand /judging (orchid-dark native)",
+        "file": "/images/orchid-dark.jpg",
+        "fileSize": [
+          5184,
+          3456
+        ],
+        "aspect": 1.5,
+        "required": {
+          "2056@2": {
+            "cssBox": [
+              2056,
+              320
+            ],
+            "requiredDevicePx": 4112,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1440@2": {
+            "cssBox": [
+              1440,
+              320
+            ],
+            "requiredDevicePx": 2880,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1280@2": {
+            "cssBox": [
+              1280,
+              320
+            ],
+            "requiredDevicePx": 2560,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1024@2": {
+            "cssBox": [
+              1024,
+              320
+            ],
+            "requiredDevicePx": 2048,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1023@2": {
+            "cssBox": [
+              1023,
+              320
+            ],
+            "requiredDevicePx": 2046,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": false
+          },
+          "768@2": {
+            "cssBox": [
+              768,
+              320
+            ],
+            "requiredDevicePx": 1536,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": false
+          },
+          "767@2": {
+            "cssBox": [
+              767,
+              320
+            ],
+            "requiredDevicePx": 1534,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": false
+          },
+          "390@3": {
+            "cssBox": [
+              390,
+              320
+            ],
+            "requiredDevicePx": 1440,
+            "fileWidth": 5184,
+            "ok": true,
+            "heightDriven": true
+          }
+        },
+        "heightLimitCss": {
+          "@2": null
+        }
+      },
+      {
+        "name": "ShowBand",
+        "file": "/images/orchid-dark-showband.jpg",
+        "fileSize": [
+          2400,
+          1750
+        ],
+        "aspect": 1.3714,
+        "required": {
+          "768@2": {
+            "cssBox": [
+              768,
+              512
+            ],
+            "requiredDevicePx": 1536,
+            "fileWidth": 2400,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1024@2": {
+            "cssBox": [
+              1024,
+              683
+            ],
+            "requiredDevicePx": 2048,
+            "fileWidth": 2400,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1045@2": {
+            "cssBox": [
+              1045,
+              697
+            ],
+            "requiredDevicePx": 2090,
+            "fileWidth": 2400,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1072@2": {
+            "cssBox": [
+              1072,
+              715
+            ],
+            "requiredDevicePx": 2144,
+            "fileWidth": 2400,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1099@2": {
+            "cssBox": [
+              1099,
+              733
+            ],
+            "requiredDevicePx": 2198,
+            "fileWidth": 2400,
+            "ok": true,
+            "heightDriven": false
+          },
+          "1100@2": {
+            "cssBox": [
+              524,
+              748
+            ],
+            "requiredDevicePx": 2053,
+            "fileWidth": 2400,
+            "ok": true,
+            "heightDriven": true
+          },
+          "1280@2": {
+            "cssBox": [
+              608,
+              762
+            ],
+            "requiredDevicePx": 2091,
+            "fileWidth": 2400,
+            "ok": true,
+            "heightDriven": true
+          },
+          "1440@2": {
+            "cssBox": [
+              686,
+              684
+            ],
+            "requiredDevicePx": 1878,
+            "fileWidth": 2400,
+            "ok": true,
+            "heightDriven": true
+          },
+          "2056@2": {
+            "cssBox": [
+              979,
+              684
+            ],
+            "requiredDevicePx": 1958,
+            "fileWidth": 2400,
+            "ok": true,
+            "heightDriven": false
+          },
+          "390@3": {
+            "cssBox": [
+              390,
+              260
+            ],
+            "requiredDevicePx": 1170,
+            "fileWidth": 2400,
+            "ok": true,
+            "heightDriven": false
+          },
+          "390@2": {
+            "cssBox": [
+              390,
+              260
+            ],
+            "requiredDevicePx": 780,
+            "fileWidth": 2400,
+            "ok": true,
+            "heightDriven": false
+          }
+        }
+      }
+    ],
+    "flags": [],
+    "showBandEventRows": {
+      "file": "/images/orchid-dark-showband.jpg",
+      "fileSize": [
+        2400,
+        1750
+      ],
+      "aspect": 1.3714,
+      "rows": [
+        {
+          "viewport": "1025@2",
+          "cssBox": [
+            430,
+            751
+          ],
+          "requiredDevicePx": 2060,
+          "fileWidth": 2400,
+          "ok": true,
+          "status": "derived from the measured curve",
+          "copyColumnCss": 434
+        },
+        {
+          "viewport": "1100@2",
+          "cssBox": [
+            462,
+            758
+          ],
+          "requiredDevicePx": 2080,
+          "fileWidth": 2400,
+          "ok": true,
+          "status": "derived from the measured curve",
+          "copyColumnCss": 478
+        },
+        {
+          "viewport": "1280@2",
+          "cssBox": [
+            538,
+            688
+          ],
+          "requiredDevicePx": 1888,
+          "fileWidth": 2400,
+          "ok": true,
+          "status": "derived from the measured curve",
+          "copyColumnCss": 582
+        },
+        {
+          "viewport": "1440@2",
+          "cssBox": [
+            605,
+            684
+          ],
+          "requiredDevicePx": 1877,
+          "fileWidth": 2400,
+          "ok": true,
+          "status": "derived from the measured curve",
+          "copyColumnCss": 675
+        },
+        {
+          "viewport": "2056@2",
+          "cssBox": [
+            864,
+            684
+          ],
+          "requiredDevicePx": 1877,
+          "fileWidth": 2400,
+          "ok": true,
+          "status": "derived from the measured curve",
+          "copyColumnCss": 720
+        }
+      ],
+      "maxBoxHeightCssAt2": 875
+    },
+    "showBandRealHeight": {
+      "note": "NOS Design measured the ShowBand photo box at 602x762 at 1280@2 (copy column makes the row 762 high, not the 620 floor)",
+      "at1280@2": {
+        "cssBox": [
+          602,
+          762
+        ],
+        "requiredDevicePx": 2372,
+        "fileWidth": 2400,
+        "spare": 28
+      },
+      "maxBoxHeightCssAt2": 875,
+      "risk": "Measured: no row exceeds 2400. The tallest box is 762 css (plateau 1276-1372), required 2090; the cut covers a box up to 875 css high at @2. The tightest row is the stacked 1099@2 at 2198 (width-driven). The height is content-driven: a copy change can push it past 875, which A9 and A19 catch.",
+      "yellowRowIsShowBand": "the baseline \"Yellow orchid on t..\" row (602x762 at 1280) IS the home and /events ShowBand photo; yellow retires and it becomes orchid-dark-showband (2400x1542, 1.556:1). No sizes is tuned for yellow.",
+      "requiredByBoxHeightAt2": {
+        "620": 1701,
+        "700": 1920,
+        "762": 2091,
+        "800": 2195,
+        "875": 2400,
+        "876": 2403,
+        "900": 2469
+      },
+      "overLimitAboveCssHeight": 875,
+      "contentDriven": "the row height is the copy column height plus 180 css of padding (min 620), so it is content-driven: a future copy change, a longer title or a narrower column can push the box past 771 css and the required width past 2400. A9 and A19 catch it as a failure; nothing clamps.",
+      "derivedFromMeasured": {
+        "1280@2": {
+          "measured": [
+            602,
+            762
+          ],
+          "requiredDevicePx": 2091,
+          "spare": 309
+        }
+      },
+      "strictRows": [
+        "1100@2",
+        "1280@2",
+        "1440@2",
+        "2056@2",
+        "event 1025@2",
+        "event 1100@2",
+        "event 1280@2",
+        "event 1440@2",
+        "event 2056@2"
+      ],
+      "measured": {
+        "build": "production build of origin/main ee2e9941 (CI env, placeholder preview on, beta wall up), Chromium, deviceScaleFactor 2, viewport height 900, read-only",
+        "routes": [
+          "/",
+          "/events"
+        ],
+        "identicalOnBothRoutes": true,
+        "formula": "required = ceil(max(W, H x 2400/1750) x 2)",
+        "rows": [
+          {
+            "vw": 768,
+            "W": 768,
+            "H": 512,
+            "copyColumnW": 704,
+            "copyColumnH": 487,
+            "requiredAt2": 1536,
+            "over2400": false,
+            "heightDriven": false
+          },
+          {
+            "vw": 800,
+            "W": 800,
+            "H": 533.3,
+            "copyColumnW": 720,
+            "copyColumnH": 487,
+            "requiredAt2": 1600,
+            "over2400": false,
+            "heightDriven": false
+          },
+          {
+            "vw": 832,
+            "W": 832,
+            "H": 554.7,
+            "copyColumnW": 720,
+            "copyColumnH": 487,
+            "requiredAt2": 1664,
+            "over2400": false,
+            "heightDriven": false
+          },
+          {
+            "vw": 864,
+            "W": 864,
+            "H": 576,
+            "copyColumnW": 720,
+            "copyColumnH": 488,
+            "requiredAt2": 1728,
+            "over2400": false,
+            "heightDriven": false
+          },
+          {
+            "vw": 896,
+            "W": 896,
+            "H": 597.3,
+            "copyColumnW": 720,
+            "copyColumnH": 489,
+            "requiredAt2": 1792,
+            "over2400": false,
+            "heightDriven": false
+          },
+          {
+            "vw": 928,
+            "W": 928,
+            "H": 618.7,
+            "copyColumnW": 720,
+            "copyColumnH": 490,
+            "requiredAt2": 1856,
+            "over2400": false,
+            "heightDriven": false
+          },
+          {
+            "vw": 960,
+            "W": 960,
+            "H": 640,
+            "copyColumnW": 720,
+            "copyColumnH": 492,
+            "requiredAt2": 1920,
+            "over2400": false,
+            "heightDriven": false
+          },
+          {
+            "vw": 992,
+            "W": 992,
+            "H": 661.3,
+            "copyColumnW": 720,
+            "copyColumnH": 493,
+            "requiredAt2": 1984,
+            "over2400": false,
+            "heightDriven": false
+          },
+          {
+            "vw": 1024,
+            "W": 1024,
+            "H": 682.7,
+            "copyColumnW": 720,
+            "copyColumnH": 494,
+            "requiredAt2": 2048,
+            "over2400": false,
+            "heightDriven": false
+          },
+          {
+            "vw": 1056,
+            "W": 1056,
+            "H": 704,
+            "copyColumnW": 720,
+            "copyColumnH": 496,
+            "requiredAt2": 2112,
+            "over2400": false,
+            "heightDriven": false
+          },
+          {
+            "vw": 1088,
+            "W": 1088,
+            "H": 725.3,
+            "copyColumnW": 720,
+            "copyColumnH": 497,
+            "requiredAt2": 2176,
+            "over2400": false,
+            "heightDriven": false
+          },
+          {
+            "vw": 1099,
+            "W": 1099,
+            "H": 732.7,
+            "copyColumnW": 720,
+            "copyColumnH": 498,
+            "requiredAt2": 2198,
+            "over2400": false,
+            "heightDriven": false
+          },
+          {
+            "vw": 1100,
+            "W": 523.8,
+            "H": 748.4,
+            "copyColumnW": 416,
+            "copyColumnH": 568,
+            "requiredAt2": 2053,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1116,
+            "W": 531.4,
+            "H": 749.7,
+            "copyColumnW": 425,
+            "copyColumnH": 570,
+            "requiredAt2": 2057,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1132,
+            "W": 539,
+            "H": 751.1,
+            "copyColumnW": 433,
+            "copyColumnH": 571,
+            "requiredAt2": 2061,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1148,
+            "W": 546.7,
+            "H": 752.4,
+            "copyColumnW": 441,
+            "copyColumnH": 572,
+            "requiredAt2": 2064,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1164,
+            "W": 554.3,
+            "H": 753.8,
+            "copyColumnW": 450,
+            "copyColumnH": 574,
+            "requiredAt2": 2068,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1180,
+            "W": 561.9,
+            "H": 755.1,
+            "copyColumnW": 458,
+            "copyColumnH": 575,
+            "requiredAt2": 2072,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1196,
+            "W": 569.5,
+            "H": 756.4,
+            "copyColumnW": 466,
+            "copyColumnH": 576,
+            "requiredAt2": 2075,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1212,
+            "W": 577.1,
+            "H": 757.8,
+            "copyColumnW": 475,
+            "copyColumnH": 578,
+            "requiredAt2": 2079,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1228,
+            "W": 584.8,
+            "H": 759.1,
+            "copyColumnW": 483,
+            "copyColumnH": 579,
+            "requiredAt2": 2083,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1244,
+            "W": 592.4,
+            "H": 760.4,
+            "copyColumnW": 492,
+            "copyColumnH": 580,
+            "requiredAt2": 2086,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1260,
+            "W": 600,
+            "H": 761.8,
+            "copyColumnW": 500,
+            "copyColumnH": 582,
+            "requiredAt2": 2090,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1276,
+            "W": 607.6,
+            "H": 762,
+            "copyColumnW": 508,
+            "copyColumnH": 582,
+            "requiredAt2": 2091,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1292,
+            "W": 615.2,
+            "H": 762,
+            "copyColumnW": 517,
+            "copyColumnH": 582,
+            "requiredAt2": 2091,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1308,
+            "W": 622.8,
+            "H": 762,
+            "copyColumnW": 525,
+            "copyColumnH": 582,
+            "requiredAt2": 2091,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1324,
+            "W": 630.5,
+            "H": 762,
+            "copyColumnW": 534,
+            "copyColumnH": 582,
+            "requiredAt2": 2091,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1340,
+            "W": 638.1,
+            "H": 762,
+            "copyColumnW": 542,
+            "copyColumnH": 582,
+            "requiredAt2": 2091,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1356,
+            "W": 645.7,
+            "H": 762,
+            "copyColumnW": 550,
+            "copyColumnH": 582,
+            "requiredAt2": 2091,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1372,
+            "W": 653.3,
+            "H": 762,
+            "copyColumnW": 559,
+            "copyColumnH": 582,
+            "requiredAt2": 2091,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1388,
+            "W": 660.9,
+            "H": 709.3,
+            "copyColumnW": 567,
+            "copyColumnH": 529,
+            "requiredAt2": 1946,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1404,
+            "W": 668.6,
+            "H": 709.3,
+            "copyColumnW": 575,
+            "copyColumnH": 529,
+            "requiredAt2": 1946,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1420,
+            "W": 676.2,
+            "H": 684.5,
+            "copyColumnW": 584,
+            "copyColumnH": 504,
+            "requiredAt2": 1878,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1436,
+            "W": 683.8,
+            "H": 684.5,
+            "copyColumnW": 592,
+            "copyColumnH": 504,
+            "requiredAt2": 1878,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 1440,
+            "W": 685.7,
+            "H": 684.5,
+            "copyColumnW": 594,
+            "copyColumnH": 504,
+            "requiredAt2": 1878,
+            "over2400": false,
+            "heightDriven": true
+          },
+          {
+            "vw": 2056,
+            "W": 979,
+            "H": 684.5,
+            "copyColumnW": 720,
+            "copyColumnH": 504,
+            "requiredAt2": 1958,
+            "over2400": false,
+            "heightDriven": false
+          }
+        ],
+        "maxRequiredAt2": 2198,
+        "maxHeightCss": 762,
+        "peakViewports": "1276 to 1372 (H 762 flat plateau, first at 1276)",
+        "anyOver2400": false,
+        "marginAtPeak": 27,
+        "stackedRange": "768-1099: H = vw/1.5 exactly (the 3/2 block); box aspect 1.5 > file 1.3714, so WIDTH-driven: required = 2 x vw, 1536 at 768 to 2198 at 1099; sizes 100vw below 1100",
+        "measuredFloorNote": "at 1440 and 2056 the real H is 684.5, not the 620 floor (required 2131)",
+        "maxRequiredViewport": 1099,
+        "tallestObserved": {
+          "H": 762,
+          "firstViewport": 1276,
+          "plateau": "1276 to 1372",
+          "requiredAt2": 2091,
+          "limitCss": 875,
+          "headroomCss": 113
+        },
+        "marginAtMax": 202
+      },
+      "eventSplitDerived": {
+        "rows": [
+          {
+            "vw": 1025,
+            "photoW": 430,
+            "copyColumnW": 434,
+            "estCopyH": 571,
+            "estBoxH": 751,
+            "estRequiredAt2": 2060,
+            "status": "derived from the measured curve, not measured"
+          },
+          {
+            "vw": 1100,
+            "photoW": 462,
+            "copyColumnW": 478,
+            "estCopyH": 578,
+            "estBoxH": 758,
+            "estRequiredAt2": 2080,
+            "status": "derived from the measured curve, not measured"
+          },
+          {
+            "vw": 1280,
+            "photoW": 538,
+            "copyColumnW": 582,
+            "estCopyH": 508,
+            "estBoxH": 688,
+            "estRequiredAt2": 1888,
+            "status": "derived from the measured curve, not measured"
+          },
+          {
+            "vw": 1440,
+            "photoW": 605,
+            "copyColumnW": 675,
+            "estCopyH": 504,
+            "estBoxH": 684,
+            "estRequiredAt2": 1877,
+            "status": "derived from the measured curve, not measured"
+          },
+          {
+            "vw": 2056,
+            "photoW": 864,
+            "copyColumnW": 720,
+            "estCopyH": 504,
+            "estBoxH": 684,
+            "estRequiredAt2": 1877,
+            "status": "derived from the measured curve, not measured"
+          }
+        ],
+        "note": "not built: #92 does not carry the 42/58 variant (HM-1 adds it); derived from the home curve of copy-column height against copy-column width, same component and copy"
+      },
+      "rulingNeededRows": []
+    }
+  },
+  "showBandEventSplit": {
+    "route": "/events/[slug]",
+    "discover": {
+      "from": "/events",
+      "hrefPrefix": "/events/"
+    },
+    "photoShare": 0.42,
+    "minCopyCss": 420,
+    "linesAt": 1440,
+    "maxLines": 2,
+    "viewports": [
+      {
+        "name": "1025@2",
+        "width": 1025,
+        "height": 900,
+        "dsf": 2
+      },
+      {
+        "name": "1100@2",
+        "width": 1100,
+        "height": 900,
+        "dsf": 2
+      },
+      {
+        "name": "1280@2",
+        "width": 1280,
+        "height": 900,
+        "dsf": 2
+      },
+      {
+        "name": "1440@2",
+        "width": 1440,
+        "height": 900,
+        "dsf": 2
+      },
+      {
+        "name": "2056@2",
+        "width": 2056,
+        "height": 900,
+        "dsf": 2
+      }
+    ],
+    "conditional": "only the National Show event renders a ShowBand",
+    "note": "the component is shared with the home page and /events (grid 1fr/1.1fr from 1100); the split is opt-in for the event page only, above 1024 (breakpoint 1025 for the variant). Whether the home and /events ShowBands should move too is flagged to NOS Design."
+  },
+  "sweep14": {
+    "note": "the 14 SAOC routes this gate covers for hero, band and PhotoBand served width (SAOC image-sweep baseline, 2026-10-25); per-route rows are finalised from NOS Design/SAOC table when it arrives",
+    "routes": [
+      "/about",
+      "/judging",
+      "/societies",
+      "/societies/[slug]",
+      "/events",
+      "/sponsors",
+      "/contact",
+      "/media-kit",
+      "/memorandum-of-incorporation",
+      "/privacy",
+      "/terms",
+      "/refunds",
+      "/members",
+      "/events/submit"
+    ],
+    "otherImages": [
+      "/ home hero (2 slides)",
+      "/ and /events ShowBand",
+      "/about and /judging PhotoBand",
+      "/events/[slug] ShowBand (A19)"
+    ],
+    "tablePending": false,
+    "source": "NOS Design HM-1 served-width baseline, comms.md 2026-10-25 (61 rows, image-sweep.js). The rows are the list of things to cover, not expected values: sim rows are not measurements, the gate measures at a real DPR (390@3 with deviceScaleFactor 3)."
+  },
+  "sweep": {
+    "viewports": [
+      "390@2",
+      "390@3",
+      "1280@2",
+      "2056@2"
+    ],
+    "routes": [
+      "/",
+      "/events",
+      "/about",
+      "/judging",
+      "/societies",
+      "/societies/[slug]",
+      "/sponsors",
+      "/contact",
+      "/media-kit",
+      "/memorandum-of-incorporation",
+      "/privacy",
+      "/terms",
+      "/refunds",
+      "/members",
+      "/events/submit"
+    ],
+    "minBox": [
+      80,
+      60
+    ],
+    "rule": "every raster img wider than 80 and taller than 60 CSS px on each route, not svg: served naturalWidth >= ceil(max(boxW, boxH x aspect) x DPR) when object-fit is cover, else ceil(boxW x DPR)",
+    "coversBeyondHeroes": [
+      "NavCards on / (343x429, sizes 100vw at 390)",
+      "YearbookStrip on / (sizes 50vw from 1100)",
+      "footer emblem SaocLockup 166x160 (needs 498 at @3; real @3 should reach the 640 variant)",
+      "ShowBand on / and /events (602x762 at 1280, real height 762 not the 620 floor)"
+    ]
+  },
+  "legalRoutes": [
+    "/privacy",
+    "/terms",
+    "/refunds"
+  ],
+  "lgrf": {
+    "hosts": [
+      "saoc.localhost",
+      "nos.localhost"
+    ],
+    "viewports": [
+      1440,
+      390
+    ],
+    "noEyebrow": true,
+    "indexEqualsH2Count": true,
+    "h2Gap": 56,
+    "h2GapNote": "NOS Design #108 measured 'every legal h2 gap 56 at 1440 and 390'; the exact measurement point is not written down - gate-lgrf.mjs measures the gap between consecutive legal h2 elements' boxes (previous block bottom to h2 top) and is an open question for NOS Design"
+  }
+}
