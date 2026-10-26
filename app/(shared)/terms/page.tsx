@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 
 import { LegalBody, legalIndex } from '@/components/legal/LegalBody';
 import { LegalBreadcrumb } from '@/components/legal/LegalBreadcrumb';
-import { LegalHero } from '@/components/nos/LegalHero';
 import { NosHero } from '@/components/nos/NosHero';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
+import { PageHero } from '@/components/ui/PageHero';
 import { WEBSITE_TERMS } from '@/content/legal/terms';
 import { buildPageMetadata } from '@/lib/seo';
 import { requestSite } from '@/lib/request-site';
@@ -34,12 +34,7 @@ export default async function TermsPage() {
       ) : (
         <>
           <LegalBreadcrumb label={PAGE_LABEL} />
-          <LegalHero
-            route="/terms"
-            eyebrow="Legal"
-            image="/images/orchid-violet.jpg"
-            heading={WEBSITE_TERMS.title}
-          />
+          <PageHero image="/images/orchid-violet.jpg" heading={WEBSITE_TERMS.title} />
         </>
       )}
       <DocumentLayout index={legalIndex(WEBSITE_TERMS)}>

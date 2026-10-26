@@ -5,8 +5,8 @@
 // `selftest` mutates the live DOM to break each rule and fails unless the judges flag the break, so a green
 // run cannot come from a blind detector. Pattern follows gate-standard.mjs. Needs node_modules and .env.local.
 import { spawn, execSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash, randomUUID } from 'node:crypto';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import { chromium } from '@playwright/test';
 
@@ -26,6 +26,15 @@ if (!ROUTES.length) { console.error(`${site}: no routes in goldens/pg1.json (${s
 if (site === 'nos' && !BASE_ENV) { console.error('nos: NOS_BASE_URL is required'); process.exit(1); }
 
 async function sanityStamp() {
+  // Under fixture replay the dataset is the recorded fixture dir: no network call, and the stamp
+  // still changes whenever a fixture file is added, removed or edited.
+  if (process.env.SANITY_FIXTURE_MODE === 'replay') {
+    const dir = process.env.SANITY_FIXTURE_DIR;
+    if (!dir) return `unreadable:${Date.now()}`;
+    const h = createHash('sha1');
+    for (const f of readdirSync(dir).filter((n) => n.endsWith('.json')).sort()) h.update(f + '\0').update(readFileSync(`${dir}/${f}`)).update('\0');
+    return `fixture:${h.digest('hex')}`;
+  }
   try {
     const env = Object.fromEntries(readFileSync('.env.local', 'utf8').split('\n').filter((l) => /^[A-Z_]+=/.test(l)).map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1).replace(/^["']|["']$/g, '')]));
     const query = encodeURIComponent('{"n": count(*), "u": *|order(_updatedAt desc)[0]._updatedAt}');
@@ -35,10 +44,17 @@ async function sanityStamp() {
   } catch { return `unreadable:${Date.now()}`; }
 }
 
+// Everything a rendered page is built from, plus this gate's own code: a change under any of these
+// must invalidate the cache.
+const SOURCE_PATHS = `app components lib content sanity types public proxy.ts ${SPEC}/checks`;
+// Build and runtime config that changes the render; hashed by content (.env.local is gitignored,
+// so git diff never sees it; only its hash enters the key, never a value).
+const CONFIG_FILES = ['next.config.ts', 'postcss.config.mjs', 'package.json', 'pnpm-lock.yaml', '.env.local'];
+
 // Untracked source counts by name AND content: an edit to a new, uncommitted file must invalidate
 // the cached measurement just as an edit to a tracked one does.
 function untrackedDigest() {
-  const files = execSync('git ls-files --others --exclude-standard -- app components lib content').toString().split('\n').filter(Boolean);
+  const files = execSync(`git ls-files --others --exclude-standard -- ${SOURCE_PATHS}`).toString().split('\n').filter(Boolean).concat(CONFIG_FILES);
   const h = createHash('sha1');
   for (const f of files) h.update(f + '\0').update(existsSync(f) ? readFileSync(f) : '').update('\0');
   return h.digest('hex');
@@ -47,8 +63,27 @@ function untrackedDigest() {
 async function stateKey() {
   const stamp = await sanityStamp();
   const head = execSync('git rev-parse HEAD').toString().trim();
-  const diff = execSync('git diff HEAD -- app components lib content proxy.ts').toString();
+  const diff = execSync(`git diff HEAD -- ${SOURCE_PATHS}`).toString();
   return createHash('sha1').update(site + (BASE_ENV ?? 'local-dev-server') + stamp + head + diff + untrackedDigest() + readFileSync(`${SPEC}/goldens/pg1.json`) + readFileSync(`${SPEC}/checks/gate-pg1.mjs`)).digest('hex');
+}
+
+// An externally served build (a base URL from the environment) has no identity the cache key can
+// see, so its measurements are never cached: nothing is read and nothing is written.
+function cachePolicy(baseUrl, wantCache) {
+  if (baseUrl) return { read: false, write: false, note: `cache: off, ${baseUrl} is an externally served build the cache key cannot identify` };
+  return { read: wantCache, write: true, note: null };
+}
+
+// Selftest of the policy: an external base URL must neither read nor write, whatever --cache says.
+function cachePolicyFails() {
+  const fails = [];
+  for (const want of [true, false]) {
+    const ext = cachePolicy('https://example.test', want);
+    if (ext.read || ext.write || !ext.note) fails.push(`selftest "external base URL skips the cache" (--cache ${want}): read ${ext.read}, write ${ext.write}`);
+  }
+  const local = cachePolicy(undefined, true);
+  if (!local.read || !local.write) fails.push('selftest "external base URL skips the cache": the local dev server lost its --cache read or write');
+  return fails;
 }
 
 function freePort() {
@@ -336,18 +371,23 @@ async function runSelftest(browser, server) {
   // of the key, and an unchanged file must not. Tested on untrackedDigest() itself: stateKey() also
   // folds in the Sanity stamp, which is the clock when Sanity is unreadable, so a whole-key compare
   // could differ for that reason alone.
-  const probe = 'components/.pg1-selftest-untracked.txt';
+  const probe = `components/.pg1-selftest-${randomUUID()}.txt`;
+  let created = false;
   try {
-    writeFileSync(probe, 'a');
+    writeFileSync(probe, 'a', { flag: 'wx' });
+    created = true;
     const a1 = untrackedDigest();
     const a2 = untrackedDigest();
     writeFileSync(probe, 'b');
     const b = untrackedDigest();
     if (a1 !== a2) fails.push('selftest "untracked content changes the cache key": digest differs for unchanged content, so it is not a content hash');
     if (b === a1) fails.push('selftest "untracked content changes the cache key": digest unchanged after an untracked file\'s content changed');
-  } finally { rmSync(probe, { force: true }); }
+  } finally { if (created) rmSync(probe); }
+  let ran = 0;
   for (const c of cases) {
     const route = ROUTES.find((r) => r.id === c.route);
+    if (!route) { console.log(`selftest "${c.name}": skipped, ${site} has no route "${c.route}"`); continue; }
+    ran++;
     const ctx = await browser.newContext({ viewport: PG.viewports[c.vp] });
     const page = await ctx.newPage();
     await page.goto(server.base + route.path, { waitUntil: 'networkidle', timeout: 90000 });
@@ -370,6 +410,7 @@ async function runSelftest(browser, server) {
     if (!found.length) fails.push(`selftest "${c.name}": judge reported nothing after the break, so it cannot catch this defect`);
     await ctx.close();
   }
+  if (!ran) fails.push(`selftest: no case could run on ${site} (none of its routes match a case), so the judges are unproven here`);
   return fails;
 }
 
@@ -377,14 +418,18 @@ const fails = [];
 const server = await startServer();
 const browser = await chromium.launch();
 try {
-  if (check === 'selftest') fails.push(...await runSelftest(browser, server));
+  if (check === 'selftest') fails.push(...cachePolicyFails(), ...await runSelftest(browser, server));
   else {
-    mkdirSync(CACHE_DIR, { recursive: true });
+    const policy = cachePolicy(BASE_ENV, useCache);
+    if (policy.note) console.log(policy.note);
     const file = `${CACHE_DIR}/measure-${site}.json`;
-    const key = await stateKey();
+    const key = policy.read || policy.write ? await stateKey() : null;
     let data = null;
-    if (useCache && existsSync(file)) { const c = JSON.parse(readFileSync(file, 'utf8')); if (c.key === key) data = c.data; }
-    if (!data) { data = await measureAll(browser, server); writeFileSync(file, JSON.stringify({ key, data })); }
+    if (policy.read && existsSync(file)) { const c = JSON.parse(readFileSync(file, 'utf8')); if (c.key === key) data = c.data; }
+    if (!data) {
+      data = await measureAll(browser, server);
+      if (policy.write) { mkdirSync(CACHE_DIR, { recursive: true }); writeFileSync(file, JSON.stringify({ key, data })); }
+    }
     let eligible = 0, h2Total = 0;
     for (const r of ROUTES) {
       for (const vpName of WIDTHS[check]) {

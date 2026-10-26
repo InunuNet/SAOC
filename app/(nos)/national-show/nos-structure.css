@@ -2697,7 +2697,8 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
    ============================================================ */
 
 /* Sticky values the shared CSS reads (SAOC 9bff74a6): the aside sticks at 100px, the index scroller
-   under the NOS header (not sticky under 780), and an h2 lands below both. */
+   under the NOS header (not sticky under 780), and an h2 lands below both. --doc-scroll-margin is the
+   total landing distance of an h2 from the viewport top, not a remainder. */
 .nos-theme {
   --doc-aside-top: 100px;
   --doc-index-top: env(safe-area-inset-top, 0px);
@@ -2706,12 +2707,12 @@ details[open] > .nos-faq-summary .nos-faq-icon-v {
 @media (min-width: 780px) {
   .nos-theme {
     --doc-index-top: 97px;
-    --doc-scroll-margin: 56px;
+    --doc-scroll-margin: 136px;
   }
 }
 @media (min-width: 1024px) {
   .nos-theme {
-    --doc-scroll-margin: 24px;
+    --doc-scroll-margin: 104px;
   }
 }
 

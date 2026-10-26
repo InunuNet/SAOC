@@ -41,6 +41,7 @@
     { "id": "sponsors", "path": "/sponsors", "firstContent": "doc-main", "minH2": 1 },
     { "id": "judging", "path": "/judging", "firstContent": "doc-main", "minH2": 0 },
     { "id": "privacy", "path": "/privacy", "firstContent": "doc-main", "minH2": 2 },
+    { "id": "refunds", "path": "/refunds", "firstContent": "doc-main", "minH2": 2 },
     { "id": "terms", "path": "/terms", "firstContent": "doc-main", "minH2": 2 },
     { "id": "moi", "path": "/memorandum-of-incorporation", "firstContent": "doc-main", "minH2": 0 }
   ],
