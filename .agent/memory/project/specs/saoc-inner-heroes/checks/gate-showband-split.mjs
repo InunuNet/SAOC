@@ -1,6 +1,6 @@
 // ShowBand 42/58 split on the event page (NOS Design via the #92 sign-off). Above 1024 the National Show event page
 // (/events/[slug]) gives the photo column 42% of the band and the copy column at least 420px; at 1440 the h2 and the dates take at
-// most 2 lines each. The home ShowBand and /events keep the 1fr/1.1fr split (47.6% photo): the ruling names the event page only.
+// most 2 lines each. The home ShowBand keeps (#109 renders /events with showPhoto={false}, so it has no ShowBand photo to measure) the 1fr/1.1fr split (47.6% photo): the ruling names the event page only.
 import { GOLDEN, launchChromium, newContext, discoverPath, withServer } from './_lib.mjs';
 
 const SPLIT = GOLDEN.showBandEventSplit;
@@ -46,7 +46,7 @@ await withServer(5, 'showband-split (saoc)', async (server, c) => {
     }
     const context = await newContext(browser, SPLIT.viewports.find((v) => v.width === SPLIT.linesAt));
     const page = await context.newPage();
-    for (const p of ['/', '/events']) {
+    for (const p of ['/']) {
       await page.goto(`${server.saoc}${p}`, { waitUntil: 'load' });
       const m = await metrics(page);
       if (!m) { c.check(`[saoc ${SPLIT.linesAt} ${p}] ShowBand present to confirm it keeps its split`, false); continue; }

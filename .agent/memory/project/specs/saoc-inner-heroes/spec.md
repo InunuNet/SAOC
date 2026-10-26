@@ -25,3 +25,9 @@ Base: NOS Site's spec `spec-base.md` (origin/spec/saoc-pagehero-mirror at 700689
 
 ## /about PhotoBand
 /about PhotoBand removed by #109; not re-added (no source for new content). The orchid-purple-band derived cut may stay in the manifest unused. /judging PhotoBand stays orchid-dark native (D11). The stale PageHero literal-100vw assertion is deleted: D6 forbids it.
+
+## Corrections 2026-10-26 (dev gate results)
+1. ShowBand routes are `/` only: #109 renders /events with showPhoto={false}.
+2. A10 stacked band is compared with document.documentElement.clientWidth (html{scrollbar-gutter:stable}, #92).
+3. LegalHero.tsx is exempt from the PageHero-image rule (unused on main, decided untouched).
+4. Probe windows corrected, crop rects unchanged: clip window y0 2400->3000, hardware window y0 3900->4000 (see goldens/crop-map.json probes.*.windowNote). The probe limit (40) is unchanged.

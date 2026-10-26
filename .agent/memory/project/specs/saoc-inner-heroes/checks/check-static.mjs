@@ -65,7 +65,6 @@ for (const r of GOLDEN.heroRoutes.filter((x) => x.variant === 'type')) {
   const file = ['/members', '/media-kit', '/memorandum-of-incorporation'].includes(r.path) ? `app/(marketing)${r.path}/page.tsx` : `app/(shared)${r.path}/page.tsx`;
   if (existsSync(file)) check(`${file}: typographic page passes no image to the hero`, !/\bimage=/.test(read(file)));
 }
-if (existsSync('components/nos/LegalHero.tsx')) check('components/nos/LegalHero.tsx: the SAOC branch passes no image (typographic PageHero)', !/<PageHero[^>]*\bimage=/.test(read('components/nos/LegalHero.tsx')));
 
 check('ShowBand.tsx: data-show-band-image hook present and the image is /images/orchid-dark-showband.jpg', read('components/home/ShowBand.tsx').includes('data-show-band-image') && read('components/home/ShowBand.tsx').includes('/images/orchid-dark-showband.jpg'));
 

@@ -471,10 +471,11 @@
       "window": [
         3900,
         5100,
-        2400,
+        3000,
         4160
       ],
-      "pixel": "dark"
+      "pixel": "dark",
+      "windowNote": "y0 2400 -> 3000 (2026-10-26): dark pixels at y2100-2799 are the narrow blurred rod (x4014-4156, 80-130 wide), not the clip; the clip proper begins at ~y3000 (dark run widens to x3962-4698, ruling: top ~3026). Crop rects are unchanged."
     },
     "stake": {
       "desc": "teal stake (dark)",
@@ -493,10 +494,11 @@
       "window": [
         2300,
         3000,
-        3900,
+        4000,
         4885
       ],
-      "pixel": "dark"
+      "pixel": "dark",
+      "windowNote": "y0 3900 -> 4000 (2026-10-26): dark pixels at y3700-3999 are the thin diagonal wire (x2574-2998), not the hardware ring, which starts at ~y4100 (n 6816 -> 16897). Crop rects are unchanged."
     }
   },
   "bands": [
@@ -521,8 +523,7 @@
       "name": "ShowBand",
       "selector": "[data-show-band-image] img",
       "routes": [
-        "/",
-        "/events"
+        "/"
       ],
       "image": "/images/orchid-dark-showband.jpg",
       "imageToday": "/images/orchid-yellow.jpg",
@@ -548,7 +549,8 @@
         "note": "grid 1fr/1.1fr from 1100, 3/2 block below; the 2400x1750 cut is width-driven in the 3/2 block (1.5 > 1.3714) and height-driven in the grid while H*1.3714 > W; it covers a box up to 875 css high at @2 (1750/2) and 1200 css wide; A9 measures the real box. 1045-1099@2 is GATED (no clamp exception).",
         "maxCssWidthCovered": 1200
       },
-      "maxBoxHeightCss": 875
+      "maxBoxHeightCss": 875,
+      "eventsNote": "#109 renders /events with showPhoto={false}: no [data-show-band-image] there, so /events is not a ShowBand route"
     }
   ],
   "requiredWidth": {

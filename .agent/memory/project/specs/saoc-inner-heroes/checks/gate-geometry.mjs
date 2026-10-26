@@ -82,7 +82,8 @@ await withServer(2, 'geometry (saoc)', async (server, c) => {
             const diff = await meanAbsDiff(px, normal.b64, photo.b64, { x0: 0, x1: T.bloomCleanZoneEnd, y0: 0, y1: 1 });
             c.check(`${tag} bloom side (left ${T.bloomCleanZoneEnd * 100}%) is the bare photograph: mean abs diff ${diff.toFixed(2)} <= ${T.cleanZoneMeanAbsDiffMax}`, diff <= T.cleanZoneMeanAbsDiffMax);
           } else {
-            c.check(`${tag} stacked: the photograph band spans the viewport width (+-1)`, Math.abs(img.w - vp.width) <= 1, `${img.w}`);
+            const clientW = await page.evaluate(() => document.documentElement.clientWidth); // html{scrollbar-gutter:stable} (#92) reserves 15px at 767 and 390
+            c.check(`${tag} stacked: the photograph band spans the viewport width (+-1) (clientWidth ${clientW})`, Math.abs(img.w - clientW) <= 1, `${img.w}`);
             c.check(`${tag} stacked: band height = width / ${T.bandAspect} +-${T.bandAspectTolerancePx}px (${Math.round(img.w / T.bandAspect)})`, Math.abs(img.h - img.w / T.bandAspect) <= T.bandAspectTolerancePx, `${img.h}`);
             c.check(`${tag} stacked: the band sits at the top of the hero`, Math.abs(img.y - hero.y) <= 1);
             for (const [k, r] of Object.entries(copy)) {
