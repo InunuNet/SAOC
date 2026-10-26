@@ -10,5 +10,6 @@ export NEXT_PUBLIC_NOS_SITE_URL="http://nos.localhost:${PORT}"
 export NEXT_PUBLIC_SAOC_SITE_URL="http://saoc.localhost:${PORT}"
 export BETA_PASSWORD_WALL_OFF=true
 export SANITY_FIXTURE_MODE=replay
+export SANITY_FIXTURE_DIR="${SANITY_FIXTURE_DIR:-$PWD/.agent/memory/project/specs/nos-content-standard/fixtures/sanity}"
 unset SITE_PUBLIC_LAUNCH
 exec pnpm build

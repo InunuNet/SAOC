@@ -4,6 +4,7 @@
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { mkdirSync, openSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const SPEC = '.agent/memory/project/specs/saoc-inner-heroes';
 export const GOLDEN = JSON.parse(readFileSync(`${SPEC}/goldens/crop-map.json`, 'utf8'));
@@ -26,6 +27,7 @@ export function startServer(offset) {
   };
   env.BETA_PASSWORD_WALL_OFF = 'true'; // 10-26 gate environment: wall off, Sanity replay fixtures. The sandbox basic-auth values above stay as dummies.
   env.SANITY_FIXTURE_MODE = 'replay';
+  env.SANITY_FIXTURE_DIR = process.env.SANITY_FIXTURE_DIR ?? resolve('.agent/memory/project/specs/nos-content-standard/fixtures/sanity'); // replay needs a recorded dir (lib/sanity-fixture.ts); the nos-content-standard capture
   const log = openSync(`${LOG_DIR}/next-start-${port}.log`, 'w');
   const proc = spawn('node_modules/.bin/next', ['start', '-p', String(port)], { stdio: ['ignore', log, log], env });
   return { port, proc, saoc: `http://saoc.localhost:${port}` };
