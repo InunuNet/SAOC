@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { PageHero } from '@/components/ui/PageHero';
+import { RouteHero } from '@/components/ui/RouteHero';
 import { CTASection } from '@/components/ui/CTASection';
 import { client } from '@/sanity/lib/client';
 import { sanityFetch } from '@/sanity/lib/fetch';
@@ -125,8 +125,8 @@ export default async function SocietyPage({
 
   return (
     <>
-      <PageHero
-        image="/images/orchid-violet.jpg"
+      <RouteHero
+        route="/societies/[slug]"
         eyebrow={society.province ?? 'SAOC society'}
         heading={society.name}
         lede={society.region ?? undefined}

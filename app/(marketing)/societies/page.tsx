@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 
-import { PageHero } from '@/components/ui/PageHero';
+import { RouteHero } from '@/components/ui/RouteHero';
 import { SocietiesClient } from './SocietiesClient';
 import { SocietiesFallback } from './SocietiesFallback';
 import type { SanitySociety } from '@/components/societies';
@@ -104,9 +104,9 @@ export default async function SocietiesPage() {
 
   return (
     <>
-      <PageHero
+      <RouteHero
         exempt
-        image="/images/orchid-purple.jpg"
+        route="/societies"
         eyebrow="Affiliated societies"
         heading="Find an orchid society near you"
       />

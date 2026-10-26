@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
 
 import { SkipLink, Header, Footer } from '@/components/chrome';
 import { NosThemeScope } from '@/components/nos/NosThemeScope';
 import { NosFrame } from '@/components/site-chrome/NosFrame';
+import { RouteHero } from '@/components/ui/RouteHero';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { requestSite } from '@/lib/request-site';
 import { SHOW_TITLE } from '@/lib/show-title';
@@ -32,32 +32,13 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export function NotFoundSection() {
   return (
-    <section className="relative flex min-h-[640px] items-center overflow-hidden bg-primary">
-      <Image
-        src="/images/orchid-dark.jpg"
-        alt=""
-        fill
-        priority
-        className="object-cover opacity-20"
-        sizes="100vw"
-      />
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/50 to-transparent"
-      />
-
-      <div className="saoc-container relative z-10 w-full py-24 text-center">
-        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ivory mb-4">
-          404 — Page not found
-        </p>
-        <h1 className="font-serif font-light text-[clamp(42px,6vw,80px)] leading-[1.04] tracking-[-0.015em] text-ivory max-w-[20ch] mx-auto mb-6">
-          This orchid has left the bench.
-        </h1>
-        <p className="font-sans text-[18px] leading-relaxed text-ivory/70 max-w-[46ch] mx-auto mb-10">
-          The page you&rsquo;re looking for doesn&rsquo;t exist or may have moved. Start from the
-          home page or find a society near you.
-        </p>
-        <div className="flex flex-wrap gap-4 justify-center">
+    <RouteHero
+      route="/404"
+      eyebrow="404 — Page not found"
+      heading="This orchid has left the bench."
+      lede="The page you’re looking for doesn’t exist or may have moved. Start from the home page or find a society near you."
+      actions={
+        <div className="mt-10 flex flex-wrap justify-center gap-4">
           <Link
             href="/"
             className="font-sans text-[14px] font-medium bg-accent px-6 py-3 text-ink transition-colors duration-150 hover:bg-accent-soft"
@@ -71,8 +52,8 @@ export function NotFoundSection() {
             Find a society
           </Link>
         </div>
-      </div>
-    </section>
+      }
+    />
   );
 }
 

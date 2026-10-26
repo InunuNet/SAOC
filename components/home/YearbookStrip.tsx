@@ -25,6 +25,9 @@ export function YearbookStrip() {
               Our annual record of award-winning plants, hybridisation notes, society reports and
               judges&apos; commentary. Available to members or via direct subscription.
             </p>
+            <div className="mt-4">
+              <PlaceholderMarker />
+            </div>
           </div>
           <div>
             <div className="flex flex-wrap gap-3 border-t border-rule pt-6">
@@ -56,9 +59,6 @@ export function YearbookStrip() {
             className="object-cover"
             sizes="(min-width: 1100px) 50vw, 100vw"
           />
-          <div className="absolute bottom-5 left-5 z-10">
-            <PlaceholderMarker />
-          </div>
         </div>
       </div>
     </section>

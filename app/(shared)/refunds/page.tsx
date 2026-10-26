@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { LegalBreadcrumb } from '@/components/legal/LegalBreadcrumb';
 import { NosHero } from '@/components/nos/NosHero';
 import { DocumentLayout, type DocumentIndexEntry } from '@/components/ui/DocumentLayout';
-import { PageHero } from '@/components/ui/PageHero';
+import { RouteHero } from '@/components/ui/RouteHero';
 import { ProvisionalFigure } from '@/components/ui/ProvisionalFigure';
 import { PROVISIONAL_REFUND_POLICY } from '@/lib/provisional-figures';
 import { buildPageMetadata } from '@/lib/seo';
@@ -73,7 +73,7 @@ export default async function RefundsPage() {
       ) : (
         <>
           <LegalBreadcrumb label={TITLE} />
-          <PageHero image="/images/orchid-violet.jpg" heading={TITLE} />
+          <RouteHero route="/refunds" heading={TITLE} />
         </>
       )}
 

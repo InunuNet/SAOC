@@ -1,5 +1,5 @@
 import { SubmitEventForm } from '@/components/events/SubmitEventForm';
-import { PageHero } from '@/components/ui/PageHero';
+import { RouteHero } from '@/components/ui/RouteHero';
 
 interface SubmitEventPageBodyProps {
   societies: ReadonlyArray<{ id: string; name: string }>;
@@ -8,8 +8,8 @@ interface SubmitEventPageBodyProps {
 export function SubmitEventPageBody({ societies }: SubmitEventPageBodyProps) {
   return (
     <>
-      <PageHero
-        image="/images/orchid-purple.jpg"
+      <RouteHero
+        route="/events/submit"
         eyebrow="Events"
         heading="Submit an event"
         lede="Your submission will be reviewed by the council before it appears on the site."

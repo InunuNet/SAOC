@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 import { Breadcrumb } from '@/components/chrome/Breadcrumb';
-import { PageHero } from '@/components/ui/PageHero';
+import { RouteHero } from '@/components/ui/RouteHero';
 import { buildPageMetadata } from '@/lib/seo';
 import { CTASection } from '@/components/ui/CTASection';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
@@ -21,8 +21,8 @@ export default function MembersPage() {
   return (
     <>
       <Breadcrumb items={[{ label: 'Members Portal' }]} />
-      <PageHero
-        image="/images/orchid-yellow.jpg"
+      <RouteHero
+        route="/members"
         eyebrow="For paid-up members"
         heading="Members Portal"
         lede={LEDE}

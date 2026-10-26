@@ -1,0 +1,14 @@
+/* Per-route crop and source-width cap for PageHero (critique fixes 4 and 15, 2026-10-25).
+   PageHero owns the markup; this wrapper only sets the photograph's object-position and stops its
+   box at the source width. Past that width the section ground and the scrim fill the rest. */
+.route [data-page-hero] {
+  background-color: var(--primary-800);
+}
+
+.route [data-page-hero] > img {
+  object-position: var(--hero-pos);
+  width: min(100%, var(--hero-src-w)) !important;
+  left: 50% !important;
+  right: auto !important;
+  translate: -50% 0;
+}

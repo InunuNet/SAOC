@@ -23,7 +23,7 @@ if (!/societies\.map\(\(\w+\) => \(?\s*<option[^>]*value=\{\w+\.id\}[^>]*>\s*\{\
 if (/<input[^>]*id="hostSocietyId"/.test(form)) failures.push('the free-text hostSocietyId input is still there');
 
 const body = tryRead('components/events/SubmitEventPageBody.tsx');
-if (!/<PageHero\b/.test(body)) failures.push('SubmitEventPageBody does not render PageHero');
+if (!/<(PageHero|RouteHero)\b/.test(body)) failures.push('SubmitEventPageBody does not render PageHero or RouteHero');
 if (!/<SubmitEventForm\b/.test(body)) failures.push('SubmitEventPageBody does not render SubmitEventForm');
 const page = tryRead('app/(marketing)/events/submit/page.tsx');
 if (!/<SubmitEventPageBody\b/.test(page)) failures.push('events/submit/page.tsx does not render SubmitEventPageBody');

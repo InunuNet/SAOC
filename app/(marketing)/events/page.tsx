@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 
-import { PageHero } from '@/components/ui/PageHero';
+import { RouteHero } from '@/components/ui/RouteHero';
 import { EventsAbout, EventsList, eventHref, type ListedEvent } from '@/components/events';
 import { ShowBand } from '@/components/home';
 import { JsonLd, eventJsonLd } from '@/components/seo/JsonLd';
 import { isNationalShowEvent, listSectionVisible, splitListed } from '@/lib/events-list';
 import { upcomingEventsParams } from '@/lib/sast-date';
-import { upcomingPlaceholderEvents } from '@/lib/data/placeholder-events';
+import { PLACEHOLDER_EVENTS_NOTE, upcomingPlaceholderEvents } from '@/lib/data/placeholder-events';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { buildPageMetadata } from '@/lib/seo';
 import { saocUrl } from '@/lib/site-hosts';
@@ -67,9 +67,9 @@ export default async function EventsPage() {
 
   return (
     <>
-      <PageHero
+      <RouteHero
         exempt
-        image="/images/orchid-purple.jpg"
+        route="/events"
         eyebrow="SAOC calendar"
         heading="Events"
         lede={LEDE}
@@ -95,9 +95,13 @@ export default async function EventsPage() {
       <ShowBand
         show={show}
         detailsHref={showEvent ? `/events/${showEvent.slug}` : undefined}
+        showPhoto={false}
       />
 
-      <EventsAbout intro={eventsPage?.intro} withhold={withhold} />
+      <EventsAbout
+        intro={eventsPage?.intro}
+        placeholderNote={placeholders.length > 0 ? PLACEHOLDER_EVENTS_NOTE : null}
+      />
 
       {listSectionVisible(rest.length) ? (
         <section data-events-list className="saoc-container pb-20">

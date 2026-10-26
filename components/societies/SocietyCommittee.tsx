@@ -18,8 +18,8 @@ export function SocietyCommittee({ society }: SocietyCommitteeProps) {
 
   return (
     <section>
-      <span className="eyebrow">Committee</span>
-      <dl className="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <h2 className="doc-h2">Committee</h2>
+      <dl className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         {members.map((member) => (
           <div key={`${member.role}-${member.name}`}>
             <dt className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">

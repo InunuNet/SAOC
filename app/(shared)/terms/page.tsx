@@ -4,7 +4,7 @@ import { LegalBody, legalIndex } from '@/components/legal/LegalBody';
 import { LegalBreadcrumb } from '@/components/legal/LegalBreadcrumb';
 import { NosHero } from '@/components/nos/NosHero';
 import { DocumentLayout } from '@/components/ui/DocumentLayout';
-import { PageHero } from '@/components/ui/PageHero';
+import { RouteHero } from '@/components/ui/RouteHero';
 import { WEBSITE_TERMS } from '@/content/legal/terms';
 import { buildPageMetadata } from '@/lib/seo';
 import { requestSite } from '@/lib/request-site';
@@ -34,7 +34,7 @@ export default async function TermsPage() {
       ) : (
         <>
           <LegalBreadcrumb label={PAGE_LABEL} />
-          <PageHero image="/images/orchid-violet.jpg" heading={WEBSITE_TERMS.title} />
+          <RouteHero route="/terms" heading={WEBSITE_TERMS.title} />
         </>
       )}
       <DocumentLayout index={legalIndex(WEBSITE_TERMS)}>
