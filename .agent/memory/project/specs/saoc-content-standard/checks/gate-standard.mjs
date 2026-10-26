@@ -7,7 +7,7 @@
 // Needs: node_modules (playwright, next) and .env.local (Sanity read) in the repo root.
 import { spawn, execSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import { chromium } from '@playwright/test';
 
@@ -25,6 +25,15 @@ const useCache = process.argv.includes('--cache');
 // the stamp is the dataset's document count and latest _updatedAt, read from the API (not the CDN). If it
 // cannot be read the stamp is the clock, so nothing is ever reused on a guess.
 async function sanityStamp() {
+  // Under fixture replay the dataset is the recorded fixture dir: no network call, and the stamp
+  // still changes whenever a fixture file is added, removed or edited.
+  if (process.env.SANITY_FIXTURE_MODE === 'replay') {
+    const dir = process.env.SANITY_FIXTURE_DIR;
+    if (!dir) return `unreadable:${Date.now()}`;
+    const h = createHash('sha1');
+    for (const f of readdirSync(dir).filter((n) => n.endsWith('.json')).sort()) h.update(f + '\0').update(readFileSync(`${dir}/${f}`)).update('\0');
+    return `fixture:${h.digest('hex')}`;
+  }
   try {
     const env = Object.fromEntries(readFileSync('.env.local', 'utf8').split('\n').filter((l) => /^[A-Z_]+=/.test(l)).map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1).replace(/^["']|["']$/g, '')]));
     const query = encodeURIComponent('{"n": count(*), "u": *|order(_updatedAt desc)[0]._updatedAt}');
