@@ -1,11 +1,10 @@
 // =============================================================
 // NOS — components/nos-chrome/nos-nav.ts
 // The National Orchid Show site's menu: the Visit / Programme / Exhibit & trade groups, the
-// "The show" links and the Tickets destinations. Labels, descriptors and order are the ones the
+// "The show" links and the Tickets destinations. Labels and order are the ones the
 // SAOC site's old National Show mega carried (mission menu-system-layout4, Brad's approved Layout 4)
 // - moved here verbatim when the show became its own site (mission nos-site-split F3), never
-// retyped. Descriptors are trimmed prefixes of the route manifest's own `purpose` field, never
-// free text.
+// retyped. The menu carries no descriptors (NOS Design ND-1).
 //
 // Hrefs are the INTERNAL show paths (the show tree's own route strings, which page code, the
 // route manifest and the sub-nav match against). The NOS chrome shows the public clean path:
@@ -44,19 +43,16 @@ export const NOS_NAV: readonly NavItem[] = [
             id: 'tickets',
             label: 'Tickets',
             href: showPath('/tickets'),
-            descriptor: 'Buy admission tickets.',
           },
           {
             id: 'show-sponsors',
             label: 'Show sponsors',
             href: showPath('/sponsors'),
-            descriptor: 'The sponsors behind the National Show.',
           },
           {
             id: 'past-shows',
             label: 'Past shows',
             href: showPath('/archive'),
-            descriptor: 'Previous editions.',
           },
         ],
       },
@@ -71,25 +67,21 @@ export const NOS_NAV: readonly NavItem[] = [
             id: 'about-the-show',
             label: 'About the show',
             href: showPath('/about'),
-            descriptor: "The show's theme, what it brings together, and who takes part.",
           },
           {
             id: 'what-to-expect',
             label: 'What to expect',
             href: showPath('/what-to-expect'),
-            descriptor: 'Hours, admission and on-the-day detail for visitors.',
           },
           {
             id: 'plan-your-visit',
             label: 'Plan your visit',
             href: showPath('/plan-your-visit'),
-            descriptor: 'Travel, parking, accommodation and nearby attractions.',
           },
           {
             id: 'faq',
             label: 'FAQ',
             href: showPath('/faq'),
-            descriptor: 'The questions visitors ask us most.',
           },
         ],
       },
@@ -102,7 +94,6 @@ export const NOS_NAV: readonly NavItem[] = [
             id: 'programme',
             label: 'Programme',
             href: showPath('/programme'),
-            descriptor: 'The overall schedule of sessions across the four show days.',
           },
           {
             id: 'workshops',
@@ -118,14 +109,11 @@ export const NOS_NAV: readonly NavItem[] = [
             id: 'wosa-conference',
             label: 'WOSA Conference',
             href: showPath('/wosa-conference'),
-            descriptor:
-              'What the WOSA Conference is and who it is for, with a link out to WOSA for wild-orchid content.',
           },
           {
             id: 'conferences',
             label: 'Conference registration',
             href: showPath('/conferences'),
-            descriptor: 'Register for the Symposium and WOSA Conference.',
           },
         ],
       },
@@ -138,19 +126,16 @@ export const NOS_NAV: readonly NavItem[] = [
             id: 'international-guests',
             label: 'International guests',
             href: showPath('/international-guests'),
-            descriptor: 'Public directory of international guests and exhibitors attending the show.',
           },
           {
             id: 'exhibitors',
             label: 'Plant Entry/Registration',
             href: showPath('/exhibitors'),
-            descriptor: 'Entry process, fees, classes, judging and eligibility for growers entering plants.',
           },
           {
             id: 'vendors',
             label: 'Exhibitors and vendors',
             href: showPath('/vendors'),
-            descriptor: 'Trade vendor showcase, application and registration.',
           },
         ],
       },

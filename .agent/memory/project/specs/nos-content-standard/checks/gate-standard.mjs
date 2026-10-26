@@ -13,7 +13,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { fsRoute, fsTickets, fsTicketsFan, fsHome, fsContact } from './fs-checks.mjs';
+import { fsRoute, fsTickets, fsTicketsFan, fsHome, fsContact, ndNavGate } from './fs-checks.mjs';
 import { AUTH, BANNED, CROPS, RETIRED, gotoRoute, EXCLUDED, ROUTES, STD, driveState, launchChromium, newContext, withServer } from './_lib.mjs';
 
 const HERO_IMG = 'section[data-nos-hero] [data-nos-hero-media] img';
@@ -1099,6 +1099,7 @@ await withServer(1, 'standard', async (server, c) => {
     await fsTickets(browser, server, c);
     await fsTicketsFan(browser, server, c);
     await ledePreloadScope(browser, server, c);
+    await ndNavGate(browser, server, c);
     for (const vp of STD.viewports) {
       const tag = `[${vp.name} /]`; const context = await newContext(browser, vp); const page = await context.newPage();
       if (await gotoRoute(page, server, '/', c, tag)) await homeChecks(page, vp, c, tag);

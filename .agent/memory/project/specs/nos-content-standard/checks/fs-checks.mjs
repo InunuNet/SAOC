@@ -280,6 +280,38 @@ async function fsConferences(page, route, vp, c, tag) {
   c.check(`${t} ${m.length} conference rows; every body element is text-align start/left (${m.flat().filter((x) => !K.textAlign.includes(x.a)).map((x) => `${x.t}=${x.a}`).join(', ') || 'all start'})`, m.length > 0 && m.flat().every((x) => K.textAlign.includes(x.a)));
 }
 
+
+/** ND-1 (NOS Design, root comms.md "ND-1 nav descriptors: remove all 14"): the rendered menu has labels only. No descriptor element anywhere in the nav, every row at least 44px tall, and the row labels are exactly the labels in nos-nav.ts (desktop mega panels at 1440, the drawer at 390). Hole: no check read the nav at all; NAV-G1 only looked at the Workshops line in the source file. */
+export async function ndNavGate(browser, server, c) {
+  const nav = readFileSync('components/nos-chrome/nos-nav.ts', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  const labels = [...new Set([...nav.matchAll(/\blabel:\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g)].map((m) => (m[1] ?? m[2]).replace(/\\'/g, "'").replace(/\s+/g, ' ').trim()))];
+  for (const vp of [{ name: '1440@1', width: 1440, height: 900, dsf: 1, mode: 'mega' }, { name: '390@2', width: 390, height: 844, dsf: 2, mode: 'drawer' }]) {
+    const tag = `[${vp.name} / ND-1]`; const context = await newContext(browser, vp); const page = await context.newPage();
+    if (await gotoRoute(page, server, '/', c, tag)) {
+      let rows = [];
+      if (vp.mode === 'mega') {
+        const ids = await page.evaluate(() => [...document.querySelectorAll('[data-group-trigger]')].map((b) => b.getAttribute('data-group-trigger')));
+        for (const id of ids) {
+          await page.click(`[data-group-trigger="${id}"]`); await page.waitForTimeout(150);
+          rows.push(...await page.evaluate((gid) => [...document.querySelectorAll(`#nh-panel-${gid}:not([hidden]) a`)].map((a) => ({ t: a.textContent.replace(/\s+/g, ' ').trim(), h: a.getBoundingClientRect().height })), id));
+        }
+      } else {
+        await page.click('.nh-burger'); await page.waitForTimeout(250);
+        for (let i = 0; i < 6; i += 1) { const closed = await page.$$('.nd-item[aria-expanded="false"]'); if (!closed.length) break; for (const b of closed) await b.click().catch(() => null); await page.waitForTimeout(120); }
+        rows = await page.evaluate(() => [...document.querySelectorAll('.nd-group a')].filter((a) => a.getBoundingClientRect().height > 0).map((a) => ({ t: a.textContent.replace(/\s+/g, ' ').trim(), h: a.getBoundingClientRect().height })));
+      }
+      const desc = await page.evaluate(() => document.querySelectorAll('.nh-desc, #nh [class*="desc" i]').length);
+      const seen = new Set(rows.map((r) => r.t));
+      c.check(`${tag} no descriptor element in the nav, hidden or shown (${desc} .nh-desc or *desc* elements)`, desc === 0);
+      c.check(`${tag} the menu has rows (${rows.length})`, rows.length > 0);
+      c.check(`${tag} every nav row is at least 44px tall (${rows.filter((r) => r.h < 43.5).map((r) => `${r.t.slice(0, 20)} ${r.h.toFixed(1)}`).join('; ') || 'all'})`, rows.length > 0 && rows.every((r) => r.h >= 43.5));
+      c.check(`${tag} every row's text is exactly a label in nos-nav.ts, with no extra copy (${[...seen].filter((t) => !labels.includes(t)).join(' | ') || 'all labels'})`, [...seen].every((t) => labels.includes(t)));
+      c.check(`${tag} every label in nos-nav.ts is rendered as a row (${labels.filter((l) => !seen.has(l)).join(' | ') || 'all rendered'})`, labels.every((l) => seen.has(l)));
+    }
+    await context.close();
+  }
+}
+
 /** Per-route handlers for the generic route loop. FS-2 adds its routes here. */
 export const ROUTE_HANDLERS = {
   '/international-guests': fsIg,

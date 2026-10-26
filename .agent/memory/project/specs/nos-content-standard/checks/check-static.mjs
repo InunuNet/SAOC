@@ -204,8 +204,8 @@ check('the :focus-visible rule in nos-theme.css is wrapped in :where() (specific
   check('NAV-G1: nos-nav.ts no longer carries the Workshops descriptor', !nav.includes(dropped));
   { const pre = JSON.parse(readFileSync('.agent/memory/project/specs/nos-content-standard/goldens/standard.json', 'utf8')).navDroppedPrefix; for (const f of ['components/nos/nos-route-heroes.ts', 'app/(nos)/national-show/workshops/page.tsx']) check(`NAV-G1: ${f} carries no "${pre}" line (lede or metadata description)`, !read(f).includes(pre)); }
   const ren = JSON.parse(readFileSync('.agent/memory/project/specs/nos-content-standard/goldens/standard.json', 'utf8')).navRenamed;
-  const allowedLine = (l) => (l.startsWith('-') && l.includes(dropped)) || (l.startsWith('-') && l.includes(ren.from)) || (l.startsWith('+') && l.includes(ren.to) && !l.includes(ren.from));
-  check('NAV-G1 / NL-2: every change to nos-nav.ts against origin/main is the removal of the Workshops descriptor line or the rename of the nav label to her "Plant Entry/Registration" (no other descriptor, label or href changed)', ch.length >= 1 && ch.every(allowedLine) && ch.filter((l) => l.startsWith('-') && l.includes(dropped)).length === 1, ch.join(' || ').slice(0, 220));
+  const allowedLine = (l) => (l.startsWith('-') && (/descriptor/.test(l) || /^-\s*['"].*['"],?\s*$/.test(l))) || /^[-+]\s*\/\//.test(l) || (l.startsWith('-') && l.includes(dropped)) || (l.startsWith('-') && l.includes(ren.from)) || (l.startsWith('+') && l.includes(ren.to) && !l.includes(ren.from));
+  check('NAV-G1 / NL-2: every change to nos-nav.ts against origin/main is the removal of a descriptor (ND-1: all of them), a comment line, or the rename of the nav label to her "Plant Entry/Registration" (no other descriptor, label or href changed)', ch.length >= 1 && ch.every(allowedLine) && ch.filter((l) => l.startsWith('-') && l.includes(dropped)).length === 1, ch.join(' || ').slice(0, 220));
   check('NL-2: nos-nav.ts and the exhibitors page carry "Plant Entry/Registration" and no "Exhibitor entry guide"', [nav, read('app/(nos)/national-show/exhibitors/page.tsx')].every((src) => src.includes(ren.to) && !src.includes(ren.from)));
 }
 
@@ -328,15 +328,23 @@ check('added CSS has no dashed 2px rail', !added.some((l) => /border[a-z-]*\s*:\
   check('SY-G1 (Rev 44): the "reserving three lines" comment is gone', !/reserving three lines/.test(struct));
 }
 
-// Rev 46d (NOS Design, root comms.md "SY-G1 names + italic preload scope"): the long name "National Orchid Show Symposium" stays on the ticket, the /programme day-card tile and the nav descriptor (NL-1 covers only the h1, <title>, og:title and crumb),
-// on one condition (R7): the nav descriptor must trace to a Drive source. Its whole sentence must be a substring of a frozen source; if none exists it is builder text and must be removed.
+// ND-1 (NOS Design, root comms.md "ND-1 nav descriptors: remove all 14", 2026-10-26; supersedes the Rev 46d single-descriptor Drive-source test): the manifest `purpose` fields are internal notes, not Lee-Ann's words, so no nav row carries a descriptor.
+// Menu rows are labels only, in the existing label style, each at min-height 44; no replacement copy; group headings unchanged. The rendered side (no descriptor element, rows >= 44px, labels identical to nos-nav.ts) is gated in gate-standard (ndNavGate).
 {
-  const fold = (t) => t.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/\*\*|__|`/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
-  const dir = '.agent/memory/project/specs/nos-content-standard/goldens/sources';
-  const sources = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.md')).map((f) => ({ f, t: fold(read(`${dir}/${f}`)) })) : [];
-  const descs = [...read('components/nos-chrome/nos-nav.ts').matchAll(/id:\s*'symposium'[^}]*?descriptor:\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g)].map((m) => (m[1] ?? m[2]).replace(/\\'/g, "'"));
-  const bad = descs.filter((d) => !sources.some((s) => s.t.includes(fold(d))));
-  check(`NAV-G1 (Rev 46d): the descriptor of the nav entry id 'symposium', if present, is a substring of a frozen Drive source (${descs.length ? descs.map((d) => `"${d}" ${bad.includes(d) ? 'NOT FOUND in any source: builder text, remove it' : 'sourced'}`).join(' | ') : 'none present'})`, bad.length === 0);
+  const stripJs = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/([^:'"])\/\/.*$/gm, '$1');
+  const nav = stripJs(read('components/nos-chrome/nos-nav.ts'));
+  const labelsOf = (src) => [...src.matchAll(/\blabel:\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g)].map((m) => (m[1] ?? m[2]).replace(/\\'/g, "'"));
+  const ren = JSON.parse(readFileSync('.agent/memory/project/specs/nos-content-standard/goldens/standard.json', 'utf8')).navRenamed;
+  let base = ''; try { base = execFileSync('git', ['show', 'origin/main:components/nos-chrome/nos-nav.ts'], { encoding: 'utf8' }); } catch { base = ''; }
+  const want = labelsOf(stripJs(base)).map((l) => (l === ren.from ? ren.to : l)); const have = labelsOf(nav);
+  check(`ND-1: no entry in nos-nav.ts has a descriptor (${(nav.match(/\bdescriptor\s*:/g) ?? []).length} left)`, !/\bdescriptor\s*:/.test(nav));
+  check(`ND-1: the nav labels are unchanged from origin/main apart from the NL-2 rename, in the same order (${have.length} labels, want ${want.length})`, want.length > 0 && JSON.stringify(have) === JSON.stringify(want));
+  const stripCss = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '');
+  const nosChrome = existsSync('components/nos-chrome') ? readdirSync('components/nos-chrome').filter((f) => /\.(ts|tsx|css)$/.test(f) && f !== 'nos-nav.ts') : [];
+  const readers = nosChrome.filter((f) => /\bdescriptor\b|nh-desc/.test(f.endsWith('.css') ? stripCss(read(`components/nos-chrome/${f}`)) : stripJs(read(`components/nos-chrome/${f}`))));
+  check(`ND-1: nothing in components/nos-chrome still reads a descriptor or styles .nh-desc (${readers.join(', ') || 'none'}; the shared SAOC type in components/chrome/nav-config.ts is out of scope)`, readers.length === 0);
+  const others = ['components/nos', 'app/(nos)', 'lib'].flatMap((d) => (existsSync(d) ? readdirSync(d, { recursive: true }).map((f) => `${d}/${f}`).filter((f) => /\.(ts|tsx)$/.test(f)) : [])).filter((f) => /\bnavLeaf\b|NOS_NAV[A-Za-z]*\b/.test(read(f)) && /\.descriptor\b/.test(stripJs(read(f))));
+  check(`ND-1: no sub-nav, show index, sitemap or page reads a nav descriptor (${others.join(', ') || 'none'})`, others.length === 0);
 }
 
 if (fails.length) { console.error(`nos-content-standard static FAILED:\n- ${fails.join('\n- ')}`); process.exit(1); }

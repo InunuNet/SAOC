@@ -39,8 +39,7 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// A destination's accessible name is its label followed by its descriptor, so match the label at
-// the start of the name.
+// A destination's accessible name is its label, so match the label at the start of the name.
 function labelMatcher(label: string): RegExp {
   return new RegExp(`^${escapeRegExp(label)}\\b`);
 }

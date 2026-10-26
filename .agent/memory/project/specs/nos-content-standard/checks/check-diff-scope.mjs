@@ -6,6 +6,7 @@ const ALLOWED = [
   /^sanity\/lib\/client\.ts$/,
   /^components\/nos\/(NosHero|hero-photos|NosSection|NosSubNav|nos-subnav-groups|nos-route-heroes|nos-nav)\.(tsx|ts)$/,
   /^components\/nos-chrome\/nos-nav\.(ts|tsx)$/,
+  /^components\/nos-chrome\/(NosHeader\.tsx|nos-chrome\.css)$/, // ND-1: the descriptor span and its .nh-desc styles go
   /^components\/nos\/Button\.tsx$/, // RB-1 (goldens/spec.md, NOS Design HR-1/RB-1): the R17 10px comment, no R2 2px citation
   /^components\/show\/nos\/HoldingState\.tsx$/, // NL-2 / HM-G1 label (dev e41ea785)
   /^scripts\/generate-image-variants\.mjs$/, // DS-1 crops (dev a82919d2; goldens/crops/NOS-DESIGN-SIGNOFF.txt)
