@@ -1,0 +1,38 @@
+schema: athanor.contract/v1
+slug: newsletter-resubscribe-topics
+goal: 'A re-subscribe stores exactly the topics in the new request, never the pre-unsubscribe topics.'
+created_at: '2026-10-26'
+autonomy: high
+
+features:
+  - id: F1
+    name: 'newsletter-resubscribe-topics'
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/saoc-functionality-fixes/newsletter-resubscribe-topics/goldens/contract-notes.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: '[fail-on-main] unsubscribed [saoc,nos] + request [saoc] stores [saoc] (fails on main)'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/newsletter-resubscribe-topics/checks/check.mjs resub-takes-requested-only'
+    - id: A2
+      description: '[fail-on-main] unsubscribed + no topics via nos-footer stores [nos] (fails on main)'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/newsletter-resubscribe-topics/checks/check.mjs resub-default-topic-from-source'
+    - id: A3
+      description: '[fail-on-main] legacy doc without topics re-subscribing with [saoc] stores [saoc] (fails on main)'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/newsletter-resubscribe-topics/checks/check.mjs resub-legacy-doc-no-topics'
+    - id: A4
+      description: '[guard] guard: re-subscribe keeps token and source, resets status'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/newsletter-resubscribe-topics/checks/check.mjs guard-resub-keeps-identity'
+    - id: A5
+      description: '[guard] guard: already-subscribed union and null no-op, and new-subscriber path, unchanged'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/newsletter-resubscribe-topics/checks/check.mjs guard-subscribed-union-unchanged'
+    - id: A6
+      description: '[guard] guard: footer-newsletter-subscribe lib check still green'
+      command: 'npx tsx .agent/memory/project/specs/footer-newsletter-subscribe/checks/check-newsletter-lib.mjs'
+    - id: A7
+      description: '[guard] guard: whole project typechecks'
+      command: 'pnpm exec tsc --noEmit'

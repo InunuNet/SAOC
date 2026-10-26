@@ -14,8 +14,9 @@ optional `topics` (`saoc` and/or `nos`, stored in that order),
 base64url, 43 chars). Re-subscribing flips the same document back and keeps its original token and
 source, so links already issued keep working. Legacy documents without `topics` are read with a
 single topic derived from `source`; no backfill is needed. A subscribe request without `topics`
-uses that same source default. An explicit empty list or unknown topic is rejected. Re-subscribing
-merges topics into the existing list, including when the address is already subscribed.
+uses that same source default. An explicit empty list or unknown topic is rejected. An unsubscribed
+address that re-subscribes gets exactly the requested topics; an already-subscribed address adding
+a topic still merges it into the existing list.
 
 ## Flow
 

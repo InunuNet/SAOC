@@ -110,18 +110,19 @@ export function applySubscribe(
       unsubscribeToken: input.token,
     };
   }
-  const topics = NEWSLETTER_TOPICS.filter((topic) =>
-    subscriberTopics(existing.topics, existing.source).includes(topic) || requestedTopics.includes(topic));
   if (existing.status === 'subscribed') {
+    const topics = NEWSLETTER_TOPICS.filter((topic) =>
+      subscriberTopics(existing.topics, existing.source).includes(topic) || requestedTopics.includes(topic));
     if (topics.length === subscriberTopics(existing.topics, existing.source).length && existing.topics) return null;
     return { ...existing, topics };
   }
   // Re-subscribe keeps the original token and source so previously issued links keep working.
+  // Topics are exactly the new request: consent given before unsubscribing does not carry over.
   return {
     email: existing.email,
     status: 'subscribed',
     source: existing.source,
-    topics,
+    topics: requestedTopics,
     subscribedAt: input.now,
     unsubscribedAt: null,
     unsubscribeToken: existing.unsubscribeToken,
