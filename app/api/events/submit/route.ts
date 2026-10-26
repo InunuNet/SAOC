@@ -5,6 +5,7 @@ import { createClient } from '@sanity/client';
 import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { initAdmin } from '@/lib/firebase-admin';
 import {
+  buildEventSlug,
   hostSocietyExists,
   isVerifiedSubmitter,
   validateEventSubmission,
@@ -39,13 +40,6 @@ type SubmitBody = {
 };
 
 const attempts = createAttemptStore(PUBLIC_FORM_RATE_LIMIT_WINDOW_MS);
-
-function slugify(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-}
 
 function tooManyAttempts(retryAfterSeconds: number): NextResponse {
   return NextResponse.json(
@@ -140,9 +134,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // 6. Compute slug + draft id
-  const datePart = date.slice(0, 10);
-  const slug = `${slugify(title)}-${datePart}`;
   const id = `drafts.societyEvent-${crypto.randomUUID()}`;
+  const slug = buildEventSlug(title, date, id);
 
   // 7. Create draft
   const doc: { _id: string; _type: string; [key: string]: unknown } = {

@@ -1,0 +1,38 @@
+schema: athanor.contract/v1
+slug: event-submit-validation
+goal: 'Event submissions accept only strict YYYY-MM-DD real calendar dates and every draft gets a unique slug.'
+created_at: '2026-10-26'
+autonomy: high
+
+features:
+  - id: F1
+    name: 'event-submit-validation'
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/saoc-functionality-fixes/event-submit-validation/goldens/contract-notes.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: '[fail-on-main] date rejects non-YYYY-MM-DD and impossible calendar dates (fails on main)'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/event-submit-validation/checks/check.mjs date-strict-reject'
+    - id: A2
+      description: '[fail-on-main] endDate gets the same strict format check (fails on main)'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/event-submit-validation/checks/check.mjs enddate-strict-reject'
+    - id: A3
+      description: '[fail-on-main] buildEventSlug gives distinct URL-safe slugs for same title+date with different draft ids (fails on main)'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/event-submit-validation/checks/check.mjs slug-unique'
+    - id: A4
+      description: '[fail-on-main] POST route builds the slug through buildEventSlug (fails on main)'
+      command: 'grep -q "buildEventSlug" app/api/events/submit/route.ts'
+    - id: A5
+      description: '[fail-on-main] route no longer owns the date-only slugify (fails on main)'
+      command: 'bash -c ''! grep -q "function slugify" app/api/events/submit/route.ts'''
+    - id: A6
+      description: '[guard] guard: valid YYYY-MM-DD still accepted, past and reversed ranges still rejected'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/event-submit-validation/checks/check.mjs guard-valid-accepted'
+    - id: A7
+      description: '[guard] guard: whole project typechecks'
+      command: 'pnpm exec tsc --noEmit'
