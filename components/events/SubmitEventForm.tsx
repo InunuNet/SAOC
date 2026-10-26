@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { getAuth } from 'firebase/auth';
 
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
@@ -66,12 +67,33 @@ function validate(v: FormValues): Partial<Record<keyof FormValues, string>> {
   return errors;
 }
 
+// The existing sign-in route honours `next` (lib/safe-next-path.ts), so the member lands back here.
+const SIGN_IN_HREF = '/admin/login?next=/events/submit';
+const SIGN_IN_LINK_TEXT = 'sign in again';
+
+// `linkText`, when set, is the part of `text` that links to the sign-in route.
+type ServerError = { text: string; linkText?: string };
+
+function ServerErrorMessage({ error }: { error: ServerError }) {
+  const at = error.linkText ? error.text.indexOf(error.linkText) : -1;
+  if (!error.linkText || at < 0) return <>{error.text}</>;
+  return (
+    <>
+      {error.text.slice(0, at)}
+      <Link href={SIGN_IN_HREF} className="underline underline-offset-2">
+        {error.linkText}
+      </Link>
+      {error.text.slice(at + error.linkText.length)}
+    </>
+  );
+}
+
 export function SubmitEventForm({ societies }: SubmitEventFormProps) {
   const hydrated = useHydrated();
   const [values, setValues] = useState<FormValues>(INITIAL);
   const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<ServerError | null>(null);
 
   function set(field: keyof FormValues) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -96,7 +118,7 @@ export function SubmitEventForm({ societies }: SubmitEventFormProps) {
     const auth = getAuth(getFirebaseApp());
     const user = auth.currentUser;
     if (!user) {
-      setServerError('Please sign in again.');
+      setServerError({ text: 'Please sign in again.', linkText: SIGN_IN_LINK_TEXT });
       setStatus('error');
       return;
     }
@@ -105,7 +127,10 @@ export function SubmitEventForm({ societies }: SubmitEventFormProps) {
     try {
       token = await user.getIdToken();
     } catch {
-      setServerError('Failed to get auth token. Please sign in again.');
+      setServerError({
+        text: 'Failed to get auth token. Please sign in again.',
+        linkText: SIGN_IN_LINK_TEXT,
+      });
       setStatus('error');
       return;
     }
@@ -139,7 +164,10 @@ export function SubmitEventForm({ societies }: SubmitEventFormProps) {
 
       const data = (await res.json()) as { error?: string; field?: string };
       if (res.status === 401) {
-        setServerError('Your session expired — please sign in again.');
+        setServerError({
+          text: 'Your session expired — please sign in again.',
+          linkText: SIGN_IN_LINK_TEXT,
+        });
         setStatus('error');
         return;
       }
@@ -148,10 +176,10 @@ export function SubmitEventForm({ societies }: SubmitEventFormProps) {
         setStatus('idle');
         return;
       }
-      setServerError(data.error ?? 'Something went wrong. Please try again.');
+      setServerError({ text: data.error ?? 'Something went wrong. Please try again.' });
       setStatus('error');
     } catch {
-      setServerError('Network error. Please try again.');
+      setServerError({ text: 'Network error. Please try again.' });
       setStatus('error');
     }
   }
@@ -169,7 +197,11 @@ export function SubmitEventForm({ societies }: SubmitEventFormProps) {
   return (
     <form method="post" onSubmit={handleSubmit} noValidate className="space-y-5">
       <div aria-live="polite" className="min-h-[1.25rem]">
-        {serverError && <TicketFieldAlert id="submit-event-error">{serverError}</TicketFieldAlert>}
+        {serverError && (
+          <TicketFieldAlert id="submit-event-error">
+            <ServerErrorMessage error={serverError} />
+          </TicketFieldAlert>
+        )}
       </div>
 
       {/* Title */}
