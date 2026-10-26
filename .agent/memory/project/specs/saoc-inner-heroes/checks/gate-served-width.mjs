@@ -1,7 +1,7 @@
 // Served-width gate (HM-1, HS-1). The file the browser actually serves (img.currentSrc, decoded through a bare new Image()) must be at
 // least as wide in device pixels as max(box width, box height x file aspect) x DPR (cover formula, goldens requiredWidth): at 2056@2, 1440@2, 1280@2,
 // 767@2 (the stacked band) and 390@3. NO native-cap exception (NOS Design ruling 3): a source narrower than its box fails. Covers every
-// photographic hero route, both home carousel slides, the PhotoBand (/about, /judging) and the home ShowBand.
+// photographic hero route, both home carousel slides, the PhotoBand (/judging) and the home ShowBand.
 import { GOLDEN, discoverPath, launchChromium, newContext, openHeroRoute, withServer } from './_lib.mjs';
 
 const VIEWPORTS = GOLDEN.viewports.served;

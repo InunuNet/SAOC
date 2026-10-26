@@ -504,22 +504,18 @@
       "name": "PhotoBand",
       "selector": "figure[data-photo-band] img",
       "routes": [
-        "/about",
         "/judging"
       ],
       "image": null,
       "sizesNote": "sizes computed from the file aspect; quality 88",
       "perRoute": {
-        "/about": {
-          "image": "/images/orchid-purple-band.jpg",
-          "position": "50% 45%"
-        },
         "/judging": {
           "image": "/images/orchid-dark.jpg",
           "position": null,
           "note": "stays orchid-dark native (NOS Design)"
         }
-      }
+      },
+      "removedNote": "/about PhotoBand removed by #109 (59779ff7); not re-added (no source for new content)"
     },
     {
       "name": "ShowBand",

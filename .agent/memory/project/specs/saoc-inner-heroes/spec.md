@@ -22,3 +22,6 @@ Base: NOS Site's spec `spec-base.md` (origin/spec/saoc-pagehero-mirror at 700689
 
 ## Open gaps (gated on HM-2, HM-3 and overflow only)
 /404, /events/[slug], /events/submit crops. LG-RF h2-gap measurement point (see gate-lgrf.mjs header).
+
+## /about PhotoBand
+/about PhotoBand removed by #109; not re-added (no source for new content). The orchid-purple-band derived cut may stay in the manifest unused. /judging PhotoBand stays orchid-dark native (D11). The stale PageHero literal-100vw assertion is deleted: D6 forbids it.

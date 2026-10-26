@@ -17,7 +17,6 @@ check('PageHero.tsx: the copy is not centred (no text-center)', !/text-center/.t
 check('PageHero.tsx: the lede is solid ivory (no text-ivory/NN opacity)', !/text-ivory\/\d+/.test(hero) && /text-ivory/.test(hero));
 check('PageHero.tsx: stacked band is aspect 2/1 (ruled for SAOC)', /aspect-\[2\s*\/\s*1\]|aspect-2\/1|aspect-ratio:\s*2\s*\/\s*1/.test(hero));
 check('PageHero.tsx: the photograph keeps quality 88 for a listed source', /quality=\{[^}]*88[^}]*\}/.test(hero) && hero.includes('hero-source-widths'));
-check('PageHero.tsx: sizes stays 100vw', hero.includes('sizes="100vw"'));
 check('PageHero.tsx: eyebrow is optional (SAOC polish F4 merge requirement): `eyebrow?:` prop, the pill rendered only when set', /eyebrow\?\s*:/.test(hero) && /eyebrow\s*(\?|&&)/.test(hero));
 check('PageHero.tsx: the h1 top margin is conditional on the eyebrow (no unconditional mt-5 on the h1)', !/<h1[^>]*className="[^"]*\bmt-5\b/.test(hero));
 check('PageHero.tsx: no hex colour literal (no new colours)', !/#[0-9a-fA-F]{3,8}\b/.test(hero));
@@ -49,8 +48,6 @@ for (const f of ['components/ui/PageHero.tsx', 'components/ui/PhotoBand.tsx', 'c
 const band = read('components/ui/PhotoBand.tsx');
 check('PhotoBand.tsx: <figure data-photo-band> (the served-width gate hooks it)', /<figure[^>]*data-photo-band/.test(band) || /data-photo-band/.test(band));
 check('PhotoBand.tsx: passes quality 88 for a source listed in hero-source-widths (else the 2048 cap fails the band at 2056@2)', /quality=\{[^}]*88[^}]*\}/.test(band) && band.includes('hero-source-widths'));
-const aboutPage = read('app/(marketing)/about/page.tsx');
-check('about PhotoBand uses the purple band cut at 50% 45%', /orchid-purple-band\.jpg/.test(aboutPage) && /50% 45%/.test(aboutPage));
 check('judging PhotoBand stays orchid-dark native (no purple band cut)', /orchid-dark\.jpg/.test(read('app/(marketing)/judging/page.tsx')) && !/orchid-purple-band/.test(read('app/(marketing)/judging/page.tsx')));
 check('PhotoBand.tsx takes an imagePosition prop and applies it as object-position', /imagePosition/.test(band) && /objectPosition/.test(band));
 
