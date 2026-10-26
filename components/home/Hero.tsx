@@ -35,7 +35,7 @@ const HERO_CTA_BASE =
 // (measured: the gold italic stays at or above 4.5:1 over the brightest petal at 390px). The
 // important modifier is needed because the base gradient in globals.css is unlayered.
 const PHONE_SCRIM_CLASSES =
-  'absolute inset-0 -z-10 max-md:!bg-[linear-gradient(to_top,rgb(34_40_31/0.92)_0%,rgb(34_40_31/0.86)_60%,rgb(34_40_31/0.78)_100%)]';
+  'absolute inset-0 -z-10 max-md:!bg-[linear-gradient(to_top,rgb(34_40_31/0.94)_0%,rgb(34_40_31/0.9)_60%,rgb(34_40_31/0.84)_100%)]';
 
 const CONTROL_FOCUS =
   'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ivory focus-visible:outline-offset-[3px]';
