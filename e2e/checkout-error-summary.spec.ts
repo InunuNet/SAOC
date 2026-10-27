@@ -61,6 +61,22 @@ const stickyBottom = (page: Page) =>
     return bottom;
   });
 
+const CLEARANCE = 8; // NOS Design: the summary top sits at least 8px below the sticky stack
+
+/** NOS Design gate: top >= sticky bottom + 8 and bottom <= viewport height. */
+async function expectSummaryClear(page: Page, viewportHeight: number) {
+  await expect
+    .poll(async () => {
+      const box = await page.locator(SUMMARY).boundingBox();
+      if (box === null) return 'missing';
+      const stack = await stickyBottom(page);
+      if (box.y < stack + CLEARANCE) return `top ${box.y} under stack ${stack}+${CLEARANCE}`;
+      if (box.y + box.height > viewportHeight) return `bottom ${box.y + box.height} past ${viewportHeight}`;
+      return 'ok';
+    })
+    .toBe('ok');
+}
+
 for (const vp of VIEWPORTS) {
   test.describe(`checkout error summary at ${vp.label}`, () => {
     test.use({ viewport: { width: vp.width, height: vp.height } });
@@ -90,18 +106,32 @@ for (const vp of VIEWPORTS) {
       }
     });
 
-    test('the focused summary is not hidden under the sticky header stack', async ({ page }) => {
+    for (const attendees of [1, 2, 3]) {
+      test(`${attendees} attendee(s): the focused summary clears the sticky stack and fits the viewport`, async ({ page }) => {
+        const submit = await open(page);
+        for (let i = 1; i < attendees; i += 1) await page.getByRole('button', { name: 'One more' }).click();
+        await pinStickyStack(page); // after the stepper clicks: the pinned bar would cover the stepper
+        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+        await submit.click();
+        await expect.poll(() => activeId(page)).toBe('checkout-error-summary');
+        await expect(page.locator(SUMMARY).getByRole('link')).toHaveCount(attendees * 2);
+        await expectSummaryClear(page, vp.height);
+      });
+    }
+
+    test('a re-submit with fewer errors refocuses the summary and nothing jumps above it', async ({ page }) => {
       const submit = await open(page);
-      await pinStickyStack(page);
+      await page.getByRole('button', { name: 'One more' }).click();
+      await pinStickyStack(page); // after the stepper click: the pinned bar would cover the stepper
+      await submit.click();
+      await expect(page.locator(SUMMARY).getByRole('link')).toHaveCount(4);
+      await page.locator('#attendee-fixture-ticket-0-name').fill('Ada Orchid');
+      await page.locator('#attendee-fixture-ticket-0-email').fill('ada@example.org');
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
       await submit.click();
+      await expect(page.locator(SUMMARY).getByRole('link')).toHaveCount(2);
       await expect.poll(() => activeId(page)).toBe('checkout-error-summary');
-      await expect
-        .poll(async () => {
-          const top = (await page.locator(SUMMARY).boundingBox())?.y ?? -1;
-          return top - (await stickyBottom(page));
-        })
-        .toBeGreaterThanOrEqual(0);
+      await expectSummaryClear(page, vp.height);
     });
 
     test('a summary link moves focus to its field, clear of the sticky stack', async ({ page }) => {
@@ -244,15 +274,24 @@ test('buy hint: zero quantity still focuses the hint, no summary (unchanged beha
   await expect(page.locator(SUMMARY)).toHaveCount(0);
 });
 
-test('live NOS /tickets/<slug>: empty submit focuses the summary', async ({ page, baseURL }) => {
-  const slug = process.env.E2E_TICKET_SLUG;
-  test.skip(!slug, 'needs a Sanity fixture replay with an on-sale ticket; set E2E_TICKET_SLUG');
-  await page.goto(`${nosBase(baseURL!)}/tickets/${slug}`);
-  const submit = page.getByRole('button', { name: SUBMIT });
-  await expect(submit).toBeEnabled();
-  await submit.click();
-  await expect.poll(() => activeId(page)).toBe('checkout-error-summary');
-  await expect
-    .poll(async () => ((await page.locator(SUMMARY).boundingBox())?.y ?? -1) - (await stickyBottom(page)))
-    .toBeGreaterThanOrEqual(0);
-});
+// The real NOS chrome (TESTING ONLY bar + header) is the stack that matters. Needs a Sanity replay
+// containing an on-sale ticket. The measured stack height is attached to the report per viewport so
+// spec.md can record it; the pinned 145px bar in the fixture tests stays as the worst-case control.
+for (const vp of VIEWPORTS) {
+  for (const attendees of [1, 3]) {
+    test(`live NOS /tickets/<slug> at ${vp.label}, ${attendees} attendee(s): real sticky stack clearance`, async ({ page, baseURL }) => {
+      const slug = process.env.E2E_TICKET_SLUG;
+      test.skip(!slug, 'needs a Sanity fixture replay with an on-sale ticket; set E2E_TICKET_SLUG');
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await page.goto(`${nosBase(baseURL!)}/tickets/${slug}`);
+      const submit = page.getByRole('button', { name: SUBMIT });
+      await expect(submit).toBeEnabled({ timeout: 45_000 });
+      for (let i = 1; i < attendees; i += 1) await page.getByRole('button', { name: 'One more' }).click();
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await submit.click();
+      await expect.poll(() => activeId(page)).toBe('checkout-error-summary');
+      test.info().annotations.push({ type: 'sticky-stack-bottom', description: String(await stickyBottom(page)) });
+      await expectSummaryClear(page, vp.height);
+    });
+  }
+}

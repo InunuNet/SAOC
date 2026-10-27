@@ -88,6 +88,13 @@ function summaryEntries(input: SummaryInput): CheckoutErrorEntry[] {
   return entries;
 }
 
+// focus() alone can leave the summary's last pixel clipped under the viewport edge; centring it keeps
+// it fully in view and clear of the sticky stack, as the field links do.
+function focusSummary(summary: HTMLDivElement | null) {
+  summary?.focus();
+  summary?.scrollIntoView({ block: 'center' });
+}
+
 function startQuantity(requested: number | undefined): number {
   if (requested === undefined || !Number.isFinite(requested)) return MIN_QUANTITY;
   return Math.min(CART_MAX_LINE_ITEMS, Math.max(MIN_QUANTITY, Math.trunc(requested)));
@@ -171,7 +178,7 @@ export function TicketPurchaseForm({
       : null;
 
   useEffect(() => {
-    if (serverMessage !== null) summaryRef.current?.focus();
+    if (serverMessage !== null) focusSummary(summaryRef.current);
   }, [serverMessage]);
 
   if (cart.redirect) {
@@ -196,7 +203,7 @@ export function TicketPurchaseForm({
   // restore that.)
   function focusFailedSubmit() {
     // The summary mounts on this render; focus it once it is in the DOM.
-    requestAnimationFrame(() => summaryRef.current?.focus());
+    requestAnimationFrame(() => focusSummary(summaryRef.current));
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -330,6 +337,7 @@ export function TicketPurchaseForm({
         onAttendeeChange={cart.updateAttendeeField}
       />
 
+      <TicketingTestPayNotice />
       <CheckoutErrorSummary
         id={SUMMARY_ID}
         heading={SUMMARY_HEADING}
@@ -343,8 +351,6 @@ export function TicketPurchaseForm({
         serverMessage={serverMessage}
         summaryRef={summaryRef}
       />
-
-      <TicketingTestPayNotice />
       <div data-catalogue-total="" className="nk-checkout-total">
         <p aria-live="polite" aria-atomic="true">
           Total <strong>{formatRand(cart.estimatedTotal)}</strong>
