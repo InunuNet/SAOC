@@ -10,19 +10,24 @@ const CLOCK_FILE = '_clock.json';
 const cache = new Map<string, Date | null>();
 
 const INSTANT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/;
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 const MAX_HOUR = 23;
 const MAX_MINUTE_OR_SECOND = 59;
 
-// An ISO 8601 instant must carry an offset: a bare local time would pin a different instant per host.
 // Date silently normalises impossible dates (02-30 becomes 03-02), so the written fields are checked first.
+// Plain arithmetic, not Date.UTC: Next's prerender replaces the global Date and drops its statics.
+function daysInMonth(year: number, month: number): number {
+  const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  return month === 2 ? (leap ? 29 : 28) : DAYS_IN_MONTH[month - 1];
+}
+
+// An ISO 8601 instant must carry an offset: a bare local time would pin a different instant per host.
 function parseInstant(text: string): Date | null {
   const m = INSTANT.exec(text);
   if (!m) return null;
   const [year, month, day, hour, minute] = [m[1], m[2], m[3], m[4], m[5]].map(Number);
   const second = Number(m[6] ?? 0);
-  const written = new Date(Date.UTC(year, month - 1, day));
-  const calendarOk =
-    written.getUTCFullYear() === year && written.getUTCMonth() === month - 1 && written.getUTCDate() === day;
+  const calendarOk = month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth(year, month);
   const clockOk = hour <= MAX_HOUR && minute <= MAX_MINUTE_OR_SECOND && second <= MAX_MINUTE_OR_SECOND;
   const date = new Date(text);
   return calendarOk && clockOk && !Number.isNaN(date.getTime()) ? date : null;
