@@ -62,6 +62,7 @@
   --display-lg: clamp(42px, 5.4vw, 72px); /* page hero */
   --display-md: clamp(34px, 4.4vw, 54px); /* h2 */
   --display-sm: clamp(26px, 3vw, 36px); /* h3 */
+  --h2-role: clamp(32px, 29px + 0.762vw, 44px); /* SA-6 h2 role, SAOC host */
 
   /* ---------- Type scale — body ---------- */
   --body-xl: 20px; /* lede / intro */
@@ -758,6 +759,12 @@ h3.font-serif {
 .nos-theme .doc-h2 {
   font-weight: 300;
   text-wrap: pretty;
+}
+/* SA-6: one h2 role on the SAOC host (the NOS theme keeps its own scale). */
+.h2:not(.nos-theme *),
+.doc-h2:not(.nos-theme *) {
+  font-size: var(--h2-role);
+  line-height: 1.15;
 }
 .doc-h3 {
   margin: 0 0 12px;

@@ -35,7 +35,7 @@ export function SponsorEnquirySection({ site, inDocument = false }: SponsorEnqui
         <h2
           id="enquire-heading"
           tabIndex={-1}
-          className={inDocument ? 'doc-h2 outline-none' : 'font-serif font-normal text-[26px] text-ink outline-none'}
+          className={inDocument ? 'doc-h2 outline-none' : 'font-serif font-normal text-[22px] text-ink outline-none'}
         >
           {ENQUIRY_HEADING}
         </h2>

@@ -8,7 +8,7 @@ export interface MonthGroupProps {
 export function MonthGroup({ month, events }: MonthGroupProps) {
   return (
     <section>
-      <h2 className="mb-2 font-serif text-[24px] font-normal leading-snug text-primary">{month}</h2>
+      <h2 className="mb-2 font-serif text-[22px] font-normal leading-snug text-primary">{month}</h2>
       <ul className="border-t border-rule">
         {events.map((event) => (
           <li key={event._id}>
