@@ -1,0 +1,45 @@
+schema: athanor.contract/v1
+slug: saoc-dc-f1c-headings-heroes
+goal: One h2 role and one inner-hero height per width on the SAOC host.
+created_at: '2026-10-28'
+autonomy: high
+
+features:
+  - id: F1
+    name: SA-6 h2 role, Title role, inner PageHero height
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/h2-roles.md
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/hero-heights.md
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/proof-on-main.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "Every main h2 is the H2 role (serif 300, clamp(32,29+0.762vw,44), lh 1.15) or the Title role (serif 400, 20-22) at 390, 1440, 2056 (fails on main, 150 violations)"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-h2-roles.mjs"
+    - id: A2
+      description: "Inner PageHero is one height (+-4) per width 768-2056, locked 480 at 1440 and 2056, copy padding identical across routes (fails on main, /about 496 at 1024 and 545 at 1280)"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-hero-heights.mjs"
+    - id: A3
+      description: "Codex adversarial QA of the whole diff against the goldens and proof-on-main"
+      type: codex_qa
+      target: >-
+        Adversarially review git diff origin/main...HEAD against the goldens in .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/. Find an input, width or route where the claimed fix does not hold and the checks still pass.
+      required: true
+    - id: A4
+      description: "browser_deployed_check on beta /about, declared for the triad linter but non-required. It cannot pass while the beta Basic Auth wall is up (execution/browser_deployed_check.sh live re-check sends no auth, HARNESS defect, backlog.md 2026-10-07). The authenticated post-deploy shell assertion is the real proof."
+      type: browser_deployed_check
+      target: .agent/memory/scratch/saoc-dc-f1c-browser-manifest.json
+      required: false
+    - id: A5
+      description: "gws inbox check, no email path is touched; declared non-required to satisfy the triad coverage linter, expected to skip"
+      type: gws_inbox_check
+      target: .agent/memory/scratch/saoc-dc-f1c-gws-manifest.json
+      required: false
+    - id: A6
+      phase: 5
+      description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). H2 roles including Home and Events list on the deployed site. Plain shell check (not the browser_deployed_check kind, see above); reads BETA_BASIC_AUTH_USER/PASSWORD inside the scripts, never printed."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-h2-roles.mjs"

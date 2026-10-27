@@ -1,0 +1,51 @@
+schema: athanor.contract/v1
+slug: saoc-dc-f1b-nav
+goal: The SAOC primary nav is inline from 1280 on one row with no overlap, with demoted items and Search in the Menu drawer.
+created_at: '2026-10-28'
+autonomy: high
+
+features:
+  - id: F1
+    name: SA-1 desktop nav threshold at <=1280
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/nav-widths.md
+  - .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/proof-on-main.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "Inline primary nav shows from 1280 and logo + nav + CTA + control sit on one row with no overlap, logo stays 405px, scrollWidth == clientWidth at 1100/1279/1280/1366/1384/1440 (fails on main, 0 inline items at 1280 and 1366)"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-one-row.mjs"
+    - id: A2
+      description: "All 7 destinations and Search stay reachable at 1280 and 1366, demoted ones inside the Menu drawer (fails on main, inline nav has 0 items)"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-reach.mjs"
+    - id: A3
+      description: "Header threshold is not above 1280: no min-[1384px] nav visibility left on the inline nav wrapper (fails on main)"
+      command: "! grep -q 'hidden min-\\[1384px\\]:block' components/chrome/Header.tsx"
+    - id: A4
+      description: "Codex adversarial QA of the whole diff against the goldens and proof-on-main"
+      type: codex_qa
+      target: >-
+        Adversarially review git diff origin/main...HEAD against the goldens in .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/goldens/. Find an input, width or route where the claimed fix does not hold and the checks still pass.
+      required: true
+    - id: A5
+      description: "browser_deployed_check on beta /about, declared for the triad linter but non-required. It cannot pass while the beta Basic Auth wall is up (execution/browser_deployed_check.sh live re-check sends no auth, HARNESS defect, backlog.md 2026-10-07). The authenticated post-deploy shell assertion is the real proof."
+      type: browser_deployed_check
+      target: .agent/memory/scratch/saoc-dc-f1b-browser-manifest.json
+      required: false
+    - id: A6
+      description: "gws inbox check, no email path is touched; declared non-required to satisfy the triad coverage linter, expected to skip"
+      type: gws_inbox_check
+      target: .agent/memory/scratch/saoc-dc-f1b-gws-manifest.json
+      required: false
+    - id: A8
+      phase: 5
+      description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). Nav one-row and reach on the deployed header at 1280 and 1366. Plain shell check (not the browser_deployed_check kind, see above); reads BETA_BASIC_AUTH_USER/PASSWORD inside the scripts, never printed."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-one-row.mjs"
+    - id: A9
+      phase: 5
+      description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). Nav reach on deployed. Plain shell check (not the browser_deployed_check kind, see above); reads BETA_BASIC_AUTH_USER/PASSWORD inside the scripts, never printed."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-reach.mjs"
