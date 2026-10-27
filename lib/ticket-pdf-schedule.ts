@@ -3,14 +3,16 @@ import { formatShowDay } from '@/lib/show-day-format';
 
 /**
  * ticket-pdf (D11 rev) — which date a ticket prints, taken from data that already exists and
- * never invented. A buyer-chosen day prints that day, an 'event' or 'pass' product prints its own
- * `when` and `meta` from TICKET_PRODUCTS (the source the live tickets page prints), and anything
- * else (programme, workshop, unmapped slug) is unconfirmed, which renders the "To be confirmed"
- * pill.
+ * never invented. A buyer-chosen day prints that day, an 'event', 'pass' or 'programme' product
+ * (Symposium, WOSA Conference) prints its own `when` and `meta` from TICKET_PRODUCTS (the source
+ * the live tickets page prints), and anything else (workshop, unmapped slug) is unconfirmed,
+ * which renders the "To be confirmed" pill.
  */
 
 export interface TicketTypeTraits {
   slug: string;
+  /** The Sanity ticket type name: the title printed on the ticket and in the email. */
+  name?: string | null;
   requiresDaySelection?: boolean | null;
 }
 
@@ -23,7 +25,7 @@ export interface ResolvedTicketSchedule {
 }
 
 const UNCONFIRMED: ResolvedTicketSchedule = { kind: 'unconfirmed', dateText: null, metaText: null };
-const DATED_PRODUCT_KINDS: readonly string[] = ['event', 'pass'];
+const DATED_PRODUCT_KINDS: readonly string[] = ['event', 'pass', 'programme'];
 const DAY_PRODUCT_ID = 'day';
 
 export function resolveTicketSchedule(

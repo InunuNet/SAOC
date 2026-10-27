@@ -11,6 +11,8 @@
 // fold); the custom image loader maps it to its pre-built WebP candidates.
 // =============================================================
 
+import { Fragment } from 'react';
+
 import { getImageProps } from 'next/image';
 import Link from 'next/link';
 
@@ -20,15 +22,17 @@ import {
   FOOTER_HEADINGS,
   FOOTER_LAYOUT,
   FOOTER_NEW_TAB_CUE,
-  FOOTER_ORG_NAME,
   FOOTER_REG,
   FOOTER_RHYTHM,
   FOOTER_WOSA,
 } from '@/components/chrome/footer-data';
+import { SaocLockup } from '@/components/chrome/SaocLockup';
+import { CONTACT_LINK } from '@/components/chrome/nav-config';
 import { ExternalArrow } from '@/components/chrome/ExternalArrow';
 import { MediaKitFooterLink } from '@/components/chrome/MediaKitFooterLink';
 import { NewsletterSignup } from '@/components/newsletter/NewsletterSignup';
-import { nosPath } from '@/lib/nos-paths';
+import { NOS_CONTACT_PATH, nosPath } from '@/lib/nos-paths';
+import { SHOW_TITLE_EXPANDED } from '@/lib/show-title';
 import { saocUrl } from '@/lib/site-hosts';
 
 import { nosChromeFontClass } from './fonts';
@@ -36,22 +40,13 @@ import { NOS_FOOTER_EXPLORE, NOS_FOOTER_LEGAL, NOS_FOOTER_MEDIA_KIT } from './no
 import './nos-chrome.css';
 
 const HUB_HREF = '/';
-const LOCKUP_ALT = 'National Orchid Show, Western Cape 2027';
+const LOCKUP_ALT = SHOW_TITLE_EXPANDED;
 const LOCKUP_SRC = '/images/NOS-2027-logo-reversed-gold-vertical.png';
 const LOCKUP_WIDTH = 3272;
 const LOCKUP_HEIGHT = 2876;
 // The lockup's rendered box is 248px wide (nos-chrome.css). A width with no `sizes` gives a 1x/2x
 // density srcset, so a high-density screen never fetches more than twice the box.
 const LOCKUP_BOX = 248;
-// The SAOC mark: the supplied full-colour original, uncropped and not recoloured, 56px tall.
-const SAOC_MARK_SRC = '/images/saoc-logo-original.png';
-const SAOC_MARK_WIDTH = 767;
-const SAOC_MARK_HEIGHT = 700;
-const SAOC_MARK_BOX_HEIGHT = 56;
-// COPY GAP: the credit's label ("Organised by" or the Council's own wording) is not supplied. It
-// shows as this existing marker string on the preview only and is omitted in public.
-const CREDIT_LABEL_PLACEHOLDER = 'To be confirmed';
-
 interface NosFooterProps {
   /** True on the beta preview, where an unsupplied fact shows as a visible marker. */
   showPlaceholders: boolean;
@@ -63,12 +58,6 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
     alt: LOCKUP_ALT,
     width: LOCKUP_BOX,
     height: Math.round((LOCKUP_BOX * LOCKUP_HEIGHT) / LOCKUP_WIDTH),
-  });
-  const { props: mark } = getImageProps({
-    src: SAOC_MARK_SRC,
-    alt: '',
-    width: Math.round((SAOC_MARK_BOX_HEIGHT * SAOC_MARK_WIDTH) / SAOC_MARK_HEIGHT),
-    height: SAOC_MARK_BOX_HEIGHT,
   });
 
   return (
@@ -101,22 +90,33 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
                 </Link>
               </li>
             ))}
+            <li>
+              <Link className={FOOTER_RHYTHM.row} href={nosPath(NOS_CONTACT_PATH)}>
+                {CONTACT_LINK.label}
+              </Link>
+            </li>
           </ul>
         </div>
 
         <div className="nf-col">
           {/* The organising body: one link to the SAOC site, a plain anchor, same tab, no arrow. */}
-          <a className="nf-credit" href={saocUrl('/')}>
-            {showPlaceholders && (
-              <span className="nf-credit-label" data-placeholder-marker>
-                {CREDIT_LABEL_PLACEHOLDER}
-              </span>
-            )}
-            {/* eslint-disable-next-line @next/next/no-img-element -- decorative mark via getImageProps, like the lockup */}
-            <img {...mark} alt="" loading="lazy" decoding="async" />
-            <span className="nf-credit-name">{FOOTER_ORG_NAME}</span>
-            <span className="nf-credit-reg">{FOOTER_REG}</span>
-          </a>
+          <div className="nf-saoc-credit">
+            <SaocLockup
+              orientation="vertical"
+              tone="dark"
+              variant="official-mono"
+              href={saocUrl('/')}
+              testId="nf-saoc-lockup"
+            />
+            <span className="nf-credit-reg">
+              {FOOTER_REG.split(/\s{2,}/).map((part, i) => (
+                <Fragment key={part}>
+                  {i > 0 && ' '}
+                  <span className="nf-reg-item">{part}</span>
+                </Fragment>
+              ))}
+            </span>
+          </div>
           {/* WOSA appears once in this footer: a Partner link under the credit (NOS Design FT4). */}
           <ul className={`nf-list ${FOOTER_RHYTHM.list}`}>
             <li>
@@ -168,8 +168,8 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
               </Link>
             ))}
             <MediaKitFooterLink href={nosPath(NOS_FOOTER_MEDIA_KIT.href)} label={NOS_FOOTER_MEDIA_KIT.label} />
-            {/* The Constitution is the Council's: a plain anchor to the SAOC site, same tab. */}
-            <a href={saocUrl('/constitution')}>Constitution</a>
+            {/* The Memorandum of Incorporation is the Council's: a plain anchor to the SAOC site, same tab. */}
+            <a href={saocUrl('/memorandum-of-incorporation')}>Memorandum of Incorporation</a>
           </div>
         </div>
       </div>

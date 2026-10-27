@@ -2,7 +2,7 @@
   "pageKey": "15-sponsors",
   "specNumber": 15,
   "title": "Sponsors",
-  "summary": "Recognising the headline and supporting sponsors and donors of the 2027 National Show.",
+  "summary": "Recognising the headline and supporting sponsors and donors of The National Orchid Show.",
   "sections": [
     {
       "sectionKey": "intro",
@@ -19,7 +19,7 @@
             {
               "_type": "span",
               "_key": "intro-b1-s1",
-              "text": "This page will recognise the headline and supporting sponsors of the 2027 National Show.",
+              "text": "This page will recognise the headline and supporting sponsors of The National Orchid Show.",
               "marks": []
             }
           ]

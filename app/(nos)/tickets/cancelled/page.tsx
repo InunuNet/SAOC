@@ -12,7 +12,10 @@ import { ticketsPageQuery } from '@/sanity/queries';
 // part of this pass. See contracts/golden/ticketing-m1-m2/README.md, decision #6.
 export const revalidate = 60;
 
-export const metadata: Metadata = { title: 'Payment cancelled' };
+export const metadata: Metadata = {
+  title: 'Payment cancelled',
+  robots: { index: false, follow: false },
+};
 
 interface TicketsPageCopy {
   cancelledHeading?: string | null;
@@ -51,7 +54,7 @@ export default async function TicketCancelledPage({
           {ref ? <p className="font-sans text-[15px] text-muted">Booking ref: {ref}</p> : null}
           <Link
             href="/tickets"
-            className="nk-btn nk-cta mt-8 inline-flex w-auto"
+            className={`nk-btn nk-cta inline-flex w-auto${ref ? ' mt-8' : ''}`}
           >
             {cancelledButtonLabel}
           </Link>

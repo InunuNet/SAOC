@@ -11,6 +11,7 @@ import {
   PartnersSection,
 } from '@/components/home';
 import { JsonLd, organizationJsonLd } from '@/components/seo/JsonLd';
+import { saocOrigin } from '@/lib/site-hosts';
 import { upcomingEventsParams } from '@/lib/sast-date';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { sanityFetch } from '@/sanity/lib/fetch';
@@ -30,33 +31,34 @@ interface HomePageData {
   missionText?: string | null;
 }
 
-const BASE_URL = 'https://saoc.co.za';
-
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
 // propagates within F6's 120s round-trip window. See contracts/cms-loop-f1-cdn-purge.yaml.
 export const revalidate = 60;
 
-export const metadata: Metadata = {
-  title: { absolute: 'South African Orchid Council' },
-  description:
-    'The South African Orchid Council — coordinating orchid societies across South Africa since 1968.',
-  openGraph: {
-    url: BASE_URL,
-    title: 'South African Orchid Council',
+export function generateMetadata(): Metadata {
+  return {
+    title: { absolute: 'South African Orchid Council' },
     description:
       'The South African Orchid Council — coordinating orchid societies across South Africa since 1968.',
-    images: [
-      {
-        url: `/og?title=${encodeURIComponent('South African Orchid Council')}`,
-        width: 1200,
-        height: 630,
-        alt: 'South African Orchid Council',
-      },
-    ],
-  },
-  twitter: { card: 'summary_large_image' },
-};
+    openGraph: {
+      siteName: 'South African Orchid Council',
+      url: saocOrigin(),
+      title: 'South African Orchid Council',
+      description:
+        'The South African Orchid Council — coordinating orchid societies across South Africa since 1968.',
+      images: [
+        {
+          url: `/og?title=${encodeURIComponent('South African Orchid Council')}`,
+          width: 1200,
+          height: 630,
+          alt: 'South African Orchid Council',
+        },
+      ],
+    },
+    twitter: { card: 'summary_large_image' },
+  };
+}
 
 export default async function HomePage() {
   const [home, eventsData, partnersData, show] = await Promise.all([
@@ -72,7 +74,7 @@ export default async function HomePage() {
   return (
     <>
       <JsonLd data={organizationJsonLd()} />
-      <Hero images={home?.heroImages} show={show} showLede={!withhold} />
+      <Hero images={home?.heroImages} show={show} />
       <MissionBlock missionText={home?.missionText} withhold={withhold} />
       <NavCards show={show} withhold={withhold} />
       <ShowBand show={show} />

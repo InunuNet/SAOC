@@ -176,7 +176,12 @@ if (cmd === 'render') {
     const none = run(slug, true, null);
     if (none.kind !== 'unconfirmed' || none.dateText !== null) fail(`${slug} without chosenDay must be the pill, got ${JSON.stringify(none)}`);
   }
-  for (const slug of ['saoc-symposium', 'wosa-conference', 'workshops', 'field-trip', 'qa-fixture-ticket', 'no-such-slug']) {
+  // leeann-content-build F2 (her 24 Oct answers 19c, 19d): the Symposium and the WOSA Conference now print their own date and hours.
+  for (const [slug, when] of [['saoc-symposium', 'Friday 24 September'], ['wosa-conference', 'Saturday 25 September']] as const) {
+    const r = run(slug, false, null);
+    if (r.kind !== 'product' || r.dateText !== when || r.metaText !== '9am to 5pm') fail(`${slug}: want "${when}" / "9am to 5pm", got ${JSON.stringify(r)}`);
+  }
+  for (const slug of ['workshops', 'field-trip', 'qa-fixture-ticket', 'no-such-slug']) {
     const r = run(slug, false, null);
     if (r.kind !== 'unconfirmed' || r.dateText !== null || r.metaText !== null) fail(`${slug}: must be the pill with no date, got ${JSON.stringify(r)}`);
   }
@@ -196,7 +201,7 @@ if (cmd === 'render') {
     need('VIP', ['Thursday', '23', 'September', '16h00', '19h00'], vip); forbid('VIP', ['24', '25', '26', 'confirmed'], vip);
     need('Sunset', ['Thursday', '23', 'September', '18h00', '21h00'], sunset); forbid('Sunset', ['confirmed'], sunset);
     need('Weekend', ['Friday', '24', 'Sunday', '26', 'September', 'Entry', 'three'], weekend); forbid('Weekend', ['Thursday', 'confirmed'], weekend);
-    need('Symposium', ['confirmed'], sym); forbid('Symposium', ['september', '2027', 'thursday'], sym);
+    need('Symposium', ['Friday', '24', 'September', '9am', '5pm'], sym); forbid('Symposium', ['confirmed', 'thursday'], sym);
   }
 } else if (cmd === 'longname') {
   // A very long attendee name must wrap/shrink inside the stub: every word stays present and ends left of the QR tile (x = 108.3 mm).

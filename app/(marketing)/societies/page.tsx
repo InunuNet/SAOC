@@ -1,8 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 
-import { PageHero } from '@/components/ui/PageHero';
-import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
+import { RouteHero } from '@/components/ui/RouteHero';
 import { SocietiesClient } from './SocietiesClient';
 import { SocietiesFallback } from './SocietiesFallback';
 import type { SanitySociety } from '@/components/societies';
@@ -28,11 +27,6 @@ export const metadata: Metadata = buildPageMetadata({
     'The SAOC also provides a national forum through which affiliated societies can collaborate and share expertise.',
   path: '/societies',
 });
-
-// The society count is not in Lee-Ann's Drive. It is withheld on the public build and shown
-// marked on the beta preview (F24, vote 1C), as the other unsourced figures are.
-const UNSOURCED_LEDE =
-  '21 societies across South Africa — growing, showing, and judging together since 1968.';
 
 function slugify(name: string): string {
   return name
@@ -110,19 +104,14 @@ export default async function SocietiesPage() {
 
   return (
     <>
-      <PageHero
-        image="/images/orchid-purple.jpg"
+      <RouteHero
+        exempt
+        route="/societies"
         eyebrow="Affiliated societies"
         heading="Find an orchid society near you"
       />
       <div className="saoc-container py-16">
-        {withhold ? null : (
-          <div data-placeholder="true" className="mb-10 flex flex-col items-start gap-2">
-            <p className="font-sans text-[16px] leading-[1.55] text-ink/80">{UNSOURCED_LEDE}</p>
-            <PlaceholderMarker />
-          </div>
-        )}
-        <Suspense fallback={<SocietiesFallback count={societies.length} />}>
+        <Suspense fallback={<SocietiesFallback societies={listed} />}>
           <SocietiesClient societies={listed} provinces={provinceChips} />
         </Suspense>
       </div>

@@ -1,37 +1,19 @@
 {
-  "template_version": "3.8.41",
-  "applied_at": "2026-10-20T15:12:42Z",
+  "template_version": "3.8.57",
+  "applied_at": "2026-10-25T03:15:12Z",
   "delivery": "partial",
-  "workspace_id": "0508fe91e31545b0",
+  "workspace_id": "7deb4bb10293321f",
   "withheld": [
-    ".agent/agents/maintainer.md",
-    ".agent/rules/_core/workflow.md",
-    "execution/codex_qa.sh",
-    "execution/contract.py",
-    "execution/dispatch_name.py",
-    "execution/gh_closure_scan.py",
-    "execution/hooks/check_autonomy.sh",
-    "execution/hooks/lib/target_resolve.sh",
-    "execution/ingest_pulse.sh",
-    "execution/paired_copies.py",
-    "execution/pulse_runner.sh",
-    "execution/sync_agents.sh",
-    "execution/update_template.py",
-    "execution/update_template.sha256.json",
-    "template/.agent/providers/codex.json",
-    "template/.agent/rules/_core/workflow.md",
-    "template/.agent/version",
-    "template/execution/codex_qa.sh",
-    "template/execution/dispatch_name.py",
-    "template/execution/hooks/check_autonomy.sh",
-    "template/execution/hooks/lib/target_resolve.sh",
-    "template/execution/paired_copies.py",
-    "template/execution/sync_agents.sh",
-    "template/execution/update_template.py",
-    "template/execution/update_template.sha256.json"
+    ".agent/handoffs.yaml",
+    ".agent/update-manifest.yaml"
   ],
+  "untracked": [
+    ".agent/handoffs.yaml",
+    ".agent/update-manifest.yaml"
+  ],
+  "reconcile_from": "3.8.57",
   "bootstrap_unresolved": {
-    "anchor": "3.8.41",
+    "anchor": "3.8.57",
     "paths": {
       ".agent/rules/claude/hooks.md": "5b246e3e1025db08902a85de2f368aedba3695c0151584ec17d22cd112e2aa3e",
       ".agent/rules/claude/memory.md": "c351b432d233c306725e97b538a3f3c80659b8a05d71fd56ef5ca9642a6a18a3",

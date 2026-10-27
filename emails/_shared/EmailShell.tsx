@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { Head, Html, Img, Preview } from '@react-email/components';
 
 import { FOOTER_REG } from '@/components/chrome/footer-data';
+import { SHOW_TITLE_EXPANDED } from '@/lib/show-title';
 import { saocUrl } from '@/lib/site-hosts';
 
 /**
@@ -81,7 +82,7 @@ const FOOTER_MARK_HEIGHT = 48;
 // 48px tall at the vertical mark's 109:96 aspect; an explicit width keeps Outlook from guessing.
 const FOOTER_MARK_WIDTH = 55;
 const FOOTER_MARK_GAP = 12;
-const NOS_LOGO_ALT = 'National Orchid Show 2027';
+const NOS_LOGO_ALT = SHOW_TITLE_EXPANDED;
 // The two registration numbers come from FOOTER_REG; only the separator changes.
 const FOOTER_REG_LINE = FOOTER_REG.replace(/\s{2,}/, ' · ');
 const FOOTER_LINE = 'South African Orchid Council — saoc.co.za';

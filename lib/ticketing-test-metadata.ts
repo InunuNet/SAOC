@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { SHOW_TITLE } from '@/lib/show-title';
 import { NOS_TITLE_DEFAULT } from '@/lib/site-metadata';
 import { TICKETING_TEST_TITLE_PREFIX, isTicketingTestMode } from '@/lib/ticketing-test-mode';
 
@@ -9,7 +10,7 @@ export function ticketingTestMetadata(testMode = isTicketingTestMode()): Metadat
   if (!testMode) return {};
   return {
     title: {
-      template: `${TICKETING_TEST_TITLE_PREFIX} %s`,
+      template: `${TICKETING_TEST_TITLE_PREFIX} %s | ${SHOW_TITLE}`,
       default: `${TICKETING_TEST_TITLE_PREFIX} ${NOS_TITLE_DEFAULT}`,
     },
   };
@@ -22,5 +23,5 @@ export function withTicketingTestTitle(
   testMode = isTicketingTestMode()
 ): Metadata {
   if (!testMode || typeof metadata.title !== 'string') return metadata;
-  return { ...metadata, title: { absolute: `${TICKETING_TEST_TITLE_PREFIX} ${metadata.title}` } };
+  return { ...metadata, title: { absolute: `${TICKETING_TEST_TITLE_PREFIX} ${metadata.title} | ${SHOW_TITLE}` } };
 }

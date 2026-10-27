@@ -1,33 +1,25 @@
 // =============================================================
 // SAOC — components/societies/SocietyAbout.tsx
-// Server Component — "About this society" section. Prefers a real
-// Sanity-sourced description; otherwise falls back to general,
-// council-true prose about affiliation (province, region, what
-// belonging to SAOC means) — never a specific unverifiable claim
-// about this society's own schedule, venue, or people. The fallback
-// is marked `data-placeholder`, the repo-wide convention for
-// credible-but-unconfirmed content (see SocietyCard.tsx, Timeline.tsx).
+// Server Component — "About this society" section. Renders the Sanity-sourced
+// description and the society's own links; with neither, the section is dropped
+// (no site-written stand-in copy).
 // =============================================================
 
 import type { SanitySociety } from './SocietyCard';
 
 export interface SocietyAboutProps {
   society: SanitySociety;
-  /** Public build (withholdPlaceholderProse): the generic fallback and its marker are not
-   *  rendered, and the section is dropped when nothing sourced remains. */
-  withhold?: boolean;
 }
 
-export function SocietyAbout({ society, withhold = false }: SocietyAboutProps) {
+export function SocietyAbout({ society }: SocietyAboutProps) {
   const hasLinks = Boolean(society.website || society.facebookUrl || society.instagramUrl);
-  if (withhold && !society.description && !hasLinks) return null;
-  const region = society.region ?? society.province ?? 'South Africa';
+  if (!society.description && !hasLinks) return null;
 
   return (
     <section>
-      <span className="eyebrow">About this society</span>
+      <h2 className="doc-h2">About this society</h2>
       {society.description ? (
-        <p className="mt-5 max-w-3xl font-sans text-[16px] leading-relaxed text-ink/80">
+        <p className="max-w-3xl font-sans text-[16px] leading-relaxed text-ink/80">
           {society.description}
         </p>
       ) : null}
@@ -38,7 +30,7 @@ export function SocietyAbout({ society, withhold = false }: SocietyAboutProps) {
               href={society.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-ink underline underline-offset-2"
+              className="inline-flex min-h-11 items-center text-ink underline underline-offset-2"
             >
               Visit society website →
             </a>
@@ -48,7 +40,7 @@ export function SocietyAbout({ society, withhold = false }: SocietyAboutProps) {
               href={society.facebookUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-ink underline underline-offset-2"
+              className="inline-flex min-h-11 items-center text-ink underline underline-offset-2"
             >
               Facebook page →
             </a>
@@ -58,27 +50,13 @@ export function SocietyAbout({ society, withhold = false }: SocietyAboutProps) {
               href={society.instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-ink underline underline-offset-2"
+              className="inline-flex min-h-11 items-center text-ink underline underline-offset-2"
             >
               Instagram page →
             </a>
           ) : null}
         </div>
       ) : null}
-      {!society.description && !withhold && (
-        <div data-placeholder="true" className="mt-5 max-w-3xl">
-          <p className="font-sans text-[16px] leading-relaxed text-ink/80">
-            {society.name} is one of SAOC&apos;s 21 affiliated societies, serving growers in{' '}
-            {region}. Affiliation means the society follows SAOC&apos;s national judging
-            standards, its members and plants are eligible to compete at accredited shows
-            country-wide, and it forms part of the federation that has coordinated South
-            African orchid growing since 1968.
-          </p>
-          <p className="mt-3 inline-block border border-rule bg-bone px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
-            General description — society-specific detail pending confirmation
-          </p>
-        </div>
-      )}
     </section>
   );
 }

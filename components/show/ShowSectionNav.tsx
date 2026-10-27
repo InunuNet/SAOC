@@ -80,11 +80,6 @@ const SECTION_LINKS: readonly SectionLink[] = [
     hint: 'Register for the Symposium and WOSA Conference',
   },
   {
-    href: '/national-show/sa-exhibitors',
-    label: 'South African Exhibitors',
-    hint: 'The nurseries exhibiting at the show',
-  },
-  {
     href: '/national-show/international-guests',
     label: 'International Guests',
     hint: 'Guests and exhibitors from abroad',
@@ -117,7 +112,7 @@ export function ShowSectionNav({ current }: ShowSectionNavProps) {
 
   return (
     <nav aria-label="National Show section" className="bg-bone py-12">
-      <div className="mx-auto max-w-[1280px] px-8">
+      <div className="saoc-container">
         <p className="font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-accent">
           More on the National Show
         </p>

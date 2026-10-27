@@ -81,13 +81,30 @@ test.describe('SAOC nav hrefs are reachable from the rendered header', () => {
     expect(SAOC_NAV_HREFS.length).toBeGreaterThan(0);
   });
 
+  // The inline nav shows from the shared full breakpoint (1384px, HD-1); below it the same links are
+  // in the drawer, which the mobile test and the menu-band test below cover.
   test('desktop: every SAOC NAV href is a real anchor inside the header', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.setViewportSize({ width: 1384, height: 900 });
     await page.goto('/');
 
     const header = page.locator('header');
     assertNoneMissing(SAOC_NAV_HREFS, new Set(await renderedAnchorHrefs(header)), 'desktop header');
     await assertPresentAnchorsActionable(header, SAOC_NAV_HREFS);
+  });
+
+  test('menu band (1280px): the inline nav is hidden and every SAOC NAV href is in the drawer', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/');
+
+    await expect(page.locator('header [data-hd="nav"]')).toBeHidden();
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+
+    assertNoneMissing(SAOC_NAV_HREFS, new Set(await renderedAnchorHrefs(dialog)), 'menu-band drawer');
+    await assertPresentAnchorsActionable(dialog, SAOC_NAV_HREFS);
   });
 
   // MobileMenu renders as a DOM sibling of <header>, not a descendant — "reachable from the header"
@@ -135,8 +152,8 @@ test.describe('NOS nav hrefs are reachable from the rendered NOS header', () => 
 
     assertNoneMissing(NOS_REQUIRED_HEADER_HREFS, rendered, 'desktop NOS header');
     expect(
-      [...rendered].some((href) => isSaocLink(href, CONTACT_LINK.href)),
-      'the NOS header has no absolute link to the SAOC Contact page',
+      [...rendered].some((href) => href === CONTACT_LINK.href),
+      'the NOS header has no NOS /contact link',
     ).toBe(true);
   });
 
@@ -167,8 +184,8 @@ test.describe('NOS nav hrefs are reachable from the rendered NOS header', () => 
     for (const href of await renderedAnchorHrefs(header)) rendered.add(href);
     assertNoneMissing(NOS_REQUIRED_HEADER_HREFS, rendered, 'mobile NOS header and menu');
     expect(
-      [...rendered].some((href) => isSaocLink(href, CONTACT_LINK.href)),
-      'the NOS menu panel has no absolute link to the SAOC Contact page',
+      [...rendered].some((href) => href === CONTACT_LINK.href),
+      'the NOS menu panel has no NOS /contact link',
     ).toBe(true);
   });
 

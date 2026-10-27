@@ -1,110 +1,121 @@
+import { PortableText } from '@portabletext/react';
 import type { Metadata } from 'next';
+import { defineQuery } from 'next-sanity';
 
-import { NosHero } from '@/components/nos/NosHero';
-import { NosSection } from '@/components/nos/NosSection';
+import { heroFactsFromShow, NosHero } from '@/components/nos/NosHero';
+import { NOS_ROUTE_HEROES } from '@/components/nos/nos-route-heroes';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
-import { ShowStatusFoot, ShowStatusLine } from '@/components/show/ShowStatusLine';
-import { SalesStatusLine, TicketCard, TicketSection } from '@/components/tickets/keepsake';
+import { TicketCard } from '@/components/tickets/keepsake';
+import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { loadTicketCardViewModels } from '@/lib/data/admission-availability';
+import { loadShowFacts } from '@/lib/data/show-facts';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
-import { TICKET_COPY, partnerNameOf, type TicketProductId } from '@/lib/data/ticket-presentation';
 import { buildPageMetadata } from '@/lib/seo';
 import { withTicketingTestTitle } from '@/lib/ticketing-test-metadata';
+import { sanityFetch } from '@/sanity/lib/fetch';
+import type { ShowFaq } from '@/types';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 
-// Live stock reaches this page through Firebase Admin credentials that exist only at runtime,
-// so it can never be prerendered at build time.
+// WK-G1 (NOS Design, comms.md 2026-10-25): hero with no lede, one 7/5 grid with her FAQ 57 copy and
+// FAQ 58-60 beside the live Workshops ticket card. Every string is hers (FAQ v1.0, section 8): the
+// standfirst and the body are the first two sentences of question 57, and the third is dropped because
+// this page is the website. The build's own status box, its chip, its session-times sentences, the
+// section heading above the cards and the cocktail card (an event, kept on /tickets and /programme) are
+// gone. Workshop records render here once SAOC enters them in Sanity (workshopSession: level, duration,
+// included, bring); none exist yet, so there is nothing to draw.
+// `dynamic = 'force-dynamic'`: the ticket card reaches Firebase Admin, as on the symposium page.
 export const dynamic = 'force-dynamic';
 
-// Description restates the page's own rendered lede below — no new claim is introduced here.
-// Deliberately no Event markup: ticketType carries no session date, and inventing one to
-// unlock a rich result is exactly what M6/B8d forbids.
+const FACTS_LABELS = ['Dates', 'Venue', 'Host'] as const;
+const FAQ_HEADING = 'Frequently asked questions';
+const FAQ_IDS = ['showFaq-q58', 'showFaq-q59', 'showFaq-q60'];
+// FAQ v1.0 question 57, its first two sentences, word for word.
+const STANDFIRST = 'Workshops are planned as part of the wider event programme.';
+const BODY = 'The topics, instructors, dates, costs and booking arrangements are to be confirmed.';
+const WORKSHOP_FAQ_QUERY = defineQuery(`
+  *[_type == "showFaq" && active == true && _id in $ids] | order(order asc){
+    _id,
+    question,
+    answer,
+    order
+  }
+`);
+
 export const metadata: Metadata = withTicketingTestTitle(
   buildPageMetadata({
-    title: 'Workshops & Field Trips',
-    image: nosOgImage('Workshops & Field Trips — National Show'),
-    description:
-      'Book Sunset Cocktails and guided Field Trip outings at the South African National ' +
-      'Orchid Show.',
+    title: NOS_ROUTE_HEROES.workshops.title,
+    image: nosOgImage('Workshops — National Show'),
+    description: STANDFIRST,
     path: '/national-show/workshops',
   })
 );
 
-const SESSIONS_NOTE =
-  'Individual session times are still being finalised — the products below are the ' +
-  'sellable Sunset Cocktails and Field Trip options. Per-session bookings are not yet ' +
-  'available for purchase.';
-// Its first sentence is the disclosure body and its second the foot line (the wording is unchanged).
-const [SESSIONS_NOTE_BODY, SESSIONS_NOTE_FOOT] = SESSIONS_NOTE.match(/[^.]+\./g) ?? [
-  SESSIONS_NOTE,
-  '',
-];
-const SESSIONS_NOTE_CHIP = 'To be confirmed by the show committee';
-
-// Public build (F24, V2): the first sentence is withheld, so the disclosure is composed here as
-// chip + foot on the same gold surface ShowStatusLine draws. ShowStatusLine itself is not
-// used for this: with no `items` it returns the bare chip and would drop the foot.
-const PUBLIC_NOTE_SURFACE_CLASSES =
-  'grid gap-5 rounded-[16px] bg-[var(--gold)] px-[clamp(20px,3vw,32px)] pb-6 pt-5 shadow-sm max-[700px]:px-4';
-const PUBLIC_NOTE_CHIP_FIT_CLASSES = [
-  '[@media(max-width:700px)]:[&>p]:!px-[10px]',
-  '[@media(min-width:420px)_and_(max-width:700px)]:[&>p]:!tracking-[0.06em]',
-  '[@media(min-width:375px)_and_(max-width:419px)]:[&>p]:!tracking-[0.02em]',
-  '[@media(max-width:374px)]:[&>p]:!tracking-[0]',
-].join(' ');
-
-const WORKSHOP_PAGE_PRODUCTS: readonly TicketProductId[] = ['sunset', 'workshops'];
-
-export default async function WorkshopsFieldTripsTicketsPage() {
-  const { cards, salesOpen } = await loadTicketCardViewModels();
-  const withhold = withholdPlaceholderProse();
-  const showProvisional = !withhold;
+export default async function WorkshopsPage() {
+  // A Sanity or Firebase failure must never turn this public page into a 500.
+  const [showFacts, ticketCards, faqs] = await Promise.all([
+    loadShowFacts(),
+    loadTicketCardViewModels().catch((error: unknown) => {
+      console.error('[national-show/workshops] loadTicketCardViewModels failed:', error);
+      return null;
+    }),
+    sanityFetch<ShowFaq[]>({
+      query: WORKSHOP_FAQ_QUERY,
+      params: { ids: FAQ_IDS },
+      tags: ['showFaq', 'sanity'],
+    }),
+  ]);
+  const card = ticketCards?.cards.workshops ?? null;
+  const answered = (faqs ?? []).filter((faq) => faq.question && (faq.answer ?? []).length > 0);
 
   return (
     <>
       <NosHero
-        route="/national-show/workshops"
-        title="Workshops & Field Trips"
-        lede="Book Sunset Cocktails and guided Field Trip outings at the National Show."
+        route={NOS_ROUTE_HEROES.workshops.route}
+        title={NOS_ROUTE_HEROES.workshops.title}
+        crumbLabel={NOS_ROUTE_HEROES.workshops.title}
+        facts={heroFactsFromShow(showFacts, FACTS_LABELS)}
         priority
       />
-      <NosSection>
-        <div className="nk-sessions-note">
-          {withhold ? (
-            <div data-status-disclosure="" role="note" className={PUBLIC_NOTE_SURFACE_CLASSES}>
-              <div className={PUBLIC_NOTE_CHIP_FIT_CLASSES}>
-                <ShowStatusLine status="pending" pendingLabel={SESSIONS_NOTE_CHIP} />
+
+      <DocumentLayout
+        aside={
+          card ? (
+            <div className="nk-grid">
+              <div className="nk-wrap">
+                <TicketCard
+                  headingLevel="p"
+                  productId="workshops"
+                  vm={card}
+                  name={card.name}
+                  partnerName={null}
+                  showProvisional={!withholdPlaceholderProse()}
+                />
               </div>
-              <ShowStatusFoot>{SESSIONS_NOTE_FOOT.trim()}</ShowStatusFoot>
             </div>
-          ) : (
-            <ShowStatusLine
-              status="pending"
-              pendingLabel={SESSIONS_NOTE_CHIP}
-              items={[SESSIONS_NOTE_BODY.trim().replace(/\.$/, '')]}
-              foot={SESSIONS_NOTE_FOOT.trim()}
-            />
-          )}
+          ) : undefined
+        }
+        asideFirst
+        asideBare
+      >
+        <div className="nos-ev-main">
+          <p className="doc-standfirst">{STANDFIRST}</p>
+          <p>{BODY}</p>
+          {answered.length > 0 ? (
+            <section className="nos-ev-faq" aria-labelledby="workshops-faq-h">
+              <h2 id="workshops-faq-h">{FAQ_HEADING}</h2>
+              <div className="nos-qa">
+                {answered.map((faq) => (
+                  <div key={faq._id}>
+                    <h3>{faq.question}</h3>
+                    <PortableText value={faq.answer ?? []} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
         </div>
-      </NosSection>
-      {!salesOpen ? <SalesStatusLine /> : null}
-      <TicketSection id="programme" title={TICKET_COPY.sections.programme} columns={2}>
-        {WORKSHOP_PAGE_PRODUCTS.map((id) => {
-          const vm = cards[id];
-          return vm ? (
-            <div key={id} className="nk-wrap">
-              <TicketCard
-                productId={id}
-                vm={vm}
-                name={vm.name}
-                partnerName={partnerNameOf(id, cards)}
-                showProvisional={showProvisional}
-              />
-            </div>
-          ) : null;
-        })}
-      </TicketSection>
-      <NosShowIndex current="/national-show/workshops" currentTone="ink" />
+      </DocumentLayout>
+      <NosShowIndex current="/national-show/workshops" />
     </>
   );
 }

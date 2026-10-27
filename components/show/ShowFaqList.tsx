@@ -9,44 +9,51 @@
 // a council document — the answer text is in the DOM even while collapsed, so the page
 // prints and in-page browser search finds it.
 //
-// Category display order is presentation, not editor content, so it is the one
-// hardcoded list this feature permits. An unrecognised category coming back from Sanity
-// is appended under General rather than silently dropped.
+// Section order, titles and introductions are Lee-Ann's: lib/data/faq-sections.ts is the one source.
+// Her numbering is rendered: a category reads "3. Getting to the venue and accessibility", a question
+// "18. Where is the venue?". An unrecognised category coming back from Sanity is appended under the
+// first section rather than silently dropped.
 //
-// R44-A3: a wrapping set of in-page jump chips, one per category that has questions, sits above
-// the sections. Chips are built from the same CATEGORY_ORDER / CATEGORY_LABELS as the sections and
-// point at each heading's existing `faq-<category>` id. No filter field; no client code.
+// nos-content-standard (FAQ-NAV): one section per category, its h2 above ONE warm card holding the
+// category's rows with hairline dividers. The category index is the page's DocumentLayout aside
+// (faqIndexEntries), never a chip row, and nothing here announces which answers are unconfirmed
+// before the first category.
 // =============================================================
 
 import { PortableText } from '@portabletext/react';
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import { FAQ_SECTIONS, type FaqSection } from '@/lib/data/faq-sections';
+import { nosPath } from '@/lib/nos-paths';
 import type { ShowFaq } from '@/types';
 
 import { ConfirmationBadge } from './ConfirmationBadge';
-import { ShowJumpChips } from './ShowJumpChips';
 
-const CATEGORY_ORDER = [
-  'getting-there',
-  'tickets',
-  'accessibility',
-  'plant-sales',
-  'general',
-] as const;
+const FALLBACK_SECTION_ID = FAQ_SECTIONS[0].id;
 
-const CATEGORY_LABELS: Record<(typeof CATEGORY_ORDER)[number], string> = {
-  'getting-there': 'Getting there',
-  tickets: 'Tickets',
-  accessibility: 'Accessibility',
-  'plant-sales': 'Plant sales',
-  general: 'General',
-};
+// Her section 10 sentence names the website's "Plan your visit" tab; the page links that name.
+const PLAN_YOUR_VISIT_NAME = 'Plan your visit';
+const PLAN_YOUR_VISIT_HREF = '/national-show/plan-your-visit';
 
-type KnownCategory = (typeof CATEGORY_ORDER)[number];
+// An introduction paragraph with the Plan your visit tab name drawn as a link, the text unchanged.
+function introWithLinks(paragraph: string): ReactNode {
+  const at = paragraph.indexOf(PLAN_YOUR_VISIT_NAME);
+  if (at === -1) return paragraph;
+  return (
+    <>
+      {paragraph.slice(0, at)}
+      <Link href={nosPath(PLAN_YOUR_VISIT_HREF)}>{PLAN_YOUR_VISIT_NAME}</Link>
+      {paragraph.slice(at + PLAN_YOUR_VISIT_NAME.length)}
+    </>
+  );
+}
 
-function categoryOf(faq: ShowFaq): KnownCategory {
-  const category = faq.category as KnownCategory | null | undefined;
-  return category && CATEGORY_ORDER.includes(category) ? category : 'general';
+function categoryOf(faq: ShowFaq): string {
+  const category = faq.category;
+  return category && FAQ_SECTIONS.some((section) => section.id === category)
+    ? category
+    : FALLBACK_SECTION_ID;
 }
 
 /** A question carries an answer when its portable text has at least one block. */
@@ -54,27 +61,48 @@ export function hasFaqAnswer(faq: ShowFaq): boolean {
   return Array.isArray(faq.answer) && faq.answer.length > 0;
 }
 
+export interface FaqGroup {
+  section: FaqSection;
+  /** Her heading: the category's number in her document, then its title. */
+  heading: string;
+  /** Her number for the category ("3.") and the title it numbers, drawn as separate spans. */
+  number: string;
+  title: string;
+  /** The h2 id, `faq-<n>-h`; its section is `faq-<n>`. */
+  id: string;
+  inCategory: ShowFaq[];
+}
+
 /**
- * A row whose answer is read from a published source rather than typed in Sanity (keyed by the
- * showFaq _id). `replaces` swaps the Sanity answer for `body`; otherwise `body` follows it. A wired
- * row carries no marker: its source is the page that publishes the fact.
+ * The categories the page draws, in her order. A category with no question is still drawn when she
+ * gave it an introduction (her section 10).
  */
-export interface WiredFaq {
-  kind: string;
-  body: ReactNode;
-  // The plain text of `body`'s answer, for the FAQPage node: the same words the row shows.
-  text: string;
-  replaces: boolean;
+export function faqGroups(faqs: ShowFaq[] | null | undefined, hideUnanswered = false): FaqGroup[] {
+  const entries = (faqs ?? []).filter(
+    (faq) => faq?.question && (!hideUnanswered || hasFaqAnswer(faq))
+  );
+  return FAQ_SECTIONS.map((section, position) => ({
+    section,
+    heading: `${position + 1}. ${section.title}`,
+    number: `${position + 1}.`,
+    title: section.title,
+    id: `faq-${position + 1}-h`,
+    inCategory: entries.filter((faq) => categoryOf(faq) === section.id),
+  })).filter(({ section, inCategory }) => inCategory.length > 0 || section.intro.length > 0);
+}
+
+/** The DocumentLayout index entries for the groups: one link per category h2. */
+export function faqIndexEntries(groups: readonly FaqGroup[]): { id: string; label: string }[] {
+  return groups.map(({ id, heading }) => ({ id, label: heading }));
 }
 
 export interface ShowFaqListProps {
-  wired?: Readonly<Record<string, WiredFaq>>;
   faqs?: ShowFaq[] | null;
   pendingLabel?: string | null;
   researchLabel?: string | null;
   /**
    * R77 #2 (F18): a question with no answer renders no row at all. The route passes
-   * `withholdPlaceholderProse()`, so beta keeps every row with its chip and a public build
+   * `withholdPlaceholderProse()`, so beta keeps every row with its marker and a public build
    * shows only what the Council has answered.
    */
   hideUnanswered?: boolean;
@@ -85,93 +113,91 @@ export function ShowFaqList({
   pendingLabel,
   researchLabel,
   hideUnanswered = false,
-  wired = {},
 }: ShowFaqListProps) {
-  const entries = (faqs ?? []).filter(
-    (faq) => faq?.question && (!hideUnanswered || hasFaqAnswer(faq) || Boolean(wired[faq._id]))
-  );
-  if (entries.length === 0) return null;
-
-  const groups = CATEGORY_ORDER.map((category) => ({
-    category,
-    inCategory: entries.filter((faq) => categoryOf(faq) === category),
-  })).filter(({ inCategory }) => inCategory.length > 0);
+  const groups = faqGroups(faqs, hideUnanswered);
+  if (groups.length === 0) return null;
 
   return (
     <>
-      {groups.length > 1 ? (
-        <ShowJumpChips
-          label="FAQ categories"
-          items={groups.map(({ category }) => ({
-            href: `#faq-${category}`,
-            label: CATEGORY_LABELS[category],
-          }))}
-        />
-      ) : null}
+      {groups.map(({ section, number, title, id, inCategory }, groupIndex) => (
+        <section
+          key={section.id}
+          id={id.replace(/-h$/, '')}
+          className="doc-section"
+          aria-labelledby={id}
+        >
+          <h2 id={id} className="doc-h2 nos-num-h2">
+            <span className="nos-num">{number}</span>{' '}
+            <span>{title}</span>
+          </h2>
+          {inCategory.length > 0
+            ? section.intro.map((paragraph) => (
+                <p key={paragraph} className="nos-faq-intro">
+                  {introWithLinks(paragraph)}
+                </p>
+              ))
+            : null}
 
-      <div className="space-y-12">
-        {groups.map(({ category, inCategory }) => (
-          <section key={category} aria-labelledby={`faq-${category}`}>
-            <h2
-              id={`faq-${category}`}
-              className="nos-label scroll-mt-[62px] font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-accent md:scroll-mt-[74px]"
-            >
-              {CATEGORY_LABELS[category]}
-            </h2>
+          <div data-faq-card="" className="nos-faq-card">
+            {inCategory.length === 0
+              ? section.intro.map((paragraph) => (
+                  <p key={paragraph} className="nos-faq-intro nos-faq-intro-only">
+                    {introWithLinks(paragraph)}
+                  </p>
+                ))
+              : null}
+            {inCategory.length > 0 ? (
+              <ul>
+                {inCategory.map((faq, rowIndex) => (
+                  <li key={faq._id}>
+                    <details open={groupIndex === 0 && rowIndex === 0 ? true : undefined}>
+                      <summary data-faq-summary="" className="nos-faq-summary">
+                        <span data-faq-number="" className="nos-faq-qn">
+                          {typeof faq.order === 'number' ? `${faq.order}.` : ''}
+                        </span>
+                        <span data-faq-question="" className="nos-faq-question">
+                          {faq.question}
+                        </span>
+                        <span data-faq-icon="" aria-hidden="true" className="nos-faq-icon">
+                          <svg
+                            viewBox="0 0 20 20"
+                            width="20"
+                            height="20"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.75"
+                            strokeLinecap="round"
+                          >
+                            <path d="M3 10h14" />
+                            <path className="nos-faq-icon-v" d="M10 3v14" />
+                          </svg>
+                        </span>
+                      </summary>
 
-            <ul className="mt-4 space-y-4">
-              {inCategory.map((faq) => (
-                <li key={faq._id} className="nos-surface nos-faq-item">
-                  <details>
-                    <summary
-                      data-faq-summary=""
-                      className="nos-faq-summary cursor-pointer font-serif font-medium text-[19px] leading-snug text-ink hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--ring-focus)]"
-                    >
-                      <span data-faq-question="" className="nos-faq-question">
-                        <span>{faq.question}</span>
-                      </span>
-                      <span data-faq-icon="" aria-hidden="true" className="nos-faq-icon">
-                        <svg
-                          viewBox="0 0 20 20"
-                          width="20"
-                          height="20"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.75"
-                          strokeLinecap="round"
-                        >
-                          <path d="M4 10h12" />
-                          <path className="nos-faq-icon-v" d="M10 4v12" />
-                        </svg>
-                      </span>
-                    </summary>
-
-                    <div className="nos-faq-answer">
-                      {/* The marker sits in the answer panel, not the summary: a marker in the summary
-                          is part of every accessible name and doubles the row's height at 390. */}
-                      {hideUnanswered || wired[faq._id] ? null : (
-                        <ConfirmationBadge
-                          status={faq.status}
-                          pendingLabel={pendingLabel}
-                          researchLabel={researchLabel}
-                        />
-                      )}
-                      {faq.answer && faq.answer.length > 0 && !wired[faq._id]?.replaces ? (
-                        <div className="max-w-3xl font-sans text-[length:var(--fs-body,1rem)] leading-[1.55] text-ink/80">
-                          <PortableText value={faq.answer} />
-                        </div>
-                      ) : null}
-                      {wired[faq._id] ? (
-                        <div data-faq-wired={wired[faq._id].kind}>{wired[faq._id].body}</div>
-                      ) : null}
-                    </div>
-                  </details>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
-      </div>
+                      <div className="nos-faq-answer">
+                        {/* The marker sits in the answer panel, not the summary: a marker in the summary
+                            is part of every accessible name and doubles the row's height at 390. */}
+                        {hideUnanswered ? null : (
+                          <ConfirmationBadge
+                            status={faq.status}
+                            pendingLabel={pendingLabel}
+                            researchLabel={researchLabel}
+                          />
+                        )}
+                        {hasFaqAnswer(faq) ? (
+                          <div className="doc-prose">
+                            <PortableText value={faq.answer ?? []} />
+                          </div>
+                        ) : null}
+                      </div>
+                    </details>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        </section>
+      ))}
     </>
   );
 }

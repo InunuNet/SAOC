@@ -9,9 +9,11 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 import { useFocusTrap } from '@/lib/hooks/useFocusTrap';
+import { navAriaCurrent } from '@/lib/nav-current';
 import { CONTACT_LINK, type NavLinkItem } from './nav-config';
 
 export const MOBILE_MENU_ID = 'mobile-menu';
@@ -19,12 +21,15 @@ export const MOBILE_MENU_ID = 'mobile-menu';
 interface MobileMenuProps {
   open: boolean;
   onClose: () => void;
+  /** Opens the search dialog; the drawer's first row (below the full breakpoint, where the header has no search icon). */
+  onSearch: () => void;
   nav: ReadonlyArray<NavLinkItem>;
   triggerRef?: React.RefObject<HTMLElement | null>;
 }
 
-export function MobileMenu({ open, onClose, nav, triggerRef }: MobileMenuProps) {
+export function MobileMenu({ open, onClose, onSearch, nav, triggerRef }: MobileMenuProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
 
   // Marks every other <body> child (header, main, footer, the SearchOverlay root, etc.)
   // inert while the drawer is open, so background content is unreachable by keyboard/screen
@@ -107,6 +112,20 @@ export function MobileMenu({ open, onClose, nav, triggerRef }: MobileMenuProps) 
         {/* Nav links */}
         <nav aria-label="Mobile primary">
           <ul className="flex flex-col gap-1">
+            <li className="min-[1384px]:hidden">
+              <button
+                data-hd="drawer-search"
+                type="button"
+                className="flex min-h-11 w-full items-center gap-3 rounded-sm px-3 font-sans text-[15px] text-ink transition-colors duration-150 hover:bg-bone hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                onClick={() => {
+                  onClose();
+                  onSearch();
+                }}
+              >
+                <Search size={18} strokeWidth={1.5} aria-hidden="true" />
+                Search SAOC
+              </button>
+            </li>
             {nav.map((n) => {
               if (n.disabled) {
                 return (
@@ -130,12 +149,15 @@ export function MobileMenu({ open, onClose, nav, triggerRef }: MobileMenuProps) 
                   <NavLink
                     href={n.href}
                     onClick={onClose}
+                    aria-current={navAriaCurrent(pathname, n.href, { crossSite: n.crossSite })}
                     className={[
-                      'flex items-center px-3 py-3 font-sans text-[15px] rounded-sm transition-colors duration-150 hover:text-primary hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment',
+                      'group flex items-center px-3 py-3 font-sans text-[15px] rounded-sm transition-colors duration-150 hover:text-primary hover:bg-bone focus-visible:text-primary focus-visible:outline-none aria-[current=page]:text-primary',
                       n.quiet ? 'text-muted' : 'text-ink',
                     ].join(' ')}
                   >
-                    {n.label}
+                    <span className="group-focus-visible:underline group-focus-visible:decoration-2! group-focus-visible:underline-offset-4 group-aria-[current=page]:underline group-aria-[current=page]:decoration-1 group-aria-[current=page]:underline-offset-4 forced-colors:group-focus-visible:decoration-[color:Highlight]">
+                      {n.label}
+                    </span>
                   </NavLink>
                 </li>
               );
@@ -144,19 +166,31 @@ export function MobileMenu({ open, onClose, nav, triggerRef }: MobileMenuProps) 
               <Link
                 href={CONTACT_LINK.href}
                 onClick={onClose}
-                className="flex items-center px-3 py-3 font-sans text-[15px] text-ink hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+                aria-current={navAriaCurrent(pathname, CONTACT_LINK.href)}
+                className="group flex items-center px-3 py-3 font-sans text-[15px] text-ink hover:text-primary hover:bg-bone rounded-sm transition-colors duration-150 focus-visible:text-primary focus-visible:outline-none aria-[current=page]:text-primary"
               >
-                {CONTACT_LINK.label}
+                <span className="group-focus-visible:underline group-focus-visible:decoration-2! group-focus-visible:underline-offset-4 group-aria-[current=page]:underline group-aria-[current=page]:decoration-1 group-aria-[current=page]:underline-offset-4 forced-colors:group-focus-visible:decoration-[color:Highlight]">
+                  {CONTACT_LINK.label}
+                </span>
               </Link>
             </li>
           </ul>
         </nav>
 
+        {/* The header's "Join a society" button lives here at 780px and below, where the bar is one row. */}
+        <Link
+          href="/societies"
+          onClick={onClose}
+          className="mt-6 inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-[10px] bg-accent px-6 py-[10px] font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:bg-accent-soft min-[781px]:hidden focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:border forced-colors:border-[color:ButtonText] forced-colors:focus-visible:decoration-[color:Highlight]"
+        >
+          Join a society
+        </Link>
+
         {/* Footer meta */}
         <div className="mt-8 pt-6 border-t border-rule flex flex-col gap-1">
           <a
             href="mailto:info@saoc.co.za"
-            className="font-mono text-[12px] text-muted hover:text-primary transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-parchment"
+            className="font-mono text-[12px] text-muted hover:text-primary transition-colors duration-150 focus-visible:text-primary focus-visible:outline-none focus-visible:underline focus-visible:decoration-2 focus-visible:underline-offset-4 forced-colors:focus-visible:decoration-[color:Highlight]"
           >
             info@saoc.co.za
           </a>

@@ -25,8 +25,11 @@ base64url, 43 chars).
   before (what "Subscribe again" puts back).
 - A footer re-subscribe (or "Subscribe again") flips the same document back, clears the three
   doc-level audit fields and `restoreTopics`, keeps `topicRemovals`, and keeps the original token
-  and source so links already issued keep working. A footer re-subscribe merges the ticked topics
-  into the topics the address already holds.
+  and source so links already issued keep working. An address that was unsubscribed and
+  re-subscribes from the footer gets exactly the ticked topics (consent given before unsubscribing
+  does not carry over); an address that is still subscribed and adds a topic has it merged into
+  the topics it already holds. A subscribe request without `topics` uses the source default; an
+  explicit empty list or unknown topic is rejected.
 - **Nothing is ever hard-deleted** (POPIA record): no code path calls `delete` on this collection.
 - Both footers start with **no topic ticked**; ticking at least one is required to submit.
 

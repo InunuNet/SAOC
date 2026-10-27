@@ -36,3 +36,8 @@ export function generateBookingRef(): string {
   }
   return `${BOOKING_REF_PREFIX}${segment}`;
 }
+
+/** A `ref` search param is only usable when it is a single string; an array or absence is ''. */
+export function normalizeBookingRefParam(ref: string | string[] | undefined): string {
+  return typeof ref === 'string' ? ref.trim() : '';
+}

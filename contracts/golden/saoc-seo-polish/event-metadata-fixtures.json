@@ -1,0 +1,30 @@
+{
+  "_comment": "Golden for finding (c). Run with NEXT_PUBLIC_SAOC_SITE_URL=https://origin.example.test. The fallback description is built ONLY from title, dates and venue/location, joined with '. ' and ended with '.', using the event page's own date format (en-ZA, long month, UTC) and its ' – ' (en dash) range separator. A description that is empty or whitespace-only counts as absent. A real description is used as written (via fitDescription, unchanged).",
+  "origin": "https://origin.example.test",
+  "cases": [
+    {
+      "name": "no description, multi-day, venue and location",
+      "slug": "test-society-annual-show",
+      "event": { "title": "Test Society Annual Show", "date": "2027-09-23T00:00:00Z", "endDate": "2027-09-26T00:00:00Z", "description": null, "venue": "The Hangar", "location": "Stellenbosch" },
+      "expectedDescription": "Test Society Annual Show. 23 September 2027 – 26 September 2027. The Hangar, Stellenbosch."
+    },
+    {
+      "name": "no description, single day, no venue",
+      "slug": "test-society-open-day",
+      "event": { "title": "Test Society Open Day", "date": "2027-10-03T00:00:00Z", "endDate": null, "description": null, "venue": null, "location": null },
+      "expectedDescription": "Test Society Open Day. 3 October 2027."
+    },
+    {
+      "name": "blank description falls back, end equal to start is one day",
+      "slug": "test-society-workshop",
+      "event": { "title": "Test Society Workshop", "date": "2027-10-10T00:00:00Z", "endDate": "2027-10-10T00:00:00Z", "description": "   ", "venue": "Town Hall", "location": null },
+      "expectedDescription": "Test Society Workshop. 10 October 2027. Town Hall."
+    },
+    {
+      "name": "real description is kept as written",
+      "slug": "test-society-talk",
+      "event": { "title": "Test Society Talk", "date": "2027-11-01T00:00:00Z", "endDate": null, "description": "A gathering of orchid growers from across the province for talks, plant sales and a judged display.", "venue": "Town Hall", "location": null },
+      "expectedDescription": "A gathering of orchid growers from across the province for talks, plant sales and a judged display."
+    }
+  ]
+}

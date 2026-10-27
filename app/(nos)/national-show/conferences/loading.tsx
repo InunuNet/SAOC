@@ -1,15 +1,17 @@
-// Route-level Suspense fallback while the Sanity conference ticket types load.
-// Sage & Paper tokens only, no new colours — same pattern as exhibitors/loading.tsx.
-export default function ConferencesLoading() {
+import { NosHero } from '@/components/nos/NosHero';
+import { NOS_ROUTE_HEROES } from '@/components/nos/nos-route-heroes';
+
+// nos-loader-h1: the page's own hero, so the h1 and the group sub-nav are on screen from the first
+// frame and do not move when the page streams in.
+export default function Loading() {
   return (
-    <div className="mx-auto max-w-[1280px] space-y-6 px-8 py-16" aria-busy="true" aria-live="polite">
-      <div className="h-[420px] animate-pulse bg-bone" aria-hidden="true" />
-      <div className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="h-56 animate-pulse border border-rule bg-bone" aria-hidden="true" />
-        <div className="h-56 animate-pulse border border-rule bg-bone" aria-hidden="true" />
-        <div className="h-56 animate-pulse border border-rule bg-bone" aria-hidden="true" />
-      </div>
-      <span className="sr-only">Loading conferences…</span>
-    </div>
+    <NosHero
+      route={NOS_ROUTE_HEROES.conferences.route}
+      title={NOS_ROUTE_HEROES.conferences.title}
+      crumbLabel={NOS_ROUTE_HEROES.conferences.title}
+      titleAs="p"
+      actions={<div className="nos-hero-facts-skeleton nos-hero-facts-skeleton--cr" aria-hidden="true" />}
+      priority
+    />
   );
 }

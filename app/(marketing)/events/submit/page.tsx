@@ -1,12 +1,23 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 
-import { SubmitEventForm } from '@/components/events/SubmitEventForm';
+import { SubmitEventPageBody } from '@/components/events/SubmitEventPageBody';
+import { RouteHero } from '@/components/ui/RouteHero';
+import { buildPageMetadata } from '@/lib/seo';
+import { sanityFetch } from '@/sanity/lib/fetch';
+import { societyListQuery } from '@/sanity/queries';
 
-export const metadata: Metadata = {
-  title: 'Submit an Event — SAOC',
-  robots: { index: false },
-};
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Submit an Event',
+  description: 'Your submission will be reviewed by the council before it appears on the site.',
+  path: '/events/submit',
+  noIndex: true,
+});
+
+interface SanitySocietyRow {
+  _id: string;
+  name: string;
+}
 
 async function isAuthenticated(): Promise<boolean> {
   try {
@@ -25,13 +36,19 @@ async function isAuthenticated(): Promise<boolean> {
 
 function LoginPrompt() {
   return (
-    <div className="py-16 text-center">
-      <h1 className="text-2xl font-semibold mb-3">Members only</h1>
-      <p className="text-gray-600 mb-6">Event submission is available to SAOC members.</p>
-      <a href="/contact" className="underline text-gray-900 text-sm">
-        Contact us about membership
-      </a>
-    </div>
+    <RouteHero
+      route="/events/submit"
+      heading="Members only"
+      lede="Event submission is available to SAOC members."
+      actions={
+        <a
+          href="/contact"
+          className="mt-8 inline-flex min-h-11 items-center bg-accent px-6 py-3 font-sans text-[14px] font-medium text-ink transition-colors duration-150 hover:bg-accent-soft"
+        >
+          Contact us about membership
+        </a>
+      }
+    />
   );
 }
 
@@ -42,13 +59,11 @@ export default async function SubmitEventPage() {
     return <LoginPrompt />;
   }
 
-  return (
-    <div className="max-w-xl mx-auto px-4 py-12">
-      <h1 className="text-2xl font-semibold mb-2">Submit an event</h1>
-      <p className="text-gray-600 text-sm mb-8">
-        Your submission will be reviewed by the council before it appears on the site.
-      </p>
-      <SubmitEventForm />
-    </div>
-  );
+  const listed = await sanityFetch<SanitySocietyRow[] | null>({
+    query: societyListQuery,
+    tags: ['societies', 'sanity'],
+  });
+  const societies = (listed ?? []).map((row) => ({ id: row._id, name: row.name }));
+
+  return <SubmitEventPageBody societies={societies} />;
 }

@@ -1,0 +1,87 @@
+schema: athanor.contract/v1
+slug: ticket-onsale-predicate
+goal: One shared server-side on-sale predicate refuses demo and non-purchasable ticket types at checkout and on the detail page, and the NOS Event JSON-LD offers derive from the same pipeline as the tickets hub.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F1
+    name: shared isTicketOnSale predicate, checkout and detail-page refusal, hub-derived JSON-LD offers
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/ticket-onsale-predicate/goldens/design.md
+  - .agent/memory/project/specs/ticket-onsale-predicate/goldens/predicate-truth-table.json
+  - .agent/memory/project/specs/ticket-onsale-predicate/goldens/qa-policy-truth-table.json
+  - .agent/memory/project/specs/ticket-onsale-predicate/goldens/catalogue.json
+  - .agent/memory/project/specs/ticket-onsale-predicate/goldens/jsonld-offers.json
+  - .agent/memory/project/specs/ticket-onsale-predicate/goldens/scope-allowlist.txt
+  - .agent/memory/project/specs/ticket-onsale-predicate/goldens/codex-qa-prompt.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: isTicketOnSale truth table (demo, inactive, sales closed, wrong show, price, capacity, sold out, pooled sold out, precedence)
+      command: pnpm exec tsx contracts/checks/ticket-onsale-predicate/check-predicate-truth-table.mts
+      timeout_seconds: 120
+    - id: A2
+      description: qaFixturesAllowed policy table (production and payments-live both refuse demo)
+      command: pnpm exec tsx contracts/checks/ticket-onsale-predicate/check-qa-policy.mts
+      timeout_seconds: 120
+    - id: A3
+      description: checkout refuses demo slugs with the existing 400 Unknown ticketType shape and zero Firestore writes, offline; real product and non-production fixture are not over-blocked
+      command: pnpm exec node --require ./contracts/checks/ticket-onsale-predicate/_mocks/register.cjs --import tsx contracts/checks/ticket-onsale-predicate/check-api-refuses.mts
+      timeout_seconds: 180
+    - id: A4
+      description: /tickets/[slug] notFound() for demo products in production, renders for real products and for the fixture in development, offline
+      command: pnpm exec node --require ./contracts/checks/ticket-onsale-predicate/_mocks/register.cjs --import tsx contracts/checks/ticket-onsale-predicate/check-page-404.mts
+      timeout_seconds: 180
+    - id: A5
+      description: JSON-LD offers equal the hub's displayed products across three stock scenarios, include Sunset Cocktails and conference products, never a demo product, SoldOut follows hub card state
+      command: pnpm exec node --require ./contracts/checks/ticket-onsale-predicate/_mocks/register.cjs --import tsx contracts/checks/ticket-onsale-predicate/check-jsonld-offers.mts
+      timeout_seconds: 120
+    - id: A6
+      description: TICKETING_PAYMENTS_LIVE is still false and SITE_PUBLIC_LAUNCH is not set in apphosting.yaml
+      command: sh contracts/checks/ticket-onsale-predicate/check-no-live-flag-flip.sh
+      timeout_seconds: 30
+    - id: A7
+      description: the prerendered /national-show page does not reach firebase-admin
+      command: '! python3 contracts/golden/build-without-secrets/check_no_prerendered_admin_routes.py . 2>&1 | sed -n ''/VIOLATIONS/,$p'' | grep -q "national-show/page.tsx"'
+      timeout_seconds: 60
+    - id: A8
+      description: checkout route consumes the shared predicate
+      command: grep -q "@/lib/ticket-on-sale" app/api/tickets/checkout/route.ts
+      timeout_seconds: 10
+    - id: A9
+      description: detail page consumes the shared predicate module
+      command: grep -q "@/lib/ticket-on-sale" "app/(nos)/tickets/[slug]/page.tsx"
+      timeout_seconds: 10
+    - id: A10
+      description: scope allow-list, every changed file is permitted
+      command: sh contracts/checks/ticket-onsale-predicate/check-scope.sh
+      timeout_seconds: 30
+    - id: A11
+      description: NOS page builds offers from the hub pipeline
+      command: grep -q "buildTicketOffers" "app/(nos)/national-show/page.tsx"
+      timeout_seconds: 10
+    - id: A12
+      description: the old admission-only offer builder is gone
+      command: '! grep -q "buildAdmissionOffers" "app/(nos)/national-show/page.tsx"'
+      timeout_seconds: 10
+    - id: A13
+      description: the hub loader uses the shared pure card builder
+      command: grep -q "buildHubCards" lib/data/admission-availability.ts
+      timeout_seconds: 10
+    - id: A14
+      description: regression, the public listing still excludes demo types
+      command: pnpm exec tsx contracts/checks/ticketing-f9-demo-ticket/check-public-listing-excludes-demo.mjs
+      timeout_seconds: 120
+    - id: A15
+      description: TypeScript strict type-check is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 300
+    - id: A16
+      description: codex QA prompt is present and demands a verdict
+      command: grep -q "VERDICT" .agent/memory/project/specs/ticket-onsale-predicate/goldens/codex-qa-prompt.md
+      timeout_seconds: 10

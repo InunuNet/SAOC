@@ -42,6 +42,7 @@ export const FIXTURES: Fixture[] = [
         venueName: 'The Hangar, Stellenbosch Flying Club',
         venueAddress: 'Stellenbosch Airfield, R44, Stellenbosch, 7600, Western Cape',
         showDates: 'Thursday 23 to Sunday 26 September 2027',
+        parking: null,
         openingTimes: [
           { label: 'Thu 23', value: '16h00 to 19h00' },
           { label: 'Fri 24', value: null },
@@ -50,8 +51,8 @@ export const FIXTURES: Fixture[] = [
         ],
       },
       positions: [
-        { bookingRef: 'TEST-0001', attendeeName: PERSON, ticketType: 'Day Visitor', qrContentId: 'qr-1' },
-        { bookingRef: 'TEST-0002', attendeeName: 'Second Person', ticketType: 'Weekend Pass', qrContentId: 'qr-2' },
+        { bookingRef: 'TEST-0001', attendeeName: PERSON, ticketTypeTitle: 'Day Visitor', qrContentId: 'qr-1' },
+        { bookingRef: 'TEST-0002', attendeeName: 'Second Person', ticketTypeTitle: 'Weekend Pass', qrContentId: 'qr-2' },
       ],
     }),
   },

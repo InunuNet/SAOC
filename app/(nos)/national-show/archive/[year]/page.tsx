@@ -80,6 +80,12 @@ async function loadPastShows(): Promise<ArchiveShow[]> {
   return mergePastShows(sanityShows);
 }
 
+// An unrecorded year calls notFound(), which renders the host-aware root not-found (it reads the request
+// headers). Next fails a statically generated route whose not-found turns dynamic at runtime (500), so
+// this page is dynamic. dynamicParams = false would also work but would 404 a newly published year until
+// the next deploy.
+export const dynamic = 'force-dynamic';
+
 export async function generateStaticParams(): Promise<Array<{ year: string }>> {
   // The Sanity `status == "past"` years only; empty until a real edition is published.
   const pastShows = await loadPastShows();
@@ -148,7 +154,7 @@ export default async function ShowYearPage({ params }: { params: Promise<{ year:
     <>
       <NosHero
         route={`/national-show/archive/${show.year}`}
-        title={`The ${show.year} South African National Orchid Show`}
+        title={`The ${show.year} National Orchid Show`}
         lede={subtitle(show)}
         priority
         actions={

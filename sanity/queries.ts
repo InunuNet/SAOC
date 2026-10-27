@@ -171,6 +171,7 @@ export const activeTicketTypesByCategoryQuery = defineQuery(`
     category,
     capacityPool,
     headcountPerUnit,
+    show,
   }
 `);
 
@@ -191,6 +192,8 @@ export const ticketTypeBySlugQuery = defineQuery(`
     _id,
     name,
     "slug": slug.current,
+    demo,
+    active,
     price,
     regularPrice,
     description,
@@ -286,7 +289,7 @@ export const ticketsPageQuery = defineQuery(`
 `);
 
 export const upcomingEventsQuery = defineQuery(`
-  *[_type == "societyEvent" && dateTime(coalesce(endDate, date)) >= dateTime($todayStart)] | order(date asc){
+  *[_type == "societyEvent" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(endDate, date))) && coalesce(endDate, date) >= $todayDate))] | order(date asc){
     _id,
     title,
     "slug": slug.current,
@@ -373,13 +376,13 @@ export const societyBySlugQuery = defineQuery(`
 `);
 
 export const societySlugsQuery = defineQuery(`
-  *[_type == "society" && listed != false && defined(slug.current)]{ "slug": slug.current }
+  *[_type == "society" && listed != false && defined(slug.current)]{ "slug": slug.current, "updatedAt": _updatedAt }
 `);
 
 // Society detail page (F-societies-detail-redesign): upcoming events hosted by one
 // affiliated society, keyed off the `hostSociety` reference's slug.
 export const societyUpcomingEventsQuery = defineQuery(`
-  *[_type == "societyEvent" && dateTime(coalesce(endDate, date)) >= dateTime($todayStart) && hostSociety->slug.current == $slug]
+  *[_type == "societyEvent" && (dateTime(coalesce(endDate, date)) >= dateTime($todayStart) || (!defined(dateTime(coalesce(endDate, date))) && coalesce(endDate, date) >= $todayDate)) && hostSociety->slug.current == $slug]
     | order(date asc)[0...6]{
     _id,
     title,
@@ -431,6 +434,8 @@ export const provinceListQuery = defineQuery(`
   }
 `);
 
+export const eventsPageQuery = defineQuery(`*[_type == "eventsPage"][0]{ intro }`);
+
 export const judgingPageQuery = defineQuery(`
   *[_type == "judgingPage"][0]{
     title,
@@ -476,7 +481,7 @@ export const eventBySlugQuery = defineQuery(`
 `);
 
 export const eventSlugsQuery = defineQuery(`
-  *[_type == "societyEvent" && defined(slug.current)]{ "slug": slug.current }
+  *[_type == "societyEvent" && defined(slug.current)]{ "slug": slug.current, "updatedAt": _updatedAt }
 `);
 
 // F1 (show-exhibitor-info): the /national-show/exhibitors singleton.

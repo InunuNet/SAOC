@@ -18,7 +18,7 @@ import { BUILDER_BRIEF_SUMMARIES } from './builder-brief-summaries';
 import type { RawShowPage, RawShowPageSection } from './show-pages';
 
 const SYMPOSIUM_PAGE_KEY = '06-saoc-symposium';
-const SYMPOSIUM_TITLE = 'National Orchid Show Symposium';
+export const SYMPOSIUM_TITLE = 'National Orchid Show Symposium';
 const THEME_SECTION_KEY = 'theme';
 const THEME_SECTION_HEADING = 'Symposium theme';
 
@@ -27,7 +27,7 @@ const THEME_SECTION_HEADING = 'Symposium theme';
 // National Show/1. Website Development SpecificationV3/v1.0/content.md (line 225). The source
 // sets it inside curly quotes; the quotes are punctuation of those sentences, not of the line,
 // and it renders with no quote characters.
-const SYMPOSIUM_THEME_LINE = 'From Wild Origins to Cultivated Excellence: The Future of Orchids';
+export const SYMPOSIUM_THEME_LINE = 'From Wild Origins to Cultivated Excellence: The Future of Orchids';
 
 const QUOTE_CHARACTERS = /["“”„‟″«»]/g;
 

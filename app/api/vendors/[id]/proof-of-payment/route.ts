@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
+import { clientIpFromForwardedFor } from '@/lib/client-ip';
 import { getStorageBucketName, initAdmin } from '@/lib/firebase-admin';
 import { VENDOR_SUBMISSIONS_COLLECTION } from '@/lib/vendor-submissions';
+import { base64BodyLimitBytes, isBodyWithinLimit } from '@/lib/request-guards';
+import { PROOF_OF_PAYMENT_MAX_BYTES } from '@/lib/vendor-payment';
 import {
   handleProofOfPaymentUpload,
   type ProofOfPaymentHandlerResult,
@@ -16,6 +19,8 @@ import {
 /** Mirrors the handler's own fallback -- decideProofOfPaymentRateLimit() always returns a
  *  non-null retryAfterMs when allowed is false, so this branch is defensive, not load-bearing. */
 const PROOF_OF_PAYMENT_ROUTE_DEFAULT_RETRY_AFTER_MS = 24 * 60 * 60 * 1000;
+
+const MAX_BODY_BYTES = base64BodyLimitBytes(PROOF_OF_PAYMENT_MAX_BYTES);
 
 /**
  * POST /api/vendors/[id]/proof-of-payment -- PUBLIC, unauthenticated route (mission
@@ -44,9 +49,8 @@ const rateLimitStore = createInMemoryProofOfPaymentRateLimitStore();
  *  not a security boundary. Mirrors F5's deriveRateLimitKey() exactly; see that route's own
  *  golden README for why lib/payfast.ts's getClientIp() is not reused here. */
 function deriveRateLimitKey(request: NextRequest): string {
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  const firstHop = forwardedFor?.split(',')[0]?.trim();
-  return `vendor-proof-of-payment-ip:${firstHop || 'unknown'}`;
+  const ip = clientIpFromForwardedFor(request.headers.get('x-forwarded-for'));
+  return `vendor-proof-of-payment-ip:${ip ?? 'unknown'}`;
 }
 
 function toResponse(result: ProofOfPaymentHandlerResult): NextResponse {
@@ -97,6 +101,12 @@ export async function POST(
         retryAfterMs: rateLimitDecision.retryAfterMs ?? PROOF_OF_PAYMENT_ROUTE_DEFAULT_RETRY_AFTER_MS,
       },
     });
+  }
+
+  // A base64 file is ~4/3 of its decoded size, so the body cap is derived from the file cap. The
+  // header is checked before request.json() buffers the body; a missing header is refused too.
+  if (!isBodyWithinLimit(request.headers.get('content-length'), MAX_BODY_BYTES)) {
+    return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
   }
 
   let body: ProofOfPaymentRequestBody;

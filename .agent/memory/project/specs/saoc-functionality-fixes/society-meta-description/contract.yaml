@@ -1,0 +1,35 @@
+schema: athanor.contract/v1
+slug: society-meta-description
+goal: 'A society meta description over 160 chars is cut at a sentence or word boundary, with an ellipsis when cut mid-sentence, never mid-word.'
+created_at: '2026-10-26'
+autonomy: high
+
+features:
+  - id: F1
+    name: 'society-meta-description'
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/saoc-functionality-fixes/society-meta-description/goldens/contract-notes.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: '[fail-on-main] over-limit text is cut at its last whole sentence (fails on main)'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/society-meta-description/checks/check.mjs cut-at-sentence'
+    - id: A2
+      description: '[fail-on-main] a single over-long sentence is cut at a word boundary within 160 and ends with an ellipsis (fails on main)'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/society-meta-description/checks/check.mjs cut-at-word-with-ellipsis'
+    - id: A3
+      description: '[fail-on-main] a first sentence under 70 chars is not used alone; word cut plus ellipsis instead (fails on main)'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/society-meta-description/checks/check.mjs short-first-sentence-uses-word-cut'
+    - id: A4
+      description: '[guard] guard: text within 160 is returned as written, whitespace collapsed'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/society-meta-description/checks/check.mjs guard-fits-unchanged'
+    - id: A5
+      description: '[guard] guard: empty-description fallbacks unchanged'
+      command: 'npx tsx .agent/memory/project/specs/saoc-functionality-fixes/society-meta-description/checks/check.mjs guard-fallbacks'
+    - id: A6
+      description: '[guard] guard: whole project typechecks'
+      command: 'pnpm exec tsc --noEmit'

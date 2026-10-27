@@ -7,6 +7,11 @@ import {
   decideMarketingAssetRateLimit,
   type MarketingAssetAttemptRecord,
 } from './vendor-marketing-upload-rate-limit.ts';
+import {
+  FILE_CONTENT_MISMATCH_ERROR,
+  leadingBytes,
+  matchesDeclaredMime,
+} from './upload-sniff.ts';
 
 /**
  * Pure orchestrator for POST /api/vendors/[id]/marketing-asset (mission
@@ -114,6 +119,12 @@ export async function handleMarketingAssetUpload(
         error: `Decoded file size (${decodedByteLength}) exceeds the ${MARKETING_ASSET_MAX_BYTES}-byte limit.`,
       },
     };
+  }
+
+  // The declared mimeType is a claim; the leading bytes must agree with it. Checked before the
+  // existence lookup so the 400 carries no existence signal.
+  if (!matchesDeclaredMime(leadingBytes(input.fileBase64), input.mimeType)) {
+    return { status: 400, body: { error: FILE_CONTENT_MISMATCH_ERROR } };
   }
 
   const fieldNames = SLOT_FIELD_NAMES[input.assetSlot];

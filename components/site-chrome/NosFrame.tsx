@@ -2,8 +2,8 @@
 // components/site-chrome/NosFrame.tsx
 // The National Orchid Show own-brand chrome around a route group's pages. Same landmark rule as
 // SaocFrame: header and footer are body-level siblings of <main id="main-content">, never inside
-// it. NOS has no SAOC utility bar (NOS Design R1.5): "Join a society" and the SAOC contact belong
-// to the SAOC site, which the NOS footer credits instead.
+// it. NOS has no SAOC utility bar (NOS Design R1.5): "Join a society" belongs to the SAOC site,
+// which the NOS footer credits instead. Contact is the show's own page.
 // Used by app/(nos)/layout.tsx and, on the NOS host, by app/(shared)/layout.tsx.
 // =============================================================
 
@@ -12,9 +12,11 @@ import { TicketingTestBar } from '@/components/tickets/TicketingTestBar';
 import { NosFooter } from '@/components/nos-chrome/NosFooter';
 import { NosHeader } from '@/components/nos-chrome/NosHeader';
 import { NosSkipLink } from '@/components/nos-chrome/NosSkipLink';
+import { NosRouteScroll } from '@/components/nos/NosRouteScroll';
+import { RouteFocus } from '@/components/site-chrome/RouteFocus';
 import { getVisibleNav } from '@/lib/data/past-shows-public';
-import { CONTACT_LINK } from '@/components/chrome/nav-config';
 import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+import { NOS_CONTACT_PATH, nosPath } from '@/lib/nos-paths';
 import { saocUrl } from '@/lib/site-hosts';
 
 export async function NosFrame({ children }: { children: React.ReactNode }) {
@@ -24,14 +26,12 @@ export async function NosFrame({ children }: { children: React.ReactNode }) {
     <>
       <TicketingTestBar />
       <NosSkipLink />
-      <NosHeader
-        nav={nav}
-        saocHomeHref={saocUrl('/')}
-        saocContactHref={saocUrl(CONTACT_LINK.href)}
-      />
+      <NosRouteScroll />
+      <NosHeader nav={nav} saocHomeHref={saocUrl('/')} contactHref={nosPath(NOS_CONTACT_PATH)} />
       <main id="main-content" tabIndex={-1}>
         {children}
       </main>
+      <RouteFocus />
       <NosFooter showPlaceholders={!withholdPlaceholderProse()} />
       <AdminPill />
     </>

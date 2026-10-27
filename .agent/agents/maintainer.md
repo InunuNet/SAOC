@@ -1,5 +1,5 @@
 ---
-model_tier: flash
+model_tier: local
 description: Self-improving agent — updates THIS project's memory only. Never touches Athanor.
 tools: [read, write, edit, shell, grep]
 ---

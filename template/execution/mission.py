@@ -18,12 +18,17 @@ Usage:
   mission.py skip <mission.md> --feature F1 --reason "..."
 """
 import argparse
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Windows: no fcntl; locks below use msvcrt
+    fcntl = None
+import importlib.util
 import json
 import os
 import re
 import subprocess
 import sys
+import time
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -45,6 +50,55 @@ COMPACTION_HINT_FILE = Path(".agent/memory/scratch/compaction-hint.json")
 SUGGESTED_COMPACT_PCT = 45
 
 # ── YAML/JSON helpers ──────────────────────────────────────────────────────────
+
+
+LOCK_DEADLINE_SECONDS = 120
+LOCK_POLL_SECONDS = 0.05
+
+
+def _lock_fd(fd, blocking=True, label="lock"):
+    """Exclusive lock on fd: flock on POSIX, msvcrt.locking on Windows.
+
+    Windows LK_LOCK gives up after ~10 retries, so a blocking acquire polls
+    LK_NBLCK until LOCK_DEADLINE_SECONDS, then raises TimeoutError naming
+    `label`. A non-blocking miss raises BlockingIOError, as flock does.
+    """
+    if fcntl is not None:
+        fcntl.flock(fd, fcntl.LOCK_EX | (0 if blocking else fcntl.LOCK_NB))
+        return
+    import msvcrt
+    pos = os.lseek(fd, 0, os.SEEK_CUR)
+    deadline = time.monotonic() + LOCK_DEADLINE_SECONDS
+    try:
+        while True:
+            os.lseek(fd, 0, os.SEEK_SET)
+            try:
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+                return
+            except OSError as exc:
+                if not blocking:
+                    raise BlockingIOError(*exc.args) from exc
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(
+                        "could not acquire %s within %ds" % (label, LOCK_DEADLINE_SECONDS)
+                    ) from exc
+                time.sleep(LOCK_POLL_SECONDS)
+    finally:
+        os.lseek(fd, pos, os.SEEK_SET)
+
+
+def _unlock_fd(fd):
+    if fcntl is not None:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        return
+    import msvcrt
+    pos = os.lseek(fd, 0, os.SEEK_CUR)
+    try:
+        os.lseek(fd, 0, os.SEEK_SET)
+        msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+    finally:
+        os.lseek(fd, pos, os.SEEK_SET)
+
 
 def _load_yaml():
     try:
@@ -320,6 +374,20 @@ def emit_compaction_hint(trigger: str, reason: str) -> None:
     except Exception:
         pass
     print("COMPACTION_HINT: " + json.dumps(payload))
+
+
+AUTOCOMPACT_DECIDER = Path(__file__).resolve().parent / "hooks" / "lib" / "autocompact_decider.py"
+
+
+def arm_autocompact(slug: str, mission_file) -> None:
+    """Write the one-shot flag the Stop hook consumes after a clean close-out. Never raises."""
+    try:
+        spec = importlib.util.spec_from_file_location("autocompact_decider", AUTOCOMPACT_DECIDER)
+        decider = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(decider)
+        decider.write_arm_flag(slug, mission_file)
+    except Exception:
+        pass
 
 
 # ── Subcommands ────────────────────────────────────────────────────────────────
@@ -887,6 +955,7 @@ def _refresh_session_state(slug: str, milestone_id, fid: str, old_status: str,
     """
     path = SESSION_STATE_PATH
     lock_fd = None
+    locked = False
     tmp_path = None
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -896,7 +965,8 @@ def _refresh_session_state(slug: str, milestone_id, fid: str, old_status: str,
         # another's entry (lost update).
         lock_path = str(path) + ".lock"
         lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o644)
-        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        _lock_fd(lock_fd, label=lock_path)
+        locked = True
 
         existing_entries: list[str] = []
         if path.exists():
@@ -948,10 +1018,11 @@ def _refresh_session_state(slug: str, milestone_id, fid: str, old_status: str,
             except OSError:
                 pass
         if lock_fd is not None:
-            try:
-                fcntl.flock(lock_fd, fcntl.LOCK_UN)
-            except OSError:
-                pass
+            if locked:
+                try:
+                    _unlock_fd(lock_fd)
+                except OSError:
+                    pass
             os.close(lock_fd)
 
 
@@ -1690,6 +1761,7 @@ def cmd_close_out(args):
         print(f"ERROR: wrap_mission.sh failed:\n{result.stderr}", file=sys.stderr)
         sys.exit(1)
     emit_compaction_hint("close_out", slug)
+    arm_autocompact(slug, args.mission)
     print("DONE: mission closed. Commit now.")
 
 

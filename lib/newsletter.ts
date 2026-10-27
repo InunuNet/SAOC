@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 
+import { csvField } from './csv-field';
 import {
   NEWSLETTER_REMOVAL_VIAS,
   NEWSLETTER_TOPICS,
@@ -52,7 +53,6 @@ const UNSUBSCRIBE_TOKEN_SHAPE = /^[A-Za-z0-9_-]{43}$/;
 const TOKEN_BYTES = 32;
 const CSV_HEADER = 'email,source,subscribedAt,unsubscribeUrl,topics,listUnsubscribeHeader';
 // A cell starting with any of these is evaluated as a formula by spreadsheet software.
-const FORMULA_LEADERS = ['=', '+', '-', '@', '\t', '\r'];
 const EMAIL_FORMULA_LEADERS = ['=', '+', '-', '@'];
 
 export function normaliseNewsletterEmail(raw: unknown): string | null {
@@ -125,9 +125,12 @@ export function applySubscribe(
       unsubscribeToken: input.token,
     };
   }
-  const held = existing.status === 'subscribed' ? existing.topics : [];
+  // An unsubscribed address holds no topics: consent given before unsubscribing does not carry over.
+  const held = existing.status === 'subscribed' ? subscriberTopics(existing.topics, existing.source) : [];
   const topics = NEWSLETTER_TOPICS.filter((topic) => held.includes(topic) || requestedTopics.includes(topic));
-  if (existing.status === 'subscribed' && topics.length === held.length) return null;
+  if (existing.status === 'subscribed' && topics.length === held.length && Array.isArray(existing.topics)) {
+    return null;
+  }
   // Re-subscribe keeps the original token, source and removal history, so previously issued links
   // and the audit trail survive; only the doc-level unsubscribe audit is cleared.
   return {
@@ -140,12 +143,6 @@ export function applySubscribe(
     unsubscribedVia: null,
     unsubscribedBy: null,
   };
-}
-
-function csvField(value: string): string {
-  const safe = FORMULA_LEADERS.includes(value.charAt(0)) ? `'${value}` : value;
-  if (/[",\r\n]/.test(safe)) return `"${safe.replace(/"/g, '""')}"`;
-  return safe;
 }
 
 /** The origin that hosts the unsubscribe page for a subscriber: one string, or chosen per source. */

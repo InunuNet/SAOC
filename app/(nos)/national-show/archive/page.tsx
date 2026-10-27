@@ -5,41 +5,36 @@ import { notFound } from 'next/navigation';
 import { mergePastShows } from '@/lib/data/mergeShows';
 import type { SanityShowProjection } from '@/lib/data/mergeShows';
 import { sanityFetch } from '@/sanity/lib/fetch';
-import { nationalShowQuery, pastShowsQuery } from '@/sanity/queries';
+import { pastShowsQuery } from '@/sanity/queries';
 import { buildPageMetadata } from '@/lib/seo';
-import { formatShowMonthYear, showLabelWithEdition } from '@/lib/show-identity';
-import type { ShowIdentity } from '@/types';
-import { Button } from '@/components/nos/Button';
-import { CtaBand } from '@/components/nos/CtaBand';
-import { EditionCard } from '@/components/nos/EditionCard';
 import { NosHero } from '@/components/nos/NosHero';
-import { NosSection } from '@/components/nos/NosSection';
-import { ShowEntityGrid } from '@/components/show/nos/ShowEntityGrid';
-import { ConfirmationBadge } from '@/components/show';
+import { DocumentLayout } from '@/components/ui/DocumentLayout';
 import { showPastShowsRoute } from '@/lib/data/past-shows-public';
-import { withholdPlaceholderProse } from '@/lib/data/show-pages';
 import { nosOgImage } from '@/app/(nos)/national-show/og-image';
 import { NosShowIndex } from '@/components/nos/NosShowIndex';
-import { saocUrl } from '@/lib/site-hosts';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
 // Firebase App Hosting — see docs/f1-cdn-purge-api-findings.md) so a Sanity publish
 // propagates within F6's 120s round-trip window. See contracts/cms-loop-f1-cdn-purge.yaml.
 export const revalidate = 60;
 
-// Self-canonical, and deliberately carries no Event markup: a past edition is not bookable,
-// and a second Event under the live show's own name would compete with it. See M6/B8e.
-const LEDE = 'The South African National Orchid Show is the council’s triennial event.';
+// AR-1 (NOS Design, comms.md): "Past shows" carries no lede, no back link and no planning band; the
+// builder's stand-in line, the "Planning for the ..." band and the arrow back link are gone. Each
+// edition is one row of a ruled register, newest first, with the facts the committee recorded and
+// nothing else: an empty cell is omitted, never filled. Self-canonical, and deliberately carries no
+// Event markup: a past edition is not bookable, and a second Event under the live show's own name
+// would compete with it. See M6/B8e.
+const PAGE_TITLE = 'Past shows';
+const FACT_LABELS = ['Entries', 'Exhibitors', 'Visitors', 'Trophies'] as const;
 
 // notFound() here as well as in the page, so a withheld route's 404 carries the not-found's head
 // rather than a canonical and og:url pointing at the missing page.
 export async function generateMetadata(): Promise<Metadata> {
   if (!(await showPastShowsRoute())) notFound();
   return buildPageMetadata({
-    title: 'Past shows',
-    image: nosOgImage('Past shows'),
-    description: 'Past editions of the South African National Orchid Show.',
-    lede: LEDE,
+    title: PAGE_TITLE,
+    image: nosOgImage(PAGE_TITLE),
+    description: 'Past editions of the National Orchid Show.',
     path: '/national-show/archive',
   });
 }
@@ -62,113 +57,69 @@ export default async function ShowArchivePage() {
   // (docs/nos-archive-public-r64.md); a preview build keeps it.
   if (!(await showPastShowsRoute())) notFound();
 
-  // F7: the CTA band advertised the edition, the month/year and the city as literals.
-  // Every one of them is a Studio edit away from being wrong, so all three come from
-  // the nationalShow singleton. See show-identity-surfaces.golden.md.
-  const [sanityShows, upcoming] = await Promise.all([
-    sanityFetch<SanityShowProjection[]>({ query: pastShowsQuery, tags: ['show', 'sanity'] }),
-    sanityFetch<ShowIdentity>({ query: nationalShowQuery, tags: ['nationalShow', 'sanity'] }),
-  ]);
-
-  const upcomingLabel = showLabelWithEdition(upcoming?.edition);
-  const upcomingTitle = `The ${showLabelWithEdition(upcoming?.edition, 'National Orchid Show')}`;
-  const upcomingMonthYear = formatShowMonthYear(upcoming?.showDate);
-  const upcomingCity = upcoming?.venue?.city ?? null;
-  const upcomingSentence = [
-    `${upcomingTitle} takes place`,
-    upcomingMonthYear ? ` in ${upcomingMonthYear}` : ' on dates yet to be confirmed',
-    upcomingCity ? ` in ${upcomingCity}.` : '.',
-  ].join('');
-
   // The same record set the detail page reads. Only a published Sanity past show appears
   // here; there is no static fallback. See lib/data/mergeShows.ts.
-  const pastShows = mergePastShows(sanityShows);
-  // R78: with no published past show, a public build shows the committee-records card alone
-  // (no facts rail, no sibling cards: the Explore index below already lists them), without the
-  // planning band; the beta card keeps its pending chip.
-  const holds = withholdPlaceholderProse() && pastShows.length === 0;
+  const sanityShows = await sanityFetch<SanityShowProjection[]>({
+    query: pastShowsQuery,
+    tags: ['show', 'sanity'],
+  });
+  const pastShows = [...mergePastShows(sanityShows)].sort((a, b) => b.year - a.year);
 
   return (
     <>
-      <NosHero
-        route="/national-show/archive"
-        title="Past shows"
-        lede={LEDE}
-        priority
-        actions={
-          <Link
-            href="/"
-            data-nos-backlink=""
-            className="inline-flex min-h-[44px] items-center font-sans text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--lilac-muted)] transition-colors duration-150 hover:text-ivory"
-          >
-            ← National Show
-          </Link>
-        }
-      />
+      <NosHero route="/national-show/archive" title={PAGE_TITLE} crumbLabel={PAGE_TITLE} priority />
 
-      {/* ── Show grid ── */}
-      <NosSection>
+      <DocumentLayout>
         {pastShows.length > 0 ? (
           <>
-            <h2 className="sr-only">National Show editions</h2>
-            <div className="nos-surface mb-10">
-              <ConfirmationBadge status="pending" />
-            </div>
-            <ShowEntityGrid
-              items={pastShows}
-              itemKey={(show) => String(show.year)}
-              renderCard={(show) => (
-                <EditionCard
-                  href={`/archive/${show.year}`}
-                  year={show.year}
-                  title={
-                    show.title ??
-                    (show.edition
-                      ? `Edition ${toRomanOrdinal(show.edition)}`
-                      : 'National Orchid Show')
-                  }
-                  venue={
-                    [show.host, show.venue && show.venue !== show.host ? show.venue : null]
-                      .filter(Boolean)
-                      .join(' · ') || undefined
-                  }
-                  chips={[
-                    ...(show.entries ? [`${show.entries.toLocaleString()} entries`] : []),
-                    ...(show.exhibitors ? [`${show.exhibitors.toLocaleString()} exhibitors`] : []),
-                    ...(show.visitors ? [`${show.visitors.toLocaleString()} visitors`] : []),
-                    ...(show.trophies ? [`${show.trophies} trophies`] : []),
-                  ]}
-                  note={show.note}
-                />
-              )}
-            />
+            <h2 className="sr-only nos-ar-heading">National Show editions</h2>
+            <ul className="nos-ar-register">
+              {pastShows.map((show) => {
+                const values = [show.entries, show.exhibitors, show.visitors, show.trophies];
+                const facts = FACT_LABELS.flatMap((label, i) =>
+                  values[i] ? [{ label, value: values[i].toLocaleString('en-ZA') }] : [],
+                );
+                return (
+                  <li key={show.year} data-edition-record="">
+                    <Link href={`/archive/${show.year}`}>
+                      <span data-edition-year="" className="nos-ar-year">
+                        {show.year}
+                      </span>
+                      <h2 className="nos-ar-title">
+                        {show.title ??
+                          (show.edition
+                            ? `Edition ${toRomanOrdinal(show.edition)}`
+                            : 'National Orchid Show')}
+                      </h2>
+                      {facts.length > 0 ? (
+                        <dl className="nos-ar-facts">
+                          {facts.map((fact) => (
+                            <div key={fact.label}>
+                              <dt>{fact.label}</dt>
+                              <dd>{fact.value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      ) : null}
+                      <span aria-hidden="true" className="nos-ar-arrow">
+                        &rarr;
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
           </>
         ) : (
-          <div className="nos-surface">
-            {holds ? null : <ConfirmationBadge status="pending" />}
-            <h2 className={`${holds ? '' : 'mt-3 '}font-serif text-[28px] font-normal text-ink`}>
-              Show history awaiting committee records
-            </h2>
+          <div>
+            <div className="nos-surface">
+              <h2 className="doc-h2">
+                Show history awaiting committee records
+              </h2>
+            </div>
           </div>
         )}
-      </NosSection>
-
-      {holds ? null : (
-        <CtaBand
-          title={`Planning for the ${upcomingLabel}?`}
-          lede={upcomingSentence}
-          action={
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button as={Link} href="/" variant="on-dark">
-                View {upcomingLabel} details
-              </Button>
-              <Button as="a" href={saocUrl('/contact')} variant="ghost-on-dark">
-                Ask the council
-              </Button>
-            </div>
-          }
-        />
-      )}
+      </DocumentLayout>
       <NosShowIndex current="/national-show/archive" />
     </>
   );

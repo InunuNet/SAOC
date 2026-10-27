@@ -1,0 +1,45 @@
+schema: athanor.contract/v1
+slug: polish-wave-2-2026-10-25
+goal: The event submission success message uses the site's own success panel instead of a Tailwind default green, with the same sentence.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F7
+    name: SS-1 on-system success panel on /events/submit
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/README.md
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/f7-submit-success.md
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f2.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f3.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f4.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f6.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f7.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f8.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "the success branch is the SuggestionForm panel with its body type, one paragraph with role=status, the sentence unchanged, no palette colour (RED on baseline, 3 findings). Rendered check not possible: the page needs a Firebase session and a POST (goldens/f7-submit-success.md, Limit). Triad coverage recorded here (the contract classifies exempt, as wave 1 F7): Codex QA via execution/codex_qa.sh at @qa time; browser layer is the orchestrator post-deploy check on the beta hosts; gws inbox layer N/A, this feature sends no email."
+      command: node contracts/checks/polish-wave-2-2026-10-25/f7-success-static.mjs
+    - id: A2
+      description: production build passes (public Sanity ids and local origins, see goldens/README.md Hermetic render)
+      command: NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A3
+      description: wave scope guard - every changed file is on a feature allow-list (goldens/scope/*.json) or under this mission's spec and check trees (stacked on wave 1? set POLISH2_BASE)
+      command: node contracts/checks/polish-wave-2-2026-10-25/scope.mjs
+    - id: A4
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A5
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A6
+      description: the feature doc exists and names the item ids
+      command: grep -q "SS-1" docs/polish-wave-2-f7-submit-success.md

@@ -25,21 +25,7 @@ const STATIC_PARTNERS: PartnerCard[] = [
     _id: 'wosa',
     name: 'Wild Orchids of Southern Africa',
     website: 'https://wildorchids.co.za',
-    description: 'Partner organisation hosting the WOSA Conference at the 2027 National Show.',
-  },
-  {
-    _id: 'sanbi',
-    name: 'South African National Biodiversity Institute',
-    website: 'https://www.sanbi.org',
-    description:
-      "South Africa's national institute for biodiversity science, conservation planning and botanical gardens.",
-  },
-  {
-    _id: 'kirstenbosch',
-    name: 'Kirstenbosch NBG',
-    website: 'https://www.sanbi.org/gardens/kirstenbosch',
-    description:
-      "One of the world's great botanical gardens, managed by SANBI at the foot of Table Mountain.",
+    description: 'Partner organisation hosting the WOSA Conference at the National Orchid Show.',
   },
 ];
 

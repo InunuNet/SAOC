@@ -1,0 +1,113 @@
+schema: athanor.contract/v1
+slug: nav-focus-underline
+goal: Header and footer link lists show an underline instead of a focus box, focus moves to the new page's h1 after client-side navigation on both hosts, and the current item carries aria-current.
+created_at: '2026-10-24'
+autonomy: high
+
+# NAV-1 (NOS Design ruling, final). Spec: goldens/README.md; fixtures: goldens/aria-current-fixtures.json.
+# FILE SET (binding, enforced by A13): components/chrome/{Header,MobileMenu,Footer}.tsx, components/nos-chrome/{NosHeader,NosFooter}.tsx,
+# components/nos-chrome/nos-chrome.css, components/site-chrome/{SaocFrame,NosFrame,RouteFocus}.tsx, app/globals.css, lib/nav-current.ts,
+# lib/route-focus.ts, docs/nav-focus-underline.md. Skip links, nav data, footer-data.ts and NewsletterSignup.tsx do not change.
+# POST-DEPLOY gates: A22 and A23 manifests are written by the BrowserAgent run against the deployed hosts at the deployed commit, so they
+# cannot exist before deploy and are not faked. They error until that run. A24 is not applicable (no email is sent) and is declared only
+# for the triad linter (Athanor#1467).
+# DECISIONS MADE HERE (flagged in the README): SAOC footer uses ivory, not --primary (dark ground); NOS disclosure triggers get
+# aria-current="true" (buttons that do not navigate); NOS plain links get the same active bar as the triggers; brand lockup links keep rings.
+
+features:
+  - id: F1
+    name: Underline focus on nav and footer links, route-change focus to h1, aria-current on the current item (SAOC and NOS)
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/nav-focus-underline/goldens/README.md
+  - .agent/memory/project/specs/nav-focus-underline/goldens/aria-current-fixtures.json
+  - .agent/memory/project/specs/nav-focus-underline/goldens/codex-qa-prompt.md
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: isNavCurrent / navAriaCurrent / anyNavCurrent match every matcher row and every SAOC and NOS route in the fixtures against the real nav data (segment boundary, hub exact, NOS public and internal paths, cross-site never current)
+      command: npx tsx .agent/memory/project/specs/nav-focus-underline/checks/check-nav-current.mjs
+    - id: A2
+      description: Route-focus core moves focus to the h1 (else main) with preventScroll and a one-shot data-route-focus marker, skips first render / same path / hash, never steals focus already inside main
+      command: npx tsx .agent/memory/project/specs/nav-focus-underline/checks/check-route-focus.mjs
+    - id: A3
+      description: No ring or outline utility remains on any nav or footer link in the five chrome TSX files; only buttons, fields and brand lockup links keep them
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-focus-static.mjs tsx-rings
+    - id: A4
+      description: Every SAOC header, mobile-menu and footer link clears the UA outline, carries a focus-visible underline utility and a forced-colors fallback
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-focus-static.mjs tsx-links
+    - id: A5
+      description: aria-current is rendered on both headers and the mobile menu through the shared matcher, and the class-driven active state and data-current are gone
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-focus-static.mjs tsx-aria-current
+    - id: A6
+      description: Buttons and the SAOC brand link keep their focus-visible rings
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-focus-static.mjs tsx-buttons
+    - id: A7
+      description: NOS CSS draws no ring or outline on a nav or footer link; only controls and brand lockups keep one (forced-colors blocks excepted)
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-focus-static.mjs css-rings
+    - id: A8
+      description: NOS nav and footer link families have a focus-visible 2px underline in --nc-royal (header) or --nc-ground (footer), clear the UA outline, and a forced-colors indicator exists
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-focus-static.mjs css-underline
+    - id: A9
+      description: NOS active visual hangs off [aria-current] for .nh-link, .nh-trigger and .nd-item, and no [data-current] rule remains
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-focus-static.mjs css-aria-current
+    - id: A10
+      description: NOS brand, CTA, burger, footer lockup, skip link and newsletter controls keep explicit 2px focus-visible outlines after the blanket rules are removed
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-focus-static.mjs css-keepers
+    - id: A11
+      description: New focus and active rules use tokens only (no bare hex or rgb) in the NOS CSS and in the Tailwind classes
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-focus-static.mjs tokens
+    - id: A12
+      description: Focus indicator colour pairs reach 3:1 on their grounds (WCAG 1.4.11), read from the real tokens
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-contrast.mjs
+    - id: A13
+      description: Only the fix's allow-listed files changed; skip links, newsletter component and nav data untouched
+      command: node .agent/memory/project/specs/nav-focus-underline/checks/check-scope.mjs
+    - id: A14
+      description: RouteFocus is a client component using usePathname, the shared core, a MutationObserver wait and the location hash
+      command: grep -q "'use client'" components/site-chrome/RouteFocus.tsx && grep -q "usePathname" components/site-chrome/RouteFocus.tsx && grep -q "@/lib/route-focus" components/site-chrome/RouteFocus.tsx && grep -q "MutationObserver" components/site-chrome/RouteFocus.tsx && grep -q "location.hash" components/site-chrome/RouteFocus.tsx
+    - id: A15
+      description: RouteFocus is mounted in both host frames and nowhere in admin
+      command: grep -q "<RouteFocus" components/site-chrome/SaocFrame.tsx && grep -q "<RouteFocus" components/site-chrome/NosFrame.tsx && ! grep -rq "RouteFocus" app/admin components/admin
+    - id: A16
+      description: globals.css removes the outline on the route-focus target only (data-route-focus marker, not on main generally)
+      command: tr -d '\n' < app/globals.css | grep -Eq '\[data-route-focus\][^{]*:focus[^{]*\{[^}]*outline:[[:space:]]*(none|0)'
+    - id: A17
+      description: Type-check passes
+      command: pnpm type-check
+      timeout_seconds: 600
+    - id: A18
+      description: Lint passes on every touched source file
+      command: pnpm exec eslint components/chrome/Header.tsx components/chrome/MobileMenu.tsx components/chrome/Footer.tsx components/nos-chrome/NosHeader.tsx components/nos-chrome/NosFooter.tsx components/site-chrome/SaocFrame.tsx components/site-chrome/NosFrame.tsx components/site-chrome/RouteFocus.tsx lib/nav-current.ts lib/route-focus.ts
+      timeout_seconds: 300
+    - id: A19
+      description: Doc exists and records the ruling, the aria-current value decision and the SAOC footer adaptation
+      command: test -f docs/nav-focus-underline.md && grep -q "NAV-1" docs/nav-focus-underline.md && grep -q 'aria-current="true"' docs/nav-focus-underline.md && grep -q "ivory" docs/nav-focus-underline.md
+    - id: A20
+      description: Codex adversarial review of the whole diff
+      type: codex_qa
+      target: .agent/memory/project/specs/nav-focus-underline/goldens/codex-qa-prompt.md
+      timeout_seconds: 1300
+      required: true
+    - id: A21
+      description: Cross-check that the fixture tables in the README name every route in the JSON (golden and prose cannot drift)
+      command: node -e "const j=require('./.agent/memory/project/specs/nav-focus-underline/goldens/aria-current-fixtures.json');const r=require('fs').readFileSync('.agent/memory/project/specs/nav-focus-underline/goldens/README.md','utf8');const miss=[...j.saoc.routes,...j.nos.routes].filter(x=>!r.includes('| \`'+x.pathname+'\` |'));if(miss.length){console.error('README missing',miss.map(x=>x.pathname));process.exit(1)}"
+    - id: A22
+      description: BrowserAgent on the SAOC host confirms click leaves focus on the h1 (desktop and mobile menu), Tab shows the underline with no ring, aria-current in the accessibility tree, buttons still ringed, skip link unchanged
+      type: browser_deployed_check
+      target: .agent/memory/scratch/nav-focus-browser-saoc-manifest.json
+      required: true
+    - id: A23
+      description: BrowserAgent on the NOS host confirms the same for the NOS header, disclosure panels and drawer, plus aria-current="true" on the parent trigger of a child route
+      type: browser_deployed_check
+      target: .agent/memory/scratch/nav-focus-browser-nos-manifest.json
+      script: .agent/memory/project/specs/nav-focus-underline/checks/browser-nos-origin.sh
+      required: true
+    - id: A24
+      description: gws inbox check is not applicable (no email is sent); declared non-required only to satisfy the triad coverage linter, expected to skip (Athanor#1467)
+      type: gws_inbox_check
+      target: .agent/memory/scratch/nav-focus-gws-manifest.json
+      required: false

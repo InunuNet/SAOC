@@ -10,8 +10,8 @@ interface VendorCheckboxFieldProps {
 }
 
 const checkboxClass =
-  'h-4 w-4 rounded-sm border border-rule outline-none focus:ring-2 focus:ring-ink/40 disabled:opacity-60';
-const labelClass = 'flex items-start gap-2.5 font-sans text-[15px] leading-relaxed text-ink';
+  'size-6 rounded-sm border border-rule outline-none focus:ring-2 focus:ring-primary disabled:opacity-60';
+const labelClass = 'flex min-h-11 items-center gap-2.5 font-sans text-[15px] leading-relaxed text-ink';
 
 export function VendorCheckboxField({
   fieldKey,

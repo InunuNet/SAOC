@@ -13,7 +13,7 @@ import type { CountDisplay, KeepsakeCardVm } from './types';
 
 const EMBLEM_WIDTH_PX = 45;
 const EMBLEM_HEIGHT_PX = 30;
-const STUB_PHOTO_SIZES = '(max-width: 700px) 50vw, 300px';
+const STUB_PHOTO_SIZES = '(max-width: 700px) 100vw, 480px';
 
 type FieldStyle = CSSProperties & { '--nk-field': string };
 
@@ -72,6 +72,7 @@ export function TicketStub({
             alt=""
             fill
             sizes={STUB_PHOTO_SIZES}
+            loading="eager"
             style={{ objectFit: 'cover', objectPosition: product.focus }}
           />
         ) : null}
@@ -86,6 +87,7 @@ export function TicketStub({
           alt=""
           width={EMBLEM_WIDTH_PX}
           height={EMBLEM_HEIGHT_PX}
+          loading="eager"
           unoptimized
         />
         <span className="nk-admit">{admit}</span>

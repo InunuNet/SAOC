@@ -1,0 +1,140 @@
+**Privacy and Personal Information Policy**
+
+**South African National Orchid Show — Western Cape 2027**
+
+The South African Orchid Council (SAOC) respects your privacy and is committed to protecting personal information in accordance with the Protection of Personal Information Act 4 of 2013 (POPIA).
+
+This policy explains what personal information we collect through the National Orchid Show website, why we collect it, how we use and protect it, when we share it, and how you can exercise your rights.
+
+**1. Who is responsible for your personal information?**
+
+The South African Orchid Council (SAOC) is responsible for the personal information collected and processed through the National Orchid Show website, subject to confirmation of the relevant arrangements with any independent service providers.
+
+**Responsible party:** South African Orchid Council (SAOC)
+**Website:** <https://saoc.co.za/>
+**Address:** 2285 Willow Road, Betty’s Bay, Western Cape, 7141
+**Information Officer:** Lee-Ann McCleland
+**Email:** secretary@saoc.co.za
+
+**2. Personal information we collect**
+
+We collect personal information directly from you when you use our website, purchase tickets, contact us or apply to participate in the Show.
+
+**Contact forms**
+
+When you submit a contact form, we may collect your name, email address and the contents of your message. We use this information to respond to your enquiry and deal with any follow-up matters.
+
+**Ticket purchases**
+
+When you purchase tickets, we may collect your name, email address, telephone number and, where required, your country, province or town.
+
+We use this information to process and administer ticket bookings, issue tickets, communicate essential event information and manage entry to the Show and any activities included in your booking.
+
+Payment information is processed through the applicable payment service provider. SAOC should not collect or retain full payment-card details unless this is specifically required and appropriately secured.
+
+**Vendor and exhibitor applications**
+
+We may collect business names, contact-person details, telephone numbers, email addresses and information required to assess and administer vendor or exhibitor applications.
+
+Where relevant, we may also collect regulatory and business information, such as CIPC registration details, VAT numbers, applicable permits and supporting documentation. Documents submitted as proof of payment may contain additional financial or identifying information.
+
+We use this information to assess applications, manage participation, administer payments and contractual arrangements, verify relevant requirements and communicate with vendors and exhibitors.
+
+**Information you choose to provide**
+
+Please do not submit unnecessary personal information or sensitive information through general contact forms or uploaded documents.
+
+**3. Why we process personal information**
+
+We process personal information for specific, legitimate purposes connected with organising and administering the National Orchid Show, including:
+
+* Responding to enquiries and requests.
+* Processing ticket purchases and managing event access.
+* Assessing and administering vendor and exhibitor applications.
+* Managing payments, invoices and financial records.
+* Communicating essential event information.
+* Meeting applicable legal, regulatory and accounting obligations.
+* Protecting the security and proper operation of the website and event.
+
+We process personal information only where there is a lawful basis for doing so under POPIA. Depending on the circumstances, this may include taking steps at your request, performing a contract, complying with a legal obligation, or another lawful basis permitted by POPIA.
+
+Providing requested information may be necessary to complete a ticket purchase, respond to an enquiry or assess a vendor application. If required information is not supplied, we may be unable to complete the relevant transaction or process the application.
+
+We will not use your information for unrelated purposes unless permitted by law and, where required, after providing further notice or obtaining your consent.
+
+**4. Who we share personal information with**
+
+We do not sell personal information.
+
+We may share relevant information with service providers who help us operate the website and administer the Show. These providers may process personal information on our behalf and must be subject to appropriate confidentiality and security requirements.
+
+Our currently identified service providers include:
+
+* **Payment gateway:** OWZO, or the payment provider in use at the time of the transaction, to process ticket payments.
+* **Resend:** To send transactional emails, such as order confirmations and contact-form acknowledgements.
+* **Firebase and Google Cloud:** To store contact submissions, ticket orders and vendor applications; secure the SAOC administration area; and store documents uploaded by vendors, including proof of payment.
+
+We limit the information shared to what is reasonably necessary for the relevant purpose. We may also disclose information where required or authorised by law.
+
+We will verify the applicable service-provider arrangements, data-processing terms and security safeguards. Some providers may process or store information outside South Africa. Where this occurs, SAOC will ensure that any transfer complies with the applicable requirements of POPIA, including section 72.
+
+**5. How we protect personal information**
+
+We take reasonable technical and organisational measures to protect personal information against loss, unauthorised access, disclosure, alteration or destruction.
+
+These measures may include access controls, authentication, restricted administrative permissions and appropriate security arrangements with service providers.
+
+Access to personal information should be limited to authorised persons who need it to perform their duties.
+
+No electronic system or method of transmission can be guaranteed to be completely secure. We will respond to suspected security compromises in accordance with applicable legal requirements.
+
+**6. How long we retain personal information**
+
+We retain personal information only for as long as reasonably necessary for the purpose for which it was collected, subject to applicable legal, accounting, contractual and record-keeping requirements.
+
+Different categories of information may require different retention periods. For example, contact enquiries may be retained for a different period from ticket transaction records, vendor agreements or financial documents.
+
+When personal information is no longer required, we will take reasonable steps to delete, destroy or de-identify it securely, where appropriate and legally permitted.
+
+**7. Cookies and analytics**
+
+At the time this policy is published, the website does not intentionally use tracking cookies or third-party analytics, subject to verification of the website's actual configuration and any embedded services.
+
+Essential technologies may be used to operate the website, secure administrative access or support requested functionality.
+
+If the website introduces analytics, advertising technologies or other tracking tools, this policy will be updated to explain their use and any applicable choices available to visitors.
+
+**8. Your rights under POPIA**
+
+Subject to applicable legal requirements and limitations, you may:
+
+* Request confirmation of whether we hold personal information about you.
+* Request access to personal information we hold about you.
+* Request correction or updating of inaccurate, incomplete or outdated information.
+* Request deletion or destruction of personal information where the law permits.
+* Object to certain processing of your personal information where POPIA provides this right.
+* Lodge a complaint with the Information Regulator if you believe your personal information has been handled unlawfully.
+
+Requests may be submitted to the Information Officer at secretary@saoc.co.za.
+
+We may need to verify your identity before processing a request. We may also be required or permitted by law to retain certain information, even where deletion has been requested.
+
+**9. Personal information security compromises**
+
+If a security compromise involving personal information occurs, SAOC will take appropriate steps to investigate and address it and will notify affected individuals and the Information Regulator where required by POPIA.
+
+**10. Complaints**
+
+If you have concerns about how your personal information has been handled, please contact the SAOC Information Officer first so that your concern can be considered.
+
+You may also lodge a complaint directly with the Information Regulator of South Africa using its official website:
+
+<https://inforegulator.org.za/complaints/>
+
+The Information Regulator's contact details and complaint procedures are available at:
+
+<https://inforegulator.org.za/contact-us/>
+
+**11. Changes to this policy**
+
+We may update this policy when our website, services, data-processing practices or legal obligations change. The latest version will be published on the National Orchid Show website, with the effective or updated date stated below.

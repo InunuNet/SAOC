@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { sendEmail, FORMS_FROM_ADDRESS } from '@/lib/email';
+import { sendEmail, NOS_FORMS_FROM_ADDRESS } from '@/lib/email';
+import type { Site } from '@/lib/site-hosts';
 import SponsorEnquiryConfirmation from '@/emails/SponsorEnquiryConfirmation';
 
 /**
@@ -19,7 +20,7 @@ export interface SponsorEnquiryConfirmationInput {
 
 /** Deliberately narrow: matches what lib/email.ts's real `sendEmail` already satisfies. */
 export interface SponsorEnquiryConfirmationMailer {
-  send(args: { to: string; subject: string; react: React.ReactElement; from?: string }): Promise<void>;
+  send(args: { to: string; subject: string; react: React.ReactElement; from?: string; site?: Site }): Promise<void>;
 }
 
 export interface SendSponsorEnquiryConfirmationDeps {
@@ -36,6 +37,7 @@ export async function sendSponsorEnquiryConfirmationEmail(
     to: input.email,
     subject: 'We received your sponsorship enquiry — SAOC',
     react: React.createElement(SponsorEnquiryConfirmation, { name: input.contactName }),
-    from: FORMS_FROM_ADDRESS,
+    from: NOS_FORMS_FROM_ADDRESS,
+    site: 'nos',
   });
 }

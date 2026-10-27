@@ -149,7 +149,7 @@ export function PreferencesForm({ token, site, maskedEmail, allRemoved, topics, 
         </div>
       ) : (
         <form onSubmit={(event) => void save(event)} noValidate>
-          <fieldset aria-labelledby="prefs-heading" className="mt-6 flex flex-col">
+          <fieldset aria-label={NEWSLETTER_COPY.prefsHeading} className="mt-6 flex flex-col">
             {ownTopicFirst(site, offered).map((topic) => (
               <label key={topic} className="inline-flex min-h-11 cursor-pointer items-center gap-3 font-sans text-[16px] text-ink">
                 <input

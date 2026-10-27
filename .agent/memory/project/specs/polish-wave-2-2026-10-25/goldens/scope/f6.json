@@ -1,0 +1,11 @@
+{
+  "feature": "F6",
+  "allow": [
+    "sanity/queries.ts",
+    "lib/data/ticket-hub-source.ts",
+    "lib/data/admission-availability.ts",
+    "app/(nos)/national-show/page.tsx",
+    ".agent/memory/project/specs/ticket-onsale-predicate/contract-f1.yaml",
+    "docs/polish-wave-2-f6-onsale-followups.md"
+  ]
+}

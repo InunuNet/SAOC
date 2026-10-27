@@ -31,7 +31,8 @@ import { TestingNotice } from './_shared/TestingNotice';
 export interface OrderConfirmationPosition {
   bookingRef: string;
   attendeeName: string;
-  ticketType: string;
+  /** The ticket type's display title (Sanity), never the stored slug. */
+  ticketTypeTitle: string;
   qrContentId: string;
 }
 
@@ -46,6 +47,8 @@ export interface OrderConfirmationVisit {
   venueName: string | null;
   venueAddress: string | null;
   showDates: string | null;
+  /** Set only from a confirmed parking block; null renders the pill. */
+  parking: string | null;
   openingTimes: OrderConfirmationOpeningTime[] | null;
 }
 
@@ -79,6 +82,7 @@ function VisitDetails({ visit }: { visit: OrderConfirmationVisit | null | undefi
           pill
         )}
       </ShellDetailRow>
+      <ShellDetailRow label="Parking">{visit?.parking ?? pill}</ShellDetailRow>
       <ShellDetailRow label="Show dates">{visit?.showDates ?? pill}</ShellDetailRow>
       <ShellDetailRow label="Opening times">
         {times.length > 0
@@ -114,7 +118,7 @@ export default function OrderConfirmation({
       {positions.map((position) => (
         <ShellCard key={position.bookingRef}>
           <ShellDetailRow label="Attendee:">{position.attendeeName}</ShellDetailRow>
-          <ShellDetailRow label="Ticket type:">{position.ticketType}</ShellDetailRow>
+          <ShellDetailRow label="Ticket type:">{position.ticketTypeTitle}</ShellDetailRow>
           <ShellDetailRow label="Booking reference:">{position.bookingRef}</ShellDetailRow>
           <TestingNotice testMode={testMode} />
           <ShellQrTile>
