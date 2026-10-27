@@ -94,20 +94,18 @@ autonomy: high
 # ============================================================================
 # ASSERTION DESIGN
 # ============================================================================
-# A1 is the headline and is UNCHANGED from F6 — this contract does not fork, weaken,
-# lengthen, or reimplement contracts/checks/f6-prove-cms-loop/check-studio-edit-
-# reaches-site.mjs. It is referenced by path. Before this fix it FAILs (see that
-# contract's own header for the live evidence); after @dev's fix it must flip to PASS
-# because of the mechanism analyzed above — a green A1 IS the positive-path,
-# user-visible-outcome proof this feature exists to produce ("a green gate is not a
-# working feature" — satisfied here because A1 drives a real browser through the real
-# Studio and reads the real public page, not a header inspection).
+# There is deliberately no end-to-end "edit reaches the site" assertion here. F6's
+# check-studio-edit-reaches-site.mjs edits aboutPage.boardIntroText in the DEPLOYED
+# Studio, which is a write to live Sanity content, and a gate must never write live
+# content. The live end-to-end proof is the mandatory verification triad's
+# BrowserAgent run against the deployed site (.claude/rules/workflow.md), and F6's own
+# contract; it is not a gate assertion of this contract.
 #
-# A2 proves the mechanism that makes A1 possible: every CMS-driven route's
-# Cache-Control now has a short, bounded s-maxage + stale-while-revalidate, replacing
-# the year-long default. Verified live (2026-08-05, pre-fix) that this correctly FAILs
-# today against all 11 routes (see contract delivery notes) — not a check that would
-# pass by accident.
+# A2 proves the mechanism directly with read-only GETs on the deployed host: every
+# CMS-driven route's Cache-Control now has a short, bounded s-maxage +
+# stale-while-revalidate, replacing the year-long default. Verified live (2026-08-05,
+# pre-fix) that this correctly FAILs today against all 11 routes (see contract
+# delivery notes) — not a check that would pass by accident.
 #
 # A3 is the negative control the dispatch brief requires: it proves A2's mechanism is
 # not vacuously true by running the identical style of assertion against routes that
@@ -133,26 +131,13 @@ autonomy: high
 assertions:
   phase: 4
   checks:
-    - id: A1
-      description: >
-        THE positive-path, user-visible-outcome assertion (mandatory per dispatch
-        brief) — unchanged, unweakened, un-lengthened reference to F6's own headline
-        check: a secretary edits aboutPage.boardIntroText in the DEPLOYED Studio via
-        real browser automation, publishes, calls /api/revalidate, and polls the
-        DEPLOYED public /about page for the sentinel, bounded at 120s / 10s intervals,
-        hard FAIL on timeout, with guaranteed cleanup. Must flip FAIL -> PASS once
-        @dev's short-TTL fix (A2) is deployed — see "TIMING ANALYSIS" above for why
-        60s s-maxage fits inside this 120s bound. Do not fork, edit, or reimplement
-        this script; do not touch contracts/checks/f6-prove-cms-loop/_shared.mjs.
-      command: node contracts/checks/f6-prove-cms-loop/check-studio-edit-reaches-site.mjs
-
     - id: A2
       description: >
         Every CMS-driven marketing route (9 static paths + 2 dynamically-resolved
         [slug] routes, 11 total — see CMS_ROUTES/CMS_DYNAMIC_ROUTES in _shared.mjs)
         on the DEPLOYED host carries Cache-Control with s-maxage <= 60 (and not the
         legacy 31536000) plus a stale-while-revalidate directive. Proves the actual
-        mechanism behind A1's fix, not just that A1 happens to pass. Currently FAILS
+        mechanism read-only, without writing to live content. Currently FAILS
         (verified live, pre-fix, all 11 routes still show s-maxage=31536000) — this is
         the correct, honest pre-fix state.
       command: node contracts/checks/cms-loop-f1-cdn-purge/check-cms-routes-short-ttl.mjs
