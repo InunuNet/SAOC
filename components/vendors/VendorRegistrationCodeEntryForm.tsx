@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { CircleAlert } from 'lucide-react';
 
 import { Button } from '@/components/nos/Button';
 import { VendorFormField } from './VendorFormField';
@@ -81,9 +82,10 @@ export function VendorRegistrationCodeEntryForm({
       {status === 'error' && errorMessage ? (
         <p
           role="alert"
-          className="rounded-sm border border-[var(--status-error)] bg-bone p-4 font-sans text-[15px] font-medium text-[var(--status-error)]"
+          className="flex items-start gap-2 rounded-sm border-2 border-[var(--status-error)] bg-bone p-4 font-sans text-[15px] font-medium text-[var(--status-error)]"
         >
-          {errorMessage}
+          <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <span>{errorMessage}</span>
         </p>
       ) : null}
 

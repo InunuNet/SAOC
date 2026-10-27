@@ -16,6 +16,11 @@
   --bone: #e8e6dc; /* eyebrow pills, section tint, soft panels */
 
   --ink: #171917; /* body copy on paper */
+
+  /* Status tokens (NOS Design 2026-10-28). Text plus icon only, never colour alone. */
+  --status-error: #8f2834;
+  --status-success: #2f5d3a;
+  --status-warning: #7a5a12;
   --muted: #636660; /* captions, meta, taglines */
 
   --rule: #d9d7c9; /* hairlines, dividers */
