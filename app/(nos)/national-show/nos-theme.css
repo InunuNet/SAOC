@@ -429,6 +429,7 @@
   font-variant-numeric: lining-nums tabular-nums;
   /* The face has no tnum, so digit advances vary; a ch floor keeps the countdown width steady. */
   min-width: 2ch;
+  text-align: center;
 }
 .nos-theme .nos-figure[data-nos-hero-text='countdown-days-value'] {
   min-width: 3ch;
@@ -633,6 +634,9 @@
 @media (min-width: 768px) and (max-width: 1023px) {
   .nos-theme .nos-hero-row {
     column-gap: 32px;
+  }
+  .nos-theme .nos-hero-row [aria-label] {
+    column-gap: 16px;
   }
 }
 
