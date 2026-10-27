@@ -23,7 +23,7 @@ export async function withSite(fn) {
   let child = null; let base = process.env.DC_BASE_URL;
   if (!base) {
     const port = await freePort(); base = `http://localhost:${port}`;
-    child = spawn('pnpm', ['exec', 'next', 'dev', '--port', String(port)], {
+    child = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', '--port', String(port)], {
       stdio: 'ignore', env: { ...process.env, BETA_BASIC_AUTH_USER: '', BETA_BASIC_AUTH_PASSWORD: '', SANITY_FIXTURE_MODE: 'replay', SANITY_FIXTURE_DIR: FIXTURE_DIR },
     });
     const deadline = Date.now() + 180_000;

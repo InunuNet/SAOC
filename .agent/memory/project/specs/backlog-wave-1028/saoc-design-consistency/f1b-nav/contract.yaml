@@ -17,10 +17,10 @@ assertions:
   phase: 4
   checks:
     - id: A1
-      description: "Inline primary nav shows from 1280 and logo + nav + CTA + control sit on one row with no overlap, logo stays 405px, scrollWidth == clientWidth at 1100/1279/1280/1366/1384/1440 (fails on main, 0 inline items at 1280 and 1366)"
+      description: "Inline primary nav shows from 1280 with exactly 5 items (Sponsors and Contact in Menu) and logo + nav + CTA + control sit on one row, also at 1383 with no overlap, logo stays 405px, scrollWidth == clientWidth at 1100/1279/1280/1366/1384/1440 (fails on main, 0 inline items at 1280 and 1366)"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-one-row.mjs"
     - id: A2
-      description: "All 7 destinations and Search stay reachable at 1280 and 1366, demoted ones inside the Menu drawer (fails on main, inline nav has 0 items)"
+      description: "All 7 destinations and Search stay reachable at 1280, 1366 and 1383 (demoted: Sponsors, Contact; Search in the drawer), demoted ones inside the Menu drawer (fails on main, inline nav has 0 items)"
       command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-reach.mjs"
     - id: A3
       description: "Header threshold is not above 1280: no min-[1384px] nav visibility left on the inline nav wrapper (fails on main)"
@@ -49,3 +49,10 @@ assertions:
       phase: 5
       description: "RUN AFTER DEPLOY (phase 5, not part of the phase 4 gate). Nav reach on deployed. Plain shell check (not the browser_deployed_check kind, see above); reads BETA_BASIC_AUTH_USER/PASSWORD inside the scripts, never printed."
       command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-reach.mjs"
+    - id: A10
+      description: "NOS Design confirmed: at 1280 and 1383 the Menu is icon-only with aria-label=Menu and a >=44x44 target, logo.right+24<=nav.left, >=12px between nav, Join and Menu, one row, scrollWidth==clientWidth; Menu hidden at 1384 (fails on main: no nav at 1280, aria-label is Open menu)"
+      command: "node .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-spacing.mjs"
+    - id: A11
+      phase: 5
+      description: "Post-deploy nav spacing and Menu label on the deployed header at 1280 and 1383. RUN AFTER DEPLOY (phase 5). Plain shell check, reads beta credentials inside the scripts, never printed."
+      command: "DC_BASE_URL=https://beta.saoc.co.za node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/saoc-design-consistency/checks/check-nav-spacing.mjs"

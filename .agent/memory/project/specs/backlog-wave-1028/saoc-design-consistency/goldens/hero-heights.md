@@ -17,3 +17,10 @@ Cause of the failures: /about carries `dl[data-hero-facts]`; at 1024 and 1280 th
 Below 768 (stacked: 2/1 photo band + copy on sage) height is content-driven and varies by anatomy at 390: /about 577, /judging 434, /sponsors 484, /members 271, MOI 168, /privacy 238, /terms 168, /refunds 168. Typographic routes have no band and no lede/facts. Equal anatomy cannot be forced there without inventing copy or imagery. NOT gated; reported as a gap for NOS Design (see report).
 
 /media-kit has no PageHero at all (measured `data-page-hero` absent at every width) and is not in the ruled exception list. Gap, not asserted.
+
+## NOS Design confirmation (2026-10-28, relayed by team-lead)
+- LOCKED: 480 +-4 at 1440 and at 2056 across the 8 non-exempt routes (check-hero-heights A2).
+- 1024 and 1280: report-only (A8, check-hero-heights-report.mjs) after the /about facts-dl fix; NOS Design locks them once all 8 routes agree within +-4.
+- Mobile (<768): no equal-height gate (content-driven). Gated instead (A7, check-hero-mobile-anatomy.mjs): the photo band uses one aspect-ratio on every route, currently `aspect-[2/1]` in components/ui/PageHero.tsx (media wrapper), and the copy block uses one padding on every route, currently `py-10` (40px) below 768 and `md:py-16` from 768 (both with `px-[var(--container-pad)]`).
+- /media-kit joins the exception list with Home, Events list, Societies grid, Contact and 404: it is a gated tool page with a typographic header and no photo hero. It is not asserted to have a PageHero.
+Honesty note: on main the hero-height lock and the mobile-anatomy gate already pass (480 at 1440/2056; 2/1 and 40px everywhere); only the 1024/1280 report shows the /about defect (496, 545). They are locks and guards, not red-on-main checks. F1c's red-on-main assertion is the h2 role check (A1).

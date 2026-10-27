@@ -1,4 +1,4 @@
-// F1b (SA-1): from 1280 the primary nav is inline and logo + nav + CTA (+ any control) sit on ONE row with no overlap,
+// F1b (SA-1, NOS Design confirmed): from 1280 to 1383 five items are inline (About, Societies, Judging & Awards, Events, National Show) with Join and an icon-only Menu; the primary nav is inline and logo + nav + CTA (+ any control) sit on ONE row with no overlap,
 // the logo keeps its 405px width, and nothing scrolls sideways. Also guards the Menu-only widths below 1280 and the full
 // 7-item row at 1384+. Natural widths measured on main are in goldens/nav-widths.md.
 import { withSite, openPage, check, finish } from './lib.mjs';
@@ -8,11 +8,11 @@ const PROBE = `() => { const vis = (e) => { const r = e.getBoundingClientRect();
   const items = [...document.querySelectorAll('[data-hd=nav] [data-hd=item]')].filter(vis).map((e) => e.textContent.trim());
   const de = document.documentElement; return { parts, items, brand: document.querySelector('[data-hd=brand]').getBoundingClientRect().width, docOver: de.scrollWidth - de.clientWidth, barOver: bar.scrollWidth - bar.clientWidth }; }`;
 await withSite(async ({ base, browser, ctxOpts }) => {
-  for (const width of [1100, 1279, 1280, 1366, 1384, 1440]) {
+  for (const width of [1100, 1279, 1280, 1366, 1383, 1384, 1440]) {
     const { page, ctx } = await openPage(browser, ctxOpts, base, '/about', width, 900);
     const r = await page.evaluate(`(${PROBE})()`);
     const where = `@${width}`;
-    if (width >= 1280) check(r.items.length >= 5, `${where}: only ${r.items.length} inline nav items visible (want >=5; the full 7 from 1384)`);
+    if (width >= 1280 && width < 1384) check(r.items.length === 5, `${where}: ${r.items.length} inline nav items, want exactly 5 (Sponsors and Contact live in Menu)`);
     if (width >= 1384) check(r.items.length === 7, `${where}: ${r.items.length} inline items, want all 7`);
     if (width < 1280) check(r.items.length === 0, `${where}: inline nav visible below the threshold`);
     const tops = r.parts.map((p) => (p.t + p.b) / 2); const mid = tops.reduce((a, b) => a + b, 0) / (tops.length || 1);

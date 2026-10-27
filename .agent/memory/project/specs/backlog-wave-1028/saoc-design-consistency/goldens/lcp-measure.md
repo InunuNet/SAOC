@@ -15,3 +15,9 @@ Design calls recorded (architect):
 2. AVIF-first via `<picture>`: `<source type="image/avif" srcset sizes>` first, WebP `<img srcset sizes>` fallback, same width list. Preload: one `<link rel=preload as=image type="image/avif" imagesrcset imagesizes>` identical to the AVIF source. Home: first slide only; later slides lazy, no preload.
 3. Quality constants: AVIF ~55, WebP 72 for the hero set. NOS Design signs off one 390@3 and one 2056@2 crop by eye per encoder change (human step, not assertable).
 4. Lighthouse needs a production-built origin, so the LCP assertion is post-deploy (phase 5), run with DC_BASE_URL.
+
+## NOS Design confirmation (2026-10-28, relayed by team-lead)
+- The header lockup drops `priority` but stays `loading="eager"` with the default fetchpriority (A9 asserts explicit loading="eager" in the server HTML, no fetchpriority).
+- The hero img and its preload must be present in the SERVER HTML (A9, no JS).
+- No opacity animation or transition on the hero img, its wrappers or the h1 (A10). Home's first crossfade slide wrapper currently fades via `transition-opacity duration-[1400ms]` (components/home/Hero.tsx slide wrapper); the deployed variant (A12) checks it.
+- The <=2.5s Slow 4G gate stays (phase 5 A7).
