@@ -32,7 +32,7 @@ assertions:
       command: 'sed -n ''/buildHubCards({/,/});/p'' lib/data/admission-availability.ts | grep -q "^      activeShowId,$"'
       timeout_seconds: 10
     - id: A6
-      description: the prerendered /national-show page passes resolveActiveShow(...) into buildShowOffers (live code only, comments stripped before matching; forwarding inside buildShowOffers is replayed behaviourally by A2)
+      description: the prerendered /national-show page passes resolveActiveShow(...) into buildShowOffers (live code only, comments stripped before matching; the page must import buildShowOffers from '@/lib/data/national-show-offers' and declare no local one; forwarding inside buildShowOffers is replayed behaviourally by A2)
       command: node contracts/checks/onsale-followups/check-page-call-site.mjs
       timeout_seconds: 10
     - id: A5
