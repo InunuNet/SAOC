@@ -21,3 +21,10 @@ Item 3 (checkout route)
 - FIXED: the NOS sitemap check now asserts NOS_EXTRA_STATIC_ROUTES equals ["/contact"] exactly; mutants M5 (SAOC) and M6 (NOS) add /does-not-exist and both checks fail on them. (The SAOC check already compared the exact set.)
 - FIXED: checkout fixture now has two day-required types (weekend-pass, workshop-pass) plus day-optional vip; mutants M2 (flag derived from the weekend-pass slug) and M3 (all types day-required) both fail the check, along with M1 (guard disabled).
 - FIXED: the check now asserts zero Firestore write attempts.
+
+## Codex A10 round 3 (2026-10-28) and the scope decision
+Fixed cheaply: the built-sitemap check feeds one society and one event and asserts their entries (mutants M10, M11 drop each spread); it asserts no /tickets/ entry with no ticket cards; the checkout fixture adds the real `day-visitor` slug as day-required (the fixed-slug-list mutant M2 now includes weekend-pass and workshop-pass, so day-visitor catches it).
+A10's prompt is now scoped to the actual product diff (lib/sast-date.ts, the sitemap golden). Further check-strength gaps on UNCHANGED code are accepted limits, not new rounds:
+- the built-sitemap check proves no /tickets/ entry only with an empty card set; it does not feed real ticket cards, so a regression in which cards produce /tickets/<slug> entries is not caught here.
+- the checkout test mocks Sanity/Firestore at the module boundary and never reaches reservation or payment (a day-required refusal happens before them); it does not prove behaviour after the day guard.
+- A11/A12 (non-required triad kinds) have no manifests. browser_deployed_check.sh and gws_inbox_check.sh have no N/A manifest form (gws requires gws_subcommand 'mail read' and a real message_id), so a missing manifest reads ERROR, accepted by team-lead for these non-required items.

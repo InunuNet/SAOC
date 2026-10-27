@@ -18,6 +18,8 @@ const mutations = [
   { id: 'M7 drop ...extraStaticRoutes from the NOS sitemap wiring (built-output check)', file: 'app/sitemap.ts', from: '    ...extraStaticRoutes,\n', to: '', check: BUILT_CHECK },
   { id: 'M8 drop ...staticRoutes from the SAOC sitemap wiring (built-output check)', file: 'app/sitemap.ts', from: 'return [...staticRoutes, ...societyRoutes, ...eventRoutes];', to: 'return [...societyRoutes, ...eventRoutes];', check: BUILT_CHECK },
   { id: 'M9 drop the manifest-derived show routes from the NOS sitemap wiring (built-output check)', file: 'app/sitemap.ts', from: '    ...buildNationalShowChildRoutes(baseUrl, showPastShows),\n', to: '', check: BUILT_CHECK },
+  { id: 'M10 drop ...societyRoutes from the SAOC sitemap wiring (built-output check)', file: 'app/sitemap.ts', from: 'return [...staticRoutes, ...societyRoutes, ...eventRoutes];', to: 'return [...staticRoutes, ...eventRoutes];', check: BUILT_CHECK },
+  { id: 'M11 drop ...eventRoutes from the SAOC sitemap wiring (built-output check)', file: 'app/sitemap.ts', from: 'return [...staticRoutes, ...societyRoutes, ...eventRoutes];', to: 'return [...staticRoutes, ...societyRoutes];', check: BUILT_CHECK },
 ];
 
 const failures: string[] = [];
