@@ -8,7 +8,7 @@ import type { ReactNode } from 'react';
 
 import { itemMeta, type MediaKitItem } from '@/lib/data/media-kit';
 
-const ZIP_LABEL = {
+export const ZIP_LABEL = {
   everything: 'Download everything (zip)',
   section: 'Download this section (zip)',
 } as const;
@@ -44,8 +44,8 @@ export interface KitSectionProps {
 export function KitSection({ id, heading, zip, children }: KitSectionProps) {
   return (
     <section id={id} aria-labelledby={`${id}-heading`} className="scroll-mt-32">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-1">
-        <h2 id={`${id}-heading`} className="font-serif tracking-[-0.015em] font-light text-[32px] leading-[1.15] text-ink">
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1">
+        <h2 id={`${id}-heading`} className="doc-h2">
           {heading}
         </h2>
         {zip ? <ZipLink item={zip} /> : null}

@@ -1,0 +1,12 @@
+{
+  "feature": "F3",
+  "allow": [
+    "lib/saoc-sitemap-routes.ts",
+    "lib/society-metadata.ts",
+    "app/(marketing)/societies/[slug]/page.tsx",
+    "app/(nos)/tickets/confirmation/page.tsx",
+    "app/(nos)/tickets/cancelled/page.tsx",
+    "contracts/golden/saoc-seo-polish/sitemap-expected.json",
+    "docs/polish-wave-f3-seo.md"
+  ]
+}

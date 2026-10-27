@@ -1,0 +1,1 @@
+{"query":"\n  *[_type == \"showSponsor\" && active == true] | order(tier asc, order asc, name asc){\n    _id,\n    name,\n    tier,\n    logo,\n    website,\n    description\n  }\n","params":{},"result":[],"capturedAt":"2026-10-25T23:51:19.296Z"}

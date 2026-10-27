@@ -1,0 +1,53 @@
+schema: athanor.contract/v1
+slug: saoc-content-standard
+goal: Rename the Constitution to Memorandum of Incorporation with a 308 redirect, and remove site-written society copy and the 21-societies figures that are not Lee-Ann's.
+created_at: '2026-10-25'
+autonomy: high
+features:
+  - id: F2
+    name: Lee-Ann SAOC copy fixes (MOI rename, society copy removal, 21 figure removal)
+    status: pending
+goldens:
+  - .agent/memory/project/specs/saoc-content-standard/goldens/f2-leeann-copy-fixes.md
+assertions:
+  phase: 4
+  checks:
+    - id: A-F2-01
+      description: MOI page exists at the new route with the new title, heading and path, no "Constitution" in it, and the old route directory is gone
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f2_check.sh moi-page
+    - id: A-F2-02
+      description: MOI body copy source (content/legal/constitution.ts) is byte-identical to the base branch and is the body rendered
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f2_check.sh moi-body-verbatim
+    - id: A-F2-03
+      description: SAOC footer link is the new label and href, old label gone
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f2_check.sh footer-saoc
+    - id: A-F2-04
+      description: NOS footer link points at the new SAOC route with the new label, old label gone
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f2_check.sh footer-nos
+    - id: A-F2-05
+      description: Sitemap lists the new route and not the old one
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f2_check.sh sitemap
+    - id: A-F2-06
+      description: proxy.ts names both the old and the new path
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f2_check.sh proxy-static
+    - id: A-F2-07
+      description: Runtime redirect probe - SAOC host 308 with query kept, new path served, NOS host single hop to the new path
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f2_check.sh redirect
+    - id: A-F2-08
+      description: No user-visible "Constitution" string remains under app/ or components/
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f2_check.sh no-constitution-label
+    - id: A-F2-09
+      description: SocietyExpect component, export, use and its copy are gone while SocietyDetailsCallout is kept
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f2_check.sh expect-removed
+    - id: A-F2-10
+      description: Societies static lede constant and its text are gone, client list still rendered
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f2_check.sh lede-removed
+    - id: A-F2-11
+      description: Generic About fallback and its placeholder marker are gone, real description still rendered
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f2_check.sh about-fallback-removed
+    - id: A-F2-12
+      description: MissionBlock no longer states the 21-societies figure and keeps the in-cultivation paragraph
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f2_check.sh figure-21-removed
+    - id: A-F2-13
+      description: Society detail CTA no longer states the 21-societies figure (optional extension, lead to confirm)
+      command: bash .agent/memory/project/specs/saoc-content-standard/checks/f2_check.sh figure-21-cta

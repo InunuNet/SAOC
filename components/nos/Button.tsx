@@ -19,8 +19,8 @@
 //              is illegible. Same padding and type as every other variant, so
 //              a filled and an outlined action carry equal weight (R2/D3.5).
 //
-// Radius is --radius-button (2px) on every variant — R2: buttons are 2px, and
-// pill radius is reserved for eyebrow pills.
+// Radius is --radius-button (10px, nos-structure.css) on every variant — R17: buttons are 10px,
+// and pill radius is reserved for eyebrow pills.
 //
 // Focus ring colour follows the *ground the ring sits on*, not the control's
 // own fill (R9/3): outline-offset places the ring outside the button, so an

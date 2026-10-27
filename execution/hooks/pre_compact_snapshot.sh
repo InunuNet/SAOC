@@ -12,8 +12,8 @@ input=$(cat)
 trigger=$(printf '%s' "$input" | python3 -c "import sys,json; print(json.load(sys.stdin).get('compaction_trigger','unknown'))" 2>/dev/null || echo "unknown")
 
 recent=$(git log --oneline -8 2>/dev/null | tr '\n' '; ' || echo "no git")
-dirty=$(git status --short 2>/dev/null | tr '\n' '; ' || echo "none")
-diffstat=$(git diff --stat HEAD 2>/dev/null | tail -5 | tr '\n' '; ' || echo "none")
+dirty=$(git --no-optional-locks status --short 2>/dev/null | tr '\n' '; ' || echo "none")
+diffstat=$(git --no-optional-locks diff --stat HEAD 2>/dev/null | tail -5 | tr '\n' '; ' || echo "none")
 branch=$(git branch --show-current 2>/dev/null || echo "unknown")
 
 mission_info="no active mission"

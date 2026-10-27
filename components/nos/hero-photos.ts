@@ -27,7 +27,18 @@ export const HERO_PHOTOS: Readonly<Record<string, NosHeroPhoto>> = {
   '/national-show': { src: '/images/orchid-dark.jpg', objectPosition: '68% 50%' },
 };
 
-export type NosCropCode = 'S3a' | 'S3b' | 'S2a' | 'S2c' | 'S1b' | 'H4a' | 'H4b';
+export type NosCropCode =
+  | 'S3a'
+  | 'S3b'
+  | 'S2a'
+  | 'S2c'
+  | 'S1b'
+  | 'H4a'
+  | 'H4b'
+  | 'D1'
+  | 'PK1'
+  | 'PK3'
+  | 'Y1';
 
 export const HERO_CROPS: Readonly<Record<NosCropCode, NosHeroPhoto>> = {
   S3a: { src: '/images/nos-hero-S3a.jpg' },
@@ -37,30 +48,34 @@ export const HERO_CROPS: Readonly<Record<NosCropCode, NosHeroPhoto>> = {
   S1b: { src: '/images/nos-hero-S1b.jpg' },
   H4a: { src: '/images/nos-hero-H4a.jpg' },
   H4b: { src: '/images/nos-hero-H4b.jpg' },
+  D1: { src: '/images/nos-hero-D1.jpg' },
+  PK1: { src: '/images/nos-hero-PK1.jpg' },
+  PK3: { src: '/images/nos-hero-PK3.jpg' },
+  Y1: { src: '/images/nos-hero-Y1.jpg' },
 };
 
 export const ROUTE_CROPS: Readonly<Record<string, NosCropCode>> = {
   '/national-show/about': 'S3a',
-  '/national-show/what-to-expect': 'S2a',
+  '/national-show/what-to-expect': 'PK1',
   '/national-show/plan-your-visit': 'S1b',
-  '/national-show/faq': 'H4b',
-  '/national-show/programme': 'H4a',
+  '/national-show/faq': 'H4a',
+  '/national-show/programme': 'S3b',
   '/national-show/workshops': 'S2c',
-  '/national-show/symposium': 'S3b',
-  '/national-show/wosa-conference': 'S2a',
-  '/national-show/conferences': 'H4b',
-  '/national-show/sa-exhibitors': 'S2c',
-  '/national-show/international-guests': 'S3b',
-  '/national-show/exhibitors': 'H4a',
+  '/national-show/symposium': 'D1',
+  '/national-show/wosa-conference': 'PK3',
+  '/national-show/conferences': 'S2a',
+  '/national-show/sa-exhibitors': 'PK1',
+  '/national-show/international-guests': 'Y1',
+  '/national-show/exhibitors': 'D1',
   '/national-show/vendors': 'S1b',
-  '/national-show/sponsors': 'S2a',
-  '/national-show/archive': 'H4b',
-  '/national-show/contact': 'S1b',
+  '/national-show/sponsors': 'PK3',
+  '/national-show/archive': 'S3a',
+  '/national-show/contact': 'H4a',
   '/national-show/media-kit': 'S2c',
   '/tickets': 'S3a',
-  '/privacy': 'S2a',
+  '/privacy': 'S3b',
   '/terms': 'S2a',
-  '/refunds': 'S2a',
+  '/refunds': 'Y1',
   '/newsletter/unsubscribe': 'S2a',
 };
 

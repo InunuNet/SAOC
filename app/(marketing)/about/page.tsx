@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 
-import { PageHero } from '@/components/ui/PageHero';
-import { PhotoBand } from '@/components/ui/PhotoBand';
+import { Breadcrumb } from '@/components/chrome/Breadcrumb';
+import { DocumentLayout } from '@/components/ui/DocumentLayout';
+import { RouteHero } from '@/components/ui/RouteHero';
 import { CTASection } from '@/components/ui/CTASection';
 import { ContentGap } from '@/components/ui/ContentGap';
 import { BoardGrid } from '@/components/about';
@@ -9,7 +10,7 @@ import type { SanityBoardMember } from '@/components/about';
 import { sanityFetch } from '@/sanity/lib/fetch';
 import { aboutPageQuery, boardMembersQuery } from '@/sanity/queries';
 import { boardMembers as staticBoard } from '@/lib/data/board';
-import { withholdPlaceholderProse } from '@/lib/data/show-pages';
+import type { HeroFact } from '@/lib/hero-facts';
 import { buildPageMetadata } from '@/lib/seo';
 
 // F1 cms-loop: bound CDN staleness to 60s (no programmatic purge API exists for
@@ -44,13 +45,15 @@ interface BoardMemberData {
 // §4). Every value here traces to a sentence in that document; nothing is
 // invented. The pre-mission stats band (judging-standardisation year, shows
 // hosted, affiliated-society counts) is NOT in content.md and has been
-// removed.
-const HERITAGE_STATS = [
-  { value: '1968', label: 'Founded' },
-  { value: '28 July 1968', label: 'Founding date, Bloemfontein' },
-  { value: '4', label: 'Founding societies' },
-  { value: '15', label: 'Accredited SAOC Judges, Sept 1968' },
-] as const;
+// removed. The bare "1968 / Founded" stat was also removed: it restated the
+// founding date beside it and the prose already says "Established in 1968".
+// The three facts are the hero's facts row (content standard, signed off by NOS Design); the
+// society count is the four societies named in the second paragraph.
+const HERITAGE_FACTS: readonly HeroFact[] = [
+  { term: 'Founded, Bloemfontein', value: '28 July 1968' },
+  { term: 'Founding societies', value: '4' },
+  { term: 'Accredited SAOC Judges, September 1968', value: '15' },
+];
 
 export default async function AboutPage() {
   const [about, board] = await Promise.all([
@@ -64,9 +67,8 @@ export default async function AboutPage() {
     }),
   ]);
 
-  // F19 (vote 1C): the six placeholder officeholders are shown, each marked, on the beta preview
-  // only. On the public build only confirmed members render; with none, the page states the gap.
-  const withhold = withholdPlaceholderProse();
+  // The six placeholder officeholders are never drawn as cards: only confirmed members render, and
+  // when every entry is a placeholder the section shows the existing gap line instead.
   const sanityBoard = board ?? [];
   const boardForGrid: SanityBoardMember[] =
     sanityBoard.length > 0
@@ -86,16 +88,36 @@ export default async function AboutPage() {
           order: i,
           placeholder: true,
         }));
-  const visibleBoard = withhold ? boardForGrid.filter((m) => !m.placeholder) : boardForGrid;
+  const visibleBoard = boardForGrid.filter((m) => !m.placeholder);
 
   return (
     <>
-      <PageHero
-        image="/images/orchid-violet.jpg"
-        eyebrow="Our heritage"
+      <Breadcrumb items={[{ label: 'About' }]} />
+      <RouteHero
+        route="/about"
         heading={<strong>About the South African Orchid Council</strong>}
+        facts={HERITAGE_FACTS}
       />
 
+      <DocumentLayout
+        aside={
+          <p className="font-sans text-[16px] leading-[1.55] text-ink/80">
+            SAOC focuses on orchids in cultivation. For wild orchid identification, habitat, and
+            conservation, visit our partner organisation{' '}
+            <a
+              href="https://wildorchids.co.za"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-link"
+            >
+              Wild Orchids of Southern Africa (WOSA)
+            </a>
+            .
+          </p>
+        }
+      >
+      <section className="doc-section">
+      <h2 className="doc-h2">Our heritage</h2>
       {/*
         Lee-Ann's official About copy (council-supplied), rendered verbatim —
         title + 7 paragraphs, 8 bold spans as <strong> — from
@@ -104,9 +126,7 @@ export default async function AboutPage() {
         text. See the golden's §1/§4 for provenance and the per-slot
         decisions that replaced the previous invented copy here.
       */}
-      <section className="bg-parchment py-24">
-        <div className="saoc-container">
-        <div className="max-w-[760px] space-y-6 font-sans text-[16px] leading-[1.55] text-ink/90">
+        <div className="doc-prose">
           <p>
             The <strong>South African Orchid Council (SAOC)</strong> is the national coordinating
             body for orchid societies and orchid enthusiasts in South Africa. Established in{' '}
@@ -170,89 +190,27 @@ export default async function AboutPage() {
             </strong>
           </p>
         </div>
-        </div>
       </section>
 
-      {/* Heritage stats — 4 facts stated in content.md, see golden §4 */}
-      <section className="bg-bone py-16">
-        <div className="saoc-container">
-          <dl className="grid grid-cols-2 gap-x-8 gap-y-8 border-y border-rule py-10 sm:grid-cols-4">
-            {HERITAGE_STATS.map((stat) => (
-              <div key={stat.label}>
-                <dt className="font-serif tracking-[-0.015em] font-normal min-[1231px]:font-light text-[clamp(24px,2.6vw,38px)] leading-none text-primary">
-                  {stat.value}
-                </dt>
-                <dd className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
-                  {stat.label}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
-
-      <PhotoBand
-        image="/images/orchid-pink.jpg"
-        alt="Pink orchid in bloom"
-        caption="Est. 1968 · Bloemfontein"
-        minHeight="320px"
-      />
-
-      {/* Board */}
-      <section className="bg-bone py-24">
-        <div className="saoc-container">
-          <div className="mb-10">
-            <div className="mb-3">
-              <span className="eyebrow">Our committee</span>
-            </div>
-            <h2 className="font-serif font-normal min-[889px]:font-light text-[clamp(30px,3.6vw,44px)] leading-[1.1] tracking-[-0.015em] text-primary">
-              The national committee
-            </h2>
-          </div>
-          {about?.boardIntroText ? (
-            <p className="mb-8 max-w-3xl font-sans text-[16px] leading-[1.55] text-ink/80">
-              {about.boardIntroText}
-            </p>
-          ) : (
-            <p className="mb-8 max-w-3xl font-sans text-[16px] leading-[1.55] text-ink/80">
-              SAOC is run by a national committee elected from its affiliated societies,
-              overseeing judging, shows, publications and the council&apos;s day-to-day affairs.
-            </p>
-          )}
-          {visibleBoard.length > 0 ? <BoardGrid members={visibleBoard} /> : <ContentGap />}
-        </div>
-      </section>
-
-      {/* WOSA partnership note — static, no schema field */}
-      <section className="bg-parchment py-16">
-        <div className="saoc-container">
-          <div className="border-t border-rule pt-10">
-          <p className="max-w-3xl font-sans text-[16px] leading-[1.55] text-ink/70">
-            SAOC focuses on orchids in cultivation. For wild orchid identification, habitat,
-            and conservation, visit our partner organisation{' '}
-            <a
-              href="https://wildorchids.co.za"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-link"
-            >
-              Wild Orchids of Southern Africa (WOSA)
-            </a>
-            .
+      <section id="committee" className="doc-section">
+        <h2 className="doc-h2">The national committee</h2>
+        {about?.boardIntroText ? (
+          <p className="mb-8 max-w-[64ch] font-sans text-[16px] leading-[1.55] text-ink/85">
+            {about.boardIntroText}
           </p>
-          </div>
-        </div>
+        ) : (
+          <p className="mb-8 max-w-[64ch] font-sans text-[16px] leading-[1.55] text-ink/85">
+            SAOC is run by a national committee elected from its affiliated societies,
+            overseeing judging, shows, publications and the council&apos;s day-to-day affairs.
+          </p>
+        )}
+        {visibleBoard.length > 0 ? <BoardGrid members={visibleBoard} /> : <ContentGap />}
       </section>
+      </DocumentLayout>
 
       <CTASection
         eyebrow="Get involved"
         heading="Find your society, join the council's work"
-        body={
-          withhold
-            ? undefined
-            : 'SAOC is a federation of 21 independent orchid societies. Find one near you, or get in touch with the national committee directly.'
-        }
-        marked={!withhold}
         primaryCta={{ href: '/societies', label: 'Find a society' }}
         secondaryCta={{ href: '/contact', label: 'Contact SAOC' }}
       />

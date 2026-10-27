@@ -1,14 +1,10 @@
 import Link from 'next/link';
 import { useId } from 'react';
 
-import { PlaceholderMarker } from '@/components/ui/PlaceholderMarker';
 import { eventDateBlock } from '@/lib/events-list';
 import type { SanityEvent } from '@/types';
 
-const EVENT_PLACEHOLDER_LABEL = "AI event: waiting on SAOC's official events";
-const EYEBROW_SEPARATOR = ' · ';
-
-/** An invented event on the beta preview carries `isPlaceholder`; it is marked and never linked. */
+/** An invented event on the beta preview carries `isPlaceholder`; the page notes it once above the list and never links it. */
 export type ListedEvent = SanityEvent & { isPlaceholder?: boolean };
 
 export interface EventCardProps {
@@ -40,7 +36,8 @@ export function EventCard({ event }: EventCardProps) {
   const dateId = `${id}-date`;
   const venueId = `${id}-venue`;
   const linked = Boolean(event.slug) && !event.isPlaceholder;
-  const eyebrow = [event.kind, event.location].filter(Boolean).join(EYEBROW_SEPARATOR);
+  const locationInVenue = event.venue && event.location && event.venue.includes(event.location);
+  const venueLine = [event.venue, locationInVenue ? null : event.location].filter(Boolean).join(', ');
 
   const content = (
     <>
@@ -58,23 +55,19 @@ export function EventCard({ event }: EventCardProps) {
       </time>
 
       <div className="min-w-0">
-        {eyebrow ? (
-          <p className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-muted">{eyebrow}</p>
-        ) : null}
         <span
           id={titleId}
-          className={`mt-1 block font-serif text-[22px] font-semibold leading-snug text-primary${
+          className={`block font-serif text-[22px] font-semibold leading-snug text-primary${
             linked ? ' underline-offset-4 decoration-2 group-hover:underline group-focus-visible:underline' : ''
           }`}
         >
           {event.title}
         </span>
-        {event.venue ? (
+        {venueLine ? (
           <p id={venueId} className="mt-1 font-sans text-[13.5px] text-ink/70">
-            {event.venue}
+            {venueLine}
           </p>
         ) : null}
-        {event.isPlaceholder ? <PlaceholderMarker label={EVENT_PLACEHOLDER_LABEL} /> : null}
       </div>
 
       {event.hostSociety ? (
@@ -101,7 +94,7 @@ export function EventCard({ event }: EventCardProps) {
           data-event-row
           href={`/events/${event.slug}`}
           aria-labelledby={titleId}
-          aria-describedby={event.venue ? `${dateId} ${venueId}` : dateId}
+          aria-describedby={venueLine ? `${dateId} ${venueId}` : dateId}
           className={`group ${ROW_CLASSES} ${BAR_CLASSES}`}
         >
           {content}

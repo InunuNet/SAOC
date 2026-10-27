@@ -26,6 +26,10 @@ export const conferencePresenter = defineType({
     // Omitted until Lee-Ann supplies a real photo — no placeholder image invented here.
     defineField({ name: 'photo', title: 'Photo', type: 'image' }),
     defineField({ name: 'bio', title: 'Bio', type: 'text' }),
+    // IG-G1 (nos-content-standard): optional and additive. Shown only when set; never inferred from
+    // the name or a nursery, and nothing is migrated or defaulted.
+    defineField({ name: 'country', title: 'Country', type: 'string' }),
+    defineField({ name: 'organisation', title: 'Organisation', type: 'string' }),
     defineField({
       name: 'event',
       title: 'Event',

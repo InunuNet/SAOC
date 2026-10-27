@@ -111,6 +111,11 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
           <h2 className="font-serif font-light text-[clamp(34px,4.4vw,54px)] leading-[1.08] tracking-[-0.015em] text-primary">
             Four ways into SAOC
           </h2>
+          {cards.some((card) => card.unsourced) && !withhold ? (
+            <div className="mt-4">
+              <PlaceholderMarker />
+            </div>
+          ) : null}
         </div>
 
         <div className="grid grid-cols-1 gap-7 min-[640px]:grid-cols-2 min-[1024px]:grid-cols-4">
@@ -150,11 +155,6 @@ export function NavCards({ show, withhold = false }: NavCardsProps) {
                   <p className="mb-auto pb-5 font-sans text-[16px] leading-[1.55] text-muted">
                     {card.body}
                   </p>
-                  {card.unsourced && !withhold ? (
-                    <div className="pb-4">
-                      <PlaceholderMarker />
-                    </div>
-                  ) : null}
 
                   <div className="flex items-center justify-between gap-3 pt-2">
                     <span

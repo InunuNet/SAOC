@@ -1,12 +1,17 @@
 {
   "template_version": "3.8.57",
-  "applied_at": "2026-10-24T23:34:49Z",
+  "applied_at": "2026-10-25T03:15:12Z",
   "delivery": "partial",
-  "workspace_id": "0508fe91e31545b0",
+  "workspace_id": "7deb4bb10293321f",
   "withheld": [
     ".agent/handoffs.yaml",
     ".agent/update-manifest.yaml"
   ],
+  "untracked": [
+    ".agent/handoffs.yaml",
+    ".agent/update-manifest.yaml"
+  ],
+  "reconcile_from": "3.8.57",
   "bootstrap_unresolved": {
     "anchor": "3.8.57",
     "paths": {

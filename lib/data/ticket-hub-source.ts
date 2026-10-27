@@ -19,6 +19,7 @@ import {
   WORKSHOP_SESSION_PRICE,
   type ProvisionalAdmissionProduct,
 } from '@/lib/provisional-figures';
+import { ticketTypeMatchesActiveShow } from '@/lib/ticket-on-sale';
 
 export const TICKET_CATEGORIES = ['admission', 'conference', 'workshop-field-trip'] as const;
 
@@ -33,6 +34,7 @@ export interface HubCmsTicketType {
   capacityPool?: string | null;
   headcountPerUnit?: number | null;
   demo?: boolean | null;
+  show?: { _ref: string } | null;
 }
 
 export interface BuildHubCardsInput {
@@ -45,6 +47,8 @@ export interface BuildHubCardsInput {
   stockKnown: boolean;
   now: Date;
   showDays: readonly string[];
+  /** The one active show, or null when none resolves (then no CMS-backed type is listed). */
+  activeShowId: string | null;
 }
 
 // Totals a ticket type carries when Sanity has none: the figures of lib/provisional-figures.ts.
@@ -93,10 +97,13 @@ function toTypeInput(
 
 /**
  * Every card of the hub. Demo / QA-fixture types are dropped always: the hub never lists a
- * fixture, even in development.
+ * fixture, even in development. Types for any show but the active one are dropped too: the
+ * product page and checkout refuse them (wrong-show), so a card would link to a 404.
  */
 export function buildHubCards(input: BuildHubCardsInput): TicketCardsOutput {
-  const cmsTypes = filterPubliclyListableTicketTypes([...input.cmsTypes]);
+  const cmsTypes = filterPubliclyListableTicketTypes([...input.cmsTypes]).filter((t) =>
+    ticketTypeMatchesActiveShow(t, input.activeShowId)
+  );
   const priceBySlug: Record<string, number | null> = Object.fromEntries(
     cmsTypes.map((t) => [t.slug, t.price ?? null])
   );

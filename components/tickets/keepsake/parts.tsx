@@ -72,6 +72,7 @@ export function TicketStub({
             alt=""
             fill
             sizes={STUB_PHOTO_SIZES}
+            loading="eager"
             style={{ objectFit: 'cover', objectPosition: product.focus }}
           />
         ) : null}
@@ -86,6 +87,7 @@ export function TicketStub({
           alt=""
           width={EMBLEM_WIDTH_PX}
           height={EMBLEM_HEIGHT_PX}
+          loading="eager"
           unoptimized
         />
         <span className="nk-admit">{admit}</span>

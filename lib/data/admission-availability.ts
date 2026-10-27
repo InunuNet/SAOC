@@ -27,6 +27,7 @@ import { getSoldCountsByTicketType, getSoldCountsByTicketTypeAndDay } from '@/li
 import { filterPubliclyListableTicketTypes } from '@/lib/demo-ticket-type';
 import { DAY_VISITOR_SELLABLE_DAYS, DAY_VISITOR_SHAPED_SLUGS } from '@/lib/provisional-figures';
 import { resolveActiveShow } from '@/lib/show-resolution';
+import { ticketTypeMatchesActiveShow } from '@/lib/ticket-on-sale';
 import { NATIONAL_SHOW_ID } from '@/lib/tickets-constants';
 
 export interface AdmissionAvailabilitySource {
@@ -178,6 +179,7 @@ export async function loadTicketCardViewModels(): Promise<TicketCardViewModelsRe
     const salesOpen = salesState?.salesOpen === true;
     const cmsTypes = filterPubliclyListableTicketTypes(byCategory.flatMap((rows) => rows ?? []));
     const stock = await readStock();
+    const activeShowId = resolveActiveShow(shows ?? []);
 
     const built = buildHubCards({
       cmsTypes,
@@ -187,11 +189,15 @@ export async function loadTicketCardViewModels(): Promise<TicketCardViewModelsRe
       stockKnown: stock !== null,
       now: new Date(),
       showDays: DAY_VISITOR_SELLABLE_DAYS,
+      activeShowId,
     });
 
     if (stock) {
       const sources: AdmissionAvailabilitySource[] = [];
+      // Only the active show's types feed the pooled-capacity check: a type of another show that
+      // shares a pool name must not lower the pool's ceiling and sell out an active-show card.
       for (const t of cmsTypes) {
+        if (!ticketTypeMatchesActiveShow(t, activeShowId)) continue;
         if (typeof t.capacity !== 'number') continue;
         sources.push({
           slug: t.slug,
@@ -201,7 +207,7 @@ export async function loadTicketCardViewModels(): Promise<TicketCardViewModelsRe
           headcountPerUnit: t.headcountPerUnit,
         });
       }
-      const verdict = await getAdmissionSoldOutBySlug(sources, resolveActiveShow(shows ?? []));
+      const verdict = await getAdmissionSoldOutBySlug(sources, activeShowId);
       for (const card of Object.values(built.cards)) {
         if (
           card &&

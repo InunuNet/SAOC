@@ -1,0 +1,43 @@
+# F8 — media kit: "Mark only" and "National Show 2027" behind a picker (MK-1..MK-3)
+
+RULED by NOS Design 2026-10-25 (final), goldens/nos-design-rulings-2026-10-25.md: DuotonePicker pattern, text-only options OK (the preview is the swatch). Conditions added to the checks: a real radiogroup with a name; the preview and every download button update on selection, the button naming the selected file and format; the selected state visible without colour alone (bold weight plus a ring); focus order radios, preview, downloads; page <=9,000px at 390 (the dev reports the measured height with the screenshots).
+
+The committee-gated SAOC /media-kit is 21,157px tall at 390 (backlog L2820). Two sections list every file: "Mark only" (25 cards) and "National Show 2027" (16 logos + emblem). The
+Duotone section already solves this with DuotonePicker (a radio group of inks, one panel visible, hash-synced). Same files, same labels, no new copy or assets; section zips stay.
+
+## Specification
+1. MK-1 components/media-kit/OptionPicker.tsx (new, 'use client'): props `{ legend: string; name: string; hashPrefix: string; defaultId: string; options: ReadonlyArray<{ id: string; label: string }>; panels: Record<string, ReactNode> }`.
+   Copy DuotonePicker's structure and classes (useSyncExternalStore on hashchange, history.replaceState + dispatched HashChangeEvent, `label > input.peer sr-only + span` chip with
+   `min-h-[44px] border border-rule bg-parchment px-3 py-2 peer-checked:border-primary peer-checked:bg-bone` and the same focus-visible outline), PLUS, on the chip span, `peer-checked:font-semibold peer-checked:ring-2 peer-checked:ring-primary` so the selected state is not colour alone (bold weight and a ring; the chip's label text sits directly in that span). The radiogroup's accessible name is the sr-only legend ("Mark only" / "National Show 2027"). No positive tabIndex: focus order is radios, then the visible panel's download buttons (the preview image is not a focus stop), never a hidden panel's., but with NO swatch and no hex: the options
+   are text only. The `<legend>` is `sr-only` (the visible heading is the section's). Selection lives in the hash as `#<hashPrefix>-<id>`; every panel is rendered, wrapped in
+   `<div data-option={id} className={selected ? <panel grid classes> : 'hidden'}>`. Do not touch DuotonePicker.tsx.
+2. MK-2 Mark only. Options (id: label, in this order): colour: "Full colour"; greyscale: "Greyscale"; indigo: "01 Indigo"; prussian: "02 Prussian"; viridian: "03 Viridian"; violet:
+   "04 Violet"; teal: "05 Teal"; plum: "06 Plum" (the manifest's rendition_label / ink_label, already approved wording). hashPrefix `mark-only`, defaultId `colour`, legend "Mark only".
+   Panel for an option = that option's existing cards, unchanged KitCard props: its mark(s) from `kit.marks` (Greyscale has two: greyscale and greyscale-reversed, grounds as `markGround` now),
+   its light chip and its dark chip from `kit.chips.light` / `kit.chips.dark` (layout="chip", same title). So 3 cards per panel, 4 for Greyscale. Keep the zip, and the "Vector masters..." paragraph below.
+3. MK-2 National Show 2027. Options: full-colour: "Full colour"; full-colour-reversed: "Full colour reversed"; grayscale: "Grayscale"; ink-olive: "Ink olive"; ink-purple: "Ink purple"; ink-violet: "Ink violet";
+   reversed-gold: "Reversed gold"; reversed-white: "Reversed white" (variant_label). hashPrefix `national-show`, defaultId `full-colour`, legend "National Show 2027". Panel = the colourway's horizontal card then its vertical
+   card (KitCard, ground via `nosGround` as now). The emblem card (`kit.nationalShowEmblem`, png + svg) stays after the picker, outside it. Keep the zip.
+   The hash `#national-show-<id>` is distinct from the section anchor `#national-show` (jump nav), so deep links to the section still work; same for `#mark-only`.
+4. Extract the page body to app/(marketing)/media-kit/MediaKitPageBody.tsx (server component, no props; everything currently inside `MediaKitPage` after the gate). KEEP IT IN THAT DIRECTORY:
+   contracts/checks/media-kit-complete/check_manifest_page.py and check_layout_static.py scan only app/(marketing)/media-kit and components/media-kit. page.tsx keeps
+   `await requireMediaKitAccess('/media-kit')` first and then renders `<MediaKitPageBody />`; the body does not call the gate.
+5. MK-3 fixture: app/media-kit-fixtures/page.tsx (new): `export const dynamic = 'force-dynamic'`; `if (process.env.MEDIA_KIT_FIXTURES !== '1') notFound();` then `<MediaKitPageBody />`.
+   No gate call, no admin session, no bypass added anywhere; flag only set by the rendered check, in no deploy or example env file.
+6. Target: page height at 390 under 9,000px. Docs: docs/polish-wave-2-f8-media-kit-pickers.md naming MK-1..MK-3, the text-only decision and that the NOS-host media kit is unchanged.
+
+## Round 2 (NOS Design): the merged Full colour · Greyscale picker, replacing the separate Full colour and Greyscale sections
+- components/media-kit/LockupPicker.tsx (new, 'use client'), DuotonePicker anatomy and the OptionPicker chip classes (44px, weight plus ring on the selected chip): a FAMILY radiogroup (segmented toggle, 2 radios: "Full colour", "Greyscale") and a VARIANT radiogroup (4 radios). Each radiogroup has an sr-only legend. ONE visible preview card (the existing KitCard, which carries preview, title and "Download PNG — <title>" buttons) follows the (family, variant) selection; all 8 cards are server-rendered and the other 7 hidden, so every download stays in the DOM.
+- Section: `<KitSection id="lockups" heading="Full colour · Greyscale">` (the id is not copy; the h2 is the two existing headings joined by a middle dot). Zero-size anchors `<span id="full-colour" />` and `<span id="greyscale" />` sit at the top of the section so the existing "On this page" hrefs (#full-colour, #greyscale, unchanged in JUMP_ITEMS) still scroll to it; the picker reads those two hashes as the family preselect (variant default horizontal-on-light). Choosing writes `#lockups-<family>-<variant>` with family ids full-colour / greyscale and variant ids horizontal-on-light, horizontal-on-dark, vertical-on-light, vertical-on-dark. Neither of the old sections remains.
+- Round 4 (WCAG 2.4.4): ONE section zip link inside the section, following the family toggle: its href is the selected family's zip (`kit.sectionZips['full-colour']` / `kit.sectionZips.greyscale`, both passed in), its accessible name carries the selected family (sr-only " — Full colour" / " — Greyscale"), and its visible text stays "Download this section (zip)". Not two identical links.
+- Labels: all existing strings. Toggle "Full colour" / "Greyscale" (rendition labels); heading "Full colour · Greyscale" (the two existing section headings, NOS Design ruling); variants are the manifest `lockup_label` values verbatim: "Horizontal — dark type on light", "Horizontal — light type on dark", "Vertical — dark type on light", "Vertical — light type on dark". No new copy. The word "Lockups" must not appear on the page.
+- Duotone and Usage unchanged. Height target is now <=10,500px at 390 (9,000 withdrawn); report the measured height.
+- Images: every visible `img`, scrolled into view, must have naturalWidth > 0 (covers Mark only, Quick start (the 512 Full colour card), the four Do/Don't illustrations, the National Show preview, the Disa emblem). If one is a lazy blank, give it `loading="eager"` or fix its src; do not weaken the check.
+- check_layout_static.py still pins the ids full-colour and greyscale and the headings: the anchors keep the ids, and the strings "Full colour" and "Greyscale" remain in the source (toggle labels, JUMP_ITEMS). Keep it green; do not edit it.
+
+## Regression checks (run in the worktree root; they read relative paths)
+python3 contracts/checks/media-kit-complete/check_manifest_page.py, check_layout_static.py and check_inventory.py must stay green. If a pinned string moved, fix the code, not the check.
+(check_layout_browser.mjs is stale: it predates the admin gate and cannot reach /media-kit; do not run it, do not edit it.)
+
+## Checks
+f8-kit-static.mjs and f8-kit-rendered.mjs (flagless 404; at 4 viewports radiogroup name, radios, labels, defaults, selected chip distinct without colour (weight and ring), per-choice card counts 3/4 and 2+emblem, every visible preview is the chosen option's file, every visible download button reads "Download <FORMAT> — <file title>" (KitCard already does; a regression guard), Tab order radios then visible downloads, hash, deep link, every manifest href still in the DOM; <9000px at 390).

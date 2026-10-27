@@ -1,0 +1,49 @@
+schema: athanor.contract/v1
+slug: polish-wave-2-2026-10-25
+goal: The SAOC /about heritage stats no longer show a bare 1968 beside 28 July 1968, with the stats laid out in three columns.
+created_at: '2026-10-25'
+autonomy: high
+
+features:
+  - id: F2
+    name: AB-1 drop the bare 1968 stat on /about
+    status: pending
+
+goldens:
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/README.md
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/f2-about-stat.md
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f2.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f3.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f4.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f6.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f7.json
+  - .agent/memory/project/specs/polish-wave-2-2026-10-25/goldens/scope/f8.json
+
+assertions:
+  phase: 4
+  checks:
+    - id: A1
+      description: "HERITAGE_STATS is exactly the three Lee-Ann facts, the dl is sm:grid-cols-3, the prose is untouched (RED on baseline, 4 findings). Triad coverage recorded here (the contract classifies exempt, as wave 1 F7): Codex QA via execution/codex_qa.sh at @qa time; browser layer is the orchestrator post-deploy check on the beta hosts; gws inbox layer N/A, this feature sends no email."
+      command: node contracts/checks/polish-wave-2-2026-10-25/f2-about-static.mjs
+    - id: A2
+      description: at 390@3, 768, 1280 and 1440@2 the stats show exactly 28 July 1968, 4, 15 in one row of three columns from 640px up (RED on baseline - a 1968 term exists and the third stat starts at 50%)
+      command: node contracts/checks/polish-wave-2-2026-10-25/f2-about-rendered.mjs
+      timeout_seconds: 900
+    - id: A3
+      description: production build passes (public Sanity ids and local origins, see goldens/README.md Hermetic render)
+      command: NEXT_PUBLIC_SANITY_PROJECT_ID=26yfbug4 NEXT_PUBLIC_SANITY_DATASET=production NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3002 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3002 pnpm build
+      timeout_seconds: 900
+    - id: A4
+      description: wave scope guard - every changed file is on a feature allow-list (goldens/scope/*.json) or under this mission's spec and check trees (stacked on wave 1? set POLISH2_BASE)
+      command: node contracts/checks/polish-wave-2-2026-10-25/scope.mjs
+    - id: A5
+      description: typecheck is clean
+      command: pnpm exec tsc --noEmit
+      timeout_seconds: 600
+    - id: A6
+      description: lint reports no errors
+      command: pnpm lint
+      timeout_seconds: 600
+    - id: A7
+      description: the feature doc exists and names the item ids
+      command: grep -q "AB-1" docs/polish-wave-2-f2-about-stat.md

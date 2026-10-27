@@ -1,5 +1,6 @@
 import { draftMode } from 'next/headers';
 
+import { SanityFixtureMiss } from '../../lib/sanity-fixture';
 import { client } from './client';
 
 type SanityFetchOptions = {
@@ -41,6 +42,10 @@ export async function sanityFetch<T>({
     });
   } catch (error) {
     console.error('[sanityFetch] failed', { query, error });
+    // A replay miss is a gate failure, never a reason to render fallback content.
+    if (error instanceof SanityFixtureMiss) {
+      throw error;
+    }
     if (propagateErrors) {
       throw error;
     }
