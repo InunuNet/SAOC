@@ -38,3 +38,7 @@ The ruled sentence says logo + nav + CTA. Dropping only Contact fits the bare ro
 - Below 1280: unchanged (Menu-only, labelled).
 
 Alternative if NOS Design prefers 6 inline items: it needs 7.85px more, i.e. it fits from 1296, which breaks the "<=1280" rule. Not recommended.
+
+## NOS Design confirmation (2026-10-28, relayed by team-lead): CONFIRMED
+From 1280 to 1383: 5 inline items, Sponsors and Contact in Menu, plus "Join a society" and an icon-only Menu (aria-label="Menu", target >=44x44). Search goes in the drawer. 1384+ unchanged. The 6-item variant from 1296 is rejected.
+Gate at 1280 AND 1383: one row; logo.right + 24 <= nav.left; >=12px between nav, CTA and Menu; scrollWidth == clientWidth. (check-nav-one-row A1, check-nav-spacing A10.)
