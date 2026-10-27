@@ -23,8 +23,8 @@ assertions:
       description: same e2e at 390
       command: mkdir -p .tmp/sandbox/fx-empty/log && TICKET_FIXTURES=1 SANITY_FIXTURE_MODE=replay SANITY_FIXTURE_DIR=.tmp/sandbox/fx-empty SANITY_FIXTURE_LOGDIR=.tmp/sandbox/fx-empty/log NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3999 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3999 SAOC_E2E_DYNAMIC_PORT=3999 pnpm exec playwright test e2e/checkout-error-summary.spec.ts --grep "at 390" --reporter=line
     - id: A3
-      description: guards stay green - SAOC host 308-redirects tickets to NOS, zero-quantity buy hint keeps focus with no summary
-      command: mkdir -p .tmp/sandbox/fx-empty/log && TICKET_FIXTURES=1 SANITY_FIXTURE_MODE=replay SANITY_FIXTURE_DIR=.tmp/sandbox/fx-empty SANITY_FIXTURE_LOGDIR=.tmp/sandbox/fx-empty/log NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3999 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3999 SAOC_E2E_DYNAMIC_PORT=3999 pnpm exec playwright test e2e/checkout-error-summary.spec.ts --grep "SAOC host|buy hint" --reporter=line
+      description: guards - SAOC host 308-redirects tickets to NOS, zero-quantity buy hint keeps focus, lowering then raising quantity does not resurrect removed attendee errors
+      command: mkdir -p .tmp/sandbox/fx-empty/log && TICKET_FIXTURES=1 SANITY_FIXTURE_MODE=replay SANITY_FIXTURE_DIR=.tmp/sandbox/fx-empty SANITY_FIXTURE_LOGDIR=.tmp/sandbox/fx-empty/log NEXT_PUBLIC_SAOC_SITE_URL=http://localhost:3999 NEXT_PUBLIC_NOS_SITE_URL=http://nos.localhost:3999 SAOC_E2E_DYNAMIC_PORT=3999 pnpm exec playwright test e2e/checkout-error-summary.spec.ts --grep "SAOC host|buy hint|lowering then raising" --reporter=line
     - id: A4
       description: summary id defined in the purchase form
       command: grep -q "checkout-error-summary" components/tickets/TicketPurchaseForm.tsx

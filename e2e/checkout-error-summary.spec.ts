@@ -275,6 +275,32 @@ for (const vp of VIEWPORTS) {
   });
 }
 
+// Regression (Codex round 2, P2): a flagged attendee removed by lowering the quantity must not leave
+// its error behind to reappear on the blank row added back later. At b352558f setQuantity() resized
+// the rows but never pruned attendeeErrors, so error key "fixture-ticket-1" survived: the row came
+// back with aria-invalid, its inline alert and an "Attendee 2" summary entry.
+test('lowering then raising the quantity does not resurrect a removed attendee\'s errors', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const submit = await open(page);
+  const attendee2 = ['#attendee-fixture-ticket-1-name', '#attendee-fixture-ticket-1-email'];
+  const summaryLinks = page.locator(SUMMARY).getByRole('link');
+  await page.getByRole('button', { name: 'One more' }).click();
+  await submit.click();
+  await expect(summaryLinks).toHaveCount(4);
+  await expect(page.locator(attendee2[0])).toHaveAttribute('aria-invalid', 'true');
+  await page.getByRole('button', { name: 'One fewer' }).click();
+  await page.getByRole('button', { name: 'One more' }).click();
+  for (const field of attendee2) {
+    await expect(page.locator(field)).toHaveAttribute('aria-invalid', 'false');
+    await expect(page.locator(field)).not.toHaveAttribute('aria-describedby', /.+/);
+    await expect(page.locator(field).locator('xpath=..').getByRole('alert')).toHaveCount(0);
+  }
+  await expect(page.locator(SUMMARY)).not.toContainText('Attendee 2');
+  await submit.click();
+  await expect(page.locator(SUMMARY).getByRole('link', { name: /^Attendee 2/ })).toHaveCount(2);
+  await expect(page.locator(attendee2[0])).toHaveAttribute('aria-invalid', 'true');
+});
+
 test('SAOC host does not render the checkout: /tickets/* redirects to the NOS origin', async ({ request }) => {
   const res = await request.get('/tickets/weekend-pass', { maxRedirects: 0 });
   expect(res.status()).toBe(308);
