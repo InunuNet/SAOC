@@ -38,3 +38,17 @@ While starting a private dev server for these measurements I ran `pkill -f next-
 - F1b A10 `FAIL nav-spacing: @1280: missing part (brand true, nav false, cta true, menu true)` (also: Menu aria-label is "Open menu" on main). A11 is the phase 5 deployed variant.
 - F1c A2 now locks 1440/2056 and 768: PASS on main (lock, not red). A7 mobile anatomy: PASS on main (guard). A8 report-only prints `/about=496` at 1024 and `/about=545` at 1280, other routes 480. The F1c red-on-main assertion is A1 (h2 roles).
 - F1d A9 `FAIL hero-html: /about: 0 <img fetchpriority="high"> in the server HTML`, `found 2` image preloads, `lockup lacks explicit loading="eager"` (deployed `/` the same). A10 no-fade: PASS on /about locally (guard); on beta `/` FAIL `opacity motion on DIV.absolute transition:opacity` (Home slide wrapper), asserted by phase 5 A12.
+
+## Amendment 2026-10-28 (Codex FAIL on check-focus-ring.mjs, check fixed, A-numbers unchanged)
+- Contrast ground is now composited from the PARENT chain only (the offset ring paints outside the element). Beta Home hero CTA no longer reads 1:1 (no hero line in the failures).
+- Footer probes are now stable selectors: lockup `footer a[href="/"]`, Explore link `footer a[href="/about"]`, legal link `footer [data-footer-bar] a[href="/privacy"]`, plus the media-kit link when the session renders it (admin-only, skipped when absent).
+- Still FAIL on main: `Menu: focus outline is 1px none offset 0px`, `Join: ... offset 1px`, `footer lockup/explore link/legal link: ... 1px none`, `footer lockup: ring contrast 2.52:1`.
+
+## Amendment 2026-10-28 (probe hardened against mid-transition reads)
+check-focus-ring.mjs now waits for `document.getAnimations()` to finish plus a 300ms floor after focus() before reading computed styles (`transition-colors` animates outline-color, so an immediate read sees the start colour). The earlier "hero CTA 1.42:1" reading was that artefact: settled, the Home hero CTA ring is ivory 2px solid and passes on beta. Still FAIL on main/beta: Menu and Join (outline none), footer lockup/explore/legal links (1px none; ring contrast 2.52:1).
+
+## Amendment 2026-10-28 (Codex FAIL on F1b test inputs)
+- e2e/nav-rendered-reachability.spec.ts: the 1280 "nav hidden" test now asserts the confirmed behaviour at 1280 and 1383 (nav visible, exactly 5 inline items, every SAOC NAV href an actionable anchor in the drawer).
+- The Menu button's accessible name is "Menu": e2e/nav-rendered-reachability.spec.ts, e2e/mobile-nav-reaches-every-section.spec.ts and e2e/no-horizontal-overflow-drawer-open.spec.ts select `{ name: 'Menu', exact: true }` (exact, so Close/other "menu" names cannot match). No other "Open menu" remains under e2e/ or checks/. `tsc --noEmit` reports no e2e errors.
+- checks/check-nav-reach.mjs now asserts real `a[href="/sponsors"]` and `a[href="/contact"]` links, visible, plus a named Search button or searchbox, inside the open drawer at 1280, 1366 and 1383. These drawer assertions pass on main (the drawer already works); the check still fails on main for the inline-nav items.
+- These e2e specs will fail on main by design until the F1b dev change lands.

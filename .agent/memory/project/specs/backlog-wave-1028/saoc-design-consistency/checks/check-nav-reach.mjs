@@ -17,9 +17,15 @@ await withSite(async ({ base, browser, ctxOpts }) => {
       check(menuShown, `@${width}: ${missing.join(', ') || 'Search'} not inline and no visible Menu button`);
       if (menuShown) {
         await menu.click(); await page.waitForTimeout(400);
-        const dlg = page.locator('[role=dialog]'); const text = (await dlg.innerText().catch(() => '')) || '';
-        for (const l of missing) check(text.includes(l), `@${width}: drawer lacks "${l}"`);
-        if (!searchInline) check(/search/i.test(text) || (await dlg.getByRole('button', { name: /search/i }).count()) > 0, `@${width}: Search not reachable in the drawer`);
+        const dlg = page.locator('[role=dialog]');
+        // Real anchors, not text: Sponsors and Contact must be a[href] links in the open drawer, visible and enabled.
+        for (const href of ['/sponsors', '/contact']) {
+          const a = dlg.locator(`a[href="${href}"]`).first();
+          check((await a.count()) > 0 && (await a.isVisible()), `@${width}: drawer has no visible a[href="${href}"]`);
+        }
+        // Search: a button or input with an accessible name inside the drawer, visible and enabled.
+        const search = dlg.getByRole('button', { name: /search/i }).or(dlg.getByRole('searchbox')).or(dlg.getByRole('textbox', { name: /search/i }));
+        check((await search.count()) > 0 && (await search.first().isVisible()) && (await search.first().isEnabled()), `@${width}: no usable Search control (named button or input) in the drawer`);
       }
     }
     await ctx.close();
