@@ -38,3 +38,8 @@ While starting a private dev server for these measurements I ran `pkill -f next-
 - F1b A10 `FAIL nav-spacing: @1280: missing part (brand true, nav false, cta true, menu true)` (also: Menu aria-label is "Open menu" on main). A11 is the phase 5 deployed variant.
 - F1c A2 now locks 1440/2056 and 768: PASS on main (lock, not red). A7 mobile anatomy: PASS on main (guard). A8 report-only prints `/about=496` at 1024 and `/about=545` at 1280, other routes 480. The F1c red-on-main assertion is A1 (h2 roles).
 - F1d A9 `FAIL hero-html: /about: 0 <img fetchpriority="high"> in the server HTML`, `found 2` image preloads, `lockup lacks explicit loading="eager"` (deployed `/` the same). A10 no-fade: PASS on /about locally (guard); on beta `/` FAIL `opacity motion on DIV.absolute transition:opacity` (Home slide wrapper), asserted by phase 5 A12.
+
+## Amendment 2026-10-28 (Codex FAIL on check-focus-ring.mjs, check fixed, A-numbers unchanged)
+- Contrast ground is now composited from the PARENT chain only (the offset ring paints outside the element). Beta Home hero CTA no longer reads 1:1 (no hero line in the failures).
+- Footer probes are now stable selectors: lockup `footer a[href="/"]`, Explore link `footer a[href="/about"]`, legal link `footer [data-footer-bar] a[href="/privacy"]`, plus the media-kit link when the session renders it (admin-only, skipped when absent).
+- Still FAIL on main: `Menu: focus outline is 1px none offset 0px`, `Join: ... offset 1px`, `footer lockup/explore link/legal link: ... 1px none`, `footer lockup: ring contrast 2.52:1`.
