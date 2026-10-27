@@ -1,12 +1,12 @@
 543f77c7bfdd07ab71ca2ebbd8cccd1b66135e5f44bf7b7340b768d75ac6e5b0  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-build.sh
 02a31c429bb299640852df4c987e8753e886caa6ff4d7d66eded19066fcb3793  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-lib.mjs
-ca552c7fb1855da3a13e1efb5ad4c96eea0b2498b7b64c60d4150a8e1a54d955  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-check-diff-scope.mjs
-4f33a422229ca27a2549dc59db590feb8032bf5bfe9682623c118bf263590583  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-check-sheets.mjs
-9397cc8c24ff9fcb80db23b0b77934c258e55ec111f91e313d8742f67baf5636  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-check-static.mjs
+ada67f6d1e33f4a819ce833ec8f23ffd7e352c9139d8f6503effd7d86f65bd09  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-check-diff-scope.mjs
+8f91c674936b54071484c31469f085791c5c68252a711e1c773839a0914b0e78  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-check-sheets.mjs
+1decf9e780552e0ab61ee680975ec3f6e77c23f07fe7a7ef0b55e8057184d101  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-check-static.mjs
 a29dfe690e00d66e7d2665588da9f70b505576ed571bb374b2d38f0bbfa8dd41  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-contrast.mjs
-9fab76e743cdeefae1d20aa90298eba94a0e5dcece646570a7b82e920b80e2ee  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-facts-align.mjs
+98c43c5a3fe769f7d50c38b5c9163f4e427c8ed303fa8b21344ae226b50f4566  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-facts-align.mjs
 994b24d0798846d3c66bc944efe9aabd20a908a03e498e6eedd3801b101f2edb  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-geometry.mjs
-c47a5e662936136acd733804afd636058ad2259a698c4906d0546db82d5411f5  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-members-note.mjs
+c20275f10c3fd012688be19b1704ae3b9ddc9fabb82e7ac398a858a7091a1c18  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-members-note.mjs
 9316230cfc5a88fcde6607c9e46f406bf1b7963550e31f57c567c47a6c3f1b24  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-scrim-focal.mjs
 e65a05b5bea3e3ec7943015137f4b5ffd4b2ce9dd65318ed1b57544f6112f68d  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-scrim-stops.mjs
 f73a0466af1956fe7efcf6d54bed31bc4f82ffbabebd8bac7687898f766d3608  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-served-width.mjs

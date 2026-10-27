@@ -1,4 +1,4 @@
-// Static rules for contract-f2 (HM-5, HM-7, HM-8, /members note), read from the source. Usage: node f2-check-static.mjs
+// Static rules for contract-f2 (HM-5, HM-6 (b), HM-7, HM-8, draft notice), read from the source. Usage: node f2-check-static.mjs
 import { existsSync, readFileSync } from 'node:fs';
 import { F2 } from './f2-lib.mjs';
 
@@ -18,11 +18,21 @@ check(`PageHero.tsx carries padding-block ${F2.hm8.paddingBlock} for the typogra
 const photos = read('lib/data/saoc-hero-photos.ts');
 for (const route of ['/404', '/events/submit']) check(`saoc-hero-photos.ts: ${route} is typographic (HM-7)`, new RegExp(`'${route}':\\s*\\{\\s*typographic:\\s*true`).test(photos));
 check("saoc-hero-photos.ts: /events/[slug] keeps its current hero (orchid-dark.jpg 72% 42%) until NOS Design picks (HM-7)", /'\/events\/\[slug\]':\s*\{[^}]*orchid-dark\.jpg[^}]*72% 42%/.test(photos));
-check('saoc-hero-photos.ts: /societies/[slug] is not re-cut in f2 (HM-6 is a sheet deliverable)', /'\/societies\/\[slug\]':\s*\{[^}]*orchid-violet-society\.jpg/.test(photos));
+check('saoc-hero-photos.ts: /societies/[slug] is typographic (HM-6 (b), NOS Design 2026-10-27)', /'\/societies\/\[slug\]':\s*\{\s*typographic:\s*true/.test(photos));
 
+// Draft notice (NOS Design 2026-10-27): one shared component, imported by /members and /refunds; the old inline markup is gone.
+const DN = F2.draftNotice;
+check(`${DN.component} exists`, existsSync(DN.component));
+for (const f of DN.importedBy) check(`${f} imports the shared DraftNotice`, /from\s+'@\/components\/ui\/DraftNotice'/.test(read(f)));
 const members = read('app/(marketing)/members/page.tsx');
 check('members/page.tsx: the filled bordered note box is gone (no "border border-rule bg-bone")', !/border border-rule bg-bone/.test(members));
-check('members/page.tsx: the note text is verbatim in the source', compact(members).includes(compact(F2.membersNote.text.replace(F2.membersNote.leadIn, '').trim())) && members.includes(F2.membersNote.leadIn));
+const refunds = read('app/(shared)/refunds/page.tsx');
+check('refunds/page.tsx: the inline 14px draft notice is gone (no text-[14px] text-muted on the notice)', !/text-\[14px\]\s+text-muted/.test(refunds));
+for (const n of DN.notices) {
+  const src = n.route === '/members' ? members : refunds;
+  const body = compact(read(DN.component) + src);
+  check(`${n.route}: the notice text is verbatim in the source`, body.includes(compact(n.text.replace(n.leadIn, '').trim().replace(/\u2019/g, '&rsquo;'))) || body.includes(compact(n.text.replace(n.leadIn, '').trim())));
+}
 
 const css = read('app/globals.css');
 const facts = (css.match(/\.hero-facts\s*\{[^}]*\}/) ?? [''])[0];

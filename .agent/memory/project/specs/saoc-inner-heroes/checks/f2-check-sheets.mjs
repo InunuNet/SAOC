@@ -1,4 +1,4 @@
-// HM-6 and HM-7 deliverable (NOS Design 2026-10-26): candidate sheets for NOS Design's pick. Nothing is implemented in f2; this check
+// /events/[slug] cut deliverable (NOS Design 2026-10-26; HM-6 left this check on 2026-10-27, /societies/[slug] is typographic): candidate sheet for NOS Design's pick. Nothing is implemented in f2; this check
 // verifies the evidence exists and the candidates obey the ruled constraints (goldens/f2.json sheets). Usage: node f2-check-sheets.mjs
 // The manifest (.tmp/sandbox/heroes2-sheets/manifest.json) lists per candidate: id, route, kind, and for photo candidates source, flip, rect
 // {x0,y0,x1,y1} in source pixels, objectPosition, plus `sheet` (the in-situ 1440@2 capture: scrim, h1, chip) and `crop` (the 1:1 left-44%
@@ -55,10 +55,6 @@ for (const spec of S.candidates) {
     if (!guarded || ex[0] !== m.source) continue;
     const v = iou(r, ex);
     check(`${spec.id} differs from ${name}: IoU ${v.toFixed(2)} <= ${S.maxIoUWithExisting}`, v <= S.maxIoUWithExisting);
-  }
-  if (spec.id === 'societies-slug-a') {
-    // "the violet top-right bloom": the window's centre sits in the source's top-right quadrant (this contract's reading; spec-f2.md).
-    check(`${spec.id} window centre (${((r.x0 + r.x1) / 2) | 0},${((r.y0 + r.y1) / 2) | 0}) is in the top-right quadrant of ${dims.join('x')}`, (r.x0 + r.x1) / 2 > dims[0] / 2 && (r.y0 + r.y1) / 2 < dims[1] / 2);
   }
 }
 

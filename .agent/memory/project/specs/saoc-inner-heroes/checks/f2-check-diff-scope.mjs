@@ -15,6 +15,8 @@ const ALLOW = [
   /^app\/not-found\.tsx$/,
   /^app\/\(marketing\)\/events\/submit\/page\.tsx$/,
   /^components\/events\/SubmitEventPageBody\.tsx$/,
+  /^components\/ui\/DraftNotice\.tsx$/,           // NOS Design 2026-10-27: the one shared draft notice
+  /^app\/\(shared\)\/refunds\/page\.tsx$/,          // ...adopted by /refunds (carved out of the (shared) stay-off lane below)
   /^scripts\/heroes-sheets\.mjs$/,
   /^docs\/saoc-inner-heroes\.md$/,
   /^e2e\/.*\.spec\.ts$/,
@@ -26,12 +28,13 @@ const ALLOW = [
 const STAY_OFF = [
   /^components\/home\//, /^components\/nos(-chrome)?\//, /^app\/\(nos\)\//, /^app\/\(shared\)\//, /^components\/chrome\//,
   /^lib\/hero-derived-sources\.json$/, /^lib\/hero-source-widths\.json$/, /^scripts\/generate-image-variants\.mjs$/, /^lib\/image-(loader|widths)/,
-  /^app\/\(marketing\)\/events\/\[slug\]\/page\.tsx$/, /^app\/\(marketing\)\/societies\/\[slug\]\/page\.tsx$/,
+  /^app\/\(marketing\)\/events\/\[slug\]\/page\.tsx$/, /^app\/\(marketing\)\/societies\/\[slug\]\/page\.tsx$/, // /societies/[slug] goes typographic through saoc-hero-photos + RouteHero, never the page file
   /^CLAUDE\.md$/, /^apphosting\.yaml$/, /^proxy\.ts$/,
 ];
+const EXEMPT_FROM_STAY_OFF = [/^app\/\(shared\)\/refunds\/page\.tsx$/];
 const failures = [];
 for (const f of changed) {
-  if (STAY_OFF.some((re) => re.test(f))) failures.push(`${f}: in a lane f2 stays out of`);
+  if (STAY_OFF.some((re) => re.test(f)) && !EXEMPT_FROM_STAY_OFF.some((re) => re.test(f))) failures.push(`${f}: in a lane f2 stays out of`);
   else if (!ALLOW.some((re) => re.test(f))) failures.push(`${f}: not in the allowlist`);
 }
 const diffOf = (file) => git('diff', BASE, 'HEAD', '-U0', '--', file).split('\n').filter((l) => /^[+-]/.test(l) && !/^(\+\+\+|---)/.test(l));
