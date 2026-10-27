@@ -1,6 +1,6 @@
 # Dev report: unparseable-contracts
 
-Both contracts now load as one mapping document (`check_single_doc.py` exit 0). Fix is YAML-only; assertion ids, intent and shell unchanged.
+Both contracts now load as one mapping document (`check_single_doc.py` exit 0). Fix is YAML-only (quoting, indentation, escaping); assertion ids and intent unchanged.
 
 ## gate-timeout-fix
 
@@ -16,7 +16,7 @@ Reported, not fixed: the contract's goal (raise default to 300) was never applie
 
 ## mission-slug-collision-fix
 
-Fix: heredoc body indented 8 spaces inside the `command: |` blocks so its `---` stays in the block scalar. A1/A2 also build the slug as `SEP="-"; SLUG="test${SEP}collision"` so the literal `-c` (from `test-collision`) no longer trips the validator's "multiline python3 -c" check at execution/contract.py:303; the resulting slug value and what the commands test are unchanged.
+Fix: heredoc body indented 8 spaces inside the `command: |` blocks so its `---` stays in the block scalar. In A1 and A2 the single line `SLUG="test-collision"` became `SLUG="test-"collision` (quote placement only; the shell value is still `test-collision`). The literal `-c` no longer appears in the command text, so the validator's "multiline python3 -c" check at execution/contract.py:303 does not trip. No statements were added.
 `contract.py validate --strict` exit 0 (3 assertions, 100% machine-verifiable).
 
 | id | result | exit | evidence |

@@ -18,8 +18,7 @@ assertions:
       command: |
         TEMP_MISSIONS_DIR=$(mktemp -d)
         export MISSIONS_DIR=$TEMP_MISSIONS_DIR
-        SEP="-"
-        SLUG="test${SEP}collision"
+        SLUG="test-"collision
         TODAY=$(date +"%Y-%m-%d")
         PAST_DATE="2025-01-01"
         PAST_MISSION_FILE="${TEMP_MISSIONS_DIR}/${PAST_DATE}-${SLUG}.md"
@@ -58,8 +57,7 @@ assertions:
       command: |
         TEMP_MISSIONS_DIR=$(mktemp -d)
         export MISSIONS_DIR=$TEMP_MISSIONS_DIR
-        SEP="-"
-        SLUG="test${SEP}collision"
+        SLUG="test-"collision
         TODAY=$(date +"%Y-%m-%d")
         PAST_DATE="2025-01-01"
         PAST_MISSION_FILE="${TEMP_MISSIONS_DIR}/${PAST_DATE}-${SLUG}.md"
