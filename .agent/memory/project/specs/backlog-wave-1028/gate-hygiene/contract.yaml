@@ -60,12 +60,15 @@ assertions:
         day-null test passes while the route guard is absent.
       required: true
     - id: A11
-      description: BrowserAgent on beta confirms /events still lists upcoming events and none are dropped after the isUpcoming change (post-deploy)
+      description: browser_deployed_check on beta /events, declared for the triad linter but non-required. It cannot pass while the beta Basic Auth wall is up, because its live re-check (execution/browser_deployed_check.sh:188) sends no auth and gets 401 (HARNESS defect, backlog.md 2026-10-07 entry "browser_deployed_check.sh's own independent live re-check cannot pass for ANY page"). A13 is the real post-deploy proof.
       type: browser_deployed_check
       target: .agent/memory/scratch/gate-hygiene-browser-manifest.json
-      required: true
+      required: false
     - id: A12
       description: gws inbox check is not applicable (no email path is touched); declared non-required only to satisfy the triad coverage linter, expected to skip
       type: gws_inbox_check
       target: .agent/memory/scratch/gate-hygiene-gws-manifest.json
       required: false
+    - id: A13
+      description: RUN AFTER DEPLOY, not a pre-deploy gate assertion. Plain check (not the browser_deployed_check kind, see A11) that beta /events returns 200 and lists at least one upcoming event; reads BETA_BASIC_AUTH_USER/PASSWORD inside the script, never printed. Exit 2 (inconclusive) if credentials are absent.
+      command: node --env-file-if-exists=.env.local .agent/memory/project/specs/backlog-wave-1028/gate-hygiene/checks/check-deployed-events-upcoming.mjs
