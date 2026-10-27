@@ -186,7 +186,10 @@ export function NewsletterSubscribersTable({ rows, list, status, counts, canMana
         setError(NEWSLETTER_COPY.genericError);
         return;
       }
-      setDone((current) => new Set(current).add(target.id));
+      // "Unsubscribed" is for a full removal only; a partial removal leaves the remaining list chips.
+      if (target.topics.every((topic) => chosen.includes(topic))) {
+        setDone((current) => new Set(current).add(target.id));
+      }
       setTarget(null);
       startTransition(() => router.refresh());
     } catch {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { DecodedIdToken } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
 import { NEWSLETTER_COPY } from '@/components/chrome/newsletter-copy';
@@ -20,8 +21,21 @@ function logError(message: string, context: Record<string, string>): void {
   console.error(`[admin/newsletter/unsubscribe] ${message}`, context);
 }
 
+async function canManageNewsletter(decodedToken: DecodedIdToken, now: Date): Promise<boolean> {
+  const lookupShowWindow = await resolveShowWindowLookup(NATIONAL_SHOW_ID, now);
+  return hasCapability(decodedToken, NATIONAL_SHOW_ID, NEWSLETTER_MANAGE_CAPABILITY, {
+    now,
+    lookupShowWindow,
+  });
+}
+
+function forbidden(): NextResponse {
+  return NextResponse.json({ error: 'Forbidden' }, { status: HTTP_FORBIDDEN });
+}
+
 export async function POST(request: NextRequest) {
-  // Authenticate before the body is read: an unauthenticated caller never gets it parsed.
+  // Session, then capability, then body: a caller who may not manage the list never gets a body parsed.
+  const now = new Date();
   initAdmin();
   const gate = await getAdminSession();
   if (!gate.ok) {
@@ -30,6 +44,11 @@ export async function POST(request: NextRequest) {
       { error: unauthenticated ? 'Unauthorized' : 'Forbidden' },
       { status: unauthenticated ? HTTP_UNAUTHORIZED : HTTP_FORBIDDEN },
     );
+  }
+  const adminEmail = gate.decodedToken.email;
+  if (typeof adminEmail !== 'string' || adminEmail.trim() === '' ||
+      !(await canManageNewsletter(gate.decodedToken, now))) {
+    return forbidden();
   }
 
   let body: unknown;
@@ -40,8 +59,6 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    initAdmin();
-    const now = new Date();
     const result = await getFirestore().runTransaction((tx) => {
       const ntx = newsletterTx(tx);
       return handleAdminNewsletterUnsubscribe(
@@ -49,13 +66,7 @@ export async function POST(request: NextRequest) {
         {
           now,
           getSession: getAdminSession,
-          canManage: async (decodedToken) => {
-            const lookupShowWindow = await resolveShowWindowLookup(NATIONAL_SHOW_ID, now);
-            return hasCapability(decodedToken, NATIONAL_SHOW_ID, NEWSLETTER_MANAGE_CAPABILITY, {
-              now,
-              lookupShowWindow,
-            });
-          },
+          canManage: (decodedToken) => canManageNewsletter(decodedToken, now),
           findById: (id) => findSubscriberById(id, ntx),
           removeTopics: (id, topics, at, adminEmail) =>
             removeSubscriberTopics(id, topics, { via: 'admin', by: adminEmail, now: at }, ntx),
