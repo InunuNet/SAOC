@@ -1,6 +1,17 @@
 import { createHash, randomBytes } from 'node:crypto';
 
 import { csvField } from './csv-field';
+import {
+  NEWSLETTER_REMOVAL_VIAS,
+  NEWSLETTER_TOPICS,
+  type NewsletterRemovalVia,
+  type NewsletterStatus,
+  type NewsletterTopic,
+  type NewsletterTopicRemoval,
+} from './newsletter-topics';
+
+export { NEWSLETTER_REMOVAL_VIAS, NEWSLETTER_TOPICS };
+export type { NewsletterRemovalVia, NewsletterStatus, NewsletterTopic, NewsletterTopicRemoval };
 
 /**
  * Pure newsletter-subscriber helpers (mission footer-newsletter-subscribe, M1/F1). No
@@ -14,18 +25,18 @@ export const NEWSLETTER_EMAIL_MAX_LENGTH = 254;
 export const NEWSLETTER_SOURCES = ['saoc-footer', 'nos-footer'] as const;
 
 export type NewsletterSource = (typeof NEWSLETTER_SOURCES)[number];
-export const NEWSLETTER_TOPICS = ['saoc', 'nos'] as const;
-export type NewsletterTopic = (typeof NEWSLETTER_TOPICS)[number];
-
-export type NewsletterStatus = 'subscribed' | 'unsubscribed';
-
+// `topics` is what the address is subscribed to now; an empty array is a real, honoured value.
 export interface NewsletterSubscriberDoc {
   email: string;
   status: NewsletterStatus;
   source: NewsletterSource;
-  topics?: NewsletterTopic[];
+  topics: NewsletterTopic[];
+  topicRemovals: NewsletterTopicRemoval[];
+  restoreTopics: NewsletterTopic[];
   subscribedAt: Date;
   unsubscribedAt: Date | null;
+  unsubscribedVia: NewsletterRemovalVia | null;
+  unsubscribedBy: string | null;
   unsubscribeToken: string;
 }
 
@@ -40,7 +51,7 @@ export interface NewsletterCsvRow {
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UNSUBSCRIBE_TOKEN_SHAPE = /^[A-Za-z0-9_-]{43}$/;
 const TOKEN_BYTES = 32;
-const CSV_HEADER = 'email,source,subscribedAt,unsubscribeUrl,topics';
+const CSV_HEADER = 'email,source,subscribedAt,unsubscribeUrl,topics,listUnsubscribeHeader';
 // A cell starting with any of these is evaluated as a formula by spreadsheet software.
 const EMAIL_FORMULA_LEADERS = ['=', '+', '-', '@'];
 
@@ -70,10 +81,10 @@ export function parseNewsletterTopics(value: unknown, source: NewsletterSource):
   return topics.length ? topics : null;
 }
 
+// Legacy documents have no `topics` array and derive from `source`; an array, even `[]`, is honoured.
 export function subscriberTopics(topics: unknown, source: NewsletterSource): NewsletterTopic[] {
   if (!Array.isArray(topics)) return topicsFromSource(source);
-  const valid = NEWSLETTER_TOPICS.filter((topic) => topics.includes(topic));
-  return valid.length ? valid : topicsFromSource(source);
+  return NEWSLETTER_TOPICS.filter((topic) => topics.includes(topic));
 }
 
 export function newsletterDocId(normalisedEmail: string): string {
@@ -105,32 +116,43 @@ export function applySubscribe(
       status: 'subscribed',
       source: input.source,
       topics: requestedTopics,
+      topicRemovals: [],
+      restoreTopics: [],
       subscribedAt: input.now,
       unsubscribedAt: null,
+      unsubscribedVia: null,
+      unsubscribedBy: null,
       unsubscribeToken: input.token,
     };
   }
-  if (existing.status === 'subscribed') {
-    const topics = NEWSLETTER_TOPICS.filter((topic) =>
-      subscriberTopics(existing.topics, existing.source).includes(topic) || requestedTopics.includes(topic));
-    if (topics.length === subscriberTopics(existing.topics, existing.source).length && existing.topics) return null;
-    return { ...existing, topics };
+  // An unsubscribed address holds no topics: consent given before unsubscribing does not carry over.
+  const held = existing.status === 'subscribed' ? subscriberTopics(existing.topics, existing.source) : [];
+  const topics = NEWSLETTER_TOPICS.filter((topic) => held.includes(topic) || requestedTopics.includes(topic));
+  if (existing.status === 'subscribed' && topics.length === held.length && Array.isArray(existing.topics)) {
+    return null;
   }
-  // Re-subscribe keeps the original token and source so previously issued links keep working.
-  // Topics are exactly the new request: consent given before unsubscribing does not carry over.
+  // Re-subscribe keeps the original token, source and removal history, so previously issued links
+  // and the audit trail survive; only the doc-level unsubscribe audit is cleared.
   return {
-    email: existing.email,
+    ...existing,
     status: 'subscribed',
-    source: existing.source,
-    topics: requestedTopics,
-    subscribedAt: input.now,
+    topics,
+    restoreTopics: [],
+    subscribedAt: existing.status === 'subscribed' ? existing.subscribedAt : input.now,
     unsubscribedAt: null,
-    unsubscribeToken: existing.unsubscribeToken,
+    unsubscribedVia: null,
+    unsubscribedBy: null,
   };
 }
 
 /** The origin that hosts the unsubscribe page for a subscriber: one string, or chosen per source. */
 export type UnsubscribeOrigin = string | ((source: string) => string);
+
+// RFC 8058 one-click: the two header lines the external sender adds to each bulletin.
+export function buildListUnsubscribeHeader(origin: string, token: string): string {
+  return `List-Unsubscribe: <${origin}/api/newsletter/unsubscribe?token=${encodeURIComponent(token)}>\n` +
+    'List-Unsubscribe-Post: List-Unsubscribe=One-Click';
+}
 
 export function buildSubscribersCsv(rows: NewsletterCsvRow[], origin: UnsubscribeOrigin): string {
   const lines = rows.map((row) => {
@@ -141,6 +163,7 @@ export function buildSubscribersCsv(rows: NewsletterCsvRow[], origin: Unsubscrib
       csvField(row.subscribedAt ? row.subscribedAt.toISOString() : ''),
       csvField(`${rowOrigin}/newsletter/unsubscribe?token=${encodeURIComponent(row.unsubscribeToken)}`),
       csvField(subscriberTopics(row.topics, row.source === 'nos-footer' ? 'nos-footer' : 'saoc-footer').join(';')),
+      csvField(buildListUnsubscribeHeader(rowOrigin, row.unsubscribeToken)),
     ].join(',');
   });
   return [CSV_HEADER, ...lines].join('\n');

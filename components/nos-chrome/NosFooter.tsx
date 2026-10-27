@@ -152,6 +152,7 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
             labelClassName="sr-only"
             statusClassName="nf-text nf-signup-status"
             errorClassName="nf-text"
+            unsubscribeWrapClassName="nf-legal"
           />
         </div>
       </div>

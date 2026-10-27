@@ -197,7 +197,7 @@ const NOS_OG_PATH = `${NOS_INTERNAL_PREFIX}/og`;
 const SAOC_ONLY_EXACT = new Set<string>(['/members', MOI_PATH, '/judging']);
 const SAOC_ONLY_PREFIXES = ['/societies', '/events'];
 // Host-neutral content rendered by both sites' chrome (app/(shared)).
-const SHARED_EXACT = new Set<string>(['/privacy', '/terms', '/refunds']);
+const SHARED_EXACT = new Set<string>(['/privacy', '/terms', '/refunds', '/unsubscribe']);
 const SHARED_PREFIXES = ['/newsletter'];
 // Show routes that exist as short top-level URLs (Ozow caps the cancel URL at 50 characters).
 const NOS_TOP_LEVEL_PREFIXES = ['/vsp', '/tickets'];
