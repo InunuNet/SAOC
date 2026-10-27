@@ -39,3 +39,27 @@ assertions:
       description: ticket-onsale-predicate A7 calls the fail-closed helper and carries no negated pipeline
       command: sh contracts/checks/onsale-followups/check-a7-rewired.sh
       timeout_seconds: 10
+    - id: A7
+      description: Codex adversarial QA of the whole diff against the goldens and proof-on-main
+      type: codex_qa
+      target: >-
+        Adversarially review git diff origin/main...HEAD on feat/onsale-followups (the buildShowOffers move into
+        lib/data/national-show-offers.ts plus the contracts/checks/onsale-followups checks) against the goldens in
+        .agent/memory/project/specs/backlog-wave-1028/onsale-followups/goldens/. Try to find a way the page stops
+        forwarding the resolved active show, a wrong-show type or price that still reaches the hub cards or the Event
+        JSON-LD, a behaviour change in the moved function body, and a fail-open shape in any check helper.
+      required: true
+    - id: A8
+      description: browser_deployed_check on the NOS /national-show hub, declared for the triad linter but non-required. It cannot pass while the Basic Auth wall is up, because its live re-check (execution/browser_deployed_check.sh:188) sends no auth and gets 401 (HARNESS defect, backlog.md 2026-10-07 entry "browser_deployed_check.sh's own independent live re-check cannot pass for ANY page"). A10 is the real post-deploy proof.
+      type: browser_deployed_check
+      target: .agent/memory/scratch/onsale-followups-browser-manifest.json
+      required: false
+    - id: A9
+      description: gws inbox check is not applicable (no email path is touched); declared non-required only to satisfy the triad coverage linter, expected to skip
+      type: gws_inbox_check
+      target: .agent/memory/scratch/onsale-followups-gws-manifest.json
+      required: false
+    - id: A10
+      description: RUN AFTER DEPLOY from the project root (needs .env.local, which a worktree lacks, so it is inconclusive/exit 2 inside the gate), non-required, not a pre-deploy gate assertion. Plain check (not the browser_deployed_check kind, see A8) that the deployed NOS /national-show Event JSON-LD has the active show's VIP offer price (EXPECT_VIP_PRICE, default 300) and no 999 or wrong-show offer; reads BETA_BASIC_AUTH_USER/PASSWORD inside the script, never printed. Exit 77 (contract.py skip) if credentials are absent; the gate then needs --allow-skips.
+      command: node --env-file-if-exists=.env.local contracts/checks/onsale-followups/check-deployed-nos-jsonld.mjs
+      required: false
