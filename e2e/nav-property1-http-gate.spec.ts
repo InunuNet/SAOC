@@ -59,7 +59,9 @@ async function runChecker(baseUrl: string, extraArgs: string[]) {
     const { stdout } = await execFileAsync(
       'node',
       ['--import', 'tsx', CHECKER, '--base-url', baseUrl, '--pending-routes', EMPTY_PENDING, ...extraArgs],
-      { encoding: 'utf8' },
+      // A sibling spec in the same worker can leave NODE_ENV=production in process.env, which makes
+      // the site-host helpers demand origins the checker is not given.
+      { encoding: 'utf8', env: { ...process.env, NODE_ENV: 'development' } },
     );
     return { code: 0, output: stdout };
   } catch (err) {
