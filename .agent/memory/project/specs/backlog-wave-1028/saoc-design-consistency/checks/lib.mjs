@@ -6,6 +6,8 @@ import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import { chromium } from 'playwright';
 
+// Routes warmed before measuring on a locally started server.
+const WARM_ROUTES = ['/about', '/judging', '/sponsors', '/members', '/memorandum-of-incorporation', '/privacy', '/terms', '/refunds', '/societies', '/contact'];
 const FIXTURE_DIR = '.agent/memory/project/specs/nos-content-standard/fixtures/sanity';
 
 export const fails = [];
@@ -26,8 +28,15 @@ export async function withSite(fn) {
     child = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'dev', '--port', String(port)], {
       stdio: 'ignore', env: { ...process.env, BETA_BASIC_AUTH_USER: '', BETA_BASIC_AUTH_PASSWORD: '', SANITY_FIXTURE_MODE: 'replay', SANITY_FIXTURE_DIR: FIXTURE_DIR },
     });
-    const deadline = Date.now() + 180_000;
-    for (;;) { try { const r = await fetch(base + '/about'); if (r.status < 500) break; } catch { /* not up yet */ } if (Date.now() > deadline) { child.kill(); throw new Error('dev server did not start'); } await new Promise((r) => setTimeout(r, 1500)); }
+    const deadline = Date.now() + 420_000;
+    // Ready means a 200 AND a rendered header (a cold .next answers 404/500 or an empty shell while it compiles), with a generous timeout.
+    for (;;) {
+      try { const r = await fetch(base + '/about'); if (r.status === 200 && /data-hd="nav"/.test(await r.text())) break; } catch { /* not up yet */ }
+      if (Date.now() > deadline) { child.kill(); throw new Error('dev server did not render /about with its header in time'); }
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    // Warm every route the checks touch so the first browser load of each is not a compile.
+    for (const path of WARM_ROUTES) { try { await fetch(base + path); } catch { /* the check itself reports a bad route */ } }
   }
   const user = process.env.BETA_BASIC_AUTH_USER; const pass = process.env.BETA_BASIC_AUTH_PASSWORD;
   const browser = await chromium.launch();
@@ -38,7 +47,7 @@ export async function withSite(fn) {
 
 export async function openPage(browser, ctxOpts, base, path, width, height = 1000, dpr = 1) {
   const ctx = await browser.newContext(ctxOpts({ width, height }, dpr)); const page = await ctx.newPage();
-  const resp = await page.goto(base + path, { waitUntil: 'load', timeout: 120_000 }); await page.waitForTimeout(700);
+  const resp = await page.goto(base + path, { waitUntil: 'load', timeout: 120_000 }); await page.waitForSelector('header', { timeout: 60_000 }).catch(() => {}); await page.waitForTimeout(700);
   return { page, ctx, status: resp ? resp.status() : 0 };
 }
 
