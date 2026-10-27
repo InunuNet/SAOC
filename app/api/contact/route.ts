@@ -12,7 +12,7 @@ import {
 import { isHoneypotHit } from '@/lib/request-guards';
 import { buildContactSubmissionDoc, sendContactAcknowledgement } from '@/lib/contact-submission';
 import { siteForHost } from '@/lib/site-hosts';
-import { deliverConfirmationEmailAfterCommit } from '@/lib/confirmation-email';
+import { deliverContactEmails } from '@/lib/contact-delivery';
 import { sendContactSubmissionAdminNotice } from '@/lib/contact-submission-admin-notice';
 import { logFailureSafely } from '@/lib/safe-log';
 
@@ -67,14 +67,10 @@ export async function POST(request: NextRequest) {
       .collection('contactSubmissions')
       .add({ ...doc, submittedAt: Timestamp.fromDate(doc.submittedAt) });
 
-    try {
-      await sendContactAcknowledgement({ name: doc.name, email, subject: doc.subject, site });
-    } catch (emailErr) {
-      console.error('[contact/route] Email send failed (non-fatal):', emailErr);
-    }
-
-    await deliverConfirmationEmailAfterCommit(
-      () =>
+    await deliverContactEmails(doc, {
+      sendAcknowledgement: () =>
+        sendContactAcknowledgement({ name: doc.name, email, subject: doc.subject, site }),
+      sendAdminNotice: () =>
         sendContactSubmissionAdminNotice({
           submissionId: ref.id,
           name: doc.name,
@@ -84,12 +80,15 @@ export async function POST(request: NextRequest) {
           submittedAt: doc.submittedAt,
           site,
         }),
-      (error) => logFailureSafely('[contact/route] admin notice failed (non-fatal)', error),
-    );
+      recordStatus: async (status) => {
+        await ref.update({ emailDelivery: status });
+      },
+      logError: (label, context) => console.error(label, context),
+    });
 
     return NextResponse.json({ success: true }, { status: HTTP_CREATED });
   } catch (error) {
-    console.error('[contact/route] Error:', error);
+    logFailureSafely('[contact/route] submit failed', error);
     return NextResponse.json(
       { error: 'Failed to submit. Please try again.' },
       { status: 500 }

@@ -41,13 +41,13 @@ export interface SendContactSubmissionAdminNoticeDeps {
 export async function sendContactSubmissionAdminNotice(
   input: ContactSubmissionAdminNoticeInput,
   deps: SendContactSubmissionAdminNoticeDeps = {},
-): Promise<void> {
+): Promise<'sent' | 'no_recipients'> {
   const mailer = deps.mailer ?? { send: sendEmail };
   const recipients = getAdminNotifyRecipients();
 
   if (recipients.length === 0) {
     console.warn('[contact-submission-admin-notice] No admin recipients configured — no notice sent.');
-    return;
+    return 'no_recipients';
   }
 
   const react = React.createElement(ContactSubmissionAdminNotice, {
@@ -72,4 +72,5 @@ export async function sendContactSubmissionAdminNotice(
       }),
     ),
   );
+  return 'sent';
 }
