@@ -133,7 +133,7 @@ export function ShowCountdown({ label, countdownDate, edition, pendingLabel }: S
   return (
     <div>
       {caption}
-      <div className="flex gap-6" aria-label={ariaLabel}>
+      <div className="flex gap-4 lg:gap-6" aria-label={ariaLabel}>
         {units.map(({ label: unit, value }) => (
           <div key={unit} className="text-center">
             {/* This countdown's one call site (the national-show landing hero,

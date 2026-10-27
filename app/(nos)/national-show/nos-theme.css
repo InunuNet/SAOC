@@ -635,9 +635,6 @@
   .nos-theme .nos-hero-row {
     column-gap: 32px;
   }
-  .nos-theme .nos-hero-row [aria-label] {
-    column-gap: 16px;
-  }
 }
 
 /* ---- Inner hero (NOS Design NH2, PR-B inputs G1-G2, 2026-10-24): the split studio panel.
