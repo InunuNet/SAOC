@@ -7,7 +7,7 @@
 // A server component: the credit's label placeholder is decided on the server
 // (withholdPlaceholderProse) and passed in.
 // r20 F3 (Codi): the footer follows the SAOC footer's layout (FOOTER_LAYOUT, shared with Footer.tsx).
-// ONE <picture> holds a 1x/2x density set of that one file, fetched lazily (the footer is below the
+// ONE <picture> holds a width srcset of that one file, fetched lazily (the footer is below the
 // fold); the custom image loader maps it to its pre-built WebP candidates.
 // =============================================================
 
@@ -44,8 +44,9 @@ const LOCKUP_ALT = SHOW_TITLE_EXPANDED;
 const LOCKUP_SRC = '/images/NOS-2027-logo-reversed-gold-vertical.png';
 const LOCKUP_WIDTH = 3272;
 const LOCKUP_HEIGHT = 2876;
-// The lockup's rendered box is 248px wide (nos-chrome.css). A width with no `sizes` gives a 1x/2x
-// density srcset, so a high-density screen never fetches more than twice the box.
+// The lockup's rendered box is 248px wide (nos-chrome.css). A width with no `sizes` gives a
+// pixel-density list that stops at twice the box, which under-serves a 3x screen. The `sizes` below
+// gives a width srcset over the whole variant ladder, so a 3x screen picks a wide enough one (LG-1).
 const LOCKUP_BOX = 248;
 interface NosFooterProps {
   /** True on the beta preview, where an unsupplied fact shows as a visible marker. */
@@ -58,6 +59,7 @@ export function NosFooter({ showPlaceholders }: NosFooterProps) {
     alt: LOCKUP_ALT,
     width: LOCKUP_BOX,
     height: Math.round((LOCKUP_BOX * LOCKUP_HEIGHT) / LOCKUP_WIDTH),
+    sizes: `${LOCKUP_BOX}px`,
   });
 
   return (
