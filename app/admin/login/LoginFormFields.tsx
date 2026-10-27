@@ -3,6 +3,7 @@
 import { useEffect, useRef, type FormEvent } from 'react';
 
 import { TicketFieldAlert } from '@/components/tickets/TicketFormField';
+import { useHydrated } from '@/lib/hooks/useHydrated';
 
 interface LoginFormFieldsProps {
   email: string;
@@ -43,6 +44,7 @@ export function LoginFormFields({
   loading,
   onSubmit,
 }: LoginFormFieldsProps) {
+  const hydrated = useHydrated();
   const emailRef = useRef<HTMLInputElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
 
@@ -55,7 +57,7 @@ export function LoginFormFields({
   }, [error]);
 
   return (
-    <form onSubmit={onSubmit} className="mt-6 space-y-5" noValidate>
+    <form method="post" onSubmit={onSubmit} className="mt-6 space-y-5" noValidate>
       <div className="space-y-1.5">
         <label htmlFor="email" className={labelClass}>
           Email
@@ -122,7 +124,7 @@ export function LoginFormFields({
 
       <button
         type="submit"
-        disabled={disabled}
+        disabled={disabled || !hydrated}
         className="min-h-[44px] w-full rounded-sm bg-primary px-4 py-2.5 font-sans text-[14px] font-medium text-ivory transition-colors duration-150 hover:bg-primary-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-800 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? 'Signing in…' : 'Sign in'}

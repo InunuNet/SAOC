@@ -6,6 +6,7 @@ import { Html5Qrcode, type CameraCapabilities } from 'html5-qrcode';
 import { DoorResultBanner, type CheckInResult } from '@/components/admin/DoorResultBanner';
 import { PageHeader, PageShell } from '@/components/admin/PageHeader';
 import { BUTTON_PRIMARY, BUTTON_SECONDARY, FOCUS_RING } from '@/components/admin/tokens';
+import { useHydrated } from '@/lib/hooks/useHydrated';
 
 type TorchFeature = ReturnType<CameraCapabilities['torchFeature']>;
 
@@ -52,6 +53,7 @@ interface DoorScannerClientProps {
 }
 
 export function DoorScannerClient({ initialCheckedInCount }: DoorScannerClientProps) {
+  const hydrated = useHydrated();
   const [result, setResult] = useState<CheckInResult | null>(null);
   const [manualRef, setManualRef] = useState('');
   const [cameraStatus, setCameraStatus] = useState<CameraStatus>('starting');
@@ -275,7 +277,7 @@ export function DoorScannerClient({ initialCheckedInCount }: DoorScannerClientPr
 
         <div className="mt-4 min-h-[72px]">{result && <DoorResultBanner result={result} />}</div>
 
-        <form onSubmit={handleManualSubmit} className="mt-4 space-y-2">
+        <form method="post" onSubmit={handleManualSubmit} className="mt-4 space-y-2">
           <label
             htmlFor="manual-ref"
             className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted"
@@ -295,7 +297,7 @@ export function DoorScannerClient({ initialCheckedInCount }: DoorScannerClientPr
               spellCheck={false}
               className={`h-12 min-w-0 flex-1 rounded-[2px] border border-rule bg-ivory px-4 font-mono text-[16px] text-ink placeholder:font-sans placeholder:text-muted ${FOCUS_RING}`}
             />
-            <button type="submit" className={`${BUTTON_PRIMARY} h-12`}>
+            <button type="submit" disabled={!hydrated} className={`${BUTTON_PRIMARY} h-12`}>
               Check in
             </button>
           </div>
