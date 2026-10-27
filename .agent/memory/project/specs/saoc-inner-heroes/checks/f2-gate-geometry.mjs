@@ -64,7 +64,12 @@ await withServer(2, 'geometry (saoc)', async (server, c) => {
             c.check(`${tag} typographic band has no min-height (computed ${minH}) (HM-8)`, minH === '0px' || minH === 'auto');
           }
           c.check(`${tag} typographic: no img, no media wrapper, no scrim`, (await page.locator(`${IMG}, ${HERO} [data-page-hero-media], ${HERO} [data-hero-scrim]`).count()) === 0);
+          // Measure the ground, not chrome: glyphs are already hidden by heroBackgroundShot; also hide the borders, outlines, shadows and FILL
+          // colours of the hero's descendants (an eyebrow chip's white/25 border landed on the 390 probe point). background-image is NOT hidden and
+          // the hero's own background is kept, so a photograph, a gradient or a scrim still fails the solid-ground check.
+          const chromeOff = await page.addStyleTag({ content: `${HERO} *{border-color:transparent!important;outline-color:transparent!important;box-shadow:none!important;background-color:transparent!important}` });
           const shot = await heroBackgroundShot(page, HERO);
+          await chromeOff.evaluate((el) => el.remove());
           for (const [fx, fy] of [[0.04, 0.1], [0.5, 0.1], [0.96, 0.5], [0.3, 0.9]]) {
             const rgb = await meanColor(px, shot.b64, { x: fx * hero.w, y: fy * hero.h, w: 6, h: 6 });
             c.check(`${tag} typographic: solid sage ground rgb(${T.solidGroundRgb}) at (${fx},${fy}) (measured ${rgb.map(Math.round)})`, solid(rgb));

@@ -5,9 +5,10 @@ ada67f6d1e33f4a819ce833ec8f23ffd7e352c9139d8f6503effd7d86f65bd09  .agent/memory/
 1decf9e780552e0ab61ee680975ec3f6e77c23f07fe7a7ef0b55e8057184d101  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-check-static.mjs
 a29dfe690e00d66e7d2665588da9f70b505576ed571bb374b2d38f0bbfa8dd41  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-contrast.mjs
 98c43c5a3fe769f7d50c38b5c9163f4e427c8ed303fa8b21344ae226b50f4566  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-facts-align.mjs
-994b24d0798846d3c66bc944efe9aabd20a908a03e498e6eedd3801b101f2edb  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-geometry.mjs
+e9cbdcb08152cc0d62bb9168e381af3185296d0f56f623fe1f38d8c2bf7f83cf  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-geometry.mjs
 c20275f10c3fd012688be19b1704ae3b9ddc9fabb82e7ac398a858a7091a1c18  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-members-note.mjs
 9316230cfc5a88fcde6607c9e46f406bf1b7963550e31f57c567c47a6c3f1b24  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-scrim-focal.mjs
 e65a05b5bea3e3ec7943015137f4b5ffd4b2ce9dd65318ed1b57544f6112f68d  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-scrim-stops.mjs
 f73a0466af1956fe7efcf6d54bed31bc4f82ffbabebd8bac7687898f766d3608  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-served-width.mjs
 7ca34c639a846a5c45684bd44d367d081381a31677416016095a39fed4638dca  .agent/memory/project/specs/saoc-inner-heroes/checks/_lib.mjs
+b19fd59f7d2267ec052160b4657656dd59847660ccc541bb6fd8c935cc6f527b  .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-scrim-alpha.mjs

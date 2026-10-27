@@ -58,8 +58,8 @@ assertions:
       description: HM-5 alpha <= .1 over the focal centre (left 0-39 percent) on /sponsors and /about at 1440@2 and 2056@2
       command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-scrim-focal.mjs
     - id: A11
-      description: f1 scrim alpha over the left 44 percent stays <= .1 at 1440@2, 2056@2, 390@3 (f1 gate reused)
-      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/gate-scrim-alpha.mjs
+      description: f1 scrim alpha over the left 44 percent stays <= .1 at 1440@2, 2056@2, 390@3 (f1 assertion and thresholds, f2 route set via f2-gate-scrim-alpha.mjs)
+      command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-scrim-alpha.mjs
     - id: A12
       description: HM-5 worst-pixel copy contrast >= 4.5 re-measured on every inner hero (lede, eyebrow, h1, CTAs)
       command: node .agent/memory/project/specs/saoc-inner-heroes/checks/f2-gate-contrast.mjs inner
