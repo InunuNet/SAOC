@@ -9,6 +9,25 @@
 const CLOCK_FILE = '_clock.json';
 const cache = new Map<string, Date | null>();
 
+const INSTANT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/;
+const MAX_HOUR = 23;
+const MAX_MINUTE_OR_SECOND = 59;
+
+// An ISO 8601 instant must carry an offset: a bare local time would pin a different instant per host.
+// Date silently normalises impossible dates (02-30 becomes 03-02), so the written fields are checked first.
+function parseInstant(text: string): Date | null {
+  const m = INSTANT.exec(text);
+  if (!m) return null;
+  const [year, month, day, hour, minute] = [m[1], m[2], m[3], m[4], m[5]].map(Number);
+  const second = Number(m[6] ?? 0);
+  const written = new Date(Date.UTC(year, month - 1, day));
+  const calendarOk =
+    written.getUTCFullYear() === year && written.getUTCMonth() === month - 1 && written.getUTCDate() === day;
+  const clockOk = hour <= MAX_HOUR && minute <= MAX_MINUTE_OR_SECOND && second <= MAX_MINUTE_OR_SECOND;
+  const date = new Date(text);
+  return calendarOk && clockOk && !Number.isNaN(date.getTime()) ? date : null;
+}
+
 function parseClock(text: string): Date {
   let now: unknown;
   try {
@@ -16,11 +35,8 @@ function parseClock(text: string): Date {
   } catch {
     throw new Error(`${CLOCK_FILE} is not valid JSON`);
   }
-  // An ISO 8601 instant must carry an offset: a bare local time would pin a different instant per host.
-  const isInstant =
-    typeof now === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/.test(now);
-  const date = isInstant ? new Date(now as string) : null; // isInstant narrows now to string
-  if (!date || Number.isNaN(date.getTime())) {
+  const date = typeof now === 'string' ? parseInstant(now) : null;
+  if (!date) {
     throw new Error(`${CLOCK_FILE} must be {"now": "<ISO 8601 instant with an offset>"}`);
   }
   return date;
