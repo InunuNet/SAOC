@@ -48,18 +48,33 @@ const pinStickyStack = (page: Page) =>
     document.body.appendChild(bar);
   }, STICKY_STACK_HEIGHT);
 
-/** Bottom edge of everything pinned to the top of the viewport (test bar, header, sub-nav). */
+/**
+ * Bottom edge of the whole sticky stack (test bar, header, sub-nav). It chains: start from the
+ * fixed/sticky elements pinned at the top edge, then keep adding any fixed/sticky element whose top
+ * is within 1px of the stack bottom so far (the NOS header is pinned at 48 under the bar, not at 0).
+ */
 const stickyBottom = (page: Page) =>
   page.evaluate(() => {
+    const pinned = [...document.querySelectorAll<HTMLElement>('body *')]
+      .filter((el) => ['fixed', 'sticky'].includes(getComputedStyle(el).position))
+      .map((el) => el.getBoundingClientRect())
+      .filter((r) => r.height > 0 && r.width > window.innerWidth * 0.5);
     let bottom = 0;
-    for (const el of document.querySelectorAll<HTMLElement>('body *')) {
-      const pos = getComputedStyle(el).position;
-      if (pos !== 'fixed' && pos !== 'sticky') continue;
-      const r = el.getBoundingClientRect();
-      if (r.height > 0 && r.width > window.innerWidth * 0.5 && r.top <= 1) bottom = Math.max(bottom, r.bottom);
+    for (let grew = true; grew; ) {
+      grew = false;
+      for (const r of pinned) {
+        if (r.top <= bottom + 1 && r.bottom > bottom) {
+          bottom = r.bottom;
+          grew = true;
+        }
+      }
     }
     return bottom;
   });
+
+// Measured on the live NOS /tickets/vip (dev, 2026-10-28): 1280 = bar 48 + sticky header to 145;
+// 390 = bar 44, the header is position:relative and scrolls away.
+const LIVE_STACK_BOTTOM: Record<string, number> = { '1280': 145, '390': 44 };
 
 const CLEARANCE = 8; // NOS Design: the summary top sits at least 8px below the sticky stack
 
@@ -290,7 +305,9 @@ for (const vp of VIEWPORTS) {
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
       await submit.click();
       await expect.poll(() => activeId(page)).toBe('checkout-error-summary');
-      test.info().annotations.push({ type: 'sticky-stack-bottom', description: String(await stickyBottom(page)) });
+      const stack = await stickyBottom(page);
+      test.info().annotations.push({ type: 'sticky-stack-bottom', description: String(stack) });
+      expect(stack, 'stickyBottom() must see the whole real stack').toBeCloseTo(LIVE_STACK_BOTTOM[vp.label], 0);
       await expectSummaryClear(page, vp.height);
     });
   }
