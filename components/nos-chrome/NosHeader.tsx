@@ -31,30 +31,36 @@ import './nos-chrome.css';
 type MegaItem = Extract<NavItem, { type: 'mega' }>;
 
 const HUB_HREF = '/';
-const LOCKUP_SRC = '/images/nos/nos-full-colour-horizontal-1200.png';
+const LOCKUP_SRC = '/images/nos/nos-full-colour-horizontal-2400.png';
 const LOCKUP_ALT = SHOW_TITLE_EXPANDED;
-const LOCKUP_WIDTH = 1200;
-const LOCKUP_HEIGHT = 294;
-// The box is 448px wide from 780px up and 390px below it. A width with no `sizes` gives a 1x/2x
-// density srcset, so a high-density screen never fetches more than twice the box.
+const LOCKUP_WIDTH = 2400;
+const LOCKUP_HEIGHT = 589;
+// The box is 448px wide from 780px up; below it the box follows the viewport up to 448px (390px
+// at a 390px viewport, see LOCKUP_SIZES_NARROW). A width with no `sizes` gives a
+// pixel-density list that stops at twice the box, which under-serves a 3x screen. The `sizes` below
+// gives a width srcset over the whole variant ladder, so a 3x screen picks a wide enough one (LG-1).
 const LOCKUP_BOX_WIDE = 448;
 const LOCKUP_BOX_NARROW = 390;
+// Below 780px the image is 110.6% of the container (viewport minus a 16px gutter each side), capped
+// at the 448px box, so it reaches 448px from about 437px wide. 390px is only its width at 390.
+const LOCKUP_SIZES_NARROW = `min(${LOCKUP_BOX_WIDE}px, calc(110.6vw - 35.4px))`;
 const PANEL_BREAKPOINT_QUERY = '(min-width: 1384px)';
 const INERT_SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'LINK', 'TEMPLATE']);
 // The "The show" links the top row carries as plain links; Tickets is the call to action.
 const TICKETS_LEAF_ID = 'tickets';
 const PLAIN_LEAF_IDS = ['show-sponsors', 'past-shows'] as const;
 
-const lockupProps = (width: number) =>
+const lockupProps = (width: number, sizes: string) =>
   getImageProps({
     priority: true,
     src: LOCKUP_SRC,
     alt: LOCKUP_ALT,
     width,
     height: Math.round((width * LOCKUP_HEIGHT) / LOCKUP_WIDTH),
+    sizes,
   }).props;
-const wideLockup = lockupProps(LOCKUP_BOX_WIDE);
-const narrowLockup = lockupProps(LOCKUP_BOX_NARROW);
+const wideLockup = lockupProps(LOCKUP_BOX_WIDE, `${LOCKUP_BOX_WIDE}px`);
+const narrowLockup = lockupProps(LOCKUP_BOX_NARROW, LOCKUP_SIZES_NARROW);
 
 function Chevron() {
   return (
@@ -245,7 +251,11 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
             aria-current={current(HUB_HREF)}
           >
             <picture>
-              <source media="(max-width: 779px)" srcSet={narrowLockup.srcSet} />
+              <source
+                media="(max-width: 779px)"
+                srcSet={narrowLockup.srcSet}
+                sizes={narrowLockup.sizes}
+              />
               <img
                 {...wideLockup}
                 alt={LOCKUP_ALT}
