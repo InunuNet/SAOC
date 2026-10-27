@@ -245,7 +245,7 @@ export function NosHeader({ nav, saocHomeHref, contactHref }: NosHeaderProps) {
             aria-current={current(HUB_HREF)}
           >
             <picture>
-              <source media="(max-width: 779px)" srcSet={narrowLockup.srcSet} />
+              <source media="(max-width: 767px)" srcSet={narrowLockup.srcSet} />
               <img
                 {...wideLockup}
                 alt={LOCKUP_ALT}
