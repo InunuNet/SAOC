@@ -52,3 +52,8 @@ check-focus-ring.mjs now waits for `document.getAnimations()` to finish plus a 3
 - The Menu button's accessible name is "Menu": e2e/nav-rendered-reachability.spec.ts, e2e/mobile-nav-reaches-every-section.spec.ts and e2e/no-horizontal-overflow-drawer-open.spec.ts select `{ name: 'Menu', exact: true }` (exact, so Close/other "menu" names cannot match). No other "Open menu" remains under e2e/ or checks/. `tsc --noEmit` reports no e2e errors.
 - checks/check-nav-reach.mjs now asserts real `a[href="/sponsors"]` and `a[href="/contact"]` links, visible, plus a named Search button or searchbox, inside the open drawer at 1280, 1366 and 1383. These drawer assertions pass on main (the drawer already works); the check still fails on main for the inline-nav items.
 - These e2e specs will fail on main by design until the F1b dev change lands.
+
+## Amendment 2026-10-28 (Codex round 2: ground measured from pixels)
+check-focus-ring.mjs no longer composites ancestor background-colors. For every target it hides the outline, screenshots a band 6-9px outside the element box (animations frozen) and takes the WORST-case contrast of the settled ring colour (alpha-blended per pixel) against those pixels, so photographs, scrims and panels are measured. The element must be fully inside the viewport or the check fails rather than skip.
+- Beta Home hero CTA: the CTA sits on the photograph under the sage scrim, not a solid panel; the ivory 2px ring passes the pixel test (crop: goldens/hero-cta-focus-ring-crop.png, ring visible at 1440).
+- Still FAIL on beta/main: Menu and Join (outline none), footer lockup/explore/legal links (1px none; worst pixel contrast 2.52:1 over 659-3448 sampled pixels).
