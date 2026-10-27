@@ -43,3 +43,6 @@ While starting a private dev server for these measurements I ran `pkill -f next-
 - Contrast ground is now composited from the PARENT chain only (the offset ring paints outside the element). Beta Home hero CTA no longer reads 1:1 (no hero line in the failures).
 - Footer probes are now stable selectors: lockup `footer a[href="/"]`, Explore link `footer a[href="/about"]`, legal link `footer [data-footer-bar] a[href="/privacy"]`, plus the media-kit link when the session renders it (admin-only, skipped when absent).
 - Still FAIL on main: `Menu: focus outline is 1px none offset 0px`, `Join: ... offset 1px`, `footer lockup/explore link/legal link: ... 1px none`, `footer lockup: ring contrast 2.52:1`.
+
+## Amendment 2026-10-28 (probe hardened against mid-transition reads)
+check-focus-ring.mjs now waits for `document.getAnimations()` to finish plus a 300ms floor after focus() before reading computed styles (`transition-colors` animates outline-color, so an immediate read sees the start colour). The earlier "hero CTA 1.42:1" reading was that artefact: settled, the Home hero CTA ring is ivory 2px solid and passes on beta. Still FAIL on main/beta: Menu and Join (outline none), footer lockup/explore/legal links (1px none; ring contrast 2.52:1).
