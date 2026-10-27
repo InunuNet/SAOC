@@ -2,7 +2,10 @@
 // resolved active show. Fixture replay: the recorded admission catalogue (PR #128) is fed to
 // buildHubCards unchanged except that the fictional-test type's demo flag is cleared, so the
 // demo filter cannot be what hides it. Pure: no network, no Sanity write.
-// Usage: tsx check-hub-show-filter.mts [path-to-ticket-hub-source.ts]
+// buildShowOffers (the function the /national-show page feeds its Event JSON-LD from) is replayed
+// itself, from lib/data/national-show-offers.ts: a structural grep cannot see it build offers from
+// unfiltered types. Red until that module exists and exports buildShowOffers(types, now, activeShowId).
+// Usage: tsx check-hub-show-filter.mts [path-to-ticket-hub-source.ts [path-to-national-show-offers.ts]]
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -18,6 +21,15 @@ const now = new Date('2026-10-25T10:00:00Z');
 const failures: string[] = [];
 const hubPath = resolve(process.argv[2] ?? 'lib/data/ticket-hub-source.ts');
 const hub = await import(pathToFileURL(hubPath).href);
+const offersModulePath = resolve(process.argv[3] ?? 'lib/data/national-show-offers.ts');
+const showOffersMod = await import(pathToFileURL(offersModulePath).href).catch((e: unknown) => {
+  console.error(`FAIL A2 hub show filter: ${offersModulePath} cannot be imported (buildShowOffers must be exported there): ${String(e).slice(0, 160)}`);
+  process.exit(1);
+});
+if (typeof showOffersMod.buildShowOffers !== 'function') {
+  console.error('FAIL A2 hub show filter: buildShowOffers is not exported from lib/data/national-show-offers.ts');
+  process.exit(1);
+}
 const off = await import(pathToFileURL(resolve('lib/ticket-offers.ts')).href);
 
 type Doc = { slug: string; demo?: boolean | null; show?: { _ref: string } | null } & Record<string, unknown>;
@@ -71,6 +83,22 @@ const forNone = slugs(null);
 for (const [where, list] of [['hub cards', forNone.cards], ['JSON-LD offers', forNone.offers]] as const) {
   if (list.length > 0) failures.push(`${where} with no active show list CMS types: ${list.join(',')}`);
 }
+
+// buildShowOffers itself: offers are keyed by their /tickets/<slug> url.
+type ShowOffer = { name: string; price: number; url: string };
+function showOffers(activeShowId: string | null): ShowOffer[] {
+  return showOffersMod.buildShowOffers(cmsTypes, now, activeShowId) as ShowOffer[];
+}
+const slugOf = (o: ShowOffer) => o.url.split('/').pop() ?? '';
+const soActive = showOffers(ACTIVE);
+if (soActive.some((o) => slugOf(o) === FICTIONAL)) failures.push(`buildShowOffers for ${ACTIVE} offers ${FICTIONAL}`);
+if (soActive.some((o) => o.price === IMPOSTOR_PRICE)) failures.push(`buildShowOffers for ${ACTIVE} carries the ${OTHER} price ${IMPOSTOR_PRICE}`);
+if (!soActive.some((o) => slugOf(o) === 'early-bird')) failures.push(`buildShowOffers for ${ACTIVE} lost early-bird`);
+if (soActive.find((o) => slugOf(o) === 'vip')?.price !== vip?.price) failures.push(`buildShowOffers VIP offer for ${ACTIVE} is not the active show's ${vip?.price}`);
+const soOther = showOffers(OTHER);
+if (soOther.some((o) => slugOf(o) !== 'vip')) failures.push(`buildShowOffers for ${OTHER} offers another show's types: ${soOther.map(slugOf).join(',')}`);
+if (soOther.find((o) => slugOf(o) === 'vip')?.price !== IMPOSTOR_PRICE) failures.push(`buildShowOffers VIP offer for ${OTHER} is not its own ${IMPOSTOR_PRICE}`);
+if (showOffers(null).length > 0) failures.push('buildShowOffers with no active show offers CMS types');
 
 if (failures.length) {
   console.error(`FAIL A2 hub show filter: ${failures.length} failure(s)`);

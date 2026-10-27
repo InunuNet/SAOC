@@ -20,7 +20,7 @@ assertions:
       command: python3 contracts/checks/onsale-followups/check-national-show-not-prerendered-admin.py .
       timeout_seconds: 60
     - id: A2
-      description: hub cards and JSON-LD offers exclude other-show ticket types (demo cleared, recorded catalogue plus a same-slug impostor), under active, other and no show
+      description: buildShowOffers (replayed from lib/data/national-show-offers.ts, red until exported there), hub cards and JSON-LD offers exclude other-show ticket types (demo cleared, recorded catalogue plus a same-slug impostor), under active, other and no show
       command: pnpm exec tsx contracts/checks/onsale-followups/check-hub-show-filter.mts
       timeout_seconds: 120
     - id: A3
@@ -32,8 +32,8 @@ assertions:
       command: 'sed -n ''/buildHubCards({/,/});/p'' lib/data/admission-availability.ts | grep -q "^      activeShowId,$"'
       timeout_seconds: 10
     - id: A6
-      description: buildShowOffers forwards its activeShowId to buildHubCards (function-scoped; the function is not exported, so a behavioural replay would need a product change) and the page call site resolves the active show
-      command: sh contracts/checks/onsale-followups/check-show-offers-forwarding.sh
+      description: the prerendered /national-show page passes resolveActiveShow(...) into buildShowOffers (the call site only; forwarding inside buildShowOffers is replayed behaviourally by A2)
+      command: grep -qF "buildShowOffers(hubTicketTypes, new Date(), resolveActiveShow(shows ?? []))" "app/(nos)/national-show/page.tsx"
       timeout_seconds: 10
     - id: A5
       description: ticket-onsale-predicate A7 calls the fail-closed helper and carries no negated pipeline

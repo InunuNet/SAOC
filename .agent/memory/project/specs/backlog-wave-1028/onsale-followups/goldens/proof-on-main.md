@@ -53,3 +53,18 @@ exactly one `command:` in the block, the helper file present, and the next line 
 (no YAML continuation). Each of these mutants of the old contract FAILs: `|| true`, `; true`, `&& true`,
 `| cat`, extra arg, trailing space, trailing `# x` comment, leading `!`, a `|| true` continuation line,
 a duplicated A7 block, a second `command:` line. The unmutated branch contract PASSes.
+
+## Round 5 (Codex round 4): buildShowOffers replayed behaviourally
+Product change required of the dev (A2 is RED on main until it lands): move `buildShowOffers`,
+`SanityHubTicketType`, `TICKET_PRODUCT_BASE_URL` and `OFFER_CURRENCY` out of
+`app/(nos)/national-show/page.tsx` into new `lib/data/national-show-offers.ts`, export
+`buildShowOffers(ticketTypes, now, activeShowId)` (body unchanged), and import it in the page. A page
+file cannot export it directly (Next rejects non-route exports from page.tsx), hence the new module.
+- On main: `FAIL A2 ... lib/data/national-show-offers.ts cannot be imported (buildShowOffers must be exported there)`.
+- Reference module (body copied verbatim, not committed): `PASS A2`.
+- Mutants of that module, each FAIL: `activeShowId: null` into buildHubCards (lost early-bird, wrong VIP);
+  activeShowId taken from the last type's show (impostor price 999 leaks under the active show);
+  see unfiltered-types mutant below.
+  Unfiltered-types mutant (every type's `show` rewritten to the active id, i.e. offers built from
+  unfiltered ticketTypes): FAIL `buildShowOffers for show-fictional-test offers another show's types: vip,weekend-pass-early-bird,early-bird`.
+- A6 is now only the page call-site grep (`buildShowOffers(hubTicketTypes, new Date(), resolveActiveShow(shows ?? []))`).
