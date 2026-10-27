@@ -16,7 +16,9 @@ test.describe('NOS media kit lands on sign-in inside NOS chrome', () => {
   test('/media-kit redirects to /admin/login with the NOS header and footer', async ({ page, baseURL }) => {
     await page.goto(`${nosBase(baseURL!)}/media-kit`);
 
-    await expect(page).toHaveURL(/\/admin\/login/);
+    const landed = new URL(page.url());
+    expect(landed.origin, 'redirect left the NOS host').toBe(nosBase(baseURL!));
+    expect(landed.pathname).toBe('/admin/login');
     await expect(page.locator('header#nh')).toHaveCount(1);
     await expect(page.locator('footer#nf')).toHaveCount(1);
     await expect(page.getByText(SAOC_CTA)).toHaveCount(0);
