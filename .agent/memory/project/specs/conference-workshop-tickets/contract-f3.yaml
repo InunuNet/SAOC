@@ -143,15 +143,17 @@ assertions:
       type: browser_deployed_check
       target: .agent/memory/project/specs/conference-workshop-tickets/goldens/fixtures/f3-a27-browser-manifest-tickets-smoke.json
 
-    - id: A28
-      description: 'DEPLOYED, LIVE proof (plain check, not the native browser_deployed_check kind — see the script''s own header comment for why: that kind''s live-recheck is an unparameterised GET and hard-fails on anything outside 2xx, so it cannot represent a POST or a 400 rejection) that a Thursday (2027-09-23) day-visitor checkout against the real beta.saoc.co.za origin is rejected 400, and the same shaped Friday (2027-09-24) checkout is accepted 200 with a real bookingRef'
-      command: node contracts/checks/conference-workshop-tickets-f3/check-deployed-thursday-rejected-friday-accepted.mjs
-
-    - id: A29
-      description: 'a real PayFast sandbox checkout-to-ITN-to-paid flow for a day-visitor purchase succeeds end to end, proving the new excludedDays branch did not regress the pre-existing accepted-day payment path. Uses a sentinel email (swept clean every run) — NOT the source purchase for A30 (correction, 2026-10-07 — sentinel addresses are never gws-readable; see A30)'
-      command: node contracts/checks/conference-workshop-tickets-f3/check-payfast-sandbox-e2e-day-visitor.mjs
-
     - id: A30
       description: 'gws_inbox_check: the confirmation email for a REAL (non-sentinel, brad@inunu.net) day-visitor Friday purchase actually arrives, proving the new excludedDays rejection branch did not regress the pre-existing accepted-day email path — a real, sourced purpose (team-lead''s own framing), not a fabricated check. Manual one-off source purchase (never gate-automated, never sentinel — gws only reads a real inbox): node contracts/checks/conference-workshop-tickets-f3/produce-a30-source-purchase.mjs, then gws mail read per that script''s own header comment'
       type: gws_inbox_check
       target: .agent/memory/project/specs/conference-workshop-tickets/goldens/fixtures/f3-a30-confirmation-email-manifest.json
+
+manual_only:
+  - id: A28
+    reason: "check-deployed-thursday-rejected-friday-accepted.mjs sends a state-changing request to the deployed host: deployed host POST /api/tickets/checkout (Firestore reservation, Sanity read); run by hand only, with the operator present"
+    description: 'DEPLOYED, LIVE proof (plain check, not the native browser_deployed_check kind — see the script''s own header comment for why: that kind''s live-recheck is an unparameterised GET and hard-fails on anything outside 2xx, so it cannot represent a POST or a 400 rejection) that a Thursday (2027-09-23) day-visitor checkout against the real beta.saoc.co.za origin is rejected 400, and the same shaped Friday (2027-09-24) checkout is accepted 200 with a real bookingRef'
+    command: node contracts/checks/conference-workshop-tickets-f3/check-deployed-thursday-rejected-friday-accepted.mjs
+  - id: A29
+    reason: "PayFast is never used for testing (CLAUDE.md Tech Stack); check-payfast-sandbox-e2e-day-visitor.mjs writes to the production Firestore (saoc-webapp): Firestore saoc-webapp orders/tickets plus PayFast sandbox ITN signed locally; run by hand only, with the operator present"
+    description: 'a real PayFast sandbox checkout-to-ITN-to-paid flow for a day-visitor purchase succeeds end to end, proving the new excludedDays branch did not regress the pre-existing accepted-day payment path. Uses a sentinel email (swept clean every run) — NOT the source purchase for A30 (correction, 2026-10-07 — sentinel addresses are never gws-readable; see A30)'
+    command: node contracts/checks/conference-workshop-tickets-f3/check-payfast-sandbox-e2e-day-visitor.mjs

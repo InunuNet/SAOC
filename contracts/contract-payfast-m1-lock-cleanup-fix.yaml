@@ -162,24 +162,6 @@ assertions:
         grep -Eq "writeSync|appendFileSync" contracts/checks/ticketing-hardening/_shared.mjs
       timeout_seconds: 15
 
-    - id: A7-PREFLIGHT-BEFORE-LOCK
-      description: >-
-        F2 - withCleanup() calls sweepManifestFromPriorRun() before acquireSuiteLock() (line
-        order within the function body - a prior run's orphans must be cleaned even if this
-        run never takes the lock). See manifest-cleanup.golden.md; dev writes
-        contracts/checks/ticketing-hardening/check-withcleanup-ordering.mjs.
-      command: 'node contracts/checks/ticketing-hardening/check-withcleanup-ordering.mjs preflight-before-lock'
-      timeout_seconds: 15
-
-    - id: A8-CLEAR-AFTER-RESIDUE-CHECK
-      description: >-
-        F2 - clearManifestEntries() is called only AFTER assertNoResidue() within withCleanup()'s
-        finally block (a kill between sweep and clear must be a safe no-op on next preflight,
-        never a premature clear of unconfirmed cleanup). Same ordering-check script as A7, second
-        mode.
-      command: 'node contracts/checks/ticketing-hardening/check-withcleanup-ordering.mjs clear-after-residue'
-      timeout_seconds: 15
-
     - id: A9-DECOY-FIXTURE-EXISTS
       description: >-
         F2/F4 support - decoy fixture script exists and never calls withCleanup, sweepSentinels,
@@ -295,3 +277,23 @@ assertions:
         withCleanup()).
       command: 'if grep -Eq "\.delete\(|\.remove\(" contracts/checks/payfast-m1/check-suite-leaves-no-ticket-residue.mjs; then exit 1; fi'
       timeout_seconds: 15
+
+manual_only:
+  - id: A7-PREFLIGHT-BEFORE-LOCK
+    reason: "check-withcleanup-ordering.mjs writes to the production Firestore (saoc-webapp): Firestore saoc-webapp via the ticketing-hardening shared helpers (sentinel-tagged); run by hand only, with the operator present"
+    description: >-
+      F2 - withCleanup() calls sweepManifestFromPriorRun() before acquireSuiteLock() (line
+      order within the function body - a prior run's orphans must be cleaned even if this
+      run never takes the lock). See manifest-cleanup.golden.md; dev writes
+      contracts/checks/ticketing-hardening/check-withcleanup-ordering.mjs.
+    command: 'node contracts/checks/ticketing-hardening/check-withcleanup-ordering.mjs preflight-before-lock'
+    timeout_seconds: 15
+  - id: A8-CLEAR-AFTER-RESIDUE-CHECK
+    reason: "check-withcleanup-ordering.mjs writes to the production Firestore (saoc-webapp): Firestore saoc-webapp via the ticketing-hardening shared helpers (sentinel-tagged); run by hand only, with the operator present"
+    description: >-
+      F2 - clearManifestEntries() is called only AFTER assertNoResidue() within withCleanup()'s
+      finally block (a kill between sweep and clear must be a safe no-op on next preflight,
+      never a premature clear of unconfirmed cleanup). Same ordering-check script as A7, second
+      mode.
+    command: 'node contracts/checks/ticketing-hardening/check-withcleanup-ordering.mjs clear-after-residue'
+    timeout_seconds: 15
