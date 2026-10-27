@@ -40,3 +40,9 @@ A refused /tickets/[slug] renders a hero with no notice; needs sourced copy, non
 - A2 also asserts prices: the VIP JSON-LD offer must equal the active show's price, the impostor's 999
   must not appear in any card or offer price under the active show, and under the other show the VIP
   offer must be 999. Mutant letting the same-slug vip through: `JSON-LD VIP offer for show-fictional-test is 300, not its own 999`.
+
+## Round 3 (Codex round 2 FAIL), A1-A6 PASS on main, each fix mutation-proved
+- A1: sweep printing only the header, rc 0 -> `FAIL sweep reported neither violations nor the (none) marker`.
+- A6 (now check-show-offers-forwarding.sh, function-scoped; buildShowOffers is not exported so a behavioural replay needs a product change, noted as accepted limit): wrapper passing `activeShowId: null` to buildHubCards -> FAIL; page call site with `null` -> FAIL.
+- A5 (now check-a7-rewired.sh, scoped to the A7 block): origin/main's old A7 -> FAIL "does not call the helper"; helper plus a `| grep` pipe -> FAIL "still carries the negated pipeline".
+- A2 active-show price lines: mutant with no filter and `.reverse()` (impostor wins under the active show) -> 7 failures incl. `JSON-LD VIP offer for show-19-2027 is 999, not the active show's 300`, `a show-fictional-test price 999 reaches hub cards or JSON-LD offers`, `hub VIP card ... carries the impostor price`.

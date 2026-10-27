@@ -32,10 +32,10 @@ assertions:
       command: 'sed -n ''/buildHubCards({/,/});/p'' lib/data/admission-availability.ts | grep -q "^      activeShowId,$"'
       timeout_seconds: 10
     - id: A6
-      description: the prerendered /national-show page passes the resolved active show to buildHubCards
-      command: grep -qF "buildShowOffers(hubTicketTypes, new Date(), resolveActiveShow(shows ?? []))" "app/(nos)/national-show/page.tsx"
+      description: buildShowOffers forwards its activeShowId to buildHubCards (function-scoped; the function is not exported, so a behavioural replay would need a product change) and the page call site resolves the active show
+      command: sh contracts/checks/onsale-followups/check-show-offers-forwarding.sh
       timeout_seconds: 10
     - id: A5
-      description: ticket-onsale-predicate A7 now calls the fail-closed helper, not the negated pipeline
-      command: grep -q "check-national-show-not-prerendered-admin.py" .agent/memory/project/specs/ticket-onsale-predicate/contract-f1.yaml
+      description: ticket-onsale-predicate A7 calls the fail-closed helper and carries no negated pipeline
+      command: sh contracts/checks/onsale-followups/check-a7-rewired.sh
       timeout_seconds: 10

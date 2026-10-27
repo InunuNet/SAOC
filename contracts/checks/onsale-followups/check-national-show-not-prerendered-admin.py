@@ -31,12 +31,17 @@ def main() -> int:
     if not heads:
         print(f"FAIL sweep produced no VIOLATIONS header (rc={proc.returncode}): {proc.stderr[-200:]}")
         return 1
-    violations = [ln.strip() for ln in lines[heads[0] + 1:] if ln.startswith("  ") and ln.strip() != "(none)"]
+    body = [ln.strip() for ln in lines[heads[0] + 1:] if ln.startswith("  ")]
+    violations = [ln for ln in body if ln != "(none)"]
     # The sweep exits 1 exactly when it lists violations (any page), 0 when clean; anything else,
-    # or any stderr, is a crash after the header and must not read as a pass.
+    # or any stderr, is a crash after the header and must not read as a pass. A clean run must
+    # also print its "(none)" marker, so a truncated report cannot pass as an empty one.
     expected_rc = 1 if violations else 0
     if proc.returncode != expected_rc or proc.stderr.strip():
         print(f"FAIL sweep ended abnormally (rc={proc.returncode}, expected {expected_rc}): {proc.stderr[-200:]}")
+        return 1
+    if not violations and body != ["(none)"]:
+        print("FAIL sweep reported neither violations nor the (none) marker; truncated report")
         return 1
     # As broad as the original A7 grep: any violation line mentioning the hub page, annotated or not.
     hub = [v for v in violations if "national-show/page.tsx" in v]
