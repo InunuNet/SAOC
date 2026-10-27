@@ -46,3 +46,9 @@ While starting a private dev server for these measurements I ran `pkill -f next-
 
 ## Amendment 2026-10-28 (probe hardened against mid-transition reads)
 check-focus-ring.mjs now waits for `document.getAnimations()` to finish plus a 300ms floor after focus() before reading computed styles (`transition-colors` animates outline-color, so an immediate read sees the start colour). The earlier "hero CTA 1.42:1" reading was that artefact: settled, the Home hero CTA ring is ivory 2px solid and passes on beta. Still FAIL on main/beta: Menu and Join (outline none), footer lockup/explore/legal links (1px none; ring contrast 2.52:1).
+
+## Amendment 2026-10-28 (Codex FAIL on F1b test inputs)
+- e2e/nav-rendered-reachability.spec.ts: the 1280 "nav hidden" test now asserts the confirmed behaviour at 1280 and 1383 (nav visible, exactly 5 inline items, every SAOC NAV href an actionable anchor in the drawer).
+- The Menu button's accessible name is "Menu": e2e/nav-rendered-reachability.spec.ts, e2e/mobile-nav-reaches-every-section.spec.ts and e2e/no-horizontal-overflow-drawer-open.spec.ts select `{ name: 'Menu', exact: true }` (exact, so Close/other "menu" names cannot match). No other "Open menu" remains under e2e/ or checks/. `tsc --noEmit` reports no e2e errors.
+- checks/check-nav-reach.mjs now asserts real `a[href="/sponsors"]` and `a[href="/contact"]` links, visible, plus a named Search button or searchbox, inside the open drawer at 1280, 1366 and 1383. These drawer assertions pass on main (the drawer already works); the check still fails on main for the inline-nav items.
+- These e2e specs will fail on main by design until the F1b dev change lands.
