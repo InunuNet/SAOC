@@ -180,7 +180,7 @@ export function Header() {
           <Link
             href="/societies"
             data-hd="cta"
-            className="ml-auto inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[10px] bg-accent max-[780px]:hidden px-6 py-[10px] font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:bg-accent-soft min-[1384px]:ml-0 focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] forced-colors:border forced-colors:border-[color:ButtonText]"
+            className="ml-auto inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[10px] bg-accent max-[780px]:hidden px-6 py-[10px] font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:bg-accent-soft min-[1384px]:ml-0 outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px] forced-colors:border forced-colors:border-[color:ButtonText]"
           >
             Join a society
           </Link>
@@ -192,7 +192,7 @@ export function Header() {
             aria-label="Open menu"
             aria-expanded={mobileOpen}
             aria-controls={MOBILE_MENU_ID}
-            className="inline-flex min-h-11 min-w-[104px] items-center justify-center gap-2 max-[480px]:min-w-11 max-[480px]:px-0 rounded-[10px] border-[1.5px] border-[color:var(--nh-control-border)] px-3 font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:text-primary max-[780px]:justify-self-end min-[1384px]:hidden focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
+            className="inline-flex min-h-11 min-w-[104px] items-center justify-center gap-2 max-[480px]:min-w-11 max-[480px]:px-0 rounded-[10px] border-[1.5px] border-[color:var(--nh-control-border)] px-3 font-sans text-[13px] font-bold uppercase leading-none tracking-[0.12em] text-ink transition-colors duration-150 hover:text-primary max-[780px]:justify-self-end min-[1384px]:hidden outline-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-primary focus-visible:outline-offset-[3px]"
             onClick={() => setMobileOpen(true)}
           >
             <Menu size={20} strokeWidth={1.75} aria-hidden="true" />
