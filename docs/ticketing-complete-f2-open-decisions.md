@@ -9,7 +9,7 @@ run. This document feeds F8's morning review.
 
 ## 1. VIP price ladder — RESOLVED by Brad's direct ruling (2026-09-08)
 
-The live dataset has VIP priced at **R300**. `fix-vip-and-weekend-pass-pricing.ts` (removed), whose intended
+The live dataset has VIP priced at **R300**. `fix-vip-and-weekend-pass-pricing.ts`'s (removed) intended
 correction to **R480** was written but never actually run against the live dataset. VIP is
 described as including the full weekend plus a reception, yet was priced below both
 Weekend Pass SKUs — incoherent as a product ladder.
@@ -34,7 +34,7 @@ until `--apply` actually runs.
 
 Two active SKUs exist simultaneously today: `weekend-pass` (**R400** on the merged model,
 R380 early-bird per the corrected pricing) and the legacy `early-bird-weekend-pass`
-(**R380**). The merge described in `fix-vip-and-weekend-pass-pricing.ts` (removed), whose own comments was
+(**R380**). The merge described in `fix-vip-and-weekend-pass-pricing.ts`'s (removed) own comments was
 never applied to the live dataset. `early-bird-weekend-pass` carries 1 real Firestore
 position, so F2 retires it (`active: false`) rather than deleting it — but the underlying
 question of whether R380/R400 is the right final early-bird/regular pair is still open.
