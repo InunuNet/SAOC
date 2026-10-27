@@ -50,3 +50,22 @@ assertions:
     - id: A9
       description: Checks left no mutation behind, route and sitemap sources equal origin/main
       command: git diff --quiet origin/main -- app/api/tickets/checkout/route.ts lib/saoc-sitemap-routes.ts lib/nos-sitemap-routes.ts
+    - id: A10
+      description: Codex adversarial QA of the whole diff against the goldens and proof-on-main
+      type: codex_qa
+      target: >-
+        Adversarially review git diff origin/main...HEAD on feat/gate-hygiene against the goldens in
+        .agent/memory/project/specs/backlog-wave-1028/gate-hygiene/goldens/. Try to find an input where isUpcoming
+        now differs from the old Date.parse behaviour, a sitemap mutation the checks miss, and a way the checkout
+        day-null test passes while the route guard is absent.
+      required: true
+    - id: A11
+      description: BrowserAgent on beta confirms /events still lists upcoming events and none are dropped after the isUpcoming change (post-deploy)
+      type: browser_deployed_check
+      target: .agent/memory/scratch/gate-hygiene-browser-manifest.json
+      required: true
+    - id: A12
+      description: gws inbox check is not applicable (no email path is touched); declared non-required only to satisfy the triad coverage linter, expected to skip
+      type: gws_inbox_check
+      target: .agent/memory/scratch/gate-hygiene-gws-manifest.json
+      required: false
