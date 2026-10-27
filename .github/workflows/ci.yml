@@ -132,6 +132,17 @@ jobs:
           SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
         run: pnpm exec tsx scripts/scan-dataset-residue.ts
 
+  live-write-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 -m pip install pyyaml
+      - name: No contract runs a live-production write in the default gate
+        run: python3 contracts/checks/live-write-guard/verify_no_ungated_writers.py
+
   firestore-residue-guard:
     runs-on: ubuntu-latest
     steps:

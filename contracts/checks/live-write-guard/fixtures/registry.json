@@ -1,0 +1,1 @@
+{"schema": "saoc.writer-registry/v1", "scripts": {"scripts/w.mjs": {"class": "REAL_SANITY", "target": "fixture", "note": "fixture writer"}}}
