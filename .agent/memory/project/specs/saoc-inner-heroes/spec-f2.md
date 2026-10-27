@@ -20,4 +20,6 @@ Base: origin/main 9b8a1e63 (#116, contract-f1 merged). Source: comms.md "[NOS De
 4. HM-7 labels: only the facts values are ruled; label (dt) alignment is measured and logged, not gated.
 
 ## Harness note
-The recorded Sanity fixture (nos-content-standard/fixtures/sanity, 85 files) has no entry for the current societyEvent slugs query, so a replay BUILD fails on 9b8a1e63. checks/f2-build.sh builds without the fixture (GET only); runtime gates still serve under replay. Fixture refresh is the fixture owner's call.
+The recorded Sanity fixture (nos-content-standard/fixtures/sanity, 85 files) has no entry for the current societyEvent slugs query, so a replay BUILD fails on 9b8a1e63. checks/f2-build.sh builds without the fixture (GET only); Fixture refresh is the fixture owner's call.
+
+Runtime (10-27, architect): the gates no longer serve under replay either. The societyEvent queries take `$todayStart` (lib/sast-date.ts, SAST start of day), so every recorded entry is keyed to its recording day; after the next SAST midnight home, /events and /societies/[slug] return 500 (SanityFixtureMiss) and each probe sat out its 20 s image timeout, which is why f2-gate-served-width ran past 11 minutes. checks/_lib.mjs startServer now reads Sanity live (GET only, public dataset) unless SAOC_GATE_SANITY_REPLAY=1; served-width also fails a non-200 page at once instead of waiting. Measured 200 s on the main build (was 11+ min, killed). Viewports and routes are unchanged.

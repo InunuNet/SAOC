@@ -100,7 +100,8 @@ await withServer(1, 'served-width (saoc)', async (server, c) => {
       for (const band of GOLDEN.bands) {
         for (const path of band.routes) {
           const tag = `[saoc ${vp.name} ${path} ${band.name}]`;
-          await page.goto(`${server.saoc}${path}`, { waitUntil: 'load' });
+          const res = await page.goto(`${server.saoc}${path}`, { waitUntil: 'load' });
+          if (res?.status() !== 200) { c.check(`${tag} page renders (fail fast, no 20 s image wait)`, false, `status ${res?.status()}`); continue; }
           await page.locator(band.selector).first().scrollIntoViewIfNeeded().catch(() => undefined);
           const found = await loaded(page, band.selector);
           c.check(`${tag} image present and loaded`, found);
@@ -111,10 +112,11 @@ await withServer(1, 'served-width (saoc)', async (server, c) => {
         }
       }
       // Home carousel: each slide in turn (pause, then its dot), because the hidden slide's image is not painted at its box.
-      await page.goto(`${server.saoc}/`, { waitUntil: 'load' });
+      const homeRes = await page.goto(`${server.saoc}/`, { waitUntil: 'load' });
       for (let i = 0; i < GOLDEN.home.slides.length; i += 1) {
         const slide = GOLDEN.home.slides[i];
         const tag = `[saoc ${vp.name} / slide ${slide.key}]`;
+        if (homeRes?.status() !== 200) { c.check(`${tag} home renders (fail fast, no 20 s image wait)`, false, `status ${homeRes?.status()}`); continue; }
         const pause = page.getByRole('button', { name: 'Pause' });
         if (await pause.count()) await pause.click();
         const dot = page.getByRole('button', { name: new RegExp(`^Show slide ${i + 1}`) });
@@ -146,7 +148,8 @@ await withServer(1, 'served-width (saoc)', async (server, c) => {
       for (const band of GOLDEN.bands.filter((b) => b.name === 'ShowBand')) {
         for (const path of band.routes) {
           const tag = `[saoc ${vp.name} ${path} ${band.name}]`;
-          await page.goto(`${server.saoc}${path}`, { waitUntil: 'load' });
+          const res = await page.goto(`${server.saoc}${path}`, { waitUntil: 'load' });
+          if (res?.status() !== 200) { c.check(`${tag} page renders (fail fast, no 20 s image wait)`, false, `status ${res?.status()}`); continue; }
           await page.locator(band.selector).first().scrollIntoViewIfNeeded().catch(() => undefined);
           const found = await loaded(page, band.selector);
           c.check(`${tag} image present and loaded`, found);
